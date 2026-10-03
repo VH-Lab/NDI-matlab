@@ -53,7 +53,10 @@ function out = relationDocuments(session, S, R, subjectIds, options)
 %   references), counts (struct: one count per relation kind), skipped
 %   (cellstr: a relation whose parent is not a subject of this session),
 %   timeReferenceIds (containers.Map: '<plate>|<cohort>' -> the id of that
-%   window's time reference, for the moves stage 8 states at the same times).
+%   window's time reference, for the moves stage 8 states at the same times),
+%   assaySpans (containers.Map: assay plate -> struct T, tol, stop, method:
+%   the transfer time with its bound, the end of filming (wall clock) and the
+%   protocol's transfer method, for the moves and windows of stage 8).
 
 arguments
     session table
@@ -74,7 +77,7 @@ R = R(strcmp(R.session, ref), :);
 out = struct('documents', {{}}, 'skipped', {{}}, 'counts', struct( ...
     'patch_part_of_plate', 0, 'worm_member_of_cohort', 0, 'cohort_in_assay_plate', 0, ...
     'cohort_in_acclimation_plate', 0, 'cohort_in_food_deprivation_plate', 0), ...
-    'timeReferenceIds', containers.Map());
+    'timeReferenceIds', containers.Map(), 'assaySpans', containers.Map());
 docs = {};
 eachMember = struct();             % `distributive`, when the schema has it (#84)
 if ndi.setup.V2.schemaHasField('directed_relation', 'distributive')
@@ -141,7 +144,8 @@ for k = 1:height(plates)
     end
     [T, rule] = ndi.setup.conv.haley.transferTime(options.Protocol, plates.folder{k}, ...
         t0, lawnStart, stems, lawnEnd);
-    spanOf(id) = struct('T', T, 'tol', rule.tolerance, 'stop', max(t + seconds(dur)));
+    spanOf(id) = struct('T', T, 'tol', rule.tolerance, 'stop', max(t + seconds(dur)), ...
+        'method', rule.method);
 end
 refOf = containers.Map();       % plate id|cohort id -> time reference id
 for k = 1:height(cohorts)
@@ -203,6 +207,7 @@ for k = 1:height(cohorts)
 end
 out.documents = docs;
 out.timeReferenceIds = refOf;
+out.assaySpans = spanOf;
 end
 
 % -----------------------------------------------------------------------------
@@ -217,15 +222,6 @@ docs{end+1} = did2.build.directedRelation(ids(child), ids(parent), relation, ...
 out.counts.(counter) = out.counts.(counter) + 1;
 end
 
-function t = wallClock(t, tz)
-% The source's wall-clock time with no zone attached: a value that already
-% carries a zone is first expressed in TZ.
-if ~isempty(t.TimeZone)
-    t.TimeZone = tz;
-    t.TimeZone = '';
-end
-end
-
 function t = placed(holding, id, tz)
 % when the worms were put onto an acclimation / food deprivation plate
 t = holding.worms_placed(strcmp(holding.local_identifier, id));
@@ -234,31 +230,4 @@ if isempty(t)
 else
     t = wallClock(t(1), tz);
 end
-end
-
-function d = utcReference(t0, tol0, fmt0, t1, tol1, fmt1, hasEnd, tz, sid)
-% A window from T0 (wall clock) to T1 (when HASEND), each with its bound
-% [minus plus] seconds ([] = exact) and the precision it was written at (FMT,
-% so source_value does not invent seconds a hand-written time never had). The
-% duration's bound follows: it is shortest when the start is late and the end
-% early (minus = start.plus + end.minus), longest the other way round.
-args = {'SourceValue', char(t0, fmt0), 'SourceTimezone', tz, ...
-    'Approximate', ~isempty(tol0), 'Tolerance', tol0};
-if hasEnd
-    s0 = tol0; if isempty(s0), s0 = [0 0]; end
-    e1 = tol1; if isempty(e1), e1 = [0 0]; end
-    durTol = [s0(2) + e1(1), s0(1) + e1(2)];
-    if all(durTol == 0), durTol = []; end
-    args = [args, {'Duration', seconds(t1 - t0), ...
-        'DurationApproximate', ~isempty(durTol), 'DurationTolerance', durTol, ...
-        'End', utcText(t1, tz), 'EndSourceValue', char(t1, fmt1), 'EndSourceTimezone', tz, ...
-        'EndApproximate', ~isempty(tol1), 'EndTolerance', tol1}];
-end
-d = did2.build.absoluteTimeReference(utcText(t0, tz), 'SessionId', sid, args{:});
-end
-
-function s = utcText(t, tz)
-t.TimeZone = tz;
-t.TimeZone = 'UTC';
-s = char(t, 'yyyy-MM-dd''T''HH:mm:ss.SSS''Z''');
 end

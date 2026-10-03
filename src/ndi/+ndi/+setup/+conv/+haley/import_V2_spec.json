@@ -1519,6 +1519,56 @@
   "type": "bacterial suspension",
   "growth_diluent": "lb"
  },
+ "preparation": {
+  "_about": "Stage 8 part C (decisions #54, #56, #57): how the plates were prepared and the worms moved, read by ndi.setup.conv.haley.manipulationDocuments. Every value is from the eLife paper's Methods, the lab's Benchling protocols or Jess Haley; terms are names until the ontology lookup.",
+  "pour": {
+   "_about": "Every plate is 25 mL of NGM in a 100 mm dish (240102B_NGM_plates; Jess: Mini's too). The agar is NGM, or NGM without peptone where the plate's `peptone` says so (Matching, E. coli); acclimation and food deprivation plates have no `peptone` column and are the plain recipe.",
+   "variable": "nematode growth medium",
+   "method": "pouring",
+   "volume_ml": 25,
+   "agar": {
+    "with": "ngm",
+    "without": "ngm_no_peptone"
+   },
+   "default_peptone": "with",
+   "notes": {
+    "ecoli": "The NGM entry for this pour records no antibiotic. Carbenicillin was probably added (the NGM protocol requires an antibiotic for plasmid-carrying bacteria such as OP50-GFP) but is unrecorded (Jess Haley, 2026-10-02)."
+   }
+  },
+  "seed": {
+   "_about": "One dose per patch at the patch's volume (`lawnVolume`) and OD600; one per acclimation plate, 200 uL (the paper: 'one large patch of 200 µl of OD600 = 1'). The suspension is the day's (seedingSuspensions).",
+   "method": "seeding",
+   "growth_volume_ul": 200
+  },
+  "temperature": {
+   "_about": "The temperature a plate was moved INTO, not heat applied; approximate, no tolerance (no bound is known). Cold room ~4 C, room temperature 20 C (the paper: 'stored at 20C until the experiment'); acclimation and food deprivation plates go into the 20 C incubator when the worms are put on them.",
+   "variable": "ambient temperature",
+   "cold_room_celsius": 4,
+   "room_celsius": 20,
+   "incubator_celsius": 20
+  },
+  "transfer": {
+   "_about": "One term_manipulation per move, on the cohort, at its contained_in relation's time. The value names the plate moved to; the method the move's last step; every move onto an assay plate first went through an empty NGM plate for about a minute to shed bacteria (Jess, 2026-10-02).",
+   "variable": "plate transfer",
+   "pick_method": "picking",
+   "assay_methods": [
+    {
+     "contains": "eyelash",
+     "method": "transfer by eyelash pick",
+     "droplet": "S-Complete"
+    },
+    {
+     "contains": "agar plug",
+     "method": "transfer by agar plug"
+    }
+   ],
+   "cleaning": "agar plug onto an empty NGM plate for about 1 min, to shed bacteria"
+  },
+  "food_deprivation": {
+   "variable": "food deprivation",
+   "value": "food deprived"
+  }
+ },
  "corrections": [
   {
    "key": "cfu_matching_2023_03_27",
@@ -1537,6 +1587,15 @@
    "value": null,
    "was": 457,
    "reason": "457 is the OP50 count of Concentration's seeding the same day; an OP50-GFP suspension cannot share it, so it was copied and the real value is unknown (Jess, 2026-10-03)."
+  },
+  {
+   "key": "peptone_ecoli_plate_90",
+   "folder": "ecoli",
+   "plate": 90,
+   "column": "peptone",
+   "value": "without",
+   "was": "with",
+   "reason": "Plate 90 is labelled with peptone, but its label is wrong: it is from the 16 Nov 2023 pour, without peptone (Jess Haley, 2026-10-02; decision #56)."
   }
  ]
 }

@@ -18,6 +18,7 @@ on:
     paths:
       - 'src/ndi/+ndi/+setup/+V2/**'
       - 'src/ndi/+ndi/+setup/+conv/+haley/import_V2*'
+      - 'src/ndi/+ndi/+setup/+conv/+haley/**'
       - 'src/ndi/+ndi/+setup/+conv/+haley/sessionList.m'
       - 'src/ndi/+ndi/+setup/+conv/+haley/subjectList.m'
       - 'src/ndi/+ndi/+setup/+conv/+haley/idPrefix.m'
@@ -37,6 +38,7 @@ on:
     paths:
       - 'src/ndi/+ndi/+setup/+V2/**'
       - 'src/ndi/+ndi/+setup/+conv/+haley/import_V2*'
+      - 'src/ndi/+ndi/+setup/+conv/+haley/**'
       - 'src/ndi/+ndi/+setup/+conv/+haley/sessionList.m'
       - 'src/ndi/+ndi/+setup/+conv/+haley/subjectList.m'
       - 'src/ndi/+ndi/+setup/+conv/+haley/idPrefix.m'

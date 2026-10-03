@@ -274,6 +274,79 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             end
         end
 
+        function testManipulations(testCase)
+            % stage 8 (decisions #54, #56, #57) over the fixture's
+            % concentration_0001, with stage 2 run so the recipes and the
+            % seeding suspensions have documents
+            result = testCase.write("concentration_0001", ["metadata", "assertions", "manipulations"]);
+            c = result.written{1}.manipulations.counts;
+            testCase.verifyEqual(c.pour, 4 + 3 + 1, '4 assay, 3 acclimation, 1 food deprivation plate');
+            testCase.verifyEqual(c.seed_patch, 4, 'one patch per assay plate');
+            testCase.verifyEqual(c.seed_acclimation_plate, 3);
+            testCase.verifyEqual(c.temperature, 4 * 2 + 3 * 3 + 1, ['assay: cold room, room ' ...
+                'temperature; acclimation: cold room, room temperature, incubator; food ' ...
+                'deprivation: incubator']);
+            testCase.verifyEqual(c.transfer, 4 + 1 + 3, ['each cohort onto its acclimation ' ...
+                'plate, plate 14''s onto its food deprivation plate, the 3 filmed plates'' assay transfers']);
+            testCase.verifyEqual(c.food_deprivation, 1);
+            testCase.verifyTrue(any(contains(result.subjectChecks.roomTempLooksEstimated, ...
+                'concentration_assayPlate0012')), 'plate 12''s timeRoomTemp is recording - 1 h');
+
+            docs = testCase.documents(result.sessions.path{1});
+            classes = cellfun(@(d) d.document_class.class_name, docs, 'UniformOutput', false);
+            byId = containers.Map(cellfun(@(d) d.base.id, docs, 'UniformOutput', false), docs);
+            subj = docs(strcmp(classes, 'subject'));
+            idOf = containers.Map(cellfun(@(d) d.subject.local_identifier, subj, 'UniformOutput', false), ...
+                cellfun(@(d) d.base.id, subj, 'UniformOutput', false));
+            on = @(set, local) set(cellfun(@(a) strcmp(edge(a, 'subject_id'), idOf(local)), set));
+            liters = @(d) d.dose.value.volume.liters;
+            dm = docs(strcmp(classes, 'dose_manipulation'));
+
+            % the patch: 0.5 uL of that day's OD600 1 dilution, at the seeding
+            seed = on(dm, 'concentration_assayPlate0012_patch0001');
+            testCase.verifyNumElements(seed, 1);
+            testCase.verifyEqual(liters(seed{1}), 0.5e-6, 'AbsTol', 1e-15);
+            testCase.verifyEqual(edge(seed{1}, 'formulation_id'), ...
+                result.metadata.ids('suspension_op50_20220202_od1'));
+            % the plate: 25 mL of NGM, poured before that seeding
+            pour = on(dm, 'concentration_assayPlate0012');
+            testCase.verifyNumElements(pour, 1);
+            testCase.verifyEqual(liters(pour{1}), 0.025, 'AbsTol', 1e-12);
+            testCase.verifyEqual(edge(pour{1}, 'formulation_id'), result.metadata.ids('ngm'));
+            when = byId(edge(pour{1}, 'time_reference_id'));
+            testCase.verifyEqual(when.document_class.class_name, 'relative_time_reference');
+            testCase.verifyEqual(edge(when, 'referent_id'), edge(seed{1}, 'time_reference_id'));
+            % the acclimation plate: 200 uL of the same dilution
+            acc = on(dm, 'concentration_0001_acclimationPlate0001');
+            acc = acc(cellfun(@(d) abs(liters(d) - 200e-6) < 1e-12, acc));
+            testCase.verifyNumElements(acc, 1);
+            testCase.verifyEqual(edge(acc{1}, 'formulation_id'), ...
+                result.metadata.ids('suspension_op50_20220202_od1'));
+
+            % plate 12: into the cold room (4 C), then room temperature (20 C)
+            tm = on(docs(strcmp(classes, 'temperature_manipulation')), 'concentration_assayPlate0012');
+            testCase.verifyEqual(reshape(sort(cellfun(@(d) d.temperature.value.celsius, tm)), 1, []), [4 20]);
+
+            % the cohort's moves, at its contained_in times
+            tmn = docs(strcmp(classes, 'term_manipulation'));
+            mine = on(tmn, 'concentration_assayPlate0012_worms');
+            toAssay = mine(cellfun(@(d) strcmp(d.term.value.name, 'assay plate'), mine));
+            testCase.verifyNumElements(toAssay, 1);
+            testCase.verifyEqual(toAssay{1}.subject_interaction.method.name, 'transfer by agar plug');
+            mp = toAssay{1}.subject_interaction.method_parameters;
+            if iscell(mp), mp = [mp{:}]; end
+            testCase.verifyTrue(any(arrayfun(@(q) strcmp(q.variable.name, 'cleaning step'), mp)));
+            dr = docs(strcmp(classes, 'directed_relation'));
+            rel = dr(cellfun(@(r) strcmp(edge(r, 'child_id'), idOf('concentration_assayPlate0012_worms')) ...
+                && strcmp(edge(r, 'parent_id'), idOf('concentration_assayPlate0012')), dr));
+            testCase.verifyNumElements(rel, 1);
+            testCase.verifyEqual(edge(toAssay{1}, 'time_reference_id'), edge(rel{1}, 'time_reference_id'), ...
+                'the move is stated at the time of the relation it makes');
+            fd = on(tmn, 'concentration_assayPlate0014_worms');
+            fd = fd(cellfun(@(d) strcmp(d.subject_statement.variable.name, 'food deprivation'), fd));
+            testCase.verifyNumElements(fd, 1);
+        end
+
         function testEcoliSession(testCase)
             result = testCase.write("ecoli_0001");
             docs = testCase.documents(result.sessions.path{1});

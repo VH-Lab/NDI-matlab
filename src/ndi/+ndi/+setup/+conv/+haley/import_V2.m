@@ -30,7 +30,10 @@ function result = import_V2(dataParentDir, options)
 %                          deprivation and assay plates (with when)
 %        7  assertions     species and strain of each cohort and seeded
 %                          patch; exclusion tags on plates
-%        8  manipulations  plate preparation, food deprivation     (not yet)
+%        8  manipulations  pouring and seeding each plate, its moves
+%                          between cold room, room temperature and
+%                          incubator; each cohort's transfers and food
+%                          deprivation
 %        9  observations   tracks, environment, geometry, images   (not yet)
 %        10 calculations   masks, closest-patch maps               (not yet)
 %     C. dataset-wide, once
@@ -73,7 +76,7 @@ function result = import_V2(dataParentDir, options)
 arguments
     dataParentDir (1,:) char {mustBeFolder} = fullfile(userpath, 'data')
     options.Spec (1,:) char = fullfile(fileparts(mfilename('fullpath')), 'import_V2_spec.json')
-    options.Stages (1,:) string = ["discover", "metadata", "sessions", "subjects", "acquisition", "relations", "assertions"]
+    options.Stages (1,:) string = ["discover", "metadata", "sessions", "subjects", "acquisition", "relations", "assertions", "manipulations"]
     options.OutputRoot (1,:) char = ''
     options.Sessions (1,:) string = string.empty(1, 0)
     options.Write (1,1) logical = false
@@ -164,8 +167,11 @@ if any(options.Stages == "subjects")
     end
     % Listed against EVERY session, then narrowed: with 'Sessions', a plate
     % of an unselected day would otherwise read as having no session.
+    spec = jsondecode(fileread(options.Spec));
+    corrections = {};
+    if isfield(spec, 'corrections'), corrections = spec.corrections; end
     [result.subjects, result.subjectChecks] = ndi.setup.conv.haley.subjectList( ...
-        dataParentDir, allSessions);
+        dataParentDir, allSessions, 'Corrections', corrections);
     result.subjects = result.subjects(ismember(result.subjects.session, ...
         result.sessions.local_identifier), :);
     if height(result.subjects) > 0
@@ -283,6 +289,29 @@ if isfield(result, 'subjects') && isfield(result, 'recordings')
                 fprintf('  skipped: %s\n', as.skipped{j});
             end
         end
+        if any(options.Stages == "manipulations") && isfield(built{k}, 'relations')
+            spec = jsondecode(fileread(options.Spec));
+            index = table();
+            if isfield(result, 'suspensions'), index = result.suspensions.index; end
+            ma = ndi.setup.conv.haley.manipulationDocuments(T(k, :), result.subjects, ...
+                built{k}.subjectIds, 'Preparation', spec.preparation, ...
+                'Seeding', spec.seeding, 'Ids', instrumentIds, 'Names', namesOf(spec), ...
+                'Suspensions', index, 'Relations', built{k}.relations, ...
+                'HandTolerance', reshape(double(spec.transfer_protocol.hand_written_tolerance_seconds), 1, 2));
+            built{k}.documents = [built{k}.documents, ma.documents];
+            built{k}.manipulations = ma;
+            c = ma.counts;
+            fprintf(['%s manipulations: %d pour, %d patch seeding, %d acclimation plate ' ...
+                'seeding, %d temperature, %d transfer, %d food deprivation\n'], ...
+                T.local_identifier{k}, c.pour, c.seed_patch, c.seed_acclimation_plate, ...
+                c.temperature, c.transfer, c.food_deprivation);
+            for j = 1:numel(ma.skipped)
+                fprintf('  skipped: %s\n', ma.skipped{j});
+            end
+        elseif any(options.Stages == "manipulations")
+            fprintf('%s: the manipulations stage needs the relations stage (it shares their times)\n', ...
+                T.local_identifier{k});
+        end
         T.documents{k} = built{k}.documents;
         T.time_reference_id{k} = built{k}.timeReferenceId;
         classes = cellfun(@(d) d.document_class.class_name, built{k}.documents, ...
@@ -299,4 +328,22 @@ end
 [T, result.sessionObjects] = ndi.setup.V2.makeSessions(T, 'Overwrite', options.Overwrite);
 result.sessions = removevars(T, 'documents');
 result.written = built;
+end
+
+function m = namesOf(spec)
+% formulation and strain keys -> the names a dose's variable reads as
+m = containers.Map();
+for f = {'formulations', 'strains'}
+    if ~isfield(spec, f{1}), continue; end
+    e = spec.(f{1});
+    if isstruct(e), e = num2cell(e); end
+    for k = 1:numel(e)
+        x = e{k};
+        if isfield(x, 'type') && ~isempty(x.type)
+            m(x.key) = char(x.type);
+        elseif isfield(x, 'name') && ~isempty(x.name)
+            m(x.key) = char(x.name);
+        end
+    end
+end
 end

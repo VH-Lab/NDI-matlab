@@ -55,7 +55,20 @@ function [S, checks] = subjectList(dataParentDir, sessions)
 %   C. elegans plates, OP50-GFP on the E. coli plates; '' for a patch of LB
 %   alone, OD600 0), cohort (a worm's cohort), type (subject.type, decision
 %   #55: worm organism, cohort group, a patch with bacteria culture, every
-%   plate and a patch of LB alone material).
+%   plate and a patch of LB alone material), prep (stage 8, decisions #54,
+%   #56: a struct of how a plate or patch was made -- seeded, cold_room,
+%   room_temp (an assay plate's `timeSeed`/`timeColdRoom`/`timeRoomTemp`, an
+%   acclimation plate's `growthTime*`, an E. coli plate's `timeSeed`/
+%   `timeSeedColdRoom`/`timeRoomTemp`), poured and poured_cold_room (E. coli),
+%   peptone (the label, or the spec's correction), od600 and volume_ul (a
+%   patch's; an acclimation plate's `growthOD600`), room_temp_note (the
+%   correction's reason when `timeRoomTemp` was estimated), room_temp_by_rule
+%   (it is exactly a recording's start minus 1 h); NaT/NaN/'' where the
+%   source has nothing).
+%
+%   Option 'Corrections': the spec's `corrections`; those naming a `plate`
+%   are applied to its prep (decision #56: plate 90's peptone; #54d: an
+%   estimated `timeRoomTemp`).
 %
 %   CHECKS (second output, also printed) report what looks wrong in the
 %   source WITHOUT changing anything:
@@ -72,18 +85,26 @@ function [S, checks] = subjectList(dataParentDir, sessions)
 %                          acclimation plate is grouped by strain alone)
 %     ecoliSeeding         an E. coli plate whose template and seeding
 %                          disagree, or a plateNum used by two experiments
+%     growthDisagrees      an acclimation plate whose assay plates give
+%                          different growth times (the first is kept)
+%     correctionUnmatched  a spec correction naming a plate not listed
+%     roomTempLooksEstimated  an assay plate whose `timeRoomTemp` is exactly a
+%                          recording's start minus 1 h (filled in by rule)
+%                          that no correction lists
 %
 %   Nothing is written; the subjects stage of import_V2 prints S.
 
 arguments
     dataParentDir (1,:) char {mustBeFolder}
     sessions table
+    options.Corrections = {}
 end
 
 root = fullfile(dataParentDir, 'haley');
 checks = struct('plateWithoutSession', {{}}, 'plateOnTwoDays', {{}}, ...
     'wormOnTwoPlates', {{}}, 'wormRange', {{}}, 'noLawnCenters', {{}}, ...
-    'patchCountDisagrees', {{}}, 'noPickTime', {{}}, 'ecoliSeeding', {{}});
+    'patchCountDisagrees', {{}}, 'noPickTime', {{}}, 'ecoliSeeding', {{}}, ...
+    'growthDisagrees', {{}}, 'correctionUnmatched', {{}}, 'roomTempLooksEstimated', {{}});
 rows = {};
 
 % ---- C. elegans -------------------------------------------------------------
@@ -111,7 +132,8 @@ for f = 1:numel(folders)
     % numbered per session, which needs every plate of the session.
     plates = unique(I.plateNum);
     P = struct('plate', {}, 'session', {}, 'worms', {}, 'strain', {}, 'pick', {}, ...
-        'nPatch', {}, 'nVideo', {}, 'exclude', {}, 'starved', {}, 'od600', {});
+        'nPatch', {}, 'nVideo', {}, 'exclude', {}, 'starved', {}, 'od600', {}, ...
+        'prep', {}, 'growth', {});
     wormHome = containers.Map('KeyType', 'double', 'ValueType', 'double');
     for k = 1:numel(plates)
         p = double(plates(k));
@@ -173,7 +195,9 @@ for f = 1:numel(folders)
         end
         P(end+1) = struct('plate', p, 'session', mine.local_identifier{s}, 'worms', kept, ...
             'strain', char(R.strainID{1}), 'pick', pick, 'nPatch', nPatch, ...
-            'nVideo', height(R), 'exclude', ex, 'starved', starved, 'od600', od); %#ok<AGROW>
+            'nVideo', height(R), 'exclude', ex, 'starved', starved, 'od600', od, ...
+            'prep', prepOf(R, 'timeSeed', 'timeColdRoom', 'timeRoomTemp', NaN), ...
+            'growth', growthPrepOf(R)); %#ok<AGROW>
     end
 
     % Acclimation plates: one per (session, strain, pick time), numbered within the
@@ -210,11 +234,22 @@ for f = 1:numel(folders)
             else
                 when = ['picked ' char(G.pick(n), 'yyyy-MM-dd HH:mm')];
             end
-            rows{end+1} = subjRow(mine.local_identifier{s}, 'acclimation_plate', gid, ...
+            r = subjRow(mine.local_identifier{s}, 'acclimation_plate', gid, ...
                 sprintf('Acclimation Plate %04d', n), ...
                 sprintf('Acclimation plate of %s, %s; the worms of %d assay plate(s) came from it.', ...
                 G.strain{n}, when, numel(members)), folder, NaN, NaN, NaN, G.strain{n}, '', false, ...
-                G.pick(n)); %#ok<AGROW>
+                G.pick(n));
+            % its preparation: the growth columns of the assay plates it served,
+            % which should agree; the first is kept and a disagreement reported
+            r.prep = P(members(1)).growth;
+            for m = 2:numel(members)
+                if ~samePrep(P(members(m)).growth, r.prep)
+                    checks.growthDisagrees{end+1} = sprintf(['%s: assay plates %d and %d give ' ...
+                        'different growth seeding/cold room/room temperature times; kept %d''s'], ...
+                        gid, P(members(1)).plate, P(members(m)).plate, P(members(1)).plate);
+                end
+            end
+            rows{end+1} = r; %#ok<AGROW>
         end
     end
 
@@ -262,10 +297,18 @@ for f = 1:numel(folders)
         q = P(m);
         pid = sprintf('%s_assayPlate%04d', pre, q.plate);
         pname = sprintf('Assay Plate %04d', q.plate);
-        rows{end+1} = subjRow(q.session, 'assay_plate', pid, pname, ...
+        r = subjRow(q.session, 'assay_plate', pid, pname, ...
             sprintf('Assay plate %d: %d worm(s), %d patch(es), filmed in %d video(s).', ...
             q.plate, numel(q.worms), q.nPatch, q.nVideo), folder, q.plate, NaN, NaN, ...
-            q.strain, growthOf{m}, q.exclude, NaT, deprivationOf{m}); %#ok<AGROW>
+            q.strain, growthOf{m}, q.exclude, NaT, deprivationOf{m});
+        r.prep = q.prep;
+        % a timeRoomTemp of exactly a recording's start minus 1 h was filled
+        % in by rule (decision #54d): the spec's corrections list each one
+        if ismember('timeRecord', I.Properties.VariableNames) && ~isnat(q.prep.room_temp)
+            t = I.timeRecord(I.plateNum == q.plate);
+            r.prep.room_temp_by_rule = any(q.prep.room_temp == t - hours(1));
+        end
+        rows{end+1} = r; %#ok<AGROW>
         for k = 1:q.nPatch
             r = subjRow(q.session, 'patch', sprintf('%s_patch%04d', pid, k), ...
                 sprintf('Patch %04d on %s', k, pname), ...
@@ -278,6 +321,10 @@ for f = 1:numel(folders)
             if ~(~isempty(od) && all(od == 0))
                 r.bacteria = 'OP50';
             end
+            % seeded with the plate, at its own OD600 and the plate's volume
+            r.prep.seeded = q.prep.seeded;
+            r.prep.volume_ul = q.prep.volume_ul;
+            if isscalar(od), r.prep.od600 = od; end
             rows{end+1} = r; %#ok<AGROW>
         end
         % The plate's worms are one cohort (decision #55): moved together, so
@@ -382,8 +429,13 @@ if height(mine) > 0
         end
         pid = sprintf('ecoli_plate%04d', p);
         pname = sprintf('Plate %04d', p);
-        rows{end+1} = subjRow(mine.local_identifier{s}, 'plate', pid, pname, ...
-            sprintf('E. coli plate %d: %s.', p, what), 'ecoli', p, NaN, NaN, '', '', false); %#ok<AGROW>
+        pl = subjRow(mine.local_identifier{s}, 'plate', pid, pname, ...
+            sprintf('E. coli plate %d: %s.', p, what), 'ecoli', p, NaN, NaN, '', '', false);
+        R1 = info(r, :);
+        pl.prep = prepOf(R1, 'timeSeed', 'timeSeedColdRoom', 'timeRoomTemp', NaN);
+        pl.prep.poured = colOr(R1, 'timePoured', NaT);
+        pl.prep.poured_cold_room = colOr(R1, 'timePouredColdRoom', NaT);
+        rows{end+1} = pl; %#ok<AGROW>
         for k = 1:nPatch
             pr = subjRow(mine.local_identifier{s}, 'patch', sprintf('%s_patch%04d', pid, k), ...
                 sprintf('Patch %04d on %s', k, pname), ...
@@ -391,16 +443,61 @@ if height(mine) > 0
             if info.OD600(r) > 0            % OD600 0 is LB alone: no bacteria
                 pr.bacteria = 'OP50-GFP';   % decision #54
             end
+            pr.prep.seeded = pl.prep.seeded;
+            pr.prep.od600 = double(info.OD600(r));
+            pr.prep.volume_ul = double(info.lawnVolume(r));
             rows{end+1} = pr; %#ok<AGROW>
         end
     end
 end
 
+% ---- the spec's named corrections to a plate (decisions #54, #56) ------------
+% By folder and plate: `peptone` replaces the plate's label (plate 90); a
+% `timeRoomTemp` with `approximate` marks that time as estimated, keeping it
+% and its reason. Corrections by seeding day are seedingSuspensions'.
+corr = options.Corrections;
+if isstruct(corr), corr = num2cell(corr); end
+for c = 1:numel(corr)
+    x = corr{c};
+    if ~isfield(x, 'plate')
+        continue;
+    end
+    hit = false;
+    for k = 1:numel(rows)
+        r = rows{k};
+        if strcmp(r.folder, x.folder) && isequal(r.plate, double(x.plate)) && ...
+                any(strcmp(r.kind, {'assay_plate', 'plate'}))
+            switch x.column
+                case 'peptone'
+                    r.prep.peptone = char(x.value);
+                case 'timeRoomTemp'
+                    r.prep.room_temp_note = char(x.reason);
+                otherwise
+                    continue;
+            end
+            rows{k} = r;
+            hit = true;
+        end
+    end
+    if ~hit
+        checks.correctionUnmatched{end+1} = sprintf('%s: no %s plate %d in the selected sessions', ...
+            char(x.key), x.folder, double(x.plate));
+    end
+end
+
+for k = 1:numel(rows)
+    r = rows{k};
+    if r.prep.room_temp_by_rule && isempty(r.prep.room_temp_note)
+        checks.roomTempLooksEstimated{end+1} = sprintf(['%s: timeRoomTemp is exactly a ' ...
+            'recording''s start minus 1 h but no correction lists it'], r.local_identifier);
+    end
+end
+
 % ---- report -------------------------------------------------------------------
 if isempty(rows)
-    S = cell2table(cell(0, 17), 'VariableNames', {'session', 'kind', 'local_identifier', ...
+    S = cell2table(cell(0, 18), 'VariableNames', {'session', 'kind', 'local_identifier', ...
         'name', 'description', 'folder', 'plate', 'patch', 'worm', 'strain', 'acclimation', ...
-        'deprivation', 'exclude', 'worms_placed', 'bacteria', 'cohort', 'type'});
+        'deprivation', 'exclude', 'worms_placed', 'bacteria', 'cohort', 'prep', 'type'});
 else
     S = struct2table([rows{:}], 'AsArray', true);
     S.type = arrayfun(@(k) typeOf(S.kind{k}, S.bacteria{k}), (1:height(S))', ...
@@ -444,7 +541,56 @@ end
 s = struct('session', session, 'kind', kind, 'local_identifier', id, 'name', name, ...
     'description', desc, 'folder', folder, 'plate', plate, 'patch', patch, 'worm', worm, ...
     'strain', strain, 'acclimation', acclimation, 'deprivation', deprivation, ...
-    'exclude', logical(exclude), 'worms_placed', placed, 'bacteria', '', 'cohort', '');
+    'exclude', logical(exclude), 'worms_placed', placed, 'bacteria', '', 'cohort', '', ...
+    'prep', blankPrep());
+end
+
+function p = blankPrep()
+% What stage 8 needs to know about how a plate or patch was made (decisions
+% #54, #56): NaT / NaN / '' where the source has nothing.
+p = struct('seeded', NaT, 'cold_room', NaT, 'room_temp', NaT, 'room_temp_note', '', ...
+    'poured', NaT, 'poured_cold_room', NaT, 'peptone', '', 'od600', NaN, 'volume_ul', NaN, ...
+    'room_temp_by_rule', false);
+end
+
+function p = prepOf(R, seeded, coldRoom, roomTemp, od600)
+% A plate's preparation from the first of its rows (the columns repeat per row).
+p = blankPrep();
+p.seeded = colOr(R, seeded, NaT);
+p.cold_room = colOr(R, coldRoom, NaT);
+p.room_temp = colOr(R, roomTemp, NaT);
+p.od600 = double(od600);
+p.volume_ul = double(colOr(R, 'lawnVolume', NaN));
+v = colOr(R, 'peptone', '');
+if iscell(v), v = v{1}; end
+if isstring(v) && any(ismissing(v)), v = ''; end
+p.peptone = lower(strtrim(char(v)));
+end
+
+function p = growthPrepOf(R)
+% The acclimation plate's preparation, from its assay plates' growth
+% columns. Its volume (200 uL) and agar are the spec's, not the assay plate's.
+p = prepOf(R, 'growthTimeSeed', 'growthTimeColdRoom', 'growthTimeRoomTemp', ...
+    colOr(R, 'growthOD600', NaN));
+p.volume_ul = NaN;
+p.peptone = '';
+end
+
+function v = colOr(R, name, default)
+% R.(name)(1) when the table has that column, else DEFAULT.
+if ismember(name, R.Properties.VariableNames) && height(R) > 0
+    v = R.(name)(1, :);
+    if iscell(v), v = v{1}; end
+    if isnumeric(v) || islogical(v), v = double(v(1)); end
+    if isdatetime(v), v = v(1); end
+else
+    v = default;
+end
+end
+
+function tf = samePrep(a, b)
+same = @(x, y) (isnat(x) && isnat(y)) || isequal(x, y);
+tf = same(a.seeded, b.seeded) && same(a.cold_room, b.cold_room) && same(a.room_temp, b.room_temp);
 end
 
 function t = typeOf(kind, bacteria)
