@@ -56,12 +56,13 @@ function out = sessionDocuments(dataParentDir, session, S, R, options)
 %
 %   OUT fields: documents (cell of structs), timeReferenceId, skipped
 %   (cellstr: recordings not written, and why), subjectIds (containers.Map,
-%   subject local_identifier -> document id, for stage 6).
+%   subject local_identifier -> document id, for stage 6), recordingRefs
+%   (containers.Map, epoch -> the id of its UTC reference, for stage 9).
 %
 %   Options:
-%     'InstrumentIds'  containers.Map, instrument key -> document id (from
-%                      stage 2: camera1, camera2, axiozoom1). Missing keys
-%                      leave instrument_id empty.
+%     'InstrumentIds'  containers.Map, spec key -> document id (from stage 2:
+%                      camera_1, camera_2, axio_zoom_1). Missing keys leave
+%                      instrument_id empty.
 %     'Checksums'      default true: MD5 of every recording (reads every byte)
 %     'ReadVideos'     default true: open each video (VideoReader) for its
 %                      pixel format; false assumes uint8 (8-bit) without
@@ -96,7 +97,7 @@ R = R(strcmp(R.session, ref), :);
 
 docs = {};
 out = struct('documents', {{}}, 'timeReferenceId', '', 'skipped', {{}}, ...
-    'subjectIds', containers.Map());
+    'subjectIds', containers.Map(), 'recordingRefs', containers.Map());
 
 % ---- subjects ---------------------------------------------------------------
 subjectIds = containers.Map();
@@ -225,6 +226,7 @@ for k = 1:height(R)
         'delete_original', 0, 'uid', ndi.ido.unique_id(), 'location', src, ...
         'parameters', '', 'location_type', 'file', 'ingest', 0));
     docs = [docs, {absRef, ep, relEpoch, st, body}]; %#ok<AGROW>
+    out.recordingRefs(r.epoch{1}) = absRef.base.id;
 
 end
 out.documents = docs;
@@ -246,11 +248,13 @@ end
 end
 
 function key = instrumentFor(sys)
-% acquisition system -> the dataset-level instrument subject's spec key
-if strcmp(sys, 'microscope')
-    key = 'axiozoom1';
-else
-    key = sys;
+% acquisition system -> the dataset-level instrument subject's SPEC KEY (the
+% key stage 2's id map uses; not its local_identifier, decision #59)
+switch sys
+    case 'microscope', key = 'axio_zoom_1';
+    case 'camera1',    key = 'camera_1';
+    case 'camera2',    key = 'camera_2';
+    otherwise,         key = sys;
 end
 end
 

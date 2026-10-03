@@ -34,8 +34,10 @@ function result = import_V2(dataParentDir, options)
 %                          between cold room, room temperature and
 %                          incubator; each cohort's transfers and food
 %                          deprivation
-%        9  observations   tracks, environment, geometry, images   (not yet)
-%        10 calculations   masks, closest-patch maps               (not yet)
+%        9  observations   each filmed assay plate's ambient temperature
+%                          and relative humidity, read by the temperature
+%                          probe over its recordings
+%        10 calculations   tracks, masks, geometry, E. coli profiles (not yet)
 %     C. dataset-wide, once
 %        11 encounters, 12 cross-study calculations, 13 check & write (not yet)
 %
@@ -76,7 +78,7 @@ function result = import_V2(dataParentDir, options)
 arguments
     dataParentDir (1,:) char {mustBeFolder} = fullfile(userpath, 'data')
     options.Spec (1,:) char = fullfile(fileparts(mfilename('fullpath')), 'import_V2_spec.json')
-    options.Stages (1,:) string = ["discover", "metadata", "sessions", "subjects", "acquisition", "relations", "assertions", "manipulations"]
+    options.Stages (1,:) string = ["discover", "metadata", "sessions", "subjects", "acquisition", "relations", "assertions", "manipulations", "observations"]
     options.OutputRoot (1,:) char = ''
     options.Sessions (1,:) string = string.empty(1, 0)
     options.Write (1,1) logical = false
@@ -311,6 +313,23 @@ if isfield(result, 'subjects') && isfield(result, 'recordings')
         elseif any(options.Stages == "manipulations")
             fprintf('%s: the manipulations stage needs the relations stage (it shares their times)\n', ...
                 T.local_identifier{k});
+        end
+        if any(options.Stages == "observations")
+            spec = jsondecode(fileread(options.Spec));
+            probe = '';
+            if isKey(instrumentIds, spec.environment.instrument)
+                probe = instrumentIds(spec.environment.instrument);
+            end
+            ob = ndi.setup.conv.haley.observationDocuments(T(k, :), result.recordings, ...
+                built{k}.subjectIds, 'Environment', spec.environment, 'InstrumentId', probe, ...
+                'RecordingRefs', built{k}.recordingRefs);
+            built{k}.documents = [built{k}.documents, ob.documents];
+            built{k}.observations = ob;
+            fprintf('%s observations: %d temperature, %d humidity\n', T.local_identifier{k}, ...
+                ob.counts.temperature, ob.counts.humidity);
+            for j = 1:numel(ob.skipped)
+                fprintf('  skipped: %s\n', ob.skipped{j});
+            end
         end
         T.documents{k} = built{k}.documents;
         T.time_reference_id{k} = built{k}.timeReferenceId;

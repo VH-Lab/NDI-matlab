@@ -26,7 +26,9 @@ function [R, checks] = recordingList(dataParentDir, sessions, options)
 %   plate subject's local_identifier), file (relative to DATAPARENTDIR/haley),
 %   source_name (the name the table records, e.g. the .avi), size_bytes,
 %   local_start (the wall-clock start as recorded, no time zone),
-%   n_frames, frame_rate, duration (seconds; NaN when not known), note.
+%   n_frames, frame_rate, duration (seconds; NaN when not known), note,
+%   temp and humidity (a behaviour video's `temp` (C) and `humidity` (%RH),
+%   the probe's mean over the recording; NaN otherwise).
 %
 %   CHECKS (second output, also printed), nothing changed:
 %     rowWithoutFile    a table row names a recording with no file on disk
@@ -94,9 +96,13 @@ for f = 1:numel(folders)
                         checks.noFrames{end+1} = sprintf('%s: %s has numFrames %g, frameRate %g', ...
                             mine.local_identifier{s}, stem, nf, fr);
                     end
-                    rows{end+1} = recRow(mine.local_identifier{s}, 'behaviour', [pre '_' stem], ...
+                    row = recRow(mine.local_identifier{s}, 'behaviour', [pre '_' stem], ...
                         sprintf('camera%d', cam), plate, fullfile(vdir, [stem '.mp4']), src, ...
-                        bytesOf(root, vdir, stem), D.timeRecord(r), nf, fr, dur); %#ok<AGROW>
+                        bytesOf(root, vdir, stem), D.timeRecord(r), nf, fr, dur);
+                    % the probe's readings for this recording (stage 9, decision #59)
+                    row.temp = colValue(D, 'temp', r);
+                    row.humidity = colValue(D, 'humidity', r);
+                    rows{end+1} = row; %#ok<AGROW>
                 end
             end
             % -- the lawn clip (one per plate, shared by its video rows) --
@@ -172,9 +178,9 @@ end
 
 % ---- report -------------------------------------------------------------------
 if isempty(rows)
-    R = cell2table(cell(0, 13), 'VariableNames', {'session', 'kind', 'epoch', 'system', ...
+    R = cell2table(cell(0, 15), 'VariableNames', {'session', 'kind', 'epoch', 'system', ...
         'plate', 'file', 'source_name', 'size_bytes', 'local_start', 'n_frames', ...
-        'frame_rate', 'duration', 'note'});
+        'frame_rate', 'duration', 'note', 'temp', 'humidity'});
 else
     R = struct2table([rows{:}], 'AsArray', true);
     [u, ~, j] = unique(R.epoch);
@@ -220,7 +226,14 @@ t.Format = 'dd-MMM-yyyy HH:mm:ss';
 s = struct('session', session, 'kind', kind, 'epoch', epoch, 'system', system, ...
     'plate', plate, 'file', file, 'source_name', src, 'size_bytes', double(bytes), ...
     'local_start', t, 'n_frames', double(nf), 'frame_rate', double(fr), 'duration', double(dur), ...
-    'note', note);
+    'note', note, 'temp', NaN, 'humidity', NaN);
+end
+
+function v = colValue(D, name, r)
+% D.(NAME)(R) as a double, NaN when the table has no such column
+v = NaN;
+if ismember(name, D.Properties.VariableNames)
+    v = double(D.(name)(r));
 end
 
 function note = imageNote(M, r)

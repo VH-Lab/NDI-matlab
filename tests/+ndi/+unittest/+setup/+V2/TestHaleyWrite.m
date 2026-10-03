@@ -356,6 +356,59 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             testCase.verifyEqual(toDep{1}.subject_interaction.method.name, 'agar plug transfer');
         end
 
+        function testObservations(testCase)
+            % stage 9 (decision #59): one ambient temperature and one relative
+            % humidity reading per filmed assay plate, by the probe, over the
+            % plate's recordings. Filmed: 11 (twice), 12, 14 (13's video is not
+            % on disk).
+            testCase.assumeTrue(ndi.setup.V2.schemaHasField('humidity', 'value'), ...
+                'DID_SCHEMA_PATH does not hold a schema with `humidity` (did-schema PR #86)');
+            result = testCase.write("concentration_0001", ["metadata", "observations"]);
+            c = result.written{1}.observations.counts;
+            testCase.verifyEqual([c.temperature, c.humidity], [3 3]);
+            testCase.verifyEmpty(result.written{1}.observations.skipped);
+
+            docs = testCase.documents(result.sessions.path{1});
+            classes = cellfun(@(d) d.document_class.class_name, docs, 'UniformOutput', false);
+            byId = containers.Map(cellfun(@(d) d.base.id, docs, 'UniformOutput', false), docs);
+            subj = docs(strcmp(classes, 'subject'));
+            idOf = containers.Map(cellfun(@(d) d.subject.local_identifier, subj, 'UniformOutput', false), ...
+                cellfun(@(d) d.base.id, subj, 'UniformOutput', false));
+            on = @(set, local) set(cellfun(@(a) strcmp(edge(a, 'subject_id'), idOf(local)), set));
+            tobs = docs(strcmp(classes, 'temperature_observation'));
+            hobs = docs(strcmp(classes, 'humidity_observation'));
+            probe = result.metadata.ids('temperature_probe_1');
+
+            % plate 12, filmed once: its video's own UTC reference
+            t12 = on(tobs, 'concentration_assayPlate0012');
+            h12 = on(hobs, 'concentration_assayPlate0012');
+            testCase.verifyNumElements(t12, 1);
+            testCase.verifyNumElements(h12, 1);
+            testCase.verifyEqual(t12{1}.temperature.value.celsius, 21.62, 'AbsTol', 1e-9);
+            testCase.verifyEqual(h12{1}.humidity.value.percent_relative_humidity, 52, 'AbsTol', 1e-9);
+            testCase.verifyEqual(t12{1}.subject_statement.variable.name, 'ambient temperature');
+            testCase.verifyEqual(h12{1}.subject_statement.variable.name, 'relative humidity');
+            testCase.verifyEqual(edge(t12{1}, 'instrument_id'), probe);
+            testCase.verifyEqual(edge(t12{1}, 'time_reference_id'), edge(h12{1}, 'time_reference_id'));
+            recs = on(docs(strcmp(classes, 'intensity_observation')), 'concentration_assayPlate0012');
+            testCase.verifyTrue(any(cellfun(@(d) ismember(edge(t12{1}, 'time_reference_id'), ...
+                edgeAll(d, 'time_reference_id')), recs)), 'the reading is timed by its video');
+            % and its recordings name their camera (stage 5; decision #59's fix)
+            cams = unique(cellfun(@(d) edge(d, 'instrument_id'), recs, 'UniformOutput', false));
+            testCase.verifyEqual(reshape(cams, 1, []), {result.metadata.ids('camera_2')});
+
+            % plate 11, filmed twice: one reading, over both videos
+            t11 = on(tobs, 'concentration_assayPlate0011');
+            testCase.verifyNumElements(t11, 1);
+            w = byId(edge(t11{1}, 'time_reference_id'));
+            testCase.verifyEqual(w.document_class.class_name, 'absolute_time_reference');
+            vids = on(docs(strcmp(classes, 'intensity_observation')), 'concentration_assayPlate0011');
+            testCase.verifyFalse(any(cellfun(@(d) ismember(w.base.id, edgeAll(d, 'time_reference_id')), vids)), ...
+                'a window of its own, not either video''s');
+
+            testCase.verifyEmpty(on(tobs, 'concentration_assayPlate0013'), 'its video is not on disk');
+        end
+
         function testEcoliSession(testCase)
             result = testCase.write("ecoli_0001");
             docs = testCase.documents(result.sessions.path{1});

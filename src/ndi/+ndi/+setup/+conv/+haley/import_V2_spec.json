@@ -1232,8 +1232,24 @@
    "local_identifier": "spectramax1",
    "name": "SpectraMax Plus 384",
    "product": "spectrophotometer"
+  },
+  {
+   "key": "temperature_probe_1",
+   "local_identifier": "temperatureprobe1",
+   "name": "Temperature probe",
+   "description": "The probe at the behaviour rigs that read the temperature and humidity of each recording (experimentInfo `temp`, `humidity`); make and model not recorded."
   }
  ],
+ "environment": {
+  "instrument": "temperature_probe_1",
+  "temperature": {
+   "variable": "ambient temperature"
+  },
+  "humidity": {
+   "variable": "relative humidity"
+  },
+  "notes": "The probe's mean over the recording, noted by hand."
+ },
  "studies": [
   {
    "key": "single_density_multi_patch",
