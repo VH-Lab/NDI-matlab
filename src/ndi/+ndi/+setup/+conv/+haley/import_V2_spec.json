@@ -1516,7 +1516,6 @@
    "foragingMatching": "s_complete",
    "ecoli": "lb_carb"
   },
-  "type": "bacterial suspension",
   "growth_diluent": "lb"
  },
  "preparation": {

@@ -38,7 +38,9 @@ function [S, checks] = seedingSuspensions(dataParentDir, spec)
 %   solution is reported, not invented.
 %
 %   S has fields:
-%     entries   1xN cell of formulation entries (key, type, ingredients),
+%     entries   1xN cell of formulation entries (key, ingredients; no
+%               `type`: a day's one-off mixture is no standard recipe -- the
+%               signed formulation.value.type rule, did-schema #84),
 %               each solution before its dilutions
 %     index     table: folder, day, od600 (nominal), key -- which formulation a
 %               plate of FOLDER seeded on DAY at OD600 was pipetted from
@@ -199,15 +201,14 @@ for s = 1:numel(sol)
     if ~isempty(x.diluent)
         ing{end+1} = struct('ingredient', x.diluent); %#ok<AGROW>
     end
-    entries{end+1} = struct('key', x.key, 'type', cfg.type, 'ingredients', {ing}); %#ok<AGROW>
+    entries{end+1} = struct('key', x.key, 'ingredients', {ing}); %#ok<AGROW>
     for n = x.nominal(x.nominal > 0 & x.nominal ~= 10)
         ing = {struct('ingredient', x.key, 'concentration', struct('volume_fraction', n / 10, ...
             'source_value', n, 'source_unit', 'OD600'))};
         if ~isempty(x.diluent)
             ing{end+1} = struct('ingredient', x.diluent); %#ok<AGROW>
         end
-        entries{end+1} = struct('key', keyFor(x.key, n, x.diluent), 'type', cfg.type, ...
-            'ingredients', {ing}); %#ok<AGROW>
+        entries{end+1} = struct('key', keyFor(x.key, n, x.diluent), 'ingredients', {ing}); %#ok<AGROW>
     end
 end
 for r = 1:numel(R)
