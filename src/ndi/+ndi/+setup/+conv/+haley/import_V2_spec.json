@@ -1596,6 +1596,86 @@
    "value": "without",
    "was": "with",
    "reason": "Plate 90 is labelled with peptone, but its label is wrong: it is from the 16 Nov 2023 pour, without peptone (Jess Haley, 2026-10-02; decision #56)."
+  },
+  {
+   "key": "room_temp_estimated_concentration_plate_01",
+   "folder": "foragingConcentration",
+   "plate": 1,
+   "column": "timeRoomTemp",
+   "approximate": true,
+   "reason": "timeRoomTemp was not recorded for this plate; it was filled in as the recording's start minus 1 h (getExperimentInfo.m), so it is an estimate with no known bound (decision #54d; listed from the data, Jess Haley 2026-10-03)."
+  },
+  {
+   "key": "room_temp_estimated_concentration_plate_02",
+   "folder": "foragingConcentration",
+   "plate": 2,
+   "column": "timeRoomTemp",
+   "approximate": true,
+   "reason": "timeRoomTemp was not recorded for this plate; it was filled in as the recording's start minus 1 h (getExperimentInfo.m), so it is an estimate with no known bound (decision #54d; listed from the data, Jess Haley 2026-10-03)."
+  },
+  {
+   "key": "room_temp_estimated_concentration_plate_03",
+   "folder": "foragingConcentration",
+   "plate": 3,
+   "column": "timeRoomTemp",
+   "approximate": true,
+   "reason": "timeRoomTemp was not recorded for this plate; it was filled in as the recording's start minus 1 h (getExperimentInfo.m), so it is an estimate with no known bound (decision #54d; listed from the data, Jess Haley 2026-10-03)."
+  },
+  {
+   "key": "room_temp_estimated_concentration_plate_04",
+   "folder": "foragingConcentration",
+   "plate": 4,
+   "column": "timeRoomTemp",
+   "approximate": true,
+   "reason": "timeRoomTemp was not recorded for this plate; it was filled in as the recording's start minus 1 h (getExperimentInfo.m), so it is an estimate with no known bound (decision #54d; listed from the data, Jess Haley 2026-10-03)."
+  },
+  {
+   "key": "room_temp_estimated_concentration_plate_05",
+   "folder": "foragingConcentration",
+   "plate": 5,
+   "column": "timeRoomTemp",
+   "approximate": true,
+   "reason": "timeRoomTemp was not recorded for this plate; it was filled in as the recording's start minus 1 h (getExperimentInfo.m), so it is an estimate with no known bound (decision #54d; listed from the data, Jess Haley 2026-10-03)."
+  },
+  {
+   "key": "room_temp_estimated_concentration_plate_06",
+   "folder": "foragingConcentration",
+   "plate": 6,
+   "column": "timeRoomTemp",
+   "approximate": true,
+   "reason": "timeRoomTemp was not recorded for this plate; it was filled in as the recording's start minus 1 h (getExperimentInfo.m), so it is an estimate with no known bound (decision #54d; listed from the data, Jess Haley 2026-10-03)."
+  },
+  {
+   "key": "room_temp_estimated_concentration_plate_07",
+   "folder": "foragingConcentration",
+   "plate": 7,
+   "column": "timeRoomTemp",
+   "approximate": true,
+   "reason": "timeRoomTemp was not recorded for this plate; it was filled in as the recording's start minus 1 h (getExperimentInfo.m), so it is an estimate with no known bound (decision #54d; listed from the data, Jess Haley 2026-10-03)."
+  },
+  {
+   "key": "room_temp_estimated_concentration_plate_08",
+   "folder": "foragingConcentration",
+   "plate": 8,
+   "column": "timeRoomTemp",
+   "approximate": true,
+   "reason": "timeRoomTemp was not recorded for this plate; it was filled in as the recording's start minus 1 h (getExperimentInfo.m), so it is an estimate with no known bound (decision #54d; listed from the data, Jess Haley 2026-10-03)."
+  },
+  {
+   "key": "room_temp_estimated_concentration_plate_09",
+   "folder": "foragingConcentration",
+   "plate": 9,
+   "column": "timeRoomTemp",
+   "approximate": true,
+   "reason": "timeRoomTemp was not recorded for this plate; it was filled in as the recording's start minus 1 h (getExperimentInfo.m), so it is an estimate with no known bound (decision #54d; listed from the data, Jess Haley 2026-10-03)."
+  },
+  {
+   "key": "room_temp_estimated_concentration_plate_10",
+   "folder": "foragingConcentration",
+   "plate": 10,
+   "column": "timeRoomTemp",
+   "approximate": true,
+   "reason": "timeRoomTemp was not recorded for this plate; it was filled in as the recording's start minus 1 h (getExperimentInfo.m), so it is an estimate with no known bound (decision #54d; listed from the data, Jess Haley 2026-10-03)."
   }
  ]
 }
