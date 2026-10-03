@@ -30,7 +30,10 @@ classdef did2sqlite < ndi.database
     %   Document add / read / remove / search / alldocids are implemented by
     %   delegating to did2.database.sqlitedb.
     %
-    %   BINARY (file) documents are NOT, and they error rather than
+    %   BINARY (file) documents are opened only when the document records
+    %   the file BY LOCATION and did not ingest it (files.file_info.locations,
+    %   ingest 0; ndi.database.fun.externalFileLocation) -- the bytes are
+    %   read where they are. Any other binary request errors rather than
     %   returning something. `did2.database.sqlitedb` has no file store at
     %   all -- it persists the document body and the two query sidecars and
     %   nothing else -- so there is no path from a document id and a
@@ -252,28 +255,51 @@ classdef did2sqlite < ndi.database
             end
         end % do_search()
 
-        function [ndi_binarydoc_obj] = do_openbinarydoc(obj, ndi_document_id, filename) %#ok<STOUT,INUSD>
+        function [ndi_binarydoc_obj] = do_openbinarydoc(obj, ndi_document_id, filename)
+            % A file the document records BY LOCATION and did not ingest
+            % (files.file_info.locations, ingest 0) is opened where it
+            % lives, read-only. Anything else still errors: there is no
+            % file store, and an empty answer would make a dataset with
+            % attached files read as a dataset with none.
+            [tf, file_path] = obj.check_exist_binarydoc(ndi_document_id, filename);
+            if tf
+                ndi_binarydoc_obj = did.file.readonly_fileobj('fullpathfilename', file_path);
+                ndi_binarydoc_obj.fopen();
+                return;
+            end
             error('NDI:did2sqlite:noBinaryStore', ...
                 ['This database is backed by did2.database.sqlitedb, which ' ...
-                 'stores document bodies and the query sidecars and has NO ' ...
-                 'file store, so there is no way to produce the bytes of ' ...
-                 '"%s" on document %s. This errors rather than returning ' ...
-                 'empty: a dataset with attached files must not read as a ' ...
-                 'dataset with none.'], filename, ndi_document_id);
+                 'has NO file store, and document %s does not record "%s" at ' ...
+                 'a location on this computer (files.file_info.locations, not ' ...
+                 'ingested). This errors rather than returning empty: a dataset ' ...
+                 'with attached files must not read as a dataset with none.'], ...
+                ndi_document_id, filename);
         end % do_openbinarydoc()
 
-        function [tf, file_path] = check_exist_binarydoc(obj, ndi_document_id, filename) %#ok<INUSD>
-            % A did2 database has no file store, so the honest answer is
-            % "no" with no path -- and unlike do_openbinarydoc this one is
-            % ASKED speculatively by callers deciding whether to read, so a
-            % false is a real answer rather than a swallowed failure.
+        function [tf, file_path] = check_exist_binarydoc(obj, ndi_document_id, filename)
+            % Asked speculatively by callers deciding whether to read, so
+            % "no" is a real answer: true only for a file the document
+            % records at a location that exists here
+            % (ndi.database.fun.externalFileLocation).
             tf = false;
             file_path = '';
+            try
+                raw = obj.db.get(ndi_document_id);
+            catch
+                return;
+            end
+            if isa(raw, 'did2.document')
+                props = raw.documentProperties;
+            else
+                props = raw;
+            end
+            [tf, file_path] = ndi.database.fun.externalFileLocation(props, filename);
         end % check_exist_binarydoc()
 
         function [ndi_binarydoc_matfid_obj] = do_closebinarydoc(obj, ndi_binarydoc_matfid_obj) %#ok<INUSL>
-            % Nothing can have been opened (do_openbinarydoc always
-            % errors), so there is nothing to close.
+            if ~isempty(ndi_binarydoc_matfid_obj)
+                ndi_binarydoc_matfid_obj.fclose();
+            end
         end % do_closebinarydoc()
 
         function [file_dir] = file_directory(obj)

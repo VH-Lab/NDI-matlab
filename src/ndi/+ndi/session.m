@@ -176,12 +176,21 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
             q2 = ndi.query('base.session_id','exact_string',ndi_session_obj.id(),'');
             q = q1 & q2;
             if numel(varargin)>0
+                rest = {};
                 for i=1:2:numel(varargin)
                     if strcmpi(varargin{i},'name')
-                        varargin{i} = 'base.name'; % case matters here
+                        % A name lives in base.name (v1, and V_eta as the
+                        % migrators write it) or in acquisition_system.name
+                        % (did-schema #73 item 54), so ask for either.
+                        q = q & ( ndi.query('base.name','exact_string',varargin{i+1},'') | ...
+                            ndi.query('acquisition_system.name','exact_string',varargin{i+1},'') );
+                    else
+                        rest(end+1:end+2) = varargin(i:i+1);
                     end
                 end
-                q = q & ndi.query(varargin);
+                if ~isempty(rest)
+                    q = q & ndi.query(rest);
+                end
             end
             dev_doc = ndi_session_obj.database_search(q);
             % dev is cell list of ndi.document objects

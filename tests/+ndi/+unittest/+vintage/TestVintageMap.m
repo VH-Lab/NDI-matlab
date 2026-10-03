@@ -219,8 +219,18 @@ classdef TestVintageMap < matlab.unittest.TestCase
             testCase.verifyEqual( ...
                 ndi.vintage.edgeName(eta, 'filenavigator_id'), ...
                 'epoch_file_pattern_id');
+            % A row with several V_eta candidates answers with the CURRENT
+            % name when the document carries none of them...
             testCase.verifyEqual( ...
                 ndi.vintage.edgeName(eta, 'daqmetadatareader_id'), ...
+                'epoch_parameter_reader_id');
+            % ...and with the name the document actually carries otherwise:
+            % the migrators still write the numbered pre-#73 family.
+            older = ndi.unittest.vintage.TestVintageMap.doc( ...
+                'acquisition_system', '', [], ...
+                struct('name', {'acquisition_metadata_reader_1'}, 'value', {'r1'}));
+            testCase.verifyEqual( ...
+                ndi.vintage.edgeName(older, 'daqmetadatareader_id'), ...
                 'acquisition_metadata_reader');
             % An edge with no row passes through untouched.
             testCase.verifyEqual( ...
@@ -277,6 +287,80 @@ classdef TestVintageMap < matlab.unittest.TestCase
             testCase.verifyEqual(val4, {'a.rhd'});
         end
 
+        function testCurrentSchemaNamesResolve(testCase)
+            % did-schema's #73 review renamed what the read path asks for
+            % AFTER the migrators were written: data_file_pattern ->
+            % file_pattern, acquisition_metadata_reader ->
+            % epoch_parameter_reader, metadata_file_pattern -> file_regex.
+            % A document built to today's schema (did2.build, import_V2)
+            % carries the new names; a migrated one carries the old. Both
+            % must read.
+            cur = ndi.unittest.vintage.TestVintageMap.doc( ...
+                'epoch_file_pattern', 'epoch_file_pattern', ...
+                struct('file_pattern', {{'#.mp4'}}));
+            [v, found] = ndi.vintage.field(cur, 'fileparameters');
+            testCase.verifyTrue(found, 'fileparameters -> file_pattern did not resolve');
+            testCase.verifyEqual(v, {'#.mp4'});
+
+            % When a block somehow carries both, the CURRENT name wins.
+            both = ndi.unittest.vintage.TestVintageMap.doc( ...
+                'epoch_file_pattern', 'epoch_file_pattern', ...
+                struct('file_pattern', {{'new'}}, 'data_file_pattern', {{'old'}}));
+            [v, ~] = ndi.vintage.field(both, 'fileparameters');
+            testCase.verifyEqual(v, {'new'});
+
+            [entry, vintage] = ndi.vintage.entryFor('epoch_parameter_reader');
+            testCase.verifyNotEmpty(entry, 'epoch_parameter_reader has no map row');
+            testCase.verifyEqual(entry.concept, 'daqmetadatareader');
+            testCase.verifyEqual(vintage, 'V_eta');
+            [entry2, ~] = ndi.vintage.entryFor('acquisition_metadata_reader');
+            testCase.verifyEqual(entry2.concept, 'daqmetadatareader', ...
+                'the pre-#73 class name must still resolve');
+
+            epr = ndi.unittest.vintage.TestVintageMap.doc( ...
+                'epoch_parameter_reader', 'epoch_parameter_reader', ...
+                struct('file_regex', '.*\.tsv\>'));
+            [v, found] = ndi.vintage.field(epr, 'tab_separated_file_parameter');
+            testCase.verifyTrue(found, 'tab_separated_file_parameter -> file_regex did not resolve');
+            testCase.verifyEqual(v, '.*\.tsv\>');
+
+            % isaQuery asks for the v1 class AND every V_eta name.
+            txt = jsonencode(ndi.vintage.isaQuery('daqmetadatareader').searchstructure);
+            testCase.verifySubstring(txt, '"daqmetadatareader"');
+            testCase.verifySubstring(txt, '"epoch_parameter_reader"');
+            testCase.verifySubstring(txt, '"acquisition_metadata_reader"');
+        end
+
+        function testARepeatedEdgeNameIsAFamily(testCase)
+            % did-schema T15: a family is ONE name repeated, not `_1`, `_2`.
+            % dependency_value_n alone returns only the first of these.
+            deps = struct('name', {'clock_alignment_configuration_id', ...
+                'clock_alignment_configuration_id', 'software_id'}, ...
+                'value', {'c1', 'c2', 's1'});
+            pol = ndi.unittest.vintage.TestVintageMap.doc( ...
+                'clock_alignment_policy', '', [], deps);
+            ids = ndi.vintage.edge_n(pol, 'syncrule_id');
+            testCase.verifyEqual(ids, {'c1', 'c2'});
+
+            % ...while the numbered form the migrators write still reads.
+            deps = struct('name', {'clock_alignment_configuration_1', ...
+                'clock_alignment_configuration_2'}, 'value', {'c1', 'c2'});
+            old = ndi.unittest.vintage.TestVintageMap.doc( ...
+                'clock_alignment_policy', '', [], deps);
+            testCase.verifyEqual(ndi.vintage.edge_n(old, 'syncrule_id'), {'c1', 'c2'});
+        end
+
+        function testObjectNameReadsEitherHome(testCase)
+            % #73 item 54 moved a system's name from base.name to
+            % acquisition_system.name.
+            cur = ndi.unittest.vintage.TestVintageMap.doc( ...
+                'acquisition_system', 'acquisition_system', struct('name', 'camera1'));
+            testCase.verifyEqual(ndi.vintage.objectName(cur), 'camera1');
+            old = ndi.unittest.vintage.TestVintageMap.doc('acquisition_system', ...
+                '', [], [], 'intan1');
+            testCase.verifyEqual(ndi.vintage.objectName(old), 'intan1');
+        end
+
         function testTheV1ObjectClassPathIsByteForByteTheOldOne(testCase)
             % ndi_document2ndi_object's inline read moved into
             % ndi.vintage.objectClass. If the v1 branch changed at all,
@@ -306,7 +390,7 @@ classdef TestVintageMap < matlab.unittest.TestCase
 
     methods (Static, Access = private)
 
-        function d = doc(className, blockName, blockStruct)
+        function d = doc(className, blockName, blockStruct, deps, baseName)
             % A minimal ndi.document of a named class, optionally carrying
             % one property block. Built from a struct so these tests need no
             % schema on the path.
@@ -329,8 +413,14 @@ classdef TestVintageMap < matlab.unittest.TestCase
             s.base = struct('id', 'test_id_0001', 'session_id', 'test_sess', ...
                 'name', '', 'datestamp', '2024-01-01T00:00:00.000Z');
             s.depends_on = struct('name', {}, 'value', {});
-            if nargin >= 3
+            if nargin >= 3 && ~isempty(blockName)
                 s.(blockName) = blockStruct;
+            end
+            if nargin >= 4 && ~isempty(deps)
+                s.depends_on = deps;
+            end
+            if nargin >= 5
+                s.base.name = baseName;
             end
             d = ndi.document(s);
         end
