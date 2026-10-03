@@ -39,13 +39,20 @@ function out = manipulationDocuments(session, S, subjectIds, options)
 %   Worm cohorts (`distributive` true when the schema has it):
 %     transfer           term_manipulation per move (acclimation, food
 %                        deprivation, assay plate) at the time of the cohort's
-%                        contained_in relation (stage 6): the value names the
-%                        plate moved to; the method the last step (picking; an
-%                        agar plug or an eyelash pick into an S-Complete
-%                        droplet, from the transfer protocol), with the
-%                        cleaning step through an empty NGM plate as a
-%                        method parameter.
-%     food deprivation   term_manipulation at the food deprivation window.
+%                        contained_in relation (stage 6): variable `location`,
+%                        value the kind of plate moved to (the plate itself is
+%                        the relation's parent), method the move's technique
+%                        (worm picking; agar plug transfer; onto the assay
+%                        plate agar plug transfer or eyelash picking, from the
+%                        transfer protocol, with the cleaning step through an
+%                        empty NGM plate and any S-Complete droplet as method
+%                        parameters).
+%     food deprivation   term_manipulation `food availability` = `none` at
+%                        the food deprivation window.
+%   Each temperature manipulation's method says how it was imposed:
+%   refrigeration (cold room), ambient exposure (the bench), incubation (the
+%   20 C incubator) -- the method is what tells room temperature from the
+%   incubator.
 %   Hand-written times are approximate, +/- the hand-written tolerance (to the
 %   minute); video times (the end of filming) are exact.
 %
@@ -127,37 +134,37 @@ for k = find(ismember(S.kind, plateKinds))'
     switch kind
         case 'assay_plate'
             temperature(id, p.cold_room, hand, p.room_temp, roomTol, minuteFmt, ...
-                cfg.temperature.cold_room_celsius, '');
+                cfg.temperature.cold_room_celsius, '', cfg.temperature.methods.cold_room);
             stop = NaT;
             if isKey(spans, id)
                 span = spans(id);       % (a Map takes one level of indexing)
                 stop = span.stop;
             end
             temperature(id, p.room_temp, roomTol, stop, [], secondFmt, ...
-                cfg.temperature.room_celsius, p.room_temp_note);
+                cfg.temperature.room_celsius, p.room_temp_note, cfg.temperature.methods.room);
         case 'acclimation_plate'
             placed = S.worms_placed(k);
             temperature(id, p.cold_room, hand, p.room_temp, hand, minuteFmt, ...
-                cfg.temperature.cold_room_celsius, '');
+                cfg.temperature.cold_room_celsius, '', cfg.temperature.methods.cold_room);
             temperature(id, p.room_temp, hand, placed, hand, minuteFmt, ...
-                cfg.temperature.room_celsius, '');
+                cfg.temperature.room_celsius, '', cfg.temperature.methods.room);
             [stop, stopTol, stopFmt] = lastMoveOff(id);
             incubatorRef = temperature(id, placed, hand, stop, stopTol, stopFmt, ...
-                cfg.temperature.incubator_celsius, '');
+                cfg.temperature.incubator_celsius, '', cfg.temperature.methods.incubator);
         case 'food_deprivation_plate'
             [stop, stopTol, stopFmt] = lastMoveOff(id);
             incubatorRef = temperature(id, S.worms_placed(k), hand, stop, stopTol, stopFmt, ...
-                cfg.temperature.incubator_celsius, '');
+                cfg.temperature.incubator_celsius, '', cfg.temperature.methods.incubator);
         case 'plate'
             % out of the cold room shortly before seeding (seeded cold): the
             % window ends at the seeding, up to out_before_seeding_seconds earlier
             outTol = [getOr(cfg.temperature, 'out_before_seeding_seconds', 0) + hand(1), hand(2)];
             temperature(id, p.poured_cold_room, hand, p.seeded, outTol, minuteFmt, ...
-                cfg.temperature.cold_room_celsius, '');
+                cfg.temperature.cold_room_celsius, '', cfg.temperature.methods.cold_room);
             temperature(id, p.cold_room, hand, p.room_temp, hand, minuteFmt, ...
-                cfg.temperature.cold_room_celsius, '');
+                cfg.temperature.cold_room_celsius, '', cfg.temperature.methods.cold_room);
             temperature(id, p.room_temp, hand, NaT, [], minuteFmt, ...
-                cfg.temperature.room_celsius, '');
+                cfg.temperature.room_celsius, '', cfg.temperature.methods.room);
     end
 
     % pouring: E. coli plates have its time; the others are before seeding
@@ -199,7 +206,7 @@ for k = cohorts
     end
     if ~isempty(S.deprivation{k})
         key = [S.deprivation{k} '|' cid];
-        move(cid, S.deprivation{k}, 'food deprivation plate', '', []);
+        move(cid, S.deprivation{k}, 'food deprivation plate', cfg.transfer.deprivation_method, []);
         if isKey(refs, key)
             statement('term_manipulation', cid, cfg.food_deprivation.variable, ...
                 did2.build.term('', cfg.food_deprivation.value), refs(key), ...
@@ -225,7 +232,7 @@ out.documents = docs;
         id = d.base.id;
     end
 
-    function refId = temperature(subject, t0, tol0, t1, tol1, fmt1, celsius, note)
+    function refId = temperature(subject, t0, tol0, t1, tol1, fmt1, celsius, note, method)
         % moved INTO CELSIUS at T0, until T1 (when known); returns the window
         refId = '';
         if isnat(t0)
@@ -247,7 +254,7 @@ out.documents = docs;
         v = did2.build.composite('temperature_manipulation', 'value', struct('celsius', celsius, ...
             'source_value', celsius, 'source_unit', 'C', 'approximate', true));
         statement('temperature_manipulation', subject, cfg.temperature.variable, v, refId, ...
-            struct('Notes', note), 'temperature');
+            struct('Notes', note, 'Method', method), 'temperature');
     end
 
     function seedPatch(row, folder, t, seedRef)

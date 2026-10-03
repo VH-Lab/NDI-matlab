@@ -327,13 +327,16 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             % plate 12: into the cold room (4 C), then room temperature (20 C)
             tm = on(docs(strcmp(classes, 'temperature_manipulation')), 'concentration_assayPlate0012');
             testCase.verifyEqual(reshape(sort(cellfun(@(d) d.temperature.value.celsius, tm)), 1, []), [4 20]);
+            methods = sort(cellfun(@(d) d.subject_interaction.method.name, tm, 'UniformOutput', false));
+            testCase.verifyEqual(reshape(methods, 1, []), {'ambient exposure', 'refrigeration'});
 
             % the cohort's moves, at its contained_in times
             tmn = docs(strcmp(classes, 'term_manipulation'));
             mine = on(tmn, 'concentration_assayPlate0012_worms');
             toAssay = mine(cellfun(@(d) strcmp(d.term.value.name, 'assay plate'), mine));
             testCase.verifyNumElements(toAssay, 1);
-            testCase.verifyEqual(toAssay{1}.subject_interaction.method.name, 'transfer by agar plug');
+            testCase.verifyEqual(toAssay{1}.subject_statement.variable.name, 'location');
+            testCase.verifyEqual(toAssay{1}.subject_interaction.method.name, 'agar plug transfer');
             mp = toAssay{1}.subject_interaction.method_parameters;
             if iscell(mp), mp = [mp{:}]; end
             testCase.verifyTrue(any(arrayfun(@(q) strcmp(q.variable.name, 'cleaning step'), mp)));
@@ -344,8 +347,13 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             testCase.verifyEqual(edge(toAssay{1}, 'time_reference_id'), edge(rel{1}, 'time_reference_id'), ...
                 'the move is stated at the time of the relation it makes');
             fd = on(tmn, 'concentration_assayPlate0014_worms');
-            fd = fd(cellfun(@(d) strcmp(d.subject_statement.variable.name, 'food deprivation'), fd));
+            fd = fd(cellfun(@(d) strcmp(d.subject_statement.variable.name, 'food availability'), fd));
             testCase.verifyNumElements(fd, 1);
+            testCase.verifyEqual(fd{1}.term.value.name, 'none');
+            toDep = on(tmn, 'concentration_assayPlate0014_worms');
+            toDep = toDep(cellfun(@(d) strcmp(d.term.value.name, 'food deprivation plate'), toDep));
+            testCase.verifyNumElements(toDep, 1);
+            testCase.verifyEqual(toDep{1}.subject_interaction.method.name, 'agar plug transfer');
         end
 
         function testEcoliSession(testCase)
