@@ -409,6 +409,97 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             testCase.verifyEmpty(on(tobs, 'concentration_assayPlate0013'), 'its video is not on disk');
         end
 
+        function testGeometry(testCase)
+            % stage 10 part A (decision #60): per behaviour video on disk (plate
+            % 11 twice, 12, 14), the lab's coordinate system, masks, nearest
+            % patch and lawn clip registration, each a calculation of the
+            % plate from its video, the masks and maps INGESTED into the session
+            result = testCase.write("concentration_0001", ["metadata", "calculations"]);
+            ge = result.written{1}.geometry;
+            c = ge.counts;
+            testCase.verifyEqual([c.coordinate_system, c.arena, c.reference_mark, c.lawn], [4 4 3 4], ...
+                'plate 14''s reference mark mask is empty, so none');
+            testCase.verifyEqual(c.registration, 3, 'the three videos of plates with a lawn clip');
+            hasItem = ndi.setup.V2.schemaHasField('item', 'value');
+            testCase.verifyEqual(c.nearest_patch, 4 * hasItem);
+
+            sessionPath = result.sessions.path{1};
+            docs = testCase.documents(sessionPath);
+            classes = cellfun(@(d) d.document_class.class_name, docs, 'UniformOutput', false);
+            byId = containers.Map(cellfun(@(d) d.base.id, docs, 'UniformOutput', false), docs);
+            subj = docs(strcmp(classes, 'subject'));
+            idOf = containers.Map(cellfun(@(d) d.subject.local_identifier, subj, 'UniformOutput', false), ...
+                cellfun(@(d) d.base.id, subj, 'UniformOutput', false));
+            ids = result.metadata.ids;
+
+            % plate 12's video: its coordinate system is on the recording
+            rec = docs(strcmp(classes, 'intensity_observation'));
+            rec = rec(cellfun(@(d) strcmp(edge(d, 'subject_id'), idOf('concentration_assayPlate0012')), rec));
+            cs = docs(strcmp(classes, 'coordinate_system'));
+            cs = cs(cellfun(@(d) any(strcmp(edge(d, 'referent_id'), cellfun(@(r) r.base.id, rec, ...
+                'UniformOutput', false))), cs));
+            testCase.verifyNumElements(cs, 1);
+            dims = cs{1}.coordinate_system.dimensions;
+            testCase.verifyEqual(dims(1).positive_direction.name, 'image right');
+            testCase.verifyEqual(dims(2).positive_direction.name, 'image down');
+            testCase.verifyEqual(dims(1).spacing.meters, 1e-3 / 33, 'AbsTol', 1e-15);
+            video = byId(edge(cs{1}, 'referent_id'));
+
+            % its arena mask: a label calculation of the plate from the video,
+            % run by the analysis package in MATLAB on macOS
+            masks = docs(strcmp(classes, 'label_calculation'));
+            arena = masks(cellfun(@(d) strcmp(d.subject_statement.variable.name, 'arena region') ...
+                && strcmp(edge(d, 'subject_id'), idOf('concentration_assayPlate0012')), masks));
+            testCase.verifyNumElements(arena, 1);
+            a = arena{1};
+            testCase.verifyEqual(edgeAll(a, 'input_id'), {video.base.id});
+            testCase.verifyEqual(edge(a, 'software_id'), ids('haley_analysis'));
+            testCase.verifyEqual(edge(a, 'interpreter_id'), ids('matlab'));
+            testCase.verifyEqual(edge(a, 'operating_system_id'), ids('macos'));
+            testCase.verifyEqual(a.data_type.datum_type, 'bool');
+            testCase.verifyEqual(a.subject_interaction.method_parameters(1).variable.name, 'arena diameter');
+
+            % its body is held by the session's database, not left in a temp file
+            b = docs(strcmp(classes, 'sampled_body'));
+            b = b{cellfun(@(d) strcmp(edge(d, 'owner_id'), a.base.id), b)};
+            testCase.verifyEqual(b.data_body.compression, 'gzip');
+            testCase.verifyEqual(b.files.file_info.locations.ingest, 1);
+            testCase.verifyFalse(isfile(b.files.file_info.locations.location), 'the original is deleted');
+            db = did2.database.sqlitedb(fullfile(sessionPath, '.ndi', ...
+                ndi.database.implementations.database.did2sqlite.DEFAULTFILENAME()));
+            held = db.filePath(b.base.id, 'body_data_0');
+            db.close();
+            testCase.verifyTrue(startsWith(held, fullfile(sessionPath, '.ndi')));
+            tmp = [tempname '.bin.gz'];
+            copyfile(held, tmp);
+            raw = gunzip(tmp);
+            fid = fopen(raw{1}, 'r');
+            bytes = fread(fid, Inf, 'uint8=>uint8');
+            fclose(fid);
+            delete(tmp); delete(raw{1});
+            expected = false(8); expected(2:7, 2:7) = true;
+            testCase.verifyEqual(reshape(bytes, 8, 8), uint8(expected), 'column-major, as written');
+
+            % the lawn mask's method: every patch was found by template
+            lawn = masks(cellfun(@(d) strcmp(d.subject_statement.variable.name, 'bacterial lawn region') ...
+                && strcmp(edge(d, 'subject_id'), idOf('concentration_assayPlate0012')), masks));
+            testCase.verifyEqual(lawn{1}.subject_interaction.method.name, 'patch detection by template');
+
+            % the registration fit: from both the video and the lawn clip
+            sc = docs(strcmp(classes, 'score_calculation'));
+            sc = sc(cellfun(@(d) strcmp(edge(d, 'subject_id'), idOf('concentration_assayPlate0012')), sc));
+            testCase.verifyNumElements(sc, 1);
+            testCase.verifyEqual(sc{1}.score.value.score, 0.98, 'AbsTol', 1e-12);
+            testCase.verifyNumElements(edgeAll(sc{1}, 'input_id'), 2);
+
+            if hasItem
+                near = docs(strcmp(classes, 'item_calculation'));
+                near = near(cellfun(@(d) strcmp(edge(d, 'subject_id'), idOf('concentration_assayPlate0012')), near));
+                testCase.verifyNumElements(near, 1);
+                testCase.verifyEqual(edgeAll(near{1}, 'item_id'), {idOf('concentration_assayPlate0012_patch0001')});
+            end
+        end
+
         function testEcoliSession(testCase)
             result = testCase.write("ecoli_0001");
             docs = testCase.documents(result.sessions.path{1});

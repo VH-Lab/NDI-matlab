@@ -57,7 +57,9 @@ function out = sessionDocuments(dataParentDir, session, S, R, options)
 %   OUT fields: documents (cell of structs), timeReferenceId, skipped
 %   (cellstr: recordings not written, and why), subjectIds (containers.Map,
 %   subject local_identifier -> document id, for stage 6), recordingRefs
-%   (containers.Map, epoch -> the id of its UTC reference, for stage 9).
+%   (containers.Map, epoch -> the id of its UTC reference, for stages 9-10),
+%   recordingStatements (containers.Map, epoch -> the id of its recording
+%   statement, the input of stage 10's calculations).
 %
 %   Options:
 %     'InstrumentIds'  containers.Map, spec key -> document id (from stage 2:
@@ -97,7 +99,8 @@ R = R(strcmp(R.session, ref), :);
 
 docs = {};
 out = struct('documents', {{}}, 'timeReferenceId', '', 'skipped', {{}}, ...
-    'subjectIds', containers.Map(), 'recordingRefs', containers.Map());
+    'subjectIds', containers.Map(), 'recordingRefs', containers.Map(), ...
+    'recordingStatements', containers.Map());
 
 % ---- subjects ---------------------------------------------------------------
 subjectIds = containers.Map();
@@ -227,6 +230,7 @@ for k = 1:height(R)
         'parameters', '', 'location_type', 'file', 'ingest', 0));
     docs = [docs, {absRef, ep, relEpoch, st, body}]; %#ok<AGROW>
     out.recordingRefs(r.epoch{1}) = absRef.base.id;
+    out.recordingStatements(r.epoch{1}) = st.base.id;
 
 end
 out.documents = docs;

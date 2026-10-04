@@ -58,8 +58,9 @@ classdef TestDatasetMetadataHaley < matlab.unittest.TestCase
             % 133 before decision #56; + 3 organizations, 1 web resource,
             % 4 products, 20 chemicals, 9 formulations, 7 relations; + the
             % temperature probe (decision #59: an instrument with no product,
-            % so no instance_of relation)
-            testCase.verifyEqual(numel(testCase.Result.documents), 178);
+            % so no instance_of relation); + the lab's analysis package and
+            % macOS, stage 10's run environment (decision #60)
+            testCase.verifyEqual(numel(testCase.Result.documents), 180);
         end
 
         function testStudiesCanBeMintedApartFromTheRest(testCase)
@@ -183,7 +184,11 @@ classdef TestDatasetMetadataHaley < matlab.unittest.TestCase
             end
             u = u(~isType);
             testCase.verifyEqual(unique({u.field}), {'vendor'});
-            testCase.verifyEqual(numel(u), numel(testCase.Spec.software));
+            % one row per software entry that names a vendor (the analysis
+            % package and macOS name none)
+            sw = testCase.Spec.software;
+            if isstruct(sw), sw = num2cell(sw); end
+            testCase.verifyEqual(numel(u), sum(cellfun(@(x) isfield(x, 'vendor') && ~isempty(x.vendor), sw)));
         end
     end
 end

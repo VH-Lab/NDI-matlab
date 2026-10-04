@@ -37,7 +37,11 @@ function result = import_V2(dataParentDir, options)
 %        9  observations   each filmed assay plate's ambient temperature
 %                          and relative humidity, read by the temperature
 %                          probe over its recordings
-%        10 calculations   tracks, masks, geometry, E. coli profiles (not yet)
+%        10 calculations   part A: each behaviour video's coordinate system,
+%                          arena / reference mark / lawn masks, nearest-patch
+%                          map and lawn clip registration fit, as the lab's
+%                          analysis package computed them (decision #60);
+%                          tracks and E. coli profiles not yet
 %     C. dataset-wide, once
 %        11 encounters, 12 cross-study calculations, 13 check & write (not yet)
 %
@@ -78,7 +82,7 @@ function result = import_V2(dataParentDir, options)
 arguments
     dataParentDir (1,:) char {mustBeFolder} = fullfile(userpath, 'data')
     options.Spec (1,:) char = fullfile(fileparts(mfilename('fullpath')), 'import_V2_spec.json')
-    options.Stages (1,:) string = ["discover", "metadata", "sessions", "subjects", "acquisition", "relations", "assertions", "manipulations", "observations"]
+    options.Stages (1,:) string = ["discover", "metadata", "sessions", "subjects", "acquisition", "relations", "assertions", "manipulations", "observations", "calculations"]
     options.OutputRoot (1,:) char = ''
     options.Sessions (1,:) string = string.empty(1, 0)
     options.Write (1,1) logical = false
@@ -329,6 +333,27 @@ if isfield(result, 'subjects') && isfield(result, 'recordings')
                 ob.counts.temperature, ob.counts.humidity);
             for j = 1:numel(ob.skipped)
                 fprintf('  skipped: %s\n', ob.skipped{j});
+            end
+        end
+        if any(options.Stages == "calculations")
+            run = struct('SoftwareId', '', 'InterpreterId', '', 'OperatingSystemId', '');
+            keys = {'haley_analysis', 'matlab', 'macos'};
+            names = fieldnames(run);
+            for j = 1:numel(keys)
+                if isKey(instrumentIds, keys{j}), run.(names{j}) = instrumentIds(keys{j}); end
+            end
+            ge = ndi.setup.conv.haley.geometryDocuments(dataParentDir, T(k, :), result.recordings, ...
+                built{k}.subjectIds, 'RecordingStatements', built{k}.recordingStatements, ...
+                'RecordingRefs', built{k}.recordingRefs, 'SoftwareId', run.SoftwareId, ...
+                'InterpreterId', run.InterpreterId, 'OperatingSystemId', run.OperatingSystemId);
+            built{k}.documents = [built{k}.documents, ge.documents];
+            built{k}.geometry = ge;
+            c = ge.counts;
+            fprintf(['%s calculations: %d coordinate system, %d arena, %d reference mark, ' ...
+                '%d lawn mask, %d nearest patch, %d registration\n'], T.local_identifier{k}, ...
+                c.coordinate_system, c.arena, c.reference_mark, c.lawn, c.nearest_patch, c.registration);
+            for j = 1:numel(ge.skipped)
+                fprintf('  skipped: %s\n', ge.skipped{j});
             end
         end
         T.documents{k} = built{k}.documents;

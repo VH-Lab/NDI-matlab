@@ -395,6 +395,21 @@
     }
    ],
    "vendor": "adobe"
+  },
+  {
+   "key": "haley_analysis",
+   "name": "Haley et al. 2024 analysis package",
+   "version": "44a89de21430cea3312d312e17054647a074f90c",
+   "identifiers": [
+    {
+     "scheme": "URL",
+     "value": "https://github.com/shreklab/Haley-et-al-2024"
+    }
+   ]
+  },
+  {
+   "key": "macos",
+   "name": "macOS"
   }
  ],
  "products": [
