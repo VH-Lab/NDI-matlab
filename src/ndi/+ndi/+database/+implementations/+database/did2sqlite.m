@@ -30,17 +30,17 @@ classdef did2sqlite < ndi.database
     %   Document add / read / remove / search / alldocids are implemented by
     %   delegating to did2.database.sqlitedb.
     %
-    %   BINARY (file) documents are opened only when the document records
-    %   the file BY LOCATION and did not ingest it (files.file_info.locations,
-    %   ingest 0; ndi.database.fun.externalFileLocation) -- the bytes are
-    %   read where they are. Any other binary request errors rather than
-    %   returning something. `did2.database.sqlitedb` has no file store at
-    %   all -- it persists the document body and the two query sidecars and
-    %   nothing else -- so there is no path from a document id and a
-    %   filename to bytes to hand back. Returning empty here would make a
-    %   dataset with attached files read as a dataset with none, which is
-    %   the hollow-document failure this project has paid for repeatedly.
-    %   An error names the gap instead.
+    %   BINARY (file) documents: a file the document INGESTED is read from
+    %   the database's file store, <.ndi>/files/<uid> (did2.database.sqlitedb
+    %   hasFile, DID-matlab #215: the same layout as the legacy backend, so
+    %   file_directory is unchanged). A file the document records BY
+    %   LOCATION without ingesting it (files.file_info.locations, ingest 0;
+    %   ndi.database.fun.externalFileLocation) is read where it is. Anything
+    %   else errors rather than returning something: an empty answer would
+    %   make a dataset with attached files read as a dataset with none, the
+    %   hollow-document failure this project has paid for repeatedly. With a
+    %   DID-matlab whose did2 database has no file store yet, only the
+    %   by-location path exists.
     %
     %   See also: ndi.database, did2.database.sqlitedb,
     %             ndi.database.implementations.database.didsqlite,
@@ -256,11 +256,10 @@ classdef did2sqlite < ndi.database
         end % do_search()
 
         function [ndi_binarydoc_obj] = do_openbinarydoc(obj, ndi_document_id, filename)
-            % A file the document records BY LOCATION and did not ingest
-            % (files.file_info.locations, ingest 0) is opened where it
-            % lives, read-only. Anything else still errors: there is no
-            % file store, and an empty answer would make a dataset with
-            % attached files read as a dataset with none.
+            % An ingested file (the database's file store) or one the
+            % document records BY LOCATION is opened read-only where it is.
+            % Anything else errors: an empty answer would make a dataset
+            % with attached files read as a dataset with none.
             [tf, file_path] = obj.check_exist_binarydoc(ndi_document_id, filename);
             if tf
                 ndi_binarydoc_obj = did.file.readonly_fileobj('fullpathfilename', file_path);
@@ -268,21 +267,31 @@ classdef did2sqlite < ndi.database
                 return;
             end
             error('NDI:did2sqlite:noBinaryStore', ...
-                ['This database is backed by did2.database.sqlitedb, which ' ...
-                 'has NO file store, and document %s does not record "%s" at ' ...
-                 'a location on this computer (files.file_info.locations, not ' ...
-                 'ingested). This errors rather than returning empty: a dataset ' ...
-                 'with attached files must not read as a dataset with none.'], ...
-                ndi_document_id, filename);
+                ['Document %s has no file "%s" on this computer: it is neither ' ...
+                 'in this database''s file store nor at a location the document ' ...
+                 'records (files.file_info.locations). This errors rather than ' ...
+                 'returning empty: a dataset with attached files must not read ' ...
+                 'as a dataset with none.'], ndi_document_id, filename);
         end % do_openbinarydoc()
 
         function [tf, file_path] = check_exist_binarydoc(obj, ndi_document_id, filename)
             % Asked speculatively by callers deciding whether to read, so
-            % "no" is a real answer: true only for a file the document
-            % records at a location that exists here
-            % (ndi.database.fun.externalFileLocation).
+            % "no" is a real answer: true for a file in the database's file
+            % store (ingested), or one the document records at a location
+            % that exists here (ndi.database.fun.externalFileLocation).
             tf = false;
             file_path = '';
+            if ismethod(obj.db, 'hasFile')      % DID-matlab #215
+                try
+                    [tf, file_path] = obj.db.hasFile(ndi_document_id, filename);
+                catch
+                    tf = false;
+                end
+                if tf
+                    return;
+                end
+                file_path = '';
+            end
             try
                 raw = obj.db.get(ndi_document_id);
             catch
@@ -303,12 +312,12 @@ classdef did2sqlite < ndi.database
         end % do_closebinarydoc()
 
         function [file_dir] = file_directory(obj)
-            % FILE_DIRECTORY - where ingested files would live
+            % FILE_DIRECTORY - where ingested files live
             %
             % Same layout as the legacy backend so a session migrated in
             % place keeps its existing `files/` directory rather than
-            % growing a second one. Nothing in this class reads or writes
-            % it yet -- see do_openbinarydoc.
+            % growing a second one. did2.database.sqlitedb ingests into
+            % <folder of the database file>/files, which is this folder.
             file_dir = fullfile(obj.path, 'files');
         end % file_directory
 
