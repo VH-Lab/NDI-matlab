@@ -130,8 +130,16 @@ function downloadedNdiDocuments = downloadNdiDocuments(cloudDatasetId, cloudDocu
         if syncOptions.Verbose
             fprintf('"SyncFiles" option is false. Updating document file info to reflect remote files.\n');
         end
+        % Build the uploaded-uid map ONCE from the paginated whole-dataset
+        % listing (NDI-matlab#1004's listFilesAll). Threaded into
+        % updateFileInfoForRemoteFiles so per-doc rewrites can validate
+        % uids and per-series manifest fetches can skip uids the server
+        % does not report as uploaded. Empty map on failure preserves
+        % the previous no-check behavior.
+        uploadedUidMap = buildUploadedUidMap(cloudDatasetId, syncOptions.Verbose);
         documentUpdateFcn = @(doc) ...
-            ndi.cloud.sync.internal.updateFileInfoForRemoteFiles(doc, cloudDatasetId);
+            ndi.cloud.sync.internal.updateFileInfoForRemoteFiles(doc, cloudDatasetId, ...
+                'uploadedUidMap', uploadedUidMap);
     end
 
     % 3. Update file info for documents based on local / remote location
@@ -151,5 +159,42 @@ function downloadedNdiDocuments = downloadNdiDocuments(cloudDatasetId, cloudDocu
 
     if nargout > 0
         downloadedNdiDocuments = newNdiDocuments;
+    end
+end
+
+function m = buildUploadedUidMap(cloudDatasetId, verbose)
+    % One paginated whole-dataset listing (listFilesAll from NDI-matlab#1004),
+    % into a containers.Map of uid -> uploaded logical. Any failure returns
+    % an empty map, which the downstream code treats as "no check" --
+    % preserves the pre-#1007 behavior. Verbose mode reports the count so
+    % the "Updating document file info..." step has a denominator to show.
+    m = containers.Map('KeyType','char','ValueType','logical');
+    try
+        if verbose
+            fprintf('Fetching cloud file listing for uid validation ...\n');
+        end
+        [ok, listing] = ndi.cloud.api.files.listFilesAll(cloudDatasetId);
+        if ~ok
+            if verbose
+                fprintf(['Could not fetch cloud file listing; skipping ', ...
+                    'uid validation (per-doc opens will surface any misses).\n']);
+            end
+            return
+        end
+        for i = 1:numel(listing)
+            uidChar = char(string(listing(i).uid));
+            if isempty(uidChar), continue, end
+            m(uidChar) = logical(listing(i).uploaded);
+        end
+        if verbose
+            uploadedCount = sum(cellfun(@logical, m.values));
+            fprintf('Cloud dataset lists %d file(s); %d uploaded.\n', ...
+                m.Count, uploadedCount);
+        end
+    catch err
+        if verbose
+            fprintf('Uid map build failed: %s. Continuing without validation.\n', err.message);
+        end
+        m = containers.Map('KeyType','char','ValueType','logical');
     end
 end

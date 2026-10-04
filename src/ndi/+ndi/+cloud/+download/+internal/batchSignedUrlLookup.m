@@ -66,21 +66,43 @@ function [url, stats] = batchSignedUrlLookup(cloudDatasetId, ndiDocumentId, seri
 %                    Default 20*3600 (the server currently signs URLs
 %                    for 24 h, leaving a buffer). A scope past its
 %                    TTL is refetched on the next miss.
-%       partialMapRetrySeconds - How long to wait, in seconds, before
-%                    re-fetching a scope whose first answer was a
-%                    populated map that did not name the requested uid.
-%                    Default 0.5. The retry gives a lagged batch
-%                    endpoint time to catch up after a bulk upload; a
-%                    zero value skips the wait but still performs the
-%                    single retry (used by tests). See
-%                    VH-Lab/NDI-matlab#991 and Waltham-Data-Science/
-%                    NDI-python#309.
+%       partialMapRetryDelays - Row vector of waits, in seconds, between
+%                    successive re-fetches of a scope whose previous
+%                    answer was a populated map that did not name the
+%                    requested uid. Default [1 3 9] -- one initial call
+%                    plus up to three retries at 1 s / 3 s / 9 s, ~13 s
+%                    of wall clock in the worst case. The retries give
+%                    a lagged batch endpoint time to catch up after
+%                    ``waitForAllBulkUploads`` returns; if the whole
+%                    schedule is spent and the map still misses, the
+%                    caller falls back per uid. See
+%                    VH-Lab/NDI-matlab#991 and
+%                    Waltham-Data-Science/NDI-python#309 and #320.
+%       partialMapRetrySeconds - Deprecated single-wait scalar. NaN
+%                    (default) means "use partialMapRetryDelays". Any
+%                    other value replaces the schedule with a
+%                    one-element one containing that wait, matching the
+%                    pre-schedule contract where 0 still fires one
+%                    retry (with no wait). Kept so tests pinned to that
+%                    contract keep passing.
 %       sleepFcn   - Function handle called as sleepFcn(seconds) to
-%                    perform the pause before a partial-map retry.
+%                    perform the pause before each partial-map retry.
 %                    Defaults to @pause. Present so tests can
 %                    short-circuit the wait without adding real
 %                    latency to a suite that exercises the retry many
 %                    times.
+%       retryBackoffSeconds - Row vector of delays, in seconds,
+%                    between successive scope-fetch attempts after a
+%                    raise. Default [1 4 16] -- one initial call, up
+%                    to three retries at 1 s / 4 s / 16 s, ~21 s of
+%                    wall clock in the worst case. An exception here
+%                    is a transient network condition
+%                    (MATLAB:webservices:ConnectionFailed and the
+%                    like); a signer that reports ok=false is a
+%                    server-side no and is NOT retried. Pass [] to
+%                    disable retries, or a vector of zeros to keep
+%                    the retry count without adding real latency
+%                    (used by tests). See VH-Lab/NDI-matlab#1010.
 %
 %   Outputs:
 %       url         - The pre-signed URL for uid (char), or "" (string
@@ -115,6 +137,16 @@ function [url, stats] = batchSignedUrlLookup(cloudDatasetId, ndiDocumentId, seri
 %                                   this uid" gets that answer after the
 %                                   retry. See VH-Lab/NDI-matlab#991 and
 %                                   Waltham-Data-Science/NDI-python#309.
+%                     .transientRetries  how many extra signer calls were
+%                                   spent recovering from a raise (a
+%                                   transient network error) before the
+%                                   scope was cached or given up on. A
+%                                   fresh scope fetch that raises is
+%                                   retried with backoff so one blip
+%                                   does not cascade to per-member
+%                                   fallback across a 156k-member series.
+%                                   See VH-Lab/NDI-matlab#1010 and
+%                                   Waltham-Data-Science/NDI-python#322.
 %
 %                     These exist to make the fallback VISIBLE. It is
 %                     deliberate at runtime -- a reader opening one file
@@ -148,8 +180,33 @@ function [url, stats] = batchSignedUrlLookup(cloudDatasetId, ndiDocumentId, seri
         options.clearCache (1,1) logical = false
         options.ttlSeconds (1,1) double  = 20*3600
         options.failureTtlSeconds (1,1) double = 60
-        options.partialMapRetrySeconds (1,1) double = 0.5
+        % PARTIAL-MAP retry schedule (bounded exponential backoff). Each
+        % entry is a wait, in seconds, before the corresponding retry.
+        % A scope whose Nth wave still returns a partial map falls back
+        % per uid without another wave. Three waves at 1 s / 3 s / 9 s
+        % cover the User-1-prod tail observed on
+        % Waltham-Data-Science/NDI-python#320: one 0.5 s retry was not
+        % enough to bridge the settle between bulk-upload extraction and
+        % the signed-URL-set index catching up. See also
+        % VH-Lab/NDI-matlab#991.
+        options.partialMapRetryDelays (1,:) double = [1 3 9]
+        % Back-compat scalar knob. If passed, replaces the schedule with
+        % a single-element one containing that wait. NaN means "not
+        % set", so partialMapRetryDelays wins. Preserves the pre-schedule
+        % semantics where partialMapRetrySeconds=0 still fires one retry
+        % (with no wait).
+        options.partialMapRetrySeconds (1,1) double = NaN
         options.sleepFcn (1,1) function_handle = @pause
+        options.retryBackoffSeconds (1,:) double = [1 4 16]
+        % Disk cache off by default: only enable when we have a URL-set
+        % source that will actually reduce cost on reopen (the async
+        % signed-URL-set job, or a scope big enough to matter). Callers
+        % that DO want it -- the DID chunk-download path for large
+        % lightsheet series -- turn it on explicitly. Existing tests
+        % that inject scripted signers see no disk activity, which is
+        % what they want: the disk cache is a production optimisation,
+        % not part of the batch contract.
+        options.diskCache (1,1) logical = false
     end
 
     % The persistent cache. Keyed on 'datasetId/documentId/seriesName'.
@@ -166,7 +223,7 @@ function [url, stats] = batchSignedUrlLookup(cloudDatasetId, ndiDocumentId, seri
     if isempty(STATS) || options.clearCache
         STATS = struct('signerCalls', 0, 'uidHits', 0, 'uidMisses', 0, ...
             'lastMapSize', 0, 'lastMapUids', {{}}, 'lastFailureReason', "", ...
-            'partialMapRetries', 0);
+            'partialMapRetries', 0, 'transientRetries', 0);
     end
     if isempty(WARNED) || options.clearCache
         WARNED = containers.Map('KeyType','char','ValueType','logical');
@@ -175,7 +232,20 @@ function [url, stats] = batchSignedUrlLookup(cloudDatasetId, ndiDocumentId, seri
         FAILEDSCOPES = containers.Map('KeyType','char','ValueType','any');
     end
     if isempty(RETRIEDSCOPES) || options.clearCache
-        RETRIEDSCOPES = containers.Map('KeyType','char','ValueType','logical');
+        % Values are the number of retry waves already spent on this
+        % scope, bounded by numel(effectiveDelays). Was a logical
+        % "has been retried" set before the multi-wave rework.
+        RETRIEDSCOPES = containers.Map('KeyType','char','ValueType','double');
+    end
+
+    % Resolve the effective partial-map schedule. A caller passing the
+    % deprecated scalar partialMapRetrySeconds gets a one-element
+    % schedule with that wait (scalar=0 still fires ONE retry, matching
+    % the pre-schedule behaviour).
+    if isnan(options.partialMapRetrySeconds)
+        effectiveDelays = options.partialMapRetryDelays;
+    else
+        effectiveDelays = options.partialMapRetrySeconds;
     end
 
     url = "";
@@ -203,6 +273,10 @@ function [url, stats] = batchSignedUrlLookup(cloudDatasetId, ndiDocumentId, seri
             % Stale; drop and refetch.
             remove(CACHE, cacheKey);
         end
+    end
+
+    if isempty(entry) && options.diskCache
+        entry = localTryDiskCache();
     end
 
     if isempty(entry)
@@ -241,14 +315,25 @@ function [url, stats] = batchSignedUrlLookup(cloudDatasetId, ndiDocumentId, seri
         % misses becomes a whole series' worth of hits from one retry.
         % See VH-Lab/NDI-matlab#991 and Waltham-Data-Science/
         % NDI-python#309.
-        if ~isKey(RETRIEDSCOPES, cacheKey)
-            RETRIEDSCOPES(cacheKey) = true;
-            STATS.partialMapRetries = STATS.partialMapRetries + 1;
-            if options.partialMapRetrySeconds > 0
-                options.sleepFcn(options.partialMapRetrySeconds);
+        % Multi-wave retry: each wave sleeps for effectiveDelays(n+1)
+        % where n is the number of waves already spent, then refetches.
+        % Stops as soon as a fresh map names the uid, or when the
+        % schedule is exhausted.
+        if isKey(RETRIEDSCOPES, cacheKey)
+            attemptsSpent = RETRIEDSCOPES(cacheKey);
+        else
+            attemptsSpent = 0;
+        end
+        while attemptsSpent < numel(effectiveDelays)
+            delay = effectiveDelays(attemptsSpent + 1);
+            if delay > 0
+                options.sleepFcn(delay);
             end
             % Drop the stale entry so localFetchScope replaces it fresh.
             remove(CACHE, cacheKey);
+            STATS.partialMapRetries = STATS.partialMapRetries + 1;
+            attemptsSpent = attemptsSpent + 1;
+            RETRIEDSCOPES(cacheKey) = attemptsSpent;
             refreshed = localFetchScope(cacheKey);
             if isempty(refreshed)
                 % localFetchScope already recorded the miss and warned;
@@ -324,34 +409,71 @@ function [url, stats] = batchSignedUrlLookup(cloudDatasetId, ndiDocumentId, seri
             wantsFour = false;
         end
 
+        % Fetch the scope with backoff on a raise. A transient network
+        % blip (MATLAB:webservices:ConnectionFailed and the like) at the
+        % start of a run would otherwise cascade: this scope is marked
+        % failed, every subsequent uid in it falls back to a per-member
+        % getFileDetails call, and a 156k-member series takes hours.
+        % Retry the batch call itself first; the per-member fallback is
+        % still there below as a safety net, just not triggered by
+        % transients. See VH-Lab/NDI-matlab#1010 and Waltham-Data-Science/
+        % NDI-python#322.
+        %
+        % Only a caught exception is retried. A signer that reports
+        % ok=false is a server-side no (auth, 404, business-logic
+        % refusal): retrying hammers a dead endpoint and adds cost with
+        % no chance of recovery.
+        ok = false;
+        answer = [];
         apiResponse = [];
         failureReason = "";
-        try
-            if wantsFour
-                if strlength(seriesName) > 0
-                    [ok, answer, apiResponse] = options.signer(cloudDatasetId, ...
-                        ndiDocumentId, 'idNamespace', "ndi", ...
-                        'fileSeries', seriesName);
+        maxAttempts = 1 + numel(options.retryBackoffSeconds);
+        for attempt = 1:maxAttempts
+            apiResponse = [];
+            failureReason = "";
+            try
+                if wantsFour
+                    if strlength(seriesName) > 0
+                        [ok, answer, apiResponse] = options.signer(cloudDatasetId, ...
+                            ndiDocumentId, 'idNamespace', "ndi", ...
+                            'fileSeries', seriesName);
+                    else
+                        [ok, answer, apiResponse] = options.signer(cloudDatasetId, ...
+                            ndiDocumentId, 'idNamespace', "ndi");
+                    end
                 else
-                    [ok, answer, apiResponse] = options.signer(cloudDatasetId, ...
-                        ndiDocumentId, 'idNamespace', "ndi");
+                    if strlength(seriesName) > 0
+                        [ok, answer] = options.signer(cloudDatasetId, ndiDocumentId, ...
+                            'idNamespace', "ndi", 'fileSeries', seriesName);
+                    else
+                        [ok, answer] = options.signer(cloudDatasetId, ndiDocumentId, ...
+                            'idNamespace', "ndi");
+                    end
                 end
-            else
-                if strlength(seriesName) > 0
-                    [ok, answer] = options.signer(cloudDatasetId, ndiDocumentId, ...
-                        'idNamespace', "ndi", 'fileSeries', seriesName);
-                else
-                    [ok, answer] = options.signer(cloudDatasetId, ndiDocumentId, ...
-                        'idNamespace', "ndi");
-                end
+            catch signerError
+                ok = false;
+                answer = [];
+                failureReason = "the call raised " + string(signerError.identifier) + ...
+                    ": " + string(signerError.message);
             end
-        catch signerError
-            ok = false;
-            answer = [];
-            failureReason = "the call raised " + string(signerError.identifier) + ...
-                ": " + string(signerError.message);
+            STATS.signerCalls = STATS.signerCalls + 1;
+            if ok
+                break
+            end
+            % Retry only on a raise. An ok=false response is not
+            % transient; break out and let the fallback path handle it.
+            if strlength(failureReason) == 0
+                break
+            end
+            if attempt >= maxAttempts
+                break
+            end
+            STATS.transientRetries = STATS.transientRetries + 1;
+            delay = options.retryBackoffSeconds(attempt);
+            if delay > 0
+                options.sleepFcn(delay);
+            end
         end
-        STATS.signerCalls = STATS.signerCalls + 1;
         if ~ok || ~isstruct(answer) || ~isfield(answer,'files') || ...
                 ~isa(answer.files,'containers.Map')
             % Any failure or unexpected shape -> no batch URL. Don't
@@ -377,6 +499,19 @@ function [url, stats] = batchSignedUrlLookup(cloudDatasetId, ndiDocumentId, seri
         CACHE(theCacheKey) = e;
         STATS.lastMapSize = double(e.map.Count);
         STATS.lastMapUids = keys(e.map);
+
+        % Persist to disk when the caller has opted in AND the payload
+        % carries a server-signed expiry we can age-check off of. A
+        % payload with neither expiresAt nor filesExpireAt is not
+        % cacheable -- the disk cache refuses to invent a TTL, on
+        % purpose (see signedUrlDiskCache.save). Best-effort: any I/O
+        % failure is swallowed so a full disk does not break a read.
+        if options.diskCache
+            try %#ok<TRYNC>
+                ndi.cloud.download.internal.signedUrlDiskCache.save( ...
+                    cloudDatasetId, ndiDocumentId, seriesName, answer);
+            end
+        end
     end
 
     function reason = localDescribeFailure(ok, answer, apiResponse)
@@ -406,6 +541,35 @@ function [url, stats] = batchSignedUrlLookup(cloudDatasetId, ndiDocumentId, seri
             reason = "'files' arrived as a " + string(class(answer.files)) + ...
                 ", not a containers.Map" + status;
         end
+    end
+
+    function e = localTryDiskCache()
+        % Consult the persistent (on-disk) cache before running the async
+        % signed-URL-set job. On hit, populate the in-memory cache so
+        % every uid in the scope resolves without another disk read. On
+        % miss (no file, corrupt file, expired-or-within-safety-buffer),
+        % return [] and let the caller fetch fresh.
+        %
+        % The disk cache lives one layer above DID's file-bytes cache
+        % (which is a different, complementary concern) and its TTL is
+        % keyed to the SERVER'S filesExpireAt, not a hardcoded value --
+        % which is why a scientist reopening the same dataset over a
+        % 24 h day pays the ~85 min sign cost once.
+        e = [];
+        try
+            disk = ndi.cloud.download.internal.signedUrlDiskCache.load( ...
+                cloudDatasetId, ndiDocumentId, seriesName);
+        catch
+            disk = [];
+        end
+        if isempty(disk) || ~isstruct(disk) || ~isfield(disk, 'files') || ...
+                ~isa(disk.files, 'containers.Map')
+            return
+        end
+        e = struct('map', disk.files, 'fetchedAt', now_utc);
+        CACHE(cacheKey) = e;
+        STATS.lastMapSize = double(e.map.Count);
+        STATS.lastMapUids = keys(e.map);
     end
 
     function localWarnOnce(scopeKey)
