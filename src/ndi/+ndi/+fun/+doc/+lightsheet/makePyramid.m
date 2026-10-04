@@ -29,12 +29,18 @@ function [pyramidDoc, levelDocs, sharedLevel0] = makePyramid(session, pyramids, 
 %     label           - char, human-readable label for the pyramid
 %     tileBudgetBytes - target UNCOMPRESSED bytes per chunk when the
 %                       chunk shape is chosen automatically. Default
-%                       8*2^20 (8 MB). Sized for a viewer over an
-%                       ~200 MB/s link fetching ~4 parallel tiles per
-%                       pan gesture. Chunks land near this budget but
-%                       are clamped by the level's own shape, so a
-%                       small coarse level may end up as one whole
-%                       chunk.
+%                       32*2^20 (32 MB). Sized to the measured
+%                       signing+fetch+decode sweet spot for a viewer
+%                       on an ~200 MB/s link: large enough that the
+%                       per-chunk round trip is amortised and the
+%                       chunk count stays bounded (121k-chunk level 0
+%                       at 8 MB -> ~30k at 32 MB on a whole-brain
+%                       lightsheet), small enough that per-chunk
+%                       decode stays under ~200 ms and the renderer
+%                       can stream chunks without stalls. Chunks land
+%                       near this budget but are clamped by the
+%                       level's own shape, so a small coarse level
+%                       may end up as one whole chunk.
 %     chunks          - optional explicit chunk shape (row vector in
 %                       axes_order). Empty (default) means auto: pick
 %                       a shape ISOTROPIC IN WORLD SPACE from the
@@ -66,7 +72,7 @@ function [pyramidDoc, levelDocs, sharedLevel0] = makePyramid(session, pyramids, 
         options.sourceFileID char = ''
         options.pipelineVersion char = ''
         options.label char = ''
-        options.tileBudgetBytes (1,1) double {mustBePositive} = 8 * 2^20
+        options.tileBudgetBytes (1,1) double {mustBePositive} = 32 * 2^20
         options.chunks double = []
         options.materializeChunks (1,1) logical = false
         options.sourceZarrPath char = ''

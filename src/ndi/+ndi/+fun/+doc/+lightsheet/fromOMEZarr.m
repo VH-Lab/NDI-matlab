@@ -46,8 +46,8 @@ function [pyramidDoc, levelDocs, info] = fromOMEZarr(session, zarrPath, options)
 %                  via NDI.FUN.DOC.LIGHTSHEET.MAKESOURCEFILE.
 %   label      - human-readable label written into the parent pyramid.
 %   tileBudgetBytes - target uncompressed bytes per chunk when chunk
-%                     shape is chosen automatically. Default 8*2^20
-%                     (8 MB). Forwarded to makePyramid.
+%                     shape is chosen automatically. Default 32*2^20
+%                     (32 MB). Forwarded to makePyramid.
 %   chunks     - optional explicit chunk shape (row vector, axes_order).
 %                Empty (default) means auto-size from the budget.
 %                Forwarded to makePyramid.
@@ -82,7 +82,7 @@ function [pyramidDoc, levelDocs, info] = fromOMEZarr(session, zarrPath, options)
         options.pipelineVersion char = ''
         options.sourceFileID char = ''
         options.label char = ''
-        options.tileBudgetBytes (1,1) double {mustBePositive} = 8 * 2^20
+        options.tileBudgetBytes (1,1) double {mustBePositive} = 32 * 2^20
         options.chunks double = []
         options.materializeChunks (1,1) logical = false
         options.codec (1,:) char {mustBeMember(options.codec, {'raw','blosc-zstd'})} = 'raw'

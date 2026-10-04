@@ -46,10 +46,10 @@ NDI documents are immutable, so:
   **Working.**
 - `ndi.fun.doc.lightsheet.chooseTileShape(shape, axesOrder, voxelSize, dtype, budgetBytes)` -
   size a chunk to a byte budget with tiles isotropic in world space.
-  Default budget 8 MB uncompressed, sized for a viewer over an
-  ~200 MB/s link fetching ~4 tiles in parallel per pan gesture. Used
-  by `makePyramid` per level; the source store's chunk shape is not
-  preserved. **Working.**
+  Default budget 32 MB uncompressed, sized to the measured
+  signing+fetch+decode sweet spot for a viewer on an ~200 MB/s link.
+  Used by `makePyramid` per level; the source store's chunk shape is
+  not preserved. **Working.**
 - `ndi.fun.doc.lightsheet.viewCommand(launcher, sessionPath, pyramidID, ...)`
   - pure command builder. Same pattern as
   `ndi.gui.app.GEFManager.viewCommand`; the launcher is

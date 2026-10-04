@@ -16,9 +16,9 @@ function chunks = chooseTileShape(shape, axesOrder, voxelSize, dtype, budgetByte
 %                 zeros or NaNs on t/c)
 %   DTYPE       - char, NGFF-style ('uint16', 'float32', '<u2', ...)
 %   BUDGETBYTES - target uncompressed bytes for one chunk. Default
-%                 chosen by MAKEPYRAMID is 8*2^20 (8 MB), sized for a
-%                 viewer over an ~200 MB/s link fetching ~4 tiles in
-%                 parallel per pan gesture.
+%                 chosen by MAKEPYRAMID is 32*2^20 (32 MB), sized to
+%                 the measured signing+fetch+decode sweet spot for a
+%                 viewer on an ~200 MB/s link.
 %
 %   Non-spatial axes (t, c) get chunk = 1 regardless of budget. The
 %   spatial axes share the budget from
@@ -31,15 +31,15 @@ function chunks = chooseTileShape(shape, axesOrder, voxelSize, dtype, budgetByte
 %   up as one whole chunk. When any axis clamps, the leftover budget
 %   is redistributed across the still-slack axes in one pass.
 %
-%   Example (uint16, 8 MB budget, isotropic 1 um):
+%   Example (uint16, 32 MB budget, isotropic 1 um):
 %       chooseTileShape([1200 2000 2000], 'zyx', [1 1 1], 'uint16', ...
-%           8*2^20)
-%       -> [161 161 161]   % ~161^3 * 2 bytes ~= 8.3 MB
+%           32*2^20)
+%       -> [256 256 256]   % ~256^3 * 2 bytes = 32.0 MB
 %
-%   Example (uint16, 8 MB, anisotropic 1/1/5 um):
+%   Example (uint16, 32 MB, anisotropic 1/1/5 um):
 %       chooseTileShape([1200 2000 2000], 'zyx', [5 1 1], 'uint16', ...
-%           8*2^20)
-%       -> [55 275 275]    % ~55*275*275*2 ~= 7.9 MB, world-cube
+%           32*2^20)
+%       -> [88 438 438]    % ~88*438*438*2 ~= 33.8 MB, world-cube
 %
 %   See also: ndi.fun.doc.lightsheet.makePyramid
 
@@ -48,7 +48,7 @@ function chunks = chooseTileShape(shape, axesOrder, voxelSize, dtype, budgetByte
         axesOrder (1,:) char
         voxelSize double
         dtype (1,:) char
-        budgetBytes (1,1) double {mustBePositive} = 8 * 2^20
+        budgetBytes (1,1) double {mustBePositive} = 32 * 2^20
     end
 
     shape = double(shape);
