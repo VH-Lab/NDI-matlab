@@ -457,7 +457,8 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             testCase.verifyEqual(edge(a, 'interpreter_id'), ids('matlab'));
             testCase.verifyEqual(edge(a, 'operating_system_id'), ids('macos'));
             testCase.verifyEqual(a.data_type.datum_type, 'bool');
-            testCase.verifyEqual(a.subject_interaction.method_parameters(1).variable.name, 'arena diameter');
+            mp = entries(a.subject_interaction.method_parameters);
+            testCase.verifyEqual(mp{1}.variable.name, 'arena diameter');
 
             % its body is held by the session's database, not left in a temp file
             b = docs(strcmp(classes, 'sampled_body'));
@@ -500,6 +501,65 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             end
         end
 
+        function testTracks(testCase)
+            % stage 10 part B (decision #61): per worm and video, the midpoint
+            % track, speed, distance to the patch edge and nearest patch, keyed
+            % by the 0-based video frame. Videos on disk: plate 11 twice, 12,
+            % 14, two worms each -> 8 tracks.
+            result = testCase.write("concentration_0001", ["metadata", "calculations"]);
+            c = result.written{1}.tracks.counts;
+            testCase.verifyEqual([c.position, c.speed, c.patch_edge_distance], [8 8 8]);
+            hasItem = ndi.setup.V2.schemaHasField('item', 'value');
+            testCase.verifyEqual(c.nearest_patch, 8 * hasItem);
+
+            sessionPath = result.sessions.path{1};
+            docs = testCase.documents(sessionPath);
+            classes = cellfun(@(d) d.document_class.class_name, docs, 'UniformOutput', false);
+            subj = docs(strcmp(classes, 'subject'));
+            idOf = containers.Map(cellfun(@(d) d.subject.local_identifier, subj, 'UniformOutput', false), ...
+                cellfun(@(d) d.base.id, subj, 'UniformOutput', false));
+            of = @(cls, local) docs(strcmp(classes, cls) & cellfun(@(d) ...
+                strcmp(edge(d, 'subject_id'), idOf(local)), docs));
+
+            % worm 121, filmed once (plate 12)
+            pos = of('position_calculation', 'concentration_worm0121');
+            testCase.verifyNumElements(pos, 1);
+            p = pos{1};
+            testCase.verifyEqual(p.subject_statement.variable.name, 'midpoint position');
+            cs = docs(strcmp(classes, 'coordinate_system'));
+            testCase.verifyTrue(any(cellfun(@(d) strcmp(d.base.id, edge(p, 'coordinate_system_id')), cs)), ...
+                'the positions are in their video''s coordinate system');
+            k1 = entries(p.data.keys);
+            testCase.verifyEqual(k1{1}.variable.name, 'video frame');
+            testCase.verifyEqual(k1{1}.n, 5);
+            names = cellfun(@(m) m.variable.name, entries(p.subject_interaction.method_parameters), ...
+                'UniformOutput', false);
+            testCase.verifyEqual(sort(names(:)'), {'gap filling', 'longest gap filled'});
+
+            % its bytes: x = frame + 12.1 - 0.5, y = 3.5 (pixels from the corner)
+            xy = testCase.bodyValues(sessionPath, docs, classes, p.base.id, 'double');
+            testCase.verifyEqual(reshape(xy, 5, 2), [(1:5)' + 12.1 - 0.5, 3.5 * ones(5, 1)], 'AbsTol', 1e-12);
+
+            sp = of('velocity_calculation', 'concentration_worm0121');
+            testCase.verifyNumElements(sp, 1);
+            testCase.verifyEqual(edgeAll(sp{1}, 'input_id'), {p.base.id});
+            v = testCase.bodyValues(sessionPath, docs, classes, sp{1}.base.id, 'double');
+            testCase.verifyEqual(v(:)', 121e-6 * ones(1, 5), 'AbsTol', 1e-15, 'm/s');
+
+            de = of('length_calculation', 'concentration_worm0121');
+            testCase.verifyNumElements(de, 1);
+            testCase.verifyNumElements(edgeAll(de{1}, 'input_id'), 2, 'the positions and the lawn mask');
+            v = testCase.bodyValues(sessionPath, docs, classes, de{1}.base.id, 'double');
+            testCase.verifyEqual(v(:)', 2 * 1e-3 / 33 * ones(1, 5), 'AbsTol', 1e-15);
+
+            if hasItem
+                np = of('item_calculation', 'concentration_worm0121');
+                testCase.verifyNumElements(np, 1);
+                v = testCase.bodyValues(sessionPath, docs, classes, np{1}.base.id, 'uint8');
+                testCase.verifyEqual(v(:)', uint8([0 0 255 0 0]), 'frame 3 is noTrack: the fill value');
+            end
+        end
+
         function testEcoliSession(testCase)
             result = testCase.write("ecoli_0001");
             docs = testCase.documents(result.sessions.path{1});
@@ -533,6 +593,23 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
                 'ReadVideos', false);
         end
 
+        function v = bodyValues(~, sessionPath, docs, classes, ownerId, precision)
+            % the values of the ingested body owned by OWNERID, read back
+            b = docs(strcmp(classes, 'sampled_body'));
+            b = b{cellfun(@(d) strcmp(edge(d, 'owner_id'), ownerId), b)};
+            db = did2.database.sqlitedb(fullfile(sessionPath, '.ndi', ...
+                ndi.database.implementations.database.did2sqlite.DEFAULTFILENAME()));
+            held = db.filePath(b.base.id, 'body_data_0');
+            db.close();
+            tmp = [tempname '.bin.gz'];
+            copyfile(held, tmp);
+            raw = gunzip(tmp);
+            fid = fopen(raw{1}, 'r', 'ieee-le');
+            v = fread(fid, Inf, [precision '=>' precision]);
+            fclose(fid);
+            delete(tmp); delete(raw{1});
+        end
+
         function docs = documents(~, sessionPath)
             db = did2.database.sqlitedb(fullfile(sessionPath, '.ndi', ...
                 ndi.database.implementations.database.did2sqlite.DEFAULTFILENAME()));
@@ -550,6 +627,12 @@ if isempty(v)
 else
     v = v{1};
 end
+end
+
+function c = entries(x)
+% a decoded list as a cell array (jsondecode gives a struct array when its
+% entries share fields, a cell array when they do not)
+if iscell(x), c = reshape(x, 1, []); else, c = num2cell(reshape(x, 1, [])); end
 end
 
 function v = edgeAll(doc, name)

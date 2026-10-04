@@ -50,7 +50,9 @@ function out = geometryDocuments(dataParentDir, session, R, subjectIds, options)
 %     'InterpreterId'        MATLAB (spec `matlab`)
 %     'OperatingSystemId'    the analysis computer's OS (spec `macos`)
 %
-%   OUT fields: documents (cell of structs), counts (struct), skipped (cellstr).
+%   OUT fields: documents (cell of structs), counts (struct), skipped (cellstr),
+%   byEpoch (containers.Map, epoch -> struct of the ids part B needs:
+%   coordinate_system, lawn_mask, nearest_patch, pixel (metres per pixel)).
 
 arguments
     dataParentDir (1,:) char {mustBeFolder}
@@ -70,7 +72,8 @@ sid = char(session.session_id{1});
 ref = char(session.local_identifier{1});
 folder = char(session.folder{1});
 out = struct('documents', {{}}, 'skipped', {{}}, 'counts', struct('coordinate_system', 0, ...
-    'arena', 0, 'reference_mark', 0, 'lawn', 0, 'nearest_patch', 0, 'registration', 0));
+    'arena', 0, 'reference_mark', 0, 'lawn', 0, 'nearest_patch', 0, 'registration', 0), ...
+    'byEpoch', containers.Map());
 if strcmp(folder, 'ecoli')
     return;
 end
@@ -165,28 +168,31 @@ for k = 1:height(R)
     end
     [docs, n, lawnMaskId] = mask(docs, d, 'lawnMask', 'bacterial lawn region', lawnArgs);
     out.counts.lawn = out.counts.lawn + n;
+    ids = struct('coordinate_system', cs.base.id, 'lawn_mask', lawnMaskId, ...
+        'nearest_patch', '', 'pixel', pixel);
 
     % ---- nearest patch ---------------------------------------------------------
     closest = cellOr(d, 'lawnClosest');
     if hasItem && ~isempty(closest)
-        patchIds = patchesOf(subjectIds, plate);
+        pIds = patchIds(subjectIds, plate);
         nPatch = max(closest(:));
-        if isempty(patchIds) || nPatch > numel(patchIds) || any(closest(:) < 1)
+        if isempty(pIds) || nPatch > numel(pIds) || any(closest(:) < 1)
             out.skipped{end+1} = sprintf(['%s: lawnClosest names patches 1..%d; plate %s has ' ...
-                '%d patch subject(s); no nearest-patch map'], epoch, nPatch, plate, numel(patchIds));
+                '%d patch subject(s); no nearest-patch map'], epoch, nPatch, plate, numel(pIds));
         else
             dt = 'uint8';
-            if numel(patchIds) > 255, dt = 'uint16'; end
+            if numel(pIds) > 255, dt = 'uint16'; end
             inputs = {videoId};
             if ~isempty(lawnMaskId), inputs{end+1} = lawnMaskId; end %#ok<AGROW>
             st = did2.build.statement('item_calculation', subjectIds(plate), ...
                 did2.build.term('', 'nearest patch'), [], 'DataBody', true, 'DatumType', dt, ...
                 'Keys', pixelKeys(closest, pixel), 'SessionId', sid, ...
                 'TimeReferenceIds', timeIds, 'InputIds', inputs, ...
-                'Edges', struct('item_id', {patchIds}), env{:});
-            docs = [docs, {st, body(st, closest - 1, dt, pixel, sid, ...
+                'Edges', struct('item_id', {pIds}), env{:});
+            docs = [docs, {st, ingestedBody(st, closest - 1, dt, pixelKeys(closest, pixel), sid, ...
                 'Each pixel''s nearest patch: a 0-based index into item_id.')}]; %#ok<AGROW>
             out.counts.nearest_patch = out.counts.nearest_patch + 1;
+            ids.nearest_patch = st.base.id;
         end
     end
 
@@ -205,6 +211,7 @@ for k = 1:height(R)
         docs{end+1} = st; %#ok<AGROW>
         out.counts.registration = out.counts.registration + 1;
     end
+    out.byEpoch(epoch) = ids;
 end
 out.documents = docs;
 
@@ -219,7 +226,7 @@ out.documents = docs;
         st = did2.build.statement('label_calculation', subjectIds(plate), ...
             did2.build.term('', variable), [], 'DataBody', true, 'DatumType', 'bool', ...
             'Keys', pixelKeys(m, pixel), calc{:}, extra{:});
-        docs = [docs, {st, body(st, logical(m), 'bool', pixel, sid, ...
+        docs = [docs, {st, ingestedBody(st, logical(m), 'bool', pixelKeys(m, pixel), sid, ...
             sprintf('The %s mask (1 = inside), from the source''s `%s`.', variable, column))}];
         n = 1; id = st.base.id;
     end
@@ -235,47 +242,16 @@ if ~isempty(options.OperatingSystemId), e = [e, {'OperatingSystemId', options.Op
 end
 
 function keys = pixelKeys(a, pixel)
-% [image vertical position, image horizontal position]: MATLAB's [row, column]
+% [image vertical position, image horizontal position]: MATLAB's [row, column].
+% Each position is a pixel's CENTRE, measured from the image's upper-left
+% corner (the coordinate system's origin): the first is half a pixel in.
 keys = did2.build.list( ...
     did2.build.key('image vertical position', size(a, 1), 'Unit', 'meter', ...
-        'Origin', 0, 'Spacing', pixel, 'SourceUnit', 'pixel', 'SourceOrigin', 0, 'SourceSpacing', 1), ...
+        'Origin', pixel / 2, 'Spacing', pixel, 'SourceUnit', 'pixel', 'SourceOrigin', 0.5, 'SourceSpacing', 1), ...
     did2.build.key('image horizontal position', size(a, 2), 'Unit', 'meter', ...
-        'Origin', 0, 'Spacing', pixel, 'SourceUnit', 'pixel', 'SourceOrigin', 0, 'SourceSpacing', 1));
+        'Origin', pixel / 2, 'Spacing', pixel, 'SourceUnit', 'pixel', 'SourceOrigin', 0.5, 'SourceSpacing', 1));
 end
 
-function b = body(st, a, datumType, pixel, sid, description)
-% the array's raw bytes (column-major, little-endian), gzipped, INGESTED
-raw = [tempname '.bin'];
-fid = fopen(raw, 'w', 'ieee-le');
-switch datumType
-    case 'bool',   fwrite(fid, uint8(a), 'uint8');
-    otherwise,     fwrite(fid, cast(a, datumType), datumType);
-end
-fclose(fid);
-gz = gzip(raw);
-gz = gz{1};
-delete(raw);
-info = dir(gz);
-byteOrder = '';
-if ~any(strcmp(datumType, {'bool', 'uint8', 'int8'})), byteOrder = 'little'; end
-b = did2.build.sampledBody(st.base.id, pixelKeys(a, pixel), 'DatumOrder', 'F', ...
-    'ByteOrder', byteOrder, 'Complete', true, 'Format', 'application/octet-stream', ...
-    'Compression', 'gzip', 'ContentHash', ndi.fun.file.MD5(gz), 'HashAlgorithm', 'MD5', ...
-    'Description', description, 'Fields', struct('size_bytes', info.bytes), 'SessionId', sid);
-b.files.file_info = struct('name', 'body_data_0', 'locations', struct( ...
-    'delete_original', 1, 'uid', ndi.ido.unique_id(), 'location', gz, ...
-    'parameters', '', 'location_type', 'file', 'ingest', 1));
-end
-
-function ids = patchesOf(subjectIds, plate)
-% the plate's patch subjects, patch0001, patch0002, ... in order
-ids = {};
-k = 1;
-while isKey(subjectIds, sprintf('%s_patch%04d', plate, k))
-    ids{end+1} = subjectIds(sprintf('%s_patch%04d', plate, k)); %#ok<AGROW>
-    k = k + 1;
-end
-end
 
 function e = epochOf(pre, name)
 % a recording's epoch id from the file name the table records

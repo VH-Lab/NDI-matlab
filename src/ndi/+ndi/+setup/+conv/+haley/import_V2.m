@@ -41,7 +41,10 @@ function result = import_V2(dataParentDir, options)
 %                          arena / reference mark / lawn masks, nearest-patch
 %                          map and lawn clip registration fit, as the lab's
 %                          analysis package computed them (decision #60);
-%                          tracks and E. coli profiles not yet
+%                          part B: each worm's per-frame position, speed,
+%                          distance to the nearest patch edge and nearest
+%                          patch, per body part and video (decision #61);
+%                          E. coli profiles not yet
 %     C. dataset-wide, once
 %        11 encounters, 12 cross-study calculations, 13 check & write (not yet)
 %
@@ -354,6 +357,20 @@ if isfield(result, 'subjects') && isfield(result, 'recordings')
                 c.coordinate_system, c.arena, c.reference_mark, c.lawn, c.nearest_patch, c.registration);
             for j = 1:numel(ge.skipped)
                 fprintf('  skipped: %s\n', ge.skipped{j});
+            end
+            tr = ndi.setup.conv.haley.trackDocuments(dataParentDir, T(k, :), result.recordings, ...
+                built{k}.subjectIds, 'Geometry', ge.byEpoch, ...
+                'RecordingStatements', built{k}.recordingStatements, ...
+                'RecordingRefs', built{k}.recordingRefs, 'SoftwareId', run.SoftwareId, ...
+                'InterpreterId', run.InterpreterId, 'OperatingSystemId', run.OperatingSystemId);
+            built{k}.documents = [built{k}.documents, tr.documents];
+            built{k}.tracks = tr;
+            c = tr.counts;
+            fprintf(['%s tracks: %d position, %d speed, %d distance to patch edge, ' ...
+                '%d nearest patch\n'], T.local_identifier{k}, c.position, c.speed, ...
+                c.patch_edge_distance, c.nearest_patch);
+            for j = 1:numel(tr.skipped)
+                fprintf('  skipped: %s\n', tr.skipped{j});
             end
         end
         T.documents{k} = built{k}.documents;

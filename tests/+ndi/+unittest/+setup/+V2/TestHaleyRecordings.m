@@ -47,6 +47,7 @@ classdef TestHaleyRecordings < matlab.unittest.TestCase
                  '', ''}, ...
                 [t(12, 10, 51), t(13, 12, 2), t(12, 10, 51), t(14, 16, 36), t(15, 17, 10)], ...
                 [10797 10797 10796 10797 0], [2.9991 2.9991 2.9991 2.9991 0]);
+            writeTracks(f);
             v = fullfile(f, 'videos', '22-02-04');
             mkdir(v);
             for name = {'2022-02-04_12-10-51_1', '2022-02-04_13-12-02_1', '2022-02-04_12-10-51_2', ...
@@ -200,6 +201,30 @@ info = table(uint16(expNum(:)), uint16(plateNum(:)), uint16(videoNum(:)), double
     'temp', 'humidity', 'scale', 'arenaDiameter', 'lawnDiameter', 'lawnSpacing', ...
     'arenaMask', 'refMask', 'lawnMask', 'lawnClosest', 'lawnMethod', 'lawnRegistration'}); %#ok<NASGU>
 save(fullfile(folder, 'experimentInfo.mat'), 'info');
+end
+
+function writeTracks(folder)
+% Stage 10 part B's midpoint.mat: 5 frames for each worm of each filmed video
+% (plate 11 videos 1 and 2, 12, 14; worms plate*10 + 1, + 2). Worm w is at
+% x = frame + w/10, y = 4; speed w um/s; 2 pixels inside the patch edge; its
+% nearest patch is patch 1, except frame 3 of worm 121, which the source
+% marks noTrack (and reads its nearest patch at pixel (1,1)).
+rows = {};
+for pv = [11 1; 11 2; 12 1; 14 1]'
+    for w = pv(1) * 10 + [1 2]
+        f = (1:5)';
+        noTrack = false(5, 1);
+        if w == 121, noTrack(3) = true; end
+        rows{end+1} = table(uint16(ones(5, 1)), uint16(pv(1) * ones(5, 1)), ...
+            uint16(pv(2) * ones(5, 1)), w * ones(5, 1), f, f + w / 10, 4 * ones(5, 1), ...
+            noTrack, w * ones(5, 1), 2 * ones(5, 1), ones(5, 1), ...
+            'VariableNames', {'expNum', 'plateNum', 'videoNum', 'wormNum', 'frameNum', ...
+            'xPosition', 'yPosition', 'noTrack', 'velocitySmooth', 'distanceLawnEdge', ...
+            'closestLawnID'}); %#ok<AGROW>
+    end
+end
+data = vertcat(rows{:}); %#ok<NASGU>
+save(fullfile(folder, 'midpoint.mat'), 'data');
 end
 
 function placeholder(file, n)
