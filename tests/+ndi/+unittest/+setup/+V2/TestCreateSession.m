@@ -68,5 +68,24 @@ classdef TestCreateSession < matlab.unittest.TestCase
             s = ndi.setup.V2.createSession(testCase.Dir, 'd2', 'Overwrite', true);
             testCase.verifyEqual(s.reference, 'd2');
         end
+
+        function testWritesInBatches(testCase)
+            % 1 session document + 4 relations, written 2 at a time, not
+            % re-validated on insert: every document arrives, and the
+            % batch count is what writeDocuments reports
+            studies = arrayfun(@(~) ndi.ido.unique_id(), 1:4, 'UniformOutput', false);
+            [session, docs] = ndi.setup.V2.createSession(testCase.Dir, 'd1', ...
+                'StudyIds', studies, 'BatchSize', 2, 'Validate', false, 'Progress', true);
+            testCase.verifyNumElements(docs, 5);
+            testCase.verifyNumElements(session.database_search( ...
+                ndi.query('', 'isa', 'directed_relation')), 4);
+
+            file = fullfile(testCase.Dir, 'more.sqlite');
+            stats = ndi.setup.V2.writeDocuments(file, docs, 'BatchSize', 2, 'Progress', false);
+            testCase.verifyEqual([stats.documents, stats.batches, stats.files], [5, 3, 0]);
+            db = did2.database.sqlitedb(file);
+            testCase.verifyEqual(db.count(), 5);
+            db.close();
+        end
     end
 end

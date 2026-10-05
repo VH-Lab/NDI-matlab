@@ -98,7 +98,19 @@ function result = import_V2(dataParentDir, options)
 %                         fits; decision #64), wherever it is kept (default:
 %                         <DATAPARENTDIR>/haley/ecoli/analyzeGFP_24-04-04.mat)
 %     'SessionFolders'    default true: also write each session to its own
-%                         folder (a working copy; the dataset holds them all)
+%                         folder (a working copy; the dataset holds them all).
+%                         false writes only the dataset, about half the time
+%     'WriteBatchSize'    documents per write batch (default 2000); progress
+%                         is printed per batch, and shown in a
+%                         ProgressBarWindow when MATLAB has a display
+%     'ValidateOnWrite'   default false: every document was validated when
+%                         did2.build built it, so the database does not
+%                         validate it again on insert; true repeats it
+%
+%   With 'Write', every folder to be written (the dataset's and, with
+%   'SessionFolders', each session's) is checked before anything is built
+%   or written: one that already holds an NDI database is an error unless
+%   'Overwrite' is true.
 %
 %   doImport.m, the original V1 import, is unchanged.
 %
@@ -119,6 +131,8 @@ arguments
     options.DatasetReference (1,:) char = 'haley'
     options.SessionFolders (1,1) logical = true
     options.EcoliProfilesFile (1,:) char = ''
+    options.WriteBatchSize (1,1) double {mustBePositive, mustBeInteger} = 2000
+    options.ValidateOnWrite (1,1) logical = false
 end
 
 % Check the requirements up front, so a missing one is reported with its fix
@@ -276,6 +290,7 @@ if isfield(result, 'subjects') && isfile(subjectFile)
 end
 T = result.sessions;
 n = height(T);
+checkFoldersFree(T, dataParentDir, options);
 T.session_id = arrayfun(@(~) ndi.ido.unique_id(), (1:n)', 'UniformOutput', false);
 T.session_doc_id = arrayfun(@(~) ndi.ido.unique_id(), (1:n)', 'UniformOutput', false);
 T.time_reference_id = repmat({''}, n, 1);
@@ -484,18 +499,50 @@ if any(options.Stages == "dataset")
     result.dataset = writeDataset(result, T, dataParentDir, options);
 end
 if options.SessionFolders
-    [T, result.sessionObjects] = ndi.setup.V2.makeSessions(T, 'Overwrite', options.Overwrite);
+    fprintf('\n== session folders ==\n');
+    [T, result.sessionObjects] = ndi.setup.V2.makeSessions(T, 'Overwrite', options.Overwrite, ...
+        'Validate', options.ValidateOnWrite, 'Progress', true, 'BatchSize', options.WriteBatchSize);
 end
 result.sessions = removevars(T, 'documents');
 result.written = built;
 end
 
-function out = writeDataset(result, T, dataParentDir, options)
-% Stage 13 (decision #66): every document of this run in ONE V2 database.
+function path = datasetPath(dataParentDir, options)
 outRoot = options.OutputRoot;
 if isempty(outRoot), outRoot = fullfile(dataParentDir, 'haley_V2'); end
 path = options.DatasetFolder;
 if isempty(path), path = fullfile(outRoot, 'dataset'); end
+end
+
+function checkFoldersFree(T, dataParentDir, options)
+% Every folder this run will write, checked before anything is built, so an
+% occupied one stops the run at its start rather than after a long write.
+if options.Overwrite, return; end
+folders = {};
+if any(options.Stages == "dataset")
+    folders{end+1} = datasetPath(dataParentDir, options);
+end
+if options.SessionFolders
+    folders = [folders, reshape(cellstr(T.path), 1, [])];
+end
+taken = {};
+for k = 1:numel(folders)
+    ndiDir = fullfile(folders{k}, '.ndi');
+    if isfolder(ndiDir) && ~isempty([dir(fullfile(ndiDir, '*.sqlite')); dir(fullfile(ndiDir, '*.json'))])
+        taken{end+1} = ndiDir; %#ok<AGROW>
+    end
+end
+if ~isempty(taken)
+    error('ndi:setup:conv:haley:foldersTaken', ...
+        ['%d of %d folder(s) to be written already hold an NDI database; nothing was ' ...
+         'built or written. Pass ''Overwrite'', true to replace them, or move them:\n  %s'], ...
+        numel(taken), numel(folders), strjoin(taken, '\n  '));
+end
+end
+
+function out = writeDataset(result, T, dataParentDir, options)
+% Stage 13 (decision #66): every document of this run in ONE V2 database.
+path = datasetPath(dataParentDir, options);
 dsDocs = {};
 for f = {'metadata', 'studies'}
     if isfield(result, f{1}), dsDocs = [dsDocs, reshape(result.(f{1}).documents, 1, [])]; end %#ok<AGROW>
@@ -519,7 +566,8 @@ for k = 1:height(T)
     sessDocs{k} = d;
 end
 [ds, report] = ndi.setup.V2.createDataset(path, options.DatasetReference, ...
-    result.datasetSessionId, dsDocs, sessDocs, 'Name', name, 'Overwrite', options.Overwrite);
+    result.datasetSessionId, dsDocs, sessDocs, 'Name', name, 'Overwrite', options.Overwrite, ...
+    'Validate', options.ValidateOnWrite, 'BatchSize', options.WriteBatchSize);
 [refs, ids] = ds.session_list();
 fprintf('dataset %s at %s: %d session(s) listed by ndi.dataset\n', ds.id(), path, numel(ids));
 disp(report.documents.byClass);

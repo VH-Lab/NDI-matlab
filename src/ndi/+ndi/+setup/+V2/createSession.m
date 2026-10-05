@@ -36,6 +36,8 @@ function [session, docs] = createSession(path, reference, options)
 %     'Overwrite'   default false. When false, PATH must not already hold an
 %                   NDI database of either kind. When true, an existing
 %                   PATH/.ndi is DELETED first.
+%     'BatchSize', 'Validate', 'Progress'  passed to
+%                   ndi.setup.V2.writeDocuments (defaults 2000, true, false)
 %
 %   DOCS returns the documents written (the session document, any relations
 %   and 'Documents'), as structs.
@@ -56,6 +58,9 @@ arguments
     options.TimeReferenceId (1,:) char = ''
     options.Documents = {}
     options.Overwrite (1,1) logical = false
+    options.BatchSize (1,1) double {mustBePositive, mustBeInteger} = 2000
+    options.Validate (1,1) logical = true
+    options.Progress (1,1) logical = false
 end
 
 ndiDir = fullfile(path, '.ndi');
@@ -110,10 +115,10 @@ for k = 1:numel(docs)
     end
 end
 
-db = did2.database.sqlitedb(fullfile(ndiDir, ...
-    ndi.database.implementations.database.did2sqlite.DEFAULTFILENAME()));
-db.add(cellfun(@(d) did2.document(d), docs, 'UniformOutput', false));
-db.close();
+ndi.setup.V2.writeDocuments(fullfile(ndiDir, ...
+    ndi.database.implementations.database.did2sqlite.DEFAULTFILENAME()), docs, ...
+    'BatchSize', options.BatchSize, 'Validate', options.Validate, ...
+    'Progress', options.Progress, 'Label', [reference ' documents']);
 
 % ndi.session.dir scopes EVERY search to its session id (ndi.session/
 % database_search ANDs base.session_id), and on a one-argument open it takes

@@ -30,6 +30,13 @@ function [dataset, report] = createDataset(path, reference, datasetSessionId, da
 %     'Overwrite'   default false; true deletes PATH/.ndi first
 %     'Strict'      default false; true refuses to write when an edge
 %                   dangles, an id repeats or a session is not in the dataset
+%     'BatchSize'   documents per write batch (default 2000); progress is
+%                   printed (and shown in a ProgressBarWindow) per batch
+%     'Validate'    default true: validate each document again as it is
+%                   inserted. Documents built with did2.build were validated
+%                   when built, so false skips only a repeat.
+%     'Progress'    default true
+%   See ndi.setup.V2.writeDocuments for how a failed batch is reported.
 %
 %   See also ndi.setup.V2.createSession, ndi.dataset.dir.
 
@@ -42,6 +49,9 @@ arguments
     options.Name (1,:) char = ''
     options.Overwrite (1,1) logical = false
     options.Strict (1,1) logical = false
+    options.BatchSize (1,1) double {mustBePositive, mustBeInteger} = 2000
+    options.Validate (1,1) logical = true
+    options.Progress (1,1) logical = true
 end
 
 if ~isfolder(path)
@@ -89,10 +99,10 @@ if bad && options.Strict
 end
 
 mkdir(ndiDir);
-db = did2.database.sqlitedb(fullfile(ndiDir, ...
-    ndi.database.implementations.database.did2sqlite.DEFAULTFILENAME()));
-db.add(cellfun(@(d) did2.document(d), docsAll, 'UniformOutput', false));
-db.close();
+report.write = ndi.setup.V2.writeDocuments(fullfile(ndiDir, ...
+    ndi.database.implementations.database.did2sqlite.DEFAULTFILENAME()), docsAll, ...
+    'BatchSize', options.BatchSize, 'Validate', options.Validate, ...
+    'Progress', options.Progress, 'Label', 'dataset documents');
 vlt.file.str2text(fullfile(ndiDir, 'unique_reference.txt'), datasetSessionId);
 vlt.file.str2text(fullfile(ndiDir, 'reference.txt'), reference);
 % mark the folder a dataset (ndi.session.dir.directorytype), as ndi.dataset.dir

@@ -25,6 +25,8 @@ function [T, sessions] = makeSessions(T, options)
 %
 %   Options:
 %     'Overwrite'  passed to createSession (default false)
+%     'Validate', 'Progress', 'BatchSize'  passed to createSession
+%                  (defaults true, false, 2000)
 %     'Verbose'    default true: print the denominator
 %
 %   See also ndi.setup.V2.createSession, ndi.setup.conv.haley.sessionList.
@@ -32,6 +34,9 @@ function [T, sessions] = makeSessions(T, options)
 arguments
     T table
     options.Overwrite (1,1) logical = false
+    options.Validate (1,1) logical = true
+    options.Progress (1,1) logical = false
+    options.BatchSize (1,1) double {mustBePositive, mustBeInteger} = 2000
     options.Verbose (1,1) logical = true
 end
 
@@ -65,7 +70,8 @@ for k = 1:height(T)
     if ~isfolder(paths{k})
         mkdir(paths{k});
     end
-    args = {'Overwrite', options.Overwrite};
+    args = {'Overwrite', options.Overwrite, 'Validate', options.Validate, ...
+        'Progress', options.Progress, 'BatchSize', options.BatchSize};
     if any(strcmp(vars, 'name')), args = [args, {'Name', char(T.name{k})}]; end %#ok<AGROW>
     if any(strcmp(vars, 'description')), args = [args, {'Description', char(T.description{k})}]; end %#ok<AGROW>
     if any(strcmp(vars, 'study_ids')), args = [args, {'StudyIds', T.study_ids{k}}]; end %#ok<AGROW>
@@ -75,6 +81,9 @@ for k = 1:height(T)
         if any(strcmp(vars, opt{1})) && ~isempty(T.(opt{1}){k})
             args = [args, {opt{2}, T.(opt{1}){k}}]; %#ok<AGROW>
         end
+    end
+    if options.Progress
+        fprintf('session %d of %d: %s -> %s\n', k, height(T), ids{k}, paths{k});
     end
     sessions{k} = ndi.setup.V2.createSession(paths{k}, ids{k}, args{:});
     T.session_id{k} = sessions{k}.id();

@@ -784,6 +784,16 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
                 'stage 12''s fits are in the dataset');
         end
 
+        function testOccupiedFolderStopsTheRunFirst(testCase)
+            % a session folder that already holds a database is found
+            % before anything is built, not after the dataset is written
+            testCase.write("concentration_0002");
+            testCase.verifyError(@() ndi.setup.conv.haley.import_V2(testCase.Root, ...
+                'Stages', ["sessions", "subjects", "acquisition"], ...
+                'Sessions', "concentration_0002", 'OutputRoot', testCase.Out, ...
+                'Write', true, 'ReadVideos', false), 'ndi:setup:conv:haley:foldersTaken');
+        end
+
         function testUnknownSessionIsAnError(testCase)
             testCase.verifyError(@() ndi.setup.conv.haley.import_V2(testCase.Root, ...
                 'Stages', "sessions", 'Sessions', "concentration_0099", ...
