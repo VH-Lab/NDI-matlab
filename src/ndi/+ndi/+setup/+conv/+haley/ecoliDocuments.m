@@ -6,7 +6,20 @@ function out = ecoliDocuments(dataParentDir, session, R, subjectIds, options)
 %   the lab's analysis package (analyzeGFP / analyzeLawnProfiles, Haley et al.
 %   2024) made from each analysed fluorescence image: ecoli/bacteria.mat
 %   `lawnAnalysis` (one row per patch detected in an image) and the image's
-%   patch mask, ecoli/mask/<image>.png. Decision log #62.
+%   patch mask, ecoli/mask/<image>.png. Decision log #62; the images and
+%   profile curves, #64.
+%
+%   WHAT THE TIFFS ARE (decision #64). ecoli/images/<n>.tiff is NOT the image
+%   as acquired: it is analyzeLawnProfiles' `imageNormalized` rounded to
+%   uint16 -- the raw image (saturated pixels filled by linear
+%   interpolation) times max(B) divided by B, B the empty-plate background
+%   image smoothed by getFluorescenceBackground (outliers against a 400 px
+%   moving median replaced, then a 20 px average filter). Checked exactly
+%   on three images (Jess, 2026-10-05). The raw images, and the background
+%   images, are ecoli/raw/<n>.tiff (the recordings, recordingList); every
+%   calculation below takes the NORMALISED image as its input, the pixels
+%   the analysis actually used. With no raw/ folder the recordings are the
+%   normalised TIFFs themselves and no normalised-image calculation is made.
 %
 %   WHICH PATCH IS WHICH. An image's lawnAnalysis rows are its detected
 %   patches in the order bwlabel numbers its mask (checked over all 1,521
@@ -22,7 +35,18 @@ function out = ecoliDocuments(dataParentDir, session, R, subjectIds, options)
 %   An image with any other count is not matched: its per-patch values are
 %   left out and reported (OUT.skipped), and its mask is still stored.
 %
-%   Per analysed image, all from the image's recording statement (input):
+%   Per image with an ecoli/images TIFF (when raw/ exists):
+%     intensity_calculation  the plate's `background-normalised fluorescence
+%                         image`: the TIFF, by location (opaque_body, not
+%                         ingested), from the raw image's recording and its
+%                         background image's recording (inputs); method
+%                         parameters the 400 px outlier window and 20 px
+%                         smoothing window
+%   Per background image used (once): its plate's `background fit r-squared`
+%   (score_calculation) and `background outlier pixels` (count_calculation),
+%   from analyzeGFP's backgroundInfo.
+%
+%   Per analysed image, all from the normalised image (input):
 %     coordinate_system   the image's pixel grid, as part A's (only when
 %                         bacteria.mat metaData gives the image's `scale`)
 %     label_calculation   the plate's `bacterial lawn region`: the mask, a
@@ -41,13 +65,24 @@ function out = ecoliDocuments(dataParentDir, session, R, subjectIds, options)
 %                            (yOuterEdge); background-normalised intensity
 %     length_calculation     `patch edge to intensity peak` (xPeak, mm -> m)
 %     score_calculation      `patch circularity` (0-1)
+%     intensity_calculation  `intensity by distance from patch edge`: the
+%                            patch's profile curve (analyzeGFP lawnProfiles
+%                            .pixelValuesNormalized, its row for this patch)
+%                            in an ingested float64 body keyed by `distance
+%                            from patch edge` (regular, 1 um steps, negative
+%                            outside the patch; NaN where the patch has no
+%                            pixels at that distance)
 %   Not stored: borderCenterRatio (border / centre amplitude), meanAmplitude,
-%   FWHM, xHalfMax*, yHalfMax, lawnRadius (decision #60's keep list). The
-%   profile curves and fitted background images are not in bacteria.mat;
-%   they come in a later pass (decision #62).
+%   FWHM, xHalfMax*, yHalfMax, lawnRadius (decision #60's keep list): each
+%   is computed from the stored curve. The fitted background images are not
+%   stored (decision #64): each is reproducible from its raw image.
 %
 %   Options: 'RecordingStatements', 'RecordingRefs', 'SoftwareId',
-%   'InterpreterId', 'OperatingSystemId' as part A.
+%   'InterpreterId', 'OperatingSystemId' as part A. 'ProfilesFile': the
+%   analyzeGFP workspace holding lawnProfiles and backgroundInfo, default
+%   ecoli/analyzeGFP_24-04-04.mat; read without loading its images
+%   (private/lawnProfileReader). Without it there are no curves and no
+%   background fit values, and OUT.skipped says so.
 %
 %   OUT fields: documents, counts (struct), skipped (cellstr).
 
@@ -61,6 +96,7 @@ arguments
     options.SoftwareId (1,:) char = ''
     options.InterpreterId (1,:) char = ''
     options.OperatingSystemId (1,:) char = ''
+    options.ProfilesFile (1,:) char = ''
 end
 if height(session) ~= 1
     error('ndi:setup:conv:haley:oneSession', 'Give exactly one session row.');
@@ -69,7 +105,7 @@ sid = char(session.session_id{1});
 ref = char(session.local_identifier{1});
 out = struct('documents', {{}}, 'skipped', {{}}, 'counts', struct('coordinate_system', 0, ...
     'mask', 0, 'nearest_patch', 0, 'matched_images', 0, 'unmatched_images', 0, ...
-    'patch_values', 0));
+    'patch_values', 0, 'normalised_image', 0, 'profiles', 0, 'background_fit', 0));
 if ~strcmp(char(session.folder{1}), 'ecoli')
     return;
 end
@@ -95,28 +131,113 @@ M = table();
 if isfield(B, 'metaData'), M = B.metaData; end
 R = R(strcmp(R.session, ref) & strcmp(R.kind, 'image'), :);
 docs = {};
+rawMode = isfolder(fullfile(root, 'raw'));
+P = [];
+BI = table();
+pf = options.ProfilesFile;
+if isempty(pf), pf = fullfile(root, 'analyzeGFP_24-04-04.mat'); end
+if isfile(pf)
+    P = lawnProfileReader(pf);
+    w = whos('-file', pf);
+    if any(strcmp({w.name}, 'backgroundInfo'))
+        S = load(pf, 'backgroundInfo');
+        BI = S.backgroundInfo;
+    end
+else
+    out.skipped{end+1} = sprintf('%s: no %s; no profile curves and no background fit values', ref, pf);
+end
+bgDone = containers.Map();
+bgParams = did2.build.list( ...
+    did2.build.parameter('background outlier window', 'Value', 400, 'Unit', 'pixel'), ...
+    did2.build.parameter('background smoothing window', 'Value', 20, 'Unit', 'pixel'));
 
 for k = 1:height(R)
     epoch = R.epoch{k};
     n = str2double(regexp(epoch, '(\d+)$', 'tokens', 'once'));
-    rows = L(L.imageNum == n, :);
-    if height(rows) == 0 || ~isKey(options.RecordingStatements, epoch)
-        continue;                                % not analysed (or not written)
+    if ~isKey(options.RecordingStatements, epoch)
+        continue;                                % not written
     end
     plate = R.plate{k};
+    rows = L(L.imageNum == n, :);
+    normFile = fullfile(root, 'images', sprintf('%04d.tiff', n));
     if ~isKey(subjectIds, plate)
-        out.skipped{end+1} = sprintf('%s: plate %s is not a subject of this session', epoch, plate);
-        continue;
-    end
-    maskFile = fullfile(root, 'mask', sprintf('%04d.png', n));
-    if ~isfile(maskFile)
-        out.skipped{end+1} = sprintf('%s: no mask/%04d.png', epoch, n);
+        if height(rows) > 0 || (rawMode && isfile(normFile))
+            out.skipped{end+1} = sprintf('%s: plate %s is not a subject of this session', epoch, plate);
+        end
         continue;
     end
     imageId = options.RecordingStatements(epoch);
     timeIds = {};
     if isKey(options.RecordingRefs, epoch), timeIds = {options.RecordingRefs(epoch)}; end
     calc = [{'SessionId', sid, 'TimeReferenceIds', timeIds}, env];
+
+    % the image's background image, when it is a recording of this session
+    bgEpoch = '';
+    if height(M) > 0 && ismember('backgroundImageNum', M.Properties.VariableNames)
+        bg = M.backgroundImageNum(M.imageNum == n);
+        if ~isempty(bg) && ~isnan(bg(1)) && isKey(options.RecordingStatements, sprintf('ecoli_image%04d', bg(1)))
+            bgEpoch = sprintf('ecoli_image%04d', bg(1));
+        end
+    end
+
+    % the background-normalised image (decision #64): the TIFF in images/
+    srcId = imageId;
+    if rawMode && isfile(normFile)
+        inputs = {imageId};
+        if ~isempty(bgEpoch), inputs{end+1} = options.RecordingStatements(bgEpoch); end %#ok<AGROW>
+        nm = did2.build.statement('intensity_calculation', subjectIds(plate), ...
+            did2.build.term('', 'background-normalised fluorescence image'), [], ...
+            'DataBody', true, 'DatumType', 'uint16', ...
+            'Method', did2.build.term('', 'normalisation to the background illumination'), ...
+            'MethodParameters', bgParams, 'InputIds', inputs, calc{:}, 'Notes', ...
+            ['The raw image (saturated pixels filled by linear interpolation) times the ' ...
+            'maximum of its smoothed background image, divided by that smoothed image, ' ...
+            'rounded to uint16 (analyzeLawnProfiles imageNormalized).']);
+        info = dir(normFile);
+        nb = did2.build.document('opaque_body', struct('format', 'image/tiff', ...
+            'filename', sprintf('%04d.tiff', n), 'size_bytes', info.bytes, ...
+            'description', 'The background-normalised image, from ecoli/images.'), ...
+            'SessionId', sid, 'Edges', struct('owner_id', nm.base.id), 'Files', {'body_data_0'});
+        nb.files.file_info = struct('name', 'body_data_0', 'locations', struct( ...
+            'delete_original', 0, 'uid', ndi.ido.unique_id(), 'location', normFile, ...
+            'parameters', '', 'location_type', 'file', 'ingest', 0));
+        docs = [docs, {nm, nb}]; %#ok<AGROW>
+        srcId = nm.base.id;
+        out.counts.normalised_image = out.counts.normalised_image + 1;
+    end
+
+    % the background fit's quality, once per background image
+    if rawMode && ~isempty(bgEpoch) && ~isKey(bgDone, bgEpoch) && height(BI) > 0
+        bgDone(bgEpoch) = true;
+        i = find(BI.imageNum == bg(1), 1);
+        bp = R.plate(strcmp(R.epoch, bgEpoch));
+        if ~isempty(i) && ~isempty(bp) && isKey(subjectIds, bp{1})
+            bgTimes = {};
+            if isKey(options.RecordingRefs, bgEpoch), bgTimes = {options.RecordingRefs(bgEpoch)}; end
+            bc = [{'SessionId', sid, 'TimeReferenceIds', bgTimes}, env, ...
+                {'InputIds', {options.RecordingStatements(bgEpoch)}, ...
+                'Method', did2.build.term('', 'background illumination smoothing'), ...
+                'MethodParameters', bgParams}];
+            docs{end+1} = did2.build.statement('score_calculation', subjectIds(bp{1}), ...
+                did2.build.term('', 'background fit r-squared'), ...
+                did2.build.valueCell('score', double(BI.rsquare(i)), 'Fields', struct( ...
+                    'scale', did2.build.term('', 'r-squared'), 'scale_min', 0, 'scale_max', 1)), ...
+                bc{:}); %#ok<AGROW>
+            docs{end+1} = did2.build.statement('count_calculation', subjectIds(bp{1}), ...
+                did2.build.term('', 'background outlier pixels'), ...
+                did2.build.valueCell('count', double(BI.numOutliers(i))), bc{:}); %#ok<AGROW>
+            out.counts.background_fit = out.counts.background_fit + 1;
+        end
+    end
+
+    if height(rows) == 0
+        continue;                                % not analysed
+    end
+    maskFile = fullfile(root, 'mask', sprintf('%04d.png', n));
+    if ~isfile(maskFile)
+        out.skipped{end+1} = sprintf('%s: no mask/%04d.png', epoch, n);
+        continue;
+    end
 
     % the image's scale, when the source gives it
     scale = NaN;
@@ -144,15 +265,9 @@ for k = 1:height(R)
     % the mask
     mask = logical(imread(maskFile));
     keys = pixelKeys(mask, pixel);
-    inputs = {imageId};
-    if height(M) > 0 && ismember('backgroundImageNum', M.Properties.VariableNames)
-        bg = M.backgroundImageNum(M.imageNum == n);
-        if ~isempty(bg) && ~isnan(bg(1))
-            bgEpoch = sprintf('ecoli_image%04d', bg(1));
-            if isKey(options.RecordingStatements, bgEpoch)
-                inputs{end+1} = options.RecordingStatements(bgEpoch); %#ok<AGROW>
-            end
-        end
+    inputs = {srcId};
+    if ~rawMode && ~isempty(bgEpoch)
+        inputs{end+1} = options.RecordingStatements(bgEpoch); %#ok<AGROW>
     end
     ms = did2.build.statement('label_calculation', subjectIds(plate), ...
         did2.build.term('', 'bacterial lawn region'), [], 'DataBody', true, 'DatumType', 'bool', ...
@@ -183,6 +298,26 @@ for k = 1:height(R)
     out.counts.matched_images = out.counts.matched_images + 1;
     match = {'Notes', 'Detected patch matched to its grid patch by position (decision #62).'};
 
+    % the profile curves: one row per detected patch, in the same order
+    curves = [];
+    if ~isempty(P)
+        [x, Y] = lawnProfileRead(P, n);
+        if isempty(Y)
+            if isKey(P.byImage, n)
+                out.skipped{end+1} = sprintf('%s: lawnProfiles holds no curves for image %d', epoch, n);
+            end
+        elseif size(Y, 1) ~= nDetected || size(Y, 2) ~= numel(x)
+            out.skipped{end+1} = sprintf('%s: lawnProfiles has %d x %d curves for %d patches and %d distances; no curves', ...
+                epoch, size(Y, 1), size(Y, 2), nDetected, numel(x));
+        elseif numel(x) < 2 || any(abs(diff(x) - 1e-3) > 1e-9)
+            out.skipped{end+1} = sprintf('%s: lawnProfiles distances are not in 1 um steps; no curves', epoch);
+        else
+            curves = struct('Y', Y, 'keys', did2.build.list(did2.build.key('distance from patch edge', ...
+                numel(x), 'Unit', 'meter', 'Origin', x(1) * 1e-3, 'Spacing', 1e-6, ...
+                'SourceUnit', 'mm', 'SourceOrigin', x(1), 'SourceSpacing', 1e-3)));
+        end
+    end
+
     % the nearest-patch map
     closestFile = fullfile(root, 'closest', sprintf('%04d.png', n));
     if hasItem && isfile(closestFile)
@@ -205,7 +340,7 @@ for k = 1:height(R)
     end
 
     % the per-patch values
-    in = {'InputIds', {imageId, ms.base.id}};
+    in = {'InputIds', {srcId, ms.base.id}};
     for j = 1:nDetected
         patch = pIds{slot(j)};
         r = rows(j, :);
@@ -236,6 +371,19 @@ for k = 1:height(R)
             docs{end+1} = did2.build.statement('score_calculation', patch, ...
                 did2.build.term('', 'patch circularity'), v, in{:}, calc{:}, match{:}); %#ok<AGROW>
             out.counts.patch_values = out.counts.patch_values + 1;
+        end
+        if ~isempty(curves)
+            pc = did2.build.statement('intensity_calculation', patch, ...
+                did2.build.term('', 'intensity by distance from patch edge'), [], ...
+                'DataBody', true, 'DatumType', 'float64', 'Keys', curves.keys, ...
+                'Method', did2.build.term('', 'fluorescence profile from the patch edge'), ...
+                'MethodParameters', did2.build.list(did2.build.parameter('distance bin', ...
+                    'Value', 1e-6, 'Unit', 'meter', 'SourceValue', '0.001', 'SourceUnit', 'mm')), ...
+                in{:}, calc{:}, match{:});
+            docs = [docs, {pc, ingestedBody(pc, curves.Y(j, :), 'float64', curves.keys, sid, ...
+                ['Mean background-normalised intensity at each distance from the patch edge ' ...
+                '(lawnProfiles pixelValuesNormalized); NaN where the patch has no pixels.'], 'NaN')}]; %#ok<AGROW>
+            out.counts.profiles = out.counts.profiles + 1;
         end
     end
 end

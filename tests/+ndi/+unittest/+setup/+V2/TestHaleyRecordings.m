@@ -64,12 +64,18 @@ classdef TestHaleyRecordings < matlab.unittest.TestCase
                 writeInfo(f, 99, 1, 1, 1, {'x.avi'}, {''}, datetime(2023, 2, 24), 1, 1);
             end
 
-            % E. coli: images 2 and 3 on disk, 1 and 4 not (4 is fluorescence).
+            % E. coli (decision #64): raw images 2 and 3 and their empty-plate
+            % background image 9 on disk, 1 and 4 not (4 is fluorescence);
+            % images/ holds 2 and 3 background-normalised.
             ec = fullfile(root, 'haley', 'ecoli');
             mkdir(fullfile(ec, 'images'));
+            mkdir(fullfile(ec, 'raw'));
             % real (tiny) 16-bit TIFFs: the write path reads their headers
             imwrite(uint16(magic(4)), fullfile(ec, 'images', '0002.tiff'));
             imwrite(uint16(magic(5)), fullfile(ec, 'images', '0003.tiff'));
+            imwrite(uint16(magic(4)) + 1, fullfile(ec, 'raw', '0002.tiff'));
+            imwrite(uint16(magic(5)) + 1, fullfile(ec, 'raw', '0003.tiff'));
+            imwrite(uint16(ones(4)), fullfile(ec, 'raw', '0009.tiff'));
             % stage 8: poured 25 Dec, cold room that evening, seeded 28 Dec,
             % cold room that afternoon, room temperature the morning of 30 Dec;
             % plate 2 without peptone
@@ -81,10 +87,10 @@ classdef TestHaleyRecordings < matlab.unittest.TestCase
                 'VariableNames', {'expNum', 'plateNum', 'template', 'OD600', 'lawnVolume', ...
                 'timePoured', 'timePouredColdRoom', 'timeSeed', 'timeSeedColdRoom', ...
                 'timeRoomTemp', 'peptone', 'OD600Real', 'CFU'}); %#ok<NASGU>
-            metaData = table([1; 1; 1; 1], [1; 2; 3; 4], [1; 1; 2; 2], ...
-                datetime(2023, 12, 30, 9, [38; 39; 40; 41], 0), ...
-                {'a.tif'; 'b.tif'; 'c.tif'; 'd.tif'}, [0; 1; 1; 1], [30; 300; 300; 3000], ...
-                [NaN; 9; 9; 9], [NaN; 1; NaN; NaN], ...
+            metaData = table([1; 1; 1; 1; 1], [1; 2; 3; 4; 9], [1; 1; 2; 2; 2], ...
+                datetime(2023, 12, 30, 9, [38; 39; 40; 41; 42], 0), ...
+                {'a.tif'; 'b.tif'; 'c.tif'; 'd.tif'; 'e.tif'}, [0; 1; 1; 1; 1], [30; 300; 300; 3000; 300], ...
+                [NaN; 9; 9; 9; 9], [NaN; 1; NaN; NaN; NaN], ...
                 'VariableNames', {'expNum', 'imageNum', 'plateNum', 'acquisitionTime', ...
                 'fileName', 'fluorescence', 'exposureTime', 'backgroundImageNum', ...
                 'brightfieldImageNum'}); %#ok<NASGU>
@@ -114,6 +120,19 @@ classdef TestHaleyRecordings < matlab.unittest.TestCase
                 'VariableNames', {'imageNum', 'xPeak', 'yPeak', 'yOuterEdge', 'circularity', ...
                 'borderAmplitude', 'centerAmplitude'}); %#ok<NASGU>
             save(fullfile(ec, 'bacteria.mat'), 'info', 'metaData', 'lawnAnalysis');
+            % analyzeGFP's workspace (decision #64), -v7.3 as the real one: the
+            % profile curves of images 2 and 3 (curve j of image 2 is 100*j +
+            % its distance index; NaN beyond the patch's last pixel) and image
+            % 9's background fit
+            x = -0.002:0.001:0.002;
+            Y = (100 * (1:12)') + (1:5);
+            Y(:, 5) = NaN;
+            lawnProfiles = struct('imageNum', [2 3], 'plateNum', [1 2], 'expNum', [1 1], ...
+                'image', {{[], []}}, 'imageNormalized', {{[], []}}, 'labeled', {{[], []}}, ...
+                'distances', {{x, x}}, 'pixelValues', {[]}, ...
+                'pixelValuesNormalized', {{Y, 7:11}}); %#ok<NASGU>
+            backgroundInfo = table(9, 7, 0.95, 'VariableNames', {'imageNum', 'numOutliers', 'rsquare'}); %#ok<NASGU>
+            save(fullfile(ec, 'analyzeGFP_24-04-04.mat'), 'lawnProfiles', 'backgroundInfo', '-v7.3');
         end
     end
 
@@ -123,7 +142,7 @@ classdef TestHaleyRecordings < matlab.unittest.TestCase
             testCase.verifyEqual(sum(strcmp(R.kind, 'behaviour')), 4, ...
                 'plate 11 twice, 12, and 14; plate 13 has no file');
             testCase.verifyEqual(sum(strcmp(R.kind, 'lawn')), 2, 'plate 11''s clip is listed once');
-            testCase.verifyEqual(sum(strcmp(R.kind, 'image')), 2);
+            testCase.verifyEqual(sum(strcmp(R.kind, 'image')), 3, 'raw images 2, 3 and background 9');
             testCase.verifyEqual(numel(unique(R.epoch)), height(R));
         end
 
@@ -145,6 +164,8 @@ classdef TestHaleyRecordings < matlab.unittest.TestCase
             testCase.verifyEqual(e.local_start, datetime(2023, 12, 30, 9, 39, 0));
             testCase.verifySubstring(e.note{1}, 'background image 9');
             testCase.verifySubstring(e.note{1}, 'brightfield image 1');
+            testCase.verifyEqual(e.file{1}, fullfile('ecoli', 'raw', '0002.tiff'), ...
+                'the recording is the raw image (decision #64)');
         end
 
         function testSourceChecks(testCase)
@@ -153,7 +174,7 @@ classdef TestHaleyRecordings < matlab.unittest.TestCase
             testCase.verifyTrue(any(contains(checks.fileWithoutRow, '2022-02-04_11-58-24_1.mp4')));
             testCase.verifyTrue(any(contains(checks.cameraDisagrees, '2022-02-04_15-17-10_2')));
             testCase.verifyTrue(any(contains(checks.noFrames, '2022-02-04_15-17-10_2')));
-            testCase.verifyTrue(any(contains(checks.imagesWithoutFile, '2 of 4')));
+            testCase.verifyTrue(any(contains(checks.imagesWithoutFile, '2 of 5')));
             testCase.verifyTrue(any(contains(checks.imagesWithoutFile, '1 of them fluorescence')));
         end
     end

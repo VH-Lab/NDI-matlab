@@ -564,17 +564,19 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             result = testCase.write("ecoli_0001");
             docs = testCase.documents(result.sessions.path{1});
             classes = cellfun(@(d) d.document_class.class_name, docs, 'UniformOutput', false);
-            testCase.verifyEqual(sum(strcmp(classes, 'epoch')), 2, 'images 2 and 3');
+            testCase.verifyEqual(sum(strcmp(classes, 'epoch')), 3, 'raw images 2, 3 and background 9');
             testCase.verifyEqual(sum(strcmp(classes, 'acquisition_system')), 1, 'the microscope');
             r = docs(strcmp(classes, 'acquisition_reader'));
             testCase.verifyEqual(r{1}.acquisition_reader.reader_string, 'tiffstack');
             session = ndi.session.dir(result.sessions.path{1});
             sys = session.daqsystem_load();
             et = sys.filenavigator.epochtable();
-            testCase.verifyEqual({et.epoch_id}, {'ecoli_image0002', 'ecoli_image0003'});
-            testCase.verifyEqual(et(1).epochprobemap.type, 'wide-field-imaging');
-            testCase.verifyEqual(et(1).underlying_epochs.underlying, ...
-                {fullfile(testCase.Root, 'haley', 'ecoli', 'images', '0002.tiff')});
+            testCase.verifyEqual(sort({et.epoch_id}), {'ecoli_image0002', 'ecoli_image0003', 'ecoli_image0009'});
+            e2 = et(strcmp({et.epoch_id}, 'ecoli_image0002'));
+            testCase.verifyEqual(e2.epochprobemap.type, 'wide-field-imaging');
+            testCase.verifyEqual(e2.underlying_epochs.underlying, ...
+                {fullfile(testCase.Root, 'haley', 'ecoli', 'raw', '0002.tiff')}, ...
+                'the epoch is the raw image (decision #64)');
         end
 
         function testEncounters(testCase)
@@ -664,6 +666,42 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             plates = {idOf('ecoli_plate0001'), idOf('ecoli_plate0002')};
             testCase.verifyTrue(all(cellfun(@(d) ismember(edge(d, 'subject_id'), plates), masks)), ...
                 'a mask is a calculation of its plate');
+
+            % decision #64: the TIFFs in images/ are background-normalised
+            % images, calculated from the raw image and its background image
+            testCase.verifyEqual([c.normalised_image, c.background_fit, c.profiles], [2 1 13]);
+            ic = docs(strcmp(classes, 'intensity_calculation'));
+            byVar = @(name) ic(cellfun(@(d) strcmp(d.subject_statement.variable.name, name), ic));
+            norm = byVar('background-normalised fluorescence image');
+            testCase.verifyNumElements(norm, 2);
+            obs = docs(strcmp(classes, 'intensity_observation'));
+            rawOf = @(n) obs{cellfun(@(d) any(cellfun(@(t) strcmp(t, epochRefOf(docs, classes, n)), ...
+                edgeAll(d, 'time_reference_id'))), obs)}.base.id;
+            n2 = norm{cellfun(@(d) strcmp(edge(d, 'subject_id'), idOf('ecoli_plate0001')), norm)};
+            testCase.verifyEqual(sort(edgeAll(n2, 'input_id')), sort({rawOf(2), rawOf(9)}), ...
+                'from the raw image and its background image');
+            m2 = masks{cellfun(@(d) strcmp(edge(d, 'subject_id'), idOf('ecoli_plate0001')), masks)};
+            testCase.verifyEqual(edgeAll(m2, 'input_id'), {n2.base.id}, ...
+                'the mask is from the normalised image');
+
+            % the background fit's quality, on the background's plate
+            sc = docs(strcmp(classes, 'score_calculation'));
+            rs = sc(cellfun(@(d) strcmp(d.subject_statement.variable.name, 'background fit r-squared'), sc));
+            testCase.verifyNumElements(rs, 1);
+            testCase.verifyEqual(rs{1}.score.value.score, 0.95);
+            cc = docs(strcmp(classes, 'count_calculation'));
+            testCase.verifyEqual(cc{1}.count.value.count, 7);
+
+            % the profile curves: patch 1 (top-left) is row 2 of image 2
+            curves = byVar('intensity by distance from patch edge');
+            testCase.verifyNumElements(curves, 13);
+            p1 = curves{cellfun(@(d) strcmp(edge(d, 'subject_id'), idOf('ecoli_plate0001_patch0001')), curves)};
+            k = entries(p1.data.keys);
+            testCase.verifyEqual(k{1}.variable.name, 'distance from patch edge');
+            testCase.verifyEqual(k{1}.n, 5);
+            v = testCase.bodyValues(result.sessions.path{1}, docs, classes, p1.base.id, 'double');
+            testCase.verifyEqual(v(:)', [201 202 203 204 NaN]);
+            testCase.verifyEqual(edgeAll(p1, 'input_id'), {n2.base.id, m2.base.id});
         end
 
         function testUnknownSessionIsAnError(testCase)
@@ -716,6 +754,15 @@ if isempty(v)
 else
     v = v{1};
 end
+end
+
+function id = epochRefOf(docs, classes, n)
+% the id of the relative time reference onto the epoch of E. coli image N
+ep = docs(strcmp(classes, 'epoch'));
+e = ep{cellfun(@(d) strcmp(d.epoch.local_identifier, sprintf('ecoli_image%04d', n)), ep)};
+rr = docs(strcmp(classes, 'relative_time_reference'));
+r = rr(cellfun(@(d) strcmp(edge(d, 'referent_id'), e.base.id), rr));
+id = r{1}.base.id;
 end
 
 function c = entries(x)

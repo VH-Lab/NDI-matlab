@@ -13,12 +13,19 @@ function [R, checks] = recordingList(dataParentDir, sessions, options)
 %     lawn       `lawnFileName`: the short clip of the plate before the worms
 %                go in, shared by a plate's video rows. Its extent is read
 %                from the file (VideoReader) only with 'ReadVideos', true.
-%   E. coli, from ecoli/bacteria.mat `metaData` and ecoli/images:
-%     image      one per image on disk (images/<imageNum>.tiff; all 1,575 --
-%                the analysed ones and the shared unanalysed ones, decision
-%                #43); an instant. Images with no file (brightfield,
-%                backgrounds, other exposures) are not recordings; each kept
-%                image's `note` names its background and brightfield image.
+%   E. coli, from ecoli/bacteria.mat `metaData` and ecoli/raw:
+%     image      one per RAW image on disk (raw/<imageNum>.tiff: the
+%                microscope images, extracted from analyzeGFP's `data` --
+%                the 1,575 analysed and shared images and the 89 empty-plate
+%                background images they were normalised by, decision #64);
+%                an instant. The TIFFs in images/ are NOT recordings: each is
+%                its raw image divided by its smoothed background
+%                (analyzeLawnProfiles' imageNormalized, rounded), and the
+%                calculations stage builds it as such. With no raw/ folder,
+%                images/ is used as before and a check says the recordings
+%                are background-normalised. Images with no file are not
+%                recordings; each kept image's `note` names its background
+%                and brightfield image.
 %
 %   Columns: session, kind, epoch (the epoch's local_identifier: the file
 %   stem with the folder prefix, e.g. concentration_2022-02-04_12-10-51_1,
@@ -36,6 +43,8 @@ function [R, checks] = recordingList(dataParentDir, sessions, options)
 %     cameraDisagrees   the `camera` column and the file name's _N disagree
 %     noFrames          a behaviour row with numFrames or frameRate 0
 %     imagesWithoutFile E. coli metaData images with no file, by kind
+%     noRawImages       no ecoli/raw/ folder: the recordings fall back to the
+%                       background-normalised TIFFs in images/
 %     unreadable        'ReadVideos': a lawn clip VideoReader could not open
 %
 %   Options:
@@ -51,7 +60,7 @@ end
 
 root = fullfile(dataParentDir, 'haley');
 checks = struct('rowWithoutFile', {{}}, 'fileWithoutRow', {{}}, 'cameraDisagrees', {{}}, ...
-    'noFrames', {{}}, 'imagesWithoutFile', {{}}, 'unreadable', {{}});
+    'noFrames', {{}}, 'imagesWithoutFile', {{}}, 'noRawImages', {{}}, 'unreadable', {{}});
 rows = {};
 nFiles = 0;
 
@@ -145,7 +154,12 @@ if height(mine) > 0
     B = load(fullfile(root, 'ecoli', 'bacteria.mat'), 'metaData');
     M = B.metaData;
     nFiles = nFiles + 1;
-    idir = fullfile('ecoli', 'images');
+    idir = fullfile('ecoli', 'raw');
+    if ~isfolder(fullfile(root, idir))
+        idir = fullfile('ecoli', 'images');
+        checks.noRawImages{end+1} = ['ecoli: no raw/ folder; the recordings are the TIFFs in ' ...
+            'images/, which are background-normalised, not as acquired (decision #64)'];
+    end
     missing = 0; missingFluor = 0;
     for r = 1:height(M)
         s = find(mine.experiment == double(M.expNum(r)), 1);
@@ -172,7 +186,7 @@ if height(mine) > 0
     end
     if missing > 0
         checks.imagesWithoutFile{end+1} = sprintf(['ecoli: %d of %d metaData image(s) have no file in ' ...
-            'images/ (%d of them fluorescence)'], missing, height(M), missingFluor);
+            '%s/ (%d of them fluorescence)'], missing, height(M), idir, missingFluor);
     end
 end
 
