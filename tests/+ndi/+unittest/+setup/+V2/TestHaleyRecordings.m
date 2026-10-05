@@ -87,7 +87,32 @@ classdef TestHaleyRecordings < matlab.unittest.TestCase
                 'VariableNames', {'expNum', 'imageNum', 'plateNum', 'acquisitionTime', ...
                 'fileName', 'fluorescence', 'exposureTime', 'backgroundImageNum', ...
                 'brightfieldImageNum'}); %#ok<NASGU>
-            save(fullfile(ec, 'bacteria.mat'), 'info', 'metaData');
+            % stage 10 part C (decision #62): image 2 (plate 1, 12 patches)
+            % and image 3 (plate 2, one patch) were analysed. Image 2's mask is
+            % the staggered 3 x 4 grid, its bottom-left patch shifted a column
+            % left so bwlabel numbers it FIRST (as on the real image 2) while
+            % the grid order makes the top-left patch 1; lawnAnalysis row j has
+            % borderAmplitude 100 + j.
+            mkdir(fullfile(ec, 'mask'));
+            mkdir(fullfile(ec, 'closest'));
+            m = false(40, 80);
+            for x = [6 26 46 66]
+                m(7:9, x-1:x+1) = true;                  % top row
+                m(31:33, x-1:x+1) = true;                % bottom row
+                m(19:21, x+9:x+11) = true;               % middle row, offset
+            end
+            m(31:33, 5:7) = false; m(31:33, 4:6) = true;  % bottom-left, a column left
+            imwrite(m, fullfile(ec, 'mask', '0002.png'));
+            imwrite(uint8(ones(40, 80)), fullfile(ec, 'closest', '0002.png'));
+            m = false(10, 10); m(4:6, 4:6) = true;
+            imwrite(m, fullfile(ec, 'mask', '0003.png'));
+            j = (1:12)';
+            lawnAnalysis = table([2 * ones(12, 1); 3], [0.1 * ones(12, 1); 0.2], ...
+                [1000 + j; 2000], [900 * ones(12, 1); 1900], [0.9 * ones(12, 1); 0.8], ...
+                [100 + j; 500], [50 + j; 250], ...
+                'VariableNames', {'imageNum', 'xPeak', 'yPeak', 'yOuterEdge', 'circularity', ...
+                'borderAmplitude', 'centerAmplitude'}); %#ok<NASGU>
+            save(fullfile(ec, 'bacteria.mat'), 'info', 'metaData', 'lawnAnalysis');
         end
     end
 

@@ -34,9 +34,11 @@ function [S, checks] = subjectList(dataParentDir, sessions, options)
 %   E. coli, from ecoli/bacteria.mat `info` (one row per plate; all 126 are
 %   kept, analysed or not -- decision #43):
 %     plate            one per plate                  ecoli_plate0042  "Plate 0042"
-%     patch            `rectangle` template: 12 (a    ecoli_plate0042_patch0012
-%                      3 x 4 grid, numbered row by
-%                      row); `none` seeded: 1 (one
+%     patch            `rectangle` template: 12 (3    ecoli_plate0042_patch0012
+%                      staggered rows of 4, numbered
+%                      left to right, top to bottom
+%                      within a column: decision
+%                      #62); `none` seeded: 1 (one
 %                      large patch; OD600 0 = LB
 %                      alone); `none` with
 %                      lawnVolume 0: none

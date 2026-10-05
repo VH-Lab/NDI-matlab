@@ -577,6 +577,42 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
                 {fullfile(testCase.Root, 'haley', 'ecoli', 'images', '0002.tiff')});
         end
 
+        function testEcoliProfiles(testCase)
+            % stage 10 part C (decision #62): each analysed image's mask, and
+            % each detected patch's values on its patch SUBJECT, matched by
+            % position. Image 2's bwlabel order puts the bottom-left patch
+            % first; the grid makes the top-left patch 1.
+            result = testCase.write("ecoli_0001", ["metadata", "calculations"]);
+            c = result.written{1}.ecoli.counts;
+            testCase.verifyEqual([c.mask, c.matched_images, c.unmatched_images], [2 2 0]);
+            testCase.verifyEqual(c.patch_values, 13 * 6, '13 patches x 6 values');
+            hasItem = ndi.setup.V2.schemaHasField('item', 'value');
+            testCase.verifyEqual(c.nearest_patch, double(hasItem), 'only image 2 has a closest map');
+
+            docs = testCase.documents(result.sessions.path{1});
+            classes = cellfun(@(d) d.document_class.class_name, docs, 'UniformOutput', false);
+            subj = docs(strcmp(classes, 'subject'));
+            idOf = containers.Map(cellfun(@(d) d.subject.local_identifier, subj, 'UniformOutput', false), ...
+                cellfun(@(d) d.base.id, subj, 'UniformOutput', false));
+            border = docs(strcmp(classes, 'intensity_calculation'));
+            border = border(cellfun(@(d) strcmp(d.subject_statement.variable.name, 'patch border amplitude'), border));
+            amp = @(local) cellfun(@(d) d.intensity.value.arbitrary_units, border(cellfun(@(d) ...
+                strcmp(edge(d, 'subject_id'), idOf(local)), border)));
+            testCase.verifyEqual(amp('ecoli_plate0001_patch0001'), 102, 'row 2 is the top-left patch');
+            testCase.verifyEqual(amp('ecoli_plate0001_patch0002'), 101, 'row 1 is the bottom-left patch');
+            testCase.verifyEqual(amp('ecoli_plate0002_patch0001'), 500, 'the one-patch plate');
+
+            len = docs(strcmp(classes, 'length_calculation'));
+            l1 = len(cellfun(@(d) strcmp(edge(d, 'subject_id'), idOf('ecoli_plate0002_patch0001')), len));
+            testCase.verifyEqual(l1{1}.length.value.meters, 0.2e-3, 'AbsTol', 1e-15);
+
+            masks = docs(strcmp(classes, 'label_calculation'));
+            testCase.verifyNumElements(masks, 2);
+            plates = {idOf('ecoli_plate0001'), idOf('ecoli_plate0002')};
+            testCase.verifyTrue(all(cellfun(@(d) ismember(edge(d, 'subject_id'), plates), masks)), ...
+                'a mask is a calculation of its plate');
+        end
+
         function testUnknownSessionIsAnError(testCase)
             testCase.verifyError(@() ndi.setup.conv.haley.import_V2(testCase.Root, ...
                 'Stages', "sessions", 'Sessions', "concentration_0099", ...

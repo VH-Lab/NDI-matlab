@@ -44,7 +44,9 @@ function result = import_V2(dataParentDir, options)
 %                          part B: each worm's per-frame position, speed,
 %                          distance to the nearest patch edge and nearest
 %                          patch, per body part and video (decision #61);
-%                          E. coli profiles not yet
+%                          part C: each analysed E. coli image's patch mask
+%                          and each detected patch's profile values, on its
+%                          patch subject (decision #62)
 %     C. dataset-wide, once
 %        11 encounters, 12 cross-study calculations, 13 check & write (not yet)
 %
@@ -371,6 +373,21 @@ if isfield(result, 'subjects') && isfield(result, 'recordings')
                 c.patch_edge_distance, c.nearest_patch);
             for j = 1:numel(tr.skipped)
                 fprintf('  skipped: %s\n', tr.skipped{j});
+            end
+            ec = ndi.setup.conv.haley.ecoliDocuments(dataParentDir, T(k, :), result.recordings, ...
+                built{k}.subjectIds, 'RecordingStatements', built{k}.recordingStatements, ...
+                'RecordingRefs', built{k}.recordingRefs, 'SoftwareId', run.SoftwareId, ...
+                'InterpreterId', run.InterpreterId, 'OperatingSystemId', run.OperatingSystemId);
+            built{k}.documents = [built{k}.documents, ec.documents];
+            built{k}.ecoli = ec;
+            c = ec.counts;
+            if c.mask > 0
+                fprintf(['%s E. coli: %d mask, %d image(s) matched to patch subjects, %d not; ' ...
+                    '%d per-patch value(s), %d nearest patch\n'], T.local_identifier{k}, c.mask, ...
+                    c.matched_images, c.unmatched_images, c.patch_values, c.nearest_patch);
+            end
+            for j = 1:numel(ec.skipped)
+                fprintf('  skipped: %s\n', ec.skipped{j});
             end
         end
         T.documents{k} = built{k}.documents;
