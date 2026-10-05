@@ -118,8 +118,30 @@ classdef TestHaleyRecordings < matlab.unittest.TestCase
                 [1000 + j; 2000], [900 * ones(12, 1); 1900], [0.9 * ones(12, 1); 0.8], ...
                 [100 + j; 500], [50 + j; 250], ...
                 'VariableNames', {'imageNum', 'xPeak', 'yPeak', 'yOuterEdge', 'circularity', ...
-                'borderAmplitude', 'centerAmplitude'}); %#ok<NASGU>
+                'borderAmplitude', 'centerAmplitude'});
+            % stage 12 (decision #65): image 2's patches at growth times 60 +
+            % 10j min, border / exposure = (94 + t/10) / 300, a line; row 12's
+            % border / centre ratio is 40, so plotForagingGFP leaves it out
+            lawnAnalysis.plateNum = [ones(12, 1); 2];
+            lawnAnalysis.fileName = [repmat({'b.tif'}, 12, 1); {'c.tif'}];
+            lawnAnalysis.acquisitionTime = [repmat(datetime(2023, 12, 30, 9, 39, 0), 12, 1); ...
+                datetime(2023, 12, 30, 9, 40, 0)];
+            lawnAnalysis.exposureTime = [300 * ones(12, 1); 300];
+            lawnAnalysis.peptone = [repmat({'with'}, 12, 1); {'without'}];
+            lawnAnalysis.OD600 = [ones(12, 1); 1];
+            lawnAnalysis.lawnVolume = [0.5 * ones(12, 1); 200];
+            lawnAnalysis.growthTimeCondition = zeros(13, 1);
+            lawnAnalysis.growthTimeTotal = minutes([60 + 10 * j; 60]);
+            lawnAnalysis.borderCenterRatio = [(100 + j) ./ (50 + j); 2];
+            lawnAnalysis.borderCenterRatio(12) = 40;
             save(fullfile(ec, 'bacteria.mat'), 'info', 'metaData', 'lawnAnalysis');
+            % the published fits: the line above; the joint low-OD fit over the
+            % same values (OD600 1, so a = 94/300, b = 1/3000); a 200 uL fit
+            writeFits(fullfile(ec, 'borderAmplitude.csv'), { ...
+                'with', 0.5, 0, 0.05, 1 / 3000, 0.05 * 94 / 300, 0, 1, 9
+                'with', 0.5, 0, 0.1, 1 / 3000, 0.1 * 94 / 300, 0, 1, 9
+                'with', 0.5, 0, 1, 1 / 3000, 94 / 300, 0, 1, 9
+                'with', 200, 48, 1, -0.0068, 55.7, 380, 0.06, 43});
             % analyzeGFP's workspace (decision #64), -v7.3 as the real one: the
             % profile curves of images 2 and 3 (curve j of image 2 is 100*j +
             % its distance index; NaN beyond the patch's last pixel) and image
@@ -274,6 +296,16 @@ data = vertcat(rows{:}); %#ok<NASGU>
 save(fullfile(folder, 'midpoint.mat'), 'data');
 end
 
+function writeFits(file, rows)
+% borderAmplitude.csv as plotForagingGFP writes it
+fid = fopen(file, 'w');
+fprintf(fid, 'peptone,lawnVolume,growthTimeCondition,OD600,slope,intercept,sse,rsquare,dfe,adjrsquare,rmse\r\n');
+for r = 1:size(rows, 1)
+    fprintf(fid, '%s,%.17g,%.17g,%.17g,%.17g,%.17g,%.17g,%.17g,%d,%.17g,%.17g\r\n', rows{r, :}, 0, 0);
+end
+fclose(fid);
+end
+
 function writeEncounters(folder)
 % Stage 11's encounter.mat: worm 121 (plate 12, one video) -- the gap before its
 % first encounter (id 0), then encounters at rows 2-3 and 4-5 on patch 1;
@@ -290,7 +322,18 @@ encounter = table(uint16(ones(n, 1)), uint16([12; 12; 12; 11]), [1; 1; 1; 2], ..
     'VariableNames', {'expNum', 'plateNum', 'videoNum', 'wormNum', 'id', 'enter', 'exit', ...
     'lawnID', 'velocityOn', 'velocityOnMin', 'distanceOnMax', 'velocityBeforeEnter', ...
     'velocityAfterEnter', 'timeSlowDown', 'decelerate', 'velocityOff', 'distanceOffMax', ...
-    'expName', 'exploitPosterior', 'sensePosterior', 'label'}); %#ok<NASGU>
+    'expName', 'exploitPosterior', 'sensePosterior', 'label'});
+% stage 12 (decision #65): worm 121's patches at OD600 1, worm 111's at 0.05
+% (the joint fit); the values labelEncounters computed from the fixture's fits
+encounter.peptone = repmat({'with'}, n, 1);
+encounter.lawnOD600 = [NaN; 1; 1; 0.05];
+encounter.lawnVolume = 0.5 * ones(n, 1);
+encounter.growthCondition = [NaN; 0; 0; 0];
+encounter.lawnGrowth = [NaN; 74; 80; 90];
+encounter.growthLawnGrowth = hours(51) * ones(n, 1);
+encounter.borderAmplitude = [NaN; 94 / 300 + 74 / 3000; 94 / 300 + 80 / 3000; ...
+    0.05 * 94 / 300 + 90 / 3000];
+encounter.borderAmplitudeGrowth = (55.7 - 0.0068 * 51 * 60) * ones(n, 1); %#ok<STRNU>
 save(fullfile(folder, 'encounter.mat'), 'encounter');
 end
 

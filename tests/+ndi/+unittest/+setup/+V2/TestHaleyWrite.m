@@ -704,6 +704,58 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             testCase.verifyEqual(edgeAll(p1, 'input_id'), {n2.base.id, m2.base.id});
         end
 
+        function testDensity(testCase)
+            % stage 12 (decision #65): the E. coli border amplitude fits, each
+            % about a group of patches, and each worm's per-encounter estimates
+            testCase.assumeTrue(isfile(fullfile(getenv('DID_SCHEMA_PATH'), 'time_calculation.json')), ...
+                'DID_SCHEMA_PATH does not hold time_calculation (did-schema PR #87)');
+            result = testCase.write(["ecoli_0001", "concentration_0001"], ...
+                ["metadata", "observations", "calculations", "encounters", "density"]);
+            de = result.density;
+            c = de.counts;
+            testCase.verifyEqual([c.fits, c.groups, c.members, c.inputs, c.refit_checked], ...
+                [2 2 24 22 2], ['the OD600 1 fit and the joint low-OD fit, each about the 12 ' ...
+                'patches of plate 1, from the 11 included values; the 200 uL fit has no image']);
+            testCase.verifyTrue(any(contains(de.skipped, '200 uL')));
+            testCase.verifyEqual([c.worms, c.estimates], [2 4]);
+            testCase.verifyEqual(c.encounters_checked, 6);
+            testCase.verifyEmpty(de.checks.encounterDisagrees, 'encounter.mat reproduces from the fits');
+
+            dd = de.datasetDocuments;
+            dc = cellfun(@(d) d.document_class.class_name, dd, 'UniformOutput', false);
+            fits = dd(strcmp(dc, 'model_fit_calculation'));
+            groups = dd(strcmp(dc, 'subject'));
+            testCase.verifyNumElements(groups, 2);
+            testCase.verifyEqual(sum(strcmp(dc, 'directed_relation')), 24);
+            lin = fits{cellfun(@(d) strcmp(d.model_fit.value.equation, 'f = slope*t + intercept'), fits)};
+            testCase.verifyTrue(ismember(edge(lin, 'subject_id'), ...
+                cellfun(@(d) d.base.id, groups, 'UniformOutput', false)), 'the fit is about a group');
+            co = entries(lin.model_fit.value.coefficients);
+            testCase.verifyEqual(co{1}.value, 1 / 3000, 'AbsTol', 1e-15);
+            testCase.verifyEqual(co{2}.value, 94 / 300, 'AbsTol', 1e-15);
+            testCase.verifyNumElements(edgeAll(lin, 'input_id'), 11, 'row 12 is excluded');
+
+            % the estimates, in the C. elegans session
+            k = find(strcmp(result.sessions.local_identifier, 'concentration_0001'));
+            docs = testCase.documents(result.sessions.path{k});
+            classes = cellfun(@(d) d.document_class.class_name, docs, 'UniformOutput', false);
+            subj = docs(strcmp(classes, 'subject'));
+            idOf = containers.Map(cellfun(@(d) d.subject.local_identifier, subj, 'UniformOutput', false), ...
+                cellfun(@(d) d.base.id, subj, 'UniformOutput', false));
+            named = @(local, var) docs(strcmp(classes, 'intensity_calculation') & cellfun(@(d) ...
+                strcmp(edge(d, 'subject_id'), idOf(local)) && isfield(d, 'subject_statement') ...
+                && strcmp(d.subject_statement.variable.name, var), docs));
+            e121 = named('concentration_worm0121', 'estimated patch border amplitude');
+            testCase.verifyNumElements(e121, 1);
+            testCase.verifyEqual([e121{1}.intensity.value.arbitrary_units], ...
+                94 / 300 + [74 80] / 3000, 'AbsTol', 1e-12);
+            testCase.verifyTrue(ismember(lin.base.id, edgeAll(e121{1}, 'input_id')), ...
+                'from the OD600 1 fit');
+            g111 = named('concentration_worm0111', 'estimated cultivation plate border amplitude');
+            testCase.verifyNumElements(g111, 1);
+            testCase.verifyEqual(g111{1}.intensity.value.arbitrary_units, 55.7 - 0.0068 * 3060, 'AbsTol', 1e-9);
+        end
+
         function testUnknownSessionIsAnError(testCase)
             testCase.verifyError(@() ndi.setup.conv.haley.import_V2(testCase.Root, ...
                 'Stages', "sessions", 'Sessions', "concentration_0099", ...

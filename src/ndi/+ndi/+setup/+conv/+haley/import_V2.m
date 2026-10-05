@@ -51,7 +51,12 @@ function result = import_V2(dataParentDir, options)
 %                          an encounter-onset list and the per-encounter
 %                          values keyed by it (decision #63)
 %     C. dataset-wide, once
-%        12 cross-study calculations, 13 check & write (not yet)
+%        12 density        the E. coli border amplitude fits, each about a
+%                          group of patches, and each C. elegans worm's
+%                          per-encounter estimates from them (decision #65;
+%                          needs the E. coli session and the C. elegans
+%                          sessions in the same run)
+%        13 check & write (not yet)
 %
 %   Nothing is written unless 'Write' is true: by default RESULT holds what
 %   each stage WOULD create, for inspection. With 'Write', each selected
@@ -90,7 +95,7 @@ function result = import_V2(dataParentDir, options)
 arguments
     dataParentDir (1,:) char {mustBeFolder} = fullfile(userpath, 'data')
     options.Spec (1,:) char = fullfile(fileparts(mfilename('fullpath')), 'import_V2_spec.json')
-    options.Stages (1,:) string = ["discover", "metadata", "sessions", "subjects", "acquisition", "relations", "assertions", "manipulations", "observations", "calculations", "encounters"]
+    options.Stages (1,:) string = ["discover", "metadata", "sessions", "subjects", "acquisition", "relations", "assertions", "manipulations", "observations", "calculations", "encounters", "density"]
     options.OutputRoot (1,:) char = ''
     options.Sessions (1,:) string = string.empty(1, 0)
     options.Write (1,1) logical = false
@@ -422,6 +427,36 @@ if isfield(result, 'subjects') && isfield(result, 'recordings')
         disp(groupsummary(table(classes(:), 'VariableNames', {'class'}), 'class'));
         for j = 1:numel(built{k}.skipped)
             fprintf('  skipped: %s\n', built{k}.skipped{j});
+        end
+    end
+    if any(options.Stages == "density")
+        fprintf('\n== stage 12: density ==\n');
+        run = struct('SoftwareId', '', 'InterpreterId', '', 'OperatingSystemId', '');
+        keys = {'haley_analysis', 'matlab', 'macos'};
+        names = fieldnames(run);
+        for j = 1:numel(keys)
+            if isKey(instrumentIds, keys{j}), run.(names{j}) = instrumentIds(keys{j}); end
+        end
+        de = ndi.setup.conv.haley.densityDocuments(dataParentDir, T, built, ...
+            'DatasetSessionId', result.datasetSessionId, 'SoftwareId', run.SoftwareId, ...
+            'InterpreterId', run.InterpreterId, 'OperatingSystemId', run.OperatingSystemId);
+        for k = 1:n
+            T.documents{k} = [T.documents{k}, de.sessionDocuments{k}];
+        end
+        result.density = de;
+        c = de.counts;
+        fprintf(['density: %d fit(s) about %d group(s) of %d patch membership(s), %d input ' ...
+            'value(s); %d refit(s) checked; %d worm(s), %d estimate document(s), %d encounter ' ...
+            'value(s) checked (dataset-level documents: written at stage 13)\n'], c.fits, ...
+            c.groups, c.members, c.inputs, c.refit_checked, c.worms, c.estimates, c.encounters_checked);
+        for j = 1:numel(de.checks.refitDisagrees)
+            fprintf('  refit disagrees: %s\n', de.checks.refitDisagrees{j});
+        end
+        for j = 1:numel(de.checks.encounterDisagrees)
+            fprintf('  encounter disagrees: %s\n', de.checks.encounterDisagrees{j});
+        end
+        for j = 1:numel(de.skipped)
+            fprintf('  skipped: %s\n', de.skipped{j});
         end
     end
 else

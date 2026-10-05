@@ -84,7 +84,10 @@ function out = ecoliDocuments(dataParentDir, session, R, subjectIds, options)
 %   (private/lawnProfileReader). Without it there are no curves and no
 %   background fit values, and OUT.skipped says so.
 %
-%   OUT fields: documents, counts (struct), skipped (cellstr).
+%   OUT fields: documents, counts (struct), skipped (cellstr), borderValues
+%   (struct array, one per stored `patch border amplitude`: imageNum, row --
+%   its position among the image's lawnAnalysis rows --, patchId,
+%   statementId; for stage 12's fits, decision #65).
 
 arguments
     dataParentDir (1,:) char {mustBeFolder}
@@ -103,7 +106,8 @@ if height(session) ~= 1
 end
 sid = char(session.session_id{1});
 ref = char(session.local_identifier{1});
-out = struct('documents', {{}}, 'skipped', {{}}, 'counts', struct('coordinate_system', 0, ...
+out = struct('documents', {{}}, 'skipped', {{}}, 'borderValues', struct('imageNum', {}, 'row', {}, ...
+    'patchId', {}, 'statementId', {}), 'counts', struct('coordinate_system', 0, ...
     'mask', 0, 'nearest_patch', 0, 'matched_images', 0, 'unmatched_images', 0, ...
     'patch_values', 0, 'normalised_image', 0, 'profiles', 0, 'background_fit', 0));
 if ~strcmp(char(session.folder{1}), 'ecoli')
@@ -356,6 +360,10 @@ for k = 1:height(R)
                 'Method', did2.build.term('', 'fluorescence profile from the patch edge'), ...
                 in{:}, calc{:}, match{:}); %#ok<AGROW>
             out.counts.patch_values = out.counts.patch_values + 1;
+            if strcmp(col, 'borderAmplitude')
+                out.borderValues(end+1) = struct('imageNum', n, 'row', j, 'patchId', patch, ...
+                    'statementId', docs{end}.base.id);
+            end
         end
         if ismember('xPeak', r.Properties.VariableNames) && ~isnan(r.xPeak)
             v = did2.build.valueCell('length', r.xPeak * 1e-3, 'SourceValue', r.xPeak, 'SourceUnit', 'mm');

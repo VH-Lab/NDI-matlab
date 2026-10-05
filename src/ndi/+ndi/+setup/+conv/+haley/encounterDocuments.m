@@ -54,7 +54,10 @@ function out = encounterDocuments(dataParentDir, session, R, subjectIds, options
 %     'RecordingRefs'        containers.Map, epoch -> its UTC reference id
 %     'SoftwareId', 'InterpreterId', 'OperatingSystemId'   as stage 10
 %
-%   OUT fields: documents, counts (struct), skipped (cellstr).
+%   OUT fields: documents, counts (struct), skipped (cellstr), byWorm
+%   (containers.Map, worm local_identifier -> struct of wormId, listId, keyed
+%   and calc -- the options its per-encounter documents are built with -- and
+%   rows, its encounter.mat rows in list order; for stage 12, decision #65).
 
 arguments
     dataParentDir (1,:) char {mustBeFolder}
@@ -75,7 +78,7 @@ sid = char(session.session_id{1});
 ref = char(session.local_identifier{1});
 folder = char(session.folder{1});
 out = struct('documents', {{}}, 'skipped', {{}}, 'counts', struct('worms', 0, ...
-    'encounters', 0, 'documents', 0));
+    'encounters', 0, 'documents', 0), 'byWorm', containers.Map());
 file = fullfile(dataParentDir, 'haley', 'celegans', 'encounter.mat');
 if strcmp(folder, 'ecoli') || ~isfile(file)
     return;
@@ -210,6 +213,8 @@ for g = 1:max(G)
         keyed = {'Keys', did2.build.list(did2.build.key('encounter', n, 'Origin', 0, 'Spacing', 1))};
     end
     per = [keyed, {'InputIds', [{list.base.id}, inputs]}, calc];
+    out.byWorm(worm) = struct('wormId', wormId, 'listId', list.base.id, 'keyed', {keyed}, ...
+        'calc', {calc}, 'rows', enc);
 
     % which patch
     pIds = patchIds(subjectIds, plate);
