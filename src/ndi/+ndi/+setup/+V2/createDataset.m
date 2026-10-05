@@ -95,6 +95,10 @@ db.add(cellfun(@(d) did2.document(d), docsAll, 'UniformOutput', false));
 db.close();
 vlt.file.str2text(fullfile(ndiDir, 'unique_reference.txt'), datasetSessionId);
 vlt.file.str2text(fullfile(ndiDir, 'reference.txt'), reference);
+% mark the folder a dataset (ndi.session.dir.directorytype), as ndi.dataset.dir
+% would on first open; without it ndi.dataset.dir refuses a folder that only
+% looks like a session, and a dataset marker is never downgraded
+vlt.file.str2text(fullfile(ndiDir, ndi.session.dir.objecttypemarkerfilename()), 'dataset');
 
 dataset = ndi.dataset.dir(path);
 if ~strcmp(dataset.id(), datasetSessionId)
