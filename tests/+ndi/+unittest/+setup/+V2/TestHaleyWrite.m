@@ -756,6 +756,34 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             testCase.verifyEqual(g111{1}.intensity.value.arbitrary_units, 55.7 - 0.0068 * 3060, 'AbsTol', 1e-9);
         end
 
+        function testDataset(testCase)
+            % stage 13 (decision #66): one V2 database holding the dataset-level
+            % documents and both sessions, ingested; checked, and opened as NDI does
+            testCase.assumeTrue(isfile(fullfile(getenv('DID_SCHEMA_PATH'), 'time_calculation.json')), ...
+                'DID_SCHEMA_PATH does not hold time_calculation (did-schema PR #87)');
+            result = testCase.write(["ecoli_0001", "concentration_0001"], ...
+                ["metadata", "observations", "calculations", "encounters", "density", "dataset"]);
+            r = result.dataset.report;
+            testCase.verifyEqual(r.sessions.found, 2);
+            testCase.verifyEmpty(r.sessions.notInDataset, 'each session is part_of a study of the dataset');
+            testCase.verifyEmpty(r.duplicateIds);
+            testCase.verifyGreaterThan(r.edges.checked, 0);
+            testCase.verifyEqual(height(r.edges.dangling), 0, evalc('disp(r.edges.dangling)'));
+
+            ds = ndi.dataset.dir(result.dataset.path);
+            testCase.verifyEqual(ds.id(), result.datasetSessionId);
+            [refs, ids] = ds.session_list();
+            testCase.verifyEqual(sort(refs), {'concentration_0001', 'ecoli_0001'});
+            s = ds.open_session(ids{strcmp(refs, 'ecoli_0001')});
+            testCase.verifyNotEmpty(s.database_search(ndi.query('', 'isa', 'subject')), ...
+                'an ingested session reads its own documents from the dataset''s database');
+            again = ndi.dataset.dir(result.dataset.path);
+            testCase.verifyEqual(again.id(), result.datasetSessionId, ...
+                'still the dataset after a session was opened in its folder');
+            testCase.verifyNumElements(again.database_search(ndi.query('', 'isa', 'model_fit_calculation')), 2, ...
+                'stage 12''s fits are in the dataset');
+        end
+
         function testUnknownSessionIsAnError(testCase)
             testCase.verifyError(@() ndi.setup.conv.haley.import_V2(testCase.Root, ...
                 'Stages', "sessions", 'Sessions', "concentration_0099", ...

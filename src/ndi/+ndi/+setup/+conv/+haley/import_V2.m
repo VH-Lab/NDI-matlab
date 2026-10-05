@@ -56,7 +56,11 @@ function result = import_V2(dataParentDir, options)
 %                          per-encounter estimates from them (decision #65;
 %                          needs the E. coli session and the C. elegans
 %                          sessions in the same run)
-%        13 check & write (not yet)
+%        13 dataset        check & write the dataset: ONE V2 database holding
+%                          the dataset-level documents (stage 2's, the
+%                          studies, stage 12's fits) and every selected
+%                          session, ingested (ndi.setup.V2.createDataset;
+%                          decision #66); opens as an ndi.dataset.dir
 %
 %   Nothing is written unless 'Write' is true: by default RESULT holds what
 %   each stage WOULD create, for inspection. With 'Write', each selected
@@ -86,7 +90,12 @@ function result = import_V2(dataParentDir, options)
 %                         video for its pixel format; false skips both
 %                         (videos are then assumed 8-bit)
 %     'DatasetSessionId'  session id for dataset-level documents (default: a
-%                         new id; stage 10 will take it from the dataset)
+%                         new id)
+%     'DatasetFolder'     where stage 13 writes the dataset (default:
+%                         <OutputRoot>/dataset)
+%     'DatasetReference'  the dataset's local_identifier (default 'haley')
+%     'SessionFolders'    default true: also write each session to its own
+%                         folder (a working copy; the dataset holds them all)
 %
 %   doImport.m, the original V1 import, is unchanged.
 %
@@ -95,7 +104,7 @@ function result = import_V2(dataParentDir, options)
 arguments
     dataParentDir (1,:) char {mustBeFolder} = fullfile(userpath, 'data')
     options.Spec (1,:) char = fullfile(fileparts(mfilename('fullpath')), 'import_V2_spec.json')
-    options.Stages (1,:) string = ["discover", "metadata", "sessions", "subjects", "acquisition", "relations", "assertions", "manipulations", "observations", "calculations", "encounters", "density"]
+    options.Stages (1,:) string = ["discover", "metadata", "sessions", "subjects", "acquisition", "relations", "assertions", "manipulations", "observations", "calculations", "encounters", "density", "dataset"]
     options.OutputRoot (1,:) char = ''
     options.Sessions (1,:) string = string.empty(1, 0)
     options.Write (1,1) logical = false
@@ -103,6 +112,9 @@ arguments
     options.Overwrite (1,1) logical = false
     options.DatasetSessionId (1,:) char = ''
     options.ReadVideos (1,1) logical = true
+    options.DatasetFolder (1,:) char = ''
+    options.DatasetReference (1,:) char = 'haley'
+    options.SessionFolders (1,1) logical = true
 end
 
 % Check the requirements up front, so a missing one is reported with its fix
@@ -462,9 +474,103 @@ if isfield(result, 'subjects') && isfield(result, 'recordings')
 else
     fprintf('(stages 4 and 5 did not run: writing the sessions alone)\n');
 end
-[T, result.sessionObjects] = ndi.setup.V2.makeSessions(T, 'Overwrite', options.Overwrite);
+if any(options.Stages == "dataset")
+    fprintf('\n== stage 13: check & write the dataset ==\n');
+    result.dataset = writeDataset(result, T, dataParentDir, options);
+end
+if options.SessionFolders
+    [T, result.sessionObjects] = ndi.setup.V2.makeSessions(T, 'Overwrite', options.Overwrite);
+end
 result.sessions = removevars(T, 'documents');
 result.written = built;
+end
+
+function out = writeDataset(result, T, dataParentDir, options)
+% Stage 13 (decision #66): every document of this run in ONE V2 database.
+outRoot = options.OutputRoot;
+if isempty(outRoot), outRoot = fullfile(dataParentDir, 'haley_V2'); end
+path = options.DatasetFolder;
+if isempty(path), path = fullfile(outRoot, 'dataset'); end
+dsDocs = {};
+for f = {'metadata', 'studies'}
+    if isfield(result, f{1}), dsDocs = [dsDocs, reshape(result.(f{1}).documents, 1, [])]; end %#ok<AGROW>
+end
+if isfield(result, 'density'), dsDocs = [dsDocs, result.density.datasetDocuments]; end
+name = '';
+isDataset = cellfun(@(d) strcmp(d.document_class.class_name, 'dataset'), dsDocs);
+if any(isDataset) && isfield(dsDocs{find(isDataset, 1)}.dataset, 'name')
+    name = char(dsDocs{find(isDataset, 1)}.dataset.name);
+end
+if ~any(isDataset)
+    fprintf('  no dataset document (the metadata stage did not run): sessions cannot be part of it\n');
+end
+sessDocs = cell(1, height(T));
+for k = 1:height(T)
+    own = sessionOwn(T(k, :));
+    d = [own, reshape(T.documents{k}, 1, [])];
+    if options.SessionFolders
+        d = keepOriginals(d);     % the session folders, written next, ingest the same files
+    end
+    sessDocs{k} = d;
+end
+[ds, report] = ndi.setup.V2.createDataset(path, options.DatasetReference, ...
+    result.datasetSessionId, dsDocs, sessDocs, 'Name', name, 'Overwrite', options.Overwrite);
+[refs, ids] = ds.session_list();
+fprintf('dataset %s at %s: %d session(s) listed by ndi.dataset\n', ds.id(), path, numel(ids));
+disp(report.documents.byClass);
+if height(report.edges.dangling) > 0
+    fprintf('  DANGLING EDGES (an edge naming no document in the dataset):\n');
+    disp(report.edges.dangling);
+end
+for j = 1:numel(report.duplicateIds)
+    fprintf('  id repeated: %s\n', report.duplicateIds{j});
+end
+for j = 1:numel(report.sessions.notInDataset)
+    fprintf('  session not part_of a study of the dataset: %s\n', report.sessions.notInDataset{j});
+end
+out = struct('path', path, 'id', ds.id(), 'report', report, 'sessionReferences', {refs}, ...
+    'sessionIds', {ids});
+end
+
+function docs = sessionOwn(row)
+% the session document and its study relations, exactly as createSession
+% writes them into a session folder (same ids where createSession is given them)
+f = struct('local_identifier', char(row.local_identifier{1}));
+vars = row.Properties.VariableNames;
+if ismember('name', vars) && ~isempty(row.name{1}), f.name = char(row.name{1}); end
+if ismember('description', vars) && ~isempty(row.description{1}), f.description = char(row.description{1}); end
+sid = char(row.session_id{1});
+args = {'SessionId', sid, 'Id', char(row.session_doc_id{1})};
+if ~isempty(row.time_reference_id{1})
+    args = [args, {'Edges', struct('time_reference_id', row.time_reference_id{1})}];
+end
+docs = {did2.build.document('session', f, args{:})};
+if ismember('study_ids', vars)
+    studies = row.study_ids{1};
+    if ischar(studies) || isstring(studies), studies = cellstr(studies); end
+    for k = 1:numel(studies)
+        docs{end+1} = did2.build.directedRelation(docs{1}.base.id, studies{k}, ...
+            'part_of', 'SessionId', sid); %#ok<AGROW>
+    end
+end
+end
+
+function docs = keepOriginals(docs)
+% a copy of DOCS whose ingested files are not deleted once copied
+for i = 1:numel(docs)
+    d = docs{i};
+    if ~isfield(d, 'files') || ~isfield(d.files, 'file_info') || isempty(d.files.file_info)
+        continue;
+    end
+    fi = d.files.file_info;
+    for a = 1:numel(fi)
+        for b = 1:numel(fi(a).locations)
+            fi(a).locations(b).delete_original = 0;
+        end
+    end
+    d.files.file_info = fi;
+    docs{i} = d;
+end
 end
 
 function m = namesOf(spec)

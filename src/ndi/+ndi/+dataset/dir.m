@@ -54,10 +54,24 @@ classdef dir < ndi.dataset
                 if ~isempty(session_in_a_dataset_docs)
                     correctSessionId = session_in_a_dataset_docs{1}.document_properties.base.session_id;
                 else
-                    q_session = ndi.query('','isa','session');
-                    candidate_session_doc = ndi_dataset_dir_obj.database_search(q_session);
-                    if isscalar(candidate_session_doc)
-                       correctSessionId = candidate_session_doc{1}.document_properties.base.session_id;
+                    % A V2 dataset (ndi.setup.V2.createDataset) has no
+                    % session_in_a_dataset documents: its sessions are ingested
+                    % `session` documents, so the dataset's own session is the
+                    % one that shares its session_id with the V2 `dataset`
+                    % document (a class v1 never had). Read unscoped: the
+                    % folder's unique_reference.txt names whichever session was
+                    % opened last, not necessarily the dataset.
+                    datasetDocs = ndi_dataset_dir_obj.session.database.search(ndi.query('','isa','dataset'));
+                    datasetDocs = datasetDocs(cellfun(@(d) strcmp(d.document_properties.document_class.class_name, ...
+                        'dataset'), datasetDocs));
+                    if isscalar(datasetDocs)
+                        correctSessionId = datasetDocs{1}.document_properties.base.session_id;
+                    else
+                        q_session = ndi.query('','isa','session');
+                        candidate_session_doc = ndi_dataset_dir_obj.database_search(q_session);
+                        if isscalar(candidate_session_doc)
+                           correctSessionId = candidate_session_doc{1}.document_properties.base.session_id;
+                        end
                     end
                 end
             end
@@ -80,6 +94,11 @@ classdef dir < ndi.dataset
                     end
                     session_id = candidate_session_doc{1}.document_properties.base.session_id;
                     ndi_dataset_dir_obj.session = ndi.session.dir(ref,ndi_dataset_dir_obj.session.path,session_id);
+                    % the session list may have been built while the folder was
+                    % open under another session's id (a V2 dataset's
+                    % unique_reference.txt names the session opened last); rebuild
+                    ndi_dataset_dir_obj.session_info = [];
+                    ndi_dataset_dir_obj.session_array = [];
                 else
                     error('Could not find dataset session document.');
                 end

@@ -1106,6 +1106,30 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
                 ndi_dataset_obj.session_info(end+1) = info_here;
             end
 
+            if isempty(session_info_doc)
+                % A V2 dataset (ndi.setup.V2.createDataset) records no
+                % session_in_a_dataset documents: V_eta states membership as
+                % `part_of` relations, and every session is INGESTED -- its
+                % `session` document is in this database under its own
+                % session_id. So each such session document is an ingested
+                % session, opened here by its local_identifier.
+                v2 = ndi_dataset_obj.session.database.search(ndi.query('','isa','session'));
+                for i=1:numel(v2)
+                    p = v2{i}.document_properties;
+                    if strcmp(p.base.session_id, ndi_dataset_obj.id()) || ~isfield(p.session,'local_identifier')
+                        continue;
+                    end
+                    info_here = struct('session_id', p.base.session_id, ...
+                        'session_reference', p.session.local_identifier, 'is_linked', 0, ...
+                        'session_creator', 'ndi.session.dir', ...
+                        'session_creator_input1', p.session.local_identifier, ...
+                        'session_creator_input2', '', 'session_creator_input3', '', ...
+                        'session_creator_input4', '', 'session_creator_input5', '', ...
+                        'session_creator_input6', '', 'session_doc_in_dataset_id', v2{i}.id());
+                    ndi_dataset_obj.session_info(end+1) = info_here;
+                end
+            end
+
             % now we have session_info structure, build the initial session_array
 
             ndi_dataset_obj.session_array = did.datastructures.emptystruct('session_id','session');
