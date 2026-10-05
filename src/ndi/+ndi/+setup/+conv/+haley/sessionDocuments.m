@@ -124,7 +124,10 @@ if height(R) > 0
     dur(isnan(dur)) = 0;
     t0 = min(R.local_start);
     t1 = max(R.local_start + seconds(dur));
-    d = utcReference(t0, seconds(t1 - t0), tz, sid);
+    z0 = t0; z1 = t1;                    % elapsed time in the zone (daylight saving)
+    if isempty(z0.TimeZone), z0.TimeZone = tz; end
+    if isempty(z1.TimeZone), z1.TimeZone = tz; end
+    d = utcReference(t0, seconds(z1 - z0), tz, sid);
     out.timeReferenceId = d.base.id;
     docs{end+1} = d;
 end

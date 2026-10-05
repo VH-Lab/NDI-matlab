@@ -16,7 +16,7 @@ if hasEnd
     e1 = tol1; if isempty(e1), e1 = [0 0]; end
     durTol = [s0(2) + e1(1), s0(1) + e1(2)];
     if all(durTol == 0), durTol = []; end
-    args = [args, {'Duration', seconds(t1 - t0), ...
+    args = [args, {'Duration', elapsed(t0, t1, tz), ...
         'DurationApproximate', ~isempty(durTol) || a0 || a1, 'DurationTolerance', durTol, ...
         'End', utcText(t1, tz), 'EndSourceValue', char(t1, fmt1), 'EndSourceTimezone', tz, ...
         'EndApproximate', a1, 'EndTolerance', tol1}];
@@ -31,4 +31,13 @@ if ischar(tol) || isstring(tol)     % 'estimated': approximate, bound unknown
 else
     approx = ~isempty(tol);
 end
+end
+
+function s = elapsed(t0, t1, tz)
+% seconds from wall-clock T0 to T1, both read in TZ: a window across a
+% daylight-saving change is an hour shorter or longer than the clocks say
+a = t0; b = t1;
+if isempty(a.TimeZone), a.TimeZone = tz; end
+if isempty(b.TimeZone), b.TimeZone = tz; end
+s = seconds(b - a);
 end

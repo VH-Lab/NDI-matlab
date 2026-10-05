@@ -94,6 +94,9 @@ function result = import_V2(dataParentDir, options)
 %     'DatasetFolder'     where stage 13 writes the dataset (default:
 %                         <OutputRoot>/dataset)
 %     'DatasetReference'  the dataset's local_identifier (default 'haley')
+%     'EcoliProfilesFile' analyzeGFP's workspace (profile curves, background
+%                         fits; decision #64), wherever it is kept (default:
+%                         <DATAPARENTDIR>/haley/ecoli/analyzeGFP_24-04-04.mat)
 %     'SessionFolders'    default true: also write each session to its own
 %                         folder (a working copy; the dataset holds them all)
 %
@@ -115,6 +118,7 @@ arguments
     options.DatasetFolder (1,:) char = ''
     options.DatasetReference (1,:) char = 'haley'
     options.SessionFolders (1,1) logical = true
+    options.EcoliProfilesFile (1,:) char = ''
 end
 
 % Check the requirements up front, so a missing one is reported with its fix
@@ -397,7 +401,8 @@ if isfield(result, 'subjects') && isfield(result, 'recordings')
             ec = ndi.setup.conv.haley.ecoliDocuments(dataParentDir, T(k, :), result.recordings, ...
                 built{k}.subjectIds, 'RecordingStatements', built{k}.recordingStatements, ...
                 'RecordingRefs', built{k}.recordingRefs, 'SoftwareId', run.SoftwareId, ...
-                'InterpreterId', run.InterpreterId, 'OperatingSystemId', run.OperatingSystemId);
+                'InterpreterId', run.InterpreterId, 'OperatingSystemId', run.OperatingSystemId, ...
+                'ProfilesFile', options.EcoliProfilesFile);
             built{k}.documents = [built{k}.documents, ec.documents];
             built{k}.ecoli = ec;
             c = ec.counts;
