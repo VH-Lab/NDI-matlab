@@ -47,8 +47,11 @@ function result = import_V2(dataParentDir, options)
 %                          part C: each analysed E. coli image's patch mask
 %                          and each detected patch's profile values, on its
 %                          patch subject (decision #62)
+%        11 encounters     each worm's patch encounters (celegans/encounter.mat):
+%                          an encounter-onset list and the per-encounter
+%                          values keyed by it (decision #63)
 %     C. dataset-wide, once
-%        11 encounters, 12 cross-study calculations, 13 check & write (not yet)
+%        12 cross-study calculations, 13 check & write (not yet)
 %
 %   Nothing is written unless 'Write' is true: by default RESULT holds what
 %   each stage WOULD create, for inspection. With 'Write', each selected
@@ -87,7 +90,7 @@ function result = import_V2(dataParentDir, options)
 arguments
     dataParentDir (1,:) char {mustBeFolder} = fullfile(userpath, 'data')
     options.Spec (1,:) char = fullfile(fileparts(mfilename('fullpath')), 'import_V2_spec.json')
-    options.Stages (1,:) string = ["discover", "metadata", "sessions", "subjects", "acquisition", "relations", "assertions", "manipulations", "observations", "calculations"]
+    options.Stages (1,:) string = ["discover", "metadata", "sessions", "subjects", "acquisition", "relations", "assertions", "manipulations", "observations", "calculations", "encounters"]
     options.OutputRoot (1,:) char = ''
     options.Sessions (1,:) string = string.empty(1, 0)
     options.Write (1,1) logical = false
@@ -389,6 +392,25 @@ if isfield(result, 'subjects') && isfield(result, 'recordings')
             for j = 1:numel(ec.skipped)
                 fprintf('  skipped: %s\n', ec.skipped{j});
             end
+        end
+        if any(options.Stages == "encounters") && isfield(built{k}, 'tracks')
+            windows = containers.Map();
+            if isfield(built{k}, 'observations'), windows = built{k}.observations.windows; end
+            en = ndi.setup.conv.haley.encounterDocuments(dataParentDir, T(k, :), result.recordings, ...
+                built{k}.subjectIds, 'Tracks', built{k}.tracks.byWorm, 'PlateWindows', windows, ...
+                'RecordingRefs', built{k}.recordingRefs, 'SoftwareId', run.SoftwareId, ...
+                'InterpreterId', run.InterpreterId, 'OperatingSystemId', run.OperatingSystemId);
+            built{k}.documents = [built{k}.documents, en.documents];
+            built{k}.encounters = en;
+            c = en.counts;
+            fprintf('%s encounters: %d worm(s), %d encounter(s), %d document(s)\n', ...
+                T.local_identifier{k}, c.worms, c.encounters, c.documents);
+            for j = 1:numel(en.skipped)
+                fprintf('  skipped: %s\n', en.skipped{j});
+            end
+        elseif any(options.Stages == "encounters")
+            fprintf('%s: the encounters stage needs the calculations stage (its tracks)\n', ...
+                T.local_identifier{k});
         end
         T.documents{k} = built{k}.documents;
         T.time_reference_id{k} = built{k}.timeReferenceId;

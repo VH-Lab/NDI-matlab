@@ -48,7 +48,10 @@ function out = trackDocuments(dataParentDir, session, R, subjectIds, options)
 %     'RecordingRefs'        containers.Map, epoch -> its UTC reference id
 %     'SoftwareId', 'InterpreterId', 'OperatingSystemId'   as part A
 %
-%   OUT fields: documents (cell of structs), counts (struct), skipped (cellstr).
+%   OUT fields: documents (cell of structs), counts (struct), skipped (cellstr),
+%   byWorm (containers.Map, '<epoch>|<worm local_identifier>' -> struct of the
+%   ids of that worm's midpoint position, speed and patch-edge distance in that
+%   video: stage 11's inputs).
 
 arguments
     dataParentDir (1,:) char {mustBeFolder}
@@ -69,7 +72,7 @@ sid = char(session.session_id{1});
 ref = char(session.local_identifier{1});
 folder = char(session.folder{1});
 out = struct('documents', {{}}, 'skipped', {{}}, 'counts', struct('position', 0, ...
-    'speed', 0, 'patch_edge_distance', 0, 'nearest_patch', 0));
+    'speed', 0, 'patch_edge_distance', 0, 'nearest_patch', 0), 'byWorm', containers.Map());
 if strcmp(folder, 'ecoli')
     return;
 end
@@ -152,6 +155,7 @@ for part = {'midpoint', 'head', 'tail'}
                 sprintf('The %s track: x, y per video frame, pixels from the upper-left corner.', bodyPart), ...
                 'NaN')}]; %#ok<AGROW>
             out.counts.position = out.counts.position + 1;
+            ids = struct('position', pos.base.id, 'speed', '', 'patch_edge_distance', '');
 
             % speed
             if ismember('velocitySmooth', W.Properties.VariableNames)
@@ -167,6 +171,7 @@ for part = {'midpoint', 'head', 'tail'}
                 docs = [docs, {sp, ingestedBody(sp, W.velocitySmooth * 1e-6, 'float64', frames, sid, ...
                     'Speed per video frame, m/s (the source''s velocitySmooth, um/s).', 'NaN')}]; %#ok<AGROW>
                 out.counts.speed = out.counts.speed + 1;
+                ids.speed = sp.base.id;
             end
 
             % distance to the nearest patch edge
@@ -181,6 +186,10 @@ for part = {'midpoint', 'head', 'tail'}
                     'Signed distance to the nearest patch edge per video frame, m (the source''s distanceLawnEdge, pixels).', ...
                     'NaN')}]; %#ok<AGROW>
                 out.counts.patch_edge_distance = out.counts.patch_edge_distance + 1;
+                ids.patch_edge_distance = de.base.id;
+            end
+            if strcmp(bodyPart, 'midpoint')
+                out.byWorm([epoch '|' worm]) = ids;
             end
 
             % nearest patch
@@ -221,20 +230,6 @@ out.documents = docs;
 end
 
 % -----------------------------------------------------------------------------
-function T = trackTable(file)
-% the table in FILE, loaded once per file (the tables are up to GBs and
-% every session of a folder reads the same one)
-persistent cacheFile cacheStamp cacheTable
-info = dir(file);
-if ~isempty(cacheFile) && strcmp(cacheFile, file) && isequal(cacheStamp, info.datenum)
-    T = cacheTable;
-    return;
-end
-S = load(file);
-f = fieldnames(S);
-T = S.(f{1});
-cacheFile = file; cacheStamp = info.datenum; cacheTable = T;
-end
 
 function e = epochOf(pre, name)
 % a recording's epoch id from the file name the table records

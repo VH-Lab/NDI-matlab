@@ -32,7 +32,8 @@ function out = observationDocuments(session, R, subjectIds, options)
 %                      (sessionDocuments' OUT.recordingRefs)
 %
 %   OUT fields: documents (cell of structs), counts (struct: temperature,
-%   humidity), skipped (cellstr).
+%   humidity), skipped (cellstr), windows (containers.Map, plate -> the id of
+%   the time reference spanning its recordings, for stage 11).
 
 arguments
     session table
@@ -53,7 +54,8 @@ secondFmt = 'yyyy-MM-dd''T''HH:mm:ss';
 hasHumidity = ndi.setup.V2.schemaHasField('humidity', 'value');
 
 docs = {};
-out = struct('documents', {{}}, 'skipped', {{}}, 'counts', struct('temperature', 0, 'humidity', 0));
+out = struct('documents', {{}}, 'skipped', {{}}, 'counts', struct('temperature', 0, 'humidity', 0), ...
+    'windows', containers.Map());
 if ~all(ismember({'temp', 'humidity'}, R.Properties.VariableNames))
     out.documents = docs;
     return;
@@ -81,6 +83,7 @@ for k = 1:numel(plates)
         continue;
     end
     timeId = window(P);
+    out.windows(plate) = timeId;
     if ~isnan(temp)
         v = did2.build.composite('temperature_observation', 'value', struct('celsius', temp, ...
             'source_value', temp, 'source_unit', 'C'));

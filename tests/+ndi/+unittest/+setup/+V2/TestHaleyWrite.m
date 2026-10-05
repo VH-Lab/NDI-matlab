@@ -577,6 +577,59 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
                 {fullfile(testCase.Root, 'haley', 'ecoli', 'images', '0002.tiff')});
         end
 
+        function testEncounters(testCase)
+            % stage 11 (decision #63): per worm, an encounter-onset list and the
+            % per-encounter values keyed by it. Worm 121 (plate 12): two
+            % encounters and the gap before them; worm 111 (plate 11, filmed
+            % twice): one encounter in the second video.
+            testCase.assumeTrue(isfile(fullfile(getenv('DID_SCHEMA_PATH'), 'time_calculation.json')), ...
+                'DID_SCHEMA_PATH does not hold time_calculation (did-schema PR #87)');
+            result = testCase.write("concentration_0001", ...
+                ["metadata", "observations", "calculations", "encounters"]);
+            c = result.written{1}.encounters.counts;
+            testCase.verifyEqual([c.worms, c.encounters], [2 3]);
+            testCase.verifyEmpty(result.written{1}.encounters.skipped);
+
+            docs = testCase.documents(result.sessions.path{1});
+            classes = cellfun(@(d) d.document_class.class_name, docs, 'UniformOutput', false);
+            subj = docs(strcmp(classes, 'subject'));
+            idOf = containers.Map(cellfun(@(d) d.subject.local_identifier, subj, 'UniformOutput', false), ...
+                cellfun(@(d) d.base.id, subj, 'UniformOutput', false));
+            named = @(cls, local, var) docs(strcmp(classes, cls) & cellfun(@(d) ...
+                strcmp(edge(d, 'subject_id'), idOf(local)) && isfield(d, 'subject_statement') ...
+                && strcmp(d.subject_statement.variable.name, var), docs));
+
+            fr = 2.9991;
+            list = named('time_calculation', 'concentration_worm0121', 'encounter onset');
+            testCase.verifyNumElements(list, 1);
+            testCase.verifyEqual([list{1}.time.value.seconds], [1 3] / fr, 'AbsTol', 1e-9, ...
+                'rows 2 and 4 of a one-video track: frames 2 and 4');
+            l111 = named('time_calculation', 'concentration_worm0111', 'encounter onset');
+            testCase.verifyEqual(l111{1}.time.value.seconds, 3671 + 1 / fr, 'AbsTol', 1e-6, ...
+                'row 7 = frame 2 of the second video, which started 3671 s after the first');
+
+            sp = named('velocity_calculation', 'concentration_worm0121', 'median speed on patch');
+            testCase.verifyEqual([sp{1}.velocity.value.meters_per_second], [10 20] * 1e-6, 'AbsTol', 1e-15);
+            testCase.verifyTrue(ismember(list{1}.base.id, edgeAll(sp{1}, 'input_id')), ...
+                'a per-encounter value is computed over the encounter list');
+            de = named('acceleration_calculation', 'concentration_worm0121', 'deceleration on entry');
+            testCase.verifyEqual([de{1}.acceleration.value.meters_per_second_squared], [-40 -50] * 1e-6, 'AbsTol', 1e-15);
+            lb = named('label_calculation', 'concentration_worm0121', 'encounter type');
+            testCase.verifyEqual({lb{1}.label.value.name}, {'exploit', 'sample'});
+            pr = named('score_calculation', 'concentration_worm0121', 'probability of exploitation');
+            testCase.verifyEqual([pr{1}.score.value.score], [0.9 0.2], 'AbsTol', 1e-12);
+            g0 = named('velocity_calculation', 'concentration_worm0121', ...
+                'median speed off patch before the first encounter');
+            testCase.verifyEqual(g0{1}.velocity.value.meters_per_second, 50e-6, 'AbsTol', 1e-15);
+
+            % the key takes its positions from the list, once both repositories have key_id
+            keys = entries(sp{1}.data.keys);
+            if isfield(keys{1}, 'positions_from') && ~isempty(keys{1}.positions_from)
+                testCase.verifyEqual(edgeAll(sp{1}, 'key_id'), {list{1}.base.id});
+            end
+            testCase.verifyEqual(keys{1}.n, 2);
+        end
+
         function testEcoliProfiles(testCase)
             % stage 10 part C (decision #62): each analysed image's mask, and
             % each detected patch's values on its patch SUBJECT, matched by
