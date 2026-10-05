@@ -122,7 +122,7 @@ for i = 1:n
     dep = docs{i}.depends_on;
     if isstruct(dep), dep = num2cell(dep); end
     for e = 1:numel(dep)
-        v = dep{e}.value;
+        v = edgeTarget(dep{e});
         if isempty(v), continue; end
         checked = checked + 1;
         if ~isKey(known, v)
@@ -180,6 +180,17 @@ v = '';
 dep = d.depends_on;
 if isstruct(dep), dep = num2cell(dep); end
 for e = 1:numel(dep)
-    if strcmp(dep{e}.name, name), v = dep{e}.value; return; end
+    if strcmp(dep{e}.name, name), v = edgeTarget(dep{e}); return; end
 end
+end
+
+function v = edgeTarget(e)
+% V2 (did2.build) stores an edge as {name, document_id}; v1 as {name, value}
+v = '';
+if isfield(e, 'document_id')
+    v = e.document_id;
+elseif isfield(e, 'value')
+    v = e.value;
+end
+v = char(v);
 end
