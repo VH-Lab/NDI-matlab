@@ -105,6 +105,35 @@ classdef TestObjectLayer < matlab.unittest.TestCase
             testCase.verifyEqual(x.value(x.variable == "inclusion in analysis"), "excluded");
         end
 
+        function testInheritedFollowsMemberOfAndDistributive(testCase)
+            % decision #55: species and strain are stated once, on the
+            % cohort, marked distributive -- they hold of each worm
+            w = testCase.subject('concentration_worm0121');
+            own = w.assertions();
+            testCase.verifyFalse(any(own.variable == "species"), 'nothing is stated on the worm itself');
+            testCase.verifyTrue(all(own.stated_on == "concentration_worm0121"));
+            T = w.assertions('Inherited', true);
+            st = w.statements('Inherited', true);
+            mine = w.statements();
+            testCase.verifyGreaterThanOrEqual(numel(st), numel(mine), 'its own statements are kept');
+            if ndi.setup.V2.schemaHasField('subject_statement', 'distributive')
+                sp = T(T.variable == "species", :);
+                testCase.verifyEqual(height(sp), 1);
+                testCase.verifyEqual(sp.node, "NCBITaxon:6239");
+                testCase.verifyEqual(sp.stated_on, "concentration_assayPlate0012_worms");
+                testCase.verifyEqual(T.value(T.variable == "strain"), "N2");
+                extra = st(numel(mine)+1:end);
+                testCase.verifyNotEmpty(extra);
+                testCase.verifyTrue(all(cellfun(@(x) x.distributive(), extra)), 'only distributive ones');
+                testCase.verifyTrue(all(cellfun(@(x) strcmp(x.subject().local_identifier, ...
+                    'concentration_assayPlate0012_worms'), extra)), 'each says where it was stated');
+            else
+                testCase.verifyEqual(numel(st), numel(mine), 'no distributive flag in this schema: nothing inherits');
+            end
+            % contained_in is not followed: the plate's temperature is not the worm's
+            testCase.verifyEmpty(w.statements('Inherited', true, 'Class', 'temperature_manipulation'));
+        end
+
         function testCalculationValueFromItsBody(testCase)
             w = testCase.subject('concentration_worm0121');
             sp = w.statements('Class', 'velocity_calculation');

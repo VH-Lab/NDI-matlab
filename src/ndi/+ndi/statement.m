@@ -226,6 +226,13 @@ classdef statement
             T = table(variable, value, unit, source_value, source_unit);
         end
 
+        function tf = distributive(obj)
+            % DISTRIBUTIVE - true when the statement, made about a group,
+            % holds of each of the group's members (subject_statement.distributive)
+            d = ndi.v2.blockOf(obj.document_properties(), 'subject_statement', 'distributive', false);
+            tf = ~isempty(d) && logical(d(1));
+        end
+
         function n = notes(obj)
             % NOTES - the statement's notes ('' when none)
             n = char(ndi.v2.blockOf(obj.document_properties(), 'subject_interaction', 'notes', ''));

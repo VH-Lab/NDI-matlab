@@ -123,18 +123,56 @@ classdef subject < ndi.ido & ndi.documentservice & ndi.entity
             % ndi.statement objects (each the right child: ndi.observation,
             % ndi.manipulation, ndi.calculation, ndi.assertion). Takes the
             % filters of ndi.statement.find: 'Variable', 'Class', 'Method'.
+            %
+            % 'Inherited', true also returns what holds of this subject
+            % because it was stated on a group the subject is a member of:
+            % the groups are found by following member_of upward (groups of
+            % groups too), and of each group's statements only those marked
+            % `distributive` are kept -- the schema's flag for "stated on the
+            % group, holds of each member" (did-schema #84). Default false:
+            % only statements whose subject is this one. An inherited
+            % statement's subject() is the group it was stated on.
+            % Relations other than member_of (contained_in, part_of) are not
+            % followed: they do not make a statement hold of the subject.
             s = {};
             if isempty(ndi_subject_obj.container_), return; end
-            s = ndi.statement.find(ndi_subject_obj.container_, 'Subject', ndi_subject_obj, varargin{:});
+            [inherited, rest] = ndi.subject.takeOption(varargin, 'Inherited', false);
+            s = ndi.statement.find(ndi_subject_obj.container_, 'Subject', ndi_subject_obj, rest{:});
+            if ~inherited
+                return;
+            end
+            seen = {ndi_subject_obj.document_id};
+            queue = ndi_subject_obj.memberOf();
+            while ~isempty(queue)
+                g = queue{1};
+                queue(1) = [];
+                if ~isa(g, 'ndi.subject') || any(strcmp(seen, g.document_id))
+                    continue;
+                end
+                seen{end+1} = g.document_id; %#ok<AGROW>
+                gs = ndi.statement.find(ndi_subject_obj.container_, 'Subject', g, rest{:});
+                for k = 1:numel(gs)
+                    if gs{k}.distributive()
+                        s{end+1} = gs{k}; %#ok<AGROW>
+                    end
+                end
+                queue = [queue, g.memberOf()]; %#ok<AGROW>
+            end
         end % statements()
 
-        function T = assertions(ndi_subject_obj)
-            % ASSERTIONS - table of what is asserted about the subject (variable, value)
+        function T = assertions(ndi_subject_obj, varargin)
+            % ASSERTIONS - table of what is asserted about the subject
             %
-            % e.g. species 'Caenorhabditis elegans', strain 'N2', inclusion in
-            % analysis 'excluded'.
+            % T = ASSERTIONS(NDI_SUBJECT_OBJ) has columns variable, value,
+            % node and stated_on (the local identifier of the subject it was
+            % stated on), e.g. species 'Caenorhabditis elegans', strain 'N2',
+            % inclusion in analysis 'excluded'. 'Inherited', true adds what
+            % is stated distributively on the subject's groups (see
+            % STATEMENTS): a worm's species and strain, stated on its cohort.
+            [inherited, ~] = ndi.subject.takeOption(varargin, 'Inherited', false);
             variable = strings(0, 1); value = strings(0, 1); node = strings(0, 1);
-            a = ndi_subject_obj.statements('Class', 'assertion');
+            stated_on = strings(0, 1);
+            a = ndi_subject_obj.statements('Class', 'assertion', 'Inherited', inherited);
             for i = 1:numel(a)
                 v = a{i}.raw_value();
                 variable(end+1, 1) = string(a{i}.variable_name()); %#ok<AGROW>
@@ -142,8 +180,14 @@ classdef subject < ndi.ido & ndi.documentservice & ndi.entity
                 nd = '';
                 if isstruct(v) && isfield(v, 'node'), nd = char(v(1).node); end
                 node(end+1, 1) = string(nd); %#ok<AGROW>
+                on = ndi_subject_obj.local_identifier;
+                if ~strcmp(statedOnId(a{i}), ndi_subject_obj.document_id)
+                    sub = a{i}.subject();
+                    if ~isempty(sub), on = sub.local_identifier; else, on = statedOnId(a{i}); end
+                end
+                stated_on(end+1, 1) = string(on); %#ok<AGROW>
             end
-            T = table(variable, value, node);
+            T = table(variable, value, node, stated_on);
         end % assertions()
 
         function m = members(ndi_subject_obj)
@@ -169,6 +213,18 @@ classdef subject < ndi.ido & ndi.documentservice & ndi.entity
     end % methods
 
     methods (Static) % static methods
+
+        function [value, rest] = takeOption(args, name, default)
+            % TAKEOPTION - remove the name-value pair NAME from ARGS
+            value = default;
+            rest = args;
+            for k = numel(args)-1:-1:1
+                if (ischar(args{k}) || isstring(args{k})) && strcmpi(args{k}, name)
+                    value = args{k+1};
+                    rest(k:k+1) = [];
+                end
+            end
+        end
 
         function obj = fromDocument(container, doc)
             % FROMDOCUMENT - an ndi.subject read from a subject document (V2 or v1)
@@ -289,3 +345,10 @@ classdef subject < ndi.ido & ndi.documentservice & ndi.entity
         end % does_subjectstring_match_session_document()
     end % static methods
 end % classdef ndi.subject
+
+function id = statedOnId(st)
+% the document id the statement is about (its subject_id edge)
+ids = ndi.v2.edgeIds(st.document_properties(), 'subject_id');
+id = '';
+if ~isempty(ids), id = ids{1}; end
+end
