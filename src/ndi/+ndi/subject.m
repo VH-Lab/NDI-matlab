@@ -1,4 +1,4 @@
-classdef subject < ndi.ido & ndi.documentservice
+classdef subject < ndi.ido & ndi.documentservice & ndi.entity
     % ndi.subject - an object describing the subject of a measurement or stimulation
     %
     % ndi.subject is an object that stores information about the subject of an ndi.element.
@@ -100,9 +100,121 @@ classdef subject < ndi.ido & ndi.documentservice
             sq = {'subject.local_identifier',ndi_subject.local_identifer'};
         end % searchquery()
 
+        %%% V2 (V_eta) methods: an ndi.subject read from a V2 document with
+        %%% ndi.subject.fromDocument / ndi.subject.find. They return empty on
+        %%% a subject that was not (no container to search).
+
+        function t = type(ndi_subject_obj)
+            % TYPE - the subject's coarse kind: 'organism', 'group', 'culture', 'material', ...
+            t = '';
+            if isempty(ndi_subject_obj.container_), return; end
+            t = ndi.v2.termName(ndi.v2.blockOf(ndi_subject_obj.document_properties(), 'subject', 'type', ''));
+        end % type()
+
+        function s = statements(ndi_subject_obj, varargin)
+            % STATEMENTS - the statements about this subject
+            %
+            % S = STATEMENTS(NDI_SUBJECT_OBJ, ...) returns a cell array of
+            % ndi.statement objects (each the right child: ndi.observation,
+            % ndi.manipulation, ndi.calculation, ndi.assertion). Takes the
+            % filters of ndi.statement.find: 'Variable', 'Class', 'Method'.
+            s = {};
+            if isempty(ndi_subject_obj.container_), return; end
+            s = ndi.statement.find(ndi_subject_obj.container_, 'Subject', ndi_subject_obj, varargin{:});
+        end % statements()
+
+        function T = assertions(ndi_subject_obj)
+            % ASSERTIONS - table of what is asserted about the subject (variable, value)
+            %
+            % e.g. species 'Caenorhabditis elegans', strain 'N2', inclusion in
+            % analysis 'excluded'.
+            variable = strings(0, 1); value = strings(0, 1); node = strings(0, 1);
+            a = ndi_subject_obj.statements('Class', 'assertion');
+            for i = 1:numel(a)
+                v = a{i}.raw_value();
+                variable(end+1, 1) = string(a{i}.variable_name()); %#ok<AGROW>
+                value(end+1, 1) = string(ndi.v2.termName(v)); %#ok<AGROW>
+                nd = '';
+                if isstruct(v) && isfield(v, 'node'), nd = char(v(1).node); end
+                node(end+1, 1) = string(nd); %#ok<AGROW>
+            end
+            T = table(variable, value, node);
+        end % assertions()
+
+        function m = members(ndi_subject_obj)
+            % MEMBERS - a group's members (the subjects that are member_of it), a cell array
+            m = ndi_subject_obj.children('member_of');
+        end
+
+        function g = memberOf(ndi_subject_obj)
+            % MEMBEROF - the groups this subject is member_of, a cell array
+            g = ndi_subject_obj.parents('member_of');
+        end
+
+        function p = parts(ndi_subject_obj)
+            % PARTS - the subjects that are part_of this one (a plate's patches), a cell array
+            p = ndi_subject_obj.children('part_of');
+        end
+
+        function w = partOf(ndi_subject_obj)
+            % PARTOF - what this subject is part_of (a patch's plate), a cell array
+            w = ndi_subject_obj.parents('part_of');
+        end
+
     end % methods
 
     methods (Static) % static methods
+
+        function obj = fromDocument(container, doc)
+            % FROMDOCUMENT - an ndi.subject read from a subject document (V2 or v1)
+            %
+            % OBJ = ndi.subject.fromDocument(CONTAINER, DOC); CONTAINER is the
+            % ndi.session or ndi.dataset DOC was read from; DOC an ndi.document
+            % or a document id. The subject keeps DOC's id. The '@' that
+            % ndi.subject(LOCAL_IDENTIFIER, DESCRIPTION) requires is a v1 rule
+            % for MAKING a subject and is not applied here (V2_Object_Layer.md, D6).
+            if ischar(doc) || isstring(doc)
+                d = ndi.v2.getDocument(container, char(doc));
+                if isempty(d)
+                    error('ndi:subject:notFound', 'No document %s in this %s.', char(doc), class(container));
+                end
+                doc = d;
+            end
+            p = ndi.v2.props(doc);
+            obj = ndi.subject();
+            obj.identifier = char(p.base.id);
+            obj.local_identifier = char(ndi.v2.blockOf(p, 'subject', 'local_identifier', ''));
+            obj.description = char(ndi.v2.blockOf(p, 'subject', 'description', ''));
+            obj.container_ = container;
+            obj.entity_document_ = doc;
+        end % fromDocument()
+
+        function s = find(container, options)
+            % FIND - the subjects in a session or dataset
+            %
+            % S = ndi.subject.find(CONTAINER, ...) returns a cell array of
+            % ndi.subject. Options: 'Type' (e.g. 'organism'), 'LocalIdentifier'.
+            % Every subject is returned unless a filter says otherwise,
+            % instrument subjects included (V2_Object_Layer.md, Q2).
+            arguments
+                container
+                options.Type (1,:) char = ''
+                options.LocalIdentifier (1,:) char = ''
+            end
+            q = ndi.query('', 'isa', 'subject', '');
+            if ~isempty(options.LocalIdentifier)
+                q = q & ndi.query('subject.local_identifier', 'exact_string', options.LocalIdentifier, '');
+            end
+            docs = container.database_search(q);
+            s = {};
+            for i = 1:numel(docs)
+                x = ndi.subject.fromDocument(container, docs{i});
+                if ~isempty(options.Type) && ~strcmp(x.type(), options.Type)
+                    continue;
+                end
+                s{end+1} = x; %#ok<AGROW>
+            end
+        end % find()
 
         function [b,msg] = isvalidlocalidentifierstring(local_identifier)
             % ISVALIDLOCALIDENTIFIERSTRING - is this a valid local identifier string?

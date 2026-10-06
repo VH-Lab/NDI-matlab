@@ -1,6 +1,10 @@
 # NDI V2 object layer: subjects, statements and entities
 
-**Status: PROPOSED (2026-10-06), for sign-off by Jess Haley and Steve Van Hooser. Nothing here is built.**
+**Status: PARTLY BUILT (2026-10-06), for review by Jess Haley and Steve Van Hooser.**
+Built (read side): `ndi.entity`, `ndi.subject` as an entity, the statement tree,
+`ndi.data_type`, and the `ndi.v2` helpers. **Not built, on purpose:** any change to
+`ndi.session` or `ndi.dataset` (section 4, "Entry points"); `ndi.strain`, `ndi.study`;
+`subject.location(t)`; the `'During'` filter. Section 9 lists what was built.
 
 ## 1. Why
 
@@ -84,7 +88,12 @@ Built from any entity document.
 | `relations(name, 'Direction', 'out' or 'in')` | table: relation, the other entity, role(s), time |
 | `parents(name)`, `children(name)` | entities across one relation (`part_of`, `member_of`, ...) |
 | `document()` | the underlying `ndi.document` |
-| `ndi.entity.fromDocument(doc)` (static) | the right class for the document: `ndi.subject` for a subject, `ndi.study`, `ndi.strain`, else `ndi.entity` |
+| `ndi.entity.fromDocument(container, doc)` (static) | the right class for the document: `ndi.subject` for a subject, else `ndi.entity` |
+| `ndi.entity.find(container, kind, 'Name', ...)` (static) | a cell array of entities of a kind |
+
+`ndi.entity` is a CONCRETE value class: a person, an organization or a piece of
+software is an `ndi.entity` with no subclass. It holds its document and the
+session or dataset it was read from, and nothing else; every question is a query.
 
 Subclasses only where there is real behaviour:
 
@@ -143,14 +152,37 @@ method or instrument.
 - `ndi.calculation`: `inputs()` (the statements and documents it was computed
   from), `software()` (software, interpreter, operating system).
 
-### `ndi.session` and `ndi.dataset` additions
+### `ndi.data_type`
 
-| member | on | returns |
-|---|---|---|
-| `subjects(...)` | both | subjects; filters `'Type'`, `'LocalIdentifier'` |
-| `statements(...)` | both | statements; the same filters as `ndi.subject.statements` plus `'Subject'` |
-| `entities(kind)` | both | entities of a kind (`'person'`, `'organization'`, ...) |
-| `studies()` | dataset | `ndi.study` objects |
+A statement's value, the same object whether it was stored inline or in a data
+body (answers Q3: a small value class).
+
+| member | returns |
+|---|---|
+| `canonical()`, `double()` | the values in the canonical unit; a term's name; the raw struct for a structured value (dose, item, model fit) |
+| `unit()` | the canonical field, e.g. `meters`, read from the schema |
+| `source()` | table: source_value, source_unit |
+| `tolerance()`, `approximate()` | per value |
+| `axes()` | the keys: variable, unit, n, coordinates |
+| `files()` | file paths, for a value kept in an opaque body (a video) |
+
+### Entry points (instead of `ndi.session` / `ndi.dataset` additions)
+
+`ndi.session` and `ndi.dataset` are NOT changed (Jess Haley, 2026-10-06: "I'm not
+sure about the session and dataset changes"). The entry points are static methods
+that take the session or dataset as their first argument:
+
+| call | returns |
+|---|---|
+| `ndi.subject.find(S, 'Type', t, 'LocalIdentifier', l)` | subjects (instruments included unless filtered: answers Q2) |
+| `ndi.statement.find(S, 'Subject', s, 'Variable', v, 'Class', c, 'Method', m)` | statements |
+| `ndi.entity.find(S, kind)` | entities of a kind |
+| `ndi.entity.fromDocument(S, doc)`, `ndi.statement.fromDocument(S, doc)` | the object for one document |
+
+A session searches only its own documents, so a dataset-level document (a
+person, a study, a formulation stored with the dataset) is found through the
+`ndi.dataset`, not through one of its sessions. `ndi.manipulation.formulation()`
+returns `[]` when its formulation is not in the container it was read from.
 
 ## 5. How it is built
 
@@ -209,12 +241,30 @@ tried on the real Haley dataset before the next.
 - **Q1** How `ndi.session` and `ndi.dataset` become entities: a mixin class, or
   composition (`session.entity()` returning an `ndi.entity`)? A mixin changes
   their class hierarchy; composition does not.
-- **Q2** Should `subjects()` include instrument subjects (tenet T7 makes an
-  instrument a subject) by default, or only when asked for?
-- **Q3** What `value()` returns for a value with tolerance or approximation: a
-  struct (value, unit, tolerance), a table, or a small value class?
-- **Q4** Does a formulation get an object (`ndi.formulation`, not an entity), or
-  stay a struct returned by `ndi.manipulation.formulation()`?
+- **Q2** ANSWERED: subjects include instrument subjects unless a filter says otherwise.
+- **Q3** ANSWERED: `ndi.data_type`, a small value class.
+- **Q4** ANSWERED: a formulation is a data_type, so `formulation()` returns an
+  `ndi.data_type` of class `formulation`; no `ndi.formulation`.
 - **Q5** The writing side (D1 defers it): when it comes, does `ndi.statement`
   get constructors wrapping `did2.build`, or does `did2.build` stay the only
   writer?
+
+## 9. What is built (2026-10-06)
+
+| file | what |
+|---|---|
+| `+ndi/entity.m` | `ndi.entity` (concrete value class) |
+| `+ndi/subject.m` | now `ndi.ido & ndi.documentservice & ndi.entity`; adds `type`, `statements`, `assertions`, `members`, `memberOf`, `parts`, `partOf`, static `fromDocument`, `find`. The v1 constructor, `newdocument`, `searchquery` and the `@` check are unchanged |
+| `+ndi/statement.m` | `ndi.statement`: `subject`, `variable`, `variable_name`, `composite`, `raw_value`, `value`, `bodies`, `axes`, `conditions`, `notes`, static `fromDocument`, `find` |
+| `+ndi/assertion.m` | `ndi.assertion` |
+| `+ndi/interaction.m` | `ndi.interaction` (abstract): `time`, `method`, `method_name`, `method_parameters`, `instrument`, `software` |
+| `+ndi/observation.m` | `ndi.observation` |
+| `+ndi/manipulation.m` | `ndi.manipulation`: `formulation` |
+| `+ndi/calculation.m` | `ndi.calculation`: `inputs`, `interpreter`, `operating_system` |
+| `+ndi/data_type.m` | `ndi.data_type` |
+| `+ndi/+v2/` | helpers: `props`, `classChain`, `directParents`, `edgeIds`, `getDocument`, `blockOf`, `termName`, `readBody` (the sampled-body reader), `axesTable`, `parseUtc`, `timeOf` (the time resolver) |
+
+Tests: `tests/+ndi/+unittest/+setup/+V2/TestObjectLayer.m`, over the Haley CI
+fixture, including the v1 subject constructor. Not yet: a chunked body (an
+error for now), a v1 session beyond the subject constructor, timing on the full
+Haley dataset.
