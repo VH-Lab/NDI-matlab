@@ -280,7 +280,7 @@ classdef TestProgressBarWindow < matlab.unittest.TestCase
             testCase.verifyEqual(app.ProgressBars(2).State, 'Open', 'Remaining bar state incorrect.');
             testCase.verifyNumElements(app.ProgressGrid.RowHeight, initialRowCount - 2, 'Grid rows not removed correctly.');
             testCase.verifyEqual(app.ProgressBars(2).Label.Layout.Row, 1);
-            testCase.verifyEqual(app.ProgressBars(2).Axes.Layout.Row, 2);
+            testCase.verifyEqual(app.ProgressBars(2).Axes.Parent.Layout.Row, 2); % the bar's panel
             % Verify properties of removed bar
             testCase.verifyEqual(app.ProgressBars(1).Tag, 'TRemove', 'Removed bar is incorrect.');
             testCase.verifyEqual(app.ProgressBars(1).State, 'Closed', 'Removed bar state incorrect.');
