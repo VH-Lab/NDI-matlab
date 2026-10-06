@@ -126,7 +126,7 @@ classdef TestProgressBarWindow < matlab.unittest.TestCase
 
         function testBarFillsItsRow(testCase)
             % The bar's axes sit in a borderless panel that the grid lays
-            % out, with the axes' INNER box filling the panel. In a grid cell
+            % out, the axes' INNER box BarMargin px inside it. In a grid cell
             % a uiaxes keeps room for hidden tick labels; on R2026a that
             % left a 2.7 px bar in a 28 px row.
             app = ndi.gui.component.ProgressBarWindow('Fill Test', 'Visible', 'off');
@@ -137,8 +137,15 @@ classdef TestProgressBarWindow < matlab.unittest.TestCase
             testCase.verifyClass(ax.Parent, 'matlab.ui.container.Panel');
             testCase.verifyEqual(ax.Parent.Layout.Row, 4, 'the panel takes the bar row');
             testCase.verifyEqual(ax.PositionConstraint, 'innerposition');
-            testCase.verifyEqual(ax.Units, 'normalized');
-            testCase.verifyEqual(ax.InnerPosition, [0 0 1 1], 'AbsTol', 1e-9);
+            testCase.verifyEqual(ax.Units, 'pixels');
+            testCase.verifyNotEmpty(ax.Parent.SizeChangedFcn, 'the bar follows its panel''s size');
+            % BarMargin px inside the panel on every side
+            m = ndi.gui.component.ProgressBarWindow.BarMargin;
+            drawnow
+            ndi.gui.component.ProgressBarWindow.fitBarAxes(ax, ax.Parent);
+            pos = getpixelposition(ax.Parent);   % the grid sets the panel's size
+            testCase.verifyEqual(ax.InnerPosition, ...
+                [1+m, 1+m, max(pos(3)-2*m, 1), max(pos(4)-2*m, 1)], 'AbsTol', 1e-6);
 
             % removing the first bar moves the second panel up and deletes
             % the first bar's panel along with its axes

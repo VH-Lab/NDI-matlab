@@ -45,6 +45,10 @@ classdef ProgressBarWindow < matlab.apps.AppBase
     %       ndi.gui.component.ProgressBarWindow.isHeadless,
     %       ndi.gui.component.ProgressBarWindow.silentModeDefault
 
+    properties (Constant, Hidden)
+        BarMargin double = 5 % Pixels between a bar and the edges of its row (as R2024b drew it).
+    end
+
     properties (Hidden)
         ScreenFrac double = 0.025 % Fraction of screen height used per bar row.
         IconClose char = fullfile(ndi.common.PathConstants.RootFolder,...
@@ -351,20 +355,25 @@ classdef ProgressBarWindow < matlab.apps.AppBase
             % by its OUTER box and keeps room inside it for tick labels and
             % a title, even hidden ones; R2026a keeps about 25 px, which
             % left a 28 px row with a 2.7 px bar. Inside a plain panel the
-            % axes' inner box can be set to fill it exactly, whatever the
-            % release. The panel is the axes' parent: it is what the grid
-            % lays out (removeBar moves and deletes it through Axes.Parent).
+            % axes' inner box is placed exactly, BarMargin px in from each
+            % side -- the margin R2024b drew -- and kept there when the
+            % panel resizes. The panel is the axes' parent: it is what the
+            % grid lays out (removeBar moves and deletes it through
+            % Axes.Parent).
             barPanel = uipanel(app.ProgressGrid,'BorderType','none',...
-                'BackgroundColor','w');
+                'BackgroundColor',app.ProgressGrid.BackgroundColor);
             barPanel.Layout.Row = rowNum;
             barPanel.Layout.Column = 1;
             app.ProgressBars(barNum).Axes = uiaxes(barPanel,...
                 'XLim',[0 1],'YLim',[0 1],'XTick',[],'YTick',[],'Box','off',...
                 'XColor','none','YColor','none','Color','w','Interactions',[]);
             app.ProgressBars(barNum).Axes.Toolbar.Visible = 'off';
-            app.ProgressBars(barNum).Axes.Units = 'normalized';
+            app.ProgressBars(barNum).Axes.Units = 'pixels';
             app.ProgressBars(barNum).Axes.PositionConstraint = 'innerposition';
-            app.ProgressBars(barNum).Axes.InnerPosition = [0 0 1 1];
+            barAxes = app.ProgressBars(barNum).Axes;
+            barPanel.SizeChangedFcn = @(panel,~) ...
+                ndi.gui.component.ProgressBarWindow.fitBarAxes(barAxes, panel);
+            ndi.gui.component.ProgressBarWindow.fitBarAxes(barAxes, barPanel);
 
             % Add bar patch (foreground)
             app.ProgressBars(barNum).Patch = patch(app.ProgressBars(barNum).Axes, ...
@@ -1031,6 +1040,21 @@ classdef ProgressBarWindow < matlab.apps.AppBase
     end
 
     methods (Static)
+        function fitBarAxes(ax, panel)
+            %fitBarAxes Place a bar's axes BarMargin px inside its panel.
+            %
+            %   ndi.gui.component.ProgressBarWindow.fitBarAxes(AX, PANEL)
+            %   sets AX's inner box (pixels) to PANEL's area less BarMargin
+            %   on each side, at least 1 x 1. addBar calls it once and as
+            %   PANEL's SizeChangedFcn.
+            if ~isvalid(ax) || ~isvalid(panel)
+                return
+            end
+            m = ndi.gui.component.ProgressBarWindow.BarMargin;
+            pos = getpixelposition(panel);
+            ax.InnerPosition = [1 + m, 1 + m, max(pos(3) - 2*m, 1), max(pos(4) - 2*m, 1)];
+        end
+
         function tf = isHeadless()
             %isHeadless True when this MATLAB has no usable display.
             %
