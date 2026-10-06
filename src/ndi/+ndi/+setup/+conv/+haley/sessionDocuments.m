@@ -199,7 +199,7 @@ for k = 1:height(R)
     ep = did2.build.document('epoch', struct('local_identifier', r.epoch{1}), 'SessionId', sid, ...
         'Edges', struct('time_reference_id', {epochRefs}));
     if isImage
-        relEpoch = did2.build.relativeTimeReference(ep.base.id, 'Relation', 'during', 'SessionId', sid);
+        relEpoch = did2.build.relativeTimeReference(ep.base.id, 'Relation', 'intervalDuring', 'SessionId', sid);
     else
         relEpoch = did2.build.relativeTimeReference(ep.base.id, 'Clock', 'dev_local_time', ...
             'Start', 0, 'Duration', dur, 'SessionId', sid);
