@@ -17,9 +17,11 @@ classdef entity
     %   p{1}.name()                                  % 'Jess Haley'
     %   p{1}.parents('affiliated_with')              % her organizations
     %
-    % A search through an ndi.session sees only that session's documents;
-    % dataset-level entities (people, studies, ...) are found through the
-    % ndi.dataset.
+    % READ THROUGH THE DATASET. A search through an ndi.session sees only
+    % that session's documents, and the shared entities (people,
+    % organizations, studies, strains, software, instruments) are stored
+    % with the dataset. An entity read through the ndi.dataset reaches
+    % everything; one read through a session does not reach those.
     %
     % ndi.entity Methods:
     %   kind               - the document class ('person', 'subject', ...)

@@ -179,10 +179,17 @@ that take the session or dataset as their first argument:
 | `ndi.entity.find(S, kind)` | entities of a kind |
 | `ndi.entity.fromDocument(S, doc)`, `ndi.statement.fromDocument(S, doc)` | the object for one document |
 
-A session searches only its own documents, so a dataset-level document (a
-person, a study, a formulation stored with the dataset) is found through the
-`ndi.dataset`, not through one of its sessions. `ndi.manipulation.formulation()`
-returns `[]` when its formulation is not in the container it was read from.
+**Read through the dataset.** A session searches only its own documents, and the
+shared documents (people, organizations, studies, strains, software, products,
+instruments, formulations) are stored with the dataset (Haley decision #20). An
+object read through a session therefore cannot reach them: `software()` and
+`formulation()` come back empty. An object read through the `ndi.dataset` reaches
+everything, including every session's documents. Measured on the full Haley dataset
+(58 sessions, 2026-10-06, `tools/v2_object_layer_tryout.m`): one worm's 22
+statements took 0.19 s through its session and 0.52 s through the dataset; the
+dose's formulation was not found through the session and was found through the
+dataset. To narrow a search to one session, find things in the session, then read
+them through the dataset with `fromDocument(ds, id)`.
 
 ## 5. How it is built
 
@@ -238,7 +245,7 @@ tried on the real Haley dataset before the next.
 
 ## 8. Open questions
 
-- **Q1** How `ndi.session` and `ndi.dataset` become entities: a mixin class, or
+- **Q1** (Reading does not need it: read through the dataset, section 4.) How `ndi.session` and `ndi.dataset` become entities: a mixin class, or
   composition (`session.entity()` returning an `ndi.entity`)? A mixin changes
   their class hierarchy; composition does not.
 - **Q2** ANSWERED: subjects include instrument subjects unless a filter says otherwise.

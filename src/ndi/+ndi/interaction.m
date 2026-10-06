@@ -54,24 +54,35 @@ classdef (Abstract) interaction < ndi.statement
             % METHOD_PARAMETERS - table: variable, value, unit, source_unit
             %
             % One row per parameter stored on the statement. VALUE is the
-            % number in the canonical unit, a term's name, or text.
+            % number in `unit` (the canonical unit), a term's name, or text;
+            % SOURCE_VALUE is the number as the source wrote it, in
+            % SOURCE_UNIT ('' for a term or text).
             m = ndi.v2.blockOf(obj.document_properties(), 'subject_interaction', 'method_parameters', []);
             m = ndi.v2.entries(m);
-            variable = strings(0, 1); value = cell(0, 1); unit = strings(0, 1); source_unit = strings(0, 1);
+            variable = strings(0, 1); value = cell(0, 1); unit = strings(0, 1);
+            source_value = strings(0, 1); source_unit = strings(0, 1);
             for i = 1:numel(m)
                 x = m{i};
                 variable(end+1, 1) = string(ndi.v2.termName(fieldOf(x, 'variable'))); %#ok<AGROW>
                 unit(end+1, 1) = string(ndi.v2.termName(fieldOf(x, 'unit'))); %#ok<AGROW>
                 source_unit(end+1, 1) = string(char(fieldOf(x, 'source_unit'))); %#ok<AGROW>
+                sv = "";
                 if ~isempty(fieldOf(x, 'term'))
                     value{end+1, 1} = ndi.v2.termName(fieldOf(x, 'term')); %#ok<AGROW>
                 elseif ~isempty(fieldOf(x, 'text'))
                     value{end+1, 1} = char(fieldOf(x, 'text')); %#ok<AGROW>
                 else
-                    value{end+1, 1} = fieldOf(x, 'value'); %#ok<AGROW>
+                    % a number: {value, source_value}
+                    q = fieldOf(x, 'value');
+                    n = fieldOf(q, 'value');
+                    if isempty(n) && isnumeric(q), n = q; end
+                    value{end+1, 1} = double(n); %#ok<AGROW>
+                    sv = string(fieldOf(q, 'source_value'));
+                    if isempty(sv) || ismissing(sv), sv = ""; end
                 end
+                source_value(end+1, 1) = sv; %#ok<AGROW>
             end
-            T = table(variable, value, unit, source_unit);
+            T = table(variable, value, unit, source_value, source_unit);
         end
 
         function s = instrument(obj)

@@ -14,7 +14,16 @@ classdef statement
     %       |-- ndi.manipulation  (formulation, for a dose)
     %       `-- ndi.calculation   (inputs, software)
     %
-    %   w = ndi.subject.find(S, 'LocalIdentifier', 'concentration_worm0012');
+    % READ THROUGH THE DATASET. A statement's software, formulation,
+    % strain and instruments are stored with the dataset, and an
+    % ndi.session searches only its own documents, so a statement read
+    % through a session cannot reach them (software() and formulation()
+    % come back empty). Read through the ndi.dataset, which reaches every
+    % document; find things in a session first if that is quicker, then
+    % re-read them through the dataset with fromDocument:
+    %
+    %   ds = ndi.dataset.dir(datasetPath);
+    %   w = ndi.subject.find(ds, 'LocalIdentifier', 'concentration_worm0012');
     %   st = w{1}.statements('Variable', 'midpoint speed');
     %   v = st{1}.value();          % an ndi.data_type
     %   speed = double(v);          % metres per second, by video frame
@@ -190,8 +199,8 @@ classdef statement
         function T = conditions(obj)
             % CONDITIONS - table of the conditions the statement holds under
             %
-            % One row per condition: variable, value (a number, or a term's
-            % name), unit, source_value, source_unit.
+            % One row per condition: variable, value (a number in `unit`, a
+            % count, or a term's name), unit, source_value, source_unit.
             c = ndi.v2.blockOf(obj.document_properties(), 'subject_statement', 'conditions', []);
             c = ndi.v2.entries(c);
             variable = strings(0, 1); value = cell(0, 1); unit = strings(0, 1);
@@ -204,9 +213,13 @@ classdef statement
                 if ~isempty(fieldOr(x, 'term', []))
                     value{end+1, 1} = ndi.v2.termName(fieldOr(fieldOr(x, 'term', []), 'value', fieldOr(x, 'term', []))); %#ok<AGROW>
                     source_value{end+1, 1} = []; %#ok<AGROW>
+                elseif ~isempty(fieldOr(x, 'count', []))
+                    value{end+1, 1} = double(fieldOr(fieldOr(x, 'count', []), 'value', NaN)); %#ok<AGROW>
+                    source_value{end+1, 1} = []; %#ok<AGROW>
                 else
-                    q = fieldOr(x, 'quantity', []);
-                    value{end+1, 1} = fieldOr(q, 'value', q); %#ok<AGROW>
+                    % a quantity: {value: {value, source_value}}
+                    q = fieldOr(fieldOr(x, 'quantity', []), 'value', []);
+                    value{end+1, 1} = double(fieldOr(q, 'value', NaN)); %#ok<AGROW>
                     source_value{end+1, 1} = fieldOr(q, 'source_value', []); %#ok<AGROW>
                 end
             end

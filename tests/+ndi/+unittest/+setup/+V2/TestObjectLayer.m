@@ -11,6 +11,7 @@ classdef TestObjectLayer < matlab.unittest.TestCase
     properties
         Root
         Session
+        Dataset
         Result
     end
 
@@ -21,10 +22,11 @@ classdef TestObjectLayer < matlab.unittest.TestCase
             ndi.unittest.setup.V2.TestHaleyRecordings.writeFixture(testCase.Root);
             testCase.Result = ndi.setup.conv.haley.import_V2(testCase.Root, ...
                 'Stages', ["sessions", "subjects", "acquisition", "relations", "metadata", ...
-                "assertions", "manipulations", "calculations"], 'Sessions', "concentration_0001", ...
+                "assertions", "manipulations", "calculations", "dataset"], 'Sessions', "concentration_0001", ...
                 'OutputRoot', fullfile(testCase.Root, 'haley_V2'), 'Write', true, ...
                 'Overwrite', true, 'ReadVideos', false);
             testCase.Session = ndi.session.dir(testCase.Result.sessions.path{1});
+            testCase.Dataset = ndi.dataset.dir(testCase.Result.dataset.path);
         end
     end
 
@@ -108,6 +110,12 @@ classdef TestObjectLayer < matlab.unittest.TestCase
             testCase.verifyEqual(reshape(xy, 5, 2), [(1:5)' + 12.1 - 0.5, 3.5 * ones(5, 1)], 'AbsTol', 1e-12);
             P = in{1}.method_parameters();
             testCase.verifyEqual(sort(P.variable)', ["gap filling", "longest gap filled"]);
+            testCase.verifyFalse(any(cellfun(@isstruct, P.value)), ...
+                'a numeric parameter is its number, not its stored record');
+            P = sp{1}.method_parameters();
+            num = P(cellfun(@isnumeric, P.value), :);
+            testCase.verifyNotEmpty(num, 'the speed''s window and fastest step are numbers');
+            testCase.verifyTrue(all(cellfun(@isscalar, num.value)));
 
             de = w.statements('Class', 'length_calculation');
             testCase.verifyNumElements(de, 1);
@@ -152,6 +160,32 @@ classdef TestObjectLayer < matlab.unittest.TestCase
             testCase.verifyTrue(all(cellfun(@(s) isa(s, 'ndi.manipulation'), moves)));
             P = moves{1}.method_parameters();
             testCase.verifyTrue(any(P.variable == "cleaning step"));
+        end
+
+        function testDatasetLevelDocumentsAreReachedThroughTheDataset(testCase)
+            % software, formulations, strains and people are stored with the
+            % dataset (decision #20): read through the dataset, a statement
+            % reaches them; read through a session, it does not
+            local = 'concentration_worm0121';
+            ws = ndi.subject.find(testCase.Session, 'LocalIdentifier', local);
+            w = ndi.subject.fromDocument(testCase.Dataset, ws{1}.document_id());
+            sp = w.statements('Class', 'velocity_calculation');
+            testCase.verifyNumElements(sp, 1);
+            testCase.verifyEqual(double(sp{1}.value()), 121e-6 * ones(5, 1), 'AbsTol', 1e-15);
+            testCase.assertNotEmpty(ndi.v2.edgeIds(sp{1}.document_properties(), 'software_id'), ...
+                'with stage 2 run, a calculation names its software (import_V2, stage 10)');
+            sw = sp{1}.software();
+            testCase.verifyNumElements(sw, 1, 'the analysis package, from the dataset');
+            testCase.verifyEqual(sw{1}.kind(), 'software');
+            spS = ws{1}.statements('Class', 'velocity_calculation');
+            testCase.verifyEmpty(spS{1}.software(), 'not reached through the session');
+
+            plate = ndi.subject.fromDocument(testCase.Dataset, ...
+                testCase.subject('concentration_assayPlate0012').document_id());
+            pour = plate.statements('Class', 'manipulation', 'Variable', 'NGM agar');
+            f = pour{1}.formulation();
+            testCase.verifyNotEmpty(f, 'the formulation is found through the dataset');
+            testCase.verifyEqual(f.class_name, 'formulation');
         end
 
         function testInteractionIsAbstract(testCase)

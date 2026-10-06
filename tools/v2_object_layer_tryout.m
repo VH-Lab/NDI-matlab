@@ -4,7 +4,12 @@ function T = v2_object_layer_tryout(datasetPath, options)
 %   T = v2_object_layer_tryout(DATASETPATH) opens the V2 dataset at
 %   DATASETPATH (the folder holding .ndi, e.g. <data>/haley_V2/dataset) and
 %   asks it the questions the object layer exists for, through ndi.subject,
-%   ndi.statement, ndi.entity and ndi.data_type. Each step prints what it
+%   ndi.statement, ndi.entity and ndi.data_type, READ THROUGH THE DATASET:
+%   things are found in one session (quick), then read through the
+%   ndi.dataset, which also reaches the shared documents (software,
+%   formulations, strains, people) that a session cannot. The last step
+%   reads the same statements through the session, to show the
+%   difference. Each step prints what it
 %   found and how long it took; a step that errors is reported and the rest
 %   still run. T is one row per step: step, ok, seconds, result.
 %
@@ -76,6 +81,13 @@ step('ndi.subject.find: every subject in the session', @allSubjects);
         fprintf('  %s\n', r);
     end
 
+step('ndi.subject.find: every subject in the dataset', @allSubjectsDataset);
+    function r = allSubjectsDataset()
+        s = ndi.subject.find(ctx.ds);
+        r = sprintf('%d subject(s) in %d session(s)', numel(s), numel(ctx.refs));
+        fprintf('  %s\n', r);
+    end
+
 step('ndi.statement.find: the speed calculations in the session', @speeds);
     function r = speeds()
         ctx.sp = ndi.statement.find(ctx.S, 'Class', 'velocity_calculation');
@@ -83,16 +95,17 @@ step('ndi.statement.find: the speed calculations in the session', @speeds);
         fprintf('  %s\n', r);
     end
 
-step('the worm of the first one (statement.subject)', @worm);
+step('the worm of the first one, read through the dataset', @worm);
     function r = worm()
-        ctx.w = ctx.sp{1}.subject();
+        ctx.wS = ctx.sp{1}.subject();
+        ctx.w = ndi.subject.fromDocument(ctx.ds, ctx.wS.document_id());
         r = sprintf('%s (%s), %s', ctx.w.local_identifier, ctx.w.type(), ctx.w.id());
         fprintf('  %s\n', r);
     end
 
-step('ndi.subject.find by LocalIdentifier', @byLocal);
+step('ndi.subject.find by LocalIdentifier, in the dataset', @byLocal);
     function r = byLocal()
-        x = ndi.subject.find(ctx.S, 'LocalIdentifier', ctx.w.local_identifier);
+        x = ndi.subject.find(ctx.ds, 'LocalIdentifier', ctx.w.local_identifier);
         r = sprintf('%d found', numel(x));
         fprintf('  %s\n', r);
     end
@@ -110,7 +123,8 @@ step('the worm''s statements, by kind', @wormStatements);
 % ---- a value from its body -------------------------------------------------------
 step('its speed: value() decoded from the body', @speedValue);
     function r = speedValue()
-        st = ctx.w.statements('Class', 'velocity_calculation');
+        st = ctx.w.statements('Class', 'velocity_calculation', 'Variable', 'midpoint speed');
+        if isempty(st), st = ctx.w.statements('Class', 'velocity_calculation'); end
         ctx.speed = st{1};
         v = st{1}.value();
         d = double(v);
@@ -198,23 +212,11 @@ step('the plate''s manipulations, with time and dose', @manipulations);
         r = sprintf('%d manipulation(s)', numel(mm));
     end
 
-step('a dose''s formulation, read through the session', @formulationSession);
-    function r = formulationSession()
+step('the dose''s formulation', @formulation);
+    function r = formulation()
         f = ctx.dose.formulation();
         if isempty(f)
-            r = 'not found from the session (expected when it is stored with the dataset)';
-        else
-            r = sprintf('found: %s', f.class_name);
-        end
-        fprintf('  %s\n', r);
-    end
-
-step('the same dose, read through the dataset', @formulationDataset);
-    function r = formulationDataset()
-        d = ndi.statement.fromDocument(ctx.ds, ctx.dose.document_id());
-        f = d.formulation();
-        if isempty(f)
-            r = 'not found from the dataset either';
+            r = 'not found';
         else
             r = sprintf('found: %s; fields %s', f.class_name, strjoin(fieldnames(f.raw), ', '));
         end
@@ -241,12 +243,17 @@ step('the dataset''s model fits (statement.find on the dataset)', @fits);
         fprintf('  %s\n', r);
     end
 
-step('the worm''s statements read through the dataset', @throughDataset);
-    function r = throughDataset()
-        w = ndi.subject.find(ctx.ds, 'LocalIdentifier', ctx.w.local_identifier);
-        n = 0;
-        if ~isempty(w), n = numel(w{1}.statements()); end
-        r = sprintf('%d subject(s) found, %d statement(s)', numel(w), n);
+% ---- the same, through the session ---------------------------------------------------
+step('the same worm read through the SESSION instead (for comparison)', @throughSession);
+    function r = throughSession()
+        st = ctx.wS.statements();
+        sp = ctx.wS.statements('Class', 'velocity_calculation', 'Variable', ctx.speed.variable_name());
+        nSw = numel(sp{1}.software());
+        nF = 0;
+        dm = ndi.statement.fromDocument(ctx.S, ctx.dose.document_id());
+        if ~isempty(dm.formulation()), nF = 1; end
+        r = sprintf(['%d statement(s); speed software found: %d (dataset: %d); ' ...
+            'formulation found: %d (dataset: 1)'], numel(st), nSw, numel(ctx.speed.software()), nF);
         fprintf('  %s\n', r);
     end
 
