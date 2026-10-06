@@ -301,7 +301,19 @@ if isfield(result, 'metadata')
     instrumentIds = result.metadata.ids;
 end
 if isfield(result, 'subjects') && isfield(result, 'recordings')
+    % building every session's documents (stages 6-11) is the longest part of
+    % a run before the write: a bar and a line per session
+    buildBar = []; tag = 'build sessions';
+    try
+        buildBar = ndi.gui.component.ProgressBarWindow('NDI V2 import', 'GrabMostRecent', true);
+        buildBar.setTimeout(hours(12));
+        buildBar.addBar('Label', sprintf('Building %d session(s)', n), 'Tag', tag, 'Auto', true);
+    catch
+        buildBar = [];
+    end
+    tBuild = tic;
     for k = 1:n
+        fprintf('\n-- session %d of %d: %s --\n', k, n, T.local_identifier{k});
         built{k} = ndi.setup.conv.haley.sessionDocuments(dataParentDir, T(k, :), ...
             result.subjects, result.recordings, 'InstrumentIds', instrumentIds, ...
             'Checksums', options.Checksums, 'ReadVideos', options.ReadVideos);
@@ -459,6 +471,12 @@ if isfield(result, 'subjects') && isfield(result, 'recordings')
         disp(groupsummary(table(classes(:), 'VariableNames', {'class'}), 'class'));
         for j = 1:numel(built{k}.skipped)
             fprintf('  skipped: %s\n', built{k}.skipped{j});
+        end
+        el = toc(tBuild);
+        fprintf('-- %d of %d session(s) built, %s elapsed, ~%s left --\n', k, n, ...
+            char(duration(0, 0, round(el))), char(duration(0, 0, round(el / k * (n - k)))));
+        if ~isempty(buildBar)
+            try buildBar.updateBar(tag, k / n); catch, end
         end
     end
     if any(options.Stages == "density")
