@@ -287,15 +287,19 @@ out.documents = docs;
         v = did2.build.composite('dose_manipulation', 'value', struct('volume', ...
             struct('liters', amount * scale.(unit), 'source_value', amount, 'source_unit', unit)));
         x = struct('Method', method, 'Notes', notes, 'Edges', struct());
-        if ~isempty(formulationKey)
-            if isKey(options.Ids, formulationKey)
-                x.Edges.formulation_id = options.Ids(formulationKey);
-            else
-                out.skipped{end+1} = sprintf('%s: formulation %s was not built; dose without it', ...
-                    subject, formulationKey);
-            end
+        % a dose names what was given: did-schema requires dose.formulation_id
+        % (#73 item 59), so a dose whose suspension is not known is not built
+        % and is reported (e.g. Mutants 2023-11-09: no solution measured)
+        if ~isempty(formulationKey) && isKey(options.Ids, formulationKey)
+            x.Edges.formulation_id = options.Ids(formulationKey);
+        elseif ~isempty(formulationKey)
+            out.skipped{end+1} = sprintf('%s: formulation %s was not built; no %s dose', ...
+                subject, formulationKey, counter);
+            return;
         else
-            out.skipped{end+1} = sprintf('%s: no formulation known for this %s', subject, counter);
+            out.skipped{end+1} = sprintf('%s: no formulation known (no solution recorded); no %s dose', ...
+                subject, counter);
+            return;
         end
         statement('dose_manipulation', subject, variable, v, timeId, x, counter);
     end
