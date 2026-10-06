@@ -791,6 +791,16 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             testCase.verifyEqual(v.edges.dangling, 0);
             testCase.verifyGreaterThan(v.files.ingested, 0);
             testCase.verifyGreaterThan(v.hashes.checked, 0, 'ingested bodies record an MD5');
+
+            % the term inventory: plain-text and ontology terms, with where they sit
+            csv = [tempname '.csv'];
+            T = ndi.setup.conv.haley.termInventory(result.dataset.path, 'OutFile', csv);
+            testCase.addTeardown(@() delete(csv));
+            testCase.verifyTrue(isfile(csv));
+            testCase.verifyTrue(any(T.kind == "plain text" & T.name == "image intensity"), ...
+                'the recordings'' variable is listed as plain text');
+            testCase.verifyTrue(any(T.kind == "ontology"), 'species carry ontology nodes');
+            testCase.verifyEqual(sum(T.kind == "ontology" & T.node == ""), 0);
         end
 
         function testOccupiedFolderStopsTheRunFirst(testCase)
