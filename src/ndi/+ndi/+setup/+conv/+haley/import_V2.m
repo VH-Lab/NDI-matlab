@@ -107,6 +107,16 @@ function result = import_V2(dataParentDir, options)
 %                         did2.build built it, so the database does not
 %                         validate it again on insert; true repeats it
 %
+%     'RunFolder'         with 'Write': where this run's record is kept
+%                         (default: <OutputRoot>/run_<yyyy-MM-dd_HHmmss>);
+%                         'none' keeps none. It holds import_log.txt (the
+%                         whole console output, a diary), import_report.mat
+%                         (`report`: the dataset check, the sessions, the
+%                         checks, the density fits, the timing; not the
+%                         documents) and skipped.txt (every reported skip
+%                         and check line). Written even when the run fails,
+%                         with the error at the end of the log.
+%
 %   With 'Write', every folder to be written (the dataset's and, with
 %   'SessionFolders', each session's) is checked before anything is built
 %   or written: one that already holds an NDI database is an error unless
@@ -133,6 +143,15 @@ arguments
     options.EcoliProfilesFile (1,:) char = ''
     options.WriteBatchSize (1,1) double {mustBePositive, mustBeInteger} = 2000
     options.ValidateOnWrite (1,1) logical = false
+    options.RunFolder (1,:) char = ''
+end
+
+% With 'Write', the run keeps its own record (log, report, skipped list) in a
+% run folder beside the dataset: this outer call sets it up and runs the
+% import itself as an inner call with RunFolder 'none'.
+if options.Write && ~strcmp(options.RunFolder, 'none')
+    result = recordedRun(dataParentDir, options);
+    return;
 end
 
 % Check the requirements up front, so a missing one is reported with its fix
@@ -273,6 +292,95 @@ if options.Write && isfield(result, 'sessions')
     fprintf('\n== write ==\n');
     result = writeSessions(result, dataParentDir, options);
 end
+end
+
+function result = recordedRun(dataParentDir, options)
+% Run the import with its console output, report and skipped list kept in
+% the run folder; the diary that was on before (if any) is restored.
+runDir = options.RunFolder;
+if isempty(runDir)
+    outRoot = options.OutputRoot;
+    if isempty(outRoot), outRoot = fullfile(dataParentDir, 'haley_V2'); end
+    runDir = fullfile(outRoot, ['run_' char(datetime('now'), 'yyyy-MM-dd_HHmmss')]);
+end
+if ~isfolder(runDir), mkdir(runDir); end
+logFile = fullfile(runDir, 'import_log.txt');
+wasOn = strcmp(get(0, 'Diary'), 'on');
+wasFile = get(0, 'DiaryFile');
+diary off
+diary(logFile);
+restore = onCleanup(@() restoreDiary(wasOn, wasFile));
+fprintf('run folder: %s\nstarted:    %s\n', runDir, char(datetime('now')));
+t0 = tic;
+inner = options;
+inner.RunFolder = 'none';
+args = namedargs2cell(inner);
+failure = [];
+try
+    result = ndi.setup.conv.haley.import_V2(dataParentDir, args{:});
+catch failure
+    fprintf('\n== the run FAILED ==\n%s\n', getReport(failure, 'extended', 'hyperlinks', 'off'));
+    result = struct();
+end
+elapsed = toc(t0);
+fprintf('\nimport took %s\nrun folder: %s\n', char(duration(0, 0, round(elapsed))), runDir);
+diary off
+report = runReport(result, options, elapsed, failure);   %#ok<NASGU> (saved)
+save(fullfile(runDir, 'import_report.mat'), 'report');
+writeSkipped(logFile, fullfile(runDir, 'skipped.txt'));
+result.runFolder = runDir;
+if ~isempty(failure)
+    rethrow(failure);
+end
+end
+
+function restoreDiary(wasOn, wasFile)
+diary off
+if wasOn
+    diary(wasFile);
+end
+end
+
+function report = runReport(result, options, elapsed, failure)
+% what the run decided and checked, without its documents (small to save)
+report = struct('finished', datetime('now'), 'seconds', elapsed, 'failed', ~isempty(failure), ...
+    'error', '', 'options', options);
+if ~isempty(failure), report.error = failure.message; end
+for f = {'datasetSessionId', 'datasetId', 'dataset', 'sessions', 'subjectChecks', ...
+        'suspensionChecks', 'recordingChecks'}
+    if isfield(result, f{1}), report.(f{1}) = result.(f{1}); end
+end
+if isfield(result, 'density')
+    d = result.density;
+    report.density = struct();
+    for f = {'fits', 'counts', 'checks', 'skipped'}
+        if isfield(d, f{1}), report.density.(f{1}) = d.(f{1}); end
+    end
+end
+end
+
+function writeSkipped(logFile, outFile)
+% every reported skip and check line of the log, under the stage or session
+% header it came after
+lines = splitlines(string(fileread(logFile)));
+keep = strings(0, 1);
+inChecks = false;
+for k = 1:numel(lines)
+    t = strtrim(lines(k));
+    if startsWith(t, "CHECKS")
+        inChecks = true;
+        keep(end+1, 1) = lines(k); %#ok<AGROW>
+    elseif inChecks && startsWith(lines(k), "  ") && t ~= ""
+        keep(end+1, 1) = lines(k); %#ok<AGROW>
+    else
+        inChecks = false;
+        if startsWith(t, "== ") || startsWith(t, "-- session ") || startsWith(t, "skipped:") ...
+                || contains(t, "disagrees:")
+            keep(end+1, 1) = lines(k); %#ok<AGROW>
+        end
+    end
+end
+writelines(keep, outFile);
 end
 
 function result = writeSessions(result, dataParentDir, options)

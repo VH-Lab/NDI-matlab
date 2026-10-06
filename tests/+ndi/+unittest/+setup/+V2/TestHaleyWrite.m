@@ -783,6 +783,17 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             testCase.verifyNumElements(again.database_search(ndi.query('', 'isa', 'model_fit_calculation')), 2, ...
                 'stage 12''s fits are in the dataset');
 
+            % the run's own record, beside the dataset
+            testCase.verifyTrue(isfolder(result.runFolder), 'a run folder is made with ''Write''');
+            for f = {'import_log.txt', 'import_report.mat', 'skipped.txt'}
+                testCase.verifyTrue(isfile(fullfile(result.runFolder, f{1})), f{1});
+            end
+            rep = load(fullfile(result.runFolder, 'import_report.mat'));
+            testCase.verifyFalse(rep.report.failed);
+            testCase.verifyEqual(rep.report.dataset.id, result.dataset.id);
+            testCase.verifySubstring(fileread(fullfile(result.runFolder, 'import_log.txt')), ...
+                '== stage 13: check & write the dataset ==');
+
             % the verification the import's user runs afterwards: every check passes,
             % and its census is the import's own count
             v = ndi.setup.conv.haley.verifyDataset(result.dataset.path, 'Expected', result);
