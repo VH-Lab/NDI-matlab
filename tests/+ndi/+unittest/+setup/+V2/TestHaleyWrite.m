@@ -796,6 +796,7 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             csv = [tempname '.csv'];
             T = ndi.setup.conv.haley.termInventory(result.dataset.path, 'OutFile', csv);
             testCase.addTeardown(@() delete(csv));
+            fprintf('TERM INVENTORY (test dataset):\n%s\nEND TERM INVENTORY\n', fileread(csv));
             testCase.verifyTrue(isfile(csv));
             testCase.verifyTrue(any(T.kind == "plain text" & T.name == "image intensity"), ...
                 'the recordings'' variable is listed as plain text');
