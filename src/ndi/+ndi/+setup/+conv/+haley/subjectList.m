@@ -106,7 +106,8 @@ root = fullfile(dataParentDir, 'haley');
 checks = struct('plateWithoutSession', {{}}, 'plateOnTwoDays', {{}}, ...
     'wormOnTwoPlates', {{}}, 'wormRange', {{}}, 'noLawnCenters', {{}}, ...
     'patchCountDisagrees', {{}}, 'noPickTime', {{}}, 'ecoliSeeding', {{}}, ...
-    'growthDisagrees', {{}}, 'correctionUnmatched', {{}}, 'roomTempLooksEstimated', {{}});
+    'growthDisagrees', {{}}, 'correctionUnmatched', {{}}, 'roomTempLooksEstimated', {{}}, ...
+    'patchOD600', {{}});
 rows = {};
 
 % ---- C. elegans -------------------------------------------------------------
@@ -194,6 +195,16 @@ for f = 1:numel(folders)
             od = R.OD600(1, :);
             if iscell(od), od = od{1}; end
             od = double(od(:)');
+            if numel(od) > 1 && numel(od) ~= nPatch && nPatch > 0
+                % a grid template (multi-density): one OD600 per template
+                % position, more positions than patches (Matching: 19, the
+                % empty centre is OD600 0). Each patch's own OD600 is read
+                % from the lab's nearest-patch OD600 map at its centre.
+                [od, why] = patchDensities(R, hasLawn, od, nPatch);
+                if ~isempty(why)
+                    checks.patchOD600{end+1} = sprintf('%s: plate %d: %s', folder, p, why);
+                end
+            end
         end
         P(end+1) = struct('plate', p, 'session', mine.local_identifier{s}, 'worms', kept, ...
             'strain', char(R.strainID{1}), 'pick', pick, 'nPatch', nPatch, ...
@@ -618,4 +629,47 @@ else
     t = char(p.pick, 'yyyyMMddHHmmss');
 end
 k = [p.strain '|' t];
+end
+
+function [od, why] = patchDensities(R, row, template, nPatch)
+% Each patch's OD600 on a grid-template plate: the lab's lawnClosestOD600
+% map (each pixel's nearest patch's OD600) read at the patch's centre
+% (lawnCenters, [x y] pixels). The template's non-zero positions, in order,
+% are the cross-check. Falls back to the template when the map is missing or
+% unreadable; NaN (and WHY) when neither gives one value per patch.
+why = '';
+fromTemplate = template(template ~= 0);
+if numel(fromTemplate) ~= nPatch, fromTemplate = []; end
+fromMap = [];
+if ismember('lawnClosestOD600', R.Properties.VariableNames)
+    M = R.lawnClosestOD600{row};
+    c = R.lawnCenters{row};
+    if ~isempty(M) && size(c, 1) == nPatch
+        for flip = [false true]                  % [x y], else [y x]
+            xy = round(c);
+            if flip, xy = xy(:, [2 1]); end
+            ok = all(xy >= 1, 2) & xy(:, 1) <= size(M, 2) & xy(:, 2) <= size(M, 1);
+            if ~all(ok), continue; end
+            v = M(sub2ind(size(M), xy(:, 2), xy(:, 1)))';
+            if all(ismember(v, template(template ~= 0)))
+                fromMap = double(v);
+                break;
+            end
+        end
+    end
+end
+if ~isempty(fromMap)
+    od = fromMap;
+    if ~isempty(fromTemplate) && ~isequal(fromMap, fromTemplate)
+        why = sprintf(['the OD600 map gives %s, the template order %s; the map''s ' ...
+            'values are used'], mat2str(fromMap), mat2str(fromTemplate));
+    end
+elseif ~isempty(fromTemplate)
+    od = fromTemplate;
+    why = 'no readable OD600 map; the template''s non-zero positions, in order, are used';
+else
+    od = nan(1, nPatch);
+    why = sprintf('%d patch(es), template %s, no readable OD600 map: OD600 not known', ...
+        nPatch, mat2str(template));
+end
 end

@@ -62,6 +62,16 @@ classdef TestHaleySubjects < matlab.unittest.TestCase
                 writeInfo(f, 1, 1, 1, {[1 2 3 4]}, {'N2'}, datetime(2023, 2, 23, 12, 50, 0), ...
                     {zeros(1, 2)}, {zeros(1, 1)}, false);
             end
+            % Matching is a grid template (multi-density): OD600 has one value
+            % per template position, more than there are patches (the real
+            % plates: 19 positions, the empty centre OD600 0, 18 patches), and
+            % lawnClosestOD600 maps each pixel to its nearest patch's OD600.
+            % Two patches, at [x y] = [10 20] and [30 40]; template [5 0 10].
+            f = fullfile(ce, 'foragingMatching');
+            M = zeros(50, 50);  M(20, 10) = 5;  M(40, 30) = 10;
+            writeInfo(f, 1, 1, 1, {[1 2 3 4]}, {'N2'}, datetime(2023, 2, 23, 12, 50, 0), ...
+                {[10 20; 30 40]}, {[1; 1]}, false, ...
+                struct('OD600', {{[5 0 10]}}, 'lawnClosestOD600', {{M}}));
 
             % E. coli: a rectangle plate, a 'none' plate with one lawn, a
             % 'none' blank plate, and a rectangle plate with no bacteria.
@@ -98,6 +108,17 @@ classdef TestHaleySubjects < matlab.unittest.TestCase
             testCase.verifySubstring(p3.description{1}, 'filmed in 2 video(s)');
             testCase.verifyEqual(sum(strcmp(S.kind, 'worm') & S.plate == 3 ...
                 & strcmp(S.folder, 'foragingConcentration')), 4, 'its worms are listed once');
+        end
+
+        function testGridTemplatePatchesTakeTheirOwnDensity(testCase)
+            % Matching: OD600 is the template (3 positions, 2 patches); each
+            % patch's OD600 is the lawnClosestOD600 map at its centre, and the
+            % template's non-zero positions agree, so nothing is reported
+            [S, checks] = testCase.list();
+            pk = S(strcmp(S.kind, 'patch') & strcmp(S.folder, 'foragingMatching'), :);
+            testCase.verifyEqual(height(pk), 2);
+            testCase.verifyEqual(arrayfun(@(j) pk.prep(j).od600, 1:2), [5 10]);
+            testCase.verifyEmpty(checks.patchOD600, strjoin(checks.patchOD600, newline));
         end
 
         function testPatchesFollowLawnCenters(testCase)
@@ -226,10 +247,15 @@ T = cell2table([repmat({name}, size(rows, 1), 1), rows], 'VariableNames', ...
 writetable(T, fullfile(folder, 'tableOfContents.xlsx'));
 end
 
-function writeInfo(folder, expNum, plateNum, videoNum, wormNum, strainID, picked, centers, radii, exclude)
+function writeInfo(folder, expNum, plateNum, videoNum, wormNum, strainID, picked, centers, radii, exclude, extra)
 info = table(uint16(expNum(:)), uint16(plateNum(:)), uint16(videoNum(:)), wormNum(:), ...
     strainID(:), picked(:), centers(:), radii(:), logical(exclude(:)), ...
     'VariableNames', {'expNum', 'plateNum', 'videoNum', 'wormNum', 'strainID', ...
-    'growthTimePicked', 'lawnCenters', 'lawnRadii', 'exclude'}); %#ok<NASGU>
+    'growthTimePicked', 'lawnCenters', 'lawnRadii', 'exclude'});
+if nargin > 10
+    for f = reshape(fieldnames(extra), 1, [])
+        info.(f{1}) = reshape(extra.(f{1}), [], 1);
+    end
+end
 save(fullfile(folder, 'experimentInfo.mat'), 'info');
 end
