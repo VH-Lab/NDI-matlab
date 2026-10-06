@@ -3,7 +3,8 @@ function T = termInventory(path, options)
 %
 %   T = ndi.setup.conv.haley.termInventory(PATH) reads every document in the
 %   V2 dataset at PATH (the folder holding .ndi) and lists each term it
-%   carries: every {node, name} pair, wherever it sits (a statement's
+%   carries: every {node, name} pair (or {name} alone: did2.build stores a
+%   term with no node without one), wherever it sits (a statement's
 %   variable or method, a unit, a key's or condition's variable, an axis, a
 %   scale, a subject type, an asserted value, ...). A term with an empty
 %   node is PLAIN TEXT; one with a node is an ONTOLOGY term.
@@ -110,9 +111,13 @@ function found = walk(x, path, found)
 % every {node, name} struct under X, as rows {name, node, path}
 if isstruct(x)
     f = fieldnames(x);
-    if numel(f) == 2 && all(ismember({'node', 'name'}, f))
+    % a term: node and/or name and nothing else. did2.build leaves an empty
+    % node out, so a plain-text term is stored as {name} alone.
+    if ~isempty(f) && all(ismember(f, {'node', 'name'}))
         for i = 1:numel(x)
-            nm = char(string(x(i).name)); nd = char(string(x(i).node));
+            nm = ''; nd = '';
+            if isfield(x, 'name'), nm = char(string(x(i).name)); end
+            if isfield(x, 'node'), nd = char(string(x(i).node)); end
             if isempty(nm) && isempty(nd), continue; end      % a blank (unset) term
             found(end+1, :) = {nm, nd, path}; %#ok<AGROW>
         end
