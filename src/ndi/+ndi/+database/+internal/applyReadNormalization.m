@@ -108,8 +108,17 @@ function ndiDocumentObj = applyReadNormalization(rawDoc)
     % BEYOND this target, and isAlreadyTarget now compares rank rather than
     % string equality, so they pass through untouched instead of being pushed
     % back through migrators aimed at a version they have already passed.
+    % The report-only census (silentLoss, fileList, timeReferenceFamilies)
+    % is skipped: this read discards it, and on one-document reads it cost
+    % more than the conversion (23.5 s of 51 s profiled over the 10,536
+    % Haley V2 subjects). Only when DID-matlab's v1_to_v2 has the option
+    % (DID-matlab #218); an older one runs it as before.
+    auditArgs = {};
+    if v1ToV2HasAudits()
+        auditArgs = {'Audits', false};
+    end
     result = did2.convert.v1_to_v2(body, 'Validate', false, ...
-        'RenameClassNames', false, 'TargetVersion', READ_TARGET_VERSION);
+        'RenameClassNames', false, 'TargetVersion', READ_TARGET_VERSION, auditArgs{:});
 
     if isempty(result.migrated)
         if ~isempty(result.quarantine)
@@ -134,4 +143,20 @@ function v = READ_TARGET_VERSION()
 %   default. See the call site for why it is still V_delta and what changing it
 %   would require.
 v = 'V_delta';
+end
+
+function tf = v1ToV2HasAudits()
+%V1TOV2HASAUDITS True when did2.convert.v1_to_v2 takes the 'Audits' option.
+%   Read once from its source and remembered; drop this test once every
+%   supported DID-matlab has the option (DID-matlab #218).
+persistent has
+if isempty(has)
+    has = false;
+    try
+        f = which('did2.convert.v1_to_v2');
+        has = ~isempty(f) && contains(fileread(f), 'options.Audits');
+    catch
+    end
+end
+tf = has;
 end

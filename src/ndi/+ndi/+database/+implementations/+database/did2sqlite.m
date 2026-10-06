@@ -248,10 +248,16 @@ classdef did2sqlite < ndi.database
         function [ndi_document_objs] = do_search(obj, searchoptions, searchparams) %#ok<INUSL>
             q2 = ndi.database.implementations.database.did2sqlite.toDid2Query( ...
                 searchparams);
-            doc_ids = obj.db.searchIds(q2);
+            % The search already decodes every matching document; each is
+            % normalised from there rather than fetched and decoded a second
+            % time by id (do_read), which cost a query and a decode per
+            % document (8 s of 51 s profiled over the 10,536 Haley V2
+            % subjects).
+            docs = obj.db.search(q2);
             ndi_document_objs = {};
-            for i = 1:numel(doc_ids)
-                ndi_document_objs{i} = obj.do_read(doc_ids{i}); %#ok<AGROW>
+            for i = 1:numel(docs)
+                ndi_document_objs{i} = ...
+                    ndi.database.internal.applyReadNormalization(docs{i}); %#ok<AGROW>
             end
         end % do_search()
 
