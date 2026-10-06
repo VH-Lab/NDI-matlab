@@ -123,6 +123,31 @@ classdef TestProgressBarWindow < matlab.unittest.TestCase
             testCase.verifyNotEmpty(app.ProgressBars(1).Axes, 'Axes handle should not be empty.');
             testCase.verifyNotEmpty(app.ProgressBars(1).Patch, 'Patch handle should not be empty.');
         end
+
+        function testBarFillsItsRow(testCase)
+            % The bar's axes sit in a borderless panel that the grid lays
+            % out, with the axes' INNER box filling the panel. In a grid cell
+            % a uiaxes keeps room for hidden tick labels; on R2026a that
+            % left a 2.7 px bar in a 28 px row.
+            app = ndi.gui.component.ProgressBarWindow('Fill Test', 'Visible', 'off');
+            testCase.addTeardown(@delete, app.ProgressFigure);
+            app.addBar('Label', 'Task 1', 'Tag', 'T1');
+            app.addBar('Label', 'Task 2', 'Tag', 'T2');
+            ax = app.ProgressBars(2).Axes;
+            testCase.verifyClass(ax.Parent, 'matlab.ui.container.Panel');
+            testCase.verifyEqual(ax.Parent.Layout.Row, 4, 'the panel takes the bar row');
+            testCase.verifyEqual(ax.PositionConstraint, 'innerposition');
+            testCase.verifyEqual(ax.Units, 'normalized');
+            testCase.verifyEqual(ax.InnerPosition, [0 0 1 1], 'AbsTol', 1e-9);
+
+            % removing the first bar moves the second panel up and deletes
+            % the first bar's panel along with its axes
+            firstPanel = app.ProgressBars(1).Axes.Parent;
+            app.updateBar('T1', 1);
+            app.removeBar('T1');
+            testCase.verifyFalse(isvalid(firstPanel), 'the removed bar''s panel is deleted');
+            testCase.verifyEqual(ax.Parent.Layout.Row, 2, 'the remaining bar''s panel moves up');
+        end
         function testAddMultipleBars(testCase)
             app = ndi.gui.component.ProgressBarWindow('Multi Bar Test', 'Visible', 'off');
             testCase.addTeardown(@delete, app.ProgressFigure);

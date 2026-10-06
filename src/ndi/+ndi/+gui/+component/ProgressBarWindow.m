@@ -346,13 +346,25 @@ classdef ProgressBarWindow < matlab.apps.AppBase
             app.ProgressBars(barNum).Timer.Layout.Row = rowNum - 1;
             app.ProgressBars(barNum).Timer.Layout.Column = 1:2;
 
-            % Add bar axes (background)
-            app.ProgressBars(barNum).Axes = uiaxes(app.ProgressGrid,...
+            % Add bar axes (background), inside a borderless panel that
+            % fills the grid cell. In a grid layout MATLAB places a uiaxes
+            % by its OUTER box and keeps room inside it for tick labels and
+            % a title, even hidden ones; R2026a keeps about 25 px, which
+            % left a 28 px row with a 2.7 px bar. Inside a plain panel the
+            % axes' inner box can be set to fill it exactly, whatever the
+            % release. The panel is the axes' parent: it is what the grid
+            % lays out (removeBar moves and deletes it through Axes.Parent).
+            barPanel = uipanel(app.ProgressGrid,'BorderType','none',...
+                'BackgroundColor','w');
+            barPanel.Layout.Row = rowNum;
+            barPanel.Layout.Column = 1;
+            app.ProgressBars(barNum).Axes = uiaxes(barPanel,...
                 'XLim',[0 1],'YLim',[0 1],'XTick',[],'YTick',[],'Box','off',...
                 'XColor','none','YColor','none','Color','w','Interactions',[]);
             app.ProgressBars(barNum).Axes.Toolbar.Visible = 'off';
-            app.ProgressBars(barNum).Axes.Layout.Row = rowNum;
-            app.ProgressBars(barNum).Axes.Layout.Column = 1;
+            app.ProgressBars(barNum).Axes.Units = 'normalized';
+            app.ProgressBars(barNum).Axes.PositionConstraint = 'innerposition';
+            app.ProgressBars(barNum).Axes.InnerPosition = [0 0 1 1];
 
             % Add bar patch (foreground)
             app.ProgressBars(barNum).Patch = patch(app.ProgressBars(barNum).Axes, ...
@@ -513,7 +525,7 @@ classdef ProgressBarWindow < matlab.apps.AppBase
                 rowNum = app.ProgressBars(barNum).Label.Layout.Row + [0 1];
 
                 % Remove progress bar
-                delete([app.ProgressBars(barNum).Axes,...
+                delete([app.ProgressBars(barNum).Axes.Parent,...   % the bar's panel, and its axes
                     app.ProgressBars(barNum).Percent,...
                     app.ProgressBars(barNum).Button,...
                     app.ProgressBars(barNum).Label,...
@@ -524,7 +536,7 @@ classdef ProgressBarWindow < matlab.apps.AppBase
                 for i = 1:numel(openBars)
                     app.ProgressBars(openBars(i)).Label.Layout.Row = 2*i - 1;
                     app.ProgressBars(openBars(i)).Timer.Layout.Row = 2*i - 1;
-                    app.ProgressBars(openBars(i)).Axes.Layout.Row = 2*i;
+                    app.ProgressBars(openBars(i)).Axes.Parent.Layout.Row = 2*i;
                     app.ProgressBars(openBars(i)).Percent.Layout.Row = 2*i;
                     app.ProgressBars(openBars(i)).Button.Layout.Row = 2*i;
                 end
