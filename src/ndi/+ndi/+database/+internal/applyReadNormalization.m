@@ -108,6 +108,19 @@ function ndiDocumentObj = applyReadNormalization(rawDoc)
     % BEYOND this target, and isAlreadyTarget now compares rank rather than
     % string equality, so they pass through untouched instead of being pushed
     % back through migrators aimed at a version they have already passed.
+    % ALREADY AT THE TARGET (every V2 document): with validation off, the
+    % full pass below reduces to exactly did2.convert.ensureClassBlocks (the
+    % base-field rename does nothing at this target, and wrapping in a
+    % did2.document and unwrapping is the identity), so apply that alone
+    % instead of the per-document batch machinery: 1.2 s of 2.4 s listing
+    % the 10,536 Haley V2 subjects. DID-matlab's testV1ToV2Audits pins that
+    % the two give the same document; only when that DID-matlab is present
+    % (#218), otherwise the full pass runs as before.
+    if hasReadShortcut() && did2.convert.isAlreadyTarget(body, READ_TARGET_VERSION)
+        ndiDocumentObj = ndi.document(did2.convert.ensureClassBlocks(body, []));
+        return;
+    end
+
     % The report-only census (silentLoss, fileList, timeReferenceFamilies)
     % is skipped: this read discards it, and on one-document reads it cost
     % more than the conversion (23.5 s of 51 s profiled over the 10,536
@@ -157,6 +170,18 @@ if isempty(has)
         has = ~isempty(f) && contains(fileread(f), 'options.Audits');
     catch
     end
+end
+tf = has;
+end
+
+function tf = hasReadShortcut()
+%HASREADSHORTCUT True when DID-matlab has did2.convert.isAlreadyTarget and
+%   ensureClassBlocks as public functions (DID-matlab #218). Remembered;
+%   drop this test once every supported DID-matlab has them.
+persistent has
+if isempty(has)
+    has = ~isempty(which('did2.convert.isAlreadyTarget')) && ...
+        ~isempty(which('did2.convert.ensureClassBlocks'));
 end
 tf = has;
 end

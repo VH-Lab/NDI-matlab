@@ -188,6 +188,32 @@ classdef TestObjectLayer < matlab.unittest.TestCase
             testCase.verifyEqual(f.class_name, 'formulation');
         end
 
+        function testReadingAV2DocumentGivesTheFullPassResult(testCase)
+            % applyReadNormalization takes a shortcut for documents already
+            % at the read target (when DID-matlab has it). Every document of
+            % the written session must come out exactly as the full
+            % v1_to_v2 pass makes it.
+            db = did2.database.sqlitedb(fullfile(testCase.Result.sessions.path{1}, '.ndi', ...
+                ndi.database.implementations.database.did2sqlite.DEFAULTFILENAME()));
+            closer = onCleanup(@() db.close());
+            ids = db.allIds();
+            testCase.assertGreaterThan(numel(ids), 100, 'the written session has documents');
+            nDiffer = 0; first = '';
+            for i = 1:numel(ids)
+                d = db.get(ids{i});
+                got = ndi.database.internal.applyReadNormalization(d);
+                full = did2.convert.v1_to_v2(d.toStruct(), 'Validate', false, ...
+                    'RenameClassNames', false, 'TargetVersion', 'V_delta');
+                want = ndi.document(full.migrated{1}.toStruct());
+                if ~isequaln(got.document_properties, want.document_properties)
+                    nDiffer = nDiffer + 1;
+                    if isempty(first), first = ids{i}; end
+                end
+            end
+            testCase.verifyEqual(nDiffer, 0, sprintf(['%d of %d document(s) read differently ' ...
+                'from the full pass; first: %s'], nDiffer, numel(ids), first));
+        end
+
         function testInteractionIsAbstract(testCase)
             testCase.verifyTrue(meta.class.fromName('ndi.interaction').Abstract);
         end
