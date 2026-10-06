@@ -35,7 +35,9 @@ classdef TestObjectLayer < matlab.unittest.TestCase
             testCase.verifyTrue(isa(w, 'ndi.entity'));
             testCase.verifyEqual(w.id(), w.document_id(), 'the subject keeps its document''s id');
             testCase.verifyEqual(w.kind(), 'subject');
-            testCase.verifyEqual(w.name(), 'concentration_worm0121');
+            p = w.document_properties();
+            testCase.verifyEqual(w.name(), char(p.subject.name), 'a subject''s display name is its own name');
+            testCase.verifyEqual(w.name(), 'Worm 0121');
             testCase.verifyEqual(w.local_identifier, 'concentration_worm0121', ...
                 'no @ is required of a V2 subject read from a document (D6)');
             if ndi.setup.V2.schemaHasField('subject', 'type')

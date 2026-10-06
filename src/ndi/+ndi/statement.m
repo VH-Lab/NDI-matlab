@@ -155,10 +155,12 @@ classdef statement
                     class(obj.container_));
             end
             bp = ndi.v2.props(b{1});
+            % the keys are the statement's; a body that states its own is the fallback
+            keys = ndi.v2.blockOf(p, 'data', 'keys', []);
+            if isempty(keys), keys = ndi.v2.blockOf(bp, 'data', 'keys', []); end
             if any(strcmp(ndi.v2.classChain(bp), 'sampled_body'))
-                vals = ndi.v2.readBody(obj.container_, b{1}, dt);
-                v = ndi.data_type(c, obj.raw_value(), 'Data', vals, ...
-                    'Keys', ndi.v2.blockOf(bp, 'data', 'keys', []), 'DatumType', dt);
+                vals = ndi.v2.readBody(obj.container_, b{1}, dt, keys);
+                v = ndi.data_type(c, obj.raw_value(), 'Data', vals, 'Keys', keys, 'DatumType', dt);
             else
                 files = {};
                 for i = 1:numel(b)
@@ -170,8 +172,7 @@ classdef statement
                         if tf, files{end+1} = f; end %#ok<AGROW>
                     end
                 end
-                v = ndi.data_type(c, obj.raw_value(), 'Files', files, ...
-                    'Keys', ndi.v2.blockOf(bp, 'data', 'keys', []), 'DatumType', dt);
+                v = ndi.data_type(c, obj.raw_value(), 'Files', files, 'Keys', keys, 'DatumType', dt);
             end
         end
 
@@ -192,11 +193,11 @@ classdef statement
             % One row per condition: variable, value (a number, or a term's
             % name), unit, source_value, source_unit.
             c = ndi.v2.blockOf(obj.document_properties(), 'subject_statement', 'conditions', []);
-            if iscell(c), c = [c{:}]; end
+            c = ndi.v2.entries(c);
             variable = strings(0, 1); value = cell(0, 1); unit = strings(0, 1);
             source_value = cell(0, 1); source_unit = strings(0, 1);
             for i = 1:numel(c)
-                x = c(i);
+                x = c{i};
                 variable(end+1, 1) = string(ndi.v2.termName(fieldOr(x, 'variable', ''))); %#ok<AGROW>
                 unit(end+1, 1) = string(ndi.v2.termName(fieldOr(x, 'unit', ''))); %#ok<AGROW>
                 source_unit(end+1, 1) = string(fieldOr(x, 'source_unit', '')); %#ok<AGROW>

@@ -56,10 +56,10 @@ classdef (Abstract) interaction < ndi.statement
             % One row per parameter stored on the statement. VALUE is the
             % number in the canonical unit, a term's name, or text.
             m = ndi.v2.blockOf(obj.document_properties(), 'subject_interaction', 'method_parameters', []);
-            if iscell(m), m = [m{:}]; end
+            m = ndi.v2.entries(m);
             variable = strings(0, 1); value = cell(0, 1); unit = strings(0, 1); source_unit = strings(0, 1);
             for i = 1:numel(m)
-                x = m(i);
+                x = m{i};
                 variable(end+1, 1) = string(ndi.v2.termName(fieldOf(x, 'variable'))); %#ok<AGROW>
                 unit(end+1, 1) = string(ndi.v2.termName(fieldOf(x, 'unit'))); %#ok<AGROW>
                 source_unit(end+1, 1) = string(char(fieldOf(x, 'source_unit'))); %#ok<AGROW>

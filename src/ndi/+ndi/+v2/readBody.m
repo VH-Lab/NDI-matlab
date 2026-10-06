@@ -1,4 +1,4 @@
-function [values, info] = readBody(container, bodyDoc, datumType)
+function [values, info] = readBody(container, bodyDoc, datumType, keys)
 %READBODY Decode a sampled_body's bytes into a MATLAB array.
 %
 %   [VALUES, INFO] = ndi.v2.readBody(CONTAINER, BODYDOC, DATUMTYPE) reads the
@@ -8,12 +8,15 @@ function [values, info] = readBody(container, bodyDoc, datumType)
 %   DATUMTYPE (the OWNER statement's data_type.datum_type: the one place the
 %   type lives; a body never repeats it) in the body's `byte_order`, shaped
 %   by its keys (`n` per key) in its `datum_order` (F column-major, C
-%   row-major). INFO has the file path and the shape.
+%   row-major). INFO has the file path and the shape. KEYS (optional) are
+%   the keys to shape by, normally the owner statement's data.keys; when
+%   empty the body's own are used.
 %
 %   One file per body (one chunk); a chunked body is an error for now.
 %
 %   See also ndi.statement/value, ndi.data_type.
 
+if nargin < 4, keys = []; end
 p = ndi.v2.props(bodyDoc);
 fi = [];
 if isfield(p, 'files') && isfield(p.files, 'file_info'), fi = p.files.file_info; end
@@ -53,12 +56,12 @@ values = fread(fid, Inf, precision);
 fclose(fid);
 values = post(values);
 
-% shape: one size per key
-keys = ndi.v2.blockOf(p, 'data', 'keys', []);
-if iscell(keys), keys = [keys{:}]; end
+% shape: one size per key (KEYS when given: the owner statement's)
+if isempty(keys), keys = ndi.v2.blockOf(p, 'data', 'keys', []); end
+keys = ndi.v2.entries(keys);
 sz = [];
 for k = 1:numel(keys)
-    if isfield(keys(k), 'n') && ~isempty(keys(k).n), sz(end+1) = double(keys(k).n); end %#ok<AGROW>
+    if isfield(keys{k}, 'n') && ~isempty(keys{k}.n), sz(end+1) = double(keys{k}.n); end %#ok<AGROW>
 end
 if numel(sz) == numel(keys) && ~isempty(sz) && prod(sz) == numel(values)
     if numel(sz) == 1

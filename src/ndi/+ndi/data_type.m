@@ -163,16 +163,19 @@ classdef data_type
                 return;
             end
             if ~isfield(s, 'fields'), return; end
-            fs = s.fields;
-            if iscell(fs), fs = [fs{:}]; end
-            v = fs(strcmp({fs.name}, 'value'));
-            if isempty(v) || ~isfield(v, 'fields') || isempty(v(1).fields), return; end
-            sub = v(1).fields;
-            if iscell(sub), sub = [sub{:}]; end
+            % field definitions differ in their keys, so they are walked as a
+            % cell array rather than concatenated
+            fs = asCell(s.fields);
+            v = [];
+            for k = 1:numel(fs)
+                if isfield(fs{k}, 'name') && strcmp(fs{k}.name, 'value'), v = fs{k}; break; end
+            end
+            if isempty(v) || ~isfield(v, 'fields') || isempty(v.fields), return; end
+            sub = asCell(v.fields);
             for k = 1:numel(sub)
-                if any(strcmp(sub(k).type, {'double', 'integer', 'matrix'})) && ...
-                        ~any(strcmp(sub(k).name, {'source_value', 'scale_min', 'scale_max'}))
-                    f = char(sub(k).name);
+                if isfield(sub{k}, 'type') && any(strcmp(sub{k}.type, {'double', 'integer', 'matrix'})) && ...
+                        ~any(strcmp(sub{k}.name, {'source_value', 'scale_min', 'scale_max'}))
+                    f = char(sub{k}.name);
                     return;
                 end
             end
@@ -182,4 +185,8 @@ end
 
 function v = firstOr(x, default)
 if isempty(x), v = default; else, v = x(1); end
+end
+
+function c = asCell(x)
+if iscell(x), c = reshape(x, 1, []); else, c = num2cell(reshape(x, 1, [])); end
 end

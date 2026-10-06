@@ -100,11 +100,11 @@ classdef entity
             p = obj.document_properties();
             g = ndi.v2.blockOf(p, 'entity', 'global_identifier', []);
             scheme = strings(0, 1); value = strings(0, 1);
-            if iscell(g), g = [g{:}]; end
+            g = ndi.v2.entries(g);
             for i = 1:numel(g)
                 sc = ''; v = '';
-                if isfield(g(i), 'scheme'), sc = ndi.v2.termName(g(i).scheme); end
-                if isfield(g(i), 'value'), v = char(g(i).value); end
+                if isfield(g{i}, 'scheme'), sc = ndi.v2.termName(g{i}.scheme); end
+                if isfield(g{i}, 'value'), v = char(g{i}.value); end
                 scheme(end+1, 1) = string(sc); %#ok<AGROW>
                 value(end+1, 1) = string(v); %#ok<AGROW>
             end
@@ -149,8 +149,8 @@ classdef entity
                     other = ndi.v2.edgeIds(p, sides{s, 3});
                     rl = ndi.v2.blockOf(p, 'directed_relation', 'roles', []);
                     rn = {};
-                    if iscell(rl), rl = [rl{:}]; end
-                    for j = 1:numel(rl), rn{end+1} = ndi.v2.termName(rl(j)); end %#ok<AGROW>
+                    rl = ndi.v2.entries(rl);
+                    for j = 1:numel(rl), rn{end+1} = ndi.v2.termName(rl{j}); end %#ok<AGROW>
                     relation(end+1, 1) = string(r); %#ok<AGROW>
                     direction(end+1, 1) = string(sides{s, 1}); %#ok<AGROW>
                     other_id(end+1, 1) = string(strjoin(other, ', ')); %#ok<AGROW>
