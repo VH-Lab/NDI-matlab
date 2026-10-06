@@ -23,6 +23,10 @@ classdef subject < ndi.ido & ndi.documentservice & ndi.entity
         description             % A string description
     end % properties
 
+    properties (Dependent, SetAccess = private)
+        type    % V2: the subject's coarse kind ('organism', 'group', ...); '' without a V2 document
+    end
+
     methods
 
         function ndi_subject_obj = subject(varargin)
@@ -104,12 +108,13 @@ classdef subject < ndi.ido & ndi.documentservice & ndi.entity
         %%% ndi.subject.fromDocument / ndi.subject.find. They return empty on
         %%% a subject that was not (no container to search).
 
-        function t = type(ndi_subject_obj)
+        function t = get.type(ndi_subject_obj)
             % TYPE - the subject's coarse kind: 'organism', 'group', 'culture', 'material', ...
+            %   ('' for a subject with no V2 document)
             t = '';
-            if isempty(ndi_subject_obj.container_), return; end
+            if isempty(ndi_subject_obj.entity_document_), return; end
             t = ndi.v2.termName(ndi.v2.blockOf(ndi_subject_obj.document_properties(), 'subject', 'type', ''));
-        end % type()
+        end % get.type()
 
         function s = statements(ndi_subject_obj, varargin)
             % STATEMENTS - the statements about this subject
@@ -209,7 +214,7 @@ classdef subject < ndi.ido & ndi.documentservice & ndi.entity
             s = {};
             for i = 1:numel(docs)
                 x = ndi.subject.fromDocument(container, docs{i});
-                if ~isempty(options.Type) && ~strcmp(x.type(), options.Type)
+                if ~isempty(options.Type) && ~strcmp(x.type, options.Type)
                     continue;
                 end
                 s{end+1} = x; %#ok<AGROW>

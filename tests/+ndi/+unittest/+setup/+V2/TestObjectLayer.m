@@ -35,20 +35,38 @@ classdef TestObjectLayer < matlab.unittest.TestCase
             w = testCase.subject('concentration_worm0121');
             testCase.verifyClass(w, 'ndi.subject');
             testCase.verifyTrue(isa(w, 'ndi.entity'));
-            testCase.verifyEqual(w.id(), w.document_id(), 'the subject keeps its document''s id');
-            testCase.verifyEqual(w.kind(), 'subject');
+            testCase.verifyEqual(w.id(), w.document_id, 'the subject keeps its document''s id');
+            testCase.verifyEqual(w.kind, 'subject');
             p = w.document_properties();
-            testCase.verifyEqual(w.name(), char(p.subject.name), 'a subject''s display name is its own name');
+            testCase.verifyEqual(w.name, char(p.subject.name), 'a subject''s display name is its own name');
             testCase.verifyEqual(w.name(), 'Worm 0121');
             testCase.verifyEqual(w.local_identifier, 'concentration_worm0121', ...
                 'no @ is required of a V2 subject read from a document (D6)');
             if ndi.setup.V2.schemaHasField('subject', 'type')
-                testCase.verifyEqual(w.type(), 'organism');
+                testCase.verifyEqual(w.type, 'organism');
                 g = ndi.subject.find(testCase.Session, 'Type', 'group');
                 testCase.verifyNumElements(g, 4, 'one cohort per assay plate');
             end
             e = ndi.entity.fromDocument(testCase.Session, w.document_id());
             testCase.verifyClass(e, 'ndi.subject', 'fromDocument returns the subclass');
+        end
+
+        function testNameTypeKindAndIdAreProperties(testCase)
+            % read from the document when asked, shown when the object is
+            % displayed, and not settable
+            w = testCase.subject('concentration_worm0121');
+            for p = {'name', 'type', 'kind', 'document_id'}
+                testCase.verifyTrue(isprop(w, p{1}), p{1});
+            end
+            testCase.verifyEqual(w.name(), w.name, 'the method-call form still works');
+            shown = evalc('disp(w)');
+            testCase.verifySubstring(shown, 'Worm 0121');
+            testCase.verifySubstring(shown, 'organism');
+            testCase.verifyError(@() setName(w), ?MException);
+            % a v1 subject has no document: all four are empty, and it displays
+            s = ndi.subject('anteater23@nosuchlab.org', 'a subject');
+            testCase.verifyEqual({s.name, s.type, s.kind, s.document_id}, {'', '', '', ''});
+            testCase.verifySubstring(evalc('disp(s)'), 'anteater23@nosuchlab.org');
         end
 
         function testRelations(testCase)
@@ -226,7 +244,7 @@ classdef TestObjectLayer < matlab.unittest.TestCase
             testCase.verifyEqual(s.description, 'a subject');
             testCase.verifyTrue(isa(s, 'ndi.entity'));
             testCase.verifyEmpty(s.statements(), 'a subject with no container has no statements');
-            testCase.verifyEqual(s.type(), '');
+            testCase.verifyEqual(s.type, '');
             d = s.newdocument();
             testCase.verifyEqual(d.document_properties.subject.local_identifier, 'anteater23@nosuchlab.org');
         end
@@ -239,4 +257,8 @@ classdef TestObjectLayer < matlab.unittest.TestCase
             s = x{1};
         end
     end
+end
+
+function setName(w)
+w.name = 'x';
 end

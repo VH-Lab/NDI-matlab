@@ -14,7 +14,7 @@ classdef entity
     % Make one with ndi.entity.fromDocument or ndi.entity.find:
     %
     %   p = ndi.entity.find(ds, 'person');          % a cell array
-    %   p{1}.name()                                  % 'Jess Haley'
+    %   p{1}.name                                    % 'Jess Haley'
     %   p{1}.parents('affiliated_with')              % her organizations
     %
     % READ THROUGH THE DATASET. A search through an ndi.session sees only
@@ -23,10 +23,12 @@ classdef entity
     % with the dataset. An entity read through the ndi.dataset reaches
     % everything; one read through a session does not reach those.
     %
-    % ndi.entity Methods:
-    %   kind               - the document class ('person', 'subject', ...)
+    % ndi.entity Properties (read from the document when asked; '' without one):
     %   name               - a display name
+    %   kind               - the document class ('person', 'subject', ...)
     %   document_id        - the document's base.id
+    %
+    % ndi.entity Methods:
     %   document           - the ndi.document
     %   document_properties - its properties (a struct)
     %   global_identifiers - table: scheme, value (ORCID, ROR, RRID, DOI, ...)
@@ -35,6 +37,15 @@ classdef entity
     %   fromDocument, find - (static) make entities
     %
     % See also ndi.subject, ndi.statement.
+
+    properties (Dependent, SetAccess = private)
+        % Read from the entity's document each time they are asked for:
+        % nothing is stored. Empty for an entity with no document (a v1
+        % ndi.subject made with its constructor).
+        name          % a display name (see get.name)
+        kind          % the document class, e.g. 'person', 'subject'
+        document_id   % the document's base.id
+    end
 
     properties (SetAccess = protected, GetAccess = public, Hidden)
         entity_document_ = []   % the ndi.document (or document struct) this entity reads
@@ -65,25 +76,31 @@ classdef entity
             p = ndi.v2.props(obj.entity_document_);
         end
 
-        function id = document_id(obj)
-            % DOCUMENT_ID - the entity document's base.id
+        function id = get.document_id(obj)
+            % DOCUMENT_ID - the entity document's base.id ('' without a document)
+            id = '';
+            if isempty(obj.entity_document_), return; end
             p = obj.document_properties();
             id = char(p.base.id);
         end
 
-        function k = kind(obj)
+        function k = get.kind(obj)
             % KIND - the entity's document class, e.g. 'person', 'subject'
+            k = '';
+            if isempty(obj.entity_document_), return; end
             p = obj.document_properties();
             k = char(p.document_class.class_name);
         end
 
-        function n = name(obj)
+        function n = get.name(obj)
             % NAME - a display name
             %
             % The class's own `name` when it has one; a person's given and
             % family names; else a subject's local_identifier, else base.name.
+            n = '';
+            if isempty(obj.entity_document_), return; end
             p = obj.document_properties();
-            k = obj.kind();
+            k = obj.kind;
             n = char(ndi.v2.blockOf(p, k, 'name', ''));
             if isempty(n) && strcmp(k, 'person')
                 n = strtrim([char(ndi.v2.blockOf(p, k, 'given_name', '')) ' ' ...
@@ -133,7 +150,7 @@ classdef entity
             end
             relation = strings(0, 1); direction = strings(0, 1); other_id = strings(0, 1);
             roles = strings(0, 1); relation_id = strings(0, 1);
-            id = obj.document_id();
+            id = obj.document_id;
             sides = {'out', 'child_id', 'parent_id'; 'in', 'parent_id', 'child_id'};
             for s = 1:2
                 if ~strcmp(options.Direction, 'both') && ~strcmp(options.Direction, sides{s, 1})
@@ -238,7 +255,7 @@ classdef entity
             e = {};
             for i = 1:numel(docs)
                 x = ndi.entity.fromDocument(container, docs{i});
-                if ~isempty(options.Name) && ~strcmp(x.name(), options.Name)
+                if ~isempty(options.Name) && ~strcmp(x.name, options.Name)
                     continue;
                 end
                 e{end+1} = x; %#ok<AGROW>
