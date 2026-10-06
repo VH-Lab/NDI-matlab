@@ -782,6 +782,15 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
                 'still the dataset after a session was opened in its folder');
             testCase.verifyNumElements(again.database_search(ndi.query('', 'isa', 'model_fit_calculation')), 2, ...
                 'stage 12''s fits are in the dataset');
+
+            % the verification the import's user runs afterwards: every check passes,
+            % and its census is the import's own count
+            v = ndi.setup.conv.haley.verifyDataset(result.dataset.path, 'Expected', result);
+            testCase.verifyEmpty(v.failed, evalc('disp(v.census.differences)'));
+            testCase.verifyEqual(v.census.total, sum(r.documents.byClass.GroupCount));
+            testCase.verifyEqual(v.edges.dangling, 0);
+            testCase.verifyGreaterThan(v.files.ingested, 0);
+            testCase.verifyGreaterThan(v.hashes.checked, 0, 'ingested bodies record an MD5');
         end
 
         function testOccupiedFolderStopsTheRunFirst(testCase)
