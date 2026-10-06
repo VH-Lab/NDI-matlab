@@ -139,6 +139,8 @@ classdef TestProgressBarWindow < matlab.unittest.TestCase
             testCase.verifyEqual(ax.PositionConstraint, 'innerposition');
             testCase.verifyEqual(ax.Units, 'pixels');
             testCase.verifyNotEmpty(ax.Parent.SizeChangedFcn, 'the bar follows its panel''s size');
+            testCase.verifyEqual(char(ax.Parent.AutoResizeChildren), 'off', ...
+                'SizeChangedFcn does not run while AutoResizeChildren is on');
             % BarMargin px inside the panel on every side
             m = ndi.gui.component.ProgressBarWindow.BarMargin;
             drawnow

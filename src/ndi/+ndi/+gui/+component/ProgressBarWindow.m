@@ -361,7 +361,8 @@ classdef ProgressBarWindow < matlab.apps.AppBase
             % grid lays out (removeBar moves and deletes it through
             % Axes.Parent).
             barPanel = uipanel(app.ProgressGrid,'BorderType','none',...
-                'BackgroundColor',app.ProgressGrid.BackgroundColor);
+                'BackgroundColor',app.ProgressGrid.BackgroundColor,...
+                'AutoResizeChildren','off');   % else SizeChangedFcn never runs
             barPanel.Layout.Row = rowNum;
             barPanel.Layout.Column = 1;
             app.ProgressBars(barNum).Axes = uiaxes(barPanel,...
