@@ -40,12 +40,16 @@ if ~isfile(dbFile)
     error('ndi:setup:conv:haley:noDataset', 'No V2 database at %s.', dbFile);
 end
 
+prog = progressBar();
+
 % ---- 1 open -------------------------------------------------------------------
 fprintf('\n== 1 open ==\n');
 ds = ndi.dataset.dir(path);
 [refs, ids] = ds.session_list();
 bad = {};
+prog.start('open', sprintf('Opening %d session(s)', numel(ids)), numel(ids));
 for k = 1:numel(ids)
+    prog.step('open', k);
     try
         s = ds.open_session(ids{k});
         if ~strcmp(s.reference, refs{k})
@@ -109,7 +113,9 @@ F = q('SELECT doc_id, filename, uid, location, ingested FROM files');
 fileDir = fullfile(ndiDir, 'files');
 missing = {};
 nIngested = 0;
+prog.start('files', sprintf('Checking %d file(s)', numel(F)), numel(F));
 for k = 1:numel(F)
+    prog.step('files', k);
     if F(k).ingested
         nIngested = nIngested + 1;
         p = fullfile(fileDir, F(k).uid);
@@ -132,7 +138,9 @@ if options.Hashes
     B = q(['SELECT f.doc_id, f.uid, d.body FROM files f JOIN documents d ON d.id = f.doc_id ' ...
         'WHERE f.ingested = 1']);
     checked = 0; noHash = 0; wrong = {};
+    prog.start('hashes', sprintf('Hashing %d file(s)', numel(B)), numel(B));
     for k = 1:numel(B)
+        prog.step('hashes', k);
         [h, alg] = recordedHash(jsondecode(B(k).body));
         if isempty(h) || ~strcmpi(alg, 'MD5')
             noHash = noHash + 1;
@@ -162,6 +170,43 @@ end
 end
 
 % -----------------------------------------------------------------------------
+function prog = progressBar()
+% one ProgressBarWindow bar per check (when MATLAB has a display), plus a
+% printed line about every 5% with elapsed time and an estimate of the rest
+w = [];
+try
+    w = ndi.gui.component.ProgressBarWindow('NDI V2 verify', 'GrabMostRecent', true);
+    w.setTimeout(hours(12));
+catch
+    w = [];
+end
+state = struct('n', 0, 'every', 1, 't0', 0, 'label', '');
+prog.start = @start;
+prog.step = @step;
+    function start(tag, label, n)
+        state.n = n;
+        state.every = max(1, round(n / 20));
+        state.t0 = tic;
+        state.label = label;
+        if ~isempty(w)
+            try w.addBar('Label', label, 'Tag', tag, 'Auto', true); catch, end
+        end
+    end
+    function step(tag, k)
+        if mod(k, state.every) ~= 0 && k ~= state.n, return; end
+        el = toc(state.t0);
+        fprintf('  %s: %d / %d (%.0f%%), %s elapsed, ~%s left\n', state.label, k, state.n, ...
+            100 * k / state.n, hms(el), hms(el / k * (state.n - k)));
+        if ~isempty(w)
+            try w.updateBar(tag, k / state.n); catch, end
+        end
+    end
+end
+
+function s = hms(sec)
+s = char(duration(0, 0, round(sec), 'Format', 'hh:mm:ss'));
+end
+
 function d = compareCounts(E, eKey, A, aKey, what)
 % differences between the expected (groupsummary: GroupCount) and actual (n) counts
 d = {};
