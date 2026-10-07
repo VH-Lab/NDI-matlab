@@ -173,12 +173,25 @@ classdef did2sqlite < ndi.database
             end
 
             ss = [];
+            D = 'ndi.database.implementations.database.did2sqlite';
             for i = 1:numel(q)
                 sHere = q(i).searchstructure;
                 for j = 1:numel(sHere)
                     try
+                        p1 = sHere(j).param1;
+                        p2 = sHere(j).param2;
+                        op = char(sHere(j).operation);
+                        if strcmp(op, 'or')
+                            % each branch is a searchstructure array: convert it
+                            % the same way (a nested query may sit inside)
+                            p1 = feval([D '.toDid2Query'], did.query(p1)).searchstructure;
+                            p2 = feval([D '.toDid2Query'], did.query(p2)).searchstructure;
+                        elseif any(strcmp(op, {'depends_on', '~depends_on'})) && isa(p2, 'did.query')
+                            % the edge's target is itself a query (did2 resolves it)
+                            p2 = feval([D '.toDid2Query'], p2);
+                        end
                         term = did2.query.searchstruct(sHere(j).field, ...
-                            sHere(j).operation, sHere(j).param1, sHere(j).param2);
+                            sHere(j).operation, p1, p2);
                     catch ME
                         error('NDI:did2sqlite:unsupportedOperation', ...
                             ['This database is backed by did2, which will ' ...

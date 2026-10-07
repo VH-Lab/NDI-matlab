@@ -287,6 +287,36 @@ classdef TestObjectLayer < matlab.unittest.TestCase
             testCase.verifyTrue(any(P.variable == "cleaning step"));
         end
 
+        function testSearchByWhatAnEdgePointsAt(testCase)
+            % a depends_on whose target is a query (DID-matlab #218): the
+            % formulations with peptone as an ingredient, without looking
+            % peptone's id up first; and, nested, the doses of them
+            ds = testCase.Dataset;
+            ids = testCase.Result.metadata.ids;
+            testCase.assumeTrue(ismethod(did2.query(), 'hasNested'), ...
+                'DID-matlab without nested depends_on targets (VH-Lab/DID-matlab#218)');
+            idsOf = @(docs) cellfun(@(d) char(d.document_properties.base.id), docs, 'UniformOutput', false);
+            chem = @(name) ndi.query('chemical.value.substance.name', 'exact_string', name, '');
+            isF = ndi.query('', 'isa', 'formulation', '');
+            withPep = isF & ndi.query('', 'depends_on', 'ingredient_id', chem('peptone'));
+            f = idsOf(ds.database_search(withPep));
+            testCase.verifyTrue(ismember(ids('ngm'), f));
+            testCase.verifyFalse(ismember(ids('ngm_no_peptone'), f));
+            agarNoPep = isF & ndi.query('', 'depends_on', 'ingredient_id', chem('agar')) & ...
+                ndi.query('', '~depends_on', 'ingredient_id', chem('peptone'));
+            testCase.verifyEqual(idsOf(ds.database_search(agarNoPep)), {ids('ngm_no_peptone')});
+            either = ds.database_search(ndi.query('', 'depends_on', 'ingredient_id', chem('peptone')) | ...
+                ndi.query('base.id', 'exact_string', ids('lb'), ''));
+            testCase.verifyTrue(all(ismember({ids('ngm'), ids('lb')}, idsOf(either))), 'inside an or');
+
+            plate = testCase.subject('concentration_assayPlate0012');
+            pour = plate.statements('Class', 'manipulation', 'Variable', 'NGM agar');
+            doses = ds.database_search(ndi.query('', 'isa', 'dose_manipulation', '') & ...
+                ndi.query('', 'depends_on', 'formulation_id', withPep));
+            testCase.verifyTrue(ismember(char(pour{1}.document_properties().base.id), idsOf(doses)), ...
+                'two levels: the plate''s pour is a dose of a formulation with peptone');
+        end
+
         function testDatasetLevelDocumentsAreReachedThroughTheDataset(testCase)
             % software, formulations, strains and people are stored with the
             % dataset (decision #20): read through the dataset, a statement
