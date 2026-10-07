@@ -485,6 +485,8 @@
   {
    "key": "OP50",
    "name": "OP50",
+   "node": "WBStrain:00041969",
+   "_node_synonym": "Also NCBITaxon:637912 (the V1 import's identifier), kept as the URL identifier below: a term carries one node, and the identifier list has no NCBITaxon scheme.",
    "species": {
     "node": "NCBITaxon:562",
     "name": "Escherichia coli"
@@ -505,6 +507,7 @@
   {
    "key": "OP50-GFP",
    "name": "OP50-GFP",
+   "node": "WBStrain:00041972",
    "species": {
     "node": "NCBITaxon:562",
     "name": "Escherichia coli"
@@ -525,9 +528,14 @@
   {
    "key": "N2",
    "name": "N2",
+   "node": "WBStrain:00000001",
    "species": {
     "node": "NCBITaxon:6239",
     "name": "Caenorhabditis elegans"
+   },
+   "biological_sex": {
+    "node": "PATO:0001340",
+    "name": "hermaphrodite"
    },
    "genetic_strain_type": "wild type",
    "description": "N2 Bristol, wild isolate.",
@@ -542,10 +550,15 @@
   {
    "key": "PR811",
    "name": "PR811",
+   "node": "WBStrain:00030796",
    "genotype": "osm-6(p811) V",
    "species": {
     "node": "NCBITaxon:6239",
     "name": "Caenorhabditis elegans"
+   },
+   "biological_sex": {
+    "node": "PATO:0001340",
+    "name": "hermaphrodite"
    },
    "genetic_strain_type": "mutant",
    "source": "cgc",
@@ -559,10 +572,15 @@
   {
    "key": "TU253",
    "name": "TU253",
+   "node": "WBStrain:00035037",
    "genotype": "mec-4(u253) X",
    "species": {
     "node": "NCBITaxon:6239",
     "name": "Caenorhabditis elegans"
+   },
+   "biological_sex": {
+    "node": "PATO:0001340",
+    "name": "hermaphrodite"
    },
    "genetic_strain_type": "mutant",
    "source": "cgc",
@@ -576,10 +594,16 @@
   {
    "key": "CB1112",
    "name": "CB1112",
+   "node": "WBStrain:00004246",
+   "_node": "WormBase id from the V1 import (doImport.m, strainNames for strains its lookup could not resolve); the V2 search found none (2026-10-07).",
    "genotype": "cat-2(e1112) II",
    "species": {
     "node": "NCBITaxon:6239",
     "name": "Caenorhabditis elegans"
+   },
+   "biological_sex": {
+    "node": "PATO:0001340",
+    "name": "hermaphrodite"
    },
    "genetic_strain_type": "mutant",
    "source": "cgc",
@@ -594,10 +618,16 @@
   {
    "key": "CX6448",
    "name": "CX6448",
+   "node": "WBStrain:00005280",
+   "_node": "WormBase id from the V1 import (doImport.m, strainNames for strains its lookup could not resolve); the V2 search found none (2026-10-07).",
    "genotype": "gcy-35(ok769) I",
    "species": {
     "node": "NCBITaxon:6239",
     "name": "Caenorhabditis elegans"
+   },
+   "biological_sex": {
+    "node": "PATO:0001340",
+    "name": "hermaphrodite"
    },
    "genetic_strain_type": "mutant",
    "source": "cgc",
@@ -612,10 +642,15 @@
   {
    "key": "DA465",
    "name": "DA465",
+   "node": "WBStrain:00005463",
    "genotype": "eat-2(ad465) II",
    "species": {
     "node": "NCBITaxon:6239",
     "name": "Caenorhabditis elegans"
+   },
+   "biological_sex": {
+    "node": "PATO:0001340",
+    "name": "hermaphrodite"
    },
    "genetic_strain_type": "mutant",
    "source": "cgc",
@@ -629,10 +664,15 @@
   {
    "key": "DA609",
    "name": "DA609",
+   "node": "WBStrain:00005493",
    "genotype": "npr-1(ad609) X",
    "species": {
     "node": "NCBITaxon:6239",
     "name": "Caenorhabditis elegans"
+   },
+   "biological_sex": {
+    "node": "PATO:0001340",
+    "name": "hermaphrodite"
    },
    "genetic_strain_type": "mutant",
    "source": "cgc",
@@ -646,10 +686,16 @@
   {
    "key": "FK103",
    "name": "FK103",
+   "node": "",
+   "_node": "To fill in: the V1 import resolved this strain by name (ndi.ontology.lookup WBStrain:<name>); WormBase could not be reached from the V2 build (2026-10-07).",
    "genotype": "tax-4(ks28) III",
    "species": {
     "node": "NCBITaxon:6239",
     "name": "Caenorhabditis elegans"
+   },
+   "biological_sex": {
+    "node": "PATO:0001340",
+    "name": "hermaphrodite"
    },
    "genetic_strain_type": "mutant",
    "source": "cgc",
@@ -664,10 +710,16 @@
   {
    "key": "MT13113",
    "name": "MT13113",
+   "node": "",
+   "_node": "To fill in: the V1 import resolved this strain by name (ndi.ontology.lookup WBStrain:<name>); WormBase could not be reached from the V2 build (2026-10-07).",
    "genotype": "tdc-1(n3419) II",
    "species": {
     "node": "NCBITaxon:6239",
     "name": "Caenorhabditis elegans"
+   },
+   "biological_sex": {
+    "node": "PATO:0001340",
+    "name": "hermaphrodite"
    },
    "genetic_strain_type": "mutant",
    "source": "cgc",
@@ -682,10 +734,16 @@
   {
    "key": "MT15434",
    "name": "MT15434",
+   "node": "WBStrain:00027519",
+   "_node": "WormBase id from the V1 import (doImport.m, strainNames for strains its lookup could not resolve); the V2 search found none (2026-10-07).",
    "genotype": "tph-1(mg280) II",
    "species": {
     "node": "NCBITaxon:6239",
     "name": "Caenorhabditis elegans"
+   },
+   "biological_sex": {
+    "node": "PATO:0001340",
+    "name": "hermaphrodite"
    },
    "genetic_strain_type": "mutant",
    "source": "cgc",
@@ -700,10 +758,16 @@
   {
    "key": "MT9455",
    "name": "MT9455",
+   "node": "",
+   "_node": "To fill in: the V1 import resolved this strain by name (ndi.ontology.lookup WBStrain:<name>); WormBase could not be reached from the V2 build (2026-10-07).",
    "genotype": "tbh-1(n3247) X",
    "species": {
     "node": "NCBITaxon:6239",
     "name": "Caenorhabditis elegans"
+   },
+   "biological_sex": {
+    "node": "PATO:0001340",
+    "name": "hermaphrodite"
    },
    "genetic_strain_type": "mutant",
    "source": "cgc",

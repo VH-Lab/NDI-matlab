@@ -143,8 +143,12 @@ if ~strcmp(options.Studies, 'only')
 
     for e = entries(spec, 'strains')
         s = e{1};
+        % `node` (the strain's ontology term) and `biological_sex` are stated by
+        % the import's assertions about the subjects of the strain, not held
+        % on the strain entity (V2 `strain` has neither field).
         state = checkKnown(state, 'strain', s, {'name', 'species', 'genetic_strain_type', ...
-            'description', 'genotype', 'identifiers', 'background', 'source'});
+            'description', 'genotype', 'identifiers', 'background', 'source'}, ...
+            struct('node', '', 'biological_sex', ''));
         f = struct('name', s.name, 'species', s.species, ...
             'genetic_strain_type', asTerm(s.genetic_strain_type));
         % V2 `strain` has no genotype field (nor does openMINDS Strain); the

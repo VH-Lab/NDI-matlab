@@ -18,8 +18,13 @@ function out = assertionDocuments(session, S, subjectIds, options)
 %     assay plate  inclusion in analysis = excluded, where the source excludes
 %                              it (decision #2: tagged, not dropped). Per plate:
 %                              no plate has some videos excluded and others not.
+%     cohort  biological sex   hermaphrodite (PATO:0001340), from the spec's
+%                              strain entry (`biological_sex`), distributive
+%                              like species and strain. Only strains that
+%                              state a sex get one, so a patch gets none.
 %   A strain assertion carries `strain_id`, the dataset-level strain document
-%   (stage 2), and its name as the term, so it reads on its own.
+%   (stage 2), and the strain's term -- its WBStrain node where the spec has
+%   one (`node`), else its name alone -- so it reads on its own.
 %
 %   The kind of each subject is NOT an assertion: it is subject.type
 %   (sessionDocuments). Terms with no ontology node yet are plain names
@@ -27,7 +32,8 @@ function out = assertionDocuments(session, S, subjectIds, options)
 %
 %   Options:
 %     'Strains'    the spec's `strains` entries (struct array or cell):
-%                  key, name, species {node, name}
+%                  key, name, species {node, name}, and optionally
+%                  node, biological_sex {node, name}
 %     'StrainIds'  containers.Map, strain key -> document id (stage 2)
 %
 %   OUT fields: documents (cell of structs), counts (struct), skipped
@@ -59,8 +65,8 @@ if ndi.setup.V2.schemaHasField('subject_statement', 'distributive')
 end
 
 out = struct('documents', {{}}, 'skipped', {{}}, 'counts', struct( ...
-    'cohort_species', 0, 'cohort_strain', 0, 'patch_species', 0, 'patch_strain', 0, ...
-    'plate_excluded', 0));
+    'cohort_species', 0, 'cohort_strain', 0, 'cohort_sex', 0, 'patch_species', 0, ...
+    'patch_strain', 0, 'patch_sex', 0, 'plate_excluded', 0));
 hasBacteria = ismember('bacteria', S.Properties.VariableNames);
 for k = 1:height(S)
     id = S.local_identifier{k};
@@ -95,13 +101,22 @@ end
             out.skipped{end+1} = sprintf('%s: no strain document for %s; strain asserted by name only', ...
                 id, strainKey);
         end
-        out = assert1(out, id, 'strain', did2.build.term('', st.name), edges, fields, ...
+        node = '';
+        if isfield(st, 'node') && ~isempty(st.node), node = char(st.node); end
+        out = assert1(out, id, 'strain', did2.build.term(node, st.name), edges, fields, ...
             [who '_strain']);
+        if isfield(st, 'biological_sex') && ~isempty(st.biological_sex)
+            sx = st.biological_sex;
+            out = assert1(out, id, did2.build.term('PATO:0000047', 'biological sex'), ...
+                did2.build.term(char(sx.node), char(sx.name)), struct(), fields, [who '_sex']);
+        end
     end
 
     function out = assert1(out, id, variable, value, edges, fields, counter)
         if ~isKey(subjectIds, id)
-            out.skipped{end+1} = sprintf('%s %s: not a subject of this session', id, variable);
+            label = variable;
+            if isstruct(label), label = label.name; end
+            out.skipped{end+1} = sprintf('%s %s: not a subject of this session', id, label);
             return;
         end
         out.documents{end+1} = did2.build.statement('term_assertion', subjectIds(id), ...

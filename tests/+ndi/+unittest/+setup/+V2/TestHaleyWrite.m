@@ -233,26 +233,36 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             about = @(local, variable) ta(cellfun(@(a) strcmp(edge(a, 'subject_id'), idOf(local)) ...
                 && strcmp(a.subject_statement.variable.name, variable), ta));
 
-            % 4 cohorts and 4 seeded patches, each with a species and a strain;
-            % plate 13 excluded
-            testCase.verifyNumElements(ta, 4 * 2 + 4 * 2 + 1);
+            % 4 cohorts, each with a species, a strain and a sex; 4 seeded
+            % patches, each with a species and a strain; plate 13 excluded
+            testCase.verifyNumElements(ta, 4 * 3 + 4 * 2 + 1);
             a = about('concentration_assayPlate0012_worms', 'species');
             testCase.verifyNumElements(a, 1);
             testCase.verifyEqual(a{1}.term.value.node, 'NCBITaxon:6239');
             a = about('concentration_assayPlate0012_worms', 'strain');
             testCase.verifyNumElements(a, 1);
             testCase.verifyEqual(a{1}.term.value.name, 'N2');
+            testCase.verifyEqual(a{1}.term.value.node, 'WBStrain:00000001', ...
+                'the strain is its WormBase term, not a name alone');
             testCase.verifyEqual(edge(a{1}, 'strain_id'), result.metadata.ids('N2'), ...
                 'the strain assertion names the dataset-level strain document');
             if ndi.setup.V2.schemaHasField('subject_statement', 'distributive')
                 testCase.verifyTrue(logical(a{1}.subject_statement.distributive), ...
                     'stated on the cohort, it holds of each worm');
             end
+            a = about('concentration_assayPlate0012_worms', 'biological sex');
+            testCase.verifyNumElements(a, 1);
+            testCase.verifyEqual(a{1}.subject_statement.variable.node, 'PATO:0000047');
+            testCase.verifyEqual(a{1}.term.value.node, 'PATO:0001340');
+            testCase.verifyEqual(a{1}.term.value.name, 'hermaphrodite');
+            testCase.verifyEmpty(about('concentration_assayPlate0012_patch0001', 'biological sex'), ...
+                'bacteria have no sex');
             testCase.verifyEmpty(about('concentration_worm0121', 'species'), ...
                 'a worm inherits its cohort''s species; it is not repeated');
             a = about('concentration_assayPlate0012_patch0001', 'strain');
             testCase.verifyNumElements(a, 1);
             testCase.verifyEqual(a{1}.term.value.name, 'OP50');
+            testCase.verifyEqual(a{1}.term.value.node, 'WBStrain:00041969');
             a = about('concentration_assayPlate0012_patch0001', 'species');
             testCase.verifyEqual(a{1}.term.value.node, 'NCBITaxon:562');
             a = about('concentration_assayPlate0013', 'inclusion in analysis');

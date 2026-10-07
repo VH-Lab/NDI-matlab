@@ -452,9 +452,9 @@ if isfield(result, 'subjects') && isfield(result, 'recordings')
             built{k}.documents = [built{k}.documents, as.documents];
             built{k}.assertions = as;
             c = as.counts;
-            fprintf(['%s assertions: cohort %d species, %d strain; patch %d species, ' ...
+            fprintf(['%s assertions: cohort %d species, %d strain, %d sex; patch %d species, ' ...
                 '%d strain; %d plate(s) excluded\n'], T.local_identifier{k}, c.cohort_species, ...
-                c.cohort_strain, c.patch_species, c.patch_strain, c.plate_excluded);
+                c.cohort_strain, c.cohort_sex, c.patch_species, c.patch_strain, c.plate_excluded);
             for j = 1:numel(as.skipped)
                 fprintf('  skipped: %s\n', as.skipped{j});
             end
