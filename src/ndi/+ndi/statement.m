@@ -101,7 +101,9 @@ classdef statement
             %   class       the document class, e.g. 'temperature_manipulation'
             %   variable, variable_node, method, method_node, value,
             %   value_node  each term's name and its ontology node ('' when it
-            %               has none yet, or the value is not a term)
+            %               has none yet, or the value is not a term); a value
+            %               of several numbers is '(array)', one kept in a data
+            %               body '(data body)'
             %   unit
             %   start, end  its time, the first of several references, shown
             %               in the zone it was recorded in when every row
@@ -334,6 +336,11 @@ classdef statement
                 if strcmp(vk, 'term'), value_node(i) = string(nodeOf(vv)); end
                 if strcmp(vk, 'none') && logical(firstOr(ndi.v2.blockOf(p, 'data_type', 'data_body', false), false))
                     vt = '(data body)';
+                elseif strcmp(vk, 'none')
+                    c = st.composite();
+                    if ~isempty(c) && numel(ndi.v2.blockOf(p, c, 'value', [])) > 1
+                        vt = '(array)';          % several values inline, e.g. one per encounter
+                    end
                 end
                 value(i) = string(vt); unit(i) = string(vu);
                 o = ndi.v2.edgeIds(p, 'subject_id');
