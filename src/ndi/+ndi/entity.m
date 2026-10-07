@@ -32,7 +32,8 @@ classdef entity
     %   document           - the ndi.document
     %   document_properties - its properties (a struct)
     %   global_identifiers - table: scheme, value (ORCID, ROR, RRID, DOI, ...)
-    %   relations          - table of the relations it takes part in
+    %   relations          - table of the relations it (or an array of
+    %                        entities) takes part in
     %   parents, children  - the entities across a relation, or a path of
     %                        them, from one entity or an array of them
     %   ancestors, descendants - the nearest entities of a type or kind,
@@ -134,9 +135,12 @@ classdef entity
         end
 
         function T = relations(obj, relationName, options)
-            % RELATIONS - the relations this entity takes part in
+            % RELATIONS - the relations this entity (or these entities) take part in
             %
-            % T = RELATIONS(OBJ) returns a table, one row per relation document:
+            % T = RELATIONS(OBJ) returns a table, one row per relation document
+            % and entity of OBJ at one end of it:
+            %   start_id    the entity of OBJ the row is about
+            %   start_name  its name
             %   relation    the relation's name (e.g. 'member_of', 'part_of')
             %   direction   "out" when this entity is the child (the subject of
             %               the sentence: worm member_of cohort), "in" when it
@@ -144,43 +148,69 @@ classdef entity
             %   other_id    the document id at the other end
             %   roles       the relation's roles, joined with ', '
             %   relation_id the relation document's id
-            % T = RELATIONS(OBJ, RELATIONNAME) keeps one relation.
-            % 'Direction' 'out', 'in' or 'both' (default).
+            % T = RELATIONS(OBJ, RELATIONNAME) keeps one relation (or any of
+            % a cell array of names). 'Direction' 'out', 'in' or 'both'
+            % (default).
+            %
+            % OBJ may be an array of entities (of one class); from a cell
+            % array C call it as a function, RELATIONS([C{:}]) -- one search
+            % per direction for every 200 entities, not one per entity. A
+            % relation whose two ends are both in OBJ gives two rows, one
+            % for each end.
             arguments
                 obj
-                relationName (1,:) char = ''
+                relationName {mustBeText} = ''
                 options.Direction (1,:) char {mustBeMember(options.Direction, {'out', 'in', 'both'})} = 'both'
             end
+            start_id = strings(0, 1); start_name = strings(0, 1);
             relation = strings(0, 1); direction = strings(0, 1); other_id = strings(0, 1);
             roles = strings(0, 1); relation_id = strings(0, 1);
-            id = obj.document_id;
+            T = table(start_id, start_name, relation, direction, other_id, roles, relation_id);
+            if isempty(obj)
+                return;
+            end
+            ids = arrayfun(@(x) x.document_id, obj, 'UniformOutput', false);
+            [ids, iu] = unique(ids(:), 'stable');
+            names = arrayfun(@(x) string(x.name), obj(iu), 'UniformOutput', false);
+            nameOf = containers.Map(ids, names);
+            container = obj(1).container_;
+            if isempty(relationName), wanted = {}; else, wanted = cellstr(relationName); end
             sides = {'out', 'child_id', 'parent_id'; 'in', 'parent_id', 'child_id'};
+            chunk = 200;
             for s = 1:2
                 if ~strcmp(options.Direction, 'both') && ~strcmp(options.Direction, sides{s, 1})
                     continue;
                 end
-                q = ndi.query('', 'isa', 'directed_relation', '') & ...
-                    ndi.query('', 'depends_on', sides{s, 2}, id);
-                docs = obj.container_.database_search(q);
-                for i = 1:numel(docs)
-                    p = ndi.v2.props(docs{i});
-                    r = ndi.v2.termName(ndi.v2.blockOf(p, 'directed_relation', 'relation', ''));
-                    if ~isempty(relationName) && ~strcmp(r, relationName)
-                        continue;
+                for c = 1:chunk:numel(ids)
+                    part = ids(c:min(c + chunk - 1, numel(ids)));
+                    q = ndi.entity.anyOf(cellfun(@(i) ndi.query('', 'depends_on', sides{s, 2}, i), ...
+                        part, 'UniformOutput', false));
+                    docs = container.database_search(ndi.query('', 'isa', 'directed_relation', '') & q);
+                    for i = 1:numel(docs)
+                        p = ndi.v2.props(docs{i});
+                        r = ndi.v2.termName(ndi.v2.blockOf(p, 'directed_relation', 'relation', ''));
+                        if ~isempty(wanted) && ~any(strcmp(r, wanted))
+                            continue;
+                        end
+                        mine = ndi.v2.edgeIds(p, sides{s, 2});
+                        mine = unique(mine(ismember(mine, part)), 'stable');
+                        other = ndi.v2.edgeIds(p, sides{s, 3});
+                        rl = ndi.v2.entries(ndi.v2.blockOf(p, 'directed_relation', 'roles', []));
+                        rn = {};
+                        for j = 1:numel(rl), rn{end+1} = ndi.v2.termName(rl{j}); end %#ok<AGROW>
+                        for m = 1:numel(mine)
+                            start_id(end+1, 1) = string(mine{m}); %#ok<AGROW>
+                            start_name(end+1, 1) = nameOf(mine{m}); %#ok<AGROW>
+                            relation(end+1, 1) = string(r); %#ok<AGROW>
+                            direction(end+1, 1) = string(sides{s, 1}); %#ok<AGROW>
+                            other_id(end+1, 1) = string(strjoin(other, ', ')); %#ok<AGROW>
+                            roles(end+1, 1) = string(strjoin(rn, ', ')); %#ok<AGROW>
+                            relation_id(end+1, 1) = string(p.base.id); %#ok<AGROW>
+                        end
                     end
-                    other = ndi.v2.edgeIds(p, sides{s, 3});
-                    rl = ndi.v2.blockOf(p, 'directed_relation', 'roles', []);
-                    rn = {};
-                    rl = ndi.v2.entries(rl);
-                    for j = 1:numel(rl), rn{end+1} = ndi.v2.termName(rl{j}); end %#ok<AGROW>
-                    relation(end+1, 1) = string(r); %#ok<AGROW>
-                    direction(end+1, 1) = string(sides{s, 1}); %#ok<AGROW>
-                    other_id(end+1, 1) = string(strjoin(other, ', ')); %#ok<AGROW>
-                    roles(end+1, 1) = string(strjoin(rn, ', ')); %#ok<AGROW>
-                    relation_id(end+1, 1) = string(p.base.id); %#ok<AGROW>
                 end
             end
-            T = table(relation, direction, other_id, roles, relation_id);
+            T = table(start_id, start_name, relation, direction, other_id, roles, relation_id);
         end
 
         function e = parents(obj, path, options)

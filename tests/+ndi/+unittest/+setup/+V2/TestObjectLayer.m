@@ -113,6 +113,25 @@ classdef TestObjectLayer < matlab.unittest.TestCase
             testCase.verifyEmpty(a.children({'member_of', 'member_of'}), 'nothing at the end of that path');
         end
 
+        function testRelationsOfManyEntities(testCase)
+            a = testCase.subject('concentration_assayPlate0012');
+            b = testCase.subject('concentration_0001_acclimationPlate0001');
+            Ta = a.relations();
+            Tb = b.relations();
+            T = relations([a b]);
+            testCase.verifyEqual(height(T), height(Ta) + height(Tb), 'the same rows as one at a time');
+            testCase.verifyEqual(sort(T.relation_id(T.start_id == a.document_id)), sort(Ta.relation_id));
+            testCase.verifyEqual(unique(T.start_name(T.start_id == b.document_id)), string(b.name));
+            testCase.verifyTrue(any(T.relation == "contained_in" & T.direction == "in" & ...
+                T.start_id == a.document_id), 'the cohort contained_in the assay plate');
+            testCase.verifyTrue(any(T.relation == "part_of" & T.direction == "in" & ...
+                T.start_id == a.document_id), 'its patches part_of it');
+            In = relations([a b], 'contained_in', 'Direction', 'in');
+            testCase.verifyEqual(unique(In.relation), "contained_in");
+            testCase.verifyEqual(sort(unique(In.start_id)), sort(string({a.document_id; b.document_id})));
+            testCase.verifyEqual(height(relations([a a])), height(Ta), 'an entity given twice is read once');
+        end
+
         function testDescendantsAndAncestorsNeedNoRelationNames(testCase)
             a = testCase.subject('concentration_assayPlate0012');
             worms = a.descendants('Type', 'organism');
