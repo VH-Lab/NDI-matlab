@@ -254,27 +254,70 @@ classdef subject < ndi.ido & ndi.documentservice & ndi.entity
             % FIND - the subjects in a session or dataset
             %
             % S = ndi.subject.find(CONTAINER, ...) returns a cell array of
-            % ndi.subject. Options: 'Type' (e.g. 'organism'), 'LocalIdentifier'.
-            % Every subject is returned unless a filter says otherwise,
-            % instrument subjects included (V2_Object_Layer.md, Q2).
+            % ndi.subject. Every subject is returned unless a filter says
+            % otherwise, instrument subjects included (V2_Object_Layer.md, Q2).
+            % Options:
+            %   'Type'             e.g. 'organism', 'group', 'material'
+            %   'LocalIdentifier'  exactly this local identifier
+            %   'Strain'           what is asserted of the subject's strain:
+            %                      a name ('N2') or an ontology node
+            %   'Asserted'         {VARIABLE, VALUE}: any term assertion, e.g.
+            %                      {'species', 'NCBITaxon:6239'}; each may be
+            %                      a name or a node
+            %   'Inherited'        default TRUE: a subject also matches when
+            %                      the assertion was stated on a group it is
+            %                      a member of (member_of, groups of groups
+            %                      too) and marked distributive -- as the
+            %                      Haley import states strain on each cohort.
+            %                      false: only assertions about the subject
+            %                      itself.
+            %
+            %   worms = ndi.subject.find(ds, 'Strain', 'N2', 'Type', 'organism');
+            %
+            % The group an assertion was stated on matches too (it is a
+            % subject the assertion is about); 'Type' leaves it out.
             arguments
                 container
                 options.Type (1,:) char = ''
                 options.LocalIdentifier (1,:) char = ''
+                options.Strain (1,:) char = ''
+                options.Asserted cell = {}
+                options.Inherited (1,1) logical = true
             end
-            q = ndi.query('', 'isa', 'subject', '');
-            if ~isempty(options.LocalIdentifier)
-                q = q & ndi.query('subject.local_identifier', 'exact_string', options.LocalIdentifier, '');
-            end
-            docs = container.database_search(q);
-            s = {};
-            for i = 1:numel(docs)
-                x = ndi.subject.fromDocument(container, docs{i});
-                if ~isempty(options.Type) && ~strcmp(x.type, options.Type)
-                    continue;
+            asserted = options.Asserted;
+            if ~isempty(options.Strain)
+                if ~isempty(asserted)
+                    error('ndi:subject:find:twoAssertions', 'Give ''Strain'' or ''Asserted'', not both.');
                 end
-                s{end+1} = x; %#ok<AGROW>
+                asserted = {'strain', options.Strain};
             end
+            if ~isempty(asserted)
+                if numel(asserted) ~= 2
+                    error('ndi:subject:find:badAsserted', '''Asserted'' is {VARIABLE, VALUE}.');
+                end
+                ids = ndi.subject.assertedIds(container, char(asserted{1}), char(asserted{2}), ...
+                    options.Inherited);
+                s = ndi.entity.fetchMany(container, ids);
+            else
+                q = ndi.query('', 'isa', 'subject', '');
+                if ~isempty(options.LocalIdentifier)
+                    q = q & ndi.query('subject.local_identifier', 'exact_string', options.LocalIdentifier, '');
+                end
+                docs = container.database_search(q);
+                s = cellfun(@(d) ndi.subject.fromDocument(container, d), docs, 'UniformOutput', false);
+            end
+            keep = true(1, numel(s));
+            for i = 1:numel(s)
+                x = s{i};
+                if ~isa(x, 'ndi.subject')
+                    keep(i) = false;
+                elseif ~isempty(options.Type) && ~strcmp(x.type, options.Type)
+                    keep(i) = false;
+                elseif ~isempty(options.LocalIdentifier) && ~strcmp(x.local_identifier, options.LocalIdentifier)
+                    keep(i) = false;
+                end
+            end
+            s = reshape(s(keep), 1, []);
         end % find()
 
         function [b,msg] = isvalidlocalidentifierstring(local_identifier)
@@ -344,6 +387,45 @@ classdef subject < ndi.ido & ndi.documentservice & ndi.entity
             end
         end % does_subjectstring_match_session_document()
     end % static methods
+
+    methods (Static, Access = protected)
+        function ids = assertedIds(container, variable, value, inherited)
+            % ASSERTEDIDS - ids of the subjects a term assertion VARIABLE = VALUE holds of
+            %
+            % One search for the assertions (VARIABLE and VALUE each matched
+            % as a name or a node); their subjects; and, when INHERITED,
+            % every member (member_of, all the way down) of a subject whose
+            % assertion is marked distributive.
+            either = @(path, v) ndi.query([path '.name'], 'exact_string', v, '') | ...
+                ndi.query([path '.node'], 'exact_string', v, '');
+            q = ndi.query('', 'isa', 'term_assertion', '') & ...
+                either('subject_statement.variable', variable) & either('term.value', value);
+            docs = container.database_search(q);
+            ids = {};
+            groups = {};
+            for i = 1:numel(docs)
+                p = ndi.v2.props(docs{i});
+                sid = ndi.v2.edgeIds(p, 'subject_id');
+                ids = [ids, sid]; %#ok<AGROW>
+                d = ndi.v2.blockOf(p, 'subject_statement', 'distributive', false);
+                if inherited && ~isempty(d) && (islogical(d) || isnumeric(d)) && logical(d(1))
+                    groups = [groups, sid]; %#ok<AGROW>
+                end
+            end
+            ids = unique(ids, 'stable');
+            groups = unique(groups, 'stable');
+            if isempty(groups)
+                return;
+            end
+            G = ndi.entity.fetchMany(container, groups);
+            G = G(cellfun(@(x) isa(x, 'ndi.subject'), G));
+            if isempty(G)
+                return;
+            end
+            m = descendants([G{:}], 'Relation', 'member_of');
+            ids = unique([ids, cellfun(@(x) x.document_id, m, 'UniformOutput', false)], 'stable');
+        end
+    end
 end % classdef ndi.subject
 
 function id = statedOnId(st)

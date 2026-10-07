@@ -168,6 +168,37 @@ classdef TestObjectLayer < matlab.unittest.TestCase
             testCase.verifyEmpty(w.descendants('Type', 'organism'), 'nothing points to a worm');
         end
 
+        function testFindByStrainWhereverItWasStated(testCase)
+            % strain is stated on each cohort, distributive (decision #55):
+            % a search by strain finds the worms without knowing that
+            S = testCase.Session;
+            w = ndi.subject.find(S, 'Strain', 'N2', 'Type', 'organism');
+            names = local(w);
+            testCase.verifyTrue(all(ismember({'concentration_worm0121', 'concentration_worm0122'}, names)), ...
+                strjoin(names, ', '));
+            testCase.verifyTrue(all(cellfun(@(x) strcmp(x.type, 'organism'), w)));
+            all_ = local(ndi.subject.find(S, 'Strain', 'N2'));
+            testCase.verifyTrue(ismember('concentration_assayPlate0012_worms', all_), ...
+                'the cohort it was stated on matches too');
+            testCase.verifyEmpty(ndi.subject.find(S, 'Strain', 'N2', 'Type', 'organism', 'Inherited', false), ...
+                'stated on no worm itself');
+            testCase.verifyEqual(sort(local(ndi.subject.find(S, 'Strain', 'N2', 'Inherited', false))), ...
+                sort(local(ndi.subject.find(S, 'Strain', 'N2', 'Type', 'group'))), ...
+                'without inheritance: the cohorts alone');
+
+            % by node, and any term assertion
+            byNode = local(ndi.subject.find(S, 'Asserted', {'species', 'NCBITaxon:6239'}, 'Type', 'organism'));
+            testCase.verifyTrue(all(ismember(names, byNode)), 'every N2 worm is C. elegans');
+            ecoli = ndi.subject.find(S, 'Asserted', {'species', 'NCBITaxon:562'});
+            testCase.verifyNotEmpty(ecoli);
+            testCase.verifyFalse(any(cellfun(@(x) strcmp(x.type, 'organism'), ecoli)), 'lawns, not worms');
+            testCase.verifyEmpty(ndi.subject.find(S, 'Strain', 'no such strain'));
+            testCase.verifyError(@() ndi.subject.find(S, 'Strain', 'N2', 'Asserted', {'species', 'x'}), ...
+                'ndi:subject:find:twoAssertions');
+            testCase.verifyEqual(local(ndi.subject.find(S, 'Strain', 'N2', ...
+                'LocalIdentifier', 'concentration_worm0121')), {'concentration_worm0121'});
+        end
+
         function testAssertions(testCase)
             c = testCase.subject('concentration_assayPlate0012_worms');
             T = c.assertions();

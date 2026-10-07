@@ -176,6 +176,7 @@ that take the session or dataset as their first argument:
 | call | returns |
 |---|---|
 | `ndi.subject.find(S, 'Type', t, 'LocalIdentifier', l)` | subjects (instruments included unless filtered: answers Q2) |
+| `ndi.subject.find(S, 'Strain', 'N2')`, `ndi.subject.find(S, 'Asserted', {'species', 'NCBITaxon:6239'})` | subjects a term assertion holds of, the value (and variable) matched as a name or a node; `'Inherited'` (default true) adds the members, all the way down `member_of`, of a group whose assertion is `distributive`, so the caller need not know whether strain was stated on the worm or its cohort |
 | `ndi.statement.find(S, 'Subject', s, 'Variable', v, 'Class', c, 'Method', m)` | statements |
 | `ndi.entity.find(S, kind)` | entities of a kind |
 | `ndi.entity.fromDocument(S, doc)`, `ndi.statement.fromDocument(S, doc)` | the object for one document |

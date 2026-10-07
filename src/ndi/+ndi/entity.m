@@ -536,6 +536,17 @@ classdef entity
             end
         end
 
+        function e = fetchMany(container, ids)
+            % FETCHMANY - the entities with these document ids, a few searches in all
+            %
+            % E = ndi.entity.fetchMany(CONTAINER, IDS): a cell array (row), one
+            % entity per id found, in the order of IDS; ids not found are
+            % left out.
+            ids = unique(cellstr(ids), 'stable');
+            e = ndi.entity.fetch(container, ids(:));
+            e = reshape(e(~cellfun(@isempty, e)), 1, []);
+        end
+
         function e = find(container, kind, options)
             % FIND - the entities of a kind in a session or dataset
             %
