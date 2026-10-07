@@ -51,10 +51,17 @@ q = andTerm(q, 'subject_statement.variable', filt.variable);
 q = andTerm(q, 'subject_interaction.method', filt.method);
 if ~isempty(filt.value) && all(cellfun(@isPlainText, filt.value))
     % a term value can be narrowed in the database; a statement whose value
-    % is not a term passes to the recheck
-    q = q & (termQuery('term.value', filt.value) | ndi.query('', '~isa', 'term', ''));
+    % is not a term passes to the recheck. When that finds nothing, search
+    % again without it: "the variable is there, the value is not" (a
+    % warning naming the values) is not "nothing has this variable"
+    cand = container.database_search(q & ...
+        (termQuery('term.value', filt.value) | ndi.query('', '~isa', 'term', '')));
+    if isempty(cand)
+        cand = container.database_search(q);
+    end
+else
+    cand = container.database_search(q);
 end
-cand = container.database_search(q);
 
 structural = {};
 for i = 1:numel(cand)
