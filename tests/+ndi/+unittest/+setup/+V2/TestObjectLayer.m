@@ -214,6 +214,45 @@ classdef TestObjectLayer < matlab.unittest.TestCase
             testCase.verifyError(@() ndi.subject.find(S, 'strain'), 'ndi:subject:find:pairs');
         end
 
+        function testFindByAStatementOfAKind(testCase)
+            % the six statement keys: the filters in one cell are one
+            % statement; a key given twice is two statements
+            S = testCase.Session;
+            plate = 'concentration_assayPlate0012';
+            has = @(varargin) ismember(plate, local(ndi.subject.find(S, varargin{:})));
+            testCase.verifyTrue(has('manipulation', {'variable', 'NGM agar'}));
+            testCase.verifyTrue(has('manipulation', {'method', 'refrigeration'}));
+            testCase.verifyTrue(has('interaction', {'method', 'refrigeration'}), 'an interaction is any of the three');
+            testCase.verifyTrue(has('statement', {'variable', 'NGM agar'}));
+            testCase.verifyTrue(has('manipulation', {'method', 'REFRIG*'}), 'a wildcard, any case');
+            % a dose compares by its amount, in its canonical unit (liters)
+            testCase.verifyTrue(has('manipulation', {'variable', 'NGM agar', 'value', '>=0.02'}));
+            testCase.verifyTrue(has('manipulation', {'variable', 'NGM agar', 'value', '<=0.025'}));
+            w = warning('off', 'ndi:subject:find:noSuchValue');
+            restore = onCleanup(@() warning(w));
+            testCase.verifyFalse(has('manipulation', {'variable', 'NGM agar', 'value', '>0.03'}));
+            % one statement that is both, versus two statements
+            testCase.verifyEmpty(ndi.subject.find(S, 'manipulation', {'method', 'refrigeration', ...
+                'variable', 'NGM agar'}), 'no single manipulation is both: none, not an error');
+            testCase.verifyTrue(has('manipulation', {'method', 'refrigeration'}, ...
+                'manipulation', {'variable', 'NGM agar'}));
+            % the shorthand is an assertion
+            testCase.verifyEqual(sort(local(ndi.subject.find(S, 'assertion', {'variable', 'strain', 'value', 'N2'}))), ...
+                sort(local(ndi.subject.find(S, 'strain', 'N2'))));
+            testCase.verifyEqual(sort(local(ndi.subject.find(S, 'str*', 'N2'))), ...
+                sort(local(ndi.subject.find(S, 'strain', 'N2'))), 'a wildcard in the property name');
+            testCase.verifyError(@() ndi.subject.find(S, 'assertion', {'method', 'x'}), ...
+                'ndi:subject:find:assertionMethod');
+            testCase.verifyError(@() ndi.subject.find(S, 'manipulation', {'method', 'no such method'}), ...
+                'ndi:subject:find:noSuchStatement');
+            testCase.verifyError(@() ndi.subject.find(S, 'manipulation', {'colour', 'x'}), ...
+                'ndi:subject:find:statementFilter');
+            testCase.verifyError(@() ndi.subject.find(S, 'manipulation', 'NGM agar'), ...
+                'ndi:subject:find:statementFilter');
+            % a plate's statements are not its worms': contained_in is not followed
+            testCase.verifyEmpty(ndi.subject.find(S, 'type', 'organism', 'manipulation', {'variable', 'NGM agar'}));
+        end
+
         function testAssertions(testCase)
             c = testCase.subject('concentration_assayPlate0012_worms');
             T = c.assertions();
