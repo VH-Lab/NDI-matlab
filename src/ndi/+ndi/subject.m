@@ -808,13 +808,14 @@ end
 function t = relationText(r, indent)
 name = 'any relation';
 if ~isempty(r.name), name = strjoin(r.name, ' or '); end
-switch r.side
-    case 'parent', role = sprintf('are the child in %s, whose parent is', name);
-    case 'child',  role = sprintf('are the parent in %s, where a child is', name);
-    otherwise,     role = sprintf('are in %s with', name);
-end
+via = '';
 if strcmp(r.side, 'parent') || strcmp(r.kind, 'directed_relation') && isempty(r.side)
-    role = [role ' (themselves, or a group they belong to when the relation is distributive)'];
+    via = ' (themselves, or through a group they belong to, when the relation is distributive)';
+end
+switch r.side
+    case 'parent', role = sprintf('are the child in %s%s, whose parent is', name, via);
+    case 'child',  role = sprintf('are the parent in %s, where a child is', name);
+    otherwise,     role = sprintf('are in %s%s with', name, via);
 end
 target = r.target;
 if isempty(target) && ~iscell(target)
