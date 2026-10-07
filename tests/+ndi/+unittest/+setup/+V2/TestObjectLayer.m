@@ -253,6 +253,71 @@ classdef TestObjectLayer < matlab.unittest.TestCase
             testCase.verifyEmpty(ndi.subject.find(S, 'type', 'organism', 'manipulation', {'variable', 'NGM agar'}));
         end
 
+        function testFindByRelation(testCase)
+            S = testCase.Session;
+            worms = {'concentration_worm0121', 'concentration_worm0122'};
+            cohort = testCase.subject('concentration_assayPlate0012_worms');
+            plate = testCase.subject('concentration_assayPlate0012');
+            names = @(varargin) sort(local(ndi.subject.find(S, varargin{:})));
+
+            % the shortcut: a relation's name, the subject is the child
+            testCase.verifyEqual(names('member_of', cohort), worms);
+            testCase.verifyEqual(names('directed_relation', {'parent', cohort}), worms, 'no name: any relation');
+            testCase.verifyEqual(names('directed_relation', {'name', 'member_of', 'parent', cohort.document_id}), ...
+                worms, 'the other end as a document id');
+            % the cohort is contained_in the plate, distributive: so is each worm
+            testCase.verifyEqual(names('type', 'organism', 'contained_in', plate), worms);
+            testCase.verifyEmpty(ndi.subject.find(S, 'type', 'organism', 'contained_in', plate, 'inherited', false), ...
+                'not inherited: no worm is contained_in anything itself');
+            % the other end described, not named
+            onNGM = names('type', 'organism', 'contained_in', {'manipulation', {'variable', 'NGM agar'}});
+            testCase.verifyTrue(all(ismember(worms, onNGM)), strjoin(onNGM, ', '));
+            % the reverse: the subject is the parent
+            p = names('directed_relation', {'name', 'part_of', 'child', ...
+                {'local_identifier', 'concentration_assayPlate0012_patch0001'}});
+            testCase.verifyEqual(p, {'concentration_assayPlate0012'});
+            % nested: worms on the plate that patch 0001 is part of
+            testCase.verifyEqual(names('type', 'organism', 'contained_in', {'directed_relation', ...
+                {'name', 'part_of', 'child', {'local_identifier', 'concentration_assayPlate0012_patch0001'}}}), worms);
+            % 'with': either end
+            w = names('relation', {'with', cohort});
+            testCase.verifyTrue(all(ismember([worms, {'concentration_assayPlate0012', ...
+                'concentration_0001_acclimationPlate0001'}], w)), strjoin(w, ', '));
+            testCase.verifyEqual(local(ndi.subject.find(S, 'id', cohort.document_id)), ...
+                {'concentration_assayPlate0012_worms'});
+
+            % explain says what it will do
+            out = evalc('ndi.subject.find(S, ''type'', ''organism'', ''contained_in'', {''manipulation'', {''variable'', ''NGM agar''}}, ''explain'', true);');
+            testCase.verifySubstring(out, 'contained_in');
+            testCase.verifySubstring(out, 'NGM agar');
+            testCase.verifySubstring(out, 'type is ''organism''');
+
+            testCase.verifyError(@() ndi.subject.find(S, 'directed_relation', {'name', 'containd_in'}), ...
+                'ndi:subject:find:unknownRelation');
+            testCase.verifyError(@() ndi.subject.find(S, 'contained_in', plate, 'directed_relation', ...
+                {'name', 'contained_in', 'parent', plate, 'at', '2023-01-01'}), 'ndi:subject:find:notYet');
+            testCase.verifyError(@() ndi.subject.find(S, 'undirected_relation', {'parent', plate}), ...
+                'ndi:subject:find:relationFilter');
+            testCase.verifyError(@() ndi.subject.find(S, 'directed_relation', {'parent', plate, 'child', plate}), ...
+                'ndi:subject:find:relationFilter');
+        end
+
+        function testAnAssertionAboutAWholeHoldsOfItsParts(testCase)
+            % plate 0013 is excluded (an assertion on the plate): its patches,
+            % part_of it, are too; its worms, contained_in it, are not
+            S = testCase.Session;
+            direct = local(ndi.subject.find(S, 'inclusion in analysis', 'excluded', 'inherited', false));
+            testCase.verifyTrue(ismember('concentration_assayPlate0013', direct));
+            all_ = local(ndi.subject.find(S, 'inclusion in analysis', 'excluded'));
+            extra = setdiff(all_, direct);
+            testCase.verifyTrue(all(startsWith(extra, 'concentration_assayPlate0013_patch')), strjoin(extra, ', '));
+            patches = local(ndi.subject.find(S, 'directed_relation', {'name', 'part_of', 'parent', ...
+                {'local_identifier', 'concentration_assayPlate0013'}}));
+            testCase.verifyEqual(sort(extra), sort(patches), 'exactly its parts');
+            testCase.verifyEmpty(ndi.subject.find(S, 'type', 'organism', 'inclusion in analysis', 'excluded'), ...
+                'contained_in does not carry statements');
+        end
+
         function testAssertions(testCase)
             c = testCase.subject('concentration_assayPlate0012_worms');
             T = c.assertions();

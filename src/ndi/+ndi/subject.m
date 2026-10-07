@@ -261,21 +261,32 @@ classdef subject < ndi.ido & ndi.documentservice & ndi.entity
             %   ndi.subject.find(ds, 'type', 'organism', ...
             %       'species', 'Caenorhabditis elegans', 'strain', {'N2', 'CB*'})
             %   ndi.subject.find(ds, 'manipulation', {'method', 'heating'})
-            %   ndi.subject.find(ds, 'manipulation', ...
-            %       {'variable', 'NGM agar', 'value', '>=0.02'})
+            %   ndi.subject.find(ds, 'type', 'organism', ...
+            %       'contained_in', {'manipulation', {'variable', 'NGM agar'}})
             %
             % A PROPERTY is one of:
-            %   'type', 'name', 'local_identifier'   the subject's own fields
+            %   'type', 'name', 'local_identifier', 'id'
+            %       the subject's own fields ('id': its document id)
             %   'statement', 'assertion', 'interaction', 'observation',
-            %   'manipulation', 'calculation'        a statement of that kind
-            %       (and its children: an interaction is an observation,
-            %       manipulation or calculation) about the subject; VALUE is a
-            %       cell of filters, all on the SAME statement:
-            %         'variable', 'method' (not for an assertion), 'value',
-            %         'formulation' (a dose's: its name or type)
-            %       Giving the key twice asks for two statements, perhaps
-            %       different ones.
-            %   'inherited'   true (default) or false, below
+            %   'manipulation', 'calculation'
+            %       a statement of that kind (or a child kind) about the
+            %       subject; VALUE is a cell of filters on ONE statement:
+            %       'variable', 'method' (not an assertion's), 'value',
+            %       'formulation' (a dose's). The key twice is two statements.
+            %   'relation', 'directed_relation', 'undirected_relation'
+            %       a relation the subject is in; VALUE is a cell:
+            %         'name'    the relation ('contained_in', 'paired_with', ...)
+            %         'parent'  the subject is the child; the parent is ...
+            %         'child'   the subject is the parent; a child is ...
+            %         'with'    the other end, either way, is ...
+            %       where ... is a subject (an ndi.entity, several in a cell,
+            %       or a document id) or a cell describing subjects -- anything
+            %       ndi.subject.find takes, nested as deep as needed.
+            %   a relation's name ('member_of', 'contained_in', 'part_of',
+            %   'paired_with', ...): short for 'directed_relation',
+            %       {'name', NAME, 'parent', VALUE} ('with' for an undirected one)
+            %   'inherited'  true (default) or false, below
+            %   'explain'    true: print what the search means before it runs
             %   anything else: an asserted variable -- 'strain', 'N2' is
             %       'assertion', {'variable', 'strain', 'value', 'N2'}
             % Property names ignore case.
@@ -284,37 +295,33 @@ classdef subject < ndi.ido & ndi.documentservice & ndi.entity
             % exactly ('NCBITaxon:6239'); a cell array is any of them; '*' is
             % a wildcard, '\*' a literal star. A value is compared by its kind:
             % numbers and dates take '>', '>=', '<', '<=' ('>=0.02',
-            % '>2023-11-16'); see ndi.v2.findStatements. Different pairs must
-            % all hold.
+            % '>2023-11-16'); see ndi.v2.findStatements. All pairs must hold.
             %
-            % 'inherited' (default true): a statement about a group holds of
-            % its members when it is marked distributive, all the way down
-            % member_of -- so it does not matter whether a strain was stated on
-            % a worm or on its cohort. contained_in and part_of are not
-            % followed (a plate's statements are not its worms'). false: only
-            % what was stated about the subject itself. The group a statement
-            % was about always matches too; 'type', 'organism' leaves it out.
+            % 'inherited' (default true):
+            %   - a statement or relation about a group holds of its members
+            %     when it is marked distributive, all the way down member_of
+            %     (a strain stated on a cohort; a cohort contained_in a plate);
+            %   - an assertion about a whole holds of its parts and samples,
+            %     down part_of, sample_of, aliquot_of and passage_of (an
+            %     animal's strain is its slice's).
+            %   contained_in is not followed for statements (a plate's are not
+            %   its worms'). false: only what is stated of the subject itself.
+            %   The group or whole a statement was about matches too; 'type'
+            %   narrows to what you want.
             %
-            % An asserted variable no assertion uses, or a kind / variable /
-            % method no statement has, is an error; values none of which
-            % match is a warning naming the values there are ("none" may be
-            % the answer).
-            [own, filters, inherited] = ndi.subject.findPairs(varargin);
-            ids = [];                       % [] = not narrowed yet; {} = nothing
-            for k = 1:numel(filters)
-                these = ndi.subject.subjectsOf(container, filters(k), inherited);
-                if isempty(ids) && ~iscell(ids)
-                    ids = these;
-                else
-                    ids = ids(ismember(ids, these));
-                end
-                if isempty(ids), s = {}; return; end
+            % An unknown asserted variable, relation name, or a kind /
+            % variable / method no statement has, is an error; values none of
+            % which match is a warning naming the values there are.
+            spec = ndi.subject.parseSearch(varargin);
+            if spec.explain
+                fprintf('%s\n', ndi.subject.explainSearch(spec, ''));
             end
+            ids = ndi.subject.searchIds(container, spec);
             if iscell(ids)
                 s = ndi.entity.fetchMany(container, ids);
             else
                 q = ndi.query('', 'isa', 'subject', '');
-                lid = own(strcmp(own(:, 1), 'local_identifier'), 2);
+                lid = spec.own(strcmp(spec.own(:, 1), 'local_identifier'), 2);
                 if isscalar(lid) && ischar(lid{1}) && ~ndi.v2.hasWildcard(lid{1})
                     q = q & ndi.query('subject.local_identifier', 'exact_string_anycase', ...
                         strrep(lid{1}, '\*', '*'), '');
@@ -324,20 +331,32 @@ classdef subject < ndi.ido & ndi.documentservice & ndi.entity
             end
             s = reshape(s, 1, []);
             keep = cellfun(@(x) isa(x, 'ndi.subject'), s);
+            own = spec.own;
             for k = 1:size(own, 1)
                 for i = find(keep)
                     x = s{i};
                     switch own{k, 1}
-                        case 'type', v = x.type;
-                        case 'name', v = x.name;
-                        case 'local_identifier', v = x.local_identifier;
+                        case 'type', keep(i) = ndi.v2.matchTerm(x.type, own{k, 2});
+                        case 'name', keep(i) = ndi.v2.matchTerm(x.name, own{k, 2});
+                        case 'local_identifier', keep(i) = ndi.v2.matchTerm(x.local_identifier, own{k, 2});
+                        case 'id', keep(i) = any(strcmp(x.document_id, cellstr(own{k, 2})));
                     end
-                    keep(i) = ndi.v2.matchTerm(v, own{k, 2});
                 end
             end
             s = reshape(s(keep), 1, []);
         end % find()
 
+    end
+
+    methods (Static, Hidden)
+        function t = explainNested(c, indent)
+            % EXPLAINNESTED - a description (a cell of find's pairs) in words
+            t = ndi.subject.explainSearch(ndi.subject.parseSearch(c), indent);
+        end
+
+    end
+
+    methods (Static)
         function [b,msg] = isvalidlocalidentifierstring(local_identifier)
             % ISVALIDLOCALIDENTIFIERSTRING - is this a valid local identifier string?
             %
@@ -407,15 +426,19 @@ classdef subject < ndi.ido & ndi.documentservice & ndi.entity
     end % static methods
 
     methods (Static, Access = protected)
-        function [own, filters, inherited] = findPairs(args)
-            % FINDPAIRS - find's PROPERTY, VALUE pairs: the subject's own
-            % fields, statement filters, and the 'inherited' switch
+        function spec = parseSearch(args)
+            % PARSESEARCH - find's PROPERTY, VALUE pairs as a search spec:
+            % own fields, statement filters, relation filters, and switches
             if mod(numel(args), 2)
                 error('ndi:subject:find:pairs', 'ndi.subject.find takes PROPERTY, VALUE pairs.');
             end
-            kinds = {'statement', 'assertion', 'interaction', 'observation', 'manipulation', 'calculation'};
-            own = cell(0, 2); inherited = true;
-            filters = struct('kind', {}, 'filt', {}, 'label', {});
+            statementKinds = {'statement', 'assertion', 'interaction', 'observation', 'manipulation', 'calculation'};
+            relationKinds = {'relation', 'directed_relation', 'undirected_relation'};
+            [directed, undirected] = ndi.v2.relationNames();
+            spec = struct('own', {cell(0, 2)}, ...
+                'filters', {struct('kind', {}, 'filt', {})}, ...
+                'relations', {struct('kind', {}, 'name', {}, 'side', {}, 'target', {})}, ...
+                'inherited', true, 'explain', false);
             for k = 1:2:numel(args)
                 p = args{k};
                 if ~(ischar(p) || (isstring(p) && isscalar(p)))
@@ -425,19 +448,27 @@ classdef subject < ndi.ido & ndi.documentservice & ndi.entity
                 v = args{k + 1};
                 if isstring(v), v = cellstr(v); if isscalar(v), v = v{1}; end, end
                 key = lower(strrep(p, '_', ''));
-                if strcmp(key, 'inherited')
-                    inherited = logical(v);
-                elseif any(strcmp(key, {'type', 'name'}))
-                    own(end+1, :) = {key, v}; %#ok<AGROW>
+                lp = lower(p);
+                if any(strcmp(key, {'inherited', 'explain'}))
+                    spec.(key) = logical(v);
+                elseif any(strcmp(key, {'type', 'name', 'id'}))
+                    spec.own(end+1, :) = {key, v};
                 elseif strcmp(key, 'localidentifier')
-                    own(end+1, :) = {'local_identifier', v}; %#ok<AGROW>
-                elseif any(strcmp(lower(p), kinds))
-                    filters(end+1) = struct('kind', lower(p), ...
-                        'filt', ndi.subject.statementFilter(lower(p), v), 'label', lower(p)); %#ok<AGROW>
+                    spec.own(end+1, :) = {'local_identifier', v};
+                elseif any(strcmp(lp, statementKinds))
+                    spec.filters(end+1) = struct('kind', lp, 'filt', ndi.subject.statementFilter(lp, v));
+                elseif any(strcmp(lp, relationKinds))
+                    spec.relations(end+1) = ndi.subject.relationFilter(lp, v);
+                elseif any(strcmpi(p, directed))
+                    spec.relations(end+1) = struct('kind', 'directed_relation', 'name', {{p}}, ...
+                        'side', 'parent', 'target', {v});
+                elseif any(strcmpi(p, undirected))
+                    spec.relations(end+1) = struct('kind', 'undirected_relation', 'name', {{p}}, ...
+                        'side', 'with', 'target', {v});
                 else
                     if ~iscell(v), v = {v}; end      % a cell is already "any of"
-                    filters(end+1) = struct('kind', 'assertion', ...
-                        'filt', struct('variable', p, 'value', {v}), 'label', p); %#ok<AGROW>
+                    spec.filters(end+1) = struct('kind', 'assertion', ...
+                        'filt', struct('variable', p, 'value', {v}));
                 end
             end
         end
@@ -464,10 +495,76 @@ classdef subject < ndi.ido & ndi.documentservice & ndi.entity
             end
         end
 
+        function r = relationFilter(kind, c)
+            % RELATIONFILTER - {'name', N, 'parent'|'child'|'with', X} as a struct
+            if ~iscell(c) || mod(numel(c), 2)
+                error('ndi:subject:find:relationFilter', ...
+                    '''%s'' takes a cell, e.g. {''name'', ''contained_in'', ''parent'', {''type'', ''material''}}.', kind);
+            end
+            r = struct('kind', kind, 'name', {{}}, 'side', '', 'target', {[]});
+            for k = 1:2:numel(c)
+                n = lower(char(c{k}));
+                v = c{k + 1};
+                switch n
+                    case 'name'
+                        if ~iscell(v), v = {v}; end
+                        r.name = cellfun(@char, v, 'UniformOutput', false);
+                    case {'parent', 'child', 'with'}
+                        if ~isempty(r.side)
+                            error('ndi:subject:find:relationFilter', ...
+                                'Give one of ''parent'', ''child'' and ''with'' in a relation (got ''%s'' and ''%s'').', r.side, n);
+                        end
+                        if strcmp(kind, 'undirected_relation') && ~strcmp(n, 'with')
+                            error('ndi:subject:find:relationFilter', ...
+                                'An undirected relation has no %s: use ''with''.', n);
+                        end
+                        r.side = n;
+                        r.target = v;
+                    case {'at', 'during', 'depth'}
+                        error('ndi:subject:find:notYet', ...
+                            'Relation filter ''%s'' is not built yet.', n);
+                    otherwise
+                        error('ndi:subject:find:relationFilter', ...
+                            'Unknown filter ''%s'' for ''%s'': name, parent, child, with.', c{k}, kind);
+                end
+            end
+            if ~isempty(r.name)
+                [directed, undirected] = ndi.v2.relationNames();
+                known = [directed, undirected];
+                for k = 1:numel(r.name)
+                    if ~isempty(known) && ~any(cellfun(@(x) ndi.v2.matchTerm(x, r.name{k}), known))
+                        error('ndi:subject:find:unknownRelation', 'No relation is called ''%s''. Relations: %s.', ...
+                            r.name{k}, strjoin(known, ', '));
+                    end
+                end
+            end
+        end
+
+        function ids = searchIds(container, spec)
+            % SEARCHIDS - the subject ids every statement and relation filter
+            % of SPEC holds of ([] when SPEC has none)
+            ids = [];
+            for k = 1:numel(spec.filters)
+                these = ndi.subject.subjectsOf(container, spec.filters(k), spec.inherited);
+                ids = narrow(ids, these);
+                if isempty(ids), ids = {}; return; end
+            end
+            for k = 1:numel(spec.relations)
+                these = ndi.subject.relatedIds(container, spec.relations(k), spec.inherited);
+                ids = narrow(ids, these);
+                if isempty(ids), ids = {}; return; end
+            end
+            if isempty(ids) && ~iscell(ids)
+                id = spec.own(strcmp(spec.own(:, 1), 'id'), 2);
+                if isscalar(id), ids = unique(cellstr(id{1}), 'stable'); end
+            end
+        end
+
         function ids = subjectsOf(container, f, inherited)
-            % SUBJECTSOF - ids of the subjects filter F holds of: the statements'
-            % subjects, and (INHERITED) every member, all the way down
-            % member_of, of a subject whose statement is distributive
+            % SUBJECTSOF - ids of the subjects statement filter F holds of: the
+            % statements' subjects; and, INHERITED, the members (down
+            % member_of) of a group whose statement is distributive, and the
+            % parts and samples of a subject an assertion is about
             [docs, info] = ndi.v2.findStatements(container, f.kind, f.filt);
             if info.structural == 0
                 ndi.subject.noSuchStatement(container, f);   % errors unless each part exists
@@ -480,24 +577,162 @@ classdef subject < ndi.ido & ndi.documentservice & ndi.entity
                 warning('ndi:subject:find:noSuchValue', 'No %s matches %s. Values there: %s%s.', ...
                     f.kind, describe(f.filt), strjoin(shown, ', '), more);
             end
-            ids = {}; groups = {};
+            ids = {}; groups = {}; asserted = {};
             for i = 1:numel(docs)
                 p = ndi.v2.props(docs{i});
                 sid = ndi.v2.edgeIds(p, 'subject_id');
                 ids = [ids, sid]; %#ok<AGROW>
-                d = ndi.v2.blockOf(p, 'subject_statement', 'distributive', false);
-                if inherited && ~isempty(d) && (islogical(d) || isnumeric(d)) && logical(d(1))
+                if ~inherited, continue; end
+                if isDistributive(ndi.v2.blockOf(p, 'subject_statement', 'distributive', false))
                     groups = [groups, sid]; %#ok<AGROW>
+                end
+                if any(strcmp(ndi.v2.classChain(p), 'subject_assertion'))
+                    asserted = [asserted, sid]; %#ok<AGROW>
                 end
             end
             ids = unique(ids, 'stable');
-            groups = unique(groups, 'stable');
-            if isempty(groups), return; end
-            G = ndi.entity.fetchMany(container, groups);
-            G = G(cellfun(@(x) isa(x, 'ndi.subject'), G));
-            if isempty(G), return; end
-            m = descendants([G{:}], 'Relation', 'member_of');
-            ids = unique([ids, cellfun(@(x) x.document_id, m, 'UniformOutput', false)], 'stable');
+            if ~inherited, return; end
+            if ~isempty(groups)
+                ids = unique([ids, ndi.entity.walkIds(container, unique(groups, 'stable'), ...
+                    'member_of', 'in')], 'stable');
+            end
+            if ~isempty(asserted)
+                % an assertion holds of the parts and samples of what it is
+                % about, and of those of the members it holds of
+                g = unique(groups(ismember(groups, asserted)), 'stable');
+                whole = asserted;
+                if ~isempty(g)
+                    whole = [whole, ndi.entity.walkIds(container, g, 'member_of', 'in')];
+                end
+                whole = unique(whole, 'stable');
+                parts = ndi.entity.walkIds(container, whole, ...
+                    {'part_of', 'sample_of', 'aliquot_of', 'passage_of'}, 'in');
+                ids = unique([ids, parts], 'stable');
+            end
+        end
+
+        function ids = relatedIds(container, r, inherited)
+            % RELATEDIDS - ids of the subjects in a relation matching R: the
+            % relation kind and name, and the other end (a subject, ids, or a
+            % description, searched first). INHERITED: a distributive relation
+            % whose child is a group holds of the group's members too.
+            T = ndi.subject.targetIds(container, r.target);     % [] = any
+            if iscell(T) && isempty(T), ids = {}; return; end
+            ids = {};
+            if ~strcmp(r.kind, 'undirected_relation')
+                sides = {r.side};
+                if isempty(r.side) || strcmp(r.side, 'with'), sides = {'parent', 'child'}; end
+                for k = 1:numel(sides)
+                    if strcmp(sides{k}, 'parent')    % this subject is the child
+                        mine = 'child_id'; theirs = 'parent_id';
+                    else
+                        mine = 'parent_id'; theirs = 'child_id';
+                    end
+                    docs = ndi.subject.relationDocs(container, 'directed_relation', r.name, theirs, T);
+                    groups = {};
+                    for i = 1:numel(docs)
+                        p = ndi.v2.props(docs{i});
+                        m = ndi.v2.edgeIds(p, mine);
+                        ids = [ids, m]; %#ok<AGROW>
+                        if inherited && strcmp(mine, 'child_id') && ...
+                                isDistributive(ndi.v2.blockOf(p, 'directed_relation', 'distributive', false))
+                            groups = [groups, m]; %#ok<AGROW>
+                        end
+                    end
+                    if ~isempty(groups)
+                        ids = [ids, ndi.entity.walkIds(container, unique(groups, 'stable'), 'member_of', 'in')]; %#ok<AGROW>
+                    end
+                end
+            end
+            if any(strcmp(r.kind, {'relation', 'undirected_relation'})) && ...
+                    (isempty(r.side) || strcmp(r.side, 'with'))
+                docs = ndi.subject.relationDocs(container, 'undirected_relation', r.name, 'entity_id', T);
+                for i = 1:numel(docs)
+                    pair = ndi.v2.edgeIds(ndi.v2.props(docs{i}), 'entity_id');
+                    for j = 1:numel(pair)
+                        others = pair([1:j-1, j+1:end]);
+                        if ~iscell(T) || any(ismember(others, T))
+                            ids{end+1} = pair{j}; %#ok<AGROW>
+                        end
+                    end
+                end
+            end
+            ids = unique(ids, 'stable');
+        end
+
+        function docs = relationDocs(container, className, names, edge, T)
+            % RELATIONDOCS - relation documents of CLASSNAME named one of NAMES
+            % ({} any) whose EDGE is one of the ids T ([] any)
+            base = ndi.query('', 'isa', className, '');
+            if ~isempty(names)
+                t = ndi.v2.termQuery([className '.relation'], names);
+                if ~isempty(t), base = base & t; end
+            end
+            if ~iscell(T)
+                docs = container.database_search(base);
+            else
+                docs = {};
+                for c = 1:200:numel(T)
+                    part = T(c:min(c + 199, numel(T)));
+                    q = ndi.entity.anyOf(cellfun(@(i) ndi.query('', 'depends_on', edge, i), part, ...
+                        'UniformOutput', false));
+                    docs = [docs, reshape(container.database_search(base & q), 1, [])]; %#ok<AGROW>
+                end
+            end
+            if isempty(names), return; end
+            keep = cellfun(@(d) ndi.v2.matchTerm(ndi.v2.blockOf(ndi.v2.props(d), className, 'relation', []), ...
+                names), docs);
+            docs = docs(keep);
+        end
+
+        function T = targetIds(container, target)
+            % TARGETIDS - the ids a relation's other end may be: [] for any;
+            % an ndi.entity (or several, or a cell of them); a document id; or
+            % a cell describing subjects, searched with ndi.subject.find
+            if isempty(target) && ~iscell(target)
+                T = [];
+            elseif isa(target, 'ndi.entity')
+                T = arrayfun(@(x) x.document_id, target, 'UniformOutput', false);
+            elseif ischar(target) || (isstring(target) && isscalar(target))
+                T = {char(target)};
+            elseif iscell(target) && ~isempty(target) && all(cellfun(@(x) isa(x, 'ndi.entity'), target))
+                T = cellfun(@(x) x.document_id, target, 'UniformOutput', false);
+            elseif iscell(target)
+                s = ndi.subject.find(container, target{:});
+                T = cellfun(@(x) x.document_id, s, 'UniformOutput', false);
+            else
+                error('ndi:subject:find:relationTarget', ...
+                    'The other end of a relation is a subject, a document id, or a cell describing subjects.');
+            end
+            if iscell(T), T = reshape(T, 1, []); end
+        end
+
+        function t = explainSearch(spec, indent)
+            % EXPLAINSEARCH - SPEC in words
+            parts = {};
+            for k = 1:size(spec.own, 1)
+                parts{end+1} = sprintf('%s is %s', strrep(spec.own{k, 1}, '_', ' '), patternText(spec.own{k, 2})); %#ok<AGROW>
+            end
+            for k = 1:numel(spec.filters)
+                f = spec.filters(k);
+                parts{end+1} = sprintf('has %s %s where %s', article(f.kind), f.kind, describe(f.filt)); %#ok<AGROW>
+            end
+            for k = 1:numel(spec.relations)
+                parts{end+1} = relationText(spec.relations(k), indent); %#ok<AGROW>
+            end
+            if isempty(parts)
+                t = [indent 'every subject'];
+                return;
+            end
+            t = [indent 'subjects that' newline indent '  - ' strjoin(parts, [newline indent '  AND ']) ''];
+            if indent == ""
+                if spec.inherited
+                    t = [t newline '(inherited: what is stated of a group, when distributive, counts for its members; ' ...
+                        'an assertion about a whole counts for its parts and samples)'];
+                else
+                    t = [t newline '(not inherited: only what is stated of the subject itself)'];
+                end
+            end
         end
 
         function noSuchStatement(container, f)
@@ -555,4 +790,55 @@ end
 
 function s = rmfieldIf(s, f)
 if isfield(s, f), s = rmfield(s, f); end
+end
+
+function ids = narrow(ids, these)
+% the intersection so far ([] = not narrowed yet)
+if isempty(ids) && ~iscell(ids)
+    ids = these;
+else
+    ids = ids(ismember(ids, these));
+end
+end
+
+function tf = isDistributive(d)
+tf = ~isempty(d) && (islogical(d) || isnumeric(d)) && logical(d(1));
+end
+
+function t = relationText(r, indent)
+name = 'any relation';
+if ~isempty(r.name), name = strjoin(r.name, ' or '); end
+switch r.side
+    case 'parent', role = sprintf('are the child in %s, whose parent is', name);
+    case 'child',  role = sprintf('are the parent in %s, where a child is', name);
+    otherwise,     role = sprintf('are in %s with', name);
+end
+if strcmp(r.side, 'parent') || strcmp(r.kind, 'directed_relation') && isempty(r.side)
+    role = [role ' (themselves, or a group they belong to when the relation is distributive)'];
+end
+target = r.target;
+if isempty(target) && ~iscell(target)
+    t = sprintf('%s anything', role);
+elseif isa(target, 'ndi.entity')
+    t = sprintf('%s %s', role, strjoin(arrayfun(@(x) ['"' x.name '"'], target, 'UniformOutput', false), ', '));
+elseif ischar(target) || isstring(target)
+    t = sprintf('%s the document %s', role, char(target));
+elseif iscell(target) && all(cellfun(@(x) isa(x, 'ndi.entity'), target))
+    t = sprintf('%s %s', role, strjoin(cellfun(@(x) ['"' x.name '"'], target, 'UniformOutput', false), ', '));
+else
+    inner = ndi.subject.explainNested(target, [indent '      ']);
+    t = sprintf('%s one of:\n%s', role, inner);
+end
+end
+
+function a = article(word)
+if any(lower(word(1)) == 'aeiou'), a = 'an'; else, a = 'a'; end
+end
+
+function t = patternText(v)
+if iscell(v)
+    t = strjoin(cellfun(@toText, v, 'UniformOutput', false), ' or ');
+else
+    t = toText(v);
+end
 end

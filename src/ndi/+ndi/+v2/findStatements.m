@@ -55,7 +55,7 @@ if ~isempty(filt.value) && all(cellfun(@isPlainText, filt.value))
     % again without it: "the variable is there, the value is not" (a
     % warning naming the values) is not "nothing has this variable"
     cand = container.database_search(q & ...
-        (termQuery('term.value', filt.value) | ndi.query('', '~isa', 'term', '')));
+        (ndi.v2.termQuery('term.value', filt.value) | ndi.query('', '~isa', 'term', '')));
     if isempty(cand)
         cand = container.database_search(q);
     end
@@ -127,28 +127,12 @@ tf = ischar(p) && ~ndi.v2.hasWildcard(p) && isempty(comparison(p));
 end
 
 function q = andTerm(q, path, patterns)
-% narrow by a term field when the database can: a plain pattern always, a
-% wildcard when did2 has the operator; otherwise the recheck does it alone
+% narrow by a term field when the database can (ndi.v2.termQuery); the
+% recheck does the rest
+patterns = patterns(cellfun(@ischar, patterns));
 if isempty(patterns), return; end
-if any(cellfun(@ndi.v2.hasWildcard, patterns)) && ~ndi.v2.hasWildcardOperator()
-    return;
-end
-q = q & termQuery(path, patterns);
-end
-
-function q = termQuery(path, patterns)
-q = [];
-for k = 1:numel(patterns)
-    p = patterns{k};
-    if ~ischar(p), continue; end
-    if ndi.v2.hasWildcard(p)
-        one = ndi.query([path '.name'], 'wildcard', p, '') | ndi.query([path '.node'], 'wildcard', p, '');
-    else
-        one = ndi.query([path '.name'], 'exact_string_anycase', strrep(p, '\*', '*'), '') | ...
-            ndi.query([path '.node'], 'exact_string', strrep(p, '\*', '*'), '');
-    end
-    if isempty(q), q = one; else, q = q | one; end
-end
+t = ndi.v2.termQuery(path, patterns);
+if ~isempty(t), q = q & t; end
 end
 
 function tf = patternsMatch(term, patterns)

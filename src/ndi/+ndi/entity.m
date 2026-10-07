@@ -536,6 +536,44 @@ classdef entity
             end
         end
 
+        function reached = walkIds(container, ids, relationNames, direction, maxDepth)
+            % WALKIDS - the ids reached from IDS across relations, without reading entities
+            %
+            % REACHED = ndi.entity.walkIds(CONTAINER, IDS, RELATIONNAMES, DIRECTION)
+            % follows RELATIONNAMES (a name, a cellstr, or {} for all) from
+            % every id in IDS, 'in' (to what points at them: members, parts)
+            % or 'out' (to what they point at), step after step until nothing
+            % new is reached or MAXDEPTH (default Inf) steps. REACHED (a row
+            % cellstr) leaves out IDS themselves. One search per step for
+            % every 200 ids; nothing is read but the relations.
+            arguments
+                container
+                ids
+                relationNames = {}
+                direction (1,:) char {mustBeMember(direction, {'in', 'out'})} = 'in'
+                maxDepth (1,1) double = Inf
+            end
+            if strcmp(direction, 'out')
+                from = 'child_id'; to = 'parent_id';
+            else
+                from = 'parent_id'; to = 'child_id';
+            end
+            frontier = unique(cellstr(ids), 'stable');
+            frontier = frontier(:);
+            seen = frontier;
+            reached = {};
+            depth = 0;
+            while ~isempty(frontier) && depth < maxDepth
+                depth = depth + 1;
+                E = ndi.entity.edges(container, frontier, relationNames, from, to);
+                next = unique(E.to, 'stable');
+                next = next(~ismember(next, seen));
+                seen = [seen; next]; %#ok<AGROW>
+                reached = [reached, next(:)']; %#ok<AGROW>
+                frontier = next;
+            end
+        end
+
         function e = fetchMany(container, ids)
             % FETCHMANY - the entities with these document ids, a few searches in all
             %
