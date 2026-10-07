@@ -104,11 +104,16 @@ classdef TestObjectLayer < matlab.unittest.TestCase
             testCase.verifyEqual(sort(local(worms)), {'concentration_worm0121', 'concentration_worm0122'});
 
             b = testCase.subject('concentration_0001_acclimationPlate0001');
+            % the acclimation plate also held other cohorts (0011's worms):
+            % the array call is the union of the one-plate calls, each worm
+            % once, though 0121 and 0122 were on both plates
+            onB = local(b.children({'contained_in', 'member_of'}));
+            testCase.verifyTrue(all(ismember({'concentration_worm0121', 'concentration_worm0122'}, onB)));
             both = children([a b], {'contained_in', 'member_of'});
-            testCase.verifyEqual(sort(local(both)), {'concentration_worm0121', 'concentration_worm0122'}, ...
+            testCase.verifyEqual(sort(local(both)), sort(unique([local(worms), onB])), ...
                 'a worm on both plates is returned once');
             T = children([a b], {'contained_in', 'member_of'}, 'Table', true);
-            testCase.verifyEqual(height(T), 4, 'one row per (plate, worm)');
+            testCase.verifyEqual(height(T), numel(worms) + numel(onB), 'one row per (plate, worm)');
             testCase.verifyEqual(sort(unique(T.start_name)), sort(string({a.name; b.name})));
             testCase.verifyEmpty(a.children({'member_of', 'member_of'}), 'nothing at the end of that path');
         end
