@@ -287,34 +287,26 @@ classdef TestObjectLayer < matlab.unittest.TestCase
             testCase.verifyTrue(any(P.variable == "cleaning step"));
         end
 
-        function testSearchByWhatAnEdgePointsAt(testCase)
-            % a depends_on whose target is a query (DID-matlab #218): the
-            % formulations with peptone as an ingredient, without looking
-            % peptone's id up first; and, nested, the doses of them
-            ds = testCase.Dataset;
-            ids = testCase.Result.metadata.ids;
-            testCase.assumeTrue(ismethod(did2.query(), 'hasNested'), ...
-                'DID-matlab without nested depends_on targets (VH-Lab/DID-matlab#218)');
-            idsOf = @(docs) cellfun(@(d) char(d.document_properties.base.id), docs, 'UniformOutput', false);
-            chem = @(name) ndi.query('chemical.value.substance.name', 'exact_string', name, '');
-            isF = ndi.query('', 'isa', 'formulation', '');
-            withPep = isF & ndi.query('', 'depends_on', 'ingredient_id', chem('peptone'));
-            f = idsOf(ds.database_search(withPep));
-            testCase.verifyTrue(ismember(ids('ngm'), f));
-            testCase.verifyFalse(ismember(ids('ngm_no_peptone'), f));
-            agarNoPep = isF & ndi.query('', 'depends_on', 'ingredient_id', chem('agar')) & ...
-                ndi.query('', '~depends_on', 'ingredient_id', chem('peptone'));
-            testCase.verifyEqual(idsOf(ds.database_search(agarNoPep)), {ids('ngm_no_peptone')});
-            either = ds.database_search(ndi.query('', 'depends_on', 'ingredient_id', chem('peptone')) | ...
-                ndi.query('base.id', 'exact_string', ids('lb'), ''));
-            testCase.verifyTrue(all(ismember({ids('ngm'), ids('lb')}, idsOf(either))), 'inside an or');
+        function testANestedEdgeTargetReachesDid2(testCase)
+            % a depends_on whose target is a query (and one inside an or)
+            % is converted for did2 as a query, not dropped or stringified.
+            % Searching with it needs DID-matlab #218; the search itself is
+            % tested there (testSqliteDb/testSearchDependsOnAQueryOrAList).
+            D = 'ndi.database.implementations.database.did2sqlite';
+            inner = ndi.query('chemical.value.substance.name', 'exact_string', 'peptone', '');
+            q = ndi.query('', 'isa', 'formulation', '') & ndi.query('', 'depends_on', 'ingredient_id', inner);
+            q2 = feval([D '.toDid2Query'], q);
+            ss = q2.searchstructure;
+            k = find(strcmp({ss.operation}, 'depends_on'));
+            testCase.assertNumElements(k, 1);
+            testCase.verifyClass(ss(k).param2, 'did2.query');
+            testCase.verifyEqual(ss(k).param2.searchstructure.field, 'chemical.value.substance.name');
+            testCase.verifyEqual(ss(k).param2.searchstructure.param1, 'peptone');
 
-            plate = testCase.subject('concentration_assayPlate0012');
-            pour = plate.statements('Class', 'manipulation', 'Variable', 'NGM agar');
-            doses = ds.database_search(ndi.query('', 'isa', 'dose_manipulation', '') & ...
-                ndi.query('', 'depends_on', 'formulation_id', withPep));
-            testCase.verifyTrue(ismember(char(pour{1}.document_properties().base.id), idsOf(doses)), ...
-                'two levels: the plate''s pour is a dose of a formulation with peptone');
+            o = feval([D '.toDid2Query'], ndi.query('', 'depends_on', 'ingredient_id', inner) | ...
+                ndi.query('base.name', 'exact_string', 'x', ''));
+            testCase.verifyEqual(o.searchstructure.operation, 'or');
+            testCase.verifyClass(o.searchstructure.param1(1).param2, 'did2.query', 'inside an or');
         end
 
         function testDatasetLevelDocumentsAreReachedThroughTheDataset(testCase)
