@@ -14,7 +14,7 @@ docs = containers.Map('KeyType', 'char', 'ValueType', 'any');
 ids = unique(cellstr(ids), 'stable');
 todo = {};
 for k = 1:numel(ids)
-    if ~isempty(cache) && isKey(cache, ['doc:' ids{k}])
+    if isa(cache, 'containers.Map') && isKey(cache, ['doc:' ids{k}])
         docs(ids{k}) = cache(['doc:' ids{k}]);
     elseif ~isempty(ids{k})
         todo{end+1} = ids{k}; %#ok<AGROW>
@@ -35,7 +35,7 @@ for c = 1:200:numel(todo)
         p = ndi.v2.props(found{i});
         id = char(p.base.id);
         docs(id) = found{i};
-        if ~isempty(cache), cache(['doc:' id]) = found{i}; end
+        if isa(cache, 'containers.Map'), cache(['doc:' id]) = found{i}; end
     end
 end
 end

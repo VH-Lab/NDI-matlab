@@ -74,13 +74,13 @@ end
 if isempty(r.referent_id) || depth >= 8
     return;
 end
-if ~isempty(cache) && isKey(cache, ['anchor:' r.referent_id])
+if isa(cache, 'containers.Map') && isKey(cache, ['anchor:' r.referent_id])
     anchor = cache(['anchor:' r.referent_id]);
 else
     ref = docOf(container, r.referent_id, cache);
     if isempty(ref), return; end
     anchor = anchorOf(container, ref, depth, cache);
-    if ~isempty(cache), cache(['anchor:' r.referent_id]) = anchor; end
+    if isa(cache, 'containers.Map'), cache(['anchor:' r.referent_id]) = anchor; end
 end
 if isempty(anchor) || isnat(anchor.start)
     return;
@@ -120,12 +120,12 @@ end
 
 function d = docOf(container, id, cache)
 % a document by id: from CACHE when it holds it (or held its absence)
-if ~isempty(cache) && isKey(cache, ['doc:' id])
+if isa(cache, 'containers.Map') && isKey(cache, ['doc:' id])
     d = cache(['doc:' id]);
     return;
 end
 d = ndi.v2.getDocument(container, id);
-if ~isempty(cache), cache(['doc:' id]) = d; end
+if isa(cache, 'containers.Map'), cache(['doc:' id]) = d; end
 end
 
 function v = getOr(s, name, default)

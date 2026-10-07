@@ -12,7 +12,7 @@ function T = timesOf(container, refIds, cache)
 %
 %   See also ndi.v2.timeOf.
 
-if nargin < 3 || isempty(cache)
+if nargin < 3 || ~isa(cache, 'containers.Map')
     cache = containers.Map('KeyType', 'char', 'ValueType', 'any');
 end
 refIds = unique(cellstr(refIds), 'stable');

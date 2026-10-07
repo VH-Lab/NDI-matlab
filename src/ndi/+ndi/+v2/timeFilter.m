@@ -37,7 +37,7 @@ function [keep, info] = timeFilter(container, docs, filt, tolerant, cache)
 %   could not decide), and, for messages, docs (DOCS with no time at all).
 
 if nargin < 4 || isempty(tolerant), tolerant = false; end
-if nargin < 5 || isempty(cache), cache = containers.Map('KeyType', 'char', 'ValueType', 'any'); end
+if nargin < 5 || ~isa(cache, 'containers.Map'), cache = containers.Map('KeyType', 'char', 'ValueType', 'any'); end
 names = intersect({'at', 'during', 'before', 'after', 'duration'}, fieldnames(filt), 'stable');
 names = names(cellfun(@(n) ~isempty(filt.(n)), names));
 keep = true(1, numel(docs));
