@@ -90,6 +90,56 @@ classdef TestObjectLayer < matlab.unittest.TestCase
                 {'concentration_assayPlate0012_patch0001'});
         end
 
+        function testRelationPathsFromOneOrManyEntities(testCase)
+            % parents/children take a path of relations and an array of
+            % starting entities; each entity reached is returned once
+            w = testCase.subject('concentration_worm0121');
+            plates = w.parents({'member_of', 'contained_in'});
+            names = cellfun(@(x) x.local_identifier, plates, 'UniformOutput', false);
+            testCase.verifyTrue(all(ismember({'concentration_assayPlate0012', ...
+                'concentration_0001_acclimationPlate0001'}, names)), strjoin(names, ', '));
+
+            a = testCase.subject('concentration_assayPlate0012');
+            worms = a.children({'contained_in', 'member_of'});
+            testCase.verifyEqual(sort(local(worms)), {'concentration_worm0121', 'concentration_worm0122'});
+
+            b = testCase.subject('concentration_0001_acclimationPlate0001');
+            both = [a b].children({'contained_in', 'member_of'});
+            testCase.verifyEqual(sort(local(both)), {'concentration_worm0121', 'concentration_worm0122'}, ...
+                'a worm on both plates is returned once');
+            T = [a b].children({'contained_in', 'member_of'}, 'Table', true);
+            testCase.verifyEqual(height(T), 4, 'one row per (plate, worm)');
+            testCase.verifyEqual(sort(unique(T.start_name)), sort(string({a.name; b.name})));
+            testCase.verifyEmpty(a.children({'member_of', 'member_of'}), 'nothing at the end of that path');
+        end
+
+        function testDescendantsAndAncestorsNeedNoRelationNames(testCase)
+            a = testCase.subject('concentration_assayPlate0012');
+            worms = a.descendants('Type', 'organism');
+            testCase.verifyEqual(sort(local(worms)), {'concentration_worm0121', 'concentration_worm0122'});
+            T = a.descendants('Type', 'organism', 'Table', true);
+            testCase.verifyEqual(T.depth, [2; 2], 'plate <- cohort <- worm');
+            testCase.verifyEqual(T.start_id, string(repmat({a.document_id}, 2, 1)));
+
+            w = testCase.subject('concentration_worm0121');
+            g = w.ancestors('Type', 'group');
+            testCase.verifyEqual(local(g), {'concentration_assayPlate0012_worms'});
+            m = local(w.ancestors('Type', 'material'));
+            testCase.verifyTrue(all(ismember({'concentration_assayPlate0012', ...
+                'concentration_0001_acclimationPlate0001'}, m)), strjoin(m, ', '));
+            testCase.verifyEqual(local(w.ancestors('Kind', 'subject')), {'concentration_assayPlate0012_worms'}, ...
+                'a match is not followed further: the nearest subject is the cohort');
+
+            parts = local(a.descendants('Relation', 'part_of'));
+            testCase.verifyNotEmpty(parts);
+            testCase.verifyTrue(all(startsWith(parts, 'concentration_assayPlate0012_patch')), strjoin(parts, ', '));
+            all_ = local(a.descendants());
+            testCase.verifyTrue(all(ismember([parts, {'concentration_assayPlate0012_worms', ...
+                'concentration_worm0121', 'concentration_worm0122'}], all_)), ...
+                'with no filter, everything reached');
+            testCase.verifyEmpty(w.descendants('Type', 'organism'), 'nothing points to a worm');
+        end
+
         function testAssertions(testCase)
             c = testCase.subject('concentration_assayPlate0012_worms');
             T = c.assertions();
@@ -286,6 +336,11 @@ classdef TestObjectLayer < matlab.unittest.TestCase
             s = x{1};
         end
     end
+end
+
+function n = local(c)
+n = cellfun(@(x) x.local_identifier, c, 'UniformOutput', false);
+n = reshape(n, 1, []);
 end
 
 function setName(w)

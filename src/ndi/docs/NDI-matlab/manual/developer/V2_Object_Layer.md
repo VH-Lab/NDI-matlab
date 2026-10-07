@@ -86,7 +86,8 @@ Built from any entity document.
 | `id`, `kind` (the document class), `name`, `local_identifier` | text |
 | `global_identifiers()` | table: scheme (ORCID, ROR, RRID, DOI, ...), value |
 | `relations(name, 'Direction', 'out' or 'in')` | table: relation, the other entity, role(s), time |
-| `parents(name)`, `children(name)` | entities across one relation (`part_of`, `member_of`, ...) |
+| `parents(name)`, `children(name)` | entities across one relation (`part_of`, `member_of`, ...), or a path of them (`{'contained_in', 'member_of'}`); called on an array of entities, one search per step, each entity returned once; `'Table', true` gives one row per (start, end) |
+| `ancestors(...)`, `descendants(...)` | the nearest entities of a `'Type'` (`organism`, `material`, ...) or `'Kind'` (document class), following any relation up or down: `[plates{:}].descendants('Type', 'organism')` is the worms that were on them, without knowing the relations. `'Relation'` limits the relations followed, `'MaxDepth'` the steps, `'Table'` adds a `depth` column |
 | `document()` | the underlying `ndi.document` |
 | `ndi.entity.fromDocument(container, doc)` (static) | the right class for the document: `ndi.subject` for a subject, else `ndi.entity` |
 | `ndi.entity.find(container, kind, 'Name', ...)` (static) | a cell array of entities of a kind |

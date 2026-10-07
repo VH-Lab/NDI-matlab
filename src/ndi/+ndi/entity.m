@@ -33,7 +33,10 @@ classdef entity
     %   document_properties - its properties (a struct)
     %   global_identifiers - table: scheme, value (ORCID, ROR, RRID, DOI, ...)
     %   relations          - table of the relations it takes part in
-    %   parents, children  - the entities across a relation
+    %   parents, children  - the entities across a relation, or a path of
+    %                        them, from one entity or an array of them
+    %   ancestors, descendants - the nearest entities of a type or kind,
+    %                        following any relation: you need not know which
     %   fromDocument, find - (static) make entities
     %
     % See also ndi.subject, ndi.statement.
@@ -180,41 +183,299 @@ classdef entity
             T = table(relation, direction, other_id, roles, relation_id);
         end
 
-        function e = parents(obj, relationName)
-            % PARENTS - the entities this one points to across RELATIONNAME
+        function e = parents(obj, path, options)
+            % PARENTS - the entities this one points to, across one relation or a path of them
             %
             % E = PARENTS(OBJ, RELATIONNAME), a cell array: e.g. a worm's
             % parents('member_of') is its cohort. An end that is not found
             % from this container (see the class help) is left out.
+            %
+            % RELATIONNAME may be a PATH, a cell array of relation names
+            % followed in turn, and OBJ may be an array of entities (of one
+            % class; make it with [c{:}] from a cell array):
+            %
+            %   w.parents({'member_of', 'contained_in'})        % a worm's plates
+            %   [worms{:}].parents({'member_of', 'contained_in'})
+            %
+            % Each step is one search over every entity reached so far, not
+            % one per entity. Each entity is returned once.
+            % 'Table', true returns a table instead, one row per (start, end)
+            % pair: start_id, start_name, end_id, end_name, end (the entity).
             arguments
                 obj
-                relationName (1,:) char
+                path {mustBeText}
+                options.Table (1,1) logical = false
             end
-            e = obj.across(obj.relations(relationName, 'Direction', 'out'));
+            e = obj.walk(path, 'out', options.Table);
         end
 
-        function e = children(obj, relationName)
-            % CHILDREN - the entities that point to this one across RELATIONNAME
+        function e = children(obj, path, options)
+            % CHILDREN - the entities that point to this one, across one relation or a path of them
             %
             % E = CHILDREN(OBJ, RELATIONNAME), a cell array: e.g. a cohort's
-            % children('member_of') are its worms.
+            % children('member_of') are its worms. As with PARENTS,
+            % RELATIONNAME may be a path and OBJ an array:
+            %
+            %   plate.children({'contained_in', 'member_of'})   % the worms that were on a plate
+            %   [plates{:}].children({'contained_in', 'member_of'}, 'Table', true)
             arguments
                 obj
-                relationName (1,:) char
+                path {mustBeText}
+                options.Table (1,1) logical = false
             end
-            e = obj.across(obj.relations(relationName, 'Direction', 'in'));
+            e = obj.walk(path, 'in', options.Table);
+        end
+
+        function e = descendants(obj, options)
+            % DESCENDANTS - the entities reached by following relations down, of a type or kind
+            %
+            % E = DESCENDANTS(OBJ, 'Type', TYPE) follows every relation
+            % inward (to the entities that point to OBJ: its members, its
+            % parts, what was contained in it), then theirs, and so on, and
+            % returns the nearest entities whose subject type is TYPE --
+            % without knowing which relations lead there:
+            %
+            %   [plates{:}].descendants('Type', 'organism')   % the worms that were on them
+            %
+            % OBJ may be an array of entities (of one class; [c{:}] from a
+            % cell array). Options:
+            %   'Type'      a subject type: 'organism', 'group', 'material',
+            %               'culture', ... (ndi.subject's `type`)
+            %   'Kind'      a document class the entity is (isa): 'subject',
+            %               'person', 'strain', ...
+            %   'Relation'  follow only these relations (default: all)
+            %   'MaxDepth'  steps to take at most (default 10)
+            %   'Table'     true: a table instead, as PARENTS returns, with
+            %               a `depth` column (the steps taken)
+            % An entity that matches is returned and not followed further.
+            % With neither 'Type' nor 'Kind', every entity reached is
+            % returned. Each step is one search over everything reached so
+            % far; each entity is visited once.
+            arguments
+                obj
+                options.Type (1,:) char = ''
+                options.Kind (1,:) char = ''
+                options.Relation {mustBeText} = {}
+                options.MaxDepth (1,1) double {mustBePositive} = 10
+                options.Table (1,1) logical = false
+            end
+            e = obj.reach('in', options);
+        end
+
+        function e = ancestors(obj, options)
+            % ANCESTORS - the entities reached by following relations up, of a type or kind
+            %
+            % E = ANCESTORS(OBJ, 'Type', TYPE): as DESCENDANTS, following
+            % every relation outward (to what OBJ is a member of, part of,
+            % contained in, ...):
+            %
+            %   w.ancestors('Type', 'material')      % the plates a worm was on
+            %   w.ancestors('Type', 'group')         % its cohort
+            arguments
+                obj
+                options.Type (1,:) char = ''
+                options.Kind (1,:) char = ''
+                options.Relation {mustBeText} = {}
+                options.MaxDepth (1,1) double {mustBePositive} = 10
+                options.Table (1,1) logical = false
+            end
+            e = obj.reach('out', options);
         end
     end
 
     methods (Access = protected)
-        function e = across(obj, T)
-            e = {};
-            for i = 1:height(T)
-                d = ndi.v2.getDocument(obj.container_, char(T.other_id(i)));
-                if ~isempty(d)
-                    e{end+1} = ndi.entity.fromDocument(obj.container_, d); %#ok<AGROW>
+        function out = walk(obj, path, direction, asTable)
+            % WALK - follow PATH from every entity in OBJ, one search per step
+            path = cellstr(path);
+            if isempty(obj)
+                out = {};
+                if asTable, out = ndi.entity.emptyWalkTable(); end
+                return;
+            end
+            container = obj(1).container_;
+            ids = arrayfun(@(x) x.document_id, obj, 'UniformOutput', false);
+            ids = ids(:);
+            % pairs: one row per (start, current) still being followed
+            pairs = unique(table(ids, ids, 'VariableNames', {'start', 'at'}), 'stable');
+            if strcmp(direction, 'out')
+                from = 'child_id'; to = 'parent_id';
+            else
+                from = 'parent_id'; to = 'child_id';
+            end
+            for s = 1:numel(path)
+                E = ndi.entity.edges(container, unique(pairs.at, 'stable'), path{s}, from, to);
+                pairs = innerjoin(pairs, E, 'LeftKeys', 'at', 'RightKeys', 'from');
+                pairs = unique(table(pairs.start, pairs.to, 'VariableNames', {'start', 'at'}), 'stable');
+                if height(pairs) == 0
+                    break;
                 end
             end
+            endIds = unique(pairs.at, 'stable');
+            ents = ndi.entity.fetch(container, endIds);
+            found = ~cellfun(@isempty, ents);
+            if ~asTable
+                out = ents(found)';
+                return;
+            end
+            byId = containers.Map(endIds(found), ents(found));
+            [u, iu] = unique(ids, 'stable');
+            nameOf = containers.Map(u, arrayfun(@(x) string(x.name), obj(iu), 'UniformOutput', false));
+            keep = isKey(byId, pairs.at);
+            pairs = pairs(keep, :);
+            out = ndi.entity.emptyWalkTable();
+            n = height(pairs);
+            if n == 0, return; end
+            ends = values(byId, pairs.at);
+            out = table(string(pairs.start), string(cellfun(@(i) char(nameOf(i)), pairs.start, 'UniformOutput', false)), ...
+                string(pairs.at), string(cellfun(@(x) x.name, ends(:), 'UniformOutput', false)), ends(:), ...
+                'VariableNames', {'start_id', 'start_name', 'end_id', 'end_name', 'end'});
+        end
+
+        function out = reach(obj, direction, options)
+            % REACH - breadth-first over relations from every entity in OBJ
+            filtered = ~isempty(options.Type) || ~isempty(options.Kind);
+            rel = cellstr(options.Relation);
+            empty = ndi.entity.emptyWalkTable();
+            empty.depth = zeros(0, 1);
+            if isempty(obj)
+                out = {};
+                if options.Table, out = empty; end
+                return;
+            end
+            container = obj(1).container_;
+            ids = arrayfun(@(x) x.document_id, obj, 'UniformOutput', false);
+            ids = ids(:);
+            [u, iu] = unique(ids, 'stable');
+            nameOf = containers.Map(u, arrayfun(@(x) string(x.name), obj(iu), 'UniformOutput', false));
+            if strcmp(direction, 'out')
+                from = 'child_id'; to = 'parent_id';
+            else
+                from = 'parent_id'; to = 'child_id';
+            end
+            seen = unique(ids);                     % never followed twice, never returned as a start
+            frontier = unique(table(ids, ids, 'VariableNames', {'start', 'at'}), 'stable');
+            byId = containers.Map();
+            hits = table(cell(0, 1), cell(0, 1), zeros(0, 1), 'VariableNames', {'start', 'at', 'depth'});
+            for depth = 1:options.MaxDepth
+                E = ndi.entity.edges(container, unique(frontier.at, 'stable'), rel, from, to);
+                if height(E) == 0, break; end
+                next = innerjoin(frontier, E, 'LeftKeys', 'at', 'RightKeys', 'from');
+                next = unique(table(next.start, next.to, 'VariableNames', {'start', 'at'}), 'stable');
+                next = next(~ismember(next.at, seen), :);
+                if height(next) == 0, break; end
+                newIds = unique(next.at, 'stable');
+                seen = [seen; newIds]; %#ok<AGROW>
+                ents = ndi.entity.fetch(container, newIds);
+                match = false(numel(newIds), 1);
+                for k = 1:numel(newIds)
+                    if isempty(ents{k}), continue; end
+                    byId(newIds{k}) = ents{k};
+                    match(k) = ~filtered || ndi.entity.matches(ents{k}, options);
+                end
+                isHit = ismember(next.at, newIds(match));
+                h = next(isHit, :);
+                h.depth = repmat(depth, height(h), 1);
+                hits = [hits; h]; %#ok<AGROW>
+                if filtered
+                    frontier = next(~isHit & isKey(byId, next.at), :);   % a match is not followed further
+                else
+                    frontier = next(isKey(byId, next.at), :);
+                end
+                if height(frontier) == 0, break; end
+            end
+            hitIds = unique(hits.at, 'stable');
+            if ~options.Table
+                out = cellfun(@(i) byId(i), hitIds, 'UniformOutput', false)';
+                return;
+            end
+            out = empty;
+            if height(hits) == 0, return; end
+            ends = values(byId, hits.at);
+            out = table(string(hits.start), string(cellfun(@(i) char(nameOf(i)), hits.start, 'UniformOutput', false)), ...
+                string(hits.at), string(cellfun(@(x) x.name, ends(:), 'UniformOutput', false)), ends(:), hits.depth, ...
+                'VariableNames', {'start_id', 'start_name', 'end_id', 'end_name', 'end', 'depth'});
+        end
+    end
+
+    methods (Static, Access = protected)
+        function E = edges(container, ids, relationName, from, to)
+            % EDGES - table from, to: the relations whose FROM end is one of IDS
+            % RELATIONNAME: a name, a cellstr of names, or empty for every relation
+            fromIds = cell(0, 1); toIds = cell(0, 1);
+            chunk = 200;
+            for c = 1:chunk:numel(ids)
+                part = ids(c:min(c + chunk - 1, numel(ids)));
+                q = ndi.entity.anyOf(cellfun(@(i) ndi.query('', 'depends_on', from, i), part, ...
+                    'UniformOutput', false));
+                docs = container.database_search(ndi.query('', 'isa', 'directed_relation', '') & q);
+                for i = 1:numel(docs)
+                    p = ndi.v2.props(docs{i});
+                    r = ndi.v2.termName(ndi.v2.blockOf(p, 'directed_relation', 'relation', ''));
+                    if ~isempty(relationName) && ~any(strcmp(r, cellstr(relationName)))
+                        continue;
+                    end
+                    a = ndi.v2.edgeIds(p, from);
+                    b = ndi.v2.edgeIds(p, to);
+                    a = a(ismember(a, part));
+                    for x = 1:numel(a)
+                        for y = 1:numel(b)
+                            fromIds{end+1, 1} = a{x}; %#ok<AGROW>
+                            toIds{end+1, 1} = b{y}; %#ok<AGROW>
+                        end
+                    end
+                end
+            end
+            E = table(fromIds, toIds, 'VariableNames', {'from', 'to'});
+        end
+
+        function ents = fetch(container, ids)
+            % FETCH - the entity for each id ({} where not found), a few searches in all
+            ents = cell(numel(ids), 1);
+            if isempty(ids), return; end
+            where = containers.Map(ids, num2cell(1:numel(ids)));
+            chunk = 200;
+            for c = 1:chunk:numel(ids)
+                part = ids(c:min(c + chunk - 1, numel(ids)));
+                q = ndi.entity.anyOf(cellfun(@(i) ndi.query('base.id', 'exact_string', i, ''), part, ...
+                    'UniformOutput', false));
+                docs = container.database_search(q);
+                for i = 1:numel(docs)
+                    p = ndi.v2.props(docs{i});
+                    k = where(char(p.base.id));
+                    ents{k} = ndi.entity.fromDocument(container, docs{i});
+                end
+            end
+        end
+
+        function q = anyOf(qs)
+            % ANYOF - the OR of the queries in cell array QS, as a balanced
+            % tree (nested log2(N) deep rather than N)
+            while numel(qs) > 1
+                n = floor(numel(qs) / 2);
+                pairs = cell(1, ceil(numel(qs) / 2));
+                for i = 1:n
+                    pairs{i} = qs{2*i - 1} | qs{2*i};
+                end
+                if mod(numel(qs), 2), pairs{end} = qs{end}; end
+                qs = pairs;
+            end
+            q = qs{1};
+        end
+
+        function tf = matches(x, options)
+            % MATCHES - does entity X have the 'Type' and 'Kind' asked for
+            tf = true;
+            if ~isempty(options.Type)
+                tf = isa(x, 'ndi.subject') && strcmp(x.type, options.Type);
+            end
+            if tf && ~isempty(options.Kind)
+                tf = any(strcmp(ndi.v2.classChain(x.document_properties()), options.Kind));
+            end
+        end
+
+        function T = emptyWalkTable()
+            T = table(strings(0, 1), strings(0, 1), strings(0, 1), strings(0, 1), cell(0, 1), ...
+                'VariableNames', {'start_id', 'start_name', 'end_id', 'end_name', 'end'});
         end
     end
 
