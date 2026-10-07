@@ -11,9 +11,9 @@ classdef entity
     % ndi.subject is an ndi.entity. ndi.session and ndi.dataset are not
     % (design: src/ndi/docs/NDI-matlab/manual/developer/V2_Object_Layer.md).
     %
-    % Make one with ndi.entity.fromDocument or ndi.entity.find:
+    % Make one with ndi.entity.fromDocument or ndi.entity.search:
     %
-    %   p = ndi.entity.find(ds, 'person');          % a cell array
+    %   p = ndi.entity.search(ds, 'person');          % a cell array
     %   p{1}.name                                    % 'Jess Haley'
     %   p{1}.parents('affiliated_with')              % her organizations
     %
@@ -38,7 +38,7 @@ classdef entity
     %                        them, from one entity or an array of them
     %   ancestors, descendants - the nearest entities of a type or kind,
     %                        following any relation: you need not know which
-    %   fromDocument, find - (static) make entities
+    %   fromDocument, search - (static) make entities
     %
     % See also ndi.subject, ndi.statement.
 
@@ -585,10 +585,10 @@ classdef entity
             e = reshape(e(~cellfun(@isempty, e)), 1, []);
         end
 
-        function e = find(container, kind, options)
-            % FIND - the entities of a kind in a session or dataset
+        function e = search(container, kind, options)
+            % SEARCH - the entities of a kind in a session or dataset
             %
-            % E = ndi.entity.find(CONTAINER, KIND) returns a cell array, one
+            % E = ndi.entity.search(CONTAINER, KIND) returns a cell array, one
             % object per document of class KIND (default 'entity': every
             % entity). Options: 'Name' keeps those whose name() is exactly it.
             arguments

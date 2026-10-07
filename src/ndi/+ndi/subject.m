@@ -105,7 +105,7 @@ classdef subject < ndi.ido & ndi.documentservice & ndi.entity
         end % searchquery()
 
         %%% V2 (V_eta) methods: an ndi.subject read from a V2 document with
-        %%% ndi.subject.fromDocument / ndi.subject.find. They return empty on
+        %%% ndi.subject.fromDocument / ndi.subject.search. They return empty on
         %%% a subject that was not (no container to search).
 
         function t = get.type(ndi_subject_obj)
@@ -122,7 +122,7 @@ classdef subject < ndi.ido & ndi.documentservice & ndi.entity
             % S = STATEMENTS(NDI_SUBJECT_OBJ, ...) returns a cell array of
             % ndi.statement objects (each the right child: ndi.observation,
             % ndi.manipulation, ndi.calculation, ndi.assertion). Takes the
-            % filters of ndi.statement.find: 'Variable', 'Class', 'Method'.
+            % filters of ndi.statement.search: 'Variable', 'Class', 'Method'.
             %
             % 'Inherited', true also returns what holds of this subject
             % because it was stated on a group the subject is a member of:
@@ -137,7 +137,7 @@ classdef subject < ndi.ido & ndi.documentservice & ndi.entity
             s = {};
             if isempty(ndi_subject_obj.container_), return; end
             [inherited, rest] = ndi.subject.takeOption(varargin, 'Inherited', false);
-            s = ndi.statement.find(ndi_subject_obj.container_, 'Subject', ndi_subject_obj, rest{:});
+            s = ndi.statement.search(ndi_subject_obj.container_, 'Subject', ndi_subject_obj, rest{:});
             if ~inherited
                 return;
             end
@@ -150,7 +150,7 @@ classdef subject < ndi.ido & ndi.documentservice & ndi.entity
                     continue;
                 end
                 seen{end+1} = g.document_id; %#ok<AGROW>
-                gs = ndi.statement.find(ndi_subject_obj.container_, 'Subject', g, rest{:});
+                gs = ndi.statement.search(ndi_subject_obj.container_, 'Subject', g, rest{:});
                 for k = 1:numel(gs)
                     if gs{k}.distributive()
                         s{end+1} = gs{k}; %#ok<AGROW>
@@ -250,18 +250,18 @@ classdef subject < ndi.ido & ndi.documentservice & ndi.entity
             obj.entity_document_ = doc;
         end % fromDocument()
 
-        function s = find(container, varargin)
-            % FIND - the subjects in a session or dataset, by what is true of them
+        function s = search(container, varargin)
+            % SEARCH - the subjects in a session or dataset, by what is true of them
             %
-            % S = ndi.subject.find(CONTAINER, PROPERTY, VALUE, ...) returns a
+            % S = ndi.subject.search(CONTAINER, PROPERTY, VALUE, ...) returns a
             % cell array of ndi.subject: those for which every pair holds.
             % With no pairs, every subject (instruments included,
             % V2_Object_Layer.md, Q2).
             %
-            %   ndi.subject.find(ds, 'type', 'organism', ...
+            %   ndi.subject.search(ds, 'type', 'organism', ...
             %       'species', 'Caenorhabditis elegans', 'strain', {'N2', 'CB*'})
-            %   ndi.subject.find(ds, 'manipulation', {'method', 'heating'})
-            %   ndi.subject.find(ds, 'type', 'organism', ...
+            %   ndi.subject.search(ds, 'manipulation', {'method', 'heating'})
+            %   ndi.subject.search(ds, 'type', 'organism', ...
             %       'contained_in', {'manipulation', {'variable', 'NGM agar'}})
             %
             % A PROPERTY is one of:
@@ -281,7 +281,7 @@ classdef subject < ndi.ido & ndi.documentservice & ndi.entity
             %         'with'    the other end, either way, is ...
             %       where ... is a subject (an ndi.entity, several in a cell,
             %       or a document id) or a cell describing subjects -- anything
-            %       ndi.subject.find takes, nested as deep as needed.
+            %       ndi.subject.search takes, nested as deep as needed.
             %   a relation's name ('member_of', 'contained_in', 'part_of',
             %   'paired_with', ...): short for 'directed_relation',
             %       {'name', NAME, 'parent', VALUE} ('with' for an undirected one)
@@ -295,7 +295,7 @@ classdef subject < ndi.ido & ndi.documentservice & ndi.entity
             % exactly ('NCBITaxon:6239'); a cell array is any of them; '*' is
             % a wildcard, '\*' a literal star. A value is compared by its kind:
             % numbers and dates take '>', '>=', '<', '<=' ('>=0.02',
-            % '>2023-11-16'); see ndi.v2.findStatements. All pairs must hold.
+            % '>2023-11-16'); see ndi.v2.searchStatements. All pairs must hold.
             %
             % 'inherited' (default true):
             %   - a statement or relation about a group holds of its members
@@ -344,13 +344,13 @@ classdef subject < ndi.ido & ndi.documentservice & ndi.entity
                 end
             end
             s = reshape(s(keep), 1, []);
-        end % find()
+        end % search()
 
     end
 
     methods (Static, Hidden)
         function t = explainNested(c, indent)
-            % EXPLAINNESTED - a description (a cell of find's pairs) in words
+            % EXPLAINNESTED - a description (a cell of search's pairs) in words
             t = ndi.subject.explainSearch(ndi.subject.parseSearch(c), indent);
         end
 
@@ -427,10 +427,10 @@ classdef subject < ndi.ido & ndi.documentservice & ndi.entity
 
     methods (Static, Access = protected)
         function spec = parseSearch(args)
-            % PARSESEARCH - find's PROPERTY, VALUE pairs as a search spec:
+            % PARSESEARCH - search's PROPERTY, VALUE pairs as a search spec:
             % own fields, statement filters, relation filters, and switches
             if mod(numel(args), 2)
-                error('ndi:subject:find:pairs', 'ndi.subject.find takes PROPERTY, VALUE pairs.');
+                error('ndi:subject:search:pairs', 'ndi.subject.search takes PROPERTY, VALUE pairs.');
             end
             statementKinds = {'statement', 'assertion', 'interaction', 'observation', 'manipulation', 'calculation'};
             relationKinds = {'relation', 'directed_relation', 'undirected_relation'};
@@ -442,7 +442,7 @@ classdef subject < ndi.ido & ndi.documentservice & ndi.entity
             for k = 1:2:numel(args)
                 p = args{k};
                 if ~(ischar(p) || (isstring(p) && isscalar(p)))
-                    error('ndi:subject:find:pairs', 'A property name must be text (argument %d).', k + 1);
+                    error('ndi:subject:search:pairs', 'A property name must be text (argument %d).', k + 1);
                 end
                 p = char(p);
                 v = args{k + 1};
@@ -476,14 +476,14 @@ classdef subject < ndi.ido & ndi.documentservice & ndi.entity
         function filt = statementFilter(kind, c)
             % STATEMENTFILTER - {'variable', V, 'method', M, ...} as a struct
             if ~iscell(c) || mod(numel(c), 2)
-                error('ndi:subject:find:statementFilter', ...
+                error('ndi:subject:search:statementFilter', ...
                     '''%s'' takes a cell of filters, e.g. {''variable'', ''NGM agar'', ''value'', ''>=0.02''}.', kind);
             end
             filt = struct();
             for k = 1:2:numel(c)
                 n = lower(char(c{k}));
                 if ~any(strcmp(n, {'variable', 'method', 'value', 'formulation'}))
-                    error('ndi:subject:find:statementFilter', ...
+                    error('ndi:subject:search:statementFilter', ...
                         'Unknown filter ''%s'' for ''%s'': variable, method, value, formulation.', c{k}, kind);
                 end
                 v = c{k + 1};
@@ -491,14 +491,14 @@ classdef subject < ndi.ido & ndi.documentservice & ndi.entity
                 filt.(n) = v;
             end
             if strcmp(kind, 'assertion') && isfield(filt, 'method')
-                error('ndi:subject:find:assertionMethod', 'An assertion has no method.');
+                error('ndi:subject:search:assertionMethod', 'An assertion has no method.');
             end
         end
 
         function r = relationFilter(kind, c)
             % RELATIONFILTER - {'name', N, 'parent'|'child'|'with', X} as a struct
             if ~iscell(c) || mod(numel(c), 2)
-                error('ndi:subject:find:relationFilter', ...
+                error('ndi:subject:search:relationFilter', ...
                     '''%s'' takes a cell, e.g. {''name'', ''contained_in'', ''parent'', {''type'', ''material''}}.', kind);
             end
             r = struct('kind', kind, 'name', {{}}, 'side', '', 'target', {[]});
@@ -511,20 +511,20 @@ classdef subject < ndi.ido & ndi.documentservice & ndi.entity
                         r.name = cellfun(@char, v, 'UniformOutput', false);
                     case {'parent', 'child', 'with'}
                         if ~isempty(r.side)
-                            error('ndi:subject:find:relationFilter', ...
+                            error('ndi:subject:search:relationFilter', ...
                                 'Give one of ''parent'', ''child'' and ''with'' in a relation (got ''%s'' and ''%s'').', r.side, n);
                         end
                         if strcmp(kind, 'undirected_relation') && ~strcmp(n, 'with')
-                            error('ndi:subject:find:relationFilter', ...
+                            error('ndi:subject:search:relationFilter', ...
                                 'An undirected relation has no %s: use ''with''.', n);
                         end
                         r.side = n;
                         r.target = v;
                     case {'at', 'during', 'depth'}
-                        error('ndi:subject:find:notYet', ...
+                        error('ndi:subject:search:notYet', ...
                             'Relation filter ''%s'' is not built yet.', n);
                     otherwise
-                        error('ndi:subject:find:relationFilter', ...
+                        error('ndi:subject:search:relationFilter', ...
                             'Unknown filter ''%s'' for ''%s'': name, parent, child, with.', c{k}, kind);
                 end
             end
@@ -533,7 +533,7 @@ classdef subject < ndi.ido & ndi.documentservice & ndi.entity
                 known = [directed, undirected];
                 for k = 1:numel(r.name)
                     if ~isempty(known) && ~any(cellfun(@(x) ndi.v2.matchTerm(x, r.name{k}), known))
-                        error('ndi:subject:find:unknownRelation', 'No relation is called ''%s''. Relations: %s.', ...
+                        error('ndi:subject:search:unknownRelation', 'No relation is called ''%s''. Relations: %s.', ...
                             r.name{k}, strjoin(known, ', '));
                     end
                 end
@@ -565,7 +565,7 @@ classdef subject < ndi.ido & ndi.documentservice & ndi.entity
             % statements' subjects; and, INHERITED, the members (down
             % member_of) of a group whose statement is distributive, and the
             % parts and samples of a subject an assertion is about
-            [docs, info] = ndi.v2.findStatements(container, f.kind, f.filt);
+            [docs, info] = ndi.v2.searchStatements(container, f.kind, f.filt);
             if info.structural == 0
                 ndi.subject.noSuchStatement(container, f);   % errors unless each part exists
                 ids = {};
@@ -574,7 +574,7 @@ classdef subject < ndi.ido & ndi.documentservice & ndi.entity
                 shown = info.values(1:min(end, 30));
                 more = '';
                 if numel(info.values) > 30, more = sprintf(' (and %d more)', numel(info.values) - 30); end
-                warning('ndi:subject:find:noSuchValue', 'No %s matches %s. Values there: %s%s.', ...
+                warning('ndi:subject:search:noSuchValue', 'No %s matches %s. Values there: %s%s.', ...
                     f.kind, describe(f.filt), strjoin(shown, ', '), more);
             end
             ids = {}; groups = {}; asserted = {};
@@ -688,7 +688,7 @@ classdef subject < ndi.ido & ndi.documentservice & ndi.entity
         function T = targetIds(container, target)
             % TARGETIDS - the ids a relation's other end may be: [] for any;
             % an ndi.entity (or several, or a cell of them); a document id; or
-            % a cell describing subjects, searched with ndi.subject.find
+            % a cell describing subjects, searched with ndi.subject.search
             if isempty(target) && ~iscell(target)
                 T = [];
             elseif isa(target, 'ndi.entity')
@@ -698,10 +698,10 @@ classdef subject < ndi.ido & ndi.documentservice & ndi.entity
             elseif iscell(target) && ~isempty(target) && all(cellfun(@(x) isa(x, 'ndi.entity'), target))
                 T = cellfun(@(x) x.document_id, target, 'UniformOutput', false);
             elseif iscell(target)
-                s = ndi.subject.find(container, target{:});
+                s = ndi.subject.search(container, target{:});
                 T = cellfun(@(x) x.document_id, s, 'UniformOutput', false);
             else
-                error('ndi:subject:find:relationTarget', ...
+                error('ndi:subject:search:relationTarget', ...
                     'The other end of a relation is a subject, a document id, or a cell describing subjects.');
             end
             if iscell(T), T = reshape(T, 1, []); end
@@ -743,17 +743,17 @@ classdef subject < ndi.ido & ndi.documentservice & ndi.entity
             % statement, the answer is simply none.
             for part = {'variable', 'method'}
                 if ~isfield(f.filt, part{1}), continue; end
-                [~, info] = ndi.v2.findStatements(container, f.kind, struct(part{1}, {f.filt.(part{1})}));
+                [~, info] = ndi.v2.searchStatements(container, f.kind, struct(part{1}, {f.filt.(part{1})}));
                 if info.structural > 0, continue; end
                 if strcmp(f.kind, 'assertion') && strcmp(part{1}, 'variable')
                     docs = container.database_search(ndi.query('', 'isa', 'subject_assertion', ''));
                     names = unique(cellfun(@(d) ndi.v2.termName(ndi.v2.blockOf(ndi.v2.props(d), ...
                         'subject_statement', 'variable', '')), docs, 'UniformOutput', false));
-                    error('ndi:subject:find:unknownVariable', ...
+                    error('ndi:subject:search:unknownVariable', ...
                         'No subject has an assertion about %s. Asserted here: %s.', ...
                         describe(struct('variable', {f.filt.variable})), strjoin(names, ', '));
                 end
-                error('ndi:subject:find:noSuchStatement', 'No %s here has %s.', f.kind, ...
+                error('ndi:subject:search:noSuchStatement', 'No %s here has %s.', f.kind, ...
                     describe(struct(part{1}, {f.filt.(part{1})})));
             end
         end

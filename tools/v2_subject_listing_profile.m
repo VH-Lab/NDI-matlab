@@ -1,7 +1,7 @@
 function T = v2_subject_listing_profile(datasetPath, options)
 %V2_SUBJECT_LISTING_PROFILE Where the time goes when every subject of a dataset is listed.
 %
-%   T = v2_subject_listing_profile(DATASETPATH) runs ndi.subject.find on the
+%   T = v2_subject_listing_profile(DATASETPATH) runs ndi.subject.search on the
 %   V2 dataset at DATASETPATH, then times each layer it goes through, one
 %   at a time, over the same subjects:
 %
@@ -19,7 +19,7 @@ function T = v2_subject_listing_profile(datasetPath, options)
 %     unique_id    did.ido.unique_id (each new ndi.subject makes one, then
 %                  ndi.subject.fromDocument overwrites it)
 %     fromDocument ndi.subject.fromDocument over the documents
-%     find         ndi.subject.find, end to end
+%     find         ndi.subject.search, end to end
 %
 %   It prints each layer's time, per document and as a share of `find`. T
 %   is the table. It writes nothing.
@@ -48,9 +48,9 @@ ds = ndi.dataset.dir(datasetPath);
 fprintf('dataset %s\n\n', datasetPath);
 
 % ---- end to end first, cold -------------------------------------------------------
-t0 = tic; s = ndi.subject.find(ds); tFind = toc(t0);
+t0 = tic; s = ndi.subject.search(ds); tFind = toc(t0);
 N = numel(s);
-fprintf('ndi.subject.find: %d subject(s), %.3f s\n\nDENOMINATOR: %d subject document(s)', N, tFind, N);
+fprintf('ndi.subject.search: %d subject(s), %.3f s\n\nDENOMINATOR: %d subject document(s)', N, tFind, N);
 M = min(N, options.Limit);
 scale = N / M;
 if M < N, fprintf('; per-document layers timed over the first %d and scaled x%.1f', M, scale); end
@@ -94,7 +94,7 @@ t0 = tic; for k = 1:M, did.ido.unique_id(); end
 add('unique_id', toc(t0) * scale, N, 'made, then overwritten');
 t0 = tic; for k = 1:M, ndi.subject.fromDocument(ds, sd{k}); end
 add('fromDocument', toc(t0) * scale, N, '');
-t0 = tic; s = ndi.subject.find(ds); add('find', toc(t0), numel(s), 'end to end (warm)');
+t0 = tic; s = ndi.subject.search(ds); add('find', toc(t0), numel(s), 'end to end (warm)');
 
 T = cell2table(rows, 'VariableNames', {'layer', 'documents', 'seconds', 'ms_per_doc', 'note'});
 T.share_of_find = T.seconds / T.seconds(end);

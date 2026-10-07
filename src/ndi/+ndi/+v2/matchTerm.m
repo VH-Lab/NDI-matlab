@@ -6,7 +6,7 @@ function tf = matchTerm(t, pattern)
 %   '*' in it is a wildcard (any run of characters), '\*' a literal star.
 %   A cell array PATTERN matches when any of its patterns does.
 %
-%   See also ndi.v2.hasWildcard, ndi.subject.find.
+%   See also ndi.v2.hasWildcard, ndi.subject.search.
 
 if iscell(pattern)
     tf = any(cellfun(@(x) ndi.v2.matchTerm(t, x), pattern));

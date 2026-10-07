@@ -23,7 +23,7 @@ classdef statement
     % re-read them through the dataset with fromDocument:
     %
     %   ds = ndi.dataset.dir(datasetPath);
-    %   w = ndi.subject.find(ds, 'LocalIdentifier', 'concentration_worm0012');
+    %   w = ndi.subject.search(ds, 'LocalIdentifier', 'concentration_worm0012');
     %   st = w{1}.statements('Variable', 'midpoint speed');
     %   v = st{1}.value();          % an ndi.data_type
     %   speed = double(v);          % metres per second, by video frame
@@ -40,7 +40,7 @@ classdef statement
     %   conditions     - table of the conditions it holds under
     %   notes          - text
     %   bodies         - the data-body documents holding the value
-    %   fromDocument, find - (static) make statements
+    %   fromDocument, search - (static) make statements
     %
     % See also ndi.subject, ndi.data_type, ndi.interaction.
 
@@ -269,10 +269,10 @@ classdef statement
             end
         end
 
-        function s = find(container, options)
-            % FIND - the statements in a session or dataset
+        function s = search(container, options)
+            % SEARCH - the statements in a session or dataset
             %
-            % S = ndi.statement.find(CONTAINER, ...) returns a cell array.
+            % S = ndi.statement.search(CONTAINER, ...) returns a cell array.
             % Filters:
             %   'Subject'   an ndi.subject (or a subject document id)
             %   'Variable'  the variable's name, e.g. 'midpoint speed'

@@ -1,7 +1,7 @@
-function [docs, info] = findStatements(container, kind, filt)
-%FINDSTATEMENTS The statement documents of a kind that match a filter.
+function [docs, info] = searchStatements(container, kind, filt)
+%SEARCHSTATEMENTS The statement documents of a kind that match a filter.
 %
-%   [DOCS, INFO] = ndi.v2.findStatements(CONTAINER, KIND, FILT) searches the
+%   [DOCS, INFO] = ndi.v2.searchStatements(CONTAINER, KIND, FILT) searches the
 %   ndi.session or ndi.dataset CONTAINER for statements of KIND -- 'statement'
 %   (any), 'assertion', 'interaction', 'observation', 'manipulation',
 %   'calculation', or a document class -- matching FILT, a struct with any of:
@@ -27,7 +27,7 @@ function [docs, info] = findStatements(container, kind, filt)
 %                             mass in grams, ...)
 %   A value kept as an array or in a data body has no single value: a VALUE
 %   pattern does not match it, and if every statement that matched the rest
-%   of FILT is one, that is an error (ndi:v2:findStatements:noSingleValue).
+%   of FILT is one, that is an error (ndi:v2:searchStatements:noSingleValue).
 %
 %   The class, variable and method narrow the database search (wildcards
 %   too, when did2 has the `wildcard` operator: DID-matlab #218); a plain
@@ -43,7 +43,7 @@ arguments
 end
 filt = normalise(filt);
 if ~isempty(filt.method) && strcmp(kind, 'assertion')
-    error('ndi:v2:findStatements:assertionMethod', 'An assertion has no method.');
+    error('ndi:v2:searchStatements:assertionMethod', 'An assertion has no method.');
 end
 
 q = ndi.query('', 'isa', classOf(kind), '');
@@ -89,7 +89,7 @@ for i = 1:numel(structural)
     docs{end+1} = structural{i}; %#ok<AGROW>
 end
 if ~isempty(filt.value) && ~isempty(structural) && single == 0
-    error('ndi:v2:findStatements:noSingleValue', ...
+    error('ndi:v2:searchStatements:noSingleValue', ...
         ['Every %s matching this filter keeps its value as an array or in a data body, ' ...
          'so it has no single value to compare.'], kind);
 end

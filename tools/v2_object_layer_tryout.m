@@ -70,9 +70,9 @@ step('open a session', @openSession);
     end
 
 % ---- subjects ---------------------------------------------------------------------
-step('ndi.subject.find: every subject in the session', @allSubjects);
+step('ndi.subject.search: every subject in the session', @allSubjects);
     function r = allSubjects()
-        s = ndi.subject.find(ctx.S);
+        s = ndi.subject.search(ctx.S);
         types = cellfun(@(x) string(x.type()), s);
         [u, ~, j] = unique(types);
         n = accumarray(j(:), 1);
@@ -81,16 +81,16 @@ step('ndi.subject.find: every subject in the session', @allSubjects);
         fprintf('  %s\n', r);
     end
 
-step('ndi.subject.find: every subject in the dataset', @allSubjectsDataset);
+step('ndi.subject.search: every subject in the dataset', @allSubjectsDataset);
     function r = allSubjectsDataset()
-        s = ndi.subject.find(ctx.ds);
+        s = ndi.subject.search(ctx.ds);
         r = sprintf('%d subject(s) in %d session(s)', numel(s), numel(ctx.refs));
         fprintf('  %s\n', r);
     end
 
-step('ndi.statement.find: the speed calculations in the session', @speeds);
+step('ndi.statement.search: the speed calculations in the session', @speeds);
     function r = speeds()
-        ctx.sp = ndi.statement.find(ctx.S, 'Class', 'velocity_calculation');
+        ctx.sp = ndi.statement.search(ctx.S, 'Class', 'velocity_calculation');
         r = sprintf('%d velocity_calculation(s)', numel(ctx.sp));
         fprintf('  %s\n', r);
     end
@@ -103,9 +103,9 @@ step('the worm of the first one, read through the dataset', @worm);
         fprintf('  %s\n', r);
     end
 
-step('ndi.subject.find by LocalIdentifier, in the dataset', @byLocal);
+step('ndi.subject.search by LocalIdentifier, in the dataset', @byLocal);
     function r = byLocal()
-        x = ndi.subject.find(ctx.ds, 'LocalIdentifier', ctx.w.local_identifier);
+        x = ndi.subject.search(ctx.ds, 'LocalIdentifier', ctx.w.local_identifier);
         r = sprintf('%d found', numel(x));
         fprintf('  %s\n', r);
     end
@@ -228,7 +228,7 @@ step('dataset-level entities (people, organizations, studies, strains)', @entiti
     function r = entities()
         out = {};
         for k = {'person', 'organization', 'study', 'strain', 'software'}
-            e = ndi.entity.find(ctx.ds, k{1});
+            e = ndi.entity.search(ctx.ds, k{1});
             names = cellfun(@(x) x.name(), e, 'UniformOutput', false);
             fprintf('  %-12s %3d  %s\n', k{1}, numel(e), strjoin(names(1:min(5, end)), ', '));
             out{end+1} = sprintf('%s %d', k{1}, numel(e)); %#ok<AGROW>
@@ -238,7 +238,7 @@ step('dataset-level entities (people, organizations, studies, strains)', @entiti
 
 step('the dataset''s model fits (statement.find on the dataset)', @fits);
     function r = fits()
-        f = ndi.statement.find(ctx.ds, 'Class', 'model_fit_calculation');
+        f = ndi.statement.search(ctx.ds, 'Class', 'model_fit_calculation');
         r = sprintf('%d model_fit_calculation(s)', numel(f));
         fprintf('  %s\n', r);
     end
