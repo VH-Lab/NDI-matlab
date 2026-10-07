@@ -135,7 +135,7 @@ classdef entity
             T = table(scheme, value);
         end
 
-        function T = summary(obj)
+        function T = summary(obj, options)
             % SUMMARY - one table row per entity
             %
             % T = SUMMARY(E) for an entity or an array of one class; for a cell
@@ -143,8 +143,13 @@ classdef entity
             % kind, id; for subjects also type, local_identifier, and one
             % column per asserted variable (species, strain, ...), inherited
             % as ndi.subject/statements inherits (several values joined with
-            % '; ').
-            T = ndi.entity.summaryOf(num2cell(obj));
+            % '; '). 'nodes', true adds beside each a <variable>_node column,
+            % the values' ontology nodes.
+            arguments
+                obj
+                options.nodes (1,1) logical = false
+            end
+            T = ndi.entity.summaryOf(num2cell(obj), 'nodes', options.nodes);
         end
 
         function T = relations(obj, relationName, options)
@@ -539,8 +544,12 @@ classdef entity
             end
         end
 
-        function T = summaryOf(entities)
+        function T = summaryOf(entities, options)
             % SUMMARYOF - the summary table of a cell array of entities (see SUMMARY)
+            arguments
+                entities
+                options.nodes (1,1) logical = false
+            end
             n = numel(entities);
             name = strings(n, 1); kind = strings(n, 1); id = strings(n, 1);
             type = strings(n, 1); local_identifier = strings(n, 1);
@@ -563,21 +572,31 @@ classdef entity
             for k = 1:numel(L.doc)
                 p = ndi.v2.props(L.doc{k});
                 v = ndi.v2.termName(ndi.v2.blockOf(p, 'subject_statement', 'variable', ''));
-                [~, ~, txt] = ndi.v2.statementValue(p);
+                [vk, vv, txt] = ndi.v2.statementValue(p);
                 if isempty(v), continue; end
+                nd = '';
+                if strcmp(vk, 'term') && isstruct(vv) && isfield(vv, 'node'), nd = char(vv(1).node); end
                 if ~isKey(cols, v), cols(v) = containers.Map('KeyType', 'char', 'ValueType', 'any'); end
                 m = cols(v);
-                if isKey(m, L.about{k}), m(L.about{k}) = [m(L.about{k}), {txt}];
-                else, m(L.about{k}) = {txt}; end
+                if isKey(m, L.about{k}), m(L.about{k}) = [m(L.about{k}), {{txt, nd}}];
+                else, m(L.about{k}) = {{txt, nd}}; end
             end
             vars = sort(keys(cols));
             for k = 1:numel(vars)
                 m = cols(vars{k});
-                c = strings(n, 1);
+                c = strings(n, 1); cn = strings(n, 1);
                 for i = 1:n
-                    if isKey(m, char(id(i))), c(i) = string(strjoin(unique(m(char(id(i))), 'stable'), '; ')); end
+                    if ~isKey(m, char(id(i))), continue; end
+                    pairs = m(char(id(i)));
+                    txts = cellfun(@(x) x{1}, pairs, 'UniformOutput', false);
+                    nds = cellfun(@(x) x{2}, pairs, 'UniformOutput', false);
+                    [txts, keep] = unique(txts, 'stable');
+                    c(i) = string(strjoin(txts, '; '));
+                    cn(i) = string(strjoin(nds(keep), '; '));
                 end
-                T.(matlab.lang.makeValidName(vars{k})) = c;
+                name_ = matlab.lang.makeValidName(vars{k});
+                T.(name_) = c;
+                if options.nodes, T.([name_ '_node']) = cn; end
             end
         end
 

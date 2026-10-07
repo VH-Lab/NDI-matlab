@@ -99,9 +99,15 @@ classdef statement
             %   subject     the subject it is about (see ABOUT)
             %   kind        assertion, observation, manipulation, calculation
             %   class       the document class, e.g. 'temperature_manipulation'
-            %   variable, method, value, unit
-            %   start, end  its time (UTC; NaT when it has none or it cannot
-            %               be resolved); the first of several references
+            %   variable, variable_node, method, method_node, value,
+            %   value_node  each term's name and its ontology node ('' when it
+            %               has none yet, or the value is not a term)
+            %   unit
+            %   start, end  its time, the first of several references, shown
+            %               in the zone it was recorded in when every row
+            %               shares one (else UTC); NaT when it has none or it
+            %               cannot be resolved
+            %   timezone    the zone each time was recorded in
             %   stated_on   the subject it was stated about
             %   via         how it holds of SUBJECT (see VIA)
             %   id          the statement document's id
@@ -298,12 +304,15 @@ classdef statement
             n = numel(statements);
             subject = strings(n, 1); kind = strings(n, 1); class = strings(n, 1);
             variable = strings(n, 1); method = strings(n, 1); value = strings(n, 1);
+            variable_node = strings(n, 1); method_node = strings(n, 1); value_node = strings(n, 1);
             unit = strings(n, 1); stated_on = strings(n, 1); via = strings(n, 1); id = strings(n, 1);
+            timezone = strings(n, 1);
             start = NaT(n, 1, 'TimeZone', 'UTC'); stop = NaT(n, 1, 'TimeZone', 'UTC');
+            names = {'subject', 'kind', 'class', 'variable', 'variable_node', 'method', 'method_node', ...
+                'value', 'value_node', 'unit', 'start', 'end', 'timezone', 'stated_on', 'via', 'id'};
             if n == 0
-                T = table(subject, kind, class, variable, method, value, unit, start, stop, stated_on, via, id, ...
-                    'VariableNames', {'subject', 'kind', 'class', 'variable', 'method', 'value', 'unit', ...
-                    'start', 'end', 'stated_on', 'via', 'id'});
+                T = table(subject, kind, class, variable, variable_node, method, method_node, value, ...
+                    value_node, unit, start, stop, timezone, stated_on, via, id, 'VariableNames', names);
                 return;
             end
             container = statements{1}.container_;
@@ -317,9 +326,12 @@ classdef statement
                 k = find(ismember(kinds, chain), 1);
                 if ~isempty(k), kind(i) = string(extractAfter(kinds{k}, 'subject_')); else, kind(i) = "statement"; end
                 class(i) = string(p.document_class.class_name);
-                variable(i) = string(ndi.v2.termName(ndi.v2.blockOf(p, 'subject_statement', 'variable', '')));
-                method(i) = string(ndi.v2.termName(ndi.v2.blockOf(p, 'subject_interaction', 'method', '')));
-                [vk, ~, vt, vu] = ndi.v2.statementValue(p);
+                vr = ndi.v2.blockOf(p, 'subject_statement', 'variable', '');
+                variable(i) = string(ndi.v2.termName(vr)); variable_node(i) = string(nodeOf(vr));
+                mr = ndi.v2.blockOf(p, 'subject_interaction', 'method', '');
+                method(i) = string(ndi.v2.termName(mr)); method_node(i) = string(nodeOf(mr));
+                [vk, vv, vt, vu] = ndi.v2.statementValue(p);
+                if strcmp(vk, 'term'), value_node(i) = string(nodeOf(vv)); end
                 if strcmp(vk, 'none') && logical(firstOr(ndi.v2.blockOf(p, 'data_type', 'data_body', false), false))
                     vt = '(data body)';
                 end
@@ -340,6 +352,7 @@ classdef statement
                         t = times(refs{i}{r});
                         if ~isnat(t.start)
                             start(i) = t.start; stop(i) = t.end;
+                            timezone(i) = string(t.timezone);
                             break;
                         end
                     end
@@ -358,9 +371,15 @@ classdef statement
                 subject(i) = nameOf(aboutIds{i});
                 stated_on(i) = nameOf(own{i});
             end
-            T = table(subject, kind, class, variable, method, value, unit, start, stop, stated_on, via, id, ...
-                'VariableNames', {'subject', 'kind', 'class', 'variable', 'method', 'value', 'unit', ...
-                'start', 'end', 'stated_on', 'via', 'id'});
+            zones = unique(timezone(timezone ~= ""));
+            if isscalar(zones)
+                try
+                    start.TimeZone = char(zones); stop.TimeZone = char(zones);
+                catch
+                end
+            end
+            T = table(subject, kind, class, variable, variable_node, method, method_node, value, ...
+                value_node, unit, start, stop, timezone, stated_on, via, id, 'VariableNames', names);
         end
 
         function obj = fromDocument(container, doc)
@@ -452,4 +471,11 @@ end
 function v = ifKey(m, k)
 v = '';
 if ~isempty(k) && isKey(m, k), v = m(k); end
+end
+
+function n = nodeOf(t)
+% a term's node ('' when none)
+n = '';
+if iscell(t) && ~isempty(t), t = t{1}; end
+if isstruct(t) && ~isempty(t) && isfield(t, 'node') && ~isempty(t(1).node), n = char(t(1).node); end
 end

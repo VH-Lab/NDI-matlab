@@ -446,11 +446,27 @@ classdef TestObjectLayer < matlab.unittest.TestCase
                 testCase.verifyEqual(T.strain, ["N2"; "N2"], 'the cohort''s strain, inherited');
             end
             testCase.verifyEqual(W(1).summary().id, string(W(1).document_id), 'one object: one row');
+            N = ndi.summary(ws, 'nodes', true);
+            if ismember('species', N.Properties.VariableNames)
+                testCase.verifyEqual(N.species_node, ["NCBITaxon:6239"; "NCBITaxon:6239"]);
+                testCase.verifyFalse(ismember('species_node', T.Properties.VariableNames), 'nodes only when asked');
+            end
 
             U = ndi.summary(statements(W));
             testCase.verifyEqual(height(U), numel(statements(W)));
-            testCase.verifyTrue(all(ismember({'subject', 'kind', 'class', 'variable', 'method', 'value', ...
-                'unit', 'start', 'end', 'stated_on', 'via', 'id'}, U.Properties.VariableNames)));
+            testCase.verifyTrue(all(ismember({'subject', 'kind', 'class', 'variable', 'variable_node', ...
+                'method', 'method_node', 'value', 'value_node', 'unit', 'start', 'end', 'timezone', ...
+                'stated_on', 'via', 'id'}, U.Properties.VariableNames)));
+            sp = U(U.variable == "species", :);
+            if height(sp) > 0
+                testCase.verifyEqual(unique(sp.value_node), "NCBITaxon:6239", 'a term value carries its node');
+            end
+            timed = U(~isnat(U.start), :);
+            testCase.verifyNotEmpty(timed, 'the transfers have times');
+            testCase.verifyEqual(unique(timed.timezone), "America/Los_Angeles");
+            testCase.verifyEqual(U.start.TimeZone, 'America/Los_Angeles', 'shown in the zone recorded');
+            testCase.verifyClass(U.start, 'datetime');
+            testCase.verifyError(@() ndi.summary(statements(W), 'nodes', true), 'ndi:summary:options');
             r = U(U.variable == "strain", :);
             if height(r) > 0
                 testCase.verifyEqual(unique(r.via), "member_of");
