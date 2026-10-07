@@ -686,8 +686,8 @@
   {
    "key": "FK103",
    "name": "FK103",
-   "node": "",
-   "_node": "To fill in: the V1 import resolved this strain by name (ndi.ontology.lookup WBStrain:<name>); WormBase could not be reached from the V2 build (2026-10-07).",
+   "node": "WBStrain:00007498",
+   "_node": "Looked up by hand on wormbase.org by Jess, 2026-10-07 (ndi.ontology.lookup WBStrain:<name> fails: the WormBase scrape and API both error).",
    "genotype": "tax-4(ks28) III",
    "species": {
     "node": "NCBITaxon:6239",
@@ -710,8 +710,8 @@
   {
    "key": "MT13113",
    "name": "MT13113",
-   "node": "",
-   "_node": "To fill in: the V1 import resolved this strain by name (ndi.ontology.lookup WBStrain:<name>); WormBase could not be reached from the V2 build (2026-10-07).",
+   "node": "WBStrain:00027424",
+   "_node": "Looked up by hand on wormbase.org by Jess, 2026-10-07 (ndi.ontology.lookup WBStrain:<name> fails: the WormBase scrape and API both error).",
    "genotype": "tdc-1(n3419) II",
    "species": {
     "node": "NCBITaxon:6239",
@@ -758,8 +758,8 @@
   {
    "key": "MT9455",
    "name": "MT9455",
-   "node": "",
-   "_node": "To fill in: the V1 import resolved this strain by name (ndi.ontology.lookup WBStrain:<name>); WormBase could not be reached from the V2 build (2026-10-07).",
+   "node": "WBStrain:00027363",
+   "_node": "Looked up by hand on wormbase.org by Jess, 2026-10-07 (ndi.ontology.lookup WBStrain:<name> fails: the WormBase scrape and API both error).",
    "genotype": "tbh-1(n3247) X",
    "species": {
     "node": "NCBITaxon:6239",
