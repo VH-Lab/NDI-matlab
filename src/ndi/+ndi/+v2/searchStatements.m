@@ -12,6 +12,9 @@ function [docs, info] = searchStatements(container, kind, filt)
 %     formulation  a dose's formulation (its name or its type)
 %     subject      document ids: only statements about these subjects
 %                  (searched 200 at a time)
+%     at, during, before, after, duration
+%                  when it held: see ndi.v2.timeFilter; 'tolerant' (true or
+%                  false) widens each time by its tolerance
 %
 %   Each is a pattern or a cell array of patterns (any of them). A pattern
 %   matches a term's name ignoring case or its node exactly, '*' being a
@@ -72,7 +75,7 @@ for i = 1:numel(cand)
     if ~patternsMatch(ndi.v2.blockOf(p, 'subject_interaction', 'method', []), filt.method), continue; end
     structural{end+1} = cand{i}; %#ok<AGROW>
 end
-info = struct('structural', numel(structural), 'values', {{}});
+info = struct('structural', numel(structural), 'values', {{}}, 'beforeTime', 0);
 docs = {};
 single = 0;
 forms = formulationsOf(container, structural, filt.formulation);
@@ -89,6 +92,15 @@ for i = 1:numel(structural)
         if ~any(cellfun(@(x) isKey(forms, x) && forms(x), f)), continue; end
     end
     docs{end+1} = structural{i}; %#ok<AGROW>
+end
+tf = intersect({'at', 'during', 'before', 'after', 'duration'}, fieldnames(filt));
+info.time = struct('unresolved', 0, 'nozone', 0, 'bound', 0, 'docs', 0);
+info.timed = ~isempty(tf);
+if info.timed && ~isempty(docs)
+    tol = isfield(filt, 'tolerant') && ~isempty(filt.tolerant) && logical(filt.tolerant);
+    [keepT, info.time] = ndi.v2.timeFilter(container, docs, filt, tol);
+    info.beforeTime = numel(docs);
+    docs = docs(keepT);
 end
 if ~isempty(filt.value) && ~isempty(structural) && single == 0
     error('ndi:v2:searchStatements:noSingleValue', ...

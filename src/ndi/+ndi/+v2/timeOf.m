@@ -12,6 +12,9 @@ function r = timeOf(container, refDoc, depth, cache)
 %     referent_id   the document the reference is relative to
 %     approximate   true when the start or end is marked approximate
 %     tolerance     [minus plus] seconds of the start (NaN when none)
+%     end_tolerance [minus plus] seconds of the end (NaN when none)
+%     timezone      the zone the source wrote the time in (source_timezone:
+%                   an absolute reference's own, a relative one's anchor's)
 %     resolved_by   'value', 'offset', 'relation' (the referent's own extent)
 %                   or '' (not resolved)
 %
@@ -30,7 +33,8 @@ p = ndi.v2.props(refDoc);
 k = char(p.document_class.class_name);
 r = struct('kind', '', 'start', NaT('TimeZone', 'UTC'), 'end', NaT('TimeZone', 'UTC'), ...
     'start_offset', NaN, 'end_offset', NaN, 'relation', '', 'clock', '', 'referent_id', '', ...
-    'approximate', false, 'tolerance', [NaN NaN], 'resolved_by', '');
+    'approximate', false, 'tolerance', [NaN NaN], 'end_tolerance', [NaN NaN], ...
+    'timezone', '', 'resolved_by', '');
 v = ndi.v2.blockOf(p, k, 'value', struct());
 if strcmp(k, 'absolute_time_reference')
     r.kind = 'absolute';
@@ -38,8 +42,11 @@ if strcmp(k, 'absolute_time_reference')
     r.start = ndi.v2.parseUtc(getOr(st, 'utc', ''));
     r.approximate = logical(getOr(st, 'approximate', false));
     r.tolerance = tol(getOr(st, 'tolerance', []));
+    r.timezone = char(getOr(st, 'source_timezone', ''));
     en = endOf(v);
     r.end = ndi.v2.parseUtc(getOr(en, 'utc', ''));
+    r.end_tolerance = tol(getOr(en, 'tolerance', []));
+    if isempty(r.timezone), r.timezone = char(getOr(en, 'source_timezone', '')); end
     du = getOr(v, 'duration', struct());
     if isnat(r.end) && ~isempty(getOr(du, 'seconds', []))
         r.end = r.start + seconds(double(du.seconds));
@@ -59,6 +66,7 @@ r.tolerance = tol(getOr(st, 'tolerance', []));
 r.approximate = logical(getOr(st, 'approximate', false));
 en = endOf(v);
 r.end_offset = double(getOr(en, 'seconds', NaN));
+r.end_tolerance = tol(getOr(en, 'tolerance', []));
 du = getOr(v, 'duration', struct());
 if isnan(r.end_offset) && ~isnan(r.start_offset) && ~isempty(getOr(du, 'seconds', []))
     r.end_offset = r.start_offset + double(du.seconds);
@@ -77,6 +85,7 @@ end
 if isempty(anchor) || isnat(anchor.start)
     return;
 end
+r.timezone = anchor.timezone;
 if ~isnan(r.start_offset)
     r.start = anchor.start + seconds(r.start_offset);
     if ~isnan(r.end_offset), r.end = anchor.start + seconds(r.end_offset); end

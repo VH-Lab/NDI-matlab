@@ -297,7 +297,7 @@ classdef TestObjectLayer < matlab.unittest.TestCase
             testCase.verifyError(@() ndi.subject.search(S, 'directed_relation', {'name', 'containd_in'}), ...
                 'ndi:subject:search:unknownRelation');
             testCase.verifyError(@() ndi.subject.search(S, 'contained_in', plate, 'directed_relation', ...
-                {'name', 'contained_in', 'parent', plate, 'at', '2023-01-01'}), 'ndi:subject:search:notYet');
+                {'name', 'contained_in', 'parent', plate, 'depth', 2}), 'ndi:subject:search:notYet');
             testCase.verifyError(@() ndi.subject.search(S, 'undirected_relation', {'parent', plate}), ...
                 'ndi:subject:search:relationFilter');
             testCase.verifyError(@() ndi.subject.search(S, 'directed_relation', {'parent', plate, 'child', plate}), ...
@@ -318,6 +318,57 @@ classdef TestObjectLayer < matlab.unittest.TestCase
             testCase.verifyEqual(sort(extra), sort(patches), 'exactly its parts');
             testCase.verifyEmpty(ndi.subject.search(S, 'type', 'organism', 'inclusion in analysis', 'excluded'), ...
                 'contained_in does not carry statements');
+        end
+
+        function testTimeFilters(testCase)
+            % the fixture's windows (TestHaleyWrite pins them), Los Angeles:
+            % cohort 0012 on acclimation plate 0001 from 2022-02-03 12:10:51 to
+            % 2022-02-04 12:10:51; cohort 0014 food-deprived for exactly 3 h,
+            % 2022-02-04 12:17:10 to 15:17:10 (the end, T, up to 5 min early)
+            S = testCase.Session;
+            w = warning('off', 'ndi:subject:search:noSuchTime');
+            restore = onCleanup(@() warning(w));
+            acc = testCase.subject('concentration_0001_acclimationPlate0001');
+            on = @(varargin) local(ndi.subject.search(S, 'type', 'organism', 'directed_relation', ...
+                [{'name', 'contained_in', 'parent', acc}, varargin]));
+            worms = {'concentration_worm0121', 'concentration_worm0122'};
+            testCase.verifyTrue(all(ismember(worms, on('at', '2022-02-03T18:00'))), 'local time, the lab''s zone');
+            testCase.verifyTrue(all(ismember(worms, on('at', '2022-02-04T02:00Z'))), 'the same instant in UTC');
+            testCase.verifyTrue(all(ismember(worms, on('at', datetime(2022, 2, 3, 18, 0, 0)))), 'a datetime');
+            testCase.verifyFalse(any(ismember(worms, on('at', '2022-02-02T18:00'))), 'before the pick');
+            testCase.verifyTrue(all(ismember(worms, on('during', '2022-02-03'))), 'a whole day');
+            testCase.verifyTrue(all(ismember(worms, on('during', {'2022-02-01', '2022-02-03T13:00'}))));
+            testCase.verifyFalse(any(ismember(worms, on('during', '2022-02-01'))));
+            testCase.verifyTrue(all(ismember(worms, on('before', '2022-02-05'))));
+            testCase.verifyTrue(all(ismember(worms, on('after', '2022-02-03'))));
+            testCase.verifyFalse(any(ismember(worms, on('after', '2022-02-04'))));
+
+            % duration, and tolerance
+            fd = local(ndi.subject.search(S, 'member_of', testCase.subject('concentration_assayPlate0014_worms')));
+            testCase.assertNotEmpty(fd);
+            deprived = @(varargin) local(ndi.subject.search(S, 'type', 'organism', 'manipulation', ...
+                [{'variable', 'food availability'}, varargin{1}], varargin{2:end}));
+            testCase.verifyEqual(sort(deprived({'duration', '>=3h'})), sort(fd));
+            testCase.verifyEqual(sort(deprived({'duration', '>=180min'})), sort(fd));
+            testCase.verifyEmpty(deprived({'duration', '>3h'}), 'exactly 3 h as stated');
+            testCase.verifyEqual(sort(deprived({'duration', '>3h'}, 'tolerant', true)), sort(fd), ...
+                'the hand-written start could be a minute early');
+            testCase.verifyWarning(@() ndi.subject.search(S, 'manipulation', ...
+                {'variable', 'food availability', 'duration', '>4h'}), 'ndi:subject:search:noSuchTime');
+
+            % a time known only as "before the seeding" (a plate's pour) is a bound
+            plate = 'concentration_assayPlate0012';
+            poured = @(varargin) local(ndi.subject.search(S, 'manipulation', [{'variable', 'NGM agar'}, varargin]));
+            testCase.verifyTrue(ismember(plate, poured('before', '2030-01-01')), 'the bound decides it');
+            testCase.verifyFalse(ismember(plate, poured('at', '2022-02-04T12:00')), 'a bound cannot place it');
+
+            out = evalc(['ndi.subject.search(S, ''type'', ''organism'', ''manipulation'', ' ...
+                '{''variable'', ''food availability'', ''duration'', ''>=3h''}, ''explain'', true);']);
+            testCase.verifySubstring(out, 'lasting >=3h');
+            testCase.verifyError(@() ndi.subject.search(S, 'directed_relation', ...
+                {'name', 'contained_in', 'at', 'yesterday'}), 'ndi:v2:timeFilter:badTime');
+            testCase.verifyError(@() ndi.subject.search(S, 'manipulation', ...
+                {'variable', 'food availability', 'duration', '3 fortnights'}), 'ndi:v2:timeFilter:badDuration');
         end
 
         function testAssertions(testCase)
