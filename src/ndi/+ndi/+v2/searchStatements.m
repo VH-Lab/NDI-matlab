@@ -10,6 +10,8 @@ function [docs, info] = searchStatements(container, kind, filt)
 %     method       an interaction's method (an assertion has none: an error)
 %     value        the statement's value
 %     formulation  a dose's formulation (its name or its type)
+%     subject      document ids: only statements about these subjects
+%                  (searched 200 at a time)
 %
 %   Each is a pattern or a cell array of patterns (any of them). A pattern
 %   matches a term's name ignoring case or its node exactly, '*' being a
@@ -54,13 +56,13 @@ if ~isempty(filt.value) && all(cellfun(@isPlainText, filt.value))
     % is not a term passes to the recheck. When that finds nothing, search
     % again without it: "the variable is there, the value is not" (a
     % warning naming the values) is not "nothing has this variable"
-    cand = container.database_search(q & ...
-        (ndi.v2.termQuery('term.value', filt.value) | ndi.query('', '~isa', 'term', '')));
+    cand = bySubject(container, q & ...
+        (ndi.v2.termQuery('term.value', filt.value) | ndi.query('', '~isa', 'term', '')), filt.subject);
     if isempty(cand)
-        cand = container.database_search(q);
+        cand = bySubject(container, q, filt.subject);
     end
 else
-    cand = container.database_search(q);
+    cand = bySubject(container, q, filt.subject);
 end
 
 structural = {};
@@ -76,8 +78,8 @@ single = 0;
 forms = formulationsOf(container, structural, filt.formulation);
 for i = 1:numel(structural)
     p = ndi.v2.props(structural{i});
-    [kindOfValue, v] = valueOf(p);
-    info.values{end+1} = textOf(kindOfValue, v);
+    [kindOfValue, v, txt] = ndi.v2.statementValue(p);
+    info.values{end+1} = txt;
     if ~strcmp(kindOfValue, 'none'), single = single + 1; end
     if ~isempty(filt.value) && ~any(cellfun(@(pat) valueMatches(kindOfValue, v, pat), filt.value))
         continue;
@@ -98,7 +100,26 @@ end
 
 % -------------------------------------------------------------------------
 
+function docs = bySubject(container, q, ids)
+% search Q, restricted to statements about IDS ({} for any), 200 ids a search
+if isempty(ids)
+    docs = container.database_search(q);
+    return;
+end
+docs = {};
+for c = 1:200:numel(ids)
+    part = ids(c:min(c + 199, numel(ids)));
+    qs = cellfun(@(i) ndi.query('', 'depends_on', 'subject_id', i), part, 'UniformOutput', false);
+    docs = [docs, reshape(container.database_search(q & ndi.v2.anyOf(qs)), 1, [])]; %#ok<AGROW>
+end
+end
+
 function filt = normalise(filt)
+if ~isfield(filt, 'subject') || isempty(filt.subject)
+    filt.subject = {};
+else
+    filt.subject = unique(cellstr(filt.subject), 'stable');
+end
 for f = {'variable', 'method', 'value', 'formulation'}
     if ~isfield(filt, f{1}) || isempty(filt.(f{1}))
         filt.(f{1}) = {};
@@ -157,67 +178,6 @@ for i = 1:numel(ents)
     if isstruct(t) && isfield(t, 'type'), ty = t.type; end
     forms(e.document_id) = any(cellfun(@(p) ischar(p) && ...
         (ndi.v2.matchTerm(struct('name', e.name, 'node', ''), p) || ndi.v2.matchTerm(ty, p)), patterns));
-end
-end
-
-function [k, v] = valueOf(p)
-% the statement's value as one of: 'term' {name,node}, 'date' (ISO text),
-% 'number' (a scalar, canonical unit), 'text', or 'none' (an array, a body,
-% a structure with no single amount, or no value)
-k = 'none'; v = [];
-if logical(firstOr(ndi.v2.blockOf(p, 'data_type', 'data_body', false), false))
-    return;
-end
-chain = ndi.v2.classChain(p);
-c = '';
-for i = 1:numel(chain)
-    if any(strcmp(ndi.v2.directParents(chain{i}), 'data_type')), c = chain{i}; break; end
-end
-if isempty(c), return; end
-raw = ndi.v2.blockOf(p, c, 'value', []);
-if iscell(raw)
-    if numel(raw) ~= 1, return; end
-    raw = raw{1};
-end
-if isstruct(raw) && numel(raw) ~= 1, return; end
-if strcmp(c, 'date') && isstruct(raw) && isfield(raw, 'instant')
-    k = 'date'; v = char(raw.instant); return;
-end
-if isstruct(raw) && all(ismember(fieldnames(raw), {'name', 'node'}))
-    k = 'term'; v = raw; return;
-end
-if ischar(raw) || isstring(raw)
-    k = 'text'; v = char(raw); return;
-end
-if isnumeric(raw) && isscalar(raw)
-    k = 'number'; v = double(raw); return;
-end
-if ~isstruct(raw), return; end
-cf = ndi.data_type.canonicalField(c);
-if ~isempty(cf) && isfield(raw, cf) && isnumeric(raw.(cf)) && isscalar(raw.(cf))
-    k = 'number'; v = double(raw.(cf)); return;
-end
-% a structured value (a dose): its one amount, if it has exactly one
-amounts = [];
-f = fieldnames(raw);
-for i = 1:numel(f)
-    s = raw.(f{i});
-    sf = ndi.data_type.canonicalField(f{i});
-    if isstruct(s) && isscalar(s) && ~isempty(sf) && isfield(s, sf) && isnumeric(s.(sf)) && isscalar(s.(sf))
-        amounts(end+1) = double(s.(sf)); %#ok<AGROW>
-    end
-end
-if isscalar(amounts)
-    k = 'number'; v = amounts;
-end
-end
-
-function t = textOf(k, v)
-switch k
-    case 'term', t = ndi.v2.termName(v);
-    case {'date', 'text'}, t = v;
-    case 'number', t = num2str(v, 6);
-    otherwise, t = '';
 end
 end
 

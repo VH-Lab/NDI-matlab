@@ -117,77 +117,97 @@ classdef subject < ndi.ido & ndi.documentservice & ndi.entity
         end % get.type()
 
         function s = statements(ndi_subject_obj, varargin)
-            % STATEMENTS - the statements about this subject
+            % STATEMENTS - the statements about this subject (or these subjects)
             %
-            % S = STATEMENTS(NDI_SUBJECT_OBJ, ...) returns a cell array of
-            % ndi.statement objects (each the right child: ndi.observation,
-            % ndi.manipulation, ndi.calculation, ndi.assertion). Takes the
-            % filters of ndi.statement.search: 'Variable', 'Class', 'Method'.
+            % S = STATEMENTS(SUBJ, ...) returns a cell array of ndi.statement
+            % objects (each the right child: ndi.observation,
+            % ndi.manipulation, ndi.calculation, ndi.assertion). SUBJ may be an
+            % array of subjects; from a cell array C call statements([C{:}]).
+            % The subjects are searched together, a few searches in all; a
+            % statement that holds of several of them comes back once for each,
+            % and each knows which subject it was asked for (about()) and how
+            % it holds of it (via()).
             %
-            % 'Inherited', true also returns what holds of this subject
-            % because it was stated on a group the subject is a member of:
-            % the groups are found by following member_of upward (groups of
-            % groups too), and of each group's statements only those marked
-            % `distributive` are kept -- the schema's flag for "stated on the
-            % group, holds of each member" (did-schema #84). Default false:
-            % only statements whose subject is this one. An inherited
-            % statement's subject() is the group it was stated on.
-            % Relations other than member_of (contained_in, part_of) are not
-            % followed: they do not make a statement hold of the subject.
+            % What holds of a subject ('inherited', default true -- the same
+            % rules as ndi.subject.search):
+            %   own        statements about it
+            %   member_of  statements about a group it belongs to (groups of
+            %              groups too) that are marked distributive
+            %   part_of, sample_of, aliquot_of, passage_of
+            %              assertions about a whole it is part or a sample of
+            % 'inherited', false: its own statements only.
+            %
+            % Filters, the words ndi.subject.search uses:
+            %   s = w.statements('manipulation')
+            %   s = w.statements('manipulation', {'method', 'refrigeration'})
+            %   s = w.statements('assertion', {'variable', 'strain'})
+            % A kind ('statement', 'assertion', 'interaction', 'observation',
+            % 'manipulation', 'calculation') with an optional cell of filters
+            % on that statement ('variable', 'method', 'value',
+            % 'formulation'); several kinds are any of them. The older
+            % 'Class', 'Variable', 'Method' pairs still work.
+            [kinds, inherited] = ndi.subject.statementArgs(varargin);
             s = {};
-            if isempty(ndi_subject_obj.container_), return; end
-            [inherited, rest] = ndi.subject.takeOption(varargin, 'Inherited', false);
-            s = ndi.statement.search(ndi_subject_obj.container_, 'Subject', ndi_subject_obj, rest{:});
-            if ~inherited
-                return;
-            end
-            seen = {ndi_subject_obj.document_id};
-            queue = ndi_subject_obj.memberOf();
-            while ~isempty(queue)
-                g = queue{1};
-                queue(1) = [];
-                if ~isa(g, 'ndi.subject') || any(strcmp(seen, g.document_id))
-                    continue;
-                end
-                seen{end+1} = g.document_id; %#ok<AGROW>
-                gs = ndi.statement.search(ndi_subject_obj.container_, 'Subject', g, rest{:});
-                for k = 1:numel(gs)
-                    if gs{k}.distributive()
-                        s{end+1} = gs{k}; %#ok<AGROW>
-                    end
-                end
-                queue = [queue, g.memberOf()]; %#ok<AGROW>
+            subjects = ndi_subject_obj(arrayfun(@(x) ~isempty(x.container_), ndi_subject_obj));
+            if isempty(subjects), return; end
+            container = subjects(1).container_;
+            ids = arrayfun(@(x) x.document_id, subjects, 'UniformOutput', false);
+            L = ndi.subject.statementLinks(container, ids, kinds, inherited);
+            s = cell(1, numel(L.doc));
+            for i = 1:numel(L.doc)
+                s{i} = ndi.statement.fromDocument(container, L.doc{i}).withContext(L.about{i}, L.via{i});
             end
         end % statements()
 
         function T = assertions(ndi_subject_obj, varargin)
-            % ASSERTIONS - table of what is asserted about the subject
+            % ASSERTIONS - table of what is asserted about the subject (or subjects)
             %
-            % T = ASSERTIONS(NDI_SUBJECT_OBJ) has columns variable, value,
-            % node and stated_on (the local identifier of the subject it was
-            % stated on), e.g. species 'Caenorhabditis elegans', strain 'N2',
-            % inclusion in analysis 'excluded'. 'Inherited', true adds what
-            % is stated distributively on the subject's groups (see
-            % STATEMENTS): a worm's species and strain, stated on its cohort.
-            [inherited, ~] = ndi.subject.takeOption(varargin, 'Inherited', false);
-            variable = strings(0, 1); value = strings(0, 1); node = strings(0, 1);
-            stated_on = strings(0, 1);
-            a = ndi_subject_obj.statements('Class', 'assertion', 'Inherited', inherited);
-            for i = 1:numel(a)
-                v = a{i}.raw_value();
-                variable(end+1, 1) = string(a{i}.variable_name()); %#ok<AGROW>
-                value(end+1, 1) = string(ndi.v2.termName(v)); %#ok<AGROW>
-                nd = '';
-                if isstruct(v) && isfield(v, 'node'), nd = char(v(1).node); end
-                node(end+1, 1) = string(nd); %#ok<AGROW>
-                on = ndi_subject_obj.local_identifier;
-                if ~strcmp(statedOnId(a{i}), ndi_subject_obj.document_id)
-                    sub = a{i}.subject();
-                    if ~isempty(sub), on = sub.local_identifier; else, on = statedOnId(a{i}); end
-                end
-                stated_on(end+1, 1) = string(on); %#ok<AGROW>
+            % T = ASSERTIONS(SUBJ) has columns variable, value, node, stated_on
+            % (the local identifier of the subject it was stated on) and via
+            % (how it holds: see STATEMENTS), e.g. species 'Caenorhabditis
+            % elegans', strain 'N2', inclusion in analysis 'excluded'. For an
+            % array of subjects a first column, subject, names which one.
+            % Inherited by default, as STATEMENTS; 'inherited', false for the
+            % subject's own assertions. Takes STATEMENTS' filters.
+            args = varargin;
+            if isempty(args) || ~any(strcmpi(args(1:2:end), 'assertion'))
+                args = [{'assertion'}, args];
             end
-            T = table(variable, value, node, stated_on);
+            a = ndi_subject_obj.statements(args{:});
+            n = numel(a);
+            subject = strings(n, 1); variable = strings(n, 1); value = strings(n, 1);
+            node = strings(n, 1); stated_on = strings(n, 1); via = strings(n, 1);
+            container = [];
+            if ~isempty(ndi_subject_obj), container = ndi_subject_obj(1).container_; end
+            ids = {};
+            for i = 1:n
+                ids = [ids, {a{i}.about()}, ndi.v2.edgeIds(a{i}.document_properties(), 'subject_id')]; %#ok<AGROW>
+            end
+            lid = containers.Map('KeyType', 'char', 'ValueType', 'char');
+            if ~isempty(ids) && ~isempty(container)
+                ents = ndi.entity.fetchMany(container, unique(ids));
+                for e = 1:numel(ents)
+                    x = ents{e};
+                    if isa(x, 'ndi.subject'), lid(x.document_id) = char(x.local_identifier);
+                    else, lid(x.document_id) = char(x.name); end
+                end
+            end
+            for i = 1:n
+                v = a{i}.raw_value();
+                variable(i) = string(a{i}.variable_name());
+                value(i) = string(ndi.v2.termName(v));
+                if isstruct(v) && isfield(v, 'node'), node(i) = string(char(v(1).node)); end
+                o = statedOnId(a{i});
+                stated_on(i) = string(o);
+                if isKey(lid, o), stated_on(i) = string(lid(o)); end
+                subject(i) = string(a{i}.about());
+                if isKey(lid, a{i}.about()), subject(i) = string(lid(a{i}.about())); end
+                via(i) = string(a{i}.via());
+            end
+            T = table(variable, value, node, stated_on, via);
+            if numel(ndi_subject_obj) > 1
+                T = addvars(T, subject, 'Before', 1);
+            end
         end % assertions()
 
         function m = members(ndi_subject_obj)
@@ -314,7 +334,7 @@ classdef subject < ndi.ido & ndi.documentservice & ndi.entity
             % which match is a warning naming the values there are.
             spec = ndi.subject.parseSearch(varargin);
             if spec.explain
-                fprintf('%s\n', ndi.subject.explainSearch(spec, ''));
+                fprintf('%s\n', ndi.subject.explainSearch(spec, '', containerWord(container)));
             end
             ids = ndi.subject.searchIds(container, spec);
             if iscell(ids)
@@ -351,7 +371,7 @@ classdef subject < ndi.ido & ndi.documentservice & ndi.entity
     methods (Static, Hidden)
         function t = explainNested(c, indent)
             % EXPLAINNESTED - a description (a cell of search's pairs) in words
-            t = ndi.subject.explainSearch(ndi.subject.parseSearch(c), indent);
+            t = ndi.subject.explainSearch(ndi.subject.parseSearch(c), indent, '');
         end
 
     end
@@ -438,7 +458,7 @@ classdef subject < ndi.ido & ndi.documentservice & ndi.entity
             spec = struct('own', {cell(0, 2)}, ...
                 'filters', {struct('kind', {}, 'filt', {})}, ...
                 'relations', {struct('kind', {}, 'name', {}, 'side', {}, 'target', {})}, ...
-                'inherited', true, 'explain', false);
+                'inherited', true, 'explain', false, 'strict', true);
             for k = 1:2:numel(args)
                 p = args{k};
                 if ~(ischar(p) || (isstring(p) && isscalar(p)))
@@ -449,7 +469,7 @@ classdef subject < ndi.ido & ndi.documentservice & ndi.entity
                 if isstring(v), v = cellstr(v); if isscalar(v), v = v{1}; end, end
                 key = lower(strrep(p, '_', ''));
                 lp = lower(p);
-                if any(strcmp(key, {'inherited', 'explain'}))
+                if any(strcmp(key, {'inherited', 'explain', 'strict'}))
                     spec.(key) = logical(v);
                 elseif any(strcmp(key, {'type', 'name', 'id'}))
                     spec.own(end+1, :) = {key, v};
@@ -545,12 +565,12 @@ classdef subject < ndi.ido & ndi.documentservice & ndi.entity
             % of SPEC holds of ([] when SPEC has none)
             ids = [];
             for k = 1:numel(spec.filters)
-                these = ndi.subject.subjectsOf(container, spec.filters(k), spec.inherited);
+                these = ndi.subject.subjectsOf(container, spec.filters(k), spec);
                 ids = narrow(ids, these);
                 if isempty(ids), ids = {}; return; end
             end
             for k = 1:numel(spec.relations)
-                these = ndi.subject.relatedIds(container, spec.relations(k), spec.inherited);
+                these = ndi.subject.relatedIds(container, spec.relations(k), spec);
                 ids = narrow(ids, these);
                 if isempty(ids), ids = {}; return; end
             end
@@ -560,22 +580,22 @@ classdef subject < ndi.ido & ndi.documentservice & ndi.entity
             end
         end
 
-        function ids = subjectsOf(container, f, inherited)
+        function ids = subjectsOf(container, f, spec)
             % SUBJECTSOF - ids of the subjects statement filter F holds of: the
-            % statements' subjects; and, INHERITED, the members (down
+            % statements' subjects; and, SPEC.inherited, the members (down
             % member_of) of a group whose statement is distributive, and the
-            % parts and samples of a subject an assertion is about
+            % parts and samples of a subject an assertion is about. With
+            % SPEC.strict, an unknown variable or method is an error and
+            % values that match nothing a warning (each naming what there is).
+            inherited = spec.inherited;
             [docs, info] = ndi.v2.searchStatements(container, f.kind, f.filt);
             if info.structural == 0
-                ndi.subject.noSuchStatement(container, f);   % errors unless each part exists
+                ndi.subject.noSuchStatement(container, f, spec.strict);   % errors unless each part exists
                 ids = {};
                 return;
-            elseif isempty(docs)
-                shown = info.values(1:min(end, 30));
-                more = '';
-                if numel(info.values) > 30, more = sprintf(' (and %d more)', numel(info.values) - 30); end
-                warning('ndi:subject:search:noSuchValue', 'No %s matches %s. Values there: %s%s.', ...
-                    f.kind, describe(f.filt), strjoin(shown, ', '), more);
+            elseif isempty(docs) && spec.strict
+                warning('ndi:subject:search:noSuchValue', '%s', ...
+                    noValueMessage(f, info.values, containerWord(container)));
             end
             ids = {}; groups = {}; asserted = {};
             for i = 1:numel(docs)
@@ -611,12 +631,13 @@ classdef subject < ndi.ido & ndi.documentservice & ndi.entity
             end
         end
 
-        function ids = relatedIds(container, r, inherited)
+        function ids = relatedIds(container, r, spec)
             % RELATEDIDS - ids of the subjects in a relation matching R: the
             % relation kind and name, and the other end (a subject, ids, or a
             % description, searched first). INHERITED: a distributive relation
             % whose child is a group holds of the group's members too.
-            T = ndi.subject.targetIds(container, r.target);     % [] = any
+            inherited = spec.inherited;
+            T = ndi.subject.targetIds(container, r.target, spec);     % [] = any
             if iscell(T) && isempty(T), ids = {}; return; end
             ids = {};
             if ~strcmp(r.kind, 'undirected_relation')
@@ -685,7 +706,7 @@ classdef subject < ndi.ido & ndi.documentservice & ndi.entity
             docs = docs(keep);
         end
 
-        function T = targetIds(container, target)
+        function T = targetIds(container, target, spec)
             % TARGETIDS - the ids a relation's other end may be: [] for any;
             % an ndi.entity (or several, or a cell of them); a document id; or
             % a cell describing subjects, searched with ndi.subject.search
@@ -698,6 +719,11 @@ classdef subject < ndi.ido & ndi.documentservice & ndi.entity
             elseif iscell(target) && ~isempty(target) && all(cellfun(@(x) isa(x, 'ndi.entity'), target))
                 T = cellfun(@(x) x.document_id, target, 'UniformOutput', false);
             elseif iscell(target)
+                % a description: the outer search's strict and inherited
+                % hold inside it unless it says otherwise
+                given = cellfun(@(x) lower(char(x)), target(1:2:end), 'UniformOutput', false);
+                if ~any(strcmp(given, 'strict')), target = [target, {'strict', spec.strict}]; end
+                if ~any(strcmp(given, 'inherited')), target = [target, {'inherited', spec.inherited}]; end
                 s = ndi.subject.search(container, target{:});
                 T = cellfun(@(x) x.document_id, s, 'UniformOutput', false);
             else
@@ -707,57 +733,199 @@ classdef subject < ndi.ido & ndi.documentservice & ndi.entity
             if iscell(T), T = reshape(T, 1, []); end
         end
 
-        function t = explainSearch(spec, indent)
-            % EXPLAINSEARCH - SPEC in words
-            parts = {};
+        function t = explainSearch(spec, indent, where)
+            % EXPLAINSEARCH - SPEC in words, one line per condition; WHERE is
+            % 'dataset' or 'session' for the first line ('' when nested)
+            lines = {};
             for k = 1:size(spec.own, 1)
-                parts{end+1} = sprintf('%s is %s', strrep(spec.own{k, 1}, '_', ' '), patternText(spec.own{k, 2})); %#ok<AGROW>
+                v = valueText(spec.own{k, 2});
+                switch spec.own{k, 1}
+                    case 'type', lines{end+1} = sprintf('are of type %s', v); %#ok<AGROW>
+                    case 'name', lines{end+1} = sprintf('are named %s', v); %#ok<AGROW>
+                    case 'local_identifier', lines{end+1} = sprintf('have local identifier %s', v); %#ok<AGROW>
+                    case 'id', lines{end+1} = sprintf('have id %s', v); %#ok<AGROW>
+                end
             end
             for k = 1:numel(spec.filters)
-                f = spec.filters(k);
-                parts{end+1} = sprintf('has %s %s where %s', article(f.kind), f.kind, describe(f.filt)); %#ok<AGROW>
+                lines{end+1} = statementText(spec.filters(k), spec.inherited); %#ok<AGROW>
             end
             for k = 1:numel(spec.relations)
-                parts{end+1} = relationText(spec.relations(k), indent); %#ok<AGROW>
+                lines{end+1} = relationText(spec.relations(k), indent, spec.inherited); %#ok<AGROW>
             end
-            if isempty(parts)
-                t = [indent 'every subject'];
+            if isempty(where)
+                head = 'subjects that';
+            else
+                head = sprintf('Searching this %s for subjects that', where);
+                if ~spec.inherited
+                    head = [head ' (counting only what is stated about each subject itself)'];
+                end
+            end
+            if isempty(lines)
+                if isempty(where), t = [indent 'any subject'];
+                else, t = sprintf('Searching this %s for every subject', where); end
                 return;
             end
-            t = [indent 'subjects that' newline indent '  - ' strjoin(parts, [newline indent '  AND ']) ''];
-            if indent == ""
-                if spec.inherited
-                    t = [t newline '(inherited: what is stated of a group, when distributive, counts for its members; ' ...
-                        'an assertion about a whole counts for its parts and samples)'];
-                else
-                    t = [t newline '(not inherited: only what is stated of the subject itself)'];
-                end
+            t = [indent head];
+            for k = 1:numel(lines)
+                t = [t newline indent '  ' char(8226) ' ' lines{k}]; %#ok<AGROW>
             end
         end
 
-        function noSuchStatement(container, f)
+        function noSuchStatement(container, f, strict)
             % NOSUCHSTATEMENT - no statement matched F's kind, variable and
             % method together. When one of them matches nothing on its own,
-            % that is an error (for an assertion's variable, naming the
-            % variables there are); when each exists but never on one
-            % statement, the answer is simply none.
+            % that is an error (for an asserted variable, naming the
+            % properties there are, with the nearest as a suggestion); when
+            % each exists but never on one statement, the answer is simply
+            % none. STRICT false: never an error.
+            if ~strict, return; end
+            where = containerWord(container);
             for part = {'variable', 'method'}
                 if ~isfield(f.filt, part{1}), continue; end
                 [~, info] = ndi.v2.searchStatements(container, f.kind, struct(part{1}, {f.filt.(part{1})}));
                 if info.structural > 0, continue; end
+                pats = cellstr(f.filt.(part{1}));
                 if strcmp(f.kind, 'assertion') && strcmp(part{1}, 'variable')
                     docs = container.database_search(ndi.query('', 'isa', 'subject_assertion', ''));
-                    names = unique(cellfun(@(d) ndi.v2.termName(ndi.v2.blockOf(ndi.v2.props(d), ...
-                        'subject_statement', 'variable', '')), docs, 'UniformOutput', false));
-                    error('ndi:subject:search:unknownVariable', ...
-                        'No subject has an assertion about %s. Asserted here: %s.', ...
-                        describe(struct('variable', {f.filt.variable})), strjoin(names, ', '));
+                    names = cellfun(@(d) ndi.v2.termName(ndi.v2.blockOf(ndi.v2.props(d), ...
+                        'subject_statement', 'variable', '')), docs, 'UniformOutput', false);
+                    props = unique([names, {'id', 'local_identifier', 'name', 'type'}]);
+                    [~, o] = sort(lower(props));
+                    props = props(o);
+                    msg = sprintf('No subject in this %s has a property %s.', where, quoted(pats));
+                    msg = [msg didYouMean(pats, props)];
+                    error('ndi:subject:search:unknownVariable', '%s\nProperties in this %s: %s', ...
+                        msg, where, strjoin(props, ', '));
                 end
-                error('ndi:subject:search:noSuchStatement', 'No %s here has %s.', f.kind, ...
-                    describe(struct(part{1}, {f.filt.(part{1})})));
+                error('ndi:subject:search:noSuchStatement', 'No %s in this %s has %s %s.', ...
+                    f.kind, where, part{1}, quoted(pats));
             end
         end
     end
+        end
+    end
+    methods (Static, Hidden)
+        function [kinds, inherited] = statementArgs(args)
+            % STATEMENTARGS - (internal) STATEMENTS' arguments: kinds with
+            % filters, the older 'Class'/'Variable'/'Method' pairs, 'inherited'
+            short = {'statement', 'assertion', 'interaction', 'observation', 'manipulation', 'calculation'};
+            kinds = struct('kind', {}, 'filt', {});
+            inherited = true;
+            legacy = struct();
+            k = 1;
+            while k <= numel(args)
+                a = args{k};
+                if ~(ischar(a) || (isstring(a) && isscalar(a)))
+                    error('ndi:subject:statements:args', 'Expected a kind or an option name at argument %d.', k + 1);
+                end
+                a = char(a);
+                la = lower(a);
+                if any(strcmp(la, short))
+                    f = struct();
+                    if k < numel(args) && iscell(args{k + 1})
+                        f = ndi.subject.statementFilter(la, args{k + 1});
+                        k = k + 1;
+                    end
+                    kinds(end+1) = struct('kind', la, 'filt', f); %#ok<AGROW>
+                elseif strcmp(la, 'inherited') && k < numel(args)
+                    inherited = logical(args{k + 1}); k = k + 1;
+                elseif any(strcmp(la, {'class', 'variable', 'method'})) && k < numel(args)
+                    legacy.(la) = char(args{k + 1}); k = k + 1;
+                else
+                    error('ndi:subject:statements:args', ...
+                        'Unknown argument ''%s'': a kind (%s), ''inherited'', or ''Class''/''Variable''/''Method''.', ...
+                        a, strjoin(short, ', '));
+                end
+                k = k + 1;
+            end
+            if ~isempty(fieldnames(legacy))
+                f = struct();
+                if isfield(legacy, 'variable'), f.variable = legacy.variable; end
+                if isfield(legacy, 'method'), f.method = legacy.method; end
+                kind = 'statement';
+                if isfield(legacy, 'class'), kind = lower(legacy.class); end
+                kinds(end+1) = struct('kind', kind, 'filt', f);
+            end
+            if isempty(kinds)
+                kinds = struct('kind', 'statement', 'filt', struct());
+            end
+        end
+
+        function L = statementLinks(container, ids, kinds, inherited)
+            % STATEMENTLINKS - (internal) which statements hold of the subjects IDS
+            %
+            % L has fields about, doc, via (cell arrays, one entry per
+            % subject-statement pair). The subjects' groups (member_of, up)
+            % and wholes (part_of, sample_of, aliquot_of, passage_of, up) are
+            % walked together, one search per step; then one statement search
+            % per kind for every 200 subjects reached. A statement on a group
+            % holds when it is distributive; one on a whole when it is an
+            % assertion; on both, both.
+            ids = unique(cellstr(ids), 'stable');
+            lineage = {'part_of', 'sample_of', 'aliquot_of', 'passage_of'};
+            % states: start, at, hasMember, hasLineage, path
+            S = struct('start', ids, 'at', ids, 'm', false, 'l', false, 'path', {''});
+            all_ = S;
+            frontier = S;
+            depth = 0;
+            while inherited && ~isempty(frontier) && depth < 16
+                depth = depth + 1;
+                at = unique({frontier.at}, 'stable');
+                next = struct('start', {}, 'at', {}, 'm', {}, 'l', {}, 'path', {});
+                for r = [{'member_of'}, lineage]
+                    step = r{1};
+                    E = ndi.entity.edges(container, at(:), step, 'child_id', 'parent_id');
+                    if height(E) == 0, continue; end
+                    for f = 1:numel(frontier)
+                        hit = find(strcmp(E.from, frontier(f).at));
+                        for h = reshape(hit, 1, [])
+                            p = step;
+                            if ~isempty(frontier(f).path), p = [frontier(f).path ' > ' step]; end
+                            next(end+1) = struct('start', frontier(f).start, 'at', E.to{h}, ...
+                                'm', frontier(f).m || strcmp(step, 'member_of'), ...
+                                'l', frontier(f).l || ~strcmp(step, 'member_of'), 'path', p); %#ok<AGROW>
+                        end
+                    end
+                end
+                % a (start, at) reached before is not followed again
+                keep = true(1, numel(next));
+                for j = 1:numel(next)
+                    keep(j) = ~any(strcmp({all_.start}, next(j).start) & strcmp({all_.at}, next(j).at));
+                    if keep(j), all_(end+1) = next(j); end %#ok<AGROW>
+                end
+                frontier = next(keep);
+            end
+            reached = unique({all_.at}, 'stable');
+            L = struct('about', {{}}, 'doc', {{}}, 'via', {{}});
+            seen = containers.Map('KeyType', 'char', 'ValueType', 'logical');
+            for k = 1:numel(kinds)
+                f = kinds(k).filt;
+                f.subject = reached;
+                docs = ndi.v2.searchStatements(container, kinds(k).kind, f);
+                for i = 1:numel(docs)
+                    p = ndi.v2.props(docs{i});
+                    sid = ndi.v2.edgeIds(p, 'subject_id');
+                    if isempty(sid), continue; end
+                    isAssertion = any(strcmp(ndi.v2.classChain(p), 'subject_assertion'));
+                    d = ndi.v2.blockOf(p, 'subject_statement', 'distributive', false);
+                    distributive = ~isempty(d) && (islogical(d) || isnumeric(d)) && logical(d(1));
+                    for j = find(strcmp({all_.at}, sid{1}))
+                        st = all_(j);
+                        if (st.m && ~distributive) || (st.l && ~isAssertion), continue; end
+                        key = [st.start '|' char(p.base.id)];
+                        if isKey(seen, key), continue; end
+                        seen(key) = true;
+                        via = st.path;
+                        if isempty(via), via = 'own'; end
+                        L.about{end+1} = st.start;
+                        L.doc{end+1} = docs{i};
+                        L.via{end+1} = via;
+                    end
+                end
+            end
+        end
+    end
+
 end % classdef ndi.subject
 
 function id = statedOnId(st)
@@ -788,9 +956,6 @@ function t = toText(v)
 if ischar(v), t = ['''' v '''']; elseif isnumeric(v) || islogical(v), t = mat2str(v); else, t = class(v); end
 end
 
-function s = rmfieldIf(s, f)
-if isfield(s, f), s = rmfield(s, f); end
-end
 
 function ids = narrow(ids, these)
 % the intersection so far ([] = not narrowed yet)
@@ -805,41 +970,129 @@ function tf = isDistributive(d)
 tf = ~isempty(d) && (islogical(d) || isnumeric(d)) && logical(d(1));
 end
 
-function t = relationText(r, indent)
-name = 'any relation';
+function t = relationText(r, indent, inherited)
+% one condition line for a relation filter, with its target nested below
+name = 'related to';
 if ~isempty(r.name), name = strjoin(r.name, ' or '); end
-via = '';
-if strcmp(r.side, 'parent') || strcmp(r.kind, 'directed_relation') && isempty(r.side)
-    via = ' (themselves, or through a group they belong to, when the relation is distributive)';
-end
-switch r.side
-    case 'parent', role = sprintf('are the child in %s%s, whose parent is', name, via);
-    case 'child',  role = sprintf('are the parent in %s, where a child is', name);
-    otherwise,     role = sprintf('are in %s%s with', name, via);
+through = '';
+if inherited && (strcmp(r.side, 'parent') || isempty(r.side) || strcmp(r.side, 'with'))
+    through = ' (directly, or through a group they are members of)';
 end
 target = r.target;
+named = '';
 if isempty(target) && ~iscell(target)
-    t = sprintf('%s anything', role);
+    named = 'anything';
 elseif isa(target, 'ndi.entity')
-    t = sprintf('%s %s', role, strjoin(arrayfun(@(x) ['"' x.name '"'], target, 'UniformOutput', false), ', '));
+    named = strjoin(arrayfun(@(x) ['"' char(x.name) '"'], target, 'UniformOutput', false), ' or ');
 elseif ischar(target) || isstring(target)
-    t = sprintf('%s the document %s', role, char(target));
+    named = ['the document ' char(target)];
 elseif iscell(target) && all(cellfun(@(x) isa(x, 'ndi.entity'), target))
-    t = sprintf('%s %s', role, strjoin(cellfun(@(x) ['"' x.name '"'], target, 'UniformOutput', false), ', '));
-else
-    inner = ndi.subject.explainNested(target, [indent '      ']);
-    t = sprintf('%s one of:\n%s', role, inner);
+    named = strjoin(cellfun(@(x) ['"' char(x.name) '"'], target, 'UniformOutput', false), ' or ');
 end
+switch r.side
+    case 'child'
+        lead = sprintf('are the %s parent of', name);
+    case 'parent'
+        lead = sprintf('are %s', name);
+    otherwise
+        if isempty(r.name), lead = 'are related to'; else, lead = sprintf('are in a %s relation with', name); end
+end
+if ~isempty(named)
+    t = sprintf('%s %s%s', lead, named, through);
+else
+    inner = ndi.subject.explainNested(target, [indent '    ']);
+    inner = regexprep(inner, '^\s*subjects that', '');      % the nested head reads "a subject that"
+    t = sprintf('%s a subject%s that%s', lead, through, inner);
+end
+end
+
+function t = statementText(f, inherited)
+% one condition line for a statement filter: "have strain N2", "had a
+% manipulation with variable NGM agar and value >= 0.02"
+kind = f.kind;
+verb = 'had';
+if any(strcmp(kind, {'assertion', 'statement'})), verb = 'have'; end
+fl = f.filt;
+names = intersect({'variable', 'method', 'value', 'formulation'}, fieldnames(fl), 'stable');
+if strcmp(kind, 'assertion') && isequal(sort(names), sort({'value', 'variable'})) && ischar(fl.variable)
+    t = sprintf('have %s %s', fl.variable, valueText(fl.value));
+else
+    parts = cellfun(@(n) sprintf('%s %s', n, valueText(fl.(n))), names, 'UniformOutput', false);
+    t = sprintf('%s %s %s', verb, article(kind), kind);
+    if ~isempty(parts)
+        if numel(parts) > 1
+            parts = [strjoin(parts(1:end-1), ', ') ' and ' parts{end}];
+        else
+            parts = parts{1};
+        end
+        t = sprintf('%s with %s', t, parts);
+    end
+end
+if inherited
+    if strcmp(kind, 'assertion')
+        t = [t ' (stated on them, on a group they are members of, or on what they are part of)'];
+    else
+        t = [t ' (on them, or on a group they are members of)'];
+    end
+end
+end
+
+function t = valueText(v)
+% a pattern or a list of them, as typed: N2 or CB*
+if iscell(v)
+    t = strjoin(cellfun(@valueText, v, 'UniformOutput', false), ' or ');
+elseif ischar(v) || isstring(v)
+    t = char(v);
+elseif isnumeric(v) || islogical(v)
+    t = mat2str(v);
+else
+    t = class(v);
+end
+end
+
+function q = quoted(pats)
+q = strjoin(cellfun(@(x) ['''' char(x) ''''], cellstr(pats), 'UniformOutput', false), ' or ');
+end
+
+function m = didYouMean(pats, candidates)
+% ' Did you mean ''strain''?' for the first pattern with a near candidate
+m = '';
+for k = 1:numel(pats)
+    if ~ischar(pats{k}) || ndi.v2.hasWildcard(pats{k}), continue; end
+    c = ndi.v2.closest(pats{k}, candidates);
+    if ~isempty(c)
+        m = sprintf(' Did you mean ''%s''?', c);
+        return;
+    end
+end
+end
+
+function w = containerWord(container)
+if isa(container, 'ndi.dataset'), w = 'dataset'; else, w = 'session'; end
+end
+
+function m = noValueMessage(f, values, where)
+% the warning when a variable is there and none of the values is
+vals = f.filt.value;
+if ~iscell(vals), vals = {vals}; end
+shown = values(1:min(end, 30));
+more = '';
+if numel(values) > 30, more = sprintf(' (and %d more)', numel(values) - 30); end
+pats = vals(cellfun(@ischar, vals));
+if strcmp(f.kind, 'assertion') && isfield(f.filt, 'variable') && ischar(f.filt.variable)
+    var = f.filt.variable;
+    m = sprintf('No subject in this %s has %s %s.', where, var, quoted(pats));
+    label = [upper(var(1)) var(2:end)];
+else
+    m = sprintf('No %s in this %s matches %s.', f.kind, where, describe(f.filt));
+    label = 'Values';
+end
+m = [m didYouMean(pats, values)];
+m = sprintf('%s\n%s in this %s: %s%s', m, label, where, strjoin(shown, ', '), more);
 end
 
 function a = article(word)
 if any(lower(word(1)) == 'aeiou'), a = 'an'; else, a = 'a'; end
 end
 
-function t = patternText(v)
-if iscell(v)
-    t = strjoin(cellfun(@toText, v, 'UniformOutput', false), ' or ');
-else
-    t = toText(v);
-end
 end

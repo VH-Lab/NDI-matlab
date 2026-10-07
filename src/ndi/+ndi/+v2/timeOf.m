@@ -1,4 +1,4 @@
-function r = timeOf(container, refDoc, depth)
+function r = timeOf(container, refDoc, depth, cache)
 %TIMEOF A time reference, read and resolved to wall-clock time where it can be.
 %
 %   R = ndi.v2.timeOf(CONTAINER, REFDOC) returns a struct:
@@ -17,8 +17,15 @@ function r = timeOf(container, refDoc, depth)
 %
 %   A relative reference resolves through its referent's own time
 %   references (a session's, an epoch's, a statement's), up to 8 levels.
+%
+%   R = ndi.v2.timeOf(CONTAINER, REFDOC, DEPTH, CACHE): CACHE, a
+%   containers.Map, holds documents under 'doc:<id>' (ndi.v2.getDocuments
+%   fills it) and each referent's resolved anchor under 'anchor:<id>', so a
+%   referent shared by many references is read and resolved once
+%   (ndi.v2.timesOf).
 
 if nargin < 3, depth = 0; end
+if nargin < 4, cache = []; end
 p = ndi.v2.props(refDoc);
 k = char(p.document_class.class_name);
 r = struct('kind', '', 'start', NaT('TimeZone', 'UTC'), 'end', NaT('TimeZone', 'UTC'), ...
@@ -59,9 +66,14 @@ end
 if isempty(r.referent_id) || depth >= 8
     return;
 end
-ref = ndi.v2.getDocument(container, r.referent_id);
-if isempty(ref), return; end
-anchor = anchorOf(container, ref, depth);
+if ~isempty(cache) && isKey(cache, ['anchor:' r.referent_id])
+    anchor = cache(['anchor:' r.referent_id]);
+else
+    ref = docOf(container, r.referent_id, cache);
+    if isempty(ref), return; end
+    anchor = anchorOf(container, ref, depth, cache);
+    if ~isempty(cache), cache(['anchor:' r.referent_id]) = anchor; end
+end
 if isempty(anchor) || isnat(anchor.start)
     return;
 end
@@ -77,24 +89,34 @@ else
 end
 end
 
-function a = anchorOf(container, refDoc, depth)
+function a = anchorOf(container, refDoc, depth, cache)
 % the referent's own time: its first time reference that resolves
 a = [];
 p = ndi.v2.props(refDoc);
 if any(strcmp(ndi.v2.classChain(p), 'time_reference'))
-    a = ndi.v2.timeOf(container, refDoc, depth + 1);
+    a = ndi.v2.timeOf(container, refDoc, depth + 1, cache);
     return;
 end
 ids = ndi.v2.edgeIds(p, 'time_reference_id');
 for i = 1:numel(ids)
-    d = ndi.v2.getDocument(container, ids{i});
+    d = docOf(container, ids{i}, cache);
     if isempty(d), continue; end
-    t = ndi.v2.timeOf(container, d, depth + 1);
+    t = ndi.v2.timeOf(container, d, depth + 1, cache);
     if ~isnat(t.start)
         a = t;
         return;
     end
 end
+end
+
+function d = docOf(container, id, cache)
+% a document by id: from CACHE when it holds it (or held its absence)
+if ~isempty(cache) && isKey(cache, ['doc:' id])
+    d = cache(['doc:' id]);
+    return;
+end
+d = ndi.v2.getDocument(container, id);
+if ~isempty(cache), cache(['doc:' id]) = d; end
 end
 
 function v = getOr(s, name, default)

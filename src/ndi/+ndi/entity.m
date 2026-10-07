@@ -32,6 +32,7 @@ classdef entity
     %   document           - the ndi.document
     %   document_properties - its properties (a struct)
     %   global_identifiers - table: scheme, value (ORCID, ROR, RRID, DOI, ...)
+    %   summary            - a table, one row per entity (ndi.summary for a cell)
     %   relations          - table of the relations it (or an array of
     %                        entities) takes part in
     %   parents, children  - the entities across a relation, or a path of
@@ -132,6 +133,18 @@ classdef entity
                 value(end+1, 1) = string(v); %#ok<AGROW>
             end
             T = table(scheme, value);
+        end
+
+        function T = summary(obj)
+            % SUMMARY - one table row per entity
+            %
+            % T = SUMMARY(E) for an entity or an array of one class; for a cell
+            % array (what search returns) use ndi.summary. Columns: name,
+            % kind, id; for subjects also type, local_identifier, and one
+            % column per asserted variable (species, strain, ...), inherited
+            % as ndi.subject/statements inherits (several values joined with
+            % '; ').
+            T = ndi.entity.summaryOf(num2cell(obj));
         end
 
         function T = relations(obj, relationName, options)
@@ -494,18 +507,8 @@ classdef entity
         end
 
         function q = anyOf(qs)
-            % ANYOF - the OR of the queries in cell array QS, as a balanced
-            % tree (nested log2(N) deep rather than N)
-            while numel(qs) > 1
-                n = floor(numel(qs) / 2);
-                pairs = cell(1, ceil(numel(qs) / 2));
-                for i = 1:n
-                    pairs{i} = qs{2*i - 1} | qs{2*i};
-                end
-                if mod(numel(qs), 2), pairs{end} = qs{end}; end
-                qs = pairs;
-            end
-            q = qs{1};
+            % ANYOF - the OR of the queries in cell array QS (ndi.v2.anyOf)
+            q = ndi.v2.anyOf(qs);
         end
 
         function T = emptyWalkTable()
@@ -533,6 +536,48 @@ classdef entity
                 obj = ndi.subject.fromDocument(container, doc);
             else
                 obj = ndi.entity(container, doc);
+            end
+        end
+
+        function T = summaryOf(entities)
+            % SUMMARYOF - the summary table of a cell array of entities (see SUMMARY)
+            n = numel(entities);
+            name = strings(n, 1); kind = strings(n, 1); id = strings(n, 1);
+            type = strings(n, 1); local_identifier = strings(n, 1);
+            isSubj = false(n, 1);
+            for i = 1:n
+                e = entities{i};
+                name(i) = string(e.name); kind(i) = string(e.kind); id(i) = string(e.document_id);
+                if isa(e, 'ndi.subject')
+                    isSubj(i) = true;
+                    type(i) = string(e.type); local_identifier(i) = string(e.local_identifier);
+                end
+            end
+            T = table(name, kind, id);
+            if ~any(isSubj), return; end
+            T.type = type; T.local_identifier = local_identifier;
+            container = entities{find(isSubj, 1)}.container_;
+            L = ndi.subject.statementLinks(container, cellstr(id(isSubj)), ...
+                struct('kind', 'assertion', 'filt', struct()), true);
+            cols = containers.Map('KeyType', 'char', 'ValueType', 'any');
+            for k = 1:numel(L.doc)
+                p = ndi.v2.props(L.doc{k});
+                v = ndi.v2.termName(ndi.v2.blockOf(p, 'subject_statement', 'variable', ''));
+                [~, ~, txt] = ndi.v2.statementValue(p);
+                if isempty(v), continue; end
+                if ~isKey(cols, v), cols(v) = containers.Map('KeyType', 'char', 'ValueType', 'any'); end
+                m = cols(v);
+                if isKey(m, L.about{k}), m(L.about{k}) = [m(L.about{k}), {txt}];
+                else, m(L.about{k}) = {txt}; end
+            end
+            vars = sort(keys(cols));
+            for k = 1:numel(vars)
+                m = cols(vars{k});
+                c = strings(n, 1);
+                for i = 1:n
+                    if isKey(m, char(id(i))), c(i) = string(strjoin(unique(m(char(id(i))), 'stable'), '; ')); end
+                end
+                T.(matlab.lang.makeValidName(vars{k})) = c;
             end
         end
 

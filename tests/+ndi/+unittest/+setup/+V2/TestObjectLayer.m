@@ -290,7 +290,9 @@ classdef TestObjectLayer < matlab.unittest.TestCase
             out = evalc('ndi.subject.search(S, ''type'', ''organism'', ''contained_in'', {''manipulation'', {''variable'', ''NGM agar''}}, ''explain'', true);');
             testCase.verifySubstring(out, 'contained_in');
             testCase.verifySubstring(out, 'NGM agar');
-            testCase.verifySubstring(out, 'type is ''organism''');
+            testCase.verifySubstring(out, 'Searching this session for subjects that');
+            testCase.verifySubstring(out, 'are of type organism');
+            testCase.verifySubstring(out, 'had a manipulation with variable NGM agar');
 
             testCase.verifyError(@() ndi.subject.search(S, 'directed_relation', {'name', 'containd_in'}), ...
                 'ndi:subject:search:unknownRelation');
@@ -335,31 +337,108 @@ classdef TestObjectLayer < matlab.unittest.TestCase
 
         function testInheritedFollowsMemberOfAndDistributive(testCase)
             % decision #55: species and strain are stated once, on the
-            % cohort, marked distributive -- they hold of each worm
+            % cohort, marked distributive -- they hold of each worm, and are
+            % read that way by default
             w = testCase.subject('concentration_worm0121');
-            own = w.assertions();
+            own = w.assertions('inherited', false);
             testCase.verifyFalse(any(own.variable == "species"), 'nothing is stated on the worm itself');
             testCase.verifyTrue(all(own.stated_on == "concentration_worm0121"));
-            T = w.assertions('Inherited', true);
-            st = w.statements('Inherited', true);
-            mine = w.statements();
-            testCase.verifyGreaterThanOrEqual(numel(st), numel(mine), 'its own statements are kept');
+            T = w.assertions();
+            st = w.statements();
+            mine = w.statements('inherited', false);
+            testCase.verifyTrue(all(cellfun(@(x) strcmp(x.via(), 'own'), mine)));
+            testCase.verifyEqual(sum(cellfun(@(x) strcmp(x.via(), 'own'), st)), numel(mine), ...
+                'its own statements are kept');
             if ndi.setup.V2.schemaHasField('subject_statement', 'distributive')
                 sp = T(T.variable == "species", :);
                 testCase.verifyEqual(height(sp), 1);
                 testCase.verifyEqual(sp.node, "NCBITaxon:6239");
                 testCase.verifyEqual(sp.stated_on, "concentration_assayPlate0012_worms");
+                testCase.verifyEqual(sp.via, "member_of");
                 testCase.verifyEqual(T.value(T.variable == "strain"), "N2");
-                extra = st(numel(mine)+1:end);
+                extra = st(cellfun(@(x) ~strcmp(x.via(), 'own'), st));
                 testCase.verifyNotEmpty(extra);
                 testCase.verifyTrue(all(cellfun(@(x) x.distributive(), extra)), 'only distributive ones');
                 testCase.verifyTrue(all(cellfun(@(x) strcmp(x.subject().local_identifier, ...
                     'concentration_assayPlate0012_worms'), extra)), 'each says where it was stated');
+                testCase.verifyTrue(all(cellfun(@(x) strcmp(x.about(), w.document_id), st)), ...
+                    'each says which subject it was asked for');
             else
                 testCase.verifyEqual(numel(st), numel(mine), 'no distributive flag in this schema: nothing inherits');
             end
             % contained_in is not followed: the plate's temperature is not the worm's
-            testCase.verifyEmpty(w.statements('Inherited', true, 'Class', 'temperature_manipulation'));
+            testCase.verifyEmpty(w.statements('Class', 'temperature_manipulation'));
+            testCase.verifyEmpty(w.statements('manipulation', {'variable', 'ambient temperature'}));
+        end
+
+        function testStatementsOfManySubjectsAndSummaries(testCase)
+            S = testCase.Session;
+            ws = ndi.subject.search(S, 'type', 'organism', 'contained_in', ...
+                testCase.subject('concentration_assayPlate0012'));
+            W = [ws{:}];
+            testCase.assertNumElements(W, 2);
+            st = statements(W, 'assertion');
+            about = cellfun(@(x) x.about(), st, 'UniformOutput', false);
+            testCase.verifyEqual(sort(unique(about)), sort({W.document_id}), 'one set per worm');
+            one = W(1).statements('assertion');
+            testCase.verifyEqual(sum(strcmp(about, W(1).document_id)), numel(one), ...
+                'the same as asking one worm at a time');
+            A = assertions(W);
+            testCase.verifyEqual(A.Properties.VariableNames{1}, 'subject');
+            testCase.verifyEqual(sort(unique(A.subject)), sort(string({W.local_identifier}')));
+
+            T = ndi.summary(ws);
+            testCase.verifyEqual(height(T), 2);
+            testCase.verifyTrue(all(ismember({'name', 'kind', 'id', 'type', 'local_identifier'}, ...
+                T.Properties.VariableNames)));
+            if ismember('strain', T.Properties.VariableNames)
+                testCase.verifyEqual(T.strain, ["N2"; "N2"], 'the cohort''s strain, inherited');
+            end
+            testCase.verifyEqual(W(1).summary().id, string(W(1).document_id), 'one object: one row');
+
+            U = ndi.summary(statements(W));
+            testCase.verifyEqual(height(U), numel(statements(W)));
+            testCase.verifyTrue(all(ismember({'subject', 'kind', 'class', 'variable', 'method', 'value', ...
+                'unit', 'start', 'end', 'stated_on', 'via', 'id'}, U.Properties.VariableNames)));
+            r = U(U.variable == "strain", :);
+            if height(r) > 0
+                testCase.verifyEqual(unique(r.via), "member_of");
+                testCase.verifyEqual(unique(r.stated_on), "Worms on Assay Plate 0012");
+            end
+            m = U(U.kind == "manipulation" & U.via == "member_of", :);
+            testCase.verifyTrue(all(~isnat(m.start) | m.value ~= ""), 'transfers have times or values');
+            testCase.verifyError(@() ndi.summary([ws, statements(W)]), 'ndi:summary:mixed');
+            testCase.verifyEqual(height(ndi.summary({})), 0);
+        end
+
+        function testStrictAndTheMessages(testCase)
+            S = testCase.Session;
+            testCase.verifyError(@() ndi.subject.search(S, 'stran', 'N2'), 'ndi:subject:search:unknownVariable');
+            try
+                ndi.subject.search(S, 'stran', 'N2');
+            catch err
+                testCase.verifySubstring(err.message, 'No subject in this session has a property ''stran''.');
+                testCase.verifySubstring(err.message, 'Did you mean ''strain''?');
+                testCase.verifySubstring(err.message, 'Properties in this session: ');
+                testCase.verifySubstring(err.message, 'local_identifier');
+            end
+            testCase.verifyWarning(@() ndi.subject.search(S, 'species', 'Caenorhabdiits elegans'), ...
+                'ndi:subject:search:noSuchValue');
+            b = warning('off', 'backtrace');
+            restore = onCleanup(@() warning(b));
+            msg = evalc('ndi.subject.search(S, ''species'', ''Caenorhabdiits elegans'');');
+            testCase.verifySubstring(msg, 'Did you mean ''Caenorhabditis elegans''?');
+            testCase.verifySubstring(msg, 'Species in this session: ');
+            % strict false: nothing, quietly
+            testCase.verifyEmpty(testCase.verifyWarningFree(@() ...
+                ndi.subject.search(S, 'stran', 'N2', 'strict', false)));
+            testCase.verifyEmpty(testCase.verifyWarningFree(@() ...
+                ndi.subject.search(S, 'species', 'Caenorhabdiits elegans', 'strict', false)));
+            testCase.verifyEmpty(testCase.verifyWarningFree(@() ...
+                ndi.subject.search(S, 'type', 'organism', 'contained_in', {'stran', 'N2'}, 'strict', false)), ...
+                'a nested description is strict as the outer search is');
+            testCase.verifyEqual(ndi.v2.closest('stran', {'strain', 'species'}), 'strain');
+            testCase.verifyEqual(ndi.v2.closest('zzz', {'strain', 'species'}), '');
         end
 
         function testCalculationValueFromItsBody(testCase)

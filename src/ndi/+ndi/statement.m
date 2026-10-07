@@ -40,6 +40,8 @@ classdef statement
     %   conditions     - table of the conditions it holds under
     %   notes          - text
     %   bodies         - the data-body documents holding the value
+    %   about, via     - the subject it was asked for, and how it holds of it
+    %   summary        - a table, one row per statement (ndi.summary for a cell)
     %   fromDocument, search - (static) make statements
     %
     % See also ndi.subject, ndi.data_type, ndi.interaction.
@@ -47,6 +49,8 @@ classdef statement
     properties (SetAccess = protected, GetAccess = public, Hidden)
         statement_document_ = []   % the ndi.document this statement reads
         container_ = []            % the ndi.session or ndi.dataset it was read from
+        about_ = ''                % the subject it was asked for (ndi.subject/statements)
+        via_ = ''                  % how it holds of that subject ('own', 'member_of', ...)
     end
 
     methods
@@ -59,6 +63,55 @@ classdef statement
             end
             obj.container_ = container;
             obj.statement_document_ = doc;
+        end
+
+        function id = about(obj)
+            % ABOUT - the document id of the subject this statement was asked for
+            %
+            % A statement read through ndi.subject/statements is about the
+            % subject it was asked for, which may not be its own subject (a
+            % cohort's strain, read for one of its worms). '' when the
+            % statement was not read for a subject; its own subject's id is
+            % then what it is about (see VIA).
+            id = obj.about_;
+            if isempty(id)
+                ids = ndi.v2.edgeIds(obj.document_properties(), 'subject_id');
+                if ~isempty(ids), id = ids{1}; end
+            end
+        end
+
+        function v = via(obj)
+            % VIA - how the statement holds of the subject it was asked for
+            %
+            % 'own' (stated about it), 'member_of' (stated about a group it
+            % belongs to, distributively), 'part_of', 'sample_of', ... (an
+            % assertion about a whole it is part or a sample of), or a path
+            % such as 'member_of > part_of'.
+            v = obj.via_;
+            if isempty(v), v = 'own'; end
+        end
+
+        function T = summary(obj)
+            % SUMMARY - one table row per statement
+            %
+            % T = SUMMARY(S) for a statement or an array of one class; for a
+            % cell array of statements of any kind use ndi.summary. Columns:
+            %   subject     the subject it is about (see ABOUT)
+            %   kind        assertion, observation, manipulation, calculation
+            %   class       the document class, e.g. 'temperature_manipulation'
+            %   variable, method, value, unit
+            %   start, end  its time (UTC; NaT when it has none or it cannot
+            %               be resolved); the first of several references
+            %   stated_on   the subject it was stated about
+            %   via         how it holds of SUBJECT (see VIA)
+            %   id          the statement document's id
+            T = ndi.statement.summaryOf(num2cell(obj));
+        end
+
+        function obj = withContext(obj, aboutId, via)
+            % WITHCONTEXT - (internal) the same statement, read for subject ABOUTID by VIA
+            obj.about_ = char(aboutId);
+            obj.via_ = char(via);
         end
 
         function d = document(obj)
@@ -240,6 +293,76 @@ classdef statement
     end
 
     methods (Static)
+        function T = summaryOf(statements)
+            % SUMMARYOF - the summary table of a cell array of statements (see SUMMARY)
+            n = numel(statements);
+            subject = strings(n, 1); kind = strings(n, 1); class = strings(n, 1);
+            variable = strings(n, 1); method = strings(n, 1); value = strings(n, 1);
+            unit = strings(n, 1); stated_on = strings(n, 1); via = strings(n, 1); id = strings(n, 1);
+            start = NaT(n, 1, 'TimeZone', 'UTC'); stop = NaT(n, 1, 'TimeZone', 'UTC');
+            if n == 0
+                T = table(subject, kind, class, variable, method, value, unit, start, stop, stated_on, via, id, ...
+                    'VariableNames', {'subject', 'kind', 'class', 'variable', 'method', 'value', 'unit', ...
+                    'start', 'end', 'stated_on', 'via', 'id'});
+                return;
+            end
+            container = statements{1}.container_;
+            cache = containers.Map('KeyType', 'char', 'ValueType', 'any');
+            refs = cell(n, 1); own = cell(n, 1);
+            for i = 1:n
+                st = statements{i};
+                p = st.document_properties();
+                chain = ndi.v2.classChain(p);
+                kinds = {'subject_assertion', 'subject_observation', 'subject_manipulation', 'subject_calculation'};
+                k = find(ismember(kinds, chain), 1);
+                if ~isempty(k), kind(i) = string(extractAfter(kinds{k}, 'subject_')); else, kind(i) = "statement"; end
+                class(i) = string(p.document_class.class_name);
+                variable(i) = string(ndi.v2.termName(ndi.v2.blockOf(p, 'subject_statement', 'variable', '')));
+                method(i) = string(ndi.v2.termName(ndi.v2.blockOf(p, 'subject_interaction', 'method', '')));
+                [vk, ~, vt, vu] = ndi.v2.statementValue(p);
+                if strcmp(vk, 'none') && logical(firstOr(ndi.v2.blockOf(p, 'data_type', 'data_body', false), false))
+                    vt = '(data body)';
+                end
+                value(i) = string(vt); unit(i) = string(vu);
+                o = ndi.v2.edgeIds(p, 'subject_id');
+                if isempty(o), o = {''}; end
+                own{i} = o{1};
+                via(i) = string(st.via());
+                id(i) = string(p.base.id);
+                refs{i} = ndi.v2.edgeIds(p, 'time_reference_id');
+            end
+            allRefs = unique([refs{:}]);
+            if ~isempty(allRefs)
+                times = ndi.v2.timesOf(container, allRefs, cache);
+                for i = 1:n
+                    for r = 1:numel(refs{i})
+                        if ~isKey(times, refs{i}{r}), continue; end
+                        t = times(refs{i}{r});
+                        if ~isnat(t.start)
+                            start(i) = t.start; stop(i) = t.end;
+                            break;
+                        end
+                    end
+                end
+            end
+            aboutIds = cellfun(@(s) s.about(), statements, 'UniformOutput', false);
+            ids = unique([reshape(aboutIds, 1, []), reshape(own, 1, [])]);
+            ids = ids(~cellfun(@isempty, ids));
+            names = containers.Map('KeyType', 'char', 'ValueType', 'char');
+            if ~isempty(ids)
+                ents = ndi.entity.fetchMany(container, ids);
+                for e = 1:numel(ents), names(ents{e}.document_id) = char(ents{e}.name); end
+            end
+            nameOf = @(x) string(ifKey(names, x));
+            for i = 1:n
+                subject(i) = nameOf(aboutIds{i});
+                stated_on(i) = nameOf(own{i});
+            end
+            T = table(subject, kind, class, variable, method, value, unit, start, stop, stated_on, via, id, ...
+                'VariableNames', {'subject', 'kind', 'class', 'variable', 'method', 'value', 'unit', ...
+                'start', 'end', 'stated_on', 'via', 'id'});
+        end
+
         function obj = fromDocument(container, doc)
             % FROMDOCUMENT - the right statement object for a statement document
             %
@@ -324,4 +447,9 @@ v = default;
 if isstruct(s) && isfield(s, name) && ~isempty(s(1).(name))
     v = s(1).(name);
 end
+end
+
+function v = ifKey(m, k)
+v = '';
+if ~isempty(k) && isKey(m, k), v = m(k); end
 end
