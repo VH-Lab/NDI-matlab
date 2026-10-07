@@ -308,11 +308,11 @@ classdef statement
             unit = strings(n, 1); stated_on = strings(n, 1); via = strings(n, 1); id = strings(n, 1);
             timezone = strings(n, 1);
             start = NaT(n, 1, 'TimeZone', 'UTC'); stop = NaT(n, 1, 'TimeZone', 'UTC');
-            names = {'subject', 'kind', 'class', 'variable', 'variable_node', 'method', 'method_node', ...
+            columns = {'subject', 'kind', 'class', 'variable', 'variable_node', 'method', 'method_node', ...
                 'value', 'value_node', 'unit', 'start', 'end', 'timezone', 'stated_on', 'via', 'id'};
             if n == 0
                 T = table(subject, kind, class, variable, variable_node, method, method_node, value, ...
-                    value_node, unit, start, stop, timezone, stated_on, via, id, 'VariableNames', names);
+                    value_node, unit, start, stop, timezone, stated_on, via, id, 'VariableNames', columns);
                 return;
             end
             container = statements{1}.container_;
@@ -379,7 +379,7 @@ classdef statement
                 end
             end
             T = table(subject, kind, class, variable, variable_node, method, method_node, value, ...
-                value_node, unit, start, stop, timezone, stated_on, via, id, 'VariableNames', names);
+                value_node, unit, start, stop, timezone, stated_on, via, id, 'VariableNames', columns);
         end
 
         function obj = fromDocument(container, doc)

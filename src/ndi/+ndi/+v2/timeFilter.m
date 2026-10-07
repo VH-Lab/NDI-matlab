@@ -17,7 +17,8 @@ function [keep, info] = timeFilter(container, docs, filt, tolerant, cache)
 %
 %   A time t is a datetime (with a zone, used as is; without one, read in
 %   the reference's own zone) or text: '2023-11-16T14:00', '2023-11-16
-%   14:00', '2023-11-16'; text ending in Z or an offset (+08:00) is that
+%   14:00', '2023-11-16' (MATLAB's 'now', 'today', 'yesterday' and
+%   'tomorrow' work too); text ending in Z or an offset (+08:00) is that
 %   zone, other text is read in the zone the lab wrote the reference in
 %   (its source_timezone). A reference whose zone is not recorded cannot be
 %   compared with such text, and is counted, not matched.

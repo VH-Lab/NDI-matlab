@@ -353,8 +353,10 @@ classdef TestObjectLayer < matlab.unittest.TestCase
             testCase.verifyEmpty(deprived({'duration', '>3h'}), 'exactly 3 h as stated');
             testCase.verifyEqual(sort(deprived({'duration', '>3h'}, 'tolerant', true)), sort(fd), ...
                 'the hand-written start could be a minute early');
+            warning('on', 'ndi:subject:search:noSuchTime');
             testCase.verifyWarning(@() ndi.subject.search(S, 'manipulation', ...
                 {'variable', 'food availability', 'duration', '>4h'}), 'ndi:subject:search:noSuchTime');
+            warning('off', 'ndi:subject:search:noSuchTime');
 
             % a time known only as "before the seeding" (a plate's pour) is a bound
             plate = 'concentration_assayPlate0012';
@@ -366,7 +368,7 @@ classdef TestObjectLayer < matlab.unittest.TestCase
                 '{''variable'', ''food availability'', ''duration'', ''>=3h''}, ''explain'', true);']);
             testCase.verifySubstring(out, 'lasting >=3h');
             testCase.verifyError(@() ndi.subject.search(S, 'directed_relation', ...
-                {'name', 'contained_in', 'at', 'yesterday'}), 'ndi:v2:timeFilter:badTime');
+                {'name', 'contained_in', 'at', 'sometime after lunch'}), 'ndi:v2:timeFilter:badTime');
             testCase.verifyError(@() ndi.subject.search(S, 'manipulation', ...
                 {'variable', 'food availability', 'duration', '3 fortnights'}), 'ndi:v2:timeFilter:badDuration');
         end
@@ -491,9 +493,16 @@ classdef TestObjectLayer < matlab.unittest.TestCase
             end
             testCase.verifyWarning(@() ndi.subject.search(S, 'species', 'Caenorhabdiits elegans'), ...
                 'ndi:subject:search:noSuchValue');
-            b = warning('off', 'backtrace');
+            % the message, whole: as an error (evalc wraps it at the console width)
+            b = warning('error', 'ndi:subject:search:noSuchValue'); %#ok<CTPCT>
             restore = onCleanup(@() warning(b));
-            msg = evalc('ndi.subject.search(S, ''species'', ''Caenorhabdiits elegans'');');
+            msg = '';
+            try
+                ndi.subject.search(S, 'species', 'Caenorhabdiits elegans');
+            catch err
+                msg = err.message;
+            end
+            clear restore
             testCase.verifySubstring(msg, 'Did you mean ''Caenorhabditis elegans''?');
             testCase.verifySubstring(msg, 'Species in this session: ');
             % strict false: nothing, quietly
