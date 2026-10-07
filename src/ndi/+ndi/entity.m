@@ -192,10 +192,12 @@ classdef entity
             %
             % RELATIONNAME may be a PATH, a cell array of relation names
             % followed in turn, and OBJ may be an array of entities (of one
-            % class; make it with [c{:}] from a cell array):
+            % class). From a cell array C, call it as a function --
+            % PARENTS([C{:}], ...) -- since [C{:}].parents(...) is not
+            % valid MATLAB:
             %
             %   w.parents({'member_of', 'contained_in'})        % a worm's plates
-            %   [worms{:}].parents({'member_of', 'contained_in'})
+            %   parents([worms{:}], {'member_of', 'contained_in'})
             %
             % Each step is one search over every entity reached so far, not
             % one per entity. Each entity is returned once.
@@ -217,7 +219,7 @@ classdef entity
             % RELATIONNAME may be a path and OBJ an array:
             %
             %   plate.children({'contained_in', 'member_of'})   % the worms that were on a plate
-            %   [plates{:}].children({'contained_in', 'member_of'}, 'Table', true)
+            %   children([plates{:}], {'contained_in', 'member_of'}, 'Table', true)
             arguments
                 obj
                 path {mustBeText}
@@ -235,10 +237,10 @@ classdef entity
             % returns the nearest entities whose subject type is TYPE --
             % without knowing which relations lead there:
             %
-            %   [plates{:}].descendants('Type', 'organism')   % the worms that were on them
+            %   descendants([plates{:}], 'Type', 'organism')  % the worms that were on them
             %
-            % OBJ may be an array of entities (of one class; [c{:}] from a
-            % cell array). Options:
+            % OBJ may be an array of entities (of one class; from a cell
+            % array C, call DESCENDANTS([C{:}], ...) as above). Options:
             %   'Type'      a subject type: 'organism', 'group', 'material',
             %               'culture', ... (ndi.subject's `type`)
             %   'Kind'      a document class the entity is (isa): 'subject',

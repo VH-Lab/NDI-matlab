@@ -104,10 +104,10 @@ classdef TestObjectLayer < matlab.unittest.TestCase
             testCase.verifyEqual(sort(local(worms)), {'concentration_worm0121', 'concentration_worm0122'});
 
             b = testCase.subject('concentration_0001_acclimationPlate0001');
-            both = [a b].children({'contained_in', 'member_of'});
+            both = children([a b], {'contained_in', 'member_of'});
             testCase.verifyEqual(sort(local(both)), {'concentration_worm0121', 'concentration_worm0122'}, ...
                 'a worm on both plates is returned once');
-            T = [a b].children({'contained_in', 'member_of'}, 'Table', true);
+            T = children([a b], {'contained_in', 'member_of'}, 'Table', true);
             testCase.verifyEqual(height(T), 4, 'one row per (plate, worm)');
             testCase.verifyEqual(sort(unique(T.start_name)), sort(string({a.name; b.name})));
             testCase.verifyEmpty(a.children({'member_of', 'member_of'}), 'nothing at the end of that path');
