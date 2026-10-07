@@ -250,71 +250,74 @@ classdef subject < ndi.ido & ndi.documentservice & ndi.entity
             obj.entity_document_ = doc;
         end % fromDocument()
 
-        function s = find(container, options)
-            % FIND - the subjects in a session or dataset
+        function s = find(container, varargin)
+            % FIND - the subjects in a session or dataset, by what is true of them
             %
-            % S = ndi.subject.find(CONTAINER, ...) returns a cell array of
-            % ndi.subject. Every subject is returned unless a filter says
-            % otherwise, instrument subjects included (V2_Object_Layer.md, Q2).
-            % Options:
-            %   'Type'             e.g. 'organism', 'group', 'material'
-            %   'LocalIdentifier'  exactly this local identifier
-            %   'Strain'           what is asserted of the subject's strain:
-            %                      a name ('N2') or an ontology node
-            %   'Asserted'         {VARIABLE, VALUE}: any term assertion, e.g.
-            %                      {'species', 'NCBITaxon:6239'}; each may be
-            %                      a name or a node
-            %   'Inherited'        default TRUE: a subject also matches when
-            %                      the assertion was stated on a group it is
-            %                      a member of (member_of, groups of groups
-            %                      too) and marked distributive -- as the
-            %                      Haley import states strain on each cohort.
-            %                      false: only assertions about the subject
-            %                      itself.
+            % S = ndi.subject.find(CONTAINER, PROPERTY, VALUE, ...) returns a
+            % cell array of ndi.subject: those for which every PROPERTY has
+            % VALUE. With no pairs, every subject (instruments included,
+            % V2_Object_Layer.md, Q2).
             %
-            %   worms = ndi.subject.find(ds, 'Strain', 'N2', 'Type', 'organism');
+            %   ndi.subject.find(ds, 'type', 'organism', ...
+            %       'species', 'Caenorhabditis elegans', 'strain', 'N2')
             %
-            % The group an assertion was stated on matches too (it is a
-            % subject the assertion is about); 'Type' leaves it out.
-            arguments
-                container
-                options.Type (1,:) char = ''
-                options.LocalIdentifier (1,:) char = ''
-                options.Strain (1,:) char = ''
-                options.Asserted cell = {}
-                options.Inherited (1,1) logical = true
-            end
-            asserted = options.Asserted;
-            if ~isempty(options.Strain)
-                if ~isempty(asserted)
-                    error('ndi:subject:find:twoAssertions', 'Give ''Strain'' or ''Asserted'', not both.');
+            % PROPERTY is one of the subject's own fields -- 'type'
+            % ('organism', 'group', 'material', ...), 'name',
+            % 'local_identifier' -- or any variable asserted of subjects
+            % ('species', 'strain', 'inclusion in analysis', ...), by its
+            % name or its ontology node. Property names ignore case.
+            %
+            % VALUE matches a term's name (ignoring case) or its node
+            % (exactly: 'NCBITaxon:6239'). A cell array means any of them
+            % ({'N2', 'CB4856'}); '*' is a wildcard ('*elegans*', 'CB*'),
+            % '\*' a literal star. Different properties must all hold.
+            %
+            % 'inherited' (default true): an assertion stated on a group
+            % holds of its members when it is marked distributive, all the
+            % way down member_of -- so it does not matter whether a strain
+            % was stated on a worm or on its cohort. false: only what was
+            % stated about the subject itself (on the Haley data, strain is
+            % stated on cohorts, so the cohorts match and no worm does).
+            % The group an assertion was stated on always matches too;
+            % 'type', 'organism' leaves it out.
+            %
+            % A variable no assertion uses is an error naming the variables
+            % that are; values of which none matches any assertion are a
+            % warning naming the values that are, since "none" may be the
+            % answer.
+            [own, asserted, inherited] = ndi.subject.findPairs(varargin);
+            ids = [];                       % [] = not narrowed yet; {} = nothing
+            for k = 1:size(asserted, 1)
+                these = ndi.subject.assertedIds(container, asserted{k, 1}, asserted{k, 2}, inherited);
+                if isempty(ids) && ~iscell(ids)
+                    ids = these;
+                else
+                    ids = ids(ismember(ids, these));
                 end
-                asserted = {'strain', options.Strain};
+                if isempty(ids), s = {}; return; end
             end
-            if ~isempty(asserted)
-                if numel(asserted) ~= 2
-                    error('ndi:subject:find:badAsserted', '''Asserted'' is {VARIABLE, VALUE}.');
-                end
-                ids = ndi.subject.assertedIds(container, char(asserted{1}), char(asserted{2}), ...
-                    options.Inherited);
+            if iscell(ids)
                 s = ndi.entity.fetchMany(container, ids);
             else
                 q = ndi.query('', 'isa', 'subject', '');
-                if ~isempty(options.LocalIdentifier)
-                    q = q & ndi.query('subject.local_identifier', 'exact_string', options.LocalIdentifier, '');
+                lid = own(strcmp(own(:, 1), 'local_identifier'), 2);
+                if isscalar(lid) && ischar(lid{1}) && ~ndi.subject.hasWildcard(lid{1})
+                    q = q & ndi.query('subject.local_identifier', 'exact_string_anycase', lid{1}, '');
                 end
                 docs = container.database_search(q);
                 s = cellfun(@(d) ndi.subject.fromDocument(container, d), docs, 'UniformOutput', false);
             end
-            keep = true(1, numel(s));
-            for i = 1:numel(s)
-                x = s{i};
-                if ~isa(x, 'ndi.subject')
-                    keep(i) = false;
-                elseif ~isempty(options.Type) && ~strcmp(x.type, options.Type)
-                    keep(i) = false;
-                elseif ~isempty(options.LocalIdentifier) && ~strcmp(x.local_identifier, options.LocalIdentifier)
-                    keep(i) = false;
+            s = reshape(s, 1, []);
+            keep = cellfun(@(x) isa(x, 'ndi.subject'), s);
+            for k = 1:size(own, 1)
+                for i = find(keep)
+                    x = s{i};
+                    switch own{k, 1}
+                        case 'type', v = x.type;
+                        case 'name', v = x.name;
+                        case 'local_identifier', v = x.local_identifier;
+                    end
+                    keep(i) = ndi.subject.valueMatches(struct('name', v, 'node', ''), own{k, 2});
                 end
             end
             s = reshape(s(keep), 1, []);
@@ -389,22 +392,68 @@ classdef subject < ndi.ido & ndi.documentservice & ndi.entity
     end % static methods
 
     methods (Static, Access = protected)
-        function ids = assertedIds(container, variable, value, inherited)
-            % ASSERTEDIDS - ids of the subjects a term assertion VARIABLE = VALUE holds of
+        function [own, asserted, inherited] = findPairs(args)
+            % FINDPAIRS - split find's PROPERTY, VALUE pairs into the subject's
+            % own fields, asserted variables, and the 'inherited' switch
+            if mod(numel(args), 2)
+                error('ndi:subject:find:pairs', 'ndi.subject.find takes PROPERTY, VALUE pairs.');
+            end
+            own = cell(0, 2); asserted = cell(0, 2); inherited = true;
+            for k = 1:2:numel(args)
+                p = args{k};
+                if ~(ischar(p) || (isstring(p) && isscalar(p)))
+                    error('ndi:subject:find:pairs', 'A property name must be text (argument %d).', k + 1);
+                end
+                p = char(p);
+                v = args{k + 1};
+                if isstring(v), v = cellstr(v); if isscalar(v), v = v{1}; end, end
+                if ~(ischar(v) || iscellstr(v) || (islogical(v) || isnumeric(v)))
+                    error('ndi:subject:find:value', 'The value of ''%s'' must be text or a cell array of text.', p);
+                end
+                switch lower(strrep(p, '_', ''))
+                    case 'inherited'
+                        inherited = logical(v);
+                    case 'type'
+                        own(end+1, :) = {'type', v}; %#ok<AGROW>
+                    case 'name'
+                        own(end+1, :) = {'name', v}; %#ok<AGROW>
+                    case 'localidentifier'
+                        own(end+1, :) = {'local_identifier', v}; %#ok<AGROW>
+                    otherwise
+                        asserted(end+1, :) = {p, v}; %#ok<AGROW>
+                end
+            end
+        end
+
+        function ids = assertedIds(container, variable, values, inherited)
+            % ASSERTEDIDS - ids of the subjects of which VARIABLE is one of VALUES
             %
-            % One search for the assertions (VARIABLE and VALUE each matched
-            % as a name or a node); their subjects; and, when INHERITED,
-            % every member (member_of, all the way down) of a subject whose
-            % assertion is marked distributive.
-            either = @(path, v) ndi.query([path '.name'], 'exact_string', v, '') | ...
+            % One search for the term assertions (VARIABLE by name, any case,
+            % or node; VALUES likewise, or filtered here when one has a
+            % wildcard); their subjects; and, when INHERITED, every member
+            % (member_of, all the way down) of a subject whose assertion is
+            % distributive.
+            values = cellstr(values);
+            term = @(path, v) ndi.query([path '.name'], 'exact_string_anycase', v, '') | ...
                 ndi.query([path '.node'], 'exact_string', v, '');
-            q = ndi.query('', 'isa', 'term_assertion', '') & ...
-                either('subject_statement.variable', variable) & either('term.value', value);
+            qVar = ndi.query('', 'isa', 'term_assertion', '') & term('subject_statement.variable', variable);
+            if any(cellfun(@ndi.subject.hasWildcard, values))
+                q = qVar;                   % wildcards are matched below
+            else
+                qv = term('term.value', values{1});
+                for k = 2:numel(values), qv = qv | term('term.value', values{k}); end
+                q = qVar & qv;
+            end
             docs = container.database_search(q);
-            ids = {};
-            groups = {};
+            ids = {}; groups = {};
+            matched = false(1, numel(values));
             for i = 1:numel(docs)
                 p = ndi.v2.props(docs{i});
+                t = ndi.v2.blockOf(p, 'term', 'value', struct('name', '', 'node', ''));
+                if iscell(t), t = t{1}; end
+                hit = cellfun(@(v) ndi.subject.valueMatches(t, v), values);
+                if ~any(hit), continue; end
+                matched = matched | hit;
                 sid = ndi.v2.edgeIds(p, 'subject_id');
                 ids = [ids, sid]; %#ok<AGROW>
                 d = ndi.v2.blockOf(p, 'subject_statement', 'distributive', false);
@@ -412,18 +461,71 @@ classdef subject < ndi.ido & ndi.documentservice & ndi.entity
                     groups = [groups, sid]; %#ok<AGROW>
                 end
             end
+            if ~any(matched)                % one of several missing is not news
+                ndi.subject.reportUnmatched(container, qVar, variable, values);
+            end
             ids = unique(ids, 'stable');
             groups = unique(groups, 'stable');
-            if isempty(groups)
-                return;
-            end
+            if isempty(groups), return; end
             G = ndi.entity.fetchMany(container, groups);
             G = G(cellfun(@(x) isa(x, 'ndi.subject'), G));
-            if isempty(G)
-                return;
-            end
+            if isempty(G), return; end
             m = descendants([G{:}], 'Relation', 'member_of');
             ids = unique([ids, cellfun(@(x) x.document_id, m, 'UniformOutput', false)], 'stable');
+        end
+
+        function reportUnmatched(container, qVar, variable, values)
+            % REPORTUNMATCHED - an unknown variable is an error, a value no
+            % assertion has is a warning; each names what there is
+            all_ = container.database_search(qVar);
+            if isempty(all_)
+                docs = container.database_search(ndi.query('', 'isa', 'term_assertion', ''));
+                names = unique(cellfun(@(d) ndi.v2.termName(ndi.v2.blockOf(ndi.v2.props(d), ...
+                    'subject_statement', 'variable', '')), docs, 'UniformOutput', false));
+                error('ndi:subject:find:unknownVariable', ...
+                    'No subject has an assertion about ''%s''. Asserted here: %s.', ...
+                    variable, strjoin(names, ', '));
+            end
+            have = unique(cellfun(@(d) ndi.v2.termName(ndi.v2.blockOf(ndi.v2.props(d), ...
+                'term', 'value', '')), all_, 'UniformOutput', false));
+            warning('ndi:subject:find:noSuchValue', ...
+                'No assertion has %s = %s. Values of %s here: %s.', variable, ...
+                strjoin(cellfun(@(v) ['''' v ''''], values, 'UniformOutput', false), ' or '), ...
+                variable, strjoin(have, ', '));
+        end
+
+        function tf = hasWildcard(v)
+            % HASWILDCARD - does V carry a '*' that is not escaped as '\*'
+            tf = ischar(v) && ~isempty(regexp(v, '(?<!\\)\*', 'once'));
+        end
+
+        function tf = valueMatches(t, v)
+            % VALUEMATCHES - does term T ({name, node}) match the pattern V
+            %
+            % V is matched against the name ignoring case and against the
+            % node exactly; '*' is a wildcard, '\*' a literal star.
+            if iscell(v)
+                tf = any(cellfun(@(x) ndi.subject.valueMatches(t, x), v));
+                return;
+            end
+            name = ''; node = '';
+            if isstruct(t)
+                if isfield(t, 'name'), name = char(t.name); end
+                if isfield(t, 'node'), node = char(t.node); end
+            elseif ischar(t) || isstring(t)
+                name = char(t);
+            end
+            v = char(v);
+            if ~ndi.subject.hasWildcard(v)
+                v = strrep(v, '\*', '*');
+                tf = strcmpi(name, v) || (~isempty(node) && strcmp(node, v));
+                return;
+            end
+            parts = regexp(v, '(?<!\\)\*', 'split');
+            parts = cellfun(@(x) regexptranslate('escape', strrep(x, '\*', '*')), parts, 'UniformOutput', false);
+            re = ['^' strjoin(parts, '.*') '$'];
+            tf = ~isempty(regexp(name, re, 'once', 'ignorecase')) || ...
+                (~isempty(node) && ~isempty(regexp(node, re, 'once')));
         end
     end
 end % classdef ndi.subject

@@ -175,8 +175,7 @@ that take the session or dataset as their first argument:
 
 | call | returns |
 |---|---|
-| `ndi.subject.find(S, 'Type', t, 'LocalIdentifier', l)` | subjects (instruments included unless filtered: answers Q2) |
-| `ndi.subject.find(S, 'Strain', 'N2')`, `ndi.subject.find(S, 'Asserted', {'species', 'NCBITaxon:6239'})` | subjects a term assertion holds of, the value (and variable) matched as a name or a node; `'Inherited'` (default true) adds the members, all the way down `member_of`, of a group whose assertion is `distributive`, so the caller need not know whether strain was stated on the worm or its cohort |
+| `ndi.subject.find(S, 'type', 'organism', 'species', 'Caenorhabditis elegans', 'strain', {'N2', 'CB*'})` | subjects for which every PROPERTY has VALUE (no pairs: every subject, instruments included: answers Q2). A property is one of the subject's own fields (`type`, `name`, `local_identifier`) or any asserted variable, by name or node; names ignore case. A value matches a term's name ignoring case or its node exactly; a cell array is any of; `*` is a wildcard. `'inherited'` (default true) adds the members, all the way down `member_of`, of a group whose assertion is `distributive`, so a caller need not know whether strain was stated on a worm or its cohort. An unknown variable is an error; values matching nothing, a warning |
 | `ndi.statement.find(S, 'Subject', s, 'Variable', v, 'Class', c, 'Method', m)` | statements |
 | `ndi.entity.find(S, kind)` | entities of a kind |
 | `ndi.entity.fromDocument(S, doc)`, `ndi.statement.fromDocument(S, doc)` | the object for one document |

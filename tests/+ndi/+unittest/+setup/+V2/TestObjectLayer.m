@@ -168,35 +168,50 @@ classdef TestObjectLayer < matlab.unittest.TestCase
             testCase.verifyEmpty(w.descendants('Type', 'organism'), 'nothing points to a worm');
         end
 
-        function testFindByStrainWhereverItWasStated(testCase)
-            % strain is stated on each cohort, distributive (decision #55):
-            % a search by strain finds the worms without knowing that
+        function testFindByWhatIsTrueOfASubject(testCase)
+            % strain and species are stated on each cohort, distributive
+            % (decision #55): a search finds the worms without knowing that
             S = testCase.Session;
-            w = ndi.subject.find(S, 'Strain', 'N2', 'Type', 'organism');
+            w = ndi.subject.find(S, 'type', 'organism', 'species', 'Caenorhabditis elegans', 'strain', 'N2');
             names = local(w);
             testCase.verifyTrue(all(ismember({'concentration_worm0121', 'concentration_worm0122'}, names)), ...
                 strjoin(names, ', '));
             testCase.verifyTrue(all(cellfun(@(x) strcmp(x.type, 'organism'), w)));
-            all_ = local(ndi.subject.find(S, 'Strain', 'N2'));
-            testCase.verifyTrue(ismember('concentration_assayPlate0012_worms', all_), ...
-                'the cohort it was stated on matches too');
-            testCase.verifyEmpty(ndi.subject.find(S, 'Strain', 'N2', 'Type', 'organism', 'Inherited', false), ...
-                'stated on no worm itself');
-            testCase.verifyEqual(sort(local(ndi.subject.find(S, 'Strain', 'N2', 'Inherited', false))), ...
-                sort(local(ndi.subject.find(S, 'Strain', 'N2', 'Type', 'group'))), ...
-                'without inheritance: the cohorts alone');
+            testCase.verifyTrue(ismember('concentration_assayPlate0012_worms', ...
+                local(ndi.subject.find(S, 'strain', 'N2'))), 'the cohort it was stated on matches too');
 
-            % by node, and any term assertion
-            byNode = local(ndi.subject.find(S, 'Asserted', {'species', 'NCBITaxon:6239'}, 'Type', 'organism'));
-            testCase.verifyTrue(all(ismember(names, byNode)), 'every N2 worm is C. elegans');
-            ecoli = ndi.subject.find(S, 'Asserted', {'species', 'NCBITaxon:562'});
+            % property names and value names ignore case; nodes are exact
+            same = @(varargin) isequal(sort(local(ndi.subject.find(S, varargin{:}))), sort(names));
+            testCase.verifyTrue(same('Type', 'Organism', 'STRAIN', 'n2'));
+            testCase.verifyTrue(same('type', 'organism', 'species', 'NCBITaxon:6239', 'strain', 'N2'));
+            testCase.verifyTrue(same('type', 'organism', 'strain', {'N2', 'no such strain'}), 'a cell is any of');
+            testCase.verifyTrue(same('type', 'organism', 'strain', 'N*'), 'a wildcard');
+            testCase.verifyTrue(same('type', 'organism', 'species', '*ELEGANS', 'strain', 'N2'), ...
+                'a wildcard on a name ignores case');
+            testCase.verifyTrue(same('type', 'organism', 'species', 'NCBITaxon:*', 'strain', 'N2'), ...
+                'a wildcard on a node');
+
+            % inherited false: only what was stated on the subject itself
+            testCase.verifyEmpty(ndi.subject.find(S, 'type', 'organism', 'strain', 'N2', 'inherited', false), ...
+                'strain is stated on no worm itself');
+            testCase.verifyEqual(sort(local(ndi.subject.find(S, 'strain', 'N2', 'inherited', false))), ...
+                sort(local(ndi.subject.find(S, 'strain', 'N2', 'type', 'group'))), 'the cohorts alone');
+
+            ecoli = ndi.subject.find(S, 'species', 'NCBITaxon:562');
             testCase.verifyNotEmpty(ecoli);
             testCase.verifyFalse(any(cellfun(@(x) strcmp(x.type, 'organism'), ecoli)), 'lawns, not worms');
-            testCase.verifyEmpty(ndi.subject.find(S, 'Strain', 'no such strain'));
-            testCase.verifyError(@() ndi.subject.find(S, 'Strain', 'N2', 'Asserted', {'species', 'x'}), ...
-                'ndi:subject:find:twoAssertions');
-            testCase.verifyEqual(local(ndi.subject.find(S, 'Strain', 'N2', ...
-                'LocalIdentifier', 'concentration_worm0121')), {'concentration_worm0121'});
+            testCase.verifyEqual(local(ndi.subject.find(S, 'strain', 'N2', ...
+                'local_identifier', 'concentration_worm0121')), {'concentration_worm0121'});
+            testCase.verifyEqual(local(ndi.subject.find(S, 'LocalIdentifier', 'concentration_worm0121')), ...
+                {'concentration_worm0121'}, 'the old spelling still works');
+
+            % a misspelled variable is an error; a value no one has, a warning
+            testCase.verifyError(@() ndi.subject.find(S, 'stran', 'N2'), 'ndi:subject:find:unknownVariable');
+            testCase.verifyWarning(@() ndi.subject.find(S, 'species', 'Caenorhabdiits elegans'), ...
+                'ndi:subject:find:noSuchValue');
+            testCase.verifyEmpty(testCase.verifyWarning(@() ndi.subject.find(S, 'strain', 'no such strain'), ...
+                'ndi:subject:find:noSuchValue'));
+            testCase.verifyError(@() ndi.subject.find(S, 'strain'), 'ndi:subject:find:pairs');
         end
 
         function testAssertions(testCase)
