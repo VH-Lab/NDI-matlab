@@ -154,6 +154,10 @@ classdef TestObjectLayer < matlab.unittest.TestCase
             testCase.verifyEqual(local(w.ancestors('Kind', 'subject')), {'concentration_assayPlate0012_worms'}, ...
                 'a match is not followed further: the nearest subject is the cohort');
 
+            testCase.verifyEqual(sort(local(w.ancestors('Type', 'material', 'Kind', 'subject'))), sort(m), ...
+                'Type and Kind together');
+            testCase.verifyEmpty(w.ancestors('Type', 'material', 'Kind', 'person'));
+
             parts = local(a.descendants('Relation', 'part_of'));
             testCase.verifyNotEmpty(parts);
             testCase.verifyTrue(all(startsWith(parts, 'concentration_assayPlate0012_patch')), strjoin(parts, ', '));

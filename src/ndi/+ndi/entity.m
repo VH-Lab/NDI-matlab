@@ -282,7 +282,9 @@ classdef entity
             % An entity that matches is returned and not followed further.
             % With neither 'Type' nor 'Kind', every entity reached is
             % returned. Each step is one search over everything reached so
-            % far; each entity is visited once.
+            % far; each entity is visited once. With 'Type' or 'Kind', the
+            % search picks out the matches, and only they are read: the
+            % entities passed through on the way are followed by id alone.
             arguments
                 obj
                 options.Type (1,:) char = ''
@@ -366,6 +368,14 @@ classdef entity
         function out = reach(obj, direction, options)
             % REACH - breadth-first over relations from every entity in OBJ
             filtered = ~isempty(options.Type) || ~isempty(options.Kind);
+            filterQuery = [];
+            if ~isempty(options.Type)
+                filterQuery = ndi.query('subject.type.name', 'exact_string', options.Type, '');
+            end
+            if ~isempty(options.Kind)
+                k = ndi.query('', 'isa', options.Kind, '');
+                if isempty(filterQuery), filterQuery = k; else, filterQuery = filterQuery & k; end
+            end
             rel = cellstr(options.Relation);
             empty = ndi.entity.emptyWalkTable();
             empty.depth = zeros(0, 1);
@@ -397,21 +407,22 @@ classdef entity
                 if height(next) == 0, break; end
                 newIds = unique(next.at, 'stable');
                 seen = [seen; newIds]; %#ok<AGROW>
-                ents = ndi.entity.fetch(container, newIds);
-                match = false(numel(newIds), 1);
-                for k = 1:numel(newIds)
-                    if isempty(ents{k}), continue; end
+                % with a filter, the search itself says which ids match, and
+                % only those are read; the others are followed by id alone
+                % (on the Haley plates: 7,422 patches never read)
+                ents = ndi.entity.fetch(container, newIds, filterQuery);
+                match = ~cellfun(@isempty, ents);
+                for k = find(match)'
                     byId(newIds{k}) = ents{k};
-                    match(k) = ~filtered || ndi.entity.matches(ents{k}, options);
                 end
                 isHit = ismember(next.at, newIds(match));
                 h = next(isHit, :);
                 h.depth = repmat(depth, height(h), 1);
                 hits = [hits; h]; %#ok<AGROW>
                 if filtered
-                    frontier = next(~isHit & isKey(byId, next.at), :);   % a match is not followed further
+                    frontier = next(~isHit, :);     % a match is not followed further
                 else
-                    frontier = next(isKey(byId, next.at), :);
+                    frontier = next(isHit, :);      % every id found in this container
                 end
                 if height(frontier) == 0, break; end
             end
@@ -460,8 +471,10 @@ classdef entity
             E = table(fromIds, toIds, 'VariableNames', {'from', 'to'});
         end
 
-        function ents = fetch(container, ids)
+        function ents = fetch(container, ids, extra)
             % FETCH - the entity for each id ({} where not found), a few searches in all
+            % EXTRA, an ndi.query or [], is ANDed in: ids not matching it are {} too
+            if nargin < 3, extra = []; end
             ents = cell(numel(ids), 1);
             if isempty(ids), return; end
             where = containers.Map(ids, num2cell(1:numel(ids)));
@@ -470,6 +483,7 @@ classdef entity
                 part = ids(c:min(c + chunk - 1, numel(ids)));
                 q = ndi.entity.anyOf(cellfun(@(i) ndi.query('base.id', 'exact_string', i, ''), part, ...
                     'UniformOutput', false));
+                if ~isempty(extra), q = extra & q; end
                 docs = container.database_search(q);
                 for i = 1:numel(docs)
                     p = ndi.v2.props(docs{i});
@@ -492,17 +506,6 @@ classdef entity
                 qs = pairs;
             end
             q = qs{1};
-        end
-
-        function tf = matches(x, options)
-            % MATCHES - does entity X have the 'Type' and 'Kind' asked for
-            tf = true;
-            if ~isempty(options.Type)
-                tf = isa(x, 'ndi.subject') && strcmp(x.type, options.Type);
-            end
-            if tf && ~isempty(options.Kind)
-                tf = any(strcmp(ndi.v2.classChain(x.document_properties()), options.Kind));
-            end
         end
 
         function T = emptyWalkTable()
