@@ -144,8 +144,10 @@ classdef subject < ndi.ido & ndi.documentservice & ndi.entity
             % A kind ('statement', 'assertion', 'interaction', 'observation',
             % 'manipulation', 'calculation') with an optional cell of filters
             % on that statement ('variable', 'method', 'value',
-            % 'formulation'); several kinds are any of them. The older
-            % 'Class', 'Variable', 'Method' pairs still work.
+            % 'formulation', and when: 'at', 'during', 'before', 'after',
+            % 'duration' -- see ndi.v2.timeFilter); several kinds are any of
+            % them. 'tolerant', true widens each time by its tolerance. The
+            % older 'Class', 'Variable', 'Method' pairs still work.
             [kinds, inherited] = ndi.subject.statementArgs(varargin);
             s = {};
             subjects = ndi_subject_obj(arrayfun(@(x) ~isempty(x.container_), ndi_subject_obj));
@@ -292,13 +294,17 @@ classdef subject < ndi.ido & ndi.documentservice & ndi.entity
             %       a statement of that kind (or a child kind) about the
             %       subject; VALUE is a cell of filters on ONE statement:
             %       'variable', 'method' (not an assertion's), 'value',
-            %       'formulation' (a dose's). The key twice is two statements.
+            %       'formulation' (a dose's), and when it held: 'at', 'during',
+            %       'before', 'after', 'duration' (ndi.v2.timeFilter). The key
+            %       twice is two statements.
             %   'relation', 'directed_relation', 'undirected_relation'
             %       a relation the subject is in; VALUE is a cell:
             %         'name'    the relation ('contained_in', 'paired_with', ...)
             %         'parent'  the subject is the child; the parent is ...
             %         'child'   the subject is the parent; a child is ...
             %         'with'    the other end, either way, is ...
+            %         'at', 'during', 'before', 'after', 'duration'
+            %                   when the relation held (ndi.v2.timeFilter)
             %       where ... is a subject (an ndi.entity, several in a cell,
             %       or a document id) or a cell describing subjects -- anything
             %       ndi.subject.search takes, nested as deep as needed.
@@ -307,6 +313,16 @@ classdef subject < ndi.ido & ndi.documentservice & ndi.entity
             %       {'name', NAME, 'parent', VALUE} ('with' for an undirected one)
             %   'inherited'  true (default) or false, below
             %   'explain'    true: print what the search means before it runs
+            %   'strict'     true (default): an unknown property is an error and
+            %                values matching nothing a warning, each naming what
+            %                there is (with a "did you mean"); false: an empty
+            %                answer, quietly (for scripts over many datasets)
+            %   'tolerant'   false (default): times are compared as stated;
+            %                true: a time matches when its tolerance allows
+            %
+            %   Times typed without a zone are read in the zone the lab
+            %   recorded each time in; 'during' takes two times, a date or a
+            %   month; 'duration' takes '>=3h', '<30min', ...
             %   anything else: an asserted variable -- 'strain', 'N2' is
             %       'assertion', {'variable', 'strain', 'value', 'N2'}
             % Property names ignore case.
@@ -457,8 +473,8 @@ classdef subject < ndi.ido & ndi.documentservice & ndi.entity
             [directed, undirected] = ndi.v2.relationNames();
             spec = struct('own', {cell(0, 2)}, ...
                 'filters', {struct('kind', {}, 'filt', {})}, ...
-                'relations', {struct('kind', {}, 'name', {}, 'side', {}, 'target', {})}, ...
-                'inherited', true, 'explain', false, 'strict', true);
+                'relations', {struct('kind', {}, 'name', {}, 'side', {}, 'target', {}, 'time', {})}, ...
+                'inherited', true, 'explain', false, 'strict', true, 'tolerant', false);
             for k = 1:2:numel(args)
                 p = args{k};
                 if ~(ischar(p) || (isstring(p) && isscalar(p)))
@@ -469,7 +485,7 @@ classdef subject < ndi.ido & ndi.documentservice & ndi.entity
                 if isstring(v), v = cellstr(v); if isscalar(v), v = v{1}; end, end
                 key = lower(strrep(p, '_', ''));
                 lp = lower(p);
-                if any(strcmp(key, {'inherited', 'explain', 'strict'}))
+                if any(strcmp(key, {'inherited', 'explain', 'strict', 'tolerant'}))
                     spec.(key) = logical(v);
                 elseif any(strcmp(key, {'type', 'name', 'id'}))
                     spec.own(end+1, :) = {key, v};
@@ -481,10 +497,10 @@ classdef subject < ndi.ido & ndi.documentservice & ndi.entity
                     spec.relations(end+1) = ndi.subject.relationFilter(lp, v);
                 elseif any(strcmpi(p, directed))
                     spec.relations(end+1) = struct('kind', 'directed_relation', 'name', {{p}}, ...
-                        'side', 'parent', 'target', {v});
+                        'side', 'parent', 'target', {v}, 'time', struct());
                 elseif any(strcmpi(p, undirected))
                     spec.relations(end+1) = struct('kind', 'undirected_relation', 'name', {{p}}, ...
-                        'side', 'with', 'target', {v});
+                        'side', 'with', 'target', {v}, 'time', struct());
                 else
                     if ~iscell(v), v = {v}; end      % a cell is already "any of"
                     spec.filters(end+1) = struct('kind', 'assertion', ...
@@ -502,9 +518,11 @@ classdef subject < ndi.ido & ndi.documentservice & ndi.entity
             filt = struct();
             for k = 1:2:numel(c)
                 n = lower(char(c{k}));
-                if ~any(strcmp(n, {'variable', 'method', 'value', 'formulation'}))
+                if ~any(strcmp(n, {'variable', 'method', 'value', 'formulation', ...
+                        'at', 'during', 'before', 'after', 'duration'}))
                     error('ndi:subject:search:statementFilter', ...
-                        'Unknown filter ''%s'' for ''%s'': variable, method, value, formulation.', c{k}, kind);
+                        ['Unknown filter ''%s'' for ''%s'': variable, method, value, formulation, ' ...
+                         'at, during, before, after, duration.'], c{k}, kind);
                 end
                 v = c{k + 1};
                 if isstring(v), v = cellstr(v); if isscalar(v), v = v{1}; end, end
@@ -521,7 +539,7 @@ classdef subject < ndi.ido & ndi.documentservice & ndi.entity
                 error('ndi:subject:search:relationFilter', ...
                     '''%s'' takes a cell, e.g. {''name'', ''contained_in'', ''parent'', {''type'', ''material''}}.', kind);
             end
-            r = struct('kind', kind, 'name', {{}}, 'side', '', 'target', {[]});
+            r = struct('kind', kind, 'name', {{}}, 'side', '', 'target', {[]}, 'time', struct());
             for k = 1:2:numel(c)
                 n = lower(char(c{k}));
                 v = c{k + 1};
@@ -540,12 +558,15 @@ classdef subject < ndi.ido & ndi.documentservice & ndi.entity
                         end
                         r.side = n;
                         r.target = v;
-                    case {'at', 'during', 'depth'}
+                    case {'at', 'during', 'before', 'after', 'duration'}
+                        r.time.(n) = v;
+                    case 'depth'
                         error('ndi:subject:search:notYet', ...
                             'Relation filter ''%s'' is not built yet.', n);
                     otherwise
                         error('ndi:subject:search:relationFilter', ...
-                            'Unknown filter ''%s'' for ''%s'': name, parent, child, with.', c{k}, kind);
+                            ['Unknown filter ''%s'' for ''%s'': name, parent, child, with, ' ...
+                             'at, during, before, after, duration.'], c{k}, kind);
                 end
             end
             if ~isempty(r.name)
@@ -588,11 +609,16 @@ classdef subject < ndi.ido & ndi.documentservice & ndi.entity
             % SPEC.strict, an unknown variable or method is an error and
             % values that match nothing a warning (each naming what there is).
             inherited = spec.inherited;
-            [docs, info] = ndi.v2.searchStatements(container, f.kind, f.filt);
+            filt = f.filt;
+            filt.tolerant = spec.tolerant;
+            [docs, info] = ndi.v2.searchStatements(container, f.kind, filt);
             if info.structural == 0
                 ndi.subject.noSuchStatement(container, f, spec.strict);   % errors unless each part exists
                 ids = {};
                 return;
+            elseif isempty(docs) && spec.strict && info.timed && info.beforeTime > 0
+                warning('ndi:subject:search:noSuchTime', '%s', ...
+                    noTimeMessage(f.kind, f.filt, info.time, containerWord(container)));
             elseif isempty(docs) && spec.strict
                 warning('ndi:subject:search:noSuchValue', '%s', ...
                     noValueMessage(f, info.values, containerWord(container)));
@@ -650,6 +676,7 @@ classdef subject < ndi.ido & ndi.documentservice & ndi.entity
                         mine = 'parent_id'; theirs = 'child_id';
                     end
                     docs = ndi.subject.relationDocs(container, 'directed_relation', r.name, theirs, T);
+                    docs = ndi.subject.timed(container, docs, r, spec);
                     groups = {};
                     for i = 1:numel(docs)
                         p = ndi.v2.props(docs{i});
@@ -668,6 +695,7 @@ classdef subject < ndi.ido & ndi.documentservice & ndi.entity
             if any(strcmp(r.kind, {'relation', 'undirected_relation'})) && ...
                     (isempty(r.side) || strcmp(r.side, 'with'))
                 docs = ndi.subject.relationDocs(container, 'undirected_relation', r.name, 'entity_id', T);
+                docs = ndi.subject.timed(container, docs, r, spec);
                 for i = 1:numel(docs)
                     pair = ndi.v2.edgeIds(ndi.v2.props(docs{i}), 'entity_id');
                     for j = 1:numel(pair)
@@ -679,6 +707,18 @@ classdef subject < ndi.ido & ndi.documentservice & ndi.entity
                 end
             end
             ids = unique(ids, 'stable');
+        end
+
+        function docs = timed(container, docs, r, spec)
+            % TIMED - the relation documents DOCS whose time meets R's time
+            % filters (all of them when R has none)
+            if isempty(fieldnames(r.time)) || isempty(docs), return; end
+            [keep, tinfo] = ndi.v2.timeFilter(container, docs, r.time, spec.tolerant);
+            if ~any(keep) && spec.strict
+                warning('ndi:subject:search:noSuchTime', '%s', ...
+                    noTimeMessage(r.kind, r.time, tinfo, containerWord(container)));
+            end
+            docs = docs(keep);
         end
 
         function docs = relationDocs(container, className, names, edge, T)
@@ -802,8 +842,7 @@ classdef subject < ndi.ido & ndi.documentservice & ndi.entity
             end
         end
     end
-        end
-    end
+
     methods (Static, Hidden)
         function [kinds, inherited] = statementArgs(args)
             % STATEMENTARGS - (internal) STATEMENTS' arguments: kinds with
@@ -811,6 +850,7 @@ classdef subject < ndi.ido & ndi.documentservice & ndi.entity
             short = {'statement', 'assertion', 'interaction', 'observation', 'manipulation', 'calculation'};
             kinds = struct('kind', {}, 'filt', {});
             inherited = true;
+            tolerant = false;
             legacy = struct();
             k = 1;
             while k <= numel(args)
@@ -829,6 +869,8 @@ classdef subject < ndi.ido & ndi.documentservice & ndi.entity
                     kinds(end+1) = struct('kind', la, 'filt', f); %#ok<AGROW>
                 elseif strcmp(la, 'inherited') && k < numel(args)
                     inherited = logical(args{k + 1}); k = k + 1;
+                elseif strcmp(la, 'tolerant') && k < numel(args)
+                    tolerant = logical(args{k + 1}); k = k + 1;
                 elseif any(strcmp(la, {'class', 'variable', 'method'})) && k < numel(args)
                     legacy.(la) = char(args{k + 1}); k = k + 1;
                 else
@@ -848,6 +890,9 @@ classdef subject < ndi.ido & ndi.documentservice & ndi.entity
             end
             if isempty(kinds)
                 kinds = struct('kind', 'statement', 'filt', struct());
+            end
+            for k = 1:numel(kinds)
+                kinds(k).filt.tolerant = tolerant;
             end
         end
 
@@ -997,12 +1042,13 @@ switch r.side
     otherwise
         if isempty(r.name), lead = 'are related to'; else, lead = sprintf('are in a %s relation with', name); end
 end
+when = timeText(r.time);
 if ~isempty(named)
-    t = sprintf('%s %s%s', lead, named, through);
+    t = sprintf('%s %s%s%s', lead, named, when, through);
 else
     inner = ndi.subject.explainNested(target, [indent '    ']);
     inner = regexprep(inner, '^\s*subjects that', '');      % the nested head reads "a subject that"
-    t = sprintf('%s a subject%s that%s', lead, through, inner);
+    t = sprintf('%s a subject%s%s that%s', lead, when, through, inner);
 end
 end
 
@@ -1014,8 +1060,9 @@ verb = 'had';
 if any(strcmp(kind, {'assertion', 'statement'})), verb = 'have'; end
 fl = f.filt;
 names = intersect({'variable', 'method', 'value', 'formulation'}, fieldnames(fl), 'stable');
+when = timeText(fl);
 if strcmp(kind, 'assertion') && isequal(sort(names), sort({'value', 'variable'})) && ischar(fl.variable)
-    t = sprintf('have %s %s', fl.variable, valueText(fl.value));
+    t = sprintf('have %s %s%s', fl.variable, valueText(fl.value), when);
 else
     parts = cellfun(@(n) sprintf('%s %s', n, valueText(fl.(n))), names, 'UniformOutput', false);
     t = sprintf('%s %s %s', verb, article(kind), kind);
@@ -1027,6 +1074,7 @@ else
         end
         t = sprintf('%s with %s', t, parts);
     end
+    t = [t when];
 end
 if inherited
     if strcmp(kind, 'assertion')
@@ -1035,6 +1083,37 @@ if inherited
         t = [t ' (on them, or on a group they are members of)'];
     end
 end
+end
+
+function t = timeText(f)
+% ', at 2023-11-16T14:00, lasting >=3h' for the time filters in F ('' when none)
+t = '';
+if ~isstruct(f), return; end
+words = struct('at', 'at', 'during', 'during', 'before', 'before', 'after', 'after', 'duration', 'lasting');
+for n = {'at', 'during', 'before', 'after', 'duration'}
+    if ~isfield(f, n{1}) || isempty(f.(n{1})), continue; end
+    v = f.(n{1});
+    if isa(v, 'datetime'), v = arrayfun(@char, v, 'UniformOutput', false); end
+    if strcmp(n{1}, 'during') && iscell(v) && numel(v) == 2
+        txt = sprintf('%s to %s', valueText(v{1}), valueText(v{2}));
+    else
+        txt = valueText(v);
+    end
+    t = sprintf('%s, %s %s', t, words.(n{1}), txt);
+end
+end
+
+function m = noTimeMessage(kind, filt, tinfo, where)
+% the warning when statements or relations matched but none at that time
+m = sprintf('No %s in this %s matches %s at the time asked.', kind, where, describe(filt));
+why = {};
+if tinfo.unresolved > 0, why{end+1} = sprintf('%d time(s) could not be resolved here', tinfo.unresolved); end
+if tinfo.nozone > 0, why{end+1} = sprintf(['%d time(s) have no recorded time zone to read the times ' ...
+        'you typed in (give a zone, e.g. ''2023-11-16T14:00-08:00'')'], tinfo.nozone); end
+if tinfo.bound > 0, why{end+1} = sprintf(['%d time(s) are known only as before or after another ' ...
+        'event, which cannot decide this'], tinfo.bound); end
+if tinfo.docs > 0, why{end+1} = sprintf('%d have no time at all', tinfo.docs); end
+if ~isempty(why), m = sprintf('%s\nNot compared: %s.', m, strjoin(why, '; ')); end
 end
 
 function t = valueText(v)
@@ -1093,6 +1172,4 @@ end
 
 function a = article(word)
 if any(lower(word(1)) == 'aeiou'), a = 'an'; else, a = 'a'; end
-end
-
 end
