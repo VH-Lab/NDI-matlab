@@ -140,9 +140,11 @@ classdef subject < ndi.ido & ndi.documentservice & ndi.entity
             % SEARCH - the subjects in a session or dataset, by what is true of them
             %
             % S = ndi.subject.search(CONTAINER, PROPERTY, VALUE, ...) is
-            % ndi.entity.search(CONTAINER, 'subject', PROPERTY, VALUE, ...): the
-            % entities that are subjects for which every pair holds. See
-            % ndi.entity.search for the properties.
+            % ndi.entity.search(CONTAINER, PROPERTY, VALUE, ...) kept to the
+            % subjects, the entities ndi.query('', 'isa', 'subject') finds:
+            % organisms, cultures, tissues, cells and groups, and a v1
+            % subject (no type). A device or a plate is an entity, not a
+            % subject: search for it with ndi.entity.search.
             s = ndi.entity.searchKind(container, 'subject', varargin);
         end % search()
 

@@ -872,8 +872,9 @@ classdef entity
             % S = ndi.entity.search(CONTAINER, KIND, PROPERTY, VALUE, ...) with
             % an odd number of arguments after CONTAINER: only entities of KIND,
             % a document class or (one entity class, 2026-10-08) an entity
-            % type -- 'subject' (any physical kind: ndi.subject.search),
-            % 'person', 'strain', 'study', ... A statement may be about any
+            % type -- 'person', 'strain', 'study', 'organism', ... ('subject'
+            % is not a kind: ndi.subject.search finds the subjects, the
+            % biological types ndi.v2.subjectTypes). A statement may be about any
             % entity, so every property below works for any kind:
             %   ndi.entity.search(ds, 'person', 'name', 'Jess*')
             %   ndi.entity.search(ds, 'strain', 'derived_from', {'name', 'N2'})
@@ -964,12 +965,18 @@ classdef entity
             if mod(numel(varargin), 2)
                 kind = char(varargin{1});
                 varargin = varargin(2:end);
+                if strcmpi(kind, 'subject')
+                    error('ndi:entity:search:subjectKind', ...
+                        ['''subject'' is not a kind: give the type (''type'', ''organism'', ' ...
+                         '...), or use ndi.subject.search for the biological subjects.']);
+                end
             end
             s = ndi.entity.searchKind(container, kind, varargin);
         end % search()
 
         function s = searchKind(container, kind, args)
             % SEARCHKIND - SEARCH for entities of KIND, with ARGS its pairs
+            % ('subject', from ndi.subject.search: the biological types)
             spec = ndi.entity.parseSearch(args);
             spec.kind = kind;
             if spec.explain
@@ -992,6 +999,12 @@ classdef entity
             end
             s = reshape(s, 1, []);
             keep = cellfun(@(x) strcmp(kind, 'entity') || strcmp(x.kind, kind), s);
+            if strcmp(kind, 'subject')
+                % the subjects are the biological types, as `isa subject`
+                % (ndi.v2.subjectTypes); a v1 subject has no type
+                bio = ndi.v2.subjectTypes();
+                keep = keep & cellfun(@(x) isempty(x.type) || any(strcmp(x.type, bio)), s);
+            end
             own = spec.own;
             for k = 1:size(own, 1)
                 for i = find(keep)

@@ -45,7 +45,7 @@ classdef TestObjectLayer < matlab.unittest.TestCase
                 'no @ is required of a V2 subject read from a document (D6)');
             if ndi.setup.V2.schemaHasField('subject', 'type')
                 testCase.verifyEqual(w.type, 'organism');
-                g = ndi.subject.search(testCase.Session, 'Type', 'group');
+                g = ndi.entity.search(testCase.Session, 'Type', 'group');
                 testCase.verifyNumElements(g, 4, 'one cohort per assay plate');
             end
             e = ndi.entity.fromDocument(testCase.Session, w.document_id());
@@ -179,25 +179,25 @@ classdef TestObjectLayer < matlab.unittest.TestCase
                 % entity in reach. A session opened from its dataset reaches it
                 % (ndi.session/database_search_with_dataset); a session folder
                 % opened on its own holds only the relation and cannot name it.
-                testCase.verifyError(@() ndi.subject.search(S, 'strain', 'N2'), ...
+                testCase.verifyError(@() ndi.entity.search(S, 'strain', 'N2'), ...
                     'ndi:entity:search:unknownVariable');
                 [refs, ids] = testCase.Dataset.session_list();
                 inDataset = testCase.Dataset.open_session(ids{strcmp(refs, S.reference)});
                 testCase.verifyTrue(all(ismember({'concentration_worm0121', 'concentration_worm0122'}, ...
-                    local(ndi.subject.search(inDataset, 'type', 'organism', 'strain', 'N2')))), ...
+                    local(ndi.entity.search(inDataset, 'type', 'organism', 'strain', 'N2')))), ...
                     'a session opened from its dataset finds the strain entity there');
                 S = testCase.Dataset;
             end
-            w = ndi.subject.search(S, 'type', 'organism', 'species', 'Caenorhabditis elegans', 'strain', 'N2');
+            w = ndi.entity.search(S, 'type', 'organism', 'species', 'Caenorhabditis elegans', 'strain', 'N2');
             names = local(w);
             testCase.verifyTrue(all(ismember({'concentration_worm0121', 'concentration_worm0122'}, names)), ...
                 strjoin(names, ', '));
             testCase.verifyTrue(all(cellfun(@(x) strcmp(x.type, 'organism'), w)));
             testCase.verifyTrue(ismember('concentration_assayPlate0012_worms', ...
-                local(ndi.subject.search(S, 'strain', 'N2'))), 'the cohort it was stated on matches too');
+                local(ndi.entity.search(S, 'strain', 'N2'))), 'the cohort it was stated on matches too');
 
             % property names and value names ignore case; nodes are exact
-            same = @(varargin) isequal(sort(local(ndi.subject.search(S, varargin{:}))), sort(names));
+            same = @(varargin) isequal(sort(local(ndi.entity.search(S, varargin{:}))), sort(names));
             testCase.verifyTrue(same('Type', 'Organism', 'STRAIN', 'n2'));
             testCase.verifyTrue(same('type', 'organism', 'species', 'NCBITaxon:6239', 'strain', 'N2'));
             testCase.verifyTrue(same('type', 'organism', 'strain', {'N2', 'no such strain'}), 'a cell is any of');
@@ -208,26 +208,26 @@ classdef TestObjectLayer < matlab.unittest.TestCase
                 'a wildcard on a node');
 
             % inherited false: only what was stated on the subject itself
-            testCase.verifyEmpty(ndi.subject.search(S, 'type', 'organism', 'strain', 'N2', 'inherited', false), ...
+            testCase.verifyEmpty(ndi.entity.search(S, 'type', 'organism', 'strain', 'N2', 'inherited', false), ...
                 'strain is stated on no worm itself');
-            testCase.verifyEqual(sort(local(ndi.subject.search(S, 'strain', 'N2', 'inherited', false))), ...
-                sort(local(ndi.subject.search(S, 'strain', 'N2', 'type', 'group'))), 'the cohorts alone');
+            testCase.verifyEqual(sort(local(ndi.entity.search(S, 'strain', 'N2', 'inherited', false))), ...
+                sort(local(ndi.entity.search(S, 'strain', 'N2', 'type', 'group'))), 'the cohorts alone');
 
-            ecoli = ndi.subject.search(S, 'species', 'NCBITaxon:562');
+            ecoli = ndi.entity.search(S, 'species', 'NCBITaxon:562');
             testCase.verifyNotEmpty(ecoli);
             testCase.verifyFalse(any(cellfun(@(x) strcmp(x.type, 'organism'), ecoli)), 'lawns, not worms');
-            testCase.verifyEqual(local(ndi.subject.search(S, 'strain', 'N2', ...
+            testCase.verifyEqual(local(ndi.entity.search(S, 'strain', 'N2', ...
                 'local_identifier', 'concentration_worm0121')), {'concentration_worm0121'});
-            testCase.verifyEqual(local(ndi.subject.search(S, 'LocalIdentifier', 'concentration_worm0121')), ...
+            testCase.verifyEqual(local(ndi.entity.search(S, 'LocalIdentifier', 'concentration_worm0121')), ...
                 {'concentration_worm0121'}, 'the old spelling still works');
 
             % a misspelled variable is an error; a value no one has, a warning
-            testCase.verifyError(@() ndi.subject.search(S, 'stran', 'N2'), 'ndi:entity:search:unknownVariable');
-            testCase.verifyWarning(@() ndi.subject.search(S, 'species', 'Caenorhabdiits elegans'), ...
+            testCase.verifyError(@() ndi.entity.search(S, 'stran', 'N2'), 'ndi:entity:search:unknownVariable');
+            testCase.verifyWarning(@() ndi.entity.search(S, 'species', 'Caenorhabdiits elegans'), ...
                 'ndi:entity:search:noSuchValue');
-            testCase.verifyEmpty(testCase.verifyWarning(@() ndi.subject.search(S, 'strain', 'no such strain'), ...
+            testCase.verifyEmpty(testCase.verifyWarning(@() ndi.entity.search(S, 'strain', 'no such strain'), ...
                 'ndi:entity:search:noSuchValue'));
-            testCase.verifyError(@() ndi.subject.search(S, 'strain'), 'ndi:entity:search:pairs');
+            testCase.verifyError(@() ndi.entity.search(S, 'strain'), 'ndi:entity:search:pairs');
         end
 
         function testFindByAStatementOfAKind(testCase)
@@ -235,7 +235,7 @@ classdef TestObjectLayer < matlab.unittest.TestCase
             % statement; a key given twice is two statements
             S = testCase.Session;
             plate = 'concentration_assayPlate0012';
-            has = @(varargin) ismember(plate, local(ndi.subject.search(S, varargin{:})));
+            has = @(varargin) ismember(plate, local(ndi.entity.search(S, varargin{:})));
             testCase.verifyTrue(has('manipulation', {'variable', 'NGM agar'}));
             testCase.verifyTrue(has('manipulation', {'method', 'refrigeration'}));
             testCase.verifyTrue(has('interaction', {'method', 'refrigeration'}), 'an interaction is any of the three');
@@ -248,28 +248,28 @@ classdef TestObjectLayer < matlab.unittest.TestCase
             restore = onCleanup(@() warning(w));
             testCase.verifyFalse(has('manipulation', {'variable', 'NGM agar', 'value', '>0.03'}));
             % one statement that is both, versus two statements
-            testCase.verifyEmpty(ndi.subject.search(S, 'manipulation', {'method', 'refrigeration', ...
+            testCase.verifyEmpty(ndi.entity.search(S, 'manipulation', {'method', 'refrigeration', ...
                 'variable', 'NGM agar'}), 'no single manipulation is both: none, not an error');
             testCase.verifyTrue(has('manipulation', {'method', 'refrigeration'}, ...
                 'manipulation', {'variable', 'NGM agar'}));
             % the shorthand is an assertion (with one entity class a strain is
             % a relation, not an assertion: testFindByWhatIsTrueOfASubject)
             if ~ndi.setup.V2.mergedEntities()
-                testCase.verifyEqual(sort(local(ndi.subject.search(S, 'assertion', {'variable', 'strain', 'value', 'N2'}))), ...
-                    sort(local(ndi.subject.search(S, 'strain', 'N2'))));
-                testCase.verifyEqual(sort(local(ndi.subject.search(S, 'str*', 'N2'))), ...
-                    sort(local(ndi.subject.search(S, 'strain', 'N2'))), 'a wildcard in the property name');
+                testCase.verifyEqual(sort(local(ndi.entity.search(S, 'assertion', {'variable', 'strain', 'value', 'N2'}))), ...
+                    sort(local(ndi.entity.search(S, 'strain', 'N2'))));
+                testCase.verifyEqual(sort(local(ndi.entity.search(S, 'str*', 'N2'))), ...
+                    sort(local(ndi.entity.search(S, 'strain', 'N2'))), 'a wildcard in the property name');
             end
-            testCase.verifyError(@() ndi.subject.search(S, 'assertion', {'method', 'x'}), ...
+            testCase.verifyError(@() ndi.entity.search(S, 'assertion', {'method', 'x'}), ...
                 'ndi:entity:search:assertionMethod');
-            testCase.verifyError(@() ndi.subject.search(S, 'manipulation', {'method', 'no such method'}), ...
+            testCase.verifyError(@() ndi.entity.search(S, 'manipulation', {'method', 'no such method'}), ...
                 'ndi:entity:search:noSuchStatement');
-            testCase.verifyError(@() ndi.subject.search(S, 'manipulation', {'colour', 'x'}), ...
+            testCase.verifyError(@() ndi.entity.search(S, 'manipulation', {'colour', 'x'}), ...
                 'ndi:entity:search:statementFilter');
-            testCase.verifyError(@() ndi.subject.search(S, 'manipulation', 'NGM agar'), ...
+            testCase.verifyError(@() ndi.entity.search(S, 'manipulation', 'NGM agar'), ...
                 'ndi:entity:search:statementFilter');
             % a plate's statements are not its worms': contained_in is not followed
-            testCase.verifyEmpty(ndi.subject.search(S, 'type', 'organism', 'manipulation', {'variable', 'NGM agar'}));
+            testCase.verifyEmpty(ndi.entity.search(S, 'type', 'organism', 'manipulation', {'variable', 'NGM agar'}));
         end
 
         function testFindByRelation(testCase)
@@ -277,7 +277,7 @@ classdef TestObjectLayer < matlab.unittest.TestCase
             worms = {'concentration_worm0121', 'concentration_worm0122'};
             cohort = testCase.subject('concentration_assayPlate0012_worms');
             plate = testCase.subject('concentration_assayPlate0012');
-            names = @(varargin) sort(local(ndi.subject.search(S, varargin{:})));
+            names = @(varargin) sort(local(ndi.entity.search(S, varargin{:})));
 
             % the shortcut: a relation's name, the subject is the child
             testCase.verifyEqual(names('member_of', cohort), worms);
@@ -286,7 +286,7 @@ classdef TestObjectLayer < matlab.unittest.TestCase
                 worms, 'the other end as a document id');
             % the cohort is contained_in the plate, distributive: so is each worm
             testCase.verifyEqual(names('type', 'organism', 'contained_in', plate), worms);
-            testCase.verifyEmpty(ndi.subject.search(S, 'type', 'organism', 'contained_in', plate, 'inherited', false), ...
+            testCase.verifyEmpty(ndi.entity.search(S, 'type', 'organism', 'contained_in', plate, 'inherited', false), ...
                 'not inherited: no worm is contained_in anything itself');
             % the other end described, not named
             onNGM = names('type', 'organism', 'contained_in', {'manipulation', {'variable', 'NGM agar'}});
@@ -302,7 +302,7 @@ classdef TestObjectLayer < matlab.unittest.TestCase
             w = names('relation', {'with', cohort});
             testCase.verifyTrue(all(ismember([worms, {'concentration_assayPlate0012', ...
                 'concentration_0001_acclimationPlate0001'}], w)), strjoin(w, ', '));
-            testCase.verifyEqual(local(ndi.subject.search(S, 'id', cohort.document_id)), ...
+            testCase.verifyEqual(local(ndi.entity.search(S, 'id', cohort.document_id)), ...
                 {'concentration_assayPlate0012_worms'});
 
             % explain says what it will do
@@ -313,13 +313,13 @@ classdef TestObjectLayer < matlab.unittest.TestCase
             testCase.verifySubstring(out, 'are of type organism');
             testCase.verifySubstring(out, 'had a manipulation with variable NGM agar');
 
-            testCase.verifyError(@() ndi.subject.search(S, 'directed_relation', {'name', 'containd_in'}), ...
+            testCase.verifyError(@() ndi.entity.search(S, 'directed_relation', {'name', 'containd_in'}), ...
                 'ndi:entity:search:unknownRelation');
-            testCase.verifyError(@() ndi.subject.search(S, 'contained_in', plate, 'directed_relation', ...
+            testCase.verifyError(@() ndi.entity.search(S, 'contained_in', plate, 'directed_relation', ...
                 {'name', 'contained_in', 'parent', plate, 'depth', 2}), 'ndi:entity:search:notYet');
-            testCase.verifyError(@() ndi.subject.search(S, 'undirected_relation', {'parent', plate}), ...
+            testCase.verifyError(@() ndi.entity.search(S, 'undirected_relation', {'parent', plate}), ...
                 'ndi:entity:search:relationFilter');
-            testCase.verifyError(@() ndi.subject.search(S, 'directed_relation', {'parent', plate, 'child', plate}), ...
+            testCase.verifyError(@() ndi.entity.search(S, 'directed_relation', {'parent', plate, 'child', plate}), ...
                 'ndi:entity:search:relationFilter');
         end
 
@@ -327,15 +327,15 @@ classdef TestObjectLayer < matlab.unittest.TestCase
             % plate 0013 is excluded (an assertion on the plate): its patches,
             % part_of it, are too; its worms, contained_in it, are not
             S = testCase.Session;
-            direct = local(ndi.subject.search(S, 'inclusion in analysis', 'excluded', 'inherited', false));
+            direct = local(ndi.entity.search(S, 'inclusion in analysis', 'excluded', 'inherited', false));
             testCase.verifyTrue(ismember('concentration_assayPlate0013', direct));
-            all_ = local(ndi.subject.search(S, 'inclusion in analysis', 'excluded'));
+            all_ = local(ndi.entity.search(S, 'inclusion in analysis', 'excluded'));
             extra = setdiff(all_, direct);
             testCase.verifyTrue(all(startsWith(extra, 'concentration_assayPlate0013_patch')), strjoin(extra, ', '));
-            patches = local(ndi.subject.search(S, 'directed_relation', {'name', 'part_of', 'parent', ...
+            patches = local(ndi.entity.search(S, 'directed_relation', {'name', 'part_of', 'parent', ...
                 {'local_identifier', 'concentration_assayPlate0013'}}));
             testCase.verifyEqual(sort(extra), sort(patches), 'exactly its parts');
-            testCase.verifyEmpty(ndi.subject.search(S, 'type', 'organism', 'inclusion in analysis', 'excluded'), ...
+            testCase.verifyEmpty(ndi.entity.search(S, 'type', 'organism', 'inclusion in analysis', 'excluded'), ...
                 'contained_in does not carry statements');
         end
 
@@ -382,16 +382,16 @@ classdef TestObjectLayer < matlab.unittest.TestCase
 
             % assertions never pass: plate 0013 is excluded, its worms are not
             testCase.verifyEqual(numel(w.assertions('context', true)), numel(w.assertions()));
-            testCase.verifyEmpty(ndi.subject.search(S, 'type', 'organism', ...
+            testCase.verifyEmpty(ndi.entity.search(S, 'type', 'organism', ...
                 'inclusion in analysis', 'excluded', 'context', true));
 
             % search: a plate's room-temperature period finds the worms on it then
-            found = local(ndi.subject.search(S, 'type', 'organism', ...
+            found = local(ndi.entity.search(S, 'type', 'organism', ...
                 'manipulation', {'method', 'ambient exposure'}, 'context', true));
             testCase.verifyTrue(ismember('concentration_worm0121', found));
-            testCase.verifyEmpty(ndi.subject.search(S, 'type', 'organism', ...
+            testCase.verifyEmpty(ndi.entity.search(S, 'type', 'organism', ...
                 'manipulation', {'method', 'ambient exposure'}), 'not without context');
-            testCase.verifyEmpty(ndi.subject.search(S, 'type', 'organism', ...
+            testCase.verifyEmpty(ndi.entity.search(S, 'type', 'organism', ...
                 'manipulation', {'method', 'refrigeration'}, 'context', true), ...
                 'every cold room was before the worms arrived');
             out = evalc(['ndi.subject.search(S, ''type'', ''organism'', ''manipulation'', ' ...
@@ -433,15 +433,15 @@ classdef TestObjectLayer < matlab.unittest.TestCase
                 testCase.verifyEqual(double(t{1}.value()), 21.62, 'AbsTol', 1e-9);
 
                 % search: worms filmed while their plate was over 21.615 C
-                found = local(ndi.subject.search(S, 'type', 'organism', 'context', true, ...
+                found = local(ndi.entity.search(S, 'type', 'organism', 'context', true, ...
                     'observation', {'variable', 'image intensity', 'during', hot}));
                 testCase.verifyTrue(ismember('concentration_worm0121', found));
-                warm = local(ndi.subject.search(S, 'type', 'organism', 'contained_in', ...
+                warm = local(ndi.entity.search(S, 'type', 'organism', 'contained_in', ...
                     {'local_identifier', {'concentration_assayPlate0012', 'concentration_assayPlate0014'}}));
                 testCase.verifyEmpty(setdiff(found, warm), 'only the worms on plates 12 and 14');
-                cool = local(ndi.subject.search(S, 'type', 'organism', 'contained_in', other));
+                cool = local(ndi.entity.search(S, 'type', 'organism', 'contained_in', other));
                 testCase.verifyEmpty(intersect(found, cool), 'none of the worms on plate 11');
-                testCase.verifyEmpty(ndi.subject.search(S, 'type', 'organism', 'context', true, ...
+                testCase.verifyEmpty(ndi.entity.search(S, 'type', 'organism', 'context', true, ...
                     'observation', {'variable', 'image intensity', 'during', cold}));
                 out = evalc(['ndi.subject.search(S, ''type'', ''organism'', ''context'', true, ' ...
                     '''observation'', {''variable'', ''image intensity'', ''during'', hot}, ''explain'', true);']);
@@ -460,7 +460,7 @@ classdef TestObjectLayer < matlab.unittest.TestCase
             w = warning('off', 'ndi:entity:search:noSuchTime');
             restore = onCleanup(@() warning(w));
             acc = testCase.subject('concentration_0001_acclimationPlate0001');
-            on = @(varargin) local(ndi.subject.search(S, 'type', 'organism', 'directed_relation', ...
+            on = @(varargin) local(ndi.entity.search(S, 'type', 'organism', 'directed_relation', ...
                 [{'name', 'contained_in', 'parent', acc}, varargin]));
             worms = {'concentration_worm0121', 'concentration_worm0122'};
             testCase.verifyTrue(all(ismember(worms, on('at', '2022-02-03T18:00'))), 'local time, the lab''s zone');
@@ -475,9 +475,9 @@ classdef TestObjectLayer < matlab.unittest.TestCase
             testCase.verifyFalse(any(ismember(worms, on('after', '2022-02-04'))));
 
             % duration, and tolerance
-            fd = local(ndi.subject.search(S, 'member_of', testCase.subject('concentration_assayPlate0014_worms')));
+            fd = local(ndi.entity.search(S, 'member_of', testCase.subject('concentration_assayPlate0014_worms')));
             testCase.assertNotEmpty(fd);
-            deprived = @(varargin) local(ndi.subject.search(S, 'type', 'organism', 'manipulation', ...
+            deprived = @(varargin) local(ndi.entity.search(S, 'type', 'organism', 'manipulation', ...
                 [{'variable', 'food availability'}, varargin{1}], varargin{2:end}));
             testCase.verifyEqual(sort(deprived({'duration', '>=3h'})), sort(fd));
             testCase.verifyEqual(sort(deprived({'duration', '>=180min'})), sort(fd));
@@ -485,22 +485,22 @@ classdef TestObjectLayer < matlab.unittest.TestCase
             testCase.verifyEqual(sort(deprived({'duration', '>3h'}, 'tolerant', true)), sort(fd), ...
                 'the hand-written start could be a minute early');
             warning('on', 'ndi:entity:search:noSuchTime');
-            testCase.verifyWarning(@() ndi.subject.search(S, 'manipulation', ...
+            testCase.verifyWarning(@() ndi.entity.search(S, 'manipulation', ...
                 {'variable', 'food availability', 'duration', '>4h'}), 'ndi:entity:search:noSuchTime');
             warning('off', 'ndi:entity:search:noSuchTime');
 
             % a time known only as "before the seeding" (a plate's pour) is a bound
             plate = 'concentration_assayPlate0012';
-            poured = @(varargin) local(ndi.subject.search(S, 'manipulation', [{'variable', 'NGM agar'}, varargin]));
+            poured = @(varargin) local(ndi.entity.search(S, 'manipulation', [{'variable', 'NGM agar'}, varargin]));
             testCase.verifyTrue(ismember(plate, poured('before', '2030-01-01')), 'the bound decides it');
             testCase.verifyFalse(ismember(plate, poured('at', '2022-02-04T12:00')), 'a bound cannot place it');
 
             out = evalc(['ndi.subject.search(S, ''type'', ''organism'', ''manipulation'', ' ...
                 '{''variable'', ''food availability'', ''duration'', ''>=3h''}, ''explain'', true);']);
             testCase.verifySubstring(out, 'lasting >=3h');
-            testCase.verifyError(@() ndi.subject.search(S, 'directed_relation', ...
+            testCase.verifyError(@() ndi.entity.search(S, 'directed_relation', ...
                 {'name', 'contained_in', 'at', 'sometime after lunch'}), 'ndi:v2:timeFilter:badTime');
-            testCase.verifyError(@() ndi.subject.search(S, 'manipulation', ...
+            testCase.verifyError(@() ndi.entity.search(S, 'manipulation', ...
                 {'variable', 'food availability', 'duration', '3 fortnights'}), 'ndi:v2:timeFilter:badDuration');
         end
 
@@ -575,6 +575,28 @@ classdef TestObjectLayer < matlab.unittest.TestCase
             testCase.verifyEmpty(w.statements('manipulation', {'variable', 'ambient temperature'}));
         end
 
+        function testSubjectsAreTheBiologicalTypes(testCase)
+            % `isa subject` and ndi.subject.search are the organisms, cultures,
+            % tissues, cells and groups (as a v1 subject always was); a plate
+            % (material) or an instrument (device) is an entity, not a subject
+            S = testCase.Session;
+            bio = {'organism', 'culture', 'tissue', 'cell', 'group'};
+            all_ = ndi.entity.search(S, 'type', '*');
+            types = cellfun(@(x) x.type, all_, 'UniformOutput', false);
+            testCase.assertTrue(any(strcmp(types, 'material')), 'the fixture has plates');
+            s = ndi.subject.search(S);
+            testCase.verifyTrue(all(ismember(cellfun(@(x) x.type, s, 'UniformOutput', false), bio)));
+            testCase.verifyEqual(numel(s), sum(ismember(types, bio)));
+            docs = S.database_search(ndi.query('', 'isa', 'subject'));
+            testCase.verifyEqual(sort(cellfun(@(d) char(d.document_properties.base.id), docs, ...
+                'UniformOutput', false)), sort(cellfun(@(x) x.document_id, s, 'UniformOutput', false)), ...
+                'isa subject finds the same subjects');
+            testCase.verifyEmpty(ndi.subject.search(S, 'LocalIdentifier', 'concentration_assayPlate0012'), ...
+                'a plate is not a subject');
+            testCase.verifyNumElements(ndi.entity.search(S, 'LocalIdentifier', 'concentration_assayPlate0012'), 1, ...
+                'it is an entity');
+        end
+
         function testTypesPassTheirAssertionsToInstances(testCase)
             % one entity class (2026-10-08): a cohort is an instance_of its
             % strain, distributive, so each worm is one too; what is
@@ -611,7 +633,7 @@ classdef TestObjectLayer < matlab.unittest.TestCase
 
         function testStatementsOfManySubjectsAndSummaries(testCase)
             S = testCase.Session;
-            ws = ndi.subject.search(S, 'type', 'organism', 'contained_in', ...
+            ws = ndi.entity.search(S, 'type', 'organism', 'contained_in', ...
                 testCase.subject('concentration_assayPlate0012'));
             W = [ws{:}];
             testCase.assertNumElements(W, 2);
@@ -828,9 +850,11 @@ classdef TestObjectLayer < matlab.unittest.TestCase
             testCase.verifyEmpty(ndi.entity.search(D, 'person', 'type', 'organism'), ...
                 'a person is not an organism');
             w = ndi.subject.search(D, 'local_identifier', 'concentration_worm0121');
-            testCase.verifyEqual(cellfun(@(x) x.document_id, ndi.entity.search(D, 'subject', ...
+            testCase.verifyEqual(cellfun(@(x) x.document_id, ndi.entity.search(D, ...
                 'local_identifier', 'concentration_worm0121'), 'UniformOutput', false), ...
-                cellfun(@(x) x.document_id, w, 'UniformOutput', false), 'ndi.subject.search is the subject kind');
+                cellfun(@(x) x.document_id, w, 'UniformOutput', false), 'a worm is a subject');
+            testCase.verifyError(@() ndi.entity.search(D, 'subject', 'local_identifier', 'x'), ...
+                'ndi:entity:search:subjectKind');
             if ndi.setup.V2.mergedEntities()
                 % a person's names are `text` assertions about it: read, and searched
                 g = p{1}.assertions({'variable', 'given name'});
@@ -851,7 +875,7 @@ classdef TestObjectLayer < matlab.unittest.TestCase
             % dataset (decision #20): read through the dataset, a statement
             % reaches them; read through a session, it does not
             local = 'concentration_worm0121';
-            ws = ndi.subject.search(testCase.Session, 'LocalIdentifier', local);
+            ws = ndi.entity.search(testCase.Session, 'LocalIdentifier', local);
             w = ndi.subject.fromDocument(testCase.Dataset, ws{1}.document_id());
             sp = w.statements('Class', 'velocity_calculation');
             testCase.verifyNumElements(sp, 1);
@@ -918,7 +942,7 @@ classdef TestObjectLayer < matlab.unittest.TestCase
 
     methods
         function s = subject(testCase, local)
-            x = ndi.subject.search(testCase.Session, 'LocalIdentifier', local);
+            x = ndi.entity.search(testCase.Session, 'LocalIdentifier', local);
             testCase.assertNumElements(x, 1, local);
             s = x{1};
         end

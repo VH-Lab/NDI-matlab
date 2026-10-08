@@ -5,9 +5,9 @@ function q = isaQuery(className)
 %   before or after the 2026-10-08 changes, so a reader finds both:
 %     - the name it had before the statement rename (ndi.v2.vetaAliases):
 %       'assertion' also finds `subject_assertion` documents;
-%     - an entity class merged into `entity` (ndi.v2.entityTypesFor): 'subject'
-%       also finds entities whose type is a physical kind, 'session' entities of
-%       type session;
+%     - an entity class merged into `entity` (ndi.v2.entityTypesFor): 'session'
+%       also finds entities of type session ('subject' is ndi.query's own: the
+%       biological types, ndi.v2.subjectTypes);
 %     - a statement leaf whose value kind became a mixin: 'temperature_observation'
 %       also finds `observation` documents that list `temperature`.
 %
@@ -19,6 +19,9 @@ for k = 2:numel(names)
     q = q | ndi.query('', 'isa', names{k}, '');
 end
 types = ndi.v2.entityTypesFor(className);
+if strcmp(className, 'subject')
+    types = {};   % ndi.query's own `isa subject` finds the biological entities
+end
 if ~isempty(types)
     t = ndi.query('entity.type.name', 'exact_string', types{1}, '');
     for k = 2:numel(types)
