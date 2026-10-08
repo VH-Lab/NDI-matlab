@@ -211,6 +211,17 @@ classdef TestDatasetMetadataHaley < matlab.unittest.TestCase
                 testCase.verifyEqual(nnz(isType), numel(testCase.Spec.formulations));
             end
             u = u(~isType);
+            % with one entity class a web resource's host has no relation
+            % (hosted_by retired, 2026-10-08): one row per resource naming one
+            isHost = strcmp({u.field}, 'host');
+            if ndi.setup.V2.mergedEntities()
+                wr = testCase.Spec.web_resources;
+                if isstruct(wr), wr = num2cell(wr); end
+                testCase.verifyEqual(nnz(isHost), sum(cellfun(@(x) isfield(x, 'host'), wr)));
+            else
+                testCase.verifyFalse(any(isHost));
+            end
+            u = u(~isHost);
             testCase.verifyEqual(unique({u.field}), {'vendor'});
             % one row per software entry that names a vendor (the analysis
             % package and macOS name none)

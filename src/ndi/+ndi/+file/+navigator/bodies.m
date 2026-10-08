@@ -197,7 +197,7 @@ classdef bodies < ndi.file.navigator
                 e = S.database_search(ndi.query('base.id', 'exact_string', referent, '') & ...
                     ndi.v2.isaQuery('epoch'));
                 if numel(e) == 1
-                    id = e{1}.document_properties.epoch.local_identifier;
+                    id = ndi.v2.blockOf(e{1}.document_properties, 'epoch', 'local_identifier');
                     return;
                 end
             end

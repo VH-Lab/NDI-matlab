@@ -489,7 +489,8 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             testCase.verifyEqual(edge(a, 'software_id'), ids('haley_analysis'));
             testCase.verifyEqual(edge(a, 'interpreter_id'), ids('matlab'));
             testCase.verifyEqual(edge(a, 'operating_system_id'), ids('macos'));
-            testCase.verifyEqual(a.value.datum_type, 'bool');
+            % `datum_type` was renamed `data_type` on 2026-10-08
+            testCase.verifyEqual(ndi.v2.blockOf(a, 'value', 'data_type', ndi.v2.blockOf(a, 'value', 'datum_type')), 'bool');
             mp = entries(a.interaction.method_parameters);
             testCase.verifyEqual(mp{1}.variable.name, 'arena diameter');
 
@@ -755,7 +756,7 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             testCase.verifyEmpty(de.checks.encounterDisagrees, 'encounter.mat reproduces from the fits');
 
             dd = de.datasetDocuments;
-            dc = cellfun(@(d) d.document_class.class_name, dd, 'UniformOutput', false);
+            dc = cellfun(@ndi.v2.leafName, dd, 'UniformOutput', false);
             fits = dd(strcmp(dc, 'model_fit_calculation'));
             groups = dd(strcmp(dc, 'subject'));
             testCase.verifyNumElements(groups, 2);

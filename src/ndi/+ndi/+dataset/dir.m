@@ -86,11 +86,12 @@ classdef dir < ndi.dataset
                     % a query-shaped grep does not find it -- the daqsystem
                     % lesson. A dataset can hold a session document of either
                     % vintage, so both spellings are accepted.
-                    session_blk = candidate_session_doc{1}.document_properties.session;
-                    if isfield(session_blk,'local_identifier')
-                        ref = session_blk.local_identifier;
-                    else
-                        ref = session_blk.reference;
+                    % and from 2026-10-08 the session may be an `entity` of
+                    % type session (ndi.v2.blockOf reads either block)
+                    p_session = candidate_session_doc{1}.document_properties;
+                    ref = ndi.v2.blockOf(p_session, 'session', 'local_identifier');
+                    if isempty(ref)
+                        ref = ndi.v2.blockOf(p_session, 'session', 'reference');
                     end
                     session_id = candidate_session_doc{1}.document_properties.base.session_id;
                     ndi_dataset_dir_obj.session = ndi.session.dir(ref,ndi_dataset_dir_obj.session.path,session_id);

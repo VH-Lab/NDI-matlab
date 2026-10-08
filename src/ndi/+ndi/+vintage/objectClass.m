@@ -101,13 +101,14 @@ if numel(swDocs) ~= 1
 end
 
 swProps = swDocs{1}.document_properties;
-if ~isfield(swProps, 'software') || ~isstruct(swProps.software) ...
-        || ~isfield(swProps.software, 'name') || isempty(swProps.software.name)
+% the `software` block, or from 2026-10-08 an `entity` of type software
+objClass = ndi.v2.blockOf(swProps, 'software', 'name');
+if isempty(objClass)
     error('NDI:vintage:softwareHasNoName', ...
         ['software document %s carries no `name`, and `name` is where ' ...
          'jSoftware puts the implementation class string'], swId);
 end
-objClass = swProps.software.name;
+objClass = char(objClass);
 end
 
 function v = assertionValue(ndi_document_obj, ndi_session_obj, label)
