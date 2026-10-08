@@ -198,7 +198,8 @@ classdef statement
             % an opaque body (a video, an image file) gives its file paths.
             p = obj.document_properties();
             c = obj.composite();
-            dt = char(ndi.v2.blockOf(p, 'value', 'datum_type', ''));
+            % value.data_type since 2026-10-08, value.datum_type before
+            dt = char(ndi.v2.blockOf(p, 'value', 'data_type', ndi.v2.blockOf(p, 'value', 'datum_type', '')));
             ids = ndi.v2.edgeIds(p, 'value_id');
             if isempty(c) && ~isempty(ids)
                 % the value is a document of its own (a shared item, a model fit)

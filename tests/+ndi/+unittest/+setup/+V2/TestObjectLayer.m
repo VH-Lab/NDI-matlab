@@ -490,6 +490,13 @@ classdef TestObjectLayer < matlab.unittest.TestCase
             c = testCase.subject('concentration_assayPlate0012_worms');
             a = c.assertions();
             testCase.verifyTrue(all(cellfun(@(x) isa(x, 'ndi.assertion'), a)), 'objects, not a table');
+            % TEMPORARY diagnostic (next-schema leg): what a composed statement carries
+            p1 = a{1}.document_properties();
+            ch = ndi.v2.classChain(p1);
+            fprintf('DIAG document_class: %s\nDIAG chain: %s\nDIAG parents: %s\nDIAG fields: %s\n', ...
+                jsonencode(p1.document_class), strjoin(ch, ','), ...
+                strjoin(cellfun(@(x) strjoin(ndi.v2.directParents(x), '+'), ch, 'UniformOutput', false), ' | '), ...
+                strjoin(fieldnames(p1)', ','));
             T = ndi.summary(a);
             testCase.verifyEqual(T.value_node(T.variable == "species"), "NCBITaxon:6239");
             testCase.verifyEqual(T.value(T.variable == "strain"), "N2");
