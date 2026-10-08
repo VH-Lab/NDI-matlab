@@ -571,7 +571,7 @@ classdef entity
             cols = containers.Map('KeyType', 'char', 'ValueType', 'any');
             for k = 1:numel(L.doc)
                 p = ndi.v2.props(L.doc{k});
-                v = ndi.v2.termName(ndi.v2.blockOf(p, 'subject_statement', 'variable', ''));
+                v = ndi.v2.termName(ndi.v2.blockOf(p, 'statement', 'variable', ''));
                 [vk, vv, txt] = ndi.v2.statementValue(p);
                 if isempty(v), continue; end
                 nd = '';

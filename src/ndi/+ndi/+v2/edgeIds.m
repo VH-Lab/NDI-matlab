@@ -24,4 +24,8 @@ for k = 1:numel(dep)
     v = char(v);
     if ~isempty(v), ids{end+1} = v; end %#ok<AGROW>
 end
+if isempty(ids) && strcmp(name, 'entity_id')
+    % a statement written before 2026-10-08 names what it is about `subject_id`
+    ids = ndi.v2.edgeIds(p, 'subject_id');
+end
 end

@@ -1,6 +1,6 @@
 classdef TestObjectLayer < matlab.unittest.TestCase
 %TESTOBJECTLAYER The V2 object layer (ndi.entity, ndi.subject, ndi.statement
-%and its children, ndi.data_type) over a written Haley session.
+%and its children, ndi.value) over a written Haley session.
 %
 %   Writes TestHaleyRecordings' synthetic concentration_0001 with its
 %   assertions, manipulations and calculations, opens it with
@@ -325,7 +325,7 @@ classdef TestObjectLayer < matlab.unittest.TestCase
             % V_eta tenet T17: a container's interactions reach what it
             % contained only with 'context', true, only while it was in it,
             % and marked as reached through contained_in. Assertions never.
-            if ~ndi.setup.V2.schemaHasField('subject_statement', 'distributive')
+            if ~ndi.setup.V2.schemaHasField('statement', 'distributive')
                 return;   % the stays are stated on the cohort, distributive
             end
             S = testCase.Session;
@@ -348,7 +348,7 @@ classdef TestObjectLayer < matlab.unittest.TestCase
                 'through its cohort''s distributive stay');
             vars = cellfun(@(x) x.variable_name(), ctx, 'UniformOutput', false);
             methods_ = cellfun(@(x) char(ndi.v2.termName(ndi.v2.blockOf(x.document_properties(), ...
-                'subject_interaction', 'method', ''))), ctx, 'UniformOutput', false);
+                'interaction', 'method', ''))), ctx, 'UniformOutput', false);
             testCase.verifyTrue(any(strcmp(vars, 'ambient temperature')), ...
                 'the bench and the incubator, while it was there');
             testCase.verifyFalse(any(strcmp(vars, 'NGM agar')), ...
@@ -401,7 +401,7 @@ classdef TestObjectLayer < matlab.unittest.TestCase
             testCase.verifyEmpty(other.observations({'variable', 'image intensity', 'during', hot}), ...
                 'plate 11 read 21.61 C; plate 12''s reading is not plate 11''s');
 
-            if ndi.setup.V2.schemaHasField('subject_statement', 'distributive')
+            if ndi.setup.V2.schemaHasField('statement', 'distributive')
                 % a worm: its plate's videos, while that plate was over 21.615 C
                 w = testCase.subject('concentration_worm0121');
                 testCase.verifyEmpty(w.observations({'variable', 'image intensity', 'during', hot}), ...
@@ -519,7 +519,7 @@ classdef TestObjectLayer < matlab.unittest.TestCase
             testCase.verifyTrue(all(cellfun(@(x) strcmp(x.via(), 'own'), mine)));
             testCase.verifyEqual(sum(cellfun(@(x) strcmp(x.via(), 'own'), st)), numel(mine), ...
                 'its own statements are kept');
-            if ndi.setup.V2.schemaHasField('subject_statement', 'distributive')
+            if ndi.setup.V2.schemaHasField('statement', 'distributive')
                 sp = T(cellfun(@(x) strcmp(x.variable_name(), 'species'), T));
                 testCase.verifyNumElements(sp, 1);
                 testCase.verifyEqual(sp{1}.raw_value().node, 'NCBITaxon:6239');
@@ -563,7 +563,7 @@ classdef TestObjectLayer < matlab.unittest.TestCase
                 testCase.verifyEqual(cellfun(@(x) x.document_id(), short{k}(W), 'UniformOutput', false), ...
                     cellfun(@(x) x.document_id(), statements(W, kinds{k}), 'UniformOutput', false), kinds{k});
             end
-            if ndi.setup.V2.schemaHasField('subject_statement', 'distributive')
+            if ndi.setup.V2.schemaHasField('statement', 'distributive')
                 m = manipulations(W(1), {'variable', 'location'});
                 testCase.verifyNotEmpty(m, 'the moves onto plates, stated on the cohort');
                 testCase.verifyTrue(all(cellfun(@(x) strcmp(x.variable_name(), 'location'), m)));
@@ -653,7 +653,7 @@ classdef TestObjectLayer < matlab.unittest.TestCase
             testCase.verifyClass(sp{1}, 'ndi.calculation');
             testCase.verifyTrue(isa(sp{1}, 'ndi.interaction'));
             v = sp{1}.value();
-            testCase.verifyClass(v, 'ndi.data_type');
+            testCase.verifyClass(v, 'ndi.value');
             testCase.verifyEqual(v.class_name, 'velocity');
             testCase.verifyEqual(double(v), 121e-6 * ones(5, 1), 'AbsTol', 1e-15, ...
                 'm/s by video frame, decoded from the sampled body');

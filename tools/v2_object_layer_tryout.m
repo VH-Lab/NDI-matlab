@@ -4,7 +4,7 @@ function T = v2_object_layer_tryout(datasetPath, options)
 %   T = v2_object_layer_tryout(DATASETPATH) opens the V2 dataset at
 %   DATASETPATH (the folder holding .ndi, e.g. <data>/haley_V2/dataset) and
 %   asks it the questions the object layer exists for, through ndi.subject,
-%   ndi.statement, ndi.entity and ndi.data_type, READ THROUGH THE DATASET:
+%   ndi.statement, ndi.entity and ndi.value, READ THROUGH THE DATASET:
 %   things are found in one session (quick), then read through the
 %   ndi.dataset, which also reaches the shared documents (software,
 %   formulations, strains, people) that a session cannot. The last step
@@ -19,7 +19,7 @@ function T = v2_object_layer_tryout(datasetPath, options)
 %
 %   It writes nothing.
 %
-%   See also ndi.subject, ndi.statement, ndi.entity, ndi.data_type,
+%   See also ndi.subject, ndi.statement, ndi.entity, ndi.value,
 %   src/ndi/docs/NDI-matlab/manual/developer/V2_Object_Layer.md.
 
 arguments

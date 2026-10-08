@@ -2,7 +2,7 @@
 
 **Status: PARTLY BUILT (2026-10-06), for review by Jess Haley and Steve Van Hooser.**
 Built (read side): `ndi.entity`, `ndi.subject` as an entity, the statement tree,
-`ndi.data_type`, and the `ndi.v2` helpers. **Not built, on purpose:** any change to
+`ndi.value`, and the `ndi.v2` helpers. **Not built, on purpose:** any change to
 `ndi.session` or `ndi.dataset` (section 4, "Entry points"); `ndi.strain`, `ndi.study`;
 `subject.location(t)`; the `'During'` filter. Section 9 lists what was built.
 
@@ -44,12 +44,12 @@ There is no method today that lists a session's subjects.
   stays with `did2.build` (as the Haley import does) until reading is done.
 - **D2 One statement tree, mirroring the schema.**
   ```
-  ndi.statement          subject_statement
-  ├── ndi.assertion      subject_assertion        (e.g. term_assertion: species, strain, exclusion)
-  └── ndi.interaction    subject_interaction      (abstract: never returned on its own)
-      ├── ndi.observation    subject_observation
-      ├── ndi.manipulation   subject_manipulation
-      └── ndi.calculation    subject_calculation
+  ndi.statement          statement
+  ├── ndi.assertion      assertion        (e.g. term_assertion: species, strain, exclusion)
+  └── ndi.interaction    interaction      (abstract: never returned on its own)
+      ├── ndi.observation    observation
+      ├── ndi.manipulation   manipulation
+      └── ndi.calculation    calculation
   ```
   There is no class per leaf (`velocity_calculation`, `dose_manipulation`, ...):
   about forty leaves would differ only by name. A statement object is returned as
@@ -156,7 +156,7 @@ method or instrument.
 - `ndi.calculation`: `inputs()` (the statements and documents it was computed
   from), `software()` (software, interpreter, operating system).
 
-### `ndi.data_type`
+### `ndi.value`
 
 A statement's value, the same object whether it was stored inline or in a data
 body (answers Q3: a small value class).
@@ -253,9 +253,9 @@ tried on the real Haley dataset before the next.
   composition (`session.entity()` returning an `ndi.entity`)? A mixin changes
   their class hierarchy; composition does not.
 - **Q2** ANSWERED: subjects include instrument subjects unless a filter says otherwise.
-- **Q3** ANSWERED: `ndi.data_type`, a small value class.
+- **Q3** ANSWERED: `ndi.value`, a small value class.
 - **Q4** ANSWERED: a formulation is a data_type, so `formulation()` returns an
-  `ndi.data_type` of class `formulation`; no `ndi.formulation`.
+  `ndi.value` of class `formulation`; no `ndi.formulation`.
 - **Q5** The writing side (D1 defers it): when it comes, does `ndi.statement`
   get constructors wrapping `did2.build`, or does `did2.build` stay the only
   writer?
@@ -272,7 +272,7 @@ tried on the real Haley dataset before the next.
 | `+ndi/observation.m` | `ndi.observation` |
 | `+ndi/manipulation.m` | `ndi.manipulation`: `formulation` |
 | `+ndi/calculation.m` | `ndi.calculation`: `inputs`, `interpreter`, `operating_system` |
-| `+ndi/data_type.m` | `ndi.data_type` |
+| `+ndi/data_type.m` | `ndi.value` |
 | `+ndi/+v2/` | helpers: `props`, `classChain`, `directParents`, `edgeIds`, `getDocument`, `blockOf`, `termName`, `readBody` (the sampled-body reader), `axesTable`, `parseUtc`, `timeOf` (the time resolver) |
 
 Tests: `tests/+ndi/+unittest/+setup/+V2/TestObjectLayer.m`, over the Haley CI

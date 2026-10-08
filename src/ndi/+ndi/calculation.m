@@ -26,7 +26,7 @@ classdef calculation < ndi.interaction
             for i = 1:numel(ids)
                 d = ndi.v2.getDocument(obj.container_, ids{i});
                 if isempty(d), continue; end
-                if any(strcmp(ndi.v2.classChain(ndi.v2.props(d)), 'subject_statement'))
+                if any(strcmp(ndi.v2.classChain(ndi.v2.props(d)), 'statement'))
                     x{end+1} = ndi.statement.fromDocument(obj.container_, d); %#ok<AGROW>
                 else
                     x{end+1} = d; %#ok<AGROW>

@@ -51,9 +51,9 @@ if ~isempty(filt.method) && strcmp(kind, 'assertion')
     error('ndi:v2:searchStatements:assertionMethod', 'An assertion has no method.');
 end
 
-q = ndi.query('', 'isa', classOf(kind), '');
-q = andTerm(q, 'subject_statement.variable', filt.variable);
-q = andTerm(q, 'subject_interaction.method', filt.method);
+q = ndi.v2.isaQuery(classOf(kind));
+q = andTerm(q, 'statement.variable', filt.variable);
+q = andTerm(q, 'interaction.method', filt.method);
 if ~isempty(filt.value) && all(cellfun(@isPlainText, filt.value))
     % a term value can be narrowed in the database; a statement whose value
     % is not a term passes to the recheck. When that finds nothing, search
@@ -71,8 +71,8 @@ end
 structural = {};
 for i = 1:numel(cand)
     p = ndi.v2.props(cand{i});
-    if ~patternsMatch(ndi.v2.blockOf(p, 'subject_statement', 'variable', []), filt.variable), continue; end
-    if ~patternsMatch(ndi.v2.blockOf(p, 'subject_interaction', 'method', []), filt.method), continue; end
+    if ~patternsMatch(ndi.v2.blockOf(p, 'statement', 'variable', []), filt.variable), continue; end
+    if ~patternsMatch(ndi.v2.blockOf(p, 'interaction', 'method', []), filt.method), continue; end
     structural{end+1} = cand{i}; %#ok<AGROW>
 end
 info = struct('structural', numel(structural), 'values', {{}}, 'beforeTime', 0);
@@ -121,7 +121,7 @@ end
 docs = {};
 for c = 1:200:numel(ids)
     part = ids(c:min(c + 199, numel(ids)));
-    qs = cellfun(@(i) ndi.query('', 'depends_on', 'subject_id', i), part, 'UniformOutput', false);
+    qs = cellfun(@(i) ndi.v2.entityQuery(i), part, 'UniformOutput', false);
     docs = [docs, reshape(container.database_search(q & ndi.v2.anyOf(qs)), 1, [])]; %#ok<AGROW>
 end
 end
@@ -147,12 +147,9 @@ if isstring(x), x = char(x); end
 end
 
 function c = classOf(kind)
-short = {'statement', 'assertion', 'interaction', 'observation', 'manipulation', 'calculation'};
-if any(strcmp(kind, short))
-    c = ['subject_' kind];
-else
-    c = kind;
-end
+% the six kinds are the class names themselves since 2026-10-08 (isaQuery
+% also finds documents written as `subject_<kind>`)
+c = kind;
 end
 
 function tf = isPlainText(p)

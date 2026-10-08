@@ -42,7 +42,7 @@ classdef (Abstract) interaction < ndi.statement
 
         function m = method(obj)
             % METHOD - the method's term ({node, name}); [] when none
-            m = ndi.v2.blockOf(obj.document_properties(), 'subject_interaction', 'method', []);
+            m = ndi.v2.blockOf(obj.document_properties(), 'interaction', 'method', []);
         end
 
         function n = method_name(obj)
@@ -57,7 +57,7 @@ classdef (Abstract) interaction < ndi.statement
             % number in `unit` (the canonical unit), a term's name, or text;
             % SOURCE_VALUE is the number as the source wrote it, in
             % SOURCE_UNIT ('' for a term or text).
-            m = ndi.v2.blockOf(obj.document_properties(), 'subject_interaction', 'method_parameters', []);
+            m = ndi.v2.blockOf(obj.document_properties(), 'interaction', 'method_parameters', []);
             m = ndi.v2.entries(m);
             variable = strings(0, 1); value = cell(0, 1); unit = strings(0, 1);
             source_value = strings(0, 1); source_unit = strings(0, 1);

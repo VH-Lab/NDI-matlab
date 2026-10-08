@@ -11,7 +11,7 @@ function chain = classChain(p)
 name = char(p.document_class.class_name);
 chain = {name};
 try
-    chain = [{name}, reshape(did2.schema.cache.shared().superclasses(name), 1, [])];
+    chain = ndi.v2.vetaName([{name}, reshape(did2.schema.cache.shared().superclasses(name), 1, [])]);
     return;
 catch
 end
@@ -24,4 +24,5 @@ if isfield(p.document_class, 'superclasses')
         end
     end
 end
+chain = ndi.v2.vetaName(chain);   % names as of 2026-10-08 (ndi.v2.vetaName)
 end

@@ -1,17 +1,18 @@
-classdef data_type
-    % ndi.data_type - a statement's value: what was measured, set or computed
+classdef value
+    % ndi.value - a statement's value: what was measured, set or computed
     %
-    % Every V2 statement's value is a data_type composite (length, time,
+    % Every V2 statement's value is a `value` composite (`data_type` until
+    % 2026-10-08) (length, time,
     % intensity, velocity, temperature, term, label, score, dose, position,
     % model_fit, ...). A dimensioned one stores each value as a cell: the
     % number in its canonical unit (e.g. `meters`), the source value and
     % unit it came from, a tolerance and whether it is approximate (tenet
     % T14). A value is stored INLINE on the statement or, when it is an array,
-    % in a data body; an ndi.data_type reads the same way either way.
+    % in a data body; an ndi.value reads the same way either way.
     %
     % Get one from a statement:  v = st.value();
     %
-    % ndi.data_type Methods:
+    % ndi.value Methods:
     %   canonical    - the values in the canonical unit (numbers), or the
     %                  names (terms, labels), or the raw struct (dose, model
     %                  fit, ...); double(v) is the same for numbers
@@ -35,10 +36,10 @@ classdef data_type
     end
 
     methods
-        function obj = data_type(className, raw, options)
-            % DATA_TYPE - wrap a composite value
+        function obj = value(className, raw, options)
+            % VALUE - wrap a composite value
             %
-            % OBJ = ndi.data_type(CLASSNAME, RAW, 'Data', A, 'Files', F,
+            % OBJ = ndi.value(CLASSNAME, RAW, 'Data', A, 'Files', F,
             % 'Keys', K, 'DatumType', T). Made by ndi.statement/value.
             arguments
                 className (1,:) char = ''
@@ -54,7 +55,7 @@ classdef data_type
             obj.file_list = options.Files;
             obj.keys = options.Keys;
             obj.datum_type = options.DatumType;
-            obj.canonical_field = ndi.data_type.canonicalField(className);
+            obj.canonical_field = ndi.value.canonicalField(className);
         end
 
         function v = canonical(obj)

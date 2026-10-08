@@ -14,8 +14,17 @@ arguments
 end
 tf = false;
 p = getenv('DID_SCHEMA_PATH');
-f = fullfile(p, [className '.json']);
-if isempty(p) || ~isfile(f)
+% a class renamed 2026-10-08 is looked up under whichever name the schema
+% in use has (ndi.v2.vetaAliases: 'statement' or 'subject_statement')
+names = ndi.v2.vetaAliases(className);
+f = '';
+for k = 1:numel(names)
+    if ~isempty(p) && isfile(fullfile(p, [names{k} '.json']))
+        f = fullfile(p, [names{k} '.json']);
+        break;
+    end
+end
+if isempty(f)
     return;
 end
 d = jsondecode(fileread(f));

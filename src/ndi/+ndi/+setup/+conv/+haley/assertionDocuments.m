@@ -60,7 +60,7 @@ for k = 1:numel(list)
     strains(list{k}.key) = list{k};
 end
 eachMember = struct();
-if ndi.setup.V2.schemaHasField('subject_statement', 'distributive')
+if ndi.setup.V2.schemaHasField('statement', 'distributive')
     eachMember.distributive = true;
 end
 

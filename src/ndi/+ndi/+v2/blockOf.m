@@ -3,7 +3,12 @@ function v = blockOf(p, block, field, default)
 
 if nargin < 4, default = []; end
 v = default;
-if isfield(p, block) && isstruct(p.(block)) && isfield(p.(block), field)
-    v = p.(block).(field);
+% a block renamed 2026-10-08 is read under either name (ndi.v2.vetaAliases)
+names = ndi.v2.vetaAliases(block);
+for k = 1:numel(names)
+    if isfield(p, names{k}) && isstruct(p.(names{k})) && isfield(p.(names{k}), field)
+        v = p.(names{k}).(field);
+        return;
+    end
 end
 end

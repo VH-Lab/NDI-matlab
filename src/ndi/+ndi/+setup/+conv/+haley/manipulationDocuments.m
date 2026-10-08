@@ -96,7 +96,7 @@ secondFmt = 'yyyy-MM-dd''T''HH:mm:ss';
 refs = getOr(options.Relations, 'timeReferenceIds', containers.Map());
 spans = getOr(options.Relations, 'assaySpans', containers.Map());
 eachMember = struct();
-if ndi.setup.V2.schemaHasField('subject_statement', 'distributive')
+if ndi.setup.V2.schemaHasField('statement', 'distributive')
     eachMember.distributive = true;
 end
 

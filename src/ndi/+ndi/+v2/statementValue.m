@@ -23,13 +23,13 @@ end
 
 function [k, v, u] = valueOf(p)
 k = 'none'; v = []; u = '';
-if logical(firstOr(ndi.v2.blockOf(p, 'data_type', 'data_body', false), false))
+if logical(firstOr(ndi.v2.blockOf(p, 'value', 'data_body', false), false))
     return;
 end
 chain = ndi.v2.classChain(p);
 c = '';
 for i = 1:numel(chain)
-    if any(strcmp(ndi.v2.directParents(chain{i}), 'data_type')), c = chain{i}; break; end
+    if any(strcmp(ndi.v2.directParents(chain{i}), 'value')), c = chain{i}; break; end
 end
 if isempty(c), return; end
 raw = ndi.v2.blockOf(p, c, 'value', []);
@@ -48,10 +48,10 @@ if ischar(raw) || isstring(raw)
     k = 'text'; v = char(raw); return;
 end
 if isnumeric(raw) && isscalar(raw)
-    k = 'number'; v = double(raw); u = ndi.data_type.canonicalField(c); return;
+    k = 'number'; v = double(raw); u = ndi.value.canonicalField(c); return;
 end
 if ~isstruct(raw), return; end
-cf = ndi.data_type.canonicalField(c);
+cf = ndi.value.canonicalField(c);
 if ~isempty(cf) && isfield(raw, cf) && isnumeric(raw.(cf)) && isscalar(raw.(cf))
     k = 'number'; v = double(raw.(cf)); u = cf; return;
 end
@@ -60,7 +60,7 @@ amounts = []; units = {};
 f = fieldnames(raw);
 for i = 1:numel(f)
     s = raw.(f{i});
-    sf = ndi.data_type.canonicalField(f{i});
+    sf = ndi.value.canonicalField(f{i});
     if isstruct(s) && isscalar(s) && ~isempty(sf) && isfield(s, sf) && isnumeric(s.(sf)) && isscalar(s.(sf))
         amounts(end+1) = double(s.(sf)); %#ok<AGROW>
         units{end+1} = sf; %#ok<AGROW>

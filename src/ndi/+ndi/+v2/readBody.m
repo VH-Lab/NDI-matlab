@@ -14,7 +14,7 @@ function [values, info] = readBody(container, bodyDoc, datumType, keys)
 %
 %   One file per body (one chunk); a chunked body is an error for now.
 %
-%   See also ndi.statement/value, ndi.data_type.
+%   See also ndi.statement/value, ndi.value.
 
 if nargin < 4, keys = []; end
 p = ndi.v2.props(bodyDoc);

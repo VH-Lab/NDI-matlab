@@ -14,15 +14,25 @@ patterns = cellstr(patterns);
 if any(cellfun(@ndi.v2.hasWildcard, patterns)) && ~ndi.v2.hasWildcardOperator()
     return;
 end
+% a block renamed 2026-10-08 is searched under both names (ndi.v2.vetaAliases)
+parts = strsplit(char(path), '.');
+paths = cellfun(@(b) strjoin([{b}, parts(2:end)], '.'), ndi.v2.vetaAliases(parts{1}), ...
+    'UniformOutput', false);
 for k = 1:numel(patterns)
-    p = patterns{k};
-    if ndi.v2.hasWildcard(p)
-        one = ndi.query([path '.name'], 'wildcard', p, '') | ndi.query([path '.node'], 'wildcard', p, '');
-    else
-        p = strrep(p, '\*', '*');
-        one = ndi.query([path '.name'], 'exact_string_anycase', p, '') | ...
-            ndi.query([path '.node'], 'exact_string', p, '');
+    for j = 1:numel(paths)
+        one = termOne(paths{j}, patterns{k});
+        if isempty(q), q = one; else, q = q | one; end
     end
-    if isempty(q), q = one; else, q = q | one; end
+end
+end
+
+function one = termOne(path, p)
+% one pattern on one path: by name (ignoring case) or by node
+if ndi.v2.hasWildcard(p)
+    one = ndi.query([path '.name'], 'wildcard', p, '') | ndi.query([path '.node'], 'wildcard', p, '');
+else
+    p = strrep(p, '\*', '*');
+    one = ndi.query([path '.name'], 'exact_string_anycase', p, '') | ...
+        ndi.query([path '.node'], 'exact_string', p, '');
 end
 end

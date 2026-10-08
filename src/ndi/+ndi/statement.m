@@ -25,7 +25,7 @@ classdef statement
     %   ds = ndi.dataset.dir(datasetPath);
     %   w = ndi.subject.search(ds, 'LocalIdentifier', 'concentration_worm0012');
     %   st = w{1}.statements('Variable', 'midpoint speed');
-    %   v = st{1}.value();          % an ndi.data_type
+    %   v = st{1}.value();          % an ndi.value
     %   speed = double(v);          % metres per second, by video frame
     %   v.axes()                    % what each dimension indexes
     %
@@ -33,7 +33,7 @@ classdef statement
     %   kind, document, document_properties, document_id
     %   subject        - the ndi.subject the statement is about
     %   variable       - the term; variable_name, its name
-    %   value          - an ndi.data_type (decoded from its body when stored there)
+    %   value          - an ndi.value (decoded from its body when stored there)
     %   raw_value      - the inline value exactly as stored
     %   composite      - the value's composite class, e.g. 'velocity'
     %   axes           - table of the value's keys
@@ -44,7 +44,7 @@ classdef statement
     %   summary        - a table, one row per statement (ndi.summary for a cell)
     %   fromDocument, search - (static) make statements
     %
-    % See also ndi.subject, ndi.data_type, ndi.interaction.
+    % See also ndi.subject, ndi.value, ndi.interaction.
 
     properties (SetAccess = protected, GetAccess = public, Hidden)
         statement_document_ = []   % the ndi.document this statement reads
@@ -75,7 +75,7 @@ classdef statement
             % then what it is about (see VIA).
             id = obj.about_;
             if isempty(id)
-                ids = ndi.v2.edgeIds(obj.document_properties(), 'subject_id');
+                ids = ndi.v2.edgeIds(obj.document_properties(), 'entity_id');
                 if ~isempty(ids), id = ids{1}; end
             end
         end
@@ -147,7 +147,7 @@ classdef statement
         function s = subject(obj)
             % SUBJECT - the ndi.subject this statement is about ([] when not found)
             s = [];
-            ids = ndi.v2.edgeIds(obj.document_properties(), 'subject_id');
+            ids = ndi.v2.edgeIds(obj.document_properties(), 'entity_id');
             if isempty(ids), return; end
             d = ndi.v2.getDocument(obj.container_, ids{1});
             if ~isempty(d)
@@ -157,7 +157,7 @@ classdef statement
 
         function t = variable(obj)
             % VARIABLE - the statement's variable, a term ({node, name})
-            t = ndi.v2.blockOf(obj.document_properties(), 'subject_statement', 'variable', []);
+            t = ndi.v2.blockOf(obj.document_properties(), 'statement', 'variable', []);
         end
 
         function n = variable_name(obj)
@@ -174,7 +174,7 @@ classdef statement
             p = obj.document_properties();
             chain = ndi.v2.classChain(p);
             for i = 1:numel(chain)
-                if any(strcmp(ndi.v2.directParents(chain{i}), 'data_type'))
+                if any(strcmp(ndi.v2.directParents(chain{i}), 'value'))
                     c = chain{i};
                     return;
                 end
@@ -191,14 +191,14 @@ classdef statement
         end
 
         function v = value(obj)
-            % VALUE - the statement's value, an ndi.data_type
+            % VALUE - the statement's value, an ndi.value
             %
             % Inline, or read from the statement's data body: a sampled body
             % is decoded into an array (its datum type, byte order and keys);
             % an opaque body (a video, an image file) gives its file paths.
             p = obj.document_properties();
             c = obj.composite();
-            dt = char(ndi.v2.blockOf(p, 'data_type', 'datum_type', ''));
+            dt = char(ndi.v2.blockOf(p, 'value', 'datum_type', ''));
             ids = ndi.v2.edgeIds(p, 'value_id');
             if isempty(c) && ~isempty(ids)
                 % the value is a document of its own (a shared item, a model fit)
@@ -209,12 +209,12 @@ classdef statement
                 end
                 q = ndi.v2.props(d);
                 k = char(q.document_class.class_name);
-                v = ndi.data_type(k, ndi.v2.blockOf(q, k, 'value', []), ...
+                v = ndi.value(k, ndi.v2.blockOf(q, k, 'value', []), ...
                     'Keys', ndi.v2.blockOf(q, 'data', 'keys', []));
                 return;
             end
-            if ~logical(firstOr(ndi.v2.blockOf(p, 'data_type', 'data_body', false), false))
-                v = ndi.data_type(c, obj.raw_value(), 'Keys', ndi.v2.blockOf(p, 'data', 'keys', []), ...
+            if ~logical(firstOr(ndi.v2.blockOf(p, 'value', 'data_body', false), false))
+                v = ndi.value(c, obj.raw_value(), 'Keys', ndi.v2.blockOf(p, 'data', 'keys', []), ...
                     'DatumType', dt);
                 return;
             end
@@ -230,7 +230,7 @@ classdef statement
             if isempty(keys), keys = ndi.v2.blockOf(bp, 'data', 'keys', []); end
             if any(strcmp(ndi.v2.classChain(bp), 'sampled_body'))
                 vals = ndi.v2.readBody(obj.container_, b{1}, dt, keys);
-                v = ndi.data_type(c, obj.raw_value(), 'Data', vals, 'Keys', keys, 'DatumType', dt);
+                v = ndi.value(c, obj.raw_value(), 'Data', vals, 'Keys', keys, 'DatumType', dt);
             else
                 files = {};
                 for i = 1:numel(b)
@@ -242,7 +242,7 @@ classdef statement
                         if tf, files{end+1} = f; end %#ok<AGROW>
                     end
                 end
-                v = ndi.data_type(c, obj.raw_value(), 'Files', files, 'Keys', keys, 'DatumType', dt);
+                v = ndi.value(c, obj.raw_value(), 'Files', files, 'Keys', keys, 'DatumType', dt);
             end
         end
 
@@ -262,7 +262,7 @@ classdef statement
             %
             % One row per condition: variable, value (a number in `unit`, a
             % count, or a term's name), unit, source_value, source_unit.
-            c = ndi.v2.blockOf(obj.document_properties(), 'subject_statement', 'conditions', []);
+            c = ndi.v2.blockOf(obj.document_properties(), 'statement', 'conditions', []);
             c = ndi.v2.entries(c);
             variable = strings(0, 1); value = cell(0, 1); unit = strings(0, 1);
             source_value = cell(0, 1); source_unit = strings(0, 1);
@@ -290,13 +290,13 @@ classdef statement
         function tf = distributive(obj)
             % DISTRIBUTIVE - true when the statement, made about a group,
             % holds of each of the group's members (subject_statement.distributive)
-            d = ndi.v2.blockOf(obj.document_properties(), 'subject_statement', 'distributive', false);
+            d = ndi.v2.blockOf(obj.document_properties(), 'statement', 'distributive', false);
             tf = ~isempty(d) && logical(d(1));
         end
 
         function n = notes(obj)
             % NOTES - the statement's notes ('' when none)
-            n = char(ndi.v2.blockOf(obj.document_properties(), 'subject_interaction', 'notes', ''));
+            n = char(ndi.v2.blockOf(obj.document_properties(), 'interaction', 'notes', ''));
         end
     end
 
@@ -324,17 +324,17 @@ classdef statement
                 st = statements{i};
                 p = st.document_properties();
                 chain = ndi.v2.classChain(p);
-                kinds = {'subject_assertion', 'subject_observation', 'subject_manipulation', 'subject_calculation'};
+                kinds = {'assertion', 'observation', 'manipulation', 'calculation'};
                 k = find(ismember(kinds, chain), 1);
-                if ~isempty(k), kind(i) = string(extractAfter(kinds{k}, 'subject_')); else, kind(i) = "statement"; end
+                if ~isempty(k), kind(i) = string(kinds{k}); else, kind(i) = "statement"; end
                 class(i) = string(p.document_class.class_name);
-                vr = ndi.v2.blockOf(p, 'subject_statement', 'variable', '');
+                vr = ndi.v2.blockOf(p, 'statement', 'variable', '');
                 variable(i) = string(ndi.v2.termName(vr)); variable_node(i) = string(nodeOf(vr));
-                mr = ndi.v2.blockOf(p, 'subject_interaction', 'method', '');
+                mr = ndi.v2.blockOf(p, 'interaction', 'method', '');
                 method(i) = string(ndi.v2.termName(mr)); method_node(i) = string(nodeOf(mr));
                 [vk, vv, vt, vu] = ndi.v2.statementValue(p);
                 if strcmp(vk, 'term'), value_node(i) = string(nodeOf(vv)); end
-                if strcmp(vk, 'none') && logical(firstOr(ndi.v2.blockOf(p, 'data_type', 'data_body', false), false))
+                if strcmp(vk, 'none') && logical(firstOr(ndi.v2.blockOf(p, 'value', 'data_body', false), false))
                     vt = '(data body)';
                 elseif strcmp(vk, 'none')
                     c = st.composite();
@@ -343,7 +343,7 @@ classdef statement
                     end
                 end
                 value(i) = string(vt); unit(i) = string(vu);
-                o = ndi.v2.edgeIds(p, 'subject_id');
+                o = ndi.v2.edgeIds(p, 'entity_id');
                 if isempty(o), o = {''}; end
                 own{i} = o{1};
                 via(i) = string(st.via());
@@ -405,13 +405,13 @@ classdef statement
                 doc = d;
             end
             chain = ndi.v2.classChain(ndi.v2.props(doc));
-            if any(strcmp(chain, 'subject_observation'))
+            if any(strcmp(chain, 'observation'))
                 obj = ndi.observation(container, doc);
-            elseif any(strcmp(chain, 'subject_manipulation'))
+            elseif any(strcmp(chain, 'manipulation'))
                 obj = ndi.manipulation(container, doc);
-            elseif any(strcmp(chain, 'subject_calculation'))
+            elseif any(strcmp(chain, 'calculation'))
                 obj = ndi.calculation(container, doc);
-            elseif any(strcmp(chain, 'subject_assertion'))
+            elseif any(strcmp(chain, 'assertion'))
                 obj = ndi.assertion(container, doc);
             else
                 obj = ndi.statement(container, doc);
@@ -436,24 +436,21 @@ classdef statement
                 options.Class (1,:) char = ''
                 options.Method (1,:) char = ''
             end
-            cls = 'subject_statement';
-            short = {'observation', 'manipulation', 'calculation', 'assertion', 'interaction'};
-            if any(strcmp(options.Class, short))
-                cls = ['subject_' options.Class];
-            elseif ~isempty(options.Class)
-                cls = options.Class;
+            cls = 'statement';
+            if ~isempty(options.Class)
+                cls = ndi.v2.vetaName(options.Class);   % 'subject_observation' still works
             end
-            q = ndi.query('', 'isa', cls, '');
+            q = ndi.v2.isaQuery(cls);
             if ~isempty(options.Subject)
                 sid = options.Subject;
                 if isa(sid, 'ndi.subject'), sid = sid.id(); end
-                q = q & ndi.query('', 'depends_on', 'subject_id', char(sid));
+                q = q & ndi.v2.entityQuery(char(sid));
             end
             if ~isempty(options.Variable)
-                q = q & ndi.query('subject_statement.variable.name', 'exact_string', options.Variable, '');
+                q = q & ndi.v2.fieldQuery('statement.variable.name', 'exact_string', options.Variable);
             end
             if ~isempty(options.Method)
-                q = q & ndi.query('subject_interaction.method.name', 'exact_string', options.Method, '');
+                q = q & ndi.v2.fieldQuery('interaction.method.name', 'exact_string', options.Method);
             end
             docs = container.database_search(q);
             s = cell(1, numel(docs));

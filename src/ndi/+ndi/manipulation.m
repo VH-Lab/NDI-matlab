@@ -2,7 +2,7 @@ classdef manipulation < ndi.interaction
     % ndi.manipulation - a statement of what was done to a subject
     %
     % ndi.manipulation Methods (beyond ndi.interaction):
-    %   formulation - for a dose: what was given (an ndi.data_type of class
+    %   formulation - for a dose: what was given (an ndi.value of class
     %                 'formulation'; [] when the statement names none)
     %
     % See also ndi.interaction, ndi.statement.
@@ -17,7 +17,7 @@ classdef manipulation < ndi.interaction
         end
 
         function f = formulation(obj)
-            % FORMULATION - what a dose gave: an ndi.data_type ([] when none)
+            % FORMULATION - what a dose gave: an ndi.value ([] when none)
             %
             % A formulation is a data_type, not an entity: its value holds
             % the ingredients (and their own formulations) as stored.
@@ -27,7 +27,7 @@ classdef manipulation < ndi.interaction
             d = ndi.v2.getDocument(obj.container_, ids{1});
             if isempty(d), return; end
             p = ndi.v2.props(d);
-            f = ndi.data_type('formulation', ndi.v2.blockOf(p, 'formulation', 'value', []));
+            f = ndi.value('formulation', ndi.v2.blockOf(p, 'formulation', 'value', []));
         end
     end
 end

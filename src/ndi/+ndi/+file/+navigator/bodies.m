@@ -123,7 +123,7 @@ classdef bodies < ndi.file.navigator
                 channels = S.database_search(ndi.query('', 'isa', 'acquisition_channels', '') & ...
                     ndi.query('', 'depends_on', 'acquisition_system_id', systems{a}.id()) & inSession);
                 for c = 1:numel(channels)
-                    statements = S.database_search(ndi.query('', 'isa', 'subject_statement', '') & ...
+                    statements = S.database_search(ndi.v2.isaQuery('statement') & ...
                         ndi.query('', 'depends_on', 'acquisition_channels_id', channels{c}.id()) & inSession);
                     for t = 1:numel(statements)
                         st = statements{t};
@@ -208,16 +208,17 @@ classdef bodies < ndi.file.navigator
         function pm = statementProbemap(~, st, sysName)
             p = st.document_properties;
             type = '';
-            if isfield(p, 'subject_interaction') && isfield(p.subject_interaction, 'method') ...
-                    && isstruct(p.subject_interaction.method) && isfield(p.subject_interaction.method, 'name')
-                type = char(p.subject_interaction.method.name);
+            m = ndi.v2.blockOf(p, 'interaction', 'method', []);
+            if isstruct(m) && isfield(m, 'name')
+                type = char(m.name);
             end
             if isempty(type)
                 error('NDI:navigator:bodies:noMethod', ...
                     ['Recording statement %s has no `method`, which names the probe ' ...
                      'type (e.g. brightfield-imaging).'], st.id());
             end
-            subject = st.dependency_value('subject_id');
+            subject = ndi.v2.edgeIds(p, 'entity_id');
+            if isempty(subject), subject = ''; else, subject = subject{1}; end
             pm = ndi.epoch.epochprobemap_daqsystem(sysName, 1, type, [sysName ':image1'], subject);
         end
     end

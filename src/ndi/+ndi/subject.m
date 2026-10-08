@@ -713,13 +713,13 @@ classdef subject < ndi.ido & ndi.documentservice & ndi.entity
             ids = {}; groups = {}; asserted = {};
             for i = 1:numel(docs)
                 p = ndi.v2.props(docs{i});
-                sid = ndi.v2.edgeIds(p, 'subject_id');
+                sid = ndi.v2.edgeIds(p, 'entity_id');
                 ids = [ids, sid]; %#ok<AGROW>
                 if ~inherited, continue; end
-                if isDistributive(ndi.v2.blockOf(p, 'subject_statement', 'distributive', false))
+                if isDistributive(ndi.v2.blockOf(p, 'statement', 'distributive', false))
                     groups = [groups, sid]; %#ok<AGROW>
                 end
-                if any(strcmp(ndi.v2.classChain(p), 'subject_assertion'))
+                if any(strcmp(ndi.v2.classChain(p), 'assertion'))
                     asserted = [asserted, sid]; %#ok<AGROW>
                 end
             end
@@ -920,9 +920,9 @@ classdef subject < ndi.ido & ndi.documentservice & ndi.entity
                 if info.structural > 0, continue; end
                 pats = cellstr(f.filt.(part{1}));
                 if strcmp(f.kind, 'assertion') && strcmp(part{1}, 'variable')
-                    docs = container.database_search(ndi.query('', 'isa', 'subject_assertion', ''));
+                    docs = container.database_search(ndi.v2.isaQuery('assertion'));
                     names = cellfun(@(d) ndi.v2.termName(ndi.v2.blockOf(ndi.v2.props(d), ...
-                        'subject_statement', 'variable', '')), docs, 'UniformOutput', false);
+                        'statement', 'variable', '')), docs, 'UniformOutput', false);
                     props = unique([names, {'id', 'local_identifier', 'name', 'type'}]);
                     [~, o] = sort(lower(props));
                     props = props(o);
@@ -1082,10 +1082,10 @@ classdef subject < ndi.ido & ndi.documentservice & ndi.entity
                 docs = ndi.v2.searchStatements(container, kinds(k).kind, f);
                 for i = 1:numel(docs)
                     p = ndi.v2.props(docs{i});
-                    sid = ndi.v2.edgeIds(p, 'subject_id');
+                    sid = ndi.v2.edgeIds(p, 'entity_id');
                     if isempty(sid), continue; end
-                    isAssertion = any(strcmp(ndi.v2.classChain(p), 'subject_assertion'));
-                    d = ndi.v2.blockOf(p, 'subject_statement', 'distributive', false);
+                    isAssertion = any(strcmp(ndi.v2.classChain(p), 'assertion'));
+                    d = ndi.v2.blockOf(p, 'statement', 'distributive', false);
                     distributive = ~isempty(d) && (islogical(d) || isnumeric(d)) && logical(d(1));
                     for j = find(strcmp({all_.at}, sid{1}))
                         st = all_(j);
@@ -1167,7 +1167,7 @@ classdef subject < ndi.ido & ndi.documentservice & ndi.entity
                 if ~isempty(all_), times = ndi.v2.timesOf(container, all_, cache); end
                 for i = 1:numel(docs)
                     p = ndi.v2.props(docs{i});
-                    sid = ndi.v2.edgeIds(p, 'subject_id');
+                    sid = ndi.v2.edgeIds(p, 'entity_id');
                     if isempty(sid), continue; end
                     t = cellfun(@(r) ifKeyAny(times, r), refs{i}, 'UniformOutput', false);
                     for j = find(strcmp({C.at}, sid{1}))
@@ -1228,7 +1228,7 @@ classdef subject < ndi.ido & ndi.documentservice & ndi.entity
             % the members of a group in a distributive stay. Assertions
             % never pass.
             ids = {};
-            keep = cellfun(@(d) ~any(strcmp(ndi.v2.classChain(ndi.v2.props(d)), 'subject_assertion')), docs);
+            keep = cellfun(@(d) ~any(strcmp(ndi.v2.classChain(ndi.v2.props(d)), 'assertion')), docs);
             docs = docs(keep);
             if isempty(docs), return; end
             cache = containers.Map('KeyType', 'char', 'ValueType', 'any');
@@ -1236,7 +1236,7 @@ classdef subject < ndi.ido & ndi.documentservice & ndi.entity
             for i = 1:numel(docs)
                 p = ndi.v2.props(docs{i});
                 refs{i} = ndi.v2.edgeIds(p, 'time_reference_id');
-                s = ndi.v2.edgeIds(p, 'subject_id');
+                s = ndi.v2.edgeIds(p, 'entity_id');
                 if isempty(s), s = {''}; end
                 subj{i} = s{1};
             end

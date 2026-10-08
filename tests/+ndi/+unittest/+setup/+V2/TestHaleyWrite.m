@@ -230,8 +230,8 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
                 cellfun(@(d) d.base.id, subj, 'UniformOutput', false));
             byLocal = containers.Map(cellfun(@(d) d.subject.local_identifier, subj, 'UniformOutput', false), subj);
             ta = docs(strcmp(classes, 'term_assertion'));
-            about = @(local, variable) ta(cellfun(@(a) strcmp(edge(a, 'subject_id'), idOf(local)) ...
-                && strcmp(a.subject_statement.variable.name, variable), ta));
+            about = @(local, variable) ta(cellfun(@(a) strcmp(edge(a, 'entity_id'), idOf(local)) ...
+                && strcmp(a.statement.variable.name, variable), ta));
 
             % 4 cohorts, each with a species, a strain and a sex; 4 seeded
             % patches, each with a species and a strain; plate 13 excluded
@@ -246,13 +246,13 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
                 'the strain is its WormBase term, not a name alone');
             testCase.verifyEqual(edge(a{1}, 'strain_id'), result.metadata.ids('N2'), ...
                 'the strain assertion names the dataset-level strain document');
-            if ndi.setup.V2.schemaHasField('subject_statement', 'distributive')
-                testCase.verifyTrue(logical(a{1}.subject_statement.distributive), ...
+            if ndi.setup.V2.schemaHasField('statement', 'distributive')
+                testCase.verifyTrue(logical(a{1}.statement.distributive), ...
                     'stated on the cohort, it holds of each worm');
             end
             a = about('concentration_assayPlate0012_worms', 'biological sex');
             testCase.verifyNumElements(a, 1);
-            testCase.verifyEqual(a{1}.subject_statement.variable.node, 'PATO:0000047');
+            testCase.verifyEqual(a{1}.statement.variable.node, 'PATO:0000047');
             testCase.verifyEqual(a{1}.term.value.node, 'PATO:0001340');
             testCase.verifyEqual(a{1}.term.value.name, 'hermaphrodite');
             testCase.verifyEmpty(about('concentration_assayPlate0012_patch0001', 'biological sex'), ...
@@ -308,7 +308,7 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             subj = docs(strcmp(classes, 'subject'));
             idOf = containers.Map(cellfun(@(d) d.subject.local_identifier, subj, 'UniformOutput', false), ...
                 cellfun(@(d) d.base.id, subj, 'UniformOutput', false));
-            on = @(set, local) set(cellfun(@(a) strcmp(edge(a, 'subject_id'), idOf(local)), set));
+            on = @(set, local) set(cellfun(@(a) strcmp(edge(a, 'entity_id'), idOf(local)), set));
             liters = @(d) d.dose.value.volume.liters;
             dm = docs(strcmp(classes, 'dose_manipulation'));
 
@@ -323,7 +323,7 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             testCase.verifyNumElements(pour, 1);
             testCase.verifyEqual(liters(pour{1}), 0.025, 'AbsTol', 1e-12);
             testCase.verifyEqual(edge(pour{1}, 'formulation_id'), result.metadata.ids('ngm'));
-            testCase.verifyEqual(pour{1}.subject_statement.variable.name, 'NGM agar');
+            testCase.verifyEqual(pour{1}.statement.variable.name, 'NGM agar');
             when = byId(edge(pour{1}, 'time_reference_id'));
             testCase.verifyEqual(when.document_class.class_name, 'relative_time_reference');
             testCase.verifyEqual(edge(when, 'referent_id'), edge(seed{1}, 'time_reference_id'));
@@ -337,7 +337,7 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             % plate 12: into the cold room (4 C), then room temperature (20 C)
             tm = on(docs(strcmp(classes, 'temperature_manipulation')), 'concentration_assayPlate0012');
             testCase.verifyEqual(reshape(sort(cellfun(@(d) d.temperature.value.celsius, tm)), 1, []), [4 20]);
-            methods = sort(cellfun(@(d) d.subject_interaction.method.name, tm, 'UniformOutput', false));
+            methods = sort(cellfun(@(d) d.interaction.method.name, tm, 'UniformOutput', false));
             testCase.verifyEqual(reshape(methods, 1, []), {'ambient exposure', 'refrigeration'});
 
             % the cohort's moves, at its contained_in times
@@ -345,9 +345,9 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             mine = on(tmn, 'concentration_assayPlate0012_worms');
             toAssay = mine(cellfun(@(d) strcmp(d.term.value.name, 'assay plate'), mine));
             testCase.verifyNumElements(toAssay, 1);
-            testCase.verifyEqual(toAssay{1}.subject_statement.variable.name, 'location');
-            testCase.verifyEqual(toAssay{1}.subject_interaction.method.name, 'agar plug transfer');
-            mp = toAssay{1}.subject_interaction.method_parameters;
+            testCase.verifyEqual(toAssay{1}.statement.variable.name, 'location');
+            testCase.verifyEqual(toAssay{1}.interaction.method.name, 'agar plug transfer');
+            mp = toAssay{1}.interaction.method_parameters;
             if iscell(mp), mp = [mp{:}]; end
             testCase.verifyTrue(any(arrayfun(@(q) strcmp(q.variable.name, 'cleaning step'), mp)));
             dr = docs(strcmp(classes, 'directed_relation'));
@@ -357,13 +357,13 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             testCase.verifyEqual(edge(toAssay{1}, 'time_reference_id'), edge(rel{1}, 'time_reference_id'), ...
                 'the move is stated at the time of the relation it makes');
             fd = on(tmn, 'concentration_assayPlate0014_worms');
-            fd = fd(cellfun(@(d) strcmp(d.subject_statement.variable.name, 'food availability'), fd));
+            fd = fd(cellfun(@(d) strcmp(d.statement.variable.name, 'food availability'), fd));
             testCase.verifyNumElements(fd, 1);
             testCase.verifyEqual(fd{1}.term.value.name, 'none');
             toDep = on(tmn, 'concentration_assayPlate0014_worms');
             toDep = toDep(cellfun(@(d) strcmp(d.term.value.name, 'food deprivation plate'), toDep));
             testCase.verifyNumElements(toDep, 1);
-            testCase.verifyEqual(toDep{1}.subject_interaction.method.name, 'agar plug transfer');
+            testCase.verifyEqual(toDep{1}.interaction.method.name, 'agar plug transfer');
         end
 
         function testObservations(testCase)
@@ -384,7 +384,7 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             subj = docs(strcmp(classes, 'subject'));
             idOf = containers.Map(cellfun(@(d) d.subject.local_identifier, subj, 'UniformOutput', false), ...
                 cellfun(@(d) d.base.id, subj, 'UniformOutput', false));
-            on = @(set, local) set(cellfun(@(a) strcmp(edge(a, 'subject_id'), idOf(local)), set));
+            on = @(set, local) set(cellfun(@(a) strcmp(edge(a, 'entity_id'), idOf(local)), set));
             tobs = docs(strcmp(classes, 'temperature_observation'));
             hobs = docs(strcmp(classes, 'humidity_observation'));
             probe = result.metadata.ids('temperature_probe_1');
@@ -396,8 +396,8 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             testCase.verifyNumElements(h12, 1);
             testCase.verifyEqual(t12{1}.temperature.value.celsius, 21.62, 'AbsTol', 1e-9);
             testCase.verifyEqual(h12{1}.humidity.value.percent_relative_humidity, 52, 'AbsTol', 1e-9);
-            testCase.verifyEqual(t12{1}.subject_statement.variable.name, 'ambient temperature');
-            testCase.verifyEqual(h12{1}.subject_statement.variable.name, 'relative humidity');
+            testCase.verifyEqual(t12{1}.statement.variable.name, 'ambient temperature');
+            testCase.verifyEqual(h12{1}.statement.variable.name, 'relative humidity');
             testCase.verifyEqual(edge(t12{1}, 'instrument_id'), probe);
             testCase.verifyEqual(edge(t12{1}, 'time_reference_id'), edge(h12{1}, 'time_reference_id'));
             recs = on(docs(strcmp(classes, 'intensity_observation')), 'concentration_assayPlate0012');
@@ -444,7 +444,7 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
 
             % plate 12's video: its coordinate system is on the recording
             rec = docs(strcmp(classes, 'intensity_observation'));
-            rec = rec(cellfun(@(d) strcmp(edge(d, 'subject_id'), idOf('concentration_assayPlate0012')), rec));
+            rec = rec(cellfun(@(d) strcmp(edge(d, 'entity_id'), idOf('concentration_assayPlate0012')), rec));
             cs = docs(strcmp(classes, 'coordinate_system'));
             cs = cs(cellfun(@(d) any(strcmp(edge(d, 'referent_id'), cellfun(@(r) r.base.id, rec, ...
                 'UniformOutput', false))), cs));
@@ -458,16 +458,16 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             % its arena mask: a label calculation of the plate from the video,
             % run by the analysis package in MATLAB on macOS
             masks = docs(strcmp(classes, 'label_calculation'));
-            arena = masks(cellfun(@(d) strcmp(d.subject_statement.variable.name, 'arena region') ...
-                && strcmp(edge(d, 'subject_id'), idOf('concentration_assayPlate0012')), masks));
+            arena = masks(cellfun(@(d) strcmp(d.statement.variable.name, 'arena region') ...
+                && strcmp(edge(d, 'entity_id'), idOf('concentration_assayPlate0012')), masks));
             testCase.verifyNumElements(arena, 1);
             a = arena{1};
             testCase.verifyEqual(edgeAll(a, 'input_id'), {video.base.id});
             testCase.verifyEqual(edge(a, 'software_id'), ids('haley_analysis'));
             testCase.verifyEqual(edge(a, 'interpreter_id'), ids('matlab'));
             testCase.verifyEqual(edge(a, 'operating_system_id'), ids('macos'));
-            testCase.verifyEqual(a.data_type.datum_type, 'bool');
-            mp = entries(a.subject_interaction.method_parameters);
+            testCase.verifyEqual(a.value.datum_type, 'bool');
+            mp = entries(a.interaction.method_parameters);
             testCase.verifyEqual(mp{1}.variable.name, 'arena diameter');
 
             % its body is held by the session's database, not left in a temp file
@@ -492,20 +492,20 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             testCase.verifyEqual(reshape(bytes, 8, 8), uint8(expected), 'column-major, as written');
 
             % the lawn mask's method: every patch was found by template
-            lawn = masks(cellfun(@(d) strcmp(d.subject_statement.variable.name, 'bacterial lawn region') ...
-                && strcmp(edge(d, 'subject_id'), idOf('concentration_assayPlate0012')), masks));
-            testCase.verifyEqual(lawn{1}.subject_interaction.method.name, 'patch detection by template');
+            lawn = masks(cellfun(@(d) strcmp(d.statement.variable.name, 'bacterial lawn region') ...
+                && strcmp(edge(d, 'entity_id'), idOf('concentration_assayPlate0012')), masks));
+            testCase.verifyEqual(lawn{1}.interaction.method.name, 'patch detection by template');
 
             % the registration fit: from both the video and the lawn clip
             sc = docs(strcmp(classes, 'score_calculation'));
-            sc = sc(cellfun(@(d) strcmp(edge(d, 'subject_id'), idOf('concentration_assayPlate0012')), sc));
+            sc = sc(cellfun(@(d) strcmp(edge(d, 'entity_id'), idOf('concentration_assayPlate0012')), sc));
             testCase.verifyNumElements(sc, 1);
             testCase.verifyEqual(sc{1}.score.value.score, 0.98, 'AbsTol', 1e-12);
             testCase.verifyNumElements(edgeAll(sc{1}, 'input_id'), 2);
 
             if hasItem
                 near = docs(strcmp(classes, 'item_calculation'));
-                near = near(cellfun(@(d) strcmp(edge(d, 'subject_id'), idOf('concentration_assayPlate0012')), near));
+                near = near(cellfun(@(d) strcmp(edge(d, 'entity_id'), idOf('concentration_assayPlate0012')), near));
                 testCase.verifyNumElements(near, 1);
                 testCase.verifyEqual(edgeAll(near{1}, 'item_id'), {idOf('concentration_assayPlate0012_patch0001')});
             end
@@ -529,20 +529,20 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             idOf = containers.Map(cellfun(@(d) d.subject.local_identifier, subj, 'UniformOutput', false), ...
                 cellfun(@(d) d.base.id, subj, 'UniformOutput', false));
             of = @(cls, local) docs(strcmp(classes, cls) & cellfun(@(d) ...
-                strcmp(edge(d, 'subject_id'), idOf(local)), docs));
+                strcmp(edge(d, 'entity_id'), idOf(local)), docs));
 
             % worm 121, filmed once (plate 12)
             pos = of('position_calculation', 'concentration_worm0121');
             testCase.verifyNumElements(pos, 1);
             p = pos{1};
-            testCase.verifyEqual(p.subject_statement.variable.name, 'midpoint position');
+            testCase.verifyEqual(p.statement.variable.name, 'midpoint position');
             cs = docs(strcmp(classes, 'coordinate_system'));
             testCase.verifyTrue(any(cellfun(@(d) strcmp(d.base.id, edge(p, 'coordinate_system_id')), cs)), ...
                 'the positions are in their video''s coordinate system');
             k1 = entries(p.data.keys);
             testCase.verifyEqual(k1{1}.variable.name, 'video frame');
             testCase.verifyEqual(k1{1}.n, 5);
-            names = cellfun(@(m) m.variable.name, entries(p.subject_interaction.method_parameters), ...
+            names = cellfun(@(m) m.variable.name, entries(p.interaction.method_parameters), ...
                 'UniformOutput', false);
             testCase.verifyEqual(sort(names(:)'), {'gap filling', 'longest gap filled'});
 
@@ -608,8 +608,8 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             idOf = containers.Map(cellfun(@(d) d.subject.local_identifier, subj, 'UniformOutput', false), ...
                 cellfun(@(d) d.base.id, subj, 'UniformOutput', false));
             named = @(cls, local, var) docs(strcmp(classes, cls) & cellfun(@(d) ...
-                strcmp(edge(d, 'subject_id'), idOf(local)) && isfield(d, 'subject_statement') ...
-                && strcmp(d.subject_statement.variable.name, var), docs));
+                strcmp(edge(d, 'entity_id'), idOf(local)) && isfield(d, 'statement') ...
+                && strcmp(d.statement.variable.name, var), docs));
 
             fr = 2.9991;
             list = named('time_calculation', 'concentration_worm0121', 'encounter onset');
@@ -660,43 +660,43 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             idOf = containers.Map(cellfun(@(d) d.subject.local_identifier, subj, 'UniformOutput', false), ...
                 cellfun(@(d) d.base.id, subj, 'UniformOutput', false));
             border = docs(strcmp(classes, 'intensity_calculation'));
-            border = border(cellfun(@(d) strcmp(d.subject_statement.variable.name, 'patch border amplitude'), border));
+            border = border(cellfun(@(d) strcmp(d.statement.variable.name, 'patch border amplitude'), border));
             amp = @(local) cellfun(@(d) d.intensity.value.arbitrary_units, border(cellfun(@(d) ...
-                strcmp(edge(d, 'subject_id'), idOf(local)), border)));
+                strcmp(edge(d, 'entity_id'), idOf(local)), border)));
             testCase.verifyEqual(amp('ecoli_plate0001_patch0001'), 102, 'row 2 is the top-left patch');
             testCase.verifyEqual(amp('ecoli_plate0001_patch0002'), 101, 'row 1 is the bottom-left patch');
             testCase.verifyEqual(amp('ecoli_plate0002_patch0001'), 500, 'the one-patch plate');
 
             len = docs(strcmp(classes, 'length_calculation'));
-            l1 = len(cellfun(@(d) strcmp(edge(d, 'subject_id'), idOf('ecoli_plate0002_patch0001')), len));
+            l1 = len(cellfun(@(d) strcmp(edge(d, 'entity_id'), idOf('ecoli_plate0002_patch0001')), len));
             testCase.verifyEqual(l1{1}.length.value.meters, 0.2e-3, 'AbsTol', 1e-15);
 
             masks = docs(strcmp(classes, 'label_calculation'));
             testCase.verifyNumElements(masks, 2);
             plates = {idOf('ecoli_plate0001'), idOf('ecoli_plate0002')};
-            testCase.verifyTrue(all(cellfun(@(d) ismember(edge(d, 'subject_id'), plates), masks)), ...
+            testCase.verifyTrue(all(cellfun(@(d) ismember(edge(d, 'entity_id'), plates), masks)), ...
                 'a mask is a calculation of its plate');
 
             % decision #64: the TIFFs in images/ are background-normalised
             % images, calculated from the raw image and its background image
             testCase.verifyEqual([c.normalised_image, c.background_fit, c.profiles], [2 1 13]);
             ic = docs(strcmp(classes, 'intensity_calculation'));
-            byVar = @(name) ic(cellfun(@(d) strcmp(d.subject_statement.variable.name, name), ic));
+            byVar = @(name) ic(cellfun(@(d) strcmp(d.statement.variable.name, name), ic));
             norm = byVar('background-normalised fluorescence image');
             testCase.verifyNumElements(norm, 2);
             obs = docs(strcmp(classes, 'intensity_observation'));
             rawOf = @(n) obs{cellfun(@(d) any(cellfun(@(t) strcmp(t, epochRefOf(docs, classes, n)), ...
                 edgeAll(d, 'time_reference_id'))), obs)}.base.id;
-            n2 = norm{cellfun(@(d) strcmp(edge(d, 'subject_id'), idOf('ecoli_plate0001')), norm)};
+            n2 = norm{cellfun(@(d) strcmp(edge(d, 'entity_id'), idOf('ecoli_plate0001')), norm)};
             testCase.verifyEqual(sort(edgeAll(n2, 'input_id')), sort({rawOf(2), rawOf(9)}), ...
                 'from the raw image and its background image');
-            m2 = masks{cellfun(@(d) strcmp(edge(d, 'subject_id'), idOf('ecoli_plate0001')), masks)};
+            m2 = masks{cellfun(@(d) strcmp(edge(d, 'entity_id'), idOf('ecoli_plate0001')), masks)};
             testCase.verifyEqual(edgeAll(m2, 'input_id'), {n2.base.id}, ...
                 'the mask is from the normalised image');
 
             % the background fit's quality, on the background's plate
             sc = docs(strcmp(classes, 'score_calculation'));
-            rs = sc(cellfun(@(d) strcmp(d.subject_statement.variable.name, 'background fit r-squared'), sc));
+            rs = sc(cellfun(@(d) strcmp(d.statement.variable.name, 'background fit r-squared'), sc));
             testCase.verifyNumElements(rs, 1);
             testCase.verifyEqual(rs{1}.score.value.score, 0.95);
             cc = docs(strcmp(classes, 'count_calculation'));
@@ -705,7 +705,7 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             % the profile curves: patch 1 (top-left) is row 2 of image 2
             curves = byVar('intensity by distance from patch edge');
             testCase.verifyNumElements(curves, 13);
-            p1 = curves{cellfun(@(d) strcmp(edge(d, 'subject_id'), idOf('ecoli_plate0001_patch0001')), curves)};
+            p1 = curves{cellfun(@(d) strcmp(edge(d, 'entity_id'), idOf('ecoli_plate0001_patch0001')), curves)};
             k = entries(p1.data.keys);
             testCase.verifyEqual(k{1}.variable.name, 'distance from patch edge');
             testCase.verifyEqual(k{1}.n, 5);
@@ -738,7 +738,7 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             testCase.verifyNumElements(groups, 2);
             testCase.verifyEqual(sum(strcmp(dc, 'directed_relation')), 24);
             lin = fits{cellfun(@(d) strcmp(d.model_fit.value.equation, 'f = slope*t + intercept'), fits)};
-            testCase.verifyTrue(ismember(edge(lin, 'subject_id'), ...
+            testCase.verifyTrue(ismember(edge(lin, 'entity_id'), ...
                 cellfun(@(d) d.base.id, groups, 'UniformOutput', false)), 'the fit is about a group');
             co = entries(lin.model_fit.value.coefficients);
             testCase.verifyEqual(co{1}.value, 1 / 3000, 'AbsTol', 1e-15);
@@ -753,8 +753,8 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             idOf = containers.Map(cellfun(@(d) d.subject.local_identifier, subj, 'UniformOutput', false), ...
                 cellfun(@(d) d.base.id, subj, 'UniformOutput', false));
             named = @(local, var) docs(strcmp(classes, 'intensity_calculation') & cellfun(@(d) ...
-                strcmp(edge(d, 'subject_id'), idOf(local)) && isfield(d, 'subject_statement') ...
-                && strcmp(d.subject_statement.variable.name, var), docs));
+                strcmp(edge(d, 'entity_id'), idOf(local)) && isfield(d, 'statement') ...
+                && strcmp(d.statement.variable.name, var), docs));
             e121 = named('concentration_worm0121', 'estimated patch border amplitude');
             testCase.verifyNumElements(e121, 1);
             testCase.verifyEqual([e121{1}.intensity.value.arbitrary_units], ...
@@ -872,10 +872,28 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             db = did2.database.sqlitedb(fullfile(sessionPath, '.ndi', ...
                 ndi.database.implementations.database.did2sqlite.DEFAULTFILENAME()));
             ids = db.allIds();
-            docs = cellfun(@(i) db.get(i).documentProperties, ids, 'UniformOutput', false);
+            docs = cellfun(@(i) newNames(db.get(i).documentProperties), ids, 'UniformOutput', false);
             db.close();
         end
     end
+end
+
+function d = newNames(d)
+% a document as V_eta names it since 2026-10-08 (did-schema V_eta_tenets.md, T2
+% amendment), whichever schema wrote it: the statement blocks lose `subject_`,
+% `data_type` is `value`, and a statement's `subject_id` edge is `entity_id`
+for old = {'subject_statement', 'subject_assertion', 'subject_interaction', ...
+        'subject_observation', 'subject_manipulation', 'subject_calculation', 'data_type'}
+    if isfield(d, old{1}) && isstruct(d.(old{1}))
+        d.(ndi.v2.vetaName(old{1})) = d.(old{1});
+        d = rmfield(d, old{1});
+    end
+end
+if isfield(d, 'statement') && isfield(d, 'depends_on') && isstruct(d.depends_on)
+    for k = 1:numel(d.depends_on)
+        if strcmp(d.depends_on(k).name, 'subject_id'), d.depends_on(k).name = 'entity_id'; end
+    end
+end
 end
 
 function v = edge(doc, name)
