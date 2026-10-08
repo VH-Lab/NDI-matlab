@@ -391,7 +391,7 @@ classdef subject < ndi.ido & ndi.documentservice & ndi.entity
                 q = ndi.v2.isaQuery('subject');   % an entity of a physical type since 2026-10-08
                 lid = spec.own(strcmp(spec.own(:, 1), 'local_identifier'), 2);
                 if isscalar(lid) && ischar(lid{1}) && ~ndi.v2.hasWildcard(lid{1})
-                    q = q & ndi.query('subject.local_identifier', 'exact_string_anycase', ...
+                    q = q & ndi.v2.blockQuery('subject.local_identifier', 'exact_string_anycase', ...
                         strrep(lid{1}, '\*', '*'), '');
                 end
                 docs = container.database_search(q);
@@ -699,6 +699,12 @@ classdef subject < ndi.ido & ndi.documentservice & ndi.entity
             filt = f.filt;
             filt.tolerant = spec.tolerant;
             [docs, info] = ndi.v2.searchStatements(container, f.kind, filt);
+            if info.structural == 0 && strcmp(f.kind, 'assertion')
+                % with one entity class, a strain is not asserted: the
+                % subject is an instance_of the strain entity
+                via = ndi.subject.instanceIds(container, filt, spec);
+                if iscell(via), ids = via; return; end
+            end
             if info.structural == 0
                 ndi.subject.noSuchStatement(container, f, spec.strict);   % errors unless each part exists
                 ids = {};
@@ -836,12 +842,48 @@ classdef subject < ndi.ido & ndi.documentservice & ndi.entity
             docs = docs(keep);
         end
 
+        function ids = instanceIds(container, filt, spec)
+            % INSTANCEIDS - the subjects that are an instance_of an entity of
+            % the type FILT's variable names ('strain', 'product'), the
+            % entity matching FILT's value by name or global identifier. With
+            % one entity class (did-schema V_eta_entity_composition_plan.md
+            % sec. 5) that is how a subject has a strain. [] when the variable
+            % names no such type or the container holds no entity of it --
+            % the caller then reports the property as unknown.
+            ids = [];
+            v = cellstr(filt.variable);
+            if ~isscalar(v), return; end
+            type = lower(v{1});
+            types = ndi.v2.entityTypesFor(type);
+            if ~isscalar(types) || ~strcmp(types{1}, type), return; end
+            targets = container.database_search(ndi.v2.isaQuery(type));
+            if isempty(targets), return; end
+            if isfield(filt, 'value') && ~isempty(filt.value)
+                keep = cellfun(@(d) entityMatches(ndi.v2.props(d), type, filt.value), targets);
+                targets = targets(keep);
+            end
+            if isempty(targets)
+                if spec.strict
+                    warning('ndi:subject:search:noSuchValue', 'No %s in this %s is called %s.', ...
+                        type, containerWord(container), strjoin(cellstr(filt.value), ' or '));
+                end
+                ids = {};
+                return;
+            end
+            tid = cellfun(@(d) d.document_properties.base.id, targets, 'UniformOutput', false);
+            r = struct('kind', 'directed_relation', 'name', {{'instance_of'}}, 'side', 'parent', ...
+                'target', struct('ids', {reshape(tid, 1, [])}), 'time', struct());
+            ids = ndi.subject.relatedIds(container, r, spec);
+        end
+
         function T = targetIds(container, target, spec)
             % TARGETIDS - the ids a relation's other end may be: [] for any;
             % an ndi.entity (or several, or a cell of them); a document id; or
             % a cell describing subjects, searched with ndi.subject.search
             if isempty(target) && ~iscell(target)
                 T = [];
+            elseif isstruct(target) && isfield(target, 'ids')
+                T = target.ids;      % document ids, already resolved
             elseif isa(target, 'ndi.entity')
                 T = arrayfun(@(x) x.document_id, target, 'UniformOutput', false);
             elseif ischar(target) || (isstring(target) && isscalar(target))
@@ -923,6 +965,14 @@ classdef subject < ndi.ido & ndi.documentservice & ndi.entity
                     docs = container.database_search(ndi.v2.isaQuery('assertion'));
                     names = cellfun(@(d) ndi.v2.termName(ndi.v2.blockOf(ndi.v2.props(d), ...
                         'statement', 'variable', '')), docs, 'UniformOutput', false);
+                    % and the entity types a subject can be an instance_of
+                    % (one entity class: a strain is a relation)
+                    for t = {'strain', 'product'}
+                        if ~isempty(container.database_search(ndi.v2.isaQuery(t{1}) & ...
+                                ndi.query('', 'isa', 'entity', '')))
+                            names{end+1} = t{1}; %#ok<AGROW>
+                        end
+                    end
                     props = unique([names, {'id', 'local_identifier', 'name', 'type'}]);
                     [~, o] = sort(lower(props));
                     props = props(o);
@@ -1503,4 +1553,14 @@ end
 
 function a = article(word)
 if any(lower(word(1)) == 'aeiou'), a = 'an'; else, a = 'a'; end
+end
+
+function tf = entityMatches(p, type, patterns)
+% does entity P of TYPE match any of PATTERNS by name or global identifier
+tf = ndi.v2.matchTerm(char(ndi.v2.blockOf(p, type, 'name', '')), patterns);
+ids = cellstr(ndi.v2.blockOf(p, type, 'global_identifier', {}));
+for k = 1:numel(ids)
+    if tf, return; end
+    tf = ndi.v2.matchTerm(struct('name', '', 'node', ids{k}), patterns);
+end
 end

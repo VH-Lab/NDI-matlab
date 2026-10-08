@@ -32,7 +32,9 @@ if ndi.v2.hasWildcard(p)
     one = ndi.query([path '.name'], 'wildcard', p, '') | ndi.query([path '.node'], 'wildcard', p, '');
 else
     p = strrep(p, '\*', '*');
+    % a node's CURIE prefix ignores case (CURIE_lookups_meta.json); the
+    % local part is rechecked exactly by ndi.v2.matchTerm
     one = ndi.query([path '.name'], 'exact_string_anycase', p, '') | ...
-        ndi.query([path '.node'], 'exact_string', p, '');
+        ndi.query([path '.node'], 'exact_string_anycase', p, '');
 end
 end

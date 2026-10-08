@@ -9,20 +9,23 @@ function chain = classChain(p)
 %   See also ndi.v2.directParents, ndi.statement.fromDocument.
 
 name = char(p.document_class.class_name);
-chain = {name};
-try
-    chain = ndi.v2.vetaName([{name}, reshape(did2.schema.cache.shared().superclasses(name), 1, [])]);
-    return;
-catch
-end
+listed = {};
 if isfield(p.document_class, 'superclasses')
     sc = p.document_class.superclasses;
     if isstruct(sc), sc = num2cell(sc); end
     for k = 1:numel(sc)
         if isstruct(sc{k}) && isfield(sc{k}, 'class_name')
-            chain{end+1} = char(sc{k}.class_name); %#ok<AGROW>
+            listed{end+1} = char(sc{k}.class_name); %#ok<AGROW>
         end
     end
 end
-chain = ndi.v2.vetaName(chain);   % names as of 2026-10-08 (ndi.v2.vetaName)
+try
+    chain = [{name}, reshape(did2.schema.cache.shared().superclasses(name), 1, [])];
+    % a statement's value kind is not in its class's chain: the document
+    % lists it after (did-schema V_eta_entity_composition_plan.md sec. 1)
+    chain = ndi.v2.vetaName([chain, listed(~ismember(listed, chain))]);
+    return;
+catch
+end
+chain = ndi.v2.vetaName([{name}, listed]);   % names as of 2026-10-08 (ndi.v2.vetaName)
 end

@@ -409,10 +409,10 @@ classdef entity
             filtered = ~isempty(options.Type) || ~isempty(options.Kind);
             filterQuery = [];
             if ~isempty(options.Type)
-                filterQuery = ndi.query('subject.type.name', 'exact_string', options.Type, '');
+                filterQuery = ndi.v2.blockQuery('subject.type.name', 'exact_string', options.Type, '');
             end
             if ~isempty(options.Kind)
-                k = ndi.query('', 'isa', options.Kind, '');
+                k = ndi.v2.isaQuery(options.Kind);
                 if isempty(filterQuery), filterQuery = k; else, filterQuery = filterQuery & k; end
             end
             rel = cellstr(options.Relation);
