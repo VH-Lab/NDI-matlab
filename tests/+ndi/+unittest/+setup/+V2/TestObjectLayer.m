@@ -233,6 +233,37 @@ classdef TestObjectLayer < matlab.unittest.TestCase
                 ?MException, 'a misspelt option is caught by the arguments block');
         end
 
+        function testSynonymsFindATermByAnotherName(testCase)
+            % a value that matches no term by its name or node matches a term
+            % it is a synonym of (ndi.v2.synonyms); the names are read from
+            % the on-disk cache, prepared here so no lookup goes online
+            S = testCase.Session;
+            folder = tempname;
+            mkdir(folder);
+            testCase.addTeardown(@() rmdir(folder, 's'));
+            old = getenv('NDI_SYNONYM_CACHE');
+            setenv('NDI_SYNONYM_CACHE', folder);
+            testCase.addTeardown(@() setenv('NDI_SYNONYM_CACHE', old));
+            fid = fopen(fullfile(folder, 'ncbitaxon_6239.json'), 'w');
+            fwrite(fid, jsonencode(struct('node', 'NCBITaxon:6239', 'names', ...
+                {{'Caenorhabditis elegans', 'C. elegans', 'nematode worm'}})), 'char');
+            fclose(fid);
+            testCase.verifyEqual(ndi.v2.synonyms('ncbitaxon:6239'), ...
+                {'Caenorhabditis elegans', 'C. elegans', 'nematode worm'}, 'read from the cache, any case');
+            worms = {'concentration_worm0121', 'concentration_worm0122'};
+            w = local(ndi.entity.search(S, {'type', 'organism', 'species', 'C. elegans'}));
+            testCase.verifyTrue(all(ismember(worms, w)), strjoin(w, ', '));
+            w = local(ndi.entity.search(S, {'type', 'organism', 'species', 'nematode*'}));
+            testCase.verifyTrue(all(ismember(worms, w)), 'a wildcard over the synonyms');
+            testCase.verifyEmpty(testCase.verifyWarning(@() ndi.entity.search(S, ...
+                {'type', 'organism', 'species', 'C. elegans'}, 'synonyms', false), ...
+                'ndi:entity:search:noSuchValue'), 'synonyms off: the name only');
+            a = testCase.subject('concentration_assayPlate0012_worms').assertions( ...
+                {'variable', 'species', 'value', 'C. elegans'});
+            testCase.verifyNotEmpty(a, 'statement filters use them too');
+            testCase.verifyEmpty(ndi.v2.synonyms('not a curie'));
+        end
+
         function testFindByAStatementOfAKind(testCase)
             % the six statement keys: the filters in one cell are one
             % statement; a key given twice is two statements

@@ -209,6 +209,9 @@ classdef entity
             %     stay or statement whose times cannot be compared is left out.
             %   'tolerant' (default false) -- true widens each time by its
             %     tolerance (and each stay, for 'context').
+            %   'synonyms' (default true) -- a 'value' that matches no term
+            %     by its name or node also matches a term it is a synonym of
+            %     (ndi.v2.synonyms: ndi.ontology.lookup, kept on disk).
             arguments
                 obj
                 kind (1,:) char = 'statement'
@@ -216,9 +219,11 @@ classdef entity
                 options.inherited (1,1) logical = true
                 options.context (1,1) logical = false
                 options.tolerant (1,1) logical = false
+                options.synonyms (1,1) logical = true
             end
             f = ndi.entity.statementFilter(lower(kind), filters);
             f.tolerant = options.tolerant;
+            f.synonyms = options.synonyms;
             kinds = struct('kind', lower(kind), 'filt', f);
             s = {};
             subjects = obj(arrayfun(@(x) ~isempty(x.container_), obj));
@@ -247,6 +252,7 @@ classdef entity
                 options.inherited (1,1) logical = true
                 options.context (1,1) logical = false
                 options.tolerant (1,1) logical = false
+                options.synonyms (1,1) logical = true
             end
             o = namedArgs(options);
             s = obj.statements('assertion', filters, o{:});
@@ -264,6 +270,7 @@ classdef entity
                 options.inherited (1,1) logical = true
                 options.context (1,1) logical = false
                 options.tolerant (1,1) logical = false
+                options.synonyms (1,1) logical = true
             end
             o = namedArgs(options);
             s = obj.statements('observation', filters, o{:});
@@ -281,6 +288,7 @@ classdef entity
                 options.inherited (1,1) logical = true
                 options.context (1,1) logical = false
                 options.tolerant (1,1) logical = false
+                options.synonyms (1,1) logical = true
             end
             o = namedArgs(options);
             s = obj.statements('manipulation', filters, o{:});
@@ -298,6 +306,7 @@ classdef entity
                 options.inherited (1,1) logical = true
                 options.context (1,1) logical = false
                 options.tolerant (1,1) logical = false
+                options.synonyms (1,1) logical = true
             end
             o = namedArgs(options);
             s = obj.statements('calculation', filters, o{:});
@@ -314,6 +323,7 @@ classdef entity
                 options.inherited (1,1) logical = true
                 options.context (1,1) logical = false
                 options.tolerant (1,1) logical = false
+                options.synonyms (1,1) logical = true
             end
             o = namedArgs(options);
             s = obj.statements('interaction', filters, o{:});
@@ -980,6 +990,12 @@ classdef entity
             %                answer, quietly (for scripts over many datasets)
             %   'tolerant'   false (default): times are compared as stated;
             %                true: a time matches when its tolerance allows
+            %   'synonyms'   true (default): a value that matches no term by
+            %                its name or node also matches a term it is a
+            %                synonym of -- {'species', 'C. elegans'} finds
+            %                NCBITaxon:6239 (ndi.v2.synonyms, from
+            %                ndi.ontology.lookup, looked up once per term
+            %                and kept on disk; nothing when offline)
             %   'context'    false (default); true: also the entities a
             %                matching observation, manipulation or calculation
             %                was CONTEXT for -- what its subject contained at
@@ -1017,6 +1033,7 @@ classdef entity
                 options.strict (1,1) logical = true
                 options.explain (1,1) logical = false
                 options.tolerant (1,1) logical = false
+                options.synonyms (1,1) logical = true
             end
             spec = ndi.entity.parseSearch(conditions);
             for f = fieldnames(options)'
@@ -1108,6 +1125,7 @@ classdef entity
                 'filters', {struct('kind', {}, 'filt', {})}, ...
                 'relations', {struct('kind', {}, 'name', {}, 'side', {}, 'target', {}, 'time', {})}, ...
                 'inherited', true, 'explain', false, 'strict', true, 'tolerant', false, ...
+                'synonyms', true, ...
                 'context', false);
             for k = 1:2:numel(args)
                 p = args{k};
@@ -1119,7 +1137,7 @@ classdef entity
                 if isstring(v), v = cellstr(v); if isscalar(v), v = v{1}; end, end
                 key = lower(strrep(p, '_', ''));
                 lp = lower(p);
-                if any(strcmp(key, {'inherited', 'explain', 'strict', 'tolerant', 'context'}))
+                if any(strcmp(key, {'inherited', 'explain', 'strict', 'tolerant', 'context', 'synonyms'}))
                     error('ndi:entity:search:option', ...
                         ['''%s'' is an option, not a condition: give it after the cell, ' ...
                          'ndi.entity.search(S, {...}, ''%s'', %s).'], p, key, 'true');
@@ -1296,7 +1314,7 @@ classdef entity
                 g = f; g.filt = rmfield(g.filt, 'during_statements');
                 ids = ndi.entity.subjectsOf(container, g, spec);
                 if isempty(ids), return; end
-                k = f; k.filt.tolerant = spec.tolerant;
+                k = f; k.filt.tolerant = spec.tolerant; k.filt.synonyms = isfield(spec, 'synonyms') && spec.synonyms;
                 L = ndi.entity.statementLinks(container, ids, k, spec.inherited, ...
                     isfield(spec, 'context') && spec.context);
                 ids = ids(ismember(ids, L.about));
@@ -1305,6 +1323,7 @@ classdef entity
             inherited = spec.inherited;
             filt = f.filt;
             filt.tolerant = spec.tolerant;
+            filt.synonyms = isfield(spec, 'synonyms') && spec.synonyms;
             [docs, info] = ndi.v2.searchStatements(container, f.kind, filt);
             if info.structural == 0 && strcmp(f.kind, 'assertion')
                 % with one entity class, a strain is not asserted: the
@@ -1469,6 +1488,10 @@ classdef entity
             if isempty(targets), return; end
             if isfield(filt, 'value') && ~isempty(filt.value)
                 keep = cellfun(@(d) entityMatches(ndi.v2.props(d), type, filt.value), targets);
+                if ~any(keep) && isfield(spec, 'synonyms') && spec.synonyms
+                    % no name or identifier matched: the names its identifiers go by
+                    keep = cellfun(@(d) entitySynonymMatches(ndi.v2.props(d), type, filt.value), targets);
+                end
                 targets = targets(keep);
             end
             if isempty(targets)
@@ -2204,6 +2227,22 @@ n = fieldnames(options);
 c = cell(1, 2 * numel(n));
 c(1:2:end) = n;
 c(2:2:end) = struct2cell(options);
+end
+
+function tf = entitySynonymMatches(p, type, patterns)
+% does a name one of the entity's global identifiers goes by (a CURIE's
+% label or synonym, ndi.v2.synonyms) match PATTERNS?
+tf = false;
+ids = cellstr(ndi.v2.blockOf(p, type, 'global_identifier', {}));
+for k = 1:numel(ids)
+    names = ndi.v2.synonyms(ids{k});
+    for j = 1:numel(names)
+        if ndi.v2.matchTerm(struct('name', names{j}, 'node', ''), patterns)
+            tf = true;
+            return;
+        end
+    end
+end
 end
 
 function docs = entitiesOfType(container, type)

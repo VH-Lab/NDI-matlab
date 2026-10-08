@@ -12,6 +12,10 @@ function [docs, info] = searchStatements(container, kind, filt)
 %     formulation  a dose's formulation (its name or its type)
 %     subject      document ids: only statements about these subjects
 %                  (searched 200 at a time)
+%     synonyms     true: a VALUE pattern that matches no term by its name or
+%                  node is also compared with the names of each term's node
+%                  (its label and synonyms, ndi.v2.synonyms: looked up once
+%                  and kept on disk); default false
 %     withDataset  true: a session opened from its dataset also searches
 %                  the dataset's documents (a strain's statements live
 %                  there); default false
@@ -57,6 +61,7 @@ end
 q = ndi.v2.isaQuery(classOf(kind));
 q = andTerm(q, 'statement.variable', filt.variable);
 q = andTerm(q, 'interaction.method', filt.method);
+narrowed = false;
 if ~isempty(filt.value) && all(cellfun(@isPlainText, filt.value))
     % a term value can be narrowed in the database; a statement whose value
     % is not a term passes to the recheck. When that finds nothing, search
@@ -64,6 +69,7 @@ if ~isempty(filt.value) && all(cellfun(@isPlainText, filt.value))
     % warning naming the values) is not "nothing has this variable"
     cand = bySubject(container, q & ...
         (ndi.v2.termQuery('term.value', filt.value) | ndi.query('', '~isa', 'term', '')), filt.subject, filt.withDataset);
+    narrowed = ~isempty(cand);
     if isempty(cand)
         cand = bySubject(container, q, filt.subject, filt.withDataset);
     end
@@ -71,30 +77,47 @@ else
     cand = bySubject(container, q, filt.subject, filt.withDataset);
 end
 
-structural = {};
-for i = 1:numel(cand)
-    p = ndi.v2.props(cand{i});
-    if ~patternsMatch(ndi.v2.blockOf(p, 'statement', 'variable', []), filt.variable), continue; end
-    if ~patternsMatch(ndi.v2.blockOf(p, 'interaction', 'method', []), filt.method), continue; end
-    structural{end+1} = cand{i}; %#ok<AGROW>
-end
+structural = keepStructural(cand, filt);
 info = struct('structural', numel(structural), 'values', {{}}, 'beforeTime', 0);
 docs = {};
 single = 0;
 forms = formulationsOf(container, structural, filt.formulation);
+matched = false(1, numel(filt.value));   % a pattern some value matched by name or node
+byValue = {};
 for i = 1:numel(structural)
     p = ndi.v2.props(structural{i});
     [kindOfValue, v, txt] = ndi.v2.statementValue(p);
     info.values{end+1} = txt;
     if ~strcmp(kindOfValue, 'none'), single = single + 1; end
-    if ~isempty(filt.value) && ~any(cellfun(@(pat) valueMatches(kindOfValue, v, pat), filt.value))
-        continue;
+    if ~isempty(filt.value)
+        hit = cellfun(@(pat) valueMatches(kindOfValue, v, pat), filt.value);
+        matched = matched | hit;
+        if ~any(hit), continue; end
     end
+    byValue{end+1} = structural{i}; %#ok<AGROW>
+end
+% a pattern no term matched by its name or node: the names its nodes go by
+synonymPats = filt.value(~matched & cellfun(@isPlainText, filt.value));
+if filt.synonyms && ~isempty(synonymPats)
+    pool = structural;
+    if narrowed     % the database kept only the direct matches: look at the rest
+        pool = keepStructural(bySubject(container, q, filt.subject, filt.withDataset), filt);
+    end
+    have = cellfun(@docIdOf, byValue, 'UniformOutput', false);
+    for i = 1:numel(pool)
+        if any(strcmp(docIdOf(pool{i}), have)), continue; end
+        [kindOfValue, v] = ndi.v2.statementValue(ndi.v2.props(pool{i}));
+        if ~strcmp(kindOfValue, 'term') || ~synonymMatches(v, synonymPats), continue; end
+        byValue{end+1} = pool{i}; %#ok<AGROW>
+        have{end+1} = docIdOf(pool{i}); %#ok<AGROW>
+    end
+end
+for i = 1:numel(byValue)
     if ~isempty(filt.formulation)
-        f = ndi.v2.edgeIds(p, 'formulation_id');
+        f = ndi.v2.edgeIds(ndi.v2.props(byValue{i}), 'formulation_id');
         if ~any(cellfun(@(x) isKey(forms, x) && forms(x), f)), continue; end
     end
-    docs{end+1} = structural{i}; %#ok<AGROW>
+    docs{end+1} = byValue{i}; %#ok<AGROW>
 end
 tf = intersect({'at', 'during', 'before', 'after', 'duration'}, fieldnames(filt));
 info.time = struct('unresolved', 0, 'nozone', 0, 'bound', 0, 'docs', 0);
@@ -133,6 +156,39 @@ for c = 1:200:numel(ids)
 end
 end
 
+function s = keepStructural(cand, filt)
+% the candidates whose variable and method match FILT's patterns
+s = {};
+for i = 1:numel(cand)
+    p = ndi.v2.props(cand{i});
+    if ~patternsMatch(ndi.v2.blockOf(p, 'statement', 'variable', []), filt.variable), continue; end
+    if ~patternsMatch(ndi.v2.blockOf(p, 'interaction', 'method', []), filt.method), continue; end
+    s{end+1} = cand{i}; %#ok<AGROW>
+end
+end
+
+function tf = synonymMatches(v, pats)
+% does any name a term's node goes by (ndi.v2.synonyms) match a pattern?
+tf = false;
+if ~isstruct(v) || ~isfield(v, 'node'), return; end
+for k = 1:numel(v)
+    node = char(v(k).node);
+    if isempty(node), continue; end
+    names = ndi.v2.synonyms(node);
+    for j = 1:numel(names)
+        if any(cellfun(@(pat) ndi.v2.matchTerm(struct('name', names{j}, 'node', ''), pat), pats))
+            tf = true;
+            return;
+        end
+    end
+end
+end
+
+function id = docIdOf(d)
+p = ndi.v2.props(d);
+id = char(p.base.id);
+end
+
 function filt = normalise(filt)
 if ~isfield(filt, 'subject') || isempty(filt.subject)
     filt.subject = {};
@@ -143,6 +199,10 @@ if ~isfield(filt, 'withDataset') || isempty(filt.withDataset)
     filt.withDataset = false;
 end
 filt.withDataset = logical(filt.withDataset);
+if ~isfield(filt, 'synonyms') || isempty(filt.synonyms)
+    filt.synonyms = false;
+end
+filt.synonyms = logical(filt.synonyms);
 for f = {'variable', 'method', 'value', 'formulation'}
     if ~isfield(filt, f{1}) || isempty(filt.(f{1}))
         filt.(f{1}) = {};
