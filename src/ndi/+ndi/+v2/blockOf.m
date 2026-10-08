@@ -5,6 +5,9 @@ if nargin < 4, default = []; end
 v = default;
 % a block renamed 2026-10-08 is read under either name (ndi.v2.vetaAliases)
 names = ndi.v2.vetaAliases(block);
+if ~isempty(ndi.v2.entityTypesFor(block))
+    names{end+1} = 'entity';   % merged into `entity` on 2026-10-08
+end
 for k = 1:numel(names)
     if isfield(p, names{k}) && isstruct(p.(names{k})) && isfield(p.(names{k}), field)
         v = p.(names{k}).(field);

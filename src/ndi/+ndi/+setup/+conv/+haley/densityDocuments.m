@@ -219,7 +219,9 @@ for i = 1:numel(fits)
     timeIds = {w.base.id};
 
     % the group of patches
-    grp = did2.build.document('subject', groupFields(q, label), 'SessionId', dsid);
+    grp = ndi.setup.V2.entityDocuments('subject', groupFields(q, label), struct(), ...
+        'SessionId', dsid, 'Type', 'group');
+    grp = grp{1};
     out.datasetDocuments{end+1} = grp;
     out.counts.groups = out.counts.groups + 1;
     pats = unique(L.patchId(q.members & ~cellfun(@isempty, L.patchId)));

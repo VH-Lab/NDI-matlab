@@ -94,6 +94,23 @@ end
         st = strains(strainKey);
         out = assert1(out, id, 'species', did2.build.term(st.species.node, st.species.name), ...
             struct(), fields, [who '_species']);
+        if ndi.setup.V2.mergedEntities()
+            % one entity class (2026-10-08): the subject is `instance_of` its strain
+            % (V_eta_entity_composition_plan.md sec. 5); there is no strain assertion
+            if ~isKey(options.StrainIds, strainKey)
+                out.skipped{end+1} = sprintf('%s: no strain entity for %s; no strain recorded', ...
+                    id, strainKey);
+            elseif ~isKey(subjectIds, id)
+                out.skipped{end+1} = sprintf('%s strain: not a subject of this session', id);
+            else
+                out.documents{end+1} = did2.build.directedRelation(subjectIds(id), ...
+                    options.StrainIds(strainKey), did2.build.term('', 'instance_of'), ...
+                    'Fields', fields, 'SessionId', sid);
+                out.counts.([who '_strain']) = out.counts.([who '_strain']) + 1;
+            end
+            sexOf(st);
+            return;
+        end
         edges = struct();
         if isKey(options.StrainIds, strainKey)
             edges.strain_id = options.StrainIds(strainKey);
@@ -105,10 +122,14 @@ end
         if isfield(st, 'node') && ~isempty(st.node), node = char(st.node); end
         out = assert1(out, id, 'strain', did2.build.term(node, st.name), edges, fields, ...
             [who '_strain']);
-        if isfield(st, 'biological_sex') && ~isempty(st.biological_sex)
-            sx = st.biological_sex;
-            out = assert1(out, id, did2.build.term('PATO:0000047', 'biological sex'), ...
-                did2.build.term(char(sx.node), char(sx.name)), struct(), fields, [who '_sex']);
+        sexOf(st);
+
+        function sexOf(st)
+            if isfield(st, 'biological_sex') && ~isempty(st.biological_sex)
+                sx = st.biological_sex;
+                out = assert1(out, id, did2.build.term('PATO:0000047', 'biological sex'), ...
+                    did2.build.term(char(sx.node), char(sx.name)), struct(), fields, [who '_sex']);
+            end
         end
     end
 

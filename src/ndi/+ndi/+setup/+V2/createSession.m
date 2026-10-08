@@ -89,14 +89,12 @@ end
 if ~isempty(options.Description)
     fields.description = options.Description;
 end
-args = {'SessionId', sid};
-if ~isempty(options.SessionDocId)
-    args = [args, {'Id', options.SessionDocId}];
-end
+edges = struct();
 if ~isempty(options.TimeReferenceId)
-    args = [args, {'Edges', struct('time_reference_id', options.TimeReferenceId)}];
+    edges.time_reference_id = options.TimeReferenceId;
 end
-docs = {did2.build.document('session', fields, args{:})};
+docs = ndi.setup.V2.entityDocuments('session', fields, edges, 'SessionId', sid, ...
+    'Id', options.SessionDocId);
 studies = options.StudyIds;
 if ischar(studies) || isstring(studies)
     studies = cellstr(studies);

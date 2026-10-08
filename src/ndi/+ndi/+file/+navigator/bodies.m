@@ -195,7 +195,7 @@ classdef bodies < ndi.file.navigator
                 end
                 referent = d{1}.dependency_value('referent_id', 'ErrorIfNotFound', 0);
                 e = S.database_search(ndi.query('base.id', 'exact_string', referent, '') & ...
-                    ndi.query('', 'isa', 'epoch', ''));
+                    ndi.v2.isaQuery('epoch'));
                 if numel(e) == 1
                     id = e{1}.document_properties.epoch.local_identifier;
                     return;

@@ -388,7 +388,7 @@ classdef subject < ndi.ido & ndi.documentservice & ndi.entity
             if iscell(ids)
                 s = ndi.entity.fetchMany(container, ids);
             else
-                q = ndi.query('', 'isa', 'subject', '');
+                q = ndi.v2.isaQuery('subject');   % an entity of a physical type since 2026-10-08
                 lid = spec.own(strcmp(spec.own(:, 1), 'local_identifier'), 2);
                 if isscalar(lid) && ischar(lid{1}) && ~ndi.v2.hasWildcard(lid{1})
                     q = q & ndi.query('subject.local_identifier', 'exact_string_anycase', ...

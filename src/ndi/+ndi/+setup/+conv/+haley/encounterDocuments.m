@@ -83,7 +83,7 @@ file = fullfile(dataParentDir, 'haley', 'celegans', 'encounter.mat');
 if strcmp(folder, 'ecoli') || ~isfile(file)
     return;
 end
-if ~ndi.setup.V2.schemaHasField('time', 'value') || ~isfile(fullfile(getenv('DID_SCHEMA_PATH'), 'time_calculation.json'))
+if ~ndi.setup.V2.schemaHasField('time', 'value') || ~ndi.setup.V2.schemaHasLeaf('time_calculation')
     out.skipped{end+1} = sprintf(['%s: the schema in use has no time_calculation ' ...
         '(did-schema PR #87); no encounters'], ref);
     return;

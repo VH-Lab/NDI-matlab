@@ -304,7 +304,7 @@
  ],
  "web_resources": [
   {
-   "key": "code",
+   "key": "code", "type": "software",
    "name": "Analysis code (GitHub)",
    "identifiers": [
     {
@@ -325,7 +325,7 @@
    "host": "ndi_cloud"
   },
   {
-   "key": "wormbook_maintenance",
+   "key": "wormbook_maintenance", "type": "publication",
    "name": "Stiernagle T (2006) Maintenance of C. elegans. WormBook",
    "identifiers": [
     {

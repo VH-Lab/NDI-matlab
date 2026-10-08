@@ -113,9 +113,9 @@ for k = 1:height(S)
     if hasType                      % decision #55; did-schema #84
         f.type = did2.build.term('', S.type{k});
     end
-    d = did2.build.document('subject', f, 'SessionId', sid);
-    subjectIds(S.local_identifier{k}) = d.base.id;
-    docs{end+1} = d; %#ok<AGROW>
+    built = ndi.setup.V2.entityDocuments('subject', f, struct(), 'SessionId', sid);
+    subjectIds(S.local_identifier{k}) = built{1}.base.id;
+    docs = [docs, built]; %#ok<AGROW>
 end
 
 % ---- the session's own UTC extent -----------------------------------------
@@ -136,9 +136,9 @@ end
 systems = unique(R.system, 'stable');
 if ~isempty(systems)
     sw = struct();
-    sw.system = did2.build.document('software', struct('name', 'ndi.daq.system.image'), 'SessionId', sid);
-    sw.navigator = did2.build.document('software', struct('name', 'ndi.file.navigator.bodies'), 'SessionId', sid);
-    sw.reader = did2.build.document('software', struct('name', 'ndi.daq.reader.image.ndr'), 'SessionId', sid);
+    sw.system = softwareDoc('ndi.daq.system.image', sid);
+    sw.navigator = softwareDoc('ndi.file.navigator.bodies', sid);
+    sw.reader = softwareDoc('ndi.daq.reader.image.ndr', sid);
     docs = [docs, {sw.system, sw.navigator, sw.reader}];
 end
 readers = containers.Map();
@@ -196,8 +196,9 @@ for k = 1:height(R)
         epochRefs{end+1} = relSession.base.id; %#ok<AGROW>
         docs{end+1} = relSession; %#ok<AGROW>
     end
-    ep = did2.build.document('epoch', struct('local_identifier', r.epoch{1}), 'SessionId', sid, ...
-        'Edges', struct('time_reference_id', {epochRefs}));
+    ep = ndi.setup.V2.entityDocuments('epoch', struct('local_identifier', r.epoch{1}), ...
+        struct('time_reference_id', {epochRefs}), 'SessionId', sid);
+    ep = ep{1};
     if isImage
         relEpoch = did2.build.relativeTimeReference(ep.base.id, 'Relation', 'intervalDuring', 'SessionId', sid);
     else
@@ -339,4 +340,10 @@ function s = isoUtc(t)
 % dir() reports the file time in this computer's own time zone
 t.TimeZone = 'UTC';
 s = char(t, 'yyyy-MM-dd''T''HH:mm:ss''Z''');
+end
+
+function d = softwareDoc(name, sid)
+% a `software` entity (or, since 2026-10-08, an `entity` of type software)
+d = ndi.setup.V2.entityDocuments('software', struct('name', name), struct(), 'SessionId', sid);
+d = d{1};
 end

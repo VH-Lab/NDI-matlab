@@ -72,7 +72,8 @@ end
 
 f = struct('local_identifier', reference);
 if ~isempty(options.Name), f.name = options.Name; end
-own = did2.build.document('session', f, 'SessionId', datasetSessionId);
+own = ndi.setup.V2.entityDocuments('session', f, struct(), 'SessionId', datasetSessionId);
+own = own{1};
 for k = 1:numel(datasetDocs)
     if ~strcmp(datasetDocs{k}.base.session_id, datasetSessionId)
         error('ndi:setup:V2:wrongSession', ...
@@ -121,7 +122,7 @@ end
 function report = check(docs, dsid)
 n = numel(docs);
 ids = cellfun(@(d) d.base.id, docs, 'UniformOutput', false);
-cls = cellfun(@(d) d.document_class.class_name, docs, 'UniformOutput', false);
+cls = cellfun(@ndi.setup.V2.kindOf, docs, 'UniformOutput', false);   % an entity's type since 2026-10-08
 sids = cellfun(@(d) d.base.session_id, docs, 'UniformOutput', false);
 [u, ~, j] = unique(ids);
 report.duplicateIds = u(accumarray(j(:), 1) > 1);
@@ -176,7 +177,8 @@ for i = sess
         end
     end
     if ~ok
-        report.sessions.notInDataset{end+1} = docs{i}.session.local_identifier;
+        [~, blk] = ndi.v2.kindOf(docs{i});
+        report.sessions.notInDataset{end+1} = docs{i}.(blk).local_identifier;
     end
 end
 end

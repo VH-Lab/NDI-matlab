@@ -61,13 +61,13 @@ classdef dir < ndi.dataset
                     % document (a class v1 never had). Read unscoped: the
                     % folder's unique_reference.txt names whichever session was
                     % opened last, not necessarily the dataset.
-                    datasetDocs = ndi_dataset_dir_obj.session.database.search(ndi.query('','isa','dataset'));
-                    datasetDocs = datasetDocs(cellfun(@(d) strcmp(d.document_properties.document_class.class_name, ...
-                        'dataset'), datasetDocs));
+                    datasetDocs = ndi_dataset_dir_obj.session.database.search(ndi.v2.isaQuery('dataset'));
+                    datasetDocs = datasetDocs(cellfun(@(d) strcmp(ndi.v2.kindOf(d.document_properties), ...
+                        'dataset'), datasetDocs));   % an entity of type dataset since 2026-10-08
                     if isscalar(datasetDocs)
                         correctSessionId = datasetDocs{1}.document_properties.base.session_id;
                     else
-                        q_session = ndi.query('','isa','session');
+                        q_session = ndi.v2.isaQuery('session');
                         candidate_session_doc = ndi_dataset_dir_obj.database_search(q_session);
                         if isscalar(candidate_session_doc)
                            correctSessionId = candidate_session_doc{1}.document_properties.base.session_id;
@@ -77,7 +77,7 @@ classdef dir < ndi.dataset
             end
 
             if ~isempty(correctSessionId)
-                q_session = ndi.query('','isa','session') & ndi.query('base.session_id','exact_string',correctSessionId);                
+                q_session = ndi.v2.isaQuery('session') & ndi.query('base.session_id','exact_string',correctSessionId);                
                 candidate_session_doc = ndi_dataset_dir_obj.database_search(q_session);
                 if isscalar(candidate_session_doc)
                     % BOTH VINTAGES. V_eta renamed session.reference ->

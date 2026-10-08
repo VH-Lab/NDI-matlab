@@ -90,11 +90,18 @@ classdef entity
         end
 
         function k = get.kind(obj)
-            % KIND - the entity's document class, e.g. 'person', 'subject'
+            % KIND - the entity's document class, e.g. 'person', 'subject';
+            % for an `entity` (one entity class, 2026-10-08) its `type`, so a
+            % person is 'person' under either schema. A subject's type is a
+            % physical kind ('organism', 'material', ...), so its kind is
+            % 'subject' as before; its type is ndi.subject's `type`.
             k = '';
             if isempty(obj.entity_document_), return; end
             p = obj.document_properties();
-            k = char(p.document_class.class_name);
+            k = ndi.v2.kindOf(p);
+            if any(strcmp(k, ndi.v2.entityTypesFor('subject')))
+                k = 'subject';
+            end
         end
 
         function n = get.name(obj)
@@ -124,11 +131,25 @@ classdef entity
             p = obj.document_properties();
             g = ndi.v2.blockOf(p, 'entity', 'global_identifier', []);
             scheme = strings(0, 1); value = strings(0, 1);
-            g = ndi.v2.entries(g);
+            if ischar(g) || isstring(g)
+                g = cellstr(g);
+            end
+            if ~iscell(g) || ~all(cellfun(@ischar, g))
+                g = ndi.v2.entries(g);
+            end
             for i = 1:numel(g)
                 sc = ''; v = '';
-                if isfield(g{i}, 'scheme'), sc = ndi.v2.termName(g{i}.scheme); end
-                if isfield(g{i}, 'value'), v = char(g{i}.value); end
+                if ischar(g{i})
+                    % a CURIE or an IRI since 2026-10-08: the prefix is the scheme
+                    tok = regexp(g{i}, '^([A-Za-z][A-Za-z0-9_.]*):(?!//)(.*)$', 'tokens', 'once');
+                    if isempty(tok)
+                        sc = 'IRI'; v = g{i};
+                    else
+                        sc = tok{1}; v = tok{2};
+                    end
+                end
+                if isstruct(g{i}) && isfield(g{i}, 'scheme'), sc = ndi.v2.termName(g{i}.scheme); end
+                if isstruct(g{i}) && isfield(g{i}, 'value'), v = char(g{i}.value); end
                 scheme(end+1, 1) = string(sc); %#ok<AGROW>
                 value(end+1, 1) = string(v); %#ok<AGROW>
             end
@@ -537,7 +558,8 @@ classdef entity
                 doc = d;
             end
             chain = ndi.v2.classChain(ndi.v2.props(doc));
-            if any(strcmp(chain, 'subject'))
+            physical = any(strcmp(ndi.v2.kindOf(ndi.v2.props(doc)), ndi.v2.entityTypesFor('subject')));
+            if any(strcmp(chain, 'subject')) || physical
                 obj = ndi.subject.fromDocument(container, doc);
             else
                 obj = ndi.entity(container, doc);
@@ -660,7 +682,7 @@ classdef entity
                 kind (1,:) char = 'entity'
                 options.Name (1,:) char = ''
             end
-            docs = container.database_search(ndi.query('', 'isa', kind, ''));
+            docs = container.database_search(ndi.v2.isaQuery(kind));   % an entity type since 2026-10-08
             e = {};
             for i = 1:numel(docs)
                 x = ndi.entity.fromDocument(container, docs{i});

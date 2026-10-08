@@ -614,7 +614,7 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
             session_doc_ids = {ndi_dataset_obj.session_info.session_doc_in_dataset_id};
 
             dataset_session_doc_id = '';
-            q_dataset_session_doc = ndi.query('','isa','session') & ndi.query('base.session_id','exact_string',ndi_dataset_obj.id());
+            q_dataset_session_doc = ndi.v2.isaQuery('session') & ndi.query('base.session_id','exact_string',ndi_dataset_obj.id());
             doc = ndi_dataset_obj.session.database_search(q_dataset_session_doc);
             if isscalar(doc)
                 dataset_session_doc_id = doc{1}.id();
@@ -1113,16 +1113,17 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
                 % `session` document is in this database under its own
                 % session_id. So each such session document is an ingested
                 % session, opened here by its local_identifier.
-                v2 = ndi_dataset_obj.session.database.search(ndi.query('','isa','session'));
+                v2 = ndi_dataset_obj.session.database.search(ndi.v2.isaQuery('session'));
                 for i=1:numel(v2)
                     p = v2{i}.document_properties;
-                    if strcmp(p.base.session_id, ndi_dataset_obj.id()) || ~isfield(p.session,'local_identifier')
+                    [~, blk] = ndi.v2.kindOf(p);   % `entity` since 2026-10-08
+                    if strcmp(p.base.session_id, ndi_dataset_obj.id()) || ~isfield(p.(blk),'local_identifier')
                         continue;
                     end
                     info_here = struct('session_id', p.base.session_id, ...
-                        'session_reference', p.session.local_identifier, 'is_linked', 0, ...
+                        'session_reference', p.(blk).local_identifier, 'is_linked', 0, ...
                         'session_creator', 'ndi.session.dir', ...
-                        'session_creator_input1', p.session.local_identifier, ...
+                        'session_creator_input1', p.(blk).local_identifier, ...
                         'session_creator_input2', '', 'session_creator_input3', '', ...
                         'session_creator_input4', '', 'session_creator_input5', '', ...
                         'session_creator_input6', '', 'session_doc_in_dataset_id', v2{i}.id());

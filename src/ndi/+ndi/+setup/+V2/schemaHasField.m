@@ -24,6 +24,13 @@ for k = 1:numel(names)
         break;
     end
 end
+if isempty(f) && any(strcmp(className, {'subject', 'strain', 'product', 'software', ...
+        'person', 'organization', 'funding', 'web_resource', 'dataset', 'study', ...
+        'publication', 'session', 'epoch'})) && isfile(fullfile(p, 'entity.json'))
+    % merged into one `entity` class on 2026-10-08 (ndi.setup.V2.mergedEntities):
+    % the identity fields (name, type, local_identifier, ...) live there
+    f = fullfile(p, 'entity.json');
+end
 if isempty(f)
     return;
 end

@@ -675,9 +675,11 @@ for f = {'metadata', 'studies'}
 end
 if isfield(result, 'density'), dsDocs = [dsDocs, result.density.datasetDocuments]; end
 name = '';
-isDataset = cellfun(@(d) strcmp(d.document_class.class_name, 'dataset'), dsDocs);
-if any(isDataset) && isfield(dsDocs{find(isDataset, 1)}.dataset, 'name')
-    name = char(dsDocs{find(isDataset, 1)}.dataset.name);
+isDataset = cellfun(@(d) strcmp(ndi.setup.V2.kindOf(d), 'dataset'), dsDocs);
+if any(isDataset)
+    ds = dsDocs{find(isDataset, 1)};
+    [~, blk] = ndi.setup.V2.kindOf(ds);   % `entity` since 2026-10-08
+    if isfield(ds.(blk), 'name'), name = char(ds.(blk).name); end
 end
 if ~any(isDataset)
     fprintf('  no dataset document (the metadata stage did not run): sessions cannot be part of it\n');
@@ -719,11 +721,12 @@ vars = row.Properties.VariableNames;
 if ismember('name', vars) && ~isempty(row.name{1}), f.name = char(row.name{1}); end
 if ismember('description', vars) && ~isempty(row.description{1}), f.description = char(row.description{1}); end
 sid = char(row.session_id{1});
-args = {'SessionId', sid, 'Id', char(row.session_doc_id{1})};
+edges = struct();
 if ~isempty(row.time_reference_id{1})
-    args = [args, {'Edges', struct('time_reference_id', row.time_reference_id{1})}];
+    edges.time_reference_id = row.time_reference_id{1};
 end
-docs = {did2.build.document('session', f, args{:})};
+docs = ndi.setup.V2.entityDocuments('session', f, edges, 'SessionId', sid, ...
+    'Id', char(row.session_doc_id{1}));
 if ismember('study_ids', vars)
     studies = row.study_ids{1};
     if ischar(studies) || isstring(studies), studies = cellstr(studies); end

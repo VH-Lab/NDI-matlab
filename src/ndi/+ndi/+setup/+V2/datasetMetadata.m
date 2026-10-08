@@ -111,12 +111,38 @@ if ~strcmp(options.Studies, 'only')
         state = add(state, 'publication', p.key, f, struct());
     end
 
+    % On a schema with one entity class (2026-10-08) there is no web_resource:
+    % a URL is an address for the thing it names. A resource the dataset is
+    % `stored_at` becomes one of the dataset's own identifiers; any other one is
+    % an entity of the `type` the spec gives it (software, publication, ...).
+    merged = ndi.setup.V2.mergedEntities();
+    storedAt = asCell(getOr(getOr(spec, 'dataset', struct()), 'stored_at', {}));
+    state.storedIds = {};
     for e = entries(spec, 'web_resources')
         w = e{1};
-        state = checkKnown(state, 'web_resource', w, {'name', 'identifiers', 'host'});
-        state = add(state, 'web_resource', w.key, putIds(struct('name', w.name), w), struct());
-        if isfield(w, 'host')
-            state = relate(state, w.key, w.host, 'hosted_by', {'web_resource'}, {'organization'});
+        if ~merged
+            state = checkKnown(state, 'web_resource', w, {'name', 'identifiers', 'host'}, ...
+                struct('type', ''));
+            state = add(state, 'web_resource', w.key, putIds(struct('name', w.name), w), struct());
+            if isfield(w, 'host')
+                state = relate(state, w.key, w.host, 'hosted_by', {'web_resource'}, {'organization'});
+            end
+        elseif any(strcmp(w.key, storedAt))
+            state = checkKnown(state, 'web_resource', w, {'name', 'identifiers'}, ...
+                struct('host', 'a stored copy is an identifier of the dataset; its host is not recorded', ...
+                'type', ''));
+            state.storedIds = [state.storedIds, storedIdentifiers(w)];
+            state.ids(w.key) = '';
+            state.kinds(w.key) = 'web_resource';
+        else
+            state = checkKnown(state, 'web_resource', w, {'name', 'identifiers', 'type'}, ...
+                struct('host', 'the schema in use has no relation from a resource to its host'));
+            if ~isfield(w, 'type')
+                error('ndi:setup:V2:noType', ['web resource `%s` needs a `type` ' ...
+                    '(software, publication, protocol, ...) on a schema with one entity class.'], w.key);
+            end
+            state = add(state, 'web_resource', w.key, putIds(struct('name', w.name), w), ...
+                struct(), '', char(w.type));
         end
     end
 
@@ -157,6 +183,14 @@ if ~strcmp(options.Studies, 'only')
             asCell(getOr(s, 'description', {}))], 'UniformOutput', false), '. ');
         if ~isempty(desc)
             f.description = desc;
+        end
+        if ndi.setup.V2.mergedEntities() && isfield(s, 'node') ...
+                && startsWith(char(s.node), 'WBStrain:')
+            % the strain's WormBase id is one of its identifiers (one entity class;
+            % `wormbase:WBStrain00000001`, V_eta_entity_composition_plan.md sec. 6),
+            % since a subject is `instance_of` the strain rather than asserting it
+            wb = struct('scheme', 'WormBase', 'value', strrep(char(s.node), ':', ''));
+            s.identifiers = [asCell(getOr(s, 'identifiers', {})), {wb}];
         end
         f = putIds(f, s);
         edges = struct();
@@ -253,7 +287,7 @@ if ~strcmp(options.Studies, 'only')
         if subjectHasName
             f = putIf(f, 'name', i, 'name');
         end
-        state = add(state, 'subject', i.key, f, struct());
+        state = add(state, 'subject', i.key, f, struct(), '', 'device');
         if isfield(i, 'product')
             state = relate(state, i.key, i.product, 'instance_of', {'subject'}, {'product'});
         end
@@ -276,6 +310,15 @@ if ~strcmp(options.Studies, 'only')
         f = putIf(f, fn{1}, d, fn{1});
     end
     f = putIds(f, d);
+    if isfield(state, 'storedIds') && ~isempty(state.storedIds)
+        % a stored copy is one of the dataset's addresses (one entity class only)
+        extra = cellfun(@(v) struct('scheme', 'URL', 'value', v), state.storedIds, ...
+            'UniformOutput', false);
+        if isfield(f, 'global_identifier')
+            extra = [num2cell(f.global_identifier(:)'), extra];
+        end
+        f.global_identifier = did2.build.list(extra{:});
+    end
     key = '#dataset';
     state = add(state, 'dataset', key, f, struct(), options.DatasetId);
 
@@ -288,8 +331,12 @@ if ~strcmp(options.Studies, 'only')
         end
         state = relate(state, key, a.person, 'has_author', {'dataset'}, {'person'}, extra);
     end
-    for pair = {'funding', 'funded_by', {'funding'}; 'cites', 'cites', {'publication'}; ...
-            'stored_at', 'stored_at', {'web_resource'}; 'documented_by', 'documented_by', {'web_resource'}}'
+    pairs = {'funding', 'funded_by', {'funding'}; 'cites', 'cites', {'publication'}; ...
+            'stored_at', 'stored_at', {'web_resource'}; 'documented_by', 'documented_by', {'web_resource'}}';
+    if ndi.setup.V2.mergedEntities()
+        pairs = pairs(:, ~strcmp(pairs(1, :), 'stored_at'));   % now the dataset's identifiers
+    end
+    for pair = pairs
         for t = asCell(getOr(d, pair{1}, {}))
             state = relate(state, key, t{1}, pair{2}, {'dataset'}, pair{3});
         end
@@ -436,18 +483,48 @@ end
 id = state.ids(key);
 end
 
-function state = add(state, className, key, fields, edges, id)
+function state = add(state, className, key, fields, edges, id, type)
+% TYPE: the entity type, for a subject (or web resource) on a schema with one
+% entity class; ndi.setup.V2.entityDocuments.
 if nargin < 6
     id = '';
+end
+if nargin < 7
+    type = '';
 end
 if isKey(state.ids, key)
     error('ndi:setup:V2:duplicateKey', 'The spec defines `%s` twice.', key);
 end
-doc = did2.build.document(className, fields, 'SessionId', state.sid, ...
-    'Edges', edges, 'Id', id, 'Validate', state.validate);
-state.docs{end+1} = doc;
-state.ids(key) = doc.base.id;
+entityKinds = {'organization', 'person', 'funding', 'publication', 'web_resource', ...
+    'software', 'product', 'strain', 'subject', 'dataset', 'study'};
+if any(strcmp(className, entityKinds))
+    buildAs = className;
+    if strcmp(className, 'web_resource') && ~isempty(type)
+        buildAs = type;   % on a schema with one entity class, what the resource is
+    end
+    docs = ndi.setup.V2.entityDocuments(buildAs, fields, edges, 'SessionId', state.sid, ...
+        'Id', id, 'Validate', state.validate, 'Type', type);
+else
+    docs = {did2.build.document(className, fields, 'SessionId', state.sid, ...
+        'Edges', edges, 'Id', id, 'Validate', state.validate)};
+end
+state.docs = [state.docs, docs];
+state.ids(key) = docs{1}.base.id;
 state.kinds(key) = className;
+end
+
+function ids = storedIdentifiers(w)
+% A stored copy's addresses: an NDI Cloud dataset page is `ndicloud:<id>`.
+ids = {};
+for x = asCell(getOr(w, 'identifiers', {}))
+    v = char(x{1}.value);
+    tok = regexp(v, 'ndi-cloud\.com/datasets/([0-9a-f]{24})', 'tokens', 'once');
+    if ~isempty(tok)
+        ids{end+1} = ['ndicloud:' tok{1}]; %#ok<AGROW>
+    else
+        ids{end+1} = v; %#ok<AGROW>
+    end
+end
 end
 
 function state = relate(state, childKey, parentKey, relation, childKinds, parentKinds, extra)
