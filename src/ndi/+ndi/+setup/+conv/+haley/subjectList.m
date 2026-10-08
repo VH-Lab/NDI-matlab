@@ -70,7 +70,9 @@ function [S, checks] = subjectList(dataParentDir, sessions, options)
 %
 %   Option 'Corrections': the spec's `corrections`; those naming a `plate`
 %   are applied to its prep (decision #56: plate 90's peptone; #54d: an
-%   estimated `timeRoomTemp`).
+%   estimated `timeRoomTemp`); those naming an `experiment` and column
+%   `growthTimeRoomTemp` replace that day's acclimation plate room temperature
+%   time (decision #70e: foragingMini experiment 24).
 %
 %   CHECKS (second output, also printed) report what looks wrong in the
 %   source WITHOUT changing anything:
@@ -115,6 +117,7 @@ checks = struct('plateWithoutSession', {{}}, 'plateOnTwoDays', {{}}, ...
     'growthDisagrees', {{}}, 'correctionUnmatched', {{}}, 'roomTempLooksEstimated', {{}}, ...
     'patchOD600', {{}}, 'assayTypeDisagrees', {{}}, 'noGrowthCondition', {{}});
 rows = {};
+dayHits = containers.Map();   % experiment-level correction key -> plates it applied to
 assayChecked = 0;       % plates whose original assay type was compared with their study
 assayUnchecked = {};    % folders whose experimentInfo has no `condition` column
 
@@ -242,6 +245,8 @@ for f = 1:numel(folders)
             'nVideo', height(R), 'exclude', ex, 'starved', starved, 'od600', od, ...
             'prep', prepOf(R, 'timeSeed', 'timeColdRoom', 'timeRoomTemp', NaN), ...
             'growth', growthPrepOf(R)); %#ok<AGROW>
+        [P(end).growth, dayHits] = growthCorrection(P(end).growth, folder, days(1), ...
+            options.Corrections, dayHits);
     end
 
     % Acclimation plates: one per (session, strain, pick time), numbered within the
@@ -529,6 +534,15 @@ for c = 1:numel(corr)
     end
 end
 
+for c = 1:numel(corr)
+    x = corr{c};
+    if isfield(x, 'experiment') && ~isKey(dayHits, char(x.key)) ...
+            && any(strcmp(sessions.folder, x.folder))
+        checks.correctionUnmatched{end+1} = sprintf('%s: no %s experiment %d in the selected sessions', ...
+            char(x.key), x.folder, double(x.experiment));
+    end
+end
+
 for k = 1:numel(rows)
     r = rows{k};
     if r.prep.room_temp_by_rule && isempty(r.prep.room_temp_note)
@@ -753,4 +767,23 @@ function s = conditionText(c)
 if iscell(c), c = c{1}; end
 if iscell(c), c = c{1}; end
 s = strtrim(char(string(c)));
+end
+
+function [g, hits] = growthCorrection(g, folder, experiment, corr, hits)
+% A named correction of a day's acclimation plate time (decision #70e): the
+% spec's `corrections` entry naming this folder and experiment, column
+% growthTimeRoomTemp, value a wall-clock time 'yyyy-MM-ddTHH:mm'
+if isstruct(corr), corr = num2cell(corr); end
+for c = 1:numel(corr)
+    x = corr{c};
+    if ~isfield(x, 'experiment') || ~strcmp(x.folder, folder) ...
+            || double(x.experiment) ~= double(experiment) || ~strcmp(x.column, 'growthTimeRoomTemp')
+        continue;
+    end
+    g.room_temp = datetime(x.value, 'InputFormat', 'yyyy-MM-dd''T''HH:mm');
+    g.room_temp_by_rule = false;
+    g.room_temp_note = char(x.reason);
+    k = char(x.key);
+    if isKey(hits, k), hits(k) = hits(k) + 1; else, hits(k) = 1; end
+end
 end

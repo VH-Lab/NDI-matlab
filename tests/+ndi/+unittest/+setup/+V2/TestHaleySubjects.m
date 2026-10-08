@@ -175,6 +175,24 @@ classdef TestHaleySubjects < matlab.unittest.TestCase
                 'listed, not excluded');
         end
 
+        function testAnExperimentCorrectionReplacesTheAcclimationRoomTemperature(testCase)
+            % decision #70e: a named correction by folder and experiment sets
+            % that day's acclimation plate room temperature time
+            T = ndi.setup.conv.haley.sessionList(testCase.Root, testCase.Spec);
+            fix = struct('key', 'test_fix', 'folder', 'foragingMini', 'experiment', 1, ...
+                'column', 'growthTimeRoomTemp', 'value', '2023-02-23T09:02', 'reason', 'a test');
+            [S, checks] = ndi.setup.conv.haley.subjectList(testCase.Root, T, 'Corrections', {fix});
+            a = find(strcmp(S.kind, 'acclimation_plate') & strcmp(S.folder, 'foragingMini'));
+            testCase.verifyNumElements(a, 1);
+            testCase.verifyEqual(S.prep(a).room_temp, datetime(2023, 2, 23, 9, 2, 0));
+            testCase.verifyEqual(S.prep(a).room_temp_note, 'a test', 'the reason goes with the time');
+            testCase.verifyEmpty(checks.correctionUnmatched);
+            % one naming a day not in the sessions is reported
+            fix.experiment = 99;
+            [~, checks] = ndi.setup.conv.haley.subjectList(testCase.Root, T, 'Corrections', {fix});
+            testCase.verifyEqual(checks.correctionUnmatched, {'test_fix: no foragingMini experiment 99 in the selected sessions'});
+        end
+
         function testAssayTypeIsCheckedAgainstTheStudy(testCase)
             % the original import's per-plate assay type (folder + condition)
             % against the study the plate's session is part_of; only folders

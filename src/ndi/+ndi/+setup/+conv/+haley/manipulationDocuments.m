@@ -146,8 +146,9 @@ for k = find(ismember(S.kind, plateKinds))'
             placed = S.worms_placed(k);
             temperature(id, p.cold_room, hand, p.room_temp, hand, minuteFmt, ...
                 cfg.temperature.cold_room_celsius, '', cfg.temperature.methods.cold_room);
+            % a named correction of the time (decision #70e) is its note
             temperature(id, p.room_temp, hand, placed, hand, minuteFmt, ...
-                cfg.temperature.room_celsius, '', cfg.temperature.methods.room);
+                cfg.temperature.room_celsius, p.room_temp_note, cfg.temperature.methods.room);
             [stop, stopTol, stopFmt] = lastMoveOff(id);
             incubatorRef = temperature(id, placed, hand, stop, stopTol, stopFmt, ...
                 cfg.temperature.incubator_celsius, '', cfg.temperature.methods.incubator);

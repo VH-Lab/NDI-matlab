@@ -1744,6 +1744,15 @@
    "reason": "Plate 90 is labelled with peptone, but its label is wrong: it is from the 16 Nov 2023 pour, without peptone (Jess Haley, 2026-10-02; decision #56)."
   },
   {
+   "key": "growth_room_temp_mini_experiment_24",
+   "folder": "foragingMini",
+   "experiment": 24,
+   "column": "growthTimeRoomTemp",
+   "value": "2023-08-28T09:02",
+   "was": "28 Aug 2023 09:03 (plate 223) down to 08:52 (plate 234), one minute earlier per plate",
+   "reason": "The 12 assay plates of foragingMini experiment 24 share one acclimation plate (one seeding, cold room and pick), but growthTimeRoomTemp steps down a minute per plate, a spreadsheet fill-down; it is the only one of the 24 Mini experiments with more than one. Plates 225 and 230 were prepared on the acclimation plate's schedule (cold room 24 Aug 14:25, the acclimation plate's) and record its room temperature time: 28 Aug 09:02. On experiment 23 the same pairing (plates 213, 218) gives exactly that day's single time. Inferred from the data, 2026-10-08: Jess does not recall the day, and her notes were not checked (decision #70e)."
+  },
+  {
    "key": "room_temp_estimated_concentration_plate_01",
    "folder": "foragingConcentration",
    "plate": 1,
