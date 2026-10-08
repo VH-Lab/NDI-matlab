@@ -103,7 +103,7 @@ end
 docs = {};
 out = struct('documents', {{}}, 'skipped', {{}}, 'counts', struct('pour', 0, ...
     'seed_patch', 0, 'seed_acclimation_plate', 0, 'temperature', 0, 'transfer', 0, ...
-    'food_deprivation', 0));
+    'food_deprivation', 0, 'developmental_stage', 0));
 
 % ---- plates ------------------------------------------------------------------
 plateKinds = {'assay_plate', 'acclimation_plate', 'food_deprivation_plate', 'plate'};
@@ -203,6 +203,9 @@ for k = cohorts
     assay = regexprep(cid, '_worms$', '');
     if ~isempty(S.acclimation{k})
         move(cid, S.acclimation{k}, 'acclimation plate', cfg.transfer.pick_method, []);
+    end
+    if isfield(cfg, 'developmental_stage')
+        stageAtPick(cid, k, assay);
     end
     if ~isempty(S.deprivation{k})
         key = [S.deprivation{k} '|' cid];
@@ -353,6 +356,36 @@ out.documents = docs;
         end
         docs{end+1} = did2.build.statement(leaf, subjectIds(subject), variable, value, args{:});
         out.counts.(counter) = out.counts.(counter) + 1;
+    end
+
+    function stageAtPick(cid, k, assay)
+        % the worms were picked as L4 larvae (decision #69): an observation at
+        % the pick, or, with no pick time, before the cohort's next move
+        st = cfg.developmental_stage;
+        when = '';
+        pick = NaT;
+        h = strcmp(S.local_identifier, S.acclimation{k});
+        if any(h), pick = S.worms_placed(find(h, 1)); end
+        if ~isnat(pick)
+            when = instant(pick, hand);
+        else
+            next = {};
+            if ~isempty(S.deprivation{k}), next{end+1} = [S.deprivation{k} '|' cid]; end
+            next{end+1} = [assay '|' cid];
+            next = next(cellfun(@(x) isKey(refs, x), next));
+            if ~isempty(next)
+                d = did2.build.relativeTimeReference(refs(next{1}), 'Relation', 'intervalBefore', ...
+                    'SessionId', sid);
+                docs{end+1} = d;
+                when = d.base.id;
+            end
+        end
+        if isempty(when)
+            out.skipped{end+1} = sprintf('%s: no pick time and no later move; no developmental stage', cid);
+            return;
+        end
+        statement('term_observation', cid, st.variable, did2.build.term('', st.value), when, ...
+            struct('Fields', eachMember, 'Method', did2.build.term('', st.method)), 'developmental_stage');
     end
 
     function [t, tol, fmt] = lastMoveOff(holding)

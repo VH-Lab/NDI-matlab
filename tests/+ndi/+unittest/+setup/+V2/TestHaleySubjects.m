@@ -53,7 +53,10 @@ classdef TestHaleySubjects < matlab.unittest.TestCase
                 [d + duration(10, 46, 0), d + duration(10, 7, 0), d + duration(10, 46, 0), ...
                  d + duration(10, 39, 0), d + duration(10, 39, 0), d + duration(10, 39, 0)], ...
                 {zeros(2, 2), zeros(2, 2), zeros(2, 2), [], [], zeros(3, 2)}, ...
-                {zeros(2, 1), zeros(2, 1), zeros(2, 1), [], [], zeros(3, 1)}, false(1, 6));
+                {zeros(2, 1), zeros(2, 1), zeros(2, 1), [], [], zeros(3, 1)}, false(1, 6), ...
+                struct('condition', {{'grid'; 'grid'; 'single'; 'grid'; 'grid'; 'grid'}}));
+            % ^ plate 3 is a single-patch plate on a mutant screen (single-density,
+            %   multi-patch) day: the assay type check reports it
 
             % The other three folders: one day, one plate, worms matching.
             for name = {'foragingMatching', 'foragingMini', 'foragingSensory'}
@@ -158,6 +161,19 @@ classdef TestHaleySubjects < matlab.unittest.TestCase
                 'rectangle template with lawnVolume 0');
             testCase.verifyFalse(any(contains(checks.ecoliSeeding, 'plate 5')), ...
                 'an LB-only patch is not a finding');
+        end
+
+        function testAssayTypeIsCheckedAgainstTheStudy(testCase)
+            % the original import's per-plate assay type (folder + condition)
+            % against the study the plate's session is part_of; only folders
+            % whose experimentInfo has a `condition` column are compared
+            [~, checks] = testCase.list();
+            d = checks.assayTypeDisagrees;
+            testCase.verifyNumElements(d, 1, strjoin(d, newline));
+            testCase.verifySubstring(d{1}, 'foragingMutants: plate 3 is LargeSinglePatch');
+            testCase.verifySubstring(d{1}, 'mutant_screen (SingleDensityMultiPatch)');
+            out = evalc('testCase.list();');
+            testCase.verifySubstring(out, 'ASSAY TYPE: 5 assay plate(s) compared with their study, 1 disagree');
         end
 
         function testEcoliPatchesFollowTheTemplate(testCase)

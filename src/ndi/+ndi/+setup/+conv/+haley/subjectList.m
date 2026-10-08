@@ -107,8 +107,10 @@ checks = struct('plateWithoutSession', {{}}, 'plateOnTwoDays', {{}}, ...
     'wormOnTwoPlates', {{}}, 'wormRange', {{}}, 'noLawnCenters', {{}}, ...
     'patchCountDisagrees', {{}}, 'noPickTime', {{}}, 'ecoliSeeding', {{}}, ...
     'growthDisagrees', {{}}, 'correctionUnmatched', {{}}, 'roomTempLooksEstimated', {{}}, ...
-    'patchOD600', {{}});
+    'patchOD600', {{}}, 'assayTypeDisagrees', {{}});
 rows = {};
+assayChecked = 0;       % plates whose original assay type was compared with their study
+assayUnchecked = {};    % folders whose experimentInfo has no `condition` column
 
 % ---- C. elegans -------------------------------------------------------------
 folders = unique(sessions.folder(~strcmp(sessions.folder, 'ecoli')));
@@ -151,6 +153,21 @@ for f = 1:numel(folders)
             checks.plateWithoutSession{end+1} = sprintf('%s: plate %d (expNum %d) has no session', ...
                 folder, p, days(1));
             continue;
+        end
+        % the original import's assay type for this plate (doImport, from the
+        % folder and the plate's own `condition`) against the study its session
+        % is part_of: the study carries the assay type, so they must agree
+        if ismember('condition', I.Properties.VariableNames) && ismember('study_key', mine.Properties.VariableNames)
+            assayChecked = assayChecked + 1;
+            want = originalAssayType(folder, R.condition(1));
+            got = studyAssayType(mine.study_key{s});
+            if ~strcmp(want, got)
+                checks.assayTypeDisagrees{end+1} = sprintf(['%s: plate %d is %s in the original ' ...
+                    'import (condition "%s") but its session is in study %s (%s)'], ...
+                    folder, p, want, conditionText(R.condition(1)), mine.study_key{s}, got);
+            end
+        elseif ~any(strcmp(assayUnchecked, folder))
+            assayUnchecked{end+1} = folder; %#ok<AGROW>
         end
         w = cellfun(@(x) double(x(:)'), R.wormNum, 'UniformOutput', false);
         worms = unique([w{:}]);
@@ -532,6 +549,11 @@ fprintf(['DENOMINATOR: %d subject(s) in %d session(s), from %d source file(s): '
     '%d assay plate(s), %d acclimation plate(s), %d food deprivation plate(s), %d E. coli plate(s), ' ...
     '%d patch(es), %d worm cohort(s), %d worm(s)\n'], ...
     height(S), numel(unique(S.session)), nFiles, counts);
+notCompared = 'none';
+if ~isempty(assayUnchecked), notCompared = strjoin(assayUnchecked, ', '); end
+fprintf(['ASSAY TYPE: %d assay plate(s) compared with their study, %d disagree; ' ...
+    'folders not compared (no condition column): %s\n'], assayChecked, ...
+    numel(checks.assayTypeDisagrees), notCompared);
 names = fieldnames(checks);
 fprintf('CHECKS (reported, nothing changed): %d finding(s)\n', ...
     sum(cellfun(@(n) numel(checks.(n)), names)));
@@ -672,4 +694,49 @@ else
     why = sprintf('%d patch(es), template %s, no readable OD600 map: OD600 not known', ...
         nPatch, mat2str(template));
 end
+end
+
+function t = originalAssayType(folder, condition)
+% doImport.m's assay type (lines 140-152): grid plates are multi-density in
+% foragingMatching and single-density elsewhere; single plates are small in
+% foragingMini and large elsewhere
+c = lower(conditionText(condition));
+switch c
+    case 'grid'
+        if strcmp(folder, 'foragingMatching')
+            t = 'MultiDensityMultiPatch';
+        else
+            t = 'SingleDensityMultiPatch';
+        end
+    case 'single'
+        if strcmp(folder, 'foragingMini')
+            t = 'SmallSinglePatch';
+        else
+            t = 'LargeSinglePatch';
+        end
+    otherwise
+        t = ['unknown (' c ')'];
+end
+end
+
+function t = studyAssayType(key)
+% the assay each spec study runs (its name says so)
+switch char(key)
+    case {'single_density_multi_patch', 'mutant_screen', 'sensory_mutants'}
+        t = 'SingleDensityMultiPatch';
+    case 'large_single_patch'
+        t = 'LargeSinglePatch';
+    case 'small_single_patch'
+        t = 'SmallSinglePatch';
+    case 'multi_density_multi_patch'
+        t = 'MultiDensityMultiPatch';
+    otherwise
+        t = ['not an assay study (' char(key) ')'];
+end
+end
+
+function s = conditionText(c)
+if iscell(c), c = c{1}; end
+if iscell(c), c = c{1}; end
+s = strtrim(char(string(c)));
 end

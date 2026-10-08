@@ -42,7 +42,7 @@ for k = 1:numel(identifiers)
         case 'awardnumber'
             local = value;
             continue;
-        case {'orcid', 'ror', 'doi', 'rrid', 'wikidata', 'swh', 'ndicloud', 'wormbase'}
+        case {'orcid', 'ror', 'doi', 'rrid', 'wikidata', 'swh', 'ndicloud', 'wormbase', 'ncbitaxon'}
             prefix = scheme;
         case 'pmid'
             prefix = 'pubmed';

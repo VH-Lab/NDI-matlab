@@ -486,7 +486,7 @@
    "key": "OP50",
    "name": "OP50",
    "node": "WBStrain:00041969",
-   "_node_synonym": "Also NCBITaxon:637912 (the V1 import's identifier), kept as the URL identifier below: a term carries one node, and the identifier list has no NCBITaxon scheme.",
+   "_node_synonym": "Also NCBITaxon:637912 (the V1 import's identifier, Escherichia coli OP50): a term carries one node, so it is a second identifier below (Jess, 2026-10-08), beside its URL.",
    "species": {
     "node": "NCBITaxon:562",
     "name": "Escherichia coli"
@@ -500,6 +500,10 @@
     {
      "scheme": "URL",
      "value": "https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?id=637912"
+    },
+    {
+     "scheme": "NCBITaxon",
+     "value": "NCBITaxon:637912"
     }
    ],
    "source": "cgc"
@@ -550,6 +554,9 @@
   {
    "key": "PR811",
    "name": "PR811",
+   "background": [
+    "N2"
+   ],
    "node": "WBStrain:00030796",
    "genotype": "osm-6(p811) V",
    "species": {
@@ -572,6 +579,9 @@
   {
    "key": "TU253",
    "name": "TU253",
+   "background": [
+    "N2"
+   ],
    "node": "WBStrain:00035037",
    "genotype": "mec-4(u253) X",
    "species": {
@@ -594,6 +604,9 @@
   {
    "key": "CB1112",
    "name": "CB1112",
+   "background": [
+    "N2"
+   ],
    "node": "WBStrain:00004246",
    "_node": "WormBase id from the V1 import (doImport.m, strainNames for strains its lookup could not resolve); the V2 search found none (2026-10-07).",
    "genotype": "cat-2(e1112) II",
@@ -618,6 +631,9 @@
   {
    "key": "CX6448",
    "name": "CX6448",
+   "background": [
+    "N2"
+   ],
    "node": "WBStrain:00005280",
    "_node": "WormBase id from the V1 import (doImport.m, strainNames for strains its lookup could not resolve); the V2 search found none (2026-10-07).",
    "genotype": "gcy-35(ok769) I",
@@ -642,6 +658,9 @@
   {
    "key": "DA465",
    "name": "DA465",
+   "background": [
+    "N2"
+   ],
    "node": "WBStrain:00005463",
    "genotype": "eat-2(ad465) II",
    "species": {
@@ -664,6 +683,9 @@
   {
    "key": "DA609",
    "name": "DA609",
+   "background": [
+    "N2"
+   ],
    "node": "WBStrain:00005493",
    "genotype": "npr-1(ad609) X",
    "species": {
@@ -686,6 +708,9 @@
   {
    "key": "FK103",
    "name": "FK103",
+   "background": [
+    "N2"
+   ],
    "node": "WBStrain:00007498",
    "_node": "Looked up by hand on wormbase.org by Jess, 2026-10-07 (ndi.ontology.lookup WBStrain:<name> fails: the WormBase scrape and API both error).",
    "genotype": "tax-4(ks28) III",
@@ -710,6 +735,9 @@
   {
    "key": "MT13113",
    "name": "MT13113",
+   "background": [
+    "N2"
+   ],
    "node": "WBStrain:00027424",
    "_node": "Looked up by hand on wormbase.org by Jess, 2026-10-07 (ndi.ontology.lookup WBStrain:<name> fails: the WormBase scrape and API both error).",
    "genotype": "tdc-1(n3419) II",
@@ -734,6 +762,9 @@
   {
    "key": "MT15434",
    "name": "MT15434",
+   "background": [
+    "N2"
+   ],
    "node": "WBStrain:00027519",
    "_node": "WormBase id from the V1 import (doImport.m, strainNames for strains its lookup could not resolve); the V2 search found none (2026-10-07).",
    "genotype": "tph-1(mg280) II",
@@ -758,6 +789,9 @@
   {
    "key": "MT9455",
    "name": "MT9455",
+   "background": [
+    "N2"
+   ],
    "node": "WBStrain:00027363",
    "_node": "Looked up by hand on wormbase.org by Jess, 2026-10-07 (ndi.ontology.lookup WBStrain:<name> fails: the WormBase scrape and API both error).",
    "genotype": "tbh-1(n3247) X",
@@ -1673,6 +1707,12 @@
   "food_deprivation": {
    "variable": "food availability",
    "value": "none"
+  },
+  "developmental_stage": {
+   "_about": "One term_observation per cohort (decision #69, Jess 2026-10-08): the worms were chosen as L4 larvae by eye when picked onto the acclimation plate. At the pick's time (hand-written, with its tolerance), or, with no pick time, a relative time before the cohort's next move. Distributive: it holds of each worm. No stage at the assay: it follows from the pick and assay times. Names alone until the terms are looked up (termInventory lists them).",
+   "variable": "developmental stage",
+   "value": "L4 larva",
+   "method": "visual inspection"
   }
  },
  "corrections": [
