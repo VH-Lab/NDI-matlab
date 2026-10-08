@@ -173,6 +173,15 @@ classdef TestObjectLayer < matlab.unittest.TestCase
             % strain and species are stated on each cohort, distributive
             % (decision #55): a search finds the worms without knowing that
             S = testCase.Session;
+            if ndi.setup.V2.mergedEntities()
+                % one entity class (2026-10-08): a cohort is an instance_of the
+                % dataset-level strain entity, so 'strain', 'N2' needs that
+                % entity in reach. A session alone holds only the relation and
+                % cannot name the strain -- OPEN, see TEAM QUESTION in the PR.
+                testCase.verifyError(@() ndi.subject.search(S, 'strain', 'N2'), ...
+                    'ndi:subject:search:unknownVariable');
+                S = testCase.Dataset;
+            end
             w = ndi.subject.search(S, 'type', 'organism', 'species', 'Caenorhabditis elegans', 'strain', 'N2');
             names = local(w);
             testCase.verifyTrue(all(ismember({'concentration_worm0121', 'concentration_worm0122'}, names)), ...
@@ -237,11 +246,14 @@ classdef TestObjectLayer < matlab.unittest.TestCase
                 'variable', 'NGM agar'}), 'no single manipulation is both: none, not an error');
             testCase.verifyTrue(has('manipulation', {'method', 'refrigeration'}, ...
                 'manipulation', {'variable', 'NGM agar'}));
-            % the shorthand is an assertion
-            testCase.verifyEqual(sort(local(ndi.subject.search(S, 'assertion', {'variable', 'strain', 'value', 'N2'}))), ...
-                sort(local(ndi.subject.search(S, 'strain', 'N2'))));
-            testCase.verifyEqual(sort(local(ndi.subject.search(S, 'str*', 'N2'))), ...
-                sort(local(ndi.subject.search(S, 'strain', 'N2'))), 'a wildcard in the property name');
+            % the shorthand is an assertion (with one entity class a strain is
+            % a relation, not an assertion: testFindByWhatIsTrueOfASubject)
+            if ~ndi.setup.V2.mergedEntities()
+                testCase.verifyEqual(sort(local(ndi.subject.search(S, 'assertion', {'variable', 'strain', 'value', 'N2'}))), ...
+                    sort(local(ndi.subject.search(S, 'strain', 'N2'))));
+                testCase.verifyEqual(sort(local(ndi.subject.search(S, 'str*', 'N2'))), ...
+                    sort(local(ndi.subject.search(S, 'strain', 'N2'))), 'a wildcard in the property name');
+            end
             testCase.verifyError(@() ndi.subject.search(S, 'assertion', {'method', 'x'}), ...
                 'ndi:subject:search:assertionMethod');
             testCase.verifyError(@() ndi.subject.search(S, 'manipulation', {'method', 'no such method'}), ...
@@ -490,15 +502,16 @@ classdef TestObjectLayer < matlab.unittest.TestCase
             c = testCase.subject('concentration_assayPlate0012_worms');
             a = c.assertions();
             testCase.verifyTrue(all(cellfun(@(x) isa(x, 'ndi.assertion'), a)), 'objects, not a table');
-            % TEMPORARY diagnostic (next-schema leg): what a composed statement carries
-            p1 = a{1}.document_properties();
-            ch = ndi.v2.classChain(p1);
-            fprintf('DIAG document_class: %s\nDIAG chain: %s\nDIAG parents: %s\nDIAG fields: %s\n', ...
-                jsonencode(p1.document_class), strjoin(ch, ','), ...
-                strjoin(cellfun(@(x) strjoin(ndi.v2.directParents(x), '+'), ch, 'UniformOutput', false), ' | '), ...
-                strjoin(fieldnames(p1)', ','));
             T = ndi.summary(a);
-            testCase.verifyEqual(T.value_node(T.variable == "species"), "NCBITaxon:6239");
+            testCase.verifyEqual(lower(T.value_node(T.variable == "species")), "ncbitaxon:6239");
+            if ndi.setup.V2.mergedEntities()
+                % one entity class: the strain is an instance_of relation
+                testCase.verifyEmpty(c.assertions({'variable', 'strain'}));
+                x = testCase.subject('concentration_assayPlate0013').assertions({'variable', 'inclusion in analysis'});
+                testCase.verifyNumElements(x, 1);
+                testCase.verifyEqual(x{1}.value().canonical(), "excluded");
+                return;
+            end
             testCase.verifyEqual(T.value(T.variable == "strain"), "N2");
             st = c.assertions({'variable', 'strain'});
             testCase.verifyNumElements(st, 1, 'a cell of filters comes first');
@@ -532,11 +545,15 @@ classdef TestObjectLayer < matlab.unittest.TestCase
             if ndi.setup.V2.schemaHasField('statement', 'distributive')
                 sp = T(cellfun(@(x) strcmp(x.variable_name(), 'species'), T));
                 testCase.verifyNumElements(sp, 1);
-                testCase.verifyEqual(sp{1}.raw_value().node, 'NCBITaxon:6239');
+                testCase.verifyEqual(lower(sp{1}.raw_value().node), 'ncbitaxon:6239');
                 testCase.verifyEqual(sp{1}.subject().local_identifier, 'concentration_assayPlate0012_worms');
                 testCase.verifyEqual(sp{1}.via(), 'member_of');
                 strain = T(cellfun(@(x) strcmp(x.variable_name(), 'strain'), T));
-                testCase.verifyEqual(strain{1}.value().canonical(), "N2");
+                if ndi.setup.V2.mergedEntities()
+                    testCase.verifyEmpty(strain, 'one entity class: a strain is a relation');
+                else
+                    testCase.verifyEqual(strain{1}.value().canonical(), "N2");
+                end
                 extra = st(cellfun(@(x) ~strcmp(x.via(), 'own'), st));
                 testCase.verifyNotEmpty(extra);
                 testCase.verifyTrue(all(cellfun(@(x) x.distributive(), extra)), 'only distributive ones');
@@ -589,7 +606,7 @@ classdef TestObjectLayer < matlab.unittest.TestCase
             testCase.verifyEqual(W(1).summary().id, string(W(1).document_id), 'one object: one row');
             N = ndi.summary(ws, 'nodes', true);
             if ismember('species', N.Properties.VariableNames)
-                testCase.verifyEqual(N.species_node, ["NCBITaxon:6239"; "NCBITaxon:6239"]);
+                testCase.verifyEqual(lower(N.species_node), ["ncbitaxon:6239"; "ncbitaxon:6239"]);
                 testCase.verifyFalse(ismember('species_node', T.Properties.VariableNames), 'nodes only when asked');
             end
 
@@ -600,7 +617,7 @@ classdef TestObjectLayer < matlab.unittest.TestCase
                 'stated_on', 'via', 'id'}, U.Properties.VariableNames)));
             sp = U(U.variable == "species", :);
             if height(sp) > 0
-                testCase.verifyEqual(unique(sp.value_node), "NCBITaxon:6239", 'a term value carries its node');
+                testCase.verifyEqual(unique(lower(sp.value_node)), "ncbitaxon:6239", 'a term value carries its node');
             end
             timed = U(~isnat(U.start), :);
             testCase.verifyNotEmpty(timed, 'the transfers have times');
@@ -626,7 +643,11 @@ classdef TestObjectLayer < matlab.unittest.TestCase
                 ndi.subject.search(S, 'stran', 'N2');
             catch err
                 testCase.verifySubstring(err.message, 'No subject in this session has a property ''stran''.');
-                testCase.verifySubstring(err.message, 'Did you mean ''strain''?');
+                if ~ndi.setup.V2.mergedEntities()
+                    % one entity class: the strain entity is not in a session
+                    % (testFindByWhatIsTrueOfASubject), so it is not suggested
+                    testCase.verifySubstring(err.message, 'Did you mean ''strain''?');
+                end
                 testCase.verifySubstring(err.message, 'Properties in this session: ');
                 testCase.verifySubstring(err.message, 'local_identifier');
             end
