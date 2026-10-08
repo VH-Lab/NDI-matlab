@@ -970,15 +970,6 @@ classdef entity
 
         function s = searchKind(container, kind, args)
             % SEARCHKIND - SEARCH for entities of KIND, with ARGS its pairs
-            %
-            % The subjects with no pairs are the subjects of the experiment:
-            % organisms, cultures, tissues, cells and groups, not the devices
-            % and materials (did-schema V_eta_entity_composition_plan.md, the
-            % agreed getsubjects() default). Any pair searches every physical
-            % type; 'type', '*' lists them all.
-            if strcmp(kind, 'subject') && isempty(args)
-                args = {'type', {'organism', 'culture', 'tissue', 'cell', 'group'}};
-            end
             spec = ndi.entity.parseSearch(args);
             spec.kind = kind;
             if spec.explain

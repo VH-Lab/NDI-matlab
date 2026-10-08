@@ -575,23 +575,6 @@ classdef TestObjectLayer < matlab.unittest.TestCase
             testCase.verifyEmpty(w.statements('manipulation', {'variable', 'ambient temperature'}));
         end
 
-        function testListingSubjectsLeavesOutDevicesAndMaterials(testCase)
-            % with no filter, the subjects of the experiment; the plates
-            % (material) and the instruments (device) only when asked for
-            S = testCase.Session;
-            all_ = ndi.entity.search(S, 'subject', 'type', '*');
-            listed = ndi.entity.search(S, 'subject');
-            types = cellfun(@(x) x.type, listed, 'UniformOutput', false);
-            testCase.verifyNotEmpty(listed);
-            testCase.verifyTrue(all(ismember(types, {'organism', 'culture', 'tissue', 'cell', 'group'})), ...
-                strjoin(unique(types), ', '));
-            allTypes = cellfun(@(x) x.type, all_, 'UniformOutput', false);
-            testCase.verifyEqual(numel(listed), sum(~ismember(allTypes, {'device', 'material'})));
-            if any(strcmp(allTypes, 'material'))
-                testCase.verifyNotEmpty(ndi.entity.search(S, 'subject', 'type', 'material'), 'asked for, they are there');
-            end
-        end
-
         function testTypesPassTheirAssertionsToInstances(testCase)
             % one entity class (2026-10-08): a cohort is an instance_of its
             % strain, distributive, so each worm is one too; what is
