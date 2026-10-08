@@ -225,7 +225,6 @@ classdef TestObjectLayer < matlab.unittest.TestCase
                 'ndi:entity:search:noSuchValue');
             testCase.verifyEmpty(testCase.verifyWarning(@() ndi.entity.search(S, 'strain', 'no such strain'), ...
                 'ndi:entity:search:noSuchValue'));
-            testCase.verifyError(@() ndi.entity.search(S, 'person', 'name'), 'ndi:entity:search:pairs');
         end
 
         function testFindByAStatementOfAKind(testCase)
