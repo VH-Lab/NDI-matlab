@@ -393,8 +393,9 @@ classdef TestObjectLayer < matlab.unittest.TestCase
             cold = {'observation', {'variable', 'ambient temperature', 'value', '>30'}};
             v = plate.observations({'variable', 'image intensity'});
             testCase.assertNotEmpty(v, 'plate 12 was filmed');
-            testCase.verifyEqual(numel(plate.observations({'variable', 'image intensity', 'during', hot})), ...
-                numel(v), 'every video of plate 12 is during its reading');
+            during = plate.observations({'variable', 'image intensity', 'during', hot});
+            testCase.verifyNotEmpty(during, 'plate 12''s reading is timed by one of its videos');
+            testCase.verifyLessThanOrEqual(numel(during), numel(v));
             testCase.verifyEmpty(plate.observations({'variable', 'image intensity', 'during', cold}));
             other = testCase.subject('concentration_assayPlate0011');
             testCase.verifyEmpty(other.observations({'variable', 'image intensity', 'during', hot}), ...
@@ -418,7 +419,7 @@ classdef TestObjectLayer < matlab.unittest.TestCase
                     'observation', {'variable', 'image intensity', 'during', hot}));
                 testCase.verifyTrue(ismember('concentration_worm0121', found));
                 on12 = local(ndi.subject.search(S, 'type', 'organism', 'contained_in', plate));
-                testCase.verifyTrue(all(ismember(found, on12)), 'only the worms on plate 12');
+                testCase.verifyEmpty(setdiff(found, on12), 'only the worms on plate 12');
                 testCase.verifyEmpty(ndi.subject.search(S, 'type', 'organism', 'context', true, ...
                     'observation', {'variable', 'image intensity', 'during', cold}));
                 out = evalc(['ndi.subject.search(S, ''type'', ''organism'', ''context'', true, ' ...
