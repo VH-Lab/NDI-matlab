@@ -928,6 +928,9 @@ end
 d = doc.depends_on;
 if iscell(d), d = [d{:}]; end
 hit = d(strcmp({d.name}, name));
+if isempty(hit) && strcmp(name, 'entity_id')
+    hit = d(strcmp({d.name}, 'subject_id'));   % the edge's name before 2026-10-08
+end
 v = {hit.document_id};
 v = v(~cellfun(@isempty, v));
 end
