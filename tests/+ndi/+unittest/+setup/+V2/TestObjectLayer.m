@@ -575,17 +575,36 @@ classdef TestObjectLayer < matlab.unittest.TestCase
             testCase.verifyEmpty(w.statements('manipulation', {'variable', 'ambient temperature'}));
         end
 
+        function testListingSubjectsLeavesOutDevicesAndMaterials(testCase)
+            % with no filter, the subjects of the experiment; the plates
+            % (material) and the instruments (device) only when asked for
+            S = testCase.Session;
+            all_ = ndi.entity.search(S, 'subject', 'type', '*');
+            listed = ndi.entity.search(S, 'subject');
+            types = cellfun(@(x) x.type, listed, 'UniformOutput', false);
+            testCase.verifyNotEmpty(listed);
+            testCase.verifyTrue(all(ismember(types, {'organism', 'culture', 'tissue', 'cell', 'group'})), ...
+                strjoin(unique(types), ', '));
+            allTypes = cellfun(@(x) x.type, all_, 'UniformOutput', false);
+            testCase.verifyEqual(numel(listed), sum(~ismember(allTypes, {'device', 'material'})));
+            if any(strcmp(allTypes, 'material'))
+                testCase.verifyNotEmpty(ndi.entity.search(S, 'subject', 'type', 'material'), 'asked for, they are there');
+            end
+        end
+
         function testTypesPassTheirAssertionsToInstances(testCase)
             % one entity class (2026-10-08): a cohort is an instance_of its
             % strain, distributive, so each worm is one too; what is
             % asserted of the strain holds of each worm (T17) and the
             % summary names the strain under its type
-            testCase.assumeTrue(ndi.setup.V2.mergedEntities(), 'one entity class only');
+            if ~ndi.setup.V2.mergedEntities()
+                return;   % a strain is an assertion there (testAssertions)
+            end
             [refs, ids] = testCase.Dataset.session_list();
             S = testCase.Dataset.open_session(ids{strcmp(refs, testCase.Session.reference)});
-            plate = ndi.subject.search(S, 'LocalIdentifier', 'concentration_assayPlate0012');
+            plate = ndi.entity.search(S, 'subject', 'LocalIdentifier', 'concentration_assayPlate0012');
             testCase.assertNumElements(plate, 1);
-            ws = ndi.subject.search(S, 'type', 'organism', 'contained_in', plate{1});
+            ws = ndi.entity.search(S, 'subject', 'type', 'organism', 'contained_in', plate{1});
             W = [ws{:}];
             testCase.assertNumElements(W, 2);
             T = ndi.summary(ws);
@@ -602,7 +621,7 @@ classdef TestObjectLayer < matlab.unittest.TestCase
             testCase.verifyFalse(any(cellfun(@(x) contains(x.via(), 'instance_of'), i)), ...
                 'a type''s interactions do not pass to its instances');
             % a session folder opened on its own holds the relation, not the strain
-            T0 = ndi.summary(ndi.subject.search(testCase.Session, 'type', 'organism', 'contained_in', ...
+            T0 = ndi.summary(ndi.entity.search(testCase.Session, 'subject', 'type', 'organism', 'contained_in', ...
                 testCase.subject('concentration_assayPlate0012')));
             testCase.verifyFalse(ismember('strain', T0.Properties.VariableNames));
         end

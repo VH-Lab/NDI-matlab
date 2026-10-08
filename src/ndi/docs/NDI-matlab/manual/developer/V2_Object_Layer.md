@@ -90,7 +90,9 @@ Built from any entity document.
 | `ancestors(...)`, `descendants(...)` | the nearest entities of a `'Type'` (`organism`, `material`, ...) or `'Kind'` (document class), following any relation up or down: `descendants([plates{:}], 'Type', 'organism')` is the worms that were on them (function form: `[c{:}].method(...)` is not valid MATLAB), without knowing the relations. `'Relation'` limits the relations followed, `'MaxDepth'` the steps, `'Table'` adds a `depth` column |
 | `document()` | the underlying `ndi.document` |
 | `ndi.entity.fromDocument(container, doc)` (static) | the right class for the document: `ndi.subject` for a subject, else `ndi.entity` |
-| `ndi.entity.search(container, kind, 'Name', ...)` (static) | a cell array of entities of a kind |
+| `ndi.entity.search(container, kind, 'Name', ...)` (static) | a cell array of entities of a kind: a document class or (one entity class) an entity type, `'person'`, `'strain'`, ...; with no kind, any entity |
+| `type`, `description` | the entity's type and description, from either schema |
+| `statements(...)`, `assertions(...)`, `observations(...)`, ... | what is stated of the entity, as for a subject below: since 2026-10-08 (one entity class) any entity can be the subject of a statement, so these live on `ndi.entity` (a person's given name, a strain's genetic strain type) |
 
 `ndi.entity` is a CONCRETE value class: a person, an organization or a piece of
 software is an `ndi.entity` with no subclass. It holds its document and the
@@ -107,6 +109,13 @@ Persons, organizations, products, software, funding and publications are plain
 from a dose (`ndi.manipulation.formulation()`), see open question Q4.
 
 ### `ndi.subject < ndi.entity`
+
+Since 2026-10-08 (did-schema `V_eta_entity_composition_plan.md`, one entity
+class) every member below except the v1 constructor is defined on `ndi.entity`
+and works for any entity. `ndi.subject` keeps the v1 constructor,
+`newdocument`, `searchquery`, the `@` check and `ndi.subject.search` (a
+one-line wrapper for `ndi.entity.search(S, 'subject', ...)`). New reading work
+goes on `ndi.entity`, not here.
 
 | member | returns |
 |---|---|
@@ -178,7 +187,7 @@ that take the session or dataset as their first argument:
 
 | call | returns |
 |---|---|
-| `ndi.subject.search(S, 'type', 'organism', 'species', 'Caenorhabditis elegans', 'strain', {'N2', 'CB*'}, 'manipulation', {'method', 'heating', 'value', '>=0.02'})` | subjects for which every pair holds (no pairs: every subject, instruments included: answers Q2). A property is one of the subject's own fields (`type`, `name`, `local_identifier`); a statement kind (`statement`, `assertion`, `interaction`, `observation`, `manipulation`, `calculation`, each including its children) with a cell of filters on ONE statement (`variable`, `method`, `value`, `formulation`; the key twice is two statements); or any other name, an asserted variable (`'strain', 'N2'` is `'assertion', {'variable', 'strain', 'value', 'N2'}`). Names ignore case. A pattern matches a term's name ignoring case or its node exactly; a cell array is any of; `*` is a wildcard (in the database with DID-matlab #218's `wildcard` operator, else rechecked in MATLAB). Numbers and dates compare with `>`, `>=`, `<`, `<=`; an array or body value has no single value. `'inherited'` (default true) adds the members, down `member_of`, of a group whose statement is `distributive`; `contained_in` and `part_of` are not followed. A variable or method no statement has is an error; values matching nothing, a warning (`ndi.v2.searchStatements`) Relations: `'relation'`, `'directed_relation'`, `'undirected_relation'` take `{'name', R, 'parent'|'child'|'with', X}` (the subject is the child / the parent / either end), X a subject, several, a document id, or a nested description; a relation's own name is a key (`'contained_in', X` = child of a contained_in whose parent is X; `'with'` for undirected). Inherited also carries a distributive relation from a group to its members, and an assertion from a whole to its parts and samples (part_of, sample_of, aliquot_of, passage_of). `'explain', true` prints the search in words. Not built yet: `'at'`, `'during'`, `'depth'`. |
+| `ndi.subject.search(S, 'type', 'organism', 'species', 'Caenorhabditis elegans', 'strain', {'N2', 'CB*'}, 'manipulation', {'method', 'heating', 'value', '>=0.02'})` | subjects for which every pair holds (no pairs: the subjects of the experiment -- organisms, cultures, tissues, cells and groups; any pair searches every physical type, devices and materials included, and `'type', '*'` lists them all: answers Q2). A property is one of the subject's own fields (`type`, `name`, `local_identifier`); a statement kind (`statement`, `assertion`, `interaction`, `observation`, `manipulation`, `calculation`, each including its children) with a cell of filters on ONE statement (`variable`, `method`, `value`, `formulation`; the key twice is two statements); or any other name, an asserted variable (`'strain', 'N2'` is `'assertion', {'variable', 'strain', 'value', 'N2'}`). Names ignore case. A pattern matches a term's name ignoring case or its node exactly; a cell array is any of; `*` is a wildcard (in the database with DID-matlab #218's `wildcard` operator, else rechecked in MATLAB). Numbers and dates compare with `>`, `>=`, `<`, `<=`; an array or body value has no single value. `'inherited'` (default true) adds the members, down `member_of`, of a group whose statement is `distributive`; `contained_in` and `part_of` are not followed. A variable or method no statement has is an error; values matching nothing, a warning (`ndi.v2.searchStatements`) Relations: `'relation'`, `'directed_relation'`, `'undirected_relation'` take `{'name', R, 'parent'|'child'|'with', X}` (the subject is the child / the parent / either end), X a subject, several, a document id, or a nested description; a relation's own name is a key (`'contained_in', X` = child of a contained_in whose parent is X; `'with'` for undirected). Inherited also carries a distributive relation from a group to its members, an assertion from a whole to its parts and samples (part_of, sample_of, aliquot_of, passage_of), and an assertion from a type to its instances (`instance_of`: a strain's or a product's assertions hold of each worm or bottle, reached from the subject, a whole, or a group whose `instance_of` is distributive; V_eta T17). `'strain', 'N2'` is a subject that is an `instance_of` the strain named N2 (one entity class). `'explain', true` prints the search in words. Not built yet: `'at'`, `'during'`, `'depth'`. |
 | `ndi.statement.search(S, 'Subject', s, 'Variable', v, 'Class', c, 'Method', m)` | statements |
 | `ndi.entity.search(S, kind)` | entities of a kind |
 | `ndi.entity.fromDocument(S, doc)`, `ndi.statement.fromDocument(S, doc)` | the object for one document |
@@ -194,6 +203,14 @@ statements took 0.19 s through its session and 0.52 s through the dataset; the
 dose's formulation was not found through the session and was found through the
 dataset. To narrow a search to one session, find things in the session, then read
 them through the dataset with `fromDocument(ds, id)`.
+
+A session opened FROM its dataset (`ds.open_session(id)`) lives in the dataset's
+database, and `ndi.session/database_search_with_dataset` searches it without the
+session filter. The readers use it for the dataset-level entities a subject
+points at: a strain found by name (`'strain', 'N2'`), and a strain's assertions
+and name reaching its worms (`ndi.summary` shows a `strain` column). A session
+folder opened on its own holds the `instance_of` relation but not the strain, so
+it cannot name it.
 
 ## 5. How it is built
 
@@ -252,7 +269,10 @@ tried on the real Haley dataset before the next.
 - **Q1** (Reading does not need it: read through the dataset, section 4.) How `ndi.session` and `ndi.dataset` become entities: a mixin class, or
   composition (`session.entity()` returning an `ndi.entity`)? A mixin changes
   their class hierarchy; composition does not.
-- **Q2** ANSWERED: subjects include instrument subjects unless a filter says otherwise.
+- **Q2** ANSWERED, then narrowed (2026-10-08, the agreed `getsubjects()` default):
+  a bare `ndi.entity.search(S, 'subject')` lists organisms, cultures, tissues, cells and
+  groups; a search with any pair covers every physical type, instruments
+  (devices) and plates (materials) included.
 - **Q3** ANSWERED: `ndi.value`, a small value class.
 - **Q4** ANSWERED: a formulation is a data_type, so `formulation()` returns an
   `ndi.value` of class `formulation`; no `ndi.formulation`.
@@ -279,3 +299,22 @@ Tests: `tests/+ndi/+unittest/+setup/+V2/TestObjectLayer.m`, over the Haley CI
 fixture, including the v1 subject constructor. Not yet: a chunked body (an
 error for now), a v1 session beyond the subject constructor, timing on the full
 Haley dataset.
+
+## 10. One entity class (2026-10-08)
+
+did-schema `V_eta_entity_composition_plan.md` (signed 2026-10-08) merged the
+entity classes into one `entity` with a bound `type`, made statements a
+direction class plus one value-kind mixin, and made a strain an `instance_of`
+relation. The readers read both schemas:
+
+| file | what changed |
+|---|---|
+| `+ndi/entity.m` | `type`, `local_identifier`, `description` read either schema; the statement members, `search` and its helpers moved here from `+ndi/subject.m` (error ids `ndi:entity:...`); `searchKind` (with the bare-listing default of Q2); `inheritanceStates` (the walk up `member_of`, the lineage relations and `instance_of`); `summaryOf` adds a column per type a subject is an instance of |
+| `+ndi/subject.m` | v1 only, plus `search`, a one-line wrapper for `ndi.entity.search(S, 'subject', ...)`; new reading work goes on `ndi.entity` |
+| `+ndi/session.m` | `database_search_with_dataset` |
+| `+ndi/+v2/` | `kindOf`, `blockOf` (falls back to the `entity` block), `isaQuery`, `blockQuery`, `leafName`; `classChain` appends the value kind; `matchTerm` / `termQuery` match a CURIE prefix ignoring case; `statementValue` reads the `text` kind; `searchStatements` takes `withDataset` |
+
+Recording keys (decision #70): a Haley video or image statement's `axes()` gives
+the image's rows and columns in pixels (centres at 0.5, 1.5, ...) and, for a
+video, `time`, one per frame from the recording's start at 1 / frame rate. They
+are written only when the file was opened (`'ReadVideos'`, or a TIFF).

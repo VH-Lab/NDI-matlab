@@ -630,6 +630,20 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             testCase.verifyEqual(e2.underlying_epochs.underlying, ...
                 {fullfile(testCase.Root, 'haley', 'ecoli', 'raw', '0002.tiff')}, ...
                 'the epoch is the raw image (decision #64)');
+            % the recording's size, read back through the object layer
+            % (decision #70): rows and columns in pixels, centres at 0.5, 1.5, ...
+            obs = session.database_search(ndi.v2.isaQuery('observation'));
+            sizes = {};
+            for i = 1:numel(obs)
+                A = ndi.statement.fromDocument(session, obs{i}).axes();
+                if height(A) ~= 2 || ~all(A.unit == "pixel"), continue; end
+                testCase.verifyEqual(A.variable, ["image vertical position"; "image horizontal position"]);
+                testCase.verifyEqual(A.coordinates{1}, (0.5:1:A.n(1) - 0.5)');
+                testCase.verifyEqual(A.n(1), A.n(2), 'the fixture''s images are square');
+                sizes{end+1} = A.n(1); %#ok<AGROW>
+            end
+            testCase.verifyEqual(unique([sizes{:}]), [4 5], ...
+                'the raw images 0002 and 0009 (4 x 4) and 0003 (5 x 5)');
         end
 
         function testEncounters(testCase)
