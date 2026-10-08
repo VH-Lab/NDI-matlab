@@ -386,7 +386,7 @@ classdef TestObjectLayer < matlab.unittest.TestCase
             % kept when it overlaps one matching it that holds of the same
             % subject, by the same rules ('inherited', 'context'). The
             % fixture's plates read 21.5 + plate/100 C over their videos, so
-            % '>21.615' is plate 12's reading alone.
+            % '>21.615' is plates 12 and 14 (21.62, 21.64), not plate 11 (21.61).
             S = testCase.Session;
             plate = testCase.subject('concentration_assayPlate0012');
             hot = {'observation', {'variable', 'ambient temperature', 'value', '>21.615'}};
@@ -418,8 +418,11 @@ classdef TestObjectLayer < matlab.unittest.TestCase
                 found = local(ndi.subject.search(S, 'type', 'organism', 'context', true, ...
                     'observation', {'variable', 'image intensity', 'during', hot}));
                 testCase.verifyTrue(ismember('concentration_worm0121', found));
-                on12 = local(ndi.subject.search(S, 'type', 'organism', 'contained_in', plate));
-                testCase.verifyEmpty(setdiff(found, on12), 'only the worms on plate 12');
+                warm = local(ndi.subject.search(S, 'type', 'organism', 'contained_in', ...
+                    {'local_identifier', {'concentration_assayPlate0012', 'concentration_assayPlate0014'}}));
+                testCase.verifyEmpty(setdiff(found, warm), 'only the worms on plates 12 and 14');
+                cool = local(ndi.subject.search(S, 'type', 'organism', 'contained_in', other));
+                testCase.verifyEmpty(intersect(found, cool), 'none of the worms on plate 11');
                 testCase.verifyEmpty(ndi.subject.search(S, 'type', 'organism', 'context', true, ...
                     'observation', {'variable', 'image intensity', 'during', cold}));
                 out = evalc(['ndi.subject.search(S, ''type'', ''organism'', ''context'', true, ' ...
