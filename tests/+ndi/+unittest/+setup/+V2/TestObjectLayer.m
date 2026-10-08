@@ -312,9 +312,20 @@ classdef TestObjectLayer < matlab.unittest.TestCase
             out = evalc('ndi.entity.search(S, {''type'', ''organism'', ''contained_in'', {''manipulation'', {''variable'', ''NGM agar''}}}, ''explain'', true);');
             testCase.verifySubstring(out, 'contained_in');
             testCase.verifySubstring(out, 'NGM agar');
-            testCase.verifySubstring(out, 'Searching this session for subjects that');
-            testCase.verifySubstring(out, 'are of type organism');
+            testCase.verifySubstring(out, 'Searching this session for organisms that', ...
+                'the search names what it is for');
+            testCase.verifySubstring(out, 'are contained_in an entity');
             testCase.verifySubstring(out, 'had a manipulation with variable NGM agar');
+            % the noun follows a single kind or type; the subject types are 'subjects'
+            out = evalc('ndi.entity.search(S, {''kind'', ''person''}, ''explain'', true);');
+            testCase.verifySubstring(out, 'Searching this session for all people');
+            out = evalc('ndi.entity.search(S, {''type'', ndi.v2.subjectTypes(), ''strain'', ''N2''}, ''explain'', true);');
+            testCase.verifySubstring(out, 'Searching this session for subjects that');
+            out = evalc('ndi.entity.search(S, {''strain'', ''N2''}, ''explain'', true);');
+            testCase.verifySubstring(out, 'Searching this session for entities that');
+            out = evalc(['ndi.entity.search(S, {''type'', ''organism'', ''contained_in'', ' ...
+                '{''type'', ''material''}}, ''explain'', true);']);
+            testCase.verifySubstring(out, 'are contained_in a material');
 
             testCase.verifyError(@() ndi.entity.search(S, {'directed_relation', {'name', 'containd_in'}}), ...
                 'ndi:entity:search:unknownRelation');

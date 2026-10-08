@@ -1085,6 +1085,11 @@ classdef entity
             t = ndi.entity.explainSearch(ndi.entity.parseSearch(c), indent, '');
         end
 
+        function spec = parseSearchNested(c)
+            % PARSESEARCHNESTED - parseSearch, for the explanation of a nested description
+            spec = ndi.entity.parseSearch(c);
+        end
+
     end
 
     methods (Static, Access = protected)
@@ -1511,10 +1516,13 @@ classdef entity
             % EXPLAINSEARCH - SPEC in words, one line per condition; WHERE is
             % 'dataset' or 'session' for the first line ('' when nested)
             lines = {};
+            [plural, ~, named] = nounOf(spec);
             for k = 1:size(spec.own, 1)
+                if k == named, continue; end      % said by the noun ("organisms that")
                 v = valueText(spec.own{k, 2});
                 switch spec.own{k, 1}
                     case 'type', lines{end+1} = sprintf('are of type %s', v); %#ok<AGROW>
+                    case 'kind', lines{end+1} = sprintf('are of kind %s', v); %#ok<AGROW>
                     case 'name', lines{end+1} = sprintf('are named %s', v); %#ok<AGROW>
                     case 'local_identifier', lines{end+1} = sprintf('have local identifier %s', v); %#ok<AGROW>
                     case 'id', lines{end+1} = sprintf('have id %s', v); %#ok<AGROW>
@@ -1531,16 +1539,16 @@ classdef entity
                 lines{end+1} = relationText(spec.relations(k), indent, spec.inherited); %#ok<AGROW>
             end
             if isempty(where)
-                head = 'subjects that';
+                head = sprintf('%s that', plural);
             else
-                head = sprintf('Searching this %s for subjects that', where);
+                head = sprintf('Searching this %s for %s that', where, plural);
                 if ~spec.inherited
-                    head = [head ' (counting only what is stated about each subject itself)'];
+                    head = [head ' (counting only what is stated about each one itself)'];
                 end
             end
             if isempty(lines)
-                if isempty(where), t = [indent 'any subject'];
-                else, t = sprintf('Searching this %s for every subject', where); end
+                if isempty(where), t = sprintf('%sany of the %s', indent, plural);
+                else, t = sprintf('Searching this %s for all %s', where, plural); end
                 return;
             end
             t = [indent head];
@@ -1995,9 +2003,15 @@ when = timeText(r.time);
 if ~isempty(named)
     t = sprintf('%s %s%s%s', lead, named, when, through);
 else
+    [~, singular] = nounOf(ndi.entity.parseSearchNested(target));
     inner = ndi.entity.explainNested(target, [indent '    ']);
-    inner = regexprep(inner, '^\s*subjects that', '');      % the nested head reads "a subject that"
-    t = sprintf('%s a subject%s%s that%s', lead, when, through, inner);
+    if ~contains(inner, newline)
+        % no conditions of its own beyond what the noun says
+        t = sprintf('%s %s %s%s%s', lead, article(singular), singular, when, through);
+    else
+        inner = inner(find(inner == newline, 1):end);   % the nested head reads "an organism that"
+        t = sprintf('%s %s %s%s%s that%s', lead, article(singular), singular, when, through, inner);
+    end
 end
 end
 
@@ -2121,6 +2135,37 @@ else
 end
 m = [m didYouMean(pats, values)];
 m = sprintf('%s\n%s in this %s: %s%s', m, label, where, strjoin(shown, ', '), more);
+end
+
+function [plural, singular, named] = nounOf(spec)
+% what a search is for, in words: from a single 'kind' or 'type' condition
+% ('people', 'organisms'), 'subjects' for exactly ndi.v2.subjectTypes, else
+% 'entities'. NAMED: the spec.own row the noun says (0 when none)
+plural = 'entities'; singular = 'entity'; named = 0;
+for key = {'kind', 'type'}
+    k = find(strcmp(spec.own(:, 1), key{1}));
+    if ~isscalar(k), continue; end
+    v = spec.own{k, 2};
+    if iscell(v) && strcmp(key{1}, 'type') && isempty(setxor(lower(v), ndi.v2.subjectTypes()))
+        plural = 'subjects'; singular = 'subject'; named = k;
+        return;
+    end
+    if (ischar(v) || (isstring(v) && isscalar(v))) && ~ndi.v2.hasWildcard(char(v))
+        singular = lower(char(v));
+        plural = pluralOf(singular); named = k;
+        return;
+    end
+end
+end
+
+function p = pluralOf(w)
+% an English plural, for the nouns entity kinds and types are
+if strcmp(w, 'person'), p = 'people';
+elseif strcmp(w, 'software'), p = 'software';
+elseif endsWith(w, 'y') && ~any(w(end-1) == 'aeiou'), p = [w(1:end-1) 'ies'];
+elseif endsWith(w, {'s', 'sh', 'ch', 'x'}), p = [w 'es'];
+else, p = [w 's'];
+end
 end
 
 function a = article(word)
