@@ -54,9 +54,11 @@ classdef TestHaleySubjects < matlab.unittest.TestCase
                  d + duration(10, 39, 0), d + duration(10, 39, 0), d + duration(10, 39, 0)], ...
                 {zeros(2, 2), zeros(2, 2), zeros(2, 2), [], [], zeros(3, 2)}, ...
                 {zeros(2, 1), zeros(2, 1), zeros(2, 1), [], [], zeros(3, 1)}, false(1, 6), ...
-                struct('condition', {{'grid'; 'grid'; 'single'; 'grid'; 'grid'; 'grid'}}));
+                struct('condition', {{'grid'; 'grid'; 'single'; 'grid'; 'grid'; 'grid'}}, ...
+                'growthCondition', [24; 24; 24; NaN; 24; 24]));
             % ^ plate 3 is a single-patch plate on a mutant screen (single-density,
-            %   multi-patch) day: the assay type check reports it
+            %   multi-patch) day: the assay type check reports it. Plate 4 has
+            %   no growthCondition and is not excluded: doImport excluded it
 
             % The other three folders: one day, one plate, worms matching.
             for name = {'foragingMatching', 'foragingMini', 'foragingSensory'}
@@ -161,6 +163,16 @@ classdef TestHaleySubjects < matlab.unittest.TestCase
                 'rectangle template with lawnVolume 0');
             testCase.verifyFalse(any(contains(checks.ecoliSeeding, 'plate 5')), ...
                 'an LB-only patch is not a finding');
+        end
+
+        function testAPlateDoImportExcludedForNoGrowthConditionIsListed(testCase)
+            % doImport also excluded rows with NaN growthCondition
+            % (identifyValidRows); V2 lists them instead, for a decision
+            [S, checks] = testCase.list();
+            testCase.verifyEqual(checks.noGrowthCondition, ...
+                {'foragingMutants: plate 4 (expNum 1) has NaN growthCondition and is not excluded; doImport excluded it'});
+            testCase.verifyFalse(S.exclude(strcmp(S.local_identifier, 'mutants_assayPlate0004')), ...
+                'listed, not excluded');
         end
 
         function testAssayTypeIsCheckedAgainstTheStudy(testCase)

@@ -176,7 +176,7 @@ for k = 1:height(R)
     end
     src = fullfile(root, r.file{1});
     [~, base, ext] = fileparts(src);
-    [datumType, why] = datumTypeOf(src, ext, options.ReadVideos);
+    [datumType, why, hw] = datumTypeOf(src, ext, options.ReadVideos);
     if isempty(datumType)
         out.skipped{end+1} = sprintf('%s: %s', r.epoch{1}, why);
         continue;
@@ -211,8 +211,12 @@ for k = 1:height(R)
     if isKey(options.InstrumentIds, instrumentKey)
         instrumentId = options.InstrumentIds(instrumentKey);
     end
+    keys = recordingKeys(hw, isImage, r);
+    keyArgs = {};
+    if ~isempty(keys), keyArgs = {'Keys', keys}; end
     st = did2.build.statement('intensity_observation', subjectIds(plate), ...
         did2.build.term('', 'image intensity'), [], 'DataBody', true, 'DatumType', datumType, ...
+        keyArgs{:}, ...
         'Method', did2.build.term('', probeType(r.system{1})), ...
         'InstrumentId', instrumentId, 'AcquisitionChannelsId', channelIds(r.system{1}), ...
         'TimeReferenceIds', {relEpoch.base.id, absRef.base.id}, 'SessionId', sid);
@@ -275,9 +279,30 @@ else
 end
 end
 
-function [t, why] = datumTypeOf(file, ext, readVideos)
-% How the recording's pixel values are encoded (data_type.datum_type).
-t = ''; why = '';
+function keys = recordingKeys(hw, isImage, r)
+% The recording's dimensions (decision #70, doImport's imageStack_parameters):
+% [image vertical position, image horizontal position], in pixels from the
+% upper-left corner (pixel centres at 0.5, 1.5, ...; the scale is a
+% calculation, stage 10), then for a video `time`, one per frame from the
+% recording's start at 1 / frame rate. Only when the pixel size is known (the
+% file was opened: 'ReadVideos', or a TIFF), so the keys are always complete.
+keys = [];
+if isempty(hw), return; end
+k = {did2.build.key('image vertical position', hw(1), 'Unit', 'pixel', 'Origin', 0.5, 'Spacing', 1), ...
+     did2.build.key('image horizontal position', hw(2), 'Unit', 'pixel', 'Origin', 0.5, 'Spacing', 1)};
+if ~isImage
+    nf = r.n_frames; fr = r.frame_rate;
+    if ~(nf > 0 && fr > 0), return; end
+    k{end+1} = did2.build.key('time', nf, 'Unit', 'second', 'Origin', 0, 'Spacing', 1 / fr, ...
+        'SourceUnit', 'frame', 'SourceOrigin', 0, 'SourceSpacing', 1);
+end
+keys = did2.build.list(k{:});
+end
+
+function [t, why, hw] = datumTypeOf(file, ext, readVideos)
+% How the recording's pixel values are encoded (data_type.datum_type), and
+% its [height width] in pixels when the file is opened ([] otherwise).
+t = ''; why = ''; hw = [];
 switch lower(ext)
     case '.mp4'
         if ~readVideos
@@ -287,6 +312,7 @@ switch lower(ext)
         try
             v = VideoReader(file);
             fmt = v.VideoFormat;
+            hw = [v.Height v.Width];
         catch err
             why = sprintf('VideoReader cannot open it (%s)', err.message);
             return;
@@ -307,6 +333,7 @@ switch lower(ext)
             return;
         end
         bits = info(1).BitsPerSample(1);
+        hw = [info(1).Height info(1).Width];
         if isfield(info, 'SampleFormat') && strcmpi(info(1).SampleFormat, 'IEEE floating point')
             t = sprintf('float%d', bits);
         elseif any(bits == [8 16 32 64])

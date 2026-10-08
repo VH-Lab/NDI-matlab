@@ -87,6 +87,12 @@ function [S, checks] = subjectList(dataParentDir, sessions, options)
 %                          acclimation plate is grouped by strain alone)
 %     ecoliSeeding         an E. coli plate whose template and seeding
 %                          disagree, or a plateNum used by two experiments
+%     noGrowthCondition    an assay plate whose `growthCondition` is NaN that
+%                          the source does not exclude. doImport ALSO
+%                          excluded these (identifyValidRows); V2 excludes on
+%                          `exclude` alone, so each is listed for a decision
+%     assayTypeDisagrees   a plate whose original assay type (doImport: folder
+%                          + its `condition`) is not its session's study's
 %     growthDisagrees      an acclimation plate whose assay plates give
 %                          different growth times (the first is kept)
 %     correctionUnmatched  a spec correction naming a plate not listed
@@ -107,7 +113,7 @@ checks = struct('plateWithoutSession', {{}}, 'plateOnTwoDays', {{}}, ...
     'wormOnTwoPlates', {{}}, 'wormRange', {{}}, 'noLawnCenters', {{}}, ...
     'patchCountDisagrees', {{}}, 'noPickTime', {{}}, 'ecoliSeeding', {{}}, ...
     'growthDisagrees', {{}}, 'correctionUnmatched', {{}}, 'roomTempLooksEstimated', {{}}, ...
-    'patchOD600', {{}}, 'assayTypeDisagrees', {{}});
+    'patchOD600', {{}}, 'assayTypeDisagrees', {{}}, 'noGrowthCondition', {{}});
 rows = {};
 assayChecked = 0;       % plates whose original assay type was compared with their study
 assayUnchecked = {};    % folders whose experimentInfo has no `condition` column
@@ -200,6 +206,14 @@ for f = 1:numel(folders)
             checks.noPickTime{end+1} = sprintf('%s: plate %d has no growthTimePicked', folder, p);
         end
         ex = false;
+        if ismember('growthCondition', I.Properties.VariableNames)
+            gc = double(R.growthCondition);
+            ex0 = ismember('exclude', I.Properties.VariableNames) && any(R.exclude);
+            if any(isnan(gc)) && ~ex0
+                checks.noGrowthCondition{end+1} = sprintf(['%s: plate %d (expNum %d) has NaN ' ...
+                    'growthCondition and is not excluded; doImport excluded it'], folder, p, days(1));
+            end
+        end
         if ismember('exclude', I.Properties.VariableNames)
             ex = any(R.exclude);
         end

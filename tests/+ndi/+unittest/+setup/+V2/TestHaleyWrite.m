@@ -478,6 +478,25 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             testCase.verifyEqual(dims(1).spacing.meters, 1e-3 / 33, 'AbsTol', 1e-15);
             video = byId(edge(cs{1}, 'referent_id'));
 
+            % each patch's centre, radius and circularity, per video (decision
+            % #70): one patch per plate, at lawnCenters [0 0] (pixel centres are
+            % 1-based, the system's origin the corner: -0.5), radius 0 px, 0.9
+            testCase.verifyEqual([c.patch_centre, c.patch_radius, c.patch_circularity], [4 4 4]);
+            patch = idOf('concentration_assayPlate0012_patch0001');
+            about = @(cls, var) docs(cellfun(@(d) strcmp(d.document_class.class_name, cls) ...
+                && strcmp(d.statement.variable.name, var) && strcmp(edge(d, 'entity_id'), patch), docs));
+            centre = about('position_calculation', 'patch centre');
+            testCase.verifyNumElements(centre, 1);
+            testCase.verifyEqual(centre{1}.position.value(1).coordinates(:)', [-0.5 -0.5]);
+            testCase.verifyEqual(edge(centre{1}, 'coordinate_system_id'), cs{1}.base.id, ...
+                'in the video''s own coordinate system');
+            testCase.verifyEqual(edgeAll(centre{1}, 'input_id'), {video.base.id});
+            radius = about('length_calculation', 'patch radius');
+            testCase.verifyNumElements(radius, 1);
+            testCase.verifyEqual(radius{1}.length.value(1).source_unit, 'pixel');
+            circ = about('score_calculation', 'patch circularity');
+            testCase.verifyEqual(circ{1}.score.value(1).score, 0.9, 'AbsTol', 1e-12);
+
             % its arena mask: a label calculation of the plate from the video,
             % run by the analysis package in MATLAB on macOS
             masks = docs(strcmp(classes, 'label_calculation'));

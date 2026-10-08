@@ -30,6 +30,15 @@ function out = geometryDocuments(dataParentDir, session, R, subjectIds, options)
 %     score_calculation   `lawnRegistration`: the fraction of the arena that
 %                         overlaps once the lawn clip is registered onto the
 %                         video (0-1); its inputs are both recordings
+%   And per patch (the plate's patch subjects, in lawnCenters order, #38), each
+%   about the PATCH, its input the recording:
+%     position_calculation `patch centre` (`lawnCenters`), in the video's
+%                         coordinate system: MATLAB's pixel centres are at 1,
+%                         2, ..., the system's origin is the image's corner, so
+%                         a centre at column x is x - 0.5 pixels from it
+%     length_calculation  `patch radius` (`lawnRadii`, pixels -> metres)
+%     score_calculation   `patch circularity` (`lawnCircularity`, 0-1)
+%   (doImport's patch table had these; decision #70)
 %   The arena's nominal diameter and the patches' nominal diameter and spacing
 %   are method parameters of the masks that used them; the lawn mask's method
 %   is the patches' `lawnMethod` when they all share one (else none, and its
@@ -72,7 +81,8 @@ sid = char(session.session_id{1});
 ref = char(session.local_identifier{1});
 folder = char(session.folder{1});
 out = struct('documents', {{}}, 'skipped', {{}}, 'counts', struct('coordinate_system', 0, ...
-    'arena', 0, 'reference_mark', 0, 'lawn', 0, 'nearest_patch', 0, 'registration', 0), ...
+    'arena', 0, 'reference_mark', 0, 'lawn', 0, 'nearest_patch', 0, 'registration', 0, ...
+    'patch_centre', 0, 'patch_radius', 0, 'patch_circularity', 0), ...
     'byEpoch', containers.Map());
 if strcmp(folder, 'ecoli')
     return;
@@ -196,6 +206,9 @@ for k = 1:height(R)
         end
     end
 
+    % ---- each patch's centre, radius and circularity ---------------------------
+    docs = patchGeometry(docs, d, plate, cs.base.id, pixel, calc);
+
     % ---- lawn clip registration ------------------------------------------------
     fit = colOr(d, 'lawnRegistration', NaN);
     lawnEpoch = epochOf(pre, cellOrChar(d, 'lawnFileName'));
@@ -216,6 +229,45 @@ end
 out.documents = docs;
 
 % =============================================================================
+    function docs = patchGeometry(docs, d, plate, csId, pixel, calc)
+        centres = cellOr(d, 'lawnCenters');
+        if isempty(centres)
+            return;
+        end
+        pIds = patchIds(subjectIds, plate);
+        n = size(centres, 1);
+        if numel(pIds) ~= n
+            out.skipped{end+1} = sprintf(['%s: %d lawnCenters but %d patch subject(s); ' ...
+                'no patch geometry'], epoch, n, numel(pIds));
+            return;
+        end
+        radii = cellOr(d, 'lawnRadii');
+        circ = cellOr(d, 'lawnCircularity');
+        for j = 1:n
+            xy = double(centres(j, 1:2)) - 0.5;
+            if all(isfinite(xy))
+                docs{end+1} = did2.build.statement('position_calculation', pIds{j}, ...
+                    did2.build.term('', 'patch centre'), struct('coordinates', xy), ...
+                    'Edges', struct('coordinate_system_id', csId), calc{:}); %#ok<AGROW>
+                out.counts.patch_centre = out.counts.patch_centre + 1;
+            end
+            if numel(radii) == n && isfinite(radii(j))
+                v = did2.build.valueCell('length', double(radii(j)) * pixel, ...
+                    'SourceValue', double(radii(j)), 'SourceUnit', 'pixel', 'Approximate', true);
+                docs{end+1} = did2.build.statement('length_calculation', pIds{j}, ...
+                    did2.build.term('', 'patch radius'), v, calc{:}); %#ok<AGROW>
+                out.counts.patch_radius = out.counts.patch_radius + 1;
+            end
+            if numel(circ) == n && isfinite(circ(j))
+                v = did2.build.valueCell('score', double(circ(j)), 'Fields', struct( ...
+                    'scale', did2.build.term('', 'circularity'), 'scale_min', 0, 'scale_max', 1));
+                docs{end+1} = did2.build.statement('score_calculation', pIds{j}, ...
+                    did2.build.term('', 'patch circularity'), v, calc{:}); %#ok<AGROW>
+                out.counts.patch_circularity = out.counts.patch_circularity + 1;
+            end
+        end
+    end
+
     function [docs, n, id] = mask(docs, d, column, variable, extra)
         % one label_calculation + its body; none when the mask is absent or empty
         n = 0; id = '';
