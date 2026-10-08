@@ -647,9 +647,10 @@ classdef entity
 
     methods (Static, Access = protected)
         function E = edges(container, ids, relationName, from, to)
-            % EDGES - table from, to: the relations whose FROM end is one of IDS
+            % EDGES - table from, to, distributive: the relations whose FROM
+            % end is one of IDS, and whether each is marked distributive
             % RELATIONNAME: a name, a cellstr of names, or empty for every relation
-            fromIds = cell(0, 1); toIds = cell(0, 1);
+            fromIds = cell(0, 1); toIds = cell(0, 1); dist = false(0, 1);
             chunk = 200;
             for c = 1:chunk:numel(ids)
                 part = ids(c:min(c + chunk - 1, numel(ids)));
@@ -665,15 +666,18 @@ classdef entity
                     a = ndi.v2.edgeIds(p, from);
                     b = ndi.v2.edgeIds(p, to);
                     a = a(ismember(a, part));
+                    d = ndi.v2.blockOf(p, 'directed_relation', 'distributive', false);
+                    d = ~isempty(d) && (islogical(d) || isnumeric(d)) && logical(d(1));
                     for x = 1:numel(a)
                         for y = 1:numel(b)
                             fromIds{end+1, 1} = a{x}; %#ok<AGROW>
                             toIds{end+1, 1} = b{y}; %#ok<AGROW>
+                            dist(end+1, 1) = d; %#ok<AGROW>
                         end
                     end
                 end
             end
-            E = table(fromIds, toIds, 'VariableNames', {'from', 'to'});
+            E = table(fromIds, toIds, dist, 'VariableNames', {'from', 'to', 'distributive'});
         end
 
         function ents = fetch(container, ids, extra)
@@ -768,6 +772,27 @@ classdef entity
                 m = cols(v);
                 if isKey(m, L.about{k}), m(L.about{k}) = [m(L.about{k}), {{txt, nd}}];
                 else, m(L.about{k}) = {{txt, nd}}; end
+            end
+            % its types (instance_of: a strain, a product), each under its
+            % type, named as the type entity is named (T17)
+            S = ndi.entity.inheritanceStates(container, cellstr(id(isSubj)), true);
+            S = S([S.i]);
+            if ~isempty(S)
+                tdocs = typeDocuments(container, unique({S.at}, 'stable'));
+                for k = 1:numel(S)
+                    if ~isKey(tdocs, S(k).at), continue; end
+                    p = tdocs(S(k).at);
+                    [v, blk] = ndi.v2.kindOf(p);
+                    txt = char(ndi.v2.blockOf(p, blk, 'name', ''));
+                    if isempty(txt), txt = char(ndi.v2.blockOf(p, blk, 'local_identifier', '')); end
+                    if isempty(v) || isempty(txt), continue; end
+                    nd = cellstr(ndi.v2.blockOf(p, blk, 'global_identifier', {}));
+                    if isempty(nd), nd = ''; else, nd = nd{1}; end
+                    if ~isKey(cols, v), cols(v) = containers.Map('KeyType', 'char', 'ValueType', 'any'); end
+                    m = cols(v);
+                    if isKey(m, S(k).start), m(S(k).start) = [m(S(k).start), {{txt, nd}}];
+                    else, m(S(k).start) = {{txt, nd}}; end
+                end
             end
             vars = sort(keys(cols));
             for k = 1:numel(vars)
@@ -1553,6 +1578,62 @@ classdef entity
             end
         end
 
+        function all_ = inheritanceStates(container, ids, inherited)
+            % INHERITANCESTATES - (internal) what the subjects IDS inherit from
+            %
+            % A struct array, one element per (start, at) pair: START is one
+            % of IDS, AT an entity it inherits from (itself included), PATH
+            % the relations walked ('' for itself), and the flags M (a
+            % member_of was walked), L (a part_of, sample_of, aliquot_of or
+            % passage_of was) and I (the last step was instance_of: AT is a
+            % type of START). Groups and wholes are walked up to 16 steps;
+            % a type is reached from a subject, a whole, or a group whose
+            % instance_of is distributive, and is not walked past. Without
+            % INHERITED, only the subjects themselves.
+            ids = unique(cellstr(ids), 'stable');
+            ids = reshape(ids, 1, []);
+            lineage = {'part_of', 'sample_of', 'aliquot_of', 'passage_of'};
+            % states: start, at, hasMember, hasLineage, isInstance, path
+            S = struct('start', ids, 'at', ids, 'm', false, 'l', false, 'i', false, 'path', {''});
+            all_ = S;
+            frontier = S;
+            depth = 0;
+            while inherited && ~isempty(frontier) && depth < 16
+                depth = depth + 1;
+                frontier = frontier(~[frontier.i]);     % a type is not walked past
+                if isempty(frontier), break; end
+                at = unique({frontier.at}, 'stable');
+                next = struct('start', {}, 'at', {}, 'm', {}, 'l', {}, 'i', {}, 'path', {});
+                for r = [{'member_of'}, lineage, {'instance_of'}]
+                    step = r{1};
+                    E = ndi.entity.edges(container, at(:), step, 'child_id', 'parent_id');
+                    if height(E) == 0, continue; end
+                    isType = strcmp(step, 'instance_of');
+                    for f = 1:numel(frontier)
+                        hit = find(strcmp(E.from, frontier(f).at));
+                        for h = reshape(hit, 1, [])
+                            % a group's type is its members' only when the
+                            % group's instance_of is distributive
+                            if isType && frontier(f).m && ~E.distributive(h), continue; end
+                            p = step;
+                            if ~isempty(frontier(f).path), p = [frontier(f).path ' > ' step]; end
+                            next(end+1) = struct('start', frontier(f).start, 'at', E.to{h}, ...
+                                'm', frontier(f).m || strcmp(step, 'member_of'), ...
+                                'l', frontier(f).l || any(strcmp(step, lineage)), ...
+                                'i', isType, 'path', p); %#ok<AGROW>
+                        end
+                    end
+                end
+                % a (start, at) reached before is not followed again
+                keep = true(1, numel(next));
+                for j = 1:numel(next)
+                    keep(j) = ~any(strcmp({all_.start}, next(j).start) & strcmp({all_.at}, next(j).at));
+                    if keep(j), all_(end+1) = next(j); end %#ok<AGROW>
+                end
+                frontier = next(keep);
+            end
+        end
+
         function L = statementLinks(container, ids, kinds, inherited, context)
             % STATEMENTLINKS - (internal) which statements hold of the subjects IDS
             %
@@ -1562,7 +1643,12 @@ classdef entity
             % walked together, one search per step; then one statement search
             % per kind for every 200 subjects reached. A statement on a group
             % holds when it is distributive; one on a whole when it is an
-            % assertion; on both, both. CONTEXT: then the containers of
+            % assertion; on both, both. A subject's types (instance_of: its
+            % strain, its product) are walked too, from the subject or from
+            % a group whose instance_of is distributive, and an assertion
+            % about the type holds of each instance (T17); the walk stops at
+            % a type, which a session opened from its dataset finds among
+            % the dataset's documents. CONTEXT: then the containers of
             % every subject reached (contextLinks).
             if nargin < 5, context = false; end
             described = arrayfun(@(k) isfield(k.filt, 'during_statements'), kinds);
@@ -1589,46 +1675,14 @@ classdef entity
                 end
                 return;
             end
-            ids = unique(cellstr(ids), 'stable');
-            lineage = {'part_of', 'sample_of', 'aliquot_of', 'passage_of'};
-            % states: start, at, hasMember, hasLineage, path
-            S = struct('start', ids, 'at', ids, 'm', false, 'l', false, 'path', {''});
-            all_ = S;
-            frontier = S;
-            depth = 0;
-            while inherited && ~isempty(frontier) && depth < 16
-                depth = depth + 1;
-                at = unique({frontier.at}, 'stable');
-                next = struct('start', {}, 'at', {}, 'm', {}, 'l', {}, 'path', {});
-                for r = [{'member_of'}, lineage]
-                    step = r{1};
-                    E = ndi.entity.edges(container, at(:), step, 'child_id', 'parent_id');
-                    if height(E) == 0, continue; end
-                    for f = 1:numel(frontier)
-                        hit = find(strcmp(E.from, frontier(f).at));
-                        for h = reshape(hit, 1, [])
-                            p = step;
-                            if ~isempty(frontier(f).path), p = [frontier(f).path ' > ' step]; end
-                            next(end+1) = struct('start', frontier(f).start, 'at', E.to{h}, ...
-                                'm', frontier(f).m || strcmp(step, 'member_of'), ...
-                                'l', frontier(f).l || ~strcmp(step, 'member_of'), 'path', p); %#ok<AGROW>
-                        end
-                    end
-                end
-                % a (start, at) reached before is not followed again
-                keep = true(1, numel(next));
-                for j = 1:numel(next)
-                    keep(j) = ~any(strcmp({all_.start}, next(j).start) & strcmp({all_.at}, next(j).at));
-                    if keep(j), all_(end+1) = next(j); end %#ok<AGROW>
-                end
-                frontier = next(keep);
-            end
+            all_ = ndi.entity.inheritanceStates(container, ids, inherited);
             reached = unique({all_.at}, 'stable');
             L = struct('about', {{}}, 'doc', {{}}, 'via', {{}});
             seen = containers.Map('KeyType', 'char', 'ValueType', 'logical');
             for k = 1:numel(kinds)
                 f = kinds(k).filt;
                 f.subject = reached;
+                f.withDataset = any([all_.i]);
                 docs = ndi.v2.searchStatements(container, kinds(k).kind, f);
                 for i = 1:numel(docs)
                     p = ndi.v2.props(docs{i});
@@ -1639,7 +1693,13 @@ classdef entity
                     distributive = ~isempty(d) && (islogical(d) || isnumeric(d)) && logical(d(1));
                     for j = find(strcmp({all_.at}, sid{1}))
                         st = all_(j);
-                        if (st.m && ~distributive) || (st.l && ~isAssertion), continue; end
+                        if st.i
+                            % a type's assertions hold of its instances;
+                            % its interactions do not (T17)
+                            if ~isAssertion, continue; end
+                        elseif (st.m && ~distributive) || (st.l && ~isAssertion)
+                            continue;
+                        end
                         key = [st.start '|' char(p.base.id)];
                         if isKey(seen, key), continue; end
                         seen(key) = true;
@@ -1652,7 +1712,8 @@ classdef entity
                 end
             end
             if context
-                L = ndi.entity.contextLinks(container, all_, kinds, L, seen);
+                % a type (a strain) is in no container
+                L = ndi.entity.contextLinks(container, all_(~[all_.i]), kinds, L, seen);
             end
         end
 
@@ -2062,6 +2123,22 @@ ids = cellstr(ndi.v2.blockOf(p, type, 'global_identifier', {}));
 for k = 1:numel(ids)
     if tf, return; end
     tf = ndi.v2.matchTerm(struct('name', '', 'node', ids{k}), patterns);
+end
+end
+
+function m = typeDocuments(container, ids)
+% the properties of the documents IDS (a strain, a product), by id: the
+% container's own, and for a session opened from a dataset the dataset's
+m = containers.Map('KeyType', 'char', 'ValueType', 'any');
+qs = cellfun(@(i) ndi.query('base.id', 'exact_string', i, ''), ids, 'UniformOutput', false);
+q = ndi.v2.anyOf(qs);
+docs = container.database_search(q);
+if numel(docs) < numel(ids) && isa(container, 'ndi.session')
+    docs = container.database_search_with_dataset(q);
+end
+for i = 1:numel(docs)
+    p = ndi.v2.props(docs{i});
+    m(char(p.base.id)) = p;
 end
 end
 

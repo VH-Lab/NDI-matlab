@@ -575,6 +575,38 @@ classdef TestObjectLayer < matlab.unittest.TestCase
             testCase.verifyEmpty(w.statements('manipulation', {'variable', 'ambient temperature'}));
         end
 
+        function testTypesPassTheirAssertionsToInstances(testCase)
+            % one entity class (2026-10-08): a cohort is an instance_of its
+            % strain, distributive, so each worm is one too; what is
+            % asserted of the strain holds of each worm (T17) and the
+            % summary names the strain under its type
+            testCase.assumeTrue(ndi.setup.V2.mergedEntities(), 'one entity class only');
+            [refs, ids] = testCase.Dataset.session_list();
+            S = testCase.Dataset.open_session(ids{strcmp(refs, testCase.Session.reference)});
+            plate = ndi.subject.search(S, 'LocalIdentifier', 'concentration_assayPlate0012');
+            testCase.assertNumElements(plate, 1);
+            ws = ndi.subject.search(S, 'type', 'organism', 'contained_in', plate{1});
+            W = [ws{:}];
+            testCase.assertNumElements(W, 2);
+            T = ndi.summary(ws);
+            testCase.assertTrue(ismember('strain', T.Properties.VariableNames), ...
+                strjoin(T.Properties.VariableNames, ', '));
+            testCase.verifyEqual(T.strain, ["N2"; "N2"], 'the cohort''s strain, through instance_of');
+            a = W(1).assertions();
+            via = cellfun(@(x) x.via(), a, 'UniformOutput', false);
+            fromType = a(contains(via, 'instance_of'));
+            testCase.verifyNotEmpty(fromType, ['the strain''s assertions hold of the worm: ' strjoin(via, ', ')]);
+            testCase.verifyTrue(all(contains(via(contains(via, 'instance_of')), 'member_of > instance_of')), ...
+                'reached through the cohort');
+            i = W(1).interactions();
+            testCase.verifyFalse(any(cellfun(@(x) contains(x.via(), 'instance_of'), i)), ...
+                'a type''s interactions do not pass to its instances');
+            % a session folder opened on its own holds the relation, not the strain
+            T0 = ndi.summary(ndi.subject.search(testCase.Session, 'type', 'organism', 'contained_in', ...
+                testCase.subject('concentration_assayPlate0012')));
+            testCase.verifyFalse(ismember('strain', T0.Properties.VariableNames));
+        end
+
         function testStatementsOfManySubjectsAndSummaries(testCase)
             S = testCase.Session;
             ws = ndi.subject.search(S, 'type', 'organism', 'contained_in', ...

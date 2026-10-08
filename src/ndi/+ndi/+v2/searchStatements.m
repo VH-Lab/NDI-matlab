@@ -12,6 +12,9 @@ function [docs, info] = searchStatements(container, kind, filt)
 %     formulation  a dose's formulation (its name or its type)
 %     subject      document ids: only statements about these subjects
 %                  (searched 200 at a time)
+%     withDataset  true: a session opened from its dataset also searches
+%                  the dataset's documents (a strain's statements live
+%                  there); default false
 %     at, during, before, after, duration
 %                  when it held: see ndi.v2.timeFilter; 'tolerant' (true or
 %                  false) widens each time by its tolerance
@@ -60,12 +63,12 @@ if ~isempty(filt.value) && all(cellfun(@isPlainText, filt.value))
     % again without it: "the variable is there, the value is not" (a
     % warning naming the values) is not "nothing has this variable"
     cand = bySubject(container, q & ...
-        (ndi.v2.termQuery('term.value', filt.value) | ndi.query('', '~isa', 'term', '')), filt.subject);
+        (ndi.v2.termQuery('term.value', filt.value) | ndi.query('', '~isa', 'term', '')), filt.subject, filt.withDataset);
     if isempty(cand)
-        cand = bySubject(container, q, filt.subject);
+        cand = bySubject(container, q, filt.subject, filt.withDataset);
     end
 else
-    cand = bySubject(container, q, filt.subject);
+    cand = bySubject(container, q, filt.subject, filt.withDataset);
 end
 
 structural = {};
@@ -112,17 +115,21 @@ end
 
 % -------------------------------------------------------------------------
 
-function docs = bySubject(container, q, ids)
+function docs = bySubject(container, q, ids, withDataset)
 % search Q, restricted to statements about IDS ({} for any), 200 ids a search
+search = @(x) container.database_search(x);
+if withDataset && isa(container, 'ndi.session')
+    search = @(x) container.database_search_with_dataset(x);
+end
 if isempty(ids)
-    docs = container.database_search(q);
+    docs = search(q);
     return;
 end
 docs = {};
 for c = 1:200:numel(ids)
     part = ids(c:min(c + 199, numel(ids)));
     qs = cellfun(@(i) ndi.v2.entityQuery(i), part, 'UniformOutput', false);
-    docs = [docs, reshape(container.database_search(q & ndi.v2.anyOf(qs)), 1, [])]; %#ok<AGROW>
+    docs = [docs, reshape(search(q & ndi.v2.anyOf(qs)), 1, [])]; %#ok<AGROW>
 end
 end
 
@@ -132,6 +139,10 @@ if ~isfield(filt, 'subject') || isempty(filt.subject)
 else
     filt.subject = unique(cellstr(filt.subject), 'stable');
 end
+if ~isfield(filt, 'withDataset') || isempty(filt.withDataset)
+    filt.withDataset = false;
+end
+filt.withDataset = logical(filt.withDataset);
 for f = {'variable', 'method', 'value', 'formulation'}
     if ~isfield(filt, f{1}) || isempty(filt.(f{1}))
         filt.(f{1}) = {};
