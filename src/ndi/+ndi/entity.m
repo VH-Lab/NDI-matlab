@@ -1144,7 +1144,7 @@ classdef entity
                 elseif strcmp(key, 'kind') && any(strcmpi(cellstr(v), 'subject'))
                     error('ndi:entity:search:subjectKind', ...
                         ['''subject'' is not a kind: give the type, e.g. {''type'', ' ...
-                         '{''organism'', ''group''}} (ndi.v2.subjectTypes are the subjects).']);
+                         '{''organism'', ''culture'', ''tissue'', ''cell'', ''group''}} (ndi.v2.subjectTypes).']);
                 elseif any(strcmp(key, {'type', 'name', 'id', 'kind'}))
                     spec.own(end+1, :) = {key, v};
                 elseif strcmp(key, 'localidentifier')
@@ -1530,7 +1530,7 @@ classdef entity
                 T = cellfun(@(x) x.document_id, s, 'UniformOutput', false);
             else
                 error('ndi:entity:search:relationTarget', ...
-                    'The other end of a relation is a subject, a document id, or a cell describing subjects.');
+                    'The other end of a relation is an entity, a document id, or a cell describing entities.');
             end
             if iscell(T), T = reshape(T, 1, []); end
         end
@@ -2161,23 +2161,32 @@ m = sprintf('%s\n%s in this %s: %s%s', m, label, where, strjoin(shown, ', '), mo
 end
 
 function [plural, singular, named] = nounOf(spec)
-% what a search is for, in words: from a single 'kind' or 'type' condition
-% ('people', 'organisms'), 'subjects' for exactly ndi.v2.subjectTypes, else
-% 'entities'. NAMED: the spec.own row the noun says (0 when none)
+% what a search is for, in words, from a single 'kind' or 'type' condition:
+% 'organisms', 'people', or for several types the list of them
+% ('organisms, cultures, tissues, cells or groups'); else 'entities'.
+% NAMED: the spec.own row the noun says (0 when none)
 plural = 'entities'; singular = 'entity'; named = 0;
 for key = {'kind', 'type'}
     k = find(strcmp(spec.own(:, 1), key{1}));
     if ~isscalar(k), continue; end
     v = spec.own{k, 2};
-    if iscell(v) && strcmp(key{1}, 'type') && isempty(setxor(lower(v), ndi.v2.subjectTypes()))
-        plural = 'subjects'; singular = 'subject'; named = k;
-        return;
+    if isstring(v), v = cellstr(v); end
+    if ischar(v), v = {v}; end
+    if ~iscell(v) || isempty(v) || ~all(cellfun(@ischar, v)) || any(cellfun(@ndi.v2.hasWildcard, v))
+        continue;
     end
-    if (ischar(v) || (isstring(v) && isscalar(v))) && ~ndi.v2.hasWildcard(char(v))
-        singular = lower(char(v));
-        plural = pluralOf(singular); named = k;
-        return;
-    end
+    words = lower(reshape(v, 1, []));
+    plural = listOf(cellfun(@pluralOf, words, 'UniformOutput', false));
+    singular = listOf(words);
+    named = k;
+    return;
+end
+end
+
+function t = listOf(w)
+% 'a', 'a or b', 'a, b or c'
+if isscalar(w), t = w{1};
+else, t = [strjoin(w(1:end-1), ', ') ' or ' w{end}];
 end
 end
 

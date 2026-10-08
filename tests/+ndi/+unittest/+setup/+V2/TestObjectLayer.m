@@ -347,11 +347,13 @@ classdef TestObjectLayer < matlab.unittest.TestCase
                 'the search names what it is for');
             testCase.verifySubstring(out, 'are contained_in an entity');
             testCase.verifySubstring(out, 'had a manipulation with variable NGM agar');
-            % the noun follows a single kind or type; the subject types are 'subjects'
+            % the noun follows a single kind or type condition; several types are listed
             out = evalc('ndi.entity.search(S, {''kind'', ''person''}, ''explain'', true);');
             testCase.verifySubstring(out, 'Searching this session for all people');
             out = evalc('ndi.entity.search(S, {''type'', ndi.v2.subjectTypes(), ''strain'', ''N2''}, ''explain'', true);');
-            testCase.verifySubstring(out, 'Searching this session for subjects that');
+            testCase.verifySubstring(out, ...
+                'Searching this session for organisms, cultures, tissues, cells or groups that', ...
+                'several types are listed');
             out = evalc('ndi.entity.search(S, {''strain'', ''N2''}, ''explain'', true);');
             testCase.verifySubstring(out, 'Searching this session for entities that');
             out = evalc(['ndi.entity.search(S, {''type'', ''organism'', ''contained_in'', ' ...
