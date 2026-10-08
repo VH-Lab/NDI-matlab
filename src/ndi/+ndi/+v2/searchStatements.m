@@ -97,7 +97,7 @@ for i = 1:numel(structural)
     byValue{end+1} = structural{i}; %#ok<AGROW>
 end
 % a pattern no term matched by its name or node: the names its nodes go by
-synonymPats = filt.value(~matched & cellfun(@isPlainText, filt.value));
+synonymPats = filt.value(~matched & cellfun(@isTextPattern, filt.value));
 if filt.synonyms && ~isempty(synonymPats)
     pool = structural;
     if narrowed     % the database kept only the direct matches: look at the rest
@@ -221,6 +221,11 @@ function c = classOf(kind)
 % the six kinds are the class names themselves since 2026-10-08 (isaQuery
 % also finds documents written as `subject_<kind>`)
 c = kind;
+end
+
+function tf = isTextPattern(p)
+% a name pattern, wildcards allowed, not a comparison ('>20')
+tf = ischar(p) && isempty(comparison(p));
 end
 
 function tf = isPlainText(p)
