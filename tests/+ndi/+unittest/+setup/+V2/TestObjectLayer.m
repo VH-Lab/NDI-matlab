@@ -808,7 +808,7 @@ classdef TestObjectLayer < matlab.unittest.TestCase
                     ndi.entity.search(D, 'person', 'given name', 'jess*'), 'UniformOutput', false), ...
                     {p{1}.document_id}, 'a text value matches like a name: any case, wildcards');
                 T = ndi.summary(p);
-                testCase.verifyEqual(T.family_name, "Haley", 'a person''s assertions are summary columns');
+                testCase.verifyEqual(T.familyName, "Haley", 'a person''s assertions are summary columns');
             end
         end
 
