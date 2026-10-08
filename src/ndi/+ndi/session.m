@@ -393,6 +393,26 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
             ndi_document_obj = ndi_session_obj.database.search(searchparameters&inSession);
         end % database_search();
 
+        function ndi_document_obj = database_search_with_dataset(ndi_session_obj, searchparameters)
+            % DATABASE_SEARCH_WITH_DATASET - search this session's database, dataset documents included
+            %
+            % NDI_DOCUMENT_OBJ = DATABASE_SEARCH_WITH_DATASET(NDI_SESSION_OBJ, SEARCHPARAMETERS)
+            %
+            % Like DATABASE_SEARCH, but without restricting the answer to this
+            % session's own documents. A session opened from an ndi.dataset
+            % lives in the dataset's database, so this also finds the
+            % dataset-level documents (a strain, a person, a study). A session
+            % opened from its own folder holds only its own documents, so the
+            % answer is the same as DATABASE_SEARCH's.
+            %
+            % See also: ndi.session/database_search, ndi.dataset/open_session
+            arguments
+                ndi_session_obj (1,1) ndi.session
+                searchparameters {mustBeA(searchparameters,{'ndi.query','did.query'})}
+            end
+            ndi_document_obj = ndi_session_obj.database.search(searchparameters);
+        end % database_search_with_dataset()
+
         function database_clear(ndi_session_obj, areyousure)
             % DATABASE_CLEAR - deletes/removes all entries from the database associated with an session
             %

@@ -849,14 +849,16 @@ classdef subject < ndi.ido & ndi.documentservice & ndi.entity
             % one entity class (did-schema V_eta_entity_composition_plan.md
             % sec. 5) that is how a subject has a strain. [] when the variable
             % names no such type or the container holds no entity of it --
-            % the caller then reports the property as unknown.
+            % the caller then reports the property as unknown. A session
+            % opened from its dataset also looks in the dataset's documents,
+            % where the strain entities are (entitiesOfType).
             ids = [];
             v = cellstr(filt.variable);
             if ~isscalar(v), return; end
             type = lower(v{1});
             types = ndi.v2.entityTypesFor(type);
             if ~isscalar(types) || ~strcmp(types{1}, type), return; end
-            targets = container.database_search(ndi.v2.isaQuery(type));
+            targets = entitiesOfType(container, type);
             if isempty(targets), return; end
             if isfield(filt, 'value') && ~isempty(filt.value)
                 keep = cellfun(@(d) entityMatches(ndi.v2.props(d), type, filt.value), targets);
@@ -968,8 +970,7 @@ classdef subject < ndi.ido & ndi.documentservice & ndi.entity
                     % and the entity types a subject can be an instance_of
                     % (one entity class: a strain is a relation)
                     for t = {'strain', 'product'}
-                        if ~isempty(container.database_search(ndi.v2.isaQuery(t{1}) & ...
-                                ndi.query('', 'isa', 'entity', '')))
+                        if ~isempty(entitiesOfType(container, t{1}))
                             names{end+1} = t{1}; %#ok<AGROW>
                         end
                     end
@@ -1562,5 +1563,16 @@ ids = cellstr(ndi.v2.blockOf(p, type, 'global_identifier', {}));
 for k = 1:numel(ids)
     if tf, return; end
     tf = ndi.v2.matchTerm(struct('name', '', 'node', ids{k}), patterns);
+end
+end
+
+function docs = entitiesOfType(container, type)
+% the entities of TYPE (merged `entity` documents only) CONTAINER can reach:
+% its own, and for a session opened from a dataset the dataset's too, since
+% a strain or product entity is written once, at dataset level
+q = ndi.v2.isaQuery(type) & ndi.query('', 'isa', 'entity', '');
+docs = container.database_search(q);
+if isempty(docs) && isa(container, 'ndi.session')
+    docs = container.database_search_with_dataset(q);
 end
 end

@@ -176,10 +176,16 @@ classdef TestObjectLayer < matlab.unittest.TestCase
             if ndi.setup.V2.mergedEntities()
                 % one entity class (2026-10-08): a cohort is an instance_of the
                 % dataset-level strain entity, so 'strain', 'N2' needs that
-                % entity in reach. A session alone holds only the relation and
-                % cannot name the strain -- OPEN, see TEAM QUESTION in the PR.
+                % entity in reach. A session opened from its dataset reaches it
+                % (ndi.session/database_search_with_dataset); a session folder
+                % opened on its own holds only the relation and cannot name it.
                 testCase.verifyError(@() ndi.subject.search(S, 'strain', 'N2'), ...
                     'ndi:subject:search:unknownVariable');
+                [refs, ids] = testCase.Dataset.session_list();
+                inDataset = testCase.Dataset.open_session(ids{strcmp(refs, S.reference)});
+                testCase.verifyTrue(all(ismember({'concentration_worm0121', 'concentration_worm0122'}, ...
+                    local(ndi.subject.search(inDataset, 'type', 'organism', 'strain', 'N2')))), ...
+                    'a session opened from its dataset finds the strain entity there');
                 S = testCase.Dataset;
             end
             w = ndi.subject.search(S, 'type', 'organism', 'species', 'Caenorhabditis elegans', 'strain', 'N2');
