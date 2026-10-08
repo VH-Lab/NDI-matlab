@@ -23,7 +23,7 @@ classdef TestHaleySessions < matlab.unittest.TestCase
             testCase.assumeTrue(~isempty(which('did2.build.document')), ...
                 'did2.build (DID-matlab V2) is not on the path');
             sp = getenv('DID_SCHEMA_PATH');
-            testCase.assumeTrue(~isempty(sp) && isfile(fullfile(sp, 'study.json')), ...
+            testCase.assumeTrue(~isempty(sp) && ndi.setup.V2.schemaHasClass('study', sp), ...
                 'DID_SCHEMA_PATH does not hold a V2 schema with `study`');
             testCase.assumeTrue(ndi.setup.V2.schemaHasField('session', 'name'), ...
                 'the V2 schema has no session.name (did-schema PR #79)');
@@ -114,8 +114,8 @@ classdef TestHaleySessions < matlab.unittest.TestCase
             s = ndi.session.dir(T.path{1});
             testCase.verifyEqual(s.id(), sessions{1}.id());
             testCase.verifyEqual(s.reference, 'concentration_0001');
-            d = s.database_search(ndi.query('', 'isa', 'session'));
-            testCase.verifySubstring(d{1}.document_properties.session.name, 'experiment 1');
+            d = s.database_search(ndi.v2.isaQuery('session'));
+            testCase.verifySubstring(ndi.v2.blockOf(d{1}.document_properties, 'session', 'name'), 'experiment 1');
             rel = s.database_search(ndi.query('', 'isa', 'directed_relation'));
             testCase.verifyNumElements(rel, 1);
         end

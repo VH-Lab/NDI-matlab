@@ -234,21 +234,38 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
                 && strcmp(a.statement.variable.name, variable), ta));
 
             % 4 cohorts, each with a species, a strain and a sex; 4 seeded
-            % patches, each with a species and a strain; plate 13 excluded
-            testCase.verifyNumElements(ta, 4 * 3 + 4 * 2 + 1);
+            % patches, each with a species and a strain; plate 13 excluded. With
+            % one entity class (2026-10-08) the strain is an `instance_of`
+            % relation to the strain entity instead of an assertion.
+            merged = ndi.setup.V2.mergedEntities();
+            perStrain = double(~merged);
+            testCase.verifyNumElements(ta, 4 * (2 + perStrain) + 4 * (1 + perStrain) + 1);
+            rel = docs(strcmp(classes, 'directed_relation'));
+            instanceOf = @(local) rel(cellfun(@(r) strcmp(r.directed_relation.relation.name, ...
+                'instance_of') && strcmp(edge(r, 'child_id'), idOf(local)), rel));
             a = about('concentration_assayPlate0012_worms', 'species');
             testCase.verifyNumElements(a, 1);
             testCase.verifyEqual(a{1}.term.value.node, 'NCBITaxon:6239');
-            a = about('concentration_assayPlate0012_worms', 'strain');
-            testCase.verifyNumElements(a, 1);
-            testCase.verifyEqual(a{1}.term.value.name, 'N2');
-            testCase.verifyEqual(a{1}.term.value.node, 'WBStrain:00000001', ...
-                'the strain is its WormBase term, not a name alone');
-            testCase.verifyEqual(edge(a{1}, 'strain_id'), result.metadata.ids('N2'), ...
-                'the strain assertion names the dataset-level strain document');
-            if ndi.setup.V2.schemaHasField('statement', 'distributive')
-                testCase.verifyTrue(logical(a{1}.statement.distributive), ...
-                    'stated on the cohort, it holds of each worm');
+            if merged
+                r = instanceOf('concentration_assayPlate0012_worms');
+                testCase.verifyNumElements(r, 1);
+                testCase.verifyEqual(edge(r{1}, 'parent_id'), result.metadata.ids('N2'), ...
+                    'the cohort is an instance of the dataset-level N2 strain entity');
+                testCase.verifyTrue(logical(r{1}.directed_relation.distributive), ...
+                    'stated of the cohort, it holds of each worm');
+                testCase.verifyEmpty(about('concentration_assayPlate0012_worms', 'strain'));
+            else
+                a = about('concentration_assayPlate0012_worms', 'strain');
+                testCase.verifyNumElements(a, 1);
+                testCase.verifyEqual(a{1}.term.value.name, 'N2');
+                testCase.verifyEqual(a{1}.term.value.node, 'WBStrain:00000001', ...
+                    'the strain is its WormBase term, not a name alone');
+                testCase.verifyEqual(edge(a{1}, 'strain_id'), result.metadata.ids('N2'), ...
+                    'the strain assertion names the dataset-level strain document');
+                if ndi.setup.V2.schemaHasField('statement', 'distributive')
+                    testCase.verifyTrue(logical(a{1}.statement.distributive), ...
+                        'stated on the cohort, it holds of each worm');
+                end
             end
             a = about('concentration_assayPlate0012_worms', 'biological sex');
             testCase.verifyNumElements(a, 1);
@@ -259,10 +276,16 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
                 'bacteria have no sex');
             testCase.verifyEmpty(about('concentration_worm0121', 'species'), ...
                 'a worm inherits its cohort''s species; it is not repeated');
-            a = about('concentration_assayPlate0012_patch0001', 'strain');
-            testCase.verifyNumElements(a, 1);
-            testCase.verifyEqual(a{1}.term.value.name, 'OP50');
-            testCase.verifyEqual(a{1}.term.value.node, 'WBStrain:00041969');
+            if merged
+                r = instanceOf('concentration_assayPlate0012_patch0001');
+                testCase.verifyNumElements(r, 1);
+                testCase.verifyEqual(edge(r{1}, 'parent_id'), result.metadata.ids('OP50'));
+            else
+                a = about('concentration_assayPlate0012_patch0001', 'strain');
+                testCase.verifyNumElements(a, 1);
+                testCase.verifyEqual(a{1}.term.value.name, 'OP50');
+                testCase.verifyEqual(a{1}.term.value.node, 'WBStrain:00041969');
+            end
             a = about('concentration_assayPlate0012_patch0001', 'species');
             testCase.verifyEqual(a{1}.term.value.node, 'NCBITaxon:562');
             a = about('concentration_assayPlate0013', 'inclusion in analysis');
@@ -894,6 +917,16 @@ if isfield(d, 'statement') && isfield(d, 'depends_on') && isstruct(d.depends_on)
         if strcmp(d.depends_on(k).name, 'subject_id'), d.depends_on(k).name = 'entity_id'; end
     end
 end
+% ... and as the per-leaf classes name it (did-schema
+% V_eta_entity_composition_plan.md, 2026-10-08): an `observation` listing
+% `temperature` is a temperature_observation, and an `entity` of type organism a
+% `subject` (its fields under `subject`), so these tests read both schemas
+[name, block] = ndi.v2.leafName(d);
+if strcmp(block, 'entity') && ~strcmp(name, 'entity')
+    d.(name) = d.entity;
+    d = rmfield(d, 'entity');
+end
+d.document_class.class_name = name;
 end
 
 function v = edge(doc, name)

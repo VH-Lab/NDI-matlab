@@ -18,7 +18,7 @@ classdef TestCreateSession < matlab.unittest.TestCase
                 'did2.build (DID-matlab V2) is not on the path');
             schemaPath = getenv('DID_SCHEMA_PATH');
             testCase.assumeTrue(~isempty(schemaPath) && ...
-                isfile(fullfile(schemaPath, 'study.json')), ...
+                ndi.setup.V2.schemaHasClass('study', schemaPath), ...
                 'DID_SCHEMA_PATH does not hold a V2 schema with `study`');
         end
     end
@@ -43,9 +43,9 @@ classdef TestCreateSession < matlab.unittest.TestCase
             reopened = ndi.session.dir(testCase.Dir);
             testCase.verifyEqual(reopened.id(), sid);
             testCase.verifyEqual(reopened.reference, 'day 22-02-01');
-            s = reopened.database_search(ndi.query('', 'isa', 'session'));
+            s = reopened.database_search(ndi.v2.isaQuery('session'));
             testCase.verifyNumElements(s, 1);
-            testCase.verifyEqual(s{1}.document_properties.session.local_identifier, 'day 22-02-01');
+            testCase.verifyEqual(ndi.v2.blockOf(s{1}.document_properties, 'session', 'local_identifier'), 'day 22-02-01');
         end
 
         function testStudyRelationIsStoredInTheSession(testCase)

@@ -26,7 +26,7 @@ classdef TestDatasetMetadataHaley < matlab.unittest.TestCase
                 'did2.build (DID-matlab V2) is not on the path');
             schemaPath = getenv('DID_SCHEMA_PATH');
             testCase.assumeTrue(~isempty(schemaPath) && ...
-                isfile(fullfile(schemaPath, 'study.json')), ...
+                ndi.setup.V2.schemaHasClass('study', schemaPath), ...
                 'DID_SCHEMA_PATH does not hold a V2 schema with `study` (did-schema PR #78)');
             specFile = fullfile(fileparts(which('ndi.setup.conv.haley.import_V2')), ...
                 'import_V2_spec.json');
@@ -53,6 +53,23 @@ classdef TestDatasetMetadataHaley < matlab.unittest.TestCase
             testCase.verifyEqual(n('product'), numel(s.products) + numel(s.strains));
             % 47 before decision #56; + the media kitchen's suborganization_of
             % Salk + 6 recipes documented_by WormBook
+            if ndi.setup.V2.mergedEntities()
+                % one entity class (2026-10-08): the entity fields become
+                % assertions and relations, so these totals are a different
+                % count, not a moved one. What must hold on either schema:
+                % every document is an entity of a known type, a statement or
+                % a relation.
+                kinds = {'organization', 'person', 'funding', 'study', 'strain', ...
+                    'subject', 'chemical', 'formulation', 'dataset', 'product', ...
+                    'software', 'publication', 'protocol', 'directed_relation'};
+                other = c(~ismember(c.class, kinds), :);
+                testCase.verifyTrue(all(endsWith(other.class, ...
+                    {'_assertion', '_observation', '_manipulation', '_calculation'})), ...
+                    strjoin(other.class, ', '));
+                testCase.verifyFalse(any(strcmp(c.class, 'web_resource')), ...
+                    'web_resource retired: its URL is an identifier of what it names');
+                return;
+            end
             testCase.verifyEqual(n('directed_relation'), 54, ...
                 'relation count moved: re-derive it from the spec, do not bump it');
             % 133 before decision #56; + 3 organizations, 1 web resource,
@@ -72,7 +89,7 @@ classdef TestDatasetMetadataHaley < matlab.unittest.TestCase
                 'DatasetId', datasetId, 'Studies', "exclude");
             studies = ndi.setup.V2.datasetMetadata(testCase.Spec, sid, ...
                 'DatasetId', datasetId, 'Studies', "only");
-            classOf = @(r) cellfun(@(d) d.document_class.class_name, r.documents, 'UniformOutput', false);
+            classOf = @(r) cellfun(@ndi.v2.leafName, r.documents, 'UniformOutput', false);
             testCase.verifyEqual(sum(strcmp(classOf(rest), 'study')), 0);
             testCase.verifyEqual(sum(strcmp(classOf(studies), 'study')), numel(testCase.Spec.studies));
             testCase.verifyEqual(numel(rest.documents) + numel(studies.documents), ...
@@ -122,13 +139,24 @@ classdef TestDatasetMetadataHaley < matlab.unittest.TestCase
         function testRelationTermsAreCompletedFromTheirValueSet(testCase)
             partOf = relationsNamed(testCase.Result.documents, 'part_of');
             testCase.verifyEqual(numel(partOf), numel(testCase.Spec.studies));
-            testCase.verifyEqual(partOf{1}.directed_relation.relation.node, 'BFO:0000050');
+            % prefixes are lowercase from 2026-10-08 (CURIE_lookups_meta.json)
+            testCase.verifyEqual(lower(partOf{1}.directed_relation.relation.node), 'bfo:0000050');
         end
 
         function testStrainLineageAndStock(testCase)
             docs = testCase.Result.documents;
             gfp = docs{strcmp(cellfun(@(d) d.base.id, docs, 'UniformOutput', false), ...
                 testCase.Result.ids('OP50-GFP'))};
+            if ndi.setup.V2.mergedEntities()
+                % one entity class: the background and the stock are relations
+                from = relationsNamed(docs, 'derived_from');
+                from = from(cellfun(@(r) any(strcmp({r.depends_on.document_id}, ...
+                    testCase.Result.ids('OP50-GFP'))), from));
+                testCase.verifyTrue(any(cellfun(@(r) strcmp(parentOf(r), ...
+                    testCase.Result.ids('OP50')), from)), 'OP50-GFP derived_from OP50');
+                testCase.verifyEqual(numel(from), 2, 'its background and its stock');
+                return;
+            end
             bg = gfp.depends_on(strcmp({gfp.depends_on.name}, 'background_strain_id'));
             testCase.verifyEqual({bg.document_id}, {testCase.Result.ids('OP50')});
             testCase.verifyTrue(any(strcmp({gfp.depends_on.name}, 'product_id')));

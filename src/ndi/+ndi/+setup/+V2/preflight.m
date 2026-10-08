@@ -33,16 +33,14 @@ if isempty(sp) || ~isfolder(sp)
         'main''s schemas/V_eta/{stable,draft,deprecated}/*.json into one folder and ' ...
         'setenv(''DID_SCHEMA_PATH'', <that folder>), then did2.schema.cache.resetSingleton().'], sp);
 else
-    missing = options.Classes(~cellfun(@(c) isfile(fullfile(sp, [c '.json'])), options.Classes));
+    % a class merged into `entity` on 2026-10-08 counts as present (schemaHasClass)
+    missing = options.Classes(~cellfun(@(c) ndi.setup.V2.schemaHasClass(c, sp), options.Classes));
     if ~isempty(missing)
         problems{end+1} = sprintf(['The schema in DID_SCHEMA_PATH (%s) has no %s. It predates ' ...
             'the V2 classes this import uses: re-copy it from did-schema main.'], ...
             sp, strjoin(strcat('`', missing, '`'), ', '));
     elseif any(strcmp(options.Classes, 'session'))
-        s = jsondecode(fileread(fullfile(sp, 'session.json')));
-        f = s.fields;
-        if iscell(f), names = cellfun(@(x) x.name, f, 'UniformOutput', false); else, names = {f.name}; end
-        if ~any(strcmp(names, 'name'))
+        if ~ndi.setup.V2.schemaHasField('session', 'name')
             problems{end+1} = sprintf(['The schema in DID_SCHEMA_PATH (%s) has no session.name ' ...
                 '(did-schema PR #79): re-copy it from did-schema main.'], sp);
         end

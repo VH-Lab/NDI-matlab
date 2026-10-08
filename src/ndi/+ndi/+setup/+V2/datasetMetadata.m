@@ -373,7 +373,9 @@ end
 result = struct();
 result.documents = state.docs;
 result.ids = state.ids;
-classes = cellfun(@(x) x.document_class.class_name, state.docs, 'UniformOutput', false);
+% counted under the per-leaf names (ndi.v2.leafName), so an `entity` counts as
+% its type and the census reads the same on either schema
+classes = cellfun(@ndi.v2.leafName, state.docs, 'UniformOutput', false);
 [u, ~, j] = unique(classes);
 result.census = table(u(:), accumarray(j(:), 1), 'VariableNames', {'class', 'count'});
 result.unrepresented = state.unrep;

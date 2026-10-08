@@ -39,7 +39,7 @@ classdef TestObjectLayer < matlab.unittest.TestCase
             testCase.verifyEqual(w.id(), w.document_id, 'the subject keeps its document''s id');
             testCase.verifyEqual(w.kind, 'subject');
             p = w.document_properties();
-            testCase.verifyEqual(w.name, char(p.subject.name), 'a subject''s display name is its own name');
+            testCase.verifyEqual(w.name, char(ndi.v2.blockOf(p, 'subject', 'name')), 'a subject''s display name is its own name');
             testCase.verifyEqual(w.name(), 'Worm 0121');
             testCase.verifyEqual(w.local_identifier, 'concentration_worm0121', ...
                 'no @ is required of a V2 subject read from a document (D6)');
