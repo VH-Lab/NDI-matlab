@@ -16,6 +16,10 @@ classdef subject < ndi.ido & ndi.documentservice & ndi.entity
     %  searchquery - Search for an ndi.document representation of an ndi.subject
     %  isvalidlocalidentifierstring - Is a string a valid local_identifier string? (Static)
     %  does_subjectstring_match_session_document - Does an ndi.subject object already have a representation in an ndi.database? (Static)
+    %  search - Find subjects by what is true of them (Static)
+    %  statements - The statements about the subject(s), inherited by default
+    %  assertions, observations, manipulations, calculations, interactions -
+    %               statements of that kind (ndi.summary makes a table)
     %
 
     properties (GetAccess=public, SetAccess=protected)
@@ -161,56 +165,57 @@ classdef subject < ndi.ido & ndi.documentservice & ndi.entity
             end
         end % statements()
 
-        function T = assertions(ndi_subject_obj, varargin)
-            % ASSERTIONS - table of what is asserted about the subject (or subjects)
+        function s = assertions(ndi_subject_obj, varargin)
+            % ASSERTIONS - what is asserted about the subject (or subjects): species, strain, ...
             %
-            % T = ASSERTIONS(SUBJ) has columns variable, value, node, stated_on
-            % (the local identifier of the subject it was stated on) and via
-            % (how it holds: see STATEMENTS), e.g. species 'Caenorhabditis
-            % elegans', strain 'N2', inclusion in analysis 'excluded'. For an
-            % array of subjects a first column, subject, names which one.
-            % Inherited by default, as STATEMENTS; 'inherited', false for the
-            % subject's own assertions. Takes STATEMENTS' filters.
-            args = varargin;
-            if isempty(args) || ~any(strcmpi(args(1:2:end), 'assertion'))
-                args = [{'assertion'}, args];
-            end
-            a = ndi_subject_obj.statements(args{:});
-            n = numel(a);
-            subject = strings(n, 1); variable = strings(n, 1); value = strings(n, 1);
-            node = strings(n, 1); stated_on = strings(n, 1); via = strings(n, 1);
-            container = [];
-            if ~isempty(ndi_subject_obj), container = ndi_subject_obj(1).container_; end
-            ids = {};
-            for i = 1:n
-                ids = [ids, {a{i}.about()}, ndi.v2.edgeIds(a{i}.document_properties(), 'subject_id')]; %#ok<AGROW>
-            end
-            lid = containers.Map('KeyType', 'char', 'ValueType', 'char');
-            if ~isempty(ids) && ~isempty(container)
-                ents = ndi.entity.fetchMany(container, unique(ids));
-                for e = 1:numel(ents)
-                    x = ents{e};
-                    if isa(x, 'ndi.subject'), lid(x.document_id) = char(x.local_identifier);
-                    else, lid(x.document_id) = char(x.name); end
-                end
-            end
-            for i = 1:n
-                v = a{i}.raw_value();
-                variable(i) = string(a{i}.variable_name());
-                value(i) = string(ndi.v2.termName(v));
-                if isstruct(v) && isfield(v, 'node'), node(i) = string(char(v(1).node)); end
-                o = statedOnId(a{i});
-                stated_on(i) = string(o);
-                if isKey(lid, o), stated_on(i) = string(lid(o)); end
-                subject(i) = string(a{i}.about());
-                if isKey(lid, a{i}.about()), subject(i) = string(lid(a{i}.about())); end
-                via(i) = string(a{i}.via());
-            end
-            T = table(variable, value, node, stated_on, via);
-            if numel(ndi_subject_obj) > 1
-                T = addvars(T, subject, 'Before', 1);
-            end
+            % S = ASSERTIONS(SUBJ, ...) is STATEMENTS(SUBJ, 'assertion', ...): a
+            % cell array of ndi.assertion objects, inherited by default. A cell
+            % of filters may come first:
+            %   a = w.assertions({'variable', 'strain'})
+            %   a = w.assertions('inherited', false)
+            % ndi.summary(a) makes the table.
+            args = ndi.subject.kindArgs('assertion', varargin);
+            s = ndi_subject_obj.statements(args{:});
         end % assertions()
+
+        function s = observations(ndi_subject_obj, varargin)
+            % OBSERVATIONS - what was observed of the subject (or subjects)
+            %
+            % S = OBSERVATIONS(SUBJ, ...) is STATEMENTS(SUBJ, 'observation', ...),
+            % a cell array of ndi.observation objects; filters as ASSERTIONS:
+            %   o = w.observations({'variable', 'temperature'})
+            args = ndi.subject.kindArgs('observation', varargin);
+            s = ndi_subject_obj.statements(args{:});
+        end % observations()
+
+        function s = manipulations(ndi_subject_obj, varargin)
+            % MANIPULATIONS - what was done to the subject (or subjects)
+            %
+            % S = MANIPULATIONS(SUBJ, ...) is STATEMENTS(SUBJ, 'manipulation', ...),
+            % a cell array of ndi.manipulation objects; filters as ASSERTIONS:
+            %   m = w.manipulations({'method', 'refrigeration'})
+            args = ndi.subject.kindArgs('manipulation', varargin);
+            s = ndi_subject_obj.statements(args{:});
+        end % manipulations()
+
+        function s = calculations(ndi_subject_obj, varargin)
+            % CALCULATIONS - what was calculated of the subject (or subjects)
+            %
+            % S = CALCULATIONS(SUBJ, ...) is STATEMENTS(SUBJ, 'calculation', ...),
+            % a cell array of ndi.calculation objects; filters as ASSERTIONS:
+            %   c = calculations([w{:}], {'variable', 'midpoint speed'})
+            args = ndi.subject.kindArgs('calculation', varargin);
+            s = ndi_subject_obj.statements(args{:});
+        end % calculations()
+
+        function s = interactions(ndi_subject_obj, varargin)
+            % INTERACTIONS - observations, manipulations and calculations of the subject
+            %
+            % S = INTERACTIONS(SUBJ, ...) is STATEMENTS(SUBJ, 'interaction', ...):
+            % every statement with a time and a method; filters as ASSERTIONS.
+            args = ndi.subject.kindArgs('interaction', varargin);
+            s = ndi_subject_obj.statements(args{:});
+        end % interactions()
 
         function m = members(ndi_subject_obj)
             % MEMBERS - a group's members (the subjects that are member_of it), a cell array
@@ -844,6 +849,16 @@ classdef subject < ndi.ido & ndi.documentservice & ndi.entity
     end
 
     methods (Static, Hidden)
+        function args = kindArgs(kind, args)
+            % KINDARGS - (internal) ASSERTIONS/OBSERVATIONS/...: STATEMENTS'
+            % arguments for one kind, with an optional cell of filters first
+            if ~isempty(args) && iscell(args{1})
+                args = [{kind, args{1}}, args(2:end)];
+            else
+                args = [{kind}, args];
+            end
+        end
+
         function [kinds, inherited] = statementArgs(args)
             % STATEMENTARGS - (internal) STATEMENTS' arguments: kinds with
             % filters, the older 'Class'/'Variable'/'Method' pairs, 'inherited'
@@ -972,13 +987,6 @@ classdef subject < ndi.ido & ndi.documentservice & ndi.entity
     end
 
 end % classdef ndi.subject
-
-function id = statedOnId(st)
-% the document id the statement is about (its subject_id edge)
-ids = ndi.v2.edgeIds(st.document_properties(), 'subject_id');
-id = '';
-if ~isempty(ids), id = ids{1}; end
-end
 
 function t = describe(filt)
 % 'variable = strain, value = N2' for messages

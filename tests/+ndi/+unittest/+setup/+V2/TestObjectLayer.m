@@ -375,17 +375,23 @@ classdef TestObjectLayer < matlab.unittest.TestCase
 
         function testAssertions(testCase)
             c = testCase.subject('concentration_assayPlate0012_worms');
-            T = c.assertions();
-            testCase.verifyEqual(T.node(T.variable == "species"), "NCBITaxon:6239");
+            a = c.assertions();
+            testCase.verifyTrue(all(cellfun(@(x) isa(x, 'ndi.assertion'), a)), 'objects, not a table');
+            T = ndi.summary(a);
+            testCase.verifyEqual(T.value_node(T.variable == "species"), "NCBITaxon:6239");
             testCase.verifyEqual(T.value(T.variable == "strain"), "N2");
+            st = c.assertions({'variable', 'strain'});
+            testCase.verifyNumElements(st, 1, 'a cell of filters comes first');
+            testCase.verifyEqual(st{1}.variable_name(), 'strain');
             a = c.statements('Class', 'assertion', 'Variable', 'strain');
             testCase.verifyNumElements(a, 1);
             testCase.verifyClass(a{1}, 'ndi.assertion');
             testCase.verifyEqual(a{1}.composite(), 'term');
             testCase.verifyEqual(a{1}.value().canonical(), "N2");
             testCase.verifyEqual(a{1}.subject().id(), c.id());
-            x = testCase.subject('concentration_assayPlate0013').assertions();
-            testCase.verifyEqual(x.value(x.variable == "inclusion in analysis"), "excluded");
+            x = testCase.subject('concentration_assayPlate0013').assertions({'variable', 'inclusion in analysis'});
+            testCase.verifyNumElements(x, 1);
+            testCase.verifyEqual(x{1}.value().canonical(), "excluded");
         end
 
         function testInheritedFollowsMemberOfAndDistributive(testCase)
@@ -394,8 +400,9 @@ classdef TestObjectLayer < matlab.unittest.TestCase
             % read that way by default
             w = testCase.subject('concentration_worm0121');
             own = w.assertions('inherited', false);
-            testCase.verifyFalse(any(own.variable == "species"), 'nothing is stated on the worm itself');
-            testCase.verifyTrue(all(own.stated_on == "concentration_worm0121"));
+            testCase.verifyFalse(any(cellfun(@(x) strcmp(x.variable_name(), 'species'), own)), ...
+                'nothing is stated on the worm itself');
+            testCase.verifyTrue(all(cellfun(@(x) strcmp(x.subject().document_id, w.document_id), own)));
             T = w.assertions();
             st = w.statements();
             mine = w.statements('inherited', false);
@@ -403,12 +410,13 @@ classdef TestObjectLayer < matlab.unittest.TestCase
             testCase.verifyEqual(sum(cellfun(@(x) strcmp(x.via(), 'own'), st)), numel(mine), ...
                 'its own statements are kept');
             if ndi.setup.V2.schemaHasField('subject_statement', 'distributive')
-                sp = T(T.variable == "species", :);
-                testCase.verifyEqual(height(sp), 1);
-                testCase.verifyEqual(sp.node, "NCBITaxon:6239");
-                testCase.verifyEqual(sp.stated_on, "concentration_assayPlate0012_worms");
-                testCase.verifyEqual(sp.via, "member_of");
-                testCase.verifyEqual(T.value(T.variable == "strain"), "N2");
+                sp = T(cellfun(@(x) strcmp(x.variable_name(), 'species'), T));
+                testCase.verifyNumElements(sp, 1);
+                testCase.verifyEqual(sp{1}.raw_value().node, 'NCBITaxon:6239');
+                testCase.verifyEqual(sp{1}.subject().local_identifier, 'concentration_assayPlate0012_worms');
+                testCase.verifyEqual(sp{1}.via(), 'member_of');
+                strain = T(cellfun(@(x) strcmp(x.variable_name(), 'strain'), T));
+                testCase.verifyEqual(strain{1}.value().canonical(), "N2");
                 extra = st(cellfun(@(x) ~strcmp(x.via(), 'own'), st));
                 testCase.verifyNotEmpty(extra);
                 testCase.verifyTrue(all(cellfun(@(x) x.distributive(), extra)), 'only distributive ones');
@@ -437,8 +445,19 @@ classdef TestObjectLayer < matlab.unittest.TestCase
             testCase.verifyEqual(sum(strcmp(about, W(1).document_id)), numel(one), ...
                 'the same as asking one worm at a time');
             A = assertions(W);
-            testCase.verifyEqual(A.Properties.VariableNames{1}, 'subject');
-            testCase.verifyEqual(sort(unique(A.subject)), sort(string({W.local_identifier}')));
+            testCase.verifyEqual(numel(A), numel(st), 'assertions is statements of one kind');
+            % the kind shortcuts are statements of that kind, filters included
+            kinds = {'observation', 'manipulation', 'calculation', 'interaction'};
+            short = {@observations, @manipulations, @calculations, @interactions};
+            for k = 1:numel(kinds)
+                testCase.verifyEqual(cellfun(@(x) x.document_id(), short{k}(W), 'UniformOutput', false), ...
+                    cellfun(@(x) x.document_id(), statements(W, kinds{k}), 'UniformOutput', false), kinds{k});
+            end
+            if ndi.setup.V2.schemaHasField('subject_statement', 'distributive')
+                m = manipulations(W(1), {'variable', 'location'});
+                testCase.verifyNotEmpty(m, 'the moves onto plates, stated on the cohort');
+                testCase.verifyTrue(all(cellfun(@(x) strcmp(x.variable_name(), 'location'), m)));
+            end
 
             T = ndi.summary(ws);
             testCase.verifyEqual(height(T), 2);
