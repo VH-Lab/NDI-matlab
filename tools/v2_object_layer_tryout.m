@@ -105,7 +105,7 @@ step('the worm of the first one, read through the dataset', @worm);
 
 step('ndi.entity.search by LocalIdentifier, in the dataset', @byLocal);
     function r = byLocal()
-        x = ndi.entity.search(ctx.ds, 'LocalIdentifier', ctx.w.local_identifier);
+        x = ndi.entity.search(ctx.ds, {'LocalIdentifier', ctx.w.local_identifier});
         r = sprintf('%d found', numel(x));
         fprintf('  %s\n', r);
     end
@@ -123,8 +123,8 @@ step('the worm''s statements, by kind', @wormStatements);
 % ---- a value from its body -------------------------------------------------------
 step('its speed: value() decoded from the body', @speedValue);
     function r = speedValue()
-        st = ctx.w.statements('Class', 'velocity_calculation', 'Variable', 'midpoint speed');
-        if isempty(st), st = ctx.w.statements('Class', 'velocity_calculation'); end
+        st = ctx.w.statements('velocity_calculation', {'variable', 'midpoint speed'});
+        if isempty(st), st = ctx.w.statements('velocity_calculation'); end
         ctx.speed = st{1};
         v = st{1}.value();
         d = double(v);
@@ -199,7 +199,7 @@ step('a plate and its patches (part_of)', @plate);
 % ---- manipulations ------------------------------------------------------------------
 step('the plate''s manipulations, with time and dose', @manipulations);
     function r = manipulations()
-        mm = ctx.plate.statements('Class', 'manipulation');
+        mm = ctx.plate.statements('manipulation');
         for i = 1:numel(mm)
             v = mm{i}.value();
             t = mm{i}.time();
@@ -228,7 +228,7 @@ step('dataset-level entities (people, organizations, studies, strains)', @entiti
     function r = entities()
         out = {};
         for k = {'person', 'organization', 'study', 'strain', 'software'}
-            e = ndi.entity.search(ctx.ds, k{1});
+            e = ndi.entity.search(ctx.ds, {'kind', k{1}});
             names = cellfun(@(x) x.name(), e, 'UniformOutput', false);
             fprintf('  %-12s %3d  %s\n', k{1}, numel(e), strjoin(names(1:min(5, end)), ', '));
             out{end+1} = sprintf('%s %d', k{1}, numel(e)); %#ok<AGROW>
@@ -247,7 +247,7 @@ step('the dataset''s model fits (statement.find on the dataset)', @fits);
 step('the same worm read through the SESSION instead (for comparison)', @throughSession);
     function r = throughSession()
         st = ctx.wS.statements();
-        sp = ctx.wS.statements('Class', 'velocity_calculation', 'Variable', ctx.speed.variable_name());
+        sp = ctx.wS.statements('velocity_calculation', {'variable', ctx.speed.variable_name()});
         nSw = numel(sp{1}.software());
         nF = 0;
         dm = ndi.statement.fromDocument(ctx.S, ctx.dose.document_id());

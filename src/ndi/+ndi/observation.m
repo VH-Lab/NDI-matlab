@@ -8,8 +8,9 @@ classdef observation < ndi.interaction
     methods
         function obj = observation(container, doc)
             % OBSERVATION - use ndi.statement.fromDocument
-            if nargin == 0
-                container = []; doc = [];
+            arguments
+                container = []
+                doc = []
             end
             obj = obj@ndi.interaction(container, doc);
         end

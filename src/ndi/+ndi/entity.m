@@ -77,6 +77,10 @@ classdef entity
             % OBJ = ndi.entity(CONTAINER, DOC); CONTAINER is an ndi.session or
             % ndi.dataset, DOC an entity document (ndi.entity.fromDocument
             % also takes a document id).
+            arguments
+                container = []
+                doc = []
+            end
             if nargin == 0
                 return;
             end
@@ -161,114 +165,158 @@ classdef entity
             v = char(ndi.v2.blockOf(obj.document_properties(), obj.kind, 'description', ''));
         end
 
-        function s = statements(obj, varargin)
-            % STATEMENTS - the statements about this subject (or these subjects)
+        function s = statements(obj, kind, filters, options)
+            % STATEMENTS - the statements about this entity (or these entities)
             %
-            % S = STATEMENTS(SUBJ, ...) returns a cell array of ndi.statement
-            % objects (each the right child: ndi.observation,
-            % ndi.manipulation, ndi.calculation, ndi.assertion). SUBJ may be an
-            % array of subjects; from a cell array C call statements([C{:}]).
-            % The subjects are searched together, a few searches in all; a
+            % S = STATEMENTS(E, KIND, FILTERS, ...) returns a cell array of
+            % ndi.statement objects (each the right child: ndi.observation,
+            % ndi.manipulation, ndi.calculation, ndi.assertion). E may be an
+            % array of entities; from a cell array C call statements([C{:}]).
+            % The entities are searched together, a few searches in all; a
             % statement that holds of several of them comes back once for each,
-            % and each knows which subject it was asked for (about()) and how
+            % and each knows which entity it was asked for (about()) and how
             % it holds of it (via()).
             %
-            % What holds of a subject ('inherited', default true -- the same
-            % rules as ndi.entity.search):
-            %   own        statements about it
-            %   member_of  statements about a group it belongs to (groups of
-            %              groups too) that are marked distributive
-            %   part_of, sample_of, aliquot_of, passage_of
-            %              assertions about a whole it is part or a sample of
-            % 'inherited', false: its own statements only.
-            %
-            % 'context', true (default false) adds what the subject was IN
-            % (V_eta tenet T17): the observations, manipulations and
-            % calculations of each container it was contained_in (its own
-            % stays, a distributive stay of a group it is in, and the
-            % containers of those), whose time overlaps the stay. They are
-            % not about the subject: via() says 'contained_in' (after any
-            % member_of), and summary's stated_on names the container. A stay
-            % or statement whose times cannot be compared is left out.
-            %
-            % Filters, the words ndi.entity.search uses:
+            % KIND (default 'statement', any): 'assertion', 'interaction',
+            % 'observation', 'manipulation', 'calculation', or a document
+            % class ('velocity_calculation'). FILTERS (default {}): a cell of
+            % filters on the statement, the words ndi.entity.search uses --
+            % 'variable', 'method', 'value', 'formulation', and when: 'at',
+            % 'during', 'before', 'after', 'duration' (ndi.v2.timeFilter).
+            % 'during' also takes statements, {'observation', {'variable',
+            % 'ambient temperature', 'value', '>22'}}: kept when it overlaps
+            % one matching that which holds of the same entity by the same
+            % rules.
             %   s = w.statements('manipulation')
             %   s = w.statements('manipulation', {'method', 'refrigeration'})
-            %   s = w.statements('assertion', {'variable', 'strain'})
-            % A kind ('statement', 'assertion', 'interaction', 'observation',
-            % 'manipulation', 'calculation') with an optional cell of filters
-            % on that statement ('variable', 'method', 'value',
-            % 'formulation', and when: 'at', 'during', 'before', 'after',
-            % 'duration' -- see ndi.v2.timeFilter); several kinds are any of
-            % them. 'tolerant', true widens each time by its tolerance (and
-            % each stay, for 'context'). 'during' also takes statements,
-            % {'observation', {'variable', 'ambient temperature', 'value',
-            % '>22'}}: kept when it overlaps one matching that which holds of
-            % the same subject by the same rules. The older 'Class',
-            % 'Variable', 'Method' pairs still work.
-            [kinds, inherited, context] = ndi.entity.statementArgs(varargin);
+            %   s = w.statements('statement', {'variable', 'midpoint speed'})
+            %
+            % Options:
+            %   'inherited' (default true) -- the same rules as
+            %     ndi.entity.search: statements about a group it belongs to
+            %     (member_of, groups of groups too) that are marked
+            %     distributive; assertions about a whole it is part or a
+            %     sample of (part_of, sample_of, aliquot_of, passage_of);
+            %     assertions about its types (instance_of: its strain, its
+            %     product). false: its own statements only.
+            %   'context' (default false) -- true adds what the entity was IN
+            %     (V_eta tenet T17): the observations, manipulations and
+            %     calculations of each container it was contained_in (its own
+            %     stays, a distributive stay of a group it is in, and the
+            %     containers of those), whose time overlaps the stay. They are
+            %     not about it: via() says 'contained_in' (after any
+            %     member_of), and summary's stated_on names the container. A
+            %     stay or statement whose times cannot be compared is left out.
+            %   'tolerant' (default false) -- true widens each time by its
+            %     tolerance (and each stay, for 'context').
+            arguments
+                obj
+                kind (1,:) char = 'statement'
+                filters cell = {}
+                options.inherited (1,1) logical = true
+                options.context (1,1) logical = false
+                options.tolerant (1,1) logical = false
+            end
+            f = ndi.entity.statementFilter(lower(kind), filters);
+            f.tolerant = options.tolerant;
+            kinds = struct('kind', lower(kind), 'filt', f);
             s = {};
             subjects = obj(arrayfun(@(x) ~isempty(x.container_), obj));
             if isempty(subjects), return; end
             container = subjects(1).container_;
             ids = arrayfun(@(x) x.document_id, subjects, 'UniformOutput', false);
-            L = ndi.entity.statementLinks(container, ids, kinds, inherited, context);
+            L = ndi.entity.statementLinks(container, ids, kinds, options.inherited, options.context);
             s = cell(1, numel(L.doc));
             for i = 1:numel(L.doc)
                 s{i} = ndi.statement.fromDocument(container, L.doc{i}).withContext(L.about{i}, L.via{i});
             end
         end % statements()
 
-        function s = assertions(obj, varargin)
-            % ASSERTIONS - what is asserted about the subject (or subjects): species, strain, ...
+        function s = assertions(obj, filters, options)
+            % ASSERTIONS - what is asserted about the entity (or entities): species, ...
             %
-            % S = ASSERTIONS(SUBJ, ...) is STATEMENTS(SUBJ, 'assertion', ...): a
-            % cell array of ndi.assertion objects, inherited by default. A cell
-            % of filters may come first:
-            %   a = w.assertions({'variable', 'strain'})
+            % S = ASSERTIONS(E, FILTERS, ...) is STATEMENTS(E, 'assertion',
+            % FILTERS, ...): a cell array of ndi.assertion objects, inherited
+            % by default; options as STATEMENTS.
+            %   a = w.assertions({'variable', 'species'})
             %   a = w.assertions('inherited', false)
             % ndi.summary(a) makes the table.
-            args = ndi.entity.kindArgs('assertion', varargin);
-            s = obj.statements(args{:});
+            arguments
+                obj
+                filters cell = {}
+                options.inherited (1,1) logical = true
+                options.context (1,1) logical = false
+                options.tolerant (1,1) logical = false
+            end
+            o = namedArgs(options);
+            s = obj.statements('assertion', filters, o{:});
         end % assertions()
 
-        function s = observations(obj, varargin)
-            % OBSERVATIONS - what was observed of the subject (or subjects)
+        function s = observations(obj, filters, options)
+            % OBSERVATIONS - what was observed of the entity (or entities)
             %
-            % S = OBSERVATIONS(SUBJ, ...) is STATEMENTS(SUBJ, 'observation', ...),
-            % a cell array of ndi.observation objects; filters as ASSERTIONS:
+            % S = OBSERVATIONS(E, FILTERS, ...) is STATEMENTS(E, 'observation',
+            % FILTERS, ...), a cell array of ndi.observation objects:
             %   o = w.observations({'variable', 'temperature'})
-            args = ndi.entity.kindArgs('observation', varargin);
-            s = obj.statements(args{:});
+            arguments
+                obj
+                filters cell = {}
+                options.inherited (1,1) logical = true
+                options.context (1,1) logical = false
+                options.tolerant (1,1) logical = false
+            end
+            o = namedArgs(options);
+            s = obj.statements('observation', filters, o{:});
         end % observations()
 
-        function s = manipulations(obj, varargin)
-            % MANIPULATIONS - what was done to the subject (or subjects)
+        function s = manipulations(obj, filters, options)
+            % MANIPULATIONS - what was done to the entity (or entities)
             %
-            % S = MANIPULATIONS(SUBJ, ...) is STATEMENTS(SUBJ, 'manipulation', ...),
-            % a cell array of ndi.manipulation objects; filters as ASSERTIONS:
+            % S = MANIPULATIONS(E, FILTERS, ...) is STATEMENTS(E, 'manipulation',
+            % FILTERS, ...), a cell array of ndi.manipulation objects:
             %   m = w.manipulations({'method', 'refrigeration'})
-            args = ndi.entity.kindArgs('manipulation', varargin);
-            s = obj.statements(args{:});
+            arguments
+                obj
+                filters cell = {}
+                options.inherited (1,1) logical = true
+                options.context (1,1) logical = false
+                options.tolerant (1,1) logical = false
+            end
+            o = namedArgs(options);
+            s = obj.statements('manipulation', filters, o{:});
         end % manipulations()
 
-        function s = calculations(obj, varargin)
-            % CALCULATIONS - what was calculated of the subject (or subjects)
+        function s = calculations(obj, filters, options)
+            % CALCULATIONS - what was calculated of the entity (or entities)
             %
-            % S = CALCULATIONS(SUBJ, ...) is STATEMENTS(SUBJ, 'calculation', ...),
-            % a cell array of ndi.calculation objects; filters as ASSERTIONS:
+            % S = CALCULATIONS(E, FILTERS, ...) is STATEMENTS(E, 'calculation',
+            % FILTERS, ...), a cell array of ndi.calculation objects:
             %   c = calculations([w{:}], {'variable', 'midpoint speed'})
-            args = ndi.entity.kindArgs('calculation', varargin);
-            s = obj.statements(args{:});
+            arguments
+                obj
+                filters cell = {}
+                options.inherited (1,1) logical = true
+                options.context (1,1) logical = false
+                options.tolerant (1,1) logical = false
+            end
+            o = namedArgs(options);
+            s = obj.statements('calculation', filters, o{:});
         end % calculations()
 
-        function s = interactions(obj, varargin)
-            % INTERACTIONS - observations, manipulations and calculations of the subject
+        function s = interactions(obj, filters, options)
+            % INTERACTIONS - observations, manipulations and calculations of the entity
             %
-            % S = INTERACTIONS(SUBJ, ...) is STATEMENTS(SUBJ, 'interaction', ...):
-            % every statement with a time and a method; filters as ASSERTIONS.
-            args = ndi.entity.kindArgs('interaction', varargin);
-            s = obj.statements(args{:});
+            % S = INTERACTIONS(E, FILTERS, ...) is STATEMENTS(E, 'interaction',
+            % FILTERS, ...): every statement with a time and a method.
+            arguments
+                obj
+                filters cell = {}
+                options.inherited (1,1) logical = true
+                options.context (1,1) logical = false
+                options.tolerant (1,1) logical = false
+            end
+            o = namedArgs(options);
+            s = obj.statements('interaction', filters, o{:});
         end % interactions()
 
         function m = members(obj)
@@ -719,6 +767,10 @@ classdef entity
             % OBJ = ndi.entity.fromDocument(CONTAINER, DOC): an ndi.entity for
             % any entity document (a subject's too). DOC may be an
             % ndi.document or a document id.
+            arguments
+                container
+                doc
+            end
             if ischar(doc) || isstring(doc)
                 d = ndi.v2.getDocument(container, char(doc));
                 if isempty(d)
@@ -850,37 +902,36 @@ classdef entity
             % E = ndi.entity.fetchMany(CONTAINER, IDS): a cell array (row), one
             % entity per id found, in the order of IDS; ids not found are
             % left out.
+            arguments
+                container
+                ids
+            end
             ids = unique(cellstr(ids), 'stable');
             e = ndi.entity.fetch(container, ids(:));
             e = reshape(e(~cellfun(@isempty, e)), 1, []);
         end
 
-        function s = search(container, varargin)
+        function s = search(container, conditions, options)
             % SEARCH - the entities in a session or dataset, by what is true of them
             %
-            % S = ndi.entity.search(CONTAINER, PROPERTY, VALUE, ...) returns a
-            % cell array of entities (ndi.entity objects): those for
-            % which every pair holds. With no pairs, every entity.
-            %
-            % S = ndi.entity.search(CONTAINER, KIND, PROPERTY, VALUE, ...) with
-            % an odd number of arguments after CONTAINER: only entities of KIND,
-            % a document class or (one entity class, 2026-10-08) an entity
-            % type -- 'person', 'strain', 'study', 'organism', ... ('subject'
-            % is not a kind: the subjects are 'type', ndi.v2.subjectTypes()).
-            % A statement may be about any
-            % entity, so every property below works for any kind:
-            %   ndi.entity.search(ds, 'person', 'name', 'Jess*')
-            %   ndi.entity.search(ds, 'strain', 'derived_from', {'name', 'N2'})
-            %
-            %   ndi.entity.search(ds, 'type', 'organism', ...
-            %       'species', 'Caenorhabditis elegans', 'strain', {'N2', 'CB*'})
-            %   ndi.entity.search(ds, 'manipulation', {'method', 'heating'})
-            %   ndi.entity.search(ds, 'type', 'organism', ...
-            %       'contained_in', {'manipulation', {'variable', 'NGM agar'}})
+            % S = ndi.entity.search(CONTAINER, CONDITIONS, ...) returns a cell
+            % array of entities (ndi.entity objects): those for which every
+            % condition holds. CONDITIONS is a cell of PROPERTY, VALUE pairs
+            % (default {}: every entity); options follow as name, value.
+            %   ndi.entity.search(ds, {'kind', 'person', 'name', 'Jess*'})
+            %   ndi.entity.search(ds, {'type', 'organism', ...
+            %       'species', 'Caenorhabditis elegans', 'strain', {'N2', 'CB*'}})
+            %   ndi.entity.search(ds, {'manipulation', {'method', 'heating'}})
+            %   ndi.entity.search(ds, {'type', 'organism', ...
+            %       'contained_in', {'manipulation', {'variable', 'NGM agar'}}})
+            %   ndi.entity.search(ds, {'type', 'organism'}, 'inherited', false)
             %
             % A PROPERTY is one of:
-            %   'type', 'name', 'local_identifier', 'id'
-            %       the subject's own fields ('id': its document id)
+            %   'type', 'name', 'local_identifier', 'id', 'kind'
+            %       the entity's own fields ('id': its document id; 'kind':
+            %       its document class or, one entity class, its type --
+            %       'person' under either schema; 'subject' is not a kind:
+            %       the subjects are 'type', ndi.v2.subjectTypes())
             %   'statement', 'assertion', 'interaction', 'observation',
             %   'manipulation', 'calculation'
             %       a statement of that kind (or a child kind) about the
@@ -906,18 +957,6 @@ classdef entity
             %   a relation's name ('member_of', 'contained_in', 'part_of',
             %   'paired_with', ...): short for 'directed_relation',
             %       {'name', NAME, 'parent', VALUE} ('with' for an undirected one)
-            %   'inherited'  true (default) or false, below
-            %   'explain'    true: print what the search means before it runs
-            %   'strict'     true (default): an unknown property is an error and
-            %                values matching nothing a warning, each naming what
-            %                there is (with a "did you mean"); false: an empty
-            %                answer, quietly (for scripts over many datasets)
-            %   'tolerant'   false (default): times are compared as stated;
-            %                true: a time matches when its tolerance allows
-            %   'context'    false (default); true: also the subjects a
-            %                matching observation, manipulation or calculation
-            %                was CONTEXT for -- what its subject contained at
-            %                the time (V_eta tenet T17), below
             %
             %   Times typed without a zone are read in the zone the lab
             %   recorded each time in; 'during' takes two times, a date or a
@@ -931,6 +970,22 @@ classdef entity
             % a wildcard, '\*' a literal star. A value is compared by its kind:
             % numbers and dates take '>', '>=', '<', '<=' ('>=0.02',
             % '>2023-11-16'); see ndi.v2.searchStatements. All pairs must hold.
+            %
+            % Options (name, value after CONDITIONS):
+            %   'inherited'  true (default) or false, below
+            %   'explain'    true: print what the search means before it runs
+            %   'strict'     true (default): an unknown property is an error and
+            %                values matching nothing a warning, each naming what
+            %                there is (with a "did you mean"); false: an empty
+            %                answer, quietly (for scripts over many datasets)
+            %   'tolerant'   false (default): times are compared as stated;
+            %                true: a time matches when its tolerance allows
+            %   'context'    false (default); true: also the entities a
+            %                matching observation, manipulation or calculation
+            %                was CONTEXT for -- what its subject contained at
+            %                the time (V_eta tenet T17), below
+            % A nested description takes the outer search's 'strict' and
+            % 'inherited'.
             %
             % 'inherited' (default true):
             %   - a statement or relation about a group holds of its members
@@ -954,22 +1009,40 @@ classdef entity
             % An unknown asserted variable, relation name, or a kind /
             % variable / method no statement has, is an error; values none of
             % which match is a warning naming the values there are.
-            kind = 'entity';
-            if mod(numel(varargin), 2)
-                kind = char(varargin{1});
-                varargin = varargin(2:end);
-                if strcmpi(kind, 'subject')
-                    error('ndi:entity:search:subjectKind', ...
-                        ['''subject'' is not a kind: give the type, e.g. ''type'', ' ...
-                         '{''organism'', ''group''} (ndi.v2.subjectTypes are the subjects).']);
-                end
+            arguments
+                container
+                conditions cell = {}
+                options.inherited (1,1) logical = true
+                options.context (1,1) logical = false
+                options.strict (1,1) logical = true
+                options.explain (1,1) logical = false
+                options.tolerant (1,1) logical = false
             end
-            s = ndi.entity.searchKind(container, kind, varargin);
+            spec = ndi.entity.parseSearch(conditions);
+            for f = fieldnames(options)'
+                spec.(f{1}) = options.(f{1});
+            end
+            s = ndi.entity.searchSpec(container, spec);
         end % search()
 
-        function s = searchKind(container, kind, args)
-            % SEARCHKIND - SEARCH for entities of KIND, with ARGS its pairs
-            spec = ndi.entity.parseSearch(args);
+    end
+
+    methods (Static, Hidden)
+        function s = searchSpec(container, spec)
+            % SEARCHSPEC - SEARCH for a parsed search spec (parseSearch)
+            %
+            % A single 'kind' condition narrows the database search to that
+            % class (or merged type); the condition is still checked below.
+            arguments
+                container
+                spec (1,1) struct
+            end
+            kind = 'entity';
+            k = spec.own(strcmp(spec.own(:, 1), 'kind'), 2);
+            if isscalar(k) && ischar(k{1}) && ~ndi.v2.hasWildcard(k{1}) ...
+                    && ~any(strcmp(k{1}, ndi.v2.entityTypesFor('subject')))
+                kind = k{1};
+            end
             spec.kind = kind;
             if spec.explain
                 fprintf('%s\n', ndi.entity.explainSearch(spec, '', containerWord(container)));
@@ -1005,10 +1078,8 @@ classdef entity
                 end
             end
             s = reshape(s(keep), 1, []);
-        end % searchKind()
-    end
+        end % searchSpec()
 
-    methods (Static, Hidden)
         function t = explainNested(c, indent)
             % EXPLAINNESTED - a description (a cell of search's pairs) in words
             t = ndi.entity.explainSearch(ndi.entity.parseSearch(c), indent, '');
@@ -1018,10 +1089,12 @@ classdef entity
 
     methods (Static, Access = protected)
         function spec = parseSearch(args)
-            % PARSESEARCH - search's PROPERTY, VALUE pairs as a search spec:
-            % own fields, statement filters, relation filters, and switches
+            % PARSESEARCH - search's CONDITIONS (PROPERTY, VALUE pairs) as a
+            % search spec: own fields, statement filters, relation filters;
+            % the switches at their defaults (search sets them from its options)
             if mod(numel(args), 2)
-                error('ndi:entity:search:pairs', 'ndi.entity.search takes PROPERTY, VALUE pairs.');
+                error('ndi:entity:search:pairs', ...
+                    'Conditions are PROPERTY, VALUE pairs in a cell, e.g. {''type'', ''organism'', ''strain'', ''N2''}.');
             end
             statementKinds = {'statement', 'assertion', 'interaction', 'observation', 'manipulation', 'calculation'};
             relationKinds = {'relation', 'directed_relation', 'undirected_relation'};
@@ -1042,8 +1115,14 @@ classdef entity
                 key = lower(strrep(p, '_', ''));
                 lp = lower(p);
                 if any(strcmp(key, {'inherited', 'explain', 'strict', 'tolerant', 'context'}))
-                    spec.(key) = logical(v);
-                elseif any(strcmp(key, {'type', 'name', 'id'}))
+                    error('ndi:entity:search:option', ...
+                        ['''%s'' is an option, not a condition: give it after the cell, ' ...
+                         'ndi.entity.search(S, {...}, ''%s'', %s).'], p, key, 'true');
+                elseif strcmp(key, 'kind') && any(strcmpi(cellstr(v), 'subject'))
+                    error('ndi:entity:search:subjectKind', ...
+                        ['''subject'' is not a kind: give the type, e.g. {''type'', ' ...
+                         '{''organism'', ''group''}} (ndi.v2.subjectTypes are the subjects).']);
+                elseif any(strcmp(key, {'type', 'name', 'id', 'kind'}))
                     spec.own(end+1, :) = {key, v};
                 elseif strcmp(key, 'localidentifier')
                     spec.own(end+1, :) = {'local_identifier', v};
@@ -1417,11 +1496,9 @@ classdef entity
                 T = cellfun(@(x) x.document_id, target, 'UniformOutput', false);
             elseif iscell(target)
                 % a description: the outer search's strict and inherited
-                % hold inside it unless it says otherwise
-                given = cellfun(@(x) lower(char(x)), target(1:2:end), 'UniformOutput', false);
-                if ~any(strcmp(given, 'strict')), target = [target, {'strict', spec.strict}]; end
-                if ~any(strcmp(given, 'inherited')), target = [target, {'inherited', spec.inherited}]; end
-                s = ndi.entity.search(container, target{:});
+                % hold inside it
+                s = ndi.entity.search(container, target, 'strict', spec.strict, ...
+                    'inherited', spec.inherited);
                 T = cellfun(@(x) x.document_id, s, 'UniformOutput', false);
             else
                 error('ndi:entity:search:relationTarget', ...
@@ -1512,71 +1589,6 @@ classdef entity
     end
 
     methods (Static, Hidden)
-        function args = kindArgs(kind, args)
-            % KINDARGS - (internal) ASSERTIONS/OBSERVATIONS/...: STATEMENTS'
-            % arguments for one kind, with an optional cell of filters first
-            if ~isempty(args) && iscell(args{1})
-                args = [{kind, args{1}}, args(2:end)];
-            else
-                args = [{kind}, args];
-            end
-        end
-
-        function [kinds, inherited, context] = statementArgs(args)
-            % STATEMENTARGS - (internal) STATEMENTS' arguments: kinds with
-            % filters, the older 'Class'/'Variable'/'Method' pairs, 'inherited'
-            short = {'statement', 'assertion', 'interaction', 'observation', 'manipulation', 'calculation'};
-            kinds = struct('kind', {}, 'filt', {});
-            inherited = true;
-            context = false;
-            tolerant = false;
-            legacy = struct();
-            k = 1;
-            while k <= numel(args)
-                a = args{k};
-                if ~(ischar(a) || (isstring(a) && isscalar(a)))
-                    error('ndi:entity:statements:args', 'Expected a kind or an option name at argument %d.', k + 1);
-                end
-                a = char(a);
-                la = lower(a);
-                if any(strcmp(la, short))
-                    f = struct();
-                    if k < numel(args) && iscell(args{k + 1})
-                        f = ndi.entity.statementFilter(la, args{k + 1});
-                        k = k + 1;
-                    end
-                    kinds(end+1) = struct('kind', la, 'filt', f); %#ok<AGROW>
-                elseif strcmp(la, 'inherited') && k < numel(args)
-                    inherited = logical(args{k + 1}); k = k + 1;
-                elseif strcmp(la, 'context') && k < numel(args)
-                    context = logical(args{k + 1}); k = k + 1;
-                elseif strcmp(la, 'tolerant') && k < numel(args)
-                    tolerant = logical(args{k + 1}); k = k + 1;
-                elseif any(strcmp(la, {'class', 'variable', 'method'})) && k < numel(args)
-                    legacy.(la) = char(args{k + 1}); k = k + 1;
-                else
-                    error('ndi:entity:statements:args', ...
-                        'Unknown argument ''%s'': a kind (%s), ''inherited'', ''context'', ''tolerant'', or ''Class''/''Variable''/''Method''.', ...
-                        a, strjoin(short, ', '));
-                end
-                k = k + 1;
-            end
-            if ~isempty(fieldnames(legacy))
-                f = struct();
-                if isfield(legacy, 'variable'), f.variable = legacy.variable; end
-                if isfield(legacy, 'method'), f.method = legacy.method; end
-                kind = 'statement';
-                if isfield(legacy, 'class'), kind = lower(legacy.class); end
-                kinds(end+1) = struct('kind', kind, 'filt', f);
-            end
-            if isempty(kinds)
-                kinds = struct('kind', 'statement', 'filt', struct());
-            end
-            for k = 1:numel(kinds)
-                kinds(k).filt.tolerant = tolerant;
-            end
-        end
-
         function all_ = inheritanceStates(container, ids, inherited)
             % INHERITANCESTATES - (internal) what the subjects IDS inherit from
             %
@@ -2139,6 +2151,14 @@ for i = 1:numel(docs)
     p = ndi.v2.props(docs{i});
     m(char(p.base.id)) = p;
 end
+end
+
+function c = namedArgs(options)
+% an options struct as NAME, VALUE pairs, to pass on
+n = fieldnames(options);
+c = cell(1, 2 * numel(n));
+c(1:2:end) = n;
+c(2:2:end) = struct2cell(options);
 end
 
 function docs = entitiesOfType(container, type)

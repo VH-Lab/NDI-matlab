@@ -23,7 +23,7 @@ classdef statement
     % re-read them through the dataset with fromDocument:
     %
     %   ds = ndi.dataset.dir(datasetPath);
-    %   w = ndi.entity.search(ds, 'LocalIdentifier', 'concentration_worm0012');
+    %   w = ndi.entity.search(ds, {'LocalIdentifier', 'concentration_worm0012'});
     %   st = w{1}.statements('Variable', 'midpoint speed');
     %   v = st{1}.value();          % an ndi.value
     %   speed = double(v);          % metres per second, by video frame
@@ -58,6 +58,10 @@ classdef statement
             % STATEMENT - a statement for DOC, read from CONTAINER
             %
             % Use ndi.statement.fromDocument, which returns the right child.
+            arguments
+                container = []
+                doc = []
+            end
             if nargin == 0
                 return;
             end
@@ -118,6 +122,11 @@ classdef statement
 
         function obj = withContext(obj, aboutId, via)
             % WITHCONTEXT - (internal) the same statement, read for subject ABOUTID by VIA
+            arguments
+                obj
+                aboutId char
+                via char
+            end
             obj.about_ = char(aboutId);
             obj.via_ = char(via);
         end
@@ -311,6 +320,9 @@ classdef statement
     methods (Static)
         function T = summaryOf(statements)
             % SUMMARYOF - the summary table of a cell array of statements (see SUMMARY)
+            arguments
+                statements cell
+            end
             n = numel(statements);
             subject = strings(n, 1); kind = strings(n, 1); class = strings(n, 1);
             variable = strings(n, 1); method = strings(n, 1); value = strings(n, 1);
@@ -405,6 +417,10 @@ classdef statement
             % ndi.assertion by the document's class chain (never a list of
             % leaf classes, so a new leaf needs no code), else an
             % ndi.statement. DOC may be an ndi.document or an id.
+            arguments
+                container
+                doc
+            end
             if ischar(doc) || isstring(doc)
                 d = ndi.v2.getDocument(container, char(doc));
                 if isempty(d)

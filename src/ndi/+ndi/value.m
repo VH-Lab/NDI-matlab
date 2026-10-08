@@ -160,6 +160,9 @@ classdef value
             %
             % Read from the V2 schema: the first numeric sub-field of the
             % class's `value` that is not source_value, scale_min or scale_max.
+            arguments
+                className (1,:) char
+            end
             f = '';
             if isempty(className), return; end
             try

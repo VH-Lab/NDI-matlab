@@ -17,8 +17,9 @@ classdef (Abstract) interaction < ndi.statement
 
     methods
         function obj = interaction(container, doc)
-            if nargin == 0
-                container = []; doc = [];
+            arguments
+                container = []
+                doc = []
             end
             obj = obj@ndi.statement(container, doc);
         end

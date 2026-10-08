@@ -10,8 +10,9 @@ classdef assertion < ndi.statement
     methods
         function obj = assertion(container, doc)
             % ASSERTION - use ndi.statement.fromDocument
-            if nargin == 0
-                container = []; doc = [];
+            arguments
+                container = []
+                doc = []
             end
             obj = obj@ndi.statement(container, doc);
         end

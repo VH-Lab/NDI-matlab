@@ -10,8 +10,9 @@ classdef manipulation < ndi.interaction
     methods
         function obj = manipulation(container, doc)
             % MANIPULATION - use ndi.statement.fromDocument
-            if nargin == 0
-                container = []; doc = [];
+            arguments
+                container = []
+                doc = []
             end
             obj = obj@ndi.interaction(container, doc);
         end

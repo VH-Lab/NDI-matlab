@@ -1,4 +1,4 @@
-function T = summary(x, varargin)
+function T = summary(x, options)
 %SUMMARY A table of subjects, entities or statements, one row each.
 %
 %   T = ndi.summary(X): X is what ndi.entity.search,
@@ -16,12 +16,16 @@ function T = summary(x, varargin)
 %   value_node); for entities, ndi.summary(X, 'nodes', true) adds a
 %   <variable>_node column beside each asserted variable.
 %
-%   ws = ndi.entity.search(ds, 'type', 'organism', 'strain', 'N2');
+%   ws = ndi.entity.search(ds, {'type', 'organism', 'strain', 'N2'});
 %   ndi.summary(ws)                          % one row per worm
 %   ndi.summary(statements([ws{:}]))         % everything about them
 %
 %   See also ndi.entity/summary, ndi.statement/summary.
 
+arguments
+    x
+    options.nodes (1,1) logical = false
+end
 if ~iscell(x)
     x = num2cell(x);
 end
@@ -38,11 +42,11 @@ if any(isEnt) && any(isSt)
         'Entities and statements make different tables: summarise them separately.');
 end
 if all(isSt) && ~isempty(x)
-    if ~isempty(varargin)
+    if options.nodes
         error('ndi:summary:options', 'A statement summary takes no options (its nodes are always shown).');
     end
     T = ndi.statement.summaryOf(x);
 else
-    T = ndi.entity.summaryOf(x, varargin{:});
+    T = ndi.entity.summaryOf(x, 'nodes', options.nodes);
 end
 end
