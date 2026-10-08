@@ -8,8 +8,10 @@ classdef entity
     % other documents, found by query each time they are asked for, so a new
     % statement or relation added to the database is seen at once.
     %
-    % ndi.subject is an ndi.entity. ndi.session and ndi.dataset are not
-    % (design: src/ndi/docs/NDI-matlab/manual/developer/V2_Object_Layer.md).
+    % Every entity is read as an ndi.entity: a worm, a plate, a probe, a
+    % person, a strain. ndi.subject is v1's class and is not used here;
+    % ndi.session and ndi.dataset are not entities (design:
+    % src/ndi/docs/NDI-matlab/manual/developer/V2_Object_Layer.md).
     %
     % Make one with ndi.entity.fromDocument or ndi.entity.search:
     %
@@ -46,14 +48,13 @@ classdef entity
     %                        interactions: statements of one kind
     %   members, memberOf, parts, partOf
     %   fromDocument, search - (static) make entities; search finds them by
-    %                        what is true of them (ndi.subject.search: subjects)
+    %                        what is true of them
     %
-    % See also ndi.subject, ndi.statement.
+    % See also ndi.statement, ndi.v2.subjectTypes.
 
     properties (Dependent, SetAccess = private)
         % Read from the entity's document each time they are asked for:
-        % nothing is stored. Empty for an entity with no document (a v1
-        % ndi.subject made with its constructor).
+        % nothing is stored. Empty for an entity with no document.
         name          % a display name (see get.name)
         kind          % the document class, e.g. 'person', 'subject'
         document_id   % the document's base.id
@@ -67,8 +68,6 @@ classdef entity
     properties (SetAccess = protected, GetAccess = public, Hidden)
         entity_document_ = []   % the ndi.document (or document struct) this entity reads
         container_ = []         % the ndi.session or ndi.dataset it was read from
-        local_identifier_ = ''  % a v1 ndi.subject's, given to its constructor (no document)
-        description_ = ''       % likewise
     end
 
     methods
@@ -76,8 +75,8 @@ classdef entity
             % ENTITY - an ndi.entity for DOC, read from CONTAINER
             %
             % OBJ = ndi.entity(CONTAINER, DOC); CONTAINER is an ndi.session or
-            % ndi.dataset, DOC an entity document. ndi.entity.fromDocument
-            % returns the right subclass (an ndi.subject for a subject).
+            % ndi.dataset, DOC an entity document (ndi.entity.fromDocument
+            % also takes a document id).
             if nargin == 0
                 return;
             end
@@ -108,7 +107,7 @@ classdef entity
             % for an `entity` (one entity class, 2026-10-08) its `type`, so a
             % person is 'person' under either schema. A subject's type is a
             % physical kind ('organism', 'material', ...), so its kind is
-            % 'subject' as before; its type is ndi.subject's `type`.
+            % 'subject', the block its fields are in under the earlier schema.
             k = '';
             if isempty(obj.entity_document_), return; end
             p = obj.document_properties();
@@ -149,15 +148,15 @@ classdef entity
         end
 
         function v = get.local_identifier(obj)
-            % LOCAL_IDENTIFIER - from the document, else a v1 subject's own
-            v = obj.local_identifier_;
+            % LOCAL_IDENTIFIER - its handle within the dataset, from the document
+            v = '';
             if isempty(obj.entity_document_), return; end
             v = char(ndi.v2.blockOf(obj.document_properties(), obj.kind, 'local_identifier', ''));
         end
 
         function v = get.description(obj)
-            % DESCRIPTION - from the document, else a v1 subject's own
-            v = obj.description_;
+            % DESCRIPTION - free text, from the document
+            v = '';
             if isempty(obj.entity_document_), return; end
             v = char(ndi.v2.blockOf(obj.document_properties(), obj.kind, 'description', ''));
         end
@@ -329,7 +328,7 @@ classdef entity
             % array (what search returns) use ndi.summary. Columns: name,
             % kind, id; for subjects also type, local_identifier, and one
             % column per asserted variable (species, strain, ...), inherited
-            % as ndi.subject/statements inherits (several values joined with
+            % as statements inherits (several values joined with
             % '; '). 'nodes', true adds beside each a <variable>_node column,
             % the values' ontology nodes.
             arguments
@@ -477,7 +476,7 @@ classdef entity
             % OBJ may be an array of entities (of one class; from a cell
             % array C, call DESCENDANTS([C{:}], ...) as above). Options:
             %   'Type'      a subject type: 'organism', 'group', 'material',
-            %               'culture', ... (ndi.subject's `type`)
+            %               'culture', ... (the entity's `type`)
             %   'Kind'      a document class the entity is (isa): 'subject',
             %               'person', 'strain', ...
             %   'Relation'  follow only these relations (default: all)
@@ -717,8 +716,8 @@ classdef entity
         function obj = fromDocument(container, doc)
             % FROMDOCUMENT - the right object for an entity document
             %
-            % OBJ = ndi.entity.fromDocument(CONTAINER, DOC): an ndi.subject for
-            % a subject document, else an ndi.entity. DOC may be an
+            % OBJ = ndi.entity.fromDocument(CONTAINER, DOC): an ndi.entity for
+            % any entity document (a subject's too). DOC may be an
             % ndi.document or a document id.
             if ischar(doc) || isstring(doc)
                 d = ndi.v2.getDocument(container, char(doc));
@@ -727,13 +726,7 @@ classdef entity
                 end
                 doc = d;
             end
-            chain = ndi.v2.classChain(ndi.v2.props(doc));
-            physical = any(strcmp(ndi.v2.kindOf(ndi.v2.props(doc)), ndi.v2.entityTypesFor('subject')));
-            if any(strcmp(chain, 'subject')) || physical
-                obj = ndi.subject.fromDocument(container, doc);
-            else
-                obj = ndi.entity(container, doc);
-            end
+            obj = ndi.entity(container, doc);
         end
 
         function T = summaryOf(entities, options)
@@ -866,15 +859,15 @@ classdef entity
             % SEARCH - the entities in a session or dataset, by what is true of them
             %
             % S = ndi.entity.search(CONTAINER, PROPERTY, VALUE, ...) returns a
-            % cell array of entities (an ndi.subject for a subject): those for
+            % cell array of entities (ndi.entity objects): those for
             % which every pair holds. With no pairs, every entity.
             %
             % S = ndi.entity.search(CONTAINER, KIND, PROPERTY, VALUE, ...) with
             % an odd number of arguments after CONTAINER: only entities of KIND,
             % a document class or (one entity class, 2026-10-08) an entity
             % type -- 'person', 'strain', 'study', 'organism', ... ('subject'
-            % is not a kind: ndi.subject.search finds the subjects, the
-            % biological types ndi.v2.subjectTypes). A statement may be about any
+            % is not a kind: the subjects are 'type', ndi.v2.subjectTypes()).
+            % A statement may be about any
             % entity, so every property below works for any kind:
             %   ndi.entity.search(ds, 'person', 'name', 'Jess*')
             %   ndi.entity.search(ds, 'strain', 'derived_from', {'name', 'N2'})
@@ -967,8 +960,8 @@ classdef entity
                 varargin = varargin(2:end);
                 if strcmpi(kind, 'subject')
                     error('ndi:entity:search:subjectKind', ...
-                        ['''subject'' is not a kind: give the type (''type'', ''organism'', ' ...
-                         '...), or use ndi.subject.search for the biological subjects.']);
+                        ['''subject'' is not a kind: give the type, e.g. ''type'', ' ...
+                         '{''organism'', ''group''} (ndi.v2.subjectTypes are the subjects).']);
                 end
             end
             s = ndi.entity.searchKind(container, kind, varargin);
@@ -976,7 +969,6 @@ classdef entity
 
         function s = searchKind(container, kind, args)
             % SEARCHKIND - SEARCH for entities of KIND, with ARGS its pairs
-            % ('subject', from ndi.subject.search: the biological types)
             spec = ndi.entity.parseSearch(args);
             spec.kind = kind;
             if spec.explain
@@ -999,12 +991,6 @@ classdef entity
             end
             s = reshape(s, 1, []);
             keep = cellfun(@(x) strcmp(kind, 'entity') || strcmp(x.kind, kind), s);
-            if strcmp(kind, 'subject')
-                % the subjects are the biological types, as `isa subject`
-                % (ndi.v2.subjectTypes); a v1 subject has no type
-                bio = ndi.v2.subjectTypes();
-                keep = keep & cellfun(@(x) isempty(x.type) || any(strcmp(x.type, bio)), s);
-            end
             own = spec.own;
             for k = 1:size(own, 1)
                 for i = find(keep)

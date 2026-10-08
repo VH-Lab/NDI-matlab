@@ -15,7 +15,7 @@ function S = stays(container, ids, side, cache)
 %                   with no end, or known only as a bound on its anchor
 %                   ('before the seeding') cannot be compared with anything
 %
-%   Used by ndi.subject for context (V_eta tenet T17): a container's
+%   Used by ndi.entity for context (V_eta tenet T17): a container's
 %   interactions reach what it contained only while it was contained.
 %
 %   See also ndi.v2.overlaps, ndi.v2.timesOf.

@@ -9,7 +9,7 @@ function tf = matchTerm(t, pattern)
 %   CURIE_lookups_meta.json, "Prefixes are matched case-insensitively".
 %   The local part stays exact.
 %
-%   See also ndi.v2.hasWildcard, ndi.subject.search.
+%   See also ndi.v2.hasWildcard, ndi.entity.search.
 
 if iscell(pattern)
     tf = any(cellfun(@(x) ndi.v2.matchTerm(t, x), pattern));

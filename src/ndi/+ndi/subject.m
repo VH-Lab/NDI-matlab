@@ -1,4 +1,4 @@
-classdef subject < ndi.ido & ndi.documentservice & ndi.entity
+classdef subject < ndi.ido & ndi.documentservice
     % ndi.subject - an object describing the subject of a measurement or stimulation
     %
     % ndi.subject is an object that stores information about the subject of an ndi.element.
@@ -16,18 +16,12 @@ classdef subject < ndi.ido & ndi.documentservice & ndi.entity
     %  searchquery - Search for an ndi.document representation of an ndi.subject
     %  isvalidlocalidentifierstring - Is a string a valid local_identifier string? (Static)
     %  does_subjectstring_match_session_document - Does an ndi.subject object already have a representation in an ndi.database? (Static)
-    %  search - Find subjects by what is true of them (Static): ndi.entity.search
-    %           restricted to subjects
-    %
-    %  From ndi.entity (a statement may be about any entity, 2026-10-08):
-    %  statements, assertions, observations, manipulations, calculations,
-    %  interactions, members, memberOf, parts, partOf, relations, parents,
-    %  children, ancestors, descendants, summary; type, name, kind
     %
 
-    % local_identifier, description and type are ndi.entity's (read from the
-    % V2 document; for a v1 subject made with ndi.subject(LOCAL_IDENTIFIER,
-    % DESCRIPTION), the values given).
+    properties (GetAccess=public, SetAccess=protected)
+        local_identifier    % A string that is a local identifier in the lab, e.g. anteater23@nosuchlab.org
+        description             % A string description
+    end % properties
 
     methods
 
@@ -75,8 +69,8 @@ classdef subject < ndi.ido & ndi.documentservice & ndi.entity
                     description_ = subject_doc.document_properties.subject.description;
                 end
             end
-            ndi_subject_obj.local_identifier_ = local_identifier_;
-            ndi_subject_obj.description_ = description_;
+            ndi_subject_obj.local_identifier = local_identifier_;
+            ndi_subject_obj.description = description_;
         end % ndi.subject()
 
         %%% ndi.documentservice methods
@@ -106,51 +100,10 @@ classdef subject < ndi.ido & ndi.documentservice & ndi.entity
             sq = {'subject.local_identifier',ndi_subject.local_identifer'};
         end % searchquery()
 
-        %%% The V2 (V_eta) methods -- statements, assertions, ..., members,
-        %%% parts, relations -- are ndi.entity's: a statement may be about any
-        %%% entity (2026-10-08), so they apply to every one.
-
     end % methods
 
     methods (Static) % static methods
 
-        function obj = fromDocument(container, doc)
-            % FROMDOCUMENT - an ndi.subject read from a subject document (V2 or v1)
-            %
-            % OBJ = ndi.subject.fromDocument(CONTAINER, DOC); CONTAINER is the
-            % ndi.session or ndi.dataset DOC was read from; DOC an ndi.document
-            % or a document id. The subject keeps DOC's id. The '@' that
-            % ndi.subject(LOCAL_IDENTIFIER, DESCRIPTION) requires is a v1 rule
-            % for MAKING a subject and is not applied here (V2_Object_Layer.md, D6).
-            if ischar(doc) || isstring(doc)
-                d = ndi.v2.getDocument(container, char(doc));
-                if isempty(d)
-                    error('ndi:subject:notFound', 'No document %s in this %s.', char(doc), class(container));
-                end
-                doc = d;
-            end
-            p = ndi.v2.props(doc);
-            obj = ndi.subject();
-            obj.identifier = char(p.base.id);
-            obj.container_ = container;
-            obj.entity_document_ = doc;
-        end % fromDocument()
-
-        function s = search(container, varargin)
-            % SEARCH - the subjects in a session or dataset, by what is true of them
-            %
-            % S = ndi.subject.search(CONTAINER, PROPERTY, VALUE, ...) is
-            % ndi.entity.search(CONTAINER, PROPERTY, VALUE, ...) kept to the
-            % subjects, the entities ndi.query('', 'isa', 'subject') finds:
-            % organisms, cultures, tissues, cells and groups, and a v1
-            % subject (no type). A device or a plate is an entity, not a
-            % subject: search for it with ndi.entity.search.
-            s = ndi.entity.searchKind(container, 'subject', varargin);
-        end % search()
-
-    end
-
-    methods (Static)
         function [b,msg] = isvalidlocalidentifierstring(local_identifier)
             % ISVALIDLOCALIDENTIFIERSTRING - is this a valid local identifier string?
             %
@@ -218,5 +171,4 @@ classdef subject < ndi.ido & ndi.documentservice & ndi.entity
             end
         end % does_subjectstring_match_session_document()
     end % static methods
-
 end % classdef ndi.subject

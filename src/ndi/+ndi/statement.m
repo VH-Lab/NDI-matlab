@@ -23,7 +23,7 @@ classdef statement
     % re-read them through the dataset with fromDocument:
     %
     %   ds = ndi.dataset.dir(datasetPath);
-    %   w = ndi.subject.search(ds, 'LocalIdentifier', 'concentration_worm0012');
+    %   w = ndi.entity.search(ds, 'LocalIdentifier', 'concentration_worm0012');
     %   st = w{1}.statements('Variable', 'midpoint speed');
     %   v = st{1}.value();          % an ndi.value
     %   speed = double(v);          % metres per second, by video frame
@@ -31,7 +31,7 @@ classdef statement
     %
     % ndi.statement Methods:
     %   kind, document, document_properties, document_id
-    %   subject        - the ndi.subject the statement is about
+    %   subject        - the ndi.entity the statement is about
     %   variable       - the term; variable_name, its name
     %   value          - an ndi.value (decoded from its body when stored there)
     %   raw_value      - the inline value exactly as stored
@@ -44,12 +44,12 @@ classdef statement
     %   summary        - a table, one row per statement (ndi.summary for a cell)
     %   fromDocument, search - (static) make statements
     %
-    % See also ndi.subject, ndi.value, ndi.interaction.
+    % See also ndi.entity, ndi.value, ndi.interaction.
 
     properties (SetAccess = protected, GetAccess = public, Hidden)
         statement_document_ = []   % the ndi.document this statement reads
         container_ = []            % the ndi.session or ndi.dataset it was read from
-        about_ = ''                % the subject it was asked for (ndi.subject/statements)
+        about_ = ''                % the subject it was asked for (ndi.entity/statements)
         via_ = ''                  % how it holds of that subject ('own', 'member_of', ...)
     end
 
@@ -68,7 +68,7 @@ classdef statement
         function id = about(obj)
             % ABOUT - the document id of the subject this statement was asked for
             %
-            % A statement read through ndi.subject/statements is about the
+            % A statement read through ndi.entity/statements is about the
             % subject it was asked for, which may not be its own subject (a
             % cohort's strain, read for one of its worms). '' when the
             % statement was not read for a subject; its own subject's id is
@@ -146,7 +146,7 @@ classdef statement
 
         function s = subject(obj)
             % SUBJECT - the entity this statement is about ([] when not found):
-            % an ndi.subject for a subject, else an ndi.entity (a statement may
+            % an ndi.entity (a statement may
             % be about any entity since 2026-10-08). The same as ENTITY.
             s = obj.entity();
         end
@@ -431,7 +431,7 @@ classdef statement
             %
             % S = ndi.statement.search(CONTAINER, ...) returns a cell array.
             % Filters:
-            %   'Subject'   an ndi.subject (or a subject document id)
+            %   'Subject'   an ndi.entity (or an entity document id)
             %   'Variable'  the variable's name, e.g. 'midpoint speed'
             %   'Class'     'observation', 'manipulation', 'calculation',
             %               'assertion', 'interaction', or a document class

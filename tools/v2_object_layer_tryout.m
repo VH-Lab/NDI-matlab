@@ -3,7 +3,7 @@ function T = v2_object_layer_tryout(datasetPath, options)
 %
 %   T = v2_object_layer_tryout(DATASETPATH) opens the V2 dataset at
 %   DATASETPATH (the folder holding .ndi, e.g. <data>/haley_V2/dataset) and
-%   asks it the questions the object layer exists for, through ndi.subject,
+%   asks it the questions the object layer exists for, through ndi.entity,
 %   ndi.statement, ndi.entity and ndi.value, READ THROUGH THE DATASET:
 %   things are found in one session (quick), then read through the
 %   ndi.dataset, which also reaches the shared documents (software,
@@ -19,7 +19,7 @@ function T = v2_object_layer_tryout(datasetPath, options)
 %
 %   It writes nothing.
 %
-%   See also ndi.subject, ndi.statement, ndi.entity, ndi.value,
+%   See also ndi.statement, ndi.entity, ndi.value,
 %   src/ndi/docs/NDI-matlab/manual/developer/V2_Object_Layer.md.
 
 arguments
@@ -70,9 +70,9 @@ step('open a session', @openSession);
     end
 
 % ---- subjects ---------------------------------------------------------------------
-step('ndi.subject.search: every subject in the session', @allSubjects);
+step('ndi.entity.search: every subject in the session', @allSubjects);
     function r = allSubjects()
-        s = ndi.subject.search(ctx.S);
+        s = ndi.entity.search(ctx.S);
         types = cellfun(@(x) string(x.type()), s);
         [u, ~, j] = unique(types);
         n = accumarray(j(:), 1);
@@ -81,9 +81,9 @@ step('ndi.subject.search: every subject in the session', @allSubjects);
         fprintf('  %s\n', r);
     end
 
-step('ndi.subject.search: every subject in the dataset', @allSubjectsDataset);
+step('ndi.entity.search: every subject in the dataset', @allSubjectsDataset);
     function r = allSubjectsDataset()
-        s = ndi.subject.search(ctx.ds);
+        s = ndi.entity.search(ctx.ds);
         r = sprintf('%d subject(s) in %d session(s)', numel(s), numel(ctx.refs));
         fprintf('  %s\n', r);
     end
@@ -98,14 +98,14 @@ step('ndi.statement.search: the speed calculations in the session', @speeds);
 step('the worm of the first one, read through the dataset', @worm);
     function r = worm()
         ctx.wS = ctx.sp{1}.subject();
-        ctx.w = ndi.subject.fromDocument(ctx.ds, ctx.wS.document_id());
-        r = sprintf('%s (%s), %s', ctx.w.local_identifier, ctx.w.type(), ctx.w.id());
+        ctx.w = ndi.entity.fromDocument(ctx.ds, ctx.wS.document_id());
+        r = sprintf('%s (%s), %s', ctx.w.local_identifier, ctx.w.type, ctx.w.document_id);
         fprintf('  %s\n', r);
     end
 
-step('ndi.subject.search by LocalIdentifier, in the dataset', @byLocal);
+step('ndi.entity.search by LocalIdentifier, in the dataset', @byLocal);
     function r = byLocal()
-        x = ndi.subject.search(ctx.ds, 'LocalIdentifier', ctx.w.local_identifier);
+        x = ndi.entity.search(ctx.ds, 'LocalIdentifier', ctx.w.local_identifier);
         r = sprintf('%d found', numel(x));
         fprintf('  %s\n', r);
     end

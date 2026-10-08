@@ -10,7 +10,7 @@ classdef (Abstract) interaction < ndi.statement
     %   time              - when: a struct array, one per time reference
     %   method            - the method's term ({node, name}); method_name, its name
     %   method_parameters - table of the method's parameters
-    %   instrument        - the instrument subject(s) (a cell array of ndi.subject)
+    %   instrument        - the instrument subject(s) (a cell array of ndi.entity)
     %   software          - the software entity (a cell array of ndi.entity)
     %
     % See also ndi.statement, ndi.v2.timeOf.
@@ -86,7 +86,7 @@ classdef (Abstract) interaction < ndi.statement
         end
 
         function s = instrument(obj)
-            % INSTRUMENT - the instrument subject(s), a cell array of ndi.subject
+            % INSTRUMENT - the instrument subject(s), a cell array of ndi.entity
             s = obj.entitiesAt('instrument_id');
         end
 

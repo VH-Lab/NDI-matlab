@@ -1,8 +1,8 @@
 function T = summary(x, varargin)
 %SUMMARY A table of subjects, entities or statements, one row each.
 %
-%   T = ndi.summary(X): X is what ndi.subject.search, ndi.entity.search,
-%   ndi.statement.search or ndi.subject/statements returns -- a cell array,
+%   T = ndi.summary(X): X is what ndi.entity.search,
+%   ndi.statement.search or ndi.entity/statements returns -- a cell array,
 %   any mix of classes -- or an array, or one object.
 %     subjects and other entities  ndi.entity/summary: name, kind, id, and
 %                                  for subjects type, local_identifier and a
@@ -16,7 +16,7 @@ function T = summary(x, varargin)
 %   value_node); for entities, ndi.summary(X, 'nodes', true) adds a
 %   <variable>_node column beside each asserted variable.
 %
-%   ws = ndi.subject.search(ds, 'type', 'organism', 'strain', 'N2');
+%   ws = ndi.entity.search(ds, 'type', 'organism', 'strain', 'N2');
 %   ndi.summary(ws)                          % one row per worm
 %   ndi.summary(statements([ws{:}]))         % everything about them
 %

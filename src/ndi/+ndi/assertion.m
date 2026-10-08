@@ -5,7 +5,7 @@ classdef assertion < ndi.statement
     % variable and a value, with no time, method or instrument. Everything
     % it does comes from ndi.statement.
     %
-    % See also ndi.statement, ndi.subject/assertions.
+    % See also ndi.statement, ndi.entity/assertions.
 
     methods
         function obj = assertion(container, doc)
