@@ -145,13 +145,20 @@ classdef statement
         end
 
         function s = subject(obj)
-            % SUBJECT - the ndi.subject this statement is about ([] when not found)
+            % SUBJECT - the entity this statement is about ([] when not found):
+            % an ndi.subject for a subject, else an ndi.entity (a statement may
+            % be about any entity since 2026-10-08). The same as ENTITY.
+            s = obj.entity();
+        end
+
+        function s = entity(obj)
+            % ENTITY - the entity this statement is about ([] when not found)
             s = [];
             ids = ndi.v2.edgeIds(obj.document_properties(), 'entity_id');
             if isempty(ids), return; end
             d = ndi.v2.getDocument(obj.container_, ids{1});
             if ~isempty(d)
-                s = ndi.subject.fromDocument(obj.container_, d);
+                s = ndi.entity.fromDocument(obj.container_, d);
             end
         end
 
@@ -444,7 +451,7 @@ classdef statement
             q = ndi.v2.isaQuery(cls);
             if ~isempty(options.Subject)
                 sid = options.Subject;
-                if isa(sid, 'ndi.subject'), sid = sid.id(); end
+                if isa(sid, 'ndi.entity'), sid = sid.document_id; end   % any entity (2026-10-08)
                 q = q & ndi.v2.entityQuery(char(sid));
             end
             if ~isempty(options.Variable)

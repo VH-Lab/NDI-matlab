@@ -78,6 +78,10 @@ classdef value
                     all(ismember(fieldnames(r), {'node', 'name'}))
                 v = strings(size(r));
                 for i = 1:numel(r), v(i) = string(ndi.v2.termName(r(i))); end
+            elseif isstruct(r) && isfield(r, 'text')
+                % the `text` kind {text, language} (2026-10-08): the text
+                v = strings(size(r));
+                for i = 1:numel(r), v(i) = string(char(r(i).text)); end
             else
                 v = r;
             end

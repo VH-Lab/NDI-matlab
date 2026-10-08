@@ -4,7 +4,8 @@ function [k, v, t, u] = statementValue(p)
 %   [K, V, T] = ndi.v2.statementValue(P): P is a statement document's
 %   properties (ndi.v2.props). K is the kind of value: 'term' (V a
 %   {name, node} struct), 'date' (V the ISO instant text), 'number' (V a
-%   scalar in the canonical unit; a dose's one amount), 'text', or 'none'
+%   scalar in the canonical unit; a dose's one amount), 'text' (a string,
+%   or the `text` kind's text), or 'none'
 %   (an array, a value in a data body, a structure with no single amount,
 %   or no value at all). T is V as text ('' for 'none'); U the unit of a
 %   number (its canonical field, e.g. 'liters', 'celsius'). Nothing is read
@@ -43,6 +44,10 @@ if strcmp(c, 'date') && isstruct(raw) && isfield(raw, 'instant')
 end
 if isstruct(raw) && all(ismember(fieldnames(raw), {'name', 'node'}))
     k = 'term'; v = raw; return;
+end
+if isstruct(raw) && isfield(raw, 'text')
+    % the `text` value kind {text, language} (2026-10-08): compared as text
+    k = 'text'; v = char(raw.text); return;
 end
 if ischar(raw) || isstring(raw)
     k = 'text'; v = char(raw); return;

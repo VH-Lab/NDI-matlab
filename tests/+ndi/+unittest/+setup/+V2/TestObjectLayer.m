@@ -180,7 +180,7 @@ classdef TestObjectLayer < matlab.unittest.TestCase
                 % (ndi.session/database_search_with_dataset); a session folder
                 % opened on its own holds only the relation and cannot name it.
                 testCase.verifyError(@() ndi.subject.search(S, 'strain', 'N2'), ...
-                    'ndi:subject:search:unknownVariable');
+                    'ndi:entity:search:unknownVariable');
                 [refs, ids] = testCase.Dataset.session_list();
                 inDataset = testCase.Dataset.open_session(ids{strcmp(refs, S.reference)});
                 testCase.verifyTrue(all(ismember({'concentration_worm0121', 'concentration_worm0122'}, ...
@@ -222,12 +222,12 @@ classdef TestObjectLayer < matlab.unittest.TestCase
                 {'concentration_worm0121'}, 'the old spelling still works');
 
             % a misspelled variable is an error; a value no one has, a warning
-            testCase.verifyError(@() ndi.subject.search(S, 'stran', 'N2'), 'ndi:subject:search:unknownVariable');
+            testCase.verifyError(@() ndi.subject.search(S, 'stran', 'N2'), 'ndi:entity:search:unknownVariable');
             testCase.verifyWarning(@() ndi.subject.search(S, 'species', 'Caenorhabdiits elegans'), ...
-                'ndi:subject:search:noSuchValue');
+                'ndi:entity:search:noSuchValue');
             testCase.verifyEmpty(testCase.verifyWarning(@() ndi.subject.search(S, 'strain', 'no such strain'), ...
-                'ndi:subject:search:noSuchValue'));
-            testCase.verifyError(@() ndi.subject.search(S, 'strain'), 'ndi:subject:search:pairs');
+                'ndi:entity:search:noSuchValue'));
+            testCase.verifyError(@() ndi.subject.search(S, 'strain'), 'ndi:entity:search:pairs');
         end
 
         function testFindByAStatementOfAKind(testCase)
@@ -244,7 +244,7 @@ classdef TestObjectLayer < matlab.unittest.TestCase
             % a dose compares by its amount, in its canonical unit (liters)
             testCase.verifyTrue(has('manipulation', {'variable', 'NGM agar', 'value', '>=0.02'}));
             testCase.verifyTrue(has('manipulation', {'variable', 'NGM agar', 'value', '<=0.025'}));
-            w = warning('off', 'ndi:subject:search:noSuchValue');
+            w = warning('off', 'ndi:entity:search:noSuchValue');
             restore = onCleanup(@() warning(w));
             testCase.verifyFalse(has('manipulation', {'variable', 'NGM agar', 'value', '>0.03'}));
             % one statement that is both, versus two statements
@@ -261,13 +261,13 @@ classdef TestObjectLayer < matlab.unittest.TestCase
                     sort(local(ndi.subject.search(S, 'strain', 'N2'))), 'a wildcard in the property name');
             end
             testCase.verifyError(@() ndi.subject.search(S, 'assertion', {'method', 'x'}), ...
-                'ndi:subject:search:assertionMethod');
+                'ndi:entity:search:assertionMethod');
             testCase.verifyError(@() ndi.subject.search(S, 'manipulation', {'method', 'no such method'}), ...
-                'ndi:subject:search:noSuchStatement');
+                'ndi:entity:search:noSuchStatement');
             testCase.verifyError(@() ndi.subject.search(S, 'manipulation', {'colour', 'x'}), ...
-                'ndi:subject:search:statementFilter');
+                'ndi:entity:search:statementFilter');
             testCase.verifyError(@() ndi.subject.search(S, 'manipulation', 'NGM agar'), ...
-                'ndi:subject:search:statementFilter');
+                'ndi:entity:search:statementFilter');
             % a plate's statements are not its worms': contained_in is not followed
             testCase.verifyEmpty(ndi.subject.search(S, 'type', 'organism', 'manipulation', {'variable', 'NGM agar'}));
         end
@@ -314,13 +314,13 @@ classdef TestObjectLayer < matlab.unittest.TestCase
             testCase.verifySubstring(out, 'had a manipulation with variable NGM agar');
 
             testCase.verifyError(@() ndi.subject.search(S, 'directed_relation', {'name', 'containd_in'}), ...
-                'ndi:subject:search:unknownRelation');
+                'ndi:entity:search:unknownRelation');
             testCase.verifyError(@() ndi.subject.search(S, 'contained_in', plate, 'directed_relation', ...
-                {'name', 'contained_in', 'parent', plate, 'depth', 2}), 'ndi:subject:search:notYet');
+                {'name', 'contained_in', 'parent', plate, 'depth', 2}), 'ndi:entity:search:notYet');
             testCase.verifyError(@() ndi.subject.search(S, 'undirected_relation', {'parent', plate}), ...
-                'ndi:subject:search:relationFilter');
+                'ndi:entity:search:relationFilter');
             testCase.verifyError(@() ndi.subject.search(S, 'directed_relation', {'parent', plate, 'child', plate}), ...
-                'ndi:subject:search:relationFilter');
+                'ndi:entity:search:relationFilter');
         end
 
         function testAnAssertionAboutAWholeHoldsOfItsParts(testCase)
@@ -448,7 +448,7 @@ classdef TestObjectLayer < matlab.unittest.TestCase
                 testCase.verifySubstring(out, 'at a time when they also had an observation with variable ambient temperature');
             end
             testCase.verifyError(@() plate.observations({'during', {'assertion', {'variable', 'strain'}}}), ...
-                'ndi:subject:search:assertionTime');
+                'ndi:entity:search:assertionTime');
         end
 
         function testTimeFilters(testCase)
@@ -457,7 +457,7 @@ classdef TestObjectLayer < matlab.unittest.TestCase
             % 2022-02-04 12:10:51; cohort 0014 food-deprived for exactly 3 h,
             % 2022-02-04 12:17:10 to 15:17:10 (the end, T, up to 5 min early)
             S = testCase.Session;
-            w = warning('off', 'ndi:subject:search:noSuchTime');
+            w = warning('off', 'ndi:entity:search:noSuchTime');
             restore = onCleanup(@() warning(w));
             acc = testCase.subject('concentration_0001_acclimationPlate0001');
             on = @(varargin) local(ndi.subject.search(S, 'type', 'organism', 'directed_relation', ...
@@ -484,10 +484,10 @@ classdef TestObjectLayer < matlab.unittest.TestCase
             testCase.verifyEmpty(deprived({'duration', '>3h'}), 'exactly 3 h as stated');
             testCase.verifyEqual(sort(deprived({'duration', '>3h'}, 'tolerant', true)), sort(fd), ...
                 'the hand-written start could be a minute early');
-            warning('on', 'ndi:subject:search:noSuchTime');
+            warning('on', 'ndi:entity:search:noSuchTime');
             testCase.verifyWarning(@() ndi.subject.search(S, 'manipulation', ...
-                {'variable', 'food availability', 'duration', '>4h'}), 'ndi:subject:search:noSuchTime');
-            warning('off', 'ndi:subject:search:noSuchTime');
+                {'variable', 'food availability', 'duration', '>4h'}), 'ndi:entity:search:noSuchTime');
+            warning('off', 'ndi:entity:search:noSuchTime');
 
             % a time known only as "before the seeding" (a plate's pour) is a bound
             plate = 'concentration_assayPlate0012';
@@ -644,7 +644,7 @@ classdef TestObjectLayer < matlab.unittest.TestCase
 
         function testStrictAndTheMessages(testCase)
             S = testCase.Session;
-            testCase.verifyError(@() ndi.subject.search(S, 'stran', 'N2'), 'ndi:subject:search:unknownVariable');
+            testCase.verifyError(@() ndi.subject.search(S, 'stran', 'N2'), 'ndi:entity:search:unknownVariable');
             try
                 ndi.subject.search(S, 'stran', 'N2');
             catch err
@@ -658,9 +658,9 @@ classdef TestObjectLayer < matlab.unittest.TestCase
                 testCase.verifySubstring(err.message, 'local_identifier');
             end
             testCase.verifyWarning(@() ndi.subject.search(S, 'species', 'Caenorhabdiits elegans'), ...
-                'ndi:subject:search:noSuchValue');
+                'ndi:entity:search:noSuchValue');
             % the message, whole: as an error (evalc wraps it at the console width)
-            b = warning('error', 'ndi:subject:search:noSuchValue'); %#ok<CTPCT>
+            b = warning('error', 'ndi:entity:search:noSuchValue'); %#ok<CTPCT>
             restore = onCleanup(@() warning(b));
             msg = '';
             try
@@ -778,6 +778,38 @@ classdef TestObjectLayer < matlab.unittest.TestCase
                 ndi.query('base.name', 'exact_string', 'x', ''));
             testCase.verifyEqual(o.searchstructure.operation, 'or');
             testCase.verifyClass(o.searchstructure.param1(1).param2, 'did2.query', 'inside an or');
+        end
+
+        function testEntitiesOfAnyKindAreSearchedAndDescribed(testCase)
+            % statements may be about any entity (2026-10-08): ndi.entity has
+            % search and statements; ndi.subject.search is it for subjects
+            D = testCase.Dataset;
+            p = ndi.entity.search(D, 'person', 'name', '*Haley');
+            testCase.verifyNumElements(p, 1, 'search by kind and name');
+            testCase.verifyEqual(p{1}.kind, 'person');
+            testCase.verifyClass(p{1}, 'ndi.entity');
+            old = ndi.entity.search(D, 'person', 'Name', p{1}.name);
+            testCase.verifyEqual(cellfun(@(x) x.document_id, old, 'UniformOutput', false), ...
+                {p{1}.document_id}, 'the older (KIND, ''Name'', NAME) form still works');
+            testCase.verifyEmpty(ndi.entity.search(D, 'person', 'type', 'organism'), ...
+                'a person is not an organism');
+            w = ndi.subject.search(D, 'local_identifier', 'concentration_worm0121');
+            testCase.verifyEqual(cellfun(@(x) x.document_id, ndi.entity.search(D, 'subject', ...
+                'local_identifier', 'concentration_worm0121'), 'UniformOutput', false), ...
+                cellfun(@(x) x.document_id, w, 'UniformOutput', false), 'ndi.subject.search is the subject kind');
+            if ndi.setup.V2.mergedEntities()
+                % a person's names are `text` assertions about it: read, and searched
+                g = p{1}.assertions({'variable', 'given name'});
+                testCase.verifyNumElements(g, 1);
+                testCase.verifyEqual(g{1}.value().canonical(), "Jessica A");
+                testCase.verifyEqual(g{1}.subject().document_id, p{1}.document_id, ...
+                    'a statement''s subject may be any entity');
+                testCase.verifyEqual(cellfun(@(x) x.document_id, ...
+                    ndi.entity.search(D, 'person', 'given name', 'jess*'), 'UniformOutput', false), ...
+                    {p{1}.document_id}, 'a text value matches like a name: any case, wildcards');
+                T = ndi.summary(p);
+                testCase.verifyEqual(T.family_name, "Haley", 'a person''s assertions are summary columns');
+            end
         end
 
         function testDatasetLevelDocumentsAreReachedThroughTheDataset(testCase)
