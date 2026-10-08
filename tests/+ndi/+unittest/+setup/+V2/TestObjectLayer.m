@@ -22,7 +22,8 @@ classdef TestObjectLayer < matlab.unittest.TestCase
             ndi.unittest.setup.V2.TestHaleyRecordings.writeFixture(testCase.Root);
             testCase.Result = ndi.setup.conv.haley.import_V2(testCase.Root, ...
                 'Stages', ["sessions", "subjects", "acquisition", "relations", "metadata", ...
-                "assertions", "manipulations", "calculations", "dataset"], 'Sessions', "concentration_0001", ...
+                "assertions", "manipulations", "observations", "calculations", "dataset"], ...
+                'Sessions', "concentration_0001", ...
                 'OutputRoot', fullfile(testCase.Root, 'haley_V2'), 'Write', true, ...
                 'Overwrite', true, 'ReadVideos', false);
             testCase.Session = ndi.session.dir(testCase.Result.sessions.path{1});
@@ -378,6 +379,54 @@ classdef TestObjectLayer < matlab.unittest.TestCase
             out = evalc(['ndi.subject.search(S, ''type'', ''organism'', ''manipulation'', ' ...
                 '{''method'', ''ambient exposure''}, ''context'', true, ''explain'', true);']);
             testCase.verifySubstring(out, 'contained in something that did while they were in it');
+        end
+
+        function testDuringAnotherStatement(testCase)
+            % 'during' takes a description of statements as well as times:
+            % kept when it overlaps one matching it that holds of the same
+            % subject, by the same rules ('inherited', 'context'). The
+            % fixture's plates read 21.5 + plate/100 C over their videos, so
+            % '>21.615' is plate 12's reading alone.
+            S = testCase.Session;
+            plate = testCase.subject('concentration_assayPlate0012');
+            hot = {'observation', {'variable', 'ambient temperature', 'value', '>21.615'}};
+            cold = {'observation', {'variable', 'ambient temperature', 'value', '>30'}};
+            v = plate.observations({'variable', 'image intensity'});
+            testCase.assertNotEmpty(v, 'plate 12 was filmed');
+            testCase.verifyEqual(numel(plate.observations({'variable', 'image intensity', 'during', hot})), ...
+                numel(v), 'every video of plate 12 is during its reading');
+            testCase.verifyEmpty(plate.observations({'variable', 'image intensity', 'during', cold}));
+            other = testCase.subject('concentration_assayPlate0011');
+            testCase.verifyEmpty(other.observations({'variable', 'image intensity', 'during', hot}), ...
+                'plate 11 read 21.61 C; plate 12''s reading is not plate 11''s');
+
+            if ndi.setup.V2.schemaHasField('subject_statement', 'distributive')
+                % a worm: its plate's videos, while that plate was over 21.615 C
+                w = testCase.subject('concentration_worm0121');
+                testCase.verifyEmpty(w.observations({'variable', 'image intensity', 'during', hot}), ...
+                    'without context the worm has neither the videos nor the reading');
+                o = w.observations({'variable', 'image intensity', 'during', hot}, 'context', true);
+                testCase.verifyNotEmpty(o);
+                testCase.verifyTrue(all(cellfun(@(x) strcmp(x.subject().local_identifier, ...
+                    'concentration_assayPlate0012'), o)));
+                t = w.observations({'variable', 'ambient temperature'}, 'context', true);
+                testCase.verifyNumElements(t, 1, 'the one reading of the plate it was filmed on');
+                testCase.verifyEqual(double(t{1}.value()), 21.62, 'AbsTol', 1e-9);
+
+                % search: worms filmed while their plate was over 21.615 C
+                found = local(ndi.subject.search(S, 'type', 'organism', 'context', true, ...
+                    'observation', {'variable', 'image intensity', 'during', hot}));
+                testCase.verifyTrue(ismember('concentration_worm0121', found));
+                on12 = local(ndi.subject.search(S, 'type', 'organism', 'contained_in', plate));
+                testCase.verifyTrue(all(ismember(found, on12)), 'only the worms on plate 12');
+                testCase.verifyEmpty(ndi.subject.search(S, 'type', 'organism', 'context', true, ...
+                    'observation', {'variable', 'image intensity', 'during', cold}));
+                out = evalc(['ndi.subject.search(S, ''type'', ''organism'', ''context'', true, ' ...
+                    '''observation'', {''variable'', ''image intensity'', ''during'', hot}, ''explain'', true);']);
+                testCase.verifySubstring(out, 'at a time when they also had an observation with variable ambient temperature');
+            end
+            testCase.verifyError(@() plate.observations({'during', {'assertion', {'variable', 'strain'}}}), ...
+                'ndi:subject:search:assertionTime');
         end
 
         function testTimeFilters(testCase)

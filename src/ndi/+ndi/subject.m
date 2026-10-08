@@ -160,8 +160,11 @@ classdef subject < ndi.ido & ndi.documentservice & ndi.entity
             % 'formulation', and when: 'at', 'during', 'before', 'after',
             % 'duration' -- see ndi.v2.timeFilter); several kinds are any of
             % them. 'tolerant', true widens each time by its tolerance (and
-            % each stay, for 'context'). The
-            % older 'Class', 'Variable', 'Method' pairs still work.
+            % each stay, for 'context'). 'during' also takes statements,
+            % {'observation', {'variable', 'ambient temperature', 'value',
+            % '>22'}}: kept when it overlaps one matching that which holds of
+            % the same subject by the same rules. The older 'Class',
+            % 'Variable', 'Method' pairs still work.
             [kinds, inherited, context] = ndi.subject.statementArgs(varargin);
             s = {};
             subjects = ndi_subject_obj(arrayfun(@(x) ~isempty(x.container_), ndi_subject_obj));
@@ -310,8 +313,11 @@ classdef subject < ndi.ido & ndi.documentservice & ndi.entity
             %       subject; VALUE is a cell of filters on ONE statement:
             %       'variable', 'method' (not an assertion's), 'value',
             %       'formulation' (a dose's), and when it held: 'at', 'during',
-            %       'before', 'after', 'duration' (ndi.v2.timeFilter). The key
-            %       twice is two statements.
+            %       'before', 'after', 'duration' (ndi.v2.timeFilter). 'during'
+            %       also takes statements, {'observation', {...}}: a statement
+            %       of the subject's that overlaps one of those of the same
+            %       subject (by 'inherited' and 'context'). The key twice is
+            %       two statements.
             %   'relation', 'directed_relation', 'undirected_relation'
             %       a relation the subject is in; VALUE is a cell:
             %         'name'    the relation ('contained_in', 'paired_with', ...)
@@ -553,10 +559,52 @@ classdef subject < ndi.ido & ndi.documentservice & ndi.entity
                 end
                 v = c{k + 1};
                 if isstring(v), v = cellstr(v); if isscalar(v), v = v{1}; end, end
+                if strcmp(n, 'during') && ndi.subject.isStatementDescription(v)
+                    % 'during', {'observation', {...}}: when a statement
+                    % matching that holds of the same subject (statementLinks)
+                    filt.during_statements = ndi.subject.statementKinds(v);
+                    continue;
+                end
                 filt.(n) = v;
+            end
+            if strcmp(kind, 'assertion') && isfield(filt, 'during_statements')
+                error('ndi:subject:search:assertionTime', 'An assertion has no time, so it is never ''during'' anything.');
             end
             if strcmp(kind, 'assertion') && isfield(filt, 'method')
                 error('ndi:subject:search:assertionMethod', 'An assertion has no method.');
+            end
+        end
+
+        function tf = isStatementDescription(v)
+            % ISSTATEMENTDESCRIPTION - is V {'observation', {...}, ...}, a
+            % description of statements, rather than times?
+            kinds = {'statement', 'interaction', 'observation', 'manipulation', 'calculation'};
+            tf = iscell(v) && ~isempty(v) && (ischar(v{1}) || (isstring(v{1}) && isscalar(v{1}))) ...
+                && any(strcmpi(char(v{1}), [kinds, {'assertion'}]));
+        end
+
+        function kinds = statementKinds(v)
+            % STATEMENTKINDS - {'observation', {...}, 'manipulation', {...}}
+            % (a kind alone is any of that kind) as the kinds struct
+            % statementLinks takes; several are any of them
+            kinds = struct('kind', {}, 'filt', {});
+            k = 1;
+            while k <= numel(v)
+                kind = lower(char(v{k}));
+                if ~ndi.subject.isStatementDescription({kind})
+                    error('ndi:subject:search:statementFilter', ...
+                        '''during'' takes times or statements, e.g. {''observation'', {''variable'', ''ambient temperature'', ''value'', ''>22''}}.');
+                end
+                f = struct();
+                if k < numel(v) && iscell(v{k + 1})
+                    f = ndi.subject.statementFilter(kind, v{k + 1});
+                    k = k + 1;
+                end
+                if strcmp(kind, 'assertion')
+                    error('ndi:subject:search:assertionTime', 'An assertion has no time, so nothing is ''during'' it.');
+                end
+                kinds(end+1) = struct('kind', kind, 'filt', f); %#ok<AGROW>
+                k = k + 1;
             end
         end
 
@@ -635,6 +683,18 @@ classdef subject < ndi.ido & ndi.documentservice & ndi.entity
             % parts and samples of a subject an assertion is about. With
             % SPEC.strict, an unknown variable or method is an error and
             % values that match nothing a warning (each naming what there is).
+            if isfield(f.filt, 'during_statements')
+                % the subjects with such a statement, then those for which it
+                % overlaps one matching the description (statementLinks)
+                g = f; g.filt = rmfield(g.filt, 'during_statements');
+                ids = ndi.subject.subjectsOf(container, g, spec);
+                if isempty(ids), return; end
+                k = f; k.filt.tolerant = spec.tolerant;
+                L = ndi.subject.statementLinks(container, ids, k, spec.inherited, ...
+                    isfield(spec, 'context') && spec.context);
+                ids = ids(ismember(ids, L.about));
+                return;
+            end
             inherited = spec.inherited;
             filt = f.filt;
             filt.tolerant = spec.tolerant;
@@ -955,6 +1015,30 @@ classdef subject < ndi.ido & ndi.documentservice & ndi.entity
             % assertion; on both, both. CONTEXT: then the containers of
             % every subject reached (contextLinks).
             if nargin < 5, context = false; end
+            described = arrayfun(@(k) isfield(k.filt, 'during_statements'), kinds);
+            if any(described)
+                L = struct('about', {{}}, 'doc', {{}}, 'via', {{}});
+                if any(~described)
+                    L = ndi.subject.statementLinks(container, ids, kinds(~described), inherited, context);
+                end
+                for k = find(described)
+                    kk = kinds(k);
+                    inner = kk.filt.during_statements;
+                    kk.filt = rmfield(kk.filt, 'during_statements');
+                    Lk = ndi.subject.statementLinks(container, ids, kk, inherited, context);
+                    tolerant = isfield(kk.filt, 'tolerant') && kk.filt.tolerant;
+                    for i = 1:numel(inner), inner(i).filt.tolerant = tolerant; end
+                    Lk = ndi.subject.duringLinks(container, Lk, inner, inherited, context, tolerant);
+                    have = strcat(L.about, '|', cellfun(@docIdOf, L.doc, 'UniformOutput', false));
+                    for i = 1:numel(Lk.doc)
+                        key = [Lk.about{i} '|' docIdOf(Lk.doc{i})];
+                        if any(strcmp(have, key)), continue; end
+                        have{end+1} = key; %#ok<AGROW>
+                        L.about{end+1} = Lk.about{i}; L.doc{end+1} = Lk.doc{i}; L.via{end+1} = Lk.via{i};
+                    end
+                end
+                return;
+            end
             ids = unique(cellstr(ids), 'stable');
             lineage = {'part_of', 'sample_of', 'aliquot_of', 'passage_of'};
             % states: start, at, hasMember, hasLineage, path
@@ -1099,6 +1183,44 @@ classdef subject < ndi.ido & ndi.documentservice & ndi.entity
             end
         end
 
+        function L = duringLinks(container, L, inner, inherited, context, tolerant)
+            % DURINGLINKS - (internal) keep the links of L whose statement's
+            % time overlaps that of a statement matching INNER (a kinds
+            % struct) that holds of the same subject -- by the same rules,
+            % INHERITED and CONTEXT. A statement or reading whose time
+            % cannot be compared does not match.
+            if isempty(L.doc), return; end
+            abouts = unique(L.about, 'stable');
+            Li = ndi.subject.statementLinks(container, abouts, inner, inherited, context);
+            cache = containers.Map('KeyType', 'char', 'ValueType', 'any');
+            refsOf = @(d) ndi.v2.edgeIds(ndi.v2.props(d), 'time_reference_id');
+            ro = cellfun(refsOf, L.doc, 'UniformOutput', false);
+            ri = cellfun(refsOf, Li.doc, 'UniformOutput', false);
+            all_ = unique([ro{:}, ri{:}]);
+            times = containers.Map('KeyType', 'char', 'ValueType', 'any');
+            if ~isempty(all_), times = ndi.v2.timesOf(container, all_, cache); end
+            % each subject's windows: the times of the statements matching INNER
+            wins = containers.Map('KeyType', 'char', 'ValueType', 'any');
+            for i = 1:numel(Li.doc)
+                for r = 1:numel(ri{i})
+                    w = windowOf(ifKeyAny(times, ri{i}{r}));
+                    if isempty(w), continue; end
+                    if isKey(wins, Li.about{i}), wins(Li.about{i}) = [wins(Li.about{i}), w];
+                    else, wins(Li.about{i}) = w; end
+                end
+            end
+            keep = false(1, numel(L.doc));
+            for i = 1:numel(L.doc)
+                if ~isKey(wins, L.about{i}), continue; end
+                t = cellfun(@(r) ifKeyAny(times, r), ro{i}, 'UniformOutput', false);
+                W = wins(L.about{i});
+                for j = 1:numel(W)
+                    if ndi.v2.overlaps(t, W(j), tolerant), keep(i) = true; break; end
+                end
+            end
+            L.about = L.about(keep); L.doc = L.doc(keep); L.via = L.via(keep);
+        end
+
         function ids = contextIds(container, docs, tolerant)
             % CONTEXTIDS - (internal) the subjects the interactions DOCS were
             % context for: what each one's subject contained while the
@@ -1157,6 +1279,28 @@ classdef subject < ndi.ido & ndi.documentservice & ndi.entity
     end
 
 end % classdef ndi.subject
+
+function id = docIdOf(d)
+% a document's base.id
+p = ndi.v2.props(d);
+id = char(p.base.id);
+end
+
+function w = windowOf(t)
+% a resolved time (ndi.v2.timeOf) as a window for ndi.v2.overlaps, or []
+% when it cannot be placed (no time, or only a bound on its anchor)
+w = [];
+if isempty(t) || isnat(t.start) || strcmp(t.resolved_by, 'relation'), return; end
+e = t.end;
+if isnat(e), e = t.start; end
+tol = t.tolerance; etol = t.end_tolerance;
+if isempty(tol) || all(isnan(tol)), tol = [0 0]; end
+if isempty(etol) || all(isnan(etol)), etol = tol; end
+if isscalar(tol), tol = [tol tol]; end
+if isscalar(etol), etol = [etol etol]; end
+tol(isnan(tol)) = 0; etol(isnan(etol)) = 0;
+w = struct('start', t.start, 'end', e, 'tol', tol, 'end_tol', etol);
+end
 
 function v = ifKeyAny(m, k)
 % the value at key K of map M, or [] when absent
@@ -1244,6 +1388,10 @@ if any(strcmp(kind, {'assertion', 'statement'})), verb = 'have'; end
 fl = f.filt;
 names = intersect({'variable', 'method', 'value', 'formulation'}, fieldnames(fl), 'stable');
 when = timeText(fl);
+if isfield(fl, 'during_statements')
+    inner = arrayfun(@(k) statementText(k, false), fl.during_statements, 'UniformOutput', false);
+    when = [when ', at a time when they also ' strjoin(inner, ' or ')];
+end
 if strcmp(kind, 'assertion') && isequal(sort(names), sort({'value', 'variable'})) && ischar(fl.variable)
     t = sprintf('have %s %s%s', fl.variable, valueText(fl.value), when);
 else
