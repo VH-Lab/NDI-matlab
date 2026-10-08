@@ -114,6 +114,7 @@ from a dose (`ndi.manipulation.formulation()`), see open question Q4.
 | `statements(...)` | statement objects about this subject; filters `'Variable'`, `'Class'` (observation, manipulation, calculation, assertion, or a leaf class), `'Method'`, `'During'` (a time window) |
 | `assertions(...)` | `statements('assertion', ...)`: assertion objects (species `Caenorhabditis elegans`, strain `N2`, `inclusion in analysis` `excluded`); `ndi.summary` of them is the table |
 | `observations(...)`, `manipulations(...)`, `calculations(...)`, `interactions(...)` | `statements('<kind>', ...)`: objects of that kind, inherited by default; an optional cell of filters first, e.g. `w.observations({'variable', 'temperature'})` |
+| `...('context', true)` | also what the subject was IN (V_eta tenet T17): the interactions of each container it was `contained_in` (through a distributive stay of its group, and nested containers) whose time overlaps the stay. Marked `via() = '... contained_in'`; assertions never pass; a stay or statement whose times cannot be compared is left out. `ndi.subject.search(..., 'context', true)` finds subjects the same way |
 | `members()` / `memberOf()` | a group's members / the groups it belongs to (`member_of`) |
 | `parts()` / `partOf()` | `part_of`: a plate's patches / a patch's plate |
 | `location(t)` | where the subject was at time `t` (`contained_in`) |

@@ -141,6 +141,15 @@ classdef subject < ndi.ido & ndi.documentservice & ndi.entity
             %              assertions about a whole it is part or a sample of
             % 'inherited', false: its own statements only.
             %
+            % 'context', true (default false) adds what the subject was IN
+            % (V_eta tenet T17): the observations, manipulations and
+            % calculations of each container it was contained_in (its own
+            % stays, a distributive stay of a group it is in, and the
+            % containers of those), whose time overlaps the stay. They are
+            % not about the subject: via() says 'contained_in' (after any
+            % member_of), and summary's stated_on names the container. A stay
+            % or statement whose times cannot be compared is left out.
+            %
             % Filters, the words ndi.subject.search uses:
             %   s = w.statements('manipulation')
             %   s = w.statements('manipulation', {'method', 'refrigeration'})
@@ -150,15 +159,16 @@ classdef subject < ndi.ido & ndi.documentservice & ndi.entity
             % on that statement ('variable', 'method', 'value',
             % 'formulation', and when: 'at', 'during', 'before', 'after',
             % 'duration' -- see ndi.v2.timeFilter); several kinds are any of
-            % them. 'tolerant', true widens each time by its tolerance. The
+            % them. 'tolerant', true widens each time by its tolerance (and
+            % each stay, for 'context'). The
             % older 'Class', 'Variable', 'Method' pairs still work.
-            [kinds, inherited] = ndi.subject.statementArgs(varargin);
+            [kinds, inherited, context] = ndi.subject.statementArgs(varargin);
             s = {};
             subjects = ndi_subject_obj(arrayfun(@(x) ~isempty(x.container_), ndi_subject_obj));
             if isempty(subjects), return; end
             container = subjects(1).container_;
             ids = arrayfun(@(x) x.document_id, subjects, 'UniformOutput', false);
-            L = ndi.subject.statementLinks(container, ids, kinds, inherited);
+            L = ndi.subject.statementLinks(container, ids, kinds, inherited, context);
             s = cell(1, numel(L.doc));
             for i = 1:numel(L.doc)
                 s{i} = ndi.statement.fromDocument(container, L.doc{i}).withContext(L.about{i}, L.via{i});
@@ -324,6 +334,10 @@ classdef subject < ndi.ido & ndi.documentservice & ndi.entity
             %                answer, quietly (for scripts over many datasets)
             %   'tolerant'   false (default): times are compared as stated;
             %                true: a time matches when its tolerance allows
+            %   'context'    false (default); true: also the subjects a
+            %                matching observation, manipulation or calculation
+            %                was CONTEXT for -- what its subject contained at
+            %                the time (V_eta tenet T17), below
             %
             %   Times typed without a zone are read in the zone the lab
             %   recorded each time in; 'during' takes two times, a date or a
@@ -347,6 +361,13 @@ classdef subject < ndi.ido & ndi.documentservice & ndi.entity
             %     animal's strain is its slice's).
             %   contained_in is not followed for statements (a plate's are not
             %   its worms'). false: only what is stated of the subject itself.
+            % 'context' (default false): a container's observations,
+            %   manipulations and calculations reach what it contained, down
+            %   contained_in (and nested containers), but only when the
+            %   statement's time overlaps the stay's; a distributive stay of a
+            %   group reaches its members. A plate's 22 C reading finds the
+            %   worms on the plate during it. A stay or statement whose times
+            %   cannot be compared is left out. Assertions never pass.
             %   The group or whole a statement was about matches too; 'type'
             %   narrows to what you want.
             %
@@ -479,7 +500,8 @@ classdef subject < ndi.ido & ndi.documentservice & ndi.entity
             spec = struct('own', {cell(0, 2)}, ...
                 'filters', {struct('kind', {}, 'filt', {})}, ...
                 'relations', {struct('kind', {}, 'name', {}, 'side', {}, 'target', {}, 'time', {})}, ...
-                'inherited', true, 'explain', false, 'strict', true, 'tolerant', false);
+                'inherited', true, 'explain', false, 'strict', true, 'tolerant', false, ...
+                'context', false);
             for k = 1:2:numel(args)
                 p = args{k};
                 if ~(ischar(p) || (isstring(p) && isscalar(p)))
@@ -490,7 +512,7 @@ classdef subject < ndi.ido & ndi.documentservice & ndi.entity
                 if isstring(v), v = cellstr(v); if isscalar(v), v = v{1}; end, end
                 key = lower(strrep(p, '_', ''));
                 lp = lower(p);
-                if any(strcmp(key, {'inherited', 'explain', 'strict', 'tolerant'}))
+                if any(strcmp(key, {'inherited', 'explain', 'strict', 'tolerant', 'context'}))
                     spec.(key) = logical(v);
                 elseif any(strcmp(key, {'type', 'name', 'id'}))
                     spec.own(end+1, :) = {key, v};
@@ -642,6 +664,9 @@ classdef subject < ndi.ido & ndi.documentservice & ndi.entity
                 end
             end
             ids = unique(ids, 'stable');
+            if isfield(spec, 'context') && spec.context
+                ids = unique([ids, ndi.subject.contextIds(container, docs, spec.tolerant)], 'stable');
+            end
             if ~inherited, return; end
             if ~isempty(groups)
                 ids = unique([ids, ndi.entity.walkIds(container, unique(groups, 'stable'), ...
@@ -793,6 +818,10 @@ classdef subject < ndi.ido & ndi.documentservice & ndi.entity
             end
             for k = 1:numel(spec.filters)
                 lines{end+1} = statementText(spec.filters(k), spec.inherited); %#ok<AGROW>
+                if isfield(spec, 'context') && spec.context && ~strcmp(spec.filters(k).kind, 'assertion')
+                    lines{end} = [lines{end} ...
+                        ', or were contained in something that did while they were in it'];
+                end
             end
             for k = 1:numel(spec.relations)
                 lines{end+1} = relationText(spec.relations(k), indent, spec.inherited); %#ok<AGROW>
@@ -859,12 +888,13 @@ classdef subject < ndi.ido & ndi.documentservice & ndi.entity
             end
         end
 
-        function [kinds, inherited] = statementArgs(args)
+        function [kinds, inherited, context] = statementArgs(args)
             % STATEMENTARGS - (internal) STATEMENTS' arguments: kinds with
             % filters, the older 'Class'/'Variable'/'Method' pairs, 'inherited'
             short = {'statement', 'assertion', 'interaction', 'observation', 'manipulation', 'calculation'};
             kinds = struct('kind', {}, 'filt', {});
             inherited = true;
+            context = false;
             tolerant = false;
             legacy = struct();
             k = 1;
@@ -884,13 +914,15 @@ classdef subject < ndi.ido & ndi.documentservice & ndi.entity
                     kinds(end+1) = struct('kind', la, 'filt', f); %#ok<AGROW>
                 elseif strcmp(la, 'inherited') && k < numel(args)
                     inherited = logical(args{k + 1}); k = k + 1;
+                elseif strcmp(la, 'context') && k < numel(args)
+                    context = logical(args{k + 1}); k = k + 1;
                 elseif strcmp(la, 'tolerant') && k < numel(args)
                     tolerant = logical(args{k + 1}); k = k + 1;
                 elseif any(strcmp(la, {'class', 'variable', 'method'})) && k < numel(args)
                     legacy.(la) = char(args{k + 1}); k = k + 1;
                 else
                     error('ndi:subject:statements:args', ...
-                        'Unknown argument ''%s'': a kind (%s), ''inherited'', or ''Class''/''Variable''/''Method''.', ...
+                        'Unknown argument ''%s'': a kind (%s), ''inherited'', ''context'', ''tolerant'', or ''Class''/''Variable''/''Method''.', ...
                         a, strjoin(short, ', '));
                 end
                 k = k + 1;
@@ -911,7 +943,7 @@ classdef subject < ndi.ido & ndi.documentservice & ndi.entity
             end
         end
 
-        function L = statementLinks(container, ids, kinds, inherited)
+        function L = statementLinks(container, ids, kinds, inherited, context)
             % STATEMENTLINKS - (internal) which statements hold of the subjects IDS
             %
             % L has fields about, doc, via (cell arrays, one entry per
@@ -920,7 +952,9 @@ classdef subject < ndi.ido & ndi.documentservice & ndi.entity
             % walked together, one search per step; then one statement search
             % per kind for every 200 subjects reached. A statement on a group
             % holds when it is distributive; one on a whole when it is an
-            % assertion; on both, both.
+            % assertion; on both, both. CONTEXT: then the containers of
+            % every subject reached (contextLinks).
+            if nargin < 5, context = false; end
             ids = unique(cellstr(ids), 'stable');
             lineage = {'part_of', 'sample_of', 'aliquot_of', 'passage_of'};
             % states: start, at, hasMember, hasLineage, path
@@ -983,10 +1017,151 @@ classdef subject < ndi.ido & ndi.documentservice & ndi.entity
                     end
                 end
             end
+            if context
+                L = ndi.subject.contextLinks(container, all_, kinds, L, seen);
+            end
+        end
+
+        function L = contextLinks(container, states, kinds, L, seen)
+            % CONTEXTLINKS - (internal) add to L the interactions of the
+            % containers the subjects of STATES were in, while they were in
+            % them (V_eta tenet T17). STATES: start (the subject asked for),
+            % at (a subject it reaches), m (reached through member_of),
+            % path. A stay reached through member_of must be distributive.
+            % Nested containers narrow the window to when both held.
+            cache = containers.Map('KeyType', 'char', 'ValueType', 'any');
+            tolerant = false;
+            for k = 1:numel(kinds)
+                if isfield(kinds(k).filt, 'tolerant') && kinds(k).filt.tolerant, tolerant = true; end
+            end
+            frontier = struct('start', {states.start}, 'at', {states.at}, 'm', {states.m}, ...
+                'path', {states.path}, 'win', {[]});
+            C = struct('start', {}, 'at', {}, 'm', {}, 'path', {}, 'win', {});
+            undecided = 0;
+            for depth = 1:4
+                if isempty(frontier), break; end
+                S = ndi.v2.stays(container, unique({frontier.at}, 'stable'), 'child', cache);
+                next = struct('start', {}, 'at', {}, 'm', {}, 'path', {}, 'win', {});
+                for i = 1:numel(S)
+                    for f = find(strcmp({frontier.at}, S(i).child))
+                        fr = frontier(f);
+                        if fr.m && ~S(i).distributive, continue; end
+                        if ~S(i).decided, undecided = undecided + 1; continue; end
+                        w = S(i);
+                        if ~isempty(fr.win)
+                            w.start = max(w.start, fr.win.start); w.end = min(w.end, fr.win.end);
+                            if w.start > w.end, continue; end
+                        end
+                        p = 'contained_in';
+                        if ~isempty(fr.path), p = [fr.path ' > contained_in']; end
+                        next(end+1) = struct('start', fr.start, 'at', S(i).parent, 'm', false, ...
+                            'path', p, 'win', w); %#ok<AGROW>
+                    end
+                end
+                C = [C, next]; %#ok<AGROW>
+                frontier = next;
+            end
+            if undecided > 0
+                warning('ndi:subject:context:undecided', ['%d stay(s) in a container had no ' ...
+                    'start or no end and were left out of the context.'], undecided);
+            end
+            if isempty(C), return; end
+            parents = unique({C.at}, 'stable');
+            for k = 1:numel(kinds)
+                kind = kinds(k).kind;
+                if strcmp(kind, 'assertion'), continue; end          % assertions never pass
+                if strcmp(kind, 'statement'), kind = 'interaction'; end
+                f = kinds(k).filt;
+                f.subject = parents;
+                docs = ndi.v2.searchStatements(container, kind, f);
+                refs = cell(1, numel(docs));
+                for i = 1:numel(docs)
+                    refs{i} = ndi.v2.edgeIds(ndi.v2.props(docs{i}), 'time_reference_id');
+                end
+                all_ = unique([refs{:}]);
+                times = containers.Map('KeyType', 'char', 'ValueType', 'any');
+                if ~isempty(all_), times = ndi.v2.timesOf(container, all_, cache); end
+                for i = 1:numel(docs)
+                    p = ndi.v2.props(docs{i});
+                    sid = ndi.v2.edgeIds(p, 'subject_id');
+                    if isempty(sid), continue; end
+                    t = cellfun(@(r) ifKeyAny(times, r), refs{i}, 'UniformOutput', false);
+                    for j = find(strcmp({C.at}, sid{1}))
+                        key = [C(j).start '|' char(p.base.id)];
+                        if isKey(seen, key), continue; end
+                        if ~ndi.v2.overlaps(t, C(j).win, tolerant), continue; end
+                        seen(key) = true;
+                        L.about{end+1} = C(j).start;
+                        L.doc{end+1} = docs{i};
+                        L.via{end+1} = C(j).path;
+                    end
+                end
+            end
+        end
+
+        function ids = contextIds(container, docs, tolerant)
+            % CONTEXTIDS - (internal) the subjects the interactions DOCS were
+            % context for: what each one's subject contained while the
+            % statement held (V_eta tenet T17), down nested containers, and
+            % the members of a group in a distributive stay. Assertions
+            % never pass.
+            ids = {};
+            keep = cellfun(@(d) ~any(strcmp(ndi.v2.classChain(ndi.v2.props(d)), 'subject_assertion')), docs);
+            docs = docs(keep);
+            if isempty(docs), return; end
+            cache = containers.Map('KeyType', 'char', 'ValueType', 'any');
+            refs = cell(1, numel(docs)); subj = cell(1, numel(docs));
+            for i = 1:numel(docs)
+                p = ndi.v2.props(docs{i});
+                refs{i} = ndi.v2.edgeIds(p, 'time_reference_id');
+                s = ndi.v2.edgeIds(p, 'subject_id');
+                if isempty(s), s = {''}; end
+                subj{i} = s{1};
+            end
+            all_ = unique([refs{:}]);
+            times = containers.Map('KeyType', 'char', 'ValueType', 'any');
+            if ~isempty(all_), times = ndi.v2.timesOf(container, all_, cache); end
+            T = cell(1, numel(docs));
+            for i = 1:numel(docs)
+                T{i} = cellfun(@(r) ifKeyAny(times, r), refs{i}, 'UniformOutput', false);
+            end
+            frontier = struct('at', subj, 'doc', num2cell(1:numel(docs)), 'win', {[]});
+            frontier = frontier(~cellfun(@isempty, subj));
+            groups = {};
+            for depth = 1:4
+                if isempty(frontier), break; end
+                S = ndi.v2.stays(container, unique({frontier.at}, 'stable'), 'parent', cache);
+                next = struct('at', {}, 'doc', {}, 'win', {});
+                for i = 1:numel(S)
+                    if ~S(i).decided, continue; end
+                    for f = find(strcmp({frontier.at}, S(i).parent))
+                        fr = frontier(f);
+                        w = S(i);
+                        if ~isempty(fr.win)
+                            w.start = max(w.start, fr.win.start); w.end = min(w.end, fr.win.end);
+                            if w.start > w.end, continue; end
+                        end
+                        if ~ndi.v2.overlaps(T{fr.doc}, w, tolerant), continue; end
+                        ids{end+1} = S(i).child; %#ok<AGROW>
+                        if S(i).distributive, groups{end+1} = S(i).child; end %#ok<AGROW>
+                        next(end+1) = struct('at', S(i).child, 'doc', fr.doc, 'win', w); %#ok<AGROW>
+                    end
+                end
+                frontier = next;
+            end
+            if ~isempty(groups)
+                ids = [ids, ndi.entity.walkIds(container, unique(groups, 'stable'), 'member_of', 'in')];
+            end
+            ids = unique(ids, 'stable');
         end
     end
 
 end % classdef ndi.subject
+
+function v = ifKeyAny(m, k)
+% the value at key K of map M, or [] when absent
+if isKey(m, k), v = m(k); else, v = []; end
+end
 
 function t = describe(filt)
 % 'variable = strain, value = N2' for messages

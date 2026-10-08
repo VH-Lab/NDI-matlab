@@ -320,6 +320,66 @@ classdef TestObjectLayer < matlab.unittest.TestCase
                 'contained_in does not carry statements');
         end
 
+        function testContextIsWhatTheSubjectWasIn(testCase)
+            % V_eta tenet T17: a container's interactions reach what it
+            % contained only with 'context', true, only while it was in it,
+            % and marked as reached through contained_in. Assertions never.
+            if ~ndi.setup.V2.schemaHasField('subject_statement', 'distributive')
+                return;   % the stays are stated on the cohort, distributive
+            end
+            S = testCase.Session;
+            w = testCase.subject('concentration_worm0121');
+            c = testCase.subject('concentration_assayPlate0012_worms');
+            plates = cellfun(@(x) x.document_id, c.parents('contained_in'), 'UniformOutput', false);
+            testCase.assertNotEmpty(plates, 'the cohort was on plates');
+            isCtx = @(x) endsWith(x.via(), 'contained_in');
+
+            % off by default: nothing about the worm comes from its plates
+            testCase.verifyFalse(any(cellfun(isCtx, w.statements())));
+            testCase.verifyEmpty(w.manipulations({'variable', 'ambient temperature'}));
+
+            m = w.manipulations('context', true);
+            ctx = m(cellfun(isCtx, m));
+            testCase.verifyNotEmpty(ctx, 'its plates'' manipulations while it was on them');
+            testCase.verifyTrue(all(cellfun(@(x) ismember(x.subject().document_id, plates), ctx)), ...
+                'only the plates it was on; stated_on is the plate');
+            testCase.verifyTrue(all(cellfun(@(x) strcmp(x.via(), 'member_of > contained_in'), ctx)), ...
+                'through its cohort''s distributive stay');
+            vars = cellfun(@(x) x.variable_name(), ctx, 'UniformOutput', false);
+            methods_ = cellfun(@(x) char(ndi.v2.termName(ndi.v2.blockOf(x.document_properties(), ...
+                'subject_interaction', 'method', ''))), ctx, 'UniformOutput', false);
+            testCase.verifyTrue(any(strcmp(vars, 'ambient temperature')), ...
+                'the bench and the incubator, while it was there');
+            testCase.verifyFalse(any(strcmp(vars, 'NGM agar')), ...
+                'the pour is only known to be before the seeding: it cannot be placed in the stay');
+            testCase.verifyFalse(any(strcmp(methods_, 'refrigeration')), ...
+                'the cold room was before the worms arrived');
+            own = w.manipulations();
+            testCase.verifyEqual(numel(m) - numel(ctx), numel(own), 'context adds; it removes nothing');
+
+            % the videos of the plate it was filmed on
+            o = w.observations('context', true);
+            testCase.verifyNotEmpty(o(cellfun(isCtx, o)), 'the assay plate''s recordings');
+
+            % assertions never pass: plate 0013 is excluded, its worms are not
+            testCase.verifyEqual(numel(w.assertions('context', true)), numel(w.assertions()));
+            testCase.verifyEmpty(ndi.subject.search(S, 'type', 'organism', ...
+                'inclusion in analysis', 'excluded', 'context', true));
+
+            % search: a plate's room-temperature period finds the worms on it then
+            found = local(ndi.subject.search(S, 'type', 'organism', ...
+                'manipulation', {'method', 'ambient exposure'}, 'context', true));
+            testCase.verifyTrue(ismember('concentration_worm0121', found));
+            testCase.verifyEmpty(ndi.subject.search(S, 'type', 'organism', ...
+                'manipulation', {'method', 'ambient exposure'}), 'not without context');
+            testCase.verifyEmpty(ndi.subject.search(S, 'type', 'organism', ...
+                'manipulation', {'method', 'refrigeration'}, 'context', true), ...
+                'every cold room was before the worms arrived');
+            out = evalc(['ndi.subject.search(S, ''type'', ''organism'', ''manipulation'', ' ...
+                '{''method'', ''ambient exposure''}, ''context'', true, ''explain'', true);']);
+            testCase.verifySubstring(out, 'contained in something that did while they were in it');
+        end
+
         function testTimeFilters(testCase)
             % the fixture's windows (TestHaleyWrite pins them), Los Angeles:
             % cohort 0012 on acclimation plate 0001 from 2022-02-03 12:10:51 to
