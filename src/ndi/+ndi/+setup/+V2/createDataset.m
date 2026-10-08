@@ -126,7 +126,11 @@ cls = cellfun(@ndi.setup.V2.kindOf, docs, 'UniformOutput', false);   % an entity
 sids = cellfun(@(d) d.base.session_id, docs, 'UniformOutput', false);
 [u, ~, j] = unique(ids);
 report.duplicateIds = u(accumarray(j(:), 1) > 1);
-report.documents.byClass = groupsummary(table(cls(:), 'VariableNames', {'class'}), 'class');
+% counted by the class each document is STORED as (an `entity` is `entity`),
+% so the census compares with what the database holds (verifyDataset reads
+% its classname column); KNOWN below names an entity by its type
+stored = cellfun(@(d) char(d.document_class.class_name), docs, 'UniformOutput', false);
+report.documents.byClass = groupsummary(table(stored(:), 'VariableNames', {'class'}), 'class');
 report.documents.bySession = groupsummary(table(sids(:), 'VariableNames', {'session_id'}), 'session_id');
 
 known = containers.Map(ids, cls);
