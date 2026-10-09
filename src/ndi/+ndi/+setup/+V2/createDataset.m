@@ -36,6 +36,11 @@ function [dataset, report] = createDataset(path, reference, datasetSessionId, da
 %                   inserted. Documents built with did2.build were validated
 %                   when built, so false skips only a repeat.
 %     'Progress'    default true
+%     'External'    a cell of documents CHECKED with the dataset but not
+%                   written into it: the documents of its LINKED sessions,
+%                   written to their own folders (V_eta_linked_session_plan.md).
+%                   Their edges, ids and membership are checked as one set with
+%                   the dataset's, and REPORT.documents counts them.
 %   See ndi.setup.V2.writeDocuments for how a failed batch is reported.
 %
 %   See also ndi.setup.V2.createSession, ndi.dataset.dir.
@@ -52,6 +57,7 @@ arguments
     options.BatchSize (1,1) double {mustBePositive, mustBeInteger} = 2000
     options.Validate (1,1) logical = true
     options.Progress (1,1) logical = true
+    options.External cell = {}
 end
 
 if ~isfolder(path)
@@ -86,10 +92,11 @@ for k = 1:numel(sessionDocs)
     docsAll = [docsAll, reshape(sessionDocs{k}, 1, [])]; %#ok<AGROW>
 end
 
-report = check(docsAll, datasetSessionId);
-fprintf(['DENOMINATOR: %d document(s) (%d dataset-level, %d session(s)); %d edge value(s) ' ...
-    'naming a document checked\n'], numel(docsAll), numel(datasetDocs) + 1, numel(sessionDocs), ...
-    report.edges.checked);
+report = check([docsAll, reshape(options.External, 1, [])], datasetSessionId);
+fprintf(['DENOMINATOR: %d document(s) (%d dataset-level, %d session(s); %d written here, %d ' ...
+    'in linked session folders); %d edge value(s) naming a document checked\n'], ...
+    numel(docsAll) + numel(options.External), numel(datasetDocs) + 1, numel(sessionDocs), ...
+    numel(docsAll), numel(options.External), report.edges.checked);
 fprintf('  dangling edges: %d   repeated ids: %d   sessions outside the dataset: %d\n', ...
     height(report.edges.dangling), numel(report.duplicateIds), numel(report.sessions.notInDataset));
 bad = height(report.edges.dangling) > 0 || ~isempty(report.duplicateIds) || ...

@@ -2,7 +2,8 @@ function T = termInventory(path, options)
 %TERMINVENTORY Every term a written V2 dataset uses, plain text or ontology.
 %
 %   T = ndi.setup.conv.haley.termInventory(PATH) reads every document in the
-%   V2 dataset at PATH (the folder holding .ndi) and lists each term it
+%   V2 dataset at PATH (the folder holding .ndi; its own database and each
+%   linked session's, ndi.setup.V2.datasetDatabaseFiles) and lists each term it
 %   carries: every {node, name} pair (or {name} alone: did2.build stores a
 %   term with no node without one), wherever it sits (a statement's
 %   variable or method, a unit, a key's or condition's variable, an axis, a
@@ -34,15 +35,9 @@ arguments
     options.BatchSize (1,1) double {mustBePositive, mustBeInteger} = 5000
 end
 
-dbFile = fullfile(path, '.ndi', ndi.database.implementations.database.did2sqlite.DEFAULTFILENAME());
-if ~isfile(dbFile)
-    error('ndi:setup:conv:haley:noDataset', 'No V2 database at %s.', dbFile);
-end
-db = did2.database.sqlitedb(dbFile);
-closer = onCleanup(@() db.close());
-dbid = db.testHookDbId();
-nDocs = mksqlite(dbid, 'SELECT COUNT(*) AS n FROM documents');
-nDocs = nDocs.n;
+% the dataset's own database, then each linked session's (decision #71)
+files = ndi.setup.V2.datasetDatabaseFiles(path);
+nDocs = 0;
 
 index = containers.Map();       % key -> row number
 rows = struct('name', {}, 'node', {}, 'field', {}, 'classes', {}, 'docs', {}, ...
@@ -50,35 +45,43 @@ rows = struct('name', {}, 'node', {}, 'field', {}, 'classes', {}, 'docs', {}, ..
 nOcc = 0;
 read = 0;
 t0 = tic;
-for offset = 0:options.BatchSize:nDocs - 1
-    B = mksqlite(dbid, sprintf(['SELECT id, classname, body FROM documents ' ...
-        'ORDER BY id LIMIT %d OFFSET %d'], options.BatchSize, offset));
-    for k = 1:numel(B)
-        found = walk(jsondecode(B(k).body), '', {});
-        read = read + 1;
-        seen = containers.Map();
-        for j = 1:size(found, 1)
-            key = [found{j, 1} char(31) found{j, 2} char(31) found{j, 3}];
-            nOcc = nOcc + 1;
-            if ~isKey(index, key)
-                rows(end+1) = struct('name', found{j, 1}, 'node', found{j, 2}, ...
-                    'field', found{j, 3}, 'classes', {{B(k).classname}}, 'docs', 0, ...
-                    'occurrences', 0, 'example_id', B(k).id); %#ok<AGROW>
-                index(key) = numel(rows);
-            end
-            r = index(key);
-            rows(r).occurrences = rows(r).occurrences + 1;
-            if ~isKey(seen, key)
-                seen(key) = true;
-                rows(r).docs = rows(r).docs + 1;
-                if ~any(strcmp(rows(r).classes, B(k).classname))
-                    rows(r).classes{end+1} = B(k).classname;
+for f = 1:numel(files)
+    db = did2.database.sqlitedb(files{f});
+    dbid = db.testHookDbId();
+    nHere = mksqlite(dbid, 'SELECT COUNT(*) AS n FROM documents');
+    nHere = double(nHere.n);
+    nDocs = nDocs + nHere;
+    for offset = 0:options.BatchSize:nHere - 1
+        B = mksqlite(dbid, sprintf(['SELECT id, classname, body FROM documents ' ...
+            'ORDER BY id LIMIT %d OFFSET %d'], options.BatchSize, offset));
+        for k = 1:numel(B)
+            found = walk(jsondecode(B(k).body), '', {});
+            read = read + 1;
+            seen = containers.Map();
+            for j = 1:size(found, 1)
+                key = [found{j, 1} char(31) found{j, 2} char(31) found{j, 3}];
+                nOcc = nOcc + 1;
+                if ~isKey(index, key)
+                    rows(end+1) = struct('name', found{j, 1}, 'node', found{j, 2}, ...
+                        'field', found{j, 3}, 'classes', {{B(k).classname}}, 'docs', 0, ...
+                        'occurrences', 0, 'example_id', B(k).id); %#ok<AGROW>
+                    index(key) = numel(rows);
+                end
+                r = index(key);
+                rows(r).occurrences = rows(r).occurrences + 1;
+                if ~isKey(seen, key)
+                    seen(key) = true;
+                    rows(r).docs = rows(r).docs + 1;
+                    if ~any(strcmp(rows(r).classes, B(k).classname))
+                        rows(r).classes{end+1} = B(k).classname;
+                    end
                 end
             end
         end
+        fprintf('  terms: %d documents read (database %d of %d), %s\n', read, f, numel(files), ...
+            char(duration(0, 0, round(toc(t0)), 'Format', 'hh:mm:ss')));
     end
-    fprintf('  terms: %d / %d documents read, %s\n', read, nDocs, ...
-        char(duration(0, 0, round(toc(t0)), 'Format', 'hh:mm:ss')));
+    db.close();
 end
 
 kind = repmat("plain text", numel(rows), 1);

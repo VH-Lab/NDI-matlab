@@ -14,8 +14,9 @@ classdef TestLinkedSessions < matlab.unittest.TestCase
 
     properties
         Root
-        Master      % the dataset the import wrote
+        Master      % the dataset the import wrote, every session ingested
         Result
+        Linked      % the import's result with its default: sessions linked
         Path        % this test's copy of the dataset
         Dataset
     end
@@ -30,8 +31,16 @@ classdef TestLinkedSessions < matlab.unittest.TestCase
                 "assertions", "manipulations", "observations", "calculations", "dataset"], ...
                 'Sessions', "concentration_0001", ...
                 'OutputRoot', fullfile(testCase.Root, 'haley_V2'), 'Write', true, ...
-                'Overwrite', true, 'ReadVideos', false);
+                'Overwrite', true, 'ReadVideos', false, 'SessionFolders', false);
             testCase.Master = testCase.Result.dataset.path;
+            % the default (decision #71): each session written once, to its
+            % folder, and linked from the dataset
+            testCase.Linked = ndi.setup.conv.haley.import_V2(testCase.Root, ...
+                'Stages', ["sessions", "subjects", "acquisition", "relations", "metadata", ...
+                "assertions", "dataset"], ...
+                'Sessions', "concentration_0001", ...
+                'OutputRoot', fullfile(testCase.Root, 'haley_V2_linked'), 'Write', true, ...
+                'Overwrite', true, 'ReadVideos', false);
         end
     end
 
@@ -120,9 +129,41 @@ classdef TestLinkedSessions < matlab.unittest.TestCase
 
         function testASessionAlreadyInTheDatasetIsNotAddedTwice(testCase)
             if ~canLink(), return; end
-            % the import's own session folder holds the same session
-            S = ndi.session.dir(testCase.Result.sessions.path{1});
-            testCase.verifyError(@() testCase.Dataset.add_linked_session(S), ?MException);
+            % the linked import's session folder holds a session its dataset has
+            ds = ndi.dataset.dir(testCase.Linked.dataset.path);
+            S = ndi.session.dir(testCase.Linked.sessions.path{1});
+            testCase.verifyError(@() ds.add_linked_session(S), ?MException);
+        end
+
+        function testTheImportLinksItsSessions(testCase)
+            if ~canLink(), return; end
+            L = testCase.Linked;
+            ds = ndi.dataset.dir(L.dataset.path);
+            [refs, ids] = ds.session_list();
+            testCase.verifyEqual(refs, {'concentration_0001'});
+            notes = ds.session_notes();
+            testCase.verifyTrue(contains(notes{1}, '0 ingested and 1 linked'), notes{1});
+            % written once: the dataset's database holds no document of the
+            % session but its part_of relation
+            files = ndi.setup.V2.datasetDatabaseFiles(L.dataset.path);
+            testCase.verifyNumElements(files, 2, 'the dataset''s database and the session folder''s');
+            db = did2.database.sqlitedb(files{1});
+            n = mksqlite(db.testHookDbId(), sprintf(['SELECT COUNT(*) AS n FROM documents ' ...
+                'WHERE session_id = ''%s'' AND classname <> ''directed_relation'''], ids{1}));
+            db.close();
+            testCase.verifyEqual(double(n.n), 0, 'no session document is copied into the dataset');
+            % opened through the dataset, the session reaches the dataset's documents
+            S = ds.open_session(ids{1});
+            testCase.verifyEqual(canonical(S.path), canonical(L.sessions.path{1}));
+            testCase.verifyNotEmpty(S.database_search_with_dataset(ndi.v2.isaQuery('study')), ...
+                'a linked session opened through its dataset finds the dataset''s studies');
+            alone = ndi.session.dir(L.sessions.path{1});
+            testCase.verifyEmpty(alone.database_search_with_dataset(ndi.v2.isaQuery('study')), ...
+                'opened on its own, the folder holds only the session''s documents');
+            % and the dataset passes its checks, over both databases
+            v = ndi.setup.conv.haley.verifyDataset(L.dataset.path, 'Expected', L, 'Hashes', false);
+            testCase.verifyEmpty(v.failed, evalc('disp(v.census.differences)'));
+            testCase.verifyEqual(v.edges.dangling, 0);
         end
 
         function testAddAnIngestedSession(testCase)

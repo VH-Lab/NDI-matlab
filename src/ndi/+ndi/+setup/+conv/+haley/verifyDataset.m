@@ -2,8 +2,9 @@ function report = verifyDataset(path, options)
 %VERIFYDATASET Check a written Haley V2 dataset against what the import built.
 %
 %   REPORT = ndi.setup.conv.haley.verifyDataset(PATH) reads the V2 dataset
-%   at PATH (the folder holding .ndi, e.g. <data>/haley_V2/dataset) and
-%   checks it, printing each check's denominator first:
+%   at PATH (the folder holding .ndi, e.g. <data>/haley_V2/dataset) -- its
+%   own database and each LINKED session's (ndi.setup.V2.datasetDatabaseFiles)
+%   -- and checks it, printing each check's denominator first:
 %
 %     1 open      ndi.dataset.dir opens it; every session it lists opens,
 %                 with the reference it is listed under
@@ -65,19 +66,34 @@ printList(bad);
 report.open = struct('datasetId', ds.id(), 'sessions', {refs}, 'problems', {bad});
 if ~isempty(bad), report.failed{end+1} = 'open'; end
 
-db = did2.database.sqlitedb(dbFile);
-closer = onCleanup(@() db.close());
-q = @(sql) mksqlite(db.testHookDbId(), sql);
+% Every database of the dataset: its own, then each linked session's
+% (decision #71); an ingested session is in the first.
+[files, folders, linkProblems] = ndi.setup.V2.datasetDatabaseFiles(path);
+fprintf('DENOMINATOR: %d database(s) read: the dataset''s and %d linked session folder(s)\n', ...
+    numel(files), numel(files) - 1);
+printList(linkProblems);
+if ~isempty(linkProblems), report.failed{end+1} = 'open'; end
+dbs = cell(1, numel(files));
+for f = 1:numel(files)
+    dbs{f} = did2.database.sqlitedb(files{f});
+end
+closer = onCleanup(@() cellfun(@(x) x.close(), dbs));
+qf = @(f, sql) mksqlite(dbs{f}.testHookDbId(), sql);
 
 % ---- 2 census -----------------------------------------------------------------
 fprintf('\n== 2 census ==\n');
-byClass = struct2table(q(['SELECT classname AS class, COUNT(*) AS n FROM documents ' ...
-    'GROUP BY classname ORDER BY classname']), 'AsArray', true);
-bySession = struct2table(q(['SELECT session_id, COUNT(*) AS n FROM documents ' ...
-    'GROUP BY session_id ORDER BY session_id']), 'AsArray', true);
+cls = {}; nCls = []; sid = {}; nSid = [];
+for f = 1:numel(dbs)
+    a = qf(f, 'SELECT classname AS class, COUNT(*) AS n FROM documents GROUP BY classname');
+    b = qf(f, 'SELECT session_id, COUNT(*) AS n FROM documents GROUP BY session_id');
+    cls = [cls, {a.class}]; nCls = [nCls, double([a.n])]; %#ok<AGROW>
+    sid = [sid, {b.session_id}]; nSid = [nSid, double([b.n])]; %#ok<AGROW>
+end
+byClass = sumBy(cls, nCls, 'class');
+bySession = sumBy(sid, nSid, 'session_id');
 total = sum(byClass.n);
-fprintf('DENOMINATOR: %d document(s) in %d class(es) and %d session id(s)\n', total, ...
-    height(byClass), height(bySession));
+fprintf('DENOMINATOR: %d document(s) in %d class(es) and %d session id(s), over %d database(s)\n', ...
+    total, height(byClass), height(bySession), numel(dbs));
 report.census = struct('total', total, 'byClass', byClass, 'bySession', bySession, ...
     'differences', {{}});
 if ~isempty(options.Expected)
@@ -94,69 +110,98 @@ end
 disp(byClass);
 
 % ---- 3 edges ------------------------------------------------------------------
+% an edge dangles when no database of the dataset holds its target: a linked
+% session's documents point at the dataset's (a strain, a study), and the
+% dataset's part_of relations and linked_session documents at the sessions'
 fprintf('\n== 3 edges ==\n');
-n = q('SELECT COUNT(*) AS n FROM depends_on WHERE document_id <> ''''');
-dang = q(['SELECT d.classname AS class, e.name AS edge, COUNT(*) AS n ' ...
-    'FROM depends_on e JOIN documents d ON d.id = e.doc_id ' ...
-    'LEFT JOIN documents t ON t.id = e.document_id ' ...
-    'WHERE e.document_id <> '''' AND t.id IS NULL GROUP BY d.classname, e.name']);
-nDang = 0;
-if ~isempty(dang), nDang = sum([dang.n]); end
-fprintf('DENOMINATOR: %d edge value(s) naming a document; %d dangling\n', n.n, nDang);
-if nDang > 0, disp(struct2table(dang, 'AsArray', true)); end
-report.edges = struct('checked', n.n, 'dangling', nDang, 'byClassEdge', dang);
+checked = 0;
+dangRows = cell(0, 2);
+for f = 1:numel(dbs)
+    n = qf(f, 'SELECT COUNT(*) AS n FROM depends_on WHERE document_id <> ''''');
+    checked = checked + double(n.n);
+    local = qf(f, ['SELECT d.classname AS class, e.name AS edge, e.document_id AS target ' ...
+        'FROM depends_on e JOIN documents d ON d.id = e.doc_id ' ...
+        'LEFT JOIN documents t ON t.id = e.document_id ' ...
+        'WHERE e.document_id <> '''' AND t.id IS NULL']);
+    for r = 1:numel(local)
+        found = false;
+        for g = setdiff(1:numel(dbs), f)
+            if dbs{g}.has(local(r).target), found = true; break; end
+        end
+        if ~found
+            dangRows(end+1, :) = {local(r).class, local(r).edge}; %#ok<AGROW>
+        end
+    end
+end
+nDang = size(dangRows, 1);
+dang = [];
+if nDang > 0
+    dang = groupsummary(cell2table(dangRows, 'VariableNames', {'class', 'edge'}), {'class', 'edge'});
+end
+fprintf('DENOMINATOR: %d edge value(s) naming a document, over %d database(s); %d dangling\n', ...
+    checked, numel(dbs), nDang);
+if nDang > 0, disp(dang); end
+report.edges = struct('checked', checked, 'dangling', nDang, 'byClassEdge', dang);
 if nDang > 0, report.failed{end+1} = 'edges'; end
 
 % ---- 4 files ------------------------------------------------------------------
 fprintf('\n== 4 files ==\n');
-F = q('SELECT doc_id, filename, uid, location, ingested FROM files');
-fileDir = fullfile(ndiDir, 'files');
 missing = {};
 nIngested = 0;
-prog.start('files', sprintf('Checking %d file(s)', numel(F)), numel(F));
-for k = 1:numel(F)
-    prog.step('files', k);
-    if F(k).ingested
-        nIngested = nIngested + 1;
-        p = fullfile(fileDir, F(k).uid);
-    else
-        p = F(k).location;
-    end
-    if ~isfile(p)
-        missing{end+1} = sprintf('%s (%s of document %s)', p, F(k).filename, F(k).doc_id); %#ok<AGROW>
+nRecorded = 0;
+for f = 1:numel(dbs)
+    F = qf(f, 'SELECT doc_id, filename, uid, location, ingested FROM files');
+    fileDir = fullfile(folders{f}, '.ndi', 'files');
+    nRecorded = nRecorded + numel(F);
+    prog.start('files', sprintf('Checking %d file(s)', numel(F)), numel(F));
+    for k = 1:numel(F)
+        prog.step('files', k);
+        if F(k).ingested
+            nIngested = nIngested + 1;
+            p = fullfile(fileDir, F(k).uid);
+        else
+            p = F(k).location;
+        end
+        if ~isfile(p)
+            missing{end+1} = sprintf('%s (%s of document %s)', p, F(k).filename, F(k).doc_id); %#ok<AGROW>
+        end
     end
 end
 fprintf('DENOMINATOR: %d file(s) recorded: %d ingested, %d by location; %d missing\n', ...
-    numel(F), nIngested, numel(F) - nIngested, numel(missing));
+    nRecorded, nIngested, nRecorded - nIngested, numel(missing));
 printList(missing, 20);
-report.files = struct('recorded', numel(F), 'ingested', nIngested, 'missing', {missing});
+report.files = struct('recorded', nRecorded, 'ingested', nIngested, 'missing', {missing});
 if ~isempty(missing), report.failed{end+1} = 'files'; end
 
 % ---- 5 hashes -----------------------------------------------------------------
 if options.Hashes
     fprintf('\n== 5 hashes ==\n');
-    B = q(['SELECT f.doc_id, f.uid, d.body FROM files f JOIN documents d ON d.id = f.doc_id ' ...
-        'WHERE f.ingested = 1']);
-    checked = 0; noHash = 0; wrong = {};
-    prog.start('hashes', sprintf('Hashing %d file(s)', numel(B)), numel(B));
-    for k = 1:numel(B)
-        prog.step('hashes', k);
-        [h, alg] = recordedHash(jsondecode(B(k).body));
-        if isempty(h) || ~strcmpi(alg, 'MD5')
-            noHash = noHash + 1;
-            continue;
-        end
-        p = fullfile(fileDir, B(k).uid);
-        if ~isfile(p), continue; end            % counted under files
-        checked = checked + 1;
-        if ~strcmpi(ndi.fun.file.MD5(p), h)
-            wrong{end+1} = sprintf('document %s: %s', B(k).doc_id, p); %#ok<AGROW>
+    checked = 0; noHash = 0; wrong = {}; nB = 0;
+    for f = 1:numel(dbs)
+        B = qf(f, ['SELECT f.doc_id, f.uid, d.body FROM files f JOIN documents d ON d.id = f.doc_id ' ...
+            'WHERE f.ingested = 1']);
+        fileDir = fullfile(folders{f}, '.ndi', 'files');
+        nB = nB + numel(B);
+        prog.start('hashes', sprintf('Hashing %d file(s)', numel(B)), numel(B));
+        for k = 1:numel(B)
+            prog.step('hashes', k);
+            [h, alg] = recordedHash(jsondecode(B(k).body));
+            if isempty(h) || ~strcmpi(alg, 'MD5')
+                noHash = noHash + 1;
+                continue;
+            end
+            p = fullfile(fileDir, B(k).uid);
+            if ~isfile(p), continue; end            % counted under files
+            checked = checked + 1;
+            if ~strcmpi(ndi.fun.file.MD5(p), h)
+                wrong{end+1} = sprintf('document %s: %s', B(k).doc_id, p); %#ok<AGROW>
+            end
         end
     end
     fprintf('DENOMINATOR: %d ingested file(s); %d with a recorded MD5 checked, %d with none; %d differ\n', ...
-        numel(B), checked, noHash, numel(wrong));
+        nB, checked, noHash, numel(wrong));
     printList(wrong, 20);
-    report.hashes = struct('ingested', numel(B), 'checked', checked, 'noHash', noHash, ...
+    report.hashes = struct('ingested', nB, 'checked', checked, 'noHash', noHash, ...
         'differ', {wrong});
     if ~isempty(wrong), report.failed{end+1} = 'hashes'; end
 end
@@ -205,6 +250,16 @@ end
 
 function s = hms(sec)
 s = char(duration(0, 0, round(sec), 'Format', 'hh:mm:ss'));
+end
+
+function T = sumBy(keys, n, name)
+% a table of KEYS (cellstr) and the sum of N over each, sorted by key
+if isempty(keys)
+    T = table(cell(0, 1), zeros(0, 1), 'VariableNames', {name, 'n'});
+    return;
+end
+[u, ~, j] = unique(keys(:));
+T = table(u, accumarray(j, n(:)), 'VariableNames', {name, 'n'});
 end
 
 function d = compareCounts(E, eKey, A, aKey, what)

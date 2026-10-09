@@ -815,6 +815,10 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
                     % ndi_dataset_obj.session_info(match_).session_creator_input5, ...
                     % ndi_dataset_obj.session_info(match_).session_creator_input6);
                     ndi_session_obj = ndi_dataset_obj.session_array(match).session;
+                    if ndi_dataset_obj.session_info(match_).is_linked && ndi_dataset_obj.isV2()
+                        % it reaches the dataset's documents through the dataset
+                        ndi_session_obj.datasetDatabase = ndi_dataset_obj.session.database;
+                    end
                     mksqlite('close'); % TODO: update ndi.session with a close database files method                
                 end
             end
@@ -1416,8 +1420,9 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
             for i=1:numel(ndi_dataset_obj.session_info)
                 session_array_here.session_id = ndi_dataset_obj.session_info(i).session_id;
                 session_array_here.session = []; % initially don't open it
-                if i <= numel(opened)
+                if i <= numel(opened) && ~isempty(opened{i})
                     session_array_here.session = opened{i}; % a linked session, opened to list it
+                    opened{i}.datasetDatabase = ndi_dataset_obj.session.database;
                 end
                 ndi_dataset_obj.session_array(i) = session_array_here; % entries will match
             end

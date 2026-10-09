@@ -97,9 +97,17 @@ function result = import_V2(dataParentDir, options)
 %     'EcoliProfilesFile' analyzeGFP's workspace (profile curves, background
 %                         fits; decision #64), wherever it is kept (default:
 %                         <DATAPARENTDIR>/haley/ecoli/analyzeGFP_24-04-04.mat)
-%     'SessionFolders'    default true: also write each session to its own
-%                         folder (a working copy; the dataset holds them all).
-%                         false writes only the dataset, about half the time
+%     'SessionFolders'    default true: each session is written ONCE, to its
+%                         own folder, and the dataset LINKS it (a
+%                         `linked_session` document and the session's `part_of`
+%                         relation in the dataset's database; decision #71).
+%                         false INGESTS every session into the dataset and writes
+%                         no folders: the self-contained form to share. Either
+%                         converts to the other later
+%                         (ndi.dataset/convertLinkedSessionToIngested,
+%                         convertIngestedSessionToLinked). With a schema that has
+%                         no `linked_session` class, true writes each session to
+%                         its folder AND into the dataset, as before.
 %     'WriteBatchSize'    documents per write batch (default 2000); progress
 %                         is printed per batch, and shown in a
 %                         ProgressBarWindow when MATLAB has a display
@@ -623,14 +631,34 @@ if isfield(result, 'subjects') && isfield(result, 'recordings')
 else
     fprintf('(stages 4 and 5 did not run: writing the sessions alone)\n');
 end
+% Decision #71: with 'SessionFolders', each session is written ONCE, to its own
+% folder, and the dataset LINKS it (a `linked_session` document and the session's
+% `part_of` relation in the dataset's database). It needs a schema with the
+% `linked_session` class; without one, the sessions are also ingested into the
+% dataset, as before.
+linked = options.SessionFolders && any(options.Stages == "dataset") && ...
+    ndi.setup.V2.schemaHasClass('linked_session');
+if options.SessionFolders && any(options.Stages == "dataset") && ~linked
+    fprintf(['(the schema in use has no linked_session class: each session is written to ' ...
+        'its folder AND ingested into the dataset)\n']);
+end
 if any(options.Stages == "dataset")
     fprintf('\n== stage 13: check & write the dataset ==\n');
-    result.dataset = writeDataset(result, T, dataParentDir, options);
+    result.dataset = writeDataset(result, T, dataParentDir, options, linked);
 end
 if options.SessionFolders
     fprintf('\n== session folders ==\n');
-    [T, result.sessionObjects] = ndi.setup.V2.makeSessions(T, 'Overwrite', options.Overwrite, ...
+    Tw = T;
+    if linked && ismember('study_ids', Tw.Properties.VariableNames)
+        % membership is the dataset's: the part_of relations were written there
+        Tw = removevars(Tw, 'study_ids');
+    end
+    [Tw, result.sessionObjects] = ndi.setup.V2.makeSessions(Tw, 'Overwrite', options.Overwrite, ...
         'Validate', options.ValidateOnWrite, 'Progress', true, 'BatchSize', options.WriteBatchSize);
+    T.session_id = Tw.session_id;
+end
+if linked
+    result.dataset = listDataset(result.dataset);
 end
 result.sessions = removevars(T, 'documents');
 result.written = built;
@@ -669,8 +697,11 @@ if ~isempty(taken)
 end
 end
 
-function out = writeDataset(result, T, dataParentDir, options)
-% Stage 13 (decision #66): every document of this run in ONE V2 database.
+function out = writeDataset(result, T, dataParentDir, options, linked)
+% Stage 13 (decision #66): every document of this run checked as one set, and
+% written into ONE V2 database -- or, LINKED (decision #71), the dataset-level
+% documents, each session's part_of relations and a linked_session per session,
+% with the sessions' own documents written to their folders afterwards.
 path = datasetPath(dataParentDir, options);
 dsDocs = {};
 for f = {'metadata', 'studies'}
@@ -688,8 +719,20 @@ if ~any(isDataset)
     fprintf('  no dataset document (the metadata stage did not run): sessions cannot be part of it\n');
 end
 sessDocs = cell(1, height(T));
+external = {};
+folders = cellstr(T.path);
 for k = 1:height(T)
     own = sessionOwn(T(k, :));
+    if linked
+        % in the dataset: the session's part_of relations and where it lives;
+        % its own documents go to its folder (checked here as one set)
+        link = did2.build.document('linked_session', ...
+            struct('path', ndi.v2.linkPath(folders{k}, path)), ...
+            'SessionId', result.datasetSessionId, 'Edges', struct('entity_id', own{1}.base.id));
+        sessDocs{k} = [own(2:end), {link}];
+        external = [external, own(1), reshape(T.documents{k}, 1, [])]; %#ok<AGROW>
+        continue;
+    end
     d = [own, reshape(T.documents{k}, 1, [])];
     if options.SessionFolders
         d = keepOriginals(d);     % the session folders, written next, ingest the same files
@@ -698,9 +741,15 @@ for k = 1:height(T)
 end
 [ds, report] = ndi.setup.V2.createDataset(path, options.DatasetReference, ...
     result.datasetSessionId, dsDocs, sessDocs, 'Name', name, 'Overwrite', options.Overwrite, ...
-    'Validate', options.ValidateOnWrite, 'BatchSize', options.WriteBatchSize);
-[refs, ids] = ds.session_list();
-fprintf('dataset %s at %s: %d session(s) listed by ndi.dataset\n', ds.id(), path, numel(ids));
+    'Validate', options.ValidateOnWrite, 'BatchSize', options.WriteBatchSize, 'External', external);
+refs = {}; ids = {};
+if linked
+    fprintf('dataset %s at %s: %d session(s) to link, listed once their folders are written\n', ...
+        ds.id(), path, height(T));
+else
+    [refs, ids] = ds.session_list();
+    fprintf('dataset %s at %s: %d session(s) listed by ndi.dataset\n', ds.id(), path, numel(ids));
+end
 disp(report.documents.byClass);
 if height(report.edges.dangling) > 0
     fprintf('  DANGLING EDGES (an edge naming no document in the dataset):\n');
@@ -714,6 +763,20 @@ for j = 1:numel(report.sessions.notInDataset)
 end
 out = struct('path', path, 'id', ds.id(), 'report', report, 'sessionReferences', {refs}, ...
     'sessionIds', {ids});
+end
+
+function out = listDataset(out)
+% the sessions of a linked dataset, listed once their folders are written
+ds = ndi.dataset.dir(out.path);
+[refs, ids] = ds.session_list();
+notes = ds.session_notes();
+fprintf('dataset %s at %s: %d session(s) listed by ndi.dataset (%s)\n', ds.id(), out.path, ...
+    numel(ids), notes{1});
+for k = 2:numel(notes)
+    fprintf('  %s\n', notes{k});
+end
+out.sessionReferences = refs;
+out.sessionIds = ids;
 end
 
 function docs = sessionOwn(row)

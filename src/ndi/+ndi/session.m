@@ -13,6 +13,13 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
         database          % An ndi.database associated with this session
         autoclose_listeners % A map of listeners for auto-closing binary documents
     end
+    properties (GetAccess={?session, ?ndi.dataset}, SetAccess={?session, ?ndi.dataset}, Transient)
+        % datasetDatabase - for a LINKED session opened through an ndi.dataset,
+        % the dataset's own database ([] otherwise), so that
+        % database_search_with_dataset reaches the dataset-level documents
+        % (a strain, a study, a person) a session in its own folder does not hold
+        datasetDatabase = []
+    end
     methods
 
         function ndi_session_obj = session(reference)
@@ -401,9 +408,11 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
             % Like DATABASE_SEARCH, but without restricting the answer to this
             % session's own documents. A session opened from an ndi.dataset
             % lives in the dataset's database, so this also finds the
-            % dataset-level documents (a strain, a person, a study). A session
-            % opened from its own folder holds only its own documents, so the
-            % answer is the same as DATABASE_SEARCH's.
+            % dataset-level documents (a strain, a person, a study). So does a
+            % LINKED session opened through its dataset (ndi.dataset/open_session):
+            % its own folder's database, then the dataset's. A session opened
+            % from its own folder on its own holds only its own documents, so
+            % the answer is the same as DATABASE_SEARCH's.
             %
             % See also: ndi.session/database_search, ndi.dataset/open_session
             arguments
@@ -411,6 +420,14 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
                 searchparameters {mustBeA(searchparameters,{'ndi.query','did.query'})}
             end
             ndi_document_obj = ndi_session_obj.database.search(searchparameters);
+            if ~isempty(ndi_session_obj.datasetDatabase)
+                % a linked session opened through its dataset: the dataset's
+                % own documents too, each once
+                more = ndi_session_obj.datasetDatabase.search(searchparameters);
+                have = cellfun(@(d) d.id(), ndi_document_obj, 'UniformOutput', false);
+                keep = ~ismember(cellfun(@(d) d.id(), more, 'UniformOutput', false), have);
+                ndi_document_obj = [reshape(ndi_document_obj, 1, []), reshape(more(keep), 1, [])];
+            end
         end % database_search_with_dataset()
 
         function database_clear(ndi_session_obj, areyousure)
