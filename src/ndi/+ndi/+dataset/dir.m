@@ -43,28 +43,42 @@ classdef dir < ndi.dataset
             % Use the session.dir's path as the path for this object
             ndi_dataset_dir_obj.path = ndi_dataset_dir_obj.session.path;
 
-            dataset_session_info_docs = ndi_dataset_dir_obj.database_search(ndi.query('','isa','dataset_session_info'));
+            dataset_session_info_docs = ndi_dataset_dir_obj.session.database.search(ndi.query('','isa','dataset_session_info'));
             
             correctSessionId = '';
             if ~isempty(dataset_session_info_docs)
                 correctSessionId = dataset_session_info_docs{1}.document_properties.base.session_id;
             else
                 q = ndi.query('','isa','session_in_a_dataset');
-                session_in_a_dataset_docs = ndi_dataset_dir_obj.database_search(q);
+                session_in_a_dataset_docs = ndi_dataset_dir_obj.session.database.search(q);
                 if ~isempty(session_in_a_dataset_docs)
                     correctSessionId = session_in_a_dataset_docs{1}.document_properties.base.session_id;
                 else
-                    q_session = ndi.query('','isa','session');
-                    candidate_session_doc = ndi_dataset_dir_obj.database_search(q_session);
-                    if isscalar(candidate_session_doc)
-                       correctSessionId = candidate_session_doc{1}.document_properties.base.session_id;
+                    % A V2 dataset (ndi.setup.V2.createDataset) has no
+                    % session_in_a_dataset documents: its sessions are ingested
+                    % `session` documents, so the dataset's own session is the
+                    % one that shares its session_id with the V2 `dataset`
+                    % document (a class v1 never had). Read unscoped: the
+                    % folder's unique_reference.txt names whichever session was
+                    % opened last, not necessarily the dataset.
+                    datasetDocs = ndi_dataset_dir_obj.session.database.search(ndi.v2.isaQuery('dataset'));
+                    datasetDocs = datasetDocs(cellfun(@(d) strcmp(ndi.v2.kindOf(d.document_properties), ...
+                        'dataset'), datasetDocs));   % an entity of type dataset since 2026-10-08
+                    if isscalar(datasetDocs)
+                        correctSessionId = datasetDocs{1}.document_properties.base.session_id;
+                    else
+                        q_session = ndi.v2.isaQuery('session');
+                        candidate_session_doc = ndi_dataset_dir_obj.session.database.search(q_session);
+                        if isscalar(candidate_session_doc)
+                           correctSessionId = candidate_session_doc{1}.document_properties.base.session_id;
+                        end
                     end
                 end
             end
 
             if ~isempty(correctSessionId)
-                q_session = ndi.query('','isa','session') & ndi.query('base.session_id','exact_string',correctSessionId);                
-                candidate_session_doc = ndi_dataset_dir_obj.database_search(q_session);
+                q_session = ndi.v2.isaQuery('session') & ndi.query('base.session_id','exact_string',correctSessionId);                
+                candidate_session_doc = ndi_dataset_dir_obj.session.database.search(q_session);
                 if isscalar(candidate_session_doc)
                     % BOTH VINTAGES. V_eta renamed session.reference ->
                     % session.local_identifier (did-schema, signed 2026-08-13).
@@ -72,14 +86,20 @@ classdef dir < ndi.dataset
                     % a query-shaped grep does not find it -- the daqsystem
                     % lesson. A dataset can hold a session document of either
                     % vintage, so both spellings are accepted.
-                    session_blk = candidate_session_doc{1}.document_properties.session;
-                    if isfield(session_blk,'local_identifier')
-                        ref = session_blk.local_identifier;
-                    else
-                        ref = session_blk.reference;
+                    % and from 2026-10-08 the session may be an `entity` of
+                    % type session (ndi.v2.blockOf reads either block)
+                    p_session = candidate_session_doc{1}.document_properties;
+                    ref = ndi.v2.blockOf(p_session, 'session', 'local_identifier');
+                    if isempty(ref)
+                        ref = ndi.v2.blockOf(p_session, 'session', 'reference');
                     end
                     session_id = candidate_session_doc{1}.document_properties.base.session_id;
                     ndi_dataset_dir_obj.session = ndi.session.dir(ref,ndi_dataset_dir_obj.session.path,session_id);
+                    % the session list may have been built while the folder was
+                    % open under another session's id (a V2 dataset's
+                    % unique_reference.txt names the session opened last); rebuild
+                    ndi_dataset_dir_obj.session_info = [];
+                    ndi_dataset_dir_obj.session_array = [];
                 else
                     error('Could not find dataset session document.');
                 end
@@ -90,7 +110,7 @@ classdef dir < ndi.dataset
             if ~isempty(dataset_session_info_docs)
                 %disp('updating dataset to new form');
                 % double-check we still need to do it
-                dataset_session_info_docs2 = ndi_dataset_dir_obj.database_search(ndi.query('','isa','dataset_session_info'));
+                dataset_session_info_docs2 = ndi_dataset_dir_obj.session.database.search(ndi.query('','isa','dataset_session_info'));
                 if ~isempty(dataset_session_info_docs2)
                     ndi_dataset_dir_obj.repairDatasetSessionInfo(ndi_dataset_dir_obj,dataset_session_info_docs2);
                 end

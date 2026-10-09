@@ -52,7 +52,7 @@ docs = {};
 
 label = ndi.vintage.elementLabel('class');
 q = ndi.query('', 'isa', 'term_assertion', '') & ...
-    ndi.query('subject_statement.variable.name', 'exact_string', label, '');
+    ndi.v2.fieldQuery('statement.variable.name', 'exact_string', label);
 if ~isempty(classFilter)
     q = q & ndi.query('term.value.name', 'contains_string', classFilter, '');
 end
@@ -67,7 +67,8 @@ end
 % rather than on anything meaningful.
 ids = {};
 for i = 1:numel(assertions)
-    sid = assertions{i}.dependency_value('subject_id', 'ErrorIfNotFound', 0);
+    sid = ndi.v2.edgeIds(ndi.v2.props(assertions{i}), 'entity_id');
+    if isempty(sid), sid = ''; else, sid = sid{1}; end
     if isempty(sid) || any(strcmp(sid, ids))
         continue;
     end

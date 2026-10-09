@@ -1,0 +1,187 @@
+name: V2 import (Haley) -- fast
+
+# Stage-by-stage tests of ndi.setup.conv.haley.import_V2 and the generic
+# ndi.setup.V2 makers it uses. They build V2 (V_eta) documents through
+# DID-matlab's did2.build, so this job needs DID-matlab V2 and a did-schema
+# that carries the classes the import uses.
+#
+# DID_SCHEMA_REF: main. The `study` entity, `instance_of`, `awarded_to` and
+# `directed_relation.roles` the import uses reached main with did-schema PR #78
+# (merged 2026-09-30).
+#
+# The tests FILTER themselves when the schema or did2.build is missing; this
+# job fails if any were filtered, so a green run always means they ran.
+
+on:
+  push:
+    branches: ['claude/**']
+    paths:
+      - 'src/ndi/+ndi/+setup/+V2/**'
+      - 'src/ndi/+ndi/+setup/+conv/+haley/import_V2*'
+      - 'src/ndi/+ndi/+setup/+conv/+haley/**'
+      - 'src/ndi/+ndi/+setup/+conv/+haley/sessionList.m'
+      - 'src/ndi/+ndi/+setup/+conv/+haley/subjectList.m'
+      - 'src/ndi/+ndi/+setup/+conv/+haley/idPrefix.m'
+      - 'src/ndi/+ndi/+setup/+conv/+haley/recordingList.m'
+      - 'src/ndi/+ndi/+setup/+conv/+haley/sessionDocuments.m'
+      - 'src/ndi/+ndi/+setup/+conv/+haley/relationDocuments.m'
+      - 'src/ndi/+ndi/+setup/+conv/+haley/transferTime.m'
+      - 'src/ndi/+ndi/+file/+navigator/bodies.m'
+      - 'src/ndi/+ndi/+database/+fun/externalFileLocation.m'
+      - 'src/ndi/+ndi/+database/+implementations/+database/did2sqlite.m'
+      - 'src/ndi/+ndi/+database/+internal/applyReadNormalization.m'
+      - 'tests/+ndi/+unittest/+setup/+V2/**'
+      - 'src/ndi/+ndi/+vintage/**'
+      - 'src/ndi/+ndi/+v2/**'
+      - 'src/ndi/+ndi/entity.m'
+      - 'src/ndi/+ndi/dataset.m'
+      - 'src/ndi/+ndi/+dataset/dir.m'
+      - 'src/ndi/+ndi/session.m'
+      - 'src/ndi/+ndi/subject.m'
+      - 'src/ndi/+ndi/statement.m'
+      - 'src/ndi/+ndi/assertion.m'
+      - 'src/ndi/+ndi/interaction.m'
+      - 'src/ndi/+ndi/observation.m'
+      - 'src/ndi/+ndi/manipulation.m'
+      - 'src/ndi/+ndi/calculation.m'
+      - 'src/ndi/+ndi/data_type.m'
+      - 'tests/+ndi/+unittest/+vintage/TestVintageMap.m'
+      - '.github/workflows/test-import-v2.yml'
+  pull_request:
+    branches: [main, V2]
+    paths:
+      - 'src/ndi/+ndi/+setup/+V2/**'
+      - 'src/ndi/+ndi/+setup/+conv/+haley/import_V2*'
+      - 'src/ndi/+ndi/+setup/+conv/+haley/**'
+      - 'src/ndi/+ndi/+setup/+conv/+haley/sessionList.m'
+      - 'src/ndi/+ndi/+setup/+conv/+haley/subjectList.m'
+      - 'src/ndi/+ndi/+setup/+conv/+haley/idPrefix.m'
+      - 'src/ndi/+ndi/+setup/+conv/+haley/recordingList.m'
+      - 'src/ndi/+ndi/+setup/+conv/+haley/sessionDocuments.m'
+      - 'src/ndi/+ndi/+setup/+conv/+haley/relationDocuments.m'
+      - 'src/ndi/+ndi/+setup/+conv/+haley/transferTime.m'
+      - 'src/ndi/+ndi/+file/+navigator/bodies.m'
+      - 'src/ndi/+ndi/+database/+fun/externalFileLocation.m'
+      - 'src/ndi/+ndi/+database/+implementations/+database/did2sqlite.m'
+      - 'src/ndi/+ndi/+database/+internal/applyReadNormalization.m'
+      - 'tests/+ndi/+unittest/+setup/+V2/**'
+      - 'src/ndi/+ndi/+vintage/**'
+      - 'src/ndi/+ndi/+v2/**'
+      - 'src/ndi/+ndi/entity.m'
+      - 'src/ndi/+ndi/dataset.m'
+      - 'src/ndi/+ndi/+dataset/dir.m'
+      - 'src/ndi/+ndi/session.m'
+      - 'src/ndi/+ndi/subject.m'
+      - 'src/ndi/+ndi/statement.m'
+      - 'src/ndi/+ndi/assertion.m'
+      - 'src/ndi/+ndi/interaction.m'
+      - 'src/ndi/+ndi/observation.m'
+      - 'src/ndi/+ndi/manipulation.m'
+      - 'src/ndi/+ndi/calculation.m'
+      - 'src/ndi/+ndi/data_type.m'
+      - 'tests/+ndi/+unittest/+vintage/TestVintageMap.m'
+      - '.github/workflows/test-import-v2.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: test-import-v2-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  import-v2:
+    name: V2 import stages (${{ matrix.schema }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # current: did-schema main with DID-matlab V2 (from requirements.txt).
+        # next: the one-entity-class / composition schema and the did2.build that
+        # reads it, both still on review branches (did-schema PR #88, DID-matlab
+        # PR #218). The import and the readers build and read both shapes, so both
+        # legs must pass. Drop `next` once both merge.
+        include:
+          - schema: current
+            did_schema_ref: main
+            did_matlab_ref: ''
+          - schema: next
+            did_schema_ref: claude/ecstatic-pascal-md91fw
+            did_matlab_ref: claude/ecstatic-pascal-md91fw
+    env:
+      DID_SCHEMA_REF: ${{ matrix.did_schema_ref }}
+    steps:
+      - name: Check out NDI-matlab
+        uses: actions/checkout@v4
+
+      - name: Check out did-schema
+        uses: actions/checkout@v4
+        with:
+          repository: Waltham-Data-Science/did-schema
+          ref: ${{ env.DID_SCHEMA_REF }}
+          path: did-schema
+
+      - name: Assemble the V2 schema set
+        run: |
+          mkdir -p "${GITHUB_WORKSPACE}/eta-schemas"
+          cp did-schema/schemas/V_eta/stable/*.json "${GITHUB_WORKSPACE}/eta-schemas/"
+          cp did-schema/schemas/V_eta/draft/*.json  "${GITHUB_WORKSPACE}/eta-schemas/"
+          cp did-schema/schemas/V_eta/deprecated/*.json "${GITHUB_WORKSPACE}/eta-schemas/"
+          echo "DENOMINATOR: $(ls "${GITHUB_WORKSPACE}/eta-schemas" | wc -l) schema file(s) from did-schema@$(git -C did-schema rev-parse --short HEAD)"
+          echo "DID_SCHEMA_PATH=${GITHUB_WORKSPACE}/eta-schemas" >> "$GITHUB_ENV"
+
+      - name: Check out DID-matlab (next leg only)
+        if: ${{ matrix.did_matlab_ref != '' }}
+        uses: actions/checkout@v4
+        with:
+          repository: VH-Lab/DID-matlab
+          ref: ${{ matrix.did_matlab_ref }}
+          path: did-matlab-next
+
+      - name: Set up MATLAB
+        uses: matlab-actions/setup-matlab@v2
+        with:
+          # PINNED: `latest` moved to R2026b (2026-10-01), whose
+          # matlab.addons.install no longer accepts the agreeToLicense argument
+          # MatBox's installFexPackage passes, so dependency install fails before
+          # any test runs. Unpin when MatBox is updated.
+          release: R2026a
+          cache: true
+
+      - name: Install MatBox
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        uses: ehennestad/matbox-actions/install-matbox@v1
+
+      - name: Install repo dependencies
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        uses: matlab-actions/run-command@v2
+        with:
+          command: |
+            addpath(genpath("src"));
+            addpath(genpath("tools"));
+            matbox.installRequirements(nditools.projectdir());
+            matbox.installRequirements(fullfile(pwd, "tests"));
+
+      - name: Run the V2 import tests
+        uses: matlab-actions/run-command@v2
+        with:
+          command: |
+            addpath(genpath("src"));
+            addpath(genpath("tests"));
+            if isfolder("did-matlab-next/src")
+                % ahead of the installed DID-matlab V2 on the path
+                addpath(genpath(fullfile(pwd, "did-matlab-next", "src")));
+                disp("DID-matlab from did-matlab-next (" + string(which("did2.build.document")) + ")");
+            end
+            import matlab.unittest.TestSuite;
+            suite = [TestSuite.fromPackage("ndi.unittest.setup.V2", "IncludingSubpackages", true), ...
+                     TestSuite.fromClass(?ndi.unittest.vintage.TestVintageMap)];
+            results = run(suite);
+            disp(table(results));
+            nRun = numel(results);
+            nFailed = sum([results.Failed]);
+            nIncomplete = sum([results.Incomplete]);
+            fprintf("VERDICT: %d run, %d failed, %d filtered\n", nRun, nFailed, nIncomplete);
+            assert(nRun > 0, "no V2 import tests were selected");
+            assert(nFailed == 0, sprintf("%d V2 import test(s) failed", nFailed));
+            assert(nIncomplete == 0, sprintf("%d V2 import test(s) were FILTERED -- did2.build or the schema is missing", nIncomplete));

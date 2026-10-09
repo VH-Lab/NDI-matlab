@@ -140,8 +140,8 @@ function v = assertionValue(ndi_session_obj, docId, label)
 %   v1 read would have produced from an empty field.
 v = '';
 q = ndi.query('', 'isa', 'term_assertion', '') & ...
-    ndi.query('subject_statement.variable.name', 'exact_string', label, '') & ...
-    ndi.query('', 'depends_on', 'subject_id', docId);
+    ndi.v2.fieldQuery('statement.variable.name', 'exact_string', label) & ...
+    ndi.v2.entityQuery(docId);
 docs = ndi_session_obj.database_search(q);
 if isempty(docs)
     return;
@@ -175,14 +175,15 @@ function [specimen, found] = specimenViaInstrument(ndi_session_obj, elementId)
 %   repository.
 specimen = '';
 found = false;
-q = ndi.query('', 'isa', 'subject_observation', '') & ...
+q = ndi.v2.isaQuery('observation') & ...
     ndi.query('', 'depends_on', 'instrument_id', elementId);
 docs = ndi_session_obj.database_search(q);
 if isempty(docs)
     return;
 end
 found = true;
-specimen = docs{1}.dependency_value('subject_id', 'ErrorIfNotFound', 0);
+specimen = ndi.v2.edgeIds(ndi.v2.props(docs{1}), 'entity_id');
+if isempty(specimen), specimen = ''; else, specimen = specimen{1}; end
 end
 
 function target = relationTarget(ndi_session_obj, childId, relationName)

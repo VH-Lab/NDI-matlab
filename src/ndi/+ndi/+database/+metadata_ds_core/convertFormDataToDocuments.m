@@ -111,8 +111,7 @@ function documentList = convertFormDataToDocuments(appUserData, sessionId)
 
     if isfield( appUserData, 'License')
         if appUserData.License ~= ""
-            S = openminds.internal.getControlledInstance( appUserData.License, 'License', 'core');
-            datasetVersion.license = openminds.core.License().fromStruct(S);
+            datasetVersion.license = openminds.core.License.fromName(appUserData.License);
         end
     end
 
