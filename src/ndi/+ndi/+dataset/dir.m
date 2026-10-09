@@ -43,14 +43,14 @@ classdef dir < ndi.dataset
             % Use the session.dir's path as the path for this object
             ndi_dataset_dir_obj.path = ndi_dataset_dir_obj.session.path;
 
-            dataset_session_info_docs = ndi_dataset_dir_obj.database_search(ndi.query('','isa','dataset_session_info'));
+            dataset_session_info_docs = ndi_dataset_dir_obj.session.database.search(ndi.query('','isa','dataset_session_info'));
             
             correctSessionId = '';
             if ~isempty(dataset_session_info_docs)
                 correctSessionId = dataset_session_info_docs{1}.document_properties.base.session_id;
             else
                 q = ndi.query('','isa','session_in_a_dataset');
-                session_in_a_dataset_docs = ndi_dataset_dir_obj.database_search(q);
+                session_in_a_dataset_docs = ndi_dataset_dir_obj.session.database.search(q);
                 if ~isempty(session_in_a_dataset_docs)
                     correctSessionId = session_in_a_dataset_docs{1}.document_properties.base.session_id;
                 else
@@ -68,7 +68,7 @@ classdef dir < ndi.dataset
                         correctSessionId = datasetDocs{1}.document_properties.base.session_id;
                     else
                         q_session = ndi.v2.isaQuery('session');
-                        candidate_session_doc = ndi_dataset_dir_obj.database_search(q_session);
+                        candidate_session_doc = ndi_dataset_dir_obj.session.database.search(q_session);
                         if isscalar(candidate_session_doc)
                            correctSessionId = candidate_session_doc{1}.document_properties.base.session_id;
                         end
@@ -78,7 +78,7 @@ classdef dir < ndi.dataset
 
             if ~isempty(correctSessionId)
                 q_session = ndi.v2.isaQuery('session') & ndi.query('base.session_id','exact_string',correctSessionId);                
-                candidate_session_doc = ndi_dataset_dir_obj.database_search(q_session);
+                candidate_session_doc = ndi_dataset_dir_obj.session.database.search(q_session);
                 if isscalar(candidate_session_doc)
                     % BOTH VINTAGES. V_eta renamed session.reference ->
                     % session.local_identifier (did-schema, signed 2026-08-13).
@@ -110,7 +110,7 @@ classdef dir < ndi.dataset
             if ~isempty(dataset_session_info_docs)
                 %disp('updating dataset to new form');
                 % double-check we still need to do it
-                dataset_session_info_docs2 = ndi_dataset_dir_obj.database_search(ndi.query('','isa','dataset_session_info'));
+                dataset_session_info_docs2 = ndi_dataset_dir_obj.session.database.search(ndi.query('','isa','dataset_session_info'));
                 if ~isempty(dataset_session_info_docs2)
                     ndi_dataset_dir_obj.repairDatasetSessionInfo(ndi_dataset_dir_obj,dataset_session_info_docs2);
                 end
