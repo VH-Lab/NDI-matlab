@@ -153,9 +153,9 @@ for f = 1:numel(dbs)
     F = qf(f, 'SELECT doc_id, filename, uid, location, ingested FROM files');
     fileDir = fullfile(folders{f}, '.ndi', 'files');
     nRecorded = nRecorded + numel(F);
-    prog.start('files', sprintf('Checking %d file(s)', numel(F)), numel(F));
+    prog.start(sprintf('files %d', f), sprintf('Checking %d file(s) of database %d', numel(F), f), numel(F));
     for k = 1:numel(F)
-        prog.step('files', k);
+        prog.step(sprintf('files %d', f), k);
         if F(k).ingested
             nIngested = nIngested + 1;
             p = fullfile(fileDir, F(k).uid);
@@ -182,9 +182,9 @@ if options.Hashes
             'WHERE f.ingested = 1']);
         fileDir = fullfile(folders{f}, '.ndi', 'files');
         nB = nB + numel(B);
-        prog.start('hashes', sprintf('Hashing %d file(s)', numel(B)), numel(B));
+        prog.start(sprintf('hashes %d', f), sprintf('Hashing %d file(s) of database %d', numel(B), f), numel(B));
         for k = 1:numel(B)
-            prog.step('hashes', k);
+            prog.step(sprintf('hashes %d', f), k);
             [h, alg] = recordedHash(jsondecode(B(k).body));
             if isempty(h) || ~strcmpi(alg, 'MD5')
                 noHash = noHash + 1;
