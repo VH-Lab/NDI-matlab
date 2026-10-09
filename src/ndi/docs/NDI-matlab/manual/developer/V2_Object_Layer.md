@@ -321,3 +321,34 @@ Recording keys (decision #70): a Haley video or image statement's `axes()` gives
 the image's rows and columns in pixels (centres at 0.5, 1.5, ...) and, for a
 video, `time`, one per frame from the recording's start at 1 / frame rate. They
 are written only when the file was opened (`'ReadVideos'`, or a TIFF).
+
+## 11. Linked and ingested sessions (2026-10-09)
+
+did-schema `V_eta_linked_session_plan.md` (signed 2026-10-09): a session is in
+a dataset when its `session` entity is `part_of` the dataset, or `part_of` a
+study that is `part_of` the dataset; the relation is in the dataset's database.
+An INGESTED session's documents are in the dataset's database too; a LINKED
+session's are in its own folder, which a `linked_session` document (`path`,
+relative to the dataset's folder when inside it, and an `entity_id` edge to the
+session's entity) names. v1's `session_in_a_dataset` is not used.
+
+| method / function | what it does on a V2 dataset |
+|---|---|
+| `session_list`, `open_session`, `database_search` | list the members (`ndi.v2.datasetSessions`), open a linked one from its folder (checked to hold that session), search the dataset and each linked session |
+| `session_notes` | the listing's denominator, and every session left out and why (not `part_of` the dataset; a linked folder missing, unopenable or holding another session; also a warning, `ndi:dataset:sessionsLeftOut`) |
+| `add_linked_session(S, 'PartOf', id)` | a `part_of` relation (to the dataset, or the study `PartOf` names) and a `linked_session` document |
+| `add_ingested_session(S, 'PartOf', id)` | copies every document of S, with the files it ingested; adds a `part_of` relation unless S's own relations already make it a member |
+| `convertLinkedSessionToIngested` | copies the linked session's documents in, deletes the `linked_session` |
+| `convertIngestedSessionToLinked(id, folder)` | writes the session's documents to a new V2 session in `folder`, deletes them from the dataset, adds a `linked_session`; the `part_of` relations stay |
+| `unlink_session` | deletes the `linked_session` and the `part_of` relations naming the session; the folder stays |
+| `makeSelfContained('DryRun', tf)` | copies every file the dataset's documents record by location into its file store |
+
+Documents are copied with `ndi.v2.copyDocuments`, as stored
+(`ndi.v2.sessionDocuments` reads the did2 database, not the ndi read path,
+which adds class blocks): ids, edges and session ids unchanged; a file a
+document ingested is ingested again from the source's copy; a file recorded by
+location stays where it is. `ndi.dataset.dir`'s constructor now reads its own
+database for its lookups. Tests: `TestLinkedSessions`.
+
+Not decided here, and not built: merging shared entities (a strain, people,
+software) when a session made on its own joins a dataset.
