@@ -14,6 +14,7 @@ function url = url(endpointName, options)
         options.session_id (1,1) string = ""
         options.stage_id (1,1) string = ""
         options.job_id (1,1) string = ""
+        options.feedback_id (1,1) string = ""
         options.state (1,1) string = ""
         options.page (1,1) double = 1
         options.page_size (1,1) double = 20
@@ -125,6 +126,11 @@ function url = url(endpointName, options)
         % last stage finalizes the session. There is no /finalize route.
         endpointMap("advance_compute_session")        = "/compute/{sessionId}/advance";
         endpointMap("list_compute_sessions")          = "/compute";
+
+        % In-app problem reports (ndi-cloud-node#158). Reporters can withdraw
+        % their own reports; triage happens in the admin site.
+        endpointMap("submit_feedback")                = "/feedback";
+        endpointMap("delete_feedback")                = "/feedback/{feedbackId}";
     end
 
     endpointPath = endpointMap(endpointName);
@@ -165,6 +171,7 @@ function options = processOptions(options)
     options = renameStructField(options, 'session_id', 'sessionId');
     options = renameStructField(options, 'stage_id', 'stageId');
     options = renameStructField(options, 'job_id', 'jobId');
+    options = renameStructField(options, 'feedback_id', 'feedbackId');
 
     function s = renameStructField(s, oldname, newname)
         s.(newname) = s.(oldname);
