@@ -386,18 +386,10 @@ classdef SignedURLSetTest < matlab.unittest.TestCase
                 testCase.DatasetID, testCase.CloudDocumentID);
             msg = ndi.unittest.cloud.APIMessage(narrative, b, job, resp, url);
 
-            % Environments where the worker isn't provisioned return
-            % 500 CONFIGURATION_ERROR / ENQUEUE_ERROR / JOB_CREATION_ERROR.
-            % Skip rather than fail so this test stays meaningful on
-            % partial deployments.
+            % An environment without the worker returns 500
+            % CONFIGURATION_ERROR / ENQUEUE_ERROR / JOB_CREATION_ERROR,
+            % which fails here.
             if ~b
-                if isstruct(job) && isfield(job, 'code') && ...
-                        any(strcmp(job.code, {'CONFIGURATION_ERROR','ENQUEUE_ERROR','JOB_CREATION_ERROR'}))
-                    testCase.assumeFail(...
-                        "Signed URL set worker is not configured on this environment; skipping async path. " + msg);
-                    testCase.Narrative = narrative;
-                    return;
-                end
                 testCase.verifyTrue(b, "createSignedURLSetJob returned failure. " + msg);
                 testCase.Narrative = narrative;
                 return;
