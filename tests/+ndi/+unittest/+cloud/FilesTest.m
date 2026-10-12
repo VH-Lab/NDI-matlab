@@ -48,18 +48,6 @@ classdef FilesTest < matlab.unittest.TestCase
         end
     end
     methods (Access = private)
-        function assumeServerHasFileLookup(testCase)
-            % The crc32 / POST /files/lookup support (NDI Cloud #162) may not
-            % be deployed to every environment the nightly run targets yet.
-            % A 404 from the route (the dataset exists) means it is not, so
-            % skip rather than fail.
-            [b, ~, resp] = ndi.cloud.api.files.lookupFiles(testCase.DatasetID, "probe_uid");
-            if ~b && isa(resp, 'matlab.net.http.ResponseMessage') ...
-                    && resp.StatusCode == matlab.net.http.StatusCode.NotFound
-                testCase.assumeFail("This NDI Cloud environment predates POST /files/lookup (#162).");
-            end
-        end
-
         function [localFilePath, fileUID] = makeLocalTestFile(testCase)
             % A temporary file named by a fresh uid, containing TestFileContent.
             tempFolder = testCase.applyFixture(matlab.unittest.fixtures.TemporaryFolderFixture);
@@ -868,7 +856,6 @@ classdef FilesTest < matlab.unittest.TestCase
             % listFiles and lookupFiles.
             testCase.Narrative = "Begin testUploadWithChecksumRoundTrip";
             narrative = testCase.Narrative;
-            testCase.assumeServerHasFileLookup();
 
             [localFilePath, fileUID] = testCase.makeLocalTestFile();
             localCrc = ndi.fun.file.crc32(localFilePath);
@@ -936,7 +923,6 @@ classdef FilesTest < matlab.unittest.TestCase
             % S3 refuses content that does not match it.
             testCase.Narrative = "Begin testUploadWithWrongChecksumIsRejected";
             narrative = testCase.Narrative;
-            testCase.assumeServerHasFileLookup();
 
             [localFilePath, fileUID] = testCase.makeLocalTestFile();
             wrongCrc = ndi.fun.file.crc32ToBase64(0);
@@ -960,7 +946,6 @@ classdef FilesTest < matlab.unittest.TestCase
             % ndi.cloud.uploadSingleFile sends the checksum by default.
             testCase.Narrative = "Begin testUploadSingleFileRecordsChecksum";
             narrative = testCase.Narrative;
-            testCase.assumeServerHasFileLookup();
 
             [localFilePath, fileUID] = testCase.makeLocalTestFile();
             [b_up, err_up] = ndi.cloud.uploadSingleFile(testCase.DatasetID, fileUID, localFilePath);
@@ -985,7 +970,6 @@ classdef FilesTest < matlab.unittest.TestCase
             % The server refuses more than 5000 uids; the client splits longer
             % lists, so drive the server check with a raw request.
             testCase.Narrative = "Begin testLookupFilesRejectsAnInvalidBody";
-            testCase.assumeServerHasFileLookup();
 
             token = ndi.cloud.authenticate();
             apiURL = ndi.cloud.api.url('lookup_dataset_files', 'dataset_id', testCase.DatasetID);
@@ -1004,7 +988,6 @@ classdef FilesTest < matlab.unittest.TestCase
         function testLookupFilesSplitsLongLists(testCase)
             % More than one server call's worth of uids, none uploaded.
             testCase.Narrative = "Begin testLookupFilesSplitsLongLists";
-            testCase.assumeServerHasFileLookup();
 
             uids = "nouid" + string(1:5003);
             [b, answer, resp, url] = ndi.cloud.api.files.lookupFiles(testCase.DatasetID, uids);

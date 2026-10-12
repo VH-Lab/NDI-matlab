@@ -287,11 +287,9 @@ classdef SignedURLSetTest < matlab.unittest.TestCase
             testCase.verifyTrue(b, "getSignedURLSet returned failure. " + msg);
             if ~b, testCase.Narrative = narrative; return; end
 
+            % An environment without fileInfo (NDI Cloud #162) fails here: the
+            % empty list does not match the URL map.
             urlUIDs = sort(ndi.unittest.cloud.SignedURLSetTest.returnedUIDs(page.files));
-            if isempty(page.fileInfo) && ~isempty(urlUIDs)
-                testCase.assumeFail("This NDI Cloud environment predates signed-url-set fileInfo (#162).");
-            end
-
             infoUIDs = sort(string({page.fileInfo.uid}));
             testCase.verifyEqual(infoUIDs, urlUIDs, ...
                 "fileInfo should describe exactly the files on the page. " + msg);
