@@ -16,6 +16,7 @@ classdef PutFiles
         jobId (1,1) string
         waitForCompletion (1,1) logical
         timeout (1,1) double
+        checksumCRC32 (1,1) string % base64 big-endian CRC-32, or "" for none
     end
 
     methods
@@ -28,7 +29,17 @@ classdef PutFiles
                 args.jobId (1,1) string = ""
                 args.waitForCompletion (1,1) logical = false
                 args.timeout (1,1) double {mustBePositive} = 60
+                args.checksumCRC32 (1,1) string = ""
             end
+            % A CRC-32 is 4 bytes: six base64 characters and '=='. Checking
+            % the shape also keeps the value safe to put in a curl command.
+            if strlength(args.checksumCRC32) > 0 && ...
+                    isempty(regexp(char(args.checksumCRC32), '^[A-Za-z0-9+/]{6}==$', 'once'))
+                error('NDI:CloudApi:PutFiles:InvalidChecksum', ...
+                    'checksumCRC32 must be the base64 of a 4-byte CRC-32 (e.g. ''NhCmhg==''), got ''%s''.', ...
+                    args.checksumCRC32);
+            end
+            this.checksumCRC32 = args.checksumCRC32;
             this.preSignedURL = args.preSignedURL;
             this.filePath = args.filePath;
             this.useCurl = args.useCurl;
@@ -77,8 +88,12 @@ classdef PutFiles
             apiURL = matlab.net.URI(this.preSignedURL);
             method = matlab.net.http.RequestMethod.PUT;
             provider = matlab.net.http.io.FileProvider(this.filePath);
-            contentTypeField = matlab.net.http.HeaderField('Content-Type', 'application/octet-stream');
-            request = matlab.net.http.RequestMessage(method, contentTypeField, provider);
+            headers = matlab.net.http.HeaderField('Content-Type', 'application/octet-stream');
+            if strlength(this.checksumCRC32) > 0
+                % The upload URL signs this header (NDI Cloud #162).
+                headers(end+1) = matlab.net.http.HeaderField('x-amz-checksum-crc32', char(this.checksumCRC32));
+            end
+            request = matlab.net.http.RequestMessage(method, headers, provider);
 
             try
                 apiResponse = send(request, apiURL);
@@ -90,6 +105,21 @@ classdef PutFiles
                 apiResponse = ME;
                 answer = ME.message;
             end
+        end
+
+        function command = curlArguments(this)
+            %CURLARGUMENTS The curl command (without the environment prefix).
+            %   When checksumCRC32 is set, the x-amz-checksum-crc32 header is
+            %   sent: the upload URL signs it (NDI Cloud #162), so S3 refuses
+            %   the PUT without it and rejects content that does not match.
+            checksumHeader = '';
+            if strlength(this.checksumCRC32) > 0
+                checksumHeader = sprintf('-H "x-amz-checksum-crc32: %s" ', char(this.checksumCRC32));
+            end
+            command = sprintf(['curl -fsSL -X PUT --upload-file "%s" ' ...
+                '-H "Content-Type: application/octet-stream" ' ...
+                '-H "Accept-Encoding: identity" ' ...
+                '%s"%s"'], this.filePath, checksumHeader, this.preSignedURL);
         end
 
         function [b, answer, apiResponse, apiURL] = executeWithCurl(this)
@@ -115,10 +145,7 @@ classdef PutFiles
             % sprintf so a '%' in the library path cannot corrupt the format
             % string.
             envPrefix = ndi.common.systemCurlEnvPrefix();
-            command = [envPrefix sprintf(['curl -fsSL -X PUT --upload-file "%s" ' ...
-                '-H "Content-Type: application/octet-stream" ' ...
-                '-H "Accept-Encoding: identity" ' ...
-                '"%s"'], this.filePath, this.preSignedURL)];
+            command = [envPrefix this.curlArguments()];
 
             [status, result] = system(command);
 

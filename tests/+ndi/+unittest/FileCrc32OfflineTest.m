@@ -93,6 +93,36 @@ classdef FileCrc32OfflineTest < matlab.unittest.TestCase
             testCase.verifyFalse(contains(u, "checksumCRC32"));
         end
 
+        % ---- PUT with a checksum header ----------------------------------
+
+        function testPutSendsTheChecksumHeader(testCase)
+            p = ndi.unittest.FileCrc32OfflineTest.writeTempFile(testCase, double('hello'));
+            call = ndi.cloud.api.implementation.files.PutFiles(...
+                'preSignedURL', "https://bucket.s3.amazonaws.com/k?X-Amz-Signature=abc", ...
+                'filePath', p, 'checksumCRC32', "NhCmhg==");
+            cmd = string(call.curlArguments());
+            testCase.verifyTrue(contains(cmd, '-H "x-amz-checksum-crc32: NhCmhg=="'), ...
+                'the signed x-amz-checksum-crc32 header must be sent');
+        end
+
+        function testPutWithoutChecksumSendsNoHeader(testCase)
+            p = ndi.unittest.FileCrc32OfflineTest.writeTempFile(testCase, double('hello'));
+            call = ndi.cloud.api.implementation.files.PutFiles(...
+                'preSignedURL', "https://bucket.s3.amazonaws.com/k?X-Amz-Signature=abc", ...
+                'filePath', p);
+            testCase.verifyFalse(contains(string(call.curlArguments()), "x-amz-checksum-crc32"));
+        end
+
+        function testPutRefusesAMalformedChecksum(testCase)
+            % The value goes into a shell command, so only a real base64
+            % CRC-32 is accepted.
+            p = ndi.unittest.FileCrc32OfflineTest.writeTempFile(testCase, double('hello'));
+            testCase.verifyError(@() ndi.cloud.api.implementation.files.PutFiles(...
+                'preSignedURL', "https://bucket.s3.amazonaws.com/k", ...
+                'filePath', p, 'checksumCRC32', "abc"" && rm -rf x"), ...
+                'NDI:CloudApi:PutFiles:InvalidChecksum');
+        end
+
         % ---- lookupFiles request -----------------------------------------
 
         function testLookupEndpoint(testCase)

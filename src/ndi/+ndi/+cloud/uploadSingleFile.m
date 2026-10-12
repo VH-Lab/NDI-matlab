@@ -77,7 +77,8 @@ function [b, errormsg] = uploadSingleFile(cloudDatasetID, cloudFileUID, filePath
         end
 
         % Upload the file
-        [b_put, put_or_error] = ndi.cloud.api.files.putFiles(url_or_error, filePath, 'useCurl', options.useCurl);
+        [b_put, put_or_error] = ndi.cloud.api.files.putFiles(url_or_error, filePath, 'useCurl', options.useCurl, ...
+            'checksumCRC32', checksumCRC32);
 
         if ~b_put
             b = false;

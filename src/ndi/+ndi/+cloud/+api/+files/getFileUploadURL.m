@@ -14,9 +14,12 @@ function [b, answer, apiResponse, apiURL] = getFileUploadURL(cloudDatasetID, clo
 %   Name-Value Inputs:
 %       checksumCRC32       - (Optional) The file's CRC-32 as base64 of its
 %                             4-byte big-endian value (ndi.fun.file.crc32).
-%                             When given, the URL is signed with it, so S3
-%                             rejects an upload whose content does not match,
-%                             and the cloud records it as the file's crc32.
+%                             When given, the URL signs the
+%                             x-amz-checksum-crc32 header, so the upload must
+%                             send it: pass the same value to putFiles as
+%                             'checksumCRC32'. S3 then rejects content that
+%                             does not match, and the cloud records the value
+%                             as the file's crc32.
 %                             Default "" (no checksum).
 %
 %   Outputs:
@@ -32,6 +35,7 @@ function [b, answer, apiResponse, apiURL] = getFileUploadURL(cloudDatasetID, clo
 %       crc = ndi.fun.file.crc32('myfile.dat');
 %       [success, upload_url] = ndi.cloud.api.files.getFileUploadURL('d-12345', 'f-newfile', ...
 %           'checksumCRC32', crc);
+%       ndi.cloud.api.files.putFiles(upload_url, 'myfile.dat', 'checksumCRC32', crc);
 %
 %   See also: ndi.cloud.api.implementation.files.GetFileUploadURL,
 %             ndi.fun.file.crc32

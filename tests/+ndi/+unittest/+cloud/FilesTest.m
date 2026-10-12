@@ -880,7 +880,8 @@ classdef FilesTest < matlab.unittest.TestCase
             testCase.verifyTrue(b_url, "Failed to get a checksummed upload URL. " + msg_url);
             if ~b_url, testCase.Narrative = narrative; return; end
 
-            [b_put, ans_put, resp_put, url_put] = ndi.cloud.api.files.putFiles(ans_url, localFilePath, "useCurl", true);
+            [b_put, ans_put, resp_put, url_put] = ndi.cloud.api.files.putFiles(ans_url, localFilePath, ...
+                "useCurl", true, "checksumCRC32", localCrc);
             msg_put = ndi.unittest.cloud.APIMessage(narrative, b_put, ans_put, resp_put, url_put);
             testCase.verifyTrue(b_put, "Upload with a matching checksum failed. " + msg_put);
             if ~b_put, testCase.Narrative = narrative; return; end
@@ -947,7 +948,8 @@ classdef FilesTest < matlab.unittest.TestCase
             testCase.verifyTrue(b_url, "Failed to get a checksummed upload URL. " + msg_url);
             if ~b_url, testCase.Narrative = narrative; return; end
 
-            [b_put, ans_put, resp_put, url_put] = ndi.cloud.api.files.putFiles(ans_url, localFilePath, "useCurl", true);
+            [b_put, ans_put, resp_put, url_put] = ndi.cloud.api.files.putFiles(ans_url, localFilePath, ...
+                "useCurl", true, "checksumCRC32", wrongCrc);
             msg_put = ndi.unittest.cloud.APIMessage(narrative, b_put, ans_put, resp_put, url_put);
             testCase.verifyFalse(b_put, "S3 accepted content whose CRC-32 does not match the signed checksum. " + msg_put);
 
