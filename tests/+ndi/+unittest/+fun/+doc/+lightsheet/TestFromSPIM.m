@@ -3,9 +3,10 @@ classdef TestFromSPIM < matlab.unittest.TestCase
     %
     % Runs on NDR's SmartSPIM fixture with 'AllChannels', true: two
     % channels (ch0 = Ex_561_Em_561F_Ch2, ch1 = Ex_640_Em_640F_Ch3), four
-    % 106x13 uint16 slices each, every pixel of slice z in channel k
-    % equal to 1000*(k+1) + z. Constant slices make every level's
-    % expected values easy to state.
+    % 106x13 uint16 slices each, every pixel of slice z (0-based) in
+    % channel k equal to 1000*(k+1) + z -- so 1-based slice z holds
+    % 1000*(k+1) + z - 1. Constant slices make every level's expected
+    % values easy to state.
 
     properties
         session
@@ -109,7 +110,7 @@ classdef TestFromSPIM < matlab.unittest.TestCase
             for k = 0:1
                 for z = 1:4
                     plane = squeeze(vol(1, k + 1, z, :, :));
-                    testCase.verifyTrue(all(plane(:) == 1000 * (k + 1) + z), ...
+                    testCase.verifyTrue(all(plane(:) == 1000 * (k + 1) + z - 1), ...
                         sprintf('ch%d z=%d', k, z));
                 end
             end
@@ -135,11 +136,10 @@ classdef TestFromSPIM < matlab.unittest.TestCase
                 vol = testCase.readLevel(lv{2});
                 for k = 0:1
                     base = 1000 * (k + 1);
-                    if strcmp(red{1}, 'mean')
-                        expect = base + [2 4];   % mean(1,2)=1.5 -> 2, mean(3,4)=3.5 -> 4
-                    else
-                        expect = base + [2 4];   % max(1,2), max(3,4)
-                    end
+                    % Slices hold base + 0..3. Mean of {0,1} = 0.5 and of
+                    % {2,3} = 2.5 round half away from zero to 1 and 3;
+                    % max gives 1 and 3 too.
+                    expect = base + [1 3];
                     for z = 1:2
                         plane = squeeze(vol(1, k + 1, z, :, :));
                         testCase.verifyTrue(all(plane(:) == expect(z)), ...

@@ -155,20 +155,22 @@ function [pyramidDoc, levelDocs, info] = fromSPIM(session, rootDir, options)
 
     pyramids = repmat(struct('name', '', 'type', '', 'axes', axesDesc, ...
         'levels', level0), numel(reductions), 1);
-    levelInfo = struct('path', {'0'}, 'reduction', {'none'}, ...
-        'shape', {shape0}, 'voxelSize', {scale0}, 'factor', {ones(1, 5)});
+    nSteps = numel(steps);
+    levelInfo = repmat(struct('path', '0', 'reduction', 'none', ...
+        'shape', shape0, 'voxelSize', scale0, 'factor', ones(1, 5)), ...
+        1, 1 + numel(reductions) * nSteps);
     for r = 1:numel(reductions)
         red = reductions{r};
-        levels = level0;
+        levels = repmat(level0, 1, 1 + nSteps);
         prevPath = '0';
-        for k = 1:numel(steps)
+        for k = 1:nSteps
             levelPath = sprintf('%s/%d', red, k);
-            levels(end+1) = levelEntry(levelPath, steps(k).shape, steps(k).scale, dtype); %#ok<AGROW>
+            levels(1 + k) = levelEntry(levelPath, steps(k).shape, steps(k).scale, dtype);
             levelSources(levelPath) = struct('kind', 'reduce', 'fromPath', prevPath, ...
                 'factor', steps(k).factor, 'reduction', red);
-            levelInfo(end+1) = struct('path', levelPath, 'reduction', red, ... %#ok<AGROW>
-                'shape', steps(k).shape, 'voxelSize', steps(k).scale, ...
-                'factor', steps(k).factor);
+            levelInfo(1 + (r - 1) * nSteps + k) = struct('path', levelPath, ...
+                'reduction', red, 'shape', steps(k).shape, ...
+                'voxelSize', steps(k).scale, 'factor', steps(k).factor);
             prevPath = levelPath;
         end
         pyramids(r).name = red;
