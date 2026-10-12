@@ -55,11 +55,35 @@ function [pyramidDoc, levelDocs, sharedLevel0] = makePyramid(session, pyramids, 
 %   without consulting the source store. Source-store chunk shape is
 %   NOT preserved.
 %
-%   Metadata only. n_chunks_stored is 0 on every level document in
-%   this PR; materializing chunk bytes into `chunk.bin_#` is follow-up
-%   work.
+%   With materializeChunks=false this is metadata only and
+%   n_chunks_stored is 0 on every level document. With
+%   materializeChunks=true each level's bytes are read, re-tiled,
+%   encoded and installed as the `chunk.bin_#` file series.
+%
+%   WHERE THE BYTES COME FROM. By default every level is read from the
+%   OME-Zarr store at sourceZarrPath (the level's own array in it).
+%   levelSources overrides that per level path, for sources that are
+%   not an OME-Zarr store -- ndi.fun.doc.lightsheet.fromSPIM uses it to
+%   read level 0 from SmartSPIM's stitched All_Channels slices and to
+%   build every coarser level by block-reducing the level just written:
+%
+%     levelSources - containers.Map from level path (the levels(k).path
+%                    string in PYRAMIDS) to a source struct:
+%         struct('kind','omezarr')        the default, from sourceZarrPath
+%         struct('kind','smartspim', 'slicePaths', {C x 1 cell of
+%                Z x 1 cellstr}, 'dtype', CLASS)
+%                                         2-D TIFF slices, one per (c, z),
+%                                         axes t,c,z,y,x
+%         struct('kind','reduce', 'fromPath', PATH, 'factor', F,
+%                'reduction', 'mean'|'max')
+%                                         block-reduce the level at PATH
+%                                         (written earlier in this call)
+%                                         by per-axis factor F
+%                    A path not in the map falls back to 'omezarr'.
 %
 %   See also: ndi.fun.doc.lightsheet.fromOMEZarr,
+%             ndi.fun.doc.lightsheet.fromSPIM,
+%             ndi.fun.doc.lightsheet.reduceBlocks,
 %             ndi.fun.doc.lightsheet.levelTable,
 %             ndi.fun.doc.lightsheet.chooseLevel
 
@@ -124,12 +148,21 @@ function [pyramidDoc, levelDocs, sharedLevel0] = makePyramid(session, pyramids, 
         % without affecting the hot path -- one line per super-block is
         % negligible on a multi-hour ingest.
         options.debugLog (1,:) char = ''
+        % Per-level-path byte sources; see "WHERE THE BYTES COME FROM"
+        % above. Empty (default) reads every level from sourceZarrPath.
+        options.levelSources = []
+        % Comma-separated channel names written to the pyramid document.
+        options.channelNames (1,:) char = ''
     end
 
-    if options.materializeChunks && isempty(options.sourceZarrPath)
+    if isempty(options.levelSources)
+        options.levelSources = containers.Map();
+    end
+    if options.materializeChunks && isempty(options.sourceZarrPath) ...
+            && options.levelSources.Count == 0
         error('NDI:lightsheet:makePyramid:noSource', ...
-            ['materializeChunks=true requires sourceZarrPath so ' ...
-             'chunks can be read from the source store.']);
+            ['materializeChunks=true requires sourceZarrPath (or ' ...
+             'levelSources) so chunks can be read from a source.']);
     end
 
     if numel(pyramids) ~= numel(perEntryReduction)
@@ -180,7 +213,7 @@ function [pyramidDoc, levelDocs, sharedLevel0] = makePyramid(session, pyramids, 
             'pyramid_type', char(firstEntry.type), ...
             'axes_order', axesOrder, ...
             'axes_units', strjoin(axesUnits, ','), ...
-            'channel_names', '', ...
+            'channel_names', options.channelNames, ...
             'n_channels', channelCount(firstLevel.shape, axesOrder), ...
             'shape_level0', firstLevel.shape, ...
             'voxel_size_level0', ensureRow(firstLevel.scale), ...
@@ -249,6 +282,7 @@ function [pyramidDoc, levelDocs, sharedLevel0] = makePyramid(session, pyramids, 
     % Assign each unique path a 0-based level index in the ORDER it
     % first appears (finest first, since listPyramids is finest-first).
     levelDocs = cell(numel(pathOrder), 1);
+    docByPath = containers.Map();
     sharedLevel0 = false;
     doneChunks = 0;
     for idx = 1:numel(pathOrder)
@@ -276,16 +310,22 @@ function [pyramidDoc, levelDocs, sharedLevel0] = makePyramid(session, pyramids, 
         reportProgress(options.progressFcn, doneChunks, totalChunks, ...
             sprintf('Level %d/%d (%s, %s): starting', ...
                 idx, numel(pathOrder), char(entry.name), reductionFn));
+        source = [];
+        if options.materializeChunks
+            source = resolveLevelSource(session, p, entry, level, ...
+                options, docByPath);
+        end
         [levelDocs{idx}, doneChunks] = makeOneLevel(session, pyramidDoc, ...
             entry, level, idx - 1, reductionFn, options, ...
             levelChunks{idx}, levelGrids{idx}, ...
-            doneChunks, totalChunks);
+            doneChunks, totalChunks, source);
+        docByPath(p) = levelDocs{idx};
     end
     reportProgress(options.progressFcn, max(doneChunks, totalChunks), ...
         max(totalChunks, 1), 'Done.');
 end
 
-function [levelDoc, doneChunks] = makeOneLevel(session, pyramidDoc, pyramidEntry, level, levelIndex, reductionFn, options, chunks, chunkGrid, doneChunks, totalChunks)
+function [levelDoc, doneChunks] = makeOneLevel(session, pyramidDoc, pyramidEntry, level, levelIndex, reductionFn, options, chunks, chunkGrid, doneChunks, totalChunks, source)
 
     if options.materializeChunks
         nChunksStored = prod(chunkGrid);
@@ -326,7 +366,7 @@ function [levelDoc, doneChunks] = makeOneLevel(session, pyramidDoc, pyramidEntry
     if options.materializeChunks
         levelLabel = sprintf('Level %d (%s)', levelIndex, reductionFn);
         [levelDoc, tmpRoot, doneChunks] = attachChunkFiles(levelDoc, ...
-            options.sourceZarrPath, pyramidEntry, level, chunks, chunkGrid, ...
+            source, level, chunks, chunkGrid, ...
             options.codec, options.clevel, ...
             options.progressFcn, doneChunks, totalChunks, levelLabel, ...
             options.numWorkers, options.prefetchBytes, options.asyncPrefetch, ...
@@ -337,22 +377,13 @@ function [levelDoc, doneChunks] = makeOneLevel(session, pyramidDoc, pyramidEntry
     session.database_add(levelDoc);
 end
 
-function [levelDoc, tmpRoot, doneChunks] = attachChunkFiles(levelDoc, sourceZarrPath, pyramidEntry, level, chunks, chunkGrid, codec, clevel, progressFcn, doneChunks, totalChunks, levelLabel, numWorkers, prefetchBytes, asyncPrefetch, debugLog)
+function [levelDoc, tmpRoot, doneChunks] = attachChunkFiles(levelDoc, source, level, chunks, chunkGrid, codec, clevel, progressFcn, doneChunks, totalChunks, levelLabel, numWorkers, prefetchBytes, asyncPrefetch, debugLog)
 % Read the source zarr level as a whole array, then re-tile into the
 % level document's chunk shape and attach each chunk as chunk.bin_<idx>
 % (1-based, C-order over chunkGrid). Files are ingested into DID, which
 % deletes the temp original as it copies -- so we build each chunk in a
-% new tempname and hand it to add_file.
-    pyramidName = char(pyramidEntry.name);
-    % Which position in this pyramid's datasets holds this level? The
-    % `level` struct came from listPyramids(entry).levels; its index is
-    % the 1-based position we need for readArray.
-    kInEntry = find(arrayfun(@(L) strcmp(char(L.path), char(level.path)), ...
-        pyramidEntry.levels), 1);
-    if isempty(kInEntry)
-        error('NDI:lightsheet:makePyramid:missingLevelInEntry', ...
-            'level path %s not found in pyramid %s.', level.path, pyramidName);
-    end
+% new tempname and hand it to add_file. SOURCE (see resolveLevelSource)
+% says where the level's bytes are read from.
 
     % STREAMING per-chunk read. We call readArray with `Region` per
     % target chunk instead of loading the whole level up front. Previous
@@ -406,6 +437,11 @@ function [levelDoc, tmpRoot, doneChunks] = attachChunkFiles(levelDoc, sourceZarr
     % pool (a super-block below poolSize would leave workers idle);
     % never larger than the level itself.
     chunkBytes = prod(chunks) * typesize;
+    % A reduced level reads prod(factor) source voxels per output voxel
+    % (and holds them as single while reducing, 2x a uint16), so its
+    % read buffer is that much bigger than the output region. Shrink
+    % the budget to match, so peak memory stays near prefetchBytes.
+    prefetchBytes = double(prefetchBytes) / readAmplification(source, typesize);
     prefetchChunkCount = max(poolSize, ...
         floor(double(prefetchBytes) / max(chunkBytes, 1)));
     prefetchChunkCount = min(prefetchChunkCount, nChunks);
@@ -456,8 +492,7 @@ function [levelDoc, tmpRoot, doneChunks] = attachChunkFiles(levelDoc, sourceZarr
     if useAsync
         pool = gcp();
         nextFut = parfeval(pool, @readSuperBlockRegion, 1, ...
-            sourceZarrPath, pyramidName, kInEntry, ...
-            superBlocks{1}.loBBox, superBlocks{1}.hiBBox);
+            source, superBlocks{1}.loBBox, superBlocks{1}.hiBBox);
     end
 
     for s = 1:nSuperBlocks
@@ -470,12 +505,10 @@ function [levelDoc, tmpRoot, doneChunks] = attachChunkFiles(levelDoc, sourceZarr
             if s < nSuperBlocks
                 nb = superBlocks{s + 1};
                 nextFut = parfeval(pool, @readSuperBlockRegion, 1, ...
-                    sourceZarrPath, pyramidName, kInEntry, ...
-                    nb.loBBox, nb.hiBBox);
+                    source, nb.loBBox, nb.hiBBox);
             end
         else
-            bigTile = readSuperBlockRegion(sourceZarrPath, ...
-                pyramidName, kInEntry, sb.loBBox, sb.hiBBox);
+            bigTile = readSuperBlockRegion(source, sb.loBBox, sb.hiBBox);
         end
 
         % ---- STAGE bigTile INTO A PARFOR-SLICEABLE ND-ARRAY -------
@@ -714,15 +747,189 @@ function [idxs, lo, hi] = growSuperBlock(linearOrder, i0, budgetChunks, chunks, 
     hi   = hi(1:n, :);
 end
 
-function bigTile = readSuperBlockRegion(sourceZarrPath, pyramidName, kInEntry, loBBox, hiBBox)
-% READSUPERBLOCKREGION - fetch one super-block region from the source
+function bigTile = readSuperBlockRegion(source, loBBox, hiBBox)
+% READSUPERBLOCKREGION - fetch one super-block region [loBBox, hiBBox]
 %
-%   Wraps ndr.format.omezarr.readArray so parfeval can dispatch it as
-%   a background read on a pool worker. Kept as a plain subfunction
-%   (not nested) so the worker can serialise it without pulling the
-%   caller's workspace.
-    bigTile = ndr.format.omezarr.readArray(sourceZarrPath, ...
-        pyramidName, kInEntry, 'Region', [loBBox; hiBBox]);
+%   Dispatches on SOURCE.kind (see resolveLevelSource). Kept as a plain
+%   subfunction (not nested), and every source carries file paths
+%   rather than a session, so parfeval can run it on a pool worker
+%   without pulling the caller's workspace or a database handle.
+    switch source.kind
+        case 'omezarr'
+            bigTile = ndr.format.omezarr.readArray(source.zarrPath, ...
+                source.pyramidName, source.kInEntry, ...
+                'Region', [loBBox; hiBBox]);
+        case 'smartspim'
+            bigTile = readSmartSpimRegion(source, loBBox, hiBBox);
+        case 'reduce'
+            bigTile = readReducedRegion(source, loBBox, hiBBox);
+        otherwise
+            error('NDI:lightsheet:makePyramid:unknownSourceKind', ...
+                'Unknown level source kind ''%s''.', source.kind);
+    end
+end
+
+function source = resolveLevelSource(session, p, entry, level, options, docByPath)
+% RESOLVELEVELSOURCE - the self-contained read recipe for level path P
+%
+%   Everything a pool worker needs to read any region of the level,
+%   with no session: an OME-Zarr store + array, SmartSPIM slice paths,
+%   or (for a reduced level) the on-disk chunk files of the level it
+%   is reduced from, which was written earlier in this same call.
+    if isKey(options.levelSources, p)
+        source = options.levelSources(p);
+    else
+        source = struct('kind', 'omezarr');
+    end
+    switch source.kind
+        case 'omezarr'
+            if isempty(options.sourceZarrPath)
+                error('NDI:lightsheet:makePyramid:noSource', ...
+                    'Level %s has no levelSources entry and no sourceZarrPath.', p);
+            end
+            % Which position in this pyramid's datasets holds this
+            % level? Its 1-based index is what readArray takes.
+            kInEntry = find(arrayfun(@(L) strcmp(char(L.path), p), ...
+                entry.levels), 1);
+            if isempty(kInEntry)
+                error('NDI:lightsheet:makePyramid:missingLevelInEntry', ...
+                    'level path %s not found in pyramid %s.', p, char(entry.name));
+            end
+            source = struct('kind', 'omezarr', ...
+                'zarrPath', char(options.sourceZarrPath), ...
+                'pyramidName', char(entry.name), 'kInEntry', kInEntry);
+        case 'smartspim'
+            % Self-contained already (slice paths + dtype).
+        case 'reduce'
+            if ~isKey(docByPath, source.fromPath)
+                error('NDI:lightsheet:makePyramid:reduceOrder', ...
+                    ['Level %s reduces level %s, which has not been ' ...
+                     'written yet. List finer levels first.'], p, source.fromPath);
+            end
+            from = docByPath(source.fromPath);
+            fp = from.document_properties.lightsheetZarrLevel;
+            nFrom = prod(double(fp.chunk_grid));
+            paths = cell(1, nFrom);
+            % Resolve each stored chunk to its file ONCE, here on the
+            % main thread; workers then read plain files.
+            for i = 1:nFrom
+                f = session.database_openbinarydoc(from, sprintf('chunk.bin_%d', i));
+                paths{i} = f.fullpathfilename;
+                session.database_closebinarydoc(f);
+            end
+            source.fromShape  = double(fp.shape(:).');
+            source.fromChunks = double(fp.chunks(:).');
+            source.fromGrid   = double(fp.chunk_grid(:).');
+            source.fromCodec  = char(fp.codec);
+            source.fromDtype  = char(fp.dtype);
+            source.chunkPaths = paths;
+            source.dtype      = char(level.dtype);
+            source.factor     = double(source.factor(:).');
+        otherwise
+            error('NDI:lightsheet:makePyramid:unknownSourceKind', ...
+                'Unknown level source kind ''%s'' for level %s.', source.kind, p);
+    end
+end
+
+function a = readAmplification(source, typesize)
+% How many bytes the reader holds per output byte (see attachChunkFiles).
+    a = 1;
+    if strcmp(source.kind, 'reduce')
+        a = prod(source.factor);
+        if strcmp(source.reduction, 'mean')
+            a = a * max(1, 4 / typesize);   % reduced in single precision
+        end
+    end
+end
+
+function out = readSmartSpimRegion(source, lo, hi)
+% READSMARTSPIMREGION - region [lo, hi] (axes t,c,z,y,x) from 2-D slices
+%
+%   source.slicePaths{c}{z} is the TIFF of channel c at z. Each slice
+%   spans the whole stitched canvas, so only the (y, x) window is read
+%   (imread PixelRegion decodes just the strips that cover it).
+    out = zeros(double(hi - lo + 1), source.dtype);
+    rows = [lo(4) hi(4)];
+    cols = [lo(5) hi(5)];
+    for c = lo(2):hi(2)
+        for z = lo(3):hi(3)
+            tile = imread(source.slicePaths{c}{z}, 'PixelRegion', {rows, cols});
+            if ~isa(tile, source.dtype)
+                tile = cast(tile, source.dtype);
+            end
+            out(1, c - lo(2) + 1, z - lo(3) + 1, :, :) = ...
+                reshape(tile, [1 1 1 size(tile, 1) size(tile, 2)]);
+        end
+    end
+end
+
+function out = readReducedRegion(source, lo, hi)
+% READREDUCEDREGION - region [lo, hi] of a level made by block-reducing
+% the level below it.
+%
+%   Output voxel i covers source voxels (i-1)*f+1 .. i*f along each axis
+%   (the last block may be partial), so the region needs source voxels
+%   (lo-1).*f+1 .. min(hi.*f, fromShape).
+    f = source.factor;
+    srcLo = (lo - 1) .* f + 1;
+    srcHi = min(hi .* f, source.fromShape);
+    src = readStoredLevelRegion(source, srcLo, srcHi);
+    out = ndi.fun.doc.lightsheet.reduceBlocks(src, f, source.reduction, source.dtype);
+end
+
+function out = readStoredLevelRegion(source, lo, hi)
+% READSTOREDLEVELREGION - region [lo, hi] of a level from its chunk files
+%
+%   Chunks are C-order (last axis fastest), 1-based, each a full
+%   (zero-padded) `chunks`-shaped tile in C byte order, raw or Blosc.
+    nd = numel(source.fromShape);
+    chunks = source.fromChunks;
+    grid = source.fromGrid;
+    out = zeros(double(hi - lo + 1), source.fromDtype);
+    cLo = floor((lo - 1) ./ chunks) + 1;
+    cHi = floor((hi - 1) ./ chunks) + 1;
+    strides = ones(1, nd);
+    for a = nd-1:-1:1
+        strides(a) = strides(a + 1) * grid(a + 1);
+    end
+    ranges = arrayfun(@(a) cLo(a):cHi(a), 1:nd, 'UniformOutput', false);
+    combos = cell(1, nd);
+    [combos{:}] = ndgrid(ranges{:});
+    nTiles = numel(combos{1});
+    for t = 1:nTiles
+        c = cellfun(@(g) g(t), combos);
+        linear = sum((c - 1) .* strides) + 1;
+        tile = readStoredChunk(source.chunkPaths{linear}, chunks, ...
+            source.fromCodec, source.fromDtype);
+        tileLo = (c - 1) .* chunks + 1;
+        oLo = max(tileLo, lo);
+        oHi = min(tileLo + chunks - 1, hi);
+        dst = arrayfun(@(a) (oLo(a) - lo(a) + 1):(oHi(a) - lo(a) + 1), ...
+            1:nd, 'UniformOutput', false);
+        srcSub = arrayfun(@(a) (oLo(a) - tileLo(a) + 1):(oHi(a) - tileLo(a) + 1), ...
+            1:nd, 'UniformOutput', false);
+        out(dst{:}) = tile(srcSub{:});
+    end
+end
+
+function tile = readStoredChunk(path, chunks, codec, dtype)
+% READSTOREDCHUNK - one stored chunk file -> a `chunks`-shaped array
+%
+%   Inverse of padEncodeAndWrite: bytes are C-order, so reshape to the
+%   reversed shape and permute back.
+    fid = fopen(path, 'r');
+    if fid < 0
+        error('NDI:lightsheet:makePyramid:readChunk', ...
+            'Could not open stored chunk %s.', path);
+    end
+    raw = fread(fid, Inf, '*uint8');
+    fclose(fid);
+    if strcmp(codec, 'blosc-zstd')
+        raw = ndr.format.blosc.decode(raw);
+    end
+    vals = typecast(raw(:), dtype);
+    nd = numel(chunks);
+    tile = permute(reshape(vals, fliplr(chunks)), nd:-1:1);
 end
 
 function tmp = padEncodeAndWrite(srcTile, chunks, codec, clevel, typesize, tmpRoot, chunkIdx)

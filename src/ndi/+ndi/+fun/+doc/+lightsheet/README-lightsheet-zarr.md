@@ -57,6 +57,21 @@ NDI documents are immutable, so:
   `napariViewLightsheet` console script that ships in
   `Waltham-Data-Science/NDI-python`. **Working.**
 
+## Straight from SmartSPIM: `fromSPIM`
+
+`ndi.fun.doc.lightsheet.fromSPIM(S, rootDir, 'subjectID', id)` builds the
+same pyramid + level documents as `fromOMEZarr`, but reads the SmartSPIM
+acquisition directly -- no spim2zarr step. Level 0 (all channels, axes
+`tczyx`) comes from the stitched, harmonized `All_Channels` slices
+(`ndr.format.smartspim.readAllChannelsInfo`; only the needed rows and
+columns of each slice are read). The mean and max ladders are built
+here, each level by block-reducing the one just written
+(`ndi.fun.doc.lightsheet.reduceBlocks`), halving x/y/z while the voxel
+size allows (coarse-z stacks even out in x/y first) until every spatial
+axis is at most `minLevelSize` (512) voxels. Chunking, encoding,
+parallel compression and installation are `makePyramid`'s, through its
+`levelSources` option.
+
 ## GUI
 
 `ndi.gui.app.LightsheetZarrManager(session)` mirrors `GEFManager`:
