@@ -34,12 +34,19 @@ function view(session, pyramidID, options)
 %                   MATLAB stays interactive; the command is
 %                   backgrounded on POSIX shells).
 %     verbose     - print the command before running it (default true).
+%     debug       - run the viewer with NDI_LIGHTSHEET_DEBUG=1 (default
+%                   true).
+%     logFile     - where the viewer's stdout/stderr go. Default: a new
+%                   lightsheet_YYYYMMDDHHMMSS.txt in
+%                   ndi.common.PathConstants.TempFolder (the path is
+%                   printed). See ndi.fun.doc.lightsheet.launchViewer.
 %
 %   Example -- list, then open:
 %     ndi.fun.doc.lightsheet.view(S);              % prints ids
 %     ndi.fun.doc.lightsheet.view(S, '<paste-id>');
 %
 %   See also: ndi.fun.doc.lightsheet.viewCommand,
+%             ndi.fun.doc.lightsheet.launchViewer,
 %             ndi.gui.app.LightsheetZarrManager
 
     arguments
@@ -54,6 +61,8 @@ function view(session, pyramidID, options)
         options.name (1,:) char = ''
         options.wait (1,1) logical = false
         options.verbose (1,1) logical = true
+        options.debug (1,1) logical = true
+        options.logFile (1,:) char = ''
     end
 
     sessionPath = options.sessionPath;
@@ -79,20 +88,34 @@ function view(session, pyramidID, options)
             'level',     options.level);
     end
 
-    if ~options.wait && ~ispc
-        % Background the process on POSIX so MATLAB does not block.
-        % On Windows fall back to a foreground wait (simple; no
-        % `start` handling here).
-        cmd = [cmd ' &'];
+    if isempty(pyramidID)
+        % --list prints the ids for the caller to read: keep it on screen.
+        if ~options.wait && ~ispc
+            % Background the process on POSIX so MATLAB does not block.
+            % On Windows fall back to a foreground wait (simple; no
+            % `start` handling here).
+            cmd = [cmd ' &'];
+        end
+        if options.verbose
+            fprintf('Executing: %s\n', cmd);
+        end
+        status = system(cmd);
+    else
+        % The viewer itself: debugging lines on, and stdout/stderr kept
+        % in a log in NDI's temporary folder -- launched from MATLAB it
+        % has no terminal, so this is the only record of what it did.
+        [status, logFile] = ndi.fun.doc.lightsheet.launchViewer(cmd, ...
+            'wait', options.wait, 'debug', options.debug, ...
+            'logFile', options.logFile, 'verbose', options.verbose);
     end
-
-    if options.verbose
-        fprintf('Executing: %s\n', cmd);
-    end
-    status = system(cmd);
     if status ~= 0 && options.wait
-        warning('NDI:lightsheet:view:nonZeroExit', ...
-            'Launcher returned status %d.', status);
+        if isempty(pyramidID)
+            warning('NDI:lightsheet:view:nonZeroExit', ...
+                'Launcher returned status %d.', status);
+        else
+            warning('NDI:lightsheet:view:nonZeroExit', ...
+                'Launcher returned status %d; see %s.', status, logFile);
+        end
     end
 end
 

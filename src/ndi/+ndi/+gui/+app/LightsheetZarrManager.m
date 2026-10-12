@@ -268,17 +268,6 @@ classdef LightsheetZarrManager < ndi.gui.app.sessionApp
             btn.FontWeight      = 'bold';
         end
 
-        function cmd = detach(cmd)
-        % DETACH - the same command, not blocking MATLAB
-        %
-        %   The viewer runs for as long as the user looks at it. Without
-        %   this, MATLAB would sit unresponsive behind it.
-            if ispc
-                cmd = ['start "napari" ' cmd];
-            else
-                cmd = [cmd ' &'];
-            end
-        end
     end
 
     % =====================================================================
@@ -553,15 +542,18 @@ classdef LightsheetZarrManager < ndi.gui.app.sessionApp
                     return;
                 end
                 ndi.gui.app.LightsheetZarrManager.setLauncherPath(target);
-                status = system( ...
-                    ndi.gui.app.LightsheetZarrManager.detach(cmd));
+                % Debugging lines on, and the viewer's output kept in a
+                % log in NDI's temporary folder: launched from here it
+                % has no terminal, so the log is the only record of what
+                % it fetched and what failed.
+                [status, logFile] = ndi.fun.doc.lightsheet.launchViewer(cmd);
                 delete(d);
                 if status == 0
-                    obj.setStatus(sprintf('Launched the viewer for %s.', ...
-                        obj.rowLabel(r)));
+                    obj.setStatus(sprintf(['Launched the viewer for %s. ' ...
+                        'Its log: %s'], obj.rowLabel(r), logFile));
                 else
                     obj.setStatus(sprintf(['The launcher exited %d. ' ...
-                        'The command was:  %s'], status, cmd));
+                        'The command was:  %s  (log: %s)'], status, cmd, logFile));
                 end
             end
         end

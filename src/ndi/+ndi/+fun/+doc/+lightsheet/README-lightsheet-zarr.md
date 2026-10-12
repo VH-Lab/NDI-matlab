@@ -63,6 +63,16 @@ NDI documents are immutable, so:
 lists pyramids in a session, and drives Add / View / Delete. `View`
 builds the napari command from `viewCommand` and shells out.
 
+### Viewer logs
+
+Both `View` and `ndi.fun.doc.lightsheet.view` launch the viewer through
+`ndi.fun.doc.lightsheet.launchViewer`, which turns on the viewer's
+debugging lines (`NDI_LIGHTSHEET_DEBUG=1`) and appends its stdout and
+stderr to `lightsheet_YYYYMMDDHHMMSS.txt` in
+`ndi.common.PathConstants.TempFolder`. The path is printed in the
+Command Window (and shown in the manager's status line); open it with
+`edit` or `type` to see what the viewer fetched and what failed.
+
 ## What still needs building
 
 1. **Chunk materialization** into `chunk.bin_#` on
