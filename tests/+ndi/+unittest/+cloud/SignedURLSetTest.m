@@ -275,6 +275,39 @@ classdef SignedURLSetTest < matlab.unittest.TestCase
         end
 
         % ------------------------------------------------------------------
+        % Sync path: per-file metadata beside the URL map (NDI Cloud #162)
+        % ------------------------------------------------------------------
+        function testGetSignedURLSetFileInfo(testCase)
+            testCase.Narrative = "Begin testGetSignedURLSetFileInfo";
+            narrative = testCase.Narrative;
+
+            [b, page, resp, url] = ndi.cloud.api.files.getSignedURLSet(...
+                testCase.DatasetID, testCase.CloudDocumentID);
+            msg = ndi.unittest.cloud.APIMessage(narrative, b, page, resp, url);
+            testCase.verifyTrue(b, "getSignedURLSet returned failure. " + msg);
+            if ~b, testCase.Narrative = narrative; return; end
+
+            urlUIDs = sort(ndi.unittest.cloud.SignedURLSetTest.returnedUIDs(page.files));
+            if isempty(page.fileInfo) && ~isempty(urlUIDs)
+                testCase.assumeFail("This NDI Cloud environment predates signed-url-set fileInfo (#162).");
+            end
+
+            infoUIDs = sort(string({page.fileInfo.uid}));
+            testCase.verifyEqual(infoUIDs, urlUIDs, ...
+                "fileInfo should describe exactly the files on the page. " + msg);
+            for i = 1:numel(page.fileInfo)
+                f = page.fileInfo(i);
+                testCase.verifyTrue(f.uploaded, "fileInfo " + f.uid + " not marked uploaded. " + msg);
+                testCase.verifyGreaterThan(f.size, 0, "fileInfo " + f.uid + " has no size. " + msg);
+                % The files were uploaded after #162, through the bulk path,
+                % which records each zip entry's CRC-32.
+                testCase.verifyNotEmpty(f.crc32, "fileInfo " + f.uid + " has no crc32. " + msg);
+            end
+
+            testCase.Narrative = narrative;
+        end
+
+        % ------------------------------------------------------------------
         % Sync path: oversized limit is server-clamped
         % ------------------------------------------------------------------
         function testGetSignedURLSetLimitClamped(testCase)
