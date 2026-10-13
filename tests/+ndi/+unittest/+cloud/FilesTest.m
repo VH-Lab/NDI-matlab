@@ -125,7 +125,9 @@ classdef FilesTest < matlab.unittest.TestCase
             testCase.verifyTrue(b_put, "File upload (PUT request) failed. " + msg_put);
             if ~b_put, return; end
             narrative(end+1) = "File uploaded successfully.";
-            pause(10); % Give server time to process the file
+            % The PUT returning 200 only means S3 has the object; wait for the
+            % server to record it (it can lag when other uploads are queued).
+            ndi.cloud.api.files.waitForFileUpload(testCase.DatasetID, fileUID);
             % Step 3.5: Verify the file appears in the dataset's file list
             narrative(end+1) = "Preparing to check dataset file list for the newly uploaded file.";
             [b_list, file_list, resp_list, url_list] = ndi.cloud.api.files.listFilesAll(testCase.DatasetID, 'checkForUpdates', true);
@@ -214,7 +216,9 @@ classdef FilesTest < matlab.unittest.TestCase
             testCase.verifyTrue(b_put, "File upload (PUT request) failed. " + msg_put);
             if ~b_put, return; end
             narrative(end+1) = "File uploaded successfully.";
-            pause(10); % Give server time to process the file
+            % The PUT returning 200 only means S3 has the object; wait for the
+            % server to record it (it can lag when other uploads are queued).
+            ndi.cloud.api.files.waitForFileUpload(testCase.DatasetID, fileUID);
             % Step 3.5: Verify the file appears in the dataset's file list
             narrative(end+1) = "Preparing to check dataset file list for the newly uploaded file.";
             [b_list, file_list, resp_list, url_list] = ndi.cloud.api.files.listFilesAll(testCase.DatasetID, 'checkForUpdates', true);
@@ -300,7 +304,9 @@ classdef FilesTest < matlab.unittest.TestCase
             testCase.verifyTrue(b_put, "File upload (PUT request) failed. " + msg_put);
             if ~b_put, return; end
             narrative(end+1) = "File uploaded successfully.";
-            pause(10); % Give server time to process the file
+            % The PUT returning 200 only means S3 has the object; wait for the
+            % server to record it (it can lag when other uploads are queued).
+            ndi.cloud.api.files.waitForFileUpload(testCase.DatasetID, fileUID);
             % Step 3.5: Verify the file appears in the dataset's file list
             narrative(end+1) = "Preparing to check dataset file list for the newly uploaded file.";
             [b_list, file_list, resp_list, url_list] = ndi.cloud.api.files.listFilesAll(testCase.DatasetID, 'checkForUpdates', true);
@@ -406,7 +412,9 @@ classdef FilesTest < matlab.unittest.TestCase
             testCase.verifyTrue(b_put, "File upload (PUT request) failed. " + msg_put);
             if ~b_put, return; end
             narrative(end+1) = "File uploaded successfully.";
-            pause(10); % Give server time to process the file
+            % The PUT returning 200 only means S3 has the object; wait for the
+            % server to record it (it can lag when other uploads are queued).
+            ndi.cloud.api.files.waitForFileUpload(testCase.DatasetID, fileUID);
             % Step 3.5: Verify the file appears in the dataset's file list
             narrative(end+1) = "Preparing to check dataset file list for the newly uploaded file.";
             [b_list, file_list, resp_list, url_list] = ndi.cloud.api.files.listFilesAll(testCase.DatasetID, 'checkForUpdates', true);
@@ -873,7 +881,9 @@ classdef FilesTest < matlab.unittest.TestCase
             testCase.verifyTrue(b_put, "Upload with a matching checksum failed. " + msg_put);
             if ~b_put, testCase.Narrative = narrative; return; end
             narrative(end+1) = "Uploaded with checksumCRC32.";
-            pause(10); % Give server time to process the file
+            % The PUT returning 200 only means S3 has the object; wait for the
+            % server to record it (it can lag when other uploads are queued).
+            ndi.cloud.api.files.waitForFileUpload(testCase.DatasetID, fileUID);
 
             % getFileDetails
             [b_d, ans_d, resp_d, url_d] = ndi.cloud.api.files.getFileDetails(testCase.DatasetID, fileUID);
@@ -951,7 +961,9 @@ classdef FilesTest < matlab.unittest.TestCase
             [b_up, err_up] = ndi.cloud.uploadSingleFile(testCase.DatasetID, fileUID, localFilePath);
             testCase.verifyTrue(b_up, "uploadSingleFile failed: " + string(err_up));
             if ~b_up, testCase.Narrative = narrative; return; end
-            pause(10);
+            % The PUT returning 200 only means S3 has the object; wait for the
+            % server to record it (it can lag when other uploads are queued).
+            ndi.cloud.api.files.waitForFileUpload(testCase.DatasetID, fileUID);
 
             [b_k, ans_k, resp_k, url_k] = ndi.cloud.api.files.lookupFiles(testCase.DatasetID, fileUID);
             msg_k = ndi.unittest.cloud.APIMessage(narrative, b_k, ans_k, resp_k, url_k);
@@ -999,6 +1011,49 @@ classdef FilesTest < matlab.unittest.TestCase
             end
         end
 
+        function testWaitForFileUpload(testCase)
+            % waitForFileUpload returns once the server has recorded a
+            % single-file upload, and times out on a uid that never uploads.
+            testCase.Narrative = "Begin testWaitForFileUpload";
+            narrative = testCase.Narrative;
+
+            [localFilePath, fileUID] = testCase.makeLocalTestFile();
+            [b_url, ans_url, resp_url, url_url] = ndi.cloud.api.files.getFileUploadURL(testCase.DatasetID, fileUID);
+            msg_url = ndi.unittest.cloud.APIMessage(narrative, b_url, ans_url, resp_url, url_url);
+            testCase.verifyTrue(b_url, "Failed to get file upload URL. " + msg_url);
+            if ~b_url, testCase.Narrative = narrative; return; end
+
+            [b_put, ans_put, resp_put, url_put] = ndi.cloud.api.files.putFiles(ans_url, localFilePath, "useCurl", true);
+            msg_put = ndi.unittest.cloud.APIMessage(narrative, b_put, ans_put, resp_put, url_put);
+            testCase.verifyTrue(b_put, "File upload (PUT request) failed. " + msg_put);
+            if ~b_put, testCase.Narrative = narrative; return; end
+
+            narrative(end+1) = "Waiting for the server to record the upload.";
+            [b_w, ans_w, resp_w, url_w] = ndi.cloud.api.files.waitForFileUpload(testCase.DatasetID, fileUID);
+            msg_w = ndi.unittest.cloud.APIMessage(narrative, b_w, ans_w, resp_w, url_w);
+            testCase.verifyTrue(b_w, "waitForFileUpload did not see the file uploaded. " + msg_w);
+            testCase.verifyEqual(ans_w.state, 'complete', msg_w);
+            testCase.verifyEmpty(ans_w.pending, msg_w);
+            if isscalar(ans_w.files)
+                testCase.verifyEqual(ans_w.files(1).uid, char(fileUID), msg_w);
+                testCase.verifyEqual(ans_w.files(1).size, double(strlength(testCase.TestFileContent)), ...
+                    "waitForFileUpload reported the wrong size. " + msg_w);
+            else
+                testCase.verifyFail("waitForFileUpload should report exactly one file. " + msg_w);
+            end
+
+            narrative(end+1) = "Waiting, briefly, on a uid that was never uploaded.";
+            neverUID = string(did.ido.unique_id());
+            [b_n, ans_n, resp_n, url_n] = ndi.cloud.api.files.waitForFileUpload(testCase.DatasetID, neverUID, ...
+                'timeout', 3);
+            msg_n = ndi.unittest.cloud.APIMessage(narrative, b_n, ans_n, resp_n, url_n);
+            testCase.verifyFalse(b_n, "waitForFileUpload succeeded for a uid that was never uploaded. " + msg_n);
+            testCase.verifyEqual(ans_n.state, 'timeout', msg_n);
+            testCase.verifyEqual(ans_n.pending, neverUID, msg_n);
+
+            testCase.Narrative = narrative;
+        end
+
         function testListFilesWithOptions(testCase)
             testCase.Narrative = "Begin testListFilesWithOptions";
             narrative = testCase.Narrative;
@@ -1028,7 +1083,9 @@ classdef FilesTest < matlab.unittest.TestCase
 
             narrative(end+1) = "File uploaded successfully.";
 
-            pause(10); % Give server time to process
+            % The PUT returning 200 only means S3 has the object; wait for the
+            % server to record it (it can lag when other uploads are queued).
+            ndi.cloud.api.files.waitForFileUpload(testCase.DatasetID, fileUID);
 
             % Step 2: Call listFiles with checkForUpdates enabled
             narrative(end+1) = "Calling listFiles with checkForUpdates=true.";
