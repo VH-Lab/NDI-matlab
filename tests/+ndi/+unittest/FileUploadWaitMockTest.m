@@ -12,32 +12,12 @@ classdef FileUploadWaitMockTest < matlab.unittest.TestCase
 %
 % Authored without a local MATLAB runtime; needs MATLAB to validate/run.
 
-    methods (Static, Access = private)
-        function r = lookup(rows, missing)
-            % A lookupFiles answer. ROWS is a cell array of fileRow structs.
-            if nargin < 2, missing = strings(1, 0); end
-            if isempty(rows)
-                files = struct('uid', {}, 'uploaded', {}, 'size', {}, 'crc32', {});
-                files = files(:);
-            else
-                files = vertcat(rows{:});
-            end
-            r = struct('ok', true, 'result', struct('files', files, 'missing', missing));
-        end
-
-        function call = scripted(results, uids, timeout)
-            call = ndi.test.helper.ScriptedFileUpload(results, ...
-                'cloudDatasetID', "ds1", 'cloudFileUIDs', uids, ...
-                'timeout', timeout, 'initialInterval', 0.01, 'maxInterval', 0.01);
-        end
-    end
-
     methods (Test)
 
         function testAlreadyUploadedReturnsAfterOnePoll(testCase)
             row = @ndi.test.helper.ScriptedFileUpload.fileRow;
-            results = { FileUploadWaitMockTest.lookup({row("u1", true)}) };
-            call = FileUploadWaitMockTest.scripted(results, "u1", 5);
+            results = { lookupResult({row("u1", true)}) };
+            call = scriptedCall(results, "u1", 5);
 
             [b, answer] = call.execute();
             testCase.verifyTrue(b);
@@ -52,10 +32,10 @@ classdef FileUploadWaitMockTest < matlab.unittest.TestCase
             % The case that broke FilesTest: the PUT has returned but the
             % server has not processed it yet (uploaded=false, size=0).
             row = @ndi.test.helper.ScriptedFileUpload.fileRow;
-            results = { FileUploadWaitMockTest.lookup({row("u1", false)}), ...
-                        FileUploadWaitMockTest.lookup({row("u1", false)}), ...
-                        FileUploadWaitMockTest.lookup({row("u1", true)}) };
-            call = FileUploadWaitMockTest.scripted(results, "u1", 5);
+            results = { lookupResult({row("u1", false)}), ...
+                        lookupResult({row("u1", false)}), ...
+                        lookupResult({row("u1", true)}) };
+            call = scriptedCall(results, "u1", 5);
 
             [b, answer] = call.execute();
             testCase.verifyTrue(b);
@@ -69,9 +49,9 @@ classdef FileUploadWaitMockTest < matlab.unittest.TestCase
         function testMissingRecordIsTreatedAsPending(testCase)
             % No record at all yet is not a failure: keep waiting.
             row = @ndi.test.helper.ScriptedFileUpload.fileRow;
-            results = { FileUploadWaitMockTest.lookup({}, "u1"), ...
-                        FileUploadWaitMockTest.lookup({row("u1", true)}) };
-            call = FileUploadWaitMockTest.scripted(results, "u1", 5);
+            results = { lookupResult({}, "u1"), ...
+                        lookupResult({row("u1", true)}) };
+            call = scriptedCall(results, "u1", 5);
 
             [b, ~] = call.execute();
             testCase.verifyTrue(b);
@@ -80,8 +60,8 @@ classdef FileUploadWaitMockTest < matlab.unittest.TestCase
 
         function testNeverUploadedTimesOut(testCase)
             row = @ndi.test.helper.ScriptedFileUpload.fileRow;
-            results = { FileUploadWaitMockTest.lookup({row("u1", false)}) };
-            call = FileUploadWaitMockTest.scripted(results, "u1", 0.05);
+            results = { lookupResult({row("u1", false)}) };
+            call = scriptedCall(results, "u1", 0.05);
 
             [b, answer] = call.execute();
             testCase.verifyFalse(b);
@@ -97,8 +77,8 @@ classdef FileUploadWaitMockTest < matlab.unittest.TestCase
             % A failed lookup is not a failed upload; keep polling.
             row = @ndi.test.helper.ScriptedFileUpload.fileRow;
             results = { struct('ok', false, 'result', struct('message', 'gateway')), ...
-                        FileUploadWaitMockTest.lookup({row("u1", true)}) };
-            call = FileUploadWaitMockTest.scripted(results, "u1", 5);
+                        lookupResult({row("u1", true)}) };
+            call = scriptedCall(results, "u1", 5);
 
             [b, ~] = call.execute();
             testCase.verifyTrue(b);
@@ -109,9 +89,9 @@ classdef FileUploadWaitMockTest < matlab.unittest.TestCase
             % With several uids, the ones already uploaded drop out of the
             % next lookup, and the result keeps every uploaded row.
             row = @ndi.test.helper.ScriptedFileUpload.fileRow;
-            results = { FileUploadWaitMockTest.lookup({row("u1", true), row("u2", false)}), ...
-                        FileUploadWaitMockTest.lookup({row("u2", true)}) };
-            call = FileUploadWaitMockTest.scripted(results, ["u1" "u2"], 5);
+            results = { lookupResult({row("u1", true), row("u2", false)}), ...
+                        lookupResult({row("u2", true)}) };
+            call = scriptedCall(results, ["u1" "u2"], 5);
 
             [b, answer] = call.execute();
             testCase.verifyTrue(b);
@@ -123,12 +103,34 @@ classdef FileUploadWaitMockTest < matlab.unittest.TestCase
 
         function testDuplicateUidsArePolledOnce(testCase)
             row = @ndi.test.helper.ScriptedFileUpload.fileRow;
-            results = { FileUploadWaitMockTest.lookup({row("u1", true)}) };
-            call = FileUploadWaitMockTest.scripted(results, ["u1" "u1"], 5);
+            results = { lookupResult({row("u1", true)}) };
+            call = scriptedCall(results, ["u1" "u1"], 5);
 
             [b, ~] = call.execute();
             testCase.verifyTrue(b);
             testCase.verifyEqual(call.polledUids{1}, "u1");
         end
     end
+end
+
+% The class lives in package ndi.unittest, so helpers are local functions
+% rather than static methods (a bare FileUploadWaitMockTest.x does not
+% resolve inside the package).
+
+function r = lookupResult(rows, missing)
+    % A scripted lookupFiles answer. ROWS is a cell array of fileRow structs.
+    if nargin < 2, missing = strings(1, 0); end
+    if isempty(rows)
+        files = struct('uid', {}, 'uploaded', {}, 'size', {}, 'crc32', {});
+        files = files(:);
+    else
+        files = vertcat(rows{:});
+    end
+    r = struct('ok', true, 'result', struct('files', files, 'missing', missing));
+end
+
+function call = scriptedCall(results, uids, timeout)
+    call = ndi.test.helper.ScriptedFileUpload(results, ...
+        'cloudDatasetID', "ds1", 'cloudFileUIDs', uids, ...
+        'timeout', timeout, 'initialInterval', 0.01, 'maxInterval', 0.01);
 end
