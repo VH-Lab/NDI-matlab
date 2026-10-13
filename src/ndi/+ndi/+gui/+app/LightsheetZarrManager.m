@@ -495,10 +495,15 @@ classdef LightsheetZarrManager < ndi.gui.app.sessionApp
                 everything{i}.ValueChangedFcn = @localRefresh;
             end
 
+            % One log per launch, named now so the command shown is the
+            % exact line that will run (and can be pasted in a terminal).
+            logFile = ndi.fun.doc.lightsheet.viewerLogFile();
+
             localRefresh();
             obj.viewDialog = d;
 
-            function cmd = localCommand()
+            function [cmd, ok] = localCommand()
+                ok = true;
                 try
                     red = '';
                     if ~strcmp(redDd.Value, '(as selected)')
@@ -513,11 +518,19 @@ classdef LightsheetZarrManager < ndi.gui.app.sessionApp
                         'name', nameEd.Value);
                 catch ME
                     cmd = ME.message;
+                    ok = false;
                 end
             end
 
             function localRefresh(~,~)
-                cmdArea.Value = localCommand();
+                % Show the full shell line: debugging on and output
+                % appended to the log, as launchViewer will run it.
+                [cmd, ok] = localCommand();
+                if ok
+                    cmd = ndi.fun.doc.lightsheet.viewerShellCommand( ...
+                        cmd, logFile, false, true, ispc);
+                end
+                cmdArea.Value = cmd;
             end
 
             function localBrowse()
@@ -546,7 +559,7 @@ classdef LightsheetZarrManager < ndi.gui.app.sessionApp
                 % log in NDI's temporary folder: launched from here it
                 % has no terminal, so the log is the only record of what
                 % it fetched and what failed.
-                [status, logFile] = ndi.fun.doc.lightsheet.launchViewer(cmd);
+                status = ndi.fun.doc.lightsheet.launchViewer(cmd, 'logFile', logFile);
                 delete(d);
                 if status == 0
                     obj.setStatus(sprintf(['Launched the viewer for %s. ' ...
