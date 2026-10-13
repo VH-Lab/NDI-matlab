@@ -95,9 +95,15 @@ classdef TestLaunchViewer < matlab.unittest.TestCase
 
         function testTheManagerLaunchesThroughLaunchViewer(testCase)
             % The View dialog must keep the log too, not just the
-            % command-line helper.
+            % command-line helper, and its preview must be the exact line
+            % that runs: the shell command built for the same log file
+            % the launch then writes to.
             src = fileread(which('ndi.gui.app.LightsheetZarrManager'));
-            testCase.verifySubstring(src, 'ndi.fun.doc.lightsheet.launchViewer(cmd)');
+            testCase.verifySubstring(src, ...
+                'ndi.fun.doc.lightsheet.launchViewer(cmd, ''logFile'', logFile)');
+            testCase.verifySubstring(src, ...
+                'ndi.fun.doc.lightsheet.viewerShellCommand( ...');
+            testCase.verifySubstring(src, 'cmd, logFile, false, true, ispc)');
             src = fileread(which('ndi.fun.doc.lightsheet.view'));
             testCase.verifySubstring(src, 'ndi.fun.doc.lightsheet.launchViewer(cmd');
         end
