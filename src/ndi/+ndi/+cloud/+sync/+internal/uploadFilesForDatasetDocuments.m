@@ -91,10 +91,13 @@ function [success, message] = uploadFilesForDatasetDocuments(cloudDatasetId, ndi
             uuid = did.ido.unique_id();
             app.addBar('Label','Uploading document-associated binary files','tag',uuid,'Auto',true);
             files_uploaded_count = 0;
+            sentUids = strings(1, 0);
             for i=1:numel(file_manifest)
                 if file_manifest(i).is_uploaded==false
+                    % Wait for the server to record the uploads once, below,
+                    % rather than after every file.
                     [upload_success, upload_message] = ndi.cloud.uploadSingleFile(cloudDatasetId, ...
-                        file_manifest(i).uid, file_manifest(i).file_path);
+                        file_manifest(i).uid, file_manifest(i).file_path, 'waitForUpload', false);
                     if ~upload_success
                         if success
                             message = ['Failed to upload file ' file_manifest(i).uid ': ' upload_message];
@@ -102,9 +105,21 @@ function [success, message] = uploadFilesForDatasetDocuments(cloudDatasetId, ndi
                         success = false;
                     else
                         files_uploaded_count = files_uploaded_count + 1;
+                        sentUids(end+1) = string(file_manifest(i).uid); %#ok<AGROW>
                     end
                 end
                 app.updateBar(uuid,i/numel(file_manifest));
+            end
+            if ~isempty(sentUids)
+                [wait_success, wait_answer] = ndi.cloud.api.files.waitForFileUpload(cloudDatasetId, sentUids);
+                if ~wait_success
+                    if success
+                        message = sprintf(['%d of %d uploaded files were not recorded by NDI Cloud ' ...
+                            'within %.0f s (first: %s).'], numel(wait_answer.pending), numel(sentUids), ...
+                            wait_answer.elapsed, wait_answer.pending(1));
+                    end
+                    success = false;
+                end
             end
             if options.Verbose
                 fprintf('Uploaded %d of %d files.\n', files_uploaded_count, numel(file_manifest));
