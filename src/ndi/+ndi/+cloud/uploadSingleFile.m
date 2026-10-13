@@ -13,6 +13,12 @@ function [b, errormsg] = uploadSingleFile(cloudDatasetID, cloudFileUID, filePath
 %   Name-Value Pairs:
 %   'useBulkUpload' (logical) - If true, the file will be zipped and uploaded
 %                               using the bulk upload mechanism. Defaults to false.
+%   'checksum' (logical)      - If true (default), compute the file's CRC-32
+%                               (ndi.fun.file.crc32) and send it with the
+%                               single-file upload URL request, so S3 rejects a
+%                               corrupted upload and NDI Cloud records the
+%                               file's crc32. Ignored for bulk uploads, whose
+%                               zip entries carry their own CRC-32.
 %
 %   Outputs:
 %   B - true if the upload was successful, false otherwise.
@@ -24,6 +30,7 @@ function [b, errormsg] = uploadSingleFile(cloudDatasetID, cloudFileUID, filePath
         filePath (1,1) string {mustBeFile}
         options.useBulkUpload (1,1) logical = false
         options.useCurl (1,1) logical = true
+        options.checksum (1,1) logical = true
     end
 
     errormsg = '';
@@ -56,7 +63,12 @@ function [b, errormsg] = uploadSingleFile(cloudDatasetID, cloudFileUID, filePath
         if isfile(zip_file), delete(zip_file); end
     else
         % Get the pre-signed URL for single file upload
-        [b_url, url_or_error] = ndi.cloud.api.files.getFileUploadURL(cloudDatasetID, cloudFileUID);
+        checksumCRC32 = "";
+        if options.checksum
+            checksumCRC32 = string(ndi.fun.file.crc32(filePath));
+        end
+        [b_url, url_or_error] = ndi.cloud.api.files.getFileUploadURL(cloudDatasetID, cloudFileUID, ...
+            'checksumCRC32', checksumCRC32);
 
         if ~b_url
             b = false;
@@ -65,7 +77,8 @@ function [b, errormsg] = uploadSingleFile(cloudDatasetID, cloudFileUID, filePath
         end
 
         % Upload the file
-        [b_put, put_or_error] = ndi.cloud.api.files.putFiles(url_or_error, filePath, 'useCurl', options.useCurl);
+        [b_put, put_or_error] = ndi.cloud.api.files.putFiles(url_or_error, filePath, 'useCurl', options.useCurl, ...
+            'checksumCRC32', checksumCRC32);
 
         if ~b_put
             b = false;

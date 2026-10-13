@@ -52,6 +52,7 @@ classdef GetSignedURLSetAll < ndi.cloud.api.call
             % A containers.Map, not a struct: the keys are DID file uids and
             % a struct would carry the JSONDECODE-renamed versions of them.
             merged.files      = containers.Map('KeyType','char','ValueType','any');
+            merged.fileInfo   = ndi.cloud.api.implementation.files.fileMetadataArray([]);
             merged.pageCount  = 0;
             merged.totalCount = 0;
             merged.pages      = 0;
@@ -69,6 +70,9 @@ classdef GetSignedURLSetAll < ndi.cloud.api.call
                         merged.files(pageKeys{i}) = page.files(pageKeys{i});
                     end
                     merged.pageCount = merged.pageCount + numel(pageKeys);
+                end
+                if isstruct(page) && isfield(page, 'fileInfo') && isstruct(page.fileInfo)
+                    merged.fileInfo = [merged.fileInfo; page.fileInfo(:)];
                 end
                 if isstruct(page) && isfield(page, 'totalCount')
                     merged.totalCount = page.totalCount;
