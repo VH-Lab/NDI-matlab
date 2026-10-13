@@ -453,13 +453,24 @@ pyramid level is an O(1) uid lookup rather than another round trip.
 
 | Function | Signature | Description |
 |---|---|---|
-| `ndi.cloud.api.files.getFileDetails` | `getFileDetails(cloudDatasetID, cloudFileUID)` | Retrieves metadata for a single file, including a pre-signed download URL. |
+| `ndi.cloud.api.files.getFileDetails` | `getFileDetails(cloudDatasetID, cloudFileUID)` | Retrieves metadata for a single file, including a pre-signed download URL and `crc32` (see below). |
 | `ndi.cloud.api.files.getFile` | `getFile(downloadURL, downloadedFile, 'useCurl', true)` | Downloads a file from a pre-signed URL and saves it to a local path. `useCurl` defaults to `true` (curl requests identity encoding so already-compressed archives are not corrupted); set it to `false` to use MATLAB's native `websave`. |
-| `ndi.cloud.api.files.getFileUploadURL` | `getFileUploadURL(cloudDatasetID, cloudFileUID)` | Returns a pre-signed URL for uploading a single file. |
+| `ndi.cloud.api.files.getFileUploadURL` | `getFileUploadURL(cloudDatasetID, cloudFileUID, 'checksumCRC32', crc)` | Returns a pre-signed URL for uploading a single file. With `checksumCRC32` (from `ndi.fun.file.crc32`) the URL signs the `x-amz-checksum-crc32` header, so pass the same value to `putFiles(..., 'checksumCRC32', crc)`; S3 then rejects an upload whose content does not match, and the cloud records the value as the file's `crc32`. `ndi.cloud.uploadSingleFile` does both by default. |
 | `ndi.cloud.api.files.getFileCollectionUploadURL` | `getFileCollectionUploadURL(cloudDatasetID)` | Returns a pre-signed URL for uploading a ZIP archive of multiple files. |
 | `ndi.cloud.api.files.putFiles` | `putFiles(preSignedURL, filePath, 'useCurl', true)` | Uploads a local file to a pre-signed URL via HTTP PUT. `useCurl` defaults to `true` (consistent S3 object headers); set it to `false` to use MATLAB's native HTTP client. |
 | `ndi.cloud.api.files.listFiles` | `listFiles(cloudDatasetId, 'limit', L, 'after', cursor)` | Lists a single keyset page of a dataset's files. Returns the page plus a `cursor`/`hasMore` envelope; pass `cursor` back as `after` for the next page. |
 | `ndi.cloud.api.files.listFilesAll` | `listFilesAll(cloudDatasetId, 'limit', L)` | Lists **all** of a dataset's files by following the keyset cursor across pages, with optional polling for newly uploaded files. The whole-dataset counterpart to `listFiles`. |
+| `ndi.cloud.api.files.lookupFiles` | `lookupFiles(cloudDatasetID, uids)` | Returns `uploaded`, `size` and `crc32` for the given file uids (`files`), and the uids the dataset has no record of (`missing`). No URLs are signed. Lists longer than the server's 5000-uid limit are split into several calls. Use it to check one document's or import batch's files, e.g. to resume an interrupted upload. |
+
+#### File checksums (`crc32`)
+
+NDI Cloud records a CRC-32 for each uploaded file: the value sent as
+`checksumCRC32` for single-file uploads, or the zip entry's CRC-32 for bulk
+uploads. It is the base64 of the 4-byte big-endian CRC-32 (IEEE), the same
+encoding S3 uses, and `ndi.fun.file.crc32(filePath)` computes it for a local
+file. `getFileDetails`, `listFiles`/`listFilesAll`, `lookupFiles` and the
+`fileInfo` array of `getSignedURLSet`/`getSignedURLSetAll` return it. Files
+uploaded without a checksum have `crc32` empty (`''`); compare `size` instead.
 
 ### Compute (`ndi.cloud.api.compute.*`)
 

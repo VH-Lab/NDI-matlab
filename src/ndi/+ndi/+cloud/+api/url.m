@@ -70,6 +70,7 @@ function url = url(endpointName, options)
         endpointMap("get_file_upload_url")            = "/datasets/{organizationId}/{datasetId}/files/{file_uid}";
         endpointMap("get_file_collection_upload_url") = "/datasets/{organizationId}/{datasetId}/files/bulk";
         endpointMap("get_file_details")               = "/datasets/{datasetId}/files/{file_uid}/detail";
+        endpointMap("lookup_dataset_files")           = "/datasets/{datasetId}/files/lookup";
         endpointMap("get_bulk_upload_status")         = "/bulk-uploads/{jobId}";
         endpointMap("list_dataset_bulk_uploads")      = "/datasets/{datasetId}/bulk-uploads?state={state}";
         % Signed download URLs for the files a document references. The
