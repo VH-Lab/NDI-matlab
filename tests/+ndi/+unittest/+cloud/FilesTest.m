@@ -961,9 +961,8 @@ classdef FilesTest < matlab.unittest.TestCase
             [b_up, err_up] = ndi.cloud.uploadSingleFile(testCase.DatasetID, fileUID, localFilePath);
             testCase.verifyTrue(b_up, "uploadSingleFile failed: " + string(err_up));
             if ~b_up, testCase.Narrative = narrative; return; end
-            % The PUT returning 200 only means S3 has the object; wait for the
-            % server to record it (it can lag when other uploads are queued).
-            ndi.cloud.api.files.waitForFileUpload(testCase.DatasetID, fileUID);
+            % uploadSingleFile waits for the server to record the upload, so
+            % the file must already be marked uploaded here.
 
             [b_k, ans_k, resp_k, url_k] = ndi.cloud.api.files.lookupFiles(testCase.DatasetID, fileUID);
             msg_k = ndi.unittest.cloud.APIMessage(narrative, b_k, ans_k, resp_k, url_k);
@@ -971,6 +970,8 @@ classdef FilesTest < matlab.unittest.TestCase
             if b_k
                 testCase.verifyNumElements(ans_k.files, 1, msg_k);
                 if isscalar(ans_k.files)
+                    testCase.verifyTrue(ans_k.files(1).uploaded, ...
+                        "uploadSingleFile returned before the server recorded the upload. " + msg_k);
                     testCase.verifyEqual(ans_k.files(1).crc32, ndi.fun.file.crc32(localFilePath), ...
                         "uploadSingleFile did not record the file's crc32. " + msg_k);
                 end
