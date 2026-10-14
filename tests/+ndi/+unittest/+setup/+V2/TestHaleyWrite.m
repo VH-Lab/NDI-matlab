@@ -53,6 +53,10 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
                 testCase.verifyEqual(ex{1}.statement.notes, 'no contrast video, so patches are poorly aligned');
                 testCase.verifyEqual(nf{1}.statement.notes, 'Prepared but not filmed: no video.');
                 testCase.verifyEmpty(pick('reason for inclusion in analysis'));
+            elseif ~ndi.setup.V2.schemaHasClass('text')
+                % neither notes nor a text kind: the reasons are reported
+                testCase.verifyEmpty(pick('reason for inclusion in analysis'));
+                testCase.verifyTrue(any(contains(out.skipped, 'no contrast video')));
             else
                 why = pick('reason for inclusion in analysis');
                 testCase.verifyNumElements(why, 1);

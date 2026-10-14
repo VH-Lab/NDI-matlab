@@ -91,6 +91,7 @@ end
 hasFilmed = ismember('filmed', S.Properties.VariableNames);
 % a statement's notes (did-schema 2026-10-14: moved up from interaction)
 statementHasNotes = ndi.setup.V2.schemaHasField('statement', 'notes');
+schemaHasText = ndi.setup.V2.schemaHasClass('text');
 hasBacteria = ismember('bacteria', S.Properties.VariableNames);
 for k = 1:height(S)
     id = S.local_identifier{k};
@@ -179,7 +180,12 @@ end
         out.documents{end+1} = did2.build.statement('term_assertion', subjectIds(id), ...
             variable, value, 'Edges', edges, 'Fields', fields, 'SessionId', sid, noteArgs{:});
         out.counts.(counter) = out.counts.(counter) + 1;
-        if ~isempty(notes) && ~statementHasNotes
+        if ~isempty(notes) && ~statementHasNotes && ~schemaHasText
+            % neither statement notes nor a text value kind: nowhere to put it
+            if isstruct(variable), variable = variable.name; end
+            out.skipped{end+1} = sprintf(['%s %s: the reason ("%s") is not recorded -- the ' ...
+                'schema has neither statement notes nor a text value'], id, variable, char(notes));
+        elseif ~isempty(notes) && ~statementHasNotes
             % a schema whose statements have no `notes` (did-schema before
             % 2026-10-14, when notes was on interaction only): the reason is
             % its own text statement beside it (decision #73)
