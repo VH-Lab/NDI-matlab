@@ -1779,6 +1779,15 @@
    "reason": "timeRoomTemp is exactly the recording's start minus 1 h, the value getExperimentInfo.m fills in when the notebook cell is blank (shreklab/Haley-et-al-2024 at 44a89de, getExperimentInfo.m:269-270). The notebook is not with the data, so the blank cannot be confirmed; it is marked an estimate with no known bound (decision #74, Jess Haley 2026-10-14)."
   },
   {
+   "key": "growth_room_temp_sensory_experiment_2",
+   "folder": "foragingSensory",
+   "experiment": 2,
+   "column": "growthTimeRoomTemp",
+   "value": "2024-01-04T09:49",
+   "was": "5 Jan 2024 09:49 (every plate of experiment 2)",
+   "reason": "Experiment 2's acclimation plates are recorded out of the cold room on 5 Jan 2024 09:49, after their worms were picked onto them on 4 Jan (11:08, 11:16, 11:24); every other step is in order (seeded 29 Dec 11:16, cold room 30 Dec 11:16, recorded 5 Jan from 08:11). The day is a typo, likely copied from the recording date: 4 Jan 09:49 is 1 h 19 min to 1 h 35 min before the picks, in line with other days (Jess Haley, 2026-10-14; decision #77)."
+  },
+  {
    "key": "room_temp_estimated_concentration_plate_01",
    "folder": "foragingConcentration",
    "plate": 1,
