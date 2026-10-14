@@ -224,8 +224,35 @@ function download_file_from_cloud(destPath, sourcePath, context)
         if strlength(seriesName) > 0 && strlength(contextUid) > 0
             ndiFileUid = char(contextUid);
         end
+        % A single-file fetch (a series manifest, or any doc-level
+        % attachment) arrives here with seriesName="" -- there is no
+        % member being asked for. Going through the per-document batch
+        % scope to answer one uid is pure loss: for a lightsheet-scale
+        % pyramid document that scope names 15k+ files, so the batch
+        % endpoint spends 60-90 s signing a set the caller has no use
+        % for, delaying the ONE URL the download actually needs by more
+        % than a minute. Same reasoning ndi.cloud.sync.internal
+        % .fetchManifest uses for the internal manifest fetch; the DID
+        % handler path has to make the same choice or the pyramid
+        % pathology reappears whenever DID reads a series member (DID
+        % fetches the manifest via the handler with seriesName="" before
+        % it fetches any members). See Waltham-Data-Science/
+        % NDI-python#320 and NDI-matlab#1010.
+        if strlength(seriesName) == 0
+            batchDocId = "";
+        else
+            batchDocId = docId;
+        end
+        % diskCache=true because DID is the production reopen-a-dataset
+        % path: a scientist who reopens the same lightsheet the next
+        % morning must not pay the ~85 min signed-URL-set job again.
+        % Signals lookup only for a scoped call (empty documentId
+        % dispatches to the batch's early return and no disk read
+        % happens). See ndi.cloud.download.internal.signedUrlDiskCache.
+        fromDiskCache = strlength(batchDocId) > 0;
         fileUrl = ndi.cloud.download.internal.batchSignedUrlLookup( ...
-            string(cloudDatasetId), docId, seriesName, string(ndiFileUid));
+            string(cloudDatasetId), batchDocId, seriesName, string(ndiFileUid), ...
+            'diskCache', fromDiskCache);
 
         if strlength(fileUrl) == 0
             % No batch URL for this uid -- either no document context,
@@ -237,9 +264,23 @@ function download_file_from_cloud(destPath, sourcePath, context)
                 error(['Failed to get file details: ' answer.message]);
             end
             fileUrl = answer.downloadUrl;
+            fromDiskCache = false; % per-uid mint; nothing to invalidate.
         end
         [success2, answer2] = ndi.cloud.api.files.getFile(char(fileUrl), destPath, 'useCurl', true);
         if ~success2
+            % An S3 403 on a URL that WAS served from the disk cache
+            % says the cached scope has gone stale (token revoked, or
+            % the object rotated). Drop the scope so the next read
+            % refetches -- otherwise we'd 403 our way through every
+            % subsequent uid in the same scope. Mirrors the in-memory
+            % scope-forget the batch would do on refresh. Best-effort;
+            % a failed forget is not fatal to the error we're raising.
+            if fromDiskCache && localIsS3Forbidden(answer2)
+                try %#ok<TRYNC>
+                    ndi.cloud.download.internal.signedUrlDiskCache.forget( ...
+                        string(cloudDatasetId), docId, seriesName);
+                end
+            end
             error(['Failed to download file from cloud: ' answer2]);
         end
     else
@@ -269,4 +310,28 @@ function [docId, seriesName, uid] = readContext(context)
             uid = string(context.uid);
         end
     end
+end
+
+function tf = localIsS3Forbidden(answer)
+    % S3 returns 403 on a rotated/revoked signed URL. curl -f surfaces
+    % that as an exit-22 message like
+    %   curl: (22) The requested URL returned error: 403
+    % (Or "403 Forbidden" on some curl builds.) websave's message
+    % contains "403" too when it makes it that far. Match \b403\b.
+    tf = false;
+    if isempty(answer)
+        return
+    end
+    txt = '';
+    if ischar(answer)
+        txt = answer;
+    elseif isstring(answer) && isscalar(answer)
+        txt = char(answer);
+    elseif isstruct(answer) && isfield(answer, 'message') && ~isempty(answer.message)
+        txt = char(string(answer.message));
+    end
+    if isempty(txt)
+        return
+    end
+    tf = ~isempty(regexp(txt, '\<403\>', 'once'));
 end
