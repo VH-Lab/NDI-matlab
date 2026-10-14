@@ -153,6 +153,20 @@ mine = sessions(strcmp(sessions.folder, 'ecoli'), :);
 if height(mine) > 0
     B = load(fullfile(root, 'ecoli', 'bacteria.mat'), 'metaData');
     M = B.metaData;
+    % the images the lab analysed (one lawnAnalysis row per detected patch),
+    % and the background images they were normalised against: a missing
+    % file among these is a gap, any other is an acquisition never kept as
+    % a TIFF (decision #79)
+    w = whos('-file', fullfile(root, 'ecoli', 'bacteria.mat'));
+    analysed = [];
+    if any(strcmp({w.name}, 'lawnAnalysis'))
+        A = load(fullfile(root, 'ecoli', 'bacteria.mat'), 'lawnAnalysis');
+        analysed = unique(double(A.lawnAnalysis.imageNum));
+        if ismember('backgroundImageNum', M.Properties.VariableNames)
+            bgUsed = double(M.backgroundImageNum(ismember(M.imageNum, analysed)));
+            analysed = union(analysed, bgUsed(~isnan(bgUsed)));
+        end
+    end
     nFiles = nFiles + 1;
     idir = fullfile('ecoli', 'raw');
     if ~isfolder(fullfile(root, idir))
@@ -160,7 +174,7 @@ if height(mine) > 0
         checks.noRawImages{end+1} = ['ecoli: no raw/ folder; the recordings are the TIFFs in ' ...
             'images/, which are background-normalised, not as acquired (decision #64)'];
     end
-    missing = 0; missingFluor = 0;
+    missing = 0; missingFluor = 0; missingUsed = 0;
     for r = 1:height(M)
         s = find(mine.experiment == double(M.expNum(r)), 1);
         if isempty(s)
@@ -170,6 +184,7 @@ if height(mine) > 0
         fi = dir(fullfile(root, idir, name));
         if isempty(fi)
             missing = missing + 1;
+            missingUsed = missingUsed + ismember(double(M.imageNum(r)), analysed);
             if ismember('fluorescence', M.Properties.VariableNames) && M.fluorescence(r)
                 missingFluor = missingFluor + 1;
             end
@@ -185,8 +200,15 @@ if height(mine) > 0
             fi.bytes, M.acquisitionTime(r), 1, NaN, NaN, note); %#ok<AGROW>
     end
     if missing > 0
+        if isempty(analysed)
+            used = 'whether any was analysed is unknown (bacteria.mat has no lawnAnalysis)';
+        elseif missingUsed == 0
+            used = 'none was analysed or used as a background: acquisitions never kept as a TIFF';
+        else
+            used = sprintf('%d of them analysed or used as a background', missingUsed);
+        end
         checks.imagesWithoutFile{end+1} = sprintf(['ecoli: %d of %d metaData image(s) have no file in ' ...
-            '%s/ (%d of them fluorescence)'], missing, height(M), idir, missingFluor);
+            '%s/ (%d of them fluorescence); %s'], missing, height(M), idir, missingFluor, used);
     end
 end
 
