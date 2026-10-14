@@ -40,7 +40,8 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             out = ndi.setup.conv.haley.assertionDocuments(session, S, ids);
             testCase.verifyEqual(out.counts.plate_excluded, 1);
             testCase.verifyEqual(out.counts.plate_not_filmed, 1);
-            pick = @(var) out.documents(cellfun(@(d) strcmp(d.statement.variable.name, var), out.documents));
+            docs = cellfun(@newNames, out.documents, 'UniformOutput', false);
+            pick = @(var) docs(cellfun(@(d) strcmp(d.statement.variable.name, var), docs));
             % the reason is the tag's notes; with a schema whose statements
             % have no notes, a text statement beside it
             ex = pick('inclusion in analysis');
@@ -69,7 +70,8 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             % a day marked `include = yes` gives an exclusion no reason
             session.include = true;
             out = ndi.setup.conv.haley.assertionDocuments(session, S, ids);
-            pick = @(var) out.documents(cellfun(@(d) strcmp(d.statement.variable.name, var), out.documents));
+            docs = cellfun(@newNames, out.documents, 'UniformOutput', false);
+            pick = @(var) docs(cellfun(@(d) strcmp(d.statement.variable.name, var), docs));
             ex = pick('inclusion in analysis');
             testCase.verifyNumElements(ex, 1);
             testCase.verifyEmpty(pick('reason for inclusion in analysis'));
