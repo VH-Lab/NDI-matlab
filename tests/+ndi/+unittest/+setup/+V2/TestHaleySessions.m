@@ -41,7 +41,7 @@ classdef TestHaleySessions < matlab.unittest.TestCase
                 '0003', '22-02-16', '220210_foraging_behavior', '0081-0120', ...
                 'single [OD600 = 0, 0.05]', 'yes', 'no L4 plate information'; ...
                 '0014', '22-04-26', '220407_foraging_behavior', '0449-0546', ...
-                'grid [OD600 = 1]', 'yes', ''});
+                'grid [OD600 = 0, 0.05, 0.1, 0.5, 1, 2, 3, 4, 5, 10, 1 (48H)]', 'yes', ''});
             for f = {'foragingMatching', 'foragingMini', 'foragingMutants', 'foragingSensory'}
                 writeToc(fullfile(ce, f{1}), {'0001', '23-02-24', 'nb', '0001-0010', ...
                     'grid [OD600 = 1]', 'yes', ''});
@@ -71,6 +71,34 @@ classdef TestHaleySessions < matlab.unittest.TestCase
             testCase.verifyEqual(r('concentration_0001').study_key{1}, 'single_density_multi_patch');
             testCase.verifyEqual(r('concentration_0003').study_key{1}, 'large_single_patch');
             testCase.verifyEqual(r('sensory_0001').study_key{1}, 'sensory_mutants');
+        end
+
+        function testRow0014IsCorrectedToTheSingleStudy(testCase)
+            % decision #72: the row says grid, its plates are single
+            [T, checks] = ndi.setup.conv.haley.sessionList(testCase.Root, testCase.Spec);
+            r = T(strcmp(T.local_identifier, 'concentration_0014'), :);
+            testCase.verifyEqual(r.study_key{1}, 'large_single_patch');
+            testCase.verifyEqual(numel(checks.corrected), 1);
+            testCase.verifySubstring(checks.corrected{1}, 'conditions_concentration_experiment_14');
+            testCase.verifyEmpty(checks.correctionNotApplied);
+        end
+
+        function testACorrectionWhoseSourceChangedIsNotApplied(testCase)
+            spec = testCase.Spec;
+            c = spec.corrections;
+            if isstruct(c), c = num2cell(c); end
+            for k = 1:numel(c)
+                if strcmp(c{k}.key, 'conditions_concentration_experiment_14')
+                    c{k}.was = 'grid [something else]';
+                end
+            end
+            spec.corrections = c;
+            [T, checks] = ndi.setup.conv.haley.sessionList(testCase.Root, spec);
+            r = T(strcmp(T.local_identifier, 'concentration_0014'), :);
+            testCase.verifyEqual(r.study_key{1}, 'single_density_multi_patch', ...
+                'a cell that no longer reads `was` is left as it is');
+            testCase.verifyEmpty(checks.corrected);
+            testCase.verifyEqual(numel(checks.correctionNotApplied), 1);
         end
 
         function testDayMetadataIsKept(testCase)

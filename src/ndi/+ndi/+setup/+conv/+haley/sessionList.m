@@ -31,6 +31,13 @@ function [T, checks] = sessionList(dataParentDir, spec, options)
 %     ecoliSpread      E. coli experiments whose images span more than 14 days
 %                      (a stray timestamp would move the session's date)
 %
+%   The spec's `corrections` naming `"table": "tableOfContents"` replace a
+%   cell of a folder's row (by `experiment`) BEFORE the study is picked, and
+%   only while the cell still reads `was`: a source fixed since then is
+%   reported (correctionNotApplied), not overwritten. Each one applied is
+%   reported (corrected). Decision #72: row 0014 of foragingConcentration
+%   says grid, its plates are single.
+%
 %   The tableOfContents worm range is kept (worm_first / worm_last) but NOT
 %   trusted: the subjects stage cross-checks it against the worms present
 %   (decision 3; foragingConcentration row 0014 is a known typo).
@@ -58,7 +65,8 @@ end
 studies = asCell(spec.studies);
 rows = {};
 checks = struct('sharedDay', {{}}, 'noVideoFolder', {{}}, 'unusedVideoDay', {{}}, ...
-    'ecoliSpread', {{}});
+    'ecoliSpread', {{}}, 'corrected', {{}}, 'correctionNotApplied', {{}});
+tocFixes = tocCorrections(spec);
 
 % ---- C. elegans: the tableOfContents of each study folder ------------------
 folders = unique(cellfun(@(s) char(s.source_folder), studies, 'UniformOutput', false));
@@ -79,6 +87,7 @@ for f = 1:numel(folders)
         error('ndi:setup:conv:haley:badTableOfContents', '%s has no column(s) %s.', ...
             toc, strjoin(missing, ', '));
     end
+    [C, checks] = applyTocCorrections(C, folder, tocFixes, checks);
     seenDays = {};
     for r = 1:height(C)
         if isempty(strtrim(C.experimentNumber{r}))
@@ -182,6 +191,45 @@ s = struct('local_identifier', id, ...
     'study_ids', {ids}, 'source', source, 'folder', folder, 'video_folder', videoFolder, ...
     'experiment', n, 'date', day, ...
     'include', include, 'worm_first', w1, 'worm_last', w2);
+end
+
+function c = tocCorrections(spec)
+% the spec's corrections to a tableOfContents cell
+c = {};
+if ~isfield(spec, 'corrections'), return; end
+list = spec.corrections;
+if isstruct(list), list = num2cell(list); end
+for k = 1:numel(list)
+    x = list{k};
+    if isfield(x, 'table') && strcmp(char(x.table), 'tableOfContents')
+        c{end+1} = x; %#ok<AGROW>
+    end
+end
+end
+
+function [C, checks] = applyTocCorrections(C, folder, fixes, checks)
+for k = 1:numel(fixes)
+    x = fixes{k};
+    if ~strcmp(char(x.folder), folder)
+        continue;
+    end
+    col = char(x.column);
+    r = find(str2double(C.experimentNumber) == double(x.experiment));
+    if isempty(r) || ~ismember(col, C.Properties.VariableNames)
+        checks.correctionNotApplied{end+1} = sprintf('%s: %s has no experiment %d or no column %s', ...
+            char(x.key), folder, double(x.experiment), col);
+        continue;
+    end
+    have = strtrim(C.(col){r(1)});
+    if ~strcmp(have, char(x.was))
+        checks.correctionNotApplied{end+1} = sprintf(['%s: %s experiment %d %s reads "%s", ' ...
+            'not "%s"; left as it is'], char(x.key), folder, double(x.experiment), col, have, char(x.was));
+        continue;
+    end
+    C.(col){r(1)} = char(x.value);
+    checks.corrected{end+1} = sprintf('%s: %s experiment %d %s "%s" -> "%s"', ...
+        char(x.key), folder, double(x.experiment), col, have, char(x.value));
+end
 end
 
 function study = pickStudy(studies, folder, word, where, r)

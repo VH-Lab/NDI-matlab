@@ -1717,6 +1717,16 @@
  },
  "corrections": [
   {
+   "key": "conditions_concentration_experiment_14",
+   "folder": "foragingConcentration",
+   "experiment": 14,
+   "table": "tableOfContents",
+   "column": "conditions",
+   "value": "single [OD600 = 0, 0.05, 0.1, 0.5, 1, 2, 3, 4, 5, 10, 1 (48H)]",
+   "was": "grid [OD600 = 0, 0.05, 0.1, 0.5, 1, 2, 3, 4, 5, 10, 1 (48H)]",
+   "reason": "Row 0014 says grid, but all 12 of its plates (133-144) say single in experimentInfo and each has one patch, as experiment 3's single plates do, while the grid days either side (13, 15) have 19 patches per plate. The row's first word is a copy of its neighbours'; the session is in large_single_patch (Jess Haley, 2026-10-14; decision #72)."
+  },
+  {
    "key": "cfu_matching_2023_03_27",
    "folder": "foragingMatching",
    "seed_day": "2023-03-27",

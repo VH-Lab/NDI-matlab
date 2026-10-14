@@ -536,8 +536,10 @@ end
 
 for c = 1:numel(corr)
     x = corr{c};
-    if isfield(x, 'experiment') && ~isKey(dayHits, char(x.key)) ...
-            && any(strcmp(sessions.folder, x.folder))
+    % only the per-experiment corrections this stage applies (a
+    % tableOfContents correction is sessionList's)
+    if isfield(x, 'experiment') && strcmp(x.column, 'growthTimeRoomTemp') ...
+            && ~isKey(dayHits, char(x.key)) && any(strcmp(sessions.folder, x.folder))
         checks.correctionUnmatched{end+1} = sprintf('%s: no %s experiment %d in the selected sessions', ...
             char(x.key), x.folder, double(x.experiment));
     end
