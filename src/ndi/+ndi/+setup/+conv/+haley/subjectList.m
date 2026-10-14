@@ -725,9 +725,13 @@ end
 function [od, why] = patchDensities(R, row, template, nPatch)
 % Each patch's OD600 on a grid-template plate: the lab's lawnClosestOD600
 % map (each pixel's nearest patch's OD600) read at the patch's centre
-% (lawnCenters, [x y] pixels). The template's non-zero positions, in order,
-% are the cross-check. Falls back to the template when the map is missing or
-% unreadable; NaN (and WHY) when neither gives one value per patch.
+% (lawnCenters, [x y] pixels). The template's non-zero positions are the
+% cross-check, compared as the set of densities the plate holds and NOT in
+% order: lawnCenters lists patches in detection order, which swaps
+% neighbours lying nearly level, so an order comparison flagged 14 Matching
+% plates holding exactly the same densities (decision #76). Falls back to the
+% template when the map is missing or unreadable; NaN (and WHY) when neither
+% gives one value per patch.
 why = '';
 fromTemplate = template(template ~= 0);
 if numel(fromTemplate) ~= nPatch, fromTemplate = []; end
@@ -751,9 +755,9 @@ if ismember('lawnClosestOD600', R.Properties.VariableNames)
 end
 if ~isempty(fromMap)
     od = fromMap;
-    if ~isempty(fromTemplate) && ~isequal(fromMap, fromTemplate)
-        why = sprintf(['the OD600 map gives %s, the template order %s; the map''s ' ...
-            'values are used'], mat2str(fromMap), mat2str(fromTemplate));
+    if ~isempty(fromTemplate) && ~isequal(sort(fromMap), sort(fromTemplate))
+        why = sprintf(['the OD600 map gives densities %s, the template %s; the map''s ' ...
+            'values are used'], mat2str(sort(fromMap)), mat2str(sort(fromTemplate)));
     end
 elseif ~isempty(fromTemplate)
     od = fromTemplate;
