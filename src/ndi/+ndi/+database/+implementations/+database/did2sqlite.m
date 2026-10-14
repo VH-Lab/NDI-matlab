@@ -30,14 +30,17 @@ classdef did2sqlite < ndi.database
     %   Document add / read / remove / search / alldocids are implemented by
     %   delegating to did2.database.sqlitedb.
     %
-    %   BINARY (file) documents are NOT, and they error rather than
-    %   returning something. `did2.database.sqlitedb` has no file store at
-    %   all -- it persists the document body and the two query sidecars and
-    %   nothing else -- so there is no path from a document id and a
-    %   filename to bytes to hand back. Returning empty here would make a
-    %   dataset with attached files read as a dataset with none, which is
-    %   the hollow-document failure this project has paid for repeatedly.
-    %   An error names the gap instead.
+    %   BINARY (file) documents: a file the document INGESTED is read from
+    %   the database's file store, <.ndi>/files/<uid> (did2.database.sqlitedb
+    %   hasFile, DID-matlab #215: the same layout as the legacy backend, so
+    %   file_directory is unchanged). A file the document records BY
+    %   LOCATION without ingesting it (files.file_info.locations, ingest 0;
+    %   ndi.database.fun.externalFileLocation) is read where it is. Anything
+    %   else errors rather than returning something: an empty answer would
+    %   make a dataset with attached files read as a dataset with none, the
+    %   hollow-document failure this project has paid for repeatedly. With a
+    %   DID-matlab whose did2 database has no file store yet, only the
+    %   by-location path exists.
     %
     %   See also: ndi.database, did2.database.sqlitedb,
     %             ndi.database.implementations.database.didsqlite,
@@ -170,12 +173,25 @@ classdef did2sqlite < ndi.database
             end
 
             ss = [];
+            D = 'ndi.database.implementations.database.did2sqlite';
             for i = 1:numel(q)
                 sHere = q(i).searchstructure;
                 for j = 1:numel(sHere)
                     try
+                        p1 = sHere(j).param1;
+                        p2 = sHere(j).param2;
+                        op = char(sHere(j).operation);
+                        if strcmp(op, 'or')
+                            % each branch is a searchstructure array: convert it
+                            % the same way (a nested query may sit inside)
+                            p1 = feval([D '.toDid2Query'], did.query(p1)).searchstructure;
+                            p2 = feval([D '.toDid2Query'], did.query(p2)).searchstructure;
+                        elseif any(strcmp(op, {'depends_on', '~depends_on'})) && isa(p2, 'did.query')
+                            % the edge's target is itself a query (did2 resolves it)
+                            p2 = feval([D '.toDid2Query'], p2);
+                        end
                         term = did2.query.searchstruct(sHere(j).field, ...
-                            sHere(j).operation, sHere(j).param1, sHere(j).param2);
+                            sHere(j).operation, p1, p2);
                     catch ME
                         error('NDI:did2sqlite:unsupportedOperation', ...
                             ['This database is backed by did2, which will ' ...
@@ -245,44 +261,82 @@ classdef did2sqlite < ndi.database
         function [ndi_document_objs] = do_search(obj, searchoptions, searchparams) %#ok<INUSL>
             q2 = ndi.database.implementations.database.did2sqlite.toDid2Query( ...
                 searchparams);
-            doc_ids = obj.db.searchIds(q2);
+            % The search already decodes every matching document; each is
+            % normalised from there rather than fetched and decoded a second
+            % time by id (do_read), which cost a query and a decode per
+            % document (8 s of 51 s profiled over the 10,536 Haley V2
+            % subjects).
+            docs = obj.db.search(q2);
             ndi_document_objs = {};
-            for i = 1:numel(doc_ids)
-                ndi_document_objs{i} = obj.do_read(doc_ids{i}); %#ok<AGROW>
+            for i = 1:numel(docs)
+                ndi_document_objs{i} = ...
+                    ndi.database.internal.applyReadNormalization(docs{i}); %#ok<AGROW>
             end
         end % do_search()
 
-        function [ndi_binarydoc_obj] = do_openbinarydoc(obj, ndi_document_id, filename) %#ok<STOUT,INUSD>
+        function [ndi_binarydoc_obj] = do_openbinarydoc(obj, ndi_document_id, filename)
+            % An ingested file (the database's file store) or one the
+            % document records BY LOCATION is opened read-only where it is.
+            % Anything else errors: an empty answer would make a dataset
+            % with attached files read as a dataset with none.
+            [tf, file_path] = obj.check_exist_binarydoc(ndi_document_id, filename);
+            if tf
+                ndi_binarydoc_obj = did.file.readonly_fileobj('fullpathfilename', file_path);
+                ndi_binarydoc_obj.fopen();
+                return;
+            end
             error('NDI:did2sqlite:noBinaryStore', ...
-                ['This database is backed by did2.database.sqlitedb, which ' ...
-                 'stores document bodies and the query sidecars and has NO ' ...
-                 'file store, so there is no way to produce the bytes of ' ...
-                 '"%s" on document %s. This errors rather than returning ' ...
-                 'empty: a dataset with attached files must not read as a ' ...
-                 'dataset with none.'], filename, ndi_document_id);
+                ['Document %s has no file "%s" on this computer: it is neither ' ...
+                 'in this database''s file store nor at a location the document ' ...
+                 'records (files.file_info.locations). This errors rather than ' ...
+                 'returning empty: a dataset with attached files must not read ' ...
+                 'as a dataset with none.'], ndi_document_id, filename);
         end % do_openbinarydoc()
 
-        function [tf, file_path] = check_exist_binarydoc(obj, ndi_document_id, filename) %#ok<INUSD>
-            % A did2 database has no file store, so the honest answer is
-            % "no" with no path -- and unlike do_openbinarydoc this one is
-            % ASKED speculatively by callers deciding whether to read, so a
-            % false is a real answer rather than a swallowed failure.
+        function [tf, file_path] = check_exist_binarydoc(obj, ndi_document_id, filename)
+            % Asked speculatively by callers deciding whether to read, so
+            % "no" is a real answer: true for a file in the database's file
+            % store (ingested), or one the document records at a location
+            % that exists here (ndi.database.fun.externalFileLocation).
             tf = false;
             file_path = '';
+            if ismethod(obj.db, 'hasFile')      % DID-matlab #215
+                try
+                    [tf, file_path] = obj.db.hasFile(ndi_document_id, filename);
+                catch
+                    tf = false;
+                end
+                if tf
+                    return;
+                end
+                file_path = '';
+            end
+            try
+                raw = obj.db.get(ndi_document_id);
+            catch
+                return;
+            end
+            if isa(raw, 'did2.document')
+                props = raw.documentProperties;
+            else
+                props = raw;
+            end
+            [tf, file_path] = ndi.database.fun.externalFileLocation(props, filename);
         end % check_exist_binarydoc()
 
         function [ndi_binarydoc_matfid_obj] = do_closebinarydoc(obj, ndi_binarydoc_matfid_obj) %#ok<INUSL>
-            % Nothing can have been opened (do_openbinarydoc always
-            % errors), so there is nothing to close.
+            if ~isempty(ndi_binarydoc_matfid_obj)
+                ndi_binarydoc_matfid_obj.fclose();
+            end
         end % do_closebinarydoc()
 
         function [file_dir] = file_directory(obj)
-            % FILE_DIRECTORY - where ingested files would live
+            % FILE_DIRECTORY - where ingested files live
             %
             % Same layout as the legacy backend so a session migrated in
             % place keeps its existing `files/` directory rather than
-            % growing a second one. Nothing in this class reads or writes
-            % it yet -- see do_openbinarydoc.
+            % growing a second one. did2.database.sqlitedb ingests into
+            % <folder of the database file>/files, which is this folder.
             file_dir = fullfile(obj.path, 'files');
         end % file_directory
 

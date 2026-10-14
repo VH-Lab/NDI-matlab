@@ -28,7 +28,10 @@ function entries = map()
 %   ------------
 %     concept        the v1 class name, and the key callers use
 %     v1_class       the class a v1 document declares
-%     eta_class      the class a V_eta document declares
+%     eta_class      the class a V_eta document declares: a char, or a
+%                    cellstr when V_eta renamed the class more than once
+%                    (CURRENT name first, then older ones still found in
+%                    documents written before the rename)
 %     object_field   v1: the block field holding the MATLAB class to
 %                    construct (the "object-reconstruction key")
 %     object_edge    V_eta: the edge to a `software` entity whose `name`
@@ -36,11 +39,22 @@ function entries = map()
 %                    the class string into an entity -- see
 %                    DID-matlab +migrators_j/private/jSoftware.m, called
 %                    with the implementation class as NAME.
-%     edges          N-by-2 cellstr, {v1_edge, eta_edge}. Base names: a
+%     edges          N-by-2 cell, {v1_edge, eta_edge}. Base names: a
 %                    numbered family (`daqmetadatareader_id_1`, ...) is
 %                    stored by its base and expanded by ndi.vintage.edge_n.
-%     fields         N-by-2 cellstr, {v1_field, eta_field}, within the
+%     fields         N-by-2 cell, {v1_field, eta_field}, within the
 %                    document's own block.
+%
+%   ONE V_eta NAME OR SEVERAL. An eta_edge or eta_field may be a cellstr of
+%   candidates, current name first. V_eta kept changing after documents
+%   were written: did-schema's #73 review renamed `data_file_pattern` and
+%   `metadata_file_pattern` to `file_pattern` / `file_regex`,
+%   `acquisition_metadata_reader` to `epoch_parameter_reader`, and (T15)
+%   numbered edge families such as `clock_alignment_configuration_#` to one
+%   repeated name `clock_alignment_configuration_id`. The DID-matlab
+%   migrators still emit the older names, while documents built with
+%   did2.build carry the current ones, so both are live. Readers take the
+%   first candidate the document actually carries.
 %
 %   WHAT IS ABSENT, AND A CORRECTION TO WHY
 %   ---------------------------------------
@@ -124,7 +138,8 @@ e(k).object_assertion = '';
 e(k).isa_bridges  = true;
 e(k).edges        = {'daqreader_id',         'reader_id'; ...
                      'filenavigator_id',     'epoch_file_pattern_id'; ...
-                     'daqmetadatareader_id', 'acquisition_metadata_reader'};
+                     'daqmetadatareader_id', {'epoch_parameter_reader_id', ...
+                                              'acquisition_metadata_reader'}};
 e(k).fields       = cell(0,2);
 
 % ---- filenavigator -> epoch_file_pattern -----------------------------
@@ -138,7 +153,7 @@ e(k).object_edge  = 'software_id';
 e(k).object_assertion = '';
 e(k).isa_bridges  = true;
 e(k).edges        = cell(0,2);
-e(k).fields       = {'fileparameters',               'data_file_pattern'; ...
+e(k).fields       = {'fileparameters',               {'file_pattern', 'data_file_pattern'}; ...
                      'epochprobemap_fileparameters', 'epoch_map_pattern'; ...
                      'epochprobemap_class',          'epoch_map_format'};
 
@@ -146,13 +161,13 @@ e(k).fields       = {'fileparameters',               'data_file_pattern'; ...
 k = k + 1;
 e(k).concept      = 'daqmetadatareader';
 e(k).v1_class     = 'daqmetadatareader';
-e(k).eta_class    = 'acquisition_metadata_reader';
+e(k).eta_class    = {'epoch_parameter_reader', 'acquisition_metadata_reader'};
 e(k).object_field = 'ndi_daqmetadatareader_class';
 e(k).object_edge  = 'software_id';
 e(k).object_assertion = '';
 e(k).isa_bridges  = true;
 e(k).edges        = cell(0,2);
-e(k).fields       = {'tab_separated_file_parameter', 'metadata_file_pattern'};
+e(k).fields       = {'tab_separated_file_parameter', {'file_regex', 'metadata_file_pattern'}};
 
 % ---- daqreader -> acquisition_reader ---------------------------------
 % `daqreader_ndr` folds into this too (the reader subtype was encoded in
@@ -188,7 +203,8 @@ e(k).object_field = 'ndi_syncgraph_class';
 e(k).object_edge  = 'software_id';
 e(k).object_assertion = '';
 e(k).isa_bridges  = true;
-e(k).edges        = {'syncrule_id', 'clock_alignment_configuration'};
+e(k).edges        = {'syncrule_id', {'clock_alignment_configuration_id', ...
+                                    'clock_alignment_configuration'}};
 e(k).fields       = cell(0,2);
 
 % ---- syncrule -> clock_alignment_configuration -----------------------
@@ -204,7 +220,8 @@ e(k).object_field = 'ndi_syncrule_class';
 e(k).object_edge  = 'software_id';
 e(k).object_assertion = '';
 e(k).isa_bridges  = true;
-e(k).edges        = {'acquisition_channels', 'acquisition_channels'};
+e(k).edges        = {'acquisition_channels', {'acquisition_channels_id', ...
+                                             'acquisition_channels'}};
 e(k).fields       = cell(0,2);
 
 % ---- element -> subject (+ satellites) -------------------------------

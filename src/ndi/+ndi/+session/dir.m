@@ -104,7 +104,7 @@ classdef dir < ndi.session
             read_from_database = 0;
 
             if should_we_try_to_read_from_database
-                session_doc = ndi_session_dir_obj.database_search(ndi.query('','isa','session'));
+                session_doc = ndi_session_dir_obj.database_search(ndi.v2.isaQuery('session'));
                 if ~isempty(session_doc)
                     % use the oldest
                     time_diff_max = 0;
@@ -140,7 +140,10 @@ classdef dir < ndi.session
                     % 2026-08-13). The OBJECT property stays `reference`: that is
                     % ndi.session's own public API, read at 20 call sites, and it
                     % is not what the migration renamed.
-                    session_blk = session_doc.document_properties.session;
+                    % and since 2026-10-08 the session may be an `entity` of type
+                    % session, whose block is `entity` (ndi.v2.kindOf)
+                    [~, session_blk_name] = ndi.v2.kindOf(session_doc.document_properties);
+                    session_blk = session_doc.document_properties.(session_blk_name);
                     if isfield(session_blk,'local_identifier')
                         ndi_session_dir_obj.reference = session_blk.local_identifier;
                     else
