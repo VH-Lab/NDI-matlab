@@ -35,7 +35,11 @@ function [S, checks] = seedingSuspensions(dataParentDir, spec)
 %   (or of unknown diluent), its own study's if it has one, else another
 %   study's -- Matching's S-Complete days use Mini's LB solution. Its nominal
 %   OD600 joins that solution's dilutions. A growth seeding day with no such
-%   solution is reported, not invented.
+%   solution (no assay plate seeded that day, so no OD600Real or CFU read:
+%   foragingMutants 2023-11-09) gets an UNMEASURED one (decision #82): one
+%   formulation per nominal OD600, the strain at that nominal OD600 in the
+%   growth diluent, with no stock and no measured concentration; its index
+%   rows carry a `note` saying so, which the dose repeats.
 %
 %   S has fields:
 %     entries   1xN cell of formulation entries (key, ingredients; no
@@ -49,7 +53,8 @@ function [S, checks] = seedingSuspensions(dataParentDir, spec)
 %   CHECKS (also printed): missingColumns (a table without the seeding
 %   columns; nothing built from it), twoReadings (a study-day with more than
 %   one OD600Real/CFU; the first is used), noReading (rows with no timeSeed or
-%   OD600Real), growthWithoutSolution (a growth seeding day with no solution).
+%   OD600Real), growthWithoutSolution (a growth seeding day with no measured
+%   solution; an unmeasured one is made, decision #82).
 %
 %   See also ndi.setup.V2.datasetMetadata, ndi.setup.conv.haley.import_V2.
 
@@ -174,10 +179,19 @@ for k = 1:numel(growth)
     elseif ~isempty(cand)
         s = cand(1);
     else
+        % no reading that day: the seeding happened, its strength is the
+        % nominal one only (decision #82)
         checks.growthWithoutSolution{end+1} = sprintf(['%s %s: acclimation plates seeded, ' ...
-            'no %s solution measured that day'], growth(k).folder, ...
-            datestr(growth(k).day, 'yyyy-mm-dd'), gdil); %#ok<DATST>
-        continue;
+            'no %s solution measured that day; recorded at its nominal OD600, unmeasured'], ...
+            growth(k).folder, datestr(growth(k).day, 'yyyy-mm-dd'), gdil); %#ok<DATST>
+        key = sprintf('suspension_%s_%s_unmeasured', lower(regexprep(strain, '\W', '')), ...
+            datestr(growth(k).day, 'yyyymmdd')); %#ok<DATST>
+        s = find(strcmp({sol.key}, key), 1);
+        if isempty(s)
+            sol(end + 1) = struct('key', key, 'strain', strain, 'day', growth(k).day, 'od', NaN, ...
+                'cfu', NaN, 'diluent', gdil, 'folders', {{growth(k).folder}}, 'nominal', []);
+            s = numel(sol);
+        end
     end
     sol(s).nominal = uniq([sol(s).nominal, growth(k).nominal]);
     for n = growth(k).nominal
@@ -187,10 +201,23 @@ end
 
 % ---- entries and the index -------------------------------------------------
 entries = {};
-index = table('Size', [0 5], 'VariableTypes', {'cell', 'datetime', 'double', 'cell', 'cell'}, ...
-    'VariableNames', {'folder', 'day', 'od600', 'key', 'kind'});
+index = table('Size', [0 6], 'VariableTypes', {'cell', 'datetime', 'double', 'cell', 'cell', 'cell'}, ...
+    'VariableNames', {'folder', 'day', 'od600', 'key', 'kind', 'note'});
 for s = 1:numel(sol)
     x = sol(s);
+    if isnan(x.od)
+        % unmeasured (decision #82): no stock; each nominal OD600 is its own
+        % formulation, its strength the nominal value alone
+        for n = x.nominal
+            ing = {struct('ingredient', x.strain, 'concentration', ...
+                struct('source_value', n, 'source_unit', 'OD600'))};
+            if ~isempty(x.diluent)
+                ing{end+1} = struct('ingredient', x.diluent); %#ok<AGROW>
+            end
+            entries{end+1} = struct('key', keyFor(x.key, n, x.diluent), 'ingredients', {ing}); %#ok<AGROW>
+        end
+        continue;
+    end
     c = struct();
     if ~isnan(x.cfu)
         c.particles_per_liter = x.cfu * 2e10;
@@ -214,14 +241,19 @@ end
 for r = 1:numel(R)
     x = sol(grp(r));
     for n = R(r).nominal
-        index(end+1, :) = {R(r).folder, R(r).day, n, keyFor(x.key, n, x.diluent), 'assay'}; %#ok<AGROW>
+        index(end+1, :) = {R(r).folder, R(r).day, n, keyFor(x.key, n, x.diluent), 'assay', ''}; %#ok<AGROW>
     end
 end
 for k = 1:size(growthRows, 1)
     g = growth(growthRows(k, 1));
     x = sol(growthRows(k, 2));
     n = growthRows(k, 3);
-    index(end+1, :) = {g.folder, g.day, n, keyFor(x.key, n, x.diluent), 'growth'}; %#ok<AGROW>
+    note = '';
+    if isnan(x.od)
+        note = sprintf(['The suspension was not measured that day (no assay plate was seeded, so ' ...
+            'no OD600 or CFU was read); its strength is the nominal OD600 %g (decision #82).'], n);
+    end
+    index(end+1, :) = {g.folder, g.day, n, keyFor(x.key, n, x.diluent), 'growth', note}; %#ok<AGROW>
 end
 
 S = struct('entries', {entries}, 'index', index);

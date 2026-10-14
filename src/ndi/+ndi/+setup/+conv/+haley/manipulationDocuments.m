@@ -286,9 +286,9 @@ out.documents = docs;
 
     function seedAcclimation(id, folder, p, seedRef)
         strain = getOr(getOr(options.Seeding, 'strain', struct()), 'default', 'OP50');
-        key = suspension(folder, p.seeded, p.od600, 'growth');
+        [key, note] = suspension(folder, p.seeded, p.od600, 'growth');
         dose(id, nameOf(strain), cfg.seed.growth_volume_ul, 'uL', key, seedRef, ...
-            cfg.seed.method, '', 'seed_acclimation_plate');
+            cfg.seed.method, note, 'seed_acclimation_plate');
     end
 
     function dose(subject, variable, amount, unit, formulationKey, timeId, method, notes, counter)
@@ -298,7 +298,8 @@ out.documents = docs;
         x = struct('Method', method, 'Notes', notes, 'Edges', struct());
         % a dose names what was given: did-schema requires dose.formulation_id
         % (#73 item 59), so a dose whose suspension is not known is not built
-        % and is reported (e.g. Mutants 2023-11-09: no solution measured)
+        % and is reported (a day with no measured solution gets an
+        % unmeasured one, decision #82, so this is now a defect if it fires)
         if ~isempty(formulationKey) && isKey(options.Ids, formulationKey)
             x.Edges.formulation_id = options.Ids(formulationKey);
         elseif ~isempty(formulationKey)
@@ -417,8 +418,9 @@ out.documents = docs;
         end
     end
 
-    function key = suspension(folder, t, od, kind)
+    function [key, note] = suspension(folder, t, od, kind)
         key = '';
+        note = '';
         I = options.Suspensions;
         if isempty(I) || height(I) == 0 || isnat(t) || isnan(od)
             return;
@@ -429,6 +431,9 @@ out.documents = docs;
         hit = find(hit, 1);
         if ~isempty(hit)
             key = I.key{hit};
+            if ismember('note', I.Properties.VariableNames)
+                note = I.note{hit};
+            end
         end
     end
 

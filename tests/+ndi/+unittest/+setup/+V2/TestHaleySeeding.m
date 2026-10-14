@@ -61,10 +61,12 @@ classdef TestHaleySeeding < matlab.unittest.TestCase
                 'suspension_op50_20230327_a', 'suspension_op50_20230327_a_od1', ...
                 'suspension_op50_20230327_b', 'suspension_op50_20230327_b_od0p5', 'suspension_op50_20230327_b_od1', ...
                 'suspension_op50_20231030', 'suspension_op50_20231030_od1', ...
-                'suspension_op50gfp_20220428', 'suspension_op50gfp_20220428_od1'}));
-            % each solution comes before its dilutions (they name it)
+                'suspension_op50gfp_20220428', 'suspension_op50gfp_20220428_od1', ...
+                'suspension_op50_20231029_unmeasured_od1'}));
+            % each solution comes before its dilutions (they name it); an
+            % unmeasured day has no stock to come first (decision #82)
             for k = 1:numel(keys)
-                if contains(keys{k}, '_od')
+                if contains(keys{k}, '_od') && ~contains(keys{k}, '_unmeasured')
                     base = regexprep(keys{k}, '_od[0-9p]+$', '');
                     testCase.verifyLessThan(find(strcmp(keys, base)), k, keys{k});
                 end
@@ -113,6 +115,21 @@ classdef TestHaleySeeding < matlab.unittest.TestCase
             testCase.verifyEqual(at('ecoli', datetime(2022, 4, 28), 0, 'assay'), {'lb_carb'});
             testCase.verifyEqual(at('foragingMutants', datetime(2023, 10, 30), 1, 'growth'), ...
                 {'suspension_op50_20231030_od1'});
+        end
+
+        function testAGrowthDayWithNoReadingIsRecordedUnmeasured(testCase)
+            % decision #82: Mutants 2023-10-29 seeded acclimation plates only
+            x = testCase.entry('suspension_op50_20231029_unmeasured_od1');
+            testCase.verifyEqual(x.ingredients{1}.ingredient, 'OP50');
+            testCase.verifyEqual(x.ingredients{1}.concentration.source_value, 1);
+            testCase.verifyEqual(x.ingredients{1}.concentration.source_unit, 'OD600');
+            testCase.verifyFalse(isfield(x.ingredients{1}.concentration, 'particles_per_liter'), ...
+                'no CFU was measured');
+            I = testCase.S.index;
+            r = strcmp(I.folder, 'foragingMutants') & I.day == datetime(2023, 10, 29) & ...
+                strcmp(I.kind, 'growth');
+            testCase.verifyEqual(I.key(r), {'suspension_op50_20231029_unmeasured_od1'});
+            testCase.verifySubstring(I.note{r}, 'not measured');
         end
 
         function testChecks(testCase)
