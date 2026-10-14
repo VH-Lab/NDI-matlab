@@ -97,13 +97,14 @@ function result = import_V2(dataParentDir, options)
 %     'EcoliProfilesFile' analyzeGFP's workspace (profile curves, background
 %                         fits; decision #64), wherever it is kept (default:
 %                         <DATAPARENTDIR>/haley/ecoli/analyzeGFP_24-04-04.mat)
-%     'SessionFolders'    default true: each session is written ONCE, to its
-%                         own folder, and the dataset LINKS it (a
-%                         `linked_session` document and the session's `part_of`
-%                         relation in the dataset's database; decision #71).
-%                         false INGESTS every session into the dataset and writes
-%                         no folders: the self-contained form to share. Either
-%                         converts to the other later
+%     'SessionFolders'    default: false when the dataset stage runs, true
+%                         when it does not (decision #71). false INGESTS every
+%                         session into the dataset and writes no folders: the
+%                         self-contained form to publish, and the fastest. true
+%                         writes each session ONCE, to its own folder, and the
+%                         dataset LINKS it (a `linked_session` document and the
+%                         session's `part_of` relation in the dataset's
+%                         database). Either converts to the other later
 %                         (ndi.dataset/convertLinkedSessionToIngested,
 %                         convertIngestedSessionToLinked). With a schema that has
 %                         no `linked_session` class, true writes each session to
@@ -147,11 +148,18 @@ arguments
     options.ReadVideos (1,1) logical = true
     options.DatasetFolder (1,:) char = ''
     options.DatasetReference (1,:) char = 'haley'
-    options.SessionFolders (1,1) logical = true
+    options.SessionFolders logical {mustBeScalarOrEmpty} = logical.empty
     options.EcoliProfilesFile (1,:) char = ''
     options.WriteBatchSize (1,1) double {mustBePositive, mustBeInteger} = 2000
     options.ValidateOnWrite (1,1) logical = false
     options.RunFolder (1,:) char = ''
+end
+if isempty(options.SessionFolders)
+    % decision #71: the import is for publishing, so a run that writes the
+    % dataset writes only the dataset (every session ingested, the form NDI
+    % Cloud holds, and the fastest); a run without the dataset stage writes
+    % session folders, which are then the only output
+    options.SessionFolders = ~any(options.Stages == "dataset");
 end
 
 % With 'Write', the run keeps its own record (log, report, skipped list) in a

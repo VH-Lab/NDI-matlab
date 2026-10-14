@@ -16,7 +16,7 @@ classdef TestLinkedSessions < matlab.unittest.TestCase
         Root
         Master      % the dataset the import wrote, every session ingested
         Result
-        Linked      % the import's result with its default: sessions linked
+        Linked      % the import's result with 'SessionFolders': sessions linked
         Path        % this test's copy of the dataset
         Dataset
     end
@@ -33,14 +33,14 @@ classdef TestLinkedSessions < matlab.unittest.TestCase
                 'OutputRoot', fullfile(testCase.Root, 'haley_V2'), 'Write', true, ...
                 'Overwrite', true, 'ReadVideos', false, 'SessionFolders', false);
             testCase.Master = testCase.Result.dataset.path;
-            % the default (decision #71): each session written once, to its
+            % 'SessionFolders' (decision #71): each session written once, to its
             % folder, and linked from the dataset
             testCase.Linked = ndi.setup.conv.haley.import_V2(testCase.Root, ...
                 'Stages', ["sessions", "subjects", "acquisition", "relations", "metadata", ...
                 "assertions", "dataset"], ...
                 'Sessions', "concentration_0001", ...
                 'OutputRoot', fullfile(testCase.Root, 'haley_V2_linked'), 'Write', true, ...
-                'Overwrite', true, 'ReadVideos', false);
+                'Overwrite', true, 'ReadVideos', false, 'SessionFolders', true);
         end
     end
 
