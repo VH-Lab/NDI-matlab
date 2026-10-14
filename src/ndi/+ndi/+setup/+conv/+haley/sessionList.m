@@ -19,7 +19,10 @@ function [T, checks] = sessionList(dataParentDir, spec, options)
 %   (OUTPUTROOT/<prefix>/<local_identifier>), study_key, study_ids, source,
 %   folder, video_folder (C. elegans: celegans/<folder>/videos/<directoryName>,
 %   relative to DATAPARENTDIR/haley; '' for E. coli), experiment, date,
-%   include, worm_first, worm_last.
+%   include, notes (the row's own `notes`; '' for E. coli), worm_first,
+%   worm_last. `include` is the row's flag as written: the lab's analysis
+%   excludes by plate, not by day (decision #73), so a day marked `no` can
+%   still have plates in the analysis.
 %
 %   CHECKS (second output, also printed) reports what looks wrong in the
 %   source's own day index, WITHOUT changing anything:
@@ -110,8 +113,11 @@ for f = 1:numel(folders)
         day = datetime(strtrim(C.directoryName{r}), 'InputFormat', 'yy-MM-dd');
         [w1, w2] = wormRange(C.wormNumber{r});
         include = ~strcmpi(strtrim(C.include{r}), 'no');
-        desc = sprintf('Lab notebook: %s. Conditions: %s. Worms: %s. Included in analysis: %s.', ...
-            strtrim(C.notebookName{r}), cond, strtrim(C.wormNumber{r}), yesNo(include));
+        % the row's `include` is NOT written into the description: the lab's
+        % analysis excludes by plate, and the plates' exclusion tags say which
+        % (decision #73; a day marked `no` had 7 of 10 plates analysed)
+        desc = sprintf('Lab notebook: %s. Conditions: %s. Worms: %s.', ...
+            strtrim(C.notebookName{r}), cond, strtrim(C.wormNumber{r}));
         if ~isempty(strtrim(C.notes{r}))
             desc = sprintf('%s Notes: %s.', desc, strtrim(C.notes{r}));
         end
@@ -119,7 +125,8 @@ for f = 1:numel(folders)
         id = sprintf('%s_%04d', pre, n);
         rows{end+1} = row(id, study, n, day, desc, include, w1, w2, ...
             fullfile(outRoot, pre, id), ['tableOfContents ' folder], folder, ...
-            fullfile('celegans', folder, 'videos', dayDir), options.StudyIds); %#ok<AGROW>
+            fullfile('celegans', folder, 'videos', dayDir), options.StudyIds, ...
+            strtrim(C.notes{r})); %#ok<AGROW>
     end
     v = dir(fullfile(root, 'celegans', folder, 'videos'));
     v = {v([v.isdir] & ~startsWith({v.name}, '.')).name};
@@ -175,7 +182,10 @@ end
 
 % =============================================================================
 
-function s = row(id, study, n, day, desc, include, w1, w2, path, source, folder, videoFolder, studyIds)
+function s = row(id, study, n, day, desc, include, w1, w2, path, source, folder, videoFolder, studyIds, notes)
+if nargin < 14
+    notes = '';
+end
 if isnat(day)
     when = 'date unknown';
 else
@@ -190,7 +200,7 @@ s = struct('local_identifier', id, ...
     'description', desc, 'path', path, 'study_key', char(study.key), ...
     'study_ids', {ids}, 'source', source, 'folder', folder, 'video_folder', videoFolder, ...
     'experiment', n, 'date', day, ...
-    'include', include, 'worm_first', w1, 'worm_last', w2);
+    'include', include, 'notes', notes, 'worm_first', w1, 'worm_last', w2);
 end
 
 function c = tocCorrections(spec)
@@ -260,10 +270,6 @@ if ~isempty(tok)
     a = str2double(tok{1});
     b = str2double(tok{2});
 end
-end
-
-function s = yesNo(tf)
-if tf, s = 'yes'; else, s = 'no'; end
 end
 
 function c = asCell(v)

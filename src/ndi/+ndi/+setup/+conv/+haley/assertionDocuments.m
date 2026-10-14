@@ -18,6 +18,15 @@ function out = assertionDocuments(session, S, subjectIds, options)
 %     assay plate  inclusion in analysis = excluded, where the source excludes
 %                              it (decision #2: tagged, not dropped). Per plate:
 %                              no plate has some videos excluded and others not.
+%                              Its notes are the reason, where one was written:
+%                              the day's tableOfContents `notes` when that day
+%                              is marked `include = no` (decision #73). The
+%                              day's flag itself tags nothing: the lab's
+%                              analysis excludes by plate.
+%     assay plate  behavior recording = Not Performed (NCIT:C141477), on a
+%                              plate never filmed (subjectList `filmed` false),
+%                              noted "Prepared but not filmed: no video."
+%                              (decision #73). Its worms are kept.
 %     cohort  biological sex   hermaphrodite (PATO:0001340), from the spec's
 %                              strain entry (`biological_sex`), distributive
 %                              like species and strain. Only strains that
@@ -66,7 +75,15 @@ end
 
 out = struct('documents', {{}}, 'skipped', {{}}, 'counts', struct( ...
     'cohort_species', 0, 'cohort_strain', 0, 'cohort_sex', 0, 'patch_species', 0, ...
-    'patch_strain', 0, 'patch_sex', 0, 'plate_excluded', 0));
+    'patch_strain', 0, 'patch_sex', 0, 'plate_excluded', 0, 'plate_not_filmed', 0));
+% the reason an excluded plate carries: the day's own note, where the day is
+% marked `include = no` (decision #73)
+dayReason = '';
+if ismember('include', session.Properties.VariableNames) && ~session.include(1) ...
+        && ismember('notes', session.Properties.VariableNames)
+    dayReason = char(session.notes{1});
+end
+hasFilmed = ismember('filmed', S.Properties.VariableNames);
 hasBacteria = ismember('bacteria', S.Properties.VariableNames);
 for k = 1:height(S)
     id = S.local_identifier{k};
@@ -80,7 +97,12 @@ for k = 1:height(S)
         case 'assay_plate'
             if S.exclude(k)
                 out = assert1(out, id, 'inclusion in analysis', ...
-                    did2.build.term('', 'excluded'), struct(), struct(), 'plate_excluded');
+                    did2.build.term('', 'excluded'), struct(), struct(), 'plate_excluded', dayReason);
+            end
+            if hasFilmed && ~S.filmed(k)
+                out = assert1(out, id, 'behavior recording', ...
+                    did2.build.term('NCIT:C141477', 'Not Performed'), struct(), struct(), ...
+                    'plate_not_filmed', 'Prepared but not filmed: no video.');
             end
     end
 end
@@ -133,7 +155,10 @@ end
         end
     end
 
-    function out = assert1(out, id, variable, value, edges, fields, counter)
+    function out = assert1(out, id, variable, value, edges, fields, counter, notes)
+        if nargin < 8
+            notes = '';
+        end
         if ~isKey(subjectIds, id)
             label = variable;
             if isstruct(label), label = label.name; end
@@ -141,7 +166,7 @@ end
             return;
         end
         out.documents{end+1} = did2.build.statement('term_assertion', subjectIds(id), ...
-            variable, value, 'Edges', edges, 'Fields', fields, 'SessionId', sid);
+            variable, value, 'Edges', edges, 'Fields', fields, 'SessionId', sid, 'Notes', notes);
         out.counts.(counter) = out.counts.(counter) + 1;
     end
 end

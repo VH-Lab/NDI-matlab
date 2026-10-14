@@ -26,6 +26,37 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
     end
 
     methods (Test)
+        function testExclusionReasonAndAPlateNotFilmed(testCase)
+            % decision #73: an excluded plate carries its day's note when the
+            % day is marked `include = no`; a plate never filmed gets
+            % `behavior recording` = Not Performed and is not excluded
+            session = table({ndi.ido.unique_id()}, {'concentration_0001'}, false, ...
+                {'no contrast video, so patches are poorly aligned'}, ...
+                'VariableNames', {'session_id', 'local_identifier', 'include', 'notes'});
+            S = table({'concentration_0001'; 'concentration_0001'}, {'assay_plate'; 'assay_plate'}, ...
+                {'p1'; 'p2'}, [true; false], [true; false], ...
+                'VariableNames', {'session', 'kind', 'local_identifier', 'exclude', 'filmed'});
+            ids = containers.Map({'p1', 'p2'}, {ndi.ido.unique_id(), ndi.ido.unique_id()});
+            out = ndi.setup.conv.haley.assertionDocuments(session, S, ids);
+            testCase.verifyEqual(out.counts.plate_excluded, 1);
+            testCase.verifyEqual(out.counts.plate_not_filmed, 1);
+            pick = @(var) out.documents(cellfun(@(d) strcmp(d.statement.variable.name, var), out.documents));
+            ex = pick('inclusion in analysis');
+            testCase.verifyNumElements(ex, 1);
+            testCase.verifyEqual(ex{1}.statement.notes, 'no contrast video, so patches are poorly aligned');
+            nf = pick('behavior recording');
+            testCase.verifyNumElements(nf, 1);
+            testCase.verifyEqual(nf{1}.term.value.node, 'NCIT:C141477');
+            testCase.verifyEqual(nf{1}.term.value.name, 'Not Performed');
+            testCase.verifyEqual(nf{1}.statement.notes, 'Prepared but not filmed: no video.');
+
+            % a day marked `include = yes` gives an exclusion no reason
+            session.include = true;
+            out = ndi.setup.conv.haley.assertionDocuments(session, S, ids);
+            ex = out.documents(cellfun(@(d) strcmp(d.statement.variable.name, 'inclusion in analysis'), out.documents));
+            testCase.verifyFalse(isfield(ex{1}.statement, 'notes') && ~isempty(ex{1}.statement.notes));
+        end
+
         function testConcentrationSession(testCase)
             result = testCase.write("concentration_0001");
             testCase.verifyEqual(height(result.sessions), 1);

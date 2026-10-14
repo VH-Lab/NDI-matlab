@@ -55,10 +55,13 @@ classdef TestHaleySubjects < matlab.unittest.TestCase
                 {zeros(2, 2), zeros(2, 2), zeros(2, 2), [], [], zeros(3, 2)}, ...
                 {zeros(2, 1), zeros(2, 1), zeros(2, 1), [], [], zeros(3, 1)}, false(1, 6), ...
                 struct('condition', {{'grid'; 'grid'; 'single'; 'grid'; 'grid'; 'grid'}}, ...
-                'growthCondition', [24; 24; 24; NaN; 24; 24]));
+                'growthCondition', [24; 24; 24; NaN; 24; 24], ...
+                'arenaDiameter', [30; 30; 30; 0; 0; 30]));
             % ^ plate 3 is a single-patch plate on a mutant screen (single-density,
             %   multi-patch) day: the assay type check reports it. Plate 4 has
-            %   no growthCondition and is not excluded: doImport excluded it
+            %   no growthCondition and is not excluded: doImport excluded it.
+            %   Plate 4 was never filmed (arena diameter 0 on its one row);
+            %   plate 5's failed first video also reads 0, its second 30.
 
             % The other three folders: one day, one plate, worms matching.
             for name = {'foragingMatching', 'foragingMini', 'foragingSensory'}
@@ -173,6 +176,21 @@ classdef TestHaleySubjects < matlab.unittest.TestCase
                 {'foragingMutants: plate 4 (expNum 1) has NaN growthCondition and is not excluded; doImport excluded it'});
             testCase.verifyFalse(S.exclude(strcmp(S.local_identifier, 'mutants_assayPlate0004')), ...
                 'listed, not excluded');
+        end
+
+        function testAPlateNeverFilmedIsFlaggedAndKeepsItsWorms(testCase)
+            % decision #73: arena diameter 0 on every row = not filmed
+            [S, checks] = testCase.list();
+            p4 = S(strcmp(S.local_identifier, 'mutants_assayPlate0004'), :);
+            p5 = S(strcmp(S.local_identifier, 'mutants_assayPlate0005'), :);
+            testCase.verifyFalse(p4.filmed);
+            testCase.verifyTrue(p5.filmed, 'one filmed video is enough');
+            testCase.verifySubstring(p4.description{1}, 'not filmed');
+            testCase.verifyEqual(checks.notFilmed, ...
+                {'foragingMutants: plate 4 (expNum 1) was not filmed'});
+            testCase.verifyFalse(p4.exclude, 'not filmed is not excluded');
+            testCase.verifyEqual(sum(strcmp(S.kind, 'worm') & S.plate == 4 & ...
+                strcmp(S.folder, 'foragingMutants')), 4, 'its worms are kept');
         end
 
         function testAnExperimentCorrectionReplacesTheAcclimationRoomTemperature(testCase)
