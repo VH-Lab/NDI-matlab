@@ -24,6 +24,10 @@ function page = signedURLSetPage(decodedData, rawPayload)
 %                             the last page
 %                expiresAt  - char timestamp when the signed URLs expire, ''
 %                             if the server did not supply one
+%                fileInfo   - Nx1 struct array (uid, uploaded, size, crc32)
+%                             for this page's files; empty when the server
+%                             did not send it. See
+%                             ndi.cloud.api.implementation.files.fileMetadataArray
 %
 %   See also: ndi.cloud.api.implementation.files.signedURLFileMap
 
@@ -52,6 +56,14 @@ function page = signedURLSetPage(decodedData, rawPayload)
 
     % Normalize the two fields whose absence is meaningful: jsondecode turns
     % a JSON null into [], and callers test these with isempty.
+    % fileInfo is an array of objects carrying the uid as a value, so
+    % JSONDECODE's key renaming does not touch it.
+    rawFileInfo = [];
+    if isstruct(decodedData) && isfield(decodedData, 'fileInfo')
+        rawFileInfo = decodedData.fileInfo;
+    end
+    page.fileInfo = ndi.cloud.api.implementation.files.fileMetadataArray(rawFileInfo);
+
     page.nextCursor = localCharField(decodedData, 'nextCursor');
     page.expiresAt  = localCharField(decodedData, 'expiresAt');
 end

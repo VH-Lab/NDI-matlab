@@ -27,6 +27,9 @@ function [b, answer, apiResponse, apiURL] = getSignedURLSet(cloudDatasetID, clou
 %                      (or the wrapped struct form MATLAB unpacks the
 %                      server's map into) and whose values are pre-signed
 %                      GET URLs.
+%                      `fileInfo` is an Nx1 struct array (uid, uploaded,
+%                      size, crc32) for this page's files; crc32 is '' when
+%                      none was recorded. Empty if the server predates it.
 %                      On failure, the server error payload.
 %       apiResponse  - The full matlab.net.http.ResponseMessage object.
 %       apiURL       - The URL that was called.

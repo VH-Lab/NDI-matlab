@@ -82,7 +82,7 @@ classdef ListFiles < ndi.cloud.api.call
                 raw_answer = apiResponse.Body.Data;
 
                 % Standardize the output format.
-                answer = struct('uid', {}, 'uploaded', {}, 'sourceDatasetId', {}, 'size', {});
+                answer = struct('uid', {}, 'uploaded', {}, 'sourceDatasetId', {}, 'size', {}, 'crc32', {});
 
                 if ~isempty(raw_answer) && isfield(raw_answer, 'files') && ~isempty(raw_answer.files)
                     files_from_api = raw_answer.files;
@@ -107,7 +107,8 @@ classdef ListFiles < ndi.cloud.api.call
                             'uid', file_in.uid, ...
                             'uploaded', [], ...
                             'sourceDatasetId', '', ...
-                            'size', []);
+                            'size', [], ...
+                            'crc32', '');
 
                         if isfield(file_in, 'uploaded')
                             file_out.uploaded = file_in.uploaded;
@@ -117,6 +118,11 @@ classdef ListFiles < ndi.cloud.api.call
                         end
                         if isfield(file_in, 'size')
                             file_out.size = file_in.size;
+                        end
+                        % Recorded at upload (base64 big-endian CRC-32);
+                        % absent for files uploaded without a checksum.
+                        if isfield(file_in, 'crc32') && ~isempty(file_in.crc32)
+                            file_out.crc32 = char(file_in.crc32);
                         end
 
                         answer(end+1) = file_out;

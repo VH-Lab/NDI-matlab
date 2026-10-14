@@ -58,13 +58,13 @@ classdef ListFilesAll < ndi.cloud.api.call
             %   Outputs:
             %       b            - True if all pages were read successfully, false otherwise.
             %       answer       - A struct array of file summaries (uid, uploaded,
-            %                      sourceDatasetId, size) on success.
+            %                      sourceDatasetId, size, crc32) on success.
             %       apiResponse  - The matlab.net.http.ResponseMessage object from the LAST page call.
             %       apiURL       - The URL that was called for the LAST page.
 
             % Initialize outputs
             b = true;
-            answer = struct('uid', {}, 'uploaded', {}, 'sourceDatasetId', {}, 'size', {});
+            answer = struct('uid', {}, 'uploaded', {}, 'sourceDatasetId', {}, 'size', {}, 'crc32', {});
             apiResponse = matlab.net.http.ResponseMessage.empty;
             apiURL = matlab.net.URI.empty;
 

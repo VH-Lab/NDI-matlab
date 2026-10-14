@@ -37,6 +37,14 @@ function [b, answer, apiResponse, apiURL] = putFiles(preSignedURL, filePath, opt
 %       'timeout' (double)  - Overall wait-for-completion deadline, in
 %                             seconds. Default 60.
 %
+%       'checksumCRC32' (string) - The file's CRC-32 (ndi.fun.file.crc32).
+%                             Required when the URL came from
+%                             getFileUploadURL(..., 'checksumCRC32', CRC):
+%                             that URL signs the x-amz-checksum-crc32
+%                             header, so it must be sent, with the same
+%                             value. S3 then rejects content that does not
+%                             match. Default "" (no header).
+%
 %   Outputs:
 %       b            - True if the upload succeeded (and, when
 %                      waitForCompletion is true, the server-side bulk
@@ -55,6 +63,13 @@ function [b, answer, apiResponse, apiURL] = putFiles(preSignedURL, filePath, opt
 %       [s, url] = ndi.cloud.api.files.getFileUploadURL('d-123', 'f-abc');
 %       if s
 %           [s2] = ndi.cloud.api.files.putFiles(url, 'localfile.dat');
+%       end
+%
+%       % Single-file upload with a checksum
+%       crc = ndi.fun.file.crc32('localfile.dat');
+%       [s, url] = ndi.cloud.api.files.getFileUploadURL('d-123', 'f-abc', 'checksumCRC32', crc);
+%       if s
+%           [s2] = ndi.cloud.api.files.putFiles(url, 'localfile.dat', 'checksumCRC32', crc);
 %       end
 %
 %       % Bulk (zip) upload, waiting for server-side extraction to finish
@@ -76,6 +91,7 @@ function [b, answer, apiResponse, apiURL] = putFiles(preSignedURL, filePath, opt
         options.jobId (1,1) string = ""
         options.waitForCompletion (1,1) logical = false
         options.timeout (1,1) double {mustBePositive} = 60
+        options.checksumCRC32 (1,1) string = ""
     end
     % 1. Create an instance of the implementation class, passing the options.
     api_call = ndi.cloud.api.implementation.files.PutFiles(...
@@ -84,7 +100,8 @@ function [b, answer, apiResponse, apiURL] = putFiles(preSignedURL, filePath, opt
         'useCurl', options.useCurl, ...
         'jobId', options.jobId, ...
         'waitForCompletion', options.waitForCompletion, ...
-        'timeout', options.timeout);
+        'timeout', options.timeout, ...
+        'checksumCRC32', options.checksumCRC32);
 
     % 2. Call the execute method and return its outputs directly.
     [b, answer, apiResponse, apiURL] = api_call.execute();
