@@ -346,9 +346,11 @@ end
 end
 
 function m = mediaType(ext)
+% the file format: an EDAM format term (fileFormat writes the media type on
+% a schema whose data_body.format is still a string)
 switch lower(ext)
-    case '.mp4',           m = 'video/mp4';
-    case {'.tif', '.tiff'}, m = 'image/tiff';
+    case '.mp4',           m = fileFormat('EDAM:format_3997', 'MPEG-4', 'video/mp4');
+    case {'.tif', '.tiff'}, m = fileFormat('EDAM:format_3591', 'TIFF', 'image/tiff');
     otherwise
         error('ndi:setup:conv:haley:unknownFormat', 'No media type for "%s".', ext);
 end

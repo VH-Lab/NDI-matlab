@@ -1,4 +1,4 @@
-function tf = schemaHasField(className, fieldName)
+function [tf, decl] = schemaHasField(className, fieldName)
 %SCHEMAHASFIELD Whether the V2 schema on DID_SCHEMA_PATH declares a field.
 %
 %   TF = ndi.setup.V2.schemaHasField(CLASSNAME, FIELDNAME) is true when
@@ -7,12 +7,17 @@ function tf = schemaHasField(className, fieldName)
 %   A field added to did-schema after a schema copy was made reads as absent,
 %   so a maker can leave it out rather than write a document that schema
 %   refuses (e.g. subject.name, did-schema #80; subject.type, #84).
+%
+%   [TF, DECL] = ... also returns the field's declaration (its `type`,
+%   `constraints`, ...), or [] when it is absent, for a field whose TYPE
+%   changed between schema copies (data_body.format, 2026-10-14).
 
 arguments
     className (1,:) char
     fieldName (1,:) char
 end
 tf = false;
+decl = [];
 p = getenv('DID_SCHEMA_PATH');
 % a class renamed 2026-10-08 is looked up under whichever name the schema
 % in use has (ndi.v2.vetaAliases: 'statement' or 'subject_statement')
@@ -60,4 +65,5 @@ for k = 1:numel(parts)
     end
 end
 tf = true;
+decl = hit;
 end

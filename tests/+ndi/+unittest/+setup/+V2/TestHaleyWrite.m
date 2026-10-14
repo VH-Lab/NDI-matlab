@@ -103,7 +103,15 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
 
             b = docs(strcmp(classes, 'opaque_body'));
             b = b{cellfun(@(d) strcmp(d.data_body.filename, '2022-02-04_12-10-51_2.mp4'), b)};
-            testCase.verifyEqual(b.data_body.format, 'video/mp4');
+            % an EDAM format term (did-schema 877bbde); the media type on an
+            % older schema copy
+            [~, decl] = ndi.setup.V2.schemaHasField('data_body', 'format');
+            if ~isempty(decl) && strcmp(decl.type, 'ontology_term')
+                testCase.verifyEqual(b.data_body.format.node, 'EDAM:format_3997');
+                testCase.verifyEqual(b.data_body.format.name, 'MPEG-4');
+            else
+                testCase.verifyEqual(b.data_body.format, 'video/mp4');
+            end
             testCase.verifyEqual(b.data_body.size_bytes, 100);
             testCase.verifyEqual(b.data_body.hash_algorithm, 'MD5');
             testCase.verifyEqual(numel(b.data_body.content_hash), 32);
