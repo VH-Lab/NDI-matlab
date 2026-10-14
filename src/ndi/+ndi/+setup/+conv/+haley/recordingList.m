@@ -88,8 +88,16 @@ for f = 1:numel(folders)
                 [~, stem] = fileparts(src);
                 k = find(strcmp(onDisk, [stem '.mp4']), 1);
                 if isempty(k)
-                    checks.rowWithoutFile{end+1} = sprintf('%s: plate %d video %d names %s; no %s.mp4 in %s', ...
+                    msg = sprintf('%s: plate %d video %d names %s; no %s.mp4 in %s', ...
                         mine.local_identifier{s}, D.plateNum(r), D.videoNum(r), src, stem, vdir);
+                    % a failed start (scale 0) whose plate has another video
+                    % carries nothing measured: say so (decision #81)
+                    if ismember('scale', D.Properties.VariableNames) && D.scale(r) == 0 && ...
+                            sum(D.plateNum == D.plateNum(r)) > 1
+                        msg = [msg '; it is a failed start (scale 0) and the plate''s ' ...
+                            'other video holds its worms'];
+                    end
+                    checks.rowWithoutFile{end+1} = msg;
                 else
                     used(k) = true;
                     cam = cameraOf(stem);
