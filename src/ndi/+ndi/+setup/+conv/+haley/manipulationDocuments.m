@@ -118,7 +118,12 @@ for k = find(ismember(S.kind, plateKinds))'
     % seeding
     seedRef = '';
     if ~isnat(p.seeded) && ismember(kind, {'assay_plate', 'plate', 'acclimation_plate'})
-        seedRef = instant(p.seeded, hand);
+        seedTol = hand;
+        if isfield(p, 'seeded_spread_s')
+            % a seeding time known only to a span (decision #75)
+            seedTol = hand + p.seeded_spread_s;
+        end
+        seedRef = instant(p.seeded, seedTol);
         if strcmp(kind, 'acclimation_plate')
             seedAcclimation(id, folder, p, seedRef);
         else

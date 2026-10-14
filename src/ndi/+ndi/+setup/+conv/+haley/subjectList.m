@@ -115,7 +115,8 @@ checks = struct('plateWithoutSession', {{}}, 'plateOnTwoDays', {{}}, ...
     'wormOnTwoPlates', {{}}, 'wormRange', {{}}, 'noLawnCenters', {{}}, ...
     'patchCountDisagrees', {{}}, 'noPickTime', {{}}, 'ecoliSeeding', {{}}, ...
     'growthDisagrees', {{}}, 'correctionUnmatched', {{}}, 'roomTempLooksEstimated', {{}}, ...
-    'patchOD600', {{}}, 'assayTypeDisagrees', {{}}, 'noGrowthCondition', {{}}, 'notFilmed', {{}});
+    'patchOD600', {{}}, 'assayTypeDisagrees', {{}}, 'noGrowthCondition', {{}}, 'notFilmed', {{}}, ...
+    'growthSeedSpread', {{}});
 rows = {};
 dayHits = containers.Map();   % experiment-level correction key -> plates it applied to
 assayChecked = 0;       % plates whose original assay type was compared with their study
@@ -299,9 +300,31 @@ for f = 1:numel(folders)
                 G.strain{n}, when, numel(members)), folder, NaN, NaN, NaN, G.strain{n}, '', false, ...
                 G.pick(n));
             % its preparation: the growth columns of the assay plates it served,
-            % which should agree; the first is kept and a disagreement reported
+            % which should agree; the first is kept and a disagreement reported.
+            % When they disagree ONLY on the seeding time, the plate was seeded
+            % once, somewhere in that span: its midpoint, widened by half the
+            % span (decision #75: concentration_0015, 12:39 / 12:41)
             r.prep = P(members(1)).growth;
-            for m = 2:numel(members)
+            seeds = repmat(P(members(1)).growth.seeded, 1, numel(members));
+            others = true(1, numel(members));
+            base = r.prep; base.seeded = NaT;
+            for m = 1:numel(members)
+                g = P(members(m)).growth;
+                seeds(m) = g.seeded;
+                g.seeded = NaT;
+                others(m) = samePrep(g, base);
+            end
+            spread = all(others) && ~any(isnat(seeds)) && min(seeds) < max(seeds);
+            if spread
+                r.prep.seeded = min(seeds) + (max(seeds) - min(seeds)) / 2;
+                r.prep.seeded_spread_s = seconds(max(seeds) - min(seeds)) / 2;
+                checks.growthSeedSpread{end+1} = sprintf(['%s: its %d assay plates give seeding ' ...
+                    'times from %s to %s; recorded as %s +/- %g s plus the hand-written tolerance'], ...
+                    gid, numel(members), char(min(seeds), 'yyyy-MM-dd HH:mm'), ...
+                    char(max(seeds), 'yyyy-MM-dd HH:mm'), char(r.prep.seeded, 'yyyy-MM-dd HH:mm:ss'), ...
+                    r.prep.seeded_spread_s);
+            end
+            for m = 2:numel(members) * ~spread   % a span is all that disagrees
                 if ~samePrep(P(members(m)).growth, r.prep)
                     checks.growthDisagrees{end+1} = sprintf(['%s: assay plates %d and %d give ' ...
                         'different growth seeding/cold room/room temperature times; kept %d''s'], ...
@@ -631,7 +654,7 @@ function p = blankPrep()
 % #54, #56): NaT / NaN / '' where the source has nothing.
 p = struct('seeded', NaT, 'cold_room', NaT, 'room_temp', NaT, 'room_temp_note', '', ...
     'poured', NaT, 'poured_cold_room', NaT, 'peptone', '', 'od600', NaN, 'volume_ul', NaN, ...
-    'room_temp_by_rule', false);
+    'room_temp_by_rule', false, 'seeded_spread_s', 0);
 end
 
 function p = prepOf(R, seeded, coldRoom, roomTemp, od600)
