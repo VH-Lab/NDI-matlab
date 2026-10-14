@@ -1763,6 +1763,22 @@
    "reason": "The 12 assay plates of foragingMini experiment 24 share one acclimation plate (one seeding, cold room and pick), but growthTimeRoomTemp steps down a minute per plate, a spreadsheet fill-down; it is the only one of the 24 Mini experiments with more than one. Plates 225 and 230 were prepared on the acclimation plate's schedule (cold room 24 Aug 14:25, the acclimation plate's) and record its room temperature time: 28 Aug 09:02. On experiment 23 the same pairing (plates 213, 218) gives exactly that day's single time. Inferred from the data, 2026-10-08: Jess does not recall the day, and her notes were not checked (decision #70e)."
   },
   {
+   "key": "room_temp_estimated_mini_plate_55",
+   "folder": "foragingMini",
+   "plate": 55,
+   "column": "timeRoomTemp",
+   "approximate": true,
+   "reason": "timeRoomTemp is exactly the recording's start minus 1 h, the value getExperimentInfo.m fills in when the notebook cell is blank (shreklab/Haley-et-al-2024 at 44a89de, getExperimentInfo.m:269-270). The notebook is not with the data, so the blank cannot be confirmed; it is marked an estimate with no known bound (decision #74, Jess Haley 2026-10-14)."
+  },
+  {
+   "key": "room_temp_estimated_mini_plate_189",
+   "folder": "foragingMini",
+   "plate": 189,
+   "column": "timeRoomTemp",
+   "approximate": true,
+   "reason": "timeRoomTemp is exactly the recording's start minus 1 h, the value getExperimentInfo.m fills in when the notebook cell is blank (shreklab/Haley-et-al-2024 at 44a89de, getExperimentInfo.m:269-270). The notebook is not with the data, so the blank cannot be confirmed; it is marked an estimate with no known bound (decision #74, Jess Haley 2026-10-14)."
+  },
+  {
    "key": "room_temp_estimated_concentration_plate_01",
    "folder": "foragingConcentration",
    "plate": 1,
