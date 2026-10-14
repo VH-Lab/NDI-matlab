@@ -18,17 +18,19 @@ function out = assertionDocuments(session, S, subjectIds, options)
 %     assay plate  inclusion in analysis = excluded, where the source excludes
 %                              it (decision #2: tagged, not dropped). Per plate:
 %                              no plate has some videos excluded and others not.
-%                              Its reason, where one was written, is a text
-%                              statement beside it (`reason for inclusion in
-%                              analysis`; an assertion carries no notes):
+%                              Its reason, where one was written, is the tag's
+%                              notes (or, with a schema whose statements have no
+%                              notes, a text statement `reason for inclusion in
+%                              analysis` beside it):
 %                              the day's tableOfContents `notes` when that day
 %                              is marked `include = no` (decision #73). The
 %                              day's flag itself tags nothing: the lab's
 %                              analysis excludes by plate.
 %     assay plate  behavior recording = Not Performed (NCIT:C141477), on a
 %                              plate never filmed (subjectList `filmed` false),
-%                              with a text statement `reason for behavior
-%                              recording` = "Prepared but not filmed: no video."
+%                              noted "Prepared but not filmed: no video." (as
+%                              above, a `reason for behavior recording` text
+%                              statement with an older schema)
 %                              (decision #73). Its worms are kept.
 %     cohort  biological sex   hermaphrodite (PATO:0001340), from the spec's
 %                              strain entry (`biological_sex`), distributive
@@ -87,6 +89,8 @@ if ismember('include', session.Properties.VariableNames) && ~session.include(1) 
     dayReason = char(session.notes{1});
 end
 hasFilmed = ismember('filmed', S.Properties.VariableNames);
+% a statement's notes (did-schema 2026-10-14: moved up from interaction)
+statementHasNotes = ndi.setup.V2.schemaHasField('statement', 'notes');
 hasBacteria = ismember('bacteria', S.Properties.VariableNames);
 for k = 1:height(S)
     id = S.local_identifier{k};
@@ -168,12 +172,17 @@ end
             out.skipped{end+1} = sprintf('%s %s: not a subject of this session', id, label);
             return;
         end
+        noteArgs = {};
+        if ~isempty(notes) && statementHasNotes
+            noteArgs = {'Notes', char(notes)};
+        end
         out.documents{end+1} = did2.build.statement('term_assertion', subjectIds(id), ...
-            variable, value, 'Edges', edges, 'Fields', fields, 'SessionId', sid);
+            variable, value, 'Edges', edges, 'Fields', fields, 'SessionId', sid, noteArgs{:});
         out.counts.(counter) = out.counts.(counter) + 1;
-        if ~isempty(notes)
-            % an assertion carries no notes (only an interaction does), so the
-            % reason is its own text statement beside it (decision #73)
+        if ~isempty(notes) && ~statementHasNotes
+            % a schema whose statements have no `notes` (did-schema before
+            % 2026-10-14, when notes was on interaction only): the reason is
+            % its own text statement beside it (decision #73)
             if isstruct(variable), variable = variable.name; end
             out.documents{end+1} = did2.build.statement('text_assertion', subjectIds(id), ...
                 did2.build.term('', ['reason for ' variable]), ...

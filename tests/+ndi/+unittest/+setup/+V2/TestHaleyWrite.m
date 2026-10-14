@@ -41,26 +41,35 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             testCase.verifyEqual(out.counts.plate_excluded, 1);
             testCase.verifyEqual(out.counts.plate_not_filmed, 1);
             pick = @(var) out.documents(cellfun(@(d) strcmp(d.statement.variable.name, var), out.documents));
-            % an assertion carries no notes, so each reason is a text
-            % statement beside its tag
-            testCase.verifyNumElements(pick('inclusion in analysis'), 1);
-            why = pick('reason for inclusion in analysis');
-            testCase.verifyNumElements(why, 1);
-            testCase.verifyEqual(why{1}.text.value(1).text, 'no contrast video, so patches are poorly aligned');
+            % the reason is the tag's notes; with a schema whose statements
+            % have no notes, a text statement beside it
+            ex = pick('inclusion in analysis');
+            testCase.verifyNumElements(ex, 1);
             nf = pick('behavior recording');
             testCase.verifyNumElements(nf, 1);
             testCase.verifyEqual(nf{1}.term.value.node, 'NCIT:C141477');
             testCase.verifyEqual(nf{1}.term.value.name, 'Not Performed');
-            why = pick('reason for behavior recording');
-            testCase.verifyNumElements(why, 1);
-            testCase.verifyEqual(why{1}.text.value(1).text, 'Prepared but not filmed: no video.');
+            if ndi.setup.V2.schemaHasField('statement', 'notes')
+                testCase.verifyEqual(ex{1}.statement.notes, 'no contrast video, so patches are poorly aligned');
+                testCase.verifyEqual(nf{1}.statement.notes, 'Prepared but not filmed: no video.');
+                testCase.verifyEmpty(pick('reason for inclusion in analysis'));
+            else
+                why = pick('reason for inclusion in analysis');
+                testCase.verifyNumElements(why, 1);
+                testCase.verifyEqual(why{1}.text.value(1).text, 'no contrast video, so patches are poorly aligned');
+                why = pick('reason for behavior recording');
+                testCase.verifyNumElements(why, 1);
+                testCase.verifyEqual(why{1}.text.value(1).text, 'Prepared but not filmed: no video.');
+            end
 
             % a day marked `include = yes` gives an exclusion no reason
             session.include = true;
             out = ndi.setup.conv.haley.assertionDocuments(session, S, ids);
             pick = @(var) out.documents(cellfun(@(d) strcmp(d.statement.variable.name, var), out.documents));
-            testCase.verifyNumElements(pick('inclusion in analysis'), 1);
+            ex = pick('inclusion in analysis');
+            testCase.verifyNumElements(ex, 1);
             testCase.verifyEmpty(pick('reason for inclusion in analysis'));
+            testCase.verifyFalse(isfield(ex{1}.statement, 'notes') && ~isempty(ex{1}.statement.notes));
         end
 
         function testConcentrationSession(testCase)
