@@ -32,8 +32,12 @@ function out = ecoliDocuments(dataParentDir, session, R, subjectIds, options)
 %         right, patches sharing a column top to bottom -- and detected patch
 %         number k is patch subject k
 %     one-patch plate   its one detected patch is the one patch subject
-%   An image with any other count is not matched: its per-patch values are
-%   left out and reported (OUT.skipped), and its mask is still stored.
+%     fewer than 12 detected on a `rectangle` plate   each is placed on the
+%         plate's grid fitted to the detected centres
+%         (ndi.setup.conv.haley.matchGridPatches, decision #80), when that
+%         placement is the only one consistent with the grid
+%   An image matched no way is reported (OUT.skipped, with why) and its
+%   per-patch values are left out; its mask is still stored.
 %
 %   Per image with an ecoli/images TIFF (when raw/ exists):
 %     intensity_calculation  the plate's `background-normalised fluorescence
@@ -108,7 +112,7 @@ sid = char(session.session_id{1});
 ref = char(session.local_identifier{1});
 out = struct('documents', {{}}, 'skipped', {{}}, 'borderValues', struct('imageNum', {}, 'row', {}, ...
     'patchId', {}, 'statementId', {}), 'counts', struct('coordinate_system', 0, ...
-    'mask', 0, 'nearest_patch', 0, 'matched_images', 0, 'unmatched_images', 0, ...
+    'mask', 0, 'nearest_patch', 0, 'matched_images', 0, 'grid_matched_images', 0, 'unmatched_images', 0, ...
     'patch_values', 0, 'normalised_image', 0, 'profiles', 0, 'background_fit', 0));
 if ~strcmp(char(session.folder{1}), 'ecoli')
     return;
@@ -293,14 +297,25 @@ for k = 1:height(R)
     end
     pIds = patchIds(subjectIds, plate);
     slot = matchPatches(centroids, nDetected, numel(pIds));
+    match = {'Notes', 'Detected patch matched to its grid patch by position (decision #62).'};
+    why = '';
+    if isempty(slot) && nDetected < 12
+        % some patches not detected: place them on the fitted grid (decision #80)
+        [slot, why] = ndi.setup.conv.haley.matchGridPatches(centroids, numel(pIds));
+        if ~isempty(slot)
+            out.counts.grid_matched_images = out.counts.grid_matched_images + 1;
+            match = {'Notes', sprintf(['Detected patch placed on the plate''s 12-patch grid by ' ...
+                'position; %d of 12 patches detected in this image (decision #80).'], nDetected)};
+        end
+    end
     if isempty(slot)
-        out.skipped{end+1} = sprintf(['%s: %d detected patch(es) on %s, which has %d patch ' ...
-            'subject(s); not matched'], epoch, nDetected, plate, numel(pIds));
+        if isempty(why), why = sprintf('the plate has %d patch subject(s)', numel(pIds)); end
+        out.skipped{end+1} = sprintf('%s: %d detected patch(es) on %s; not matched: %s', ...
+            epoch, nDetected, plate, why);
         out.counts.unmatched_images = out.counts.unmatched_images + 1;
         continue;
     end
     out.counts.matched_images = out.counts.matched_images + 1;
-    match = {'Notes', 'Detected patch matched to its grid patch by position (decision #62).'};
 
     % the profile curves: one row per detected patch, in the same order
     curves = [];
