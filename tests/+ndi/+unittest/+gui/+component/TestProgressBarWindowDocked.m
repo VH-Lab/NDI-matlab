@@ -75,8 +75,9 @@ classdef TestProgressBarWindowDocked < matlab.unittest.TestCase
 
             testCase.verifyEqual(app.ProgressBars(1).Progress, 0.5);
             testCase.verifyEqual(app.ProgressBars(1).Percent.Text, '50%');
-            testCase.verifySameHandle(app.ProgressBars(1).Axes.Parent, testCase.Pane.BarGrid, ...
-                'Bar axes should be parented to the pane bar grid.');
+            % the axes sit in the bar's panel, which the pane's grid lays out
+            testCase.verifySameHandle(app.ProgressBars(1).Axes.Parent.Parent, testCase.Pane.BarGrid, ...
+                'Bar panel should be parented to the pane bar grid.');
         end
 
         function testCascadeMultipleBars(testCase)

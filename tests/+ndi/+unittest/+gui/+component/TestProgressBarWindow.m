@@ -123,6 +123,40 @@ classdef TestProgressBarWindow < matlab.unittest.TestCase
             testCase.verifyNotEmpty(app.ProgressBars(1).Axes, 'Axes handle should not be empty.');
             testCase.verifyNotEmpty(app.ProgressBars(1).Patch, 'Patch handle should not be empty.');
         end
+
+        function testBarFillsItsRow(testCase)
+            % The bar's axes sit in a borderless panel that the grid lays
+            % out, the axes' INNER box BarMargin px inside it. In a grid cell
+            % a uiaxes keeps room for hidden tick labels; on R2026a that
+            % left a 2.7 px bar in a 28 px row.
+            app = ndi.gui.component.ProgressBarWindow('Fill Test', 'Visible', 'off');
+            testCase.addTeardown(@delete, app.ProgressFigure);
+            app.addBar('Label', 'Task 1', 'Tag', 'T1');
+            app.addBar('Label', 'Task 2', 'Tag', 'T2');
+            ax = app.ProgressBars(2).Axes;
+            testCase.verifyClass(ax.Parent, 'matlab.ui.container.Panel');
+            testCase.verifyEqual(ax.Parent.Layout.Row, 4, 'the panel takes the bar row');
+            testCase.verifyEqual(ax.PositionConstraint, 'innerposition');
+            testCase.verifyEqual(ax.Units, 'pixels');
+            testCase.verifyNotEmpty(ax.Parent.SizeChangedFcn, 'the bar follows its panel''s size');
+            testCase.verifyEqual(char(ax.Parent.AutoResizeChildren), 'off', ...
+                'SizeChangedFcn does not run while AutoResizeChildren is on');
+            % BarMargin px inside the panel on every side
+            m = ndi.gui.component.ProgressBarWindow.BarMargin;
+            drawnow
+            ndi.gui.component.ProgressBarWindow.fitBarAxes(ax, ax.Parent);
+            pos = getpixelposition(ax.Parent);   % the grid sets the panel's size
+            testCase.verifyEqual(ax.InnerPosition, ...
+                [1+m, 1+m, max(pos(3)-2*m, 1), max(pos(4)-2*m, 1)], 'AbsTol', 1e-6);
+
+            % removing the first bar moves the second panel up and deletes
+            % the first bar's panel along with its axes
+            firstPanel = app.ProgressBars(1).Axes.Parent;
+            app.updateBar('T1', 1);
+            app.removeBar('T1');
+            testCase.verifyFalse(isvalid(firstPanel), 'the removed bar''s panel is deleted');
+            testCase.verifyEqual(ax.Parent.Layout.Row, 2, 'the remaining bar''s panel moves up');
+        end
         function testAddMultipleBars(testCase)
             app = ndi.gui.component.ProgressBarWindow('Multi Bar Test', 'Visible', 'off');
             testCase.addTeardown(@delete, app.ProgressFigure);
@@ -248,7 +282,7 @@ classdef TestProgressBarWindow < matlab.unittest.TestCase
             testCase.verifyEqual(app.ProgressBars(2).State, 'Open', 'Remaining bar state incorrect.');
             testCase.verifyNumElements(app.ProgressGrid.RowHeight, initialRowCount - 2, 'Grid rows not removed correctly.');
             testCase.verifyEqual(app.ProgressBars(2).Label.Layout.Row, 1);
-            testCase.verifyEqual(app.ProgressBars(2).Axes.Layout.Row, 2);
+            testCase.verifyEqual(app.ProgressBars(2).Axes.Parent.Layout.Row, 2); % the bar's panel
             % Verify properties of removed bar
             testCase.verifyEqual(app.ProgressBars(1).Tag, 'TRemove', 'Removed bar is incorrect.');
             testCase.verifyEqual(app.ProgressBars(1).State, 'Closed', 'Removed bar state incorrect.');
@@ -408,10 +442,16 @@ classdef TestProgressBarWindow < matlab.unittest.TestCase
             testCase.addTeardown(@delete, app.ProgressFigure);
             originalTimeout = app.Timeout;
             app.setTimeout(duration(0,0,0.1)); % 0.1 seconds
-            testCase.addTeardown(@() setfield(app,'Timeout',originalTimeout));
+            % Guard the restore teardown against AutoDelete: this test's
+            % updateBar call auto-closes both bars, and with AutoDelete
+            % on (the constructor default) the app is then deleted.
+            % Touching a deleted AppBase handle raises
+            % MATLAB:class:InvalidHandle, which would fail the test
+            % even though the assertion above succeeded.
+            testCase.addTeardown(@() restoreTimeoutIfAlive(app, originalTimeout));
             app.addBar('Tag', 'TAutoTimeout', 'Auto', true);
             app.addBar('Tag', 'TUpdated', 'Auto', true);
-            
+
             pause(0.2); % Wait for timeout
             testCase.verifyWarning(@() app.updateBar('TUpdated', 0.2), 'ProgressBarWindow:AutoCloseOnTimeout');
         end
@@ -588,5 +628,14 @@ classdef TestProgressBarWindow < matlab.unittest.TestCase
                 testCase.verifyEqual(buttonHandle.Icon, 'error', 'Button icon should be error.');
             end
         end
+    end
+end
+
+function restoreTimeoutIfAlive(app, originalTimeout)
+    % Teardown helper: restore the app's Timeout only if the app is
+    % still a live handle. A test that drives AutoDelete to tear the
+    % window down cannot then reach through app to write a property.
+    if isvalid(app)
+        app.Timeout = originalTimeout;
     end
 end

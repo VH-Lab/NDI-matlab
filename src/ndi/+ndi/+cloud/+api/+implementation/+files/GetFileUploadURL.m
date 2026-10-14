@@ -3,6 +3,7 @@ classdef GetFileUploadURL < ndi.cloud.api.call
 
     properties
         cloudFileUID
+        checksumCRC32 (1,1) string = "" % base64 big-endian CRC-32, or "" for none
     end
 
     methods
@@ -12,15 +13,38 @@ classdef GetFileUploadURL < ndi.cloud.api.call
             %   Inputs:
             %       'cloudDatasetID' - The ID of the dataset.
             %       'cloudFileUID'   - The unique identifier for the file.
+            %       'checksumCRC32'  - (Optional) The file's CRC-32, base64 of
+            %                          its 4-byte big-endian value. Sent as the
+            %                          checksumCRC32 query parameter.
             %
             arguments
                 args.cloudDatasetID (1,1) string
                 args.cloudFileUID (1,1) string
+                args.checksumCRC32 (1,1) string = ""
             end
             
             this.cloudDatasetID = args.cloudDatasetID;
             this.cloudFileUID = args.cloudFileUID;
+            this.checksumCRC32 = args.checksumCRC32;
             this.endpointName = 'get_file_upload_url';
+        end
+
+        function apiURL = buildURL(this, organizationId)
+            %BUILDURL The upload URL request for ORGANIZATIONID, with the
+            %   checksumCRC32 query parameter when a checksum was given.
+            apiURL = ndi.cloud.api.url('get_file_upload_url', ...
+                'dataset_id', this.cloudDatasetID, ...
+                'organization_id', organizationId, ...
+                'file_uid', this.cloudFileUID);
+            if strlength(this.checksumCRC32) > 0
+                % QueryParameter percent-encodes the base64 '+', '/' and '='.
+                q = matlab.net.QueryParameter('checksumCRC32', char(this.checksumCRC32));
+                if isempty(apiURL.Query)
+                    apiURL.Query = q;
+                else
+                    apiURL.Query = [apiURL.Query q];
+                end
+            end
         end
 
         function [b, answer, apiResponse, apiURL] = execute(this)
@@ -41,10 +65,7 @@ classdef GetFileUploadURL < ndi.cloud.api.call
                 return;
             end
             
-            apiURL = ndi.cloud.api.url('get_file_upload_url', ...
-                'dataset_id', this.cloudDatasetID, ...
-                'organization_id', dsetinfo.organizationId, ...
-                'file_uid', this.cloudFileUID);
+            apiURL = this.buildURL(dsetinfo.organizationId);
 
             method = matlab.net.http.RequestMethod.GET;
             

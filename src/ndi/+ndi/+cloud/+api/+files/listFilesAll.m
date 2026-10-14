@@ -30,6 +30,8 @@ function [b, answer, apiResponse, apiURL] = listFilesAll(cloudDatasetID, args)
 %                          uploaded        - 0/1 flag: whether the file is uploaded.
 %                          sourceDatasetId - The parent dataset's cloud id.
 %                          size            - The file size in bytes.
+%                          crc32           - Base64 big-endian CRC-32 recorded at
+%                                            upload ('' when none was recorded).
 %       apiResponse  - The matlab.net.http.ResponseMessage object from the LAST
 %                      page call.
 %       apiURL       - The URL that was called for the LAST page.

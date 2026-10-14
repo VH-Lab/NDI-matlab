@@ -45,6 +45,10 @@ classdef ProgressBarWindow < matlab.apps.AppBase
     %       ndi.gui.component.ProgressBarWindow.isHeadless,
     %       ndi.gui.component.ProgressBarWindow.silentModeDefault
 
+    properties (Constant, Hidden)
+        BarMargin double = 5 % Pixels between a bar and the edges of its row (as R2024b drew it).
+    end
+
     properties (Hidden)
         ScreenFrac double = 0.025 % Fraction of screen height used per bar row.
         IconClose char = fullfile(ndi.common.PathConstants.RootFolder,...
@@ -265,6 +269,15 @@ classdef ProgressBarWindow < matlab.apps.AppBase
                 options.Tag {mustBeTextScalar(options.Tag)} = ''
                 options.Color (1,3) double {mustBeInRange(options.Color,0,1)} = [1 1 1]
                 options.Auto logical = false
+                % Per-bar timeout. Overrides app.Timeout for this bar only.
+                % duration.empty (the default) means "inherit app.Timeout".
+                % Pass minutes(Inf) to opt this bar out of the timeout entirely
+                % -- appropriate for a top-level bar that ticks less often
+                % than the app-level timeout (typically 1 min), which used to
+                % get culled by updateBar's global timeout sweep while its
+                % owner was still using it. See NDI-matlab lightsheet demo
+                % 2026-09-20.
+                options.Timeout duration = duration.empty
             end
 
             % Bring figure to front
@@ -307,6 +320,9 @@ classdef ProgressBarWindow < matlab.apps.AppBase
             app.ProgressBars(barNum).Auto = options.Auto;
             app.ProgressBars(barNum).Progress = 0;
             app.ProgressBars(barNum).Clock(1:2) = {datetime('now')};
+            % Per-bar timeout: duration.empty means inherit app.Timeout at
+            % checkTimeout time. minutes(Inf) means "never time out".
+            app.ProgressBars(barNum).Timeout = options.Timeout;
 
             % Everything from here on builds this bar's graphics. When
             % silent there is no grid and no figure, so the bar exists as
@@ -346,13 +362,31 @@ classdef ProgressBarWindow < matlab.apps.AppBase
             app.ProgressBars(barNum).Timer.Layout.Row = rowNum - 1;
             app.ProgressBars(barNum).Timer.Layout.Column = 1:2;
 
-            % Add bar axes (background)
-            app.ProgressBars(barNum).Axes = uiaxes(app.ProgressGrid,...
+            % Add bar axes (background), inside a borderless panel that
+            % fills the grid cell. In a grid layout MATLAB places a uiaxes
+            % by its OUTER box and keeps room inside it for tick labels and
+            % a title, even hidden ones; R2026a keeps about 25 px, which
+            % left a 28 px row with a 2.7 px bar. Inside a plain panel the
+            % axes' inner box is placed exactly, BarMargin px in from each
+            % side -- the margin R2024b drew -- and kept there when the
+            % panel resizes. The panel is the axes' parent: it is what the
+            % grid lays out (removeBar moves and deletes it through
+            % Axes.Parent).
+            barPanel = uipanel(app.ProgressGrid,'BorderType','none',...
+                'BackgroundColor',app.ProgressGrid.BackgroundColor,...
+                'AutoResizeChildren','off');   % else SizeChangedFcn never runs
+            barPanel.Layout.Row = rowNum;
+            barPanel.Layout.Column = 1;
+            app.ProgressBars(barNum).Axes = uiaxes(barPanel,...
                 'XLim',[0 1],'YLim',[0 1],'XTick',[],'YTick',[],'Box','off',...
                 'XColor','none','YColor','none','Color','w','Interactions',[]);
             app.ProgressBars(barNum).Axes.Toolbar.Visible = 'off';
-            app.ProgressBars(barNum).Axes.Layout.Row = rowNum;
-            app.ProgressBars(barNum).Axes.Layout.Column = 1;
+            app.ProgressBars(barNum).Axes.Units = 'pixels';
+            app.ProgressBars(barNum).Axes.PositionConstraint = 'innerposition';
+            barAxes = app.ProgressBars(barNum).Axes;
+            barPanel.SizeChangedFcn = @(panel,~) ...
+                ndi.gui.component.ProgressBarWindow.fitBarAxes(barAxes, panel);
+            ndi.gui.component.ProgressBarWindow.fitBarAxes(barAxes, barPanel);
 
             % Add bar patch (foreground)
             app.ProgressBars(barNum).Patch = patch(app.ProgressBars(barNum).Axes, ...
@@ -513,7 +547,7 @@ classdef ProgressBarWindow < matlab.apps.AppBase
                 rowNum = app.ProgressBars(barNum).Label.Layout.Row + [0 1];
 
                 % Remove progress bar
-                delete([app.ProgressBars(barNum).Axes,...
+                delete([app.ProgressBars(barNum).Axes.Parent,...   % the bar's panel, and its axes
                     app.ProgressBars(barNum).Percent,...
                     app.ProgressBars(barNum).Button,...
                     app.ProgressBars(barNum).Label,...
@@ -524,7 +558,7 @@ classdef ProgressBarWindow < matlab.apps.AppBase
                 for i = 1:numel(openBars)
                     app.ProgressBars(openBars(i)).Label.Layout.Row = 2*i - 1;
                     app.ProgressBars(openBars(i)).Timer.Layout.Row = 2*i - 1;
-                    app.ProgressBars(openBars(i)).Axes.Layout.Row = 2*i;
+                    app.ProgressBars(openBars(i)).Axes.Parent.Layout.Row = 2*i;
                     app.ProgressBars(openBars(i)).Percent.Layout.Row = 2*i;
                     app.ProgressBars(openBars(i)).Button.Layout.Row = 2*i;
                 end
@@ -663,11 +697,23 @@ classdef ProgressBarWindow < matlab.apps.AppBase
                 % Get duration of time since last update
                 timeout = datetime('now') - app.ProgressBars(i).Clock{2};
 
-                if timeout >= app.Timeout & ...
+                % Per-bar timeout wins over the app default. A bar that
+                % was created with Timeout=minutes(Inf) never times out
+                % here -- this is what long-running top-level bars need
+                % so that a global sweep (fired as a side effect of ANY
+                % updateBar call, including one on a different, actively
+                % updating bar) does not cull them from behind.
+                thisTimeout = app.Timeout;
+                if isfield(app.ProgressBars(i), 'Timeout') && ...
+                        ~isempty(app.ProgressBars(i).Timeout)
+                    thisTimeout = app.ProgressBars(i).Timeout;
+                end
+
+                if timeout >= thisTimeout & ...
                         ~strcmpi(app.ProgressBars(i).State,'Closed') && ...
                         ~strcmpi(app.ProgressBars(i).State,'Complete') && ...
                         app.ProgressBars(i).Progress < 1
-                    
+
                     % Set icon to error and state to 'Timeout'
                     app.setErrorIconForButton(app.ProgressBars(i).Button)
                     app.ProgressBars(i).State = 'Timeout';
@@ -1019,6 +1065,21 @@ classdef ProgressBarWindow < matlab.apps.AppBase
     end
 
     methods (Static)
+        function fitBarAxes(ax, panel)
+            %fitBarAxes Place a bar's axes BarMargin px inside its panel.
+            %
+            %   ndi.gui.component.ProgressBarWindow.fitBarAxes(AX, PANEL)
+            %   sets AX's inner box (pixels) to PANEL's area less BarMargin
+            %   on each side, at least 1 x 1. addBar calls it once and as
+            %   PANEL's SizeChangedFcn.
+            if ~isvalid(ax) || ~isvalid(panel)
+                return
+            end
+            m = ndi.gui.component.ProgressBarWindow.BarMargin;
+            pos = getpixelposition(panel);
+            ax.InnerPosition = [1 + m, 1 + m, max(pos(3) - 2*m, 1), max(pos(4) - 2*m, 1)];
+        end
+
         function tf = isHeadless()
             %isHeadless True when this MATLAB has no usable display.
             %

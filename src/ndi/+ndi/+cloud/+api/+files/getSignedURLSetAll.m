@@ -29,6 +29,9 @@ function [b, answer, apiResponse, apiURL] = getSignedURLSetAll(cloudDatasetID, c
 %                        pages, expiresAt, files.
 %                      `files` is a struct whose field names are file UIDs
 %                      and whose values are pre-signed GET URLs.
+%                      `fileInfo` is an Nx1 struct array (uid, uploaded,
+%                      size, crc32) across all pages; crc32 is '' when none
+%                      was recorded.
 %       apiResponse  - The matlab.net.http.ResponseMessage from the last page.
 %       apiURL       - The URL of the last page.
 %
