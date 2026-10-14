@@ -819,7 +819,13 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
                         % it reaches the dataset's documents through the dataset
                         ndi_session_obj.datasetDatabase = ndi_dataset_obj.session.database;
                     end
-                    mksqlite('close'); % TODO: update ndi.session with a close database files method                
+                    if ~ndi_dataset_obj.isV2()
+                        % closes EVERY mksqlite connection: harmless for the legacy
+                        % backend, which reopens its file per call, but a V2
+                        % database (did2.database.sqlitedb) keeps its connection
+                        % open, and this would close the session just opened
+                        mksqlite('close'); % TODO: update ndi.session with a close database files method
+                    end
                 end
             end
         end % open_session()

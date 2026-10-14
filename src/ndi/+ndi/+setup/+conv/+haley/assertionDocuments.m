@@ -18,14 +18,17 @@ function out = assertionDocuments(session, S, subjectIds, options)
 %     assay plate  inclusion in analysis = excluded, where the source excludes
 %                              it (decision #2: tagged, not dropped). Per plate:
 %                              no plate has some videos excluded and others not.
-%                              Its notes are the reason, where one was written:
+%                              Its reason, where one was written, is a text
+%                              statement beside it (`reason for inclusion in
+%                              analysis`; an assertion carries no notes):
 %                              the day's tableOfContents `notes` when that day
 %                              is marked `include = no` (decision #73). The
 %                              day's flag itself tags nothing: the lab's
 %                              analysis excludes by plate.
 %     assay plate  behavior recording = Not Performed (NCIT:C141477), on a
 %                              plate never filmed (subjectList `filmed` false),
-%                              noted "Prepared but not filmed: no video."
+%                              with a text statement `reason for behavior
+%                              recording` = "Prepared but not filmed: no video."
 %                              (decision #73). Its worms are kept.
 %     cohort  biological sex   hermaphrodite (PATO:0001340), from the spec's
 %                              strain entry (`biological_sex`), distributive
@@ -166,7 +169,15 @@ end
             return;
         end
         out.documents{end+1} = did2.build.statement('term_assertion', subjectIds(id), ...
-            variable, value, 'Edges', edges, 'Fields', fields, 'SessionId', sid, 'Notes', notes);
+            variable, value, 'Edges', edges, 'Fields', fields, 'SessionId', sid);
         out.counts.(counter) = out.counts.(counter) + 1;
+        if ~isempty(notes)
+            % an assertion carries no notes (only an interaction does), so the
+            % reason is its own text statement beside it (decision #73)
+            if isstruct(variable), variable = variable.name; end
+            out.documents{end+1} = did2.build.statement('text_assertion', subjectIds(id), ...
+                did2.build.term('', ['reason for ' variable]), ...
+                did2.build.valueCell('text', {char(notes)}), 'SessionId', sid);
+        end
     end
 end

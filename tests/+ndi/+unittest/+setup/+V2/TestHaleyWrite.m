@@ -41,20 +41,26 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             testCase.verifyEqual(out.counts.plate_excluded, 1);
             testCase.verifyEqual(out.counts.plate_not_filmed, 1);
             pick = @(var) out.documents(cellfun(@(d) strcmp(d.statement.variable.name, var), out.documents));
-            ex = pick('inclusion in analysis');
-            testCase.verifyNumElements(ex, 1);
-            testCase.verifyEqual(ex{1}.statement.notes, 'no contrast video, so patches are poorly aligned');
+            % an assertion carries no notes, so each reason is a text
+            % statement beside its tag
+            testCase.verifyNumElements(pick('inclusion in analysis'), 1);
+            why = pick('reason for inclusion in analysis');
+            testCase.verifyNumElements(why, 1);
+            testCase.verifyEqual(why{1}.text.value(1).text, 'no contrast video, so patches are poorly aligned');
             nf = pick('behavior recording');
             testCase.verifyNumElements(nf, 1);
             testCase.verifyEqual(nf{1}.term.value.node, 'NCIT:C141477');
             testCase.verifyEqual(nf{1}.term.value.name, 'Not Performed');
-            testCase.verifyEqual(nf{1}.statement.notes, 'Prepared but not filmed: no video.');
+            why = pick('reason for behavior recording');
+            testCase.verifyNumElements(why, 1);
+            testCase.verifyEqual(why{1}.text.value(1).text, 'Prepared but not filmed: no video.');
 
             % a day marked `include = yes` gives an exclusion no reason
             session.include = true;
             out = ndi.setup.conv.haley.assertionDocuments(session, S, ids);
-            ex = out.documents(cellfun(@(d) strcmp(d.statement.variable.name, 'inclusion in analysis'), out.documents));
-            testCase.verifyFalse(isfield(ex{1}.statement, 'notes') && ~isempty(ex{1}.statement.notes));
+            pick = @(var) out.documents(cellfun(@(d) strcmp(d.statement.variable.name, var), out.documents));
+            testCase.verifyNumElements(pick('inclusion in analysis'), 1);
+            testCase.verifyEmpty(pick('reason for inclusion in analysis'));
         end
 
         function testConcentrationSession(testCase)
