@@ -219,7 +219,8 @@ for k = 1:height(R)
         keyArgs{:}, ...
         'Method', did2.build.term('', probeType(r.system{1})), ...
         'InstrumentId', instrumentId, 'AcquisitionChannelsId', channelIds(r.system{1}), ...
-        'TimeReferenceIds', {relEpoch.base.id, absRef.base.id}, 'SessionId', sid);
+        'TimeReferenceIds', {relEpoch.base.id, absRef.base.id}, 'SessionId', sid, ...
+        'Notes', noteOf(r));
 
     info = dir(src);
     f = struct('format', mediaType(ext), 'filename', [base ext], ...
@@ -373,4 +374,12 @@ function d = softwareDoc(name, sid)
 % a `software` entity (or, since 2026-10-08, an `entity` of type software)
 d = ndi.setup.V2.entityDocuments('software', struct('name', name), struct(), 'SessionId', sid);
 d = d{1};
+end
+
+function n = noteOf(r)
+% a recording row's note (recordingList: e.g. decision #83's camera swap)
+n = '';
+if ismember('note', r.Properties.VariableNames) && ~isempty(r.note{1})
+    n = char(r.note{1});
+end
 end

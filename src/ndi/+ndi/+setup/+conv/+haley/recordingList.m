@@ -60,7 +60,8 @@ end
 
 root = fullfile(dataParentDir, 'haley');
 checks = struct('rowWithoutFile', {{}}, 'fileWithoutRow', {{}}, 'cameraDisagrees', {{}}, ...
-    'noFrames', {{}}, 'imagesWithoutFile', {{}}, 'noRawImages', {{}}, 'unreadable', {{}});
+    'noFrames', {{}}, 'imagesWithoutFile', {{}}, 'noRawImages', {{}}, 'unreadable', {{}}, ...
+    'cameraSwap', {{}});
 rows = {};
 nFiles = 0;
 
@@ -149,9 +150,54 @@ for f = 1:numel(folders)
                 end
             end
         end
+        % a plate whose lawn clip and video are on different cameras, when
+        % no other plate that day changes camera (decision #83)
+        here = find(cellfun(@(q) strcmp(q.session, mine.local_identifier{s}), rows));
+        camOf = containers.Map();
+        for q = here
+            x = rows{q};
+            camOf([x.plate '|' x.kind]) = x.system;
+        end
+        swapped = {};
+        for q = here
+            x = rows{q};
+            if strcmp(x.kind, 'lawn') && isKey(camOf, [x.plate '|behaviour']) && ...
+                    ~strcmp(camOf([x.plate '|behaviour']), x.system)
+                swapped{end+1} = x.plate; %#ok<AGROW>
+            end
+        end
+        for q = here
+            x = rows{q};
+            if any(strcmp(swapped, x.plate))
+                rows{q}.note = sprintf(['This plate''s lawn clip and behaviour video were filmed on ' ...
+                    'different cameras (%s, %s), as the source table names them; %d plate(s) ' ...
+                    'did so that day. Whether the plates moved or the names were swapped is ' ...
+                    'not known (decision #83).'], camOf([x.plate '|lawn']), ...
+                    camOf([x.plate '|behaviour']), numel(swapped));
+            end
+        end
+        for p = swapped
+            checks.cameraSwap{end+1} = sprintf('%s: %s''s lawn clip and video are on different cameras; noted', ...
+                mine.local_identifier{s}, p{1});
+        end
+        % worms all on listed plates: an unnamed file is not a missing plate
+        allWorms = '';
+        w = [];
+        if ismember('wormNum', D.Properties.VariableNames)
+            if iscell(D.wormNum)
+                w = cell2mat(cellfun(@(v) reshape(double(v), 1, []), D.wormNum(:)', 'UniformOutput', false));
+            else
+                w = reshape(double(D.wormNum), 1, []);
+            end
+        end
+        if ~isnan(mine.worm_first(s)) && ~isempty(w) && ...
+                all(ismember(mine.worm_first(s):mine.worm_last(s), w))
+            allWorms = sprintf(['; the day''s worms (%d-%d) are all on listed plates, so it is ' ...
+                'not a missing plate'], mine.worm_first(s), mine.worm_last(s));
+        end
         for k = find(~used)
-            checks.fileWithoutRow{end+1} = sprintf('%s: %s is named by no row', ...
-                mine.local_identifier{s}, fullfile(vdir, onDisk{k}));
+            checks.fileWithoutRow{end+1} = sprintf('%s: %s is named by no row%s', ...
+                mine.local_identifier{s}, fullfile(vdir, onDisk{k}), allWorms);
         end
     end
 end
