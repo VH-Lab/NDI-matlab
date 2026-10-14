@@ -84,6 +84,28 @@ classdef BatchSignedUrlLookupTest < matlab.unittest.TestCase
                 error('BatchSignedUrlLookupTest:retryBlewUp', 'retry blew up');
             end
         end
+
+        function signer = flakyThenGoodSigner(~, filesMap, counterHandle, raiseCount)
+            % A signer that raises on the first `raiseCount` calls and
+            % returns `filesMap` thereafter -- exercises the transient-
+            % error backoff path. Named error id matches what
+            % matlab.net.http.send hands back on a real TLS blip, so
+            % the retry logic is being tested against the shape it will
+            % see in production. See VH-Lab/NDI-matlab#1010.
+            signer = @doSign;
+            function [ok, answer] = doSign(~, ~, varargin)
+                counterHandle('n') = counterHandle('n') + 1;
+                counterHandle('lastArgs') = varargin;
+                if counterHandle('n') <= raiseCount
+                    error('MATLAB:webservices:ConnectionFailed', ...
+                        'Error downloading content from https://example.invalid');
+                end
+                ok = true;
+                answer = struct('files', filesMap, ...
+                                'pages', 1, ...
+                                'expiresAt', '2026-12-31T00:00:00Z');
+            end
+        end
     end
 
     methods (Test)
@@ -480,6 +502,143 @@ classdef BatchSignedUrlLookupTest < matlab.unittest.TestCase
             testCase.verifyTrue(contains(stats.lastFailureReason, "retry blew up"), ...
                 sprintf('lastFailureReason should name the raise; got %s', ...
                         stats.lastFailureReason));
+        end
+
+        function testTransientErrorRetriesBeforePerMemberFallback(testCase)
+            % One transient TLS blip at start of run must NOT cascade to
+            % per-member fallback for a whole series. Before the retry,
+            % a MATLAB:webservices:ConnectionFailed on the first batch
+            % call marked the scope failed and cost N getFileDetails
+            % calls for a 156k-member lightsheet series -- 4+ hours of
+            % wall clock. With the retry, one raise is absorbed by a
+            % second signer call and every uid in the scope resolves
+            % from the cached map. See VH-Lab/NDI-matlab#1010 and
+            % Waltham-Data-Science/NDI-python#322.
+            counter = containers.Map('KeyType','char','ValueType','any');
+            counter('n') = 0;
+            filesMap = testCase.mapOf({'u_1', 'https://s3/u_1'; ...
+                                       'u_2', 'https://s3/u_2'; ...
+                                       'u_3', 'https://s3/u_3'});
+            signer = testCase.flakyThenGoodSigner(filesMap, counter, 1);
+
+            % Zero delays so the suite stays fast; the retry mechanics
+            % are what this test asserts, not the wait times.
+            url1 = ndi.cloud.download.internal.batchSignedUrlLookup( ...
+                "ds", "doc", "chunks", "u_1", ...
+                'signer', signer, 'clearCache', true, ...
+                'retryBackoffSeconds', [0 0 0]);
+            testCase.verifyEqual(url1, 'https://s3/u_1', ...
+                'the first uid should resolve from the retried batch');
+            testCase.verifyEqual(counter('n'), 2, ...
+                'exactly one retry after the transient raise');
+
+            % Every other uid in the same scope must ride the cached
+            % map -- no more signer calls, no per-member fallback.
+            url2 = ndi.cloud.download.internal.batchSignedUrlLookup( ...
+                "ds", "doc", "chunks", "u_2", 'signer', signer);
+            url3 = ndi.cloud.download.internal.batchSignedUrlLookup( ...
+                "ds", "doc", "chunks", "u_3", 'signer', signer);
+            testCase.verifyEqual(url2, 'https://s3/u_2');
+            testCase.verifyEqual(url3, 'https://s3/u_3');
+            testCase.verifyEqual(counter('n'), 2, ...
+                'later uids must not trigger another signer call');
+
+            [~, stats] = ndi.cloud.download.internal.batchSignedUrlLookup("", "", "", "");
+            testCase.verifyEqual(stats.uidHits, 3);
+            testCase.verifyEqual(stats.uidMisses, 0, ...
+                'no per-member fallback -- the retry rescued the scope');
+            testCase.verifyEqual(stats.signerCalls, 2, ...
+                'initial raise + one successful retry');
+            testCase.verifyEqual(stats.transientRetries, 1, ...
+                'one retry was needed to recover from the transient');
+        end
+
+        function testTransientRetriesAreBoundedThenFallBack(testCase)
+            % The retry is a safety net, not a busy loop. Exhaust the
+            % backoff and the caller is handed "" so the per-member
+            % fallback still runs -- the batch retry replaces the O(N)
+            % cascade with ~20 s of wall clock, but a scope that
+            % legitimately cannot be reached must not spin forever.
+            counter = containers.Map('KeyType','char','ValueType','any');
+            counter('n') = 0;
+            filesMap = testCase.mapOf({'u_1', 'https://s3/u_1'});
+            % 999 keeps every attempt raising -- more than any
+            % retryBackoffSeconds this test would set.
+            signer = testCase.flakyThenGoodSigner(filesMap, counter, 999);
+
+            url = ndi.cloud.download.internal.batchSignedUrlLookup( ...
+                "ds", "doc", "chunks", "u_1", ...
+                'signer', signer, 'clearCache', true, ...
+                'retryBackoffSeconds', [0 0]);
+
+            testCase.verifyEqual(url, "", ...
+                'exhausted retries should return "" so the caller falls back');
+            testCase.verifyEqual(counter('n'), 3, ...
+                'three attempts total: one initial call, two retries');
+
+            [~, stats] = ndi.cloud.download.internal.batchSignedUrlLookup("", "", "", "");
+            testCase.verifyEqual(stats.transientRetries, 2, ...
+                'two retries were spent, matching numel(retryBackoffSeconds)');
+            testCase.verifyEqual(stats.uidMisses, 1, ...
+                'the final failure still counts as a miss');
+            testCase.verifyTrue(contains(stats.lastFailureReason, ...
+                'MATLAB:webservices:ConnectionFailed'), ...
+                sprintf('lastFailureReason should name the raise; got %s', ...
+                        stats.lastFailureReason));
+        end
+
+        function testTransientRetryPausesBetweenAttempts(testCase)
+            % The backoff delays are what turn hammering a flaky
+            % endpoint into a graceful wait. Verify each delay is
+            % actually applied, and only between failed attempts (a
+            % successful attempt breaks the loop before its delay).
+            counter = containers.Map('KeyType','char','ValueType','any');
+            counter('n') = 0;
+            filesMap = testCase.mapOf({'u_1', 'https://s3/u_1'});
+            % Raise twice, succeed on the third call. Two delays should
+            % fire (between attempt 1 -> 2 and 2 -> 3).
+            signer = testCase.flakyThenGoodSigner(filesMap, counter, 2);
+
+            box = containers.Map('KeyType','char','ValueType','any');
+            box('sleeps') = [];
+            appendSleep = @(s) localAppendToMap(box, 'sleeps', s);
+
+            ndi.cloud.download.internal.batchSignedUrlLookup( ...
+                "ds", "doc", "chunks", "u_1", ...
+                'signer', signer, 'clearCache', true, ...
+                'retryBackoffSeconds', [0.1 0.2 0.4], ...
+                'sleepFcn', appendSleep);
+
+            testCase.verifyEqual(box('sleeps'), [0.1 0.2], ...
+                'exactly one delay per retry, in order');
+        end
+
+        function testTransientRetryDoesNotFireOnOkFalse(testCase)
+            % An ok=false response is a server-side no, not a transient.
+            % Retrying it hammers a dead endpoint for zero benefit.
+            % Verify the retry loop only reacts to a raise.
+            function [ok, answer] = failingSigner(varargin) %#ok<INUSD>
+                ok = false;
+                answer = struct('message','server said no');
+            end
+
+            box = containers.Map('KeyType','char','ValueType','any');
+            box('sleeps') = [];
+            appendSleep = @(s) localAppendToMap(box, 'sleeps', s);
+
+            url = ndi.cloud.download.internal.batchSignedUrlLookup( ...
+                "ds", "doc", "chunks", "u_1", ...
+                'signer', @failingSigner, 'clearCache', true, ...
+                'retryBackoffSeconds', [1 4 16], ...
+                'sleepFcn', appendSleep);
+            testCase.verifyEqual(url, "");
+
+            [~, stats] = ndi.cloud.download.internal.batchSignedUrlLookup("", "", "", "");
+            testCase.verifyEqual(stats.signerCalls, 1, ...
+                'ok=false must not trigger a retry');
+            testCase.verifyEqual(stats.transientRetries, 0);
+            testCase.verifyEmpty(box('sleeps'), ...
+                'no backoff should have been slept -- nothing to retry');
         end
 
         function testExpiredEntryIsRefetched(testCase)

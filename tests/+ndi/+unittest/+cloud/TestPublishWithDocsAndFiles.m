@@ -83,10 +83,22 @@ classdef TestPublishWithDocsAndFiles < matlab.unittest.TestCase
         end
 
         function [b, ans_details, resp, url] = getFileDetailsWithRetry(testCase, fileUID)
+            % Poll getFileDetails until the server marks the file
+            % uploaded and returns a downloadUrl, or until we exceed
+            % the timeout. getFileDetails itself returns b=false while
+            % the file document is still 'uploaded: false' (its
+            % response body carries size=0 and no downloadUrl), so a
+            % retry loop on ~b covers the "PUT to S3 succeeded but the
+            % backend hasn't committed the file document yet" window
+            % without treating it as a hard failure. When the backend
+            % is under load this window can stretch well past the
+            % previous 10 s single-retry budget.
+            timeoutSec  = 300;
+            intervalSec = 2;
+            deadline = tic;
             [b, ans_details, resp, url] = ndi.cloud.api.files.getFileDetails(testCase.DatasetID, fileUID);
-            if ~b
-                % Retry once after a brief wait to ride out transient backend 500s.
-                pause(10);
+            while ~b && toc(deadline) < timeoutSec
+                pause(intervalSec);
                 [b, ans_details, resp, url] = ndi.cloud.api.files.getFileDetails(testCase.DatasetID, fileUID);
             end
         end
@@ -145,8 +157,7 @@ classdef TestPublishWithDocsAndFiles < matlab.unittest.TestCase
             end
             narrative(end+1) = "All files uploaded successfully.";
 
-            narrative(end+1) = "Pausing for 20 seconds to allow for processing before pre-publish verification...";
-            pause(20);
+            narrative(end+1) = "Per-file getFileDetails polling (getFileDetailsWithRetry) will gate each verification on uploaded=true rather than a fixed pause.";
 
             % Step 2.5: Pre-Publish Verification
             narrative(end+1) = "VERIFICATION (PRE-PUBLISH): Checking documents before publishing.";
@@ -304,8 +315,7 @@ classdef TestPublishWithDocsAndFiles < matlab.unittest.TestCase
             end
             narrative(end+1) = "All files uploaded successfully.";
 
-            narrative(end+1) = "Pausing for 20 seconds to allow for processing before pre-publish verification...";
-            pause(20);
+            narrative(end+1) = "Per-file getFileDetails polling (getFileDetailsWithRetry) will gate each verification on uploaded=true rather than a fixed pause.";
 
             % Step 2.5: Pre-Publish Verification
             narrative(end+1) = "VERIFICATION (PRE-PUBLISH): Checking documents before publishing.";

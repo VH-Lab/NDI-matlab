@@ -29,6 +29,9 @@ function [b, answer, apiResponse, apiURL] = listFiles(cloudDatasetID, args)
 %       uploaded            - A 0/1 flag indicating if the file has been uploaded.
 %       sourceDatasetId     - The cloudDatasetId of the file's parent dataset.
 %       size                - The file size in bytes.
+%       crc32               - The base64 big-endian CRC-32 of the content,
+%                             recorded at upload ('' when none was recorded).
+%                             Compare with ndi.fun.file.crc32 of a local copy.
 %
 %   Example:
 %       % Get the first page of files
