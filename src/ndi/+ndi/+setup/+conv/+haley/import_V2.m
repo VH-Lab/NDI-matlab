@@ -552,11 +552,14 @@ if isfield(result, 'subjects') && isfield(result, 'recordings')
             for j = 1:numel(tr.skipped)
                 fprintf('  skipped: %s\n', tr.skipped{j});
             end
+            patchLayout = struct([]);
+            sp = jsondecode(fileread(options.Spec));
+            if isfield(sp, 'ecoli_patch_layout'), patchLayout = sp.ecoli_patch_layout; end
             ec = ndi.setup.conv.haley.ecoliDocuments(dataParentDir, T(k, :), result.recordings, ...
                 built{k}.subjectIds, 'RecordingStatements', built{k}.recordingStatements, ...
                 'RecordingRefs', built{k}.recordingRefs, 'SoftwareId', run.SoftwareId, ...
                 'InterpreterId', run.InterpreterId, 'OperatingSystemId', run.OperatingSystemId, ...
-                'ProfilesFile', options.EcoliProfilesFile);
+                'ProfilesFile', options.EcoliProfilesFile, 'PatchLayout', patchLayout);
             built{k}.documents = [built{k}.documents, ec.documents];
             built{k}.ecoli = ec;
             c = ec.counts;

@@ -32,10 +32,13 @@ function out = ecoliDocuments(dataParentDir, session, R, subjectIds, options)
 %         right, patches sharing a column top to bottom -- and detected patch
 %         number k is patch subject k
 %     one-patch plate   its one detected patch is the one patch subject
-%     fewer than 12 detected on a `rectangle` plate   each is placed on the
-%         plate's grid fitted to the detected centres
-%         (ndi.setup.conv.haley.matchGridPatches, decision #80), when that
-%         placement is the only one consistent with the grid
+%     fewer than 12 detected on a `rectangle` plate   each goes to the
+%         nearest of the 12 patch positions of the acetate template
+%         registered on the image's brightfield image (metaData
+%         brightfieldImageNum -> the extract's `template`; the positions are
+%         the spec's `ecoli_patch_layout`; ndi.setup.conv.haley.
+%         matchTemplatePatches, decision #80), when every patch is within
+%         its max_distance_mm and no two claim one position
 %   An image matched no way is reported (OUT.skipped, with why) and its
 %   per-patch values are left out; its mask is still stored.
 %
@@ -85,7 +88,9 @@ function out = ecoliDocuments(dataParentDir, session, R, subjectIds, options)
 %   'InterpreterId', 'OperatingSystemId' as part A. 'ProfilesFile': the
 %   analyzeGFP workspace holding lawnProfiles and backgroundInfo, default
 %   ecoli/analyzeGFP_24-04-04.mat; read without loading its images
-%   (private/lawnProfileReader). Without it there are no curves and no
+%   (private/lawnProfileReader); its `template` (extractTemplates), when
+%   present, places partly detected images. 'PatchLayout': the spec's
+%   `ecoli_patch_layout` (decision #80). Without it there are no curves and no
 %   background fit values, and OUT.skipped says so.
 %
 %   OUT fields: documents, counts (struct), skipped (cellstr), borderValues
@@ -104,6 +109,7 @@ arguments
     options.InterpreterId (1,:) char = ''
     options.OperatingSystemId (1,:) char = ''
     options.ProfilesFile (1,:) char = ''
+    options.PatchLayout = struct([])
 end
 if height(session) ~= 1
     error('ndi:setup:conv:haley:oneSession', 'Give exactly one session row.');
@@ -112,7 +118,7 @@ sid = char(session.session_id{1});
 ref = char(session.local_identifier{1});
 out = struct('documents', {{}}, 'skipped', {{}}, 'borderValues', struct('imageNum', {}, 'row', {}, ...
     'patchId', {}, 'statementId', {}), 'counts', struct('coordinate_system', 0, ...
-    'mask', 0, 'nearest_patch', 0, 'matched_images', 0, 'grid_matched_images', 0, 'unmatched_images', 0, ...
+    'mask', 0, 'nearest_patch', 0, 'matched_images', 0, 'template_matched_images', 0, 'unmatched_images', 0, ...
     'patch_values', 0, 'normalised_image', 0, 'profiles', 0, 'background_fit', 0));
 if ~strcmp(char(session.folder{1}), 'ecoli')
     return;
@@ -142,6 +148,7 @@ docs = {};
 rawMode = isfolder(fullfile(root, 'raw'));
 P = [];
 BI = table();
+TPL = struct([]);
 pf = options.ProfilesFile;
 if isempty(pf), pf = fullfile(root, 'analyzeGFP_24-04-04.mat'); end
 if isfile(pf)
@@ -150,6 +157,10 @@ if isfile(pf)
     if any(strcmp({w.name}, 'backgroundInfo'))
         S = load(pf, 'backgroundInfo');
         BI = S.backgroundInfo;
+    end
+    if any(strcmp({w.name}, 'template'))
+        S = load(pf, 'template');
+        TPL = S.template;            % acetate registrations (extractTemplates)
     end
 else
     out.skipped{end+1} = sprintf('%s: no %s; no profile curves and no background fit values', ref, pf);
@@ -299,13 +310,15 @@ for k = 1:height(R)
     slot = matchFullImage(centroids, nDetected, numel(pIds));
     match = {'Notes', 'Detected patch matched to its grid patch by position (decision #62).'};
     why = '';
-    if isempty(slot) && nDetected < 12
-        % some patches not detected: place them on the fitted grid (decision #80)
-        [slot, why] = ndi.setup.conv.haley.matchGridPatches(centroids, numel(pIds));
+    if isempty(slot) && nDetected < 12 && numel(pIds) == 12
+        % some patches not detected: place them by the acetate template
+        % registered on the image's brightfield image (decision #80)
+        [slot, why] = templateMatch(n, centroids);
         if ~isempty(slot)
-            out.counts.grid_matched_images = out.counts.grid_matched_images + 1;
-            match = {'Notes', sprintf(['Detected patch placed on the plate''s 12-patch grid by ' ...
-                'position; %d of 12 patches detected in this image (decision #80).'], nDetected)};
+            out.counts.template_matched_images = out.counts.template_matched_images + 1;
+            match = {'Notes', sprintf(['Detected patch placed at the nearest patch position of ' ...
+                'the acetate template registered on this image''s brightfield image; %d of 12 ' ...
+                'patches detected in this image (decision #80).'], nDetected)};
         end
     end
     if isempty(slot)
@@ -411,6 +424,30 @@ for k = 1:height(R)
     end
 end
 out.documents = docs;
+
+    function [slot, why] = templateMatch(imageNum, centroids)
+        slot = [];
+        if isempty(options.PatchLayout)
+            why = 'no ecoli_patch_layout in the spec';
+            return;
+        end
+        if isempty(TPL)
+            why = 'the profiles file holds no template (run extractTemplates)';
+            return;
+        end
+        r = find(M.imageNum == imageNum, 1);
+        if isempty(r) || ~ismember('brightfieldImageNum', M.Properties.VariableNames)
+            why = 'metaData names no brightfield image';
+            return;
+        end
+        t = find(TPL.imageNum == M.brightfieldImageNum(r), 1);
+        if isempty(t)
+            why = sprintf('no template registered on brightfield image %g', M.brightfieldImageNum(r));
+            return;
+        end
+        [slot, why] = ndi.setup.conv.haley.matchTemplatePatches(centroids, TPL.center(t, :), ...
+            TPL.angle(t), TPL.scale(t), options.PatchLayout);
+    end
 end
 
 % -----------------------------------------------------------------------------

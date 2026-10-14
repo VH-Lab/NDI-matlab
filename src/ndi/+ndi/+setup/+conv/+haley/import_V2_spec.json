@@ -1715,6 +1715,7 @@
    "method": "visual inspection"
   }
  },
+ "ecoli_patch_layout": {"positions_mm": [[-10.46, -5.199], [-10.425, 5.262], [-7.491, 0.06], [-4.439, -5.217], [-4.374, 5.249], [-1.375, -0.008], [1.649, -5.192], [1.619, 5.185], [4.698, -0.059], [7.719, -5.29], [7.734, 5.231], [10.686, -0.068]], "angle_sign": -1, "max_distance_mm": 2.0, "source": "ndi.setup.conv.haley.patchLayout, run by Jess Haley 2026-10-14: the median position of each patch, in the acetate template's frame (mm), over every analysed full 12-patch image of a rectangle plate; median deviation 0.26-0.33 mm per patch, maximum 1.54 mm; closest two positions 5.97 mm apart. The angle sign is immaterial at these angles (median deviation 0.303 mm with +, 0.301 mm with -). max_distance_mm is a third of the 5.97 mm spacing, above the largest deviation seen (decision #80)."},
  "corrections": [
   {
    "key": "conditions_concentration_experiment_14",
