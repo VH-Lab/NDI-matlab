@@ -807,13 +807,19 @@ function source = resolveLevelSource(session, p, entry, level, options, docByPat
                      'written yet. List finer levels first.'], p, source.fromPath);
             end
             from = docByPath(source.fromPath);
-            fp = from.document_properties.lightsheetZarrLevel;
+            % Read through ndi.vintage so the level may be either vintage:
+            % for the v1 lightsheetZarrLevel this call writes, FP is its
+            % block and chunk i is chunk.bin_i, exactly as before; a
+            % migrated (V_eta) level is a sampled_body whose chunk i is
+            % body_data_<i-1> (V_eta numbers series members from 0).
+            fp = ndi.vintage.lightsheetLevel(from);
             nFrom = prod(double(fp.chunk_grid));
             paths = cell(1, nFrom);
             % Resolve each stored chunk to its file ONCE, here on the
             % main thread; workers then read plain files.
             for i = 1:nFrom
-                f = session.database_openbinarydoc(from, sprintf('chunk.bin_%d', i));
+                f = session.database_openbinarydoc(from, ...
+                    ndi.vintage.lightsheetChunkName(from, i));
                 paths{i} = f.fullpathfilename;
                 session.database_closebinarydoc(f);
             end
@@ -924,7 +930,9 @@ function tile = readStoredChunk(path, chunks, codec, dtype)
     end
     raw = fread(fid, Inf, '*uint8');
     fclose(fid);
-    if strcmp(codec, 'blosc-zstd')
+    % 'blosc' is how a migrated (V_eta) level records v1's 'blosc-zstd':
+    % a Blosc chunk's header carries its own settings (#73 L4).
+    if any(strcmp(codec, {'blosc-zstd', 'blosc'}))
         raw = ndr.format.blosc.decode(raw);
     end
     vals = typecast(raw(:), dtype);

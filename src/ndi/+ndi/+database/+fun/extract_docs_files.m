@@ -49,7 +49,8 @@ function [docs,target_path] = extract_docs_files(ndi_session_obj, target_path, o
     % current_file_list does not cover: it returns the manifest name only, so
     % the members are enumerated from the series record instead and fetched by
     % their NAME_<i> names, which resolve through the manifest
-    % (VH-Lab/DID-matlab#173, #183).
+    % (VH-Lab/DID-matlab#173, #183). The first member is NAME_1 on a v1
+    % document and NAME_0 on a V_eta one (ndi.vintage.seriesMemberBase).
     %
     % Each member is recorded in the extracted document's ingest_locations
     % UNDER ITS ORIGINAL UID. That is what lets the copy be stored somewhere
@@ -201,6 +202,14 @@ function [docs,target_path] = extract_docs_files(ndi_session_obj, target_path, o
                 % member is the source's own file and must never be deleted.
                 seriesMemberFiles = repmat({{}},1,numel(seriesInfo));
 
+                % The NUMBER of slot m depends on the document's vintage: a v1
+                % document's members are NAME_1..NAME_N, a V_eta document's
+                % NAME_0..NAME_<N-1> (did.document/seriesMemberBase; a
+                % migrated lightsheet level is body_data_0..). Asking a V_eta
+                % document for NAME_1..NAME_N would skip its first member and
+                % ask for one past its last.
+                memberBase = ndi.vintage.seriesMemberBase(d{i});
+
                 for s = 1:numel(seriesInfo)
                     seriesName = seriesInfo(s).name;
                     slotCount = 0;
@@ -222,7 +231,8 @@ function [docs,target_path] = extract_docs_files(ndi_session_obj, target_path, o
                     copiedCount = 0;
 
                     for m = 1:slotCount
-                        memberName = sprintf('%s_%d',seriesName,m);
+                        memberNumber = m - 1 + memberBase;
+                        memberName = sprintf('%s_%d',seriesName,memberNumber);
                         % database_existbinarydoc reports the member's LOCAL
                         % path (via the manifest) without retrieving anything,
                         % so a miss here is a member whose bytes are not on
@@ -271,7 +281,10 @@ function [docs,target_path] = extract_docs_files(ndi_session_obj, target_path, o
                         % delete_original 0: whether this is our copy in
                         % TARGET_PATH or a reference to the source, the caller
                         % was promised the files would still be there.
-                        memberEntries(memberCount) = struct('index',m, ...
+                        % `index` is the number AS WRITTEN IN THE NAME,
+                        % which is how DID turns an ingest record back into
+                        % NAME_<index> (did.implementations.sqlitedb).
+                        memberEntries(memberCount) = struct('index',memberNumber, ...
                             'uid',memberUid,'location',memberLocation, ...
                             'location_type','file','ingest',1, ...
                             'delete_original',0,'parameters','');

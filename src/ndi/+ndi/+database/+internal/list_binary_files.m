@@ -34,8 +34,9 @@ function file_manifest = list_binary_files(ndi_dataset, database_documents, verb
     % NEW-STYLE SERIES (files.file_series) still need the separate pass
     % below: addFileSeries calls add_file once, for the series MANIFEST, so
     % file_info holds the manifest's name and not the members'. Those come
-    % from the per-series record, and are one-based by DID's own rule
-    % (VH-Lab/DID-matlab#183).
+    % from the per-series record, numbered by DID's own rule: from 1 on a v1
+    % document (VH-Lab/DID-matlab#183), from 0 on a V_eta one
+    % (did.document/seriesMemberBase; ndi.vintage.seriesMemberBase).
 
     arguments
         ndi_dataset (1,1) ndi.dataset
@@ -121,6 +122,10 @@ function file_manifest = list_binary_files(ndi_dataset, database_documents, verb
                 seriesInfo = database_documents{i}.document_properties.files.series_info;
             end
 
+            % NAME_1.. on a v1 document, NAME_0.. on a V_eta one (a migrated
+            % lightsheet level's body_data_0..): ndi.vintage.seriesMemberBase.
+            memberBase = ndi.vintage.seriesMemberBase(database_documents{i});
+
             for s = 1:numel(seriesInfo)
                 slotCount = 0;
                 if isfield(seriesInfo(s), 'count') && ~isempty(seriesInfo(s).count)
@@ -152,7 +157,7 @@ function file_manifest = list_binary_files(ndi_dataset, database_documents, verb
                 end
 
                 for m = 1:slotCount
-                    member_name = sprintf('%s_%d', series_name, m);
+                    member_name = sprintf('%s_%d', series_name, m - 1 + memberBase);
                     [member_exists, member_path] = ...
                         ndi_dataset.database_existbinarydoc(ndi_document_id, member_name);
                     % An absent slot is normal: a sparse series is the case

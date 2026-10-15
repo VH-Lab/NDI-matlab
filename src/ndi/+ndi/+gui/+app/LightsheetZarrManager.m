@@ -102,19 +102,32 @@ classdef LightsheetZarrManager < ndi.gui.app.sessionApp
         %   The lookup is done ONCE for the whole session rather than
         %   per row -- a session with 20 pyramids would otherwise make
         %   20 subject queries to answer one question.
-            docs = session.database_search( ...
-                ndi.query('','isa','lightsheetZarrPyramid'));
+        %
+        %   BOTH VINTAGES. A migrated (V_eta) pyramid is listed too: the
+        %   intensity observation DID-matlab's lightsheet migrator makes of
+        %   it, its id kept (ndi.vintage.lightsheetPyramidDocs). Its fields
+        %   are read by their v1 names through ndi.vintage.lightsheetPyramid,
+        %   its subject is its `entity_id`, and its levels are the
+        %   sampled_bodies it owns (ndi.vintage.lightsheetLevelDocs).
+            docs = ndi.vintage.lightsheetPyramidDocs(session);
             subjectNames = ndi.gui.app.LightsheetZarrManager.subjectNameMap(session);
             rows = struct('id',{},'label',{},'reduction',{},'subject',{}, ...
                 'subjectID',{},'nLevels',{},'shapeLevel0',{},'dtype',{},'doc',{});
             for i = 1:numel(docs)
                 d = docs{i};
-                p = d.document_properties.lightsheetZarrPyramid;
+                [p, vintage] = ndi.vintage.lightsheetPyramid(d, session);
                 k = numel(rows) + 1;
                 rows(k).id = d.id();
                 rows(k).doc = d;
                 rows(k).label = ndi.gui.app.LightsheetZarrManager.field(p,'label','');
-                rows(k).subjectID = ndi.gui.app.LightsheetZarrManager.dependency(d,'subject_id');
+                if strcmp(vintage, 'v1')
+                    rows(k).subjectID = ndi.gui.app.LightsheetZarrManager.dependency(d,'subject_id');
+                else
+                    rows(k).subjectID = ndi.gui.app.LightsheetZarrManager.dependency(d,'entity_id');
+                    if isempty(rows(k).subjectID)   % before #73's rename
+                        rows(k).subjectID = ndi.gui.app.LightsheetZarrManager.dependency(d,'subject_id');
+                    end
+                end
                 rows(k).subject = ndi.gui.app.LightsheetZarrManager.lookup( ...
                     subjectNames, rows(k).subjectID, rows(k).subjectID);
 
@@ -124,10 +137,7 @@ classdef LightsheetZarrManager < ndi.gui.app.sessionApp
                 % level (reduction_function on lightsheetZarrLevel);
                 % the parent's pyramid_type names the source volume, not
                 % the reduction. See NDI-matlab#979 review 2026-09-25.
-                q1 = ndi.query('', 'isa', 'lightsheetZarrLevel');
-                q2 = ndi.query('depends_on', 'depends_on', ...
-                    'lightsheetZarrPyramid_id', rows(k).id);
-                levelDocs = session.database_search(q1 & q2);
+                levelDocs = ndi.vintage.lightsheetLevelDocs(session, d);
                 rows(k).nLevels = numel(levelDocs);
                 rows(k).reduction = ndi.gui.app.LightsheetZarrManager.joinReductions(levelDocs);
 
@@ -146,7 +156,10 @@ classdef LightsheetZarrManager < ndi.gui.app.sessionApp
         %   ladder.
             seen = strings(1, numel(levelDocs));
             for j = 1:numel(levelDocs)
-                lp = levelDocs{j}.document_properties.lightsheetZarrLevel;
+                % v1: the lightsheetZarrLevel block itself; V_eta: the
+                % reduction read off the body's `summary statistic`
+                % condition ('none' for level 0).
+                lp = ndi.vintage.lightsheetLevel(levelDocs{j});
                 seen(j) = string(ndi.gui.app.LightsheetZarrManager.field( ...
                     lp, 'reduction_function', 'none'));
             end
@@ -172,8 +185,9 @@ classdef LightsheetZarrManager < ndi.gui.app.sessionApp
             docs = session.database_search(ndi.query('','isa','subject'));
             for i = 1:numel(docs)
                 p = docs{i}.document_properties;
-                if ~isfield(p,'subject'), continue; end
-                nm = ndi.gui.app.LightsheetZarrManager.field(p.subject,'local_identifier','');
+                % v1 and V_eta keep it in `subject`; the one-entity-class
+                % schema keeps it in `entity` (ndi.v2.blockOf knows both).
+                nm = ndi.v2.blockOf(p, 'subject', 'local_identifier', '');
                 if ~isempty(nm)
                     m(docs{i}.id()) = char(nm);
                 end
@@ -185,16 +199,37 @@ classdef LightsheetZarrManager < ndi.gui.app.sessionApp
         %
         %   Public and static so a caller without a display can preview
         %   what a delete would remove.
+        %
+        %   A MIGRATED (V_eta) pyramid's levels are the sampled_bodies its
+        %   observation owns, and the plan finds them through
+        %   ndi.vintage.lightsheetLevelDocs. Its store record (the unheld
+        %   opaque_body the migration made of the v1 fileReference) ALSO
+        %   names the observation as its owner, where the v1 fileReference
+        %   was named BY the pyramid -- so deleting the pyramid alone would
+        %   leave that record pointing at nothing. It is listed in the plan
+        %   (nStoreRecords) and removed with the pyramid; the stored bytes
+        %   are not held by the database and are not touched. v1 has no
+        %   such record and its plan is unchanged.
             plan = struct();
             plan.pyramidID = char(pyramidID);
-            q1 = ndi.query('', 'isa', 'lightsheetZarrLevel');
-            q2 = ndi.query('depends_on', 'depends_on', ...
-                'lightsheetZarrPyramid_id', plan.pyramidID);
-            levelDocs = session.database_search(q1 & q2);
             parentDoc = session.database_search(ndi.query('base.id', ...
                 'exact_string', plan.pyramidID));
+            storeDocs = {};
+            if ~isempty(parentDoc) && ...
+                    ~isfield(parentDoc{1}.document_properties, 'lightsheetZarrPyramid')
+                levelDocs = ndi.vintage.lightsheetLevelDocs(session, parentDoc{1});
+                storeDocs = session.database_search( ...
+                    ndi.query('', 'isa', 'opaque_body', '') & ...
+                    ndi.query('', 'depends_on', 'owner_id', plan.pyramidID));
+            else
+                q1 = ndi.query('', 'isa', 'lightsheetZarrLevel');
+                q2 = ndi.query('depends_on', 'depends_on', ...
+                    'lightsheetZarrPyramid_id', plan.pyramidID);
+                levelDocs = session.database_search(q1 & q2);
+            end
             plan.nLevels = numel(levelDocs);
-            plan.docsToRemove = [levelDocs(:); parentDoc(:)];
+            plan.nStoreRecords = numel(storeDocs);
+            plan.docsToRemove = [levelDocs(:); storeDocs(:); parentDoc(:)];
         end
 
         function msg = deletionMessage(plan, label)
@@ -204,11 +239,18 @@ classdef LightsheetZarrManager < ndi.gui.app.sessionApp
         %   and "delete 32 documents" do not read the same.
             if nargin < 2, label = ''; end
             if isempty(label), label = plan.pyramidID; end
+            nStore = 0;
+            if isfield(plan, 'nStoreRecords'), nStore = plan.nStoreRecords; end
+            storeLine = '';
+            if nStore > 0
+                storeLine = sprintf(['  %d store record(s) (the store itself ' ...
+                    'is not in the database and is not deleted)\n'], nStore);
+            end
             msg = sprintf(['This removes %d document(s):\n\n' ...
-                '  1 pyramid (%s)\n  %d level(s)\n\n' ...
+                '  1 pyramid (%s)\n  %d level(s)\n%s\n' ...
                 'The levels go because the pyramid they belong to goes. ' ...
                 'This cannot be undone.'], ...
-                1 + plan.nLevels, label, plan.nLevels);
+                1 + plan.nLevels + nStore, label, plan.nLevels, storeLine);
         end
 
         function p = launcherPath()
@@ -602,7 +644,7 @@ classdef LightsheetZarrManager < ndi.gui.app.sessionApp
                 obj.session.database_rm(plan.docsToRemove{k});
             end
             obj.setStatus(sprintf('Deleted %d document(s).', ...
-                1 + plan.nLevels));
+                numel(plan.docsToRemove)));
             obj.reload();
         end
 

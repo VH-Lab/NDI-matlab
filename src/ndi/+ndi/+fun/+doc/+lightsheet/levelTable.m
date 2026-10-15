@@ -9,6 +9,13 @@ function t = levelTable(session, pyramidDoc, options)
 %   `lightsheetZarrPyramid_id` depends_on matches PYRAMIDDOC.id(), and
 %   returns a MATLAB table sorted by `level` ascending (finest-first).
 %
+%   BOTH VINTAGES. PYRAMIDDOC may also be a MIGRATED (V_eta) pyramid -- the
+%   intensity observation DID-matlab's lightsheet migrator makes, its id
+%   kept -- and its levels are then the sampled_bodies it owns. The columns
+%   and UserData are the same, by v1 name, read through ndi.vintage
+%   (lightsheetLevelDocs / lightsheetLevels / lightsheetPyramid); see those
+%   for where each value comes from and for the one derived column, `level`.
+%
 %   When the 'reduction' name-value is passed, the returned table only
 %   contains levels with reduction_function in {'none', <reduction>} --
 %   the shared raw level(s) plus the requested reduction. Omit to get
@@ -48,14 +55,20 @@ function t = levelTable(session, pyramidDoc, options)
         parentDoc = parentDoc{1};
     end
 
-    q1 = ndi.query('', 'isa', 'lightsheetZarrLevel');
-    q2 = ndi.query('depends_on', 'depends_on', 'lightsheetZarrPyramid_id', parentID);
-    docs = session.database_search(q1 & q2);
+    % Both vintages: a v1 pyramid's lightsheetZarrLevel documents, or the
+    % sampled_bodies a migrated (V_eta) pyramid observation owns. The v1
+    % query is the one this function always ran (ndi.vintage.lightsheetLevelDocs).
+    docs = ndi.vintage.lightsheetLevelDocs(session, parentDoc);
     if isempty(docs)
         t = emptyTable();
-        t.Properties.UserData = frame(parentDoc, {});
+        t.Properties.UserData = frame(session, parentDoc, {}, {});
         return;
     end
+    % Each level's fields by their v1 names. A v1 level's record IS its
+    % lightsheetZarrLevel block; a V_eta level's is read back from its keys,
+    % conditions and series, with `level` derived from the set
+    % (ndi.vintage.lightsheetLevels).
+    recs = ndi.vintage.lightsheetLevels(docs, parentDoc);
 
     n = numel(docs);
     level = zeros(n, 1);
@@ -70,7 +83,7 @@ function t = levelTable(session, pyramidDoc, options)
     id = cell(n, 1);
 
     for k = 1:n
-        p = docs{k}.document_properties.lightsheetZarrLevel;
+        p = recs{k};
         level(k) = p.level;
         reduction_function{k} = char(p.reduction_function);
         shape{k} = reshape(double(p.shape), 1, []);
@@ -102,11 +115,13 @@ function t = levelTable(session, pyramidDoc, options)
     t = table(level, reduction_function, shape, chunks, chunk_grid, ...
         n_chunks_stored, voxel_size, translation, dtype, id);
     t = sortrows(t, 'level');
-    t.Properties.UserData = frame(parentDoc, reductionsPresent);
+    t.Properties.UserData = frame(session, parentDoc, reductionsPresent, recs);
 end
 
-function f = frame(parentDoc, reductionsPresent)
-    p = parentDoc.document_properties.lightsheetZarrPyramid;
+function f = frame(session, parentDoc, reductionsPresent, recs)
+    % v1: the pyramid's own block. V_eta: the same fields, read back by
+    % ndi.vintage.lightsheetPyramid from the store body / level 0.
+    p = ndi.vintage.lightsheetPyramid(parentDoc, session, recs);
     f = struct( ...
         'axes_order', char(p.axes_order), ...
         'voxel_size_level0', reshape(double(p.voxel_size_level0), 1, []), ...

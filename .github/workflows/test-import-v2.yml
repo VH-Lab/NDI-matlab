@@ -45,7 +45,13 @@ on:
       - 'src/ndi/+ndi/manipulation.m'
       - 'src/ndi/+ndi/calculation.m'
       - 'src/ndi/+ndi/data_type.m'
-      - 'tests/+ndi/+unittest/+vintage/TestVintageMap.m'
+      - 'tests/+ndi/+unittest/+vintage/**'
+      - 'src/ndi/+ndi/+fun/+doc/+lightsheet/**'
+      - 'src/ndi/+ndi/+gui/+app/LightsheetZarrManager.m'
+      - 'src/ndi/+ndi/+database/+fun/extract_docs_files.m'
+      - 'src/ndi/+ndi/+database/+internal/list_binary_files.m'
+      - 'tests/+ndi/+unittest/+fun/+doc/+lightsheet/**'
+      - 'tests/+ndi/+unittest/+gui/+app/TestLightsheetZarrManager.m'
       - '.github/workflows/test-import-v2.yml'
   pull_request:
     branches: [main, V2]
@@ -79,7 +85,13 @@ on:
       - 'src/ndi/+ndi/manipulation.m'
       - 'src/ndi/+ndi/calculation.m'
       - 'src/ndi/+ndi/data_type.m'
-      - 'tests/+ndi/+unittest/+vintage/TestVintageMap.m'
+      - 'tests/+ndi/+unittest/+vintage/**'
+      - 'src/ndi/+ndi/+fun/+doc/+lightsheet/**'
+      - 'src/ndi/+ndi/+gui/+app/LightsheetZarrManager.m'
+      - 'src/ndi/+ndi/+database/+fun/extract_docs_files.m'
+      - 'src/ndi/+ndi/+database/+internal/list_binary_files.m'
+      - 'tests/+ndi/+unittest/+fun/+doc/+lightsheet/**'
+      - 'tests/+ndi/+unittest/+gui/+app/TestLightsheetZarrManager.m'
       - '.github/workflows/test-import-v2.yml'
   workflow_dispatch:
 
@@ -175,7 +187,15 @@ jobs:
             end
             import matlab.unittest.TestSuite;
             suite = [TestSuite.fromPackage("ndi.unittest.setup.V2", "IncludingSubpackages", true), ...
-                     TestSuite.fromClass(?ndi.unittest.vintage.TestVintageMap)];
+                     TestSuite.fromClass(?ndi.unittest.vintage.TestVintageMap), ...
+                     TestSuite.fromClass(?ndi.unittest.vintage.TestLightsheetVintage), ...
+                     TestSuite.fromClass(?ndi.unittest.vintage.TestLightsheetMigratedSession)];
+            % The lightsheet readers over the REAL migrator's output need
+            % DID-matlab's lightsheet migrators, which only the next leg's
+            % DID-matlab has. Selected there, not filtered here.
+            if isfolder("did-matlab-next/src")
+                suite = [suite, TestSuite.fromClass(?ndi.unittest.vintage.TestLightsheetMigrated)];
+            end
             results = run(suite);
             disp(table(results));
             nRun = numel(results);
@@ -185,3 +205,35 @@ jobs:
             assert(nRun > 0, "no V2 import tests were selected");
             assert(nFailed == 0, sprintf("%d V2 import test(s) failed", nFailed));
             assert(nIncomplete == 0, sprintf("%d V2 import test(s) were FILTERED -- did2.build or the schema is missing", nIncomplete));
+
+      - name: Run the v1 lightsheet reader tests (v1 must read exactly as before)
+        # The lightsheet readers now route through ndi.vintage so they also
+        # read a MIGRATED pyramid. These are the existing v1 tests (legacy
+        # session, documents makePyramid writes), otherwise run only by
+        # run-tests.yml on main/Vnext; here so a branch that touches the
+        # readers proves v1 unchanged. A filtered test (a missing optional
+        # dependency) is reported, not counted as a pass, and not a failure.
+        uses: matlab-actions/run-command@v2
+        with:
+          command: |
+            addpath(genpath("src"));
+            addpath(genpath("tests"));
+            if isfolder("did-matlab-next/src")
+                addpath(genpath(fullfile(pwd, "did-matlab-next", "src")));
+            end
+            % as run-tests.yml runs them: no V2 schema set
+            setenv("DID_SCHEMA_PATH", "");
+            import matlab.unittest.TestSuite;
+            suite = [TestSuite.fromClass(?ndi.unittest.fun.doc.lightsheet.TestLevelTable), ...
+                     TestSuite.fromClass(?ndi.unittest.fun.doc.lightsheet.TestChooseLevel), ...
+                     TestSuite.fromClass(?ndi.unittest.fun.doc.lightsheet.TestMakePyramid), ...
+                     TestSuite.fromClass(?ndi.unittest.fun.doc.lightsheet.TestFromSPIM), ...
+                     TestSuite.fromClass(?ndi.unittest.gui.app.TestLightsheetZarrManager)];
+            results = run(suite);
+            disp(table(results));
+            nRun = numel(results);
+            nFailed = sum([results.Failed]);
+            nIncomplete = sum([results.Incomplete]);
+            fprintf("VERDICT (v1 lightsheet): %d run, %d failed, %d filtered\n", nRun, nFailed, nIncomplete);
+            assert(nRun > 0, "no v1 lightsheet tests were selected");
+            assert(nFailed == 0, sprintf("%d v1 lightsheet test(s) failed", nFailed));
