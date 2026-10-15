@@ -3,7 +3,9 @@ classdef LightsheetFixtures
 %
 %   The V_eta builders here are shaped as DID-matlab's lightsheet migration
 %   emits them (+migrators_j/lightsheet_zarr_pyramid.m,
-%   lightsheet_zarr_level.m, private/jLightsheetKeys.m and the store-record
+%   lightsheet_zarr_level.m, private/jLightsheetKeys.m (through
+%   did2.build.key: a regular axis's origin and spacing are {value,
+%   source_value} pairs) and the store-record
 %   half of +did2/+convert/foldGenericFiles.m, DID-matlab
 %   claude/ecstatic-pascal-md91fw at 000aeb8), AFTER the batch pass:
 %
@@ -116,8 +118,8 @@ classdef LightsheetFixtures
             vox = [2 0.5 0.5] * factor;
             t = struct('variable', struct('name', 'time'), 'n', n(1), ...
                 'unit', struct('node', 'UO:0000010', 'name', 'second'), ...
-                'origin', 0, 'spacing', 1);
-            c = struct('variable', struct('name', 'channel'), 'n', n(2), ...
+                'regular', true, 'origin', struct('value', 0), 'spacing', struct('value', 1));
+            c = struct('variable', struct('name', 'channel'), 'n', n(2), 'regular', false, ...
                 'labels', struct('node', '', 'name', {'GCaMP6s', 'tdTomato'}));
             space = cell(1, 3);
             names = 'zyx';
@@ -125,9 +127,9 @@ classdef LightsheetFixtures
             for a = 1:3
                 space{a} = struct('variable', struct('name', names(a)), 'n', n(2 + a), ...
                     'unit', struct('node', 'UO:0000008', 'name', 'meter'), ...
-                    'source_unit', 'micrometer', ...
-                    'origin', origin(a) * 1e-6, 'spacing', vox(a) * 1e-6, ...
-                    'source_origin', origin(a), 'source_spacing', vox(a));
+                    'source_unit', 'micrometer', 'regular', true, ...
+                    'origin', struct('value', origin(a) * 1e-6, 'source_value', origin(a)), ...
+                    'spacing', struct('value', vox(a) * 1e-6, 'source_value', vox(a)));
             end
             k = [{t, c}, space];
             if withChunks

@@ -23,7 +23,7 @@ function f = lightsheetKeys(keys)
 %
 %   SOURCE UNITS, NOT CANONICAL ONES. The migrator converts a space or time
 %   axis to V_eta's canonical unit (meter, second) and keeps what the source
-%   said in source_spacing / source_origin / source_unit. v1 readers and their
+%   said in spacing.source_value / origin.source_value / source_unit. v1 readers and their
 %   callers (chooseLevel's target voxel size, the napari viewer) work in the
 %   source's micrometres, so the source values are read where they exist and
 %   the canonical ones only where the source's were already canonical.
@@ -57,15 +57,17 @@ for k = 1:n
     c = get(key, 'chunk');
     if ~isempty(c), chunks(k) = double(c(1)); end
 
+    % did2.build.key writes a regular axis as origin = {value,
+    % source_value} and spacing = {value, source_value}: the canonical
+    % number and, when the unit was converted, the source's own.
     unit = termName(get(key, 'source_unit'));
-    spacing = get(key, 'source_spacing');
-    origin = get(key, 'source_origin');
-    if isempty(spacing)
-        spacing = get(key, 'spacing');
-        origin = get(key, 'origin');
-        if isempty(unit)
-            unit = termName(get(key, 'unit'));
-        end
+    [spacing, sourceSpacing] = pairOf(get(key, 'spacing'), get(key, 'source_spacing'));
+    [origin, sourceOrigin] = pairOf(get(key, 'origin'), get(key, 'source_origin'));
+    if ~isempty(sourceSpacing)
+        spacing = sourceSpacing;
+        if ~isempty(sourceOrigin), origin = sourceOrigin; end
+    elseif isempty(unit)
+        unit = termName(get(key, 'unit'));
     end
     if ~isempty(spacing), f.voxel_size(k) = double(spacing(1)); end
     if ~isempty(origin),  f.translation(k) = double(origin(1)); end
@@ -91,6 +93,21 @@ function v = get(s, name)
 v = [];
 if isstruct(s) && isfield(s, name)
     v = s.(name);
+end
+end
+
+function [v, source] = pairOf(p, flatSource)
+% A key's origin or spacing: the {value, source_value} pair did2.build.key
+% writes, or a bare number with the source in a sibling field (flatSource).
+v = [];
+source = flatSource;
+if isstruct(p)
+    if isfield(p, 'value'), v = p(1).value; end
+    if isfield(p, 'source_value') && ~isempty(p(1).source_value)
+        source = p(1).source_value;
+    end
+elseif isnumeric(p)
+    v = p;
 end
 end
 
