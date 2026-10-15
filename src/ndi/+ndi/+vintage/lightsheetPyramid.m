@@ -26,11 +26,21 @@ function [p, vintage] = lightsheetPyramid(pyramidDoc, session, levelRecs)
 %                      (LEVELRECS, ndi.vintage.lightsheetLevels), which the
 %                      same pass completed from the pyramid's units and
 %                      channel names.
-%     label, pyramid_name, pyramid_type
-%                      the migration keeps these ONLY as words in the store
-%                      body's `description` ('label "..."', 'NGFF multiscales
-%                      name "..."', '... type "..."'), so they are parsed
-%                      back out of it; '' when there is no store body.
+%     label            the observation's `statement.notes` (Jess
+%                      2026-10-15: the label stays there, permanently). When
+%                      the batch pass did not run, the notes also carry, after
+%                      a newline and '-- store body: ', the text the pass
+%                      would have moved to the store body; only the part
+%                      before the LAST such separator is the label. The
+%                      separator is DID-matlab's lightsheet_zarr_pyramid.m /
+%                      foldGenericFiles.m NOTES_SEPARATOR, character for
+%                      character.
+%     pyramid_name     parsed from the store body's `description`
+%                      ('NGFF multiscales name "..."'); '' when there is no
+%                      store body (or no SESSION).
+%     pyramid_type     '' always: the migration DROPS it (Jess 2026-10-15; it
+%                      repeats the levels' summary statistic, and the v1
+%                      docs say not to trust it).
 %     pipeline_version ''. It became a `version` text_assertion about the
 %                      software entity, not read here.
 %     byte_order       level 0's, if given.
@@ -53,6 +63,8 @@ p = struct('label', '', 'pyramid_name', '', 'pyramid_type', '', ...
     'shape_level0', [], 'voxel_size_level0', [], 'voxel_size_units', '', ...
     'translation_level0', [], 'dtype', '', 'pipeline_version', '', 'byte_order', '');
 
+p.label = labelOf(charOr(ndi.v2.blockOf(props, 'statement', 'notes', '')));
+
 p.dtype = charOr(ndi.v2.blockOf(props, 'value', 'source_data_type'));
 if isempty(p.dtype)
     p.dtype = charOr(ndi.v2.blockOf(props, 'value', 'data_type'));
@@ -66,10 +78,7 @@ if ~isempty(session)
         sp = stores{k}.document_properties;
         d = blockValue(sp, 'description');
         if ~isempty(d)
-            d = charOr(d);
-            p.label = quoted(d, 'label');
-            p.pyramid_name = quoted(d, 'NGFF multiscales name');
-            p.pyramid_type = quoted(d, 'NGFF multiscales type');
+            p.pyramid_name = quoted(charOr(d), 'NGFF multiscales name');
         end
         keys = blockValue(sp, 'keys');
         if ~isempty(keys) && isempty(frame)
@@ -109,6 +118,18 @@ p.channel_names = frame.channel_names;
 c = find(frame.axes_order == 'c', 1);
 if ~isempty(c)
     p.n_channels = frame.shape(c);
+end
+end
+
+function label = labelOf(notes)
+% The label: NOTES up to the LAST separator DID-matlab's migrator writes
+% before the text its store-record pass moves out (present only when that pass
+% did not run), else all of NOTES.
+SEPARATOR = sprintf('\n-- store body: ');
+label = notes;
+at = strfind(notes, SEPARATOR);
+if ~isempty(at)
+    label = notes(1:at(end) - 1);
 end
 end
 

@@ -159,6 +159,23 @@ classdef TestLightsheetVintage < matlab.unittest.TestCase
             testCase.verifyEqual(p.n_channels, 2);
         end
 
+        function testAMigratedPyramidsLabelIsItsNotes(testCase)
+            % Jess 2026-10-15: the label stays on the observation's notes;
+            % pyramid_type is dropped. Notes the batch pass did not split
+            % (label, separator, the store body's text) give the label alone.
+            F = ndi.unittest.vintage.LightsheetFixtures;
+            s = F.pyramid('pyr_ls_1', 'sw_1');
+            p = ndi.vintage.lightsheetPyramid(ndi.document(s));
+            testCase.verifyEqual(p.label, 'brain 7 cleared');
+            testCase.verifyEqual(p.pyramid_type, '');
+            s.statement.notes = sprintf('brain 7 cleared\n-- store body: NGFF multiscales name "mean"');
+            p = ndi.vintage.lightsheetPyramid(ndi.document(s));
+            testCase.verifyEqual(p.label, 'brain 7 cleared', 'only the part before the separator');
+            s.statement = rmfield(s.statement, 'notes');
+            p = ndi.vintage.lightsheetPyramid(ndi.document(s));
+            testCase.verifyEqual(p.label, '', 'no notes, no label');
+        end
+
         function testTheStoreKeysGiveChannelNamesAndUnits(testCase)
             F = ndi.unittest.vintage.LightsheetFixtures;
             k = ndi.vintage.lightsheetKeys(F.keys(1, false));

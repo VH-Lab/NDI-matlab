@@ -12,7 +12,7 @@ classdef TestLightsheetMigrated < matlab.unittest.TestCase
 %   ndi.session.dir, and asks the same readers.
 %
 %   NEEDS DID-matlab's lightsheet migrators (claude/ecstatic-pascal-md91fw,
-%   000aeb8 and later) and the composition did-schema they target, so
+%   f363d98 and later: the method and the label on notes, Jess 2026-10-15) and the composition did-schema they target, so
 %   test-import-v2.yml runs it on the `next` leg only. It is not filtered on
 %   `current`; it is not selected there.
 %
@@ -60,27 +60,66 @@ classdef TestLightsheetMigrated < matlab.unittest.TestCase
 
     methods (Test)
 
-        function testTheBuilderNameIsTheMigrators(testCase)
+        function testTheMethodIsTheMigrators(testCase)
             % ndi.vintage.lightsheetPyramidDocs finds migrated pyramids by
-            % this one string; it must be the migrator's, character for
-            % character.
-            names = {};
+            % this method node (Jess 2026-10-15), on the path
+            % interaction.method.node; it must be the migrator's, character
+            % for character, and at that path.
+            obs = [];
             for k = 1:numel(testCase.Out)
-                d = testCase.Out{k};
-                if strcmp(d.document_class.class_name, 'entity') || ...
-                        strcmp(d.document_class.class_name, 'software')
-                    n = ndi.v2.blockOf(d, 'software', 'name', '');
-                    if ~isempty(n), names{end+1} = char(n); end %#ok<AGROW>
-                end
+                if strcmp(testCase.Out{k}.base.id, 'pyr_ls_1'), obs = testCase.Out{k}; end
             end
-            testCase.verifyTrue(any(strcmp(names, ndi.vintage.lightsheetBuilderName())), ...
-                sprintf('software entities in the migration: %s', strjoin(names, ' | ')));
+            testCase.assertNotEmpty(obs, 'the pyramid''s observation');
+            m = ndi.v2.blockOf(obs, 'interaction', 'method', []);
+            if iscell(m), m = m{1}; end
+            testCase.assertTrue(isstruct(m) && isfield(m, 'node'), ...
+                'the migrated pyramid carries interaction.method');
+            M = ndi.vintage.lightsheetMethod();
+            testCase.verifyEqual(char(m.node), M.node);
+            testCase.verifyEqual(char(m.name), M.name);
+        end
+
+        function testTheLabelStaysOnTheObservation(testCase)
+            % Jess 2026-10-15: the label is the observation's notes after the
+            % batch pass, and the store body's description holds the NGFF
+            % multiscales name only.
+            d = testCase.Session.database_search(ndi.query('base.id', 'exact_string', 'pyr_ls_1'));
+            testCase.assertNumElements(d, 1);
+            testCase.verifyEqual(char(ndi.v2.blockOf(d{1}.document_properties, ...
+                'statement', 'notes', '')), 'brain 7 cleared');
+            [p, vintage] = ndi.vintage.lightsheetPyramid(d{1}, testCase.Session);
+            testCase.verifyEqual(vintage, 'V_eta');
+            testCase.verifyEqual(p.label, 'brain 7 cleared');
+            testCase.verifyEqual(p.pyramid_name, 'mean');
+            testCase.verifyEqual(p.pyramid_type, '', 'pyramid_type is dropped');
+        end
+
+        function testWithoutThePassTheReaderStillGetsTheLabel(testCase)
+            % A bare v1_to_v2 call leaves the multiscales name after the
+            % migrator's separator in notes; the reader's separator must be
+            % the same literal, so the label it reads is the label alone.
+            out = did2.convert.v1_to_v2({ndi.unittest.vintage.TestLightsheetMigrated.v1Pyramid()}, ...
+                'Validate', true, 'TargetVersion', 'V_eta');
+            testCase.assertEmpty(out.quarantine, ...
+                ndi.unittest.vintage.TestLightsheetMigrated.reasons(out));
+            obs = [];
+            for k = 1:numel(out.migrated)
+                d = out.migrated{k}.toStruct();
+                if strcmp(d.base.id, 'pyr_ls_1'), obs = d; end
+            end
+            testCase.assertNotEmpty(obs);
+            notes = char(ndi.v2.blockOf(obs, 'statement', 'notes', ''));
+            testCase.verifySubstring(notes, 'NGFF multiscales name "mean"', ...
+                'without the pass the name is still on the notes');
+            p = ndi.vintage.lightsheetPyramid(obs);
+            testCase.verifyEqual(p.label, 'brain 7 cleared');
         end
 
         function testTheMigratedPyramidIsFoundAndListed(testCase)
             docs = ndi.vintage.lightsheetPyramidDocs(testCase.Session);
             ids = cellfun(@(d) d.id(), docs, 'UniformOutput', false);
-            testCase.verifyEqual(ids, {'pyr_ls_1'}, 'the pyramid keeps its id');
+            testCase.verifyEqual(ids, {'pyr_ls_1'}, ...
+                'the pyramid keeps its id, and is found by its method');
             rows = ndi.gui.app.LightsheetZarrManager.pyramidRows(testCase.Session);
             testCase.verifyNumElements(rows, 1);
             testCase.verifyEqual(rows(1).subjectID, 'subj_ls_1');

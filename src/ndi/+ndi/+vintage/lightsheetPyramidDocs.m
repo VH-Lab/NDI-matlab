@@ -8,16 +8,19 @@ function docs = lightsheetPyramidDocs(session)
 %
 %   HOW A MIGRATED PYRAMID IS RECOGNISED. DID-matlab
 %   +migrators_j/lightsheet_zarr_pyramid.m makes each v1 pyramid an intensity
-%   `observation` (its id kept) whose software_id names an `entity` of type
-%   software called ndi.vintage.lightsheetBuilderName() -- 'NDI lightsheet
-%   pyramid builder (ndi.fun.doc.lightsheet.makePyramid)' (Jess
-%   2026-10-14, lightsheet point 5). Nothing else on the observation says
-%   "lightsheet": its class is `observation`, its value kind `intensity` and
-%   its variable NCIT:C184706 'Fluorescence Intensity', all of which any
-%   fluorescence measurement shares. So a migrated pyramid is an observation
-%   whose software is THAT entity, found in two steps (the entity by name,
-%   then the observations pointing at it) because a query sees one document
-%   at a time.
+%   `observation` (its id kept) whose `interaction.method` is
+%   ndi.vintage.lightsheetMethod() -- FBbi:00000369 'selective plane
+%   illumination fluorescence microscopy' (Jess 2026-10-15). Its class
+%   (`observation`), value kind (`intensity`) and variable (NCIT:C184706
+%   'Fluorescence Intensity') are shared by any fluorescence measurement; the
+%   method is what says light-sheet. So a migrated pyramid is an observation
+%   whose method node is that term, found in ONE query on the field path
+%   `interaction.method.node` (`interaction` declares `method`, an
+%   ontology_term {node, name}; ndi.v2.fieldQuery also asks the block's name
+%   before 2026-10-08, `subject_interaction`).
+%
+%   (Until 2026-10-15 it was found through the builder `software` entity's
+%   name. The entity is still written; it no longer marks the pyramid.)
 %
 %   This is why lightsheet has no ndi.vintage.map row. ndi.vintage.entryFor
 %   keys on the class name alone, and `observation` / `sampled_body` are every
@@ -25,28 +28,21 @@ function docs = lightsheetPyramidDocs(session)
 %   ndi.vintage.edge / field do for EVERY observation in a session (e.g. the
 %   time-reference reads in ndi.file.navigator.bodies), not just pyramids.
 %
-%   The software entity is matched in both shapes did-schema has used: an
-%   `entity` with name (current) or a `software` document with name (before
-%   2026-10-08).
-%
-%   See also: ndi.vintage.lightsheetLevelDocs, ndi.vintage.lightsheetPyramid.
+%   See also: ndi.vintage.lightsheetMethod, ndi.vintage.lightsheetLevelDocs,
+%             ndi.vintage.lightsheetPyramid.
 
-BUILDER = ndi.vintage.lightsheetBuilderName();
+M = ndi.vintage.lightsheetMethod();
 
 docs = session.database_search(ndi.query('', 'isa', 'lightsheetZarrPyramid'));
 docs = reshape(docs, 1, []);
 
-sw = session.database_search(ndi.query('entity.name', 'exact_string', BUILDER, '') | ...
-    ndi.query('software.name', 'exact_string', BUILDER, ''));
-seen = {};
-for i = 1:numel(sw)
-    obs = session.database_search(ndi.v2.isaQuery('observation') & ...
-        ndi.query('', 'depends_on', 'software_id', sw{i}.id()));
-    for j = 1:numel(obs)
-        id = obs{j}.id();
-        if any(strcmp(seen, id)), continue; end
-        seen{end+1} = id; %#ok<AGROW>
-        docs{end+1} = obs{j}; %#ok<AGROW>
-    end
+obs = session.database_search(ndi.v2.isaQuery('observation') & ...
+    ndi.v2.fieldQuery('interaction.method.node', 'exact_string', M.node));
+seen = cellfun(@(d) d.id(), docs, 'UniformOutput', false);
+for j = 1:numel(obs)
+    id = obs{j}.id();
+    if any(strcmp(seen, id)), continue; end
+    seen{end+1} = id; %#ok<AGROW>
+    docs{end+1} = obs{j}; %#ok<AGROW>
 end
 end

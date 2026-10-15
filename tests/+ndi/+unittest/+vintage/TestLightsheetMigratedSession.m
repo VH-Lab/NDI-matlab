@@ -41,8 +41,14 @@ classdef TestLightsheetMigratedSession < matlab.unittest.TestCase
             mkdir(bytes);
             testCase.Member0 = F.tempFile(bytes, 'uid_level0_chunk0', uint8(1:8));
             m1 = F.tempFile(bytes, 'uid_level0_chunk1', uint8(9:16));
+            % A DECOY: an intensity observation with the same builder
+            % software but no light-sheet method. The finder keys on the
+            % method (Jess 2026-10-15), so it must NOT be listed.
+            decoy = F.pyramid('obs_not_lightsheet', 'sw_ls_1');
+            decoy.interaction = struct('method', struct('node', '', 'name', ''));
+            decoy.statement.notes = '';
             docs = {F.software('sw_ls_1'), ...
-                F.pyramid('pyr_ls_1', 'sw_ls_1'), ...
+                F.pyramid('pyr_ls_1', 'sw_ls_1'), decoy, ...
                 F.store('fref_store_1', 'pyr_ls_1'), ...
                 F.level('lvl_0', 'pyr_ls_1', 1, '', {testCase.Member0, m1}), ...
                 F.level('lvl_max1', 'pyr_ls_1', 2, 'max', {}), ...
@@ -61,7 +67,8 @@ classdef TestLightsheetMigratedSession < matlab.unittest.TestCase
             docs = ndi.vintage.lightsheetPyramidDocs(testCase.Session);
             ids = cellfun(@(d) d.id(), docs, 'UniformOutput', false);
             testCase.verifyEqual(ids, {'pyr_ls_1'}, ...
-                'exactly the observation whose software is the pyramid builder');
+                ['exactly the observation whose method is light-sheet ' ...
+                 'microscopy, not every observation of the builder software']);
         end
 
         function testLevelTableReadsTheMigratedLevels(testCase)
@@ -113,7 +120,8 @@ classdef TestLightsheetMigratedSession < matlab.unittest.TestCase
             rows = ndi.gui.app.LightsheetZarrManager.pyramidRows(testCase.Session);
             testCase.verifyNumElements(rows, 1);
             testCase.verifyEqual(rows(1).id, 'pyr_ls_1');
-            testCase.verifyEqual(rows(1).label, 'brain 7 cleared');
+            testCase.verifyEqual(rows(1).label, 'brain 7 cleared', ...
+                'the label is the observation''s notes (Jess 2026-10-15)');
             testCase.verifyEqual(rows(1).subjectID, 'subj_ls_1');
             testCase.verifyEqual(rows(1).nLevels, 3);
             testCase.verifyEqual(rows(1).reduction, 'max/mean');

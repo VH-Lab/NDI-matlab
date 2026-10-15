@@ -7,19 +7,22 @@ classdef LightsheetFixtures
 %   did2.build.key: a regular axis's origin and spacing are {value,
 %   source_value} pairs) and the store-record
 %   half of +did2/+convert/foldGenericFiles.m, DID-matlab
-%   claude/ecstatic-pascal-md91fw at 000aeb8), AFTER the batch pass:
+%   claude/ecstatic-pascal-md91fw at f363d98), AFTER the batch pass:
 %
 %     pyramid  an `observation` (value kind `intensity`) with the v1 pyramid's
 %              id; entity_id = the subject, instrument_id = the element,
 %              software_id = the builder `entity`; value.data_type 'uint16',
 %              value.source_data_type '<u2' (the v1 dtype), data_body true;
-%              variable NCIT:C184706 'Fluorescence Intensity'.
-%     software an `entity` of type software named
-%              ndi.vintage.lightsheetBuilderName().
+%              variable NCIT:C184706 'Fluorescence Intensity'; method
+%              ndi.vintage.lightsheetMethod() (FBbi:00000369, Jess
+%              2026-10-15), the mark ndi.vintage.lightsheetPyramidDocs finds;
+%              notes = the v1 label (Jess 2026-10-15).
+%     software an `entity` of type software named for the builder (the
+%              migrator's BUILDER; no longer the finder's mark).
 %     store    the v1 fileReference as an UNHELD `opaque_body` owned by the
 %              observation, format EMPTY:0000259 OME-Zarr, carrying the
 %              full-resolution keys and a description holding the pyramid's
-%              label / NGFF name / type.
+%              NGFF multiscales name (no label, no type: Jess 2026-10-15).
 %     level    a `sampled_body` with the v1 level's id, owner_id = the
 %              observation; keys t,c,z,y,x (t in second, c named by channel,
 %              z/y/x converted to meter with the micrometre source kept);
@@ -45,7 +48,9 @@ classdef LightsheetFixtures
             s.depends_on = struct('name', {'entity_id', 'instrument_id', 'software_id'}, ...
                 'document_id', {'subj_ls_1', 'elem_scope_1', softwareId});
             s.statement = struct('variable', ...
-                struct('node', 'NCIT:C184706', 'name', 'Fluorescence Intensity'));
+                struct('node', 'NCIT:C184706', 'name', 'Fluorescence Intensity'), ...
+                'notes', 'brain 7 cleared');
+            s.interaction = struct('method', ndi.vintage.lightsheetMethod());
             s.value = struct('data_type', 'uint16', 'source_data_type', '<u2', ...
                 'data_body', true);
         end
@@ -54,7 +59,7 @@ classdef LightsheetFixtures
             s = ndi.unittest.vintage.LightsheetFixtures.etaDoc('entity', {'base'}, id);
             s.depends_on = struct('name', {}, 'document_id', {});
             s.entity = struct('type', struct('node', '', 'name', 'software'), ...
-                'name', ndi.vintage.lightsheetBuilderName());
+                'name', 'NDI lightsheet pyramid builder (ndi.fun.doc.lightsheet.makePyramid)');
         end
 
         function s = store(id, ownerId)
@@ -66,8 +71,8 @@ classdef LightsheetFixtures
                 'format', struct('node', 'EMPTY:0000259', 'name', 'OME-Zarr'), ...
                 'filename', 'brain7.ome.zarr', ...
                 'description', ['OME-Zarr store, not held in the database; ' ...
-                    'label "brain 7 cleared"; NGFF multiscales name "mean"; ' ...
-                    'NGFF multiscales type "mean"; .zattrs MD5 0123456789abcdef'], ...
+                    'NGFF multiscales name "mean"; recorded by location, not ' ...
+                    'ingested; .zattrs MD5 0123456789abcdef'], ...
                 'redundant', false);
         end
 
