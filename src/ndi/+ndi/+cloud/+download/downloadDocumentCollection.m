@@ -25,7 +25,7 @@ function documents = downloadDocumentCollection(datasetId, documentIds, options)
 %
 %    options.Timeout - (1,1) double, optional
 %                   How long, in seconds, to keep retrying each chunk's download
-%                   while the server builds its archive. Default is 300.
+%                   while the server builds its archive. Default is 60.
 %
 %    options.ChunkSize - (1,1) double, optional
 %                   The maximum number of document IDs to request in a single
@@ -54,7 +54,7 @@ function documents = downloadDocumentCollection(datasetId, documentIds, options)
     arguments
         datasetId (1,1) string
         documentIds (1,:) string = "" % Default: Will download all documents
-        options.Timeout = 300 % seconds to wait for each chunk's archive
+        options.Timeout = 60 % seconds to wait for each chunk's archive
         options.ChunkSize = 2000 % Default chunk size
         options.AllDocumentsMode (1,1) logical = false
     end
