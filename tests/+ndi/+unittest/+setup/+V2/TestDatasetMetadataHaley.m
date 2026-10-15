@@ -154,7 +154,17 @@ classdef TestDatasetMetadataHaley < matlab.unittest.TestCase
                     testCase.Result.ids('OP50-GFP'))), from));
                 testCase.verifyTrue(any(cellfun(@(r) strcmp(parentOf(r), ...
                     testCase.Result.ids('OP50')), from)), 'OP50-GFP derived_from OP50');
-                testCase.verifyEqual(numel(from), 2, 'its background and its stock');
+                if ndi.setup.V2.schemaHasRelation('distributed_as')
+                    % decision #17: the stock is `distributed_as`, the background
+                    % alone is `derived_from`
+                    testCase.verifyEqual(numel(from), 1, 'its background only');
+                    stock = relationsNamed(docs, 'distributed_as');
+                    stock = stock(cellfun(@(r) any(strcmp({r.depends_on.document_id}, ...
+                        testCase.Result.ids('OP50-GFP'))), stock));
+                    testCase.verifyNumElements(stock, 1, 'OP50-GFP distributed_as its stock');
+                else
+                    testCase.verifyEqual(numel(from), 2, 'its background and its stock');
+                end
                 return;
             end
             bg = gfp.depends_on(strcmp({gfp.depends_on.name}, 'background_strain_id'));

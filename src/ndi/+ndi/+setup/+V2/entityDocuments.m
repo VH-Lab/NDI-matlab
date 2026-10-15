@@ -18,7 +18,8 @@ function docs = entityDocuments(className, fields, edges, options)
 %     2. one assertion per other field (a term, text or date assertion whose
 %        `variable` is the field's name with spaces);
 %     3. one relation per other edge: vendor_id -> sold_by, background_strain_id
-%        and product_id -> derived_from.
+%        -> derived_from, product_id -> distributed_as (derived_from on a schema
+%        without it).
 %   A field or edge with no home there is an error (ndi:setup:V2:noHome), never
 %   dropped.
 %
@@ -126,6 +127,12 @@ end
 % ---- 3. the other edges, as relations ---------------------------------------------
 relationOf = struct('vendor_id', 'sold_by', 'background_strain_id', 'derived_from', ...
     'product_id', 'derived_from');
+% a strain is DISTRIBUTED AS its product (a stock-centre or vendor listing), not
+% derived from it (Haley import decision #17; did-schema 033a22d, 2026-10-15);
+% `derived_from` stays only on a schema copy without `distributed_as`
+if ndi.setup.V2.schemaHasRelation('distributed_as')
+    relationOf.product_id = 'distributed_as';
+end
 enames = setdiff(fieldnames(edges), {'time_reference_id'}, 'stable');
 for k = 1:numel(enames)
     e = enames{k};
