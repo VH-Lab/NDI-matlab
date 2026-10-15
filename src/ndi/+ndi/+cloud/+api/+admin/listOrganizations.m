@@ -35,7 +35,7 @@ function [b, answer, apiResponse, apiURL] = listOrganizations(options)
     arguments
         options.query (1,1) string = ""
         options.page (1,1) double {mustBePositive, mustBeInteger} = 1
-        options.pageSize (1,1) double {mustBeInteger, mustBeInRange(options.pageSize, 1, 100)} = 25
+        options.pageSize (1,1) double {mustBeInteger, mustBePositive, mustBeLessThanOrEqual(options.pageSize, 100)} = 25
     end
 
     api_call = ndi.cloud.api.implementation.admin.ListOrganizations( ...
