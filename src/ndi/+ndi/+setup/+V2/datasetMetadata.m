@@ -362,9 +362,11 @@ if ~strcmp(options.Studies, 'only')
             state = relate(state, key, t{1}, pair{2}, {'dataset'}, pair{3});
         end
     end
-    if isfield(state, 'storedHosts')
-        for h = unique(state.storedHosts, 'stable')
-            state = relate(state, key, h{1}, 'hosted_by', {'dataset'}, {'organization'});
+    if isfield(state, 'storedHosts') && ~isempty(state.storedHosts)
+        % by index: `for` over an empty cell still runs once (on its 0x1 column)
+        hosts = unique(state.storedHosts, 'stable');
+        for k = 1:numel(hosts)
+            state = relate(state, key, hosts{k}, 'hosted_by', {'dataset'}, {'organization'});
         end
     end
 else
