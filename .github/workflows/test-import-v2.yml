@@ -54,6 +54,10 @@ on:
       - 'tests/+ndi/+unittest/+gui/+app/TestLightsheetZarrManager.m'
       - 'src/ndi/+ndi/+database/+implementations/+database/didsqlite.m'
       - 'tests/+ndi/+unittest/+database/TestV1SubjectSearch.m'
+      - 'src/ndi/+ndi/+cloud/+sync/+internal/reconstructSeriesIngestLocations.m'
+      - 'src/ndi/+ndi/+cloud/+sync/+internal/updateFileInfoForLocalFiles.m'
+      - 'src/ndi/+ndi/+cloud/+sync/+internal/updateFileInfoForRemoteFiles.m'
+      - 'tests/+ndi/+unittest/ReconstructSeriesIngestLocationsTest.m'
       - '.github/workflows/test-import-v2.yml'
   pull_request:
     branches: [main, V2]
@@ -96,6 +100,10 @@ on:
       - 'tests/+ndi/+unittest/+gui/+app/TestLightsheetZarrManager.m'
       - 'src/ndi/+ndi/+database/+implementations/+database/didsqlite.m'
       - 'tests/+ndi/+unittest/+database/TestV1SubjectSearch.m'
+      - 'src/ndi/+ndi/+cloud/+sync/+internal/reconstructSeriesIngestLocations.m'
+      - 'src/ndi/+ndi/+cloud/+sync/+internal/updateFileInfoForLocalFiles.m'
+      - 'src/ndi/+ndi/+cloud/+sync/+internal/updateFileInfoForRemoteFiles.m'
+      - 'tests/+ndi/+unittest/ReconstructSeriesIngestLocationsTest.m'
       - '.github/workflows/test-import-v2.yml'
   workflow_dispatch:
 
@@ -233,7 +241,8 @@ jobs:
                      TestSuite.fromClass(?ndi.unittest.fun.doc.lightsheet.TestMakePyramid), ...
                      TestSuite.fromClass(?ndi.unittest.fun.doc.lightsheet.TestFromSPIM), ...
                      TestSuite.fromClass(?ndi.unittest.gui.app.TestLightsheetZarrManager), ...
-                     TestSuite.fromClass(?ndi.unittest.database.TestV1SubjectSearch)];
+                     TestSuite.fromClass(?ndi.unittest.database.TestV1SubjectSearch), ...
+                     TestSuite.fromClass(?ndi.unittest.ReconstructSeriesIngestLocationsTest)];
             results = run(suite);
             disp(table(results));
             nRun = numel(results);
