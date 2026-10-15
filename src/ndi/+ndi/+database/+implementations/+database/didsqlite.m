@@ -114,6 +114,7 @@ classdef  didsqlite < ndi.database
             end
 
             ndi_document_objs = {};
+            searchparams = v1SubjectSearch(searchparams);
             [doc_ids] = ndi_didsqlite_obj.db.search(searchparams,'a');
             ndi_document_objs = {};
             for i=1:numel(doc_ids)
@@ -336,4 +337,47 @@ function tf = localIsS3Forbidden(answer)
         return
     end
     tf = ~isempty(regexp(txt, '\<403\>', 'once'));
+end
+
+function q = v1SubjectSearch(q)
+    % V1SUBJECTSEARCH - put back plain `isa subject` on a v1 database
+    %
+    % ndi.query('', 'isa', 'subject') leaves out subjects whose subject.type
+    % is not biological (ndi.query.subjectSearch). This database searches in
+    % SQL, where '~exact_string' needs the field to exist, so it would also
+    % leave out every v1 subject, none of which has a subject.type. A v1
+    % subject always was a biological subject, so here the plain search is
+    % the right one. V2 sessions are did2sqlite and keep the rewrite.
+    ss = q.searchstructure;
+    [ss, changed] = swapSubjectSearch(ss, ndi.query.subjectSearch(), ...
+        did.query('', 'isa', 'subject').searchstructure);
+    if changed
+        q = did.query(ss);
+    end
+end
+
+function [ss, changed] = swapSubjectSearch(ss, rewritten, plain)
+    changed = false;
+    if ~isstruct(ss)
+        return
+    end
+    if isequal(ss, rewritten)
+        ss = plain;
+        changed = true;
+        return
+    end
+    for k = 1:numel(ss)
+        if isequal(ss(k), rewritten)
+            ss(k) = plain;
+            changed = true;
+        elseif strcmpi(strrep(ss(k).operation, '~', ''), 'or')
+            [p1, c1] = swapSubjectSearch(ss(k).param1, rewritten, plain);
+            [p2, c2] = swapSubjectSearch(ss(k).param2, rewritten, plain);
+            if c1 || c2
+                ss(k).param1 = p1;
+                ss(k).param2 = p2;
+                changed = true;
+            end
+        end
+    end
 end
