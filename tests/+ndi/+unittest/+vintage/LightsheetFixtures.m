@@ -39,7 +39,7 @@ classdef LightsheetFixtures
 
         function s = pyramid(id, softwareId)
             s = ndi.unittest.vintage.LightsheetFixtures.etaDoc('observation', ...
-                {'base', 'statement', 'interaction', 'observation', 'intensity', 'value'}, id);
+                {'base', 'statement', 'interaction', 'intensity', 'value'}, id);
             s.depends_on = struct('name', {'entity_id', 'instrument_id', 'software_id'}, ...
                 'document_id', {'subj_ls_1', 'elem_scope_1', softwareId});
             s.statement = struct('variable', ...
@@ -49,7 +49,7 @@ classdef LightsheetFixtures
         end
 
         function s = software(id)
-            s = ndi.unittest.vintage.LightsheetFixtures.etaDoc('entity', {'base', 'entity'}, id);
+            s = ndi.unittest.vintage.LightsheetFixtures.etaDoc('entity', {'base'}, id);
             s.depends_on = struct('name', {}, 'document_id', {});
             s.entity = struct('type', struct('node', '', 'name', 'software'), ...
                 'name', ndi.vintage.lightsheetBuilderName());
@@ -57,7 +57,7 @@ classdef LightsheetFixtures
 
         function s = store(id, ownerId)
             s = ndi.unittest.vintage.LightsheetFixtures.etaDoc('opaque_body', ...
-                {'base', 'data_body', 'opaque_body'}, id);
+                {'base', 'data_body'}, id);
             s.depends_on = struct('name', 'owner_id', 'document_id', ownerId);
             s.data = struct('keys', {ndi.unittest.vintage.LightsheetFixtures.keys(1, false)});
             s.data_body = struct( ...
@@ -75,7 +75,7 @@ classdef LightsheetFixtures
             %   is a cellstr of existing files recorded BY LOCATION as
             %   body_data_0, body_data_1, ... ({} for none).
             s = ndi.unittest.vintage.LightsheetFixtures.etaDoc('sampled_body', ...
-                {'base', 'data_body', 'sampled_body'}, id);
+                {'base', 'data_body'}, id);
             s.depends_on = struct('name', 'owner_id', 'document_id', ownerId);
             s.data = struct('keys', {ndi.unittest.vintage.LightsheetFixtures.keys(factor, true)}, ...
                 'complete', true);
@@ -99,7 +99,10 @@ classdef LightsheetFixtures
                     1:numel(memberPaths), 'UniformOutput', false);
                 locs = cellfun(@(p) ndi.unittest.vintage.LightsheetFixtures.byLocation(p), ...
                     reshape(memberPaths, 1, []), 'UniformOutput', false);
-                s.files = struct('file_list', {names}, 'file_series', {{'body_data'}}, ...
+                % the series is declared (file_list and file_series) by its
+                % manifest name, as did.document requires; its members are
+                % named outright in file_info, as the migrator renames them
+                s.files = struct('file_list', {{'body_data'}}, 'file_series', {{'body_data'}}, ...
                     'file_info', struct('name', names, 'locations', locs));
             end
         end
@@ -169,7 +172,7 @@ classdef LightsheetFixtures
                 'UniformOutput', false);
             locs = cellfun(@(p) ndi.unittest.vintage.LightsheetFixtures.byLocation(p), ...
                 reshape(memberPaths, 1, []), 'UniformOutput', false);
-            s.files = struct('file_list', {names}, 'file_series', {{'chunk.bin'}}, ...
+            s.files = struct('file_list', {{'chunk.bin'}}, 'file_series', {{'chunk.bin'}}, ...
                 'file_info', struct('name', names, 'locations', locs));
         end
 
@@ -180,6 +183,9 @@ classdef LightsheetFixtures
         end
 
         function s = etaDoc(className, superNames, id)
+            % SUPERNAMES are the ancestors only, never the class itself: the
+            % did2 database indexes the class name AND its superclasses, and
+            % a repeat is a UNIQUE-constraint failure on write.
             sc = struct('class_name', superNames, 'class_version', '1.0.0');
             s = struct();
             s.document_class = struct('class_name', className, ...

@@ -27,7 +27,7 @@ classdef TestLightsheetMigrated < matlab.unittest.TestCase
 
     methods (TestClassSetup)
         function migrateAndWrite(testCase)
-            testCase.assertTrue(exist('did2.convert.migrators_j.lightsheet_zarr_level', 'file') == 2, ...
+            testCase.assertTrue(~isempty(which('did2.convert.migrators_j.lightsheet_zarr_level')), ...
                 'DID-matlab''s lightsheet migrators are not on the path');
             F = ndi.unittest.vintage.LightsheetFixtures;
             testCase.Dir = tempname;

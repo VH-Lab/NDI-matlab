@@ -51,7 +51,7 @@ if isstring(sv) && isscalar(sv), sv = char(sv); end
 if ~ischar(sv) || isempty(sv)
     return;
 end
-if exist('did2.convert.schemaVersionRank', 'file') == 2
+if ~isempty(which('did2.convert.schemaVersionRank'))
     try
         [rank, known] = did2.convert.schemaVersionRank(sv);
         etaRank = did2.convert.schemaVersionRank('V_eta');
