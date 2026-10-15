@@ -185,9 +185,12 @@ classdef LightsheetZarrManager < ndi.gui.app.sessionApp
             docs = session.database_search(ndi.query('','isa','subject'));
             for i = 1:numel(docs)
                 p = docs{i}.document_properties;
-                % v1 and V_eta keep it in `subject`; the one-entity-class
-                % schema keeps it in `entity` (ndi.v2.blockOf knows both).
-                nm = ndi.v2.blockOf(p, 'subject', 'local_identifier', '');
+                if isfield(p,'subject')
+                    nm = ndi.gui.app.LightsheetZarrManager.field(p.subject,'local_identifier','');
+                else
+                    % the one-entity-class schema keeps it in `entity`
+                    nm = ndi.v2.blockOf(p, 'subject', 'local_identifier', '');
+                end
                 if ~isempty(nm)
                     m(docs{i}.id()) = char(nm);
                 end
