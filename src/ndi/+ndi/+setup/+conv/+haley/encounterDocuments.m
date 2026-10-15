@@ -137,10 +137,17 @@ for g = 1:max(G)
     vids = D(D.plateNum == plates(g), :);
     epochs = arrayfun(@(r) epochOf(pre, vids.videoFileName{r}), (1:height(vids))', 'UniformOutput', false);
     [onR, where] = ismember(epochs, R.epoch);
-    if ~all(onR)
-        out.skipped{end+1} = sprintf('%s: a video of %s is not a recording of this session', worm, plate);
+    % A video that is not a recording (a failed start with no file, which
+    % stage 5 reports as rowWithoutFile) holds none of the worm's track; the
+    % worm is skipped only when a row of its track is on such a video.
+    if ~any(onR) || ~all(ismember(unique(W.videoNum), vids.videoNum(onR)))
+        out.skipped{end+1} = sprintf('%s: its track is on a video of %s that is not a recording of this session', ...
+            worm, plate);
         continue;
     end
+    vids = vids(onR, :);
+    epochs = epochs(onR);
+    where = where(onR);
     start = R.local_start(where);
     rate = R.frame_rate(where);
     t0 = min(start);
