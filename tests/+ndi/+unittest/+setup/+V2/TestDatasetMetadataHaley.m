@@ -212,22 +212,40 @@ classdef TestDatasetMetadataHaley < matlab.unittest.TestCase
             end
             u = u(~isType);
             % with one entity class a web resource's host has no relation
-            % (hosted_by retired, 2026-10-08): one row per resource naming one
+            % (hosted_by retired, 2026-10-08): one row per resource naming one --
+            % EXCEPT a stored copy's host, which is the dataset's `hosted_by` on a
+            % schema that has it again (did-schema 9bedceb, 2026-10-15)
             isHost = strcmp({u.field}, 'host');
+            wr = testCase.Spec.web_resources;
+            if isstruct(wr), wr = num2cell(wr); end
+            stored = cellstr(string(testCase.Spec.dataset.stored_at));
+            hasHosted = ndi.setup.V2.schemaHasRelation('hosted_by');
             if ndi.setup.V2.mergedEntities()
-                wr = testCase.Spec.web_resources;
-                if isstruct(wr), wr = num2cell(wr); end
-                testCase.verifyEqual(nnz(isHost), sum(cellfun(@(x) isfield(x, 'host'), wr)));
+                expect = sum(cellfun(@(x) isfield(x, 'host') && ...
+                    ~(hasHosted && any(strcmp(x.key, stored))), wr));
+                testCase.verifyEqual(nnz(isHost), expect);
             else
                 testCase.verifyFalse(any(isHost));
             end
             u = u(~isHost);
-            testCase.verifyEqual(unique({u.field}), {'vendor'});
-            % one row per software entry that names a vendor (the analysis
-            % package and macOS name none)
+            % software.vendor: a `developed_by` relation on a schema that has it
+            % (did-schema 9bedceb), else one row per software naming a vendor
+            % (the analysis package and macOS name none)
             sw = testCase.Spec.software;
             if isstruct(sw), sw = num2cell(sw); end
-            testCase.verifyEqual(numel(u), sum(cellfun(@(x) isfield(x, 'vendor') && ~isempty(x.vendor), sw)));
+            nVendor = sum(cellfun(@(x) isfield(x, 'vendor') && ~isempty(x.vendor), sw));
+            if ndi.setup.V2.schemaHasRelation('developed_by')
+                testCase.verifyEmpty(u);
+                testCase.verifyNumElements(relationsNamed(testCase.Result.documents, ...
+                    'developed_by'), nVendor);
+            else
+                testCase.verifyEqual(unique({u.field}), {'vendor'});
+                testCase.verifyEqual(numel(u), nVendor);
+            end
+            if hasHosted && ndi.setup.V2.mergedEntities()
+                testCase.verifyNumElements(relationsNamed(testCase.Result.documents, ...
+                    'hosted_by'), 1, 'the NDI Cloud copy names its host');
+            end
         end
     end
 end

@@ -118,6 +118,7 @@ if ~strcmp(options.Studies, 'only')
     merged = ndi.setup.V2.mergedEntities();
     storedAt = asCell(getOr(getOr(spec, 'dataset', struct()), 'stored_at', {}));
     state.storedIds = {};
+    state.storedHosts = {};
     for e = entries(spec, 'web_resources')
         w = e{1};
         if ~merged
@@ -128,9 +129,19 @@ if ~strcmp(options.Studies, 'only')
                 state = relate(state, w.key, w.host, 'hosted_by', {'web_resource'}, {'organization'});
             end
         elseif any(strcmp(w.key, storedAt))
-            state = checkKnown(state, 'web_resource', w, {'name', 'identifiers'}, ...
-                struct('host', 'a stored copy is an identifier of the dataset; its host is not recorded', ...
-                'type', ''));
+            % a stored copy is one of the dataset's identifiers; its host is the
+            % DATASET's `hosted_by` (did-schema 9bedceb, Jess 2026-10-15)
+            if ndi.setup.V2.schemaHasRelation('hosted_by')
+                state = checkKnown(state, 'web_resource', w, {'name', 'identifiers', 'host'}, ...
+                    struct('type', ''));
+                if isfield(w, 'host')
+                    state.storedHosts{end+1} = w.host;
+                end
+            else
+                state = checkKnown(state, 'web_resource', w, {'name', 'identifiers'}, ...
+                    struct('host', 'a stored copy is an identifier of the dataset; its host is not recorded', ...
+                    'type', ''));
+            end
             state.storedIds = [state.storedIds, storedIdentifiers(w)];
             state.ids(w.key) = '';
             state.kinds(w.key) = 'web_resource';
@@ -148,10 +159,20 @@ if ~strcmp(options.Studies, 'only')
 
     for e = entries(spec, 'software')
         s = e{1};
-        state = checkKnown(state, 'software', s, {'name', 'version', 'identifiers'}, ...
-            struct('vendor', 'V2 has no relation from software to its developer or vendor'));
+        % its maker: `developed_by` (did-schema 9bedceb, Jess 2026-10-15), not
+        % `sold_by` -- free and open-source software was never sold
+        hasDeveloper = ndi.setup.V2.schemaHasRelation('developed_by');
+        if hasDeveloper
+            state = checkKnown(state, 'software', s, {'name', 'version', 'identifiers', 'vendor'});
+        else
+            state = checkKnown(state, 'software', s, {'name', 'version', 'identifiers'}, ...
+                struct('vendor', 'the schema in use has no relation from software to its developer'));
+        end
         f = putIf(struct('name', s.name), 'version', s, 'version');
         state = add(state, 'software', s.key, putIds(f, s), struct());
+        if hasDeveloper && isfield(s, 'vendor')
+            state = relate(state, s.key, s.vendor, 'developed_by', {'software'}, {'organization'});
+        end
     end
 
     for e = entries(spec, 'products')
@@ -339,6 +360,11 @@ if ~strcmp(options.Studies, 'only')
     for pair = pairs
         for t = asCell(getOr(d, pair{1}, {}))
             state = relate(state, key, t{1}, pair{2}, {'dataset'}, pair{3});
+        end
+    end
+    if isfield(state, 'storedHosts')
+        for h = unique(state.storedHosts, 'stable')
+            state = relate(state, key, h{1}, 'hosted_by', {'dataset'}, {'organization'});
         end
     end
 else
