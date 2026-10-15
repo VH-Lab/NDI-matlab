@@ -29,10 +29,15 @@ function f = lightsheetKeys(keys)
 %   the canonical ones only where the source's were already canonical.
 %
 %   AN AXIS WITH NO SPACING READS AS 1, ORIGIN AS 0. The `c` key is
-%   categorical (names or indices, no spacing), and a space/time axis written
-%   with no scale has none either. v1 stored the NGFF `scale` there, which for
-%   a channel axis is 1. This is a reader's convention so chooseLevel can
-%   compare whole vectors; it is not a value the document states.
+%   categorical (names or indices, no spacing). v1 stored the NGFF `scale`
+%   there, which for a channel axis is 1. This is a reader's convention so
+%   chooseLevel can compare whole vectors; it is not a value the document
+%   states. A space/time axis the source gave no scale is written by the
+%   migrator as REGULAR with origin 0, spacing 1 and NO unit (its indices
+%   0..n-1; Jess 2026-10-15), so it reads as voxel size 1, translation 0 and
+%   unit '' from the key itself. (Before that it was written as `values`
+%   0..n-1 and read as 1 and 0 by the convention above; both forms read the
+%   same.)
 %
 %   See also: ndi.vintage.lightsheetLevel, ndi.vintage.lightsheetPyramid.
 

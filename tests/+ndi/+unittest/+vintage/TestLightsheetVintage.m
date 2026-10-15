@@ -159,6 +159,35 @@ classdef TestLightsheetVintage < matlab.unittest.TestCase
             testCase.verifyEqual(p.n_channels, 2);
         end
 
+        function testAnAxisWithNoScaleReadsAsVoxelOneTranslationZero(testCase)
+            % Jess 2026-10-15: the migrator writes a space/time axis the
+            % source gave no scale as regular, origin 0, spacing 1, no unit
+            % (DID-matlab jLightsheetKeys). It reads as v1's 1 and 0, with no
+            % unit; the older `values` form reads the same.
+            regular = @(name, n) struct('variable', struct('name', name), 'n', n, ...
+                'regular', true, 'origin', struct('value', 0), 'spacing', struct('value', 1));
+            k = {regular('time', 1), ...
+                struct('variable', struct('name', 'channel'), 'n', 2, 'regular', false, ...
+                    'values', [0 1]), ...
+                regular('z', 400), regular('y', 2048), regular('x', 2048)};
+            f = ndi.vintage.lightsheetKeys(k);
+            testCase.verifyEqual(f.axes_order, 'tczyx');
+            testCase.verifyEqual(f.shape, [1 2 400 2048 2048]);
+            testCase.verifyEqual(f.voxel_size, [1 1 1 1 1]);
+            testCase.verifyEqual(f.translation, [0 0 0 0 0]);
+            testCase.verifyEqual(f.units, {'', '', '', '', ''});
+            testCase.verifyEqual(f.voxel_size_units, '');
+            testCase.verifyEqual(f.channel_names, '');
+            old = k;
+            for a = [1 3 4 5]
+                old{a} = struct('variable', k{a}.variable, 'n', k{a}.n, ...
+                    'regular', false, 'values', 0:(k{a}.n - 1));
+            end
+            g = ndi.vintage.lightsheetKeys(old);
+            testCase.verifyEqual(g.voxel_size, f.voxel_size);
+            testCase.verifyEqual(g.translation, f.translation);
+        end
+
         function testAMigratedPyramidsLabelIsItsNotes(testCase)
             % Jess 2026-10-15: the label stays on the observation's notes;
             % pyramid_type is dropped. Notes the batch pass did not split
