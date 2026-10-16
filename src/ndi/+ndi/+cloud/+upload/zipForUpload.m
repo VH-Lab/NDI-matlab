@@ -13,7 +13,9 @@ function [b, msg] = zipForUpload(D, doc_file_struct, total_size, dataset_id, opt
 %  'Verbose'   - A logical (true/false) to control whether detailed
 %                information is printed to the console. Defaults to false.
 %  'SizeLimit' - The maximum size of each zip file batch in bytes.
-%                Defaults to 25 MB (25e6).
+%                Defaults to the preference
+%                Cloud.Upload.Max_File_Batch_Size (250 MB unless changed;
+%                see ndi.preferences).
 %  'DebugLog'  - A logical (true/false) to enable logging of zipped files.
 %                Defaults to false.
 %
@@ -27,7 +29,7 @@ arguments
     total_size (1,1) {mustBeNumeric}
     dataset_id (1,:) char {mustBeTextScalar}
     options.Verbose (1,1) logical = true
-    options.SizeLimit (1,1) {mustBeNumeric, mustBePositive} = 50e6
+    options.SizeLimit (1,1) {mustBeNumeric, mustBePositive} = ndi.preferences.get('Cloud.Upload.Max_File_Batch_Size')
     options.DebugLog (1,1) logical = true
     options.numberRetries (1,1) {mustBeNumeric, mustBeInteger, mustBeNonnegative} = 3
 end
