@@ -22,6 +22,8 @@ function clearAllCaches(varargin)
 %      via ndi.database.fun.clearcaches).
 %   5. The database hierarchy (persistent inside
 %      ndi.common.getDatabaseHierarchy).
+%   6. Where NDI-python's command-line tools were found (persistent
+%      inside ndi.python.findCommand).
 %
 % Configuration singletons that hold user state or static lookups are left
 % untouched (e.g. ndi.preferences, ndi.common.getLogger,
@@ -74,6 +76,13 @@ function clearAllCaches(varargin)
     % 5) the database hierarchy (persistent inside getDatabaseHierarchy)
     try
         clear('ndi.common.getDatabaseHierarchy');
+    catch
+        % ignore: nothing to clear or not clearable in this context
+    end
+
+    % 6) the NDI-python command locations
+    try
+        ndi.python.clearCommandCache();
     catch
         % ignore: nothing to clear or not clearable in this context
     end
