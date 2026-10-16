@@ -56,7 +56,7 @@ function binPath = install(options)
 
     workDir = tempname;
     mkdir(workDir);
-    cleanup = onCleanup(@() rmdir(workDir, 's')); %#ok<NASGU>
+    cleanup = onCleanup(@() rmdir(workDir, 's'));
     scriptFile = fullfile(workDir, scriptName);
 
     source = options.Source;
