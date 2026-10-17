@@ -16,6 +16,9 @@ function [success, message] = uploadFilesForDatasetDocuments(cloudDatasetId, ndi
 % | 'Verbose'             | (logical) Display verbose output (default true) |
 % | 'FileUploadStrategy'  | ('serial' or 'batch') Upload strategy (default 'batch') |
 % | 'onlyMissing'         | (logical) Only upload missing files (default true) |
+% | 'FileBatchSizeLimit'  | (double) Maximum size in bytes of each zip batch when |
+% |                       | FileUploadStrategy is 'batch'. Empty (default) uses the |
+% |                       | preference Cloud.Upload.Max_File_Batch_Size. |
 %
 % Outputs:
 % | Name                  | Description                               |
@@ -33,6 +36,7 @@ function [success, message] = uploadFilesForDatasetDocuments(cloudDatasetId, ndi
         options.FileUploadStrategy (1,1) string ...
             {mustBeMember(options.FileUploadStrategy, ["serial", "batch"])} = "batch"
         options.onlyMissing (1,1) logical = true
+        options.FileBatchSizeLimit double {mustBeScalarOrEmpty, mustBePositive} = []
     end
 
     success = true;
@@ -125,7 +129,11 @@ function [success, message] = uploadFilesForDatasetDocuments(cloudDatasetId, ndi
                 fprintf('Uploaded %d of %d files.\n', files_uploaded_count, numel(file_manifest));
             end
         case "batch"
-            [batch_success, batch_message] = ndi.cloud.upload.zipForUpload(ndiDataset, file_manifest, totalSizeKb, cloudDatasetId);
+            zipArgs = {};
+            if ~isempty(options.FileBatchSizeLimit)
+                zipArgs = {'SizeLimit', options.FileBatchSizeLimit};
+            end
+            [batch_success, batch_message] = ndi.cloud.upload.zipForUpload(ndiDataset, file_manifest, totalSizeKb, cloudDatasetId, zipArgs{:});
             if ~batch_success
                 success = false;
                 message = batch_message;

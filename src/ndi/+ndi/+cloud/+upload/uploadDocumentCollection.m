@@ -21,8 +21,8 @@ function [b, report] = uploadDocumentCollection(datasetId, documentList, options
 %
 %   options.maxDocumentChunk - (1,1) double
 %                    The maximum number of documents to include in a single ZIP
-%                    archive for batch uploads. Defaults to Inf (all documents
-%                    in one batch).
+%                    archive for batch uploads. Defaults to the preference
+%                    Cloud.Upload.Max_Document_Batch_Count (see ndi.preferences).
 %
 % OUTPUTS:
 %   b              - (1,1) logical
@@ -52,7 +52,7 @@ function [b, report] = uploadDocumentCollection(datasetId, documentList, options
     arguments
         datasetId (1,1) string
         documentList (1,:) cell
-        options.maxDocumentChunk (1,1) double = Inf
+        options.maxDocumentChunk (1,1) double {mustBePositive} = ndi.preferences.get('Cloud.Upload.Max_Document_Batch_Count')
         options.onlyUploadMissing (1,1) logical = true
     end
     assert(~isempty(documentList), 'List of documents was empty.')

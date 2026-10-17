@@ -138,7 +138,7 @@ Downloads a collection of documents from a cloud dataset using the bulk download
 
 **Optional name-value inputs:**
 - `Timeout` (double) — Timeout in seconds for the download operation. Default: `20`.
-- `ChunkSize` (double) — Maximum number of document IDs per bulk download request. Default: `2000`.
+- `ChunkSize` (double) — Maximum number of document IDs per bulk download request. Default: the preference `Cloud.Download.Max_Document_Batch_Count` (10000 unless changed; see `ndi.preferences`).
 
 **Outputs:**
 - `documents` — A cell array of `ndi.document` objects.
@@ -193,7 +193,7 @@ Uploads a collection of `ndi.document` objects to a cloud dataset. Uses bulk (ZI
 - `documentList` (cell array) — A cell array of `ndi.document` objects to upload.
 
 **Optional name-value inputs:**
-- `maxDocumentChunk` (double) — Maximum number of documents per ZIP batch. Default: `Inf` (all in one batch).
+- `maxDocumentChunk` (double) — Maximum number of documents per ZIP batch. Default: the preference `Cloud.Upload.Max_Document_Batch_Count` (100000 unless changed; see `ndi.preferences`).
 - `onlyUploadMissing` (logical) — If `true`, documents already present on the remote are skipped. Default: `true`.
 
 **Outputs:**
@@ -392,6 +392,25 @@ Where:
 | `ndi.cloud.api.users.me` | `me()` | Retrieves the current authenticated user's profile information. |
 | `ndi.cloud.api.users.createUser` | `createUser(email, name, password)` | Registers a new user account. |
 | `ndi.cloud.api.users.GetUser` | `GetUser(userId)` | Retrieves profile information for a user specified by ID. |
+
+### Administration (`ndi.cloud.api.admin.*`)
+
+These call the `/admin` endpoints and require an account with administrator rights; other accounts get `b = false` and a 403 response. The one exception is `getUserOrganizations()` with no input, which lists the logged-in user's own organizations. Users must already have an NDI Cloud account to be added to an organization; there is no invitation by email. The API cannot delete organizations.
+
+| Function | Signature | Description |
+|---|---|---|
+| `ndi.cloud.api.admin.listOrganizations` | `listOrganizations('query', q, 'page', p, 'pageSize', n)` | Lists organizations, optionally filtered by a substring of the name. |
+| `ndi.cloud.api.admin.getOrganization` | `getOrganization(orgId)` | Retrieves an organization with its members (`memberID`, `memberName`, `memberEmail`). |
+| `ndi.cloud.api.admin.createOrganization` | `createOrganization(name, 'canUploadDataset', tf)` | Creates an organization with no members. |
+| `ndi.cloud.api.admin.updateOrganization` | `updateOrganization(orgId, 'name', name, 'canUploadDataset', tf)` | Renames an organization or changes its upload permission. |
+| `ndi.cloud.api.admin.addOrganizationMember` | `addOrganizationMember(orgId, userId)` | Adds a user to an organization. |
+| `ndi.cloud.api.admin.removeOrganizationMember` | `removeOrganizationMember(orgId, userId)` | Removes a user from an organization. |
+| `ndi.cloud.api.admin.addOrganizationMemberByEmail` | `addOrganizationMemberByEmail(orgId, email)` | Adds a user to an organization by exact email address. |
+| `ndi.cloud.api.admin.removeOrganizationMemberByEmail` | `removeOrganizationMemberByEmail(orgId, email)` | Removes a user from an organization by exact email address. |
+| `ndi.cloud.api.admin.listUsers` | `listUsers('query', q, 'page', p, 'pageSize', n)` | Lists active users, optionally filtered by a substring of the name or email. |
+| `ndi.cloud.api.admin.getUser` | `getUser(userId)` | Retrieves a user, including the organizations they belong to. |
+| `ndi.cloud.api.admin.findUserByEmail` | `findUserByEmail(email)` | Finds the one active user with this exact email address (any case). |
+| `ndi.cloud.api.admin.getUserOrganizations` | `getUserOrganizations()` or `getUserOrganizations(userIdOrEmail)` | Lists the organizations of the logged-in user (no admin rights needed) or of another user. |
 
 ### Datasets (`ndi.cloud.api.datasets.*`)
 

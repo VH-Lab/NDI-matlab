@@ -16,12 +16,18 @@ classdef SyncOptions < matlab.mixin.SetGet
 %           "batch" (default) to upload a bundles of files using zip files. 
 %           The "batch" option is recommended when uploading many files,
 %           and the serial option can be used as a fallback if batch upload fails.
+%     FileBatchSizeLimit (double) - Maximum size in bytes of each zip file
+%           when FileUploadStrategy is "batch". Empty (default) means use
+%           the preference Cloud.Upload.Max_File_Batch_Size (250 MB unless
+%           changed; see ndi.preferences). The preference is read when the
+%           upload runs, so changing it takes effect without restarting.
 
     properties
         SyncFiles (1,1) logical = false  % Whether to download file portion (binary data) of documents
         Verbose (1,1) logical = true    % Whether to print verbose output
         DryRun (1,1) logical = false    % Simulate actions without executing
         FileUploadStrategy (1,1) string {mustBeMember(FileUploadStrategy, ["serial", "batch"])} = "batch"
+        FileBatchSizeLimit double {mustBeScalarOrEmpty, mustBePositive} = [] % Bytes per zip batch; empty uses ndi.preferences
     end
 
     methods

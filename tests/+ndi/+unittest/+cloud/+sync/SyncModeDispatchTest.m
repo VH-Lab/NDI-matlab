@@ -40,6 +40,7 @@ classdef SyncModeDispatchTest < matlab.unittest.TestCase
             opts.Verbose = false;
             opts.DryRun = true;
             opts.FileUploadStrategy = "serial";
+            opts.FileBatchSizeLimit = 123e6;
 
             nvPairs = opts.toCell();
             received = ndi.unittest.cloud.sync.SyncModeDispatchTest.acceptSyncOptions( ...
@@ -49,6 +50,7 @@ classdef SyncModeDispatchTest < matlab.unittest.TestCase
             testCase.verifyEqual(received.Verbose, false);
             testCase.verifyEqual(received.DryRun, true);
             testCase.verifyEqual(received.FileUploadStrategy, "serial");
+            testCase.verifyEqual(received.FileBatchSizeLimit, 123e6);
         end
 
         function testToCellRoundTripsToSyncOptions(testCase)
@@ -66,6 +68,7 @@ classdef SyncModeDispatchTest < matlab.unittest.TestCase
             testCase.verifyEqual(opts2.Verbose, opts.Verbose);
             testCase.verifyEqual(opts2.DryRun, opts.DryRun);
             testCase.verifyEqual(opts2.FileUploadStrategy, opts.FileUploadStrategy);
+            testCase.verifyEqual(opts2.FileBatchSizeLimit, opts.FileBatchSizeLimit);
         end
 
         function testSyncModeFunctionsResolve(testCase)
@@ -91,6 +94,7 @@ classdef SyncModeDispatchTest < matlab.unittest.TestCase
                 options.Verbose (1,1) logical
                 options.DryRun (1,1) logical
                 options.FileUploadStrategy (1,1) string
+                options.FileBatchSizeLimit double
             end
             received = options;
         end

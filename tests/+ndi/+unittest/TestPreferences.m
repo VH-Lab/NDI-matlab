@@ -70,7 +70,7 @@ classdef TestPreferences < matlab.unittest.TestCase
                 100000);
             testCase.verifyEqual( ...
                 ndi.preferences.get('Cloud.Upload.Max_File_Batch_Size'), ...
-                500e6);
+                250e6);
         end
 
         function testSetThenGetRoundTrips(testCase)
@@ -85,7 +85,7 @@ classdef TestPreferences < matlab.unittest.TestCase
             ndi.preferences.set(path, 1);
             testCase.assertEqual(ndi.preferences.get(path), 1);
             ndi.preferences.reset(path);
-            testCase.verifyEqual(ndi.preferences.get(path), 500e6);
+            testCase.verifyEqual(ndi.preferences.get(path), 250e6);
         end
 
         function testResetAllReturnsAllToDefaults(testCase)
@@ -101,7 +101,7 @@ classdef TestPreferences < matlab.unittest.TestCase
                 100000);
             testCase.verifyEqual( ...
                 ndi.preferences.get('Cloud.Upload.Max_File_Batch_Size'), ...
-                500e6);
+                250e6);
         end
 
         function testHasReportsRegisteredPaths(testCase)
