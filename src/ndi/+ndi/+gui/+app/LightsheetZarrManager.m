@@ -16,12 +16,11 @@ classdef LightsheetZarrManager < ndi.gui.app.sessionApp
 %   VIEWING IS SOMEONE ELSE'S JOB. The viewer is napari, which is
 %   Python, so View does not draw anything here: it builds a command
 %   line via NDI.FUN.DOC.LIGHTSHEET.VIEWCOMMAND and hands it to a
-%   launcher, by default /usr/local/bin/napariViewLightsheet. That
-%   launcher is a shell wrapper rather than the console script itself
-%   because MATLAB exports library paths of its own, and a Python
-%   process started from MATLAB picks up MATLAB's copies of libraries
-%   it must not use; the wrapper scrubs the environment before exec'ing
-%   the real entry point. viewCommand builds the command and is pure,
+%   launcher: NDI-python's napariViewLightsheet console script, found by
+%   ndi.python.findCommand (install it with ndi.python.install()). It is
+%   started with NDI_FROM_MATLAB=1, which tells the Python side to drop
+%   the library paths MATLAB exports before loading anything, so no
+%   shell wrapper is needed. viewCommand builds the command and is pure,
 %   so what will run can be shown in the dialog before it runs and can
 %   be copied into a terminal when it does not.
 %
@@ -43,7 +42,11 @@ classdef LightsheetZarrManager < ndi.gui.app.sessionApp
         Category = "Lightsheet microscopy"
 
         % Where the napari launcher lives when nobody has said otherwise.
-        DefaultViewerLauncher = "/usr/local/bin/napariViewLightsheet"
+        % Empty means "find it": ndi.python.findCommand('napariViewLightsheet')
+        % looks in ~/.ndi/bin (where ndi.python.install puts it) and the
+        % other usual places. Overridden by the preference
+        % GUI.LightsheetZarrManager.ViewerLauncher.
+        DefaultViewerLauncher = ""
     end
 
     properties (Access = private)
@@ -212,16 +215,37 @@ classdef LightsheetZarrManager < ndi.gui.app.sessionApp
         end
 
         function p = launcherPath()
-        % LAUNCHERPATH - the viewer launcher, from preferences or default
+        % LAUNCHERPATH - the viewer launcher, from preferences or found
         %
-        %   A missing or unreadable preference falls back to the default
-        %   rather than raising: the dialog can still open, and the
-        %   field it opens with is editable.
-            p = char(ndi.gui.app.LightsheetZarrManager.DefaultViewerLauncher);
-            try
-                v = ndi.preferences.get('GUI.LightsheetZarrManager.ViewerLauncher');
-                if ~isempty(char(v)), p = char(v); end
-            catch
+        %   ndi.python.findCommand('napariViewLightsheet'), which honours
+        %   the preference GUI.LightsheetZarrManager.ViewerLauncher when
+        %   it names a file that exists. When nothing is found this
+        %   returns the preference as written, or '' -- never raises: the
+        %   dialog can still open, and the field it opens with is
+        %   editable.
+            p = ndi.gui.app.LightsheetZarrManager.resolveLauncher('');
+            if isempty(p)
+                try
+                    p = strtrim(char(ndi.preferences.get( ...
+                        'GUI.LightsheetZarrManager.ViewerLauncher')));
+                catch
+                end
+            end
+        end
+
+        function p = resolveLauncher(p)
+        % RESOLVELAUNCHER - the launcher typed, or the one found if none was
+        %
+        %   An explicit launcher always wins. An empty one means "find
+        %   it", and stays empty when NDI-python's napariViewLightsheet
+        %   is not installed; viewCommand then says how to install it.
+            p = strtrim(char(p));
+            if isempty(p)
+                try
+                    p = ndi.python.findCommand('napariViewLightsheet');
+                catch
+                    p = '';
+                end
             end
         end
 
@@ -442,8 +466,11 @@ classdef LightsheetZarrManager < ndi.gui.app.sessionApp
 
             lab = uilabel(gl,'Text','Launcher');
             lab.Layout.Row = 3; lab.Layout.Column = 1;
-            ed = uieditfield(gl,'text','Value', ...
-                ndi.gui.app.LightsheetZarrManager.launcherPath());
+            % Remembered so Go only writes the preference when the user
+            % changed the launcher: a path that was merely found must not
+            % be pinned over a later ndi.python.install().
+            initialLauncher = ndi.gui.app.LightsheetZarrManager.launcherPath();
+            ed = uieditfield(gl,'text','Value', initialLauncher);
             ed.Layout.Row = 3; ed.Layout.Column = 2;
             ndi.gui.app.LightsheetZarrManager.paper(ed, c);
             br = uibutton(gl,'Text','Browse...');
@@ -510,7 +537,8 @@ classdef LightsheetZarrManager < ndi.gui.app.sessionApp
                         red = redDd.Value;
                     end
                     cmd = ndi.fun.doc.lightsheet.viewCommand( ...
-                        ed.Value, sessionPath, r.id, ...
+                        ndi.gui.app.LightsheetZarrManager.resolveLauncher(ed.Value), ...
+                        sessionPath, r.id, ...
                         'reduction', red, ...
                         'channel', chSpin.Value, ...
                         'level', lvSpin.Value, ...
@@ -543,18 +571,27 @@ classdef LightsheetZarrManager < ndi.gui.app.sessionApp
 
             function localGo()
                 cmd = localCommand();
-                target = strtrim(ed.Value);
-                if ~isempty(regexp(target,'[/\\]','once')) && ~isfile(target)
-                    uialert(d, sprintf(['No launcher at\n  %s\n\nThat ' ...
-                        'path is normally a small shell wrapper that ' ...
-                        'scrubs MATLAB''s library paths and then runs ' ...
-                        'napariViewLightsheet from your NDI-python ' ...
-                        'environment. Install it there, or point this ' ...
-                        'at the console script yourself.'], target), ...
+                target = ndi.gui.app.LightsheetZarrManager.resolveLauncher(ed.Value);
+                if isempty(target)
+                    uialert(d, ['NDI-python''s napariViewLightsheet was ' ...
+                        'not found. Run ndi.python.install() in MATLAB ' ...
+                        'to install it, or point Launcher at it yourself.'], ...
                         'Launcher not found');
                     return;
                 end
-                ndi.gui.app.LightsheetZarrManager.setLauncherPath(target);
+                if ~isempty(regexp(target,'[/\\]','once')) && ~isfile(target)
+                    uialert(d, sprintf(['No launcher at\n  %s\n\nRun ' ...
+                        'ndi.python.install() in MATLAB to install ' ...
+                        'NDI-python''s napariViewLightsheet, or point ' ...
+                        'this at the console script yourself.'], target), ...
+                        'Launcher not found');
+                    return;
+                end
+                % Only a launcher the user chose is remembered; clearing
+                % the field goes back to finding it automatically.
+                if ~strcmp(strtrim(ed.Value), initialLauncher)
+                    ndi.gui.app.LightsheetZarrManager.setLauncherPath(strtrim(ed.Value));
+                end
                 % Debugging lines on, and the viewer's output kept in a
                 % log in NDI's temporary folder: launched from here it
                 % has no terminal, so the log is the only record of what

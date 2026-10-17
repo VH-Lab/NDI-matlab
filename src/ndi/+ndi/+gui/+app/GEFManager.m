@@ -51,12 +51,11 @@ classdef GEFManager < ndi.gui.app.sessionApp
 %
 %   VIEWING IS SOMEONE ELSE'S JOB. The viewer is napari, which is Python,
 %   so View does not draw anything here: it builds a command line and
-%   hands it to a launcher, by default /usr/local/bin/napariViewGEF. That
-%   launcher is a shell wrapper rather than the console script itself
-%   because MATLAB exports library paths of its own, and a Python process
-%   started from MATLAB picks up MATLAB's copies of libraries it must not
-%   use; the wrapper scrubs the environment before exec'ing the real
-%   entry point. viewCommand builds the command and is pure, so what will
+%   hands it to NDI-python's napariViewGEF console script, found by
+%   ndi.python.findCommand (install it with ndi.python.install()). It is
+%   started with NDI_FROM_MATLAB=1, which tells the Python side to drop
+%   the library paths MATLAB exports before loading anything, so no shell
+%   wrapper is needed. viewCommand builds the command and is pure, so what will
 %   run can be shown in the dialog before it runs -- and can be copied
 %   into a terminal when it does not.
 %
@@ -79,13 +78,12 @@ classdef GEFManager < ndi.gui.app.sessionApp
         Category = "Spatial transcriptomics"
 
         % Where the napari launcher lives when nobody has said otherwise.
-        % A wrapper in /usr/local/bin rather than the console script in a
-        % virtual environment: MATLAB exports library paths of its own,
-        % and a Python process started from MATLAB loads MATLAB's copies
-        % of libraries it must not use. The wrapper scrubs those and then
-        % execs the real entry point. Overridden by the preference
-        % GUI.GEFManager.ViewerLauncher, which the View dialog writes.
-        DefaultViewerLauncher = "/usr/local/bin/napariViewGEF"
+        % Empty means "find it": ndi.python.findCommand('napariViewGEF')
+        % looks in ~/.ndi/bin (where ndi.python.install puts it) and the
+        % other usual places. Overridden by the preference
+        % GUI.GEFManager.ViewerLauncher, which the View dialog writes when
+        % the user changes the launcher.
+        DefaultViewerLauncher = ""
     end
 
     properties (Access = private)
@@ -842,16 +840,35 @@ classdef GEFManager < ndi.gui.app.sessionApp
         end
 
         function p = launcherPath()
-        % LAUNCHERPATH - the viewer launcher, from preferences or default
+        % LAUNCHERPATH - the viewer launcher, from preferences or found
         %
-        %   A missing or unreadable preference falls back to the default
-        %   rather than raising: the dialog can still open, and the field
-        %   it opens with is editable.
-            p = char(ndi.gui.app.GEFManager.DefaultViewerLauncher);
-            try
-                v = ndi.preferences.get('GUI.GEFManager.ViewerLauncher');
-                if ~isempty(char(v)), p = char(v); end
-            catch
+        %   ndi.python.findCommand('napariViewGEF'), which honours the
+        %   preference GUI.GEFManager.ViewerLauncher when it names a file
+        %   that exists. When nothing is found this returns the
+        %   preference as written, or '' -- never raises: the dialog can
+        %   still open, and the field it opens with is editable.
+            p = ndi.gui.app.GEFManager.resolveLauncher('');
+            if isempty(p)
+                try
+                    p = strtrim(char(ndi.preferences.get('GUI.GEFManager.ViewerLauncher')));
+                catch
+                end
+            end
+        end
+
+        function p = resolveLauncher(p)
+        % RESOLVELAUNCHER - the launcher typed, or the one found if none was
+        %
+        %   An explicit launcher always wins. An empty one means "find
+        %   it", and stays empty when NDI-python's napariViewGEF is not
+        %   installed; viewCommand then says how to install it.
+            p = strtrim(char(p));
+            if isempty(p)
+                try
+                    p = ndi.python.findCommand('napariViewGEF');
+                catch
+                    p = '';
+                end
             end
         end
 
@@ -984,10 +1001,9 @@ classdef GEFManager < ndi.gui.app.sessionApp
             end
             if isempty(strtrim(launcher))
                 error('NDI:gene:GEFManager:noLauncher', ...
-                    ['No viewer launcher is set. It is normally ' ...
-                     '/usr/local/bin/napariViewGEF, a shell wrapper that ' ...
-                     'scrubs MATLAB''s library paths before starting ' ...
-                     'Python.']);
+                    ['No viewer launcher is set, and NDI-python''s ' ...
+                     'napariViewGEF was not found. Run ' ...
+                     'ndi.python.install() to install it.']);
             end
             if isempty(strtrim(sessionPath))
                 error('NDI:gene:GEFManager:noSessionPath', ...
@@ -1044,15 +1060,20 @@ classdef GEFManager < ndi.gui.app.sessionApp
         end
 
         function cmd = detach(cmd)
-        % DETACH - the same command, not blocking MATLAB
+        % DETACH - the same command, not blocking MATLAB, marked as MATLAB's
         %
         %   The viewer runs for as long as the user looks at it. Without
         %   this, MATLAB would sit unresponsive behind it until they close
         %   the window, which reads as the launch having hung.
+        %
+        %   NDI_FROM_MATLAB=1 is set for it (ndi.python.environmentPrefix):
+        %   the console script then drops the library paths MATLAB
+        %   exports before Python loads anything.
+            prefix = ndi.python.environmentPrefix();
             if ispc
-                cmd = ['start "napari" ' cmd];
+                cmd = [prefix 'start "napari" ' cmd];
             else
-                cmd = [cmd ' &'];
+                cmd = [prefix cmd ' &'];
             end
         end
 
@@ -1484,7 +1505,11 @@ classdef GEFManager < ndi.gui.app.sessionApp
 
             lab = uilabel(gl,'Text','Launcher');
             lab.Layout.Row = 3; lab.Layout.Column = 1;
-            ed = uieditfield(gl,'text','Value',ndi.gui.app.GEFManager.launcherPath());
+            % Remembered so Go only writes the preference when the user
+            % changed the launcher: a path that was merely found must not
+            % be pinned over a later ndi.python.install().
+            initialLauncher = ndi.gui.app.GEFManager.launcherPath();
+            ed = uieditfield(gl,'text','Value',initialLauncher);
             ed.Layout.Row = 3; ed.Layout.Column = 2;
             ndi.gui.app.GEFManager.paper(ed, c);
             br = uibutton(gl,'Text','Browse...');
@@ -1579,7 +1604,8 @@ classdef GEFManager < ndi.gui.app.sessionApp
                 % than raised: the dialog is still open and the user is
                 % one field away from fixing it.
                 try
-                    c = ndi.gui.app.GEFManager.viewCommand(ed.Value, sessionPath, ...
+                    c = ndi.gui.app.GEFManager.viewCommand( ...
+                        ndi.gui.app.GEFManager.resolveLauncher(ed.Value), sessionPath, ...
                         r.id, 'cells', cbCells.Value, 'outlines', cbOut.Value, ...
                         'density', ~cbCounts.Value, 'controls', cbPanels.Value, ...
                         'name', nameEd.Value, 'labels', localLabels(), ...
@@ -1626,22 +1652,32 @@ classdef GEFManager < ndi.gui.app.sessionApp
 
             function localGo()
                 cmd = localCommand();
-                target = strtrim(ed.Value);
+                target = ndi.gui.app.GEFManager.resolveLauncher(ed.Value);
+                if isempty(target)
+                    uialert(d, ['NDI-python''s napariViewGEF was not ' ...
+                        'found. Run ndi.python.install() in MATLAB to ' ...
+                        'install it, or point Launcher at it yourself.'], ...
+                        'Launcher not found');
+                    return;
+                end
                 % An absolute path that is not there is the common
-                % failure -- the wrapper has not been installed yet --
+                % failure -- NDI-python has not been installed yet --
                 % and it is worth naming before the shell answers with
                 % "not found". A bare name is left to the shell, which is
                 % where PATH lookup belongs.
                 if ~isempty(regexp(target,'[/\\]','once')) && ~isfile(target)
-                    uialert(d, sprintf(['No launcher at\n  %s\n\nThat path ' ...
-                        'is normally a small shell wrapper that scrubs ' ...
-                        'MATLAB''s library paths and then runs napariViewGEF ' ...
-                        'from your NDI-python environment. Install it there, ' ...
-                        'or point this at the console script yourself.'], ...
+                    uialert(d, sprintf(['No launcher at\n  %s\n\nRun ' ...
+                        'ndi.python.install() in MATLAB to install ' ...
+                        'NDI-python''s napariViewGEF, or point this at ' ...
+                        'the console script yourself.'], ...
                         target), 'Launcher not found');
                     return;
                 end
-                ndi.gui.app.GEFManager.setLauncherPath(target);
+                % Only a launcher the user chose is remembered; clearing
+                % the field goes back to finding it automatically.
+                if ~strcmp(strtrim(ed.Value), initialLauncher)
+                    ndi.gui.app.GEFManager.setLauncherPath(strtrim(ed.Value));
+                end
                 % The child inherits NDI_CLOUD_TOKEN and can renew
                 % nothing itself, so a stale one here becomes missing
                 % tiles there, an hour later, with no mention of a login.

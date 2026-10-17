@@ -4,7 +4,8 @@ classdef TestLaunchViewer < matlab.unittest.TestCase
     % A viewer launched from MATLAB has no terminal, so its stdout and
     % stderr -- which tiles it fetched, what failed and why -- go to
     % lightsheet_YYYYMMDDHHMMSS.txt in NDI's temporary folder, with
-    % NDI_LIGHTSHEET_DEBUG=1 so the debugging lines are in it.
+    % NDI_LIGHTSHEET_DEBUG=1 so the debugging lines are in it, and with
+    % NDI_FROM_MATLAB=1 so NDI-python drops MATLAB's library paths.
     % viewerShellCommand and viewerLogFile are pure and tested on every
     % platform; launchViewer runs a stand-in launcher on POSIX.
 
@@ -19,23 +20,23 @@ classdef TestLaunchViewer < matlab.unittest.TestCase
 
         function testPosixDetachedDebugCommand(testCase)
             c = ndi.fun.doc.lightsheet.viewerShellCommand( ...
-                '/usr/local/bin/napariViewLightsheet ''/s'' --pyramid p', ...
+                '''/home/u/.ndi/bin/napariViewLightsheet'' ''/s'' --pyramid p', ...
                 '/tmp/nditemp/lightsheet_1.txt', false, true, false);
-            testCase.verifyEqual(c, ['NDI_LIGHTSHEET_DEBUG=1 ' ...
-                '/usr/local/bin/napariViewLightsheet ''/s'' --pyramid p ' ...
+            testCase.verifyEqual(c, ['NDI_FROM_MATLAB=1 NDI_LIGHTSHEET_DEBUG=1 ' ...
+                '''/home/u/.ndi/bin/napariViewLightsheet'' ''/s'' --pyramid p ' ...
                 '>>''/tmp/nditemp/lightsheet_1.txt'' 2>&1 &']);
         end
 
         function testPosixWaitWithoutDebug(testCase)
             c = ndi.fun.doc.lightsheet.viewerShellCommand('v', '/tmp/l.txt', ...
                 true, false, false);
-            testCase.verifyEqual(c, 'v >>''/tmp/l.txt'' 2>&1');
+            testCase.verifyEqual(c, 'NDI_FROM_MATLAB=1 v >>''/tmp/l.txt'' 2>&1');
         end
 
         function testPosixQuotesALogPathWithAQuote(testCase)
             c = ndi.fun.doc.lightsheet.viewerShellCommand('v', '/tmp/it''s.txt', ...
                 true, false, false);
-            testCase.verifyEqual(c, 'v >>''/tmp/it''\''''s.txt'' 2>&1');
+            testCase.verifyEqual(c, 'NDI_FROM_MATLAB=1 v >>''/tmp/it''\''''s.txt'' 2>&1');
         end
 
         function testWindowsDetachedDebugCommand(testCase)
@@ -43,7 +44,7 @@ classdef TestLaunchViewer < matlab.unittest.TestCase
                 '"C:\ndi\napariViewLightsheet.bat" "C:\s" --pyramid p', ...
                 'C:\Temp\nditemp\lightsheet_1.txt', false, true, true);
             testCase.verifyEqual(c, ['start "napari" /min cmd /c "' ...
-                'set NDI_LIGHTSHEET_DEBUG=1&& ' ...
+                'set NDI_FROM_MATLAB=1&& set NDI_LIGHTSHEET_DEBUG=1&& ' ...
                 '"C:\ndi\napariViewLightsheet.bat" "C:\s" --pyramid p ' ...
                 '>>"C:\Temp\nditemp\lightsheet_1.txt" 2>&1"']);
         end
@@ -51,7 +52,8 @@ classdef TestLaunchViewer < matlab.unittest.TestCase
         function testWindowsWaitRunsInPlace(testCase)
             c = ndi.fun.doc.lightsheet.viewerShellCommand('v', 'C:\l.txt', ...
                 true, true, true);
-            testCase.verifyEqual(c, 'set NDI_LIGHTSHEET_DEBUG=1&& v >>"C:\l.txt" 2>&1');
+            testCase.verifyEqual(c, ['set NDI_FROM_MATLAB=1&& ' ...
+                'set NDI_LIGHTSHEET_DEBUG=1&& v >>"C:\l.txt" 2>&1']);
         end
 
         function testLaunchWritesHeaderOutputAndDebugFlag(testCase)
@@ -61,7 +63,7 @@ classdef TestLaunchViewer < matlab.unittest.TestCase
             testCase.addTeardown(@() rmdir(folder, 's'));
             launcher = fullfile(folder, 'fakeViewer.sh');
             fid = fopen(launcher, 'w');
-            fprintf(fid, '#!/bin/sh\necho "debug=$NDI_LIGHTSHEET_DEBUG args=$*"\necho "to stderr" >&2\n');
+            fprintf(fid, '#!/bin/sh\necho "debug=$NDI_LIGHTSHEET_DEBUG args=$*"\necho "from=$NDI_FROM_MATLAB"\necho "to stderr" >&2\n');
             fclose(fid);
             system(['chmod +x ''' launcher '''']);
             logFile = fullfile(folder, 'sub', 'lightsheet_test.txt');
@@ -77,6 +79,7 @@ classdef TestLaunchViewer < matlab.unittest.TestCase
             testCase.verifySubstring(text, '=== napari lightsheet viewer:');
             testCase.verifySubstring(text, ['command : ' launcher ' --pyramid p1']);
             testCase.verifySubstring(text, 'debug=1 args=--pyramid p1');
+            testCase.verifySubstring(text, 'from=1');
             testCase.verifySubstring(text, 'to stderr');
         end
 
