@@ -138,7 +138,7 @@ Downloads a collection of documents from a cloud dataset using the bulk download
 
 **Optional name-value inputs:**
 - `Timeout` (double) — Timeout in seconds for the download operation. Default: `20`.
-- `ChunkSize` (double) — Maximum number of document IDs per bulk download request. Default: `2000`.
+- `ChunkSize` (double) — Maximum number of document IDs per bulk download request. Default: the preference `Cloud.Download.Max_Document_Batch_Count` (10000 unless changed; see `ndi.preferences`).
 
 **Outputs:**
 - `documents` — A cell array of `ndi.document` objects.
@@ -193,7 +193,7 @@ Uploads a collection of `ndi.document` objects to a cloud dataset. Uses bulk (ZI
 - `documentList` (cell array) — A cell array of `ndi.document` objects to upload.
 
 **Optional name-value inputs:**
-- `maxDocumentChunk` (double) — Maximum number of documents per ZIP batch. Default: `Inf` (all in one batch).
+- `maxDocumentChunk` (double) — Maximum number of documents per ZIP batch. Default: the preference `Cloud.Upload.Max_Document_Batch_Count` (100000 unless changed; see `ndi.preferences`).
 - `onlyUploadMissing` (logical) — If `true`, documents already present on the remote are skipped. Default: `true`.
 
 **Outputs:**
