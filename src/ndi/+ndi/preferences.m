@@ -241,7 +241,13 @@ classdef preferences < matlab.mixin.CustomDisplay & handle
         %   already exist. Failures are reported via warning with
         %   identifier 'NDI:preferences:saveFailed'; the in-memory
         %   state is unaffected.
-            S = struct();
+        %
+        %   Keys in the file that this version of NDI-matlab does not
+        %   register are kept as they are: NDI-python (and other
+        %   versions of NDI-matlab) share this file and have
+        %   preferences of their own. The file is re-read just before
+        %   writing, so a value the other side saved meanwhile survives.
+            S = obj.unknownEntriesOnDisk();
             for i = 1:numel(obj.Items)
                 key = ndi.preferences.itemKey(obj.Items(i));
                 S.(key) = obj.Items(i).Value;
@@ -268,6 +274,40 @@ classdef preferences < matlab.mixin.CustomDisplay & handle
                 warning('NDI:preferences:saveFailed', ...
                     'Could not save preferences to %s: %s', ...
                     obj.Filename, ME.message);
+            end
+        end
+
+        function S = unknownEntriesOnDisk(obj)
+        %UNKNOWNENTRIESONDISK Entries in the JSON file no item registers.
+        %
+        %   S = UNKNOWNENTRIESONDISK(OBJ) reads obj.Filename and returns
+        %   a struct holding only the keys that do not belong to a
+        %   registered item, with their values unchanged. A missing,
+        %   empty or unreadable file gives an empty struct: there is
+        %   nothing to keep.
+            S = struct();
+            if ~isfile(obj.Filename)
+                return
+            end
+            try
+                txt = fileread(obj.Filename);
+                if isempty(strtrim(txt))
+                    return
+                end
+                onDisk = jsondecode(txt);
+            catch
+                return
+            end
+            if ~isstruct(onDisk) || ~isscalar(onDisk)
+                return
+            end
+            known = arrayfun(@(item) ndi.preferences.itemKey(item), ...
+                obj.Items, 'UniformOutput', false);
+            keys = fieldnames(onDisk);
+            for i = 1:numel(keys)
+                if ~ismember(keys{i}, known)
+                    S.(keys{i}) = onDisk.(keys{i});
+                end
             end
         end
 

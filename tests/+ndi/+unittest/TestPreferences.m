@@ -113,6 +113,56 @@ classdef TestPreferences < matlab.unittest.TestCase
             testCase.verifyFalse(ndi.preferences.has('JustOneToken'));
         end
 
+        function testSavingKeepsEntriesOtherVersionsWrote(testCase)
+            % NDI-python and other versions of NDI-matlab share this file
+            % and register preferences of their own. Saving from here
+            % must not drop them, including ones written after this
+            % MATLAB session first read the file.
+            f = ndi.preferences.filename();
+            hadFile = isfile(f);
+            original = '';
+            if hadFile
+                original = fileread(f);
+            end
+            testCase.addTeardown(@() ndi.unittest.TestPreferences.restoreFile( ...
+                f, hadFile, original));
+
+            S = struct();
+            if ~isempty(strtrim(original))
+                S = jsondecode(original);
+            end
+            S.OtherNDI__Viewer__Path = '/somewhere/else';
+            S.OtherNDI__Count = 7;
+            ndi.unittest.TestPreferences.writeFile(f, jsonencode(S));
+
+            ndi.preferences.set('Cloud.Download.Max_Document_Batch_Count', 42);
+
+            T = jsondecode(fileread(f));
+            testCase.verifyTrue(isfield(T, 'OtherNDI__Viewer__Path'));
+            testCase.verifyEqual(T.OtherNDI__Viewer__Path, '/somewhere/else');
+            testCase.verifyEqual(T.OtherNDI__Count, 7);
+            testCase.verifyEqual(T.Cloud__Download__Max_Document_Batch_Count, 42);
+        end
+
+        function testSavingSurvivesACorruptFile(testCase)
+            % Nothing to keep from a file that cannot be read; saving
+            % still writes this side's values.
+            f = ndi.preferences.filename();
+            hadFile = isfile(f);
+            original = '';
+            if hadFile
+                original = fileread(f);
+            end
+            testCase.addTeardown(@() ndi.unittest.TestPreferences.restoreFile( ...
+                f, hadFile, original));
+            ndi.unittest.TestPreferences.writeFile(f, '{ not json');
+
+            ndi.preferences.set('Cloud.Download.Max_Document_Batch_Count', 43);
+
+            T = jsondecode(fileread(f));
+            testCase.verifyEqual(T.Cloud__Download__Max_Document_Batch_Count, 43);
+        end
+
         function testUnknownPathThrows(testCase)
             testCase.verifyError( ...
                 @() ndi.preferences.get('Cloud.Foo.Bar'), ...
@@ -194,6 +244,24 @@ classdef TestPreferences < matlab.unittest.TestCase
     end
 
     methods (Static, Access = private)
+
+        function writeFile(f, txt)
+            folder = fileparts(f);
+            if ~isempty(folder) && ~isfolder(folder)
+                mkdir(folder);
+            end
+            fid = fopen(f, 'w');
+            fwrite(fid, txt, 'char');
+            fclose(fid);
+        end
+
+        function restoreFile(f, hadFile, original)
+            if hadFile
+                ndi.unittest.TestPreferences.writeFile(f, original);
+            elseif isfile(f)
+                delete(f);
+            end
+        end
 
         function p = itemPath(item)
             if isempty(item.Subcategory)
