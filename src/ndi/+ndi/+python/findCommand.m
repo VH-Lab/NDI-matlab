@@ -16,14 +16,18 @@ function commandPath = findCommand(name, options)
 %     c) <NDI_HOME>/bin, i.e. ~/.ndi/bin, where ndi.python.install puts
 %        them (see ndi.python.ndiHome)
 %     d) ~/.local/bin, where a plain `uv tool install` puts them
-%     e) /usr/local/bin and /opt/homebrew/bin (not on Windows)
+%     e) /usr/local/bin, /opt/homebrew/bin and /usr/bin (not on Windows)
 %     f) the user's login shell: `/bin/sh -lc 'command -v NAME'`, or
 %        `where NAME` on Windows
 %
+%   Steps b-f are done by ndi.fun.findExecutable, the lookup NDI uses for
+%   every external program (ffmpeg, Rscript, ...); this function adds
+%   NDI-python's own folders and preferences in front of it.
+%
 %   On Windows '.exe' is appended to NAME for steps b-e.
 %
-%   Steps b-f are cached in a persistent containers.Map for the rest of
-%   the MATLAB session; a cached path that has since disappeared is
+%   Steps b-f are cached for the rest of the MATLAB session (in
+%   ndi.fun.findExecutable); a cached path that has since disappeared is
 %   looked up again. The preference (step a) is read on every call, so
 %   changing it takes effect at once.
 %
@@ -47,7 +51,8 @@ function commandPath = findCommand(name, options)
 %     p = ndi.python.findCommand('napariViewGEF');
 %
 %   See also: ndi.python.install, ndi.python.launch,
-%             ndi.python.clearCommandCache, ndi.python.ndiHome
+%             ndi.python.clearCommandCache, ndi.python.ndiHome,
+%             ndi.fun.findExecutable
 
     arguments
         name (1,:) char
@@ -55,13 +60,8 @@ function commandPath = findCommand(name, options)
         options.IsWindows (1,1) logical = ispc
     end
 
-    persistent cache
-    if isempty(cache) || ~isa(cache, 'containers.Map')
-        cache = containers.Map('KeyType', 'char', 'ValueType', 'char');
-    end
-
     if strcmp(name, 'clear')
-        cache = containers.Map('KeyType', 'char', 'ValueType', 'char');
+        ndi.fun.findExecutable('clear');
         commandPath = '';
         return
     end
@@ -78,56 +78,30 @@ function commandPath = findCommand(name, options)
         return
     end
 
-    if options.IsWindows
-        fileName = [name '.exe'];
-    else
-        fileName = name;
-    end
-    cacheKey = fileName;
-
-    if ~options.Refresh && isKey(cache, cacheKey) && isfile(cache(cacheKey))
-        commandPath = cache(cacheKey);
-        return
-    end
-
-    % b) - e) Known folders.
-    folders = {};
+    % b) - d) NDI-python's own folders, searched before the standard ones.
+    folders = string.empty;
     envBin = getenv('NDI_PYTHON_BIN');
     if ~isempty(envBin)
-        folders = [folders, strsplit(envBin, pathsep)];
+        folders = string(strsplit(envBin, pathsep));
     end
-    folders{end+1} = fullfile(ndi.python.ndiHome('IsWindows', options.IsWindows), 'bin');
-    folders{end+1} = fullfile(ndi.python.userHome('IsWindows', options.IsWindows), ...
-        '.local', 'bin');
-    if ~options.IsWindows
-        folders = [folders, {'/usr/local/bin', '/opt/homebrew/bin'}];
-    end
-    for i = 1:numel(folders)
-        if isempty(folders{i})
-            continue
-        end
-        candidate = fullfile(folders{i}, fileName);
-        if isfile(candidate)
-            commandPath = candidate;
-            cache(cacheKey) = commandPath;
-            return
-        end
-    end
+    folders = [folders, ...
+        string(fullfile(ndi.python.ndiHome('IsWindows', options.IsWindows), 'bin')), ...
+        string(fullfile(ndi.python.userHome('IsWindows', options.IsWindows), '.local', 'bin'))];
 
-    % f) The user's own shell.
-    if options.IsWindows == ispc
-        commandPath = shellLookup(name, options.IsWindows);
-        if ~isempty(commandPath)
-            cache(cacheKey) = commandPath;
-            return
+    % b) - f) through the shared lookup.
+    try
+        commandPath = ndi.fun.findExecutable(name, 'Folders', folders, ...
+            'Refresh', options.Refresh, 'IsWindows', options.IsWindows);
+    catch ME
+        if ~strcmp(ME.identifier, 'ndi:fun:findExecutable:notFound')
+            rethrow(ME);
         end
+        error('ndi:python:commandNotFound', ...
+            ['Could not find NDI-python''s "%s" command. Install NDI-python''s ' ...
+             'command-line tools by running ndi.python.install() in MATLAB, ' ...
+             'or set the environment variable NDI_PYTHON_BIN to the folder ' ...
+             'that holds it.'], name);
     end
-
-    error('ndi:python:commandNotFound', ...
-        ['Could not find NDI-python''s "%s" command. Install NDI-python''s ' ...
-         'command-line tools by running ndi.python.install() in MATLAB, ' ...
-         'or set the environment variable NDI_PYTHON_BIN to the folder ' ...
-         'that holds it.'], name);
 end
 
 function p = preferredPath(name)
@@ -153,32 +127,5 @@ function p = preferredPath(name)
     end
     if isfile(v)
         p = v;
-    end
-end
-
-function p = shellLookup(name, isWindows)
-% Ask the user's shell where NAME is. NAME has already been validated.
-    p = '';
-    if isWindows
-        cmd = ['where ' name];
-    else
-        cmd = sprintf('/bin/sh -lc ''command -v %s''', name);
-    end
-    try
-        [status, out] = system(cmd);
-    catch
-        return
-    end
-    if status ~= 0
-        return
-    end
-    % A login shell may print banners first; `where` may list several
-    % matches. Take the first line that names an existing file.
-    lines = cellstr(strtrim(splitlines(string(out))));
-    for i = 1:numel(lines)
-        if ~isempty(lines{i}) && isfile(lines{i})
-            p = lines{i};
-            return
-        end
     end
 end
