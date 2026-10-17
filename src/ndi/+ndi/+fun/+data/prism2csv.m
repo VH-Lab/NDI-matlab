@@ -44,11 +44,13 @@ function prism2csv(inputSource, outputDir, options)
     % 3. Standardize paths and arguments
     inputSource = char(inputSource);
     
-    % If outputDir is empty, pass "NULL" so R knows to use the source directories
+    % If outputDir is empty, pass "NULL" so R knows to use the source
+    % directories. The default is the string "", for which isempty is
+    % false, so compare characters, not elements.
+    outputDir = char(outputDir);
     if isempty(outputDir)
         outputDirArg = 'NULL';
     else
-        outputDir = char(outputDir);
         if ~exist(outputDir, 'dir'), mkdir(outputDir); end
         outputDirArg = outputDir;
     end
