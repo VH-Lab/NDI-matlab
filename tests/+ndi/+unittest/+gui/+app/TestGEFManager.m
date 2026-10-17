@@ -353,22 +353,47 @@ classdef TestGEFManager < matlab.unittest.TestCase
             % The viewer runs for as long as the user looks at it. Without
             % this MATLAB sits unresponsive behind it until they close the
             % window, which reads as the launch having hung.
+            % And NDI_FROM_MATLAB=1 is set for it, so NDI-python drops the
+            % library paths MATLAB exports before loading anything.
             cmd = ndi.gui.app.GEFManager.detach('someviewer /data');
             if ispc
-                testCase.verifyTrue(startsWith(cmd, 'start '));
+                testCase.verifyTrue(startsWith(cmd, 'set NDI_FROM_MATLAB=1&& start '));
             else
+                testCase.verifyTrue(startsWith(cmd, 'NDI_FROM_MATLAB=1 '));
                 testCase.verifyTrue(endsWith(cmd, ' &'));
             end
             testCase.verifyTrue(contains(cmd, 'someviewer /data'));
         end
 
         function testTheLauncherPathIsAlwaysUsable(testCase)
-            % Falls back to the default rather than raising when the
-            % preference is missing or unreadable: the dialog must still
-            % open, and the field it opens with is editable.
+            % Never raises, even with nothing installed: the dialog must
+            % still open, and the field it opens with is editable.
             p = ndi.gui.app.GEFManager.launcherPath();
             testCase.verifyClass(p, 'char');
-            testCase.verifyNotEmpty(p);
+        end
+
+        function testTheLauncherPathIsFoundAutomatically(testCase)
+            % With no preference set, the launcher is wherever
+            % ndi.python.findCommand finds napariViewGEF.
+            import matlab.unittest.fixtures.EnvironmentVariableFixture
+            binDir = tempname;
+            mkdir(binDir);
+            testCase.addTeardown(@() rmdir(binDir, 's'));
+            fake = fullfile(binDir, 'napariViewGEF');
+            if ispc, fake = [fake '.exe']; end
+            fclose(fopen(fake, 'w'));
+            testCase.applyFixture(EnvironmentVariableFixture('NDI_PYTHON_BIN', binDir));
+            old = ndi.preferences.get('GUI.GEFManager.ViewerLauncher');
+            testCase.addTeardown(@() ndi.preferences.set( ...
+                'GUI.GEFManager.ViewerLauncher', old));
+            ndi.preferences.set('GUI.GEFManager.ViewerLauncher', "");
+            ndi.python.clearCommandCache();
+            testCase.addTeardown(@() ndi.python.clearCommandCache());
+
+            testCase.verifyEqual(ndi.gui.app.GEFManager.launcherPath(), fake);
+            testCase.verifyEqual(ndi.gui.app.GEFManager.resolveLauncher(''), fake);
+            testCase.verifyEqual(ndi.gui.app.GEFManager.resolveLauncher(' /my/viewer '), ...
+                '/my/viewer', 'an explicit launcher always wins');
         end
 
         function testAccentSurvivesAHandleThatIsNotThere(testCase)
@@ -380,10 +405,11 @@ classdef TestGEFManager < matlab.unittest.TestCase
                 @() ndi.gui.app.GEFManager.accent([], c));
         end
 
-        function testTheDefaultLauncherIsTheDocumentedWrapper(testCase)
+        function testTheDefaultLauncherMeansFindIt(testCase)
+            % Empty: ndi.python.findCommand locates NDI-python's
+            % napariViewGEF rather than a hard-coded /usr/local/bin.
             testCase.verifyEqual( ...
-                char(ndi.gui.app.GEFManager.DefaultViewerLauncher), ...
-                '/usr/local/bin/napariViewGEF');
+                char(ndi.gui.app.GEFManager.DefaultViewerLauncher), '');
         end
 
         function testDeletionPlanReachesEveryDependent(testCase)

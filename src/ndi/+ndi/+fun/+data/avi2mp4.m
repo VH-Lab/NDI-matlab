@@ -46,6 +46,14 @@ function avi2mp4(inputSource, outputDir, options)
 %                     existing files are skipped.
 %                     (logical scalar, default: true)
 %
+%       ffmpegPath  - Full path of the ffmpeg program to run. An explicit
+%                     path always wins. Default '' finds it with
+%                     ndi.fun.findExecutable: the preference
+%                     Tools.FFmpegPath, the FFMPEG_BINARY environment
+%                     variable, the usual install folders, then your
+%                     shell's PATH.
+%                     (char vector | string scalar)
+%
 %   Examples:
 %       % Compress all files in a folder and save locally
 %       avi2mp4('/Users/jhaley/Data/Experiment1');
@@ -53,15 +61,19 @@ function avi2mp4(inputSource, outputDir, options)
 %       % Compress with high quality and skip existing files
 %       avi2mp4(dataPath, 'Overwrite', false, 'crf', 18);
 %
-%   See also: SYSTEM, DIR, FULLFILE.
+%   See also: ndi.fun.findExecutable, ndi.fun.systemCommandLine,
+%             SYSTEM, DIR, FULLFILE.
 
 % Input argument validation
 arguments
     inputSource {mustBeText, mustBeNonempty}
     outputDir {mustBeTextScalar} = ""
-    options.crf = []
-    options.preset = []
+    options.crf {mustBeScalarOrEmpty, mustBeInteger, mustBeGreaterThanOrEqual(options.crf, 0), mustBeLessThanOrEqual(options.crf, 51)} = []
+    options.preset (1,:) char {mustBeMember(options.preset, {'', 'ultrafast', ...
+        'superfast', 'veryfast', 'faster', 'fast', 'medium', 'slow', ...
+        'slower', 'veryslow'})} = ''
     options.Overwrite logical = true
+    options.ffmpegPath (1,:) char = ''
 end
     
 % 1. Unify inputSource into a struct array of files
@@ -92,14 +104,12 @@ if isempty(filesToProcess)
 end
 
 % 2. Find FFmpeg (Cross-Platform)
-ffmpegPath = findFFmpeg(); % Helper function logic moved below for cleanliness
+ffmpegPath = findFFmpeg(options.ffmpegPath);
 
-% 3. Prepare Flags
-crfFlag = '';
-if ~isempty(options.crf), crfFlag = sprintf('-crf %d', options.crf); end
-
-presetFlag = '';
-if ~isempty(options.preset), presetFlag = sprintf('-preset %s', char(options.preset)); end
+% 3. Prepare Flags (each element is passed as one quoted argument)
+codecArgs = {'-vcodec', 'libx264'};
+if ~isempty(options.crf), codecArgs = [codecArgs, {'-crf', sprintf('%d', options.crf)}]; end
+if ~isempty(options.preset), codecArgs = [codecArgs, {'-preset', options.preset}]; end
 
 ovrFlag = '-n';
 if options.Overwrite, ovrFlag = '-y'; end
@@ -129,8 +139,8 @@ for i = 1:length(filesToProcess)
 
     fprintf('Processing (%d/%d): %s\n', i, length(filesToProcess), fileName);
 
-    cmd = sprintf('"%s" -i "%s" -vcodec libx264 %s %s %s "%s"', ...
-        ffmpegPath, fullInput, crfFlag, presetFlag, ovrFlag, fullOutput);
+    cmd = ndi.fun.systemCommandLine(ffmpegPath, ...
+        [{'-i', fullInput}, codecArgs, {ovrFlag, fullOutput}]);
 
     [status, cmdOut] = system(cmd);
     if status ~= 0, warning('Error on %s: %s', fileName, cmdOut); end
@@ -138,21 +148,28 @@ end
 fprintf('Batch complete.\n');
 end
 
-function path = findFFmpeg()
-% Internal helper to find executable across platforms
-searchCmd = 'which ffmpeg';
-if ispc, searchCmd = 'where ffmpeg'; end
-[status, cmdOut] = system(searchCmd);
-if status == 0
-    lines = splitlines(strtrim(cmdOut));
-    path = lines{1};
-else
-    if ispc, paths = {'C:\ffmpeg\bin\ffmpeg.exe', 'C:\Program Files\ffmpeg\bin\ffmpeg.exe'};
-    else, paths = {'/opt/homebrew/bin/ffmpeg', '/usr/local/bin/ffmpeg'}; end
-    path = '';
-    for i = 1:length(paths)
-        if exist(paths{i}, 'file'), path = paths{i}; break; end
+function path = findFFmpeg(explicitPath)
+% Internal helper: find ffmpeg across platforms (see ndi.fun.findExecutable)
+folders = string.empty;
+if ispc
+    folders = [folders, "C:\ffmpeg\bin"];
+    if ~isempty(getenv('ProgramFiles'))
+        folders = [folders, string(fullfile(getenv('ProgramFiles'), 'ffmpeg', 'bin'))];
+    end
+    if ~isempty(getenv('LOCALAPPDATA'))
+        % winget puts a link to ffmpeg here
+        folders = [folders, string(fullfile(getenv('LOCALAPPDATA'), 'Microsoft', 'WinGet', 'Links'))];
+    end
+    if ~isempty(getenv('ProgramData'))
+        folders = [folders, string(fullfile(getenv('ProgramData'), 'chocolatey', 'bin'))];
     end
 end
-if isempty(path), error('FFmpeg not found.'); end
+path = ndi.fun.findExecutable('ffmpeg', 'Path', explicitPath, ...
+    'Preference', 'Tools.FFmpegPath', ...
+    'EnvironmentVariables', "FFMPEG_BINARY", ...
+    'Folders', folders, ...
+    'InstallHint', ['Install FFmpeg (https://ffmpeg.org/download.html; ' ...
+        'e.g. "brew install ffmpeg" on macOS, "sudo apt install ffmpeg" ' ...
+        'on Ubuntu, "winget install ffmpeg" on Windows), or set the ' ...
+        'preference Tools.FFmpegPath or pass ''ffmpegPath''.']);
 end

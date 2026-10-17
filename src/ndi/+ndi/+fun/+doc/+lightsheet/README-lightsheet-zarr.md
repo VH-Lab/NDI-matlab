@@ -52,10 +52,12 @@ NDI documents are immutable, so:
   not preserved. **Working.**
 - `ndi.fun.doc.lightsheet.viewCommand(launcher, sessionPath, pyramidID, ...)`
   - pure command builder. Same pattern as
-  `ndi.gui.app.GEFManager.viewCommand`; the launcher is
-  `/usr/local/bin/napariViewLightsheet`, a shell wrapper around the
+  `ndi.gui.app.GEFManager.viewCommand`; the launcher is the
   `napariViewLightsheet` console script that ships in
-  `Waltham-Data-Science/NDI-python`. **Working.**
+  `Waltham-Data-Science/NDI-python`, found by
+  `ndi.python.findCommand('napariViewLightsheet')` (install it with
+  `ndi.python.install()`) and started with `NDI_FROM_MATLAB=1`.
+  **Working.**
 
 ## Straight from SmartSPIM: `fromSPIM`
 
@@ -99,8 +101,8 @@ Command Window (and shown in the manager's status line); open it with
    `makePyramid` option (or a stand-alone `materializeChunks`
    function) can write bytes.
 2. **NDI-python napari reader.** The MATLAB `viewCommand` targets
-   `/usr/local/bin/napariViewLightsheet`, a shell wrapper around
-   `ndi.gui.app.lightsheetZarr.cli:main` in
+   the `napariViewLightsheet` console script
+   (`ndi.gui.app.lightsheetZarr.cli:main`) in
    `Waltham-Data-Science/NDI-python` (installed as
    `[project.scripts].napariViewLightsheet`). The CLI, viewer, and
    metadata reader are landed; the per-chunk dask fetcher that

@@ -33,8 +33,10 @@ numLevels   = 3;
 codec       = 'blosc-zstd';
 clevel      = 5;
 
-% Napari launcher. Same wrapper the real-data script uses.
-launcher    = '/usr/local/bin/napariViewLightsheet';
+% Napari launcher. Empty finds NDI-python's napariViewLightsheet with
+% ndi.python.findCommand (install it with ndi.python.install()); set a
+% path here to use a different copy.
+launcher    = '';
 % ---------------------------------------------------------------------
 
 fprintf('Building blob fixture and ingesting ...\n');

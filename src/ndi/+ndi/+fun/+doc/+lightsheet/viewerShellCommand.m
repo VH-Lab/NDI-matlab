@@ -4,6 +4,9 @@ function fullCmd = viewerShellCommand(cmd, logFile, wait, debug, isWindows)
 %   FULLCMD = ndi.fun.doc.lightsheet.VIEWERSHELLCOMMAND(CMD, LOGFILE, WAIT, DEBUG, ISWINDOWS)
 %
 %   Wraps the viewer command CMD so that, when passed to SYSTEM:
+%     * NDI_FROM_MATLAB=1 is set for the viewer process, so NDI-python
+%       drops the library paths MATLAB exports (see
+%       ndi.python.environmentPrefix),
 %     * NDI_LIGHTSHEET_DEBUG=1 is set for the viewer process (if DEBUG),
 %     * its stdout and stderr are APPENDED to LOGFILE, and
 %     * it runs detached (unless WAIT), so MATLAB is not blocked for as
@@ -13,8 +16,8 @@ function fullCmd = viewerShellCommand(cmd, logFile, wait, debug, isWindows)
 %   cmd.exe syntax over POSIX sh), so it can be tested anywhere.
 %   ndi.fun.doc.lightsheet.launchViewer is the function that runs it.
 %
-%   POSIX:    NDI_LIGHTSHEET_DEBUG=1 CMD >>'LOGFILE' 2>&1 &
-%   Windows:  start "napari" /min cmd /c "set NDI_LIGHTSHEET_DEBUG=1&& CMD >>"LOGFILE" 2>&1"
+%   POSIX:    NDI_FROM_MATLAB=1 NDI_LIGHTSHEET_DEBUG=1 CMD >>'LOGFILE' 2>&1 &
+%   Windows:  start "napari" /min cmd /c "set NDI_FROM_MATLAB=1&& set NDI_LIGHTSHEET_DEBUG=1&& CMD >>"LOGFILE" 2>&1"
 %
 %   See also: ndi.fun.doc.lightsheet.launchViewer
 
@@ -32,6 +35,7 @@ function fullCmd = viewerShellCommand(cmd, logFile, wait, debug, isWindows)
             % No space before &&: cmd.exe would keep it in the value.
             inner = ['set NDI_LIGHTSHEET_DEBUG=1&& ' inner];
         end
+        inner = [ndi.python.environmentPrefix('IsWindows', true) inner];
         if wait
             fullCmd = inner;
         else
@@ -44,6 +48,7 @@ function fullCmd = viewerShellCommand(cmd, logFile, wait, debug, isWindows)
         if debug
             fullCmd = ['NDI_LIGHTSHEET_DEBUG=1 ' fullCmd];
         end
+        fullCmd = [ndi.python.environmentPrefix('IsWindows', false) fullCmd];
         if ~wait
             fullCmd = [fullCmd ' &'];
         end
