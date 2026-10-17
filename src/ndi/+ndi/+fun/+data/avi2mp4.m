@@ -68,7 +68,7 @@ function avi2mp4(inputSource, outputDir, options)
 arguments
     inputSource {mustBeText, mustBeNonempty}
     outputDir {mustBeTextScalar} = ""
-    options.crf {mustBeScalarOrEmpty, mustBeInteger, mustBeInRange(options.crf, 0, 51)} = []
+    options.crf {mustBeScalarOrEmpty, mustBeInteger, mustBeGreaterThanOrEqual(options.crf, 0), mustBeLessThanOrEqual(options.crf, 51)} = []
     options.preset (1,:) char {mustBeMember(options.preset, {'', 'ultrafast', ...
         'superfast', 'veryfast', 'faster', 'fast', 'medium', 'slow', ...
         'slower', 'veryslow'})} = ''
