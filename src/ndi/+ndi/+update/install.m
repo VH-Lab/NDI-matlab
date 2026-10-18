@@ -25,6 +25,11 @@ function result = install(options)
 %   ndi.fun.clearAllCaches, so document definitions, schemas and lookups
 %   are re-read from the new files.
 %
+%   If NDI-python was installed with ndi.python.install (or the NDI
+%   installer) and is behind its main branch, it is updated afterwards by
+%   running ndi.python.install again, after asking (Confirm). This happens
+%   even if NDI-matlab itself is up to date. See ndi.update.checkPython.
+%
 %   RESULT is the structure returned by ndi.update.check before updating.
 %
 %   RESULT = ndi.update.install(Name, Value) accepts:
@@ -38,6 +43,8 @@ function result = install(options)
 %                      ndi_install: 1 for the NDI dependencies (default) or
 %                      2 for the full VH-Lab tools suite
 %       Timeout      - seconds to wait for GitHub (default 10)
+%       IncludePython - also update NDI-python when it needs it and can be
+%                      updated (default true)
 %       RepoRoot     - update the git clone of NDI-matlab in this folder
 %                      instead of the running copy (default "", the
 %                      running copy)
@@ -54,25 +61,49 @@ function result = install(options)
         options.Dependencies (1,1) double {mustBeMember(options.Dependencies, [1 2])} = 1
         options.Timeout (1,1) double {mustBePositive} = 10
         options.RepoRoot (1,1) string = ""
+        options.IncludePython (1,1) logical = true
     end
 
     result = ndi.update.check(Verbose = true, Timeout = options.Timeout, ...
-        RepoRoot = options.RepoRoot);
+        RepoRoot = options.RepoRoot, IncludePython = options.IncludePython);
 
-    if ~result.UpdateAvailable && ~options.Force
+    updateMatlab = result.UpdateAvailable || options.Force;
+    updatePython = options.IncludePython && result.Python.UpdateAvailable && ...
+        result.Python.CanInstall;
+    if ~updateMatlab && ~updatePython
         return
     end
 
-    switch result.InstallType
-        case "git"
-            installGit(result, options);
-        case "toolbox"
-            installToolbox(result, options);
-        otherwise
-            error('ndi:update:install:unknownInstall', ...
-                ['Could not tell how NDI-matlab was installed. Reinstall with ' ...
-                 'ndi_install or from the Add-On Explorer.']);
+    if updateMatlab
+        switch result.InstallType
+            case "git"
+                installGit(result, options);
+            case "toolbox"
+                installToolbox(result, options);
+            otherwise
+                error('ndi:update:install:unknownInstall', ...
+                    ['Could not tell how NDI-matlab was installed. Reinstall with ' ...
+                     'ndi_install or from the Add-On Explorer.']);
+        end
     end
+
+    if updatePython
+        installPython(result.Python, options);
+    end
+end
+
+function installPython(py, options)
+    if options.Confirm
+        prompt = "Update NDI-python (" + py.CurrentVersion + " -> " + ...
+            py.LatestVersion + ") by running its installer again? Y/N [Y]: ";
+        if ~confirmed(prompt)
+            disp('NDI-python update cancelled.');
+            return
+        end
+    end
+    % AddToPath=false: an update leaves the user's shell profile as it is.
+    ndi.python.install(AddToPath = false);
+    disp('NDI-python update finished.');
 end
 
 function installGit(result, options)

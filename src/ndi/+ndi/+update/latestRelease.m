@@ -26,16 +26,7 @@ function release = latestRelease(options)
         options.Timeout (1,1) double {mustBePositive} = 10
     end
 
-    headers = {'Accept', 'application/vnd.github+json'};
-    token = getenv('GITHUB_TOKEN');
-    if ~isempty(token)
-        headers(end+1, :) = {'Authorization', ['Bearer ' token]};
-    end
-    opts = weboptions('ContentType', 'json', 'Timeout', options.Timeout, ...
-        'HeaderFields', headers);
-
-    url = "https://api.github.com/repos/" + options.Repository + "/releases/latest";
-    r = webread(url, opts);
+    r = githubApi("repos/" + options.Repository + "/releases/latest", options.Timeout);
 
     release.Tag = string(r.tag_name);
     release.Version = regexprep(release.Tag, '^[vV]', '');

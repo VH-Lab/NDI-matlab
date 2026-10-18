@@ -20,6 +20,8 @@ NDI-matlab can check for a newer version and update itself, whichever way you in
 * **Installed with `ndi_install` (git):** your copy is compared with the latest commit on the `main` branch on GitHub, and the dependency repositories `ndi_install` placed next to NDI-matlab are compared with their own upstream branches. Updating runs `ndi_install` again, which pulls the changes. Your NDI-matlab clone must be on the `main` branch. If you have changed code in NDI-matlab or one of those repositories (edited or added files, or made local commits), the updater lists the changes and asks whether to update anyway, with No as the default. If you go ahead, edited files are stashed (get them back with `git stash pop` in that folder), new files are left in place, and local commits are merged with the update.
 * **Installed as a toolbox (Add-On Explorer or `.mltbx`):** your installed version is compared with the latest [GitHub release](https://github.com/VH-Lab/NDI-matlab/releases). Updating downloads that release's `.mltbx` and installs it over the current one, so any files you changed or added inside the installed toolbox folder are lost; restart MATLAB afterwards. You can also update from the Add-On Manager.
 
+If NDI-python is installed (for the napari viewers, see `ndi.python.install`), it is checked too, against the latest commit on its `main` branch, and `ndi.update.install()` and the navigator's **Update** button offer to update it by running its installer again.
+
 NDI also checks once a day when it starts and prints one line if an update is available. To turn this off:
 
     ndi.preferences.set('Update.CheckOnStartup', false)

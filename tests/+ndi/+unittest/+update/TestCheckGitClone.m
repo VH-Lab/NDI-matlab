@@ -97,7 +97,7 @@ classdef TestCheckGitClone < matlab.unittest.TestCase
         function testDependenciesCanBeSkipped(testCase)
             testCase.pushUpstream("depA", "README.md", "dependency change");
             r = ndi.update.check(RepoRoot = testCase.Ndi, Verbose = false, ...
-                IncludeDependencies = false);
+                IncludeDependencies = false, IncludePython = false);
             testCase.verifyEmpty(r.Dependencies);
             testCase.verifyEqual(r.Status, "upToDate");
         end
@@ -183,7 +183,8 @@ classdef TestCheckGitClone < matlab.unittest.TestCase
 
     methods (Access = private)
         function r = check(testCase)
-            r = ndi.update.check(RepoRoot = testCase.Ndi, Verbose = false);
+            r = ndi.update.check(RepoRoot = testCase.Ndi, Verbose = false, ...
+                IncludePython = false);
         end
 
         function r = install(testCase, options)
@@ -192,7 +193,8 @@ classdef TestCheckGitClone < matlab.unittest.TestCase
                 options.AllowModified (1,1) logical = false
             end
             r = [];
-            evalc('r = ndi.update.install(RepoRoot = testCase.Ndi, Confirm = false, AllowModified = options.AllowModified);');
+            evalc(['r = ndi.update.install(RepoRoot = testCase.Ndi, Confirm = false, ' ...
+                'AllowModified = options.AllowModified, IncludePython = false);']);
         end
 
         function s = depStatus(testCase, r, name)

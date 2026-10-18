@@ -14,6 +14,12 @@ function result = check(options)
 %     - toolbox installs (Add-On Explorer or a .mltbx file) are compared
 %       with the latest NDI-matlab release on GitHub.
 %
+%   If NDI-python is installed (its 'ndi' command is found), it is checked
+%   too, against the latest commit on NDI-python's main branch; see
+%   ndi.update.checkPython. Its result is in the Python field and adds a
+%   line to Message, but does not set UpdateAvailable, which is about
+%   NDI-matlab.
+%
 %   Checking a git install runs 'git fetch', which updates only the
 %   remote-tracking branches; your files and checked-out branch are not
 %   changed.
@@ -47,12 +53,16 @@ function result = check(options)
 %       BothInstalled   - true if a git clone and the toolbox are both
 %                         installed
 %       RepoRoot        - root of the git clone that was checked (git only)
+%       Python          - result of ndi.update.checkPython (Status
+%                         "notChecked" if IncludePython is false)
 %
 %   RESULT = ndi.update.check(Name, Value) accepts:
 %       IncludeDependencies - also check the dependency repositories of a
 %                             git install (default true)
 %       Verbose             - print the summary (default true)
 %       Timeout             - seconds to wait for GitHub (default 10)
+%       IncludePython       - also check NDI-python, if it is installed
+%                             (default true)
 %       RepoRoot            - check the git clone of NDI-matlab in this
 %                             folder instead of the running copy (default
 %                             "", the running copy)
@@ -68,6 +78,7 @@ function result = check(options)
         options.Verbose (1,1) logical = true
         options.Timeout (1,1) double {mustBePositive} = 10
         options.RepoRoot (1,1) string = ""
+        options.IncludePython (1,1) logical = true
     end
 
     [type, info] = ndi.update.installType();
@@ -93,7 +104,9 @@ function result = check(options)
         'ReleaseUrl', "", ...
         'MltbxUrl', "", ...
         'BothInstalled', info.BothInstalled, ...
-        'RepoRoot', info.RepoRoot);
+        'RepoRoot', info.RepoRoot, ...
+        'Python', struct('Installed', false, 'Kind', "none", 'Status', "notChecked", ...
+            'UpdateAvailable', false, 'CanInstall', false, 'Message', ""));
 
     switch type
         case "git"
@@ -110,6 +123,14 @@ function result = check(options)
             "toolbox (version " + info.ToolboxVersion + ") is also installed. " + ...
             "Only one copy can be used at a time; consider uninstalling one " + ...
             "from the Add-On Manager or removing the git clone from the path.";
+    end
+
+    if options.IncludePython
+        result.Python = ndi.update.checkPython(Timeout = options.Timeout);
+        if result.Python.Installed
+            result.Message = result.Message + newline + "NDI-python: " + ...
+                result.Python.Message;
+        end
     end
 
     if options.Verbose

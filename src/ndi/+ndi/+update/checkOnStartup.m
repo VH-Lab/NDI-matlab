@@ -5,7 +5,8 @@ function checkOnStartup()
 %
 %   Called when NDI-matlab starts (ndi_Init, ndi_toolbox_setup). If the
 %   preference Update.CheckOnStartup is true and at least
-%   Update.CheckIntervalDays days have passed since the last check, runs
+%   Update.CheckIntervalDays days have passed since the last check
+%   (Update.MATLAB.LastCheckTime; NDI-python keeps its own time), runs
 %   ndi.update.check quietly and prints one line if an update is
 %   available. It never errors: a failed check (for example, no network) is
 %   silently ignored until the next interval.
@@ -26,7 +27,7 @@ function checkOnStartup()
             return
         end
 
-        lastCheck = ndi.preferences.get('Update.LastCheckTime');
+        lastCheck = ndi.preferences.get('Update.MATLAB.LastCheckTime');
         intervalDays = ndi.preferences.get('Update.CheckIntervalDays');
         fmt = "yyyy-MM-dd'T'HH:mm:ss";
         nowTime = datetime('now', 'Format', fmt);
@@ -38,18 +39,27 @@ function checkOnStartup()
         end
         % Record the attempt first, so a failing check is not retried at
         % every start.
-        ndi.preferences.set('Update.LastCheckTime', string(nowTime));
+        ndi.preferences.set('Update.MATLAB.LastCheckTime', string(nowTime));
 
         r = ndi.update.check(Verbose = false, Timeout = 5);
-        if r.UpdateAvailable
+        if r.UpdateAvailable || r.Python.UpdateAvailable
             if usejava('desktop')
                 cmd = '<a href="matlab:ndi.update.install">ndi.update.install()</a>';
             else
                 cmd = 'ndi.update.install()';
             end
-            summary = splitlines(r.Message);
-            fprintf('%s Run %s to update, or ndi.update.check() for details.\n', ...
-                summary(1), cmd);
+            if r.UpdateAvailable
+                summary = splitlines(r.Message);
+                summary = summary(1);
+            else
+                summary = regexprep(r.Python.Message, ' Run ndi\.update\.install\(\).*$', '');
+            end
+            if r.UpdateAvailable || r.Python.CanInstall
+                fprintf('%s Run %s to update, or ndi.update.check() for details.\n', ...
+                    summary, cmd);
+            else
+                fprintf('%s\n', summary);
+            end
         end
     catch
         % never let an update check break startup

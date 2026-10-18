@@ -91,7 +91,8 @@ classdef ndiPane < ndi.gui.nav.pane
             %   Update button callback. Runs ndi.update.check behind a busy
             %   dialog and reports the result. If an update can be installed,
             %   asks the user to confirm and then runs ndi.update.install
-            %   without its command-window prompt.
+            %   without its command-window prompt. An installed NDI-python
+            %   that is behind its main branch is offered (and updated) too.
             fig = obj.Navigator.Figure;
             title = 'NDI Update';
 
@@ -106,7 +107,8 @@ classdef ndiPane < ndi.gui.nav.pane
             end
             close(busy);
 
-            if ~r.UpdateAvailable
+            updatePython = r.Python.UpdateAvailable && r.Python.CanInstall;
+            if ~r.UpdateAvailable && ~updatePython
                 if r.Status == "unknown"
                     icon = 'warning';
                 else
@@ -116,7 +118,7 @@ classdef ndiPane < ndi.gui.nav.pane
                 return;
             end
 
-            if r.InstallType == "git" && r.Branch ~= "main"
+            if r.UpdateAvailable && r.InstallType == "git" && r.Branch ~= "main"
                 % ndi.update.install refuses this case; say why up front.
                 uialert(fig, char(r.Message), title, 'Icon', 'warning');
                 return;
@@ -125,7 +127,7 @@ classdef ndiPane < ndi.gui.nav.pane
             % The message ends with command-line hints; the dialog replaces them.
             msg = regexprep(char(r.Message), '\n?Run ndi\.update\.install\(\) to update[^\n]*', '');
             msg = regexprep(msg, '\n?Note: you have changed code[^\n]*', '');
-            if r.HasModifications
+            if r.UpdateAvailable && r.HasModifications
                 % The user has changed code: list it, and make Cancel the
                 % default so a stray Enter does not stash their work.
                 summary = char(ndi.update.modificationSummary(r));
@@ -135,7 +137,7 @@ classdef ndiPane < ndi.gui.nav.pane
                     'DefaultOption', 2, 'CancelOption', 2);
                 go = strcmp(choice, 'Update anyway');
             else
-                if r.InstallType == "toolbox"
+                if r.UpdateAvailable && r.InstallType == "toolbox"
                     msg = sprintf(['%s\n\nAny files you changed or added inside ' ...
                         'the installed toolbox folder will be lost.'], msg);
                 end
@@ -159,8 +161,15 @@ classdef ndiPane < ndi.gui.nav.pane
                 return;
             end
             if isvalid(busy), close(busy); end
-            uialert(fig, ['NDI-matlab was updated. Restart MATLAB to make sure ' ...
-                'the new version is used.'], title, 'Icon', 'success');
+            done = {};
+            if r.UpdateAvailable
+                done{end+1} = ['NDI-matlab was updated. Restart MATLAB to make ' ...
+                    'sure the new version is used.'];
+            end
+            if updatePython
+                done{end+1} = 'NDI-python was updated.';
+            end
+            uialert(fig, strjoin(done, newline), title, 'Icon', 'success');
         end
     end
 end
