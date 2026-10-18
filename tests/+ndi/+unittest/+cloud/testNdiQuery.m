@@ -27,7 +27,7 @@ classdef testNdiQuery < matlab.unittest.TestCase
             [testCase.Dataset, testCase.Session] = ndi.unittest.dataset.buildDataset.sessionWithIngestedDocsAndFiles();
 
             unique_name = testCase.DatasetNamePrefix + string(did.ido.unique_id());
-            [b_up, testCase.DatasetID, msg_up] = ndi.cloud.uploadDataset(testCase.Dataset, 'skipMetadataEditorMetadata',true,...
+            [b_up, testCase.DatasetID, msg_up] = ndi.cloud.uploadDataset(testCase.Dataset, 'organizationID', ndi.unittest.cloud.testOrganizationID(), 'skipMetadataEditorMetadata',true,...
                 'remoteDatasetName',unique_name);
             testCase.assertTrue(b_up, "Failed to upload dataset: " + msg_up);
 

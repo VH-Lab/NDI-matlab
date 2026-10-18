@@ -42,11 +42,11 @@ classdef TestPublishWithDocsAndFiles < matlab.unittest.TestCase
             unique_name = testCase.DatasetNamePrefix + string(did.ido.unique_id());
             datasetInfo = struct("name", unique_name);
 
-            [b, cloudDatasetID, resp, url] = ndi.cloud.api.datasets.createDataset(datasetInfo);
+            [b, cloudDatasetID, resp, url] = ndi.cloud.api.datasets.createDataset(datasetInfo, 'organizationID', ndi.unittest.cloud.testOrganizationID());
             if ~b
                 % Retry once after a brief wait to ride out transient backend 500s.
                 pause(10);
-                [b, cloudDatasetID, resp, url] = ndi.cloud.api.datasets.createDataset(datasetInfo);
+                [b, cloudDatasetID, resp, url] = ndi.cloud.api.datasets.createDataset(datasetInfo, 'organizationID', ndi.unittest.cloud.testOrganizationID());
             end
 
             if ~b

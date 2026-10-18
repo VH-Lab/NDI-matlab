@@ -30,7 +30,17 @@ function [token, organizationID] = authenticate(options)
 %
 % Output Arguments: (optional)
 %   token - The authentication token retrieved after successful authentication.
-%   organizationID - The organization ID fetched from the environment variable.
+%   organizationID - (deprecated) An organization ID. A user may belong to
+%       several organizations, so there is no single "logged-in"
+%       organization. If the user belongs to exactly one, its id is
+%       returned; otherwise ndi.cloud.internal.chooseOrganization decides
+%       (a selection dialog when interaction is enabled, an error listing
+%       the organizations otherwise). New code should call
+%       ndi.cloud.internal.chooseOrganization or
+%       ndi.cloud.internal.getOrganizations directly.
+%
+% The organizations the user belongs to (ids, names and upload permission)
+% are cached at login; see ndi.cloud.internal.getOrganizations.
 
     arguments
         options.UserName (1,1) string = missing
@@ -55,14 +65,15 @@ function [token, organizationID] = authenticate(options)
         token = ndi.cloud.internal.getActiveToken();
     end
     if nargout >= 2
-        organizationID = getenv("NDI_CLOUD_ORGANIZATION_ID");
+        organizationID = ndi.cloud.internal.chooseOrganization( ...
+            'Interactive', logical(options.InteractionEnabled));
     end
 end
 
 
 function result = isAuthenticated(username)
-    [token, organization_id] = ndi.cloud.internal.getActiveToken();
-    result = ~isempty(token) && ~isempty(organization_id);
+    token = ndi.cloud.internal.getActiveToken();
+    result = ~isempty(token);
 
     if result && ndi.cloud.internal.isTokenExpired(token)
         result = false;
@@ -154,10 +165,12 @@ function isSuccess = login(userName, password)
     [b, answer, apiResponse, ~] = ndi.cloud.api.auth.login(userName, password);
     
     if b
-        token = answer.token;
-        organization_id = extractFirstOrganizationId(answer.user);
-        setenv('NDI_CLOUD_TOKEN', token)
-        setenv('NDI_CLOUD_ORGANIZATION_ID', organization_id)
+        setenv('NDI_CLOUD_TOKEN', answer.token)
+        organizations = [];
+        if isfield(answer, 'user') && isfield(answer.user, 'organizations')
+            organizations = answer.user.organizations;
+        end
+        ndi.cloud.internal.setOrganizations(organizations);
         isSuccess = true;
     else
         body_details = jsonencode(answer, "PrettyPrint", true);
@@ -168,41 +181,3 @@ function isSuccess = login(userName, password)
         error('NDI:Cloud:AuthenticationFailed', error_message);
     end
 end
-
-function organization_id = extractFirstOrganizationId(user)
-    % Accept 1x1 struct, 1xN struct array, or cell array of structs.
-    if ~isfield(user, 'organizations')
-        error('NDI:Cloud:NoOrganizations', ...
-            'Login response did not include an organizations field.');
-    end
-
-    orgs = user.organizations;
-    if isstruct(orgs) && numel(orgs) >= 1 && isfield(orgs, 'id')
-        organization_id = orgs(1).id;
-        nOrgs = numel(orgs);
-    elseif iscell(orgs) && ~isempty(orgs) && isstruct(orgs{1}) && isfield(orgs{1}, 'id')
-        organization_id = orgs{1}.id;
-        nOrgs = numel(orgs);
-    else
-        error('NDI:Cloud:NoOrganizations', ...
-            'Could not extract an organization id from the login response.');
-    end
-
-    % TODO: support selecting among multiple organizations explicitly.
-    if nOrgs > 1
-        warning('NDI:Cloud:MultipleOrganizations', ...
-            ['Login response contained %d organizations; using the first ', ...
-             '("%s"). Selection among multiple organizations is not yet ', ...
-             'supported.'], nOrgs, char(organization_id));
-    end
-
-    if isstring(organization_id)
-        organization_id = char(organization_id);
-    end
-    if isempty(organization_id)
-        error('NDI:Cloud:NoOrganizations', ...
-            'Login response contained an empty organization id.');
-    end
-end
-
-

@@ -1225,27 +1225,36 @@ classdef datasetsPane < ndi.gui.nav.pane
 
         function [labels, ids] = fetchCloudDatasets(~, isPublic)
             %FETCHCLOUDDATASETS Cloud dataset display labels and their ids.
-            %   Public uses the published catalogue; private authenticates to
-            %   obtain the organization id, then lists that org's datasets.
+            %   Public uses the published catalogue; private lists the
+            %   datasets in every organization the user belongs to, and
+            %   prefixes each label with its organization's name when the user
+            %   belongs to more than one.
             if isPublic
                 [b, answer] = ndi.cloud.api.datasets.getPublished();
                 if ~b
                     error('Could not retrieve published datasets from NDI Cloud.');
                 end
             else
-                [~, orgID] = ndi.cloud.authenticate();
-                [b, answer] = ndi.cloud.api.datasets.listDatasets( ...
-                    'cloudOrganizationID', orgID);
+                [b, answer] = ndi.cloud.api.datasets.listDatasets();
                 if ~b
                     error('Could not retrieve your NDI Cloud datasets.');
                 end
             end
             list = ndi.gui.nav.datasetsPane.normalizeCloudList(answer);
+            orgNames = {};
+            if ~isPublic
+                orgNames = cellfun(@(d) ndi.gui.nav.datasetsPane.firstField(d, {'organizationName'}), ...
+                    list, 'UniformOutput', false);
+            end
+            showOrg = numel(unique(cellfun(@char, orgNames, 'UniformOutput', false))) > 1;
             labels = cell(1, numel(list));
             ids    = cell(1, numel(list));
             for i = 1:numel(list)
                 [ids{i}, labels{i}] = ...
                     ndi.gui.nav.datasetsPane.cloudDatasetIdLabel(list{i});
+                if showOrg && ~isempty(orgNames{i})
+                    labels{i} = sprintf('[%s] %s', char(orgNames{i}), labels{i});
+                end
             end
             % Drop any entries we could not extract an id for.
             keep   = ~cellfun(@isempty, ids);
