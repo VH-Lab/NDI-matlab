@@ -93,7 +93,7 @@ function result = largeFileListingScenario(options)
 
     % ----- 2. Create + link + upload the cloud dataset -----
     uniqueName = options.datasetNamePrefix + string(did.ido.unique_id());
-    [bCreate, cloudId] = ndi.cloud.api.datasets.createDataset(struct("name", uniqueName));
+    [bCreate, cloudId] = ndi.cloud.api.datasets.createDataset(struct("name", uniqueName), 'organizationID', ndi.unittest.cloud.testOrganizationID());
     assert(bCreate, 'NDI:test:helper:CreateDatasetFailed', ...
         'Failed to create cloud dataset "%s".', uniqueName);
 

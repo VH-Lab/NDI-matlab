@@ -93,7 +93,7 @@ classdef SignedURLSetTest < matlab.unittest.TestCase
 
             % 2. Create cloud dataset and link.
             unique_name = testCase.DatasetNamePrefix + string(did.ido.unique_id());
-            [b, cloudId] = ndi.cloud.api.datasets.createDataset(struct("name", unique_name));
+            [b, cloudId] = ndi.cloud.api.datasets.createDataset(struct("name", unique_name), 'organizationID', ndi.unittest.cloud.testOrganizationID());
             testCase.assertTrue(b, "Failed to create cloud dataset for SignedURLSetTest.");
             testCase.DatasetID = cloudId;
             testCase.addTeardown(@() testCase.cleanupCloudDataset());

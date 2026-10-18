@@ -33,12 +33,14 @@ function [success, cloudDatasetId, message] = uploadDataset(ndiDataset, syncOpti
     % |                              | 'remoteDatasetName'.                                                     |
     % | 'remoteDatasetName'          | (char) The name to be assigned to the dataset on the remote server. This |
     % |                              | is *required* if 'skipMetadataEditorMetadata' is true.                   |
-    % | 'organizationName'           | (char/string) The NAME of the NDI Cloud organization the dataset should  |
-    % |                              | be created under. The current user must belong to it. Names are matched  |
-    % |                              | case-sensitively against the list ndi.cloud.api.users.me returns.        |
-    % |                              | Mutually exclusive with 'organizationID'. When neither is given, the     |
-    % |                              | active NDI_CLOUD_ORGANIZATION_ID env var is used (set by login to the    |
-    % |                              | first organization; see ndi.cloud.ui.dialog.selectOrganization).         |
+    % | 'organizationName'           | (char/string) The NAME of the NDI Cloud organization a NEW remote        |
+    % |                              | dataset should be created under. The current user must belong to it and  |
+    % |                              | be allowed to upload to it. Names are matched case-sensitively.          |
+    % |                              | Mutually exclusive with 'organizationID'. When neither is given and the  |
+    % |                              | user can upload to exactly one organization, that one is used; otherwise |
+    % |                              | the user is asked to choose (in the MATLAB desktop) or an error lists    |
+    % |                              | the organizations. See ndi.cloud.internal.chooseOrganization. Ignored    |
+    % |                              | when the dataset already exists on NDI Cloud.                            |
     % | 'organizationID'             | (char/string) The ID of the NDI Cloud organization to use. Mutually     |
     % |                              | exclusive with 'organizationName'.                                       |
     %
@@ -58,28 +60,10 @@ function [success, cloudDatasetId, message] = uploadDataset(ndiDataset, syncOpti
 
     syncOptions = ndi.cloud.sync.SyncOptions(syncOptions);
 
-    % Route the request to a specific organization when the caller named one.
-    % Restore the previous NDI_CLOUD_ORGANIZATION_ID on function exit so a
-    % later call in the same MATLAB session inherits neither our resolution
-    % nor a partial state after an early return / error.
-    if ~isempty(options.organizationName) || ~isempty(options.organizationID)
-        if ~isempty(options.organizationName) && ~isempty(options.organizationID)
-            success = false; cloudDatasetId = '';
-            message = 'organizationName and organizationID are mutually exclusive.';
-            return;
-        end
-        previousOrgId = getenv('NDI_CLOUD_ORGANIZATION_ID');
-        orgRestore = onCleanup(@() setenv('NDI_CLOUD_ORGANIZATION_ID', previousOrgId)); %#ok<NASGU>
-        try
-            resolvedOrgId = ndi.cloud.internal.resolveOrganizationId( ...
-                'organizationName', options.organizationName, ...
-                'organizationID',   options.organizationID);
-        catch resolveErr
-            success = false; cloudDatasetId = '';
-            message = resolveErr.message;
-            return;
-        end
-        setenv('NDI_CLOUD_ORGANIZATION_ID', resolvedOrgId);
+    if ~isempty(options.organizationName) && ~isempty(options.organizationID)
+        success = false; cloudDatasetId = '';
+        message = 'organizationName and organizationID are mutually exclusive.';
+        return;
     end
 
     success = false;
@@ -114,8 +98,21 @@ function [success, cloudDatasetId, message] = uploadDataset(ndiDataset, syncOpti
             cloud_dataset_info = ndi.cloud.utility.createCloudMetadataStruct(metadata_struct);
         end
 
-        %   Step 1c: Create new NDI Cloud Dataset
-        [success_create, newCloudDatasetId, apiResponse] = ndi.cloud.api.datasets.createDataset(cloud_dataset_info);
+        %   Step 1c: Decide which organization the new dataset belongs to
+        try
+            organizationID = ndi.cloud.internal.chooseOrganization( ...
+                'organizationName', options.organizationName, ...
+                'organizationID', options.organizationID, ...
+                'RequireUpload', true, ...
+                'PromptString', "Upload the dataset to which organization?");
+        catch chooseErr
+            message = chooseErr.message;
+            return;
+        end
+
+        %   Step 1d: Create new NDI Cloud Dataset
+        [success_create, newCloudDatasetId, apiResponse] = ndi.cloud.api.datasets.createDataset( ...
+            cloud_dataset_info, 'organizationID', organizationID);
         if ~success_create
             message = ['Failed to create dataset: ' ndi.cloud.internal.formatApiError(apiResponse)];
             return;

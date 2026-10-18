@@ -65,11 +65,10 @@ function [success, message] = uploadFilesForDatasetDocuments(cloudDatasetId, ndi
             if options.Verbose
                 fprintf(['ERROR while checking which files are already ', ...
                     'in the cloud: %s\n', ...
-                    'This often means the active NDI_CLOUD_ORGANIZATION_ID ', ...
-                    'does not own dataset %s. Pass ndi.cloud.uploadDataset ', ...
-                    'the ''organizationName'' or ''organizationID'' the ', ...
-                    'dataset was created under. Current active org: %s.\n'], ...
-                    message, cloudDatasetId, getenv('NDI_CLOUD_ORGANIZATION_ID'));
+                    'This often means dataset %s belongs to an organization ', ...
+                    'the logged-in user is not a member of. Your ', ...
+                    'organizations: %s.\n'], ...
+                    message, cloudDatasetId, organizationSummary());
             end
             return;
         end
@@ -143,5 +142,17 @@ function [success, message] = uploadFilesForDatasetDocuments(cloudDatasetId, ndi
             elseif options.Verbose
                 fprintf('Uploaded %d files in batch mode.\n', numel(file_manifest));
             end
+    end
+end
+
+function s = organizationSummary()
+    % Names and ids of the user's organizations, for diagnostics only.
+    try
+        organizations = ndi.cloud.internal.getOrganizations();
+        parts = arrayfun(@(o) sprintf('"%s" (%s)', o.name, o.id), ...
+            organizations, 'UniformOutput', false);
+        s = strjoin(parts, ', ');
+    catch
+        s = '(could not be retrieved)';
     end
 end

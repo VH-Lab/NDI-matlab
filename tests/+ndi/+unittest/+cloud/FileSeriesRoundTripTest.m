@@ -143,7 +143,7 @@ classdef FileSeriesRoundTripTest < matlab.unittest.TestCase
 
             unique_name = testCase.DatasetNamePrefix + string(did.ido.unique_id());
             narrative(end+1) = "Creating cloud dataset named " + unique_name + ".";
-            [b, cloudId] = ndi.cloud.api.datasets.createDataset(struct("name", unique_name));
+            [b, cloudId] = ndi.cloud.api.datasets.createDataset(struct("name", unique_name), 'organizationID', ndi.unittest.cloud.testOrganizationID());
             msg = ndi.unittest.cloud.APIMessage(narrative, b, cloudId, ...
                 matlab.net.http.ResponseMessage.empty, "datasets.createDataset");
             testCase.assertTrue(b, "Failed to create cloud dataset. " + msg);

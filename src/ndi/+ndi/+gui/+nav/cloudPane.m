@@ -110,7 +110,7 @@ classdef cloudPane < ndi.gui.nav.pane
             %REFRESHLOGIN Clear the NDI Cloud login so the next call re-authenticates.
             %   Calls ndi.cloud.logout, which invalidates the current token on
             %   the server (best effort) and clears the local NDI_CLOUD_TOKEN
-            %   and NDI_CLOUD_ORGANIZATION_ID environment variables. The next
+            %   and the cached list of the user's organizations. The next
             %   NDI Cloud action then signs in again using the default NDI
             %   Cloud profile. This recovers from an expired/stale token.
             ndi.cloud.logout();

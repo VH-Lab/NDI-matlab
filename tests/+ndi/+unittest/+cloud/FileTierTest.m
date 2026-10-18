@@ -79,7 +79,7 @@ classdef FileTierTest < matlab.unittest.TestCase
             end
 
             unique_name = testCase.DatasetNamePrefix + string(did.ido.unique_id());
-            [b, cloudId] = ndi.cloud.api.datasets.createDataset(struct("name", unique_name));
+            [b, cloudId] = ndi.cloud.api.datasets.createDataset(struct("name", unique_name), 'organizationID', ndi.unittest.cloud.testOrganizationID());
             testCase.assertTrue(b, "Failed to create cloud dataset for FileTierTest.");
             testCase.DatasetID = cloudId;
             testCase.addTeardown(@() testCase.cleanupCloudDataset());

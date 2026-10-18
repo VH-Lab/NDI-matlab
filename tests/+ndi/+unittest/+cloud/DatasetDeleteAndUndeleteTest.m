@@ -27,7 +27,7 @@ classdef DatasetDeleteAndUndeleteTest < matlab.unittest.TestCase
             narrative(end+1) = "SETUP: Creating dataset for immediate deletion.";
             unique_name = testCase.DatasetNamePrefix + "NOW_" + string(did.ido.unique_id());
             datasetInfo = struct("name", unique_name);
-            [b, cloudDatasetID, resp, url] = ndi.cloud.api.datasets.createDataset(datasetInfo);
+            [b, cloudDatasetID, resp, url] = ndi.cloud.api.datasets.createDataset(datasetInfo, 'organizationID', ndi.unittest.cloud.testOrganizationID());
             testCase.assertTrue(b, "Failed to create dataset.");
             narrative(end+1) = "Dataset created: " + cloudDatasetID;
 
@@ -73,7 +73,7 @@ classdef DatasetDeleteAndUndeleteTest < matlab.unittest.TestCase
             narrative(end+1) = "SETUP: Creating dataset for soft deletion.";
             unique_name = testCase.DatasetNamePrefix + "SOFT_" + string(did.ido.unique_id());
             datasetInfo = struct("name", unique_name);
-            [b, cloudDatasetID, resp, url] = ndi.cloud.api.datasets.createDataset(datasetInfo);
+            [b, cloudDatasetID, resp, url] = ndi.cloud.api.datasets.createDataset(datasetInfo, 'organizationID', ndi.unittest.cloud.testOrganizationID());
             testCase.assertTrue(b, "Failed to create dataset.");
             narrative(end+1) = "Dataset created: " + cloudDatasetID;
 
@@ -126,7 +126,7 @@ classdef DatasetDeleteAndUndeleteTest < matlab.unittest.TestCase
             narrative(end+1) = "SETUP: Creating dataset for deletion listing test.";
             unique_name = testCase.DatasetNamePrefix + "LIST_" + string(did.ido.unique_id());
             datasetInfo = struct("name", unique_name);
-            [b, cloudDatasetID, resp, url] = ndi.cloud.api.datasets.createDataset(datasetInfo);
+            [b, cloudDatasetID, resp, url] = ndi.cloud.api.datasets.createDataset(datasetInfo, 'organizationID', ndi.unittest.cloud.testOrganizationID());
             testCase.assertTrue(b, "Failed to create dataset.");
 
             % Ensure cleanup
