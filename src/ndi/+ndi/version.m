@@ -29,5 +29,7 @@ function [v, url] = version
             if strlength(info.ToolboxVersion) > 0
                 v = char(info.ToolboxVersion);
             end
+        catch
+            % keep the placeholder version if the toolbox cannot be queried
         end
     end;
