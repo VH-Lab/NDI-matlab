@@ -5,7 +5,8 @@ classdef OrganizationsTest < matlab.unittest.TestCase
 %   ndi.cloud.internal.setOrganizations, ndi.cloud.internal.getOrganizations
 %   (cache path only) and ndi.cloud.internal.chooseOrganization (with
 %   Interactive false). The token is cleared for every test so nothing
-%   reaches the network. Requires no credentials.
+%   reaches the network. Requires no credentials, so it lives outside
+%   tests/+ndi/+unittest/+cloud and runs in the main (coverage) suite.
 
     properties (Access = private)
         SavedEnv struct = struct()
