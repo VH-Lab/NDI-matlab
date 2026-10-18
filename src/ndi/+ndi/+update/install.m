@@ -38,6 +38,9 @@ function result = install(options)
 %                      ndi_install: 1 for the NDI dependencies (default) or
 %                      2 for the full VH-Lab tools suite
 %       Timeout      - seconds to wait for GitHub (default 10)
+%       RepoRoot     - update the git clone of NDI-matlab in this folder
+%                      instead of the running copy (default "", the
+%                      running copy)
 %
 %   Example:
 %       ndi.update.install()
@@ -50,9 +53,11 @@ function result = install(options)
         options.AllowModified (1,1) logical = false
         options.Dependencies (1,1) double {mustBeMember(options.Dependencies, [1 2])} = 1
         options.Timeout (1,1) double {mustBePositive} = 10
+        options.RepoRoot (1,1) string = ""
     end
 
-    result = ndi.update.check(Verbose = true, Timeout = options.Timeout);
+    result = ndi.update.check(Verbose = true, Timeout = options.Timeout, ...
+        RepoRoot = options.RepoRoot);
 
     if ~result.UpdateAvailable && ~options.Force
         return
@@ -71,18 +76,12 @@ function result = install(options)
 end
 
 function installGit(result, options)
-    [~, info] = ndi.update.installType();
-    repoRoot = info.RepoRoot;
+    repoRoot = result.RepoRoot;
 
     if result.Branch ~= "main"
         error('ndi:update:install:notOnMain', ...
             ['NDI-matlab in %s is on branch ''%s''. Updates come from main; ' ...
              'run ''git checkout main'' there first.'], repoRoot, result.Branch);
-    end
-
-    if ~isfile(fullfile(repoRoot, 'ndi_install.m'))
-        error('ndi:update:install:noInstaller', ...
-            'Could not find ndi_install.m in %s.', repoRoot);
     end
 
     if result.HasModifications
@@ -110,9 +109,13 @@ function installGit(result, options)
         end
     end
 
-    if isempty(which('ndi_install'))
-        addpath(char(repoRoot));
+    if ~isfile(fullfile(repoRoot, 'ndi_install.m'))
+        error('ndi:update:install:noInstaller', ...
+            'Could not find ndi_install.m in %s.', repoRoot);
     end
+
+    % Put this clone's ndi_install first on the path, so it is the one run.
+    addpath(char(repoRoot));
     ndi_install(char(fileparts(repoRoot)), options.Dependencies);
     clearCaches();
     disp('NDI-matlab update finished.');

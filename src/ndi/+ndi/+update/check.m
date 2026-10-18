@@ -46,12 +46,16 @@ function result = check(options)
 %       MltbxUrl        - download URL of the latest toolbox (toolbox only)
 %       BothInstalled   - true if a git clone and the toolbox are both
 %                         installed
+%       RepoRoot        - root of the git clone that was checked (git only)
 %
 %   RESULT = ndi.update.check(Name, Value) accepts:
 %       IncludeDependencies - also check the dependency repositories of a
 %                             git install (default true)
 %       Verbose             - print the summary (default true)
 %       Timeout             - seconds to wait for GitHub (default 10)
+%       RepoRoot            - check the git clone of NDI-matlab in this
+%                             folder instead of the running copy (default
+%                             "", the running copy)
 %
 %   Example:
 %       r = ndi.update.check();
@@ -63,9 +67,15 @@ function result = check(options)
         options.IncludeDependencies (1,1) logical = true
         options.Verbose (1,1) logical = true
         options.Timeout (1,1) double {mustBePositive} = 10
+        options.RepoRoot (1,1) string = ""
     end
 
     [type, info] = ndi.update.installType();
+    if strlength(options.RepoRoot) > 0
+        type = "git";
+        info.RepoRoot = options.RepoRoot;
+        info.BothInstalled = false;
+    end
 
     result = struct( ...
         'InstallType', type, ...
@@ -82,7 +92,8 @@ function result = check(options)
         'Dependencies', struct('Name', {}, 'Path', {}, 'Status', {}, 'CommitsBehind', {}), ...
         'ReleaseUrl', "", ...
         'MltbxUrl', "", ...
-        'BothInstalled', info.BothInstalled);
+        'BothInstalled', info.BothInstalled, ...
+        'RepoRoot', info.RepoRoot);
 
     switch type
         case "git"
