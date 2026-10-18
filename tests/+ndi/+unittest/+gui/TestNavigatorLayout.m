@@ -120,6 +120,18 @@ classdef TestNavigatorLayout < matlab.unittest.TestCase
             testCase.verifySubstring(dp.DisclosureButton.Tooltip, 'Expand');
             testCase.verifySubstring(dp.DisclosureButton.Tooltip, 'Datasets');
         end
+
+        function testNdiPaneHasUpdateButton(testCase)
+            % The top NDI pane offers an "Update" button, between the broom
+            % and "Prefs", that checks for a newer NDI-matlab.
+            b = findall(testCase.Nav.Figure, 'Type', 'uibutton');
+            texts = string({b.Text});
+            testCase.verifyTrue(any(texts == "Update"), ...
+                'Expected an "Update" button in the navigator.');
+            testCase.verifyTrue(any(texts == "Prefs"));
+            update = b(texts == "Update");
+            testCase.verifySubstring(update(1).Tooltip, 'newer version');
+        end
     end
 
     methods (Access = private)

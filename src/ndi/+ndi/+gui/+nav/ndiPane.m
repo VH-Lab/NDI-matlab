@@ -2,12 +2,13 @@ classdef ndiPane < ndi.gui.nav.pane
 %NDI.GUI.NAV.NDIPANE The top, uncollapsible "NDI" pane.
 %
 %   A single-row pane with a 12-point bold "NDI" label on the left and, on
-%   the right, a broom button that clears NDI's in-memory caches followed by
-%   a "Prefs" button that opens the preferences editor. This is always the
-%   first pane in ndi.gui.navigator and cannot be collapsed.
+%   the right, a broom button that clears NDI's in-memory caches, an
+%   "Update" button that checks for a newer NDI-matlab and offers to install
+%   it, and a "Prefs" button that opens the preferences editor. This is
+%   always the first pane in ndi.gui.navigator and cannot be collapsed.
 %
 %   See also: ndi.gui.navigator, ndi.gui.nav.pane, ndi.gui.preferencesEditor,
-%   ndi.fun.clearAllCaches
+%   ndi.fun.clearAllCaches, ndi.update.check, ndi.update.install
 
     methods
         function obj = ndiPane(navigator)
@@ -19,12 +20,13 @@ classdef ndiPane < ndi.gui.nav.pane
 
     methods (Access = protected)
         function buildHeaderRight(obj, parent)
-            % Two buttons share the right header column: a compact broom that
-            % clears the in-memory caches, then the wider "Prefs" button.
-            grid = uigridlayout(parent, [1 2]);
+            % Three buttons share the right header column: a compact broom
+            % that clears the in-memory caches, then the wider "Update" and
+            % "Prefs" buttons.
+            grid = uigridlayout(parent, [1 3]);
             grid.Layout.Row     = 1;
             grid.Layout.Column  = 3;
-            grid.ColumnWidth    = {28, 60};
+            grid.ColumnWidth    = {28, 60, 60};
             grid.RowHeight      = {'1x'};
             grid.Padding        = [0 0 0 0];
             grid.ColumnSpacing  = 4;
@@ -50,13 +52,21 @@ classdef ndiPane < ndi.gui.nav.pane
                 'Tooltip',         'Open the NDI preferences editor', ...
                 'ButtonPushedFcn', @(~,~) obj.Navigator.openPreferences());
             prefs.Layout.Row    = 1;
-            prefs.Layout.Column = 2;
+            prefs.Layout.Column = 3;
             obj.accentButton(prefs);
+
+            update = uibutton(grid, ...
+                'Text',            'Update', ...
+                'Tooltip',         'Check for a newer version of NDI-matlab', ...
+                'ButtonPushedFcn', @(~,~) obj.checkForUpdates());
+            update.Layout.Row    = 1;
+            update.Layout.Column = 2;
+            obj.accentButton(update);
         end
 
         function w = rightWidth(~)
-            % broom (28) + spacing (4) + Prefs (60)
-            w = 92;
+            % broom (28) + spacing (4) + Update (60) + spacing (4) + Prefs (60)
+            w = 156;
         end
     end
 
@@ -74,6 +84,92 @@ classdef ndiPane < ndi.gui.nav.pane
             end
             uialert(obj.Navigator.Figure, 'NDI in-memory caches were cleared.', ...
                 'Clear Caches', 'Icon', 'success');
+        end
+
+        function checkForUpdates(obj)
+            %CHECKFORUPDATES Check for, and offer to install, an NDI update.
+            %   Update button callback. Runs ndi.update.check behind a busy
+            %   dialog and reports the result. If an update can be installed,
+            %   asks the user to confirm and then runs ndi.update.install
+            %   without its command-window prompt. An installed NDI-python
+            %   that is behind its main branch is offered (and updated) too.
+            fig = obj.Navigator.Figure;
+            title = 'NDI Update';
+
+            busy = uiprogressdlg(fig, 'Title', title, ...
+                'Message', 'Checking for updates...', 'Indeterminate', 'on');
+            try
+                r = ndi.update.check(Verbose = false);
+            catch ME
+                close(busy);
+                uialert(fig, ME.message, title);
+                return;
+            end
+            close(busy);
+
+            updatePython = r.Python.UpdateAvailable && r.Python.CanInstall;
+            if ~r.UpdateAvailable && ~updatePython
+                if r.Status == "unknown"
+                    icon = 'warning';
+                else
+                    icon = 'success';
+                end
+                uialert(fig, char(r.Message), title, 'Icon', icon);
+                return;
+            end
+
+            if r.UpdateAvailable && r.InstallType == "git" && r.Branch ~= "main"
+                % ndi.update.install refuses this case; say why up front.
+                uialert(fig, char(r.Message), title, 'Icon', 'warning');
+                return;
+            end
+
+            % The message ends with command-line hints; the dialog replaces them.
+            msg = regexprep(char(r.Message), '\n?Run ndi\.update\.install\(\) to update[^\n]*', '');
+            msg = regexprep(msg, '\n?Note: you have changed code[^\n]*', '');
+            if r.UpdateAvailable && r.HasModifications
+                % The user has changed code: list it, and make Cancel the
+                % default so a stray Enter does not stash their work.
+                summary = char(ndi.update.modificationSummary(r));
+                choice = uiconfirm(fig, sprintf('%s\n\n%s\n\nUpdate anyway?', msg, summary), ...
+                    title, 'Icon', 'warning', ...
+                    'Options', {'Update anyway', 'Cancel'}, ...
+                    'DefaultOption', 2, 'CancelOption', 2);
+                go = strcmp(choice, 'Update anyway');
+            else
+                if r.UpdateAvailable && r.InstallType == "toolbox"
+                    msg = sprintf(['%s\n\nAny files you changed or added inside ' ...
+                        'the installed toolbox folder will be lost.'], msg);
+                end
+                choice = uiconfirm(fig, sprintf('%s\n\nUpdate now?', msg), title, ...
+                    'Options', {'Update', 'Cancel'}, ...
+                    'DefaultOption', 1, 'CancelOption', 2);
+                go = strcmp(choice, 'Update');
+            end
+            if ~go
+                return;
+            end
+
+            busy = uiprogressdlg(fig, 'Title', title, ...
+                'Message', 'Installing the update. This can take a few minutes...', ...
+                'Indeterminate', 'on');
+            try
+                ndi.update.install(Confirm = false, AllowModified = true);
+            catch ME
+                if isvalid(busy), close(busy); end
+                uialert(fig, ME.message, title);
+                return;
+            end
+            if isvalid(busy), close(busy); end
+            done = {};
+            if r.UpdateAvailable
+                done{end+1} = ['NDI-matlab was updated. Restart MATLAB to make ' ...
+                    'sure the new version is used.'];
+            end
+            if updatePython
+                done{end+1} = 'NDI-python was updated.';
+            end
+            uialert(fig, strjoin(done, newline), title, 'Icon', 'success');
         end
     end
 end

@@ -22,4 +22,7 @@ function ndi_Init() % NDI_INIT - Add paths and initialize variables for NDI
 
     % run any warnings on various architectures
     ndi.fun.run_Linux_checks
+
+    % let the user know if a newer NDI-matlab is available
+    ndi.update.checkOnStartup
 end
