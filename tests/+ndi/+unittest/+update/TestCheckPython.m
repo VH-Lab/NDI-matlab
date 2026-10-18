@@ -71,6 +71,19 @@ classdef TestCheckPython < matlab.unittest.TestCase
             testCase.verifySubstring(py.Message, "since it was installed on");
         end
 
+        function testReceiptWithoutCommitUsesItsTime(testCase)
+            % The installer could not reach GitHub's API: the receipt has a
+            % null commit and the install time, which is used.
+            testCase.makeCommand();
+            testCase.writeFile(fullfile(testCase.Home, "install.json"), ...
+                '{"commit": null, "installedAt": "2026-10-01T12:00:00Z"}');
+            api = @(p, ~) fakeApi(p, "", testCase.Latest, 0, 4);
+            py = ndi.update.checkPython(NdiHome = testCase.Home, GitHubApi = api);
+            testCase.verifyEqual(py.CommitsBehind, 4);
+            testCase.verifyEqual(py.InstalledAt, "2026-10-01T12:00:00Z");
+            testCase.verifyEqual(py.CurrentVersion, "installed 2026-10-01");
+        end
+
         function testGitHubFailureIsUnknown(testCase)
             testCase.makeCommand();
             testCase.writeFile(fullfile(testCase.Home, "install.json"), ...

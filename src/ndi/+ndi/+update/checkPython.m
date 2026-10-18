@@ -14,8 +14,9 @@ function py = checkPython(options)
 %     2. For a copy that the NDI installer did not install (for example a
 %        developer clone), the commit that 'ndi version' reports.
 %     3. Otherwise, for an installer install, only the time it was
-%        installed is known (from ~/.ndi/venvs/ndi/uv-receipt.toml), and
-%        the commits made to main since then are counted.
+%        installed is known (the receipt's 'installedAt', or for installs
+%        older than receipts ~/.ndi/venvs/ndi/uv-receipt.toml), and the
+%        commits made to main since then are counted.
 %
 %   PY is a structure with fields:
 %       Installed       - true if the 'ndi' command was found
@@ -190,11 +191,27 @@ function sha = installedCommit(py, home)
 end
 
 function t = installTime(py, home)
-    % uv writes this receipt each time it installs the 'ndi' tool.
     t = NaT('TimeZone', 'UTC');
     if py.Kind ~= "installer"
         return
     end
+    % The NDI installer's receipt records the time even when it could not
+    % record the commit (GitHub's API was unreachable while installing).
+    receipt = fullfile(home, "install.json");
+    if isfile(receipt)
+        try
+            j = jsondecode(fileread(receipt));
+            if isfield(j, 'installedAt') && ~isempty(j.installedAt)
+                t = datetime(j.installedAt, 'InputFormat', "yyyy-MM-dd'T'HH:mm:ss'Z'", ...
+                    'TimeZone', 'UTC');
+                return
+            end
+        catch
+            % an unreadable time is treated as no time
+        end
+    end
+    % Installs made before the installer wrote receipts: uv rewrites this
+    % file each time it installs the 'ndi' tool.
     candidates = [fullfile(home, "venvs", "ndi", "uv-receipt.toml"), py.Command];
     for f = candidates
         if isfile(f)
