@@ -11,7 +11,10 @@ function result = install(options)
 %       which pulls the latest main branch of NDI-matlab and updates (or
 %       clones) its dependencies. Uncommitted changes in those repositories
 %       are stashed by ndi_install. The NDI-matlab clone must be on the
-%       main branch.
+%       main branch. If you have changed code (edited or added files, or
+%       made local commits) in NDI-matlab or a dependency, the changes are
+%       listed first and you are asked whether to update anyway; the
+%       default answer is No.
 %     - toolbox installs: downloads the .mltbx file attached to the latest
 %       GitHub release and installs it over the current toolbox. Restart
 %       MATLAB afterwards so that no old copy of a class stays in memory.
@@ -27,6 +30,10 @@ function result = install(options)
 %   RESULT = ndi.update.install(Name, Value) accepts:
 %       Confirm      - ask before installing (default true)
 %       Force        - install even if no update was found (default false)
+%       AllowModified - with Confirm=false, update even if you have changed
+%                      code (default false, which stops with an error
+%                      listing the changes instead). Ignored when Confirm
+%                      is true, because you are asked instead.
 %       Dependencies - for git installs, the DEPENDENCIES argument passed to
 %                      ndi_install: 1 for the NDI dependencies (default) or
 %                      2 for the full VH-Lab tools suite
@@ -40,6 +47,7 @@ function result = install(options)
     arguments
         options.Confirm (1,1) logical = true
         options.Force (1,1) logical = false
+        options.AllowModified (1,1) logical = false
         options.Dependencies (1,1) double {mustBeMember(options.Dependencies, [1 2])} = 1
         options.Timeout (1,1) double {mustBePositive} = 10
     end
@@ -77,10 +85,24 @@ function installGit(result, options)
             'Could not find ndi_install.m in %s.', repoRoot);
     end
 
-    if options.Confirm
+    if result.HasModifications
+        summary = ndi.update.modificationSummary(result, MaxFiles = 25);
+        if options.Confirm
+            disp(summary);
+            prompt = "Update anyway? Y/N [N]: ";
+            if ~confirmed(prompt, false)
+                disp('Update cancelled; your changes were not touched.');
+                return
+            end
+        elseif ~options.AllowModified
+            error('ndi:update:install:localModifications', ...
+                ['%s\n\nUpdate cancelled. Commit, move or discard these ' ...
+                 'changes, or call ndi.update.install(Confirm=false, ' ...
+                 'AllowModified=true) to update anyway.'], summary);
+        end
+    elseif options.Confirm
         prompt = "This will run ndi_install to update NDI-matlab and its " + ...
             "dependencies in " + fileparts(repoRoot) + "." + newline + ...
-            "Uncommitted changes in those repositories will be stashed." + newline + ...
             "Continue? Y/N [Y]: ";
         if ~confirmed(prompt)
             disp('Update cancelled.');
@@ -106,7 +128,9 @@ function installToolbox(result, options)
     if options.Confirm
         prompt = "This will download and install NDI-matlab " + ...
             result.LatestVersion + " over the installed version " + ...
-            result.CurrentVersion + "." + newline + "Continue? Y/N [Y]: ";
+            result.CurrentVersion + ". Any files you changed or added inside " + ...
+            "the installed toolbox folder will be lost." + newline + ...
+            "Continue? Y/N [Y]: ";
         if ~confirmed(prompt)
             disp('Update cancelled.');
             return
@@ -139,9 +163,17 @@ function clearCaches()
     end
 end
 
-function tf = confirmed(prompt)
+function tf = confirmed(prompt, default)
+    % Ask a Y/N question; an empty reply gives DEFAULT (true unless given).
+    if nargin < 2
+        default = true;
+    end
     reply = strtrim(input(char(prompt), 's'));
-    tf = isempty(reply) || strcmpi(reply, 'y') || strcmpi(reply, 'yes');
+    if isempty(reply)
+        tf = default;
+    else
+        tf = strcmpi(reply, 'y') || strcmpi(reply, 'yes');
+    end
 end
 
 function deleteIfPresent(f)

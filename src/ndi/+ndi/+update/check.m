@@ -29,8 +29,17 @@ function result = check(options)
 %       Branch          - checked-out branch (git only)
 %       CommitsBehind   - commits on main not in the running copy (git only)
 %       CommitsAhead    - local commits not on main (git only)
-%       LocalChanges    - true if there are uncommitted changes (git only);
-%                         ndi_install stashes these before updating
+%       HasModifications - true if the user has changed code: edited or
+%                         added files, or made commits that are not upstream,
+%                         in NDI-matlab or a dependency (git only)
+%       Modifications   - structure array, one entry per repository that has
+%                         modifications (git only), with fields Name, Path,
+%                         ChangedFiles (tracked files edited, deleted or
+%                         staged; ndi_install stashes these), NewFiles
+%                         (untracked files not ignored by .gitignore; left in
+%                         place), and CommitsAhead (local commits; merged
+%                         with the update by git pull). See
+%                         ndi.update.modificationSummary.
 %       Dependencies    - structure array, one entry per dependency (git
 %                         only), with fields Name, Path, Status, CommitsBehind
 %       ReleaseUrl      - web page of the latest release (toolbox only)
@@ -68,7 +77,8 @@ function result = check(options)
         'Branch', "", ...
         'CommitsBehind', NaN, ...
         'CommitsAhead', NaN, ...
-        'LocalChanges', false, ...
+        'HasModifications', false, ...
+        'Modifications', emptyModifications(), ...
         'Dependencies', struct('Name', {}, 'Path', {}, 'Status', {}, 'CommitsBehind', {}), ...
         'ReleaseUrl', "", ...
         'MltbxUrl', "", ...
@@ -108,8 +118,6 @@ function result = checkGit(result, info, options)
 
     [~, result.Branch] = runGit(repo, "rev-parse --abbrev-ref HEAD");
     [~, localHash] = runGit(repo, "rev-parse HEAD");
-    [~, dirty] = runGit(repo, "status --porcelain --untracked-files=no");
-    result.LocalChanges = strlength(dirty) > 0;
     result.CurrentVersion = shortHash(localHash);
 
     [s, out] = runGit(repo, "fetch --quiet origin main");
@@ -126,9 +134,14 @@ function result = checkGit(result, info, options)
     result.CommitsBehind = str2double(behind);
     result.CommitsAhead = str2double(ahead);
 
+    mods = localModifications("NDI-matlab", repo, result.CommitsAhead);
+
     if options.IncludeDependencies
-        result.Dependencies = checkDependencies(repo);
+        [result.Dependencies, depMods] = checkDependencies(repo);
+        mods = [mods, depMods];
     end
+    result.Modifications = mods;
+    result.HasModifications = ~isempty(mods);
     depsBehind = false(1, numel(result.Dependencies));
     for i = 1:numel(result.Dependencies)
         depsBehind(i) = ismember(result.Dependencies(i).Status, ["behind", "missing"]);
@@ -162,17 +175,19 @@ function result = checkGit(result, info, options)
                 "branch '" + result.Branch + "', not main. Run " + ...
                 "'git checkout main' in " + repo + " before updating.";
         end
-        if result.LocalChanges
-            result.Message = result.Message + newline + "Note: NDI-matlab " + ...
-                "has uncommitted changes; updating will stash them.";
+        if result.HasModifications
+            result.Message = result.Message + newline + "Note: you have " + ...
+                "changed code in " + strjoin([mods.Name], ", ") + ". " + ...
+                "ndi.update.install will list the changes and ask before updating.";
         end
         result.Message = result.Message + newline + "Run ndi.update.install() to update.";
     end
 end
 
-function deps = checkDependencies(repo)
+function [deps, mods] = checkDependencies(repo)
     % The dependency list is read from main, so that dependencies that main
     % has added since the last update are noticed too.
+    mods = emptyModifications();
     [s, txt] = runGit(repo, "show origin/main:requirements.txt");
     if s ~= 0
         reqFile = fullfile(repo, 'requirements.txt');
@@ -214,6 +229,11 @@ function deps = checkDependencies(repo)
         else
             [s, ~] = runGit(depPath, "fetch --quiet");
             [s2, behind] = runGit(depPath, "rev-list --count ""HEAD..@{u}""");
+            [s3, ahead] = runGit(depPath, "rev-list --count ""@{u}..HEAD""");
+            if s3 ~= 0
+                ahead = "0";
+            end
+            mods = [mods, localModifications(name, depPath, str2double(ahead))]; %#ok<AGROW>
             if s == 0 && s2 == 0
                 d.CommitsBehind = str2double(behind);
                 if d.CommitsBehind > 0
@@ -265,6 +285,36 @@ function result = checkToolbox(result, info, options)
         result.Message = "NDI-matlab " + result.CurrentVersion + ...
             " is the latest release.";
     end
+end
+
+function mods = localModifications(name, repoDir, commitsAhead)
+    % Returns a one-element Modifications structure if REPODIR has edited,
+    % added or committed-but-not-upstream code, otherwise an empty one.
+    mods = emptyModifications();
+    [s, out] = runGit(repoDir, "status --porcelain");
+    if s ~= 0
+        return
+    end
+    lines = splitlines(out);
+    lines = lines(strlength(lines) > 3);
+    isNew = startsWith(lines, "??");
+    files = extractAfter(lines, 3);
+    changed = files(~isNew);
+    added = files(isNew);
+    if isnan(commitsAhead)
+        commitsAhead = 0;
+    end
+    if isempty(changed) && isempty(added) && commitsAhead == 0
+        return
+    end
+    mods = struct('Name', string(name), 'Path', string(repoDir), ...
+        'ChangedFiles', {changed(:)}, 'NewFiles', {added(:)}, ...
+        'CommitsAhead', commitsAhead);
+end
+
+function mods = emptyModifications()
+    mods = struct('Name', {}, 'Path', {}, 'ChangedFiles', {}, ...
+        'NewFiles', {}, 'CommitsAhead', {});
 end
 
 function s = shortHash(h)

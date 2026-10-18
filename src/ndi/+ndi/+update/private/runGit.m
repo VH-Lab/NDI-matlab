@@ -3,7 +3,8 @@ function [status, out] = runGit(repoDir, gitArgs)
 %
 %   [STATUS, OUT] = runGit(REPODIR, GITARGS) runs
 %   git -C "REPODIR" GITARGS and returns the exit STATUS and the output OUT
-%   as a trimmed string.
+%   as a string with trailing whitespace removed. Leading whitespace is
+%   kept, because it is meaningful in 'git status --porcelain' output.
 
     arguments
         repoDir (1,1) string
@@ -11,5 +12,5 @@ function [status, out] = runGit(repoDir, gitArgs)
     end
 
     [status, out] = system(sprintf('git -C "%s" %s', repoDir, gitArgs));
-    out = strtrim(string(out));
+    out = strip(string(out), 'right');
 end

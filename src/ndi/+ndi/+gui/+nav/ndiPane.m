@@ -122,12 +122,29 @@ classdef ndiPane < ndi.gui.nav.pane
                 return;
             end
 
-            % The message ends with a command-line hint; the button replaces it.
+            % The message ends with command-line hints; the dialog replaces them.
             msg = regexprep(char(r.Message), '\n?Run ndi\.update\.install\(\) to update[^\n]*', '');
-            choice = uiconfirm(fig, sprintf('%s\n\nUpdate now?', msg), title, ...
-                'Options', {'Update', 'Cancel'}, ...
-                'DefaultOption', 1, 'CancelOption', 2);
-            if ~strcmp(choice, 'Update')
+            msg = regexprep(msg, '\n?Note: you have changed code[^\n]*', '');
+            if r.HasModifications
+                % The user has changed code: list it, and make Cancel the
+                % default so a stray Enter does not stash their work.
+                summary = char(ndi.update.modificationSummary(r));
+                choice = uiconfirm(fig, sprintf('%s\n\n%s\n\nUpdate anyway?', msg, summary), ...
+                    title, 'Icon', 'warning', ...
+                    'Options', {'Update anyway', 'Cancel'}, ...
+                    'DefaultOption', 2, 'CancelOption', 2);
+                go = strcmp(choice, 'Update anyway');
+            else
+                if r.InstallType == "toolbox"
+                    msg = sprintf(['%s\n\nAny files you changed or added inside ' ...
+                        'the installed toolbox folder will be lost.'], msg);
+                end
+                choice = uiconfirm(fig, sprintf('%s\n\nUpdate now?', msg), title, ...
+                    'Options', {'Update', 'Cancel'}, ...
+                    'DefaultOption', 1, 'CancelOption', 2);
+                go = strcmp(choice, 'Update');
+            end
+            if ~go
                 return;
             end
 
@@ -135,7 +152,7 @@ classdef ndiPane < ndi.gui.nav.pane
                 'Message', 'Installing the update. This can take a few minutes...', ...
                 'Indeterminate', 'on');
             try
-                ndi.update.install(Confirm = false);
+                ndi.update.install(Confirm = false, AllowModified = true);
             catch ME
                 if isvalid(busy), close(busy); end
                 uialert(fig, ME.message, title);
