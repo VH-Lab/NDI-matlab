@@ -10,6 +10,20 @@
 
     `ndi_install`
 
+## Checking for updates and updating
+
+NDI-matlab can check for a newer version and update itself, whichever way you installed it:
+
+    ndi.update.check()      % report whether an update is available
+    ndi.update.install()    % update, after asking for confirmation
+
+* **Installed with `ndi_install` (git):** your copy is compared with the latest commit on the `main` branch on GitHub, and the dependency repositories `ndi_install` placed next to NDI-matlab are compared with their own upstream branches. Updating runs `ndi_install` again, which pulls the changes (uncommitted local changes are stashed). Your NDI-matlab clone must be on the `main` branch.
+* **Installed as a toolbox (Add-On Explorer or `.mltbx`):** your installed version is compared with the latest [GitHub release](https://github.com/VH-Lab/NDI-matlab/releases). Updating downloads that release's `.mltbx` and installs it over the current one; restart MATLAB afterwards. You can also update from the Add-On Manager.
+
+NDI also checks once a day when it starts and prints one line if an update is available. To turn this off:
+
+    ndi.preferences.set('Update.CheckOnStartup', false)
+
 ## Required Matlab toolboxes
 
 To use all of the NDI tools, the following Matlab toolboxes are required:

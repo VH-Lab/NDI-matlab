@@ -13,6 +13,9 @@ function ndi_toolbox_setup(options)
     % 3. Run any warnings on various architectures
     ndi.fun.run_Linux_checks
 
+    % 4. Let the user know if a newer NDI-matlab is available
+    ndi.update.checkOnStartup()
+
     if options.SavePath
         savepath();
     end
