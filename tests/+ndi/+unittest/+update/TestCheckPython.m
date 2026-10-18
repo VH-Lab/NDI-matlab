@@ -89,7 +89,7 @@ classdef TestCheckPython < matlab.unittest.TestCase
             testCase.writeFile(fullfile(testCase.Home, "install.json"), ...
                 jsonencode(struct('commit', testCase.Installed)));
             py = ndi.update.checkPython(NdiHome = testCase.Home, ...
-                GitHubApi = @(~, ~) error('test:offline', 'no network'));
+                GitHubApi = @offlineApi);
             testCase.verifyEqual(py.Status, "unknown");
             testCase.verifyFalse(py.UpdateAvailable);
             testCase.verifySubstring(py.Message, "no network");
@@ -115,6 +115,14 @@ classdef TestCheckPython < matlab.unittest.TestCase
             fclose(fid);
         end
     end
+end
+
+function data = offlineApi(~, ~) %#ok<STOUT>
+% Stand-in for GitHub when it cannot be reached. A named function with an
+% output, not @(~,~) error(...): checkPython asks for a result, and an
+% anonymous function around error has none, so MATLAB would report "Too
+% many output arguments" instead of the network error being tested.
+    error('test:offline', 'no network');
 end
 
 function data = fakeApi(apiPath, installed, latest, aheadBy, commitsSince)
