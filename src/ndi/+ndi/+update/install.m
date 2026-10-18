@@ -18,6 +18,10 @@ function result = install(options)
 %       (If the toolbox came from the Add-On Explorer, updating from the
 %       Add-On Manager does the same.)
 %
+%   After either kind of update, NDI's in-memory caches are cleared with
+%   ndi.fun.clearAllCaches, so document definitions, schemas and lookups
+%   are re-read from the new files.
+%
 %   RESULT is the structure returned by ndi.update.check before updating.
 %
 %   RESULT = ndi.update.install(Name, Value) accepts:
@@ -88,6 +92,7 @@ function installGit(result, options)
         addpath(char(repoRoot));
     end
     ndi_install(char(fileparts(repoRoot)), options.Dependencies);
+    clearCaches();
     disp('NDI-matlab update finished.');
 end
 
@@ -116,9 +121,22 @@ function installToolbox(result, options)
     disp('Installing toolbox...');
     matlab.addons.install(char(mltbxFile), true, 'overwrite');
     clear cleanupFile
+    clearCaches();
 
     fprintf(['NDI-matlab %s is installed. Please restart MATLAB before ' ...
         'using NDI.\n'], result.LatestVersion);
+end
+
+function clearCaches()
+    % Drop in-memory copies of definitions, schemas and lookups that the old
+    % version built, so they are re-read from the updated files. Classes
+    % already loaded stay old until MATLAB restarts.
+    try
+        ndi.fun.clearAllCaches();
+    catch ME
+        warning('ndi:update:install:clearCaches', ...
+            'Could not clear NDI caches after updating: %s', ME.message);
+    end
 end
 
 function tf = confirmed(prompt)
