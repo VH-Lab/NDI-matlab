@@ -21,7 +21,10 @@ function [organizationID, organizationName] = chooseOrganization(options)
 %        by name and id, so the caller can pass one explicitly.
 %
 %   When 'RequireUpload' is true, only organizations in which the user may
-%   create datasets (canUploadDataset) qualify.
+%   create datasets qualify: those with canUploadDataset set, or any of the
+%   user's organizations if the user is an NDI Cloud administrator (as on
+%   the server). The administrator check (ndi.cloud.internal.userIsAdmin)
+%   is only made when canUploadDataset would exclude an organization.
 %
 %   Name-value options:
 %       organizationName - (char) name of the organization to use. Names are
@@ -99,7 +102,8 @@ function [organizationID, organizationName] = chooseOrganization(options)
                 'Organization name "%s" matches %d organizations you belong to; pass organizationID instead. Matches: %s.', ...
                 options.organizationName, numel(idx), availableList(organizations(idx)));
         end
-        if options.RequireUpload && ~organizations(idx).canUploadDataset
+        if options.RequireUpload && ~organizations(idx).canUploadDataset ...
+                && ~ndi.cloud.internal.userIsAdmin()
             error('NDI:Cloud:OrganizationCannotUpload', ...
                 'Organization %s does not allow dataset upload.', ...
                 describe(organizations(idx)));
@@ -111,7 +115,8 @@ function [organizationID, organizationName] = chooseOrganization(options)
 
     % 2. Only one candidate.
     candidates = organizations;
-    if options.RequireUpload
+    if options.RequireUpload && ~all([organizations.canUploadDataset]) ...
+            && ~ndi.cloud.internal.userIsAdmin()
         candidates = organizations([organizations.canUploadDataset]);
         if isempty(candidates)
             error('NDI:Cloud:NoUploadableOrganization', ...
