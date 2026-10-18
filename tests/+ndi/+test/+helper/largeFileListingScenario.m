@@ -108,7 +108,7 @@ function result = largeFileListingScenario(options)
     localDataset.database_add(remoteDoc);
 
     if options.verbose, fprintf('  uploading dataset %s ...\n', cloudId); end
-    successUpload = ndi.cloud.uploadDataset(localDataset);
+    successUpload = ndi.cloud.uploadDataset(localDataset, 'organizationID', ndi.unittest.cloud.testOrganizationID());
     assert(successUpload, 'NDI:test:helper:UploadFailed', 'ndi.cloud.uploadDataset failed.');
     ndi.cloud.api.files.waitForAllBulkUploads(cloudId);
 

@@ -87,7 +87,7 @@ classdef FileTierTest < matlab.unittest.TestCase
             remoteDoc = ndi.cloud.internal.createRemoteDatasetDoc(cloudId, testCase.LocalDataset);
             testCase.LocalDataset.database_add(remoteDoc);
 
-            success_upload = ndi.cloud.uploadDataset(testCase.LocalDataset);
+            success_upload = ndi.cloud.uploadDataset(testCase.LocalDataset, 'organizationID', ndi.unittest.cloud.testOrganizationID());
             testCase.assertTrue(success_upload, "Failed to upload test dataset to cloud.");
             ndi.cloud.api.files.waitForAllBulkUploads(testCase.DatasetID);
 

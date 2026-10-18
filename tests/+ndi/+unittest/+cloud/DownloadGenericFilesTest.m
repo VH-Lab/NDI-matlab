@@ -68,7 +68,7 @@ classdef DownloadGenericFilesTest < matlab.unittest.TestCase
             testCase.LocalDataset.database_add(remoteDoc);
 
             % 3. Upload to cloud
-            [success_upload] = ndi.cloud.uploadDataset(testCase.LocalDataset);
+            [success_upload] = ndi.cloud.uploadDataset(testCase.LocalDataset, 'organizationID', ndi.unittest.cloud.testOrganizationID());
             testCase.assertTrue(success_upload, "Failed to upload test dataset to cloud.");
 
             % Wait for server-side bulk extraction of the just-uploaded
@@ -142,7 +142,7 @@ classdef DownloadGenericFilesTest < matlab.unittest.TestCase
             testCase.LocalDataset.database_add(doc3);
 
             % Re-upload dataset to include doc3
-            ndi.cloud.uploadDataset(testCase.LocalDataset);
+            ndi.cloud.uploadDataset(testCase.LocalDataset, 'organizationID', ndi.unittest.cloud.testOrganizationID());
             ndi.cloud.api.files.waitForAllBulkUploads(testCase.DatasetID);
 
             destFolder = fullfile(testCase.LocalDataset.path, 'download_test_dep');

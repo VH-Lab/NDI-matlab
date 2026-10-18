@@ -102,7 +102,7 @@ classdef SignedURLSetTest < matlab.unittest.TestCase
             testCase.LocalDataset.database_add(remoteDoc);
 
             % 3. Upload, then wait for server-side extraction.
-            success_upload = ndi.cloud.uploadDataset(testCase.LocalDataset);
+            success_upload = ndi.cloud.uploadDataset(testCase.LocalDataset, 'organizationID', ndi.unittest.cloud.testOrganizationID());
             testCase.assertTrue(success_upload, "Failed to upload test dataset to cloud.");
             ndi.cloud.api.files.waitForAllBulkUploads(testCase.DatasetID);
 
