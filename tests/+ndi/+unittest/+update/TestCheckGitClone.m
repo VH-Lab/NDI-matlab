@@ -235,8 +235,21 @@ classdef TestCheckGitClone < matlab.unittest.TestCase
         end
 
         function git(testCase, repo, args)
-            [s, out] = system(sprintf('git -C "%s" %s', repo, args));
-            testCase.assertEqual(s, 0, "git " + args + " failed: " + out);
+            % Never waits for input (see runGit); on Linux and macOS each
+            % command is also limited to 60 s when 'timeout' exists, so a
+            % hang fails the test, naming the command, instead of the run.
+            cmd = sprintf('git -c core.pager=cat -c core.editor=true -C "%s" %s', repo, args);
+            if ispc
+                cmd = ['set GIT_TERMINAL_PROMPT=0&& ' cmd ' < NUL'];
+            else
+                [hasTimeout, ~] = system('command -v timeout');
+                if hasTimeout == 0
+                    cmd = ['timeout 60 ' cmd];
+                end
+                cmd = ['GIT_TERMINAL_PROMPT=0 ' cmd ' < /dev/null'];
+            end
+            [s, out] = system(cmd);
+            testCase.assertEqual(s, 0, "git " + args + " failed (status " + s + "): " + out);
         end
 
         function writeFile(~, f, text)
