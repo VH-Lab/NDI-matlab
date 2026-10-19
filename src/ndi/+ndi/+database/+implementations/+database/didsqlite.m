@@ -321,6 +321,9 @@ function tf = localIsS3Forbidden(answer)
     %   curl: (22) The requested URL returned error: 403
     % (Or "403 Forbidden" on some curl builds.) websave's message
     % contains "403" too when it makes it that far. Match \b403\b.
+    arguments
+        answer % char, string, an error-like struct, or anything else (gives false)
+    end
     tf = false;
     if isempty(answer)
         return
@@ -348,6 +351,9 @@ function q = v1SubjectSearch(q)
     % leave out every v1 subject, none of which has a subject.type. A v1
     % subject always was a biological subject, so here the plain search is
     % the right one. V2 sessions are did2sqlite and keep the rewrite.
+    arguments
+        q {mustBeA(q, "did.query")}
+    end
     ss = q.searchstructure;
     [ss, changed] = swapSubjectSearch(ss, ndi.query.subjectSearch(), ...
         did.query('', 'isa', 'subject').searchstructure);
@@ -357,6 +363,11 @@ function q = v1SubjectSearch(q)
 end
 
 function [ss, changed] = swapSubjectSearch(ss, rewritten, plain)
+    arguments
+        ss % a search structure; anything that is not a struct is left alone
+        rewritten struct
+        plain struct
+    end
     changed = false;
     if ~isstruct(ss)
         return

@@ -279,6 +279,11 @@ classdef did2sqlite < ndi.database
             % document records BY LOCATION is opened read-only where it is.
             % Anything else errors: an empty answer would make a dataset
             % with attached files read as a dataset with none.
+            arguments
+                obj (1,1) ndi.database.implementations.database.did2sqlite
+                ndi_document_id {mustBeText}
+                filename {mustBeText}
+            end
             [tf, file_path] = obj.check_exist_binarydoc(ndi_document_id, filename);
             if tf
                 ndi_binarydoc_obj = did.file.readonly_fileobj('fullpathfilename', file_path);
@@ -298,6 +303,11 @@ classdef did2sqlite < ndi.database
             % "no" is a real answer: true for a file in the database's file
             % store (ingested), or one the document records at a location
             % that exists here (ndi.database.fun.externalFileLocation).
+            arguments
+                obj (1,1) ndi.database.implementations.database.did2sqlite
+                ndi_document_id {mustBeText}
+                filename {mustBeText}
+            end
             tf = false;
             file_path = '';
             if ismethod(obj.db, 'hasFile')      % DID-matlab #215

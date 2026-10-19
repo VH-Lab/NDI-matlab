@@ -17,6 +17,11 @@ function [tf, location] = externalFileLocation(document_properties, filename)
 %   See also ndi.document/add_file,
 %            ndi.database.implementations.database.did2sqlite.
 
+arguments
+    document_properties % a document's properties struct; anything else gives TF false
+    filename {mustBeText}
+end
+
 tf = false;
 location = '';
 if ~isfield(document_properties, 'files') || ~isstruct(document_properties.files) ...
@@ -54,6 +59,9 @@ end
 end
 
 function c = asCell(x)
+arguments
+    x % a cell, a struct array, or anything else (which gives {})
+end
 if iscell(x)
     c = x;
 elseif isstruct(x)
