@@ -990,6 +990,10 @@ classdef TestObjectLayer < matlab.unittest.TestCase
 
     methods
         function s = subject(testCase, local)
+            arguments
+                testCase (1,1) matlab.unittest.TestCase
+                local {mustBeText}
+            end
             x = ndi.entity.search(testCase.Session, {'LocalIdentifier', local});
             testCase.assertNumElements(x, 1, local);
             s = x{1};
@@ -998,10 +1002,16 @@ classdef TestObjectLayer < matlab.unittest.TestCase
 end
 
 function n = local(c)
+arguments
+    c
+end
 n = cellfun(@(x) x.local_identifier, c, 'UniformOutput', false);
 n = reshape(n, 1, []);
 end
 
 function setName(w)
+arguments
+    w
+end
 w.name = 'x';
 end

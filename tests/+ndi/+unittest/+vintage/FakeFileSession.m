@@ -12,15 +12,28 @@ classdef FakeFileSession
 
     methods
         function obj = FakeFileSession(docs, files)
+            arguments
+                docs
+                files containers.Map
+            end
             obj.Docs = docs;
             obj.Files = files;
         end
 
-        function d = database_search(obj, ~)
+        function d = database_search(obj, query)
+            arguments
+                obj (1,1) ndi.unittest.vintage.FakeFileSession
+                query %#ok<INUSA> every search returns all the documents
+            end
             d = obj.Docs;
         end
 
-        function [tf, p] = database_existbinarydoc(obj, ~, name)
+        function [tf, p] = database_existbinarydoc(obj, docId, name)
+            arguments
+                obj (1,1) ndi.unittest.vintage.FakeFileSession
+                docId %#ok<INUSA> answered by file name alone
+                name {mustBeText}
+            end
             tf = isKey(obj.Files, name);
             p = '';
             if tf

@@ -315,6 +315,10 @@ classdef TestLightsheetVintage < matlab.unittest.TestCase
     methods (Static)
 
         function s = fakeSession(doc, files)
+            arguments
+                doc
+                files containers.Map
+            end
             s = ndi.unittest.vintage.FakeFileSession({doc}, files);
         end
 

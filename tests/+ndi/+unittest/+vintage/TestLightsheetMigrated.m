@@ -223,6 +223,9 @@ classdef TestLightsheetMigrated < matlab.unittest.TestCase
         end
 
         function msg = reasons(out)
+            arguments
+                out (1,1) struct
+            end
             msg = 'no quarantined documents';
             if isempty(out.quarantine), return; end
             msg = '';

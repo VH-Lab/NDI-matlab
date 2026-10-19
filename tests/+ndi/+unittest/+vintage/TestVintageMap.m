@@ -402,6 +402,14 @@ classdef TestVintageMap < matlab.unittest.TestCase
             % Built by field assignment, not by struct() with cell/struct
             % values -- struct() unwraps a cell argument into a struct
             % ARRAY, and an empty one silently yields an empty document.
+
+            arguments
+                className {mustBeText}
+                blockName = ''
+                blockStruct = []
+                deps = []
+                baseName = ''
+            end
             dc = struct();
             dc.class_name = className;
             dc.class_version = '1.0.0';

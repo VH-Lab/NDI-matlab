@@ -210,7 +210,11 @@ classdef TestLinkedSessions < matlab.unittest.TestCase
 
     methods
         function docs = sessionDocuments(testCase, sid, ds)
-            if nargin < 3, ds = testCase.Dataset; end
+            arguments
+                testCase (1,1) matlab.unittest.TestCase
+                sid {mustBeText}
+                ds = testCase.Dataset
+            end
             found = ds.database_search(ndi.query('base.session_id', 'exact_string', sid, ''));
             docs = cellfun(@(d) d.document_properties, found, 'UniformOutput', false);
         end
@@ -223,15 +227,24 @@ tf = ndi.setup.V2.schemaHasClass('linked_session');
 end
 
 function ids = idsOf(docs)
+arguments
+    docs
+end
 ids = cellfun(@(d) d.base.id, docs, 'UniformOutput', false);
 end
 
 function p = canonical(p)
+arguments
+    p
+end
 p = char(java.io.File(p).getCanonicalPath());
 end
 
 function [docId, name] = ingestedFile(docs)
 % a document of DOCS with an ingested file, and that file's name ('' if none)
+arguments
+    docs
+end
 docId = ''; name = '';
 for i = 1:numel(docs)
     d = docs{i};

@@ -43,6 +43,10 @@ classdef LightsheetFixtures
         end
 
         function s = pyramid(id, softwareId)
+            arguments
+                id {mustBeText}
+                softwareId {mustBeText}
+            end
             s = ndi.unittest.vintage.LightsheetFixtures.etaDoc('observation', ...
                 {'base', 'statement', 'interaction', 'intensity', 'value'}, id);
             s.depends_on = struct('name', {'entity_id', 'instrument_id', 'software_id'}, ...
@@ -56,6 +60,9 @@ classdef LightsheetFixtures
         end
 
         function s = software(id)
+            arguments
+                id {mustBeText}
+            end
             s = ndi.unittest.vintage.LightsheetFixtures.etaDoc('entity', {'base'}, id);
             s.depends_on = struct('name', {}, 'document_id', {});
             s.entity = struct('type', struct('node', '', 'name', 'software'), ...
@@ -63,6 +70,10 @@ classdef LightsheetFixtures
         end
 
         function s = store(id, ownerId)
+            arguments
+                id {mustBeText}
+                ownerId {mustBeText}
+            end
             s = ndi.unittest.vintage.LightsheetFixtures.etaDoc('opaque_body', ...
                 {'base', 'data_body'}, id);
             s.depends_on = struct('name', 'owner_id', 'document_id', ownerId);
@@ -81,6 +92,14 @@ classdef LightsheetFixtures
             %   level 0); REDUCTION '' (level 0), 'max' or 'mean'. MEMBERPATHS
             %   is a cellstr of existing files recorded BY LOCATION as
             %   body_data_0, body_data_1, ... ({} for none).
+
+            arguments
+                id {mustBeText}
+                ownerId {mustBeText}
+                factor (1,1) {mustBeNumeric}
+                reduction {mustBeText}
+                memberPaths
+            end
             s = ndi.unittest.vintage.LightsheetFixtures.etaDoc('sampled_body', ...
                 {'base', 'data_body'}, id);
             s.depends_on = struct('name', 'owner_id', 'document_id', ownerId);
@@ -118,6 +137,11 @@ classdef LightsheetFixtures
             %KEYS t,c,z,y,x of a 1x2x400x2048x2048 '<u2' volume downsampled
             %   by FACTOR in z,y,x, voxel 2 x 0.5 x 0.5 micrometre at level 0,
             %   z translated by 10 micrometre.
+
+            arguments
+                factor (1,1) {mustBeNumeric}
+                withChunks (1,1) logical
+            end
             n = [1 2 ceil(400 / factor) ceil(2048 / factor) ceil(2048 / factor)];
             chunk = [1 1 64 256 256];
             vox = [2 0.5 0.5] * factor;
@@ -147,6 +171,13 @@ classdef LightsheetFixtures
         function s = v1Level(id, pyramidId, level, reduction, memberPaths)
             %V1LEVEL A lightsheetZarrLevel as makePyramid's makeOneLevel writes
             %   one, members chunk.bin_1.. recorded by location.
+            arguments
+                id {mustBeText}
+                pyramidId {mustBeText}
+                level (1,1) {mustBeNumeric}
+                reduction {mustBeText}
+                memberPaths
+            end
             f = 2 ^ level;
             shape = [1 2 ceil(400 / f) ceil(2048 / f) ceil(2048 / f)];
             chunks = [1 1 64 256 256];
@@ -184,6 +215,9 @@ classdef LightsheetFixtures
         end
 
         function l = byLocation(p)
+            arguments
+                p {mustBeText}
+            end
             [~, uid] = fileparts(p);
             l = struct('delete_original', 0, 'uid', uid, 'location', p, ...
                 'parameters', '', 'location_type', 'file', 'ingest', 0);
@@ -193,6 +227,12 @@ classdef LightsheetFixtures
             % SUPERNAMES are the ancestors only, never the class itself: the
             % did2 database indexes the class name AND its superclasses, and
             % a repeat is a UNIQUE-constraint failure on write.
+
+            arguments
+                className {mustBeText}
+                superNames cell
+                id {mustBeText}
+            end
             sc = struct('class_name', superNames, 'class_version', '1.0.0');
             s = struct();
             s.document_class = struct('class_name', className, ...
@@ -204,6 +244,11 @@ classdef LightsheetFixtures
         end
 
         function p = tempFile(folder, uid, bytes)
+            arguments
+                folder {mustBeText}
+                uid {mustBeText}
+                bytes
+            end
             p = fullfile(folder, uid);
             fid = fopen(p, 'w');
             fwrite(fid, bytes, 'uint8');
