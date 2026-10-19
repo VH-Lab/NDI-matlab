@@ -634,6 +634,20 @@
    "name": "Koptec 190 Proof Ethanol",
    "vendor": "decon_labs",
    "_note": "Cholesterol stock (Benchling): 190 Proof Ethanol - Koptec. 190 proof is 95% ethanol by volume."
+  },
+  {
+   "key": "mgso4_m7506",
+   "name": "Magnesium sulfate",
+   "catalog_number": "M7506",
+   "vendor": "sigma_aldrich",
+   "_note": "MgSO4 stock (Benchling): the 500 g bottle, M7506-500G. Anhydrous: 12.037 g in 100 mL is 1 M at 120.37 g/mol."
+  },
+  {
+   "key": "cacl2_c70",
+   "name": "Calcium chloride dihydrate",
+   "catalog_number": "C70",
+   "vendor": "fisher",
+   "_note": "CaCl2 stock (Benchling): 14.7 g in 100 mL is 1 M at 147.01 g/mol, the dihydrate."
   }
  ],
  "strains": [
@@ -1006,22 +1020,14 @@
    "product": "k2hpo4_p5504"
   },
   {
-   "key": "mgso4_1m",
+   "key": "mgso4_sigma",
    "substance": "magnesium sulfate",
-   "concentration": {
-    "molar": 1,
-    "source_value": 1,
-    "source_unit": "M"
-   }
+   "product": "mgso4_m7506"
   },
   {
-   "key": "cacl2_1m",
-   "substance": "calcium chloride",
-   "concentration": {
-    "molar": 1,
-    "source_value": 1,
-    "source_unit": "M"
-   }
+   "key": "cacl2_2h2o_fisher",
+   "substance": "calcium chloride dihydrate",
+   "product": "cacl2_c70"
   },
   {
    "key": "cholesterol_alfa",
@@ -1051,7 +1057,8 @@
   },
   {
    "key": "edta_disodium",
-   "substance": "disodium EDTA"
+   "substance": "disodium EDTA dihydrate",
+   "_note": "The dihydrate: the trace metals recipe's 1.86 g/L is 5 mM only at 372.24 g/mol, and each of its other metals is a round molarity only as its hydrate (decision #91)."
   },
   {
    "key": "feso4",
@@ -1103,6 +1110,42 @@
     }
    ],
    "_note": "Cholesterol stock (Benchling, protocol adapted from Kathleen Quach): 500 mg cholesterol (500.7 mg weighed) in 100 mL 190 proof ethanol, stirred on high (~350 rpm) until dissolved, transferred to a 100 mL bottle, not autoclaved, stored at 4 C. Nominally 5 mg/mL (decision #90)."
+  },
+  {
+   "key": "mgso4_1m",
+   "type": "1 M magnesium sulfate",
+   "ingredients": [
+    {
+     "ingredient": "mgso4_sigma",
+     "concentration": {
+      "grams_per_liter": 120.3,
+      "source_value": 12.03,
+      "source_unit": "g in 100 mL"
+     }
+    },
+    {
+     "ingredient": "water"
+    }
+   ],
+   "_note": "MgSO4 stock (Benchling, 27 Sep 2022; protocol adapted from Kathleen Quach): 12.037 g (12.03 g weighed) dissolved in 75 mL dH2O, made up to 100 mL; autoclaved 30 min on liquid cycle #3, stored at room temperature."
+  },
+  {
+   "key": "cacl2_1m",
+   "type": "1 M calcium chloride",
+   "ingredients": [
+    {
+     "ingredient": "cacl2_2h2o_fisher",
+     "concentration": {
+      "grams_per_liter": 147,
+      "source_value": 14.7,
+      "source_unit": "g in 100 mL"
+     }
+    },
+    {
+     "ingredient": "water"
+    }
+   ],
+   "_note": "CaCl2 stock (Benchling, 27 Sep 2022; protocol adapted from Kathleen Quach): 14.7 g calcium chloride dihydrate dissolved in 75 mL dH2O, made up to 100 mL; autoclaved 30 min on liquid cycle #3, stored at room temperature."
   },
   {
    "key": "kh2po4_1m",

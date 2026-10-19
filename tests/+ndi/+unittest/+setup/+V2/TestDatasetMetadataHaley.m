@@ -85,8 +85,10 @@ classdef TestDatasetMetadataHaley < matlab.unittest.TestCase
             % buffer's documented_by WormBook; decision #89, + 2 relations;
             % decision #90, the cholesterol stock as a recipe: + Alfa Aesar and
             % Decon Labs, their relation, 2 products, the stock formulation, and
-            % cholesterol + ethanol as chemicals in place of the stock (+1)
-            testCase.verifyEqual(numel(testCase.Result.documents), 195);
+            % cholesterol + ethanol as chemicals in place of the stock (+1);
+            % decision #91, the MgSO4 and CaCl2 stocks as recipes: + 2 products
+            % and 2 formulations, the weighed solids replacing the 1 M chemicals
+            testCase.verifyEqual(numel(testCase.Result.documents), 199);
         end
 
         function testStudiesCanBeMintedApartFromTheRest(testCase)
