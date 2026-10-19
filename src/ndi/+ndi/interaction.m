@@ -99,6 +99,10 @@ classdef (Abstract) interaction < ndi.statement
 
     methods (Access = protected)
         function e = entitiesAt(obj, edge)
+            arguments
+                obj (1,1) ndi.interaction
+                edge {mustBeText}
+            end
             e = {};
             ids = ndi.v2.edgeIds(obj.document_properties(), edge);
             for i = 1:numel(ids)
@@ -112,6 +116,10 @@ classdef (Abstract) interaction < ndi.statement
 end
 
 function v = fieldOf(s, name)
+arguments
+    s
+    name {mustBeText}
+end
 v = [];
 if isstruct(s) && isfield(s, name), v = s.(name); end
 end

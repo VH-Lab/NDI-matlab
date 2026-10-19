@@ -486,10 +486,19 @@ classdef statement
 end
 
 function v = firstOr(x, default)
+arguments
+    x
+    default
+end
 if isempty(x), v = default; else, v = x(1); end
 end
 
 function v = fieldOr(s, name, default)
+arguments
+    s
+    name {mustBeText}
+    default
+end
 v = default;
 if isstruct(s) && isfield(s, name) && ~isempty(s(1).(name))
     v = s(1).(name);
@@ -497,12 +506,19 @@ end
 end
 
 function v = ifKey(m, k)
+arguments
+    m
+    k
+end
 v = '';
 if ~isempty(k) && isKey(m, k), v = m(k); end
 end
 
 function n = nodeOf(t)
 % a term's node ('' when none)
+arguments
+    t
+end
 n = '';
 if iscell(t) && ~isempty(t), t = t{1}; end
 if isstruct(t) && ~isempty(t) && isfield(t, 'node') && ~isempty(t(1).node), n = char(t(1).node); end
