@@ -539,6 +539,9 @@ end
 
 function note = decodingNote(cacheFile)
 % the file naming the video being decoded: beside the cache, or none without one
+arguments
+    cacheFile {mustBeText}
+end
 note = '';
 if ~isempty(cacheFile), note = [cacheFile '.decoding.txt']; end
 end
