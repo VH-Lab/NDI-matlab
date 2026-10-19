@@ -8,6 +8,10 @@ function chain = classChain(p)
 %
 %   See also ndi.v2.directParents, ndi.statement.fromDocument.
 
+arguments
+    p
+end
+
 name = char(p.document_class.class_name);
 listed = {};
 if isfield(p.document_class, 'superclasses')

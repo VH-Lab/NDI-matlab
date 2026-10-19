@@ -1,5 +1,8 @@
 function t = parseUtc(s)
 %PARSEUTC A V2 `utc` timestamp string as a datetime in UTC (NaT when empty or unreadable).
+arguments
+    s
+end
 
 t = NaT('TimeZone', 'UTC');
 if isempty(s), return; end

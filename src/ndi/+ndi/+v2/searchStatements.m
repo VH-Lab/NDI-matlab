@@ -140,6 +140,12 @@ end
 
 function docs = bySubject(container, q, ids, withDataset)
 % search Q, restricted to statements about IDS ({} for any), 200 ids a search
+arguments
+    container
+    q
+    ids
+    withDataset
+end
 search = @(x) container.database_search(x);
 if withDataset && isa(container, 'ndi.session')
     search = @(x) container.database_search_with_dataset(x);
@@ -158,6 +164,10 @@ end
 
 function s = keepStructural(cand, filt)
 % the candidates whose variable and method match FILT's patterns
+arguments
+    cand
+    filt
+end
 s = {};
 for i = 1:numel(cand)
     p = ndi.v2.props(cand{i});
@@ -169,6 +179,10 @@ end
 
 function tf = synonymMatches(v, pats)
 % does any name a term's node goes by (ndi.v2.synonyms) match a pattern?
+arguments
+    v
+    pats
+end
 tf = false;
 if ~isstruct(v) || ~isfield(v, 'node'), return; end
 for k = 1:numel(v)
@@ -185,11 +199,17 @@ end
 end
 
 function id = docIdOf(d)
+arguments
+    d
+end
 p = ndi.v2.props(d);
 id = char(p.base.id);
 end
 
 function filt = normalise(filt)
+arguments
+    filt
+end
 if ~isfield(filt, 'subject') || isempty(filt.subject)
     filt.subject = {};
 else
@@ -214,27 +234,44 @@ end
 end
 
 function x = asPattern(x)
+arguments
+    x
+end
 if isstring(x), x = char(x); end
 end
 
 function c = classOf(kind)
 % the six kinds are the class names themselves since 2026-10-08 (isaQuery
 % also finds documents written as `subject_<kind>`)
+arguments
+    kind
+end
 c = kind;
 end
 
 function tf = isTextPattern(p)
 % a name pattern, wildcards allowed, not a comparison ('>20')
+arguments
+    p
+end
 tf = ischar(p) && isempty(comparison(p));
 end
 
 function tf = isPlainText(p)
+arguments
+    p
+end
 tf = ischar(p) && ~ndi.v2.hasWildcard(p) && isempty(comparison(p));
 end
 
 function q = andTerm(q, path, patterns)
 % narrow by a term field when the database can (ndi.v2.termQuery); the
 % recheck does the rest
+arguments
+    q
+    path {mustBeText}
+    patterns
+end
 patterns = patterns(cellfun(@ischar, patterns));
 if isempty(patterns), return; end
 t = ndi.v2.termQuery(path, patterns);
@@ -242,11 +279,20 @@ if ~isempty(t), q = q & t; end
 end
 
 function tf = patternsMatch(term, patterns)
+arguments
+    term
+    patterns
+end
 tf = isempty(patterns) || any(cellfun(@(p) ischar(p) && ndi.v2.matchTerm(term, p), patterns));
 end
 
 function forms = formulationsOf(container, docs, patterns)
 % formulation id -> does it match one of PATTERNS (by its name or its type)
+arguments
+    container
+    docs
+    patterns
+end
 forms = containers.Map('KeyType', 'char', 'ValueType', 'logical');
 if isempty(patterns), return; end
 ids = {};
@@ -267,6 +313,11 @@ end
 end
 
 function tf = valueMatches(k, v, pat)
+arguments
+    k
+    v
+    pat
+end
 tf = false;
 [op, rhs] = comparison(pat);
 switch k
@@ -295,6 +346,9 @@ end
 
 function [op, rhs] = comparison(pat)
 % '>=x', '<=x', '>x', '<x' (a leading '\' makes the sign literal)
+arguments
+    pat
+end
 op = ''; rhs = '';
 if ~ischar(pat) || isempty(pat), return; end
 t = regexp(pat, '^(>=|<=|>|<)\s*(.+)$', 'tokens', 'once');
@@ -302,15 +356,29 @@ if ~isempty(t), op = t{1}; rhs = strtrim(t{2}); end
 end
 
 function tf = compareText(a, b, op)
+arguments
+    a
+    b
+    op {mustBeText}
+end
 c = sign(double(strcmp(a, b) == 0) * (2 * double(issorted({b, a})) - 1));
 tf = applyOp(c, op);
 end
 
 function tf = compareNumber(a, b, op)
+arguments
+    a
+    b
+    op {mustBeText}
+end
 tf = applyOp(sign(a - b), op);
 end
 
 function tf = applyOp(c, op)
+arguments
+    c
+    op {mustBeText}
+end
 switch op
     case '>',  tf = c > 0;
     case '>=', tf = c >= 0;
@@ -321,5 +389,9 @@ end
 end
 
 function v = firstOr(x, default)
+arguments
+    x
+    default
+end
 if isempty(x), v = default; else, v = x(1); end
 end

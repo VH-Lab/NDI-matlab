@@ -20,7 +20,14 @@ function S = stays(container, ids, side, cache)
 %
 %   See also ndi.v2.overlaps, ndi.v2.timesOf.
 
-if nargin < 4 || ~isa(cache, 'containers.Map')
+arguments
+    container
+    ids
+    side {mustBeText}
+    cache = []
+end
+
+if ~isa(cache, 'containers.Map')
     cache = containers.Map('KeyType', 'char', 'ValueType', 'any');
 end
 ids = unique(cellstr(ids), 'stable');
@@ -70,6 +77,9 @@ end
 
 function t = zeroNaN(t)
 % [minus plus] seconds, 0 where unknown
+arguments
+    t
+end
 if isempty(t), t = [0 0]; end
 if isscalar(t), t = [t t]; end
 t(isnan(t)) = 0;

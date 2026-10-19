@@ -7,6 +7,10 @@ function [kind, block] = kindOf(doc)
 %   KIND is its `type` ('session', 'dataset', 'organism', ...) and BLOCK is
 %   'entity'. So code asking "is this the dataset?" works on either schema.
 
+arguments
+    doc
+end
+
 kind = char(doc.document_class.class_name);
 block = kind;
 if strcmp(kind, 'entity') && isfield(doc, 'entity') && isfield(doc.entity, 'type')

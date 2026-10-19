@@ -10,7 +10,13 @@ function q = blockQuery(path, op, param1, param2)
 %
 %   See also ndi.v2.blockOf, ndi.v2.isaQuery.
 
-if nargin < 4, param2 = ''; end
+arguments
+    path {mustBeText}
+    op {mustBeText}
+    param1
+    param2 = ''
+end
+
 parts = strsplit(char(path), '.');
 names = ndi.v2.vetaAliases(parts{1});
 if ~isempty(ndi.v2.entityTypesFor(parts{1}))

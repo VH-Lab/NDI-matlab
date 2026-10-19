@@ -6,6 +6,10 @@ function T = axesTable(keys)
 %   positions, origin + spacing * (0:n-1) for a regular key, or the labels'
 %   names).
 
+arguments
+    keys
+end
+
 keys = ndi.v2.entries(keys);
 variable = strings(0, 1); unit = strings(0, 1); n = zeros(0, 1); coordinates = cell(0, 1);
 for k = 1:numel(keys)
@@ -35,6 +39,11 @@ T = table(variable, unit, n, coordinates);
 end
 
 function v = field(s, name, default)
+arguments
+    s
+    name {mustBeText}
+    default
+end
 v = default;
 if isstruct(s) && isfield(s, name) && ~isempty(s(1).(name))
     v = s(1).(name);

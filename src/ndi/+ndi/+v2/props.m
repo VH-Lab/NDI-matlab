@@ -5,6 +5,10 @@ function p = props(doc)
 %
 %   See also ndi.entity, ndi.statement.
 
+arguments
+    doc
+end
+
 if isa(doc, 'ndi.document')
     p = doc.document_properties;
 elseif isa(doc, 'did2.document')

@@ -3,5 +3,9 @@ function tf = hasWildcard(pattern)
 %
 %   See also ndi.v2.matchTerm.
 
+arguments
+    pattern
+end
+
 tf = ischar(pattern) && ~isempty(regexp(pattern, '(?<!\\)\*', 'once'));
 end

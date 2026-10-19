@@ -19,6 +19,10 @@ function out = vetaName(name)
 %
 %   See also ndi.v2.vetaAliases.
 
+arguments
+    name
+end
+
 if iscell(name)
     out = cellfun(@ndi.v2.vetaName, name, 'UniformOutput', false);
     return;

@@ -10,6 +10,10 @@ function types = entityTypesFor(className)
 %
 %   See also ndi.v2.isaQuery, ndi.v2.blockOf.
 
+arguments
+    className {mustBeText}
+end
+
 switch char(className)
     case 'subject'
         types = {'organism', 'culture', 'tissue', 'cell', 'group', 'device', 'material'};

@@ -9,6 +9,11 @@ function c = closest(word, candidates)
 %   'Caenorhabditis elegans' -- and '' otherwise (or when WORD is itself one
 %   of them).
 
+arguments
+    word
+    candidates
+end
+
 c = '';
 candidates = cellstr(candidates);
 if isempty(candidates) || isempty(word), return; end
@@ -27,6 +32,10 @@ if best > limit, c = ''; end
 end
 
 function d = editDistance(a, b)
+arguments
+    a
+    b
+end
 m = numel(a); n = numel(b);
 prev = 0:n;
 for i = 1:m

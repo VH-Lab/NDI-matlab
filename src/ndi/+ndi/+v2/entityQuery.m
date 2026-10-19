@@ -6,5 +6,9 @@ function q = entityQuery(id)
 %
 %   See also ndi.v2.isaQuery, ndi.v2.vetaAliases.
 
+arguments
+    id
+end
+
 q = ndi.query('', 'depends_on', 'entity_id', id) | ndi.query('', 'depends_on', 'subject_id', id);
 end

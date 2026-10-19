@@ -22,5 +22,8 @@ end
 end
 
 function tf = isAbsolute(p)
+arguments
+    p {mustBeText}
+end
 tf = startsWith(p, filesep) || ~isempty(regexp(p, '^[A-Za-z]:', 'once'));
 end

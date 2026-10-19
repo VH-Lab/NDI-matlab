@@ -9,6 +9,11 @@ function q = termQuery(path, patterns)
 %   The database answer is a superset to recheck with ndi.v2.matchTerm (a
 %   wildcard ignores case on the node too).
 
+arguments
+    path {mustBeText}
+    patterns
+end
+
 q = [];
 patterns = cellstr(patterns);
 if any(cellfun(@ndi.v2.hasWildcard, patterns)) && ~ndi.v2.hasWildcardOperator()
@@ -28,6 +33,10 @@ end
 
 function one = termOne(path, p)
 % one pattern on one path: by name (ignoring case) or by node
+arguments
+    path {mustBeText}
+    p
+end
 if ndi.v2.hasWildcard(p)
     one = ndi.query([path '.name'], 'wildcard', p, '') | ndi.query([path '.node'], 'wildcard', p, '');
 else

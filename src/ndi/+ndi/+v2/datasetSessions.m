@@ -150,6 +150,10 @@ end
 % -----------------------------------------------------------------------------
 function children = partOfChildren(database, parentId)
 % the ids of the documents `part_of` PARENTID, read from relations in DATABASE
+arguments
+    database
+    parentId {mustBeText}
+end
 children = {};
 q = ndi.query('', 'isa', 'directed_relation', '') & ...
     ndi.query('', 'depends_on', 'parent_id', parentId);
@@ -166,6 +170,10 @@ end
 
 function [S, sp, why] = openLinked(folder, entityId)
 % the session in FOLDER, checked to hold the session entity ENTITYID
+arguments
+    folder {mustBeText}
+    entityId {mustBeText}
+end
 S = []; sp = []; why = '';
 if ~isfolder(folder)
     why = sprintf('%s (linked): no such folder', folder);

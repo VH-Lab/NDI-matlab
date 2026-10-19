@@ -9,6 +9,10 @@ function names = vetaAliases(name)
 %
 %   See also ndi.v2.vetaName, ndi.v2.isaQuery.
 
+arguments
+    name
+end
+
 name = char(ndi.v2.vetaName(name));
 switch name
     case 'statement',    names = {name, 'subject_statement'};

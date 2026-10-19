@@ -13,6 +13,10 @@ function [k, v, t, u] = statementValue(p)
 %
 %   See also ndi.v2.searchStatements, ndi.statement/summary.
 
+arguments
+    p
+end
+
 [k, v, u] = valueOf(p);
 switch k
     case 'term', t = ndi.v2.termName(v);
@@ -23,6 +27,9 @@ end
 end
 
 function [k, v, u] = valueOf(p)
+arguments
+    p
+end
 k = 'none'; v = []; u = '';
 if logical(firstOr(ndi.v2.blockOf(p, 'value', 'data_body', false), false))
     return;
@@ -77,5 +84,9 @@ end
 end
 
 function v = firstOr(x, default)
+arguments
+    x
+    default
+end
 if isempty(x), v = default; else, v = x(1); end
 end

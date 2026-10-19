@@ -5,6 +5,10 @@ function q = anyOf(qs)
 %   SQL and the in-memory recheck shallow for a few hundred ids. Callers
 %   keep N to about 200 per search.
 
+arguments
+    qs cell
+end
+
 while numel(qs) > 1
     n = floor(numel(qs) / 2);
     nx = cell(1, ceil(numel(qs) / 2));

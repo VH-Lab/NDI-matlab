@@ -64,6 +64,9 @@ end
 
 function n = asNames(x)
 % a row cell array of the non-empty, distinct names in X
+arguments
+    x
+end
 if isempty(x), n = {}; return; end
 n = cellstr(x);
 n = reshape(n(~cellfun(@isempty, n)), 1, []);

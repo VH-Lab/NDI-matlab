@@ -16,7 +16,13 @@ function [values, info] = readBody(container, bodyDoc, datumType, keys)
 %
 %   See also ndi.statement/value, ndi.value.
 
-if nargin < 4, keys = []; end
+arguments
+    container
+    bodyDoc
+    datumType
+    keys = []
+end
+
 p = ndi.v2.props(bodyDoc);
 fi = [];
 if isfield(p, 'files') && isfield(p.files, 'file_info'), fi = p.files.file_info; end
@@ -77,6 +83,9 @@ clear cleanup
 end
 
 function [precision, post] = precisionOf(t)
+arguments
+    t
+end
 post = @(x) x;
 switch char(t)
     case 'float64', precision = 'double=>double';
@@ -91,6 +100,9 @@ end
 end
 
 function deleteQuietly(files)
+arguments
+    files cell
+end
 for k = 1:numel(files)
     if isfile(files{k}), delete(files{k}); end
 end

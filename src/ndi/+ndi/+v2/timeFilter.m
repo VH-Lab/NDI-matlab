@@ -37,8 +37,16 @@ function [keep, info] = timeFilter(container, docs, filt, tolerant, cache)
 %   time), nozone (text with no zone to read it in), bound (bounds that
 %   could not decide), and, for messages, docs (DOCS with no time at all).
 
-if nargin < 4 || isempty(tolerant), tolerant = false; end
-if nargin < 5 || ~isa(cache, 'containers.Map'), cache = containers.Map('KeyType', 'char', 'ValueType', 'any'); end
+arguments
+    container
+    docs
+    filt
+    tolerant = false
+    cache = []
+end
+
+if isempty(tolerant), tolerant = false; end
+if ~isa(cache, 'containers.Map'), cache = containers.Map('KeyType', 'char', 'ValueType', 'any'); end
 names = intersect({'at', 'during', 'before', 'after', 'duration'}, fieldnames(filt), 'stable');
 names = names(cellfun(@(n) ~isempty(filt.(n)), names));
 keep = true(1, numel(docs));
@@ -75,6 +83,12 @@ end
 
 function [m, why] = meets(t, filt, names, tolerant)
 % does the one time T meet every filter
+arguments
+    t
+    filt
+    names cell
+    tolerant
+end
 m = false; why = '';
 if isnat(t.start)
     why = 'unresolved';
@@ -122,6 +136,11 @@ end
 function [decided, yes] = boundDecides(t, n, q)
 % a time known only as before / after / within its anchor (t.start, t.end
 % are the anchor's): decide 'before' and 'after' when the bound does
+arguments
+    t
+    n {mustBeText}
+    q
+end
 decided = false; yes = false;
 rel = lower(t.relation);
 aS = t.start; aE = t.end;
@@ -148,6 +167,11 @@ end
 
 function [q, ok] = queryTime(v, n, tz)
 % a filter's time(s) as UTC datetimes: q(1) (and q(2) for 'during')
+arguments
+    v
+    n {mustBeText}
+    tz
+end
 ok = true;
 if strcmp(n, 'during')
     if iscell(v) && numel(v) == 2
@@ -166,6 +190,11 @@ end
 function [d, ok] = oneTime(v, tz, edge)
 % one time as UTC. A date or a month of text is its first (EDGE 'start')
 % or last (EDGE 'end') instant.
+arguments
+    v
+    tz
+    edge {mustBeText}
+end
 ok = true;
 if isa(v, 'datetime')
     d = v;
@@ -214,6 +243,9 @@ end
 
 function [op, secs] = parseDuration(v)
 % '>=3h' -> '>=', 10800
+arguments
+    v
+end
 t = regexp(strtrim(char(v)), '^(>=|<=|>|<|=)?\s*([0-9.eE+-]+)\s*([a-zA-Z]*)$', 'tokens', 'once');
 if isempty(t) || isnan(str2double(t{2}))
     error('ndi:v2:timeFilter:badDuration', ...
@@ -234,6 +266,11 @@ end
 
 function tf = applyOp(vals, ref, op)
 % is any of VALS (the possible range, ends inclusive) OP REF
+arguments
+    vals
+    ref
+    op {mustBeText}
+end
 lo = min(vals); hi = max(vals);
 switch op
     case '>',  tf = hi > ref;
@@ -245,5 +282,8 @@ end
 end
 
 function t = zeroNaN(t)
+arguments
+    t
+end
 t(isnan(t)) = 0;
 end

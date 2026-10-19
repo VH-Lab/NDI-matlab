@@ -27,8 +27,13 @@ function r = timeOf(container, refDoc, depth, cache)
 %   referent shared by many references is read and resolved once
 %   (ndi.v2.timesOf).
 
-if nargin < 3, depth = 0; end
-if nargin < 4, cache = []; end
+arguments
+    container
+    refDoc
+    depth = 0
+    cache = []
+end
+
 p = ndi.v2.props(refDoc);
 k = char(p.document_class.class_name);
 r = struct('kind', '', 'start', NaT('TimeZone', 'UTC'), 'end', NaT('TimeZone', 'UTC'), ...
@@ -100,6 +105,12 @@ end
 
 function a = anchorOf(container, refDoc, depth, cache)
 % the referent's own time: its first time reference that resolves
+arguments
+    container
+    refDoc
+    depth
+    cache
+end
 a = [];
 p = ndi.v2.props(refDoc);
 if any(strcmp(ndi.v2.classChain(p), 'time_reference'))
@@ -120,6 +131,11 @@ end
 
 function d = docOf(container, id, cache)
 % a document by id: from CACHE when it holds it (or held its absence)
+arguments
+    container
+    id {mustBeText}
+    cache
+end
 if isa(cache, 'containers.Map') && isKey(cache, ['doc:' id])
     d = cache(['doc:' id]);
     return;
@@ -129,6 +145,11 @@ if isa(cache, 'containers.Map'), cache(['doc:' id]) = d; end
 end
 
 function v = getOr(s, name, default)
+arguments
+    s
+    name {mustBeText}
+    default
+end
 v = default;
 if isstruct(s) && isfield(s, name) && ~isempty(s(1).(name))
     v = s(1).(name);
@@ -136,6 +157,9 @@ end
 end
 
 function t = tol(x)
+arguments
+    x
+end
 t = [NaN NaN];
 if isstruct(x) && ~isempty(x)
     if isfield(x, 'minus') && ~isempty(x.minus), t(1) = double(x.minus); end
@@ -145,6 +169,9 @@ end
 
 function e = endOf(v)
 % the value's `end` cell (a reserved word: a JSON reader may rename it)
+arguments
+    v
+end
 e = struct();
 for n = {'end', 'xEnd', 'x_end', 'end_'}
     if isstruct(v) && isfield(v, n{1}) && ~isempty(v(1).(n{1}))

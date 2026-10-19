@@ -1,7 +1,12 @@
 function v = blockOf(p, block, field, default)
 %BLOCKOF P.(BLOCK).(FIELD), or DEFAULT when either is absent.
+arguments
+    p
+    block {mustBeText}
+    field {mustBeText}
+    default = []
+end
 
-if nargin < 4, default = []; end
 v = default;
 % a block renamed 2026-10-08 is read under either name (ndi.v2.vetaAliases)
 names = ndi.v2.vetaAliases(block);

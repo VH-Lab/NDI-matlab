@@ -13,6 +13,10 @@ function q = isaQuery(className)
 %
 %   See also ndi.v2.vetaAliases, ndi.v2.entityTypesFor, ndi.v2.entityQuery.
 
+arguments
+    className {mustBeText}
+end
+
 names = ndi.v2.vetaAliases(className);
 q = ndi.query('', 'isa', names{1}, '');
 for k = 2:numel(names)

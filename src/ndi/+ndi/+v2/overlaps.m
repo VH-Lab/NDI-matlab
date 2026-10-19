@@ -11,7 +11,12 @@ function [tf, decided] = overlaps(times, window, tolerant)
 %
 %   See also ndi.v2.stays, ndi.v2.timeFilter.
 
-if nargin < 3, tolerant = false; end
+arguments
+    times
+    window
+    tolerant = false
+end
+
 tf = false; decided = false;
 if isnat(window.start) || isnat(window.end), return; end
 wS = window.start; wE = window.end;
@@ -39,6 +44,9 @@ end
 
 function t = zeroNaN(t)
 % [minus plus] seconds, 0 where unknown
+arguments
+    t
+end
 if isempty(t), t = [0 0]; end
 if isscalar(t), t = [t t]; end
 t(isnan(t)) = 0;

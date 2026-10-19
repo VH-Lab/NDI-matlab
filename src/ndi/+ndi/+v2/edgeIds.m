@@ -6,6 +6,11 @@ function ids = edgeIds(p, name)
 %   (the v1 numbered form). Empty values are left out. A V2 edge holds the
 %   id in `document_id`, a v1 edge in `value`.
 
+arguments
+    p
+    name {mustBeText}
+end
+
 ids = {};
 if ~isfield(p, 'depends_on') || isempty(p.depends_on)
     return;

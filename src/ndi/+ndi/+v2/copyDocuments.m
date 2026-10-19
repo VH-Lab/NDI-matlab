@@ -54,6 +54,10 @@ end
 % -----------------------------------------------------------------------------
 function [d, nIn, nBy, missing] = fromStore(d, fileDir)
 % D with every ingested location pointed at FILEDIR's copy, kept there
+arguments
+    d
+    fileDir
+end
 nIn = 0; nBy = 0; missing = {};
 if ~isfield(d, 'files') || ~isstruct(d.files) || ~isfield(d.files, 'file_info') ...
         || isempty(d.files.file_info)

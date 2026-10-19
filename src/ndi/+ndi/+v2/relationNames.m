@@ -11,6 +11,9 @@ undirected = namesOf('undirected_relation');
 end
 
 function n = namesOf(className)
+arguments
+    className {mustBeText}
+end
 n = {};
 try
     s = did2.schema.cache.shared().getClass(className);

@@ -6,6 +6,10 @@ function c = entries(x)
 %   parameter beside a numeric one), so a list is walked as cells and never
 %   concatenated with [x{:}]. Empty gives {}.
 
+arguments
+    x
+end
+
 if isempty(x)
     c = {};
 elseif iscell(x)

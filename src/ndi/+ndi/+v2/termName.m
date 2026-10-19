@@ -1,5 +1,8 @@
 function n = termName(t)
 %TERMNAME The name of a term ({node, name} or {name}); its node when it has no name.
+arguments
+    t
+end
 
 n = '';
 if isempty(t), return; end

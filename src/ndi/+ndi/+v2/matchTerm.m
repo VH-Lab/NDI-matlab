@@ -11,6 +11,11 @@ function tf = matchTerm(t, pattern)
 %
 %   See also ndi.v2.hasWildcard, ndi.entity.search.
 
+arguments
+    t
+    pattern
+end
+
 if iscell(pattern)
     tf = any(cellfun(@(x) ndi.v2.matchTerm(t, x), pattern));
     return;
@@ -44,6 +49,9 @@ end
 
 function s = lowerPrefix(s)
 % the CURIE prefix of S lowercased, when S has one (a ':' with no '*' before it)
+arguments
+    s
+end
 k = find(s == ':', 1);
 if ~isempty(k) && ~any(s(1:k) == '*')
     s = [lower(s(1:k)) s(k+1:end)];

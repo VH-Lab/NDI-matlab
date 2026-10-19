@@ -7,6 +7,12 @@ function q = fieldQuery(path, op, value)
 %
 %   See also ndi.v2.termQuery, ndi.v2.isaQuery.
 
+arguments
+    path {mustBeText}
+    op {mustBeText}
+    value
+end
+
 parts = strsplit(char(path), '.');
 names = ndi.v2.vetaAliases(parts{1});
 q = [];

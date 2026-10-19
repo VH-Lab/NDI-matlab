@@ -9,7 +9,12 @@ function docs = getDocuments(container, ids, cache)
 %
 %   See also ndi.v2.getDocument, ndi.v2.timesOf.
 
-if nargin < 3, cache = []; end
+arguments
+    container
+    ids
+    cache = []
+end
+
 docs = containers.Map('KeyType', 'char', 'ValueType', 'any');
 ids = unique(cellstr(ids), 'stable');
 todo = {};

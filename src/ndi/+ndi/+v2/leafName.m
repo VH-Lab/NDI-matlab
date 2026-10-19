@@ -14,6 +14,10 @@ function [name, block] = leafName(p)
 %
 %   See also ndi.v2.kindOf, ndi.v2.isaQuery.
 
+arguments
+    p
+end
+
 name = char(p.document_class.class_name);
 block = name;
 directions = {'assertion', 'observation', 'manipulation', 'calculation'};

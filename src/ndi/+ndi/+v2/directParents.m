@@ -4,6 +4,10 @@ function parents = directParents(className)
 %   PARENTS = ndi.v2.directParents(CLASSNAME) returns a cellstr; empty when
 %   the schema does not know the class.
 
+arguments
+    className {mustBeText}
+end
+
 parents = {};
 try
     s = did2.schema.cache.shared().getClass(className);
