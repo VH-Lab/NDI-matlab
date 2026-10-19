@@ -582,6 +582,12 @@ classdef entity
     methods (Access = protected)
         function out = walk(obj, path, direction, asTable)
             % WALK - follow PATH from every entity in OBJ, one search per step
+            arguments
+                obj
+                path
+                direction {mustBeText}
+                asTable (1,1) logical
+            end
             path = cellstr(path);
             if isempty(obj)
                 out = {};
@@ -629,6 +635,11 @@ classdef entity
 
         function out = reach(obj, direction, options)
             % REACH - breadth-first over relations from every entity in OBJ
+            arguments
+                obj
+                direction {mustBeText}
+                options (1,1) struct
+            end
             filtered = ~isempty(options.Type) || ~isempty(options.Kind);
             filterQuery = [];
             if ~isempty(options.Type)
@@ -707,6 +718,14 @@ classdef entity
             % EDGES - table from, to, distributive: the relations whose FROM
             % end is one of IDS, and whether each is marked distributive
             % RELATIONNAME: a name, a cellstr of names, or empty for every relation
+
+            arguments
+                container
+                ids
+                relationName
+                from {mustBeText}
+                to {mustBeText}
+            end
             fromIds = cell(0, 1); toIds = cell(0, 1); dist = false(0, 1);
             chunk = 200;
             for c = 1:chunk:numel(ids)
@@ -740,7 +759,11 @@ classdef entity
         function ents = fetch(container, ids, extra)
             % FETCH - the entity for each id ({} where not found), a few searches in all
             % EXTRA, an ndi.query or [], is ANDed in: ids not matching it are {} too
-            if nargin < 3, extra = []; end
+            arguments
+                container
+                ids
+                extra = []
+            end
             ents = cell(numel(ids), 1);
             if isempty(ids), return; end
             where = containers.Map(ids, num2cell(1:numel(ids)));
@@ -761,6 +784,9 @@ classdef entity
 
         function q = anyOf(qs)
             % ANYOF - the OR of the queries in cell array QS (ndi.v2.anyOf)
+            arguments
+                qs cell
+            end
             q = ndi.v2.anyOf(qs);
         end
 
@@ -1099,11 +1125,18 @@ classdef entity
 
         function t = explainNested(c, indent)
             % EXPLAINNESTED - a description (a cell of search's pairs) in words
+            arguments
+                c
+                indent {mustBeText}
+            end
             t = ndi.entity.explainSearch(ndi.entity.parseSearch(c), indent, '');
         end
 
         function spec = parseSearchNested(c)
             % PARSESEARCHNESTED - parseSearch, for the explanation of a nested description
+            arguments
+                c
+            end
             spec = ndi.entity.parseSearch(c);
         end
 
@@ -1114,6 +1147,10 @@ classdef entity
             % PARSESEARCH - search's CONDITIONS (PROPERTY, VALUE pairs) as a
             % search spec: own fields, statement filters, relation filters;
             % the switches at their defaults (search sets them from its options)
+
+            arguments
+                args
+            end
             if mod(numel(args), 2)
                 error('ndi:entity:search:pairs', ...
                     'Conditions are PROPERTY, VALUE pairs in a cell, e.g. {''type'', ''organism'', ''strain'', ''N2''}.');
@@ -1169,6 +1206,10 @@ classdef entity
 
         function filt = statementFilter(kind, c)
             % STATEMENTFILTER - {'variable', V, 'method', M, ...} as a struct
+            arguments
+                kind {mustBeText}
+                c
+            end
             if ~iscell(c) || mod(numel(c), 2)
                 error('ndi:entity:search:statementFilter', ...
                     '''%s'' takes a cell of filters, e.g. {''variable'', ''NGM agar'', ''value'', ''>=0.02''}.', kind);
@@ -1203,6 +1244,9 @@ classdef entity
         function tf = isStatementDescription(v)
             % ISSTATEMENTDESCRIPTION - is V {'observation', {...}, ...}, a
             % description of statements, rather than times?
+            arguments
+                v
+            end
             kinds = {'statement', 'interaction', 'observation', 'manipulation', 'calculation'};
             tf = iscell(v) && ~isempty(v) && (ischar(v{1}) || (isstring(v{1}) && isscalar(v{1}))) ...
                 && any(strcmpi(char(v{1}), [kinds, {'assertion'}]));
@@ -1212,6 +1256,10 @@ classdef entity
             % STATEMENTKINDS - {'observation', {...}, 'manipulation', {...}}
             % (a kind alone is any of that kind) as the kinds struct
             % statementLinks takes; several are any of them
+
+            arguments
+                v
+            end
             kinds = struct('kind', {}, 'filt', {});
             k = 1;
             while k <= numel(v)
@@ -1235,6 +1283,10 @@ classdef entity
 
         function r = relationFilter(kind, c)
             % RELATIONFILTER - {'name', N, 'parent'|'child'|'with', X} as a struct
+            arguments
+                kind {mustBeText}
+                c
+            end
             if ~iscell(c) || mod(numel(c), 2)
                 error('ndi:entity:search:relationFilter', ...
                     '''%s'' takes a cell, e.g. {''name'', ''contained_in'', ''parent'', {''type'', ''material''}}.', kind);
@@ -1284,6 +1336,10 @@ classdef entity
         function ids = searchIds(container, spec)
             % SEARCHIDS - the subject ids every statement and relation filter
             % of SPEC holds of ([] when SPEC has none)
+            arguments
+                container
+                spec (1,1) struct
+            end
             ids = [];
             for k = 1:numel(spec.filters)
                 these = ndi.entity.subjectsOf(container, spec.filters(k), spec);
@@ -1308,6 +1364,12 @@ classdef entity
             % parts and samples of a subject an assertion is about. With
             % SPEC.strict, an unknown variable or method is an error and
             % values that match nothing a warning (each naming what there is).
+
+            arguments
+                container
+                f (1,1) struct
+                spec (1,1) struct
+            end
             if isfield(f.filt, 'during_statements')
                 % the subjects with such a statement, then those for which it
                 % overlaps one matching the description (statementLinks)
@@ -1384,6 +1446,12 @@ classdef entity
             % relation kind and name, and the other end (a subject, ids, or a
             % description, searched first). INHERITED: a distributive relation
             % whose child is a group holds of the group's members too.
+
+            arguments
+                container
+                r (1,1) struct
+                spec (1,1) struct
+            end
             inherited = spec.inherited;
             T = ndi.entity.targetIds(container, r.target, spec);     % [] = any
             if iscell(T) && isempty(T), ids = {}; return; end
@@ -1434,6 +1502,12 @@ classdef entity
         function docs = timed(container, docs, r, spec)
             % TIMED - the relation documents DOCS whose time meets R's time
             % filters (all of them when R has none)
+            arguments
+                container
+                docs
+                r (1,1) struct
+                spec (1,1) struct
+            end
             if isempty(fieldnames(r.time)) || isempty(docs), return; end
             [keep, tinfo] = ndi.v2.timeFilter(container, docs, r.time, spec.tolerant);
             if ~any(keep) && spec.strict
@@ -1446,6 +1520,13 @@ classdef entity
         function docs = relationDocs(container, className, names, edge, T)
             % RELATIONDOCS - relation documents of CLASSNAME named one of NAMES
             % ({} any) whose EDGE is one of the ids T ([] any)
+            arguments
+                container
+                className {mustBeText}
+                names
+                edge {mustBeText}
+                T
+            end
             base = ndi.query('', 'isa', className, '');
             if ~isempty(names)
                 t = ndi.v2.termQuery([className '.relation'], names);
@@ -1478,6 +1559,12 @@ classdef entity
             % the caller then reports the property as unknown. A session
             % opened from its dataset also looks in the dataset's documents,
             % where the strain entities are (entitiesOfType).
+
+            arguments
+                container
+                filt (1,1) struct
+                spec (1,1) struct
+            end
             ids = [];
             v = cellstr(filt.variable);
             if ~isscalar(v), return; end
@@ -1512,6 +1599,12 @@ classdef entity
             % TARGETIDS - the ids a relation's other end may be: [] for any;
             % an ndi.entity (or several, or a cell of them); a document id; or
             % a cell describing subjects, searched with ndi.entity.search
+
+            arguments
+                container
+                target
+                spec (1,1) struct
+            end
             if isempty(target) && ~iscell(target)
                 T = [];
             elseif isstruct(target) && isfield(target, 'ids')
@@ -1538,6 +1631,11 @@ classdef entity
         function t = explainSearch(spec, indent, where)
             % EXPLAINSEARCH - SPEC in words, one line per condition; WHERE is
             % 'dataset' or 'session' for the first line ('' when nested)
+            arguments
+                spec (1,1) struct
+                indent {mustBeText}
+                where {mustBeText}
+            end
             lines = {};
             [plural, ~, named] = nounOf(spec);
             for k = 1:size(spec.own, 1)
@@ -1587,6 +1685,13 @@ classdef entity
             % properties there are, with the nearest as a suggestion); when
             % each exists but never on one statement, the answer is simply
             % none. STRICT false: never an error.
+
+            arguments
+                container
+                f (1,1) struct
+                strict
+                noun {mustBeText}
+            end
             if ~strict, return; end
             where = containerWord(container);
             for part = {'variable', 'method'}
@@ -1632,6 +1737,12 @@ classdef entity
             % a type is reached from a subject, a whole, or a group whose
             % instance_of is distributive, and is not walked past. Without
             % INHERITED, only the subjects themselves.
+
+            arguments
+                container
+                ids
+                inherited
+            end
             ids = unique(cellstr(ids), 'stable');
             ids = reshape(ids, 1, []);
             lineage = {'part_of', 'sample_of', 'aliquot_of', 'passage_of'};
@@ -1692,7 +1803,14 @@ classdef entity
             % a type, which a session opened from its dataset finds among
             % the dataset's documents. CONTEXT: then the containers of
             % every subject reached (contextLinks).
-            if nargin < 5, context = false; end
+
+            arguments
+                container
+                ids
+                kinds struct
+                inherited
+                context = false
+            end
             described = arrayfun(@(k) isfield(k.filt, 'during_statements'), kinds);
             if any(described)
                 L = struct('about', {{}}, 'doc', {{}}, 'via', {{}});
@@ -1766,6 +1884,14 @@ classdef entity
             % at (a subject it reaches), m (reached through member_of),
             % path. A stay reached through member_of must be distributive.
             % Nested containers narrow the window to when both held.
+
+            arguments
+                container
+                states struct
+                kinds struct
+                L (1,1) struct
+                seen
+            end
             cache = containers.Map('KeyType', 'char', 'ValueType', 'any');
             tolerant = false;
             for k = 1:numel(kinds)
@@ -1842,6 +1968,15 @@ classdef entity
             % struct) that holds of the same subject -- by the same rules,
             % INHERITED and CONTEXT. A statement or reading whose time
             % cannot be compared does not match.
+
+            arguments
+                container
+                L (1,1) struct
+                inner struct
+                inherited
+                context
+                tolerant
+            end
             if isempty(L.doc), return; end
             abouts = unique(L.about, 'stable');
             Li = ndi.entity.statementLinks(container, abouts, inner, inherited, context);
@@ -1880,6 +2015,12 @@ classdef entity
             % statement held (V_eta tenet T17), down nested containers, and
             % the members of a group in a distributive stay. Assertions
             % never pass.
+
+            arguments
+                container
+                docs
+                tolerant
+            end
             ids = {};
             keep = cellfun(@(d) ~any(strcmp(ndi.v2.classChain(ndi.v2.props(d)), 'assertion')), docs);
             docs = docs(keep);
@@ -1935,6 +2076,9 @@ end
 
 function id = docIdOf(d)
 % a document's base.id
+arguments
+    d
+end
 p = ndi.v2.props(d);
 id = char(p.base.id);
 end
@@ -1942,6 +2086,9 @@ end
 function w = windowOf(t)
 % a resolved time (ndi.v2.timeOf) as a window for ndi.v2.overlaps, or []
 % when it cannot be placed (no time, or only a bound on its anchor)
+arguments
+    t
+end
 w = [];
 if isempty(t) || isnat(t.start) || strcmp(t.resolved_by, 'relation'), return; end
 e = t.end;
@@ -1957,11 +2104,18 @@ end
 
 function v = ifKeyAny(m, k)
 % the value at key K of map M, or [] when absent
+arguments
+    m
+    k
+end
 if isKey(m, k), v = m(k); else, v = []; end
 end
 
 function t = describe(filt)
 % 'variable = strain, value = N2' for messages
+arguments
+    filt
+end
 f = fieldnames(filt);
 parts = cell(1, numel(f));
 for k = 1:numel(f)
@@ -1978,12 +2132,19 @@ if isempty(t), t = 'anything'; end
 end
 
 function t = toText(v)
+arguments
+    v
+end
 if ischar(v), t = ['''' v '''']; elseif isnumeric(v) || islogical(v), t = mat2str(v); else, t = class(v); end
 end
 
 
 function ids = narrow(ids, these)
 % the intersection so far ([] = not narrowed yet)
+arguments
+    ids
+    these
+end
 if isempty(ids) && ~iscell(ids)
     ids = these;
 else
@@ -1992,11 +2153,19 @@ end
 end
 
 function tf = isDistributive(d)
+arguments
+    d
+end
 tf = ~isempty(d) && (islogical(d) || isnumeric(d)) && logical(d(1));
 end
 
 function t = relationText(r, indent, inherited)
 % one condition line for a relation filter, with its target nested below
+arguments
+    r (1,1) struct
+    indent {mustBeText}
+    inherited
+end
 name = 'related to';
 if ~isempty(r.name), name = strjoin(r.name, ' or '); end
 through = '';
@@ -2041,6 +2210,10 @@ end
 function t = statementText(f, inherited)
 % one condition line for a statement filter: "have strain N2", "had a
 % manipulation with variable NGM agar and value >= 0.02"
+arguments
+    f (1,1) struct
+    inherited
+end
 kind = f.kind;
 verb = 'had';
 if any(strcmp(kind, {'assertion', 'statement'})), verb = 'have'; end
@@ -2077,6 +2250,9 @@ end
 
 function t = timeText(f)
 % ', at 2023-11-16T14:00, lasting >=3h' for the time filters in F ('' when none)
+arguments
+    f
+end
 t = '';
 if ~isstruct(f), return; end
 words = struct('at', 'at', 'during', 'during', 'before', 'before', 'after', 'after', 'duration', 'lasting');
@@ -2095,6 +2271,12 @@ end
 
 function m = noTimeMessage(kind, filt, tinfo, where)
 % the warning when statements or relations matched but none at that time
+arguments
+    kind {mustBeText}
+    filt
+    tinfo (1,1) struct
+    where {mustBeText}
+end
 m = sprintf('No %s in this %s matches %s at the time asked.', kind, where, describe(filt));
 why = {};
 if tinfo.unresolved > 0, why{end+1} = sprintf('%d time(s) could not be resolved here', tinfo.unresolved); end
@@ -2108,6 +2290,9 @@ end
 
 function t = valueText(v)
 % a pattern or a list of them, as typed: N2 or CB*
+arguments
+    v
+end
 if iscell(v)
     t = strjoin(cellfun(@valueText, v, 'UniformOutput', false), ' or ');
 elseif ischar(v) || isstring(v)
@@ -2120,11 +2305,18 @@ end
 end
 
 function q = quoted(pats)
+arguments
+    pats
+end
 q = strjoin(cellfun(@(x) ['''' char(x) ''''], cellstr(pats), 'UniformOutput', false), ' or ');
 end
 
 function m = didYouMean(pats, candidates)
 % ' Did you mean ''strain''?' for the first pattern with a near candidate
+arguments
+    pats
+    candidates
+end
 m = '';
 for k = 1:numel(pats)
     if ~ischar(pats{k}) || ndi.v2.hasWildcard(pats{k}), continue; end
@@ -2137,11 +2329,20 @@ end
 end
 
 function w = containerWord(container)
+arguments
+    container
+end
 if isa(container, 'ndi.dataset'), w = 'dataset'; else, w = 'session'; end
 end
 
 function m = noValueMessage(f, values, where, noun)
 % the warning when a variable is there and none of the values is
+arguments
+    f (1,1) struct
+    values
+    where {mustBeText}
+    noun {mustBeText}
+end
 vals = f.filt.value;
 if ~iscell(vals), vals = {vals}; end
 shown = values(1:min(end, 30));
@@ -2165,6 +2366,10 @@ function [plural, singular, named] = nounOf(spec)
 % 'organisms', 'people', or for several types the list of them
 % ('organisms, cultures, tissues, cells or groups'); else 'entities'.
 % NAMED: the spec.own row the noun says (0 when none)
+
+arguments
+    spec (1,1) struct
+end
 plural = 'entities'; singular = 'entity'; named = 0;
 for key = {'kind', 'type'}
     k = find(strcmp(spec.own(:, 1), key{1}));
@@ -2185,6 +2390,9 @@ end
 
 function t = listOf(w)
 % 'a', 'a or b', 'a, b or c'
+arguments
+    w cell
+end
 if isscalar(w), t = w{1};
 else, t = [strjoin(w(1:end-1), ', ') ' or ' w{end}];
 end
@@ -2192,6 +2400,9 @@ end
 
 function p = pluralOf(w)
 % an English plural, for the nouns entity kinds and types are
+arguments
+    w {mustBeText}
+end
 if strcmp(w, 'person'), p = 'people';
 elseif strcmp(w, 'software'), p = 'software';
 elseif endsWith(w, 'y') && ~any(w(end-1) == 'aeiou'), p = [w(1:end-1) 'ies'];
@@ -2201,11 +2412,19 @@ end
 end
 
 function a = article(word)
+arguments
+    word {mustBeText}
+end
 if any(lower(word(1)) == 'aeiou'), a = 'an'; else, a = 'a'; end
 end
 
 function tf = entityMatches(p, type, patterns)
 % does entity P of TYPE match any of PATTERNS by name or global identifier
+arguments
+    p
+    type {mustBeText}
+    patterns
+end
 tf = ndi.v2.matchTerm(char(ndi.v2.blockOf(p, type, 'name', '')), patterns);
 ids = cellstr(ndi.v2.blockOf(p, type, 'global_identifier', {}));
 for k = 1:numel(ids)
@@ -2217,6 +2436,10 @@ end
 function m = typeDocuments(container, ids)
 % the properties of the documents IDS (a strain, a product), by id: the
 % container's own, and for a session opened from a dataset the dataset's
+arguments
+    container
+    ids
+end
 m = containers.Map('KeyType', 'char', 'ValueType', 'any');
 qs = cellfun(@(i) ndi.query('base.id', 'exact_string', i, ''), ids, 'UniformOutput', false);
 q = ndi.v2.anyOf(qs);
@@ -2232,6 +2455,9 @@ end
 
 function c = namedArgs(options)
 % an options struct as NAME, VALUE pairs, to pass on
+arguments
+    options (1,1) struct
+end
 n = fieldnames(options);
 c = cell(1, 2 * numel(n));
 c(1:2:end) = n;
@@ -2241,6 +2467,11 @@ end
 function tf = entitySynonymMatches(p, type, patterns)
 % does a name one of the entity's global identifiers goes by (a CURIE's
 % label or synonym, ndi.v2.synonyms) match PATTERNS?
+arguments
+    p
+    type {mustBeText}
+    patterns
+end
 tf = false;
 ids = cellstr(ndi.v2.blockOf(p, type, 'global_identifier', {}));
 for k = 1:numel(ids)
@@ -2258,6 +2489,11 @@ function docs = entitiesOfType(container, type)
 % the entities of TYPE (merged `entity` documents only) CONTAINER can reach:
 % its own, and for a session opened from a dataset the dataset's too, since
 % a strain or product entity is written once, at dataset level
+
+arguments
+    container
+    type {mustBeText}
+end
 q = ndi.v2.isaQuery(type) & ndi.query('', 'isa', 'entity', '');
 docs = container.database_search(q);
 if isempty(docs) && isa(container, 'ndi.session')
@@ -2267,6 +2503,9 @@ end
 
 function n = kindOfSpec(spec)
 % the noun a search's messages use: its kind ('subject', 'person', ...)
+arguments
+    spec
+end
 n = 'entity';
 if isfield(spec, 'kind') && ~isempty(spec.kind), n = char(spec.kind); end
 end
