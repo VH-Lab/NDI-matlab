@@ -457,6 +457,11 @@ out.documents = docs;
 end
 
 function v = getOr(s, name, default)
+arguments
+    s
+    name {mustBeText}
+    default
+end
 if isstruct(s) && isfield(s, name)
     v = s.(name);
 else

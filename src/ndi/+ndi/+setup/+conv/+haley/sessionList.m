@@ -183,8 +183,21 @@ end
 % =============================================================================
 
 function s = row(id, study, n, day, desc, include, w1, w2, path, source, folder, videoFolder, studyIds, notes)
-if nargin < 14
-    notes = '';
+arguments
+    id {mustBeText}
+    study (1,1) struct
+    n
+    day
+    desc {mustBeText}
+    include (1,1) logical
+    w1
+    w2
+    path {mustBeText}
+    source {mustBeText}
+    folder {mustBeText}
+    videoFolder {mustBeText}
+    studyIds
+    notes {mustBeText} = ''
 end
 if isnat(day)
     when = 'date unknown';
@@ -205,6 +218,9 @@ end
 
 function c = tocCorrections(spec)
 % the spec's corrections to a tableOfContents cell
+arguments
+    spec struct
+end
 c = {};
 if ~isfield(spec, 'corrections'), return; end
 list = spec.corrections;
@@ -218,6 +234,12 @@ end
 end
 
 function [C, checks] = applyTocCorrections(C, folder, fixes, checks)
+arguments
+    C table
+    folder {mustBeText}
+    fixes cell
+    checks (1,1) struct
+end
 for k = 1:numel(fixes)
     x = fixes{k};
     if ~strcmp(char(x.folder), folder)
@@ -243,6 +265,13 @@ end
 end
 
 function study = pickStudy(studies, folder, word, where, r)
+arguments
+    studies cell
+    folder {mustBeText}
+    word {mustBeText}
+    where {mustBeText}
+    r (1,1) {mustBeNumeric}
+end
 hit = {};
 for k = 1:numel(studies)
     s = studies{k};
@@ -264,6 +293,9 @@ study = hit{1};
 end
 
 function [a, b] = wormRange(txt)
+arguments
+    txt
+end
 a = NaN; b = NaN;
 tok = regexp(strtrim(txt), '^(\d+)\s*-\s*(\d+)$', 'tokens', 'once');
 if ~isempty(tok)
@@ -273,5 +305,8 @@ end
 end
 
 function c = asCell(v)
+arguments
+    v
+end
 if iscell(v), c = reshape(v, 1, []); else, c = num2cell(reshape(v, 1, [])); end
 end

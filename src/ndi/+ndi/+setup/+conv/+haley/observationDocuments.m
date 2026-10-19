@@ -126,6 +126,9 @@ end
 
 function v = oneValue(x)
 % the one value X holds (NaN when none); [] when its values differ
+arguments
+    x {mustBeNumeric}
+end
 u = unique(x(~isnan(x)));
 if isempty(u)
     v = NaN;

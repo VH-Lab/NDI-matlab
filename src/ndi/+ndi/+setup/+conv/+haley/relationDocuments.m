@@ -212,6 +212,18 @@ end
 
 % -----------------------------------------------------------------------------
 function [docs, out] = relate(docs, out, ids, child, parent, relation, times, sid, counter, fields)
+arguments
+    docs cell
+    out (1,1) struct
+    ids
+    child {mustBeText}
+    parent {mustBeText}
+    relation {mustBeText}
+    times cell
+    sid {mustBeText}
+    counter {mustBeText}
+    fields struct
+end
 if ~isKey(ids, child) || ~isKey(ids, parent)
     out.skipped{end+1} = sprintf('%s %s %s: not both subjects of this session', ...
         child, relation, parent);
@@ -224,6 +236,11 @@ end
 
 function t = placed(holding, id, tz)
 % when the worms were put onto an acclimation / food deprivation plate
+arguments
+    holding table
+    id {mustBeText}
+    tz {mustBeText}
+end
 t = holding.worms_placed(strcmp(holding.local_identifier, id));
 if isempty(t)
     t = NaT;

@@ -248,6 +248,9 @@ end
 
 % -----------------------------------------------------------------------------
 function [readerString, filePattern] = systemFiles(sys)
+arguments
+    sys {mustBeText}
+end
 switch sys
     case 'camera1'
         readerString = 'video'; filePattern = '.*_1\.mp4\>';
@@ -263,6 +266,9 @@ end
 function key = instrumentFor(sys)
 % acquisition system -> the dataset-level instrument subject's SPEC KEY (the
 % key stage 2's id map uses; not its local_identifier, decision #59)
+arguments
+    sys {mustBeText}
+end
 switch sys
     case 'microscope', key = 'axio_zoom_1';
     case 'camera1',    key = 'camera_1';
@@ -273,6 +279,9 @@ end
 
 function t = probeType(sys)
 % ndi_common/probe/probetype2object.json; all map to ndi.probe.image
+arguments
+    sys {mustBeText}
+end
 if strcmp(sys, 'microscope')
     t = 'wide-field-imaging';
 else
@@ -289,6 +298,11 @@ function keys = recordingKeys(hw, isImage, r)
 % decoded (decision #87: the videos do not have a constant frame rate), else
 % regular at 1 / frame rate. Only when the pixel size is known (the file was
 % opened: 'ReadVideos', or a TIFF), so the keys are always complete.
+arguments
+    hw
+    isImage (1,1) logical
+    r table
+end
 keys = [];
 if isempty(hw), return; end
 k = {did2.build.key('image vertical position', hw(1), 'Unit', 'pixel', 'Origin', 0.5, 'Spacing', 1), ...
@@ -311,6 +325,11 @@ end
 function [t, why, hw] = datumTypeOf(file, ext, readVideos)
 % How the recording's pixel values are encoded (data_type.datum_type), and
 % its [height width] in pixels when the file is opened ([] otherwise).
+arguments
+    file {mustBeText}
+    ext {mustBeText}
+    readVideos (1,1) logical
+end
 t = ''; why = ''; hw = [];
 switch lower(ext)
     case '.mp4'
@@ -356,6 +375,9 @@ end
 function m = mediaType(ext)
 % the file format: an EDAM format term (fileFormat writes the media type on
 % a schema whose data_body.format is still a string)
+arguments
+    ext {mustBeText}
+end
 switch lower(ext)
     case '.mp4',           m = fileFormat('EDAM:format_3997', 'MPEG-4', 'video/mp4');
     case {'.tif', '.tiff'}, m = fileFormat('EDAM:format_3591', 'TIFF', 'image/tiff');
@@ -365,6 +387,12 @@ end
 end
 
 function d = utcReference(localStart, dur, tz, sid)
+arguments
+    localStart
+    dur
+    tz {mustBeText}
+    sid {mustBeText}
+end
 t = localStart;
 t.TimeZone = tz;
 u = t;
@@ -376,18 +404,28 @@ end
 
 function s = isoUtc(t)
 % dir() reports the file time in this computer's own time zone
+arguments
+    t
+end
 t.TimeZone = 'UTC';
 s = char(t, 'yyyy-MM-dd''T''HH:mm:ss''Z''');
 end
 
 function d = softwareDoc(name, sid)
 % a `software` entity (or, since 2026-10-08, an `entity` of type software)
+arguments
+    name {mustBeText}
+    sid {mustBeText}
+end
 d = ndi.setup.V2.entityDocuments('software', struct('name', name), struct(), 'SessionId', sid);
 d = d{1};
 end
 
 function n = noteOf(r)
 % a recording row's note (recordingList: e.g. decision #83's camera swap)
+arguments
+    r table
+end
 n = '';
 if ismember('note', r.Properties.VariableNames) && ~isempty(r.note{1})
     n = char(r.note{1});

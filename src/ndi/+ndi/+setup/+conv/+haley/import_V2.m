@@ -314,6 +314,10 @@ end
 function result = recordedRun(dataParentDir, options)
 % Run the import with its console output, report and skipped list kept in
 % the run folder; the diary that was on before (if any) is restored.
+arguments
+    dataParentDir {mustBeText}
+    options (1,1) struct
+end
 runDir = options.RunFolder;
 if isempty(runDir)
     outRoot = options.OutputRoot;
@@ -352,6 +356,10 @@ end
 end
 
 function restoreDiary(wasOn, wasFile)
+arguments
+    wasOn (1,1) logical
+    wasFile {mustBeText}
+end
 diary off
 if wasOn
     diary(wasFile);
@@ -360,6 +368,12 @@ end
 
 function report = runReport(result, options, elapsed, failure)
 % what the run decided and checked, without its documents (small to save)
+arguments
+    result (1,1) struct
+    options (1,1) struct
+    elapsed (1,1) {mustBeNumeric}
+    failure
+end
 report = struct('finished', datetime('now'), 'seconds', elapsed, 'failed', ~isempty(failure), ...
     'error', '', 'options', options);
 if ~isempty(failure), report.error = failure.message; end
@@ -379,6 +393,10 @@ end
 function writeSkipped(logFile, outFile)
 % every reported skip and check line of the log, under the stage or session
 % header it came after
+arguments
+    logFile {mustBeText}
+    outFile {mustBeText}
+end
 lines = splitlines(string(fileread(logFile)));
 keep = strings(0, 1);
 inChecks = false;
@@ -403,6 +421,11 @@ end
 function result = writeSessions(result, dataParentDir, options)
 % One V2 session per selected row: its documents first, then its files.
 % Subjects carry a display name (decision #42), which needs did-schema #80.
+arguments
+    result (1,1) struct
+    dataParentDir {mustBeText}
+    options (1,1) struct
+end
 schema = getenv('DID_SCHEMA_PATH');
 subjectFile = fullfile(schema, 'subject.json');
 if isfield(result, 'subjects') && isfile(subjectFile)
@@ -677,6 +700,10 @@ result.written = built;
 end
 
 function path = datasetPath(dataParentDir, options)
+arguments
+    dataParentDir {mustBeText}
+    options (1,1) struct
+end
 outRoot = options.OutputRoot;
 if isempty(outRoot), outRoot = fullfile(dataParentDir, 'haley_V2'); end
 path = options.DatasetFolder;
@@ -686,6 +713,11 @@ end
 function checkFoldersFree(T, dataParentDir, options)
 % Every folder this run will write, checked before anything is built, so an
 % occupied one stops the run at its start rather than after a long write.
+arguments
+    T table
+    dataParentDir {mustBeText}
+    options (1,1) struct
+end
 if options.Overwrite, return; end
 folders = {};
 if any(options.Stages == "dataset")
@@ -714,6 +746,13 @@ function out = writeDataset(result, T, dataParentDir, options, linked)
 % written into ONE V2 database -- or, LINKED (decision #71), the dataset-level
 % documents, each session's part_of relations and a linked_session per session,
 % with the sessions' own documents written to their folders afterwards.
+arguments
+    result (1,1) struct
+    T table
+    dataParentDir {mustBeText}
+    options (1,1) struct
+    linked (1,1) logical
+end
 path = datasetPath(dataParentDir, options);
 dsDocs = {};
 for f = {'metadata', 'studies'}
@@ -779,6 +818,9 @@ end
 
 function out = listDataset(out)
 % the sessions of a linked dataset, listed once their folders are written
+arguments
+    out (1,1) struct
+end
 ds = ndi.dataset.dir(out.path);
 [refs, ids] = ds.session_list();
 notes = ds.session_notes();
@@ -794,6 +836,9 @@ end
 function docs = sessionOwn(row)
 % the session document and its study relations, exactly as createSession
 % writes them into a session folder (same ids where createSession is given them)
+arguments
+    row table
+end
 f = struct('local_identifier', char(row.local_identifier{1}));
 vars = row.Properties.VariableNames;
 if ismember('name', vars) && ~isempty(row.name{1}), f.name = char(row.name{1}); end
@@ -817,6 +862,9 @@ end
 
 function docs = keepOriginals(docs)
 % a copy of DOCS whose ingested files are not deleted once copied
+arguments
+    docs cell
+end
 for i = 1:numel(docs)
     d = docs{i};
     if ~isfield(d, 'files') || ~isfield(d.files, 'file_info') || isempty(d.files.file_info)
@@ -835,6 +883,9 @@ end
 
 function m = namesOf(spec)
 % formulation and strain keys -> the names a dose's variable reads as
+arguments
+    spec (1,1) struct
+end
 m = containers.Map();
 for f = {'formulations', 'strains'}
     if ~isfield(spec, f{1}), continue; end
@@ -854,6 +905,10 @@ end
 function f = frameTimesCache(dataParentDir, outRoot)
 % where the measured video frame times are kept between runs (decision #87):
 % beside the run folders, so a rerun does not decode every video again
+arguments
+    dataParentDir {mustBeText}
+    outRoot {mustBeText}
+end
 if isempty(outRoot), outRoot = fullfile(dataParentDir, 'haley_V2'); end
 f = fullfile(outRoot, 'video_frame_times.mat');
 end

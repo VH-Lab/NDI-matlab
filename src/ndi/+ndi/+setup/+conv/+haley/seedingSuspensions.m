@@ -276,6 +276,11 @@ end
 
 function T = applyCorrections(T, folder, spec)
 % The spec's named corrections to a seeding column (decision #57).
+arguments
+    T table
+    folder {mustBeText}
+    spec struct
+end
 if ~isfield(spec, 'corrections')
     return;
 end
@@ -297,6 +302,11 @@ end
 end
 
 function k = keyFor(key, n, diluent)
+arguments
+    key {mustBeText}
+    n (1,1) {mustBeNumeric}
+    diluent {mustBeText}
+end
 if n == 10
     k = key;
 elseif n == 0
@@ -307,6 +317,9 @@ end
 end
 
 function v = flat(x)
+arguments
+    x
+end
 if iscell(x), x = [x{:}]; end
 if iscell(x), x = [x{:}]; end
 v = double(x(:)');
@@ -314,11 +327,18 @@ v = v(~isnan(v));
 end
 
 function v = uniq(v)
+arguments
+    v
+end
 v = unique(round(double(v(:)'), 9));
 v = v(~isnan(v));
 end
 
 function v = pick(s, folder)
+arguments
+    s struct
+    folder {mustBeText}
+end
 if isfield(s, folder)
     v = s.(folder);
 else
@@ -327,5 +347,10 @@ end
 end
 
 function v = getOr(s, name, default)
+arguments
+    s struct
+    name {mustBeText}
+    default
+end
 if isfield(s, name), v = s.(name); else, v = default; end
 end
