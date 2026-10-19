@@ -41,6 +41,9 @@ classdef bodies < ndi.file.navigator
 
     methods
         function obj = bodies(varargin)
+            arguments (Repeating)
+                varargin
+            end
             obj = obj@ndi.file.navigator(varargin{:});
             obj.found = containers.Map();
         end
@@ -48,8 +51,10 @@ classdef bodies < ndi.file.navigator
         function id = epochid(obj, epoch_number, epochfiles)
             % The epoch document's local_identifier; no hidden file is
             % written next to the (raw) epoch files.
-            if nargin < 3
-                epochfiles = obj.getepochfiles_number(epoch_number);
+            arguments
+                obj (1,1) ndi.file.navigator.bodies
+                epoch_number
+                epochfiles = obj.getepochfiles_number(epoch_number)
             end
             if ndi.file.navigator.isingested(epochfiles)
                 id = ndi.file.navigator.ingestedfiles_epochid(epochfiles);
@@ -79,8 +84,10 @@ classdef bodies < ndi.file.navigator
         end
 
         function epochprobemap = getepochprobemap(obj, N, epochfiles)
-            if nargin < 3
-                epochfiles = obj.getepochfiles_number(N);
+            arguments
+                obj (1,1) ndi.file.navigator.bodies
+                N
+                epochfiles = obj.getepochfiles_number(N)
             end
             R = obj.recordings();
             for k = 1:numel(R)
@@ -154,6 +161,11 @@ classdef bodies < ndi.file.navigator
         function [files, names] = statementFiles(obj, st, pattern)
             % FILES: local paths of the statement's bodies' files; NAMES:
             % the bodies' recorded file names that match PATTERN.
+            arguments
+                obj (1,1) ndi.file.navigator.bodies
+                st (1,1) ndi.document
+                pattern {mustBeText}
+            end
             files = {};
             names = {};
             S = obj.session;
@@ -186,6 +198,10 @@ classdef bodies < ndi.file.navigator
 
         function id = statementEpoch(obj, st)
             % The epoch a statement's relative time reference points at.
+            arguments
+                obj (1,1) ndi.file.navigator.bodies
+                st (1,1) ndi.document
+            end
             S = obj.session;
             refs = ndi.vintage.edge_n(st, 'time_reference_id');
             for r = 1:numel(refs)
@@ -205,7 +221,12 @@ classdef bodies < ndi.file.navigator
                 'Recording statement %s has no relative time reference to an epoch document.', st.id());
         end
 
-        function pm = statementProbemap(~, st, sysName)
+        function pm = statementProbemap(obj, st, sysName)
+            arguments
+                obj (1,1) ndi.file.navigator.bodies %#ok<INUSA> the method reads only its inputs
+                st (1,1) ndi.document
+                sysName {mustBeText}
+            end
             p = st.document_properties;
             type = '';
             m = ndi.v2.blockOf(p, 'interaction', 'method', []);
