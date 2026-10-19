@@ -159,6 +159,25 @@ classdef TestHaleyRecordings < matlab.unittest.TestCase
     end
 
     methods (Test)
+        function testEveryReportedCheckIsDeclared(testCase)
+            % A check recorded with `checks.<name>{end+1} = ...` must be one
+            % the function declares up front: an undeclared name is a MATLAB
+            % error the first time that check fires (framesDisagree did, on
+            % the first real run with ReadVideos, 2026-10-19). The fixture's
+            % videos are placeholders, so the video checks never fire here;
+            % this reads the source instead.
+            src = fileread(which('ndi.setup.conv.haley.recordingList'));
+            used = regexp(src, 'checks\.(\w+)\{end\+1\}', 'tokens');
+            used = unique(cellfun(@(c) c{1}, used, 'UniformOutput', false));
+            decl = regexp(src, 'checks = struct\((.*?)\);', 'tokens', 'once');
+            testCase.assertNotEmpty(decl, 'the checks declaration was not found');
+            declared = regexp(decl{1}, '''(\w+)''', 'tokens');
+            declared = cellfun(@(c) c{1}, declared, 'UniformOutput', false);
+            testCase.verifyNotEmpty(used);
+            testCase.verifyEmpty(setdiff(used, declared), ...
+                'recorded but not declared in recordingList''s checks struct');
+        end
+
         function testOneRowPerRecordingOnDisk(testCase)
             [R, ~] = testCase.list();
             testCase.verifyEqual(sum(strcmp(R.kind, 'behaviour')), 4, ...

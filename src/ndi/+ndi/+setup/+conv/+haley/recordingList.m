@@ -74,7 +74,7 @@ nCached = cache.Count;
 root = fullfile(dataParentDir, 'haley');
 checks = struct('rowWithoutFile', {{}}, 'fileWithoutRow', {{}}, 'cameraDisagrees', {{}}, ...
     'noFrames', {{}}, 'imagesWithoutFile', {{}}, 'noRawImages', {{}}, 'unreadable', {{}}, ...
-    'cameraSwap', {{}});
+    'framesDisagree', {{}}, 'cameraSwap', {{}});
 rows = {};
 nFiles = 0;
 
