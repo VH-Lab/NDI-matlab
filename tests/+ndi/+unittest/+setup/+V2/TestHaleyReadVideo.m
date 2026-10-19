@@ -55,6 +55,46 @@ classdef TestHaleyReadVideo < matlab.unittest.TestCase
     end
 
     methods (Test)
+        function testFrameTimesAreMeasuredAndCached(testCase)
+            % stage 5 with ReadVideos (decision #87), over the one real
+            % video: the table says 10796 frames and the file has T, which is
+            % the case that stopped the first real run (an undeclared
+            % framesDisagree check). The placeholders are not videos, so
+            % they are reported unreadable and the run carries on.
+            spec = jsondecode(fileread(fullfile(fileparts( ...
+                which('ndi.setup.conv.haley.import_V2')), 'import_V2_spec.json')));
+            sessions = ndi.setup.conv.haley.sessionList(testCase.Root, spec);
+            cacheFile = fullfile(testCase.Root, 'haley_V2', 'video_frame_times.mat');
+            [R, checks] = ndi.setup.conv.haley.recordingList(testCase.Root, sessions, ...
+                'ReadVideos', true, 'FrameTimesCache', cacheFile);
+            r = R(strcmp(R.epoch, testCase.Epoch), :);
+            testCase.assertEqual(height(r), 1);
+            ft = r.frame_times{1};
+            testCase.verifyNumElements(ft, testCase.T, sprintf('frame times (%s)', testCase.Profile));
+            testCase.verifyEqual(ft(1), 0, 'AbsTol', 1e-9, 'the first frame is at 0 s');
+            testCase.verifyTrue(all(diff(ft) > 0), 'frame times increase');
+            testCase.verifyEqual(r.n_frames, testCase.T, 'the decoded count replaces the table''s');
+            testCase.verifyTrue(any(contains(checks.framesDisagree, ...
+                sprintf('decodes to %d frame(s); the table says 10796', testCase.T))), ...
+                strjoin(checks.framesDisagree, newline));
+            testCase.verifyNotEmpty(checks.unreadable, 'the placeholders are not videos');
+
+            % the cache holds the measured times, under the file's path, size and date
+            testCase.assertTrue(isfile(cacheFile), 'the cache is written');
+            testCase.verifyFalse(isfile([cacheFile '.partial.mat']), 'no partial file is left behind');
+            S = load(cacheFile, 'frameTimes');
+            k = S.frameTimes.keys;
+            hit = k(contains(k, '2022-02-04_12-10-51_2.mp4'));
+            testCase.assertNumElements(hit, 1);
+            testCase.verifyEqual(S.frameTimes(hit{1}), ft);
+            % a second run takes the real video's times from the cache (the
+            % placeholders are not cached: they never decode)
+            out = evalc(['ndi.setup.conv.haley.recordingList(testCase.Root, sessions, ' ...
+                '''ReadVideos'', true, ''FrameTimesCache'', cacheFile);']);
+            testCase.verifyTrue(contains(out, '1 video(s) already in the cache'), out);
+            testCase.verifyTrue(contains(out, ', 1 taken from the cache'), out);
+        end
+
         function testReadFrameThroughDaqSystem(testCase)
             fprintf('ndr.reader.video: %s\n', which('ndr.reader.video'));
             result = ndi.setup.conv.haley.import_V2(testCase.Root, ...

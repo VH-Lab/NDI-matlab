@@ -60,7 +60,9 @@ function [R, checks] = recordingList(dataParentDir, sessions, options)
 %     'FrameTimesCache'  a .mat file that keeps the measured frame times
 %                   between runs, keyed by file path, size and modification
 %                   time ('' = none): decoding takes about 10 s per hour of
-%                   video.
+%                   video. It is saved every 25 newly decoded videos as well
+%                   as at the end, so a run that stops part way keeps what
+%                   it decoded; progress is printed every 10.
 
 arguments
     dataParentDir (1,:) char {mustBeFolder}
@@ -70,6 +72,14 @@ arguments
 end
 cache = loadFrameTimes(options.FrameTimesCache);
 nCached = cache.Count;
+% progress of the decoding: printed every 10 newly decoded videos, the cache
+% saved every 25 (decision #87)
+prog = struct('decoded', 0, 'reused', 0, 'seconds', 0, 'started', tic, ...
+    'file', options.FrameTimesCache);
+if options.ReadVideos
+    fprintf(['frame times: %d video(s) already in the cache (%s); decoding the rest, ' ...
+        'progress every 10\n'], nCached, cacheName(options.FrameTimesCache));
+end
 
 root = fullfile(dataParentDir, 'haley');
 checks = struct('rowWithoutFile', {{}}, 'fileWithoutRow', {{}}, 'cameraDisagrees', {{}}, ...
@@ -129,7 +139,7 @@ for f = 1:numel(folders)
                     end
                     ft = [];
                     if options.ReadVideos
-                        [ft, cache, err] = frameTimes(fullfile(root, vdir, [stem '.mp4']), cache);
+                        [ft, cache, err, prog] = frameTimes(fullfile(root, vdir, [stem '.mp4']), cache, prog);
                         if ~isempty(err)
                             checks.unreadable{end+1} = sprintf('%s: %s.mp4: %s', ...
                                 mine.local_identifier{s}, stem, err);
@@ -166,7 +176,7 @@ for f = 1:numel(folders)
                         if options.ReadVideos
                             [nf, fr, dur, err] = readVideo(fullfile(root, vdir, [stem '.mp4']));
                             if isempty(err)
-                                [ft, cache, err] = frameTimes(fullfile(root, vdir, [stem '.mp4']), cache);
+                                [ft, cache, err, prog] = frameTimes(fullfile(root, vdir, [stem '.mp4']), cache, prog);
                                 if isempty(err), nf = numel(ft); end
                             end
                             if ~isempty(err)
@@ -300,6 +310,10 @@ if height(mine) > 0
 end
 
 % ---- report -------------------------------------------------------------------
+if options.ReadVideos
+    fprintf('frame times: %d video(s) decoded in %s, %d taken from the cache\n', ...
+        prog.decoded, hms(toc(prog.started)), prog.reused);
+end
 if cache.Count > nCached
     saveFrameTimes(options.FrameTimesCache, cache);
 end
@@ -409,11 +423,13 @@ if ~isempty(d)
 end
 end
 
-function [t, cache, err] = frameTimes(file, cache)
+function [t, cache, err, prog] = frameTimes(file, cache, prog)
 % The measured time of every frame of a video (decision #87): VideoReader's
 % CurrentTime just before each readFrame, in seconds from the start of the
 % file -- the method of NDR's ndr.reader.video/frametimes, so the times agree
-% with what NDI reads. Cached by path, size and modification time.
+% with what NDI reads. Cached by path, size and modification time. PROG
+% counts the videos decoded (printing every 10, saving the cache every 25)
+% and those taken from the cache.
 t = []; err = '';
 d = dir(file);
 if isempty(d)
@@ -423,8 +439,10 @@ end
 key = sprintf('%s|%d|%.10f', file, d(1).bytes, d(1).datenum);
 if isKey(cache, key)
     t = cache(key);
+    prog.reused = prog.reused + 1;
     return;
 end
+started = tic;
 try
     v = VideoReader(file);
     n = v.NumFrames;
@@ -442,6 +460,27 @@ catch e
     t = [];
     err = e.message;
 end
+prog.decoded = prog.decoded + 1;
+prog.seconds = prog.seconds + toc(started);
+if mod(prog.decoded, 10) == 0
+    fprintf('  frame times: %d video(s) decoded, %s elapsed (%.1f s per video); %d from the cache\n', ...
+        prog.decoded, hms(toc(prog.started)), prog.seconds / prog.decoded, prog.reused);
+end
+if mod(prog.decoded, 25) == 0
+    saveFrameTimes(prog.file, cache);
+end
+end
+
+function s = hms(seconds)
+s = char(duration(0, 0, seconds, 'Format', 'hh:mm:ss'));
+end
+
+function s = cacheName(file)
+if isempty(file)
+    s = 'none kept';
+else
+    s = file;
+end
 end
 
 function cache = loadFrameTimes(file)
@@ -458,7 +497,11 @@ if isempty(file), return; end
 folder = fileparts(file);
 if ~isempty(folder) && ~isfolder(folder), mkdir(folder); end
 frameTimes = cache; %#ok<NASGU>
-save(file, 'frameTimes', '-v7.3');
+% written beside the cache and then moved over it, so a run stopped mid-save
+% leaves the previous cache intact rather than a truncated file
+partial = [file '.partial.mat'];
+save(partial, 'frameTimes', '-v7.3');
+movefile(partial, file, 'f');
 end
 
 function [nf, fr, dur, err] = readVideo(file)
