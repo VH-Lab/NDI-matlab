@@ -355,7 +355,8 @@ for k = 1:numel(built)
             [onsets, order] = sort([a.onset]);
             a = a(order);
             in = {a.fitId};
-            in = [unique(in(~cellfun(@isempty, in)), 'stable'), unique({a.listId}, 'stable')];
+            in = [reshape(unique(in(~cellfun(@isempty, in)), 'stable'), 1, []), ...
+                reshape(unique({a.listId}, 'stable'), 1, [])];
             extra = {};
             if ~isnan(a(1).bin)
                 extra = {'Conditions', did2.build.list(binCondition(a(1).bin)), ...
