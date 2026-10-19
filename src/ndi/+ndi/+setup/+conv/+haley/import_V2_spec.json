@@ -273,6 +273,29 @@
     }
    ],
    "parent": "emd_millipore"
+  },
+  {
+   "key": "alfa_aesar",
+   "name": "Alfa Aesar",
+   "identifiers": [
+    {
+     "scheme": "URL",
+     "value": "https://www.alfa.com/"
+    }
+   ],
+   "parent": "fisher",
+   "_note": "Now part of Thermo Fisher Scientific: alfa.com redirects to Thermo Fisher's chemicals pages (checked 2026-10-19)."
+  },
+  {
+   "key": "decon_labs",
+   "name": "Decon Labs",
+   "identifiers": [
+    {
+     "scheme": "URL",
+     "value": "https://deconlabs.com/"
+    }
+   ],
+   "_note": "Maker of Koptec ethanol."
   }
  ],
  "people": [
@@ -598,6 +621,19 @@
    "key": "s_complete_kitchen",
    "name": "S-Complete",
    "vendor": "salk_media_kitchen"
+  },
+  {
+   "key": "cholesterol_a11470",
+   "name": "Cholesterol, 95%",
+   "catalog_number": "A11470",
+   "vendor": "alfa_aesar",
+   "_note": "Cholesterol stock (Benchling): 95% Cholesterol - Alfa A11470."
+  },
+  {
+   "key": "ethanol_koptec_190",
+   "name": "Koptec 190 Proof Ethanol",
+   "vendor": "decon_labs",
+   "_note": "Cholesterol stock (Benchling): 190 Proof Ethanol - Koptec. 190 proof is 95% ethanol by volume."
   }
  ],
  "strains": [
@@ -988,14 +1024,14 @@
    }
   },
   {
-   "key": "cholesterol_5",
+   "key": "cholesterol_alfa",
    "substance": "cholesterol",
-   "concentration": {
-    "grams_per_liter": 5,
-    "source_value": 5,
-    "source_unit": "mg/mL"
-   },
-   "_note": "5 mg/mL in ethanol."
+   "product": "cholesterol_a11470"
+  },
+  {
+   "key": "ethanol_koptec",
+   "substance": "ethanol",
+   "product": "ethanol_koptec_190"
   },
   {
    "key": "tryptone",
@@ -1045,6 +1081,29 @@
   }
  ],
  "formulations": [
+  {
+   "key": "cholesterol_5",
+   "type": "5 mg/mL cholesterol in ethanol",
+   "ingredients": [
+    {
+     "ingredient": "cholesterol_alfa",
+     "mass": {
+      "grams": 0.5007,
+      "source_value": 500.7,
+      "source_unit": "mg"
+     }
+    },
+    {
+     "ingredient": "ethanol_koptec",
+     "volume": {
+      "liters": 0.1,
+      "source_value": 100,
+      "source_unit": "mL"
+     }
+    }
+   ],
+   "_note": "Cholesterol stock (Benchling, protocol adapted from Kathleen Quach): 500 mg cholesterol (500.7 mg weighed) in 100 mL 190 proof ethanol, stirred on high (~350 rpm) until dissolved, transferred to a 100 mL bottle, not autoclaved, stored at 4 C. Nominally 5 mg/mL (decision #90)."
+  },
   {
    "key": "kh2po4_1m",
    "type": "1 M potassium phosphate monobasic",

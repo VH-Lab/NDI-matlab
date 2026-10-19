@@ -71,8 +71,9 @@ classdef TestDatasetMetadataHaley < matlab.unittest.TestCase
                 return;
             end
             % 53 before decision #89; + suborganization_of for Sigma-Aldrich
-            % (of EMD Millipore) and PixeLink (of Navitar)
-            testCase.verifyEqual(n('directed_relation'), 55, ...
+            % (of EMD Millipore) and PixeLink (of Navitar); decision #90, + Alfa
+            % Aesar's (of Thermo Fisher)
+            testCase.verifyEqual(n('directed_relation'), 56, ...
                 'relation count moved: re-derive it from the spec, do not bump it');
             % 133 before decision #56; + 3 organizations, 1 web resource,
             % 4 products, 20 chemicals, 9 formulations, 7 relations; + the
@@ -81,8 +82,11 @@ classdef TestDatasetMetadataHaley < matlab.unittest.TestCase
             % macOS, stage 10's run environment (decision #60); decision #86,
             % the potassium phosphate buffer from 231109_KPO4_stock: + Sigma-
             % Aldrich, 2 products, 2 chemicals, the 2 1 M stocks, - the
-            % buffer's documented_by WormBook; decision #89, + 2 relations
-            testCase.verifyEqual(numel(testCase.Result.documents), 188);
+            % buffer's documented_by WormBook; decision #89, + 2 relations;
+            % decision #90, the cholesterol stock as a recipe: + Alfa Aesar and
+            % Decon Labs, their relation, 2 products, the stock formulation, and
+            % cholesterol + ethanol as chemicals in place of the stock (+1)
+            testCase.verifyEqual(numel(testCase.Result.documents), 195);
         end
 
         function testStudiesCanBeMintedApartFromTheRest(testCase)
