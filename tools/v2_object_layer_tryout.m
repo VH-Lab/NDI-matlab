@@ -265,6 +265,9 @@ disp(T(:, {'step', 'ok', 'seconds'}));
 end
 
 function s = describe(x)
+arguments
+    x % an ndi.statement, or a document ndi.v2.props can read
+end
 if isa(x, 'ndi.statement')
     s = sprintf('%s: %s', x.kind(), x.variable_name());
 else

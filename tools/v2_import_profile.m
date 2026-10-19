@@ -101,6 +101,10 @@ end
 end
 
 function g = groupOf(name, file)
+arguments
+    name {mustBeText}
+    file {mustBeText}
+end
 f = replace(file, '\', '/');
 if contains(f, '/+did2/+schema/')
     g = "schema cache";

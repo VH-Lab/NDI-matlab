@@ -116,6 +116,9 @@ end
 % -----------------------------------------------------------------------------------
 function printPlan(plan)
 % EXPLAIN QUERY PLAN rows as a tree (indented by parent)
+arguments
+    plan % the struct array mksqlite returns for EXPLAIN QUERY PLAN
+end
 depth = containers.Map('KeyType', 'double', 'ValueType', 'double');
 depth(0) = 0;
 for k = 1:numel(plan)
@@ -128,6 +131,10 @@ end
 end
 
 function [t, out] = timeIt(fn, repeats)
+arguments
+    fn (1,1) function_handle
+    repeats (1,1) {mustBeNumeric}
+end
 times = zeros(1, repeats);
 for k = 1:repeats
     t0 = tic;
@@ -138,13 +145,22 @@ t = median(times);
 end
 
 function v = firstRow(rows)
+arguments
+    rows % the struct array mksqlite returns
+end
 v = rows(1).n;
 end
 
 function s = toText(x)
+arguments
+    x % text, or anything mat2str prints
+end
 if ischar(x) || isstring(x), s = char(x); else, s = mat2str(x); end
 end
 
 function s = yesno(tf)
+arguments
+    tf (1,1) logical
+end
 if tf, s = 'yes'; else, s = 'no (the planner has no table sizes)'; end
 end
