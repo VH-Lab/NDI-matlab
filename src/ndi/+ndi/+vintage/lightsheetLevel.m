@@ -136,6 +136,7 @@ for i = 1:numel(list)
     t = [];
     if isfield(c, 'term') && isstruct(c.term)
         t = c.term;
+        if isfield(t, 'value') && ~isfield(t, 'node'), t = t(1).value; end   % before 2026-10-19
     end
     switch termOf(t, 'node')
         case 'NCIT:C25564', r = 'max';

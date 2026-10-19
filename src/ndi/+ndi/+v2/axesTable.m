@@ -27,8 +27,12 @@ for k = 1:numel(keys)
     elseif ~isempty(field(key, 'quantity', []))
         c = field(field(key, 'quantity', struct()), 'value', []);
         c = c(:);
-    elseif ~isempty(field(key, 'term', []))
+    elseif ~isempty(field(key, 'values', []))           % before 2026-10-19
+        c = field(field(key, 'values', struct()), 'values', []);
+        c = c(:);
+    elseif ~isempty(field(key, 'term', [])) || ~isempty(field(key, 'labels', []))
         l = field(key, 'term', []);
+        if isempty(l), l = field(key, 'labels', []); end    % before 2026-10-19
         l = ndi.v2.entries(l);
         c = strings(numel(l), 1);
         for j = 1:numel(l), c(j) = string(ndi.v2.termName(l{j})); end

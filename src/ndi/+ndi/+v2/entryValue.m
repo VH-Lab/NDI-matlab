@@ -9,6 +9,11 @@ function [value, sourceValue, kind] = entryValue(entry)
 %   number in the entry's `unit`, the count, or the text ([] when none).
 %   SOURCEVALUE is the quantity's `source_value`, the number as the source
 %   wrote it (text), and "" for every other form.
+%
+%   The form is the one that holds something: a stored entry can carry the
+%   other forms' blanks. Entries written before data_body AMENDMENT 3
+%   (2026-10-19) are read too: a condition's `term.value`, `count.value` and
+%   `quantity.value(1).{value, source_value}`, and a parameter's `value`.
 
 arguments
     entry
@@ -17,21 +22,41 @@ end
 value = []; sourceValue = ""; kind = '';
 if ~isstruct(entry) || isempty(entry), return; end
 entry = entry(1);
-if ~isempty(fieldOf(entry, 'term'))
+
+t = fieldOf(entry, 'term');
+if isstruct(t) && isfield(t, 'value') && ~isfield(t, 'node'), t = t(1).value; end
+if ~isempty(ndi.v2.termName(t))
     kind = 'term';
-    value = ndi.v2.termName(fieldOf(entry, 'term'));
-elseif ~isempty(fieldOf(entry, 'quantity'))
+    value = ndi.v2.termName(t);
+    return;
+end
+
+q = fieldOf(entry, 'quantity');
+if isempty(q), q = fieldOf(entry, 'value'); end            % a parameter, before 2026-10-19
+if isstruct(q) && isfield(q, 'value') && isstruct(q(1).value)
+    q = q(1).value;                                         % a condition, before 2026-10-19
+end
+v = fieldOf(q, 'value');
+if (isnumeric(v) || islogical(v)) && ~isempty(v)
     kind = 'quantity';
-    q = fieldOf(entry, 'quantity');
-    value = double(fieldOf(q, 'value'));
+    value = double(v(1));
     sv = fieldOf(q, 'source_value');
     if ~isempty(sv), sourceValue = string(sv); end
-elseif ~isempty(fieldOf(entry, 'count'))
-    kind = 'count';
-    value = double(fieldOf(entry, 'count'));
-elseif ~isempty(fieldOf(entry, 'text'))
+    return;
+end
+
+x = fieldOf(entry, 'text');
+if ~isempty(x)
     kind = 'text';
-    value = char(fieldOf(entry, 'text'));
+    value = char(x);
+    return;
+end
+
+c = fieldOf(entry, 'count');
+if isstruct(c), c = fieldOf(c, 'value'); end              % a condition, before 2026-10-19
+if ~isempty(c)
+    kind = 'count';
+    value = double(c(1));
 end
 end
 
@@ -41,5 +66,5 @@ arguments
     name {mustBeText}
 end
 v = [];
-if isstruct(s) && isfield(s, name), v = s(1).(name); end
+if isstruct(s) && ~isempty(s) && isfield(s, name), v = s(1).(name); end
 end

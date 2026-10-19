@@ -233,10 +233,11 @@ if isstruct(s) && isfield(s, name)
 end
 e = methodParameter(s, name);
 if ~isempty(e)
-    if isfield(e, 'text') && ~isempty(e.text)
-        v = e.text;
-    elseif isfield(e, 'quantity') && isstruct(e.quantity) && isfield(e.quantity, 'source_value')
-        v = e.quantity.source_value;
+    [x, sv, kind] = ndi.v2.entryValue(e);
+    if strcmp(kind, 'text')
+        v = x;
+    elseif strcmp(kind, 'quantity')
+        v = char(sv);
     end
 end
 end
@@ -310,13 +311,9 @@ if isstruct(cfg) && isfield(cfg, etaName) && ~isempty(cfg.(etaName))
     return;
 end
 e = methodParameter(cfg, etaName);
-if ~isempty(e) && isfield(e, 'quantity') && isstruct(e.quantity) ...
-        && isfield(e.quantity, 'value') && ~isempty(e.quantity.value)
-    v = e.quantity.value;
-    return;
-end
-if ~isempty(e) && isfield(e, 'count') && ~isempty(e.count)
-    v = double(e.count);
+[x, ~, kind] = ndi.v2.entryValue(e);
+if any(strcmp(kind, {'quantity', 'count'}))
+    v = x;
     return;
 end
 error('NDI:vintage:syncruleMissingField', ...

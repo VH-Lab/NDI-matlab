@@ -82,6 +82,7 @@ for k = 1:n
     f.units{k} = unit;
     if axes(k) == 'c'
         terms = get(key, 'term');
+        if isempty(terms), terms = get(key, 'labels'); end   % before 2026-10-19
         names = cellfun(@termName, asList(terms), 'UniformOutput', false);
         f.channel_names = strjoin(names, ',');
     end
