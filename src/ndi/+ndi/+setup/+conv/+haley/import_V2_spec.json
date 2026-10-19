@@ -638,11 +638,10 @@
    },
    "genetic_strain_type": "mutant",
    "source": "cgc",
-   "_verify": "WormBase WBStrain id not found by search; RRID by strain name",
    "identifiers": [
     {
      "scheme": "RRID",
-     "value": "RRID:WB-STRAIN:CB1112"
+     "value": "RRID:WB-STRAIN:WBStrain00004246"
     }
    ]
   },
@@ -665,11 +664,10 @@
    },
    "genetic_strain_type": "mutant",
    "source": "cgc",
-   "_verify": "WormBase WBStrain id not found by search; RRID by strain name",
    "identifiers": [
     {
      "scheme": "RRID",
-     "value": "RRID:WB-STRAIN:CX6448"
+     "value": "RRID:WB-STRAIN:WBStrain00005280"
     }
    ]
   },
@@ -742,11 +740,10 @@
    },
    "genetic_strain_type": "mutant",
    "source": "cgc",
-   "_verify": "WormBase WBStrain id not found by search; RRID by strain name",
    "identifiers": [
     {
      "scheme": "RRID",
-     "value": "RRID:WB-STRAIN:FK103"
+     "value": "RRID:WB-STRAIN:WBStrain00007498"
     }
    ]
   },
@@ -769,11 +766,10 @@
    },
    "genetic_strain_type": "mutant",
    "source": "cgc",
-   "_verify": "WormBase WBStrain id not found by search; RRID by strain name",
    "identifiers": [
     {
      "scheme": "RRID",
-     "value": "RRID:WB-STRAIN:MT13113"
+     "value": "RRID:WB-STRAIN:WBStrain00027424"
     }
    ]
   },
@@ -796,11 +792,10 @@
    },
    "genetic_strain_type": "mutant",
    "source": "cgc",
-   "_verify": "WormBase WBStrain id not found by search; RRID by strain name",
    "identifiers": [
     {
      "scheme": "RRID",
-     "value": "RRID:WB-STRAIN:MT15434"
+     "value": "RRID:WB-STRAIN:WBStrain00027519"
     }
    ]
   },
@@ -823,11 +818,10 @@
    },
    "genetic_strain_type": "mutant",
    "source": "cgc",
-   "_verify": "WormBase WBStrain id not found by search; RRID by strain name",
    "identifiers": [
     {
      "scheme": "RRID",
-     "value": "RRID:WB-STRAIN:MT9455"
+     "value": "RRID:WB-STRAIN:WBStrain00027363"
     }
    ]
   }
