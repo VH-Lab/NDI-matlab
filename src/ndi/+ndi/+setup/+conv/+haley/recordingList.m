@@ -79,6 +79,13 @@ prog = struct('decoded', 0, 'reused', 0, 'seconds', 0, 'started', tic, ...
 if options.ReadVideos
     fprintf(['frame times: %d video(s) already in the cache (%s); decoding the rest, ' ...
         'progress every 10\n'], nCached, cacheName(options.FrameTimesCache));
+    % a run that was stopped mid-video (killed, or hung and force-quit) left the
+    % name of the video it was decoding beside the cache
+    was = decodingNote(prog.file);
+    if ~isempty(was) && isfile(was)
+        fprintf('frame times: the last run stopped while decoding %s\n', fileread(was));
+        delete(was);
+    end
 end
 
 root = fullfile(dataParentDir, 'haley');
@@ -443,6 +450,16 @@ if isKey(cache, key)
     return;
 end
 started = tic;
+% the video being decoded, written beside the cache before it is opened, so a
+% run that hangs on one (and has to be force-quit) says which on the next run
+note = decodingNote(prog.file);
+if ~isempty(note)
+    fid = fopen(note, 'w');
+    if fid > 0
+        fprintf(fid, '%s (started %s)', file, char(datetime('now')));
+        fclose(fid);
+    end
+end
 try
     v = VideoReader(file);
     n = v.NumFrames;
@@ -460,8 +477,13 @@ catch e
     t = [];
     err = e.message;
 end
+if ~isempty(note) && isfile(note), delete(note); end
 prog.decoded = prog.decoded + 1;
-prog.seconds = prog.seconds + toc(started);
+took = toc(started);
+prog.seconds = prog.seconds + took;
+if took > 60
+    fprintf('  frame times: %s took %s\n', file, hms(took));
+end
 if mod(prog.decoded, 10) == 0
     fprintf('  frame times: %d video(s) decoded, %s elapsed (%.1f s per video); %d from the cache\n', ...
         prog.decoded, hms(toc(prog.started)), prog.seconds / prog.decoded, prog.reused);
@@ -473,6 +495,12 @@ end
 
 function s = hms(seconds)
 s = char(duration(0, 0, seconds, 'Format', 'hh:mm:ss'));
+end
+
+function note = decodingNote(cacheFile)
+% the file naming the video being decoded: beside the cache, or none without one
+note = '';
+if ~isempty(cacheFile), note = [cacheFile '.decoding.txt']; end
 end
 
 function s = cacheName(file)

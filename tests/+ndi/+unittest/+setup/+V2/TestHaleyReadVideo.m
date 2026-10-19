@@ -82,6 +82,8 @@ classdef TestHaleyReadVideo < matlab.unittest.TestCase
             % the cache holds the measured times, under the file's path, size and date
             testCase.assertTrue(isfile(cacheFile), 'the cache is written');
             testCase.verifyFalse(isfile([cacheFile '.partial.mat']), 'no partial file is left behind');
+            testCase.verifyFalse(isfile([cacheFile '.decoding.txt']), ...
+                'no note of a video being decoded is left behind');
             S = load(cacheFile, 'frameTimes');
             k = S.frameTimes.keys;
             hit = k(contains(k, '2022-02-04_12-10-51_2.mp4'));
@@ -93,6 +95,18 @@ classdef TestHaleyReadVideo < matlab.unittest.TestCase
                 '''ReadVideos'', true, ''FrameTimesCache'', cacheFile);']);
             testCase.verifyTrue(contains(out, '1 video(s) already in the cache'), out);
             testCase.verifyTrue(contains(out, ', 1 taken from the cache'), out);
+            testCase.verifyFalse(contains(out, 'stopped while decoding'), out);
+            % a run that was killed mid-video left the note behind: the next
+            % run names that video
+            fid = fopen([cacheFile '.decoding.txt'], 'w');
+            fprintf(fid, '%s', '/data/haley/some_video.mp4 (started 19-Oct-2026 13:00:00)');
+            fclose(fid);
+            out = evalc(['ndi.setup.conv.haley.recordingList(testCase.Root, sessions, ' ...
+                '''ReadVideos'', true, ''FrameTimesCache'', cacheFile);']);
+            testCase.verifyTrue(contains(out, ['the last run stopped while decoding ' ...
+                '/data/haley/some_video.mp4']), out);
+            testCase.verifyFalse(isfile([cacheFile '.decoding.txt']), ...
+                'a run that finishes removes the note');
         end
 
         function testReadFrameThroughDaqSystem(testCase)
