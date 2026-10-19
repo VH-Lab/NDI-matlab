@@ -10,41 +10,47 @@ function out = geometryDocuments(dataParentDir, session, R, subjectIds, options)
 %   Per behaviour video (R rows of kind 'behaviour' with a recording
 %   statement in 'RecordingStatements'), all about the video's assay plate,
 %   each a calculation whose input is the recording:
-%     coordinate_system   the video's pixel grid: origin the image's upper-left
-%                         corner, x along the image horizontal axis (positive
-%                         right), y along the vertical axis (positive down), one
-%                         pixel = 1/`scale` mm (the lab's scale: the arena's
-%                         known diameter over its mask's size in pixels, so it
-%                         is marked approximate)
-%     label_calculation   one per mask: `arenaMask` (variable `arena region`),
-%                         `refMask` (`reference mark region`; foragingMini's
-%                         arenas have no mark and its masks are empty, so none)
-%                         and `lawnMask` (`bacterial lawn region`). A bool per
-%                         pixel, in a sampled_body keyed [image vertical
-%                         position, image horizontal position], metres with
-%                         pixels as the source unit
-%     item_calculation    `lawnClosest`: which patch is nearest each pixel, as a
-%                         0-based index into the plate's patch subjects (item_id,
-%                         in lawnCenters order, decision #38). Only when the
-%                         schema in use has `item` (did-schema PR #87)
-%     score_calculation   `lawnRegistration`: the fraction of the arena that
+%     coordinate_system   the video's pixel grid: origin the image upper-left
+%                         corner, x-axis positive toward image right, y-axis
+%                         positive toward image down, one pixel = 1/`scale` mm
+%                         (the lab's scale: the arena's known diameter over its
+%                         mask's size in pixels, so it is marked approximate)
+%     label_calculation   one per mask: `arenaMask` (variable `arena region`, a
+%                         label), `refMask` (`reference mark region`, a label;
+%                         foragingMini's arenas have no mark and its masks are
+%                         empty, so none) and `lawnMask` (`bacterial patch
+%                         mask`). A bool per pixel, in a sampled_body keyed
+%                         [Y-coordinate, X-coordinate] (MATLAB's [row,
+%                         column]), metres with pixels as the source unit
+%     item_calculation    `lawnClosest` (`nearest bacterial patch`): which patch
+%                         is nearest each pixel, as a 0-based index into the
+%                         plate's patch subjects (item_id, in lawnCenters
+%                         order, decision #38). Only when the schema in use has
+%                         `item` (did-schema PR #87)
+%     score_calculation   `lawnRegistration` (variable `overlap`, method image
+%                         registration): the fraction of the arena that
 %                         overlaps once the lawn clip is registered onto the
-%                         video (0-1); its inputs are both recordings
+%                         video (0-1, scale `fraction`); its inputs are both
+%                         recordings
 %   And per patch (the plate's patch subjects, in lawnCenters order, #38), each
 %   about the PATCH, its input the recording:
-%     position_calculation `patch centre` (`lawnCenters`), in the video's
-%                         coordinate system: MATLAB's pixel centres are at 1,
-%                         2, ..., the system's origin is the image's corner, so
-%                         a centre at column x is x - 0.5 pixels from it
-%     length_calculation  `patch radius` (`lawnRadii`, pixels -> metres)
-%     score_calculation   `patch circularity` (`lawnCircularity`, 0-1)
+%     position_calculation `position` (`lawnCenters`, the patch's center), in
+%                         the video's coordinate system: MATLAB's pixel centers
+%                         are at 1, 2, ..., the system's origin is the image's
+%                         corner, so a center at column x is x - 0.5 pixels
+%                         from it
+%     length_calculation  `radius` (`lawnRadii`, pixels -> metres)
+%     score_calculation   `circularity` (`lawnCircularity`, 0-1)
 %   (doImport's patch table had these; decision #70)
-%   The arena's nominal diameter and the patches' nominal diameter and spacing
-%   are method parameters of the masks that used them; the lawn mask's method
-%   is the patches' `lawnMethod` when they all share one (else none, and its
-%   notes list them). `lawnClosestOD600` (the closest map with each patch's
-%   OD600) and `firstFrame` (frame 0 of the video) are not stored: both are
-%   already in the dataset.
+%   The arena mask's method parameter is the plate or arena diameter. The lawn
+%   mask's inputs are the recording and the plate's target design statements
+%   ('TargetIds': the patches' target diameter and the plate's target
+%   spacing, built by an earlier stage); its method is the patches'
+%   `lawnMethod` when they all share one (threshold: image segmentation;
+%   template: image registration), else none, and its notes list them.
+%   `lawnClosestOD600` (the closest map with each patch's OD600) and
+%   `firstFrame` (frame 0 of the video) are not stored: both are already in
+%   the dataset.
 %
 %   Each mask and map is written to a temporary gzip file of its raw bytes
 %   (column-major, little-endian) that the database INGESTS when the session
@@ -58,6 +64,11 @@ function out = geometryDocuments(dataParentDir, session, R, subjectIds, options)
 %     'SoftwareId'           the analysis package (spec `haley_analysis`)
 %     'InterpreterId'        MATLAB (spec `matlab`)
 %     'OperatingSystemId'    the analysis computer's OS (spec `macos`)
+%     'TargetIds'            containers.Map, plate local_identifier -> cell of
+%                            the ids of that plate's target design statements
+%                            (each patch's target diameter, the plate's target
+%                            spacing); inputs of the plate's lawn mask.
+%                            Default: none
 %
 %   OUT fields: documents (cell of structs), counts (struct), skipped (cellstr),
 %   byEpoch (containers.Map, epoch -> struct of the ids part B needs:
@@ -73,6 +84,7 @@ arguments
     options.SoftwareId (1,:) char = ''
     options.InterpreterId (1,:) char = ''
     options.OperatingSystemId (1,:) char = ''
+    options.TargetIds = containers.Map()
 end
 if height(session) ~= 1
     error('ndi:setup:conv:haley:oneSession', 'Give exactly one session row.');
@@ -82,7 +94,7 @@ ref = char(session.local_identifier{1});
 folder = char(session.folder{1});
 out = struct('documents', {{}}, 'skipped', {{}}, 'counts', struct('coordinate_system', 0, ...
     'arena', 0, 'reference_mark', 0, 'lawn', 0, 'nearest_patch', 0, 'registration', 0, ...
-    'patch_centre', 0, 'patch_radius', 0, 'patch_circularity', 0), ...
+    'patch_center', 0, 'patch_radius', 0, 'patch_circularity', 0), ...
     'byEpoch', containers.Map());
 if strcmp(folder, 'ecoli')
     return;
@@ -141,42 +153,43 @@ for k = 1:height(R)
     step = did2.build.valueCell('length', pixel, 'SourceValue', 1 / scale, ...
         'SourceUnit', 'mm', 'Approximate', true);
     cs = did2.build.document('coordinate_system', struct( ...
-        'origin', did2.build.term('', 'image upper-left corner'), ...
+        'origin', haleyTerm('image upper-left corner'), ...
         'dimensions', did2.build.list( ...
-            struct('axis', did2.build.term('', 'image horizontal axis'), ...
-                'positive_direction', did2.build.term('', 'image right'), 'spacing', step), ...
-            struct('axis', did2.build.term('', 'image vertical axis'), ...
-                'positive_direction', did2.build.term('', 'image down'), 'spacing', step))), ...
+            struct('axis', haleyTerm('x-axis'), ...
+                'positive_direction', haleyTerm('image right'), 'spacing', step), ...
+            struct('axis', haleyTerm('y-axis'), ...
+                'positive_direction', haleyTerm('image down'), 'spacing', step))), ...
         'SessionId', sid, 'Edges', struct('referent_id', videoId));
     docs{end+1} = cs; %#ok<AGROW>
     out.counts.coordinate_system = out.counts.coordinate_system + 1;
 
-    calc = {'SessionId', sid, 'TimeReferenceIds', timeIds, 'InputIds', {videoId}};
-    calc = [calc, env]; %#ok<AGROW>
+    common = [{'SessionId', sid, 'TimeReferenceIds', timeIds}, env];
+    calc = [common, {'InputIds', {videoId}}];
 
     % ---- masks ---------------------------------------------------------------
-    arenaParams = did2.build.list(did2.build.parameter('arena diameter', ...
-        'Value', colOr(d, 'arenaDiameter', NaN) * 1e-3, 'Unit', 'meter', ...
+    arenaParams = did2.build.list(did2.build.parameter(haleyTerm('plate or arena diameter'), ...
+        'Value', colOr(d, 'arenaDiameter', NaN) * 1e-3, 'Unit', haleyTerm('meter'), ...
         'SourceValue', num2str(colOr(d, 'arenaDiameter', NaN)), 'SourceUnit', 'mm'));
-    [docs, n] = mask(docs, d, 'arenaMask', 'arena region', {'MethodParameters', arenaParams});
+    [docs, n] = mask(docs, d, 'arenaMask', did2.build.term('', 'arena region'), ...
+        [calc, {'MethodParameters', arenaParams}]);
     out.counts.arena = out.counts.arena + n;
-    [docs, n] = mask(docs, d, 'refMask', 'reference mark region', {});
+    [docs, n] = mask(docs, d, 'refMask', did2.build.term('', 'reference mark region'), calc);
     out.counts.reference_mark = out.counts.reference_mark + n;
-    lawnArgs = {'MethodParameters', did2.build.list( ...
-        did2.build.parameter('patch diameter', 'Value', colOr(d, 'lawnDiameter', NaN) * 1e-3, ...
-            'Unit', 'meter', 'SourceValue', num2str(colOr(d, 'lawnDiameter', NaN)), 'SourceUnit', 'mm'), ...
-        did2.build.parameter('patch spacing', 'Value', colOr(d, 'lawnSpacing', NaN) * 1e-3, ...
-            'Unit', 'meter', 'SourceValue', num2str(colOr(d, 'lawnSpacing', NaN)), 'SourceUnit', 'mm'))};
+    targets = {};
+    if isKey(options.TargetIds, plate)
+        targets = reshape(cellstr(options.TargetIds(plate)), 1, []);
+    end
+    lawnArgs = [common, {'InputIds', [{videoId}, targets]}];
     found = cellOr(d, 'lawnMethod');
     if ~iscell(found), found = {}; end
     found = found(~cellfun(@isempty, found));
     if ~isempty(found) && numel(unique(found)) == 1
-        lawnArgs = [lawnArgs, {'Method', did2.build.term('', ['patch detection by ' found{1}])}]; %#ok<AGROW>
+        lawnArgs = [lawnArgs, {'Method', detectionMethod(found{1})}]; %#ok<AGROW>
     elseif ~isempty(found)
         lawnArgs = [lawnArgs, {'Notes', sprintf('Each patch''s detection method, in patch order: %s.', ...
             strjoin(found, ', '))}]; %#ok<AGROW>
     end
-    [docs, n, lawnMaskId] = mask(docs, d, 'lawnMask', 'bacterial lawn region', lawnArgs);
+    [docs, n, lawnMaskId] = mask(docs, d, 'lawnMask', haleyTerm('bacterial patch mask'), lawnArgs);
     out.counts.lawn = out.counts.lawn + n;
     ids = struct('coordinate_system', cs.base.id, 'lawn_mask', lawnMaskId, ...
         'nearest_patch', '', 'pixel', pixel);
@@ -195,7 +208,7 @@ for k = 1:height(R)
             inputs = {videoId};
             if ~isempty(lawnMaskId), inputs{end+1} = lawnMaskId; end %#ok<AGROW>
             st = did2.build.statement('item_calculation', subjectIds(plate), ...
-                did2.build.term('', 'nearest patch'), [], 'DataBody', true, 'DatumType', dt, ...
+                haleyTerm('nearest bacterial patch'), [], 'DataBody', true, 'DatumType', dt, ...
                 'Keys', pixelKeys(closest, pixel), 'SessionId', sid, ...
                 'TimeReferenceIds', timeIds, 'InputIds', inputs, ...
                 'Edges', struct('item_id', {pIds}), env{:});
@@ -206,7 +219,7 @@ for k = 1:height(R)
         end
     end
 
-    % ---- each patch's centre, radius and circularity ---------------------------
+    % ---- each patch's center, radius and circularity ---------------------------
     docs = patchGeometry(docs, d, plate, cs.base.id, pixel, calc);
 
     % ---- lawn clip registration ------------------------------------------------
@@ -215,11 +228,10 @@ for k = 1:height(R)
     if ~isnan(fit) && ~isempty(lawnEpoch) && any(strcmp(lawnClips.epoch, lawnEpoch)) ...
             && isKey(options.RecordingStatements, lawnEpoch)
         v = did2.build.valueCell('score', fit, 'Fields', struct( ...
-            'scale', did2.build.term('', 'fraction of the arena overlapping'), ...
-            'scale_min', 0, 'scale_max', 1));
+            'scale', haleyTerm('fraction'), 'scale_min', 0, 'scale_max', 1));
         st = did2.build.statement('score_calculation', subjectIds(plate), ...
-            did2.build.term('', 'lawn clip registration fit'), v, 'SessionId', sid, ...
-            'TimeReferenceIds', timeIds, ...
+            haleyTerm('overlap'), v, 'Method', haleyTerm('image registration'), ...
+            'SessionId', sid, 'TimeReferenceIds', timeIds, ...
             'InputIds', {videoId, options.RecordingStatements(lawnEpoch)}, env{:});
         docs{end+1} = st; %#ok<AGROW>
         out.counts.registration = out.counts.registration + 1;
@@ -230,12 +242,12 @@ out.documents = docs;
 
 % =============================================================================
     function docs = patchGeometry(docs, d, plate, csId, pixel, calc)
-        centres = cellOr(d, 'lawnCenters');
-        if isempty(centres)
+        centers = cellOr(d, 'lawnCenters');
+        if isempty(centers)
             return;
         end
         pIds = patchIds(subjectIds, plate);
-        n = size(centres, 1);
+        n = size(centers, 1);
         if numel(pIds) ~= n
             out.skipped{end+1} = sprintf(['%s: %d lawnCenters but %d patch subject(s); ' ...
                 'no patch geometry'], epoch, n, numel(pIds));
@@ -244,42 +256,43 @@ out.documents = docs;
         radii = cellOr(d, 'lawnRadii');
         circ = cellOr(d, 'lawnCircularity');
         for j = 1:n
-            xy = double(centres(j, 1:2)) - 0.5;
+            xy = double(centers(j, 1:2)) - 0.5;
             if all(isfinite(xy))
                 docs{end+1} = did2.build.statement('position_calculation', pIds{j}, ...
-                    did2.build.term('', 'patch centre'), struct('coordinates', xy), ...
+                    haleyTerm('position'), struct('coordinates', xy), ...
                     'Edges', struct('coordinate_system_id', csId), calc{:}); %#ok<AGROW>
-                out.counts.patch_centre = out.counts.patch_centre + 1;
+                out.counts.patch_center = out.counts.patch_center + 1;
             end
             if numel(radii) == n && isfinite(radii(j))
                 v = did2.build.valueCell('length', double(radii(j)) * pixel, ...
                     'SourceValue', double(radii(j)), 'SourceUnit', 'pixel', 'Approximate', true);
                 docs{end+1} = did2.build.statement('length_calculation', pIds{j}, ...
-                    did2.build.term('', 'patch radius'), v, calc{:}); %#ok<AGROW>
+                    haleyTerm('radius'), v, calc{:}); %#ok<AGROW>
                 out.counts.patch_radius = out.counts.patch_radius + 1;
             end
             if numel(circ) == n && isfinite(circ(j))
                 v = did2.build.valueCell('score', double(circ(j)), 'Fields', struct( ...
-                    'scale', did2.build.term('', 'circularity'), 'scale_min', 0, 'scale_max', 1));
+                    'scale', haleyTerm('circularity'), 'scale_min', 0, 'scale_max', 1));
                 docs{end+1} = did2.build.statement('score_calculation', pIds{j}, ...
-                    did2.build.term('', 'patch circularity'), v, calc{:}); %#ok<AGROW>
+                    haleyTerm('circularity'), v, calc{:}); %#ok<AGROW>
                 out.counts.patch_circularity = out.counts.patch_circularity + 1;
             end
         end
     end
 
-    function [docs, n, id] = mask(docs, d, column, variable, extra)
-        % one label_calculation + its body; none when the mask is absent or empty
+    function [docs, n, id] = mask(docs, d, column, variable, args)
+        % one label_calculation + its body; none when the mask is absent or
+        % empty. VARIABLE is a term; ARGS the statement's other name-value pairs
         n = 0; id = '';
         m = cellOr(d, column);
         if isempty(m) || ~any(m(:))
             return;
         end
         st = did2.build.statement('label_calculation', subjectIds(plate), ...
-            did2.build.term('', variable), [], 'DataBody', true, 'DatumType', 'bool', ...
-            'Keys', pixelKeys(m, pixel), calc{:}, extra{:});
+            variable, [], 'DataBody', true, 'DatumType', 'bool', ...
+            'Keys', pixelKeys(m, pixel), args{:});
         docs = [docs, {st, ingestedBody(st, logical(m), 'bool', pixelKeys(m, pixel), sid, ...
-            sprintf('The %s mask (1 = inside), from the source''s `%s`.', variable, column))}];
+            sprintf('The %s (1 = inside), from the source''s `%s`.', variable.name, column))}];
         n = 1; id = st.base.id;
     end
 end
@@ -297,18 +310,30 @@ if ~isempty(options.OperatingSystemId), e = [e, {'OperatingSystemId', options.Op
 end
 
 function keys = pixelKeys(a, pixel)
-% [image vertical position, image horizontal position]: MATLAB's [row, column].
-% Each position is a pixel's CENTRE, measured from the image's upper-left
-% corner (the coordinate system's origin): the first is half a pixel in.
+% [Y-coordinate, X-coordinate]: MATLAB's [row, column]. Each position is a
+% pixel's CENTER, measured from the image's upper-left corner (the coordinate
+% system's origin): the first is half a pixel in.
 arguments
     a
     pixel (1,1) {mustBeNumeric}
 end
 keys = did2.build.list( ...
-    did2.build.key('image vertical position', size(a, 1), 'Unit', 'meter', ...
+    did2.build.key(haleyTerm('Y-coordinate'), size(a, 1), 'Unit', haleyTerm('meter'), ...
         'Origin', pixel / 2, 'Spacing', pixel, 'SourceUnit', 'pixel', 'SourceOrigin', 0.5, 'SourceSpacing', 1), ...
-    did2.build.key('image horizontal position', size(a, 2), 'Unit', 'meter', ...
+    did2.build.key(haleyTerm('X-coordinate'), size(a, 2), 'Unit', haleyTerm('meter'), ...
         'Origin', pixel / 2, 'Spacing', pixel, 'SourceUnit', 'pixel', 'SourceOrigin', 0.5, 'SourceSpacing', 1));
+end
+
+function t = detectionMethod(name)
+% the term for a patch detection method the source names (`lawnMethod`)
+arguments
+    name {mustBeText}
+end
+switch char(name)
+    case 'threshold', t = haleyTerm('image segmentation');
+    case 'template',  t = haleyTerm('image registration');
+    otherwise,        t = did2.build.term('', ['patch detection by ' char(name)]);
+end
 end
 
 

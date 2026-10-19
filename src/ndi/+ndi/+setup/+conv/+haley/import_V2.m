@@ -41,12 +41,14 @@ function result = import_V2(dataParentDir, options)
 %                          and relative humidity, read by the temperature
 %                          probe over its recordings
 %        10 calculations   part A: each behaviour video's coordinate system,
-%                          arena / reference mark / lawn masks, nearest-patch
-%                          map and lawn clip registration fit, as the lab's
-%                          analysis package computed them (decision #60);
-%                          part B: each worm's per-frame position, speed,
-%                          distance to the nearest patch edge and nearest
-%                          patch, per body part and video (decision #61);
+%                          arena / reference mark / bacterial patch masks,
+%                          nearest-patch map and lawn clip registration
+%                          overlap, as the lab's analysis package computed
+%                          them (decision #60); part B: each worm's
+%                          per-frame position, speed, distance to the
+%                          nearest patch edge and nearest patch, one
+%                          statement of each per video keyed by video frame
+%                          and body part (decision #61);
 %                          part C: each analysed E. coli image's patch mask
 %                          and each detected patch's profile values, on its
 %                          patch subject (decision #62)
@@ -560,10 +562,10 @@ if isfield(result, 'subjects') && isfield(result, 'recordings')
             built{k}.geometry = ge;
             c = ge.counts;
             fprintf(['%s calculations: %d coordinate system, %d arena, %d reference mark, ' ...
-                '%d lawn mask, %d nearest patch, %d registration; patch %d centre, %d radius, ' ...
+                '%d lawn mask, %d nearest patch, %d registration; patch %d center, %d radius, ' ...
                 '%d circularity\n'], T.local_identifier{k}, ...
                 c.coordinate_system, c.arena, c.reference_mark, c.lawn, c.nearest_patch, c.registration, ...
-                c.patch_centre, c.patch_radius, c.patch_circularity);
+                c.patch_center, c.patch_radius, c.patch_circularity);
             for j = 1:numel(ge.skipped)
                 fprintf('  skipped: %s\n', ge.skipped{j});
             end
@@ -575,8 +577,9 @@ if isfield(result, 'subjects') && isfield(result, 'recordings')
             built{k}.documents = [built{k}.documents, tr.documents];
             built{k}.tracks = tr;
             c = tr.counts;
-            fprintf(['%s tracks: %d position, %d speed, %d distance to patch edge, ' ...
-                '%d nearest patch\n'], T.local_identifier{k}, c.position, c.speed, ...
+            fprintf(['%s tracks (statements per worm and video, keyed by body part): ' ...
+                '%d position, %d speed, %d distance to patch edge, %d nearest patch\n'], ...
+                T.local_identifier{k}, c.position, c.speed, ...
                 c.patch_edge_distance, c.nearest_patch);
             for j = 1:numel(tr.skipped)
                 fprintf('  skipped: %s\n', tr.skipped{j});

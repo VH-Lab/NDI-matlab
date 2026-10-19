@@ -802,15 +802,17 @@ classdef TestObjectLayer < matlab.unittest.TestCase
             ax = sp{1}.axes();
             testCase.verifyEqual(ax.variable(1), "video frame");
             testCase.verifyEqual(ax.n(1), 5);
+            testCase.verifyEqual(ax.variable(2), "body part");
+            testCase.verifyEqual(ax.n(2), 1, 'one statement for the worm''s body parts: here the midpoint');
 
             in = sp{1}.inputs();
             testCase.verifyNumElements(in, 1);
             testCase.verifyClass(in{1}, 'ndi.calculation');
-            testCase.verifyEqual(in{1}.variable_name(), 'midpoint position');
+            testCase.verifyEqual(in{1}.variable_name(), 'position');
             xy = double(in{1}.value());
             testCase.verifyEqual(reshape(xy, 5, 2), [(1:5)' + 12.1 - 0.5, 3.5 * ones(5, 1)], 'AbsTol', 1e-12);
             P = in{1}.method_parameters();
-            testCase.verifyEqual(sort(P.variable)', ["gap filling", "longest gap filled"]);
+            testCase.verifyEqual(sort(P.variable)', ["interpolation method", "maximum gap filled"]);
             testCase.verifyFalse(any(cellfun(@isstruct, P.value)), ...
                 'a numeric parameter is its number, not its stored record');
             P = sp{1}.method_parameters();

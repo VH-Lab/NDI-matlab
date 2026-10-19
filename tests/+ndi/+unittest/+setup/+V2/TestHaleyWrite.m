@@ -608,28 +608,37 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
                 'UniformOutput', false))), cs));
             testCase.verifyNumElements(cs, 1);
             dims = cs{1}.coordinate_system.dimensions;
+            testCase.verifyEqual(dims(1).axis.node, 'STATO:0000006', 'x-axis');
+            testCase.verifyEqual(dims(2).axis.node, 'STATO:0000008', 'y-axis');
             testCase.verifyEqual(dims(1).positive_direction.name, 'image right');
+            testCase.verifyEqual(dims(1).positive_direction.node, 'EMPTY:0000311');
             testCase.verifyEqual(dims(2).positive_direction.name, 'image down');
+            testCase.verifyEqual(dims(2).positive_direction.node, 'EMPTY:0000312');
+            testCase.verifyEqual(cs{1}.coordinate_system.origin.node, 'EMPTY:0000310', ...
+                'image upper-left corner');
             testCase.verifyEqual(dims(1).spacing.meters, 1e-3 / 33, 'AbsTol', 1e-15);
             video = byId(edge(cs{1}, 'referent_id'));
 
-            % each patch's centre, radius and circularity, per video (decision
-            % #70): one patch per plate, at lawnCenters [0 0] (pixel centres are
+            % each patch's center, radius and circularity, per video (decision
+            % #70): one patch per plate, at lawnCenters [0 0] (pixel centers are
             % 1-based, the system's origin the corner: -0.5), radius 0 px, 0.9
-            testCase.verifyEqual([c.patch_centre, c.patch_radius, c.patch_circularity], [4 4 4]);
+            testCase.verifyEqual([c.patch_center, c.patch_radius, c.patch_circularity], [4 4 4]);
             patch = idOf('concentration_assayPlate0012_patch0001');
             about = @(cls, var) docs(cellfun(@(d) strcmp(d.document_class.class_name, cls) ...
                 && strcmp(d.statement.variable.name, var) && strcmp(edge(d, 'entity_id'), patch), docs));
-            centre = about('position_calculation', 'patch centre');
-            testCase.verifyNumElements(centre, 1);
-            testCase.verifyEqual(centre{1}.position.value(1).coordinates(:)', [-0.5 -0.5]);
-            testCase.verifyEqual(edge(centre{1}, 'coordinate_system_id'), cs{1}.base.id, ...
+            center = about('position_calculation', 'position');
+            testCase.verifyNumElements(center, 1);
+            testCase.verifyEqual(center{1}.statement.variable.node, 'PATO:0000140');
+            testCase.verifyEqual(center{1}.position.value(1).coordinates(:)', [-0.5 -0.5]);
+            testCase.verifyEqual(edge(center{1}, 'coordinate_system_id'), cs{1}.base.id, ...
                 'in the video''s own coordinate system');
-            testCase.verifyEqual(edgeAll(centre{1}, 'input_id'), {video.base.id});
-            radius = about('length_calculation', 'patch radius');
+            testCase.verifyEqual(edgeAll(center{1}, 'input_id'), {video.base.id});
+            radius = about('length_calculation', 'radius');
             testCase.verifyNumElements(radius, 1);
+            testCase.verifyEqual(radius{1}.statement.variable.node, 'PATO:0002390');
             testCase.verifyEqual(radius{1}.length.value(1).source_unit, 'pixel');
-            circ = about('score_calculation', 'patch circularity');
+            circ = about('score_calculation', 'circularity');
+            testCase.verifyEqual(circ{1}.statement.variable.node, 'EMPTY:0000288');
             testCase.verifyEqual(circ{1}.score.value(1).score, 0.9, 'AbsTol', 1e-12);
 
             % its arena mask: a label calculation of the plate from the video,
@@ -646,7 +655,11 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             % `datum_type` was renamed `data_type` on 2026-10-08
             testCase.verifyEqual(ndi.v2.blockOf(a, 'value', 'data_type', ndi.v2.blockOf(a, 'value', 'datum_type')), 'bool');
             mp = entries(a.interaction.method_parameters);
-            testCase.verifyEqual(mp{1}.variable.name, 'arena diameter');
+            testCase.verifyEqual(mp{1}.variable.name, 'plate or arena diameter');
+            testCase.verifyEqual(mp{1}.variable.node, 'EMPTY:0000122');
+            k = entries(a.data.keys);
+            testCase.verifyEqual(cellfun(@(x) x.variable.node, k, 'UniformOutput', false), ...
+                {'NCIT:C44478', 'NCIT:C44477'}, '[Y-coordinate, X-coordinate]: [row, column]');
 
             % its body is held by the session's database, not left in a temp file
             b = docs(strcmp(classes, 'sampled_body'));
@@ -669,15 +682,26 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             expected = false(8); expected(2:7, 2:7) = true;
             testCase.verifyEqual(reshape(bytes, 8, 8), uint8(expected), 'column-major, as written');
 
-            % the lawn mask's method: every patch was found by template
-            lawn = masks(cellfun(@(d) strcmp(d.statement.variable.name, 'bacterial lawn region') ...
+            % the lawn mask: every patch was found by template, i.e. image
+            % registration; no target statements were given, so its one input
+            % is the video
+            lawn = masks(cellfun(@(d) strcmp(d.statement.variable.name, 'bacterial patch mask') ...
                 && strcmp(edge(d, 'entity_id'), idOf('concentration_assayPlate0012')), masks));
-            testCase.verifyEqual(lawn{1}.interaction.method.name, 'patch detection by template');
+            testCase.verifyNumElements(lawn, 1);
+            testCase.verifyEqual(lawn{1}.statement.variable.node, 'EMPTY:0000131');
+            testCase.verifyEqual(lawn{1}.interaction.method.node, 'NCIT:C80145');
+            testCase.verifyFalse(isfield(lawn{1}.interaction, 'method_parameters') ...
+                && ~isempty(lawn{1}.interaction.method_parameters), ...
+                'the patches'' target diameter and spacing are statements, not parameters');
+            testCase.verifyEqual(edgeAll(lawn{1}, 'input_id'), {video.base.id});
 
-            % the registration fit: from both the video and the lawn clip
+            % the registration fit: the overlap, from both the video and the lawn clip
             sc = docs(strcmp(classes, 'score_calculation'));
             sc = sc(cellfun(@(d) strcmp(edge(d, 'entity_id'), idOf('concentration_assayPlate0012')), sc));
             testCase.verifyNumElements(sc, 1);
+            testCase.verifyEqual(sc{1}.statement.variable.node, 'NCIT:C54669', 'overlap');
+            testCase.verifyEqual(sc{1}.interaction.method.node, 'NCIT:C80145', 'image registration');
+            testCase.verifyEqual(sc{1}.score.value.scale.node, 'NCIT:C25514', 'fraction');
             testCase.verifyEqual(sc{1}.score.value.score, 0.98, 'AbsTol', 1e-12);
             testCase.verifyNumElements(edgeAll(sc{1}, 'input_id'), 2);
 
@@ -690,10 +714,11 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
         end
 
         function testTracks(testCase)
-            % stage 10 part B (decision #61): per worm and video, the midpoint
-            % track, speed, distance to the patch edge and nearest patch, keyed
-            % by the 0-based video frame. Videos on disk: plate 11 twice, 12,
-            % 14, two worms each -> 8 tracks.
+            % stage 10 part B (decision #61): per worm and video, one track,
+            % speed, distance to the patch edge and nearest patch, keyed by the
+            % 0-based video frame and the body part (the fixture tracks only
+            % the midpoint, so n = 1). Videos on disk: plate 11 twice, 12, 14,
+            % two worms each -> 8 of each.
             result = testCase.write("concentration_0001", ["metadata", "calculations"]);
             c = result.written{1}.tracks.counts;
             testCase.verifyEqual([c.position, c.speed, c.patch_edge_distance], [8 8 8]);
@@ -713,16 +738,27 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             pos = of('position_calculation', 'concentration_worm0121');
             testCase.verifyNumElements(pos, 1);
             p = pos{1};
-            testCase.verifyEqual(p.statement.variable.name, 'midpoint position');
+            testCase.verifyEqual(p.statement.variable.name, 'position');
+            testCase.verifyEqual(p.statement.variable.node, 'PATO:0000140');
+            testCase.verifyEqual(p.interaction.method.node, 'EMPTY:0000301', 'video tracking');
             cs = docs(strcmp(classes, 'coordinate_system'));
             testCase.verifyTrue(any(cellfun(@(d) strcmp(d.base.id, edge(p, 'coordinate_system_id')), cs)), ...
                 'the positions are in their video''s coordinate system');
             k1 = entries(p.data.keys);
+            testCase.verifyNumElements(k1, 3, '[video frame x body part x coordinate]');
             testCase.verifyEqual(k1{1}.variable.name, 'video frame');
+            testCase.verifyEqual(k1{1}.variable.node, 'EMPTY:0000309');
             testCase.verifyEqual(k1{1}.n, 5);
-            names = cellfun(@(m) m.variable.name, entries(p.interaction.method_parameters), ...
-                'UniformOutput', false);
-            testCase.verifyEqual(sort(names(:)'), {'gap filling', 'longest gap filled'});
+            testCase.verifyEqual(k1{2}.variable.node, 'EMPTY:0000135', 'body part');
+            testCase.verifyEqual(k1{2}.n, 1, 'only the midpoint was tracked');
+            testCase.verifyEqual(k1{2}.term(1).node, 'EMPTY:0000137', 'midpoint');
+            testCase.verifyEqual(k1{3}.variable.node, 'NCIT:C44465', 'coordinate');
+            testCase.verifyEqual({k1{3}.term.node}, {'NCIT:C44477', 'NCIT:C44478'});
+            mp = entries(p.interaction.method_parameters);
+            names = cellfun(@(m) m.variable.name, mp, 'UniformOutput', false);
+            testCase.verifyEqual(sort(names(:)'), {'interpolation method', 'maximum gap filled'});
+            gap = mp{strcmp(names, 'interpolation method')};
+            testCase.verifyEqual(gap.term.node, 'EMPTY:0000306', 'linear interpolation');
 
             % its bytes: x = frame + 12.1 - 0.5, y = 3.5 (pixels from the corner)
             xy = testCase.bodyValues(sessionPath, docs, classes, p.base.id, 'double');
@@ -730,6 +766,9 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
 
             sp = of('velocity_calculation', 'concentration_worm0121');
             testCase.verifyNumElements(sp, 1);
+            testCase.verifyEqual(sp{1}.statement.variable.node, 'PATO:0000008', 'speed');
+            testCase.verifyEqual(sp{1}.interaction.method.node, 'OBI:0200056', 'moving average');
+            testCase.verifyNumElements(entries(sp{1}.data.keys), 2, '[video frame x body part]');
             testCase.verifyEqual(edgeAll(sp{1}, 'input_id'), {p.base.id});
             v = testCase.bodyValues(sessionPath, docs, classes, sp{1}.base.id, 'double');
             testCase.verifyEqual(v(:)', 121e-6 * ones(1, 5), 'AbsTol', 1e-15, 'm/s');
@@ -737,12 +776,18 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             de = of('length_calculation', 'concentration_worm0121');
             testCase.verifyNumElements(de, 1);
             testCase.verifyNumElements(edgeAll(de{1}, 'input_id'), 2, 'the positions and the lawn mask');
+            testCase.verifyEqual(de{1}.statement.variable.node, 'PATO:0000040', 'distance');
+            cond = entries(de{1}.statement.conditions);
+            testCase.verifyNumElements(cond, 1);
+            testCase.verifyEqual(cond{1}.variable.node, 'NCIT:C45793', 'reference point');
+            testCase.verifyEqual(cond{1}.term.node, 'EMPTY:0000276', 'nearest bacterial patch edge');
             v = testCase.bodyValues(sessionPath, docs, classes, de{1}.base.id, 'double');
             testCase.verifyEqual(v(:)', 2 * 1e-3 / 33 * ones(1, 5), 'AbsTol', 1e-15);
 
             if hasItem
                 np = of('item_calculation', 'concentration_worm0121');
                 testCase.verifyNumElements(np, 1);
+                testCase.verifyEqual(np{1}.statement.variable.node, 'EMPTY:0000297');
                 v = testCase.bodyValues(sessionPath, docs, classes, np{1}.base.id, 'uint8');
                 testCase.verifyEqual(v(:)', uint8([0 0 255 0 0]), 'frame 3 is noTrack: the fill value');
             end
