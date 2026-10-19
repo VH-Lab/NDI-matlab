@@ -228,6 +228,12 @@ function steps = planLadder(shape0, scale0, minLevelSize, maxLevels)
 %   x, y first; "finest" counts only axes longer than 1). Stops when
 %   every spatial axis is <= minLevelSize, when
 %   no axis can be halved, or at maxLevels levels (level 0 included).
+    arguments
+        shape0 {mustBeNumeric}
+        scale0 {mustBeNumeric}
+        minLevelSize (1,1) double
+        maxLevels (1,1) double
+    end
     steps = struct('shape', {}, 'scale', {}, 'factor', {});
     shape = shape0;
     scale = scale0;
@@ -256,12 +262,22 @@ end
 
 function L = levelEntry(path, shape, scale, dtype)
 % One level in the shape ndr.format.omezarr.listPyramids reports.
+    arguments
+        path {mustBeText}
+        shape {mustBeNumeric}
+        scale {mustBeNumeric}
+        dtype {mustBeText}
+    end
     L = struct('path', path, 'shape', double(shape), 'chunks', [], ...
         'dtype', dtype, 'scale', double(scale), 'translation', zeros(1, 5));
 end
 
 function [chans, names] = pickChannels(spim, wanted)
 % The channels to put on the c axis, in order.
+    arguments
+        spim % the struct ndr.format.smartspim.readAllChannelsInfo returns
+        wanted % channel names (text or a cell array of text), or empty for all
+    end
     chans = spim.channels(:);
     if isempty(wanted)
         names = {chans.name};
@@ -287,6 +303,10 @@ function fcn = resolveProgressCallback(spec, label)
 % 'default' -> an NDI ProgressBarWindow; a function handle -> as is;
 % [] -> silent. Same contract as fromOMEZarr's; a bar that cannot draw
 % itself never stops the ingest.
+    arguments
+        spec % 'default'/'auto', a function handle, or []
+        label {mustBeText}
+    end
     if isa(spec, 'function_handle')
         fcn = spec;
         return;

@@ -72,6 +72,12 @@ end
 
 function A = reduceAxis(A, d, f, reduction)
 % Reduce A along axis D by factor F, trailing partial block included.
+    arguments
+        A {mustBeNumericOrLogical}
+        d (1,1) {mustBeNumeric}
+        f (1,1) {mustBeNumeric}
+        reduction {mustBeText}
+    end
     n = size(A, d);
     m = ceil(n / f);
     pad = m * f - n;

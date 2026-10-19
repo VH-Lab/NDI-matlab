@@ -95,6 +95,9 @@ function cmd = viewCommand(launcher, sessionPath, pyramidID, options)
 end
 
 function s = shellQuote(str)
+    arguments
+        str {mustBeText}
+    end
     str = char(str);
     if ispc
         s = ['"' strrep(str, '"', '""') '"'];

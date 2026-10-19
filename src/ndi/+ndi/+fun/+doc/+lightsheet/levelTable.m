@@ -121,6 +121,12 @@ end
 function f = frame(session, parentDoc, reductionsPresent, recs)
     % v1: the pyramid's own block. V_eta: the same fields, read back by
     % ndi.vintage.lightsheetPyramid from the store body / level 0.
+    arguments
+        session (1,1)
+        parentDoc (1,1) ndi.document
+        reductionsPresent cell
+        recs % the level records ndi.vintage.lightsheetLevels returns
+    end
     p = ndi.vintage.lightsheetPyramid(parentDoc, session, recs);
     f = struct( ...
         'axes_order', char(p.axes_order), ...

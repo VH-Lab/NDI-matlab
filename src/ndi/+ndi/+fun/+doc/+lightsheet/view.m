@@ -123,5 +123,8 @@ function s = shq(s)
 % Minimal POSIX shell quoting: wrap in single quotes and escape any
 % single quote inside. Enough for paths and identifiers; not a general
 % shell escaper.
+    arguments
+        s {mustBeText}
+    end
     s = ['''' strrep(s, '''', '''\''''') ''''];
 end

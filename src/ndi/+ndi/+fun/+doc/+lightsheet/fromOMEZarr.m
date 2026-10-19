@@ -215,6 +215,10 @@ function r = pickReduction(pyramid, reductionMap)
 %   Preference: explicit map by name, then by type, then a heuristic:
 %   pyramid.type == 'max' -> 'max', anything else -> 'mean'. Warns when
 %   falling back because pyramid.type is unreliable.
+    arguments
+        pyramid % one entry of ndr.format.omezarr.listPyramids (fields name, type)
+        reductionMap % a struct, a containers.Map, or empty
+    end
     r = '';
     if ~isempty(reductionMap)
         if isstruct(reductionMap)
@@ -254,6 +258,11 @@ function fcn = resolveProgressCallback(spec, label, zarrPath)
 % default. Failures to open the bar are swallowed and the ingest
 % continues silently: a bar that could not draw itself must not stop
 % a multi-hour ingest.
+    arguments
+        spec % 'default'/'auto', a function handle, or []
+        label {mustBeText}
+        zarrPath {mustBeText}
+    end
     if isa(spec, 'function_handle')
         fcn = spec;
         return;
