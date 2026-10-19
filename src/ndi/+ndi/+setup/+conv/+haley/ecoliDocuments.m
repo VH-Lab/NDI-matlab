@@ -17,9 +17,9 @@ function out = ecoliDocuments(dataParentDir, session, R, subjectIds, options)
 %   moving median replaced, then a 20 px average filter). Checked exactly
 %   on three images (Jess, 2026-10-05). The raw images, and the background
 %   images, are ecoli/raw/<n>.tiff (the recordings, recordingList); every
-%   calculation below takes the NORMALISED image as its input, the pixels
+%   calculation below takes the NORMALIZED image as its input, the pixels
 %   the analysis actually used. With no raw/ folder the recordings are the
-%   normalised TIFFs themselves and no normalised-image calculation is made.
+%   normalized TIFFs themselves and no normalized-image calculation is made.
 %
 %   WHICH PATCH IS WHICH. An image's lawnAnalysis rows are its detected
 %   patches in the order bwlabel numbers its mask (checked over all 1,521
@@ -43,43 +43,51 @@ function out = ecoliDocuments(dataParentDir, session, R, subjectIds, options)
 %   per-patch values are left out; its mask is still stored.
 %
 %   Per image with an ecoli/images TIFF (when raw/ exists):
-%     intensity_calculation  the plate's `background-normalised fluorescence
-%                         image`: the TIFF, by location (opaque_body, not
-%                         ingested), from the raw image's recording and its
-%                         background image's recording (inputs); method
-%                         parameters the 400 px outlier window and 20 px
-%                         smoothing window
-%   Per background image used (once): its plate's `background fit r-squared`
-%   (score_calculation) and `background outlier pixels` (count_calculation),
-%   from analyzeGFP's backgroundInfo.
+%     intensity_calculation  the plate's `fluorescence intensity`, method
+%                         `normalization to background illumination`: the
+%                         TIFF, by location (opaque_body, not ingested), from
+%                         the raw image's recording and its background image's
+%                         recording (inputs); method parameters the 400 px
+%                         `background outlier window` and 20 px `background
+%                         smoothing window` (labels)
 %
-%   Per analysed image, all from the normalised image (input):
+%   Per analysed image, all from the normalized image (input):
 %     coordinate_system   the image's pixel grid, as part A's (only when
 %                         bacteria.mat metaData gives the image's `scale`)
-%     label_calculation   the plate's `bacterial lawn region`: the mask, a
-%                         bool per pixel (ingested body), method parameter the
-%                         0.5 mm margin the analysis adds around each patch
-%     item_calculation    the plate's `nearest patch` (ecoli/closest/<image>
-%                         .png), a 0-based index into the patch subjects --
-%                         only for a matched image, and only when the schema
-%                         has `item` (did-schema PR #87)
+%     label_calculation   the plate's `bacterial patch mask`: a bool per pixel
+%                         (ingested body) keyed [Y-coordinate, X-coordinate],
+%                         method `image segmentation`, method parameter the
+%                         0.5 mm `margin around each patch` (a label) the
+%                         analysis adds
+%     item_calculation    the plate's `nearest bacterial patch` map
+%                         (ecoli/closest/<image>.png), a 0-based index into
+%                         the patch subjects -- only for a matched image, and
+%                         only when the schema has `item` (did-schema PR #87)
 %   and per matched detected patch, about its patch subject, from the image
-%   and the mask:
-%     intensity_calculation  `patch border amplitude` (borderAmplitude, the
-%                            basis of the paper's relative density), `patch
-%                            centre amplitude` (centerAmplitude), `patch peak
-%                            intensity` (yPeak), `patch edge intensity`
-%                            (yOuterEdge); background-normalised intensity
-%     length_calculation     `patch edge to intensity peak` (xPeak, mm -> m)
-%     score_calculation      `patch circularity` (0-1)
-%     intensity_calculation  `intensity by distance from patch edge`: the
-%                            patch's profile curve (analyzeGFP lawnProfiles
-%                            .pixelValuesNormalized, its row for this patch)
-%                            in an ingested float64 body keyed by `distance
-%                            from patch edge` (regular, 1 um steps, negative
-%                            outside the patch; NaN where the patch has no
-%                            pixels at that distance)
-%   Not stored: borderCenterRatio (border / centre amplitude), meanAmplitude,
+%   and the mask, each `fluorescence intensity` in background-normalized
+%   arbitrary units, told apart by method and conditions:
+%     intensity_calculation  yPeak: method `maximum`
+%                            yOuterEdge: condition `location` = `bacterial
+%                            patch edge`
+%                            centerAmplitude: method `mean`, condition
+%                            `location` = `bacterial patch center`
+%                            borderAmplitude (the basis of the paper's
+%                            relative density): method `maximum`, condition
+%                            `baseline` = `bacterial patch edge`
+%     length_calculation     xPeak, `distance` (mm -> m), conditions
+%                            `reference point` = `bacterial patch edge` and
+%                            `distance end point` = `bacterial patch
+%                            fluorescence peak`
+%     score_calculation      `circularity` (0-1)
+%     intensity_calculation  the patch's profile curve, method `mean`
+%                            (analyzeGFP lawnProfiles.pixelValuesNormalized,
+%                            its row for this patch) in an ingested float64
+%                            body keyed by `distance` (regular, 1 um steps,
+%                            negative outside the patch; NaN where the patch
+%                            has no pixels at that distance), condition
+%                            `reference point` = `bacterial patch edge`,
+%                            method parameter the 1 um `bin width`
+%   Not stored: borderCenterRatio (border / center amplitude), meanAmplitude,
 %   FWHM, xHalfMax*, yHalfMax, lawnRadius (decision #60's keep list): each
 %   is computed from the stored curve. The fitted background images are not
 %   stored (decision #64): each is reproducible from its raw image.
@@ -89,12 +97,12 @@ function out = ecoliDocuments(dataParentDir, session, R, subjectIds, options)
 %   analyzeGFP workspace holding lawnProfiles and backgroundInfo, default
 %   ecoli/analyzeGFP_24-04-04.mat; read without loading its images
 %   (private/lawnProfileReader); its `template` (extractTemplates), when
-%   present, places partly detected images. 'PatchLayout': the spec's
-%   `ecoli_patch_layout` (decision #80). Without it there are no curves and no
-%   background fit values, and OUT.skipped says so.
+%   present, places partly detected images. Without the file there are no
+%   curves, and OUT.skipped says so. 'PatchLayout': the spec's
+%   `ecoli_patch_layout` (decision #80).
 %
 %   OUT fields: documents, counts (struct), skipped (cellstr), borderValues
-%   (struct array, one per stored `patch border amplitude`: imageNum, row --
+%   (struct array, one per stored borderAmplitude statement: imageNum, row --
 %   its position among the image's lawnAnalysis rows --, patchId,
 %   statementId; for stage 12's fits, decision #65).
 
@@ -119,7 +127,7 @@ ref = char(session.local_identifier{1});
 out = struct('documents', {{}}, 'skipped', {{}}, 'borderValues', struct('imageNum', {}, 'row', {}, ...
     'patchId', {}, 'statementId', {}), 'counts', struct('coordinate_system', 0, ...
     'mask', 0, 'nearest_patch', 0, 'matched_images', 0, 'template_matched_images', 0, 'unmatched_images', 0, ...
-    'patch_values', 0, 'normalised_image', 0, 'profiles', 0, 'background_fit', 0));
+    'patch_values', 0, 'normalized_image', 0, 'profiles', 0));
 if ~strcmp(char(session.folder{1}), 'ecoli')
     return;
 end
@@ -147,28 +155,37 @@ R = R(strcmp(R.session, ref) & strcmp(R.kind, 'image'), :);
 docs = {};
 rawMode = isfolder(fullfile(root, 'raw'));
 P = [];
-BI = table();
 TPL = struct([]);
 pf = options.ProfilesFile;
 if isempty(pf), pf = fullfile(root, 'analyzeGFP_24-04-04.mat'); end
 if isfile(pf)
     P = lawnProfileReader(pf);
     w = whos('-file', pf);
-    if any(strcmp({w.name}, 'backgroundInfo'))
-        S = load(pf, 'backgroundInfo');
-        BI = S.backgroundInfo;
-    end
     if any(strcmp({w.name}, 'template'))
         S = load(pf, 'template');
         TPL = S.template;            % acetate registrations (extractTemplates)
     end
 else
-    out.skipped{end+1} = sprintf('%s: no %s; no profile curves and no background fit values', ref, pf);
+    out.skipped{end+1} = sprintf('%s: no %s; no profile curves', ref, pf);
 end
-bgDone = containers.Map();
 bgParams = did2.build.list( ...
-    did2.build.parameter('background outlier window', 'Value', 400, 'Unit', 'pixel'), ...
-    did2.build.parameter('background smoothing window', 'Value', 20, 'Unit', 'pixel'));
+    did2.build.parameter(did2.build.term('', 'background outlier window'), 'Value', 400, ...
+        'Unit', haleyTerm('pixel')), ...
+    did2.build.parameter(did2.build.term('', 'background smoothing window'), 'Value', 20, ...
+        'Unit', haleyTerm('pixel')));
+fi = haleyTerm('fluorescence intensity');
+patchEdge = haleyTerm('bacterial patch edge');
+% each lawnAnalysis intensity column and the method / conditions that tell its
+% `fluorescence intensity` statement from the others on the same patch
+intensityValues = {
+    'borderAmplitude', {'Method', haleyTerm('maximum'), 'Conditions', did2.build.list( ...
+        did2.build.condition(haleyTerm('baseline'), 'Term', patchEdge))}
+    'centerAmplitude', {'Method', haleyTerm('mean'), 'Conditions', did2.build.list( ...
+        did2.build.condition(haleyTerm('location'), 'Term', haleyTerm('bacterial patch center')))}
+    'yPeak',           {'Method', haleyTerm('maximum')}
+    'yOuterEdge',      {'Conditions', did2.build.list( ...
+        did2.build.condition(haleyTerm('location'), 'Term', patchEdge))}
+    };
 
 for k = 1:height(R)
     epoch = R.epoch{k};
@@ -199,15 +216,14 @@ for k = 1:height(R)
         end
     end
 
-    % the background-normalised image (decision #64): the TIFF in images/
+    % the background-normalized image (decision #64): the TIFF in images/
     srcId = imageId;
     if rawMode && isfile(normFile)
         inputs = {imageId};
         if ~isempty(bgEpoch), inputs{end+1} = options.RecordingStatements(bgEpoch); end %#ok<AGROW>
-        nm = did2.build.statement('intensity_calculation', subjectIds(plate), ...
-            did2.build.term('', 'background-normalised fluorescence image'), [], ...
+        nm = did2.build.statement('intensity_calculation', subjectIds(plate), fi, [], ...
             'DataBody', true, 'DatumType', 'uint16', ...
-            'Method', did2.build.term('', 'normalisation to the background illumination'), ...
+            'Method', haleyTerm('normalization to background illumination'), ...
             'MethodParameters', bgParams, 'InputIds', inputs, calc{:}, 'Notes', ...
             ['The raw image (saturated pixels filled by linear interpolation) times the ' ...
             'maximum of its smoothed background image, divided by that smoothed image, ' ...
@@ -215,38 +231,14 @@ for k = 1:height(R)
         info = dir(normFile);
         nb = did2.build.document('opaque_body', struct('format', fileFormat('EDAM:format_3591', 'TIFF', 'image/tiff'), ...
             'filename', sprintf('%04d.tiff', n), 'size_bytes', info.bytes, ...
-            'description', 'The background-normalised image, from ecoli/images.'), ...
+            'description', 'The background-normalized image, from ecoli/images.'), ...
             'SessionId', sid, 'Edges', struct('owner_id', nm.base.id), 'Files', {'body_data_0'});
         nb.files.file_info = struct('name', 'body_data_0', 'locations', struct( ...
             'delete_original', 0, 'uid', ndi.ido.unique_id(), 'location', normFile, ...
             'parameters', '', 'location_type', 'file', 'ingest', 0));
         docs = [docs, {nm, nb}]; %#ok<AGROW>
         srcId = nm.base.id;
-        out.counts.normalised_image = out.counts.normalised_image + 1;
-    end
-
-    % the background fit's quality, once per background image
-    if rawMode && ~isempty(bgEpoch) && ~isKey(bgDone, bgEpoch) && height(BI) > 0
-        bgDone(bgEpoch) = true;
-        i = find(BI.imageNum == bg(1), 1);
-        bp = R.plate(strcmp(R.epoch, bgEpoch));
-        if ~isempty(i) && ~isempty(bp) && isKey(subjectIds, bp{1})
-            bgTimes = {};
-            if isKey(options.RecordingRefs, bgEpoch), bgTimes = {options.RecordingRefs(bgEpoch)}; end
-            bc = [{'SessionId', sid, 'TimeReferenceIds', bgTimes}, env, ...
-                {'InputIds', {options.RecordingStatements(bgEpoch)}, ...
-                'Method', did2.build.term('', 'background illumination smoothing'), ...
-                'MethodParameters', bgParams}];
-            docs{end+1} = did2.build.statement('score_calculation', subjectIds(bp{1}), ...
-                did2.build.term('', 'background fit r-squared'), ...
-                did2.build.valueCell('score', double(BI.rsquare(i)), 'Fields', struct( ...
-                    'scale', did2.build.term('', 'r-squared'), 'scale_min', 0, 'scale_max', 1)), ...
-                bc{:}); %#ok<AGROW>
-            docs{end+1} = did2.build.statement('count_calculation', subjectIds(bp{1}), ...
-                did2.build.term('', 'background outlier pixels'), ...
-                did2.build.valueCell('count', double(BI.numOutliers(i))), bc{:}); %#ok<AGROW>
-            out.counts.background_fit = out.counts.background_fit + 1;
-        end
+        out.counts.normalized_image = out.counts.normalized_image + 1;
     end
 
     if height(rows) == 0
@@ -270,12 +262,12 @@ for k = 1:height(R)
         step = did2.build.valueCell('length', pixel, 'SourceValue', 1 / scale, ...
             'SourceUnit', 'mm', 'Approximate', true);
         cs = did2.build.document('coordinate_system', struct( ...
-            'origin', did2.build.term('', 'image upper-left corner'), ...
+            'origin', haleyTerm('image upper-left corner'), ...
             'dimensions', did2.build.list( ...
-                struct('axis', did2.build.term('', 'image horizontal axis'), ...
-                    'positive_direction', did2.build.term('', 'image right'), 'spacing', step), ...
-                struct('axis', did2.build.term('', 'image vertical axis'), ...
-                    'positive_direction', did2.build.term('', 'image down'), 'spacing', step))), ...
+                struct('axis', haleyTerm('x-axis'), ...
+                    'positive_direction', haleyTerm('image right'), 'spacing', step), ...
+                struct('axis', haleyTerm('y-axis'), ...
+                    'positive_direction', haleyTerm('image down'), 'spacing', step))), ...
             'SessionId', sid, 'Edges', struct('referent_id', imageId));
         docs{end+1} = cs; %#ok<AGROW>
         out.counts.coordinate_system = out.counts.coordinate_system + 1;
@@ -289,10 +281,11 @@ for k = 1:height(R)
         inputs{end+1} = options.RecordingStatements(bgEpoch); %#ok<AGROW>
     end
     ms = did2.build.statement('label_calculation', subjectIds(plate), ...
-        did2.build.term('', 'bacterial lawn region'), [], 'DataBody', true, 'DatumType', 'bool', ...
-        'Keys', keys, 'Method', did2.build.term('', 'patch detection by threshold'), ...
-        'MethodParameters', did2.build.list(did2.build.parameter('margin around each patch', ...
-            'Value', 0.5e-3, 'Unit', 'meter', 'SourceValue', '0.5', 'SourceUnit', 'mm')), ...
+        haleyTerm('bacterial patch mask'), [], 'DataBody', true, 'DatumType', 'bool', ...
+        'Keys', keys, 'Method', haleyTerm('image segmentation'), ...
+        'MethodParameters', did2.build.list(did2.build.parameter( ...
+            did2.build.term('', 'margin around each patch'), 'Value', 0.5e-3, ...
+            'Unit', haleyTerm('meter'), 'SourceValue', '0.5', 'SourceUnit', 'mm')), ...
         'InputIds', inputs, calc{:});
     docs = [docs, {ms, ingestedBody(ms, mask, 'bool', keys, sid, ...
         sprintf('The patch mask (1 = within 0.5 mm of a detected patch), from mask/%04d.png.', n))}]; %#ok<AGROW>
@@ -344,8 +337,8 @@ for k = 1:height(R)
         elseif numel(x) < 2 || any(abs(diff(x) - 1e-3) > 1e-9)
             out.skipped{end+1} = sprintf('%s: lawnProfiles distances are not in 1 um steps; no curves', epoch);
         else
-            curves = struct('Y', Y, 'keys', did2.build.list(did2.build.key('distance from patch edge', ...
-                numel(x), 'Unit', 'meter', 'Origin', x(1) * 1e-3, 'Spacing', 1e-6, ...
+            curves = struct('Y', Y, 'keys', did2.build.list(did2.build.key(haleyTerm('distance'), ...
+                numel(x), 'Unit', haleyTerm('meter'), 'Origin', x(1) * 1e-3, 'Spacing', 1e-6, ...
                 'SourceUnit', 'mm', 'SourceOrigin', x(1), 'SourceSpacing', 1e-3)));
         end
     end
@@ -359,7 +352,7 @@ for k = 1:height(R)
             dt = 'uint8';
             if numel(pIds) > 255, dt = 'uint16'; end
             np = did2.build.statement('item_calculation', subjectIds(plate), ...
-                did2.build.term('', 'nearest patch'), [], 'DataBody', true, 'DatumType', dt, ...
+                haleyTerm('nearest bacterial patch'), [], 'DataBody', true, 'DatumType', dt, ...
                 'Keys', keys, 'InputIds', {ms.base.id}, ...
                 'Edges', struct('item_id', {pIds}), calc{:}, match{:});
             docs = [docs, {np, ingestedBody(np, v, dt, keys, sid, ...
@@ -371,22 +364,17 @@ for k = 1:height(R)
         end
     end
 
-    % the per-patch values
+    % the per-patch values: one variable, told apart by method and conditions
     in = {'InputIds', {srcId, ms.base.id}};
     for j = 1:nDetected
         patch = pIds{slot(j)};
         r = rows(j, :);
-        for q = {{'borderAmplitude', 'patch border amplitude'}, ...
-                 {'centerAmplitude', 'patch centre amplitude'}, ...
-                 {'yPeak', 'patch peak intensity'}, ...
-                 {'yOuterEdge', 'patch edge intensity'}}
-            col = q{1}{1};
+        for q = 1:size(intensityValues, 1)
+            col = intensityValues{q, 1};
             if ~ismember(col, r.Properties.VariableNames) || isnan(r.(col)), continue; end
             v = did2.build.valueCell('intensity', double(r.(col)));
-            docs{end+1} = did2.build.statement('intensity_calculation', patch, ...
-                did2.build.term('', q{1}{2}), v, ...
-                'Method', did2.build.term('', 'fluorescence profile from the patch edge'), ...
-                in{:}, calc{:}, match{:}); %#ok<AGROW>
+            docs{end+1} = did2.build.statement('intensity_calculation', patch, fi, v, ...
+                intensityValues{q, 2}{:}, in{:}, calc{:}, match{:}); %#ok<AGROW>
             out.counts.patch_values = out.counts.patch_values + 1;
             if strcmp(col, 'borderAmplitude')
                 out.borderValues(end+1) = struct('imageNum', n, 'row', j, 'patchId', patch, ...
@@ -396,28 +384,31 @@ for k = 1:height(R)
         if ismember('xPeak', r.Properties.VariableNames) && ~isnan(r.xPeak)
             v = did2.build.valueCell('length', r.xPeak * 1e-3, 'SourceValue', r.xPeak, 'SourceUnit', 'mm');
             docs{end+1} = did2.build.statement('length_calculation', patch, ...
-                did2.build.term('', 'patch edge to intensity peak'), v, ...
-                'Method', did2.build.term('', 'fluorescence profile from the patch edge'), ...
+                haleyTerm('distance'), v, 'Conditions', did2.build.list( ...
+                    did2.build.condition(haleyTerm('reference point'), 'Term', patchEdge), ...
+                    did2.build.condition(haleyTerm('distance end point'), ...
+                        'Term', haleyTerm('bacterial patch fluorescence peak'))), ...
                 in{:}, calc{:}, match{:}); %#ok<AGROW>
             out.counts.patch_values = out.counts.patch_values + 1;
         end
         if ismember('circularity', r.Properties.VariableNames) && ~isnan(r.circularity)
             v = did2.build.valueCell('score', r.circularity, 'Fields', struct( ...
-                'scale', did2.build.term('', 'circularity'), 'scale_min', 0, 'scale_max', 1));
+                'scale', haleyTerm('circularity'), 'scale_min', 0, 'scale_max', 1));
             docs{end+1} = did2.build.statement('score_calculation', patch, ...
-                did2.build.term('', 'patch circularity'), v, in{:}, calc{:}, match{:}); %#ok<AGROW>
+                haleyTerm('circularity'), v, in{:}, calc{:}, match{:}); %#ok<AGROW>
             out.counts.patch_values = out.counts.patch_values + 1;
         end
         if ~isempty(curves)
-            pc = did2.build.statement('intensity_calculation', patch, ...
-                did2.build.term('', 'intensity by distance from patch edge'), [], ...
+            pc = did2.build.statement('intensity_calculation', patch, fi, [], ...
                 'DataBody', true, 'DatumType', 'float64', 'Keys', curves.keys, ...
-                'Method', did2.build.term('', 'fluorescence profile from the patch edge'), ...
-                'MethodParameters', did2.build.list(did2.build.parameter('distance bin', ...
-                    'Value', 1e-6, 'Unit', 'meter', 'SourceValue', '0.001', 'SourceUnit', 'mm')), ...
+                'Conditions', did2.build.list(did2.build.condition(haleyTerm('reference point'), ...
+                    'Term', patchEdge)), ...
+                'Method', haleyTerm('mean'), ...
+                'MethodParameters', did2.build.list(did2.build.parameter(haleyTerm('bin width'), ...
+                    'Value', 1e-6, 'Unit', haleyTerm('meter'), 'SourceValue', '0.001', 'SourceUnit', 'mm')), ...
                 in{:}, calc{:}, match{:});
             docs = [docs, {pc, ingestedBody(pc, curves.Y(j, :), 'float64', curves.keys, sid, ...
-                ['Mean background-normalised intensity at each distance from the patch edge ' ...
+                ['Mean background-normalized intensity at each distance from the patch edge ' ...
                 '(lawnProfiles pixelValuesNormalized); NaN where the patch has no pixels.'], 'NaN')}]; %#ok<AGROW>
             out.counts.profiles = out.counts.profiles + 1;
         end
@@ -452,7 +443,7 @@ end
 
 % -----------------------------------------------------------------------------
 function keys = pixelKeys(a, pixel)
-% as part A: pixel centres from the upper-left corner, in metres when the
+% as part A: pixel centers from the upper-left corner, in meters when the
 % scale is known, else in pixels
 arguments
     a
@@ -460,15 +451,15 @@ arguments
 end
 if isnan(pixel)
     keys = did2.build.list( ...
-        did2.build.key('image vertical position', size(a, 1), 'Unit', 'pixel', ...
+        did2.build.key(haleyTerm('Y-coordinate'), size(a, 1), 'Unit', haleyTerm('pixel'), ...
             'Origin', 0.5, 'Spacing', 1), ...
-        did2.build.key('image horizontal position', size(a, 2), 'Unit', 'pixel', ...
+        did2.build.key(haleyTerm('X-coordinate'), size(a, 2), 'Unit', haleyTerm('pixel'), ...
             'Origin', 0.5, 'Spacing', 1));
     return;
 end
 keys = did2.build.list( ...
-    did2.build.key('image vertical position', size(a, 1), 'Unit', 'meter', ...
+    did2.build.key(haleyTerm('Y-coordinate'), size(a, 1), 'Unit', haleyTerm('meter'), ...
         'Origin', pixel / 2, 'Spacing', pixel, 'SourceUnit', 'pixel', 'SourceOrigin', 0.5, 'SourceSpacing', 1), ...
-    did2.build.key('image horizontal position', size(a, 2), 'Unit', 'meter', ...
+    did2.build.key(haleyTerm('X-coordinate'), size(a, 2), 'Unit', haleyTerm('meter'), ...
         'Origin', pixel / 2, 'Spacing', pixel, 'SourceUnit', 'pixel', 'SourceOrigin', 0.5, 'SourceSpacing', 1));
 end

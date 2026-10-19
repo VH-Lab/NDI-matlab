@@ -896,8 +896,19 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             subj = docs(strcmp(classes, 'subject'));
             idOf = containers.Map(cellfun(@(d) d.subject.local_identifier, subj, 'UniformOutput', false), ...
                 cellfun(@(d) d.base.id, subj, 'UniformOutput', false));
-            border = docs(strcmp(classes, 'intensity_calculation'));
-            border = border(cellfun(@(d) strcmp(d.statement.variable.name, 'patch border amplitude'), border));
+            % every intensity is `fluorescence intensity`; borderAmplitude is
+            % the one with method maximum and condition baseline = patch edge
+            ic = docs(strcmp(classes, 'intensity_calculation'));
+            testCase.verifyTrue(all(cellfun(@(d) strcmp(d.statement.variable.node, 'NCIT:C184706'), ic)), ...
+                'all fluorescence intensity');
+            border = ic(cellfun(@(d) strcmp(methodOf(d), 'maximum') ...
+                && strcmp(conditionTerm(d, 'baseline'), 'bacterial patch edge'), ic));
+            testCase.verifyEqual(sort(cellfun(@(d) d.base.id, border, 'UniformOutput', false)), ...
+                sort({result.written{1}.ecoli.borderValues.statementId}), ...
+                'stage 12 finds the border values by statement id');
+            center = ic(cellfun(@(d) strcmp(conditionTerm(d, 'location'), 'bacterial patch center'), ic));
+            testCase.verifyTrue(all(cellfun(@(d) strcmp(methodOf(d), 'mean'), center)));
+            testCase.verifyNumElements(center, numel(border));
             amp = @(local) cellfun(@(d) d.intensity.value.arbitrary_units, border(cellfun(@(d) ...
                 strcmp(edge(d, 'entity_id'), idOf(local)), border)));
             testCase.verifyEqual(amp('ecoli_plate0001_patch0001'), 102, 'row 2 is the top-left patch');
@@ -907,19 +918,25 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             len = docs(strcmp(classes, 'length_calculation'));
             l1 = len(cellfun(@(d) strcmp(edge(d, 'entity_id'), idOf('ecoli_plate0002_patch0001')), len));
             testCase.verifyEqual(l1{1}.length.value.meters, 0.2e-3, 'AbsTol', 1e-15);
+            testCase.verifyEqual(l1{1}.statement.variable.name, 'distance');
+            testCase.verifyEqual(conditionTerm(l1{1}, 'reference point'), 'bacterial patch edge');
+            testCase.verifyEqual(conditionTerm(l1{1}, 'distance end point'), 'bacterial patch fluorescence peak');
 
             masks = docs(strcmp(classes, 'label_calculation'));
             testCase.verifyNumElements(masks, 2);
             plates = {idOf('ecoli_plate0001'), idOf('ecoli_plate0002')};
             testCase.verifyTrue(all(cellfun(@(d) ismember(edge(d, 'entity_id'), plates), masks)), ...
                 'a mask is a calculation of its plate');
+            testCase.verifyEqual(masks{1}.statement.variable.node, 'EMPTY:0000131');
+            mk = entries(masks{1}.data.keys);
+            testCase.verifyEqual(cellfun(@(e) e.variable.node, mk, 'UniformOutput', false), ...
+                {'NCIT:C44478', 'NCIT:C44477'}, 'keyed [Y-coordinate, X-coordinate]');
 
-            % decision #64: the TIFFs in images/ are background-normalised
+            % decision #64: the TIFFs in images/ are background-normalized
             % images, calculated from the raw image and its background image
-            testCase.verifyEqual([c.normalised_image, c.background_fit, c.profiles], [2 1 13]);
-            ic = docs(strcmp(classes, 'intensity_calculation'));
-            byVar = @(name) ic(cellfun(@(d) strcmp(d.statement.variable.name, name), ic));
-            norm = byVar('background-normalised fluorescence image');
+            testCase.verifyEqual([c.normalized_image, c.profiles], [2 13]);
+            byMethod = @(name) ic(cellfun(@(d) strcmp(methodOf(d), name), ic));
+            norm = byMethod('normalization to background illumination');
             testCase.verifyNumElements(norm, 2);
             obs = docs(strcmp(classes, 'intensity_observation'));
             rawOf = @(n) obs{cellfun(@(d) any(cellfun(@(t) strcmp(t, epochRefOf(docs, classes, n)), ...
@@ -931,20 +948,23 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             testCase.verifyEqual(edgeAll(m2, 'input_id'), {n2.base.id}, ...
                 'the mask is from the normalised image');
 
-            % the background fit's quality, on the background's plate
-            sc = docs(strcmp(classes, 'score_calculation'));
-            rs = sc(cellfun(@(d) strcmp(d.statement.variable.name, 'background fit r-squared'), sc));
-            testCase.verifyNumElements(rs, 1);
-            testCase.verifyEqual(rs{1}.score.value.score, 0.95);
-            cc = docs(strcmp(classes, 'count_calculation'));
-            testCase.verifyEqual(cc{1}.count.value.count, 7);
+            % the background fit's quality is not stored; each patch has its
+            % circularity
+            sc = docs(strcmp(classes, 'score_calculation') | strcmp(classes, 'count_calculation'));
+            names = cellfun(@(d) d.statement.variable.name, sc, 'UniformOutput', false);
+            testCase.verifyFalse(any(ismember(names, {'background fit r-squared', 'background outlier pixels'})));
+            circ = sc(strcmp(names, 'circularity'));
+            testCase.verifyNumElements(circ, 13);
+            testCase.verifyEqual(circ{1}.statement.variable.node, 'EMPTY:0000288');
 
             % the profile curves: patch 1 (top-left) is row 2 of image 2
-            curves = byVar('intensity by distance from patch edge');
+            curves = ic(cellfun(@(d) strcmp(methodOf(d), 'mean') ...
+                && strcmp(conditionTerm(d, 'reference point'), 'bacterial patch edge'), ic));
             testCase.verifyNumElements(curves, 13);
             p1 = curves{cellfun(@(d) strcmp(edge(d, 'entity_id'), idOf('ecoli_plate0001_patch0001')), curves)};
             k = entries(p1.data.keys);
-            testCase.verifyEqual(k{1}.variable.name, 'distance from patch edge');
+            testCase.verifyEqual(k{1}.variable.name, 'distance');
+            testCase.verifyEqual(k{1}.variable.node, 'PATO:0000040');
             testCase.verifyEqual(k{1}.n, 5);
             v = testCase.bodyValues(result.sessions.path{1}, docs, classes, p1.base.id, 'double');
             testCase.verifyEqual(v(:)', [201 202 203 204 NaN]);
@@ -1187,6 +1207,34 @@ e = ep{cellfun(@(d) strcmp(d.epoch.local_identifier, sprintf('ecoli_image%04d', 
 rr = docs(strcmp(classes, 'relative_time_reference'));
 r = rr(cellfun(@(d) strcmp(edge(d, 'referent_id'), e.base.id), rr));
 id = r{1}.base.id;
+end
+
+function name = methodOf(doc)
+% a statement's method name, '' when it has none
+arguments
+    doc struct
+end
+name = '';
+if isfield(doc, 'interaction') && isfield(doc.interaction, 'method') && isstruct(doc.interaction.method)
+    name = doc.interaction.method.name;
+end
+end
+
+function name = conditionTerm(doc, variable)
+% the term name of a statement's condition VARIABLE, '' when it has none
+arguments
+    doc struct
+    variable (1,:) char
+end
+name = '';
+if ~isfield(doc, 'statement') || ~isfield(doc.statement, 'conditions'), return; end
+c = entries(doc.statement.conditions);
+for i = 1:numel(c)
+    if strcmp(c{i}.variable.name, variable) && isfield(c{i}, 'term')
+        name = c{i}.term.name;
+        return;
+    end
+end
 end
 
 function c = entries(x)

@@ -99,8 +99,8 @@ function result = import_V2(dataParentDir, options)
 %     'DatasetFolder'     where stage 13 writes the dataset (default:
 %                         <OutputRoot>/dataset)
 %     'DatasetReference'  the dataset's local_identifier (default 'haley')
-%     'EcoliProfilesFile' analyzeGFP's workspace (profile curves, background
-%                         fits; decision #64), wherever it is kept (default:
+%     'EcoliProfilesFile' analyzeGFP's workspace (profile curves and
+%                         acetate templates; decision #64), wherever it is kept (default:
 %                         <DATAPARENTDIR>/haley/ecoli/analyzeGFP_24-04-04.mat)
 %     'SessionFolders'    default: false when the dataset stage runs, true
 %                         when it does not (decision #71). false INGESTS every
@@ -595,11 +595,11 @@ if isfield(result, 'subjects') && isfield(result, 'recordings')
             built{k}.documents = [built{k}.documents, ec.documents];
             built{k}.ecoli = ec;
             c = ec.counts;
-            if c.mask > 0 || c.normalised_image > 0
-                fprintf(['%s E. coli: %d normalised image(s), %d background fit(s), %d mask, ' ...
+            if c.mask > 0 || c.normalized_image > 0
+                fprintf(['%s E. coli: %d normalized image(s), %d mask, ' ...
                     '%d image(s) matched to patch subjects, %d not; %d per-patch value(s), ' ...
                     '%d profile curve(s), %d nearest patch\n'], T.local_identifier{k}, ...
-                    c.normalised_image, c.background_fit, c.mask, c.matched_images, ...
+                    c.normalized_image, c.mask, c.matched_images, ...
                     c.unmatched_images, c.patch_values, c.profiles, c.nearest_patch);
             end
             for j = 1:numel(ec.skipped)
