@@ -143,7 +143,7 @@ end
 
 function [ok, answer] = localScriptedDetails(recorded, datasetId, fileUid, url)
     arguments
-        recorded (1,1) containers.Map
+        recorded {mustBeA(recorded, "containers.Map")}
         datasetId % recorded verbatim
         fileUid % recorded verbatim
         url
@@ -156,7 +156,7 @@ end
 
 function [ok, msg] = localScriptedFile(recorded, url, path, varargin)
     arguments
-        recorded (1,1) containers.Map
+        recorded {mustBeA(recorded, "containers.Map")}
         url % recorded verbatim
         path % recorded verbatim
     end
@@ -175,7 +175,7 @@ function [ok, msg] = localFailUnexpectedCall(recorded, key)
     % rather than raising here (which would leave the test in a less
     % informative state).
     arguments
-        recorded (1,1) containers.Map
+        recorded {mustBeA(recorded, "containers.Map")}
         key {mustBeText}
     end
     recorded(key) = recorded(key) + 1;
@@ -185,7 +185,7 @@ end
 
 function localRecordHandlerCall(recorded, dest, src, ctx) %#ok<INUSL>
     arguments
-        recorded (1,1) containers.Map
+        recorded {mustBeA(recorded, "containers.Map")}
         dest {mustBeText}
         src %#ok<INUSA> the handler signature passes it; this stub does not read it
         ctx % recorded verbatim

@@ -94,8 +94,8 @@ classdef BatchSignedUrlLookupTest < matlab.unittest.TestCase
             % see in production. See VH-Lab/NDI-matlab#1010.
             arguments
                 testCase (1,1) ndi.unittest.BatchSignedUrlLookupTest %#ok<INUSA> the signer depends only on its other inputs
-                filesMap (1,1) containers.Map
-                counterHandle (1,1) containers.Map
+                filesMap {mustBeA(filesMap, "containers.Map")}
+                counterHandle {mustBeA(counterHandle, "containers.Map")}
                 raiseCount (1,1) {mustBeNumeric}
             end
             signer = @doSign;

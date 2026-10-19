@@ -43,7 +43,7 @@ classdef SignedUrlDiskCacheEndToEndTest < matlab.unittest.TestCase
             % pattern BatchSignedUrlLookupTest already uses.
             arguments
                 testCase (1,1) ndi.unittest.cloud.SignedUrlDiskCacheEndToEndTest %#ok<INUSA> the signer depends only on filesMap
-                filesMap (1,1) containers.Map
+                filesMap {mustBeA(filesMap, "containers.Map")}
             end
             counter = containers.Map('KeyType','char','ValueType','any');
             counter('n') = 0;

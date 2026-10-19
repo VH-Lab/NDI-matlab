@@ -588,7 +588,7 @@ classdef signedUrlDiskCache
 
         function txt = mapToJson(m)
             arguments
-                m (1,1) containers.Map
+                m {mustBeA(m, "containers.Map")}
             end
             ks = keys(m);
             n = numel(ks);

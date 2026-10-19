@@ -369,7 +369,7 @@ classdef LightsheetZarrManager < ndi.gui.app.sessionApp
 
         function v = lookup(m, key, dflt)
             arguments
-                m (1,1) containers.Map
+                m {mustBeA(m, "containers.Map")}
                 key % text, or empty (gives dflt)
                 dflt
             end

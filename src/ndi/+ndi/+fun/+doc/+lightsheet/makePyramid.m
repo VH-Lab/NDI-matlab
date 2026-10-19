@@ -841,7 +841,7 @@ function source = resolveLevelSource(session, p, entry, level, options, docByPat
         entry (1,1) struct
         level % one entry of entry.levels
         options (1,1) struct
-        docByPath (1,1) containers.Map
+        docByPath {mustBeA(docByPath, "containers.Map")}
     end
     if isKey(options.levelSources, p)
         source = options.levelSources(p);
