@@ -160,6 +160,10 @@ classdef TestHaleySeeding < matlab.unittest.TestCase
 
     methods
         function x = entry(testCase, key)
+            arguments
+                testCase (1,1) ndi.unittest.setup.V2.TestHaleySeeding
+                key {mustBeText}
+            end
             k = find(cellfun(@(e) strcmp(e.key, key), testCase.S.entries));
             testCase.assertNumElements(k, 1, key);
             x = testCase.S.entries{k};
@@ -168,6 +172,15 @@ classdef TestHaleySeeding < matlab.unittest.TestCase
 end
 
 function writeInfo(folder, timeSeed, od, cfu, od600, growthTimeSeed, growthOD600)
+arguments
+    folder {mustBeText}
+    timeSeed
+    od
+    cfu
+    od600
+    growthTimeSeed
+    growthOD600
+end
 mkdir(folder);
 info = table(timeSeed, od, cfu, od600, growthTimeSeed, growthOD600, 'VariableNames', ...
     {'timeSeed', 'OD600Real', 'CFU', 'OD600', 'growthTimeSeed', 'growthOD600'}); %#ok<NASGU>

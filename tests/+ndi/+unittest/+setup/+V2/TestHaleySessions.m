@@ -158,6 +158,10 @@ classdef TestHaleySessions < matlab.unittest.TestCase
 end
 
 function writeToc(folder, rows)
+arguments
+    folder {mustBeText}
+    rows cell
+end
 if ~isfolder(folder), mkdir(folder); end
 [~, name] = fileparts(folder);
 T = cell2table([repmat({name}, size(rows, 1), 1), rows], 'VariableNames', ...

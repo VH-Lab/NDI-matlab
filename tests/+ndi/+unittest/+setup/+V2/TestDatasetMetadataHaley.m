@@ -277,11 +277,18 @@ classdef TestDatasetMetadataHaley < matlab.unittest.TestCase
 end
 
 function rels = relationsNamed(docs, name)
+arguments
+    docs cell
+    name {mustBeText}
+end
 isRel = cellfun(@(d) strcmp(d.document_class.class_name, 'directed_relation'), docs);
 rels = docs(isRel);
 rels = rels(cellfun(@(r) strcmp(r.directed_relation.relation.name, name), rels));
 end
 
 function id = parentOf(r)
+arguments
+    r (1,1) struct
+end
 id = r.depends_on(strcmp({r.depends_on.name}, 'parent_id')).document_id;
 end

@@ -27,6 +27,9 @@ classdef TestHaleyRecordings < matlab.unittest.TestCase
     methods (Static)
         function writeFixture(root)
             % The raw-data stand-in, also used by TestHaleyWrite.
+            arguments
+                root {mustBeText}
+            end
             ce = fullfile(root, 'haley', 'celegans');
 
             % foragingConcentration, one day (22-02-04):
@@ -229,6 +232,10 @@ classdef TestHaleyRecordings < matlab.unittest.TestCase
 end
 
 function writeToc(folder, rows)
+arguments
+    folder {mustBeText}
+    rows cell
+end
 if ~isfolder(folder), mkdir(folder); end
 [~, name] = fileparts(folder);
 T = cell2table([repmat({name}, size(rows, 1), 1), rows], 'VariableNames', ...
@@ -256,6 +263,18 @@ function writeInfo(folder, expNum, plateNum, videoNum, camera, video, lawn, t, n
 % pixel's nearest patch is the plate's one patch; patches found by template;
 % the lawn clip registered at 0.98 where the plate has one; the patch's
 % circularity 0.9.
+arguments
+    folder {mustBeText}
+    expNum {mustBeNumeric}
+    plateNum {mustBeNumeric}
+    videoNum {mustBeNumeric}
+    camera {mustBeNumeric}
+    video cell
+    lawn cell
+    t datetime
+    nFrames {mustBeNumeric}
+    rate {mustBeNumeric}
+end
 n = numel(expNum);
 arena = false(8); arena(2:7, 2:7) = true;
 ref = false(8); ref(2, 2) = true;
@@ -299,6 +318,9 @@ function writeTracks(folder)
 % x = frame + w/10, y = 4; speed w um/s; 2 pixels inside the patch edge; its
 % nearest patch is patch 1, except frame 3 of worm 121, which the source
 % marks noTrack (and reads its nearest patch at pixel (1,1)).
+arguments
+    folder {mustBeText}
+end
 rows = {};
 for pv = [11 1; 11 2; 12 1; 14 1]'
     for w = pv(1) * 10 + [1 2]
@@ -319,6 +341,10 @@ end
 
 function writeFits(file, rows)
 % borderAmplitude.csv as plotForagingGFP writes it
+arguments
+    file {mustBeText}
+    rows cell
+end
 fid = fopen(file, 'w');
 fprintf(fid, 'peptone,lawnVolume,growthTimeCondition,OD600,slope,intercept,sse,rsquare,dfe,adjrsquare,rmse\r\n');
 for r = 1:size(rows, 1)
@@ -332,6 +358,9 @@ function writeEncounters(folder)
 % first encounter (id 0), then encounters at rows 2-3 and 4-5 on patch 1;
 % worm 111 (plate 11, two videos of 5 frames each, joined) -- one encounter at
 % rows 7-9, frames 2-4 of the second video. Values: speeds w*1 um/s on, ...
+arguments
+    folder {mustBeText}
+end
 n = 4;
 name = repmat({'foragingConcentration'}, n, 1);
 encounter = table(uint16(ones(n, 1)), uint16([12; 12; 12; 11]), [1; 1; 1; 2], ...
@@ -359,6 +388,10 @@ save(fullfile(folder, 'encounter.mat'), 'encounter');
 end
 
 function placeholder(file, n)
+arguments
+    file {mustBeText}
+    n (1,1) {mustBeNumeric}
+end
 fid = fopen(file, 'w');
 fwrite(fid, zeros(1, n, 'uint8'));
 fclose(fid);

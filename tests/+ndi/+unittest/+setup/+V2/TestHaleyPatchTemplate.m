@@ -58,6 +58,14 @@ classdef TestHaleyPatchTemplate < matlab.unittest.TestCase
         function c = centroids(testCase, slots, centerYX, angleDeg, scale, jitterMm)
             % pixel centroids of the given patch numbers in an image whose
             % template has CENTERYX ([y x]), ANGLEDEG and SCALE (px/mm)
+            arguments
+                testCase (1,1) ndi.unittest.setup.V2.TestHaleyPatchTemplate
+                slots {mustBeNumeric}
+                centerYX {mustBeNumeric}
+                angleDeg (1,1) {mustBeNumeric}
+                scale (1,1) {mustBeNumeric}
+                jitterMm (1,1) {mustBeNumeric}
+            end
             pos = reshape(testCase.Layout.positions_mm, [], 2);
             th = testCase.Layout.angle_sign * angleDeg * pi / 180;
             rng(1);

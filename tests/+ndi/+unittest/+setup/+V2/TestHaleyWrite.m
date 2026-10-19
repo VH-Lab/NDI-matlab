@@ -961,15 +961,27 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
 
     methods
         function result = write(testCase, which, more)
-            if nargin < 3, more = string.empty; end
+            arguments
+                testCase (1,1) ndi.unittest.setup.V2.TestHaleyWrite
+                which
+                more = string.empty
+            end
             result = ndi.setup.conv.haley.import_V2(testCase.Root, ...
                 'Stages', ["sessions", "subjects", "acquisition", "relations", more], 'Sessions', which, ...
                 'OutputRoot', testCase.Out, 'Write', true, 'Overwrite', true, ...
                 'ReadVideos', false);
         end
 
-        function v = bodyValues(~, sessionPath, docs, classes, ownerId, precision)
+        function v = bodyValues(testCase, sessionPath, docs, classes, ownerId, precision)
             % the values of the ingested body owned by OWNERID, read back
+            arguments
+                testCase (1,1) ndi.unittest.setup.V2.TestHaleyWrite %#ok<INUSA> a method for call syntax; needs no state
+                sessionPath {mustBeText}
+                docs cell
+                classes cell
+                ownerId {mustBeText}
+                precision {mustBeText}
+            end
             b = docs(strcmp(classes, 'sampled_body'));
             b = b{cellfun(@(d) strcmp(edge(d, 'owner_id'), ownerId), b)};
             db = did2.database.sqlitedb(fullfile(sessionPath, '.ndi', ...
@@ -985,7 +997,11 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             delete(tmp); delete(raw{1});
         end
 
-        function docs = documents(~, sessionPath)
+        function docs = documents(testCase, sessionPath)
+            arguments
+                testCase (1,1) ndi.unittest.setup.V2.TestHaleyWrite %#ok<INUSA> a method for call syntax; needs no state
+                sessionPath {mustBeText}
+            end
             db = did2.database.sqlitedb(fullfile(sessionPath, '.ndi', ...
                 ndi.database.implementations.database.did2sqlite.DEFAULTFILENAME()));
             ids = db.allIds();
@@ -999,6 +1015,9 @@ function d = newNames(d)
 % a document as V_eta names it since 2026-10-08 (did-schema V_eta_tenets.md, T2
 % amendment), whichever schema wrote it: the statement blocks lose `subject_`,
 % `data_type` is `value`, and a statement's `subject_id` edge is `entity_id`
+arguments
+    d (1,1) struct
+end
 for old = {'subject_statement', 'subject_assertion', 'subject_interaction', ...
         'subject_observation', 'subject_manipulation', 'subject_calculation', 'data_type'}
     if isfield(d, old{1}) && isstruct(d.(old{1}))
@@ -1024,6 +1043,10 @@ d.document_class.class_name = name;
 end
 
 function v = edge(doc, name)
+arguments
+    doc (1,1) struct
+    name {mustBeText}
+end
 v = edgeAll(doc, name);
 if isempty(v)
     v = '';
@@ -1034,6 +1057,11 @@ end
 
 function id = epochRefOf(docs, classes, n)
 % the id of the relative time reference onto the epoch of E. coli image N
+arguments
+    docs cell
+    classes cell
+    n (1,1) {mustBeNumeric}
+end
 ep = docs(strcmp(classes, 'epoch'));
 e = ep{cellfun(@(d) strcmp(d.epoch.local_identifier, sprintf('ecoli_image%04d', n)), ep)};
 rr = docs(strcmp(classes, 'relative_time_reference'));
@@ -1044,10 +1072,17 @@ end
 function c = entries(x)
 % a decoded list as a cell array (jsondecode gives a struct array when its
 % entries share fields, a cell array when they do not)
+arguments
+    x
+end
 if iscell(x), c = reshape(x, 1, []); else, c = num2cell(reshape(x, 1, [])); end
 end
 
 function v = edgeAll(doc, name)
+arguments
+    doc (1,1) struct
+    name {mustBeText}
+end
 v = {};
 if ~isfield(doc, 'depends_on') || isempty(doc.depends_on)
     return;
@@ -1063,6 +1098,10 @@ v = v(~cellfun(@isempty, v));
 end
 
 function t = subjectType(byLocal, local)
+arguments
+    byLocal
+    local {mustBeText}
+end
 d = byLocal(local);
 t = d.subject.type.name;
 end

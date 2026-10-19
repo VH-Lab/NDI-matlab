@@ -321,6 +321,10 @@ classdef TestHaleySubjects < matlab.unittest.TestCase
 end
 
 function writeToc(folder, rows)
+arguments
+    folder {mustBeText}
+    rows cell
+end
 if ~isfolder(folder), mkdir(folder); end
 [~, name] = fileparts(folder);
 T = cell2table([repmat({name}, size(rows, 1), 1), rows], 'VariableNames', ...
@@ -330,11 +334,24 @@ writetable(T, fullfile(folder, 'tableOfContents.xlsx'));
 end
 
 function writeInfo(folder, expNum, plateNum, videoNum, wormNum, strainID, picked, centers, radii, exclude, extra)
+arguments
+    folder {mustBeText}
+    expNum {mustBeNumeric}
+    plateNum {mustBeNumeric}
+    videoNum {mustBeNumeric}
+    wormNum
+    strainID
+    picked
+    centers
+    radii
+    exclude
+    extra (1,1) struct = struct()
+end
 info = table(uint16(expNum(:)), uint16(plateNum(:)), uint16(videoNum(:)), wormNum(:), ...
     strainID(:), picked(:), centers(:), radii(:), logical(exclude(:)), ...
     'VariableNames', {'expNum', 'plateNum', 'videoNum', 'wormNum', 'strainID', ...
     'growthTimePicked', 'lawnCenters', 'lawnRadii', 'exclude'});
-if nargin > 10
+if ~isempty(fieldnames(extra))
     for f = reshape(fieldnames(extra), 1, [])
         info.(f{1}) = reshape(extra.(f{1}), [], 1);
     end

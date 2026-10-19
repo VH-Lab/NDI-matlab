@@ -141,6 +141,11 @@ end
 
 function profile = writeVideoAsMp4(file, rgb, frameRate)
 % MPEG-4 if this platform can write it; otherwise Motion JPEG AVI, renamed.
+arguments
+    file {mustBeText}
+    rgb {mustBeNumeric}
+    frameRate (1,1) {mustBeNumeric}
+end
 candidates = {'MPEG-4', file; 'Motion JPEG AVI', [tempname '.avi']};
 if isfile(file), delete(file); end
 for c = 1:size(candidates, 1)
@@ -166,5 +171,8 @@ error('TestHaleyReadVideo:noWriter', 'neither MPEG-4 nor Motion JPEG AVI could b
 end
 
 function m = channelMeans(frame)
+arguments
+    frame {mustBeNumeric}
+end
 m = reshape(mean(mean(double(frame), 1), 2), 1, []);
 end
