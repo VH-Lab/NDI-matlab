@@ -32,6 +32,10 @@ classdef GetFileUploadURL < ndi.cloud.api.call
         function apiURL = buildURL(this, organizationId)
             %BUILDURL The upload URL request for ORGANIZATIONID, with the
             %   checksumCRC32 query parameter when a checksum was given.
+            arguments
+                this (1,1) ndi.cloud.api.implementation.files.GetFileUploadURL
+                organizationId {mustBeText}
+            end
             apiURL = ndi.cloud.api.url('get_file_upload_url', ...
                 'dataset_id', this.cloudDatasetID, ...
                 'organization_id', organizationId, ...

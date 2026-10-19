@@ -168,6 +168,10 @@ function m = buildUploadedUidMap(cloudDatasetId, verbose)
     % an empty map, which the downstream code treats as "no check" --
     % preserves the pre-#1007 behavior. Verbose mode reports the count so
     % the "Updating document file info..." step has a denominator to show.
+    arguments
+        cloudDatasetId {mustBeText}
+        verbose (1,1) logical
+    end
     m = containers.Map('KeyType','char','ValueType','logical');
     try
         if verbose

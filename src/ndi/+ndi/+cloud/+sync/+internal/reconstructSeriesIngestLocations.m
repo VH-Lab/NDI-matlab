@@ -140,6 +140,11 @@ function ingestLocations = buildIngestLocations(manifest, cloudDatasetId, member
 % array one entry at a time with `end+1` reallocates the whole array on
 % every step -- classic O(N^2), turning a linear pass into minutes.
 % See NDI-matlab lightsheet 2026-09-24 download hang.
+    arguments
+        manifest
+        cloudDatasetId {mustBeText}
+        memberBase (1,1) double
+    end
     prototype = struct( ...
         'index', 0, ...
         'uid', '', ...

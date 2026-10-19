@@ -50,6 +50,9 @@ classdef LookupFiles < ndi.cloud.api.call
             %   When MATLAB encodes a scalar string to JSON it produces a bare
             %   string, not an array, so a single uid is sent twice (the server
             %   collapses duplicates), as BulkFetch does.
+            arguments
+                this (1,1) ndi.cloud.api.implementation.files.LookupFiles
+            end
             uids = this.cloudFileUIDs;
             if isscalar(uids)
                 uids = [uids uids];
@@ -68,6 +71,9 @@ classdef LookupFiles < ndi.cloud.api.call
             %                      failure, the error body from the server.
             %       apiResponse  - The matlab.net.http.ResponseMessage object.
             %       apiURL       - The URL that was called.
+            arguments
+                this (1,1) ndi.cloud.api.implementation.files.LookupFiles
+            end
 
             b = false;
 

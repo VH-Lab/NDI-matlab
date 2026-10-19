@@ -321,6 +321,11 @@ classdef signedUrlDiskCache
             % Series names can be arbitrary strings (paths, spaces, uni);
             % filesystems can't hold them literally. Follow the escape
             % rule NDI-python will mirror byte-for-byte.
+            arguments
+                datasetId {mustBeText}
+                documentId {mustBeText}
+                seriesName {mustBeText}
+            end
             base = ndi.cloud.download.internal.signedUrlDiskCache.cacheDir();
             dsDir = fullfile(base, char(datasetId));
             if strlength(seriesName) == 0
@@ -337,6 +342,9 @@ classdef signedUrlDiskCache
             % Above MaxEscapedSeriesLen fall back to 'hash-<sha1(raw)>'
             % so a pathologically long name never overflows a filesystem's
             % 255-byte name limit.
+            arguments
+                raw {mustBeText}
+            end
             bytes = uint8(unicode2native(raw, 'UTF-8'));
             safe = (bytes >= uint8('A') & bytes <= uint8('Z')) | ...
                    (bytes >= uint8('a') & bytes <= uint8('z')) | ...
@@ -359,6 +367,9 @@ classdef signedUrlDiskCache
         end
 
         function hex = sha1Hex(raw)
+            arguments
+                raw {mustBeText}
+            end
             md = java.security.MessageDigest.getInstance('SHA-1');
             md.update(int8(unicode2native(raw, 'UTF-8')));
             digest = typecast(md.digest(), 'uint8');
@@ -366,6 +377,9 @@ classdef signedUrlDiskCache
         end
 
         function ensureParentDir(filePath)
+            arguments
+                filePath {mustBeText}
+            end
             parent = fileparts(filePath);
             if ~isfolder(parent)
                 mkdir(parent);
@@ -376,6 +390,9 @@ classdef signedUrlDiskCache
             % Bearer tokens for 24 h -- keep world-readable off on POSIX.
             % Windows relies on the default per-user profile ACL for
             % ~/.ndi/, which is roughly equivalent.
+            arguments
+                dirPath {mustBeText}
+            end
             if isunix
                 try %#ok<TRYNC>
                     if exist('filePermissions', 'builtin') == 5 || ...
@@ -409,6 +426,10 @@ classdef signedUrlDiskCache
             % overload resolution for write(byte[]) versus write(int) is
             % release- and JVM-dependent, and a mis-picked overload here
             % writes silently corrupt output.
+            arguments
+                txt {mustBeText}
+                outPath {mustBeText}
+            end
             parent = fileparts(outPath);
             stem = tempname(parent);
             plainPath = [stem '.json'];
@@ -432,6 +453,9 @@ classdef signedUrlDiskCache
             % gunzip writes into a temp dir, then we read the plain file.
             % Same rationale as gzipToFile: avoid the Java-bridge
             % overload traps by using MATLAB builtins end to end.
+            arguments
+                inPath {mustBeText}
+            end
             outDir = tempname;
             mkdir(outDir);
             cleanupDir = onCleanup(@() localCleanupDir(outDir)); %#ok<NASGU>
@@ -459,6 +483,10 @@ classdef signedUrlDiskCache
             % path there is fragile across MATLAB releases -- an
             % interface-typed array plus an enum-to-array assignment can
             % throw silently, and save()'s outer try/catch swallows it.
+            arguments
+                srcPath {mustBeText}
+                dstPath {mustBeText}
+            end
             movefile(srcPath, dstPath, 'f');
         end
 
@@ -473,6 +501,9 @@ classdef signedUrlDiskCache
             % Strip a trailing 'Z' (or ' +00:00' / '+00:00') and parse as
             % naive UTC. Simpler than juggling MATLAB's timezone format
             % code, which differs across releases.
+            arguments
+                str {mustBeText}
+            end
             str = char(str);
             dt = NaT('TimeZone','UTC');
             if isempty(str)
@@ -503,6 +534,10 @@ classdef signedUrlDiskCache
         end
 
         function v = stringField(s, name)
+            arguments
+                s struct
+                name {mustBeText}
+            end
             v = "";
             if isfield(s, name) && ~isempty(s.(name))
                 v = string(s.(name));
@@ -513,6 +548,11 @@ classdef signedUrlDiskCache
         end
 
         function v = numericField(s, name, defaultValue)
+            arguments
+                s struct
+                name {mustBeText}
+                defaultValue
+            end
             v = defaultValue;
             if isfield(s, name) && isnumeric(s.(name)) && ~isempty(s.(name))
                 v = double(s.(name));
@@ -525,6 +565,9 @@ classdef signedUrlDiskCache
             % target across MATLAB releases, and jsondecode on a struct
             % with digit keys goes through the same rename dance that
             % signedURLFileMap already had to work around.
+            arguments
+                rec (1,1) struct
+            end
             E = @(v) jsonencode(string(v));
             parts = {};
             parts{end+1} = sprintf('{"schemaVersion":%d', ...
@@ -544,6 +587,9 @@ classdef signedUrlDiskCache
         end
 
         function txt = mapToJson(m)
+            arguments
+                m (1,1) containers.Map
+            end
             ks = keys(m);
             n = numel(ks);
             if n == 0
@@ -560,6 +606,9 @@ classdef signedUrlDiskCache
         end
 
         function out = parseJson(txt)
+            arguments
+                txt {mustBeText}
+            end
             out = [];
             % jsondecode renames field names beginning with a digit,
             % which every did.ido uid does. Reuse the same trick
@@ -585,6 +634,10 @@ classdef signedUrlDiskCache
         end
 
         function v = readTopString(data, name)
+            arguments
+                data struct
+                name {mustBeText}
+            end
             v = "";
             if isfield(data, name) && ~isempty(data.(name))
                 v = string(data.(name));
@@ -592,6 +645,10 @@ classdef signedUrlDiskCache
         end
 
         function v = readTopNumber(data, name)
+            arguments
+                data struct
+                name {mustBeText}
+            end
             v = 0;
             if isfield(data, name) && isnumeric(data.(name)) && ~isempty(data.(name))
                 v = double(data.(name));
@@ -602,6 +659,9 @@ end
 
 function localDeleteIfExists(p)
 % Best-effort delete for an onCleanup guard on a scratch file.
+    arguments
+        p % any value; only a non-empty char path is acted on
+    end
     if ischar(p) && ~isempty(p) && isfile(p)
         try %#ok<TRYNC>
             delete(p);
@@ -612,6 +672,9 @@ end
 function localCleanupDir(d)
 % Best-effort recursive rmdir for a scratch temp directory used only for
 % one gunzip. Missing directory is not an error.
+    arguments
+        d % any value; only a non-empty char path is acted on
+    end
     if ischar(d) && ~isempty(d) && isfolder(d)
         try %#ok<TRYNC>
             rmdir(d, 's');

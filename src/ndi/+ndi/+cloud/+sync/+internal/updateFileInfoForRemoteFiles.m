@@ -275,6 +275,10 @@ function tf = isUploaded(map, uid)
     % the previous no-check behavior), or when the map says this uid is
     % on the server as uploaded=true. False only when the map is present
     % AND names this uid as not uploaded (or does not name it at all).
+    arguments
+        map % a containers.Map, or [] for no check
+        uid % normally text; any other value reads as not uploaded
+    end
     if isempty(map)
         tf = true;
         return
@@ -295,6 +299,11 @@ function tickBar(app, tag, progress)
     % Guarded progress update. If the bar / window has been closed or
     % culled, drop the update silently rather than crash the download
     % pipeline. Same defensive contract list_binary_files uses.
+    arguments
+        app % an ndi.gui.component.ProgressBarWindow, or [] for none
+        tag {mustBeText}
+        progress {mustBeNumeric}
+    end
     if isempty(app) || ~isvalid(app) || isempty(tag)
         return
     end
