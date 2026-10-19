@@ -849,32 +849,81 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
                 && strcmp(d.statement.variable.name, var), docs));
 
             fr = 2.9991;
-            list = named('time_calculation', 'concentration_worm0121', 'encounter onset');
+            list = named('time_calculation', 'concentration_worm0121', 'encounter onset time');
             testCase.verifyNumElements(list, 1);
+            testCase.verifyEqual(list{1}.statement.variable.node, 'EMPTY:0000140');
             testCase.verifyEqual([list{1}.time.value.seconds], [1 3] / fr, 'AbsTol', 1e-9, ...
                 'rows 2 and 4 of a one-video track: frames 2 and 4');
-            l111 = named('time_calculation', 'concentration_worm0111', 'encounter onset');
+            testCase.verifyEqual(methodOf(list{1}), 'patch encounter detection');
+            lk = entries(list{1}.data.keys);
+            testCase.verifyEqual(lk{1}.variable.node, 'NCIT:C62143', 'keyed `encounter`');
+            l111 = named('time_calculation', 'concentration_worm0111', 'encounter onset time');
             testCase.verifyEqual(l111{1}.time.value.seconds, 3671 + 1 / fr, 'AbsTol', 1e-6, ...
                 'row 7 = frame 2 of the second video, which started 3671 s after the first');
 
-            sp = named('velocity_calculation', 'concentration_worm0121', 'median speed on patch');
-            testCase.verifyEqual([sp{1}.velocity.value.meters_per_second], [10 20] * 1e-6, 'AbsTol', 1e-15);
+            % velocityOn + velocityOff: one median speed, keyed [encounter x period]
+            speeds = named('velocity_calculation', 'concentration_worm0121', 'speed');
+            sp = speeds(cellfun(@(d) strcmp(methodOf(d), 'median') && ...
+                isempty(conditionTerms(d)), speeds));
+            testCase.verifyNumElements(sp, 1);
+            v = numbers(sp{1}.velocity.value, 'meters_per_second');
+            testCase.verifyEqual(v(1:3), [10 20 60] * 1e-6, 'AbsTol', 1e-15, ...
+                'column-major: during each encounter, then after');
+            testCase.verifyTrue(isnan(v(4)), 'nothing after the last encounter');
+            keys = entries(sp{1}.data.keys);
+            testCase.verifyNumElements(keys, 2);
+            testCase.verifyEqual(keys{2}.variable.name, 'patch encounter period');
+            testCase.verifyEqual({keys{2}.term.name}, {'during the patch encounter', 'after the patch encounter'});
             testCase.verifyTrue(ismember(list{1}.base.id, edgeAll(sp{1}, 'input_id')), ...
                 'a per-encounter value is computed over the encounter list');
-            de = named('acceleration_calculation', 'concentration_worm0121', 'deceleration on entry');
-            testCase.verifyEqual([de{1}.acceleration.value.meters_per_second_squared], [-40 -50] * 1e-6, 'AbsTol', 1e-15);
-            lb = named('label_calculation', 'concentration_worm0121', 'encounter type');
-            testCase.verifyEqual({lb{1}.label.value.name}, {'exploit', 'sample'});
-            pr = named('score_calculation', 'concentration_worm0121', 'probability of exploitation');
-            testCase.verifyEqual([pr{1}.score.value.score], [0.9 0.2], 'AbsTol', 1e-12);
-            g0 = named('velocity_calculation', 'concentration_worm0121', ...
-                'median speed off patch before the first encounter');
+            mn = speeds(cellfun(@(d) strcmp(methodOf(d), 'minimum'), speeds));
+            testCase.verifyEqual(numbers(mn{1}.velocity.value, 'meters_per_second'), [5 6] * 1e-6, 'AbsTol', 1e-15);
+            testCase.verifyEqual(conditionTerms(mn{1}), {'during the patch encounter'});
+            pk = speeds(cellfun(@(d) strcmp(methodOf(d), 'peak speed before an event'), speeds));
+            testCase.verifyEqual(numbers(pk{1}.velocity.value, 'meters_per_second'), [100 110] * 1e-6, 'AbsTol', 1e-15);
+            testCase.verifyEqual(conditionValues(pk{1}), [-10 0], ...
+                'the window from 10 s before the onset to the onset');
+
+            de = named('acceleration_calculation', 'concentration_worm0121', 'acceleration');
+            testCase.verifyEqual(numbers(de{1}.acceleration.value, 'meters_per_second_squared'), ...
+                [-40 -50] * 1e-6, 'AbsTol', 1e-15);
+            testCase.verifyEqual(methodOf(de{1}), 'ordinary least squares estimation');
+            testCase.verifyEqual(conditionValues(de{1}), [-1.5 6.5]);
+            dist = named('length_calculation', 'concentration_worm0121', 'distance');
+            on = dist(cellfun(@(d) ismember('during the patch encounter', conditionTerms(d)), dist));
+            testCase.verifyEqual(numbers(on{1}.length.value, 'meters'), [0.1 0.2] * 1e-3, 'AbsTol', 1e-15);
+            testCase.verifyTrue(ismember('nearest bacterial patch edge', conditionTerms(on{1})));
+
+            % the encounter type: the decided terms (a label where the schema has no term_calculation)
+            if ndi.setup.V2.schemaHasLeaf('term_calculation')
+                lb = named('term_calculation', 'concentration_worm0121', 'encounter type');
+                types = entries(lb{1}.term.value);
+                testCase.verifyEqual(cellfun(@(t) t.node, types, 'UniformOutput', false), ...
+                    {'EMPTY:0000293', 'EMPTY:0000294'});
+            else
+                lb = named('label_calculation', 'concentration_worm0121', 'encounter type');
+                types = entries(lb{1}.label.value);
+            end
+            testCase.verifyEqual(cellfun(@(t) t.name, types, 'UniformOutput', false), {'exploit', 'sample'});
+            testCase.verifyEqual(methodOf(lb{1}), 'classification');
+
+            % exploitPosterior + sensePosterior: one posterior, keyed [encounter x state]
+            pr = named('score_calculation', 'concentration_worm0121', 'posterior probability');
+            testCase.verifyNumElements(pr, 1);
+            testCase.verifyEqual(numbers(pr{1}.score.value, 'score'), [0.9 0.2 0.8 0.6], 'AbsTol', 1e-12);
+            pkeys = entries(pr{1}.data.keys);
+            testCase.verifyEqual({pkeys{2}.term.name}, {'exploitation', 'sensing'});
+
+            % the gap before the first encounter
+            g0 = speeds(cellfun(@(d) isequal(conditionTerms(d), {'before the first patch encounter'}), speeds));
+            testCase.verifyNumElements(g0, 1);
             testCase.verifyEqual(g0{1}.velocity.value.meters_per_second, 50e-6, 'AbsTol', 1e-15);
+            testCase.verifyEqual(methodOf(g0{1}), 'median');
 
             % the key takes its positions from the list, once both repositories have key_id
-            keys = entries(sp{1}.data.keys);
+            keys = entries(mn{1}.data.keys);
             if isfield(keys{1}, 'positions_from') && ~isempty(keys{1}.positions_from)
-                testCase.verifyEqual(edgeAll(sp{1}, 'key_id'), {list{1}.base.id});
+                testCase.verifyEqual(edgeAll(mn{1}, 'key_id'), {list{1}.base.id});
             end
             testCase.verifyEqual(keys{1}.n, 2);
         end
@@ -973,7 +1022,9 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
 
         function testDensity(testCase)
             % stage 12 (decision #65): the E. coli border amplitude fits, each
-            % about a group of patches, and each worm's per-encounter estimates
+            % about a group of patches, and the estimates from them about the
+            % C. elegans patches: each assay-plate patch at its encounters, each
+            % acclimation-plate patch at the pick
             testCase.assumeTrue(ndi.setup.V2.schemaHasLeaf('time_calculation'), ...
                 'DID_SCHEMA_PATH does not hold time_calculation (did-schema PR #87)');
             result = testCase.write(["ecoli_0001", "concentration_0001"], ...
@@ -984,7 +1035,9 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
                 [2 2 24 22 2], ['the OD600 1 fit and the joint low-OD fit, each about the 12 ' ...
                 'patches of plate 1, from the 11 included values; the 200 uL fit has no image']);
             testCase.verifyTrue(any(contains(de.skipped, '200 uL')));
-            testCase.verifyEqual([c.worms, c.estimates], [2 4]);
+            testCase.verifyEqual([c.worms, c.patches], [2 2], ...
+                'patch 1 of plate 12 (worm 121) and of plate 11 (worm 111)');
+            testCase.verifyEqual(c.estimates, c.patches + c.acclimation_patches);
             testCase.verifyEqual(c.encounters_checked, 6);
             testCase.verifyEmpty(de.checks.encounterDisagrees, 'encounter.mat reproduces from the fits');
 
@@ -994,33 +1047,60 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             groups = dd(strcmp(dc, 'subject'));
             testCase.verifyNumElements(groups, 2);
             testCase.verifyEqual(sum(strcmp(dc, 'directed_relation')), 24);
-            lin = fits{cellfun(@(d) strcmp(d.model_fit.value.equation, 'f = slope*t + intercept'), fits)};
+            lin = newNames(fits{cellfun(@(d) strcmp(d.model_fit.value.equation, 'f = slope*t + intercept'), fits)});
             testCase.verifyTrue(ismember(edge(lin, 'entity_id'), ...
                 cellfun(@(d) d.base.id, groups, 'UniformOutput', false)), 'the fit is about a group');
+            testCase.verifyEqual(lin.statement.variable.node, 'NCIT:C184706');
+            testCase.verifyEqual(methodOf(lin), 'ordinary least squares estimation');
+            testCase.verifyEqual(lin.model_fit.value.dependent_variable.unit.node, 'EMPTY:0000261');
             co = entries(lin.model_fit.value.coefficients);
+            testCase.verifyEqual(co{1}.variable.node, 'STATO:0000656');
             testCase.verifyEqual(co{1}.value, 1 / 3000, 'AbsTol', 1e-15);
+            testCase.verifyEqual(co{2}.variable.node, 'STATO:0000657');
             testCase.verifyEqual(co{2}.value, 94 / 300, 'AbsTol', 1e-15);
+            testCase.verifyEqual(conditionTerms(lin), {'nematode growth medium'});
             testCase.verifyNumElements(edgeAll(lin, 'input_id'), 11, 'row 12 is excluded');
 
-            % the estimates, in the C. elegans session
+            % the estimates, about the patches of the C. elegans session
             k = find(strcmp(result.sessions.local_identifier, 'concentration_0001'));
             docs = testCase.documents(result.sessions.path{k});
             classes = cellfun(@(d) d.document_class.class_name, docs, 'UniformOutput', false);
             subj = docs(strcmp(classes, 'subject'));
-            idOf = containers.Map(cellfun(@(d) d.subject.local_identifier, subj, 'UniformOutput', false), ...
-                cellfun(@(d) d.base.id, subj, 'UniformOutput', false));
-            named = @(local, var) docs(strcmp(classes, 'intensity_calculation') & cellfun(@(d) ...
-                strcmp(edge(d, 'entity_id'), idOf(local)) && isfield(d, 'statement') ...
-                && strcmp(d.statement.variable.name, var), docs));
-            e121 = named('concentration_worm0121', 'estimated patch border amplitude');
-            testCase.verifyNumElements(e121, 1);
-            testCase.verifyEqual([e121{1}.intensity.value.arbitrary_units], ...
+            locals = cellfun(@(d) d.subject.local_identifier, subj, 'UniformOutput', false);
+            idOf = containers.Map(locals, cellfun(@(d) d.base.id, subj, 'UniformOutput', false));
+            about = @(id) docs(strcmp(classes, 'intensity_calculation') & cellfun(@(d) ...
+                strcmp(edge(d, 'entity_id'), id) && isfield(d, 'statement') ...
+                && strcmp(d.statement.variable.name, 'fluorescence intensity'), docs));
+            e12 = about(idOf('concentration_assayPlate0012_patch0001'));
+            testCase.verifyNumElements(e12, 1);
+            testCase.verifyEqual(numbers(e12{1}.intensity.value, 'arbitrary_units'), ...
                 94 / 300 + [74 80] / 3000, 'AbsTol', 1e-12);
-            testCase.verifyTrue(ismember(lin.base.id, edgeAll(e121{1}, 'input_id')), ...
+            testCase.verifyEqual(methodOf(e12{1}), 'prediction from a fitted model');
+            ek = entries(e12{1}.data.keys);
+            testCase.verifyEqual(ek{1}.variable.name, 'encounter onset time');
+            testCase.verifyEqual(ek{1}.quantity.value(:)', [1 3] / 2.9991, 'AbsTol', 1e-9, ...
+                'at worm 121''s two encounter onsets');
+            testCase.verifyTrue(ismember(lin.base.id, edgeAll(e12{1}, 'input_id')), ...
                 'from the OD600 1 fit');
-            g111 = named('concentration_worm0111', 'estimated cultivation plate border amplitude');
-            testCase.verifyNumElements(g111, 1);
-            testCase.verifyEqual(g111{1}.intensity.value.arbitrary_units, 55.7 - 0.0068 * 3060, 'AbsTol', 1e-9);
+            testCase.verifyEqual(conditionValues(e12{1}), 0, 'the 0 h growth duration bin');
+            testCase.verifyNumElements(about(idOf('concentration_assayPlate0011_patch0001')), 1);
+            testCase.verifyEmpty(about(idOf('concentration_worm0121')), 'no estimate is about a worm');
+
+            % an acclimation plate's patch, at the pick, when stage 4 made one
+            acc = locals(~cellfun(@isempty, regexp(locals, '_acclimationPlate\d{4}_patch0001$', 'once')));
+            if isempty(acc)
+                testCase.verifyEqual(c.acclimation_patches, 0);
+                testCase.verifyTrue(any(contains(de.skipped, 'no estimate at the pick')));
+            else
+                est = cellfun(@(a) about(idOf(a)), acc, 'UniformOutput', false);
+                est = [est{:}];
+                testCase.verifyNumElements(est, c.acclimation_patches);
+                testCase.verifyGreaterThan(numel(est), 0);
+                for j = 1:numel(est)
+                    testCase.verifyEqual(est{j}.intensity.value.arbitrary_units, ...
+                        55.7 - 0.0068 * 3060, 'AbsTol', 1e-9);
+                end
+            end
         end
 
         function testDataset(testCase)
@@ -1272,4 +1352,62 @@ arguments
 end
 d = byLocal(local);
 t = d.subject.type.name;
+end
+
+function m = methodOf(doc)
+% the name of a statement's method ('' when it has none)
+arguments
+    doc (1,1) struct
+end
+m = '';
+if isfield(doc, 'interaction') && isfield(doc.interaction, 'method') && ~isempty(doc.interaction.method)
+    m = doc.interaction.method.name;
+end
+end
+
+function c = conditionsOf(doc)
+% a statement's conditions, as a cell array of entries
+arguments
+    doc (1,1) struct
+end
+c = {};
+if isfield(doc, 'statement') && isfield(doc.statement, 'conditions') && ~isempty(doc.statement.conditions)
+    c = entries(doc.statement.conditions);
+end
+end
+
+function names = conditionTerms(doc)
+% the names of a statement's categorical condition values, in order
+arguments
+    doc (1,1) struct
+end
+c = conditionsOf(doc);
+c = c(cellfun(@(e) isfield(e, 'term') && ~isempty(e.term), c));
+names = cellfun(@(e) e.term.name, c, 'UniformOutput', false);
+end
+
+function v = conditionValues(doc)
+% the numbers of a statement's numeric condition values, in order
+arguments
+    doc (1,1) struct
+end
+c = conditionsOf(doc);
+c = c(cellfun(@(e) isfield(e, 'quantity') && ~isempty(e.quantity), c));
+v = cellfun(@(e) e.quantity.value, c);
+end
+
+function v = numbers(x, field)
+% one number per value entry of a decoded value list; NaN where the entry
+% holds none (a NaN is stored as null)
+arguments
+    x
+    field {mustBeText}
+end
+c = entries(x);
+v = NaN(1, numel(c));
+for k = 1:numel(c)
+    if isfield(c{k}, field) && isnumeric(c{k}.(field)) && ~isempty(c{k}.(field))
+        v(k) = c{k}.(field);
+    end
+end
 end

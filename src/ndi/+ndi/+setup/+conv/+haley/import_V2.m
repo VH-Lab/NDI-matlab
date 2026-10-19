@@ -57,8 +57,10 @@ function result = import_V2(dataParentDir, options)
 %                          values keyed by it (decision #63)
 %     C. dataset-wide, once
 %        12 density        the E. coli border amplitude fits, each about a
-%                          group of patches, and each C. elegans worm's
-%                          per-encounter estimates from them (decision #65;
+%                          group of patches, and the estimates from them
+%                          about the C. elegans patches: each assay-plate
+%                          patch at its encounters, each acclimation-plate
+%                          patch at the pick (decision #65;
 %                          needs the E. coli session and the C. elegans
 %                          sessions in the same run)
 %        13 dataset        check & write the dataset: ONE V2 database holding
@@ -651,16 +653,19 @@ if isfield(result, 'subjects') && isfield(result, 'recordings')
         end
         de = ndi.setup.conv.haley.densityDocuments(dataParentDir, T, built, ...
             'DatasetSessionId', result.datasetSessionId, 'SoftwareId', run.SoftwareId, ...
-            'InterpreterId', run.InterpreterId, 'OperatingSystemId', run.OperatingSystemId);
+            'InterpreterId', run.InterpreterId, 'OperatingSystemId', run.OperatingSystemId, ...
+            'Subjects', result.subjects);
         for k = 1:n
             T.documents{k} = [T.documents{k}, de.sessionDocuments{k}];
         end
         result.density = de;
         c = de.counts;
         fprintf(['density: %d fit(s) about %d group(s) of %d patch membership(s), %d input ' ...
-            'value(s); %d refit(s) checked; %d worm(s), %d estimate document(s), %d encounter ' ...
-            'value(s) checked (dataset-level documents: written at stage 13)\n'], c.fits, ...
-            c.groups, c.members, c.inputs, c.refit_checked, c.worms, c.estimates, c.encounters_checked);
+            'value(s); %d refit(s) checked; from %d worm(s), %d estimate document(s) about %d ' ...
+            'assay-plate patch(es) and %d acclimation-plate patch(es), %d encounter value(s) ' ...
+            'checked (dataset-level documents: written at stage 13)\n'], c.fits, c.groups, ...
+            c.members, c.inputs, c.refit_checked, c.worms, c.estimates, c.patches, ...
+            c.acclimation_patches, c.encounters_checked);
         for j = 1:numel(de.checks.refitDisagrees)
             fprintf('  refit disagrees: %s\n', de.checks.refitDisagrees{j});
         end

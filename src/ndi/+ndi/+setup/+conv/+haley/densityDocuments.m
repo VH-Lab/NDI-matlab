@@ -19,7 +19,7 @@ function out = densityDocuments(dataParentDir, sessions, built, options)
 %
 %   Included patches, as plotForagingGFP excludes: image
 %   20231230_101739.czi; plate 64; 0.5 uL patches with circularity < 0.75; a
-%   border / centre ratio < 1 or > 35; then, per image, the lowest xPeak until
+%   border / center ratio < 1 or > 35; then, per image, the lowest xPeak until
 %   the image's xPeak range is at most 0.1 mm.
 %
 %   Dataset-level documents (OUT.datasetDocuments; written with stage 2's at
@@ -28,31 +28,51 @@ function out = densityDocuments(dataParentDir, sessions, built, options)
 %                         the patches of that condition (joint fits: of OD600
 %                         0.5-2), each `member_of` it
 %     directed_relation   patch member_of group
-%     model_fit_calculation  the group's `border amplitude growth`: the line,
-%                         its coefficients and goodness (r2, sse, sse per
-%                         point); conditions the seeding condition; inputs the
-%                         INCLUDED patches' `patch border amplitude` statements
-%                         (stage 10 part C), so the exclusions are the values
-%                         left out; method `linear least squares`, method
-%                         parameters the exclusion rules; time the span of the
+%     model_fit_calculation  about the group, variable `fluorescence intensity`
+%                         (unit `arbitrary unit per millisecond`): the line
+%                         (model `linear`, a label), its independent variables
+%                         (`bacteria growth duration after seeding`, min; and
+%                         `OD600` for a joint fit), coefficients (`slope` /
+%                         `intercept`; the joint fit's `a` / `b`, labels) and
+%                         goodness (r2, sse, sse per point); conditions the
+%                         seeding condition (`culture medium` = `nematode
+%                         growth medium` [without peptone], `bacterial patch
+%                         volume`, `bacteria growth duration after seeding` =
+%                         the 0 / 12 / 48 h bin, approximate, and for a
+%                         one-OD600 fit `bacterial OD600 (target) at seeding`);
+%                         inputs the INCLUDED patches' border amplitude
+%                         statements (stage 10 part C), so the exclusions are
+%                         the values left out; method `ordinary least squares
+%                         estimation`, method parameters the exclusion rules
+%                         and the bin width (labels); time the span of the
 %                         included images
 %     absolute_time_reference  that span
-%   Per C. elegans worm with encounters (OUT.sessionDocuments{k}, keyed by the
-%   worm's encounter list like stage 11's values):
-%     intensity_calculation  `estimated patch border amplitude`: encounter.mat
-%                         borderAmplitude (a.u. per ms of exposure), from the
-%                         fit for the patch's condition at its growth time;
-%                         0 for a patch of LB alone; NaN where no fit matches
-%     intensity_calculation  `estimated cultivation plate border amplitude`:
-%                         borderAmplitudeGrowth, from the 200 uL fit at the
-%                         cultivation plate's growth time
+%   In each C. elegans session (OUT.sessionDocuments{k}), the estimates
+%   labelEncounters made from the fits, about the PATCHES (method `prediction
+%   from a fitted model`, variable `fluorescence intensity`, a.u. per ms):
+%     intensity_calculation  per assay-plate patch a worm encountered:
+%                         encounter.mat borderAmplitude at each encounter on
+%                         it, keyed `encounter onset time` (the onsets of the
+%                         worms' encounter lists, seconds from the plate's window);
+%                         inputs the fit for the patch's condition (none for a
+%                         patch of LB alone, estimated 0; NaN where no fit
+%                         matches) and the worms' encounter lists; condition
+%                         the growth duration bin
+%     intensity_calculation  per acclimation-plate patch (`<plate>_patch0001`,
+%                         skipped when the subject list has none): the
+%                         estimate at the pick (encounter.mat
+%                         borderAmplitudeGrowth), from the 200 uL fit at the
+%                         plate's growth time then; timed by the pick
+%                         (absolute_time_reference, to the minute)
 %   Each value is checked against the fit it names (OUT.checks
 %   .encounterDisagrees). Relative density (modelExploit's 10 x / the OD 10
 %   mean, floored at 0.01, log10) is not stored: it is computed in the model
 %   script, not in any source file.
 %
 %   Options: 'DatasetSessionId', 'SoftwareId', 'InterpreterId',
-%   'OperatingSystemId' (the run environment, as stage 10), 'FitsFile'.
+%   'OperatingSystemId' (the run environment, as stage 10), 'FitsFile',
+%   'Subjects' (subjectList's table: each assay plate's acclimation plate and
+%   its pick time).
 
 arguments
     dataParentDir (1,:) char {mustBeFolder}
@@ -63,12 +83,14 @@ arguments
     options.InterpreterId (1,:) char = ''
     options.OperatingSystemId (1,:) char = ''
     options.FitsFile (1,:) char = ''
+    options.Subjects table = table()
 end
 dsid = options.DatasetSessionId;
 out = struct('datasetDocuments', {{}}, 'sessionDocuments', {repmat({{}}, height(sessions), 1)}, ...
     'skipped', {{}}, 'checks', struct('refitDisagrees', {{}}, 'encounterDisagrees', {{}}), ...
     'counts', struct('fits', 0, 'groups', 0, 'members', 0, 'inputs', 0, 'refit_checked', 0, ...
-    'worms', 0, 'estimates', 0, 'encounters_checked', 0), 'fits', table());
+    'worms', 0, 'patches', 0, 'acclimation_patches', 0, 'estimates', 0, ...
+    'encounters_checked', 0), 'fits', table());
 if isempty(options.OperatingSystemId)
     out.skipped{end+1} = 'no operating system document (built by the metadata stage); no fits';
     return;
@@ -238,8 +260,8 @@ for i = 1:numel(fits)
 
     inputs = L.statementId(q.sel & ~cellfun(@isempty, L.statementId))';
     fit = did2.build.statement('model_fit_calculation', grp.base.id, ...
-        did2.build.term('', 'border amplitude growth'), fitValue(q), ...
-        'Conditions', conditionsOf(q), 'Method', did2.build.term('', 'linear least squares'), ...
+        haleyTerm('fluorescence intensity'), fitValue(q), ...
+        'Conditions', conditionsOf(q), 'Method', haleyTerm('ordinary least squares estimation'), ...
         'MethodParameters', rules(), 'InputIds', inputs, 'TimeReferenceIds', timeIds, ...
         'SessionId', dsid, env{:}, 'Notes', ['Border amplitude divided by exposure time ' ...
         '(a.u. per ms) against growth time (min), as plotForagingGFP fits it.']);
@@ -252,54 +274,136 @@ end
 out.fits = struct2table(rmfield(fits, {'sel', 'members'}), 'AsArray', true);
 out.fits.id = fitIds(:);
 
-% ---- the C. elegans estimates ---------------------------------------------------
+% ---- the estimates, on the C. elegans patches ------------------------------------
+prediction = haleyTerm('prediction from a fitted model');
+fluorescence = haleyTerm('fluorescence intensity');
+S = options.Subjects;
 for k = 1:numel(built)
     if isempty(built{k}) || ~isfield(built{k}, 'encounters')
         continue;
     end
     sid = char(sessions.session_id{k});
+    subjectIds = built{k}.subjectIds;
     worms = built{k}.encounters.byWorm;
     names = keys(worms);
     docs = {};
+    % every encounter of every worm: its patch, onset, estimate, fit and bin
+    at = struct('patchId', {}, 'timeId', {}, 'bin', {}, 'onset', {}, 'value', {}, ...
+        'fitId', {}, 'listId', {});
+    picked = containers.Map();   % acclimation plate -> its estimate at the pick
     for w = 1:numel(names)
         x = worms(names{w});
         E = x.rows;
-        need = {'lawnOD600', 'lawnVolume', 'growthCondition', 'peptone', 'lawnGrowth', ...
-            'borderAmplitude'};
+        need = {'lawnID', 'lawnOD600', 'lawnVolume', 'growthCondition', 'peptone', ...
+            'lawnGrowth', 'borderAmplitude'};
         if ~all(ismember(need, E.Properties.VariableNames)) || height(E) == 0
             continue;
         end
+        out.counts.worms = out.counts.worms + 1;
         [ids, pred] = patchFits(E, fits, fitIds);
         check(names{w}, 'patch', double(E.borderAmplitude), pred);
-        in = reshape(unique(ids(~cellfun(@isempty, ids)), 'stable'), 1, []);
-        docs{end+1} = did2.build.statement('intensity_calculation', x.wormId, ...
-            did2.build.term('', 'estimated patch border amplitude'), ...
-            did2.build.valueCell('intensity', reshape(double(E.borderAmplitude), 1, [])), ...
-            'Method', did2.build.term('', 'calibration from the E. coli border amplitude fits'), ...
-            x.keyed{:}, 'InputIds', [{x.listId}, in], x.calc{:}, 'Notes', ...
-            ['Per ms of exposure, from the fit for the patch''s seeding condition at its growth ' ...
-            'time (encounter.mat lawnGrowth, min); 0 for a patch of LB alone; NaN where no fit ' ...
-            'matches (labelEncounters).']); %#ok<AGROW>
-        out.counts.estimates = out.counts.estimates + 1;
-        if all(ismember({'growthLawnGrowth', 'borderAmplitudeGrowth'}, E.Properties.VariableNames))
-            g = find(arrayfun(@(q) strcmp(q.kind, 'single') && q.volume == 200, fits), 1);
-            gIn = {};
-            gPred = NaN(height(E), 1);
-            if ~isempty(g)
-                if ~isempty(fitIds{g}), gIn = fitIds(g); end
-                gPred = fits(g).coef(2) + fits(g).coef(1) * growthMinutes(E.growthLawnGrowth);
+        pIds = patchIds(subjectIds, x.plate);
+        lawn = double(E.lawnID);
+        bin = growthBin(E.growthCondition);
+        for i = 1:height(E)
+            if ~(lawn(i) >= 1 && lawn(i) <= numel(pIds))
+                out.skipped{end+1} = sprintf('%s: encounter %d names a patch %s does not have; no estimate', ...
+                    names{w}, i, x.plate); %#ok<AGROW>
+                continue;
             end
-            check(names{w}, 'cultivation plate', double(E.borderAmplitudeGrowth), gPred);
-            docs{end+1} = did2.build.statement('intensity_calculation', x.wormId, ...
-                did2.build.term('', 'estimated cultivation plate border amplitude'), ...
-                did2.build.valueCell('intensity', reshape(double(E.borderAmplitudeGrowth), 1, [])), ...
-                'Method', did2.build.term('', 'calibration from the E. coli border amplitude fits'), ...
-                x.keyed{:}, 'InputIds', [{x.listId}, gIn], x.calc{:}, 'Notes', ...
-                ['Per ms of exposure, from the 200 uL fit at the cultivation plate''s growth time ' ...
-                '(encounter.mat growthLawnGrowth).']); %#ok<AGROW>
+            at(end+1) = struct('patchId', pIds{lawn(i)}, 'timeId', x.timeId, 'bin', bin(i), ...
+                'onset', x.onset(i), 'value', double(E.borderAmplitude(i)), 'fitId', ids{i}, ...
+                'listId', x.listId); %#ok<AGROW>
+        end
+
+        % the acclimation plate the worm came from, at the pick
+        if ~all(ismember({'growthLawnGrowth', 'borderAmplitudeGrowth'}, E.Properties.VariableNames))
+            continue;
+        end
+        g = find(arrayfun(@(q) strcmp(q.kind, 'single') && q.volume == 200, fits), 1);
+        gPred = NaN(height(E), 1);
+        if ~isempty(g)
+            gPred = fits(g).coef(2) + fits(g).coef(1) * growthMinutes(E.growthLawnGrowth);
+        end
+        check(names{w}, 'acclimation plate', double(E.borderAmplitudeGrowth), gPred);
+        acc = acclimationOf(S, x.plate);
+        if isempty(acc)
+            out.skipped{end+1} = sprintf('%s: no acclimation plate known for %s; no estimate at the pick', ...
+                names{w}, x.plate);
+            continue;
+        end
+        v = double(E.borderAmplitudeGrowth(1));
+        if isKey(picked, acc)
+            p = picked(acc);
+            if ~(isnan(p.value) && isnan(v)) && abs(p.value - v) > 1e-6 * max(1, abs(v))
+                out.checks.encounterDisagrees{end+1} = sprintf(['%s: its acclimation plate %s ' ...
+                    'is estimated at %g, %s''s rows at %g'], names{w}, acc, v, p.worm, p.value);
+            end
+        else
+            picked(acc) = struct('value', v, 'worm', names{w}, 'fit', g);
+        end
+    end
+
+    % one estimate per assay-plate patch (and time reference and growth
+    % duration bin), keyed by the onsets of its encounters
+    if ~isempty(at)
+        bins = [at.bin];
+        bins(isnan(bins)) = -1;
+        [G, ~] = findgroups({at.patchId}', {at.timeId}', bins');
+        for gi = 1:max(G)
+            a = at(G == gi);
+            [onsets, order] = sort([a.onset]);
+            a = a(order);
+            in = {a.fitId};
+            in = [unique(in(~cellfun(@isempty, in)), 'stable'), unique({a.listId}, 'stable')];
+            extra = {};
+            if ~isnan(a(1).bin)
+                extra = {'Conditions', did2.build.list(binCondition(a(1).bin)), ...
+                    'MethodParameters', did2.build.list(binParameter())};
+            end
+            docs{end+1} = did2.build.statement('intensity_calculation', a(1).patchId, fluorescence, ...
+                did2.build.valueCell('intensity', [a.value]), 'Keys', did2.build.list( ...
+                    did2.build.key(haleyTerm('encounter onset time'), numel(a), 'Values', onsets, ...
+                    'Unit', haleyTerm('second'))), ...
+                'Method', prediction, extra{:}, 'InputIds', in, 'SessionId', sid, ...
+                'TimeReferenceIds', {a(1).timeId}, env{:}, 'Notes', ...
+                ['Border amplitude per ms of exposure at each encounter''s onset (seconds from ' ...
+                'the start of the plate''s first recording, as in each worm''s encounter list), ' ...
+                'from the fit for the patch''s seeding condition at its growth time ' ...
+                '(encounter.mat lawnGrowth, min); 0 for a patch of LB alone; NaN where no fit ' ...
+                'matches (labelEncounters).']); %#ok<AGROW>
+            out.counts.patches = out.counts.patches + 1;
             out.counts.estimates = out.counts.estimates + 1;
         end
-        out.counts.worms = out.counts.worms + 1;
+    end
+
+    % one estimate per acclimation-plate patch, at the pick, from the 200 uL fit
+    accs = keys(picked);
+    for j = 1:numel(accs)
+        p = picked(accs{j});
+        accPatch = [accs{j} '_patch0001'];
+        if ~isKey(subjectIds, accPatch)
+            out.skipped{end+1} = sprintf('%s: no patch subject %s; no estimate at the pick', ...
+                accs{j}, accPatch);
+            continue;
+        end
+        when = pickTime(S, accs{j});
+        if isnat(when)
+            out.skipped{end+1} = sprintf('%s: no pick time; no estimate at the pick', accs{j});
+            continue;
+        end
+        ref = utcReference(wallClock(when, tz), [60 60], 'yyyy-MM-dd''T''HH:mm', [], [], '', ...
+            false, tz, sid);
+        gIn = {};
+        if ~isempty(p.fit) && ~isempty(fitIds{p.fit}), gIn = fitIds(p.fit); end
+        docs = [docs, {ref, did2.build.statement('intensity_calculation', subjectIds(accPatch), ...
+            fluorescence, did2.build.valueCell('intensity', p.value), 'Method', prediction, ...
+            'InputIds', gIn, 'SessionId', sid, 'TimeReferenceIds', {ref.base.id}, env{:}, ...
+            'Notes', ['Border amplitude per ms of exposure when the worms were picked from ' ...
+            'this plate, from the 200 uL fit at the plate''s growth time then (encounter.mat ' ...
+            'growthLawnGrowth).'])}]; %#ok<AGROW>
+        out.counts.acclimation_patches = out.counts.acclimation_patches + 1;
+        out.counts.estimates = out.counts.estimates + 1;
     end
     out.sessionDocuments{k} = docs;
 end
@@ -373,8 +477,7 @@ n = height(E);
 ids = repmat({''}, n, 1);
 pred = NaN(n, 1);
 pep = cellstr(E.peptone);
-growth = double(E.growthCondition);
-growth(growth == 60) = 48;              % labelEncounters: foragingMini's 60 is 48
+growth = growthBin(E.growthCondition);
 lg = growthMinutes(E.lawnGrowth);
 for i = 1:n
     od = double(E.lawnOD600(i));
@@ -432,39 +535,98 @@ end
 end
 
 function c = conditionsOf(q)
+% the seeding condition the fit is for: culture medium, patch volume, growth
+% duration bin and, for a one-OD600 fit, the target OD600
 arguments
     q (1,1) struct
 end
-pep = 'with peptone';
-if ~strcmp(q.peptone, 'with'), pep = 'without peptone'; end
-parts = {did2.build.condition('peptone', 'Term', did2.build.term('', pep)), ...
-    did2.build.condition('seeding volume', 'Quantity', q.volume * 1e-6, 'Unit', 'liter', ...
-        'SourceValue', q.volume, 'SourceUnit', 'uL'), ...
-    did2.build.condition('growth time condition', 'Quantity', q.growth * 3600, 'Unit', 'second', ...
-        'SourceValue', q.growth, 'SourceUnit', 'h')};
+medium = 'nematode growth medium';
+if ~strcmp(q.peptone, 'with'), medium = 'nematode growth medium without peptone'; end
+parts = {did2.build.condition(haleyTerm('culture medium'), 'Term', haleyTerm(medium)), ...
+    did2.build.condition(haleyTerm('bacterial patch volume'), 'Quantity', q.volume * 1e-6, ...
+        'Unit', haleyTerm('liter'), 'SourceValue', q.volume, 'SourceUnit', 'uL'), ...
+    binCondition(q.growth)};
 if strcmp(q.kind, 'single')
-    parts{end+1} = did2.build.condition('OD600', 'Quantity', q.od);
+    parts{end+1} = did2.build.condition(haleyTerm('bacterial OD600 (target) at seeding'), ...
+        'Quantity', q.od);
 end
 c = did2.build.list(parts{:});
+end
+
+function c = binCondition(h)
+% the condition `bacteria growth duration after seeding` = H hours, a bin
+arguments
+    h (1,1) double
+end
+c = did2.build.condition(haleyTerm('bacteria growth duration after seeding'), ...
+    'Quantity', h * 3600, 'Unit', haleyTerm('second'), 'SourceValue', h, 'SourceUnit', 'h', ...
+    'Approximate', true);
+end
+
+function p = binParameter()
+% the growth duration bin's width, a label
+p = did2.build.parameter(did2.build.term('', 'growth duration binned to the nearest'), ...
+    'Value', 12 * 3600, 'Unit', haleyTerm('second'), 'SourceValue', '12', 'SourceUnit', 'h');
+end
+
+function b = growthBin(x)
+% each growth condition, hours: labelEncounters reads foragingMini's 60 as 48
+arguments
+    x
+end
+b = double(x(:));
+b(b == 60) = 48;
+end
+
+function a = acclimationOf(S, plate)
+% the acclimation plate an assay plate's worms came from ('' when not known)
+arguments
+    S table
+    plate {mustBeText}
+end
+a = '';
+if ~all(ismember({'local_identifier', 'acclimation'}, S.Properties.VariableNames))
+    return;
+end
+r = find(strcmp(S.local_identifier, plate), 1);
+if isempty(r), return; end
+a = S.acclimation(r);
+if iscell(a), a = a{1}; end
+a = char(a);
+end
+
+function t = pickTime(S, acc)
+% when the worms were picked from acclimation plate ACC (NaT when not known)
+arguments
+    S table
+    acc {mustBeText}
+end
+t = NaT;
+if ~all(ismember({'local_identifier', 'worms_placed'}, S.Properties.VariableNames))
+    return;
+end
+r = find(strcmp(S.local_identifier, acc), 1);
+if ~isempty(r), t = S.worms_placed(r); end
 end
 
 function v = fitValue(q)
 arguments
     q (1,1) struct
 end
-t = struct('variable', did2.build.term('', 'growth time'), 'unit', did2.build.term('', 'minute'));
-y = struct('variable', did2.build.term('', 'border amplitude per exposure time'), ...
-    'unit', did2.build.term('', 'arbitrary unit per millisecond'));
+t = struct('variable', haleyTerm('bacteria growth duration after seeding'), ...
+    'unit', haleyTerm('minute'));
+y = struct('variable', haleyTerm('fluorescence intensity'), ...
+    'unit', haleyTerm('arbitrary unit per millisecond'));
 if strcmp(q.kind, 'joint')
     eq = 'f = a*OD600 + b*t';
-    x = did2.build.list(struct('variable', did2.build.term('', 'OD600')), t);
+    x = did2.build.list(struct('variable', haleyTerm('OD600')), t);
     co = did2.build.list(struct('variable', did2.build.term('', 'a'), 'value', q.coef(1)), ...
         struct('variable', did2.build.term('', 'b'), 'value', q.coef(2)));
 else
     eq = 'f = slope*t + intercept';
     x = did2.build.list(t);
-    co = did2.build.list(struct('variable', did2.build.term('', 'slope'), 'value', q.coef(1)), ...
-        struct('variable', did2.build.term('', 'intercept'), 'value', q.coef(2)));
+    co = did2.build.list(struct('variable', haleyTerm('slope'), 'value', q.coef(1)), ...
+        struct('variable', haleyTerm('intercept'), 'value', q.coef(2)));
 end
 v = struct('model', did2.build.term('', 'linear'), 'equation', eq, ...
     'independent_variables', x, 'dependent_variable', y, 'coefficients', co, ...
@@ -473,12 +635,15 @@ v = struct('model', did2.build.term('', 'linear'), 'equation', eq, ...
 end
 
 function p = rules()
+% plotForagingGFP's exclusion rules (labels), and the growth duration bin
 p = did2.build.list( ...
-    did2.build.parameter('excluded image', 'Text', '20231230_101739.czi'), ...
-    did2.build.parameter('excluded plate', 'Text', 'E. coli plate 64'), ...
-    did2.build.parameter('minimum circularity of a 0.5 uL patch', 'Value', 0.75), ...
-    did2.build.parameter('minimum border to centre ratio', 'Value', 1), ...
-    did2.build.parameter('maximum border to centre ratio', 'Value', 35), ...
-    did2.build.parameter('maximum spread of the intensity peak distance within an image', ...
-        'Value', 1e-4, 'Unit', 'meter', 'SourceValue', '0.1', 'SourceUnit', 'mm'));
+    did2.build.parameter(did2.build.term('', 'excluded image'), 'Text', '20231230_101739.czi'), ...
+    did2.build.parameter(did2.build.term('', 'excluded plate'), 'Text', 'E. coli plate 64'), ...
+    did2.build.parameter(did2.build.term('', 'minimum circularity of a 0.5 uL patch'), 'Value', 0.75), ...
+    did2.build.parameter(did2.build.term('', 'minimum border to center ratio'), 'Value', 1), ...
+    did2.build.parameter(did2.build.term('', 'maximum border to center ratio'), 'Value', 35), ...
+    did2.build.parameter(did2.build.term('', ...
+        'maximum spread of the intensity peak distance within an image'), ...
+        'Value', 1e-4, 'Unit', haleyTerm('meter'), 'SourceValue', '0.1', 'SourceUnit', 'mm'), ...
+    binParameter());
 end
