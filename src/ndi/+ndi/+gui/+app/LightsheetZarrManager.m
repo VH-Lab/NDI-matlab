@@ -109,6 +109,9 @@ classdef LightsheetZarrManager < ndi.gui.app.sessionApp
         %   are read by their v1 names through ndi.vintage.lightsheetPyramid,
         %   its subject is its `entity_id`, and its levels are the
         %   sampled_bodies it owns (ndi.vintage.lightsheetLevelDocs).
+            arguments
+                session (1,1)
+            end
             docs = ndi.vintage.lightsheetPyramidDocs(session);
             subjectNames = ndi.gui.app.LightsheetZarrManager.subjectNameMap(session);
             rows = struct('id',{},'label',{},'reduction',{},'subject',{}, ...
@@ -154,6 +157,9 @@ classdef LightsheetZarrManager < ndi.gui.app.sessionApp
         %   marker) filtered out. When only 'none' levels exist, returns
         %   the string 'none' so the column doesn't lie about a missing
         %   ladder.
+            arguments
+                levelDocs cell
+            end
             seen = strings(1, numel(levelDocs));
             for j = 1:numel(levelDocs)
                 % v1: the lightsheetZarrLevel block itself; V_eta: the
@@ -181,6 +187,9 @@ classdef LightsheetZarrManager < ndi.gui.app.sessionApp
         %   caller's default is the id, and an empty cell in the Subject
         %   column would say the pyramid has no subject, which is a
         %   different and worse claim than showing the id.
+            arguments
+                session (1,1)
+            end
             m = containers.Map('KeyType','char','ValueType','char');
             docs = session.database_search(ndi.query('','isa','subject'));
             for i = 1:numel(docs)
@@ -213,6 +222,10 @@ classdef LightsheetZarrManager < ndi.gui.app.sessionApp
         %   (nStoreRecords) and removed with the pyramid; the stored bytes
         %   are not held by the database and are not touched. v1 has no
         %   such record and its plan is unchanged.
+            arguments
+                session (1,1)
+                pyramidID {mustBeText}
+            end
             plan = struct();
             plan.pyramidID = char(pyramidID);
             parentDoc = session.database_search(ndi.query('base.id', ...
@@ -240,7 +253,10 @@ classdef LightsheetZarrManager < ndi.gui.app.sessionApp
         %
         %   Names the pyramid and the level count so "delete 1 document"
         %   and "delete 32 documents" do not read the same.
-            if nargin < 2, label = ''; end
+            arguments
+                plan (1,1) struct
+                label {mustBeText} = ''
+            end
             if isempty(label), label = plan.pyramidID; end
             nStore = 0;
             if isfield(plan, 'nStoreRecords'), nStore = plan.nStoreRecords; end
@@ -274,6 +290,9 @@ classdef LightsheetZarrManager < ndi.gui.app.sessionApp
         % SETLAUNCHERPATH - remember the launcher for next time
         %
         %   Failing to persist must not cost the launch about to happen.
+            arguments
+                p {mustBeText}
+            end
             try
                 ndi.preferences.set('GUI.LightsheetZarrManager.ViewerLauncher', string(p));
             catch
@@ -287,6 +306,10 @@ classdef LightsheetZarrManager < ndi.gui.app.sessionApp
         %   CONTROLS default to MATLAB's grey chrome, which reads as a
         %   grey app with a tinted border. Defensive: a missing handle
         %   or a control without a BackgroundColor is a no-op.
+            arguments
+                h % a uicontrol/uitable handle, or empty (a no-op)
+                c (1,1) struct
+            end
             if isempty(h) || ~isvalid(h)
                 return;
             end
@@ -305,6 +328,10 @@ classdef LightsheetZarrManager < ndi.gui.app.sessionApp
         %   cloud .mlapp apps. A missing or deleted handle is a no-op
         %   rather than an error: this is styling, and losing the
         %   window over a colour would be a poor trade.
+            arguments
+                btn % a uibutton handle, or empty (a no-op)
+                c (1,1) struct
+            end
             if isempty(btn) || ~isvalid(btn)
                 return;
             end
@@ -319,10 +346,19 @@ classdef LightsheetZarrManager < ndi.gui.app.sessionApp
     methods (Static, Access = private)
 
         function v = field(s, name, dflt)
+            arguments
+                s % a struct, or anything else (gives dflt)
+                name {mustBeText}
+                dflt
+            end
             if isstruct(s) && isfield(s, name), v = s.(name); else, v = dflt; end
         end
 
         function v = dependency(d, name)
+            arguments
+                d % an ndi.document; anything without the dependency gives ''
+                name {mustBeText}
+            end
             try
                 v = d.dependency_value(name);
             catch
@@ -332,12 +368,20 @@ classdef LightsheetZarrManager < ndi.gui.app.sessionApp
         end
 
         function v = lookup(m, key, dflt)
+            arguments
+                m (1,1) containers.Map
+                key % text, or empty (gives dflt)
+                dflt
+            end
             v = dflt;
             if isempty(key) || ~isKey(m, char(key)), return; end
             v = m(char(key));
         end
 
         function c = rowsToCell(rows)
+            arguments
+                rows struct
+            end
             c = cell(numel(rows), 6);
             for i = 1:numel(rows)
                 c{i,1} = rows(i).label;
@@ -404,6 +448,10 @@ classdef LightsheetZarrManager < ndi.gui.app.sessionApp
         end
 
         function setStatus(obj, msg)
+            arguments
+                obj (1,1) ndi.gui.app.LightsheetZarrManager
+                msg {mustBeText}
+            end
             if ~isempty(obj.statusLabel) && isvalid(obj.statusLabel)
                 obj.statusLabel.Text = msg;
             end
@@ -696,7 +744,11 @@ classdef LightsheetZarrManager < ndi.gui.app.sessionApp
             id = subs{idx}.id();
         end
 
-        function s = rowLabel(~, r)
+        function s = rowLabel(obj, r)
+            arguments
+                obj (1,1) ndi.gui.app.LightsheetZarrManager %#ok<INUSA> the label is read from r alone
+                r (1,1) struct
+            end
             s = r.label;
             if isempty(s), s = r.id; end
         end
@@ -704,6 +756,9 @@ classdef LightsheetZarrManager < ndi.gui.app.sessionApp
 
     methods (Static, Access = private)
         function s = orEmpty(v)
+            arguments
+                v
+            end
             if isempty(v), s = ''; else, s = char(v); end
         end
     end

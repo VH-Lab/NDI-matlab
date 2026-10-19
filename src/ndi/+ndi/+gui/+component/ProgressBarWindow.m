@@ -1072,6 +1072,10 @@ classdef ProgressBarWindow < matlab.apps.AppBase
             %   sets AX's inner box (pixels) to PANEL's area less BarMargin
             %   on each side, at least 1 x 1. addBar calls it once and as
             %   PANEL's SizeChangedFcn.
+            arguments
+                ax (1,1) matlab.ui.control.UIAxes
+                panel (1,1) matlab.ui.container.Panel
+            end
             if ~isvalid(ax) || ~isvalid(panel)
                 return
             end
