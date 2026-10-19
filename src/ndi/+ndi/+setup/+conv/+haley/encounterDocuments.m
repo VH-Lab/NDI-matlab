@@ -31,8 +31,11 @@ function out = encounterDocuments(dataParentDir, session, R, subjectIds, options
 %     acceleration_calculation  `deceleration on entry` (decelerate,
 %                       um/s^2 -> m/s^2; a linear fit from -1.5 to +6.5 s)
 %     time_calculation  `time to slow down` (timeSlowDown, s)
-%     length_calculation  `furthest distance off patch during the encounter`
-%                       (distanceOnMax), `furthest distance from the patch edge
+%     length_calculation  `deepest distance into the patch during the encounter`
+%                       (distanceOnMax: the largest signed distance from the
+%                       patch edge, positive inside, so negative when the
+%                       midpoint never crossed it; analyzeEncounters line
+%                       273, whose own header misnames it), `furthest distance from the patch edge
 %                       after the encounter` (distanceOffMax), mm -> m
 %     score_calculation  `probability of exploitation` (exploitPosterior),
 %                       `probability of sensing` (sensePosterior), 0-1
@@ -239,23 +242,27 @@ for g = 1:max(G)
     end
 
     % the per-encounter values
+    signedNote = ['Signed distance of the midpoint from the patch edge, positive inside ' ...
+        'the patch: negative when the midpoint never crossed the edge during the encounter.'];
     q = {
-        'velocity_calculation', 'median speed on patch', 'velocityOn', @speed
-        'velocity_calculation', 'minimum speed on patch', 'velocityOnMin', @speed
-        'velocity_calculation', 'peak speed before entry', 'velocityBeforeEnter', @speed
-        'velocity_calculation', 'minimum speed after entry', 'velocityAfterEnter', @speed
-        'velocity_calculation', 'median speed off patch after the encounter', 'velocityOff', @speed
-        'acceleration_calculation', 'deceleration on entry', 'decelerate', @accel
-        'time_calculation', 'time to slow down', 'timeSlowDown', @secs
-        'length_calculation', 'furthest distance off patch during the encounter', 'distanceOnMax', @mm
-        'length_calculation', 'furthest distance from the patch edge after the encounter', 'distanceOffMax', @mm
-        'score_calculation', 'probability of exploitation', 'exploitPosterior', @prob
-        'score_calculation', 'probability of sensing', 'sensePosterior', @prob};
+        'velocity_calculation', 'median speed on patch', 'velocityOn', @speed, ''
+        'velocity_calculation', 'minimum speed on patch', 'velocityOnMin', @speed, ''
+        'velocity_calculation', 'peak speed before entry', 'velocityBeforeEnter', @speed, ''
+        'velocity_calculation', 'minimum speed after entry', 'velocityAfterEnter', @speed, ''
+        'velocity_calculation', 'median speed off patch after the encounter', 'velocityOff', @speed, ''
+        'acceleration_calculation', 'deceleration on entry', 'decelerate', @accel, ''
+        'time_calculation', 'time to slow down', 'timeSlowDown', @secs, ''
+        'length_calculation', 'deepest distance into the patch during the encounter', 'distanceOnMax', @mm, signedNote
+        'length_calculation', 'furthest distance from the patch edge after the encounter', 'distanceOffMax', @mm, ''
+        'score_calculation', 'probability of exploitation', 'exploitPosterior', @prob, ''
+        'score_calculation', 'probability of sensing', 'sensePosterior', @prob, ''};
     for j = 1:size(q, 1)
         if ~ismember(q{j, 3}, enc.Properties.VariableNames), continue; end
         x = double(enc.(q{j, 3}));
+        note = {};
+        if ~isempty(q{j, 5}), note = {'Notes', q{j, 5}}; end
         docs{end+1} = did2.build.statement(q{j, 1}, wormId, did2.build.term('', q{j, 2}), ...
-            q{j, 4}(x), 'Method', method, per{:}); %#ok<AGROW>
+            q{j, 4}(x), 'Method', method, note{:}, per{:}); %#ok<AGROW>
     end
     if ismember('label', enc.Properties.VariableNames)
         names = cellstr(enc.label);
