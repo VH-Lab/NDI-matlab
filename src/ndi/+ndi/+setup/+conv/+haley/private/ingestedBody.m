@@ -12,8 +12,14 @@ function b = ingestedBody(st, a, datumType, keys, sid, description, fillValue)
 %   FILLVALUE (optional, char) is what a position with no value holds.
 %   Stage 10, decision #60.
 
-if nargin < 7
-    fillValue = '';
+arguments
+    st (1,1) struct
+    a
+    datumType {mustBeText}
+    keys
+    sid {mustBeText}
+    description {mustBeText}
+    fillValue {mustBeText} = ''
 end
 raw = [tempname '.bin'];
 fid = fopen(raw, 'w', 'ieee-le');

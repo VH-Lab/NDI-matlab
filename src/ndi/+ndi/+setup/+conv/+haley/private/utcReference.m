@@ -7,6 +7,17 @@ function d = utcReference(t0, tol0, fmt0, t1, tol1, fmt1, hasEnd, tz, sid)
 % A bound of 'estimated' is an approximate time with NO known bound (a time
 % the source filled in by rule, decision #54d): approximate, no tolerance, and
 % a duration it touches is approximate with no tolerance too.
+arguments
+    t0
+    tol0
+    fmt0 {mustBeText}
+    t1
+    tol1
+    fmt1 {mustBeText}
+    hasEnd (1,1) logical
+    tz {mustBeText}
+    sid {mustBeText}
+end
 [a0, tol0] = bound(tol0);
 args = {'SourceValue', char(t0, fmt0), 'SourceTimezone', tz, ...
     'Approximate', a0, 'Tolerance', tol0};
@@ -25,6 +36,9 @@ d = did2.build.absoluteTimeReference(utcText(t0, tz), 'SessionId', sid, args{:})
 end
 
 function [approx, tol] = bound(tol)
+arguments
+    tol
+end
 if ischar(tol) || isstring(tol)     % 'estimated': approximate, bound unknown
     approx = true;
     tol = [];
@@ -36,6 +50,11 @@ end
 function s = elapsed(t0, t1, tz)
 % seconds from wall-clock T0 to T1, both read in TZ: a window across a
 % daylight-saving change is an hour shorter or longer than the clocks say
+arguments
+    t0
+    t1
+    tz {mustBeText}
+end
 a = t0; b = t1;
 if isempty(a.TimeZone), a.TimeZone = tz; end
 if isempty(b.TimeZone), b.TimeZone = tz; end

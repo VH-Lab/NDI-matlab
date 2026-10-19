@@ -6,6 +6,9 @@ function [labeled, n, centroids] = labelRegions(mask)
 %   column-major order) without the Image Processing Toolbox. CENTROIDS is
 %   N x 2, [x y] in pixels (column, row), as regionprops' Centroid.
 %   Stage 10 part C, decision #62.
+arguments
+    mask
+end
 
 mask = logical(mask);
 [h, w] = size(mask);

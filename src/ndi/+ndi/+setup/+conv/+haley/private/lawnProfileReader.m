@@ -14,6 +14,9 @@ function P = lawnProfileReader(file)
 %   P fields: file, imageNums (row), byImage (containers.Map imageNum ->
 %   position), hdf5 (logical), refs (struct of the two reference arrays,
 %   HDF5 only), loaded (the struct, non-HDF5 only).
+arguments
+    file {mustBeText}
+end
 
 P = struct('file', file, 'imageNums', [], 'byImage', containers.Map('KeyType', 'double', ...
     'ValueType', 'double'), 'hdf5', false, 'refs', struct(), 'loaded', struct());

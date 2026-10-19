@@ -8,6 +8,10 @@ function [x, Y] = lawnProfileRead(P, imageNum)
 %   in the order analyzeLawnProfiles numbered the patches (bwlabel), the
 %   order of that image's lawnAnalysis rows. Both are empty when the image
 %   is not in the file or no patch was found in it. Decision #64.
+arguments
+    P (1,1) struct
+    imageNum
+end
 
 x = []; Y = [];
 if ~isKey(P.byImage, imageNum)
@@ -31,6 +35,11 @@ end
 end
 
 function v = deref(fid, path, ref)
+arguments
+    fid
+    path {mustBeText}
+    ref
+end
 d = H5D.open(fid, path);
 cd = onCleanup(@() H5D.close(d));
 try

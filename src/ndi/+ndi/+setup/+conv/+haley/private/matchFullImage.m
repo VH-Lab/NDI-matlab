@@ -2,6 +2,11 @@ function slot = matchFullImage(c, nDetected, nSubjects)
 %MATCHFULLIMAGE SLOT(j) = the patch subject number of detected patch j, or [] when the
 % image cannot be matched. 12: number as bwlabel numbers an ideal staggered
 % grid (left to right; patches sharing a column, top to bottom). 1: itself.
+arguments
+    c {mustBeNumeric}
+    nDetected (1,1) {mustBeNumeric}
+    nSubjects (1,1) {mustBeNumeric}
+end
 slot = [];
 if nDetected == 1 && nSubjects == 1
     slot = 1;
