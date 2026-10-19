@@ -20,6 +20,12 @@ classdef ScriptedFileUpload < ndi.cloud.api.implementation.files.WaitForFileUplo
 
     methods
         function this = ScriptedFileUpload(results, varargin)
+            arguments
+                results cell
+            end
+            arguments (Repeating)
+                varargin
+            end
             this@ndi.cloud.api.implementation.files.WaitForFileUpload(varargin{:});
             this.results = results;
         end
@@ -28,6 +34,10 @@ classdef ScriptedFileUpload < ndi.cloud.api.implementation.files.WaitForFileUplo
     methods (Static)
         function row = fileRow(uid, uploaded)
             % One lookupFiles row, as lookupFilesResult returns it.
+            arguments
+                uid {mustBeText}
+                uploaded (1,1) logical
+            end
             row = struct('uid', char(uid), 'uploaded', logical(uploaded), ...
                 'size', double(uploaded) * 47, 'crc32', '');
         end
@@ -35,6 +45,10 @@ classdef ScriptedFileUpload < ndi.cloud.api.implementation.files.WaitForFileUplo
 
     methods (Access = protected)
         function [ok, result, apiResponse, apiURL] = pollStatus(this, uids)
+            arguments
+                this (1,1) ndi.test.helper.ScriptedFileUpload
+                uids {mustBeText}
+            end
             this.callCount = this.callCount + 1;
             this.polledUids{end+1} = uids;
             entry = this.results{min(this.callCount, numel(this.results))};

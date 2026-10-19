@@ -61,6 +61,10 @@ classdef feedbackTest < matlab.unittest.TestCase
         function registerCleanup(testCase, feedbackID)
             % Delete the report at teardown if the test did not get to it.
             % deleteFeedback returning 404 here just means it is already gone.
+            arguments
+                testCase (1,1) ndi.unittest.cloud.feedbackTest
+                feedbackID {mustBeText}
+            end
             testCase.addTeardown(@() ndi.cloud.api.feedback.deleteFeedback(feedbackID));
         end
     end

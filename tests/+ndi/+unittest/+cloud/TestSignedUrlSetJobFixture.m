@@ -308,6 +308,11 @@ classdef TestSignedUrlSetJobFixture < matlab.unittest.TestCase
             % that state, append a narrative line and return fatal=true
             % so the caller skips this document without failing the
             % whole test.
+            arguments
+                testCase (1,1) ndi.unittest.cloud.TestSignedUrlSetJobFixture
+                cloudDatasetId {mustBeText}
+                cloudDocId {mustBeText}
+            end
             narrative = testCase.Narrative;
             manifestUid = "";
             fatal = false;
@@ -343,6 +348,14 @@ classdef TestSignedUrlSetJobFixture < matlab.unittest.TestCase
             % waitForSignedURLSetJob (async path) and getFileDetails
             % (single-uid path). Return a row struct summarising the
             % outcome, plus the extended narrative.
+            arguments
+                testCase (1,1) ndi.unittest.cloud.TestSignedUrlSetJobFixture
+                cloudDatasetId {mustBeText}
+                ndiDocId {mustBeText}
+                manifestUid {mustBeText}
+                cloudDocId {mustBeText}
+                narrative {mustBeText}
+            end
 
             row = struct( ...
                 'cloudDocId',        cloudDocId, ...
@@ -476,6 +489,10 @@ end
 function uid = extractManifestUidFromDoc(docProps, seriesName)
     % Manifest UID for a series named NAME lives at
     % document.files.file_info entry.name==NAME .locations(1).uid.
+    arguments
+        docProps % a document properties struct, or anything else (gives "")
+        seriesName {mustBeText}
+    end
     uid = "";
     if ~isstruct(docProps), return, end
     files = safeField(docProps, 'files', struct());
@@ -493,6 +510,11 @@ function uid = extractManifestUidFromDoc(docProps, seriesName)
 end
 
 function v = safeField(s, name, defaultValue)
+    arguments
+        s % a struct, or anything else (gives defaultValue)
+        name {mustBeText}
+        defaultValue
+    end
     if isstruct(s) && isfield(s, name) && ~isempty(s.(name))
         v = s.(name);
     else
@@ -501,6 +523,9 @@ function v = safeField(s, name, defaultValue)
 end
 
 function m = extractMessage(payload)
+    arguments
+        payload % a struct, text, or anything else (gives "")
+    end
     m = "";
     if isstruct(payload)
         if isfield(payload, 'message') && ~isempty(payload.message)
@@ -519,6 +544,9 @@ function printFixtureProbeRow(row)
     % Single-line summary per level doc, kept for grep-ability in CI
     % logs. The JSON narrative report is what a human reads on a
     % failed assertion; this line is the sequence marker.
+    arguments
+        row (1,1) struct
+    end
     detail = char(string(row.jobDetail));
     if numel(detail) > 60, detail = [detail(1:57) '...']; end
     fprintf(['[fixture-probe] doc=%s ndi=%s manifestUid=%s ' ...
@@ -530,6 +558,9 @@ function printFixtureProbeRow(row)
 end
 
 function s = mapSizeAsText(value)
+    arguments
+        value % a number, or anything else (printed as '-')
+    end
     if isnumeric(value) && isscalar(value) && ~isnan(value)
         s = sprintf('%d', round(value));
     else
@@ -538,6 +569,9 @@ function s = mapSizeAsText(value)
 end
 
 function safeDeleteDataset(cloudDatasetId)
+    arguments
+        cloudDatasetId {mustBeText}
+    end
     try
         ndi.cloud.api.datasets.deleteDataset(char(cloudDatasetId), ...
             'when', 'now'); %#ok<TRYNC>

@@ -192,9 +192,16 @@ classdef value
 end
 
 function v = firstOr(x, default)
+arguments
+    x % any array; its first element is returned
+    default
+end
 if isempty(x), v = default; else, v = x(1); end
 end
 
 function c = asCell(x)
+arguments
+    x % a cell, or any array (split into a cell per element)
+end
 if iscell(x), c = reshape(x, 1, []); else, c = num2cell(reshape(x, 1, [])); end
 end

@@ -142,6 +142,12 @@ classdef TestFetchManifest < matlab.unittest.TestCase
 end
 
 function [ok, answer] = localScriptedDetails(recorded, datasetId, fileUid, url)
+    arguments
+        recorded (1,1) containers.Map
+        datasetId % recorded verbatim
+        fileUid % recorded verbatim
+        url
+    end
     recorded('detailsCalls') = recorded('detailsCalls') + 1;
     recorded('detailsArgs')  = {datasetId, fileUid};
     ok = true;
@@ -149,6 +155,14 @@ function [ok, answer] = localScriptedDetails(recorded, datasetId, fileUid, url)
 end
 
 function [ok, msg] = localScriptedFile(recorded, url, path, varargin)
+    arguments
+        recorded (1,1) containers.Map
+        url % recorded verbatim
+        path % recorded verbatim
+    end
+    arguments (Repeating)
+        varargin
+    end
     recorded('fileCalls') = recorded('fileCalls') + 1;
     recorded('fileArgs')  = {url, path, varargin};
     ok = true;
@@ -160,12 +174,22 @@ function [ok, msg] = localFailUnexpectedCall(recorded, key)
     % called. Record it so the assertion fires with a clear counter,
     % rather than raising here (which would leave the test in a less
     % informative state).
+    arguments
+        recorded (1,1) containers.Map
+        key {mustBeText}
+    end
     recorded(key) = recorded(key) + 1;
     ok = false;
     msg = 'unexpected call';
 end
 
 function localRecordHandlerCall(recorded, dest, src, ctx) %#ok<INUSL>
+    arguments
+        recorded (1,1) containers.Map
+        dest {mustBeText}
+        src %#ok<INUSA> the handler signature passes it; this stub does not read it
+        ctx % recorded verbatim
+    end
     recorded('handlerCalls') = recorded('handlerCalls') + 1;
     recorded('handlerCtx')   = ctx;
     % Write a tiny placeholder so the caller sees the handler landed
