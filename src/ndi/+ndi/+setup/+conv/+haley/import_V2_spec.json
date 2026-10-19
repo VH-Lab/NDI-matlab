@@ -1,5 +1,5 @@
 {
- "_about": "Dataset-level metadata for the Haley V2 import (stage 2). Sources: the eLife paper (Haley, Chen, Aoi, Chalasani, eLife 13:RP103191, doi:10.7554/eLife.103191; Key resources table, Materials and methods, Funding, Author contributions, Author ORCIDs, Data availability) and the NDI Cloud dataset page (licence). ROR ids came from web search and are marked '_verify' where the search result was not titled with the organization's name. Every entry has a local `key`; references between entries use keys, which the maker resolves to document ids. See import_V2_decisions.md.",
+ "_about": "Dataset-level metadata for the Haley V2 import (stage 2). Sources: the eLife paper (Haley, Chen, Aoi, Chalasani, eLife 13:RP103191, doi:10.7554/eLife.103191; Key resources table, Materials and methods, Funding, Author contributions, Author ORCIDs, Data availability) and the NDI Cloud dataset page (licence). Organization identifiers were checked against the ROR registry (api.ror.org) and settled with Jess in decision #89. Every entry has a local `key`; references between entries use keys, which the maker resolves to document ids. See import_V2_decisions.md.",
  "organizations": [
   {
    "key": "salk",
@@ -25,23 +25,40 @@
      "scheme": "ROR",
      "value": "https://ror.org/0168r3w48"
     }
-   ],
-   "_verify": "ROR from a search summary, record page not read"
+   ]
   },
   {
    "key": "ucsd_ngp",
    "name": "Neurosciences Graduate Program",
-   "parent": "ucsd"
+   "parent": "ucsd",
+   "identifiers": [
+    {
+     "scheme": "URL",
+     "value": "https://neurograd.ucsd.edu/"
+    }
+   ]
   },
   {
    "key": "ucsd_hdsi",
    "name": "Halıcıoğlu Data Science Institute",
-   "parent": "ucsd"
+   "parent": "ucsd",
+   "identifiers": [
+    {
+     "scheme": "URL",
+     "value": "https://datascience.ucsd.edu/"
+    }
+   ]
   },
   {
    "key": "ucsd_neurobiology",
    "name": "Department of Neurobiology",
-   "parent": "ucsd"
+   "parent": "ucsd",
+   "identifiers": [
+    {
+     "scheme": "URL",
+     "value": "https://biology.ucsd.edu/research/academic-departments/nb/index.html"
+    }
+   ]
   },
   {
    "key": "nih",
@@ -52,8 +69,7 @@
      "scheme": "ROR",
      "value": "https://ror.org/01cwqze88"
     }
-   ],
-   "_verify": "top ROR search result, untitled"
+   ]
   },
   {
    "key": "nimh",
@@ -76,16 +92,15 @@
      "scheme": "ROR",
      "value": "https://ror.org/021nxhr62"
     }
-   ],
-   "_verify": "top ROR search result, untitled"
+   ]
   },
   {
    "key": "dorsett_brown",
    "name": "Joe W. and Dorothy Dorsett Brown Foundation",
    "identifiers": [
     {
-     "scheme": "URL",
-     "value": "https://www.thebrownfoundation.org/"
+     "scheme": "ROR",
+     "value": "https://ror.org/043291659"
     }
    ]
   },
@@ -112,48 +127,115 @@
   },
   {
    "key": "norpix",
-   "name": "NorPix"
+   "name": "NorPix",
+   "identifiers": [
+    {
+     "scheme": "URL",
+     "value": "https://www.norpix.com/"
+    }
+   ]
   },
   {
    "key": "mbf",
-   "name": "MBF Bioscience"
+   "name": "MBF Bioscience",
+   "identifiers": [
+    {
+     "scheme": "ROR",
+     "value": "https://ror.org/02zynam48"
+    }
+   ]
   },
   {
    "key": "mathworks",
-   "name": "MathWorks"
+   "name": "MathWorks",
+   "identifiers": [
+    {
+     "scheme": "ROR",
+     "value": "https://ror.org/01n8qtk87"
+    }
+   ]
   },
   {
    "key": "adobe",
-   "name": "Adobe"
+   "name": "Adobe",
+   "identifiers": [
+    {
+     "scheme": "ROR",
+     "value": "https://ror.org/059tvcg64"
+    }
+   ]
   },
   {
    "key": "pixelink",
-   "name": "PixeLink"
+   "name": "PixeLink",
+   "identifiers": [
+    {
+     "scheme": "URL",
+     "value": "https://www.navitar.com/pixelink"
+    }
+   ],
+   "parent": "navitar"
   },
   {
    "key": "navitar",
-   "name": "Navitar"
+   "name": "Navitar",
+   "identifiers": [
+    {
+     "scheme": "URL",
+     "value": "https://www.navitar.com/"
+    }
+   ]
   },
   {
    "key": "advanced_illumination",
-   "name": "Advanced Illumination"
+   "name": "Advanced Illumination",
+   "identifiers": [
+    {
+     "scheme": "URL",
+     "value": "https://advancedillumination.com/"
+    }
+   ]
   },
   {
    "key": "zeiss",
-   "name": "Carl Zeiss"
+   "name": "Carl Zeiss",
+   "identifiers": [
+    {
+     "scheme": "ROR",
+     "value": "https://ror.org/02mp31p96"
+    }
+   ]
   },
   {
    "key": "molecular_devices",
-   "name": "Molecular Devices"
+   "name": "Molecular Devices",
+   "identifiers": [
+    {
+     "scheme": "ROR",
+     "value": "https://ror.org/0018wmh19"
+    }
+   ]
   },
   {
    "key": "cricut",
-   "name": "Cricut"
+   "name": "Cricut",
+   "identifiers": [
+    {
+     "scheme": "URL",
+     "value": "https://cricut.com/"
+    }
+   ]
   },
   {
    "key": "bd",
    "name": "Becton, Dickinson and Company",
-   "short_name": "BD"
+   "short_name": "BD",
+   "identifiers": [
+    {
+     "scheme": "ROR",
+     "value": "https://ror.org/048vrgr14"
+    }
+   ]
   },
   {
    "key": "salk_media_kitchen",
@@ -163,15 +245,34 @@
   },
   {
    "key": "emd_millipore",
-   "name": "EMD Millipore"
+   "name": "EMD Millipore",
+   "identifiers": [
+    {
+     "scheme": "ROR",
+     "value": "https://ror.org/04cyww122"
+    }
+   ]
   },
   {
    "key": "fisher",
-   "name": "Fisher Scientific"
+   "name": "Thermo Fisher Scientific",
+   "identifiers": [
+    {
+     "scheme": "ROR",
+     "value": "https://ror.org/03x1ewr52"
+    }
+   ]
   },
   {
    "key": "sigma_aldrich",
-   "name": "Sigma-Aldrich"
+   "name": "Sigma-Aldrich",
+   "identifiers": [
+    {
+     "scheme": "URL",
+     "value": "https://www.sigmaaldrich.com/"
+    }
+   ],
+   "parent": "emd_millipore"
   }
  ],
  "people": [

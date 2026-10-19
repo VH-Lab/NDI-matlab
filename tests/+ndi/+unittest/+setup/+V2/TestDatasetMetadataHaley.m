@@ -70,7 +70,9 @@ classdef TestDatasetMetadataHaley < matlab.unittest.TestCase
                     'web_resource retired: its URL is an identifier of what it names');
                 return;
             end
-            testCase.verifyEqual(n('directed_relation'), 53, ...
+            % 53 before decision #89; + suborganization_of for Sigma-Aldrich
+            % (of EMD Millipore) and PixeLink (of Navitar)
+            testCase.verifyEqual(n('directed_relation'), 55, ...
                 'relation count moved: re-derive it from the spec, do not bump it');
             % 133 before decision #56; + 3 organizations, 1 web resource,
             % 4 products, 20 chemicals, 9 formulations, 7 relations; + the
@@ -79,8 +81,8 @@ classdef TestDatasetMetadataHaley < matlab.unittest.TestCase
             % macOS, stage 10's run environment (decision #60); decision #86,
             % the potassium phosphate buffer from 231109_KPO4_stock: + Sigma-
             % Aldrich, 2 products, 2 chemicals, the 2 1 M stocks, - the
-            % buffer's documented_by WormBook
-            testCase.verifyEqual(numel(testCase.Result.documents), 186);
+            % buffer's documented_by WormBook; decision #89, + 2 relations
+            testCase.verifyEqual(numel(testCase.Result.documents), 188);
         end
 
         function testStudiesCanBeMintedApartFromTheRest(testCase)
