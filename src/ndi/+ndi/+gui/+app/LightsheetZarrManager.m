@@ -24,6 +24,13 @@ classdef LightsheetZarrManager < ndi.gui.app.sessionApp
 %   so what will run can be shown in the dialog before it runs and can
 %   be copied into a terminal when it does not.
 %
+%   ADDING CAN GO STRAIGHT TO THE CLOUD. Add... offers this session or a
+%   session of an NDI Cloud dataset. For the cloud, the user picks the
+%   dataset, one of its sessions and a subject of that session; the
+%   pyramid is built here, its chunks are uploaded and checked
+%   (ndi.cloud.upload.SessionWriter), and its documents land in that
+%   session. Nothing is added to the local session.
+%
 %   DELETING IS A CASCADE. Levels depend on the pyramid, so removing a
 %   pyramid orphans everything beneath it. deletionPlan enumerates that
 %   first and the confirmation names the counts, because "delete 1
@@ -292,6 +299,13 @@ classdef LightsheetZarrManager < ndi.gui.app.sessionApp
             btn.FontWeight      = 'bold';
         end
 
+        function labels = sessionLabels(sessions)
+        % SESSIONLABELS - list entries for cloud sessions: reference, then id
+            labels = arrayfun(@(x) sprintf('%s  (%s)', ...
+                x.session_reference, x.session_id), sessions, ...
+                'UniformOutput', false);
+            labels = reshape(labels, 1, []);
+        end
     end
 
     % =====================================================================
@@ -644,6 +658,26 @@ classdef LightsheetZarrManager < ndi.gui.app.sessionApp
         end
 
         function onAdd(obj)
+        % ONADD - ingest an OME-Zarr store, here or into a cloud session
+        %
+        %   The pyramid goes either to the session this manager shows or
+        %   straight to a session of an NDI Cloud dataset (see
+        %   onAddToCloud). Nothing in between is local in the second case.
+            where = uiconfirm(obj.fig, ...
+                ['Add the pyramid to this session, or straight to a ' ...
+                 'session of an NDI Cloud dataset?'], 'Add pyramid', ...
+                'Options', {'This session', 'NDI Cloud session...', 'Cancel'}, ...
+                'DefaultOption', 1, 'CancelOption', 3);
+            switch where
+                case 'This session'
+                    obj.onAddLocal();
+                case 'NDI Cloud session...'
+                    obj.onAddToCloud();
+            end
+        end
+
+        function zarrPath = pickZarr(~)
+            zarrPath = '';
             [f, p] = uigetfile({'.zattrs', 'OME-Zarr .zattrs'; ...
                                 '*',        'All Files (*)'}, ...
                 'Select the OME-Zarr store .zattrs (or its containing folder)');
@@ -654,6 +688,11 @@ classdef LightsheetZarrManager < ndi.gui.app.sessionApp
                 zarrPath = fullfile(p, f);
             end
             zarrPath = strip(zarrPath, 'right', filesep);
+        end
+
+        function onAddLocal(obj)
+            zarrPath = obj.pickZarr();
+            if isempty(zarrPath), return; end
 
             subjectID = obj.pickSubject();
             if isempty(subjectID), return; end
@@ -668,6 +707,95 @@ classdef LightsheetZarrManager < ndi.gui.app.sessionApp
             catch ME
                 obj.setStatus('Ingest failed; see the message.');
                 uialert(obj.fig, ME.message, 'Add failed');
+            end
+        end
+
+        function onAddToCloud(obj)
+        % ONADDTOCLOUD - build the pyramid and add it to a session of a cloud dataset
+        %
+        %   Dataset, then one of its sessions, then a subject of that
+        %   session: a pyramid belongs to a session, and depends on a
+        %   subject in it. The chunks are materialized and uploaded by
+        %   ndi.cloud.upload.SessionWriter, which checks each file against
+        %   NDI Cloud's CRC-32 before any document is added. The result
+        %   is not listed here: this table shows the local session.
+            zarrPath = obj.pickZarr();
+            if isempty(zarrPath), return; end
+
+            try
+                datasetId = ndi.cloud.ui.dialog.selectCloudDataset("private");
+            catch ME
+                if ~strcmp(ME.identifier, 'NDI:CloudDialog:UserCanceled')
+                    uialert(obj.fig, ME.message, 'Could not list datasets');
+                end
+                return;
+            end
+            datasetId = char(datasetId);
+
+            obj.setStatus('Reading the dataset''s sessions...');
+            drawnow;
+            try
+                sessions = ndi.cloud.upload.SessionWriter.listSessions(datasetId);
+            catch ME
+                obj.setStatus('');
+                uialert(obj.fig, ME.message, 'Could not read the dataset');
+                return;
+            end
+            obj.setStatus('');
+            if isempty(sessions)
+                uialert(obj.fig, ['This dataset has no sessions. A pyramid ' ...
+                    'is added to a session of a dataset, not to the ' ...
+                    'dataset itself.'], 'No sessions');
+                return;
+            end
+            [idx, ok] = listdlg('PromptString', 'Session:', ...
+                'SelectionMode', 'single', 'ListSize', [400 250], ...
+                'ListString', ndi.gui.app.LightsheetZarrManager.sessionLabels(sessions));
+            if ~ok, return; end
+            session = sessions(idx);
+
+            try
+                subjects = ndi.cloud.upload.SessionWriter.listSubjects( ...
+                    datasetId, session.session_id);
+            catch ME
+                uialert(obj.fig, ME.message, 'Could not read the session');
+                return;
+            end
+            if isempty(subjects)
+                uialert(obj.fig, sprintf(['Session %s has no subjects. Add ' ...
+                    'the subject to that session first.'], ...
+                    session.session_reference), 'No subject');
+                return;
+            end
+            [idx, ok] = listdlg('PromptString', 'Subject:', ...
+                'SelectionMode', 'single', 'ListSize', [400 250], ...
+                'ListString', {subjects.local_identifier});
+            if ~ok, return; end
+            subjectID = subjects(idx).id;
+
+            go = uiconfirm(obj.fig, sprintf(['Build the pyramid from\n%s\n' ...
+                'and add it to session %s of the cloud dataset?\n\n' ...
+                'Every chunk is built here and uploaded; for a large ' ...
+                'volume this takes a long time and needs free disk for ' ...
+                'the chunks until the upload ends. Progress is in the ' ...
+                'Command Window.'], zarrPath, session.session_reference), ...
+                'Add to NDI Cloud', 'Options', {'Add', 'Cancel'}, ...
+                'DefaultOption', 1, 'CancelOption', 2);
+            if ~strcmp(go, 'Add'), return; end
+
+            obj.setStatus('Building and uploading; see the Command Window...');
+            drawnow;
+            try
+                writer = ndi.cloud.upload.SessionWriter(datasetId, session.session_id);
+                [~, ~, info] = ndi.fun.doc.lightsheet.fromOMEZarr(writer, zarrPath, ...
+                    'subjectID', subjectID, 'codec', 'blosc-zstd');
+                obj.setStatus(sprintf(['Added %d document(s) and %d file(s) ' ...
+                    '(%.1f MB) to cloud session %s.'], info.cloud.documents, ...
+                    info.cloud.files, info.cloud.bytes / 1e6, ...
+                    session.session_reference));
+            catch ME
+                obj.setStatus('Upload failed; see the message.');
+                uialert(obj.fig, ME.message, 'Add to NDI Cloud failed');
             end
         end
 
