@@ -285,17 +285,25 @@ function keys = recordingKeys(hw, isImage, r)
 % [image vertical position, image horizontal position], in pixels from the
 % upper-left corner (pixel centres at 0.5, 1.5, ...; the scale is a
 % calculation, stage 10), then for a video `time`, one per frame from the
-% recording's start at 1 / frame rate. Only when the pixel size is known (the
-% file was opened: 'ReadVideos', or a TIFF), so the keys are always complete.
+% recording's start: the measured time of each frame when the video was
+% decoded (decision #87: the videos do not have a constant frame rate), else
+% regular at 1 / frame rate. Only when the pixel size is known (the file was
+% opened: 'ReadVideos', or a TIFF), so the keys are always complete.
 keys = [];
 if isempty(hw), return; end
 k = {did2.build.key('image vertical position', hw(1), 'Unit', 'pixel', 'Origin', 0.5, 'Spacing', 1), ...
      did2.build.key('image horizontal position', hw(2), 'Unit', 'pixel', 'Origin', 0.5, 'Spacing', 1)};
 if ~isImage
+    ft = frameTimesOf(r, 1);
     nf = r.n_frames; fr = r.frame_rate;
-    if ~(nf > 0 && fr > 0), return; end
-    k{end+1} = did2.build.key('time', nf, 'Unit', 'second', 'Origin', 0, 'Spacing', 1 / fr, ...
-        'SourceUnit', 'frame', 'SourceOrigin', 0, 'SourceSpacing', 1);
+    if ~isempty(ft)
+        k{end+1} = did2.build.key('time', numel(ft), 'Unit', 'second', 'Values', ft(:)', ...
+            'SourceUnit', 'frame', 'SourceValues', 0:numel(ft) - 1);
+    else
+        if ~(nf > 0 && fr > 0), return; end
+        k{end+1} = did2.build.key('time', nf, 'Unit', 'second', 'Origin', 0, 'Spacing', 1 / fr, ...
+            'SourceUnit', 'frame', 'SourceOrigin', 0, 'SourceSpacing', 1);
+    end
 end
 keys = did2.build.list(k{:});
 end

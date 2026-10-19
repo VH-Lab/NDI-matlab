@@ -273,7 +273,8 @@ if any(options.Stages == "acquisition")
             'The acquisition stage needs the sessions stage: include "sessions" in ''Stages''.');
     end
     [result.recordings, result.recordingChecks] = ndi.setup.conv.haley.recordingList( ...
-        dataParentDir, result.sessions, 'ReadVideos', options.ReadVideos);
+        dataParentDir, result.sessions, 'ReadVideos', options.ReadVideos, ...
+        'FrameTimesCache', frameTimesCache(dataParentDir, options.OutputRoot));
     if height(result.recordings) > 0
         disp(groupsummary(result.recordings, {'kind', 'system'}));
     end
@@ -848,4 +849,11 @@ for f = {'formulations', 'strains'}
         end
     end
 end
+end
+
+function f = frameTimesCache(dataParentDir, outRoot)
+% where the measured video frame times are kept between runs (decision #87):
+% beside the run folders, so a rerun does not decode every video again
+if isempty(outRoot), outRoot = fullfile(dataParentDir, 'haley_V2'); end
+f = fullfile(outRoot, 'video_frame_times.mat');
 end

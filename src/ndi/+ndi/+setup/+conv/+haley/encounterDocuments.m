@@ -150,6 +150,9 @@ for g = 1:max(G)
     where = where(onR);
     start = R.local_start(where);
     rate = R.frame_rate(where);
+    % each video's measured frame times when it was decoded (decision #87),
+    % else frame k is taken at (k-1)/frame rate
+    ft = arrayfun(@(w) {frameTimesOf(R, w)}, where);
     t0 = min(start);
     % the plate's window: stage 9's, else the one video's own reference
     timeId = '';
@@ -165,7 +168,7 @@ for g = 1:max(G)
         docs{end+1} = w; %#ok<AGROW>
         timeId = w.base.id;
     end
-    secondsAt = @(idx) arrayfun(@(i) rowSeconds(W, i, vids, start, rate, t0), idx);
+    secondsAt = @(idx) arrayfun(@(i) rowSeconds(W, i, vids, start, rate, t0, ft), idx);
 
     % inputs: the worm's midpoint speed and patch-edge distance in each video
     inputs = {};
@@ -272,14 +275,21 @@ out.counts.documents = numel(docs);
 end
 
 % -----------------------------------------------------------------------------
-function s = rowSeconds(W, i, vids, start, rate, t0)
-% seconds from T0 of row I of the worm's joined track
+function s = rowSeconds(W, i, vids, start, rate, t0, ft)
+% seconds from T0 of row I of the worm's joined track: the frame's measured
+% time in its video (decision #87) when the video was decoded, else
+% (frame - 1) / frame rate
 if isnan(i) || i < 1 || i > height(W)
     s = NaN;
     return;
 end
 v = find(vids.videoNum == W.videoNum(i), 1);
-s = seconds(start(v) - t0) + (double(W.frameNum(i)) - 1) / rate(v);
+f = double(W.frameNum(i));
+if f >= 1 && f <= numel(ft{v}) && f == round(f)
+    s = seconds(start(v) - t0) + ft{v}(f);
+else
+    s = seconds(start(v) - t0) + (f - 1) / rate(v);
+end
 end
 
 function tf = keyByReference()

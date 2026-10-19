@@ -45,18 +45,31 @@ function [R, checks] = recordingList(dataParentDir, sessions, options)
 %     imagesWithoutFile E. coli metaData images with no file, by kind
 %     noRawImages       no ecoli/raw/ folder: the recordings fall back to the
 %                       background-normalised TIFFs in images/
-%     unreadable        'ReadVideos': a lawn clip VideoReader could not open
+%     unreadable        'ReadVideos': a video VideoReader could not open
+%     framesDisagree    'ReadVideos': a behaviour video whose decoded frame
+%                       count differs from the table's numFrames (the
+%                       decoded count is used)
 %
 %   Options:
 %     'ReadVideos'  default false. true opens every lawn clip with MATLAB's
 %                   VideoReader to read its frame count and rate (decision
-%                   #30); behaviour videos are not opened.
+%                   #30), and decodes every video once to measure the time
+%                   of each frame (`frame_times`, decision #87): the videos
+%                   do not have a constant frame rate, so frame k is not at
+%                   (k-1)/frameRate (up to 1.33 s off over an hour).
+%     'FrameTimesCache'  a .mat file that keeps the measured frame times
+%                   between runs, keyed by file path, size and modification
+%                   time ('' = none): decoding takes about 10 s per hour of
+%                   video.
 
 arguments
     dataParentDir (1,:) char {mustBeFolder}
     sessions table
     options.ReadVideos (1,1) logical = false
+    options.FrameTimesCache (1,:) char = ''
 end
+cache = loadFrameTimes(options.FrameTimesCache);
+nCached = cache.Count;
 
 root = fullfile(dataParentDir, 'haley');
 checks = struct('rowWithoutFile', {{}}, 'fileWithoutRow', {{}}, 'cameraDisagrees', {{}}, ...
@@ -114,9 +127,23 @@ for f = 1:numel(folders)
                         checks.noFrames{end+1} = sprintf('%s: %s has numFrames %g, frameRate %g', ...
                             mine.local_identifier{s}, stem, nf, fr);
                     end
+                    ft = [];
+                    if options.ReadVideos
+                        [ft, cache, err] = frameTimes(fullfile(root, vdir, [stem '.mp4']), cache);
+                        if ~isempty(err)
+                            checks.unreadable{end+1} = sprintf('%s: %s.mp4: %s', ...
+                                mine.local_identifier{s}, stem, err);
+                        elseif numel(ft) ~= nf
+                            checks.framesDisagree{end+1} = sprintf(['%s: %s.mp4 decodes to %d ' ...
+                                'frame(s); the table says %g'], mine.local_identifier{s}, stem, ...
+                                numel(ft), nf);
+                            nf = numel(ft);
+                        end
+                    end
                     row = recRow(mine.local_identifier{s}, 'behaviour', [pre '_' stem], ...
                         sprintf('camera%d', cam), plate, fullfile(vdir, [stem '.mp4']), src, ...
                         bytesOf(root, vdir, stem), D.timeRecord(r), nf, fr, dur);
+                    row.frame_times = ft;
                     % the probe's readings for this recording (stage 9, decision #59)
                     row.temp = colValue(D, 'temp', r);
                     row.humidity = colValue(D, 'humidity', r);
@@ -135,17 +162,23 @@ for f = 1:numel(folders)
                             mine.local_identifier{s}, D.plateNum(r), src, stem, vdir);
                     else
                         used(k) = true;
-                        nf = NaN; fr = NaN; dur = NaN;
+                        nf = NaN; fr = NaN; dur = NaN; ft = [];
                         if options.ReadVideos
                             [nf, fr, dur, err] = readVideo(fullfile(root, vdir, [stem '.mp4']));
+                            if isempty(err)
+                                [ft, cache, err] = frameTimes(fullfile(root, vdir, [stem '.mp4']), cache);
+                                if isempty(err), nf = numel(ft); end
+                            end
                             if ~isempty(err)
                                 checks.unreadable{end+1} = sprintf('%s: %s.mp4: %s', ...
                                     mine.local_identifier{s}, stem, err);
                             end
                         end
-                        rows{end+1} = recRow(mine.local_identifier{s}, 'lawn', [pre '_' stem], ...
+                        row = recRow(mine.local_identifier{s}, 'lawn', [pre '_' stem], ...
                             sprintf('camera%d', cameraOf(stem)), plate, fullfile(vdir, [stem '.mp4']), ...
-                            src, bytesOf(root, vdir, stem), stampOf(stem), nf, fr, dur); %#ok<AGROW>
+                            src, bytesOf(root, vdir, stem), stampOf(stem), nf, fr, dur);
+                        row.frame_times = ft;
+                        rows{end+1} = row; %#ok<AGROW>
                     end
                 end
             end
@@ -267,10 +300,13 @@ if height(mine) > 0
 end
 
 % ---- report -------------------------------------------------------------------
+if cache.Count > nCached
+    saveFrameTimes(options.FrameTimesCache, cache);
+end
 if isempty(rows)
-    R = cell2table(cell(0, 15), 'VariableNames', {'session', 'kind', 'epoch', 'system', ...
+    R = cell2table(cell(0, 16), 'VariableNames', {'session', 'kind', 'epoch', 'system', ...
         'plate', 'file', 'source_name', 'size_bytes', 'local_start', 'n_frames', ...
-        'frame_rate', 'duration', 'note', 'temp', 'humidity'});
+        'frame_rate', 'duration', 'note', 'temp', 'humidity', 'frame_times'});
 else
     R = struct2table([rows{:}], 'AsArray', true);
     [u, ~, j] = unique(R.epoch);
@@ -316,7 +352,10 @@ t.Format = 'dd-MMM-yyyy HH:mm:ss';
 s = struct('session', session, 'kind', kind, 'epoch', epoch, 'system', system, ...
     'plate', plate, 'file', file, 'source_name', src, 'size_bytes', double(bytes), ...
     'local_start', t, 'n_frames', double(nf), 'frame_rate', double(fr), 'duration', double(dur), ...
-    'note', note, 'temp', NaN, 'humidity', NaN);
+    'note', note, 'temp', NaN, 'humidity', NaN, 'frame_times', []);
+% frame_times: the measured time of each frame, seconds from the start of the
+% file (a column), or [] when the video was not decoded. In the table it is a
+% cell column; read a row with private/frameTimesOf.
 end
 
 function v = colValue(D, name, r)
@@ -368,6 +407,58 @@ b = NaN;
 if ~isempty(d)
     b = d.bytes;
 end
+end
+
+function [t, cache, err] = frameTimes(file, cache)
+% The measured time of every frame of a video (decision #87): VideoReader's
+% CurrentTime just before each readFrame, in seconds from the start of the
+% file -- the method of NDR's ndr.reader.video/frametimes, so the times agree
+% with what NDI reads. Cached by path, size and modification time.
+t = []; err = '';
+d = dir(file);
+if isempty(d)
+    err = 'no such file';
+    return;
+end
+key = sprintf('%s|%d|%.10f', file, d(1).bytes, d(1).datenum);
+if isKey(cache, key)
+    t = cache(key);
+    return;
+end
+try
+    v = VideoReader(file);
+    n = v.NumFrames;
+    if isempty(n) || ~isfinite(n) || n < 1, n = 0; end
+    t = zeros(n, 1);
+    k = 0;
+    while hasFrame(v)
+        k = k + 1;
+        t(k, 1) = v.CurrentTime;
+        readFrame(v);
+    end
+    t = t(1:k);
+    cache(key) = t;
+catch e
+    t = [];
+    err = e.message;
+end
+end
+
+function cache = loadFrameTimes(file)
+cache = containers.Map('KeyType', 'char', 'ValueType', 'any');
+if isempty(file) || ~isfile(file), return; end
+S = load(file, 'frameTimes');
+if isfield(S, 'frameTimes') && isa(S.frameTimes, 'containers.Map')
+    cache = S.frameTimes;
+end
+end
+
+function saveFrameTimes(file, cache)
+if isempty(file), return; end
+folder = fileparts(file);
+if ~isempty(folder) && ~isfolder(folder), mkdir(folder); end
+frameTimes = cache; %#ok<NASGU>
+save(file, 'frameTimes', '-v7.3');
 end
 
 function [nf, fr, dur, err] = readVideo(file)
