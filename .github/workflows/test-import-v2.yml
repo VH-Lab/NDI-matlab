@@ -186,12 +186,28 @@ jobs:
             matbox.installRequirements(nditools.projectdir());
             matbox.installRequirements(fullfile(pwd, "tests"));
 
+      - name: Check out NDR-matlab's video reader (TEMPORARY)
+        # TEMPORARY: remove this step, and the ndr-video addpath in the next
+        # one, once VH-Lab/NDR-matlab#140 merges. ndr.reader.video exists only
+        # on that PR's branch; MatBox installs NDR main (requirements.txt),
+        # where ndr.known_readers() has no 'video'. TestHaleyReadVideo reads
+        # a real frame through it and FAILS without it (no assumption).
+        uses: actions/checkout@v4
+        with:
+          repository: VH-Lab/NDR-matlab
+          ref: claude/native-video-reader
+          path: ndr-video
+
       - name: Run the V2 import tests
         uses: matlab-actions/run-command@v2
         with:
           command: |
             addpath(genpath("src"));
             addpath(genpath("tests"));
+            % TEMPORARY (VH-Lab/NDR-matlab#140): NDR's video reader ahead of
+            % the installed NDR main
+            addpath(genpath(fullfile(pwd, "ndr-video")));
+            disp("NDR from ndr-video (" + string(which("ndr.reader.video")) + "); known readers: " + strjoin(string(ndr.known_readers()), ", "));
             if isfolder("did-matlab-next/src")
                 % ahead of the installed DID-matlab V2 on the path
                 addpath(genpath(fullfile(pwd, "did-matlab-next", "src")));
