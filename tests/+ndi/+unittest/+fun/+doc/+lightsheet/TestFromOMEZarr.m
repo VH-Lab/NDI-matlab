@@ -182,6 +182,12 @@ function fixtureDir = writeSyntheticZarr(testCase)
 end
 
 function writeZArray(dir, shape, chunks, dtype)
+    arguments
+        dir {mustBeText}
+        shape {mustBeNumeric}
+        chunks {mustBeNumeric}
+        dtype {mustBeText}
+    end
     mkdir(dir);
     meta = struct( ...
         'zarr_format', 2, ...
@@ -197,12 +203,20 @@ function writeZArray(dir, shape, chunks, dtype)
 end
 
 function d = dataset(pathStr, scale)
+    arguments
+        pathStr {mustBeText}
+        scale {mustBeNumeric}
+    end
     d = struct('path', pathStr, ...
         'coordinateTransformations', {{ ...
             struct('type', 'scale', 'scale', scale) }});
 end
 
 function writeJSON(f, s)
+    arguments
+        f {mustBeText}
+        s % anything jsonencode accepts
+    end
     txt = jsonencode(s);
     fid = fopen(f, 'w');
     fwrite(fid, txt);

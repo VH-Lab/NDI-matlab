@@ -85,13 +85,19 @@ classdef BatchSignedUrlLookupTest < matlab.unittest.TestCase
             end
         end
 
-        function signer = flakyThenGoodSigner(~, filesMap, counterHandle, raiseCount)
+        function signer = flakyThenGoodSigner(testCase, filesMap, counterHandle, raiseCount)
             % A signer that raises on the first `raiseCount` calls and
             % returns `filesMap` thereafter -- exercises the transient-
             % error backoff path. Named error id matches what
             % matlab.net.http.send hands back on a real TLS blip, so
             % the retry logic is being tested against the shape it will
             % see in production. See VH-Lab/NDI-matlab#1010.
+            arguments
+                testCase (1,1) ndi.unittest.BatchSignedUrlLookupTest %#ok<INUSA> the signer depends only on its other inputs
+                filesMap (1,1) containers.Map
+                counterHandle (1,1) containers.Map
+                raiseCount (1,1) {mustBeNumeric}
+            end
             signer = @doSign;
             function [ok, answer] = doSign(~, ~, varargin)
                 counterHandle('n') = counterHandle('n') + 1;
