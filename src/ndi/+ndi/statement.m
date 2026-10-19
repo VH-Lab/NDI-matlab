@@ -278,28 +278,20 @@ classdef statement
             % CONDITIONS - table of the conditions the statement holds under
             %
             % One row per condition: variable, value (a number in `unit`, a
-            % count, or a term's name), unit, source_value, source_unit.
+            % count, a term's name, or text), unit, source_value (the number
+            % as the source wrote it, "" otherwise), source_unit.
             c = ndi.v2.blockOf(obj.document_properties(), 'statement', 'conditions', []);
             c = ndi.v2.entries(c);
             variable = strings(0, 1); value = cell(0, 1); unit = strings(0, 1);
-            source_value = cell(0, 1); source_unit = strings(0, 1);
+            source_value = strings(0, 1); source_unit = strings(0, 1);
             for i = 1:numel(c)
                 x = c{i};
                 variable(end+1, 1) = string(ndi.v2.termName(fieldOr(x, 'variable', ''))); %#ok<AGROW>
                 unit(end+1, 1) = string(ndi.v2.termName(fieldOr(x, 'unit', ''))); %#ok<AGROW>
                 source_unit(end+1, 1) = string(fieldOr(x, 'source_unit', '')); %#ok<AGROW>
-                if ~isempty(fieldOr(x, 'term', []))
-                    value{end+1, 1} = ndi.v2.termName(fieldOr(fieldOr(x, 'term', []), 'value', fieldOr(x, 'term', []))); %#ok<AGROW>
-                    source_value{end+1, 1} = []; %#ok<AGROW>
-                elseif ~isempty(fieldOr(x, 'count', []))
-                    value{end+1, 1} = double(fieldOr(fieldOr(x, 'count', []), 'value', NaN)); %#ok<AGROW>
-                    source_value{end+1, 1} = []; %#ok<AGROW>
-                else
-                    % a quantity: {value: {value, source_value}}
-                    q = fieldOr(fieldOr(x, 'quantity', []), 'value', []);
-                    value{end+1, 1} = double(fieldOr(q, 'value', NaN)); %#ok<AGROW>
-                    source_value{end+1, 1} = fieldOr(q, 'source_value', []); %#ok<AGROW>
-                end
+                [v, sv] = ndi.v2.entryValue(x);
+                value{end+1, 1} = v; %#ok<AGROW>
+                source_value(end+1, 1) = sv; %#ok<AGROW>
             end
             T = table(variable, value, unit, source_value, source_unit);
         end

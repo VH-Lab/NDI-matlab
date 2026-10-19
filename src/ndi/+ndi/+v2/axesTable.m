@@ -3,7 +3,7 @@ function T = axesTable(keys)
 %
 %   T = ndi.v2.axesTable(KEYS), KEYS a data.keys struct array: one row per
 %   key with variable, unit, n and coordinates (a cell: the numeric
-%   positions, origin + spacing * (0:n-1) for a regular key, or the labels'
+%   positions, origin + spacing * (0:n-1) for a regular key, or the terms'
 %   names).
 
 arguments
@@ -24,11 +24,11 @@ for k = 1:numel(keys)
         o = field(field(key, 'origin', struct()), 'value', 0);
         s = field(field(key, 'spacing', struct()), 'value', 1);
         c = double(o) + double(s) * (0:nk-1)';
-    elseif ~isempty(field(key, 'values', []))
-        c = field(field(key, 'values', struct()), 'values', []);
+    elseif ~isempty(field(key, 'quantity', []))
+        c = field(field(key, 'quantity', struct()), 'value', []);
         c = c(:);
-    elseif ~isempty(field(key, 'labels', []))
-        l = field(key, 'labels', []);
+    elseif ~isempty(field(key, 'term', []))
+        l = field(key, 'term', []);
         l = ndi.v2.entries(l);
         c = strings(numel(l), 1);
         for j = 1:numel(l), c(j) = string(ndi.v2.termName(l{j})); end

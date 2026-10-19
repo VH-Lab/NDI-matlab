@@ -117,7 +117,7 @@ classdef LightsheetFixtures
                     otherwise,   t = struct('node', '', 'name', reduction);
                 end
                 db.conditions = struct('variable', struct('name', 'summary statistic'), ...
-                    'term', struct('value', t));
+                    'term', t);
             end
             s.data_body = db;
             if ~isempty(memberPaths)
@@ -149,7 +149,7 @@ classdef LightsheetFixtures
                 'unit', struct('node', 'UO:0000010', 'name', 'second'), ...
                 'regular', true, 'origin', struct('value', 0), 'spacing', struct('value', 1));
             c = struct('variable', struct('name', 'channel'), 'n', n(2), 'regular', false, ...
-                'labels', struct('node', '', 'name', {'GCaMP6s', 'tdTomato'}));
+                'term', struct('node', '', 'name', {'GCaMP6s', 'tdTomato'}));
             space = cell(1, 3);
             names = 'zyx';
             origin = [10 0 0];

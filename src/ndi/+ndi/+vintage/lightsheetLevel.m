@@ -134,8 +134,8 @@ for i = 1:numel(list)
         continue;
     end
     t = [];
-    if isfield(c, 'term') && isstruct(c.term) && isfield(c.term, 'value')
-        t = c.term.value;
+    if isfield(c, 'term') && isstruct(c.term)
+        t = c.term;
     end
     switch termOf(t, 'node')
         case 'NCIT:C25564', r = 'max';

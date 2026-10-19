@@ -296,7 +296,7 @@ tried on the real Haley dataset before the next.
 | `+ndi/manipulation.m` | `ndi.manipulation`: `formulation` |
 | `+ndi/calculation.m` | `ndi.calculation`: `inputs`, `interpreter`, `operating_system` |
 | `+ndi/data_type.m` | `ndi.value` |
-| `+ndi/+v2/` | helpers: `props`, `classChain`, `directParents`, `edgeIds`, `getDocument`, `blockOf`, `termName`, `readBody` (the sampled-body reader), `axesTable`, `parseUtc`, `timeOf` (the time resolver) |
+| `+ndi/+v2/` | helpers: `props`, `classChain`, `directParents`, `edgeIds`, `getDocument`, `blockOf`, `termName`, `readBody` (the sampled-body reader), `axesTable`, `entryValue` (a condition's or method parameter's one value), `parseUtc`, `timeOf` (the time resolver) |
 
 Tests: `tests/+ndi/+unittest/+setup/+V2/TestObjectLayer.m`, over the Haley CI
 fixture, including the v1 subject constructor. Not yet: a chunked body (an

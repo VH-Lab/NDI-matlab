@@ -235,8 +235,8 @@ e = methodParameter(s, name);
 if ~isempty(e)
     if isfield(e, 'text') && ~isempty(e.text)
         v = e.text;
-    elseif isfield(e, 'value') && isstruct(e.value) && isfield(e.value, 'source_value')
-        v = e.value.source_value;
+    elseif isfield(e, 'quantity') && isstruct(e.quantity) && isfield(e.quantity, 'source_value')
+        v = e.quantity.source_value;
     end
 end
 end
@@ -310,9 +310,13 @@ if isstruct(cfg) && isfield(cfg, etaName) && ~isempty(cfg.(etaName))
     return;
 end
 e = methodParameter(cfg, etaName);
-if ~isempty(e) && isfield(e, 'value') && isstruct(e.value) ...
-        && isfield(e.value, 'value') && ~isempty(e.value.value)
-    v = e.value.value;
+if ~isempty(e) && isfield(e, 'quantity') && isstruct(e.quantity) ...
+        && isfield(e.quantity, 'value') && ~isempty(e.quantity.value)
+    v = e.quantity.value;
+    return;
+end
+if ~isempty(e) && isfield(e, 'count') && ~isempty(e.count)
+    v = double(e.count);
     return;
 end
 error('NDI:vintage:syncruleMissingField', ...

@@ -19,7 +19,7 @@ function f = lightsheetKeys(keys)
 %     units             cellstr, the source's unit per axis ('' if none)
 %     voxel_size_units  the unit of the first space axis (v1 hard-coded
 %                       'micrometer' there; the migrator converts it)
-%     channel_names     the `c` key's labels, comma-joined ('' if none)
+%     channel_names     the `c` key's terms' names, comma-joined ('' if none)
 %
 %   SOURCE UNITS, NOT CANONICAL ONES. The migrator converts a space or time
 %   axis to V_eta's canonical unit (meter, second) and keeps what the source
@@ -35,9 +35,8 @@ function f = lightsheetKeys(keys)
 %   states. A space/time axis the source gave no scale is written by the
 %   migrator as REGULAR with origin 0, spacing 1 and NO unit (its indices
 %   0..n-1; Jess 2026-10-15), so it reads as voxel size 1, translation 0 and
-%   unit '' from the key itself. (Before that it was written as `values`
-%   0..n-1 and read as 1 and 0 by the convention above; both forms read the
-%   same.)
+%   unit '' from the key itself. A key whose positions are stored (a
+%   `quantity` 0..n-1) reads as 1 and 0 by the convention above, the same.
 %
 %   See also: ndi.vintage.lightsheetLevel, ndi.vintage.lightsheetPyramid.
 
@@ -82,8 +81,8 @@ for k = 1:n
     if ~isempty(origin),  f.translation(k) = double(origin(1)); end
     f.units{k} = unit;
     if axes(k) == 'c'
-        labels = get(key, 'labels');
-        names = cellfun(@termName, asList(labels), 'UniformOutput', false);
+        terms = get(key, 'term');
+        names = cellfun(@termName, asList(terms), 'UniformOutput', false);
         f.channel_names = strjoin(names, ',');
     end
 end
