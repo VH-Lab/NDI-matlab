@@ -53,7 +53,7 @@ classdef bodies < ndi.file.navigator
             % written next to the (raw) epoch files.
             arguments
                 obj (1,1) ndi.file.navigator.bodies
-                epoch_number
+                epoch_number %#ok<INUSA> used by EPOCHFILES' default
                 epochfiles = obj.getepochfiles_number(epoch_number)
             end
             if ndi.file.navigator.isingested(epochfiles)
