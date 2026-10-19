@@ -1533,6 +1533,10 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
 
         function v2Remove(ndi_dataset_obj, ids)
             % V2REMOVE - delete documents (by id) from the dataset's database
+            arguments
+                ndi_dataset_obj (1,1) ndi.dataset
+                ids cell
+            end
             db = ndi_dataset_obj.v2Db();
             for k = 1:numel(ids)
                 if ~isempty(ids{k}) && db.has(ids{k})
@@ -1545,6 +1549,11 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
             % V2MEMBERSHIPIDS - the part_of relations in the dataset's database
             %   whose child is ENTITYID (the relations that make a session a
             %   member), as a cellstr of document ids
+
+            arguments
+                ndi_dataset_obj (1,1) ndi.dataset
+                entityId {mustBeText}
+            end
             ids = {};
             q = ndi.query('', 'isa', 'directed_relation', '') & ...
                 ndi.query('', 'depends_on', 'child_id', entityId);
@@ -1559,6 +1568,11 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
 
         function tf = v2HasPartOf(ndi_dataset_obj, childId, parentId)
             % V2HASPARTOF - does the dataset's database hold CHILDID part_of PARENTID?
+            arguments
+                ndi_dataset_obj (1,1) ndi.dataset
+                childId {mustBeText}
+                parentId {mustBeText}
+            end
             tf = false;
             ids = ndi_dataset_obj.v2MembershipIds(childId);
             for k = 1:numel(ids)
@@ -1574,6 +1588,11 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
             % V2ENTITYIDOF - the session entity id of session_info(IDX): the
             %   entity document itself for an ingested session, the
             %   linked_session's entity_id edge for a linked one
+
+            arguments
+                ndi_dataset_obj (1,1) ndi.dataset
+                idx
+            end
             info = ndi_dataset_obj.session_info(idx);
             entityId = info.session_doc_in_dataset_id;
             if info.is_linked
@@ -1586,6 +1605,12 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
 
         function addSessionV2(ndi_dataset_obj, ndi_session_obj, linked, partOf)
             % ADDSESSIONV2 - add a V2 session to a V2 dataset, linked or ingested
+            arguments
+                ndi_dataset_obj (1,1) ndi.dataset
+                ndi_session_obj (1,1) ndi.session
+                linked (1,1) logical
+                partOf {mustBeText}
+            end
             if ~isa(ndi_session_obj.database, 'ndi.database.implementations.database.did2sqlite')
                 error('ndi:dataset:notV2Session', ['Session %s is not a V2 session; only a ' ...
                     'V2 session can be added to a V2 dataset.'], ndi_session_obj.reference);
@@ -1678,6 +1703,11 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
     methods (Static, Access = protected)
         function tf = confirm(options, question, title)
             % CONFIRM - options.areYouSure, or the user's answer to a dialog
+            arguments
+                options (1,1) struct
+                question {mustBeText}
+                title {mustBeText}
+            end
             tf = options.areYouSure;
             if ~tf && options.askUserToConfirm
                 tf = strcmp(questdlg(question, title, 'Yes', 'No', 'No'), 'Yes');
@@ -1691,6 +1721,12 @@ function [d, nIn, missing, notFiles, keep] = ingestByLocation(d, fileDir, stage)
 % D with every by-location file location that holds a file here marked
 % ingested; KEEP (N x 2: stored copy, staging path) the files D already
 % ingested, pointed at their staging path so D can be removed and added back.
+
+arguments
+    d
+    fileDir
+    stage
+end
 nIn = 0; missing = {}; notFiles = 0; keep = cell(0, 2);
 if ~isfield(d, 'files') || ~isstruct(d.files) || ~isfield(d.files, 'file_info') ...
         || isempty(d.files.file_info)
@@ -1733,5 +1769,10 @@ d.files.file_info = fi;
 end
 
 function out = ifelse(tf, a, b)
+arguments
+    tf
+    a
+    b
+end
 if tf, out = a; else, out = b; end
 end
