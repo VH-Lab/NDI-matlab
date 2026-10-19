@@ -127,6 +127,16 @@ classdef ndiPane < ndi.gui.nav.pane
             % The message ends with command-line hints; the dialog replaces them.
             msg = regexprep(char(r.Message), '\n?Run ndi\.update\.install\(\) to update[^\n]*', '');
             msg = regexprep(msg, '\n?Note: you have changed code[^\n]*', '');
+            blocking = r.UpdateAvailable && r.HasModifications && ...
+                any(arrayfun(@(m) ~isempty(m.BlockingFiles), r.Modifications));
+            if blocking
+                % Untracked files sit where the update adds files; git will
+                % not overwrite them, so updating cannot work until they move.
+                uialert(fig, sprintf(['%s\n\n%s\n\nMove or rename the files ' ...
+                    'marked "in the way", then press Update again.'], msg, ...
+                    char(ndi.update.modificationSummary(r))), title, 'Icon', 'warning');
+                return;
+            end
             if r.UpdateAvailable && r.HasModifications
                 % The user has changed code: list it, and make Cancel the
                 % default so a stray Enter does not stash their work.
