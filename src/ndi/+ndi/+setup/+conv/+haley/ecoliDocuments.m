@@ -454,6 +454,10 @@ end
 function keys = pixelKeys(a, pixel)
 % as part A: pixel centres from the upper-left corner, in metres when the
 % scale is known, else in pixels
+arguments
+    a
+    pixel (1,1) {mustBeNumeric}
+end
 if isnan(pixel)
     keys = did2.build.list( ...
         did2.build.key('image vertical position', size(a, 1), 'Unit', 'pixel', ...

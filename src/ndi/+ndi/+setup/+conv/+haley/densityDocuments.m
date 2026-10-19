@@ -318,6 +318,9 @@ end
 % -----------------------------------------------------------------------------
 function inc = included(L)
 % plotForagingGFP's exclusions, in its order
+arguments
+    L table
+end
 inc = ~strcmp(L.fileName, '20231230_101739.czi') & L.plateNum ~= 64;
 inc = inc & ~((L.circularity < 0.75 & L.lawnVolume == 0.5) | ...
     L.borderCenterRatio < 1 | L.borderCenterRatio > 35);
@@ -334,6 +337,9 @@ end
 end
 
 function m = growthMinutes(x)
+arguments
+    x
+end
 if isduration(x)
     m = minutes(x);
 else
@@ -343,6 +349,12 @@ m = m(:);
 end
 
 function X = designOf(q, L, t, sel)
+arguments
+    q (1,1) struct
+    L table
+    t {mustBeNumeric}
+    sel
+end
 if strcmp(q.kind, 'joint')
     X = [double(L.OD600(sel)), t(sel)];
 else
@@ -352,6 +364,11 @@ end
 
 function [ids, pred] = patchFits(E, fits, fitIds)
 % the fit each encounter's patch takes (labelEncounters' match) and its value
+arguments
+    E table
+    fits struct
+    fitIds cell
+end
 n = height(E);
 ids = repmat({''}, n, 1);
 pred = NaN(n, 1);
@@ -388,6 +405,9 @@ end
 end
 
 function s = conditionText(q)
+arguments
+    q (1,1) struct
+end
 pep = 'with peptone';
 if ~strcmp(q.peptone, 'with'), pep = 'without peptone'; end
 if strcmp(q.kind, 'joint')
@@ -398,6 +418,10 @@ end
 end
 
 function f = groupFields(q, label)
+arguments
+    q (1,1) struct %#ok<INUSA> the group's fields come from its label alone
+    label {mustBeText}
+end
 id = regexprep(lower(label), '[^a-z0-9.]+', '_');
 f = struct('local_identifier', ['ecoli_fit_group_' regexprep(id, '^e._coli_patches_', '')], ...
     'name', label, 'description', ['The E. coli patches seeded this way, whose border ' ...
@@ -408,6 +432,9 @@ end
 end
 
 function c = conditionsOf(q)
+arguments
+    q (1,1) struct
+end
 pep = 'with peptone';
 if ~strcmp(q.peptone, 'with'), pep = 'without peptone'; end
 parts = {did2.build.condition('peptone', 'Term', did2.build.term('', pep)), ...
@@ -422,6 +449,9 @@ c = did2.build.list(parts{:});
 end
 
 function v = fitValue(q)
+arguments
+    q (1,1) struct
+end
 t = struct('variable', did2.build.term('', 'growth time'), 'unit', did2.build.term('', 'minute'));
 y = struct('variable', did2.build.term('', 'border amplitude per exposure time'), ...
     'unit', did2.build.term('', 'arbitrary unit per millisecond'));

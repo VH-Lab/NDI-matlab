@@ -279,6 +279,15 @@ function s = rowSeconds(W, i, vids, start, rate, t0, ft)
 % seconds from T0 of row I of the worm's joined track: the frame's measured
 % time in its video (decision #87) when the video was decoded, else
 % (frame - 1) / frame rate
+arguments
+    W table
+    i (1,1) {mustBeNumeric}
+    vids table
+    start
+    rate
+    t0
+    ft cell
+end
 if isnan(i) || i < 1 || i > height(W)
     s = NaN;
     return;
@@ -307,14 +316,47 @@ catch
 end
 end
 
-function v = speed(x), v = did2.build.valueCell('velocity', x(:)' * 1e-6, 'SourceValue', x(:)', 'SourceUnit', 'um/s'); end
-function v = accel(x), v = did2.build.valueCell('acceleration', x(:)' * 1e-6, 'SourceValue', x(:)', 'SourceUnit', 'um/s^2'); end
-function v = secs(x), v = did2.build.valueCell('time', x(:)'); end
-function v = mm(x), v = did2.build.valueCell('length', x(:)' * 1e-3, 'SourceValue', x(:)', 'SourceUnit', 'mm'); end
-function v = prob(x), v = did2.build.valueCell('score', x(:)', 'Fields', struct( ...
-    'scale', did2.build.term('', 'probability'), 'scale_min', 0, 'scale_max', 1)); end
+function v = speed(x)
+arguments
+    x
+end
+v = did2.build.valueCell('velocity', x(:)' * 1e-6, 'SourceValue', x(:)', 'SourceUnit', 'um/s');
+end
+
+function v = accel(x)
+arguments
+    x
+end
+v = did2.build.valueCell('acceleration', x(:)' * 1e-6, 'SourceValue', x(:)', 'SourceUnit', 'um/s^2');
+end
+
+function v = secs(x)
+arguments
+    x
+end
+v = did2.build.valueCell('time', x(:)');
+end
+
+function v = mm(x)
+arguments
+    x
+end
+v = did2.build.valueCell('length', x(:)' * 1e-3, 'SourceValue', x(:)', 'SourceUnit', 'mm');
+end
+
+function v = prob(x)
+arguments
+    x
+end
+v = did2.build.valueCell('score', x(:)', 'Fields', struct( ...
+    'scale', did2.build.term('', 'probability'), 'scale_min', 0, 'scale_max', 1));
+end
 
 function e = epochOf(pre, name)
+arguments
+    pre {mustBeText}
+    name
+end
 e = '';
 name = strtrim(char(name));
 if isempty(name), return; end

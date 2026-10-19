@@ -233,6 +233,10 @@ end
 
 function e = epochOf(pre, name)
 % a recording's epoch id from the file name the table records
+arguments
+    pre {mustBeText}
+    name
+end
 e = '';
 name = strtrim(char(name));
 if isempty(name), return; end

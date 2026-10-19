@@ -287,6 +287,9 @@ end
 % -----------------------------------------------------------------------------
 function e = runEnvironment(options)
 % the calculation's software, interpreter and operating system edges
+arguments
+    options (1,1) struct
+end
 e = {};
 if ~isempty(options.SoftwareId), e = [e, {'SoftwareId', options.SoftwareId}]; end
 if ~isempty(options.InterpreterId), e = [e, {'InterpreterId', options.InterpreterId}]; end
@@ -297,6 +300,10 @@ function keys = pixelKeys(a, pixel)
 % [image vertical position, image horizontal position]: MATLAB's [row, column].
 % Each position is a pixel's CENTRE, measured from the image's upper-left
 % corner (the coordinate system's origin): the first is half a pixel in.
+arguments
+    a
+    pixel (1,1) {mustBeNumeric}
+end
 keys = did2.build.list( ...
     did2.build.key('image vertical position', size(a, 1), 'Unit', 'meter', ...
         'Origin', pixel / 2, 'Spacing', pixel, 'SourceUnit', 'pixel', 'SourceOrigin', 0.5, 'SourceSpacing', 1), ...
@@ -307,6 +314,10 @@ end
 
 function e = epochOf(pre, name)
 % a recording's epoch id from the file name the table records
+arguments
+    pre {mustBeText}
+    name
+end
 e = '';
 name = strtrim(char(name));
 if isempty(name), return; end
@@ -315,6 +326,11 @@ e = [pre '_' stem];
 end
 
 function v = colOr(d, name, default)
+arguments
+    d table
+    name {mustBeText}
+    default
+end
 v = default;
 if ismember(name, d.Properties.VariableNames)
     x = d.(name);
@@ -325,6 +341,10 @@ end
 
 function v = cellOr(d, name)
 % d.(NAME){1}, or [] when the table has no such column
+arguments
+    d table
+    name {mustBeText}
+end
 v = [];
 if ismember(name, d.Properties.VariableNames)
     v = d.(name);
@@ -333,6 +353,10 @@ end
 end
 
 function v = cellOrChar(d, name)
+arguments
+    d table
+    name {mustBeText}
+end
 v = cellOr(d, name);
 if isempty(v) || ~(ischar(v) || isstring(v)), v = ''; end
 v = char(v);

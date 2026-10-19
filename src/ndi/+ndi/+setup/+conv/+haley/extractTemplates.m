@@ -63,6 +63,10 @@ end
 function v = readField(fid, path)
 % a struct field of a -v7.3 MAT file: numeric data, or object references
 % to one dataset per element (a cell)
+arguments
+    fid
+    path {mustBeText}
+end
 d = H5D.open(fid, path);
 cd = onCleanup(@() H5D.close(d));
 t = H5D.get_type(d);
