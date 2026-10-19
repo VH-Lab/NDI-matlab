@@ -29,6 +29,10 @@ function base = seriesMemberBase(doc)
 %
 %   See also: ndi.vintage.lightsheetChunkName, did.document/seriesMemberOf.
 
+arguments
+    doc
+end
+
 base = 1;
 if isa(doc, 'did.document')
     if ismethod(doc, 'seriesMemberBase')

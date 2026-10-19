@@ -41,6 +41,10 @@ function f = lightsheetKeys(keys)
 %
 %   See also: ndi.vintage.lightsheetLevel, ndi.vintage.lightsheetPyramid.
 
+arguments
+    keys
+end
+
 list = asList(keys);
 n = numel(list);
 f = struct('axes_order', '', 'shape', zeros(1, n), 'chunks', [], ...
@@ -95,6 +99,10 @@ end
 end
 
 function v = get(s, name)
+arguments
+    s
+    name {mustBeText}
+end
 v = [];
 if isstruct(s) && isfield(s, name)
     v = s.(name);
@@ -104,6 +112,10 @@ end
 function [v, source] = pairOf(p, flatSource)
 % A key's origin or spacing: the {value, source_value} pair did2.build.key
 % writes, or a bare number with the source in a sibling field (flatSource).
+arguments
+    p
+    flatSource
+end
 v = [];
 source = flatSource;
 if isstruct(p)
@@ -117,6 +129,10 @@ end
 end
 
 function v = firstOr(v, default)
+arguments
+    v
+    default
+end
 if isempty(v)
     v = default;
 elseif iscell(v)
@@ -128,6 +144,9 @@ end
 
 function n = termName(t)
 % A term or a name: {node, name} struct, a bare name, or a one-element cell.
+arguments
+    t
+end
 n = '';
 if iscell(t)
     if isempty(t), return; end
@@ -141,6 +160,9 @@ end
 end
 
 function c = asList(x)
+arguments
+    x
+end
 if iscell(x)
     c = reshape(x, 1, []);
 elseif isstruct(x)

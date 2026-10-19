@@ -23,6 +23,11 @@ function docs = lightsheetLevelDocs(session, pyramidDoc)
 %
 %   See also: ndi.vintage.lightsheetLevels, ndi.vintage.lightsheetPyramidDocs.
 
+arguments
+    session
+    pyramidDoc
+end
+
 props = ndi.v2.props(pyramidDoc);
 id = props.base.id;
 if isfield(props, 'lightsheetZarrPyramid')

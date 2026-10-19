@@ -48,8 +48,12 @@ function [p, vintage] = lightsheetPyramid(pyramidDoc, session, levelRecs)
 %   See also: ndi.vintage.lightsheetLevels, ndi.vintage.lightsheetPyramidDocs,
 %             ndi.fun.doc.lightsheet.levelTable.
 
-if nargin < 2, session = []; end
-if nargin < 3, levelRecs = {}; end
+arguments
+    pyramidDoc
+    session = []
+    levelRecs = {}
+end
+
 props = ndi.v2.props(pyramidDoc);
 if isfield(props, 'lightsheetZarrPyramid')
     p = props.lightsheetZarrPyramid;
@@ -125,6 +129,10 @@ function label = labelOf(notes)
 % The label: NOTES up to the LAST separator DID-matlab's migrator writes
 % before the text its store-record pass moves out (present only when that pass
 % did not run), else all of NOTES.
+
+arguments
+    notes {mustBeText}
+end
 SEPARATOR = sprintf('\n-- store body: ');
 label = notes;
 at = strfind(notes, SEPARATOR);
@@ -134,6 +142,10 @@ end
 end
 
 function s = quoted(text, label)
+arguments
+    text {mustBeText}
+    label {mustBeText}
+end
 s = '';
 tok = regexp(text, [regexptranslate('escape', label) ' "([^"]*)"'], 'tokens', 'once');
 if ~isempty(tok)
@@ -142,6 +154,10 @@ end
 end
 
 function v = blockValue(props, name)
+arguments
+    props
+    name {mustBeText}
+end
 v = [];
 skip = {'base', 'document_class', 'depends_on', 'files'};
 names = fieldnames(props);
@@ -156,6 +172,9 @@ end
 end
 
 function s = charOr(x)
+arguments
+    x
+end
 if isempty(x)
     s = '';
 elseif iscell(x)

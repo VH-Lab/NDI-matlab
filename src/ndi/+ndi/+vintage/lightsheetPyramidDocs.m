@@ -31,6 +31,10 @@ function docs = lightsheetPyramidDocs(session)
 %   See also: ndi.vintage.lightsheetMethod, ndi.vintage.lightsheetLevelDocs,
 %             ndi.vintage.lightsheetPyramid.
 
+arguments
+    session
+end
+
 M = ndi.vintage.lightsheetMethod();
 
 docs = session.database_search(ndi.query('', 'isa', 'lightsheetZarrPyramid'));

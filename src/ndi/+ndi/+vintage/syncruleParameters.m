@@ -140,6 +140,11 @@ end
 
 function [deviceName, channelSpec] = deviceHalf(channelIds, ndi_session_obj, n)
 %DEVICEHALF Resolve the n-th channel group to a device name + channel spec.
+arguments
+    channelIds
+    ndi_session_obj
+    n (1,1) {mustBeNumeric}
+end
 deviceName = '';
 channelSpec = '';
 edgeName = sprintf('acquisition_channels (%d)', n);
@@ -238,6 +243,11 @@ end
 
 function d = linkedDoc(doc, ndi_session_obj, edgeName)
 %LINKEDDOC The one document an edge names, or [] if it names none.
+arguments
+    doc
+    ndi_session_obj
+    edgeName {mustBeText}
+end
 d = [];
 id = doc.dependency_value(edgeName, 'ErrorIfNotFound', 0);
 if isempty(id)
@@ -255,6 +265,11 @@ function e = methodParameter(cfg, name)
 %   entries named by `variable`. Until that variable is bound it is a LABEL
 %   ({name}, no node), so an entry is matched by the V_eta field name or by
 %   the v1 parameter name it came from.
+
+arguments
+    cfg
+    name {mustBeText}
+end
 e = [];
 if ~isstruct(cfg) || ~isfield(cfg, 'method_parameters') || isempty(cfg.method_parameters)
     return;

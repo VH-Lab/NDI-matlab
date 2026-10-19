@@ -45,9 +45,11 @@ function [p, vintage] = lightsheetLevel(levelDoc, pyramidDoc)
 %   See also: ndi.vintage.lightsheetLevels, ndi.vintage.lightsheetPyramid,
 %             ndi.vintage.lightsheetChunkName.
 
-if nargin < 2
-    pyramidDoc = [];
+arguments
+    levelDoc
+    pyramidDoc = []
 end
+
 props = ndi.v2.props(levelDoc);
 if isfield(props, 'lightsheetZarrLevel')
     p = props.lightsheetZarrLevel;
@@ -93,6 +95,11 @@ function v = etaField(props, name)
 % `data`, `conditions`/`compression`/`redundant` in `data_body`,
 % `datum_order`/`byte_order`/`fill_value` in `sampled_body`), and which block
 % that is has moved between did-schema revisions.
+
+arguments
+    props (1,1) struct
+    name {mustBeText}
+end
 v = [];
 skip = {'base', 'document_class', 'depends_on', 'files'};
 order = {'data', 'data_body', 'sampled_body'};
@@ -108,6 +115,9 @@ end
 end
 
 function r = reductionOf(conditions)
+arguments
+    conditions
+end
 r = 'none';
 list = {};
 if iscell(conditions)
@@ -145,6 +155,10 @@ end
 end
 
 function s = termOf(t, part)
+arguments
+    t
+    part {mustBeText}
+end
 s = '';
 if iscell(t)
     if isempty(t), return; end
@@ -158,6 +172,9 @@ end
 end
 
 function n = storedCount(props)
+arguments
+    props
+end
 n = 0;
 if ~isfield(props, 'files') || ~isstruct(props.files)
     return;
@@ -183,6 +200,9 @@ end
 end
 
 function d = pyramidDtype(pp)
+arguments
+    pp
+end
 d = charOr(ndi.v2.blockOf(pp, 'value', 'source_data_type'), '');
 if isempty(d)
     d = charOr(ndi.v2.blockOf(pp, 'value', 'data_type'), '');
@@ -193,6 +213,9 @@ end
 end
 
 function v = fillOf(x)
+arguments
+    x
+end
 v = 0;
 if isempty(x), return; end
 if ischar(x) || isstring(x)
@@ -203,6 +226,10 @@ end
 end
 
 function s = charOr(x, default)
+arguments
+    x
+    default
+end
 if isempty(x)
     s = default;
 elseif iscell(x)

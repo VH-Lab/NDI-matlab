@@ -9,6 +9,10 @@ function c = names(x)
 %
 %   See also: ndi.vintage.map, ndi.vintage.entryFor.
 
+arguments
+    x
+end
+
 if ischar(x) || (isstring(x) && isscalar(x))
     c = {char(x)};
 elseif iscell(x)

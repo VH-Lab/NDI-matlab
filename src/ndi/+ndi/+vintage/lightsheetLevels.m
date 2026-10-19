@@ -24,6 +24,11 @@ function [recs, vintages] = lightsheetLevels(levelDocs, pyramidDoc)
 %
 %   See also: ndi.vintage.lightsheetLevel, ndi.fun.doc.lightsheet.levelTable.
 
+arguments
+    levelDocs
+    pyramidDoc
+end
+
 n = numel(levelDocs);
 recs = cell(1, n);
 vintages = cell(1, n);
