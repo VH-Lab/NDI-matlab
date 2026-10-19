@@ -15,6 +15,10 @@ function [out, local] = curie(identifiers)
 %
 %   Errors ndi:setup:V2:unknownScheme for a scheme with no prefix.
 
+arguments
+    identifiers
+end
+
 out = {};
 local = '';
 if isempty(identifiers)
