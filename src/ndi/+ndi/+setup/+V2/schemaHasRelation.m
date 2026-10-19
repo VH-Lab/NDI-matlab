@@ -11,9 +11,11 @@ function tf = schemaHasRelation(relationName, schemaPath)
 %
 %   See also ndi.setup.V2.schemaHasClass, ndi.setup.V2.schemaHasField.
 
-if nargin < 2
-    schemaPath = getenv('DID_SCHEMA_PATH');
+arguments
+    relationName {mustBeText}
+    schemaPath = getenv('DID_SCHEMA_PATH')
 end
+
 tf = false;
 f = fullfile(schemaPath, 'binding_registry_meta.json');
 if isempty(schemaPath) || ~isfile(f)

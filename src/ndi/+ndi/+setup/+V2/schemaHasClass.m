@@ -10,9 +10,11 @@ function tf = schemaHasClass(className, schemaPath)
 %
 %   See also ndi.setup.V2.schemaHasField, ndi.setup.V2.schemaHasLeaf.
 
-if nargin < 2
-    schemaPath = getenv('DID_SCHEMA_PATH');
+arguments
+    className {mustBeText}
+    schemaPath = getenv('DID_SCHEMA_PATH')
 end
+
 tf = false;
 if isempty(schemaPath)
     return;

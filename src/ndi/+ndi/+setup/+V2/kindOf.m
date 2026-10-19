@@ -5,5 +5,9 @@ function [kind, block] = kindOf(doc)
 %
 %   See also ndi.v2.kindOf.
 
+arguments
+    doc
+end
+
 [kind, block] = ndi.v2.kindOf(doc);
 end

@@ -105,6 +105,9 @@ end
 end
 
 function k = ingestedCount(d)
+arguments
+    d
+end
 k = 0;
 if ~isfield(d, 'files') || ~isfield(d.files, 'file_info'), return; end
 fi = d.files.file_info;
@@ -119,5 +122,8 @@ end
 end
 
 function s = hms(sec)
+arguments
+    sec {mustBeNumeric}
+end
 s = char(duration(0, 0, round(sec), 'Format', 'hh:mm:ss'));
 end

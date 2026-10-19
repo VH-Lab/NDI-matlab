@@ -127,6 +127,10 @@ end
 
 % -----------------------------------------------------------------------------
 function report = check(docs, dsid)
+arguments
+    docs cell
+    dsid {mustBeText}
+end
 n = numel(docs);
 ids = cellfun(@(d) d.base.id, docs, 'UniformOutput', false);
 cls = cellfun(@ndi.setup.V2.kindOf, docs, 'UniformOutput', false);   % an entity's type since 2026-10-08
@@ -195,6 +199,9 @@ end
 end
 
 function r = relationName(d)
+arguments
+    d (1,1) struct
+end
 r = '';
 if isfield(d, 'directed_relation') && isfield(d.directed_relation, 'relation')
     x = d.directed_relation.relation;
@@ -203,6 +210,10 @@ end
 end
 
 function v = edgeOf(d, name)
+arguments
+    d (1,1) struct
+    name {mustBeText}
+end
 v = '';
 dep = d.depends_on;
 if isstruct(dep), dep = num2cell(dep); end
@@ -213,6 +224,9 @@ end
 
 function v = edgeTarget(e)
 % V2 (did2.build) stores an edge as {name, document_id}; v1 as {name, value}
+arguments
+    e (1,1) struct
+end
 v = '';
 if isfield(e, 'document_id')
     v = e.document_id;

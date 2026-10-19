@@ -72,6 +72,9 @@ end
 
 function p = canonical(p)
 % Compare folders, not spellings: drop a trailing separator.
+arguments
+    p
+end
 p = char(p);
 while numel(p) > 1 && any(p(end) == '/\\')
     p = p(1:end-1);

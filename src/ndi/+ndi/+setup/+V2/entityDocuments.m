@@ -149,6 +149,9 @@ end
 end
 
 function n = termName(t)
+arguments
+    t
+end
 if isstruct(t)
     n = char(t.name);
 else
@@ -158,6 +161,9 @@ end
 
 function t = asTerms(v)
 % one term, or a list of them, from terms or plain names
+arguments
+    v
+end
 if isstruct(v)
     t = v;
     return;
@@ -171,6 +177,9 @@ end
 
 function p = precisionOf(s)
 % a partial-precision date: YYYY, YYYY-MM or YYYY-MM-DD
+arguments
+    s {mustBeText}
+end
 switch numel(regexp(s, '\d+', 'match'))
     case 1, p = 'year';
     case 2, p = 'month';

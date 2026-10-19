@@ -412,6 +412,10 @@ end
 % =============================================================================
 
 function c = entries(spec, name)
+arguments
+    spec
+    name {mustBeText}
+end
 if ~isfield(spec, name) || isempty(spec.(name))
     c = {};
     return;
@@ -425,6 +429,9 @@ end
 end
 
 function c = asCell(v)
+arguments
+    v
+end
 if isempty(v)
     c = {};
 elseif iscell(v)
@@ -439,6 +446,11 @@ end
 end
 
 function v = getOr(s, name, default)
+arguments
+    s
+    name {mustBeText}
+    default
+end
 if isfield(s, name)
     v = s.(name);
 else
@@ -447,6 +459,12 @@ end
 end
 
 function f = putIf(f, fieldName, src, srcName)
+arguments
+    f
+    fieldName {mustBeText}
+    src
+    srcName {mustBeText}
+end
 if isfield(src, srcName) && ~isempty(src.(srcName))
     f.(fieldName) = src.(srcName);
 end
@@ -454,6 +472,10 @@ end
 
 function f = putIds(f, src)
 % A spec entry's `identifiers` [{scheme, value}] -> entity.global_identifier.
+arguments
+    f
+    src
+end
 if ~isfield(src, 'identifiers') || isempty(src.identifiers)
     return;
 end
@@ -466,6 +488,9 @@ f.global_identifier = did2.build.list(g{:});
 end
 
 function t = asTerm(v)
+arguments
+    v
+end
 if isstruct(v)
     t = v;
 else
@@ -475,8 +500,12 @@ end
 
 function state = checkKnown(state, kind, entry, known, noted)
 % Record every spec field this kind cannot hold, instead of dropping it silently.
-if nargin < 5
-    noted = struct();
+arguments
+    state (1,1) struct
+    kind {mustBeText}
+    entry (1,1) struct
+    known cell
+    noted = struct()
 end
 % A spec key starting with `_` (`_verify`, `_note`) is an ANNOTATION for the
 % reader, not data. jsondecode cannot keep a leading underscore in a field name
@@ -502,6 +531,11 @@ end
 end
 
 function id = idOf(state, key, kinds)
+arguments
+    state (1,1) struct
+    key
+    kinds cell
+end
 key = char(key);
 if ~isKey(state.ids, key)
     error('ndi:setup:V2:unknownKey', 'The spec refers to `%s`, which no entry defines.', key);
@@ -516,11 +550,14 @@ end
 function state = add(state, className, key, fields, edges, id, type)
 % TYPE: the entity type, for a subject (or web resource) on a schema with one
 % entity class; ndi.setup.V2.entityDocuments.
-if nargin < 6
-    id = '';
-end
-if nargin < 7
-    type = '';
+arguments
+    state (1,1) struct
+    className {mustBeText}
+    key
+    fields
+    edges
+    id = ''
+    type = ''
 end
 if isKey(state.ids, key)
     error('ndi:setup:V2:duplicateKey', 'The spec defines `%s` twice.', key);
@@ -545,6 +582,9 @@ end
 
 function ids = storedIdentifiers(w)
 % A stored copy's addresses: an NDI Cloud dataset page is `ndicloud:<id>`.
+arguments
+    w
+end
 ids = {};
 for x = asCell(getOr(w, 'identifiers', {}))
     v = char(x{1}.value);
@@ -558,8 +598,14 @@ end
 end
 
 function state = relate(state, childKey, parentKey, relation, childKinds, parentKinds, extra)
-if nargin < 7
-    extra = struct();
+arguments
+    state (1,1) struct
+    childKey
+    parentKey
+    relation {mustBeText}
+    childKinds cell
+    parentKinds cell
+    extra = struct()
 end
 child = idOf(state, childKey, childKinds);
 parent = idOf(state, parentKey, parentKinds);

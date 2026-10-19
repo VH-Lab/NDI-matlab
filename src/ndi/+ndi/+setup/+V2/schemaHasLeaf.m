@@ -10,6 +10,10 @@ function tf = schemaHasLeaf(leaf)
 %
 %   See also ndi.setup.V2.schemaHasField, ndi.setup.V2.mergedEntities.
 
+arguments
+    leaf {mustBeText}
+end
+
 c = did2.schema.cache.shared();
 tf = c.hasClass(leaf);
 if tf || ~ismethod(c, 'valueKindRule')
