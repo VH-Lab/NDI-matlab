@@ -333,7 +333,11 @@ classdef system < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice
                 else
                     et(i).t0_t1 = t0_t1(ndi_daqsystem_obj, et(i).epoch_number);
                 end
-                if mod(i,10)==0 % only update every tenth so we don't slow it down
+                % only update every tenth so we don't slow it down, and never
+                % to 1 here: the bar closes itself at 1 ('Auto'), so a loop
+                % ending on a multiple of 10 would close it before the final
+                % update below, which then warns "Could not find barID"
+                if mod(i,10)==0 && i < numel(et)
                     currentProgBar.updateBar(ProgBarUuid,i/numel(et)); % Update the bar's progress
                 end
             end
