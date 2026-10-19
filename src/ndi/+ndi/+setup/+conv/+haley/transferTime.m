@@ -33,7 +33,16 @@ function [T, rule] = transferTime(protocol, folder, behaviourStart, lawnStart, b
 %   (inclusive, yyyy-MM-dd) against BEHAVIOURSTART's day; an exception
 %   overrides the contrast-video order of the rule that matched.
 
-if nargin < 6 || isnat(lawnEnd)
+arguments
+    protocol
+    folder {mustBeText}
+    behaviourStart
+    lawnStart
+    behaviourVideo {mustBeText}
+    lawnEnd = NaT
+end
+
+if isnat(lawnEnd)
     lawnEnd = lawnStart;
 end
 rule = struct('method', '', 'contrast_video', '', 'source', 'none', 'used', 'behaviour video', ...
@@ -80,6 +89,11 @@ end
 end
 
 function v = getOr(s, name, default)
+arguments
+    s
+    name {mustBeText}
+    default
+end
 if isstruct(s) && isfield(s, name)
     v = s.(name);
 else
@@ -88,6 +102,9 @@ end
 end
 
 function c = asCell(x)
+arguments
+    x
+end
 if iscell(x)
     c = x(:)';
 elseif isstruct(x)

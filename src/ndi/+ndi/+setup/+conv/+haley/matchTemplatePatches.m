@@ -16,6 +16,14 @@ function [slot, why] = matchTemplatePatches(c, centerYX, angleDeg, scale, layout
 %   angle_sign (+1/-1: how the template angle turns the frame),
 %   max_distance_mm.
 
+arguments
+    c {mustBeNumeric}
+    centerYX {mustBeNumeric}
+    angleDeg (1,1) {mustBeNumeric}
+    scale (1,1) {mustBeNumeric}
+    layout (1,1) struct
+end
+
 slot = [];
 why = '';
 pos = reshape(double(layout.positions_mm), [], 2);

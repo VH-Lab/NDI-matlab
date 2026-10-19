@@ -112,6 +112,11 @@ end
 % -----------------------------------------------------------------------------
 function found = walk(x, path, found)
 % every {node, name} struct under X, as rows {name, node, path}
+arguments
+    x
+    path {mustBeText}
+    found cell
+end
 if isstruct(x)
     f = fieldnames(x);
     % a term: node and/or name and nothing else. did2.build leaves an empty
@@ -141,5 +146,9 @@ end
 end
 
 function p = join(a, b)
+arguments
+    a {mustBeText}
+    b {mustBeText}
+end
 if isempty(a), p = b; else, p = [a '.' b]; end
 end

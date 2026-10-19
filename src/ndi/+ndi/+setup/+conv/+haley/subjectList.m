@@ -636,11 +636,21 @@ end
 % =============================================================================
 
 function s = subjRow(session, kind, id, name, desc, folder, plate, patch, worm, strain, acclimation, exclude, placed, deprivation)
-if nargin < 13
-    placed = NaT;
-end
-if nargin < 14
-    deprivation = '';
+arguments
+    session
+    kind {mustBeText}
+    id {mustBeText}
+    name {mustBeText}
+    desc {mustBeText}
+    folder {mustBeText}
+    plate
+    patch
+    worm
+    strain
+    acclimation
+    exclude
+    placed = NaT
+    deprivation = ''
 end
 s = struct('session', session, 'kind', kind, 'local_identifier', id, 'name', name, ...
     'description', desc, 'folder', folder, 'plate', plate, 'patch', patch, 'worm', worm, ...
@@ -659,6 +669,13 @@ end
 
 function p = prepOf(R, seeded, coldRoom, roomTemp, od600)
 % A plate's preparation from the first of its rows (the columns repeat per row).
+arguments
+    R table
+    seeded {mustBeText}
+    coldRoom {mustBeText}
+    roomTemp {mustBeText}
+    od600
+end
 p = blankPrep();
 p.seeded = colOr(R, seeded, NaT);
 p.cold_room = colOr(R, coldRoom, NaT);
@@ -674,6 +691,9 @@ end
 function p = growthPrepOf(R)
 % The acclimation plate's preparation, from its assay plates' growth
 % columns. Its volume (200 uL) and agar are the spec's, not the assay plate's.
+arguments
+    R table
+end
 p = prepOf(R, 'growthTimeSeed', 'growthTimeColdRoom', 'growthTimeRoomTemp', ...
     colOr(R, 'growthOD600', NaN));
 p.volume_ul = NaN;
@@ -682,6 +702,11 @@ end
 
 function v = colOr(R, name, default)
 % R.(name)(1) when the table has that column, else DEFAULT.
+arguments
+    R table
+    name {mustBeText}
+    default
+end
 if ismember(name, R.Properties.VariableNames) && height(R) > 0
     v = R.(name)(1, :);
     if iscell(v), v = v{1}; end
@@ -693,6 +718,10 @@ end
 end
 
 function tf = samePrep(a, b)
+arguments
+    a (1,1) struct
+    b (1,1) struct
+end
 same = @(x, y) (isnat(x) && isnat(y)) || isequal(x, y);
 tf = same(a.seeded, b.seeded) && same(a.cold_room, b.cold_room) && same(a.room_temp, b.room_temp);
 end
@@ -701,6 +730,10 @@ function t = typeOf(kind, bacteria)
 % subject.type (decision #55): plates are material; a patch with bacteria is
 % a culture (a lawn: a population whose members are never subjects), one of
 % LB alone is material; a worm is an organism; a cohort is a group.
+arguments
+    kind {mustBeText}
+    bacteria
+end
 switch kind
     case 'worm'
         t = 'organism';
@@ -714,6 +747,9 @@ end
 end
 
 function k = growthKey(p)
+arguments
+    p (1,1) struct
+end
 if isnat(p.pick)
     t = 'NaT';
 else
@@ -732,6 +768,12 @@ function [od, why] = patchDensities(R, row, template, nPatch)
 % plates holding exactly the same densities (decision #76). Falls back to the
 % template when the map is missing or unreadable; NaN (and WHY) when neither
 % gives one value per patch.
+arguments
+    R table
+    row
+    template {mustBeNumeric}
+    nPatch (1,1) {mustBeNumeric}
+end
 why = '';
 fromTemplate = template(template ~= 0);
 if numel(fromTemplate) ~= nPatch, fromTemplate = []; end
@@ -773,6 +815,10 @@ function t = originalAssayType(folder, condition)
 % doImport.m's assay type (lines 140-152): grid plates are multi-density in
 % foragingMatching and single-density elsewhere; single plates are small in
 % foragingMini and large elsewhere
+arguments
+    folder {mustBeText}
+    condition
+end
 c = lower(conditionText(condition));
 switch c
     case 'grid'
@@ -794,6 +840,9 @@ end
 
 function t = studyAssayType(key)
 % the assay each spec study runs (its name says so)
+arguments
+    key
+end
 switch char(key)
     case {'single_density_multi_patch', 'mutant_screen', 'sensory_mutants'}
         t = 'SingleDensityMultiPatch';
@@ -809,6 +858,9 @@ end
 end
 
 function s = conditionText(c)
+arguments
+    c
+end
 if iscell(c), c = c{1}; end
 if iscell(c), c = c{1}; end
 s = strtrim(char(string(c)));
@@ -818,6 +870,13 @@ function [g, hits] = growthCorrection(g, folder, experiment, corr, hits)
 % A named correction of a day's acclimation plate time (decision #70e): the
 % spec's `corrections` entry naming this folder and experiment, column
 % growthTimeRoomTemp, value a wall-clock time 'yyyy-MM-ddTHH:mm'
+arguments
+    g (1,1) struct
+    folder {mustBeText}
+    experiment
+    corr
+    hits
+end
 if isstruct(corr), corr = num2cell(corr); end
 for c = 1:numel(corr)
     x = corr{c};

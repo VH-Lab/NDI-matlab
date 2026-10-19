@@ -249,11 +249,19 @@ prog.step = @step;
 end
 
 function s = hms(sec)
+arguments
+    sec (1,1) {mustBeNumeric}
+end
 s = char(duration(0, 0, round(sec), 'Format', 'hh:mm:ss'));
 end
 
 function T = sumBy(keys, n, name)
 % a table of KEYS (cellstr) and the sum of N over each, sorted by key
+arguments
+    keys cell
+    n {mustBeNumeric}
+    name {mustBeText}
+end
 if isempty(keys)
     T = table(cell(0, 1), zeros(0, 1), 'VariableNames', {name, 'n'});
     return;
@@ -264,6 +272,13 @@ end
 
 function d = compareCounts(E, eKey, A, aKey, what)
 % differences between the expected (groupsummary: GroupCount) and actual (n) counts
+arguments
+    E table
+    eKey {mustBeText}
+    A table
+    aKey {mustBeText}
+    what {mustBeText}
+end
 d = {};
 e = containers.Map(cellstr(string(E.(eKey))), num2cell(E.GroupCount));
 a = containers.Map(cellstr(string(A.(aKey))), num2cell(double(A.n)));
@@ -279,6 +294,9 @@ end
 
 function [h, alg] = recordedHash(s)
 % the content_hash and hash_algorithm of a body document, in whichever block holds them
+arguments
+    s struct
+end
 h = ''; alg = '';
 for f = reshape(fieldnames(s), 1, [])
     b = s.(f{1});
@@ -291,7 +309,10 @@ end
 end
 
 function printList(items, limit)
-if nargin < 2, limit = Inf; end
+arguments
+    items cell
+    limit (1,1) {mustBeNumeric} = Inf
+end
 for k = 1:min(numel(items), limit)
     fprintf('  %s\n', items{k});
 end

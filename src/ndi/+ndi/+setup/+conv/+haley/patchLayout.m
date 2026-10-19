@@ -112,6 +112,9 @@ end
 
 function g = squareform_(p)
 % pairwise distances between the rows of P
+arguments
+    p {mustBeNumeric}
+end
 n = size(p, 1);
 g = zeros(n);
 for a = 1:n

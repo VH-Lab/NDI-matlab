@@ -359,8 +359,20 @@ end
 % =============================================================================
 
 function s = recRow(session, kind, epoch, system, plate, file, src, bytes, t, nf, fr, dur, note)
-if nargin < 13
-    note = '';
+arguments
+    session
+    kind {mustBeText}
+    epoch {mustBeText}
+    system {mustBeText}
+    plate
+    file {mustBeText}
+    src
+    bytes
+    t
+    nf
+    fr
+    dur
+    note = ''
 end
 % One kind of value for the whole column: the sources mix zoned and unzoned
 % datetimes (which cannot be concatenated), so a zoned one is expressed in
@@ -381,6 +393,11 @@ end
 
 function v = colValue(D, name, r)
 % D.(NAME)(R) as a double, NaN when the table has no such column
+arguments
+    D table
+    name {mustBeText}
+    r
+end
 v = NaN;
 if ismember(name, D.Properties.VariableNames)
     v = double(D.(name)(r));
@@ -391,6 +408,10 @@ function note = imageNote(M, r)
 % The processing facts an image file cannot carry: its exposure, and the
 % background and brightfield images it was paired with (by imageNum; those
 % images were not shared as files).
+arguments
+    M table
+    r
+end
 parts = {};
 if ismember('exposureTime', M.Properties.VariableNames)
     parts{end+1} = sprintf('exposure %g ms', M.exposureTime(r));
@@ -406,6 +427,9 @@ end
 
 function c = cameraOf(stem)
 % The camera is the file name's last _N (2022-02-04_12-10-51_1 -> 1).
+arguments
+    stem {mustBeText}
+end
 tok = regexp(stem, '_(\d+)$', 'tokens', 'once');
 c = NaN;
 if ~isempty(tok)
@@ -415,6 +439,9 @@ end
 
 function t = stampOf(stem)
 % The wall-clock start in the name: yyyy-MM-dd_HH-mm-ss_N.
+arguments
+    stem {mustBeText}
+end
 tok = regexp(stem, '^(\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2})', 'tokens', 'once');
 t = NaT;
 if ~isempty(tok)
@@ -423,6 +450,11 @@ end
 end
 
 function b = bytesOf(root, vdir, stem)
+arguments
+    root {mustBeText}
+    vdir {mustBeText}
+    stem {mustBeText}
+end
 d = dir(fullfile(root, vdir, [stem '.mp4']));
 b = NaN;
 if ~isempty(d)
@@ -437,6 +469,11 @@ function [t, cache, err, prog] = frameTimes(file, cache, prog)
 % with what NDI reads. Cached by path, size and modification time. PROG
 % counts the videos decoded (printing every 10, saving the cache every 25)
 % and those taken from the cache.
+arguments
+    file {mustBeText}
+    cache
+    prog (1,1) struct
+end
 t = []; err = '';
 d = dir(file);
 if isempty(d)
@@ -494,6 +531,9 @@ end
 end
 
 function s = hms(seconds)
+arguments
+    seconds (1,1) {mustBeNumeric}
+end
 s = char(duration(0, 0, seconds, 'Format', 'hh:mm:ss'));
 end
 
@@ -504,6 +544,9 @@ if ~isempty(cacheFile), note = [cacheFile '.decoding.txt']; end
 end
 
 function s = cacheName(file)
+arguments
+    file {mustBeText}
+end
 if isempty(file)
     s = 'none kept';
 else
@@ -512,6 +555,9 @@ end
 end
 
 function cache = loadFrameTimes(file)
+arguments
+    file {mustBeText}
+end
 cache = containers.Map('KeyType', 'char', 'ValueType', 'any');
 if isempty(file) || ~isfile(file), return; end
 S = load(file, 'frameTimes');
@@ -521,6 +567,10 @@ end
 end
 
 function saveFrameTimes(file, cache)
+arguments
+    file {mustBeText}
+    cache
+end
 if isempty(file), return; end
 folder = fileparts(file);
 if ~isempty(folder) && ~isfolder(folder), mkdir(folder); end
@@ -533,6 +583,9 @@ movefile(partial, file, 'f');
 end
 
 function [nf, fr, dur, err] = readVideo(file)
+arguments
+    file {mustBeText}
+end
 nf = NaN; fr = NaN; dur = NaN; err = '';
 try
     v = VideoReader(file);
