@@ -168,6 +168,10 @@
   {
    "key": "fisher",
    "name": "Fisher Scientific"
+  },
+  {
+   "key": "sigma_aldrich",
+   "name": "Sigma-Aldrich"
   }
  ],
  "people": [
@@ -469,6 +473,20 @@
    "catalog_number": "S271-1",
    "vendor": "fisher",
    "_note": "240102B_NGM_plates (Benchling)."
+  },
+  {
+   "key": "kh2po4_bp362",
+   "name": "Potassium phosphate monobasic",
+   "catalog_number": "BP362",
+   "vendor": "fisher",
+   "_note": "231109_KPO4_stock (Benchling)."
+  },
+  {
+   "key": "k2hpo4_p5504",
+   "name": "Potassium phosphate dibasic trihydrate",
+   "catalog_number": "P5504",
+   "vendor": "sigma_aldrich",
+   "_note": "231109_KPO4_stock (Benchling): the 500 g bottle, P5504-500G."
   },
   {
    "key": "lb_kitchen",
@@ -847,6 +865,16 @@
    "substance": "dipotassium hydrogen phosphate"
   },
   {
+   "key": "kh2po4_fisher",
+   "substance": "potassium dihydrogen phosphate",
+   "product": "kh2po4_bp362"
+  },
+  {
+   "key": "k2hpo4_3h2o_sigma",
+   "substance": "dipotassium hydrogen phosphate trihydrate",
+   "product": "k2hpo4_p5504"
+  },
+  {
    "key": "mgso4_1m",
    "substance": "magnesium sulfate",
    "concentration": {
@@ -923,33 +951,65 @@
  ],
  "formulations": [
   {
-   "key": "kpo4_1m_ph6",
-   "type": "1 M potassium phosphate buffer, pH 6.0",
+   "key": "kh2po4_1m",
+   "type": "1 M potassium phosphate monobasic",
    "ingredients": [
     {
-     "ingredient": "kh2po4",
+     "ingredient": "kh2po4_fisher",
      "concentration": {
-      "grams_per_liter": 108.3,
-      "source_value": 108.3,
-      "source_unit": "g/L"
-     }
-    },
-    {
-     "ingredient": "k2hpo4",
-     "concentration": {
-      "grams_per_liter": 35.6,
-      "source_value": 35.6,
-      "source_unit": "g/L"
+      "grams_per_liter": 136,
+      "source_value": 68,
+      "source_unit": "g in 500 mL"
      }
     },
     {
      "ingredient": "water"
     }
    ],
+   "_note": "231109_KPO4_stock (Benchling; protocol adapted from Kathleen Quach): 68.00 g dissolved in 400 mL dH2O, made up to 500 mL."
+  },
+  {
+   "key": "k2hpo4_1m",
+   "type": "1 M potassium phosphate dibasic",
+   "ingredients": [
+    {
+     "ingredient": "k2hpo4_3h2o_sigma",
+     "concentration": {
+      "grams_per_liter": 228.16,
+      "source_value": 57.04,
+      "source_unit": "g in 250 mL"
+     }
+    },
+    {
+     "ingredient": "water"
+    }
+   ],
+   "_note": "231109_KPO4_stock (Benchling): 57.04 g of the trihydrate dissolved in 200 mL dH2O, made up to 250 mL."
+  },
+  {
+   "key": "kpo4_1m_ph6",
+   "type": "1 M potassium phosphate buffer, pH 6.0",
+   "ingredients": [
+    {
+     "ingredient": "kh2po4_1m",
+     "volume": {
+      "liters": 0.5,
+      "source_value": 500,
+      "source_unit": "mL"
+     }
+    },
+    {
+     "ingredient": "k2hpo4_1m",
+     "volume": {
+      "liters": 0.2,
+      "source_value": 200,
+      "source_unit": "mL",
+      "approximate": true
+     }
+    }
+   ],
    "ph": 6.0,
-   "documented_by": [
-    "wormbook_maintenance"
-   ]
+   "_note": "231109_KPO4_stock (Benchling; Jess Haley, 9 Nov 2023, protocol adapted from Kathleen Quach): the 1 M dibasic solution titrated into 500 mL of 1 M monobasic until the pH read 6.0 (measured 5.999), about 200 mL; autoclaved 30 min, stored at room temperature. Replaces WormBook's 108.3 g KH2PO4 + 35.6 g K2HPO4 per litre (decision #86)."
   },
   {
    "key": "ngm",

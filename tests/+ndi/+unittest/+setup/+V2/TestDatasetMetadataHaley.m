@@ -52,7 +52,7 @@ classdef TestDatasetMetadataHaley < matlab.unittest.TestCase
             % every strain has a source, so each adds one stock product
             testCase.verifyEqual(n('product'), numel(s.products) + numel(s.strains));
             % 47 before decision #56; + the media kitchen's suborganization_of
-            % Salk + 6 recipes documented_by WormBook
+            % Salk + 6 recipes documented_by WormBook (5 since decision #86)
             if ndi.setup.V2.mergedEntities()
                 % one entity class (2026-10-08): the entity fields become
                 % assertions and relations, so these totals are a different
@@ -70,14 +70,17 @@ classdef TestDatasetMetadataHaley < matlab.unittest.TestCase
                     'web_resource retired: its URL is an identifier of what it names');
                 return;
             end
-            testCase.verifyEqual(n('directed_relation'), 54, ...
+            testCase.verifyEqual(n('directed_relation'), 53, ...
                 'relation count moved: re-derive it from the spec, do not bump it');
             % 133 before decision #56; + 3 organizations, 1 web resource,
             % 4 products, 20 chemicals, 9 formulations, 7 relations; + the
             % temperature probe (decision #59: an instrument with no product,
             % so no instance_of relation); + the lab's analysis package and
-            % macOS, stage 10's run environment (decision #60)
-            testCase.verifyEqual(numel(testCase.Result.documents), 180);
+            % macOS, stage 10's run environment (decision #60); decision #86,
+            % the potassium phosphate buffer from 231109_KPO4_stock: + Sigma-
+            % Aldrich, 2 products, 2 chemicals, the 2 1 M stocks, - the
+            % buffer's documented_by WormBook
+            testCase.verifyEqual(numel(testCase.Result.documents), 186);
         end
 
         function testStudiesCanBeMintedApartFromTheRest(testCase)
@@ -191,8 +194,13 @@ classdef TestDatasetMetadataHaley < matlab.unittest.TestCase
             testCase.verifyEqual(numel(ing), 7);
             cited = relationsNamed(docs, 'documented_by');
             cited = cited(cellfun(@(r) strcmp(parentOf(r), ids('wormbook_maintenance')), cited));
-            testCase.verifyEqual(numel(cited), 6, ...
-                'S Basal, S-Complete, trace metals, potassium citrate, potassium phosphate, LB');
+            testCase.verifyEqual(numel(cited), 5, ...
+                ['S Basal, S-Complete, trace metals, potassium citrate, LB (the potassium ' ...
+                'phosphate buffer is Jess''s 231109_KPO4_stock, decision #86)']);
+            kp = byId(ids('kpo4_1m_ph6'));
+            ing = kp.depends_on(strcmp({kp.depends_on.name}, 'ingredient_id'));
+            testCase.verifyEqual(sort({ing.document_id}), sort({ids('kh2po4_1m'), ids('k2hpo4_1m')}), ...
+                'the buffer is the 1 M dibasic titrated into the 1 M monobasic');
             if ndi.setup.V2.schemaHasField('formulation', 'value.type')
                 testCase.verifyEqual(sc.formulation.value.type.name, 'S-Complete');
             end
