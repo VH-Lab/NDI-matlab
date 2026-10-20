@@ -351,4 +351,33 @@ location stays where it is. `ndi.dataset.dir`'s constructor now reads its own
 database for its lookups. Tests: `TestLinkedSessions`.
 
 Not decided here, and not built: merging shared entities (a strain, people,
-software) when a session made on its own joins a dataset.
+software) when a session made on its own joins a dataset. Section 12 records
+them as one thing instead, without merging.
+
+## 12. One thing recorded twice: `same_as` (2026-10-20)
+
+did-schema `V_eta_duplicate_entities_plan.md` (signed 2026-10-19), tenet T18:
+`same_as` (an `undirected_relation` over entities) joins two records of one
+thing and never two instances of one kind (a second N2 worm, or a second
+microscope of one model, is `instance_of` the kind); it is written only on an
+identifier that names the thing itself, stored in the dataset, and no id is
+deleted or rewritten. A physical merge is not decided and not built.
+
+| method / function | what it does |
+|---|---|
+| `ndi.v2.sameAs(C, ids)` | each id's other records: the `same_as` groups, closed over chains (a~b, b~c); a session also reads its dataset's, where the relation is stored |
+| `ndi.entity.search` | with `'inherited'` (default): a relation to either record matches (the instances of either N2 record are N2's; `'instance_of', X`, `'member_of', X`, ...), and an entity matching an assertion about one record is joined by its other records (and their members and parts, as for the record) |
+| `statements`, `assertions`, `summary` | what is ASSERTED of another record holds of the entity (`via()` ends in `same_as`), from the entity itself and from each group, whole and type it reaches (a worm whose strain is recorded twice gets both records' assertions); interactions and context do not pass through a `same_as`, since T18 names assertions |
+| `e.sameAs()` | the other records, as entities |
+| `e.disagreements()` | a table (about, variable, record_id, value): where the records of one group assert different values of a variable. The reader returns every value and picks none; `statements` and `summary` also warn, `ndi:entity:sameAs:disagree` |
+| `add_linked_session`, `add_ingested_session` (V2, `'SameAs'` default true) | before the session joins, `ndi.v2.sameAsMatches` compares its entities with the dataset's, pair by pair within one type: the same identifier CURIE (prefix ignoring case), the same serial number and manufacturer on two devices, or the same catalog or model number on two products is a MATCH, and a `same_as` is written in the dataset's database for each not already joined; the same name alone, or the same serial number without a manufacturer on both, is a CANDIDATE, listed and never written; differing identifiers (or serial or catalog numbers) make two things, neither. `same_as_report()` returns the denominator, the matches (with the relation written), the candidates and notes |
+
+Serial numbers and manufacturers are read from assertions whose variable is
+`serial number` and `manufacturer` (the unit's serial number has no field of
+its own yet, Haley decision #14); a catalog number from `product.catalog_number`
+or a `catalog number` / `model number` assertion. Sessions, epochs and datasets
+are not compared. Tests: `TestSameAs`, on both schema legs (both bind
+`same_as`, and `instance_of` from a device to a product).
+
+Not built: confirming a candidate (writing its `same_as` by hand is a
+`did2.build.undirectedRelation({a, b}, 'same_as', ...)` in the dataset).

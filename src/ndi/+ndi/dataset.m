@@ -31,6 +31,11 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
         % every session left out and why (ndi.v2.datasetSessions). Read with
         % session_notes().
         SessionNotes = {}
+
+        % SameAsReport - what the last session joined to this V2 dataset
+        % recorded twice (V_eta tenet T18): the same_as relations written
+        % and the name-only candidates listed. Read with same_as_report().
+        SameAsReport = []
     end
 
     methods
@@ -86,17 +91,30 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
             % session's folder (relative to the dataset's folder when inside it).
             % The session must be a V2 session.
             %
+            % A V2 session joining a V2 dataset may bring its own record of
+            % something the dataset already records (its own N2 strain, its own
+            % record of the microscope). Each such pair found on evidence that
+            % names the thing (the same identifier CURIE, the same serial
+            % number and manufacturer, the same catalog or model number) is
+            % joined by a `same_as` relation written in the dataset's database;
+            % a pair sharing only a name is listed, not written. No id is
+            % deleted or rewritten (V_eta tenet T18). same_as_report() says
+            % what was found.
+            %
             % Options:
             %   'PartOf'  V2 only: the id of the dataset's study (an entity
             %             document in the dataset) the session is part_of;
             %             default: the dataset itself
+            %   'SameAs'  V2 only: default true; false writes no same_as
+            %             (the report still lists what was found)
             arguments
                 ndi_dataset_obj (1,1) ndi.dataset
                 ndi_session_obj (1,1) ndi.session
                 options.PartOf (1,:) char = ''
+                options.SameAs (1,1) logical = true
             end
             if ndi_dataset_obj.v2Listing()
-                ndi_dataset_obj.addSessionV2(ndi_session_obj, true, options.PartOf);
+                ndi_dataset_obj.addSessionV2(ndi_session_obj, true, options.PartOf, options.SameAs);
                 return;
             end
             if isempty(ndi_dataset_obj.session_array)
@@ -173,17 +191,21 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
             % with the files it ingested; files recorded by location stay where
             % they are. Unless the copied documents already make the session
             % part_of the dataset or one of its studies, a `part_of` relation
-            % is added. The session must be a V2 session.
+            % is added. The session must be a V2 session. Its records of what
+            % the dataset already records are joined by `same_as`, as
+            % add_linked_session joins them ('SameAs', default true; see
+            % same_as_report).
             %
             arguments
                 ndi_dataset_obj (1,1) ndi.dataset
                 ndi_session_obj (1,1) ndi.session
                 options.ReferenceInPlace (1,1) logical = true
                 options.PartOf (1,:) char = ''
+                options.SameAs (1,1) logical = true
             end
 
             if ndi_dataset_obj.v2Listing()
-                ndi_dataset_obj.addSessionV2(ndi_session_obj, false, options.PartOf);
+                ndi_dataset_obj.addSessionV2(ndi_session_obj, false, options.PartOf, options.SameAs);
                 return;
             end
 
@@ -883,6 +905,26 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
             end
             notes = ndi_dataset_obj.SessionNotes;
         end % session_notes()
+
+        function report = same_as_report(ndi_dataset_obj)
+            % SAME_AS_REPORT - what the last session joined to a V2 dataset recorded twice
+            %
+            % REPORT = SAME_AS_REPORT(NDI_DATASET_OBJ)
+            %
+            % After add_linked_session or add_ingested_session on a V2
+            % dataset, a struct (ndi.v2.sameAsMatches): DENOMINATOR (the
+            % entities compared), MATCHES (pairs joined on evidence that
+            % names the thing, with the `same_as` relation written for each
+            % in RELATION_ID, "" when it was not written: already joined, or
+            % 'SameAs' false), CANDIDATES (pairs sharing only a name, or a
+            % serial number with no manufacturer on both: listed for a person
+            % to confirm, never written), WRITTEN (how many relations were
+            % written) and NOTES. [] before any session was joined through
+            % this object.
+            %
+            % See also: ndi.v2.sameAsMatches, ndi.entity/sameAs
+            report = ndi_dataset_obj.SameAsReport;
+        end % same_as_report()
 
         function p = getpath(ndi_dataset_obj)
             % GETPATH - Return the path of the dataset
@@ -1603,13 +1645,14 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
             end
         end % v2EntityIdOf()
 
-        function addSessionV2(ndi_dataset_obj, ndi_session_obj, linked, partOf)
+        function addSessionV2(ndi_dataset_obj, ndi_session_obj, linked, partOf, sameAs)
             % ADDSESSIONV2 - add a V2 session to a V2 dataset, linked or ingested
             arguments
                 ndi_dataset_obj (1,1) ndi.dataset
                 ndi_session_obj (1,1) ndi.session
                 linked (1,1) logical
                 partOf {mustBeText}
+                sameAs (1,1) logical = true
             end
             if ~isa(ndi_session_obj.database, 'ndi.database.implementations.database.did2sqlite')
                 error('ndi:dataset:notV2Session', ['Session %s is not a V2 session; only a ' ...
@@ -1655,6 +1698,9 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
                     'document of this dataset.'], partOf);
             end
 
+            % what the session records that the dataset already does (T18),
+            % found before anything of the session is in the dataset
+            report = ndi.v2.sameAsMatches(ndi_session_obj, ndi_dataset_obj);
             db = ndi_dataset_obj.v2Db();
             if ~linked
                 docs = ndi.v2.sessionDocuments(ndi_session_obj.database, ndi_session_obj.id());
@@ -1684,6 +1730,7 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
                 end
                 ndi.v2.copyDocuments(ndi_session_obj.database.db, db, docs);
                 if stated
+                    ndi_dataset_obj.SameAsReport = ndi_dataset_obj.writeSameAs(report, sameAs);
                     ndi_dataset_obj.build_session_info();
                     return;
                 end
@@ -1695,8 +1742,59 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
                     'SessionId', dsid, 'Edges', struct('entity_id', entityId));
             end
             db.add(cellfun(@(x) did2.document(x), add, 'UniformOutput', false));
+            ndi_dataset_obj.SameAsReport = ndi_dataset_obj.writeSameAs(report, sameAs);
             ndi_dataset_obj.build_session_info();
         end % addSessionV2()
+
+        function report = writeSameAs(ndi_dataset_obj, report, write)
+            % WRITESAMEAS - write a `same_as` relation in the dataset's database
+            %   for each match of REPORT (ndi.v2.sameAsMatches) not already
+            %   joined, when WRITE; REPORT gains matches.relation_id, written
+            %   and notes. A schema that binds no `same_as` writes nothing and
+            %   the notes say so. Name-only candidates are never written.
+
+            arguments
+                ndi_dataset_obj (1,1) ndi.dataset
+                report (1,1) struct
+                write (1,1) logical
+            end
+            report.matches.relation_id = strings(height(report.matches), 1);
+            report.written = 0;
+            report.notes = {};
+            if height(report.candidates) > 0
+                report.notes{end+1} = sprintf(['%d pair(s) share only a name (or a serial ' ...
+                    'number with no manufacturer on both): listed in candidates, not ' ...
+                    'written; confirming one writes its same_as'], height(report.candidates));
+            end
+            if height(report.matches) == 0, return; end
+            if ~write
+                report.notes{end+1} = 'SameAs was false: no same_as written';
+                return;
+            end
+            [~, undirected] = ndi.v2.relationNames();
+            if ~any(strcmp(undirected, 'same_as'))
+                report.notes{end+1} = sprintf(['the schema in use binds no same_as relation: ' ...
+                    '%d match(es) found and not written'], height(report.matches));
+                return;
+            end
+            dsid = ndi_dataset_obj.id();
+            existing = cellstr(report.matches.existing_id);
+            joined = ndi.v2.sameAs(ndi_dataset_obj, unique(existing, 'stable'));
+            add = {};
+            for k = 1:height(report.matches)
+                a = char(report.matches.incoming_id(k));
+                b = char(report.matches.existing_id(k));
+                if ismember(a, joined(b)), continue; end      % joined already
+                d = did2.build.undirectedRelation({a, b}, 'same_as', 'SessionId', dsid);
+                add{end+1} = d; %#ok<AGROW>
+                report.matches.relation_id(k) = string(d.base.id);
+                joined(b) = [joined(b), {a}];
+            end
+            if ~isempty(add)
+                ndi_dataset_obj.v2Db().add(cellfun(@(x) did2.document(x), add, 'UniformOutput', false));
+            end
+            report.written = numel(add);
+        end % writeSameAs()
 
     end % methods protected
 

@@ -47,6 +47,9 @@ classdef entity
     %                        observations, manipulations, calculations,
     %                        interactions: statements of one kind
     %   members, memberOf, parts, partOf
+    %   sameAs             - the other records of the very same thing (same_as,
+    %                        V_eta tenet T18)
+    %   disagreements      - where those records assert different values
     %   fromDocument, search - (static) make entities; search finds them by
     %                        what is true of them
     %
@@ -198,7 +201,11 @@ classdef entity
             %     distributive; assertions about a whole it is part or a
             %     sample of (part_of, sample_of, aliquot_of, passage_of);
             %     assertions about its types (instance_of: its strain, its
-            %     product). false: its own statements only.
+            %     product); assertions about another record of it, or of
+            %     any of those (same_as, T18: via() ends in 'same_as'; where
+            %     the records disagree, every value is returned and a
+            %     warning, ndi:entity:sameAs:disagree, names them -- see
+            %     disagreements). false: its own statements only.
             %   'context' (default false) -- true adds what the entity was IN
             %     (V_eta tenet T17): the observations, manipulations and
             %     calculations of each container it was contained_in (its own
@@ -231,6 +238,7 @@ classdef entity
             container = subjects(1).container_;
             ids = arrayfun(@(x) x.document_id, subjects, 'UniformOutput', false);
             L = ndi.entity.statementLinks(container, ids, kinds, options.inherited, options.context);
+            warnDisagreements(L);
             s = cell(1, numel(L.doc));
             for i = 1:numel(L.doc)
                 s{i} = ndi.statement.fromDocument(container, L.doc{i}).withContext(L.about{i}, L.via{i});
@@ -347,6 +355,62 @@ classdef entity
         function w = partOf(obj)
             % PARTOF - what this subject is part_of (a patch's plate), a cell array
             w = obj.parents('part_of');
+        end
+
+        function e = sameAs(obj)
+            % SAMEAS - the other records of the very same thing, a cell array
+            %
+            % E = SAMEAS(OBJ): the entities joined to this one by `same_as`
+            % (V_eta tenet T18), directly or through another record of the
+            % group; {} when it is recorded once. Both records keep their
+            % ids. A session opened on its own does not see a same_as stored
+            % with its dataset; read through the dataset.
+            arguments
+                obj (1,1) ndi.entity
+            end
+            e = {};
+            if isempty(obj.document_id) || isempty(obj.container_), return; end
+            others = ndi.v2.sameAs(obj.container_, {obj.document_id});
+            ids = others(obj.document_id);
+            if isempty(ids), return; end
+            e = ndi.entity.fetchMany(obj.container_, ids);
+            if numel(e) < numel(ids) && isa(obj.container_, 'ndi.session')
+                % a record stored with the dataset
+                docs = obj.container_.database_search_with_dataset(ndi.v2.anyOf(cellfun( ...
+                    @(i) ndi.query('base.id', 'exact_string', i, ''), ids, 'UniformOutput', false)));
+                e = cellfun(@(d) ndi.entity.fromDocument(obj.container_, d), ...
+                    reshape(docs, 1, []), 'UniformOutput', false);
+            end
+        end
+
+        function T = disagreements(obj, options)
+            % DISAGREEMENTS - where the records of one thing assert different values
+            %
+            % T = DISAGREEMENTS(E): for an entity (or an array) recorded more
+            % than once (`same_as`, V_eta tenet T18), a table with one row per
+            % record and variable on which the group's records assert
+            % different values: about (the entity asked for), variable,
+            % record_id (the record that states it) and value (its values,
+            % joined with '; '). The reader reports these and does not pick
+            % one: assertions and summary return every record's value. The
+            % records reached through member_of, part_of and instance_of are
+            % compared too (two records of a worm's strain). Empty when they
+            % agree.
+            arguments
+                obj
+                options.synonyms (1,1) logical = true
+            end
+            T = table(strings(0, 1), strings(0, 1), strings(0, 1), strings(0, 1), ...
+                'VariableNames', {'about', 'variable', 'record_id', 'value'});
+            subjects = obj(arrayfun(@(x) ~isempty(x.container_), obj));
+            if isempty(subjects), return; end
+            ids = arrayfun(@(x) x.document_id, subjects, 'UniformOutput', false);
+            f = ndi.entity.statementFilter('assertion', {});
+            f.tolerant = false;
+            f.synonyms = options.synonyms;
+            L = ndi.entity.statementLinks(subjects(1).container_, ids, ...
+                struct('kind', 'assertion', 'filt', f), true);
+            if isfield(L, 'disagreements'), T = L.disagreements; end
         end
 
         function T = global_identifiers(obj)
@@ -841,6 +905,7 @@ classdef entity
             container = entities{find(isSubj, 1)}.container_;
             L = ndi.entity.statementLinks(container, cellstr(id(isSubj)), ...
                 struct('kind', 'assertion', 'filt', struct()), true);
+            warnDisagreements(L);   % both values are in the column, joined
             cols = containers.Map('KeyType', 'char', 'ValueType', 'any');
             for k = 1:numel(L.doc)
                 p = ndi.v2.props(L.doc{k});
@@ -1035,7 +1100,11 @@ classdef entity
             %     (a strain stated on a cohort; a cohort contained_in a plate);
             %   - an assertion about a whole holds of its parts and samples,
             %     down part_of, sample_of, aliquot_of and passage_of (an
-            %     animal's strain is its slice's).
+            %     animal's strain is its slice's);
+            %   - one thing recorded twice is one entity (same_as, V_eta
+            %     tenet T18): a relation to either record matches (the
+            %     instances of either N2 record are N2's), and what is
+            %     asserted of one record holds of the other.
             %   contained_in is not followed for statements (a plate's are not
             %   its worms'). false: only what is stated of the subject itself.
             % 'context' (default false): a container's observations,
@@ -1422,6 +1491,20 @@ classdef entity
                 ids = unique([ids, ndi.entity.contextIds(container, docs, spec.tolerant)], 'stable');
             end
             if ~inherited, return; end
+            if ~isempty(asserted)
+                % what is asserted of one record of a thing holds of its
+                % other records (same_as, V_eta tenet T18): they match too,
+                % and so do their members and parts below
+                asserted = unique(asserted, 'stable');
+                others = ndi.v2.sameAs(container, asserted);
+                for a = asserted
+                    o = others(a{1});
+                    ids = [ids, o]; %#ok<AGROW>
+                    if ismember(a{1}, groups), groups = [groups, o]; end %#ok<AGROW>
+                    asserted = [asserted, o]; %#ok<AGROW>
+                end
+                ids = unique(ids, 'stable');
+            end
             if ~isempty(groups)
                 ids = unique([ids, ndi.entity.walkIds(container, unique(groups, 'stable'), ...
                     'member_of', 'in')], 'stable');
@@ -1455,6 +1538,16 @@ classdef entity
             inherited = spec.inherited;
             T = ndi.entity.targetIds(container, r.target, spec);     % [] = any
             if iscell(T) && isempty(T), ids = {}; return; end
+            if inherited && iscell(T) && ~any(strcmp(cellstr(r.name), 'same_as'))
+                % the other end is one thing, however many records it has:
+                % a relation to either record matches (same_as, V_eta tenet
+                % T18), so the instances of either N2 record are N2's
+                alias = ndi.v2.sameAs(container, T);
+                for t = T
+                    T = [T, alias(t{1})]; %#ok<AGROW>
+                end
+                T = unique(T, 'stable');
+            end
             ids = {};
             if ~strcmp(r.kind, 'undirected_relation')
                 sides = {r.side};
@@ -1732,11 +1825,16 @@ classdef entity
             % of IDS, AT an entity it inherits from (itself included), PATH
             % the relations walked ('' for itself), and the flags M (a
             % member_of was walked), L (a part_of, sample_of, aliquot_of or
-            % passage_of was) and I (the last step was instance_of: AT is a
-            % type of START). Groups and wholes are walked up to 16 steps;
-            % a type is reached from a subject, a whole, or a group whose
-            % instance_of is distributive, and is not walked past. Without
-            % INHERITED, only the subjects themselves.
+            % passage_of was), I (the last step was instance_of: AT is a
+            % type of START), S (a same_as was walked: AT is another record
+            % of something START reaches, V_eta tenet T18) and G (the record
+            % AT stands in for: AT itself, or the record whose same_as group
+            % AT was reached through). Groups and wholes are walked up to 16
+            % steps; a type is reached from a subject, a whole, or a group
+            % whose instance_of is distributive, and is not walked past.
+            % Every entity reached also reaches the other records of its
+            % same_as group (ndi.v2.sameAs), a type's included, with the
+            % same flags. Without INHERITED, only the subjects themselves.
 
             arguments
                 container
@@ -1746,9 +1844,16 @@ classdef entity
             ids = unique(cellstr(ids), 'stable');
             ids = reshape(ids, 1, []);
             lineage = {'part_of', 'sample_of', 'aliquot_of', 'passage_of'};
-            % states: start, at, hasMember, hasLineage, isInstance, path
-            S = struct('start', ids, 'at', ids, 'm', false, 'l', false, 'i', false, 'path', {''});
+            % states: start, at, hasMember, hasLineage, isInstance, sameAs,
+            % the record it stands in for, path
+            S = struct('start', ids, 'at', ids, 'm', false, 'l', false, 'i', false, ...
+                's', false, 'g', ids, 'path', {''});
             all_ = S;
+            if inherited
+                more = sameAsStates(container, S, all_);
+                all_ = [all_, more];
+                S = [S, more];
+            end
             frontier = S;
             depth = 0;
             while inherited && ~isempty(frontier) && depth < 16
@@ -1756,7 +1861,8 @@ classdef entity
                 frontier = frontier(~[frontier.i]);     % a type is not walked past
                 if isempty(frontier), break; end
                 at = unique({frontier.at}, 'stable');
-                next = struct('start', {}, 'at', {}, 'm', {}, 'l', {}, 'i', {}, 'path', {});
+                next = struct('start', {}, 'at', {}, 'm', {}, 'l', {}, 'i', {}, 's', {}, ...
+                    'g', {}, 'path', {});
                 for r = [{'member_of'}, lineage, {'instance_of'}]
                     step = r{1};
                     E = ndi.entity.edges(container, at(:), step, 'child_id', 'parent_id');
@@ -1773,7 +1879,8 @@ classdef entity
                             next(end+1) = struct('start', frontier(f).start, 'at', E.to{h}, ...
                                 'm', frontier(f).m || strcmp(step, 'member_of'), ...
                                 'l', frontier(f).l || any(strcmp(step, lineage)), ...
-                                'i', isType, 'path', p); %#ok<AGROW>
+                                'i', isType, 's', frontier(f).s, 'g', E.to{h}, ...
+                                'path', p); %#ok<AGROW>
                         end
                     end
                 end
@@ -1783,7 +1890,11 @@ classdef entity
                     keep(j) = ~any(strcmp({all_.start}, next(j).start) & strcmp({all_.at}, next(j).at));
                     if keep(j), all_(end+1) = next(j); end %#ok<AGROW>
                 end
-                frontier = next(keep);
+                next = next(keep);
+                % and the other records of what this step reached (T18)
+                more = sameAsStates(container, next, all_);
+                all_ = [all_, more]; %#ok<AGROW>
+                frontier = [next, more];
             end
         end
 
@@ -1801,8 +1912,13 @@ classdef entity
             % a group whose instance_of is distributive, and an assertion
             % about the type holds of each instance (T17); the walk stops at
             % a type, which a session opened from its dataset finds among
-            % the dataset's documents. CONTEXT: then the containers of
-            % every subject reached (contextLinks).
+            % the dataset's documents. Each entity reached also reaches the
+            % other records of its same_as group, and an assertion about
+            % either record holds (T18; not an interaction). Where the
+            % records of one group assert different values of one variable,
+            % L.disagreements says so (one row each, sameAsDisagreements):
+            % both statements are in L, and neither is picked. CONTEXT: then
+            % the containers of every subject reached (contextLinks).
 
             arguments
                 container
@@ -1839,10 +1955,14 @@ classdef entity
             reached = unique({all_.at}, 'stable');
             L = struct('about', {{}}, 'doc', {{}}, 'via', {{}});
             seen = containers.Map('KeyType', 'char', 'ValueType', 'logical');
+            % for each assertion link, the record it was stated on and the
+            % record that one stands in for (same_as, T18)
+            onAt = {}; onG = {}; onAbout = {}; onDoc = {};
             for k = 1:numel(kinds)
                 f = kinds(k).filt;
                 f.subject = reached;
-                f.withDataset = any([all_.i]);
+                % a type, or another record of a thing, may be stored with the dataset
+                f.withDataset = any([all_.i]) || any([all_.s]);
                 docs = ndi.v2.searchStatements(container, kinds(k).kind, f);
                 for i = 1:numel(docs)
                     p = ndi.v2.props(docs{i});
@@ -1860,6 +1980,14 @@ classdef entity
                         elseif (st.m && ~distributive) || (st.l && ~isAssertion)
                             continue;
                         end
+                        % what is asserted of another record of the thing
+                        % holds of it; a reading of the other record is
+                        % not passed (T18 names assertions)
+                        if st.s && ~isAssertion, continue; end
+                        if isAssertion
+                            onAt{end+1} = sid{1}; onG{end+1} = st.g; %#ok<AGROW>
+                            onAbout{end+1} = st.start; onDoc{end+1} = docs{i}; %#ok<AGROW>
+                        end
                         key = [st.start '|' char(p.base.id)];
                         if isKey(seen, key), continue; end
                         seen(key) = true;
@@ -1871,9 +1999,65 @@ classdef entity
                     end
                 end
             end
+            L.disagreements = ndi.entity.sameAsDisagreements(all_, onAbout, onAt, onG, onDoc);
             if context
-                % a type (a strain) is in no container
-                L = ndi.entity.contextLinks(container, all_(~[all_.i]), kinds, L, seen);
+                % a type (a strain) is in no container, and a container's
+                % interactions are not passed through another record (T18)
+                L = ndi.entity.contextLinks(container, all_(~[all_.i] & ~[all_.s]), kinds, L, seen);
+            end
+        end
+
+        function T = sameAsDisagreements(all_, about, at, g, docs)
+            % SAMEASDISAGREEMENTS - (internal) where the records of one thing
+            % disagree (V_eta tenet T18)
+            %
+            % ALL_ are inheritanceStates' states; ABOUT, AT, G, DOCS one
+            % entry per assertion that holds: the entity asked for, the
+            % record it is stated on, the record that one stands in for, the
+            % statement. Records sharing a G are one same_as group. A row of
+            % T (about, variable, record_id, value) is one record's value of
+            % a variable on which the group's records state different
+            % values; nothing is chosen between them. Only groups some
+            % state reached through same_as are compared.
+
+            arguments
+                all_ struct
+                about cell
+                at cell
+                g cell
+                docs cell
+            end
+            T = table(strings(0, 1), strings(0, 1), strings(0, 1), strings(0, 1), ...
+                'VariableNames', {'about', 'variable', 'record_id', 'value'});
+            if isempty(all_) || ~any([all_.s]) || isempty(docs), return; end
+            joined = unique(strcat({all_([all_.s]).start}, '|', {all_([all_.s]).g}));
+            n = numel(docs);
+            v = cell(1, n); val = cell(1, n);
+            for k = 1:n
+                p = ndi.v2.props(docs{k});
+                v{k} = ndi.v2.termName(ndi.v2.blockOf(p, 'statement', 'variable', ''));
+                [~, ~, t] = ndi.v2.statementValue(p);
+                if iscell(t), t = strjoin(cellfun(@(x) char(string(x)), t, 'UniformOutput', false), ', '); end
+                val{k} = char(string(t));
+            end
+            keys_ = strcat(about, '|', g);
+            for key = reshape(unique(keys_(ismember(keys_, joined)), 'stable'), 1, [])
+                inGroup = find(strcmp(keys_, key{1}));
+                vars = unique(v(inGroup), 'stable');
+                for j = 1:numel(vars)
+                    if isempty(vars{j}), continue; end
+                    these = inGroup(strcmp(v(inGroup), vars{j}));
+                    records = unique(at(these), 'stable');
+                    if numel(records) < 2, continue; end
+                    % each record's set of values; they disagree when the sets differ
+                    sets = cellfun(@(r) strjoin(sort(unique(val(these(strcmp(at(these), r))))), '; '), ...
+                        records, 'UniformOutput', false);
+                    if numel(unique(sets)) < 2, continue; end
+                    for r = 1:numel(records)
+                        T(end+1, :) = {string(about{these(1)}), string(vars{j}), ...
+                            string(records{r}), string(sets{r})}; %#ok<AGROW>
+                    end
+                end
             end
         end
 
@@ -2508,4 +2692,53 @@ arguments
 end
 n = 'entity';
 if isfield(spec, 'kind') && ~isempty(spec.kind), n = char(spec.kind); end
+end
+
+function more = sameAsStates(container, states, all_)
+% the states reaching the other records of the same_as group of each state's
+% entity (V_eta tenet T18): the same start and flags, S set, G the record they
+% stand in for; a (start, at) already in ALL_ is left out
+arguments
+    container
+    states struct
+    all_ struct
+end
+more = struct('start', {}, 'at', {}, 'm', {}, 'l', {}, 'i', {}, 's', {}, 'g', {}, 'path', {});
+if isempty(states), return; end
+others = ndi.v2.sameAs(container, unique({states.at}, 'stable'));
+have = strcat({all_.start}, '|', {all_.at});
+for k = 1:numel(states)
+    st = states(k);
+    o = others(st.at);
+    for j = 1:numel(o)
+        key = [st.start '|' o{j}];
+        if any(strcmp(have, key)), continue; end
+        have{end+1} = key; %#ok<AGROW>
+        p = 'same_as';
+        if ~isempty(st.path), p = [st.path ' > same_as']; end
+        more(end+1) = struct('start', st.start, 'at', o{j}, 'm', st.m, 'l', st.l, ...
+            'i', st.i, 's', true, 'g', st.g, 'path', p); %#ok<AGROW>
+    end
+end
+end
+
+function warnDisagreements(L)
+% warn when the records of one thing (same_as, V_eta tenet T18) assert
+% different values: each is returned, and none is chosen
+arguments
+    L (1,1) struct
+end
+if ~isfield(L, 'disagreements') || height(L.disagreements) == 0, return; end
+T = L.disagreements;
+lines = {};
+keys_ = unique(strcat(T.about, '|', T.variable), 'stable');
+for k = 1:numel(keys_)
+    rows = T(strcat(T.about, '|', T.variable) == keys_(k), :);
+    says = arrayfun(@(r) sprintf('%s says "%s"', rows.record_id(r), rows.value(r)), ...
+        1:height(rows), 'UniformOutput', false);
+    lines{end+1} = sprintf('  %s of %s: %s', rows.variable(1), rows.about(1), strjoin(says, ', ')); %#ok<AGROW>
+end
+warning('ndi:entity:sameAs:disagree', ['Records of one thing (same_as, V_eta tenet ' ...
+    'T18) assert different values; every value is returned and none is chosen ' ...
+    '(ndi.entity/disagreements):\n%s'], strjoin(lines, newline));
 end
