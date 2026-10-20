@@ -218,6 +218,7 @@ pairs = {
     'binary mask',                             'NCIT:C201530',            'Binary Mask'
     'region of interest',                      'NCIT:C85402',             'Imaging Region of Interest'
     'bacterial patch',                         'EMPTY:0000325',           'bacterial patch'
+    'sample type',                             'NCIT:C210102',            'Sample Type'
     'arena',                                   'EMPTY:0000326',           'arena'
     'reference mark',                          'EMPTY:0000327',           'reference mark'
     'encountered entity',                      'EMPTY:0000328',           'encountered entity'

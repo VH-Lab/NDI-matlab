@@ -39,6 +39,14 @@ function out = assertionDocuments(session, S, subjectIds, options)
 %                              strain entry (`biological_sex`), distributive
 %                              like species and strain. Only strains that
 %                              state a sex get one, so a patch gets none.
+%     patch   sample type (NCIT:C210102) = bacterial patch (EMPTY:0000325)
+%                              on a patch with bacteria (decision #104): what
+%                              kind of thing it is, so a search finds every
+%                              patch by term. A patch of LB alone gets none
+%                              (it is not a bacterial patch), and a plate gets
+%                              none: under tenet T17 an assertion about a whole
+%                              holds of each part, so a plate's kind would be
+%                              read as its patches' kind.
 %     assay-plate patch  diameter (PATO:0001334), length_assertion: the
 %                              plate's target patch diameter (`lawnDiameter`,
 %                              mm -> m), with condition value basis
@@ -98,7 +106,8 @@ end
 out = struct('documents', {{}}, 'skipped', {{}}, 'counts', struct( ...
     'cohort_species', 0, 'cohort_strain', 0, 'cohort_sex', 0, 'patch_species', 0, ...
     'patch_strain', 0, 'patch_sex', 0, 'plate_excluded', 0, 'plate_not_filmed', 0, ...
-    'patch_target_diameter', 0, 'plate_target_spacing', 0), 'targetIds', containers.Map());
+    'patch_target_diameter', 0, 'plate_target_spacing', 0, 'patch_sample_type', 0), ...
+    'targetIds', containers.Map());
 % the reason an excluded plate carries: the day's own note, where the day is
 % marked `include = no` (decision #73)
 dayReason = '';
@@ -124,6 +133,8 @@ for k = 1:height(S)
         case 'patch'
             if hasBacteria && ~isempty(S.bacteria{k})
                 out = organismAssertions(out, id, S.bacteria{k}, 'patch', struct());
+                out = assert1(out, id, 'term_assertion', haleyTerm('sample type'), ...
+                    haleyTerm('bacterial patch'), struct(), struct(), 'patch_sample_type');
             end
             if hasDiameter
                 out = target(out, id, regexprep(id, '_patch\d+$', ''), 'diameter', ...

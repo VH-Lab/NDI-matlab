@@ -95,6 +95,29 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             testCase.verifyFalse(isfield(ex{1}.statement, 'notes') && ~isempty(ex{1}.statement.notes));
         end
 
+        function testABacterialPatchHasItsSampleType(testCase)
+            % decision #104: a patch with bacteria carries sample type
+            % (NCIT:C210102) = bacterial patch (EMPTY:0000325); a patch of LB
+            % alone is not a bacterial patch and gets none
+            session = table({ndi.ido.unique_id()}, {'concentration_0001'}, ...
+                'VariableNames', {'session_id', 'local_identifier'});
+            S = table({'concentration_0001'; 'concentration_0001'}, {'patch'; 'patch'}, ...
+                {'p1_patch0001'; 'p1_patch0002'}, {'OP50'; ''}, ...
+                'VariableNames', {'session', 'kind', 'local_identifier', 'bacteria'});
+            ids = containers.Map({'p1_patch0001', 'p1_patch0002'}, ...
+                {ndi.ido.unique_id(), ndi.ido.unique_id()});
+            out = ndi.setup.conv.haley.assertionDocuments(session, S, ids);
+            testCase.verifyEqual(out.counts.patch_sample_type, 1);
+            docs = cellfun(@newNames, out.documents, 'UniformOutput', false);
+            st = docs(cellfun(@(d) strcmp(d.statement.variable.name, 'Sample Type'), docs));
+            testCase.verifyNumElements(st, 1);
+            testCase.verifyEqual(st{1}.statement.variable.node, 'NCIT:C210102');
+            testCase.verifyEqual(st{1}.term.value.node, 'EMPTY:0000325');
+            testCase.verifyEqual(st{1}.term.value.name, 'bacterial patch');
+            on = ndi.v2.edgeIds(st{1}, 'entity_id');
+            testCase.verifyEqual(on, {ids('p1_patch0001')}, 'on the patch with bacteria');
+        end
+
         function testConcentrationSession(testCase)
             result = testCase.write("concentration_0001");
             testCase.verifyEqual(height(result.sessions), 1);
