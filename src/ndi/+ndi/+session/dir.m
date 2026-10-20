@@ -109,7 +109,7 @@ classdef dir < ndi.session
                 % (did-schema V_eta_relation_inheritance_plan.md, 2026-10-20);
                 % otherwise its `session` documents (v1, and V2 on did-schema
                 % main), scoped to the session id like every search here
-                session_doc = ndi.v2.sessionRecord(ndi_session_dir_obj.database, ...
+                session_doc = ndi.v2.sessionRecord(ndi_session_dir_obj, ...
                     ndi_session_dir_obj.id());
                 if ~isempty(session_doc)
                     % use the oldest
