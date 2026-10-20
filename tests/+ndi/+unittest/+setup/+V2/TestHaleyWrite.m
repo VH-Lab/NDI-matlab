@@ -1149,6 +1149,17 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             testCase.verifyEqual(co{2}.variable.node, 'STATO:0000657');
             testCase.verifyEqual(co{2}.value, 94 / 300, 'AbsTol', 1e-15);
             testCase.verifyEqual(conditionTerms(lin), {'nematode growth medium'});
+            % the OD600 the patches were seeded at is the PLANNED one, said by its
+            % term (decision #110, tenet T19): target seeding OD600, not OD600
+            cv = cellfun(@(e) e.variable.node, conditionsOf(lin), 'UniformOutput', false);
+            testCase.verifyTrue(ismember('EMPTY:0000105', cv), 'the one-OD600 fit''s target OD600');
+            testCase.verifyFalse(ismember('MCO:0000059', cv), 'no measured OD600 is claimed');
+            jt = fits(cellfun(@(d) strcmp(d.model_fit.value.equation, 'f = a*OD600 + b*t'), fits));
+            if ~isempty(jt)
+                xv = entries(newNames(jt{1}).model_fit.value.independent_variables);
+                testCase.verifyEqual(xv{1}.variable.node, 'EMPTY:0000105');
+                testCase.verifyEqual(xv{1}.variable.name, 'target seeding OD600');
+            end
             testCase.verifyNumElements(edgeAll(lin, 'input_id'), 11, 'row 12 is excluded');
 
             % the estimates, about the patches of the C. elegans session
@@ -1219,8 +1230,8 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             testCase.verifyEqual(r12{1}.interaction.method.node, 'OBI:0200169');
             pm = entries(r12{1}.interaction.method_parameters);
             pv = cellfun(@(e) e.variable.node, pm, 'UniformOutput', false);
-            testCase.verifyEqual(sort(pv), sort({'EMPTY:0000323', 'MCO:0000059', 'EMPTY:0000324'}), ...
-                'the reference, its OD600 and the floor');
+            testCase.verifyEqual(sort(pv), sort({'EMPTY:0000323', 'EMPTY:0000105', 'EMPTY:0000324'}), ...
+                'the reference, its target seeding OD600 (#110) and the floor');
             ek12 = entries(r12{1}.data.keys);
             testCase.verifyEqual(ek12{1}.variable.name, 'encounter onset time', 'keyed as its estimate');
             if ~isempty(acc)

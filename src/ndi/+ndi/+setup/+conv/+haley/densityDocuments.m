@@ -32,14 +32,14 @@ function out = densityDocuments(dataParentDir, sessions, built, options)
 %                         (unit `arbitrary unit per millisecond`): the line
 %                         (model `linear`, a label), its independent variables
 %                         (`bacteria growth duration after seeding`, min; and
-%                         `OD600` for a joint fit), coefficients (`slope` /
+%                         `target seeding OD600` for a joint fit, #110), coefficients (`slope` /
 %                         `intercept`; the joint fit's `a` / `b`, labels) and
 %                         goodness (r2, sse, sse per point); conditions the
 %                         seeding condition (`culture medium` = `nematode
 %                         growth medium` [without peptone], `bacterial patch
 %                         volume`, `bacteria growth duration after seeding` =
 %                         the 0 / 12 / 48 h bin, approximate, and for a
-%                         one-OD600 fit `bacterial OD600 (target) at seeding`);
+%                         one-OD600 fit `target seeding OD600`, decision #110);
 %                         inputs the INCLUDED patches' border amplitude
 %                         statements (stage 10 part C), so the exclusions are
 %                         the values left out; method `ordinary least squares
@@ -76,7 +76,8 @@ function out = densityDocuments(dataParentDir, sessions, built, options)
 %                         10, 0.5 uL patches; same keys and time as the
 %                         estimate, whose statement is its input; method
 %                         `normalization data transformation`, method
-%                         parameters the reference, its OD600 (10) and, at
+%                         parameters the reference, its target seeding OD600
+%                         (10; #110) and, at
 %                         the assay plates only, the lower limit 0.01 that a
 %                         patch of LB alone (estimate 0) is given, as the
 %                         model does. An estimate of NaN (no fit matched)
@@ -583,7 +584,9 @@ parts = {did2.build.condition(haleyTerm('culture medium'), 'Term', haleyTerm(med
         'Unit', haleyTerm('liter'), 'SourceValue', q.volume, 'SourceUnit', 'uL'), ...
     binCondition(q.growth)};
 if strcmp(q.kind, 'single')
-    parts{end+1} = did2.build.condition(haleyTerm('bacterial OD600 (target) at seeding'), ...
+    % the OD600 the patches were seeded at: the planned value, named so by its
+    % term because the data also holds the measured OD600 (decision #110, T19)
+    parts{end+1} = did2.build.condition(haleyTerm('target seeding OD600'), ...
         'Quantity', q.od);
 end
 c = did2.build.list(parts{:});
@@ -655,7 +658,8 @@ y = struct('variable', haleyTerm('fluorescence intensity'), ...
     'unit', haleyTerm('arbitrary unit per millisecond'));
 if strcmp(q.kind, 'joint')
     eq = 'f = a*OD600 + b*t';
-    x = did2.build.list(struct('variable', haleyTerm('OD600')), t);
+    % the planned OD600 the patches were seeded at (decision #110, T19)
+    x = did2.build.list(struct('variable', haleyTerm('target seeding OD600')), t);
     % each coefficient named by its symbol in the equation
     co = did2.build.list(struct('variable', coefficient('a'), 'value', q.coef(1)), ...
         struct('variable', coefficient('b'), 'value', q.coef(2)));
@@ -739,7 +743,7 @@ end
 x = 10 * v(:)' / rd.value;
 params = {did2.build.parameter(haleyTerm('normalization reference value'), 'Value', rd.value, ...
         'Unit', haleyTerm('arbitrary unit per millisecond')), ...
-    did2.build.parameter(haleyTerm('OD600'), 'Value', 10)};
+    did2.build.parameter(haleyTerm('target seeding OD600'), 'Value', 10)};   % #110
 note = '';
 if floored
     x(x < 0.01) = 0.01;

@@ -66,7 +66,7 @@ pairs = {
     'image intensity',                         'NCIT:C221750',            'Imaging Signal Intensity'
     'culture medium',                          'OBI:0000079',             'culture medium'
     'bacterial patch volume',                  'EMPTY:0000120',           'bacterial patch volume'
-    'bacterial OD600 (target) at seeding',     'EMPTY:0000105',           'bacterial OD600 (target) at seeding'
+    'target seeding OD600',                    'EMPTY:0000105',           'target seeding OD600'
     % formulation types
     'LB medium, Lennox',                       'MCO:0000030',             'LB medium, Lennox'
     'LB with carbenicillin',                   'EMPTY:0000264',           'LB with carbenicillin'
