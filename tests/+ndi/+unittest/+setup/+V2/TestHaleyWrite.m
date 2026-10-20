@@ -31,8 +31,6 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             % day is marked `include = no`; a plate never filmed gets
             % video recording (NCIT:C91063) = false and is not excluded. Both
             % are logical assertions, false, made only where they hold.
-            testCase.assumeTrue(ndi.setup.V2.schemaHasLeaf('logical_assertion'), ...
-                'DID_SCHEMA_PATH does not hold a schema with the `logical` value kind');
             session = table({ndi.ido.unique_id()}, {'concentration_0001'}, false, ...
                 {'no contrast video, so patches are poorly aligned'}, ...
                 'VariableNames', {'session_id', 'local_identifier', 'include', 'notes'});
@@ -41,6 +39,14 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
                 'VariableNames', {'session', 'kind', 'local_identifier', 'exclude', 'filmed'});
             ids = containers.Map({'p1', 'p2'}, {ndi.ido.unique_id(), ndi.ido.unique_id()});
             out = ndi.setup.conv.haley.assertionDocuments(session, S, ids);
+            if ~ndi.setup.V2.schemaHasLeaf('logical_assertion')
+                % a schema without the `logical` value kind: neither is
+                % built, and both are reported, not dropped
+                testCase.verifyEmpty(out.documents);
+                testCase.verifyNumElements(out.skipped, 2, strjoin(out.skipped, newline));
+                testCase.verifyTrue(all(contains(out.skipped, 'no `logical` value kind')));
+                return;
+            end
             testCase.verifyEqual(out.counts.plate_excluded, 1);
             testCase.verifyEqual(out.counts.plate_not_filmed, 1);
             docs = cellfun(@newNames, out.documents, 'UniformOutput', false);

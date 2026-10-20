@@ -376,8 +376,13 @@ classdef TestObjectLayer < matlab.unittest.TestCase
             % plate 0013 is excluded (an assertion on the plate): its patches,
             % part_of it, are too; its worms, contained_in it, are not
             S = testCase.Session;
-            testCase.assumeTrue(ndi.setup.V2.schemaHasLeaf('logical_assertion'), ...
-                'the schema in use has no `logical` value kind, so no exclusion is stated');
+            if ~ndi.setup.V2.schemaHasLeaf('logical_assertion')
+                % no `logical` value kind: the import states no exclusion,
+                % so the property does not exist in the session
+                testCase.verifyError(@() ndi.entity.search(S, {'inclusion in analysis', false}), ...
+                    'ndi:entity:search:unknownVariable');
+                return;
+            end
             direct = local(ndi.entity.search(S, {'inclusion in analysis', false}, 'inherited', false));
             testCase.verifyTrue(ismember('concentration_assayPlate0013', direct));
             all_ = local(ndi.entity.search(S, {'inclusion in analysis', false}));
