@@ -7,23 +7,28 @@ function out = manipulationDocuments(session, S, subjectIds, options)
 %   (subjectList, whose `prep` column holds each plate's and patch's times,
 %   peptone, OD600 and volume); SUBJECTIDS maps each subject's
 %   local_identifier to its document id. Nothing is written here. Decision
-%   log #54, #56, #57; every term is a name until the ontology lookup.
+%   log #54, #56, #57. Variables are the decided terms (haleyTerm); methods
+%   and the kinds of plate moved to are labels.
 %
 %   Plates (assay, acclimation, food deprivation, E. coli):
 %     pour         dose_manipulation: 25 mL of NGM agar (or NGM agar without
 %                  peptone, from the plate's `peptone`; only Matching and the
-%                  E. coli study used it), formulation_id the recipe.
+%                  E. coli study used it), formulation_id the recipe, variable
+%                  the recipe's formulation type (nematode growth medium
+%                  EMPTY:0000262, or without peptone EMPTY:0000263).
 %                  When: E. coli `timePoured`; a C. elegans plate, which has no
 %                  pour time, a relative_time_reference `intervalBefore` its
 %                  seeding (an unseeded food deprivation plate: before the
 %                  worms went on). No time, no pour.
-%     seeding      dose_manipulation per patch (assay and E. coli plates) at
-%                  the patch's volume, and per acclimation plate (200 uL);
-%                  variable the strain (the diluent's name for a patch of
-%                  diluent alone), formulation_id that day's suspension
+%     seeding      dose_manipulation per patch at the patch's volume (assay
+%                  and E. coli plates), and on each acclimation plate's one
+%                  patch (200 uL); variable the strain's term (its WBStrain
+%                  node; the diluent's formulation type for a patch of diluent
+%                  alone), formulation_id that day's suspension
 %                  (seedingSuspensions' index). When: the seeding time.
 %     temperature  temperature_manipulation per move: the temperature moved
-%                  INTO, approximate. Assay plate: cold room (`timeColdRoom`
+%                  INTO, approximate; variable ambient temperature
+%                  (NCIT:C90380). Assay plate: cold room (`timeColdRoom`
 %                  to `timeRoomTemp`), room temperature (`timeRoomTemp` to the
 %                  end of filming). Acclimation plate: cold room
 %                  (`growthTimeColdRoom` to `growthTimeRoomTemp`), room
@@ -39,16 +44,18 @@ function out = manipulationDocuments(session, S, subjectIds, options)
 %   Worm cohorts (`distributive` true when the schema has it):
 %     transfer           term_manipulation per move (acclimation, food
 %                        deprivation, assay plate) at the time of the cohort's
-%                        contained_in relation (stage 6): variable `location`,
-%                        value the kind of plate moved to (the plate itself is
+%                        contained_in relation (stage 6): variable location
+%                        (NCIT:C25341), value the kind of plate moved to (a
+%                        label; the plate itself is
 %                        the relation's parent), method the move's technique
 %                        (worm picking; agar plug transfer; onto the assay
 %                        plate agar plug transfer or eyelash picking, from the
 %                        transfer protocol, with the cleaning step through an
 %                        empty NGM plate and any S-Complete droplet as method
 %                        parameters).
-%     food deprivation   term_manipulation `food availability` = `none` at
-%                        the food deprivation window.
+%     food deprivation   term_manipulation food availability (ZECO:0000113)
+%                        = fasting (ZECO:0000114) at the food deprivation
+%                        window; no method.
 %   Each temperature manipulation's method says how it was imposed:
 %   refrigeration (cold room), ambient exposure (the bench), incubation (the
 %   20 C incubator) -- the method is what tells room temperature from the
@@ -61,7 +68,9 @@ function out = manipulationDocuments(session, S, subjectIds, options)
 %     'Seeding'      the spec's `seeding` section (strain per folder)
 %     'Ids'          containers.Map: dataset-level key -> document id (stage 2:
 %                    recipes, strains, suspensions)
-%     'Names'        containers.Map: formulation or strain key -> its name
+%     'Names'        containers.Map: formulation or strain key -> the term a
+%                    dose of it reads as (a formulation's type, a strain's
+%                    WBStrain term)
 %     'Suspensions'  seedingSuspensions' index table
 %     'Relations'    relationDocuments' output (timeReferenceIds, assaySpans)
 %     'HandTolerance'  [minus plus] s for a hand-written time (default [60 60])
@@ -102,7 +111,7 @@ end
 
 docs = {};
 out = struct('documents', {{}}, 'skipped', {{}}, 'counts', struct('pour', 0, ...
-    'seed_patch', 0, 'seed_acclimation_plate', 0, 'temperature', 0, 'transfer', 0, ...
+    'seed_patch', 0, 'seed_acclimation_patch', 0, 'temperature', 0, 'transfer', 0, ...
     'food_deprivation', 0, 'developmental_stage', 0));
 
 % ---- plates ------------------------------------------------------------------
@@ -125,7 +134,7 @@ for k = find(ismember(S.kind, plateKinds))'
         end
         seedRef = instant(p.seeded, seedTol);
         if strcmp(kind, 'acclimation_plate')
-            seedAcclimation(id, folder, p, seedRef);
+            seedAcclimation([id '_patch0001'], folder, p, seedRef);
         else
             pk = find(strcmp(S.kind, 'patch') & startsWith(S.local_identifier, [id '_patch']))';
             for j = pk
@@ -197,7 +206,7 @@ for k = find(ismember(S.kind, plateKinds))'
         if isfield(cfg.pour, 'notes') && isfield(cfg.pour.notes, folder)
             notes = cfg.pour.notes.(folder);
         end
-        dose(id, cfg.pour.variable.(peptone), cfg.pour.volume_ml, 'mL', cfg.pour.agar.(peptone), ...
+        dose(id, nameOf(cfg.pour.agar.(peptone)), cfg.pour.volume_ml, 'mL', cfg.pour.agar.(peptone), ...
             pourRef, cfg.pour.method, notes, 'pour');
     end
 end
@@ -217,8 +226,8 @@ for k = cohorts
         key = [S.deprivation{k} '|' cid];
         move(cid, S.deprivation{k}, 'food deprivation plate', cfg.transfer.deprivation_method, []);
         if isKey(refs, key)
-            statement('term_manipulation', cid, cfg.food_deprivation.variable, ...
-                did2.build.term('', cfg.food_deprivation.value), refs(key), ...
+            statement('term_manipulation', cid, haleyTerm(cfg.food_deprivation.variable), ...
+                haleyTerm(cfg.food_deprivation.value), refs(key), ...
                 struct('Fields', eachMember), 'food_deprivation');
         end
     end
@@ -262,7 +271,7 @@ out.documents = docs;
         refId = d.base.id;
         v = did2.build.composite('temperature_manipulation', 'value', struct('celsius', celsius, ...
             'source_value', celsius, 'source_unit', 'C', 'approximate', true));
-        statement('temperature_manipulation', subject, cfg.temperature.variable, v, refId, ...
+        statement('temperature_manipulation', subject, haleyTerm(cfg.temperature.variable), v, refId, ...
             struct('Notes', note, 'Method', method), 'temperature');
     end
 
@@ -275,7 +284,7 @@ out.documents = docs;
         elseif ~isempty(key)
             variable = nameOf(key);          % a patch of the diluent alone
         else
-            variable = 'diluent';
+            variable = did2.build.term('', 'diluent');
         end
         if isnan(pp.volume_ul)
             out.skipped{end+1} = sprintf('%s: seeding volume not recorded; no seeding dose', pid);
@@ -284,11 +293,12 @@ out.documents = docs;
         dose(pid, variable, pp.volume_ul, 'uL', key, seedRef, cfg.seed.method, '', 'seed_patch');
     end
 
-    function seedAcclimation(id, folder, p, seedRef)
+    function seedAcclimation(patch, folder, p, seedRef)
+        % the acclimation plate's one patch (subjectList), at the spec's volume
         strain = getOr(getOr(options.Seeding, 'strain', struct()), 'default', 'OP50');
         [key, note] = suspension(folder, p.seeded, p.od600, 'growth');
-        dose(id, nameOf(strain), cfg.seed.growth_volume_ul, 'uL', key, seedRef, ...
-            cfg.seed.method, note, 'seed_acclimation_plate');
+        dose(patch, nameOf(strain), cfg.seed.growth_volume_ul, 'uL', key, seedRef, ...
+            cfg.seed.method, note, 'seed_acclimation_patch');
     end
 
     function dose(subject, variable, amount, unit, formulationKey, timeId, method, notes, counter)
@@ -321,7 +331,7 @@ out.documents = docs;
             return;
         end
         x = struct('Fields', eachMember, 'Method', method, 'MethodParameters', params);
-        statement('term_manipulation', cohort, cfg.transfer.variable, ...
+        statement('term_manipulation', cohort, haleyTerm(cfg.transfer.variable), ...
             did2.build.term('', value), refs(moveKey), x, 'transfer');
     end
 
@@ -337,7 +347,7 @@ out.documents = docs;
                 method = rules{r}.method;
                 if isfield(rules{r}, 'droplet')
                     params = did2.build.list(params, ...
-                        did2.build.parameter('droplet', 'Term', rules{r}.droplet));
+                        did2.build.parameter('droplet', 'Term', nameOf(rules{r}.droplet)));
                 end
                 return;
             end
@@ -437,12 +447,14 @@ out.documents = docs;
         end
     end
 
-    function n = nameOf(key)
+    function t = nameOf(key)
+        % the term a dose of KEY reads as; its key as a label when unknown
         if isKey(options.Names, key)
-            n = options.Names(key);
+            t = options.Names(key);
         else
-            n = key;
+            t = did2.build.term('', key);
         end
+        if ~isstruct(t), t = did2.build.term('', t); end
     end
 
     function f = fmtOf(tol)

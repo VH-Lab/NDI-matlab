@@ -51,6 +51,7 @@ pairs = {
     'spacing',                                'NCIT:C45786'
     'value basis',                            'EMPTY:0000298'
     'target',                                 'EMPTY:0000299'
+    'intervalDuring',                         'time:intervalDuring'
     % manipulations, observations
     'ambient temperature',                    'NCIT:C90380'
     'relative humidity',                      'OM:RelativeHumidity'

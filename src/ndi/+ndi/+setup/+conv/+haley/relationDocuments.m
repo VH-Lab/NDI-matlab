@@ -10,9 +10,9 @@ function out = relationDocuments(session, S, R, subjectIds, options)
 %   is written here. Decision log #52, #53.
 %
 %   Relations (child -> parent):
-%     patch  part_of       its plate (assay plate, or E. coli plate). No
-%                          time: a patch is part of its plate for the
-%                          plate's whole life.
+%     patch  part_of       its plate (assay plate, acclimation plate, or
+%                          E. coli plate). No time: a patch is part of its
+%                          plate for the plate's whole life.
 %     worm   member_of     its cohort (the worms of its assay plate, moved
 %                          together; decision #55). No time.
 %     cohort contained_in  each plate its worms were on, in turn: its acclimation

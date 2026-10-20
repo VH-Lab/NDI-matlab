@@ -16,7 +16,9 @@ function docs = entityDocuments(className, fields, edges, options)
 %        description, global_identifier (as CURIEs, ndi.setup.V2.curie) -- and
 %        the time reference edge;
 %     2. one assertion per other field (a term, text or date assertion whose
-%        `variable` is the field's name with spaces);
+%        `variable` is the field's name with spaces, with its ontology node
+%        where one is decided: species NCIT:C45293, accessibility
+%        NCIT:C175887);
 %     3. one relation per other edge: vendor_id -> sold_by, background_strain_id
 %        -> derived_from, product_id -> distributed_as (derived_from on a schema
 %        without it).
@@ -100,6 +102,9 @@ dates = {'release_date', 'publication_date'};
 texts = {'short_name', 'version', 'version_innovation', 'how_to_cite', 'support_channel', ...
     'copyright_year', 'given_name', 'family_name', 'alternate_name', 'email', ...
     'catalog_number', 'lot_number', 'laboratory_code', 'synonym', 'authors'};
+% the variables with a decided ontology node (the Haley import's term pass,
+% 2026-10-19; accessibility as did-schema's binding registry names it)
+variableNodes = struct('species', 'NCIT:C45293', 'accessibility', 'NCIT:C175887');
 names = setdiff(fieldnames(fields), identity, 'stable');
 for k = 1:numel(names)
     f = names{k};
@@ -108,6 +113,9 @@ for k = 1:numel(names)
         continue;
     end
     variable = strrep(f, '_', ' ');
+    if isfield(variableNodes, f)
+        variable = did2.build.term(variableNodes.(f), variable);
+    end
     if any(strcmp(f, terms))
         docs{end+1} = did2.build.statement('term_assertion', eid, variable, asTerms(v), common{:}); %#ok<AGROW>
     elseif any(strcmp(f, dates))

@@ -210,7 +210,82 @@ classdef TestDatasetMetadataHaley < matlab.unittest.TestCase
             testCase.verifyEqual(sort({ing.document_id}), sort({ids('kh2po4_1m'), ids('k2hpo4_1m')}), ...
                 'the buffer is the 1 M dibasic titrated into the 1 M monobasic');
             if ndi.setup.V2.schemaHasField('formulation', 'value.type')
-                testCase.verifyEqual(sc.formulation.value.type.name, 'S-Complete');
+                testCase.verifyEqual(sc.formulation.value.type.node, 'EMPTY:0000266');
+                testCase.verifyEqual(sc.formulation.value.type.name, 'S medium');
+            end
+        end
+
+        function testChemicalsAndFormulationTypesCarryTheirNodes(testCase)
+            % every chemical's substance and every formulation's type is its
+            % decided ontology term (2026-10-19), not a name alone
+            docs = testCase.Result.documents;
+            classes = cellfun(@ndi.v2.leafName, docs, 'UniformOutput', false);
+            chem = docs(strcmp(classes, 'chemical'));
+            testCase.verifyNumElements(chem, numel(testCase.Spec.chemicals));
+            for k = 1:numel(chem)
+                t = chem{k}.chemical.value.substance;
+                testCase.verifyNotEmpty(t.node, sprintf('chemical %s has no node', t.name));
+            end
+            byId = containers.Map(cellfun(@(d) d.base.id, docs, 'UniformOutput', false), docs);
+            carb = byId(testCase.Result.ids('carbenicillin_50'));
+            testCase.verifyEqual(carb.chemical.value.substance.node, 'CHEBI:3393');
+            if ndi.setup.V2.schemaHasField('formulation', 'value.type')
+                form = docs(strcmp(classes, 'formulation'));
+                testCase.verifyNumElements(form, numel(testCase.Spec.formulations));
+                for k = 1:numel(form)
+                    t = form{k}.formulation.value.type;
+                    testCase.verifyNotEmpty(t.node, sprintf('formulation type %s has no node', t.name));
+                end
+                lb = byId(testCase.Result.ids('lb'));
+                testCase.verifyEqual(lb.formulation.value.type.node, 'MCO:0000030');
+            end
+        end
+
+        function testEveryAuthorRoleHasItsCreditNode(testCase)
+            % the CRediT role names are completed from the field's value set
+            rels = relationsNamed(testCase.Result.documents, 'has_author');
+            n = 0;
+            for k = 1:numel(rels)
+                roles = rels{k}.directed_relation.roles;
+                if iscell(roles), roles = [roles{:}]; end
+                for j = 1:numel(roles)
+                    n = n + 1;
+                    testCase.verifyNotEmpty(roles(j).node, sprintf('role "%s" has no node', roles(j).name));
+                end
+            end
+            testCase.verifyEqual(n, 29, 'every role of the four authors was inspected');
+        end
+
+        function testStudyFactorsAccessibilityAndNoEthicsAssertion(testCase)
+            % study factors are decided terms (patch configuration dropped);
+            % accessibility is unrestricted access; an ethics assessment that
+            % was not required is not asserted
+            st = testCase.Spec.studies;
+            if isstruct(st), st = num2cell(st); end
+            nFactors = 0;
+            for k = 1:numel(st)
+                f = st{k}.factors;
+                if iscell(f), f = [f{:}]; end
+                nFactors = nFactors + numel(f);
+                testCase.verifyFalse(any(strcmp({f.name}, 'patch configuration')));
+                testCase.verifyTrue(all(~cellfun(@isempty, {f.node})), st{k}.key);
+            end
+            testCase.verifyGreaterThan(nFactors, 0);
+            testCase.verifyEqual(testCase.Spec.dataset.accessibility.node, 'NCIT:C183346');
+            testCase.verifyFalse(isfield(testCase.Spec.dataset, 'ethics_assessment'));
+            docs = testCase.Result.documents;
+            if ndi.setup.V2.mergedEntities()
+                st = docs(cellfun(@(d) isfield(d, 'statement'), docs));
+                vars = cellfun(@(d) d.statement.variable.name, st, 'UniformOutput', false);
+                testCase.verifyFalse(any(strcmp(vars, 'ethics assessment')));
+                acc = st(strcmp(vars, 'accessibility'));
+                testCase.verifyNumElements(acc, 1);
+                testCase.verifyEqual(acc{1}.statement.variable.node, 'NCIT:C175887');
+            else
+                ds = docs{strcmp(cellfun(@ndi.v2.leafName, docs, 'UniformOutput', false), 'dataset')};
+                testCase.verifyFalse(isfield(ds.dataset, 'ethics_assessment') && ...
+                    ~isempty(ds.dataset.ethics_assessment.name));
+                testCase.verifyEqual(ds.dataset.accessibility.node, 'NCIT:C183346');
             end
         end
 

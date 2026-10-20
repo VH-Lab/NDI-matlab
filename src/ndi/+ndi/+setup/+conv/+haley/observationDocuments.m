@@ -16,9 +16,10 @@ function out = observationDocuments(session, R, subjectIds, options)
 %   videos disagree gets none (reported in OUT.skipped). No value, no
 %   observation.
 %
-%     temperature_observation  variable `ambient temperature` (the term the
-%                              manipulations move a plate into), celsius
-%     humidity_observation     variable `relative humidity`,
+%     temperature_observation  variable ambient temperature (NCIT:C90380, the
+%                              term the manipulations move a plate into),
+%                              celsius
+%     humidity_observation     variable relative humidity (OM:RelativeHumidity),
 %                              percent_relative_humidity (did-schema PR #86;
 %                              only when the schema in use has `humidity`)
 %
@@ -119,7 +120,7 @@ out.documents = docs;
         if ~isempty(options.InstrumentId), args = [args, {'InstrumentId', options.InstrumentId}]; end
         if isfield(cfg, 'notes') && ~isempty(cfg.notes), args = [args, {'Notes', cfg.notes}]; end
         docs{end+1} = did2.build.statement(leaf, subjectIds(plate), ...
-            did2.build.term('', variable), value, args{:});
+            haleyTerm(variable), value, args{:});
         out.counts.(counter) = out.counts.(counter) + 1;
     end
 end

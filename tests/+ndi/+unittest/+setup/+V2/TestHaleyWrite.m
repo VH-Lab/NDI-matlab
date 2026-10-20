@@ -29,7 +29,10 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
         function testExclusionReasonAndAPlateNotFilmed(testCase)
             % decision #73: an excluded plate carries its day's note when the
             % day is marked `include = no`; a plate never filmed gets
-            % `behavior recording` = Not Performed and is not excluded
+            % video recording (NCIT:C91063) = false and is not excluded. Both
+            % are logical assertions, false, made only where they hold.
+            testCase.assumeTrue(ndi.setup.V2.schemaHasLeaf('logical_assertion'), ...
+                'DID_SCHEMA_PATH does not hold a schema with the `logical` value kind');
             session = table({ndi.ido.unique_id()}, {'concentration_0001'}, false, ...
                 {'no contrast video, so patches are poorly aligned'}, ...
                 'VariableNames', {'session_id', 'local_identifier', 'include', 'notes'});
@@ -46,10 +49,12 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             % have no notes, a text statement beside it
             ex = pick('inclusion in analysis');
             testCase.verifyNumElements(ex, 1);
-            nf = pick('behavior recording');
+            testCase.verifyEqual(ex{1}.statement.variable.node, 'EMPTY:0000314');
+            testCase.verifyFalse(logical(ex{1}.logical.value));
+            nf = pick('video recording');
             testCase.verifyNumElements(nf, 1);
-            testCase.verifyEqual(nf{1}.term.value.node, 'NCIT:C141477');
-            testCase.verifyEqual(nf{1}.term.value.name, 'Not Performed');
+            testCase.verifyEqual(nf{1}.statement.variable.node, 'NCIT:C91063');
+            testCase.verifyFalse(logical(nf{1}.logical.value));
             if ndi.setup.V2.schemaHasField('statement', 'notes')
                 testCase.verifyEqual(ex{1}.statement.notes, 'no contrast video, so patches are poorly aligned');
                 testCase.verifyEqual(nf{1}.statement.notes, 'Prepared but not filmed: no video.');
@@ -62,7 +67,7 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
                 why = pick('reason for inclusion in analysis');
                 testCase.verifyNumElements(why, 1);
                 testCase.verifyEqual(why{1}.text.value(1).text, 'no contrast video, so patches are poorly aligned');
-                why = pick('reason for behavior recording');
+                why = pick('reason for video recording');
                 testCase.verifyNumElements(why, 1);
                 testCase.verifyEqual(why{1}.text.value(1).text, 'Prepared but not filmed: no video.');
             end
@@ -88,9 +93,9 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             count = @(c) sum(strcmp(classes, c));
             % plates 11-14, one patch each, two worms each, one cohort each
             % (decision #55); three acclimation plates (the fixture's plates
-            % were picked at three times); one food deprivation plate (plate
-            % 14's worms)
-            testCase.verifyEqual(count('subject'), 4 + 4 + 8 + 4 + 3 + 1);
+            % were picked at three times), each with its one patch; one food
+            % deprivation plate (plate 14's worms)
+            testCase.verifyEqual(count('subject'), 4 + 4 + 8 + 4 + 3 + 3 + 1);
             % plate 11 twice + 12 + 14 (behaviour) + 2 lawn clips
             testCase.verifyEqual(count('epoch'), 6);
             testCase.verifyEqual(count('intensity_observation'), 6);
@@ -170,7 +175,8 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             % its study, minted in stage 3 since decision #50)
             subjectIdSet = values(idOf);
             rel = rel(cellfun(@(r) any(strcmp(edge(r, 'child_id'), subjectIdSet)), rel));
-            testCase.verifyEqual(numel(rel), 4 + 8 + 4 + 4 + 1, ['4 patch part_of plate, 8 worms ' ...
+            testCase.verifyEqual(numel(rel), 4 + 3 + 8 + 4 + 4 + 1, ['4 assay-plate patches and ' ...
+                '3 acclimation-plate patches part_of their plate, 8 worms ' ...
                 'member_of their cohort, 4 cohorts in their assay plate, 4 in their acclimation ' ...
                 'plate, 1 (plate 14) in a food deprivation plate (decision #55)']);
             find1 = @(child, parent, name) rel(cellfun(@(r) ...
@@ -180,6 +186,10 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             r = find1('concentration_assayPlate0012_patch0001', 'concentration_assayPlate0012', 'part_of');
             testCase.verifyNumElements(r, 1);
             testCase.verifyEmpty(edgeAll(r{1}, 'time_reference_id'), 'a patch is part of its plate, timeless');
+            r = find1('concentration_0001_acclimationPlate0001_patch0001', ...
+                'concentration_0001_acclimationPlate0001', 'part_of');
+            testCase.verifyNumElements(r, 1, 'an acclimation plate''s one patch is part of it');
+            testCase.verifyEmpty(edgeAll(r{1}, 'time_reference_id'));
 
             % each worm is a member of its plate's cohort, timelessly; the
             % plates and moves are stated once, on the cohort (decision #55)
@@ -293,18 +303,21 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             about = @(local, variable) ta(cellfun(@(a) strcmp(edge(a, 'entity_id'), idOf(local)) ...
                 && strcmp(a.statement.variable.name, variable), ta));
 
-            % 4 cohorts, each with a species, a strain and a sex; 4 seeded
-            % patches, each with a species and a strain; plate 13 excluded. With
-            % one entity class (2026-10-08) the strain is an `instance_of`
-            % relation to the strain entity instead of an assertion.
+            % 4 cohorts, each with a species, a strain and a sex; 7 seeded
+            % patches (one per assay plate, one per acclimation plate), each
+            % with a species and a strain. With one entity class (2026-10-08)
+            % the strain is an `instance_of` relation to the strain entity
+            % instead of an assertion. Plate 13's exclusion is a logical
+            % assertion, not a term.
             merged = ndi.setup.V2.mergedEntities();
             perStrain = double(~merged);
-            testCase.verifyNumElements(ta, 4 * (2 + perStrain) + 4 * (1 + perStrain) + 1);
+            testCase.verifyNumElements(ta, 4 * (2 + perStrain) + 7 * (1 + perStrain));
             rel = docs(strcmp(classes, 'directed_relation'));
             instanceOf = @(local) rel(cellfun(@(r) strcmp(r.directed_relation.relation.name, ...
                 'instance_of') && strcmp(edge(r, 'child_id'), idOf(local)), rel));
             a = about('concentration_assayPlate0012_worms', 'species');
             testCase.verifyNumElements(a, 1);
+            testCase.verifyEqual(a{1}.statement.variable.node, 'NCIT:C45293');
             testCase.verifyEqual(a{1}.term.value.node, 'NCBITaxon:6239');
             if merged
                 r = instanceOf('concentration_assayPlate0012_worms');
@@ -313,10 +326,11 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
                     'the cohort is an instance of the dataset-level N2 strain entity');
                 testCase.verifyTrue(logical(r{1}.directed_relation.distributive), ...
                     'stated of the cohort, it holds of each worm');
-                testCase.verifyEmpty(about('concentration_assayPlate0012_worms', 'strain'));
+                testCase.verifyEmpty(about('concentration_assayPlate0012_worms', 'organism strain'));
             else
-                a = about('concentration_assayPlate0012_worms', 'strain');
+                a = about('concentration_assayPlate0012_worms', 'organism strain');
                 testCase.verifyNumElements(a, 1);
+                testCase.verifyEqual(a{1}.statement.variable.node, 'NCIT:C14419');
                 testCase.verifyEqual(a{1}.term.value.name, 'N2');
                 testCase.verifyEqual(a{1}.term.value.node, 'WBStrain:00000001', ...
                     'the strain is its WormBase term, not a name alone');
@@ -341,17 +355,62 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
                 testCase.verifyNumElements(r, 1);
                 testCase.verifyEqual(edge(r{1}, 'parent_id'), result.metadata.ids('OP50'));
             else
-                a = about('concentration_assayPlate0012_patch0001', 'strain');
+                a = about('concentration_assayPlate0012_patch0001', 'organism strain');
                 testCase.verifyNumElements(a, 1);
                 testCase.verifyEqual(a{1}.term.value.name, 'OP50');
                 testCase.verifyEqual(a{1}.term.value.node, 'WBStrain:00041969');
             end
             a = about('concentration_assayPlate0012_patch0001', 'species');
             testCase.verifyEqual(a{1}.term.value.node, 'NCBITaxon:562');
-            a = about('concentration_assayPlate0013', 'inclusion in analysis');
-            testCase.verifyNumElements(a, 1);
-            testCase.verifyEqual(a{1}.term.value.name, 'excluded');
-            testCase.verifyEmpty(about('concentration_assayPlate0012', 'inclusion in analysis'));
+            a = about('concentration_0001_acclimationPlate0001_patch0001', 'species');
+            testCase.verifyNumElements(a, 1, 'an acclimation plate''s patch is OP50 too');
+            testCase.verifyEqual(a{1}.term.value.node, 'NCBITaxon:562');
+
+            % excluded, and never filmed: logical assertions, false, only where
+            % they hold
+            if ndi.setup.V2.schemaHasLeaf('logical_assertion')
+                la = docs(strcmp(classes, 'logical_assertion'));
+                aboutL = @(local, variable) la(cellfun(@(a) strcmp(edge(a, 'entity_id'), idOf(local)) ...
+                    && strcmp(a.statement.variable.name, variable), la));
+                a = aboutL('concentration_assayPlate0013', 'inclusion in analysis');
+                testCase.verifyNumElements(a, 1);
+                testCase.verifyFalse(logical(a{1}.logical.value));
+                testCase.verifyEmpty(aboutL('concentration_assayPlate0012', 'inclusion in analysis'));
+                testCase.verifyEmpty(aboutL('concentration_assayPlate0012', 'video recording'), ...
+                    'plate 12 was filmed');
+            end
+
+            % the target design as statements (fixture: 1.5 mm patches 5 mm
+            % apart): each assay-plate patch's diameter, each plate's spacing,
+            % value basis = target
+            if ndi.setup.V2.schemaHasLeaf('length_assertion')
+                lens = docs(strcmp(classes, 'length_assertion'));
+                testCase.verifyNumElements(lens, 4 + 4, ...
+                    '4 assay-plate patches'' diameters, 4 assay plates'' spacings');
+                d = lens(cellfun(@(a) strcmp(edge(a, 'entity_id'), ...
+                    idOf('concentration_assayPlate0012_patch0001')), lens));
+                testCase.verifyNumElements(d, 1);
+                testCase.verifyEqual(d{1}.statement.variable.node, 'PATO:0001334');
+                testCase.verifyEqual(d{1}.length.value(1).meters, 1.5e-3, 'AbsTol', 1e-12);
+                testCase.verifyEqual(d{1}.length.value(1).source_value, 1.5, 'AbsTol', 1e-12);
+                testCase.verifyEqual(d{1}.length.value(1).source_unit, 'mm');
+                c = d{1}.statement.conditions;
+                if iscell(c), c = [c{:}]; end
+                testCase.verifyNumElements(c, 1);
+                testCase.verifyEqual(c(1).variable.node, 'EMPTY:0000298');
+                testCase.verifyEqual(c(1).term.node, 'EMPTY:0000299');
+                sp = lens(cellfun(@(a) strcmp(edge(a, 'entity_id'), idOf('concentration_assayPlate0012')), lens));
+                testCase.verifyNumElements(sp, 1);
+                testCase.verifyEqual(sp{1}.statement.variable.node, 'NCIT:C45786');
+                testCase.verifyEqual(sp{1}.length.value(1).meters, 5e-3, 'AbsTol', 1e-12);
+                testCase.verifyEmpty(lens(cellfun(@(a) strcmp(edge(a, 'entity_id'), ...
+                    idOf('concentration_0001_acclimationPlate0001_patch0001')), lens)), ...
+                    'an acclimation plate has no target design');
+                % the stage returns them per plate, for the calculation that used them
+                t = result.written{1}.assertions.targetIds;
+                testCase.verifyEqual(sort(t('concentration_assayPlate0012')), ...
+                    sort({d{1}.base.id, sp{1}.base.id}));
+            end
 
             % subject.type, once the schema has it (#84)
             if ndi.setup.V2.schemaHasField('subject', 'type')
@@ -361,6 +420,7 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
                 testCase.verifyEqual(type('concentration_assayPlate0012_patch0001'), 'culture');
                 testCase.verifyEqual(type('concentration_assayPlate0012'), 'material');
                 testCase.verifyEqual(type('concentration_0001_acclimationPlate0001'), 'material');
+                testCase.verifyEqual(type('concentration_0001_acclimationPlate0001_patch0001'), 'culture');
             else
                 w = byLocal('concentration_worm0121');
                 testCase.verifyFalse(isfield(w.subject, 'type'));
@@ -375,7 +435,7 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             c = result.written{1}.manipulations.counts;
             testCase.verifyEqual(c.pour, 4 + 3 + 1, '4 assay, 3 acclimation, 1 food deprivation plate');
             testCase.verifyEqual(c.seed_patch, 4, 'one patch per assay plate');
-            testCase.verifyEqual(c.seed_acclimation_plate, 3);
+            testCase.verifyEqual(c.seed_acclimation_patch, 3, 'one per acclimation plate''s patch');
             testCase.verifyEqual(c.temperature, 4 * 2 + 3 * 3 + 1, ['assay: cold room, room ' ...
                 'temperature; acclimation: cold room, room temperature, incubator; food ' ...
                 'deprivation: incubator']);
@@ -401,25 +461,35 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             testCase.verifyEqual(liters(seed{1}), 0.5e-6, 'AbsTol', 1e-15);
             testCase.verifyEqual(edge(seed{1}, 'formulation_id'), ...
                 result.metadata.ids('suspension_op50_20220202_od1'));
+            testCase.verifyEqual(seed{1}.statement.variable.node, 'WBStrain:00041969', ...
+                'the variable is the strain''s term');
+            testCase.verifyEqual(seed{1}.statement.variable.name, 'OP50');
             % the plate: 25 mL of NGM, poured before that seeding
             pour = on(dm, 'concentration_assayPlate0012');
             testCase.verifyNumElements(pour, 1);
             testCase.verifyEqual(liters(pour{1}), 0.025, 'AbsTol', 1e-12);
             testCase.verifyEqual(edge(pour{1}, 'formulation_id'), result.metadata.ids('ngm'));
-            testCase.verifyEqual(pour{1}.statement.variable.name, 'NGM agar');
+            testCase.verifyEqual(pour{1}.statement.variable.node, 'EMPTY:0000262', ...
+                'the variable is the recipe''s formulation type');
+            testCase.verifyEqual(pour{1}.statement.variable.name, 'nematode growth medium');
             when = byId(edge(pour{1}, 'time_reference_id'));
             testCase.verifyEqual(when.document_class.class_name, 'relative_time_reference');
             testCase.verifyEqual(edge(when, 'referent_id'), edge(seed{1}, 'time_reference_id'));
-            % the acclimation plate: 200 uL of the same dilution
-            acc = on(dm, 'concentration_0001_acclimationPlate0001');
-            acc = acc(cellfun(@(d) abs(liters(d) - 200e-6) < 1e-12, acc));
+            % the acclimation plate's one patch: 200 uL of the same dilution;
+            % the plate itself has only its pour
+            acc = on(dm, 'concentration_0001_acclimationPlate0001_patch0001');
             testCase.verifyNumElements(acc, 1);
+            testCase.verifyEqual(liters(acc{1}), 200e-6, 'AbsTol', 1e-12);
+            plateDoses = on(dm, 'concentration_0001_acclimationPlate0001');
+            testCase.verifyNumElements(plateDoses, 1);
+            testCase.verifyEqual(liters(plateDoses{1}), 0.025, 'AbsTol', 1e-12, 'its pour');
             testCase.verifyEqual(edge(acc{1}, 'formulation_id'), ...
                 result.metadata.ids('suspension_op50_20220202_od1'));
 
             % plate 12: into the cold room (4 C), then room temperature (20 C)
             tm = on(docs(strcmp(classes, 'temperature_manipulation')), 'concentration_assayPlate0012');
             testCase.verifyEqual(reshape(sort(cellfun(@(d) d.temperature.value.celsius, tm)), 1, []), [4 20]);
+            testCase.verifyEqual(tm{1}.statement.variable.node, 'NCIT:C90380');
             methods = sort(cellfun(@(d) d.interaction.method.name, tm, 'UniformOutput', false));
             testCase.verifyEqual(reshape(methods, 1, []), {'ambient exposure', 'refrigeration'});
 
@@ -429,6 +499,7 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             toAssay = mine(cellfun(@(d) strcmp(d.term.value.name, 'assay plate'), mine));
             testCase.verifyNumElements(toAssay, 1);
             testCase.verifyEqual(toAssay{1}.statement.variable.name, 'location');
+            testCase.verifyEqual(toAssay{1}.statement.variable.node, 'NCIT:C25341');
             testCase.verifyEqual(toAssay{1}.interaction.method.name, 'agar plug transfer');
             mp = toAssay{1}.interaction.method_parameters;
             if iscell(mp), mp = [mp{:}]; end
@@ -442,7 +513,9 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             fd = on(tmn, 'concentration_assayPlate0014_worms');
             fd = fd(cellfun(@(d) strcmp(d.statement.variable.name, 'food availability'), fd));
             testCase.verifyNumElements(fd, 1);
-            testCase.verifyEqual(fd{1}.term.value.name, 'none');
+            testCase.verifyEqual(fd{1}.statement.variable.node, 'ZECO:0000113');
+            testCase.verifyEqual(fd{1}.term.value.node, 'ZECO:0000114');
+            testCase.verifyEqual(fd{1}.term.value.name, 'fasting');
             toDep = on(tmn, 'concentration_assayPlate0014_worms');
             toDep = toDep(cellfun(@(d) strcmp(d.term.value.name, 'food deprivation plate'), toDep));
             testCase.verifyNumElements(toDep, 1);
@@ -480,7 +553,9 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             testCase.verifyEqual(t12{1}.temperature.value.celsius, 21.62, 'AbsTol', 1e-9);
             testCase.verifyEqual(h12{1}.humidity.value.percent_relative_humidity, 52, 'AbsTol', 1e-9);
             testCase.verifyEqual(t12{1}.statement.variable.name, 'ambient temperature');
+            testCase.verifyEqual(t12{1}.statement.variable.node, 'NCIT:C90380');
             testCase.verifyEqual(h12{1}.statement.variable.name, 'relative humidity');
+            testCase.verifyEqual(h12{1}.statement.variable.node, 'OM:RelativeHumidity');
             testCase.verifyEqual(edge(t12{1}, 'instrument_id'), probe);
             testCase.verifyEqual(edge(t12{1}, 'time_reference_id'), edge(h12{1}, 'time_reference_id'));
             recs = on(docs(strcmp(classes, 'intensity_observation')), 'concentration_assayPlate0012');
@@ -697,7 +772,7 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             for i = 1:numel(obs)
                 A = ndi.statement.fromDocument(session, obs{i}).axes();
                 if height(A) ~= 2 || ~all(A.unit == "pixel"), continue; end
-                testCase.verifyEqual(A.variable, ["image vertical position"; "image horizontal position"]);
+                testCase.verifyEqual(A.variable, ["Y-coordinate"; "X-coordinate"]);
                 testCase.verifyEqual(A.coordinates{1}, (0.5:1:A.n(1) - 0.5)');
                 testCase.verifyEqual(A.n(1), A.n(2), 'the fixture''s images are square');
                 sizes{end+1} = A.n(1); %#ok<AGROW>
@@ -936,8 +1011,8 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             testCase.addTeardown(@() delete(csv));
             fprintf('TERM INVENTORY (test dataset):\n%s\nEND TERM INVENTORY\n', fileread(csv));
             testCase.verifyTrue(isfile(csv));
-            testCase.verifyTrue(any(T.kind == "plain text" & T.name == "image intensity"), ...
-                'the recordings'' variable is listed as plain text');
+            testCase.verifyTrue(any(T.kind == "ontology" & T.name == "image intensity" ...
+                & T.node == "NCIT:C221750"), 'the recordings'' variable carries its node');
             testCase.verifyTrue(any(T.kind == "ontology"), 'species carry ontology nodes');
             testCase.verifyEqual(sum(T.kind == "ontology" & T.node == ""), 0);
         end

@@ -34,15 +34,21 @@ function out = sessionDocuments(dataParentDir, session, S, R, options)
 %     relative_time_reference dev_local_time from 0 for the recording's
 %                             duration, referent the SESSION document (videos)
 %     absolute_time_reference its UTC start (and duration when known)
-%     intensity_observation   the recording: subject = the plate, instrument =
+%     intensity_observation   the recording: variable image intensity
+%                             (NCIT:C221750); subject = the plate, instrument =
 %                             the dataset-level camera / microscope subject
 %                             (when 'InstrumentIds' has it), acquisition
 %                             channels = this session's system; times = a
 %                             relative reference to the EPOCH (videos: the
-%                             same extent; images: `during`) + the UTC one;
-%                             method = the imaging method, which is also the
-%                             NDI probe type (brightfield-imaging /
-%                             wide-field-imaging)
+%                             same extent; images: time:intervalDuring) + the
+%                             UTC one; method = the imaging method, its node
+%                             decided (brightfield imaging EMPTY:0000300,
+%                             fluorescence microscopy NCIT:C16856) and its
+%                             name the NDI probe type the navigator rebuilds
+%                             the probe from (brightfield-imaging /
+%                             wide-field-imaging); keys Y-coordinate
+%                             (NCIT:C44478) x X-coordinate (NCIT:C44477) in
+%                             pixels, then for a video `time` in seconds
 %                             datum_type: a video's from VideoReader's
 %                             VideoFormat (RGB24/Grayscale -> uint8,
 %                             RGB48/Mono16 -> uint16), a TIFF's from its
@@ -200,7 +206,8 @@ for k = 1:height(R)
         struct('time_reference_id', {epochRefs}), 'SessionId', sid);
     ep = ep{1};
     if isImage
-        relEpoch = did2.build.relativeTimeReference(ep.base.id, 'Relation', 'intervalDuring', 'SessionId', sid);
+        relEpoch = did2.build.relativeTimeReference(ep.base.id, 'Relation', haleyTerm('intervalDuring'), ...
+            'SessionId', sid);
     else
         relEpoch = did2.build.relativeTimeReference(ep.base.id, 'Clock', 'dev_local_time', ...
             'Start', 0, 'Duration', dur, 'SessionId', sid);
@@ -215,9 +222,9 @@ for k = 1:height(R)
     keyArgs = {};
     if ~isempty(keys), keyArgs = {'Keys', keys}; end
     st = did2.build.statement('intensity_observation', subjectIds(plate), ...
-        did2.build.term('', 'image intensity'), [], 'DataBody', true, 'DatumType', datumType, ...
+        haleyTerm('image intensity'), [], 'DataBody', true, 'DatumType', datumType, ...
         keyArgs{:}, ...
-        'Method', did2.build.term('', probeType(r.system{1})), ...
+        'Method', probeType(r.system{1}), ...
         'InstrumentId', instrumentId, 'AcquisitionChannelsId', channelIds(r.system{1}), ...
         'TimeReferenceIds', {relEpoch.base.id, absRef.base.id}, 'SessionId', sid, ...
         'Notes', noteOf(r));
@@ -278,20 +285,24 @@ end
 end
 
 function t = probeType(sys)
-% ndi_common/probe/probetype2object.json; all map to ndi.probe.image
+% The imaging method: its decided node, named by the NDI probe type
+% (ndi_common/probe/probetype2object.json; all map to ndi.probe.image), which
+% ndi.file.navigator.bodies reads from the method's name
 arguments
     sys {mustBeText}
 end
 if strcmp(sys, 'microscope')
-    t = 'wide-field-imaging';
+    t = haleyTerm('fluorescence microscopy');
+    t.name = 'wide-field-imaging';
 else
-    t = 'brightfield-imaging';
+    t = haleyTerm('brightfield imaging');
+    t.name = 'brightfield-imaging';
 end
 end
 
 function keys = recordingKeys(hw, isImage, r)
 % The recording's dimensions (decision #70, doImport's imageStack_parameters):
-% [image vertical position, image horizontal position], in pixels from the
+% [Y-coordinate, X-coordinate] (image vertical, horizontal), in pixels from the
 % upper-left corner (pixel centres at 0.5, 1.5, ...; the scale is a
 % calculation, stage 10), then for a video `time`, one per frame from the
 % recording's start: the measured time of each frame when the video was
@@ -305,17 +316,17 @@ arguments
 end
 keys = [];
 if isempty(hw), return; end
-k = {did2.build.key('image vertical position', hw(1), 'Unit', 'pixel', 'Origin', 0.5, 'Spacing', 1), ...
-     did2.build.key('image horizontal position', hw(2), 'Unit', 'pixel', 'Origin', 0.5, 'Spacing', 1)};
+k = {did2.build.key(haleyTerm('Y-coordinate'), hw(1), 'Unit', haleyTerm('pixel'), 'Origin', 0.5, 'Spacing', 1), ...
+     did2.build.key(haleyTerm('X-coordinate'), hw(2), 'Unit', haleyTerm('pixel'), 'Origin', 0.5, 'Spacing', 1)};
 if ~isImage
     ft = frameTimesOf(r, 1);
     nf = r.n_frames; fr = r.frame_rate;
     if ~isempty(ft)
-        k{end+1} = did2.build.key('time', numel(ft), 'Unit', 'second', 'Values', ft(:)', ...
+        k{end+1} = did2.build.key('time', numel(ft), 'Unit', haleyTerm('second'), 'Values', ft(:)', ...
             'SourceUnit', 'frame', 'SourceValues', 0:numel(ft) - 1);
     else
         if ~(nf > 0 && fr > 0), return; end
-        k{end+1} = did2.build.key('time', nf, 'Unit', 'second', 'Origin', 0, 'Spacing', 1 / fr, ...
+        k{end+1} = did2.build.key('time', nf, 'Unit', haleyTerm('second'), 'Origin', 0, 'Spacing', 1 / fr, ...
             'SourceUnit', 'frame', 'SourceOrigin', 0, 'SourceSpacing', 1);
     end
 end

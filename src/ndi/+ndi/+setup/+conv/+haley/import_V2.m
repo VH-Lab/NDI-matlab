@@ -23,14 +23,17 @@ function result = import_V2(dataParentDir, options)
 %        3  sessions       the studies (from the spec; decision #50), then one
 %                          session per experiment day, part_of its study
 %        4  subjects       plates, patches, worm cohorts, worms, acclimation
-%                          and food deprivation plates; each with its type
+%                          plates (each with its one patch) and food
+%                          deprivation plates; each with its type
 %        5  acquisition    camera/microscope, one epoch per recording
 %        6  relations      patch part_of plate; worm member_of its cohort;
 %                          cohort contained_in its acclimation, food
 %                          deprivation and assay plates (with when)
 %        7  assertions     species and strain of each cohort and seeded
-%                          patch; exclusion tags on plates
-%        8  manipulations  pouring and seeding each plate, its moves
+%                          patch; each assay plate's target patch diameter
+%                          and spacing; plates excluded from analysis or
+%                          never filmed (logical, false)
+%        8  manipulations  pouring each plate and seeding its patches, its moves
 %                          between cold room, room temperature and
 %                          incubator; each cohort's transfers and food
 %                          deprivation
@@ -493,8 +496,10 @@ if isfield(result, 'subjects') && isfield(result, 'recordings')
             built{k}.assertions = as;
             c = as.counts;
             fprintf(['%s assertions: cohort %d species, %d strain, %d sex; patch %d species, ' ...
-                '%d strain; %d plate(s) excluded\n'], T.local_identifier{k}, c.cohort_species, ...
-                c.cohort_strain, c.cohort_sex, c.patch_species, c.patch_strain, c.plate_excluded);
+                '%d strain, %d target diameter; plate %d target spacing; %d plate(s) excluded, ' ...
+                '%d not filmed\n'], T.local_identifier{k}, c.cohort_species, ...
+                c.cohort_strain, c.cohort_sex, c.patch_species, c.patch_strain, ...
+                c.patch_target_diameter, c.plate_target_spacing, c.plate_excluded, c.plate_not_filmed);
             for j = 1:numel(as.skipped)
                 fprintf('  skipped: %s\n', as.skipped{j});
             end
@@ -511,10 +516,10 @@ if isfield(result, 'subjects') && isfield(result, 'recordings')
             built{k}.documents = [built{k}.documents, ma.documents];
             built{k}.manipulations = ma;
             c = ma.counts;
-            fprintf(['%s manipulations: %d pour, %d patch seeding, %d acclimation plate ' ...
-                'seeding, %d temperature, %d transfer, %d food deprivation; ' ...
+            fprintf(['%s manipulations: %d pour, %d assay/E. coli patch seeding, %d acclimation ' ...
+                'patch seeding, %d temperature, %d transfer, %d food deprivation; ' ...
                 '%d developmental stage observation(s)\n'], ...
-                T.local_identifier{k}, c.pour, c.seed_patch, c.seed_acclimation_plate, ...
+                T.local_identifier{k}, c.pour, c.seed_patch, c.seed_acclimation_patch, ...
                 c.temperature, c.transfer, c.food_deprivation, c.developmental_stage);
             for j = 1:numel(ma.skipped)
                 fprintf('  skipped: %s\n', ma.skipped{j});
@@ -882,7 +887,8 @@ end
 end
 
 function m = namesOf(spec)
-% formulation and strain keys -> the names a dose's variable reads as
+% formulation and strain keys -> the term a dose's variable reads as: a
+% formulation's `type` {node, name}, a strain's {node (WBStrain), name}
 arguments
     spec (1,1) struct
 end
@@ -894,11 +900,25 @@ for f = {'formulations', 'strains'}
     for k = 1:numel(e)
         x = e{k};
         if isfield(x, 'type') && ~isempty(x.type)
-            m(x.key) = char(x.type);
+            m(x.key) = asTerm(x.type);
         elseif isfield(x, 'name') && ~isempty(x.name)
-            m(x.key) = char(x.name);
+            node = '';
+            if isfield(x, 'node') && ~isempty(x.node), node = char(x.node); end
+            m(x.key) = did2.build.term(node, char(x.name));
         end
     end
+end
+end
+
+function t = asTerm(v)
+% a spec term: {node, name}, or a name alone
+arguments
+    v
+end
+if isstruct(v)
+    t = did2.build.term(char(v.node), char(v.name));
+else
+    t = did2.build.term('', char(v));
 end
 end
 

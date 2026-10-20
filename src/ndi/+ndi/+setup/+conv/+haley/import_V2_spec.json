@@ -660,7 +660,10 @@
     "node": "NCBITaxon:562",
     "name": "Escherichia coli"
    },
-   "genetic_strain_type": "wild type",
+   "genetic_strain_type": {
+    "node": "NCIT:C62195",
+    "name": "wild type"
+   },
    "identifiers": [
     {
      "scheme": "RRID",
@@ -685,7 +688,10 @@
     "node": "NCBITaxon:562",
     "name": "Escherichia coli"
    },
-   "genetic_strain_type": "transgenic",
+   "genetic_strain_type": {
+    "node": "OBI:1000048",
+    "name": "transgenic organism"
+   },
    "background": [
     "OP50"
    ],
@@ -710,7 +716,10 @@
     "node": "PATO:0001340",
     "name": "hermaphrodite"
    },
-   "genetic_strain_type": "wild type",
+   "genetic_strain_type": {
+    "node": "NCIT:C62195",
+    "name": "wild type"
+   },
    "description": "N2 Bristol, wild isolate.",
    "source": "cgc",
    "identifiers": [
@@ -736,7 +745,10 @@
     "node": "PATO:0001340",
     "name": "hermaphrodite"
    },
-   "genetic_strain_type": "mutant",
+   "genetic_strain_type": {
+    "node": "NCIT:C25360",
+    "name": "mutant"
+   },
    "source": "cgc",
    "identifiers": [
     {
@@ -761,7 +773,10 @@
     "node": "PATO:0001340",
     "name": "hermaphrodite"
    },
-   "genetic_strain_type": "mutant",
+   "genetic_strain_type": {
+    "node": "NCIT:C25360",
+    "name": "mutant"
+   },
    "source": "cgc",
    "identifiers": [
     {
@@ -787,7 +802,10 @@
     "node": "PATO:0001340",
     "name": "hermaphrodite"
    },
-   "genetic_strain_type": "mutant",
+   "genetic_strain_type": {
+    "node": "NCIT:C25360",
+    "name": "mutant"
+   },
    "source": "cgc",
    "identifiers": [
     {
@@ -813,7 +831,10 @@
     "node": "PATO:0001340",
     "name": "hermaphrodite"
    },
-   "genetic_strain_type": "mutant",
+   "genetic_strain_type": {
+    "node": "NCIT:C25360",
+    "name": "mutant"
+   },
    "source": "cgc",
    "identifiers": [
     {
@@ -838,7 +859,10 @@
     "node": "PATO:0001340",
     "name": "hermaphrodite"
    },
-   "genetic_strain_type": "mutant",
+   "genetic_strain_type": {
+    "node": "NCIT:C25360",
+    "name": "mutant"
+   },
    "source": "cgc",
    "identifiers": [
     {
@@ -863,7 +887,10 @@
     "node": "PATO:0001340",
     "name": "hermaphrodite"
    },
-   "genetic_strain_type": "mutant",
+   "genetic_strain_type": {
+    "node": "NCIT:C25360",
+    "name": "mutant"
+   },
    "source": "cgc",
    "identifiers": [
     {
@@ -889,7 +916,10 @@
     "node": "PATO:0001340",
     "name": "hermaphrodite"
    },
-   "genetic_strain_type": "mutant",
+   "genetic_strain_type": {
+    "node": "NCIT:C25360",
+    "name": "mutant"
+   },
    "source": "cgc",
    "identifiers": [
     {
@@ -915,7 +945,10 @@
     "node": "PATO:0001340",
     "name": "hermaphrodite"
    },
-   "genetic_strain_type": "mutant",
+   "genetic_strain_type": {
+    "node": "NCIT:C25360",
+    "name": "mutant"
+   },
    "source": "cgc",
    "identifiers": [
     {
@@ -941,7 +974,10 @@
     "node": "PATO:0001340",
     "name": "hermaphrodite"
    },
-   "genetic_strain_type": "mutant",
+   "genetic_strain_type": {
+    "node": "NCIT:C25360",
+    "name": "mutant"
+   },
    "source": "cgc",
    "identifiers": [
     {
@@ -967,7 +1003,10 @@
     "node": "PATO:0001340",
     "name": "hermaphrodite"
    },
-   "genetic_strain_type": "mutant",
+   "genetic_strain_type": {
+    "node": "NCIT:C25360",
+    "name": "mutant"
+   },
    "source": "cgc",
    "identifiers": [
     {
@@ -980,117 +1019,189 @@
  "chemicals": [
   {
    "key": "water",
-   "substance": "water"
+   "substance": {
+    "node": "CHEBI:15377",
+    "name": "water"
+   }
   },
   {
    "key": "agar_emd",
-   "substance": "agar",
+   "substance": {
+    "node": "CHEBI:2509",
+    "name": "agar"
+   },
    "product": "agar"
   },
   {
    "key": "nacl_fisher",
-   "substance": "sodium chloride",
+   "substance": {
+    "node": "CHEBI:26710",
+    "name": "sodium chloride"
+   },
    "product": "nacl_s271"
   },
   {
    "key": "nacl",
-   "substance": "sodium chloride"
+   "substance": {
+    "node": "CHEBI:26710",
+    "name": "sodium chloride"
+   }
   },
   {
    "key": "peptone_bd",
-   "substance": "peptone",
+   "substance": {
+    "node": "MICRO:0000178",
+    "name": "peptone"
+   },
    "product": "peptone"
   },
   {
    "key": "kh2po4",
-   "substance": "potassium dihydrogen phosphate"
+   "substance": {
+    "node": "CHEBI:63036",
+    "name": "potassium dihydrogen phosphate"
+   }
   },
   {
    "key": "k2hpo4",
-   "substance": "dipotassium hydrogen phosphate"
+   "substance": {
+    "node": "CHEBI:131527",
+    "name": "dipotassium hydrogen phosphate"
+   }
   },
   {
    "key": "kh2po4_fisher",
-   "substance": "potassium dihydrogen phosphate",
+   "substance": {
+    "node": "CHEBI:63036",
+    "name": "potassium dihydrogen phosphate"
+   },
    "product": "kh2po4_bp362"
   },
   {
    "key": "k2hpo4_3h2o_sigma",
-   "substance": "dipotassium hydrogen phosphate trihydrate",
+   "substance": {
+    "node": "EMPTY:0000313",
+    "name": "dipotassium hydrogen phosphate trihydrate"
+   },
    "product": "k2hpo4_p5504"
   },
   {
    "key": "mgso4_sigma",
-   "substance": "magnesium sulfate",
+   "substance": {
+    "node": "CHEBI:32599",
+    "name": "magnesium sulfate"
+   },
    "product": "mgso4_m7506"
   },
   {
    "key": "cacl2_2h2o_fisher",
-   "substance": "calcium chloride dihydrate",
+   "substance": {
+    "node": "CHEBI:86158",
+    "name": "calcium chloride dihydrate"
+   },
    "product": "cacl2_c70"
   },
   {
    "key": "cholesterol_alfa",
-   "substance": "cholesterol",
+   "substance": {
+    "node": "CHEBI:16113",
+    "name": "cholesterol"
+   },
    "product": "cholesterol_a11470"
   },
   {
    "key": "ethanol_koptec",
-   "substance": "ethanol",
+   "substance": {
+    "node": "CHEBI:16236",
+    "name": "ethanol"
+   },
    "product": "ethanol_koptec_190"
   },
   {
    "key": "tryptone",
-   "substance": "tryptone"
+   "substance": {
+    "node": "MICRO:0000182",
+    "name": "tryptone"
+   }
   },
   {
    "key": "yeast_extract",
-   "substance": "yeast extract"
+   "substance": {
+    "node": "MICRO:0000201",
+    "name": "yeast extract"
+   }
   },
   {
    "key": "citric_acid_monohydrate",
-   "substance": "citric acid monohydrate"
+   "substance": {
+    "node": "CHEBI:31404",
+    "name": "citric acid monohydrate"
+   }
   },
   {
    "key": "tripotassium_citrate_monohydrate",
-   "substance": "tripotassium citrate monohydrate"
+   "substance": {
+    "node": "CHEBI:64746",
+    "name": "tripotassium citrate monohydrate"
+   }
   },
   {
    "key": "edta_disodium",
-   "substance": "disodium EDTA dihydrate",
+   "substance": {
+    "node": "CHEBI:64758",
+    "name": "disodium EDTA dihydrate"
+   },
    "_note": "The dihydrate: the trace metals recipe's 1.86 g/L is 5 mM only at 372.24 g/mol, and each of its other metals is a round molarity only as its hydrate (decision #91)."
   },
   {
    "key": "feso4",
-   "substance": "iron(II) sulfate heptahydrate"
+   "substance": {
+    "node": "CHEBI:75836",
+    "name": "iron(II) sulfate heptahydrate"
+   }
   },
   {
    "key": "mncl2",
-   "substance": "manganese(II) chloride tetrahydrate"
+   "substance": {
+    "node": "CHEBI:86368",
+    "name": "manganese(II) chloride tetrahydrate"
+   }
   },
   {
    "key": "znso4",
-   "substance": "zinc sulfate heptahydrate"
+   "substance": {
+    "node": "CHEBI:32312",
+    "name": "zinc sulfate heptahydrate"
+   }
   },
   {
    "key": "cuso4",
-   "substance": "copper(II) sulfate pentahydrate"
+   "substance": {
+    "node": "CHEBI:31440",
+    "name": "copper(II) sulfate pentahydrate"
+   }
   },
   {
    "key": "carbenicillin_50",
-   "substance": "carbenicillin",
+   "substance": {
+    "node": "CHEBI:3393",
+    "name": "carbenicillin"
+   },
    "concentration": {
     "grams_per_liter": 50,
     "source_value": 50,
     "source_unit": "mg/mL"
    },
-   "_note": "Frozen stock, 50 mg/mL (231229_OP50_OP50-GFP_cultures)."
+   "_note": "Frozen stock, 50 mg/mL (231229_OP50_OP50-GFP_cultures). Salt form not recorded; commercial carbenicillin is usually the disodium salt (CHEBI:34609), so 50 mg/mL may be by salt mass."
   }
  ],
  "formulations": [
   {
    "key": "cholesterol_5",
-   "type": "5 mg/mL cholesterol in ethanol",
+   "type": {
+    "node": "EMPTY:0000271",
+    "name": "cholesterol solution"
+   },
    "ingredients": [
     {
      "ingredient": "cholesterol_alfa",
@@ -1113,7 +1224,10 @@
   },
   {
    "key": "mgso4_1m",
-   "type": "1 M magnesium sulfate",
+   "type": {
+    "node": "EMPTY:0000267",
+    "name": "magnesium sulfate solution"
+   },
    "ingredients": [
     {
      "ingredient": "mgso4_sigma",
@@ -1131,7 +1245,10 @@
   },
   {
    "key": "cacl2_1m",
-   "type": "1 M calcium chloride",
+   "type": {
+    "node": "EMPTY:0000268",
+    "name": "calcium chloride solution"
+   },
    "ingredients": [
     {
      "ingredient": "cacl2_2h2o_fisher",
@@ -1149,7 +1266,10 @@
   },
   {
    "key": "kh2po4_1m",
-   "type": "1 M potassium phosphate monobasic",
+   "type": {
+    "node": "EMPTY:0000269",
+    "name": "potassium phosphate monobasic solution"
+   },
    "ingredients": [
     {
      "ingredient": "kh2po4_fisher",
@@ -1167,7 +1287,10 @@
   },
   {
    "key": "k2hpo4_1m",
-   "type": "1 M potassium phosphate dibasic",
+   "type": {
+    "node": "EMPTY:0000270",
+    "name": "potassium phosphate dibasic solution"
+   },
    "ingredients": [
     {
      "ingredient": "k2hpo4_3h2o_sigma",
@@ -1185,7 +1308,10 @@
   },
   {
    "key": "kpo4_1m_ph6",
-   "type": "1 M potassium phosphate buffer, pH 6.0",
+   "type": {
+    "node": "NCIT:C29321",
+    "name": "potassium phosphate buffer"
+   },
    "ingredients": [
     {
      "ingredient": "kh2po4_1m",
@@ -1210,7 +1336,10 @@
   },
   {
    "key": "ngm",
-   "type": "NGM, 3% agar",
+   "type": {
+    "node": "EMPTY:0000262",
+    "name": "nematode growth medium"
+   },
    "ingredients": [
     {
      "ingredient": "water",
@@ -1281,7 +1410,10 @@
   },
   {
    "key": "ngm_no_peptone",
-   "type": "NGM, 3% agar, no peptone",
+   "type": {
+    "node": "EMPTY:0000263",
+    "name": "nematode growth medium without peptone"
+   },
    "ingredients": [
     {
      "ingredient": "water",
@@ -1344,7 +1476,10 @@
   },
   {
    "key": "s_basal",
-   "type": "S Basal",
+   "type": {
+    "node": "EMPTY:0000265",
+    "name": "S basal"
+   },
    "ingredients": [
     {
      "ingredient": "nacl",
@@ -1388,7 +1523,10 @@
   },
   {
    "key": "trace_metals",
-   "type": "trace metals solution",
+   "type": {
+    "node": "MICRO:0000455",
+    "name": "trace metals solution"
+   },
    "ingredients": [
     {
      "ingredient": "edta_disodium",
@@ -1440,7 +1578,10 @@
   },
   {
    "key": "k_citrate_1m_ph6",
-   "type": "1 M potassium citrate, pH 6.0",
+   "type": {
+    "node": "NCIT:C70815",
+    "name": "potassium citrate solution"
+   },
    "ingredients": [
     {
      "ingredient": "citric_acid_monohydrate",
@@ -1469,7 +1610,10 @@
   },
   {
    "key": "s_complete",
-   "type": "S-Complete",
+   "type": {
+    "node": "EMPTY:0000266",
+    "name": "S medium"
+   },
    "ingredients": [
     {
      "ingredient": "s_basal",
@@ -1520,7 +1664,10 @@
   },
   {
    "key": "lb",
-   "type": "LB",
+   "type": {
+    "node": "MCO:0000030",
+    "name": "LB medium, Lennox"
+   },
    "ingredients": [
     {
      "ingredient": "tryptone",
@@ -1558,7 +1705,10 @@
   },
   {
    "key": "lb_carb",
-   "type": "LB with carbenicillin",
+   "type": {
+    "node": "EMPTY:0000264",
+    "name": "LB with carbenicillin"
+   },
    "ingredients": [
     {
      "ingredient": "lb"
@@ -1630,12 +1780,12 @@
    "description": "Four young adult hermaphrodites forage in a 30 mm arena on an isometric grid of 19 patches (0.5 µl, 6 mm apart), all of one OP50 density (OD600 0-10; also 1 (12H) and 1 (48H) grown patches); 1 h at 3 fps.",
    "factors": [
     {
-     "node": "",
+     "node": "MCO:0000059",
      "name": "OD600"
     },
     {
-     "node": "",
-     "name": "bacterial growth time"
+     "node": "EMPTY:0000119",
+     "name": "bacteria growth duration after seeding"
     }
    ]
   },
@@ -1648,7 +1798,7 @@
    "description": "As the single-density multi-patch assay, but one large 20 µl patch in the centre of the 30 mm arena.",
    "factors": [
     {
-     "node": "",
+     "node": "MCO:0000059",
      "name": "OD600"
     }
    ]
@@ -1661,7 +1811,7 @@
    "description": "One young adult in a 9 mm arena with one 0.5 µl patch (OD600 0, 0.5, 1, 5, 10); 1 h at 8 fps and ~105 px/mm, head and tail tracked.",
    "factors": [
     {
-     "node": "",
+     "node": "MCO:0000059",
      "name": "OD600"
     }
    ]
@@ -1674,12 +1824,8 @@
    "description": "Grids of 18 patches combining OD600 1, 5 and 10 on peptone-free NGM; animals released from an S-Complete droplet at the arena centre; 2 h recordings.",
    "factors": [
     {
-     "node": "",
+     "node": "MCO:0000059",
      "name": "OD600"
-    },
-    {
-     "node": "",
-     "name": "patch configuration"
     }
    ]
   },
@@ -1691,12 +1837,12 @@
    "description": "Single-density, multi-patch environments with ten mutant strains and N2, well-fed and 3-h food-deprived. The paper's food-deprivation analysis is the N2 subset; most strains are not reported in the paper.",
    "factors": [
     {
-     "node": "",
-     "name": "strain"
+     "node": "NCIT:C14419",
+     "name": "organism strain"
     },
     {
-     "node": "",
-     "name": "food deprivation"
+     "node": "ZECO:0000113",
+     "name": "food availability"
     }
    ]
   },
@@ -1708,8 +1854,8 @@
    "description": "Wild type (N2) and the sensory mutants osm-6 (PR811) and mec-4 (TU253) in single-density, multi-patch environments.",
    "factors": [
     {
-     "node": "",
-     "name": "strain"
+     "node": "NCIT:C14419",
+     "name": "organism strain"
     }
    ]
   },
@@ -1721,12 +1867,12 @@
    "description": "OP50-GFP patches seeded as in the behaviour assays and imaged for several hours on a Zeiss Axio Zoom.V16 to estimate relative bacterial density from the patch-edge fluorescence.",
    "factors": [
     {
-     "node": "",
+     "node": "MCO:0000059",
      "name": "OD600"
     },
     {
-     "node": "",
-     "name": "bacterial growth time"
+     "node": "EMPTY:0000119",
+     "name": "bacteria growth duration after seeding"
     }
    ]
   }
@@ -1744,13 +1890,10 @@
   ],
   "license": "CC-BY-4.0",
   "accessibility": {
-   "node": "",
-   "name": "free access"
+   "node": "NCIT:C183346",
+   "name": "unrestricted access"
   },
-  "ethics_assessment": {
-   "node": "",
-   "name": "not required"
-  },
+  "_ethics_assessment": "Not stated: no ethics assessment was required (C. elegans and E. coli), and an assessment that was not required is not asserted (2026-10-19).",
   "release_date": "2025-08-01",
   "identifiers": [
    {
@@ -1905,13 +2048,9 @@
   "growth_diluent": "lb"
  },
  "preparation": {
-  "_about": "Stage 8 part C (decisions #54, #56, #57): how the plates were prepared and the worms moved, read by ndi.setup.conv.haley.manipulationDocuments. Every value is from the eLife paper's Methods, the lab's Benchling protocols or Jess Haley; terms are names until the ontology lookup.",
+  "_about": "Stage 8 part C (decisions #54, #56, #57): how the plates were prepared and the worms moved, read by ndi.setup.conv.haley.manipulationDocuments. Every value is from the eLife paper's Methods, the lab's Benchling protocols or Jess Haley. A `variable` or `value` here is a name in the import's term table (haleyTerm), which gives its node; methods are labels.",
   "pour": {
-   "_about": "Every plate is 25 mL of NGM in a 100 mm dish (240102B_NGM_plates; Jess: Mini's too). The agar is NGM, or NGM without peptone where the plate's `peptone` says so (Matching, E. coli); acclimation and food deprivation plates have no `peptone` column and are the plain recipe.",
-   "variable": {
-    "with": "NGM agar",
-    "without": "NGM agar (no peptone)"
-   },
+   "_about": "Every plate is 25 mL of NGM in a 100 mm dish (240102B_NGM_plates; Jess: Mini's too). The agar is NGM, or NGM without peptone where the plate's `peptone` says so (Matching, E. coli); acclimation and food deprivation plates have no `peptone` column and are the plain recipe. The dose's variable is the recipe's formulation type.",
    "method": "pouring",
    "volume_ml": 25,
    "agar": {
@@ -1944,7 +2083,7 @@
    "_out_before_seeding": "An E. coli plate left the cold room shortly before it was seeded: the paper seeds onto cold, low-moisture NGM plates (Methods, Bacterial cultures), and Jess puts it at about 5 min. So the cold-room window after pouring ends at the seeding time, approximate, up to this much earlier (plus the seeding time's own hand-written bound)."
   },
   "transfer": {
-   "_about": "One term_manipulation per move, on the cohort, at its contained_in relation's time. The variable is the cohort's location and the value the kind of plate moved to (the plate itself is the parent of the contained_in relation at the same time); the method the move's last step (onto a food deprivation plate: agar plug, per Jess); every move onto an assay plate first went through an empty NGM plate for about a minute to shed bacteria (Jess, 2026-10-02).",
+   "_about": "One term_manipulation per move, on the cohort, at its contained_in relation's time. The variable is the cohort's location and the value the kind of plate moved to (the plate itself is the parent of the contained_in relation at the same time); the method the move's last step (onto a food deprivation plate: agar plug, per Jess), and `droplet` the formulation key of the droplet the worms were released in; every move onto an assay plate first went through an empty NGM plate for about a minute to shed bacteria (Jess, 2026-10-02).",
    "variable": "location",
    "pick_method": "worm picking",
    "deprivation_method": "agar plug transfer",
@@ -1952,7 +2091,7 @@
     {
      "contains": "eyelash",
      "method": "eyelash picking",
-     "droplet": "S-Complete"
+     "droplet": "s_complete"
     },
     {
      "contains": "agar plug",
@@ -1963,7 +2102,7 @@
   },
   "food_deprivation": {
    "variable": "food availability",
-   "value": "none"
+   "value": "fasting"
   },
   "developmental_stage": {
    "_about": "One term_observation per cohort (decision #69, Jess 2026-10-08): the worms were chosen as L4 larvae by eye when picked onto the acclimation plate. At the pick's time (hand-written, with its tolerance), or, with no pick time, a relative time before the cohort's next move. Distributive: it holds of each worm. No stage at the assay: it follows from the pick and assay times. Names alone until the terms are looked up (termInventory lists them).",

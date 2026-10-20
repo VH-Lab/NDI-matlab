@@ -57,7 +57,8 @@ classdef TestHaleySubjects < matlab.unittest.TestCase
                 struct('condition', {{'grid'; 'grid'; 'single'; 'grid'; 'grid'; 'grid'}}, ...
                 'growthCondition', [24; 24; 24; NaN; 24; 24], ...
                 'arenaDiameter', [30; 30; 30; 0; 0; 30], ...
-                'growthTimeSeed', d - days(4) + duration([12 39 0; 12 0 0; 12 41 0; 12 0 0; 12 0 0; 12 0 0])));
+                'growthTimeSeed', d - days(4) + duration([12 39 0; 12 0 0; 12 41 0; 12 0 0; 12 0 0; 12 0 0]), ...
+                'lawnDiameter', [1.5; 1.5; 1.5; 1.5; 1.5; 2], 'lawnSpacing', 6 * ones(6, 1)));
             % ^ plate 3 is a single-patch plate on a mutant screen (single-density,
             %   multi-patch) day: the assay type check reports it. Plate 4 has
             %   no growthCondition and is not excluded: doImport excluded it.
@@ -65,6 +66,8 @@ classdef TestHaleySubjects < matlab.unittest.TestCase
             %   plate 5's failed first video also reads 0, its second 30.
             %   Plates 1 and 3 share TU253's acclimation plate and give its
             %   seeding time as 12:39 and 12:41 (as concentration_0015 does).
+            %   Every plate's design: 1.5 mm patches 6 mm apart, except plate
+            %   5's second video, which gives 2 mm.
 
             % The other three folders: one day, one plate, worms matching.
             for name = {'foragingMatching', 'foragingMini', 'foragingSensory'}
@@ -156,6 +159,42 @@ classdef TestHaleySubjects < matlab.unittest.TestCase
             testCase.verifyEqual(p1.acclimation{1}, p3.acclimation{1}, 'same strain and pick -> same acclimation plate');
             w = S(strcmp(S.local_identifier, 'mutants_worm0005'), :);
             testCase.verifyEqual(w.acclimation{1}, 'mutants_0001_acclimationPlate0001');
+        end
+
+        function testEachAcclimationPlateHasOnePatch(testCase)
+            % the plate's one large patch of OP50, part of it, seeded with it
+            [S, ~] = testCase.list();
+            nAcc = sum(strcmp(S.kind, 'acclimation_plate'));
+            testCase.verifyGreaterThan(nAcc, 0, 'no acclimation plates were inspected');
+            accPatches = strcmp(S.kind, 'patch') & contains(S.local_identifier, '_acclimationPlate');
+            testCase.verifyEqual(sum(accPatches), nAcc, 'one patch per acclimation plate');
+            p = S(strcmp(S.local_identifier, 'mutants_0001_acclimationPlate0001_patch0001'), :);
+            testCase.verifyEqual(height(p), 1);
+            testCase.verifyEqual(p.name{1}, 'Patch 0001 on Acclimation Plate 0001');
+            testCase.verifyEqual(p.bacteria{1}, 'OP50');
+            testCase.verifyEqual(p.type{1}, 'culture');
+            a = S(strcmp(S.local_identifier, 'mutants_0001_acclimationPlate0001'), :);
+            testCase.verifyEqual(p.prep.seeded, a.prep.seeded, 'seeded with its plate');
+            testCase.verifyTrue(isequaln(p.prep.od600, a.prep.od600), 'at its plate''s OD600');
+            testCase.verifyTrue(isnan(p.lawn_diameter_mm), 'no target design on an acclimation plate');
+        end
+
+        function testTheTargetDesignIsCarriedForTheAssertionsStage(testCase)
+            % lawnDiameter on each assay-plate patch, lawnSpacing on its plate (mm)
+            [S, checks] = testCase.list();
+            p = S(strcmp(S.local_identifier, 'mutants_assayPlate0001_patch0001'), :);
+            testCase.verifyEqual(p.lawn_diameter_mm, 1.5);
+            testCase.verifyTrue(isnan(p.lawn_spacing_mm));
+            q = S(strcmp(S.local_identifier, 'mutants_assayPlate0001'), :);
+            testCase.verifyEqual(q.lawn_spacing_mm, 6);
+            testCase.verifyTrue(isnan(q.lawn_diameter_mm));
+            testCase.verifyTrue(all(isnan(S.lawn_diameter_mm(strcmp(S.folder, 'foragingConcentration')))), ...
+                'no lawnDiameter column, no design');
+            % plate 5's videos disagree: the first is kept, and it is reported
+            p5 = S(strcmp(S.local_identifier, 'mutants_assayPlate0005_patch0001'), :);
+            testCase.verifyEqual(p5.lawn_diameter_mm, 1.5);
+            testCase.verifyEqual(checks.lawnDesignDisagrees, ...
+                {'foragingMutants: plate 5 gives lawnDiameter [1.5 2]; kept 1.5'});
         end
 
         function testSourceChecksReportWithoutChanging(testCase)

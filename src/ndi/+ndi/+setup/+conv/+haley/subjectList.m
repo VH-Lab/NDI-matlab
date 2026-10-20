@@ -27,6 +27,9 @@ function [S, checks] = subjectList(dataParentDir, sessions, options)
 %                      in a session, numbered by pick "Acclimation Plate 0001"
 %                      time then strain (the source
 %                      has no id for it; decision #39)
+%     patch            one per acclimation plate: its concentration_0001_acclimationPlate0001_patch0001
+%                      one large patch of OP50,       "Patch 0001 on Acclimation Plate 0001"
+%                      the seeding's subject
 %     food_deprivation_plate  one per (strain,   mutants_0001_foodDeprivationPlate0001
 %                      starvedTime) in a session: the "Food Deprivation Plate 0001"
 %                      unseeded plate food-deprived worms were moved to
@@ -55,7 +58,10 @@ function [S, checks] = subjectList(dataParentDir, sessions, options)
 %   plate's `growthTimePicked`, a food deprivation plate's `starvedTime`;
 %   NaT for the other kinds), bacteria (a patch's strain key: OP50 on the
 %   C. elegans plates, OP50-GFP on the E. coli plates; '' for a patch of LB
-%   alone, OD600 0), cohort (a worm's cohort), type (subject.type, decision
+%   alone, OD600 0), cohort (a worm's cohort), lawn_diameter_mm (an assay-plate
+%   patch's target diameter, the plate's `lawnDiameter`; NaN otherwise),
+%   lawn_spacing_mm (an assay plate's target patch spacing, its `lawnSpacing`;
+%   NaN otherwise), type (subject.type, decision
 %   #55: worm organism, cohort group, a patch with bacteria culture, every
 %   plate and a patch of LB alone material), prep (stage 8, decisions #54,
 %   #56: a struct of how a plate or patch was made -- seeded, cold_room,
@@ -97,6 +103,8 @@ function [S, checks] = subjectList(dataParentDir, sessions, options)
 %                          + its `condition`) is not its session's study's
 %     growthDisagrees      an acclimation plate whose assay plates give
 %                          different growth times (the first is kept)
+%     lawnDesignDisagrees  an assay plate whose videos give different
+%                          `lawnDiameter` or `lawnSpacing` (the first is kept)
 %     correctionUnmatched  a spec correction naming a plate not listed
 %     roomTempLooksEstimated  an assay plate whose `timeRoomTemp` is exactly a
 %                          recording's start minus 1 h (filled in by rule)
@@ -116,7 +124,7 @@ checks = struct('plateWithoutSession', {{}}, 'plateOnTwoDays', {{}}, ...
     'patchCountDisagrees', {{}}, 'noPickTime', {{}}, 'ecoliSeeding', {{}}, ...
     'growthDisagrees', {{}}, 'correctionUnmatched', {{}}, 'roomTempLooksEstimated', {{}}, ...
     'patchOD600', {{}}, 'assayTypeDisagrees', {{}}, 'noGrowthCondition', {{}}, 'notFilmed', {{}}, ...
-    'growthSeedSpread', {{}});
+    'growthSeedSpread', {{}}, 'lawnDesignDisagrees', {{}});
 rows = {};
 dayHits = containers.Map();   % experiment-level correction key -> plates it applied to
 assayChecked = 0;       % plates whose original assay type was compared with their study
@@ -148,7 +156,7 @@ for f = 1:numel(folders)
     plates = unique(I.plateNum);
     P = struct('plate', {}, 'session', {}, 'worms', {}, 'strain', {}, 'pick', {}, ...
         'nPatch', {}, 'nVideo', {}, 'filmed', {}, 'exclude', {}, 'starved', {}, 'od600', {}, ...
-        'prep', {}, 'growth', {});
+        'prep', {}, 'growth', {}, 'diameter', {}, 'spacing', {});
     wormHome = containers.Map('KeyType', 'double', 'ValueType', 'double');
     for k = 1:numel(plates)
         p = double(plates(k));
@@ -251,11 +259,20 @@ for f = 1:numel(folders)
             checks.notFilmed{end+1} = sprintf('%s: plate %d (expNum %d) was not filmed', ...
                 folder, p, days(1));
         end
+        % the plate's design: its patches' target diameter and spacing (mm)
+        [diameter, why] = designValue(R, 'lawnDiameter');
+        if ~isempty(why)
+            checks.lawnDesignDisagrees{end+1} = sprintf('%s: plate %d %s', folder, p, why);
+        end
+        [spacing, why] = designValue(R, 'lawnSpacing');
+        if ~isempty(why)
+            checks.lawnDesignDisagrees{end+1} = sprintf('%s: plate %d %s', folder, p, why);
+        end
         P(end+1) = struct('plate', p, 'session', mine.local_identifier{s}, 'worms', kept, ...
             'strain', char(R.strainID{1}), 'pick', pick, 'nPatch', nPatch, ...
             'nVideo', height(R) * filmed, 'filmed', filmed, 'exclude', ex, 'starved', starved, 'od600', od, ...
             'prep', prepOf(R, 'timeSeed', 'timeColdRoom', 'timeRoomTemp', NaN), ...
-            'growth', growthPrepOf(R)); %#ok<AGROW>
+            'growth', growthPrepOf(R), 'diameter', diameter, 'spacing', spacing); %#ok<AGROW>
         [P(end).growth, dayHits] = growthCorrection(P(end).growth, folder, days(1), ...
             options.Corrections, dayHits);
     end
@@ -332,6 +349,17 @@ for f = 1:numel(folders)
                 end
             end
             rows{end+1} = r; %#ok<AGROW>
+            % its one patch (200 uL of OP50, the paper's "one large patch"):
+            % what the seeding put on the plate, seeded with it at its OD600
+            pr = subjRow(mine.local_identifier{s}, 'patch', [gid '_patch0001'], ...
+                sprintf('Patch 0001 on Acclimation Plate %04d', n), ...
+                sprintf('The one patch of acclimation plate %d.', n), folder, NaN, 1, NaN, ...
+                '', '', false);
+            pr.bacteria = 'OP50';
+            pr.prep.seeded = r.prep.seeded;
+            pr.prep.seeded_spread_s = r.prep.seeded_spread_s;
+            pr.prep.od600 = r.prep.od600;
+            rows{end+1} = pr; %#ok<AGROW>
         end
     end
 
@@ -390,6 +418,7 @@ for f = 1:numel(folders)
             q.strain, growthOf{m}, q.exclude, NaT, deprivationOf{m});
         r.filmed = q.filmed;
         r.prep = q.prep;
+        r.lawn_spacing_mm = q.spacing;
         % a timeRoomTemp of exactly a recording's start minus 1 h was filled
         % in by rule (decision #54d): the spec's corrections list each one
         if ismember('timeRecord', I.Properties.VariableNames) && ~isnat(q.prep.room_temp)
@@ -413,6 +442,7 @@ for f = 1:numel(folders)
             r.prep.seeded = q.prep.seeded;
             r.prep.volume_ul = q.prep.volume_ul;
             if isscalar(od), r.prep.od600 = od; end
+            r.lawn_diameter_mm = q.diameter;
             rows{end+1} = r; %#ok<AGROW>
         end
         % The plate's worms are one cohort (decision #55): moved together, so
@@ -594,9 +624,10 @@ end
 
 % ---- report -------------------------------------------------------------------
 if isempty(rows)
-    S = cell2table(cell(0, 19), 'VariableNames', {'session', 'kind', 'local_identifier', ...
+    S = cell2table(cell(0, 21), 'VariableNames', {'session', 'kind', 'local_identifier', ...
         'name', 'description', 'folder', 'plate', 'patch', 'worm', 'strain', 'acclimation', ...
-        'deprivation', 'exclude', 'filmed', 'worms_placed', 'bacteria', 'cohort', 'prep', 'type'});
+        'deprivation', 'exclude', 'filmed', 'worms_placed', 'bacteria', 'cohort', ...
+        'lawn_diameter_mm', 'lawn_spacing_mm', 'prep', 'type'});
 else
     S = struct2table([rows{:}], 'AsArray', true);
     S.type = arrayfun(@(k) typeOf(S.kind{k}, S.bacteria{k}), (1:height(S))', ...
@@ -656,7 +687,7 @@ s = struct('session', session, 'kind', kind, 'local_identifier', id, 'name', nam
     'description', desc, 'folder', folder, 'plate', plate, 'patch', patch, 'worm', worm, ...
     'strain', strain, 'acclimation', acclimation, 'deprivation', deprivation, ...
     'exclude', logical(exclude), 'filmed', true, 'worms_placed', placed, 'bacteria', '', 'cohort', '', ...
-    'prep', blankPrep());
+    'lawn_diameter_mm', NaN, 'lawn_spacing_mm', NaN, 'prep', blankPrep());
 end
 
 function p = blankPrep()
@@ -714,6 +745,30 @@ if ismember(name, R.Properties.VariableNames) && height(R) > 0
     if isdatetime(v), v = v(1); end
 else
     v = default;
+end
+end
+
+function [v, why] = designValue(R, name)
+% A plate's design value (mm) from its rows: NaN when the column is missing or
+% empty; the first when its videos disagree, and WHY says so.
+arguments
+    R table
+    name {mustBeText}
+end
+v = NaN;
+why = '';
+if ~ismember(name, R.Properties.VariableNames) || height(R) == 0
+    return;
+end
+x = double(R.(name));
+x = x(~isnan(x));
+if isempty(x)
+    return;
+end
+v = x(1);
+u = unique(x);
+if numel(u) > 1
+    why = sprintf('gives %s %s; kept %g', name, mat2str(u(:)'), v);
 end
 end
 

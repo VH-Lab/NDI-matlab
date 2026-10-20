@@ -233,12 +233,12 @@ if ~strcmp(options.Studies, 'only')
 
     % Chemicals and formulations (Haley decision #56): what plates and seeding
     % suspensions are made of, dataset-level so every session's doses can point
-    % at one copy. A chemical's `substance` is a term (a name until the ontology
-    % lookup); its `concentration` is the bottle's own strength. A formulation's
+    % at one copy. A chemical's `substance` is a term, {node, name} in the spec
+    % (or a name alone); its `concentration` is the bottle's own strength. A formulation's
     % `ingredients` name chemicals, formulations or strains by key, each with
     % what the source gave (an added `mass` / `volume`, or a final
-    % `concentration`), in order; `type` names the standard recipe it is
-    % (did-schema #84; left out on a schema without it); `documented_by` cites
+    % `concentration`), in order; `type` is the term of the standard recipe it
+    % is (did-schema #84; left out on a schema without it); `documented_by` cites
     % where the recipe is written down.
     for e = entries(spec, 'chemicals')
         c = e{1};
@@ -348,6 +348,8 @@ if ~strcmp(options.Studies, 'only')
         a = authors{k};
         extra = struct('sequence', k);
         if isfield(a, 'roles')
+            % CRediT role names: the builder fills each node from the field's
+            % value set (directed_relation.roles), so a name must match it exactly
             extra.roles = did2.build.label(asCell(a.roles));
         end
         state = relate(state, key, a.person, 'has_author', {'dataset'}, {'person'}, extra);
