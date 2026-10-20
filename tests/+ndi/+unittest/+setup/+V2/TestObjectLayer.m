@@ -831,7 +831,7 @@ classdef TestObjectLayer < matlab.unittest.TestCase
                 'a numeric parameter is its number, not its stored record');
             P = sp{1}.method_parameters();
             num = P(cellfun(@isnumeric, P.value), :);
-            testCase.verifyNotEmpty(num, 'the speed''s window and fastest step are numbers');
+            testCase.verifyNotEmpty(num, 'the speed''s window is a number');
             testCase.verifyTrue(all(cellfun(@isscalar, num.value)));
 
             de = w.statements('length_calculation');

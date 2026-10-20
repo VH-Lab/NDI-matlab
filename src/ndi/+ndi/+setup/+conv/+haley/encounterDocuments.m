@@ -35,8 +35,7 @@ function out = encounterDocuments(dataParentDir, session, R, subjectIds, options
 %     velocity_calculation  `speed`, method `minimum`, condition `patch
 %                       encounter period` = during (velocityOnMin)
 %     velocity_calculation  `speed`, method `peak speed before an event`
-%                       (velocityBeforeEnter; method parameter `peak
-%                       neighborhood`, a label, 1 s), conditions `reference
+%                       (velocityBeforeEnter), conditions `reference
 %                       time point` = `encounter onset time`, `analysis window
 %                       start` -10 s, `analysis window end` 0 s
 %     velocity_calculation  `speed`, method `minimum speed after an event`
@@ -44,8 +43,6 @@ function out = encounterDocuments(dataParentDir, session, R, subjectIds, options
 %     acceleration_calculation  `acceleration`, method `ordinary least squares
 %                       estimation` (decelerate, um/s^2 -> m/s^2), the same
 %                       anchor, window -1.5..+6.5 s
-%     time_calculation  `time to slow down` (timeSlowDown, s), the same anchor,
-%                       window -10..+10 s
 %     length_calculation  `distance`, method `maximum`, conditions `reference
 %                       point` = `nearest bacterial patch edge` and the period:
 %                       during (distanceOnMax: the largest signed distance from
@@ -53,9 +50,12 @@ function out = encounterDocuments(dataParentDir, session, R, subjectIds, options
 %                       midpoint never crossed it; analyzeEncounters line 273,
 %                       whose own header misnames it) and after (distanceOffMax,
 %                       outside the patch, unsigned); mm -> m
-%     score_calculation  `posterior probability`, keyed [encounter x
-%                       `behavioral state`] (`exploitation`: exploitPosterior;
-%                       `sensing`: sensePosterior), scale `probability`, 0-1
+%     score_calculation  `posterior probability`, keyed by encounter, one per
+%                       state: condition `behavioral state` = `exploitation`
+%                       (exploitPosterior, method `Gaussian mixture model
+%                       clustering`) and = `sensing` (sensePosterior, method
+%                       `quadratic discriminant analysis`); scale `probability`,
+%                       0-1. timeSlowDown is not kept: no figure uses it
 %     term_calculation  `encounter type`, method `classification`: `exploit`,
 %                       `sample`, `search on patch` (source searchOn), `search
 %                       off patch` (searchOff); the label `unlabeled` where the
@@ -160,8 +160,6 @@ signedNote = ['Signed distance of the midpoint from the patch edge, positive ins
 offPatchNote = 'Distance of the midpoint outside the patch, unsigned.';
 columnMajor = ['Values in column-major order: every encounter''s value for the first ' ...
     'position of the second key, then for the second.'];
-peak = did2.build.list(did2.build.parameter(did2.build.term('', 'peak neighborhood'), ...
-    'Value', 1, 'Unit', haleyTerm('second')));
 detection = {'Method', haleyTerm('patch encounter detection'), 'MethodParameters', ...
     did2.build.list(did2.build.parameter(haleyTerm('body part'), 'Term', haleyTerm('midpoint')))};
 hasTerm = ndi.setup.V2.schemaHasLeaf('term_calculation');
@@ -306,14 +304,12 @@ for g = 1:max(G)
         'velocity_calculation', 'speed', 'velocityOnMin', @speed, ...
             {'Method', haleyTerm('minimum')}, {during}, ''
         'velocity_calculation', 'speed', 'velocityBeforeEnter', @speed, ...
-            {'Method', haleyTerm('peak speed before an event'), 'MethodParameters', peak}, ...
+            {'Method', haleyTerm('peak speed before an event')}, ...
             eventWindow(-10, 0), ''
         'velocity_calculation', 'speed', 'velocityAfterEnter', @speed, ...
             {'Method', haleyTerm('minimum speed after an event')}, eventWindow(0, 10), ''
         'acceleration_calculation', 'acceleration', 'decelerate', @accel, ...
             {'Method', haleyTerm('ordinary least squares estimation')}, eventWindow(-1.5, 6.5), ''
-        'time_calculation', 'time to slow down', 'timeSlowDown', @secs, ...
-            detection, eventWindow(-10, 10), ''
         'length_calculation', 'distance', 'distanceOnMax', @mm, ...
             {'Method', haleyTerm('maximum')}, {edgeCondition(), during}, signedNote
         'length_calculation', 'distance', 'distanceOffMax', @mm, ...
@@ -328,18 +324,22 @@ for g = 1:max(G)
             keyed{:}, note{:}, per{:}); %#ok<AGROW>
     end
 
-    % the posterior probabilities of exploitation and sensing: one array, keyed
-    % by behavioral state
-    if all(ismember({'exploitPosterior', 'sensePosterior'}, enc.Properties.VariableNames))
-        x = [double(enc.exploitPosterior), double(enc.sensePosterior)];
-        byState = keysWith(did2.build.key(haleyTerm('behavioral state'), 2, 'Labels', ...
-            haleyTerm({'exploitation', 'sensing'})));
+    % the posterior probabilities of exploitation and sensing: two statements,
+    % because two models made them (labelEncounters: a Gaussian mixture model
+    % of log duration and log on-patch speed; a semi-supervised quadratic
+    % discriminant analysis of three speed features), each with the state as
+    % its condition (T16)
+    posteriors = {
+        'exploitPosterior', 'exploitation', 'Gaussian mixture model clustering'
+        'sensePosterior',   'sensing',      'quadratic discriminant analysis'};
+    for j = 1:size(posteriors, 1)
+        if ~ismember(posteriors{j, 1}, enc.Properties.VariableNames), continue; end
         docs{end+1} = did2.build.statement('score_calculation', wormId, ...
-            haleyTerm('posterior probability'), prob(x), detection{:}, byState{:}, ...
-            'Notes', columnMajor, per{:}); %#ok<AGROW>
-    elseif any(ismember({'exploitPosterior', 'sensePosterior'}, enc.Properties.VariableNames))
-        out.skipped{end+1} = sprintf('%s: encounter.mat has only one of exploitPosterior / sensePosterior; no posteriors', ...
-            worm);
+            haleyTerm('posterior probability'), prob(double(enc.(posteriors{j, 1}))), ...
+            'Method', haleyTerm(posteriors{j, 3}), ...
+            'Conditions', did2.build.list(did2.build.condition(haleyTerm('behavioral state'), ...
+                'Term', haleyTerm(posteriors{j, 2}))), ...
+            keyed{:}, per{:}); %#ok<AGROW>
     end
 
     % the encounter type, from thresholds on the posteriors
@@ -418,13 +418,6 @@ arguments
     x
 end
 v = did2.build.valueCell('acceleration', x(:)' * 1e-6, 'SourceValue', x(:)', 'SourceUnit', 'um/s^2');
-end
-
-function v = secs(x)
-arguments
-    x
-end
-v = did2.build.valueCell('time', x(:)');
 end
 
 function v = mm(x)

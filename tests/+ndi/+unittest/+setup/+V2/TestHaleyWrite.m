@@ -505,6 +505,7 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             toAssay = mine(cellfun(@(d) strcmp(d.term.value.name, 'assay plate'), mine));
             testCase.verifyNumElements(toAssay, 1);
             testCase.verifyEqual(toAssay{1}.statement.variable.name, 'location');
+            testCase.verifyEqual(toAssay{1}.term.value.node, 'EMPTY:0000321', 'assay plate');
             testCase.verifyEqual(toAssay{1}.statement.variable.node, 'NCIT:C25341');
             testCase.verifyEqual(toAssay{1}.interaction.method.name, 'agar plug transfer');
             mp = toAssay{1}.interaction.method_parameters;
@@ -650,7 +651,7 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             % its arena mask: a label calculation of the plate from the video,
             % run by the analysis package in MATLAB on macOS
             masks = docs(strcmp(classes, 'label_calculation'));
-            arena = masks(cellfun(@(d) strcmp(d.statement.variable.name, 'arena region') ...
+            arena = masks(cellfun(@(d) strcmp(d.statement.variable.name, 'arena mask') ...
                 && strcmp(edge(d, 'entity_id'), idOf('concentration_assayPlate0012')), masks));
             testCase.verifyNumElements(arena, 1);
             a = arena{1};
@@ -913,12 +914,19 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             testCase.verifyEqual(cellfun(@(t) t.name, types, 'UniformOutput', false), {'exploit', 'sample'});
             testCase.verifyEqual(methodOf(lb{1}), 'classification');
 
-            % exploitPosterior + sensePosterior: one posterior, keyed [encounter x state]
+            % exploitPosterior and sensePosterior: two statements, one per model
+            % (labelEncounters), the state a condition
             pr = named('score_calculation', 'concentration_worm0121', 'posterior probability');
-            testCase.verifyNumElements(pr, 1);
-            testCase.verifyEqual(numbers(pr{1}.score.value, 'score'), [0.9 0.2 0.8 0.6], 'AbsTol', 1e-12);
-            pkeys = entries(pr{1}.data.keys);
-            testCase.verifyEqual({pkeys{2}.term.name}, {'exploitation', 'sensing'});
+            testCase.verifyNumElements(pr, 2);
+            state = cellfun(@(d) conditionTerm(d, 'behavioral state'), pr, 'UniformOutput', false);
+            ex = pr{strcmp(state, 'exploitation')};
+            se = pr{strcmp(state, 'sensing')};
+            testCase.verifyEqual(numbers(ex.score.value, 'score'), [0.9 0.2], 'AbsTol', 1e-12);
+            testCase.verifyEqual(numbers(se.score.value, 'score'), [0.8 0.6], 'AbsTol', 1e-12);
+            testCase.verifyEqual(ex.interaction.method.node, 'EMPTY:0000316', 'Gaussian mixture model clustering');
+            testCase.verifyEqual(se.interaction.method.node, 'EMPTY:0000317', 'quadratic discriminant analysis');
+            % timeSlowDown is not kept: no figure uses it
+            testCase.verifyEmpty(named('time_calculation', 'concentration_worm0121', 'time to slow down'));
 
             % the gap before the first encounter
             g0 = speeds(cellfun(@(d) isequal(conditionTerms(d), {'before the first patch encounter'}), speeds));

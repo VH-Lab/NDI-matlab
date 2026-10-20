@@ -332,7 +332,7 @@ out.documents = docs;
         end
         x = struct('Fields', eachMember, 'Method', method, 'MethodParameters', params);
         statement('term_manipulation', cohort, haleyTerm(cfg.transfer.variable), ...
-            did2.build.term('', value), refs(moveKey), x, 'transfer');
+            haleyTerm(value), refs(moveKey), x, 'transfer');
     end
 
     function [method, params] = assayMethod(protocolMethod)
@@ -401,8 +401,8 @@ out.documents = docs;
             out.skipped{end+1} = sprintf('%s: no pick time and no later move; no developmental stage', cid);
             return;
         end
-        statement('term_observation', cid, st.variable, did2.build.term('', st.value), when, ...
-            struct('Fields', eachMember, 'Method', did2.build.term('', st.method)), 'developmental_stage');
+        statement('term_observation', cid, haleyTerm(st.variable), haleyTerm(st.value), when, ...
+            struct('Fields', eachMember, 'Method', haleyTerm(st.method)), 'developmental_stage');
     end
 
     function [t, tol, fmt] = lastMoveOff(holding)

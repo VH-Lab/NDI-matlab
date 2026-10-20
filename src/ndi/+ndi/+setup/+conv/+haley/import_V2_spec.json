@@ -2105,7 +2105,7 @@
    "value": "fasting"
   },
   "developmental_stage": {
-   "_about": "One term_observation per cohort (decision #69, Jess 2026-10-08): the worms were chosen as L4 larvae by eye when picked onto the acclimation plate. At the pick's time (hand-written, with its tolerance), or, with no pick time, a relative time before the cohort's next move. Distributive: it holds of each worm. No stage at the assay: it follows from the pick and assay times. Names alone until the terms are looked up (termInventory lists them).",
+   "_about": "One term_observation per cohort (decision #69, Jess 2026-10-08): the worms were chosen as L4 larvae by eye when picked onto the acclimation plate. At the pick's time (hand-written, with its tolerance), or, with no pick time, a relative time before the cohort's next move. Distributive: it holds of each worm. No stage at the assay: it follows from the pick and assay times. Terms (haleyTerm): developmental stage NCIT:C43531, L4 larva WBls:0000038 (L4 larva Ce), visual inspection NCIT:C214703.",
    "variable": "developmental stage",
    "value": "L4 larva",
    "method": "visual inspection"
