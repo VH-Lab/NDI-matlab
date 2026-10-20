@@ -425,19 +425,19 @@ classdef TestObjectLayer < matlab.unittest.TestCase
             % test excludes plate 0012 too, in a copy of the session.
             folder = fullfile(testCase.Root, ['containers_' char(ndi.ido.unique_id())]);
             copyfile(testCase.Session.getpath(), folder);
-            S = ndi.session.dir(folder);
+            sid = testCase.Session.id();
             plate = testCase.subject('concentration_assayPlate0012').document_id;
             worm = testCase.subject('concentration_worm0121').document_id;
             if ndi.setup.V2.schemaHasLeaf('logical_assertion')
                 % the import's own exclusion of plate 0013, restated of 0012
-                ex = S.database_search(ndi.v2.isaQuery('logical_assertion'));
+                ex = testCase.Session.database_search(ndi.v2.isaQuery('logical_assertion'));
                 ex = ex(cellfun(@(d) strcmp(ndi.v2.termName(ndi.v2.blockOf( ...
                     d.document_properties, 'statement', 'variable', '')), ...
                     'inclusion in analysis'), ex));
                 testCase.assertNotEmpty(ex, 'the import excludes plate 0013');
                 variable = ndi.v2.blockOf(ex{1}.document_properties, 'statement', 'variable');
                 doc = did2.build.statement('logical_assertion', plate, variable, false, ...
-                    'SessionId', S.id());
+                    'SessionId', sid);
                 desc = {'inclusion in analysis', false};
             else
                 % no `logical` value kind (the `current` leg): the same
@@ -448,10 +448,16 @@ classdef TestObjectLayer < matlab.unittest.TestCase
                 end
                 doc = did2.build.statement('term_assertion', plate, ...
                     did2.build.term('', 'container exclusion test'), ...
-                    did2.build.term('', 'excluded'), 'SessionId', S.id());
+                    did2.build.term('', 'excluded'), 'SessionId', sid);
                 desc = {'container exclusion test', 'excluded'};
             end
-            S.database.db.add({did2.document(doc)});
+            % written into the copy's database file, then the copy is opened
+            db = did2.database.sqlitedb(fullfile(folder, '.ndi', ...
+                ndi.database.implementations.database.did2sqlite.DEFAULTFILENAME()));
+            db.add({did2.document(doc)});
+            db.close();
+            S = ndi.session.dir(folder);
+            testCase.verifyEqual(S.id(), sid);
 
             all_ = ndi.statement.search(S, 'Class', 'calculation', 'Subject', worm);
             testCase.assertNotEmpty(all_, 'worm 0121 has calculations (stage 10)');
