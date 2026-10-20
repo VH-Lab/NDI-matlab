@@ -377,7 +377,7 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
                 'instance_of') && strcmp(edge(r, 'child_id'), idOf(local)), rel));
             % the species: on the cohort (did-schema main), or once on the
             % strain entity the cohort is an instance_of (decision #112)
-            md = result.metadata.documents;
+            md = cellfun(@newNames, result.metadata.documents, 'UniformOutput', false);
             speciesOf = @(id) md(cellfun(@(d) isfield(d, 'statement') && ...
                 strcmp(edge(d, 'entity_id'), id) && strcmp(d.statement.variable.node, 'NCIT:C45293'), md));
             a = about('concentration_assayPlate0012_worms', 'species');
@@ -568,7 +568,7 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             % the seeding solutions (decision #114): each one pipetted is an
             % entity of type material, made to its formulation -- its plan --
             % and only the stock's OD600 was measured, an observation of it
-            md = result.metadata.documents;
+            md = cellfun(@newNames, result.metadata.documents, 'UniformOutput', false);
             mk = cellfun(@ndi.v2.leafName, md, 'UniformOutput', false);
             ids = result.metadata.ids;
             stockId = ids('suspension_op50_20220202#solution');
