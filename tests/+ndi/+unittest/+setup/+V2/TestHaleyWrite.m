@@ -56,7 +56,7 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             testCase.verifyEqual(out.counts.plate_excluded, 1);
             testCase.verifyEqual(out.counts.plate_not_filmed, 1);
             docs = cellfun(@newNames, out.documents, 'UniformOutput', false);
-            pick = @(var) docs(cellfun(@(d) strcmp(d.statement.variable.name, var), docs));
+            pick = @(var) docs(cellfun(@(d) strcmpi(d.statement.variable.name, var), docs));
             % the reason is the tag's notes; with a schema whose statements
             % have no notes, a text statement beside it
             ex = pick('inclusion in analysis');
@@ -88,7 +88,7 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             session.include = true;
             out = ndi.setup.conv.haley.assertionDocuments(session, S, ids);
             docs = cellfun(@newNames, out.documents, 'UniformOutput', false);
-            pick = @(var) docs(cellfun(@(d) strcmp(d.statement.variable.name, var), docs));
+            pick = @(var) docs(cellfun(@(d) strcmpi(d.statement.variable.name, var), docs));
             ex = pick('inclusion in analysis');
             testCase.verifyNumElements(ex, 1);
             testCase.verifyEmpty(pick('reason for inclusion in analysis'));
@@ -313,7 +313,7 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             byLocal = containers.Map(cellfun(@(d) d.subject.local_identifier, subj, 'UniformOutput', false), subj);
             ta = docs(strcmp(classes, 'term_assertion'));
             about = @(local, variable) ta(cellfun(@(a) strcmp(edge(a, 'entity_id'), idOf(local)) ...
-                && strcmp(a.statement.variable.name, variable), ta));
+                && strcmpi(a.statement.variable.name, variable), ta));
 
             % 4 cohorts, each with a species, a strain and a sex; 7 seeded
             % patches (one per assay plate, one per acclimation plate), each
@@ -383,7 +383,7 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             if ndi.setup.V2.schemaHasLeaf('logical_assertion')
                 la = docs(strcmp(classes, 'logical_assertion'));
                 aboutL = @(local, variable) la(cellfun(@(a) strcmp(edge(a, 'entity_id'), idOf(local)) ...
-                    && strcmp(a.statement.variable.name, variable), la));
+                    && strcmpi(a.statement.variable.name, variable), la));
                 a = aboutL('concentration_assayPlate0013', 'inclusion in analysis');
                 testCase.verifyNumElements(a, 1);
                 testCase.verifyFalse(logical(a{1}.logical.value));
@@ -510,7 +510,7 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             mine = on(tmn, 'concentration_assayPlate0012_worms');
             toAssay = mine(cellfun(@(d) strcmp(d.term.value.name, 'assay plate'), mine));
             testCase.verifyNumElements(toAssay, 1);
-            testCase.verifyEqual(toAssay{1}.statement.variable.name, 'location');
+            testCase.verifyEqual(toAssay{1}.statement.variable.name, 'Location');
             testCase.verifyEqual(toAssay{1}.term.value.node, 'EMPTY:0000321', 'assay plate');
             testCase.verifyEqual(toAssay{1}.statement.variable.node, 'NCIT:C25341');
             testCase.verifyEqual(toAssay{1}.interaction.method.name, 'agar plug transfer');
@@ -565,7 +565,7 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             testCase.verifyNumElements(h12, 1);
             testCase.verifyEqual(t12{1}.temperature.value.celsius, 21.62, 'AbsTol', 1e-9);
             testCase.verifyEqual(h12{1}.humidity.value.percent_relative_humidity, 52, 'AbsTol', 1e-9);
-            testCase.verifyEqual(t12{1}.statement.variable.name, 'ambient temperature');
+            testCase.verifyEqual(t12{1}.statement.variable.name, 'Environmental Temperature');
             testCase.verifyEqual(t12{1}.statement.variable.node, 'NCIT:C90380');
             testCase.verifyEqual(h12{1}.statement.variable.name, 'relative humidity');
             testCase.verifyEqual(h12{1}.statement.variable.node, 'om:RelativeHumidity');
@@ -657,7 +657,10 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             % its arena mask: a label calculation of the plate from the video,
             % run by the analysis package in MATLAB on macOS
             masks = docs(strcmp(classes, 'label_calculation'));
-            arena = masks(cellfun(@(d) strcmp(d.statement.variable.name, 'arena mask') ...
+            % masks are Binary Mask with an Imaging Region of Interest condition
+            % (tenet T19: one variable, the region a condition complete on its own)
+            arena = masks(cellfun(@(d) strcmp(d.statement.variable.name, 'Binary Mask') ...
+                && strcmp(conditionTerm(d, 'Imaging Region of Interest'), 'arena') ...
                 && strcmp(edge(d, 'entity_id'), idOf('concentration_assayPlate0012')), masks));
             testCase.verifyNumElements(arena, 1);
             a = arena{1};
@@ -668,7 +671,7 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             % `datum_type` was renamed `data_type` on 2026-10-08
             testCase.verifyEqual(ndi.v2.blockOf(a, 'value', 'data_type', ndi.v2.blockOf(a, 'value', 'datum_type')), 'bool');
             mp = entries(a.interaction.method_parameters);
-            testCase.verifyEqual(mp{1}.variable.name, 'plate or arena diameter');
+            testCase.verifyEqual(mp{1}.variable.name, 'arena diameter');
             testCase.verifyEqual(mp{1}.variable.node, 'EMPTY:0000122');
             k = entries(a.data.keys);
             testCase.verifyEqual(cellfun(@(x) x.variable.node, k, 'UniformOutput', false), ...
@@ -698,10 +701,11 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             % the lawn mask: every patch was found by template, i.e. image
             % registration; no target statements were given, so its one input
             % is the video
-            lawn = masks(cellfun(@(d) strcmp(d.statement.variable.name, 'bacterial patch mask') ...
+            lawn = masks(cellfun(@(d) strcmp(d.statement.variable.name, 'Binary Mask') ...
+                && strcmp(conditionTerm(d, 'Imaging Region of Interest'), 'bacterial patch') ...
                 && strcmp(edge(d, 'entity_id'), idOf('concentration_assayPlate0012')), masks));
             testCase.verifyNumElements(lawn, 1);
-            testCase.verifyEqual(lawn{1}.statement.variable.node, 'EMPTY:0000131');
+            testCase.verifyEqual(lawn{1}.statement.variable.node, 'NCIT:C201530');
             testCase.verifyEqual(lawn{1}.interaction.method.node, 'NCIT:C80145');
             testCase.verifyFalse(isfield(lawn{1}.interaction, 'method_parameters') ...
                 && ~isempty(lawn{1}.interaction.method_parameters), ...
@@ -762,9 +766,9 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             testCase.verifyEqual(k1{1}.variable.name, 'video frame');
             testCase.verifyEqual(k1{1}.variable.node, 'EMPTY:0000309');
             testCase.verifyEqual(k1{1}.n, 5);
-            testCase.verifyEqual(k1{2}.variable.node, 'EMPTY:0000135', 'body part');
+            testCase.verifyEqual(k1{2}.variable.node, 'NCIT:C32221', 'Body Part');
             testCase.verifyEqual(k1{2}.n, 1, 'only the midpoint was tracked');
-            testCase.verifyEqual(k1{2}.term(1).node, 'EMPTY:0000137', 'midpoint');
+            testCase.verifyEqual(k1{2}.term(1).node, 'EMPTY:0000137', 'body midpoint');
             testCase.verifyEqual(k1{3}.variable.node, 'NCIT:C44465', 'coordinate');
             testCase.verifyEqual({k1{3}.term.node}, {'NCIT:C44477', 'NCIT:C44478'});
             mp = entries(p.interaction.method_parameters);
@@ -844,8 +848,8 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             sizes = {};
             for i = 1:numel(obs)
                 A = ndi.statement.fromDocument(session, obs{i}).axes();
-                if height(A) ~= 2 || ~all(A.unit == "pixel"), continue; end
-                testCase.verifyEqual(A.variable, ["Y-coordinate"; "X-coordinate"]);
+                if height(A) ~= 2 || ~all(A.unit == "Pixel"), continue; end
+                testCase.verifyEqual(A.variable, ["Y-Coordinate"; "X-Coordinate"]);
                 testCase.verifyEqual(A.coordinates{1}, (0.5:1:A.n(1) - 0.5)');
                 testCase.verifyEqual(A.n(1), A.n(2), 'the fixture''s images are square');
                 sizes{end+1} = A.n(1); %#ok<AGROW>
@@ -882,7 +886,7 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             testCase.verifyEqual(list{1}.statement.variable.node, 'EMPTY:0000140');
             testCase.verifyEqual([list{1}.time.value.seconds], [1 3] / fr, 'AbsTol', 1e-9, ...
                 'rows 2 and 4 of a one-video track: frames 2 and 4');
-            testCase.verifyEqual(methodOf(list{1}), 'patch encounter detection');
+            testCase.verifyEqual(methodOf(list{1}), 'encounter detection');
             lk = entries(list{1}.data.keys);
             testCase.verifyEqual(lk{1}.variable.node, 'NCIT:C62143', 'keyed `encounter`');
             l111 = named('time_calculation', 'concentration_worm0111', 'encounter onset time');
@@ -891,7 +895,7 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
 
             % velocityOn + velocityOff: one median speed, keyed [encounter x period]
             speeds = named('velocity_calculation', 'concentration_worm0121', 'speed');
-            sp = speeds(cellfun(@(d) strcmp(methodOf(d), 'median') && ...
+            sp = speeds(cellfun(@(d) strcmp(methodOf(d), 'Median') && ...
                 isempty(conditionTerms(d)), speeds));
             testCase.verifyNumElements(sp, 1);
             v = numbers(sp{1}.velocity.value, 'meters_per_second');
@@ -900,13 +904,13 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             testCase.verifyTrue(isnan(v(4)), 'nothing after the last encounter');
             keys = entries(sp{1}.data.keys);
             testCase.verifyNumElements(keys, 2);
-            testCase.verifyEqual(keys{2}.variable.name, 'patch encounter period');
-            testCase.verifyEqual({keys{2}.term.name}, {'during the patch encounter', 'after the patch encounter'});
+            testCase.verifyEqual(keys{2}.variable.name, 'encounter period');
+            testCase.verifyEqual({keys{2}.term.name}, {'during the encounter', 'after the encounter'});
             testCase.verifyTrue(ismember(list{1}.base.id, edgeAll(sp{1}, 'input_id')), ...
                 'a per-encounter value is computed over the encounter list');
-            mn = speeds(cellfun(@(d) strcmp(methodOf(d), 'minimum'), speeds));
+            mn = speeds(cellfun(@(d) strcmp(methodOf(d), 'minimum observed value'), speeds));
             testCase.verifyEqual(numbers(mn{1}.velocity.value, 'meters_per_second'), [5 6] * 1e-6, 'AbsTol', 1e-15);
-            testCase.verifyEqual(conditionTerms(mn{1}), {'during the patch encounter'});
+            testCase.verifyEqual(conditionTerms(mn{1}), {'during the encounter'});
             pk = speeds(cellfun(@(d) strcmp(methodOf(d), 'peak speed before an event'), speeds));
             testCase.verifyEqual(numbers(pk{1}.velocity.value, 'meters_per_second'), [100 110] * 1e-6, 'AbsTol', 1e-15);
             testCase.verifyEqual(conditionValues(pk{1}), [-10 0], ...
@@ -918,7 +922,7 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             testCase.verifyEqual(methodOf(de{1}), 'ordinary least squares estimation');
             testCase.verifyEqual(conditionValues(de{1}), [-1.5 6.5]);
             dist = named('length_calculation', 'concentration_worm0121', 'distance');
-            on = dist(cellfun(@(d) ismember('during the patch encounter', conditionTerms(d)), dist));
+            on = dist(cellfun(@(d) ismember('during the encounter', conditionTerms(d)), dist));
             testCase.verifyEqual(numbers(on{1}.length.value, 'meters'), [0.1 0.2] * 1e-3, 'AbsTol', 1e-15);
             testCase.verifyTrue(ismember('nearest bacterial patch edge', conditionTerms(on{1})));
 
@@ -933,7 +937,7 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
                 types = entries(lb{1}.label.value);
             end
             testCase.verifyEqual(cellfun(@(t) t.name, types, 'UniformOutput', false), {'exploit', 'sample'});
-            testCase.verifyEqual(methodOf(lb{1}), 'classification');
+            testCase.verifyEqual(methodOf(lb{1}), 'Classification');
 
             % exploitPosterior and sensePosterior: two statements, one per model
             % (labelEncounters), the state a condition
@@ -950,10 +954,10 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             testCase.verifyEmpty(named('time_calculation', 'concentration_worm0121', 'time to slow down'));
 
             % the gap before the first encounter
-            g0 = speeds(cellfun(@(d) isequal(conditionTerms(d), {'before the first patch encounter'}), speeds));
+            g0 = speeds(cellfun(@(d) isequal(conditionTerms(d), {'before the first encounter'}), speeds));
             testCase.verifyNumElements(g0, 1);
             testCase.verifyEqual(g0{1}.velocity.value.meters_per_second, 50e-6, 'AbsTol', 1e-15);
-            testCase.verifyEqual(methodOf(g0{1}), 'median');
+            testCase.verifyEqual(methodOf(g0{1}), 'Median');
 
             % the key takes its positions from the list, once both repositories have key_id
             keys = entries(mn{1}.data.keys);
@@ -985,13 +989,13 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             ic = docs(strcmp(classes, 'intensity_calculation'));
             testCase.verifyTrue(all(cellfun(@(d) strcmp(d.statement.variable.node, 'NCIT:C184706'), ic)), ...
                 'all fluorescence intensity');
-            border = ic(cellfun(@(d) strcmp(methodOf(d), 'maximum') ...
-                && strcmp(conditionTerm(d, 'baseline'), 'bacterial patch edge'), ic));
+            border = ic(cellfun(@(d) strcmp(methodOf(d), 'maximum observed value') ...
+                && strcmp(conditionTerm(d, 'Baseline'), 'bacterial patch edge'), ic));
             testCase.verifyEqual(sort(cellfun(@(d) d.base.id, border, 'UniformOutput', false)), ...
                 sort({result.written{1}.ecoli.borderValues.statementId}), ...
                 'stage 12 finds the border values by statement id');
-            center = ic(cellfun(@(d) strcmp(conditionTerm(d, 'location'), 'bacterial patch center'), ic));
-            testCase.verifyTrue(all(cellfun(@(d) strcmp(methodOf(d), 'mean'), center)));
+            center = ic(cellfun(@(d) strcmp(conditionTerm(d, 'Location'), 'bacterial patch center'), ic));
+            testCase.verifyTrue(all(cellfun(@(d) strcmp(methodOf(d), 'Arithmetic Mean'), center)));
             testCase.verifyNumElements(center, numel(border));
             amp = @(local) cellfun(@(d) d.intensity.value.arbitrary_units, border(cellfun(@(d) ...
                 strcmp(edge(d, 'entity_id'), idOf(local)), border)));
@@ -1003,7 +1007,7 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             l1 = len(cellfun(@(d) strcmp(edge(d, 'entity_id'), idOf('ecoli_plate0002_patch0001')), len));
             testCase.verifyEqual(l1{1}.length.value.meters, 0.2e-3, 'AbsTol', 1e-15);
             testCase.verifyEqual(l1{1}.statement.variable.name, 'distance');
-            testCase.verifyEqual(conditionTerm(l1{1}, 'reference point'), 'bacterial patch edge');
+            testCase.verifyEqual(conditionTerm(l1{1}, 'Reference Point'), 'bacterial patch edge');
             testCase.verifyEqual(conditionTerm(l1{1}, 'distance end point'), 'bacterial patch fluorescence peak');
 
             masks = docs(strcmp(classes, 'label_calculation'));
@@ -1011,7 +1015,8 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             plates = {idOf('ecoli_plate0001'), idOf('ecoli_plate0002')};
             testCase.verifyTrue(all(cellfun(@(d) ismember(edge(d, 'entity_id'), plates), masks)), ...
                 'a mask is a calculation of its plate');
-            testCase.verifyEqual(masks{1}.statement.variable.node, 'EMPTY:0000131');
+            testCase.verifyEqual(masks{1}.statement.variable.node, 'NCIT:C201530');
+            testCase.verifyEqual(conditionTerm(masks{1}, 'Imaging Region of Interest'), 'bacterial patch');
             mk = entries(masks{1}.data.keys);
             testCase.verifyEqual(cellfun(@(e) e.variable.node, mk, 'UniformOutput', false), ...
                 {'NCIT:C44478', 'NCIT:C44477'}, 'keyed [Y-coordinate, X-coordinate]');
@@ -1042,8 +1047,8 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             testCase.verifyEqual(circ{1}.statement.variable.node, 'EMPTY:0000288');
 
             % the profile curves: patch 1 (top-left) is row 2 of image 2
-            curves = ic(cellfun(@(d) strcmp(methodOf(d), 'mean') ...
-                && strcmp(conditionTerm(d, 'reference point'), 'bacterial patch edge'), ic));
+            curves = ic(cellfun(@(d) strcmp(methodOf(d), 'Arithmetic Mean') ...
+                && strcmp(conditionTerm(d, 'Reference Point'), 'bacterial patch edge'), ic));
             testCase.verifyNumElements(curves, 13);
             p1 = curves{cellfun(@(d) strcmp(edge(d, 'entity_id'), idOf('ecoli_plate0001_patch0001')), curves)};
             k = entries(p1.data.keys);
@@ -1105,7 +1110,7 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             idOf = containers.Map(locals, cellfun(@(d) d.base.id, subj, 'UniformOutput', false));
             about = @(id) docs(strcmp(classes, 'intensity_calculation') & cellfun(@(d) ...
                 strcmp(edge(d, 'entity_id'), id) && isfield(d, 'statement') ...
-                && strcmp(d.statement.variable.name, 'fluorescence intensity'), docs));
+                && strcmp(d.statement.variable.name, 'Fluorescence Intensity'), docs));
             e12 = about(idOf('concentration_assayPlate0012_patch0001'));
             testCase.verifyNumElements(e12, 1);
             testCase.verifyEqual(numbers(e12{1}.intensity.value, 'arbitrary_units'), ...
@@ -1229,7 +1234,7 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             testCase.addTeardown(@() delete(csv));
             fprintf('TERM INVENTORY (test dataset):\n%s\nEND TERM INVENTORY\n', fileread(csv));
             testCase.verifyTrue(isfile(csv));
-            testCase.verifyTrue(any(T.kind == "ontology" & T.name == "image intensity" ...
+            testCase.verifyTrue(any(T.kind == "ontology" & T.name == "Imaging Signal Intensity" ...
                 & T.node == "NCIT:C221750"), 'the recordings'' variable carries its node');
             testCase.verifyTrue(any(T.kind == "ontology"), 'species carry ontology nodes');
             testCase.verifyEqual(sum(T.kind == "ontology" & T.node == ""), 0);

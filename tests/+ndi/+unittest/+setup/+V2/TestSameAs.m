@@ -213,7 +213,7 @@ classdef TestSameAs < matlab.unittest.TestCase
                 termAssertion(id.p2, 'illumination', 'LED', sid), ...
                 termAssertion(id.p1, 'objective', 'PlanApo 1.0x', sid), ...
                 termAssertion(id.p2, 'objective', 'PlanApo 2.0x', sid), ...
-                did2.build.statement('term_assertion', id.w1, did2.build.term('NCIT:C45293', 'species'), ...
+                did2.build.statement('term_assertion', id.w1, did2.build.term('NCIT:C45293', 'Species'), ...
                     did2.build.term('NCBITaxon:6239', 'Caenorhabditis elegans'), c{:})}];
             folder = fullfile(testCase.Dir, 'reader');
             mkdir(folder);
@@ -332,6 +332,6 @@ if ndi.setup.V2.schemaHasField('strain', 'species') && ~isfield(f, 'species')
     f.species = struct('node', 'NCBITaxon:6239', 'name', 'Caenorhabditis elegans');
 end
 if ndi.setup.V2.schemaHasField('strain', 'genetic_strain_type') && ~isfield(f, 'genetic_strain_type')
-    f.genetic_strain_type = struct('node', 'NCIT:C62195', 'name', 'wild type');
+    f.genetic_strain_type = struct('node', 'NCIT:C62195', 'name', 'Wild Type');
 end
 end

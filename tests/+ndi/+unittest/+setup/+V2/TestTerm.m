@@ -68,10 +68,35 @@ classdef TestTerm < matlab.unittest.TestCase
             testCase.verifyTrue("NCBITaxon:6239" == a, 'either side');
             testCase.verifyTrue(ndi.term('WBls:0000038', 'L4 larva') == "L4 larva Ce", ...
                 'text: the ontology''s label (from the cache)');
+            testCase.verifyTrue(ndi.term('WBls:0000038', 'L4 larva Ce') == "L4 larva", ...
+                'text: one of the ontology''s synonyms (from the cache; tenet T19)');
             testCase.verifyFalse(a == "worm");
             testCase.verifyTrue(a ~= "worm");
             testCase.verifyEqual(a == ["C. elegans", "worm"], [true false], 'elementwise');
             testCase.verifyError(@() a == 3, 'ndi:term:eq');
+        end
+
+        function testSynonymNodesFindARegisteredTermByASynonym(testCase)
+            % ndi.v2.synonymNodes reads DID-schema's term registry: 'mean' is
+            % a synonym of NCIT:C53319 Arithmetic Mean, so a search for
+            % 'mean' widens to that node (ndi.v2.searchStatements)
+            testCase.assumeTrue(~isempty(which('did2.schema.termIndex')), ...
+                'DID-matlab has no term registry');
+            ix = did2.schema.termIndex();
+            testCase.assumeTrue(ix.present && isKey(ix.byNode, 'ncit:C53319'), ...
+                'the schema in use has no term registry holding NCIT:C53319');
+            % every registered term answered offline: its name alone
+            v = values(ix.byNode);
+            for k = 1:numel(v)
+                write(testCase.Folder, [regexprep(lower(v{k}.node), '[^a-z0-9_.-]', '_') '.json'], ...
+                    struct('node', v{k}.node, 'names', {{v{k}.name}}));
+            end
+            write(testCase.Folder, 'ncit_c53319.json', struct('node', 'NCIT:C53319', ...
+                'names', {{'Arithmetic Mean', 'mean', 'Statistical Mean'}}));
+            testCase.verifyEqual(ndi.v2.synonymNodes('mean'), {'NCIT:C53319'});
+            testCase.verifyEqual(ndi.v2.synonymNodes({'statistical*'}), {'NCIT:C53319'}, ...
+                'a wildcard pattern');
+            testCase.verifyEmpty(ndi.v2.synonymNodes('no term goes by this'));
         end
 
         function testOntologyAnswers(testCase)

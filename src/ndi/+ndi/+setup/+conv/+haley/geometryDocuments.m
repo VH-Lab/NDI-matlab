@@ -167,13 +167,13 @@ for k = 1:height(R)
     calc = [common, {'InputIds', {videoId}}];
 
     % ---- masks ---------------------------------------------------------------
-    arenaParams = did2.build.list(did2.build.parameter(haleyTerm('plate or arena diameter'), ...
+    arenaParams = did2.build.list(did2.build.parameter(haleyTerm('arena diameter'), ...
         'Value', colOr(d, 'arenaDiameter', NaN) * 1e-3, 'Unit', haleyTerm('meter'), ...
         'SourceValue', num2str(colOr(d, 'arenaDiameter', NaN)), 'SourceUnit', 'mm'));
-    [docs, n] = mask(docs, d, 'arenaMask', haleyTerm('arena mask'), ...
+    [docs, n] = mask(docs, d, 'arenaMask', 'arena', ...
         [calc, {'MethodParameters', arenaParams}]);
     out.counts.arena = out.counts.arena + n;
-    [docs, n] = mask(docs, d, 'refMask', haleyTerm('reference mark mask'), calc);
+    [docs, n] = mask(docs, d, 'refMask', 'reference mark', calc);
     out.counts.reference_mark = out.counts.reference_mark + n;
     targets = {};
     if isKey(options.TargetIds, plate)
@@ -189,7 +189,7 @@ for k = 1:height(R)
         lawnArgs = [lawnArgs, {'Notes', sprintf('Each patch''s detection method, in patch order: %s.', ...
             strjoin(found, ', '))}]; %#ok<AGROW>
     end
-    [docs, n, lawnMaskId] = mask(docs, d, 'lawnMask', haleyTerm('bacterial patch mask'), lawnArgs);
+    [docs, n, lawnMaskId] = mask(docs, d, 'lawnMask', 'bacterial patch', lawnArgs);
     out.counts.lawn = out.counts.lawn + n;
     ids = struct('coordinate_system', cs.base.id, 'lawn_mask', lawnMaskId, ...
         'nearest_patch', '', 'pixel', pixel);
@@ -280,19 +280,23 @@ out.documents = docs;
         end
     end
 
-    function [docs, n, id] = mask(docs, d, column, variable, args)
+    function [docs, n, id] = mask(docs, d, column, region, args)
         % one label_calculation + its body; none when the mask is absent or
-        % empty. VARIABLE is a term; ARGS the statement's other name-value pairs
+        % empty. Variable Binary Mask, condition Imaging Region of Interest =
+        % REGION (a haleyTerm handle; tenet T19, one condition complete on its
+        % own); ARGS the statement's other name-value pairs
         n = 0; id = '';
         m = cellOr(d, column);
         if isempty(m) || ~any(m(:))
             return;
         end
+        roi = did2.build.list(did2.build.condition(haleyTerm('region of interest'), ...
+            'Term', haleyTerm(region)));
         st = did2.build.statement('label_calculation', subjectIds(plate), ...
-            variable, [], 'DataBody', true, 'DatumType', 'bool', ...
-            'Keys', pixelKeys(m, pixel), args{:});
+            haleyTerm('binary mask'), [], 'DataBody', true, 'DatumType', 'bool', ...
+            'Keys', pixelKeys(m, pixel), 'Conditions', roi, args{:});
         docs = [docs, {st, ingestedBody(st, logical(m), 'bool', pixelKeys(m, pixel), sid, ...
-            sprintf('The %s (1 = inside), from the source''s `%s`.', variable.name, column))}];
+            sprintf('The %s mask (1 = inside), from the source''s `%s`.', region, column))}];
         n = 1; id = st.base.id;
     end
 end

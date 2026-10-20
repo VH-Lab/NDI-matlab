@@ -39,7 +39,8 @@ classdef term
     %   hasNode     - true where the term has a node
     %   eq, ne      - the same term: equal keys when both have a node, else
     %                 equal names (ignoring case); against text, true when
-    %                 the text is the term's node (by key), name or label
+    %                 the text is the term's node (by key), name, label
+    %                 or one of its synonyms
     %   string, char - the name (the node when there is no name)
     %   toStruct    - {node, name}, as a builder takes it
     %   fromStored  - (static) ndi.term(s) from a stored term, a struct
@@ -237,7 +238,10 @@ classdef term
             elseif strcmpi(s, strtrim(obj.name))
                 tf = true;
             elseif ~isempty(obj.node)
-                tf = strcmpi(s, strtrim(obj.label()));
+                % its ontology label, or a synonym ('meter' is OM's metre),
+                % from the same cached lookup (tenet T19: whichever label is
+                % stored, the term is found by the names it goes by)
+                tf = strcmpi(s, strtrim(obj.label())) || any(strcmpi(s, strtrim(obj.synonyms())));
             end
         end
     end

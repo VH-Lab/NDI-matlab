@@ -425,7 +425,7 @@ classdef TestObjectLayer < matlab.unittest.TestCase
 
             % off by default: nothing about the worm comes from its plates
             testCase.verifyFalse(any(cellfun(isCtx, w.statements())));
-            testCase.verifyEmpty(w.manipulations({'variable', 'ambient temperature'}));
+            testCase.verifyEmpty(w.manipulations({'variable', 'Environmental Temperature'}));
 
             m = w.manipulations('context', true);
             ctx = m(cellfun(isCtx, m));
@@ -437,7 +437,7 @@ classdef TestObjectLayer < matlab.unittest.TestCase
             vars = cellfun(@(x) x.variable_name(), ctx, 'UniformOutput', false);
             methods_ = cellfun(@(x) char(ndi.v2.termName(ndi.v2.blockOf(x.document_properties(), ...
                 'interaction', 'method', ''))), ctx, 'UniformOutput', false);
-            testCase.verifyTrue(any(strcmp(vars, 'ambient temperature')), ...
+            testCase.verifyTrue(any(strcmp(vars, 'Environmental Temperature')), ...
                 'the bench and the incubator, while it was there');
             testCase.verifyFalse(any(strcmp(vars, 'nematode growth medium')), ...
                 'the pour is only known to be before the seeding: it cannot be placed in the stay');
@@ -479,34 +479,34 @@ classdef TestObjectLayer < matlab.unittest.TestCase
             % '>21.615' is plates 12 and 14 (21.62, 21.64), not plate 11 (21.61).
             S = testCase.Session;
             plate = testCase.subject('concentration_assayPlate0012');
-            hot = {'observation', {'variable', 'ambient temperature', 'value', '>21.615'}};
-            cold = {'observation', {'variable', 'ambient temperature', 'value', '>30'}};
-            v = plate.observations({'variable', 'image intensity'});
+            hot = {'observation', {'variable', 'Environmental Temperature', 'value', '>21.615'}};
+            cold = {'observation', {'variable', 'Environmental Temperature', 'value', '>30'}};
+            v = plate.observations({'variable', 'Imaging Signal Intensity'});
             testCase.assertNotEmpty(v, 'plate 12 was filmed');
-            during = plate.observations({'variable', 'image intensity', 'during', hot});
+            during = plate.observations({'variable', 'Imaging Signal Intensity', 'during', hot});
             testCase.verifyNotEmpty(during, 'plate 12''s reading is timed by one of its videos');
             testCase.verifyLessThanOrEqual(numel(during), numel(v));
-            testCase.verifyEmpty(plate.observations({'variable', 'image intensity', 'during', cold}));
+            testCase.verifyEmpty(plate.observations({'variable', 'Imaging Signal Intensity', 'during', cold}));
             other = testCase.subject('concentration_assayPlate0011');
-            testCase.verifyEmpty(other.observations({'variable', 'image intensity', 'during', hot}), ...
+            testCase.verifyEmpty(other.observations({'variable', 'Imaging Signal Intensity', 'during', hot}), ...
                 'plate 11 read 21.61 C; plate 12''s reading is not plate 11''s');
 
             if ndi.setup.V2.schemaHasField('statement', 'distributive')
                 % a worm: its plate's videos, while that plate was over 21.615 C
                 w = testCase.subject('concentration_worm0121');
-                testCase.verifyEmpty(w.observations({'variable', 'image intensity', 'during', hot}), ...
+                testCase.verifyEmpty(w.observations({'variable', 'Imaging Signal Intensity', 'during', hot}), ...
                     'without context the worm has neither the videos nor the reading');
-                o = w.observations({'variable', 'image intensity', 'during', hot}, 'context', true);
+                o = w.observations({'variable', 'Imaging Signal Intensity', 'during', hot}, 'context', true);
                 testCase.verifyNotEmpty(o);
                 testCase.verifyTrue(all(cellfun(@(x) strcmp(x.subject().local_identifier, ...
                     'concentration_assayPlate0012'), o)));
-                t = w.observations({'variable', 'ambient temperature'}, 'context', true);
+                t = w.observations({'variable', 'Environmental Temperature'}, 'context', true);
                 testCase.verifyNumElements(t, 1, 'the one reading of the plate it was filmed on');
                 testCase.verifyEqual(double(t{1}.value()), 21.62, 'AbsTol', 1e-9);
 
                 % search: worms filmed while their plate was over 21.615 C
                 found = local(ndi.entity.search(S, {'type', 'organism', ...
-                    'observation', {'variable', 'image intensity', 'during', hot}}, 'context', true));
+                    'observation', {'variable', 'Imaging Signal Intensity', 'during', hot}}, 'context', true));
                 testCase.verifyTrue(ismember('concentration_worm0121', found));
                 warm = local(ndi.entity.search(S, {'type', 'organism', 'contained_in', ...
                     {'local_identifier', {'concentration_assayPlate0012', 'concentration_assayPlate0014'}}}));
@@ -514,9 +514,9 @@ classdef TestObjectLayer < matlab.unittest.TestCase
                 cool = local(ndi.entity.search(S, {'type', 'organism', 'contained_in', other}));
                 testCase.verifyEmpty(intersect(found, cool), 'none of the worms on plate 11');
                 testCase.verifyEmpty(ndi.entity.search(S, {'type', 'organism', ...
-                    'observation', {'variable', 'image intensity', 'during', cold}}, 'context', true));
+                    'observation', {'variable', 'Imaging Signal Intensity', 'during', cold}}, 'context', true));
                 out = evalc(['ndi.entity.search(S, {''type'', ''organism'', ' ...
-                    '''observation'', {''variable'', ''image intensity'', ''during'', hot}}, ''context'', true, ''explain'', true);']);
+                    '''observation'', {''variable'', ''Imaging Signal Intensity'', ''during'', hot}}, ''context'', true, ''explain'', true);']);
                 testCase.verifySubstring(out, 'at a time when they also had an observation with variable ambient temperature');
             end
             testCase.verifyError(@() plate.observations({'during', {'assertion', {'variable', 'strain'}}}), ...
@@ -581,7 +581,7 @@ classdef TestObjectLayer < matlab.unittest.TestCase
             a = c.assertions();
             testCase.verifyTrue(all(cellfun(@(x) isa(x, 'ndi.assertion'), a)), 'objects, not a table');
             T = ndi.summary(a);
-            testCase.verifyEqual(lower(T.value_node(T.variable == "species")), "ncbitaxon:6239");
+            testCase.verifyEqual(lower(T.value_node(lower(T.variable) == "species")), "ncbitaxon:6239");
             if ndi.setup.V2.mergedEntities()
                 % one entity class: the strain is an instance_of relation
                 testCase.verifyEmpty(c.assertions({'variable', 'strain'}));
@@ -593,7 +593,7 @@ classdef TestObjectLayer < matlab.unittest.TestCase
             testCase.verifyEqual(T.value(T.variable == "organism strain"), "N2");
             st = c.assertions({'variable', 'organism strain'});
             testCase.verifyNumElements(st, 1, 'a cell of filters comes first');
-            testCase.verifyEqual(st{1}.variable_name(), 'organism strain');
+            testCase.verifyEqual(st{1}.variable_name(), 'Organism Strain');
             a = c.statements('assertion', {'variable', 'organism strain'});
             testCase.verifyNumElements(a, 1);
             testCase.verifyClass(a{1}, 'ndi.assertion');
@@ -602,7 +602,7 @@ classdef TestObjectLayer < matlab.unittest.TestCase
             % the variable and a term value are ndi.term objects (as stored)
             t = st{1}.variable();
             testCase.verifyClass(t, 'ndi.term');
-            testCase.verifyEqual(t.name, 'organism strain');
+            testCase.verifyEqual(t.name, 'Organism Strain');
             testCase.verifyTrue(t == "organism strain");
             vt = a{1}.value().terms();
             testCase.verifyClass(vt, 'ndi.term');
@@ -621,7 +621,7 @@ classdef TestObjectLayer < matlab.unittest.TestCase
             % read that way by default
             w = testCase.subject('concentration_worm0121');
             own = w.assertions('inherited', false);
-            testCase.verifyFalse(any(cellfun(@(x) strcmp(x.variable_name(), 'species'), own)), ...
+            testCase.verifyFalse(any(cellfun(@(x) strcmpi(x.variable_name(), 'species'), own)), ...
                 'nothing is stated on the worm itself');
             testCase.verifyTrue(all(cellfun(@(x) strcmp(x.subject().document_id, w.document_id), own)));
             T = w.assertions();
@@ -631,7 +631,7 @@ classdef TestObjectLayer < matlab.unittest.TestCase
             testCase.verifyEqual(sum(cellfun(@(x) strcmp(x.via(), 'own'), st)), numel(mine), ...
                 'its own statements are kept');
             if ndi.setup.V2.schemaHasField('statement', 'distributive')
-                sp = T(cellfun(@(x) strcmp(x.variable_name(), 'species'), T));
+                sp = T(cellfun(@(x) strcmpi(x.variable_name(), 'species'), T));
                 testCase.verifyNumElements(sp, 1);
                 testCase.verifyEqual(lower(sp{1}.raw_value().node), 'ncbitaxon:6239');
                 testCase.verifyEqual(sp{1}.subject().local_identifier, 'concentration_assayPlate0012_worms');
@@ -654,7 +654,7 @@ classdef TestObjectLayer < matlab.unittest.TestCase
             end
             % contained_in is not followed: the plate's temperature is not the worm's
             testCase.verifyEmpty(w.statements('temperature_manipulation'));
-            testCase.verifyEmpty(w.statements('manipulation', {'variable', 'ambient temperature'}));
+            testCase.verifyEmpty(w.statements('manipulation', {'variable', 'Environmental Temperature'}));
         end
 
         function testSubjectsAreTheBiologicalTypes(testCase)
@@ -739,7 +739,7 @@ classdef TestObjectLayer < matlab.unittest.TestCase
             if ndi.setup.V2.schemaHasField('statement', 'distributive')
                 m = manipulations(W(1), {'variable', 'location'});
                 testCase.verifyNotEmpty(m, 'the moves onto plates, stated on the cohort');
-                testCase.verifyTrue(all(cellfun(@(x) strcmp(x.variable_name(), 'location'), m)));
+                testCase.verifyTrue(all(cellfun(@(x) strcmpi(x.variable_name(), 'location'), m)));
             end
 
             T = ndi.summary(ws);
@@ -751,9 +751,9 @@ classdef TestObjectLayer < matlab.unittest.TestCase
             end
             testCase.verifyEqual(W(1).summary().id, string(W(1).document_id), 'one object: one row');
             N = ndi.summary(ws, 'nodes', true);
-            if ismember('species', N.Properties.VariableNames)
-                testCase.verifyEqual(lower(N.species_node), ["ncbitaxon:6239"; "ncbitaxon:6239"]);
-                testCase.verifyFalse(ismember('species_node', T.Properties.VariableNames), 'nodes only when asked');
+            if ismember('Species', N.Properties.VariableNames)
+                testCase.verifyEqual(lower(N.Species_node), ["ncbitaxon:6239"; "ncbitaxon:6239"]);
+                testCase.verifyFalse(ismember('Species_node', T.Properties.VariableNames), 'nodes only when asked');
             end
 
             U = ndi.summary(statements(W));
@@ -761,7 +761,7 @@ classdef TestObjectLayer < matlab.unittest.TestCase
             testCase.verifyTrue(all(ismember({'subject', 'kind', 'class', 'variable', 'variable_node', ...
                 'method', 'method_node', 'value', 'value_node', 'unit', 'start', 'end', 'timezone', ...
                 'stated_on', 'via', 'id'}, U.Properties.VariableNames)));
-            sp = U(U.variable == "species", :);
+            sp = U(lower(U.variable) == "species", :);
             if height(sp) > 0
                 testCase.verifyEqual(unique(lower(sp.value_node)), "ncbitaxon:6239", 'a term value carries its node');
             end
@@ -838,7 +838,7 @@ classdef TestObjectLayer < matlab.unittest.TestCase
             ax = sp{1}.axes();
             testCase.verifyEqual(ax.variable(1), "video frame");
             testCase.verifyEqual(ax.n(1), 5);
-            testCase.verifyEqual(ax.variable(2), "body part");
+            testCase.verifyEqual(ax.variable(2), "Body Part");
             testCase.verifyEqual(ax.n(2), 1, 'one statement for the worm''s body parts: here the midpoint');
 
             in = sp{1}.inputs();

@@ -662,7 +662,7 @@
    },
    "genetic_strain_type": {
     "node": "NCIT:C62195",
-    "name": "wild type"
+    "name": "Wild Type"
    },
    "identifiers": [
     {
@@ -718,7 +718,7 @@
    },
    "genetic_strain_type": {
     "node": "NCIT:C62195",
-    "name": "wild type"
+    "name": "Wild Type"
    },
    "description": "N2 Bristol, wild isolate.",
    "source": "cgc",
@@ -747,7 +747,7 @@
    },
    "genetic_strain_type": {
     "node": "NCIT:C25360",
-    "name": "mutant"
+    "name": "Mutant"
    },
    "source": "cgc",
    "identifiers": [
@@ -775,7 +775,7 @@
    },
    "genetic_strain_type": {
     "node": "NCIT:C25360",
-    "name": "mutant"
+    "name": "Mutant"
    },
    "source": "cgc",
    "identifiers": [
@@ -804,7 +804,7 @@
    },
    "genetic_strain_type": {
     "node": "NCIT:C25360",
-    "name": "mutant"
+    "name": "Mutant"
    },
    "source": "cgc",
    "identifiers": [
@@ -833,7 +833,7 @@
    },
    "genetic_strain_type": {
     "node": "NCIT:C25360",
-    "name": "mutant"
+    "name": "Mutant"
    },
    "source": "cgc",
    "identifiers": [
@@ -861,7 +861,7 @@
    },
    "genetic_strain_type": {
     "node": "NCIT:C25360",
-    "name": "mutant"
+    "name": "Mutant"
    },
    "source": "cgc",
    "identifiers": [
@@ -889,7 +889,7 @@
    },
    "genetic_strain_type": {
     "node": "NCIT:C25360",
-    "name": "mutant"
+    "name": "Mutant"
    },
    "source": "cgc",
    "identifiers": [
@@ -918,7 +918,7 @@
    },
    "genetic_strain_type": {
     "node": "NCIT:C25360",
-    "name": "mutant"
+    "name": "Mutant"
    },
    "source": "cgc",
    "identifiers": [
@@ -947,7 +947,7 @@
    },
    "genetic_strain_type": {
     "node": "NCIT:C25360",
-    "name": "mutant"
+    "name": "Mutant"
    },
    "source": "cgc",
    "identifiers": [
@@ -976,7 +976,7 @@
    },
    "genetic_strain_type": {
     "node": "NCIT:C25360",
-    "name": "mutant"
+    "name": "Mutant"
    },
    "source": "cgc",
    "identifiers": [
@@ -1005,7 +1005,7 @@
    },
    "genetic_strain_type": {
     "node": "NCIT:C25360",
-    "name": "mutant"
+    "name": "Mutant"
    },
    "source": "cgc",
    "identifiers": [
@@ -1135,21 +1135,21 @@
    "key": "citric_acid_monohydrate",
    "substance": {
     "node": "CHEBI:31404",
-    "name": "citric acid monohydrate"
+    "name": "Citric acid monohydrate"
    }
   },
   {
    "key": "tripotassium_citrate_monohydrate",
    "substance": {
     "node": "CHEBI:64746",
-    "name": "tripotassium citrate monohydrate"
+    "name": "potassium citrate monohydrate"
    }
   },
   {
    "key": "edta_disodium",
    "substance": {
     "node": "CHEBI:64758",
-    "name": "disodium EDTA dihydrate"
+    "name": "EDTA disodium salt dihydrate"
    },
    "_note": "The dihydrate: the trace metals recipe's 1.86 g/L is 5 mM only at 372.24 g/mol, and each of its other metals is a round molarity only as its hydrate (decision #91)."
   },
@@ -1157,7 +1157,7 @@
    "key": "feso4",
    "substance": {
     "node": "CHEBI:75836",
-    "name": "iron(II) sulfate heptahydrate"
+    "name": "iron(2+) sulfate heptahydrate"
    }
   },
   {
@@ -1525,7 +1525,7 @@
    "key": "trace_metals",
    "type": {
     "node": "MICRO:0000455",
-    "name": "trace metals solution"
+    "name": "trace elements solution"
    },
    "ingredients": [
     {
@@ -1838,7 +1838,7 @@
    "factors": [
     {
      "node": "NCIT:C14419",
-     "name": "organism strain"
+     "name": "Organism Strain"
     },
     {
      "node": "ZECO:0000113",
@@ -1855,7 +1855,7 @@
    "factors": [
     {
      "node": "NCIT:C14419",
-     "name": "organism strain"
+     "name": "Organism Strain"
     }
    ]
   },
@@ -1891,7 +1891,7 @@
   "license": "CC-BY-4.0",
   "accessibility": {
    "node": "NCIT:C183346",
-   "name": "unrestricted access"
+   "name": "Unrestricted Access"
   },
   "_ethics_assessment": "Not stated: no ethics assessment was required (C. elegans and E. coli), and an assessment that was not required is not asserted (2026-10-19).",
   "release_date": "2025-08-01",

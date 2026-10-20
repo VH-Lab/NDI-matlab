@@ -291,7 +291,9 @@ function k = bodyPartKey(names)
 arguments
     names cell
 end
-k = did2.build.key(haleyTerm('body part'), numel(names), 'Labels', haleyTerm(names));
+% the source's part names; its `midpoint` is the term `body midpoint`
+k = did2.build.key(haleyTerm('body part'), numel(names), 'Labels', ...
+    haleyTerm(strrep(names, 'midpoint', 'body midpoint')));
 end
 
 function [has, a] = column(W, name)

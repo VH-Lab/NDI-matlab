@@ -286,7 +286,7 @@ classdef TestDatasetMetadataHaley < matlab.unittest.TestCase
                 st = docs(cellfun(@(d) isfield(d, 'statement'), docs));
                 vars = cellfun(@(d) d.statement.variable.name, st, 'UniformOutput', false);
                 testCase.verifyFalse(any(strcmp(vars, 'ethics assessment')));
-                acc = st(strcmp(vars, 'accessibility'));
+                acc = st(strcmp(vars, 'Open or Controlled Data Access Indicator') | strcmp(vars, 'accessibility'));
                 testCase.verifyNumElements(acc, 1);
                 testCase.verifyEqual(acc{1}.statement.variable.node, 'NCIT:C175887');
             else

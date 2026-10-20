@@ -153,16 +153,18 @@ R = R(strcmp(R.session, ref) & strcmp(R.kind, 'behaviour'), :);
 docs = {};
 
 % what the per-encounter documents share
-before = periodCondition('before the first patch encounter');
-during = periodCondition('during the patch encounter');
-after = periodCondition('after the patch encounter');
+before = periodCondition('before the first encounter');
+during = periodCondition('during the encounter');
+after = periodCondition('after the encounter');
 signedNote = ['Signed distance of the midpoint from the patch edge, positive inside ' ...
     'the patch: negative when the midpoint never crossed the edge during the encounter.'];
 offPatchNote = 'Distance of the midpoint outside the patch, unsigned.';
 columnMajor = ['Values in column-major order: every encounter''s value for the first ' ...
     'position of the second key, then for the second.'];
-detection = {'Method', haleyTerm('patch encounter detection'), 'MethodParameters', ...
-    did2.build.list(did2.build.parameter(haleyTerm('body part'), 'Term', haleyTerm('midpoint')))};
+detection = {'Method', haleyTerm('encounter detection'), 'MethodParameters', ...
+    did2.build.list( ...
+        did2.build.parameter(haleyTerm('encountered entity'), 'Term', haleyTerm('bacterial patch')), ...
+        did2.build.parameter(haleyTerm('body part'), 'Term', haleyTerm('body midpoint')))};
 hasTerm = ndi.setup.V2.schemaHasLeaf('term_calculation');
 
 [G, plates, worms] = findgroups(E.plateNum, E.wormNum);
@@ -279,7 +281,7 @@ for g = 1:max(G)
     if hasItem && all(enc.lawnID >= 1 & enc.lawnID <= numel(pIds))
         v = struct('item', enc.lawnID(:)' - 1, 'offset', secondsAt(enc.exit)');
         docs{end+1} = did2.build.statement('item_calculation', wormId, ...
-            haleyTerm('bacterial patch in contact'), v, 'Edges', struct('item_id', {pIds}), ...
+            haleyTerm('entity in contact'), v, 'Edges', struct('item_id', {pIds}), ...
             detection{:}, keyed{:}, per{:}); %#ok<AGROW>
     elseif hasItem
         out.skipped{end+1} = sprintf('%s: an encounter names a patch %s does not have; no patch list', ...
@@ -289,8 +291,8 @@ for g = 1:max(G)
     % median speed during and after each encounter: one array, keyed by period
     if all(ismember({'velocityOn', 'velocityOff'}, enc.Properties.VariableNames))
         x = [double(enc.velocityOn), double(enc.velocityOff)];
-        byPeriod = keysWith(did2.build.key(haleyTerm('patch encounter period'), 2, 'Labels', ...
-            haleyTerm({'during the patch encounter', 'after the patch encounter'})));
+        byPeriod = keysWith(did2.build.key(haleyTerm('encounter period'), 2, 'Labels', ...
+            haleyTerm({'during the encounter', 'after the encounter'})));
         docs{end+1} = did2.build.statement('velocity_calculation', wormId, haleyTerm('speed'), ...
             speed(x), 'Method', haleyTerm('median'), byPeriod{:}, ...
             'Notes', [columnMajor ' After the last encounter: NaN when the track ends first.'], ...
@@ -455,11 +457,11 @@ e = [pre '_' stem];
 end
 
 function c = periodCondition(period)
-% the condition `patch encounter period` = PERIOD (a decided term's name)
+% the condition `encounter period` = PERIOD (a decided term's handle)
 arguments
     period {mustBeText}
 end
-c = did2.build.condition(haleyTerm('patch encounter period'), 'Term', haleyTerm(period));
+c = did2.build.condition(haleyTerm('encounter period'), 'Term', haleyTerm(period));
 end
 
 function c = edgeCondition()

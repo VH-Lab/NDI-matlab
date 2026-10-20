@@ -113,8 +113,13 @@ for k = 1:numel(names)
         continue;
     end
     variable = strrep(f, '_', ' ');
+    % the registry's spelling of the term (tenet T19): by its decided node
+    % ('accessibility' is NCIT's Open or Controlled Data Access Indicator), or
+    % else by the field's name
     if isfield(variableNodes, f)
-        variable = did2.build.term(variableNodes.(f), variable);
+        variable = ndi.setup.V2.registeredTerm(variableNodes.(f), variable);
+    else
+        variable = ndi.setup.V2.registeredTerm('', variable);
     end
     if any(strcmp(f, terms))
         docs{end+1} = did2.build.statement('term_assertion', eid, variable, asTerms(v), common{:}); %#ok<AGROW>

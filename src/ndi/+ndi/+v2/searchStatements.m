@@ -15,7 +15,10 @@ function [docs, info] = searchStatements(container, kind, filt)
 %     synonyms     true: a VALUE pattern that matches no term by its name or
 %                  node is also compared with the names of each term's node
 %                  (its label and synonyms, ndi.v2.synonyms: looked up once
-%                  and kept on disk); default false
+%                  and kept on disk); and when no statement matches the
+%                  VARIABLE or METHOD as given, each is widened by the
+%                  registered terms that go by it (ndi.v2.synonymNodes:
+%                  'meter' finds metre); default false
 %     withDataset  true: a session opened from its dataset also searches
 %                  the dataset's documents (a strain's statements live
 %                  there); default false
@@ -78,6 +81,20 @@ else
 end
 
 structural = keepStructural(cand, filt);
+if filt.synonyms && isempty(structural)
+    % a variable or method named by a label or synonym rather than the name a
+    % document stores ('meter' for metre, 'mean' for Arithmetic Mean): the
+    % registered terms that go by it (ndi.v2.synonymNodes, tenet T19)
+    [filt, widened] = widenBySynonyms(filt);
+    if widened
+        q = ndi.v2.isaQuery(classOf(kind));
+        q = andTerm(q, 'statement.variable', filt.variable);
+        q = andTerm(q, 'interaction.method', filt.method);
+        cand = bySubject(container, q, filt.subject, filt.withDataset);
+        narrowed = false;
+        structural = keepStructural(cand, filt);
+    end
+end
 info = struct('structural', numel(structural), 'values', {{}}, 'beforeTime', 0);
 docs = {};
 single = 0;
@@ -204,6 +221,25 @@ arguments
 end
 p = ndi.v2.props(d);
 id = char(p.base.id);
+end
+
+function [filt, widened] = widenBySynonyms(filt)
+% FILT with each variable and method text pattern joined by the nodes of the
+% registered terms that go by it; WIDENED when any were added
+arguments
+    filt (1,1) struct
+end
+widened = false;
+for f = {'variable', 'method'}
+    pats = filt.(f{1});
+    pats = pats(cellfun(@isTextPattern, pats));
+    if isempty(pats), continue; end
+    extra = setdiff(ndi.v2.synonymNodes(pats), filt.(f{1}), 'stable');
+    if ~isempty(extra)
+        filt.(f{1}) = [filt.(f{1}), extra];
+        widened = true;
+    end
+end
 end
 
 function filt = normalise(filt)
