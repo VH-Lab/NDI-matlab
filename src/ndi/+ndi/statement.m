@@ -32,7 +32,7 @@ classdef statement
     % ndi.statement Methods:
     %   kind, document, document_properties, document_id
     %   subject        - the ndi.entity the statement is about
-    %   variable       - the term; variable_name, its name
+    %   variable       - the variable, an ndi.term; variable_name, its name
     %   value          - an ndi.value (decoded from its body when stored there)
     %   raw_value      - the inline value exactly as stored
     %   composite      - the value's composite class, e.g. 'velocity'
@@ -172,8 +172,9 @@ classdef statement
         end
 
         function t = variable(obj)
-            % VARIABLE - the statement's variable, a term ({node, name})
-            t = ndi.v2.blockOf(obj.document_properties(), 'statement', 'variable', []);
+            % VARIABLE - the statement's variable, an ndi.term (t.node, t.name,
+            % t.definition(), ...); an empty ndi.term when it has none
+            t = ndi.term.fromStored(ndi.v2.blockOf(obj.document_properties(), 'statement', 'variable', []));
         end
 
         function n = variable_name(obj)

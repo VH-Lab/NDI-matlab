@@ -8,7 +8,7 @@ classdef (Abstract) interaction < ndi.statement
     %
     % ndi.interaction Methods (beyond ndi.statement):
     %   time              - when: a struct array, one per time reference
-    %   method            - the method's term ({node, name}); method_name, its name
+    %   method            - the method, an ndi.term; method_name, its name
     %   method_parameters - table of the method's parameters
     %   instrument        - the instrument subject(s) (a cell array of ndi.entity)
     %   software          - the software entity (a cell array of ndi.entity)
@@ -42,8 +42,8 @@ classdef (Abstract) interaction < ndi.statement
         end
 
         function m = method(obj)
-            % METHOD - the method's term ({node, name}); [] when none
-            m = ndi.v2.blockOf(obj.document_properties(), 'interaction', 'method', []);
+            % METHOD - the method, an ndi.term; an empty ndi.term when none
+            m = ndi.term.fromStored(ndi.v2.blockOf(obj.document_properties(), 'interaction', 'method', []));
         end
 
         function n = method_name(obj)

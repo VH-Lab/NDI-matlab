@@ -1,5 +1,5 @@
 function n = termName(t)
-%TERMNAME The name of a term ({node, name} or {name}); its node when it has no name.
+%TERMNAME The name of a term ({node, name}, {name} or an ndi.term); its node when it has no name.
 arguments
     t
 end
@@ -7,6 +7,10 @@ end
 n = '';
 if isempty(t), return; end
 if iscell(t), t = t{1}; end
+if isa(t, 'ndi.term')
+    n = char(t(1));
+    return;
+end
 if isstruct(t)
     t = t(1);
     if isfield(t, 'name') && ~isempty(t.name)

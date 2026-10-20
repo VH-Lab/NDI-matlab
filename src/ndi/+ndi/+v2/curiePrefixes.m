@@ -18,6 +18,8 @@ function ix = curiePrefixes(schemaPath)
 %                `EDAM:format_1929`)
 %     writtenAs  registry key -> {registry key, id prefix}: an entry cited
 %                through another (`cellosaurus:0030` is `RRID:CVCL_0030`)
+%     uriBase    registry key -> the entry's `uri_base`, which the local id
+%                is appended to to make the term's IRI (ndi.v2.curieIri)
 %
 %   A schema built before the spellings (no `spelling` on its entries) gives
 %   an index that knows each entry by its key and writes it as its key, the
@@ -74,7 +76,8 @@ ix = struct( ...
     'names', containers.Map('KeyType', 'char', 'ValueType', 'char'), ...
     'spelling', containers.Map('KeyType', 'char', 'ValueType', 'char'), ...
     'legacy', containers.Map('KeyType', 'char', 'ValueType', 'any'), ...
-    'writtenAs', containers.Map('KeyType', 'char', 'ValueType', 'any'));
+    'writtenAs', containers.Map('KeyType', 'char', 'ValueType', 'any'), ...
+    'uriBase', containers.Map('KeyType', 'char', 'ValueType', 'char'));
 if ~isstruct(registry) || ~isscalar(registry) || ~isfield(registry, 'prefixes') ...
         || ~isstruct(registry.prefixes)
     return;
@@ -88,6 +91,10 @@ for i = 1:numel(keys)
         sp = k;
     end
     ix.spelling(k) = sp;
+    base = textOf(e, 'uri_base');
+    if ~isempty(base)
+        ix.uriBase(k) = base;
+    end
     names = [{k}, textList(e, 'synonyms')];
     if isfield(e, 'written_as') && isstruct(e.written_as)
         % spelled through another entry, so its spelling names that entry

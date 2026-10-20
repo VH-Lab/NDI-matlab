@@ -132,7 +132,7 @@ The v1 constructor and its `@` check stay as they are (D6).
 | member | returns |
 |---|---|
 | `subject()`, `entity()` | the `ndi.entity` it is about |
-| `variable` | the term (name and node) |
+| `variable()` | an `ndi.term` (§13); `variable_name()` its name |
 | `value()` | the value, with units, decoded from the body when stored there (array, with axes) |
 | `axes()` | the value's keys: name, unit, values (e.g. video frame, metre) |
 | `conditions()` | table: variable, value, unit |
@@ -150,7 +150,7 @@ method or instrument.
 | member | returns |
 |---|---|
 | `time()` | start and end, resolved through the time references (absolute UTC or relative to another document), with tolerance |
-| `method()`, `method_parameters()` | the term; a table of parameters |
+| `method()`, `method_parameters()` | an `ndi.term` (§13); a table of parameters |
 | `instrument()` | the instrument subject, if any |
 
 ### `ndi.observation`, `ndi.manipulation`, `ndi.calculation < ndi.interaction`
@@ -169,6 +169,7 @@ body (answers Q3: a small value class).
 | member | returns |
 |---|---|
 | `canonical()`, `double()` | the values in the canonical unit; a term's name; the raw struct for a structured value (dose, item, model fit) |
+| `terms()` | a term-valued value's terms, as `ndi.term` objects (§13) |
 | `unit()` | the canonical field, e.g. `meters`, read from the schema |
 | `source()` | table: source_value, source_unit |
 | `tolerance()`, `approximate()` | per value |
@@ -381,3 +382,42 @@ are not compared. Tests: `TestSameAs`, on both schema legs (both bind
 
 Not built: confirming a candidate (writing its `same_as` by hand is a
 `did2.build.undirectedRelation({a, b}, 'same_as', ...)` in the dataset).
+
+## 13. Terms as objects: `ndi.term` (2026-10-20)
+
+A statement names things with terms: its variable, its method, the variables of
+its conditions, parameters and keys, units, and a term-valued statement's value.
+Each is stored as `{node, name}`. Until now the readers handed those back as
+structs and each caller asked the ontology on its own (`ndi.v2.synonyms`,
+`matchTerm`). `ndi.term` (Jess, 2026-10-20) holds the stored node and name and
+asks the ontology for the rest only when a method needs it, so a session's
+thousands of terms cost nothing until one is asked about.
+
+| member | returns |
+|---|---|
+| `node`, `name` | the CURIE and the name as stored (either may be `''`) |
+| `label()`, `definition()`, `synonyms()`, `id()` | what `ndi.ontology.lookup` says for the node |
+| `lookup()` | all of those, as a struct (`ndi.v2.termLookup`) |
+| `prefix()`, `key()`, `iri()` | the prefix as written; the node in the form nodes are compared in (`ndi.v2.curieKey`); the IRI, from the registry's `uri_base` (`ndi.v2.curieIri`) |
+| `hasNode()` | true where the term has a node |
+| `==`, `~=` | two terms: equal keys when both have a node, else equal names ignoring case; a term and text: the text is its node (by key), name or label |
+| `string()`, `char()` | the name (the node when there is none), so code that wants names keeps working |
+| `toStruct()` | `{node, name}`, as the builders take a term |
+| `ndi.term.fromStored(x)` (static) | terms from a stored struct, struct array, cell array or text |
+
+**The stored name and the ontology's label are kept apart.** `'L4 larva'` is
+stored for `WBls:0000038`, which WBls labels `'L4 larva Ce'`; `name` is what the
+dataset says and `label()` what the ontology says. Neither replaces the other.
+
+**One cache.** `ndi.v2.termLookup` looks a node up once per machine and keeps the
+answer (id, label, definition, synonyms) in the folder `ndi.v2.synonyms` already
+used (`NDI_SYNONYM_CACHE`); `ndi.v2.synonyms` now reads it. A file written before
+(names only) still reads, its first name as the label, with no definition until
+a `'Refresh'`. Without ndi-ontology-matlab or the network, the ontology methods
+return `''` or `{}`.
+
+**What returns one:** `ndi.statement.variable()`, `ndi.interaction.method()` and
+`ndi.value.terms()`. `variable_name()`, `method_name()`, `canonical()` and the
+`conditions()` / `method_parameters()` / `axes()` tables still give names.
+Tests: `TestTerm` (offline, from a prepared cache) and `TestObjectLayer`.
+

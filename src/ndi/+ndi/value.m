@@ -16,6 +16,7 @@ classdef value
     %   canonical    - the values in the canonical unit (numbers), or the
     %                  names (terms, labels), or the raw struct (dose, model
     %                  fit, ...); double(v) is the same for numbers
+    %   terms        - a term-valued value's terms, as ndi.term objects
     %   unit         - the canonical unit's field name, e.g. 'meters'
     %   source       - table: source_value, source_unit (as the lab wrote it)
     %   tolerance    - [minus plus] per value, in the canonical unit
@@ -84,6 +85,22 @@ classdef value
                 for i = 1:numel(r), v(i) = string(char(r(i).text)); end
             else
                 v = r;
+            end
+        end
+
+        function t = terms(obj)
+            % TERMS - a term-valued value's terms, an ndi.term array
+            %
+            % One ndi.term per stored term, as CANONICAL gives their names;
+            % an empty ndi.term array for a value that holds no terms.
+            t = ndi.term.empty(1, 0);
+            r = obj.raw;
+            if iscell(r) && ~isempty(r) && all(cellfun(@isstruct, r))
+                try r = [r{:}]; catch, end
+            end
+            if isstruct(r) && ~isempty(r) && (isfield(r, 'name') || isfield(r, 'node')) && ...
+                    all(ismember(fieldnames(r), {'node', 'name'}))
+                t = reshape(ndi.term.fromStored(r), size(r));
             end
         end
 

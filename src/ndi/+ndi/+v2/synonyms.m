@@ -15,50 +15,21 @@ function names = synonyms(node, options)
 %     'Refresh'  true: look the node up again and rewrite its file
 %     'Folder'   where the files are
 %
-%   See also ndi.v2.synonymFolder, ndi.v2.searchStatements, ndi.entity.search.
+%   The lookup and its cache are ndi.v2.termLookup's; this is its label and
+%   synonyms.
+%
+%   See also ndi.v2.termLookup, ndi.v2.synonymFolder, ndi.v2.searchStatements,
+%   ndi.entity.search.
 
 arguments
     node (1,:) char
     options.Refresh (1,1) logical = false
     options.Folder (1,:) char = ndi.v2.synonymFolder()
 end
-persistent failed
-if isempty(failed), failed = containers.Map('KeyType', 'char', 'ValueType', 'logical'); end
+L = ndi.v2.termLookup(node, 'Refresh', options.Refresh, 'Folder', options.Folder);
 names = {};
-if isempty(regexp(node, '^[A-Za-z][\w.-]*:\S+$', 'once')), return; end
-file = fullfile(options.Folder, [regexprep(lower(node), '[^a-z0-9_.-]', '_') '.json']);
-if ~options.Refresh && isfile(file)
-    try
-        c = jsondecode(fileread(file));
-        names = asNames(c.names);
-        return;
-    catch
-        % an unreadable file is looked up again and rewritten
-    end
-end
-if ~options.Refresh && isKey(failed, lower(node)), return; end
-if isempty(which('ndi.ontology.lookup'))
-    failed(lower(node)) = true;
-    return;
-end
-try
-    [~, name, ~, ~, syn] = ndi.ontology.lookup(node);
-catch
-    failed(lower(node)) = true;
-    return;
-end
-names = asNames([{name}, reshape(cellstr(syn), 1, [])]);
-try
-    if ~isfolder(options.Folder), mkdir(options.Folder); end
-    c = struct('node', node, 'names', {names}, ...
-        'looked_up', char(datetime('now', 'TimeZone', 'UTC', 'Format', 'yyyy-MM-dd''T''HH:mm:ss''Z''')));
-    fid = fopen(file, 'w');
-    if fid > 0
-        fwrite(fid, jsonencode(c), 'char');
-        fclose(fid);
-    end
-catch
-    % a folder that cannot be written: the names are still returned
+if L.found
+    names = asNames([{L.label}, L.synonyms]);
 end
 end
 

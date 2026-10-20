@@ -593,6 +593,14 @@ classdef TestObjectLayer < matlab.unittest.TestCase
             testCase.verifyClass(a{1}, 'ndi.assertion');
             testCase.verifyEqual(a{1}.composite(), 'term');
             testCase.verifyEqual(a{1}.value().canonical(), "N2");
+            % the variable and a term value are ndi.term objects (as stored)
+            t = st{1}.variable();
+            testCase.verifyClass(t, 'ndi.term');
+            testCase.verifyEqual(t.name, 'organism strain');
+            testCase.verifyTrue(t == "organism strain");
+            vt = a{1}.value().terms();
+            testCase.verifyClass(vt, 'ndi.term');
+            testCase.verifyEqual(string(vt), "N2");
             testCase.verifyEqual(a{1}.subject().document_id, c.document_id);
             if ndi.setup.V2.schemaHasLeaf('logical_assertion')
                 x = testCase.subject('concentration_assayPlate0013').assertions({'variable', 'inclusion in analysis'});
@@ -874,6 +882,9 @@ classdef TestObjectLayer < matlab.unittest.TestCase
             testCase.verifyNumElements(tm, 2);
             m = sort(cellfun(@(s) s.method_name(), tm, 'UniformOutput', false));
             testCase.verifyEqual(m, {'ambient exposure', 'refrigeration'});
+            mt = tm{1}.method();
+            testCase.verifyClass(mt, 'ndi.term');
+            testCase.verifyTrue(any(mt == ["ambient exposure", "refrigeration"]), 'a method is an ndi.term');
             for i = 1:2
                 v = tm{i}.value();
                 testCase.verifyNotEmpty(v.unit());
