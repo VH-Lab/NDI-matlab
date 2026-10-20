@@ -56,9 +56,51 @@ classdef TestCreateSession < matlab.unittest.TestCase
             rel = session.database_search(ndi.query('', 'isa', 'directed_relation'));
             testCase.verifyNumElements(rel, 1);
             r = rel{1}.document_properties;
-            testCase.verifyEqual(r.directed_relation.relation.name, 'part_of');
+            % included_in where the schema binds it (did-schema
+            % V_eta_relation_inheritance_plan.md, 2026-10-20), part_of before
+            expected = 'part_of';
+            if ndi.setup.V2.schemaHasRelation('included_in')
+                expected = 'included_in';
+            end
+            testCase.verifyEqual(ndi.v2.recordRelation(), expected);
+            testCase.verifyEqual(r.directed_relation.relation.name, expected);
             parent = r.depends_on(strcmp({r.depends_on.name}, 'parent_id'));
             testCase.verifyEqual(parent.document_id, study);
+        end
+
+        function testTheSessionEntityIdIsTheSessionIdWhereSessionIdIsAnEdge(testCase)
+            % did-schema V_eta_relation_inheritance_plan.md (2026-10-20): where
+            % session_id is an edge, the session entity's base.id IS the session
+            % id, so its own edge points at itself; on did-schema main it has
+            % an id of its own and base.session_id is a field
+            sid = ndi.ido.unique_id();
+            [session, docs] = ndi.setup.V2.createSession(testCase.Dir, 'd1', 'SessionId', sid);
+            own = docs{1};
+            testCase.verifyEqual(ndi.v2.sessionIdOf(own), sid);
+            reopened = ndi.session.dir(testCase.Dir);
+            testCase.verifyEqual(reopened.id(), sid);
+            testCase.verifyEqual(reopened.reference, 'd1');
+            found = session.database_search(ndi.v2.isaQuery('session'));
+            testCase.verifyNumElements(found, 1);
+            testCase.verifyEqual(found{1}.session_id(), sid, ...
+                'the accessor reads the field or the edge, whichever the document has');
+            if ndi.v2.sessionIdIsEdge()
+                testCase.verifyEqual(own.base.id, sid);
+                testCase.verifyFalse(isfield(own.base, 'session_id'), 'no base.session_id field');
+                testCase.verifyEqual(ndi.v2.edgeIds(own, 'session_id'), {sid}, 'it points at itself');
+                testCase.verifyEqual(found{1}.id(), sid);
+                % a session document id other than the session id cannot be honoured
+                other = fullfile(testCase.Dir, 'other');
+                mkdir(other);
+                testCase.verifyError(@() ndi.setup.V2.createSession(other, 'd2', ...
+                    'SessionDocId', ndi.ido.unique_id()), 'ndi:setup:V2:sessionDocId');
+                s2 = ndi.setup.V2.createSession(other, 'd2', 'SessionId', sid, ...
+                    'SessionDocId', sid, 'Overwrite', true);
+                testCase.verifyEqual(s2.id(), sid, '''SessionDocId'' equal to the session id is accepted');
+            else
+                testCase.verifyNotEqual(own.base.id, sid);
+                testCase.verifyEqual(own.base.session_id, sid);
+            end
         end
 
         function testRefusesToOverwriteByDefault(testCase)

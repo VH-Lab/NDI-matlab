@@ -11,9 +11,13 @@ function [T, sessions] = makeSessions(T, options)
 %     path              the session's directory; created if missing (required)
 %     name              display name (optional column)
 %     description       free text (optional column)
-%     study_ids         a cellstr per row: the studies it is part_of (optional)
+%     study_ids         a cellstr per row: the studies it is filed under
+%                       (`included_in`, or `part_of` on a schema without it;
+%                       ndi.v2.recordRelation) (optional)
 %     session_id        a preassigned session id (optional; '' = new)
-%     session_doc_id    a preassigned session-document id (optional)
+%     session_doc_id    a preassigned session-document id (optional; where
+%                       session_id is an edge it must equal session_id, the
+%                       id the session document then has: createSession)
 %     time_reference_id the session's time reference (optional)
 %     documents         a cell per row: further documents for that session,
 %                       built with its session_id (optional)

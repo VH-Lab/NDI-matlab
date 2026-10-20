@@ -466,16 +466,16 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
                     errmsg = ['All entries of DOCUMENT must be ndi.document objects.'];
                     break;
                 end
-                session_id_here = document{i}.document_properties.base.session_id;
+                session_id_here = document{i}.session_id();
                 b_ = strcmp(session_id_here,ndi_session_obj.id());
                 if ~b_
-                    b_= strcmp(document{i}.document_properties.base.session_id,ndi.session.empty_id());
+                    b_= strcmp(session_id_here,ndi.session.empty_id());
                 end
                 b = b & b_;
                 if ~b
                     errmsg = ['All documents associated with the session) must have a session_id equal to the session id (document ' int2str(i) ' does not match and has session_id '  ').'];
                     ndi_session_obj.id(),
-                    document{i}.document_properties.base.session_id,
+                    session_id_here,
                     break;
                 end
             end
@@ -1086,7 +1086,7 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
             b = zeros(numel(docs),1);
             errmsg = ['The following documents are not in session_id ' session_id ': '];
             for i=1:numel(docs)
-                session_id_here = docs{i}.document_properties.base.session_id;
+                session_id_here = docs{i}.session_id();
                 b(i) = strcmp(session_id,session_id_here);
                 if ~b(i)
                     errmsg = cat(2,errmsg,[session_id_here ', ']);

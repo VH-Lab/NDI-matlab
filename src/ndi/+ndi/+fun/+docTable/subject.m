@@ -52,7 +52,7 @@ end
 % Initialize table with core subject information efficiently
 doc_ids = cellfun(@(d) d.document_properties.base.id, subjectDocs, 'UniformOutput', false);
 local_ids = cellfun(@(d) d.document_properties.subject.local_identifier, subjectDocs, 'UniformOutput', false);
-session_ids = cellfun(@(d) d.document_properties.base.session_id, subjectDocs, 'UniformOutput', false);
+session_ids = cellfun(@(d) d.session_id(), subjectDocs, 'UniformOutput', false);
 subjectTable = table(session_ids(:), doc_ids(:), local_ids(:), 'VariableNames', {'SessionIdentifier', 'SubjectDocumentIdentifier', 'SubjectLocalIdentifier'});
 
 % --- Step 2: Perform a single, broad query for all openminds metadata ---

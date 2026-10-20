@@ -1100,7 +1100,12 @@ classdef entity
             %     (a strain stated on a cohort; a cohort contained_in a plate);
             %   - an assertion about a whole holds of its parts and samples,
             %     down part_of, sample_of, aliquot_of and passage_of (an
-            %     animal's strain is its slice's);
+            %     animal's strain is its slice's): the relations whose
+            %     `passes` is `assertions` in the schema's registry
+            %     (ndi.v2.relationPasses, V_eta tenet T17), instance_of
+            %     walked as a type. A session or study `included_in` a
+            %     study or dataset passes nothing: it does not take the
+            %     dataset's short name, version or licence;
             %   - one thing recorded twice is one entity (same_as, V_eta
             %     tenet T18): a relation to either record matches (the
             %     instances of either N2 record are N2's), and what is
@@ -1518,8 +1523,7 @@ classdef entity
                     whole = [whole, ndi.entity.walkIds(container, g, 'member_of', 'in')];
                 end
                 whole = unique(whole, 'stable');
-                parts = ndi.entity.walkIds(container, whole, ...
-                    {'part_of', 'sample_of', 'aliquot_of', 'passage_of'}, 'in');
+                parts = ndi.entity.walkIds(container, whole, ndi.entity.lineageRelations(), 'in');
                 ids = unique([ids, parts], 'stable');
             end
         end
@@ -1818,6 +1822,24 @@ classdef entity
     end
 
     methods (Static, Hidden)
+        function names = lineageRelations()
+            % LINEAGERELATIONS - (internal) the relations down which an
+            % assertion about the parent holds of the child, instance_of
+            % aside (a type is walked on its own path): those whose `passes`
+            % is `assertions` in the V2 schema's registry (V_eta tenet T17,
+            % did-schema V_eta_relation_inheritance_plan.md;
+            % ndi.v2.relationPasses, read once per schema file). A registry
+            % with no `passes` (did-schema main) gives the list NDI
+            % hard-coded until then: part_of, sample_of, aliquot_of,
+            % passage_of. So a relation the registry adds with `passes:
+            % assertions` works without a change here, and `included_in`
+            % (records) passes nothing.
+
+            P = ndi.v2.relationPasses();
+            names = setdiff(P.assertions, {'instance_of'}, 'stable');
+            names = reshape(names, 1, []);
+        end
+
         function all_ = inheritanceStates(container, ids, inherited)
             % INHERITANCESTATES - (internal) what the subjects IDS inherit from
             %
@@ -1843,7 +1865,7 @@ classdef entity
             end
             ids = unique(cellstr(ids), 'stable');
             ids = reshape(ids, 1, []);
-            lineage = {'part_of', 'sample_of', 'aliquot_of', 'passage_of'};
+            lineage = ndi.entity.lineageRelations();
             % states: start, at, hasMember, hasLineage, isInstance, sameAs,
             % the record it stands in for, path
             S = struct('start', ids, 'at', ids, 'm', false, 'l', false, 'i', false, ...

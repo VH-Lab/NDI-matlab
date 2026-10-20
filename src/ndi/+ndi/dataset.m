@@ -85,7 +85,8 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
             % the session remains where it is.
             %
             % In a V2 dataset (V_eta_linked_session_plan.md), this writes two
-            % documents into the dataset's database: a `part_of` relation from
+            % documents into the dataset's database: an `included_in` relation
+            % (`part_of` on a schema without it; ndi.v2.recordRelation) from
             % the session's `session` entity to the dataset (or to the study
             % 'PartOf' names), and a `linked_session` document recording the
             % session's folder (relative to the dataset's folder when inside it).
@@ -103,7 +104,7 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
             %
             % Options:
             %   'PartOf'  V2 only: the id of the dataset's study (an entity
-            %             document in the dataset) the session is part_of;
+            %             document in the dataset) the session is included_in;
             %             default: the dataset itself
             %   'SameAs'  V2 only: default true; false writes no same_as
             %             (the report still lists what was found)
@@ -183,15 +184,15 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
             %                          |   copy. See
             %                          |   ndi.dataset.copySessionToDataset.
             % PartOf ('')              | V2 only: the id of the dataset's
-            %                          |   study the session is part_of
+            %                          |   study the session is included_in
             %                          |   (default: the dataset itself)
             %
             % In a V2 dataset (V_eta_linked_session_plan.md), every document of
             % the session is copied into the dataset's database, ids unchanged,
             % with the files it ingested; files recorded by location stay where
-            % they are. Unless the copied documents already make the session
-            % part_of the dataset or one of its studies, a `part_of` relation
-            % is added. The session must be a V2 session. Its records of what
+            % they are. Unless the copied documents already file the session
+            % under the dataset or one of its studies, an `included_in`
+            % relation (`part_of` on a schema without it) is added. The session must be a V2 session. Its records of what
             % the dataset already records are joined by `same_as`, as
             % add_linked_session joins them ('SameAs', default true; see
             % same_as_report).
@@ -867,7 +868,9 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
             % documents that describe the session in the dataset.
             %
             % DATASET_SESSION_DOC_ID is the document unique id for the 'session' document that
-            % describes the dataset's own session.
+            % describes the dataset's own session (where session_id is an edge,
+            % did-schema V_eta_relation_inheritance_plan.md, the dataset entity whose
+            % id IS the dataset's id: ndi.v2.sessionRecord).
             %
             if isempty(ndi_dataset_obj.session_info)
                 ndi_dataset_obj.build_session_info();
@@ -878,8 +881,7 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
             session_doc_ids = {ndi_dataset_obj.session_info.session_doc_in_dataset_id};
 
             dataset_session_doc_id = '';
-            q_dataset_session_doc = ndi.v2.isaQuery('session') & ndi.query('base.session_id','exact_string',ndi_dataset_obj.id());
-            doc = ndi_dataset_obj.session.database_search(q_dataset_session_doc);
+            doc = ndi.v2.sessionRecord(ndi_dataset_obj.session.database, ndi_dataset_obj.id());
             if isscalar(doc)
                 dataset_session_doc_id = doc{1}.id();
             elseif numel(doc)>1
@@ -968,7 +970,7 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
 
             ndi_session_ids_here = {};
             for i=1:numel(document)
-                ndi_session_ids_here{end+1} = document{i}.document_properties.base.session_id;
+                ndi_session_ids_here{end+1} = document{i}.session_id();
             end
 
             usession_ids = setdiff(unique(ndi_session_ids_here),ndi.session.empty_id());
@@ -1024,7 +1026,7 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
             doc_input = ndi.session.docinput2docs(ndi_dataset_obj, doc_unique_id); % make sure we have docs
             ndi_session_ids_here = {};
             for i=1:numel(doc_input)
-                ndi_session_ids_here{i} = doc_input{i}.document_properties.base.session_id;
+                ndi_session_ids_here{i} = doc_input{i}.session_id();
             end
 
             usession_ids = setdiff(unique(ndi_session_ids_here),ndi.session.empty_id());
@@ -1095,7 +1097,7 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
                 doc_input = ndi.session.docinput2docs(ndi_dataset_obj, ndi_document_or_id);
                 if ~isempty(doc_input)
                     doc = doc_input{1};
-                    session_id = doc.document_properties.base.session_id;
+                    session_id = doc.session_id();
 
                     % session matches one of the linked sessions
                     if ~strcmp(session_id, ndi_dataset_obj.id())
@@ -1126,7 +1128,7 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
             doc_input = ndi.session.docinput2docs(ndi_dataset_obj, ndi_document_or_id);
             if ~isempty(doc_input)
                 doc = doc_input{1};
-                session_id = doc.document_properties.base.session_id;
+                session_id = doc.session_id();
                 if ~strcmp(session_id, ndi_dataset_obj.id())
                     % session matches one of the linked sessions
                     % (actually docinput2docs found it, so it's either in dataset or linked session)
@@ -1176,7 +1178,7 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
             % Given an ndi.document, return an open ndi.session object that contains the
             % the document.
             %
-            session_id = ndi_document_obj.document_properties.base.session_id;
+            session_id = ndi_document_obj.session_id();
             ndi_session_obj = ndi_dataset_obj.open_session(session_id);
         end % document_session()
 
@@ -1214,7 +1216,7 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
                  error(['Found too many dataset session info documents (' int2str(numel(doc)) ') for dataset ' ndi_dataset_obj.id() '.']);
             end
 
-            currentDatasetID = doc{1}.document_properties.base.session_id;
+            currentDatasetID = doc{1}.session_id();
             dataset_session_info_struct = doc{1}.document_properties.dataset_session_info.dataset_session_info;
 
             if isstruct(dataset_session_info_struct)
@@ -1352,7 +1354,7 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
             are_empty_session_id_docs = 0;
 
             for i=1:numel(docs)
-                if isempty(docs{i}.document_properties.base.session_id)
+                if isempty(docs{i}.session_id())
                     are_empty_session_id_docs = are_empty_session_id_docs + 1;
                     docs{i} = docs{i}.set_session_id(ndi_session_obj.id());
                 end
@@ -1419,7 +1421,8 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
                 [v2, notes] = ndi.v2.datasetSessions(ndi_dataset_obj.session.database, ...
                     ndi_dataset_obj.id(), ndi_dataset_obj.getpath());
                 ndi_dataset_obj.SessionNotes = notes;
-                left = notes(startsWith(notes, 'not listed') | contains(notes, 'not part_of'));
+                left = notes(startsWith(notes, 'not listed') | ...
+                    contains(notes, ['not ' ndi.v2.recordRelation()]));
                 if ~isempty(left)
                     warning('ndi:dataset:sessionsLeftOut', '%s\n  %s', ...
                         'Some sessions of this dataset could not be listed:', strjoin(left, '\n  '));
@@ -1448,10 +1451,10 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
                 for i=1:numel(v2)
                     p = v2{i}.document_properties;
                     [~, blk] = ndi.v2.kindOf(p);   % `entity` since 2026-10-08
-                    if strcmp(p.base.session_id, ndi_dataset_obj.id()) || ~isfield(p.(blk),'local_identifier')
+                    if strcmp(ndi.v2.sessionIdOf(p), ndi_dataset_obj.id()) || ~isfield(p.(blk),'local_identifier')
                         continue;
                     end
-                    info_here = struct('session_id', p.base.session_id, ...
+                    info_here = struct('session_id', ndi.v2.sessionIdOf(p), ...
                         'session_reference', p.(blk).local_identifier, 'is_linked', 0, ...
                         'session_creator', 'ndi.session.dir', ...
                         'session_creator_input1', p.(blk).local_identifier, ...
@@ -1588,9 +1591,11 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
         end % v2Remove()
 
         function ids = v2MembershipIds(ndi_dataset_obj, entityId)
-            % V2MEMBERSHIPIDS - the part_of relations in the dataset's database
-            %   whose child is ENTITYID (the relations that make a session a
-            %   member), as a cellstr of document ids
+            % V2MEMBERSHIPIDS - the membership relations in the dataset's
+            %   database whose child is ENTITYID (the relations that make a
+            %   session a member: `included_in` where the schema binds it,
+            %   `part_of` before; ndi.v2.recordRelation), as a cellstr of
+            %   document ids
 
             arguments
                 ndi_dataset_obj (1,1) ndi.dataset
@@ -1600,16 +1605,18 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
             q = ndi.query('', 'isa', 'directed_relation', '') & ...
                 ndi.query('', 'depends_on', 'child_id', entityId);
             rels = ndi_dataset_obj.session.database.search(q);
+            member = ndi.v2.recordRelation();
             for k = 1:numel(rels)
                 p = rels{k}.document_properties;
-                if strcmp(ndi.v2.termName(ndi.v2.blockOf(p, 'directed_relation', 'relation', '')), 'part_of')
+                if strcmp(ndi.v2.termName(ndi.v2.blockOf(p, 'directed_relation', 'relation', '')), member)
                     ids{end+1} = p.base.id; %#ok<AGROW>
                 end
             end
         end % v2MembershipIds()
 
         function tf = v2HasPartOf(ndi_dataset_obj, childId, parentId)
-            % V2HASPARTOF - does the dataset's database hold CHILDID part_of PARENTID?
+            % V2HASPARTOF - does the dataset's database file CHILDID under
+            %   PARENTID (included_in, or part_of before: ndi.v2.recordRelation)?
             arguments
                 ndi_dataset_obj (1,1) ndi.dataset
                 childId {mustBeText}
@@ -1673,14 +1680,17 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
             % the session's own `session` entity document
             own = ndi_session_obj.database_search(ndi.v2.isaQuery('session'));
             own = own(cellfun(@(d) strcmp(ndi.v2.kindOf(d.document_properties), 'session') && ...
-                strcmp(d.document_properties.base.session_id, ndi_session_obj.id()), own));
+                strcmp(d.session_id(), ndi_session_obj.id()), own));
             if ~isscalar(own)
                 error('ndi:dataset:sessionDocument', ['Session %s holds %d session ' ...
                     'documents of its own; it must hold exactly one.'], ndi_session_obj.reference, ...
                     numel(own));
             end
             entityId = own{1}.id();
-            % the parent it is part_of: the dataset, or a study of it
+            % the parent it is filed under (included_in, or part_of on a
+            % schema without it: ndi.v2.recordRelation): the dataset, or a
+            % study of it
+            member = ndi.v2.recordRelation();
             dsid = ndi_dataset_obj.id();
             explicit = ~isempty(partOf);
             if ~explicit
@@ -1688,8 +1698,8 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
                 d = d(cellfun(@(x) strcmp(ndi.v2.kindOf(x.document_properties), 'dataset'), d));
                 if ~isscalar(d)
                     error('ndi:dataset:noDatasetDocument', ['The dataset holds %d dataset ' ...
-                        'document(s), so ''PartOf'' must name the study the session is part_of.'], ...
-                        numel(d));
+                        'document(s), so ''PartOf'' must name the study the session is %s.'], ...
+                        numel(d), member);
                 end
                 partOf = d{1}.id();
             elseif isempty(ndi_dataset_obj.session.database.search(ndi.query('base.id', ...
@@ -1711,14 +1721,15 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
                 end
                 % a membership the session's own documents already state is
                 % not stated again (each fact once, T17): with no 'PartOf',
-                % its own part_of a study of the dataset (or the dataset) is
-                % enough; with one, its own part_of that parent is
+                % its own membership of a study of the dataset (or the
+                % dataset) is enough; with one, its own membership of that
+                % parent is
                 parents = {};
                 for k = 1:numel(docs)
                     p = docs{k};
                     if strcmp(char(p.document_class.class_name), 'directed_relation') && ...
                             any(strcmp(ndi.v2.edgeIds(p, 'child_id'), entityId)) && ...
-                            strcmp(ndi.v2.termName(ndi.v2.blockOf(p, 'directed_relation', 'relation', '')), 'part_of')
+                            strcmp(ndi.v2.termName(ndi.v2.blockOf(p, 'directed_relation', 'relation', '')), member)
                         parents = [parents, ndi.v2.edgeIds(p, 'parent_id')]; %#ok<AGROW>
                     end
                 end
@@ -1735,7 +1746,7 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
                     return;
                 end
             end
-            add = {did2.build.directedRelation(entityId, partOf, 'part_of', 'SessionId', dsid)};
+            add = {did2.build.directedRelation(entityId, partOf, member, 'SessionId', dsid)};
             if linked
                 add{end+1} = did2.build.document('linked_session', ...
                     struct('path', ndi.v2.linkPath(ndi_session_obj.getpath(), ndi_dataset_obj.getpath())), ...

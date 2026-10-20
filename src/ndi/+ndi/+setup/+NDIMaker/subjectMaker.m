@@ -321,7 +321,7 @@ classdef subjectMaker < handle
                 current_doc_set = documentsToAddSets{i};
                 if isempty(current_doc_set) || ~iscell(current_doc_set) || ~isa(current_doc_set{1}, 'ndi.document'), continue; end
                 
-                target_session_id = current_doc_set{1}.document_properties.base.session_id;
+                target_session_id = current_doc_set{1}.session_id();
                 
                 if isKey(session_id_map, target_session_id)
                     session_idx_in_array = session_id_map(target_session_id);

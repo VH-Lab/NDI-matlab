@@ -326,8 +326,11 @@ are written only when the file was opened (`'ReadVideos'`, or a TIFF).
 ## 11. Linked and ingested sessions (2026-10-09)
 
 did-schema `V_eta_linked_session_plan.md` (signed 2026-10-09): a session is in
-a dataset when its `session` entity is `part_of` the dataset, or `part_of` a
-study that is `part_of` the dataset; the relation is in the dataset's database.
+a dataset when its `session` entity is filed under the dataset, or under a
+study that is filed under the dataset; the relation is in the dataset's
+database. The relation is `included_in` where the schema binds it, `part_of`
+on did-schema main (section 14; `ndi.v2.recordRelation`); "`part_of`" below
+means whichever.
 An INGESTED session's documents are in the dataset's database too; a LINKED
 session's are in its own folder, which a `linked_session` document (`path`,
 relative to the dataset's folder when inside it, and an `entity_id` edge to the

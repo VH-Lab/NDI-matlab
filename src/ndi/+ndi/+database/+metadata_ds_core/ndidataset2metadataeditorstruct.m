@@ -127,7 +127,7 @@ function datasetInformation = ndidataset2metadataeditorstruct(D)
             species_doc{1}.document_properties.openminds.fields.name, ...
             species_doc{1}.document_properties.openminds.fields.preferredOntologyIdentifier, ...
             species_doc{1}.document_properties.openminds.fields.synonym);
-        subject.sessionIdentifier = studiedSpecimen_doc{1}.document_properties.base.session_id;
+        subject.sessionIdentifier = studiedSpecimen_doc{1}.session_id();
         Subjects(i) = ndi.database.metadata_app.class.Subject();
         Subjects(i).SubjectName = subject.SubjectName;
         Subjects(i).BiologicalSexList = subject.BiologicalSexList;

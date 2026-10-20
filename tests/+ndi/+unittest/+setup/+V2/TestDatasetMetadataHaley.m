@@ -96,6 +96,11 @@ classdef TestDatasetMetadataHaley < matlab.unittest.TestCase
             % (decision #50): "exclude" + "only" together are "include".
             sid = did.ido.unique_id();
             datasetId = did.ido.unique_id();
+            if ndi.v2.sessionIdIsEdge()
+                % the dataset entity's id IS the dataset's session id
+                % (V_eta_relation_inheritance_plan.md, 2026-10-20)
+                datasetId = sid;
+            end
             rest = ndi.setup.V2.datasetMetadata(testCase.Spec, sid, ...
                 'DatasetId', datasetId, 'Studies', "exclude");
             studies = ndi.setup.V2.datasetMetadata(testCase.Spec, sid, ...
@@ -105,7 +110,7 @@ classdef TestDatasetMetadataHaley < matlab.unittest.TestCase
             testCase.verifyEqual(sum(strcmp(classOf(studies), 'study')), numel(testCase.Spec.studies));
             testCase.verifyEqual(numel(rest.documents) + numel(studies.documents), ...
                 numel(testCase.Result.documents));
-            % each study is part_of the dataset the other call built
+            % each study is filed under the dataset the other call built
             rel = studies.documents(strcmp(classOf(studies), 'directed_relation'));
             testCase.verifyEqual(numel(rel), numel(testCase.Spec.studies));
             for k = 1:numel(rel)
@@ -114,8 +119,18 @@ classdef TestDatasetMetadataHaley < matlab.unittest.TestCase
             end
             ds = rest.documents(strcmp(classOf(rest), 'dataset'));
             testCase.verifyEqual(ds{1}.base.id, datasetId);
-            testCase.verifyError(@() ndi.setup.V2.datasetMetadata(testCase.Spec, sid, ...
-                'Studies', "only"), 'ndi:setup:V2:noDatasetId');
+            if ndi.v2.sessionIdIsEdge()
+                % the dataset's id is known from the session id, so "only"
+                % needs no 'DatasetId', and another id is refused
+                alone = ndi.setup.V2.datasetMetadata(testCase.Spec, sid, 'Studies', "only");
+                rel = alone.documents(strcmp(classOf(alone), 'directed_relation'));
+                testCase.verifyTrue(all(cellfun(@(r) any(strcmp({r.depends_on.document_id}, sid)), rel)));
+                testCase.verifyError(@() ndi.setup.V2.datasetMetadata(testCase.Spec, sid, ...
+                    'DatasetId', did.ido.unique_id(), 'Studies', "only"), 'ndi:setup:V2:datasetId');
+            else
+                testCase.verifyError(@() ndi.setup.V2.datasetMetadata(testCase.Spec, sid, ...
+                    'Studies', "only"), 'ndi:setup:V2:noDatasetId');
+            end
         end
 
         function testEveryEdgeNamesABuiltDocument(testCase)
@@ -148,11 +163,21 @@ classdef TestDatasetMetadataHaley < matlab.unittest.TestCase
         end
 
         function testRelationTermsAreCompletedFromTheirValueSet(testCase)
-            partOf = relationsNamed(testCase.Result.documents, 'part_of');
-            testCase.verifyEqual(numel(partOf), numel(testCase.Spec.studies));
+            % a study is filed under the dataset by included_in where the
+            % schema binds it (schema:isPartOf; V_eta_relation_inheritance_plan.md,
+            % 2026-10-20), by part_of (BFO:0000050) before
+            name = ndi.v2.recordRelation();
+            member = relationsNamed(testCase.Result.documents, name);
+            testCase.verifyEqual(numel(member), numel(testCase.Spec.studies));
             % the prefix is BFO from 2026-10-19 (V_eta_prefix_spelling_plan.md) and
             % lowercase on a schema built between 2026-10-08 and then
-            testCase.verifyEqual(lower(partOf{1}.directed_relation.relation.node), 'bfo:0000050');
+            node = 'bfo:0000050';
+            if strcmp(name, 'included_in')
+                node = 'schema:ispartof';
+                testCase.verifyEmpty(relationsNamed(testCase.Result.documents, 'part_of'), ...
+                    'part_of is physical: no record is part_of another');
+            end
+            testCase.verifyEqual(lower(member{1}.directed_relation.relation.node), node);
         end
 
         function testStrainLineageAndStock(testCase)

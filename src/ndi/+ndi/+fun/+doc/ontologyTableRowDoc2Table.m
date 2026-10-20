@@ -58,7 +58,7 @@ for i = 1:numel(tableRowDoc)
     tableRows{i} = vlt.data.flattenstruct2table(tableRowDoc{i}.document_properties.ontologyTableRow.data);
     variableNames{i} = tableRowDoc{i}.document_properties.ontologyTableRow.variableNames;
     docID{i} = tableRowDoc{i}.id;
-    sessionID{i} = tableRowDoc{i}.document_properties.base.session_id;  
+    sessionID{i} = tableRowDoc{i}.session_id();  
     dependencyID{i} = tableRowDoc{i}.dependency_value_n('document_id');
 end
 

@@ -24,13 +24,23 @@ function result = datasetMetadata(spec, sessionId, options)
 %                   recorded. Reported, never silently dropped.
 %
 %   Options:
-%     'DatasetId'   the dataset document's id (default: a new one)
+%     'DatasetId'   the dataset document's id (default: a new one). WHERE
+%                   session_id IS AN EDGE (did-schema
+%                   V_eta_relation_inheritance_plan.md, 2026-10-20;
+%                   ndi.v2.sessionIdIsEdge) the dataset entity's id IS the
+%                   dataset's session id, SESSIONID, which every document
+%                   here points at: the default is SESSIONID and any other
+%                   value is an error (ndi:setup:V2:datasetId).
 %     'Validate'    passed to did2.build (default true)
 %     'Studies'     "include" (default): everything, studies too; "exclude":
-%                   everything but the studies; "only": the studies and their
-%                   `part_of` relations alone, which needs 'DatasetId' (an
-%                   import mints studies beside the sessions they group --
-%                   Haley decision #50 -- and the rest in its metadata stage)
+%                   everything but the studies; "only": the studies and the
+%                   relations filing them under the dataset alone, which needs
+%                   'DatasetId' (given, or SESSIONID where session_id is an
+%                   edge) (an import mints studies beside the sessions they
+%                   group -- Haley decision #50 -- and the rest in its
+%                   metadata stage). A study is `included_in` the dataset
+%                   where the schema binds it, `part_of` before
+%                   (ndi.v2.recordRelation).
 %
 %   Errors did2:build:* when an entry does not fit the schema, and
 %   ndi:setup:V2:* for spec problems (a duplicate key, a key that names
@@ -48,6 +58,16 @@ end
 
 if ischar(spec) || isstring(spec)
     spec = jsondecode(fileread(char(spec)));
+end
+if ndi.v2.sessionIdIsEdge()
+    % the dataset entity is the dataset's own record: its id is the session id
+    if isempty(options.DatasetId)
+        options.DatasetId = sessionId;
+    elseif ~strcmp(options.DatasetId, sessionId)
+        error('ndi:setup:V2:datasetId', ['''DatasetId'' %s is not the session id %s: ' ...
+            'where session_id is an edge, the dataset entity''s id is the dataset''s ' ...
+            'session id.'], options.DatasetId, sessionId);
+    end
 end
 state = struct();
 state.docs = {};
@@ -373,11 +393,11 @@ if ~strcmp(options.Studies, 'only')
         end
     end
 else
-    % Studies alone (stage 3 of an import): they are part_of the dataset,
+    % Studies alone (stage 3 of an import): they are filed under the dataset,
     % whose document another call builds, so its id is given, not made.
     if isempty(options.DatasetId)
         error('ndi:setup:V2:noDatasetId', ['''Studies'', "only" needs ''DatasetId'': ' ...
-            'the dataset document the studies are part_of.']);
+            'the dataset document the studies are filed under.']);
     end
     key = '#dataset';
     state.ids(key) = options.DatasetId;
@@ -396,7 +416,7 @@ if ~strcmp(options.Studies, 'exclude')
         f = putIf(f, 'factors', s, 'factors');
         f = putIf(f, 'design', s, 'design');
         state = add(state, 'study', s.key, putIds(f, s), struct());
-        state = relate(state, s.key, key, 'part_of', {'study'}, {'dataset'});
+        state = relate(state, s.key, key, ndi.v2.recordRelation(), {'study'}, {'dataset'});
     end
 end
 

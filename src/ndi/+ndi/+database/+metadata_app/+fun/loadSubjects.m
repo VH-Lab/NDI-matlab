@@ -18,6 +18,6 @@ function subjectData = loadSubjects(S)
     for i = 1:numel(subjects)
         subject_obj = subjectData.addItem();
         subject_obj.SubjectName = subjects{i}.document_properties.subject.local_identifier;
-        subject_obj.sessionIdentifier = subjects{i}.document_properties.base.session_id;
+        subject_obj.sessionIdentifier = subjects{i}.session_id();
     end
 end

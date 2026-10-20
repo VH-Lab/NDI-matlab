@@ -21,7 +21,8 @@ function result = import_V2(dataParentDir, options)
 %                          (ndi.setup.conv.haley.seedingSuspensions)
 %     B. per study (E. coli first); per day:
 %        3  sessions       the studies (from the spec; decision #50), then one
-%                          session per experiment day, part_of its study
+%                          session per experiment day, included_in its study
+%                          (part_of on a schema without included_in; #109)
 %        4  subjects       plates, patches, worm cohorts, worms, acclimation
 %                          plates (each with its one patch) and food
 %                          deprivation plates; each with its type
@@ -110,7 +111,7 @@ function result = import_V2(dataParentDir, options)
 %                         self-contained form to publish, and the fastest. true
 %                         writes each session ONCE, to its own folder, and the
 %                         dataset LINKS it (a `linked_session` document and the
-%                         session's `part_of` relation in the dataset's
+%                         session's `included_in` (`part_of`) relation in the dataset's
 %                         database). Either converts to the other later
 %                         (ndi.dataset/convertLinkedSessionToIngested,
 %                         convertIngestedSessionToLinked). With a schema that has
@@ -190,8 +191,13 @@ if isempty(sid)
 end
 result.datasetSessionId = sid;
 % One dataset document id for the whole run: stage 2 builds the dataset with
-% it and stage 3's studies are part_of it, whichever stages run.
+% it and stage 3's studies are included_in it, whichever stages run. Where
+% session_id is an edge (decision #109), the dataset entity's id IS the
+% dataset's session id.
 result.datasetId = ndi.ido.unique_id();
+if ndi.v2.sessionIdIsEdge()
+    result.datasetId = sid;
+end
 
 if any(options.Stages == "discover")
     fprintf('\n== stage 0: discover ==\n');
@@ -447,7 +453,12 @@ T = result.sessions;
 n = height(T);
 checkFoldersFree(T, dataParentDir, options);
 T.session_id = arrayfun(@(~) ndi.ido.unique_id(), (1:n)', 'UniformOutput', false);
-T.session_doc_id = arrayfun(@(~) ndi.ido.unique_id(), (1:n)', 'UniformOutput', false);
+if ndi.v2.sessionIdIsEdge()
+    % decision #109: the session entity's id IS the session id
+    T.session_doc_id = T.session_id;
+else
+    T.session_doc_id = arrayfun(@(~) ndi.ido.unique_id(), (1:n)', 'UniformOutput', false);
+end
 T.time_reference_id = repmat({''}, n, 1);
 T.documents = repmat({{}}, n, 1);
 built = cell(n, 1);
@@ -685,7 +696,7 @@ else
 end
 % Decision #71: with 'SessionFolders', each session is written ONCE, to its own
 % folder, and the dataset LINKS it (a `linked_session` document and the session's
-% `part_of` relation in the dataset's database). It needs a schema with the
+% `included_in` (`part_of`) relation in the dataset's database). It needs a schema with the
 % `linked_session` class; without one, the sessions are also ingested into the
 % dataset, as before.
 linked = options.SessionFolders && any(options.Stages == "dataset") && ...
@@ -702,7 +713,7 @@ if options.SessionFolders
     fprintf('\n== session folders ==\n');
     Tw = T;
     if linked && ismember('study_ids', Tw.Properties.VariableNames)
-        % membership is the dataset's: the part_of relations were written there
+        % membership is the dataset's: the included_in (part_of) relations were written there
         Tw = removevars(Tw, 'study_ids');
     end
     [Tw, result.sessionObjects] = ndi.setup.V2.makeSessions(Tw, 'Overwrite', options.Overwrite, ...
@@ -761,7 +772,7 @@ end
 function out = writeDataset(result, T, dataParentDir, options, linked)
 % Stage 13 (decision #66): every document of this run checked as one set, and
 % written into ONE V2 database -- or, LINKED (decision #71), the dataset-level
-% documents, each session's part_of relations and a linked_session per session,
+% documents, each session's included_in (part_of) relations and a linked_session per session,
 % with the sessions' own documents written to their folders afterwards.
 arguments
     result (1,1) struct
@@ -792,7 +803,7 @@ folders = cellstr(T.path);
 for k = 1:height(T)
     own = sessionOwn(T(k, :));
     if linked
-        % in the dataset: the session's part_of relations and where it lives;
+        % in the dataset: the session's included_in (part_of) relations and where it lives;
         % its own documents go to its folder (checked here as one set)
         link = did2.build.document('linked_session', ...
             struct('path', ndi.v2.linkPath(folders{k}, path)), ...
@@ -827,7 +838,8 @@ for j = 1:numel(report.duplicateIds)
     fprintf('  id repeated: %s\n', report.duplicateIds{j});
 end
 for j = 1:numel(report.sessions.notInDataset)
-    fprintf('  session not part_of a study of the dataset: %s\n', report.sessions.notInDataset{j});
+    fprintf('  session not %s a study of the dataset: %s\n', ndi.v2.recordRelation(), ...
+        report.sessions.notInDataset{j});
 end
 out = struct('path', path, 'id', ds.id(), 'report', report, 'sessionReferences', {refs}, ...
     'sessionIds', {ids});
@@ -870,9 +882,10 @@ docs = ndi.setup.V2.entityDocuments('session', f, edges, 'SessionId', sid, ...
 if ismember('study_ids', vars)
     studies = row.study_ids{1};
     if ischar(studies) || isstring(studies), studies = cellstr(studies); end
+    member = ndi.v2.recordRelation();   % included_in (decision #109), part_of before
     for k = 1:numel(studies)
         docs{end+1} = did2.build.directedRelation(docs{1}.base.id, studies{k}, ...
-            'part_of', 'SessionId', sid); %#ok<AGROW>
+            member, 'SessionId', sid); %#ok<AGROW>
     end
 end
 end

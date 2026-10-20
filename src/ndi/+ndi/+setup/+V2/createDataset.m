@@ -5,12 +5,24 @@ function [dataset, report] = createDataset(path, reference, datasetSessionId, da
 %   DATASETSESSIONID, DATASETDOCS, SESSIONDOCS) writes, into PATH/.ndi's V2
 %   database (did2), the dataset's own `session` document, DATASETDOCS (the
 %   dataset-level documents: the dataset, people, studies, ...; each with
-%   base.session_id = DATASETSESSIONID) and SESSIONDOCS (a cell, one cell of
+%   session id DATASETSESSIONID) and SESSIONDOCS (a cell, one cell of
 %   documents per session, each holding that session's `session` document,
 %   with its own session_id), then opens it as an ndi.dataset.dir. Every
 %   session is INGESTED: its documents live in the dataset's database and
 %   ndi.dataset opens it there (ndi.dataset/build_session_info lists a V2
 %   dataset's sessions from their `session` documents).
+%
+%   WHERE session_id IS AN EDGE (did-schema V_eta_relation_inheritance_plan.md,
+%   2026-10-20, a proposal built ahead of signature; ndi.v2.sessionIdIsEdge):
+%   the dataset's own record is the document whose base.id IS
+%   DATASETSESSIONID, which every dataset-level document's `session_id` edge
+%   points at. When DATASETDOCS hold the `dataset` entity, it is that record
+%   (built with that id, e.g. by ndi.setup.V2.datasetMetadata) and no separate
+%   `session` document is written; it is given REFERENCE as its
+%   local_identifier when it has none, so ndi.session.dir reads the dataset's
+%   reference from it. A `dataset` entity with another id is an error
+%   (ndi:setup:V2:datasetId). With no `dataset` entity, the dataset's own
+%   `session` document is written with DATASETSESSIONID as its id.
 %
 %   Files: a body recorded with `ingest` 1 is copied into PATH/.ndi/files; one
 %   recorded by location (`ingest` 0, the raw recordings) stays where it is.
@@ -22,8 +34,10 @@ function [dataset, report] = createDataset(path, reference, datasetSessionId, da
 %                   and those naming no document in the set (dangling), by
 %                   class and edge name
 %     duplicateIds  ids carried by more than one document
-%     sessions      session documents found, and those with no `part_of`
-%                   relation to a study that is itself `part_of` the dataset
+%     sessions      session documents found, and those not filed under a
+%                   study that is itself filed under the dataset (the relation
+%                   is ndi.v2.recordRelation: `included_in` where the schema
+%                   binds it, `part_of` before)
 %
 %   Options:
 %     'Name'        the dataset session's display name
@@ -76,18 +90,46 @@ if isfolder(ndiDir)
     end
 end
 
-f = struct('local_identifier', reference);
-if ~isempty(options.Name), f.name = options.Name; end
-own = ndi.setup.V2.entityDocuments('session', f, struct(), 'SessionId', datasetSessionId);
-own = own{1};
 for k = 1:numel(datasetDocs)
-    if ~strcmp(datasetDocs{k}.base.session_id, datasetSessionId)
+    if ~strcmp(ndi.v2.sessionIdOf(datasetDocs{k}), datasetSessionId)
         error('ndi:setup:V2:wrongSession', ...
             'Dataset document %d (%s) has session_id %s, not the dataset''s %s.', k, ...
-            datasetDocs{k}.document_class.class_name, datasetDocs{k}.base.session_id, datasetSessionId);
+            datasetDocs{k}.document_class.class_name, ndi.v2.sessionIdOf(datasetDocs{k}), ...
+            datasetSessionId);
     end
 end
-docsAll = [{own}, reshape(datasetDocs, 1, [])];
+own = {};
+recordAt = [];
+if ndi.v2.sessionIdIsEdge()
+    % the dataset entity is the dataset's own record: its id is the session id
+    for k = 1:numel(datasetDocs)
+        if ~strcmp(ndi.setup.V2.kindOf(datasetDocs{k}), 'dataset'), continue; end
+        if ~strcmp(datasetDocs{k}.base.id, datasetSessionId)
+            error('ndi:setup:V2:datasetId', ['The dataset document has id %s; where ' ...
+                'session_id is an edge its id must be the dataset''s session id, %s ' ...
+                '(ndi.setup.V2.datasetMetadata builds it so by default).'], ...
+                datasetDocs{k}.base.id, datasetSessionId);
+        end
+        recordAt = k;
+    end
+end
+if isempty(recordAt)
+    f = struct('local_identifier', reference);
+    if ~isempty(options.Name), f.name = options.Name; end
+    idArgs = {};
+    if ndi.v2.sessionIdIsEdge(), idArgs = {'Id', datasetSessionId}; end
+    own = ndi.setup.V2.entityDocuments('session', f, struct(), 'SessionId', datasetSessionId, ...
+        idArgs{:});
+    own = own(1);
+else
+    [~, blk] = ndi.setup.V2.kindOf(datasetDocs{recordAt});
+    if ~isfield(datasetDocs{recordAt}.(blk), 'local_identifier') || ...
+            isempty(datasetDocs{recordAt}.(blk).local_identifier)
+        % ndi.session.dir reads the folder's reference from its own record
+        datasetDocs{recordAt}.(blk).local_identifier = reference;
+    end
+end
+docsAll = [own, reshape(datasetDocs, 1, [])];
 for k = 1:numel(sessionDocs)
     docsAll = [docsAll, reshape(sessionDocs{k}, 1, [])]; %#ok<AGROW>
 end
@@ -95,7 +137,7 @@ end
 report = check([docsAll, reshape(options.External, 1, [])], datasetSessionId);
 fprintf(['DENOMINATOR: %d document(s) (%d dataset-level, %d session(s); %d written here, %d ' ...
     'in linked session folders); %d edge value(s) naming a document checked\n'], ...
-    numel(docsAll) + numel(options.External), numel(datasetDocs) + 1, numel(sessionDocs), ...
+    numel(docsAll) + numel(options.External), numel(datasetDocs) + numel(own), numel(sessionDocs), ...
     numel(docsAll), numel(options.External), report.edges.checked);
 fprintf('  dangling edges: %d   repeated ids: %d   sessions outside the dataset: %d\n', ...
     height(report.edges.dangling), numel(report.duplicateIds), numel(report.sessions.notInDataset));
@@ -134,7 +176,7 @@ end
 n = numel(docs);
 ids = cellfun(@(d) d.base.id, docs, 'UniformOutput', false);
 cls = cellfun(@ndi.setup.V2.kindOf, docs, 'UniformOutput', false);   % an entity's type since 2026-10-08
-sids = cellfun(@(d) d.base.session_id, docs, 'UniformOutput', false);
+sids = cellfun(@ndi.v2.sessionIdOf, docs, 'UniformOutput', false);
 [u, ~, j] = unique(ids);
 report.duplicateIds = u(accumarray(j(:), 1) > 1);
 % counted by the class each document is STORED as (an `entity` is `entity`),
@@ -169,12 +211,14 @@ else
         {'class', 'edge'});
 end
 
-% sessions: part_of a study that is part_of the dataset
+% sessions: filed under a study that is filed under the dataset (included_in,
+% or part_of on a schema without it: ndi.v2.recordRelation)
+member = ndi.v2.recordRelation();
 isRel = strcmp(cls, 'directed_relation');
 parentsOf = containers.Map();
 for i = find(isRel)
     d = docs{i};
-    if ~strcmp(relationName(d), 'part_of'), continue; end
+    if ~strcmp(relationName(d), member), continue; end
     c = edgeOf(d, 'child_id'); p = edgeOf(d, 'parent_id');
     if isKey(parentsOf, c), parentsOf(c) = [parentsOf(c), {p}]; else, parentsOf(c) = {p}; end
 end

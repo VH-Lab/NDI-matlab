@@ -47,12 +47,12 @@ classdef dir < ndi.dataset
             
             correctSessionId = '';
             if ~isempty(dataset_session_info_docs)
-                correctSessionId = dataset_session_info_docs{1}.document_properties.base.session_id;
+                correctSessionId = dataset_session_info_docs{1}.session_id();
             else
                 q = ndi.query('','isa','session_in_a_dataset');
                 session_in_a_dataset_docs = ndi_dataset_dir_obj.session.database.search(q);
                 if ~isempty(session_in_a_dataset_docs)
-                    correctSessionId = session_in_a_dataset_docs{1}.document_properties.base.session_id;
+                    correctSessionId = session_in_a_dataset_docs{1}.session_id();
                 else
                     % A V2 dataset (ndi.setup.V2.createDataset) has no
                     % session_in_a_dataset documents: its sessions are ingested
@@ -65,20 +65,24 @@ classdef dir < ndi.dataset
                     datasetDocs = datasetDocs(cellfun(@(d) strcmp(ndi.v2.kindOf(d.document_properties), ...
                         'dataset'), datasetDocs));   % an entity of type dataset since 2026-10-08
                     if isscalar(datasetDocs)
-                        correctSessionId = datasetDocs{1}.document_properties.base.session_id;
+                        correctSessionId = datasetDocs{1}.session_id();
                     else
                         q_session = ndi.v2.isaQuery('session');
                         candidate_session_doc = ndi_dataset_dir_obj.session.database.search(q_session);
                         if isscalar(candidate_session_doc)
-                           correctSessionId = candidate_session_doc{1}.document_properties.base.session_id;
+                           correctSessionId = candidate_session_doc{1}.session_id();
                         end
                     end
                 end
             end
 
             if ~isempty(correctSessionId)
-                q_session = ndi.v2.isaQuery('session') & ndi.query('base.session_id','exact_string',correctSessionId);                
-                candidate_session_doc = ndi_dataset_dir_obj.session.database.search(q_session);
+                % the dataset's own record: where session_id is an edge, the
+                % dataset (or session) entity whose base.id IS the session id
+                % (did-schema V_eta_relation_inheritance_plan.md, 2026-10-20);
+                % otherwise its `session` document
+                candidate_session_doc = ndi.v2.sessionRecord( ...
+                    ndi_dataset_dir_obj.session.database, correctSessionId);
                 if isscalar(candidate_session_doc)
                     % BOTH VINTAGES. V_eta renamed session.reference ->
                     % session.local_identifier (did-schema, signed 2026-08-13).
@@ -93,7 +97,13 @@ classdef dir < ndi.dataset
                     if isempty(ref)
                         ref = ndi.v2.blockOf(p_session, 'session', 'reference');
                     end
-                    session_id = candidate_session_doc{1}.document_properties.base.session_id;
+                    if isempty(ref) && strcmp(ndi.v2.kindOf(p_session), 'dataset')
+                        % a dataset entity has no local_identifier: the
+                        % reference the folder was written with (reference.txt,
+                        % ndi.setup.V2.createDataset), as ndi.session.dir read it
+                        ref = ndi_dataset_dir_obj.session.reference;
+                    end
+                    session_id = candidate_session_doc{1}.session_id();
                     ndi_dataset_dir_obj.session = ndi.session.dir(ref,ndi_dataset_dir_obj.session.path,session_id);
                     % the session list may have been built while the folder was
                     % open under another session's id (a V2 dataset's

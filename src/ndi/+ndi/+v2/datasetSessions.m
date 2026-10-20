@@ -6,7 +6,8 @@ function [sessions, notes] = datasetSessions(database, datasetSessionId, dataset
 %   searched without a session scope) and returns its sessions, one row of a
 %   struct array each:
 %
-%     session_id    the session's id (its documents' base.session_id)
+%     session_id    the session's id (its documents' session id:
+%                   ndi.v2.sessionIdOf)
 %     reference     its local_identifier
 %     entity_id     the id of its `session` entity document
 %     is_linked     false: ingested (its documents are in DATABASE)
@@ -18,18 +19,21 @@ function [sessions, notes] = datasetSessions(database, datasetSessionId, dataset
 %                   ingested)
 %
 %   The rule (V_eta_linked_session_plan.md, signed 2026-10-09): a session is
-%   in the dataset when its entity document is `part_of` the dataset, or
-%   `part_of` a study that is `part_of` the dataset; the relation is in the
-%   dataset's database for both kinds. A session is LINKED when a
+%   in the dataset when its entity document is filed under the dataset, or
+%   under a study that is filed under the dataset; the relation is in the
+%   dataset's database for both kinds. The relation is `included_in` where
+%   the schema binds it (V_eta_relation_inheritance_plan.md, 2026-10-20, a
+%   proposal built ahead of signature), `part_of` before
+%   (ndi.v2.recordRelation). A session is LINKED when a
 %   `linked_session` document names it: its `path` is the session's folder
 %   (relative to DATASETPATH when inside it) and its `entity_id` the
 %   session's entity document, which must be in that folder.
 %
 %   NOTES is a cellstr of what was left out and why, the denominator first:
-%     - a `session` document in DATABASE that is not part_of the dataset;
+%     - a `session` document in DATABASE that is not in the dataset;
 %     - a linked folder that is missing, cannot be opened, or holds another
 %       session;
-%     - a linked session that is not part_of the dataset.
+%     - a linked session that is not in the dataset.
 %   When DATABASE holds no `dataset` document (an import whose metadata stage
 %   did not run), membership cannot be read, so every session is listed and
 %   NOTES says so.
@@ -52,21 +56,22 @@ sessions = struct('session_id', {}, 'reference', {}, 'entity_id', {}, ...
     'is_linked', {}, 'path', {}, 'link_id', {}, 'session', {});
 notes = {};
 
-% --- membership: part_of the dataset, directly or through a study ---
+% --- membership: filed under the dataset, directly or through a study ---
+member = ndi.v2.recordRelation();
 datasetDocs = database.search(ndi.v2.isaQuery('dataset'));
 datasetDocs = datasetDocs(cellfun(@(d) strcmp(ndi.v2.kindOf(d.document_properties), ...
     'dataset'), datasetDocs));
 knowMembership = ~isempty(datasetDocs);
-% level 1: part_of the dataset (studies, or sessions directly); level 2:
-% part_of one of those (the sessions of a study)
+% level 1: filed under the dataset (studies, or sessions directly); level 2:
+% filed under one of those (the sessions of a study)
 level1 = {};
 for k = 1:numel(datasetDocs)
-    level1 = [level1, partOfChildren(database, datasetDocs{k}.id())]; %#ok<AGROW>
+    level1 = [level1, memberChildren(database, datasetDocs{k}.id(), member)]; %#ok<AGROW>
 end
 level1 = unique(level1);
 members = level1;
 for k = 1:numel(level1)
-    members = [members, partOfChildren(database, level1{k})]; %#ok<AGROW>
+    members = [members, memberChildren(database, level1{k}, member)]; %#ok<AGROW>
 end
 members = unique(members);
 
@@ -76,7 +81,7 @@ nIngested = 0;
 left = {};
 for i = 1:numel(sessionDocs)
     p = sessionDocs{i}.document_properties;
-    if ~strcmp(ndi.v2.kindOf(p), 'session') || strcmp(p.base.session_id, datasetSessionId)
+    if ~strcmp(ndi.v2.kindOf(p), 'session') || strcmp(ndi.v2.sessionIdOf(p), datasetSessionId)
         continue;
     end
     ref = char(ndi.v2.blockOf(p, 'session', 'local_identifier', ''));
@@ -85,7 +90,7 @@ for i = 1:numel(sessionDocs)
         continue;
     end
     nIngested = nIngested + 1;
-    sessions(end+1) = struct('session_id', p.base.session_id, 'reference', ref, ...
+    sessions(end+1) = struct('session_id', ndi.v2.sessionIdOf(p), 'reference', ref, ...
         'entity_id', p.base.id, 'is_linked', false, 'path', '', 'link_id', '', ...
         'session', []); %#ok<AGROW>
 end
@@ -110,7 +115,7 @@ for i = 1:numel(links)
     entityId = e{1};
     folder = ndi.v2.resolveLinkPath(rel, datasetPath);
     if knowMembership && ~ismember(entityId, members)
-        problems{end+1} = sprintf('%s (linked) is not part_of the dataset', folder); %#ok<AGROW>
+        problems{end+1} = sprintf('%s (linked) is not %s the dataset', folder, member); %#ok<AGROW>
         continue;
     end
     row = struct('session_id', '', 'reference', '', 'entity_id', entityId, ...
@@ -132,15 +137,15 @@ end
 notes{end+1} = sprintf(['DENOMINATOR: %d session document(s) and %d linked_session ' ...
     'document(s) read; %d ingested and %d linked session(s) listed'], ...
     sum(cellfun(@(d) strcmp(ndi.v2.kindOf(d.document_properties), 'session') && ...
-    ~strcmp(d.document_properties.base.session_id, datasetSessionId), sessionDocs)), ...
+    ~strcmp(d.session_id(), datasetSessionId), sessionDocs)), ...
     numel(links), nIngested, nLinked);
 if ~knowMembership
-    notes{end+1} = ['no dataset document: membership (part_of) cannot be read, so every ' ...
-        'session is listed'];
+    notes{end+1} = sprintf(['no dataset document: membership (%s) cannot be read, so every ' ...
+        'session is listed'], member);
 end
 if ~isempty(left)
-    notes{end+1} = sprintf('%d session document(s) not part_of the dataset, not listed: %s', ...
-        numel(left), strjoin(left, ', '));
+    notes{end+1} = sprintf('%d session document(s) not %s the dataset, not listed: %s', ...
+        numel(left), member, strjoin(left, ', '));
 end
 for k = 1:numel(problems)
     notes{end+1} = ['not listed: ' problems{k}]; %#ok<AGROW>
@@ -148,11 +153,13 @@ end
 end
 
 % -----------------------------------------------------------------------------
-function children = partOfChildren(database, parentId)
-% the ids of the documents `part_of` PARENTID, read from relations in DATABASE
+function children = memberChildren(database, parentId, member)
+% the ids of the documents filed under PARENTID by the relation MEMBER
+% (ndi.v2.recordRelation), read from relations in DATABASE
 arguments
     database
     parentId {mustBeText}
+    member {mustBeText}
 end
 children = {};
 q = ndi.query('', 'isa', 'directed_relation', '') & ...
@@ -160,7 +167,7 @@ q = ndi.query('', 'isa', 'directed_relation', '') & ...
 rels = database.search(q);
 for k = 1:numel(rels)
     p = rels{k}.document_properties;
-    if ~strcmp(ndi.v2.termName(ndi.v2.blockOf(p, 'directed_relation', 'relation', '')), 'part_of')
+    if ~strcmp(ndi.v2.termName(ndi.v2.blockOf(p, 'directed_relation', 'relation', '')), member)
         continue;
     end
     c = ndi.v2.edgeIds(p, 'child_id');

@@ -23,11 +23,18 @@ function [session, docs] = createSession(path, reference, options)
 %     'SessionId'   the session id (default: a new ndi.ido id)
 %     'Name'        the session's display name (session.name)
 %     'Description' free text about the session (session.description)
-%     'StudyIds'    cellstr: studies this session is `part_of` (a relation
-%                   document each, stored in this session)
+%     'StudyIds'    cellstr: studies this session is filed under (a relation
+%                   document each, stored in this session): `included_in`
+%                   where the schema binds it, `part_of` before
+%                   (ndi.v2.recordRelation)
 %     'SessionDocId' base.id of the session document (default: a new id).
 %                   Given when other documents must point at the session
 %                   document before it exists (a time reference's referent).
+%                   WHERE session_id IS AN EDGE (did-schema
+%                   V_eta_relation_inheritance_plan.md, 2026-10-20;
+%                   ndi.v2.sessionIdIsEdge) the session document's id IS the
+%                   session id, so this defaults to it and any other value is
+%                   an error (ndi:setup:V2:sessionDocId).
 %     'TimeReferenceId' the session's own time reference
 %                   (session.time_reference_id), e.g. its UTC extent
 %     'Documents'   cell array of further documents (structs, built with the
@@ -63,6 +70,22 @@ arguments
     options.Progress (1,1) logical = false
 end
 
+sid = options.SessionId;
+if isempty(sid)
+    sid = ndi.ido.unique_id();
+end
+docId = options.SessionDocId;
+if ndi.v2.sessionIdIsEdge()
+    % the session entity's base.id IS its session id: every document's
+    % session_id edge, its own included, points at it
+    if ~isempty(docId) && ~strcmp(docId, sid)
+        error('ndi:setup:V2:sessionDocId', ['''SessionDocId'' %s is not the session id ' ...
+            '%s: where session_id is an edge, the session document''s id is the ' ...
+            'session id.'], docId, sid);
+    end
+    docId = sid;
+end
+
 ndiDir = fullfile(path, '.ndi');
 if isfolder(ndiDir)
     existing = [dir(fullfile(ndiDir, '*.sqlite')); dir(fullfile(ndiDir, '*.json'))];
@@ -77,11 +100,6 @@ if isfolder(ndiDir)
 end
 mkdir(ndiDir);
 
-sid = options.SessionId;
-if isempty(sid)
-    sid = ndi.ido.unique_id();
-end
-
 fields = struct('local_identifier', reference);
 if ~isempty(options.Name)
     fields.name = options.Name;
@@ -94,22 +112,23 @@ if ~isempty(options.TimeReferenceId)
     edges.time_reference_id = options.TimeReferenceId;
 end
 docs = ndi.setup.V2.entityDocuments('session', fields, edges, 'SessionId', sid, ...
-    'Id', options.SessionDocId);
+    'Id', docId);
 studies = options.StudyIds;
 if ischar(studies) || isstring(studies)
     studies = cellstr(studies);
 end
+member = ndi.v2.recordRelation();
 for k = 1:numel(studies)
     docs{end+1} = did2.build.directedRelation(docs{1}.base.id, studies{k}, ...
-        'part_of', 'SessionId', sid); %#ok<AGROW>
+        member, 'SessionId', sid); %#ok<AGROW>
 end
 
 docs = [docs, reshape(options.Documents, 1, [])];
 for k = 1:numel(docs)
-    if ~strcmp(docs{k}.base.session_id, sid)
+    if ~strcmp(ndi.v2.sessionIdOf(docs{k}), sid)
         error('ndi:setup:V2:wrongSession', ...
             'Document %d (%s) has session_id %s, not this session''s %s.', ...
-            k, docs{k}.document_class.class_name, docs{k}.base.session_id, sid);
+            k, docs{k}.document_class.class_name, ndi.v2.sessionIdOf(docs{k}), sid);
     end
 end
 
@@ -119,7 +138,8 @@ ndi.setup.V2.writeDocuments(fullfile(ndiDir, ...
     'Progress', options.Progress, 'Label', [reference ' documents']);
 
 % ndi.session.dir scopes EVERY search to its session id (ndi.session/
-% database_search ANDs base.session_id), and on a one-argument open it takes
+% database_search ANDs base.session_id, which DID answers from the field or
+% the edge), and on a one-argument open it takes
 % that id from .ndi/unique_reference.txt -- or, if the file is absent, makes a
 % provisional random one, which then finds nothing and fails "Could not load
 % the REFERENCE field". So the two files ndi.session.dir itself writes are

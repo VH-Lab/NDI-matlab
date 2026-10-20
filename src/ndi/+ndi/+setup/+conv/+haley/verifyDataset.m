@@ -85,7 +85,12 @@ fprintf('\n== 2 census ==\n');
 cls = {}; nCls = []; sid = {}; nSid = [];
 for f = 1:numel(dbs)
     a = qf(f, 'SELECT classname AS class, COUNT(*) AS n FROM documents GROUP BY classname');
-    b = qf(f, 'SELECT session_id, COUNT(*) AS n FROM documents GROUP BY session_id');
+    % a document's session: the documents.session_id column (base.session_id),
+    % or, where session_id is an edge (decision #109), its `session_id` edge
+    b = qf(f, ['SELECT COALESCE(NULLIF(d.session_id, ''''), e.document_id) AS session_id, ' ...
+        'COUNT(*) AS n FROM documents d LEFT JOIN depends_on e ' ...
+        'ON e.doc_id = d.id AND e.name = ''session_id'' ' ...
+        'GROUP BY COALESCE(NULLIF(d.session_id, ''''), e.document_id)']);
     cls = [cls, {a.class}]; nCls = [nCls, double([a.n])]; %#ok<AGROW>
     sid = [sid, {b.session_id}]; nSid = [nSid, double([b.n])]; %#ok<AGROW>
 end
@@ -112,7 +117,7 @@ disp(byClass);
 % ---- 3 edges ------------------------------------------------------------------
 % an edge dangles when no database of the dataset holds its target: a linked
 % session's documents point at the dataset's (a strain, a study), and the
-% dataset's part_of relations and linked_session documents at the sessions'
+% dataset's included_in (part_of) relations and linked_session documents at the sessions'
 fprintf('\n== 3 edges ==\n');
 checked = 0;
 dangRows = cell(0, 2);
