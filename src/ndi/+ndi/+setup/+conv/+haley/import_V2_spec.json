@@ -1309,7 +1309,7 @@
   {
    "key": "kpo4_1m_ph6",
    "type": {
-    "node": "NCIT:C29321",
+    "node": "EMPTY:0000329",
     "name": "potassium phosphate buffer"
    },
    "ingredients": [
@@ -1579,7 +1579,7 @@
   {
    "key": "k_citrate_1m_ph6",
    "type": {
-    "node": "NCIT:C70815",
+    "node": "EMPTY:0000330",
     "name": "potassium citrate solution"
    },
    "ingredients": [

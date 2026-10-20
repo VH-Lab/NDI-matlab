@@ -409,7 +409,7 @@ if ~isfile(f), return; end
 d = jsondecode(fileread(f));
 if ~isfield(d, 'depends_on') || ~any(strcmp({d.depends_on.name}, 'key_id')), return; end
 try
-    did2.build.key('encounter', 1, 'PositionsFrom', 0);
+    did2.build.key(haleyTerm('encounter'), 1, 'PositionsFrom', 0);   % a registered term (T19)
     tf = true;
 catch
 end

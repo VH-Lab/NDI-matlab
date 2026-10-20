@@ -230,7 +230,14 @@ classdef bodies < ndi.file.navigator
             p = st.document_properties;
             type = '';
             m = ndi.v2.blockOf(p, 'interaction', 'method', []);
-            if isstruct(m) && isfield(m, 'name')
+            if isstruct(m) && isfield(m, 'node') && ~isempty(m.node)
+                % the method's term names the imaging method by its ontology
+                % label (tenet T19), so the NDI probe type comes from its node
+                type = probeTypeOfNode(char(m.node));
+            end
+            if isempty(type) && isstruct(m) && isfield(m, 'name')
+                % a method with no known node names the probe type itself
+                % (documents written before 2026-10-20, other imports)
                 type = char(m.name);
             end
             if isempty(type)
@@ -243,4 +250,20 @@ classdef bodies < ndi.file.navigator
             pm = ndi.epoch.epochprobemap_daqsystem(sysName, 1, type, [sysName ':image1'], subject);
         end
     end
+end
+
+function type = probeTypeOfNode(node)
+% the NDI probe type (ndi_common/probe/probetype2object.json) of an imaging
+% method's node, '' when the node is not an imaging method this reader knows
+arguments
+    node (1,:) char
+end
+known = struct('key', {'empty:0000300', 'ncit:C16856'}, ...
+    'type', {'brightfield-imaging', 'wide-field-imaging'});   % brightfield imaging; fluorescence microscopy
+type = '';
+k = ndi.v2.curieKey(node);
+hit = strcmp({known.key}, k);
+if any(hit)
+    type = known(find(hit, 1)).type;
+end
 end

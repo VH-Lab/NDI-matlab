@@ -43,9 +43,10 @@ function out = sessionDocuments(dataParentDir, session, S, R, options)
 %                             same extent; images: time:intervalDuring) + the
 %                             UTC one; method = the imaging method, its node
 %                             decided (brightfield imaging EMPTY:0000300,
-%                             fluorescence microscopy NCIT:C16856) and its
-%                             name the NDI probe type the navigator rebuilds
-%                             the probe from (brightfield-imaging /
+%                             fluorescence microscopy NCIT:C16856), named as
+%                             the term registry names it; the navigator maps
+%                             the node to the NDI probe type it rebuilds the
+%                             probe from (brightfield-imaging /
 %                             wide-field-imaging); a microscope image
 %                             whose R.contrast is `brightfield` is brightfield
 %                             imaging (decision #97); keys Y-coordinate
@@ -287,9 +288,10 @@ end
 end
 
 function t = probeType(sys, contrast)
-% The imaging method: its decided node, named by the NDI probe type
-% (ndi_common/probe/probetype2object.json; all map to ndi.probe.image), which
-% ndi.file.navigator.bodies reads from the method's name. A microscope image is
+% The imaging method, its registered term (tenet T19, decision #102);
+% ndi.file.navigator.bodies maps its node to the NDI probe type
+% (brightfield-imaging / wide-field-imaging, ndi_common/probe/
+% probetype2object.json, both ndi.probe.image). A microscope image is
 % fluorescence unless its CONTRAST is `brightfield` (decision #97: the E. coli
 % brightfield images, beside the fluorescence images in ecoli/raw/)
 arguments
@@ -298,10 +300,8 @@ arguments
 end
 if strcmp(sys, 'microscope') && ~strcmp(contrast, 'brightfield')
     t = haleyTerm('fluorescence microscopy');
-    t.name = 'wide-field-imaging';
 else
     t = haleyTerm('brightfield imaging');
-    t.name = 'brightfield-imaging';
 end
 end
 

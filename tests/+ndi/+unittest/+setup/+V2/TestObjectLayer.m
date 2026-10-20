@@ -517,7 +517,7 @@ classdef TestObjectLayer < matlab.unittest.TestCase
                     'observation', {'variable', 'Imaging Signal Intensity', 'during', cold}}, 'context', true));
                 out = evalc(['ndi.entity.search(S, {''type'', ''organism'', ' ...
                     '''observation'', {''variable'', ''Imaging Signal Intensity'', ''during'', hot}}, ''context'', true, ''explain'', true);']);
-                testCase.verifySubstring(out, 'at a time when they also had an observation with variable ambient temperature');
+                testCase.verifySubstring(out, 'at a time when they also had an observation with variable Environmental Temperature');
             end
             testCase.verifyError(@() plate.observations({'during', {'assertion', {'variable', 'strain'}}}), ...
                 'ndi:entity:search:assertionTime');
@@ -590,7 +590,7 @@ classdef TestObjectLayer < matlab.unittest.TestCase
                 testCase.verifyEqual(x{1}.value().canonical(), false);
                 return;
             end
-            testCase.verifyEqual(T.value(T.variable == "organism strain"), "N2");
+            testCase.verifyEqual(T.value(lower(T.variable) == "organism strain"), "N2");
             st = c.assertions({'variable', 'organism strain'});
             testCase.verifyNumElements(st, 1, 'a cell of filters comes first');
             testCase.verifyEqual(st{1}.variable_name(), 'Organism Strain');
@@ -636,7 +636,7 @@ classdef TestObjectLayer < matlab.unittest.TestCase
                 testCase.verifyEqual(lower(sp{1}.raw_value().node), 'ncbitaxon:6239');
                 testCase.verifyEqual(sp{1}.subject().local_identifier, 'concentration_assayPlate0012_worms');
                 testCase.verifyEqual(sp{1}.via(), 'member_of');
-                strain = T(cellfun(@(x) strcmp(x.variable_name(), strainProp()), T));
+                strain = T(cellfun(@(x) strcmpi(x.variable_name(), strainProp()), T));
                 if ndi.setup.V2.mergedEntities()
                     testCase.verifyEmpty(strain, 'one entity class: a strain is a relation');
                 else
@@ -793,7 +793,7 @@ classdef TestObjectLayer < matlab.unittest.TestCase
                 if ~ndi.setup.V2.mergedEntities()
                     % one entity class: the strain entity is not in a session
                     % (testFindByWhatIsTrueOfASubject), so it is not suggested
-                    testCase.verifySubstring(err.message, ['Did you mean ''' strainProp() '''?']);
+                    testCase.verifySubstring(lower(err.message), lower(['Did you mean ''' strainProp() '''?']));
                 end
                 testCase.verifySubstring(err.message, 'Properties in this session: ');
                 testCase.verifySubstring(err.message, 'local_identifier');

@@ -441,11 +441,16 @@ classdef statement
             % S = ndi.statement.search(CONTAINER, ...) returns a cell array.
             % Filters:
             %   'Subject'   an ndi.entity (or an entity document id)
-            %   'Variable'  the variable's name, e.g. 'midpoint speed'
+            %   'Variable'  the variable's name, e.g. 'midpoint speed', or its node
             %   'Class'     'observation', 'manipulation', 'calculation',
             %               'assertion', 'interaction', or a document class
             %               (e.g. 'velocity_calculation')
-            %   'Method'    the method's name, e.g. 'tracking by WormLab'
+            %   'Method'    the method's name, e.g. 'tracking by WormLab', or its node
+            % A name is matched ignoring case, a node by its CURIE key
+            % (ndi.v2.termQuery). When nothing matches, the variable and
+            % method are widened by the registered terms that go by them, a
+            % label or a synonym (ndi.v2.synonymNodes; tenet T19): 'meter'
+            % finds metre.
             arguments
                 container
                 options.Subject = []
@@ -463,19 +468,48 @@ classdef statement
                 if isa(sid, 'ndi.entity'), sid = sid.document_id; end   % any entity (2026-10-08)
                 q = q & ndi.v2.entityQuery(char(sid));
             end
-            if ~isempty(options.Variable)
-                q = q & ndi.v2.fieldQuery('statement.variable.name', 'exact_string', options.Variable);
+            docs = container.database_search(withTerms(q, {options.Variable}, {options.Method}));
+            if isempty(docs) && ~(isempty(options.Variable) && isempty(options.Method))
+                v = widened(options.Variable);
+                m = widened(options.Method);
+                if numel(v) + numel(m) > ~isempty(options.Variable) + ~isempty(options.Method)
+                    docs = container.database_search(withTerms(q, v, m));
+                end
             end
-            if ~isempty(options.Method)
-                q = q & ndi.v2.fieldQuery('interaction.method.name', 'exact_string', options.Method);
-            end
-            docs = container.database_search(q);
             s = cell(1, numel(docs));
             for i = 1:numel(docs)
                 s{i} = ndi.statement.fromDocument(container, docs{i});
             end
         end
     end
+end
+
+function q = withTerms(q, variables, methods)
+% Q narrowed to statements whose variable is one of VARIABLES and whose method
+% is one of METHODS (each a cell of names or nodes; {''} or {} for any)
+arguments
+    q
+    variables cell
+    methods cell
+end
+variables = variables(~cellfun(@isempty, variables));
+methods = methods(~cellfun(@isempty, methods));
+if ~isempty(variables)
+    q = q & ndi.v2.termQuery('statement.variable', variables);
+end
+if ~isempty(methods)
+    q = q & ndi.v2.termQuery('interaction.method', methods);
+end
+end
+
+function c = widened(name)
+% NAME and the nodes of the registered terms that go by it ({} for '')
+arguments
+    name (1,:) char
+end
+c = {};
+if isempty(name), return; end
+c = [{name}, setdiff(ndi.v2.synonymNodes(name), {name}, 'stable')];
 end
 
 function v = firstOr(x, default)
