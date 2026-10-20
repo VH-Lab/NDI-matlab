@@ -188,9 +188,11 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
                     if strcmpi(varargin{i},'name')
                         % A name lives in base.name (v1, and V_eta as the
                         % migrators write it) or in acquisition_system.name
-                        % (did-schema #73 item 54), so ask for either.
-                        q = q & ( ndi.query('base.name','exact_string',varargin{i+1},'') | ...
-                            ndi.query('acquisition_system.name','exact_string',varargin{i+1},'') );
+                        % (did-schema #73 item 54), so ask for either. The
+                        % value is a regular expression, as ndi.query's
+                        % name/value form made it: getprobes asks for '(.*)'.
+                        q = q & ( ndi.query('base.name','regexp',varargin{i+1},'') | ...
+                            ndi.query('acquisition_system.name','regexp',varargin{i+1},'') );
                     else
                         rest(end+1:end+2) = varargin(i:i+1);
                     end

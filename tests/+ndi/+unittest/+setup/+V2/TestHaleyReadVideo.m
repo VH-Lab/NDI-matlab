@@ -34,6 +34,12 @@ classdef TestHaleyReadVideo < matlab.unittest.TestCase
 
     methods (TestClassSetup)
         function fixture(testCase)
+            testCase.assumeTrue(~isempty(which('did2.build.document')), ...
+                'did2.build (DID-matlab V2) is not on the path');
+            schemaPath = getenv('DID_SCHEMA_PATH');
+            testCase.assumeTrue(~isempty(schemaPath) && ...
+                ndi.setup.V2.schemaHasClass('study', schemaPath), ...
+                'DID_SCHEMA_PATH does not hold a V2 schema with `study`');
             testCase.Root = tempname;
             testCase.addTeardown(@() rmdir(testCase.Root, 's'));
             ndi.unittest.setup.V2.TestHaleyRecordings.writeFixture(testCase.Root);
