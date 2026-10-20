@@ -171,65 +171,67 @@ classdef TestObjectLayer < matlab.unittest.TestCase
             % strain and species are stated on each cohort, distributive
             % (decision #55): a search finds the worms without knowing that
             S = testCase.Session;
+            p = strainProp();     % the strain's property name on the schema in use
+            typo = strrep(p, p, typo);
             if ndi.setup.V2.mergedEntities()
                 % one entity class (2026-10-08): a cohort is an instance_of the
-                % dataset-level strain entity, so 'strain', 'N2' needs that
+                % dataset-level strain entity, so p, 'N2' needs that
                 % entity in reach. A session opened from its dataset reaches it
                 % (ndi.session/database_search_with_dataset); a session folder
                 % opened on its own holds only the relation and cannot name it.
-                testCase.verifyError(@() ndi.entity.search(S, {'strain', 'N2'}), ...
+                testCase.verifyError(@() ndi.entity.search(S, {p, 'N2'}), ...
                     'ndi:entity:search:unknownVariable');
                 [refs, ids] = testCase.Dataset.session_list();
                 inDataset = testCase.Dataset.open_session(ids{strcmp(refs, S.reference)});
                 testCase.verifyTrue(all(ismember({'concentration_worm0121', 'concentration_worm0122'}, ...
-                    local(ndi.entity.search(inDataset, {'type', 'organism', 'strain', 'N2'})))), ...
+                    local(ndi.entity.search(inDataset, {'type', 'organism', p, 'N2'})))), ...
                     'a session opened from its dataset finds the strain entity there');
                 S = testCase.Dataset;
             end
-            w = ndi.entity.search(S, {'type', 'organism', 'species', 'Caenorhabditis elegans', 'strain', 'N2'});
+            w = ndi.entity.search(S, {'type', 'organism', 'species', 'Caenorhabditis elegans', p, 'N2'});
             names = local(w);
             testCase.verifyTrue(all(ismember({'concentration_worm0121', 'concentration_worm0122'}, names)), ...
                 strjoin(names, ', '));
             testCase.verifyTrue(all(cellfun(@(x) strcmp(x.type, 'organism'), w)));
             testCase.verifyTrue(ismember('concentration_assayPlate0012_worms', ...
-                local(ndi.entity.search(S, {'strain', 'N2'}))), 'the cohort it was stated on matches too');
+                local(ndi.entity.search(S, {p, 'N2'}))), 'the cohort it was stated on matches too');
 
             % property names and value names ignore case; nodes are exact
             same = @(varargin) isequal(sort(local(ndi.entity.search(S, varargin))), sort(names));
-            testCase.verifyTrue(same('Type', 'Organism', 'STRAIN', 'n2'));
-            testCase.verifyTrue(same('type', 'organism', 'species', 'NCBITaxon:6239', 'strain', 'N2'));
-            testCase.verifyTrue(same('type', 'organism', 'strain', {'N2', 'no such strain'}), 'a cell is any of');
-            testCase.verifyTrue(same('type', 'organism', 'strain', 'N*'), 'a wildcard');
-            testCase.verifyTrue(same('type', 'organism', 'species', '*ELEGANS', 'strain', 'N2'), ...
+            testCase.verifyTrue(same('Type', 'Organism', upper(p), 'n2'));
+            testCase.verifyTrue(same('type', 'organism', 'species', 'NCBITaxon:6239', p, 'N2'));
+            testCase.verifyTrue(same('type', 'organism', p, {'N2', 'no such strain'}), 'a cell is any of');
+            testCase.verifyTrue(same('type', 'organism', p, 'N*'), 'a wildcard');
+            testCase.verifyTrue(same('type', 'organism', 'species', '*ELEGANS', p, 'N2'), ...
                 'a wildcard on a name ignores case');
-            testCase.verifyTrue(same('type', 'organism', 'species', 'NCBITaxon:*', 'strain', 'N2'), ...
+            testCase.verifyTrue(same('type', 'organism', 'species', 'NCBITaxon:*', p, 'N2'), ...
                 'a wildcard on a node');
 
             % inherited false: only what was stated on the subject itself
-            testCase.verifyEmpty(ndi.entity.search(S, {'type', 'organism', 'strain', 'N2'}, 'inherited', false), ...
+            testCase.verifyEmpty(ndi.entity.search(S, {'type', 'organism', p, 'N2'}, 'inherited', false), ...
                 'strain is stated on no worm itself');
-            testCase.verifyEqual(sort(local(ndi.entity.search(S, {'strain', 'N2'}, 'inherited', false))), ...
-                sort(local(ndi.entity.search(S, {'strain', 'N2', 'type', 'group'}))), 'the cohorts alone');
+            testCase.verifyEqual(sort(local(ndi.entity.search(S, {p, 'N2'}, 'inherited', false))), ...
+                sort(local(ndi.entity.search(S, {p, 'N2', 'type', 'group'}))), 'the cohorts alone');
 
             ecoli = ndi.entity.search(S, {'species', 'NCBITaxon:562'});
             testCase.verifyNotEmpty(ecoli);
             testCase.verifyFalse(any(cellfun(@(x) strcmp(x.type, 'organism'), ecoli)), 'lawns, not worms');
-            testCase.verifyEqual(local(ndi.entity.search(S, {'strain', 'N2', ...
+            testCase.verifyEqual(local(ndi.entity.search(S, {p, 'N2', ...
                 'local_identifier', 'concentration_worm0121'})), {'concentration_worm0121'});
             testCase.verifyEqual(local(ndi.entity.search(S, {'LocalIdentifier', 'concentration_worm0121'})), ...
                 {'concentration_worm0121'}, 'the old spelling still works');
 
             % a misspelled variable is an error; a value no one has, a warning
-            testCase.verifyError(@() ndi.entity.search(S, {'stran', 'N2'}), 'ndi:entity:search:unknownVariable');
+            testCase.verifyError(@() ndi.entity.search(S, {typo, 'N2'}), 'ndi:entity:search:unknownVariable');
             testCase.verifyWarning(@() ndi.entity.search(S, {'species', 'Caenorhabdiits elegans'}), ...
                 'ndi:entity:search:noSuchValue');
-            testCase.verifyEmpty(testCase.verifyWarning(@() ndi.entity.search(S, {'strain', 'no such strain'}), ...
+            testCase.verifyEmpty(testCase.verifyWarning(@() ndi.entity.search(S, {p, 'no such strain'}), ...
                 'ndi:entity:search:noSuchValue'));
             % the conditions are one cell of pairs; the switches are options after it
-            testCase.verifyError(@() ndi.entity.search(S, {'strain'}), 'ndi:entity:search:pairs');
-            testCase.verifyError(@() ndi.entity.search(S, {'strain', 'N2', 'inherited', false}), ...
+            testCase.verifyError(@() ndi.entity.search(S, {p}), 'ndi:entity:search:pairs');
+            testCase.verifyError(@() ndi.entity.search(S, {p, 'N2', 'inherited', false}), ...
                 'ndi:entity:search:option');
-            testCase.verifyError(@() ndi.entity.search(S, {'strain', 'N2'}, 'inheritd', false), ...
+            testCase.verifyError(@() ndi.entity.search(S, {p, 'N2'}, 'inheritd', false), ...
                 ?MException, 'a misspelt option is caught by the arguments block');
         end
 
@@ -289,10 +291,10 @@ classdef TestObjectLayer < matlab.unittest.TestCase
             % the shorthand is an assertion (with one entity class a strain is
             % a relation, not an assertion: testFindByWhatIsTrueOfASubject)
             if ~ndi.setup.V2.mergedEntities()
-                testCase.verifyEqual(sort(local(ndi.entity.search(S, {'assertion', {'variable', 'strain', 'value', 'N2'}}))), ...
-                    sort(local(ndi.entity.search(S, {'strain', 'N2'}))));
-                testCase.verifyEqual(sort(local(ndi.entity.search(S, {'str*', 'N2'}))), ...
-                    sort(local(ndi.entity.search(S, {'strain', 'N2'}))), 'a wildcard in the property name');
+                testCase.verifyEqual(sort(local(ndi.entity.search(S, {'assertion', {'variable', 'organism strain', 'value', 'N2'}}))), ...
+                    sort(local(ndi.entity.search(S, {'organism strain', 'N2'}))));
+                testCase.verifyEqual(sort(local(ndi.entity.search(S, {'organism str*', 'N2'}))), ...
+                    sort(local(ndi.entity.search(S, {'organism strain', 'N2'}))), 'a wildcard in the property name');
             end
             testCase.verifyError(@() ndi.entity.search(S, {'assertion', {'method', 'x'}}), ...
                 'ndi:entity:search:assertionMethod');
@@ -565,11 +567,11 @@ classdef TestObjectLayer < matlab.unittest.TestCase
                 testCase.verifyEqual(x{1}.value().canonical(), false);
                 return;
             end
-            testCase.verifyEqual(T.value(T.variable == "strain"), "N2");
-            st = c.assertions({'variable', 'strain'});
+            testCase.verifyEqual(T.value(T.variable == "organism strain"), "N2");
+            st = c.assertions({'variable', 'organism strain'});
             testCase.verifyNumElements(st, 1, 'a cell of filters comes first');
-            testCase.verifyEqual(st{1}.variable_name(), 'strain');
-            a = c.statements('assertion', {'variable', 'strain'});
+            testCase.verifyEqual(st{1}.variable_name(), 'organism strain');
+            a = c.statements('assertion', {'variable', 'organism strain'});
             testCase.verifyNumElements(a, 1);
             testCase.verifyClass(a{1}, 'ndi.assertion');
             testCase.verifyEqual(a{1}.composite(), 'term');
@@ -601,7 +603,7 @@ classdef TestObjectLayer < matlab.unittest.TestCase
                 testCase.verifyEqual(lower(sp{1}.raw_value().node), 'ncbitaxon:6239');
                 testCase.verifyEqual(sp{1}.subject().local_identifier, 'concentration_assayPlate0012_worms');
                 testCase.verifyEqual(sp{1}.via(), 'member_of');
-                strain = T(cellfun(@(x) strcmp(x.variable_name(), 'strain'), T));
+                strain = T(cellfun(@(x) strcmp(x.variable_name(), strainProp()), T));
                 if ndi.setup.V2.mergedEntities()
                     testCase.verifyEmpty(strain, 'one entity class: a strain is a relation');
                 else
@@ -749,15 +751,16 @@ classdef TestObjectLayer < matlab.unittest.TestCase
 
         function testStrictAndTheMessages(testCase)
             S = testCase.Session;
-            testCase.verifyError(@() ndi.entity.search(S, {'stran', 'N2'}), 'ndi:entity:search:unknownVariable');
+            typo = strrep(strainProp(), 'strain', 'stran');
+            testCase.verifyError(@() ndi.entity.search(S, {typo, 'N2'}), 'ndi:entity:search:unknownVariable');
             try
-                ndi.entity.search(S, {'stran', 'N2'});
+                ndi.entity.search(S, {typo, 'N2'});
             catch err
-                testCase.verifySubstring(err.message, 'No entity in this session has a property ''stran''.');
+                testCase.verifySubstring(err.message, ['No entity in this session has a property ''' typo '''.']);
                 if ~ndi.setup.V2.mergedEntities()
                     % one entity class: the strain entity is not in a session
                     % (testFindByWhatIsTrueOfASubject), so it is not suggested
-                    testCase.verifySubstring(err.message, 'Did you mean ''strain''?');
+                    testCase.verifySubstring(err.message, ['Did you mean ''' strainProp() '''?']);
                 end
                 testCase.verifySubstring(err.message, 'Properties in this session: ');
                 testCase.verifySubstring(err.message, 'local_identifier');
@@ -778,11 +781,11 @@ classdef TestObjectLayer < matlab.unittest.TestCase
             testCase.verifySubstring(msg, 'Species in this session: ');
             % strict false: nothing, quietly
             testCase.verifyEmpty(testCase.verifyWarningFree(@() ...
-                ndi.entity.search(S, {'stran', 'N2'}, 'strict', false)));
+                ndi.entity.search(S, {typo, 'N2'}, 'strict', false)));
             testCase.verifyEmpty(testCase.verifyWarningFree(@() ...
                 ndi.entity.search(S, {'species', 'Caenorhabdiits elegans'}, 'strict', false)));
             testCase.verifyEmpty(testCase.verifyWarningFree(@() ...
-                ndi.entity.search(S, {'type', 'organism', 'contained_in', {'stran', 'N2'}}, 'strict', false)), ...
+                ndi.entity.search(S, {'type', 'organism', 'contained_in', {typo, 'N2'}}, 'strict', false)), ...
                 'a nested description is strict as the outer search is');
             testCase.verifyEqual(ndi.v2.closest('stran', {'strain', 'species'}), 'strain');
             testCase.verifyEqual(ndi.v2.closest('zzz', {'strain', 'species'}), '');
@@ -1016,4 +1019,14 @@ arguments
     w
 end
 w.name = 'x';
+end
+
+function p = strainProp()
+% the strain's property name: with one entity class it is the strain type
+% entity's own name (T17); before, the assertion's variable
+if ndi.setup.V2.mergedEntities()
+    p = 'strain';
+else
+    p = 'organism strain';
+end
 end

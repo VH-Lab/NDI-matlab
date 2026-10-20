@@ -248,6 +248,8 @@ classdef TestDatasetMetadataHaley < matlab.unittest.TestCase
             for k = 1:numel(rels)
                 roles = rels{k}.directed_relation.roles;
                 if iscell(roles), roles = [roles{:}]; end
+                testCase.assumeTrue(isempty(roles) || isfield(roles, 'node'), ...
+                    'the schema in use keeps a role as a name only (did-schema before the role nodes)');
                 for j = 1:numel(roles)
                     n = n + 1;
                     testCase.verifyNotEmpty(roles(j).node, sprintf('role "%s" has no node', roles(j).name));
