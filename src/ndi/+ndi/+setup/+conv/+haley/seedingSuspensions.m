@@ -48,8 +48,9 @@ function [S, checks] = seedingSuspensions(dataParentDir, spec)
 %               each solution before its dilutions
 %     index     table: folder, day, od600 (nominal), key -- which formulation a
 %               plate of FOLDER seeded on DAY at OD600 was pipetted from
-%               ('' for OD600 0 with an unknown diluent); kind is "assay" or
-%               "growth"
+%               (for OD600 0, FOLDER's own diluent, even on a day whose
+%               solution was shared by studies with different diluents --
+%               decision #94); kind is "assay" or "growth"
 %   CHECKS (also printed): missingColumns (a table without the seeding
 %   columns; nothing built from it), twoReadings (a study-day with more than
 %   one OD600Real/CFU; the first is used), noReading (rows with no timeSeed or
@@ -241,7 +242,11 @@ end
 for r = 1:numel(R)
     x = sol(grp(r));
     for n = R(r).nominal
-        index(end+1, :) = {R(r).folder, R(r).day, n, keyFor(x.key, n, x.diluent), 'assay', ''}; %#ok<AGROW>
+        % an OD600 0 patch is its own study's diluent alone, whatever the
+        % day's shared solution was made in (Jess, decision #94)
+        dil = x.diluent;
+        if n == 0, dil = R(r).diluent; end
+        index(end+1, :) = {R(r).folder, R(r).day, n, keyFor(x.key, n, dil), 'assay', ''}; %#ok<AGROW>
     end
 end
 for k = 1:size(growthRows, 1)

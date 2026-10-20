@@ -6,7 +6,8 @@ classdef TestHaleySeeding < matlab.unittest.TestCase
 %   ndi.setup.conv.haley.seedingSuspensions against the real spec's `seeding`
 %   and `corrections` (decisions #56, #57):
 %     2023-02-17  Mini and Matching read identically: ONE solution, and since
-%                 their diluents differ (LB, S-Complete) it lists none
+%                 their diluents differ (LB, S-Complete) it lists none; each
+%                 study's OD600 0 patch is its own diluent (decision #94)
 %     2023-03-27  Matching (S-Complete, CFU corrected away) and Mini (LB) read
 %                 differently: two solutions, _a and _b; Matching's
 %                 acclimation plates use Mini's LB solution
@@ -36,9 +37,9 @@ classdef TestHaleySeeding < matlab.unittest.TestCase
             d1 = datetime(2023, 2, 17, 10, 0, 0);
             d2 = datetime(2023, 3, 27, 10, 0, 0);
             writeInfo(fullfile(ce, 'foragingMini'), [d1; d2], [10.1; 10.4], [1117; 846], ...
-                [1; 0.5], [d1; d2] + hours(1), [1; 1]);
+                {[1 0]; 0.5}, [d1; d2] + hours(1), [1; 1]);
             writeInfo(fullfile(ce, 'foragingMatching'), [d1; d2], [10.1; 9.9375], [1117; 846], ...
-                {[1 5]; [1 10]}, [d1; d2] + hours(2), [1; 1]);
+                {[0 1 5]; [1 10]}, [d1; d2] + hours(2), [1; 1]);
             d3 = datetime(2023, 10, 30, 10, 0, 0);
             writeInfo(fullfile(ce, 'foragingMutants'), [d3; d3], [10.3125; 10.3125], [585; 585], ...
                 [1; 1], [d3 - days(1); d3], [1; 1]);
@@ -86,6 +87,13 @@ classdef TestHaleySeeding < matlab.unittest.TestCase
             testCase.verifyEqual(d.ingredients{1}.ingredient, 'suspension_op50_20230217');
             testCase.verifyEqual(d.ingredients{1}.concentration.volume_fraction, 0.5, 'AbsTol', 1e-12);
             testCase.verifyEqual(d.ingredients{1}.concentration.source_value, 5);
+            % the OD600 0 patches that day are each study's own diluent alone
+            % (decision #94): Mini's LB, Matching's S-Complete
+            I = testCase.S.index;
+            day = datetime(2023, 2, 17);
+            at = @(folder) I.key(strcmp(I.folder, folder) & I.day == day & I.od600 == 0 & strcmp(I.kind, 'assay'));
+            testCase.verifyEqual(at('foragingMini'), {'lb'});
+            testCase.verifyEqual(at('foragingMatching'), {'s_complete'});
         end
 
         function testCorrectedCfuAndDiluents(testCase)
