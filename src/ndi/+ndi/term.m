@@ -4,16 +4,17 @@ classdef term
     % A V2 statement names things with terms: its variable, its method, the
     % variables of its conditions, parameters and keys, units, and the value
     % of a term-valued statement. Each is stored as {node, name}: NODE a
-    % CURIE ('WBls:0000038'), NAME what the import wrote ('L4 larva'). An
+    % CURIE ('WBls:0000038'), NAME what the import wrote ('L4 larva Ce'). An
     % ndi.term holds those two as stored and asks the ontology for the rest
     % only when a method needs it (ndi.ontology.lookup, through the on-disk
     % cache of ndi.v2.termLookup), so making thousands of them is cheap and
     % one that is never asked costs no lookup.
     %
     % The stored NAME and the ontology's LABEL are different things and can
-    % differ: 'L4 larva' is stored for WBls:0000038, which WBls labels
-    % 'L4 larva Ce'. NAME is what the dataset says; LABEL is what the
-    % ontology says.
+    % differ: a name written before its term was looked up, or a dataset
+    % that names a term its own way, keeps its NAME while LABEL is what the
+    % ontology says now. The Haley import writes each term's ontology label
+    % as its name (Jess, 2026-10-20), so there the two agree.
     %
     %   t = st.variable();            % an ndi.term
     %   t.name                        % 'organism strain'

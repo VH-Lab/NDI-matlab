@@ -187,7 +187,7 @@ pairs = {
     'food deprivation plate',                 'EMPTY:0000320'
     'assay plate',                            'EMPTY:0000321'
     'developmental stage',                    'NCIT:C43531'
-    'L4 larva',                               'WBls:0000038'
+    'L4 larva Ce',                            'WBls:0000038'
     'visual inspection',                      'NCIT:C214703'
     % keys, coordinates, units
     'video frame',                            'EMPTY:0000309'

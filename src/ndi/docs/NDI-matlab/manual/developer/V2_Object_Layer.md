@@ -405,9 +405,11 @@ thousands of terms cost nothing until one is asked about.
 | `toStruct()` | `{node, name}`, as the builders take a term |
 | `ndi.term.fromStored(x)` (static) | terms from a stored struct, struct array, cell array or text |
 
-**The stored name and the ontology's label are kept apart.** `'L4 larva'` is
-stored for `WBls:0000038`, which WBls labels `'L4 larva Ce'`; `name` is what the
-dataset says and `label()` what the ontology says. Neither replaces the other.
+**The stored name and the ontology's label are kept apart.** `name` is what the
+dataset says and `label()` what the ontology says now; they can differ (a name
+written before its term was looked up, or a dataset's own wording), and neither
+replaces the other. The Haley import writes the ontology's label as the name
+(Jess, 2026-10-20: `WBls:0000038` is stored as `'L4 larva Ce'`, as WBls labels it).
 
 **One cache.** `ndi.v2.termLookup` looks a node up once per machine and keeps the
 answer (id, label, definition, synonyms) in the folder `ndi.v2.synonyms` already
