@@ -68,7 +68,8 @@ function [S, checks] = subjectList(dataParentDir, sessions, options)
 %   room_temp (an assay plate's `timeSeed`/`timeColdRoom`/`timeRoomTemp`, an
 %   acclimation plate's `growthTime*`, an E. coli plate's `timeSeed`/
 %   `timeSeedColdRoom`/`timeRoomTemp`), poured and poured_cold_room (E. coli),
-%   peptone (the label, or the spec's correction), od600 and volume_ul (a
+%   peptone (the label, or the spec's correction), peptone_note (that
+%   correction's note, decision #111), od600 and volume_ul (a
 %   patch's; an acclimation plate's `growthOD600`), room_temp_note (the
 %   correction's reason when `timeRoomTemp` was estimated), room_temp_by_rule
 %   (it is exactly a recording's start minus 1 h); NaT/NaN/'' where the
@@ -106,6 +107,10 @@ function [S, checks] = subjectList(dataParentDir, sessions, options)
 %     lawnDesignDisagrees  an assay plate whose videos give different
 %                          `lawnDiameter` or `lawnSpacing` (the first is kept)
 %     correctionUnmatched  a spec correction naming a plate not listed
+%     corrected            a spec correction applied (its source still read
+%                          `was`; decision #111, applyCorrection)
+%     correctionNotApplied a spec correction refused: its source no longer
+%                          reads `was` (fixed upstream), so it is left as it is
 %     roomTempLooksEstimated  an assay plate whose `timeRoomTemp` is exactly a
 %                          recording's start minus 1 h (filled in by rule)
 %                          that no correction lists
@@ -124,7 +129,8 @@ checks = struct('plateWithoutSession', {{}}, 'plateOnTwoDays', {{}}, ...
     'patchCountDisagrees', {{}}, 'noPickTime', {{}}, 'ecoliSeeding', {{}}, ...
     'growthDisagrees', {{}}, 'correctionUnmatched', {{}}, 'roomTempLooksEstimated', {{}}, ...
     'patchOD600', {{}}, 'assayTypeDisagrees', {{}}, 'noGrowthCondition', {{}}, 'notFilmed', {{}}, ...
-    'growthSeedSpread', {{}}, 'lawnDesignDisagrees', {{}});
+    'growthSeedSpread', {{}}, 'lawnDesignDisagrees', {{}}, 'corrected', {{}}, ...
+    'correctionNotApplied', {{}});
 rows = {};
 dayHits = containers.Map();   % experiment-level correction key -> plates it applied to
 assayChecked = 0;       % plates whose original assay type was compared with their study
@@ -273,8 +279,8 @@ for f = 1:numel(folders)
             'nVideo', height(R) * filmed, 'filmed', filmed, 'exclude', ex, 'starved', starved, 'od600', od, ...
             'prep', prepOf(R, 'timeSeed', 'timeColdRoom', 'timeRoomTemp', NaN), ...
             'growth', growthPrepOf(R), 'diameter', diameter, 'spacing', spacing); %#ok<AGROW>
-        [P(end).growth, dayHits] = growthCorrection(P(end).growth, folder, days(1), ...
-            options.Corrections, dayHits);
+        [P(end).growth, dayHits, checks] = growthCorrection(P(end).growth, folder, days(1), ...
+            p, options.Corrections, dayHits, checks);
     end
 
     % Acclimation plates: one per (session, strain, pick time), numbered within the
@@ -587,8 +593,19 @@ for c = 1:numel(corr)
                 any(strcmp(r.kind, {'assay_plate', 'plate'}))
             switch x.column
                 case 'peptone'
-                    r.prep.peptone = char(x.value);
+                    % only while the label still reads `was` (decision #111)
+                    [v, applied, note, line] = applyCorrection(x, r.prep.peptone, ...
+                        sprintf('%s plate %d', r.folder, r.plate));
+                    if applied
+                        r.prep.peptone = lower(v);
+                        r.prep.peptone_note = note;
+                        checks.corrected{end+1} = line;
+                    else
+                        checks.correctionNotApplied{end+1} = line;
+                    end
                 case 'timeRoomTemp'
+                    % an estimate, not a new value: the time is kept, marked
+                    % estimated with the reason (decision #54d)
                     r.prep.room_temp_note = char(x.reason);
                 otherwise
                     continue;
@@ -694,8 +711,8 @@ function p = blankPrep()
 % What stage 8 needs to know about how a plate or patch was made (decisions
 % #54, #56): NaT / NaN / '' where the source has nothing.
 p = struct('seeded', NaT, 'cold_room', NaT, 'room_temp', NaT, 'room_temp_note', '', ...
-    'poured', NaT, 'poured_cold_room', NaT, 'peptone', '', 'od600', NaN, 'volume_ul', NaN, ...
-    'room_temp_by_rule', false, 'seeded_spread_s', 0);
+    'poured', NaT, 'poured_cold_room', NaT, 'peptone', '', 'peptone_note', '', 'od600', NaN, ...
+    'volume_ul', NaN, 'room_temp_by_rule', false, 'seeded_spread_s', 0);
 end
 
 function p = prepOf(R, seeded, coldRoom, roomTemp, od600)
@@ -921,16 +938,42 @@ if iscell(c), c = c{1}; end
 s = strtrim(char(string(c)));
 end
 
-function [g, hits] = growthCorrection(g, folder, experiment, corr, hits)
+function [g, hits, checks] = growthCorrection(g, folder, experiment, plate, corr, hits, checks)
 % A named correction of a day's acclimation plate time (decision #70e): the
 % spec's `corrections` entry naming this folder and experiment, column
-% growthTimeRoomTemp, value a wall-clock time 'yyyy-MM-ddTHH:mm'
+% growthTimeRoomTemp, value a wall-clock time 'yyyy-MM-ddTHH:mm'. Applied to
+% this assay plate's growth columns only while they still read its `was`
+% (decision #111, applyCorrection); the room temperature time then carries
+% the correction's note.
 arguments
     g (1,1) struct
     folder {mustBeText}
     experiment
+    plate
     corr
     hits
+    checks (1,1) struct
+end
+if isstruct(corr), corr = num2cell(corr); end
+for c = 1:numel(corr)
+    x = corr{c};
+    if ~isfield(x, 'experiment') || ~strcmp(x.folder, folder) ...
+            || double(x.experiment) ~= double(experiment) || ~strcmp(x.column, 'growthTimeRoomTemp')
+        continue;
+    end
+    k = char(x.key);
+    if isKey(hits, k), hits(k) = hits(k) + 1; else, hits(k) = 1; end
+    [v, applied, note, line] = applyCorrection(x, g.room_temp, ...
+        sprintf('%s experiment %d plate %d', folder, double(experiment), double(plate)));
+    if ~applied
+        checks.correctionNotApplied{end+1} = line;
+        continue;
+    end
+    checks.corrected{end+1} = line;
+    g.room_temp = v;
+    g.room_temp_by_rule = false;
+    g.room_temp_note = note;
+end
 end
 if isstruct(corr), corr = num2cell(corr); end
 for c = 1:numel(corr)

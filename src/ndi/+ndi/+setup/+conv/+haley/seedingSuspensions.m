@@ -67,7 +67,7 @@ end
 cfg = spec.seeding;
 root = fullfile(dataParentDir, 'haley');
 checks = struct('missingColumns', {{}}, 'twoReadings', {{}}, 'noReading', {{}}, ...
-    'growthWithoutSolution', {{}});
+    'growthWithoutSolution', {{}}, 'corrected', {{}}, 'correctionNotApplied', {{}});
 need = {'timeSeed', 'OD600Real', 'CFU', 'OD600'};
 
 % ---- every source table: (folder, table) ------------------------------------
@@ -86,7 +86,7 @@ end
 
 % ---- one reading per study and seeding day ---------------------------------
 R = struct('folder', {}, 'strain', {}, 'diluent', {}, 'day', {}, 'od', {}, 'cfu', {}, ...
-    'nominal', {});
+    'nominal', {}, 'note', {});
 growth = struct('folder', {}, 'day', {}, 'nominal', {});
 nTables = 0;
 nRows = 0;
@@ -100,7 +100,7 @@ for t = 1:size(tables, 1)
     end
     nTables = nTables + 1;
     nRows = nRows + height(T);
-    T = applyCorrections(T, folder, spec);
+    [T, checks, fixNotes] = applyCorrections(T, folder, spec, checks);
     day = dateshift(T.timeSeed, 'start', 'day');
     od = double(T.OD600Real);
     cfu = double(T.CFU);
@@ -121,9 +121,12 @@ for t = 1:size(tables, 1)
         for j = r(:)'
             nominal = [nominal, flat(T.OD600(j, :))]; %#ok<AGROW>
         end
+        note = '';              % a correction applied to the day (decision #111)
+        dayKey = datestr(days(k), 'yyyy-mm-dd'); %#ok<DATST>
+        if isKey(fixNotes, dayKey), note = fixNotes(dayKey); end
         R(end+1) = struct('folder', folder, 'strain', pick(cfg.strain, folder), ...
             'diluent', pick(cfg.diluent, folder), 'day', days(k), 'od', od(r(1)), ...
-            'cfu', cfu(r(1)), 'nominal', uniq(nominal)); %#ok<AGROW>
+            'cfu', cfu(r(1)), 'nominal', uniq(nominal), 'note', note); %#ok<AGROW>
     end
     if all(ismember({'growthTimeSeed', 'growthOD600'}, T.Properties.VariableNames))
         g = dateshift(T.growthTimeSeed, 'start', 'day');
@@ -284,13 +287,18 @@ if n > 0
 end
 end
 
-function T = applyCorrections(T, folder, spec)
-% The spec's named corrections to a seeding column (decision #57).
+function [T, checks, notes] = applyCorrections(T, folder, spec, checks)
+% The spec's named corrections to a seeding column (decision #57), by folder
+% and seed_day, each applied only while every row of that day still reads
+% its `was` (decision #111, applyCorrection). NOTES maps a day
+% ('yyyy-MM-dd') to the standard note of the correction(s) applied to it.
 arguments
     T table
     folder {mustBeText}
     spec struct
+    checks (1,1) struct
 end
+notes = containers.Map('KeyType', 'char', 'ValueType', 'any');
 if ~isfield(spec, 'corrections')
     return;
 end
@@ -302,12 +310,31 @@ for k = 1:numel(c)
             || ~isfield(x, 'seed_day')
         continue;
     end
-    r = dateshift(T.timeSeed, 'start', 'day') == datetime(x.seed_day, 'InputFormat', 'yyyy-MM-dd');
-    v = x.value;
-    if isempty(v), v = NaN; end
+    r = find(dateshift(T.timeSeed, 'start', 'day') == datetime(x.seed_day, 'InputFormat', 'yyyy-MM-dd'));
+    where = sprintf('%s seeding day %s', folder, char(x.seed_day));
+    if isempty(r)
+        checks.correctionNotApplied{end+1} = sprintf('%s: %s has no rows; nothing to correct', ...
+            char(x.key), where);
+        continue;
+    end
     col = double(T.(x.column));
+    ok = true;
+    for j = r(:)'
+        [v, applied, note, line] = applyCorrection(x, col(j), where);
+        if ~applied
+            ok = false;
+            break;
+        end
+    end
+    if ~ok
+        checks.correctionNotApplied{end+1} = line;
+        continue;
+    end
     col(r) = v;
     T.(x.column) = col;
+    checks.corrected{end+1} = sprintf('%s (%d row(s))', line, numel(r));
+    d = char(x.seed_day);
+    if isKey(notes, d), notes(d) = [notes(d) ' ' note]; else, notes(d) = note; end
 end
 end
 

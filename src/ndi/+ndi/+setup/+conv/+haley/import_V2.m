@@ -27,7 +27,7 @@ function result = import_V2(dataParentDir, options)
 %                          plates (each with its one patch) and food
 %                          deprivation plates; each with its type
 %        5  acquisition    camera/microscope, one epoch per recording
-%        6  relations      patch part_of plate; worm member_of its cohort;
+%        6  relations      patch contained_in its plate (#107); worm member_of its cohort;
 %                          cohort contained_in its acclimation, food
 %                          deprivation and assay plates (with when)
 %        7  assertions     species and strain of each cohort and seeded

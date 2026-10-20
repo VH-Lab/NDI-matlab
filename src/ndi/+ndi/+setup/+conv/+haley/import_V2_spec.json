@@ -2156,7 +2156,7 @@
    "experiment": 24,
    "column": "growthTimeRoomTemp",
    "value": "2023-08-28T09:02",
-   "was": "28 Aug 2023 09:03 (plate 223) down to 08:52 (plate 234), one minute earlier per plate",
+   "was": ["2023-08-28T08:52", "2023-08-28T09:03"],
    "reason": "The 12 assay plates of foragingMini experiment 24 share one acclimation plate (one seeding, cold room and pick), but growthTimeRoomTemp steps down a minute per plate, a spreadsheet fill-down; it is the only one of the 24 Mini experiments with more than one. Plates 225 and 230 were prepared on the acclimation plate's schedule (cold room 24 Aug 14:25, the acclimation plate's) and record its room temperature time: 28 Aug 09:02. On experiment 23 the same pairing (plates 213, 218) gives exactly that day's single time. Inferred from the data, 2026-10-08: Jess does not recall the day, and her notes were not checked (decision #70e)."
   },
   {
@@ -2181,7 +2181,7 @@
    "experiment": 2,
    "column": "growthTimeRoomTemp",
    "value": "2024-01-04T09:49",
-   "was": "5 Jan 2024 09:49 (every plate of experiment 2)",
+   "was": "2024-01-05T09:49",
    "reason": "Experiment 2's acclimation plates are recorded out of the cold room on 5 Jan 2024 09:49, after their worms were picked onto them on 4 Jan (11:08, 11:16, 11:24); every other step is in order (seeded 29 Dec 11:16, cold room 30 Dec 11:16, recorded 5 Jan from 08:11). The day is a typo, likely copied from the recording date: 4 Jan 09:49 is 1 h 19 min to 1 h 35 min before the picks, in line with other days (Jess Haley, 2026-10-14; decision #77)."
   },
   {

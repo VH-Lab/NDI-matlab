@@ -38,7 +38,10 @@ function [T, checks] = sessionList(dataParentDir, spec, options)
 %   cell of a folder's row (by `experiment`) BEFORE the study is picked, and
 %   only while the cell still reads `was`: a source fixed since then is
 %   reported (correctionNotApplied), not overwritten. Each one applied is
-%   reported (corrected). Decision #72: row 0014 of foragingConcentration
+%   reported (corrected), and the session's description carries its note,
+%   "Corrected from <was>: <reason> (correction <key>)" (decision #111; the
+%   check and the note are applyCorrection's, shared with the subjects and
+%   the seeding suspensions). Decision #72: row 0014 of foragingConcentration
 %   says grid, its plates are single.
 %
 %   The tableOfContents worm range is kept (worm_first / worm_last) but NOT
@@ -90,7 +93,7 @@ for f = 1:numel(folders)
         error('ndi:setup:conv:haley:badTableOfContents', '%s has no column(s) %s.', ...
             toc, strjoin(missing, ', '));
     end
-    [C, checks] = applyTocCorrections(C, folder, tocFixes, checks);
+    [C, checks, fixNotes] = applyTocCorrections(C, folder, tocFixes, checks);
     seenDays = {};
     for r = 1:height(C)
         if isempty(strtrim(C.experimentNumber{r}))
@@ -120,6 +123,11 @@ for f = 1:numel(folders)
             strtrim(C.notebookName{r}), cond, strtrim(C.wormNumber{r}));
         if ~isempty(strtrim(C.notes{r}))
             desc = sprintf('%s Notes: %s.', desc, strtrim(C.notes{r}));
+        end
+        if isKey(fixNotes, sprintf('%d', n))
+            % a corrected cell travels with the value (decision #111): the
+            % session record carries the correction's note
+            desc = sprintf('%s %s.', desc, fixNotes(sprintf('%d', n)));
         end
         pre = ndi.setup.conv.haley.idPrefix(folder);
         id = sprintf('%s_%04d', pre, n);
@@ -233,13 +241,18 @@ for k = 1:numel(list)
 end
 end
 
-function [C, checks] = applyTocCorrections(C, folder, fixes, checks)
+function [C, checks, notes] = applyTocCorrections(C, folder, fixes, checks)
+% the spec's corrections to this folder's tableOfContents cells, each applied
+% only while the cell reads its `was` (applyCorrection, decision #111). NOTES
+% maps an experiment number (as text) to the standard note of the
+% correction(s) applied to its row, which the session's description carries.
 arguments
     C table
     folder {mustBeText}
     fixes cell
     checks (1,1) struct
 end
+notes = containers.Map('KeyType', 'char', 'ValueType', 'any');
 for k = 1:numel(fixes)
     x = fixes{k};
     if ~strcmp(char(x.folder), folder)
@@ -252,15 +265,16 @@ for k = 1:numel(fixes)
             char(x.key), folder, double(x.experiment), col);
         continue;
     end
-    have = strtrim(C.(col){r(1)});
-    if ~strcmp(have, char(x.was))
-        checks.correctionNotApplied{end+1} = sprintf(['%s: %s experiment %d %s reads "%s", ' ...
-            'not "%s"; left as it is'], char(x.key), folder, double(x.experiment), col, have, char(x.was));
+    [v, applied, note, line] = applyCorrection(x, C.(col){r(1)}, ...
+        sprintf('%s experiment %d', folder, double(x.experiment)));
+    if ~applied
+        checks.correctionNotApplied{end+1} = line;
         continue;
     end
-    C.(col){r(1)} = char(x.value);
-    checks.corrected{end+1} = sprintf('%s: %s experiment %d %s "%s" -> "%s"', ...
-        char(x.key), folder, double(x.experiment), col, have, char(x.value));
+    C.(col){r(1)} = v;
+    checks.corrected{end+1} = line;
+    e = sprintf('%d', double(x.experiment));
+    if isKey(notes, e), notes(e) = [notes(e) ' ' note]; else, notes(e) = note; end
 end
 end
 

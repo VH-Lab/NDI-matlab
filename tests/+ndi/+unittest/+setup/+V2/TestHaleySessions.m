@@ -81,6 +81,10 @@ classdef TestHaleySessions < matlab.unittest.TestCase
             testCase.verifyEqual(numel(checks.corrected), 1);
             testCase.verifySubstring(checks.corrected{1}, 'conditions_concentration_experiment_14');
             testCase.verifyEmpty(checks.correctionNotApplied);
+            % the corrected session carries the standard note (decision #111)
+            testCase.verifySubstring(r.description{1}, ['Corrected from grid [OD600 = 0, 0.05, ' ...
+                '0.1, 0.5, 1, 2, 3, 4, 5, 10, 1 (48H)]: Row 0014 says grid']);
+            testCase.verifySubstring(r.description{1}, '(correction conditions_concentration_experiment_14)');
         end
 
         function testACorrectionWhoseSourceChangedIsNotApplied(testCase)
@@ -99,6 +103,8 @@ classdef TestHaleySessions < matlab.unittest.TestCase
                 'a cell that no longer reads `was` is left as it is');
             testCase.verifyEmpty(checks.corrected);
             testCase.verifyEqual(numel(checks.correctionNotApplied), 1);
+            testCase.verifyFalse(contains(r.description{1}, 'Corrected from'), ...
+                'a refused correction leaves no note');
         end
 
         function testDayMetadataIsKept(testCase)

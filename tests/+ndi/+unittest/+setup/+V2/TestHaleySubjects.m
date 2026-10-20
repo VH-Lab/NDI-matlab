@@ -256,14 +256,32 @@ classdef TestHaleySubjects < matlab.unittest.TestCase
             % decision #70e: a named correction by folder and experiment sets
             % that day's acclimation plate room temperature time
             T = ndi.setup.conv.haley.sessionList(testCase.Root, testCase.Spec);
+            % (the fixture has no growthTimeRoomTemp: the source reads blank,
+            % and `was` [] says so; decision #111)
             fix = struct('key', 'test_fix', 'folder', 'foragingMini', 'experiment', 1, ...
-                'column', 'growthTimeRoomTemp', 'value', '2023-02-23T09:02', 'reason', 'a test');
+                'column', 'growthTimeRoomTemp', 'value', '2023-02-23T09:02', 'was', [], ...
+                'reason', 'a test.');
             [S, checks] = ndi.setup.conv.haley.subjectList(testCase.Root, T, 'Corrections', {fix});
             a = find(strcmp(S.kind, 'acclimation_plate') & strcmp(S.folder, 'foragingMini'));
             testCase.verifyNumElements(a, 1);
             testCase.verifyEqual(S.prep(a).room_temp, datetime(2023, 2, 23, 9, 2, 0));
-            testCase.verifyEqual(S.prep(a).room_temp_note, 'a test', 'the reason goes with the time');
+            testCase.verifyEqual(S.prep(a).room_temp_note, ...
+                'Corrected from blank: a test. (correction test_fix)', ...
+                'the standard note goes with the time (decision #111)');
             testCase.verifyEmpty(checks.correctionUnmatched);
+            testCase.verifyNumElements(checks.corrected, 1);
+            testCase.verifyEmpty(checks.correctionNotApplied);
+            % a source that no longer reads `was` is not corrected, and is reported
+            fix.was = '2023-02-23T08:00';
+            [S, checks] = ndi.setup.conv.haley.subjectList(testCase.Root, T, 'Corrections', {fix});
+            a = find(strcmp(S.kind, 'acclimation_plate') & strcmp(S.folder, 'foragingMini'));
+            testCase.verifyTrue(isnat(S.prep(a).room_temp), 'left as the source has it');
+            testCase.verifyEmpty(S.prep(a).room_temp_note);
+            testCase.verifyEmpty(checks.corrected);
+            testCase.verifyNumElements(checks.correctionNotApplied, 1);
+            testCase.verifySubstring(checks.correctionNotApplied{1}, ...
+                'test_fix: foragingMini experiment 1 plate 1 growthTimeRoomTemp reads "blank", not "2023-02-23T08:00"');
+            fix.was = [];
             % one naming a day not in the sessions is reported
             fix.experiment = 99;
             [~, checks] = ndi.setup.conv.haley.subjectList(testCase.Root, T, 'Corrections', {fix});

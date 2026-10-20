@@ -206,6 +206,11 @@ for k = find(ismember(S.kind, plateKinds))'
         if isfield(cfg.pour, 'notes') && isfield(cfg.pour.notes, folder)
             notes = cfg.pour.notes.(folder);
         end
+        if isfield(p, 'peptone_note') && ~isempty(p.peptone_note)
+            % the plate's label was corrected (decision #111): the pour that
+            % names the recipe carries the correction's note
+            notes = strtrim(sprintf('%s %s.', notes, p.peptone_note));
+        end
         dose(id, nameOf(cfg.pour.agar.(peptone)), cfg.pour.volume_ml, 'mL', cfg.pour.agar.(peptone), ...
             pourRef, cfg.pour.method, notes, 'pour');
     end
