@@ -12,8 +12,8 @@ function [S, checks] = seedingSuspensions(dataParentDir, spec)
 %   made an OD600 10 solution from it, measured that solution (`OD600Real`)
 %   and, on most days, its CFU (`CFU`), then diluted it to each OD600 the day
 %   needed. So, per day:
-%     OD600 10 solution   ingredients: the strain at OD600Real (source unit
-%                         OD600; particles_per_liter = CFU x 2e10 when the
+%     OD600 10 solution   ingredients: the strain at OD600Real (`od600`, and
+%                         the source pair in source unit OD600; particles_per_liter = CFU x 2e10 when the
 %                         CFU was measured -- decision #57), then the diluent
 %     dilution, per OD600 ingredients: the OD600 10 solution as a
 %                         volume_fraction of nominal/10 (source value: the
@@ -201,6 +201,9 @@ for k = 1:numel(growth)
 end
 
 % ---- entries and the index -------------------------------------------------
+% an OD600 is concentration's `od600` canonical when the schema has it (did-schema,
+% Jess 2026-10-20), with the source pair beside it; before that, the source pair alone
+hasOD = ndi.setup.V2.schemaHasField('concentration', 'value.od600');
 entries = {};
 index = table('Size', [0 6], 'VariableTypes', {'cell', 'datetime', 'double', 'cell', 'cell', 'cell'}, ...
     'VariableNames', {'folder', 'day', 'od600', 'key', 'kind', 'note'});
@@ -210,8 +213,9 @@ for s = 1:numel(sol)
         % unmeasured (decision #82): no stock; each nominal OD600 is its own
         % formulation, its strength the nominal value alone
         for n = x.nominal
-            ing = {struct('ingredient', x.strain, 'concentration', ...
-                struct('source_value', n, 'source_unit', 'OD600'))};
+            cn = struct('source_value', n, 'source_unit', 'OD600');
+            if hasOD, cn.od600 = n; end
+            ing = {struct('ingredient', x.strain, 'concentration', cn)};
             if ~isempty(x.diluent)
                 ing{end+1} = struct('ingredient', x.diluent); %#ok<AGROW>
             end
@@ -223,6 +227,7 @@ for s = 1:numel(sol)
     if ~isnan(x.cfu)
         c.particles_per_liter = x.cfu * 2e10;
     end
+    if hasOD, c.od600 = x.od; end
     c.source_value = x.od;
     c.source_unit = 'OD600';
     ing = {struct('ingredient', x.strain, 'concentration', c)};

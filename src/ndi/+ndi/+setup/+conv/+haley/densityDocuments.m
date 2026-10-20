@@ -68,8 +68,9 @@ function out = densityDocuments(dataParentDir, sessions, built, options)
 %   .encounterDisagrees). Beside each estimate, its RELATIVE DENSITY
 %   (decision #99; modelExploit and fig3_single):
 %     concentration_calculation  `relative bacterial density`, in OD600
-%                         equivalents (source unit OD600; concentration has no
-%                         canonical slot for it): 10 x the estimate / the
+%                         equivalents (concentration's `od600` canonical,
+%                         and the source pair, source unit OD600; a schema
+%                         before od600 gets the source pair alone): 10 x the estimate / the
 %                         reference, the mean encounter.mat borderAmplitude
 %                         over the foragingConcentration encounters on OD600
 %                         10, 0.5 uL patches; same keys and time as the
@@ -747,7 +748,7 @@ if floored
 end
 d = did2.build.statement('concentration_calculation', entityId, ...
     haleyTerm('relative bacterial density'), ...
-    did2.build.valueCell('concentration', x, 'Canonical', 'source_value', 'SourceUnit', 'OD600'), ...
+    densityCell(x), ...
     keys{:}, 'Method', haleyTerm('normalization data transformation'), ...
     'MethodParameters', did2.build.list(params{:}), 'InputIds', {estimate.base.id}, ...
     'SessionId', sid, 'TimeReferenceIds', {timeId}, env{:}, 'Notes', ...
@@ -755,6 +756,21 @@ d = did2.build.statement('concentration_calculation', entityId, ...
     'estimate / %.6g, the mean over %d foragingConcentration encounters on OD600 10, 0.5 uL ' ...
     'patches (modelExploit, fig3_single). NaN where the estimate is NaN.'], rd.value, rd.n), ...
     note, ' The model works with its log10.']);
+end
+
+function v = densityCell(x)
+% the relative density as concentration cells: in the `od600` canonical when
+% the schema has it (did-schema, Jess 2026-10-20), the same number as the
+% source value in source unit OD600; before that, the source pair alone
+arguments
+    x double
+end
+if ndi.setup.V2.schemaHasField('concentration', 'value.od600')
+    v = did2.build.valueCell('concentration', x, 'Canonical', 'od600', 'SourceValue', x, ...
+        'SourceUnit', 'OD600');
+else
+    v = did2.build.valueCell('concentration', x, 'Canonical', 'source_value', 'SourceUnit', 'OD600');
+end
 end
 
 function p = rules()

@@ -68,7 +68,7 @@ if isnumeric(raw) && isscalar(raw)
     k = 'number'; v = double(raw); u = ndi.value.canonicalField(c); return;
 end
 if ~isstruct(raw), return; end
-cf = ndi.value.canonicalField(c);
+cf = ndi.value.canonicalField(c, raw);   % the slot the cell fills (concentration has several)
 if ~isempty(cf) && isfield(raw, cf) && isnumeric(raw.(cf)) && isscalar(raw.(cf))
     k = 'number'; v = double(raw.(cf)); u = cf; return;
 end
@@ -77,7 +77,7 @@ amounts = []; units = {};
 f = fieldnames(raw);
 for i = 1:numel(f)
     s = raw.(f{i});
-    sf = ndi.value.canonicalField(f{i});
+    sf = ndi.value.canonicalField(f{i}, raw.(f{i}));
     if isstruct(s) && isscalar(s) && ~isempty(sf) && isfield(s, sf) && isnumeric(s.(sf)) && isscalar(s.(sf))
         amounts(end+1) = double(s.(sf)); %#ok<AGROW>
         units{end+1} = sf; %#ok<AGROW>

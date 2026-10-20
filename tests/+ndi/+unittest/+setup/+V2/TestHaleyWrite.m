@@ -1148,6 +1148,12 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
                 10 * (94 / 300 + [74 80] / 3000) / 2.5, 'AbsTol', 1e-12);
             testCase.verifyEqual(unique(cellfun(@(e) e.source_unit, entries(r12{1}.concentration.value), ...
                 'UniformOutput', false)), {'OD600'});
+            if ndi.setup.V2.schemaHasField('concentration', 'value.od600')
+                testCase.verifyEqual(numbers(r12{1}.concentration.value, 'od600'), ...
+                    10 * (94 / 300 + [74 80] / 3000) / 2.5, 'AbsTol', 1e-12, 'in the od600 canonical');
+                v = ndi.value('concentration', r12{1}.concentration.value);
+                testCase.verifyEqual(v.unit(), 'od600', 'ndi.value reads the slot the cells fill');
+            end
             testCase.verifyEqual(edgeAll(r12{1}, 'input_id'), {e12{1}.base.id}, 'from its estimate');
             testCase.verifyEqual(r12{1}.interaction.method.node, 'OBI:0200169');
             pm = entries(r12{1}.interaction.method_parameters);

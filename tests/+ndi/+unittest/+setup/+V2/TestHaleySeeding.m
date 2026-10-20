@@ -82,6 +82,11 @@ classdef TestHaleySeeding < matlab.unittest.TestCase
             testCase.verifyEqual(g.concentration.particles_per_liter, 1117 * 2e10);
             testCase.verifyEqual(g.concentration.source_value, 10.1);
             testCase.verifyEqual(g.concentration.source_unit, 'OD600');
+            if ndi.setup.V2.schemaHasField('concentration', 'value.od600')
+                testCase.verifyEqual(g.concentration.od600, 10.1, 'the od600 canonical');
+            else
+                testCase.verifyFalse(isfield(g.concentration, 'od600'));
+            end
             d = testCase.entry('suspension_op50_20230217_od5');
             testCase.verifyNumElements(d.ingredients, 1);
             testCase.verifyEqual(d.ingredients{1}.ingredient, 'suspension_op50_20230217');
@@ -131,6 +136,9 @@ classdef TestHaleySeeding < matlab.unittest.TestCase
             testCase.verifyEqual(x.ingredients{1}.ingredient, 'OP50');
             testCase.verifyEqual(x.ingredients{1}.concentration.source_value, 1);
             testCase.verifyEqual(x.ingredients{1}.concentration.source_unit, 'OD600');
+            if ndi.setup.V2.schemaHasField('concentration', 'value.od600')
+                testCase.verifyEqual(x.ingredients{1}.concentration.od600, 1, 'the nominal OD600');
+            end
             testCase.verifyFalse(isfield(x.ingredients{1}.concentration, 'particles_per_liter'), ...
                 'no CFU was measured');
             I = testCase.S.index;

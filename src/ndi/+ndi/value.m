@@ -56,7 +56,7 @@ classdef value
             obj.file_list = options.Files;
             obj.keys = options.Keys;
             obj.datum_type = options.DatumType;
-            obj.canonical_field = ndi.value.canonicalField(className);
+            obj.canonical_field = ndi.value.canonicalField(className, raw);
         end
 
         function v = canonical(obj)
@@ -172,15 +172,23 @@ classdef value
     end
 
     methods (Static)
-        function f = canonicalField(className)
+        function f = canonicalField(className, raw)
             % CANONICALFIELD - the numeric field of CLASSNAME's value cell, e.g. 'meters'
             %
             % Read from the V2 schema: the first numeric sub-field of the
             % class's `value` that is not source_value, scale_min or scale_max.
+            % A class with several canonical slots (concentration: molar,
+            % grams_per_liter, ..., particles_per_liter, od600) gives the
+            % first one that the stored cells RAW fill, when RAW is given and
+            % fills one; else the first declared.
             arguments
                 className (1,:) char
+                raw = []
             end
             f = '';
+            if iscell(raw) && ~isempty(raw) && all(cellfun(@isstruct, raw))
+                try raw = [raw{:}]; catch, raw = []; end
+            end
             if isempty(className), return; end
             try
                 s = did2.schema.cache.shared().getClass(className);
@@ -200,8 +208,13 @@ classdef value
             for k = 1:numel(sub)
                 if isfield(sub{k}, 'type') && any(strcmp(sub{k}.type, {'double', 'integer', 'matrix'})) && ...
                         ~any(strcmp(sub{k}.name, {'source_value', 'scale_min', 'scale_max'}))
-                    f = char(sub{k}.name);
-                    return;
+                    name = char(sub{k}.name);
+                    if isempty(f), f = name; end
+                    if ~isstruct(raw) || isempty(raw), return; end
+                    if isfield(raw, name) && any(arrayfun(@(x) ~isempty(x.(name)), raw))
+                        f = name;
+                        return;
+                    end
                 end
             end
         end
