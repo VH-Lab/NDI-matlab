@@ -314,7 +314,8 @@ out.documents = docs;
         % a dose names what was given: did-schema requires dose.formulation_id
         % (#73 item 59), so a dose whose suspension is not known is not built
         % and is reported (a day with no measured solution gets an
-        % unmeasured one, decision #82, so this is now a defect if it fires)
+        % solution of its plan alone, decisions #82 and #114, so this is now a
+        % defect if it fires)
         if ~isempty(formulationKey) && isKey(options.Ids, formulationKey)
             x.Edges.formulation_id = options.Ids(formulationKey);
         elseif ~isempty(formulationKey)

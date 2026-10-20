@@ -565,6 +565,40 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             testCase.verifyEqual(edge(acc{1}, 'formulation_id'), ...
                 result.metadata.ids('suspension_op50_20220202_od1'));
 
+            % the seeding solutions (decision #114): each one pipetted is an
+            % entity of type material, made to its formulation -- its plan --
+            % and only the stock's OD600 was measured, an observation of it
+            md = result.metadata.documents;
+            mk = cellfun(@ndi.v2.leafName, md, 'UniformOutput', false);
+            ids = result.metadata.ids;
+            stockId = ids('suspension_op50_20220202#solution');
+            dilId = ids('suspension_op50_20220202_od1#solution');
+            aboutMd = @(id, leaf) md(strcmp(mk, leaf) & cellfun(@(d) strcmp(edge(d, 'entity_id'), id), md));
+            prep = aboutMd(stockId, 'dose_manipulation');
+            testCase.verifyNumElements(prep, 1, 'the stock was made to its plan');
+            testCase.verifyEqual(edge(prep{1}, 'formulation_id'), ids('suspension_op50_20220202'));
+            testCase.verifyEqual(prep{1}.statement.variable.name, 'OP50');
+            prep = aboutMd(dilId, 'dose_manipulation');
+            testCase.verifyNumElements(prep, 1);
+            testCase.verifyEqual(edge(prep{1}, 'formulation_id'), edge(seed{1}, 'formulation_id'), ...
+                'the dilution is made to the formulation the patch''s seeding dose names');
+            plan = md{cellfun(@(d) strcmp(d.base.id, ids('suspension_op50_20220202')), md)};
+            g = entries(ndi.v2.blockOf(plan, 'formulation', 'value').ingredients);
+            testCase.verifyEqual(g{1}.concentration.source_value, 10, 'the plan: target OD600 10');
+            if ndi.setup.V2.schemaHasField('concentration', 'value.od600')
+                testCase.verifyEqual(g{1}.concentration.od600, 10);
+            end
+            if ndi.setup.V2.schemaHasLeaf('concentration_observation')
+                ob = aboutMd(stockId, 'concentration_observation');
+                testCase.verifyNumElements(ob, 1, 'the stock''s OD600Real');
+                testCase.verifyEqual(ob{1}.statement.variable.node, 'MCO:0000059');
+                testCase.verifyEqual(numbers(ndi.v2.blockOf(ob{1}, 'concentration', 'value'), ...
+                    'source_value'), 10.2, 'AbsTol', 1e-12, 'measured, not the plan');
+                testCase.verifyEqual(edge(ob{1}, 'instrument_id'), ids('spectrophotometer_1'));
+                testCase.verifyEmpty(aboutMd(dilId, 'concentration_observation'), ...
+                    'a dilution was not measured: no observation (T14)');
+            end
+
             % plate 12: into the cold room (4 C), then room temperature (20 C)
             tm = on(docs(strcmp(classes, 'temperature_manipulation')), 'concentration_assayPlate0012');
             testCase.verifyEqual(reshape(sort(cellfun(@(d) d.temperature.value.celsius, tm)), 1, []), [4 20]);

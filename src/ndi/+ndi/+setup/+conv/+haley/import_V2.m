@@ -18,7 +18,10 @@ function result = import_V2(dataParentDir, options)
 %                          the eLife paper, WormBook, the lab's Benchling
 %                          protocols) -- and the seeding suspensions, one set
 %                          per seeding day, from the source tables
-%                          (ndi.setup.conv.haley.seedingSuspensions)
+%                          (ndi.setup.conv.haley.seedingSuspensions): each
+%                          solution a material entity made to its
+%                          formulation, the stock's measured OD600 an
+%                          observation (seedingDocuments, decision #114)
 %     B. per study (E. coli first); per day:
 %        3  sessions       the studies (from the spec; decision #50), then one
 %                          session per experiment day, included_in its study
@@ -221,6 +224,21 @@ if any(options.Stages == "metadata")
     end
     result.metadata = ndi.setup.V2.datasetMetadata(spec, sid, ...
         'DatasetId', result.datasetId, 'Studies', "exclude");
+    if isfield(result, 'suspensions')
+        % each seeding solution is a material entity made to its formulation
+        % (its plan), and the stock's measured OD600 an observation of it
+        % (decision #114)
+        sd = ndi.setup.conv.haley.seedingDocuments(result.suspensions, result.metadata.ids, sid, ...
+            'Names', namesOf(spec));
+        result.metadata.documents = [result.metadata.documents, sd.documents];
+        for k = sd.ids.keys
+            result.metadata.ids(k{1}) = sd.ids(k{1});
+        end
+        result.seeding = sd;
+        classes = cellfun(@ndi.v2.leafName, result.metadata.documents, 'UniformOutput', false);
+        [u, ~, j] = unique(classes);
+        result.metadata.census = table(u(:), accumarray(j(:), 1), 'VariableNames', {'class', 'count'});
+    end
     fprintf('DENOMINATOR: %d document(s) built from %s\n', ...
         numel(result.metadata.documents), options.Spec);
     disp(result.metadata.census);

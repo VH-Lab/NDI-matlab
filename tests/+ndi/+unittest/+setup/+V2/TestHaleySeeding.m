@@ -4,7 +4,8 @@ classdef TestHaleySeeding < matlab.unittest.TestCase
 %   Writes the seeding columns of three C. elegans studies and the E. coli
 %   table (column names as in the real files) and checks
 %   ndi.setup.conv.haley.seedingSuspensions against the real spec's `seeding`
-%   and `corrections` (decisions #56, #57):
+%   and `corrections` (decisions #56, #57; #111 the corrections, #114 each
+%   solution an entity whose formulation is its plan):
 %     2023-02-17  Mini and Matching read identically: ONE solution, and since
 %                 their diluents differ (LB, S-Complete) it lists none; each
 %                 study's OD600 0 patch is its own diluent (decision #94)
@@ -63,14 +64,15 @@ classdef TestHaleySeeding < matlab.unittest.TestCase
                 'suspension_op50_20230327_b', 'suspension_op50_20230327_b_od0p5', 'suspension_op50_20230327_b_od1', ...
                 'suspension_op50_20231030', 'suspension_op50_20231030_od1', ...
                 'suspension_op50gfp_20220428', 'suspension_op50gfp_20220428_od1', ...
-                'suspension_op50_20231029_unmeasured_od1'}));
-            % each solution comes before its dilutions (they name it); an
-            % unmeasured day has no stock to come first (decision #82)
-            for k = 1:numel(keys)
-                if contains(keys{k}, '_od') && ~contains(keys{k}, '_unmeasured')
-                    base = regexprep(keys{k}, '_od[0-9p]+$', '');
-                    testCase.verifyLessThan(find(strcmp(keys, base)), k, keys{k});
-                end
+                'suspension_op50_20231029_od1'}), ...
+                'an unmeasured day is named like any other (decision #114)');
+            % each stock comes before its dilutions (they name it); an
+            % unmeasured day has no stock (decision #82)
+            sol = testCase.S.solutions;
+            testCase.verifyEqual(sort({sol.formulation}), sort(keys), 'one solution per formulation');
+            for k = find(strcmp({sol.kind}, 'dilution'))
+                testCase.verifyLessThan(find(strcmp(keys, sol(k).stock)), ...
+                    find(strcmp(keys, sol(k).formulation)), sol(k).formulation);
             end
         end
 
@@ -79,14 +81,19 @@ classdef TestHaleySeeding < matlab.unittest.TestCase
             testCase.verifyNumElements(x.ingredients, 1, 'Mini (LB) and Matching (S-Complete) shared it');
             g = x.ingredients{1};
             testCase.verifyEqual(g.ingredient, 'OP50');
-            testCase.verifyEqual(g.concentration.particles_per_liter, 1117 * 2e10);
-            testCase.verifyEqual(g.concentration.source_value, 10.1);
+            testCase.verifyEqual(g.concentration.particles_per_liter, 1117 * 2e10, ...
+                'CFU stays on the plan until a term observes it (decision #114)');
+            testCase.verifyEqual(g.concentration.source_value, 10, 'the plan: target OD600 10');
             testCase.verifyEqual(g.concentration.source_unit, 'OD600');
             if ndi.setup.V2.schemaHasField('concentration', 'value.od600')
-                testCase.verifyEqual(g.concentration.od600, 10.1, 'the od600 canonical');
+                testCase.verifyEqual(g.concentration.od600, 10, 'the od600 canonical');
             else
                 testCase.verifyFalse(isfield(g.concentration, 'od600'));
             end
+            st = testCase.solution('suspension_op50_20230217');
+            testCase.verifyEqual(st.kind, 'stock');
+            testCase.verifyEqual(st.od, 10.1, 'the measured OD600 is the solution''s, not the plan''s');
+            testCase.verifyEqual(st.cfu, 1117);
             d = testCase.entry('suspension_op50_20230217_od5');
             testCase.verifyNumElements(d.ingredients, 1);
             testCase.verifyEqual(d.ingredients{1}.ingredient, 'suspension_op50_20230217');
@@ -105,8 +112,15 @@ classdef TestHaleySeeding < matlab.unittest.TestCase
             a = testCase.entry('suspension_op50_20230327_a');      % Matching
             testCase.verifyFalse(isfield(a.ingredients{1}.concentration, 'particles_per_liter'), ...
                 'the S-Complete seeding of 2023-03-27 measured no CFU (correction)');
-            testCase.verifyEqual(a.ingredients{1}.concentration.source_value, 9.9375);
+            testCase.verifyEqual(a.ingredients{1}.concentration.source_value, 10, 'the plan');
+            testCase.verifyEqual(testCase.solution('suspension_op50_20230327_a').od, 9.9375, 'measured');
             testCase.verifyEqual(a.ingredients{2}.ingredient, 's_complete');
+            % the applied correction travels with the solution (decision #111)
+            testCase.verifySubstring(testCase.solution('suspension_op50_20230327_a').note, ...
+                'Corrected from 846: The S-Complete seeding of 27 Mar 2023 measured no CFU');
+            testCase.verifySubstring(testCase.solution('suspension_op50_20230327_a').note, ...
+                '(correction cfu_matching_2023_03_27)');
+            testCase.verifyEmpty(testCase.solution('suspension_op50_20230327_b').note);
             b = testCase.entry('suspension_op50_20230327_b');      % Mini
             testCase.verifyEqual(b.ingredients{1}.concentration.particles_per_liter, 846 * 2e10);
             testCase.verifyEqual(b.ingredients{2}.ingredient, 'lb');
@@ -131,8 +145,13 @@ classdef TestHaleySeeding < matlab.unittest.TestCase
         end
 
         function testAGrowthDayWithNoReadingIsRecordedUnmeasured(testCase)
-            % decision #82: Mutants 2023-10-29 seeded acclimation plates only
-            x = testCase.entry('suspension_op50_20231029_unmeasured_od1');
+            % decision #82: Mutants 2023-10-29 seeded acclimation plates only;
+            % #114: its plan alone, named like any other, no note, no measurement
+            x = testCase.entry('suspension_op50_20231029_od1');
+            sx = testCase.solution('suspension_op50_20231029_od1');
+            testCase.verifyEqual(sx.kind, 'suspension');
+            testCase.verifyTrue(isnan(sx.od) && isnan(sx.cfu), 'nothing was measured');
+            testCase.verifyEmpty(sx.note);
             testCase.verifyEqual(x.ingredients{1}.ingredient, 'OP50');
             testCase.verifyEqual(x.ingredients{1}.concentration.source_value, 1);
             testCase.verifyEqual(x.ingredients{1}.concentration.source_unit, 'OD600');
@@ -144,8 +163,8 @@ classdef TestHaleySeeding < matlab.unittest.TestCase
             I = testCase.S.index;
             r = strcmp(I.folder, 'foragingMutants') & I.day == datetime(2023, 10, 29) & ...
                 strcmp(I.kind, 'growth');
-            testCase.verifyEqual(I.key(r), {'suspension_op50_20231029_unmeasured_od1'});
-            testCase.verifySubstring(I.note{r}, 'not measured');
+            testCase.verifyEqual(I.key(r), {'suspension_op50_20231029_od1'});
+            testCase.verifyEmpty(I.note{r}, 'the source says nothing about it (T14)');
         end
 
         function testChecks(testCase)
@@ -155,6 +174,31 @@ classdef TestHaleySeeding < matlab.unittest.TestCase
             testCase.verifyEmpty(c.missingColumns);
             testCase.verifyEmpty(c.twoReadings);
             testCase.verifyEmpty(c.noReading);
+            % the two CFU corrections still read their `was` (decision #111)
+            testCase.verifyNumElements(c.corrected, 2, strjoin(c.corrected, newline));
+            testCase.verifyEmpty(c.correctionNotApplied);
+        end
+
+        function testACorrectionWhoseSourceChangedIsRefused(testCase)
+            % decision #111: applied only while the source still reads `was`
+            spec = testCase.Spec;
+            c = spec.corrections;
+            if isstruct(c), c = num2cell(c); end
+            for k = 1:numel(c)
+                if strcmp(c{k}.key, 'cfu_matching_2023_03_27')
+                    c{k}.was = 999;
+                end
+            end
+            spec.corrections = c;
+            [S, checks] = ndi.setup.conv.haley.seedingSuspensions(testCase.Root, spec);
+            testCase.verifyNumElements(checks.correctionNotApplied, 1);
+            testCase.verifySubstring(checks.correctionNotApplied{1}, ...
+                'cfu_matching_2023_03_27: foragingMatching seeding day 2023-03-27 CFU reads "846", not "999"');
+            testCase.verifyNumElements(checks.corrected, 1, 'the E. coli one still applies');
+            k = find(strcmp({S.solutions.formulation}, 'suspension_op50_20230327_a'));
+            testCase.assertNumElements(k, 1);
+            testCase.verifyEqual(S.solutions(k).cfu, 846, 'left as the source has it');
+            testCase.verifyEmpty(S.solutions(k).note, 'a refused correction leaves no note');
         end
 
         function testTheEntriesBuild(testCase)
@@ -167,14 +211,45 @@ classdef TestHaleySeeding < matlab.unittest.TestCase
             if isstruct(f), f = num2cell(f); end
             n0 = numel(f);
             spec.formulations = [reshape(f, 1, []), testCase.S.entries];
-            r = ndi.setup.V2.datasetMetadata(spec, did.ido.unique_id());
+            sid = did.ido.unique_id();
+            r = ndi.setup.V2.datasetMetadata(spec, sid);
             c = r.census;
             testCase.verifyEqual(sum(c.count(strcmp(c.class, 'formulation'))), ...
                 n0 + numel(testCase.S.entries));
+            % each solution an entity made to its plan (decision #114)
+            names = containers.Map();       % a strain key -> its term (as import_V2's namesOf)
+            st = spec.strains;
+            if isstruct(st), st = num2cell(st); end
+            for k = 1:numel(st)
+                node = '';
+                if isfield(st{k}, 'node') && ~isempty(st{k}.node), node = char(st{k}.node); end
+                names(st{k}.key) = did2.build.term(node, char(st{k}.name));
+            end
+            sd = ndi.setup.conv.haley.seedingDocuments(testCase.S, r.ids, sid, 'Names', names);
+            n = numel(testCase.S.solutions);
+            testCase.verifyEqual([sd.counts.solutions, sd.counts.preparations], [n n]);
+            stocks = sum(strcmp({testCase.S.solutions.kind}, 'stock'));
+            if ndi.setup.V2.schemaHasLeaf('concentration_observation')
+                testCase.verifyEqual(sd.counts.od600_observations, stocks, 'one per measured stock');
+            end
+            testCase.verifyEqual(sd.counts.days, numel(unique(dateshift([testCase.S.solutions.day], ...
+                'start', 'day'))));
+            testCase.verifyTrue(any(contains(sd.skipped, 'colony-forming-unit')), ...
+                'the CFU is reported, not observed');
         end
     end
 
     methods
+        function x = solution(testCase, key)
+            arguments
+                testCase (1,1) ndi.unittest.setup.V2.TestHaleySeeding
+                key {mustBeText}
+            end
+            k = find(strcmp({testCase.S.solutions.formulation}, key));
+            testCase.assertNumElements(k, 1, key);
+            x = testCase.S.solutions(k);
+        end
+
         function x = entry(testCase, key)
             arguments
                 testCase (1,1) ndi.unittest.setup.V2.TestHaleySeeding
