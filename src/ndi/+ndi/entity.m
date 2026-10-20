@@ -1525,6 +1525,22 @@ classdef entity
                 whole = unique(whole, 'stable');
                 parts = ndi.entity.walkIds(container, whole, ndi.entity.lineageRelations(), 'in');
                 ids = unique([ids, parts], 'stable');
+                % and of the instances of what it is about, when that is a
+                % type (instance_of: a strain, a product; V_eta tenet T17's
+                % fourth path): each instance, the members of an instance
+                % that is a group whose instance_of is distributive (a
+                % cohort of N2 worms), and their parts. So the species
+                % stated once on a strain finds its worms (Haley #112)
+                E = ndi.entity.edges(container, whole, 'instance_of', 'parent_id', 'child_id');
+                if height(E) > 0
+                    inst = reshape(unique(E.to, 'stable'), 1, []);
+                    grp = reshape(unique(E.to(E.distributive), 'stable'), 1, []);
+                    if ~isempty(grp)
+                        inst = unique([inst, ndi.entity.walkIds(container, grp, 'member_of', 'in')], 'stable');
+                    end
+                    inst = [inst, ndi.entity.walkIds(container, inst, ndi.entity.lineageRelations(), 'in')];
+                    ids = unique([ids, inst], 'stable');
+                end
             end
         end
 

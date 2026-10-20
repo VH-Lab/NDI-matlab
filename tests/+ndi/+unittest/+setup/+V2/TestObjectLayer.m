@@ -13,6 +13,10 @@ classdef TestObjectLayer < matlab.unittest.TestCase
         Session
         Dataset
         Result
+        % the session as it reaches the dataset-level documents: the Session
+        % itself, or, with one entity class, the session opened from its
+        % dataset, where the strain entities and their species are (#112)
+        Reach
     end
 
     methods (TestClassSetup)
@@ -34,6 +38,12 @@ classdef TestObjectLayer < matlab.unittest.TestCase
                 'Overwrite', true, 'ReadVideos', false, 'SessionFolders', true);
             testCase.Session = ndi.session.dir(testCase.Result.sessions.path{1});
             testCase.Dataset = ndi.dataset.dir(testCase.Result.dataset.path);
+            testCase.Reach = testCase.Session;
+            if ndi.setup.V2.mergedEntities()
+                [refs, ids] = testCase.Dataset.session_list();
+                testCase.Reach = testCase.Dataset.open_session( ...
+                    ids{strcmp(refs, testCase.Session.reference)});
+            end
         end
     end
 
@@ -255,7 +265,7 @@ classdef TestObjectLayer < matlab.unittest.TestCase
             % a value that matches no term by its name or node matches a term
             % it is a synonym of (ndi.v2.synonyms); the names are read from
             % the on-disk cache, prepared here so no lookup goes online
-            S = testCase.Session;
+            S = testCase.Reach;     % where the species is stated (#112)
             folder = tempname;
             mkdir(folder);
             testCase.addTeardown(@() rmdir(folder, 's'));
@@ -276,7 +286,7 @@ classdef TestObjectLayer < matlab.unittest.TestCase
             testCase.verifyEmpty(testCase.verifyWarning(@() ndi.entity.search(S, ...
                 {'type', 'organism', 'species', 'C. elegans'}, 'synonyms', false), ...
                 'ndi:entity:search:noSuchValue'), 'synonyms off: the name only');
-            a = testCase.subject('concentration_assayPlate0012_worms').assertions( ...
+            a = testCase.subject('concentration_assayPlate0012_worms', S).assertions( ...
                 {'variable', 'species', 'value', 'C. elegans'});
             testCase.verifyNotEmpty(a, 'statement filters use them too');
             testCase.verifyEmpty(ndi.v2.synonyms('not a curie'));
@@ -368,11 +378,12 @@ classdef TestObjectLayer < matlab.unittest.TestCase
             % the noun follows a single kind or type condition; several types are listed
             out = evalc('ndi.entity.search(S, {''kind'', ''person''}, ''explain'', true);');
             testCase.verifySubstring(out, 'Searching this session for all people');
-            out = evalc('ndi.entity.search(S, {''type'', ndi.v2.subjectTypes(), ''species'', ''Caenorhabditis elegans''}, ''explain'', true);');
+            R = testCase.Reach;     %#ok<NASGU> where the species is stated (#112)
+            out = evalc('ndi.entity.search(R, {''type'', ndi.v2.subjectTypes(), ''species'', ''Caenorhabditis elegans''}, ''explain'', true);');
             testCase.verifySubstring(out, ...
                 'Searching this session for organisms, cultures, tissues, cells or groups that', ...
                 'several types are listed');
-            out = evalc('ndi.entity.search(S, {''species'', ''Caenorhabditis elegans''}, ''explain'', true);');
+            out = evalc('ndi.entity.search(R, {''species'', ''Caenorhabditis elegans''}, ''explain'', true);');
             testCase.verifySubstring(out, 'Searching this session for entities that');
             out = evalc(['ndi.entity.search(S, {''type'', ''organism'', ''contained_in'', ' ...
                 '{''type'', ''material''}}, ''explain'', true);']);
@@ -668,7 +679,7 @@ classdef TestObjectLayer < matlab.unittest.TestCase
         end
 
         function testAssertions(testCase)
-            c = testCase.subject('concentration_assayPlate0012_worms');
+            c = testCase.subject('concentration_assayPlate0012_worms', testCase.Reach);
             a = c.assertions();
             testCase.verifyTrue(all(cellfun(@(x) isa(x, 'ndi.assertion'), a)), 'objects, not a table');
             T = ndi.summary(a);
@@ -709,8 +720,12 @@ classdef TestObjectLayer < matlab.unittest.TestCase
         function testInheritedFollowsMemberOfAndDistributive(testCase)
             % decision #55: species and strain are stated once, on the
             % cohort, marked distributive -- they hold of each worm, and are
-            % read that way by default
-            w = testCase.subject('concentration_worm0121');
+            % read that way by default. With one entity class the species is
+            % stated once more upstream, on the strain the cohort is an
+            % instance_of (decision #112), so the worm is read where the
+            % strain is in reach
+            merged = ndi.setup.V2.mergedEntities();
+            w = testCase.subject('concentration_worm0121', testCase.Reach);
             own = w.assertions('inherited', false);
             testCase.verifyFalse(any(cellfun(@(x) strcmpi(x.variable_name(), 'species'), own)), ...
                 'nothing is stated on the worm itself');
@@ -725,15 +740,23 @@ classdef TestObjectLayer < matlab.unittest.TestCase
                 sp = T(cellfun(@(x) strcmpi(x.variable_name(), 'species'), T));
                 testCase.verifyNumElements(sp, 1);
                 testCase.verifyEqual(lower(sp{1}.raw_value().node), 'ncbitaxon:6239');
-                testCase.verifyEqual(sp{1}.subject().local_identifier, 'concentration_assayPlate0012_worms');
-                testCase.verifyEqual(sp{1}.via(), 'member_of');
+                if merged
+                    % stated on the strain, reached through the cohort
+                    testCase.verifyEqual(sp{1}.via(), 'member_of > instance_of');
+                    testCase.verifyEqual(sp{1}.subject().name, 'N2', 'stated on the strain');
+                else
+                    testCase.verifyEqual(sp{1}.subject().local_identifier, 'concentration_assayPlate0012_worms');
+                    testCase.verifyEqual(sp{1}.via(), 'member_of');
+                end
                 strain = T(cellfun(@(x) strcmpi(x.variable_name(), strainProp()), T));
                 if ndi.setup.V2.mergedEntities()
                     testCase.verifyEmpty(strain, 'one entity class: a strain is a relation');
                 else
                     testCase.verifyEqual(strain{1}.value().canonical(), "N2");
                 end
-                extra = st(cellfun(@(x) ~strcmp(x.via(), 'own'), st));
+                % what the cohort stated (a type's assertions, via
+                % instance_of, are testTypesPassTheirAssertionsToInstances')
+                extra = st(cellfun(@(x) strcmp(x.via(), 'member_of'), st));
                 testCase.verifyNotEmpty(extra);
                 testCase.verifyTrue(all(cellfun(@(x) x.distributive(), extra)), 'only distributive ones');
                 testCase.verifyTrue(all(cellfun(@(x) strcmp(x.subject().local_identifier, ...
@@ -800,6 +823,25 @@ classdef TestObjectLayer < matlab.unittest.TestCase
             i = W(1).interactions();
             testCase.verifyFalse(any(cellfun(@(x) contains(x.via(), 'instance_of'), i)), ...
                 'a type''s interactions do not pass to its instances');
+            % the species is stated ONCE, on the strain (decision #112): not
+            % on the worm, not on its cohort, and still found for both, by
+            % reading the worm and by a search, through the strain
+            sp = a(cellfun(@(x) strcmpi(x.variable_name(), 'species'), a));
+            testCase.verifyNumElements(sp, 1);
+            testCase.verifyEqual(sp{1}.via(), 'member_of > instance_of');
+            testCase.verifyEqual(lower(sp{1}.raw_value().node), 'ncbitaxon:6239');
+            cohort = ndi.entity.search(S, {'LocalIdentifier', 'concentration_assayPlate0012_worms'});
+            testCase.assertNumElements(cohort, 1);
+            testCase.verifyFalse(any(cellfun(@(x) strcmpi(x.variable_name(), 'species'), ...
+                cohort{1}.assertions('inherited', false))), 'the cohort states no species of its own');
+            found = local(ndi.entity.search(S, {'type', 'organism', 'species', 'Caenorhabditis elegans'}));
+            testCase.verifyTrue(all(ismember(local(ws), found)), ...
+                ['a search by species finds the worms through their strain: ' strjoin(found, ', ')]);
+            testCase.verifyEmpty(ndi.entity.search(S, {'type', 'organism', 'species', ...
+                'Caenorhabditis elegans'}, 'inherited', false), 'no worm states it itself');
+            lawns = local(ndi.entity.search(S, {'species', 'NCBITaxon:562'}));
+            testCase.verifyTrue(ismember('concentration_assayPlate0012_patch0001', lawns), ...
+                'a patch is an instance_of OP50, whose species is E. coli');
             % a session folder opened on its own holds the relation, not the strain
             T0 = ndi.summary(ndi.entity.search(testCase.Session, {'type', 'organism', 'contained_in', ...
                 testCase.subject('concentration_assayPlate0012')}));
@@ -889,14 +931,15 @@ classdef TestObjectLayer < matlab.unittest.TestCase
                 testCase.verifySubstring(err.message, 'Properties in this session: ');
                 testCase.verifySubstring(err.message, 'local_identifier');
             end
-            testCase.verifyWarning(@() ndi.entity.search(S, {'species', 'Caenorhabdiits elegans'}), ...
+            R = testCase.Reach;     % where the species is stated (#112)
+            testCase.verifyWarning(@() ndi.entity.search(R, {'species', 'Caenorhabdiits elegans'}), ...
                 'ndi:entity:search:noSuchValue');
             % the message, whole: as an error (evalc wraps it at the console width)
             b = warning('error', 'ndi:entity:search:noSuchValue'); %#ok<CTPCT>
             restore = onCleanup(@() warning(b));
             msg = '';
             try
-                ndi.entity.search(S, {'species', 'Caenorhabdiits elegans'});
+                ndi.entity.search(R, {'species', 'Caenorhabdiits elegans'});
             catch err
                 msg = err.message;
             end
@@ -907,7 +950,7 @@ classdef TestObjectLayer < matlab.unittest.TestCase
             testCase.verifyEmpty(testCase.verifyWarningFree(@() ...
                 ndi.entity.search(S, {typo, 'N2'}, 'strict', false)));
             testCase.verifyEmpty(testCase.verifyWarningFree(@() ...
-                ndi.entity.search(S, {'species', 'Caenorhabdiits elegans'}, 'strict', false)));
+                ndi.entity.search(R, {'species', 'Caenorhabdiits elegans'}, 'strict', false)));
             testCase.verifyEmpty(testCase.verifyWarningFree(@() ...
                 ndi.entity.search(S, {'type', 'organism', 'contained_in', {typo, 'N2'}}, 'strict', false)), ...
                 'a nested description is strict as the outer search is');
@@ -1121,12 +1164,14 @@ classdef TestObjectLayer < matlab.unittest.TestCase
     end
 
     methods
-        function s = subject(testCase, local)
+        function s = subject(testCase, local, container)
             arguments
                 testCase (1,1) matlab.unittest.TestCase
                 local {mustBeText}
+                container = []
             end
-            x = ndi.entity.search(testCase.Session, {'LocalIdentifier', local});
+            if isempty(container), container = testCase.Session; end
+            x = ndi.entity.search(container, {'LocalIdentifier', local});
             testCase.assertNumElements(x, 1, local);
             s = x{1};
         end

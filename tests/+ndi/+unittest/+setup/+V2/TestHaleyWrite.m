@@ -360,11 +360,12 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             % assay, 3 acclimation, 1 food deprivation), each with its sample
             % type (#107). With one entity class (2026-10-08)
             % the strain is an `instance_of` relation to the strain entity
-            % instead of an assertion. Plate 13's exclusion is a logical
-            % assertion, not a term.
+            % instead of an assertion, and the species is stated once, on
+            % the strain entity, not on each cohort and patch (decision
+            % #112). Plate 13's exclusion is a logical assertion, not a term.
             merged = ndi.setup.V2.mergedEntities();
             perStrain = double(~merged);
-            testCase.verifyNumElements(ta, 4 * (2 + perStrain) + 7 * (2 + perStrain) + 8);
+            testCase.verifyNumElements(ta, 4 * (1 + 2 * perStrain) + 7 * (1 + 2 * perStrain) + 8);
             kind = ta(cellfun(@(a) strcmp(a.statement.variable.name, 'Sample Type'), ta));
             kinds = cellfun(@(a) a.term.value.name, kind, 'UniformOutput', false);
             testCase.verifyEqual(sum(strcmp(kinds, 'bacterial patch')), 7, 'one per seeded patch');
@@ -374,7 +375,16 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             rel = docs(strcmp(classes, 'directed_relation'));
             instanceOf = @(local) rel(cellfun(@(r) strcmp(r.directed_relation.relation.name, ...
                 'instance_of') && strcmp(edge(r, 'child_id'), idOf(local)), rel));
+            % the species: on the cohort (did-schema main), or once on the
+            % strain entity the cohort is an instance_of (decision #112)
+            md = result.metadata.documents;
+            speciesOf = @(id) md(cellfun(@(d) isfield(d, 'statement') && ...
+                strcmp(edge(d, 'entity_id'), id) && strcmp(d.statement.variable.node, 'NCIT:C45293'), md));
             a = about('concentration_assayPlate0012_worms', 'species');
+            if merged
+                testCase.verifyEmpty(a, 'not repeated on the cohort: its strain states it');
+                a = speciesOf(result.metadata.ids('N2'));
+            end
             testCase.verifyNumElements(a, 1);
             testCase.verifyEqual(a{1}.statement.variable.node, 'NCIT:C45293');
             testCase.verifyEqual(a{1}.term.value.node, 'NCBITaxon:6239');
@@ -420,10 +430,20 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
                 testCase.verifyEqual(a{1}.term.value.node, 'WormBase:WBStrain00041969');
             end
             a = about('concentration_assayPlate0012_patch0001', 'species');
+            if merged
+                testCase.verifyEmpty(a, 'not repeated on the patch: OP50 states it');
+                a = speciesOf(result.metadata.ids('OP50'));
+                testCase.verifyNumElements(a, 1);
+                testCase.verifyEmpty(about('concentration_0001_acclimationPlate0001_patch0001', 'species'));
+                testCase.verifyNumElements(instanceOf('concentration_0001_acclimationPlate0001_patch0001'), 1, ...
+                    'an acclimation plate''s patch is OP50 too');
+            end
             testCase.verifyEqual(a{1}.term.value.node, 'NCBITaxon:562');
-            a = about('concentration_0001_acclimationPlate0001_patch0001', 'species');
-            testCase.verifyNumElements(a, 1, 'an acclimation plate''s patch is OP50 too');
-            testCase.verifyEqual(a{1}.term.value.node, 'NCBITaxon:562');
+            if ~merged
+                a = about('concentration_0001_acclimationPlate0001_patch0001', 'species');
+                testCase.verifyNumElements(a, 1, 'an acclimation plate''s patch is OP50 too');
+                testCase.verifyEqual(a{1}.term.value.node, 'NCBITaxon:562');
+            end
 
             % excluded, and never filmed: logical assertions, false, only where
             % they hold

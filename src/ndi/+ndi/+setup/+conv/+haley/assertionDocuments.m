@@ -17,6 +17,12 @@ function out = assertionDocuments(session, S, subjectIds, options)
 %                              C. elegans assay and acclimation plates,
 %                              OP50-GFP on the E. coli plates. A patch of LB
 %                              alone gets none.
+%   On a schema with one entity class the strain is an `instance_of` relation
+%   to the dataset-level strain entity, and the species is NOT repeated on the
+%   cohort or patch when the strain's own record states it (decision #112,
+%   tenet T17: an assertion about a type holds of each instance); it is stated
+%   here only when no strain entity is known. On did-schema main (a strain
+%   assertion with `strain_id`, no instance_of to a strain) both stay here.
 %     assay plate  inclusion in analysis (EMPTY:0000314) = false
 %                              (logical_assertion), where the source excludes
 %                              it (decision #2: tagged, not dropped). Per plate:
@@ -171,14 +177,13 @@ end
             return;
         end
         st = strains(strainKey);
-        out = assert1(out, id, 'term_assertion', haleyTerm('species'), ...
-            did2.build.term(st.species.node, st.species.name), struct(), fields, [who '_species']);
         if ndi.setup.V2.mergedEntities()
             % one entity class (2026-10-08): the subject is `instance_of` its strain
             % (V_eta_entity_composition_plan.md sec. 5); there is no strain assertion
             if ~isKey(options.StrainIds, strainKey)
                 out.skipped{end+1} = sprintf('%s: no strain entity for %s; no strain recorded', ...
                     id, strainKey);
+                speciesOf(st);     % no strain known: the species is stated here
             elseif ~isKey(subjectIds, id)
                 out.skipped{end+1} = sprintf('%s strain: not a subject of this session', id);
             else
@@ -186,10 +191,15 @@ end
                     options.StrainIds(strainKey), did2.build.term('', 'instance_of'), ...
                     'Fields', fields, 'SessionId', sid);
                 out.counts.([who '_strain']) = out.counts.([who '_strain']) + 1;
+                % the species is stated ONCE, on the strain (decision #112,
+                % tenet T17's type-to-instance path: instance_of passes
+                % assertions): the dataset metadata asserts each spec
+                % strain's `species` on its entity, so it is not repeated here
             end
             sexOf(st);
             return;
         end
+        speciesOf(st);
         edges = struct();
         if isKey(options.StrainIds, strainKey)
             edges.strain_id = options.StrainIds(strainKey);
@@ -203,6 +213,12 @@ end
             did2.build.term(node, st.name), edges, fields, [who '_strain']);
         sexOf(st);
 
+        function speciesOf(st)
+            if ~hasSpecies(st), return; end
+            out = assert1(out, id, 'term_assertion', haleyTerm('species'), ...
+                did2.build.term(st.species.node, st.species.name), struct(), fields, [who '_species']);
+        end
+
         function sexOf(st)
             if isfield(st, 'biological_sex') && ~isempty(st.biological_sex)
                 sx = st.biological_sex;
@@ -210,6 +226,12 @@ end
                     did2.build.term(char(sx.node), char(sx.name)), struct(), fields, [who '_sex']);
             end
         end
+    end
+
+    function tf = hasSpecies(st)
+        % the spec's strain entry names its species
+        tf = isfield(st, 'species') && isstruct(st.species) && isfield(st.species, 'node') ...
+            && ~isempty(st.species.node);
     end
 
     function out = logical1(out, id, variable, counter, notes)
