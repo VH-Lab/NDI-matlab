@@ -324,11 +324,14 @@ end
 
 function f = strainFields(f)
 % a strain's fields on the schema in use: a schema with a `strain` class
-% (before one entity class) requires its species
+% (before one entity class) requires its species and genetic strain type
 arguments
     f (1,1) struct
 end
 if ndi.setup.V2.schemaHasField('strain', 'species') && ~isfield(f, 'species')
     f.species = struct('node', 'NCBITaxon:6239', 'name', 'Caenorhabditis elegans');
+end
+if ndi.setup.V2.schemaHasField('strain', 'genetic_strain_type') && ~isfield(f, 'genetic_strain_type')
+    f.genetic_strain_type = struct('node', 'NCIT:C62195', 'name', 'wild type');
 end
 end
