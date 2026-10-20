@@ -172,7 +172,7 @@ classdef TestObjectLayer < matlab.unittest.TestCase
             % (decision #55): a search finds the worms without knowing that
             S = testCase.Session;
             p = strainProp();     % the strain's property name on the schema in use
-            typo = strrep(p, p, typo);
+            typo = strrep(p, 'strain', 'stran');
             if ndi.setup.V2.mergedEntities()
                 % one entity class (2026-10-08): a cohort is an instance_of the
                 % dataset-level strain entity, so p, 'N2' needs that
