@@ -166,6 +166,7 @@ pairs = {
     'search on patch',                        'EMPTY:0000295'
     'search off patch',                       'EMPTY:0000296'
     'classification',                         'NCIT:C25161'
+    'cannot be determined',                   'NCIT:C179711'
     'Gaussian mixture model clustering',      'EMPTY:0000316'
     'quadratic discriminant analysis',        'EMPTY:0000317'
     % fits and estimates

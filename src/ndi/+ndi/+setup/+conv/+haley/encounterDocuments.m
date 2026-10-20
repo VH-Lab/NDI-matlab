@@ -58,9 +58,10 @@ function out = encounterDocuments(dataParentDir, session, R, subjectIds, options
 %                       0-1. timeSlowDown is not kept: no figure uses it
 %     term_calculation  `encounter type`, method `classification`: `exploit`,
 %                       `sample`, `search on patch` (source searchOn), `search
-%                       off patch` (searchOff); the label `unlabeled` where the
+%                       off patch` (searchOff); `Cannot Be Determined` where the
 %                       source left it blank; its method parameters (labels)
-%                       the three posterior thresholds. A label_calculation of
+%                       the three posterior thresholds and search off patch's
+%                       distance rule (0 m into the patch). A label_calculation of
 %                       the same names on a schema with no term_calculation
 %   A two-key value is stored in column-major order, the encounter fastest
 %   (the notes say so). For the gap before the first encounter (the source's
@@ -348,7 +349,13 @@ for g = 1:max(G)
         typeArgs = {'Method', haleyTerm('classification'), 'MethodParameters', did2.build.list( ...
                 did2.build.parameter(did2.build.term('', 'exploit: minimum probability of exploitation'), 'Value', 0.5), ...
                 did2.build.parameter(did2.build.term('', 'sample: minimum probability of sensing'), 'Value', 0.5), ...
-                did2.build.parameter(did2.build.term('', 'search off patch: probability of sensing below'), 'Value', 0.05)), ...
+                did2.build.parameter(did2.build.term('', 'search off patch: probability of sensing below'), 'Value', 0.05), ...
+                did2.build.parameter(did2.build.term('', 'search off patch: maximum distance into the patch'), ...
+                    'Value', 0, 'Unit', haleyTerm('meter'))), ...
+            'Notes', ['Each encounter''s type from its two posteriors (labelEncounters lines 379-384). ' ...
+                'Search off patch also needs the midpoint never to have crossed the patch edge ' ...
+                '(distanceOnMax < 0). Cannot Be Determined marks an encounter with a missing ' ...
+                'posterior, which the source leaves unlabeled.'], ...
             keyed{:}, per{:}};
         if hasTerm
             docs{end+1} = did2.build.statement('term_calculation', wormId, ...
@@ -476,7 +483,8 @@ end
 function t = encounterTypes(names)
 % each encounter's type as a term: labelEncounters' labels are the decided
 % types (searchOn / searchOff the search on / off patch ones); a blank label is
-% the plain label `unlabeled`, and any other label is kept as written
+% `Cannot Be Determined` (a posterior is missing, so no rule applies; Jess,
+% 2026-10-20), and any other label is kept as written
 arguments
     names cell
 end
@@ -488,7 +496,7 @@ for k = 1:numel(names)
     if hit
         t{k} = haleyTerm(decided{at});
     elseif isempty(strtrim(names{k}))
-        t{k} = did2.build.term('', 'unlabeled');
+        t{k} = haleyTerm('cannot be determined');
     else
         t{k} = did2.build.term('', names{k});
     end
