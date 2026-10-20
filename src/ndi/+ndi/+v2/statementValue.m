@@ -5,7 +5,8 @@ function [k, v, t, u] = statementValue(p)
 %   properties (ndi.v2.props). K is the kind of value: 'term' (V a
 %   {name, node} struct), 'date' (V the ISO instant text), 'number' (V a
 %   scalar in the canonical unit; a dose's one amount), 'text' (a string,
-%   or the `text` kind's text), or 'none'
+%   or the `text` kind's text), 'logical' (V true or false; T 'true' or
+%   'false'), or 'none'
 %   (an array, a value in a data body, a structure with no single amount,
 %   or no value at all). T is V as text ('' for 'none'); U the unit of a
 %   number (its canonical field, e.g. 'liters', 'celsius'). Nothing is read
@@ -22,6 +23,7 @@ switch k
     case 'term', t = ndi.v2.termName(v);
     case {'date', 'text'}, t = v;
     case 'number', t = num2str(v, 6);
+    case 'logical', t = char(string(v));
     otherwise, t = '';
 end
 end
@@ -58,6 +60,9 @@ if isstruct(raw) && isfield(raw, 'text')
 end
 if ischar(raw) || isstring(raw)
     k = 'text'; v = char(raw); return;
+end
+if islogical(raw) && isscalar(raw)
+    k = 'logical'; v = raw; return;
 end
 if isnumeric(raw) && isscalar(raw)
     k = 'number'; v = double(raw); u = ndi.value.canonicalField(c); return;

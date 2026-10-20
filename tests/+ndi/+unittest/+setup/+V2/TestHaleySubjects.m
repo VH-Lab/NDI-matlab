@@ -127,9 +127,11 @@ classdef TestHaleySubjects < matlab.unittest.TestCase
         function testGridTemplatePatchesTakeTheirOwnDensity(testCase)
             % Matching: OD600 is the template (3 positions, 2 patches); each
             % patch's OD600 is the lawnClosestOD600 map at its centre, and the
-            % template's non-zero positions agree, so nothing is reported
+            % template's non-zero positions agree, so nothing is reported.
+            % (The acclimation plate's own patch is not on the grid.)
             [S, checks] = testCase.list();
-            pk = S(strcmp(S.kind, 'patch') & strcmp(S.folder, 'foragingMatching'), :);
+            pk = S(strcmp(S.kind, 'patch') & strcmp(S.folder, 'foragingMatching') ...
+                & ~contains(S.local_identifier, 'acclimationPlate'), :);
             testCase.verifyEqual(height(pk), 2);
             testCase.verifyEqual(arrayfun(@(j) pk.prep(j).od600, 1:2), [5 10]);
             testCase.verifyEmpty(checks.patchOD600, strjoin(checks.patchOD600, newline));

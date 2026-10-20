@@ -1354,17 +1354,6 @@ d = byLocal(local);
 t = d.subject.type.name;
 end
 
-function m = methodOf(doc)
-% the name of a statement's method ('' when it has none)
-arguments
-    doc (1,1) struct
-end
-m = '';
-if isfield(doc, 'interaction') && isfield(doc.interaction, 'method') && ~isempty(doc.interaction.method)
-    m = doc.interaction.method.name;
-end
-end
-
 function c = conditionsOf(doc)
 % a statement's conditions, as a cell array of entries
 arguments

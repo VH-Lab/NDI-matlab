@@ -325,6 +325,13 @@ switch k
         tf = isempty(op) && ischar(pat) && ndi.v2.matchTerm(v, pat);
     case 'text'
         tf = isempty(op) && ischar(pat) && ndi.v2.matchTerm(struct('name', v, 'node', ''), pat);
+    case 'logical'
+        % true / false, or the text 'true' / 'false'
+        if islogical(pat) && isscalar(pat)
+            tf = v == pat;
+        elseif ischar(pat) && any(strcmpi(pat, {'true', 'false'}))
+            tf = v == strcmpi(pat, 'true');
+        end
     case 'date'
         if ~isempty(op)
             n = min(numel(v), numel(rhs));
