@@ -137,6 +137,13 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             % plate 11 twice + 12 + 14 (behaviour) + 2 lawn clips
             testCase.verifyEqual(count('epoch'), 6);
             testCase.verifyEqual(count('intensity_observation'), 6);
+            % the behaviour videos are brightfield imaging; the 2 lawn clips,
+            % filmed with a card between the light and the plate, oblique
+            % illumination imaging (decision #108)
+            io = docs(strcmp(classes, 'intensity_observation'));
+            how = cellfun(@(d) d.interaction.method.node, io, 'UniformOutput', false);
+            testCase.verifyEqual(sum(strcmp(how, 'EMPTY:0000300')), 4);
+            testCase.verifyEqual(sum(strcmp(how, 'EMPTY:0000348')), 2);
             testCase.verifyEqual(count('opaque_body'), 6);
             testCase.verifyEqual(count('acquisition_system'), 2, 'camera1 and camera2');
             testCase.verifyEqual(count('session'), 1);

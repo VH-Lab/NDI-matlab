@@ -107,6 +107,7 @@ pairs = {
     % geometry, masks, tracks
     'brightfield imaging',                     'EMPTY:0000300',           'brightfield imaging'
     'brightfield microscopy',                  'NCIT:C19827',             'Brightfield Microscopy'
+    'oblique illumination imaging',            'EMPTY:0000348',           'oblique illumination imaging'
     'fluorescence microscopy',                 'NCIT:C16856',             'Fluorescence Microscopy'
     'video tracking',                          'EMPTY:0000301',           'video tracking'
     'moving average',                          'OBI:0200056',             'moving average'

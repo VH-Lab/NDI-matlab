@@ -227,7 +227,7 @@ for k = 1:height(R)
     st = did2.build.statement('intensity_observation', subjectIds(plate), ...
         haleyTerm('image intensity'), [], 'DataBody', true, 'DatumType', datumType, ...
         keyArgs{:}, ...
-        'Method', probeType(r.system{1}, contrastOf(r)), ...
+        'Method', probeType(r.system{1}, contrastOf(r), r.kind{1}), ...
         'InstrumentId', instrumentId, 'AcquisitionChannelsId', channelIds(r.system{1}), ...
         'TimeReferenceIds', {relEpoch.base.id, absRef.base.id}, 'SessionId', sid, ...
         'Notes', noteOf(r));
@@ -295,12 +295,17 @@ function t = probeType(sys, contrast)
 % fluorescence microscopy unless its CONTRAST is `brightfield` (decision #97:
 % the E. coli brightfield images, beside the fluorescence images in
 % ecoli/raw/), which is brightfield microscopy (decision #103); a camera's
-% image is brightfield imaging
+% video is brightfield imaging, except a patch contrast (`lawn`) video, filmed
+% with a card between the backlight and the plate: oblique illumination
+% imaging (decision #108)
 arguments
     sys {mustBeText}
     contrast {mustBeText} = ''
+    kind {mustBeText} = ''
 end
-if strcmp(sys, 'microscope') && ~strcmp(contrast, 'brightfield')
+if strcmp(kind, 'lawn')
+    t = haleyTerm('oblique illumination imaging');
+elseif strcmp(sys, 'microscope') && ~strcmp(contrast, 'brightfield')
     t = haleyTerm('fluorescence microscopy');
 elseif strcmp(sys, 'microscope')
     t = haleyTerm('brightfield microscopy');
