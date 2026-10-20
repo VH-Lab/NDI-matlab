@@ -340,13 +340,17 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
 
             % 4 cohorts, each with a species, a strain and a sex; 7 seeded
             % patches (one per assay plate, one per acclimation plate), each
-            % with a species and a strain. With one entity class (2026-10-08)
+            % with a species, a strain and a sample type (#104). With one entity class (2026-10-08)
             % the strain is an `instance_of` relation to the strain entity
             % instead of an assertion. Plate 13's exclusion is a logical
             % assertion, not a term.
             merged = ndi.setup.V2.mergedEntities();
             perStrain = double(~merged);
-            testCase.verifyNumElements(ta, 4 * (2 + perStrain) + 7 * (1 + perStrain));
+            testCase.verifyNumElements(ta, 4 * (2 + perStrain) + 7 * (2 + perStrain));
+            kind = ta(cellfun(@(a) strcmp(a.statement.variable.name, 'Sample Type'), ta));
+            testCase.verifyNumElements(kind, 7, 'one sample type per seeded patch');
+            testCase.verifyTrue(all(cellfun(@(a) strcmp(a.term.value.node, 'EMPTY:0000325'), kind)), ...
+                'each is a bacterial patch');
             rel = docs(strcmp(classes, 'directed_relation'));
             instanceOf = @(local) rel(cellfun(@(r) strcmp(r.directed_relation.relation.name, ...
                 'instance_of') && strcmp(edge(r, 'child_id'), idOf(local)), rel));
