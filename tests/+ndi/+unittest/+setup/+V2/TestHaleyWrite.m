@@ -1347,6 +1347,10 @@ if isfield(e, 'values') && isstruct(e.values) && ~isempty(e.values) ...
     if isfield(e.values, 'source_values'), q.source_value = e.values.source_values; end
     e.quantity = q;
 end
+if isfield(e, 'quantity') && isstruct(e.quantity) && isscalar(e.quantity) ...
+        && isfield(e.quantity, 'value') && isstruct(e.quantity.value) && isfield(e.quantity.value, 'value')
+    e.quantity = e.quantity.value;     % a condition's {value: {value, source_value}}
+end
 if isfield(e, 'count') && isstruct(e.count) && isfield(e.count, 'value')
     e.count = e.count.value;
 end
