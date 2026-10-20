@@ -18,9 +18,10 @@ function [dataset, report] = createDataset(path, reference, datasetSessionId, da
 %   DATASETSESSIONID, which every dataset-level document's `session_id` edge
 %   points at. When DATASETDOCS hold the `dataset` entity, it is that record
 %   (built with that id, e.g. by ndi.setup.V2.datasetMetadata) and no separate
-%   `session` document is written; it is given REFERENCE as its
-%   local_identifier when it has none, so ndi.session.dir reads the dataset's
-%   reference from it. A `dataset` entity with another id is an error
+%   `session` document is written. The entity keeps the local_identifier its
+%   metadata gives it (or none): REFERENCE is the FOLDER's and is written only
+%   to .ndi/reference.txt, where ndi.session.dir and ndi.dataset.dir read it
+%   for a dataset record (Haley decision #115). A `dataset` entity with another id is an error
 %   (ndi:setup:V2:datasetId). With no `dataset` entity, the dataset's own
 %   `session` document is written with DATASETSESSIONID as its id.
 %
@@ -121,14 +122,11 @@ if isempty(recordAt)
     own = ndi.setup.V2.entityDocuments('session', f, struct(), 'SessionId', datasetSessionId, ...
         idArgs{:});
     own = own(1);
-else
-    [~, blk] = ndi.setup.V2.kindOf(datasetDocs{recordAt});
-    if ~isfield(datasetDocs{recordAt}.(blk), 'local_identifier') || ...
-            isempty(datasetDocs{recordAt}.(blk).local_identifier)
-        % ndi.session.dir reads the folder's reference from its own record
-        datasetDocs{recordAt}.(blk).local_identifier = reference;
-    end
 end
+% A dataset entity standing as the folder's record keeps the local_identifier
+% its metadata gave it (or none): the folder's REFERENCE is written to
+% .ndi/reference.txt below, where ndi.session.dir reads it (Haley decision
+% #115). It is not copied into the entity.
 docsAll = [own, reshape(datasetDocs, 1, [])];
 for k = 1:numel(sessionDocs)
     docsAll = [docsAll, reshape(sessionDocs{k}, 1, [])]; %#ok<AGROW>

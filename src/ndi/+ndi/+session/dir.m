@@ -148,9 +148,16 @@ classdef dir < ndi.session
                     % is not what the migration renamed.
                     % and since 2026-10-08 the session may be an `entity` of type
                     % session, whose block is `entity` (ndi.v2.kindOf)
-                    [~, session_blk_name] = ndi.v2.kindOf(session_doc.document_properties);
+                    [record_kind, session_blk_name] = ndi.v2.kindOf(session_doc.document_properties);
                     session_blk = session_doc.document_properties.(session_blk_name);
-                    if isfield(session_blk,'local_identifier')
+                    reference_file = fullfile(ndi_session_dir_obj.ndipathname(), 'reference.txt');
+                    if strcmp(record_kind, 'dataset') && isfile(reference_file)
+                        % a dataset entity standing as the folder's own record:
+                        % the folder's reference is its reference.txt, never
+                        % the entity's local_identifier, which is the
+                        % dataset's own (Haley decision #115)
+                        ndi_session_dir_obj.reference = strtrim(vlt.file.textfile2char(reference_file));
+                    elseif isfield(session_blk,'local_identifier') && ~isempty(session_blk.local_identifier)
                         ndi_session_dir_obj.reference = session_blk.local_identifier;
                     elseif isfield(session_blk,'reference')
                         ndi_session_dir_obj.reference = session_blk.reference;

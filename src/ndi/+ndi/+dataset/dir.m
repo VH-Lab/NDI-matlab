@@ -93,15 +93,19 @@ classdef dir < ndi.dataset
                     % and from 2026-10-08 the session may be an `entity` of
                     % type session (ndi.v2.blockOf reads either block)
                     p_session = candidate_session_doc{1}.document_properties;
-                    ref = ndi.v2.blockOf(p_session, 'session', 'local_identifier');
-                    if isempty(ref)
-                        ref = ndi.v2.blockOf(p_session, 'session', 'reference');
-                    end
-                    if isempty(ref) && strcmp(ndi.v2.kindOf(p_session), 'dataset')
-                        % a dataset entity has no local_identifier: the
-                        % reference the folder was written with (reference.txt,
-                        % ndi.setup.V2.createDataset), as ndi.session.dir read it
+                    if strcmp(ndi.v2.kindOf(p_session), 'dataset')
+                        % a dataset entity standing as the folder's own
+                        % record: the folder's reference is the one it was
+                        % written with (reference.txt, ndi.setup.V2.createDataset),
+                        % as ndi.session.dir read it -- never the entity's
+                        % local_identifier, which is the dataset's own
+                        % (Haley decision #115)
                         ref = ndi_dataset_dir_obj.session.reference;
+                    else
+                        ref = ndi.v2.blockOf(p_session, 'session', 'local_identifier');
+                        if isempty(ref)
+                            ref = ndi.v2.blockOf(p_session, 'session', 'reference');
+                        end
                     end
                     session_id = candidate_session_doc{1}.session_id();
                     ndi_dataset_dir_obj.session = ndi.session.dir(ref,ndi_dataset_dir_obj.session.path,session_id);

@@ -101,7 +101,9 @@ function result = import_V2(dataParentDir, options)
 %                         new id)
 %     'DatasetFolder'     where stage 13 writes the dataset (default:
 %                         <OutputRoot>/dataset)
-%     'DatasetReference'  the dataset's local_identifier (default 'haley')
+%     'DatasetReference'  the dataset folder's reference, .ndi/reference.txt
+%                         (default 'haley'); not the dataset entity's
+%                         local_identifier (decision #115)
 %     'EcoliProfilesFile' analyzeGFP's workspace (profile curves and
 %                         acetate templates; decision #64), wherever it is kept (default:
 %                         <DATAPARENTDIR>/haley/ecoli/analyzeGFP_24-04-04.mat)

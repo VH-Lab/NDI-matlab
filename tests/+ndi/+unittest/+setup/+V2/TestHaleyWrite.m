@@ -1284,6 +1284,19 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
 
             ds = ndi.dataset.dir(result.dataset.path);
             testCase.verifyEqual(ds.id(), result.datasetSessionId);
+            % the folder's reference is .ndi/reference.txt; where the dataset
+            % entity is the folder's record it does not take it as its
+            % local_identifier (decision #115), and the folder still opens
+            testCase.verifyEqual(ds.reference(), 'haley');
+            testCase.verifyEqual(strtrim(fileread(fullfile(result.dataset.path, '.ndi', 'reference.txt'))), 'haley');
+            if ndi.v2.sessionIdIsEdge()
+                rec = ds.database_search(ndi.query('base.id', 'exact_string', result.datasetSessionId, ''));
+                testCase.assertNumElements(rec, 1);
+                rp = rec{1}.document_properties;
+                testCase.verifyEqual(ndi.v2.kindOf(rp), 'dataset', 'the dataset entity is the record');
+                testCase.verifyNotEqual(char(ndi.v2.blockOf(rp, 'dataset', 'local_identifier', '')), 'haley', ...
+                    'the folder reference is not written into the dataset entity');
+            end
             [refs, ids] = ds.session_list();
             testCase.verifyEqual(sort(refs), {'concentration_0001', 'ecoli_0001'});
             s = ds.open_session(ids{strcmp(refs, 'ecoli_0001')});
