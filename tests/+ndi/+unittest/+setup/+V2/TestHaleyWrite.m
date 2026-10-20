@@ -827,7 +827,8 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             e2 = et(strcmp({et.epoch_id}, 'ecoli_image0002'));
             testCase.verifyEqual(e2.epochprobemap.type, 'wide-field-imaging');
             % the brightfield image: the same microscope, its method brightfield
-            % imaging (decision #97), so NDI rebuilds it as a brightfield probe
+            % microscopy (decisions #97, #103), so NDI rebuilds it as a
+            % brightfield probe
             e1 = et(strcmp({et.epoch_id}, 'ecoli_image0001'));
             testCase.verifyEqual(e1.epochprobemap.name, 'microscope');
             testCase.verifyEqual(e1.epochprobemap.type, 'brightfield-imaging');
@@ -835,8 +836,10 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
                 {fullfile(testCase.Root, 'haley', 'ecoli', 'raw', '0001.tiff')});
             st = docs(strcmp(classes, 'intensity_observation'));
             how = cellfun(@(d) d.interaction.method.node, st, 'UniformOutput', false);
-            testCase.verifyEqual(sum(strcmp(how, 'EMPTY:0000300')), 1, ...
-                'one brightfield imaging recording');
+            testCase.verifyEqual(sum(strcmp(how, 'NCIT:C19827')), 1, ...
+                'one brightfield microscopy recording');
+            testCase.verifyEqual(sum(strcmp(how, 'EMPTY:0000300')), 0, ...
+                'brightfield imaging is the cameras'' method, not the microscope''s');
             testCase.verifyEqual(sum(strcmp(how, 'NCIT:C16856')), 3, ...
                 'three fluorescence microscopy recordings');
             testCase.verifyEqual(e2.underlying_epochs.underlying, ...

@@ -258,8 +258,9 @@ function type = probeTypeOfNode(node)
 arguments
     node (1,:) char
 end
-known = struct('key', {'empty:0000300', 'ncit:C16856'}, ...
-    'type', {'brightfield-imaging', 'wide-field-imaging'});   % brightfield imaging; fluorescence microscopy
+known = struct('key', {'empty:0000300', 'ncit:C19827', 'ncit:C16856'}, ...
+    'type', {'brightfield-imaging', 'brightfield-imaging', 'wide-field-imaging'});
+    % brightfield imaging; brightfield microscopy; fluorescence microscopy
 type = '';
 k = ndi.v2.curieKey(node);
 hit = strcmp({known.key}, k);

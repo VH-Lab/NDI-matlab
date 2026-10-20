@@ -292,14 +292,18 @@ function t = probeType(sys, contrast)
 % ndi.file.navigator.bodies maps its node to the NDI probe type
 % (brightfield-imaging / wide-field-imaging, ndi_common/probe/
 % probetype2object.json, both ndi.probe.image). A microscope image is
-% fluorescence unless its CONTRAST is `brightfield` (decision #97: the E. coli
-% brightfield images, beside the fluorescence images in ecoli/raw/)
+% fluorescence microscopy unless its CONTRAST is `brightfield` (decision #97:
+% the E. coli brightfield images, beside the fluorescence images in
+% ecoli/raw/), which is brightfield microscopy (decision #103); a camera's
+% image is brightfield imaging
 arguments
     sys {mustBeText}
     contrast {mustBeText} = ''
 end
 if strcmp(sys, 'microscope') && ~strcmp(contrast, 'brightfield')
     t = haleyTerm('fluorescence microscopy');
+elseif strcmp(sys, 'microscope')
+    t = haleyTerm('brightfield microscopy');
 else
     t = haleyTerm('brightfield imaging');
 end

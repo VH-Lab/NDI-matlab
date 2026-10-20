@@ -106,6 +106,7 @@ pairs = {
     'carbenicillin',                           'CHEBI:3393',              'carbenicillin'
     % geometry, masks, tracks
     'brightfield imaging',                     'EMPTY:0000300',           'brightfield imaging'
+    'brightfield microscopy',                  'NCIT:C19827',             'Brightfield Microscopy'
     'fluorescence microscopy',                 'NCIT:C16856',             'Fluorescence Microscopy'
     'video tracking',                          'EMPTY:0000301',           'video tracking'
     'moving average',                          'OBI:0200056',             'moving average'
@@ -182,7 +183,7 @@ pairs = {
     'prediction from a fitted model',          'EMPTY:0000304',           'prediction from a fitted model'
     'linear regression',                       'STATO:0000108',           'linear regression for analysis of continuous dependent variable'
     'regression coefficient',                  'STATO:0000565',           'regression coefficient'
-    'relative bacterial density',              'EMPTY:0000322',           'relative bacterial density'
+    'relative cell density',                   'EMPTY:0000322',           'relative cell density'
     'normalization data transformation',       'OBI:0200169',             'normalization data transformation'
     'normalization reference value',           'EMPTY:0000323',           'normalization reference value'
     'lower limit of reported value',           'EMPTY:0000324',           'lower limit of reported value'
