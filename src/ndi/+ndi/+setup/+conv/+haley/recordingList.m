@@ -17,13 +17,13 @@ function [R, checks] = recordingList(dataParentDir, sessions, options)
 %     image      one per RAW image on disk (raw/<imageNum>.tiff: the
 %                microscope images, extracted from analyzeGFP's `data` --
 %                the 1,575 analysed and shared images and the 89 empty-plate
-%                background images they were normalised by, decision #64);
+%                background images they were normalized by, decision #64);
 %                an instant. The TIFFs in images/ are NOT recordings: each is
 %                its raw image divided by its smoothed background
 %                (analyzeLawnProfiles' imageNormalized, rounded), and the
 %                calculations stage builds it as such. With no raw/ folder,
 %                images/ is used as before and a check says the recordings
-%                are background-normalised. Images with no file are not
+%                are background-normalized. Images with no file are not
 %                recordings; each kept image's `note` names its background
 %                and brightfield image.
 %
@@ -44,7 +44,7 @@ function [R, checks] = recordingList(dataParentDir, sessions, options)
 %     noFrames          a behaviour row with numFrames or frameRate 0
 %     imagesWithoutFile E. coli metaData images with no file, by kind
 %     noRawImages       no ecoli/raw/ folder: the recordings fall back to the
-%                       background-normalised TIFFs in images/
+%                       background-normalized TIFFs in images/
 %     unreadable        'ReadVideos': a video VideoReader could not open
 %     framesDisagree    'ReadVideos': a behaviour video whose decoded frame
 %                       count differs from the table's numFrames (the
@@ -258,7 +258,7 @@ if height(mine) > 0
     B = load(fullfile(root, 'ecoli', 'bacteria.mat'), 'metaData');
     M = B.metaData;
     % the images the lab analysed (one lawnAnalysis row per detected patch),
-    % and the background images they were normalised against: a missing
+    % and the background images they were normalized against: a missing
     % file among these is a gap, any other is an acquisition never kept as
     % a TIFF (decision #79)
     w = whos('-file', fullfile(root, 'ecoli', 'bacteria.mat'));
@@ -276,7 +276,7 @@ if height(mine) > 0
     if ~isfolder(fullfile(root, idir))
         idir = fullfile('ecoli', 'images');
         checks.noRawImages{end+1} = ['ecoli: no raw/ folder; the recordings are the TIFFs in ' ...
-            'images/, which are background-normalised, not as acquired (decision #64)'];
+            'images/, which are background-normalized, not as acquired (decision #64)'];
     end
     missing = 0; missingFluor = 0; missingUsed = 0;
     for r = 1:height(M)
