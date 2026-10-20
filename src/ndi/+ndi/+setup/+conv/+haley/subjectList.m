@@ -975,17 +975,3 @@ for c = 1:numel(corr)
     g.room_temp_note = note;
 end
 end
-if isstruct(corr), corr = num2cell(corr); end
-for c = 1:numel(corr)
-    x = corr{c};
-    if ~isfield(x, 'experiment') || ~strcmp(x.folder, folder) ...
-            || double(x.experiment) ~= double(experiment) || ~strcmp(x.column, 'growthTimeRoomTemp')
-        continue;
-    end
-    g.room_temp = datetime(x.value, 'InputFormat', 'yyyy-MM-dd''T''HH:mm');
-    g.room_temp_by_rule = false;
-    g.room_temp_note = char(x.reason);
-    k = char(x.key);
-    if isKey(hits, k), hits(k) = hits(k) + 1; else, hits(k) = 1; end
-end
-end
