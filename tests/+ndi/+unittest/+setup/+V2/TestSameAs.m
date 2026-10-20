@@ -33,6 +33,14 @@ classdef TestSameAs < matlab.unittest.TestCase
             testCase.assumeTrue(~isempty(schemaPath) && ...
                 ndi.setup.V2.schemaHasClass('study', schemaPath), ...
                 'DID_SCHEMA_PATH does not hold a V2 schema with `study`');
+            % the fixtures' terms ('instrument type', 'illumination',
+            % 'objective', 'serial number', 'manufacturer') are this test's own
+            % vocabulary, not a dataset's, so they are not in DID-schema's term
+            % registry; what is tested here is same_as, not the registry
+            if ~isempty(which('did2.schema.termIndex'))
+                prev = did2.schema.cache.strictMode('TermRegistry', false);
+                testCase.addTeardown(@() did2.schema.cache.strictMode('TermRegistry', prev));
+            end
         end
     end
 
