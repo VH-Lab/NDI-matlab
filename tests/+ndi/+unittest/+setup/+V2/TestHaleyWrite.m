@@ -804,16 +804,31 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             result = testCase.write("ecoli_0001");
             docs = testCase.documents(result.sessions.path{1});
             classes = cellfun(@(d) d.document_class.class_name, docs, 'UniformOutput', false);
-            testCase.verifyEqual(sum(strcmp(classes, 'epoch')), 3, 'raw images 2, 3 and background 9');
+            testCase.verifyEqual(sum(strcmp(classes, 'epoch')), 4, ...
+                'raw images 2, 3, background 9 and brightfield image 1 (decision #97)');
             testCase.verifyEqual(sum(strcmp(classes, 'acquisition_system')), 1, 'the microscope');
             r = docs(strcmp(classes, 'acquisition_reader'));
             testCase.verifyEqual(r{1}.acquisition_reader.reader_string, 'tiffstack');
             session = ndi.session.dir(result.sessions.path{1});
             sys = session.daqsystem_load();
             et = sys.filenavigator.epochtable();
-            testCase.verifyEqual(sort({et.epoch_id}), {'ecoli_image0002', 'ecoli_image0003', 'ecoli_image0009'});
+            testCase.verifyEqual(sort({et.epoch_id}), ...
+                {'ecoli_image0001', 'ecoli_image0002', 'ecoli_image0003', 'ecoli_image0009'});
             e2 = et(strcmp({et.epoch_id}, 'ecoli_image0002'));
             testCase.verifyEqual(e2.epochprobemap.type, 'wide-field-imaging');
+            % the brightfield image: the same microscope, its method brightfield
+            % imaging (decision #97), so NDI rebuilds it as a brightfield probe
+            e1 = et(strcmp({et.epoch_id}, 'ecoli_image0001'));
+            testCase.verifyEqual(e1.epochprobemap.name, 'microscope');
+            testCase.verifyEqual(e1.epochprobemap.type, 'brightfield-imaging');
+            testCase.verifyEqual(e1.underlying_epochs.underlying, ...
+                {fullfile(testCase.Root, 'haley', 'ecoli', 'raw', '0001.tiff')});
+            st = docs(strcmp(classes, 'intensity_observation'));
+            how = cellfun(@(d) d.interaction.method.node, st, 'UniformOutput', false);
+            testCase.verifyEqual(sum(strcmp(how, 'EMPTY:0000300')), 1, ...
+                'one brightfield imaging recording');
+            testCase.verifyEqual(sum(strcmp(how, 'NCIT:C16856')), 3, ...
+                'three fluorescence microscopy recordings');
             testCase.verifyEqual(e2.underlying_epochs.underlying, ...
                 {fullfile(testCase.Root, 'haley', 'ecoli', 'raw', '0002.tiff')}, ...
                 'the epoch is the raw image (decision #64)');
@@ -830,7 +845,7 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
                 sizes{end+1} = A.n(1); %#ok<AGROW>
             end
             testCase.verifyEqual(unique([sizes{:}]), [4 5], ...
-                'the raw images 0002 and 0009 (4 x 4) and 0003 (5 x 5)');
+                'the raw images 0001, 0002 and 0009 (4 x 4) and 0003 (5 x 5)');
         end
 
         function testEncounters(testCase)

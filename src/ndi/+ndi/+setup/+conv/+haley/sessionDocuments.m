@@ -46,7 +46,9 @@ function out = sessionDocuments(dataParentDir, session, S, R, options)
 %                             fluorescence microscopy NCIT:C16856) and its
 %                             name the NDI probe type the navigator rebuilds
 %                             the probe from (brightfield-imaging /
-%                             wide-field-imaging); keys Y-coordinate
+%                             wide-field-imaging); a microscope image
+%                             whose R.contrast is `brightfield` is brightfield
+%                             imaging (decision #97); keys Y-coordinate
 %                             (NCIT:C44478) x X-coordinate (NCIT:C44477) in
 %                             pixels, then for a video `time` in seconds
 %                             datum_type: a video's from VideoReader's
@@ -224,7 +226,7 @@ for k = 1:height(R)
     st = did2.build.statement('intensity_observation', subjectIds(plate), ...
         haleyTerm('image intensity'), [], 'DataBody', true, 'DatumType', datumType, ...
         keyArgs{:}, ...
-        'Method', probeType(r.system{1}), ...
+        'Method', probeType(r.system{1}, contrastOf(r)), ...
         'InstrumentId', instrumentId, 'AcquisitionChannelsId', channelIds(r.system{1}), ...
         'TimeReferenceIds', {relEpoch.base.id, absRef.base.id}, 'SessionId', sid, ...
         'Notes', noteOf(r));
@@ -284,19 +286,36 @@ switch sys
 end
 end
 
-function t = probeType(sys)
+function t = probeType(sys, contrast)
 % The imaging method: its decided node, named by the NDI probe type
 % (ndi_common/probe/probetype2object.json; all map to ndi.probe.image), which
-% ndi.file.navigator.bodies reads from the method's name
+% ndi.file.navigator.bodies reads from the method's name. A microscope image is
+% fluorescence unless its CONTRAST is `brightfield` (decision #97: the E. coli
+% brightfield images, beside the fluorescence images in ecoli/raw/)
 arguments
     sys {mustBeText}
+    contrast {mustBeText} = ''
 end
-if strcmp(sys, 'microscope')
+if strcmp(sys, 'microscope') && ~strcmp(contrast, 'brightfield')
     t = haleyTerm('fluorescence microscopy');
     t.name = 'wide-field-imaging';
 else
     t = haleyTerm('brightfield imaging');
     t.name = 'brightfield-imaging';
+end
+end
+
+function c = contrastOf(r)
+% a recording row's contrast method ('' when the table has no such column:
+% a recording list made before decision #97)
+arguments
+    r table
+end
+c = '';
+if ismember('contrast', r.Properties.VariableNames)
+    c = r.contrast;
+    if iscell(c), c = c{1}; end
+    c = char(c);
 end
 end
 

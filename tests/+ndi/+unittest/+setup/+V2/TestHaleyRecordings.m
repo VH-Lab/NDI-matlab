@@ -68,8 +68,10 @@ classdef TestHaleyRecordings < matlab.unittest.TestCase
             end
 
             % E. coli (decision #64): raw images 2 and 3 and their empty-plate
-            % background image 9 on disk, 1 and 4 not (4 is fluorescence);
-            % images/ holds 2 and 3 background-normalised.
+            % background image 9 on disk, and beside them brightfield image 1,
+            % on which image 2 was registered (decision #97); 4 (fluorescence)
+            % and brightfield image 5, image 3's, not on disk; images/ holds 2
+            % and 3 background-normalised.
             ec = fullfile(root, 'haley', 'ecoli');
             mkdir(fullfile(ec, 'images'));
             mkdir(fullfile(ec, 'raw'));
@@ -79,6 +81,7 @@ classdef TestHaleyRecordings < matlab.unittest.TestCase
             imwrite(uint16(magic(4)) + 1, fullfile(ec, 'raw', '0002.tiff'));
             imwrite(uint16(magic(5)) + 1, fullfile(ec, 'raw', '0003.tiff'));
             imwrite(uint16(ones(4)), fullfile(ec, 'raw', '0009.tiff'));
+            imwrite(uint16(2 * ones(4)), fullfile(ec, 'raw', '0001.tiff'));
             % stage 8: poured 25 Dec, cold room that evening, seeded 28 Dec,
             % cold room that afternoon, room temperature the morning of 30 Dec;
             % plate 2 without peptone
@@ -90,10 +93,11 @@ classdef TestHaleyRecordings < matlab.unittest.TestCase
                 'VariableNames', {'expNum', 'plateNum', 'template', 'OD600', 'lawnVolume', ...
                 'timePoured', 'timePouredColdRoom', 'timeSeed', 'timeSeedColdRoom', ...
                 'timeRoomTemp', 'peptone', 'OD600Real', 'CFU'}); %#ok<NASGU>
-            metaData = table([1; 1; 1; 1; 1], [1; 2; 3; 4; 9], [1; 1; 2; 2; 2], ...
-                datetime(2023, 12, 30, 9, [38; 39; 40; 41; 42], 0), ...
-                {'a.tif'; 'b.tif'; 'c.tif'; 'd.tif'; 'e.tif'}, [0; 1; 1; 1; 1], [30; 300; 300; 3000; 300], ...
-                [NaN; 9; 9; 9; 9], [NaN; 1; NaN; NaN; NaN], ...
+            metaData = table([1; 1; 1; 1; 1; 1], [1; 2; 3; 4; 9; 5], [1; 1; 2; 2; 2; 2], ...
+                datetime(2023, 12, 30, 9, [38; 39; 40; 41; 42; 43], 0), ...
+                {'a.tif'; 'b.tif'; 'c.tif'; 'd.tif'; 'e.tif'; 'f.tif'}, [0; 1; 1; 1; 1; 0], ...
+                [30; 300; 300; 3000; 300; 30], ...
+                [NaN; 9; 9; 9; 9; NaN], [NaN; 1; 5; NaN; NaN; NaN], ...
                 'VariableNames', {'expNum', 'imageNum', 'plateNum', 'acquisitionTime', ...
                 'fileName', 'fluorescence', 'exposureTime', 'backgroundImageNum', ...
                 'brightfieldImageNum'}); %#ok<NASGU>
@@ -186,7 +190,8 @@ classdef TestHaleyRecordings < matlab.unittest.TestCase
             testCase.verifyEqual(sum(strcmp(R.kind, 'behaviour')), 4, ...
                 'plate 11 twice, 12, and 14; plate 13 has no file');
             testCase.verifyEqual(sum(strcmp(R.kind, 'lawn')), 2, 'plate 11''s clip is listed once');
-            testCase.verifyEqual(sum(strcmp(R.kind, 'image')), 3, 'raw images 2, 3 and background 9');
+            testCase.verifyEqual(sum(strcmp(R.kind, 'image')), 4, ...
+                'raw images 2, 3, background 9 and brightfield 1 (decision #97)');
             testCase.verifyEqual(numel(unique(R.epoch)), height(R));
         end
 
@@ -210,6 +215,29 @@ classdef TestHaleyRecordings < matlab.unittest.TestCase
             testCase.verifySubstring(e.note{1}, 'brightfield image 1');
             testCase.verifyEqual(e.file{1}, fullfile('ecoli', 'raw', '0002.tiff'), ...
                 'the recording is the raw image (decision #64)');
+            testCase.verifyEqual(e.contrast{1}, 'fluorescence');
+        end
+
+        function testBrightfieldImagesAreRecordings(testCase)
+            % decision #97 (replacing #43's "brightfield images are not
+            % recordings"): a brightfield image on disk beside the fluorescence
+            % images is a recording of the microscope, its contrast brightfield
+            [R, checks] = testCase.list();
+            b = R(strcmp(R.epoch, 'ecoli_image0001'), :);
+            testCase.verifyEqual(height(b), 1, 'brightfield image 1 is on disk');
+            testCase.verifyEqual(b.kind{1}, 'image');
+            testCase.verifyEqual(b.system{1}, 'microscope');
+            testCase.verifyEqual(b.plate{1}, 'ecoli_plate0001');
+            testCase.verifyEqual(b.contrast{1}, 'brightfield');
+            testCase.verifyEqual(b.file{1}, fullfile('ecoli', 'raw', '0001.tiff'));
+            testCase.verifyEqual(b.local_start, datetime(2023, 12, 30, 9, 38, 0));
+            testCase.verifySubstring(b.note{1}, 'exposure 30 ms');
+            bg = R(strcmp(R.epoch, 'ecoli_image0009'), :);
+            testCase.verifyEqual(bg.contrast{1}, 'fluorescence', 'a background image is fluorescence');
+            % image 3 was registered on brightfield image 5, which is not on disk
+            testCase.verifyNumElements(checks.brightfieldWithoutFile, 1);
+            testCase.verifySubstring(checks.brightfieldWithoutFile{1}, 'brightfield image 5');
+            testCase.verifyTrue(any(contains(checks.imagesWithoutFile, '1 brightfield')));
         end
 
         function testSourceChecks(testCase)
@@ -218,8 +246,10 @@ classdef TestHaleyRecordings < matlab.unittest.TestCase
             testCase.verifyTrue(any(contains(checks.fileWithoutRow, '2022-02-04_11-58-24_1.mp4')));
             testCase.verifyTrue(any(contains(checks.cameraDisagrees, '2022-02-04_15-17-10_2')));
             testCase.verifyTrue(any(contains(checks.noFrames, '2022-02-04_15-17-10_2')));
-            testCase.verifyTrue(any(contains(checks.imagesWithoutFile, '2 of 5')));
+            testCase.verifyTrue(any(contains(checks.imagesWithoutFile, '2 of 6')));
             testCase.verifyTrue(any(contains(checks.imagesWithoutFile, '1 of them fluorescence')));
+            testCase.verifyTrue(any(contains(checks.imagesWithoutFile, '1 of them analysed or used')), ...
+                'brightfield image 5 was used: image 3 was registered on it');
         end
     end
 

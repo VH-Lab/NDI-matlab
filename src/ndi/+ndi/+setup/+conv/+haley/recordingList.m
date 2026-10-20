@@ -17,15 +17,20 @@ function [R, checks] = recordingList(dataParentDir, sessions, options)
 %     image      one per RAW image on disk (raw/<imageNum>.tiff: the
 %                microscope images, extracted from analyzeGFP's `data` --
 %                the 1,575 analysed and shared images and the 89 empty-plate
-%                background images they were normalized by, decision #64);
-%                an instant. The TIFFs in images/ are NOT recordings: each is
-%                its raw image divided by its smoothed background
-%                (analyzeLawnProfiles' imageNormalized, rounded), and the
-%                calculations stage builds it as such. With no raw/ folder,
-%                images/ is used as before and a check says the recordings
-%                are background-normalized. Images with no file are not
-%                recordings; each kept image's `note` names its background
-%                and brightfield image.
+%                background images they were normalized by, decision #64 --
+%                and the brightfield images beside them, decision #97);
+%                an instant. `contrast` says which kind each is, from
+%                metaData's `fluorescence` column: `fluorescence`, or
+%                `brightfield` (fluorescence 0: the plate under transmitted
+%                light, on which analyzeGFP registered the acetate template,
+%                decision #80; Fig. S6A). The TIFFs in images/ are NOT
+%                recordings: each is its raw image divided by its smoothed
+%                background (analyzeLawnProfiles' imageNormalized, rounded),
+%                and the calculations stage builds it as such. With no raw/
+%                folder, images/ is used as before and a check says the
+%                recordings are background-normalized. Images with no file
+%                are not recordings; each kept image's `note` names its
+%                background and brightfield image.
 %
 %   Columns: session, kind, epoch (the epoch's local_identifier: the file
 %   stem with the folder prefix, e.g. concentration_2022-02-04_12-10-51_1,
@@ -35,7 +40,9 @@ function [R, checks] = recordingList(dataParentDir, sessions, options)
 %   local_start (the wall-clock start as recorded, no time zone),
 %   n_frames, frame_rate, duration (seconds; NaN when not known), note,
 %   temp and humidity (a behaviour video's `temp` (C) and `humidity` (%RH),
-%   the probe's mean over the recording; NaN otherwise).
+%   the probe's mean over the recording; NaN otherwise), contrast (an E. coli
+%   image's `fluorescence` or `brightfield`; '' for a video, whose contrast
+%   method is its camera's).
 %
 %   CHECKS (second output, also printed), nothing changed:
 %     rowWithoutFile    a table row names a recording with no file on disk
@@ -43,6 +50,9 @@ function [R, checks] = recordingList(dataParentDir, sessions, options)
 %     cameraDisagrees   the `camera` column and the file name's _N disagree
 %     noFrames          a behaviour row with numFrames or frameRate 0
 %     imagesWithoutFile E. coli metaData images with no file, by kind
+%     brightfieldWithoutFile  an analysed image's brightfield image (metaData
+%                       brightfieldImageNum) with no file in raw/: the image's
+%                       acetate registration (decision #80) has no recording
 %     noRawImages       no ecoli/raw/ folder: the recordings fall back to the
 %                       background-normalized TIFFs in images/
 %     unreadable        'ReadVideos': a video VideoReader could not open
@@ -91,7 +101,7 @@ end
 root = fullfile(dataParentDir, 'haley');
 checks = struct('rowWithoutFile', {{}}, 'fileWithoutRow', {{}}, 'cameraDisagrees', {{}}, ...
     'noFrames', {{}}, 'imagesWithoutFile', {{}}, 'noRawImages', {{}}, 'unreadable', {{}}, ...
-    'framesDisagree', {{}}, 'cameraSwap', {{}});
+    'framesDisagree', {{}}, 'cameraSwap', {{}}, 'brightfieldWithoutFile', {{}});
 rows = {};
 nFiles = 0;
 
@@ -263,14 +273,24 @@ if height(mine) > 0
     % a TIFF (decision #79)
     w = whos('-file', fullfile(root, 'ecoli', 'bacteria.mat'));
     analysed = [];
+    bfUsed = [];
     if any(strcmp({w.name}, 'lawnAnalysis'))
         A = load(fullfile(root, 'ecoli', 'bacteria.mat'), 'lawnAnalysis');
-        analysed = unique(double(A.lawnAnalysis.imageNum));
+        fluor = unique(double(A.lawnAnalysis.imageNum));
+        analysed = fluor;
         if ismember('backgroundImageNum', M.Properties.VariableNames)
-            bgUsed = double(M.backgroundImageNum(ismember(M.imageNum, analysed)));
+            bgUsed = double(M.backgroundImageNum(ismember(M.imageNum, fluor)));
             analysed = union(analysed, bgUsed(~isnan(bgUsed)));
         end
+        % the brightfield images the analysed images were registered on
+        % (decision #80): a missing one is reported by name (decision #97)
+        if ismember('brightfieldImageNum', M.Properties.VariableNames)
+            bfUsed = double(M.brightfieldImageNum(ismember(M.imageNum, fluor)));
+            bfUsed = unique(bfUsed(~isnan(bfUsed)));
+            analysed = union(analysed, bfUsed);
+        end
     end
+    hasContrast = ismember('fluorescence', M.Properties.VariableNames);
     nFiles = nFiles + 1;
     idir = fullfile('ecoli', 'raw');
     if ~isfolder(fullfile(root, idir))
@@ -278,7 +298,7 @@ if height(mine) > 0
         checks.noRawImages{end+1} = ['ecoli: no raw/ folder; the recordings are the TIFFs in ' ...
             'images/, which are background-normalized, not as acquired (decision #64)'];
     end
-    missing = 0; missingFluor = 0; missingUsed = 0;
+    missing = 0; missingFluor = 0; missingUsed = 0; missingBright = 0;
     for r = 1:height(M)
         s = find(mine.experiment == double(M.expNum(r)), 1);
         if isempty(s)
@@ -289,8 +309,15 @@ if height(mine) > 0
         if isempty(fi)
             missing = missing + 1;
             missingUsed = missingUsed + ismember(double(M.imageNum(r)), analysed);
-            if ismember('fluorescence', M.Properties.VariableNames) && M.fluorescence(r)
+            if hasContrast && M.fluorescence(r)
                 missingFluor = missingFluor + 1;
+            elseif hasContrast
+                missingBright = missingBright + 1;
+            end
+            if ismember(double(M.imageNum(r)), bfUsed) && strcmp(idir, fullfile('ecoli', 'raw'))
+                checks.brightfieldWithoutFile{end+1} = sprintf(['ecoli: brightfield image %d ' ...
+                    '(plate %d), on which an analysed image was registered, has no file %s'], ...
+                    M.imageNum(r), M.plateNum(r), fullfile(idir, name));
             end
             continue;
         end
@@ -299,20 +326,28 @@ if height(mine) > 0
             src = char(M.fileName{r});
         end
         note = imageNote(M, r);
-        rows{end+1} = recRow(mine.local_identifier{s}, 'image', sprintf('ecoli_image%04d', M.imageNum(r)), ...
+        row = recRow(mine.local_identifier{s}, 'image', sprintf('ecoli_image%04d', M.imageNum(r)), ...
             'microscope', sprintf('ecoli_plate%04d', M.plateNum(r)), fullfile(idir, name), src, ...
-            fi.bytes, M.acquisitionTime(r), 1, NaN, NaN, note); %#ok<AGROW>
+            fi.bytes, M.acquisitionTime(r), 1, NaN, NaN, note);
+        % fluorescence unless metaData says otherwise (decision #97); a table
+        % with no `fluorescence` column is read as before, all fluorescence
+        row.contrast = 'fluorescence';
+        if hasContrast && ~M.fluorescence(r)
+            row.contrast = 'brightfield';
+        end
+        rows{end+1} = row; %#ok<AGROW>
     end
     if missing > 0
         if isempty(analysed)
             used = 'whether any was analysed is unknown (bacteria.mat has no lawnAnalysis)';
         elseif missingUsed == 0
-            used = 'none was analysed or used as a background: acquisitions never kept as a TIFF';
+            used = 'none was analysed or used as a background or brightfield image: acquisitions never kept as a TIFF';
         else
-            used = sprintf('%d of them analysed or used as a background', missingUsed);
+            used = sprintf('%d of them analysed or used as a background or brightfield image', missingUsed);
         end
         checks.imagesWithoutFile{end+1} = sprintf(['ecoli: %d of %d metaData image(s) have no file in ' ...
-            '%s/ (%d of them fluorescence); %s'], missing, height(M), idir, missingFluor, used);
+            '%s/ (%d of them fluorescence, %d brightfield); %s'], missing, height(M), idir, ...
+            missingFluor, missingBright, used);
     end
 end
 
@@ -325,9 +360,9 @@ if cache.Count > nCached
     saveFrameTimes(options.FrameTimesCache, cache);
 end
 if isempty(rows)
-    R = cell2table(cell(0, 16), 'VariableNames', {'session', 'kind', 'epoch', 'system', ...
+    R = cell2table(cell(0, 17), 'VariableNames', {'session', 'kind', 'epoch', 'system', ...
         'plate', 'file', 'source_name', 'size_bytes', 'local_start', 'n_frames', ...
-        'frame_rate', 'duration', 'note', 'temp', 'humidity', 'frame_times'});
+        'frame_rate', 'duration', 'note', 'temp', 'humidity', 'frame_times', 'contrast'});
 else
     R = struct2table([rows{:}], 'AsArray', true);
     [u, ~, j] = unique(R.epoch);
@@ -339,13 +374,14 @@ else
 end
 kinds = {'behaviour', 'lawn', 'image'};
 counts = cellfun(@(k) sum(strcmp(R.kind, k)), kinds);
+nBright = sum(strcmp(R.kind, 'image') & strcmp(R.contrast, 'brightfield'));
 gb = 0;
 if height(R) > 0
     gb = sum(R.size_bytes, 'omitnan') / 1e9;
 end
 fprintf(['DENOMINATOR: %d recording(s) with a file, in %d session(s), from %d source table(s): ' ...
-    '%d behaviour video(s), %d lawn clip(s), %d E. coli image(s); %.1f GB\n'], ...
-    height(R), numel(unique(R.session)), nFiles, counts, gb);
+    '%d behaviour video(s), %d lawn clip(s), %d E. coli image(s) (%d of them brightfield); ' ...
+    '%.1f GB\n'], height(R), numel(unique(R.session)), nFiles, counts, nBright, gb);
 names = fieldnames(checks);
 fprintf('CHECKS (reported, nothing changed): %d finding(s)\n', ...
     sum(cellfun(@(n) numel(checks.(n)), names)));
@@ -385,10 +421,11 @@ t.Format = 'dd-MMM-yyyy HH:mm:ss';
 s = struct('session', session, 'kind', kind, 'epoch', epoch, 'system', system, ...
     'plate', plate, 'file', file, 'source_name', src, 'size_bytes', double(bytes), ...
     'local_start', t, 'n_frames', double(nf), 'frame_rate', double(fr), 'duration', double(dur), ...
-    'note', note, 'temp', NaN, 'humidity', NaN, 'frame_times', []);
+    'note', note, 'temp', NaN, 'humidity', NaN, 'frame_times', [], 'contrast', '');
 % frame_times: the measured time of each frame, seconds from the start of the
 % file (a column), or [] when the video was not decoded. In the table it is a
-% cell column; read a row with private/frameTimesOf.
+% cell column; read a row with private/frameTimesOf. contrast: an E. coli
+% image's `fluorescence` or `brightfield` (decision #97), '' for a video.
 end
 
 function v = colValue(D, name, r)
