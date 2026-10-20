@@ -413,6 +413,78 @@ classdef TestObjectLayer < matlab.unittest.TestCase
                 'contained_in does not carry statements');
         end
 
+        function testAnAnalysisAsksTheContainersInOneCall(testCase)
+            % V_eta tenet T17 (did-schema dc66d35): an assertion about a
+            % container stays on the container -- a plate's `inclusion in
+            % analysis` false is not its worms' -- so an analysis asks the
+            % containers: ndi.statement.search's 'NotContainerAssertion' drops
+            % the statements whose subject was, while they held, on a plate
+            % so described (through its cohort's distributive stay), and
+            % 'ContainerAssertion' keeps only those. Plate 0013, the fixture's
+            % excluded plate, was never filmed, so nothing timed is on it; the
+            % test excludes plate 0012 too, in a copy of the session.
+            folder = fullfile(testCase.Root, ['containers_' char(ndi.ido.unique_id())]);
+            copyfile(testCase.Session.getpath(), folder);
+            S = ndi.session.dir(folder);
+            plate = testCase.subject('concentration_assayPlate0012').document_id;
+            worm = testCase.subject('concentration_worm0121').document_id;
+            if ndi.setup.V2.schemaHasLeaf('logical_assertion')
+                % the import's own exclusion of plate 0013, restated of 0012
+                ex = S.database_search(ndi.v2.isaQuery('logical_assertion'));
+                ex = ex(cellfun(@(d) strcmp(ndi.v2.termName(ndi.v2.blockOf( ...
+                    d.document_properties, 'statement', 'variable', '')), ...
+                    'inclusion in analysis'), ex));
+                testCase.assertNotEmpty(ex, 'the import excludes plate 0013');
+                variable = ndi.v2.blockOf(ex{1}.document_properties, 'statement', 'variable');
+                doc = did2.build.statement('logical_assertion', plate, variable, false, ...
+                    'SessionId', S.id());
+                desc = {'inclusion in analysis', false};
+            else
+                % no `logical` value kind (the `current` leg): the same
+                % question, asked of a term this test asserts
+                if ~isempty(which('did2.schema.termIndex'))
+                    prev = did2.schema.cache.strictMode('TermRegistry', false);
+                    testCase.addTeardown(@() did2.schema.cache.strictMode('TermRegistry', prev));
+                end
+                doc = did2.build.statement('term_assertion', plate, ...
+                    did2.build.term('', 'container exclusion test'), ...
+                    did2.build.term('', 'excluded'), 'SessionId', S.id());
+                desc = {'container exclusion test', 'excluded'};
+            end
+            S.database.db.add({did2.document(doc)});
+
+            all_ = ndi.statement.search(S, 'Class', 'calculation', 'Subject', worm);
+            testCase.assertNotEmpty(all_, 'worm 0121 has calculations (stage 10)');
+            [kept, info] = ndi.statement.search(S, 'Class', 'calculation', 'Subject', worm, ...
+                'NotContainerAssertion', desc);
+            testCase.verifyEqual(info.read, numel(all_), 'the denominator: every statement read');
+            testCase.verifyGreaterThanOrEqual(info.containers, 1, 'plate 0012 matches');
+            testCase.verifyEqual(info.kept + info.dropped, info.read);
+            testCase.verifyGreaterThan(info.dropped, 0, ...
+                'the worm''s statements made while its cohort was on plate 0012 are dropped');
+            [inside, info2] = ndi.statement.search(S, 'Class', 'calculation', 'Subject', worm, ...
+                'ContainerAssertion', desc);
+            testCase.verifyEqual(info2.kept, info.dropped);
+            testCase.verifyEqual(sort([sids(kept), sids(inside)]), sort(sids(all_)), ...
+                'the two forms split the statements between them');
+            % the exclusion itself is still the plate's, not the worm's
+            w = ndi.entity.fromDocument(S, worm);
+            testCase.verifyEmpty(w.assertions({'variable', desc{1}}, 'synonyms', false));
+            testCase.verifyError(@() ndi.statement.search(S, 'ContainerAssertion', desc, ...
+                'NotContainerAssertion', desc), 'ndi:statement:search:twoContainerFilters');
+
+            % a worm on a plate that is not excluded keeps everything
+            other = ndi.entity.search(S, {'LocalIdentifier', 'concentration_worm0111'});
+            if ~isempty(other)
+                o = other{1}.document_id;
+                n = numel(ndi.statement.search(S, 'Class', 'calculation', 'Subject', o));
+                [k, i3] = ndi.statement.search(S, 'Class', 'calculation', 'Subject', o, ...
+                    'NotContainerAssertion', desc);
+                testCase.verifyNumElements(k, n);
+                testCase.verifyEqual(i3.dropped, 0);
+            end
+        end
+
         function testContextIsWhatTheSubjectWasIn(testCase)
             % V_eta tenet T17: a container's interactions reach what it
             % contained only with 'context', true, only while it was in it,
@@ -1053,6 +1125,15 @@ classdef TestObjectLayer < matlab.unittest.TestCase
             s = x{1};
         end
     end
+end
+
+function ids = sids(statements)
+% the document ids of a cell array of statement objects, a row cellstr
+arguments
+    statements cell
+end
+ids = reshape(cellfun(@(x) char(x.document_properties().base.id), statements, ...
+    'UniformOutput', false), 1, []);
 end
 
 function n = local(c)

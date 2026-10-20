@@ -435,10 +435,11 @@ classdef statement
             end
         end
 
-        function s = search(container, options)
+        function [s, info] = search(container, options)
             % SEARCH - the statements in a session or dataset
             %
             % S = ndi.statement.search(CONTAINER, ...) returns a cell array.
+            % [S, INFO] = ... also returns what was read and kept (below).
             % Filters:
             %   'Subject'   an ndi.entity (or an entity document id)
             %   'Variable'  the variable's name, e.g. 'midpoint speed', or its node
@@ -451,12 +452,44 @@ classdef statement
             % method are widened by the registered terms that go by them, a
             % label or a synonym (ndi.v2.synonymNodes; tenet T19): 'meter'
             % finds metre.
+            %
+            % By what was asserted of the subject's CONTAINERS (V_eta tenet
+            % T17, "an assertion about a container stays on the container":
+            % a plate's exclusion is not its worms', so an analysis asks the
+            % containers, in one call):
+            %   'ContainerAssertion'     a description of a container, as
+            %       ndi.entity.search takes one, e.g. {'inclusion in
+            %       analysis', false}: keep only statements whose subject was
+            %       contained_in such a container while the statement held
+            %   'NotContainerAssertion'  the same description: drop those
+            %       statements (keep the rest), e.g. every worm's tracks
+            %       except those on plates excluded from analysis
+            % The containers are what ndi.entity.search(CONTAINER, DESC,
+            % 'inherited', false, 'strict', false) finds; the subject's own
+            % stays, a distributive stay of a group it is member_of, and
+            % nested containers count, each only while it overlaps the
+            % statement's time (ndi.v2.containersDuring). Undecidable means
+            % not in (T17): a statement or stay whose times cannot be compared
+            % reaches no container, so it is dropped by 'ContainerAssertion'
+            % and kept by 'NotContainerAssertion', and INFO counts it.
+            %
+            % INFO (the denominator first): read (statements the other
+            % filters found), containers (containers matching the
+            % description; NaN when none was given), kept, dropped,
+            % undecided (statements with a stay or time that could not be
+            % compared).
             arguments
                 container
                 options.Subject = []
                 options.Variable (1,:) char = ''
                 options.Class (1,:) char = ''
                 options.Method (1,:) char = ''
+                options.ContainerAssertion cell = {}
+                options.NotContainerAssertion cell = {}
+            end
+            if ~isempty(options.ContainerAssertion) && ~isempty(options.NotContainerAssertion)
+                error('ndi:statement:search:twoContainerFilters', ...
+                    'Give ''ContainerAssertion'' or ''NotContainerAssertion'', not both.');
             end
             cls = 'statement';
             if ~isempty(options.Class)
@@ -475,6 +508,26 @@ classdef statement
                 if numel(v) + numel(m) > ~isempty(options.Variable) + ~isempty(options.Method)
                     docs = container.database_search(withTerms(q, v, m));
                 end
+            end
+            info = struct('read', numel(docs), 'containers', NaN, 'kept', numel(docs), ...
+                'dropped', 0, 'undecided', 0);
+            desc = options.ContainerAssertion;
+            if isempty(desc), desc = options.NotContainerAssertion; end
+            if ~isempty(desc)
+                found = ndi.entity.search(container, desc, 'inherited', false, 'strict', false);
+                C = cellfun(@(e) e.document_id, found, 'UniformOutput', false);
+                info.containers = numel(C);
+                [held, undecided] = ndi.v2.containersDuring(container, docs);
+                inOne = cellfun(@(h) any(ismember(h, C)), held);
+                if isempty(options.NotContainerAssertion)
+                    keep = inOne;
+                else
+                    keep = ~inOne;
+                end
+                docs = docs(keep);
+                info.kept = sum(keep);
+                info.dropped = info.read - info.kept;
+                info.undecided = sum(undecided);
             end
             s = cell(1, numel(docs));
             for i = 1:numel(docs)

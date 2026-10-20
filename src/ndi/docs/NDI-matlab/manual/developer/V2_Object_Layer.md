@@ -426,3 +426,53 @@ return `''` or `{}`.
 `conditions()` / `method_parameters()` / `axes()` tables still give names.
 Tests: `TestTerm` (offline, from a prepared cache) and `TestObjectLayer`.
 
+## 14. What a relation passes; records' own relation; `session_id` as an edge (2026-10-20)
+
+did-schema `V_eta_relation_inheritance_plan.md` (a proposal built ahead of
+signature, did-schema#88; Haley decision #109). NDI reads both shapes, so
+did-schema main behaves as before.
+
+- **What passes is the registry's.** Each `relation_bindings` row declares
+  `passes`: `assertions` (part_of, sample_of, aliquot_of, passage_of,
+  instance_of), `distributive` (member_of), `context` (contained_in) or
+  `nothing` (every other row). `ndi.v2.relationPasses` reads it once per
+  schema file; `ndi.entity` walks the `assertions` relations (instance_of on
+  its own path, as a type) from it, so a relation the registry adds works
+  without code. A registry without the column (did-schema main) gives the
+  lists NDI hard-coded before. The member_of and contained_in walks keep
+  their own rules (the `distributive` flag; stay times), and the registry's
+  one row of each matches them.
+- **Records are `included_in`** (`schema:isPartOf`, passes nothing): a session
+  in a study or dataset, a study in a dataset. A study no longer reads the
+  dataset's short name, version or licence as its own; `part_of` is physical.
+  Writers and readers of membership ask `ndi.v2.recordRelation` (`included_in`
+  where the schema binds it, `part_of` before): section 11's methods,
+  `ndi.setup.V2.createSession` / `createDataset` / `datasetMetadata`, the
+  Haley import.
+- **`session_id` is an edge.** `base` has no `session_id` field; every
+  document has a `session_id` edge to the session or dataset entity it is
+  stored with, whose `base.id` IS the session id. `ndi.document/session_id`,
+  `set_session_id` and `ndi.v2.sessionIdOf` read and write the field or the
+  edge, whichever the document has (v1 keeps the field: NDI still writes v1).
+  A query on `base.session_id` needs no change: DID answers it from either
+  (`did2sqlite` translates query terms one for one, no field is rewritten).
+  `createSession` gives the session entity the session id as its id
+  (`'SessionDocId'` must then equal it); the dataset entity's id is the
+  dataset's session id, and it is the dataset folder's own record
+  (`createDataset` writes no separate `session` document beside it).
+  `ndi.session.dir`, `ndi.dataset.dir` and `session_list` find their own record
+  by id first, then as before (`ndi.v2.sessionRecord`).
+- **An assertion about a container stays on it** (T-3, did-schema dc66d35): a
+  plate's exclusion is not its worms'. An analysis asks the containers in one
+  call:
+
+| call | returns |
+|---|---|
+| `ndi.statement.search(S, 'Class', 'calculation', 'NotContainerAssertion', {'inclusion in analysis', false})` | the statements whose subject was not, while they held, `contained_in` a container so described (its own stays, a distributive stay of a group it is member_of, nested containers; `ndi.v2.containersDuring`) |
+| `ndi.statement.search(..., 'ContainerAssertion', desc)` | only those whose subject was in such a container |
+| `[s, info] = ndi.statement.search(...)` | `info`: read, containers (matching the description), kept, dropped, undecided (a stay or time that could not be compared: undecidable means not in, T17) |
+
+At the entity level the same question is already one call:
+`ndi.entity.search(S, {'directed_relation', {'name', 'contained_in', 'parent', {'inclusion in analysis', false}}})`
+(ever contained, with no statement time to compare).
+
