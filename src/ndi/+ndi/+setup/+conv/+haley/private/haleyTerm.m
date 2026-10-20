@@ -222,6 +222,23 @@ pairs = {
     'arena',                                   'EMPTY:0000326',           'arena'
     'reference mark',                          'EMPTY:0000327',           'reference mark'
     'encountered entity',                      'EMPTY:0000328',           'encountered entity'
+    % procedures, transfer settings, encounter thresholds (tenet T19 node pass,
+    % Jess Haley 2026-10-20, decision #106)
+    'seeding',                                 'EMPTY:0000331',           'seeding'
+    'pouring',                                 'EMPTY:0000332',           'pouring'
+    'incubation',                              'EMPTY:0000333',           'incubation'
+    'refrigeration',                           'EMPTY:0000334',           'refrigeration'
+    'ambient exposure',                        'EMPTY:0000335',           'ambient exposure'
+    'agar plug transfer',                      'EMPTY:0000336',           'agar plug transfer'
+    'worm picking',                            'EMPTY:0000337',           'worm picking'
+    'eyelash picking',                         'EMPTY:0000338',           'eyelash picking'
+    'cleaning step',                           'EMPTY:0000339',           'cleaning step'
+    'droplet',                                 'EMPTY:0000340',           'droplet'
+    'exploit: minimum probability of exploitation', 'EMPTY:0000341',      'exploit: minimum probability of exploitation'
+    'sample: minimum probability of sensing',  'EMPTY:0000342',           'sample: minimum probability of sensing'
+    'search off patch: probability of sensing below', 'EMPTY:0000343',    'search off patch: probability of sensing below'
+    'search off patch: maximum distance into the patch', 'EMPTY:0000344', 'search off patch: maximum distance into the patch'
+    'diluent',                                 'NCIT:C60823',             'Diluent'
     };
 m = containers.Map(pairs(:, 1), num2cell(pairs(:, 2:3), 2));
 end

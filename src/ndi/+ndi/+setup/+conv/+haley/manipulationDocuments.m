@@ -284,7 +284,7 @@ out.documents = docs;
         elseif ~isempty(key)
             variable = nameOf(key);          % a patch of the diluent alone
         else
-            variable = did2.build.term('', 'diluent');
+            variable = haleyTerm('diluent');
         end
         if isnan(pp.volume_ul)
             out.skipped{end+1} = sprintf('%s: seeding volume not recorded; no seeding dose', pid);
@@ -339,7 +339,7 @@ out.documents = docs;
         % the transfer protocol's method -> the last step, plus the cleaning
         % step every assay transfer went through
         method = '';
-        params = did2.build.parameter('cleaning step', 'Text', cfg.transfer.cleaning);
+        params = did2.build.parameter(haleyTerm('cleaning step'), 'Text', cfg.transfer.cleaning);
         rules = cfg.transfer.assay_methods;
         if isstruct(rules), rules = num2cell(rules); end
         for r = 1:numel(rules)
@@ -347,7 +347,7 @@ out.documents = docs;
                 method = rules{r}.method;
                 if isfield(rules{r}, 'droplet')
                     params = did2.build.list(params, ...
-                        did2.build.parameter('droplet', 'Term', nameOf(rules{r}.droplet)));
+                        did2.build.parameter(haleyTerm('droplet'), 'Term', nameOf(rules{r}.droplet)));
                 end
                 return;
             end
@@ -360,7 +360,13 @@ out.documents = docs;
             return;
         end
         args = {'SessionId', sid, 'TimeReferenceIds', {timeId}};
-        if isfield(x, 'Method') && ~isempty(x.Method), args = [args, {'Method', x.Method}]; end
+        if isfield(x, 'Method') && ~isempty(x.Method)
+            m = x.Method;
+            if ischar(m) || isstring(m)
+                m = haleyTerm(char(m));   % the spec names a procedure; its term (#106)
+            end
+            args = [args, {'Method', m}];
+        end
         if isfield(x, 'MethodParameters') && ~isempty(x.MethodParameters)
             args = [args, {'MethodParameters', x.MethodParameters}];
         end
