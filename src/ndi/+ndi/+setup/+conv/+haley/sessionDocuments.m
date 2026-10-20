@@ -287,7 +287,7 @@ switch sys
 end
 end
 
-function t = probeType(sys, contrast)
+function t = probeType(sys, contrast, kind)
 % The imaging method, its registered term (tenet T19, decision #102);
 % ndi.file.navigator.bodies maps its node to the NDI probe type
 % (brightfield-imaging / wide-field-imaging, ndi_common/probe/
