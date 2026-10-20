@@ -350,11 +350,11 @@ if ~isImage
     ft = frameTimesOf(r, 1);
     nf = r.n_frames; fr = r.frame_rate;
     if ~isempty(ft)
-        k{end+1} = did2.build.key('time', numel(ft), 'Unit', haleyTerm('second'), 'Values', ft(:)', ...
+        k{end+1} = did2.build.key(haleyTerm('time'), numel(ft), 'Unit', haleyTerm('second'), 'Values', ft(:)', ...
             'SourceUnit', 'frame', 'SourceValues', 0:numel(ft) - 1);
     else
         if ~(nf > 0 && fr > 0), return; end
-        k{end+1} = did2.build.key('time', nf, 'Unit', haleyTerm('second'), 'Origin', 0, 'Spacing', 1 / fr, ...
+        k{end+1} = did2.build.key(haleyTerm('time'), nf, 'Unit', haleyTerm('second'), 'Origin', 0, 'Spacing', 1 / fr, ...
             'SourceUnit', 'frame', 'SourceOrigin', 0, 'SourceSpacing', 1);
     end
 end

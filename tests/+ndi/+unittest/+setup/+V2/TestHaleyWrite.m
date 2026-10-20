@@ -791,7 +791,7 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             testCase.verifyNumElements(sc, 1);
             testCase.verifyEqual(sc{1}.statement.variable.node, 'NCIT:C54669', 'overlap');
             testCase.verifyEqual(sc{1}.interaction.method.node, 'NCIT:C80145', 'image registration');
-            testCase.verifyEqual(sc{1}.score.value.scale.node, 'NCIT:C25514', 'fraction');
+            testCase.verifyEqual(sc{1}.score.value.scale.node, 'NCIT:C49159', 'a proportion (#116)');
             testCase.verifyEqual(sc{1}.score.value.score, 0.98, 'AbsTol', 1e-12);
             testCase.verifyNumElements(edgeAll(sc{1}, 'input_id'), 2);
 
@@ -924,7 +924,7 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             sizes = {};
             for i = 1:numel(obs)
                 A = ndi.statement.fromDocument(session, obs{i}).axes();
-                if height(A) ~= 2 || ~all(A.unit == "Pixel"), continue; end
+                if height(A) ~= 2 || ~all(A.unit == "pixel"), continue; end
                 testCase.verifyEqual(A.variable, ["Y-Coordinate"; "X-Coordinate"]);
                 testCase.verifyEqual(A.coordinates{1}, (0.5:1:A.n(1) - 0.5)');
                 testCase.verifyEqual(A.n(1), A.n(2), 'the fixture''s images are square');

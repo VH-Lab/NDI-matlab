@@ -92,9 +92,15 @@ classdef TestHaleyReadVideo < matlab.unittest.TestCase
                 'no note of a video being decoded is left behind');
             S = load(cacheFile, 'frameTimes');
             k = S.frameTimes.keys;
-            hit = k(contains(k, '2022-02-04_12-10-51_2.mp4'));
+            hit = k(contains(k, '2022-02-04_12-10-51_2.mp4') & ~endsWith(k, '|channels'));
             testCase.assertNumElements(hit, 1);
             testCase.verifyEqual(S.frameTimes(hit{1}), ft);
+            % its channels were checked as it was decoded (decision #116, D-8):
+            % this video is colour, a different level per channel, so it is
+            % reported as not greyscale; the behaviour videos are greyscale
+            testCase.verifyEqual(S.frameTimes([hit{1} '|channels']), 'differ');
+            testCase.verifyTrue(any(contains(checks.channelsDiffer, '2022-02-04_12-10-51_2.mp4')), ...
+                strjoin(checks.channelsDiffer, newline));
             % a second run takes the real video's times from the cache (the
             % placeholders are not cached: they never decode)
             out = evalc(['ndi.setup.conv.haley.recordingList(testCase.Root, sessions, ' ...

@@ -59,6 +59,15 @@ function [R, checks] = recordingList(dataParentDir, sessions, options)
 %     framesDisagree    'ReadVideos': a behaviour video whose decoded frame
 %                       count differs from the table's numFrames (the
 %                       decoded count is used)
+%     channelsDiffer    'ReadVideos': a behaviour video stored with three
+%                       channels that are NOT identical in every frame. The
+%                       behaviour videos are greyscale (Jess, decision #116,
+%                       D-8), possibly written as three identical channels,
+%                       so their keys are [Y, X, time] with no channel key;
+%                       one listed here is not greyscale. Checked as each
+%                       video is decoded for its frame times (a video taken
+%                       from a frame-time cache made before this check is
+%                       counted as unchecked).
 %
 %   Options:
 %     'ReadVideos'  default false. true opens every lawn clip with MATLAB's
@@ -82,13 +91,15 @@ arguments
 end
 cache = loadFrameTimes(options.FrameTimesCache);
 nCached = cache.Count;
+% the videos in it (each also has a KEY|channels entry once checked, D-8)
+nVideosCached = sum(~endsWith(cache.keys, '|channels'));
 % progress of the decoding: printed every 10 newly decoded videos, the cache
 % saved every 25 (decision #87)
 prog = struct('decoded', 0, 'reused', 0, 'seconds', 0, 'started', tic, ...
     'file', options.FrameTimesCache);
 if options.ReadVideos
     fprintf(['frame times: %d video(s) already in the cache (%s); decoding the rest, ' ...
-        'progress every 10\n'], nCached, cacheName(options.FrameTimesCache));
+        'progress every 10\n'], nVideosCached, cacheName(options.FrameTimesCache));
     % a run that was stopped mid-video (killed, or hung and force-quit) left the
     % name of the video it was decoding beside the cache
     was = decodingNote(prog.file);
@@ -101,7 +112,9 @@ end
 root = fullfile(dataParentDir, 'haley');
 checks = struct('rowWithoutFile', {{}}, 'fileWithoutRow', {{}}, 'cameraDisagrees', {{}}, ...
     'noFrames', {{}}, 'imagesWithoutFile', {{}}, 'noRawImages', {{}}, 'unreadable', {{}}, ...
-    'framesDisagree', {{}}, 'cameraSwap', {{}}, 'brightfieldWithoutFile', {{}});
+    'framesDisagree', {{}}, 'cameraSwap', {{}}, 'brightfieldWithoutFile', {{}}, ...
+    'channelsDiffer', {{}});
+channelCount = struct('checked', 0, 'one', 0, 'identical', 0, 'differ', 0, 'unchecked', 0);
 rows = {};
 nFiles = 0;
 
@@ -156,7 +169,21 @@ for f = 1:numel(folders)
                     end
                     ft = [];
                     if options.ReadVideos
-                        [ft, cache, err, prog] = frameTimes(fullfile(root, vdir, [stem '.mp4']), cache, prog);
+                        [ft, cache, err, prog, channels] = frameTimes( ...
+                            fullfile(root, vdir, [stem '.mp4']), cache, prog);
+                        if isempty(err)
+                            % greyscale, possibly as 3 identical channels (D-8)
+                            if isempty(channels)
+                                channelCount.unchecked = channelCount.unchecked + 1;
+                            else
+                                channelCount.checked = channelCount.checked + 1;
+                                channelCount.(channels) = channelCount.(channels) + 1;
+                                if strcmp(channels, 'differ')
+                                    checks.channelsDiffer{end+1} = sprintf(['%s: %s.mp4 has three ' ...
+                                        'channels that differ: not greyscale'], mine.local_identifier{s}, stem);
+                                end
+                            end
+                        end
                         if ~isempty(err)
                             checks.unreadable{end+1} = sprintf('%s: %s.mp4: %s', ...
                                 mine.local_identifier{s}, stem, err);
@@ -355,6 +382,10 @@ end
 if options.ReadVideos
     fprintf('frame times: %d video(s) decoded in %s, %d taken from the cache\n', ...
         prog.decoded, hms(toc(prog.started)), prog.reused);
+    c = channelCount;
+    fprintf(['behaviour video channels (D-8): %d checked -- %d one channel, %d three ' ...
+        'identical (greyscale), %d differ; %d unchecked (frame times from an older cache)\n'], ...
+        c.checked, c.one, c.identical, c.differ, c.unchecked);
 end
 if cache.Count > nCached
     saveFrameTimes(options.FrameTimesCache, cache);
@@ -499,19 +530,22 @@ if ~isempty(d)
 end
 end
 
-function [t, cache, err, prog] = frameTimes(file, cache, prog)
+function [t, cache, err, prog, channels] = frameTimes(file, cache, prog)
 % The measured time of every frame of a video (decision #87): VideoReader's
 % CurrentTime just before each readFrame, in seconds from the start of the
 % file -- the method of NDR's ndr.reader.video/frametimes, so the times agree
 % with what NDI reads. Cached by path, size and modification time. PROG
 % counts the videos decoded (printing every 10, saving the cache every 25)
-% and those taken from the cache.
+% and those taken from the cache. CHANNELS (decision #116, D-8): 'one' (a
+% single channel), 'identical' (three channels equal in every frame: grey),
+% 'differ', or '' when unknown (taken from a cache made before the check);
+% kept in the cache under KEY|channels.
 arguments
     file {mustBeText}
     cache
     prog (1,1) struct
 end
-t = []; err = '';
+t = []; err = ''; channels = '';
 d = dir(file);
 if isempty(d)
     err = 'no such file';
@@ -520,6 +554,7 @@ end
 key = sprintf('%s|%d|%.10f', file, d(1).bytes, d(1).datenum);
 if isKey(cache, key)
     t = cache(key);
+    if isKey(cache, [key '|channels']), channels = cache([key '|channels']); end
     prog.reused = prog.reused + 1;
     return;
 end
@@ -540,13 +575,22 @@ try
     if isempty(n) || ~isfinite(n) || n < 1, n = 0; end
     t = zeros(n, 1);
     k = 0;
+    channels = 'one';
     while hasFrame(v)
         k = k + 1;
         t(k, 1) = v.CurrentTime;
-        readFrame(v);
+        f = readFrame(v);
+        if size(f, 3) == 3 && ~strcmp(channels, 'differ')
+            if isequal(f(:, :, 1), f(:, :, 2), f(:, :, 3))
+                channels = 'identical';
+            else
+                channels = 'differ';
+            end
+        end
     end
     t = t(1:k);
     cache(key) = t;
+    cache([key '|channels']) = channels;
 catch e
     t = [];
     err = e.message;
