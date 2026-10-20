@@ -654,7 +654,7 @@
   {
    "key": "OP50",
    "name": "OP50",
-   "node": "WBStrain:00041969",
+   "node": "WormBase:WBStrain00041969",
    "_node_synonym": "Also NCBITaxon:637912 (the V1 import's identifier, Escherichia coli OP50): a term carries one node, so it is a second identifier below (Jess, 2026-10-08), beside its URL.",
    "species": {
     "node": "NCBITaxon:562",
@@ -683,7 +683,7 @@
   {
    "key": "OP50-GFP",
    "name": "OP50-GFP",
-   "node": "WBStrain:00041972",
+   "node": "WormBase:WBStrain00041972",
    "species": {
     "node": "NCBITaxon:562",
     "name": "Escherichia coli"
@@ -707,7 +707,7 @@
   {
    "key": "N2",
    "name": "N2",
-   "node": "WBStrain:00000001",
+   "node": "WormBase:WBStrain00000001",
    "species": {
     "node": "NCBITaxon:6239",
     "name": "Caenorhabditis elegans"
@@ -735,7 +735,7 @@
    "background": [
     "N2"
    ],
-   "node": "WBStrain:00030796",
+   "node": "WormBase:WBStrain00030796",
    "genotype": "osm-6(p811) V",
    "species": {
     "node": "NCBITaxon:6239",
@@ -763,7 +763,7 @@
    "background": [
     "N2"
    ],
-   "node": "WBStrain:00035037",
+   "node": "WormBase:WBStrain00035037",
    "genotype": "mec-4(u253) X",
    "species": {
     "node": "NCBITaxon:6239",
@@ -791,7 +791,7 @@
    "background": [
     "N2"
    ],
-   "node": "WBStrain:00004246",
+   "node": "WormBase:WBStrain00004246",
    "_node": "WormBase id from the V1 import (doImport.m, strainNames for strains its lookup could not resolve); the V2 search found none (2026-10-07).",
    "genotype": "cat-2(e1112) II",
    "species": {
@@ -820,7 +820,7 @@
    "background": [
     "N2"
    ],
-   "node": "WBStrain:00005280",
+   "node": "WormBase:WBStrain00005280",
    "_node": "WormBase id from the V1 import (doImport.m, strainNames for strains its lookup could not resolve); the V2 search found none (2026-10-07).",
    "genotype": "gcy-35(ok769) I",
    "species": {
@@ -849,7 +849,7 @@
    "background": [
     "N2"
    ],
-   "node": "WBStrain:00005463",
+   "node": "WormBase:WBStrain00005463",
    "genotype": "eat-2(ad465) II",
    "species": {
     "node": "NCBITaxon:6239",
@@ -877,7 +877,7 @@
    "background": [
     "N2"
    ],
-   "node": "WBStrain:00005493",
+   "node": "WormBase:WBStrain00005493",
    "genotype": "npr-1(ad609) X",
    "species": {
     "node": "NCBITaxon:6239",
@@ -905,7 +905,7 @@
    "background": [
     "N2"
    ],
-   "node": "WBStrain:00007498",
+   "node": "WormBase:WBStrain00007498",
    "_node": "Looked up by hand on wormbase.org by Jess, 2026-10-07 (ndi.ontology.lookup WBStrain:<name> fails: the WormBase scrape and API both error).",
    "genotype": "tax-4(ks28) III",
    "species": {
@@ -934,7 +934,7 @@
    "background": [
     "N2"
    ],
-   "node": "WBStrain:00027424",
+   "node": "WormBase:WBStrain00027424",
    "_node": "Looked up by hand on wormbase.org by Jess, 2026-10-07 (ndi.ontology.lookup WBStrain:<name> fails: the WormBase scrape and API both error).",
    "genotype": "tdc-1(n3419) II",
    "species": {
@@ -963,7 +963,7 @@
    "background": [
     "N2"
    ],
-   "node": "WBStrain:00027519",
+   "node": "WormBase:WBStrain00027519",
    "_node": "WormBase id from the V1 import (doImport.m, strainNames for strains its lookup could not resolve); the V2 search found none (2026-10-07).",
    "genotype": "tph-1(mg280) II",
    "species": {
@@ -992,7 +992,7 @@
    "background": [
     "N2"
    ],
-   "node": "WBStrain:00027363",
+   "node": "WormBase:WBStrain00027363",
    "_node": "Looked up by hand on wormbase.org by Jess, 2026-10-07 (ndi.ontology.lookup WBStrain:<name> fails: the WormBase scrape and API both error).",
    "genotype": "tbh-1(n3247) X",
    "species": {

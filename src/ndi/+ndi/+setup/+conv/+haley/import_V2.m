@@ -899,7 +899,7 @@ end
 
 function m = namesOf(spec)
 % formulation and strain keys -> the term a dose's variable reads as: a
-% formulation's `type` {node, name}, a strain's {node (WBStrain), name}
+% formulation's `type` {node, name}, a strain's {node (WormBase:WBStrain...), name}
 arguments
     spec (1,1) struct
 end

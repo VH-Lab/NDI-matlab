@@ -19,7 +19,7 @@ function out = observationDocuments(session, R, subjectIds, options)
 %     temperature_observation  variable ambient temperature (NCIT:C90380, the
 %                              term the manipulations move a plate into),
 %                              celsius
-%     humidity_observation     variable relative humidity (OM:RelativeHumidity),
+%     humidity_observation     variable relative humidity (om:RelativeHumidity),
 %                              percent_relative_humidity (did-schema PR #86;
 %                              only when the schema in use has `humidity`)
 %

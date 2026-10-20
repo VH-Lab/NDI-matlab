@@ -150,7 +150,8 @@ classdef TestDatasetMetadataHaley < matlab.unittest.TestCase
         function testRelationTermsAreCompletedFromTheirValueSet(testCase)
             partOf = relationsNamed(testCase.Result.documents, 'part_of');
             testCase.verifyEqual(numel(partOf), numel(testCase.Spec.studies));
-            % prefixes are lowercase from 2026-10-08 (CURIE_lookups_meta.json)
+            % the prefix is BFO from 2026-10-19 (V_eta_prefix_spelling_plan.md) and
+            % lowercase on a schema built between 2026-10-08 and then
             testCase.verifyEqual(lower(partOf{1}.directed_relation.relation.node), 'bfo:0000050');
         end
 

@@ -206,11 +206,12 @@ if ~strcmp(options.Studies, 'only')
             f.description = desc;
         end
         if ndi.setup.V2.mergedEntities() && isfield(s, 'node') ...
-                && startsWith(char(s.node), 'WBStrain:')
+                && ~isempty(wormBaseId(char(s.node)))
             % the strain's WormBase id is one of its identifiers (one entity class;
-            % `wormbase:WBStrain00000001`, V_eta_entity_composition_plan.md sec. 6),
-            % since a subject is `instance_of` the strain rather than asserting it
-            wb = struct('scheme', 'WormBase', 'value', strrep(char(s.node), ':', ''));
+            % `WormBase:WBStrain00000001`, V_eta_entity_composition_plan.md sec. 6,
+            % spelled per V_eta_prefix_spelling_plan.md), since a subject is
+            % `instance_of` the strain rather than asserting it
+            wb = struct('scheme', 'WormBase', 'value', wormBaseId(char(s.node)));
             s.identifiers = [asCell(getOr(s, 'identifiers', {})), {wb}];
         end
         f = putIds(f, s);
@@ -621,4 +622,21 @@ end
 doc = did2.build.directedRelation(child, parent, relation, 'SessionId', state.sid, ...
     'Validate', state.validate, opts{:});
 state.docs{end+1} = doc;
+end
+
+function id = wormBaseId(node)
+%WORMBASEID The WormBase strain id a strain node names ('WBStrain00000001'), or ''.
+%   The node is written `WormBase:WBStrain00000001` (did-schema
+%   V_eta_prefix_spelling_plan.md, signed 2026-10-19); the older
+%   `WBStrain:00000001` is read too.
+arguments
+    node (1,:) char
+end
+
+id = '';
+if startsWith(node, 'WBStrain:', 'IgnoreCase', true)
+    id = ['WBStrain' node(numel('WBStrain:') + 1:end)];
+elseif startsWith(node, 'WormBase:WBStrain', 'IgnoreCase', true)
+    id = node(numel('WormBase:') + 1:end);
+end
 end

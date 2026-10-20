@@ -3,7 +3,8 @@ function q = termQuery(path, patterns)
 %
 %   Q = ndi.v2.termQuery(PATH, PATTERNS): PATH is a term field (e.g.
 %   'subject_statement.variable'); each pattern matches PATH.name ignoring
-%   case or PATH.node exactly ('*' a wildcard, '\*' a literal star). Q is []
+%   case or PATH.node (its CURIE prefix by key, spelling or synonym, ignoring
+%   case; ndi.v2.curieForms) ('*' a wildcard, '\*' a literal star). Q is []
 %   when nothing can be sent to the database: no text patterns, or a
 %   wildcard and no `wildcard` operator in did2 (ndi.v2.hasWildcardOperator).
 %   The database answer is a superset to recheck with ndi.v2.matchTerm (a
@@ -41,9 +42,14 @@ if ndi.v2.hasWildcard(p)
     one = ndi.query([path '.name'], 'wildcard', p, '') | ndi.query([path '.node'], 'wildcard', p, '');
 else
     p = strrep(p, '\*', '*');
-    % a node's CURIE prefix ignores case (CURIE_lookups_meta.json); the
-    % local part is rechecked exactly by ndi.v2.matchTerm
-    one = ndi.query([path '.name'], 'exact_string_anycase', p, '') | ...
-        ndi.query([path '.node'], 'exact_string_anycase', p, '');
+    % a node's CURIE prefix is read by key, spelling or synonym, ignoring
+    % case (did-schema V_eta_prefix_spelling_plan.md, signed 2026-10-19), so
+    % the node is asked for in every form that names it (ndi.v2.curieForms);
+    % the local part is rechecked exactly by ndi.v2.matchTerm
+    one = ndi.query([path '.name'], 'exact_string_anycase', p, '');
+    forms = ndi.v2.curieForms(p);
+    for f = 1:numel(forms)
+        one = one | ndi.query([path '.node'], 'exact_string_anycase', forms{f}, '');
+    end
 end
 end

@@ -200,6 +200,14 @@ classdef TestObjectLayer < matlab.unittest.TestCase
             same = @(varargin) isequal(sort(local(ndi.entity.search(S, varargin))), sort(names));
             testCase.verifyTrue(same('Type', 'Organism', upper(p), 'n2'));
             testCase.verifyTrue(same('type', 'organism', 'species', 'NCBITaxon:6239', p, 'N2'));
+            % a node's prefix is read by key, spelling or synonym, ignoring case
+            % (did-schema V_eta_prefix_spelling_plan.md, signed 2026-10-19)
+            testCase.verifyTrue(same('type', 'organism', 'species', 'ncbitaxon:6239', p, 'N2'), ...
+                'a node prefix ignores case');
+            if isKey(ndi.v2.curiePrefixes().names, 'ncbit')
+                testCase.verifyTrue(same('type', 'organism', 'species', 'NCBIT:6239', p, 'N2'), ...
+                    'a node prefix is read by synonym');
+            end
             testCase.verifyTrue(same('type', 'organism', p, {'N2', 'no such strain'}), 'a cell is any of');
             testCase.verifyTrue(same('type', 'organism', p, 'N*'), 'a wildcard');
             testCase.verifyTrue(same('type', 'organism', 'species', '*ELEGANS', p, 'N2'), ...

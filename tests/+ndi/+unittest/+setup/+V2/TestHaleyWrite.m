@@ -338,7 +338,7 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
                 testCase.verifyNumElements(a, 1);
                 testCase.verifyEqual(a{1}.statement.variable.node, 'NCIT:C14419');
                 testCase.verifyEqual(a{1}.term.value.name, 'N2');
-                testCase.verifyEqual(a{1}.term.value.node, 'WBStrain:00000001', ...
+                testCase.verifyEqual(a{1}.term.value.node, 'WormBase:WBStrain00000001', ...
                     'the strain is its WormBase term, not a name alone');
                 testCase.verifyEqual(edge(a{1}, 'strain_id'), result.metadata.ids('N2'), ...
                     'the strain assertion names the dataset-level strain document');
@@ -364,7 +364,7 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
                 a = about('concentration_assayPlate0012_patch0001', 'organism strain');
                 testCase.verifyNumElements(a, 1);
                 testCase.verifyEqual(a{1}.term.value.name, 'OP50');
-                testCase.verifyEqual(a{1}.term.value.node, 'WBStrain:00041969');
+                testCase.verifyEqual(a{1}.term.value.node, 'WormBase:WBStrain00041969');
             end
             a = about('concentration_assayPlate0012_patch0001', 'species');
             testCase.verifyEqual(a{1}.term.value.node, 'NCBITaxon:562');
@@ -467,7 +467,7 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             testCase.verifyEqual(liters(seed{1}), 0.5e-6, 'AbsTol', 1e-15);
             testCase.verifyEqual(edge(seed{1}, 'formulation_id'), ...
                 result.metadata.ids('suspension_op50_20220202_od1'));
-            testCase.verifyEqual(seed{1}.statement.variable.node, 'WBStrain:00041969', ...
+            testCase.verifyEqual(seed{1}.statement.variable.node, 'WormBase:WBStrain00041969', ...
                 'the variable is the strain''s term');
             testCase.verifyEqual(seed{1}.statement.variable.name, 'OP50');
             % the plate: 25 mL of NGM, poured before that seeding
@@ -562,7 +562,7 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             testCase.verifyEqual(t12{1}.statement.variable.name, 'ambient temperature');
             testCase.verifyEqual(t12{1}.statement.variable.node, 'NCIT:C90380');
             testCase.verifyEqual(h12{1}.statement.variable.name, 'relative humidity');
-            testCase.verifyEqual(h12{1}.statement.variable.node, 'OM:RelativeHumidity');
+            testCase.verifyEqual(h12{1}.statement.variable.node, 'om:RelativeHumidity');
             testCase.verifyEqual(edge(t12{1}, 'instrument_id'), probe);
             testCase.verifyEqual(edge(t12{1}, 'time_reference_id'), edge(h12{1}, 'time_reference_id'));
             recs = on(docs(strcmp(classes, 'intensity_observation')), 'concentration_assayPlate0012');
