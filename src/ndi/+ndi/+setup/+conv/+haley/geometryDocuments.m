@@ -15,11 +15,12 @@ function out = geometryDocuments(dataParentDir, session, R, subjectIds, options)
 %                         positive toward image down, one pixel = 1/`scale` mm
 %                         (the lab's scale: the arena's known diameter over its
 %                         mask's size in pixels, so it is marked approximate)
-%     label_calculation   one per mask: `arenaMask` (variable `arena region`, a
-%                         label), `refMask` (`reference mark region`, a label;
-%                         foragingMini's arenas have no mark and its masks are
-%                         empty, so none) and `lawnMask` (`bacterial patch
-%                         mask`). A bool per pixel, in a sampled_body keyed
+%     label_calculation   one per mask, variable `Imaging Region of Interest`
+%                         (NCIT:C85402) with the condition `Location` = the
+%                         region (decision #113): `arenaMask` (arena),
+%                         `refMask` (reference mark; foragingMini's arenas
+%                         have no mark and its masks are empty, so none) and
+%                         `lawnMask` (bacterial patch). A bool per pixel, in a sampled_body keyed
 %                         [Y-coordinate, X-coordinate] (MATLAB's [row,
 %                         column]), metres with pixels as the source unit
 %     item_calculation    `lawnClosest` (`nearest bacterial patch`): which patch
@@ -282,18 +283,20 @@ out.documents = docs;
 
     function [docs, n, id] = mask(docs, d, column, region, args)
         % one label_calculation + its body; none when the mask is absent or
-        % empty. Variable Binary Mask, condition Imaging Region of Interest =
-        % REGION (a haleyTerm handle; tenet T19, one condition complete on its
-        % own); ARGS the statement's other name-value pairs
+        % empty. Variable Imaging Region of Interest (decision #113, tenet T16:
+        % the pixels say where a region is; `binary mask` named how it is
+        % stored), with the condition Location = REGION (a haleyTerm handle):
+        % which region it is, a fact of its own that does not repeat the
+        % variable (T19); ARGS the statement's other name-value pairs
         n = 0; id = '';
         m = cellOr(d, column);
         if isempty(m) || ~any(m(:))
             return;
         end
-        roi = did2.build.list(did2.build.condition(haleyTerm('region of interest'), ...
+        roi = did2.build.list(did2.build.condition(haleyTerm('location'), ...
             'Term', haleyTerm(region)));
         st = did2.build.statement('label_calculation', subjectIds(plate), ...
-            haleyTerm('binary mask'), [], 'DataBody', true, 'DatumType', 'bool', ...
+            haleyTerm('region of interest'), [], 'DataBody', true, 'DatumType', 'bool', ...
             'Keys', pixelKeys(m, pixel), 'Conditions', roi, args{:});
         docs = [docs, {st, ingestedBody(st, logical(m), 'bool', pixelKeys(m, pixel), sid, ...
             sprintf('The %s mask (1 = inside), from the source''s `%s`.', region, column))}];

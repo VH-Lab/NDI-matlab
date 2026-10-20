@@ -724,13 +724,19 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             % its arena mask: a label calculation of the plate from the video,
             % run by the analysis package in MATLAB on macOS
             masks = docs(strcmp(classes, 'label_calculation'));
-            % masks are Binary Mask with an Imaging Region of Interest condition
-            % (tenet T19: one variable, the region a condition complete on its own)
-            arena = masks(cellfun(@(d) strcmp(d.statement.variable.name, 'Binary Mask') ...
-                && strcmp(conditionTerm(d, 'Imaging Region of Interest'), 'arena') ...
+            % a mask's variable is the region, Imaging Region of Interest, not
+            % how it is stored (decision #113, tenet T16); which region is the
+            % condition Location, which does not repeat the variable (T19)
+            arena = masks(cellfun(@(d) strcmp(d.statement.variable.name, 'Imaging Region of Interest') ...
+                && strcmp(conditionTerm(d, 'Location'), 'arena') ...
                 && strcmp(edge(d, 'entity_id'), idOf('concentration_assayPlate0012')), masks));
             testCase.verifyNumElements(arena, 1);
             a = arena{1};
+            testCase.verifyEqual(a.statement.variable.node, 'NCIT:C85402');
+            cv = cellfun(@(e) e.variable.node, conditionsOf(a), 'UniformOutput', false);
+            testCase.verifyEqual(cv, {'NCIT:C25341'}, 'one condition, not the variable again');
+            testCase.verifyFalse(any(cellfun(@(d) strcmp(d.statement.variable.node, 'NCIT:C201530'), masks)), ...
+                'no mask names its encoding as its variable');
             testCase.verifyEqual(edgeAll(a, 'input_id'), {video.base.id});
             testCase.verifyEqual(edge(a, 'software_id'), ids('haley_analysis'));
             testCase.verifyEqual(edge(a, 'interpreter_id'), ids('matlab'));
@@ -768,11 +774,11 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             % the lawn mask: every patch was found by template, i.e. image
             % registration; no target statements were given, so its one input
             % is the video
-            lawn = masks(cellfun(@(d) strcmp(d.statement.variable.name, 'Binary Mask') ...
-                && strcmp(conditionTerm(d, 'Imaging Region of Interest'), 'bacterial patch') ...
+            lawn = masks(cellfun(@(d) strcmp(d.statement.variable.name, 'Imaging Region of Interest') ...
+                && strcmp(conditionTerm(d, 'Location'), 'bacterial patch') ...
                 && strcmp(edge(d, 'entity_id'), idOf('concentration_assayPlate0012')), masks));
             testCase.verifyNumElements(lawn, 1);
-            testCase.verifyEqual(lawn{1}.statement.variable.node, 'NCIT:C201530');
+            testCase.verifyEqual(lawn{1}.statement.variable.node, 'NCIT:C85402');
             testCase.verifyEqual(lawn{1}.interaction.method.node, 'NCIT:C80145');
             testCase.verifyFalse(isfield(lawn{1}.interaction, 'method_parameters') ...
                 && ~isempty(lawn{1}.interaction.method_parameters), ...
@@ -1085,8 +1091,8 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             plates = {idOf('ecoli_plate0001'), idOf('ecoli_plate0002')};
             testCase.verifyTrue(all(cellfun(@(d) ismember(edge(d, 'entity_id'), plates), masks)), ...
                 'a mask is a calculation of its plate');
-            testCase.verifyEqual(masks{1}.statement.variable.node, 'NCIT:C201530');
-            testCase.verifyEqual(conditionTerm(masks{1}, 'Imaging Region of Interest'), 'bacterial patch');
+            testCase.verifyEqual(masks{1}.statement.variable.node, 'NCIT:C85402');
+            testCase.verifyEqual(conditionTerm(masks{1}, 'Location'), 'bacterial patch');
             mk = entries(masks{1}.data.keys);
             testCase.verifyEqual(cellfun(@(e) e.variable.node, mk, 'UniformOutput', false), ...
                 {'NCIT:C44478', 'NCIT:C44477'}, 'keyed [Y-coordinate, X-coordinate]');
