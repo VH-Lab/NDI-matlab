@@ -43,10 +43,13 @@ function out = assertionDocuments(session, S, subjectIds, options)
 %                              on a patch with bacteria (decision #104): what
 %                              kind of thing it is, so a search finds every
 %                              patch by term. A patch of LB alone gets none
-%                              (it is not a bacterial patch), and a plate gets
-%                              none: under tenet T17 an assertion about a whole
-%                              holds of each part, so a plate's kind would be
-%                              read as its patches' kind.
+%                              (it is not a bacterial patch).
+%     plate   sample type = its kind: assay plate (EMPTY:0000321), acclimation
+%                              plate (EMPTY:0000319), food deprivation plate
+%                              (EMPTY:0000320), or Petri Dish (NCIT:C96141) for
+%                              an E. coli plate (decision #107). A patch is
+%                              contained_in its plate, not part_of it, so the
+%                              plate's kind is not its patches' (tenet T17).
 %     assay-plate patch  diameter (PATO:0001334), length_assertion: the
 %                              plate's target patch diameter (`lawnDiameter`,
 %                              mm -> m), with condition value basis
@@ -106,7 +109,8 @@ end
 out = struct('documents', {{}}, 'skipped', {{}}, 'counts', struct( ...
     'cohort_species', 0, 'cohort_strain', 0, 'cohort_sex', 0, 'patch_species', 0, ...
     'patch_strain', 0, 'patch_sex', 0, 'plate_excluded', 0, 'plate_not_filmed', 0, ...
-    'patch_target_diameter', 0, 'plate_target_spacing', 0, 'patch_sample_type', 0), ...
+    'patch_target_diameter', 0, 'plate_target_spacing', 0, 'patch_sample_type', 0, ...
+    'plate_sample_type', 0), ...
     'targetIds', containers.Map());
 % the reason an excluded plate carries: the day's own note, where the day is
 % marked `include = no` (decision #73)
@@ -125,8 +129,14 @@ hasSpacing = ismember('lawn_spacing_mm', S.Properties.VariableNames);
 hasLogical = ndi.setup.V2.schemaHasLeaf('logical_assertion');
 hasLength = ndi.setup.V2.schemaHasLeaf('length_assertion');
 asTarget = did2.build.condition(haleyTerm('value basis'), 'Term', haleyTerm('target'));
+plateKind = struct('assay_plate', 'assay plate', 'acclimation_plate', 'acclimation plate', ...
+    'food_deprivation_plate', 'food deprivation plate', 'plate', 'petri dish');
 for k = 1:height(S)
     id = S.local_identifier{k};
+    if isfield(plateKind, S.kind{k})
+        out = assert1(out, id, 'term_assertion', haleyTerm('sample type'), ...
+            haleyTerm(plateKind.(S.kind{k})), struct(), struct(), 'plate_sample_type');
+    end
     switch S.kind{k}
         case 'cohort'
             out = organismAssertions(out, id, S.strain{k}, 'cohort', eachMember);

@@ -47,8 +47,11 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             out = ndi.setup.conv.haley.assertionDocuments(session, S, ids);
             if ~ndi.setup.V2.schemaHasLeaf('logical_assertion')
                 % a schema without the `logical` value kind: neither is
-                % built, and both are reported, not dropped
-                testCase.verifyEmpty(out.documents);
+                % built, and both are reported, not dropped (each plate's
+                % sample type, a term, is built: decision #107)
+                kinds = cellfun(@(d) newNames(d).statement.variable.name, out.documents, ...
+                    'UniformOutput', false);
+                testCase.verifyEqual(kinds, {'Sample Type', 'Sample Type'});
                 testCase.verifyNumElements(out.skipped, 2, strjoin(out.skipped, newline));
                 testCase.verifyTrue(all(contains(out.skipped, 'no `logical` value kind')));
                 return;
@@ -211,20 +214,26 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             subjectIdSet = values(idOf);
             rel = rel(cellfun(@(r) any(strcmp(edge(r, 'child_id'), subjectIdSet)), rel));
             testCase.verifyEqual(numel(rel), 4 + 3 + 8 + 4 + 4 + 1, ['4 assay-plate patches and ' ...
-                '3 acclimation-plate patches part_of their plate, 8 worms ' ...
+                '3 acclimation-plate patches contained_in their plate (#107), 8 worms ' ...
                 'member_of their cohort, 4 cohorts in their assay plate, 4 in their acclimation ' ...
                 'plate, 1 (plate 14) in a food deprivation plate (decision #55)']);
             find1 = @(child, parent, name) rel(cellfun(@(r) ...
                 strcmp(edge(r, 'child_id'), idOf(child)) && strcmp(edge(r, 'parent_id'), idOf(parent)) ...
                 && strcmp(r.directed_relation.relation.name, name), rel));
 
-            r = find1('concentration_assayPlate0012_patch0001', 'concentration_assayPlate0012', 'part_of');
+            % a patch is contained_in its plate (decision #107), from the
+            % plate's seeding to its last recording
+            r = find1('concentration_assayPlate0012_patch0001', 'concentration_assayPlate0012', 'contained_in');
             testCase.verifyNumElements(r, 1);
-            testCase.verifyEmpty(edgeAll(r{1}, 'time_reference_id'), 'a patch is part of its plate, timeless');
+            tr = edgeAll(r{1}, 'time_reference_id');
+            testCase.verifyNumElements(tr, 1, 'a stay with a time');
+            t = docs(cellfun(@(d) strcmp(d.base.id, tr{1}), docs));
+            testCase.verifyNumElements(t, 1, 'the stay''s time reference is written');
+            testCase.verifyEmpty(find1('concentration_assayPlate0012_patch0001', ...
+                'concentration_assayPlate0012', 'part_of'), 'no longer part_of');
             r = find1('concentration_0001_acclimationPlate0001_patch0001', ...
-                'concentration_0001_acclimationPlate0001', 'part_of');
-            testCase.verifyNumElements(r, 1, 'an acclimation plate''s one patch is part of it');
-            testCase.verifyEmpty(edgeAll(r{1}, 'time_reference_id'));
+                'concentration_0001_acclimationPlate0001', 'contained_in');
+            testCase.verifyNumElements(r, 1, 'an acclimation plate''s one patch is in it');
 
             % each worm is a member of its plate's cohort, timelessly; the
             % plates and moves are stated once, on the cohort (decision #55)
@@ -340,17 +349,21 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
 
             % 4 cohorts, each with a species, a strain and a sex; 7 seeded
             % patches (one per assay plate, one per acclimation plate), each
-            % with a species, a strain and a sample type (#104). With one entity class (2026-10-08)
+            % with a species, a strain and a sample type (#104); 8 plates (4
+            % assay, 3 acclimation, 1 food deprivation), each with its sample
+            % type (#107). With one entity class (2026-10-08)
             % the strain is an `instance_of` relation to the strain entity
             % instead of an assertion. Plate 13's exclusion is a logical
             % assertion, not a term.
             merged = ndi.setup.V2.mergedEntities();
             perStrain = double(~merged);
-            testCase.verifyNumElements(ta, 4 * (2 + perStrain) + 7 * (2 + perStrain));
+            testCase.verifyNumElements(ta, 4 * (2 + perStrain) + 7 * (2 + perStrain) + 8);
             kind = ta(cellfun(@(a) strcmp(a.statement.variable.name, 'Sample Type'), ta));
-            testCase.verifyNumElements(kind, 7, 'one sample type per seeded patch');
-            testCase.verifyTrue(all(cellfun(@(a) strcmp(a.term.value.node, 'EMPTY:0000325'), kind)), ...
-                'each is a bacterial patch');
+            kinds = cellfun(@(a) a.term.value.name, kind, 'UniformOutput', false);
+            testCase.verifyEqual(sum(strcmp(kinds, 'bacterial patch')), 7, 'one per seeded patch');
+            testCase.verifyEqual(sum(strcmp(kinds, 'assay plate')), 4);
+            testCase.verifyEqual(sum(strcmp(kinds, 'acclimation plate')), 3);
+            testCase.verifyEqual(sum(strcmp(kinds, 'food deprivation plate')), 1);
             rel = docs(strcmp(classes, 'directed_relation'));
             instanceOf = @(local) rel(cellfun(@(r) strcmp(r.directed_relation.relation.name, ...
                 'instance_of') && strcmp(edge(r, 'child_id'), idOf(local)), rel));

@@ -10,9 +10,21 @@ function out = relationDocuments(session, S, R, subjectIds, options)
 %   is written here. Decision log #52, #53.
 %
 %   Relations (child -> parent):
-%     patch  part_of       its plate (assay plate, acclimation plate, or
-%                          E. coli plate). No time: a patch is part of its
-%                          plate for the plate's whole life.
+%     patch  contained_in  its plate (assay plate, acclimation plate, or
+%                          E. coli plate; decision #107, replacing #52's
+%                          part_of): a patch is a population of bacteria on
+%                          the plate's agar, not a piece of the plate, so the
+%                          plate's assertions (its kind, its target spacing,
+%                          its exclusion) are not the patch's (tenet T17), and
+%                          the plate's manipulations (cold room, room
+%                          temperature, incubator) reach it as context while
+%                          it is there. From the plate's seeding (hand-written,
+%                          its bound plus any spread, decision #75) to the
+%                          plate's last recording: the end of filming on an
+%                          assay plate, the last image on an E. coli plate
+%                          (exact). An acclimation plate has no recording, so
+%                          its patch's stay has a start only; a plate with no
+%                          seeding time gives a stay with no time.
 %     worm   member_of     its cohort (the worms of its assay plate, moved
 %                          together; decision #55). No time.
 %     cohort contained_in  each plate its worms were on, in turn: its acclimation
@@ -75,22 +87,13 @@ S = S(strcmp(S.session, ref), :);
 R = R(strcmp(R.session, ref), :);
 
 out = struct('documents', {{}}, 'skipped', {{}}, 'counts', struct( ...
-    'patch_part_of_plate', 0, 'worm_member_of_cohort', 0, 'cohort_in_assay_plate', 0, ...
+    'patch_in_plate', 0, 'worm_member_of_cohort', 0, 'cohort_in_assay_plate', 0, ...
     'cohort_in_acclimation_plate', 0, 'cohort_in_food_deprivation_plate', 0), ...
     'timeReferenceIds', containers.Map(), 'assaySpans', containers.Map());
 docs = {};
 eachMember = struct();             % `distributive`, when the schema has it (#84)
 if ndi.setup.V2.schemaHasField('directed_relation', 'distributive')
     eachMember.distributive = true;
-end
-
-% ---- patch part_of plate --------------------------------------------------------
-patches = S(strcmp(S.kind, 'patch'), :);
-for k = 1:height(patches)
-    child = patches.local_identifier{k};
-    parent = regexprep(child, '_patch\d+$', '');   % <plate>_patchNNNN (decision #42)
-    [docs, out] = relate(docs, out, subjectIds, child, parent, 'part_of', {}, sid, ...
-        'patch_part_of_plate', struct());
 end
 
 % ---- worm member_of its cohort --------------------------------------------------
@@ -147,6 +150,24 @@ for k = 1:height(plates)
     spanOf(id) = struct('T', T, 'tol', rule.tolerance, 'stop', max(t + seconds(dur)), ...
         'method', rule.method);
 end
+% ---- patch contained_in its plate (decision #107) ------------------------------
+images = R(strcmp(R.kind, 'image'), :);
+patches = S(strcmp(S.kind, 'patch'), :);
+stayOf = containers.Map();      % plate id -> the time reference its patches share
+for k = 1:height(patches)
+    child = patches.local_identifier{k};
+    parent = regexprep(child, '_patch\d+$', '');   % <plate>_patchNNNN (decision #42)
+    if ~isKey(stayOf, parent)
+        stayOf(parent) = patchStay(parent);
+    end
+    times = {};
+    if ~isempty(stayOf(parent))
+        times = {stayOf(parent)};
+    end
+    [docs, out] = relate(docs, out, subjectIds, child, parent, 'contained_in', times, sid, ...
+        'patch_in_plate', struct());
+end
+
 refOf = containers.Map();       % plate id|cohort id -> time reference id
 for k = 1:height(cohorts)
     w = cohorts(k, :);
@@ -208,6 +229,44 @@ end
 out.documents = docs;
 out.timeReferenceIds = refOf;
 out.assaySpans = spanOf;
+
+    function id = patchStay(plate)
+        % a plate's patches: from its seeding to its last recording (the id of
+        % the time reference, '' with no seeding time)
+        id = '';
+        h = find(strcmp(S.local_identifier, plate), 1);
+        if isempty(h) || ~ismember('prep', S.Properties.VariableNames)
+            return;
+        end
+        p = S.prep(h);
+        if ~isstruct(p) || ~isfield(p, 'seeded') || isnat(p.seeded)
+            return;
+        end
+        t0 = wallClock(p.seeded, tz);
+        tol = handTol;
+        if isfield(p, 'seeded_spread_s') && ~isempty(p.seeded_spread_s) && ~isnan(p.seeded_spread_s)
+            tol = tol + p.seeded_spread_s;      % a seeding known only to a span (#75)
+        end
+        stop = NaT;
+        if isKey(spanOf, plate)                 % an assay plate: the end of filming
+            stop = spanOf(plate).stop;
+        else                                    % an E. coli plate: its last image
+            im = images(strcmp(images.plate, plate), :);
+            if height(im) > 0
+                stop = max(wallClock(im.local_start, tz));
+            end
+        end
+        hasEnd = ~isnat(stop);
+        if hasEnd && stop < t0
+            out.skipped{end+1} = sprintf(['%s patches: the last recording (%s) is before ' ...
+                'the seeding (%s); the stay is recorded with its start only'], plate, ...
+                char(stop), char(t0));
+            hasEnd = false;
+        end
+        d = utcReference(t0, tol, minuteFmt, stop, [], secondFmt, hasEnd, tz, sid);
+        docs{end+1} = d;
+        id = d.base.id;
+    end
 end
 
 % -----------------------------------------------------------------------------

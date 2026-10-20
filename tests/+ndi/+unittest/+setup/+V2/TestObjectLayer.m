@@ -86,13 +86,14 @@ classdef TestObjectLayer < matlab.unittest.TestCase
             testCase.verifyEqual(height(T), 2);
             testCase.verifyEqual(unique(T.direction), "in");
 
+            % a patch is contained_in its plate (decision #107), not part_of it
             p = testCase.subject('concentration_assayPlate0012_patch0001');
-            w = p.partOf();
+            testCase.verifyEmpty(p.partOf());
+            w = p.parents('contained_in');
             testCase.verifyNumElements(w, 1);
             testCase.verifyEqual(w{1}.local_identifier, 'concentration_assayPlate0012');
-            parts = w{1}.parts();
-            testCase.verifyEqual(cellfun(@(x) x.local_identifier, parts, 'UniformOutput', false), ...
-                {'concentration_assayPlate0012_patch0001'});
+            inside = cellfun(@(x) x.local_identifier, w{1}.children('contained_in'), 'UniformOutput', false);
+            testCase.verifyTrue(ismember('concentration_assayPlate0012_patch0001', inside), strjoin(inside, ', '));
         end
 
         function testRelationPathsFromOneOrManyEntities(testCase)
@@ -134,8 +135,8 @@ classdef TestObjectLayer < matlab.unittest.TestCase
             testCase.verifyEqual(unique(T.start_name(T.start_id == b.document_id)), string(b.name));
             testCase.verifyTrue(any(T.relation == "contained_in" & T.direction == "in" & ...
                 T.start_id == a.document_id), 'the cohort contained_in the assay plate');
-            testCase.verifyTrue(any(T.relation == "part_of" & T.direction == "in" & ...
-                T.start_id == a.document_id), 'its patches part_of it');
+            testCase.verifyGreaterThanOrEqual(sum(T.relation == "contained_in" & T.direction == "in" & ...
+                T.start_id == a.document_id), 2, 'its cohort and its patch contained_in it (decision #107)');
             In = relations([a b], 'contained_in', 'Direction', 'in');
             testCase.verifyEqual(unique(In.relation), "contained_in");
             testCase.verifyEqual(sort(unique(In.start_id)), sort(string({a.document_id; b.document_id})));
@@ -163,9 +164,10 @@ classdef TestObjectLayer < matlab.unittest.TestCase
                 'Type and Kind together: a plate is not a subject (isa subject is the biological types)');
             testCase.verifyEmpty(w.ancestors('Type', 'material', 'Kind', 'person'));
 
-            parts = local(a.descendants('Relation', 'part_of'));
-            testCase.verifyNotEmpty(parts);
-            testCase.verifyTrue(all(startsWith(parts, 'concentration_assayPlate0012_patch')), strjoin(parts, ', '));
+            inside = local(a.descendants('Relation', 'contained_in'));
+            parts = inside(startsWith(inside, 'concentration_assayPlate0012_patch'));
+            testCase.verifyNotEmpty(parts, 'its patches are contained_in it (decision #107)');
+            testCase.verifyTrue(ismember('concentration_assayPlate0012_worms', inside), strjoin(inside, ', '));
             all_ = local(a.descendants());
             testCase.verifyTrue(all(ismember([parts, {'concentration_assayPlate0012_worms', ...
                 'concentration_worm0121', 'concentration_worm0122'}], all_)), ...
@@ -342,12 +344,12 @@ classdef TestObjectLayer < matlab.unittest.TestCase
             onNGM = names('type', 'organism', 'contained_in', {'manipulation', {'variable', 'nematode growth medium'}});
             testCase.verifyTrue(all(ismember(worms, onNGM)), strjoin(onNGM, ', '));
             % the reverse: the subject is the parent
-            p = names('directed_relation', {'name', 'part_of', 'child', ...
+            p = names('directed_relation', {'name', 'contained_in', 'child', ...
                 {'local_identifier', 'concentration_assayPlate0012_patch0001'}});
             testCase.verifyEqual(p, {'concentration_assayPlate0012'});
-            % nested: worms on the plate that patch 0001 is part of
+            % nested: worms on the plate that patch 0001 is in
             testCase.verifyEqual(names('type', 'organism', 'contained_in', {'directed_relation', ...
-                {'name', 'part_of', 'child', {'local_identifier', 'concentration_assayPlate0012_patch0001'}}}), worms);
+                {'name', 'contained_in', 'child', {'local_identifier', 'concentration_assayPlate0012_patch0001'}}}), worms);
             % 'with': either end
             w = names('relation', {'with', cohort});
             testCase.verifyTrue(all(ismember([worms, {'concentration_assayPlate0012', ...
@@ -386,9 +388,10 @@ classdef TestObjectLayer < matlab.unittest.TestCase
                 'ndi:entity:search:relationFilter');
         end
 
-        function testAnAssertionAboutAWholeHoldsOfItsParts(testCase)
-            % plate 0013 is excluded (an assertion on the plate): its patches,
-            % part_of it, are too; its worms, contained_in it, are not
+        function testAnAssertionAboutAContainerStaysOnIt(testCase)
+            % plate 0013 is excluded (an assertion on the plate). Its patches
+            % and its worms are contained_in it (decision #107), and
+            % contained_in carries no assertion (tenet T17), so neither is
             S = testCase.Session;
             if ~ndi.setup.V2.schemaHasLeaf('logical_assertion')
                 % no `logical` value kind: the import states no exclusion,
@@ -400,11 +403,12 @@ classdef TestObjectLayer < matlab.unittest.TestCase
             direct = local(ndi.entity.search(S, {'inclusion in analysis', false}, 'inherited', false));
             testCase.verifyTrue(ismember('concentration_assayPlate0013', direct));
             all_ = local(ndi.entity.search(S, {'inclusion in analysis', false}));
-            extra = setdiff(all_, direct);
-            testCase.verifyTrue(all(startsWith(extra, 'concentration_assayPlate0013_patch')), strjoin(extra, ', '));
-            patches = local(ndi.entity.search(S, {'directed_relation', {'name', 'part_of', 'parent', ...
+            testCase.verifyEqual(sort(all_), sort(direct), 'nothing inherits the plate''s exclusion');
+            patches = local(ndi.entity.search(S, {'directed_relation', {'name', 'contained_in', 'parent', ...
                 {'local_identifier', 'concentration_assayPlate0013'}}}));
-            testCase.verifyEqual(sort(extra), sort(patches), 'exactly its parts');
+            patches = patches(startsWith(patches, 'concentration_assayPlate0013_patch'));
+            testCase.verifyNotEmpty(patches, 'its patches are contained_in it');
+            testCase.verifyEmpty(intersect(patches, all_), 'and are not excluded');
             testCase.verifyEmpty(ndi.entity.search(S, {'type', 'organism', 'inclusion in analysis', false}), ...
                 'contained_in does not carry statements');
         end
@@ -469,6 +473,15 @@ classdef TestObjectLayer < matlab.unittest.TestCase
             out = evalc(['ndi.entity.search(S, {''type'', ''organism'', ''manipulation'', ' ...
                 '{''method'', ''ambient exposure''}}, ''context'', true, ''explain'', true);']);
             testCase.verifySubstring(out, 'contained in something that did while they were in it');
+
+            % a patch is contained_in its plate from the seeding (decision
+            % #107): the plate's cold room after seeding reaches it as context
+            p = testCase.subject('concentration_assayPlate0012_patch0001');
+            testCase.verifyEmpty(p.manipulations({'method', 'refrigeration'}), 'not without context');
+            cold = p.manipulations({'method', 'refrigeration'}, 'context', true);
+            testCase.verifyNotEmpty(cold, 'the plate''s cold room, while the patch was on it');
+            testCase.verifyTrue(all(cellfun(@(x) strcmp(x.subject().local_identifier, ...
+                'concentration_assayPlate0012'), cold)), 'stated on the plate');
         end
 
         function testDuringAnotherStatement(testCase)

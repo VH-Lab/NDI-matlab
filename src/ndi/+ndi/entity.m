@@ -348,12 +348,12 @@ classdef entity
         end
 
         function p = parts(obj)
-            % PARTS - the subjects that are part_of this one (a plate's patches), a cell array
+            % PARTS - the subjects that are part_of this one (a sample's aliquots), a cell array
             p = obj.children('part_of');
         end
 
         function w = partOf(obj)
-            % PARTOF - what this subject is part_of (a patch's plate), a cell array
+            % PARTOF - what this subject is part_of (an aliquot's sample), a cell array
             w = obj.parents('part_of');
         end
 
