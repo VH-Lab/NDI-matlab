@@ -176,6 +176,10 @@ pairs = {
     'prediction from a fitted model',         'EMPTY:0000304'
     'linear regression',                      'STATO:0000108'
     'regression coefficient',                 'STATO:0000565'
+    'relative bacterial density',             'EMPTY:0000322'
+    'normalization data transformation',      'OBI:0200169'
+    'normalization reference value',          'EMPTY:0000323'
+    'lower limit of reported value',          'EMPTY:0000324'
     % masks, plates, development (decided with Jess 2026-10-20)
     'arena mask',                             'EMPTY:0000130'
     'reference mark mask',                    'EMPTY:0000318'

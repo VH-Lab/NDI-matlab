@@ -413,7 +413,21 @@ encounter.lawnGrowth = [NaN; 74; 80; 90];
 encounter.growthLawnGrowth = hours(51) * ones(n, 1);
 encounter.borderAmplitude = [NaN; 94 / 300 + 74 / 3000; 94 / 300 + 80 / 3000; ...
     0.05 * 94 / 300 + 90 / 3000];
-encounter.borderAmplitudeGrowth = (55.7 - 0.0068 * 51 * 60) * ones(n, 1); %#ok<STRNU>
+encounter.borderAmplitudeGrowth = (55.7 - 0.0068 * 51 * 60) * ones(n, 1);
+% the relative density's reference group (decision #99): modelExploit groups by
+% these, and one encounter on a foragingConcentration OD600 10, 0.5 uL patch,
+% in an experiment (99) no test session holds, sets the reference to 2.5
+encounter.OD600Label = arrayfun(@(x) sprintf('%.2f', x), encounter.lawnOD600, 'UniformOutput', false);
+encounter.strainName = repmat({'N2'}, n, 1);
+encounter.strainID = repmat({'00000001'}, n, 1);
+r = encounter(n, :);
+r.expNum = uint16(99);
+r.plateNum = uint16(99);
+r.wormNum = 999;
+r.lawnOD600 = 10;
+r.OD600Label = {'10.00'};
+r.borderAmplitude = 2.5;
+encounter = [encounter; r]; %#ok<NASGU>
 save(fullfile(folder, 'encounter.mat'), 'encounter');
 end
 

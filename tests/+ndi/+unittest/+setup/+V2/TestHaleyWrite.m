@@ -1130,6 +1130,38 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
                         55.7 - 0.0068 * 3060, 'AbsTol', 1e-9);
                 end
             end
+
+            % the relative density beside each estimate (decision #99): 10 x the
+            % estimate / the reference, 2.5 (the fixture's one OD600 10 encounter)
+            if ~ndi.setup.V2.schemaHasLeaf('concentration_calculation')
+                testCase.verifyEqual(c.relative_density, 0);
+                testCase.verifyTrue(any(contains(de.skipped, 'no relative density')));
+                return;
+            end
+            testCase.verifyEqual(c.relative_density, c.estimates, 'one per estimate');
+            rdOf = @(id) docs(strcmp(classes, 'concentration_calculation') & cellfun(@(d) ...
+                strcmp(edge(d, 'entity_id'), id), docs));
+            r12 = rdOf(idOf('concentration_assayPlate0012_patch0001'));
+            testCase.verifyNumElements(r12, 1);
+            testCase.verifyEqual(r12{1}.statement.variable.node, 'EMPTY:0000322');
+            testCase.verifyEqual(numbers(r12{1}.concentration.value, 'source_value'), ...
+                10 * (94 / 300 + [74 80] / 3000) / 2.5, 'AbsTol', 1e-12);
+            testCase.verifyEqual(unique(cellfun(@(e) e.source_unit, entries(r12{1}.concentration.value), ...
+                'UniformOutput', false)), {'OD600'});
+            testCase.verifyEqual(edgeAll(r12{1}, 'input_id'), {e12{1}.base.id}, 'from its estimate');
+            testCase.verifyEqual(r12{1}.interaction.method.node, 'OBI:0200169');
+            pm = entries(r12{1}.interaction.method_parameters);
+            pv = cellfun(@(e) e.variable.node, pm, 'UniformOutput', false);
+            testCase.verifyEqual(sort(pv), sort({'EMPTY:0000323', 'MCO:0000059', 'EMPTY:0000324'}), ...
+                'the reference, its OD600 and the floor');
+            ek12 = entries(r12{1}.data.keys);
+            testCase.verifyEqual(ek12{1}.variable.name, 'encounter onset time', 'keyed as its estimate');
+            if ~isempty(acc)
+                ra = rdOf(idOf(acc{1}));
+                testCase.verifyNumElements(ra, 1);
+                testCase.verifyEqual(numbers(ra{1}.concentration.value, 'source_value'), ...
+                    10 * (55.7 - 0.0068 * 3060) / 2.5, 'AbsTol', 1e-9, 'at the pick, not floored');
+            end
         end
 
         function testDataset(testCase)

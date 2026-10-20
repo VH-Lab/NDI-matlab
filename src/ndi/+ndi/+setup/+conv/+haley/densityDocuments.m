@@ -65,9 +65,24 @@ function out = densityDocuments(dataParentDir, sessions, built, options)
 %                         plate's growth time then; timed by the pick
 %                         (absolute_time_reference, to the minute)
 %   Each value is checked against the fit it names (OUT.checks
-%   .encounterDisagrees). Relative density (modelExploit's 10 x / the OD 10
-%   mean, floored at 0.01, log10) is not stored: it is computed in the model
-%   script, not in any source file.
+%   .encounterDisagrees). Beside each estimate, its RELATIVE DENSITY
+%   (decision #99; modelExploit and fig3_single):
+%     concentration_calculation  `relative bacterial density`, in OD600
+%                         equivalents (source unit OD600; concentration has no
+%                         canonical slot for it): 10 x the estimate / the
+%                         reference, the mean encounter.mat borderAmplitude
+%                         over the foragingConcentration encounters on OD600
+%                         10, 0.5 uL patches; same keys and time as the
+%                         estimate, whose statement is its input; method
+%                         `normalization data transformation`, method
+%                         parameters the reference, its OD600 (10) and, at
+%                         the assay plates only, the lower limit 0.01 that a
+%                         patch of LB alone (estimate 0) is given, as the
+%                         model does. An estimate of NaN (no fit matched)
+%                         stays NaN. The model works with its log10.
+%   With no reference (encounter.mat lacks the columns, or not exactly one
+%   OD600 10 group matches) or no `concentration_calculation` leaf, none is
+%   written and OUT.skipped says why.
 %
 %   Options: 'DatasetSessionId', 'SoftwareId', 'InterpreterId',
 %   'OperatingSystemId' (the run environment, as stage 10), 'FitsFile',
@@ -89,7 +104,7 @@ dsid = options.DatasetSessionId;
 out = struct('datasetDocuments', {{}}, 'sessionDocuments', {repmat({{}}, height(sessions), 1)}, ...
     'skipped', {{}}, 'checks', struct('refitDisagrees', {{}}, 'encounterDisagrees', {{}}), ...
     'counts', struct('fits', 0, 'groups', 0, 'members', 0, 'inputs', 0, 'refit_checked', 0, ...
-    'worms', 0, 'patches', 0, 'acclimation_patches', 0, 'estimates', 0, ...
+    'worms', 0, 'patches', 0, 'acclimation_patches', 0, 'estimates', 0, 'relative_density', 0, ...
     'encounters_checked', 0), 'fits', table());
 if isempty(options.OperatingSystemId)
     out.skipped{end+1} = 'no operating system document (built by the metadata stage); no fits';
@@ -278,6 +293,15 @@ out.fits.id = fitIds(:);
 prediction = haleyTerm('prediction from a fitted model');
 fluorescence = haleyTerm('fluorescence intensity');
 S = options.Subjects;
+% the relative density's reference (decision #99)
+[rd, why] = densityReference(dataParentDir);
+if isempty(why) && ~ndi.setup.V2.schemaHasLeaf('concentration_calculation')
+    why = 'the schema in use has no concentration_calculation';
+end
+if ~isempty(why)
+    out.skipped{end+1} = ['no relative density: ' why];
+    rd = [];
+end
 for k = 1:numel(built)
     if isempty(built{k}) || ~isfield(built{k}, 'encounters')
         continue;
@@ -362,10 +386,10 @@ for k = 1:numel(built)
                 extra = {'Conditions', did2.build.list(binCondition(a(1).bin)), ...
                     'MethodParameters', did2.build.list(binParameter())};
             end
+            onsetKeys = did2.build.list(did2.build.key(haleyTerm('encounter onset time'), ...
+                numel(a), 'Values', onsets, 'Unit', haleyTerm('second')));
             docs{end+1} = did2.build.statement('intensity_calculation', a(1).patchId, fluorescence, ...
-                did2.build.valueCell('intensity', [a.value]), 'Keys', did2.build.list( ...
-                    did2.build.key(haleyTerm('encounter onset time'), numel(a), 'Values', onsets, ...
-                    'Unit', haleyTerm('second'))), ...
+                did2.build.valueCell('intensity', [a.value]), 'Keys', onsetKeys, ...
                 'Method', prediction, extra{:}, 'InputIds', in, 'SessionId', sid, ...
                 'TimeReferenceIds', {a(1).timeId}, env{:}, 'Notes', ...
                 ['Border amplitude per ms of exposure at each encounter''s onset (seconds from ' ...
@@ -375,6 +399,11 @@ for k = 1:numel(built)
                 'matches (labelEncounters).']); %#ok<AGROW>
             out.counts.patches = out.counts.patches + 1;
             out.counts.estimates = out.counts.estimates + 1;
+            if ~isempty(rd)
+                docs{end+1} = relativeDensity(rd, a(1).patchId, docs{end}, [a.value], true, ...
+                    {'Keys', onsetKeys}, a(1).timeId, sid, env); %#ok<AGROW>
+                out.counts.relative_density = out.counts.relative_density + 1;
+            end
         end
     end
 
@@ -405,6 +434,11 @@ for k = 1:numel(built)
             'growthLawnGrowth).'])}]; %#ok<AGROW>
         out.counts.acclimation_patches = out.counts.acclimation_patches + 1;
         out.counts.estimates = out.counts.estimates + 1;
+        if ~isempty(rd)
+            docs{end+1} = relativeDensity(rd, subjectIds(accPatch), docs{end}, p.value, false, ...
+                {}, ref.base.id, sid, env); %#ok<AGROW>
+            out.counts.relative_density = out.counts.relative_density + 1;
+        end
     end
     out.sessionDocuments{k} = docs;
 end
@@ -643,6 +677,84 @@ arguments
 end
 r = haleyTerm('regression coefficient');
 t = did2.build.term(r.node, symbol);
+end
+
+function [rd, why] = densityReference(dataParentDir)
+% the relative density's reference (decision #99; modelExploit): the mean
+% encounter.mat borderAmplitude over the encounters of the one
+% (expName, lawnVolume, growthCondition, OD600Label, strainName, strainID)
+% group that is foragingConcentration, OD600 10, 0.5 uL. WHY is '' when found.
+arguments
+    dataParentDir (1,:) char
+end
+rd = struct('value', NaN, 'n', 0);
+why = '';
+file = fullfile(dataParentDir, 'haley', 'celegans', 'encounter.mat');
+if ~isfile(file)
+    why = 'no celegans/encounter.mat';
+    return;
+end
+E = load(file, 'encounter');
+E = E.encounter;
+by = {'expName', 'lawnVolume', 'growthCondition', 'OD600Label', 'strainName', 'strainID'};
+missing = setdiff([by, {'borderAmplitude'}], E.Properties.VariableNames);
+if ~isempty(missing)
+    why = sprintf('encounter.mat has no %s', strjoin(missing, ', '));
+    return;
+end
+[G, GID] = findgroups(E(:, by));
+ref = find(string(GID.expName) == "foragingConcentration" & ...
+    string(GID.OD600Label) == "10.00" & GID.lawnVolume == 0.5);
+if numel(ref) ~= 1
+    why = sprintf(['%d encounter.mat group(s) are foragingConcentration, OD600 10, 0.5 uL; ' ...
+        'the reference needs exactly one'], numel(ref));
+    return;
+end
+x = double(E.borderAmplitude(G == ref));
+x = x(~isnan(x));
+if isempty(x) || mean(x) <= 0
+    why = 'the OD600 10 reference encounters have no positive border amplitude';
+    return;
+end
+rd = struct('value', mean(x), 'n', numel(x));
+end
+
+function d = relativeDensity(rd, entityId, estimate, v, floored, keys, timeId, sid, env)
+% the relative density, about ENTITYID (the patch), of ESTIMATE's values V
+% (decision #99): 10 x V / the
+% reference, in OD600 equivalents; FLOORED (the assay plates) sets a value
+% below 0.01 to 0.01, as the model does for a patch of LB alone. NaN stays NaN.
+arguments
+    rd (1,1) struct
+    entityId {mustBeText}
+    estimate (1,1) struct
+    v double
+    floored (1,1) logical
+    keys cell
+    timeId {mustBeText}
+    sid {mustBeText}
+    env cell
+end
+x = 10 * v(:)' / rd.value;
+params = {did2.build.parameter(haleyTerm('normalization reference value'), 'Value', rd.value, ...
+        'Unit', haleyTerm('arbitrary unit per millisecond')), ...
+    did2.build.parameter(haleyTerm('OD600'), 'Value', 10)};
+note = '';
+if floored
+    x(x < 0.01) = 0.01;
+    params{end+1} = did2.build.parameter(haleyTerm('lower limit of reported value'), 'Value', 0.01);
+    note = ' A value below 0.01 (a patch of LB alone, estimated 0) is given 0.01, as the model does.';
+end
+d = did2.build.statement('concentration_calculation', entityId, ...
+    haleyTerm('relative bacterial density'), ...
+    did2.build.valueCell('concentration', x, 'Canonical', 'source_value', 'SourceUnit', 'OD600'), ...
+    keys{:}, 'Method', haleyTerm('normalization data transformation'), ...
+    'MethodParameters', did2.build.list(params{:}), 'InputIds', {estimate.base.id}, ...
+    'SessionId', sid, 'TimeReferenceIds', {timeId}, env{:}, 'Notes', ...
+    [sprintf(['Relative bacterial density in OD600 equivalents: 10 x the border amplitude ' ...
+    'estimate / %.6g, the mean over %d foragingConcentration encounters on OD600 10, 0.5 uL ' ...
+    'patches (modelExploit, fig3_single). NaN where the estimate is NaN.'], rd.value, rd.n), ...
+    note, ' The model works with its log10.']);
 end
 
 function p = rules()
