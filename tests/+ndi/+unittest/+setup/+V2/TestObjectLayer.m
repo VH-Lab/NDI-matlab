@@ -743,7 +743,8 @@ classdef TestObjectLayer < matlab.unittest.TestCase
                 if merged
                     % stated on the strain, reached through the cohort
                     testCase.verifyEqual(sp{1}.via(), 'member_of > instance_of');
-                    testCase.verifyEqual(sp{1}.subject().name, 'N2', 'stated on the strain');
+                    testCase.verifyEqual(ndi.v2.edgeIds(sp{1}.document_properties(), 'entity_id'), ...
+                        {testCase.Result.metadata.ids('N2')}, 'stated on the strain');
                 else
                     testCase.verifyEqual(sp{1}.subject().local_identifier, 'concentration_assayPlate0012_worms');
                     testCase.verifyEqual(sp{1}.via(), 'member_of');

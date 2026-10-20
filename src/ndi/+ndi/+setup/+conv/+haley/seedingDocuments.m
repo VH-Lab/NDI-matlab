@@ -131,7 +131,7 @@ for k = 1:numel(S.solutions)
         haleyTerm('OD600'), v, args{:}, 'TimeReferenceIds', {when}, 'SessionId', sessionId);
     out.counts.od600_observations = out.counts.od600_observations + 1;
 end
-out.counts.days = dayRefs.Count;
+out.counts.days = double(dayRefs.Count);
 if cfuNotObserved > 0
     out.skipped{end+1} = sprintf(['%d stock(s) with a measured CFU: not an observation (the term ' ...
         'registry has no term for a colony-forming-unit density); kept on the plan as ' ...

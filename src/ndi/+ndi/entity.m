@@ -1460,6 +1460,13 @@ classdef entity
             filt = f.filt;
             filt.tolerant = spec.tolerant;
             filt.synonyms = isfield(spec, 'synonyms') && spec.synonyms;
+            if inherited && strcmp(f.kind, 'assertion')
+                % an assertion about a type (a strain's species) is stored
+                % with the dataset, and holds of the type's instances here
+                % (below): a session opened from its dataset searches there
+                % too (Haley #112)
+                filt.withDataset = true;
+            end
             [docs, info] = ndi.v2.searchStatements(container, f.kind, filt);
             if info.structural == 0 && strcmp(f.kind, 'assertion')
                 % with one entity class, a strain is not asserted: the
