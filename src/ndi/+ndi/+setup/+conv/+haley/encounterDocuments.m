@@ -476,8 +476,8 @@ arguments
     t1 (1,1) double
 end
 c = {did2.build.condition(haleyTerm('reference time point'), 'Term', haleyTerm('encounter onset time')), ...
-    did2.build.condition(haleyTerm('analysis window start'), 'Value', t0, 'Unit', haleyTerm('second')), ...
-    did2.build.condition(haleyTerm('analysis window end'), 'Value', t1, 'Unit', haleyTerm('second'))};
+    did2.build.condition(haleyTerm('analysis window start'), 'Quantity', t0, 'Unit', haleyTerm('second')), ...
+    did2.build.condition(haleyTerm('analysis window end'), 'Quantity', t1, 'Unit', haleyTerm('second'))};
 end
 
 function t = encounterTypes(names)

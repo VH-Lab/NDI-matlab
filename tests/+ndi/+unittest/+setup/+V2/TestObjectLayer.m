@@ -376,6 +376,8 @@ classdef TestObjectLayer < matlab.unittest.TestCase
             % plate 0013 is excluded (an assertion on the plate): its patches,
             % part_of it, are too; its worms, contained_in it, are not
             S = testCase.Session;
+            testCase.assumeTrue(ndi.setup.V2.schemaHasLeaf('logical_assertion'), ...
+                'the schema in use has no `logical` value kind, so no exclusion is stated');
             direct = local(ndi.entity.search(S, {'inclusion in analysis', false}, 'inherited', false));
             testCase.verifyTrue(ismember('concentration_assayPlate0013', direct));
             all_ = local(ndi.entity.search(S, {'inclusion in analysis', false}));
@@ -431,8 +433,10 @@ classdef TestObjectLayer < matlab.unittest.TestCase
 
             % assertions never pass: plate 0013 is excluded, its worms are not
             testCase.verifyEqual(numel(w.assertions('context', true)), numel(w.assertions()));
-            testCase.verifyEmpty(ndi.entity.search(S, {'type', 'organism', ...
-                'inclusion in analysis', false}, 'context', true));
+            if ndi.setup.V2.schemaHasLeaf('logical_assertion')
+                testCase.verifyEmpty(ndi.entity.search(S, {'type', 'organism', ...
+                    'inclusion in analysis', false}, 'context', true));
+            end
 
             % search: a plate's room-temperature period finds the worms on it then
             found = local(ndi.entity.search(S, {'type', 'organism', ...
@@ -577,9 +581,11 @@ classdef TestObjectLayer < matlab.unittest.TestCase
             testCase.verifyEqual(a{1}.composite(), 'term');
             testCase.verifyEqual(a{1}.value().canonical(), "N2");
             testCase.verifyEqual(a{1}.subject().document_id, c.document_id);
-            x = testCase.subject('concentration_assayPlate0013').assertions({'variable', 'inclusion in analysis'});
-            testCase.verifyNumElements(x, 1);
-            testCase.verifyEqual(x{1}.value().canonical(), false);
+            if ndi.setup.V2.schemaHasLeaf('logical_assertion')
+                x = testCase.subject('concentration_assayPlate0013').assertions({'variable', 'inclusion in analysis'});
+                testCase.verifyNumElements(x, 1);
+                testCase.verifyEqual(x{1}.value().canonical(), false);
+            end
         end
 
         function testInheritedFollowsMemberOfAndDistributive(testCase)

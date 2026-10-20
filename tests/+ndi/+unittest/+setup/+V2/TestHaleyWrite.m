@@ -394,8 +394,8 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
                 testCase.verifyEqual(d{1}.length.value(1).meters, 1.5e-3, 'AbsTol', 1e-12);
                 testCase.verifyEqual(d{1}.length.value(1).source_value, 1.5, 'AbsTol', 1e-12);
                 testCase.verifyEqual(d{1}.length.value(1).source_unit, 'mm');
-                c = d{1}.statement.conditions;
-                if iscell(c), c = [c{:}]; end
+                c = entries(d{1}.statement.conditions);
+                c = [c{:}];
                 testCase.verifyNumElements(c, 1);
                 testCase.verifyEqual(c(1).variable.node, 'EMPTY:0000298');
                 testCase.verifyEqual(c(1).term.node, 'EMPTY:0000299');
@@ -1324,6 +1324,32 @@ arguments
     x
 end
 if iscell(x), c = reshape(x, 1, []); else, c = num2cell(reshape(x, 1, [])); end
+c = cellfun(@asEntry, c, 'UniformOutput', false);
+end
+
+function e = asEntry(e)
+% a key, condition or method parameter in the one-entry shape (data_body
+% AMENDMENT 3), whichever shape the schema in use stores: before it, a
+% condition held term.value / count.value and a key labels / values
+arguments
+    e
+end
+if ~isstruct(e) || ~isscalar(e) || ~isfield(e, 'variable'), return; end
+if isfield(e, 'term') && isstruct(e.term) && isfield(e.term, 'value') && ~isfield(e.term, 'node')
+    e.term = e.term.value;
+end
+if isfield(e, 'labels') && ~isempty(e.labels) && (~isfield(e, 'term') || isempty(e.term))
+    e.term = e.labels;
+end
+if isfield(e, 'values') && isstruct(e.values) && ~isempty(e.values) ...
+        && (~isfield(e, 'quantity') || isempty(e.quantity))
+    q = struct('value', e.values.values, 'source_value', []);
+    if isfield(e.values, 'source_values'), q.source_value = e.values.source_values; end
+    e.quantity = q;
+end
+if isfield(e, 'count') && isstruct(e.count) && isfield(e.count, 'value')
+    e.count = e.count.value;
+end
 end
 
 function v = edgeAll(doc, name)
