@@ -117,8 +117,13 @@ classdef TestCuriePrefixSpelling < matlab.unittest.TestCase
 
         function testTheSchemaOnDidSchemaPathSpellsTheSignedPrefixes(testCase)
             ix = ndi.v2.curiePrefixes(testCase.OldPath);
-            testCase.assumeTrue(isKey(ix.names, 'pmid'), ...
-                'DID_SCHEMA_PATH holds a schema built before the prefix spellings');
+            if ~isKey(ix.names, 'pmid')
+                % a schema built before the prefix spellings: nothing is
+                % respelled, and a prefix still matches ignoring case
+                testCase.verifyEqual(ndi.v2.curieKey('ORCID:0000-0001-6282-7124', ix), ...
+                    ndi.v2.curieKey('orcid:0000-0001-6282-7124', ix));
+                return;
+            end
             testCase.verifyEqual(ndi.v2.curieSpelling('orcid:0000-0001-6282-7124', ix), ...
                 'ORCID:0000-0001-6282-7124');
             testCase.verifyEqual(ndi.v2.curieSpelling('pubmed:1', ix), 'PMID:1');
