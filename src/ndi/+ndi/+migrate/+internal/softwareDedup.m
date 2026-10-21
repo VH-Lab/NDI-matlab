@@ -34,7 +34,7 @@ function [kept, report] = softwareDedup(structs)
 %   is a body that was already in STRUCTS.
 %
 %   ---------------------------------------------------------------------
-%   THE MERGE KEY IS (session_id, name, version) -- NOT local_identifier
+%   THE MERGE KEY IS (scope, name, version) -- NOT local_identifier
 %   ---------------------------------------------------------------------
 %   `software.local_identifier` is a CONVENIENCE the DID-side helper writes
 %   (private/jSoftware.m composes NAME or NAME@VERSION), and keying on it would
@@ -44,16 +44,23 @@ function [kept, report] = softwareDedup(structs)
 %   local_identifier is missing, stale or hand-written still merges correctly,
 %   and this pass REPAIRS the handle on the survivor rather than trusting it.
 %
-%   SESSION IS PART OF THE KEY, and that is a deliberate narrowing, not an
-%   oversight. `base.session_id` is "mustBeNonEmpty": true (did-schema
-%   schemas/V_eta/stable/base.json), so a survivor carries exactly one session,
-%   and merging across sessions would leave documents in session B pointing at
-%   an entity stamped session A. Whether that is acceptable is a MODELLING
-%   QUESTION (is `software` a per-session entity or a dataset-level one?), and
-%   this pass does not answer it -- it MEASURES it: REPORT.cross_session_groups
-%   and REPORT.cross_session_collapsible say exactly how many further entities a
-%   dataset-scoped key would remove. Same shape as epochMint, whose key is also
-%   the PAIR and for the same reason.
+%   THE SCOPE IS THE DATASET WHEN A DATASET IS MIGRATED, THE SESSION
+%   OTHERWISE. Decided by Jess Haley, 2026-10-21: "When a dataset is migrated,
+%   shared entities (strains, software, people, organizations, instruments,
+%   products) move to the dataset level as in native V2 imports (Haley
+%   import_V2_decisions.md #20): one entity per distinct thing in the
+%   dataset's database, with session documents pointing at it and merged-away
+%   ids remapped so every link still resolves; a lone session with no dataset
+%   keeps them in the session." ndi.migrate.internal.datasetScope decides:
+%   with exactly one `dataset` entity in the batch the key's scope is that
+%   dataset, and every software entity (with its version assertions) is then
+%   stored at the dataset level -- its `session_id` names the dataset entity,
+%   as the native import writes dataset-level documents
+%   (REPORT.moved_to_dataset_level). Otherwise the scope is the entity's
+%   session, as before. REPORT.cross_session_groups /
+%   REPORT.cross_session_collapsible measure, in both modes, how many entities
+%   a session-scoped key would leave beyond a dataset-scoped one;
+%   REPORT.scope / REPORT.dataset_id say which this run used.
 %
 %   ---------------------------------------------------------------------
 %   RETARGETING IS BY TARGET ID, NOT BY EDGE NAME
@@ -98,7 +105,8 @@ function [kept, report] = softwareDedup(structs)
 %   ---------------------------------------------------------------------
 %   WHAT IS DELIBERATELY NOT DONE
 %   ---------------------------------------------------------------------
-%   - No cross-session merge (measured, see above).
+%   - No cross-session merge for a lone session (no dataset entity in the
+%     batch, or more than one); measured, see above.
 %   - No fuzzy matching. 'ndi.calc.vis.oridir' and 'ndi.calc.vis.oridir '
 %     are different software. Names come from class() and from the app block;
 %     inventing an equivalence is the ground-truth fabrication this repo keeps
@@ -143,6 +151,9 @@ report.local_identifier_repaired = 0;
 report.version_assertions_dropped = 0;  % #88: the merged-away entity's own
 report.cross_session_groups      = 0;   % (name,version) keys spanning >1 session
 report.cross_session_collapsible = 0;   % extra entities a dataset-scoped key removes
+report.scope                     = 'session';
+report.dataset_id                = '';
+report.moved_to_dataset_level    = 0;   % entities + version assertions
 report.changed                   = false;
 
 n = numel(structs);
@@ -242,15 +253,25 @@ if report.software_seen == 0
 end
 
 % --------------------------------------------------------------- group them
-% Key = session_id | name | version. An entity with no name is excluded from
-% grouping entirely (see header) but still counted.
+% Key = scope | name | version, the scope being the dataset when one is
+% migrated and the session otherwise (Jess Haley, 2026-10-21; see header). An
+% entity with no name is excluded from grouping entirely but still counted.
+scope = ndi.migrate.internal.datasetScope(structs);
+if scope.is_dataset
+    report.scope      = 'dataset';
+    report.dataset_id = scope.dataset_id;
+end
 groups = containers.Map('KeyType', 'char', 'ValueType', 'any');
 for i = find(isSoftware)
     if isempty(nameOf{i})
         report.unnamed_seen = report.unnamed_seen + 1;
         continue;
     end
-    key = [sessOf{i} '|' nameOf{i} '|' versOf{i}];
+    if scope.is_dataset
+        key = [scope.dataset_id '|' nameOf{i} '|' versOf{i}];
+    else
+        key = [sessOf{i} '|' nameOf{i} '|' versOf{i}];
+    end
     if isKey(groups, key)
         groups(key) = [groups(key), i];
     else
@@ -258,7 +279,7 @@ for i = find(isSoftware)
     end
 end
 
-% --------------------------- measure (do NOT perform) the cross-session merge
+% ------------------------------------- measure the cross-session collapse
 report = measureCrossSession(report, isSoftware, sessOf, nameOf, versOf);
 
 % ------------------------------------------------------------------ merge
@@ -314,8 +335,27 @@ end
 
 report.software_surviving = report.software_seen - report.software_merged_away;
 
+% ------------------------------------------- the dataset level, when there is one
+% Every surviving software entity and its version assertions are stored with
+% the dataset (their `session_id` names the dataset entity).
+if scope.is_dataset
+    for i = find(isSoftware | isVersionAssertion)
+        if removeMask(i)
+            continue;
+        end
+        if isVersionAssertion(i) && ~isKey(softwareIdx, S.aboutId(structs{i}))
+            continue;   % a version of something that is not a software entity here
+        end
+        if ~strcmp(ndi.v2.sessionIdOf(structs{i}), scope.dataset_id)
+            structs{i} = ndi.migrate.internal.withSessionId(structs{i}, scope.dataset_id);
+            report.moved_to_dataset_level = report.moved_to_dataset_level + 1;
+        end
+    end
+end
+
 if report.software_merged_away == 0
     kept = structs;   % global_identifier unions/handle repairs cannot have run
+    report.changed = report.moved_to_dataset_level > 0;
     return;
 end
 
@@ -336,11 +376,9 @@ end
 % ===================== cross-session measurement ==========================
 
 function report = measureCrossSession(report, isSoftware, sessOf, nameOf, versOf)
-%MEASURECROSSSESSION How much MORE a dataset-scoped key would collapse.
-%   Recorded, never acted on: dropping session from the key is a modelling
-%   decision about what a `software` entity is, and rule 4 says the team makes
-%   it. Reporting the number is what turns "should we?" into a question with an
-%   answer attached.
+%MEASURECROSSSESSION How many entities a session-scoped key leaves beyond a
+%   dataset-scoped one. Measured in both modes; the merge itself happens only
+%   when the scope is a dataset (Jess Haley, 2026-10-21; see the header).
 bySoftware = containers.Map('KeyType', 'char', 'ValueType', 'any');
 for i = find(isSoftware)
     if isempty(nameOf{i})

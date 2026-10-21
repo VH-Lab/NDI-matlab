@@ -300,6 +300,43 @@ classdef TestSoftwareDedup < matlab.unittest.TestCase
             testCase.verifyEqual(depValue(l, 'interpreter_id'), 'sw_a');
         end
 
+        function testInADatasetOneProgramIsOneEntityAtTheDatasetLevel(testCase)
+            % Decided by Jess Haley, 2026-10-21: "When a dataset is migrated,
+            % shared entities (strains, software, people, organizations,
+            % instruments, products) move to the dataset level as in native V2
+            % imports [...] one entity per distinct thing in the dataset's
+            % database, with session documents pointing at it and merged-away
+            % ids remapped so every link still resolves". With a `dataset`
+            % entity in the batch the two sessions' mints merge, the survivor
+            % and its version are stored with the dataset, and session 2's
+            % calculation points at the survivor.
+            [a, va] = software88('sw_a', 'sess_1', 'ndi.calc.vis.oridir', '1.2');
+            [b, vb] = software88('sw_b', 'sess_2', 'ndi.calc.vis.oridir', '1.2');
+            leaf = leafBody('leaf_2', 'sess_2', 'sw_b');
+            [kept, report] = ndi.migrate.internal.softwareDedup( ...
+                {datasetEntity('ds_1'), a, va, b, vb, leaf});
+            testCase.verifyEqual(report.scope, 'dataset');
+            testCase.verifyEqual(report.dataset_id, 'ds_1');
+            testCase.verifyEqual(report.software_merged_away, 1);
+            testCase.verifyEqual(report.cross_session_collapsible, 1);
+            testCase.verifyEmpty(firstWithId(kept, 'sw_b'));
+            testCase.verifyEqual(depValue(firstWithId(kept, 'leaf_2'), 'software_id'), 'sw_a');
+            testCase.verifyEqual(ndi.v2.sessionIdOf(firstWithId(kept, 'sw_a')), 'ds_1');
+            testCase.verifyEqual(ndi.v2.sessionIdOf(firstWithId(kept, 'sw_a_version')), 'ds_1');
+            % the session document that points at it stays in its session
+            testCase.verifyEqual(ndi.v2.sessionIdOf(firstWithId(kept, 'leaf_2')), 'sess_2');
+            testCase.verifyEqual(report.moved_to_dataset_level, 2);
+        end
+
+        function testALoneSessionKeepsItsSoftware(testCase)
+            % "a lone session with no dataset keeps them in the session"
+            [a, va] = software88('sw_a', 'sess_1', 'ndi', '1.2');
+            [kept, report] = ndi.migrate.internal.softwareDedup({a, va});
+            testCase.verifyEqual(report.scope, 'session');
+            testCase.verifyEqual(report.moved_to_dataset_level, 0);
+            testCase.verifyEqual(ndi.v2.sessionIdOf(firstWithId(kept, 'sw_a')), 'sess_1');
+        end
+
         function testEightyEightDifferentVersionsDoNotMerge(testCase)
             [a, va] = software88('sw_a', 'sess_1', 'ndi', '1.2');
             [b, vb] = software88('sw_b', 'sess_1', 'ndi', '1.3');
@@ -368,6 +405,19 @@ v.base = struct('id', [id '_version'], 'session_id', sessionId, ...
     'creation_timestamp', '2024-01-01T00:00:00.000Z');
 v.statement = struct('variable', struct('node', 'IAO:0000129', 'name', 'version number'));
 v.text = struct('value', struct('text', version));
+end
+
+function d = datasetEntity(id)
+%DATASETENTITY A did-schema #88 `entity` of type dataset; its id is the
+%   dataset's session id, as the native V2 import writes it.
+d = struct();
+d.document_class = struct('class_name', 'entity', 'class_version', '1.0.0', ...
+    'superclasses', struct('class_name', 'base', 'class_version', '1.0.0'), ...
+    'schema_version', 'V_eta');
+d.depends_on = struct('name', {}, 'value', {});
+d.base = struct('id', id, 'session_id', id, ...
+    'creation_timestamp', '2024-01-01T00:00:00.000Z');
+d.entity = struct('type', struct('node', '', 'name', 'dataset'), 'name', 'ds');
 end
 
 function s = leafBody(id, sessionId, softwareId)

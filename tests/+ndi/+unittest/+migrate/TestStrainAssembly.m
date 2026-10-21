@@ -245,6 +245,58 @@ classdef TestStrainAssembly < matlab.unittest.TestCase
             testCase.verifyEqual(numel(kept), 1);
         end
 
+        function testInADatasetEachStrainIsOneEntityAtTheDatasetLevel(testCase)
+            % Decided by Jess Haley, 2026-10-21: "When a dataset is migrated,
+            % shared entities (strains, ...) move to the dataset level as in
+            % native V2 imports [...]: one entity per distinct thing in the
+            % dataset's database, with session documents pointing at it and
+            % merged-away ids remapped so every link still resolves". Haley
+            % writes OP50 and OP50-GFP once per session; with a dataset in the
+            % batch the two copies merge onto the smallest id, and a table row
+            % in session 2 that named session 2's OP50 names the survivor.
+            row = struct('document_class', dc('ontology_table_row', {'base'}), ...
+                'depends_on', dep('document_id', 'op50_doc_2'), ...
+                'base', base('row_2'), ...
+                'ontology_table_row', struct('values', {{'op50_doc_2', 'x'}}));
+            [kept, minted, report] = ndi.migrate.internal.strainAssembly( ...
+                [haleyBacteriaIn('', 'sess_1'), haleyBacteriaIn('_2', 'sess_2'), ...
+                 {datasetEntity('ds_1'), row}]);
+            testCase.verifyEqual(report.scope, 'dataset');
+            testCase.verifyEqual(report.strains_assembled, 4);
+            testCase.verifyEqual(report.strains_merged_away, 2);
+            testCase.verifyEqual(report.cross_session_groups, 2);
+            testCase.verifyEqual(report.cross_session_collapsible, 2);
+            testCase.verifyNotEmpty(strainWithId(minted, 'op50_doc'));
+            testCase.verifyNotEmpty(strainWithId(minted, 'op50gfp_doc'));
+            testCase.verifyEmpty(strainWithId(minted, 'op50_doc_2'));
+            testCase.verifyEmpty(strainWithId(minted, 'op50gfp_doc_2'));
+            % one derived_from, survivor to survivor
+            r = relationsFrom(minted, 'op50gfp_doc');
+            testCase.verifyNumElements(r, 1);
+            testCase.verifyEqual(depValue(r{1}, 'parent_id'), 'op50_doc');
+            testCase.verifyEmpty(relationsFrom(minted, 'op50gfp_doc_2'));
+            % stored with the dataset
+            for k = 1:numel(minted)
+                testCase.verifyEqual(ndi.v2.sessionIdOf(minted{k}), 'ds_1');
+            end
+            % the remap: the edge AND the table cell
+            out = kept{cellfun(@(b) strcmp(b.base.id, 'row_2'), kept)};
+            testCase.verifyEqual(depValue(out, 'document_id'), 'op50_doc');
+            testCase.verifyEqual(out.ontology_table_row.values{1}, 'op50_doc');
+            testCase.verifyEqual(report.references_remapped, 2);
+        end
+
+        function testALoneSessionKeepsEveryStrainCopy(testCase)
+            % "a lone session with no dataset keeps them in the session"
+            [~, minted, report] = ndi.migrate.internal.strainAssembly( ...
+                [haleyBacteriaIn('', 'sess_1'), haleyBacteriaIn('_2', 'sess_2')]);
+            testCase.verifyEqual(report.scope, 'session');
+            testCase.verifyEqual(report.strains_merged_away, 0);
+            testCase.verifyEqual(report.cross_session_collapsible, 2);
+            testCase.verifyNotEmpty(strainWithId(minted, 'op50_doc_2'));
+            testCase.verifyEqual(ndi.v2.sessionIdOf(strainWithId(minted, 'op50_doc_2')), 'sess_2');
+        end
+
         function testReportStatesItsDenominator(testCase)
             structs = haleyBacteria();
             [~, ~, report] = ndi.migrate.internal.strainAssembly(structs);
@@ -278,6 +330,31 @@ s = { ...
         'ndi://gst_doc', 'WBStrain:00041972', {'ndi://op50_doc'}), ...
     speciesDoc('species_doc'), ...
     gstDoc('gst_doc', 'transgenic', 'openminds:transgenic')};
+end
+
+function s = haleyBacteriaIn(sfx, sess)
+% haleyBacteria with every id suffixed by SFX and stored in session SESS -- the
+% per-session copy haley/doImport.m writes.
+s = { ...
+    strainDoc(['op50_doc' sfx], 'Escherichia coli OP50', ['species_doc' sfx], ...
+        'wild type', 'NCBITaxon:637912', {}), ...
+    strainDoc(['op50gfp_doc' sfx], 'OP50-GFP', ['species_doc' sfx], ...
+        ['ndi://gst_doc' sfx], 'WBStrain:00041972', {['ndi://op50_doc' sfx]}), ...
+    speciesDoc(['species_doc' sfx]), ...
+    gstDoc(['gst_doc' sfx], 'transgenic', 'openminds:transgenic')};
+for k = 1:numel(s)
+    s{k}.base.session_id = sess;
+end
+end
+
+function d = datasetEntity(id)
+%DATASETENTITY A did-schema #88 `entity` of type dataset (its id is the
+%   dataset's session id).
+d = struct('document_class', dc('entity', {'base'}), ...
+    'depends_on', struct('name', {}, 'value', {}), ...
+    'base', struct('id', id, 'session_id', id, 'name', 'n', ...
+        'datestamp', '2024-01-01T00:00:00.000Z'), ...
+    'entity', struct('type', struct('node', '', 'name', 'dataset'), 'name', 'ds'));
 end
 
 function s = twoParentCross()

@@ -112,6 +112,26 @@ function [kept, minted, report] = strainAssembly(structs)
 %     every assertion minted here is about the STRAIN (its `entity_id`). That
 %     is the whole reason a strain is an entity.
 %
+%   * ONE STRAIN PER DATASET WHEN A DATASET IS MIGRATED. Decided by Jess
+%     Haley, 2026-10-21: "When a dataset is migrated, shared entities
+%     (strains, software, people, organizations, instruments, products) move
+%     to the dataset level as in native V2 imports (Haley
+%     import_V2_decisions.md #20): one entity per distinct thing in the
+%     dataset's database, with session documents pointing at it and
+%     merged-away ids remapped so every link still resolves; a lone session
+%     with no dataset keeps them in the session." The Haley writer mints one
+%     Strain per session (doImport.m runs per session), so a dataset holds
+%     copies. With exactly one `dataset` entity in the batch
+%     (ndi.migrate.internal.datasetScope), identical strains (same name,
+%     species, genetic strain type, identifier, description and surviving
+%     background strains) merge onto the smallest id, every strain entity and
+%     its assertions and relations are stored at the dataset level (their
+%     `session_id` names the dataset entity), and every reference to a
+%     merged-away id ANYWHERE in the kept set -- edges and ordinary fields,
+%     since the ids sit in table cells -- is rewritten to the survivor
+%     (ndi.migrate.internal.remapIds; REPORT.strains_merged_away,
+%     REPORT.references_remapped). A lone session is left exactly as before.
+%
 %   ---------------------------------------------------------------------
 %   DEFERRED, ON PURPOSE
 %   ---------------------------------------------------------------------
@@ -162,6 +182,12 @@ report.background_unresolved  = 0;
 report.species_missing        = 0;   % assembled, but no species to assert
 report.genetic_strain_type_missing = 0;
 report.assertions_minted      = 0;   % term + text assertions about strains
+report.scope                  = 'session';
+report.dataset_id             = '';
+report.cross_session_groups   = 0;   % distinct strains written in >1 session
+report.cross_session_collapsible = 0;
+report.strains_merged_away    = 0;   % dataset scope only
+report.references_remapped    = 0;   % merged-away ids rewritten to survivors
 report.changed                = false;
 
 if isempty(structs)
@@ -336,7 +362,135 @@ for i = find(isOpenminds)
 end
 
 kept = structs(~removeMask);
+
+% --- pass 4: the dataset level, when a dataset is migrated -----------------
+% Decided by Jess Haley, 2026-10-21 (header): one strain entity per distinct
+% strain in the dataset's database, stored at the dataset level, with every
+% merged-away id remapped to its survivor.
+scope = ndi.migrate.internal.datasetScope(structs);
+[minted, kept, report] = datasetLevel(minted, kept, report, scope, ...
+    find(assembled), idOf, structs, speciesTermOf, gstTermOf, byId, assembled);
 report.changed = true;
+end
+
+% ===================== the dataset level ==================================
+
+function [minted, kept, report] = datasetLevel(minted, kept, report, scope, ...
+        idx, idOf, structs, speciesTermOf, gstTermOf, byId, assembled)
+%DATASETLEVEL Merge identical strains across the dataset and store them there.
+%   The key is the strain's CONTENT -- name, species, genetic strain type,
+%   identifier, description and its background strains (as their SURVIVING
+%   ids) -- iterated to a fixed point so that two copies of a cross whose
+%   parents are themselves copies merge too. Measured in both modes
+%   (REPORT.cross_session_groups / _collapsible); merged and moved only when the
+%   scope is a dataset.
+S = ndi.migrate.internal.etaShape;
+remap = containers.Map('KeyType', 'char', 'ValueType', 'char');
+attrs = cell(1, numel(idx));
+sess  = cell(1, numel(idx));
+parents = cell(1, numel(idx));
+for k = 1:numel(idx)
+    i = idx(k);
+    f = openmindsFields(structs{i});
+    sp = speciesTermOf{i}; g = gstTermOf{i};
+    attrs{k} = strjoin({charField(f, {'name'}), char(sp.node), char(sp.name), ...
+        char(g.node), char(g.name), ...
+        charField(f, {'ontologyIdentifier', 'ontology_identifier'}), ...
+        charField(f, {'description'})}, char(31));
+    sess{k} = ndi.v2.sessionIdOf(structs{i});
+    ps = ndiRefs(getAny(f, {'backgroundStrain', 'background_strain'}));
+    keepP = false(1, numel(ps));
+    for p = 1:numel(ps)
+        keepP(p) = isKey(byId, ps{p}) && assembled(byId(ps{p}));
+    end
+    parents{k} = ps(keepP);
+end
+ids = idOf(idx);
+for iter = 1:numel(idx) + 1
+    keys_ = cell(1, numel(idx));
+    for k = 1:numel(idx)
+        pk = cellfun(@(x) resolveId(remap, x), parents{k}, 'UniformOutput', false);
+        keys_{k} = [attrs{k} char(30) strjoin(pk, ',')];
+    end
+    [u, ~, grp] = unique(keys_);
+    changed = false;
+    for g = 1:numel(u)
+        members = find(grp == g);
+        [~, o] = sort(ids(members));
+        survivor = ids{members(o(1))};
+        for m = members(:)'
+            if ~strcmp(ids{m}, survivor) && ...
+                    ~(isKey(remap, ids{m}) && strcmp(remap(ids{m}), survivor))
+                remap(ids{m}) = survivor;
+                changed = true;
+            end
+        end
+    end
+    if ~changed
+        break;
+    end
+end
+% measurement: session-scoped groups beyond dataset-scoped ones
+sessKeys = cellfun(@(a, b) [a char(29) b], sess, keys_, 'UniformOutput', false);
+report.cross_session_collapsible = numel(unique(sessKeys)) - numel(unique(keys_));
+for g = 1:numel(u)
+    if numel(unique(sess(grp == g))) > 1
+        report.cross_session_groups = report.cross_session_groups + 1;
+    end
+end
+if ~scope.is_dataset
+    return;
+end
+report.scope      = 'dataset';
+report.dataset_id = scope.dataset_id;
+
+gone = remap.keys();
+report.strains_merged_away = numel(gone);
+keepM = true(1, numel(minted));
+seenRel = containers.Map('KeyType', 'char', 'ValueType', 'logical');
+for k = 1:numel(minted)
+    b = minted{k};
+    if S.isEntity(b)
+        about = b.base.id;
+    elseif strcmp(S.className(b), 'directed_relation')
+        [about, par] = S.relationEnds(b);
+    else
+        about = S.aboutId(b);
+    end
+    if isKey(remap, about)
+        keepM(k) = false;   % the survivor carries the same entity and facts
+        continue;
+    end
+    if strcmp(S.className(b), 'directed_relation')
+        newPar = resolveId(remap, par);
+        relKey = [about '|' newPar];
+        if isKey(seenRel, relKey)
+            keepM(k) = false;
+            continue;
+        end
+        seenRel(relKey) = true;
+        if ~strcmp(newPar, par)
+            b = S.setEdge(b, 'parent_id', newPar);
+        end
+    end
+    minted{k} = ndi.migrate.internal.withSessionId(b, scope.dataset_id);
+end
+minted = minted(keepM);
+if ~isempty(gone)
+    flat = containers.Map('KeyType', 'char', 'ValueType', 'char');
+    for k = 1:numel(gone)
+        flat(gone{k}) = resolveId(remap, gone{k});
+    end
+    [kept, report.references_remapped] = ndi.migrate.internal.remapIds(kept, flat);
+end
+end
+
+function id = resolveId(remap, id)
+seen = 0;
+while isKey(remap, id) && seen < remap.Count + 1
+    id = remap(id);
+    seen = seen + 1;
+end
 end
 
 % ===================== the strain's statements =========================

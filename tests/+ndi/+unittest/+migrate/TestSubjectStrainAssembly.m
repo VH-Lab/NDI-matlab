@@ -236,13 +236,17 @@ classdef TestSubjectStrainAssembly < matlab.unittest.TestCase
 
         function testGeneticStrainTypeAssertionMovesOntoTheStrain(testCase)
             % each rat's OWN strain is OTR-IRES-Cre, so its `knockin` moves;
-            % SD is an ancestor, so the `wildtype` assertion stays on the rat
+            % SD is an ancestor reachable through derived_from, so its
+            % `wildtype` assertion leaves the rat too (Jess Haley, 2026-10-21)
             [kept, minted, report] = runOn(@twoRatsSameGenotype);
             testCase.verifyEqual(report.gst_fragments_seen, 4);
-            testCase.verifyEqual(report.gst_assertions_removed, 2);
-            testCase.verifyEqual(report.gst_kept_not_the_subjects_strain, 2);
+            testCase.verifyEqual(report.gst_assertions_removed, 4);
+            testCase.verifyEqual(report.gst_kept_not_the_subjects_strain, 0);
             testCase.verifyFalse(anyId(kept, 'rat1_gst_cre'));
-            testCase.verifyTrue(anyId(kept, 'rat1_gst_sd'));
+            testCase.verifyFalse(anyId(kept, 'rat1_gst_sd'));
+            sd = strainNamed(minted, 'SD');
+            gsd = assertionsAbout(minted, sd.base.id, 'genetic strain type');
+            testCase.verifyEqual(gsd{1}.term.value.name, 'wildtype');
             cre = strainNamed(minted, 'OTR-IRES-Cre');
             g = assertionsAbout(minted, cre.base.id, 'genetic strain type');
             testCase.verifyEqual(g{1}.term.value.name, 'knockin');
@@ -404,23 +408,120 @@ classdef TestSubjectStrainAssembly < matlab.unittest.TestCase
             testCase.verifyEqual(numel(kept), numel(mig));
         end
 
-        % ---------------- measured, not acted on ---------------------------
+        % ---------------- ancestor strain assertions -----------------------
+        % Decided by Jess Haley, 2026-10-21: "A subject keeps only its
+        % `instance_of` link to its own strain; the ancestor-strain assertions
+        % on the subject are dropped wherever the pedigree resolved into
+        % `derived_from` links between strains (an unresolved parent's
+        % assertion stays)."
 
-        function testAncestorAssertionsOnTheSubjectAreMeasuredNotRemoved(testCase)
-            % the mouse is an instance of the CROSS only; the three ancestor
-            % strain assertions stay as pass 1 emitted them
+        function testAncestorAssertionsAreDroppedWhereThePedigreeResolved(testCase)
+            % the mouse is an instance of the CROSS only; its three ancestors
+            % are reached cross -> arc/eyfp -> svev, so their assertions go
             [kept, minted, report] = runOn(@hunsbergerCross);
             testCase.verifyEqual(report.background_strain_assertions_on_subject, 3);
-            testCase.verifyTrue(anyId(kept, 'm1_svev'));
-            testCase.verifyTrue(anyId(kept, 'm1_arc'));
-            testCase.verifyTrue(anyId(kept, 'm1_eyfp'));
+            testCase.verifyEqual(report.background_strain_assertions_removed, 3);
+            testCase.verifyEqual(report.background_kept_unreachable, 0);
+            testCase.verifyEqual(report.background_kept_pinned, 0);
+            testCase.verifyFalse(anyId(kept, 'm1_svev'));
+            testCase.verifyFalse(anyId(kept, 'm1_arc'));
+            testCase.verifyFalse(anyId(kept, 'm1_eyfp'));
             testCase.verifyFalse(anyId(kept, 'm1_cross'));
             r = relations(minted, 'm1', 'instance_of');
             testCase.verifyNumElements(r, 1);
             cross = strainNamed(minted, 'ArcCreERT2 x eYFP');
             testCase.verifyEqual(depValue(r{1}, 'parent_id'), cross.base.id);
             testCase.verifyEqual(report.instance_of_minted, 1);
+            % no `strain` assertion about the mouse is left at all
+            testCase.verifyEmpty(assertionsAbout(kept, 'm1', 'strain'));
+            % and both genetic strain types left the mouse with them
+            testCase.verifyFalse(anyId(kept, 'm1_gst'));
+            testCase.verifyFalse(anyId(kept, 'm1_gst_wt'));
         end
+
+        function testTheDroppedAncestorIsStillReachableFromTheSubject(testCase)
+            [~, minted, ~] = runOn(@hunsbergerCross);
+            r = relations(minted, 'm1', 'instance_of');
+            here = {depValue(r{1}, 'parent_id')};
+            reached = here;
+            while ~isempty(here)
+                nxt = {};
+                for k = 1:numel(here)
+                    rr = relations(minted, here{k}, 'derived_from');
+                    for q = 1:numel(rr)
+                        nxt{end+1} = depValue(rr{q}, 'parent_id'); %#ok<AGROW>
+                    end
+                end
+                here = setdiff(unique(nxt), reached);
+                reached = [reached, here]; %#ok<AGROW>
+            end
+            svev = strainNamed(minted, '129S/SvEv');
+            testCase.verifyTrue(any(strcmp(reached, svev.base.id)));
+        end
+
+        function testAnUnresolvedParentKeepsItsAncestorsAssertion(testCase)
+            % eYFP cannot be assembled (no name), so cross -> eYFP is not a
+            % derived_from link; 129S/SvEv is still reached through ArcCreERT2,
+            % so only eYFP's own assertion stays -- and it is not a candidate
+            % at all, so it is left by construction.
+            [v1, mig] = hunsbergerCross();
+            v1 = renameStrain(v1, 'm1_eyfp', '');
+            [kept, ~, report] = ...
+                ndi.migrate.internal.subjectStrainAssembly(v1, mig);
+            testCase.verifyEqual(report.background_unresolved, 1);
+            testCase.verifyTrue(anyId(kept, 'm1_eyfp'));
+            testCase.verifyFalse(anyId(kept, 'm1_arc'));
+            testCase.verifyFalse(anyId(kept, 'm1_svev'));
+            testCase.verifyEqual(report.background_strain_assertions_removed, 2);
+        end
+
+        function testAnAncestorBehindAnUnresolvedLinkStays(testCase)
+            % Arc and eYFP both unassembled: svev is still an ancestor
+            % candidate, but no derived_from chain reaches it from the cross
+            [v1, mig] = hunsbergerCross();
+            v1 = renameStrain(v1, 'm1_arc', '');
+            v1 = renameStrain(v1, 'm1_eyfp', '');
+            [kept, ~, report] = ...
+                ndi.migrate.internal.subjectStrainAssembly(v1, mig);
+            testCase.verifyTrue(anyId(kept, 'm1_arc'));
+            testCase.verifyTrue(anyId(kept, 'm1_eyfp'));
+            testCase.verifyTrue(anyId(kept, 'm1_svev'));
+            testCase.verifyEqual(report.background_strain_assertions_removed, 0);
+        end
+
+        function testAPinnedAncestorAssertionStays(testCase)
+            [v1, mig] = hunsbergerCross();
+            mig{end+1} = relationDoc('rel_1', 'sess_H', 'm1_arc');
+            [kept, ~, report] = ...
+                ndi.migrate.internal.subjectStrainAssembly(v1, mig);
+            testCase.verifyEqual(report.background_kept_pinned, 1);
+            testCase.verifyTrue(anyId(kept, 'm1_arc'));
+            testCase.verifyFalse(anyId(kept, 'm1_svev'));
+        end
+
+        function testACyclicPedigreeLosesNoStrainAssertion(testCase)
+            % both strains are each other's ancestor, so the subject has no
+            % own strain and nothing is reachable from one: both stay
+            [v1, mig] = cyclicPedigree();
+            [kept, ~, report] = ...
+                ndi.migrate.internal.subjectStrainAssembly(v1, mig);
+            testCase.verifyEqual(report.instance_of_minted, 0);
+            testCase.verifyEqual(report.background_kept_unreachable, 2);
+            testCase.verifyTrue(anyId(kept, 'c_a'));
+            testCase.verifyTrue(anyId(kept, 'c_b'));
+        end
+
+        function testEveryAncestorAssertionIsAccountedFor(testCase)
+            [v1, mig] = hunsbergerCross();
+            mig{end+1} = relationDoc('rel_1', 'sess_H', 'm1_arc');
+            [~, ~, report] = ndi.migrate.internal.subjectStrainAssembly(v1, mig);
+            testCase.verifyEqual(report.background_strain_assertions_on_subject, ...
+                report.background_strain_assertions_removed ...
+                + report.background_kept_unreachable ...
+                + report.background_kept_pinned);
+        end
+
+        % ---------------- measured, not acted on ---------------------------
 
         function testCrossSessionMergeIsMeasuredAndNotPerformed(testCase)
             [~, minted, report] = runOn(@sameStrainTwoSessions);
@@ -431,6 +532,44 @@ classdef TestSubjectStrainAssembly < matlab.unittest.TestCase
             testCase.verifyEqual(report.cross_session_collapsible, 1);
             sessions = sort(cellfun(@(b) sessionOf(b), e, 'UniformOutput', false));
             testCase.verifyEqual(sessions, {'sess_A', 'sess_B'});
+        end
+
+        function testInADatasetOneStrainIsOneEntityAtTheDatasetLevel(testCase)
+            % Decided by Jess Haley, 2026-10-21: shared entities move to the
+            % dataset level when a dataset is migrated; one entity per
+            % distinct thing; session documents point at it.
+            [v1, mig] = sameStrainTwoSessions();
+            mig{end+1} = datasetEntity('ds_1');
+            [~, minted, report] = ...
+                ndi.migrate.internal.subjectStrainAssembly(v1, mig);
+            testCase.verifyEqual(report.scope, 'dataset');
+            testCase.verifyEqual(report.dataset_id, 'ds_1');
+            testCase.verifyEqual(report.distinct_strains, 1);
+            testCase.verifyEqual(report.cross_session_collapsible, 1);
+            testCase.verifyEqual(report.cross_session_merged, 1);
+            e = strainEntities(minted);
+            testCase.verifyEqual(numel(e), 1);
+            testCase.verifyEqual(sessionOf(e{1}), 'ds_1');
+            % its assertions live with it
+            g = assertionsAbout(minted, e{1}.base.id, 'species');
+            testCase.verifyEqual(sessionOf(g{1}), 'ds_1');
+            % each worm, in its own session, is an instance_of the one strain
+            for w = {'worm_sess_A', 'worm_sess_B'}
+                r = relations(minted, w{1}, 'instance_of');
+                testCase.verifyNumElements(r, 1);
+                testCase.verifyEqual(depValue(r{1}, 'parent_id'), e{1}.base.id);
+                testCase.verifyEqual(sessionOf(r{1}), strrep(w{1}, 'worm_', ''));
+            end
+        end
+
+        function testWithTwoDatasetEntitiesTheScopeStaysTheSession(testCase)
+            [v1, mig] = sameStrainTwoSessions();
+            mig{end+1} = datasetEntity('ds_1');
+            mig{end+1} = datasetEntity('ds_2');
+            [~, ~, report] = ndi.migrate.internal.subjectStrainAssembly(v1, mig);
+            testCase.verifyEqual(report.scope, 'session');
+            testCase.verifyEqual(report.distinct_strains, 2);
+            testCase.verifyEqual(report.cross_session_merged, 0);
         end
 
         % ---------------- identifiers --------------------------------------
@@ -485,8 +624,9 @@ classdef TestSubjectStrainAssembly < matlab.unittest.TestCase
                 + report.gst_kept_not_a_term_assertion);
             testCase.verifyEqual(report.gst_kept_pinned, 1);
             testCase.verifyEqual(report.gst_kept_value_not_on_strain, 1);
-            testCase.verifyEqual(report.gst_kept_not_the_subjects_strain, 2);
-            testCase.verifyEqual(report.gst_assertions_removed, 0);
+            % the two SD fragments leave with the SD assertions they belong to
+            testCase.verifyEqual(report.gst_kept_not_the_subjects_strain, 0);
+            testCase.verifyEqual(report.gst_assertions_removed, 2);
         end
 
         function testEmptyInputIsInertAndStillReports(testCase)
@@ -878,6 +1018,18 @@ b.statement = struct('variable', struct('node', '', 'name', variableName));
 b.term = struct('value', struct('node', node, 'name', name));
 end
 
+function d = datasetEntity(id)
+%DATASETENTITY A did-schema #88 `entity` of type dataset (its id is the
+%   dataset's session id).
+d = struct();
+d.document_class = dc('entity', {'base'});
+d.document_class.schema_version = 'V_eta';
+d.depends_on = struct('name', {}, 'value', {});
+d.base = struct('id', id, 'session_id', id, ...
+    'creation_timestamp', '2024-06-01T12:00:00.000Z');
+d.entity = struct('type', struct('node', '', 'name', 'dataset'), 'name', 'ds');
+end
+
 function b = subjectDoc(id)
 %SUBJECTDOC What did2.convert.migrators_j.subject emits on #88: an `entity`
 %   of type `organism`, id preserved.
@@ -945,6 +1097,18 @@ function mig = retermAssertion(mig, id, node, name)
 for k = 1:numel(mig)
     if strcmp(mig{k}.base.id, id)
         mig{k}.term.value = struct('node', node, 'name', name);
+        return;
+    end
+end
+error('fixture has no document %s', id);
+end
+
+function v1 = renameStrain(v1, id, name)
+%RENAMESTRAIN Set a did_v1 Strain's `fields.name`; '' makes it unassemblable
+%   (a strain entity requires a name), i.e. an unresolved parent.
+for k = 1:numel(v1)
+    if strcmp(v1{k}.base.id, id)
+        v1{k}.openminds.fields.name = name;
         return;
     end
 end

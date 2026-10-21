@@ -174,7 +174,7 @@ function [kept, minted, report] = subjectStrainAssembly(v1Bodies, migratedStruct
 %   so every subject row mints its own Strain, its own Species and its own
 %   GeneticStrainType documents. The key is therefore the strain's CONTENT:
 %
-%       (session_id, name, species{node,name}, genetic_strain_type{node,name},
+%       (scope, name, species{node,name}, genetic_strain_type{node,name},
 %        description, phenotype, laboratory_code, sorted global identifiers,
 %        the KEYS of its background strains, in order)
 %
@@ -190,19 +190,33 @@ function [kept, minted, report] = subjectStrainAssembly(v1Bodies, migratedStruct
 %   repository keeps paying for. ndi.migrate.internal.softwareDedup makes the
 %   same call in the same words.
 %
-%   SESSION IS IN THE KEY, deliberately, exactly as it is in softwareDedup and
-%   epochMint. `base.session_id` is mustBeNonEmpty (V_eta/stable/base.json), so
-%   a survivor carries exactly one session and merging across sessions would
-%   leave documents in session B pointing at an entity stamped session A.
-%   Whether `strain` is a per-session or a dataset-level entity is a MODELLING
-%   QUESTION and this pass does not answer it -- it MEASURES it
-%   (REPORT.cross_session_groups, REPORT.cross_session_collapsible say exactly
-%   how many further entities a dataset-scoped key would remove).
+%   THE SCOPE IS THE DATASET WHEN A DATASET IS MIGRATED, THE SESSION OTHERWISE.
+%   Decided by Jess Haley, 2026-10-21: "When a dataset is migrated, shared
+%   entities (strains, software, people, organizations, instruments, products)
+%   move to the dataset level as in native V2 imports (Haley
+%   import_V2_decisions.md #20): one entity per distinct thing in the
+%   dataset's database, with session documents pointing at it and merged-away
+%   ids remapped so every link still resolves; a lone session with no dataset
+%   keeps them in the session." ndi.migrate.internal.datasetScope decides
+%   which: with exactly one `dataset` entity in the batch the key's scope is
+%   that dataset and every minted strain entity, its assertions and its
+%   `derived_from` relations are stored at the dataset level (their
+%   `session_id` names the dataset entity, as the native import writes them);
+%   otherwise the scope is the document's session, as before
+%   (REPORT.scope, REPORT.dataset_id). The subject's `instance_of` stays in the
+%   subject's session -- it is the session document pointing at the shared
+%   entity. Nothing needs remapping here: the strain entities are freshly
+%   minted and each source assertion's id is kept by its `instance_of`.
+%   REPORT.cross_session_groups / REPORT.cross_session_collapsible are measured
+%   in both modes (how many entities a session-scoped key would leave beyond a
+%   dataset-scoped one); REPORT.cross_session_merged is how many of those this
+%   run actually merged (0 when session-scoped).
 %
 %   ---------------------------------------------------------------------
 %   WHAT IS REMOVED, AND THE CONDITIONS ON REMOVING IT
 %   ---------------------------------------------------------------------
-%   Two kinds of assertion leave the subject. Both are named in the signed
+%   Two kinds of assertion leave the subject here (a third, the ancestor
+%   `strain` assertions, is the 2026-10-21 decision below). Both are named in the signed
 %   model (DID-schema V_eta_openminds_family_record.md Part 6, "Migration
 %   consequences" 2 and 3, under TEAM-SIGN-OFF jess 2026-08-05), and the
 %   pre-#88 schema repeated one of them in its own documentation
@@ -215,8 +229,9 @@ function [kept, minted, report] = subjectStrainAssembly(v1Bodies, migratedStruct
 %   * A `genetic strain type` assertion goes ONLY IF it is the assertion
 %     minted from a GeneticStrainType fragment of a Strain this pass
 %     assembled, AND that Strain is the subject's OWN strain (this pass made
-%     the subject an `instance_of` it; an ancestor's strain is not reachable
-%     that way), AND the strain entity was given a `genetic strain type`
+%     the subject an `instance_of` it) or an ancestor whose `strain`
+%     assertion was dropped below (reachable through `derived_from`), AND
+%     the strain entity was given a `genetic strain type`
 %     assertion of that exact value. So the fact is reachable subject ->
 %     instance_of -> strain before the assertion is dropped, never after a
 %     guess. (Before #88 this read "the subject's `strain` assertion carries a
@@ -242,21 +257,39 @@ function [kept, minted, report] = subjectStrainAssembly(v1Bodies, migratedStruct
 %   assertion stays (REPORT.gst_kept_shared_with_unassembled).
 %
 %   ---------------------------------------------------------------------
+%   ANCESTOR-STRAIN ASSERTIONS ON THE SUBJECT
+%   ---------------------------------------------------------------------
+%   Decided by Jess Haley, 2026-10-21: "A subject keeps only its
+%   `instance_of` link to its own strain; the ancestor-strain assertions on
+%   the subject are dropped wherever the pedigree resolved into
+%   `derived_from` links between strains (an unresolved parent's assertion
+%   stays)."
+%
+%   Because the writer sets `subject_id` on every document of the flattened
+%   graph, a subject whose strain is an F1 cross also carries a `strain`
+%   assertion for EACH ancestor -- the Hunsberger cross gives
+%   `ArcCreERT2 x eYFP`, `ArcCreERT2`, `eYFP` and `129S/SvEv`, all as
+%   assertions about the same mouse, only one of which is the mouse's strain.
+%   An ancestor assertion is never turned into `instance_of` (the mouse is not
+%   an instance of `eYFP`). It is REMOVED when its strain entity is reachable
+%   from the subject: subject -instance_of-> own strain -derived_from->* the
+%   ancestor's strain, every link minted by this pass. So the fact is still
+%   readable after the drop. Otherwise it stays as pass 1 emitted it:
+%     REPORT.background_kept_unreachable  the chain to it did not resolve (an
+%         intermediate parent this pass could not assemble), or the subject
+%         has no own strain at all (a pedigree cycle);
+%     REPORT.background_kept_pinned       another document points at it.
+%   REPORT.background_strain_assertions_on_subject counts every ancestor
+%   assertion seen; REPORT.background_strain_assertions_removed the dropped
+%   ones. A parent that was never assembled (absent, or no name) has no
+%   assertion among the candidates and is untouched by construction. The
+%   ancestor's `genetic strain type` assertion goes with it under the same
+%   reachability condition (REPORT.gst_kept_not_the_subjects_strain now counts
+%   only those whose strain assertion stayed).
+%
+%   ---------------------------------------------------------------------
 %   WHAT IS MEASURED AND DELIBERATELY NOT ACTED ON
 %   ---------------------------------------------------------------------
-%   * BACKGROUND-STRAIN ASSERTIONS ON THE SUBJECT. Because `subject_id` is set
-%     on every document of the flattened graph, a subject whose strain is an
-%     F1 cross also carries a `strain` assertion for EACH ancestor -- the
-%     Hunsberger cross gives `ArcCreERT2 x eYFP`, `ArcCreERT2`, `eYFP` and
-%     `129S/SvEv`, all as assertions about the same mouse, only one of which is
-%     the mouse's strain. Whether the ancestor assertions should be removed now
-%     that the pedigree is on the strain document is a MODELLING CALL and
-%     modelling calls are the team's; #78 does not name it. They are counted
-%     (REPORT.background_strain_assertions_on_subject) and left exactly as pass
-%     1 emitted them -- term assertions with the strain's name and identifier,
-%     and NOT turned into `instance_of` (the mouse is not an instance of
-%     `eYFP`). Their genetic-strain-type assertions stay with them
-%     (REPORT.gst_kept_not_the_subjects_strain).
 %   * DUPLICATE SPECIES GROUPS WITH NO STRAIN FRAGMENT IN THEM. Counted
 %     (REPORT.duplicate_species_groups_out_of_scope) and untouched: a duplicate
 %     this family did not cause is not this pass's to remove.
@@ -312,13 +345,19 @@ report.strains_minted                      = 0;
 report.strain_docs_collapsed               = 0;   % candidates - groups
 report.cross_session_groups                = 0;
 report.cross_session_collapsible           = 0;
+report.cross_session_merged                = 0;
+report.scope                               = 'session';
+report.dataset_id                          = '';
 
 report.background_refs_seen                = 0;
 report.background_refs_not_in_openminds_edges = 0;
 report.background_edges                    = 0;
 report.background_unresolved               = 0;
 report.pedigree_cycles                     = 0;
-report.background_strain_assertions_on_subject = 0;   % measured, untouched
+report.background_strain_assertions_on_subject = 0;   % ancestors seen
+report.background_strain_assertions_removed = 0;
+report.background_kept_unreachable         = 0;
+report.background_kept_pinned              = 0;
 
 report.strain_assertions_minted            = 0;   % about the strains
 report.instance_of_minted                  = 0;   % subject -> strain
@@ -420,6 +459,7 @@ if ~isempty(strainIdx)
     cand(numel(strainIdx)).group = 0;   % trimmed to nCand below
 end
 nCand = 0;
+pedigree = struct('source_id', {}, 'subject_id', {}, 'parents', {});
 candById = containers.Map('KeyType', 'char', 'ValueType', 'double');
 for k = 1:numel(strainIdx)
     b = v1Bodies{strainIdx(k)};
@@ -470,6 +510,12 @@ for k = 1:numel(strainIdx)
         end
     end
 
+    % Every Strain's pedigree, assembled or not, says who is an ANCESTOR: a
+    % strain named as a background by an unassembled strain is still not the
+    % subject's own strain.
+    pedigree(end+1) = struct('source_id', srcId, 'subject_id', e.subject_id, ...
+        'parents', {e.parents}); %#ok<AGROW>
+
     if isempty(e.name)
         % A strain entity requires `name` (did-schema #88 entity_type_bindings).
         % A Strain without one is left exactly as pass 1 emitted it rather
@@ -494,17 +540,25 @@ if isempty(cand)
 end
 
 % ---- the recursive dedup key --------------------------------------------
-% Two keys, and the split is what makes the cross-session number exact rather
-% than a string edit of the other one: CONTENT_KEY is the strain and its
-% pedigree with no session anywhere in it, KEY is CONTENT_KEY under this
-% document's session. Grouping is on KEY (session is part of the key -- see the
-% header); the cross-session MEASUREMENT is the difference between the two.
+% Two keys: CONTENT_KEY is the strain and its pedigree with no session anywhere
+% in it, KEY is CONTENT_KEY under the SCOPE -- the dataset when one is being
+% migrated, otherwise this document's session (Jess Haley, 2026-10-21; see the
+% header). Grouping is on KEY.
+scope = ndi.migrate.internal.datasetScope(migratedStructs);
+if scope.is_dataset
+    report.scope      = 'dataset';
+    report.dataset_id = scope.dataset_id;
+end
 memo    = containers.Map('KeyType', 'char', 'ValueType', 'char');
 visited = containers.Map('KeyType', 'char', 'ValueType', 'logical');
 sep     = char(31);   % unit separator: cannot occur in a name or a CURIE
 for c = 1:numel(cand)
     [cand(c).content_key, cycles] = strainKey(c, cand, candById, memo, visited);
-    cand(c).key = [cand(c).session_id sep cand(c).content_key];
+    if scope.is_dataset
+        cand(c).key = [scope.dataset_id sep cand(c).content_key];
+    else
+        cand(c).key = [cand(c).session_id sep cand(c).content_key];
+    end
     report.pedigree_cycles = report.pedigree_cycles + cycles;
 end
 
@@ -522,17 +576,23 @@ nGroups = numel(groupKeys);
 report.distinct_strains      = nGroups;
 report.strain_docs_collapsed = numel(cand) - nGroups;
 
-% Cross-session measurement: how much further a dataset-scoped key would go.
-% Reported, never performed -- see the header.
+% Cross-session measurement: how many entities a SESSION-scoped key leaves
+% beyond a dataset-scoped one. Measured in both modes; merged only when the
+% scope is a dataset.
 contentKeys     = {cand.content_key};
 uniqContentKeys = unique(contentKeys);
+sessionKeys     = cellfun(@(a, b) [a sep b], {cand.session_id}, contentKeys, ...
+    'UniformOutput', false);
 for u = 1:numel(uniqContentKeys)
     members = strcmp(contentKeys, uniqContentKeys{u});
     if numel(unique({cand(members).session_id})) > 1
         report.cross_session_groups = report.cross_session_groups + 1;
     end
 end
-report.cross_session_collapsible = nGroups - numel(uniqContentKeys);
+report.cross_session_collapsible = numel(unique(sessionKeys)) - numel(uniqContentKeys);
+if scope.is_dataset
+    report.cross_session_merged = report.cross_session_collapsible;
+end
 
 % ---- mint one strain per group ------------------------------------------
 % did-schema #88 (V_eta_entity_composition_plan.md sec. 4): the strain is an
@@ -548,9 +608,14 @@ for g = 1:nGroups
     groupDocId{g} = did.ido.unique_id();
 end
 
+groupParents = cell(1, nGroups);
 for g = 1:nGroups
     rep = cand(groupRep(g));
-    common = {'SessionId', rep.session_id, 'Datestamp', rep.datestamp};
+    home = rep.session_id;
+    if scope.is_dataset
+        home = scope.dataset_id;   % dataset level (Jess Haley, 2026-10-21)
+    end
+    common = {'SessionId', home, 'Datestamp', rep.datestamp};
 
     ef = struct('name', rep.name);
     if ~isempty(rep.description); ef.description = rep.description; end
@@ -568,6 +633,7 @@ for g = 1:nGroups
             minted{end+1} = S.relation(groupDocId{g}, ...
                 groupDocId{cand(candById(pid)).group}, ...
                 S.term('RO:0001000', 'derived_from'), common{:}); %#ok<AGROW>
+            groupParents{g}(end+1) = cand(candById(pid)).group;
             report.background_edges = report.background_edges + 1;
         else
             report.background_unresolved = report.background_unresolved + 1;
@@ -582,15 +648,15 @@ end
 % compared pairwise: the pairwise form is numel(cand)^2 and numel(cand) is in
 % the thousands on a real dataset. A self-loop is skipped at BUILD time.
 ancestorOf = containers.Map('KeyType', 'char', 'ValueType', 'logical');
-for d = 1:numel(cand)
-    if isempty(cand(d).subject_id)
+for d = 1:numel(pedigree)
+    if isempty(pedigree(d).subject_id)
         continue;
     end
-    for p = 1:numel(cand(d).parents)
-        if strcmp(cand(d).parents{p}, cand(d).source_id)
+    for p = 1:numel(pedigree(d).parents)
+        if strcmp(pedigree(d).parents{p}, pedigree(d).source_id)
             continue;   % a strain that is its own background
         end
-        ancestorOf([cand(d).parents{p} '|' cand(d).subject_id]) = true;
+        ancestorOf([pedigree(d).parents{p} '|' pedigree(d).subject_id]) = true;
     end
 end
 
@@ -603,12 +669,13 @@ end
 % strain then holds of the subject (T17's type-to-instance rule).
 %
 % AN ANCESTOR'S `strain` ASSERTION IS NOT TURNED INTO `instance_of`. The mouse
-% is an instance of `ArcCreERT2 x eYFP`, not of `eYFP`; whether the ancestor
-% assertions should go is a MODELLING CALL and modelling calls are the team's.
-% They stay exactly as pass 1 emitted them and are counted
-% (REPORT.background_strain_assertions_on_subject).
+% is an instance of `ArcCreERT2 x eYFP`, not of `eYFP`. It is collected here
+% and dropped below where the pedigree resolved (Jess Haley, 2026-10-21; see
+% the header).
 removeMask = false(1, n);
 ownStrain = false(1, numel(cand));
+ancestorDropped = false(1, numel(cand));
+ancestors = [];
 for c = 1:numel(cand)
     if isempty(cand(c).subject_id)
         report.strain_assertions_without_subject = ...
@@ -618,6 +685,7 @@ for c = 1:numel(cand)
     if isKey(ancestorOf, [cand(c).source_id '|' cand(c).subject_id])
         report.background_strain_assertions_on_subject = ...
             report.background_strain_assertions_on_subject + 1;
+        ancestors(end+1) = c; %#ok<AGROW>
         continue;
     end
     pos = cand(c).assertion_pos;
@@ -629,6 +697,37 @@ for c = 1:numel(cand)
     removeMask(pos) = true;
     ownStrain(c) = true;
     report.instance_of_minted = report.instance_of_minted + 1;
+end
+
+% ---- drop the ancestor assertions the pedigree now carries ----------------
+% Decided by Jess Haley, 2026-10-21 (header). Reachable = the ancestor's
+% strain group is reached from one of the SAME subject's own strain groups by
+% following the derived_from links minted above.
+reachable = containers.Map('KeyType', 'char', 'ValueType', 'logical');
+for c = find(ownStrain)
+    stack = cand(c).group;
+    seen = false(1, nGroups);
+    while ~isempty(stack)
+        g = stack(end); stack(end) = [];
+        if seen(g); continue; end
+        seen(g) = true;
+        reachable([cand(c).subject_id '|' num2str(g)]) = true;
+        stack = [stack, groupParents{g}]; %#ok<AGROW>
+    end
+end
+for c = ancestors
+    if ~isKey(reachable, [cand(c).subject_id '|' num2str(cand(c).group)])
+        report.background_kept_unreachable = report.background_kept_unreachable + 1;
+        continue;
+    end
+    if isPinned(inbound, cand(c).source_id)
+        report.background_kept_pinned = report.background_kept_pinned + 1;
+        continue;
+    end
+    removeMask(cand(c).assertion_pos) = true;
+    ancestorDropped(c) = true;
+    report.background_strain_assertions_removed = ...
+        report.background_strain_assertions_removed + 1;
 end
 
 % ---- move the `genetic strain type` assertion onto the strain ------------
@@ -697,9 +796,10 @@ for c = 1:numel(cand)
     end
     % The fact must be reachable subject -> instance_of -> strain BEFORE this
     % one is dropped: this pass minted the subject's `instance_of` to that
-    % strain (an ancestor's strain is not reachable that way), and the strain
-    % was given this exact `genetic strain type` assertion.
-    if ~ownStrain(c)
+    % strain, or the strain is an ancestor whose own assertion was dropped
+    % because it is reachable through derived_from (Jess Haley, 2026-10-21),
+    % and the strain was given this exact `genetic strain type` assertion.
+    if ~ownStrain(c) && ~ancestorDropped(c)
         report.gst_kept_not_the_subjects_strain = ...
             report.gst_kept_not_the_subjects_strain + 1;
         continue;
