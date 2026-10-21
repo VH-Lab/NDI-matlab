@@ -233,7 +233,28 @@ function result = local(path, options)
     if ~strcmp(options.TargetVersion, 'V_delta')
         v2args = [v2args, {'TargetVersion', options.TargetVersion}];
     end
-    convertResult = did2.convert.v1_to_v2(bodies, v2args{:});
+    % Migrated recordings link their epoch files as data bodies (Jess Haley,
+    % 2026-10-21, did-schema V_eta_recording_observation_plan.md): one
+    % observation per element per epoch, its epoch files as opaque_bodies by
+    % location. did2.convert.resolveEpochProbemap builds them from the cached
+    % `epochfiles_ingested` documents; a session never ingested has none, so
+    % the file navigators supply the same facts as TRANSIENT bodies (converted
+    % with the rest so epochMint mints their epochs, removed after the
+    % probemap pass). See ndi.migrate.internal.navigatorEpochFiles.
+    navigatorEpochReport = [];
+    convertInput = bodies;
+    if strcmp(options.TargetVersion, 'V_eta') && ~alreadyMigrated
+        try
+            [navBodies, navigatorEpochReport] = ...
+                ndi.migrate.internal.navigatorEpochFiles(path, bodies);
+            convertInput = [bodies(:)', navBodies];
+        catch ME
+            warning('NDI:migrate:navigatorEpochFilesFailed', ...
+                ['Reading the file navigators failed (%s); epochs with no ' ...
+                 'epochfiles cache get no recording observation.'], ME.message);
+        end
+    end
+    convertResult = did2.convert.v1_to_v2(convertInput, v2args{:});
 
     % --- second pass: context-dependent (session-aware) deferrals ----------
     % Some V_eta classes cannot be migrated from a single document alone
@@ -850,6 +871,30 @@ function result = local(path, options)
                  'probemap and #30''s session-scoped observations in place, ' ...
                  'which is the state without this pass.'], ME.message);
         end
+        % UNCONDITIONALLY, whether or not the pass above ran: the transient
+        % navigator epochs are not v1 documents (nor ingestion manifests) and
+        % must never be written.
+        if isstruct(navigatorEpochReport) && ~isempty(navigatorEpochReport.transient_ids)
+            keepIdx = true(1, numel(convertResult.migrated));
+            for k = 1:numel(convertResult.migrated)
+                keepIdx(k) = ~any(strcmp(char(convertResult.migrated{k}.get('base.id')), ...
+                    navigatorEpochReport.transient_ids));
+            end
+            navigatorEpochReport.transient_removed = sum(~keepIdx);
+            convertResult.migrated = convertResult.migrated(keepIdx);
+            convertResult.summary = recountSummary(convertResult);
+        end
+        % the files that ARE on this computer get their size and MD5, as a
+        % native V2 recording body does; an absent one stays as recorded
+        try
+            [convertResult, lffReport] = fillLocatedFileFacts(convertResult, options);
+            if isstruct(navigatorEpochReport)
+                navigatorEpochReport.located_file_facts = lffReport;
+            end
+        catch ME
+            warning('NDI:migrate:locatedFileFactsFailed', ...
+                'Filling size/MD5 of located files failed (%s).', ME.message);
+        end
         try
             % AFTER the epochprobemap fold (it re-attributes that pass's
             % per-epoch statements) and after epochMint (its epoch index is
@@ -1045,6 +1090,7 @@ function result = local(path, options)
         'recordingAttribution', recordingAttributionReport, ...
         'sessionAnchorFold',   sessionAnchorReport, ...
         'epochProbemapFold',   epochProbemapReport, ...
+        'navigatorEpochFiles', navigatorEpochReport, ...
         'responseParametersFold', responseParametersReport, ...
         'lawnPlateSubjects',   lawnPlateReport, ...
         'imagedEntitySubjects', imagedEntityReport, ...
@@ -2533,6 +2579,35 @@ function id = cohortIdOf(cohortIds, sessionId)
         cohortIds(sessionId) = did.ido.unique_id(); %#ok<NASGU>
     end
     id = cohortIds(sessionId);
+end
+
+function [convertResult, rep] = fillLocatedFileFacts(convertResult, options)
+%FILLLOCATEDFILEFACTS ndi.migrate.internal.locatedFileFacts over the migrated
+%   set; each changed body is re-validated through did2.convert.v1_to_v2 and
+%   REVERTED (left as it was) if it does not come back clean.
+    docs = convertResult.migrated;
+    structs = cell(1, numel(docs));
+    for k = 1:numel(docs)
+        structs{k} = docs{k}.toStruct();
+    end
+    [structs, rep] = ndi.migrate.internal.locatedFileFacts(structs);
+    rep.reverted = 0;
+    for k = 1:numel(docs)
+        if ~any(strcmp(char(structs{k}.base.id), rep.changed_ids)); continue; end
+        try
+            sub = did2.convert.v1_to_v2({structs{k}}, ...
+                'Validate', options.Validate, 'SchemaCache', options.SchemaCache, ...
+                'TargetVersion', options.TargetVersion, 'Verbose', false);
+            if isempty(sub.quarantine) && isscalar(sub.migrated)
+                docs{k} = sub.migrated{1};
+            else
+                rep.reverted = rep.reverted + 1;
+            end
+        catch
+            rep.reverted = rep.reverted + 1;
+        end
+    end
+    convertResult.migrated = docs;
 end
 
 function out = decodeBodies(bodies)
