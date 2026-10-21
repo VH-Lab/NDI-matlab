@@ -278,7 +278,116 @@ r = ndi.setup.conv.haley.import_V2(dataParentDir, ...
     'Sessions', "concentration_0001", 'OutputRoot', outFolder, 'Write', true);
 ```
 
-## 7. What is v1 only
+## 7. Adding terms for a new dataset
+
+Every variable, method, unit, condition, parameter and key a V2 import writes
+must be in DID-schema's term registry (`schemas/V_eta_term_registry.json`;
+tenet T19, `V_eta_term_registry_plan.md`). A new dataset usually needs a few
+terms the registry lacks. The steps, in order:
+
+**1. List the unregistered terms.** Turn the registry error off and
+collection on, run the import, and save the list:
+
+```matlab
+prev  = did2.schema.cache.strictMode('TermRegistry', false);
+prevC = did2.build.unregisteredTerms('-collect', true);
+did2.build.unregisteredTerms('-reset');
+r = myImport(dataDir, 'OutputRoot', tempname, 'Write', true);   % your import
+L = did2.build.unregisteredTerms();     % one row per (name, node, field), with the reason
+did2.schema.cache.strictMode('TermRegistry', prev);
+did2.build.unregisteredTerms('-collect', prevC);
+writetable(struct2table(L, 'AsArray', true), 'terms.tsv', ...
+    'FileType', 'text', 'Delimiter', '\t');
+```
+
+A term on a path your fixture does not take is not listed. Read the import's
+code for those (the Haley import found two that way).
+
+**2. Choose a node for each term, in T19's order.** Three places to look:
+
+- **The registry.** The term may already be there under the ontology's own
+  label: `mean` is `NCIT:C53319` "Arithmetic Mean". Search the JSON, or ask
+  `ndi.setup.V2.registeredTerm('', 'arithmetic mean')`. If it is there, use it
+  and write nothing new. In the import, write the registered term with
+  `ndi.setup.V2.registeredTerm(node)`.
+- **An existing ontology.** Search OLS (<https://www.ebi.ac.uk/ols4>, or
+  `curl 'https://www.ebi.ac.uk/ols4/api/search?q=petri+dish&rows=10'`), then
+  confirm the term with `[id, name, ~, def] = ndi.ontology.lookup('NCIT:C96141')`.
+  Use the ontology's label as the name and its definition. Choose the general
+  term when the meaning is the same, and never a term narrower or broader
+  than what is meant.
+- **A new EMPTY term**, only when no ontology has one. Add a class to
+  `src/ontology/empty-edit.owl` in Waltham-Data-Science/empty-ontology. Take
+  the next free id, write a definition (`IAO_0000115`), a label, a parent
+  (`SubClassOf`), and an `rdfs:comment` that records what you searched for
+  and why the near misses do not fit, for example `"No ontology term found
+  (OLS, 2026-10-21): ..."`. Copy the existing blocks there as the pattern.
+
+If the prefix is new (no entry in `schemas/V_eta/stable/CURIE_lookups_meta.json`),
+add it before the term. It goes in DID-schema's `tools/build_v_eta.py` prefix
+tables (spelling, URI base, pattern), and in ndi-ontology-matlab (a lookup class
+and an `ontology_list.json` entry) when NDI needs to look its terms up.
+
+**3. Check the batch and get the registry rows.** In `terms.tsv`, fill in the
+`node` column, and add a `definition` column for the non-EMPTY terms. Then run,
+in DID-schema:
+
+```bash
+EMPTY_ONTOLOGY=../empty-ontology python3 tools/propose_terms.py terms.tsv \
+    --decided "Jess Haley, 2026-10-21" --first-used-in "Smith et al. 2026 (NDI-matlab ndi.setup.conv.smith)"
+```
+
+The tool gives each term a verdict:
+
+- `REGISTERED`: the registry already holds the term. Nothing to add.
+- `USE REGISTRY`: the node is registered under another name. Fix the import,
+  not the registry.
+- `ADD`: the term is new. The tool prints its row.
+- `FAIL`: the term cannot be added as given. The tool says why, using the
+  gate's rules.
+
+For an EMPTY term the tool copies the label and definition from your
+empty-ontology checkout. It also rewrites each prefix to the registry's
+spelling. It writes nothing: paste the printed rows at the end of `terms`.
+
+**4. Rebuild and gate.** In DID-schema, run `python3 tools/build_v_eta.py`,
+which copies the registry into `schemas/V_eta/stable/term_registry_meta.json`.
+Then run `EMPTY_ONTOLOGY=../empty-ontology python3 tools/gates.py`.
+`check_term_registry` must pass, and its R7 line must say the EMPTY terms
+were compared, not `NOT CHECKED`. CI has no empty-ontology checkout, so R7
+is checked only on your machine. Copy the rebuilt `stable`, `draft` and
+`deprecated` folders to your `DID_SCHEMA_PATH`. Then re-run step 1, which
+should now list nothing, with the registry error back on.
+
+**Which repository and PR gets what:**
+
+| repository | what | PR (until merged) |
+|---|---|---|
+| Waltham-Data-Science/empty-ontology | new EMPTY classes in `src/ontology/empty-edit.owl` | #22, branch `claude/ome-zarr-format` |
+| did-schema | the rows in `schemas/V_eta_term_registry.json`, the rebuilt `term_registry_meta.json`, and any new prefix in `tools/build_v_eta.py` | #88, branch `claude/ecstatic-pascal-md91fw` |
+| ndi-ontology-matlab | a lookup class for a new prefix, only if one is needed | #11 |
+| NDI-matlab | the import, writing terms through `ndi.setup.V2.registeredTerm`, and a test like `TestTermRegistry` that runs it with collection on | #1021 |
+
+DID-matlab needs no change. It reads the registry from `DID_SCHEMA_PATH`.
+Merge empty-ontology first (the ids are fixed there), then did-schema, then
+NDI-matlab.
+
+**What a reviewer checks:**
+
+- Each node resolves (`ndi.ontology.lookup`, or the OLS page). The registry
+  name is the ontology's label, exactly.
+- The term means what the import writes: not narrower, not broader, and the
+  general term when the meaning is the same.
+- Each EMPTY term has an `rdfs:comment` that names the search made and why the
+  nearest existing terms were rejected. Its parent is sensible, and it names
+  nothing the document already carries.
+- `decided` names the person who chose the term. Only the team decides terms.
+- `propose_terms.py` reports `0 FAIL`, and `check_term_registry` reports R7
+  compared, run locally with `EMPTY_ONTOLOGY` set.
+- CI is green: did-schema `tests.yml` (the `gates.py` chain) and NDI-matlab
+  `test-import-v2.yml`, which includes `TestTermRegistry`.
+
+## 8. What is v1 only
 
 - `ndi.subject` is v1's class, with its `@` rule. Read a V2 subject as an
   `ndi.entity`.
