@@ -4,7 +4,7 @@ function [text, note, r] = correctedText(cfg, r, session, rowId, column, text)
 %   [TEXT, NOTE, R] = correctedText(CFG, R, SESSION, ROWID, COLUMN, TEXT)
 %   applies every correction in CFG.corrections naming this cell (its
 %   `session`, `row` -- the row's id column value -- and `column`) through
-%   applyCorrection, the ONE correction function: applied only while the
+%   ndi.setup.V2.applyCorrection, the ONE correction function: applied only while the
 %   source still reads the correction's `was`, and recorded either way in
 %   R.corrected / R.notCorrected. NOTE is the text the document carries,
 %   "Corrected from <was>: <reason> (correction <key>)", '' when none was
@@ -31,7 +31,7 @@ for k = 1:numel(c)
             || ~strcmp(fieldText(x, 'column'), column)
         continue;
     end
-    [text, applied, n, line] = applyCorrection(x, text, sprintf('%s %s', session, rowId));
+    [text, applied, n, line] = ndi.setup.V2.applyCorrection(x, text, sprintf('%s %s', session, rowId));
     text = char(string(text));
     if applied
         r.corrected{end+1} = line;

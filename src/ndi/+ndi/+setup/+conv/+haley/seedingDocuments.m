@@ -148,7 +148,7 @@ end
             id = dayRefs(key);
             return;
         end
-        r = utcReference(d, [0 86399], 'yyyy-MM-dd', NaT, [], 'yyyy-MM-dd', false, tz, sessionId);
+        r = ndi.setup.V2.utcReference(d, tz, sessionId, 'Tolerance', [0 86399], 'Format', 'yyyy-MM-dd');
         out.documents{end+1} = r;
         id = r.base.id;
         dayRefs(key) = id;

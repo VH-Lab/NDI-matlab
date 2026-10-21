@@ -781,7 +781,10 @@ function out = writeDataset(result, T, dataParentDir, options, linked)
 % Stage 13 (decision #66): every document of this run checked as one set, and
 % written into ONE V2 database -- or, LINKED (decision #71), the dataset-level
 % documents, each session's included_in relations and a linked_session per session,
-% with the sessions' own documents written to their folders afterwards.
+% with the sessions' own documents written to their folders afterwards (by
+% writeSessions, which also writes them when the dataset stage does not run).
+% The writing is ndi.setup.V2.writeDataset; 'Strict' stays off here: this
+% import prints what the check finds and writes anyway, as it always has.
 arguments
     result (1,1) struct
     T table
@@ -795,47 +798,21 @@ for f = {'metadata', 'studies'}
     if isfield(result, f{1}), dsDocs = [dsDocs, reshape(result.(f{1}).documents, 1, [])]; end %#ok<AGROW>
 end
 if isfield(result, 'density'), dsDocs = [dsDocs, result.density.datasetDocuments]; end
-name = '';
 isDataset = cellfun(@(d) strcmp(ndi.v2.kindOf(d), 'dataset'), dsDocs);
-if any(isDataset)
-    ds = dsDocs{find(isDataset, 1)};
-    [~, blk] = ndi.v2.kindOf(ds);   % `entity` since 2026-10-08
-    if isfield(ds.(blk), 'name'), name = char(ds.(blk).name); end
-end
 if ~any(isDataset)
     fprintf('  no dataset document (the metadata stage did not run): sessions cannot be part of it\n');
 end
-sessDocs = cell(1, height(T));
-external = {};
-folders = cellstr(T.path);
-for k = 1:height(T)
-    own = sessionOwn(T(k, :));
-    if linked
-        % in the dataset: the session's included_in (part_of) relations and where it lives;
-        % its own documents go to its folder (checked here as one set)
-        link = did2.build.document('linked_session', ...
-            struct('path', ndi.v2.linkPath(folders{k}, path)), ...
-            'SessionId', result.datasetSessionId, 'Edges', struct('entity_id', own{1}.base.id));
-        sessDocs{k} = [own(2:end), {link}];
-        external = [external, own(1), reshape(T.documents{k}, 1, [])]; %#ok<AGROW>
-        continue;
-    end
-    d = [own, reshape(T.documents{k}, 1, [])];
-    if options.SessionFolders
-        d = keepOriginals(d);     % the session folders, written next, ingest the same files
-    end
-    sessDocs{k} = d;
-end
-[ds, report] = ndi.setup.V2.createDataset(path, options.DatasetReference, ...
-    result.datasetSessionId, dsDocs, sessDocs, 'Name', name, 'Overwrite', options.Overwrite, ...
-    'Validate', options.ValidateOnWrite, 'BatchSize', options.WriteBatchSize, 'External', external);
-refs = {}; ids = {};
+w = ndi.setup.V2.writeDataset(path, options.DatasetReference, result.datasetSessionId, ...
+    dsDocs, T, 'Linked', linked, 'WriteSessions', false, ...
+    'KeepOriginals', options.SessionFolders && ~linked, ...   % the session folders, written next, ingest the same files
+    'Strict', false, 'Overwrite', options.Overwrite, 'Validate', options.ValidateOnWrite, ...
+    'BatchSize', options.WriteBatchSize);
+report = w.report;
 if linked
     fprintf('dataset %s at %s: %d session(s) to link, listed once their folders are written\n', ...
-        ds.id(), path, height(T));
+        w.id, path, height(T));
 else
-    [refs, ids] = ds.session_list();
-    fprintf('dataset %s at %s: %d session(s) listed by ndi.dataset\n', ds.id(), path, numel(ids));
+    fprintf('dataset %s at %s: %d session(s) listed by ndi.dataset\n', w.id, path, numel(w.sessionIds));
 end
 disp(report.documents.byClass);
 if height(report.edges.dangling) > 0
@@ -849,8 +826,8 @@ for j = 1:numel(report.sessions.notInDataset)
     fprintf('  session not included_in a study of the dataset: %s\n', ...
         report.sessions.notInDataset{j});
 end
-out = struct('path', path, 'id', ds.id(), 'report', report, 'sessionReferences', {refs}, ...
-    'sessionIds', {ids});
+out = struct('path', path, 'id', w.id, 'report', report, 'sessionReferences', {w.sessionReferences}, ...
+    'sessionIds', {w.sessionIds});
 end
 
 function out = listDataset(out)
@@ -868,55 +845,6 @@ for k = 2:numel(notes)
 end
 out.sessionReferences = refs;
 out.sessionIds = ids;
-end
-
-function docs = sessionOwn(row)
-% the session document and its study relations, exactly as createSession
-% writes them into a session folder (same ids where createSession is given them)
-arguments
-    row table
-end
-f = struct('local_identifier', char(row.local_identifier{1}));
-vars = row.Properties.VariableNames;
-if ismember('name', vars) && ~isempty(row.name{1}), f.name = char(row.name{1}); end
-if ismember('description', vars) && ~isempty(row.description{1}), f.description = char(row.description{1}); end
-sid = char(row.session_id{1});
-edges = struct();
-if ~isempty(row.time_reference_id{1})
-    edges.time_reference_id = row.time_reference_id{1};
-end
-docs = ndi.setup.V2.entityDocuments('session', f, edges, 'SessionId', sid, ...
-    'Id', char(row.session_doc_id{1}));
-if ismember('study_ids', vars)
-    studies = row.study_ids{1};
-    if ischar(studies) || isstring(studies), studies = cellstr(studies); end
-    member = 'included_in';   % decision #109
-    for k = 1:numel(studies)
-        docs{end+1} = did2.build.directedRelation(docs{1}.base.id, studies{k}, ...
-            member, 'SessionId', sid); %#ok<AGROW>
-    end
-end
-end
-
-function docs = keepOriginals(docs)
-% a copy of DOCS whose ingested files are not deleted once copied
-arguments
-    docs cell
-end
-for i = 1:numel(docs)
-    d = docs{i};
-    if ~isfield(d, 'files') || ~isfield(d.files, 'file_info') || isempty(d.files.file_info)
-        continue;
-    end
-    fi = d.files.file_info;
-    for a = 1:numel(fi)
-        for b = 1:numel(fi(a).locations)
-            fi(a).locations(b).delete_original = 0;
-        end
-    end
-    d.files.file_info = fi;
-    docs{i} = d;
-end
 end
 
 function m = namesOf(spec)

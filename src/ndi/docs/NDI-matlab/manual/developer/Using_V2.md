@@ -203,7 +203,9 @@ S = ndi.setup.V2.createSession(folder, 'day 1', 'SessionId', sid, ...
   `did2.build.term(node, name)` a term; `did2.build.directedRelation(child,
   parent, relation, 'SessionId', sid)` a relation.
 - `ndi.setup.V2.createSession(path, reference, ...)` makes a session folder
-  with a V2 database; `ndi.setup.V2.createDataset(path, reference,
+  with a V2 database; `ndi.setup.V2.writeDataset` writes a dataset whose
+  sessions are linked, each in its own folder (section 8);
+  `ndi.setup.V2.createDataset(path, reference,
   datasetSessionId, datasetDocs, sessionDocs)` writes a whole dataset (every
   session ingested) and opens it; `ndi.setup.V2.writeDocuments(dbFile, docs)`
   adds documents to an existing V2 database
@@ -293,20 +295,22 @@ must be in DID-schema's term registry (`schemas/V_eta_term_registry.json`;
 tenet T19, `V_eta_term_registry_plan.md`). A new dataset usually needs a few
 terms the registry lacks. The steps, in order:
 
-**1. List the unregistered terms.** Turn the registry error off and
-collection on, run the import, and save the list:
+**1. List the unregistered terms.** `ndi.setup.V2.checkTerms` runs a
+function with the registry error off and collection on, returns every
+unregistered term it wrote (one row per (name, node, field), with the
+reason) after the function's own outputs, and puts both switches back, also
+when the function throws. Run the import through it and save the list:
 
 ```matlab
-prev  = did2.schema.cache.strictMode('TermRegistry', false);
-prevC = did2.build.unregisteredTerms('-collect', true);
-did2.build.unregisteredTerms('-reset');
-r = myImport(dataDir, 'OutputRoot', tempname, 'Write', true);   % your import
-L = did2.build.unregisteredTerms();     % one row per (name, node, field), with the reason
-did2.schema.cache.strictMode('TermRegistry', prev);
-did2.build.unregisteredTerms('-collect', prevC);
+[L, r] = ndi.setup.V2.checkTerms(@() myImport(dataDir, 'OutputRoot', tempname));  % your import
 writetable(struct2table(L, 'AsArray', true), 'terms.tsv', ...
     'FileType', 'text', 'Delimiter', '\t');
 ```
+
+With `'Raise', true` it throws (`'ErrorId'`, default
+`ndi:setup:V2:unregisteredTerms`) after listing them, so an import can build
+its documents inside it and write only when the list is empty; the template's
+runner does exactly that.
 
 A term on a path your fixture does not take is not listed. Read the import's
 code for those (the Haley import found two that way).
@@ -317,7 +321,12 @@ code for those (the Haley import found two that way).
   label: `mean` is `NCIT:C53319` "Arithmetic Mean". Search the JSON, or ask
   `ndi.setup.V2.registeredTerm('', 'arithmetic mean')`. If it is there, use it
   and write nothing new. In the import, write the registered term with
-  `ndi.setup.V2.registeredTerm(node)`.
+  `ndi.setup.V2.registeredTerm(node)`. A unit needs no lookup of its own:
+  `ndi.setup.V2.sourceUnit(spelling)` takes a registered unit's label
+  (`'millimetre'`, any case) or CURIE (`'om:millimetre'`), plus the
+  abbreviations it has a row for (`'mm'`, `'C'`, `'uL'`, ...). The registry
+  has no synonyms, so another abbreviation needs a row there or the label in
+  your spec.
 - **An existing ontology.** Search OLS (<https://www.ebi.ac.uk/ols4>, or
   `curl 'https://www.ebi.ac.uk/ols4/api/search?q=petri+dish&rows=10'`), then
   confirm the term with `[id, name, ~, def] = ndi.ontology.lookup('NCIT:C96141')`.
@@ -409,6 +418,20 @@ stage at a time with the dataset's owner. It holds:
 | `import_V2_decisions.md` | the decision log, with "Current rules" at the top; keep it from day one |
 | `private/*Documents.m` | one helper per stage, each writing one example document through the public API, with comments saying what a real importer replaces |
 
+The pieces every import shares are public, in `ndi.setup.V2`; call them, do
+not copy them (the Haley import and the template both do):
+
+| function | what it does |
+|---|---|
+| `checkTerms(fn, ...)` | runs `fn` collecting every unregistered term; returns the list, or with `'Raise'` throws after listing; restores the registry switches even on error |
+| `utcReference(t0, tz, sid, ...)` | an `absolute_time_reference` from a wall-clock time in an IANA time zone: `'Format'` (the precision the source wrote) or `'SourceText'`, `'Tolerance'` ([60 60] for a hand-written minute, `'estimated'` for no known bound), `'End'` (a window; its duration counts a daylight-saving change), `'Duration'` |
+| `applyCorrection(x, have, where)` | THE correction function: applies a spec correction only while the source still reads its `was`, and returns the note the document carries ("Corrected from <was>: <reason> (correction <key>)") and the report line |
+| `sourceUnit(spelling)` | a `source_unit` as its registered term, by abbreviation, label or CURIE |
+| `registeredTerm(node, name)` | any term as the registry spells it |
+| `recordingDocuments(subject, file, t0, tz, sid, ...)` | the five documents one recorded file needs, joined: its UTC time, its epoch and epoch clock, the observation (data in a body) and the body naming the file by location; returns their ids, so later statements are timed by the recording |
+| `datasetMetadata(spec, dsid, ...)` | the dataset entity, its studies, people, software, strains, ... from a spec |
+| `writeDataset(path, ref, dsid, datasetDocs, sessions, ...)` | the dataset and its sessions: each session's `session` entity, its `included_in` relations and a `linked_session` in the dataset, its documents in its own folder; all checked as one set first (`'Strict'`, the default, writes nothing on a dangling edge, a repeated id or a session outside the dataset). `sessions` is a table (`local_identifier`, `path`, `session_id`, `name`, `study_ids`, `documents`); `study_ids` may be a cellstr, one id as char, or a one-id cell, which `cell2table` unwraps to char |
+
 The stages run in a fixed order, and later stages read the ids earlier ones
 made: **sessions** (the dataset entity and its studies, then the sessions) ->
 **entities** -> **acquisition** (epochs, times, each raw file recorded by
@@ -431,16 +454,19 @@ What the template does for you, and a new import should keep:
   With `'Write'` the run keeps `import_log.txt` and `import_report.mat` in a
   run folder.
 - **Terms by name** through `ndi.setup.V2.registeredTerm`; the run collects
-  every unregistered term and writes nothing until each is registered (see
-  section 7).
+  every unregistered term (`ndi.setup.V2.checkTerms`) and writes nothing until
+  each is registered (see section 7).
 - **Source values verbatim**: `source_value`, `source_unit` as its registered
   term (`ndi.setup.V2.sourceUnit`), a tolerance where the source states one; a
-  hand-written time is approximate, [60 60] s. Corrections go through one
-  function, only while the source still reads the correction's `was`, and the
-  document says what it was.
+  hand-written time is approximate, [60 60] s (`ndi.setup.V2.utcReference`).
+  Corrections go through one function, `ndi.setup.V2.applyCorrection`, only
+  while the source still reads the correction's `was`, and the document says
+  what it was.
 - **The raw data is never copied or written to**: recordings by location
-  (`ndi.setup.V2.attachFile(..., 'Ingest', false)`), sessions in their own
-  folders under `'OutputRoot'`, linked from the dataset.
+  (`ndi.setup.V2.recordingDocuments`, which uses
+  `ndi.setup.V2.attachFile(..., 'Ingest', false)`), sessions in their own
+  folders under `'OutputRoot'`, linked from the dataset
+  (`ndi.setup.V2.writeDataset`).
 
 `TestTemplateImport` runs the template end to end on a tiny folder it writes,
 reads the documents back and checks every stage's denominators; copy it with

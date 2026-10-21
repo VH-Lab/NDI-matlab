@@ -217,8 +217,9 @@ for g = 1:max(G)
     else
         dur = R.duration(where);
         [t1, k1] = max(start + seconds(dur));
-        w = utcReference(wallClock(t0, tz), [], secondFmt, wallClock(t1, tz), [], secondFmt, ...
-            ~isnan(dur(k1)), tz, sid);
+        t1 = wallClock(t1, tz);
+        if isnan(dur(k1)), t1 = NaT; end
+        w = ndi.setup.V2.utcReference(wallClock(t0, tz), tz, sid, 'Format', secondFmt, 'End', t1);
         docs{end+1} = w; %#ok<AGROW>
         timeId = w.base.id;
     end

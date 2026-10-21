@@ -270,8 +270,8 @@ for i = 1:numel(fits)
         fits(i) = q;
         continue;
     end
-    w = utcReference(wallClock(min(times), tz), [], fmt, wallClock(max(times), tz), [], fmt, ...
-        true, tz, dsid);
+    w = ndi.setup.V2.utcReference(wallClock(min(times), tz), tz, dsid, 'Format', fmt, ...
+        'End', wallClock(max(times), tz));
     out.datasetDocuments{end+1} = w;
     timeIds = {w.base.id};
 
@@ -445,8 +445,8 @@ for k = 1:numel(built)
             out.skipped{end+1} = sprintf('%s: no pick time; no estimate at the pick', accs{j});
             continue;
         end
-        ref = utcReference(wallClock(when, tz), [60 60], 'yyyy-MM-dd''T''HH:mm', [], [], '', ...
-            false, tz, sid);
+        ref = ndi.setup.V2.utcReference(wallClock(when, tz), tz, sid, 'Tolerance', [60 60], ...
+            'Format', 'yyyy-MM-dd''T''HH:mm');
         gIn = {};
         if ~isempty(p.fit) && ~isempty(fitIds{p.fit}), gIn = fitIds(p.fit); end
         if isKey(seeds, subjectIds(accPatch))
@@ -649,7 +649,7 @@ for c = 1:numel(corrections)
     where = sprintf('ecoli plate %d', double(x.plate));
     ok = true;
     for j = r(:)'
-        [v, applied, ~, line] = applyCorrection(x, L.peptone{j}, where);
+        [v, applied, ~, line] = ndi.setup.V2.applyCorrection(x, L.peptone{j}, where);
         if ~applied
             ok = false;
             break;

@@ -23,8 +23,10 @@ function [session, docs] = createSession(path, reference, options)
 %     'SessionId'   the session id (default: a new ndi.ido id)
 %     'Name'        the session's display name (session.name)
 %     'Description' free text about the session (session.description)
-%     'StudyIds'    cellstr: studies this session is filed under (a relation
-%                   document each, stored in this session): `included_in`
+%     'StudyIds'    the studies this session is filed under (a relation
+%                   document each, stored in this session): `included_in`.
+%                   A cellstr, one id as char or string, or a table cell
+%                   holding either (cell2table unwraps a one-id cell to char)
 %     'SessionDocId' base.id of the session document. session_id is an edge
 %                   (did-schema V_eta_relation_inheritance_plan.md), so the
 %                   session document's id IS the session id: this defaults to
@@ -92,28 +94,11 @@ if isfolder(ndiDir)
 end
 mkdir(ndiDir);
 
-fields = struct('local_identifier', reference);
-if ~isempty(options.Name)
-    fields.name = options.Name;
-end
-if ~isempty(options.Description)
-    fields.description = options.Description;
-end
-edges = struct();
-if ~isempty(options.TimeReferenceId)
-    edges.time_reference_id = options.TimeReferenceId;
-end
-docs = ndi.setup.V2.entityDocuments('session', fields, edges, 'SessionId', sid, ...
-    'Id', docId);
-studies = options.StudyIds;
-if ischar(studies) || isstring(studies)
-    studies = cellstr(studies);
-end
-member = 'included_in';
-for k = 1:numel(studies)
-    docs{end+1} = did2.build.directedRelation(docs{1}.base.id, studies{k}, ...
-        member, 'SessionId', sid); %#ok<AGROW>
-end
+% the session entity and its `included_in` relations: the same builder
+% ndi.setup.V2.writeDataset checks a linked session's record with
+docs = sessionRecord(reference, sid, 'Name', options.Name, ...
+    'Description', options.Description, 'TimeReferenceId', options.TimeReferenceId, ...
+    'StudyIds', options.StudyIds, 'Id', docId);
 
 docs = [docs, reshape(options.Documents, 1, [])];
 for k = 1:numel(docs)

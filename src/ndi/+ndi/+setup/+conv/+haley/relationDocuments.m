@@ -220,8 +220,10 @@ for k = 1:height(cohorts)
                     dur = [];
                 end
             end
-            d = utcReference(seq(i).start, seq(i).tol, seq(i).fmt, ...
-                stop, stopTol, stopFmt, ~isempty(dur), tz, sid);
+            stopAt = stop;
+            if isempty(dur), stopAt = NaT; end
+            d = ndi.setup.V2.utcReference(seq(i).start, tz, sid, 'Tolerance', seq(i).tol, ...
+                'Format', seq(i).fmt, 'End', stopAt, 'EndTolerance', stopTol, 'EndFormat', stopFmt);
             docs{end+1} = d; %#ok<AGROW>
             refOf(key) = d.base.id;
             times = {d.base.id};
@@ -273,7 +275,10 @@ out.assaySpans = spanOf;
         if hasEnd
             out.stayEnds(plate) = struct('stop', stop, 'tol', stopTol, 'fmt', stopFmt);
         end
-        d = utcReference(t0, tol, minuteFmt, stop, stopTol, stopFmt, hasEnd, tz, sid);
+        stopAt = stop;
+        if ~hasEnd, stopAt = NaT; end
+        d = ndi.setup.V2.utcReference(t0, tz, sid, 'Tolerance', tol, 'Format', minuteFmt, ...
+            'End', stopAt, 'EndTolerance', stopTol, 'EndFormat', stopFmt);
         docs{end+1} = d;
         id = d.base.id;
     end

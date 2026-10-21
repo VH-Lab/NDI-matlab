@@ -9,10 +9,10 @@ function out = manipulationDocuments(sessions, entityIds, cfg, throwErrors)
 %     variable / method  looked up by NAME in the term registry
 %     value              quantityCell: canonical, source_value, source_unit
 %                        (a registered term) -- after the spec's named
-%                        corrections (applyCorrection), whose note the
+%                        corrections (ndi.setup.V2.applyCorrection), whose note the
 %                        statement carries
 %     when               its own absolute_time_reference at the row's
-%                        time_column. A hand-written time is to the minute,
+%                        time_column (ndi.setup.V2.utcReference). A hand-written time is to the minute,
 %                        so it is approximate with time_tolerance [60 60] s
 %                        and its source_value is the text as written. No time
 %                        in the source: no time reference and no manipulation.
@@ -70,7 +70,8 @@ for s = 1:n
             t = datetime(whenText, 'InputFormat', m.time_format);
             tol = [];
             if ~isempty(m.time_tolerance), tol = reshape(double(m.time_tolerance), 1, 2); end
-            when = timeReference(t, whenText, m.time_zone, tol, [], sid);
+            when = ndi.setup.V2.utcReference(t, m.time_zone, sid, 'SourceText', whenText, ...
+                'Tolerance', tol);
             st = did2.build.statement(m.leaf, subject, variable, value, 'Method', method, ...
                 'TimeReferenceIds', {when.base.id}, 'Notes', note, 'SessionId', sid);
             docs{s} = [docs{s}, {when, st}];

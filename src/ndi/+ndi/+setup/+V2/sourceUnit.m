@@ -28,11 +28,18 @@ function u = sourceUnit(spelling)
 %       uL/mL   NCIT:C69175                         Microliter per Milliliter
 %   (the last seven registered in did-schema #88 for this import). A pH has no source
 %   unit (the canonical `ph` is its own scale).
-%   A spelling with no decided term becomes a term with an empty node and the
-%   spelling as its name -- the plan's rule for a spelling no term matches
-%   (item 4): kept, not dropped and not guessed. did2.build's term registry
-%   check then refuses it (or, collecting, lists it), so it is reported until
-%   its unit is registered and added here.
+%   ANY OTHER SPELLING is looked up in the term registry itself: a spelling
+%   that is a registered term's label ('millimetre', 'degree Celsius', any
+%   case) or its CURIE ('om:millimetre') gives that term, so a new import can
+%   use any registered unit without a line here. The table above is only for
+%   the spellings that are NOT a label ('mm', 'C', 'um/s'). The registry
+%   carries no synonyms today, so an abbreviation needs a row above (or the
+%   label in the spec).
+%   A spelling the registry does not hold either becomes a term with an empty
+%   node and the spelling as its name -- the plan's rule for a spelling no
+%   term matches (item 4): kept, not dropped and not guessed. did2.build's
+%   term registry check then refuses it (or, collecting, lists it), so it is
+%   reported until its unit is registered ("Adding terms", Using_V2.md).
 %
 %   SPELLING may be a cellstr / string array, giving one per element (a cell).
 %
@@ -77,7 +84,19 @@ end
 if isKey(decided, spelling)
     e = decided(spelling);
     u = ndi.setup.V2.registeredTerm(e{1}, e{2});
-else
-    u = did2.build.term('', spelling);
+    return;
 end
+u = did2.build.term('', spelling);
+ix = did2.schema.termIndex();
+if ~ix.present
+    return;
+end
+if contains(spelling, ':') && isKey(ix.byNode, did2.schema.curieKey(spelling))
+    e = ix.byNode(did2.schema.curieKey(spelling));        % a CURIE
+elseif isKey(ix.byName, lower(spelling))
+    e = ix.byName(lower(spelling));                      % a label
+else
+    return;
+end
+u = did2.build.term(e.node, e.name);
 end

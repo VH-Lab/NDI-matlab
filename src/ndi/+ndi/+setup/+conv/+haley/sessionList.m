@@ -265,7 +265,7 @@ for k = 1:numel(fixes)
             char(x.key), folder, double(x.experiment), col);
         continue;
     end
-    [v, applied, note, line] = applyCorrection(x, C.(col){r(1)}, ...
+    [v, applied, note, line] = ndi.setup.V2.applyCorrection(x, C.(col){r(1)}, ...
         sprintf('%s experiment %d', folder, double(x.experiment)));
     if ~applied
         checks.correctionNotApplied{end+1} = line;

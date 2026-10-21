@@ -111,7 +111,7 @@ out.documents = docs;
         t1 = wallClock(P.local_start(end), tz) + seconds(P.duration(end));
         hasEnd = ~isnan(P.duration(end));
         if ~hasEnd, t1 = NaT; end
-        d = utcReference(t0, [], secondFmt, t1, [], secondFmt, hasEnd, tz, sid);
+        d = ndi.setup.V2.utcReference(t0, tz, sid, 'Format', secondFmt, 'End', t1);
         docs{end+1} = d;
         id = d.base.id;
     end

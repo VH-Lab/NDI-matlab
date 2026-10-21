@@ -594,7 +594,7 @@ for c = 1:numel(corr)
             switch x.column
                 case 'peptone'
                     % only while the label still reads `was` (decision #111)
-                    [v, applied, note, line] = applyCorrection(x, r.prep.peptone, ...
+                    [v, applied, note, line] = ndi.setup.V2.applyCorrection(x, r.prep.peptone, ...
                         sprintf('%s plate %d', r.folder, r.plate));
                     if applied
                         r.prep.peptone = lower(v);
@@ -963,7 +963,7 @@ for c = 1:numel(corr)
     end
     k = char(x.key);
     if isKey(hits, k), hits(k) = hits(k) + 1; else, hits(k) = 1; end
-    [v, applied, note, line] = applyCorrection(x, g.room_temp, ...
+    [v, applied, note, line] = ndi.setup.V2.applyCorrection(x, g.room_temp, ...
         sprintf('%s experiment %d plate %d', folder, double(experiment), double(plate)));
     if ~applied
         checks.correctionNotApplied{end+1} = line;

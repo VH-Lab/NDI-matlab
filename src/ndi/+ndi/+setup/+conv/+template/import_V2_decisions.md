@@ -105,8 +105,8 @@ statement because every statement needs a time reference.
 | 6 | YYYY-MM-DD | TEMPLATE: each recording is one epoch; its start is exact. | OPEN |
 | 7 | YYYY-MM-DD | Hand-written times are to the minute: approximate, tolerance [60 60] s. | DECIDED |
 | 8 | YYYY-MM-DD | Source values and units are kept beside the canonical value; nothing is filled where the source is blank. | DECIDED |
-| 9 | YYYY-MM-DD | Corrections go through one function and are recorded on the document. | DECIDED |
-| 10 | YYYY-MM-DD | Terms come from DID-schema's term registry, looked up by name; the run refuses to write an unregistered term. | DECIDED |
+| 9 | YYYY-MM-DD | Corrections go through one function (`ndi.setup.V2.applyCorrection`) and are recorded on the document. | DECIDED |
+| 10 | YYYY-MM-DD | Terms come from DID-schema's term registry, looked up by name; the run refuses to write an unregistered term (`ndi.setup.V2.checkTerms`). | DECIDED |
 
 ## Source inventory
 

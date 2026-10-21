@@ -267,7 +267,7 @@ out.documents = docs;
 % =============================================================================
     function id = instant(t, tol)
         % a hand-written instant: when something was done
-        d = utcReference(wallClock(t, tz), tol, fmtOf(tol), NaT, [], minuteFmt, false, tz, sid);
+        d = ndi.setup.V2.utcReference(wallClock(t, tz), tz, sid, 'Tolerance', tol, 'Format', fmtOf(tol));
         docs{end+1} = d;
         id = d.base.id;
     end
@@ -288,7 +288,9 @@ out.documents = docs;
                 hasEnd = false;
             end
         end
-        d = utcReference(t0, tol0, fmtOf(tol0), t1, tol1, fmt1, hasEnd, tz, sid);
+        if ~hasEnd, t1 = NaT; end
+        d = ndi.setup.V2.utcReference(t0, tz, sid, 'Tolerance', tol0, 'Format', fmtOf(tol0), ...
+            'End', t1, 'EndTolerance', tol1, 'EndFormat', fmt1);
         docs{end+1} = d;
         refId = d.base.id;
         v = did2.build.composite('temperature_manipulation', 'value', struct('celsius', celsius, ...

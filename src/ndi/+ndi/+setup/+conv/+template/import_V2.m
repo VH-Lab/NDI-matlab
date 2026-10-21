@@ -36,9 +36,10 @@ function result = import_V2(dataFolder, options)
 %       with its reason, from day one; "Current rules" at its top.
 %     * Terms are looked up BY NAME in DID-schema's term registry
 %       (ndi.setup.V2.registeredTerm); no node is typed in code. The run
-%       COLLECTS every unregistered term while it builds, and with 'Write'
-%       writes nothing if there is one (error
-%       ndi:setup:conv:template:unregisteredTerms, listing them all).
+%       COLLECTS every unregistered term while it builds
+%       (ndi.setup.V2.checkTerms), and with 'Write' writes nothing if there
+%       is one (error ndi:setup:conv:template:unregisteredTerms, listing them
+%       all).
 %     * Every stage returns a REPORT with its denominators: read, written,
 %       skipped (each with why), errors (each with what), documents built.
 %       On a normal run a row's error goes into the report and the stage goes
@@ -46,13 +47,15 @@ function result = import_V2(dataFolder, options)
 %     * Source values are kept VERBATIM: `source_value`, `source_unit` as a
 %       registered term (ndi.setup.V2.sourceUnit), a tolerance where the
 %       source states one; a hand-written time is to the minute, approximate
-%       with tolerance [60 60] s. A correction goes through ONE function
-%       (applyCorrection), only while the source still reads its `was`, and
-%       the document carries "Corrected from <was>: <reason>".
+%       with tolerance [60 60] s (ndi.setup.V2.utcReference). A correction
+%       goes through ONE function (ndi.setup.V2.applyCorrection), only while
+%       the source still reads its `was`, and the document carries
+%       "Corrected from <was>: <reason>".
 %     * Raw data is NEVER copied or written to: each recording's file is
-%       recorded by location; sessions are written to their own folders under
-%       'OutputRoot' (outside DATAFOLDER), and the dataset LINKS them (a
-%       `linked_session` each, V_eta_linked_session_plan.md).
+%       recorded by location (ndi.setup.V2.recordingDocuments); sessions are
+%       written to their own folders under 'OutputRoot' (outside DATAFOLDER),
+%       and the dataset LINKS them (a `linked_session` each,
+%       V_eta_linked_session_plan.md; ndi.setup.V2.writeDataset).
 %     * The did-schema #88 shape only: one `entity` class, a statement's
 %       method one block {term, parameters} (or a shared `method` document by
 %       `method_id`), `included_in` for records, `session_id` an edge (the
@@ -84,8 +87,13 @@ function result = import_V2(dataFolder, options)
 %   'Write', write (the dataset's path, its check report and what was
 %   written) and runFolder.
 %
+%   The shared pieces are public, in ndi.setup.V2, so a copy of this folder
+%   calls them rather than copying them: checkTerms, utcReference,
+%   applyCorrection, sourceUnit, registeredTerm, recordingDocuments,
+%   datasetMetadata, writeDataset.
+%
 %   See also ndi.setup.conv.haley.import_V2, ndi.setup.V2.datasetMetadata,
-%   ndi.setup.V2.createDataset, ndi.setup.V2.makeSessions.
+%   ndi.setup.V2.writeDataset, ndi.setup.V2.checkTerms.
 
 arguments
     dataFolder (1,:) char {mustBeFolder}
@@ -166,14 +174,30 @@ if ~isfield(result, 'reports'), result.reports = struct(); end
 cfg = resolveSpec(options.Spec);
 result.spec = cfg;
 
-% Build with the term registry's error OFF and collection ON, so ONE run lists
-% every unregistered term instead of stopping at the first; the list is
-% checked before anything is written.
-prevStrict = did2.schema.cache.strictMode('TermRegistry', false);
-prevCollect = did2.build.unregisteredTerms('-collect', true);
-did2.build.unregisteredTerms('-reset');
-restore = onCleanup(@() restoreTerms(prevStrict, prevCollect)); %#ok<NASGU>
+% Build with the term registry's error OFF and collection ON
+% (ndi.setup.V2.checkTerms), so ONE run lists every unregistered term instead
+% of stopping at the first; the list is checked before anything is written.
+% With 'Write' (or in test mode) an unregistered term stops the run here.
+[L, result] = ndi.setup.V2.checkTerms(@() buildStages(result, dataFolder, cfg, options, testMode), ...
+    'Raise', options.Write || testMode, 'ErrorId', 'ndi:setup:conv:template:unregisteredTerms');
+result.unregisteredTerms = L;
 
+if options.Write
+    fprintf('\n== write ==\n');
+    result.write = writeAll(result, options);
+end
+end
+
+% =============================================================================
+function result = buildStages(result, dataFolder, cfg, options, testMode)
+% The stages named in 'Stages', in their fixed order, on top of RESULT.
+arguments
+    result (1,1) struct
+    dataFolder (1,:) char
+    cfg (1,1) struct
+    options (1,1) struct
+    testMode (1,1) logical
+end
 order = ["sessions", "entities", "acquisition", "manipulations", "observations", "calculations"];
 for stage = order(ismember(order, options.Stages))
     fprintf('\n== stage %d: %s ==\n', find(order == stage), stage);
@@ -211,23 +235,6 @@ for stage = order(ismember(order, options.Stages))
     result.reports.(char(stage)) = out.report;
     printReport(out.report);
 end
-
-L = did2.build.unregisteredTerms();
-result.unregisteredTerms = L;
-fprintf('\nUNREGISTERED TERMS: %d distinct (name, node, field)\n', numel(L));
-for k = 1:numel(L)
-    fprintf('  %-40s %-20s %-40s x%d  %s\n', L(k).name, L(k).node, L(k).field, L(k).count, L(k).reason);
-end
-if ~isempty(L) && (options.Write || testMode)
-    error('ndi:setup:conv:template:unregisteredTerms', ['%d term(s) are not in DID-schema''s ' ...
-        'term registry (listed above); nothing was written. Correct the name in the spec, ' ...
-        'or register the term ("Adding terms", Using_V2.md).'], numel(L));
-end
-
-if options.Write
-    fprintf('\n== write ==\n');
-    result.write = writeAll(result, options);
-end
 end
 
 % =============================================================================
@@ -252,7 +259,7 @@ function w = writeAll(result, options)
 % The dataset folder holds the dataset-level documents and, per session, its
 % `included_in` relations and a `linked_session` naming its folder; each
 % session's own documents are written ONCE, to its own folder. The whole set
-% is checked as one before anything is written (ndi.setup.V2.createDataset).
+% is checked as one before anything is written (ndi.setup.V2.writeDataset).
 arguments
     result (1,1) struct
     options (1,1) struct
@@ -281,36 +288,15 @@ for f = {'entities', 'acquisition', 'manipulations', 'observations', 'calculatio
         stageDocs{k} = [stageDocs{k}, reshape(result.(f{1}).documents{k}, 1, [])];
     end
 end
-dsid = result.datasetSessionId;
-sessDocs = cell(1, n);
-external = {};
-for k = 1:n
-    sid = T.session_id{k};
-    own = ndi.setup.V2.entityDocuments('session', struct('local_identifier', T.local_identifier{k}, ...
-        'name', T.name{k}), struct(), 'SessionId', sid, 'Id', sid);
-    studies = cellstr(T.study_ids{k});
-    for j = 1:numel(studies)
-        own{end+1} = did2.build.directedRelation(sid, studies{j}, 'included_in', ...
-            'SessionId', sid); %#ok<AGROW>
-    end
-    link = did2.build.document('linked_session', struct('path', ndi.v2.linkPath(T.path{k}, dsPath)), ...
-        'SessionId', dsid, 'Edges', struct('entity_id', sid));
-    sessDocs{k} = [own(2:end), {link}];
-    external = [external, own(1), stageDocs{k}]; %#ok<AGROW>
-end
+T.documents = stageDocs;
 name = '';
 if isfield(result.spec.dataset, 'name'), name = char(result.spec.dataset.name); end
-[~, check] = ndi.setup.V2.createDataset(dsPath, char(result.spec.write.dataset_reference), dsid, ...
-    result.datasetDocuments, sessDocs, 'Name', name, 'Overwrite', options.Overwrite, ...
-    'External', external, 'Progress', false, 'Strict', true);
-Tw = T(:, {'local_identifier', 'path', 'name', 'session_id', 'session_doc_id'});
-Tw.documents = stageDocs;
-ndi.setup.V2.makeSessions(Tw, 'Overwrite', options.Overwrite);
-ds = ndi.dataset.dir(dsPath);
-[refs, ids] = ds.session_list();
-fprintf('dataset %s: %d session(s) listed by ndi.dataset\n', ds.id(), numel(ids));
-w = struct('path', dsPath, 'check', check, 'sessionReferences', {refs}, 'sessionIds', {ids}, ...
-    'documents', numel(result.datasetDocuments) + sum(cellfun(@numel, sessDocs)) + numel(external));
+out = ndi.setup.V2.writeDataset(dsPath, char(result.spec.write.dataset_reference), ...
+    result.datasetSessionId, result.datasetDocuments, T, 'Name', name, ...
+    'Overwrite', options.Overwrite, 'Progress', false, 'Strict', true);
+fprintf('dataset %s: %d session(s) listed by ndi.dataset\n', out.id, numel(out.sessionIds));
+w = struct('path', dsPath, 'check', out.report, 'sessionReferences', {out.sessionReferences}, ...
+    'sessionIds', {out.sessionIds}, 'documents', out.documents);
 end
 
 % =============================================================================
@@ -381,15 +367,6 @@ end
 while numel(p) > 1 && any(p(end) == '/\')
     p = p(1:end-1);
 end
-end
-
-function restoreTerms(prevStrict, prevCollect)
-arguments
-    prevStrict
-    prevCollect
-end
-did2.schema.cache.strictMode('TermRegistry', prevStrict);
-did2.build.unregisteredTerms('-collect', prevCollect);
 end
 
 function restoreDiary(wasOn, wasFile)

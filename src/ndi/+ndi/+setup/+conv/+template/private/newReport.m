@@ -9,7 +9,7 @@ function r = newReport(stage)
 %   number of DOCUMENTS it built. read = written + skipped + errors.
 %
 %   corrected / notCorrected list the spec's named corrections the stage
-%   applied or refused (applyCorrection).
+%   applied or refused (ndi.setup.V2.applyCorrection).
 %
 %   See also skipRow, rowError, printReport.
 

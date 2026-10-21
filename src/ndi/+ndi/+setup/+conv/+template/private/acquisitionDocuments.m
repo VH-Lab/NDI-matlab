@@ -3,7 +3,8 @@ function out = acquisitionDocuments(sessions, entityIds, cfg, throwErrors, optio
 %
 %   OUT = acquisitionDocuments(SESSIONS, ENTITYIDS, CFG, THROWERRORS) builds,
 %   for each row of a session's source table that names a recording file
-%   (CFG.acquisition.file_column) in the session's data folder:
+%   (CFG.acquisition.file_column) in the session's data folder, these five
+%   documents, in one call to ndi.setup.V2.recordingDocuments:
 %
 %     absolute_time_reference  the recording's UTC extent, from the row's
 %                              start (start_column, read in time_zone, exact)
@@ -95,33 +96,15 @@ for s = 1:n
                 dur = [];
             end
 
-            absRef = timeReference(t0, startText, a.time_zone, [], dur, sid);
+            % the five documents one recorded file needs, joined, in one call
             [~, stem] = fileparts(file);
-            ep = ndi.setup.V2.entityDocuments('epoch', ...
-                struct('local_identifier', sprintf('%s_%s', ref, stem)), ...
-                struct('time_reference_id', {{absRef.base.id}}), 'SessionId', sid);
-            ep = ep{1};
-            relEpoch = did2.build.relativeTimeReference(ep.base.id, 'Clock', 'dev_local_time', ...
-                'Start', 0, 'Duration', dur, 'SessionId', sid);
-            st = did2.build.statement(a.leaf, subject, variable, [], 'DataBody', true, ...
-                'DatumType', a.datum_type, 'Method', method, ...
-                'TimeReferenceIds', {relEpoch.base.id, absRef.base.id}, 'SessionId', sid);
-
-            info = dir(src);
-            f = struct('format', fileFormat, 'filename', file, 'size_bytes', info.bytes, ...
-                'description', sprintf('The raw recording, %s, where the source keeps it.', file));
-            if options.Checksums
-                f.content_hash = ndi.fun.file.MD5(src);
-                f.hash_algorithm = 'MD5';
-            end
-            body = did2.build.document('opaque_body', f, 'SessionId', sid, ...
-                'Edges', struct('owner_id', st.base.id), 'Files', {'body_data_0'});
-            % recorded BY LOCATION, not ingested: the raw data is never copied
-            body = ndi.setup.V2.attachFile(body, 'body_data_0', src, 'Ingest', false);
-
-            built = {absRef, ep, relEpoch, st, body};
+            [built, ids] = ndi.setup.V2.recordingDocuments(subject, src, t0, a.time_zone, sid, ...
+                'Leaf', a.leaf, 'Variable', variable, 'Method', method, 'Format', fileFormat, ...
+                'DatumType', a.datum_type, 'Duration', dur, 'SourceText', startText, ...
+                'Epoch', sprintf('%s_%s', ref, stem), 'Checksums', options.Checksums);
             docs{s} = [docs{s}, built];
-            recs(end+1, :) = {ref, rowId, ep.base.id, st.base.id, absRef.base.id, src}; %#ok<AGROW>
+            recs(end+1, :) = {ref, rowId, ids.epoch_id, ids.statement_id, ...
+                ids.time_reference_id, src}; %#ok<AGROW>
             r.written = r.written + 1;
             r.documents = r.documents + numel(built);
         catch err

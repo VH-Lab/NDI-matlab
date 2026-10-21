@@ -350,7 +350,7 @@ for k = 1:numel(c)
     col = double(T.(x.column));
     ok = true;
     for j = r(:)'
-        [v, applied, note, line] = applyCorrection(x, col(j), where);
+        [v, applied, note, line] = ndi.setup.V2.applyCorrection(x, col(j), where);
         if ~applied
             ok = false;
             break;
