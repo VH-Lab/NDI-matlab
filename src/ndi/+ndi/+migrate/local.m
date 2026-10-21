@@ -1065,6 +1065,11 @@ function result = local(path, options)
             'SchemaCache', options.SchemaCache);
         dbCleanup = onCleanup(@() db.close());
         if ~isempty(convertResult.migrated)
+            % A repeated id would surface as mksqlite's bare "UNIQUE constraint
+            % failed: documents.id" (B and Dab, runs 39684114775 and
+            % 39668356521), which names neither the id nor the pass that
+            % minted it. Say both before writing anything.
+            assertUniqueIds(convertResult.migrated);
             db.add(convertResult.migrated, 'Validate', options.Validate);
         end
         clear dbCleanup;
@@ -3217,4 +3222,27 @@ key = [sessionId '|' epochStr];
 if isKey(epochByPair, key)
     docId = epochByPair(key);
 end
+end
+
+function assertUniqueIds(docs)
+%ASSERTUNIQUEIDS Error, naming them, when two migrated documents share an id.
+    ids = cellfun(@(d) char(d.id()), docs, 'UniformOutput', false);
+    [u, ~, j] = unique(ids);
+    counts = accumarray(j(:), 1);
+    dup = u(counts > 1);
+    if isempty(dup)
+        return;
+    end
+    lines = {};
+    for q = 1:min(numel(dup), 10)
+        hit = find(strcmp(ids, dup{q}));
+        cls = cellfun(@(k) char(docs{k}.className()), num2cell(hit), ...
+            'UniformOutput', false);
+        lines{end+1} = sprintf('  %s x%d: %s', dup{q}, numel(hit), ...
+            strjoin(cls, ', ')); %#ok<AGROW>
+    end
+    error('NDI:migrate:duplicateIds', ...
+        ['%d id(s) are carried by more than one migrated document (of %d); ' ...
+         'nothing was written. First %d (id xN: classes):\n%s'], ...
+        numel(dup), numel(docs), numel(lines), strjoin(lines, newline));
 end
