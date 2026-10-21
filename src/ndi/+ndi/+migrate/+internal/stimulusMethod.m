@@ -4,12 +4,14 @@ function doc = stimulusMethod(recipe, sessionId, creationTimestamp)
 %
 %   DOC = ndi.migrate.internal.stimulusMethod(RECIPE, SESSIONID, TIMESTAMP)
 %   builds the `method` document {term, parameters} for RECIPE (from
-%   ndi.migrate.internal.gratingRecipe, or a Hartley basis entry built the
-%   same way) with did2.build.method, so the shape is read from the schema in
+%   ndi.migrate.internal.stimulusRecipe / gratingRecipe, or a Hartley basis
+%   entry built the same way) with did2.build.method, so the shape is read from the schema in
 %   use and never written here. An `item`'s `item_id` names one of these per
 %   distinct stimulus.
 %
-%   The terms and parameter variables are LABELS ({name}, no node): the plan
+%   A recipe entry's form is 'quantity', 'matrix', 'count', 'term' or 'text';
+%   its variable, unit and term are a {node, name} struct where a registered
+%   term matches, else a name. Most are LABELS ({name}, no node): the plan
 %   says so ("until the term registry carries them -- follow-up (a)"), so
 %   the T19 TermRegistry check is off while the document is built, exactly as
 %   DID-matlab's batch passes do. Validation is left to the caller's
@@ -28,14 +30,21 @@ for k = 1:numel(recipe.parameters)
     p = recipe.parameters(k);
     switch p.form
         case 'term'
-            entries{end+1} = did2.build.parameter(p.variable, 'Term', p.value); %#ok<AGROW>
+            args = {'Term', p.value};
+        case 'count'
+            args = {'Count', p.value};
+        case 'text'
+            args = {'Text', p.value};
+        case 'matrix'
+            % data_body AMENDMENT 4 (did-schema #88): one numeric array is ONE value
+            args = {'Matrix', p.value};
         otherwise
             args = {'Value', p.value};
-            if ~isempty(p.unit)
-                args = [args, {'Unit', p.unit}]; %#ok<AGROW>
-            end
-            entries{end+1} = did2.build.parameter(p.variable, args{:}); %#ok<AGROW>
     end
+    if any(strcmp(p.form, {'quantity', 'matrix'})) && ~isempty(p.unit)
+        args = [args, {'Unit', p.unit}]; %#ok<AGROW>
+    end
+    entries{end+1} = did2.build.parameter(p.variable, args{:}); %#ok<AGROW>
 end
 params = [];
 if ~isempty(entries)

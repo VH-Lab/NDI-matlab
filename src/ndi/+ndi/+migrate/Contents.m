@@ -37,7 +37,11 @@
 %                        - the stimulus fold in the did-schema #88 shape
 %                          (V_eta_method_plan.md, TEAM-SIGN-OFF [method]
 %                          2026-10-21): one standalone `method` document per
-%                          distinct stimulus (gratingRecipe + stimulusMethod)
+%                          distinct stimulus (stimulusRecipe + stimulusMethod;
+%                          every recognised NewStim kind -- grating, blank,
+%                          uniform field / bars, dense noise, sparse noise,
+%                          shape movie -- per [non-grating stimuli as methods],
+%                          Jess Haley 2026-10-21)
 %                          + ONE `manipulation` (value kind `item`) carrying the v1
 %                          presentation id and a 0-based playlist into them.
 %                          Several animals: one manipulation of the session's
