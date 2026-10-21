@@ -3,7 +3,8 @@ function docs = getDocuments(container, ids, cache)
 %
 %   DOCS = ndi.v2.getDocuments(CONTAINER, IDS) returns a containers.Map,
 %   id -> ndi.document, for the ids found in CONTAINER (an ndi.session or
-%   ndi.dataset); 200 ids per search. With a CACHE (a containers.Map), the
+%   ndi.dataset; a session opened from its dataset also reaches the
+%   dataset-level documents, as ndi.v2.getDocument); 200 ids per search. With a CACHE (a containers.Map), the
 %   documents found are also stored in it under 'doc:<id>', and ids already
 %   there are not searched again.
 %
@@ -36,6 +37,9 @@ for c = 1:200:numel(todo)
         qs = nx;
     end
     found = container.database_search(qs{1});
+    if numel(found) < numel(part) && isa(container, 'ndi.session')
+        found = container.database_search_with_dataset(qs{1});
+    end
     for i = 1:numel(found)
         p = ndi.v2.props(found{i});
         id = char(p.base.id);

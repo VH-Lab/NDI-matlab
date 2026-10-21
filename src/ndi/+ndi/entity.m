@@ -822,7 +822,9 @@ classdef entity
 
         function ents = fetch(container, ids, extra)
             % FETCH - the entity for each id ({} where not found), a few searches in all
-            % EXTRA, an ndi.query or [], is ANDed in: ids not matching it are {} too
+            % EXTRA, an ndi.query or [], is ANDed in: ids not matching it are {} too.
+            % A session opened from its dataset also reaches the dataset-level
+            % entities (a dataset, a strain, software), as ndi.v2.getDocument.
             arguments
                 container
                 ids
@@ -838,6 +840,9 @@ classdef entity
                     'UniformOutput', false));
                 if ~isempty(extra), q = extra & q; end
                 docs = container.database_search(q);
+                if numel(docs) < numel(part) && isa(container, 'ndi.session')
+                    docs = container.database_search_with_dataset(q);
+                end
                 for i = 1:numel(docs)
                     p = ndi.v2.props(docs{i});
                     k = where(char(p.base.id));
