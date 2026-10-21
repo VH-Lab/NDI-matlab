@@ -133,7 +133,7 @@ for i = 1:numel(names)
     if strcmp(f, 'randState')
         variable = SEED;
     end
-    if isstruct(unit) && strcmp(unit.node, AU.node)
+    if isstruct(unit) && isequal(unit, AU)
         hasColour = true;
     end
     if strcmp(f, 'pixSize') && isnumeric(v) && any(v(:) < 1)
