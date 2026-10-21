@@ -582,7 +582,7 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             if iscell(mp), mp = [mp{:}]; end
             testCase.verifyTrue(any(arrayfun(@(q) strcmp(q.variable.name, 'cleaning step'), mp)));
             testCase.verifyFalse(any(arrayfun(@(q) strcmp(q.variable.name, 'droplet'), mp)), ...
-                'a droplet is a dose of the cohort, not a method parameter (decision #132)');
+                'a droplet is a manipulation of the cohort, not a method parameter (decisions #132, #145)');
             dr = docs(strcmp(classes, 'directed_relation'));
             rel = dr(cellfun(@(r) strcmp(edge(r, 'child_id'), idOf('concentration_assayPlate0012_worms')) ...
                 && strcmp(edge(r, 'parent_id'), idOf('concentration_assayPlate0012')), dr));
@@ -601,12 +601,14 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             testCase.verifyEqual(toDep{1}.interaction.method.term.name, 'agar plug transfer');
         end
 
-        function testTheDropletIsADoseOfTheCohort(testCase)
-            % decision #132, option c (Jess Haley, 2026-10-21): worms eyelash-
-            % picked into an S-Complete droplet get that droplet as its own
-            % dose_manipulation of the cohort, at the transfer's time,
-            % formulation_id the s_complete formulation, no amount, and the
-            % transfer carries no `droplet` method parameter. The fixture's
+        function testTheDropletIsAManipulationValuedByItsFormulation(testCase)
+            % decision #145 (Jess Haley, 2026-10-21; supersedes #132's dose):
+            % worms eyelash-picked into an S-Complete droplet are immersed in
+            % it, not given an amount of it, so the droplet is a
+            % formulation_manipulation of the cohort, at the transfer's time,
+            % its own value empty and a `value_id` edge to the s_complete
+            % formulation; no dose is written, and the transfer carries no
+            % `droplet` method parameter. The fixture's
             % concentration plates are agar plugs, so a spec copy gives
             % foragingConcentration the eyelash rule.
             specFile = fullfile(fileparts(which('ndi.setup.conv.haley.import_V2')), 'import_V2_spec.json');
@@ -638,13 +640,13 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             idOf = containers.Map(cellfun(@(d) d.subject.local_identifier, subj, 'UniformOutput', false), ...
                 cellfun(@(d) d.base.id, subj, 'UniformOutput', false));
             on = @(set, local) set(cellfun(@(a) strcmp(edge(a, 'entity_id'), idOf(local)), set));
-            dm = on(docs(strcmp(classes, 'dose_manipulation')), 'concentration_assayPlate0012_worms');
-            testCase.verifyNumElements(dm, 1, 'one droplet dose of plate 12''s cohort');
-            testCase.verifyEqual(edge(dm{1}, 'formulation_id'), result.metadata.ids('s_complete'), ...
-                'the droplet is the s_complete formulation');
-            testCase.verifyTrue(~isfield(dm{1}, 'dose') || ~isfield(dm{1}.dose, 'value') ...
-                || isempty(dm{1}.dose.value) || isempty(fieldnames(dm{1}.dose.value)), ...
-                'no amount was recorded');
+            testCase.verifyEmpty(on(docs(strcmp(classes, 'dose_manipulation')), ...
+                'concentration_assayPlate0012_worms'), 'the droplet is not a dose (decision #145)');
+            dm = on(docs(strcmp(classes, 'formulation_manipulation')), 'concentration_assayPlate0012_worms');
+            testCase.verifyNumElements(dm, 1, 'one droplet manipulation of plate 12''s cohort');
+            testCase.verifyEqual(edge(dm{1}, 'value_id'), result.metadata.ids('s_complete'), ...
+                'the droplet is valued by the s_complete formulation');
+            testCase.verifyEqual(edge(dm{1}, 'formulation_id'), '', 'no formulation_id: not a dose');
             testCase.verifyEqual(dm{1}.statement.variable.node, 'EMPTY:0000266', ...
                 'the variable is what was given: the formulation''s type (S medium)');
             testCase.verifyEqual(methodOf(dm{1}), '', 'no method');

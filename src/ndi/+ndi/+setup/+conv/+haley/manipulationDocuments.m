@@ -54,11 +54,16 @@ function out = manipulationDocuments(session, S, subjectIds, options)
 %                        plate agar plug transfer or eyelash picking, from the
 %                        transfer protocol, with the cleaning step through an
 %                        empty NGM plate as a method parameter).
-%     droplet            dose_manipulation of the cohort, at the assay
-%                        transfer's time, when the transfer's rule names a
-%                        droplet (eyelash picking into S-Complete): formulation_id
-%                        the droplet's formulation, no amount, variable its
-%                        formulation type, no method (decision #132, option c).
+%     droplet            formulation_manipulation of the cohort (the direction
+%                        `manipulation` valued by a formulation): the worms
+%                        sit in the droplet, they are not given an amount of it
+%                        (Jess Haley, 2026-10-21; decision #145, superseding
+%                        #132's dose). When the transfer's rule names a droplet
+%                        (eyelash picking into S-Complete): an empty `value`
+%                        and a `value_id` edge to the droplet's formulation,
+%                        variable its formulation type, no method, at the
+%                        assay transfer's time (the source records no
+%                        evaporation time).
 %     food deprivation   term_manipulation food availability (ZECO:0000113)
 %                        = fasting (ZECO:0000114) at the food deprivation
 %                        window; no method.
@@ -377,7 +382,8 @@ out.documents = docs;
         % the transfer protocol's method -> the last step, plus the cleaning
         % step every assay transfer went through; and the formulation key of
         % the droplet the worms were released in, when the rule has one (it
-        % is its own dose, decision #132 option c, not a method parameter)
+        % is its own manipulation, decisions #132 and #145, not a method
+        % parameter)
         method = '';
         dropletKey = '';
         params = did2.build.parameter(haleyTerm('cleaning step'), 'Text', cfg.transfer.cleaning);
@@ -396,18 +402,30 @@ out.documents = docs;
 
     function droplet(cohort, plate, formulationKey)
         % the droplet the worms were released in on the assay plate (decision
-        % #132, option c, Jess Haley 2026-10-21): a dose_manipulation of the
-        % cohort, at the transfer's time, formulation_id the droplet's
-        % formulation (S-Complete), no amount (none was recorded). Variable:
-        % what was given, the formulation's type, as for a pour (no other dose
-        % in this import is given to animals); no method. A move with no time
-        % has no transfer and no droplet (move reports it).
+        % #145, Jess Haley 2026-10-21: "A subject immersed in a formulation
+        % (bath, perfusion, the Haley assay droplet) is a manipulation valued
+        % by the formulation; a subject given a quantity is a dose"). The
+        % worms are eyelash-picked into S-Complete, which evaporates before
+        % recording: a transitory bath, not a dose. So a
+        % formulation_manipulation of the cohort (did2.build reads the name
+        % as the direction `manipulation` with the value kind `formulation`):
+        % its own `value` empty, a `value_id` edge to the droplet's
+        % formulation document, as the migrated baths (DID-matlab
+        % resolveDeferredBaths). Variable: the formulation's type; no method.
+        % Time: the transfer's. The source records no evaporation time, so
+        % the window cannot be closed; the instant stays the transfer's. A
+        % move with no time has no transfer and no droplet (move reports it).
         moveKey = [plate '|' cohort];
         if ~isKey(refs, moveKey)
             return;
         end
-        dose(cohort, nameOf(formulationKey), [], '', formulationKey, refs(moveKey), '', '', ...
-            'droplet', eachMember);
+        if ~isKey(options.Ids, formulationKey)
+            out.skipped{end+1} = sprintf('%s: formulation %s was not built; no droplet', ...
+                cohort, formulationKey);
+            return;
+        end
+        statement('formulation_manipulation', cohort, nameOf(formulationKey), [], refs(moveKey), ...
+            struct('Fields', eachMember, 'ValueId', options.Ids(formulationKey)), 'droplet');
     end
 
     function statement(leaf, subject, variable, value, timeId, x, counter)
@@ -432,6 +450,9 @@ out.documents = docs;
         end
         if isfield(x, 'Edges') && ~isempty(fieldnames(x.Edges))
             args = [args, {'Edges', x.Edges}];
+        end
+        if isfield(x, 'ValueId') && ~isempty(x.ValueId)
+            args = [args, {'ValueId', x.ValueId}];
         end
         docs{end+1} = did2.build.statement(leaf, subjectIds(subject), variable, value, args{:});
         out.counts.(counter) = out.counts.(counter) + 1;
