@@ -99,7 +99,8 @@ classdef TestDatasetMetadataHaley < matlab.unittest.TestCase
             % needs no 'DatasetId', and another id is refused
             alone = ndi.setup.V2.datasetMetadata(testCase.Spec, sid, 'Studies', "only");
             rel = alone.documents(strcmp(classOf(alone), 'directed_relation'));
-            toDataset = cellfun(@(r) any(strcmp({r.depends_on.document_id}, sid)), rel);
+            % (by the parent edge: every document also carries the session id)
+            toDataset = cellfun(@(r) strcmp(parentOf(r), sid), rel);
             testCase.verifyEqual(sum(toDataset), numel(rel) - numel(nestedStudyKeys(testCase.Spec)));
             testCase.verifyError(@() ndi.setup.V2.datasetMetadata(testCase.Spec, sid, ...
                 'DatasetId', did.ido.unique_id(), 'Studies', "only"), 'ndi:setup:V2:datasetId');
@@ -310,8 +311,8 @@ classdef TestDatasetMetadataHaley < matlab.unittest.TestCase
             st = testCase.Spec.studies;
             if isstruct(st), st = num2cell(st); end
             byKey = containers.Map(cellfun(@(x) x.key, st, 'UniformOutput', false), st);
-            nodes = @(k) sort(cellfun(@(f) f.node, num2cell(asStructs(byKey(k).factors)), ...
-                'UniformOutput', false));
+            nodes = @(k) reshape(sort(cellfun(@(f) f.node, num2cell(asStructs(byKey(k).factors)), ...
+                'UniformOutput', false)), 1, []);
             testCase.verifyEqual(nodes('single_patch_assays'), ...
                 sort({'EMPTY:0000120', 'EMPTY:0000122', 'EMPTY:0000365'}));
             testCase.verifyTrue(any(strcmp(nodes('large_single_patch'), 'EMPTY:0000119')));
