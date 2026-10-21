@@ -20,7 +20,8 @@ classdef TestGenericDatasetEndToEnd < matlab.unittest.TestCase
 %     manipulate  the organism's temperature, inline with a `source_unit`
 %               term, and an inline method {term, parameters}
 %     calculate the mean speed, derived from the observation (`input_id`),
-%               whose method is a standalone `method` document (`method_id`)
+%               whose method is a standalone `method` document (`method_id`),
+%               run on an operating system (a `software` entity; required)
 %
 %   It asserts values, units, edges and inheritance (what `part_of`,
 %   `instance_of` and `included_in` pass), that getsubjects returns the
@@ -102,7 +103,7 @@ classdef TestGenericDatasetEndToEnd < matlab.unittest.TestCase
                     'manipulation', 'method', 'calculation', 'timeReference', 'partOf', 'instanceOf'}
                 testCase.verifyEqual(sessionOf(testCase.Id.(n{1})), testCase.Id.session, n{1});
             end
-            for n = {'dataset', 'strain', 'species', 'abbreviation'}
+            for n = {'dataset', 'strain', 'species', 'abbreviation', 'os'}
                 testCase.verifyEqual(sessionOf(testCase.Id.(n{1})), testCase.Id.dataset, n{1});
             end
         end
@@ -255,6 +256,10 @@ classdef TestGenericDatasetEndToEnd < matlab.unittest.TestCase
             testCase.assertNumElements(in, 1);
             testCase.verifyClass(in{1}, 'ndi.observation');
             testCase.verifyEqual(in{1}.document_id(), testCase.Id.observation);
+            os = c.operating_system();
+            testCase.assertNumElements(os, 1);
+            testCase.verifyEqual(os{1}.document_id, testCase.Id.os);
+            testCase.verifyEqual(os{1}.type, 'software');
 
             p = c.document_properties();
             testCase.verifyEqual(ndi.v2.edgeIds(p, 'method_id'), {testCase.Id.method});
@@ -332,7 +337,12 @@ id.strain = strain{1}.base.id;
 species = did2.build.statement('term_assertion', id.strain, T('NCIT:C45293'), ...
     T('NCBITaxon:6239'), D{:});
 id.species = species.base.id;
-dsDocs = [dsDocs, {abbrev}, strain, {species}];
+% the operating system a calculation ran on (calculation.operating_system_id
+% is required), a shared software entity
+os = ndi.setup.V2.entityDocuments('software', struct('name', 'Linux', 'version', '6.8'), ...
+    struct(), D{:});
+id.os = os{1}.base.id;
+dsDocs = [dsDocs, {abbrev}, strain, {species}, os];
 
 % ---- the session, included_in the dataset; its id is the session id
 sess = ndi.setup.V2.entityDocuments('session', struct('local_identifier', 'day1'), ...
@@ -400,7 +410,8 @@ id.method = method.base.id;
 calc = did2.build.statement('velocity_calculation', id.organism, T('PATO:0000008'), ...
     did2.build.valueCell('velocity', mean(speed), 'SourceValue', mean(speed) * 1e6, ...
         'SourceUnit', T('om:micrometrePerSecond-Time')), ...
-    'MethodId', id.method, 'InputIds', {id.observation}, when{:}, S{:});
+    'MethodId', id.method, 'InputIds', {id.observation}, 'OperatingSystemId', id.os, ...
+    when{:}, S{:});
 id.calculation = calc.base.id;
 
 sessDocs = [sess, {included}, worm, head, camera, {instanceOf, partOf, stage, ref, ...
