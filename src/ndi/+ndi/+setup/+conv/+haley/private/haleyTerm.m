@@ -219,7 +219,10 @@ pairs = {
     'binary mask',                             'NCIT:C201530',            'Binary Mask'
     'region of interest',                      'NCIT:C85402',             'Imaging Region of Interest'
     'bacterial patch',                         'EMPTY:0000325',           'bacterial patch'
-    'sample type',                             'NCIT:C210102',            'Sample Type'
+    % a thing's kind: a plate is a material, a patch a culture (decision
+    % #139, Jess Haley 2026-10-21; NCIT Sample Type is left for real samples)
+    'material type',                           'EMPTY:0000354',           'material type'
+    'culture type',                            'EMPTY:0000357',           'culture type'
     'petri dish',                              'NCIT:C96141',             'Petri Dish'
     'arena',                                   'EMPTY:0000326',           'arena'
     'reference mark',                          'EMPTY:0000327',           'reference mark'

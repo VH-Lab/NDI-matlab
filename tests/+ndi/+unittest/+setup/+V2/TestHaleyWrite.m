@@ -74,10 +74,11 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             testCase.verifyFalse(isfield(ex{1}.statement, 'notes') && ~isempty(ex{1}.statement.notes));
         end
 
-        function testABacterialPatchHasItsSampleType(testCase)
-            % decision #104: a patch with bacteria carries sample type
-            % (NCIT:C210102) = bacterial patch (EMPTY:0000325); a patch of LB
-            % alone is not a bacterial patch and gets none
+        function testABacterialPatchHasItsCultureType(testCase)
+            % decisions #104, #139: a patch with bacteria carries culture type
+            % (EMPTY:0000357) = bacterial patch (EMPTY:0000325); a patch of LB
+            % alone is not a bacterial patch and gets none. NCIT Sample Type
+            % is not written.
             session = table({ndi.ido.unique_id()}, {'concentration_0001'}, ...
                 'VariableNames', {'session_id', 'local_identifier'});
             S = table({'concentration_0001'; 'concentration_0001'}, {'patch'; 'patch'}, ...
@@ -86,11 +87,13 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             ids = containers.Map({'p1_patch0001', 'p1_patch0002'}, ...
                 {ndi.ido.unique_id(), ndi.ido.unique_id()});
             out = ndi.setup.conv.haley.assertionDocuments(session, S, ids);
-            testCase.verifyEqual(out.counts.patch_sample_type, 1);
+            testCase.verifyEqual(out.counts.patch_culture_type, 1);
             docs = cellfun(@newNames, out.documents, 'UniformOutput', false);
-            st = docs(cellfun(@(d) strcmp(d.statement.variable.name, 'Sample Type'), docs));
+            testCase.verifyEmpty(docs(cellfun(@(d) strcmp(d.statement.variable.node, ...
+                'NCIT:C210102'), docs)), 'NCIT Sample Type is not written (#139)');
+            st = docs(cellfun(@(d) strcmp(d.statement.variable.name, 'culture type'), docs));
             testCase.verifyNumElements(st, 1);
-            testCase.verifyEqual(st{1}.statement.variable.node, 'NCIT:C210102');
+            testCase.verifyEqual(st{1}.statement.variable.node, 'EMPTY:0000357');
             testCase.verifyEqual(st{1}.term.value.node, 'EMPTY:0000325');
             testCase.verifyEqual(st{1}.term.value.name, 'bacterial patch');
             on = ndi.v2.edgeIds(st{1}, 'entity_id');
@@ -332,16 +335,22 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
 
             % 4 cohorts, each with a species, a strain and a sex; 7 seeded
             % patches (one per assay plate, one per acclimation plate), each
-            % with a species, a strain and a sample type (#104); 8 plates (4
-            % assay, 3 acclimation, 1 food deprivation), each with its sample
-            % type (#107). The strain is an `instance_of` relation to the
+            % with a species, a strain and a culture type (#104, #139); 8
+            % plates (4 assay, 3 acclimation, 1 food deprivation), each with
+            % its material type (#107, #139). The strain is an `instance_of` relation to the
             % strain entity instead of an assertion, and the species is stated once, on
             % the strain entity, not on each cohort and patch (decision
             % #112). Plate 13's exclusion is a logical assertion, not a term.
             testCase.verifyNumElements(ta, 4 + 7 + 8);
-            kind = ta(cellfun(@(a) strcmp(a.statement.variable.name, 'Sample Type'), ta));
+            testCase.verifyEmpty(ta(cellfun(@(a) strcmp(a.statement.variable.node, ...
+                'NCIT:C210102'), ta)), 'NCIT Sample Type is not written (#139)');
+            kind = ta(cellfun(@(a) strcmp(a.statement.variable.node, 'EMPTY:0000357'), ta));
             kinds = cellfun(@(a) a.term.value.name, kind, 'UniformOutput', false);
-            testCase.verifyEqual(sum(strcmp(kinds, 'bacterial patch')), 7, 'one per seeded patch');
+            testCase.verifyEqual(sum(strcmp(kinds, 'bacterial patch')), 7, 'one culture type per seeded patch');
+            testCase.verifyNumElements(kind, 7);
+            kind = ta(cellfun(@(a) strcmp(a.statement.variable.node, 'EMPTY:0000354'), ta));
+            kinds = cellfun(@(a) a.term.value.name, kind, 'UniformOutput', false);
+            testCase.verifyNumElements(kind, 8, 'one material type per plate');
             testCase.verifyEqual(sum(strcmp(kinds, 'assay plate')), 4);
             testCase.verifyEqual(sum(strcmp(kinds, 'acclimation plate')), 3);
             testCase.verifyEqual(sum(strcmp(kinds, 'food deprivation plate')), 1);
