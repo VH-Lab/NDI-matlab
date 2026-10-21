@@ -1,4 +1,4 @@
-function testCloudApiPart(partIdx, numParts)
+function testCloudApiPart(partIdx, numParts, options)
 %testCloudApiPart Run a partition of the ndi.unittest.cloud test suite.
 %
 %   testCloudApiPart(PARTIDX, NUMPARTS) builds the full TestSuite from the
@@ -19,9 +19,23 @@ function testCloudApiPart(partIdx, numParts)
 %   New classes still land in their alphabetical chunk automatically; add
 %   an entry to manualPartOverrides only when a class shows up as a
 %   sustained bottleneck.
+%
+%   testCloudApiPart(..., 'CodeCoverage', true) also records code coverage
+%   of the cloud package (src/ndi/+ndi/+cloud) and writes it to
+%   docs/reports/codecoverage.xml in Cobertura format for upload to Codecov.
+%   Coverage is limited to the cloud package to keep the instrumentation
+%   cost low; the rest of src is covered by the no-cloud test run.
+
+    arguments
+        partIdx
+        numParts
+        options.CodeCoverage (1,1) logical = false
+    end
 
     import matlab.unittest.TestSuite
     import matlab.unittest.TestRunner
+    import matlab.unittest.plugins.CodeCoveragePlugin
+    import matlab.unittest.plugins.codecoverage.CoberturaFormat
 
     if ischar(partIdx) || isstring(partIdx)
         partIdx = double(string(partIdx));
@@ -90,6 +104,17 @@ function testCloudApiPart(partIdx, numParts)
     end
 
     runner = TestRunner.withTextOutput('OutputDetail', 'Detailed');
+    if options.CodeCoverage
+        outputDirectory = fullfile(projectRootDir, "docs", "reports");
+        if ~isfolder(outputDirectory)
+            mkdir(outputDirectory)
+        end
+        cloudFolder = fullfile(projectRootDir, "src", "ndi", "+ndi", "+cloud");
+        mfileListing = dir(fullfile(cloudFolder, '**', '*.m'));
+        codecoverageFileList = fullfile({mfileListing.folder}, {mfileListing.name});
+        runner.addPlugin(CodeCoveragePlugin.forFile(codecoverageFileList, ...
+            'Producing', CoberturaFormat(fullfile(outputDirectory, "codecoverage.xml"))));
+    end
     results = runner.run(partitionSuite);
     display(results)
     results.assertSuccess()
