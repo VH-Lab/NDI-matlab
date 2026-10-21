@@ -9,14 +9,14 @@ function [bathBody, timeRefBody, extraBodies, anchorInfo] = stimulusBathToBath(v
 %   did2.convert.resolveDeferredBaths/makeBathVEta (the DID-side assembler of
 %   the same class on #88):
 %
-%     bathBody     a `manipulation` with the `dose` value kind (the
-%                  `dose_manipulation` join leaf went, V_eta_entity_composition
-%                  _plan.md sec. 1), source id PRESERVED, about the stimulator
-%                  element's subject (`entity_id`), the stimulator as
-%                  `instrument_id` (T7), and the REQUIRED `formulation_id` edge
-%                  to the formulation below. The mixture no longer rides
-%                  inline: #88's `dose` holds amounts, and what was given is a
-%                  standalone `formulation`.
+%     bathBody     a `manipulation` with the `formulation` value kind, its
+%                  value the formulation document below through a `value_id`
+%                  edge and its own `value` empty -- NOT a dose: "A bath is a
+%                  manipulation whose value is the formulation (pointed at
+%                  through `value_id`), not a dose; a dose always has an
+%                  amount" (Jess Haley, 2026-10-21). Source id PRESERVED, about
+%                  the stimulator element's subject (`entity_id`), the
+%                  stimulator as `instrument_id` (T7).
 %     timeRefBody  a `relative_time_reference` (#88: the placeholder class
 %                  `epoch_bounded_reference` is GONE, so it cannot be emitted
 %                  even transiently -- it would quarantine on validation) that
@@ -148,7 +148,7 @@ function [bathBody, timeRefBody, extraBodies, anchorInfo] = stimulusBathToBath(v
 %   Outputs:
 %     bathBody     - the manipulation document body (schema_version =
 %                    targetVersion): a `bath` under V_zeta/V_epsilon, or a
-%                    `dose_manipulation` under V_eta (D8 retired the bath family).
+%                    `manipulation` valued by its `formulation` under V_eta.
 %     timeRefBody  - the epoch_bounded_reference document the manipulation
 %                    depends_on, or [] when V_eta declines to anchor (see
 %                    NO TIMES => NO REFERENCE below). A caller must drop an
@@ -259,7 +259,7 @@ end
 
 function [dose, anchor, extra, anchorInfo] = vetaBath(v1Body, stimulatorId, ...
         epochId, sessionId, datestamp, bathId, subjectId, epochClock)
-%VETABATH The did-schema #88 bath: dose manipulation + formulation + chemicals,
+%VETABATH The did-schema #88 bath: manipulation valued by a formulation + chemicals,
 %   anchored "during the session" until epochAnchorFold re-points the anchor at
 %   the stimulator's epoch (see the header).
 S = ndi.migrate.internal.etaShape;
@@ -336,9 +336,15 @@ f.formulation = struct('value', fv);
 f = ndi.migrate.internal.withSessionId(f, sessionId);
 extra{end+1} = f;
 
-dose = S.statement('manipulation', 'dose', subjectId, primaryChemical(mixture), [], ...
+% A bath is NOT a dose: "A bath is a manipulation whose value is the
+% formulation (pointed at through `value_id`), not a dose; a dose always has an
+% amount" (Jess Haley, 2026-10-21; did-schema V_eta_go_forward_class_audit.md).
+% So the manipulation's value kind is `formulation`, its own `value` stays
+% empty, and the formulation document above is its value through `value_id`
+% (DID-matlab resolveDeferredBaths, ff6d542, builds the same shape).
+dose = S.statement('manipulation', 'formulation', subjectId, primaryChemical(mixture), [], ...
     'Id', bathId, 'InstrumentId', stimulatorId, 'TimeReferenceIds', trIds, ...
-    'Edges', {'formulation_id', f.base.id}, common{:});
+    'Edges', {'value_id', f.base.id}, common{:});
 end
 
 function mixture = parseMixture88(body)

@@ -186,8 +186,9 @@ classdef TestMigrateLocalEta < matlab.unittest.TestCase
 
         function testStimulusBathResolvesToDose(testCase)
             % did-schema #88 (VH-Lab/did-schema#88): the bath is a `manipulation`
-            % whose value kind is `dose`, about the specimen by `entity_id`,
-            % pointing at a `formulation` by `formulation_id`; the mixture's
+            % whose value kind is `formulation`, about the specimen by
+            % `entity_id`, its value the `formulation` document through
+            % `value_id` -- not a dose (Jess Haley, 2026-10-21); the mixture's
             % chemicals are `chemical` documents. `dose_manipulation` and
             % `subject_statement` no longer exist.
             %
@@ -233,12 +234,14 @@ classdef TestMigrateLocalEta < matlab.unittest.TestCase
 
             dose = findByClass(result.destination, 'manipulation');
             verifyNotEmpty(testCase, dose, resultDiag(result));
-            verifyTrue(testCase, isfield(dose, 'dose'), ...
-                'the manipulation does not carry the `dose` value kind');
+            verifyTrue(testCase, any(strcmp( ...
+                {dose.document_class.superclasses.class_name}, 'formulation')), ...
+                'the manipulation does not carry the `formulation` value kind');
+            verifyFalse(testCase, isfield(dose, 'dose'), 'a bath is not a dose');
             verifyEqual(testCase, depValue(dose, 'entity_id'), subjId);
             verifyNotEmpty(testCase, depValue(dose, 'time_reference_id'));
             verifyEqual(testCase, depValue(dose, 'instrument_id'), stimId);
-            formulation = findById(result.destination, depValue(dose, 'formulation_id'));
+            formulation = findById(result.destination, depValue(dose, 'value_id'));
             verifyNotEmpty(testCase, formulation, ...
                 ['the dose names no formulation in the database. ' resultDiag(result)]);
             verifyEqual(testCase, formulation.document_class.class_name, 'formulation');

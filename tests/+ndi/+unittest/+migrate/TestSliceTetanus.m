@@ -15,7 +15,8 @@ classdef TestSliceTetanus < matlab.unittest.TestCase
 %
 %   The migrated side is built here in the did-schema #88 shapes the real
 %   passes emit (stimulusBathToBath + epochAnchorFold: a `manipulation` with
-%   the `dose` kind, the stimulus_bath id, the stimulator as instrument,
+%   the `formulation` kind and a `value_id` edge (a bath is not a dose, Jess
+%   Haley 2026-10-21), the stimulus_bath id, the stimulator as instrument,
 %   anchored by a `relative_time_reference` to the epoch entity;
 %   resolveEpochProbemap: per-epoch term manipulations / voltage observations;
 %   the treatment migrator + Path S: a term manipulation on a `tissue` part
@@ -274,7 +275,9 @@ for k = 1:numel(v1)
         case 'stimulus_bath'
             st = v1dep(b, 'stimulus_element_id');
             a = anchor(s, b.epochid.epochid);
-            M{end+1} = statement('manipulation', 'dose', b.base.id, s, ...
+            bathKind = 'formulation';   % a bath is not a dose (Jess Haley, 2026-10-21)
+            if pre88; bathKind = 'dose'; end
+            M{end+1} = statement('manipulation', bathKind, b.base.id, s, ...
                 [struct('name', ABOUT, 'value', v1dep(els(st), 'subject_id')), ...
                  struct('name', 'instrument_id', 'value', st), ...
                  struct('name', TR, 'value', a)]); %#ok<AGROW>

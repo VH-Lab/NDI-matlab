@@ -3,17 +3,22 @@ classdef TestBathAssembly < matlab.unittest.TestCase
 %   struct assembly with a mock resolver; no database, schema, or toolbox needed).
 %
 %   Under V_eta the bath / pharmacological_manipulation family is retired (D8): a
-%   deferred stimulus_bath assembles into a `dose_manipulation` (the delivered
-%   substance) on the resolved subject over the stimulator's epoch, mirroring the
-%   coarse did2.convert.resolveDeferredBaths.makeBathVeta. Older targets still
-%   assemble a `bath`.
+%   deferred stimulus_bath assembles into a `manipulation` whose value is the
+%   bath's `formulation`, through `value_id` -- not a dose: "A bath is a
+%   manipulation whose value is the formulation (pointed at through
+%   `value_id`), not a dose; a dose always has an amount" (Jess Haley,
+%   2026-10-21) -- on the resolved subject over the stimulator's epoch,
+%   mirroring did2.convert.resolveDeferredBaths.makeBathVEta (DID-matlab
+%   ff6d542). Older targets still assemble a `bath`.
 %
 %   Run with:  runtests('ndi.unittest.migrate.TestBathAssembly')
 
     methods (Test)
 
-        function testVetaBecomesDoseManipulation(testCase)
-            % did-schema #88: the `manipulation` direction + the `dose` kind,
+        function testVetaIsAManipulationValuedByItsFormulation(testCase)
+            % did-schema #88: the `manipulation` direction + the `formulation`
+            % kind, its value the formulation document through `value_id`
+            % (Jess Haley, 2026-10-21: a bath is not a dose),
             % the mixture as a standalone `formulation` of `chemical`s, and a
             % VALID "during the session" anchor whose epoch rides in anchorInfo
             v1 = stimulusBathDoc('stim_1', 't00001');
@@ -23,7 +28,7 @@ classdef TestBathAssembly < matlab.unittest.TestCase
 
             testCase.verifyEqual(dose.document_class.class_name, 'manipulation');
             testCase.verifyEqual({dose.document_class.superclasses.class_name}, ...
-                {'interaction', 'statement', 'base', 'dose', 'value', 'data'});
+                {'interaction', 'statement', 'base', 'formulation', 'value', 'data'});
             testCase.verifyEqual(dose.base.id, 'bath_1');          % source id preserved
             testCase.verifyEqual(depValue(dose, 'entity_id'), 'animal_1');
             testCase.verifyEmpty(depValue(dose, 'subject_id'));
@@ -36,7 +41,11 @@ classdef TestBathAssembly < matlab.unittest.TestCase
             testCase.verifyEqual(sort(classes), {'chemical', 'formulation'});
             f = extra{strcmp(classes, 'formulation')};
             c = extra{strcmp(classes, 'chemical')};
-            testCase.verifyEqual(depValue(dose, 'formulation_id'), f.base.id);
+            testCase.verifyEqual(depValue(dose, 'value_id'), f.base.id);
+            testCase.verifyEmpty(depValue(dose, 'formulation_id'));
+            % its own value stays empty: the formulation document holds it
+            testCase.verifyFalse(isfield(dose, 'formulation'));
+            testCase.verifyFalse(isfield(dose, 'dose'));
             testCase.verifyEqual(depValue(f, 'ingredient_id'), c.base.id);
             testCase.verifyEqual(c.chemical.value.substance.name, 'muscimol');
             testCase.verifyEqual(c.chemical.value.substance.node, 'chebi:6904');
