@@ -42,11 +42,22 @@ function [bathBody, timeRefBody, extraBodies, anchorInfo] = stimulusBathToBath(v
 %   The mixture table is read with DID-side's parser (quoted names that hold
 %   commas; the header row is not a chemical) -- the pre-#88 reader split on
 %   every comma and read the header as a chemical named "ontologyName".
-%   The bath's LOCATION is not emitted on this path, as it was not before #88
-%   (DID-side adds an `anatomical location` term observation; doing that here
-%   would hand ndi.migrate.internal.pathSPromotion a co-anchored site and turn
-%   every Dab bath into a part-subject before sliceTetanus reads it -- a
-%   modelling change, not a port).
+%   The bath's LOCATION (Jess Haley, 2026-10-21, replacing D3's located-by-
+%   default): "Any statement about an anatomical region of a subject targets
+%   that region's part entity ... A statement about the whole subject (a
+%   whole-prep or whole-slice bath, i.e. the generic 'bath' location
+%   NCIm:C0179246) targets the subject." So a bath at an ANATOMICAL location
+%   (a Marder compartment: 'upper' UBERON:8910017-22, 'lower' UBERON:8910010)
+%   gets an `anatomical location` term observation CO-ANCHORED with the bath
+%   (it shares the bath's time reference), which
+%   ndi.migrate.internal.pathSPromotion turns into the compartment's part
+%   entity and moves the bath onto; a GENERIC bath location (node
+%   NCIm:C0179246, or a name 'bath') gets none, so the bath stays on the
+%   subject -- every Dabrowska bath, and Marder's 'bath', which is what
+%   sliceTetanus matches. The test is the one did2.convert.migrators_j's
+%   jTreatmentRoute uses. A bath with NO anchor (no epoch, or a no_time clock)
+%   has nothing to co-anchor on and gets no site observation: it stays on the
+%   subject (a gap, not a decision).
 %
 %   ---------------------------------------------------------------------
 %   STATUS: the V_eta changes below (the time-anchor guard, the `instrument_id`
@@ -345,6 +356,34 @@ extra{end+1} = f;
 dose = S.statement('manipulation', 'formulation', subjectId, primaryChemical(mixture), [], ...
     'Id', bathId, 'InstrumentId', stimulatorId, 'TimeReferenceIds', trIds, ...
     'Edges', {'value_id', f.base.id}, common{:});
+
+% an anatomical bath location: the site observation pathSPromotion promotes
+loc = locationTerm(v1Body);
+if ~isempty(trIds) && ~isempty([char(loc.node) char(loc.name)]) && ~isGenericBath(loc)
+    extra{end+1} = S.statement('observation', 'term', subjectId, ...
+        S.term('', 'anatomical location'), loc, ...
+        'TimeReferenceIds', trIds, common{:});
+end
+end
+
+function tf = isGenericBath(loc)
+%ISGENERICBATH The whole-prep / whole-slice bath location: node NCIm:C0179246
+%   (compared as a CURIE key, so the prefix's spelling does not matter) or a
+%   name 'bath' -- did2.convert.migrators_j's jTreatmentRoute test, the
+%   registry-label half left out (a pure assembler loads no registry).
+node = strtrim(char(loc.node));
+tf = strcmpi(strtrim(char(loc.name)), 'bath');
+if ~tf && ~isempty(node)
+    tf = strcmpi(curieKeyOf(node), curieKeyOf('NCIm:C0179246'));
+end
+end
+
+function k = curieKeyOf(node)
+try
+    k = char(did2.schema.curieKey(node));
+catch
+    k = lower(node);
+end
 end
 
 function mixture = parseMixture88(body)

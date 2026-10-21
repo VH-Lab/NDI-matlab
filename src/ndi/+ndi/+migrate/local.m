@@ -270,6 +270,8 @@ function result = local(path, options)
     imagedEntityReport = [];
     stimulusSequenceReport = [];
     sliceTetanusReport = [];
+    regionSitesReport = [];
+    regionLocatedReport = [];
     if strcmp(options.TargetVersion, 'V_eta')
         % V_eta's second pass has the kinds of work enumerated below, all
         % needing the whole migrated body set (the corpus-wide session/element
@@ -723,7 +725,8 @@ function result = local(path, options)
                  '(%s); leaving presentations as passthrough.'], ME.message);
         end
         try
-            convertResult = resolvePathS(convertResult, options);
+            [convertResult, regionSitesReport] = ...
+                resolvePathS(convertResult, options, 'sites');
         catch ME
             warning('NDI:migrate:pathSFailed', ...
                 ['Second-pass Path-S promotion failed (%s); leaving ' ...
@@ -864,6 +867,23 @@ function result = local(path, options)
                  'tetanus treatment and the before/after approach documents ' ...
                  'as they were, which is the state without this pass.'], ...
                 ME.message);
+        end
+        try
+            % A statement about an anatomical region targets that region's part
+            % entity (Jess Haley, 2026-10-21; see
+            % ndi.migrate.internal.pathSPromotion). AFTER the epochprobemap
+            % fold (it makes the recording observations whose probe is
+            % located) and AFTER sliceTetanus (it matches slice statements by
+            % the animal they are about, and a statement it moved onto a slice
+            % is not moved again). Finds the parts the 'sites' pass made, so
+            % an injection into a region and a recording from it share one.
+            [convertResult, regionLocatedReport] = ...
+                resolvePathS(convertResult, options, 'located');
+        catch ME
+            warning('NDI:migrate:regionLocatedFailed', ...
+                ['Second-pass region-part retarget of located-instrument ' ...
+                 'statements failed (%s); leaving them on the subject, which ' ...
+                 'is the state without this pass.'], ME.message);
         end
         try
             [convertResult, responseParametersReport] = ...
@@ -1052,7 +1072,9 @@ function result = local(path, options)
         'validIntervalDecompose', validIntervalReport, ...
         'clockAlignmentFold',  clockAlignmentReport, ...
         'softwareDedup',       softwareDedupReport, ...
-        'sliceTetanus',        sliceTetanusReport);
+        'sliceTetanus',        sliceTetanusReport, ...
+        'regionPartsSites',    regionSitesReport, ...
+        'regionPartsLocated',  regionLocatedReport);
 
     if options.Verbose
         printSummary(result);
@@ -1203,15 +1225,21 @@ function summary = recountSummary(convertResult)
     summary.by_class = byClass;
 end
 
-function convertResult = resolvePathS(convertResult, options)
-%RESOLVEPATHS V_eta second pass: promote attributed anatomical loci to Path-S
-%   part-subjects using the whole migrated body set. The pass-1 J migrators emit
-%   a located-by-default `term_observation` for every anatomical site (D3); here
-%   -- with the corpus-wide subject graph in hand -- a site that is an
-%   intervention target (co-anchored with a manipulation) becomes a part-subject
-%   + a `term_assertion` of its anatomical kind + a `part_of` `directed_relation`,
-%   and the co-anchored manipulation is retargeted onto the part. Merely-located
-%   sites (probe/label) are left untouched. See ndi.migrate.internal.pathSPromotion.
+function [convertResult, report] = resolvePathS(convertResult, options, mode)
+%RESOLVEPATHS V_eta second pass: a statement about an anatomical region of a
+%   subject targets that region's part entity (one per subject and region,
+%   type tissue, `part_of` the subject; Jess Haley, 2026-10-21, replacing D3's
+%   located-by-default). MODE 'sites': a pass-1 site observation co-anchored
+%   with a manipulation becomes the part (+ its kind assertion + `part_of`)
+%   and the manipulation moves onto it. MODE 'located': a statement whose
+%   instrument carries a location (probe_location), or a label naming an
+%   UBERON region, moves onto the part. See ndi.migrate.internal.pathSPromotion.
+%
+%   The minted parts are folded through v1_to_v2 FIRST; if any of them
+%   quarantines, NOTHING moves (the batch is left exactly as it was found and
+%   the count is reported), so no statement can be left pointing at a part
+%   that was not written.
+    report = [];
     docs = convertResult.migrated;
     if isempty(docs)
         return;
@@ -1220,8 +1248,36 @@ function convertResult = resolvePathS(convertResult, options)
     for k = 1:numel(docs)
         structs{k} = docs{k}.toStruct();
     end
-    [kept, minted, changed] = ndi.migrate.internal.pathSPromotion(structs);
+    [kept, minted, changed, report] = ...
+        ndi.migrate.internal.pathSPromotion(structs, 'Mode', mode);
+    report.minted_folded = 0;
+    report.minted_quarantined = 0;
+    report.reverted = false;
     if ~changed
+        printRegionParts(report);
+        return;
+    end
+    % fold the minted part entity / kind assertion / part_of bodies through
+    % v1_to_v2: they are tagged schema_version 'V_eta', so the converter
+    % short-circuits them (isAlreadyTarget) to ensureClassBlocks + validate
+    % rather than re-migrating -- the same footing the deferred-resolution pass
+    % uses.
+    sub = struct('migrated', {{}}, 'quarantine', struct([]));
+    if ~isempty(minted)
+        sub = did2.convert.v1_to_v2(minted, ...
+            'Validate', options.Validate, ...
+            'SchemaCache', options.SchemaCache, ...
+            'TargetVersion', options.TargetVersion, ...
+            'Verbose', false);
+        report.minted_folded = numel(sub.migrated);
+        report.minted_quarantined = numel(sub.quarantine);
+    end
+    if report.minted_quarantined > 0
+        report.reverted = true;
+        printRegionParts(report);
+        warning('NDI:migrate:regionPartQuarantined', ...
+            ['%d minted region-part document(s) did not validate; no statement ' ...
+             'was moved onto a part (%s pass).'], report.minted_quarantined, mode);
         return;
     end
     % rewrap the surviving (possibly retargeted) bodies
@@ -1229,22 +1285,34 @@ function convertResult = resolvePathS(convertResult, options)
     for k = 1:numel(kept)
         keptDocs{k} = did2.document(kept{k});
     end
-    convertResult.migrated = keptDocs;
-    % fold the minted part-subject / term_assertion / part_of bodies through
-    % v1_to_v2: they are tagged schema_version 'V_eta', so the converter
-    % short-circuits them (isAlreadyTarget) to ensureClassBlocks + validate
-    % rather than re-migrating -- the same footing the deferred-resolution pass
-    % uses.
-    if ~isempty(minted)
-        sub = did2.convert.v1_to_v2(minted, ...
-            'Validate', options.Validate, ...
-            'SchemaCache', options.SchemaCache, ...
-            'TargetVersion', options.TargetVersion, ...
-            'Verbose', false);
-        convertResult.migrated = [convertResult.migrated, sub.migrated];
-        convertResult.quarantine = [convertResult.quarantine, sub.quarantine];
-    end
+    convertResult.migrated = [keptDocs, sub.migrated];
     convertResult.summary = recountSummary(convertResult);
+    printRegionParts(report);
+end
+
+function printRegionParts(r)
+%PRINTREGIONPARTS The region-part pass's own census, denominator first.
+    if isempty(r); return; end
+    fprintf(['REGION PARTS (%s)\n' ...
+        '  DENOMINATOR: %d migrated document(s); %d part(s) already in the batch\n' ...
+        '  site observations %d: promoted %d, not co-anchored %d, unanchored %d\n' ...
+        '  located instruments %d; statements with one %d\n' ...
+        '  labels %d (anatomical %d, retargeted %d)\n' ...
+        '  retargeted: observations %d, manipulations %d; parts minted %d ' ...
+        '(folded %d, quarantined %d, reverted %d)\n' ...
+        '  left: instrument has several locations %d, about a tissue %d, about a device %d, ' ...
+        'subject not in batch %d, not an entity %d, no subject %d\n'], ...
+        r.mode, r.documents_read, r.parts_found_existing, ...
+        r.site_observations_seen, r.site_observations_promoted, ...
+        r.site_observations_not_co_anchored, r.site_observations_unanchored, ...
+        r.located_instruments, r.statements_with_located_instrument, ...
+        r.label_observations_seen, r.label_observations_anatomical, ...
+        r.label_observations_retargeted, r.observations_retargeted, ...
+        r.manipulations_retargeted, r.parts_minted, r.minted_folded, ...
+        r.minted_quarantined, double(r.reverted), ...
+        r.left_instrument_has_several_locations, r.left_about_a_tissue, ...
+        r.left_about_a_device, r.left_subject_not_in_batch, ...
+        r.left_subject_not_an_entity, r.left_no_subject);
 end
 
 function [convertResult, report] = resolveEnsembleMembership(convertResult, ...

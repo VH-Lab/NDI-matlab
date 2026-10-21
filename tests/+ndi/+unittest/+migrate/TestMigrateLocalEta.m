@@ -238,7 +238,29 @@ classdef TestMigrateLocalEta < matlab.unittest.TestCase
                 {dose.document_class.superclasses.class_name}, 'formulation')), ...
                 'the manipulation does not carry the `formulation` value kind');
             verifyFalse(testCase, isfield(dose, 'dose'), 'a bath is not a dose');
-            verifyEqual(testCase, depValue(dose, 'entity_id'), subjId);
+            % The fixture's bath location is CNS (uberon:0001017), an anatomical
+            % region, not the generic bath: "Any statement about an anatomical
+            % region of a subject ... targets that region's part entity (one per
+            % subject and region, shared, type tissue, part_of the subject)"
+            % (Jess Haley, 2026-10-21). So the bath is about the CNS part of
+            % the animal, not the animal.
+            part = findById(result.destination, depValue(dose, 'entity_id'));
+            verifyNotEmpty(testCase, part, ['the bath names no part. ' resultDiag(result)]);
+            if ~isempty(part)
+                verifyEqual(testCase, part.document_class.class_name, 'entity');
+                verifyEqual(testCase, part.entity.type.name, 'tissue');
+            end
+            partOf = {};
+            for r = findAllByClass(result.destination, 'directed_relation')
+                rel = r{1};
+                if strcmp(rel.directed_relation.relation.name, 'part_of') ...
+                        && strcmp(depValue(rel, 'child_id'), depValue(dose, 'entity_id'))
+                    partOf{end+1} = depValue(rel, 'parent_id'); %#ok<AGROW>
+                end
+            end
+            verifyEqual(testCase, partOf, {subjId}, 'the CNS part is part_of the animal');
+            verifyEmpty(testCase, findTermObservation(result.destination, ...
+                'anatomical location'), 'the promoted site observation is gone');
             verifyNotEmpty(testCase, depValue(dose, 'time_reference_id'));
             verifyEqual(testCase, depValue(dose, 'instrument_id'), stimId);
             formulation = findById(result.destination, depValue(dose, 'value_id'));
@@ -767,6 +789,19 @@ for k = 1:numel(ids)
     doc = db.get(ids{k});
     if strcmp(doc.className(), className)
         bodies{end+1} = doc.toStruct(); %#ok<AGROW>
+    end
+end
+end
+
+function body = findTermObservation(dstPath, variableName)
+% the first term observation whose variable is VARIABLENAME ([] when none)
+body = [];
+for d = findAllByClass(dstPath, 'observation')
+    x = d{1};
+    if isfield(x, 'statement') && isfield(x.statement, 'variable') ...
+            && strcmp(x.statement.variable.name, variableName)
+        body = x;
+        return;
     end
 end
 end

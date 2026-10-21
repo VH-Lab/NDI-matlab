@@ -153,7 +153,198 @@ classdef TestPathSPromotion < matlab.unittest.TestCase
             testCase.verifyEqual(countClass(minted, 'entity'), 2);
         end
 
+
+        % ---- REGION PARTS (Jess Haley, 2026-10-21) -------------------------
+        % "Any statement about an anatomical region of a subject --
+        % manipulation or observation -- targets that region's part entity
+        % (one per subject and region, shared, type tissue, part_of the
+        % subject). A statement about the whole subject (... the generic
+        % 'bath' location NCIm:C0179246) targets the subject."
+
+        function testCompartmentBathTargetsThePart(testCase)
+            % a Marder 'upper' compartment bath: a formulation-valued
+            % manipulation and its co-anchored anatomical site
+            structs = bathWithSite('anch_b', 'prep_1', 'UBERON:8910017', '');
+            [kept, minted, changed, report] = ...
+                ndi.migrate.internal.pathSPromotion(structs, 'Mode', 'sites');
+            testCase.verifyTrue(changed);
+            part = firstOfClass(minted, 'entity');
+            testCase.verifyEqual(part.entity.type.name, 'tissue');
+            bath = firstOfClass(kept, 'manipulation');
+            testCase.verifyEqual(depValue(bath, 'entity_id'), part.base.id);
+            rel = firstOfClass(minted, 'directed_relation');
+            testCase.verifyEqual(depValue(rel, 'parent_id'), 'prep_1');
+            testCase.verifyEqual(report.site_observations_promoted, 1);
+            testCase.verifyEqual(report.manipulations_retargeted, 1);
+        end
+
+        function testGenericBathTargetsTheWholeSubject(testCase)
+            % the generic bath carries no site (the assemblers drop it), so
+            % nothing is promoted and the bath stays on the subject
+            structs = bathWithSite('anch_b', 'animal_1', '', '');
+            structs = structs(~cellfun(@(b) strcmp(b.base.id, 'site_anch_b'), structs));
+            [kept, minted, changed] = ndi.migrate.internal.pathSPromotion(structs);
+            testCase.verifyFalse(changed);
+            testCase.verifyEmpty(minted);
+            testCase.verifyEqual(depValue(firstOfClass(kept, 'manipulation'), ...
+                'entity_id'), 'animal_1');
+        end
+
+        function testProbeLocationRetargetsTheRecording(testCase)
+            structs = [{organism('animal_1'), device('probe_1')}, ...
+                probeWithSite('anch_p', 'probe_1', 'UBERON:0001880', ...
+                    'bed nucleus of stria terminalis (BNST)'), ...
+                recording('rec_1', 'animal_1', 'probe_1', 'anch_r')];
+            [kept, minted, changed, report] = ...
+                ndi.migrate.internal.pathSPromotion(structs, 'Mode', 'located');
+            testCase.verifyTrue(changed);
+            part = firstOfClass(minted, 'entity');
+            testCase.verifyEqual(part.entity.type.name, 'tissue');
+            rec = byId(kept, 'rec_1');
+            testCase.verifyEqual(depValue(rec, 'entity_id'), part.base.id);
+            testCase.verifyEqual(depValue(rec, 'instrument_id'), 'probe_1');
+            rel = firstOfClass(minted, 'directed_relation');
+            testCase.verifyEqual(depValue(rel, 'parent_id'), 'animal_1');
+            kind = firstOfClass(minted, 'assertion');
+            testCase.verifyEqual(kind.term.value.node, 'UBERON:0001880');
+            % the probe's own location stays: it is a fact about the probe
+            testCase.verifyNotEmpty(byId(kept, 'site_anch_p'));
+            testCase.verifyEqual(depValue(byId(kept, 'site_anch_p'), 'entity_id'), 'probe_1');
+            testCase.verifyEqual(report.observations_retargeted, 1);
+            testCase.verifyEqual(report.located_instruments, 1);
+        end
+
+        function testInjectionAndRecordingShareOnePart(testCase)
+            % an injection into BNST and a recording from a probe in BNST, on
+            % one animal: ONE part entity, both statements on it -- in one
+            % call, and in the two calls ndi.migrate.local makes
+            structs = [{organism('animal_1'), device('probe_1')}, ...
+                treatmentWithSite('anch_t', 'animal_1', 'uberon:0001880', ''), ...
+                probeWithSite('anch_p', 'probe_1', 'UBERON:0001880', 'BNST'), ...
+                recording('rec_1', 'animal_1', 'probe_1', 'anch_r')];
+
+            [kept, minted] = ndi.migrate.internal.pathSPromotion(structs);
+            testCase.verifyEqual(countClass(minted, 'entity'), 1);
+            part = firstOfClass(minted, 'entity');
+            testCase.verifyEqual(depValue(byId(kept, 'manip_anch_t'), 'entity_id'), part.base.id);
+            testCase.verifyEqual(depValue(byId(kept, 'rec_1'), 'entity_id'), part.base.id);
+
+            [k1, m1] = ndi.migrate.internal.pathSPromotion(structs, 'Mode', 'sites');
+            [k2, m2, ~, r2] = ndi.migrate.internal.pathSPromotion([k1, m1], 'Mode', 'located');
+            testCase.verifyEqual(countClass([m1, m2], 'entity'), 1, ...
+                'the late pass finds the part the early pass made');
+            testCase.verifyEqual(r2.parts_found_existing, 1);
+            part = firstOfClass(m1, 'entity');
+            testCase.verifyEqual(depValue(byId(k2, 'manip_anch_t'), 'entity_id'), part.base.id);
+            testCase.verifyEqual(depValue(byId(k2, 'rec_1'), 'entity_id'), part.base.id);
+        end
+
+        function testAProbeWithSeveralLocationsIsLeftAndCounted(testCase)
+            % Soph / 20211116: V1 AND a hemisphere on one probe -- which region
+            % the recording is from is not decided here
+            structs = [{organism('animal_1'), device('probe_1')}, ...
+                probeWithSite('anch_p', 'probe_1', 'UBERON:0002436', 'primary visual cortex'), ...
+                probeWithSite('anch_q', 'probe_1', 'UBERON:0002812', 'left cerebral hemisphere'), ...
+                recording('rec_1', 'animal_1', 'probe_1', 'anch_r')];
+            [kept, minted, changed, report] = ...
+                ndi.migrate.internal.pathSPromotion(structs, 'Mode', 'located');
+            testCase.verifyFalse(changed);
+            testCase.verifyEmpty(minted);
+            testCase.verifyEqual(depValue(byId(kept, 'rec_1'), 'entity_id'), 'animal_1');
+            testCase.verifyEqual(report.left_instrument_has_several_locations, 1);
+        end
+
+        function testARecordingOnASliceStaysOnTheSlice(testCase)
+            % sliceTetanus moved it onto a slice (a tissue with no anatomical
+            % kind): a region part of a slice is not decided
+            structs = [{organism('animal_1'), device('probe_1'), tissue('slice_a')}, ...
+                probeWithSite('anch_p', 'probe_1', 'UBERON:0001880', 'BNST'), ...
+                recording('rec_1', 'slice_a', 'probe_1', 'anch_r')];
+            [kept, ~, changed, report] = ...
+                ndi.migrate.internal.pathSPromotion(structs, 'Mode', 'located');
+            testCase.verifyFalse(changed);
+            testCase.verifyEqual(depValue(byId(kept, 'rec_1'), 'entity_id'), 'slice_a');
+            testCase.verifyEqual(report.left_about_a_tissue, 1);
+        end
+
+        function testAnAnatomicalLabelTargetsThePart(testCase)
+            lbl = labelObs('lbl_1', 'animal_1', 'UBERON:0002436', 'anch_l');
+            other = labelObs('lbl_2', 'animal_1', 'EMPTY:0000131', 'anch_l');
+            structs = [{organism('animal_1'), lbl, other}, {makeAnchor('anch_l')}];
+            [kept, minted, changed, report] = ...
+                ndi.migrate.internal.pathSPromotion(structs, 'Mode', 'located');
+            testCase.verifyTrue(changed);
+            part = firstOfClass(minted, 'entity');
+            testCase.verifyEqual(depValue(byId(kept, 'lbl_1'), 'entity_id'), part.base.id);
+            testCase.verifyEqual(depValue(byId(kept, 'lbl_2'), 'entity_id'), 'animal_1');
+            testCase.verifyEqual([report.label_observations_seen ...
+                report.label_observations_anatomical report.label_observations_retargeted], [2 1 1]);
+        end
+
     end
+end
+
+
+function s = bathWithSite(anchorId, subjectId, siteNode, siteName)
+bath = struct();
+bath.document_class = dc('manipulation', ...
+    {'interaction', 'statement', 'base', 'formulation', 'value', 'data'});
+bath.depends_on = [dep('entity_id', subjectId), dep('instrument_id', 'stim_1'), ...
+    dep('time_reference_id', anchorId), dep('value_id', 'form_1')];
+bath.base = base('bath_1');
+bath.statement = struct('variable', term('CHEBI:6904', 'muscimol'));
+site = siteObs(anchorId, subjectId, siteNode, siteName, ['site_' anchorId]);
+s = {bath, site, makeAnchor(anchorId)};
+end
+
+function s = recording(id, subjectId, probeId, anchorId)
+r = struct();
+r.document_class = dc('observation', ...
+    {'interaction', 'statement', 'base', 'voltage', 'value', 'data'});
+r.depends_on = [dep('entity_id', subjectId), dep('instrument_id', probeId), ...
+    dep('time_reference_id', anchorId)];
+r.base = base(id);
+r.statement = struct('variable', term('', 'voltage'));
+s = {r, makeAnchor(anchorId)};
+end
+
+function o = labelObs(id, subjectId, node, anchorId)
+o = struct();
+o.document_class = dc('observation', ...
+    {'interaction', 'statement', 'base', 'term', 'value', 'data'});
+o.depends_on = [dep('entity_id', subjectId), dep('time_reference_id', anchorId)];
+o.base = base(id);
+o.statement = struct('variable', term('', 'label'));
+o.term = struct('value', term(node, ''));
+end
+
+function e = organism(id)
+e = entityOf(id, 'organism');
+end
+
+function e = device(id)
+e = entityOf(id, 'device');
+end
+
+function e = tissue(id)
+e = entityOf(id, 'tissue');
+end
+
+function e = entityOf(id, type)
+e = struct();
+e.document_class = dc('entity', {'base'});
+e.depends_on = struct('name', {}, 'value', {});
+e.base = base(id);
+e.entity = struct('type', term('', type), 'local_identifier', id);
+end
+
+function b = byId(bodies, id)
+b = [];
+for k = 1:numel(bodies)
+    if strcmp(bodies{k}.base.id, id)
+        b = bodies{k}; return;
+    end
+end
 end
 
 

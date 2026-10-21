@@ -243,7 +243,87 @@ classdef TestSliceTetanus < matlab.unittest.TestCase
             end
             verifyNumElements(testCase, tetanusManipulations(plan), 4);
         end
+
+        function testRegionPartsLeaveTheSliceMatchingUnchanged(testCase)
+            % Region parts (Jess Haley, 2026-10-21): the Dabrowska baths are
+            % the generic 'bath' (NCIm:C0179246), so they target the whole
+            % slice/prep and sliceTetanus matches exactly as before. Every
+            % patch probe is located in BNST (Dab's 404 probe_location
+            % documents all say UBERON:0001880), as ndi.migrate.local runs it:
+            % Path S 'sites' -> sliceTetanus -> Path S 'located'.
+            mig = testCase.Migrated;
+            probes = {};
+            for k = 1:numel(mig)
+                if strcmp(mig{k}.document_class.class_name, 'observation')
+                    probes{end+1} = dep(mig{k}, 'instrument_id'); %#ok<AGROW>
+                end
+            end
+            probes = unique(probes);
+            verifyNotEmpty(testCase, probes);
+            for k = 1:numel(probes)
+                mig = [mig, probeLocation(probes{k}, k)]; %#ok<AGROW>
+            end
+
+            [k1, m1, ch1, r1] = ndi.migrate.internal.pathSPromotion(mig, 'Mode', 'sites');
+            verifyFalse(testCase, ch1, 'a generic bath carries no site to promote');
+            verifyEmpty(testCase, m1);
+            verifyEqual(testCase, r1.site_observations_not_co_anchored, numel(probes));
+
+            [plan, r] = ndi.migrate.internal.sliceTetanus(testCase.V1, k1, testCase.EpochIndex);
+            r0 = testCase.Report;
+            for f = {'slices', 'new_animals', 'epoch_statements_examined', ...
+                    'epoch_statements_matched', 'epoch_statements_unmatched', ...
+                    'unanchored_statements_matched', 'tetanus_manipulations', ...
+                    'tetanus_with_target_region', 'labels_rebuilt', ...
+                    'treatment_manipulations_superseded', ...
+                    'treatment_part_subjects_superseded', 'documents_reattributed'}
+                verifyEqual(testCase, r.(f{1}), r0.(f{1}), f{1});
+            end
+
+            % after the slices: every recording is on its slice and stays there
+            after = applyPlan(k1, plan);
+            [k2, m2, ch2, r2] = ndi.migrate.internal.pathSPromotion(after, 'Mode', 'located');
+            verifyFalse(testCase, ch2);
+            verifyEmpty(testCase, m2);
+            verifyEqual(testCase, r2.located_instruments, numel(probes));
+            verifyEqual(testCase, r2.statements_with_located_instrument, 98);
+            verifyEqual(testCase, r2.left_about_a_tissue, 98);
+            verifyEqual(testCase, r2.observations_retargeted, 0);
+            verifyEqual(testCase, numel(k2), numel(after));
+        end
     end
+end
+
+function b = probeLocation(probeId, n)
+% a pass-1 probe_location: a site term observation ABOUT the probe, anchored
+% to the session (migrators_j.probe_location)
+a = sprintf('ploc_anchor_%03d', n);
+b = body('observation', sprintf('ploc_%03d', n), 'sess', ...
+    [struct('name', 'entity_id', 'value', probeId), ...
+     struct('name', 'time_reference_id', 'value', a)]);
+b.document_class.superclasses = struct('class_name', ...
+    {'interaction', 'statement', 'base', 'term', 'value', 'data'}, 'class_version', '1.0.0');
+b.statement = struct('variable', struct('node', '', 'name', 'anatomical location'));
+b.term = struct('value', struct('node', 'UBERON:0001880', ...
+    'name', 'bed nucleus of stria terminalis (BNST)'));
+r = body('relative_time_reference', a, 'sess', ...
+    struct('name', 'referent_id', 'value', 'sessiondoc'));
+b = {b, r};
+end
+
+function out = applyPlan(M, plan)
+% what ndi.migrate.local's resolveSliceTetanus does with a plan that folded
+removed = containers.Map('KeyType', 'char', 'ValueType', 'logical');
+for k = 1:numel(plan.removed); removed(plan.removed{k}) = true; end
+replaced = containers.Map('KeyType', 'char', 'ValueType', 'any');
+for k = 1:numel(plan.replaced); replaced(plan.replaced{k}.base.id) = plan.replaced{k}; end
+out = {};
+for k = 1:numel(M)
+    id = M{k}.base.id;
+    if isKey(removed, id); continue; end
+    if isKey(replaced, id); out{end+1} = replaced(id); else; out{end+1} = M{k}; end %#ok<AGROW>
+end
+out = [out, plan.minted];
 end
 
 

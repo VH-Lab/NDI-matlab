@@ -24,7 +24,7 @@
 %                          it: the base.session_id field, or a `session_id`
 %                          edge (did-schema V_eta_relation_inheritance_plan.md).
 %     stimulusBathToBath - stimulus_bath assembler (V_eta: dose_manipulation).
-%     pathSPromotion     - V_eta attributed-locus -> Path-S promotion.
+%     pathSPromotion     - V_eta region parts: a statement about a region targets its part entity.
 %     softwareDedup      - V_eta `software` merge on (session, name, version),
 %                          retargeting inbound edges BY TARGET ID (one of the
 %                          seven edges that must_refer to `software` is called
