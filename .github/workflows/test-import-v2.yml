@@ -126,7 +126,8 @@ jobs:
         # next: the one-entity-class / composition schema and the did2.build that
         # reads it, both still on review branches (did-schema PR #88, DID-matlab
         # PR #218). The import and the readers build and read both shapes, so both
-        # legs must pass. Drop `next` once both merge.
+        # legs must pass. Once both merge, `current` IS #88's shape: keep one leg
+        # and delete the matrix.
         include:
           - schema: current
             did_schema_ref: main
