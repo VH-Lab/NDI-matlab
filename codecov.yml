@@ -1,0 +1,9 @@
+# Coverage comes from two sources, merged by Codecov per commit:
+#   - the no-cloud test run (run-tests.yml), uploaded without a flag
+#   - the three Cloud CI shards (test-cloud-prod.yml), uploaded with the
+#     "cloud" flag and covering src/ndi/+ndi/+cloud only
+# If a cloud shard dies before uploading, carryforward reuses the cloud
+# coverage from the parent commit instead of counting that code as uncovered.
+flags:
+  cloud:
+    carryforward: true
