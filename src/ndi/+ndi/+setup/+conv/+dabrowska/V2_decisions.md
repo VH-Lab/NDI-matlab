@@ -7,7 +7,7 @@ existing `doImport.m` is left unchanged. The migration itself is
 `ndi.migrate.local`; the code that carries these decisions is the second pass
 `ndi.migrate.internal.sliceTetanus` (called from `local.m`,
 `resolveSliceTetanus`), tested by `TestSliceTetanus` (real Dab documents) and
-`TestMigrateLocalEtaDab` (the whole corpus).
+`TestMigrateLocalEtaDab` (Dabrowska's documents in the Dab corpus zip; the zip also carries corpus B, which `TestMigrateLocalEtaB` reads).
 
 Entries marked **DECIDED** were made by the dataset owner (Jess Haley) in
 conversation; **OPEN** entries are questions still to answer.
