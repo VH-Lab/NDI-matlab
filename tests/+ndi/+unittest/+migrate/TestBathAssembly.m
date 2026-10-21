@@ -38,7 +38,9 @@ classdef TestBathAssembly < matlab.unittest.TestCase
             % the formulation and its one chemical
             classes = cellfun(@(b) b.document_class.class_name, extra, ...
                 'UniformOutput', false);
-            testCase.verifyEqual(sort(classes), {'chemical', 'formulation'});
+            % + the site observation: the fixture's location is CNS, an
+            % anatomical region (see testAnAnatomicalBathLocationIsACoAnchoredSite)
+            testCase.verifyEqual(sort(classes), {'chemical', 'formulation', 'observation'});
             f = extra{strcmp(classes, 'formulation')};
             c = extra{strcmp(classes, 'chemical')};
             testCase.verifyEqual(depValue(dose, 'value_id'), f.base.id);
@@ -68,6 +70,71 @@ classdef TestBathAssembly < matlab.unittest.TestCase
             testCase.verifyFalse(isfield(dose, 'pharmacological_manipulation'));
             testCase.verifyFalse(isfield(dose, 'subject_statement'));
         end
+        % ---- WHERE THE BATH IS (Jess Haley, 2026-10-21) ------------------
+        % "Any statement about an anatomical region of a subject ... targets
+        % that region's part entity ... A statement about the whole subject (a
+        % whole-prep or whole-slice bath, i.e. the generic 'bath' location
+        % NCIm:C0179246) targets the subject." The assembler hands
+        % pathSPromotion a co-anchored site for an anatomical location and
+        % nothing for the generic bath.
+
+        function testAnAnatomicalBathLocationIsACoAnchoredSite(testCase)
+            % a Marder compartment bath ('lower', marder_bathtargets.json)
+            v1 = stimulusBathDoc('stim_1', 't00001');
+            v1.stimulus_bath.location = struct('ontologyNode', 'UBERON:8910010', ...
+                'name', 'lower compartment');
+            r  = mockResolver('prep_1', 'dev_local_time');
+            [dose, timeRef, extra] = ...
+                ndi.migrate.internal.stimulusBathToBath(v1, r, 'V_eta');
+            site = siteOf(extra);
+            testCase.verifyNumElements(site, 1);
+            site = site{1};
+            testCase.verifyEqual(site.statement.variable.name, 'anatomical location');
+            testCase.verifyEqual(site.term.value.node, 'UBERON:8910010');
+            testCase.verifyEqual(depValue(site, 'entity_id'), 'prep_1');
+            testCase.verifyEqual(depValue(site, 'time_reference_id'), timeRef.base.id);
+            testCase.verifyEqual(depValue(dose, 'time_reference_id'), timeRef.base.id);
+
+            % and Path S puts the bath on the compartment's part
+            [kept, minted, changed] = ndi.migrate.internal.pathSPromotion( ...
+                [{dose, timeRef}, extra], 'Mode', 'sites');
+            testCase.verifyTrue(changed);
+            part = minted{cellfun(@(b) strcmp(b.document_class.class_name, 'entity'), minted)};
+            testCase.verifyEqual(part.entity.type.name, 'tissue');
+            bath = kept{cellfun(@(b) strcmp(b.base.id, 'bath_1'), kept)};
+            testCase.verifyEqual(depValue(bath, 'entity_id'), part.base.id);
+            testCase.verifyEmpty(siteOf(kept), 'the site is superseded by the part');
+        end
+
+        function testTheGenericBathTargetsTheWholeSubject(testCase)
+            % Dabrowska's every bath, and Marder's 'bath': no site, so Path S
+            % leaves the bath on the subject (which is what sliceTetanus reads)
+            for loc = {struct('ontologyNode', 'NCIm:C0179246', 'name', 'Baths, Water, Laboratory'), ...
+                       struct('ontologyNode', 'ncim:C0179246', 'name', ''), ...
+                       struct('ontologyNode', '', 'name', 'bath')}
+                v1 = stimulusBathDoc('stim_1', 't00001');
+                v1.stimulus_bath.location = loc{1};
+                r  = mockResolver('slice_animal', 'dev_local_time');
+                [dose, timeRef, extra] = ...
+                    ndi.migrate.internal.stimulusBathToBath(v1, r, 'V_eta');
+                testCase.verifyEmpty(siteOf(extra));
+                [kept, minted, changed] = ndi.migrate.internal.pathSPromotion( ...
+                    [{dose, timeRef}, extra]);
+                testCase.verifyFalse(changed);
+                testCase.verifyEmpty(minted);
+                bath = kept{cellfun(@(b) strcmp(b.base.id, 'bath_1'), kept)};
+                testCase.verifyEqual(depValue(bath, 'entity_id'), 'slice_animal');
+            end
+        end
+
+        function testABathWithNoAnchorGetsNoSite(testCase)
+            % nothing to co-anchor on: the bath stays on the subject (a gap)
+            v1 = stimulusBathDoc('stim_1', 't00001');
+            r  = mockResolver('animal_1', 'no_time');
+            [~, ~, extra] = ndi.migrate.internal.stimulusBathToBath(v1, r, 'V_eta');
+            testCase.verifyEmpty(siteOf(extra));
+        end
+
         function testVetaCarriesTheStimulatorAsInstrument(testCase)
             % T7: the instrument of an interaction is an edge on the
             % interaction. This is what keeps the stimulator's identity when
@@ -168,6 +235,18 @@ v1.epochid = struct('epochid', epochId);
 v1.stimulus_bath = struct( ...
     'location', struct('ontologyNode', 'uberon:0001017', 'name', 'CNS'), ...
     'mixture_table', 'chebi:6904,muscimol,5,,mg/ml');
+end
+
+function out = siteOf(bodies)
+% the `anatomical location` observations among BODIES
+out = {};
+for k = 1:numel(bodies)
+    b = bodies{k};
+    if strcmp(b.document_class.class_name, 'observation') && isfield(b, 'statement') ...
+            && strcmp(b.statement.variable.name, 'anatomical location')
+        out{end+1} = b; %#ok<AGROW>
+    end
+end
 end
 
 function r = mockResolver(subjectId, epochClock)
