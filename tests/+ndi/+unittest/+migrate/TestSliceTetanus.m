@@ -13,13 +13,16 @@ classdef TestSliceTetanus < matlab.unittest.TestCase
 %                                        Nov 28, whose files sit in a `Nov 28
 %                                        2022` folder nested in `Dec 02 2022`
 %
-%   The migrated side is built here in the shapes the real passes emit
-%   (stimulusBathToBath + epochAnchorFold: a dose_manipulation with the
-%   stimulus_bath id, the stimulator as instrument, anchored to the epoch;
-%   resolveEpochProbemap: per-epoch term_manipulation / observations; the
-%   treatment migrator + Path S: a term_manipulation on a part-subject;
-%   openminds_stimulus: a passthrough; element: `observes`). The whole
-%   pipeline is proven on the corpus by TestMigrateLocalEtaDab.
+%   The migrated side is built here in the did-schema #88 shapes the real
+%   passes emit (stimulusBathToBath + epochAnchorFold: a `manipulation` with
+%   the `dose` kind, the stimulus_bath id, the stimulator as instrument,
+%   anchored by a `relative_time_reference` to the epoch entity;
+%   resolveEpochProbemap: per-epoch term manipulations / voltage observations;
+%   the treatment migrator + Path S: a term manipulation on a `tissue` part
+%   entity; subjectStrainAssembly: the animal `instance_of` its strain;
+%   openminds_stimulus: a passthrough). testThePreEightyEightSpellingGivesTheSamePlan
+%   feeds the pre-#88 spelling of the same documents. The whole pipeline is
+%   proven on the corpus by TestMigrateLocalEtaDab.
 %
 %   Decided by Jess Haley, 2026-10-21 (dabrowska/V2_decisions.md).
 
@@ -37,7 +40,7 @@ classdef TestSliceTetanus < matlab.unittest.TestCase
             raw = jsondecode(fileread(fullfile(here, 'dab_slice_tetanus_v1.json')));
             if isstruct(raw); raw = num2cell(raw); end
             testCase.V1 = raw(:)';
-            [testCase.Migrated, testCase.EpochIndex] = simulateMigrated(testCase.V1);
+            [testCase.Migrated, testCase.EpochIndex] = simulateMigrated(testCase.V1, false);
             [testCase.Plan, testCase.Report] = ndi.migrate.internal.sliceTetanus( ...
                 testCase.V1, testCase.Migrated, testCase.EpochIndex);
         end
@@ -58,12 +61,10 @@ classdef TestSliceTetanus < matlab.unittest.TestCase
             verifyEqual(testCase, r.slices, 4, '221122 _a, _b; 221202 _a Dec 02; and the Nov 28 slice');
             verifyEqual(testCase, r.new_animals, 1);
             verifyEqual(testCase, r.epochs_on_a_nested_date, 11);
-            animal = mintedNamed(testCase.Plan, 'migrated_nested_date_animal');
+            animal = mintedEntities(testCase.Plan, 'organism');
             verifyNumElements(testCase, animal, 1);
-            verifyEqual(testCase, animal{1}.subject.local_identifier, ...
+            verifyEqual(testCase, animal{1}.entity.local_identifier, ...
                 'sd_rat_AVPCre_221128_BNSTI_SCN@dabrowska-lab.rosalindfranklin.edu');
-            % every strain assertion the Dec 02 animal carries is copied, and
-            % nothing else (species and sex are lab-wide, not folder facts)
             dec02 = '';
             for k = 1:numel(testCase.V1)
                 b = testCase.V1{k};
@@ -73,30 +74,36 @@ classdef TestSliceTetanus < matlab.unittest.TestCase
                     dec02 = b.base.id;
                 end
             end
+            % #88: the animal's strain is its instance_of relation
             nStrain = 0;
             for k = 1:numel(testCase.Migrated)
                 b = testCase.Migrated{k};
-                if strcmp(b.document_class.class_name, 'term_assertion') ...
-                        && strcmp(dep(b, 'subject_id'), dec02) && ~isempty(dep(b, 'strain_id'))
+                if strcmp(b.document_class.class_name, 'directed_relation') ...
+                        && strcmp(b.directed_relation.relation.name, 'instance_of') ...
+                        && strcmp(dep(b, 'child_id'), dec02)
                     nStrain = nStrain + 1;
                 end
             end
             verifyGreaterThan(testCase, nStrain, 0);
             verifyEqual(testCase, r.new_animal_strain_assertions_copied, nStrain);
-            slices = mintedNamed(testCase.Plan, 'migrated_slice');
-            lids = sort(cellfun(@(s) s.subject.local_identifier, slices, 'UniformOutput', false));
+            copied = mintedRelations(testCase.Plan, 'instance_of');
+            verifyNumElements(testCase, copied, nStrain);
+            verifyEqual(testCase, dep(copied{1}, 'child_id'), animal{1}.base.id);
+
+            slices = mintedEntities(testCase.Plan, 'tissue');
+            lids = sort(cellfun(@(s) s.entity.local_identifier, slices, 'UniformOutput', false));
             verifyEqual(testCase, lids, sort({ ...
                 'sd_rat_AVPCre_221122_BNSTIII_SCN_a@dabrowska-lab.rosalindfranklin.edu', ...
                 'sd_rat_AVPCre_221122_BNSTIII_SCN_b@dabrowska-lab.rosalindfranklin.edu', ...
                 'sd_rat_AVPCre_221202_BNSTI_SCN_a@dabrowska-lab.rosalindfranklin.edu', ...
                 'sd_rat_AVPCre_221128_BNSTI_SCN_a@dabrowska-lab.rosalindfranklin.edu'}));
-            rels = mintedNamed(testCase.Plan, 'migrated_slice_part_of');
+            rels = mintedRelations(testCase.Plan, 'part_of');
             verifyNumElements(testCase, rels, 4);
-            novSlice = slices{strcmp(cellfun(@(s) s.subject.local_identifier, slices, ...
+            novSlice = slices{strcmp(cellfun(@(s) s.entity.local_identifier, slices, ...
                 'UniformOutput', false), ...
                 'sd_rat_AVPCre_221128_BNSTI_SCN_a@dabrowska-lab.rosalindfranklin.edu')};
-            rel = rels{cellfun(@(x) strcmp(dep(x, 'child'), novSlice.base.id), rels)};
-            verifyEqual(testCase, dep(rel, 'parent'), animal{1}.base.id, ...
+            rel = rels{cellfun(@(x) strcmp(dep(x, 'child_id'), novSlice.base.id), rels)};
+            verifyEqual(testCase, dep(rel, 'parent_id'), animal{1}.base.id, ...
                 'the Nov 28 slice is part_of the new animal');
         end
 
@@ -105,16 +112,14 @@ classdef TestSliceTetanus < matlab.unittest.TestCase
             verifyEqual(testCase, r.epoch_statements_examined, 196, ...
                 '49 baths + 49 probemap stimulator rows + 98 recording rows');
             verifyEqual(testCase, [r.epoch_statements_matched r.epoch_statements_unmatched], [196 0]);
-            verifyEqual(testCase, [r.element_relations_matched r.element_relations_ambiguous], [6 3], ...
-                'the 221202 elements recorded both animals, so their observes stays on the animal');
-            sliceIds = cellfun(@(s) s.base.id, mintedNamed(testCase.Plan, 'migrated_slice'), ...
+            sliceIds = cellfun(@(s) s.base.id, mintedEntities(testCase.Plan, 'tissue'), ...
                 'UniformOutput', false);
             for k = 1:numel(testCase.Plan.replaced)
                 s = testCase.Plan.replaced{k};
                 if strcmp(s.document_class.class_name, 'directed_relation')
-                    verifyTrue(testCase, any(strcmp(dep(s, 'parent'), sliceIds)));
+                    verifyTrue(testCase, any(strcmp(dep(s, 'parent_id'), sliceIds)));
                 else
-                    verifyTrue(testCase, any(strcmp(dep(s, 'subject_id'), sliceIds)));
+                    verifyTrue(testCase, any(strcmp(dep(s, 'entity_id'), sliceIds)));
                 end
             end
         end
@@ -126,69 +131,60 @@ classdef TestSliceTetanus < matlab.unittest.TestCase
                 'the Nov 28 animal has no treatment record');
             verifyEqual(testCase, [r.tetanus_with_parameters r.tetanus_without_parameters], [2 2], ...
                 '221202 (both runs) sits under TLS 10 Hz 20 s; 221122 under plain TLS');
-            ms = mintedNamed(testCase.Plan, 'migrated_tetanus_manipulation');
+            ms = tetanusManipulations(testCase.Plan);
+            verifyNumElements(testCase, ms, 4);
+            nParam = 0;
             for k = 1:numel(ms)
                 m = ms{k};
-                verifyEqual(testCase, m.subject_interaction.method.name, 'optogenetic tetanus stimulation');
-                verifyEqual(testCase, m.subject_interaction.method.node, 'EMPTY:0000358');
+                verifyEqual(testCase, {m.document_class.superclasses.class_name}, ...
+                    {'interaction', 'statement', 'base', 'term', 'value', 'data'});
+                verifyEqual(testCase, m.interaction.method.term.name, 'optogenetic tetanus stimulation');
+                verifyEqual(testCase, m.interaction.method.term.node, 'EMPTY:0000358');
+                verifyEqual(testCase, m.term.value.node, 'EMPTY:0000358');
                 verifyNotEmpty(testCase, dep(m, 'instrument_id'));
-                if isfield(m.subject_statement, 'conditions')
-                    c = m.subject_statement.conditions;
+                if isfield(m.statement, 'conditions')
+                    c = m.statement.conditions;
                     verifyEqual(testCase, c.variable.node, 'EMPTY:0000074');
-                    verifyTrue(testCase, startsWith(c.term.value.node, 'UBERON:'));
+                    verifyTrue(testCase, startsWith(c.term.node, 'UBERON:'));
                 end
-                if isfield(m.subject_interaction, 'method_parameters')
-                    p = m.subject_interaction.method_parameters;
-                    verifyTrue(testCase, isscalar(p), ...
-                        'method_parameters is a scalar struct on the pinned schema');
-                    verifyEqual(testCase, {p.frequency.source_unit, p.duration.source_unit}, {'Hz', 's'});
-                    verifyEqual(testCase, [p.frequency.value p.duration.value], [10 20]);
-                    verifyEqual(testCase, {p.frequency.source_value, p.duration.source_value}, {'10', '20'});
-                    verifyEqual(testCase, p.duration.unit.node, 'om:second-Time');
-                    verifyEqual(testCase, p.frequency.unit.node, 'om:hertz');
+                if isfield(m.interaction.method, 'parameters')
+                    nParam = nParam + 1;
+                    p = m.interaction.method.parameters;
+                    verifyNumElements(testCase, p, 2, ...
+                        'method.parameters is an entry list on did-schema #88');
+                    verifyEqual(testCase, {p(1).variable.name, p(2).variable.name}, ...
+                        {'frequency', 'duration'});
+                    verifyEqual(testCase, [p(1).quantity.value p(2).quantity.value], [10 20]);
+                    verifyEqual(testCase, {p(1).quantity.source_value, p(2).quantity.source_value}, ...
+                        {'10', '20'});
+                    verifyEqual(testCase, p(1).unit.node, 'om:hertz');
+                    verifyEqual(testCase, p(2).unit.node, 'om:second-Time');
                 end
             end
+            verifyEqual(testCase, nParam, 2);
         end
 
         function testTheWindowIsRelativeToTheLastBeforeEpoch(testCase)
-            % The Nov 28 run, from the v1 times: last before epoch
-            % 17:01:06-17:02:38, first after 17:05:07.
-            ms = mintedNamed(testCase.Plan, 'migrated_tetanus_manipulation');
-            refs = mintedNamed(testCase.Plan, 'migrated_tetanus_window');
+            ms = tetanusManipulations(testCase.Plan);
+            refs = mintedOfClass(testCase.Plan, 'relative_time_reference');
             verifyNumElements(testCase, refs, 4);
             for k = 1:numel(ms)
-                ref = refs{cellfun(@(x) strcmp(x.base.id, dep(ms{k}, 'time_reference_1')), refs)};
-                v = ref.relative_reference.value;
+                ref = refs{cellfun(@(x) strcmp(x.base.id, dep(ms{k}, 'time_reference_id')), refs)};
+                v = ref.relative_time_reference.value;
                 verifyEqual(testCase, v.clock.name, 'exp_global_time');
                 verifyGreaterThan(testCase, v.start.seconds, 0);
                 verifyGreaterThan(testCase, v.duration.seconds, 0);
                 verifyLessThan(testCase, v.duration.seconds, 10 * 60);
-                verifyTrue(testCase, any(strcmp(dep(ref, 'relative_to'), ...
+                verifyTrue(testCase, any(strcmp(dep(ref, 'referent_id'), ...
                     {testCase.EpochIndex.epoch_document_id})));
             end
         end
 
-        function testMintedBodiesValidateAgainstThePinnedSchema(testCase)
-            % Runs where a V_eta schema set is assembled (DID_SCHEMA_PATH, the
-            % end-to-end workflow, pinned to did-schema v_eta-pre73); skipped
-            % in the fast gate, which carries no schema. Every minted body but
-            % the copied strain assertions (copies of this test's simulated
-            % assertions, not of real ones) goes through the converter with
-            % validation on, including both TLS 10 Hz 20 s runs.
+        function testMintedBodiesValidateAgainstTheSchema(testCase)
             if isempty(getenv('DID_SCHEMA_PATH'))
                 assumeFail(testCase, 'DID_SCHEMA_PATH unset; no schema to validate against.');
             end
-            bodies = {};
-            nParam = 0;
-            for k = 1:numel(testCase.Plan.minted)
-                b = testCase.Plan.minted{k};
-                if strcmp(b.document_class.class_name, 'term_assertion'); continue; end
-                bodies{end+1} = b; %#ok<AGROW>
-                if isfield(b, 'subject_interaction') && isfield(b.subject_interaction, 'method_parameters')
-                    nParam = nParam + 1;
-                end
-            end
-            verifyEqual(testCase, nParam, 2, 'expected both 221202 runs to carry parameters');
+            bodies = testCase.Plan.minted;
             sub = did2.convert.v1_to_v2(bodies, 'Validate', true, ...
                 'TargetVersion', 'V_eta', 'Verbose', false);
             msg = '';
@@ -227,12 +223,32 @@ classdef TestSliceTetanus < matlab.unittest.TestCase
                 end
             end
         end
+
+        function testThePreEightyEightSpellingGivesTheSamePlan(testCase)
+            % pass-1 output in the pre-#88 spelling (subject, term_assertion +
+            % strain_id, subject_id, time_reference_1, relative_reference,
+            % child / parent) is read the same way: every count matches
+            [mig, idx] = simulateMigrated(testCase.V1, true);
+            [plan, r] = ndi.migrate.internal.sliceTetanus(testCase.V1, mig, idx);
+            r0 = testCase.Report;
+            for f = {'slices', 'new_animals', 'new_animal_strain_assertions_copied', ...
+                    'epoch_statements_examined', 'epoch_statements_matched', ...
+                    'tetanus_manipulations', 'tetanus_with_target_region', ...
+                    'tetanus_with_parameters', 'labels_rebuilt', ...
+                    'approach_labels_removed', 'treatment_manipulations_superseded', ...
+                    'treatment_part_subjects_superseded', 'treatment_anchors_removed', ...
+                    'documents_minted', 'documents_reattributed', 'documents_removed'}
+                verifyEqual(testCase, r.(f{1}), r0.(f{1}), f{1});
+            end
+            verifyNumElements(testCase, tetanusManipulations(plan), 4);
+        end
     end
 end
 
-% ===================== the migrated side, in the passes' shapes ==========
 
-function [M, idx] = simulateMigrated(v1)
+function [M, idx] = simulateMigrated(v1, pre88)
+%SIMULATEMIGRATED The pass-1 + earlier second-pass output for V1, in the
+%   did-schema #88 spelling, or the pre-#88 one when PRE88 is true.
 M = {}; idx = struct('session_id', {}, 'local_identifier', {}, 'epoch_document_id', {});
 epochDoc = containers.Map();
 els = containers.Map(); subjByLid = containers.Map(); elByName = containers.Map();
@@ -247,65 +263,87 @@ for k = 1:numel(v1)
     end
 end
 n = 0;
+if pre88
+    ABOUT = 'subject_id'; TR = 'time_reference_1'; CHILD = 'child'; PARENT = 'parent';
+else
+    ABOUT = 'entity_id'; TR = 'time_reference_id'; CHILD = 'child_id'; PARENT = 'parent_id';
+end
 for k = 1:numel(v1)
     b = v1{k}; s = b.base.session_id;
     switch b.document_class.class_name
         case 'stimulus_bath'
             st = v1dep(b, 'stimulus_element_id');
             a = anchor(s, b.epochid.epochid);
-            M{end+1} = body('dose_manipulation', b.base.id, s, 'migrated_bath', ...
-                [struct('name', 'subject_id', 'value', v1dep(els(st), 'subject_id')), ...
+            M{end+1} = statement('manipulation', 'dose', b.base.id, s, ...
+                [struct('name', ABOUT, 'value', v1dep(els(st), 'subject_id')), ...
                  struct('name', 'instrument_id', 'value', st), ...
-                 struct('name', 'time_reference_1', 'value', a)]); %#ok<AGROW>
+                 struct('name', TR, 'value', a)]); %#ok<AGROW>
         case 'epochfiles_ingested'
             ep = b.epochfiles_ingested.epoch_id;
             rows = strsplit(strtrim(b.epochfiles_ingested.epochprobemap), newline);
             a = anchor(s, ep);
             for q = 2:numel(rows)
                 c = strsplit(rows{q}, sprintf('\t'));
-                d = [struct('name', 'subject_id', 'value', subjByLid(c{5})), ...
+                d = [struct('name', ABOUT, 'value', subjByLid(c{5})), ...
                      struct('name', 'instrument_id', 'value', elByName([s '|' c{1}])), ...
-                     struct('name', 'time_reference_1', 'value', a)];
+                     struct('name', TR, 'value', a)];
                 if strcmp(c{3}, 'stimulator')
-                    x = body('term_manipulation', uid(), s, 'migrated_probemap_manipulation', d);
+                    x = statement('manipulation', 'term', uid(), s, d);
                 else
-                    x = body('voltage_observation', uid(), s, 'migrated_probemap_observation', d);
+                    x = statement('observation', 'voltage', uid(), s, d);
                 end
                 M{end+1} = x; %#ok<AGROW>
             end
         case 'openminds_stimulus'
-            M{end+1} = body('openminds_stimulus', b.base.id, s, '', ...
+            M{end+1} = body('openminds_stimulus', b.base.id, s, ...
                 struct('name', 'stimulus_element_id', 'value', v1dep(b, 'stimulus_element_id'))); %#ok<AGROW>
         case 'treatment'
             animal = v1dep(b, 'subject_id'); sa = uid(); part = uid();
-            M{end+1} = body('relative_reference', sa, s, 'migrated_session_anchor', ...
-                struct('name', 'relative_to', 'value', 'sessiondoc')); %#ok<AGROW>
-            t = body('term_manipulation', b.base.id, s, '', ...
-                [struct('name', 'subject_id', 'value', part), struct('name', 'time_reference_1', 'value', sa)]);
-            t.subject_statement = struct('variable', struct('node', 'EMPTY:0000074', ...
+            M{end+1} = sessionAnchor(sa, s); %#ok<AGROW>
+            t = statement('manipulation', 'term', b.base.id, s, ...
+                [struct('name', ABOUT, 'value', part), struct('name', TR, 'value', sa)]);
+            v = struct('variable', struct('node', 'EMPTY:0000074', ...
                 'name', 'Optogenetic Tetanus Stimulation'));
+            if pre88; t.subject_statement = v; else; t.statement = v; end
             M{end+1} = t; %#ok<AGROW>
-            M{end+1} = body('subject', part, s, 'migrated_part_x', struct('name', {}, 'value', {})); %#ok<AGROW>
-            M{end+1} = body('term_assertion', uid(), s, 'migrated_part_kind', ...
-                struct('name', 'subject_id', 'value', part)); %#ok<AGROW>
-            r = body('directed_relation', uid(), s, 'migrated_part_of', ...
-                [struct('name', 'child', 'value', part), struct('name', 'parent', 'value', animal)]);
+            if pre88
+                p = body('subject', part, s, struct('name', {}, 'value', {}));
+                p.base.name = 'migrated_part_x';
+            else
+                p = entity(part, s, 'tissue');
+            end
+            M{end+1} = p; %#ok<AGROW>
+            M{end+1} = statement('assertion', 'term', uid(), s, ...
+                struct('name', ABOUT, 'value', part)); %#ok<AGROW>
+            r = body('directed_relation', uid(), s, ...
+                [struct('name', CHILD, 'value', part), struct('name', PARENT, 'value', animal)]);
             r.directed_relation = struct('relation', struct('node', 'BFO:0000050', 'name', 'part_of'));
             M{end+1} = r; %#ok<AGROW>
         case 'element'
-            M{end+1} = body('subject', b.base.id, s, '', struct('name', {}, 'value', {})); %#ok<AGROW>
-            r = body('directed_relation', uid(), s, '', ...
-                [struct('name', 'child', 'value', b.base.id), ...
-                 struct('name', 'parent', 'value', v1dep(b, 'subject_id'))]);
-            r.directed_relation = struct('relation', struct('node', '', 'name', 'observes'));
-            M{end+1} = r; %#ok<AGROW>
+            if pre88
+                M{end+1} = body('subject', b.base.id, s, struct('name', {}, 'value', {})); %#ok<AGROW>
+            else
+                M{end+1} = entity(b.base.id, s, 'device'); %#ok<AGROW>
+            end
         case 'subject'
-            M{end+1} = body('subject', b.base.id, s, '', struct('name', {}, 'value', {})); %#ok<AGROW>
+            if pre88
+                M{end+1} = body('subject', b.base.id, s, struct('name', {}, 'value', {})); %#ok<AGROW>
+            else
+                M{end+1} = entity(b.base.id, s, 'organism'); %#ok<AGROW>
+            end
         case 'openminds_subject'
             if contains(b.openminds.openminds_type, 'Strain')
-                M{end+1} = body('term_assertion', uid(), s, '', ...
-                    [struct('name', 'subject_id', 'value', v1dep(b, 'subject_id')), ...
-                     struct('name', 'strain_id', 'value', 'strainentity')]); %#ok<AGROW>
+                if pre88
+                    M{end+1} = statement('assertion', 'term', uid(), s, ...
+                        [struct('name', ABOUT, 'value', v1dep(b, 'subject_id')), ...
+                         struct('name', 'strain_id', 'value', 'strainentity')]); %#ok<AGROW>
+                else
+                    r = body('directed_relation', uid(), s, ...
+                        [struct('name', CHILD, 'value', v1dep(b, 'subject_id')), ...
+                         struct('name', PARENT, 'value', 'strainentity')]);
+                    r.directed_relation = struct('relation', struct('node', '', 'name', 'instance_of'));
+                    M{end+1} = r; %#ok<AGROW>
+                end
             end
     end
 end
@@ -317,23 +355,51 @@ end
         if ~isKey(epochDoc, key)
             e = uid(); epochDoc(key) = e;
             idx(end+1) = struct('session_id', s, 'local_identifier', ep, 'epoch_document_id', e);
-            M{end+1} = body('epoch', e, s, '', struct('name', 'session_id', 'value', 'sessiondoc'));
+            M{end+1} = entity(e, s, 'epoch');
         end
         e = epochDoc(key);
     end
     function a = anchor(s, ep)
         a = uid();
-        M{end+1} = body('relative_reference', a, s, 'migrated_probemap_epoch_anchor', ...
-            struct('name', 'relative_to', 'value', epoch(s, ep)));
+        e = epoch(s, ep);
+        if pre88
+            M{end+1} = body('relative_reference', a, s, struct('name', 'relative_to', 'value', e));
+        else
+            M{end+1} = body('relative_time_reference', a, s, struct('name', 'referent_id', 'value', e));
+        end
+    end
+    function x = sessionAnchor(id, s)
+        if pre88
+            x = body('relative_reference', id, s, struct('name', 'relative_to', 'value', 'sessiondoc'));
+        else
+            x = body('relative_time_reference', id, s, struct('name', 'referent_id', 'value', 'sessiondoc'));
+        end
+    end
+    function x = statement(direction, kind, id, s, deps)
+        if pre88
+            x = body([kind '_' direction], id, s, deps);
+        else
+            x = body(direction, id, s, deps);
+            own = {'interaction', 'statement', 'base'};
+            if strcmp(direction, 'assertion'); own = {'statement', 'base'}; end
+            x.document_class.superclasses = struct('class_name', ...
+                [own, {kind, 'value', 'data'}], 'class_version', '1.0.0');
+        end
     end
 end
 
-function b = body(cls, id, s, name, deps)
+function b = entity(id, s, type)
+b = body('entity', id, s, struct('name', {}, 'value', {}));
+b.document_class.superclasses = struct('class_name', 'base', 'class_version', '1.0.0');
+b.entity = struct('type', struct('node', '', 'name', type), 'local_identifier', id);
+end
+
+function b = body(cls, id, s, deps)
 b = struct();
 b.document_class = struct('class_name', cls, 'class_version', '1.0.0', ...
     'superclasses', struct('class_name', {}, 'class_version', {}), 'schema_version', 'V_eta');
 b.depends_on = deps;
-b.base = struct('id', id, 'session_id', s, 'name', name, 'creation_timestamp', 'x');
+b.base = struct('id', id, 'session_id', s, 'name', '', 'creation_timestamp', 'x');
 end
 
 function v = v1dep(b, name)
@@ -352,9 +418,35 @@ for k = 1:numel(b.depends_on)
 end
 end
 
-function out = mintedNamed(plan, name)
+function out = mintedOfClass(plan, cls)
 out = {};
 for k = 1:numel(plan.minted)
-    if strcmp(plan.minted{k}.base.name, name); out{end+1} = plan.minted{k}; end %#ok<AGROW>
+    if strcmp(plan.minted{k}.document_class.class_name, cls)
+        out{end+1} = plan.minted{k}; %#ok<AGROW>
+    end
+end
+end
+
+function out = mintedEntities(plan, type)
+out = {};
+e = mintedOfClass(plan, 'entity');
+for k = 1:numel(e)
+    if strcmp(e{k}.entity.type.name, type); out{end+1} = e{k}; end %#ok<AGROW>
+end
+end
+
+function out = mintedRelations(plan, name)
+out = {};
+r = mintedOfClass(plan, 'directed_relation');
+for k = 1:numel(r)
+    if strcmp(r{k}.directed_relation.relation.name, name); out{end+1} = r{k}; end %#ok<AGROW>
+end
+end
+
+function out = tetanusManipulations(plan)
+out = {};
+m = mintedOfClass(plan, 'manipulation');
+for k = 1:numel(m)
+    if strcmp(m{k}.statement.variable.node, 'EMPTY:0000358'); out{end+1} = m{k}; end %#ok<AGROW>
 end
 end

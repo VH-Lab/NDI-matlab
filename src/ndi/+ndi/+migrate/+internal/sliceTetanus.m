@@ -60,14 +60,21 @@ function [plan, report] = sliceTetanus(v1Bodies, structs, epochIndex)
 %   6. THE TETANUS PROTOCOL FROM THE FOLDER. The post-tetanus recordings sit in
 %      a folder named `TLS` or `TLS <f> Hz <d> s`; where the folder states the
 %      protocol (every "after" epoch of the run agrees), the manipulation's
-%      `method_parameters` carry frequency and duration as written. Plain
+%      `method.parameters` carry frequency and duration as written. Plain
 %      `TLS` records nothing.
 %
-%   WHAT THE PINNED SCHEMA (did-schema v_eta-pre73) CANNOT SAY, AND SO IS NOT
-%   SAID: a slice's entity TYPE. pre73 `subject` has no `type` field (V2's
-%   `entity.type`, bound to {'', 'tissue'}, came later), so a slice is a plain
-%   `subject` + `part_of`, the shape Path-S part-subjects already use, and its
-%   description says what it is. The method term is EMPTY:0000358
+%   THE SHAPE IS did-schema #88's (V_eta_entity_composition_plan.md, signed
+%   2026-10-08). Open item #8 of the decisions above ("writing `type: tissue`
+%   once the migration moves past the pin") is therefore done: a slice is an
+%   `entity` of type `tissue` + a `part_of` relation (child_id / parent_id), a
+%   nested-date animal an `entity` of type `organism`, and what it copies from
+%   the outer animal is its strain -- on #88 the `instance_of` relation
+%   (sec. 5), before #88 the strain assertion. The tetanus is a `manipulation`
+%   with the `term` value kind; its method is the one `method {term,
+%   parameters}` block (V_eta_method_plan.md), the parameters an entry list;
+%   its window a `relative_time_reference` naming the epoch by `referent_id`.
+%   Every read accepts the pre-#88 spelling too (etaShape). The method term is
+%   EMPTY:0000358
 %   (*optogenetic tetanus stimulation*, minted 2026-10-21: no term at its
 %   specificity in OLS4) and the hertz unit is OM's `om:hertz`, both in
 %   did-schema's term registry.
@@ -235,12 +242,15 @@ posOf = containers.Map('KeyType', 'char', 'ValueType', 'double');
 for k = 1:n
     if ~isempty(idOf{k}); posOf(idOf{k}) = k; end
 end
-relTo = containers.Map();            % relative_reference id -> relative_to
+relTo = containers.Map();            % relative time reference id -> its referent
 for k = 1:n
-    if strcmp(classOf{k}, 'relative_reference')
+    if strcmp(classOf{k}, 'relative_time_reference')          % #88
+        relTo(idOf{k}) = depValue(structs{k}, 'referent_id');
+    elseif strcmp(classOf{k}, 'relative_reference')           % before #88
         relTo(idOf{k}) = depValue(structs{k}, 'relative_to');
     end
 end
+S = ndi.migrate.internal.etaShape;
 epochKeyOfDoc = containers.Map(); epochDocOfKey = containers.Map();
 for k = 1:numel(epochIndex)
     ek = [char(epochIndex(k).session_id) '|' char(epochIndex(k).local_identifier)];
@@ -257,30 +267,41 @@ for i = 1:numel(aks)
     a = newAnimalOf(ak);
     newId = did.ido.unique_id();
     mintedAnimalId(ak) = newId;
-    body = struct();
-    body.document_class = classBlock('subject', {'base'});
-    body.depends_on = struct('name', {}, 'value', {});
-    body.base = struct('id', newId, 'session_id', subjSession(a), ...
-        'name', 'migrated_nested_date_animal', 'creation_timestamp', dsOr(subjDs(a)));
-    body.subject = struct('local_identifier', newAnimalLid(ak), 'description', ...
-        sprintf(['an animal recorded on 20%s that did_v1 filed under %s: its ' ...
-        'epoch files sit in a %s folder nested inside the other animal''s ' ...
-        'date folder'], ak(end-5:end), subjLid(a), ak(end-5:end)));
-    body = ndi.migrate.internal.withSessionId(body, subjSession(a));
+    body = S.entity('organism', struct('local_identifier', newAnimalLid(ak), ...
+        'description', sprintf(['an animal recorded on 20%s that did_v1 ' ...
+        'filed under %s: its epoch files sit in a %s folder nested inside the ' ...
+        'other animal''s date folder'], ak(end-5:end), subjLid(a), ak(end-5:end))), ...
+        'Id', newId, 'SessionId', subjSession(a), 'Datestamp', dsOr(subjDs(a)));
     plan.minted{end+1} = body;
-    % the strain assertions come from the genotype folder the two animals share
+    % the strain comes from the genotype folder the two animals share: on #88
+    % the animal's `instance_of` relation to its strain, before #88 its strain
+    % assertion (a term assertion carrying `strain_id`)
     for k = 1:n
-        if strcmp(classOf{k}, 'term_assertion') ...
-                && strcmp(depValue(structs{k}, 'subject_id'), a) ...
-                && ~isempty(depValue(structs{k}, 'strain_id'))
-            cp = structs{k};
-            cp.base.id = did.ido.unique_id();
-            cp = setDep(cp, 'subject_id', newId);
-            cp.document_class.schema_version = 'V_eta';
-            plan.minted{end+1} = cp; %#ok<AGROW>
-            report.new_animal_strain_assertions_copied = ...
-                report.new_animal_strain_assertions_copied + 1;
+        isStrainRelation = strcmp(classOf{k}, 'directed_relation') ...
+            && strcmp(relationName(structs{k}), 'instance_of') ...
+            && strcmp(firstOf(depValue(structs{k}, 'child_id'), ...
+                depValue(structs{k}, 'child')), a);
+        isStrainAssertion = S.isStatement(structs{k}, 'assertion', 'term') ...
+            && strcmp(S.aboutId(structs{k}), a) ...
+            && ~isempty(depValue(structs{k}, 'strain_id'));
+        if ~(isStrainRelation || isStrainAssertion)
+            continue;
         end
+        cp = structs{k};
+        cp.base.id = did.ido.unique_id();
+        if isStrainRelation
+            if isempty(depValue(cp, 'child_id'))
+                cp = setDep(cp, 'child', newId);
+            else
+                cp = setDep(cp, 'child_id', newId);
+            end
+        else
+            cp = S.setAbout(cp, newId);
+        end
+        cp.document_class.schema_version = 'V_eta';
+        plan.minted{end+1} = cp; %#ok<AGROW>
+        report.new_animal_strain_assertions_copied = ...
+            report.new_animal_strain_assertions_copied + 1;
     end
 end
 
@@ -301,24 +322,12 @@ for i = 1:numel(sks)
     sliceId(sk) = newId;
     sliceKeyById(newId) = sk;
     [b0, dom] = lidBase(lid);
-    sl = struct();
-    sl.document_class = classBlock('subject', {'base'});
-    sl.depends_on = struct('name', {}, 'value', {});
-    sl.base = struct('id', newId, 'session_id', sid, ...
-        'name', 'migrated_slice', 'creation_timestamp', ds);
-    sl.subject = struct('local_identifier', [b0 '_' sliceLabel(sk) dom], ...
-        'description', sprintf(['brain slice %s of %s (tissue); its bath ' ...
-        'stimulator is %s'], sliceLabel(sk), lid, elName(s)));
-    sl = ndi.migrate.internal.withSessionId(sl, sid);
-    rel = struct();
-    rel.document_class = classBlock('directed_relation', {'relation'});
-    rel.depends_on = [struct('name', 'child', 'value', newId), ...
-        struct('name', 'parent', 'value', animalId)];
-    rel.base = struct('id', did.ido.unique_id(), 'session_id', sid, ...
-        'name', 'migrated_slice_part_of', 'creation_timestamp', ds);
-    rel.directed_relation = struct('relation', ...
-        struct('node', 'BFO:0000050', 'name', 'part_of'));
-    rel = ndi.migrate.internal.withSessionId(rel, sid);
+    sl = S.entity('tissue', struct('local_identifier', [b0 '_' sliceLabel(sk) dom], ...
+        'description', sprintf(['brain slice %s of %s; its bath stimulator ' ...
+        'is %s'], sliceLabel(sk), lid, elName(s))), ...
+        'Id', newId, 'SessionId', sid, 'Datestamp', ds);
+    rel = S.relation(newId, animalId, S.term('BFO:0000050', 'part_of'), ...
+        'SessionId', sid, 'Datestamp', ds);
     plan.minted = [plan.minted, {sl, rel}];
 end
 
@@ -345,9 +354,13 @@ replacedPos = [];
 for k = 1:n
     c = classOf{k};
     s = structs{k};
-    isStatement = endsWith(c, '_manipulation') || endsWith(c, '_observation');
+    isStatement = any(strcmp(S.direction(s), {'manipulation', 'observation'}));
     if isStatement
-        subj = depValue(s, 'subject_id');
+        % report key: the class before #88, <kind>_<direction> on #88
+        if any(strcmp(c, {'manipulation', 'observation'}))
+            c = [S.valueKind(s) '_' c];
+        end
+        subj = S.aboutId(s);
         instr = depValue(s, 'instrument_id');
         ek = epochOfStatement(s, relTo, epochKeyOfDoc);
         if ~isempty(ek) && isKey(epochSlice, ek)
@@ -361,7 +374,7 @@ for k = 1:n
             end
             if strcmp(instr, st) || (isKey(elementSlices, instr) ...
                     && any(strcmp(elementSlices(instr), sk)))
-                structs{k} = setDep(s, 'subject_id', sliceId(sk));
+                structs{k} = S.setAbout(s, sliceId(sk));
                 replacedPos(end+1) = k; %#ok<AGROW>
                 report.epoch_statements_matched = report.epoch_statements_matched + 1;
                 report = bumpClass(report, 'reattributed_by_class', c);
@@ -375,7 +388,7 @@ for k = 1:n
             report.unanchored_statements_examined = report.unanchored_statements_examined + 1;
             sl = elementSlices(instr);
             if isscalar(sl)
-                structs{k} = setDep(s, 'subject_id', sliceId(sl{1}));
+                structs{k} = S.setAbout(s, sliceId(sl{1}));
                 replacedPos(end+1) = k; %#ok<AGROW>
                 report.unanchored_statements_matched = report.unanchored_statements_matched + 1;
                 report = bumpClass(report, 'reattributed_by_class', c);
@@ -384,13 +397,15 @@ for k = 1:n
             end
         end
     elseif strcmp(c, 'directed_relation')
-        child = depValue(s, 'child'); parent = depValue(s, 'parent');
+        [child, parent] = S.relationEnds(s);
         if isKey(elementSlices, child) && strcmp(parent, elSubj(child)) ...
                 && strcmp(relationName(s), 'observes')
             report.element_relations_examined = report.element_relations_examined + 1;
             sl = elementSlices(child);
             if isscalar(sl)
-                structs{k} = setDep(s, 'parent', sliceId(sl{1}));
+                parentEdge = 'parent_id';
+                if isempty(depValue(s, 'parent_id')); parentEdge = 'parent'; end
+                structs{k} = setDep(s, parentEdge, sliceId(sl{1}));
                 replacedPos(end+1) = k; %#ok<AGROW>
                 report.element_relations_matched = report.element_relations_matched + 1;
             else
@@ -426,6 +441,7 @@ end
 report.runs_examined = numel(runKeys);
 
 TOL_DAYS = 1e-3 / 86400;   % 1 ms, against datenum round-off; gaps are minutes
+tetanusIds = {};           % the minted tetanus manipulations (no base.name on V_eta)
 for r = 1:numel(runKeys)
     sk = runKeys{r};
     rows = [runRows{r}{:}];
@@ -451,40 +467,24 @@ for r = 1:numel(runKeys)
         continue;
     end
 
-    ref = struct();
-    ref.document_class = struct('class_name', 'relative_reference', ...
-        'class_version', '2.0.0', 'superclasses', struct('class_name', ...
-        'time_reference', 'class_version', '4.0.0'), 'schema_version', 'V_eta');
-    ref.depends_on = struct('name', 'relative_to', 'value', epochDocOfKey(lb.key));
-    ref.base = struct('id', did.ido.unique_id(), 'session_id', sid, ...
-        'name', 'migrated_tetanus_window', 'creation_timestamp', ds);
-    ref = ndi.migrate.internal.withSessionId(ref, sid);
-    ref.relative_reference = struct('value', struct( ...
+    ref = S.relativeTimeReference(epochDocOfKey(lb.key), struct( ...
         'clock', struct('node', '', 'name', 'exp_global_time'), ...
         'start', struct('seconds', startS), ...
-        'duration', struct('seconds', durS)));
+        'duration', struct('seconds', durS)), 'SessionId', sid, 'Datestamp', ds);
 
-    m = struct();
-    m.document_class = classBlock('term_manipulation', {'subject_manipulation'});
-    m.depends_on = [struct('name', 'subject_id', 'value', sliceId(sk)), ...
-        struct('name', 'instrument_id', 'value', s), ...
-        struct('name', 'time_reference_1', 'value', ref.base.id)];
-    m.base = struct('id', did.ido.unique_id(), 'session_id', sid, ...
-        'name', 'migrated_tetanus_manipulation', 'creation_timestamp', ds);
-    m = ndi.migrate.internal.withSessionId(m, sid);
-    m.subject_statement = struct('variable', ACT, 'storage_mode', 'inline');
     ak = sliceAnimalKey(sk);
+    conds = [];
     if isempty(ak) && isKey(treatRegion, elSubj(s)) && ~isempty(treatRegion(elSubj(s)))
-        m.subject_statement.conditions = struct('variable', SITE_VAR, ...
-            'term', struct('value', struct('node', treatRegion(elSubj(s)), 'name', '')));
+        % a condition entry holds ONE value form; a term here (#88: the same
+        % entry shape as a key's, `term` = {node, name})
+        conds = struct('variable', SITE_VAR, ...
+            'term', struct('node', treatRegion(elSubj(s)), 'name', ''));
         report.tetanus_with_target_region = report.tetanus_with_target_region + 1;
     else
         report.tetanus_without_target_region = report.tetanus_without_target_region + 1;
     end
-    m.subject_interaction = struct('method', ACT, 'sample_time', struct('kind', 'point'));
     [params, pstate] = folderParameters(rows(nb+1:end));
     if ~isempty(params)
-        m.subject_interaction.method_parameters = params;
         report.tetanus_with_parameters = report.tetanus_with_parameters + 1;
     else
         report.tetanus_without_parameters = report.tetanus_without_parameters + 1;
@@ -493,14 +493,17 @@ for r = 1:numel(runKeys)
                 report.tetanus_parameter_folders_disagree + 1;
         end
     end
-    m.subject_manipulation = struct('notes', '');
-    m.term = struct('value', ACT);
+    m = S.statement('manipulation', 'term', sliceId(sk), ACT, ACT, ...
+        'InstrumentId', s, 'TimeReferenceIds', {ref.base.id}, ...
+        'Method', ACT, 'MethodParameters', params, 'Conditions', conds, ...
+        'SessionId', sid, 'Datestamp', ds);
+    tetanusIds{end+1} = m.base.id; %#ok<AGROW>
 
     % ---- the labels, rebuilt from what is EMITTED ------------------------
     % Read back from the bodies just built, not from lb/fa: the window start
     % is the referent epoch's t0 plus `start`, its end that plus `duration`.
-    ws = lb.t0 + ref.relative_reference.value.start.seconds / 86400;
-    we = ws + ref.relative_reference.value.duration.seconds / 86400;
+    ws = lb.t0 + ref.relative_time_reference.value.start.seconds / 86400;
+    we = ws + ref.relative_time_reference.value.duration.seconds / 86400;
     allOk = true;
     for q = 1:numel(rows)
         if rows(q).t1 <= ws + TOL_DAYS
@@ -537,32 +540,39 @@ end
 animalsWithRun = {};
 for i = 1:numel(plan.minted)
     b = plan.minted{i};
-    if strcmp(baseField(b, 'name'), 'migrated_tetanus_manipulation')
-        sk = sliceKeyById(depValue(b, 'subject_id'));
+    if any(strcmp(baseField(b, 'id'), tetanusIds))
+        sk = sliceKeyById(S.aboutId(b));
         if isempty(sliceAnimalKey(sk))
             animalsWithRun{end+1} = elSubj(sliceStim(sk)); %#ok<AGROW>
         end
     end
 end
 animalsWithRun = unique(animalsWithRun);
+% A Path-S part: before #88 a `subject` whose base.name pathSPromotion stamped
+% 'migrated_part_...'; on #88 (no base.name) an `entity` of type `tissue` --
+% what pathSPromotion mints -- that is `part_of` an animal. Only a part whose
+% subject carries the superseded treatment below is ever dropped.
 partsOf = containers.Map();          % part-subject id -> animal id
 for k = 1:n
     if strcmp(classOf{k}, 'directed_relation') && strcmp(relationName(structs{k}), 'part_of')
-        ch = depValue(structs{k}, 'child');
-        if isKey(posOf, ch) && startsWith(baseField(structs{posOf(ch)}, 'name'), 'migrated_part_')
-            partsOf(ch) = depValue(structs{k}, 'parent');
+        [ch, pa] = S.relationEnds(structs{k});
+        if ~isKey(posOf, ch); continue; end
+        part = structs{posOf(ch)};
+        if startsWith(baseField(part, 'name'), 'migrated_part_') ...
+                || S.isEntity(part, {'tissue'}) && strcmp(className(part), 'entity')
+            partsOf(ch) = pa;
         end
     end
 end
 dropAnchors = {}; dropParts = {};
 for k = 1:n
-    if ~strcmp(classOf{k}, 'term_manipulation'); continue; end
     s = structs{k};
+    if ~S.isStatement(s, 'manipulation', 'term'); continue; end
     if ~(strcmp(termNode(s, 'variable'), SITE_VAR_NODE) || strcmp(termNode(s, 'term'), SITE_VAR_NODE))
         continue;
     end
     report.treatment_manipulations_found = report.treatment_manipulations_found + 1;
-    subj = depValue(s, 'subject_id');
+    subj = S.aboutId(s);
     animal = subj;
     if isKey(partsOf, subj); animal = partsOf(subj); end
     if ~any(strcmp(animalsWithRun, animal))
@@ -571,14 +581,14 @@ for k = 1:n
     end
     plan.removed{end+1} = idOf{k}; %#ok<AGROW>
     report.treatment_manipulations_superseded = report.treatment_manipulations_superseded + 1;
-    a = depValue(s, 'time_reference_1');
+    a = firstAnchor(s);
     if ~isempty(a); dropAnchors{end+1} = a; end %#ok<AGROW>
     if isKey(partsOf, subj); dropParts{end+1} = subj; end %#ok<AGROW>
     % an un-promoted site observation sharing the anchor goes with it
     for q = 1:n
-        if strcmp(classOf{q}, 'term_observation') && ~isempty(a) ...
-                && strcmp(depValue(structs{q}, 'time_reference_1'), a) ...
-                && strcmp(depValue(structs{q}, 'subject_id'), animal) ...
+        if S.isStatement(structs{q}, 'observation', 'term') && ~isempty(a) ...
+                && strcmp(firstAnchor(structs{q}), a) ...
+                && strcmp(S.aboutId(structs{q}), animal) ...
                 && strcmp(variableName(structs{q}), 'anatomical location')
             plan.removed{end+1} = idOf{q}; %#ok<AGROW>
             report.treatment_site_observations_superseded = ...
@@ -592,8 +602,9 @@ for i = 1:numel(dropParts)
     plan.removed{end+1} = p; %#ok<AGROW>
     for k = 1:n
         c = classOf{k};
-        if (strcmp(c, 'term_assertion') && strcmp(depValue(structs{k}, 'subject_id'), p)) ...
-                || (strcmp(c, 'directed_relation') && strcmp(depValue(structs{k}, 'child'), p))
+        [ch, ~] = S.relationEnds(structs{k});
+        if (S.isStatement(structs{k}, 'assertion', 'term') && strcmp(S.aboutId(structs{k}), p)) ...
+                || (strcmp(c, 'directed_relation') && strcmp(ch, p))
             plan.removed{end+1} = idOf{k}; %#ok<AGROW>
         end
     end
@@ -669,7 +680,7 @@ end
 
 function ek = epochOfStatement(s, relTo, epochKeyOfDoc)
 ek = '';
-a = depValue(s, 'time_reference_1');
+a = firstAnchor(s);
 if isempty(a) || ~isKey(relTo, a); return; end
 e = relTo(a);
 if isKey(epochKeyOfDoc, e); ek = epochKeyOfDoc(e); end
@@ -747,17 +758,19 @@ if numel(names) ~= 1 || isempty(names{1}); if numel(names) > 1; state = 'mixed';
 tok = regexp(names{1}, '^TLS\s+(\d+(?:\.\d+)?)\s*Hz\s+(\d+(?:\.\d+)?)\s*s$', 'tokens', 'once');
 if isempty(tok); return; end
 state = 'stated';
-% ONE scalar struct, a field per knob: the pinned schema (v_eta-pre73)
-% declares `subject_interaction.method_parameters` a free-form SCALAR structure
-% (an array of entries is refused: "is required to be scalar", Dab e2e run
-% 39546975753), the same shape resolveResponseParameters inlines its knobs in.
+% did-schema #88 (V_eta_method_plan.md): `method.parameters` is an ENTRY LIST,
+% each {variable, unit, source_unit, approximate} plus ONE value form -- here a
+% `quantity` {value, source_value}. (On the pinned pre-#73 schema it was one
+% free-form scalar struct, a field per knob.) The source wrote the canonical
+% units, so `source_unit` is the same term as `unit`.
+HZ = struct('node', 'om:hertz', 'name', 'hertz');
+SEC = struct('node', 'om:second-Time', 'name', 'second');
 params = struct( ...
-    'frequency', struct('variable', struct('node', '', 'name', 'frequency'), ...
-        'unit', struct('node', 'om:hertz', 'name', 'hertz'), 'source_unit', 'Hz', ...
-        'value', str2double(tok{1}), 'source_value', tok{1}), ...
-    'duration', struct('variable', struct('node', '', 'name', 'duration'), ...
-        'unit', struct('node', 'om:second-Time', 'name', 'second'), 'source_unit', 's', ...
-        'value', str2double(tok{2}), 'source_value', tok{2}));
+    'variable', {struct('node', '', 'name', 'frequency'), struct('node', '', 'name', 'duration')}, ...
+    'unit', {HZ, SEC}, ...
+    'source_unit', {HZ, SEC}, ...
+    'quantity', {struct('value', str2double(tok{1}), 'source_value', tok{1}), ...
+                 struct('value', str2double(tok{2}), 'source_value', tok{2})});
 end
 
 function [t, ok] = clockTimes(et, clockName)
@@ -895,22 +908,30 @@ nm = charField(r, 'name');
 end
 
 function nm = variableName(s)
-nm = charField(blockOf(blockOf(s, 'subject_statement'), 'variable'), 'name');
+v = ndi.migrate.internal.etaShape.variable(s);
+nm = v.name;
 end
 
 function node = termNode(s, which)
 if strcmp(which, 'variable')
-    node = charField(blockOf(blockOf(s, 'subject_statement'), 'variable'), 'node');
+    v = ndi.migrate.internal.etaShape.variable(s);
+    node = v.node;
 else
     node = charField(blockOf(blockOf(s, 'term'), 'value'), 'node');
 end
 end
 
-function dc = classBlock(name, supers)
-sc = struct('class_name', {}, 'class_version', {});
-for i = 1:numel(supers)
-    sc(i) = struct('class_name', supers{i}, 'class_version', '1.0.0');
+function a = firstAnchor(s)
+%FIRSTANCHOR The statement's first time reference (`time_reference_id` on #88,
+%   `time_reference_1` before).
+ids = ndi.migrate.internal.etaShape.timeReferenceIds(s);
+a = '';
+if ~isempty(ids); a = ids{1}; end
 end
-dc = struct('class_name', name, 'class_version', '1.0.0', ...
-    'superclasses', sc, 'schema_version', 'V_eta');
+
+function v = firstOf(varargin)
+v = '';
+for k = 1:numel(varargin)
+    if ~isempty(varargin{k}); v = varargin{k}; return; end
+end
 end

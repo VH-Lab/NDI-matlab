@@ -2,6 +2,19 @@ function [kept, report] = softwareDedup(structs)
 %SOFTWAREDEDUP V_eta second pass: merge duplicate `software` ENTITIES and
 %   retarget every edge that pointed at the ones that go away.
 %
+%   ON did-schema #88 (V_eta_entity_composition_plan.md sec. 4): software is
+%   an `entity` of type `software`; its name is `entity.name`, its handle
+%   `entity.local_identifier` (NAME@VERSION) and its version a TEXT ASSERTION
+%   about it (variable `version number`, IAO:0000129 -- what DID-side
+%   jSoftware writes). This pass reads both spellings: the pre-#88 `software`
+%   class with its `software` block, and the #88 entity with its version
+%   assertion. On #88 two more edge names are SOFTWARE REFERENCES rather than
+%   pins -- a calculation's `interpreter_id` and `operating_system_id` (the run
+%   environment became two software edges, #73 item 53) -- and a merged-away
+%   entity's own version assertion is dropped with it (the survivor carries an
+%   identical one: the version is part of the merge key), counted in
+%   REPORT.version_assertions_dropped.
+%
 %   SIGNED MODEL (DID-schema `V_eta_tenet_audit.md`:10, TEAM-SIGN-OFF
 %   [software] jess 2026-08-06): "the `app` mixin is replaced by a `software`
 %   ENTITY (DEDUPLICATED BY NAME+VERSION) referenced from a statement by
@@ -127,6 +140,7 @@ report.software_surviving        = 0;
 report.pinned_key_collisions     = 0;   % >1 pinned entity on one key -> untouched
 report.edges_retargeted          = 0;
 report.local_identifier_repaired = 0;
+report.version_assertions_dropped = 0;  % #88: the merged-away entity's own
 report.cross_session_groups      = 0;   % (name,version) keys spanning >1 session
 report.cross_session_collapsible = 0;   % extra entities a dataset-scoped key removes
 report.changed                   = false;
@@ -142,15 +156,46 @@ idOf       = cell(1, n);
 sessOf     = cell(1, n);
 nameOf     = cell(1, n);
 versOf     = cell(1, n);
+% #88: the version is an assertion about the software; index those first
+S = ndi.migrate.internal.etaShape;
+versionAssertion = containers.Map('KeyType', 'char', 'ValueType', 'any');
+isVersionAssertion = false(1, n);
 for i = 1:n
-    idOf{i} = baseField(structs{i}, 'id', '');
-    if ~strcmp(classNameOf(structs{i}), 'software')
+    if ~S.isStatement(structs{i}, 'assertion', 'text')
         continue;
     end
-    isSoftware(i)  = true;
-    sessOf{i} = ndi.v2.sessionIdOf(structs{i});
-    nameOf{i} = blockField(structs{i}, 'software', 'name', '');
-    versOf{i} = blockField(structs{i}, 'software', 'version', '');
+    v = S.variable(structs{i});
+    if ~(strcmp(v.node, 'IAO:0000129') || strcmpi(v.name, 'version number'))
+        continue;
+    end
+    about = S.aboutId(structs{i});
+    if isempty(about)
+        continue;
+    end
+    isVersionAssertion(i) = true;
+    if isKey(versionAssertion, about)
+        versionAssertion(about) = [versionAssertion(about), i];
+    else
+        versionAssertion(about) = i;
+    end
+end
+for i = 1:n
+    idOf{i} = baseField(structs{i}, 'id', '');
+    if strcmp(classNameOf(structs{i}), 'software')
+        isSoftware(i)  = true;
+        sessOf{i} = ndi.v2.sessionIdOf(structs{i});
+        nameOf{i} = blockField(structs{i}, 'software', 'name', '');
+        versOf{i} = blockField(structs{i}, 'software', 'version', '');
+    elseif S.isEntity(structs{i}, {'software'})
+        isSoftware(i)  = true;
+        sessOf{i} = ndi.v2.sessionIdOf(structs{i});
+        nameOf{i} = blockField(structs{i}, 'entity', 'name', '');
+        versOf{i} = '';
+        if isKey(versionAssertion, idOf{i})
+            va = versionAssertion(idOf{i});
+            versOf{i} = textValue(structs{va(1)});
+        end
+    end
 end
 report.software_seen = sum(isSoftware);
 
@@ -170,6 +215,7 @@ end
 % defect in miniature: a denominator that reads as "nothing to look at" when
 % what happened is "looked at everything, matched nothing".
 pinned = false(1, n);
+referenceEdges = {'software_id', 'interpreter_id', 'operating_system_id'};
 for j = 1:n
     deps = depsOf(structs{j});
     for k = 1:numel(deps)
@@ -178,7 +224,13 @@ for j = 1:n
         if isempty(tgt) || ~isKey(softwareIdx, tgt)
             continue;
         end
-        if ~strcmp(depName(deps(k)), 'software_id')
+        if isVersionAssertion(j) && strcmp(depName(deps(k)), 'entity_id')
+            continue;   % the entity's own version, not a pin
+        end
+        if strcmp(depName(deps(k)), 'session_id')
+            continue;   % #88: a record's session edge is not a reference to it
+        end
+        if ~any(strcmp(depName(deps(k)), referenceEdges))
             pinned(softwareIdx(tgt)) = true;
         end
     end
@@ -247,6 +299,12 @@ for g = 1:numel(keys_)
         structs{survivor} = unionGlobalIdentifiers(structs{survivor}, structs{m});
         removeMask(m) = true;
         report.software_merged_away = report.software_merged_away + 1;
+        if isKey(versionAssertion, idOf{m})
+            va = versionAssertion(idOf{m});
+            removeMask(va) = true;
+            report.version_assertions_dropped = ...
+                report.version_assertions_dropped + numel(va);
+        end
     end
     % Repair the dedup handle on the survivor from the fields that ARE the key.
     [structs{survivor}, fixed] = repairLocalIdentifier(structs{survivor}, ...
@@ -313,15 +371,35 @@ end
 % ===================== body edits =========================================
 
 function s = unionGlobalIdentifiers(s, other)
-%UNIONGLOBALIDENTIFIERS Add OTHER's entity.global_identifier entries to S.
-%   Two mints of one program can carry different URLs; both are facts about the
-%   same software, so the survivor gets both. Duplicate {scheme, value} pairs
-%   collapse. Nothing is invented and nothing is overwritten.
+%UNIONGLOBALIDENTIFIERS The survivor keeps every identifier either carried.
+%   #88 writes a list of CURIE / IRI strings; before #88, an array of
+%   {scheme, value}. Union in whichever shape the survivor has.
 add = gidsOf(other);
 if isempty(add)
     return;
 end
 have = gidsOf(s);
+if iscell(have) || (isempty(have) && iscell(add))
+    out = reshape(have, 1, []);
+    if ~iscell(out); out = {}; end
+    addc = add;
+    if ~iscell(addc)
+        addc = arrayfun(@(e) gidKey(e), addc, 'UniformOutput', false);
+    end
+    for k = 1:numel(addc)
+        if ~any(strcmp(out, addc{k}))
+            out{end+1} = addc{k}; %#ok<AGROW>
+        end
+    end
+    if ~isfield(s, 'entity') || ~isstruct(s.entity)
+        s.entity = struct();
+    end
+    s.entity.global_identifier = out;
+    return;
+end
+if iscell(add)
+    return;     % a mixed pair: leave the survivor as it is
+end
 seen = {};
 for k = 1:numel(have)
     seen{end+1} = gidKey(have(k)); %#ok<AGROW>
@@ -348,9 +426,13 @@ end
 function g = gidsOf(s)
 g = struct('scheme', {}, 'value', {});
 if isfield(s, 'entity') && isstruct(s.entity) && isscalar(s.entity) ...
-        && isfield(s.entity, 'global_identifier') ...
-        && isstruct(s.entity.global_identifier)
-    g = s.entity.global_identifier;
+        && isfield(s.entity, 'global_identifier')
+    x = s.entity.global_identifier;
+    if isstruct(x) || iscell(x)
+        g = x;
+    elseif ischar(x) && ~isempty(x)
+        g = {x};
+    end
 end
 end
 
@@ -374,18 +456,23 @@ want = name;
 if ~isempty(version)
     want = [name '@' version];
 end
+% the handle lives on the `software` block before #88, `entity` on #88
+blk = 'software';
+if ~isfield(s, 'software') && isfield(s, 'entity')
+    blk = 'entity';
+end
 have = '';
-if isfield(s, 'software') && isstruct(s.software) && isscalar(s.software) ...
-        && isfield(s.software, 'local_identifier')
-    have = char(s.software.local_identifier);
+if isfield(s, blk) && isstruct(s.(blk)) && isscalar(s.(blk)) ...
+        && isfield(s.(blk), 'local_identifier')
+    have = char(s.(blk).local_identifier);
 end
 if strcmp(have, want)
     return;
 end
-if ~isfield(s, 'software') || ~isstruct(s.software)
-    s.software = struct();
+if ~isfield(s, blk) || ~isstruct(s.(blk))
+    s.(blk) = struct();
 end
-s.software.local_identifier = want;
+s.(blk).local_identifier = want;
 fixed = 1;
 end
 
@@ -421,6 +508,18 @@ end
 end
 
 % ===================== struct accessors ===================================
+
+function t = textValue(s)
+%TEXTVALUE The first text of a text assertion's value, '' when none.
+t = '';
+if isfield(s, 'text') && isstruct(s.text) && isfield(s.text, 'value') ...
+        && isstruct(s.text.value) && ~isempty(s.text.value) ...
+        && isfield(s.text.value, 'text')
+    x = s.text.value(1).text;
+    if iscell(x) && ~isempty(x); x = x{1}; end
+    if ischar(x) || (isstring(x) && isscalar(x)); t = char(x); end
+end
+end
 
 function c = classNameOf(s)
 c = '';
