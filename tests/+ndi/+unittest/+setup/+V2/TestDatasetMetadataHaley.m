@@ -350,7 +350,7 @@ classdef TestDatasetMetadataHaley < matlab.unittest.TestCase
         function testKeywordsAreTextAndTheLicenceIsItsSpdxTerm(testCase)
             % Jess Haley, 2026-10-21: the dataset's keywords are its own text
             % (a text assertion), not terms with no node; its licence is the
-            % term whose node is its SPDX IRI (no ontology has licence terms)
+            % registered term spdx:CC-BY-4.0 (no ontology has licence terms)
             docs = testCase.Result.documents;
             if ~ndi.setup.V2.mergedEntities()
                 % the dataset is its own class here (did-schema main): keyword
@@ -371,8 +371,9 @@ classdef TestDatasetMetadataHaley < matlab.unittest.TestCase
             testCase.verifyEqual(sort(words(:)'), sort(cellstr(string(testCase.Spec.dataset.keyword))'));
             lic = st(strcmp(nodes, 'NCIT:C43611'));
             testCase.verifyNumElements(lic, 1, 'one licence statement');
-            testCase.verifyEqual(lic{1}.term.value.node, 'https://spdx.org/licenses/CC-BY-4.0');
-            testCase.verifyEqual(lic{1}.term.value.name, 'CC-BY-4.0');
+            testCase.verifyEqual(lic{1}.term.value.node, 'spdx:CC-BY-4.0');
+            testCase.verifyEqual(lic{1}.term.value.name, ...
+                'Creative Commons Attribution 4.0 International', 'the registry''s label');
         end
 
         function testUnrepresentedContentIsReportedNotDropped(testCase)

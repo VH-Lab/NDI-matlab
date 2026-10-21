@@ -143,10 +143,10 @@ for k = 1:numel(names)
         variable = ndi.setup.V2.registeredTerm('', variable);
     end
     if strcmp(f, 'license') && (ischar(v) || (isstring(v) && isscalar(v)))
-        % a licence named by its SPDX identifier ('CC-BY-4.0') is the term
-        % whose node is its SPDX IRI: no ontology has licence terms (Jess
-        % Haley, 2026-10-21)
-        v = did2.build.term(['https://spdx.org/licenses/' strtrim(char(v))], strtrim(char(v)));
+        % a licence named by its SPDX identifier ('CC-BY-4.0') is the
+        % registered term spdx:<id> (Bioregistry's `spdx` prefix; no ontology
+        % has licence terms; Jess Haley, 2026-10-21), its label the registry's
+        v = ndi.setup.V2.registeredTerm(['spdx:' strtrim(char(v))], strtrim(char(v)));
     end
     if any(strcmp(f, terms))
         docs{end+1} = did2.build.statement('term_assertion', eid, variable, asTerms(v), common{:}); %#ok<AGROW>

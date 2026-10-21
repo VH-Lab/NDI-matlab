@@ -768,6 +768,78 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
                 'a spelling with no decided term keeps its spelling as the name (plan item 4)');
         end
 
+        % ---- no unregistered label by fallback (decision #136) ----------------
+        % Each source value with no registered term is an error that names it,
+        % not a label with no node. Each test edits a FRESH fixture (the class
+        % fixture is shared) and runs the import with 'Write' false, so the
+        % error reaches the caller (a written run records a failure instead).
+
+        function testAnUnknownEncounterLabelIsAnError(testCase)
+            if ~ndi.setup.V2.schemaHasLeaf('time_calculation')
+                return;   % the encounters stage needs it (did-schema PR #87); both CI legs have it
+            end
+            root = testCase.freshFixture();
+            files = dir(fullfile(root, '**', 'encounter.mat'));
+            testCase.assertNotEmpty(files, 'the fixture has an encounter table');
+            for k = 1:numel(files)
+                f = fullfile(files(k).folder, files(k).name);
+                x = load(f, 'encounter');
+                encounter = x.encounter;
+                has = ~cellfun(@isempty, encounter.label);
+                encounter.label(has) = {'wander'}; %#ok<NASGU> (saved)
+                save(f, 'encounter');
+            end
+            testCase.verifyError(@() testCase.dryRun(root, ...
+                ["metadata", "observations", "calculations", "encounters"]), ...
+                'ndi:setup:conv:haley:unregisteredLabel');
+        end
+
+        function testAnUnknownDetectionMethodIsAnError(testCase)
+            root = testCase.freshFixture();
+            files = dir(fullfile(root, '**', 'experimentInfo.mat'));
+            testCase.assertNotEmpty(files, 'the fixture has an experiment table');
+            for k = 1:numel(files)
+                f = fullfile(files(k).folder, files(k).name);
+                x = load(f, 'info');
+                info = x.info;
+                info.lawnMethod = repmat({{'manual'}}, height(info), 1); %#ok<NASGU> (saved)
+                save(f, 'info');
+            end
+            testCase.verifyError(@() testCase.dryRun(root, ["metadata", "calculations"]), ...
+                'ndi:setup:conv:haley:unregisteredLabel');
+        end
+
+        function testADoseKeyWithNoTermIsAnError(testCase)
+            % the pour's agar names a key that is no formulation, so the dose
+            % has no term (manipulationDocuments nameOf)
+            specFile = fullfile(fileparts(which('ndi.setup.conv.haley.import_V2')), 'import_V2_spec.json');
+            raw = fileread(specFile);
+            raw2 = regexprep(raw, '"with":\s*"ngm"', '"with": "ngm_with_no_term"', 'once');
+            testCase.assertNotEqual(raw2, raw, 'the spec copy renames the pour''s agar');
+            spec = fullfile(testCase.scratchDir(), 'spec.json');
+            fid = fopen(spec, 'w', 'n', 'UTF-8');
+            fwrite(fid, raw2, 'char');
+            fclose(fid);
+            testCase.verifyError(@() ndi.setup.conv.haley.import_V2(testCase.Root, ...
+                'Stages', ["sessions", "subjects", "acquisition", "relations", "metadata", ...
+                "assertions", "manipulations"], 'Sessions', "concentration_0001", 'Spec', spec, ...
+                'OutputRoot', fullfile(fileparts(spec), 'haley_V2'), 'Write', false, ...
+                'ReadVideos', false), 'ndi:setup:conv:haley:unregisteredLabel');
+        end
+
+        function testASeedingStrainWithNoTermIsAnError(testCase)
+            % the seeding solutions' strain has no term in 'Names'
+            % (seedingDocuments strainTerm)
+            result = ndi.setup.conv.haley.import_V2(testCase.Root, ...
+                'Stages', ["sessions", "metadata"], 'Sessions', "concentration_0001", ...
+                'OutputRoot', fullfile(testCase.scratchDir(), 'haley_V2'), 'Write', false, ...
+                'ReadVideos', false);
+            testCase.assertTrue(isfield(result, 'suspensions'), 'the fixture has seeding solutions');
+            testCase.verifyError(@() ndi.setup.conv.haley.seedingDocuments(result.suspensions, ...
+                result.metadata.ids, did.ido.unique_id(), 'Names', containers.Map()), ...
+                'ndi:setup:conv:haley:unregisteredLabel');
+        end
+
         function testObservations(testCase)
             % stage 9 (decision #59): one ambient temperature and one relative
             % humidity reading per filmed assay plate, by the probe, over the
@@ -1738,6 +1810,35 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             v = fread(fid, Inf, [precision '=>' precision]);
             fclose(fid);
             delete(tmp); delete(raw{1});
+        end
+
+        function root = freshFixture(testCase)
+            % a fixture of this test's own, removed after it
+            root = tempname;
+            mkdir(root);
+            testCase.addTeardown(@() rmdir(root, 's'));
+            ndi.unittest.setup.V2.TestHaleyRecordings.writeFixture(root);
+        end
+
+        function d = scratchDir(testCase)
+            % an empty folder of this test's own, removed after it
+            d = tempname;
+            mkdir(d);
+            testCase.addTeardown(@() rmdir(d, 's'));
+        end
+
+        function result = dryRun(testCase, root, more)
+            % the import over ROOT up to MORE, not written, so an error reaches
+            % the caller
+            arguments
+                testCase (1,1) ndi.unittest.setup.V2.TestHaleyWrite
+                root {mustBeText}
+                more = string.empty
+            end
+            result = ndi.setup.conv.haley.import_V2(root, ...
+                'Stages', ["sessions", "subjects", "acquisition", "relations", more], ...
+                'Sessions', "concentration_0001", 'OutputRoot', fullfile(root, 'haley_V2'), ...
+                'Write', false, 'ReadVideos', false);
         end
 
         function docs = documents(testCase, sessionPath)
