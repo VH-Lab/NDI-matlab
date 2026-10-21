@@ -529,8 +529,15 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             testCase.verifyEmpty(edge(prep{1}, 'formulation_id'));
             testCase.verifyEqual(prep{1}.statement.variable.node, 'PATO:0000025');
             testCase.verifyEqual(prep{1}.statement.variable.name, 'composition');
-            testCase.verifyEqual(edge(prep{1}, 'time_reference_id'), edge(obAll{1}, 'time_reference_id'), ...
-                'prepared on the seeding day, timed like the OD600');
+            testCase.verifyEmpty(edge(prep{1}, 'time_reference_id'), ...
+                'the assertion is timeless (decision #147)');
+            stockDoc = md{cellfun(@(d) strcmp(d.base.id, stockId), md)};
+            testCase.verifyEqual(edge(stockDoc, 'time_reference_id'), edge(obAll{1}, 'time_reference_id'), ...
+                'the solution existed from the seeding day, timed like the OD600 (decision #147)');
+            der = md(strcmp(mk, 'directed_relation') & cellfun(@(d) strcmp(edge(d, 'child_id'), dilId), md));
+            testCase.verifyNumElements(der, 1, 'the dilution derived_from its stock (decision #147)');
+            testCase.verifyEqual(edge(der{1}, 'parent_id'), stockId);
+            testCase.verifyEqual(der{1}.directed_relation.relation.node, 'RO:0001000');
             prep = aboutMd(dilId, 'formulation_assertion');
             testCase.verifyNumElements(prep, 1);
             testCase.verifyEqual(edge(prep{1}, 'value_id'), edge(seed{1}, 'formulation_id'), ...

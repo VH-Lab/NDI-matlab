@@ -12,15 +12,22 @@ function out = seedingDocuments(S, ids, sessionId, options)
 %
 %     entity             type material, local_identifier its formulation's
 %                        key, a name and description (and the note of a
-%                        correction applied to it, decision #111)
+%                        correction applied to it, decision #111); its own
+%                        time_reference_id the seeding day, when it existed
+%                        from its preparation (decision #147)
 %     formulation_assertion  what it was made to (decision #146, Jess
 %                        Haley 2026-10-21): an assertion about the solution
 %                        whose value is its formulation -- its PLAN (the
 %                        strain at target OD600 10; a dilution's target
 %                        fraction of the stock) -- through `value_id`, its own
 %                        value empty; variable composition (PATO:0000025);
-%                        no method (none is recorded); when: the seeding day.
-%                        Not a dose: nothing was given to the solution.
+%                        no method (none is recorded); timeless, as every
+%                        assertion is (decision #147: the day is on the
+%                        entity). Not a dose: nothing was given to the
+%                        solution.
+%     directed_relation  a dilution derived_from (RO:0001000) the stock
+%                        solution it was made from, that day's stock (decision
+%                        #147); when: the seeding day
 %     concentration_observation  the stock's MEASURED OD600 (`OD600Real`),
 %                        variable OD600 (MCO:0000059), in the `od600` canonical
 %                        with the source pair where the schema has it, method
@@ -53,7 +60,7 @@ function out = seedingDocuments(S, ids, sessionId, options)
 %                   'spectrophotometer_1')
 %
 %   OUT fields: documents (cell), ids (containers.Map, solution key -> entity
-%   id), counts (solutions, preparations, od600_observations,
+%   id), counts (solutions, preparations, derivations, od600_observations,
 %   cfu_observations, days), skipped
 %   (cellstr).
 %
@@ -68,7 +75,7 @@ end
 
 tz = 'America/Los_Angeles';
 out = struct('documents', {{}}, 'ids', containers.Map(), 'counts', struct('solutions', 0, ...
-    'preparations', 0, 'od600_observations', 0, 'cfu_observations', 0, 'days', 0), ...
+    'preparations', 0, 'derivations', 0, 'od600_observations', 0, 'cfu_observations', 0, 'days', 0), ...
     'skipped', {{}});
 if ~isfield(S, 'solutions') || isempty(S.solutions)
     return;
@@ -94,7 +101,8 @@ for k = 1:numel(S.solutions)
     % the solution
     f = struct('local_identifier', x.formulation, 'name', nameOf(x), ...
         'description', descriptionOf(x), 'type', did2.build.term('', 'material'));
-    ent = ndi.setup.V2.entityDocuments('subject', f, struct(), 'SessionId', sessionId, ...
+    ent = ndi.setup.V2.entityDocuments('subject', f, struct('time_reference_id', when), ...
+        'SessionId', sessionId, ...
         'Type', 'material');
     out.documents = [out.documents, reshape(ent, 1, [])];
     eid = ent{1}.base.id;
@@ -104,9 +112,22 @@ for k = 1:numel(S.solutions)
     % what it was made to: its formulation, its plan, as the solution's
     % composition (decision #146; an assertion, not a dose)
     out.documents{end+1} = did2.build.statement('formulation_assertion', eid, ...
-        haleyTerm('composition'), [], 'ValueId', ids(x.formulation), ...
-        'TimeReferenceIds', {when}, 'SessionId', sessionId);
+        haleyTerm('composition'), [], 'ValueId', ids(x.formulation), 'SessionId', sessionId);
     out.counts.preparations = out.counts.preparations + 1;
+
+    % a dilution was made from that day's stock solution (decision #147)
+    if strcmp(x.kind, 'dilution')
+        stockKey = [x.stock '#solution'];
+        if isKey(out.ids, stockKey)
+            out.documents{end+1} = did2.build.directedRelation(eid, out.ids(stockKey), ...
+                did2.build.term('RO:0001000', 'derived_from'), ...
+                'TimeReferenceIds', {when}, 'SessionId', sessionId);
+            out.counts.derivations = out.counts.derivations + 1;
+        else
+            out.skipped{end+1} = sprintf('%s: its stock %s was not built; no derived_from', ...
+                x.key, stockKey);
+        end
+    end
 
     % what was measured of it: the stock's OD600 and, on most days, its CFU
     if isnan(x.od)
@@ -131,9 +152,10 @@ for k = 1:numel(S.solutions)
     end
 end
 out.counts.days = double(dayRefs.Count);
-fprintf(['DENOMINATOR: %d seeding solution(s) -> %d entity(ies), %d preparation(s), %d measured ' ...
-    'OD600 and %d CFU observation(s), over %d seeding day(s)\n'], numel(S.solutions), ...
-    out.counts.solutions, out.counts.preparations, out.counts.od600_observations, ...
+fprintf(['DENOMINATOR: %d seeding solution(s) -> %d entity(ies), %d preparation(s), %d ' ...
+    'derived_from, %d measured OD600 and %d CFU observation(s), over %d seeding day(s)\n'], ...
+    numel(S.solutions), out.counts.solutions, out.counts.preparations, out.counts.derivations, ...
+    out.counts.od600_observations, ...
     out.counts.cfu_observations, out.counts.days);
 for j = 1:numel(out.skipped)
     fprintf('  skipped: %s\n', out.skipped{j});

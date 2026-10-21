@@ -234,6 +234,23 @@ classdef TestHaleySeeding < matlab.unittest.TestCase
                 'its value is its formulation, through value_id');
             testCase.verifyEqual(p1{1}.statement.variable.node, 'PATO:0000025', 'composition');
             testCase.verifyEmpty(edgeOf(p1{1}, 'formulation_id'), 'no dose edge');
+            testCase.verifyEmpty(edgeOf(p1{1}, 'time_reference_id'), ...
+                'an assertion is timeless (decision #147)');
+            e1 = sd.documents(cellfun(@(d) strcmp(d.base.id, sd.ids(x.key)), sd.documents));
+            testCase.verifyNotEmpty(edgeOf(e1{1}, 'time_reference_id'), ...
+                'the seeding day is on the solution entity (decision #147)');
+            % each dilution derived_from its stock solution (decision #147)
+            isDil = strcmp({testCase.S.solutions.kind}, 'dilution');
+            testCase.verifyGreaterThan(sum(isDil), 0);
+            testCase.verifyEqual(sd.counts.derivations, sum(isDil));
+            rel = sd.documents(strcmp(leaf, 'directed_relation'));
+            testCase.verifyNumElements(rel, sum(isDil));
+            dx = testCase.S.solutions(find(isDil, 1));
+            r1 = rel(cellfun(@(d) strcmp(edgeOf(d, 'child_id'), sd.ids(dx.key)), rel));
+            testCase.verifyNumElements(r1, 1);
+            testCase.verifyEqual(edgeOf(r1{1}, 'parent_id'), sd.ids([dx.stock '#solution']), ...
+                'derived from its stock solution');
+            testCase.verifyEqual(r1{1}.directed_relation.relation.node, 'RO:0001000');
             stocks = sum(strcmp({testCase.S.solutions.kind}, 'stock'));
             testCase.verifyEqual(sd.counts.od600_observations, stocks, 'one per measured stock');
             testCase.verifyEqual(sd.counts.days, numel(unique(dateshift([testCase.S.solutions.day], ...
