@@ -1535,8 +1535,8 @@ function [convertResult, report] = resolveSliceTetanus(convertResult, bodies, ..
         end
         out{end+1} = d; %#ok<AGROW>
     end
-    report.reattributions_applied = replacedById.Count;
-    report.removals_applied = removed.Count;
+    report.reattributions_applied = double(replacedById.Count);
+    report.removals_applied = double(removed.Count);
     convertResult.migrated = out;
     convertResult.summary = recountSummary(convertResult);
     report.folded = true;

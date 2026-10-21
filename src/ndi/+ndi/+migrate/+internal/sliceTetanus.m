@@ -167,7 +167,7 @@ for k = 1:numel(v1Bodies)
             end
     end
 end
-report.treatment_target_locations = treatRegion.Count;
+report.treatment_target_locations = double(treatRegion.Count);
 report.approach_labels = numel(labelIds);
 report.stimulus_bath_documents = numel(bathIds);
 
@@ -218,10 +218,10 @@ for j = 1:numel(bathIds)
     end
     epochSlice(key) = sk;
 end
-report.slices = sliceStim.Count;
+report.slices = double(sliceStim.Count);
 report.epochs_on_a_nested_date = cnt('epochs_on_a_nested_date');
 report.nested_dates_not_in_animal_id = cnt('nested_dates_not_in_animal_id');
-report.new_animals = newAnimalLid.Count;
+report.new_animals = double(newAnimalLid.Count);
 
 % ======================= migrated indices ==============================
 n = numel(structs);
@@ -338,7 +338,7 @@ for i = 1:numel(ss)
         end
     end
 end
-report.slice_elements = elementSlices.Count;
+report.slice_elements = double(elementSlices.Count);
 
 replacedPos = [];
 for k = 1:n
