@@ -125,9 +125,9 @@ for k = 1:numel(S.solutions)
     end
     if hasOD
         v = did2.build.valueCell('concentration', x.od, 'Canonical', 'od600', 'SourceValue', x.od, ...
-            'SourceUnit', 'OD600');
+            'SourceUnit', ndi.setup.V2.sourceUnit('OD600'));
     else
-        v = did2.build.valueCell('concentration', x.od, 'Canonical', 'source_value', 'SourceUnit', 'OD600');
+        v = did2.build.valueCell('concentration', x.od, 'Canonical', 'source_value', 'SourceUnit', ndi.setup.V2.sourceUnit('OD600'));
     end
     args = {};
     if ~isempty(instrument), args = {'InstrumentId', instrument}; end
@@ -138,7 +138,7 @@ for k = 1:numel(S.solutions)
     if ~isnan(x.cfu)
         % the lab code's conversion: CFU x 2e7 per mL (decision #57)
         c = did2.build.valueCell('concentration', x.cfu * 2e10, 'Canonical', 'particles_per_liter', ...
-            'SourceValue', x.cfu * 2e7, 'SourceUnit', 'CFU/mL');
+            'SourceValue', x.cfu * 2e7, 'SourceUnit', ndi.setup.V2.sourceUnit('CFU/mL'));
         out.documents{end+1} = did2.build.statement('concentration_observation', eid, ...
             haleyTerm('cell density'), c, 'Method', haleyTerm('viable cell count'), ...
             'TimeReferenceIds', {when}, 'SessionId', sessionId);

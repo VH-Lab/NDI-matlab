@@ -84,7 +84,7 @@ classdef TestHaleySeeding < matlab.unittest.TestCase
             testCase.verifyFalse(isfield(g.concentration, 'particles_per_liter'), ...
                 'the measured CFU is an observation of the solution, not its plan (decision #129)');
             testCase.verifyEqual(g.concentration.source_value, 10, 'the plan: target OD600 10');
-            testCase.verifyEqual(g.concentration.source_unit, 'OD600');
+            testCase.verifyEqual(g.concentration.source_unit, ndi.setup.V2.sourceUnit('OD600'));
             if ndi.setup.V2.schemaHasField('concentration', 'value.od600')
                 testCase.verifyEqual(g.concentration.od600, 10, 'the od600 canonical');
             else
@@ -157,7 +157,7 @@ classdef TestHaleySeeding < matlab.unittest.TestCase
             testCase.verifyEmpty(sx.note);
             testCase.verifyEqual(x.ingredients{1}.ingredient, 'OP50');
             testCase.verifyEqual(x.ingredients{1}.concentration.source_value, 1);
-            testCase.verifyEqual(x.ingredients{1}.concentration.source_unit, 'OD600');
+            testCase.verifyEqual(x.ingredients{1}.concentration.source_unit, ndi.setup.V2.sourceUnit('OD600'));
             if ndi.setup.V2.schemaHasField('concentration', 'value.od600')
                 testCase.verifyEqual(x.ingredients{1}.concentration.od600, 1, 'the nominal OD600');
             end
@@ -259,7 +259,7 @@ classdef TestHaleySeeding < matlab.unittest.TestCase
                     'the colonies were not counted with the spectrophotometer');
                 c = ndi.v2.blockOf(cd{1}, 'concentration', 'value');
                 if iscell(c), c = c{1}; end
-                testCase.verifyEqual(c(1).source_unit, 'CFU/mL');
+                testCase.verifyEqual(c(1).source_unit, ndi.setup.V2.sourceUnit('CFU/mL'));
                 testCase.verifyEqual(c(1).particles_per_liter, 1000 * c(1).source_value, 'RelTol', 1e-12, ...
                     'per mL -> per L');
                 od = ob(strcmp(node, 'MCO:0000059'));

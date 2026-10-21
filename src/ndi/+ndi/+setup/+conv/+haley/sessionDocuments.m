@@ -351,11 +351,11 @@ if ~isImage
     nf = r.n_frames; fr = r.frame_rate;
     if ~isempty(ft)
         k{end+1} = did2.build.key(haleyTerm('time'), numel(ft), 'Unit', haleyTerm('second'), 'Values', ft(:)', ...
-            'SourceUnit', 'frame', 'SourceValues', 0:numel(ft) - 1);
+            'SourceUnit', ndi.setup.V2.sourceUnit('frame'), 'SourceValues', 0:numel(ft) - 1);
     else
         if ~(nf > 0 && fr > 0), return; end
         k{end+1} = did2.build.key(haleyTerm('time'), nf, 'Unit', haleyTerm('second'), 'Origin', 0, 'Spacing', 1 / fr, ...
-            'SourceUnit', 'frame', 'SourceOrigin', 0, 'SourceSpacing', 1);
+            'SourceUnit', ndi.setup.V2.sourceUnit('frame'), 'SourceOrigin', 0, 'SourceSpacing', 1);
     end
 end
 keys = did2.build.list(k{:});

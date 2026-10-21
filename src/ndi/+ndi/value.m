@@ -18,7 +18,8 @@ classdef value
     %                  fit, ...); double(v) is the same for numbers
     %   terms        - a term-valued value's terms, as ndi.term objects
     %   unit         - the canonical unit's field name, e.g. 'meters'
-    %   source       - table: source_value, source_unit (as the lab wrote it)
+    %   source       - table: source_value, source_unit (as the lab wrote it; on a
+    %                  schema where source_unit is a term, the term's name)
     %   tolerance    - [minus plus] per value, in the canonical unit
     %   approximate  - true per value that is approximate
     %   axes         - table of the value's keys (what each dimension indexes)
@@ -121,7 +122,7 @@ classdef value
             for i = 1:numel(r)
                 if ~ok, break; end
                 if isfield(r, 'source_value'), source_value(i) = double(firstOr(r(i).source_value, NaN)); end
-                if isfield(r, 'source_unit'), source_unit(i) = string(r(i).source_unit); end
+                if isfield(r, 'source_unit'), source_unit(i) = string(ndi.v2.termName(r(i).source_unit)); end
             end
             T = table(source_value, source_unit);
         end

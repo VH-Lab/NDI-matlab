@@ -66,7 +66,7 @@ classdef (Abstract) interaction < ndi.statement
                 x = m{i};
                 variable(end+1, 1) = string(ndi.v2.termName(fieldOf(x, 'variable'))); %#ok<AGROW>
                 unit(end+1, 1) = string(ndi.v2.termName(fieldOf(x, 'unit'))); %#ok<AGROW>
-                source_unit(end+1, 1) = string(char(fieldOf(x, 'source_unit'))); %#ok<AGROW>
+                source_unit(end+1, 1) = string(ndi.v2.termName(fieldOf(x, 'source_unit'))); %#ok<AGROW>
                 [v, sv] = ndi.v2.entryValue(x);
                 value{end+1, 1} = v; %#ok<AGROW>
                 source_value(end+1, 1) = sv; %#ok<AGROW>

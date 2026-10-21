@@ -53,8 +53,12 @@ function out = manipulationDocuments(session, S, subjectIds, options)
 %                        (worm picking; agar plug transfer; onto the assay
 %                        plate agar plug transfer or eyelash picking, from the
 %                        transfer protocol, with the cleaning step through an
-%                        empty NGM plate and any S-Complete droplet as method
-%                        parameters).
+%                        empty NGM plate as a method parameter).
+%     droplet            dose_manipulation of the cohort, at the assay
+%                        transfer's time, when the transfer's rule names a
+%                        droplet (eyelash picking into S-Complete): formulation_id
+%                        the droplet's formulation, no amount, variable its
+%                        formulation type, no method (decision #132, option c).
 %     food deprivation   term_manipulation food availability (ZECO:0000113)
 %                        = fasting (ZECO:0000114) at the food deprivation
 %                        window; no method.
@@ -117,7 +121,7 @@ end
 docs = {};
 out = struct('documents', {{}}, 'skipped', {{}}, 'counts', struct('pour', 0, ...
     'seed_patch', 0, 'seed_acclimation_patch', 0, 'temperature', 0, 'transfer', 0, ...
-    'food_deprivation', 0, 'developmental_stage', 0), 'seedIds', containers.Map());
+    'food_deprivation', 0, 'developmental_stage', 0, 'droplet', 0), 'seedIds', containers.Map());
 
 % ---- plates ------------------------------------------------------------------
 plateKinds = {'assay_plate', 'acclimation_plate', 'food_deprivation_plate', 'plate'};
@@ -250,11 +254,15 @@ for k = cohorts
     end
     method = '';
     params = [];
+    dropletKey = '';
     if isKey(spans, assay)
         span = spans(assay);
-        [method, params] = assayMethod(span.method);
+        [method, params, dropletKey] = assayMethod(span.method);
     end
     move(cid, assay, 'assay plate', method, params);
+    if ~isempty(dropletKey)
+        droplet(cid, assay, dropletKey);
+    end
 end
 
 out.documents = docs;
@@ -287,7 +295,7 @@ out.documents = docs;
         docs{end+1} = d;
         refId = d.base.id;
         v = did2.build.composite('temperature_manipulation', 'value', struct('celsius', celsius, ...
-            'source_value', celsius, 'source_unit', 'C', 'approximate', true));
+            'source_value', celsius, 'source_unit', ndi.setup.V2.sourceUnit('C'), 'approximate', true));
         statement('temperature_manipulation', subject, haleyTerm(cfg.temperature.variable), v, refId, ...
             struct('Notes', note, 'Method', method), 'temperature');
     end
@@ -318,11 +326,20 @@ out.documents = docs;
             cfg.seed.method, note, 'seed_acclimation_patch');
     end
 
-    function dose(subject, variable, amount, unit, formulationKey, timeId, method, notes, counter)
-        scale = struct('uL', 1e-6, 'mL', 1e-3);
-        v = did2.build.composite('dose_manipulation', 'value', struct('volume', ...
-            struct('liters', amount * scale.(unit), 'source_value', amount, 'source_unit', unit)));
+    function dose(subject, variable, amount, unit, formulationKey, timeId, method, notes, counter, fields)
+        % AMOUNT empty: a dose with no amount recorded (its value is left out)
+        if isempty(amount)
+            v = [];
+        else
+            scale = struct('uL', 1e-6, 'mL', 1e-3);
+            v = did2.build.composite('dose_manipulation', 'value', struct('volume', ...
+                struct('liters', amount * scale.(unit), 'source_value', amount, ...
+                'source_unit', ndi.setup.V2.sourceUnit(unit))));
+        end
         x = struct('Method', method, 'Notes', notes, 'Edges', struct());
+        if nargin >= 10
+            x.Fields = fields;
+        end
         % a dose names what was given: did-schema requires dose.formulation_id
         % (#73 item 59), so a dose whose suspension is not known is not built
         % and is reported (a day with no measured solution gets an
@@ -357,10 +374,13 @@ out.documents = docs;
             haleyTerm(value), refs(moveKey), x, 'transfer');
     end
 
-    function [method, params] = assayMethod(protocolMethod)
+    function [method, params, dropletKey] = assayMethod(protocolMethod)
         % the transfer protocol's method -> the last step, plus the cleaning
-        % step every assay transfer went through
+        % step every assay transfer went through; and the formulation key of
+        % the droplet the worms were released in, when the rule has one (it
+        % is its own dose, decision #132 option c, not a method parameter)
         method = '';
+        dropletKey = '';
         params = did2.build.parameter(haleyTerm('cleaning step'), 'Text', cfg.transfer.cleaning);
         rules = cfg.transfer.assay_methods;
         if isstruct(rules), rules = num2cell(rules); end
@@ -368,12 +388,27 @@ out.documents = docs;
             if contains(protocolMethod, rules{r}.contains)
                 method = rules{r}.method;
                 if isfield(rules{r}, 'droplet')
-                    params = did2.build.list(params, ...
-                        did2.build.parameter(haleyTerm('droplet'), 'Term', nameOf(rules{r}.droplet)));
+                    dropletKey = rules{r}.droplet;
                 end
                 return;
             end
         end
+    end
+
+    function droplet(cohort, plate, formulationKey)
+        % the droplet the worms were released in on the assay plate (decision
+        % #132, option c, Jess Haley 2026-10-21): a dose_manipulation of the
+        % cohort, at the transfer's time, formulation_id the droplet's
+        % formulation (S-Complete), no amount (none was recorded). Variable:
+        % what was given, the formulation's type, as for a pour (no other dose
+        % in this import is given to animals); no method. A move with no time
+        % has no transfer and no droplet (move reports it).
+        moveKey = [plate '|' cohort];
+        if ~isKey(refs, moveKey)
+            return;
+        end
+        dose(cohort, nameOf(formulationKey), [], '', formulationKey, refs(moveKey), '', '', ...
+            'droplet', eachMember);
     end
 
     function statement(leaf, subject, variable, value, timeId, x, counter)

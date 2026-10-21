@@ -608,7 +608,7 @@ medium = 'nematode growth medium';
 if ~strcmp(q.peptone, 'with'), medium = 'nematode growth medium without peptone'; end
 parts = {did2.build.condition(haleyTerm('culture medium'), 'Term', haleyTerm(medium)), ...
     did2.build.condition(haleyTerm('bacterial patch volume'), 'Quantity', q.volume * 1e-6, ...
-        'Unit', haleyTerm('liter'), 'SourceValue', q.volume, 'SourceUnit', 'uL'), ...
+        'Unit', haleyTerm('liter'), 'SourceValue', q.volume, 'SourceUnit', ndi.setup.V2.sourceUnit('uL')), ...
     growthGroupCondition(q.growth)};
 if strcmp(q.kind, 'single')
     % the OD600 the patches were seeded at: the planned value, named so by its
@@ -627,7 +627,7 @@ arguments
     h (1,1) double
 end
 c = did2.build.condition(haleyTerm('target bacteria growth duration after seeding'), ...
-    'Quantity', h * 3600, 'Unit', haleyTerm('second'), 'SourceValue', h, 'SourceUnit', 'h');
+    'Quantity', h * 3600, 'Unit', haleyTerm('second'), 'SourceValue', h, 'SourceUnit', ndi.setup.V2.sourceUnit('h'));
 end
 
 function [L, checks] = correctPeptone(L, corrections, checks)
@@ -832,8 +832,8 @@ arguments
 end
 if ndi.setup.V2.schemaHasField('concentration', 'value.od600')
     v = did2.build.valueCell('concentration', x, 'Canonical', 'od600', 'SourceValue', x, ...
-        'SourceUnit', 'OD600');
+        'SourceUnit', ndi.setup.V2.sourceUnit('OD600'));
 else
-    v = did2.build.valueCell('concentration', x, 'Canonical', 'source_value', 'SourceUnit', 'OD600');
+    v = did2.build.valueCell('concentration', x, 'Canonical', 'source_value', 'SourceUnit', ndi.setup.V2.sourceUnit('OD600'));
 end
 end

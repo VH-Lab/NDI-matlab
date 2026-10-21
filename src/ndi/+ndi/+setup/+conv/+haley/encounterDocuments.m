@@ -447,21 +447,21 @@ function v = speed(x)
 arguments
     x
 end
-v = did2.build.valueCell('velocity', x(:)' * 1e-6, 'SourceValue', x(:)', 'SourceUnit', 'um/s');
+v = did2.build.valueCell('velocity', x(:)' * 1e-6, 'SourceValue', x(:)', 'SourceUnit', ndi.setup.V2.sourceUnit('um/s'));
 end
 
 function v = accel(x)
 arguments
     x
 end
-v = did2.build.valueCell('acceleration', x(:)' * 1e-6, 'SourceValue', x(:)', 'SourceUnit', 'um/s^2');
+v = did2.build.valueCell('acceleration', x(:)' * 1e-6, 'SourceValue', x(:)', 'SourceUnit', ndi.setup.V2.sourceUnit('um/s^2'));
 end
 
 function v = mm(x)
 arguments
     x
 end
-v = did2.build.valueCell('length', x(:)' * 1e-3, 'SourceValue', x(:)', 'SourceUnit', 'mm');
+v = did2.build.valueCell('length', x(:)' * 1e-3, 'SourceValue', x(:)', 'SourceUnit', ndi.setup.V2.sourceUnit('mm'));
 end
 
 function v = prob(x)

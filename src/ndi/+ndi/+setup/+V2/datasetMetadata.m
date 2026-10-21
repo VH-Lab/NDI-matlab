@@ -282,7 +282,7 @@ if ~strcmp(options.Studies, 'only')
         if isfield(c, 'product')
             edges.product_id = idOf(state, c.product, {'product'});
         end
-        state = add(state, 'chemical', c.key, struct('value', v), edges);
+        state = add(state, 'chemical', c.key, struct('value', withSourceUnits(v)), edges);
     end
     formulationHasType = ndi.setup.V2.schemaHasField('formulation', 'value.type');
     for e = entries(spec, 'formulations')
@@ -320,7 +320,7 @@ if ~strcmp(options.Studies, 'only')
         if isfield(c, 'product')
             edges.product_id = idOf(state, c.product, {'product'});
         end
-        state = add(state, 'formulation', c.key, struct('value', v), edges);
+        state = add(state, 'formulation', c.key, struct('value', withSourceUnits(v)), edges);
         for t = asCell(getOr(c, 'documented_by', {}))
             state = relate(state, c.key, t{1}, 'documented_by', {'formulation'}, {'web_resource'});
         end
@@ -490,6 +490,31 @@ if isfield(s, name)
     v = s.(name);
 else
     v = default;
+end
+end
+
+function x = withSourceUnits(x)
+% every `source_unit` the spec spells ('mg', 'g/L', 'pH') in the shape the
+% schema in use declares: unchanged on did-schema main, the unit's registered
+% term where source_unit is a term (ndi.setup.V2.sourceUnit; did-schema
+% V_eta_source_unit_plan.md)
+arguments
+    x
+end
+if iscell(x)
+    x = cellfun(@withSourceUnits, x, 'UniformOutput', false);
+elseif isstruct(x)
+    fn = fieldnames(x);
+    for i = 1:numel(x)
+        for j = 1:numel(fn)
+            y = x(i).(fn{j});
+            if strcmp(fn{j}, 'source_unit') && (ischar(y) || (isstring(y) && isscalar(y)))
+                x(i).(fn{j}) = ndi.setup.V2.sourceUnit(y);
+            else
+                x(i).(fn{j}) = withSourceUnits(y);
+            end
+        end
+    end
 end
 end
 

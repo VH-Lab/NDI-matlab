@@ -256,7 +256,7 @@ end
             return;
         end
         n = numel(out.documents);
-        v = did2.build.valueCell('length', mm * 1e-3, 'SourceValue', mm, 'SourceUnit', 'mm');
+        v = did2.build.valueCell('length', mm * 1e-3, 'SourceValue', mm, 'SourceUnit', ndi.setup.V2.sourceUnit('mm'));
         out = assert1(out, subject, 'length_assertion', haleyTerm(name), v, struct(), ...
             struct(), counter, '', asTarget);
         if numel(out.documents) > n

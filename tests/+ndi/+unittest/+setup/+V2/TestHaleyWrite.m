@@ -481,7 +481,7 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
                 testCase.verifyEqual(d{1}.statement.variable.node, 'PATO:0001334');
                 testCase.verifyEqual(d{1}.length.value(1).meters, 1.5e-3, 'AbsTol', 1e-12);
                 testCase.verifyEqual(d{1}.length.value(1).source_value, 1.5, 'AbsTol', 1e-12);
-                testCase.verifyEqual(d{1}.length.value(1).source_unit, 'mm');
+                testCase.verifyEqual(d{1}.length.value(1).source_unit, ndi.setup.V2.sourceUnit('mm'));
                 c = entries(d{1}.statement.conditions);
                 c = [c{:}];
                 testCase.verifyNumElements(c, 1);
@@ -530,6 +530,8 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             testCase.verifyEqual(c.transfer, 4 + 1 + 3, ['each cohort onto its acclimation ' ...
                 'plate, plate 14''s onto its food deprivation plate, the 3 filmed plates'' assay transfers']);
             testCase.verifyEqual(c.food_deprivation, 1);
+            testCase.verifyEqual(c.droplet, 0, ...
+                'concentration''s assay transfers are agar plugs: no droplet (decision #132)');
             testCase.verifyTrue(any(contains(result.subjectChecks.roomTempLooksEstimated, ...
                 'concentration_assayPlate0012')), 'plate 12''s timeRoomTemp is recording - 1 h');
 
@@ -623,7 +625,7 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
                 cv = entries(ndi.v2.blockOf(cfu{1}, 'concentration', 'value'));
                 testCase.verifyEqual(cv{1}.particles_per_liter, 500 * 2e10, 'RelTol', 1e-12);
                 testCase.verifyEqual(cv{1}.source_value, 500 * 2e7, 'RelTol', 1e-12);
-                testCase.verifyEqual(cv{1}.source_unit, 'CFU/mL');
+                testCase.verifyEqual(cv{1}.source_unit, ndi.setup.V2.sourceUnit('CFU/mL'));
                 testCase.verifyEmpty(edge(cfu{1}, 'instrument_id'), 'counted on a plate');
                 testCase.verifyEqual(edge(cfu{1}, 'time_reference_id'), edge(ob{1}, 'time_reference_id'), ...
                     'timed like the OD600: the seeding day');
@@ -652,6 +654,8 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             mp = toAssay{1}.interaction.method_parameters;
             if iscell(mp), mp = [mp{:}]; end
             testCase.verifyTrue(any(arrayfun(@(q) strcmp(q.variable.name, 'cleaning step'), mp)));
+            testCase.verifyFalse(any(arrayfun(@(q) strcmp(q.variable.name, 'droplet'), mp)), ...
+                'a droplet is a dose of the cohort, not a method parameter (decision #132)');
             dr = docs(strcmp(classes, 'directed_relation'));
             rel = dr(cellfun(@(r) strcmp(edge(r, 'child_id'), idOf('concentration_assayPlate0012_worms')) ...
                 && strcmp(edge(r, 'parent_id'), idOf('concentration_assayPlate0012')), dr));
@@ -668,6 +672,96 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             toDep = toDep(cellfun(@(d) strcmp(d.term.value.name, 'food deprivation plate'), toDep));
             testCase.verifyNumElements(toDep, 1);
             testCase.verifyEqual(toDep{1}.interaction.method.name, 'agar plug transfer');
+        end
+
+        function testTheDropletIsADoseOfTheCohort(testCase)
+            % decision #132, option c (Jess Haley, 2026-10-21): worms eyelash-
+            % picked into an S-Complete droplet get that droplet as its own
+            % dose_manipulation of the cohort, at the transfer's time,
+            % formulation_id the s_complete formulation, no amount, and the
+            % transfer carries no `droplet` method parameter. The fixture's
+            % concentration plates are agar plugs, so a spec copy gives
+            % foragingConcentration the eyelash rule.
+            specFile = fullfile(fileparts(which('ndi.setup.conv.haley.import_V2')), 'import_V2_spec.json');
+            raw = fileread(specFile);
+            raw2 = regexprep(raw, ...
+                '("source_folder":\s*"foragingConcentration",\s*"method":\s*)"[^"]*"', ...
+                '$1"eyelash pick into an S-Complete droplet"', 'once');
+            testCase.assertNotEqual(raw2, raw, 'the spec copy names the eyelash rule');
+            out = tempname;
+            mkdir(out);
+            testCase.addTeardown(@() rmdir(out, 's'));
+            spec = fullfile(out, 'spec.json');
+            fid = fopen(spec, 'w', 'n', 'UTF-8');
+            fwrite(fid, raw2, 'char');
+            fclose(fid);
+            result = ndi.setup.conv.haley.import_V2(testCase.Root, ...
+                'Stages', ["sessions", "subjects", "acquisition", "relations", "metadata", ...
+                "assertions", "manipulations"], 'Sessions', "concentration_0001", 'Spec', spec, ...
+                'OutputRoot', fullfile(out, 'haley_V2'), 'Write', true, 'Overwrite', true, ...
+                'ReadVideos', false);
+            c = result.written{1}.manipulations.counts;
+            testCase.verifyEqual(c.droplet, c.transfer - 4 - 1, ...
+                'one droplet per assay transfer (not the acclimation or food deprivation moves)');
+            testCase.verifyEqual(c.droplet, 3, 'the 3 filmed plates'' assay transfers');
+
+            docs = testCase.documents(result.sessions.path{1});
+            classes = cellfun(@(d) d.document_class.class_name, docs, 'UniformOutput', false);
+            subj = docs(strcmp(classes, 'subject'));
+            idOf = containers.Map(cellfun(@(d) d.subject.local_identifier, subj, 'UniformOutput', false), ...
+                cellfun(@(d) d.base.id, subj, 'UniformOutput', false));
+            on = @(set, local) set(cellfun(@(a) strcmp(edge(a, 'entity_id'), idOf(local)), set));
+            dm = on(docs(strcmp(classes, 'dose_manipulation')), 'concentration_assayPlate0012_worms');
+            testCase.verifyNumElements(dm, 1, 'one droplet dose of plate 12''s cohort');
+            testCase.verifyEqual(edge(dm{1}, 'formulation_id'), result.metadata.ids('s_complete'), ...
+                'the droplet is the s_complete formulation');
+            testCase.verifyTrue(~isfield(dm{1}, 'dose') || ~isfield(dm{1}.dose, 'value') ...
+                || isempty(dm{1}.dose.value) || isempty(fieldnames(dm{1}.dose.value)), ...
+                'no amount was recorded');
+            testCase.verifyEqual(dm{1}.statement.variable.node, 'EMPTY:0000266', ...
+                'the variable is what was given: the formulation''s type (S medium)');
+            testCase.verifyEqual(methodOf(dm{1}), '', 'no method');
+            tmn = on(docs(strcmp(classes, 'term_manipulation')), 'concentration_assayPlate0012_worms');
+            toAssay = tmn(cellfun(@(d) strcmp(d.term.value.name, 'assay plate'), tmn));
+            testCase.verifyNumElements(toAssay, 1);
+            testCase.verifyEqual(toAssay{1}.interaction.method.name, 'eyelash picking');
+            testCase.verifyEqual(edge(dm{1}, 'time_reference_id'), edge(toAssay{1}, 'time_reference_id'), ...
+                'the droplet is at the transfer''s time');
+            mp = toAssay{1}.interaction.method_parameters;
+            if iscell(mp), mp = [mp{:}]; end
+            testCase.verifyFalse(any(arrayfun(@(q) strcmp(q.variable.name, 'droplet'), mp)), ...
+                'the transfer carries no droplet parameter');
+            testCase.verifyTrue(any(arrayfun(@(q) strcmp(q.variable.name, 'cleaning step'), mp)));
+        end
+
+        function testSourceUnitsAreRegisteredTermsWhereTheSchemaSaysSo(testCase)
+            % did-schema V_eta_source_unit_plan.md (signed 2026-10-21): where a
+            % value's source_unit is a term (ndi.v2.sourceUnitIsTerm) the import
+            % writes the unit's registered term; on did-schema main, the text
+            u = ndi.setup.V2.sourceUnit({'mm', 'pixel', 'frame', 'h', 'uL', 'um/s', 'um/s^2', ...
+                'CFU/mL', 'OD600'});
+            if ~ndi.v2.sourceUnitIsTerm()
+                testCase.verifyEqual(u, {'mm', 'pixel', 'frame', 'h', 'uL', 'um/s', 'um/s^2', ...
+                    'CFU/mL', 'OD600'}, 'on the char shape the spelling is written unchanged');
+                return;
+            end
+            nodes = cellfun(@(t) t.node, u, 'UniformOutput', false);
+            names = cellfun(@(t) t.name, u, 'UniformOutput', false);
+            testCase.verifyEqual(nodes, {'om:millimetre', 'om:pixel', 'EMPTY:0000260', 'om:hour', ...
+                'om:microlitre', 'om:micrometrePerSecond-Time', 'om:micrometrePerSecond-TimeSquared', ...
+                'NCIT:C68902', 'NCIT:C73686'});
+            testCase.verifyEqual(names, {'millimetre', 'pixel', 'frame', 'hour', 'microlitre', ...
+                'micrometre per second', 'micrometre per second squared', ...
+                'Colony Forming Unit per Milliliter', 'Absorbance Unit'});
+            if ~isempty(which('did2.schema.termIndex')) && did2.schema.termIndex().present
+                for k = 1:numel(u)
+                    [tf, why] = did2.schema.termRegistered(u{k}, did2.schema.termIndex());
+                    testCase.verifyTrue(tf, sprintf('%s: %s', names{k}, why));
+                end
+            end
+            x = ndi.setup.V2.sourceUnit('furlongs');
+            testCase.verifyEqual(x, did2.build.term('', 'furlongs'), ...
+                'a spelling with no decided term keeps its spelling as the name (plan item 4)');
         end
 
         function testObservations(testCase)
@@ -788,7 +882,7 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             radius = about('length_calculation', 'radius');
             testCase.verifyNumElements(radius, 1);
             testCase.verifyEqual(radius{1}.statement.variable.node, 'PATO:0002390');
-            testCase.verifyEqual(radius{1}.length.value(1).source_unit, 'pixel');
+            testCase.verifyEqual(radius{1}.length.value(1).source_unit, ndi.setup.V2.sourceUnit('pixel'));
             circ = about('score_calculation', 'circularity');
             testCase.verifyEqual(circ{1}.statement.variable.node, 'EMPTY:0000288');
             testCase.verifyEqual(circ{1}.score.value(1).score, 0.9, 'AbsTol', 1e-12);
@@ -1490,8 +1584,9 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             testCase.verifyEqual(r12{1}.statement.variable.node, 'EMPTY:0000322');
             testCase.verifyEqual(numbers(r12{1}.concentration.value, 'source_value'), ...
                 10 * (94 / 300 + [74 80] / 3000) / 2.5, 'AbsTol', 1e-12);
-            testCase.verifyEqual(unique(cellfun(@(e) e.source_unit, entries(r12{1}.concentration.value), ...
-                'UniformOutput', false)), {'OD600'});
+            testCase.verifyEqual(unique(cellfun(@(e) ndi.v2.termName(e.source_unit), ...
+                entries(r12{1}.concentration.value), 'UniformOutput', false)), ...
+                {ndi.v2.termName(ndi.setup.V2.sourceUnit('OD600'))});
             if ndi.setup.V2.schemaHasField('concentration', 'value.od600')
                 testCase.verifyEqual(numbers(r12{1}.concentration.value, 'od600'), ...
                     10 * (94 / 300 + [74 80] / 3000) / 2.5, 'AbsTol', 1e-12, 'in the od600 canonical');

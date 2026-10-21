@@ -280,7 +280,8 @@ classdef statement
             %
             % One row per condition: variable, value (a number in `unit`, a
             % count, a term's name, or text), unit, source_value (the number
-            % as the source wrote it, "" otherwise), source_unit.
+            % as the source wrote it, "" otherwise), source_unit (the unit's
+            % name where the schema stores it as a term).
             c = ndi.v2.blockOf(obj.document_properties(), 'statement', 'conditions', []);
             c = ndi.v2.entries(c);
             variable = strings(0, 1); value = cell(0, 1); unit = strings(0, 1);
@@ -289,7 +290,7 @@ classdef statement
                 x = c{i};
                 variable(end+1, 1) = string(ndi.v2.termName(fieldOr(x, 'variable', ''))); %#ok<AGROW>
                 unit(end+1, 1) = string(ndi.v2.termName(fieldOr(x, 'unit', ''))); %#ok<AGROW>
-                source_unit(end+1, 1) = string(fieldOr(x, 'source_unit', '')); %#ok<AGROW>
+                source_unit(end+1, 1) = string(ndi.v2.termName(fieldOr(x, 'source_unit', ''))); %#ok<AGROW>
                 [v, sv] = ndi.v2.entryValue(x);
                 value{end+1, 1} = v; %#ok<AGROW>
                 source_value(end+1, 1) = sv; %#ok<AGROW>
