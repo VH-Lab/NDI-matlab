@@ -38,6 +38,10 @@ jobs:
   eta-migrate:
     name: V_eta migrate assemblers (fast)
     runs-on: ubuntu-latest
+    env:
+      # did-schema PR #88 and DID-matlab PR #218 (main and V2 once they merge)
+      DID_SCHEMA_REF: claude/ecstatic-pascal-md91fw
+      DID_MATLAB_REF: claude/ecstatic-pascal-md91fw
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
@@ -57,19 +61,50 @@ jobs:
       # THE STIMULUS FOLD BUILDS WITH did2.build ON did-schema #88, so its
       # tests need both (the step after the main one). did-schema PR #88 and
       # DID-matlab PR #218; point both at main / V2 once they merge.
+      - name: Resolve cross-repo refs (print them; fail if one is missing)
+        # A requested ref that does not exist must STOP the run, never fall back
+        # to a default branch: a run against the wrong did-schema / DID-matlab
+        # reads exactly like a run against the right one. Each ref is resolved
+        # to a commit here, the checkouts below use that commit, and the log
+        # says which commit every later step measured.
+        run: |
+          set -euo pipefail
+          resolve() {  # <owner/repo> <ref> <env var for the sha>
+            local sha
+            sha=$(git ls-remote "https://github.com/$1.git" "refs/heads/$2" "refs/tags/$2^{}" "refs/tags/$2" | head -1 | cut -f1)
+            if [ -z "$sha" ] && [[ "$2" =~ ^[0-9a-f]{40}$ ]]; then sha="$2"; fi
+            if [ -z "$sha" ]; then
+              echo "::error::$1 has no branch, tag or commit '$2'. Refusing to fall back to any other ref."
+              exit 1
+            fi
+            echo "RESOLVED: $1 @ $2 = $sha"
+            echo "$3=$sha" >> "$GITHUB_ENV"
+          }
+          resolve Waltham-Data-Science/did-schema "$DID_SCHEMA_REF" DID_SCHEMA_SHA
+          resolve VH-Lab/DID-matlab "$DID_MATLAB_REF" DID_MATLAB_SHA
+
       - name: Check out did-schema (#88)
         uses: actions/checkout@v4
         with:
           repository: Waltham-Data-Science/did-schema
-          ref: claude/ecstatic-pascal-md91fw
+          ref: ${{ env.DID_SCHEMA_SHA }}
           path: did-schema
 
       - name: Check out DID-matlab (#218)
         uses: actions/checkout@v4
         with:
           repository: VH-Lab/DID-matlab
-          ref: claude/ecstatic-pascal-md91fw
+          ref: ${{ env.DID_MATLAB_SHA }}
           path: did-matlab
+
+      - name: Print the checked-out cross-repo commits
+        run: |
+          set -euo pipefail
+          s=$(git -C did-schema rev-parse HEAD); d=$(git -C did-matlab rev-parse HEAD)
+          echo "CHECKED OUT: did-schema ${DID_SCHEMA_REF} = ${s}"
+          echo "CHECKED OUT: DID-matlab ${DID_MATLAB_REF} = ${d}"
+          [ "$s" = "$DID_SCHEMA_SHA" ] || { echo "::error::did-schema is at $s, resolved $DID_SCHEMA_SHA"; exit 1; }
+          [ "$d" = "$DID_MATLAB_SHA" ] || { echo "::error::DID-matlab is at $d, resolved $DID_MATLAB_SHA"; exit 1; }
 
       - name: Assemble the #88 schema set
         run: |
