@@ -3,7 +3,7 @@ function [manipBody, methodBodies, report] = ...
 %STIMULUSPRESENTATIONTOITEM Decompose one legacy stimulus_presentation into the
 %   did-schema #88 stimulus shape: N deduplicated standalone `method`
 %   documents (one per distinct stimulus, given as a recipe) plus ONE
-%   `item_manipulation` whose `item` value is the playlist into them.
+%   `manipulation` (value kind `item`) whose `item` value is the playlist into them.
 %
 %   [MANIP, METHODS, REPORT] = stimulusPresentationToItem(V1BODY, RESOLVER)
 %   [...] = stimulusPresentationToItem(V1BODY, RESOLVER, SEQUENCE)
@@ -16,9 +16,9 @@ function [manipBody, methodBodies, report] = ...
 %          visual_grating and spatial_frequency deleted"
 %     V_eta_study_plan.md: `item` replaces `timed_sequence`.
 %     V_eta_entity_composition_plan.md sec. 1: a statement is a direction
-%         class plus ONE value-kind mixin, so the manipulation is an
-%         `manipulation` listing `item` (did2.build reads 'item_manipulation'
-%         that way).
+%         class plus ONE value-kind mixin, so the manipulation is a
+%         `manipulation` listing `item`: did2.build.statement('manipulation',
+%         ..., 'ValueKind', 'item').
 %
 %   WHAT IT EMITS, per input stimulus_presentation
 %     methodBodies  one `method` document per DISTINCT stimulus
@@ -27,7 +27,7 @@ function [manipBody, methodBodies, report] = ...
 %                   ids: nothing in v1 references a single stimulus. Empty on
 %                   the SEQUENCE path (the shared Hartley basis is minted once
 %                   by the caller).
-%     manipBody     ONE item_manipulation, base.id = THE V1 PRESENTATION id,
+%     manipBody     ONE manipulation (value kind item), base.id = THE V1 PRESENTATION id,
 %                   so every inbound `stimulus_presentation_id` keeps
 %                   resolving (494 inbound edges onto 11 ids on 20211116).
 %                     entity_id      the animal; or the session's COHORT
@@ -374,8 +374,8 @@ end
 if distributive
     args = [args, {'Fields', struct('distributive', true)}];
 end
-m = did2.build.statement('item_manipulation', entityId, 'visual stimulus', ...
-    value, args{:});
+m = did2.build.statement('manipulation', entityId, 'visual stimulus', ...
+    value, 'ValueKind', 'item', args{:});
 m = removeEdge(m, 'time_reference_id');
 m = addEdge(m, did2.convert.mintSessionDuring('marker'), presentationId);
 end

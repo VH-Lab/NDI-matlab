@@ -8,7 +8,7 @@ classdef TestMigrateLocalEta < matlab.unittest.TestCase
 %        per-document converter defers stimulus_bath; the V_eta second pass
 %        (resolveDeferred -> stimulusBathToBath) assembles a dose_manipulation on
 %        the stimulator's subject over its epoch.
-%     2. stimulus_presentation -> item_manipulation + method documents (did-schema #88).
+%     2. stimulus_presentation -> manipulation (value kind item) + method documents (did-schema #88).
 %        There is no per-document migrator; resolveStimulusPresentations assembles
 %        it from the recording graph (stimulus_response -> element -> subject).
 %     3. THE EPOCH ANCHOR, BOTH WAYS. The bath assembler mints an
@@ -464,8 +464,8 @@ classdef TestMigrateLocalEta < matlab.unittest.TestCase
         function testStimulusPresentationBecomesAnItemManipulation(testCase)
             % did-schema #88 (V_eta_method_plan.md, TEAM-SIGN-OFF [method]
             % 2026-10-21): a presentation that carries a sequence of gratings
-            % becomes ONE `item_manipulation` (a `manipulation` listing the
-            % `item` value kind) whose `item_id` names one standalone `method`
+            % becomes ONE `manipulation` (listing the `item`
+            % value kind) whose `item_id` names one standalone `method`
             % document per distinct stimulus. `visual_grating`,
             % `timed_sequence_manipulation` and `visual_grating_manipulation`
             % are gone from the schema; this test was

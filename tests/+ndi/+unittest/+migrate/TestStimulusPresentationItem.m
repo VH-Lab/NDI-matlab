@@ -3,7 +3,7 @@ classdef TestStimulusPresentationItem < matlab.unittest.TestCase
 %   ndi.migrate.internal.stimulusPresentationToItem -- the stimulus fold in
 %   the did-schema #88 shape: one standalone `method` document per distinct
 %   stimulus (V_eta_method_plan.md, TEAM-SIGN-OFF [method] 2026-10-21) and
-%   one `item_manipulation` whose `item` value is the playlist into them
+%   one `manipulation` (value kind `item`) whose `item` value is the playlist into them
 %   (`item` replaces `timed_sequence`, V_eta_study_plan.md).
 %
 %   The documents are built with did2.build, so these tests need DID-matlab

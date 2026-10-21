@@ -2460,7 +2460,7 @@ function [convertResult, report] = resolveStimulusPresentations(convertResult, b
 %RESOLVESTIMULUSPRESENTATIONS V_eta second pass: DECOMPOSE each legacy
 %   stimulus_presentation into the did-schema #88 stimulus shape -- one
 %   standalone `method` document per distinct stimulus (a recipe:
-%   {term, parameters}) plus ONE `item_manipulation` whose `item` value is the
+%   {term, parameters}) plus ONE `manipulation` (value kind `item`) whose `item` value is the
 %   playlist into them (V_eta_method_plan.md, TEAM-SIGN-OFF [method]
 %   2026-10-21; `item` replaces `timed_sequence`, V_eta_study_plan.md).
 %

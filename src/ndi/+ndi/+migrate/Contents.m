@@ -38,7 +38,7 @@
 %                          (V_eta_method_plan.md, TEAM-SIGN-OFF [method]
 %                          2026-10-21): one standalone `method` document per
 %                          distinct stimulus (gratingRecipe + stimulusMethod)
-%                          + ONE `item_manipulation` carrying the v1
+%                          + ONE `manipulation` (value kind `item`) carrying the v1
 %                          presentation id and a 0-based playlist into them.
 %                          Several animals: one manipulation of the session's
 %                          cohort, `distributive` (sessionCohort).
