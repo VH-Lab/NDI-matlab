@@ -127,8 +127,9 @@ classdef TestDatasetMetadataHaley < matlab.unittest.TestCase
             seq = cellfun(@(r) r.directed_relation.order, rels);
             % did-schema T20 renamed `sequence` to `order`; only `order` is emitted
             testCase.verifyFalse(any(cellfun(@(r) isfield(r.directed_relation, 'sequence'), rels)));
-            testCase.verifyEqual(sort(seq), 1:4);
-            first = rels{seq == 1};
+            % 0-based: the first author is order 0 ([author order from 0])
+            testCase.verifyEqual(sort(seq), 0:3);
+            first = rels{seq == 0};
             testCase.verifyEqual(parentOf(first), testCase.Result.ids('haley'));
             testCase.verifyEqual(numel(first.directed_relation.roles), 14);
             corr = rels(cellfun(@(r) any(strcmp({r.directed_relation.roles.name}, ...

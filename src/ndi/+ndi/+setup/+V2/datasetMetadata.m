@@ -329,7 +329,9 @@ if ~strcmp(options.Studies, 'only')
     authors = asCell(getOr(d, 'authors', {}));
     for k = 1:numel(authors)
         a = authors{k};
-        extra = struct('order', k);
+        % has_author `order` counts from 0: the first author is 0 (T14; Decided
+        % by Jess Haley, 2026-10-21 [author order from 0], V_eta_study_plan.md)
+        extra = struct('order', k - 1);
         if isfield(a, 'roles')
             % CRediT role names: the builder fills each node from the field's
             % value set (directed_relation.roles), so a name must match it exactly

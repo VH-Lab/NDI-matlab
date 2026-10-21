@@ -182,6 +182,15 @@ classdef TestPathSPromotion < matlab.unittest.TestCase
                 {device('probe_1'), obs, makeAnchor('img_anchor')}, 'Mode', 'sites');
             testCase.verifyFalse(changed);
             testCase.verifyEqual(report.left_about_a_device, 1);
+            % a non-area node rides on NCIT:C211970 "Image Annotation"
+            % ([non-area image node]); it stays on the subject
+            obs = conditionObs('img_1', 'animal_1', 'CL:0000540', 'neuron');
+            obs.statement.conditions(1).variable = term('NCIT:C211970', 'Image Annotation');
+            [kept, ~, changed, report] = ndi.migrate.internal.pathSPromotion( ...
+                {organism('animal_1'), obs, makeAnchor('img_anchor')}, 'Mode', 'sites');
+            testCase.verifyFalse(changed);
+            testCase.verifyEqual(report.site_conditions_seen, 0);
+            testCase.verifyEqual(depValue(byId(kept, 'img_1'), 'entity_id'), 'animal_1');
             % a condition with another variable is not a site
             obs = conditionObs('img_1', 'animal_1', 'uberon:0002436', 'primary visual cortex');
             obs.statement.conditions(1).variable = term('NCIT:C25185', 'Laterality');

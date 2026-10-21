@@ -548,8 +548,10 @@ for i = 1:numel(structs)
         mKey = ['m|' groupId '|' neuronId '|' int2str(column) '|' epochKey];
         if ~isKey(seenEdge, mKey)
             seenEdge(mKey) = true;
+            % `order` counts from 0 (T14; did-schema directed_relation.order,
+            % [author order from 0]); v1's neuron_id_N column is 1-based
             minted{end+1} = relationBody(neuronId, groupId, MEMBER_OF, ...
-                column, epochKey, sessionId, ds, 'migrated_ensemble_member'); %#ok<AGROW>
+                column - 1, epochKey, sessionId, ds, 'migrated_ensemble_member'); %#ok<AGROW>
             report.member_of_minted = report.member_of_minted + 1;
             if ~isempty(epochKey)
                 report.epoch_scoped_edges = report.epoch_scoped_edges + 1;

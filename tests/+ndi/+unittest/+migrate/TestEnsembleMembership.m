@@ -57,8 +57,9 @@ classdef TestEnsembleMembership < matlab.unittest.TestCase
             testCase.verifyEqual(m{1}.directed_relation.relation.node, 'RO:0002350');
             % column order rides on the declared `order` ordinal
             % (`sequence` until did-schema T20; only `order` is emitted)
-            testCase.verifyEqual(m{1}.directed_relation.order, 1);
-            testCase.verifyEqual(m{2}.directed_relation.order, 2);
+            % 0-based (T14): column 1 is order 0
+            testCase.verifyEqual(m{1}.directed_relation.order, 0);
+            testCase.verifyEqual(m{2}.directed_relation.order, 1);
             testCase.verifyFalse(isfield(m{1}.directed_relation, 'sequence'));
 
             d = ofRelation(minted, 'derived_from');
@@ -127,8 +128,8 @@ classdef TestEnsembleMembership < matlab.unittest.TestCase
             for k = 1:numel(m)
                 byChild(depValue(m{k}, 'child_id')) = m{k}.directed_relation.order;
             end
-            testCase.verifyEqual(byChild('nrn_1'), 1);
-            testCase.verifyEqual(byChild('nrn_2'), 2);
+            testCase.verifyEqual(byChild('nrn_1'), 0);
+            testCase.verifyEqual(byChild('nrn_2'), 1);
         end
 
         function testStrandedNeuronIsCountedAndGetsNoEdge(testCase)
