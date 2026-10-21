@@ -136,14 +136,15 @@ classdef TestCheckGitClone < matlab.unittest.TestCase
 
             ndiMods = r.Modifications(names == "NDI-matlab");
             testCase.verifyEqual(ndiMods.ChangedFiles, "README.md");
-            testCase.verifyEqual(ndiMods.NewFiles, "mine.m");
+            % An untracked file the update does not touch is not listed.
+            testCase.verifyEmpty(ndiMods.BlockingFiles);
             testCase.verifyEqual(ndiMods.CommitsAhead, 0);
             testCase.verifyEqual(r.Modifications(names == "depA").CommitsAhead, 1);
             testCase.verifySubstring(r.Message, "changed code in");
 
             txt = ndi.update.modificationSummary(r);
-            testCase.verifySubstring(txt, "changed: README.md");
-            testCase.verifySubstring(txt, "new:     mine.m");
+            testCase.verifySubstring(txt, "changed:    README.md");
+            testCase.verifyFalse(contains(txt, "mine.m"));
             testCase.verifySubstring(txt, "1 local commit(s)");
         end
 
@@ -166,9 +167,51 @@ classdef TestCheckGitClone < matlab.unittest.TestCase
             % Past the modification guard, the next step needs ndi_install.m,
             % which the fake clone lacks.
             testCase.pushUpstream("NDI-matlab", "README.md", "new upstream line");
-            testCase.writeFile(fullfile(testCase.Ndi, "mine.m"), "y = 2;");
+            testCase.writeFile(fullfile(testCase.Ndi, "local.m"), "x = 1;");
+            testCase.commitAll(testCase.Ndi, "local work");
             testCase.verifyError(@() testCase.install(AllowModified = true), ...
                 'ndi:update:install:noInstaller');
+        end
+
+        function testUntrackedFilesNeedNoConsent(testCase)
+            % git stash and git pull leave untracked files alone, so they
+            % are not "modifications": the update goes ahead without asking
+            % (and, in this fake clone, stops only for want of ndi_install.m).
+            testCase.pushUpstream("NDI-matlab", "README.md", "new upstream line");
+            testCase.writeFile(fullfile(testCase.Ndi, "mine.m"), "y = 2;");
+            testCase.writeFile(fullfile(testCase.Ndi, "scratch", "notes.m"), "z = 3;");
+            r = testCase.check();
+            testCase.verifyTrue(r.UpdateAvailable);
+            testCase.verifyFalse(r.HasModifications);
+            testCase.verifyEmpty(r.Modifications);
+            testCase.verifyFalse(contains(r.Message, "changed code"));
+            testCase.verifyError(@() testCase.install(), 'ndi:update:install:noInstaller');
+        end
+
+        function testUntrackedFileInTheWayStopsTheUpdate(testCase)
+            % The update adds files where the user has untracked ones; git
+            % would refuse to overwrite them and stop part-way, so install
+            % stops before starting and names them -- even with
+            % AllowModified, since no answer could make the pull work.
+            testCase.pushUpstream("NDI-matlab", "newfile.m", "upstream", Append = false);
+            testCase.pushUpstream("NDI-matlab", fullfile("sub", "added.m"), "upstream", Append = false);
+            testCase.writeFile(fullfile(testCase.Ndi, "newfile.m"), "mine");
+            testCase.writeFile(fullfile(testCase.Ndi, "sub", "added.m"), "mine too");
+            testCase.writeFile(fullfile(testCase.Ndi, "harmless.m"), "left alone");
+            r = testCase.check();
+            testCase.verifyTrue(r.HasModifications);
+            testCase.verifyEqual(sort(r.Modifications(1).BlockingFiles), ...
+                sort(["newfile.m"; "sub/added.m"]));
+            testCase.verifyEmpty(r.Modifications(1).ChangedFiles);
+            txt = ndi.update.modificationSummary(r);
+            testCase.verifySubstring(txt, "in the way: newfile.m");
+            testCase.verifyFalse(contains(txt, "harmless.m"));
+            testCase.verifyError(@() testCase.install(), ...
+                'ndi:update:install:untrackedFilesInTheWay');
+            testCase.verifyError(@() testCase.install(AllowModified = true), ...
+                'ndi:update:install:untrackedFilesInTheWay');
+            testCase.verifyEqual(strtrim(string(fileread(fullfile(testCase.Ndi, "newfile.m")))), ...
+                "mine");
         end
 
         function testInstallRefusesOtherBranch(testCase)

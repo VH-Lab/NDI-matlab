@@ -11,10 +11,13 @@ function result = install(options)
 %       which pulls the latest main branch of NDI-matlab and updates (or
 %       clones) its dependencies. Uncommitted changes in those repositories
 %       are stashed by ndi_install. The NDI-matlab clone must be on the
-%       main branch. If you have changed code (edited or added files, or
+%       main branch. If you have changed code (edited tracked files, or
 %       made local commits) in NDI-matlab or a dependency, the changes are
 %       listed first and you are asked whether to update anyway; the
-%       default answer is No.
+%       default answer is No. Untracked files of your own are left alone and
+%       need no answer, unless one is at a path the update adds a file to:
+%       git will not overwrite it, so the update stops before starting and
+%       asks you to move it.
 %     - toolbox installs: downloads the .mltbx file attached to the latest
 %       GitHub release and installs it over the current toolbox. Restart
 %       MATLAB afterwards so that no old copy of a class stays in memory.
@@ -115,6 +118,17 @@ function installGit(result, options)
              'run ''git checkout main'' there first.'], repoRoot, result.Branch);
     end
 
+    blocking = blockingFiles(result);
+    if ~isempty(blocking)
+        % git pull would stop part-way rather than overwrite these, so no
+        % answer to "update anyway?" could make the update work.
+        error('ndi:update:install:untrackedFilesInTheWay', ...
+            ['The update adds files at these paths, where you have untracked ' ...
+             'files of your own. git will not overwrite them, so the update ' ...
+             'would stop part-way. Move or rename them, then update again:\n%s'], ...
+            strjoin("  " + blocking, newline));
+    end
+
     if result.HasModifications
         summary = ndi.update.modificationSummary(result, MaxFiles = 25);
         if options.Confirm
@@ -150,6 +164,15 @@ function installGit(result, options)
     ndi_install(char(fileparts(repoRoot)), options.Dependencies);
     clearCaches();
     disp('NDI-matlab update finished.');
+end
+
+function files = blockingFiles(result)
+    % Full paths of the untracked files in the way of files the update adds.
+    files = strings(0, 1);
+    for i = 1:numel(result.Modifications)
+        m = result.Modifications(i);
+        files = [files; fullfile(m.Path, m.BlockingFiles)]; %#ok<AGROW>
+    end
 end
 
 function installToolbox(result, options)
