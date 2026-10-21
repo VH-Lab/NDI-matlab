@@ -567,7 +567,7 @@ end
 function tf = isSiteObservation(s)
 S = ndi.migrate.internal.etaShape;
 tf = S.isStatement(s, 'observation', 'term') ...
-    && strcmp(S.variable(s).name, 'anatomical location');
+    && S.isVariable(s, 'anatomical location');
 end
 
 function tf = isManipulation(s)
@@ -681,13 +681,14 @@ for k = 1:numel(structs)
         if ~isempty(ch) && ~isempty(pa); idx.parentOf(ch) = pa; end
     elseif S.isStatement(s, 'assertion', 'term')
         v = S.variable(s).name;
+        isKind = S.isVariable(s, 'anatomical structure');
         a = S.aboutId(s);
         if strcmp(v, 'element type') && ~isempty(a)
             idx.elements(a) = true;
         end
         k2 = regionKey(S.termValue(s));
         if isempty(k2) || isempty(a); continue; end
-        if strcmp(v, 'anatomical structure')
+        if isKind
             idx.kindOf(a) = k2;
         elseif strcmp(v, LATERALITY_VARIABLE().name)
             sideOf(a) = k2;
@@ -797,7 +798,7 @@ if isempty(lid); lid = partId; end
 ent = S.entity('tissue', struct('local_identifier', lid), 'Id', partId, common{:});
 
 assertion = S.statement('assertion', 'term', partId, ...
-    S.term('', 'anatomical structure'), siteTerm, common{:});
+    S.anatomicalStructureVariable(), siteTerm, common{:});
 
 laterality = [];
 if ~isempty(sideTerm)

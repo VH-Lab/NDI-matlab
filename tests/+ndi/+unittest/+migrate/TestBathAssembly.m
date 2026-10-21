@@ -51,8 +51,11 @@ classdef TestBathAssembly < matlab.unittest.TestCase
             testCase.verifyEqual(depValue(f, 'ingredient_id'), c.base.id);
             testCase.verifyEqual(c.chemical.value.substance.name, 'muscimol');
             testCase.verifyEqual(c.chemical.value.substance.node, 'chebi:6904');
+            % a struct array, as the schema declares it (a cell reads as blank
+            % to the value rule and quarantined the formulation)
+            testCase.verifyClass(f.formulation.value.ingredients, 'struct');
             testCase.verifyNumElements(f.formulation.value.ingredients, 1);
-            conc = f.formulation.value.ingredients{1}.concentration;
+            conc = f.formulation.value.ingredients(1).concentration;
             testCase.verifyEqual(conc.source_value, 5);
             testCase.verifyEqual(conc.source_unit.name, 'mg/ml');
 
@@ -89,7 +92,8 @@ classdef TestBathAssembly < matlab.unittest.TestCase
             site = siteOf(extra);
             testCase.verifyNumElements(site, 1);
             site = site{1};
-            testCase.verifyEqual(site.statement.variable.name, 'anatomical location');
+            testCase.verifyEqual(site.statement.variable.node, 'NCIT:C13717');
+            testCase.verifyEqual(site.statement.variable.name, 'Anatomic Site');
             testCase.verifyEqual(site.term.value.node, 'UBERON:8910010');
             testCase.verifyEqual(depValue(site, 'entity_id'), 'prep_1');
             testCase.verifyEqual(depValue(site, 'time_reference_id'), timeRef.base.id);
@@ -190,10 +194,37 @@ classdef TestBathAssembly < matlab.unittest.TestCase
                 'sodium phosphate, monobasic');
             f = extra{strcmp(classes, 'formulation')};
             testCase.verifyEqual(f.formulation.value.ph.ph, 7.4);
-            conc = f.formulation.value.ingredients{1}.concentration;
+            conc = f.formulation.value.ingredients(1).concentration;
             testCase.verifyEqual(conc.molar, 0.0012);
             testCase.verifyEqual(conc.source_unit.node, 'UO:0000062');
         end
+        function testTheFormulationPassesTheValueRule(testCase)
+            % e2e run 39668356516: the formulation was quarantined by
+            % value_inline_or_body ("its `value` is empty") because its
+            % ingredients were a cell. A row with an amount and a row without
+            % one must both survive, and the document must validate.
+            testCase.assumeTrue(~isempty(which('did2.convert.v1_to_v2')) ...
+                && ~isempty(getenv('DID_SCHEMA_PATH')), ...
+                'needs DID-matlab and a V_eta schema set (DID_SCHEMA_PATH)');
+            v1 = stimulusBathDoc('stim_1', 't00001');
+            v1.stimulus_bath.mixture_table = sprintf(['ontologyName,name,value,ontologyUnit,unitName\n' ...
+                'chebi:6904,muscimol,5,,mg/ml\n' ...
+                'chebi:26710,sodium chloride,,,\n']);
+            r  = mockResolver('animal_1', 'dev_local_time');
+            [~, ~, extra] = ndi.migrate.internal.stimulusBathToBath(v1, r, 'V_eta');
+            classes = cellfun(@(b) b.document_class.class_name, extra, ...
+                'UniformOutput', false);
+            f = extra{strcmp(classes, 'formulation')};
+            testCase.verifyNumElements(f.formulation.value.ingredients, 2);
+            testCase.verifyEqual(f.formulation.value.ingredients(1).concentration.source_value, 5);
+            testCase.verifyEqual(numel(depValues(f, 'ingredient_id')), 2);
+            % folded as ndi.migrate.local folds it: nothing may quarantine
+            % (the old shape quarantined with did2:validation:valueNowhere)
+            res = did2.convert.v1_to_v2({f}, 'TargetVersion', 'V_eta', 'Verbose', false);
+            testCase.verifyEmpty(res.quarantine, 'the formulation was quarantined');
+            testCase.verifyNumElements(res.migrated, 1);
+        end
+
         function testTheGuardIsVetaOnlyAndOlderTargetsAreUntouched(testCase)
             % The retirement is a V_eta decision. V_zeta/V_epsilon keep the
             % behaviour they are green with, no_time clock included.
@@ -243,7 +274,8 @@ out = {};
 for k = 1:numel(bodies)
     b = bodies{k};
     if strcmp(b.document_class.class_name, 'observation') && isfield(b, 'statement') ...
-            && strcmp(b.statement.variable.name, 'anatomical location')
+            && (strcmpi(b.statement.variable.node, 'NCIT:C13717') ...
+                || strcmp(b.statement.variable.name, 'anatomical location'))
         out{end+1} = b; %#ok<AGROW>
     end
 end
@@ -262,6 +294,17 @@ for k = 1:numel(body.depends_on)
     if strcmp(body.depends_on(k).name, name)
         v = body.depends_on(k).value;
         return;
+    end
+end
+end
+
+function v = depValues(body, name)
+% every value of the edge NAME (an edge may repeat)
+v = {};
+for k = 1:numel(body.depends_on)
+    if iscell(body.depends_on); d = body.depends_on{k}; else; d = body.depends_on(k); end
+    if strcmp(d.name, name)
+        if isfield(d, 'value'); v{end+1} = d.value; else; v{end+1} = d.document_id; end %#ok<AGROW>
     end
 end
 end

@@ -260,6 +260,47 @@ classdef etaShape
             t = struct('node', char(node), 'name', char(name));
         end
 
+        function t = anatomicalLocationVariable()
+            %ANATOMICALLOCATIONVARIABLE The variable of a site statement:
+            %   NCIT:C13717 "Anatomic Site" (did-schema #88 term registry,
+            %   row decided 2026-10-21). Older documents wrote the label
+            %   'anatomical location' with an empty node; isVariable accepts both.
+            t = struct('node', 'NCIT:C13717', 'name', 'Anatomic Site');
+        end
+
+        function t = anatomicalStructureVariable()
+            %ANATOMICALSTRUCTUREVARIABLE The variable of a region part's kind
+            %   assertion: UBERON:0000061 "anatomical structure" (did-schema #88
+            %   term registry, row decided 2026-10-21). Older documents wrote
+            %   the same label with an empty node.
+            t = struct('node', 'UBERON:0000061', 'name', 'anatomical structure');
+        end
+
+        function tf = isVariable(s, which)
+            %ISVARIABLE True when statement S's variable is WHICH
+            %   ('anatomical location' or 'anatomical structure'): by node
+            %   (compared case-insensitively, so 'ncit:c13717' matches), or by
+            %   the registered label, or by the legacy label-only form.
+            S = ndi.migrate.internal.etaShape;
+            switch which
+                case 'anatomical location'
+                    want = S.anatomicalLocationVariable();
+                case 'anatomical structure'
+                    want = S.anatomicalStructureVariable();
+                otherwise
+                    error('NDI:migrate:etaShape:unknownVariable', ...
+                        'No registered variable for "%s".', which);
+            end
+            v = S.variable(s);
+            node = strtrim(char(v.node));
+            name = strtrim(char(v.name));
+            if ~isempty(node)
+                tf = strcmpi(node, want.node);
+            else
+                tf = any(strcmpi(name, {want.name, which}));
+            end
+        end
+
         function t = asTerm(v)
             %ASTERM A term from a term struct or a bare name.
             if isstruct(v)

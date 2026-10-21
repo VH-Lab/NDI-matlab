@@ -335,7 +335,6 @@ for i = 1:numel(mixture)
     entries{end+1} = e; %#ok<AGROW>
 end
 fv = props;
-fv.ingredients = entries;
 f = struct();
 f.document_class = S.docClass('formulation');
 f.depends_on = S.noEdges();
@@ -343,6 +342,11 @@ for k = 1:numel(ids)
     f = S.addEdge(f, 'ingredient_id', ids{k});
 end
 f.base = S.baseBlock('', datestamp);
+% `ingredients` is a STRUCT ARRAY, as the schema declares it and as did2.build
+% writes it. Left a cell of per-row structs, the value rule
+% (value_inline_or_body) reads it as blank and quarantines the formulation, so
+% the bath's `value_id` names nothing (e2e run 39668356516).
+fv.ingredients = rowsToStructArray(entries);
 f.formulation = struct('value', fv);
 f = ndi.migrate.internal.withSessionId(f, sessionId);
 extra{end+1} = f;
@@ -361,7 +365,7 @@ dose = S.statement('manipulation', 'formulation', subjectId, primaryChemical(mix
 loc = locationTerm(v1Body);
 if ~isempty(trIds) && ~isempty([char(loc.node) char(loc.name)]) && ~isGenericBath(loc)
     extra{end+1} = S.statement('observation', 'term', subjectId, ...
-        S.term('', 'anatomical location'), loc, ...
+        S.anatomicalLocationVariable(), loc, ...
         'TimeReferenceIds', trIds, common{:});
 end
 end
@@ -531,5 +535,33 @@ if isempty(mixture)
         'chemical', struct('node', '', 'name', ''), ...
         'amount', struct('source_value', 0.0, 'source_unit', '', ...
             'approximate', false));
+end
+end
+
+function out = rowsToStructArray(rows)
+%ROWSTOSTRUCTARRAY A cell of per-row structs as one struct array. A row that
+%   lacks a field another row has (an ingredient with no amount beside one
+%   with a concentration) gets that field empty, so no row is dropped.
+out = struct([]);
+if isempty(rows)
+    return;
+end
+names = {};
+for k = 1:numel(rows)
+    names = union(names, fieldnames(rows{k}), 'stable');
+end
+for k = 1:numel(rows)
+    r = rows{k};
+    for j = 1:numel(names)
+        if ~isfield(r, names{j})
+            r.(names{j}) = [];
+        end
+    end
+    r = orderfields(r, names);
+    if isempty(out)
+        out = r;
+    else
+        out(end+1) = r; %#ok<AGROW>
+    end
 end
 end

@@ -775,12 +775,19 @@ end
 end
 
 function body = findTermObservation(dstPath, variableName)
-% the first term observation whose variable is VARIABLENAME ([] when none)
+% the first term observation whose variable is VARIABLENAME ([] when none):
+% its label, or -- for the registered anatomy variables -- its node, so a
+% site written as NCIT:C13717 "Anatomic Site" is found by 'anatomical location'
 body = [];
+nodes = struct('anatomical_location', 'NCIT:C13717', ...
+    'anatomical_structure', 'UBERON:0000061');
+key = strrep(variableName, ' ', '_');
 for d = findAllByClass(dstPath, 'observation')
     x = d{1};
-    if isfield(x, 'statement') && isfield(x.statement, 'variable') ...
-            && strcmp(x.statement.variable.name, variableName)
+    if ~(isfield(x, 'statement') && isfield(x.statement, 'variable')); continue; end
+    v = x.statement.variable;
+    byNode = isfield(nodes, key) && isfield(v, 'node') && strcmpi(v.node, nodes.(key));
+    if byNode || strcmp(v.name, variableName)
         body = x;
         return;
     end

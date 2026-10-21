@@ -90,6 +90,9 @@ classdef TestPathSPromotion < matlab.unittest.TestCase
 
             assertion = firstOfClass(minted, 'assertion');
             testCase.verifyEqual(assertion.term.value.node, 'uberon:0002436');
+            % the registered variable (did-schema #88 term registry), not the
+            % label-only form older documents carry
+            testCase.verifyEqual(assertion.statement.variable.node, 'UBERON:0000061');
             testCase.verifyEqual(assertion.statement.variable.name, 'anatomical structure');
             testCase.verifyEqual(depValue(assertion, 'entity_id'), partId);
             testCase.verifyEqual({assertion.document_class.superclasses.class_name}, ...
@@ -112,6 +115,27 @@ classdef TestPathSPromotion < matlab.unittest.TestCase
             testCase.verifyEqual(assertion.term.value.node, 'uberon:0002436');
             testCase.verifyEqual(assertion.term.value.name, ...
                 'primary visual cortex');
+        end
+
+        function testRegisteredSiteVariableIsPromotedToo(testCase)
+            % A site written with the registered variable NCIT:C13717 "Anatomic
+            % Site" is promoted exactly as the label-only 'anatomical location'
+            % of older documents is (the fixture's default form).
+            structs = treatmentWithSite('anch_1', 'animal_1', ...
+                'uberon:0002436', 'primary visual cortex');
+            structs{2}.statement.variable = term('NCIT:C13717', 'Anatomic Site');
+            [kept, minted, changed] = ndi.migrate.internal.pathSPromotion(structs);
+            testCase.verifyTrue(changed);
+            testCase.verifyFalse(anyStatement(kept, 'observation'));
+            testCase.verifyTrue(anyClass(minted, 'entity'));
+            % the node decides, whatever the label says
+            structs{2}.statement.variable = term('ncit:c13717', '');
+            [~, ~, changed] = ndi.migrate.internal.pathSPromotion(structs);
+            testCase.verifyTrue(changed, 'the node alone, in another case, must match');
+            % a different node with the old label is NOT a site
+            structs{2}.statement.variable = term('NCIT:C25185', 'anatomical location');
+            [~, ~, changed] = ndi.migrate.internal.pathSPromotion(structs);
+            testCase.verifyFalse(changed, 'a node other than C13717 is not the site variable');
         end
 
         function testPreCompositeSiteBlockStillResolves(testCase)
@@ -269,6 +293,7 @@ classdef TestPathSPromotion < matlab.unittest.TestCase
             kind = kinds{strcmp(v, 'anatomical structure')};
             lat = kinds{strcmp(v, 'Laterality')};
             testCase.verifyEqual(kind.term.value.node, 'UBERON:0002436');
+            testCase.verifyEqual(kind.statement.variable.node, 'UBERON:0000061');
             testCase.verifyEqual(lat.statement.variable.node, 'NCIT:C25185');
             % the side is kept as the writer wrote it
             testCase.verifyEqual(lat.term.value.node, 'UBERON:0002812');
