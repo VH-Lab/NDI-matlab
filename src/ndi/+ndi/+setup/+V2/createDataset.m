@@ -104,7 +104,7 @@ recordAt = [];
 if ndi.v2.sessionIdIsEdge()
     % the dataset entity is the dataset's own record: its id is the session id
     for k = 1:numel(datasetDocs)
-        if ~strcmp(ndi.setup.V2.kindOf(datasetDocs{k}), 'dataset'), continue; end
+        if ~strcmp(ndi.v2.kindOf(datasetDocs{k}), 'dataset'), continue; end
         if ~strcmp(datasetDocs{k}.base.id, datasetSessionId)
             error('ndi:setup:V2:datasetId', ['The dataset document has id %s; where ' ...
                 'session_id is an edge its id must be the dataset''s session id, %s ' ...
@@ -173,7 +173,7 @@ arguments
 end
 n = numel(docs);
 ids = cellfun(@(d) d.base.id, docs, 'UniformOutput', false);
-cls = cellfun(@ndi.setup.V2.kindOf, docs, 'UniformOutput', false);   % an entity's type since 2026-10-08
+cls = cellfun(@ndi.v2.kindOf, docs, 'UniformOutput', false);   % an entity's type since 2026-10-08
 sids = cellfun(@ndi.v2.sessionIdOf, docs, 'UniformOutput', false);
 [u, ~, j] = unique(ids);
 report.duplicateIds = u(accumarray(j(:), 1) > 1);

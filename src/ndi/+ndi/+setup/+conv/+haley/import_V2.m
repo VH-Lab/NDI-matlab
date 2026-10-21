@@ -822,10 +822,10 @@ for f = {'metadata', 'studies'}
 end
 if isfield(result, 'density'), dsDocs = [dsDocs, result.density.datasetDocuments]; end
 name = '';
-isDataset = cellfun(@(d) strcmp(ndi.setup.V2.kindOf(d), 'dataset'), dsDocs);
+isDataset = cellfun(@(d) strcmp(ndi.v2.kindOf(d), 'dataset'), dsDocs);
 if any(isDataset)
     ds = dsDocs{find(isDataset, 1)};
-    [~, blk] = ndi.setup.V2.kindOf(ds);   % `entity` since 2026-10-08
+    [~, blk] = ndi.v2.kindOf(ds);   % `entity` since 2026-10-08
     if isfield(ds.(blk), 'name'), name = char(ds.(blk).name); end
 end
 if ~any(isDataset)
