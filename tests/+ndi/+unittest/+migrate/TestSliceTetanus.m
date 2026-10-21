@@ -130,6 +130,7 @@ classdef TestSliceTetanus < matlab.unittest.TestCase
             for k = 1:numel(ms)
                 m = ms{k};
                 verifyEqual(testCase, m.subject_interaction.method.name, 'optogenetic tetanus stimulation');
+                verifyEqual(testCase, m.subject_interaction.method.node, 'EMPTY:0000358');
                 verifyNotEmpty(testCase, dep(m, 'instrument_id'));
                 if isfield(m.subject_statement, 'conditions')
                     c = m.subject_statement.conditions;
@@ -144,6 +145,7 @@ classdef TestSliceTetanus < matlab.unittest.TestCase
                     verifyEqual(testCase, [p.frequency.value p.duration.value], [10 20]);
                     verifyEqual(testCase, {p.frequency.source_value, p.duration.source_value}, {'10', '20'});
                     verifyEqual(testCase, p.duration.unit.node, 'om:second-Time');
+                    verifyEqual(testCase, p.frequency.unit.node, 'om:hertz');
                 end
             end
         end

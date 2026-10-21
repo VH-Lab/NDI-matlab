@@ -67,9 +67,10 @@ function [plan, report] = sliceTetanus(v1Bodies, structs, epochIndex)
 %   SAID: a slice's entity TYPE. pre73 `subject` has no `type` field (V2's
 %   `entity.type`, bound to {'', 'tissue'}, came later), so a slice is a plain
 %   `subject` + `part_of`, the shape Path-S part-subjects already use, and its
-%   description says what it is. The method term and the hertz unit have no
-%   registered identifier in scope, so their nodes are left empty, the line's
-%   convention for a term with no identifier.
+%   description says what it is. The method term is EMPTY:0000358
+%   (*optogenetic tetanus stimulation*, minted 2026-10-21: no term at its
+%   specificity in OLS4) and the hertz unit is OM's `om:hertz`, both in
+%   did-schema's term registry.
 
 arguments
     v1Bodies cell
@@ -83,7 +84,7 @@ report = newReport();
 report.v1_documents_read = numel(v1Bodies);
 report.migrated_documents_read = numel(structs);
 
-ACT = struct('node', '', 'name', 'optogenetic tetanus stimulation');
+ACT = struct('node', 'EMPTY:0000358', 'name', 'optogenetic tetanus stimulation');
 SITE_VAR_NODE = 'EMPTY:0000074';
 SITE_VAR = struct('node', SITE_VAR_NODE, ...
     'name', 'Optogenetic Tetanus Stimulation Target Location');
@@ -752,7 +753,7 @@ state = 'stated';
 % 39546975753), the same shape resolveResponseParameters inlines its knobs in.
 params = struct( ...
     'frequency', struct('variable', struct('node', '', 'name', 'frequency'), ...
-        'unit', struct('node', '', 'name', 'hertz'), 'source_unit', 'Hz', ...
+        'unit', struct('node', 'om:hertz', 'name', 'hertz'), 'source_unit', 'Hz', ...
         'value', str2double(tok{1}), 'source_value', tok{1}), ...
     'duration', struct('variable', struct('node', '', 'name', 'duration'), ...
         'unit', struct('node', 'om:second-Time', 'name', 'second'), 'source_unit', 's', ...
