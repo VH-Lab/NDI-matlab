@@ -1190,9 +1190,9 @@
    "concentration": {
     "grams_per_liter": 50,
     "source_value": 50,
-    "source_unit": "mg/mL"
+    "source_unit": "g/L"
    },
-   "_note": "Frozen stock, 50 mg/mL (231229_OP50_OP50-GFP_cultures). Salt form not recorded; commercial carbenicillin is usually the disodium salt (CHEBI:34609), so 50 mg/mL may be by salt mass."
+   "_note": "Frozen stock, 50 mg/mL (231229_OP50_OP50-GFP_cultures). Salt form not recorded; commercial carbenicillin is usually the disodium salt (CHEBI:34609), so 50 mg/mL may be by salt mass. Written as 50 g/L, the same number (Jess Haley, 2026-10-21)."
   }
  ],
  "formulations": [
@@ -1510,7 +1510,7 @@
      "concentration": {
       "volume_fraction": 0.001,
       "source_value": 1,
-      "source_unit": "mL/L"
+      "source_unit": "uL/mL"
      }
     },
     {
@@ -1519,7 +1519,8 @@
    ],
    "documented_by": [
     "wormbook_maintenance"
-   ]
+   ],
+   "_note": "Cholesterol 1 mL per litre in the recipe; written as 1 uL/mL, the same number (Jess Haley, 2026-10-21)."
   },
   {
    "key": "trace_metals",

@@ -235,7 +235,6 @@ pairs = {
     'worm picking',                            'EMPTY:0000337',           'worm picking'
     'eyelash picking',                         'EMPTY:0000338',           'eyelash picking'
     'cleaning step',                           'EMPTY:0000339',           'cleaning step'
-    'droplet',                                 'EMPTY:0000340',           'droplet'
     'patch exploitation encounter: minimum probability of exploitation', 'EMPTY:0000341', 'patch exploitation encounter: minimum probability of exploitation'
     'patch sampling encounter: minimum probability of sensing', 'EMPTY:0000342', 'patch sampling encounter: minimum probability of sensing'
     'off-patch search encounter: probability of sensing below', 'EMPTY:0000343', 'off-patch search encounter: probability of sensing below'

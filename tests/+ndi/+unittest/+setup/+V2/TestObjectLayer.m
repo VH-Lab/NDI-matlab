@@ -819,25 +819,10 @@ classdef TestObjectLayer < matlab.unittest.TestCase
                 testCase.verifyTrue(all(ismember(bioIds, gotIds)), ...
                     sprintf('getsubjects on a %s keeps every biological entity', class(H)));
                 untyped = setdiff(gotIds, bioIds);
-                if ndi.setup.V2.mergedEntities()
-                    testCase.verifyEmpty(untyped, ...
-                        sprintf('getsubjects on a %s is exactly the biological entities', class(H)));
-                else
-                    % A WRITER GAP, not fixed here: on a schema with a
-                    % `subject` class, ndi.setup.V2.entityDocuments drops
-                    % 'Type' (it is used only with one entity class), so a
-                    % subject written with 'Type' 'device' (datasetMetadata's
-                    % instruments) has NO type. Nothing then says it is not
-                    % an organism; `isa subject` keeps it, and so does
-                    % getsubjects. Measured and named here, not asserted.
-                    rawIds = cellfun(@(d) char(d.id()), got, 'UniformOutput', false);
-                    names = cellfun(@(d) char(ndi.v2.blockOf(ndi.v2.props(d), 'subject', ...
-                        'local_identifier', '')), got(ismember(rawIds, untyped)), 'UniformOutput', false);
-                    testCase.log(1, sprintf(['DENOMINATOR: getsubjects on a %s returned %d; ' ...
-                        '%d biological, %d untyped subject(s) (no type to filter on): %s'], ...
-                        class(H), numel(gotIds), numel(bioIds), numel(untyped), strjoin(names, ', ')));
-                    fprintf('getsubjects untyped on %s: %s\n', class(H), strjoin(names, ', '));
-                end
+                % on either schema: with a `subject` class, entityDocuments now
+                % writes subject.type from 'Type' (the instruments are devices)
+                testCase.verifyEmpty(untyped, ...
+                    sprintf('getsubjects on a %s is exactly the biological entities', class(H)));
                 testCase.verifyNotEmpty(gotIds, 'the worms are subjects');
                 testCase.verifyFalse(any(ismember(entIds(apparatus), gotIds)), ...
                     sprintf('getsubjects on a %s leaves out every device and material', class(H)));

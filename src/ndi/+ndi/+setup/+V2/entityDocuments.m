@@ -42,6 +42,14 @@ end
 
 common = {'SessionId', options.SessionId, 'Validate', options.Validate};
 if ~ndi.setup.V2.mergedEntities()
+    % a schema with a `subject` class that declares `type` (did-schema main,
+    % #84: the seven coarse kinds) gets the 'Type' option there, so a device
+    % is not an untyped subject that getsubjects cannot tell from an animal
+    if strcmp(className, 'subject') && ~isempty(options.Type) ...
+            && ~(isfield(fields, 'type') && ~isempty(fields.type)) ...
+            && ndi.setup.V2.schemaHasField('subject', 'type')
+        fields.type = did2.build.term('', options.Type);
+    end
     docs = {did2.build.document(className, fields, 'Edges', edges, ...
         'Id', options.Id, common{:})};
     return;
