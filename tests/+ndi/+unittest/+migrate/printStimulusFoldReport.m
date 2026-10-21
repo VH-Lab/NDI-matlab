@@ -5,7 +5,7 @@ function printStimulusFoldReport(r, corpusName)
 %   decomposed presentation's animal was resolved, the per-kind stimulus
 %   counts (NewStim class recogniser), presentations by their set of kinds
 %   split decomposed / refused, and the histogram of refusal reasons.
-%   REPORT-ONLY: it asserts nothing. Shared by the Dab and Soph e2e tests.
+%   REPORT-ONLY: it asserts nothing. Shared by the B and Soph e2e tests.
 
 field = @(name) getOr(r, name, 0);
 fprintf(['\n  STIMULUS-PRESENTATION FOLD (%s, #31) -- report-only\n' ...

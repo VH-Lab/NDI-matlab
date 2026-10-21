@@ -1,17 +1,22 @@
 name: V_eta migrate Dab (on-demand)
 
-# The Dab corpus (~27,561 v1 documents, ~35 MB compressed) through the WHOLE
-# V_eta pipeline: ndi.migrate.local over the real corpus, then open the result
-# through ndi.session.dir and read it back through the object API.
+# The Dabrowska documents of the Dab corpus through the WHOLE V_eta pipeline:
+# ndi.migrate.local over the real corpus, then open the result through
+# ndi.session.dir and read it back through the object API.
+#
+# Dab.zip (27,561 documents, ~35 MB compressed) is TWO datasets: Dabrowska's
+# (14,644) and the whole of corpus B, the Fitzpatrick tree-shrew dataset
+# (12,917). The test filters B out at read time, by session (Jess Haley,
+# 2026-10-21); B's stimulus-presentation checks run in test-eta-migrate-b.yml.
 #
 # WHY DAB HAS ITS OWN, DISPATCH-ONLY WORKFLOW rather than a line in
-# test-eta-migrate-e2e.yml. Dab is the WIDEST corpus (26 v1 classes) and the
-# only one that holds `ontologyTableRow` at scale (~6,205 docs). Its
+# test-eta-migrate-e2e.yml. Dabrowska is the only corpus that holds
+# `ontologyTableRow` at scale (6,205 docs). Its
 # decomposition -- ndi.migrate.internal.ontologyRowSubjects, the two-tier
 # subject fan-out (#53) -- is proven only by a fixture (TestOntologyRowSubjects)
 # and has never run over a real corpus. This workflow is the first full-corpus
-# exercise of that pass, plus the widest object read-back surface (ingestion
-# ~9,419, openMINDS ~2,344, syncrule_mapping ~2,484). Run alone, with a generous
+# exercise of that pass, plus the bath / slice / optogenetic-tetanus pass and
+# the ingestion (3,209) and openMINDS (2,344) read-back. Run alone, with a generous
 # timeout, and never on every push: it does not gate the fast e2e check, and a
 # Dab timeout/OOM here cannot turn that check red. Dab's MIGRATION (0 quarantine
 # / 0 orphans) is also gated independently on the DID-matlab side
@@ -154,7 +159,8 @@ jobs:
           command: |
             addpath(genpath("src"));
             addpath(genpath("tests"));
-            % Dab ALONE. Hard-asserts corpus size, 0 quarantine / 0 orphans /
+            % Dabrowska ALONE (corpus B filtered out at read time). Hard-asserts
+            % corpus size, 0 quarantine / 0 orphans /
             % 0 fragments, that the session opens on the did2sqlite backend, and
             % that the ontologyRowSubjects fan-out (#53) leaves no unfolded
             % `ontologyTableRow` in the output. The pass-1 census, final survivor
