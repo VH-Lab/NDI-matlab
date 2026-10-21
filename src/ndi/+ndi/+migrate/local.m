@@ -3226,7 +3226,7 @@ end
 
 function assertUniqueIds(docs)
 %ASSERTUNIQUEIDS Error, naming them, when two migrated documents share an id.
-    ids = cellfun(@(d) char(d.id()), docs, 'UniformOutput', false);
+    ids = cellfun(@(d) char(d.get('base.id')), docs, 'UniformOutput', false);
     [u, ~, j] = unique(ids);
     counts = accumarray(j(:), 1);
     dup = u(counts > 1);
