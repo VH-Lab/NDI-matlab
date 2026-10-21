@@ -83,9 +83,13 @@ f = struct('name', '', 'reference', [], 'type', '', 'direct', false, ...
 
 % --- name + reference, out of the one combined field -------------------
 localId = '';
-if isfield(props, 'subject') && isstruct(props.subject) ...
-        && isfield(props.subject, 'local_identifier')
-    localId = props.subject.local_identifier;
+% did-schema #88 (T1): the element is an `entity`; #73: a `subject`
+for blk = {'entity', 'subject'}
+    if isfield(props, blk{1}) && isstruct(props.(blk{1})) ...
+            && isfield(props.(blk{1}), 'local_identifier')
+        localId = props.(blk{1}).local_identifier;
+        break;
+    end
 end
 tok = regexp(localId, '^(.*) \(ref (.+)\)$', 'tokens', 'once');
 if isempty(tok)
@@ -201,7 +205,8 @@ function target = relationTarget(ndi_session_obj, childId, relationName)
 target = '';
 q = ndi.query('', 'isa', 'directed_relation', '') & ...
     ndi.query('directed_relation.relation.name', 'exact_string', relationName, '') & ...
-    ndi.query('', 'depends_on', 'child', childId);
+    (ndi.query('', 'depends_on', 'child_id', childId) | ...   % did-schema #88
+     ndi.query('', 'depends_on', 'child', childId));
 docs = ndi_session_obj.database_search(q);
 if isempty(docs)
     return;

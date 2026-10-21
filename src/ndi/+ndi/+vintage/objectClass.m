@@ -29,6 +29,19 @@ className = props.document_class.class_name;
 
 [entry, vintage] = ndi.vintage.entryFor(ndi_document_obj);
 
+% did-schema #88 (T1): a migrated element is an `entity` (type device, ...)
+% rather than a `subject`, so the class map does not name it. Its MATLAB
+% class is where it always was on #73: the `ndi element class` assertion
+% about it, read through the element row's object_assertion.
+if isempty(entry) && strcmp(className, 'entity')
+    elementEntry = ndi.vintage.entryFor('element');
+    if ~isempty(elementEntry) && ~isempty(elementEntry.object_assertion)
+        objClass = assertionValue(ndi_document_obj, ndi_session_obj, ...
+            elementEntry.object_assertion);
+        return;
+    end
+end
+
 if isempty(entry) || strcmp(vintage, 'v1')
     % THE ORIGINAL PATH, unchanged. `obj_parent_string` strips a legacy
     % `ndi_document_` prefix exactly as ndi_document2ndi_object always did.
