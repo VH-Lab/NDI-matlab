@@ -138,10 +138,12 @@ classdef TestSliceTetanus < matlab.unittest.TestCase
                 end
                 if isfield(m.subject_interaction, 'method_parameters')
                     p = m.subject_interaction.method_parameters;
-                    verifyEqual(testCase, {p.source_unit}, {'Hz', 's'});
-                    verifyEqual(testCase, [p(1).quantity.value p(2).quantity.value], [10 20]);
-                    verifyEqual(testCase, {p(1).quantity.source_value, p(2).quantity.source_value}, {'10', '20'});
-                    verifyEqual(testCase, p(2).unit.node, 'om:second-Time');
+                    verifyTrue(testCase, isscalar(p), ...
+                        'method_parameters is a scalar struct on the pinned schema');
+                    verifyEqual(testCase, {p.frequency.source_unit, p.duration.source_unit}, {'Hz', 's'});
+                    verifyEqual(testCase, [p.frequency.value p.duration.value], [10 20]);
+                    verifyEqual(testCase, {p.frequency.source_value, p.duration.source_value}, {'10', '20'});
+                    verifyEqual(testCase, p.duration.unit.node, 'om:second-Time');
                 end
             end
         end
@@ -162,6 +164,37 @@ classdef TestSliceTetanus < matlab.unittest.TestCase
                 verifyTrue(testCase, any(strcmp(dep(ref, 'relative_to'), ...
                     {testCase.EpochIndex.epoch_document_id})));
             end
+        end
+
+        function testMintedBodiesValidateAgainstThePinnedSchema(testCase)
+            % Runs where a V_eta schema set is assembled (DID_SCHEMA_PATH, the
+            % end-to-end workflow, pinned to did-schema v_eta-pre73); skipped
+            % in the fast gate, which carries no schema. Every minted body but
+            % the copied strain assertions (copies of this test's simulated
+            % assertions, not of real ones) goes through the converter with
+            % validation on, including both TLS 10 Hz 20 s runs.
+            if isempty(getenv('DID_SCHEMA_PATH'))
+                assumeFail(testCase, 'DID_SCHEMA_PATH unset; no schema to validate against.');
+            end
+            bodies = {};
+            nParam = 0;
+            for k = 1:numel(testCase.Plan.minted)
+                b = testCase.Plan.minted{k};
+                if strcmp(b.document_class.class_name, 'term_assertion'); continue; end
+                bodies{end+1} = b; %#ok<AGROW>
+                if isfield(b, 'subject_interaction') && isfield(b.subject_interaction, 'method_parameters')
+                    nParam = nParam + 1;
+                end
+            end
+            verifyEqual(testCase, nParam, 2, 'expected both 221202 runs to carry parameters');
+            sub = did2.convert.v1_to_v2(bodies, 'Validate', true, ...
+                'TargetVersion', 'V_eta', 'Verbose', false);
+            msg = '';
+            for k = 1:numel(sub.quarantine)
+                msg = sprintf('%s\n  %s: %s', msg, sub.quarantine(k).class_name, sub.quarantine(k).reason);
+            end
+            verifyEmpty(testCase, sub.quarantine, ['minted bodies quarantined:' msg]);
+            verifyNumElements(testCase, sub.migrated, numel(bodies));
         end
 
         function testEveryLabelRebuildsAndIsDropped(testCase)
