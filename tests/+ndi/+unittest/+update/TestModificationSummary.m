@@ -20,7 +20,8 @@ classdef TestModificationSummary < matlab.unittest.TestCase
             testCase.verifySubstring(txt, "1 local commit(s)");
             testCase.verifySubstring(txt, "changed:    src/a.m");
             testCase.verifySubstring(txt, "in the way: myScript.m");
-            testCase.verifySubstring(txt, "git stash pop");
+            testCase.verifySubstring(txt, "put back after the update");
+            testCase.verifySubstring(txt, "git stash list");
             testCase.verifySubstring(txt, "other untracked files are left alone");
         end
 

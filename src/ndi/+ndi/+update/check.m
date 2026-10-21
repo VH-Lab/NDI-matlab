@@ -43,7 +43,7 @@ function result = check(options)
 %                         updating touches the user's work (git only), with
 %                         fields Name, Path, ChangedFiles (tracked files
 %                         edited, deleted or staged; ndi_install stashes
-%                         these), BlockingFiles (untracked files at a path
+%                         them for the pull and puts them back), BlockingFiles (untracked files at a path
 %                         the update adds a file to; git stops rather than
 %                         overwrite them, so ndi.update.install asks for them
 %                         to be moved first), and CommitsAhead (local
