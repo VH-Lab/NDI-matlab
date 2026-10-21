@@ -169,11 +169,16 @@ end
     end
 
     function t = strainTerm(key)
-        % the term a dose of the strain reads as (decision #105)
+        % the term a dose of the strain reads as (decision #105); a strain
+        % with none is an error, not an unregistered label
         if isKey(options.Names, key)
             t = options.Names(key);
         else
-            t = did2.build.term('', key);
+            error('ndi:setup:conv:haley:unregisteredLabel', ...
+                ['The suspension dose of strain "%s" (seedingDocuments, the spec''s ' ...
+                 'seeding strains) has no term: the spec gives "%s" no strain term ' ...
+                 '(the ''Names'' option). Give it one; its key is not written as a label.'], ...
+                key, key);
         end
         if ~isstruct(t), t = did2.build.term('', t); end
     end

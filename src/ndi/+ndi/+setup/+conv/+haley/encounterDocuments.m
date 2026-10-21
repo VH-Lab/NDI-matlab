@@ -509,7 +509,9 @@ function t = encounterTypes(names)
 % types (exploit, sample, searchOn, searchOff: the patch exploitation, patch
 % sampling, on-patch and off-patch search encounters; decision #127); a blank label is
 % `Cannot Be Determined` (a posterior is missing, so no rule applies; Jess,
-% 2026-10-20), and any other label is kept as written
+% 2026-10-20), and any other label is an error: it has no registered term, and
+% writing it as a plain label would be an unregistered term (Jess Haley,
+% 2026-10-21)
 arguments
     names cell
 end
@@ -524,7 +526,11 @@ for k = 1:numel(names)
     elseif isempty(strtrim(names{k}))
         t{k} = haleyTerm('cannot be determined');
     else
-        t{k} = did2.build.term('', names{k});
+        error('ndi:setup:conv:haley:unregisteredLabel', ...
+            ['Encounter %d is labelled "%s" (labelEncounters, the encounter table''s ' ...
+             'type column), which is none of exploit, sample, searchOn, searchOff or ' ...
+             'blank: it has no registered term. Decide its term and add it to ' ...
+             'haleyTerm and encounterTypes.'], k, names{k});
     end
 end
 t = [t{:}];

@@ -347,6 +347,29 @@ classdef TestDatasetMetadataHaley < matlab.unittest.TestCase
             end
         end
 
+        function testKeywordsAreTextAndTheLicenceIsItsSpdxTerm(testCase)
+            % Jess Haley, 2026-10-21: the dataset's keywords are its own text
+            % (a text assertion), not terms with no node; its licence is the
+            % term whose node is its SPDX IRI (no ontology has licence terms)
+            testCase.assumeTrue(ndi.setup.V2.mergedEntities(), ...
+                'the dataset is its own class here: keyword and license are its fields');
+            docs = testCase.Result.documents;
+            st = docs(cellfun(@(d) isfield(d, 'statement'), docs));
+            nodes = cellfun(@(d) d.statement.variable.node, st, 'UniformOutput', false);
+            kw = st(strcmp(nodes, 'EDAM:data_0968'));
+            testCase.verifyNumElements(kw, 1, 'one keyword statement');
+            testCase.verifyTrue(isfield(kw{1}, 'text') && ~isfield(kw{1}, 'term'), ...
+                'the keywords are a text assertion');
+            tv = kw{1}.text.value;
+            if iscell(tv), tv = [tv{:}]; end
+            words = arrayfun(@(c) char(c.text), tv, 'UniformOutput', false);
+            testCase.verifyEqual(sort(words(:)'), sort(cellstr(string(testCase.Spec.dataset.keyword))'));
+            lic = st(strcmp(nodes, 'NCIT:C43611'));
+            testCase.verifyNumElements(lic, 1, 'one licence statement');
+            testCase.verifyEqual(lic{1}.term.value.node, 'https://spdx.org/licenses/CC-BY-4.0');
+            testCase.verifyEqual(lic{1}.term.value.name, 'CC-BY-4.0');
+        end
+
         function testUnrepresentedContentIsReportedNotDropped(testCase)
             u = testCase.Result.unrepresented;
             % software.vendor has no V2 home. An instrument's `name` has one only

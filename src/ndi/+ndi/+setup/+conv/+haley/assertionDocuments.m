@@ -296,12 +296,18 @@ end
                 'schema has neither statement notes nor a text value'], id, variable, char(notes));
         elseif ~isempty(notes) && ~statementHasNotes
             % a schema whose statements have no `notes` (did-schema before
-            % 2026-10-14, when notes was on interaction only): the reason is
-            % its own text statement beside it (decision #73)
+            % 2026-10-14, when notes was on interaction only): the reason
+            % as its own text statement beside it (decision #73) would need
+            % the variable "reason for <variable>", which has no registered
+            % term, so it is an error, not an unregistered label (Jess Haley,
+            % 2026-10-21)
             if isstruct(variable), variable = variable.name; end
-            out.documents{end+1} = did2.build.statement('text_assertion', subjectIds(id), ...
-                did2.build.term('', ['reason for ' variable]), ...
-                did2.build.valueCell('text', {char(notes)}), 'SessionId', sid);
+            error('ndi:setup:conv:haley:unregisteredLabel', ...
+                ['%s %s: its reason ("%s", from the spec''s assertions) would be written ' ...
+                 'as a text statement with the variable "reason for %s", which has no ' ...
+                 'registered term; the schema in use has no statement notes to hold it. ' ...
+                 'Use a schema with statement notes or register the term.'], ...
+                id, variable, char(notes), variable);
         end
     end
 end

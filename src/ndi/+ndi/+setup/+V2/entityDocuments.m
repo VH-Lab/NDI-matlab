@@ -95,13 +95,15 @@ eid = docs{1}.base.id;
 
 % ---- 2. the other fields, as assertions ------------------------------------------
 identity = {'type', 'name', 'local_identifier', 'description', 'global_identifier'};
+% a keyword is the dataset's own free text, not a term (Jess Haley, 2026-10-21)
 terms = {'species', 'genetic_strain_type', 'phenotype', 'breeding_type', 'disease_model', ...
-    'keyword', 'license', 'accessibility', 'ethics_assessment', 'experimental_approach', ...
+    'license', 'accessibility', 'ethics_assessment', 'experimental_approach', ...
     'factors', 'design'};
 dates = {'release_date', 'publication_date'};
 texts = {'short_name', 'version', 'version_innovation', 'how_to_cite', 'support_channel', ...
     'copyright_year', 'given_name', 'family_name', 'alternate_name', 'email', ...
-    'catalog_number', 'lot_number', 'laboratory_code', 'synonym', 'authors', 'genotype'};
+    'catalog_number', 'lot_number', 'laboratory_code', 'synonym', 'authors', 'genotype', ...
+    'keyword'};
 % the variables with a decided ontology node (the Haley import's term pass,
 % 2026-10-19; accessibility as did-schema's binding registry names it; the
 % rest by tenet T19's node pass, 2026-10-20, Haley decision #106)
@@ -111,7 +113,11 @@ variableNodes = struct('species', 'NCIT:C45293', 'accessibility', 'NCIT:C175887'
     'factors', 'OBI:0000750', 'short_name', 'NCIT:C42610', 'version', 'IAO:0000129', ...
     'authors', 'IAO:0000321', 'publication_date', 'EMPTY:0000345', ...
     'release_date', 'EMPTY:0000346', 'genetic_strain_type', 'EMPTY:0000347', ...
-    'genotype', 'NCIT:C16631');
+    'genotype', 'NCIT:C16631', 'design', 'OBI:0500000', ...
+    'ethics_assessment', 'EMPTY:0000355', 'experimental_approach', 'EMPTY:0000356');
+% ('design' is registered as "study design", so it cannot be found by its field
+% name; ethics_assessment and experimental_approach are explicit so they do
+% not depend on a name lookup either -- Jess Haley, 2026-10-21)
 names = setdiff(fieldnames(fields), identity, 'stable');
 for k = 1:numel(names)
     f = names{k};
@@ -127,6 +133,12 @@ for k = 1:numel(names)
         variable = ndi.setup.V2.registeredTerm(variableNodes.(f), variable);
     else
         variable = ndi.setup.V2.registeredTerm('', variable);
+    end
+    if strcmp(f, 'license') && (ischar(v) || (isstring(v) && isscalar(v)))
+        % a licence named by its SPDX identifier ('CC-BY-4.0') is the term
+        % whose node is its SPDX IRI: no ontology has licence terms (Jess
+        % Haley, 2026-10-21)
+        v = did2.build.term(['https://spdx.org/licenses/' strtrim(char(v))], strtrim(char(v)));
     end
     if any(strcmp(f, terms))
         docs{end+1} = did2.build.statement('term_assertion', eid, variable, asTerms(v), common{:}); %#ok<AGROW>

@@ -33,7 +33,7 @@ classdef TestSameAs < matlab.unittest.TestCase
             testCase.assumeTrue(~isempty(schemaPath) && ...
                 ndi.setup.V2.schemaHasClass('study', schemaPath), ...
                 'DID_SCHEMA_PATH does not hold a V2 schema with `study`');
-            % the fixtures' terms ('instrument type', 'illumination',
+            % the fixtures' terms ('illumination',
             % 'objective', 'serial number', 'manufacturer') are this test's own
             % vocabulary, not a dataset's, so they are not in DID-schema's term
             % registry; what is tested here is same_as, not the registry
@@ -81,10 +81,10 @@ classdef TestSameAs < matlab.unittest.TestCase
             d2 = ndi.entity.fromDocument(S, id.d2);
             a = testCase.verifyWarning(@() d2.assertions(), 'ndi:entity:sameAs:disagree');
             vars = cellfun(@(x) x.variable_name(), a, 'UniformOutput', false);
-            testCase.verifyTrue(ismember('instrument type', vars), ...
+            testCase.verifyTrue(ismember('Equipment Type', vars), ...
                 'asserted of the other record of its product (P1), it holds of D2');
             testCase.verifyTrue(ismember('illumination', vars), 'asserted of its own product (P2)');
-            k = find(strcmp(vars, 'instrument type'), 1);
+            k = find(strcmp(vars, 'Equipment Type'), 1);
             testCase.verifySubstring(a{k}.via(), 'same_as');
             testCase.verifySubstring(a{k}.via(), 'instance_of');
 
@@ -217,7 +217,8 @@ classdef TestSameAs < matlab.unittest.TestCase
                 did2.build.directedRelation(id.d2, id.p2, 'instance_of', c{:}), ...
                 did2.build.undirectedRelation({id.p1, id.p2}, 'same_as', c{:}), ...
                 did2.build.undirectedRelation({id.w1, id.w2}, 'same_as', c{:}), ...
-                termAssertion(id.p1, 'instrument type', 'stereo microscope', sid), ...
+                termAssertion(id.p1, did2.build.term('NCIT:C178920', 'Equipment Type'), ...
+                    'stereo microscope', sid), ...
                 termAssertion(id.p2, 'illumination', 'LED', sid), ...
                 termAssertion(id.p1, 'objective', 'PlanApo 1.0x', sid), ...
                 termAssertion(id.p2, 'objective', 'PlanApo 2.0x', sid), ...
@@ -308,14 +309,17 @@ docs = ndi.setup.V2.entityDocuments('subject', struct('local_identifier', localI
 end
 
 function d = termAssertion(entityId, variable, value, sid)
-% VARIABLE of ENTITYID is the term named VALUE
+% VARIABLE (a term, or a name) of ENTITYID is the term named VALUE
 arguments
     entityId {mustBeText}
-    variable {mustBeText}
+    variable
     value {mustBeText}
     sid {mustBeText}
 end
-d = did2.build.statement('term_assertion', entityId, did2.build.term('', variable), ...
+if ~isstruct(variable)
+    variable = did2.build.term('', variable);
+end
+d = did2.build.statement('term_assertion', entityId, variable, ...
     did2.build.term('', value), 'SessionId', sid);
 end
 

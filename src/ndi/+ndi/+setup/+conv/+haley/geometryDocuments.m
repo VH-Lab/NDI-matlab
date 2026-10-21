@@ -339,7 +339,12 @@ end
 switch char(name)
     case 'threshold', t = haleyTerm('image segmentation');
     case 'template',  t = haleyTerm('image registration');
-    otherwise,        t = did2.build.term('', ['patch detection by ' char(name)]);
+    otherwise
+        error('ndi:setup:conv:haley:unregisteredLabel', ...
+            ['The patch detection method "%s" (the lawn table''s `lawnMethod` column) ' ...
+             'is neither threshold nor template, so it has no registered term; ' ...
+             '"patch detection by %s" is not written as a label. Decide its term and ' ...
+             'add it to haleyTerm and detectionMethod.'], char(name), char(name));
 end
 end
 

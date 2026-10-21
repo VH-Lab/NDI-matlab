@@ -44,6 +44,17 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
                 {'p1'; 'p2'}, [true; false], [true; false], ...
                 'VariableNames', {'session', 'kind', 'local_identifier', 'exclude', 'filmed'});
             ids = containers.Map({'p1', 'p2'}, {ndi.ido.unique_id(), ndi.ido.unique_id()});
+            if ndi.setup.V2.schemaHasLeaf('logical_assertion') ...
+                    && ~ndi.setup.V2.schemaHasField('statement', 'notes') ...
+                    && ndi.setup.V2.schemaHasClass('text')
+                % no statement notes: the reason would be a text statement whose
+                % variable "reason for ..." has no registered term, so the
+                % import refuses it rather than writing an unregistered label
+                % (Jess Haley, 2026-10-21)
+                testCase.verifyError(@() ndi.setup.conv.haley.assertionDocuments(session, S, ids), ...
+                    'ndi:setup:conv:haley:unregisteredLabel');
+                return;
+            end
             out = ndi.setup.conv.haley.assertionDocuments(session, S, ids);
             if ~ndi.setup.V2.schemaHasLeaf('logical_assertion')
                 % a schema without the `logical` value kind: neither is
@@ -74,17 +85,10 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
                 testCase.verifyEqual(ex{1}.statement.notes, 'no contrast video, so patches are poorly aligned');
                 testCase.verifyEqual(nf{1}.statement.notes, 'Prepared but not filmed: no video.');
                 testCase.verifyEmpty(pick('reason for inclusion in analysis'));
-            elseif ~ndi.setup.V2.schemaHasClass('text')
+            else
                 % neither notes nor a text kind: the reasons are reported
                 testCase.verifyEmpty(pick('reason for inclusion in analysis'));
                 testCase.verifyTrue(any(contains(out.skipped, 'no contrast video')));
-            else
-                why = pick('reason for inclusion in analysis');
-                testCase.verifyNumElements(why, 1);
-                testCase.verifyEqual(why{1}.text.value(1).text, 'no contrast video, so patches are poorly aligned');
-                why = pick('reason for video recording');
-                testCase.verifyNumElements(why, 1);
-                testCase.verifyEqual(why{1}.text.value(1).text, 'Prepared but not filmed: no video.');
             end
 
             % a day marked `include = yes` gives an exclusion no reason

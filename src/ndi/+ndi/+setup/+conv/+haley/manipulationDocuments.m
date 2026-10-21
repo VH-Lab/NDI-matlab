@@ -511,11 +511,16 @@ out.documents = docs;
     end
 
     function t = nameOf(key)
-        % the term a dose of KEY reads as; its key as a label when unknown
+        % the term a dose of KEY reads as (a formulation's type, a strain's
+        % term); a key with none is an error, not an unregistered label
         if isKey(options.Names, key)
             t = options.Names(key);
         else
-            t = did2.build.term('', key);
+            error('ndi:setup:conv:haley:unregisteredLabel', ...
+                ['The dose of "%s" (manipulationDocuments, from the spec''s ' ...
+                 'preparation/seeding sections) has no term: the spec gives "%s" no ' ...
+                 'formulation type or strain term (the ''Names'' option). Give it one; ' ...
+                 'its key is not written as a label.'], key, key);
         end
         if ~isstruct(t), t = did2.build.term('', t); end
     end
