@@ -1,5 +1,7 @@
 # NDI V2 object layer: subjects, statements and entities
 
+**Using it:** [Using_V2.md](Using_V2.md) is the short user guide (open, search, read, walk, write).
+
 **Status: PARTLY BUILT (2026-10-06), for review by Jess Haley and Steve Van Hooser.**
 Built (read side): `ndi.entity`, the statement tree,
 `ndi.value`, and the `ndi.v2` helpers. **Not built, on purpose:** any change to
