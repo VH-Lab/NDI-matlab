@@ -422,6 +422,47 @@ classdef TestPathSPromotion < matlab.unittest.TestCase
                 report.sites_laterality_folded report.laterality_assertions_minted], [1 1 1]);
         end
 
+        function testSortedUnitsOfALocatedProbeAreNotMoved(testCase)
+            % 20211116: the located n-trode `leftcortex` (V1 + left cerebral
+            % hemisphere) has 21 sorted `spikes` units (underlying_element_id
+            % the probe). Each unit is migrated as an entity with an `element
+            % type` kind assertion; an observation about a unit taken with the
+            % probe is not about the specimen, so no region part is made for
+            % it (CI run 39658733813 minted 22 parts there, one per unit).
+            u1 = entityOf('unit_1', 'cell'); u2 = entityOf('unit_2', '');
+            u2.document_class = dc('subject', {'base'});    % pre-#88 element
+            structs = [{organism('animal_1'), device('probe_1'), u1, u2, ...
+                elementType('unit_1', 'spikes'), elementType('unit_2', 'spikes'), ...
+                elementType('probe_1', 'n-trode')}, ...
+                probeWithSite('anch_p', 'probe_1', 'UBERON:0002436', 'primary visual cortex'), ...
+                probeWithSite('anch_q', 'probe_1', 'UBERON:0002812', 'left cerebral hemisphere'), ...
+                recording('rec_u1', 'unit_1', 'probe_1', 'anch_r1'), ...
+                recording('rec_u2', 'unit_2', 'probe_1', 'anch_r2'), ...
+                recording('rec_a', 'animal_1', 'probe_1', 'anch_r3')];
+            [kept, minted, ~, report] = ...
+                ndi.migrate.internal.pathSPromotion(structs, 'Mode', 'located');
+            testCase.verifyEqual(countClass(minted, 'entity'), 1, ...
+                'one part, for the animal; none per unit');
+            testCase.verifyEqual(depValue(byId(kept, 'rec_u1'), 'entity_id'), 'unit_1');
+            testCase.verifyEqual(depValue(byId(kept, 'rec_u2'), 'entity_id'), 'unit_2');
+            part = firstOfClass(minted, 'entity');
+            testCase.verifyEqual(depValue(byId(kept, 'rec_a'), 'entity_id'), part.base.id);
+            testCase.verifyEqual(report.left_about_an_element, 2);
+        end
+
+        function testACellOrCultureIsNotARegionParent(testCase)
+            structs = [{entityOf('cell_1', 'cell'), entityOf('cult_1', 'culture'), ...
+                device('probe_1')}, ...
+                probeWithSite('anch_p', 'probe_1', 'UBERON:0001880', 'BNST'), ...
+                recording('rec_1', 'cell_1', 'probe_1', 'anch_r'), ...
+                recording('rec_2', 'cult_1', 'probe_1', 'anch_r2')];
+            [~, minted, changed, report] = ...
+                ndi.migrate.internal.pathSPromotion(structs, 'Mode', 'located');
+            testCase.verifyFalse(changed);
+            testCase.verifyEmpty(minted);
+            testCase.verifyEqual(report.left_about_another_entity_type, 2);
+        end
+
         % ---- SLICES (Jess Haley, 2026-10-21, "a") --------------------------
         % "The recording observation points at a BNST part entity that is a
         % part of the SLICE, and the slice is a part of the animal (animal ->
@@ -605,6 +646,16 @@ for k = 1:numel(a)
         node = a{k}.term.value.node;
     end
 end
+end
+
+function a = elementType(entityId, type)
+% the kind assertion migrators_j.element writes about every v1 element
+a = struct();
+a.document_class = dc('assertion', {'statement', 'base', 'term', 'value', 'data'});
+a.depends_on = dep('entity_id', entityId);
+a.base = base(['etype_' entityId]);
+a.statement = struct('variable', term('', 'element type'));
+a.term = struct('value', term('', type));
 end
 
 function e = organism(id)

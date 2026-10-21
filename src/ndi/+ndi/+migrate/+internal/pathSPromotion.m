@@ -108,7 +108,9 @@ function [kept, minted, changed, report] = pathSPromotion(structs, options)
 %     * an instrument whose only location is a bare side qualifier (NCIT
 %       Left / Right): there is no region to make a part of.
 %     * a statement already about a region part, a tissue that is part of
-%       nothing, a device, or a subject not in the batch.
+%       nothing, a device, a v1 element (a sorted unit recorded by the probe:
+%       the migrators assert its `element type`), another entity type (a
+%       cell, a culture), or a subject not in the batch.
 %
 %   STRUCTS is a cell of V_eta document body structs (from did2.document.toStruct).
 %   Returns KEPT (the surviving bodies, with retargeted statements and the
@@ -397,6 +399,8 @@ r = struct( ...
     'left_about_a_region_part',              0, ...
     'left_about_a_tissue_part_of_nothing',   0, ...
     'left_about_a_device',                   0, ...
+    'left_about_an_element',                 0, ...
+    'left_about_another_entity_type',        0, ...
     'left_subject_not_in_batch',             0, ...
     'left_subject_not_an_entity',            0, ...
     'left_no_subject',                       0, ...
@@ -600,7 +604,8 @@ end
 
 function [ok, why, onSlice] = movableSubject(idx, subject)
 %MOVABLESUBJECT May a statement about SUBJECT move onto a region part of it?
-%   A subject (an entity that is not a tissue or device), or a SLICE: a
+%   A subject (an organism; a pre-#88 `subject` that is not a v1 element),
+%   or a SLICE: a
 %   `tissue` entity `part_of` something that is not itself a region part
 %   (sliceTetanus's slices; decision "a", animal -> slice -> region).
 ok = false;
@@ -614,6 +619,11 @@ else
     e = idx.byId(subject);
     if ~ndi.migrate.internal.etaShape.isEntity(e)
         why = 'left_subject_not_an_entity';
+    elseif isKey(idx.elements, subject)
+        % a v1 element (a probe, a sorted unit): the migrators assert its
+        % `element type`; a unit recorded by a located probe is not the
+        % specimen, and a region part of a unit is not decided
+        why = 'left_about_an_element';
     elseif isRegionPart(idx, subject, e)
         why = 'left_about_a_region_part';
     elseif isTissue(e)
@@ -625,6 +635,10 @@ else
         end
     elseif strcmp(ndi.migrate.internal.etaShape.entityType(e), 'device')
         why = 'left_about_a_device';
+    elseif ~any(strcmp(ndi.migrate.internal.etaShape.entityType(e), {'organism', ''}))
+        % a cell, a culture, a group, ...: "a region of a SUBJECT" names an
+        % organism ('' is the pre-#88 `subject` class, which has no type)
+        why = 'left_about_another_entity_type';
     else
         ok = true;
     end
@@ -656,6 +670,7 @@ idx.byId = containers.Map('KeyType', 'char', 'ValueType', 'any');
 idx.parts = containers.Map('KeyType', 'char', 'ValueType', 'char');
 idx.parentOf = containers.Map('KeyType', 'char', 'ValueType', 'char');
 idx.kindOf = containers.Map('KeyType', 'char', 'ValueType', 'char');
+idx.elements = containers.Map('KeyType', 'char', 'ValueType', 'logical');
 sideOf = containers.Map('KeyType', 'char', 'ValueType', 'char');
 for k = 1:numel(structs)
     s = structs{k};
@@ -667,6 +682,9 @@ for k = 1:numel(structs)
     elseif S.isStatement(s, 'assertion', 'term')
         v = S.variable(s).name;
         a = S.aboutId(s);
+        if strcmp(v, 'element type') && ~isempty(a)
+            idx.elements(a) = true;
+        end
         k2 = regionKey(S.termValue(s));
         if isempty(k2) || isempty(a); continue; end
         if strcmp(v, 'anatomical structure')
