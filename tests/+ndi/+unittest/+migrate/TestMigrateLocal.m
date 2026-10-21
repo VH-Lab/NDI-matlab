@@ -4,8 +4,13 @@ classdef TestMigrateLocal < matlab.unittest.TestCase
 %   Builds a synthetic NDI session tree on the fly (a directory with
 %   a .ndi/ subdirectory holding either a v1 did-sqlite database or a
 %   matlabdumbjsondb file set), runs ndi.migrate.local against it, and
-%   inspects the resulting V_delta sqlite, the backup, the quarantine
-%   sidecar, the lock semantics, and the idempotency fast pass.
+%   inspects the resulting sqlite, the backup, the quarantine sidecar,
+%   the lock semantics, and the idempotency fast pass.
+%
+%   Every call but testDefaultTargetIsVeta's explicit one relies on the
+%   DEFAULT TargetVersion, which is 'V_eta' since 2026-10-21
+%   (VH-Lab/NDI-matlab#804; it was 'V_delta'), so these tests run the
+%   V_eta path: +migrators_j in pass 1 and the second pass.
 %
 %   Tests run with Validate=false so the test runner does not need a
 %   checked-out did-schema tree next to it. The mksqlite gate lives in
@@ -44,6 +49,33 @@ classdef TestMigrateLocal < matlab.unittest.TestCase
     end
 
     methods (Test)
+
+        function testDefaultTargetIsVeta(testCase)
+            % ndi.migrate.local migrates to V_eta unless asked otherwise
+            % (VH-Lab/NDI-matlab#804): it writes V_eta.sqlite and runs the
+            % V_eta second pass, whose report is carried on the result.
+            srcSqlite = fullfile(testCase.SessionRoot, '.ndi', 'did-sqlite.sqlite');
+            buildV1Sqlite(srcSqlite, {jsonencode(makeV1Body('alpha'))});
+
+            result = ndi.migrate.local(testCase.SessionRoot, 'Validate', false);
+
+            [~, name, ext] = fileparts(result.destination);
+            verifyEqual(testCase, [name ext], 'V_eta.sqlite');
+            verifyTrue(testCase, isfile(fullfile(testCase.SessionRoot, '.ndi', 'V_eta.sqlite')));
+            verifyFalse(testCase, isfile(fullfile(testCase.SessionRoot, '.ndi', 'V_delta.sqlite')));
+            % result.secondPass exists on every target, but its reports are
+            % [] unless the V_eta second pass ran; the strain pass reports
+            % its denominator whenever it is handed documents
+            verifyNotEmpty(testCase, result.secondPass.strainAssembly, ...
+                'the V_eta second pass did not run on the default target');
+            verifyGreaterThan(testCase, result.secondPass.strainAssembly.documents_inspected, 0);
+
+            % the default is declared, not inferred from a file name
+            explicit = ndi.migrate.local(testCase.SessionRoot, 'Validate', false, ...
+                'TargetVersion', 'V_eta');
+            verifyTrue(testCase, explicit.alreadyMigrated, ...
+                'an explicit V_eta run finds the default run''s V_eta.sqlite');
+        end
 
         function testMigratesV1SqliteToVDelta(testCase)
             % Round-trip a synthetic v1 sqlite store: produces the

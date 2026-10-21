@@ -1,11 +1,12 @@
 function result = local(path, options)
-%LOCAL Migrate a local NDI dataset/session to V_delta on disk.
+%LOCAL Migrate a local NDI dataset/session to V_eta on disk.
 %
 %   RESULT = ndi.migrate.local(PATH) migrates the on-disk did_v1
-%   database under PATH/.ndi to the V_delta wire format by reading
-%   every document body via the did2 v1 readers, running
-%   did2.convert.v1_to_v2 per body, and writing the surviving docs
-%   into PATH/.ndi/V_delta.sqlite via did2.database.sqlitedb.
+%   database under PATH/.ndi to the V_eta wire format (the default
+%   TargetVersion; 'V_delta' on request) by reading every document
+%   body via the did2 v1 readers, running did2.convert.v1_to_v2 per
+%   body plus the V_eta second pass, and writing the surviving docs
+%   into PATH/.ndi/<TargetVersion>.sqlite via did2.database.sqlitedb.
 %
 %   The function acquires an exclusive lock at PATH/.ndi/.migrate.lock
 %   for the duration of the run, so concurrent migrations of the same
@@ -95,10 +96,12 @@ function result = local(path, options)
 %                      []) - override the shared schema cache. Used
 %                      by tests; production callers should rely on
 %                      ndi.schemas.init having set the active cache.
-%     TargetVersion    (1,:) char, default 'V_delta') - migration
-%                      target wire format. 'V_delta' preserves the
-%                      historical class-preserving behaviour and
-%                      writes V_delta.sqlite. 'V_eta' (Brainstorm J)
+%     TargetVersion    (1,:) char, default 'V_eta') - migration
+%                      target wire format. The default became 'V_eta'
+%                      on 2026-10-21 (VH-Lab/NDI-matlab#804; it was
+%                      'V_delta'). 'V_delta' preserves the historical
+%                      class-preserving behaviour and writes
+%                      V_delta.sqlite. 'V_eta' (Brainstorm J)
 %                      routes split-eligible classes through the
 %                      +migrators_j migrators (1 -> N) and runs a second
 %                      pass using the open body set: it resolves
@@ -173,7 +176,7 @@ function result = local(path, options)
         options.Verbose (1,1) logical = false
         options.Validate (1,1) logical = true
         options.SchemaCache = []
-        options.TargetVersion (1,:) char {mustBeMember(options.TargetVersion, {'V_delta', 'V_eta'})} = 'V_delta'
+        options.TargetVersion (1,:) char {mustBeMember(options.TargetVersion, {'V_delta', 'V_eta'})} = 'V_eta'
     end
 
     if ~isfolder(path)
@@ -210,8 +213,8 @@ function result = local(path, options)
         else
             error('NDI:migrate:noV1Source', ...
                 ['No recognised v1 database (did-sqlite.sqlite or ' ...
-                 'Object_id_*_v*.json) and no V_delta.sqlite found ' ...
-                 'under "%s".'], ndiDir);
+                 'Object_id_*_v*.json) and no %s.sqlite found ' ...
+                 'under "%s".'], options.TargetVersion, ndiDir);
         end
         if options.Backup && ~options.DryRun && ~isfolder(backupDir)
             copyBackup(ndiDir, backupDir);
@@ -2602,7 +2605,9 @@ function [kind, srcPath] = detectV1Source(ndiDir)
 
     sqliteListing = dir(fullfile(ndiDir, '*.sqlite'));
     sqliteListing = sqliteListing(~[sqliteListing.isdir]);
-    sqliteListing = sqliteListing(~strcmpi({sqliteListing.name}, 'V_delta.sqlite'));
+    % a migration OUTPUT is never a v1 source, whichever target wrote it
+    sqliteListing = sqliteListing(~ismember(lower({sqliteListing.name}), ...
+        {'v_delta.sqlite', 'v_eta.sqlite'}));
     if ~isempty(sqliteListing)
         kind = 'sqlite';
         srcPath = fullfile(ndiDir, sqliteListing(1).name);

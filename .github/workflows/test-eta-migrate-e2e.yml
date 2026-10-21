@@ -63,6 +63,11 @@ on:
         required: false
         default: ''
         type: string
+      schema_ref:
+        description: 'did-schema ref to validate against (default: the pin below)'
+        required: false
+        default: ''
+        type: string
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -79,7 +84,7 @@ jobs:
       DID_MATLAB_REF: ${{ inputs.ref || 'V2' }}
       # V_eta lives on did-schema `main` since #64 merged (2026-09-23) and the
       # shared topic branch was deleted; validate against main.
-      DID_SCHEMA_REF: v_eta-pre73  # pinned: pre-#73 schema until NDI emits the #73 shape (DID-schema PR #76)
+      DID_SCHEMA_REF: ${{ inputs.schema_ref || 'v_eta-pre73' }}  # pinned: pre-#73 schema until NDI emits the #73 shape (DID-schema PR #76)
     steps:
       - name: Check out NDI-matlab
         uses: actions/checkout@v4
@@ -204,6 +209,11 @@ jobs:
                 'ndi.unittest.migrate.TestMigrateLocalEta', ...
                 'ndi.unittest.migrate.TestMigrateLocalEtaPRED', ...
                 'ndi.unittest.migrate.TestMigrateLocalEta20211116', ...
+                ... % ndi.migrate.local's own tests. Its DEFAULT TargetVersion
+                ... % is V_eta since 2026-10-21 (VH-Lab/NDI-matlab#804), so
+                ... % TestMigrateLocal runs the V_eta path and belongs here,
+                ... % where mksqlite, DID-matlab and the schema are installed.
+                'ndi.unittest.migrate.TestMigrateLocal', ...
                 'ndi.unittest.database.TestDid2SqliteHierarchy', ...
                 'ndi.unittest.vintage.TestVintageMap', ...
                 'ndi.unittest.vintage.TestElementLabelMatchesMigrator', ...
