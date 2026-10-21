@@ -119,7 +119,9 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: test-import-v2-${{ github.ref }}
+  # Keyed on the commit: a push never cancels another commit's run;
+  # only a duplicate run of the same commit is cancelled.
+  group: test-import-v2-${{ github.sha }}
   cancel-in-progress: true
 
 jobs:
