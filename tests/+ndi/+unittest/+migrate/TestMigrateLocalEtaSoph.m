@@ -162,44 +162,49 @@ classdef TestMigrateLocalEtaSoph < matlab.unittest.TestCase
         end
 
         function testNoV1DocumentSurvivesUnfoldedInTheFinalOutput(testCase)
-            % THE BAR-2 INSTRUMENT, report-only on this first landing. The
-            % census above counts what the single-document migrators did in
-            % pass 1; it cannot see the SECOND PASSES that run afterward
-            % (epochMint's armed folds, resolveResponseParameters,
-            % resolveClockAlignment), so a class that reads "unconverted" there
-            % can still reach its decided shape. The only sound test of "is
-            % this corpus fully at decided shape" is the FINAL output: a v1
-            % SOURCE class name that still labels a destination document did
-            % not fold. Measured before it is asserted.
+            % THE BAR-2 INSTRUMENT, report-only (measured, not asserted). The
+            % pass-1 census above cannot see the SECOND PASSES that run
+            % afterward (epochMint's armed folds, resolveResponseParameters,
+            % resolveClockAlignment, resolveStimulusPresentations), so the
+            % only sound test of "is this corpus at decided shape" is the
+            % FINAL output.
+            %
+            % DECIDED PER DOCUMENT, NOT BY CLASS NAME. The previous census
+            % flagged any destination document whose class_name was also a
+            % v1 source class_name. On the pinned schema (did-schema
+            % v_eta-pre73) the calculator leaves REUSE the v1 spellings as
+            % real V2 classes (tuningcurve_calc etc. chain to
+            % tuning_curve_calculation), so ~69k converted calculator
+            % documents read as survivors, as did subject and session. The
+            % signal now is each destination document's own superclass chain,
+            % which v1_to_v2's ensureClassBlocks rebuilt from the pinned
+            % schema: a chain made only of v1 class names means the class is
+            % a v1 tombstone and the body is unconverted; a chain with a
+            % V_eta-only ancestor means a real V2 class under a v1 spelling.
+            % See finalV1BodyCensus for the full argument and its direction
+            % of error.
             src = testCase.Bodies;
             dst = destinationBodies(testCase.Result.destination);
-            survivors = ndi.unittest.migrate.finalV1SurvivorCensus( ...
-                reshape(src, 1, []), reshape(dst, 1, []));
+            % KNOWN DEFERRALS. stimulus_response_scalar and its _basic
+            % parameters are genuinely unconverted on this line: the target
+            % class was deleted by #67 decision 10, so the migrator passes
+            % them through. Still v1 bodies -- listed in their own table, not
+            % hidden.
+            deferrals = struct( ...
+                'class_name', {'stimulus_response_scalar', ...
+                               'stimulus_response_scalar_parameters_basic'}, ...
+                'label', {'deferred to the migrator port (#67 decision 10)', ...
+                          'deferred to the migrator port (#67 decision 10)'});
+            census = ndi.unittest.migrate.finalV1BodyCensus( ...
+                reshape(src, 1, []), reshape(dst, 1, []), 'Deferrals', deferrals);
+            ndi.unittest.migrate.printV1BodyCensus(census, 'Soph');
 
-            fprintf(['\n  BAR-2 FINAL-OUTPUT V1 SURVIVOR CENSUS (Soph)\n' ...
-                     '    DENOMINATOR: %d source document(s), %d destination ' ...
-                     'document(s)\n' ...
-                     '    v1 source class names still labelling a destination ' ...
-                     'document: %d\n'], ...
-                numel(src), numel(dst), numel(survivors));
-            if isempty(survivors)
-                fprintf('      (none -- every v1 class folded)\n');
-            else
-                for k = 1:numel(survivors)
-                    note = 'UNFOLDED -- a Bar-2 gap unless persist or a declared deferral';
-                    if any(strcmp(survivors(k).class_name, {'subject', 'session'}))
-                        note = 'persist (v1 class IS the V_eta class)';
-                    elseif strcmp(survivors(k).class_name, 'stimulus_response_scalar_parameters_basic')
-                        note = 'SIGNED verify-before-delete deferral (#61)';
-                    end
-                    fprintf('      %6d  %-40s %s\n', survivors(k).count, ...
-                        survivors(k).class_name, note);
-                end
-            end
             % A denominator that read nothing is the silentLoss failure; assert
-            % it even while the survivor set itself is report-only.
+            % it even while the survivor sets themselves are report-only.
             verifyEqual(testCase, numel(src), 101427, ...
                 'the source census did not read 101427 documents');
+            verifyEqual(testCase, census.denominator.source_classified, numel(src), ...
+                'the census could not read a class name from every source document');
             verifyGreaterThan(testCase, numel(dst), 0, ...
                 'the destination census read zero documents');
         end
