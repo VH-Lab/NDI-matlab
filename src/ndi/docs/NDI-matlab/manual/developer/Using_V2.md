@@ -329,8 +329,8 @@ code for those (the Haley import found two that way).
   (OLS, 2026-10-21): ..."`. Copy the existing blocks there as the pattern.
 
 If the prefix is new (no entry in `schemas/V_eta/stable/CURIE_lookups_meta.json`),
-add it before the term. It goes in DID-schema's `tools/build_v_eta.py` prefix
-tables (spelling, URI base, pattern), and in ndi-ontology-matlab (a lookup class
+add it before the term. It goes in that file in DID-schema (an entry with its
+`spelling`, URI base and pattern), and in ndi-ontology-matlab (a lookup class
 and an `ontology_list.json` entry) when NDI needs to look its terms up.
 
 **3. Check the batch and get the registry rows.** In `terms.tsv`, fill in the
@@ -355,12 +355,13 @@ For an EMPTY term the tool copies the label and definition from your
 empty-ontology checkout. It also rewrites each prefix to the registry's
 spelling. It writes nothing: paste the printed rows at the end of `terms`.
 
-**4. Rebuild and gate.** In DID-schema, run `python3 tools/build_v_eta.py`,
-which copies the registry into `schemas/V_eta/stable/term_registry_meta.json`.
-Then run `EMPTY_ONTOLOGY=../empty-ontology python3 tools/gates.py`.
+**4. Gate.** In DID-schema, run
+`EMPTY_ONTOLOGY=../empty-ontology python3 tools/gates.py`. Its `validate_v_eta`
+step copies the registry into `schemas/V_eta/stable/term_registry_meta.json`
+(the JSON under `schemas/V_eta` is the source; there is no build step).
 `check_term_registry` must pass, and its R7 line must say the EMPTY terms
 were compared, not `NOT CHECKED`. CI has no empty-ontology checkout, so R7
-is checked only on your machine. Copy the rebuilt `stable`, `draft` and
+is checked only on your machine. Copy the `stable`, `draft` and
 `deprecated` folders to your `DID_SCHEMA_PATH`. Then re-run step 1, which
 should now list nothing, with the registry error back on.
 
@@ -369,7 +370,7 @@ should now list nothing, with the registry error back on.
 | repository | what | PR (until merged) |
 |---|---|---|
 | Waltham-Data-Science/empty-ontology | new EMPTY classes in `src/ontology/empty-edit.owl` | #22, branch `claude/ome-zarr-format` |
-| did-schema | the rows in `schemas/V_eta_term_registry.json`, the rebuilt `term_registry_meta.json`, and any new prefix in `tools/build_v_eta.py` | #88, branch `claude/ecstatic-pascal-md91fw` |
+| did-schema | the rows in `schemas/V_eta_term_registry.json`, the regenerated `term_registry_meta.json`, and any new prefix in `schemas/V_eta/stable/CURIE_lookups_meta.json` | #88, branch `claude/ecstatic-pascal-md91fw` |
 | ndi-ontology-matlab | a lookup class for a new prefix, only if one is needed | #11 |
 | NDI-matlab | the import, writing terms through `ndi.setup.V2.registeredTerm`, and a test like `TestTermRegistry` that runs it with collection on | #1021 |
 
