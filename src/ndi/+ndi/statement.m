@@ -447,7 +447,9 @@ classdef statement
             %   'Class'     'observation', 'manipulation', 'calculation',
             %               'assertion', 'interaction', or a document class
             %               (e.g. 'velocity_calculation')
-            %   'Method'    the method's name, e.g. 'tracking by WormLab', or its node
+            %   'Method'    the method's name, e.g. 'tracking by WormLab', or its node:
+            %               the inline method, or the shared `method` document
+            %               the statement names by `method_id` (did-schema #88)
             % A name is matched ignoring case, a node by its CURIE key
             % (ndi.v2.termQuery). When nothing matches, the variable and
             % method are widened by the registered terms that go by them, a
@@ -502,12 +504,12 @@ classdef statement
                 if isa(sid, 'ndi.entity'), sid = sid.document_id; end   % any entity (2026-10-08)
                 q = q & ndi.v2.entityQuery(char(sid));
             end
-            docs = container.database_search(withTerms(q, {options.Variable}, {options.Method}));
+            docs = byTerms(container, q, {options.Variable}, {options.Method});
             if isempty(docs) && ~(isempty(options.Variable) && isempty(options.Method))
                 v = widened(options.Variable);
                 m = widened(options.Method);
                 if numel(v) + numel(m) > ~isempty(options.Variable) + ~isempty(options.Method)
-                    docs = container.database_search(withTerms(q, v, m));
+                    docs = byTerms(container, q, v, m);
                 end
             end
             info = struct('read', numel(docs), 'containers', NaN, 'kept', numel(docs), ...
@@ -538,10 +540,13 @@ classdef statement
     end
 end
 
-function q = withTerms(q, variables, methods)
-% Q narrowed to statements whose variable is one of VARIABLES and whose method
-% is one of METHODS (each a cell of names or nodes; {''} or {} for any)
+function docs = byTerms(container, q, variables, methods)
+% the documents matching Q whose variable is one of VARIABLES and whose method
+% is one of METHODS (each a cell of names or nodes; {''} or {} for any). The
+% method is the inline `interaction.method.term` or the term of the `method`
+% document the `method_id` edge names (did-schema #88; ndi.v2.methodQuery).
 arguments
+    container
     q
     variables cell
     methods cell
@@ -551,8 +556,14 @@ methods = methods(~cellfun(@isempty, methods));
 if ~isempty(variables)
     q = q & ndi.v2.termQuery('statement.variable', variables);
 end
+byMethod = [];
 if ~isempty(methods)
-    q = q & ndi.v2.termQuery('interaction.method.term', methods);   % did-schema #88
+    [m, byMethod] = ndi.v2.methodQuery(@(x) container.database_search(x), methods);
+    if ~isempty(m), q = q & m; end
+end
+docs = container.database_search(q);
+if ~isempty(byMethod)
+    docs = docs(cellfun(@(d) byMethod(ndi.v2.props(d)), docs));
 end
 end
 

@@ -98,7 +98,10 @@ A statement's method is one block, `interaction.method: {term, parameters}`
 `parameters`. A shared, named method is instead a standalone `method` document
 the statement points at by `method_id` (never both); `method()` and
 `method_parameters()` read that document the same way. Searching by `'method'`
-matches `interaction.method.term`.
+(`ndi.statement.search`'s `'Method'`, `ndi.entity.search`'s `{'method', ...}`)
+matches either: the inline `interaction.method.term`, or the `method.term` of
+the `method` document the statement's `method_id` names (`ndi.v2.methodQuery`).
+A statement with neither is not found by a method filter.
 
 To search across a whole session instead of one entity:
 

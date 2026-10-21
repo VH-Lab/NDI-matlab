@@ -1024,6 +1024,74 @@ classdef TestObjectLayer < matlab.unittest.TestCase
             testCase.verifyEqual(mb.name, 'house transfer');
         end
 
+        function testAMethodFilterFindsAMethodDocument(testCase)
+            % did-schema #88: a method filter matches a statement whose
+            % inline `interaction.method.term` matches OR whose `method_id`
+            % names a `method` document whose `method.term` does; a
+            % statement with neither is not found, and the counts agree.
+            M = 'agar plug transfer';
+            moves = ndi.statement.search(testCase.Session, 'Variable', 'location', 'Method', M);
+            testCase.assertNotEmpty(moves);
+            inline = moves{1}.document_properties();
+            sid = testCase.Session.id();
+            prev = did2.schema.cache.strictMode('TermRegistry', false);
+            restore = onCleanup(@() did2.schema.cache.strictMode('TermRegistry', prev));
+            m = did2.build.method(inline.interaction.method.term, ...
+                inline.interaction.method.parameters, 'Name', 'house transfer', 'SessionId', sid);
+            clear restore;
+            dep = inline.depends_on;
+            if iscell(dep), dep = [dep{:}]; end
+            byEdge = inline;
+            byEdge.base.id = char(ndi.ido.unique_id());
+            byEdge.interaction = rmfield(byEdge.interaction, 'method');
+            byEdge.depends_on = struct('name', [{dep.name}, {'method_id'}], ...
+                'document_id', [{dep.document_id}, {m.base.id}]);
+            neither = inline;
+            neither.base.id = char(ndi.ido.unique_id());
+            neither.interaction = rmfield(neither.interaction, 'method');
+            neither.depends_on = struct('name', {dep.name}, 'document_id', {dep.document_id});
+            folder = fullfile(testCase.Root, ['methodsearch_' char(ndi.ido.unique_id())]);
+            copyfile(testCase.Session.getpath(), folder);
+            db = did2.database.sqlitedb(fullfile(folder, '.ndi', ...
+                ndi.database.implementations.database.did2sqlite.DEFAULTFILENAME()));
+            db.add({did2.document(m), did2.document(byEdge), did2.document(neither)});
+            db.close();
+            S = ndi.session.dir(folder);
+            idOf = @(c) cellfun(@(s) s.document_id(), c, 'UniformOutput', false);
+            before = idOf(moves);
+
+            % ndi.statement.search
+            [after, info] = ndi.statement.search(S, 'Variable', 'location', 'Method', M);
+            got = idOf(after);
+            testCase.verifyTrue(any(strcmp(got, byEdge.base.id)), 'the method_id statement is found by its method term');
+            testCase.verifyTrue(all(ismember(before, got)), 'every inline statement is still found');
+            testCase.verifyFalse(any(strcmp(got, neither.base.id)), 'a statement with no method is not found');
+            testCase.verifyNumElements(after, numel(moves) + 1, 'exactly one more: the method_id statement');
+            testCase.verifyEqual(info.read, numel(moves) + 1, 'the denominator counts the method_id statement');
+            node = inline.interaction.method.term.node;
+            if ~isempty(node)
+                byNode = idOf(ndi.statement.search(S, 'Variable', 'location', 'Method', char(node)));
+                testCase.verifyTrue(any(strcmp(byNode, byEdge.base.id)), 'found by the method node too');
+            end
+
+            % ndi.v2.searchStatements (the path ndi.entity.search takes)
+            [docs0, info0] = ndi.v2.searchStatements(testCase.Session, 'manipulation', ...
+                struct('variable', 'location', 'method', M));
+            [docs1, info1] = ndi.v2.searchStatements(S, 'manipulation', ...
+                struct('variable', 'location', 'method', M));
+            ids1 = cellfun(@(d) char(subsref(ndi.v2.props(d), substruct('.', 'base', '.', 'id'))), ...
+                docs1, 'UniformOutput', false);
+            testCase.verifyTrue(any(strcmp(ids1, byEdge.base.id)), 'searchStatements finds the method_id statement');
+            testCase.verifyFalse(any(strcmp(ids1, neither.base.id)), 'searchStatements: no method, not found');
+            testCase.verifyNumElements(docs1, numel(docs0) + 1);
+            testCase.verifyEqual(info1.structural, info0.structural + 1, 'the structural count includes it');
+
+            % a method nobody used finds nothing, by either route
+            testCase.verifyEmpty(ndi.statement.search(S, 'Variable', 'location', 'Method', 'no such method zzz'));
+            testCase.verifyEmpty(ndi.v2.searchStatements(S, 'manipulation', ...
+                struct('variable', 'location', 'method', 'no such method zzz')));
+        end
+
         function testANestedEdgeTargetReachesDid2(testCase)
             % a depends_on whose target is a query (and one inside an or)
             % is converted for did2 as a query, not dropped or stringified.

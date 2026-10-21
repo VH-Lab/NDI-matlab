@@ -7,7 +7,10 @@ function [docs, info] = searchStatements(container, kind, filt)
 %   'calculation', or a document class -- matching FILT, a struct with any of:
 %
 %     variable     the statement's variable
-%     method       an interaction's method (an assertion has none: an error)
+%     method       an interaction's method (an assertion has none: an error):
+%                  its inline `interaction.method.term`, or the term of the
+%                  `method` document its `method_id` names (did-schema #88;
+%                  ndi.v2.methodQuery)
 %     value        the statement's value
 %     formulation  a dose's formulation (its name or its type)
 %     subject      document ids: only statements about these subjects
@@ -61,9 +64,10 @@ if ~isempty(filt.method) && strcmp(kind, 'assertion')
     error('ndi:v2:searchStatements:assertionMethod', 'An assertion has no method.');
 end
 
+search = searchOf(container, filt.withDataset);
 q = ndi.v2.isaQuery(classOf(kind));
 q = andTerm(q, 'statement.variable', filt.variable);
-q = andTerm(q, 'interaction.method.term', filt.method);
+[q, byMethod] = andMethod(q, search, filt.method);
 narrowed = false;
 if ~isempty(filt.value) && all(cellfun(@isPlainText, filt.value))
     % a term value can be narrowed in the database; a statement whose value
@@ -80,7 +84,7 @@ else
     cand = bySubject(container, q, filt.subject, filt.withDataset);
 end
 
-structural = keepStructural(cand, filt);
+structural = keepStructural(cand, filt, byMethod);
 if filt.synonyms && isempty(structural)
     % a variable or method named by a label or synonym rather than the name a
     % document stores ('meter' for metre, 'mean' for Arithmetic Mean): the
@@ -89,10 +93,10 @@ if filt.synonyms && isempty(structural)
     if widened
         q = ndi.v2.isaQuery(classOf(kind));
         q = andTerm(q, 'statement.variable', filt.variable);
-        q = andTerm(q, 'interaction.method.term', filt.method);
+        [q, byMethod] = andMethod(q, search, filt.method);
         cand = bySubject(container, q, filt.subject, filt.withDataset);
         narrowed = false;
-        structural = keepStructural(cand, filt);
+        structural = keepStructural(cand, filt, byMethod);
     end
 end
 info = struct('structural', numel(structural), 'values', {{}}, 'beforeTime', 0);
@@ -118,7 +122,7 @@ synonymPats = filt.value(~matched & cellfun(@isTextPattern, filt.value));
 if filt.synonyms && ~isempty(synonymPats)
     pool = structural;
     if narrowed     % the database kept only the direct matches: look at the rest
-        pool = keepStructural(bySubject(container, q, filt.subject, filt.withDataset), filt);
+        pool = keepStructural(bySubject(container, q, filt.subject, filt.withDataset), filt, byMethod);
     end
     have = cellfun(@docIdOf, byValue, 'UniformOutput', false);
     for i = 1:numel(pool)
@@ -163,10 +167,7 @@ arguments
     ids
     withDataset
 end
-search = @(x) container.database_search(x);
-if withDataset && isa(container, 'ndi.session')
-    search = @(x) container.database_search_with_dataset(x);
-end
+search = searchOf(container, withDataset);
 if isempty(ids)
     docs = search(q);
     return;
@@ -179,31 +180,45 @@ for c = 1:200:numel(ids)
 end
 end
 
-function s = keepStructural(cand, filt)
-% the candidates whose variable and method match FILT's patterns
+function search = searchOf(container, withDataset)
+% the container's database search (with its dataset's documents when asked)
+arguments
+    container
+    withDataset
+end
+search = @(x) container.database_search(x);
+if withDataset && isa(container, 'ndi.session')
+    search = @(x) container.database_search_with_dataset(x);
+end
+end
+
+function [q, byMethod] = andMethod(q, search, patterns)
+% narrow by method: the inline `interaction.method.term` OR a `method_id`
+% edge to a `method` document whose term matches (did-schema #88;
+% ndi.v2.methodQuery). BYMETHOD rechecks one document's properties.
+arguments
+    q
+    search
+    patterns
+end
+[m, byMethod] = ndi.v2.methodQuery(search, patterns);
+if ~isempty(m), q = q & m; end
+end
+
+function s = keepStructural(cand, filt, byMethod)
+% the candidates whose variable and method match FILT's patterns (the
+% method inline or through `method_id`: BYMETHOD, from ndi.v2.methodQuery)
 arguments
     cand
     filt
+    byMethod function_handle
 end
 s = {};
 for i = 1:numel(cand)
     p = ndi.v2.props(cand{i});
     if ~patternsMatch(ndi.v2.blockOf(p, 'statement', 'variable', []), filt.variable), continue; end
-    if ~patternsMatch(methodTerm(p), filt.method), continue; end
+    if ~isempty(filt.method) && ~byMethod(p), continue; end
     s{end+1} = cand{i}; %#ok<AGROW>
-end
-end
-
-function t = methodTerm(p)
-% the inline method's term (did-schema #88: `interaction.method.term`)
-arguments
-    p
-end
-t = ndi.v2.blockOf(p, 'interaction', 'method', []);
-if isstruct(t) && ~isempty(t) && isfield(t, 'term')
-    t = t(1).term;
-else
-    t = [];
 end
 end
 
