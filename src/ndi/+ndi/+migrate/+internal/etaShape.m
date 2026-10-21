@@ -190,10 +190,12 @@ classdef etaShape
 
         function body = relation(childId, parentId, relationTerm, varargin)
             %RELATION A directed_relation CHILDID <RELATIONTERM> PARENTID.
-            %   OPTS: Id, SessionId, Datestamp, Sequence, EpochId,
-            %   TimeReferenceIds, Method (a term).
+            %   OPTS: Id, SessionId, Datestamp, Order, EpochId,
+            %   TimeReferenceIds, Method (a term). ORDER is the position among
+            %   siblings, written to `directed_relation.order` (named
+            %   `sequence` until did-schema T20, 6f10f73).
             opts = ndi.migrate.internal.etaShape.options(struct('Id', '', ...
-                'SessionId', '', 'Datestamp', '', 'Sequence', [], 'EpochId', '', ...
+                'SessionId', '', 'Datestamp', '', 'Order', [], 'EpochId', '', ...
                 'TimeReferenceIds', {{}}, 'Method', []), varargin);
             S = ndi.migrate.internal.etaShape;
             body = struct();
@@ -209,8 +211,8 @@ classdef etaShape
             end
             body.base = S.baseBlock(opts.Id, opts.Datestamp);
             blk = struct('relation', S.asTerm(relationTerm));
-            if ~isempty(opts.Sequence)
-                blk.sequence = opts.Sequence;
+            if ~isempty(opts.Order)
+                blk.order = opts.Order;
             end
             body.directed_relation = blk;
             if ~isempty(opts.Method)

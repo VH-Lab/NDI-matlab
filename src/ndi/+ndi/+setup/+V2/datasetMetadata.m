@@ -329,7 +329,7 @@ if ~strcmp(options.Studies, 'only')
     authors = asCell(getOr(d, 'authors', {}));
     for k = 1:numel(authors)
         a = authors{k};
-        extra = struct('sequence', k);
+        extra = struct('order', k);   % directed_relation.order (did-schema T20)
         if isfield(a, 'roles')
             % CRediT role names: the builder fills each node from the field's
             % value set (directed_relation.roles), so a name must match it exactly
@@ -629,8 +629,8 @@ end
 child = idOf(state, childKey, childKinds);
 parent = idOf(state, parentKey, parentKinds);
 opts = {};
-if isfield(extra, 'sequence')
-    opts = [opts, {'Sequence', extra.sequence}];
+if isfield(extra, 'order')
+    opts = [opts, {'Order', extra.order}];
 end
 if isfield(extra, 'roles')
     opts = [opts, {'Fields', struct('roles', extra.roles)}];

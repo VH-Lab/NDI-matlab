@@ -56,8 +56,8 @@ classdef TestEnsembleMembership < matlab.unittest.TestCase
             testCase.verifyEqual(depValue(m{1}, 'parent_id'), 'ens_1');
             testCase.verifyEqual(m{1}.directed_relation.relation.node, 'RO:0002350');
             % column order rides on the declared `sequence` ordinal
-            testCase.verifyEqual(m{1}.directed_relation.sequence, 1);
-            testCase.verifyEqual(m{2}.directed_relation.sequence, 2);
+            testCase.verifyEqual(m{1}.directed_relation.order, 1);
+            testCase.verifyEqual(m{2}.directed_relation.order, 2);
 
             d = ofRelation(minted, 'derived_from');
             testCase.verifyEqual(numel(d), 2);
@@ -68,7 +68,7 @@ classdef TestEnsembleMembership < matlab.unittest.TestCase
             testCase.verifyEqual(depValue(d{1}, 'parent_id'), 'nrn_1');
             testCase.verifyEqual(d{1}.directed_relation.relation.node, 'RO:0001000');
             % a derived_from edge is unordered -- no sequence
-            testCase.verifyFalse(isfield(d{1}.directed_relation, 'sequence'));
+            testCase.verifyFalse(isfield(d{1}.directed_relation, 'order'));
         end
 
         function testMintedRelationShapeIsVEta(testCase)
@@ -122,7 +122,7 @@ classdef TestEnsembleMembership < matlab.unittest.TestCase
             m = ofRelation(minted, 'member_of');
             byChild = containers.Map();
             for k = 1:numel(m)
-                byChild(depValue(m{k}, 'child_id')) = m{k}.directed_relation.sequence;
+                byChild(depValue(m{k}, 'child_id')) = m{k}.directed_relation.order;
             end
             testCase.verifyEqual(byChild('nrn_1'), 1);
             testCase.verifyEqual(byChild('nrn_2'), 2);
