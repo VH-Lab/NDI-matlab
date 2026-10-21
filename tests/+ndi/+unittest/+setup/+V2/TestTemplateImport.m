@@ -46,7 +46,7 @@ classdef TestTemplateImport < matlab.unittest.TestCase
 
             % ---- each stage's denominators: read = written + skipped + errors
             %      stage            read written skipped errors documents
-            expected = {'sessions',      2, 1, 1, 0, 3; ...   % dataset, study, included_in
+            expected = {'sessions',      2, 1, 1, 0, 5; ...   % dataset, 2 software, study, included_in
                         'entities',      2, 2, 0, 0, 2; ...
                         'acquisition',   2, 1, 1, 0, 5; ...   % UTC, epoch, epoch clock, statement, body
                         'manipulations', 2, 1, 1, 0, 2; ...   % its time, the statement

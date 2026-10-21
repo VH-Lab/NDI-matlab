@@ -205,7 +205,7 @@ for stage = order(ismember(order, options.Stages))
         case "calculations"
             need(result, stage, ["sessions", "entities", "acquisition"]);
             out = calculationDocuments(result.sessions, result.entities.ids, ...
-                result.acquisition.recordings, cfg, testMode);
+                result.acquisition.recordings, result.ids, cfg, testMode);
             result.calculations = out;
     end
     result.reports.(char(stage)) = out.report;
@@ -288,7 +288,7 @@ for k = 1:n
     sid = T.session_id{k};
     own = ndi.setup.V2.entityDocuments('session', struct('local_identifier', T.local_identifier{k}, ...
         'name', T.name{k}), struct(), 'SessionId', sid, 'Id', sid);
-    studies = T.study_ids{k};
+    studies = cellstr(T.study_ids{k});
     for j = 1:numel(studies)
         own{end+1} = did2.build.directedRelation(sid, studies{j}, 'included_in', ...
             'SessionId', sid); %#ok<AGROW>
@@ -326,6 +326,11 @@ cfg.dataset = struct('name', 'Template dataset', ...
     'description', 'Written by ndi.setup.conv.template.import_V2.');
 cfg.studies = {struct('key', 'study', 'name', 'Template study', ...
     'description', 'The one study of the template''s example data.')};
+% the software a calculation names: a calculation REQUIRES its operating
+% system (calculation.operating_system_id), so the template lists one;
+% dataset-level, made by stage 1 with the other shared entities
+cfg.software = {struct('key', 'analysis', 'name', 'Template analysis'), ...
+    struct('key', 'os', 'name', 'Linux')};
 cfg.sessions = struct('folder_pattern', '^[^.]', 'name_format', 'Session %s', 'study', 'study');
 cfg.entities = struct('table', 'subjects.csv', 'id_column', 'subject', 'type', 'organism');
 cfg.acquisition = struct('file_column', 'recording', 'start_column', 'recorded_at', ...
@@ -343,7 +348,8 @@ cfg.observations = struct('value_column', 'temperature_C', 'leaf', 'temperature_
     'variable', 'Environmental Temperature', 'method', 'Arithmetic Mean');
 cfg.calculations = struct('value_column', 'diameter_mm', 'leaf', 'length_calculation', ...
     'data_type', 'length', 'unit', 'mm', 'scale', 0.001, 'tolerance', [], ...
-    'variable', 'diameter', 'method', 'image segmentation');
+    'variable', 'diameter', 'method', 'image segmentation', ...
+    'software', 'analysis', 'operating_system', 'os', 'interpreter', '');
 cfg.corrections = {};
 cfg.write = struct('dataset_reference', 'dataset');
 if isempty(file)

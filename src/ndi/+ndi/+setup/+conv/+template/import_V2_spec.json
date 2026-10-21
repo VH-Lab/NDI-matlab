@@ -10,6 +10,9 @@
     "studies": [],
     "_studies": "A list of {key, name, short_name, description, factors, design}; each study is included_in the dataset. Empty: one study, key 'study'.",
 
+    "software": [],
+    "_software": "Dataset-level software, each {key, name, version, identifiers, vendor}: what computed the calculations, and the operating system a calculation requires. Empty: 'analysis' (Template analysis) and 'os' (Linux).",
+
     "_more_metadata": "Dataset-level entities, each a list with a `key`, exactly as ndi.setup.V2.datasetMetadata reads them: organizations, people, funding, publications, web_resources, software, products, strains, chemicals, formulations, instruments. Add the sections the dataset has.",
 
     "sessions": {
@@ -69,7 +72,7 @@
     },
 
     "calculations": {
-        "_comment": "Stage 6. As observations; computed from the row's recording (its input).",
+        "_comment": "Stage 6. As observations; computed from the row's recording (its input). software, operating_system (required by the schema) and interpreter are keys in `software`.",
         "value_column": "",
         "leaf": "",
         "data_type": "",
@@ -77,7 +80,10 @@
         "scale": null,
         "tolerance": [],
         "variable": "",
-        "method": ""
+        "method": "",
+        "software": "",
+        "operating_system": "",
+        "interpreter": ""
     },
 
     "corrections": [],

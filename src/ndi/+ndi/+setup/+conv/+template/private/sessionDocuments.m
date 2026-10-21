@@ -25,7 +25,9 @@ function out = sessionDocuments(dataFolder, cfg, outputRoot, throwErrors)
 %
 %   OUT fields: datasetSessionId, documents (the dataset-level documents),
 %   ids (containers.Map, spec key -> id), sessions (table: local_identifier,
-%   name, folder, path, session_id, session_doc_id, study_ids), report.
+%   name, folder, path, session_id, session_doc_id, study_ids),
+%   unrepresented (spec content V2 has no place for, from datasetMetadata),
+%   report.
 
 arguments
     dataFolder {mustBeFolder}
@@ -45,9 +47,10 @@ for k = {'organizations', 'people', 'funding', 'publications', 'web_resources', 
     end
 end
 m = ndi.setup.V2.datasetMetadata(meta, dsid, 'Studies', "include");
+% spec content with no place in V2 is reported, never silently dropped
 for k = 1:numel(m.unrepresented)
     u = m.unrepresented(k);
-    r = skipRow(r, sprintf('spec %s %s', u.kind, u.key), sprintf('`%s` not recorded: %s', u.field, u.why));
+    fprintf('  spec %s %s: `%s` not recorded: %s\n', u.kind, u.key, u.field, u.why);
 end
 studyKey = char(cfg.sessions.study);
 if ~isKey(m.ids, studyKey)
@@ -58,7 +61,7 @@ end
 % ---- the sessions: one per data folder -----------------------------------------
 listing = dir(dataFolder);
 listing = listing([listing.isdir] & ~ismember({listing.name}, {'.', '..'}));
-rows = {};
+rows = cell(0, 7);
 for k = 1:numel(listing)
     folder = listing(k).name;
     r.read = r.read + 1;
@@ -88,5 +91,5 @@ end
 r.documents = numel(m.documents);
 
 out = struct('datasetSessionId', dsid, 'documents', {m.documents}, 'ids', m.ids, ...
-    'sessions', sessions, 'report', r);
+    'sessions', sessions, 'unrepresented', {m.unrepresented}, 'report', r);
 end

@@ -1,7 +1,7 @@
-function out = calculationDocuments(sessions, entityIds, recordings, cfg, throwErrors)
+function out = calculationDocuments(sessions, entityIds, recordings, sharedIds, cfg, throwErrors)
 %CALCULATIONDOCUMENTS Stage 6 (template): what was computed from the data.
 %
-%   OUT = calculationDocuments(SESSIONS, ENTITYIDS, RECORDINGS, CFG,
+%   OUT = calculationDocuments(SESSIONS, ENTITYIDS, RECORDINGS, SHAREDIDS, CFG,
 %   THROWERRORS) builds, for each row of a session's source table with a
 %   value in CFG.calculations.value_column, a CFG.calculations.leaf
 %   statement (length_calculation in the template: a diameter in mm, stored
@@ -16,9 +16,13 @@ function out = calculationDocuments(sessions, entityIds, recordings, cfg, throwE
 %   statements is instead a standalone `method` document
 %   (did2.build.method) the statements point at by 'MethodId' -- never both.
 %
-%   TEMPLATE: a real importer adds 'SoftwareId' (the dataset-level software
-%   that computed it), 'InterpreterId' / 'OperatingSystemId' where they
-%   change the result, and a value too large to inline in a data body.
+%   Its run environment: 'SoftwareId' (CFG.calculations.software), the
+%   REQUIRED 'OperatingSystemId' (operating_system) and, when given,
+%   'InterpreterId' (interpreter) -- spec keys of dataset-level software
+%   entities (stage 1; SHAREDIDS maps spec key -> id).
+%
+%   TEMPLATE: a real importer names its own analysis software, and stores a
+%   value too large to inline in a data body.
 %
 %   OUT fields: documents (cell per session), report.
 
@@ -26,6 +30,7 @@ arguments
     sessions table
     entityIds table
     recordings table
+    sharedIds
     cfg (1,1) struct
     throwErrors (1,1) logical
 end
@@ -35,6 +40,18 @@ n = height(sessions);
 docs = repmat({{}}, n, 1);
 variable = termByName(c.variable);
 method = termByName(c.method);
+env = {};
+for e = {'software', 'SoftwareId'; 'operating_system', 'OperatingSystemId'; ...
+        'interpreter', 'InterpreterId'}'
+    key = '';
+    if isfield(c, e{1}), key = char(c.(e{1})); end
+    if isempty(key), continue; end
+    if ~isKey(sharedIds, key)
+        error('ndi:setup:conv:template:noSoftware', ['calculations.%s names "%s", which ' ...
+            'is not a key in the spec''s `software`.'], e{1}, key);
+    end
+    env = [env, {e{2}, sharedIds(key)}]; %#ok<AGROW>
+end
 for s = 1:n
     ref = sessions.local_identifier{s};
     sid = sessions.session_id{s};
@@ -64,7 +81,7 @@ for s = 1:n
             st = did2.build.statement(c.leaf, subject, variable, quantityCell(c, text), ...
                 'Method', method, 'InputIds', recordings.statement_id(rec), ...
                 'TimeReferenceIds', recordings.time_reference_id(rec), ...
-                'Notes', note, 'SessionId', sid);
+                'Notes', note, 'SessionId', sid, env{:});
             docs{s}{end+1} = st;
             r.written = r.written + 1;
             r.documents = r.documents + 1;
