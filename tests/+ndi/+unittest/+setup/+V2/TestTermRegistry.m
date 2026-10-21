@@ -7,13 +7,14 @@ classdef TestTermRegistry < matlab.unittest.TestCase
 %   This runs the import over the fixture with that error OFF and collection
 %   ON (did2.build.unregisteredTerms), so a failure lists every unregistered
 %   term at once instead of stopping at the first. It needs a schema with a
-%   registry (did-schema #88) and a DID-matlab that checks against it;
-%   without them (the `current` CI leg) each test returns early, as
-%   TestLinkedSessions does, because test-import-v2.yml fails a filtered test.
+%   registry (did-schema #88) and a DID-matlab that checks against it
+%   (DID-matlab #218); without them each test is filtered, which
+%   test-import-v2.yml counts as a failure.
 
     methods (Test)
         function testEveryHaleyTermIsTheRegisteredOne(testCase)
-            if ~hasRegistry(), return; end
+            testCase.assumeTrue(hasRegistry(), ['no term registry: needs did-schema #88 ' ...
+                'and DID-matlab #218']);
             % haleyTerm's table (private to the import, read here as text)
             % names each handle's node and name; each must be a registered
             % term, exactly, so the import cannot drift from the registry
@@ -29,7 +30,8 @@ classdef TestTermRegistry < matlab.unittest.TestCase
         end
 
         function testTheImportWritesOnlyRegisteredTerms(testCase)
-            if ~hasRegistry(), return; end
+            testCase.assumeTrue(hasRegistry(), ['no term registry: needs did-schema #88 ' ...
+                'and DID-matlab #218']);
             prev = did2.schema.cache.strictMode('TermRegistry', false);
             testCase.addTeardown(@() did2.schema.cache.strictMode('TermRegistry', prev));
             prevC = did2.build.unregisteredTerms('-collect', true);
@@ -55,11 +57,11 @@ classdef TestTermRegistry < matlab.unittest.TestCase
 end
 
 function tf = hasRegistry()
-% did2.build, a schema with `study` and a term registry, and a DID-matlab
+% did2.build, a schema with `entity` and a term registry, and a DID-matlab
 % that checks against it
 schemaPath = getenv('DID_SCHEMA_PATH');
 tf = ~isempty(which('did2.build.document')) && ~isempty(schemaPath) ...
-    && ndi.setup.V2.schemaHasClass('study', schemaPath) ...
+    && isfile(fullfile(schemaPath, 'entity.json')) ...
     && ~isempty(which('did2.schema.termIndex'));
 if tf
     ix = did2.schema.termIndex();

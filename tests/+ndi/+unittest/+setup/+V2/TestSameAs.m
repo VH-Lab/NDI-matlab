@@ -10,14 +10,10 @@ classdef TestSameAs < matlab.unittest.TestCase
 %   neither. Joining a session to a dataset writes a same_as per match and
 %   lists the name-only candidates.
 %
-%   Every document is built with ndi.setup.V2.entityDocuments and did2.build,
-%   so the same tests run on a schema with separate entity classes (the
-%   `current` leg: a device is a `subject`, a product a `product`) and on one
-%   with one `entity` class (the `next` leg). Both bind `same_as` (an
-%   undirected_relation over entities, did-schema #73 audit 2 D5) and
-%   `instance_of` from a device to a product, so nothing here is filtered by
-%   the schema; serial numbers and manufacturers are term assertions, which
-%   both legs have (the `current` leg has no text value).
+%   Every document is built with ndi.setup.V2.entityDocuments and did2.build.
+%   The schema binds `same_as` (an undirected_relation over entities,
+%   did-schema #73 audit 2 D5) and `instance_of` from a device to a product;
+%   serial numbers and manufacturers are term assertions.
 %
 %   UNVERIFIED: written without MATLAB; test-import-v2.yml is the first run.
 
@@ -31,8 +27,8 @@ classdef TestSameAs < matlab.unittest.TestCase
                 'did2.build (DID-matlab V2) is not on the path');
             schemaPath = getenv('DID_SCHEMA_PATH');
             testCase.assumeTrue(~isempty(schemaPath) && ...
-                ndi.setup.V2.schemaHasClass('study', schemaPath), ...
-                'DID_SCHEMA_PATH does not hold a V2 schema with `study`');
+                isfile(fullfile(schemaPath, 'entity.json')), ...
+                'DID_SCHEMA_PATH does not hold a V2 schema with `entity` (did-schema #88)');
             % the fixtures' terms ('illumination',
             % 'objective', 'serial number', 'manufacturer') are this test's own
             % vocabulary, not a dataset's, so they are not in DID-schema's term
@@ -53,11 +49,11 @@ classdef TestSameAs < matlab.unittest.TestCase
     end
 
     methods (Test)
-        function testBothLegsBindSameAs(testCase)
+        function testTheSchemaBindsSameAs(testCase)
             % the premise of every test below, asserted rather than assumed
             [~, undirected] = ndi.v2.relationNames();
             testCase.verifyTrue(any(strcmp(undirected, 'same_as')), strjoin(undirected, ', '));
-            testCase.verifyTrue(ndi.setup.V2.schemaHasRelation('instance_of'));
+            testCase.verifyTrue(any(strcmp(ndi.v2.relationPasses().names, 'instance_of')));
         end
 
         function testASearchForEitherRecordFindsTheGroupsInstances(testCase)
@@ -171,15 +167,6 @@ classdef TestSameAs < matlab.unittest.TestCase
         end
 
         function testALinkedSessionIsJoinedTheSameWay(testCase)
-            if ~ndi.setup.V2.schemaHasClass('linked_session')
-                % the schema cannot link a session; adding one is an error
-                % there (TestLinkedSessions), so the ingested tests above
-                % are this leg's whole check
-                [ds, S2, ~] = testCase.joinFixture();
-                testCase.verifyError(@() ds.add_linked_session(S2), ...
-                    'ndi:dataset:noLinkedSessionClass');
-                return;
-            end
             [ds, S2, id] = testCase.joinFixture();
             ds.add_linked_session(S2);
             r = ds.same_as_report();
@@ -245,30 +232,27 @@ classdef TestSameAs < matlab.unittest.TestCase
             end
             d = {'SessionId', dsid};
             s = {'SessionId', sid};
-            dsIdArg = {};
-            if ndi.v2.sessionIdIsEdge()
-                % the dataset entity's id IS the dataset's session id
-                % (V_eta_relation_inheritance_plan.md, 2026-10-20)
-                dsIdArg = {'Id', dsid};
-            end
+            % the dataset entity's id IS the dataset's session id
+            % (V_eta_relation_inheritance_plan.md)
+            dsIdArg = {'Id', dsid};
             wb = @(v) did2.build.list(struct('scheme', did2.build.label('WormBase'), 'value', v));
             dsDocs = [ ...
                 ndi.setup.V2.entityDocuments('dataset', struct('name', 'same_as join'), struct(), d{:}, dsIdArg{:}), ...
-                ndi.setup.V2.entityDocuments('strain', strainFields(struct('name', 'N2', ...
-                    'global_identifier', wb('WBStrain00000001'))), struct(), d{:}, 'Id', id.dN2), ...
+                ndi.setup.V2.entityDocuments('strain', struct('name', 'N2', ...
+                    'global_identifier', wb('WBStrain00000001')), struct(), d{:}, 'Id', id.dN2), ...
                 ndi.setup.V2.entityDocuments('product', struct('name', 'OP50 stock', ...
                     'catalog_number', 'OP50-CGC'), struct(), d{:}, 'Id', id.dProd), ...
                 device(id.dScope, 'zoom_ds', dsid), ...
                 {termAssertion(id.dScope, 'serial number', 'SN-4471', dsid), ...
                  termAssertion(id.dScope, 'manufacturer', 'Zeiss', dsid)}, ...
-                ndi.setup.V2.entityDocuments('strain', strainFields(struct('name', 'CB4856')), struct(), d{:}, 'Id', id.dCB)];
+                ndi.setup.V2.entityDocuments('strain', struct('name', 'CB4856'), struct(), d{:}, 'Id', id.dCB)];
             ndi.setup.V2.createDataset(fullfile(testCase.Dir, 'ds'), 'same_as join', dsid, ...
                 dsDocs, {}, 'Progress', false);
             ds = ndi.dataset.dir(fullfile(testCase.Dir, 'ds'));
 
             sDocs = [ ...
-                ndi.setup.V2.entityDocuments('strain', strainFields(struct('name', 'Bristol N2', ...
-                    'global_identifier', wb('WBStrain00000001'))), struct(), s{:}, 'Id', id.sN2), ...
+                ndi.setup.V2.entityDocuments('strain', struct('name', 'Bristol N2', ...
+                    'global_identifier', wb('WBStrain00000001')), struct(), s{:}, 'Id', id.sN2), ...
                 ndi.setup.V2.entityDocuments('product', struct('name', 'E. coli OP50', ...
                     'catalog_number', 'OP50-CGC'), struct(), s{:}, 'Id', id.sProd), ...
                 device(id.sScope, 'zoom_session', sid), ...
@@ -276,9 +260,9 @@ classdef TestSameAs < matlab.unittest.TestCase
                  termAssertion(id.sScope, 'manufacturer', 'Zeiss', sid)}, ...
                 device(id.sScope2, 'zoom_spare', sid), ...
                 {termAssertion(id.sScope2, 'serial number', 'SN-4471', sid)}, ...
-                ndi.setup.V2.entityDocuments('strain', strainFields(struct('name', 'CB4856')), struct(), s{:}, 'Id', id.sCB), ...
-                ndi.setup.V2.entityDocuments('strain', strainFields(struct('name', 'N2', ...
-                    'global_identifier', wb('WBStrain00000002'))), struct(), s{:}, 'Id', id.sOther)];
+                ndi.setup.V2.entityDocuments('strain', struct('name', 'CB4856'), struct(), s{:}, 'Id', id.sCB), ...
+                ndi.setup.V2.entityDocuments('strain', struct('name', 'N2', ...
+                    'global_identifier', wb('WBStrain00000002')), struct(), s{:}, 'Id', id.sOther)];
             folder = fullfile(testCase.Dir, 'joining');
             mkdir(folder);
             S2 = ndi.setup.V2.createSession(folder, 'joining', 'SessionId', sid, 'Documents', sDocs);
@@ -287,7 +271,7 @@ classdef TestSameAs < matlab.unittest.TestCase
 end
 
 function docs = device(docId, localId, sid)
-% a device subject (an instrument), on either schema
+% a device subject (an instrument)
 arguments
     docId {mustBeText}
     localId {mustBeText}
@@ -298,7 +282,7 @@ docs = ndi.setup.V2.entityDocuments('subject', struct('local_identifier', localI
 end
 
 function docs = organism(docId, localId, sid)
-% an organism subject, on either schema
+% an organism subject
 arguments
     docId {mustBeText}
     localId {mustBeText}
@@ -338,18 +322,4 @@ arguments
 end
 [~, ~, t] = ndi.v2.statementValue(s.document_properties());
 t = char(t);
-end
-
-function f = strainFields(f)
-% a strain's fields on the schema in use: a schema with a `strain` class
-% (before one entity class) requires its species and genetic strain type
-arguments
-    f (1,1) struct
-end
-if ndi.setup.V2.schemaHasField('strain', 'species') && ~isfield(f, 'species')
-    f.species = struct('node', 'NCBITaxon:6239', 'name', 'Caenorhabditis elegans');
-end
-if ndi.setup.V2.schemaHasField('strain', 'genetic_strain_type') && ~isfield(f, 'genetic_strain_type')
-    f.genetic_strain_type = struct('node', 'NCIT:C62195', 'name', 'Wild Type');
-end
 end

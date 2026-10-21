@@ -26,8 +26,8 @@ classdef TestDatasetMetadataHaley < matlab.unittest.TestCase
                 'did2.build (DID-matlab V2) is not on the path');
             schemaPath = getenv('DID_SCHEMA_PATH');
             testCase.assumeTrue(~isempty(schemaPath) && ...
-                ndi.setup.V2.schemaHasClass('study', schemaPath), ...
-                'DID_SCHEMA_PATH does not hold a V2 schema with `study` (did-schema PR #78)');
+                isfile(fullfile(schemaPath, 'entity.json')), ...
+                'DID_SCHEMA_PATH does not hold a V2 schema with `entity` (did-schema #88)');
             specFile = fullfile(fileparts(which('ndi.setup.conv.haley.import_V2')), ...
                 'import_V2_spec.json');
             testCase.Spec = jsondecode(fileread(specFile));
@@ -53,54 +53,27 @@ classdef TestDatasetMetadataHaley < matlab.unittest.TestCase
             testCase.verifyEqual(n('product'), numel(s.products) + numel(s.strains));
             % 47 before decision #56; + the media kitchen's suborganization_of
             % Salk + 6 recipes documented_by WormBook (5 since decision #86)
-            if ndi.setup.V2.mergedEntities()
-                % one entity class (2026-10-08): the entity fields become
-                % assertions and relations, so these totals are a different
-                % count, not a moved one. What must hold on either schema:
-                % every document is an entity of a known type, a statement or
-                % a relation.
-                kinds = {'organization', 'person', 'funding', 'study', 'strain', ...
-                    'subject', 'chemical', 'formulation', 'dataset', 'product', ...
-                    'software', 'publication', 'protocol', 'directed_relation'};
-                other = c(~ismember(c.class, kinds), :);
-                testCase.verifyTrue(all(endsWith(other.class, ...
-                    {'_assertion', '_observation', '_manipulation', '_calculation'})), ...
-                    strjoin(other.class, ', '));
-                testCase.verifyFalse(any(strcmp(c.class, 'web_resource')), ...
-                    'web_resource retired: its URL is an identifier of what it names');
-                return;
-            end
-            % 53 before decision #89; + suborganization_of for Sigma-Aldrich
-            % (of EMD Millipore) and PixeLink (of Navitar); decision #90, + Alfa
-            % Aesar's (of Thermo Fisher)
-            testCase.verifyEqual(n('directed_relation'), 56, ...
-                'relation count moved: re-derive it from the spec, do not bump it');
-            % 133 before decision #56; + 3 organizations, 1 web resource,
-            % 4 products, 20 chemicals, 9 formulations, 7 relations; + the
-            % temperature probe (decision #59: an instrument with no product,
-            % so no instance_of relation); + the lab's analysis package and
-            % macOS, stage 10's run environment (decision #60); decision #86,
-            % the potassium phosphate buffer from 231109_KPO4_stock: + Sigma-
-            % Aldrich, 2 products, 2 chemicals, the 2 1 M stocks, - the
-            % buffer's documented_by WormBook; decision #89, + 2 relations;
-            % decision #90, the cholesterol stock as a recipe: + Alfa Aesar and
-            % Decon Labs, their relation, 2 products, the stock formulation, and
-            % cholesterol + ethanol as chemicals in place of the stock (+1);
-            % decision #91, the MgSO4 and CaCl2 stocks as recipes: + 2 products
-            % and 2 formulations, the weighed solids replacing the 1 M chemicals
-            testCase.verifyEqual(numel(testCase.Result.documents), 199);
+            % the entity fields are assertions and relations (one entity
+            % class, 2026-10-08): every document is an entity of a known
+            % type, a statement or a relation.
+            kinds = {'organization', 'person', 'funding', 'study', 'strain', ...
+                'subject', 'chemical', 'formulation', 'dataset', 'product', ...
+                'software', 'publication', 'protocol', 'directed_relation'};
+            other = c(~ismember(c.class, kinds), :);
+            testCase.verifyTrue(all(endsWith(other.class, ...
+                {'_assertion', '_observation', '_manipulation', '_calculation'})), ...
+                strjoin(other.class, ', '));
+            testCase.verifyFalse(any(strcmp(c.class, 'web_resource')), ...
+                'web_resource retired: its URL is an identifier of what it names');
         end
 
         function testStudiesCanBeMintedApartFromTheRest(testCase)
             % import_V2 builds the studies in stage 3, beside the sessions
             % (decision #50): "exclude" + "only" together are "include".
             sid = did.ido.unique_id();
-            datasetId = did.ido.unique_id();
-            if ndi.v2.sessionIdIsEdge()
-                % the dataset entity's id IS the dataset's session id
-                % (V_eta_relation_inheritance_plan.md, 2026-10-20)
-                datasetId = sid;
-            end
+            % the dataset entity's id IS the dataset's session id
+            % (V_eta_relation_inheritance_plan.md)
+            datasetId = sid;
             rest = ndi.setup.V2.datasetMetadata(testCase.Spec, sid, ...
                 'DatasetId', datasetId, 'Studies', "exclude");
             studies = ndi.setup.V2.datasetMetadata(testCase.Spec, sid, ...
@@ -119,18 +92,13 @@ classdef TestDatasetMetadataHaley < matlab.unittest.TestCase
             end
             ds = rest.documents(strcmp(classOf(rest), 'dataset'));
             testCase.verifyEqual(ds{1}.base.id, datasetId);
-            if ndi.v2.sessionIdIsEdge()
-                % the dataset's id is known from the session id, so "only"
-                % needs no 'DatasetId', and another id is refused
-                alone = ndi.setup.V2.datasetMetadata(testCase.Spec, sid, 'Studies', "only");
-                rel = alone.documents(strcmp(classOf(alone), 'directed_relation'));
-                testCase.verifyTrue(all(cellfun(@(r) any(strcmp({r.depends_on.document_id}, sid)), rel)));
-                testCase.verifyError(@() ndi.setup.V2.datasetMetadata(testCase.Spec, sid, ...
-                    'DatasetId', did.ido.unique_id(), 'Studies', "only"), 'ndi:setup:V2:datasetId');
-            else
-                testCase.verifyError(@() ndi.setup.V2.datasetMetadata(testCase.Spec, sid, ...
-                    'Studies', "only"), 'ndi:setup:V2:noDatasetId');
-            end
+            % the dataset's id is known from the session id, so "only"
+            % needs no 'DatasetId', and another id is refused
+            alone = ndi.setup.V2.datasetMetadata(testCase.Spec, sid, 'Studies', "only");
+            rel = alone.documents(strcmp(classOf(alone), 'directed_relation'));
+            testCase.verifyTrue(all(cellfun(@(r) any(strcmp({r.depends_on.document_id}, sid)), rel)));
+            testCase.verifyError(@() ndi.setup.V2.datasetMetadata(testCase.Spec, sid, ...
+                'DatasetId', did.ido.unique_id(), 'Studies', "only"), 'ndi:setup:V2:datasetId');
         end
 
         function testEveryEdgeNamesABuiltDocument(testCase)
@@ -163,65 +131,41 @@ classdef TestDatasetMetadataHaley < matlab.unittest.TestCase
         end
 
         function testRelationTermsAreCompletedFromTheirValueSet(testCase)
-            % a study is filed under the dataset by included_in where the
-            % schema binds it (schema:isPartOf; V_eta_relation_inheritance_plan.md,
-            % 2026-10-20), by part_of (BFO:0000050) before
-            name = ndi.v2.recordRelation();
-            member = relationsNamed(testCase.Result.documents, name);
+            % a study is filed under the dataset by included_in
+            % (schema:isPartOf; V_eta_relation_inheritance_plan.md)
+            member = relationsNamed(testCase.Result.documents, 'included_in');
             testCase.verifyEqual(numel(member), numel(testCase.Spec.studies));
-            % the prefix is BFO from 2026-10-19 (V_eta_prefix_spelling_plan.md) and
-            % lowercase on a schema built between 2026-10-08 and then
-            node = 'bfo:0000050';
-            if strcmp(name, 'included_in')
-                node = 'schema:ispartof';
-                testCase.verifyEmpty(relationsNamed(testCase.Result.documents, 'part_of'), ...
-                    'part_of is physical: no record is part_of another');
-            end
+            node = 'schema:ispartof';
+            testCase.verifyEmpty(relationsNamed(testCase.Result.documents, 'part_of'), ...
+                'part_of is physical: no record is part_of another');
             testCase.verifyEqual(lower(member{1}.directed_relation.relation.node), node);
         end
 
         function testStrainLineageAndStock(testCase)
             docs = testCase.Result.documents;
-            gfp = docs{strcmp(cellfun(@(d) d.base.id, docs, 'UniformOutput', false), ...
-                testCase.Result.ids('OP50-GFP'))};
-            if ndi.setup.V2.mergedEntities()
-                % one entity class: the background and the stock are relations
-                from = relationsNamed(docs, 'derived_from');
-                from = from(cellfun(@(r) any(strcmp({r.depends_on.document_id}, ...
-                    testCase.Result.ids('OP50-GFP'))), from));
-                testCase.verifyTrue(any(cellfun(@(r) strcmp(parentOf(r), ...
-                    testCase.Result.ids('OP50')), from)), 'OP50-GFP derived_from OP50');
-                if ndi.setup.V2.schemaHasRelation('distributed_as')
-                    % decision #17: the stock is `distributed_as`, the background
-                    % alone is `derived_from`
-                    testCase.verifyEqual(numel(from), 1, 'its background only');
-                    stock = relationsNamed(docs, 'distributed_as');
-                    stock = stock(cellfun(@(r) any(strcmp({r.depends_on.document_id}, ...
-                        testCase.Result.ids('OP50-GFP'))), stock));
-                    testCase.verifyNumElements(stock, 1, 'OP50-GFP distributed_as its stock');
-                else
-                    testCase.verifyEqual(numel(from), 2, 'its background and its stock');
-                end
-                return;
-            end
-            bg = gfp.depends_on(strcmp({gfp.depends_on.name}, 'background_strain_id'));
-            testCase.verifyEqual({bg.document_id}, {testCase.Result.ids('OP50')});
-            testCase.verifyTrue(any(strcmp({gfp.depends_on.name}, 'product_id')));
+            % one entity class: the background and the stock are relations
+            from = relationsNamed(docs, 'derived_from');
+            from = from(cellfun(@(r) any(strcmp({r.depends_on.document_id}, ...
+                testCase.Result.ids('OP50-GFP'))), from));
+            testCase.verifyTrue(any(cellfun(@(r) strcmp(parentOf(r), ...
+                testCase.Result.ids('OP50')), from)), 'OP50-GFP derived_from OP50');
+            % decision #17: the stock is `distributed_as`, the background
+            % alone is `derived_from`
+            testCase.verifyEqual(numel(from), 1, 'its background only');
+            stock = relationsNamed(docs, 'distributed_as');
+            stock = stock(cellfun(@(r) any(strcmp({r.depends_on.document_id}, ...
+                testCase.Result.ids('OP50-GFP'))), stock));
+            testCase.verifyNumElements(stock, 1, 'OP50-GFP distributed_as its stock');
         end
 
         function testAStrainsGenotypeIsAnAssertion(testCase)
-            % decision #117: on one entity class a strain's genotype is a text
-            % assertion about the strain, variable NCIT:C16631 Genotype, and its
-            % description keeps the spec's prose only; a `strain` class (no
-            % genotype field) keeps it in the description
+            % decision #117: a strain's genotype is a text assertion about the
+            % strain, variable NCIT:C16631 Genotype, and its description keeps
+            % the spec's prose only
             docs = testCase.Result.documents;
             pr = testCase.Result.ids('PR811');
             ent = docs{cellfun(@(d) strcmp(d.base.id, pr), docs)};
             desc = char(ndi.v2.blockOf(ent, 'strain', 'description', ''));
-            if ~ndi.setup.V2.mergedEntities()
-                testCase.verifySubstring(desc, 'osm-6(p811) V');
-                return;
-            end
             testCase.verifyFalse(contains(desc, 'osm-6'), 'not in the description');
             about = @(d) isfield(d, 'depends_on') && any(strcmp({d.depends_on.document_id}, pr));
             g = docs(cellfun(@(d) about(d) && isstruct(ndi.v2.blockOf(d, 'statement', 'variable')) ...
@@ -260,10 +204,8 @@ classdef TestDatasetMetadataHaley < matlab.unittest.TestCase
             ing = kp.depends_on(strcmp({kp.depends_on.name}, 'ingredient_id'));
             testCase.verifyEqual(sort({ing.document_id}), sort({ids('kh2po4_1m'), ids('k2hpo4_1m')}), ...
                 'the buffer is the 1 M dibasic titrated into the 1 M monobasic');
-            if ndi.setup.V2.schemaHasField('formulation', 'value.type')
-                testCase.verifyEqual(sc.formulation.value.type.node, 'EMPTY:0000266');
-                testCase.verifyEqual(sc.formulation.value.type.name, 'S medium');
-            end
+            testCase.verifyEqual(sc.formulation.value.type.node, 'EMPTY:0000266');
+            testCase.verifyEqual(sc.formulation.value.type.name, 'S medium');
         end
 
         function testChemicalsAndFormulationTypesCarryTheirNodes(testCase)
@@ -280,16 +222,14 @@ classdef TestDatasetMetadataHaley < matlab.unittest.TestCase
             byId = containers.Map(cellfun(@(d) d.base.id, docs, 'UniformOutput', false), docs);
             carb = byId(testCase.Result.ids('carbenicillin_50'));
             testCase.verifyEqual(carb.chemical.value.substance.node, 'CHEBI:3393');
-            if ndi.setup.V2.schemaHasField('formulation', 'value.type')
-                form = docs(strcmp(classes, 'formulation'));
-                testCase.verifyNumElements(form, numel(testCase.Spec.formulations));
-                for k = 1:numel(form)
-                    t = form{k}.formulation.value.type;
-                    testCase.verifyNotEmpty(t.node, sprintf('formulation type %s has no node', t.name));
-                end
-                lb = byId(testCase.Result.ids('lb'));
-                testCase.verifyEqual(lb.formulation.value.type.node, 'MCO:0000030');
+            form = docs(strcmp(classes, 'formulation'));
+            testCase.verifyNumElements(form, numel(testCase.Spec.formulations));
+            for k = 1:numel(form)
+                t = form{k}.formulation.value.type;
+                testCase.verifyNotEmpty(t.node, sprintf('formulation type %s has no node', t.name));
             end
+            lb = byId(testCase.Result.ids('lb'));
+            testCase.verifyEqual(lb.formulation.value.type.node, 'MCO:0000030');
         end
 
         function testEveryAuthorRoleHasItsCreditNode(testCase)
@@ -332,19 +272,12 @@ classdef TestDatasetMetadataHaley < matlab.unittest.TestCase
             testCase.verifyEqual(testCase.Spec.dataset.accessibility.node, 'NCIT:C183346');
             testCase.verifyFalse(isfield(testCase.Spec.dataset, 'ethics_assessment'));
             docs = testCase.Result.documents;
-            if ndi.setup.V2.mergedEntities()
-                st = docs(cellfun(@(d) isfield(d, 'statement'), docs));
-                vars = cellfun(@(d) d.statement.variable.name, st, 'UniformOutput', false);
-                testCase.verifyFalse(any(strcmp(vars, 'ethics assessment')));
-                acc = st(strcmp(vars, 'Open or Controlled Data Access Indicator') | strcmp(vars, 'accessibility'));
-                testCase.verifyNumElements(acc, 1);
-                testCase.verifyEqual(acc{1}.statement.variable.node, 'NCIT:C175887');
-            else
-                ds = docs{strcmp(cellfun(@ndi.v2.leafName, docs, 'UniformOutput', false), 'dataset')};
-                testCase.verifyFalse(isfield(ds.dataset, 'ethics_assessment') && ...
-                    ~isempty(ds.dataset.ethics_assessment.name));
-                testCase.verifyEqual(ds.dataset.accessibility.node, 'NCIT:C183346');
-            end
+            st = docs(cellfun(@(d) isfield(d, 'statement'), docs));
+            vars = cellfun(@(d) d.statement.variable.name, st, 'UniformOutput', false);
+            testCase.verifyFalse(any(strcmp(vars, 'ethics assessment')));
+            acc = st(strcmp(vars, 'Open or Controlled Data Access Indicator') | strcmp(vars, 'accessibility'));
+            testCase.verifyNumElements(acc, 1);
+            testCase.verifyEqual(acc{1}.statement.variable.node, 'NCIT:C175887');
         end
 
         function testKeywordsAreTextAndTheLicenceIsItsSpdxTerm(testCase)
@@ -352,13 +285,6 @@ classdef TestDatasetMetadataHaley < matlab.unittest.TestCase
             % (a text assertion), not terms with no node; its licence is the
             % registered term spdx:CC-BY-4.0 (no ontology has licence terms)
             docs = testCase.Result.documents;
-            if ~ndi.setup.V2.mergedEntities()
-                % the dataset is its own class here (did-schema main): keyword
-                % and license are its own fields, written as the spec gives them
-                ds = docs{strcmp(cellfun(@ndi.v2.leafName, docs, 'UniformOutput', false), 'dataset')};
-                testCase.verifyEqual(char(ds.dataset.license), 'CC-BY-4.0');
-                return;
-            end
             st = docs(cellfun(@(d) isfield(d, 'statement'), docs));
             nodes = cellfun(@(d) d.statement.variable.node, st, 'UniformOutput', false);
             kw = st(strcmp(nodes, 'EDAM:data_0968'));
@@ -378,62 +304,36 @@ classdef TestDatasetMetadataHaley < matlab.unittest.TestCase
 
         function testUnrepresentedContentIsReportedNotDropped(testCase)
             u = testCase.Result.unrepresented;
-            % software.vendor has no V2 home. An instrument's `name` has one only
-            % once the schema declares subject.name (did-schema PR #80); before
-            % that it is reported here, one row per instrument. Nothing else in
-            % the spec should be.
-            hasName = ndi.setup.V2.schemaHasField('subject', 'name');
+            % An instrument's `name` and a formulation's `type` are built;
+            % only a web resource's host, outside a stored copy, is reported.
             isName = strcmp({u.field}, 'name');
-            if hasName
-                testCase.verifyFalse(any(isName), 'subject.name exists, so names are built');
-            else
-                testCase.verifyEqual(nnz(isName), numel(testCase.Spec.instruments));
-            end
+            testCase.verifyFalse(any(isName), 'subject.name exists, so names are built');
             u = u(~isName);
-            % formulation.value.type likewise, once the schema declares it
-            % (did-schema PR #84); before that, one row per formulation
             isType = strcmp({u.field}, 'type');
-            if ndi.setup.V2.schemaHasField('formulation', 'value.type')
-                testCase.verifyFalse(any(isType), 'formulation.value.type exists, so types are built');
-            else
-                testCase.verifyEqual(nnz(isType), numel(testCase.Spec.formulations));
-            end
+            testCase.verifyFalse(any(isType), 'formulation.value.type exists, so types are built');
             u = u(~isType);
-            % with one entity class a web resource's host has no relation
-            % (hosted_by retired, 2026-10-08): one row per resource naming one --
-            % EXCEPT a stored copy's host, which is the dataset's `hosted_by` on a
-            % schema that has it again (did-schema 9bedceb, 2026-10-15)
+            % a web resource's host has no relation (hosted_by retired,
+            % 2026-10-08): one row per resource naming one -- EXCEPT a stored
+            % copy's host, which is the dataset's `hosted_by` (did-schema
+            % 9bedceb, 2026-10-15)
             isHost = strcmp({u.field}, 'host');
             wr = testCase.Spec.web_resources;
             if isstruct(wr), wr = num2cell(wr); end
             stored = cellstr(string(testCase.Spec.dataset.stored_at));
-            hasHosted = ndi.setup.V2.schemaHasRelation('hosted_by');
-            if ndi.setup.V2.mergedEntities()
-                expect = sum(cellfun(@(x) isfield(x, 'host') && ...
-                    ~(hasHosted && any(strcmp(x.key, stored))), wr));
-                testCase.verifyEqual(nnz(isHost), expect);
-            else
-                testCase.verifyFalse(any(isHost));
-            end
+            expect = sum(cellfun(@(x) isfield(x, 'host') && ...
+                ~any(strcmp(x.key, stored)), wr));
+            testCase.verifyEqual(nnz(isHost), expect);
             u = u(~isHost);
-            % software.vendor: a `developed_by` relation on a schema that has it
-            % (did-schema 9bedceb), else one row per software naming a vendor
+            % software.vendor: a `developed_by` relation (did-schema 9bedceb)
             % (the analysis package and macOS name none)
             sw = testCase.Spec.software;
             if isstruct(sw), sw = num2cell(sw); end
             nVendor = sum(cellfun(@(x) isfield(x, 'vendor') && ~isempty(x.vendor), sw));
-            if ndi.setup.V2.schemaHasRelation('developed_by')
-                testCase.verifyEmpty(u);
-                testCase.verifyNumElements(relationsNamed(testCase.Result.documents, ...
-                    'developed_by'), nVendor);
-            else
-                testCase.verifyEqual(unique({u.field}), {'vendor'});
-                testCase.verifyEqual(numel(u), nVendor);
-            end
-            if hasHosted && ndi.setup.V2.mergedEntities()
-                testCase.verifyNumElements(relationsNamed(testCase.Result.documents, ...
-                    'hosted_by'), 1, 'the NDI Cloud copy names its host');
-            end
+            testCase.verifyEmpty(u);
+            testCase.verifyNumElements(relationsNamed(testCase.Result.documents, ...
+                'developed_by'), nVendor);
+            testCase.verifyNumElements(relationsNamed(testCase.Result.documents, ...
+                'hosted_by'), 1, 'the NDI Cloud copy names its host');
         end
     end
 end

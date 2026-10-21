@@ -79,12 +79,14 @@ classdef TestTerm < matlab.unittest.TestCase
         function testSynonymNodesFindARegisteredTermByASynonym(testCase)
             % ndi.v2.synonymNodes reads DID-schema's term registry: 'mean' is
             % a synonym of NCIT:C53319 Arithmetic Mean, so a search for
-            % 'mean' widens to that node (ndi.v2.searchStatements). Without a
-            % registry (the `current` CI leg) it returns early: a filtered test
-            % fails test-import-v2.yml.
-            if isempty(which('did2.schema.termIndex')), return; end
+            % 'mean' widens to that node (ndi.v2.searchStatements). Needs the
+            % registry (did-schema #88, DID-matlab #218); filtered without it,
+            % which test-import-v2.yml counts as a failure.
+            testCase.assumeTrue(~isempty(which('did2.schema.termIndex')), ...
+                'no did2.schema.termIndex (DID-matlab #218)');
             ix = did2.schema.termIndex();
-            if ~(ix.present && isKey(ix.byNode, 'ncit:C53319')), return; end
+            testCase.assumeTrue(ix.present && isKey(ix.byNode, 'ncit:C53319'), ...
+                'no term registry holding NCIT:C53319 (did-schema #88)');
             % every registered term answered offline: its name alone
             v = values(ix.byNode);
             for k = 1:numel(v)

@@ -2,15 +2,11 @@ classdef TestLinkedSessions < matlab.unittest.TestCase
 %TESTLINKEDSESSIONS Linked and ingested sessions in a V2 dataset.
 %
 %   V_eta_linked_session_plan.md (signed 2026-10-09): a session is in a
-%   dataset when it is `part_of` the dataset or a study of it; an INGESTED
+%   dataset when it is `included_in` the dataset or a study of it; an INGESTED
 %   session's documents are in the dataset's database, a LINKED one's in its
 %   own folder, which a `linked_session` document names. Writes
 %   TestHaleyRecordings' synthetic concentration_0001 into a dataset once,
 %   then each test works on its own copy of that dataset.
-%
-%   Tests that link need the `linked_session` class; with a schema that
-%   does not have it (the `current` CI leg) they return early (the workflow
-%   fails a run in which any test is filtered).
 
     properties
         Root
@@ -27,8 +23,8 @@ classdef TestLinkedSessions < matlab.unittest.TestCase
                 'did2.build (DID-matlab V2) is not on the path');
             schemaPath = getenv('DID_SCHEMA_PATH');
             testCase.assumeTrue(~isempty(schemaPath) && ...
-                ndi.setup.V2.schemaHasClass('study', schemaPath), ...
-                'DID_SCHEMA_PATH does not hold a V2 schema with `study`');
+                isfile(fullfile(schemaPath, 'entity.json')), ...
+                'DID_SCHEMA_PATH does not hold a V2 schema with `entity` (did-schema #88)');
             testCase.Root = tempname;
             testCase.addTeardown(@() rmdir(testCase.Root, 's'));
             ndi.unittest.setup.V2.TestHaleyRecordings.writeFixture(testCase.Root);
@@ -72,7 +68,6 @@ classdef TestLinkedSessions < matlab.unittest.TestCase
         end
 
         function testIngestedToLinkedAndBack(testCase)
-            if ~canLink(), return; end
             [~, ids] = testCase.Dataset.session_list();
             sid = ids{1};
             before = testCase.sessionDocuments(sid);
@@ -111,7 +106,6 @@ classdef TestLinkedSessions < matlab.unittest.TestCase
         end
 
         function testAddAndUnlinkALinkedSession(testCase)
-            if ~canLink(), return; end
             folder = fullfile(testCase.Root, ['extra_' char(ndi.ido.unique_id())]);
             mkdir(folder);
             S2 = ndi.setup.V2.createSession(folder, 'extra');
@@ -134,7 +128,6 @@ classdef TestLinkedSessions < matlab.unittest.TestCase
         end
 
         function testASessionAlreadyInTheDatasetIsNotAddedTwice(testCase)
-            if ~canLink(), return; end
             % the linked import's session folder holds a session its dataset has
             ds = ndi.dataset.dir(testCase.Linked.dataset.path);
             S = ndi.session.dir(testCase.Linked.sessions.path{1});
@@ -142,7 +135,6 @@ classdef TestLinkedSessions < matlab.unittest.TestCase
         end
 
         function testTheImportLinksItsSessions(testCase)
-            if ~canLink(), return; end
             L = testCase.Linked;
             ds = ndi.dataset.dir(L.dataset.path);
             [refs, ids] = ds.session_list();
@@ -188,7 +180,6 @@ classdef TestLinkedSessions < matlab.unittest.TestCase
         end
 
         function testAFolderThatMovedIsReported(testCase)
-            if ~canLink(), return; end
             [~, ids] = testCase.Dataset.session_list();
             folder = fullfile(testCase.Root, ['moving_' char(ndi.ido.unique_id())]);
             testCase.Dataset.convertIngestedSessionToLinked(ids{1}, folder, 'areYouSure', true);
@@ -225,11 +216,6 @@ classdef TestLinkedSessions < matlab.unittest.TestCase
             docs = cellfun(@(d) d.document_properties, found, 'UniformOutput', false);
         end
     end
-end
-
-function tf = canLink()
-% the schema in use has the linked_session class
-tf = ndi.setup.V2.schemaHasClass('linked_session');
 end
 
 function ids = idsOf(docs)

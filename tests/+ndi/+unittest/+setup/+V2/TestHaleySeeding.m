@@ -15,8 +15,9 @@ classdef TestHaleySeeding < matlab.unittest.TestCase
 %     Mutants     a growth seeding day with no solution is reported
 %     E. coli     OP50-GFP in LB with carbenicillin; CFU corrected away; OD600
 %                 0 is the diluent itself
-%   The last test builds the entries with ndi.setup.V2.datasetMetadata (needs
-%   did2.build and a V2 schema); the others need neither.
+%   Every test needs did2.build (a source unit is a registered term, built
+%   with did2.build.term); the last also builds the entries with
+%   ndi.setup.V2.datasetMetadata, which needs a V2 schema.
 %
 %   UNVERIFIED: written without MATLAB; test-import-v2.yml is the first run.
 
@@ -29,6 +30,8 @@ classdef TestHaleySeeding < matlab.unittest.TestCase
 
     methods (TestClassSetup)
         function fixture(testCase)
+            testCase.assumeTrue(~isempty(which('did2.build.term')), ...
+                'did2.build (DID-matlab V2) is not on the path');
             testCase.Root = tempname;
             testCase.addTeardown(@() rmdir(testCase.Root, 's'));
             specFile = fullfile(fileparts(which('ndi.setup.conv.haley.import_V2')), ...
@@ -85,11 +88,7 @@ classdef TestHaleySeeding < matlab.unittest.TestCase
                 'the measured CFU is an observation of the solution, not its plan (decision #129)');
             testCase.verifyEqual(g.concentration.source_value, 10, 'the plan: target OD600 10');
             testCase.verifyEqual(g.concentration.source_unit, ndi.setup.V2.sourceUnit('OD600'));
-            if ndi.setup.V2.schemaHasField('concentration', 'value.od600')
-                testCase.verifyEqual(g.concentration.od600, 10, 'the od600 canonical');
-            else
-                testCase.verifyFalse(isfield(g.concentration, 'od600'));
-            end
+            testCase.verifyEqual(g.concentration.od600, 10, 'the od600 canonical');
             st = testCase.solution('suspension_op50_20230217');
             testCase.verifyEqual(st.kind, 'stock');
             testCase.verifyEqual(st.od, 10.1, 'the measured OD600 is the solution''s, not the plan''s');
@@ -158,9 +157,7 @@ classdef TestHaleySeeding < matlab.unittest.TestCase
             testCase.verifyEqual(x.ingredients{1}.ingredient, 'OP50');
             testCase.verifyEqual(x.ingredients{1}.concentration.source_value, 1);
             testCase.verifyEqual(x.ingredients{1}.concentration.source_unit, ndi.setup.V2.sourceUnit('OD600'));
-            if ndi.setup.V2.schemaHasField('concentration', 'value.od600')
-                testCase.verifyEqual(x.ingredients{1}.concentration.od600, 1, 'the nominal OD600');
-            end
+            testCase.verifyEqual(x.ingredients{1}.concentration.od600, 1, 'the nominal OD600');
             testCase.verifyFalse(isfield(x.ingredients{1}.concentration, 'particles_per_liter'), ...
                 'no CFU was measured');
             I = testCase.S.index;
@@ -207,8 +204,9 @@ classdef TestHaleySeeding < matlab.unittest.TestCase
         function testTheEntriesBuild(testCase)
             testCase.assumeTrue(~isempty(which('did2.build.document')), ...
                 'did2.build (DID-matlab V2) is not on the path');
-            testCase.assumeTrue(ndi.setup.V2.schemaHasField('formulation', 'value'), ...
-                'DID_SCHEMA_PATH does not hold a V2 schema with `formulation`');
+            sp = getenv('DID_SCHEMA_PATH');
+            testCase.assumeTrue(~isempty(sp) && isfile(fullfile(sp, 'entity.json')), ...
+                'DID_SCHEMA_PATH does not hold a V2 schema with `entity` (did-schema #88)');
             spec = testCase.Spec;
             f = spec.formulations;
             if isstruct(f), f = num2cell(f); end
@@ -232,42 +230,36 @@ classdef TestHaleySeeding < matlab.unittest.TestCase
             n = numel(testCase.S.solutions);
             testCase.verifyEqual([sd.counts.solutions, sd.counts.preparations], [n n]);
             stocks = sum(strcmp({testCase.S.solutions.kind}, 'stock'));
-            if ndi.setup.V2.schemaHasLeaf('concentration_observation')
-                testCase.verifyEqual(sd.counts.od600_observations, stocks, 'one per measured stock');
-            end
+            testCase.verifyEqual(sd.counts.od600_observations, stocks, 'one per measured stock');
             testCase.verifyEqual(sd.counts.days, numel(unique(dateshift([testCase.S.solutions.day], ...
                 'start', 'day'))));
             % each measured stock with a CFU: a Cell Density observation by
             % viable cell count, in particles_per_liter (decision #129)
             withCfu = sum(strcmp({testCase.S.solutions.kind}, 'stock') & ~isnan([testCase.S.solutions.cfu]));
             testCase.verifyGreaterThan(withCfu, 0);
-            if ndi.setup.V2.schemaHasLeaf('concentration_observation')
-                testCase.verifyEqual(sd.counts.cfu_observations, withCfu, 'one per stock with a CFU');
-                leaf = cellfun(@ndi.v2.leafName, sd.documents, 'UniformOutput', false);
-                ob = sd.documents(strcmp(leaf, 'concentration_observation'));
-                nodeOf = @(t) t.node;
-                node = cellfun(@(d) nodeOf(ndi.v2.blockOf(d, 'statement', 'variable')), ob, ...
-                    'UniformOutput', false);
-                cd = ob(strcmp(node, 'NCIT:C120538'));
-                testCase.verifyNumElements(cd, withCfu);
-                testCase.verifyEqual(nodeOf(ndi.v2.blockOf(cd{1}, 'interaction', 'method')), ...
-                    'NCIT:C130166', 'Viable Cell Count');
-                dep = cd{1}.depends_on;
-                if iscell(dep), dep = [dep{:}]; end
-                testCase.verifyFalse(any(strcmp({dep.name}, 'instrument_id') & ...
-                    ~cellfun(@isempty, {dep.document_id})), ...
-                    'the colonies were not counted with the spectrophotometer');
-                c = ndi.v2.blockOf(cd{1}, 'concentration', 'value');
-                if iscell(c), c = c{1}; end
-                testCase.verifyEqual(c(1).source_unit, ndi.setup.V2.sourceUnit('CFU/mL'));
-                testCase.verifyEqual(c(1).particles_per_liter, 1000 * c(1).source_value, 'RelTol', 1e-12, ...
-                    'per mL -> per L');
-                od = ob(strcmp(node, 'MCO:0000059'));
-                testCase.verifyEqual(nodeOf(ndi.v2.blockOf(od{1}, 'interaction', 'method')), ...
-                    'NCIT:C85776', 'Optical Density Measurement (decision #129)');
-            else
-                testCase.verifyEqual(sd.counts.cfu_observations, 0);
-            end
+            testCase.verifyEqual(sd.counts.cfu_observations, withCfu, 'one per stock with a CFU');
+            leaf = cellfun(@ndi.v2.leafName, sd.documents, 'UniformOutput', false);
+            ob = sd.documents(strcmp(leaf, 'concentration_observation'));
+            nodeOf = @(t) t.node;
+            node = cellfun(@(d) nodeOf(ndi.v2.blockOf(d, 'statement', 'variable')), ob, ...
+                'UniformOutput', false);
+            cd = ob(strcmp(node, 'NCIT:C120538'));
+            testCase.verifyNumElements(cd, withCfu);
+            testCase.verifyEqual(nodeOf(ndi.v2.blockOf(cd{1}, 'interaction', 'method')), ...
+                'NCIT:C130166', 'Viable Cell Count');
+            dep = cd{1}.depends_on;
+            if iscell(dep), dep = [dep{:}]; end
+            testCase.verifyFalse(any(strcmp({dep.name}, 'instrument_id') & ...
+                ~cellfun(@isempty, {dep.document_id})), ...
+                'the colonies were not counted with the spectrophotometer');
+            c = ndi.v2.blockOf(cd{1}, 'concentration', 'value');
+            if iscell(c), c = c{1}; end
+            testCase.verifyEqual(c(1).source_unit, ndi.setup.V2.sourceUnit('CFU/mL'));
+            testCase.verifyEqual(c(1).particles_per_liter, 1000 * c(1).source_value, 'RelTol', 1e-12, ...
+                'per mL -> per L');
+            od = ob(strcmp(node, 'MCO:0000059'));
+            testCase.verifyEqual(nodeOf(ndi.v2.blockOf(od{1}, 'interaction', 'method')), ...
+                'NCIT:C85776', 'Optical Density Measurement (decision #129)');
         end
     end
 

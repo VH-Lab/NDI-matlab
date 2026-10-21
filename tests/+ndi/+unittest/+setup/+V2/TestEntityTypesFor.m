@@ -4,10 +4,10 @@ classdef TestEntityTypesFor < matlab.unittest.TestCase
 %   ndi.v2.entityTypesFor reads binding_registry_meta.json's
 %   `entity_type_bindings` (did-schema #88 lists 19 types and retires
 %   web_resource); a registry without the list falls back to the types NDI
-%   hard-coded. ndi.setup.V2.schemaHasField asks the same function which
-%   class names live in entity.json, so the two cannot disagree.
+%   hard-coded (a migrated database read with the schema the migrators are
+%   pinned to).
 %
-%   Each test writes a scratch schema folder, so neither CI leg filters it.
+%   Each test writes a scratch schema folder, so CI never filters it.
 %
 %   UNVERIFIED: written without MATLAB; CI is the first run.
 
@@ -54,24 +54,6 @@ classdef TestEntityTypesFor < matlab.unittest.TestCase
                 testCase.verifyEqual(ndi.v2.entityTypesFor(c{1}, p), c, c{1});
             end
             testCase.verifyEmpty(ndi.v2.entityTypesFor('statement', p));
-        end
-
-        function testSchemaHasFieldAsksTheSameList(testCase)
-            % entity.json holds the identity fields of every merged class
-            for registered = {[], {'organism', 'protocol', 'session'}}
-                p = schemaFolder(testCase, registered{1});
-                fid = fopen(fullfile(p, 'entity.json'), 'w');
-                fwrite(fid, jsonencode(struct('classname', 'entity', ...
-                    'fields', {{struct('name', 'name'), struct('name', 'type')}})));
-                fclose(fid);
-                setenv('DID_SCHEMA_PATH', p);
-                for c = {'protocol', 'session', 'subject'}
-                    testCase.verifyEqual(ndi.setup.V2.schemaHasField(c{1}, 'name'), ...
-                        ~isempty(ndi.v2.entityTypesFor(c{1}, p)), c{1});
-                end
-                testCase.verifyTrue(ndi.setup.V2.schemaHasField('protocol', 'name'), ...
-                    'protocol is an entity type in both lists');
-            end
         end
     end
 end

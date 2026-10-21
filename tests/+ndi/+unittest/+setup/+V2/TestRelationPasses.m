@@ -8,10 +8,7 @@ classdef TestRelationPasses < matlab.unittest.TestCase
 %   base.session_id becomes a required `session_id` edge to the session or
 %   dataset entity, whose base.id IS the session id.
 %
-%   The `current` CI leg (did-schema main) has none of this: `part_of` files
-%   records, the registry declares no `passes` and base.session_id is a
-%   field. Each test checks what holds on the schema in use, so neither leg
-%   filters it.
+%   Needs did-schema #88 (or later) on DID_SCHEMA_PATH.
 %
 %   UNVERIFIED: written without MATLAB; test-import-v2.yml is the first run.
 
@@ -25,8 +22,8 @@ classdef TestRelationPasses < matlab.unittest.TestCase
                 'did2.build (DID-matlab V2) is not on the path');
             schemaPath = getenv('DID_SCHEMA_PATH');
             testCase.assumeTrue(~isempty(schemaPath) && ...
-                ndi.setup.V2.schemaHasClass('study', schemaPath), ...
-                'DID_SCHEMA_PATH does not hold a V2 schema with `study`');
+                isfile(fullfile(schemaPath, 'entity.json')), ...
+                'DID_SCHEMA_PATH does not hold a V2 schema with `entity` (did-schema #88)');
             % 'short name', 'species' and the values below are this test's own
             % vocabulary; what is tested is inheritance, not the term registry
             if ~isempty(which('did2.schema.termIndex'))
@@ -59,16 +56,9 @@ classdef TestRelationPasses < matlab.unittest.TestCase
             % the same registry
             testCase.verifyEqual(ndi.entity.distributiveRelations(), {'member_of'});
             testCase.verifyEqual(ndi.entity.contextRelations(), {'contained_in'});
-            if ndi.setup.V2.schemaHasRelation('included_in')
-                testCase.verifyTrue(P.declared, 'a schema with included_in declares passes');
-                testCase.verifyTrue(ismember('included_in', P.nothing));
-                testCase.verifyTrue(ismember('same_as', P.nothing));
-                testCase.verifyEqual(ndi.v2.recordRelation(), 'included_in');
-            else
-                testCase.verifyFalse(P.declared, ...
-                    'did-schema main: the lists NDI hard-coded are the fallback');
-                testCase.verifyEqual(ndi.v2.recordRelation(), 'part_of');
-            end
+            testCase.verifyTrue(P.declared, 'the registry declares passes');
+            testCase.verifyTrue(ismember('included_in', P.nothing));
+            testCase.verifyTrue(ismember('same_as', P.nothing));
         end
 
         function testARecordInheritsNothingFromWhatItIsIncludedIn(testCase)
@@ -88,7 +78,7 @@ classdef TestRelationPasses < matlab.unittest.TestCase
                     'type', did2.build.term('', 'organism')), struct(), c{:}, 'Id', id.org), ...
                 ndi.setup.V2.entityDocuments('subject', struct('local_identifier', 'slice', ...
                     'type', did2.build.term('', 'tissue')), struct(), c{:}, 'Id', id.slice), ...
-                {did2.build.directedRelation(id.st, id.ds, ndi.v2.recordRelation(), c{:}), ...
+                {did2.build.directedRelation(id.st, id.ds, 'included_in', c{:}), ...
                  did2.build.directedRelation(id.slice, id.org, 'part_of', c{:}), ...
                  termAssertion(id.ds, 'short name', 'DS', sid), ...
                  termAssertion(id.st, 'short name', 'ST', sid), ...
@@ -96,7 +86,7 @@ classdef TestRelationPasses < matlab.unittest.TestCase
                     did2.build.term('NCBITaxon:6239', 'Caenorhabditis elegans'), c{:})}];
             S = ndi.setup.V2.createSession(testCase.Dir, 'passes', 'SessionId', sid, 'Documents', docs);
 
-            % physical part_of passes assertions, on both schemas
+            % physical part_of passes assertions
             slice = ndi.entity.fromDocument(S, id.slice);
             sp = slice.assertions({'variable', 'species'}, 'synonyms', false);
             testCase.verifyNumElements(sp, 1);
@@ -105,15 +95,9 @@ classdef TestRelationPasses < matlab.unittest.TestCase
             st = ndi.entity.fromDocument(S, id.st);
             names = st.assertions({'variable', 'short name'}, 'synonyms', false);
             values = sort(cellfun(@(x) termText(x), names, 'UniformOutput', false));
-            if strcmp(ndi.v2.recordRelation(), 'included_in')
-                testCase.verifyEqual(values, {'ST'}, ...
-                    'included_in passes nothing: the study has its own short name only');
-                testCase.verifyEqual(names{1}.via(), 'own');
-            else
-                % did-schema main: records are part_of, which passes assertions
-                % (the misfire the change removes), so both short names reach it
-                testCase.verifyEqual(values, {'DS', 'ST'});
-            end
+            testCase.verifyEqual(values, {'ST'}, ...
+                'included_in passes nothing: the study has its own short name only');
+            testCase.verifyEqual(names{1}.via(), 'own');
             own = st.assertions({'variable', 'short name'}, 'inherited', false, 'synonyms', false);
             testCase.verifyNumElements(own, 1, 'inherited false: only its own');
         end
@@ -125,9 +109,6 @@ classdef TestRelationPasses < matlab.unittest.TestCase
             % a plate, distributive and with no time, is undecidable, so it
             % shows as UNDECIDED for a worm that is member_of the cohort, and
             % not for one tied to it by part_of, which passes assertions.
-            if ~ndi.setup.V2.schemaHasField('directed_relation', 'distributive')
-                return;   % a group's stay reaches its members only when distributive
-            end
             testCase.verifyEqual(ndi.v2.relationPasses().distributive, {'member_of'});
             sid = ndi.ido.unique_id();
             c = {'SessionId', sid};
@@ -174,7 +155,7 @@ classdef TestRelationPasses < matlab.unittest.TestCase
                 'set_session_id moves the edge, adding no field');
             testCase.verifyEqual(ndi.v2.edgeIds(d2.document_properties, 'session_id'), {other});
 
-            % the field, where a document has one (v1, and V2 on did-schema main)
+            % the field, where a document has one (v1, and migrated V_eta)
             q = p;
             q.depends_on = struct('name', {}, 'document_id', {});
             q.base.session_id = sid;
@@ -184,27 +165,22 @@ classdef TestRelationPasses < matlab.unittest.TestCase
             testCase.verifyEqual(e2.document_properties.base.session_id, other);
             testCase.verifyEmpty(ndi.v2.edgeIds(e2.document_properties, 'session_id'));
 
-            % neither: whatever the schema in use declares
+            % neither: a V_eta document gets the edge
             r = q;
             r.base = rmfield(r.base, 'session_id');
             f = ndi.document(r).set_session_id(sid);
             testCase.verifyEqual(f.session_id(), sid);
-            testCase.verifyEqual(isfield(f.document_properties.base, 'session_id'), ...
-                ~ndi.v2.sessionIdIsEdge());
+            testCase.verifyFalse(isfield(f.document_properties.base, 'session_id'));
+            testCase.verifyEqual(ndi.v2.edgeIds(f.document_properties, 'session_id'), {sid});
         end
 
-        function testBuiltDocumentsCarryTheShapeOfTheSchema(testCase)
-            % did2.build with 'SessionId' writes the edge where base has no
-            % session_id field (DID-matlab #218), the field otherwise
+        function testBuiltDocumentsCarryTheSessionEdge(testCase)
+            % did2.build with 'SessionId' writes the edge (DID-matlab #218)
             sid = ndi.ido.unique_id();
             d = termAssertion(ndi.ido.unique_id(), 'short name', 'X', sid);
             testCase.verifyEqual(ndi.v2.sessionIdOf(d), sid);
-            if ndi.v2.sessionIdIsEdge()
-                testCase.verifyFalse(isfield(d.base, 'session_id'));
-                testCase.verifyEqual(ndi.v2.edgeIds(d, 'session_id'), {sid});
-            else
-                testCase.verifyEqual(d.base.session_id, sid);
-            end
+            testCase.verifyFalse(isfield(d.base, 'session_id'));
+            testCase.verifyEqual(ndi.v2.edgeIds(d, 'session_id'), {sid});
         end
     end
 end

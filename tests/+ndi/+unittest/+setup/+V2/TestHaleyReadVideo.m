@@ -38,8 +38,8 @@ classdef TestHaleyReadVideo < matlab.unittest.TestCase
                 'did2.build (DID-matlab V2) is not on the path');
             schemaPath = getenv('DID_SCHEMA_PATH');
             testCase.assumeTrue(~isempty(schemaPath) && ...
-                ndi.setup.V2.schemaHasClass('study', schemaPath), ...
-                'DID_SCHEMA_PATH does not hold a V2 schema with `study`');
+                isfile(fullfile(schemaPath, 'entity.json')), ...
+                'DID_SCHEMA_PATH does not hold a V2 schema with `entity` (did-schema #88)');
             testCase.Root = tempname;
             testCase.addTeardown(@() rmdir(testCase.Root, 's'));
             ndi.unittest.setup.V2.TestHaleyRecordings.writeFixture(testCase.Root);

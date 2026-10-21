@@ -11,10 +11,9 @@ classdef TestLightsheetMigrated < matlab.unittest.TestCase
 %   no bytes -- writes what comes out into a V2 session, reopens it with
 %   ndi.session.dir, and asks the same readers.
 %
-%   NEEDS DID-matlab's lightsheet migrators (claude/ecstatic-pascal-md91fw,
-%   f363d98 and later: the method and the label on notes, Jess 2026-10-15) and the composition did-schema they target, so
-%   test-import-v2.yml runs it on the `next` leg only. It is not filtered on
-%   `current`; it is not selected there.
+%   NEEDS DID-matlab's lightsheet migrators (DID-matlab #218, f363d98 and
+%   later: the method and the label on notes, Jess 2026-10-15) and the
+%   composition did-schema they target (did-schema #88).
 %
 %   UNVERIFIED: written without MATLAB; test-import-v2.yml is the first run.
 
@@ -31,8 +30,8 @@ classdef TestLightsheetMigrated < matlab.unittest.TestCase
                 'did2.build (DID-matlab V2) is not on the path');
             schemaPath = getenv('DID_SCHEMA_PATH');
             testCase.assumeTrue(~isempty(schemaPath) && ...
-                ndi.setup.V2.schemaHasClass('study', schemaPath), ...
-                'DID_SCHEMA_PATH does not hold a V2 schema with `study`');
+                isfile(fullfile(schemaPath, 'entity.json')), ...
+                'DID_SCHEMA_PATH does not hold a V2 schema with `entity` (did-schema #88)');
             testCase.assertTrue(~isempty(which('did2.convert.migrators_j.lightsheet_zarr_level')), ...
                 'DID-matlab''s lightsheet migrators are not on the path');
             F = ndi.unittest.vintage.LightsheetFixtures;

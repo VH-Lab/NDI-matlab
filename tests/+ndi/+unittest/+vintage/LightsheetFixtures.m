@@ -32,7 +32,7 @@ classdef LightsheetFixtures
 %              body_data_{k-1}.
 %
 %   They are hand-built so they need neither DID-matlab's migrators nor a
-%   particular did-schema, and so run on both legs of test-import-v2.yml.
+%   particular did-schema.
 %   TestLightsheetMigrated runs the REAL migrator (where it exists) so a
 %   drift between these and its output is caught.
 
