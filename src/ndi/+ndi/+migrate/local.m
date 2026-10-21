@@ -2284,6 +2284,11 @@ function [convertResult, report] = resolveStimulusPresentations(convertResult, b
 %   the session (ndi.migrate.internal.sessionCohort). Stimulator links that
 %   lead to different animals are refused (decision 4).
 %
+%   NO SUBJECT (Jess Haley, 2026-10-21, "a"): a presentation with no
+%   response, no element in its session-epoch and no animal behind its
+%   stimulator becomes a standalone `item` (id preserved, no manipulation,
+%   no subject claim) instead of staying v1. Counted as `standalone_items`.
+%
 %   TIME. Each manipulation is anchored "during the session" by
 %   did2.convert.mintSessionDuring (the lightsheet decision, Jess 2026-10-14,
 %   option A): the epoch anchor needs a clocktype that lives in
@@ -2336,6 +2341,24 @@ function [convertResult, report] = resolveStimulusPresentations(convertResult, b
             if rep.several_animals > 1
                 report.several_animal_refused = report.several_animal_refused + 1;
             end
+            continue;
+        end
+        if rep.standalone
+            % No subject resolves (Jess Haley, 2026-10-21, "a"): a standalone
+            % `item`, no manipulation, so no time-reference marker either.
+            report.standalone_items = report.standalone_items + 1;
+            report.standalone_ids{end+1} = presId;
+            minted{end+1} = manip; %#ok<AGROW>
+            for g = 1:numel(methods)
+                minted{end+1} = methods{g}; %#ok<AGROW>
+            end
+            if ~isempty(sequence) && isstruct(sequence) && isfield(sequence, 'item_ids')
+                for r = 1:numel(sequence.item_ids)
+                    usedShared(char(sequence.item_ids{r})) = true;
+                end
+            end
+            report.methods_minted = report.methods_minted + numel(methods);
+            consumed{end+1} = presId; %#ok<AGROW>
             continue;
         end
         switch rep.animal_source
@@ -2496,6 +2519,8 @@ function r = newStimulusSequenceReport()
         'several_animal_presentations', 0, ...
         'several_animal_refused',     0, ...
         'distributive_manipulations', 0, ...
+        'standalone_items',           0, ...
+        'standalone_ids',             {{}}, ...
         'cohorts_minted',             0, ...
         'cohort_members',             0, ...
         'quarantined',                0, ...

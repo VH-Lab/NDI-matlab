@@ -258,10 +258,12 @@ classdef TestStimulusPresentationItem < matlab.unittest.TestCase
             pres = presentationBody('pres_none', [1 2], { noiseStim(1), blankStim() });
             r = ndi.migrate.internal.bodyResolver({pres});
             [m, ~, report] = ndi.migrate.internal.stimulusPresentationToItem(pres, r);
-            testCase.verifyEmpty(m);
+            testCase.verifyEmpty(m, 'the grating guard still refuses noise');
             testCase.verifyEqual(report.stimulus_kinds.stochasticgridstim, 1);
             testCase.verifyEqual(report.stimulus_kinds.blank, 1);
-            testCase.verifySubstring(report.reason, 'no responding animal');
+            testCase.verifyTrue(report.standalone);
+            testCase.verifySubstring(report.no_subject_reason, 'no responding animal');
+            testCase.verifySubstring(report.reason, 'stochasticgridstim');
         end
 
         % ================= the stimulator route ============================
@@ -307,16 +309,63 @@ classdef TestStimulusPresentationItem < matlab.unittest.TestCase
             testCase.verifyEqual(report.animal_source, 'response');
         end
 
-        function testAStimulatorNamingNoSubjectIsRefused(testCase)
-            pres = presentationBody('pres_nosub', 1, { gratingStim(0, 0.04, 0.5) });
+        function testAStimulatorNamingNoSubjectGivesAStandaloneItem(testCase)
+            % No response, no element in the epoch, and the stimulator names
+            % no animal: decided by Jess Haley, 2026-10-21 ("a"), a standalone
+            % `item`, id preserved, no manipulation and no subject claim.
+            pres = presentationBody('pres_nosub', [1 2 1], ...
+                { gratingStim(0, 0.04, 0.5), blankStim() });
             orphan = docBody('element', stimulatorIdOf(pres));
             orphan.base.session_id = pres.base.session_id;
             r = ndi.migrate.internal.bodyResolver({ pres, orphan });
-            [m, methods, report] = ndi.migrate.internal.stimulusPresentationToItem(pres, r);
-            testCase.verifyEmpty(m);
-            testCase.verifyEmpty(methods);
+            [d, methods, report] = ndi.migrate.internal.stimulusPresentationToItem(pres, r);
+            testCase.verifyTrue(report.standalone);
             testCase.verifyEqual(report.animal_source, 'none');
-            testCase.verifySubstring(report.reason, 'stimulator element names no subject');
+            testCase.verifySubstring(report.no_subject_reason, ...
+                'stimulator element names no subject');
+            testCase.verifyEmpty(report.reason, 'a standalone item is not a refusal');
+            testCase.verifyEqual(d.document_class.class_name, 'item');
+            testCase.verifyEqual(d.base.id, 'pres_nosub');
+            testCase.verifyEqual(numel(methods), 2);
+            testCase.verifyEqual(depValues(d, 'item_id'), ...
+                cellfun(@(x) x.base.id, methods, 'UniformOutput', false));
+            testCase.verifyEqual(d.item.value.item(:)', [0 1 0]);
+            testCase.verifyEqual(double(d.item.value.control_item), 1);
+            for gone = {'entity_id', 'instrument_id', 'time_reference_id', ...
+                    did2.convert.mintSessionDuring('marker')}
+                testCase.verifyEmpty(depValues(d, gone{1}), ...
+                    sprintf('a standalone item carries no %s', gone{1}));
+            end
+            verifyNoEmptyEdges(testCase, d);
+        end
+
+        function testTheStandaloneItemValidates(testCase)
+            pres = presentationBody('pres_valid', [1 2], ...
+                { gratingStim(0, 0.04, 0.5), gratingStim(45, 0.04, 0.5) });
+            r = ndi.migrate.internal.bodyResolver({pres});
+            [d, ~, report] = ndi.migrate.internal.stimulusPresentationToItem(pres, r);
+            testCase.verifyTrue(report.standalone);
+            cache = did2.schema.cache.shared();
+            restore = ndi.migrate.internal.termRegistryOff(); %#ok<NASGU>
+            testCase.verifyWarningFree(@() cache.validateDocument(d), ...
+                'the standalone item does not validate against did-schema #88');
+        end
+
+        function testElementsThatResolveToNoSubjectAreStillRefused(testCase)
+            % Outside the decision: the epoch DOES record an element, it just
+            % names no subject. Still left as v1, with its reason.
+            pres = presentationBody('pres_nosubj_el', 1, { gratingStim(0, 0.04, 0.5) });
+            sid = pres.base.session_id;
+            ee = docBody('element_epoch', 'ee_1', {'element_id', 'unit_1'});
+            ee.base.session_id = sid;
+            ee.epochid = struct('epochid', pres.epochid.epochid);
+            el = docBody('element', 'unit_1');
+            el.base.session_id = sid;
+            r = ndi.migrate.internal.bodyResolver({ pres, ee, el });
+            [m, ~, report] = ndi.migrate.internal.stimulusPresentationToItem(pres, r);
+            testCase.verifyEmpty(m);
+            testCase.verifyFalse(report.standalone);
+            testCase.verifySubstring(report.reason, 'resolve to no subject');
         end
 
         function testStimulatorLinksToDifferentAnimalsAreRefused(testCase)
@@ -344,9 +393,11 @@ classdef TestStimulusPresentationItem < matlab.unittest.TestCase
             bodies = { pres, stimulatorElement(stimulatorIdOf(pres), ...
                 'animal_other', 'some_other_session') };
             r = ndi.migrate.internal.bodyResolver(bodies);
-            [m, ~, report] = ndi.migrate.internal.stimulusPresentationToItem(pres, r);
-            testCase.verifyEmpty(m);
+            [d, ~, report] = ndi.migrate.internal.stimulusPresentationToItem(pres, r);
             testCase.verifyEqual(report.stimulator_subjects, 0);
+            testCase.verifyTrue(report.standalone, ...
+                'never followed into another session, so no subject: a standalone item');
+            testCase.verifyEqual(d.document_class.class_name, 'item');
         end
 
         function testAPlaylistIndexOutsideTheStimuliListIsRefused(testCase)
@@ -392,11 +443,14 @@ classdef TestStimulusPresentationItem < matlab.unittest.TestCase
                 'basis_source'; 'shared_refs'; 'frames'; ...
                 'subjects_resolved'; 'sibling_subjects'; 'stimulator_subjects'; ...
                 'several_animals'; 'animals'; 'distributive'; ...
+                'standalone'; 'no_subject_reason'; ...
                 'instrument_resolved'; 'epoch_id'; 'animal_source'; 'reason'};
             pres = presentationBody('pres_1', 1, { gratingStim(0, 0.04, 0.5) });
+            pres.base.datestamp = '';    % refused before anything is read
             r = ndi.migrate.internal.bodyResolver({pres});
             [~, ~, refused] = ndi.migrate.internal.stimulusPresentationToItem(pres, r);
             testCase.verifyEqual(fieldnames(refused), expected);
+            pres.base.datestamp = '2025-09-11T12:48:21.932Z';
             [~, ~, ok] = emit(testCase, pres);
             testCase.verifyEqual(fieldnames(ok), expected);
             testCase.verifyEmpty(ok.reason);

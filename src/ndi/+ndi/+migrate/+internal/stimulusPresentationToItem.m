@@ -78,6 +78,17 @@ function [manipBody, methodBodies, report] = ...
 %   STIMULATOR LINKS THAT LEAD TO DIFFERENT ANIMALS ARE REFUSED (decision 4):
 %   conflicting records are not a shared event.
 %
+%   NO SUBJECT (decided by Jess Haley, 2026-10-21, "a"): when no response
+%   names the presentation, its session-epoch records no element, and the
+%   stimulator names no animal, the presentation is NOT left as v1. MANIP is
+%   then a STANDALONE `item` document -- the same ordered, timed list of
+%   stimuli the manipulation would have referenced, base.id = the
+%   presentation id -- with no manipulation, no entity and no instrument.
+%   REPORT.standalone is true and REPORT.no_subject_reason says why no
+%   subject resolved. A presentation whose epoch DOES record elements that
+%   resolve to no subject is still refused (its reason says so), as is one
+%   the grating guard refuses.
+%
 %   SEQUENCE (optional) supplies an enumeration the presentation lacks:
 %     .item_ids     cell of ALREADY-MINTED method ids
 %     .order        [1 x nFrames] 1-based index into item_ids, per frame
@@ -162,15 +173,23 @@ if isempty(animals)
                 numel(viaStimulator));
             return;
         else
-            report.reason = noAnimalReason(resolver, presentationId);
+            % NO SUBJECT CAN BE RESOLVED: no response names it, the
+            % session-epoch records no element, and the stimulator names no
+            % animal. Decided by Jess Haley, 2026-10-21 ("a"): such a
+            % presentation becomes a STANDALONE `item` (the same ordered,
+            % timed list of stimuli, id preserved) with no manipulation and
+            % no subject claim, instead of being left as v1.
+            report.no_subject_reason = noAnimalReason(resolver, presentationId);
             report.sibling_subjects = siblingCount(resolver, presentationId);
-            return;
+            report.standalone = true;
         end
     end
 end
 
-entityId = animals{1};
-if numel(animals) > 1
+entityId = '';
+if report.standalone
+    % no entity: the item is a value, not a statement
+elseif numel(animals) > 1
     report.several_animals = numel(animals);
     report.animals = animals(:)';
     if isempty(options.CohortIdFor)
@@ -182,6 +201,7 @@ if numel(animals) > 1
     entityId = char(options.CohortIdFor(sessionId));
     report.distributive = true;
 else
+    entityId = animals{1};
     report.animals = animals(:)';
 end
 
@@ -221,7 +241,7 @@ if ~isempty(sequence)
         report.trials_with_timing = numel(frameTimes);
         report.timing_source = 'frameTimes (hartley_calc)';
     end
-    manipBody = itemManipulation(presentationId, sessionId, datestamp, ...
+    manipBody = itemBody(report.standalone, presentationId, sessionId, datestamp, ...
         entityId, stimulatorId, itemIds, value, keys, report.distributive);
     return;
 end
@@ -300,11 +320,37 @@ else
     report.timing_source = 'none in the document body (presentation_time.bin not read here)';
 end
 
-manipBody = itemManipulation(presentationId, sessionId, datestamp, ...
+manipBody = itemBody(report.standalone, presentationId, sessionId, datestamp, ...
     entityId, stimulatorId, itemIds, value, keys, report.distributive);
 end
 
 % ===================== the manipulation ===================================
+
+function b = itemBody(standalone, presentationId, sessionId, datestamp, ...
+        entityId, stimulatorId, itemIds, value, keys, distributive)
+if standalone
+    b = standaloneItem(presentationId, sessionId, datestamp, itemIds, value, keys);
+else
+    b = itemManipulation(presentationId, sessionId, datestamp, ...
+        entityId, stimulatorId, itemIds, value, keys, distributive);
+end
+end
+
+function d = standaloneItem(presentationId, sessionId, datestamp, itemIds, value, keys)
+%STANDALONEITEM The presentation's `item` on its own: the ordered, timed list
+%   of stimuli shown, base.id = the v1 presentation id, and no manipulation,
+%   subject or instrument (Jess Haley, 2026-10-21, "a"). `item` is concrete
+%   on did-schema #88 (draft/item.json declares no `abstract`).
+restore = ndi.migrate.internal.termRegistryOff(); %#ok<NASGU>
+fields = struct('value', value);
+if ~isempty(keys)
+    fields.keys = keys;
+end
+d = did2.build.document('item', fields, ...
+    'Edges', struct('item_id', {itemIds}), ...
+    'SessionId', sessionId, 'Id', presentationId, ...
+    'CreationTimestamp', datestamp, 'Validate', false);
+end
 
 function m = itemManipulation(presentationId, sessionId, datestamp, ...
         entityId, stimulatorId, itemIds, value, keys, distributive)
@@ -558,6 +604,8 @@ r = struct( ...
     'several_animals',     0, ...
     'animals',             {{}}, ...
     'distributive',        false, ...
+    'standalone',          false, ...
+    'no_subject_reason',   '', ...
     'instrument_resolved', false, ...
     'epoch_id',            '', ...
     'animal_source',       '', ...
