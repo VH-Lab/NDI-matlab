@@ -1916,18 +1916,18 @@ end
 
 function [convertResult, report] = resolveStrainAssembly(convertResult, options)
 %RESOLVESTRAINASSEMBLY V_eta second pass: assemble the unattached `openminds`
-%   Strain documents into `strain` entities with their ids PRESERVED, consuming
-%   the Species / GeneticStrainType fragment documents they reference into the
-%   strain's `species` / `genetic_strain_type` fields and wiring
-%   `backgroundStrain` into `background_strain_#`. A second pass because those
-%   values live in OTHER documents, reachable only through the `ndi://` /
-%   `openminds_#` links a single-document migrator cannot follow.
+%   Strain documents into strain entities (did-schema #88: `entity`, type
+%   `strain`) with their ids PRESERVED, turning the Species /
+%   GeneticStrainType fragment documents they reference into assertions about
+%   the strain and `backgroundStrain` into `derived_from` relations. A second
+%   pass because those values live in OTHER documents, reachable only through
+%   the `ndi://` / `openminds_#` links a single-document migrator cannot follow.
 %
 %   Id preservation is load-bearing rather than tidy: `ontologyTableRow`'s
 %   `bacteriaStrain` column holds the strain document's id as a plain string
-%   (haley/doImport.m:164,734), so nothing would flag a re-mint. The
-%   `strain_id` edge itself is NOT attached here -- it rides with the pass that
-%   mints subjects from `ontologyTableRow` (#53), which does not exist yet.
+%   (haley/doImport.m:164,734), so nothing would flag a re-mint. No
+%   `instance_of` is minted here: what is an instance of these strains is
+%   minted by the pass that reads those rows.
     report = [];
     docs = convertResult.migrated;
     if isempty(docs)
@@ -1958,10 +1958,11 @@ end
 
 function [convertResult, report] = resolveSubjectStrainAssembly(convertResult, bodies, options)
 %RESOLVESUBJECTSTRAINASSEMBLY V_eta second pass (#78): the openminds_subject
-%   half of the strain family -- one deduplicated `strain` entity per distinct
-%   strain, `strain_id` back on the assertion, the `background_strain_#`
-%   pedigree, the `genetic strain type` assertion moved onto the strain, and
-%   the duplicate `species` assertion dropped.
+%   half of the strain family -- one deduplicated strain entity per distinct
+%   strain (did-schema #88), the subject an `instance_of` it in place of its
+%   strain assertion, the pedigree as `derived_from` relations, the `genetic
+%   strain type` assertion moved onto the strain, and the duplicate `species`
+%   assertion dropped.
 %
 %   IT TAKES `bodies`, and that argument is why the pass is NDI-side rather
 %   than a preference. Pass 1 keeps only `subject_id` on the emitted
@@ -1986,10 +1987,11 @@ function [convertResult, report] = resolveSubjectStrainAssembly(convertResult, b
 %   the report's own `v1_openminds_subject_bodies` is 0 and says so). Otherwise
 %   it carries its denominators first. REPORT.changed gates the rebuild.
 %
-%   A MINTED `strain` THAT QUARANTINES DOES NOT UNDO THE EDGES, and that is
-%   deliberate rather than overlooked: the `strain_id` values are minted here,
-%   so a quarantined strain leaves an edge naming a document that is not in
-%   the migrated set -- an ORPHAN, which the gate at the end of ndi.migrate.local
+%   A MINTED STRAIN THAT QUARANTINES DOES NOT UNDO THE RELATIONS, and that is
+%   deliberate rather than overlooked: the strain ids are minted here, so a
+%   quarantined strain leaves `instance_of` / `derived_from` relations naming a
+%   document that is not in the migrated set -- an ORPHAN, which the gate at
+%   the end of ndi.migrate.local
 %   counts and which is exactly the loud failure wanted. The alternative,
 %   silently dropping the edges, would leave a green run with the work
 %   undone. did2.convert.v1_to_v2's quarantine list is carried onto
@@ -2798,22 +2800,25 @@ function printSubjectStrainSummary(result)
         r.strains_candidate, r.distinct_strains, r.strain_docs_collapsed, ...
         r.strains_incomplete, r.strain_docs_not_in_migrated_set, ...
         r.strain_docs_not_a_term_assertion);
-    fprintf(['    pedigree: %d reference(s) -> %d background_strain edge(s), ' ...
-             '%d unresolved, %d over max_count 2, %d cycle(s), ' ...
+    fprintf(['    pedigree: %d reference(s) -> %d derived_from relation(s), ' ...
+             '%d unresolved, %d cycle(s), ' ...
              '%d not corroborated by an openminds_# edge.\n'], ...
         r.background_refs_seen, r.background_edges, r.background_unresolved, ...
-        r.background_over_max, r.pedigree_cycles, ...
-        r.background_refs_not_in_openminds_edges);
-    fprintf('    strain_id: %d edge(s) attached, %d assertion(s) already had one.\n', ...
-        r.strain_id_edges_attached, r.strain_id_assertion_already_had_one);
+        r.pedigree_cycles, r.background_refs_not_in_openminds_edges);
+    fprintf(['    instance_of: %d subject(s) made an instance of their strain ' ...
+             '(their strain assertion replaced), %d strain assertion(s) with ' ...
+             'no subject; %d assertion(s) minted about the strains.\n'], ...
+        r.instance_of_minted, r.strain_assertions_without_subject, ...
+        r.strain_assertions_minted);
     fprintf(['    moved onto the strain: %d of %d genetic-strain-type ' ...
              'assertion(s) removed; KEPT -- %d value not on the strain, ' ...
              '%d shared with an unassembled strain, %d wrong/absent subject, ' ...
-             '%d pinned by an inbound edge, %d not a term_assertion.\n'], ...
+             '%d of an ancestor strain, %d pinned by an inbound edge, ' ...
+             '%d not a term assertion.\n'], ...
         r.gst_assertions_removed, r.gst_fragments_seen, ...
         r.gst_kept_value_not_on_strain, r.gst_kept_shared_with_unassembled, ...
-        r.gst_kept_wrong_subject, r.gst_kept_pinned, ...
-        r.gst_kept_not_a_term_assertion);
+        r.gst_kept_wrong_subject, r.gst_kept_not_the_subjects_strain, ...
+        r.gst_kept_pinned, r.gst_kept_not_a_term_assertion);
     fprintf(['    species: %d fragment(s), %d duplicate group(s) in scope, ' ...
              '%d assertion(s) removed, %d pinned and kept.\n'], ...
         r.species_fragments_seen, r.species_duplicate_groups, ...

@@ -1,8 +1,8 @@
 function [kept, minted, report] = subjectStrainAssembly(v1Bodies, migratedStructs)
 %SUBJECTSTRAINASSEMBLY V_eta second pass (#78): assemble the SUBJECT-ATTACHED
-%   openMINDS Strain documents into deduplicated `strain` ENTITIES, put the
-%   `strain_id` edge back on the assertion, wire `backgroundStrain` into the
-%   recursive `background_strain_#` pedigree, move the `genetic strain type`
+%   openMINDS Strain documents into deduplicated strain ENTITIES, make each
+%   subject an `instance_of` its strain, wire `backgroundStrain` into
+%   `derived_from` relations between strains, move the `genetic strain type`
 %   assertion off the subject onto the strain, and drop the duplicate `species`
 %   assertion the strain object's own Species child produces.
 %
@@ -11,21 +11,35 @@ function [kept, minted, report] = subjectStrainAssembly(v1Bodies, migratedStruct
 %
 %   V1BODIES is the cell of did_v1 bodies pass 1 read; MIGRATEDSTRUCTS is the
 %   cell of migrated V_eta bodies (did2.document.toStruct). KEPT is the
-%   surviving migrated set with the edges attached and the moved/duplicate
-%   assertions removed; MINTED is the new `strain` bodies; REPORT states its
-%   denominators FIRST and unconditionally, and `[]` from the caller means "did
-%   not run", so a silent zero and a real zero are distinguishable from the
-%   output alone.
+%   surviving migrated set with the replaced, moved and duplicate assertions
+%   removed; MINTED is the strain entities, the assertions about them, their
+%   `derived_from` relations and the subjects' `instance_of` relations; REPORT
+%   states its denominators FIRST and unconditionally, and `[]` from the caller
+%   means "did not run", so a silent zero and a real zero are distinguishable
+%   from the output alone.
+%
+%   THE SHAPE IS did-schema #88's (V_eta_entity_composition_plan.md, signed
+%   2026-10-08 by Jess):
+%     sec. 4  a strain is an `entity` with `type: strain` (required: `name`);
+%             its species, genetic strain type and phenotype are term
+%             assertions about it, its laboratory code and synonyms text
+%             assertions, and its background a `derived_from` relation
+%             (strain -> strain, RO:0001000);
+%     sec. 5  "`term_assertion.strain_id` goes. A subject is an `instance_of`
+%             its strain" -- so the subject's own `strain` assertion is
+%             REPLACED by an `instance_of` relation (subject -> strain), which
+%             keeps the assertion's id. T17's type-to-instance rule then makes
+%             what is asserted of the strain hold of the subject.
+%     sec. 1  an assertion is the `assertion` direction plus the `term` (or
+%             `text`) value-kind mixin, pointing at what it is about by
+%             `entity_id`. The reads accept the pre-#88 spelling as well
+%             (`term_assertion`, `subject_id`, `subject_statement`), through
+%             ndi.migrate.internal.etaShape.
 %
 %   This function is PURE apart from minting document ids: it reads structs and
 %   returns structs, calls no converter, touches no database and needs no
-%   schema. That is what makes it testable without a corpus.
-%
-%   STATUS: authored WITHOUT local MATLAB (`command -v matlab octave
-%   octave-cli` exits 1 in the container this was written in). Neither this
-%   function nor its unit tests
-%   (tests/+ndi/+unittest/+migrate/TestSubjectStrainAssembly.m) have been run.
-%   Nothing here has been exercised against a corpus.
+%   schema. That is what makes it testable without a corpus. Tests:
+%   tests/+ndi/+unittest/+migrate/TestSubjectStrainAssembly.m.
 %
 %   ---------------------------------------------------------------------
 %   THIS IS THE OTHER HALF OF THE STRAIN FAMILY, NOT A SECOND COPY OF IT
@@ -39,13 +53,15 @@ function [kept, minted, report] = subjectStrainAssembly(v1Bodies, migratedStruct
 %     * the documents HAVE a subject, and pass 1 already migrated each one 1->1
 %       into a `term_assertion` (did2.convert.migrators_j.openminds_subject);
 %     * so the source id is ALREADY IN USE by that assertion and the minted
-%       `strain` CANNOT reuse it (see "IDS ARE NOT PRESERVED HERE" below);
+%       strain CANNOT reuse it (see "IDS ARE NOT PRESERVED HERE" below; the
+%       `instance_of` relation that replaces the assertion takes it instead);
 %     * they are written per SUBJECT ROW, so one strain becomes hundreds of
 %       documents and dedup is the point rather than a tidy-up.
 %
 %   The two passes cannot collide: this one only ever touches a v1 body whose
-%   MIGRATED counterpart is a `term_assertion`, and strainAssembly's documents
-%   are either still `openminds` passthroughs or have already become `strain`.
+%   MIGRATED counterpart is a term assertion, and strainAssembly's documents
+%   are either still `openminds` passthroughs or have already become strain
+%   entities.
 %
 %   ---------------------------------------------------------------------
 %   WHY THIS IS A SECOND PASS AND NOT A `+migrators_j` FILE
@@ -82,7 +98,8 @@ function [kept, minted, report] = subjectStrainAssembly(v1Bodies, migratedStruct
 %   THE PEDIGREE COMES FROM `fields`, NOT FROM THE `openminds_#` EDGES
 %   ---------------------------------------------------------------------
 %   #78's own wording is "the `openminds_#` pedigree edges are read so
-%   `backgroundStrain` becomes `background_strain_#`". READ THE WRITER: those
+%   `backgroundStrain` becomes `background_strain_#`" (on #88, `derived_from`
+%   relations between strain entities). READ THE WRITER: those
 %   edges CANNOT carry the pedigree by themselves. `add_dependency_value_n`
 %   appends `openminds_1, openminds_2, ...` in `fieldnames` order over ALL
 %   object-valued fields, so `openminds_1` is as likely to be the SPECIES as
@@ -188,7 +205,7 @@ function [kept, minted, report] = subjectStrainAssembly(v1Bodies, migratedStruct
 %   Two kinds of assertion leave the subject. Both are named in the signed
 %   model (DID-schema V_eta_openminds_family_record.md Part 6, "Migration
 %   consequences" 2 and 3, under TEAM-SIGN-OFF jess 2026-08-05), and the
-%   built schema repeats one of them in its own documentation
+%   pre-#88 schema repeated one of them in its own documentation
 %   (V_eta/stable/strain.json, `genetic_strain_type`: "it lives HERE rather
 %   than on the subject: ~2,365 `genetic strain type` assertions move off
 %   subjects onto the strain"). Neither is removed on the strength of that
@@ -197,10 +214,13 @@ function [kept, minted, report] = subjectStrainAssembly(v1Bodies, migratedStruct
 %
 %   * A `genetic strain type` assertion goes ONLY IF it is the assertion
 %     minted from a GeneticStrainType fragment of a Strain this pass
-%     assembled, AND the same subject still carries a `strain` assertion whose
-%     `strain_id` names a strain document whose `genetic_strain_type` is that
-%     exact value. So the fact is reachable subject -> assertion -> strain
-%     before the assertion is dropped, never after a guess.
+%     assembled, AND that Strain is the subject's OWN strain (this pass made
+%     the subject an `instance_of` it; an ancestor's strain is not reachable
+%     that way), AND the strain entity was given a `genetic strain type`
+%     assertion of that exact value. So the fact is reachable subject ->
+%     instance_of -> strain before the assertion is dropped, never after a
+%     guess. (Before #88 this read "the subject's `strain` assertion carries a
+%     `strain_id`"; the reachability argument is the same.)
 %   * A `species` assertion goes ONLY IF it is an EXACT duplicate (same
 %     subject, same {node,name}) of another surviving species assertion on the
 %     same subject, and at least one member of the duplicate group came from a
@@ -233,7 +253,10 @@ function [kept, minted, report] = subjectStrainAssembly(v1Bodies, migratedStruct
 %     that the pedigree is on the strain document is a MODELLING CALL and
 %     modelling calls are the team's; #78 does not name it. They are counted
 %     (REPORT.background_strain_assertions_on_subject) and left exactly as pass
-%     1 emitted them, each with its own correct `strain_id`.
+%     1 emitted them -- term assertions with the strain's name and identifier,
+%     and NOT turned into `instance_of` (the mouse is not an instance of
+%     `eYFP`). Their genetic-strain-type assertions stay with them
+%     (REPORT.gst_kept_not_the_subjects_strain).
 %   * DUPLICATE SPECIES GROUPS WITH NO STRAIN FRAGMENT IN THEM. Counted
 %     (REPORT.duplicate_species_groups_out_of_scope) and untouched: a duplicate
 %     this family did not cause is not this pass's to remove.
@@ -294,12 +317,12 @@ report.background_refs_seen                = 0;
 report.background_refs_not_in_openminds_edges = 0;
 report.background_edges                    = 0;
 report.background_unresolved               = 0;
-report.background_over_max                 = 0;
 report.pedigree_cycles                     = 0;
 report.background_strain_assertions_on_subject = 0;   % measured, untouched
 
-report.strain_id_edges_attached            = 0;
-report.strain_id_assertion_already_had_one = 0;
+report.strain_assertions_minted            = 0;   % about the strains
+report.instance_of_minted                  = 0;   % subject -> strain
+report.strain_assertions_without_subject   = 0;
 
 report.gst_fragments_seen                  = 0;
 report.gst_assertions_removed              = 0;
@@ -307,6 +330,7 @@ report.gst_kept_not_a_term_assertion       = 0;
 report.gst_kept_value_not_on_strain        = 0;
 report.gst_kept_shared_with_unassembled    = 0;
 report.gst_kept_wrong_subject              = 0;
+report.gst_kept_not_the_subjects_strain    = 0;
 report.gst_kept_pinned                     = 0;
 
 report.species_fragments_seen              = 0;
@@ -322,6 +346,7 @@ if isempty(v1Bodies) || isempty(migratedStructs)
 end
 
 % ---- index the migrated set ---------------------------------------------
+S = ndi.migrate.internal.etaShape;
 n = numel(migratedStructs);
 migratedPos = containers.Map('KeyType', 'char', 'ValueType', 'double');
 inbound     = containers.Map('KeyType', 'char', 'ValueType', 'any');
@@ -331,7 +356,7 @@ for i = 1:n
     if ~isempty(id)
         migratedPos(id) = i;
     end
-    if strcmp(classNameOf(s), 'term_assertion')
+    if S.isStatement(s, 'assertion', 'term')
         report.term_assertions_indexed = report.term_assertions_indexed + 1;
     end
     targets = dependencyTargets(s);
@@ -405,7 +430,7 @@ for k = 1:numel(strainIdx)
         continue;
     end
     assertionPos = migratedPos(srcId);
-    if ~strcmp(classNameOf(migratedStructs{assertionPos}), 'term_assertion')
+    if ~S.isStatement(migratedStructs{assertionPos}, 'assertion', 'term')
         report.strain_docs_not_a_term_assertion = ...
             report.strain_docs_not_a_term_assertion + 1;
         continue;
@@ -416,8 +441,8 @@ for k = 1:numel(strainIdx)
     e.source_id     = srcId;
     e.assertion_pos = assertionPos;
     e.session_id    = ndi.v2.sessionIdOf(b);
-    e.datestamp     = baseField(b, 'datestamp', '2024-01-01T00:00:00.000Z');
-    e.subject_id    = dependencyValueNamed(migratedStructs{assertionPos}, 'subject_id');
+    e.datestamp     = baseField(b, 'datestamp', '');
+    e.subject_id    = S.aboutId(migratedStructs{assertionPos});
     e.name          = charField(f, {'name'});
     [e.species, e.species_frag] = resolveTerm(f, {'species'}, v1Pos, v1Bodies);
     [e.gst, e.gst_frag] = resolveTerm(f, ...
@@ -445,21 +470,15 @@ for k = 1:numel(strainIdx)
         end
     end
 
-    why = '';
     if isempty(e.name)
-        why = 'name';
-    elseif ~termIsPopulated(e.species)
-        why = 'species';
-    elseif ~termIsPopulated(e.gst)
-        why = 'genetic_strain_type';
-    end
-    if ~isempty(why)
-        % `name`, `species` and `genetic_strain_type` are all mustBeNonEmpty on
-        % V_eta/stable/strain.json. A Strain missing one is left exactly as
-        % pass 1 emitted it rather than minted with a vacuous required field.
+        % A strain entity requires `name` (did-schema #88 entity_type_bindings).
+        % A Strain without one is left exactly as pass 1 emitted it rather
+        % than minted hollow. (Before #88 the `strain` class also required
+        % `species` and `genetic_strain_type`; on #88 those are assertions,
+        % so a Strain without one simply gets no such assertion.)
         report.strains_incomplete = report.strains_incomplete + 1;
         report.incomplete_reasons{end+1} = ...
-            sprintf('%s: missing %s', shortId(srcId), why); %#ok<AGROW>
+            sprintf('%s: missing name', shortId(srcId)); %#ok<AGROW>
         continue;
     end
 
@@ -516,6 +535,12 @@ end
 report.cross_session_collapsible = nGroups - numel(uniqContentKeys);
 
 % ---- mint one strain per group ------------------------------------------
+% did-schema #88 (V_eta_entity_composition_plan.md sec. 4): the strain is an
+% `entity` of type `strain`; its species, genetic strain type, phenotype,
+% laboratory code and synonyms are ASSERTIONS about it; its pedigree is a
+% `derived_from` relation to the SURVIVOR of each parent's group, in the order
+% `fields.backgroundStrain` gives. A parent this pass could not assemble
+% produces NO relation (REPORT.background_unresolved).
 groupDocId = cell(1, nGroups);
 groupRep   = zeros(1, nGroups);
 for g = 1:nGroups
@@ -525,80 +550,37 @@ end
 
 for g = 1:nGroups
     rep = cand(groupRep(g));
+    common = {'SessionId', rep.session_id, 'Datestamp', rep.datestamp};
 
-    body = struct();
-    body.document_class = classBlock('strain', {'entity'});
+    ef = struct('name', rep.name);
+    if ~isempty(rep.description); ef.description = rep.description; end
+    if ~isempty(rep.identifiers); ef.global_identifier = rep.identifiers; end
+    minted{end+1} = S.entity('strain', ef, 'Id', groupDocId{g}, common{:}); %#ok<AGROW>
+    report.strains_minted = report.strains_minted + 1;
 
-    % background_strain_#: to the SURVIVOR of each parent's group, in the
-    % order `fields.backgroundStrain` gives. A parent this pass could not
-    % assemble produces NO edge -- an edge naming nobody validates clean and
-    % means nothing (did2/+validate/references.m:90 skips empty edges), which
-    % is the invented-empty-edge defect, not a repair of it.
-    deps = struct('name', {}, 'value', {});
-    nEdge = 0;
+    docs = strainStatements(groupDocId{g}, rep, common);
+    minted = [minted, docs]; %#ok<AGROW>
+    report.strain_assertions_minted = report.strain_assertions_minted + numel(docs);
+
     for p = 1:numel(rep.parents)
         pid = rep.parents{p};
         if isKey(candById, pid)
-            nEdge = nEdge + 1;
-            deps(end+1) = struct('name', ...
-                sprintf('background_strain_%d', nEdge), ...
-                'value', groupDocId{cand(candById(pid)).group}); %#ok<AGROW>
+            minted{end+1} = S.relation(groupDocId{g}, ...
+                groupDocId{cand(candById(pid)).group}, ...
+                S.term('RO:0001000', 'derived_from'), common{:}); %#ok<AGROW>
             report.background_edges = report.background_edges + 1;
         else
             report.background_unresolved = report.background_unresolved + 1;
         end
     end
-    if nEdge > 2
-        % strain.json declares max_count 2. Emitted AS FOUND rather than
-        % silently truncated: a real violation is a finding and will show up
-        % in validation, whereas a truncation is a silent loss.
-        report.background_over_max = report.background_over_max + 1;
-    end
-    body.depends_on = deps;
-
-    body.base = struct('id', groupDocId{g}, 'session_id', rep.session_id, ...
-        'name', 'migrated_strain', 'creation_timestamp', rep.datestamp);
-    % a field or a `session_id` edge, as the schema in use keeps it
-    body = ndi.migrate.internal.withSessionId(body, rep.session_id);
-
-    body.entity = struct();
-    body.entity.global_identifier = rep.identifiers;
-
-    blk = struct();
-    blk.name                = rep.name;
-    blk.species             = rep.species;
-    blk.genetic_strain_type = rep.gst;
-    if ~isempty(rep.description);     blk.description     = rep.description;     end
-    if ~isempty(rep.phenotype);       blk.phenotype       = rep.phenotype;       end
-    if ~isempty(rep.laboratory_code); blk.laboratory_code = rep.laboratory_code; end
-    if ~isempty(rep.synonym);         blk.synonym         = rep.synonym;         end
-    body.strain = blk;
-
-    minted{end+1} = body; %#ok<AGROW>
-    report.strains_minted = report.strains_minted + 1;
-end
-
-% ---- put `strain_id` back on the assertion -------------------------------
-for c = 1:numel(cand)
-    pos = cand(c).assertion_pos;
-    if ~isempty(dependencyValueNamed(kept{pos}, 'strain_id'))
-        report.strain_id_assertion_already_had_one = ...
-            report.strain_id_assertion_already_had_one + 1;
-        continue;
-    end
-    kept{pos} = appendDependency(kept{pos}, 'strain_id', ...
-        groupDocId{cand(c).group});
-    report.strain_id_edges_attached = report.strain_id_edges_attached + 1;
 end
 
 % An ancestor of another candidate is still asserted OF THE SUBJECT, because
 % the writer sets `subject_id` on every document of the flattened graph.
-% MEASURED, NOT ACTED ON -- see the header.
 %
 % Indexed on (parent document id, referring document's subject) rather than
 % compared pairwise: the pairwise form is numel(cand)^2 and numel(cand) is in
-% the thousands on a real dataset. A self-loop is skipped at BUILD time, which
-% is the `d ~= c` the pairwise form spelled out.
+% the thousands on a real dataset. A self-loop is skipped at BUILD time.
 ancestorOf = containers.Map('KeyType', 'char', 'ValueType', 'logical');
 for d = 1:numel(cand)
     if isempty(cand(d).subject_id)
@@ -611,18 +593,45 @@ for d = 1:numel(cand)
         ancestorOf([cand(d).parents{p} '|' cand(d).subject_id]) = true;
     end
 end
+
+% ---- the subject is an `instance_of` its strain ---------------------------
+% did-schema #88 sec. 5 (TEAM-SIGN-OFF jess 2026-10-08): "`term_assertion.
+% strain_id` goes. A subject is an `instance_of` its strain". So the subject's
+% OWN `strain` assertion is REPLACED by a directed_relation subject
+% -instance_of-> strain entity, which takes over the assertion's id (anything
+% that pointed at the assertion still resolves). What is asserted of the
+% strain then holds of the subject (T17's type-to-instance rule).
+%
+% AN ANCESTOR'S `strain` ASSERTION IS NOT TURNED INTO `instance_of`. The mouse
+% is an instance of `ArcCreERT2 x eYFP`, not of `eYFP`; whether the ancestor
+% assertions should go is a MODELLING CALL and modelling calls are the team's.
+% They stay exactly as pass 1 emitted them and are counted
+% (REPORT.background_strain_assertions_on_subject).
+removeMask = false(1, n);
+ownStrain = false(1, numel(cand));
 for c = 1:numel(cand)
     if isempty(cand(c).subject_id)
+        report.strain_assertions_without_subject = ...
+            report.strain_assertions_without_subject + 1;
         continue;
     end
     if isKey(ancestorOf, [cand(c).source_id '|' cand(c).subject_id])
         report.background_strain_assertions_on_subject = ...
             report.background_strain_assertions_on_subject + 1;
+        continue;
     end
+    pos = cand(c).assertion_pos;
+    ds = baseField(kept{pos}, 'creation_timestamp', '');
+    if isempty(ds); ds = cand(c).datestamp; end
+    minted{end+1} = S.relation(cand(c).subject_id, groupDocId{cand(c).group}, ...
+        S.term('', 'instance_of'), 'Id', cand(c).source_id, ...
+        'SessionId', cand(c).session_id, 'Datestamp', ds); %#ok<AGROW>
+    removeMask(pos) = true;
+    ownStrain(c) = true;
+    report.instance_of_minted = report.instance_of_minted + 1;
 end
 
 % ---- move the `genetic strain type` assertion onto the strain ------------
-removeMask = false(1, n);
 
 fragReferrers = containers.Map('KeyType', 'char', 'ValueType', 'any');
 for k = 1:numel(strainIdx)
@@ -658,7 +667,7 @@ for c = 1:numel(cand)
         continue;
     end
     pos = migratedPos(fragId);
-    if ~strcmp(classNameOf(kept{pos}), 'term_assertion')
+    if ~S.isStatement(kept{pos}, 'assertion', 'term')
         report.gst_kept_not_a_term_assertion = ...
             report.gst_kept_not_a_term_assertion + 1;
         continue;
@@ -682,17 +691,20 @@ for c = 1:numel(cand)
     % edges, so "" would otherwise match "" and the reachability argument
     % below would be about a subject that does not exist.
     if isempty(cand(c).subject_id) ...
-            || ~strcmp(dependencyValueNamed(kept{pos}, 'subject_id'), ...
-                       cand(c).subject_id)
+            || ~strcmp(S.aboutId(kept{pos}), cand(c).subject_id)
         report.gst_kept_wrong_subject = report.gst_kept_wrong_subject + 1;
         continue;
     end
-    % The fact must be reachable subject -> strain assertion -> strain BEFORE
-    % this one is dropped: the strain assertion on that subject really carries
-    % a `strain_id` (re-read, not assumed from the loop above), and the strain
-    % it names really carries this exact `genetic_strain_type`.
-    if isempty(dependencyValueNamed(kept{cand(c).assertion_pos}, 'strain_id')) ...
-            || ~sameTerm(termValueOf(kept{pos}), cand(c).gst)
+    % The fact must be reachable subject -> instance_of -> strain BEFORE this
+    % one is dropped: this pass minted the subject's `instance_of` to that
+    % strain (an ancestor's strain is not reachable that way), and the strain
+    % was given this exact `genetic strain type` assertion.
+    if ~ownStrain(c)
+        report.gst_kept_not_the_subjects_strain = ...
+            report.gst_kept_not_the_subjects_strain + 1;
+        continue;
+    end
+    if ~sameTerm(S.termValue(kept{pos}), cand(c).gst)
         report.gst_kept_value_not_on_strain = ...
             report.gst_kept_value_not_on_strain + 1;
         continue;
@@ -721,14 +733,15 @@ end
 speciesKey = cell(1, n);
 for i = 1:n
     speciesKey{i} = '';
-    if removeMask(i) || ~strcmp(classNameOf(kept{i}), 'term_assertion')
+    if removeMask(i) || ~S.isStatement(kept{i}, 'assertion', 'term')
         continue;
     end
-    if ~strcmp(normaliseKey(variableNameOf(kept{i})), 'species')
+    v = S.variable(kept{i});
+    if ~strcmp(normaliseKey(v.name), 'species')
         continue;
     end
-    t = termValueOf(kept{i});
-    sid = dependencyValueNamed(kept{i}, 'subject_id');
+    t = S.termValue(kept{i});
+    sid = S.aboutId(kept{i});
     if isempty(sid)
         % No subject means no "duplicate on the same subject" to speak of.
         % Two subject-less assertions are not evidence of being about one
@@ -783,7 +796,7 @@ end
 
 kept = kept(~removeMask);
 report.changed = report.strains_minted > 0 ...
-    || report.strain_id_edges_attached > 0 || any(removeMask);
+    || report.instance_of_minted > 0 || any(removeMask);
 end
 
 % ===================== the dedup key ======================================
@@ -834,15 +847,7 @@ memo(srcId) = key; %#ok<NASGU>
 end
 
 function s = identifierKey(gid)
-s = '';
-if isempty(gid)
-    return;
-end
-parts = cell(1, numel(gid));
-for k = 1:numel(gid)
-    parts{k} = [char(gid(k).scheme) ':' char(gid(k).value)];
-end
-s = strjoin(sort(parts), ',');
+s = strjoin(sort(gid), ',');
 end
 
 % ===================== openMINDS accessors ================================
@@ -939,8 +944,8 @@ end
 function ids = ndiRefs(v)
 %NDIREFS The `ndi://<id>` document ids inside a `fields` value, IN ORDER.
 %   Order is a fact from the writer -- `backgroundStrain = [ArcCreERT2,eYFP]`
-%   (hunsberger/SubjectInformationCreator.m:107) -- and it is what makes
-%   background_strain_1 / _2 reproducible.
+%   (hunsberger/SubjectInformationCreator.m:107) -- and it is what orders the
+%   `derived_from` relations reproducibly.
 ids = {};
 if isempty(v); return; end
 if ischar(v); v = {v}; end
@@ -957,17 +962,17 @@ end
 end
 
 function gid = identifiers(f)
-%IDENTIFIERS entity.global_identifier -- an ARRAY of {scheme, value}, split on
-%   the first colon of the CURIE. Empty when the writer gives none: 115 strains
-%   carry no identifier at all (dabrowska's Cre lines set only `name`), which
-%   is why the field is optional on the entity.
+%IDENTIFIERS entity.global_identifier -- a list of CURIE strings (did-schema
+%   #88 sec. 6: "`global_identifier` is a list of strings"). Empty when the
+%   writer gives none: 115 strains carry no identifier at all (dabrowska's Cre
+%   lines set only `name`), which is why the field is optional on the entity.
 %
 %   THE SLOT IS NOT TRUSTED, THE PREFIX IS. Dabrowska writes
 %   `'ontologyIdentifier', "RRID:RGD_70508"` -- an RRID in the ontology slot --
-%   so both `ontologyIdentifier` and `digitalIdentifier` are read and the
-%   scheme comes from the CURIE itself.
-gid = struct('scheme', {}, 'value', {});
-raws = {};
+%   so `ontologyIdentifier`, `digitalIdentifier` and `alternateIdentifier` are
+%   all read, and each CURIE is written as given (etaShape.curie applies the
+%   one rewrite the signed plan names, WBStrain -> WormBase).
+gid = {};
 for nm = {'ontologyIdentifier', 'ontology_identifier', ...
           'digitalIdentifier', 'digital_identifier', ...
           'alternateIdentifier', 'alternate_identifier'}
@@ -979,63 +984,48 @@ for nm = {'ontologyIdentifier', 'ontology_identifier', ...
     for k = 1:numel(v)
         e = v{k};
         if isstring(e); e = char(e); end
-        if ischar(e) && ~isempty(strtrim(e)); raws{end+1} = strtrim(e); end %#ok<AGROW>
-    end
-end
-for k = 1:numel(raws)
-    raw = raws{k};
-    c = strfind(raw, ':');
-    if isempty(c)
-        entry = struct('scheme', '', 'value', raw);
-    else
-        entry = struct('scheme', strtrim(raw(1:c(1)-1)), ...
-            'value', strtrim(raw(c(1)+1:end)));
-    end
-    dup = false;
-    for j = 1:numel(gid)
-        if strcmp(gid(j).scheme, entry.scheme) && strcmp(gid(j).value, entry.value)
-            dup = true;
+        if ~ischar(e) || isempty(strtrim(e)); continue; end
+        g = ndi.migrate.internal.etaShape.curie(e);
+        if ~any(strcmp(gid, g))
+            gid{end+1} = g; %#ok<AGROW>
         end
     end
-    if ~dup
-        gid(end+1) = entry; %#ok<AGROW>
-    end
+end
+end
+
+% ===================== the strain's statements =============================
+
+function docs = strainStatements(strainId, rep, common)
+%STRAINSTATEMENTS The assertions a strain's openMINDS fields become on #88
+%   (V_eta_entity_composition_plan.md sec. 4): species, genetic strain type and
+%   phenotype as term assertions, laboratory code and synonyms as text
+%   assertions -- the variables ndi.setup.V2.entityDocuments writes for the
+%   same fields, so a migrated strain reads like an imported one.
+S = ndi.migrate.internal.etaShape;
+docs = {};
+if termIsPopulated(rep.species)
+    docs{end+1} = S.statement('assertion', 'term', strainId, ...
+        S.term('NCIT:C45293', 'Species'), rep.species, common{:});
+end
+if termIsPopulated(rep.gst)
+    docs{end+1} = S.statement('assertion', 'term', strainId, ...
+        S.term('EMPTY:0000347', 'genetic strain type'), rep.gst, common{:});
+end
+if ~isempty(rep.phenotype)
+    docs{end+1} = S.statement('assertion', 'term', strainId, ...
+        S.term('', 'phenotype'), S.term('', rep.phenotype), common{:});
+end
+if ~isempty(rep.laboratory_code)
+    docs{end+1} = S.statement('assertion', 'text', strainId, ...
+        S.term('', 'laboratory code'), struct('text', rep.laboratory_code), common{:});
+end
+if ~isempty(rep.synonym)
+    docs{end+1} = S.statement('assertion', 'text', strainId, ...
+        S.term('', 'synonym'), struct('text', rep.synonym), common{:});
 end
 end
 
 % ===================== migrated-body accessors ============================
-
-function v = variableNameOf(s)
-v = '';
-if isstruct(s) && isfield(s, 'subject_statement') ...
-        && isstruct(s.subject_statement) ...
-        && isfield(s.subject_statement, 'variable')
-    var = s.subject_statement.variable;
-    if isstruct(var) && isfield(var, 'name')
-        v = firstChar(var.name);
-    end
-end
-end
-
-function t = termValueOf(s)
-%TERMVALUEOF The assertion's `{node,name}`. It rides the `term` composite
-%   block, NOT a `term_assertion` block: V_eta/stable/term_assertion.json
-%   declares no fields of its own and `value` is inherited from `term`. The
-%   stale spelling is read as a FALLBACK only, because it is what a body
-%   emitted before NDI d03a42bdf carries.
-t = struct('node', '', 'name', '');
-blk = struct();
-if isstruct(s) && isfield(s, 'term') && isstruct(s.term)
-    blk = s.term;
-elseif isstruct(s) && isfield(s, 'term_assertion') && isstruct(s.term_assertion)
-    blk = s.term_assertion;
-end
-if ~isfield(blk, 'value') || ~isstruct(blk.value)
-    return;
-end
-if isfield(blk.value, 'node'); t.node = firstChar(blk.value.node); end
-if isfield(blk.value, 'name'); t.name = firstChar(blk.value.name); end
-end
 
 function tf = sameTerm(a, b)
 tf = strcmp(a.node, b.node) && strcmp(a.name, b.name);
@@ -1075,20 +1065,6 @@ for k = 1:numel(s.depends_on)
 end
 end
 
-function v = dependencyValueNamed(s, name)
-v = '';
-if ~isstruct(s) || ~isfield(s, 'depends_on') || ~isstruct(s.depends_on)
-    return;
-end
-for k = 1:numel(s.depends_on)
-    d = s.depends_on(k);
-    if isfield(d, 'name') && strcmp(charOf(d.name), name)
-        v = dependencyValueOf(d);
-        if ~isempty(v); return; end
-    end
-end
-end
-
 function vals = dependencyValuesMatching(b, baseName)
 %DEPENDENCYVALUESMATCHING Every depends_on value whose name is BASENAME or
 %   BASENAME_<n>. `add_dependency_value_n` writes `openminds_1..n`, so a
@@ -1123,41 +1099,6 @@ elseif isfield(d, 'id') && ~isempty(d.id)
 end
 end
 
-function b = appendDependency(b, name, value)
-%APPENDDEPENDENCY Add an edge to a migrated body, matching the existing struct
-%   array's field schema so the append is legal. Same shape as
-%   ndi.migrate.internal.ontologyRowSubjects/addSubjectDependency.
-entry = struct('name', name, 'value', value);
-if isfield(b, 'depends_on') && isstruct(b.depends_on) && ~isempty(b.depends_on)
-    entry = matchFields(entry, b.depends_on(1));
-    deps = b.depends_on;
-    deps(end+1) = entry;
-    b.depends_on = deps;
-else
-    b.depends_on = entry;
-end
-end
-
-function entry = matchFields(entry, template)
-val = dependencyValueOf(entry);
-tf = fieldnames(template);
-out = struct();
-for k = 1:numel(tf)
-    switch tf{k}
-        case 'name'
-            out.name = entry.name;
-        case {'document_id', 'value', 'id'}
-            out.(tf{k}) = val;
-        otherwise
-            out.(tf{k}) = '';
-    end
-end
-if ~isfield(out, 'name')
-    out.name = entry.name;
-end
-entry = out;
-end
-
 % ===================== small helpers ======================================
 
 function c = emptyCandidate()
@@ -1167,15 +1108,6 @@ c = struct('source_id', {}, 'assertion_pos', {}, 'session_id', {}, ...
     'phenotype', {}, 'laboratory_code', {}, 'synonym', {}, ...
     'identifiers', {}, 'parents', {}, 'content_key', {}, 'key', {}, ...
     'group', {});
-end
-
-function dc = classBlock(name, supers)
-sc = struct('class_name', {}, 'class_version', {});
-for i = 1:numel(supers)
-    sc(i) = struct('class_name', supers{i}, 'class_version', '1.0.0');
-end
-dc = struct('class_name', name, 'class_version', '1.0.0', ...
-    'superclasses', sc, 'schema_version', 'V_eta');
 end
 
 function addUse(map, key, user)

@@ -3,11 +3,13 @@ classdef TestStrainAssembly < matlab.unittest.TestCase
 %   (pure struct logic; no database, schema, or MATLAB toolbox needed).
 %
 %   ndi.migrate.internal.strainAssembly turns each UNATTACHED `openminds`
-%   document carrying an openMINDS Strain into a `strain` ENTITY with its id
-%   PRESERVED, consuming the Species / GeneticStrainType FRAGMENT documents it
-%   references into the strain's `species` and `genetic_strain_type` fields and
-%   wiring `backgroundStrain` into the recursive `background_strain_#` edge. No
-%   `term_assertion` is emitted -- these documents have no subject.
+%   document carrying an openMINDS Strain into a strain ENTITY (did-schema #88:
+%   an `entity` of type `strain`) with its id PRESERVED, turns the Species /
+%   GeneticStrainType FRAGMENT documents it references into ASSERTIONS about
+%   the strain (`assertion` + the `term` value kind, `entity_id` = the strain),
+%   and turns `backgroundStrain` into `derived_from` relations (strain ->
+%   strain). Nothing is asserted of an organism -- these documents have no
+%   subject. (V_eta_entity_composition_plan.md secs. 1, 4 and 5.)
 %
 %   The fixtures reproduce the real writer's shape
 %   (origin/main:+ndi/+setup/+conv/+haley/doImport.m:70-89 and :696-706):
@@ -18,10 +20,9 @@ classdef TestStrainAssembly < matlab.unittest.TestCase
 %   second pass at all.
 %
 %   `fields` keys stay camelCase after migration: universalRenames snake-cases
-%   only one level (universalRenames.m:351-367, `snakeCaseBlockFields` walks
-%   `fieldnames(block)` and stops), and `fields` is nested inside the
-%   `openminds` block. testSnakeCaseFieldKeysAlsoResolve pins the fallback
-%   anyway, per the standing migrator lesson.
+%   only one level, and `fields` is nested inside the `openminds` block.
+%   testSnakeCaseFieldKeysAlsoResolve pins the fallback anyway, per the
+%   standing migrator lesson.
 %
 %   Run with:  runtests('ndi.unittest.migrate.TestStrainAssembly')
 %
@@ -30,7 +31,7 @@ classdef TestStrainAssembly < matlab.unittest.TestCase
 
     methods (Test)
 
-        function testStrainMintedWithIdPreserved(testCase)
+        function testStrainEntityMintedWithIdPreserved(testCase)
             structs = haleyBacteria();
             [~, minted, report] = ndi.migrate.internal.strainAssembly(structs);
 
@@ -40,109 +41,112 @@ classdef TestStrainAssembly < matlab.unittest.TestCase
 
             op50 = strainWithId(minted, 'op50_doc');
             testCase.verifyNotEmpty(op50);
-            % ID PRESERVATION IS LOAD-BEARING: ontologyTableRow's
-            % `bacteriaStrain` cell holds this id as a plain string, so nothing
-            % would flag a re-mint.
             testCase.verifyEqual(op50.base.id, 'op50_doc');
-            testCase.verifyEqual(op50.document_class.class_name, 'strain');
+            testCase.verifyEqual(op50.document_class.class_name, 'entity');
             testCase.verifyEqual(op50.document_class.schema_version, 'V_eta');
             supers = {op50.document_class.superclasses.class_name};
-            testCase.verifyTrue(any(strcmp(supers, 'entity')));
-            testCase.verifyEqual(op50.strain.name, 'Escherichia coli OP50');
+            testCase.verifyEqual(supers, {'base'});
+            testCase.verifyEqual(op50.entity.type.name, 'strain');
+            testCase.verifyEqual(op50.entity.name, 'Escherichia coli OP50');
+            testCase.verifyEqual(op50.entity.description, 'as the source gives it');
+            testCase.verifyFalse(isfield(op50, 'strain'));
+            testCase.verifyFalse(isfield(op50.base, 'name'), ...
+                'V_eta documents never write base.name (#73 item 54)');
         end
 
-        function testSpeciesFragmentBecomesAField(testCase)
+        function testSpeciesFragmentBecomesAnAssertion(testCase)
             structs = haleyBacteria();
             [~, minted, ~] = ndi.migrate.internal.strainAssembly(structs);
-            op50 = strainWithId(minted, 'op50_doc');
-            testCase.verifyEqual(op50.strain.species.node, 'NCBITaxon:562');
-            testCase.verifyEqual(op50.strain.species.name, 'Escherichia coli');
+            a = assertionAbout(minted, 'op50_doc', 'Species');
+            testCase.verifyNumElements(a, 1);
+            a = a{1};
+            testCase.verifyEqual(a.document_class.class_name, 'assertion');
+            supers = {a.document_class.superclasses.class_name};
+            testCase.verifyEqual(supers, {'statement', 'base', 'term', 'value', 'data'});
+            testCase.verifyEqual(a.statement.variable.node, 'NCIT:C45293');
+            testCase.verifyEqual(a.term.value.node, 'NCBITaxon:562');
+            testCase.verifyEqual(a.term.value.name, 'Escherichia coli');
+            testCase.verifyEqual(depValue(a, 'entity_id'), 'op50_doc');
+            testCase.verifyEmpty(depValue(a, 'subject_id'));
         end
 
         function testInlineGeneticStrainTypeIsAccepted(testCase)
-            % The writer ASSIGNS A CHAR ('wild type'). Whether openMINDS
-            % coerces it into its own document was never read, so both shapes
-            % must work; here it is inline, so there is no CURIE and the node
-            % stays empty (normalising 'wild type' vs 'wildtype' is the T8
-            % binding job, not this pass's).
             structs = haleyBacteria();
             [~, minted, ~] = ndi.migrate.internal.strainAssembly(structs);
-            op50 = strainWithId(minted, 'op50_doc');
-            testCase.verifyEqual(op50.strain.genetic_strain_type.name, 'wild type');
-            testCase.verifyEqual(op50.strain.genetic_strain_type.node, '');
+            a = assertionAbout(minted, 'op50_doc', 'genetic strain type');
+            testCase.verifyNumElements(a, 1);
+            testCase.verifyEqual(a{1}.statement.variable.node, 'EMPTY:0000347');
+            testCase.verifyEqual(a{1}.term.value.name, 'wild type');
+            testCase.verifyEqual(a{1}.term.value.node, '');
         end
 
         function testReferencedGeneticStrainTypeFragmentIsAccepted(testCase)
             structs = haleyBacteria();
             [~, minted, ~] = ndi.migrate.internal.strainAssembly(structs);
-            gfp = strainWithId(minted, 'op50gfp_doc');
-            testCase.verifyEqual(gfp.strain.genetic_strain_type.name, 'transgenic');
-            testCase.verifyEqual(gfp.strain.genetic_strain_type.node, ...
-                'openminds:transgenic');
+            a = assertionAbout(minted, 'op50gfp_doc', 'genetic strain type');
+            testCase.verifyNumElements(a, 1);
+            testCase.verifyEqual(a{1}.term.value.name, 'transgenic');
+            testCase.verifyEqual(a{1}.term.value.node, 'openminds:transgenic');
         end
 
-        function testPedigreeBecomesBackgroundStrainEdge(testCase)
+        function testPedigreeBecomesDerivedFromRelation(testCase)
             structs = haleyBacteria();
             [~, minted, report] = ndi.migrate.internal.strainAssembly(structs);
-            gfp = strainWithId(minted, 'op50gfp_doc');
-            testCase.verifyEqual(depValue(gfp, 'background_strain_1'), 'op50_doc');
+            r = relationsFrom(minted, 'op50gfp_doc');
+            testCase.verifyNumElements(r, 1);
+            testCase.verifyEqual(r{1}.document_class.class_name, 'directed_relation');
+            testCase.verifyEqual(depValue(r{1}, 'parent_id'), 'op50_doc');
+            testCase.verifyEqual(r{1}.directed_relation.relation.name, 'derived_from');
+            testCase.verifyEqual(r{1}.directed_relation.relation.node, 'RO:0001000');
             testCase.verifyEqual(report.background_edges, 1);
             testCase.verifyEqual(report.background_unresolved, 0);
-            % the root strain has no pedigree edge at all (not an empty one)
-            op50 = strainWithId(minted, 'op50_doc');
-            testCase.verifyEmpty(depValue(op50, 'background_strain_1'));
-            testCase.verifyEmpty(op50.depends_on);
+            testCase.verifyEmpty(relationsFrom(minted, 'op50_doc'));
+            gfp = strainWithId(minted, 'op50gfp_doc');
+            testCase.verifyEmpty(depValue(gfp, 'background_strain_1'));
         end
 
-        function testTwoParentCrossGetsTwoEdges(testCase)
-            % ArcCreERT2 x eYFP is production data (hunsberger
-            % SubjectInformationCreator.m:70-107): backgroundStrain is an ARRAY.
+        function testTwoParentCrossGetsTwoRelations(testCase)
             structs = twoParentCross();
             [~, minted, report] = ndi.migrate.internal.strainAssembly(structs);
-            cross = strainWithId(minted, 'cross_doc');
-            testCase.verifyEqual(depValue(cross, 'background_strain_1'), 'parent_a_doc');
-            testCase.verifyEqual(depValue(cross, 'background_strain_2'), 'parent_b_doc');
+            r = relationsFrom(minted, 'cross_doc');
+            testCase.verifyNumElements(r, 2);
+            testCase.verifyEqual(depValue(r{1}, 'parent_id'), 'parent_a_doc');
+            testCase.verifyEqual(depValue(r{2}, 'parent_id'), 'parent_b_doc');
             testCase.verifyEqual(report.background_edges, 2);
-            testCase.verifyEqual(report.background_over_max, 0);
         end
 
-        function testUnresolvableParentProducesNoEmptyEdge(testCase)
+        function testUnresolvableParentProducesNoRelation(testCase)
             structs = haleyBacteria();
             structs = dropId(structs, 'op50_doc');     % the pedigree target
             [~, minted, report] = ndi.migrate.internal.strainAssembly(structs);
-            gfp = strainWithId(minted, 'op50gfp_doc');
-            testCase.verifyEmpty(gfp.depends_on);
+            testCase.verifyEmpty(relationsFrom(minted, 'op50gfp_doc'));
             testCase.verifyEqual(report.background_edges, 0);
             testCase.verifyEqual(report.background_unresolved, 1);
         end
 
-        function testGlobalIdentifierIsSplitOnScheme(testCase)
+        function testGlobalIdentifierIsACurie(testCase)
             structs = haleyBacteria();
             [~, minted, ~] = ndi.migrate.internal.strainAssembly(structs);
             op50 = strainWithId(minted, 'op50_doc');
-            testCase.verifyEqual(numel(op50.entity.global_identifier), 1);
-            testCase.verifyEqual(op50.entity.global_identifier(1).scheme, 'NCBITaxon');
-            testCase.verifyEqual(op50.entity.global_identifier(1).value, '637912');
+            testCase.verifyEqual(op50.entity.global_identifier, {'NCBITaxon:637912'});
+            % Bioregistry has no `wbstrain` (V_eta_entity_composition_plan.md
+            % sec. 6): a WormBase strain id is `WormBase:WBStrain<digits>`.
             gfp = strainWithId(minted, 'op50gfp_doc');
-            testCase.verifyEqual(gfp.entity.global_identifier(1).scheme, 'WBStrain');
-            testCase.verifyEqual(gfp.entity.global_identifier(1).value, '00041972');
+            testCase.verifyEqual(gfp.entity.global_identifier, {'WormBase:WBStrain00041972'});
         end
 
         function testIdentifierlessStrainStillAssembles(testCase)
-            % 115 strains carry no identifier at all (dabrowska sets only
-            % `name`); the global_identifier array is simply empty.
             structs = {strainDoc('bare_doc', 'OTR-IRES-Cre', 'species_doc', ...
                 'transgenic', '', {}), speciesDoc('species_doc')};
             [~, minted, report] = ndi.migrate.internal.strainAssembly(structs);
             testCase.verifyEqual(report.strains_assembled, 1);
-            testCase.verifyEmpty(minted{1}.entity.global_identifier);
+            e = strainWithId(minted, 'bare_doc');
+            testCase.verifyFalse(isfield(e.entity, 'global_identifier'));
         end
 
         function testFragmentsAreConsumedAndSourcesReplaced(testCase)
             structs = haleyBacteria();
             [kept, ~, report] = ndi.migrate.internal.strainAssembly(structs);
-            % the two Strain documents and the two fragments all leave `kept`;
-            % the Strains come back as `strain` documents with the same ids.
             testCase.verifyEqual(report.fragments_seen, 2);
             testCase.verifyEqual(report.fragments_consumed, 2);
             testCase.verifyEqual(report.fragments_retained, 0);
@@ -150,9 +154,6 @@ classdef TestStrainAssembly < matlab.unittest.TestCase
         end
 
         function testFragmentSharedWithAnUnassembledStrainIsRetained(testCase)
-            % A fragment may only go when EVERY document that references it is
-            % a strain this pass assembled -- otherwise the surviving
-            % passthrough's `openminds_#` edge would dangle.
             structs = haleyBacteria();
             broken = strainDoc('broken_doc', '', 'species_doc', 'wild type', '', {});
             structs{end+1} = broken;
@@ -165,48 +166,76 @@ classdef TestStrainAssembly < matlab.unittest.TestCase
             testCase.verifyTrue(anyId(kept, 'broken_doc'));
         end
 
-        function testIncompleteStrainPassesThroughUntouched(testCase)
-            % `name`, `species` and `genetic_strain_type` are all
-            % mustBeNonEmpty on strain.json. A Strain missing one is left as a
-            % passthrough rather than emitted with a vacuous required field.
-            structs = {strainDoc('no_species_doc', 'X', '', 'wildtype', '', {})};
+        function testNamelessStrainPassesThroughUntouched(testCase)
+            % a strain entity requires `name` (entity_type_bindings), so a
+            % Strain without one is left as the v1 document
+            structs = {strainDoc('no_name_doc', '', '', 'wildtype', '', {})};
             [kept, minted, report] = ndi.migrate.internal.strainAssembly(structs);
             testCase.verifyFalse(report.changed);
             testCase.verifyEmpty(minted);
             testCase.verifyEqual(report.strains_incomplete, 1);
             testCase.verifyEqual(numel(report.incomplete_reasons), 1);
-            testCase.verifyTrue(anyId(kept, 'no_species_doc'));
+            testCase.verifyTrue(anyId(kept, 'no_name_doc'));
         end
 
-        function testNoTermAssertionIsEmitted(testCase)
-            % These documents carry no subject_id -- they are not assertions
-            % about anybody. That is the whole reason `strain` is an entity.
+        function testStrainWithoutSpeciesAssemblesWithoutASpeciesAssertion(testCase)
+            % species was a required FIELD of the pre-#88 `strain` class; on
+            % #88 it is an assertion, so its absence is counted, not refused
+            structs = {strainDoc('no_species_doc', 'X', '', 'wildtype', '', {})};
+            [~, minted, report] = ndi.migrate.internal.strainAssembly(structs);
+            testCase.verifyEqual(report.strains_assembled, 1);
+            testCase.verifyEqual(report.species_missing, 1);
+            testCase.verifyEqual(report.genetic_strain_type_missing, 0);
+            testCase.verifyEmpty(assertionAbout(minted, 'no_species_doc', 'Species'));
+            testCase.verifyNumElements( ...
+                assertionAbout(minted, 'no_species_doc', 'genetic strain type'), 1);
+        end
+
+        function testOtherStrainFieldsBecomeAssertions(testCase)
+            f = struct('name', 'N2', 'phenotype', 'normal', ...
+                'laboratoryCode', 'CGC', 'synonym', {{'Bristol', 'wild isolate'}}, ...
+                'geneticStrainType', 'wild type');
+            structs = {openmindsDoc('n2_doc', 'openminds.core.research.Strain', ...
+                'https://openminds.om-i.org/types/Strain', f, {})};
+            [~, minted, report] = ndi.migrate.internal.strainAssembly(structs);
+            p = assertionAbout(minted, 'n2_doc', 'phenotype');
+            testCase.verifyNumElements(p, 1);
+            testCase.verifyEqual(p{1}.term.value.name, 'normal');
+            l = assertionAbout(minted, 'n2_doc', 'laboratory code');
+            testCase.verifyNumElements(l, 1);
+            testCase.verifyEqual(l{1}.document_class.superclasses(3).class_name, 'text');
+            testCase.verifyEqual(l{1}.text.value.text, 'CGC');
+            y = assertionAbout(minted, 'n2_doc', 'synonym');
+            testCase.verifyNumElements(y, 1);
+            testCase.verifyEqual({y{1}.text.value.text}, {'Bristol', 'wild isolate'});
+            testCase.verifyEqual(report.assertions_minted, 4);
+        end
+
+        function testNothingIsSaidAboutAnOrganism(testCase)
             structs = haleyBacteria();
             [~, minted, ~] = ndi.migrate.internal.strainAssembly(structs);
+            strainIds = {'op50_doc', 'op50gfp_doc'};
             for k = 1:numel(minted)
-                testCase.verifyEqual(minted{k}.document_class.class_name, 'strain');
-                names = fieldnames(minted{k});
-                testCase.verifyFalse(any(strcmp(names, 'term_assertion')));
                 testCase.verifyEmpty(depValue(minted{k}, 'subject_id'));
+                if strcmp(minted{k}.document_class.class_name, 'assertion')
+                    testCase.verifyTrue(any(strcmp(depValue(minted{k}, 'entity_id'), strainIds)));
+                end
             end
         end
 
         function testSnakeCaseFieldKeysAlsoResolve(testCase)
-            % Standing migrator lesson: any nested sub-field a migrator reads
-            % needs a snake+camelCase fallback.
             structs = haleyBacteria();
             for k = 1:numel(structs)
                 structs{k} = snakeifyFields(structs{k});
             end
             [~, minted, report] = ndi.migrate.internal.strainAssembly(structs);
             testCase.verifyEqual(report.strains_assembled, 2);
-            gfp = strainWithId(minted, 'op50gfp_doc');
-            testCase.verifyEqual(depValue(gfp, 'background_strain_1'), 'op50_doc');
+            r = relationsFrom(minted, 'op50gfp_doc');
+            testCase.verifyNumElements(r, 1);
+            testCase.verifyEqual(depValue(r{1}, 'parent_id'), 'op50_doc');
         end
 
         function testNonStrainOpenmindsIsLeftAlone(testCase)
-            % Group B of Part 7 (Dataset / Person / Organization ...) is not
-            % handled here; those documents are counted and left untouched.
             structs = {openmindsDoc('ds_doc', 'openminds.core.products.Dataset', ...
                 'https://openminds.om-i.org/types/Dataset', struct('fullName', 'D'), {})};
             [kept, minted, report] = ndi.migrate.internal.strainAssembly(structs);
@@ -235,6 +264,7 @@ classdef TestStrainAssembly < matlab.unittest.TestCase
 
     end
 end
+
 
 % ===================== fixtures + accessors (test-only) ====================
 
@@ -353,9 +383,33 @@ end
 function b = strainWithId(bodies, id)
 b = [];
 for k = 1:numel(bodies)
-    if strcmp(bodies{k}.document_class.class_name, 'strain') ...
+    if strcmp(bodies{k}.document_class.class_name, 'entity') ...
+            && strcmp(bodies{k}.entity.type.name, 'strain') ...
             && strcmp(bodies{k}.base.id, id)
         b = bodies{k}; return;
+    end
+end
+end
+
+function out = assertionAbout(bodies, entityId, variableName)
+out = {};
+for k = 1:numel(bodies)
+    b = bodies{k};
+    if strcmp(b.document_class.class_name, 'assertion') ...
+            && strcmp(depValue(b, 'entity_id'), entityId) ...
+            && strcmp(b.statement.variable.name, variableName)
+        out{end+1} = b; %#ok<AGROW>
+    end
+end
+end
+
+function out = relationsFrom(bodies, childId)
+out = {};
+for k = 1:numel(bodies)
+    b = bodies{k};
+    if strcmp(b.document_class.class_name, 'directed_relation') ...
+            && strcmp(depValue(b, 'child_id'), childId)
+        out{end+1} = b; %#ok<AGROW>
     end
 end
 end
