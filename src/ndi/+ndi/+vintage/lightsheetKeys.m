@@ -16,7 +16,11 @@ function f = lightsheetKeys(keys)
 %     chunks            each key's `chunk` ([] when no key has one)
 %     voxel_size        the axis spacing IN THE SOURCE'S OWN UNIT
 %     translation       the axis origin, likewise
-%     units             cellstr, the source's unit per axis ('' if none)
+%     units             cellstr, the source's unit per axis ('' if none), in
+%                       the OME-NGFF / UDUNITS-2 spelling v1 stored
+%                       ('micrometer'): a unit stored as its OM term
+%                       (om:micrometre 'micrometre', DID-matlab jLightsheetKeys
+%                       since 2026-10-21) is read back by its node
 %     voxel_size_units  the unit of the first space axis (v1 hard-coded
 %                       'micrometer' there; the migrator converts it)
 %     channel_names     the `c` key's terms' names, comma-joined ('' if none)
@@ -68,14 +72,14 @@ for k = 1:n
     % did2.build.key writes a regular axis as origin = {value,
     % source_value} and spacing = {value, source_value}: the canonical
     % number and, when the unit was converted, the source's own.
-    unit = termName(get(key, 'source_unit'));
+    unit = unitSpelling(get(key, 'source_unit'));
     [spacing, sourceSpacing] = pairOf(get(key, 'spacing'), get(key, 'source_spacing'));
     [origin, sourceOrigin] = pairOf(get(key, 'origin'), get(key, 'source_origin'));
     if ~isempty(sourceSpacing)
         spacing = sourceSpacing;
         if ~isempty(sourceOrigin), origin = sourceOrigin; end
     elseif isempty(unit)
-        unit = termName(get(key, 'unit'));
+        unit = unitSpelling(get(key, 'unit'));
     end
     if ~isempty(spacing), f.voxel_size(k) = double(spacing(1)); end
     if ~isempty(origin),  f.translation(k) = double(origin(1)); end
@@ -140,6 +144,32 @@ elseif iscell(v)
 elseif ~ischar(v)
     v = v(1);
 end
+end
+
+function u = unitSpelling(t)
+% A unit as v1 spelled it (OME-NGFF / UDUNITS-2): a term whose node is one of
+% the OM units DID-matlab's jLightsheetKeys writes is read back by its node
+% (OM's labels are British, 'micrometre'; v1 and NGFF say 'micrometer');
+% anything else by its name, as termName reads it.
+arguments
+    t
+end
+persistent byNode
+if isempty(byNode)
+    byNode = containers.Map(lower({'om:angstrom', 'om:nanometre', 'om:micrometre', 'om:millimetre', ...
+         'om:centimetre', 'om:metre', 'om:nanosecond-Time', 'om:microsecond-Time', ...
+         'om:millisecond-Time', 'om:second-Time', 'om:minute-Time', 'om:hour'}), ...
+        {'angstrom', 'nanometer', 'micrometer', 'millimeter', 'centimeter', 'meter', ...
+         'nanosecond', 'microsecond', 'millisecond', 'second', 'minute', 'hour'});
+end
+x = t;
+if iscell(x) && ~isempty(x), x = x{1}; end
+if isstruct(x) && ~isempty(x) && isfield(x, 'node') && ~isempty(x(1).node) ...
+        && isKey(byNode, lower(char(x(1).node)))
+    u = byNode(lower(char(x(1).node)));
+    return;
+end
+u = termName(t);
 end
 
 function n = termName(t)
