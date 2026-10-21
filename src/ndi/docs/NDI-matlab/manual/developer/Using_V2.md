@@ -206,7 +206,70 @@ S = ndi.setup.V2.createSession(folder, 'day 1', 'SessionId', sid, ...
   adds documents to an existing V2 database
   (`.ndi/V_eta.sqlite` in the folder).
 
-The worked example is the Haley import, `ndi.setup.conv.haley.import_V2`,
+- `ndi.setup.V2.attachFile(doc, name, path)` says where the bytes of a
+  document's file are (`did2.build.sampledBody` names its file
+  `body_data_0`); the write copies it into the database's file store.
+
+### A whole dataset
+
+A dataset is a `dataset` entity whose id IS the dataset's session id, the
+dataset-level documents (strains, people, ...) stored under that id, and one
+cell of documents per session. A session is a `session` entity whose id is its
+session id, `included_in` the dataset (or in a study that is). Use only
+registered terms: `ndi.setup.V2.registeredTerm(node)` gives the registry's
+spelling, and `did2.build` refuses a term the registry does not hold
+(`did2:build:unregisteredTerm`).
+
+```matlab
+T = @(node) ndi.setup.V2.registeredTerm(node);
+dsid = ndi.ido.unique_id();  sid = ndi.ido.unique_id();
+D = {'SessionId', dsid};     S = {'SessionId', sid};
+
+% the dataset, and a strain stated once with its species
+ds = ndi.setup.V2.entityDocuments('dataset', struct('name', 'My dataset'), struct(), D{:}, 'Id', dsid);
+strain = ndi.setup.V2.entityDocuments('strain', struct('name', 'N2'), struct(), D{:});
+sp = did2.build.statement('term_assertion', strain{1}.base.id, T('NCIT:C45293'), T('NCBITaxon:6239'), D{:});
+note = did2.build.statement('text_assertion', dsid, T('NCIT:C42610'), did2.build.valueCell('text', {'MD'}), D{:});
+
+% the session, its subjects and their relations
+sess = ndi.setup.V2.entityDocuments('session', struct('local_identifier', 'day1'), struct(), S{:}, 'Id', sid);
+inc  = did2.build.directedRelation(sid, dsid, 'included_in', S{:});
+worm = ndi.setup.V2.entityDocuments('subject', struct('local_identifier', 'worm1', ...
+    'type', did2.build.term('', 'organism')), struct(), S{:});
+isa_ = did2.build.directedRelation(worm{1}.base.id, strain{1}.base.id, 'instance_of', S{:});
+
+% when: an interval after the start of the session
+ref = did2.build.relativeTimeReference(sid, 'Clock', 'dev_local_time', 'Start', 0, 'Duration', 2, S{:});
+
+% an observation whose value is a series in a body
+t = did2.build.key(T('om:Time'), 5, 'Unit', T('om:second-Time'), 'Origin', 0, 'Spacing', 0.5);
+obs = did2.build.statement('velocity_observation', worm{1}.base.id, T('PATO:0000008'), [], ...
+    'Keys', t, 'DataBody', true, 'DatumType', did2.build.datumType('double'), ...
+    'TimeReferenceIds', {ref.base.id}, S{:});
+body = did2.build.sampledBody(obs.base.id, t, 'ByteOrder', 'little', S{:});
+fid = fopen(f, 'w', 'ieee-le'); fwrite(fid, speeds, 'double'); fclose(fid);
+body = ndi.setup.V2.attachFile(body, 'body_data_0', f);
+
+% a method inline ...
+man = did2.build.statement('temperature_manipulation', worm{1}.base.id, T('NCIT:C90380'), ...
+    did2.build.valueCell('temperature', 20, 'SourceValue', 20, 'SourceUnit', T('om:degreeCelsius')), ...
+    'Method', T('EMPTY:0000333'), 'MethodParameters', did2.build.parameter(T('om:Time'), ...
+        'Value', 3600, 'Unit', T('om:second-Time')), 'TimeReferenceIds', {ref.base.id}, S{:});
+% ... or a shared `method` document, named by the statement's method_id
+m = did2.build.method(T('NCIT:C53319'), [], 'Name', 'mean speed', S{:});
+calc = did2.build.statement('velocity_calculation', worm{1}.base.id, T('PATO:0000008'), ...
+    did2.build.valueCell('velocity', mean(speeds)), 'MethodId', m.base.id, ...
+    'InputIds', {obs.base.id}, 'TimeReferenceIds', {ref.base.id}, S{:});
+
+dataset = ndi.setup.V2.createDataset(folder, 'my dataset', dsid, [ds, strain, {sp, note}], ...
+    {[sess, {inc}, worm, {isa_, ref, obs, body, man, m, calc}]}, 'Strict', true);
+S1 = dataset.open_session(sid);   % reaches the strain, so the worm's species reads back
+```
+
+`tests/+ndi/+unittest/+setup/+V2/TestGenericDatasetEndToEnd.m` builds this
+dataset and reads every piece of it back.
+
+The worked example of a real import is the Haley import, `ndi.setup.conv.haley.import_V2`,
 with every choice it makes recorded in `import_V2_decisions.md` beside it. Run
 without `'Write'`, it returns what each stage would create:
 

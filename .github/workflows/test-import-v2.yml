@@ -1,7 +1,9 @@
 name: V2 import (Haley) -- fast
 
 # Stage-by-stage tests of ndi.setup.conv.haley.import_V2 and the generic
-# ndi.setup.V2 makers it uses. They build V2 (V_eta) documents through
+# ndi.setup.V2 makers it uses, and TestGenericDatasetEndToEnd: a small
+# made-up dataset built with the public V2 API only and read back through
+# the object layer (it is in ndi.unittest.setup.V2, so the suite below runs it). They build V2 (V_eta) documents through
 # DID-matlab's did2.build, so this job needs DID-matlab V2 and a did-schema
 # that carries the classes the import uses.
 #

@@ -34,9 +34,10 @@ function [dataset, report] = createDataset(path, reference, datasetSessionId, da
 %                   and those naming no document in the set (dangling), by
 %                   class and edge name
 %     duplicateIds  ids carried by more than one document
-%     sessions      session documents found, and those not filed under a
-%                   study that is itself filed under the dataset (the relation
-%                   is `included_in`)
+%     sessions      session documents found, and those not filed under the
+%                   dataset, directly or through a study filed under it (the
+%                   relation is `included_in`, whose registry row lets a
+%                   session's parent be a study or a dataset)
 %
 %   Options:
 %     'Name'        the dataset session's display name
@@ -202,7 +203,8 @@ else
         {'class', 'edge'});
 end
 
-% sessions: filed under a study that is filed under the dataset (included_in)
+% sessions: filed under the dataset, directly or through a study that is
+% filed under it (included_in: a session's parent is a study or a dataset)
 member = 'included_in';
 isRel = strcmp(cls, 'directed_relation');
 parentsOf = containers.Map();
@@ -220,7 +222,8 @@ for i = sess
     ok = false;
     if isKey(parentsOf, ids{i})
         for p = parentsOf(ids{i})
-            if isKey(parentsOf, p{1}) && any(ismember(parentsOf(p{1}), datasetIds))
+            if ismember(p{1}, datasetIds) || ...
+                    (isKey(parentsOf, p{1}) && any(ismember(parentsOf(p{1}), datasetIds)))
                 ok = true;
             end
         end
