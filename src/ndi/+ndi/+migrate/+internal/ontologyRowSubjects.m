@@ -7,8 +7,11 @@ function [plan, report] = ontologyRowSubjects(v1Bodies, migratedStructs, options
 %   MIGRATEDSTRUCTS) inspects every did_v1 `ontologyTableRow` body in V1BODIES
 %   that pass 1 left UNCONVERTED (it is still an `ontology_table_row` document
 %   in MIGRATEDSTRUCTS, carrying its source id), tries to resolve which
-%   migrated `subject` the row is about, and returns a PLAN: for each row it
+%   migrated subject the row is about (did-schema #88: an `entity` of a
+%   physical type; a `subject` before #88), and returns a PLAN: for each row it
 %   could resolve, a COPY of the v1 body with a `subject_id` dependency added.
+%   That edge is on the did_v1 INPUT, which is what the pass-1 migrator reads;
+%   the statements it fans out point at the subject by `entity_id`.
 %   The caller re-folds each planned body through did2.convert.v1_to_v2 at
 %   TargetVersion V_eta, where did2.convert.migrators_j.ontology_table_row's
 %   guard now passes and the per-column fan-out runs (see
@@ -524,15 +527,19 @@ tf = strcmp(c, 'ontologyTableRow') || strcmp(c, 'ontology_table_row');
 end
 
 function tf = isSubjectDoc(s)
-% A `subject` document, or anything whose superclass chain includes `subject`.
-% Element-derived subjects reach here too: did2.convert.migrators_j.element
-% promotes an element to a subject with its id PRESERVED, which is why an
-% `element_id` candidate resolves through route 1 without special-casing.
+% A subject: on did-schema #88 an `entity` of one of the physical types
+% (organism, culture, tissue, cell, group, device, material -- the types a
+% `subject` became); before #88 a `subject` document, or anything whose
+% superclass chain includes `subject`. Element-derived subjects reach here
+% too: did2.convert.migrators_j.element promotes an element to an entity with
+% its id PRESERVED, which is why an `element_id` candidate resolves through
+% route 1 without special-casing.
 tf = false;
 if ~isstruct(s)
     return;
 end
-if strcmp(classNameOf(s), 'subject')
+if ndi.migrate.internal.etaShape.isEntity(s, {'organism', 'culture', ...
+        'tissue', 'cell', 'group', 'device', 'material'})
     tf = true;
     return;
 end
@@ -550,11 +557,7 @@ end
 end
 
 function lid = subjectLocalIdentifier(s)
-lid = '';
-if isfield(s, 'subject') && isstruct(s.subject) ...
-        && isfield(s.subject, 'local_identifier')
-    lid = charOf(s.subject.local_identifier);
-end
+lid = charOf(ndi.migrate.internal.etaShape.localIdentifier(s));
 end
 
 function v = dataCell(b, wantedKey)

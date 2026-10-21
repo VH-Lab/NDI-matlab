@@ -185,19 +185,28 @@ classdef TestMigrateLocalEta < matlab.unittest.TestCase
     methods (Test)
 
         function testStimulusBathResolvesToDose(testCase)
+            % did-schema #88 (VH-Lab/did-schema#88): the bath is a `manipulation`
+            % whose value kind is `formulation`, about the specimen by
+            % `entity_id`, its value the `formulation` document through
+            % `value_id` -- not a dose (Jess Haley, 2026-10-21); the mixture's
+            % chemicals are `chemical` documents. `dose_manipulation` and
+            % `subject_statement` no longer exist.
+            %
+            % THE `session` DOCUMENT IS NOW NEEDED FOR THE GRAPH TO CLOSE. Under
+            % #88 the session is an EDGE (`session_id`) on every document, not
+            % a string in `base`, so a batch without the session document has
+            % one dangling `session_id` per document: e2e run 39636971875 on
+            % this fixture without it reported 11 orphans over 10 documents,
+            % every one a `session_id` (or the session-anchored
+            % `referent_id`) naming aabb1122ccdd3344_9900aabbccddeeff. The
+            % animal `subject` is still needed for the reason the notes above
+            % give.
             stimId  = 'aabb1122ccdd3344_5500000000000002';
             subjId  = 'aabb1122ccdd3344_5500000000000001';
+            sessId  = 'aabb1122ccdd3344_5500000000000005';
             epochId = 'epoch_t00001';
-            % THE ANIMAL `subject` IS NOT DECORATION. Without it this fixture
-            % produces exactly 2 dangling edges, both naming `subjId`:
-            %   did2.convert.migrators_j.element.m  lineageRelation writes
-            %       depends_on {child, PARENT}, parent = the specimen id
-            %   ndi.migrate.internal.stimulusBathToBath  dose_manipulation
-            %       subject_id = resolver.subjectOfElement(stimulator), same id
-            % They were present and unseen for as long as this test has existed,
-            % because it never asked. Adding the document is the same repair the
-            % two anchor tests took, and it leaves every assertion below intact.
             bodies = { ...
+                jsonencode(makeSessionDoc(sessId)), ...
                 jsonencode(makeSubject(subjId)), ...
                 jsonencode(makeStimulatorElement(stimId, subjId)), ...
                 jsonencode(makeElementEpoch(stimId, epochId, 'dev_local_time')), ...
@@ -207,32 +216,47 @@ classdef TestMigrateLocalEta < matlab.unittest.TestCase
             % no needsSessionContext deferral left behind
             assertNoDeferral(testCase, result);
 
-            % THE CORPUS GATE'S HEADLINE CONDITION, asked here for the first
-            % time. `0 quarantine AND 0 orphans` is the gate; this test drove a
-            % real pipeline end to end and only ever asked the first half.
+            % THE CORPUS GATE'S HEADLINE CONDITION
             verifyEqual(testCase, result.references.orphan_count, 0, ...
                 ['the graph does not close. ' resultDiag(result)]);
 
-            % the bath became a dose_manipulation (NOT the retired `bath`)
-            verifyTrue(testCase, isfield(result.summary.by_class, 'dose_manipulation'), ...
-                ['no dose_manipulation produced from stimulus_bath. ' resultDiag(result)]);
+            % the bath became a dose manipulation (NOT the retired `bath`, and
+            % not the pre-#88 `dose_manipulation`)
             verifyFalse(testCase, isfield(result.summary.by_class, 'bath'), ...
                 'retired `bath` class leaked onto the V_eta path');
+            verifyFalse(testCase, ...
+                isfield(result.summary.by_class, 'dose_manipulation'), ...
+                ['the pre-#88 class was written. ' resultDiag(result)]);
+            for c = {'manipulation', 'formulation', 'chemical'}
+                verifyTrue(testCase, isfield(result.summary.by_class, c{1}), ...
+                    ['no `' c{1} '` produced from stimulus_bath. ' resultDiag(result)]);
+            end
 
-            dose = findByClass(result.destination, 'dose_manipulation');
+            dose = findByClass(result.destination, 'manipulation');
             verifyNotEmpty(testCase, dose, resultDiag(result));
-            verifyEqual(testCase, depValue(dose, 'subject_id'), subjId);
-            verifyNotEmpty(testCase, depValue(dose, 'time_reference_1'));
-            % primary mixture chemical is the spine identity
-            verifyEqual(testCase, dose.subject_statement.variable.name, 'muscimol');
+            verifyTrue(testCase, any(strcmp( ...
+                {dose.document_class.superclasses.class_name}, 'formulation')), ...
+                'the manipulation does not carry the `formulation` value kind');
+            verifyFalse(testCase, isfield(dose, 'dose'), 'a bath is not a dose');
+            verifyEqual(testCase, depValue(dose, 'entity_id'), subjId);
+            verifyNotEmpty(testCase, depValue(dose, 'time_reference_id'));
+            verifyEqual(testCase, depValue(dose, 'instrument_id'), stimId);
+            formulation = findById(result.destination, depValue(dose, 'value_id'));
+            verifyNotEmpty(testCase, formulation, ...
+                ['the dose names no formulation in the database. ' resultDiag(result)]);
+            verifyEqual(testCase, formulation.document_class.class_name, 'formulation');
+            % primary mixture chemical is the statement's variable
+            verifyEqual(testCase, dose.statement.variable.name, 'muscimol');
         end
 
         function testEpochAnchorFoldsToRelativeReferenceWithItsIdPreserved(testCase)
             % (a) WITH a `session` document. The whole chain, driven from the
-            % real emitter: the bath is deferred, stimulusBathToBath mints the
-            % pass-1 `epoch_bounded_reference`, epochMint mints the `epoch` for
-            % the (base.session_id, epoch-id string) PAIR, and epochAnchorFold
-            % upgrades the placeholder in place.
+            % real emitter. did-schema #88: the bath assembler mints a VALID
+            % `relative_time_reference` "during the session" (#88 has no
+            % `epoch_bounded_reference` to hold an unresolved epoch), hands the
+            % epoch string and clock to the fold, epochMint mints the `epoch`
+            % entity for the (session, epoch-id string) PAIR, and
+            % epochAnchorFold re-points the reference at that epoch IN PLACE.
             stimId  = 'aabb1122ccdd3344_5500000000000002';
             subjId  = 'aabb1122ccdd3344_5500000000000001';
             sessId  = 'aabb1122ccdd3344_5500000000000005';
@@ -247,8 +271,6 @@ classdef TestMigrateLocalEta < matlab.unittest.TestCase
             assertNoDeferral(testCase, result);
 
             % --- DENOMINATORS FIRST, off the pass's own instrument ---------
-            % Asserted BEFORE any class-name check so that "the fold did not
-            % run" and "the fold ran and refused" are different failures.
             mint = result.secondPass.epochMint;
             verifyNotEmpty(testCase, mint, 'epochMint did not run at all');
             verifyEqual(testCase, mint.session_documents_seen, 1, ...
@@ -262,128 +284,102 @@ classdef TestMigrateLocalEta < matlab.unittest.TestCase
                 ['the epoch anchor fold did not run; ndi.migrate.local warns ' ...
                  'and continues when it throws. ' resultDiag(result)]);
             verifyEqual(testCase, fold.anchors_seen, 1, resultDiag(result));
+            verifyEqual(testCase, fold.bath_anchors_seen, 1, resultDiag(result));
             verifyEqual(testCase, fold.anchors_planned, 1, resultDiag(result));
             verifyEqual(testCase, fold.refused_total, 0, resultDiag(result));
             verifyEqual(testCase, fold.anchors_refolded, 1, resultDiag(result));
             verifyEqual(testCase, fold.refold_quarantined, 0, resultDiag(result));
             verifyTrue(testCase, fold.folded, resultDiag(result));
-            % the accounting invariant, on the real corpus shape rather than a
-            % hand-built one: there is no third bucket an anchor can vanish into
             verifyEqual(testCase, fold.anchors_seen, ...
                 fold.anchors_planned + fold.refused_total);
 
-            % --- the retired class is GONE from the database ---------------
-            verifyFalse(testCase, ...
-                isfield(result.summary.by_class, 'epoch_bounded_reference'), ...
-                ['a class the signed decision RETIRES was written to the ' ...
-                 'destination database. ' resultDiag(result)]);
+            % --- no retired or pre-#88 time class reaches the database -----
+            for c = {'epoch_bounded_reference', 'relative_reference'}
+                verifyFalse(testCase, isfield(result.summary.by_class, c{1}), ...
+                    ['`' c{1} '` was written to the destination. ' resultDiag(result)]);
+            end
             verifyTrue(testCase, ...
-                isfield(result.summary.by_class, 'relative_reference'), ...
-                resultDiag(result));
-            verifyTrue(testCase, isfield(result.summary.by_class, 'epoch'), ...
+                isfield(result.summary.by_class, 'relative_time_reference'), ...
                 resultDiag(result));
 
             % --- THE ID IS PRESERVED (this is the orphan gate) -------------
-            % A dissolution that changed ids produced 11,448 orphans in the Soph
-            % corpus. The dose's `time_reference_1` edge was written by the
-            % assembler in pass 1 and must still name the same document after
-            % the fold has replaced its class.
-            dose = findByClass(result.destination, 'dose_manipulation');
+            dose = findByClass(result.destination, 'manipulation');
             verifyNotEmpty(testCase, dose, resultDiag(result));
-            anchorId = depValue(dose, 'time_reference_1');
+            anchorId = depValue(dose, 'time_reference_id');
             verifyNotEmpty(testCase, anchorId, resultDiag(result));
-
-            % SELECTED BY ID, NOT BY CLASS -- and that distinction is now
-            % load-bearing. `findByClass` returns the FIRST document of a class
-            % in `db.allIds()` order, which was unambiguous while the fold's
-            % output was the only `relative_reference` here. It is not any more:
-            % epochMint gained the epoch EXTENT references (#60 option A,
-            % signed -- "acquisition_epoch won't exist", so the epoch carries
-            % its own clock references), minting one per DISTINCT clock. This
-            % fixture's element_epoch has one, so there are now TWO.
-            %
-            % Selecting by class picked whichever sqlite returned first, and
-            % when that was the extent the test failed on assertions it was
-            % never making. All three CI symptoms are that one substitution:
-            %     :290  base.id mismatch  -- two different minted documents
-            %     :300  relative_to was the SESSION, not the epoch
-            %     :307  'MATLAB:nonExistentField' on value.relation, which an
-            %           extent does not carry (it has clock/start/duration)
-            % and the failure message blamed the fold for moving an id it had
-            % not touched -- a wrong diagnosis aimed at innocent code.
+            % SELECTED BY ID, NOT BY CLASS: epochMint also mints the epoch's
+            % EXTENT references, so there is more than one
+            % relative_time_reference here (see findById).
             ref = findById(result.destination, anchorId);
             verifyNotEmpty(testCase, ref, ['the anchor id the dose names is ' ...
                 'not in the destination at all. ' resultDiag(result)]);
             verifyEqual(testCase, ref.document_class.class_name, ...
-                'relative_reference', ...
-                ['the anchor id resolves to a document of the wrong class; ' ...
-                 'the fold did not upgrade it. ' resultDiag(result)]);
+                'relative_time_reference', resultDiag(result));
 
             % and the whole graph still closes
             verifyEqual(testCase, result.references.orphan_count, 0, ...
                 ['the graph does not close. ' resultDiag(result)]);
 
-            % --- `relative_to` names the epoch epochMint actually minted ----
-            epochDoc = findByClass(result.destination, 'epoch');
-            verifyNotEmpty(testCase, epochDoc, resultDiag(result));
-            verifyEqual(testCase, depValue(ref, 'relative_to'), epochDoc.base.id);
-            % the pass-1 handle does not survive alongside its own resolution
-            verifyEmpty(testCase, depValue(ref, 'element_id'));
+            % --- `referent_id` names the epoch epochMint actually minted ---
+            epochDoc = findEntity(result.destination, 'epoch');
+            verifyNotEmpty(testCase, epochDoc, ['no `epoch` entity. ' resultDiag(result)]);
+            if isempty(epochDoc); return; end
+            verifyEqual(testCase, depValue(ref, 'referent_id'), epochDoc.base.id);
             verifyFalse(testCase, isfield(ref, 'epochid'));
-            verifyFalse(testCase, isfield(ref, 'epoch_bounded_reference'));
 
             % --- the signed value shape ------------------------------------
-            verifyEqual(testCase, ref.relative_reference.value.relation.node, ...
+            verifyEqual(testCase, ref.relative_time_reference.value.relation.node, ...
                 'time:intervalDuring');
-            % the clock is READ THROUGH bodyResolver from the element_epoch
-            % document above, not asserted by the anchor -- so this also pins
-            % that the emitter -> fold clock hand-off survives the round trip.
-            verifyEqual(testCase, ref.relative_reference.value.clock.name, ...
+            % the clock is read from the element_epoch document above and
+            % handed over by the bath assembler, so this pins that hand-off
+            verifyEqual(testCase, ref.relative_time_reference.value.clock.name, ...
                 'dev_local_time');
-            % CHANGE 5 / decision C: the source states no offsets, so none are
-            % invented, and with a single anchor the split-anchored interval
-            % case (fork C) does not arise. NO start_anchor/end_anchor is built.
+            % the source states no offsets, so none are invented
             verifyFalse(testCase, ...
-                isfield(ref.relative_reference.value, 'start'));
+                isfield(ref.relative_time_reference.value, 'start'));
             verifyFalse(testCase, ...
-                isfield(ref.relative_reference.value, 'duration'));
+                isfield(ref.relative_time_reference.value, 'duration'));
 
-            % --- AND THE OTHER relative_reference IS THE EPOCH'S EXTENT -----
-            % Named rather than tolerated. The assertions above were silently
-            % ambiguous from the moment a second one existed: a test that says
-            % "the relative_reference" while two exist can pass against the
-            % wrong one as easily as fail against it, and which it gets is
-            % sqlite's row order. One clock -> exactly two documents.
-            allRefs = findAllByClass(result.destination, 'relative_reference');
+            % --- AND THE OTHER relative_time_reference IS THE EPOCH'S EXTENT
+            allRefs = findAllByClass(result.destination, 'relative_time_reference');
             verifyEqual(testCase, numel(allRefs), 2, ...
                 ['expected the folded anchor plus ONE epoch extent reference. ' ...
                  resultDiag(result)]);
-            extent = allRefs{find(cellfun(@(b) ~strcmp(b.base.id, anchorId), ...
-                allRefs), 1)};
-            % The two are told apart by WHAT THEY ANCHOR TO, the substantive
-            % difference: the fold's anchor is relative to the EPOCH, the
-            % extent to the SESSION.
-            verifyEqual(testCase, depValue(extent, 'relative_to'), sessId, ...
+            others = allRefs(cellfun(@(b) ~strcmp(b.base.id, anchorId), allRefs));
+            verifyNotEmpty(testCase, others, resultDiag(result));
+            if isempty(others); return; end
+            extent = others{1};
+            % told apart by WHAT THEY ANCHOR TO: the fold's anchor names the
+            % EPOCH, the extent names the SESSION entity
+            sessionEntity = findEntity(result.destination, 'session');
+            verifyNotEmpty(testCase, sessionEntity, resultDiag(result));
+            if isempty(sessionEntity); return; end
+            verifyEqual(testCase, depValue(extent, 'referent_id'), ...
+                sessionEntity.base.id, ...
                 ['the epoch extent must be anchored to the session, not to ' ...
                  'the epoch it describes. ' resultDiag(result)]);
-            % and it carries the offsets the anchor deliberately does not
-            verifyTrue(testCase, isfield(extent.relative_reference.value, 'start'));
-            verifyTrue(testCase, isfield(extent.relative_reference.value, 'duration'));
+            verifyTrue(testCase, isfield(extent.relative_time_reference.value, 'start'));
+            verifyTrue(testCase, isfield(extent.relative_time_reference.value, 'duration'));
         end
 
-        function testWithoutASessionDocumentTheRetiredAnchorReachesTheDatabase(testCase)
-            % (b) WITHOUT a `session` document -- the fixture this file has
-            % always used. This is not a test of a hypothetical: it pins what
-            % ACTUALLY HAPPENS to a minted `epoch_bounded_reference` when the
-            % fold cannot resolve it, which is that ndi.migrate.local writes it
-            % to the destination database as a retired class.
+        function testWithoutASessionDocumentTheAnchorStaysOnTheSession(testCase)
+            % (b) WITHOUT a `session` document. RENAMED from
+            % testWithoutASessionDocumentTheRetiredAnchorReachesTheDatabase:
+            % under did-schema #88 there is no retired class to reach the
+            % database. The bath assembler mints a VALID
+            % `relative_time_reference` "during the session" from the start, so
+            % when epochMint refuses (no session document) and the fold
+            % refuses (no epoch), the anchor stays exactly as minted.
             %
-            % It is deliberately NOT written as "the fold is broken": the
-            % refusal is correct behaviour (DISCOVERY MODE -- a subset batch
-            % need not carry the `session` document, and absence is not
-            % evidence). A guess here would be a blank required `relative_to`,
-            % which quarantines under the armed RequiredDependencies check.
-            % What the test forbids is the refusal being SILENT.
+            % What the test still forbids is the refusal being SILENT.
+            %
+            % ORPHANS ARE EXPECTED HERE AND ARE ALL OF ONE KIND. Under #88 the
+            % session is a `session_id` EDGE on every document, so a batch with
+            % no session document leaves each of those edges, and the
+            % session-anchored `referent_id`, naming a document not in the
+            % batch -- the discovery-mode case (a subset batch need not carry
+            % the session document). The assertion is that EVERY orphan names
+            % the session id and nothing else dangles.
             stimId  = 'aabb1122ccdd3344_5500000000000002';
             subjId  = 'aabb1122ccdd3344_5500000000000001';
             epochId = 'epoch_t00001';
@@ -404,9 +400,9 @@ classdef TestMigrateLocalEta < matlab.unittest.TestCase
 
             fold = result.secondPass.epochAnchorFold;
             verifyNotEmpty(testCase, fold, resultDiag(result));
-            % the anchor was SEEN -- the pass read it and declined; it did not
-            % fail to notice it
+            % the anchor was SEEN -- the pass read it and declined
             verifyEqual(testCase, fold.anchors_seen, 1, resultDiag(result));
+            verifyEqual(testCase, fold.bath_anchors_seen, 1, resultDiag(result));
             verifyEqual(testCase, fold.anchors_planned, 0, resultDiag(result));
             verifyEqual(testCase, fold.refused_no_epoch_document, 1, ...
                 resultDiag(result));
@@ -414,28 +410,33 @@ classdef TestMigrateLocalEta < matlab.unittest.TestCase
             verifyEqual(testCase, fold.anchors_refolded, 0, resultDiag(result));
             verifyFalse(testCase, fold.folded, resultDiag(result));
 
-            % THE FINDING, PINNED: the retired class is in the database.
-            verifyTrue(testCase, ...
-                isfield(result.summary.by_class, 'epoch_bounded_reference'), ...
-                ['a refused anchor must be left EXACTLY as it was; it is no ' ...
-                 'longer in the migrated set. ' resultDiag(result)]);
             verifyFalse(testCase, ...
-                isfield(result.summary.by_class, 'relative_reference'), ...
-                ['an anchor was folded with no `epoch` to anchor to -- the ' ...
-                 'guess this pass exists to refuse. ' resultDiag(result)]);
-            verifyFalse(testCase, isfield(result.summary.by_class, 'epoch'), ...
+                isfield(result.summary.by_class, 'epoch_bounded_reference'), ...
+                resultDiag(result));
+            verifyEmpty(testCase, findEntity(result.destination, 'epoch'), ...
                 resultDiag(result));
 
-            % A refusal is a no-op, not a loss: the edge still resolves, so the
-            % un-folded state is not an orphan failure either.
-            dose = findByClass(result.destination, 'dose_manipulation');
+            % A refusal is a no-op: the dose still names the anchor it was
+            % minted with, and that anchor still says "during the session".
+            dose = findByClass(result.destination, 'manipulation');
             verifyNotEmpty(testCase, dose, resultDiag(result));
-            anchor = findByClass(result.destination, 'epoch_bounded_reference');
+            if isempty(dose); return; end
+            anchor = findById(result.destination, depValue(dose, 'time_reference_id'));
             verifyNotEmpty(testCase, anchor, resultDiag(result));
-            verifyEqual(testCase, anchor.base.id, ...
-                depValue(dose, 'time_reference_1'));
-            verifyEqual(testCase, result.references.orphan_count, 0, ...
-                resultDiag(result));
+            if isempty(anchor); return; end
+            verifyEqual(testCase, anchor.document_class.class_name, ...
+                'relative_time_reference');
+            verifyEqual(testCase, depValue(anchor, 'referent_id'), session());
+
+            o = result.references.orphans;
+            verifyGreaterThan(testCase, numel(o), 0, resultDiag(result));
+            for k = 1:numel(o)
+                verifyEqual(testCase, charField(o(k), 'edge_document_id'), session(), ...
+                    ['an orphan other than the absent session document. ' ...
+                     resultDiag(result)]);
+                verifyTrue(testCase, ismember(charField(o(k), 'edge_name'), ...
+                    {'session_id', 'referent_id'}), resultDiag(result));
+            end
         end
 
         function testStimulusPresentationBecomesAnItemManipulation(testCase)
@@ -716,6 +717,20 @@ for k = 1:numel(ids)
     doc = db.get(ids{k});
     s = doc.toStruct();
     if isfield(s, 'base') && isfield(s.base, 'id') && strcmp(s.base.id, wantId)
+        body = s;
+        return;
+    end
+end
+end
+
+function body = findEntity(dstPath, typeName)
+%FINDENTITY The first did-schema #88 `entity` whose `type.name` is typeName.
+body = [];
+for b = findAllByClass(dstPath, 'entity')
+    s = b{1};
+    if isfield(s, 'entity') && isfield(s.entity, 'type') ...
+            && isstruct(s.entity.type) && isfield(s.entity.type, 'name') ...
+            && strcmp(char(s.entity.type.name), typeName)
         body = s;
         return;
     end

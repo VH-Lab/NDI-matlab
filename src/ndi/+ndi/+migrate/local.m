@@ -1,11 +1,12 @@
 function result = local(path, options)
-%LOCAL Migrate a local NDI dataset/session to V_delta on disk.
+%LOCAL Migrate a local NDI dataset/session to V_eta on disk.
 %
 %   RESULT = ndi.migrate.local(PATH) migrates the on-disk did_v1
-%   database under PATH/.ndi to the V_delta wire format by reading
-%   every document body via the did2 v1 readers, running
-%   did2.convert.v1_to_v2 per body, and writing the surviving docs
-%   into PATH/.ndi/V_delta.sqlite via did2.database.sqlitedb.
+%   database under PATH/.ndi to the V_eta wire format (the default
+%   TargetVersion; 'V_delta' on request) by reading every document
+%   body via the did2 v1 readers, running did2.convert.v1_to_v2 per
+%   body plus the V_eta second pass, and writing the surviving docs
+%   into PATH/.ndi/<TargetVersion>.sqlite via did2.database.sqlitedb.
 %
 %   The function acquires an exclusive lock at PATH/.ndi/.migrate.lock
 %   for the duration of the run, so concurrent migrations of the same
@@ -95,10 +96,12 @@ function result = local(path, options)
 %                      []) - override the shared schema cache. Used
 %                      by tests; production callers should rely on
 %                      ndi.schemas.init having set the active cache.
-%     TargetVersion    (1,:) char, default 'V_delta') - migration
-%                      target wire format. 'V_delta' preserves the
-%                      historical class-preserving behaviour and
-%                      writes V_delta.sqlite. 'V_eta' (Brainstorm J)
+%     TargetVersion    (1,:) char, default 'V_eta') - migration
+%                      target wire format. The default became 'V_eta'
+%                      on 2026-10-21 (VH-Lab/NDI-matlab#804; it was
+%                      'V_delta'). 'V_delta' preserves the historical
+%                      class-preserving behaviour and writes
+%                      V_delta.sqlite. 'V_eta' (Brainstorm J)
 %                      routes split-eligible classes through the
 %                      +migrators_j migrators (1 -> N) and runs a second
 %                      pass using the open body set: it resolves
@@ -173,7 +176,7 @@ function result = local(path, options)
         options.Verbose (1,1) logical = false
         options.Validate (1,1) logical = true
         options.SchemaCache = []
-        options.TargetVersion (1,:) char {mustBeMember(options.TargetVersion, {'V_delta', 'V_eta'})} = 'V_delta'
+        options.TargetVersion (1,:) char {mustBeMember(options.TargetVersion, {'V_delta', 'V_eta'})} = 'V_eta'
     end
 
     if ~isfolder(path)
@@ -210,8 +213,8 @@ function result = local(path, options)
         else
             error('NDI:migrate:noV1Source', ...
                 ['No recognised v1 database (did-sqlite.sqlite or ' ...
-                 'Object_id_*_v*.json) and no V_delta.sqlite found ' ...
-                 'under "%s".'], ndiDir);
+                 'Object_id_*_v*.json) and no %s.sqlite found ' ...
+                 'under "%s".'], options.TargetVersion, ndiDir);
         end
         if options.Backup && ~options.DryRun && ~isfolder(backupDir)
             copyBackup(ndiDir, backupDir);
@@ -246,6 +249,7 @@ function result = local(path, options)
     % not they changed anything -- a count with no denominator is not evidence.
     % Empty means "did not run" (a non-V_eta target, or the sub-pass threw).
     ensembleReport = [];
+    bathAnchors = [];   % resolveDeferred -> resolveEpochAnchorFold (did-schema #88)
     strainReport = [];
     subjectStrainReport = [];
     openmindsCitationsReport = [];
@@ -688,7 +692,7 @@ function result = local(path, options)
         % their pass-1 form.
         try
             resolver = ndi.migrate.internal.bodyResolver(bodies);
-            convertResult = resolveDeferred(convertResult, resolver, options);
+            [convertResult, bathAnchors] = resolveDeferred(convertResult, resolver, options);
         catch ME
             warning('NDI:migrate:deferredResolveFailed', ...
                 ['Second-pass resolution of session-context deferrals ' ...
@@ -790,7 +794,8 @@ function result = local(path, options)
         end
         try
             [convertResult, epochAnchorReport] = ...
-                resolveEpochAnchorFold(convertResult, epochMintReport, options);
+                resolveEpochAnchorFold(convertResult, epochMintReport, options, ...
+                    bathAnchors);
         catch ME
             warning('NDI:migrate:epochAnchorFoldFailed', ...
                 ['Second-pass epoch anchor fold failed (%s); leaving the ' ...
@@ -1063,7 +1068,7 @@ end
 
 % ---- second pass: session-context-dependent deferrals ---------------------
 
-function convertResult = resolveDeferred(convertResult, resolver, options)
+function [convertResult, bathAnchors] = resolveDeferred(convertResult, resolver, options)
 %RESOLVEDEFERRED Assemble the deferrals that need the session/element graph.
 %   The per-document converter quarantines context-dependent classes with
 %   reason did2:convert:needsSessionContext rather than emitting a partial
@@ -1075,6 +1080,12 @@ function convertResult = resolveDeferred(convertResult, resolver, options)
 %   does not re-migrate. Successfully assembled+validated docs move from
 %   quarantine into migrated; anything that cannot be assembled or fails
 %   validation stays quarantined with a reason.
+%
+%   BATHANCHORS (did-schema #88) is the struct array of the bath time anchors
+%   minted "during the session", each with the stimulator's epoch string and
+%   clock, for resolveEpochAnchorFold to re-point at the epoch entity once
+%   did2.convert.epochMint has minted it. [] when none.
+    bathAnchors = [];
     q = convertResult.quarantine;
     if isempty(q)
         return;
@@ -1087,9 +1098,16 @@ function convertResult = resolveDeferred(convertResult, resolver, options)
         end
         try
             v1Body = jsondecode(q(k).original_body);
-            bodies = assembleDeferred(q(k).class_name, v1Body, resolver, ...
-                options.TargetVersion);
+            [bodies, anchorInfo] = assembleDeferred(q(k).class_name, v1Body, ...
+                resolver, options.TargetVersion);
             assembled = [assembled, bodies]; %#ok<AGROW>
+            if ~isempty(anchorInfo)
+                if isempty(bathAnchors)
+                    bathAnchors = anchorInfo;
+                else
+                    bathAnchors(end+1) = anchorInfo; %#ok<AGROW>
+                end
+            end
             keep(k) = false;   % resolved -> drop the original deferral
         catch
             % leave it quarantined with its original (deferral) reason
@@ -1136,13 +1154,13 @@ function classes = deferredAssemblerClasses()
     classes = {'stimulus_bath'};
 end
 
-function bodies = assembleDeferred(className, v1Body, resolver, targetVersion)
+function [bodies, anchorInfo] = assembleDeferred(className, v1Body, resolver, targetVersion)
 % Dispatch a deferred v1 body to its session-aware assembler. Returns a cell
 % array of target-version bodies (so a 1 -> N assembly fits). Add new
 % context-dependent classes here as their assemblers land.
     switch className
         case 'stimulus_bath'
-            [bathBody, timeRefBody] = ...
+            [bathBody, timeRefBody, extraBodies, anchorInfo] = ...
                 ndi.migrate.internal.stimulusBathToBath(v1Body, resolver, ...
                     targetVersion);
             % timeRefBody is [] when V_eta declines to anchor (no epoch string,
@@ -1156,6 +1174,8 @@ function bodies = assembleDeferred(className, v1Body, resolver, targetVersion)
             else
                 bodies = {timeRefBody, bathBody};
             end
+            % did-schema #88: the bath's formulation and its chemicals
+            bodies = [bodies, extraBodies];
         otherwise
             error('NDI:migrate:noAssembler', ...
                 'No session-aware assembler for deferred class "%s".', ...
@@ -1535,15 +1555,16 @@ function [convertResult, report] = resolveSliceTetanus(convertResult, bodies, ..
 end
 
 function tf = movedTargetMinted(s, minted)
-% The moved edge -- `subject_id` on a statement, `parent` on a relation --
-% always names a minted slice; the move stands only if that slice was folded.
-    edge = 'subject_id';
+% The moved edge -- `entity_id` on a statement, `parent_id` on a relation
+% (did-schema #88; `subject_id` / `parent` before) -- always names a minted
+% slice; the move stands only if that slice was folded.
+    edges = {'entity_id', 'subject_id'};
     if strcmp(s.document_class.class_name, 'directed_relation')
-        edge = 'parent';
+        edges = {'parent_id', 'parent'};
     end
     tf = false;
     for k = 1:numel(s.depends_on)
-        if strcmp(s.depends_on(k).name, edge)
+        if any(strcmp(s.depends_on(k).name, edges))
             v = '';
             if isfield(s.depends_on(k), 'value'); v = s.depends_on(k).value;
             elseif isfield(s.depends_on(k), 'document_id'); v = s.depends_on(k).document_id; end
@@ -1742,7 +1763,9 @@ function [convertResult, report] = resolveOntologyLabelSubjects(convertResult, o
     newDocs = {};
     for k = 1:numel(plan)
         try
-            sub = did2.convert.v1_to_v2({plan(k).body}, ...
+            % the observation and its `derived_from` relation (did-schema
+            % #88) fold together: either both land or the label stays
+            sub = did2.convert.v1_to_v2([{plan(k).body}, plan(k).related], ...
                 'Validate',      options.Validate, ...
                 'SchemaCache',   options.SchemaCache, ...
                 'TargetVersion', options.TargetVersion, ...
@@ -1916,18 +1939,18 @@ end
 
 function [convertResult, report] = resolveStrainAssembly(convertResult, options)
 %RESOLVESTRAINASSEMBLY V_eta second pass: assemble the unattached `openminds`
-%   Strain documents into `strain` entities with their ids PRESERVED, consuming
-%   the Species / GeneticStrainType fragment documents they reference into the
-%   strain's `species` / `genetic_strain_type` fields and wiring
-%   `backgroundStrain` into `background_strain_#`. A second pass because those
-%   values live in OTHER documents, reachable only through the `ndi://` /
-%   `openminds_#` links a single-document migrator cannot follow.
+%   Strain documents into strain entities (did-schema #88: `entity`, type
+%   `strain`) with their ids PRESERVED, turning the Species /
+%   GeneticStrainType fragment documents they reference into assertions about
+%   the strain and `backgroundStrain` into `derived_from` relations. A second
+%   pass because those values live in OTHER documents, reachable only through
+%   the `ndi://` / `openminds_#` links a single-document migrator cannot follow.
 %
 %   Id preservation is load-bearing rather than tidy: `ontologyTableRow`'s
 %   `bacteriaStrain` column holds the strain document's id as a plain string
-%   (haley/doImport.m:164,734), so nothing would flag a re-mint. The
-%   `strain_id` edge itself is NOT attached here -- it rides with the pass that
-%   mints subjects from `ontologyTableRow` (#53), which does not exist yet.
+%   (haley/doImport.m:164,734), so nothing would flag a re-mint. No
+%   `instance_of` is minted here: what is an instance of these strains is
+%   minted by the pass that reads those rows.
     report = [];
     docs = convertResult.migrated;
     if isempty(docs)
@@ -1958,10 +1981,11 @@ end
 
 function [convertResult, report] = resolveSubjectStrainAssembly(convertResult, bodies, options)
 %RESOLVESUBJECTSTRAINASSEMBLY V_eta second pass (#78): the openminds_subject
-%   half of the strain family -- one deduplicated `strain` entity per distinct
-%   strain, `strain_id` back on the assertion, the `background_strain_#`
-%   pedigree, the `genetic strain type` assertion moved onto the strain, and
-%   the duplicate `species` assertion dropped.
+%   half of the strain family -- one deduplicated strain entity per distinct
+%   strain (did-schema #88), the subject an `instance_of` it in place of its
+%   strain assertion, the pedigree as `derived_from` relations, the `genetic
+%   strain type` assertion moved onto the strain, and the duplicate `species`
+%   assertion dropped.
 %
 %   IT TAKES `bodies`, and that argument is why the pass is NDI-side rather
 %   than a preference. Pass 1 keeps only `subject_id` on the emitted
@@ -1986,10 +2010,11 @@ function [convertResult, report] = resolveSubjectStrainAssembly(convertResult, b
 %   the report's own `v1_openminds_subject_bodies` is 0 and says so). Otherwise
 %   it carries its denominators first. REPORT.changed gates the rebuild.
 %
-%   A MINTED `strain` THAT QUARANTINES DOES NOT UNDO THE EDGES, and that is
-%   deliberate rather than overlooked: the `strain_id` values are minted here,
-%   so a quarantined strain leaves an edge naming a document that is not in
-%   the migrated set -- an ORPHAN, which the gate at the end of ndi.migrate.local
+%   A MINTED STRAIN THAT QUARANTINES DOES NOT UNDO THE RELATIONS, and that is
+%   deliberate rather than overlooked: the strain ids are minted here, so a
+%   quarantined strain leaves `instance_of` / `derived_from` relations naming a
+%   document that is not in the migrated set -- an ORPHAN, which the gate at
+%   the end of ndi.migrate.local
 %   counts and which is exactly the loud failure wanted. The alternative,
 %   silently dropping the edges, would leave a green run with the work
 %   undone. did2.convert.v1_to_v2's quarantine list is carried onto
@@ -2096,17 +2121,45 @@ function c = datasetLayerCensus(docs)
 %   alone would count every entity-layer edge in the batch.
     c = struct('documents', numel(docs), 'dataset_entities', 0, ...
         'distinct_dataset_ids', 0, 'membership_edges', 0);
+    % did-schema #88: a dataset is an `entity` of type `dataset`, and a
+    % session's membership is an `included_in` relation; the pre-#88 class
+    % name and base.name sentinel are read too -- the same two tests
+    % did2.convert.resolveDatasetEntities applies (isDatasetEntity,
+    % isMembership), so the census counts what the pass acts on.
     seenIds = {};
     for k = 1:numel(docs)
         cls = docs{k}.className();
-        if strcmp(cls, 'dataset')
+        isDataset = strcmp(cls, 'dataset');
+        if ~isDataset && strcmp(cls, 'entity')
+            t = [];
+            try
+                t = docs{k}.get('entity.type');
+            catch
+            end
+            isDataset = isstruct(t) && isfield(t, 'name') ...
+                && strcmpi(char(t.name), 'dataset');
+        end
+        isMembership = false;
+        if strcmp(cls, 'directed_relation')
+            isMembership = strcmp(safeDocGet(docs{k}, 'base.name'), ...
+                'migrated_session_membership');
+            if ~isMembership
+                r = [];
+                try
+                    r = docs{k}.get('directed_relation.relation');
+                catch
+                end
+                isMembership = isstruct(r) && isfield(r, 'name') ...
+                    && strcmp(char(r.name), 'included_in');
+            end
+        end
+        if isDataset
             c.dataset_entities = c.dataset_entities + 1;
             id = safeDocGet(docs{k}, 'base.id');
             if ~isempty(id) && ~any(strcmp(id, seenIds))
                 seenIds{end+1} = id; %#ok<AGROW>
             end
-        elseif strcmp(cls, 'directed_relation') && strcmp( ...
-                safeDocGet(docs{k}, 'base.name'), 'migrated_session_membership')
+        elseif isMembership
             c.membership_edges = c.membership_edges + 1;
         end
     end
@@ -2123,7 +2176,7 @@ function v = safeDocGet(doc, path)
 end
 
 function [convertResult, report] = resolveEpochAnchorFold(convertResult, ...
-    epochMintReport, options)
+    epochMintReport, options, bathAnchors)
 %RESOLVEEPOCHANCHORFOLD V_eta second pass: fold the pass-1
 %   `epoch_bounded_reference` placeholders into the signed `relative_reference`,
 %   anchored to the `epoch` documents did2.convert.epochMint just minted.
@@ -2164,7 +2217,12 @@ function [convertResult, report] = resolveEpochAnchorFold(convertResult, ...
     for k = 1:numel(docs)
         structs{k} = docs{k}.toStruct();
     end
-    [plan, report] = ndi.migrate.internal.epochAnchorFold(structs, epochIndex);
+    if nargin < 4 || isempty(bathAnchors)
+        bathAnchors = struct('anchor_id', {}, 'session_id', {}, ...
+            'epoch_string', {}, 'epoch_clock', {});
+    end
+    [plan, report] = ndi.migrate.internal.epochAnchorFold(structs, epochIndex, ...
+        bathAnchors);
 
     % Fold outcomes belong to the same instrument, so they are initialised
     % unconditionally -- a field that appears only on the success path is a
@@ -2205,9 +2263,10 @@ function [convertResult, report] = resolveEpochAnchorFold(convertResult, ...
     kept = {};
     for k = 1:numel(convertResult.migrated)
         d = convertResult.migrated{k};
-        if strcmp(d.className(), 'epoch_bounded_reference') ...
+        if any(strcmp(d.className(), {'epoch_bounded_reference', ...
+                'relative_time_reference'})) ...
                 && any(strcmp(d.get('base.id'), replacedIds))
-            continue;   % superseded by the relative_reference carrying its id
+            continue;   % superseded by the re-anchored reference carrying its id
         end
         kept{end+1} = d; %#ok<AGROW>
     end
@@ -2597,7 +2656,9 @@ function [kind, srcPath] = detectV1Source(ndiDir)
 
     sqliteListing = dir(fullfile(ndiDir, '*.sqlite'));
     sqliteListing = sqliteListing(~[sqliteListing.isdir]);
-    sqliteListing = sqliteListing(~strcmpi({sqliteListing.name}, 'V_delta.sqlite'));
+    % a migration OUTPUT is never a v1 source, whichever target wrote it
+    sqliteListing = sqliteListing(~ismember(lower({sqliteListing.name}), ...
+        {'v_delta.sqlite', 'v_eta.sqlite'}));
     if ~isempty(sqliteListing)
         kind = 'sqlite';
         srcPath = fullfile(ndiDir, sqliteListing(1).name);
@@ -2795,34 +2856,50 @@ function printSubjectStrainSummary(result)
         r.strains_candidate, r.distinct_strains, r.strain_docs_collapsed, ...
         r.strains_incomplete, r.strain_docs_not_in_migrated_set, ...
         r.strain_docs_not_a_term_assertion);
-    fprintf(['    pedigree: %d reference(s) -> %d background_strain edge(s), ' ...
-             '%d unresolved, %d over max_count 2, %d cycle(s), ' ...
+    fprintf(['    pedigree: %d reference(s) -> %d derived_from relation(s), ' ...
+             '%d unresolved, %d cycle(s), ' ...
              '%d not corroborated by an openminds_# edge.\n'], ...
         r.background_refs_seen, r.background_edges, r.background_unresolved, ...
-        r.background_over_max, r.pedigree_cycles, ...
-        r.background_refs_not_in_openminds_edges);
-    fprintf('    strain_id: %d edge(s) attached, %d assertion(s) already had one.\n', ...
-        r.strain_id_edges_attached, r.strain_id_assertion_already_had_one);
+        r.pedigree_cycles, r.background_refs_not_in_openminds_edges);
+    fprintf(['    instance_of: %d subject(s) made an instance of their strain ' ...
+             '(their strain assertion replaced), %d strain assertion(s) with ' ...
+             'no subject; %d assertion(s) minted about the strains.\n'], ...
+        r.instance_of_minted, r.strain_assertions_without_subject, ...
+        r.strain_assertions_minted);
     fprintf(['    moved onto the strain: %d of %d genetic-strain-type ' ...
              'assertion(s) removed; KEPT -- %d value not on the strain, ' ...
              '%d shared with an unassembled strain, %d wrong/absent subject, ' ...
-             '%d pinned by an inbound edge, %d not a term_assertion.\n'], ...
+             '%d of an ancestor strain, %d pinned by an inbound edge, ' ...
+             '%d not a term assertion.\n'], ...
         r.gst_assertions_removed, r.gst_fragments_seen, ...
         r.gst_kept_value_not_on_strain, r.gst_kept_shared_with_unassembled, ...
-        r.gst_kept_wrong_subject, r.gst_kept_pinned, ...
-        r.gst_kept_not_a_term_assertion);
+        r.gst_kept_wrong_subject, r.gst_kept_not_the_subjects_strain, ...
+        r.gst_kept_pinned, r.gst_kept_not_a_term_assertion);
     fprintf(['    species: %d fragment(s), %d duplicate group(s) in scope, ' ...
              '%d assertion(s) removed, %d pinned and kept.\n'], ...
         r.species_fragments_seen, r.species_duplicate_groups, ...
         r.species_assertions_removed, r.species_kept_pinned);
-    fprintf(['    MEASURED, NOT ACTED ON: %d ancestor strain assertion(s) ' ...
-             'still on their subject (a modelling call, and modelling calls ' ...
-             'are the team''s); %d duplicate species group(s) this family ' ...
-             'did not cause; %d further entit(ies) a dataset-scoped key ' ...
-             'would merge, across %d cross-session group(s).\n'], ...
+    fprintf(['    ancestor strain assertions on their subject %d: removed %d ' ...
+             '(reachable through derived_from; Jess Haley 2026-10-21), kept ' ...
+             'unreachable %d, kept pinned %d\n'], ...
         r.background_strain_assertions_on_subject, ...
-        r.duplicate_species_groups_out_of_scope, ...
-        r.cross_session_collapsible, r.cross_session_groups);
+        r.background_strain_assertions_removed, ...
+        r.background_kept_unreachable, r.background_kept_pinned);
+    fprintf(['    scope %s%s: %d entit(ies) a session-scoped key would leave ' ...
+             'beyond a dataset-scoped one, across %d cross-session group(s); ' ...
+             'merged this run %d (Jess Haley 2026-10-21: shared entities at ' ...
+             'the dataset level)\n'], r.scope, ...
+        ifDataset(r.dataset_id), r.cross_session_collapsible, ...
+        r.cross_session_groups, r.cross_session_merged);
+    fprintf(['    MEASURED, NOT ACTED ON: %d duplicate species group(s) this family ' ...
+             'did not cause.\n'], r.duplicate_species_groups_out_of_scope);
+end
+
+function s = ifDataset(id)
+s = '';
+if ~isempty(id)
+    s = [' ' id];
+end
 end
 
 function printOntologyRowSummary(result)

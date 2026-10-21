@@ -126,6 +126,25 @@ classdef TestOntologyRowSubjects < matlab.unittest.TestCase
             testCase.verifyTrue(report.changed);
         end
 
+
+        function testAPreEightyEightSubjectStillResolves(testCase)
+            % a `subject` document (pass 1 on a pre-#88 DID-matlab) is a
+            % subject exactly as a #88 `entity` of type organism is
+            [v1, mig] = babuRow();
+            mig{2} = migratedPre88Subject('subj_babu', 'sess_babu', 'worm_01');
+            [plan, ~] = ndi.migrate.internal.ontologyRowSubjects(v1, mig);
+            testCase.verifyEqual(numel(plan), 1);
+            testCase.verifyEqual(plan(1).subject_id, 'subj_babu');
+        end
+
+        function testAnEntityThatIsNotASubjectIsRefused(testCase)
+            % on #88 a strain or a session is an `entity` too, and is not
+            % what a table row is about
+            [v1, mig] = babuRow();
+            mig{2}.entity.type.name = 'strain';
+            [plan, ~] = ndi.migrate.internal.ontologyRowSubjects(v1, mig);
+            testCase.verifyEmpty(plan);
+        end
         function testNumberedDocumentIdEdgeIsRead(testCase)
             % tableDocMaker uses add_dependency_value_n when a row names more
             % than one referent, so the names become document_id_1, _2, ...
@@ -619,6 +638,13 @@ s.base = struct('id', id, 'session_id', sessionId, ...
 end
 
 function s = migratedSubject(id, sessionId, localId)
+% migrators_j.subject on did-schema #88: an `entity` of type `organism`
+s = migratedDoc(id, sessionId, 'entity');
+s.entity = struct('type', struct('node', '', 'name', 'organism'), ...
+    'local_identifier', localId);
+end
+
+function s = migratedPre88Subject(id, sessionId, localId)
 s = migratedDoc(id, sessionId, 'subject');
 s.subject = struct('local_identifier', localId, 'description', '');
 end

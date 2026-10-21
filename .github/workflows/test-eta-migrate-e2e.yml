@@ -63,11 +63,16 @@ on:
         required: false
         default: ''
         type: string
+      schema_ref:
+        description: 'did-schema ref to validate against (default: the pin below)'
+        required: false
+        default: ''
+        type: string
 
 concurrency:
   # Keyed on the commit: a push never cancels another commit's run;
   # only a duplicate run of the same commit is cancelled.
-  group: ${{ github.workflow }}-${{ github.sha }}-${{ inputs.ref }}
+  group: ${{ github.workflow }}-${{ github.sha }}-${{ inputs.ref }}-${{ inputs.schema_ref }}
   cancel-in-progress: true
 
 jobs:
@@ -85,7 +90,7 @@ jobs:
       # shared topic branch was deleted; validate against main.
       # the v_eta-pre73 pin is dropped: the second pass emits did-schema #88's
       # shape (method / item). PR #88's branch until it merges, then main.
-      DID_SCHEMA_REF: claude/ecstatic-pascal-md91fw
+      DID_SCHEMA_REF: ${{ inputs.schema_ref || 'claude/ecstatic-pascal-md91fw' }}
     steps:
       - name: Check out NDI-matlab
         uses: actions/checkout@v4
@@ -212,6 +217,11 @@ jobs:
                 'ndi.unittest.migrate.TestMigrateLocalEta', ...
                 'ndi.unittest.migrate.TestMigrateLocalEtaPRED', ...
                 'ndi.unittest.migrate.TestMigrateLocalEta20211116', ...
+                ... % ndi.migrate.local's own tests. Its DEFAULT TargetVersion
+                ... % is V_eta since 2026-10-21 (VH-Lab/NDI-matlab#804), so
+                ... % TestMigrateLocal runs the V_eta path and belongs here,
+                ... % where mksqlite, DID-matlab and the schema are installed.
+                'ndi.unittest.migrate.TestMigrateLocal', ...
                 'ndi.unittest.database.TestDid2SqliteHierarchy', ...
                 'ndi.unittest.vintage.TestVintageMap', ...
                 'ndi.unittest.vintage.TestElementLabelMatchesMigrator', ...

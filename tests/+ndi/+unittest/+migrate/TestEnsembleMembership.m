@@ -51,9 +51,9 @@ classdef TestEnsembleMembership < matlab.unittest.TestCase
 
             m = ofRelation(minted, 'member_of');
             testCase.verifyEqual(numel(m), 2);
-            % child = the neuron, parent = the ensemble group-subject
-            testCase.verifyEqual(depValue(m{1}, 'child'), 'nrn_1');
-            testCase.verifyEqual(depValue(m{1}, 'parent'), 'ens_1');
+            % child_id = the neuron, parent_id = the ensemble group-subject
+            testCase.verifyEqual(depValue(m{1}, 'child_id'), 'nrn_1');
+            testCase.verifyEqual(depValue(m{1}, 'parent_id'), 'ens_1');
             testCase.verifyEqual(m{1}.directed_relation.relation.node, 'RO:0002350');
             % column order rides on the declared `sequence` ordinal
             testCase.verifyEqual(m{1}.directed_relation.sequence, 1);
@@ -64,8 +64,8 @@ classdef TestEnsembleMembership < matlab.unittest.TestCase
             % the cache carrier (the acquisition_epoch holding the combined
             % binary) is DERIVED FROM each neuron -- this set is the
             % verify-before-delete manifest.
-            testCase.verifyEqual(depValue(d{1}, 'child'), 'aepoch_epoch_a');
-            testCase.verifyEqual(depValue(d{1}, 'parent'), 'nrn_1');
+            testCase.verifyEqual(depValue(d{1}, 'child_id'), 'aepoch_epoch_a');
+            testCase.verifyEqual(depValue(d{1}, 'parent_id'), 'nrn_1');
             testCase.verifyEqual(d{1}.directed_relation.relation.node, 'RO:0001000');
             % a derived_from edge is unordered -- no sequence
             testCase.verifyFalse(isfield(d{1}.directed_relation, 'sequence'));
@@ -85,7 +85,15 @@ classdef TestEnsembleMembership < matlab.unittest.TestCase
             testCase.verifyEqual(rel.document_class.class_name, 'directed_relation');
             testCase.verifyEqual(rel.document_class.schema_version, 'V_eta');
             testCase.verifyNotEmpty(rel.base.id);
-            testCase.verifyEqual(rel.base.session_id, 'sess_1');
+            % the session id is a field, or the `session_id` edge on a
+            % schema that keeps it as one (did-schema #88)
+            if isfield(rel.base, 'session_id')
+                testCase.verifyEqual(rel.base.session_id, 'sess_1');
+            else
+                testCase.verifyEqual(depValue(rel, 'session_id'), 'sess_1');
+            end
+            testCase.verifyFalse(isfield(rel.base, 'name'), ...
+                'V_eta documents never write base.name (#73 item 54)');
         end
 
         function testNothingIsEverDropped(testCase)
@@ -114,7 +122,7 @@ classdef TestEnsembleMembership < matlab.unittest.TestCase
             m = ofRelation(minted, 'member_of');
             byChild = containers.Map();
             for k = 1:numel(m)
-                byChild(depValue(m{k}, 'child')) = m{k}.directed_relation.sequence;
+                byChild(depValue(m{k}, 'child_id')) = m{k}.directed_relation.sequence;
             end
             testCase.verifyEqual(byChild('nrn_1'), 1);
             testCase.verifyEqual(byChild('nrn_2'), 2);
@@ -135,8 +143,8 @@ classdef TestEnsembleMembership < matlab.unittest.TestCase
             testCase.verifyEqual(report.stranded_neuron_ids, {'nrn_2'});
             testCase.verifyEqual(report.member_of_minted, 1);
             for k = 1:numel(minted)
-                testCase.verifyNotEqual(depValue(minted{k}, 'child'), 'nrn_2');
-                testCase.verifyNotEqual(depValue(minted{k}, 'parent'), 'nrn_2');
+                testCase.verifyNotEqual(depValue(minted{k}, 'child_id'), 'nrn_2');
+                testCase.verifyNotEqual(depValue(minted{k}, 'parent_id'), 'nrn_2');
             end
         end
 
@@ -661,11 +669,13 @@ b.ensemble = struct('ensemble_name', 'V1', 'value_type', 'spiketimes', ...
 end
 
 function b = subjectBody(id)
+% migrators_j.element on did-schema #88: an `entity`, id preserved
 b = struct();
-b.document_class = dc('subject', {'entity'});
+b.document_class = dc('entity', {'base'});
 b.depends_on = struct('name', {}, 'value', {});
 b.base = base(id);
-b.subject = struct('local_identifier', id, 'description', '');
+b.entity = struct('type', struct('node', '', 'name', 'device'), ...
+    'local_identifier', id);
 end
 
 function b = acquisitionEpochBody(id, epochId, elementId)

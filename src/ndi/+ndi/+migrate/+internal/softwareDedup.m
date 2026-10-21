@@ -2,6 +2,19 @@ function [kept, report] = softwareDedup(structs)
 %SOFTWAREDEDUP V_eta second pass: merge duplicate `software` ENTITIES and
 %   retarget every edge that pointed at the ones that go away.
 %
+%   ON did-schema #88 (V_eta_entity_composition_plan.md sec. 4): software is
+%   an `entity` of type `software`; its name is `entity.name`, its handle
+%   `entity.local_identifier` (NAME@VERSION) and its version a TEXT ASSERTION
+%   about it (variable `version number`, IAO:0000129 -- what DID-side
+%   jSoftware writes). This pass reads both spellings: the pre-#88 `software`
+%   class with its `software` block, and the #88 entity with its version
+%   assertion. On #88 two more edge names are SOFTWARE REFERENCES rather than
+%   pins -- a calculation's `interpreter_id` and `operating_system_id` (the run
+%   environment became two software edges, #73 item 53) -- and a merged-away
+%   entity's own version assertion is dropped with it (the survivor carries an
+%   identical one: the version is part of the merge key), counted in
+%   REPORT.version_assertions_dropped.
+%
 %   SIGNED MODEL (DID-schema `V_eta_tenet_audit.md`:10, TEAM-SIGN-OFF
 %   [software] jess 2026-08-06): "the `app` mixin is replaced by a `software`
 %   ENTITY (DEDUPLICATED BY NAME+VERSION) referenced from a statement by
@@ -21,7 +34,7 @@ function [kept, report] = softwareDedup(structs)
 %   is a body that was already in STRUCTS.
 %
 %   ---------------------------------------------------------------------
-%   THE MERGE KEY IS (session_id, name, version) -- NOT local_identifier
+%   THE MERGE KEY IS (scope, name, version) -- NOT local_identifier
 %   ---------------------------------------------------------------------
 %   `software.local_identifier` is a CONVENIENCE the DID-side helper writes
 %   (private/jSoftware.m composes NAME or NAME@VERSION), and keying on it would
@@ -31,16 +44,23 @@ function [kept, report] = softwareDedup(structs)
 %   local_identifier is missing, stale or hand-written still merges correctly,
 %   and this pass REPAIRS the handle on the survivor rather than trusting it.
 %
-%   SESSION IS PART OF THE KEY, and that is a deliberate narrowing, not an
-%   oversight. `base.session_id` is "mustBeNonEmpty": true (did-schema
-%   schemas/V_eta/stable/base.json), so a survivor carries exactly one session,
-%   and merging across sessions would leave documents in session B pointing at
-%   an entity stamped session A. Whether that is acceptable is a MODELLING
-%   QUESTION (is `software` a per-session entity or a dataset-level one?), and
-%   this pass does not answer it -- it MEASURES it: REPORT.cross_session_groups
-%   and REPORT.cross_session_collapsible say exactly how many further entities a
-%   dataset-scoped key would remove. Same shape as epochMint, whose key is also
-%   the PAIR and for the same reason.
+%   THE SCOPE IS THE DATASET WHEN A DATASET IS MIGRATED, THE SESSION
+%   OTHERWISE. Decided by Jess Haley, 2026-10-21: "When a dataset is migrated,
+%   shared entities (strains, software, people, organizations, instruments,
+%   products) move to the dataset level as in native V2 imports (Haley
+%   import_V2_decisions.md #20): one entity per distinct thing in the
+%   dataset's database, with session documents pointing at it and merged-away
+%   ids remapped so every link still resolves; a lone session with no dataset
+%   keeps them in the session." ndi.migrate.internal.datasetScope decides:
+%   with exactly one `dataset` entity in the batch the key's scope is that
+%   dataset, and every software entity (with its version assertions) is then
+%   stored at the dataset level -- its `session_id` names the dataset entity,
+%   as the native import writes dataset-level documents
+%   (REPORT.moved_to_dataset_level). Otherwise the scope is the entity's
+%   session, as before. REPORT.cross_session_groups /
+%   REPORT.cross_session_collapsible measure, in both modes, how many entities
+%   a session-scoped key would leave beyond a dataset-scoped one;
+%   REPORT.scope / REPORT.dataset_id say which this run used.
 %
 %   ---------------------------------------------------------------------
 %   RETARGETING IS BY TARGET ID, NOT BY EDGE NAME
@@ -85,7 +105,8 @@ function [kept, report] = softwareDedup(structs)
 %   ---------------------------------------------------------------------
 %   WHAT IS DELIBERATELY NOT DONE
 %   ---------------------------------------------------------------------
-%   - No cross-session merge (measured, see above).
+%   - No cross-session merge for a lone session (no dataset entity in the
+%     batch, or more than one); measured, see above.
 %   - No fuzzy matching. 'ndi.calc.vis.oridir' and 'ndi.calc.vis.oridir '
 %     are different software. Names come from class() and from the app block;
 %     inventing an equivalence is the ground-truth fabrication this repo keeps
@@ -127,8 +148,12 @@ report.software_surviving        = 0;
 report.pinned_key_collisions     = 0;   % >1 pinned entity on one key -> untouched
 report.edges_retargeted          = 0;
 report.local_identifier_repaired = 0;
+report.version_assertions_dropped = 0;  % #88: the merged-away entity's own
 report.cross_session_groups      = 0;   % (name,version) keys spanning >1 session
 report.cross_session_collapsible = 0;   % extra entities a dataset-scoped key removes
+report.scope                     = 'session';
+report.dataset_id                = '';
+report.moved_to_dataset_level    = 0;   % entities + version assertions
 report.changed                   = false;
 
 n = numel(structs);
@@ -142,15 +167,46 @@ idOf       = cell(1, n);
 sessOf     = cell(1, n);
 nameOf     = cell(1, n);
 versOf     = cell(1, n);
+% #88: the version is an assertion about the software; index those first
+S = ndi.migrate.internal.etaShape;
+versionAssertion = containers.Map('KeyType', 'char', 'ValueType', 'any');
+isVersionAssertion = false(1, n);
 for i = 1:n
-    idOf{i} = baseField(structs{i}, 'id', '');
-    if ~strcmp(classNameOf(structs{i}), 'software')
+    if ~S.isStatement(structs{i}, 'assertion', 'text')
         continue;
     end
-    isSoftware(i)  = true;
-    sessOf{i} = ndi.v2.sessionIdOf(structs{i});
-    nameOf{i} = blockField(structs{i}, 'software', 'name', '');
-    versOf{i} = blockField(structs{i}, 'software', 'version', '');
+    v = S.variable(structs{i});
+    if ~(strcmp(v.node, 'IAO:0000129') || strcmpi(v.name, 'version number'))
+        continue;
+    end
+    about = S.aboutId(structs{i});
+    if isempty(about)
+        continue;
+    end
+    isVersionAssertion(i) = true;
+    if isKey(versionAssertion, about)
+        versionAssertion(about) = [versionAssertion(about), i];
+    else
+        versionAssertion(about) = i;
+    end
+end
+for i = 1:n
+    idOf{i} = baseField(structs{i}, 'id', '');
+    if strcmp(classNameOf(structs{i}), 'software')
+        isSoftware(i)  = true;
+        sessOf{i} = ndi.v2.sessionIdOf(structs{i});
+        nameOf{i} = blockField(structs{i}, 'software', 'name', '');
+        versOf{i} = blockField(structs{i}, 'software', 'version', '');
+    elseif S.isEntity(structs{i}, {'software'})
+        isSoftware(i)  = true;
+        sessOf{i} = ndi.v2.sessionIdOf(structs{i});
+        nameOf{i} = blockField(structs{i}, 'entity', 'name', '');
+        versOf{i} = '';
+        if isKey(versionAssertion, idOf{i})
+            va = versionAssertion(idOf{i});
+            versOf{i} = textValue(structs{va(1)});
+        end
+    end
 end
 report.software_seen = sum(isSoftware);
 
@@ -170,6 +226,7 @@ end
 % defect in miniature: a denominator that reads as "nothing to look at" when
 % what happened is "looked at everything, matched nothing".
 pinned = false(1, n);
+referenceEdges = {'software_id', 'interpreter_id', 'operating_system_id'};
 for j = 1:n
     deps = depsOf(structs{j});
     for k = 1:numel(deps)
@@ -178,7 +235,13 @@ for j = 1:n
         if isempty(tgt) || ~isKey(softwareIdx, tgt)
             continue;
         end
-        if ~strcmp(depName(deps(k)), 'software_id')
+        if isVersionAssertion(j) && strcmp(depName(deps(k)), 'entity_id')
+            continue;   % the entity's own version, not a pin
+        end
+        if strcmp(depName(deps(k)), 'session_id')
+            continue;   % #88: a record's session edge is not a reference to it
+        end
+        if ~any(strcmp(depName(deps(k)), referenceEdges))
             pinned(softwareIdx(tgt)) = true;
         end
     end
@@ -190,15 +253,25 @@ if report.software_seen == 0
 end
 
 % --------------------------------------------------------------- group them
-% Key = session_id | name | version. An entity with no name is excluded from
-% grouping entirely (see header) but still counted.
+% Key = scope | name | version, the scope being the dataset when one is
+% migrated and the session otherwise (Jess Haley, 2026-10-21; see header). An
+% entity with no name is excluded from grouping entirely but still counted.
+scope = ndi.migrate.internal.datasetScope(structs);
+if scope.is_dataset
+    report.scope      = 'dataset';
+    report.dataset_id = scope.dataset_id;
+end
 groups = containers.Map('KeyType', 'char', 'ValueType', 'any');
 for i = find(isSoftware)
     if isempty(nameOf{i})
         report.unnamed_seen = report.unnamed_seen + 1;
         continue;
     end
-    key = [sessOf{i} '|' nameOf{i} '|' versOf{i}];
+    if scope.is_dataset
+        key = [scope.dataset_id '|' nameOf{i} '|' versOf{i}];
+    else
+        key = [sessOf{i} '|' nameOf{i} '|' versOf{i}];
+    end
     if isKey(groups, key)
         groups(key) = [groups(key), i];
     else
@@ -206,7 +279,7 @@ for i = find(isSoftware)
     end
 end
 
-% --------------------------- measure (do NOT perform) the cross-session merge
+% ------------------------------------- measure the cross-session collapse
 report = measureCrossSession(report, isSoftware, sessOf, nameOf, versOf);
 
 % ------------------------------------------------------------------ merge
@@ -247,6 +320,12 @@ for g = 1:numel(keys_)
         structs{survivor} = unionGlobalIdentifiers(structs{survivor}, structs{m});
         removeMask(m) = true;
         report.software_merged_away = report.software_merged_away + 1;
+        if isKey(versionAssertion, idOf{m})
+            va = versionAssertion(idOf{m});
+            removeMask(va) = true;
+            report.version_assertions_dropped = ...
+                report.version_assertions_dropped + numel(va);
+        end
     end
     % Repair the dedup handle on the survivor from the fields that ARE the key.
     [structs{survivor}, fixed] = repairLocalIdentifier(structs{survivor}, ...
@@ -256,8 +335,27 @@ end
 
 report.software_surviving = report.software_seen - report.software_merged_away;
 
+% ------------------------------------------- the dataset level, when there is one
+% Every surviving software entity and its version assertions are stored with
+% the dataset (their `session_id` names the dataset entity).
+if scope.is_dataset
+    for i = find(isSoftware | isVersionAssertion)
+        if removeMask(i)
+            continue;
+        end
+        if isVersionAssertion(i) && ~isKey(softwareIdx, S.aboutId(structs{i}))
+            continue;   % a version of something that is not a software entity here
+        end
+        if ~strcmp(ndi.v2.sessionIdOf(structs{i}), scope.dataset_id)
+            structs{i} = ndi.migrate.internal.withSessionId(structs{i}, scope.dataset_id);
+            report.moved_to_dataset_level = report.moved_to_dataset_level + 1;
+        end
+    end
+end
+
 if report.software_merged_away == 0
     kept = structs;   % global_identifier unions/handle repairs cannot have run
+    report.changed = report.moved_to_dataset_level > 0;
     return;
 end
 
@@ -278,11 +376,9 @@ end
 % ===================== cross-session measurement ==========================
 
 function report = measureCrossSession(report, isSoftware, sessOf, nameOf, versOf)
-%MEASURECROSSSESSION How much MORE a dataset-scoped key would collapse.
-%   Recorded, never acted on: dropping session from the key is a modelling
-%   decision about what a `software` entity is, and rule 4 says the team makes
-%   it. Reporting the number is what turns "should we?" into a question with an
-%   answer attached.
+%MEASURECROSSSESSION How many entities a session-scoped key leaves beyond a
+%   dataset-scoped one. Measured in both modes; the merge itself happens only
+%   when the scope is a dataset (Jess Haley, 2026-10-21; see the header).
 bySoftware = containers.Map('KeyType', 'char', 'ValueType', 'any');
 for i = find(isSoftware)
     if isempty(nameOf{i})
@@ -313,15 +409,35 @@ end
 % ===================== body edits =========================================
 
 function s = unionGlobalIdentifiers(s, other)
-%UNIONGLOBALIDENTIFIERS Add OTHER's entity.global_identifier entries to S.
-%   Two mints of one program can carry different URLs; both are facts about the
-%   same software, so the survivor gets both. Duplicate {scheme, value} pairs
-%   collapse. Nothing is invented and nothing is overwritten.
+%UNIONGLOBALIDENTIFIERS The survivor keeps every identifier either carried.
+%   #88 writes a list of CURIE / IRI strings; before #88, an array of
+%   {scheme, value}. Union in whichever shape the survivor has.
 add = gidsOf(other);
 if isempty(add)
     return;
 end
 have = gidsOf(s);
+if iscell(have) || (isempty(have) && iscell(add))
+    out = reshape(have, 1, []);
+    if ~iscell(out); out = {}; end
+    addc = add;
+    if ~iscell(addc)
+        addc = arrayfun(@(e) gidKey(e), addc, 'UniformOutput', false);
+    end
+    for k = 1:numel(addc)
+        if ~any(strcmp(out, addc{k}))
+            out{end+1} = addc{k}; %#ok<AGROW>
+        end
+    end
+    if ~isfield(s, 'entity') || ~isstruct(s.entity)
+        s.entity = struct();
+    end
+    s.entity.global_identifier = out;
+    return;
+end
+if iscell(add)
+    return;     % a mixed pair: leave the survivor as it is
+end
 seen = {};
 for k = 1:numel(have)
     seen{end+1} = gidKey(have(k)); %#ok<AGROW>
@@ -348,9 +464,13 @@ end
 function g = gidsOf(s)
 g = struct('scheme', {}, 'value', {});
 if isfield(s, 'entity') && isstruct(s.entity) && isscalar(s.entity) ...
-        && isfield(s.entity, 'global_identifier') ...
-        && isstruct(s.entity.global_identifier)
-    g = s.entity.global_identifier;
+        && isfield(s.entity, 'global_identifier')
+    x = s.entity.global_identifier;
+    if isstruct(x) || iscell(x)
+        g = x;
+    elseif ischar(x) && ~isempty(x)
+        g = {x};
+    end
 end
 end
 
@@ -374,18 +494,23 @@ want = name;
 if ~isempty(version)
     want = [name '@' version];
 end
+% the handle lives on the `software` block before #88, `entity` on #88
+blk = 'software';
+if ~isfield(s, 'software') && isfield(s, 'entity')
+    blk = 'entity';
+end
 have = '';
-if isfield(s, 'software') && isstruct(s.software) && isscalar(s.software) ...
-        && isfield(s.software, 'local_identifier')
-    have = char(s.software.local_identifier);
+if isfield(s, blk) && isstruct(s.(blk)) && isscalar(s.(blk)) ...
+        && isfield(s.(blk), 'local_identifier')
+    have = char(s.(blk).local_identifier);
 end
 if strcmp(have, want)
     return;
 end
-if ~isfield(s, 'software') || ~isstruct(s.software)
-    s.software = struct();
+if ~isfield(s, blk) || ~isstruct(s.(blk))
+    s.(blk) = struct();
 end
-s.software.local_identifier = want;
+s.(blk).local_identifier = want;
 fixed = 1;
 end
 
@@ -421,6 +546,18 @@ end
 end
 
 % ===================== struct accessors ===================================
+
+function t = textValue(s)
+%TEXTVALUE The first text of a text assertion's value, '' when none.
+t = '';
+if isfield(s, 'text') && isstruct(s.text) && isfield(s.text, 'value') ...
+        && isstruct(s.text.value) && ~isempty(s.text.value) ...
+        && isfield(s.text.value, 'text')
+    x = s.text.value(1).text;
+    if iscell(x) && ~isempty(x); x = x{1}; end
+    if ischar(x) || (isstring(x) && isscalar(x)); t = char(x); end
+end
+end
 
 function c = classNameOf(s)
 c = '';

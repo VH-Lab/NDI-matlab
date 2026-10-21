@@ -2,7 +2,10 @@ function [plan, report] = recordingAttribution(structs)
 %RECORDINGATTRIBUTION Re-attribute a raw recording to the SPECIMEN it came from.
 %
 %   [PLAN, REPORT] = RECORDINGATTRIBUTION(STRUCTS) finds migrated
-%   `<modality>_observation` documents that name a PROBE as their subject and no
+%   modality observations (did-schema #88: an `observation` with a modality
+%   value kind, about its `entity_id`; before #88 a `<modality>_observation`
+%   about its `subject_id` -- both are read, and an edit keeps the spelling
+%   the document already has) that name a PROBE as their subject and no
 %   instrument at all, and plans the signed attribution for each: `subject_id`
 %   becomes the specimen, and the probe moves to `instrument_id` (T7).
 %
@@ -135,7 +138,7 @@ for k = 1:numel(structs)
     end
     report.observations = report.observations + 1;
     instrumentId = depValue(body, 'instrument_id');
-    subjectId    = depValue(body, 'subject_id');
+    subjectId    = ndi.migrate.internal.etaShape.aboutId(body);
     if ~isempty(instrumentId)
         report.donors = report.donors + 1;
         if isempty(subjectId)
@@ -161,7 +164,7 @@ report.ambiguous_probes = sort(keys(ambiguous));
 % ---- pass 2: plan an attribution per candidate ------------------------------
 for k = 1:numel(candidates)
     body     = candidates{k};
-    probeId  = depValue(body, 'subject_id');
+    probeId  = ndi.migrate.internal.etaShape.aboutId(body);
     if isempty(probeId)
         report.refused_no_subject = report.refused_no_subject + 1;
         continue;
@@ -183,12 +186,12 @@ for k = 1:numel(candidates)
     end
 
     out = body;
-    out = setDep(out, 'subject_id',    specimenId);
+    out = ndi.migrate.internal.etaShape.setAbout(out, specimenId);
     out = setDep(out, 'instrument_id', probeId);
     if isUnresolvedVariable(out)
         donorVar = donorVariable(probeId);
         if ~isempty(donorVar) && ~isempty(nodeOf(donorVar))
-            out.subject_statement.variable = donorVar;
+            out.(variableBlock(out)).variable = donorVar;
             report.variable_carried = report.variable_carried + 1;
         end
     end
@@ -211,19 +214,9 @@ end
 % ===================== helpers =========================================
 
 function tf = isObservation(body)
-%ISOBSERVATION A migrated observation document, by class name.
-%   The `_observation` suffix is the whole test, and it is deliberately broad:
-%   the donor map is keyed by instrument id and a candidate only matches when
-%   its subject IS a probe some donor named, so a `count_observation` or an
-%   `image_observation` that happens through here simply finds no donor. A
-%   narrower whitelist of modality classes would go stale the first time a
-%   modality is added and would fail SILENTLY, which is the worse direction.
-tf = false;
-name = className(body);
-if isempty(name)
-    return;
-end
-tf = numel(name) > 12 && strcmp(name(end-11:end), '_observation');
+% the `observation` direction on did-schema #88 (any value kind), or a
+% pre-#88 `<kind>_observation` leaf
+tf = strcmp(ndi.migrate.internal.etaShape.direction(body), 'observation');
 end
 
 function name = className(body)
@@ -241,36 +234,33 @@ if ~isfield(body, 'depends_on') || ~isstruct(body.depends_on)
 end
 for k = 1:numel(body.depends_on)
     d = body.depends_on(k);
-    if isfield(d, 'name') && strcmp(char(d.name), name) && isfield(d, 'value')
-        value = char(d.value);
+    if isfield(d, 'name') && strcmp(char(d.name), name)
+        value = ndi.migrate.internal.etaShape.entryValue(d);
         return;
     end
 end
 end
 
 function body = setDep(body, name, value)
-%SETDEP Set a dependency, replacing it in place or appending it.
-entry = struct('name', name, 'value', value);
-if ~isfield(body, 'depends_on') || ~isstruct(body.depends_on) ...
-        || isempty(body.depends_on)
-    body.depends_on = entry;
-    return;
-end
-for k = 1:numel(body.depends_on)
-    if isfield(body.depends_on(k), 'name') ...
-            && strcmp(char(body.depends_on(k).name), name)
-        body.depends_on(k).value = value;
-        return;
-    end
-end
-body.depends_on(end+1) = entry;
+body = ndi.migrate.internal.etaShape.setEdge(body, name, value);
 end
 
 function v = getVariable(body)
 v = [];
-if isfield(body, 'subject_statement') && isstruct(body.subject_statement) ...
-        && isfield(body.subject_statement, 'variable')
-    v = body.subject_statement.variable;
+blk = variableBlock(body);
+if ~isempty(blk) && isfield(body.(blk), 'variable')
+    v = body.(blk).variable;
+end
+end
+
+function blk = variableBlock(body)
+% `statement` on did-schema #88, `subject_statement` before
+blk = '';
+for b = {'statement', 'subject_statement'}
+    if isfield(body, b{1}) && isstruct(body.(b{1}))
+        blk = b{1};
+        return;
+    end
 end
 end
 

@@ -3,49 +3,71 @@ classdef TestBathAssembly < matlab.unittest.TestCase
 %   struct assembly with a mock resolver; no database, schema, or toolbox needed).
 %
 %   Under V_eta the bath / pharmacological_manipulation family is retired (D8): a
-%   deferred stimulus_bath assembles into a `dose_manipulation` (the delivered
-%   substance) on the resolved subject over the stimulator's epoch, mirroring the
-%   coarse did2.convert.resolveDeferredBaths.makeBathVeta. Older targets still
-%   assemble a `bath`.
+%   deferred stimulus_bath assembles into a `manipulation` whose value is the
+%   bath's `formulation`, through `value_id` -- not a dose: "A bath is a
+%   manipulation whose value is the formulation (pointed at through
+%   `value_id`), not a dose; a dose always has an amount" (Jess Haley,
+%   2026-10-21) -- on the resolved subject over the stimulator's epoch,
+%   mirroring did2.convert.resolveDeferredBaths.makeBathVEta (DID-matlab
+%   ff6d542). Older targets still assemble a `bath`.
 %
 %   Run with:  runtests('ndi.unittest.migrate.TestBathAssembly')
 
     methods (Test)
 
-        function testVetaBecomesDoseManipulation(testCase)
+        function testVetaIsAManipulationValuedByItsFormulation(testCase)
+            % did-schema #88: the `manipulation` direction + the `formulation`
+            % kind, its value the formulation document through `value_id`
+            % (Jess Haley, 2026-10-21: a bath is not a dose),
+            % the mixture as a standalone `formulation` of `chemical`s, and a
+            % VALID "during the session" anchor whose epoch rides in anchorInfo
             v1 = stimulusBathDoc('stim_1', 't00001');
             r  = mockResolver('animal_1', 'dev_local_time');
-            [dose, timeRef] = ...
+            [dose, timeRef, extra, anchorInfo] = ...
                 ndi.migrate.internal.stimulusBathToBath(v1, r, 'V_eta');
 
-            % the manipulation is a dose_manipulation on the resolved subject
-            testCase.verifyEqual(dose.document_class.class_name, 'dose_manipulation');
+            testCase.verifyEqual(dose.document_class.class_name, 'manipulation');
+            testCase.verifyEqual({dose.document_class.superclasses.class_name}, ...
+                {'interaction', 'statement', 'base', 'formulation', 'value', 'data'});
             testCase.verifyEqual(dose.base.id, 'bath_1');          % source id preserved
-            testCase.verifyEqual(depValue(dose, 'subject_id'), 'animal_1');
-            testCase.verifyEqual(dose.subject_statement.storage_mode, 'inline');
+            testCase.verifyEqual(depValue(dose, 'entity_id'), 'animal_1');
+            testCase.verifyEmpty(depValue(dose, 'subject_id'));
+            testCase.verifyEqual(dose.statement.variable.node, 'chebi:6904');
+            testCase.verifyEqual(dose.statement.variable.name, 'muscimol');
 
-            % the primary mixture chemical is the spine identity (variable)
-            testCase.verifyEqual(dose.subject_statement.variable.node, 'chebi:6904');
-            testCase.verifyEqual(dose.subject_statement.variable.name, 'muscimol');
+            % the formulation and its one chemical
+            classes = cellfun(@(b) b.document_class.class_name, extra, ...
+                'UniformOutput', false);
+            testCase.verifyEqual(sort(classes), {'chemical', 'formulation'});
+            f = extra{strcmp(classes, 'formulation')};
+            c = extra{strcmp(classes, 'chemical')};
+            testCase.verifyEqual(depValue(dose, 'value_id'), f.base.id);
+            testCase.verifyEmpty(depValue(dose, 'formulation_id'));
+            % its own value stays empty: the formulation document holds it
+            testCase.verifyFalse(isfield(dose, 'formulation'));
+            testCase.verifyFalse(isfield(dose, 'dose'));
+            testCase.verifyEqual(depValue(f, 'ingredient_id'), c.base.id);
+            testCase.verifyEqual(c.chemical.value.substance.name, 'muscimol');
+            testCase.verifyEqual(c.chemical.value.substance.node, 'chebi:6904');
+            testCase.verifyNumElements(f.formulation.value.ingredients, 1);
+            conc = f.formulation.value.ingredients{1}.concentration;
+            testCase.verifyEqual(conc.source_value, 5);
+            testCase.verifyEqual(conc.source_unit.name, 'mg/ml');
 
-            % the mixture -> dose formulation chemicals ({substance, amount})
-            chems = dose.dose.value.formulation.chemicals;
-            testCase.verifyEqual(numel(chems), 1);
-            testCase.verifyEqual(chems(1).substance.name, 'muscimol');
-            testCase.verifyEqual(chems(1).amount.source_value, 5);
-
-            % the dose depends on the epoch-precise time anchor
+            % the anchor: valid on #88, during the session, epoch handed over
             testCase.verifyEqual(timeRef.document_class.class_name, ...
-                'epoch_bounded_reference');
-            testCase.verifyEqual(depValue(dose, 'time_reference_1'), timeRef.base.id);
-            testCase.verifyEqual(timeRef.epoch_bounded_reference.epoch_clock, ...
-                'dev_local_time');
+                'relative_time_reference');
+            testCase.verifyEqual(depValue(timeRef, 'referent_id'), 'sess_09');
+            testCase.verifyEqual(depValue(dose, 'time_reference_id'), timeRef.base.id);
+            testCase.verifyEqual(anchorInfo.anchor_id, timeRef.base.id);
+            testCase.verifyEqual(anchorInfo.epoch_string, 't00001');
+            testCase.verifyEqual(anchorInfo.epoch_clock, 'dev_local_time');
+            testCase.verifyEqual(anchorInfo.session_id, 'sess_09');
 
-            % no retired bath classes leak onto the V_eta path
             testCase.verifyFalse(isfield(dose, 'bath'));
             testCase.verifyFalse(isfield(dose, 'pharmacological_manipulation'));
+            testCase.verifyFalse(isfield(dose, 'subject_statement'));
         end
-
         function testVetaCarriesTheStimulatorAsInstrument(testCase)
             % T7: the instrument of an interaction is an edge on the
             % interaction. This is what keeps the stimulator's identity when
@@ -65,32 +87,46 @@ classdef TestBathAssembly < matlab.unittest.TestCase
         % hollow document: it validates, it is counted, and it says nothing.
 
         function testVetaEmitsNoAnchorForANoTimeClock(testCase)
-            % 'no_time' is NDI's assertion that a thing keeps no time at all
-            % (+file/navigator.m:185), never a timeline a time is expressed on.
             v1 = stimulusBathDoc('stim_1', 't00001');
             r  = mockResolver('animal_1', 'no_time');
-            [dose, timeRef] = ...
+            [dose, timeRef, ~, anchorInfo] = ...
                 ndi.migrate.internal.stimulusBathToBath(v1, r, 'V_eta');
             testCase.verifyEmpty(timeRef);
-            % time_reference_# is an OPTIONAL dependency, so the absence costs
-            % nothing and asserts nothing.
-            testCase.verifyEmpty(depValue(dose, 'time_reference_1'));
-            testCase.verifyEqual(depValue(dose, 'subject_id'), 'animal_1');
+            testCase.verifyEmpty(anchorInfo);
+            testCase.verifyEmpty(depValue(dose, 'time_reference_id'));
+            testCase.verifyEqual(depValue(dose, 'entity_id'), 'animal_1');
         end
-
         function testVetaEmitsNoAnchorWhenThereIsNoEpochString(testCase)
-            % `epochid.epochid` is mustBeNonEmpty on the V_eta schema, so an
-            % empty one is a QUARANTINE today. Declining to mint turns a
-            % quarantined document into an honest absence.
             v1 = stimulusBathDoc('stim_1', 't00001');
             v1.epochid = struct('epochid', '');
             r  = mockResolver('animal_1', 'dev_local_time');
             [dose, timeRef] = ...
                 ndi.migrate.internal.stimulusBathToBath(v1, r, 'V_eta');
             testCase.verifyEmpty(timeRef);
-            testCase.verifyEmpty(depValue(dose, 'time_reference_1'));
+            testCase.verifyEmpty(depValue(dose, 'time_reference_id'));
         end
 
+        function testVetaReadsTheWritersMixtureTable(testCase)
+            % NDI writes a HEADER row and double-quotes a name holding commas;
+            % pH is a property of the whole mixture, not an ingredient
+            v1 = stimulusBathDoc('stim_1', 't00001');
+            v1.stimulus_bath.mixture_table = sprintf(['ontologyName,name,value,ontologyUnit,unitName\n' ...
+                'CHEBI:1,"sodium phosphate, monobasic",0.0012,UO:0000062,Molar\n' ...
+                'CHEBI:2,pH,7.4,,\n']);
+            r  = mockResolver('animal_1', 'dev_local_time');
+            [~, ~, extra] = ndi.migrate.internal.stimulusBathToBath(v1, r, 'V_eta');
+            classes = cellfun(@(b) b.document_class.class_name, extra, ...
+                'UniformOutput', false);
+            testCase.verifyEqual(sum(strcmp(classes, 'chemical')), 1);
+            c = extra{strcmp(classes, 'chemical')};
+            testCase.verifyEqual(c.chemical.value.substance.name, ...
+                'sodium phosphate, monobasic');
+            f = extra{strcmp(classes, 'formulation')};
+            testCase.verifyEqual(f.formulation.value.ph.ph, 7.4);
+            conc = f.formulation.value.ingredients{1}.concentration;
+            testCase.verifyEqual(conc.molar, 0.0012);
+            testCase.verifyEqual(conc.source_unit.node, 'UO:0000062');
+        end
         function testTheGuardIsVetaOnlyAndOlderTargetsAreUntouched(testCase)
             % The retirement is a V_eta decision. V_zeta/V_epsilon keep the
             % behaviour they are green with, no_time clock included.

@@ -1,6 +1,52 @@
-function [bathBody, timeRefBody] = stimulusBathToBath(v1Body, resolver, targetVersion)
+function [bathBody, timeRefBody, extraBodies, anchorInfo] = stimulusBathToBath(v1Body, resolver, targetVersion)
 %STIMULUSBATHTOBATH Assemble a `bath` (+ epoch time reference) from a legacy
 %   stimulus_bath, using session/element context.
+%
+%   ---------------------------------------------------------------------
+%   ON did-schema #88 (the V_eta target since 2026-10-21) -- READ THIS FIRST
+%   ---------------------------------------------------------------------
+%   The V_eta branch emits #88's shape, mirroring DID-matlab's
+%   did2.convert.resolveDeferredBaths/makeBathVEta (the DID-side assembler of
+%   the same class on #88):
+%
+%     bathBody     a `manipulation` with the `formulation` value kind, its
+%                  value the formulation document below through a `value_id`
+%                  edge and its own `value` empty -- NOT a dose: "A bath is a
+%                  manipulation whose value is the formulation (pointed at
+%                  through `value_id`), not a dose; a dose always has an
+%                  amount" (Jess Haley, 2026-10-21). Source id PRESERVED, about
+%                  the stimulator element's subject (`entity_id`), the
+%                  stimulator as `instrument_id` (T7).
+%     timeRefBody  a `relative_time_reference` (#88: the placeholder class
+%                  `epoch_bounded_reference` is GONE, so it cannot be emitted
+%                  even transiently -- it would quarantine on validation) that
+%                  says "during the session": `referent_id` is the session id,
+%                  which IS the session entity's base.id on #88
+%                  (V_eta_relation_inheritance_plan.md item 4). The epoch is
+%                  not lost: ANCHORINFO carries the stimulator's epoch string
+%                  and clock, and ndi.migrate.internal.epochAnchorFold
+%                  re-points the anchor at the epoch entity did2.convert.
+%                  epochMint mints (id PRESERVED), which is the two-phase shape
+%                  the placeholder used to give. If the fold cannot resolve the
+%                  epoch, the bath stays anchored to its session -- valid, and
+%                  exactly what the DID-side assembler writes.
+%     extraBodies  one `chemical` per mixture row and the `formulation` naming
+%                  them (`ingredient_id`, ordered; each ingredient entry holds
+%                  the row's amount as a concentration with its source unit as
+%                  a term). A pH or osmolarity row is a property of the whole
+%                  mixture and lands on the formulation's `ph` / `osmolarity`,
+%                  as DID-side does.
+%     anchorInfo   struct {anchor_id, session_id, epoch_string, epoch_clock}
+%                  for epochAnchorFold; [] when no anchor was minted.
+%
+%   The mixture table is read with DID-side's parser (quoted names that hold
+%   commas; the header row is not a chemical) -- the pre-#88 reader split on
+%   every comma and read the header as a chemical named "ontologyName".
+%   The bath's LOCATION is not emitted on this path, as it was not before #88
+%   (DID-side adds an `anatomical location` term observation; doing that here
+%   would hand ndi.migrate.internal.pathSPromotion a co-anchored site and turn
+%   every Dab bath into a part-subject before sliceTetanus reads it -- a
+%   modelling change, not a port).
 %
 %   ---------------------------------------------------------------------
 %   STATUS: the V_eta changes below (the time-anchor guard, the `instrument_id`
@@ -102,7 +148,7 @@ function [bathBody, timeRefBody] = stimulusBathToBath(v1Body, resolver, targetVe
 %   Outputs:
 %     bathBody     - the manipulation document body (schema_version =
 %                    targetVersion): a `bath` under V_zeta/V_epsilon, or a
-%                    `dose_manipulation` under V_eta (D8 retired the bath family).
+%                    `manipulation` valued by its `formulation` under V_eta.
 %     timeRefBody  - the epoch_bounded_reference document the manipulation
 %                    depends_on, or [] when V_eta declines to anchor (see
 %                    NO TIMES => NO REFERENCE below). A caller must drop an
@@ -153,116 +199,32 @@ epochClock = resolver.epochClockOfElement(stimulatorId, epochId);
 % In both cases `time_reference_1` is simply OMITTED from the manipulation --
 % it is an OPTIONAL dependency (subject_interaction declares time_reference_#
 % with mustBeNonEmpty false), so the absence costs nothing and asserts nothing.
-timeRefId   = '';
-timeRefBody = [];
-mintReference = true;
-if strcmp(targetVersion, 'V_eta')
-    mintReference = ~isempty(epochId) && ~strcmp(epochClock, 'no_time');
-end
-if mintReference
-    timeRefId = did.ido.unique_id();
-    timeRefBody = struct();
-    timeRefBody.document_class = struct( ...
-        'class_name', 'epoch_bounded_reference', 'class_version', '1.0.0', ...
-        'superclasses', [ ...
-            struct('class_name', 'time_reference', 'class_version', '1.0.0'), ...
-            struct('class_name', 'epochid',        'class_version', '1.0.0')], ...
-        'schema_version', targetVersion);
-    timeRefBody.depends_on = struct('name', 'element_id', 'value', stimulatorId);
-    timeRefBody.base = struct('id', timeRefId, 'session_id', sessionId, ...
-        'name', 'migrated_stimulator_epoch_anchor', 'creation_timestamp', datestamp);
-    if strcmp(targetVersion, 'V_eta')
-        % a field or a `session_id` edge, as the V_eta schema in use keeps it
-        timeRefBody = ndi.migrate.internal.withSessionId(timeRefBody, sessionId);
-    end
-    timeRefBody.time_reference = struct('is_approximate', false);
-    timeRefBody.epochid = struct('epochid', epochId);
-    timeRefBody.epoch_bounded_reference = struct('epoch_clock', epochClock);
-end
-
-% --- the bath --------------------------------------------------------------
-mixture = parseMixture(v1Body);
+extraBodies = {};
+anchorInfo  = [];
 
 if strcmp(targetVersion, 'V_eta')
-    % Strict J (D8) retired the bath / pharmacological_manipulation family: a
-    % bath is a delivered substance -> a `dose_manipulation` on the resolved
-    % subject over the stimulator's epoch. This is the LIVE-session counterpart
-    % of the coarse did2.convert.resolveDeferredBaths.makeBathVeta (and shares
-    % migrators_j.treatment's dose shape): the primary chemical is the spine
-    % identity (subject_statement.variable), the whole mixture becomes the dose
-    % formulation's chemicals. Unlike the coarse path it keeps the epoch-precise
-    % time anchor built above, not a session-relative one -- as a pass-1
-    % `epoch_bounded_reference` placeholder that
-    % ndi.migrate.internal.epochAnchorFold folds into the signed
-    % `relative_reference`, id preserved, once epochMint has created the `epoch`
-    % it points at. The bath `location` (the chamber, not a subject site) has no
-    % strict-J home on the subject and is dropped.
-    chemicals = struct('substance', {}, 'amount', {});
-    for i = 1:numel(mixture)
-        chem = mixture(i).chemical;
-        if isempty(chem.node) && isempty(chem.name)
-            continue;   % skip parseMixture's blank fallback (invalid chemical)
-        end
-        chemicals(end+1) = struct('substance', chem, ...
-            'amount', mixture(i).amount); %#ok<AGROW>
-    end
-    bathBody = struct();
-    bathBody.document_class = struct('class_name', 'dose_manipulation', ...
-        'class_version', '1.0.0', 'superclasses', [ ...
-            struct('class_name', 'subject_manipulation', 'class_version', '1.0.0'), ...
-            struct('class_name', 'dose',                 'class_version', '1.0.0')], ...
-        'schema_version', targetVersion);
-    % `instrument_id` = the STIMULATOR (T7: the instrument of an interaction is
-    % an edge on the interaction). This is NOT decoration. The retired
-    % `epoch_bounded_reference` was the only document recording WHICH element's
-    % epoch this bath sat in, on its `element_id` edge -- and
-    % `relative_reference` declares exactly one dependency, `relative_to`, so
-    % epochAnchorFold must drop that edge when it folds. Carrying the stimulator
-    % here keeps the fact on a class that declares a slot for it
-    % (subject_interaction.instrument_id, must_refer subject, optional), and
-    % keeps it whether or not the fold ever runs. The stimulator is an element,
-    % and did2.convert.migrators_j.element promotes an element to a `subject`
-    % with its id PRESERVED, so the edge resolves.
-    %
-    % NOT A NEW PATTERN, and that matters because a new edge that dangles is a
-    % GATING orphan failure (the reverted distance_metadata endpoint relation
-    % cost 4,156 of them). An element id in `instrument_id` is what the shipped
-    % J migrators already write, on the DID path the corpus is green on:
-    %
-    %   $ grep -rn "'instrument_id'" DID-matlab/src/did/+did2/+convert/
-    %   DENOMINATOR: 175 .m files under +did2/+convert; 2 emit the edge.
-    %   +migrators_j/stimulus_response_scalar.m:292
-    %       setDep(..., 'instrument_id', depValue(preBody, 'stimulator_id'))
-    %                                             ^^ the SAME referent kind
-    %   +migrators_j/private/jRecordingObservation.m:212
-    %       struct('name','instrument_id','value', elementId)  % the electrode (T7)
-    %
-    % Guarded anyway: an empty stimulator id emits NO edge rather than a blank
-    % one. (subjectOfElement above errors before we reach here in that case, so
-    % this is belt-and-braces, not a live branch.)
-    bathDeps = struct('name', 'subject_id', 'value', subjectId);
-    if ~isempty(stimulatorId)
-        bathDeps(end+1) = struct('name', 'instrument_id', 'value', stimulatorId);
-    end
-    if ~isempty(timeRefId)
-        bathDeps(end+1) = struct('name', 'time_reference_1', 'value', timeRefId);
-    end
-    bathBody.depends_on = bathDeps;
-    bathBody.base = struct('id', bathId, 'session_id', sessionId, ...
-        'name', 'migrated_bath', 'creation_timestamp', datestamp);
-    % a field or a `session_id` edge, as the schema in use keeps it
-    bathBody = ndi.migrate.internal.withSessionId(bathBody, sessionId);
-    bathBody.subject_statement = struct('variable', primaryChemical(mixture), ...
-        'storage_mode', 'inline');
-    bathBody.subject_interaction = struct('method', struct('node', '', 'name', ''), ...
-        'sample_time', struct('kind', 'point'));
-    bathBody.subject_manipulation = struct('notes', '');
-    bathBody.dose = struct('value', struct('formulation', ...
-        struct('chemicals', chemicals), ...
-        'volume', struct('source_unit', '', 'source_value', 0.0, 'approximate', false), ...
-        'route', struct('node', '', 'name', '')));
+    [bathBody, timeRefBody, extraBodies, anchorInfo] = vetaBath(v1Body, ...
+        stimulatorId, epochId, sessionId, datestamp, bathId, subjectId, epochClock);
     return;
 end
+
+% --- the older targets (no V_eta) -----------------------------------------
+timeRefId = did.ido.unique_id();
+timeRefBody = struct();
+timeRefBody.document_class = struct( ...
+    'class_name', 'epoch_bounded_reference', 'class_version', '1.0.0', ...
+    'superclasses', [ ...
+        struct('class_name', 'time_reference', 'class_version', '1.0.0'), ...
+        struct('class_name', 'epochid',        'class_version', '1.0.0')], ...
+    'schema_version', targetVersion);
+timeRefBody.depends_on = struct('name', 'element_id', 'value', stimulatorId);
+timeRefBody.base = struct('id', timeRefId, 'session_id', sessionId, ...
+    'name', 'migrated_stimulator_epoch_anchor', 'creation_timestamp', datestamp);
+timeRefBody.time_reference = struct('is_approximate', false);
+timeRefBody.epochid = struct('epochid', epochId);
+timeRefBody.epoch_bounded_reference = struct('epoch_clock', epochClock);
+
+mixture = parseMixture(v1Body);
 
 bathBody = struct();
 bathBody.document_class = struct( ...
@@ -293,6 +255,159 @@ bathBody.pharmacological_manipulation = struct();
 bathBody.pharmacological_manipulation.mixture = mixture;
 % location/kind are declared on bath -> the bath block.
 bathBody.bath = struct('kind', 'drug', 'location', locationTerm(v1Body));
+end
+
+function [dose, anchor, extra, anchorInfo] = vetaBath(v1Body, stimulatorId, ...
+        epochId, sessionId, datestamp, bathId, subjectId, epochClock)
+%VETABATH The did-schema #88 bath: manipulation valued by a formulation + chemicals,
+%   anchored "during the session" until epochAnchorFold re-points the anchor at
+%   the stimulator's epoch (see the header).
+S = ndi.migrate.internal.etaShape;
+common = {'SessionId', sessionId, 'Datestamp', datestamp};
+
+% NO TIMES => NO REFERENCE. The signed plan's rule: a reference that cannot
+% name a time is a hollow document. A `no_time` clock, or no epoch string at
+% all, mints none (the dose then has no time reference; `time_reference_id` is
+% min_count 1 on interactions, so validation reports it rather than this
+% function hiding it).
+anchor = [];
+anchorInfo = [];
+trIds = {};
+if ~isempty(epochId) && ~strcmp(epochClock, 'no_time')
+    anchor = S.relativeTimeReference(sessionId, struct('relation', ...
+        S.term('time:intervalDuring', 'intervalDuring')), common{:});
+    trIds = {anchor.base.id};
+    anchorInfo = struct('anchor_id', anchor.base.id, 'session_id', sessionId, ...
+        'epoch_string', epochId, 'epoch_clock', epochClock);
+end
+
+mixture = parseMixture88(v1Body);
+extra = {};
+ids = {};
+entries = {};
+props = struct();
+for i = 1:numel(mixture)
+    chem = mixture(i).chemical;
+    if isempty(chem.node) && isempty(chem.name)
+        continue;
+    end
+    a = mixture(i).amount;
+    if strcmpi(chem.name, 'pH') && isfinite(a.source_value)
+        props.ph = struct('ph', a.source_value, 'source_value', a.source_value, ...
+            'source_unit', a.source_unit, 'approximate', false);
+        continue;
+    end
+    if any(strcmpi(chem.name, {'osm', 'osmolarity'})) && isfinite(a.source_value)
+        props.osmolarity = struct('source_value', a.source_value, ...
+            'source_unit', a.source_unit, 'approximate', false);
+        continue;
+    end
+    c = struct();
+    c.document_class = S.docClass('chemical');
+    c.depends_on = S.noEdges();
+    c.base = S.baseBlock('', datestamp);
+    c.chemical = struct('value', struct('substance', chem));
+    c = ndi.migrate.internal.withSessionId(c, sessionId);
+    extra{end+1} = c; %#ok<AGROW>
+    ids{end+1} = c.base.id; %#ok<AGROW>
+    e = struct();
+    if isfinite(a.source_value)
+        conc = struct('source_value', a.source_value, 'approximate', false);
+        if ~isempty(a.source_unit.node) || ~isempty(a.source_unit.name)
+            conc.source_unit = a.source_unit;
+        end
+        if strcmpi(a.source_unit.name, 'Molar')
+            conc.molar = a.source_value;
+        end
+        e.concentration = conc;
+    end
+    entries{end+1} = e; %#ok<AGROW>
+end
+fv = props;
+fv.ingredients = entries;
+f = struct();
+f.document_class = S.docClass('formulation');
+f.depends_on = S.noEdges();
+for k = 1:numel(ids)
+    f = S.addEdge(f, 'ingredient_id', ids{k});
+end
+f.base = S.baseBlock('', datestamp);
+f.formulation = struct('value', fv);
+f = ndi.migrate.internal.withSessionId(f, sessionId);
+extra{end+1} = f;
+
+% A bath is NOT a dose: "A bath is a manipulation whose value is the
+% formulation (pointed at through `value_id`), not a dose; a dose always has an
+% amount" (Jess Haley, 2026-10-21; did-schema V_eta_go_forward_class_audit.md).
+% So the manipulation's value kind is `formulation`, its own `value` stays
+% empty, and the formulation document above is its value through `value_id`
+% (DID-matlab resolveDeferredBaths, ff6d542, builds the same shape).
+dose = S.statement('manipulation', 'formulation', subjectId, primaryChemical(mixture), [], ...
+    'Id', bathId, 'InstrumentId', stimulatorId, 'TimeReferenceIds', trIds, ...
+    'Edges', {'value_id', f.base.id}, common{:});
+end
+
+function mixture = parseMixture88(body)
+%PARSEMIXTURE88 The bath's mixture_table rows as NDI's writer serialises them:
+%   a CSV with a HEADER row (ontologyName,name,value,ontologyUnit,unitName) and
+%   double-quoted names that may hold commas. Each row is {chemical {node,name},
+%   amount {source_value, source_unit {node,name}}}; the header is not a row.
+%   The same reader as DID-matlab did2.convert.resolveDeferredBaths.
+mixture = struct('chemical', {}, 'amount', {});
+if ~(isfield(body, 'stimulus_bath') && isstruct(body.stimulus_bath) ...
+        && isfield(body.stimulus_bath, 'mixture_table'))
+    return;
+end
+raw = body.stimulus_bath.mixture_table;
+if ~(ischar(raw) || (isstring(raw) && isscalar(raw)))
+    return;
+end
+lines = regexp(char(raw), '\r?\n', 'split');
+for i = 1:numel(lines)
+    line = strtrim(lines{i});
+    if isempty(line); continue; end
+    cols = csvFields(line);
+    if numel(cols) < 5 || isempty(cols{1}); continue; end
+    if strcmpi(cols{1}, 'ontologyName'); continue; end      % the header row
+    chemical = struct('node', cols{1}, 'name', cols{2});
+    amount = struct('source_value', str2double(cols{3}), ...
+        'source_unit', struct('node', cols{4}, 'name', cols{5}), 'approximate', false);
+    mixture(end+1) = struct('chemical', chemical, 'amount', amount); %#ok<AGROW>
+end
+end
+
+function cols = csvFields(line)
+%CSVFIELDS Split one CSV line on commas outside double quotes; a quoted field
+%   loses its quotes and "" inside it is one ". Empty fields (",,", a trailing
+%   ",") are kept, so a row's column count is its comma count + 1.
+cols = {};
+cur = '';
+inQuote = false;
+k = 1;
+while k <= numel(line)
+    ch = line(k);
+    if inQuote
+        if ch == '"'
+            if k < numel(line) && line(k + 1) == '"'
+                cur(end+1) = '"'; %#ok<AGROW>
+                k = k + 1;
+            else
+                inQuote = false;
+            end
+        else
+            cur(end+1) = ch; %#ok<AGROW>
+        end
+    elseif ch == '"'
+        inQuote = true;
+    elseif ch == ','
+        cols{end+1} = strtrim(cur); %#ok<AGROW>
+        cur = '';
+    else
+        cur(end+1) = ch; %#ok<AGROW>
+    end
+    k = k + 1;
+end
+cols{end+1} = strtrim(cur);
 end
 
 function variable = primaryChemical(mixture)

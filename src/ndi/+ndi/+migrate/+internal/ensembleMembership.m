@@ -67,16 +67,16 @@ function [kept, minted, report] = ensembleMembership(structs, options)
 %   Per (map document, neuron_id_i), deduplicated on
 %   (parent, child, sequence, epoch):
 %
-%     member_of    directed_relation   child  = the neuron-subject
-%                                      parent = the ensemble group-subject
+%     member_of    directed_relation   child_id  = the neuron-subject
+%                                      parent_id = the ensemble group-subject
 %                                      relation {RO:0002350, member_of}
 %                                      sequence = i (the column index)
 %
-%     derived_from directed_relation   child  = the cache carrier (the migrated
+%     derived_from directed_relation   child_id  = the cache carrier (the migrated
 %                                               `acquisition_epoch` that holds
 %                                               the combined .vhsb binary --
 %                                               the map's `element_epoch_id`)
-%                                      parent = the neuron-subject
+%                                      parent_id = the neuron-subject
 %                                      relation {RO:0001000, derived_from}
 %
 %   The `derived_from` set IS the verify-before-delete manifest: for a given
@@ -84,9 +84,9 @@ function [kept, minted, report] = ensembleMembership(structs, options)
 %   exist before those bytes may be dropped.
 %
 %   ONE DECLARATIVE MISMATCH, STATED RATHER THAN HIDDEN: `directed_relation`
-%   declares `child` and `parent` as `must_refer_to_document_class: "entity"`,
-%   and the cache carrier (`acquisition_epoch`, superclasses base + epochid) is
-%   NOT an entity. It validates -- must_refer is existence-only, never
+%   declares `child_id` and `parent_id` as `must_refer_to_document_class:
+%   "entity,statement,value"` (did-schema #88), and the cache carrier
+%   (`acquisition_epoch`, superclasses base + epochid) is none of those. It validates -- must_refer is existence-only, never
 %   type-checked -- and the registry row for `derived_from` constrains neither
 %   end (`child_types: []`, `parent_types: []`). It is recorded here because
 %   the right long-term child is the `sampled_body` cache document of item 3,
@@ -462,7 +462,8 @@ for i = 1:numel(structs)
     end
 
     sessionId = ndi.v2.sessionIdOf(s);
-    ds        = baseField(s, 'datestamp', '2024-01-01T00:00:00.000Z');
+    ds        = baseField(s, 'creation_timestamp', '');
+    if isempty(ds); ds = baseField(s, 'datestamp', ''); end
     [epochKey, epochStatus] = epochScope(s, sessionId, options.EpochDocumentIdFor);
     switch epochStatus
         case 'scoped'
@@ -592,53 +593,15 @@ end
 % ===================== builders ========================================
 
 function body = relationBody(childId, parentId, relTerm, sequence, epochDocId, ...
-        sessionId, ds, name)
-%RELATIONBODY One `directed_relation`. Emits only NON-EMPTY edges.
-body = struct();
-% `subject_relation` was renamed to `relation` (abstract) in V_eta; emit the
-% current superclass and NO stale block -- an undeclared top-level block
-% quarantines (the JH 163k-orphan regression). ensureClassBlocks rebuilds the
-% chain and any needed empty blocks. Mirrors pathSPromotion exactly.
-body.document_class = struct('class_name', 'directed_relation', ...
-    'class_version', '1.0.0', ...
-    'superclasses', struct('class_name', 'relation', 'class_version', '1.0.0'), ...
-    'schema_version', 'V_eta');
-deps = [struct('name', 'child',  'value', childId), ...
-        struct('name', 'parent', 'value', parentId)];
-if ~isempty(epochDocId)
-    % Only reachable when OPTIONS.EpochDocumentIdFor supplied a real id; see
-    % item 2 of the header. THIS COMMENT SAID "directed_relation does not
-    % declare the slot yet -- that is the DID-schema change this hook waits
-    % on", contradicting item 2(a) of this file's own header. STALE: the slot
-    % is declared, and OPTIONAL, so an unscoped edge cannot quarantine under
-    % #37 RequiredDependencies.
-    %
-    %   $ python3 -c "import json;print([(x['name'],x['mustBeNonEmpty']) for x
-    %         in json.load(open('schemas/V_eta/stable/directed_relation.json')
-    %       )['depends_on']])"
-    %   [('child', True), ('parent', True), ('time_reference_#', False),
-    %    ('epoch_id', False)]
-    deps(end+1) = struct('name', 'epoch_id', 'value', epochDocId);
-end
-body.depends_on = deps;
-body.base = struct('id', did.ido.unique_id(), 'session_id', sessionId, ...
-    'name', name, 'creation_timestamp', ds);
-% a field or a `session_id` edge, as the schema in use keeps it
-body = ndi.migrate.internal.withSessionId(body, sessionId);
-block = struct('relation', relTerm);
-if ~isempty(sequence)
-    % `sequence` is directed_relation's declared "ordinal for ordered
-    % relations" -- the column index of this neuron in the epoch's combined
-    % binary. THIS COMMENT SAID "NOTE the registry row for member_of
-    % currently says 'ordered': false", contradicting item 5 of this file's
-    % own header, which records the disagreement as CLOSED. STALE: the row
-    % reads `'timed': True, 'ordered': True` (DENOMINATOR: 26
-    % relation_bindings rows read from
-    % schemas/V_eta/stable/binding_registry_meta.json), so `ordered: true`
-    % licenses this ordinal and `timed: true` licenses the epoch scoping.
-    block.sequence = sequence;
-end
-body.directed_relation = block;
+        sessionId, ds, ~)
+%RELATIONBODY One `directed_relation` (did-schema #88: `child_id` /
+%   `parent_id`, no base.name). Emits only NON-EMPTY edges: `epoch_id` is
+%   written only when OPTIONS.EpochDocumentIdFor supplied a real id (item 2 of
+%   the header); the slot is declared and OPTIONAL on directed_relation, so an
+%   unscoped edge cannot quarantine under #37 RequiredDependencies.
+body = ndi.migrate.internal.etaShape.relation(childId, parentId, relTerm, ...
+    'Sequence', sequence, 'EpochId', epochDocId, ...
+    'SessionId', sessionId, 'Datestamp', ds);
 end
 
 % ===================== struct accessors ================================
@@ -737,7 +700,9 @@ end
 end
 
 function tf = isSubject(idClass, id)
-tf = ~isempty(id) && isKey(idClass, id) && strcmp(idClass(id), 'subject');
+%ISSUBJECT The id names a migrated entity (did-schema #88 `entity`; `subject`
+%   before #88). An element became one, id preserved.
+tf = ~isempty(id) && isKey(idClass, id) && any(strcmp(idClass(id), {'entity', 'subject'}));
 end
 
 function c = classNameOf(s)

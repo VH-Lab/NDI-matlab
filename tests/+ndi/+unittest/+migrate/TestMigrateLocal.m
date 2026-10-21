@@ -4,8 +4,13 @@ classdef TestMigrateLocal < matlab.unittest.TestCase
 %   Builds a synthetic NDI session tree on the fly (a directory with
 %   a .ndi/ subdirectory holding either a v1 did-sqlite database or a
 %   matlabdumbjsondb file set), runs ndi.migrate.local against it, and
-%   inspects the resulting V_delta sqlite, the backup, the quarantine
-%   sidecar, the lock semantics, and the idempotency fast pass.
+%   inspects the resulting sqlite, the backup, the quarantine sidecar,
+%   the lock semantics, and the idempotency fast pass.
+%
+%   Every call but testDefaultTargetIsVeta's explicit one relies on the
+%   DEFAULT TargetVersion, which is 'V_eta' since 2026-10-21
+%   (VH-Lab/NDI-matlab#804; it was 'V_delta'), so these tests run the
+%   V_eta path: +migrators_j in pass 1 and the second pass.
 %
 %   Tests run with Validate=false so the test runner does not need a
 %   checked-out did-schema tree next to it. The mksqlite gate lives in
@@ -44,6 +49,33 @@ classdef TestMigrateLocal < matlab.unittest.TestCase
     end
 
     methods (Test)
+
+        function testDefaultTargetIsVeta(testCase)
+            % ndi.migrate.local migrates to V_eta unless asked otherwise
+            % (VH-Lab/NDI-matlab#804): it writes V_eta.sqlite and runs the
+            % V_eta second pass, whose report is carried on the result.
+            srcSqlite = fullfile(testCase.SessionRoot, '.ndi', 'did-sqlite.sqlite');
+            buildV1Sqlite(srcSqlite, {jsonencode(makeV1Body('alpha'))});
+
+            result = ndi.migrate.local(testCase.SessionRoot, 'Validate', false);
+
+            [~, name, ext] = fileparts(result.destination);
+            verifyEqual(testCase, [name ext], 'V_eta.sqlite');
+            verifyTrue(testCase, isfile(fullfile(testCase.SessionRoot, '.ndi', 'V_eta.sqlite')));
+            verifyFalse(testCase, isfile(fullfile(testCase.SessionRoot, '.ndi', 'V_delta.sqlite')));
+            % result.secondPass exists on every target, but its reports are
+            % [] unless the V_eta second pass ran; the strain pass reports
+            % its denominator whenever it is handed documents
+            verifyNotEmpty(testCase, result.secondPass.strainAssembly, ...
+                'the V_eta second pass did not run on the default target');
+            verifyGreaterThan(testCase, result.secondPass.strainAssembly.documents_inspected, 0);
+
+            % the default is declared, not inferred from a file name
+            explicit = ndi.migrate.local(testCase.SessionRoot, 'Validate', false, ...
+                'TargetVersion', 'V_eta');
+            verifyTrue(testCase, explicit.alreadyMigrated, ...
+                'an explicit V_eta run finds the default run''s V_eta.sqlite');
+        end
 
         function testMigratesV1SqliteToVDelta(testCase)
             % Round-trip a synthetic v1 sqlite store: produces the
@@ -231,22 +263,35 @@ classdef TestMigrateLocal < matlab.unittest.TestCase
         function testReferencesReported(testCase)
             % depends_on edge pointing at a non-existent id surfaces
             % as an orphan in the references report (no quarantine).
+            %
+            % The batch carries its `session` document, as a real session
+            % directory does (ndi.session.dir persists one on first open). On
+            % did-schema #88 base.session_id is a `session_id` EDGE to the
+            % session entity, whose base.id IS the session id
+            % (V_eta_relation_inheritance_plan.md item 4), so every document
+            % carries one more edge -- and without the session document every
+            % one of them would be an orphan. The ONE orphan is the parent_id.
+            session = makeV1Session();
             good = makeV1Body('alpha');
             orphan = makeV1Body('beta');
             orphan.depends_on = struct( ...
                 'name',  'parent_id', ...
                 'value', 'deadbeefdeadbeef_0000111122223333');
             srcSqlite = fullfile(testCase.SessionRoot, '.ndi', 'did-sqlite.sqlite');
-            buildV1Sqlite(srcSqlite, {jsonencode(good), jsonencode(orphan)});
+            buildV1Sqlite(srcSqlite, {jsonencode(session), jsonencode(good), ...
+                jsonencode(orphan)});
 
             result = ndi.migrate.local(testCase.SessionRoot, ...
                 'Validate', false);
 
-            verifyEqual(testCase, result.summary.migrated_count, 2);
+            verifyEqual(testCase, result.summary.migrated_count, 3);
             verifyEqual(testCase, result.references.orphan_count, 1);
-            verifyEqual(testCase, result.references.edges_examined, 1);
+            sessionEdges = 0;
+            if ndi.v2.sessionIdIsEdge()
+                sessionEdges = 3;     % one per document, the session's own included
+            end
+            verifyEqual(testCase, result.references.edges_examined, 1 + sessionEdges);
         end
-
     end
 end
 
@@ -267,6 +312,25 @@ body.base = struct( ...
     'name',       name, ...
     'datestamp',  '2024-06-01T12:00:00.000Z');
 body.demo_a = struct('marker', name);
+end
+
+function body = makeV1Session()
+% the did_v1 `session` document ndi.session.dir writes: base.session_id is
+% the session id (makeV1Body's), session.reference its name
+body = struct();
+body.document_class = struct( ...
+    'class_name',    'session', ...
+    'class_version', '1.0.0', ...
+    'superclasses',  struct( ...
+        'class_name',    'base', ...
+        'class_version', '1.0.0'));
+body.depends_on = struct('name', {}, 'value', {});
+body.base = struct( ...
+    'id',         'aabb1122ccdd3344_5e55100000000000', ...
+    'session_id', 'aabb1122ccdd3344_9900aabbccddeeff', ...
+    'name',       'session', ...
+    'datestamp',  '2024-06-01T12:00:00.000Z');
+body.session = struct('reference', 'test_session');
 end
 
 function s = pad16(name)

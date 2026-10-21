@@ -137,16 +137,59 @@ classdef TestEpochAnchorFold < matlab.unittest.TestCase
             [plan, report] = ndi.migrate.internal.epochAnchorFold(docs, idx);
             testCase.verifyEqual(numel(plan), 1);
             b = plan(1).body;
+            % did-schema #88: `relative_time_reference` (was relative_reference)
             testCase.verifyEqual(b.document_class.class_name, ...
-                'relative_reference');
-            testCase.verifyEqual(b.document_class.class_version, '2.0.0');
-            testCase.verifyEqual(b.document_class.superclasses.class_name, ...
-                'time_reference');
+                'relative_time_reference');
+            testCase.verifyEqual({b.document_class.superclasses.class_name}, ...
+                {'time_reference', 'base'});
             testCase.verifyEqual(b.document_class.schema_version, 'V_eta');
             testCase.verifyEqual(report.anchors_planned, 1);
             testCase.verifyTrue(report.changed);
         end
 
+
+        function testABathAnchorIsReanchoredToItsEpoch(testCase)
+            % did-schema #88: the bath assembler mints a VALID "during the
+            % session" relative_time_reference and hands over its epoch; the
+            % fold re-points it at the minted epoch, id preserved
+            docs = {sessionAnchorDoc('bath_anchor_1', 'sess_09')};
+            idx  = epochRow('sess_09', 't00001', 'epoch_doc_A');
+            info = struct('anchor_id', 'bath_anchor_1', 'session_id', 'sess_09', ...
+                'epoch_string', 't00001', 'epoch_clock', 'approx_dev_global_time');
+            [plan, report] = ndi.migrate.internal.epochAnchorFold(docs, idx, info);
+            testCase.verifyEqual(report.bath_anchors_handed_over, 1);
+            testCase.verifyEqual(report.bath_anchors_seen, 1);
+            testCase.verifyEqual(numel(plan), 1);
+            b = plan(1).body;
+            testCase.verifyEqual(b.base.id, 'bath_anchor_1');
+            testCase.verifyEqual(b.document_class.class_name, 'relative_time_reference');
+            testCase.verifyEqual(depValue(b, 'referent_id'), 'epoch_doc_A');
+            testCase.verifyEqual(b.relative_time_reference.value.clock.name, 'dev_global_time');
+            testCase.verifyEqual(b.relative_time_reference.value.relation.name, 'intervalDuring');
+            testCase.verifyEqual(b.time_reference.clock_tolerance.seconds, 5);
+        end
+
+        function testABathAnchorWithNoEpochDocumentStaysOnItsSession(testCase)
+            docs = {sessionAnchorDoc('bath_anchor_1', 'sess_09')};
+            info = struct('anchor_id', 'bath_anchor_1', 'session_id', 'sess_09', ...
+                'epoch_string', 't00009', 'epoch_clock', 'dev_local_time');
+            [plan, report] = ndi.migrate.internal.epochAnchorFold(docs, ...
+                epochRow('sess_09', 't00001', 'epoch_doc_A'), info);
+            testCase.verifyEmpty(plan);
+            testCase.verifyEqual(report.refused_no_epoch_document, 1);
+        end
+
+        function testAnAnchorNotHandedOverIsNotTouched(testCase)
+            % only the anchors the bath assembler named are re-anchored; any
+            % other session anchor is left alone
+            docs = {sessionAnchorDoc('other_anchor', 'sess_09')};
+            info = struct('anchor_id', 'bath_anchor_1', 'session_id', 'sess_09', ...
+                'epoch_string', 't00001', 'epoch_clock', 'dev_local_time');
+            [plan, report] = ndi.migrate.internal.epochAnchorFold(docs, ...
+                epochRow('sess_09', 't00001', 'epoch_doc_A'), info);
+            testCase.verifyEmpty(plan);
+            testCase.verifyEqual(report.bath_anchors_seen, 0);
+        end
         function testTheDocumentIdIsPreserved(testCase)
             % Every `time_reference_1` edge on the manipulation points here. If
             % the id moved, the fold would manufacture orphans -- the 11,448
@@ -158,15 +201,17 @@ classdef TestEpochAnchorFold < matlab.unittest.TestCase
         end
 
         function testRelativeToNamesTheMintedEpochDocument(testCase)
+            % the referent is the ONLY dependency besides the session (a
+            % `session_id` edge on a schema that keeps it as one, #88)
             [docs, idx] = oneFoldableAnchor();
             [plan, ~] = ndi.migrate.internal.epochAnchorFold(docs, idx);
             deps = plan(1).body.depends_on;
-            testCase.verifyEqual(numel(deps), 1);
-            testCase.verifyEqual(deps(1).name, 'relative_to');
-            testCase.verifyEqual(deps(1).value, 'epoch_doc_A');
+            names = {deps.name};
+            names = names(~strcmp(names, 'session_id'));
+            testCase.verifyEqual(names, {'referent_id'});
+            testCase.verifyEqual(depValue(plan(1).body, 'referent_id'), 'epoch_doc_A');
             testCase.verifyEqual(plan(1).epoch_document_id, 'epoch_doc_A');
         end
-
         function testTheRetiredElementEdgeIsReplacedNotKept(testCase)
             % `relative_reference` declares exactly one dependency. Keeping
             % `element_id` would be an undeclared edge on the new class.
@@ -195,7 +240,7 @@ classdef TestEpochAnchorFold < matlab.unittest.TestCase
             % resolveSessionAnchors uses.
             [docs, idx] = oneFoldableAnchor();
             [plan, ~] = ndi.migrate.internal.epochAnchorFold(docs, idx);
-            rel = plan(1).body.relative_reference.value.relation;
+            rel = plan(1).body.relative_time_reference.value.relation;
             testCase.verifyEqual(rel.node, 'time:intervalDuring');
             testCase.verifyEqual(rel.name, 'intervalDuring');
         end
@@ -206,7 +251,7 @@ classdef TestEpochAnchorFold < matlab.unittest.TestCase
             % NaN metrics is the hollow document silentLoss exists to catch.
             [docs, idx] = oneFoldableAnchor();
             [plan, ~] = ndi.migrate.internal.epochAnchorFold(docs, idx);
-            value = plan(1).body.relative_reference.value;
+            value = plan(1).body.relative_time_reference.value;
             testCase.verifyFalse(isfield(value, 'start'));
             testCase.verifyFalse(isfield(value, 'duration'));
         end
@@ -268,7 +313,7 @@ classdef TestEpochAnchorFold < matlab.unittest.TestCase
                 idx  = epochRow('sess_09', 't00001', 'epoch_doc_A');
                 [plan, report] = ndi.migrate.internal.epochAnchorFold(docs, idx);
                 testCase.verifyEqual(numel(plan), 1, names{k});
-                clk = plan(1).body.relative_reference.value.clock;
+                clk = plan(1).body.relative_time_reference.value.clock;
                 testCase.verifyEqual(clk.name, names{k});
                 % Nodes are STAGED EMPTY in the schema's own binding: no NDIC
                 % identifier can be assigned, so none is invented.
@@ -293,7 +338,7 @@ classdef TestEpochAnchorFold < matlab.unittest.TestCase
                 testCase.verifyEqual(numel(plan), 1, pairs{k,1});
                 b = plan(1).body;
                 testCase.verifyEqual( ...
-                    b.relative_reference.value.clock.name, pairs{k,2});
+                    b.relative_time_reference.value.clock.name, pairs{k,2});
                 testCase.verifyEqual(b.time_reference.clock_tolerance.seconds, 5);
                 testCase.verifyEqual(plan(1).clock_tolerance_seconds, 5);
                 testCase.verifyEqual(report.clock_tolerance_applied, 1);
@@ -324,7 +369,7 @@ classdef TestEpochAnchorFold < matlab.unittest.TestCase
             [plan, report] = ndi.migrate.internal.epochAnchorFold(docs, idx);
             testCase.verifyEqual(numel(plan), 1);
             testCase.verifyFalse( ...
-                isfield(plan(1).body.relative_reference.value, 'clock'));
+                isfield(plan(1).body.relative_time_reference.value, 'clock'));
             testCase.verifyEqual(report.planned_without_clock, 1);
             testCase.verifyEqual(report.refused_total, 0);
         end
@@ -448,6 +493,20 @@ b.base = struct('id', id, 'session_id', sessionId, ...
 b.time_reference = struct('is_approximate', false);
 b.epochid = struct('epochid', epochId);
 b.epoch_bounded_reference = struct('epoch_clock', epochClock);
+end
+
+function b = sessionAnchorDoc(id, sessionId)
+% what ndi.migrate.internal.stimulusBathToBath mints on did-schema #88
+b = struct();
+b.document_class = struct('class_name', 'relative_time_reference', ...
+    'class_version', '1.0.0', 'superclasses', struct('class_name', ...
+    {'time_reference', 'base'}, 'class_version', '1.0.0'), ...
+    'schema_version', 'V_eta');
+b.depends_on = struct('name', 'referent_id', 'value', sessionId);
+b.base = struct('id', id, 'session_id', sessionId, ...
+    'creation_timestamp', '2024-01-01T00:00:00.000Z');
+b.relative_time_reference = struct('value', struct('relation', ...
+    struct('node', 'time:intervalDuring', 'name', 'intervalDuring')));
 end
 
 function s = migratedDoc(id, sessionId, className)

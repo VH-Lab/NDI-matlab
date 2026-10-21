@@ -125,7 +125,9 @@ classdef TestMigrateSessionId < matlab.unittest.TestCase
             [plan, report] = ndi.migrate.internal.epochAnchorFold({a}, idx);
             testCase.verifyEqual(report.anchors_planned, 1);
             b = plan(1).body;
-            testCase.verifyEqual(ndi.v2.edgeIds(b, 'relative_to'), {'epoch_doc_A'});
+            % did-schema #88: relative_time_reference names its referent by
+            % `referent_id` (`relative_to` before)
+            testCase.verifyEqual(ndi.v2.edgeIds(b, 'referent_id'), {'epoch_doc_A'});
             testCase.verifyEqual(ndi.v2.edgeIds(b, 'session_id'), {'sess_09'});
             testCase.verifyEmpty(ndi.v2.edgeIds(b, 'element_id'));
             testCase.verifyFalse(isfield(b.base, 'session_id'));
@@ -135,7 +137,7 @@ classdef TestMigrateSessionId < matlab.unittest.TestCase
             [plan, ~] = ndi.migrate.internal.epochAnchorFold({anchorDoc()}, idx);
             b = plan(1).body;
             testCase.verifyEqual(b.depends_on, ...
-                struct('name', 'relative_to', 'value', 'epoch_doc_A'));
+                struct('name', 'referent_id', 'value', 'epoch_doc_A'));
             testCase.verifyEqual(b.base.session_id, 'sess_09');
         end
     end
