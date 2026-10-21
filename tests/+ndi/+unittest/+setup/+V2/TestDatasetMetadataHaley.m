@@ -124,7 +124,9 @@ classdef TestDatasetMetadataHaley < matlab.unittest.TestCase
         function testAuthorsAreOrderedWithRoles(testCase)
             rels = relationsNamed(testCase.Result.documents, 'has_author');
             testCase.verifyEqual(numel(rels), 4);
-            seq = cellfun(@(r) r.directed_relation.sequence, rels);
+            seq = cellfun(@(r) r.directed_relation.order, rels);
+            % did-schema T20 renamed `sequence` to `order`; only `order` is emitted
+            testCase.verifyFalse(any(cellfun(@(r) isfield(r.directed_relation, 'sequence'), rels)));
             testCase.verifyEqual(sort(seq), 1:4);
             first = rels{seq == 1};
             testCase.verifyEqual(parentOf(first), testCase.Result.ids('haley'));

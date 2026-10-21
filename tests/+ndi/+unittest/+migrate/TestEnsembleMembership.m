@@ -5,7 +5,7 @@ classdef TestEnsembleMembership < matlab.unittest.TestCase
 %   ndi.migrate.internal.ensembleMembership turns each did_v1 `ensemble` MAP
 %   document into graph-native membership: a `member_of` `directed_relation`
 %   from every constituent neuron-subject to the ensemble group-subject
-%   (carrying its column order in `sequence`), plus `derived_from` provenance
+%   (carrying its column order in `order`), plus `derived_from` provenance
 %   recording that the combined marked-point-process binary is a rebuildable
 %   CACHE of those same neurons.
 %
@@ -55,9 +55,11 @@ classdef TestEnsembleMembership < matlab.unittest.TestCase
             testCase.verifyEqual(depValue(m{1}, 'child_id'), 'nrn_1');
             testCase.verifyEqual(depValue(m{1}, 'parent_id'), 'ens_1');
             testCase.verifyEqual(m{1}.directed_relation.relation.node, 'RO:0002350');
-            % column order rides on the declared `sequence` ordinal
-            testCase.verifyEqual(m{1}.directed_relation.sequence, 1);
-            testCase.verifyEqual(m{2}.directed_relation.sequence, 2);
+            % column order rides on the declared `order` ordinal
+            % (`sequence` until did-schema T20; only `order` is emitted)
+            testCase.verifyEqual(m{1}.directed_relation.order, 1);
+            testCase.verifyEqual(m{2}.directed_relation.order, 2);
+            testCase.verifyFalse(isfield(m{1}.directed_relation, 'sequence'));
 
             d = ofRelation(minted, 'derived_from');
             testCase.verifyEqual(numel(d), 2);
@@ -67,7 +69,8 @@ classdef TestEnsembleMembership < matlab.unittest.TestCase
             testCase.verifyEqual(depValue(d{1}, 'child_id'), 'aepoch_epoch_a');
             testCase.verifyEqual(depValue(d{1}, 'parent_id'), 'nrn_1');
             testCase.verifyEqual(d{1}.directed_relation.relation.node, 'RO:0001000');
-            % a derived_from edge is unordered -- no sequence
+            % a derived_from edge is unordered -- no order (under either name)
+            testCase.verifyFalse(isfield(d{1}.directed_relation, 'order'));
             testCase.verifyFalse(isfield(d{1}.directed_relation, 'sequence'));
         end
 
@@ -122,7 +125,7 @@ classdef TestEnsembleMembership < matlab.unittest.TestCase
             m = ofRelation(minted, 'member_of');
             byChild = containers.Map();
             for k = 1:numel(m)
-                byChild(depValue(m{k}, 'child_id')) = m{k}.directed_relation.sequence;
+                byChild(depValue(m{k}, 'child_id')) = m{k}.directed_relation.order;
             end
             testCase.verifyEqual(byChild('nrn_1'), 1);
             testCase.verifyEqual(byChild('nrn_2'), 2);

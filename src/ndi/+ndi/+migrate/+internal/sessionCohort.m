@@ -10,7 +10,7 @@ function docs = sessionCohort(cohortId, sessionId, memberIds, creationTimestamp)
 %                local_identifier: binding_registry_meta entity_type_bindings)
 %     member_of  a directed_relation per member, child = the animal, parent =
 %                the cohort (RO:0002350, completed by did2.build from the bound
-%                relation set). Unordered: a cohort leaves `sequence` empty.
+%                relation set). Unordered: a cohort leaves `order` empty.
 %
 %   THE DECISION (Jess Haley, 2026-10-21; V_eta_stimulus_model_plan.md, "Who
 %   received a presentation", decision 2, not a TEAM-SIGN-OFF line): several

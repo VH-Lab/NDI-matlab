@@ -334,7 +334,7 @@ function result = local(path, options)
         %       deferral emits can be a Path-S retarget candidate.
         %   (3) ENSEMBLE MEMBERSHIP: each `ensemble` map document becomes
         %       `member_of` edges (neuron-subject -> ensemble group-subject,
-        %       EPOCH-SCOPED, carrying column order in `sequence`) plus
+        %       EPOCH-SCOPED, carrying column order in `order`) plus
         %       `derived_from` provenance for the combined-binary cache.
         %       Adds only; drops nothing (the verify-before-delete gate has not
         %       run). See ndi.migrate.internal.ensembleMembership.
