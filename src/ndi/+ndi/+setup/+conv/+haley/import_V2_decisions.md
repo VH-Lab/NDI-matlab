@@ -9,6 +9,140 @@ Entries marked **DECIDED** were made by the dataset owner (jess) in
 conversation; **OPEN** entries are questions still to answer. The existing
 `doImport.m` is left unchanged (backwards compatibility).
 
+## Current rules
+
+A summary of the rule in force today, by topic, read off the whole log below.
+Each line cites the decision(s) that set it; rows it replaces are in
+parentheses. The log is the record: where this summary and a row disagree,
+the row wins, and this section should be corrected.
+
+### Dataset and study metadata
+
+- Shared entities (people, organizations, funding, publication, studies, software, products, strains, instruments, chemicals, recipes, seeding solutions, fit groups) are created once at the dataset level and referred to by id from each session (#20, #56, #65, #114).
+- Dataset required fields: accessibility = free access, ethics assessment = not required (#19); their variables, and the studies' `design`, are written by their decided nodes (#134).
+- Labs and departments are organizations linked upward by `suborganization_of` (#15); each organization's identifier is its own ROR, else its web address as an IRI, else none (#89; replaces #13).
+- Author roles (CRediT + corresponding author) ride on each `has_author` edge, and grant recipients are `awarded_to` (#18).
+- Instruments record their product by `instance_of` (#14); no serial numbers are recorded (#108); instruments are typed as devices on both schema shapes (#137).
+- A strain's stock listing is `distributed_as` its product (#17); software names its maker by `developed_by` and the dataset its NDI Cloud host by `hosted_by` (#85).
+- Recipes are formulations, from Jess's Benchling protocols where she has them and WormBook otherwise: potassium phosphate pH 6 (#86, replacing #56's), cholesterol stock (#90), MgSO4 and CaCl2 stocks, dihydrate EDTA (#91); LB and S-Complete also name the media kitchen's product (#56).
+- Studies: seven, from the eLife paper and the data (#12), each a `study` entity with `factors` and `design` (#11), minted in stage 3 beside its sessions (#50; replaces stage 2), `included_in` the dataset (#109b, proposal built ahead of signature; replaces #11's `part_of`).
+
+### Subjects, strains, species and genotype
+
+- Plates and patches are subjects (#1); every identifier is dataset-unique, prefixed by the folder name without `foraging`, camelCase within a part, `_` between parts, four-digit numbers (#37, #42; replaces #38's names), with a display `name` (#42).
+- Subjects per session: assay plates (one per `plateNum`, two videos = one subject), their patches, worms (#38, #42); acclimation plates per (strain, pick time) (#39, #42); food deprivation plates per (session, strain, `starvedTime`), Mutants only (#53); each acclimation plate has one patch, `<plate>_patch0001` (#93).
+- E. coli: all 126 plates are subjects, analysed or not (#43); a `rectangle` plate has 12 patches numbered as `bwlabel` numbers an ideal grid (#62; replaces #40's row-by-row), a partly detected image placed by the acetate template (#80); a `none` plate has one patch or none (#40).
+- `subject.type`: worm organism, cohort group, plates material, a bacterial patch culture, an LB-alone patch material (#55); instruments device (#137).
+- Kind: a bacterial patch carries Sample Type = bacterial patch (#104), and every plate carries its own Sample Type (assay / acclimation / food deprivation plate, or Petri Dish for E. coli) (#107; settles #104's open point).
+- Strains carry their WormBase node as the term (#68) and RRIDs in the WormBase-number form (#88); OP50 also carries NCBITaxon:637912 as an identifier (#68, #69a); every C. elegans strain but N2 has N2 as background (#69c) and is hermaphrodite, asserted distributively on the cohort (#68).
+- Genetic strain type: wild type is BAO:0000089 (#126; replaces #102's NCIT Wild Type); a strain's genotype is a `text_assertion` (Genotype) on the one-entity schema, prose in the description otherwise (#117).
+- Species is stated once, on the strain, and reaches cohorts and patches through `instance_of` on the one-entity schema; on did-schema main it stays on each cohort and seeded patch with a `strain_id` strain assertion (#112; replaces #55's per-cohort species there).
+- Developmental stage: one distributive `term_observation` per cohort, L4 larva Ce, by visual inspection, at the pick (#69b, #100, #95d).
+
+### Cohorts and groups
+
+- The worms of one assay plate are one `group` subject, `<assay plate>_worms`; each worm is `member_of` it, and containment, transfers and food deprivation are stated once on the cohort with `distributive` true (#55; replaces #52's per-worm relations).
+- Each density fit's patches form a dataset-level `group` subject whose members are `member_of` it (#65).
+
+### Plates, patches and containment
+
+- A worm cohort is `contained_in` (RO:0001018) each plate it was on in turn: acclimation from the pick, food deprivation from `starvedTime`, assay from the transfer T (#52, #55).
+- A patch is `contained_in` its plate from the plate's seeding to the plate's last recording (#107; replaces #52's `part_of`); an acclimation plate's patch stay ends at the last move of worms off it (#130a).
+- What passes: `part_of`, `instance_of` and the other physical relations pass assertions, `member_of` passes distributive statements, `contained_in` passes context only, records' `included_in` passes nothing (#109a, proposal built ahead of signature). So a plate's assertions, including its exclusion, stay on the plate, and its cold-room / room-temperature / incubator windows reach the patch and worms while they are there (#107, #109d).
+- Plates are not related to each other, and the brief empty NGM transfer plate is not a subject (#52).
+
+### Sessions, linked sessions and the dataset folder record
+
+- One session per experimental day for C. elegans (#5, from the tableOfContents rows, #26) and one per `expNum` for E. coli (#23); identifier `<prefix>_<number>` (#37; replaces #24/#26's `foragingConcentration_0001`) with a display `name` (#24) and the day's free text in `description` (#22, #26).
+- A session is `included_in` its study (#109b, proposal; replaces `part_of`, #11, #26); its own time reference is its UTC extent, first recording start to last recording end (#45).
+- Output is a separate tree; the raw data is never written to (#21). A run that writes the dataset ingests every session into one dataset database and writes no session folders; `'SessionFolders', true` writes each session once to its own folder and links it with a `linked_session`; a run without the dataset stage writes session folders only (#71; replaces #66's write-twice).
+- Before writing, the whole set is checked as one: denominator, dangling edges, repeated ids, session -> study -> dataset, census (#66, #71).
+- Acquisition systems and the `software` documents naming NDI classes live in each session (#29, #33); one system per camera, one for the microscope (#28).
+- Where `session_id` is an edge, the dataset entity is the dataset folder's own record and every dataset-level document points at it; no separate dataset `session` document is written (#109c, proposal; replaces #66's on that leg); the folder's reference is `.ndi/reference.txt` only (#115).
+
+### Recordings and epochs
+
+- Each behaviour video, lawn clip and E. coli image (raw fluorescence and brightfield) is a recording with one epoch; E. coli is one epoch per image (#9, #10, #27, #64, #97; brightfield replaces #43).
+- A recording's file is an `opaque_body` held by location, not ingested (#34, #47), its `format` an EDAM term (#84; replaces #34's media type); NDI finds it through the documents, writing no links or probe-map files (#51; replaces #31, #32, #46).
+- The `epoch` document's `local_identifier` is NDI's epoch id; each camera's `epoch_file_pattern` picks its recordings (#46, #51).
+- Methods: behaviour videos brightfield imaging (EMPTY:0000300), lawn contrast videos oblique illumination imaging (EMPTY:0000348) (#108), E. coli fluorescence microscopy (NCIT:C16856) or brightfield microscopy (NCIT:C19827) (#103; replaces #49's names and #97's EMPTY:0000300 for the microscope); the variable is Imaging Signal Intensity (#102; replaces #49's `image intensity`); `acquisition_channels` stay empty for cameras (#49).
+- Keys: [image vertical, image horizontal] in pixels (om:pixel) and, for a video, `time` (om:Time) (#70b, #116a, #116c); behaviour videos have no channel key, and a video whose channels differ is reported (#116e).
+
+### Time references and anchors
+
+- An epoch carries its UTC extent (`absolute_time_reference`, America/Los_Angeles source) and a video its `dev_local_time` extent from 0; the recording points at both (#35, #48).
+- A video's frame times are measured with `ReadVideos` and cached; without it frame k is at (k-1)/frameRate (#87; settles #9).
+- Video times are exact; every hand-written time is to the minute and approximate, tolerance [60 60] s with a minute-resolution `source_value` (#52, #53, #54); `starvedTime` is hand-written (#53; replaces #52's "exact for now").
+- The assay transfer T is the first behaviour video's start, or the lawn clip's start on lawn-first plates (by the spec's `transfer_protocol`), with bound [minus 0] (#52); a window records its end with that end's own precision, and its duration bound is the sum of its ends' (#52).
+- An E. coli plate's cold room after pouring ends at seeding with bound [360 60] s (#58); an acclimation seeding time known only to a span takes the midpoint, tolerance widened by half the span (#75); a day-dated instant has tolerance [0, 86399] s (#114).
+- A time or key with no anchor of its own counts from the start of its statement's time reference (#118, tenet proposal); encounter times are seconds from the plate's first recording's start (#63, #87, #118).
+- Windows and stays end where the source gives an end: an E. coli plate's room-temperature window ends at its last image (#130b; replaces #58's "no end"). No time in the source, no time reference and no manipulation (#52, #54).
+
+### Corrections and missing values
+
+- A correction is applied only while the source reads its `was`, is reported (`corrected` / `correctionNotApplied`), and leaves the note "Corrected from <was>: <reason> (correction <key>)" where the value reaches a document (#111; one mechanism for the paths of #57, #70e, #72, #77; extended to the fits by #131).
+- Named corrections in force: concentration experiment 14 is `single` (#72), plate 90's peptone is `without` (#56d, reaching the fits, #131), Mini experiment 24's acclimation room temperature 09:02 (#70e), Sensory experiment 2's acclimation room temperature 4 Jan 09:49 (#77), Matching 2023-03-27 and E. coli 2022-04-28 have no CFU (#57).
+- Estimated times are marked approximate with no bound and their reason in the note, not corrected: Concentration plates 1-10 (#54d, #58) and Mini plates 55 and 189 (#74).
+- Not corrected, only cross-checked: the tableOfContents worm range (#3); Mini plates with `arenaDiameter` 0 (#56e); Mutants plate 1's failed start (#41, #70d); plates 161/162's camera swap, kept as written with a note (#83b).
+- Missing is not a value: nothing is filled or noted where the source says nothing (#114, replacing #82's note); a NaN density estimate stays NaN (#99); an encounter with no type is Cannot Be Determined, NCIT:C179711 (#96); a label with no registered term raises an error rather than falling back to text (#136).
+
+### Seeding, formulations, doses and the droplet
+
+- Pouring: a `dose_manipulation` of every plate, 25 mL of NGM or NGM without peptone by the plate's `peptone` (acclimation and food deprivation plates with peptone), at `timePoured` (E. coli) or a relative time `intervalBefore` the seeding (#54a, #56, #58); E. coli pours note that carbenicillin was probably added but is unrecorded (#56c).
+- Seeding: a `dose_manipulation` of each patch (its `lawnVolume`) at the seeding time, variable the strain (OP50, or OP50-GFP on E. coli), `formulation_id` that day's solution (#54b, #58, #105); the acclimation seeding dose is on the acclimation plate's patch, 200 uL at OD600 1 in LB (#57, #93); an OD600 0 patch names its own study's diluent (#94).
+- Seeding solutions: per seeding day an OD600 10 stock and one dilution per nominal OD600, each a dataset-level `material` entity tied to its formulation (its plan: target OD600 10, or a `volume_fraction` of the stock) by a `dose_manipulation` (#57, #114; replaces #57's measured OD600 and CFU on the formulation); a day with no reading has its plan alone, named like any other (#82, #114).
+- Diluent: S-Complete for Matching, LB otherwise; a solution shared by studies with different diluents lists none (#56a, #57); OP50-GFP grown with carbenicillin 100 ug/mL, CHEBI:3393 (#56, #93; replaces #54b's ampicillin).
+- The assay-transfer droplet is its own distributive `dose_manipulation` of the cohort, `formulation_id` the S-Complete formulation, variable S medium, no amount, no method (#132; replaces #56/#58's `droplet` method parameter).
+- Transfers: a `term_manipulation` per cohort move, variable `location` = the plate kind moved to, method worm picking / agar plug transfer / eyelash picking, method parameter the cleaning step (#58 (4), #106, #132). Food deprivation: `food availability` = none on the cohort, no method (#58).
+- Temperature: a `temperature_manipulation` per move, a window to the next, method refrigeration (cold room, 4 C), ambient exposure (room temperature, 20 C), or incubation (20 C incubator) (#54c, #56, #58; 20 C replaces #54c's 25 C).
+
+### Observations
+
+- Temperature and humidity: one `temperature_observation` (ambient temperature, celsius) and one `humidity_observation` (relative humidity) per filmed assay plate, instrument the temperature probe, method Arithmetic Mean, timed by the plate's recordings; none where the plate's videos disagree or its video is missing (#59, #121; replaces #59's "no method").
+- OD600: the stock's measured `OD600Real` is a `concentration_observation` of the stock entity, `od600` canonical with source pair, method Optical Density Measurement, instrument the spectrophotometer (#101, #114, #129); measured OD600 is MCO:0000059 and a planned one `target seeding OD600` (#110, #114).
+- CFU: a second `concentration_observation` of the stock, Cell Density by Viable Cell Count, `particles_per_liter` = CFU x 2e10 with source pair CFU x 2e7 CFU/mL, no instrument; no measured value remains in a plan (#57, #129; replaces #114's "CFU stays on the plan").
+
+### Calculations
+
+- Geometry: per behaviour video a `coordinate_system` and, from the recording, the masks, nearest-patch map, lawn registration score (Proportion) and each patch's centre, radius and circularity (#60, #70a, #116b); bytes ingested as gzip (#60).
+- Masks: variable Imaging Region of Interest with condition Location = arena / reference mark / bacterial patch (#113; replaces #102d's Binary Mask); the lawn masks take the target patch diameter and spacing `length_assertion`s as inputs (#93).
+- Tracks: positions, speed, signed distance from the nearest bacterial patch edge, and nearest patch, one statement per kind per worm keyed [video frame x body part] (#61, #93, #119); body parts are body midpoint and anterior / posterior end point (#102c, #128; replaces UBERON head/tail); tracks kept as the analysis left them, gap fill stated as method parameters (#61).
+- Encounters: per worm an `encounter onset` list and one statement per kept quantity keyed by it (#63); `entity in contact` and `encounter period` (#102e); the patch-edge distance is the signed variable, maximum during and minimum between encounters (#119; replaces #63's); median speed states `datum_order` (#120).
+- Encounter type: a `term_calculation` (#93) with the four behavioural categories, method EDAM Classification and four threshold method parameters (#96, #127; names replace #96's); the two posteriors are separate `score_calculation`s by Gaussian mixture model clustering and quadratic discriminant analysis (#95a).
+- E. coli profiles: the raw images are recordings and each normalised TIFF is an `intensity_calculation` from them (#64); masks, nearest-patch maps, per-patch values and profile curves take the normalised image as input (#62, #64); `borderAmplitude` is `fluorescence intensity` by peak amplitude from the patch edge (#123); per-patch values take the profile curve as input (#122b).
+- Density fits: per condition a `model_fit_calculation`, linear regression, the published CSV's numbers checked by refit, inputs exactly the included patches' border amplitudes, condition the planned growth duration (0 / 12 / 48 h, exact), no method parameters (#65, #95c, #125; plate 90 corrected per #131, so these fits differ from the paper's).
+- Density estimates and relative density: per worm with encounters, estimated patch and cultivation-plate border amplitudes stated on the patches (#65, #93), inputs including the seeding dose (#122c); beside each, `relative cell density` in OD600 equivalents, floor 0.01 at assay plates only (#99, #103a; replaces #65's "not stored").
+- Calculations list the inputs they were computed from (#122); implementation settings that change no stored value's meaning are not stated (#95c).
+
+### Terms and the term registry
+
+- Every term comes from one table (`haleyTerm`), looked for in the registry, then an existing ontology, then a new EMPTY term; did2.build refuses a term the registry lacks (#93, #102, tenet T19).
+- A term's stored name is the ontology's label (#100, #102a); every registered term has a node (#106); the general term where the meaning is the same (#102c, #103a); a term's name matches the specificity of its definition (#127).
+- A variable names a property, the value its state, the method how (T16, #58 (4)); a variable never names how a value is stored (#113); a summary of a quantity is that quantity with the statistic as method (#121); a planned value is said by its term, not a qualifier (#110).
+- Keys, conditions and method parameters are one entry with one value form (#92).
+- Source units are their registered terms where the schema's `source_unit` is an `ontology_term`, spellings on did-schema main; a pH has none; "g in N mL" stocks are g/L (#133).
+- OD600 is its own canonical concentration unit, `od600` (#101).
+
+### Identifiers
+
+- CURIE spelling of strains: RRID `WB-STRAIN:WBStrain<number>` and `wormbase:WBStrain<number>` (#88).
+- Organizations: ROR only where one exists; otherwise the full web address as an IRI, not a `URL:` CURIE (#89).
+- Licence: CC-BY-4.0 (#16), written on the one-entity schema as a `term_assertion` whose node is its SPDX IRI (#135).
+- Keywords: one `text_assertion` (#135).
+
+### What is not imported
+
+- WormLab `.csv` tracks (not on disk) (#27, #98 M1); the posterior models, exploitation GLM results, encounter thresholds file and patch-permutation null (#98 M3-M6).
+- The 2,061 E. coli images with no file (#79, #43); the two camera-2 files on 6 May 2022 (#44, #83a); the possible failed-start file of mutants_0001 plate 1 (#81); recordings for the 0-frame failed start and Mini's unrecorded cameras (#27).
+- Derived columns: the track's computed columns and `noTrack` (#61), `lawnClosestOD600` and `firstFrame` (#60), several `lawnAnalysis` and `lawnProfiles` fields (#62, #64), encounter durations, times since transfer and censor flags (#63), `timeSlowDown` (#95b), the background fits and their r^2 / outlier counts (#64, #93), `starvedDuration` (#53).
+- A master suspension document (#57); the plate role as its own assertion and old worm identifiers (#69e, #69f); doImport's extra exclusion (#70c); the tableOfContents day `include` flag as a tag or description (#73a; corrects #2); never-filmed plates get `video recording` = false, not an exclusion (#93, #95e, #124; replaces #73c).
+
+### Unresolved
+
+- **How many studies.** #11 says "JH: six flat studies under the dataset"; #12, the same day, makes foragingConcentration two studies, which with Mini, Matching, Mutants, Sensory and ecoli is seven. No later row restates the count. (The spec's `studies` lists seven.)
+
+Open points the rows record as still to decide (not conflicts): the qualifier term for masks, `Location` (#113); whether NDI Cloud filters on `base.session_id` (#109); the signatures of #109 (proposal) and #118 (tenet proposal); #132's `next` leg, which waited on #133's unregistered units.
+
 ## Principles (DECIDED 2026-09-30)
 
 - Changes to NDI-matlab and DID-matlab are backwards compatible: new
