@@ -218,10 +218,22 @@ if ~strcmp(options.Studies, 'only')
             struct('node', '', 'biological_sex', ''));
         f = struct('name', s.name, 'species', s.species, ...
             'genetic_strain_type', asTerm(s.genetic_strain_type));
-        % V2 `strain` has no genotype field (nor does openMINDS Strain); the
-        % genotype string is kept in the description rather than dropped.
-        desc = strjoin(cellfun(@char, [asCell(getOr(s, 'genotype', {})), ...
-            asCell(getOr(s, 'description', {}))], 'UniformOutput', false), '. ');
+        if ndi.setup.V2.mergedEntities()
+            % one entity class: the genotype is a text assertion about the
+            % strain, variable NCIT:C16631 Genotype (ndi.setup.V2.entityDocuments;
+            % Haley decision #117), so it is queryable and reaches the strain's
+            % instances; the description keeps human prose only
+            if isfield(s, 'genotype') && ~isempty(s.genotype)
+                f.genotype = char(s.genotype);
+            end
+            desc = char(getOr(s, 'description', ''));
+        else
+            % a `strain` class has no genotype field (nor does openMINDS
+            % Strain): the genotype string is kept in the description rather
+            % than dropped
+            desc = strjoin(cellfun(@char, [asCell(getOr(s, 'genotype', {})), ...
+                asCell(getOr(s, 'description', {}))], 'UniformOutput', false), '. ');
+        end
         if ~isempty(desc)
             f.description = desc;
         end

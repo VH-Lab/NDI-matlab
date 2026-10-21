@@ -241,6 +241,15 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             r = find1('concentration_0001_acclimationPlate0001_patch0001', ...
                 'concentration_0001_acclimationPlate0001', 'contained_in');
             testCase.verifyNumElements(r, 1, 'an acclimation plate''s one patch is in it');
+            % ... from its seeding until the last move of worms off the plate,
+            % the transfer T, early only (decision #130): the source shows the
+            % patch there at least that long
+            tr = edgeAll(r{1}, 'time_reference_id');
+            testCase.verifyNumElements(tr, 1);
+            stay = byId(tr{1}).absolute_time_reference.value;
+            testCase.verifyNotEmpty(stay.end.utc, 'the stay ends');
+            testCase.verifyTrue(logical(stay.end.approximate), 'at T, which is approximate');
+            testCase.verifyEqual(stay.end.tolerance.plus, 0, 'T is early only');
 
             % each worm is a member of its plate's cohort, timelessly; the
             % plates and moves are stated once, on the cohort (decision #55)
@@ -574,6 +583,7 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             stockId = ids('suspension_op50_20220202#solution');
             dilId = ids('suspension_op50_20220202_od1#solution');
             aboutMd = @(id, leaf) md(strcmp(mk, leaf) & cellfun(@(d) strcmp(edge(d, 'entity_id'), id), md));
+            obAll = aboutMd(ids('suspension_op50_20220202#solution'), 'concentration_observation');
             prep = aboutMd(stockId, 'dose_manipulation');
             testCase.verifyNumElements(prep, 1, 'the stock was made to its plan');
             testCase.verifyEqual(edge(prep{1}, 'formulation_id'), ids('suspension_op50_20220202'));
@@ -595,9 +605,32 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
                 testCase.verifyEqual(numbers(ndi.v2.blockOf(ob{1}, 'concentration', 'value'), ...
                     'source_value'), 10.2, 'AbsTol', 1e-12, 'measured, not the plan');
                 testCase.verifyEqual(edge(ob{1}, 'instrument_id'), ids('spectrophotometer_1'));
+                testCase.verifyEqual(ob{1}.interaction.method.node, 'NCIT:C85776', ...
+                    'Optical Density Measurement (decision #129)');
                 testCase.verifyEmpty(aboutMd(dilId, 'concentration_observation'), ...
                     'a dilution was not measured: no observation (T14)');
             end
+            testCase.verifyFalse(isfield(g{1}.concentration, 'particles_per_liter'), ...
+                'the plan holds no measured CFU (decision #129)');
+            if ndi.setup.V2.schemaHasLeaf('concentration_observation')
+                % the stock's CFU (the fixture's 500): Cell Density by viable
+                % cell count, CFU x 2e7 per mL, no instrument (decision #129)
+                cfu = obAll(cellfun(@(d) strcmp(d.statement.variable.node, 'NCIT:C120538'), obAll));
+                testCase.verifyNumElements(cfu, 1);
+                testCase.verifyEqual(cfu{1}.statement.variable.name, 'Cell Density');
+                testCase.verifyEqual(cfu{1}.interaction.method.node, 'NCIT:C130166');
+                cv = entries(ndi.v2.blockOf(cfu{1}, 'concentration', 'value'));
+                testCase.verifyEqual(cv{1}.particles_per_liter, 500 * 2e10, 'RelTol', 1e-12);
+                testCase.verifyEqual(cv{1}.source_value, 500 * 2e7, 'RelTol', 1e-12);
+                testCase.verifyEqual(cv{1}.source_unit, 'CFU/mL');
+                testCase.verifyEmpty(edge(cfu{1}, 'instrument_id'), 'counted on a plate');
+                testCase.verifyEqual(edge(cfu{1}, 'time_reference_id'), edge(ob{1}, 'time_reference_id'), ...
+                    'timed like the OD600: the seeding day');
+            end
+            % each patch's seeding dose is exported for its stage-12 estimates (#122)
+            sIds = result.written{1}.manipulations.seedIds;
+            testCase.verifyEqual(sIds(idOf('concentration_assayPlate0012_patch0001')), seed{1}.base.id);
+            testCase.verifyEqual(sIds(idOf('concentration_0001_acclimationPlate0001_patch0001')), acc{1}.base.id);
 
             % plate 12: into the cold room (4 C), then room temperature (20 C)
             tm = on(docs(strcmp(classes, 'temperature_manipulation')), 'concentration_assayPlate0012');
@@ -671,6 +704,10 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             testCase.verifyEqual(h12{1}.statement.variable.name, 'relative humidity');
             testCase.verifyEqual(h12{1}.statement.variable.node, 'om:RelativeHumidity');
             testCase.verifyEqual(edge(t12{1}, 'instrument_id'), probe);
+            % the probe's mean over the hour: the statistic is the method (T16,
+            % decision #121)
+            testCase.verifyEqual(t12{1}.interaction.method.node, 'NCIT:C53319');
+            testCase.verifyEqual(h12{1}.interaction.method.name, 'Arithmetic Mean');
             testCase.verifyEqual(edge(t12{1}, 'time_reference_id'), edge(h12{1}, 'time_reference_id'));
             recs = on(docs(strcmp(classes, 'intensity_observation')), 'concentration_assayPlate0012');
             testCase.verifyTrue(any(cellfun(@(d) ismember(edge(t12{1}, 'time_reference_id'), ...
@@ -900,11 +937,11 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             de = of('length_calculation', 'concentration_worm0121');
             testCase.verifyNumElements(de, 1);
             testCase.verifyNumElements(edgeAll(de{1}, 'input_id'), 2, 'the positions and the lawn mask');
-            testCase.verifyEqual(de{1}.statement.variable.node, 'PATO:0000040', 'distance');
-            cond = entries(de{1}.statement.conditions);
-            testCase.verifyNumElements(cond, 1);
-            testCase.verifyEqual(cond{1}.variable.node, 'NCIT:C45793', 'reference point');
-            testCase.verifyEqual(cond{1}.term.node, 'EMPTY:0000276', 'nearest bacterial patch edge');
+            testCase.verifyEqual(de{1}.statement.variable.node, 'EMPTY:0000350', ...
+                'signed distance from the nearest bacterial patch edge: the sign is the variable''s (#119)');
+            testCase.verifyEmpty(conditionsOf(de{1}), 'the variable names the edge it is measured from');
+            testCase.verifyFalse(isfield(de{1}.statement, 'notes') && ~isempty(de{1}.statement.notes), ...
+                'no sign convention in notes');
             v = testCase.bodyValues(sessionPath, docs, classes, de{1}.base.id, 'double');
             testCase.verifyEqual(v(:)', 2 * 1e-3 / 33 * ones(1, 5), 'AbsTol', 1e-15);
 
@@ -915,6 +952,92 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
                 v = testCase.bodyValues(sessionPath, docs, classes, np{1}.base.id, 'uint8');
                 testCase.verifyEqual(v(:)', uint8([0 0 255 0 0]), 'frame 3 is noTrack: the fill value');
             end
+        end
+
+        function testEcoliRoomTemperatureEndsAtTheLastImage(testCase)
+            % decision #130: the E. coli plate's room-temperature window ends
+            % where its patches' stay ends, at the plate's last image, so the
+            % window reaches the patches (tenet T17: a stay with no end does
+            % not pass)
+            result = testCase.write("ecoli_0001", ["metadata", "manipulations"]);
+            docs = testCase.documents(result.sessions.path{1});
+            classes = cellfun(@(d) d.document_class.class_name, docs, 'UniformOutput', false);
+            byId = containers.Map(cellfun(@(d) d.base.id, docs, 'UniformOutput', false), docs);
+            subj = docs(strcmp(classes, 'subject'));
+            idOf = containers.Map(cellfun(@(d) d.subject.local_identifier, subj, 'UniformOutput', false), ...
+                cellfun(@(d) d.base.id, subj, 'UniformOutput', false));
+            tm = docs(strcmp(classes, 'temperature_manipulation') & cellfun(@(d) ...
+                strcmp(edge(d, 'entity_id'), idOf('ecoli_plate0001')), docs));
+            room = tm(cellfun(@(d) strcmp(methodOf(d), 'ambient exposure'), tm));
+            testCase.verifyNumElements(room, 1);
+            w = byId(edge(room{1}, 'time_reference_id')).absolute_time_reference.value;
+            testCase.verifyNotEmpty(w.end.utc, 'the window ends');
+            rel = docs(strcmp(classes, 'directed_relation') & cellfun(@(d) ...
+                strcmp(edge(d, 'child_id'), idOf('ecoli_plate0001_patch0001')) && ...
+                strcmp(edge(d, 'parent_id'), idOf('ecoli_plate0001')), docs));
+            testCase.verifyNumElements(rel, 1);
+            stay = byId(edge(rel{1}, 'time_reference_id')).absolute_time_reference.value;
+            testCase.verifyEqual(w.end.utc, stay.end.utc, 'at the last image, where the stay ends');
+        end
+
+        function testTrackBodyPartsArePoints(testCase)
+            % decision #128: the tracked head and tail are the ends of the body
+            % spline -- `anterior end point` and `posterior end point`, points
+            % like `body midpoint` -- not UBERON's head and tail regions. The
+            % fixture with a head.mat beside midpoint.mat
+            root = tempname;
+            testCase.addTeardown(@() rmdir(root, 's'));
+            ndi.unittest.setup.V2.TestHaleyRecordings.writeFixture(root);
+            folder = fullfile(root, 'haley', 'celegans', 'foragingConcentration');
+            S = load(fullfile(folder, 'midpoint.mat'), 'data');
+            data = S.data; %#ok<NASGU>
+            save(fullfile(folder, 'head.mat'), 'data');
+            result = ndi.setup.conv.haley.import_V2(root, ...
+                'Stages', ["sessions", "subjects", "acquisition", "relations", "metadata", "calculations"], ...
+                'Sessions', "concentration_0001", 'OutputRoot', fullfile(root, 'haley_V2'), ...
+                'Write', true, 'Overwrite', true, 'ReadVideos', false);
+            docs = testCase.documents(result.sessions.path{1});
+            classes = cellfun(@(d) d.document_class.class_name, docs, 'UniformOutput', false);
+            pos = docs(strcmp(classes, 'position_calculation'));
+            testCase.verifyNotEmpty(pos);
+            k = entries(pos{1}.data.keys);
+            testCase.verifyEqual(k{2}.n, 2, 'midpoint and head');
+            testCase.verifyEqual({k{2}.term.node}, {'EMPTY:0000137', 'EMPTY:0000352'});
+            testCase.verifyEqual({k{2}.term.name}, {'body midpoint', 'anterior end point'});
+        end
+
+        function testDensityAppliesThePlatePeptoneCorrection(testCase)
+            % decision #131: stage 12 applies the spec's peptone correction to a
+            % plate's lawnAnalysis rows (applyCorrection, decision #111) BEFORE
+            % grouping, as plate 90 needs. Here a test correction marks the
+            % fixture's plate 1 (with peptone) as without: its 12 patches leave
+            % the with-peptone fits, so no fit has an included image
+            testCase.assumeTrue(ndi.setup.V2.schemaHasLeaf('time_calculation'), ...
+                'DID_SCHEMA_PATH does not hold time_calculation (did-schema PR #87)');
+            specFile = fullfile(fileparts(which('ndi.setup.conv.haley.import_V2')), 'import_V2_spec.json');
+            raw = fileread(specFile);
+            entry = ['{"key": "peptone_ecoli_plate_1_test", "folder": "ecoli", "plate": 1, ' ...
+                '"column": "peptone", "value": "without", "was": "with", ' ...
+                '"reason": "A test of decision #131."}, '];
+            raw = regexprep(raw, '"corrections":\s*\[', ['"corrections": [' entry], 'once');
+            out = tempname;
+            mkdir(out);
+            testCase.addTeardown(@() rmdir(out, 's'));
+            spec = fullfile(out, 'spec.json');
+            fid = fopen(spec, 'w', 'n', 'UTF-8');
+            fwrite(fid, raw, 'char');
+            fclose(fid);
+            result = ndi.setup.conv.haley.import_V2(testCase.Root, ...
+                'Stages', ["sessions", "subjects", "acquisition", "relations", "metadata", ...
+                "calculations", "density"], 'Sessions', "ecoli_0001", 'Spec', spec, ...
+                'OutputRoot', fullfile(out, 'haley_V2'), 'Write', true, 'Overwrite', true, ...
+                'ReadVideos', false);
+            de = result.density;
+            testCase.verifyTrue(any(contains(de.checks.corrected, 'peptone_ecoli_plate_1_test')), ...
+                'the correction is applied and reported');
+            testCase.verifyTrue(any(contains(de.checks.corrected, '12 lawnAnalysis row(s)')));
+            testCase.verifyEqual(de.counts.fits, 0, ...
+                'plate 1''s patches are without peptone now: no with-peptone fit has an image');
         end
 
         function testEcoliSession(testCase)
@@ -997,6 +1120,26 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             testCase.verifyEqual([list{1}.time.value.seconds], [1 3] / fr, 'AbsTol', 1e-9, ...
                 'rows 2 and 4 of a one-video track: frames 2 and 4');
             testCase.verifyEqual(methodOf(list{1}), 'encounter detection');
+            % the onsets count from the START of the list's time reference,
+            % which is the plate's first recording's start (tenet T14, decision
+            % #118): no "seconds from" note
+            testCase.verifyFalse(isfield(list{1}.statement, 'notes') && ~isempty(list{1}.statement.notes));
+            tref = docs(cellfun(@(d) any(strcmp(d.base.id, edgeAll(list{1}, 'time_reference_id'))), docs));
+            testCase.verifyNumElements(tref, 1);
+            recs = docs(strcmp(classes, 'intensity_observation') & cellfun(@(d) ...
+                strcmp(edge(d, 'entity_id'), idOf('concentration_assayPlate0012')), docs));
+            starts = {};
+            for r = 1:numel(recs)
+                for id = edgeAll(recs{r}, 'time_reference_id')
+                    t = docs(cellfun(@(d) strcmp(d.base.id, id{1}), docs));
+                    if ~isempty(t) && isfield(t{1}, 'absolute_time_reference')
+                        starts{end+1} = t{1}.absolute_time_reference.value.start.utc; %#ok<AGROW>
+                    end
+                end
+            end
+            starts = sort(starts);
+            testCase.verifyEqual(tref{1}.absolute_time_reference.value.start.utc, starts{1}, ...
+                'the list''s time reference starts at the plate''s first recording');
             lk = entries(list{1}.data.keys);
             testCase.verifyEqual(lk{1}.variable.node, 'NCIT:C62143', 'keyed `encounter`');
             l111 = named('time_calculation', 'concentration_worm0111', 'encounter onset time');
@@ -1016,6 +1159,11 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             testCase.verifyNumElements(keys, 2);
             testCase.verifyEqual(keys{2}.variable.name, 'encounter period');
             testCase.verifyEqual({keys{2}.term.name}, {'during the encounter', 'after the encounter'});
+            if ndi.setup.V2.schemaHasField('data', 'datum_order')
+                % the layout is declared, not noted (did-schema 59cd34b, decision #120)
+                testCase.verifyEqual(sp{1}.data.datum_order, 'F', 'the encounter fastest');
+                testCase.verifyFalse(contains(sp{1}.statement.notes, 'column-major'));
+            end
             testCase.verifyTrue(ismember(list{1}.base.id, edgeAll(sp{1}, 'input_id')), ...
                 'a per-encounter value is computed over the encounter list');
             mn = speeds(cellfun(@(d) strcmp(methodOf(d), 'minimum observed value'), speeds));
@@ -1031,10 +1179,37 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
                 [-40 -50] * 1e-6, 'AbsTol', 1e-15);
             testCase.verifyEqual(methodOf(de{1}), 'ordinary least squares estimation');
             testCase.verifyEqual(conditionValues(de{1}), [-1.5 6.5]);
-            dist = named('length_calculation', 'concentration_worm0121', 'distance');
-            on = dist(cellfun(@(d) ismember('during the encounter', conditionTerms(d)), dist));
+            % the signed distance from the patch edge (decision #119): the
+            % largest during each encounter, the smallest (signed) after it
+            dist = named('length_calculation', 'concentration_worm0121', ...
+                'signed distance from the nearest bacterial patch edge');
+            testCase.verifyTrue(all(cellfun(@(d) strcmp(d.statement.variable.node, 'EMPTY:0000350'), dist)));
+            on = dist(cellfun(@(d) isequal(conditionTerms(d), {'during the encounter'}), dist));
+            testCase.verifyNumElements(on, 1);
             testCase.verifyEqual(numbers(on{1}.length.value, 'meters'), [0.1 0.2] * 1e-3, 'AbsTol', 1e-15);
-            testCase.verifyTrue(ismember('nearest bacterial patch edge', conditionTerms(on{1})));
+            testCase.verifyEqual(methodOf(on{1}), 'maximum observed value');
+            off = dist(cellfun(@(d) isequal(conditionTerms(d), {'after the encounter'}), dist));
+            testCase.verifyNumElements(off, 1);
+            offV = numbers(off{1}.length.value, 'meters');
+            testCase.verifyEqual(offV(1), -1.1e-3, 'AbsTol', 1e-15, '-distanceOffMax: outside the patch');
+            testCase.verifyTrue(isnan(offV(2)), 'nothing after the last encounter');
+            testCase.verifyEqual(methodOf(off{1}), 'minimum observed value');
+            gd = dist(cellfun(@(d) isequal(conditionTerms(d), {'before the first encounter'}), dist));
+            testCase.verifyNumElements(gd, 1);
+            testCase.verifyEqual(gd{1}.length.value.meters, -1.0e-3, 'AbsTol', 1e-15);
+            testCase.verifyEqual(methodOf(gd{1}), 'minimum observed value');
+            testCase.verifyFalse(any(cellfun(@(d) isfield(d.statement, 'notes') && ...
+                ~isempty(d.statement.notes), dist)), 'no sign convention in notes');
+
+            % the patch in contact is read off the nearest-patch tracks (#122)
+            if ndi.setup.V2.schemaHasField('item', 'value')
+                ec = named('item_calculation', 'concentration_worm0121', 'entity in contact');
+                testCase.verifyNumElements(ec, 1);
+                np = named('item_calculation', 'concentration_worm0121', 'nearest bacterial patch');
+                testCase.verifyNotEmpty(np);
+                testCase.verifyTrue(all(ismember(cellfun(@(d) d.base.id, np, 'UniformOutput', false), ...
+                    edgeAll(ec{1}, 'input_id'))));
+            end
 
             % the encounter type: the decided terms (a label where the schema has no term_calculation)
             if ndi.setup.V2.schemaHasLeaf('term_calculation')
@@ -1046,8 +1221,17 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
                 lb = named('label_calculation', 'concentration_worm0121', 'encounter type');
                 types = entries(lb{1}.label.value);
             end
-            testCase.verifyEqual(cellfun(@(t) t.name, types, 'UniformOutput', false), {'exploit', 'sample'});
+            testCase.verifyEqual(cellfun(@(t) t.name, types, 'UniformOutput', false), ...
+                {'patch exploitation encounter', 'patch sampling encounter'}, 'decision #127');
             testCase.verifyEqual(methodOf(lb{1}), 'Classification');
+            testCase.verifyEqual(lb{1}.interaction.method.node, 'EDAM:operation_2990');
+            pn = cellfun(@(e) e.variable.name, entries(lb{1}.interaction.method_parameters), ...
+                'UniformOutput', false);
+            testCase.verifyEqual(sort(pn), sort({ ...
+                'patch exploitation encounter: minimum probability of exploitation', ...
+                'patch sampling encounter: minimum probability of sensing', ...
+                'off-patch search encounter: probability of sensing below', ...
+                'off-patch search encounter: maximum distance into the patch'}));
 
             % exploitPosterior and sensePosterior: two statements, one per model
             % (labelEncounters), the state a condition
@@ -1095,12 +1279,26 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             idOf = containers.Map(cellfun(@(d) d.subject.local_identifier, subj, 'UniformOutput', false), ...
                 cellfun(@(d) d.base.id, subj, 'UniformOutput', false));
             % every intensity is `fluorescence intensity`; borderAmplitude is
-            % the one with method maximum and condition baseline = patch edge
+            % the one with method peak amplitude, its reference point the patch
+            % edge a method parameter (decision #123), no condition
             ic = docs(strcmp(classes, 'intensity_calculation'));
             testCase.verifyTrue(all(cellfun(@(d) strcmp(d.statement.variable.node, 'NCIT:C184706'), ic)), ...
                 'all fluorescence intensity');
-            border = ic(cellfun(@(d) strcmp(methodOf(d), 'maximum observed value') ...
-                && strcmp(conditionTerm(d, 'Baseline'), 'bacterial patch edge'), ic));
+            border = ic(cellfun(@(d) strcmp(methodOf(d), 'peak amplitude'), ic));
+            testCase.verifyTrue(all(cellfun(@(d) strcmp(d.interaction.method.node, 'EMPTY:0000349'), border)));
+            testCase.verifyTrue(all(cellfun(@(d) isempty(conditionsOf(d)), border)), 'no baseline condition');
+            bp = entries(border{1}.interaction.method_parameters);
+            testCase.verifyNumElements(bp, 1);
+            testCase.verifyEqual(bp{1}.variable.node, 'NCIT:C45793', 'Reference Point');
+            testCase.verifyEqual(bp{1}.term.name, 'bacterial patch edge');
+            % the per-patch values are read off the profile curve: it is an
+            % input (decision #122)
+            curveIds = cellfun(@(d) d.base.id, ic(cellfun(@(d) strcmp(methodOf(d), 'Arithmetic Mean') ...
+                && strcmp(conditionTerm(d, 'Reference Point'), 'bacterial patch edge'), ic)), ...
+                'UniformOutput', false);
+            testCase.verifyTrue(all(cellfun(@(d) numel(edgeAll(d, 'input_id')) == 3 && ...
+                any(ismember(edgeAll(d, 'input_id'), curveIds)), border)), ...
+                'image, mask and the patch''s curve');
             testCase.verifyEqual(sort(cellfun(@(d) d.base.id, border, 'UniformOutput', false)), ...
                 sort({result.written{1}.ecoli.borderValues.statementId}), ...
                 'stage 12 finds the border values by statement id');
@@ -1178,7 +1376,7 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             testCase.assumeTrue(ndi.setup.V2.schemaHasLeaf('time_calculation'), ...
                 'DID_SCHEMA_PATH does not hold time_calculation (did-schema PR #87)');
             result = testCase.write(["ecoli_0001", "concentration_0001"], ...
-                ["metadata", "observations", "calculations", "encounters", "density"]);
+                ["metadata", "manipulations", "observations", "calculations", "encounters", "density"]);
             de = result.density;
             c = de.counts;
             testCase.verifyEqual([c.fits, c.groups, c.members, c.inputs, c.refit_checked], ...
@@ -1209,6 +1407,16 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             testCase.verifyEqual(co{2}.variable.node, 'STATO:0000657');
             testCase.verifyEqual(co{2}.value, 94 / 300, 'AbsTol', 1e-15);
             testCase.verifyEqual(conditionTerms(lin), {'nematode growth medium'});
+            % the growth group is the PLANNED one, exact, and is not a bin: no
+            % bin width (decision #125)
+            gc = conditionsOf(lin);
+            gc = gc(cellfun(@(e) strcmp(e.variable.node, 'EMPTY:0000351'), gc));
+            testCase.verifyNumElements(gc, 1, 'target bacteria growth duration after seeding');
+            testCase.verifyEqual(gc{1}.quantity.value, 0);
+            testCase.verifyFalse(isfield(gc{1}, 'approximate') && ~isempty(gc{1}.approximate) ...
+                && logical(gc{1}.approximate), 'exact');
+            testCase.verifyFalse(isfield(lin.interaction, 'method_parameters') ...
+                && ~isempty(lin.interaction.method_parameters), 'no bin width');
             % the OD600 the patches were seeded at is the PLANNED one, said by its
             % term (decision #110, tenet T19): target seeding OD600, not OD600
             cv = cellfun(@(e) e.variable.node, conditionsOf(lin), 'UniformOutput', false);
@@ -1243,7 +1451,13 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
                 'at worm 121''s two encounter onsets');
             testCase.verifyTrue(ismember(lin.base.id, edgeAll(e12{1}, 'input_id')), ...
                 'from the OD600 1 fit');
-            testCase.verifyEqual(conditionValues(e12{1}), 0, 'the 0 h growth duration bin');
+            testCase.verifyEqual(conditionValues(e12{1}), 0, 'the 0 h growth group');
+            testCase.verifyEqual(cellfun(@(e) e.variable.node, conditionsOf(e12{1}), 'UniformOutput', false), ...
+                {'EMPTY:0000351'});
+            % the patch's seeding is an input of its estimate (#122)
+            sIds = result.written{k}.manipulations.seedIds;
+            testCase.verifyTrue(ismember(sIds(idOf('concentration_assayPlate0012_patch0001')), ...
+                edgeAll(e12{1}, 'input_id')), 'the patch''s seeding dose');
             testCase.verifyNumElements(about(idOf('concentration_assayPlate0011_patch0001')), 1);
             testCase.verifyEmpty(about(idOf('concentration_worm0121')), 'no estimate is about a worm');
 

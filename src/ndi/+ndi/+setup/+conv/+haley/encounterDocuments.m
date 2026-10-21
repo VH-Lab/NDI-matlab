@@ -11,8 +11,12 @@ function out = encounterDocuments(dataParentDir, session, R, subjectIds, options
 %   whole track on the plate, its videos joined in order, so `enter`/`exit` are
 %   row numbers in that joined track (an encounter can start in one video and
 %   end in the next). The documents are timed by the plate's recording window
-%   (stage 9's, else the video's own reference) and each time is in seconds
-%   from that window's start: the video's start plus (frame - 1) / frame rate.
+%   (stage 9's when it starts at the plate's first recording, else the one
+%   video's own reference, else a window of their own from the first
+%   recording's start), and each time with no anchor of its own -- the onsets,
+%   the item offsets -- is in seconds from that window's START, which is the
+%   plate's first recording's start (tenet T14, PROPOSAL 2026-10-20, decision
+%   #118): the video's start plus (frame - 1) / frame rate.
 %
 %   Per worm with encounters (V_eta_study_plan.md, "Repeated events", T2),
 %   each statement's variable, method and conditions a decided term
@@ -23,15 +27,19 @@ function out = encounterDocuments(dataParentDir, session, R, subjectIds, options
 %                       part` = `midpoint` (the track it reads). Every other
 %                       per-encounter document takes its `encounter` key's
 %                       positions from it (`key_id` / `positions_from`, T14)
-%     item_calculation  `bacterial patch in contact`: each encounter's patch
+%     item_calculation  `entity in contact`: each encounter's patch
 %                       subject (the source's lawnID = its lawnCenters row, #38)
 %                       and, as `offset`, when it ended (`exit`); when the
-%                       schema has `item`
+%                       schema has `item`. Inputs also the worm's per-frame
+%                       nearest-patch tracks (stage 10 part B), which the
+%                       patch was read from (decision #122)
 %     velocity_calculation  `speed`, method `median`, keyed [encounter x
-%                       `patch encounter period`] (`during the patch
-%                       encounter`: velocityOn; `after the patch encounter`:
-%                       velocityOff, NaN after the last encounter when the
-%                       track ends first); um/s -> m/s throughout
+%                       `encounter period`] (`during the encounter`:
+%                       velocityOn; `after the encounter`: velocityOff, NaN
+%                       after the last encounter when the track ends first),
+%                       its `datum_order` 'F' (the encounter fastest) where
+%                       the schema declares it on `data` (decision #120); um/s
+%                       -> m/s throughout
 %     velocity_calculation  `speed`, method `minimum`, condition `patch
 %                       encounter period` = during (velocityOnMin)
 %     velocity_calculation  `speed`, method `peak speed before an event`
@@ -43,31 +51,35 @@ function out = encounterDocuments(dataParentDir, session, R, subjectIds, options
 %     acceleration_calculation  `acceleration`, method `ordinary least squares
 %                       estimation` (decelerate, um/s^2 -> m/s^2), the same
 %                       anchor, window -1.5..+6.5 s
-%     length_calculation  `distance`, method `maximum`, conditions `reference
-%                       point` = `nearest bacterial patch edge` and the period:
-%                       during (distanceOnMax: the largest signed distance from
-%                       the patch edge, positive inside, so negative when the
-%                       midpoint never crossed it; analyzeEncounters line 273,
-%                       whose own header misnames it) and after (distanceOffMax,
-%                       outside the patch, unsigned); mm -> m
+%     length_calculation  `signed distance from the nearest bacterial patch
+%                       edge` (EMPTY:0000350: positive inside the patch,
+%                       negative outside; the variable says so, decision #119),
+%                       condition the period: during, method `maximum`
+%                       (distanceOnMax, analyzeEncounters line 273, whose own
+%                       header misnames it); after, method `minimum`, the
+%                       SIGNED value -distanceOffMax (the source stores
+%                       abs(min(distanceLawnEdge)) between encounters, lines
+%                       309-310); mm -> m
 %     score_calculation  `posterior probability`, keyed by encounter, one per
 %                       state: condition `behavioral state` = `exploitation`
 %                       (exploitPosterior, method `Gaussian mixture model
 %                       clustering`) and = `sensing` (sensePosterior, method
 %                       `quadratic discriminant analysis`); scale `probability`,
 %                       0-1. timeSlowDown is not kept: no figure uses it
-%     term_calculation  `encounter type`, method `classification`: `exploit`,
-%                       `sample`, `search on patch` (source searchOn), `search
-%                       off patch` (searchOff); `Cannot Be Determined` where the
-%                       source left it blank; its method parameters (labels)
-%                       the three posterior thresholds and search off patch's
-%                       distance rule (0 m into the patch). A label_calculation of
-%                       the same names on a schema with no term_calculation
-%   A two-key value is stored in column-major order, the encounter fastest
-%   (the notes say so). For the gap before the first encounter (the source's
-%   id 0 row): one `speed`, method `median`, and one `distance`, method
-%   `maximum` (reference point the nearest patch edge), each with condition
-%   `patch encounter period` = `before the first patch encounter`.
+%     term_calculation  `encounter type`, method EDAM Classification
+%                       (operation_2990): `patch exploitation encounter`
+%                       (source exploit), `patch sampling encounter` (sample),
+%                       `on-patch search encounter` (searchOn), `off-patch
+%                       search encounter` (searchOff); `Cannot Be Determined`
+%                       where the source left it blank; its method parameters
+%                       the three posterior thresholds and the off-patch search
+%                       encounter's distance rule (0 m into the patch),
+%                       decision #127. A label_calculation of the same names on
+%                       a schema with no term_calculation
+%   For the gap before the first encounter (the source's id 0 row): one
+%   `speed`, method `median`, and one signed patch-edge distance, method
+%   `minimum` (-distanceOffMax), each with condition `encounter period` =
+%   `before the first encounter`.
 %   Inputs: the worm's midpoint speed and patch-edge distance tracks (stage 10
 %   part B) for each of the plate's videos; the per-encounter values also take
 %   the encounter list.
@@ -78,14 +90,17 @@ function out = encounterDocuments(dataParentDir, session, R, subjectIds, options
 %   Options:
 %     'Tracks'               trackDocuments' OUT.byWorm
 %     'PlateWindows'         observationDocuments' OUT.windows
+%     'PlateWindowStarts'    observationDocuments' OUT.windowStarts: a plate's
+%                            window is used only when it starts at the plate's
+%                            first recording (decision #118)
 %     'RecordingRefs'        containers.Map, epoch -> its UTC reference id
 %     'SoftwareId', 'InterpreterId', 'OperatingSystemId'   as stage 10
 %
 %   OUT fields: documents, counts (struct), skipped (cellstr), byWorm
 %   (containers.Map, worm local_identifier -> struct of wormId, listId,
 %   plate (its assay plate's local_identifier), onset (each encounter's onset,
-%   seconds, as in the list), timeId (the time reference those seconds are
-%   from), calc (the session, time reference and run
+%   seconds, as in the list), timeId (the time reference those seconds count
+%   from: they count from its start), calc (the session, time reference and run
 %   environment options its documents are built with) and rows, its
 %   encounter.mat rows in list order; for stage 12, decision #65).
 
@@ -96,6 +111,7 @@ arguments
     subjectIds
     options.Tracks = containers.Map()
     options.PlateWindows = containers.Map()
+    options.PlateWindowStarts = containers.Map()
     options.RecordingRefs = containers.Map()
     options.SoftwareId (1,:) char = ''
     options.InterpreterId (1,:) char = ''
@@ -128,6 +144,12 @@ if ~isempty(options.SoftwareId), env = [env, {'SoftwareId', options.SoftwareId}]
 if ~isempty(options.InterpreterId), env = [env, {'InterpreterId', options.InterpreterId}]; end
 env = [env, {'OperatingSystemId', options.OperatingSystemId}];
 hasItem = ndi.setup.V2.schemaHasField('item', 'value');
+% an inline two-key value states its layout (did-schema 59cd34b: `datum_order`
+% on `data`, beside `keys`; decision #120)
+order = {};
+if ndi.setup.V2.schemaHasField('data', 'datum_order')
+    order = {'Fields', struct('datum_order', 'F')};
+end
 byRef = keyByReference();
 tz = 'America/Los_Angeles';
 secondFmt = 'yyyy-MM-dd''T''HH:mm:ss';
@@ -156,11 +178,7 @@ docs = {};
 before = periodCondition('before the first encounter');
 during = periodCondition('during the encounter');
 after = periodCondition('after the encounter');
-signedNote = ['Signed distance of the midpoint from the patch edge, positive inside ' ...
-    'the patch: negative when the midpoint never crossed the edge during the encounter.'];
-offPatchNote = 'Distance of the midpoint outside the patch, unsigned.';
-columnMajor = ['Values in column-major order: every encounter''s value for the first ' ...
-    'position of the second key, then for the second.'];
+edgeDistance = haleyTerm('signed distance from the nearest bacterial patch edge');
 detection = {'Method', haleyTerm('encounter detection'), 'MethodParameters', ...
     did2.build.list( ...
         did2.build.parameter(haleyTerm('encountered entity'), 'Term', haleyTerm('bacterial patch')), ...
@@ -199,9 +217,12 @@ for g = 1:max(G)
     % else frame k is taken at (k-1)/frame rate
     ft = arrayfun(@(w) {frameTimesOf(R, w)}, where);
     t0 = min(start);
-    % the plate's window: stage 9's, else the one video's own reference
+    % the plate's window, which must START at t0: the times below count from
+    % it (decision #118). Stage 9's when it starts there, else the one
+    % video's own reference, else a window of its own from t0
     timeId = '';
-    if isKey(options.PlateWindows, plate)
+    if isKey(options.PlateWindows, plate) && isKey(options.PlateWindowStarts, plate) ...
+            && isequal(options.PlateWindowStarts(plate), wallClock(t0, tz))
         timeId = options.PlateWindows(plate);
     elseif height(vids) == 1 && isKey(options.RecordingRefs, epochs{1})
         timeId = options.RecordingRefs(epochs{1});
@@ -215,16 +236,22 @@ for g = 1:max(G)
     end
     secondsAt = @(idx) arrayfun(@(i) rowSeconds(W, i, vids, start, rate, t0, ft), idx);
 
-    % inputs: the worm's midpoint speed and patch-edge distance in each video
+    % inputs: the worm's midpoint speed and patch-edge distance in each video,
+    % and (for the patch in contact) its nearest-patch track
     inputs = {};
+    nearest = {};
     for v = 1:numel(epochs)
         key = [epochs{v} '|' worm];
         if isKey(options.Tracks, key)
             t = options.Tracks(key);
             inputs = [inputs, {t.speed, t.patch_edge_distance}]; %#ok<AGROW>
+            if isfield(t, 'nearest_patch')
+                nearest{end+1} = t.nearest_patch; %#ok<AGROW>
+            end
         end
     end
     inputs = inputs(~cellfun(@isempty, inputs));
+    nearest = nearest(~cellfun(@isempty, nearest));
     calc = [{'SessionId', sid, 'TimeReferenceIds', {timeId}}, env];
     wormId = subjectIds(worm);
 
@@ -241,10 +268,10 @@ for g = 1:max(G)
                 'Conditions', did2.build.list(before), 'InputIds', inputs, calc{:}); %#ok<AGROW>
         end
         if ~isnan(gap0.distanceOffMax)
-            docs{end+1} = did2.build.statement('length_calculation', wormId, haleyTerm('distance'), ...
-                mm(gap0.distanceOffMax), 'Method', haleyTerm('maximum'), ...
-                'Conditions', did2.build.list(edgeCondition(), before), ...
-                'Notes', offPatchNote, 'InputIds', inputs, calc{:}); %#ok<AGROW>
+            % the source's abs(min(distanceLawnEdge)): the minimum, signed
+            docs{end+1} = did2.build.statement('length_calculation', wormId, edgeDistance, ...
+                mm(-gap0.distanceOffMax), 'Method', haleyTerm('minimum'), ...
+                'Conditions', did2.build.list(before), 'InputIds', inputs, calc{:}); %#ok<AGROW>
         end
     end
     if n == 0
@@ -257,9 +284,7 @@ for g = 1:max(G)
     list = did2.build.statement('time_calculation', wormId, ...
         haleyTerm('encounter onset time'), did2.build.valueCell('time', onset), ...
         'Keys', did2.build.list(did2.build.key(haleyTerm('encounter'), n, 'Origin', 0, 'Spacing', 1)), ...
-        detection{:}, 'InputIds', inputs, ...
-        'Notes', ['Seconds from the start of the plate''s first recording; the source''s ' ...
-        '`enter`, a row of the worm''s track over the plate''s videos joined in order.'], calc{:});
+        detection{:}, 'InputIds', inputs, calc{:});
     docs{end+1} = list; %#ok<AGROW>
     if byRef
         encKey = did2.build.key(haleyTerm('encounter'), n, 'PositionsFrom', 0);
@@ -269,7 +294,8 @@ for g = 1:max(G)
         keyIds = {};
     end
     % the keys of a per-encounter value: the encounter, then any other
-    % dimension (its values in column-major order, the encounter fastest)
+    % dimension (its values in column-major order, the encounter fastest,
+    % which `datum_order` states)
     keysWith = @(varargin) [{'Keys', did2.build.list(encKey, varargin{:})}, keyIds];
     keyed = keysWith();
     per = [{'InputIds', [{list.base.id}, inputs]}, calc];
@@ -282,7 +308,7 @@ for g = 1:max(G)
         v = struct('item', enc.lawnID(:)' - 1, 'offset', secondsAt(enc.exit)');
         docs{end+1} = did2.build.statement('item_calculation', wormId, ...
             haleyTerm('entity in contact'), v, 'Edges', struct('item_id', {pIds}), ...
-            detection{:}, keyed{:}, per{:}); %#ok<AGROW>
+            detection{:}, keyed{:}, 'InputIds', [{list.base.id}, inputs, nearest], calc{:}); %#ok<AGROW>
     elseif hasItem
         out.skipped{end+1} = sprintf('%s: an encounter names a patch %s does not have; no patch list', ...
             worm, plate);
@@ -294,8 +320,8 @@ for g = 1:max(G)
         byPeriod = keysWith(did2.build.key(haleyTerm('encounter period'), 2, 'Labels', ...
             haleyTerm({'during the encounter', 'after the encounter'})));
         docs{end+1} = did2.build.statement('velocity_calculation', wormId, haleyTerm('speed'), ...
-            speed(x), 'Method', haleyTerm('median'), byPeriod{:}, ...
-            'Notes', [columnMajor ' After the last encounter: NaN when the track ends first.'], ...
+            speed(x), 'Method', haleyTerm('median'), byPeriod{:}, order{:}, ...
+            'Notes', 'After the last encounter: NaN when the track ends first.', ...
             per{:}); %#ok<AGROW>
     elseif any(ismember({'velocityOn', 'velocityOff'}, enc.Properties.VariableNames))
         out.skipped{end+1} = sprintf('%s: encounter.mat has only one of velocityOn / velocityOff; no median speeds', ...
@@ -313,16 +339,18 @@ for g = 1:max(G)
             {'Method', haleyTerm('minimum speed after an event')}, eventWindow(0, 10), ''
         'acceleration_calculation', 'acceleration', 'decelerate', @accel, ...
             {'Method', haleyTerm('ordinary least squares estimation')}, eventWindow(-1.5, 6.5), ''
-        'length_calculation', 'distance', 'distanceOnMax', @mm, ...
-            {'Method', haleyTerm('maximum')}, {edgeCondition(), during}, signedNote
-        'length_calculation', 'distance', 'distanceOffMax', @mm, ...
-            {'Method', haleyTerm('maximum')}, {edgeCondition(), after}, offPatchNote};
+        'length_calculation', edgeDistance, 'distanceOnMax', @mm, ...
+            {'Method', haleyTerm('maximum')}, {during}, ''
+        'length_calculation', edgeDistance, 'distanceOffMax', @(x) mm(-x), ...
+            {'Method', haleyTerm('minimum')}, {after}, ''};
     for j = 1:size(q, 1)
         if ~ismember(q{j, 3}, enc.Properties.VariableNames), continue; end
         x = double(enc.(q{j, 3}));
         note = {};
         if ~isempty(q{j, 7}), note = {'Notes', q{j, 7}}; end
-        docs{end+1} = did2.build.statement(q{j, 1}, wormId, haleyTerm(q{j, 2}), ...
+        variable = q{j, 2};
+        if ischar(variable), variable = haleyTerm(variable); end
+        docs{end+1} = did2.build.statement(q{j, 1}, wormId, variable, ...
             q{j, 4}(x), q{j, 5}{:}, 'Conditions', did2.build.list(q{j, 6}{:}), ...
             keyed{:}, note{:}, per{:}); %#ok<AGROW>
     end
@@ -349,15 +377,15 @@ for g = 1:max(G)
     if ismember('label', enc.Properties.VariableNames)
         names = reshape(cellstr(enc.label), 1, []);
         typeArgs = {'Method', haleyTerm('classification'), 'MethodParameters', did2.build.list( ...
-                did2.build.parameter(haleyTerm('exploit: minimum probability of exploitation'), 'Value', 0.5), ...
-                did2.build.parameter(haleyTerm('sample: minimum probability of sensing'), 'Value', 0.5), ...
-                did2.build.parameter(haleyTerm('search off patch: probability of sensing below'), 'Value', 0.05), ...
-                did2.build.parameter(haleyTerm('search off patch: maximum distance into the patch'), ...
+                did2.build.parameter(haleyTerm('patch exploitation encounter: minimum probability of exploitation'), 'Value', 0.5), ...
+                did2.build.parameter(haleyTerm('patch sampling encounter: minimum probability of sensing'), 'Value', 0.5), ...
+                did2.build.parameter(haleyTerm('off-patch search encounter: probability of sensing below'), 'Value', 0.05), ...
+                did2.build.parameter(haleyTerm('off-patch search encounter: maximum distance into the patch'), ...
                     'Value', 0, 'Unit', haleyTerm('meter'))), ...
             'Notes', ['Each encounter''s type from its two posteriors (labelEncounters lines 379-384). ' ...
-                'Search off patch also needs the midpoint never to have crossed the patch edge ' ...
-                '(distanceOnMax < 0). Cannot Be Determined marks an encounter with a missing ' ...
-                'posterior, which the source leaves unlabeled.'], ...
+                'An off-patch search encounter also needs the midpoint never to have crossed the ' ...
+                'patch edge (distanceOnMax < 0). Cannot Be Determined marks an encounter with a ' ...
+                'missing posterior, which the source leaves unlabeled.'], ...
             keyed{:}, per{:}};
         if hasTerm
             docs{end+1} = did2.build.statement('term_calculation', wormId, ...
@@ -464,12 +492,6 @@ end
 c = did2.build.condition(haleyTerm('encounter period'), 'Term', haleyTerm(period));
 end
 
-function c = edgeCondition()
-% the condition `reference point` = the nearest bacterial patch edge
-c = did2.build.condition(haleyTerm('reference point'), 'Term', ...
-    haleyTerm('nearest bacterial patch edge'));
-end
-
 function c = eventWindow(t0, t1)
 % the conditions of a value computed over a window around each encounter's
 % onset: from T0 to T1 seconds after it
@@ -484,14 +506,16 @@ end
 
 function t = encounterTypes(names)
 % each encounter's type as a term: labelEncounters' labels are the decided
-% types (searchOn / searchOff the search on / off patch ones); a blank label is
+% types (exploit, sample, searchOn, searchOff: the patch exploitation, patch
+% sampling, on-patch and off-patch search encounters; decision #127); a blank label is
 % `Cannot Be Determined` (a posterior is missing, so no rule applies; Jess,
 % 2026-10-20), and any other label is kept as written
 arguments
     names cell
 end
 source = {'exploit', 'sample', 'searchOn', 'searchOff'};
-decided = {'exploit', 'sample', 'search on patch', 'search off patch'};
+decided = {'patch exploitation encounter', 'patch sampling encounter', ...
+    'on-patch search encounter', 'off-patch search encounter'};
 t = cell(1, numel(names));
 for k = 1:numel(names)
     [hit, at] = ismember(names{k}, source);

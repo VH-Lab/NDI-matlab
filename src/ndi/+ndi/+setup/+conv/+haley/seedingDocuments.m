@@ -22,13 +22,22 @@ function out = seedingDocuments(S, ids, sessionId, options)
 %                        the seeding day
 %     concentration_observation  the stock's MEASURED OD600 (`OD600Real`),
 %                        variable OD600 (MCO:0000059), in the `od600` canonical
-%                        with the source pair where the schema has it;
-%                        instrument the spectrophotometer (the spec's
-%                        `spectrophotometer_1`); when: the seeding day. No
-%                        method: no registered term names absorbance at
-%                        600 nm (reported). A dilution was not measured and
-%                        an unmeasured day's solution was not either: no
-%                        observation (T14).
+%                        with the source pair where the schema has it, method
+%                        NCIT:C85776 Optical Density Measurement (decision
+%                        #129); instrument the spectrophotometer (the spec's
+%                        `spectrophotometer_1`); when: the seeding day.
+%     concentration_observation  the stock's MEASURED colony count (`CFU`,
+%                        where the day has one), variable NCIT:C120538 Cell
+%                        Density, method NCIT:C130166 Viable Cell Count
+%                        (decision #129): `particles_per_liter` CFU x 2e10,
+%                        the source pair CFU x 2e7 'CFU/mL' (the lab code's
+%                        conversion, decision #57; NCIT:C68902 Colony Forming
+%                        Unit per Milliliter is the registered unit). No
+%                        instrument: the colonies were counted on a plate,
+%                        not with the spectrophotometer; when: the seeding
+%                        day.
+%                        A dilution was not measured and an unmeasured day's
+%                        solution was not either: no observation (T14).
 %     absolute_time_reference  the seeding day, as an instant written to the
 %                        day (tolerance minus 0, plus 86399 s; tenet T14's
 %                        T-7: a coarser granularity is a tolerance), one per
@@ -37,9 +46,6 @@ function out = seedingDocuments(S, ids, sessionId, options)
 %   The seeding doses of the patches keep pointing at the formulation they
 %   used (dose.formulation_id): a formulation and its solution are one to
 %   one, and a dose has no edge for the material it was pipetted from.
-%   The CFU is not observed here: the term registry has no term for a
-%   colony-forming-unit density, so it stays on the stock's plan (decision
-%   #57) and is reported in OUT.skipped.
 %
 %   Options:
 %     'Names'       containers.Map, strain key -> the term a dose of it reads
@@ -48,7 +54,8 @@ function out = seedingDocuments(S, ids, sessionId, options)
 %                   'spectrophotometer_1')
 %
 %   OUT fields: documents (cell), ids (containers.Map, solution key -> entity
-%   id), counts (solutions, preparations, od600_observations, days), skipped
+%   id), counts (solutions, preparations, od600_observations,
+%   cfu_observations, days), skipped
 %   (cellstr).
 %
 %   See also ndi.setup.conv.haley.seedingSuspensions, ndi.setup.conv.haley.import_V2.
@@ -63,7 +70,8 @@ end
 
 tz = 'America/Los_Angeles';
 out = struct('documents', {{}}, 'ids', containers.Map(), 'counts', struct('solutions', 0, ...
-    'preparations', 0, 'od600_observations', 0, 'days', 0), 'skipped', {{}});
+    'preparations', 0, 'od600_observations', 0, 'cfu_observations', 0, 'days', 0), ...
+    'skipped', {{}});
 if ~isfield(S, 'solutions') || isempty(S.solutions)
     return;
 end
@@ -77,7 +85,6 @@ else
         'instrument'], options.Instrument);
 end
 dayRefs = containers.Map();
-cfuNotObserved = 0;
 
 for k = 1:numel(S.solutions)
     x = S.solutions(k);
@@ -107,12 +114,9 @@ for k = 1:numel(S.solutions)
         'TimeReferenceIds', {when}, 'SessionId', sessionId);
     out.counts.preparations = out.counts.preparations + 1;
 
-    % what was measured of it: the stock's OD600 (nothing else was)
+    % what was measured of it: the stock's OD600 and, on most days, its CFU
     if isnan(x.od)
         continue;
-    end
-    if ~isnan(x.cfu)
-        cfuNotObserved = cfuNotObserved + 1;
     end
     if ~hasObservation
         out.skipped{end+1} = sprintf(['%s: the schema in use has no concentration_observation; ' ...
@@ -128,18 +132,24 @@ for k = 1:numel(S.solutions)
     args = {};
     if ~isempty(instrument), args = {'InstrumentId', instrument}; end
     out.documents{end+1} = did2.build.statement('concentration_observation', eid, ...
-        haleyTerm('OD600'), v, args{:}, 'TimeReferenceIds', {when}, 'SessionId', sessionId);
+        haleyTerm('OD600'), v, 'Method', haleyTerm('optical density measurement'), args{:}, ...
+        'TimeReferenceIds', {when}, 'SessionId', sessionId);
     out.counts.od600_observations = out.counts.od600_observations + 1;
+    if ~isnan(x.cfu)
+        % the lab code's conversion: CFU x 2e7 per mL (decision #57)
+        c = did2.build.valueCell('concentration', x.cfu * 2e10, 'Canonical', 'particles_per_liter', ...
+            'SourceValue', x.cfu * 2e7, 'SourceUnit', 'CFU/mL');
+        out.documents{end+1} = did2.build.statement('concentration_observation', eid, ...
+            haleyTerm('cell density'), c, 'Method', haleyTerm('viable cell count'), ...
+            'TimeReferenceIds', {when}, 'SessionId', sessionId);
+        out.counts.cfu_observations = out.counts.cfu_observations + 1;
+    end
 end
 out.counts.days = double(dayRefs.Count);
-if cfuNotObserved > 0
-    out.skipped{end+1} = sprintf(['%d stock(s) with a measured CFU: not an observation (the term ' ...
-        'registry has no term for a colony-forming-unit density); kept on the plan as ' ...
-        'particles_per_liter (decision #57)'], cfuNotObserved);
-end
 fprintf(['DENOMINATOR: %d seeding solution(s) -> %d entity(ies), %d preparation(s), %d measured ' ...
-    'OD600 observation(s), over %d seeding day(s)\n'], numel(S.solutions), out.counts.solutions, ...
-    out.counts.preparations, out.counts.od600_observations, out.counts.days);
+    'OD600 and %d CFU observation(s), over %d seeding day(s)\n'], numel(S.solutions), ...
+    out.counts.solutions, out.counts.preparations, out.counts.od600_observations, ...
+    out.counts.cfu_observations, out.counts.days);
 for j = 1:numel(out.skipped)
     fprintf('  skipped: %s\n', out.skipped{j});
 end

@@ -23,8 +23,11 @@ function out = observationDocuments(session, R, subjectIds, options)
 %                              percent_relative_humidity (did-schema PR #86;
 %                              only when the schema in use has `humidity`)
 %
-%   Both: subject = the assay plate, instrument = the probe (stage 2), notes
-%   = the spec's `environment.notes`.
+%   Both: subject = the assay plate, instrument = the probe (stage 2), method
+%   NCIT:C53319 Arithmetic Mean (the value is the probe's mean over the hour:
+%   tenet T16, a summary is stated as its quantity with the statistic as its
+%   method; decision #121, superseding #59's "no method"), notes = the spec's
+%   `environment.notes`.
 %
 %   Options:
 %     'Environment'    the spec's `environment` section (required)
@@ -34,7 +37,10 @@ function out = observationDocuments(session, R, subjectIds, options)
 %
 %   OUT fields: documents (cell of structs), counts (struct: temperature,
 %   humidity), skipped (cellstr), windows (containers.Map, plate -> the id of
-%   the time reference spanning its recordings, for stage 11).
+%   the time reference spanning its recordings, for stage 11), windowStarts
+%   (containers.Map, plate -> that window's start, wall clock: stage 11 uses
+%   the window only when it starts at the plate's first recording, decision
+%   #118).
 
 arguments
     session table
@@ -56,7 +62,7 @@ hasHumidity = ndi.setup.V2.schemaHasField('humidity', 'value');
 
 docs = {};
 out = struct('documents', {{}}, 'skipped', {{}}, 'counts', struct('temperature', 0, 'humidity', 0), ...
-    'windows', containers.Map());
+    'windows', containers.Map(), 'windowStarts', containers.Map());
 if ~all(ismember({'temp', 'humidity'}, R.Properties.VariableNames))
     out.documents = docs;
     return;
@@ -85,6 +91,7 @@ for k = 1:numel(plates)
     end
     timeId = window(P);
     out.windows(plate) = timeId;
+    out.windowStarts(plate) = wallClock(P.local_start(1), tz);
     if ~isnan(temp)
         v = did2.build.composite('temperature_observation', 'value', struct('celsius', temp, ...
             'source_value', temp, 'source_unit', 'C'));
@@ -116,7 +123,7 @@ out.documents = docs;
     end
 
     function statement(leaf, plate, variable, value, timeId, counter)
-        args = {'SessionId', sid, 'TimeReferenceIds', {timeId}};
+        args = {'SessionId', sid, 'TimeReferenceIds', {timeId}, 'Method', haleyTerm('mean')};
         if ~isempty(options.InstrumentId), args = [args, {'InstrumentId', options.InstrumentId}]; end
         if isfield(cfg, 'notes') && ~isempty(cfg.notes), args = [args, {'Notes', cfg.notes}]; end
         docs{end+1} = did2.build.statement(leaf, subjectIds(plate), ...

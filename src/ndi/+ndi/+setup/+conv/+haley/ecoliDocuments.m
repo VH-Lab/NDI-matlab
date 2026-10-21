@@ -73,8 +73,10 @@ function out = ecoliDocuments(dataParentDir, session, R, subjectIds, options)
 %                            centerAmplitude: method `mean`, condition
 %                            `location` = `bacterial patch center`
 %                            borderAmplitude (the basis of the paper's
-%                            relative density): method `maximum`, condition
-%                            `baseline` = `bacterial patch edge`
+%                            relative density; yPeak - yOuterEdge): method
+%                            `peak amplitude` (EMPTY:0000349), method
+%                            parameter `reference point` = `bacterial patch
+%                            edge` (decision #123)
 %     length_calculation     xPeak, `distance` (mm -> m), conditions
 %                            `reference point` = `bacterial patch edge` and
 %                            `distance end point` = `bacterial patch
@@ -88,6 +90,9 @@ function out = ecoliDocuments(dataParentDir, session, R, subjectIds, options)
 %                            has no pixels at that distance), condition
 %                            `reference point` = `bacterial patch edge`,
 %                            method parameter the 1 um `bin width`
+%   The per-patch intensities and xPeak are read off the profile curve
+%   (analyzeLawnProfiles), so the curve's statement is among their inputs
+%   when it is stored (decision #122).
 %   Not stored: borderCenterRatio (border / center amplitude), meanAmplitude,
 %   FWHM, xHalfMax*, yHalfMax, lawnRadius (decision #60's keep list): each
 %   is computed from the stored curve. The fitted background images are not
@@ -174,8 +179,8 @@ patchEdge = haleyTerm('bacterial patch edge');
 % each lawnAnalysis intensity column and the method / conditions that tell its
 % `fluorescence intensity` statement from the others on the same patch
 intensityValues = {
-    'borderAmplitude', {'Method', haleyTerm('maximum'), 'Conditions', did2.build.list( ...
-        did2.build.condition(haleyTerm('baseline'), 'Term', patchEdge))}
+    'borderAmplitude', {'Method', haleyTerm('peak amplitude'), 'MethodParameters', did2.build.list( ...
+        did2.build.parameter(haleyTerm('reference point'), 'Term', patchEdge))}
     'centerAmplitude', {'Method', haleyTerm('mean'), 'Conditions', did2.build.list( ...
         did2.build.condition(haleyTerm('location'), 'Term', haleyTerm('bacterial patch center')))}
     'yPeak',           {'Method', haleyTerm('maximum')}
@@ -364,35 +369,8 @@ for k = 1:height(R)
     for j = 1:nDetected
         patch = pIds{slot(j)};
         r = rows(j, :);
-        for q = 1:size(intensityValues, 1)
-            col = intensityValues{q, 1};
-            if ~ismember(col, r.Properties.VariableNames) || isnan(r.(col)), continue; end
-            v = did2.build.valueCell('intensity', double(r.(col)));
-            docs{end+1} = did2.build.statement('intensity_calculation', patch, fi, v, ...
-                intensityValues{q, 2}{:}, in{:}, calc{:}, match{:}); %#ok<AGROW>
-            out.counts.patch_values = out.counts.patch_values + 1;
-            if strcmp(col, 'borderAmplitude')
-                out.borderValues(end+1) = struct('imageNum', n, 'row', j, 'patchId', patch, ...
-                    'statementId', docs{end}.base.id);
-            end
-        end
-        if ismember('xPeak', r.Properties.VariableNames) && ~isnan(r.xPeak)
-            v = did2.build.valueCell('length', r.xPeak * 1e-3, 'SourceValue', r.xPeak, 'SourceUnit', 'mm');
-            docs{end+1} = did2.build.statement('length_calculation', patch, ...
-                haleyTerm('distance'), v, 'Conditions', did2.build.list( ...
-                    did2.build.condition(haleyTerm('reference point'), 'Term', patchEdge), ...
-                    did2.build.condition(haleyTerm('distance end point'), ...
-                        'Term', haleyTerm('bacterial patch fluorescence peak'))), ...
-                in{:}, calc{:}, match{:}); %#ok<AGROW>
-            out.counts.patch_values = out.counts.patch_values + 1;
-        end
-        if ismember('circularity', r.Properties.VariableNames) && ~isnan(r.circularity)
-            v = did2.build.valueCell('score', r.circularity, 'Fields', struct( ...
-                'scale', haleyTerm('circularity'), 'scale_min', 0, 'scale_max', 1));
-            docs{end+1} = did2.build.statement('score_calculation', patch, ...
-                haleyTerm('circularity'), v, in{:}, calc{:}, match{:}); %#ok<AGROW>
-            out.counts.patch_values = out.counts.patch_values + 1;
-        end
+        % the profile curve first: the values below are read off it
+        fromCurve = in;
         if ~isempty(curves)
             pc = did2.build.statement('intensity_calculation', patch, fi, [], ...
                 'DataBody', true, 'DatumType', 'float64', 'Keys', curves.keys, ...
@@ -406,6 +384,36 @@ for k = 1:height(R)
                 ['Mean background-normalized intensity at each distance from the patch edge ' ...
                 '(lawnProfiles pixelValuesNormalized); NaN where the patch has no pixels.'], 'NaN')}]; %#ok<AGROW>
             out.counts.profiles = out.counts.profiles + 1;
+            fromCurve = {'InputIds', {srcId, ms.base.id, pc.base.id}};
+        end
+        for q = 1:size(intensityValues, 1)
+            col = intensityValues{q, 1};
+            if ~ismember(col, r.Properties.VariableNames) || isnan(r.(col)), continue; end
+            v = did2.build.valueCell('intensity', double(r.(col)));
+            docs{end+1} = did2.build.statement('intensity_calculation', patch, fi, v, ...
+                intensityValues{q, 2}{:}, fromCurve{:}, calc{:}, match{:}); %#ok<AGROW>
+            out.counts.patch_values = out.counts.patch_values + 1;
+            if strcmp(col, 'borderAmplitude')
+                out.borderValues(end+1) = struct('imageNum', n, 'row', j, 'patchId', patch, ...
+                    'statementId', docs{end}.base.id);
+            end
+        end
+        if ismember('xPeak', r.Properties.VariableNames) && ~isnan(r.xPeak)
+            v = did2.build.valueCell('length', r.xPeak * 1e-3, 'SourceValue', r.xPeak, 'SourceUnit', 'mm');
+            docs{end+1} = did2.build.statement('length_calculation', patch, ...
+                haleyTerm('distance'), v, 'Conditions', did2.build.list( ...
+                    did2.build.condition(haleyTerm('reference point'), 'Term', patchEdge), ...
+                    did2.build.condition(haleyTerm('distance end point'), ...
+                        'Term', haleyTerm('bacterial patch fluorescence peak'))), ...
+                fromCurve{:}, calc{:}, match{:}); %#ok<AGROW>
+            out.counts.patch_values = out.counts.patch_values + 1;
+        end
+        if ismember('circularity', r.Properties.VariableNames) && ~isnan(r.circularity)
+            v = did2.build.valueCell('score', r.circularity, 'Fields', struct( ...
+                'scale', haleyTerm('circularity'), 'scale_min', 0, 'scale_max', 1));
+            docs{end+1} = did2.build.statement('score_calculation', patch, ...
+                haleyTerm('circularity'), v, in{:}, calc{:}, match{:}); %#ok<AGROW>
+            out.counts.patch_values = out.counts.patch_values + 1;
         end
     end
 end

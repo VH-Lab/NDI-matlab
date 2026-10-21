@@ -661,8 +661,8 @@
     "name": "Escherichia coli"
    },
    "genetic_strain_type": {
-    "node": "NCIT:C62195",
-    "name": "Wild Type"
+    "node": "BAO:0000089",
+    "name": "wild type"
    },
    "identifiers": [
     {
@@ -717,8 +717,8 @@
     "name": "hermaphrodite"
    },
    "genetic_strain_type": {
-    "node": "NCIT:C62195",
-    "name": "Wild Type"
+    "node": "BAO:0000089",
+    "name": "wild type"
    },
    "description": "N2 Bristol, wild isolate.",
    "source": "cgc",

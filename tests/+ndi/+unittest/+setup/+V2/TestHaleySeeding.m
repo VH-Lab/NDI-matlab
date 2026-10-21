@@ -81,8 +81,8 @@ classdef TestHaleySeeding < matlab.unittest.TestCase
             testCase.verifyNumElements(x.ingredients, 1, 'Mini (LB) and Matching (S-Complete) shared it');
             g = x.ingredients{1};
             testCase.verifyEqual(g.ingredient, 'OP50');
-            testCase.verifyEqual(g.concentration.particles_per_liter, 1117 * 2e10, ...
-                'CFU stays on the plan until a term observes it (decision #114)');
+            testCase.verifyFalse(isfield(g.concentration, 'particles_per_liter'), ...
+                'the measured CFU is an observation of the solution, not its plan (decision #129)');
             testCase.verifyEqual(g.concentration.source_value, 10, 'the plan: target OD600 10');
             testCase.verifyEqual(g.concentration.source_unit, 'OD600');
             if ndi.setup.V2.schemaHasField('concentration', 'value.od600')
@@ -122,7 +122,10 @@ classdef TestHaleySeeding < matlab.unittest.TestCase
                 '(correction cfu_matching_2023_03_27)');
             testCase.verifyEmpty(testCase.solution('suspension_op50_20230327_b').note);
             b = testCase.entry('suspension_op50_20230327_b');      % Mini
-            testCase.verifyEqual(b.ingredients{1}.concentration.particles_per_liter, 846 * 2e10);
+            testCase.verifyFalse(isfield(b.ingredients{1}.concentration, 'particles_per_liter'), ...
+                'the plan holds no measured value (decision #129)');
+            testCase.verifyEqual(testCase.solution('suspension_op50_20230327_b').cfu, 846, ...
+                'the CFU is the solution''s, observed');
             testCase.verifyEqual(b.ingredients{2}.ingredient, 'lb');
             e = testCase.entry('suspension_op50gfp_20220428');
             testCase.verifyEqual(e.ingredients{1}.ingredient, 'OP50-GFP');
@@ -234,8 +237,37 @@ classdef TestHaleySeeding < matlab.unittest.TestCase
             end
             testCase.verifyEqual(sd.counts.days, numel(unique(dateshift([testCase.S.solutions.day], ...
                 'start', 'day'))));
-            testCase.verifyTrue(any(contains(sd.skipped, 'colony-forming-unit')), ...
-                'the CFU is reported, not observed');
+            % each measured stock with a CFU: a Cell Density observation by
+            % viable cell count, in particles_per_liter (decision #129)
+            withCfu = sum(strcmp({testCase.S.solutions.kind}, 'stock') & ~isnan([testCase.S.solutions.cfu]));
+            testCase.verifyGreaterThan(withCfu, 0);
+            if ndi.setup.V2.schemaHasLeaf('concentration_observation')
+                testCase.verifyEqual(sd.counts.cfu_observations, withCfu, 'one per stock with a CFU');
+                leaf = cellfun(@ndi.v2.leafName, sd.documents, 'UniformOutput', false);
+                ob = sd.documents(strcmp(leaf, 'concentration_observation'));
+                nodeOf = @(t) t.node;
+                node = cellfun(@(d) nodeOf(ndi.v2.blockOf(d, 'statement', 'variable')), ob, ...
+                    'UniformOutput', false);
+                cd = ob(strcmp(node, 'NCIT:C120538'));
+                testCase.verifyNumElements(cd, withCfu);
+                testCase.verifyEqual(nodeOf(ndi.v2.blockOf(cd{1}, 'interaction', 'method')), ...
+                    'NCIT:C130166', 'Viable Cell Count');
+                dep = cd{1}.depends_on;
+                if iscell(dep), dep = [dep{:}]; end
+                testCase.verifyFalse(any(strcmp({dep.name}, 'instrument_id') & ...
+                    ~cellfun(@isempty, {dep.document_id})), ...
+                    'the colonies were not counted with the spectrophotometer');
+                c = ndi.v2.blockOf(cd{1}, 'concentration', 'value');
+                if iscell(c), c = c{1}; end
+                testCase.verifyEqual(c(1).source_unit, 'CFU/mL');
+                testCase.verifyEqual(c(1).particles_per_liter, 1000 * c(1).source_value, 'RelTol', 1e-12, ...
+                    'per mL -> per L');
+                od = ob(strcmp(node, 'MCO:0000059'));
+                testCase.verifyEqual(nodeOf(ndi.v2.blockOf(od{1}, 'interaction', 'method')), ...
+                    'NCIT:C85776', 'Optical Density Measurement (decision #129)');
+            else
+                testCase.verifyEqual(sd.counts.cfu_observations, 0);
+            end
         end
     end
 

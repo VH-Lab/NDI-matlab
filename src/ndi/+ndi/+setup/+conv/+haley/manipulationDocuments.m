@@ -37,7 +37,9 @@ function out = manipulationDocuments(session, S, subjectIds, options)
 %                  (`starvedTime` to the last move off it). E. coli plate: cold
 %                  room after pouring (to seeding, which was onto cold plates:
 %                  the end is up to 5 min early), cold room after seeding (to
-%                  `timeRoomTemp`), room temperature (from `timeRoomTemp`).
+%                  `timeRoomTemp`), room temperature (from `timeRoomTemp` to
+%                  its last image, where its patches' stay ends; decision
+%                  #130).
 %                  Seeding to cold room is at room temperature with no move:
 %                  none. A `timeRoomTemp` the spec's corrections mark as
 %                  estimated is approximate with no bound, and says so.
@@ -72,12 +74,14 @@ function out = manipulationDocuments(session, S, subjectIds, options)
 %                    dose of it reads as (a formulation's type, a strain's
 %                    WBStrain term)
 %     'Suspensions'  seedingSuspensions' index table
-%     'Relations'    relationDocuments' output (timeReferenceIds, assaySpans)
+%     'Relations'    relationDocuments' output (timeReferenceIds, assaySpans,
+%                    stayEnds)
 %     'HandTolerance'  [minus plus] s for a hand-written time (default [60 60])
 %
 %   OUT fields: documents (cell of structs: manipulations and their time
 %   references), counts (struct), skipped (cellstr: a manipulation not made,
-%   and why).
+%   and why), seedIds (containers.Map, a patch's document id -> its seeding
+%   dose's id: an input of the patch's stage-12 estimates, decision #122).
 
 arguments
     session table
@@ -104,6 +108,7 @@ minuteFmt = 'yyyy-MM-dd''T''HH:mm';
 secondFmt = 'yyyy-MM-dd''T''HH:mm:ss';
 refs = getOr(options.Relations, 'timeReferenceIds', containers.Map());
 spans = getOr(options.Relations, 'assaySpans', containers.Map());
+stayEnds = getOr(options.Relations, 'stayEnds', containers.Map());
 eachMember = struct();
 if ndi.setup.V2.schemaHasField('statement', 'distributive')
     eachMember.distributive = true;
@@ -112,7 +117,7 @@ end
 docs = {};
 out = struct('documents', {{}}, 'skipped', {{}}, 'counts', struct('pour', 0, ...
     'seed_patch', 0, 'seed_acclimation_patch', 0, 'temperature', 0, 'transfer', 0, ...
-    'food_deprivation', 0, 'developmental_stage', 0));
+    'food_deprivation', 0, 'developmental_stage', 0), 'seedIds', containers.Map());
 
 % ---- plates ------------------------------------------------------------------
 plateKinds = {'assay_plate', 'acclimation_plate', 'food_deprivation_plate', 'plate'};
@@ -178,7 +183,14 @@ for k = find(ismember(S.kind, plateKinds))'
                 cfg.temperature.cold_room_celsius, '', cfg.temperature.methods.cold_room);
             temperature(id, p.cold_room, hand, p.room_temp, hand, minuteFmt, ...
                 cfg.temperature.cold_room_celsius, '', cfg.temperature.methods.cold_room);
-            temperature(id, p.room_temp, hand, NaT, [], minuteFmt, ...
+            % on the bench until its last image, where its patches' stay
+            % ends (relationDocuments; decision #130)
+            stop = NaT; stopTol = []; stopFmt = minuteFmt;
+            if isKey(stayEnds, id)
+                e = stayEnds(id);
+                stop = e.stop; stopTol = e.tol; stopFmt = e.fmt;
+            end
+            temperature(id, p.room_temp, hand, stop, stopTol, stopFmt, ...
                 cfg.temperature.room_celsius, '', cfg.temperature.methods.room);
     end
 
@@ -327,7 +339,11 @@ out.documents = docs;
                 subject, counter);
             return;
         end
+        n0 = numel(docs);
         statement('dose_manipulation', subject, variable, v, timeId, x, counter);
+        if numel(docs) > n0 && startsWith(counter, 'seed')
+            out.seedIds(subjectIds(subject)) = docs{end}.base.id;
+        end
     end
 
     function move(cohort, plate, value, method, params)

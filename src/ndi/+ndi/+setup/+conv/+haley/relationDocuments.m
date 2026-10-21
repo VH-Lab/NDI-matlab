@@ -22,9 +22,13 @@ function out = relationDocuments(session, S, R, subjectIds, options)
 %                          its bound plus any spread, decision #75) to the
 %                          plate's last recording: the end of filming on an
 %                          assay plate, the last image on an E. coli plate
-%                          (exact). An acclimation plate has no recording, so
-%                          its patch's stay has a start only; a plate with no
-%                          seeding time gives a stay with no time.
+%                          (exact). An acclimation plate has no recording: its
+%                          patch's stay ends with the last move of worms off
+%                          the plate (their food deprivation plate's start or
+%                          the transfer T, with its bound), the latest time
+%                          the source shows the patch there (decision #130); a
+%                          plate with no seeding time gives a stay with no
+%                          time.
 %     worm   member_of     its cohort (the worms of its assay plate, moved
 %                          together; decision #55). No time.
 %     cohort contained_in  each plate its worms were on, in turn: its acclimation
@@ -68,7 +72,9 @@ function out = relationDocuments(session, S, R, subjectIds, options)
 %   window's time reference, for the moves stage 8 states at the same times),
 %   assaySpans (containers.Map: assay plate -> struct T, tol, stop, method:
 %   the transfer time with its bound, the end of filming (wall clock) and the
-%   protocol's transfer method, for the moves and windows of stage 8).
+%   protocol's transfer method, for the moves and windows of stage 8),
+%   stayEnds (containers.Map: plate -> struct stop, tol, fmt: where its
+%   patches' stay ends, for the windows of stage 8; decision #130).
 
 arguments
     session table
@@ -89,7 +95,8 @@ R = R(strcmp(R.session, ref), :);
 out = struct('documents', {{}}, 'skipped', {{}}, 'counts', struct( ...
     'patch_in_plate', 0, 'worm_member_of_cohort', 0, 'cohort_in_assay_plate', 0, ...
     'cohort_in_acclimation_plate', 0, 'cohort_in_food_deprivation_plate', 0), ...
-    'timeReferenceIds', containers.Map(), 'assaySpans', containers.Map());
+    'timeReferenceIds', containers.Map(), 'assaySpans', containers.Map(), ...
+    'stayEnds', containers.Map());
 docs = {};
 eachMember = struct();             % `distributive`, when the schema has it (#84)
 if ndi.setup.V2.schemaHasField('directed_relation', 'distributive')
@@ -247,9 +254,12 @@ out.assaySpans = spanOf;
         if isfield(p, 'seeded_spread_s') && ~isempty(p.seeded_spread_s) && ~isnan(p.seeded_spread_s)
             tol = tol + p.seeded_spread_s;      % a seeding known only to a span (#75)
         end
-        stop = NaT;
+        stop = NaT; stopTol = []; stopFmt = secondFmt;
         if isKey(spanOf, plate)                 % an assay plate: the end of filming
             stop = spanOf(plate).stop;
+        elseif strcmp(S.kind{h}, 'acclimation_plate')
+            % no recording: the last move of worms off it (decision #130)
+            [stop, stopTol, stopFmt] = lastMoveOff(plate);
         else                                    % an E. coli plate: its last image
             im = images(strcmp(images.plate, plate), :);
             if height(im) > 0
@@ -263,9 +273,33 @@ out.assaySpans = spanOf;
                 char(stop), char(t0));
             hasEnd = false;
         end
-        d = utcReference(t0, tol, minuteFmt, stop, [], secondFmt, hasEnd, tz, sid);
+        if hasEnd
+            out.stayEnds(plate) = struct('stop', stop, 'tol', stopTol, 'fmt', stopFmt);
+        end
+        d = utcReference(t0, tol, minuteFmt, stop, stopTol, stopFmt, hasEnd, tz, sid);
         docs{end+1} = d;
         id = d.base.id;
+    end
+
+    function [t, tol, fmt] = lastMoveOff(accId)
+        % the latest time a cohort left acclimation plate ACCID: its food
+        % deprivation plate's start, or else its assay plate's transfer T
+        t = NaT; tol = []; fmt = minuteFmt;
+        for ci = find(strcmp(cohorts.acclimation, accId))'
+            if ~isempty(cohorts.deprivation{ci})
+                when = placed(holding, cohorts.deprivation{ci}, tz);
+                whenTol = handTol; whenFmt = minuteFmt;
+            else
+                ap = plates.local_identifier(plates.plate == cohorts.plate(ci) & ...
+                    strcmp(plates.folder, cohorts.folder{ci}));
+                if isempty(ap) || ~isKey(spanOf, ap{1}), continue; end
+                sp = spanOf(ap{1});
+                when = sp.T; whenTol = sp.tol; whenFmt = secondFmt;
+            end
+            if ~isnat(when) && (isnat(t) || when > t)
+                t = when; tol = whenTol; fmt = whenFmt;
+            end
+        end
     end
 end
 

@@ -17,11 +17,9 @@ function [S, checks] = seedingSuspensions(dataParentDir, spec)
 %     OD600 10 solution   formulation: the strain at its target OD600 10
 %                         (`od600` and the source pair, source unit OD600),
 %                         then the diluent. Its measured OD600 (`OD600Real`)
-%                         is an observation of the solution entity, not a
-%                         value of the formulation. CFU stays on the plan as
-%                         particles_per_liter = CFU x 2e10 (decision #57)
-%                         until the term registry has a term to observe it by
-%                         (decision #114: reported, not minted).
+%                         and CFU (`CFU`) are observations of the solution
+%                         entity (seedingDocuments), not values of the
+%                         formulation (decisions #114, #129).
 %     dilution, per OD600 formulation: the OD600 10 solution as a
 %                         volume_fraction of target/10 (source value: the
 %                         target OD600), then the diluent
@@ -262,15 +260,9 @@ for s = 1:numel(sol)
         end
         continue;
     end
-    % the stock's plan: the strain at OD600 10. CFU stays on it, as the
-    % measured particles_per_liter (decision #57), until the registry has a
-    % term to observe it by (decision #114: reported, not invented)
+    % the stock's plan: the strain at OD600 10. What was measured of it (its
+    % OD600 and CFU) is an observation of the solution (decisions #114, #129)
     c = target(10, hasOD);
-    if ~isnan(x.cfu)
-        c.particles_per_liter = x.cfu * 2e10;
-        c = orderfields(c, intersect({'particles_per_liter', 'od600', 'source_value', 'source_unit'}, ...
-            fieldnames(c), 'stable'));
-    end
     ing = {struct('ingredient', x.strain, 'concentration', c)};
     if ~isempty(x.diluent)
         ing{end+1} = struct('ingredient', x.diluent); %#ok<AGROW>

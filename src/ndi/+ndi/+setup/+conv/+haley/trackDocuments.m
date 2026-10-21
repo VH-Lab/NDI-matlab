@@ -11,7 +11,10 @@ function out = trackDocuments(dataParentDir, session, R, subjectIds, options)
 %   Per worm and video, four calculations about the worm, each in an
 %   ingested sampled_body keyed by `video frame` (0-based; the source's
 %   1-based `frameNum`) and `body part` (the body parts with a table, in the
-%   order midpoint, head, tail: one, the midpoint, when only it was tracked).
+%   order midpoint, head, tail: one, the midpoint, when only it was tracked;
+%   written as the points they are -- `body midpoint`, `anterior end point`,
+%   `posterior end point`, the ends of the tracked body spline, not UBERON's
+%   head and tail regions; decision #128).
 %   The body parts of a worm share their frames; a body part whose frames
 %   differ from the first one's is left out and reported in OUT.skipped.
 %     position_calculation  `position`, keyed [video frame x body part x
@@ -32,11 +35,12 @@ function out = trackDocuments(dataParentDir, session, R, subjectIds, options)
 %                           steps faster than 600 um/s left out (method
 %                           parameter window).
 %                           Input: the positions.
-%     length_calculation    `distance` (`distanceLawnEdge`), m, with the
-%                           condition reference point = nearest bacterial
-%                           patch edge; positive inside a patch, negative
-%                           outside it (notes). Method distance transform.
-%                           Inputs: the positions and the lawn mask.
+%     length_calculation    `signed distance from the nearest bacterial patch
+%                           edge` (`distanceLawnEdge`), m: positive inside a
+%                           patch, negative outside it, as the variable
+%                           (EMPTY:0000350) says (decision #119). Method
+%                           distance transform. Inputs: the positions and the
+%                           lawn mask.
 %     item_calculation      `nearest bacterial patch` (`closestLawnID`): a
 %                           0-based index into the plate's patch subjects
 %                           (item_id). The source reads it at pixel (1, 1) on
@@ -61,8 +65,9 @@ function out = trackDocuments(dataParentDir, session, R, subjectIds, options)
 %   OUT fields: documents (cell of structs), counts (struct: position, speed,
 %   patch_edge_distance, nearest_patch, each a number of statements),
 %   skipped (cellstr), byWorm (containers.Map, '<epoch>|<worm
-%   local_identifier>' -> struct of the ids of that worm's position, speed and
-%   patch-edge distance statements in that video: stage 11's inputs).
+%   local_identifier>' -> struct of the ids of that worm's position, speed,
+%   patch-edge distance and nearest-patch statements in that video ('' for
+%   one not made): stage 11's inputs).
 
 arguments
     dataParentDir (1,:) char {mustBeFolder}
@@ -129,8 +134,6 @@ speedParams = did2.build.list( ...
     did2.build.parameter(haleyTerm('window'), 'Value', 4, 'Unit', haleyTerm('second')));
 coordinate = did2.build.key(haleyTerm('coordinate'), 2, ...
     'Labels', haleyTerm({'X-coordinate', 'Y-coordinate'}));
-toEdge = did2.build.list(did2.build.condition(haleyTerm('reference point'), ...
-    'Term', haleyTerm('nearest bacterial patch edge')));
 
 for k = 1:height(R)
     epoch = R.epoch{k};
@@ -207,7 +210,8 @@ for k = 1:height(R)
             'pixels from the upper-left corner.'], strjoin(kept, ', ')), ...
             'NaN')}]; %#ok<AGROW>
         out.counts.position = out.counts.position + 1;
-        ids = struct('position', pos.base.id, 'speed', '', 'patch_edge_distance', '');
+        ids = struct('position', pos.base.id, 'speed', '', 'patch_edge_distance', '', ...
+            'nearest_patch', '');
 
         % speed
         [has, a] = column(W, 'velocitySmooth');
@@ -230,10 +234,9 @@ for k = 1:height(R)
         if any(has) && ~isempty(geo.lawn_mask)
             keys = did2.build.list(frame, bodyPartKey(kept(has)));
             de = did2.build.statement('length_calculation', wormId, ...
-                haleyTerm('distance'), [], 'DataBody', true, 'DatumType', 'float64', ...
-                'Keys', keys, 'Conditions', toEdge, ...
+                haleyTerm('signed distance from the nearest bacterial patch edge'), [], ...
+                'DataBody', true, 'DatumType', 'float64', 'Keys', keys, ...
                 'Method', haleyTerm('distance transform'), ...
-                'Notes', 'Positive inside a patch, negative outside it.', ...
                 'InputIds', {pos.base.id, geo.lawn_mask}, calc{:});
             docs = [docs, {de, ingestedBody(de, a * geo.pixel, 'float64', keys, sid, ...
                 ['Signed distance to the nearest patch edge per video frame and body part, m ' ...
@@ -241,7 +244,6 @@ for k = 1:height(R)
             out.counts.patch_edge_distance = out.counts.patch_edge_distance + 1;
             ids.patch_edge_distance = de.base.id;
         end
-        out.byWorm([epoch '|' worm]) = ids;
 
         % nearest patch
         [has, id] = column(W, 'closestLawnID');
@@ -277,8 +279,10 @@ for k = 1:height(R)
                     'into item_id; %d where the source did not track the worm.'], fill), ...
                     num2str(fill))}]; %#ok<AGROW>
                 out.counts.nearest_patch = out.counts.nearest_patch + 1;
+                ids.nearest_patch = np.base.id;
             end
         end
+        out.byWorm([epoch '|' worm]) = ids;
     end
 end
 out.documents = docs;
@@ -291,9 +295,13 @@ function k = bodyPartKey(names)
 arguments
     names cell
 end
-% the source's part names; its `midpoint` is the term `body midpoint`
+% the source's part names are points of the tracked body spline: `midpoint`
+% the term `body midpoint`, `head` and `tail` its ends, `anterior end point`
+% and `posterior end point` (decision #128)
+points = containers.Map({'midpoint', 'head', 'tail'}, ...
+    {'body midpoint', 'anterior end point', 'posterior end point'});
 k = did2.build.key(haleyTerm('body part'), numel(names), 'Labels', ...
-    haleyTerm(strrep(names, 'midpoint', 'body midpoint')));
+    haleyTerm(cellfun(@(n) points(n), names, 'UniformOutput', false)));
 end
 
 function [has, a] = column(W, name)

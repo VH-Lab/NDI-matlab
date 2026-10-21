@@ -645,9 +645,14 @@ if isfield(result, 'subjects') && isfield(result, 'recordings')
         end
         if any(options.Stages == "encounters") && isfield(built{k}, 'tracks')
             windows = containers.Map();
-            if isfield(built{k}, 'observations'), windows = built{k}.observations.windows; end
+            windowStarts = containers.Map();
+            if isfield(built{k}, 'observations')
+                windows = built{k}.observations.windows;
+                windowStarts = built{k}.observations.windowStarts;
+            end
             en = ndi.setup.conv.haley.encounterDocuments(dataParentDir, T(k, :), result.recordings, ...
                 built{k}.subjectIds, 'Tracks', built{k}.tracks.byWorm, 'PlateWindows', windows, ...
+                'PlateWindowStarts', windowStarts, ...
                 'RecordingRefs', built{k}.recordingRefs, 'SoftwareId', run.SoftwareId, ...
                 'InterpreterId', run.InterpreterId, 'OperatingSystemId', run.OperatingSystemId);
             built{k}.documents = [built{k}.documents, en.documents];
@@ -686,10 +691,13 @@ if isfield(result, 'subjects') && isfield(result, 'recordings')
         for j = 1:numel(keys)
             if isKey(instrumentIds, keys{j}), run.(names{j}) = instrumentIds(keys{j}); end
         end
+        spec = jsondecode(fileread(options.Spec));
+        corrections = struct([]);
+        if isfield(spec, 'corrections'), corrections = spec.corrections; end
         de = ndi.setup.conv.haley.densityDocuments(dataParentDir, T, built, ...
             'DatasetSessionId', result.datasetSessionId, 'SoftwareId', run.SoftwareId, ...
             'InterpreterId', run.InterpreterId, 'OperatingSystemId', run.OperatingSystemId, ...
-            'Subjects', result.subjects);
+            'Subjects', result.subjects, 'Corrections', corrections);
         for k = 1:n
             T.documents{k} = [T.documents{k}, de.sessionDocuments{k}];
         end
@@ -706,6 +714,12 @@ if isfield(result, 'subjects') && isfield(result, 'recordings')
         end
         for j = 1:numel(de.checks.encounterDisagrees)
             fprintf('  encounter disagrees: %s\n', de.checks.encounterDisagrees{j});
+        end
+        for j = 1:numel(de.checks.corrected)
+            fprintf('  corrected: %s\n', de.checks.corrected{j});
+        end
+        for j = 1:numel(de.checks.correctionNotApplied)
+            fprintf('  correction not applied: %s\n', de.checks.correctionNotApplied{j});
         end
         for j = 1:numel(de.skipped)
             fprintf('  skipped: %s\n', de.skipped{j});

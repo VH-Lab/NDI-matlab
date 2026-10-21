@@ -18,7 +18,7 @@ function docs = entityDocuments(className, fields, edges, options)
 %     2. one assertion per other field (a term, text or date assertion whose
 %        `variable` is the field's name with spaces, with its ontology node
 %        where one is decided: species NCIT:C45293, accessibility
-%        NCIT:C175887);
+%        NCIT:C175887, a strain's genotype NCIT:C16631 as text);
 %     3. one relation per other edge: vendor_id -> sold_by, background_strain_id
 %        -> derived_from, product_id -> distributed_as (derived_from on a schema
 %        without it).
@@ -101,7 +101,7 @@ terms = {'species', 'genetic_strain_type', 'phenotype', 'breeding_type', 'diseas
 dates = {'release_date', 'publication_date'};
 texts = {'short_name', 'version', 'version_innovation', 'how_to_cite', 'support_channel', ...
     'copyright_year', 'given_name', 'family_name', 'alternate_name', 'email', ...
-    'catalog_number', 'lot_number', 'laboratory_code', 'synonym', 'authors'};
+    'catalog_number', 'lot_number', 'laboratory_code', 'synonym', 'authors', 'genotype'};
 % the variables with a decided ontology node (the Haley import's term pass,
 % 2026-10-19; accessibility as did-schema's binding registry names it; the
 % rest by tenet T19's node pass, 2026-10-20, Haley decision #106)
@@ -110,7 +110,8 @@ variableNodes = struct('species', 'NCIT:C45293', 'accessibility', 'NCIT:C175887'
     'catalog_number', 'NCIT:C99286', 'keyword', 'EDAM:data_0968', 'license', 'NCIT:C43611', ...
     'factors', 'OBI:0000750', 'short_name', 'NCIT:C42610', 'version', 'IAO:0000129', ...
     'authors', 'IAO:0000321', 'publication_date', 'EMPTY:0000345', ...
-    'release_date', 'EMPTY:0000346', 'genetic_strain_type', 'EMPTY:0000347');
+    'release_date', 'EMPTY:0000346', 'genetic_strain_type', 'EMPTY:0000347', ...
+    'genotype', 'NCIT:C16631');
 names = setdiff(fieldnames(fields), identity, 'stable');
 for k = 1:numel(names)
     f = names{k};

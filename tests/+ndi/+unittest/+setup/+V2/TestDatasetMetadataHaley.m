@@ -209,6 +209,31 @@ classdef TestDatasetMetadataHaley < matlab.unittest.TestCase
             testCase.verifyTrue(any(strcmp({gfp.depends_on.name}, 'product_id')));
         end
 
+        function testAStrainsGenotypeIsAnAssertion(testCase)
+            % decision #117: on one entity class a strain's genotype is a text
+            % assertion about the strain, variable NCIT:C16631 Genotype, and its
+            % description keeps the spec's prose only; a `strain` class (no
+            % genotype field) keeps it in the description
+            docs = testCase.Result.documents;
+            pr = testCase.Result.ids('PR811');
+            ent = docs{cellfun(@(d) strcmp(d.base.id, pr), docs)};
+            desc = char(ndi.v2.blockOf(ent, 'strain', 'description', ''));
+            if ~ndi.setup.V2.mergedEntities()
+                testCase.verifySubstring(desc, 'osm-6(p811) V');
+                return;
+            end
+            testCase.verifyFalse(contains(desc, 'osm-6'), 'not in the description');
+            about = @(d) isfield(d, 'depends_on') && any(strcmp({d.depends_on.document_id}, pr));
+            g = docs(cellfun(@(d) about(d) && isstruct(ndi.v2.blockOf(d, 'statement', 'variable')) ...
+                && strcmp(ndi.v2.blockOf(d, 'statement', 'variable').node, 'NCIT:C16631'), docs));
+            testCase.verifyNumElements(g, 1, 'one genotype assertion');
+            testCase.verifyEqual(ndi.v2.blockOf(g{1}, 'statement', 'variable').name, 'Genotype');
+            testCase.verifyEqual(ndi.v2.leafName(g{1}), 'text_assertion');
+            v = ndi.v2.blockOf(g{1}, 'text', 'value');
+            if iscell(v), v = v{1}; end
+            testCase.verifyEqual(v(1).text, 'osm-6(p811) V');
+        end
+
         function testRecipesAreBuiltFromTheirIngredients(testCase)
             % decision #56: NGM and the WormBook media, dataset-level
             docs = testCase.Result.documents;

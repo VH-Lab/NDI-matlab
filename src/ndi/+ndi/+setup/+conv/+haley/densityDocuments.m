@@ -22,6 +22,14 @@ function out = densityDocuments(dataParentDir, sessions, built, options)
 %   border / center ratio < 1 or > 35; then, per image, the lowest xPeak until
 %   the image's xPeak range is at most 0.1 mm.
 %
+%   A plate's `peptone` is corrected by the spec's named corrections (option
+%   'Corrections'; folder `ecoli`, by plate) through applyCorrection BEFORE
+%   the patches are grouped (decision #131): plate 90, labelled with peptone,
+%   joins the without-peptone fits, which therefore differ from the paper's
+%   (the refits are reported in OUT.checks.refitDisagrees). Applied and
+%   refused corrections are listed in OUT.checks.corrected /
+%   correctionNotApplied.
+%
 %   Dataset-level documents (OUT.datasetDocuments; written with stage 2's at
 %   stage 13):
 %     subject             per fit, a GROUP of E. coli patches (type `group`):
@@ -38,14 +46,16 @@ function out = densityDocuments(dataParentDir, sessions, built, options)
 %                         seeding condition (`culture medium` = `nematode
 %                         growth medium` [without peptone], `bacterial patch
 %                         volume`, `bacteria growth duration after seeding` =
-%                         the 0 / 12 / 48 h bin, approximate, and for a
-%                         one-OD600 fit `target seeding OD600`, decision #110);
+%                         the planned growth group, `target bacteria growth
+%                         duration after seeding` = 0 / 12 / 48 h, exact
+%                         (EMPTY:0000351, decision #125), and for a one-OD600
+%                         fit `target seeding OD600`, decision #110);
 %                         inputs the INCLUDED patches' border amplitude
 %                         statements (stage 10 part C), so the exclusions are
 %                         the values left out; method `ordinary least squares
-%                         estimation`, method parameters the exclusion rules
-%                         and the bin width (labels); time the span of the
-%                         included images
+%                         estimation` (no method parameters: the groups are
+%                         the planned growth groups, not bins, #125); time the
+%                         span of the included images
 %     absolute_time_reference  that span
 %   In each C. elegans session (OUT.sessionDocuments{k}), the estimates
 %   labelEncounters made from the fits, about the PATCHES (method `prediction
@@ -53,17 +63,20 @@ function out = densityDocuments(dataParentDir, sessions, built, options)
 %     intensity_calculation  per assay-plate patch a worm encountered:
 %                         encounter.mat borderAmplitude at each encounter on
 %                         it, keyed `encounter onset time` (the onsets of the
-%                         worms' encounter lists, seconds from the plate's window);
-%                         inputs the fit for the patch's condition (none for a
-%                         patch of LB alone, estimated 0; NaN where no fit
-%                         matches) and the worms' encounter lists; condition
-%                         the growth duration bin
+%                         worms' encounter lists, counted from the start of
+%                         the statement's time reference, the plate's window,
+%                         #118); inputs the fit for the patch's condition (none
+%                         for a patch of LB alone, estimated 0; NaN where no
+%                         fit matches), the worms' encounter lists and the
+%                         patch's seeding dose (#122); condition the planned
+%                         growth group
 %     intensity_calculation  per acclimation-plate patch (`<plate>_patch0001`,
 %                         skipped when the subject list has none): the
 %                         estimate at the pick (encounter.mat
 %                         borderAmplitudeGrowth), from the 200 uL fit at the
-%                         plate's growth time then; timed by the pick
-%                         (absolute_time_reference, to the minute)
+%                         plate's growth time then, and the patch's seeding
+%                         dose; timed by the pick (absolute_time_reference, to
+%                         the minute)
 %   Each value is checked against the fit it names (OUT.checks
 %   .encounterDisagrees). Beside each estimate, its RELATIVE DENSITY
 %   (decision #99; modelExploit and fig3_single):
@@ -89,7 +102,7 @@ function out = densityDocuments(dataParentDir, sessions, built, options)
 %   Options: 'DatasetSessionId', 'SoftwareId', 'InterpreterId',
 %   'OperatingSystemId' (the run environment, as stage 10), 'FitsFile',
 %   'Subjects' (subjectList's table: each assay plate's acclimation plate and
-%   its pick time).
+%   its pick time), 'Corrections' (the spec's `corrections`).
 
 arguments
     dataParentDir (1,:) char {mustBeFolder}
@@ -101,10 +114,12 @@ arguments
     options.OperatingSystemId (1,:) char = ''
     options.FitsFile (1,:) char = ''
     options.Subjects table = table()
+    options.Corrections = struct([])
 end
 dsid = options.DatasetSessionId;
 out = struct('datasetDocuments', {{}}, 'sessionDocuments', {repmat({{}}, height(sessions), 1)}, ...
-    'skipped', {{}}, 'checks', struct('refitDisagrees', {{}}, 'encounterDisagrees', {{}}), ...
+    'skipped', {{}}, 'checks', struct('refitDisagrees', {{}}, 'encounterDisagrees', {{}}, ...
+    'corrected', {{}}, 'correctionNotApplied', {{}}), ...
     'counts', struct('fits', 0, 'groups', 0, 'members', 0, 'inputs', 0, 'refit_checked', 0, ...
     'worms', 0, 'patches', 0, 'acclimation_patches', 0, 'estimates', 0, 'relative_density', 0, ...
     'encounters_checked', 0), 'fits', table());
@@ -147,6 +162,9 @@ if ~isempty(missing)
 end
 L.peptone = cellstr(L.peptone);
 L.fileName = cellstr(L.fileName);
+% a plate's peptone label, as the spec corrects it (plate 90, decision #131),
+% before anything is grouped by it
+[L, out.checks] = correctPeptone(L, options.Corrections, out.checks);
 % each row's stored statement: its position among its image's rows
 L.row = zeros(height(L), 1);
 L.statementId = repmat({''}, height(L), 1);
@@ -279,7 +297,7 @@ for i = 1:numel(fits)
     fit = did2.build.statement('model_fit_calculation', grp.base.id, ...
         haleyTerm('fluorescence intensity'), fitValue(q), ...
         'Conditions', conditionsOf(q), 'Method', haleyTerm('ordinary least squares estimation'), ...
-        'MethodParameters', rules(), 'InputIds', inputs, 'TimeReferenceIds', timeIds, ...
+        'InputIds', inputs, 'TimeReferenceIds', timeIds, ...
         'SessionId', dsid, env{:}, 'Notes', ['Border amplitude divided by exposure time ' ...
         '(a.u. per ms) against growth time (min), as plotForagingGFP fits it.']);
     out.datasetDocuments{end+1} = fit;
@@ -311,6 +329,11 @@ for k = 1:numel(built)
     sid = char(sessions.session_id{k});
     subjectIds = built{k}.subjectIds;
     worms = built{k}.encounters.byWorm;
+    % each patch's seeding dose (stage 8), an input of its estimates (#122)
+    seeds = containers.Map();
+    if isfield(built{k}, 'manipulations') && isfield(built{k}.manipulations, 'seedIds')
+        seeds = built{k}.manipulations.seedIds;
+    end
     names = keys(worms);
     docs = {};
     % every encounter of every worm: its patch, onset, estimate, fit and bin
@@ -370,8 +393,8 @@ for k = 1:numel(built)
         end
     end
 
-    % one estimate per assay-plate patch (and time reference and growth
-    % duration bin), keyed by the onsets of its encounters
+    % one estimate per assay-plate patch (and time reference and planned
+    % growth group), keyed by the onsets of its encounters
     if ~isempty(at)
         bins = [at.bin];
         bins(isnan(bins)) = -1;
@@ -383,10 +406,12 @@ for k = 1:numel(built)
             in = {a.fitId};
             in = [reshape(unique(in(~cellfun(@isempty, in)), 'stable'), 1, []), ...
                 reshape(unique({a.listId}, 'stable'), 1, [])];
+            if isKey(seeds, a(1).patchId)
+                in{end+1} = seeds(a(1).patchId); %#ok<AGROW>
+            end
             extra = {};
             if ~isnan(a(1).bin)
-                extra = {'Conditions', did2.build.list(binCondition(a(1).bin)), ...
-                    'MethodParameters', did2.build.list(binParameter())};
+                extra = {'Conditions', did2.build.list(growthGroupCondition(a(1).bin))};
             end
             onsetKeys = did2.build.list(did2.build.key(haleyTerm('encounter onset time'), ...
                 numel(a), 'Values', onsets, 'Unit', haleyTerm('second')));
@@ -394,8 +419,7 @@ for k = 1:numel(built)
                 did2.build.valueCell('intensity', [a.value]), 'Keys', onsetKeys, ...
                 'Method', prediction, extra{:}, 'InputIds', in, 'SessionId', sid, ...
                 'TimeReferenceIds', {a(1).timeId}, env{:}, 'Notes', ...
-                ['Border amplitude per ms of exposure at each encounter''s onset (seconds from ' ...
-                'the start of the plate''s first recording, as in each worm''s encounter list), ' ...
+                ['Border amplitude per ms of exposure at each encounter''s onset, ' ...
                 'from the fit for the patch''s seeding condition at its growth time ' ...
                 '(encounter.mat lawnGrowth, min); 0 for a patch of LB alone; NaN where no fit ' ...
                 'matches (labelEncounters).']); %#ok<AGROW>
@@ -428,6 +452,9 @@ for k = 1:numel(built)
             false, tz, sid);
         gIn = {};
         if ~isempty(p.fit) && ~isempty(fitIds{p.fit}), gIn = fitIds(p.fit); end
+        if isKey(seeds, subjectIds(accPatch))
+            gIn{end+1} = seeds(subjectIds(accPatch)); %#ok<AGROW>
+        end
         docs = [docs, {ref, did2.build.statement('intensity_calculation', subjectIds(accPatch), ...
             fluorescence, did2.build.valueCell('intensity', p.value), 'Method', prediction, ...
             'InputIds', gIn, 'SessionId', sid, 'TimeReferenceIds', {ref.base.id}, env{:}, ...
@@ -582,7 +609,7 @@ if ~strcmp(q.peptone, 'with'), medium = 'nematode growth medium without peptone'
 parts = {did2.build.condition(haleyTerm('culture medium'), 'Term', haleyTerm(medium)), ...
     did2.build.condition(haleyTerm('bacterial patch volume'), 'Quantity', q.volume * 1e-6, ...
         'Unit', haleyTerm('liter'), 'SourceValue', q.volume, 'SourceUnit', 'uL'), ...
-    binCondition(q.growth)};
+    growthGroupCondition(q.growth)};
 if strcmp(q.kind, 'single')
     % the OD600 the patches were seeded at: the planned value, named so by its
     % term because the data also holds the measured OD600 (decision #110, T19)
@@ -592,20 +619,54 @@ end
 c = did2.build.list(parts{:});
 end
 
-function c = binCondition(h)
-% the condition `bacteria growth duration after seeding` = H hours, a bin
+function c = growthGroupCondition(h)
+% the condition `target bacteria growth duration after seeding` = H hours:
+% the growth group the assay was planned for, exact (decision #125;
+% getExperimentInfo derives it by rounding the measured growth to 12 h)
 arguments
     h (1,1) double
 end
-c = did2.build.condition(haleyTerm('bacteria growth duration after seeding'), ...
-    'Quantity', h * 3600, 'Unit', haleyTerm('second'), 'SourceValue', h, 'SourceUnit', 'h', ...
-    'Approximate', true);
+c = did2.build.condition(haleyTerm('target bacteria growth duration after seeding'), ...
+    'Quantity', h * 3600, 'Unit', haleyTerm('second'), 'SourceValue', h, 'SourceUnit', 'h');
 end
 
-function p = binParameter()
-% the width of the growth duration bins (12 h)
-p = did2.build.parameter(haleyTerm('bin width'), ...
-    'Value', 12 * 3600, 'Unit', haleyTerm('second'), 'SourceValue', '12', 'SourceUnit', 'h');
+function [L, checks] = correctPeptone(L, corrections, checks)
+% the spec's named corrections to an E. coli plate's `peptone` (folder
+% `ecoli`, by plate; plate 90, decision #131), each applied to the plate's
+% lawnAnalysis rows only while every one still reads its `was` (decision
+% #111, applyCorrection); listed in CHECKS
+arguments
+    L table
+    corrections
+    checks (1,1) struct
+end
+if isstruct(corrections), corrections = num2cell(corrections); end
+for c = 1:numel(corrections)
+    x = corrections{c};
+    if ~isfield(x, 'plate') || ~isfield(x, 'column') || ~strcmp(x.column, 'peptone') ...
+            || ~isfield(x, 'folder') || ~strcmp(x.folder, 'ecoli')
+        continue;
+    end
+    r = find(L.plateNum == double(x.plate));
+    if isempty(r)
+        continue;                       % not among the analysed images
+    end
+    where = sprintf('ecoli plate %d', double(x.plate));
+    ok = true;
+    for j = r(:)'
+        [v, applied, ~, line] = applyCorrection(x, L.peptone{j}, where);
+        if ~applied
+            ok = false;
+            break;
+        end
+    end
+    if ~ok
+        checks.correctionNotApplied{end+1} = line;
+        continue;
+    end
+    L.peptone(r) = {lower(v)};
+    checks.corrected{end+1} = sprintf('%s (%d lawnAnalysis row(s))', line, numel(r));
+end
 end
 
 function b = growthBin(x)
@@ -775,11 +836,4 @@ if ndi.setup.V2.schemaHasField('concentration', 'value.od600')
 else
     v = did2.build.valueCell('concentration', x, 'Canonical', 'source_value', 'SourceUnit', 'OD600');
 end
-end
-
-function p = rules()
-% the growth duration bin: it defines the groups the fit is made over. The
-% patch selection rules of plotForagingGFP are not stated: the fit lists the
-% patches it used as its inputs (Jess, 2026-10-20)
-p = did2.build.list(binParameter());
 end
