@@ -1,4 +1,12 @@
 function [] = doImport(dataParentDir,options)
+% DOIMPORT Import the Haley dataset as v1 (did_v1) documents.
+%
+%   SUPERSEDED by ndi.setup.conv.haley.import_V2, which writes the dataset as
+%   V2 documents; new work belongs there. Kept until V1 is frozen.
+%
+%   Known issue (NDI #1017): the imageStack dimension_scale is labelled
+%   micrometer, but the source `scale` is pixels per millimetre. import_V2
+%   reads it correctly; this importer is left as it is.
 
 % Input argument validation
 arguments
