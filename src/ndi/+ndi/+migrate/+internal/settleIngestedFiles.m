@@ -34,6 +34,9 @@ function [docs, report] = settleIngestedFiles(docs, ndiDir)
 %       document migrates and the file reads the moment its bytes are put
 %       in the store. Counted `missing`, and warned
 %       (NDI:migrate:ingestedFileMissing), never silent.
+%       DECIDED (Jess Haley, 2026-10-21): migrate and warn, rather than refuse
+%       the session or flag each document; the warning and the `missing`
+%       count are the record of what is absent.
 %   `delete_original` is set to 0 on every ingested location: v1 already
 %   acted on it, and a migration must never delete a file.
 %
