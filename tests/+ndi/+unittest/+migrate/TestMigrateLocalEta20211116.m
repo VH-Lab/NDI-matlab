@@ -105,6 +105,17 @@ classdef TestMigrateLocalEta20211116 < matlab.unittest.TestCase
 
     methods (Test)
 
+        function testTheStimulusFoldReportsItsSeveralAnimalCount(testCase)
+            % REPORT-ONLY (Jess Haley, 2026-10-21): every corpus states how
+            % many presentations resolve to SEVERAL animals in their session,
+            % 0 included. Those are left as v1 (the cohort + distributive shape
+            % is not expressible on the schema this pass writes).
+            r = testCase.Result.secondPass.stimulusSequence;
+            testCase.assertTrue(isstruct(r) && isfield(r, 'several_animal_presentations'), ...
+                'the stimulusSequence report carries no several-animal counter');
+            ndi.unittest.migrate.printStimulusFoldReport(r, '20211116');
+        end
+
         function testTheWholeCorpusMigratesWithNothingQuarantinedOrDangling(testCase)
             % DENOMINATOR FIRST. A pass over zero documents quarantines
             % zero documents, and that reading prints the same digit as a
