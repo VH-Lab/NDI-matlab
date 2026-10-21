@@ -1070,6 +1070,33 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
             end
         end % database_search();
 
+        function subjects = getsubjects(ndi_dataset_obj)
+            % GETSUBJECTS - Return the biological subject documents of the dataset
+            %
+            % SUBJECTS = GETSUBJECTS(NDI_DATASET_OBJ)
+            %
+            % Returns a cell array of ndi.document: the subjects of the
+            % experiment -- organisms, cultures, tissues, cells and groups
+            % (ndi.v2.subjectTypes) -- and NOT the apparatus. A v1 database
+            % holds only such subjects as `subject` documents, so on v1 this
+            % is every `subject` document. On a V2 (V_eta) database a probe,
+            % a camera (device) or a plate (material) is an entity too, and
+            % a MIGRATED element is a `subject`; all of those are left out,
+            % so a V2 or migrated database answers as v1 did (Jess Haley,
+            % 2026-10-21). See ndi.vintage.subjectDocs.
+            %
+            % For V2 data, new code should prefer ndi.entity.search, which
+            % returns ndi.entity objects and can filter on type, statements
+            % and relations; the same subjects are
+            %   ndi.entity.search(NDI_DATASET_OBJ, {'type', ndi.v2.subjectTypes()})
+            % and every entity, the apparatus included, is
+            %   ndi.entity.search(NDI_DATASET_OBJ, {'type', '*'})
+            %
+            % See also: ndi.entity.search, ndi.v2.subjectTypes,
+            % ndi.vintage.subjectDocs
+            subjects = ndi.vintage.subjectDocs(ndi_dataset_obj);
+        end % getsubjects()
+
         function ndi_binarydoc_obj = database_openbinarydoc(ndi_dataset_obj, ndi_document_or_id, filename, options)
             % DATABASE_OPENBINARYDOC - open the ndi.database.binarydoc channel of an ndi.document
             %

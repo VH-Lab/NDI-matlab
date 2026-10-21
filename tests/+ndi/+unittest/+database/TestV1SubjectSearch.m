@@ -39,6 +39,15 @@ classdef TestV1SubjectSearch < matlab.unittest.TestCase
             testCase.verifyTrue(any(cellfun(@(d) strcmp(d.id(), testCase.subjectID), docs)));
         end
 
+        function testGetsubjectsIsEveryV1Subject(testCase)
+            % v1 behaviour is unchanged: getsubjects is `isa subject`
+            got = testCase.session.getsubjects();
+            all_ = testCase.session.database_search(ndi.query('', 'isa', 'subject'));
+            ids = @(c) sort(cellfun(@(d) char(d.id()), c, 'UniformOutput', false));
+            testCase.verifyEqual(ids(got), ids(all_));
+            testCase.verifyTrue(any(strcmp(ids(got), testCase.subjectID)));
+        end
+
         function testIsaSubjectInsideAnOr(testCase)
             q = ndi.query('', 'isa', 'subject') | ndi.query('', 'isa', 'probe');
             docs = testCase.session.database_search(q);

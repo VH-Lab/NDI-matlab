@@ -891,6 +891,33 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
             end
         end % getelements()
 
+        function subjects = getsubjects(ndi_session_obj)
+            % GETSUBJECTS - Return the biological subject documents of the session
+            %
+            % SUBJECTS = GETSUBJECTS(NDI_SESSION_OBJ)
+            %
+            % Returns a cell array of ndi.document: the subjects of the
+            % experiment -- organisms, cultures, tissues, cells and groups
+            % (ndi.v2.subjectTypes) -- and NOT the apparatus. A v1 database
+            % holds only such subjects as `subject` documents, so on v1 this
+            % is every `subject` document. On a V2 (V_eta) database a probe,
+            % a camera (device) or a plate (material) is an entity too, and
+            % a MIGRATED element is a `subject`; all of those are left out,
+            % so a V2 or migrated database answers as v1 did (Jess Haley,
+            % 2026-10-21). See ndi.vintage.subjectDocs.
+            %
+            % For V2 data, new code should prefer ndi.entity.search, which
+            % returns ndi.entity objects and can filter on type, statements
+            % and relations; the same subjects are
+            %   ndi.entity.search(NDI_SESSION_OBJ, {'type', ndi.v2.subjectTypes()})
+            % and every entity, the apparatus included, is
+            %   ndi.entity.search(NDI_SESSION_OBJ, {'type', '*'})
+            %
+            % See also: ndi.entity.search, ndi.v2.subjectTypes,
+            % ndi.vintage.subjectDocs
+            subjects = ndi.vintage.subjectDocs(ndi_session_obj);
+        end % getsubjects()
+
         function b = eq(e1,e2)
             % EQ - are 2 NDI_SESSIONS equal?
             %

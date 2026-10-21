@@ -796,6 +796,36 @@ classdef TestObjectLayer < matlab.unittest.TestCase
             testCase.verifyError(@() ndi.entity.search(S, {'kind', 'subject'}), 'ndi:entity:search:subjectKind');
         end
 
+        function testGetsubjectsReturnsOnlyBiologicalSubjects(testCase)
+            % getsubjects on V2 answers as on v1 (Jess Haley, 2026-10-21):
+            % the organisms, cultures, tissues, cells and groups, never a
+            % plate (material) or an instrument (device). Session and dataset.
+            bio = ndi.v2.subjectTypes();
+            idsOf = @(c) sort(cellfun(@(d) char(d.id()), c, 'UniformOutput', false));
+            entIds = @(c) sort(cellfun(@(x) char(x.document_id), c, 'UniformOutput', false));
+            for holder = {testCase.Session, testCase.Dataset}
+                H = holder{1};
+                all_ = ndi.entity.search(H, {'type', '*'});
+                types = cellfun(@(x) char(x.type), all_, 'UniformOutput', false);
+                apparatus = all_(~ismember(types, bio));
+                testCase.assertNotEmpty(apparatus, sprintf( ...
+                    'the fixture read through a %s has non-biological entities', class(H)));
+                got = H.getsubjects();
+                testCase.verifyClass(got, 'cell');
+                testCase.verifyTrue(all(cellfun(@(d) isa(d, 'ndi.document'), got)), ...
+                    'getsubjects returns ndi.document objects, as a database_search does');
+                gotIds = idsOf(got);
+                testCase.verifyEqual(unique(gotIds), unique(entIds(ndi.entity.search(H, {'type', bio}))), ...
+                    sprintf('getsubjects on a %s is the biological entities', class(H)));
+                testCase.verifyNotEmpty(gotIds, 'the worms are subjects');
+                testCase.verifyFalse(any(ismember(entIds(apparatus), gotIds)), ...
+                    sprintf('getsubjects on a %s leaves out every device and material', class(H)));
+            end
+            testCase.verifyEqual(idsOf(testCase.Session.getsubjects()), ...
+                idsOf(testCase.Session.database_search(ndi.query('', 'isa', 'subject'))), ...
+                'on V2, getsubjects is `isa subject` (already the biological types)');
+        end
+
         function testTypesPassTheirAssertionsToInstances(testCase)
             % one entity class (2026-10-08): a cohort is an instance_of its
             % strain, distributive, so each worm is one too; what is

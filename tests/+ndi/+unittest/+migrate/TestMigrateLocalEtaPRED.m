@@ -571,6 +571,29 @@ classdef TestMigrateLocalEtaPRED < matlab.unittest.TestCase
             assertEqual(testCase, classes, ...
                 ["ndi.probe.timeseries.mfdaq", "ndi.probe.timeseries.stimulator"], ...
                 'the elements did not rebuild as their recorded probe classes');
+
+            % ---- getsubjects: THE ANIMAL, NOT THE PROBES ------------------
+            % `isa subject` above finds the animal AND the two migrated
+            % elements (all three are `subject` documents with no type).
+            % getsubjects answers as v1 did -- biological subjects only
+            % (Jess Haley, 2026-10-21) -- so it drops exactly the subjects an
+            % `ndi element class` assertion marks as apparatus.
+            subIds = cellfun(@(d) char(d.id()), subs, 'UniformOutput', false);
+            elIds = ndi.vintage.elementSubjectIds(s);
+            assertEqual(testCase, numel(elIds), 2, ...
+                'PRED holds 2 elements, each an `ndi element class` subject');
+            assertTrue(testCase, all(ismember(elIds, subIds)), ...
+                'the element subjects are among `isa subject`');
+            gs = s.getsubjects();
+            gsIds = cellfun(@(d) char(d.id()), gs, 'UniformOutput', false);
+            verifyEqual(testCase, sort(gsIds), sort(setdiff(subIds, elIds)), sprintf( ...
+                ['getsubjects returned %d subject(s) of %d `isa subject`; it ' ...
+                 'should be every subject except the 2 probes'], numel(gs), numel(subs)));
+            verifyFalse(testCase, any(ismember(elIds, gsIds)), ...
+                'getsubjects returned a probe');
+            verifyEqual(testCase, numel(gs), 1, sprintf( ...
+                ['getsubjects returned %d; PRED holds 1 animal (3 `isa subject` ' ...
+                 'documents = the animal + 2 probes)'], numel(gs)));
         end
 
         function testTheTimeReferenceFamilyIsTheFirstOfSizeTwoAndIsLegal(testCase)
