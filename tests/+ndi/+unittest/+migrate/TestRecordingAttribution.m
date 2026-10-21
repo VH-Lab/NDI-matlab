@@ -82,6 +82,50 @@ classdef TestRecordingAttribution < matlab.unittest.TestCase
 
     methods (Test)
 
+        function withoutEpochFilesTheElementsObservesIsTheDonor(testCase)
+            % Decided by Jess Haley, 2026-10-21 [preview attribution without
+            % epoch files]: no per-epoch recording observation exists (PRED
+            % carries no epoch files), so the element's kept `observes`
+            % relation (the probe observes the organism) gives the specimen.
+            structs = {testCase.as88(testCase.candidate('probe-1')), ...
+                       observes('probe-1', 'mouse-7')};
+            [plan, report] = ndi.migrate.internal.recordingAttribution(structs);
+            testCase.verifyEqual(report.observes_relations, 1);
+            testCase.verifyEqual(report.attributed, 1);
+            testCase.verifyEqual(report.attributed_via_observes, 1);
+            testCase.verifyEqual(report.refused_no_donor, 0);
+            testCase.verifyEqual(dep(plan(1).body, 'entity_id'), 'mouse-7');
+            testCase.verifyEqual(dep(plan(1).body, 'instrument_id'), 'probe-1');
+        end
+
+        function aRecordingObservationDonorWinsOverObserves(testCase)
+            % the per-epoch observation, when there is one, decides
+            structs = {testCase.as88(testCase.donor('probe-1', 'mouse-7')), ...
+                       testCase.as88(testCase.candidate('probe-1')), ...
+                       observes('probe-1', 'mouse-9')};
+            [plan, report] = ndi.migrate.internal.recordingAttribution(structs);
+            testCase.verifyEqual(report.attributed, 1);
+            testCase.verifyEqual(report.attributed_via_observes, 0);
+            testCase.verifyEqual(dep(plan(1).body, 'entity_id'), 'mouse-7');
+        end
+
+        function aProbeObservingTwoSpecimensIsRefused(testCase)
+            structs = {testCase.as88(testCase.candidate('probe-1')), ...
+                       observes('probe-1', 'mouse-7'), observes('probe-1', 'mouse-9')};
+            [plan, report] = ndi.migrate.internal.recordingAttribution(structs);
+            testCase.verifyEmpty(plan);
+            testCase.verifyEqual(report.refused_ambiguous_observes, 1);
+            testCase.verifyEqual(report.attributed, 0);
+        end
+
+        function aProbeWithNoDonorAndNoObservesIsStillRefused(testCase)
+            structs = {testCase.as88(testCase.candidate('probe-1')), ...
+                       observes('probe-2', 'mouse-7')};
+            [plan, report] = ndi.migrate.internal.recordingAttribution(structs);
+            testCase.verifyEmpty(plan);
+            testCase.verifyEqual(report.refused_no_donor, 1);
+        end
+
         function theEightyEightShapeIsAttributedInItsOwnSpelling(testCase)
             % pass 1 on did-schema #88: the probe moves to instrument_id and
             % the specimen becomes the `entity_id`; no `subject_id` appears
@@ -241,4 +285,17 @@ for k = 1:numel(body.depends_on)
         return;
     end
 end
+end
+
+function r = observes(childId, parentId)
+% the element's kept v1 `observes` relation, did-schema #88 shape
+r = struct();
+r.document_class = struct('class_name', 'directed_relation', 'class_version', '1.0.0', ...
+    'superclasses', struct('class_name', {'relation', 'base'}, 'class_version', '1.0.0'));
+r.depends_on = [struct('name', 'child_id', 'value', childId), ...
+    struct('name', 'parent_id', 'value', parentId), ...
+    struct('name', 'session_id', 'value', 's1')];
+r.base = struct('id', ['obs-' childId '-' parentId]);
+r.relation = struct();
+r.directed_relation = struct('relation', struct('node', '', 'name', 'observes'));
 end

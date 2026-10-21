@@ -115,6 +115,9 @@ report = struct( ...
     'attributed',               0, ...
     'variable_carried',         0, ...
     'refused_no_donor',         0, ...
+    'observes_relations',       0, ...   % probe observes specimen, as kept
+    'attributed_via_observes',  0, ...   % no donor: the element's observes
+    'refused_ambiguous_observes', 0, ...
     'refused_no_subject',       0, ...
     'refused_self_reference',   0, ...
     'refused_ambiguous_probe',  0, ...
@@ -130,6 +133,31 @@ donorSpecimen = containers.Map('KeyType', 'char', 'ValueType', 'char');
 donorVariable = containers.Map('KeyType', 'char', 'ValueType', 'any');
 ambiguous     = containers.Map('KeyType', 'char', 'ValueType', 'logical');
 candidates    = {};
+
+% THE ELEMENT'S OWN `observes` RELATION (probe observes specimen), which the
+% migration keeps. Decided by Jess Haley, 2026-10-21 [preview attribution
+% without epoch files] (did-schema V_eta_recording_observation_plan.md): when
+% a corpus has no epoch files, so no per-epoch recording observation exists to
+% be the donor, a pyraview's observation takes its specimen from here. A probe
+% observing two different specimens is ambiguous and refused.
+S = ndi.migrate.internal.etaShape;
+observesOf = containers.Map('KeyType', 'char', 'ValueType', 'char');
+observesAmbiguous = containers.Map('KeyType', 'char', 'ValueType', 'logical');
+for k = 1:numel(structs)
+    body = structs{k};
+    if ~strcmp(S.className(body), 'directed_relation') ...
+            || ~strcmp(S.relationName(body), 'observes')
+        continue;
+    end
+    [ch, pa] = S.relationEnds(body);
+    if isempty(ch) || isempty(pa); continue; end
+    report.observes_relations = report.observes_relations + 1;
+    if isKey(observesOf, ch) && ~strcmp(observesOf(ch), pa)
+        observesAmbiguous(ch) = true;
+    else
+        observesOf(ch) = pa;
+    end
+end
 
 for k = 1:numel(structs)
     body = structs{k};
@@ -173,13 +201,23 @@ for k = 1:numel(candidates)
         report.refused_ambiguous_probe = report.refused_ambiguous_probe + 1;
         continue;
     end
-    if ~isKey(donorSpecimen, probeId)
+    viaObserves = false;
+    if isKey(donorSpecimen, probeId)
+        specimenId = donorSpecimen(probeId);
+    elseif isKey(observesAmbiguous, probeId)
+        report.refused_ambiguous_observes = report.refused_ambiguous_observes + 1;
+        continue;
+    elseif isKey(observesOf, probeId)
+        % no per-epoch recording observation names this probe (no epoch
+        % files): the element's kept `observes` relation is the donor
+        specimenId = observesOf(probeId);
+        viaObserves = true;
+    else
         % The common, correct refusal: this observation's subject is not a probe
         % any signed emitter has attributed. Leaving it alone is right.
         report.refused_no_donor = report.refused_no_donor + 1;
         continue;
     end
-    specimenId = donorSpecimen(probeId);
     if strcmp(specimenId, probeId)
         report.refused_self_reference = report.refused_self_reference + 1;
         continue;
@@ -188,7 +226,7 @@ for k = 1:numel(candidates)
     out = body;
     out = ndi.migrate.internal.etaShape.setAbout(out, specimenId);
     out = setDep(out, 'instrument_id', probeId);
-    if isUnresolvedVariable(out)
+    if ~viaObserves && isUnresolvedVariable(out)
         donorVar = donorVariable(probeId);
         if ~isempty(donorVar) && ~isempty(nodeOf(donorVar))
             out.(variableBlock(out)).variable = donorVar;
@@ -206,6 +244,9 @@ for k = 1:numel(candidates)
         'specimen_id',   specimenId, ...
         'instrument_id', probeId); %#ok<AGROW>
     report.attributed = report.attributed + 1;
+    if viaObserves
+        report.attributed_via_observes = report.attributed_via_observes + 1;
+    end
 end
 
 report.changed = ~isempty(plan);
