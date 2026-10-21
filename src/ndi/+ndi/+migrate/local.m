@@ -98,19 +98,19 @@ function result = local(path, options)
 %     TargetVersion    (1,:) char, default 'V_delta') - migration
 %                      target wire format. 'V_delta' preserves the
 %                      historical class-preserving behaviour and
-%                      writes V_delta.sqlite. 'V_epsilon' (Brainstorm E)
-%                      'V_zeta' (Brainstorm I) and 'V_eta' (Brainstorm
-%                      J) route split-eligible classes through the
-%                      matching migrators (1 -> N) and run a second pass
-%                      using the open body set. For V_epsilon/V_zeta the
-%                      pass resolves session-context-dependent deferrals
-%                      (e.g. stimulus_bath -> bath); for V_eta it promotes
+%                      writes V_delta.sqlite. 'V_eta' (Brainstorm J)
+%                      routes split-eligible classes through the
+%                      +migrators_j migrators (1 -> N) and runs a second
+%                      pass using the open body set: it resolves
+%                      session-context-dependent deferrals (e.g.
+%                      stimulus_bath -> dose_manipulation) and promotes
 %                      attributed anatomical loci to Path-S part-subjects
 %                      (a part-`subject` + `term_assertion` + `part_of`
 %                      relation, retargeting the co-anchored manipulation).
-%                      Writes <TargetVersion>.sqlite. V_eta (Brainstorm J)
-%                      is the current direction; V_zeta/V_epsilon are
-%                      retained as archived references.
+%                      Writes <TargetVersion>.sqlite. The 'V_epsilon' and
+%                      'V_zeta' targets were removed with did-schema #88,
+%                      which deleted schemas/V_alpha .. V_zeta (OPEN_WORK
+%                      #128); asking for either is an argument error.
 %
 %   RESULT is a struct with fields:
 %       path         - the input PATH (char).
@@ -173,7 +173,7 @@ function result = local(path, options)
         options.Verbose (1,1) logical = false
         options.Validate (1,1) logical = true
         options.SchemaCache = []
-        options.TargetVersion (1,:) char = 'V_delta'
+        options.TargetVersion (1,:) char {mustBeMember(options.TargetVersion, {'V_delta', 'V_eta'})} = 'V_delta'
     end
 
     if ~isfolder(path)
@@ -222,7 +222,7 @@ function result = local(path, options)
     % Build the converter args. Only forward TargetVersion when it is NOT
     % the default 'V_delta': the default path must stay call-compatible with
     % the stable released did-matlab (whose v1_to_v2 predates the
-    % TargetVersion option). A 'V_epsilon' run requires the newer did-matlab
+    % TargetVersion option). A 'V_eta' run requires the newer did-matlab
     % anyway, so adding the name-value there is safe.
     v2args = {'Validate', options.Validate, ...
         'SchemaCache', options.SchemaCache, ...
@@ -233,8 +233,8 @@ function result = local(path, options)
     convertResult = did2.convert.v1_to_v2(bodies, v2args{:});
 
     % --- second pass: context-dependent (session-aware) deferrals ----------
-    % Some V_epsilon classes cannot be migrated from a single document alone
-    % (e.g. stimulus_bath -> bath needs the stimulator element's subject and
+    % Some V_eta classes cannot be migrated from a single document alone
+    % (e.g. stimulus_bath -> dose_manipulation needs the stimulator element's subject and
     % epoch). The per-document converter defers those with reason
     % did2:convert:needsSessionContext; resolve them here, where the whole
     % body set (the session/element graph) is in hand, then fold the
@@ -266,16 +266,7 @@ function result = local(path, options)
     imagedEntityReport = [];
     stimulusSequenceReport = [];
     sliceTetanusReport = [];
-    if any(strcmp(options.TargetVersion, {'V_epsilon', 'V_zeta'}))
-        try
-            resolver = ndi.migrate.internal.bodyResolver(bodies);
-            convertResult = resolveDeferred(convertResult, resolver, options);
-        catch ME
-            warning('NDI:migrate:deferredResolveFailed', ...
-                ['Second-pass resolution of session-context deferrals ' ...
-                 'failed (%s); leaving them quarantined.'], ME.message);
-        end
-    elseif strcmp(options.TargetVersion, 'V_eta')
+    if strcmp(options.TargetVersion, 'V_eta')
         % V_eta's second pass has the kinds of work enumerated below, all
         % needing the whole migrated body set (the corpus-wide session/element
         % graph).

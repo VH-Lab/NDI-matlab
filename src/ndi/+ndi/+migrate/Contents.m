@@ -2,14 +2,15 @@
 %
 %   The +migrate subpackage holds user-facing commands that move an
 %   existing NDI dataset or session from the legacy did_v1 storage
-%   shape to a chosen target wire format (V_delta by default; V_epsilon,
-%   V_zeta, or V_eta via TargetVersion). Each command produces a summary
+%   shape to a chosen target wire format (V_delta by default, or V_eta
+%   via TargetVersion; V_epsilon and V_zeta were removed with did-schema
+%   #88). Each command produces a summary
 %   struct the caller can inspect; nothing aborts the whole run on a
 %   single bad document (see did2.convert.v1_to_v2's quarantine
-%   convention). For split targets the command also runs a second pass
-%   over the whole migrated body set: V_epsilon/V_zeta resolve
-%   session-context deferrals (e.g. stimulus_bath -> bath); V_eta
-%   promotes attributed anatomical loci to Path-S part-subjects.
+%   convention). For V_eta the command also runs a second pass
+%   over the whole migrated body set: it resolves session-context
+%   deferrals (e.g. stimulus_bath -> dose_manipulation) and promotes
+%   attributed anatomical loci to Path-S part-subjects.
 %
 % Files:
 %   local   - migrate a local on-disk dataset/session.
@@ -22,7 +23,7 @@
 %     withSessionId      - a minted body's session id as the schema in use keeps
 %                          it: the base.session_id field, or a `session_id`
 %                          edge (did-schema V_eta_relation_inheritance_plan.md).
-%     stimulusBathToBath - V_epsilon/V_zeta stimulus_bath assembler.
+%     stimulusBathToBath - stimulus_bath assembler (V_eta: dose_manipulation).
 %     pathSPromotion     - V_eta attributed-locus -> Path-S promotion.
 %     softwareDedup      - V_eta `software` merge on (session, name, version),
 %                          retargeting inbound edges BY TARGET ID (one of the
