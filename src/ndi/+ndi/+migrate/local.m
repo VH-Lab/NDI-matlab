@@ -965,6 +965,19 @@ function result = local(path, options)
         end
     end
 
+    % --- ingested files: point them at the bytes v1 already ingested --------
+    % A v1 document still records each file as it was when first added
+    % (`ingest` 1 from a path that is usually gone); the legacy backend copied
+    % the bytes to <.ndi>/files/<uid> at the time. did2.database.sqlitedb
+    % ingests on add and refuses the whole batch when a source is missing
+    % (did2:database:ingestSourceMissing), so without this the migration
+    % writes nothing for any session whose documents carry files.
+    ingestedFilesReport = struct();
+    if ~alreadyMigrated && iscell(convertResult.migrated) && ~isempty(convertResult.migrated)
+        [convertResult.migrated, ingestedFilesReport] = ...
+            ndi.migrate.internal.settleIngestedFiles(convertResult.migrated, ndiDir);
+    end
+
     wroteDst = false;
     wroteQuarantineFile = '';
     if ~options.DryRun && ~alreadyMigrated
@@ -1005,6 +1018,7 @@ function result = local(path, options)
     result.quarantine = convertResult.quarantine;
     result.quarantineFile = wroteQuarantineFile;
     result.references = refReport;
+    result.ingestedFiles = ingestedFilesReport;
     result.secondPass = struct( ...
         'ensembleMembership',  ensembleReport, ...
         'strainAssembly',      strainReport, ...
