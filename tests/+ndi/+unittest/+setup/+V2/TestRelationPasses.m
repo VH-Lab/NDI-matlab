@@ -55,6 +55,10 @@ classdef TestRelationPasses < matlab.unittest.TestCase
             end
             testCase.verifyEqual(ndi.entity.lineageRelations(), ...
                 {'part_of', 'sample_of', 'aliquot_of', 'passage_of'});
+            % ndi.entity takes its distributive and context relations from
+            % the same registry
+            testCase.verifyEqual(ndi.entity.distributiveRelations(), {'member_of'});
+            testCase.verifyEqual(ndi.entity.contextRelations(), {'contained_in'});
             if ndi.setup.V2.schemaHasRelation('included_in')
                 testCase.verifyTrue(P.declared, 'a schema with included_in declares passes');
                 testCase.verifyTrue(ismember('included_in', P.nothing));

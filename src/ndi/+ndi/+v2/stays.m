@@ -2,11 +2,13 @@ function S = stays(container, ids, side, cache)
 %STAYS The contained_in relations of some subjects, with when each held.
 %
 %   S = ndi.v2.stays(CONTAINER, IDS, SIDE, CACHE) reads the directed
-%   relations named `contained_in` whose SIDE end ('child' or 'parent') is
+%   relations that pass context (`contained_in`; the registry's `passes:
+%   context` rows, ndi.v2.relationPasses) whose SIDE end ('child' or 'parent') is
 %   one of the ids IDS, and resolves their time references in batches
 %   (ndi.v2.timesOf, CACHE shared). S is a struct array, one entry per
 %   relation:
 %     id            the relation document's id
+%     relation      the relation's name ('contained_in')
 %     child, parent the subject that was contained, and its container
 %     distributive  the relation holds of each member of a group child
 %     start, end    when the stay began and ended (UTC datetimes)
@@ -31,7 +33,7 @@ if ~isa(cache, 'containers.Map')
     cache = containers.Map('KeyType', 'char', 'ValueType', 'any');
 end
 ids = unique(cellstr(ids), 'stable');
-S = struct('id', {}, 'child', {}, 'parent', {}, 'distributive', {}, 'start', {}, ...
+S = struct('id', {}, 'relation', {}, 'child', {}, 'parent', {}, 'distributive', {}, 'start', {}, ...
     'end', {}, 'tol', {}, 'end_tol', {}, 'decided', {});
 if isempty(ids), return; end
 edge = [char(side) '_id'];
@@ -42,10 +44,11 @@ for c = 1:200:numel(ids)
     docs = [docs, reshape(container.database_search(ndi.query('', 'isa', 'directed_relation', '') & q), 1, [])]; %#ok<AGROW>
 end
 refs = {};
+contextNames = ndi.v2.relationPasses().context;
 keep = false(1, numel(docs));
 for i = 1:numel(docs)
     p = ndi.v2.props(docs{i});
-    keep(i) = strcmp(ndi.v2.termName(ndi.v2.blockOf(p, 'directed_relation', 'relation', '')), 'contained_in');
+    keep(i) = ismember(char(ndi.v2.termName(ndi.v2.blockOf(p, 'directed_relation', 'relation', ''))), contextNames);
     if keep(i), refs = [refs, ndi.v2.edgeIds(p, 'time_reference_id')]; end %#ok<AGROW>
 end
 docs = docs(keep);
@@ -57,7 +60,9 @@ for i = 1:numel(docs)
     parent = ndi.v2.edgeIds(p, 'parent_id');
     if isempty(child) || isempty(parent), continue; end
     d = ndi.v2.blockOf(p, 'directed_relation', 'distributive', false);
-    e = struct('id', char(p.base.id), 'child', child{1}, 'parent', parent{1}, ...
+    e = struct('id', char(p.base.id), ...
+        'relation', char(ndi.v2.termName(ndi.v2.blockOf(p, 'directed_relation', 'relation', ''))), ...
+        'child', child{1}, 'parent', parent{1}, ...
         'distributive', ~isempty(d) && (islogical(d) || isnumeric(d)) && logical(d(1)), ...
         'start', NaT('TimeZone', 'UTC'), 'end', NaT('TimeZone', 'UTC'), ...
         'tol', [0 0], 'end_tol', [0 0], 'decided', false);

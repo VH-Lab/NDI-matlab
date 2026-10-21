@@ -1519,7 +1519,7 @@ classdef entity
             end
             if ~isempty(groups)
                 ids = unique([ids, ndi.entity.walkIds(container, unique(groups, 'stable'), ...
-                    'member_of', 'in')], 'stable');
+                    ndi.entity.distributiveRelations(), 'in')], 'stable');
             end
             if ~isempty(asserted)
                 % an assertion holds of the parts and samples of what it is
@@ -1527,7 +1527,7 @@ classdef entity
                 g = unique(groups(ismember(groups, asserted)), 'stable');
                 whole = asserted;
                 if ~isempty(g)
-                    whole = [whole, ndi.entity.walkIds(container, g, 'member_of', 'in')];
+                    whole = [whole, ndi.entity.walkIds(container, g, ndi.entity.distributiveRelations(), 'in')];
                 end
                 whole = unique(whole, 'stable');
                 parts = ndi.entity.walkIds(container, whole, ndi.entity.lineageRelations(), 'in');
@@ -1543,7 +1543,8 @@ classdef entity
                     inst = reshape(unique(E.to, 'stable'), 1, []);
                     grp = reshape(unique(E.to(E.distributive), 'stable'), 1, []);
                     if ~isempty(grp)
-                        inst = unique([inst, ndi.entity.walkIds(container, grp, 'member_of', 'in')], 'stable');
+                        inst = unique([inst, ndi.entity.walkIds(container, grp, ...
+                            ndi.entity.distributiveRelations(), 'in')], 'stable');
                     end
                     inst = [inst, ndi.entity.walkIds(container, inst, ndi.entity.lineageRelations(), 'in')];
                     ids = unique([ids, inst], 'stable');
@@ -1598,7 +1599,8 @@ classdef entity
                         end
                     end
                     if ~isempty(groups)
-                        ids = [ids, ndi.entity.walkIds(container, unique(groups, 'stable'), 'member_of', 'in')]; %#ok<AGROW>
+                        ids = [ids, ndi.entity.walkIds(container, unique(groups, 'stable'), ...
+                            ndi.entity.distributiveRelations(), 'in')]; %#ok<AGROW>
                     end
                 end
             end
@@ -1863,6 +1865,28 @@ classdef entity
             names = reshape(names, 1, []);
         end
 
+        function names = distributiveRelations()
+            % DISTRIBUTIVERELATIONS - (internal) the relations down which a
+            % statement or relation marked distributive on a group holds of
+            % each member: those whose `passes` is `distributive` in the V2
+            % schema's registry (ndi.v2.relationPasses, as lineageRelations).
+            % A registry with no `passes` (did-schema main) gives member_of.
+
+            P = ndi.v2.relationPasses();
+            names = reshape(P.distributive, 1, []);
+        end
+
+        function names = contextRelations()
+            % CONTEXTRELATIONS - (internal) the relations along which a
+            % container's interactions reach what it held, as context: those
+            % whose `passes` is `context` in the V2 schema's registry
+            % (ndi.v2.relationPasses, as lineageRelations; ndi.v2.stays reads
+            % the same list). A registry with no `passes` gives contained_in.
+
+            P = ndi.v2.relationPasses();
+            names = reshape(P.context, 1, []);
+        end
+
         function all_ = inheritanceStates(container, ids, inherited)
             % INHERITANCESTATES - (internal) what the subjects IDS inherit from
             %
@@ -1889,6 +1913,7 @@ classdef entity
             ids = unique(cellstr(ids), 'stable');
             ids = reshape(ids, 1, []);
             lineage = ndi.entity.lineageRelations();
+            distributive = ndi.entity.distributiveRelations();
             % states: start, at, hasMember, hasLineage, isInstance, sameAs,
             % the record it stands in for, path
             S = struct('start', ids, 'at', ids, 'm', false, 'l', false, 'i', false, ...
@@ -1908,7 +1933,7 @@ classdef entity
                 at = unique({frontier.at}, 'stable');
                 next = struct('start', {}, 'at', {}, 'm', {}, 'l', {}, 'i', {}, 's', {}, ...
                     'g', {}, 'path', {});
-                for r = [{'member_of'}, lineage, {'instance_of'}]
+                for r = [distributive, lineage, {'instance_of'}]
                     step = r{1};
                     E = ndi.entity.edges(container, at(:), step, 'child_id', 'parent_id');
                     if height(E) == 0, continue; end
@@ -1922,7 +1947,7 @@ classdef entity
                             p = step;
                             if ~isempty(frontier(f).path), p = [frontier(f).path ' > ' step]; end
                             next(end+1) = struct('start', frontier(f).start, 'at', E.to{h}, ...
-                                'm', frontier(f).m || strcmp(step, 'member_of'), ...
+                                'm', frontier(f).m || any(strcmp(step, distributive)), ...
                                 'l', frontier(f).l || any(strcmp(step, lineage)), ...
                                 'i', isType, 's', frontier(f).s, 'g', E.to{h}, ...
                                 'path', p); %#ok<AGROW>
@@ -2144,8 +2169,8 @@ classdef entity
                             w.start = max(w.start, fr.win.start); w.end = min(w.end, fr.win.end);
                             if w.start > w.end, continue; end
                         end
-                        p = 'contained_in';
-                        if ~isempty(fr.path), p = [fr.path ' > contained_in']; end
+                        p = S(i).relation;
+                        if ~isempty(fr.path), p = [fr.path ' > ' S(i).relation]; end
                         next(end+1) = struct('start', fr.start, 'at', S(i).parent, 'm', false, ...
                             'path', p, 'win', w); %#ok<AGROW>
                     end
@@ -2295,7 +2320,8 @@ classdef entity
                 frontier = next;
             end
             if ~isempty(groups)
-                ids = [ids, ndi.entity.walkIds(container, unique(groups, 'stable'), 'member_of', 'in')];
+                ids = [ids, ndi.entity.walkIds(container, unique(groups, 'stable'), ...
+                    ndi.entity.distributiveRelations(), 'in')];
             end
             ids = unique(ids, 'stable');
         end
