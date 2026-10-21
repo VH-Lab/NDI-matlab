@@ -211,7 +211,10 @@ classdef etaShape
             end
             body.base = S.baseBlock(opts.Id, opts.Datestamp);
             blk = struct('relation', S.asTerm(relationTerm));
-            if ~isempty(opts.Order)
+            % 0 is the FIRST position (T14); unordered is -1 or absent
+            % (did-schema directed_relation.order blank_value), so an
+            % unordered relation writes no `order` and 0 is never "no order"
+            if ~isempty(opts.Order) && opts.Order >= 0
                 blk.order = opts.Order;
             end
             body.directed_relation = blk;
