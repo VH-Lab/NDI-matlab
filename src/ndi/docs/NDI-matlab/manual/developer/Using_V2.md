@@ -7,7 +7,12 @@ Haley C. elegans dataset and its unit tests (`TestObjectLayer`, `TestHaleyWrite`
 
 V2 needs DID-matlab's V2 line on the path and `DID_SCHEMA_PATH` set to a folder of
 V_eta schema files (did-schema `schemas/V_eta/stable`, `draft` and `deprecated`,
-copied into one folder).
+copied into one folder). **It requires did-schema #88 and DID-matlab #218** (one
+`entity` class, statements by composition, `included_in`, a `session_id` edge,
+the term registry): NDI writes that shape only, and NDI-matlab #1021 merges after
+both. Until they merge, take did-schema and DID-matlab from their branch
+`claude/ecstatic-pascal-md91fw`. `ndi.setup.V2.preflight` says so when the schema
+on `DID_SCHEMA_PATH` is older.
 
 ## 1. Open a dataset or a session
 
@@ -211,7 +216,7 @@ r = ndi.setup.conv.haley.import_V2(dataParentDir, ...
   `ndi.document(...)` and `S.newdocument(...)` build v1 documents from NDI's
   templates. Make V2 with `ndi.setup.V2` and `did2.build`.
 - v1's `session_in_a_dataset` is not used: a V2 session is in a dataset through
-  an `included_in` relation (`part_of` on older schemas).
+  an `included_in` relation.
 - Acquisition objects (DAQ systems, probes, elements, the syncgraph) are v1's.
   A migrated V2 session rebuilds them through `ndi.vintage`; they are not part
   of the V2 object layer.

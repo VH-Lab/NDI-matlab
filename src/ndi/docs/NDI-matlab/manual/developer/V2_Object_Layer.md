@@ -2,6 +2,18 @@
 
 **Using it:** [Using_V2.md](Using_V2.md) is the short user guide (open, search, read, walk, write).
 
+**Requires did-schema #88 and DID-matlab #218 (2026-10-21).** The writers
+(`ndi.setup.V2`, the Haley import) build ONE schema shape: did-schema PR #88 (one
+`entity` class, statements by composition, `included_in` for records, a
+`session_id` edge, the term registry) through DID-matlab PR #218's `did2.build`.
+The support for did-schema main's older shape (per-leaf classes, separate
+entity classes, `part_of` for records, a `base.session_id` field) is removed,
+so NDI-matlab #1021 merges after #88 and #218. The read path for MIGRATED
+documents is unchanged: the migrators are pinned to did-schema `v_eta-pre73`
+and still write older names, which `ndi.v2.vetaAliases`, `ndi.v2.entityTypesFor`
+and `ndi.vintage` read. Where this document below says "either schema" or
+"did-schema main", that describes the history of the change, not code that runs.
+
 **Status: PARTLY BUILT (2026-10-06), for review by Jess Haley and Steve Van Hooser.**
 Built (read side): `ndi.entity`, the statement tree,
 `ndi.value`, and the `ndi.v2` helpers. **Not built, on purpose:** any change to
@@ -316,7 +328,8 @@ Haley dataset.
 did-schema `V_eta_entity_composition_plan.md` (signed 2026-10-08) merged the
 entity classes into one `entity` with a bound `type`, made statements a
 direction class plus one value-kind mixin, and made a strain an `instance_of`
-relation. The readers read both schemas:
+relation. The writers build this shape only (since 2026-10-21); the readers
+also read migrated documents, whose classes keep the older names:
 
 | file | what changed |
 |---|---|
@@ -335,9 +348,8 @@ are written only when the file was opened (`'ReadVideos'`, or a TIFF).
 did-schema `V_eta_linked_session_plan.md` (signed 2026-10-09): a session is in
 a dataset when its `session` entity is filed under the dataset, or under a
 study that is filed under the dataset; the relation is in the dataset's
-database. The relation is `included_in` where the schema binds it, `part_of`
-on did-schema main (section 14; `ndi.v2.recordRelation`); "`part_of`" below
-means whichever.
+database. The relation is `included_in` (section 14); "`part_of`" below
+means `included_in`.
 An INGESTED session's documents are in the dataset's database too; a LINKED
 session's are in its own folder, which a `linked_session` document (`path`,
 relative to the dataset's folder when inside it, and an `entity_id` edge to the
@@ -347,7 +359,7 @@ session's entity) names. v1's `session_in_a_dataset` is not used.
 |---|---|
 | `session_list`, `open_session`, `database_search` | list the members (`ndi.v2.datasetSessions`), open a linked one from its folder (checked to hold that session), search the dataset and each linked session |
 | `session_notes` | the listing's denominator, and every session left out and why (not `part_of` the dataset; a linked folder missing, unopenable or holding another session; also a warning, `ndi:dataset:sessionsLeftOut`) |
-| `add_linked_session(S, 'PartOf', id)` | a record relation (`ndi.v2.recordRelation`: `included_in`, or `part_of` on did-schema main) to the dataset, or the study `PartOf` names, and a `linked_session` document |
+| `add_linked_session(S, 'PartOf', id)` | an `included_in` relation to the dataset, or the study `PartOf` names, and a `linked_session` document |
 | `add_ingested_session(S, 'PartOf', id)` | copies every document of S, with the files it ingested; adds a `part_of` relation unless S's own relations already make it a member |
 | `convertLinkedSessionToIngested` | copies the linked session's documents in, deletes the `linked_session` |
 | `convertIngestedSessionToLinked(id, folder)` | writes the session's documents to a new V2 session in `folder`, deletes them from the dataset, adds a `linked_session`; the `part_of` relations stay |
@@ -436,8 +448,8 @@ Tests: `TestTerm` (offline, from a prepared cache) and `TestObjectLayer`.
 ## 14. What a relation passes; records' own relation; `session_id` as an edge (2026-10-20)
 
 did-schema `V_eta_relation_inheritance_plan.md` (a proposal built ahead of
-signature, did-schema#88; Haley decision #109). NDI reads both shapes, so
-did-schema main behaves as before.
+signature, did-schema#88; Haley decision #109). Since 2026-10-21 this is the
+only shape NDI's writers build.
 
 - **What passes is the registry's.** Each `relation_bindings` row declares
   `passes`: `assertions` (part_of, sample_of, aliquot_of, passage_of,
@@ -445,22 +457,23 @@ did-schema main behaves as before.
   `nothing` (every other row). `ndi.v2.relationPasses` reads it once per
   schema file; `ndi.entity` walks the `assertions` relations (instance_of on
   its own path, as a type) from it, so a relation the registry adds works
-  without code. A registry without the column (did-schema main) gives the
-  lists NDI hard-coded before. The member_of and contained_in walks keep
+  without code. A registry without the column passes nothing: NDI keeps no
+  hard-coded lists. The member_of and contained_in walks keep
   their own rules (the `distributive` flag; stay times), and the registry's
   one row of each matches them.
 - **Records are `included_in`** (`schema:isPartOf`, passes nothing): a session
   in a study or dataset, a study in a dataset. A study no longer reads the
   dataset's short name, version or licence as its own; `part_of` is physical.
-  Writers and readers of membership ask `ndi.v2.recordRelation` (`included_in`
-  where the schema binds it, `part_of` before): section 11's methods,
+  Writers and readers of membership use `included_in`: section 11's methods,
   `ndi.setup.V2.createSession` / `createDataset` / `datasetMetadata`, the
   Haley import.
 - **`session_id` is an edge.** `base` has no `session_id` field; every
   document has a `session_id` edge to the session or dataset entity it is
   stored with, whose `base.id` IS the session id. `ndi.document/session_id`,
   `set_session_id` and `ndi.v2.sessionIdOf` read and write the field or the
-  edge, whichever the document has (v1 keeps the field: NDI still writes v1).
+  edge, whichever the document has (v1 keeps the field: NDI still writes v1;
+  so do the migrators, pinned to `v_eta-pre73`, and only the second pass
+  asks `ndi.v2.sessionIdIsEdge`).
   A query on `base.session_id` needs no change: DID answers it from either
   (`did2sqlite` translates query terms one for one, no field is rewritten).
   `createSession` gives the session entity the session id as its id
