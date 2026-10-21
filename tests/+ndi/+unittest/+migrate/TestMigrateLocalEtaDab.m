@@ -251,6 +251,117 @@ classdef TestMigrateLocalEtaDab < matlab.unittest.TestCase
                 numel(devs), numel(els));
         end
 
+        function testSlicesAndTetanusRunsRebuildEveryApproachLabel(testCase)
+            % DECIDED BY JESS HALEY 2026-10-21 (dabrowska/V2_decisions.md):
+            % each brain slice is an entity `part_of` its animal; one
+            % optogenetic-tetanus manipulation per recording run, on the
+            % slice, timed by a RELATIVE reference on exp_global_time
+            % (relative_to the last "before" epoch; start = that recording's
+            % length, duration = the gap to the first "after" recording);
+            % the 635 before/after approach documents are dropped because the
+            % window rebuilds them (T6). The Nov 28 run filed under the Dec 02
+            % animal is its own animal, slice and run.
+            %
+            % THE LOSSLESS CHECK IS DONE HERE FROM THE DATABASE, not from the
+            % pass's report: every v1 label is rebuilt from the windows the
+            % database holds and the v1 epoch times.
+            r = testCase.Result.secondPass.sliceTetanus;
+            assertNotEmpty(testCase, r, 'the slice / tetanus pass did not run');
+            fprintf(['\n  SLICE / TETANUS REPORT\n    tetanus %d, slices %d, new animals %d, ' ...
+                'labels rebuilt %d/%d, approach docs removed %d, minted quarantined %d\n'], ...
+                r.tetanus_manipulations, r.slices, r.new_animals, r.labels_rebuilt, ...
+                r.approach_labels, r.approach_labels_removed, r.minted_quarantined);
+            verifyEqual(testCase, r.minted_quarantined, 0, 'a minted slice/tetanus document quarantined');
+            verifyEqual(testCase, r.approach_labels, 635, 'the pass did not read 635 approach labels');
+            verifyEqual(testCase, r.tetanus_manipulations, 56, 'expected 56 tetanus runs (55 stimulators + the Nov 28 run)');
+            verifyEqual(testCase, r.slices, 203, 'expected 203 slices (202 bath stimulators + the Nov 28 slice)');
+            verifyEqual(testCase, r.new_animals, 1, 'expected one new animal (the Nov 28 run)');
+            verifyEqual(testCase, [r.tetanus_with_parameters r.tetanus_without_parameters], [9 47], ...
+                'expected 9 runs whose TLS folder states 10 Hz / 20 s and 47 plain TLS');
+            verifyEqual(testCase, [r.tetanus_with_target_region r.tetanus_without_target_region], [55 1], ...
+                'expected a target region on every run but the Nov 28 one (no treatment record)');
+            verifyEqual(testCase, r.labels_not_rebuilt, 0, 'the pass itself could not rebuild a label');
+
+            migrated = destinationBodies(testCase.Result.destination);
+            byId = containers.Map('KeyType', 'char', 'ValueType', 'any');
+            for k = 1:numel(migrated)
+                byId(migrated{k}.base.id) = migrated{k};
+            end
+            tet = {}; slices = 0; sliceParts = 0; animals = 0; survivors = 0;
+            for k = 1:numel(migrated)
+                b = migrated{k};
+                switch b.base.name
+                    case 'migrated_tetanus_manipulation'; tet{end+1} = b; %#ok<AGROW>
+                    case 'migrated_slice'; slices = slices + 1;
+                    case 'migrated_slice_part_of'; sliceParts = sliceParts + 1;
+                    case 'migrated_nested_date_animal'; animals = animals + 1;
+                end
+                if strcmp(b.document_class.class_name, 'openminds_stimulus')
+                    survivors = survivors + 1;
+                end
+            end
+            fprintf(['  IN THE DATABASE: tetanus manipulations %d, slices %d (part_of %d), ' ...
+                'new animals %d, openminds_stimulus left %d\n'], numel(tet), slices, ...
+                sliceParts, animals, survivors);
+            verifyEqual(testCase, [numel(tet) slices sliceParts animals survivors], [56 203 203 1 0]);
+
+            % ---- the windows, as stored ---------------------------------
+            win = struct('stim', {}, 'session', {}, 'epoch', {}, 'start', {}, 'duration', {});
+            for k = 1:numel(tet)
+                m = tet{k};
+                ref = byId(edgeOf(m, 'time_reference_1'));
+                ep = byId(edgeOf(ref, 'relative_to'));
+                v = ref.relative_reference.value;
+                verifyEqual(testCase, v.clock.name, 'exp_global_time');
+                win(end+1) = struct('stim', edgeOf(m, 'instrument_id'), ...
+                    'session', ep.base.session_id, 'epoch', ep.epoch.local_identifier, ...
+                    'start', v.start.seconds, 'duration', v.duration.seconds); %#ok<AGROW>
+            end
+
+            % ---- the v1 epoch times and labels ---------------------------
+            t0t1 = containers.Map(); labels = {};
+            for k = 1:numel(testCase.Bodies)
+                txt = testCase.Bodies{k};
+                if contains(txt, '"daqreader_mfdaq_epochdata_ingested"') && contains(txt, 'exp_global_time')
+                    b = jsondecode(txt);
+                    et = b.daqreader_epochdata_ingested.epochtable;
+                    i = find(strcmp(cellstr(et.epochclock), 'exp_global_time'), 1);
+                    t0t1([b.base.session_id '|' b.epochid.epochid]) = [et.t0_t1(1, i) et.t0_t1(2, i)];
+                elseif contains(txt, '"openminds_stimulus"') && contains(txt, 'optogenetic tetanus')
+                    b = jsondecode(txt);
+                    labels{end+1} = b; %#ok<AGROW>
+                end
+            end
+            rebuilt = 0; wrong = 0;
+            for k = 1:numel(labels)
+                b = labels{k};
+                d = b.depends_on; if iscell(d); d = [d{:}]; end
+                stim = d(strcmp({d.name}, 'stimulus_element_id')).value;
+                t = t0t1([b.base.session_id '|' b.epochid.epochid]);
+                truth = 'before';
+                if endsWith(b.openminds.fields.name, 'after optogenetic tetanus'); truth = 'after'; end
+                best = Inf; pred = '';
+                for w = 1:numel(win)
+                    if ~strcmp(win(w).stim, stim) || ~strcmp(win(w).session, b.base.session_id); continue; end
+                    ref = t0t1([win(w).session '|' win(w).epoch]);
+                    ws = ref(1) + win(w).start / 86400;
+                    we = ws + win(w).duration / 86400;
+                    dist = abs(t(1) - ws);
+                    if dist < best
+                        best = dist;
+                        if t(2) <= ws + 1e-3/86400; pred = 'before';
+                        elseif t(1) >= we - 1e-3/86400; pred = 'after';
+                        else; pred = ''; end
+                    end
+                end
+                if strcmp(pred, truth); rebuilt = rebuilt + 1; else; wrong = wrong + 1; end
+            end
+            fprintf('  LABELS REBUILT FROM THE DATABASE WINDOWS: %d/%d (wrong %d)\n', ...
+                rebuilt, numel(labels), wrong);
+            verifyEqual(testCase, [numel(labels) rebuilt], [635 635], ...
+                'not every before/after label rebuilds from the stored tetanus windows');
+        end
+
         function testTheOntologyRowFanOutRunsAtScale(testCase)
             % DAB'S HEADLINE, and the reason it earns its own e2e. The
             % ontologyRowSubjects second pass (#53, local.m ~706) fans each
@@ -607,4 +718,17 @@ function s = resultDiag(result)
 s = sprintf('[migrated %d, quarantined %d, edges %d] %s', ...
     result.summary.total, numel(result.quarantine), ...
     result.references.edges_examined, quarantineDiag(result));
+end
+
+function v = edgeOf(b, name)
+%EDGEOF The value of one depends_on edge of a struct body, '' when absent.
+v = '';
+d = b.depends_on;
+if iscell(d); d = [d{:}]; end
+for k = 1:numel(d)
+    if strcmp(d(k).name, name)
+        if isfield(d(k), 'value'); v = d(k).value; else; v = d(k).document_id; end
+        return;
+    end
+end
 end
