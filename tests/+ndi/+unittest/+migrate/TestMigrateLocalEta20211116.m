@@ -105,6 +105,17 @@ classdef TestMigrateLocalEta20211116 < matlab.unittest.TestCase
 
     methods (Test)
 
+        function testTheStimulusFoldReportsItsSeveralAnimalCount(testCase)
+            % REPORT-ONLY (Jess Haley, 2026-10-21): every corpus states how
+            % many presentations resolve to SEVERAL animals in their session,
+            % 0 included. Those become ONE distributive manipulation of the
+            % session's cohort (stimulus plan, decision 2).
+            r = testCase.Result.secondPass.stimulusSequence;
+            testCase.assertTrue(isstruct(r) && isfield(r, 'several_animal_presentations'), ...
+                'the stimulusSequence report carries no several-animal counter');
+            ndi.unittest.migrate.printStimulusFoldReport(r, '20211116');
+        end
+
         function testTheWholeCorpusMigratesWithNothingQuarantinedOrDangling(testCase)
             % DENOMINATOR FIRST. A pass over zero documents quarantines
             % zero documents, and that reading prints the same digit as a
@@ -557,7 +568,7 @@ classdef TestMigrateLocalEta20211116 < matlab.unittest.TestCase
                  'something else'], numel(srcPres)));
 
             migrated = destinationBodies(testCase.Result.destination);
-            seqs = findAllByClass(migrated, 'timed_sequence_manipulation');
+            seqs = itemManipulations(migrated);
             % THIS DIAGNOSTIC USED TO END "so a shortfall is a refusal to
             % read, not a crash." IT WAS WRONG, AND IT COST A ROUND TRIP.
             % The pass was throwing on EVERY call -- a signature/arguments
@@ -573,7 +584,7 @@ classdef TestMigrateLocalEta20211116 < matlab.unittest.TestCase
             % state -- applied to a test's own diagnostic.
             verifyEqual(testCase, numel(seqs), 11, sprintf( ...
                 ['%d of 11 presentations became a ' ...
-                 'timed_sequence_manipulation. TWO CAUSES PRODUCE THIS ' ...
+                 'item_manipulation (did-schema #88). TWO CAUSES PRODUCE THIS ' ...
                  'AND THEY LOOK IDENTICAL FROM HERE: a per-presentation ' ...
                  'REFUSAL (no responding animal, or stimuli that cannot ' ...
                  'be typed), or the whole pass THROWING -- ' ...
@@ -593,98 +604,80 @@ classdef TestMigrateLocalEta20211116 < matlab.unittest.TestCase
             dstIds = cellfun(@(d) string(d.base.id), seqs(:)');
             verifyTrue(testCase, all(ismember(string(srcPres), dstIds)), ...
                 ['a stimulus_presentation id is missing from the ' ...
-                 'timed_sequence_manipulation set -- the decomposition ' ...
+                 'item_manipulation set -- the decomposition ' ...
                  'reassigned an id instead of preserving it']);
 
             % and NOTHING survives under the v1 name or under the superseded
             % flattened one
             verifyEmpty(testCase, findAllByClass(migrated, 'stimulus_presentation'), ...
                 'stimulus_presentation documents survived the decomposition');
-            verifyEmpty(testCase, ...
-                findAllByClass(migrated, 'visual_grating_manipulation'), ...
-                ['a visual_grating_manipulation was emitted. That pass is ' ...
-                 'GATED OFF: it is retained only for the presentation-less ' ...
-                 'single-grating case, and both emitters claim the same ' ...
-                 'base.id.']);
+            for gone = {'visual_grating', 'visual_grating_manipulation', ...
+                    'timed_sequence', 'timed_sequence_manipulation'}
+                verifyEmpty(testCase, findAllByClass(migrated, gone{1}), ...
+                    sprintf('%s was emitted; did-schema #88 deletes it.', gone{1}));
+            end
         end
 
         function testTheHartleyBasisIsMintedOnceAndCarriesItsPhase(testCase)
             % The enumeration lives in the `hartley_calc` documents, not in
             % the presentations: hartley_numbers {S,KXV,KYV,ORDER} is 3360
             % entries and has ONE distinct value across all 210 of them --
-            % 1680 (kx,ky) pairs x 2 signs, 41*41-1 = 1680 exactly, the DC
-            % term excluded. So ONE basis set serves all ten presentations.
+            % 1680 (kx,ky) pairs x 2 signs. So ONE basis set serves all ten
+            % presentations. Since did-schema #88 each basis function is a
+            % standalone `method` document (term 'Hartley basis grating').
             migrated = destinationBodies(testCase.Result.destination);
-            gratings = findAllByClass(migrated, 'visual_grating');
-            verifyNotEmpty(testCase, gratings, ...
-                ['no standalone visual_grating documents. Either the basis ' ...
-                 'was not assembled or `visual_grating` is abstract again ' ...
-                 '(it stopped being abstract on 2026-08-17).']);
+            methods = findAllByClass(migrated, 'method');
+            basis = {};
+            for k = 1:numel(methods)
+                if isfield(methods{k}, 'method') && isfield(methods{k}.method, 'term') ...
+                        && strcmp(methods{k}.method.term.name, 'Hartley basis grating')
+                    basis{end+1} = methods{k}; %#ok<AGROW>
+                end
+            end
+            verifyNotEmpty(testCase, basis, ...
+                'no Hartley basis `method` documents; the basis was not assembled');
+            % MINTED ONCE: ten copies of the basis would be 33,600.
+            verifyLessThanOrEqual(testCase, numel(basis), 3360, sprintf( ...
+                ['%d Hartley basis method documents. The basis is shared by ' ...
+                 'all ten generator presentations and must be minted ONCE.'], ...
+                numel(basis)));
 
-            % MINTED ONCE: 3360 for the Hartley basis + the distinct gratings
-            % of the single 225-stimulus enumerated presentation. Ten copies
-            % of the basis would be 33,600.
-            verifyLessThan(testCase, numel(gratings), 33600, sprintf( ...
-                ['%d visual_grating documents. The Hartley basis is shared ' ...
-                 'by all ten generator presentations and must be minted ' ...
-                 'ONCE; a per-presentation mint gives ten copies.'], ...
-                numel(gratings)));
-
-            % THE PHASE IS THE FIELD WITHOUT WHICH THE SET COLLAPSES: with it
-            % the 3360 basis functions give 3360 distinct values, without it
-            % 1680. So both signs must be present among the minted documents.
+            % THE PHASE IS THE PARAMETER WITHOUT WHICH THE SET COLLAPSES.
             phases = [];
-            for k = 1:numel(gratings)
-                v = gratings{k}.visual_grating.value;
-                if isfield(v, 'phase') && ~isempty(v.phase)
-                    phases(end+1) = double(v.phase); %#ok<AGROW>
-                end
+            units = {};
+            for k = 1:numel(basis)
+                [ph, ~] = methodEntry(basis{k}, 'spatial phase');
+                if ~isempty(ph); phases(end+1) = double(ph); end %#ok<AGROW>
+                [~, u] = methodEntry(basis{k}, 'spatial frequency');
+                if ~isempty(u); units{end+1} = u; end %#ok<AGROW>
             end
-            verifyNotEmpty(testCase, phases, ...
-                'no visual_grating carries a phase; the signed pair collapses');
             verifyGreaterThanOrEqual(testCase, numel(unique(phases)), 2, ...
-                ['only one distinct phase across the basis -- the s = -1 ' ...
-                 'half of every (kx,ky) pair has deduped away']);
-
-            % and the pixel-domain frequency did NOT go into the
-            % cycles-per-degree field
-            withGeom = 0;
-            for k = 1:numel(gratings)
-                v = gratings{k}.visual_grating.value;
-                if isfield(v, 'source_geometry') && isstruct(v.source_geometry) ...
-                        && isfield(v.source_geometry, 'unit') ...
-                        && strcmp(char(v.source_geometry.unit), 'cycles/pixel')
-                    withGeom = withGeom + 1;
-                end
-            end
-            verifyGreaterThan(testCase, withGeom, 0, ...
-                ['no visual_grating carries source_geometry in ' ...
-                 'cycles/pixel; the Hartley spatial frequency has nowhere ' ...
-                 'correct to live']);
+                ['fewer than two distinct spatial phases across the basis -- ' ...
+                 'the s = -1 half of every (kx,ky) pair has deduped away']);
+            % and the pixel-domain frequency is stated in its own unit
+            verifyTrue(testCase, ~isempty(units) && all(strcmp(units, 'cycles per pixel')), ...
+                'the Hartley spatial frequency is not stated in cycles per pixel');
         end
 
-        function testTheFrameTimesSurviveAsAnIrregularTimeAxis(testCase)
+        function testTheFrameTimesSurviveAsATimeKey(testCase)
             % frameTimes is the ONLY surviving stimulus timing on this
-            % corpus. The writer moved `presentation_time` into
-            % presentation_time.bin -- declared by 11 of 11 presentations and
-            % present in 0 of them -- and a struct-level batch pass does not
-            % open attached binaries.
+            % corpus (presentation_time.bin is declared by 11 of 11
+            % presentations and present in 0). Since #88 it is the `time` key
+            % of the item manipulation.
             migrated = destinationBodies(testCase.Result.destination);
-            seqs = findAllByClass(migrated, 'timed_sequence_manipulation');
-            withAxis = 0;
+            seqs = itemManipulations(migrated);
+            withKey = 0;
             for k = 1:numel(seqs)
-                st = seqs{k}.subject_statement;
-                if isfield(st, 'axes') && ~isempty(st.axes) ...
-                        && isfield(st.axes(1), 'n') && st.axes(1).n > 1
-                    withAxis = withAxis + 1;
+                d = seqs{k};
+                if isfield(d, 'data') && isfield(d.data, 'keys') && ~isempty(d.data.keys) ...
+                        && double(d.data.keys(1).n) > 1
+                    withKey = withKey + 1;
                 end
             end
-            verifyGreaterThanOrEqual(testCase, withAxis, 10, sprintf( ...
-                ['%d of the migrated sequences carry a time axis. The ten ' ...
+            verifyGreaterThanOrEqual(testCase, withKey, 10, sprintf( ...
+                ['%d of the migrated sequences carry a time key. The ten ' ...
                  'Hartley presentations each have a frameTimes of 3360, so ' ...
-                 'fewer than ten means the timing was dropped -- and it is ' ...
-                 'not recoverable from anywhere else in this corpus.'], ...
-                withAxis));
+                 'fewer than ten means the timing was dropped.'], withKey));
         end
 
         function testTheCalculatorFamilyKeepsItsIdentities(testCase)
@@ -791,6 +784,38 @@ ids = db.allIds();
 bodies = cell(1, numel(ids));
 for k = 1:numel(ids)
     bodies{k} = db.get(ids{k}).toStruct();
+end
+end
+
+function hits = itemManipulations(bodies)
+%ITEMMANIPULATIONS The `manipulation` documents listing the `item` value kind
+%   (did-schema #88: a statement is a direction class plus one value kind).
+hits = {};
+for k = 1:numel(bodies)
+    b = bodies{k};
+    if ~isfield(b, 'document_class') || ~strcmp(b.document_class.class_name, 'manipulation')
+        continue;
+    end
+    sc = b.document_class.superclasses;
+    if isstruct(sc) && any(strcmp({sc.class_name}, 'item'))
+        hits{end+1} = b; %#ok<AGROW>
+    end
+end
+end
+
+function [v, u] = methodEntry(doc, variable)
+%METHODENTRY A `method` document's parameter VARIABLE: value and unit name.
+v = []; u = '';
+if ~isfield(doc.method, 'parameters'); return; end
+p = doc.method.parameters;
+if isstruct(p); p = num2cell(p); end
+for k = 1:numel(p)
+    e = p{k};
+    if strcmp(e.variable.name, variable)
+        if isfield(e, 'quantity') && ~isempty(e.quantity); v = e.quantity.value; end
+        if isfield(e, 'unit') && isstruct(e.unit) && ~isempty(e.unit); u = e.unit.name; end
+        return;
+    end
 end
 end
 
