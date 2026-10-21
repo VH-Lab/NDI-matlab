@@ -58,7 +58,45 @@ classdef TestRecordingAttribution < matlab.unittest.TestCase
         end
     end
 
+    methods (Static)
+        function b = as88(b)
+            %AS88 The same observation in did-schema #88's spelling: the
+            %   `observation` direction + the `voltage` kind, `entity_id`,
+            %   `time_reference_id`, the variable on the `statement` block.
+            sc = {'interaction', 'statement', 'base', 'voltage', 'value', 'data'};
+            b.document_class = struct('class_name', 'observation', ...
+                'class_version', '1.0.0', 'superclasses', ...
+                struct('class_name', sc, 'class_version', '1.0.0'));
+            for k = 1:numel(b.depends_on)
+                switch b.depends_on(k).name
+                    case 'subject_id'
+                        b.depends_on(k).name = 'entity_id';
+                    case 'time_reference_1'
+                        b.depends_on(k).name = 'time_reference_id';
+                end
+            end
+            b.statement = struct('variable', b.subject_statement.variable);
+            b = rmfield(b, 'subject_statement');
+        end
+    end
+
     methods (Test)
+
+        function theEightyEightShapeIsAttributedInItsOwnSpelling(testCase)
+            % pass 1 on did-schema #88: the probe moves to instrument_id and
+            % the specimen becomes the `entity_id`; no `subject_id` appears
+            structs = {testCase.as88(testCase.donor('probe-1', 'mouse-7')), ...
+                       testCase.as88(testCase.candidate('probe-1'))};
+            [plan, report] = ndi.migrate.internal.recordingAttribution(structs);
+            testCase.verifyEqual(report.observations, 2);
+            testCase.verifyEqual(report.attributed, 1);
+            testCase.verifyEqual(dep(plan(1).body, 'entity_id'), 'mouse-7');
+            testCase.verifyEqual(dep(plan(1).body, 'instrument_id'), 'probe-1');
+            testCase.verifyEmpty(dep(plan(1).body, 'subject_id'));
+            testCase.verifyEqual(dep(plan(1).body, 'time_reference_id'), 'tr-1');
+            testCase.verifyEqual(plan(1).body.statement.variable.node, 'NDIC:voltage');
+            testCase.verifyEqual(report.variable_carried, 1);
+        end
 
         function theDenominatorIsReportedUnconditionally(testCase)
             % Rule 5, and on the EMPTY input too -- "nothing to do" and "this

@@ -249,6 +249,7 @@ function result = local(path, options)
     % not they changed anything -- a count with no denominator is not evidence.
     % Empty means "did not run" (a non-V_eta target, or the sub-pass threw).
     ensembleReport = [];
+    bathAnchors = [];   % resolveDeferred -> resolveEpochAnchorFold (did-schema #88)
     strainReport = [];
     subjectStrainReport = [];
     openmindsCitationsReport = [];
@@ -691,7 +692,7 @@ function result = local(path, options)
         % their pass-1 form.
         try
             resolver = ndi.migrate.internal.bodyResolver(bodies);
-            convertResult = resolveDeferred(convertResult, resolver, options);
+            [convertResult, bathAnchors] = resolveDeferred(convertResult, resolver, options);
         catch ME
             warning('NDI:migrate:deferredResolveFailed', ...
                 ['Second-pass resolution of session-context deferrals ' ...
@@ -793,7 +794,8 @@ function result = local(path, options)
         end
         try
             [convertResult, epochAnchorReport] = ...
-                resolveEpochAnchorFold(convertResult, epochMintReport, options);
+                resolveEpochAnchorFold(convertResult, epochMintReport, options, ...
+                    bathAnchors);
         catch ME
             warning('NDI:migrate:epochAnchorFoldFailed', ...
                 ['Second-pass epoch anchor fold failed (%s); leaving the ' ...
@@ -1066,7 +1068,7 @@ end
 
 % ---- second pass: session-context-dependent deferrals ---------------------
 
-function convertResult = resolveDeferred(convertResult, resolver, options)
+function [convertResult, bathAnchors] = resolveDeferred(convertResult, resolver, options)
 %RESOLVEDEFERRED Assemble the deferrals that need the session/element graph.
 %   The per-document converter quarantines context-dependent classes with
 %   reason did2:convert:needsSessionContext rather than emitting a partial
@@ -1078,6 +1080,12 @@ function convertResult = resolveDeferred(convertResult, resolver, options)
 %   does not re-migrate. Successfully assembled+validated docs move from
 %   quarantine into migrated; anything that cannot be assembled or fails
 %   validation stays quarantined with a reason.
+%
+%   BATHANCHORS (did-schema #88) is the struct array of the bath time anchors
+%   minted "during the session", each with the stimulator's epoch string and
+%   clock, for resolveEpochAnchorFold to re-point at the epoch entity once
+%   did2.convert.epochMint has minted it. [] when none.
+    bathAnchors = [];
     q = convertResult.quarantine;
     if isempty(q)
         return;
@@ -1090,9 +1098,16 @@ function convertResult = resolveDeferred(convertResult, resolver, options)
         end
         try
             v1Body = jsondecode(q(k).original_body);
-            bodies = assembleDeferred(q(k).class_name, v1Body, resolver, ...
-                options.TargetVersion);
+            [bodies, anchorInfo] = assembleDeferred(q(k).class_name, v1Body, ...
+                resolver, options.TargetVersion);
             assembled = [assembled, bodies]; %#ok<AGROW>
+            if ~isempty(anchorInfo)
+                if isempty(bathAnchors)
+                    bathAnchors = anchorInfo;
+                else
+                    bathAnchors(end+1) = anchorInfo; %#ok<AGROW>
+                end
+            end
             keep(k) = false;   % resolved -> drop the original deferral
         catch
             % leave it quarantined with its original (deferral) reason
@@ -1139,13 +1154,13 @@ function classes = deferredAssemblerClasses()
     classes = {'stimulus_bath'};
 end
 
-function bodies = assembleDeferred(className, v1Body, resolver, targetVersion)
+function [bodies, anchorInfo] = assembleDeferred(className, v1Body, resolver, targetVersion)
 % Dispatch a deferred v1 body to its session-aware assembler. Returns a cell
 % array of target-version bodies (so a 1 -> N assembly fits). Add new
 % context-dependent classes here as their assemblers land.
     switch className
         case 'stimulus_bath'
-            [bathBody, timeRefBody] = ...
+            [bathBody, timeRefBody, extraBodies, anchorInfo] = ...
                 ndi.migrate.internal.stimulusBathToBath(v1Body, resolver, ...
                     targetVersion);
             % timeRefBody is [] when V_eta declines to anchor (no epoch string,
@@ -1159,6 +1174,8 @@ function bodies = assembleDeferred(className, v1Body, resolver, targetVersion)
             else
                 bodies = {timeRefBody, bathBody};
             end
+            % did-schema #88: the bath's formulation and its chemicals
+            bodies = [bodies, extraBodies];
         otherwise
             error('NDI:migrate:noAssembler', ...
                 'No session-aware assembler for deferred class "%s".', ...
@@ -1538,15 +1555,16 @@ function [convertResult, report] = resolveSliceTetanus(convertResult, bodies, ..
 end
 
 function tf = movedTargetMinted(s, minted)
-% The moved edge -- `subject_id` on a statement, `parent` on a relation --
-% always names a minted slice; the move stands only if that slice was folded.
-    edge = 'subject_id';
+% The moved edge -- `entity_id` on a statement, `parent_id` on a relation
+% (did-schema #88; `subject_id` / `parent` before) -- always names a minted
+% slice; the move stands only if that slice was folded.
+    edges = {'entity_id', 'subject_id'};
     if strcmp(s.document_class.class_name, 'directed_relation')
-        edge = 'parent';
+        edges = {'parent_id', 'parent'};
     end
     tf = false;
     for k = 1:numel(s.depends_on)
-        if strcmp(s.depends_on(k).name, edge)
+        if any(strcmp(s.depends_on(k).name, edges))
             v = '';
             if isfield(s.depends_on(k), 'value'); v = s.depends_on(k).value;
             elseif isfield(s.depends_on(k), 'document_id'); v = s.depends_on(k).document_id; end
@@ -1745,7 +1763,9 @@ function [convertResult, report] = resolveOntologyLabelSubjects(convertResult, o
     newDocs = {};
     for k = 1:numel(plan)
         try
-            sub = did2.convert.v1_to_v2({plan(k).body}, ...
+            % the observation and its `derived_from` relation (did-schema
+            % #88) fold together: either both land or the label stays
+            sub = did2.convert.v1_to_v2([{plan(k).body}, plan(k).related], ...
                 'Validate',      options.Validate, ...
                 'SchemaCache',   options.SchemaCache, ...
                 'TargetVersion', options.TargetVersion, ...
@@ -2101,17 +2121,45 @@ function c = datasetLayerCensus(docs)
 %   alone would count every entity-layer edge in the batch.
     c = struct('documents', numel(docs), 'dataset_entities', 0, ...
         'distinct_dataset_ids', 0, 'membership_edges', 0);
+    % did-schema #88: a dataset is an `entity` of type `dataset`, and a
+    % session's membership is an `included_in` relation; the pre-#88 class
+    % name and base.name sentinel are read too -- the same two tests
+    % did2.convert.resolveDatasetEntities applies (isDatasetEntity,
+    % isMembership), so the census counts what the pass acts on.
     seenIds = {};
     for k = 1:numel(docs)
         cls = docs{k}.className();
-        if strcmp(cls, 'dataset')
+        isDataset = strcmp(cls, 'dataset');
+        if ~isDataset && strcmp(cls, 'entity')
+            t = [];
+            try
+                t = docs{k}.get('entity.type');
+            catch
+            end
+            isDataset = isstruct(t) && isfield(t, 'name') ...
+                && strcmpi(char(t.name), 'dataset');
+        end
+        isMembership = false;
+        if strcmp(cls, 'directed_relation')
+            isMembership = strcmp(safeDocGet(docs{k}, 'base.name'), ...
+                'migrated_session_membership');
+            if ~isMembership
+                r = [];
+                try
+                    r = docs{k}.get('directed_relation.relation');
+                catch
+                end
+                isMembership = isstruct(r) && isfield(r, 'name') ...
+                    && strcmp(char(r.name), 'included_in');
+            end
+        end
+        if isDataset
             c.dataset_entities = c.dataset_entities + 1;
             id = safeDocGet(docs{k}, 'base.id');
             if ~isempty(id) && ~any(strcmp(id, seenIds))
                 seenIds{end+1} = id; %#ok<AGROW>
             end
-        elseif strcmp(cls, 'directed_relation') && strcmp( ...
-                safeDocGet(docs{k}, 'base.name'), 'migrated_session_membership')
+        elseif isMembership
             c.membership_edges = c.membership_edges + 1;
         end
     end
@@ -2128,7 +2176,7 @@ function v = safeDocGet(doc, path)
 end
 
 function [convertResult, report] = resolveEpochAnchorFold(convertResult, ...
-    epochMintReport, options)
+    epochMintReport, options, bathAnchors)
 %RESOLVEEPOCHANCHORFOLD V_eta second pass: fold the pass-1
 %   `epoch_bounded_reference` placeholders into the signed `relative_reference`,
 %   anchored to the `epoch` documents did2.convert.epochMint just minted.
@@ -2169,7 +2217,12 @@ function [convertResult, report] = resolveEpochAnchorFold(convertResult, ...
     for k = 1:numel(docs)
         structs{k} = docs{k}.toStruct();
     end
-    [plan, report] = ndi.migrate.internal.epochAnchorFold(structs, epochIndex);
+    if nargin < 4 || isempty(bathAnchors)
+        bathAnchors = struct('anchor_id', {}, 'session_id', {}, ...
+            'epoch_string', {}, 'epoch_clock', {});
+    end
+    [plan, report] = ndi.migrate.internal.epochAnchorFold(structs, epochIndex, ...
+        bathAnchors);
 
     % Fold outcomes belong to the same instrument, so they are initialised
     % unconditionally -- a field that appears only on the success path is a
@@ -2210,9 +2263,10 @@ function [convertResult, report] = resolveEpochAnchorFold(convertResult, ...
     kept = {};
     for k = 1:numel(convertResult.migrated)
         d = convertResult.migrated{k};
-        if strcmp(d.className(), 'epoch_bounded_reference') ...
+        if any(strcmp(d.className(), {'epoch_bounded_reference', ...
+                'relative_time_reference'})) ...
                 && any(strcmp(d.get('base.id'), replacedIds))
-            continue;   % superseded by the relative_reference carrying its id
+            continue;   % superseded by the re-anchored reference carrying its id
         end
         kept{end+1} = d; %#ok<AGROW>
     end

@@ -263,22 +263,35 @@ classdef TestMigrateLocal < matlab.unittest.TestCase
         function testReferencesReported(testCase)
             % depends_on edge pointing at a non-existent id surfaces
             % as an orphan in the references report (no quarantine).
+            %
+            % The batch carries its `session` document, as a real session
+            % directory does (ndi.session.dir persists one on first open). On
+            % did-schema #88 base.session_id is a `session_id` EDGE to the
+            % session entity, whose base.id IS the session id
+            % (V_eta_relation_inheritance_plan.md item 4), so every document
+            % carries one more edge -- and without the session document every
+            % one of them would be an orphan. The ONE orphan is the parent_id.
+            session = makeV1Session();
             good = makeV1Body('alpha');
             orphan = makeV1Body('beta');
             orphan.depends_on = struct( ...
                 'name',  'parent_id', ...
                 'value', 'deadbeefdeadbeef_0000111122223333');
             srcSqlite = fullfile(testCase.SessionRoot, '.ndi', 'did-sqlite.sqlite');
-            buildV1Sqlite(srcSqlite, {jsonencode(good), jsonencode(orphan)});
+            buildV1Sqlite(srcSqlite, {jsonencode(session), jsonencode(good), ...
+                jsonencode(orphan)});
 
             result = ndi.migrate.local(testCase.SessionRoot, ...
                 'Validate', false);
 
-            verifyEqual(testCase, result.summary.migrated_count, 2);
+            verifyEqual(testCase, result.summary.migrated_count, 3);
             verifyEqual(testCase, result.references.orphan_count, 1);
-            verifyEqual(testCase, result.references.edges_examined, 1);
+            sessionEdges = 0;
+            if ndi.v2.sessionIdIsEdge()
+                sessionEdges = 3;     % one per document, the session's own included
+            end
+            verifyEqual(testCase, result.references.edges_examined, 1 + sessionEdges);
         end
-
     end
 end
 
@@ -299,6 +312,25 @@ body.base = struct( ...
     'name',       name, ...
     'datestamp',  '2024-06-01T12:00:00.000Z');
 body.demo_a = struct('marker', name);
+end
+
+function body = makeV1Session()
+% the did_v1 `session` document ndi.session.dir writes: base.session_id is
+% the session id (makeV1Body's), session.reference its name
+body = struct();
+body.document_class = struct( ...
+    'class_name',    'session', ...
+    'class_version', '1.0.0', ...
+    'superclasses',  struct( ...
+        'class_name',    'base', ...
+        'class_version', '1.0.0'));
+body.depends_on = struct('name', {}, 'value', {});
+body.base = struct( ...
+    'id',         'aabb1122ccdd3344_5e55100000000000', ...
+    'session_id', 'aabb1122ccdd3344_9900aabbccddeeff', ...
+    'name',       'session', ...
+    'datestamp',  '2024-06-01T12:00:00.000Z');
+body.session = struct('reference', 'test_session');
 end
 
 function s = pad16(name)

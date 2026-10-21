@@ -749,11 +749,8 @@ plateId = tail;
 end
 
 function lid = subjectLocalIdentifier(s)
-lid = '';
-if isfield(s, 'subject') && isstruct(s.subject) && isscalar(s.subject) ...
-        && isfield(s.subject, 'local_identifier')
-    lid = charOf(s.subject.local_identifier);
-end
+% entity.local_identifier on did-schema #88, subject.local_identifier before
+lid = charOf(ndi.migrate.internal.etaShape.localIdentifier(s));
 end
 
 function blk = rowBlock(b)
@@ -784,7 +781,9 @@ tf = isImageClass(c) || strcmp(c, 'imageStack') || strcmp(c, 'ontologyImage');
 end
 
 function tf = isSubjectDoc(s)
-% A `subject`, or anything whose superclass chain includes `subject`.
+% A subject: on did-schema #88 an `entity` of one of the physical types (the
+% types a `subject` became); before #88 a `subject`, or anything whose
+% superclass chain includes `subject`.
 % Element-derived subjects reach here too: did2.convert.migrators_j.element
 % promotes an element to a subject with its id PRESERVED. That is a recurring
 % trap in this repo and it is recorded here so a reader does not re-derive it
@@ -793,7 +792,8 @@ tf = false;
 if ~isstruct(s)
     return;
 end
-if strcmp(classNameOf(s), 'subject')
+if ndi.migrate.internal.etaShape.isEntity(s, {'organism', 'culture', ...
+        'tissue', 'cell', 'group', 'device', 'material'})
     tf = true;
     return;
 end
