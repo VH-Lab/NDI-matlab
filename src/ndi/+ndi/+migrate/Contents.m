@@ -33,17 +33,15 @@
 %                          single-document migrator cannot see the batch; this
 %                          is the "deduplicated by name+version" half of the
 %                          signed R1 model. Runs LAST of the V_eta sub-passes.
-%     stimulusPresentationToTimedSequence
-%                        - V_eta SIGNED stimulus model, and the pass that runs
-%                          on stimulus_presentation since 2026-08-17: N
-%                          deduped standalone `visual_grating` docs + ONE
-%                          `timed_sequence_manipulation` carrying the v1
-%                          presentation id and a playlist that indexes them.
-%                          The two blockers this entry used to record are both
-%                          cleared -- `visual_grating` stopped being abstract
-%                          (team, 2026-08-17), and the id collision is gone
-%                          because the two emitters are now mutually exclusive
-%                          by definition.
+%     stimulusPresentationToItem
+%                        - the stimulus fold in the did-schema #88 shape
+%                          (V_eta_method_plan.md, TEAM-SIGN-OFF [method]
+%                          2026-10-21): one standalone `method` document per
+%                          distinct stimulus (gratingRecipe + stimulusMethod)
+%                          + ONE `item_manipulation` carrying the v1
+%                          presentation id and a 0-based playlist into them.
+%                          Several animals: one manipulation of the session's
+%                          cohort, `distributive` (sessionCohort).
 %     hartleyBasisGratings
 %                        - the half of the Hartley decomposition the
 %                          presentation does not contain. Ten of the eleven
@@ -56,24 +54,14 @@
 %                          with a `frameTimes` of the same length. Mints the
 %                          basis ONCE per session and hands the playlist +
 %                          frame times to the assembler above.
-%     stimulusPresentationToManipulation
-%                        - the FLATTENING emitter, GATED OFF. RETAINED by the
-%                          2026-08-17 signature for the presentation-less
-%                          single-grating case -- "not a rival model to
-%                          retire, the degenerate one" -- and that case has NO
-%                          v1 source, so this emitter has no caller and no
-%                          reachable input. It is not retired; do not delete
-%                          it, and do not re-wire it without reading the
-%                          signature: both emitters preserve the presentation
-%                          id, and `documents(id TEXT PRIMARY KEY)` cannot
-%                          hold two claimants.
+%     (stimulusPresentationToManipulation, stimulusPresentationToTimedSequence
+%      and gratingValueFromParameters were deleted 2026-10-21 with the
+%      `visual_grating`, `visual_grating_manipulation` and `timed_sequence`
+%      classes they wrote; did-schema #88 has none of them.)
 %
 % NOTE the list above is a HAND-WRITTEN NARRATIVE and is NOT a census of
-% +internal/. Measured 2026-08-17: 20 .m files in
-% src/ndi/+ndi/+migrate/+internal/, of which 7 are named anywhere above
-% (bodyResolver, hartleyBasisGratings, pathSPromotion, softwareDedup,
-% stimulusBathToBath, stimulusPresentationToManipulation,
-% stimulusPresentationToTimedSequence) and 13 are not. An absence here has
+% +internal/. (The 2026-08-17 count of 20 files, 7 named, is stale: three of
+% the named files are deleted and several helpers were added since.) An absence here has
 % never meant a helper does not exist. To ask what helpers exist, list the
 % folder.
 %

@@ -2263,83 +2263,58 @@ end
 
 function [convertResult, report] = resolveStimulusPresentations(convertResult, bodies, options)
 %RESOLVESTIMULUSPRESENTATIONS V_eta second pass: DECOMPOSE each legacy
-%   stimulus_presentation into the SIGNED stimulus model -- N deduped
-%   standalone `visual_grating` documents plus ONE
-%   `timed_sequence_manipulation` on the animal that references them, its
-%   playlist an index array into those references.
+%   stimulus_presentation into the did-schema #88 stimulus shape -- one
+%   standalone `method` document per distinct stimulus (a recipe:
+%   {term, parameters}) plus ONE `item_manipulation` whose `item` value is the
+%   playlist into them (V_eta_method_plan.md, TEAM-SIGN-OFF [method]
+%   2026-10-21; `item` replaces `timed_sequence`, V_eta_study_plan.md).
 %
-%   The pass-1 converter has no per-document migrator for
-%   stimulus_presentation (the animal is only knowable from the whole body set
-%   -- the stimulus_response -> element -> subject link), so it passes
-%   through; here it is decomposed. A presentation with no responding animal,
-%   or one this pass cannot type, is left as passthrough. The manipulation
-%   PRESERVES the presentation's id, so every inbound reference resolves to it
-%   (`stimulus_response_scalar.stimulus_presentation_id`,
-%   `hartley_calc.stimulus_presentation_id`,
-%   `control_designation.timed_sequence_id`).
+%   The pass-1 converter passes stimulus_presentation through (the animal is
+%   only knowable from the whole body set); here it is decomposed. The
+%   manipulation PRESERVES the presentation's id, so every inbound reference
+%   resolves to it. A presentation the guard refuses (not a sequence of
+%   gratings), or one with no animal, is left as v1 with its reason.
 %
-%   ------------------------------------------------------------------------
-%   WHAT CHANGED 2026-08-17, AND THE ONE CONSEQUENCE THAT IS NOT GOOD NEWS
-%   ------------------------------------------------------------------------
-%   This pass used to call
-%   ndi.migrate.internal.stimulusPresentationToManipulation, which FLATTENS a
-%   whole presentation into a single `visual_grating_manipulation` with the
-%   per-stimulus parameters in an untyped numeric matrix. The 2026-08-17
-%   signature (DID-schema V_eta_stimulus_model_plan.md) RETAINS that class for
-%   the PRESENTATION-LESS single-grating case and gives the sequence case to
-%   the decomposition -- "not a rival model to retire, the degenerate one".
+%   SEVERAL ANIMALS (Jess Haley, 2026-10-21, stimulus plan decision 2): a
+%   presentation whose response or epoch route resolves to several animals
+%   becomes ONE manipulation of its session's COHORT with `distributive`
+%   true. The cohort is minted here once per session -- a `group` entity
+%   whose members (`member_of`) are the animals recorded in that session plus
+%   any the presentations resolved to -- and reused by every presentation in
+%   the session (ndi.migrate.internal.sessionCohort). Stimulator links that
+%   lead to different animals are refused (decision 4).
 %
-%   The two are therefore mutually exclusive by definition, which is what
-%   removes the id collision: both emitters set base.id = the presentation id,
-%   and `+did2/+database/sqlitedb.m` declares `documents(id TEXT PRIMARY KEY)`,
-%   so two claimants cannot both be stored.
+%   TIME. Each manipulation is anchored "during the session" by
+%   did2.convert.mintSessionDuring (the lightsheet decision, Jess 2026-10-14,
+%   option A): the epoch anchor needs a clocktype that lives in
+%   presentation_time.bin, which this pass does not open.
 %
-%   GATING THE FLATTENING PASS TO ITS RETAINED CASE STOPS IT FIRING
-%   ENTIRELY, AND THE RETAINED CASE HAS NO EMITTER. That pass is structurally
-%   a loop over `isPresentationBody(b)`; a presentation-less input never
-%   reaches it. Nothing is stranded TODAY -- no did_v1 class carries a lone
-%   grating, `stimulus_presentation` being the only carrier of grating
-%   parameters -- but if such a source ever appears it has nothing to migrate
-%   into it. Recorded here rather than covered over, and counted in the report
-%   below as `single_grating_candidates`, which is measured, not assumed.
+%   `visual_grating`, `visual_grating_manipulation`, `timed_sequence` and
+%   `timed_sequence_manipulation` are gone from #88; nothing here emits them.
     report = newStimulusSequenceReport();
     resolver = ndi.migrate.internal.bodyResolver(bodies);
-    % The first-run v1 readers (did2.convert.readers.sqliteV1 / dumbJsonV1)
-    % return raw JSON char bodies -- nothing is decoded there. isPresentationBody
-    % (and the assembler's struct-typed argument) need decoded structs, so
-    % normalise here; the idempotent re-run path already passes structs, which
-    % this leaves untouched.
     bodies = decodeBodies(bodies);
     report.bodies_read = numel(bodies);
 
-    % THE HARTLEY HALF, BUILT ONCE FOR THE WHOLE SESSION. Ten of the eleven
-    % 20211116 presentations carry a GENERATOR RECIPE and enumerate nothing;
-    % the basis they play is in the `hartley_calc` documents that reference
-    % them, identical across all 210 of them. Minted here rather than inside
-    % the per-presentation assembler because the basis is a property of the
-    % SESSION: minting per presentation would create ten copies of the same
-    % 3,360 gratings.
-    [hartleyGratings, hartleyByPresentation, report.hartley] = ...
-        ndi.migrate.internal.hartleyBasisGratings(bodies, options.TargetVersion);
+    % THE HARTLEY HALF, BUILT ONCE FOR THE WHOLE SESSION (the basis is a
+    % property of the session, shared by every presentation that plays it).
+    [hartleyMethods, hartleyByPresentation, report.hartley] = ...
+        ndi.migrate.internal.hartleyBasisGratings(bodies);
 
-    % The shared basis is added at the END, and only the entries a decomposed
-    % presentation really references. A grating document nothing points at is
-    % an unreachable document, not a preserved fact -- and a Hartley
-    % presentation can still be refused (no responding animal), so "built" and
-    % "referenced" are genuinely different sets.
+    % The session cohorts, minted lazily: one id per session, its members
+    % accumulated over every distributive presentation in it.
+    cohortIds = containers.Map('KeyType', 'char', 'ValueType', 'char');
+    cohortMembers = containers.Map('KeyType', 'char', 'ValueType', 'any');
+    cohortStamp = containers.Map('KeyType', 'char', 'ValueType', 'char');
+    cohortIdFor = @(sid) cohortIdOf(cohortIds, sid);
+
     usedShared = containers.Map('KeyType', 'char', 'ValueType', 'logical');
     minted = {};
-    consumed = {};   % presentation ids that became a manipulation
+    manips = {};
+    consumed = {};
     for k = 1:numel(bodies)
         b = bodies{k};
         if ~isPresentationBody(b)
-            % THE RETAINED-CASE COUNTER. A presentation-less single grating is
-            % what `visual_grating_manipulation` is kept for; nothing in
-            % did_v1 is one, and this counts rather than asserts that.
-            if isSingleGratingCandidate(b)
-                report.single_grating_candidates = ...
-                    report.single_grating_candidates + 1;
-            end
             continue;
         end
         report.presentations_read = report.presentations_read + 1;
@@ -2348,102 +2323,115 @@ function [convertResult, report] = resolveStimulusPresentations(convertResult, b
         if ~isempty(presId) && isKey(hartleyByPresentation, presId)
             sequence = hartleyByPresentation(presId);
         end
-        [manip, gratings, bodyDoc, ~, rep, extra] = ...
-            ndi.migrate.internal.stimulusPresentationToTimedSequence( ...
-                b, resolver, options.TargetVersion, sequence);
-        % THE PER-KIND BREAKDOWN (NewStim class, per stimulus), summed over
-        % every presentation read, and the presentation-level row it falls in
-        % (its set of stimulus kinds, decomposed or refused).
+        [manip, methods, rep] = ndi.migrate.internal.stimulusPresentationToItem( ...
+            b, resolver, sequence, 'CohortIdFor', cohortIdFor);
         report = tallyStimulusKinds(report, rep, ~isempty(manip));
-        % SEVERAL ANIMALS (Jess Haley, 2026-10-21): counted for every corpus,
-        % 0 included. Each is left as v1 (stimulusPresentationToTimedSequence,
-        % severalAnimals): the decided cohort + distributive shape is not
-        % expressible on the schema this pass writes.
         if isfield(rep, 'several_animals') && rep.several_animals > 1
             report.several_animal_presentations = ...
                 report.several_animal_presentations + 1;
         end
         if isempty(manip)
-            % Left as passthrough with the reason recorded -- a refusal and a
-            % crash must not print the same result.
             report.presentations_refused = report.presentations_refused + 1;
             report.refusals{end+1} = struct('id', presId, 'reason', rep.reason);
+            if rep.several_animals > 1
+                report.several_animal_refused = report.several_animal_refused + 1;
+            end
             continue;
         end
-        % Record HOW the manipulation's animal was resolved: through a
-        % stimulus_response (`response`); through the presentation's own
-        % session-scoped epoch (`epoch`, FORK 1); through the presentation's own
-        % stimulator element when its epoch records no element (`stimulator`,
-        % Jess Haley 2026-10-21, PR #1021); or through a sibling session's
-        % epoch (`epoch_sibling`, FORK 2 -- disarmed, so it never fires).
-        src = '';
-        if isfield(rep, 'animal_source'); src = rep.animal_source; end
-        switch src
+        switch rep.animal_source
             case 'epoch'
                 report.decomposed_via_epoch = report.decomposed_via_epoch + 1;
             case 'stimulator'
                 report.decomposed_via_stimulator = ...
                     report.decomposed_via_stimulator + 1;
-            case 'epoch_sibling'
-                report.decomposed_via_epoch_sibling = ...
-                    report.decomposed_via_epoch_sibling + 1;
             otherwise
                 report.decomposed_via_response = report.decomposed_via_response + 1;
         end
-        minted{end+1} = manip; %#ok<AGROW>
-        for g = 1:numel(gratings)
-            minted{end+1} = gratings{g}; %#ok<AGROW>
+        if rep.distributive
+            sid = ndi.v2.sessionIdOf(b);
+            members = {};
+            if isKey(cohortMembers, sid)
+                members = cohortMembers(sid);
+            else
+                members = resolver.subjectsRecordedInSession(sid);
+                cohortStamp(sid) = char(b.base.datestamp);
+            end
+            for a = 1:numel(rep.animals)
+                if ~any(strcmp(members, rep.animals{a}))
+                    members{end+1} = rep.animals{a}; %#ok<AGROW>
+                end
+            end
+            cohortMembers(sid) = members;
+            report.distributive_manipulations = report.distributive_manipulations + 1;
         end
-        if ~isempty(bodyDoc)
-            minted{end+1} = bodyDoc; %#ok<AGROW>
-            report.sampled_bodies = report.sampled_bodies + 1;
+        manips{end+1} = manip; %#ok<AGROW>
+        for g = 1:numel(methods)
+            minted{end+1} = methods{g}; %#ok<AGROW>
         end
-        % MULTI-SUBJECT (storage_mode:reference): the assembler returned the
-        % primary manipulation in `manip`; `extra` carries the ONE shared
-        % standalone timed_sequence body-of-record plus the N-1 further
-        % per-subject manipulations. Empty {} on the single-subject path, so this
-        % loop is inert there.
-        for e = 1:numel(extra)
-            minted{end+1} = extra{e}; %#ok<AGROW>
-            report.reference_bodies_minted = report.reference_bodies_minted + 1;
-        end
-        if ~isempty(sequence) && isstruct(sequence) && isfield(sequence, 'presented_ids')
-            for r = 1:numel(sequence.presented_ids)
-                usedShared(char(sequence.presented_ids{r})) = true;
+        if ~isempty(sequence) && isstruct(sequence) && isfield(sequence, 'item_ids')
+            for r = 1:numel(sequence.item_ids)
+                usedShared(char(sequence.item_ids{r})) = true;
             end
         end
         report.presentations_decomposed = report.presentations_decomposed + 1;
-        report.gratings_minted = report.gratings_minted + numel(gratings);
-        report.refs_declared = report.refs_declared + ...
-            max(numel(gratings), rep.shared_refs);
+        report.methods_minted = report.methods_minted + numel(methods);
+        report.items_declared = report.items_declared + ...
+            max(numel(methods), rep.shared_refs);
         consumed{end+1} = presId; %#ok<AGROW>
     end
     if isempty(consumed)
-        % Nothing was decomposed, so nothing may be minted either.
-        report.gratings_minted = 0;
+        report.methods_minted = 0;
         return;
     end
-    for g = 1:numel(hartleyGratings)
-        if isKey(usedShared, hartleyGratings{g}.base.id)
-            minted{end+1} = hartleyGratings{g}; %#ok<AGROW>
-            report.shared_gratings_minted = report.shared_gratings_minted + 1;
+    for g = 1:numel(hartleyMethods)
+        if isKey(usedShared, hartleyMethods{g}.base.id)
+            minted{end+1} = hartleyMethods{g}; %#ok<AGROW>
+            report.shared_methods_minted = report.shared_methods_minted + 1;
         end
     end
-    % drop the passthrough stimulus_presentation docs that were assembled away
+    % the session cohorts, once each
+    sids = cohortIds.keys();
+    for c = 1:numel(sids)
+        members = cohortMembers(sids{c});
+        docs = ndi.migrate.internal.sessionCohort(cohortIds(sids{c}), sids{c}, ...
+            members, cohortStamp(sids{c}));
+        minted = [minted, docs]; %#ok<AGROW>
+        report.cohorts_minted = report.cohorts_minted + 1;
+        report.cohort_members = report.cohort_members + numel(members);
+    end
+
+    % drop the passthrough stimulus_presentation docs that were assembled away,
+    % and collect the session documents the time references anchor to
     kept = {};
+    sessionStructs = {};
+    sessionClasses = {};
     for k = 1:numel(convertResult.migrated)
         d = convertResult.migrated{k};
-        if strcmp(d.className(), 'stimulus_presentation') ...
+        cls = d.className();
+        if strcmp(cls, 'stimulus_presentation') ...
                 && any(strcmp(d.get('base.id'), consumed))
             continue;
+        end
+        if any(strcmp(cls, {'session', 'entity'}))
+            sessionStructs{end+1} = d.toStruct(); %#ok<AGROW>
+            sessionClasses{end+1} = cls; %#ok<AGROW>
         end
         kept{end+1} = d; %#ok<AGROW>
     end
     convertResult.migrated = kept;
-    % fold the minted manipulation + sampled_body through v1_to_v2: they are
-    % tagged schema_version == TargetVersion, so the converter short-circuits them
-    % (isAlreadyTarget) to ensureClassBlocks + validate -- the same footing the
-    % deferred-resolution and Path-S passes use.
+
+    % "during the session" for every manipulation (the marker each carries)
+    nS = numel(sessionStructs);
+    batch = [sessionStructs, manips];
+    classes = [sessionClasses, repmat({'manipulation'}, 1, numel(manips))];
+    [batch, refs, anchorReport] = did2.convert.mintSessionDuring(batch, classes, ...
+        nS + (1:numel(manips)), struct('SchemaCache', options.SchemaCache));
+    report.time_references = anchorReport;
+    minted = [batch(nS+1:end), refs, minted];
+
+    % fold the minted documents through v1_to_v2: they are tagged
+    % schema_version == TargetVersion, so the converter short-circuits them
+    % (isAlreadyTarget) to ensureClassBlocks + validate.
     sub = did2.convert.v1_to_v2(minted, ...
         'Validate', options.Validate, ...
         'SchemaCache', options.SchemaCache, ...
@@ -2451,7 +2439,18 @@ function [convertResult, report] = resolveStimulusPresentations(convertResult, b
         'Verbose', false);
     convertResult.migrated = [convertResult.migrated, sub.migrated];
     convertResult.quarantine = [convertResult.quarantine, sub.quarantine];
+    report.quarantined = numel(sub.quarantine);
     convertResult.summary = recountSummary(convertResult);
+end
+
+function id = cohortIdOf(cohortIds, sessionId)
+%COHORTIDOF The session's cohort id, minted the first time it is asked for.
+%   containers.Map is a handle, so the caller's map holds every id issued.
+    sessionId = char(sessionId);
+    if ~isKey(cohortIds, sessionId)
+        cohortIds(sessionId) = did.ido.unique_id(); %#ok<NASGU>
+    end
+    id = cohortIds(sessionId);
 end
 
 function out = decodeBodies(bodies)
@@ -2480,43 +2479,6 @@ function tf = isPresentationBody(b)
         && strcmp(b.document_class.class_name, 'stimulus_presentation');
 end
 
-function tf = isSingleGratingCandidate(b)
-%ISSINGLEGRATINGCANDIDATE The case `visual_grating_manipulation` is RETAINED
-%   for by the 2026-08-17 signature: a document describing ONE grating with NO
-%   presentation around it.
-%
-%   THIS IS A COUNTER, NOT A ROUTE. Nothing is emitted for such a document,
-%   because nothing in the did_v1 universe is one -- `stimulus_presentation`
-%   is the only class that carries grating parameters at all, and it is
-%   excluded by construction here. The predicate exists so that the claim "the
-%   retained case has no input" is MEASURED on every corpus this runs on
-%   instead of being asserted once and going stale: if it ever returns
-%   non-zero, the retained case has acquired a source and needs an emitter.
-    tf = false;
-    if ~isstruct(b) || isPresentationBody(b)
-        return;
-    end
-    % One level into each block, because a did_v1 document holds its content
-    % in a block named after its class, never at the top level. The three
-    % names are exactly the ones
-    % ndi.migrate.internal.gratingValueFromParameters reads, so this predicate
-    % and the mapper cannot drift into disagreeing about what a grating is.
-    defining = {'angle', 'sFrequency', 'tFrequency'};
-    blocks = fieldnames(b);
-    for i = 1:numel(blocks)
-        blk = b.(blocks{i});
-        if ~isstruct(blk) || ~isscalar(blk)
-            continue;
-        end
-        for k = 1:numel(defining)
-            if isfield(blk, defining{k}) && ~isempty(blk.(defining{k}))
-                tf = true;
-                return;
-            end
-        end
-    end
-end
-
 function r = newStimulusSequenceReport()
 %NEWSTIMULUSSEQUENCEREPORT Denominators first and unconditionally, so a pass
 %   that did nothing and a pass that saw nothing print differently.
@@ -2525,20 +2487,21 @@ function r = newStimulusSequenceReport()
         'presentations_read',         0, ...
         'presentations_decomposed',   0, ...
         'presentations_refused',      0, ...
-        'gratings_minted',            0, ...
-        'shared_gratings_minted',     0, ...
-        'refs_declared',              0, ...
-        'sampled_bodies',             0, ...
-        'reference_bodies_minted',    0, ...
-        'single_grating_candidates',  0, ...
+        'methods_minted',             0, ...
+        'shared_methods_minted',      0, ...
+        'items_declared',             0, ...
         'decomposed_via_response',    0, ...
         'decomposed_via_epoch',       0, ...
         'decomposed_via_stimulator',  0, ...
-        'decomposed_via_epoch_sibling', 0, ...
         'several_animal_presentations', 0, ...
+        'several_animal_refused',     0, ...
+        'distributive_manipulations', 0, ...
+        'cohorts_minted',             0, ...
+        'cohort_members',             0, ...
+        'quarantined',                0, ...
+        'time_references',            [], ...
         'stimulus_kinds',             [], ...
         'presentations_by_kind',      struct('kinds', {}, 'decomposed', {}, 'refused', {}), ...
-        'flattening_pass',            'GATED OFF -- retained for the presentation-less single-grating case, which has no v1 source', ...
         'refusals',                   {{}}, ...
         'hartley',                    []);
 end

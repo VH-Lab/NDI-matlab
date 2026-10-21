@@ -108,6 +108,8 @@ resolver.epochElementCountUnscoped = @(presentationId) ...
     epochElementCountUnscoped(byId, elementsByEpoch, presentationId);
 resolver.epochElementCountScoped = @(presentationId) ...
     epochElementCountScoped(byId, elementsBySessionEpoch, presentationId);
+resolver.subjectsRecordedInSession = @(sessionId) ...
+    subjectsRecordedInSession(byId, elementsBySessionEpoch, sessionId);
 end
 
 % ===================== graph index (one O(N) pass) =======================
@@ -468,6 +470,40 @@ for k = 1:numel(stimulatorIds)
     if ~isempty(sid) && ~isKey(seen, sid)
         seen(sid) = true;
         subs{end+1} = sid; %#ok<AGROW>
+    end
+end
+end
+
+function subs = subjectsRecordedInSession(byId, elementsBySessionEpoch, sessionId)
+% The animals recorded in SESSIONID: every element any of its epochs records
+% (element_epoch, session-scoped), resolved to its subject. This is the
+% membership of the session's COHORT (stimulus plan, decision 2 of
+% 2026-10-21: "a standing group (the animals recorded together in that
+% session)"). Same return contract as the other resolvers: a de-duplicated
+% cell of subject ids, in body order; empty when nothing resolves.
+sessionId = char(sessionId);
+subs = {};
+if isempty(sessionId)
+    return;
+end
+prefix = [sessionId '|'];
+keys = elementsBySessionEpoch.keys();
+seen = containers.Map('KeyType', 'char', 'ValueType', 'logical');
+for k = 1:numel(keys)
+    if ~startsWith(keys{k}, prefix)
+        continue;
+    end
+    elementIds = elementsBySessionEpoch(keys{k});
+    for e = 1:numel(elementIds)
+        try
+            sid = subjectOfElement(byId, elementIds{e});
+        catch
+            continue;
+        end
+        if ~isempty(sid) && ~isKey(seen, sid)
+            seen(sid) = true;
+            subs{end+1} = sid; %#ok<AGROW>
+        end
     end
 end
 end

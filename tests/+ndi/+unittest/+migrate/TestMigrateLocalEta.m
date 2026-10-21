@@ -8,7 +8,7 @@ classdef TestMigrateLocalEta < matlab.unittest.TestCase
 %        per-document converter defers stimulus_bath; the V_eta second pass
 %        (resolveDeferred -> stimulusBathToBath) assembles a dose_manipulation on
 %        the stimulator's subject over its epoch.
-%     2. stimulus_presentation -> visual_grating_manipulation (+ sampled_body).
+%     2. stimulus_presentation -> item_manipulation + method documents (did-schema #88).
 %        There is no per-document migrator; resolveStimulusPresentations assembles
 %        it from the recording graph (stimulus_response -> element -> subject).
 %     3. THE EPOCH ANCHOR, BOTH WAYS. The bath assembler mints an
@@ -438,40 +438,19 @@ classdef TestMigrateLocalEta < matlab.unittest.TestCase
                 resultDiag(result));
         end
 
-        function testStimulusPresentationBecomesATimedSequence(testCase)
-            % INVERTED 2026-08-17, and RENAMED from
-            % testStimulusPresentationBecomesGratingManipulation. It asserted
-            % a `visual_grating_manipulation` -- the model
-            % V_eta_stimulus_model_plan.md SUPERSEDES -- and began failing the
-            % moment the signed decomposition started working, which is the
-            % most misleading way for a test to be red: everything is correct
-            % and the gate says otherwise.
+        function testStimulusPresentationBecomesAnItemManipulation(testCase)
+            % did-schema #88 (V_eta_method_plan.md, TEAM-SIGN-OFF [method]
+            % 2026-10-21): a presentation that carries a sequence of gratings
+            % becomes ONE `item_manipulation` (a `manipulation` listing the
+            % `item` value kind) whose `item_id` names one standalone `method`
+            % document per distinct stimulus. `visual_grating`,
+            % `timed_sequence_manipulation` and `visual_grating_manipulation`
+            % are gone from the schema; this test was
+            % testStimulusPresentationBecomesATimedSequence until then.
             %
-            % THE SIGNATURE THAT SETTLES IT, V_eta_stimulus_model_plan.md:270
-            % (jess, 2026-08-17), which also closed the "keep or retire" item
-            % left open at :133:
-            %
-            %   "a `stimulus_presentation` document that carries a SEQUENCE of
-            %    visual gratings becomes ONE `timed_sequence_manipulation`
-            %    referencing N `visual_grating` documents (deduped,
-            %    `presented_id` -> the distinct gratings,
-            %    `value.presentation_order` the playlist).
-            %    `visual_grating_manipulation` is RETAINED for the genuine
-            %    single-grating, presentation-less case -- it is not a rival
-            %    model to retire, it is the degenerate one."
-            %
-            % THIS FIXTURE IS THE SEQUENCE CASE: two gratings (45 and 90),
-            % presentation_order [1 2], two trial times. So the signed answer
-            % is the timed_sequence, and `visual_grating_manipulation` must
-            % NOT appear -- asserted below, because "retained" is not
-            % "emitted", and a run that produced BOTH would put two documents
-            % on the presentation's one preserved base.id.
-            %
-            % THE EXPECTED CLASSES ARE NOT PREDICTED. They are the by_class
-            % this same fixture produced in e2e run 77 (29b596a54), read from
-            % the old assertion's own failure diagnostic:
-            %   {subject, term_assertion, directed_relation,
-            %    timed_sequence_manipulation, visual_grating, sampled_body}
+            % THIS FIXTURE: two gratings (45 and 90), presentation_order [1 2],
+            % two trial times inline -- so the onsets become a `time` key and
+            % the ends `item.value.offset`, with no body.
             subjId  = 'aabb1122ccdd3344_5500000000000010';
             recElem = 'aabb1122ccdd3344_5500000000000011';
             stimEl  = 'aabb1122ccdd3344_5500000000000012';
@@ -485,49 +464,41 @@ classdef TestMigrateLocalEta < matlab.unittest.TestCase
                 jsonencode(makeStimulusPresentation(presId, stimEl))};
             result = runMigrate(testCase, bodies);
 
-            % the presentation became ONE body-backed timed_sequence_manipulation
-            verifyTrue(testCase, ...
-                isfield(result.summary.by_class, 'timed_sequence_manipulation'), ...
-                ['no timed_sequence_manipulation produced from ' ...
-                 'stimulus_presentation. Read the run log for "Second-pass ' ...
-                 'stimulus_presentation decomposition failed" FIRST: ' ...
-                 'ndi.migrate.local wraps the pass in a try/catch that warns ' ...
-                 'and leaves everything as passthrough, so a THROW and a ' ...
-                 'per-presentation REFUSAL both arrive here as an absence. ' ...
-                 resultDiag(result)]);
-            verifyTrue(testCase, isfield(result.summary.by_class, 'visual_grating'), ...
-                ['no standalone visual_grating documents. The signed model ' ...
-                 'references them; without them the sequence points at ' ...
-                 'nothing. ' resultDiag(result)]);
-            verifyTrue(testCase, isfield(result.summary.by_class, 'sampled_body'), ...
-                ['no sampled_body produced for the trial times. ' resultDiag(result)]);
+            manip = findById(result.destination, presId);
+            verifyNotEmpty(testCase, manip, ...
+                ['no document carries the presentation id. Read the run log ' ...
+                 'for "Second-pass stimulus_presentation decomposition ' ...
+                 'failed" FIRST: ndi.migrate.local wraps the pass in a ' ...
+                 'try/catch, so a THROW and a REFUSAL both arrive here as an ' ...
+                 'absence. ' resultDiag(result)]);
+            verifyEqual(testCase, manip.document_class.class_name, 'manipulation', ...
+                resultDiag(result));
+            verifyTrue(testCase, any(strcmp( ...
+                {manip.document_class.superclasses.class_name}, 'item')), ...
+                'the manipulation does not list the `item` value kind');
+            verifyEqual(testCase, depValue(manip, 'entity_id'), subjId);
+            verifyEqual(testCase, depValue(manip, 'instrument_id'), stimEl);
+            verifyEqual(testCase, manip.item.value.item(:)', [0 1]);
+            verifyEqual(testCase, manip.item.value.offset(:)', [4 9]);
+            verifyEqual(testCase, manip.data.keys(1).quantity.value(:)', [0 5]);
 
-            % THE SUPERSEDED SHAPE MUST BE ABSENT, not merely unasserted.
-            % Both emitters preserve the presentation id, so a run producing
-            % both would put two documents on one base.id and the sqlite
-            % primary key would reject the second -- the failure
-            % TestStimulusPassGating/testTheFlatteningPassHasNoCaller exists
-            % to prevent, checked here on real output rather than on source.
-            verifyFalse(testCase, ...
-                isfield(result.summary.by_class, 'visual_grating_manipulation'), ...
-                ['visual_grating_manipulation was emitted for a SEQUENCE. It ' ...
-                 'is retained only for the degenerate presentation-less ' ...
-                 'single-grating case (plan :270). ' resultDiag(result)]);
+            % TWO DISTINCT STIMULI, so dedup must not collapse them (45 / 90).
+            methods = findAllByClass(result.destination, 'method');
+            verifyEqual(testCase, numel(methods), 2, sprintf( ...
+                ['%d method document(s) for a 2-grating sequence (45 and 90 ' ...
+                 'degrees). %s'], numel(methods), resultDiag(result)));
+            for k = 1:numel(methods)
+                verifyEqual(testCase, methods{k}.method.term.name, ...
+                    'drifting sinusoidal grating');
+            end
 
-            manip = findByClass(result.destination, 'timed_sequence_manipulation');
-            verifyNotEmpty(testCase, manip, resultDiag(result));
-            verifyEqual(testCase, manip.base.id, presId);            % id preserved
-            verifyEqual(testCase, depValue(manip, 'subject_id'), subjId);
-            verifyEqual(testCase, manip.subject_statement.storage_mode, 'body');
-
-            % TWO DISTINCT GRATINGS, so dedup must not collapse them. The
-            % fixture's angles are 45 and 90; a single grating here would mean
-            % the dedup key ignores `angle`, which would silently merge every
-            % orientation in a real orientation-tuning experiment.
-            gratings = findAllByClass(result.destination, 'visual_grating');
-            verifyEqual(testCase, numel(gratings), 2, sprintf( ...
-                ['%d visual_grating document(s) for a 2-grating sequence ' ...
-                 '(45 and 90 degrees). %s'], numel(gratings), resultDiag(result)));
+            % none of the classes #88 deleted
+            for gone = {'visual_grating', 'visual_grating_manipulation', ...
+                    'timed_sequence', 'timed_sequence_manipulation'}
+                verifyFalse(testCase, isfield(result.summary.by_class, gone{1}), ...
+                    sprintf('%s was emitted; did-schema #88 deletes it. %s', ...
+                    gone{1}, resultDiag(result)));
+            end
 
             % the presentation itself is consumed (assembled away)
             verifyFalse(testCase, isfield(result.summary.by_class, 'stimulus_presentation'), ...

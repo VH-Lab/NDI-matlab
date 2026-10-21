@@ -1,21 +1,22 @@
-function [gratingBodies, byPresentation, report] = hartleyBasisGratings(bodies, targetVersion)
+function [gratingBodies, byPresentation, report] = hartleyBasisGratings(bodies)
 %HARTLEYBASISGRATINGS The Hartley basis set of a session, as deduped
-%   `visual_grating` documents, plus the per-presentation playlist and frame
-%   times that reference them.
+%   standalone `method` documents (one stimulus recipe each, did-schema #88),
+%   plus the per-presentation playlist and frame times that reference them.
 %
-%   [G, BYPRES, REPORT] = hartleyBasisGratings(BODIES, TARGETVERSION) reads a
-%   decoded v1 body set and returns
+%   [G, BYPRES, REPORT] = hartleyBasisGratings(BODIES) reads a decoded v1 body
+%   set and returns
 %
-%     G        a cell of standalone `visual_grating` document bodies -- the
-%              DISTINCT basis functions of the session, MINTED ONCE.
+%     G        a cell of standalone `method` documents ({term 'Hartley basis
+%              grating', parameters}) -- the DISTINCT basis functions of the
+%              session, MINTED ONCE.
 %     BYPRES   a containers.Map from stimulus_presentation id to
-%                 .presented_ids  cell of the G ids that presentation uses
-%                 .order          [1 x nFrames] index into presented_ids,
+%                 .item_ids       cell of the G ids that presentation uses
+%                 .order          [1 x nFrames] index into item_ids,
 %                                 one entry per displayed frame
 %                 .frame_times    [1 x nFrames] frame onsets, seconds
 %                 .duration       the nominal per-frame duration, 1/fps
 %              -- i.e. exactly the override
-%              ndi.migrate.internal.stimulusPresentationToTimedSequence takes.
+%              ndi.migrate.internal.stimulusPresentationToItem takes.
 %     REPORT   denominators first, unconditionally (Operating Rule 5).
 %
 %   ========================================================================
@@ -41,7 +42,7 @@ function [gratingBodies, byPresentation, report] = hartleyBasisGratings(bodies, 
 %   0.10034 s against a declared fps of 10.
 %
 %   So the presentation cannot be decomposed from its own contents, and
-%   ndi.migrate.internal.stimulusPresentationToTimedSequence correctly REFUSES
+%   ndi.migrate.internal.stimulusPresentationToItem correctly REFUSES
 %   it on its own (the generator spec carries no angle / sFrequency /
 %   tFrequency, and mapping it anyway yields a grating at 0 deg, 0 cyc/deg,
 %   0 Hz with every field looking measured). This function supplies the
@@ -84,6 +85,10 @@ function [gratingBodies, byPresentation, report] = hartleyBasisGratings(bodies, 
 %   ------------------------------------------------------------------------
 %   WHAT EACH BASIS FUNCTION BECOMES, AND WHAT IS DELIBERATELY LEFT UNSET
 %   ------------------------------------------------------------------------
+%   (Written for the deleted `visual_grating` value. Since did-schema #88 the
+%   same facts are `method` parameters -- orientation, spatial phase, spatial
+%   frequency in CYCLES PER PIXEL, contrast, duration; see basisRecipe. The
+%   reasoning below about what is left unset is unchanged.)
 %     value.angle            atan2d(ky, kx), wrapped to [0,360). EXACT -- a
 %                            direction needs no rig calibration.
 %     value.phase            THE FIELD WITHOUT WHICH THE SET COLLAPSES. cas =
@@ -121,12 +126,11 @@ function [gratingBodies, byPresentation, report] = hartleyBasisGratings(bodies, 
 %       open question rather than resolved by writing two units into one
 %       field.
 %
-%   See also: ndi.migrate.internal.stimulusPresentationToTimedSequence,
-%   ndi.migrate.internal.gratingValueFromParameters.
+%   See also: ndi.migrate.internal.stimulusPresentationToItem,
+%   ndi.migrate.internal.stimulusMethod.
 
 arguments
     bodies cell
-    targetVersion (1,:) char = 'V_eta'
 end
 
 report = newReport();
@@ -251,33 +255,33 @@ for p = 1:numel(presIds)
     datestamp = baseField(pres, 'datestamp', '');
 
     localIndex = containers.Map('KeyType', 'double', 'ValueType', 'double');
-    presentedIds = {};
+    itemIds = {};
     order = zeros(1, nFrames);
     for f = 1:nFrames
-        value = basisValue(enumeration.kx(f), enumeration.ky(f), ...
+        recipe = basisRecipe(enumeration.kx(f), enumeration.ky(f), ...
             enumeration.s(f), spec.M, spec.contrast, duration);
-        key = [sessionId '|' valueKey(value)];
+        key = [sessionId '|' recipeKey(recipe)];
         if isKey(seen, key)
             g = seen(key);
         else
             g = numel(gratingBodies) + 1;
             seen(key) = g;
-            ids{g} = did.ido.unique_id();  %#ok<AGROW>
-            gratingBodies{g} = gratingDocument(ids{g}, sessionId, datestamp, ...
-                g, value, targetVersion); %#ok<AGROW>
+            gratingBodies{g} = ndi.migrate.internal.stimulusMethod( ...
+                recipe, sessionId, datestamp); %#ok<AGROW>
+            ids{g} = gratingBodies{g}.base.id;  %#ok<AGROW>
         end
         if isKey(localIndex, g)
             local = localIndex(g);
         else
-            presentedIds{end+1} = ids{g};   %#ok<AGROW>
-            local = numel(presentedIds);
+            itemIds{end+1} = ids{g};   %#ok<AGROW>
+            local = numel(itemIds);
             localIndex(g) = local;
         end
         order(f) = local;
     end
 
     entry = struct();
-    entry.presented_ids = presentedIds;
+    entry.item_ids      = itemIds;
     entry.order         = order;
     entry.frame_times   = frameTimes(:)';
     entry.duration      = duration;
@@ -290,58 +294,55 @@ end
 report.distinct_gratings_minted = numel(gratingBodies);
 end
 
-% ===================== the basis value ====================================
+% ===================== the basis recipe ===================================
 
-function value = basisValue(kx, ky, s, M, contrast, duration)
-%BASISVALUE One Hartley basis function as a V_eta `visual_grating` value.
-%   Only the fields this can state are set; see the header for every field
-%   that is deliberately absent and why. `angle` is wrapped to [0,360) to
-%   match the domain v1 `angle` uses (NewStim writes 0-360), and the wrap is a
-%   bijection on distinct directions, so it collapses nothing: measured, the
-%   3360 entries still give 3360 distinct value tuples after wrapping.
-value = struct();
-value.angle    = mod(atan2d(double(ky), double(kx)), 360);
-value.contrast = contrast;
-value.duration = duration;
-value.is_blank = false;
-% cas(theta) = cos(theta) + sin(theta) = sqrt(2)*cos(theta - 45deg), so as a
-% cosine grating the s = +1 basis function sits at -45 deg; s = -1 is the same
-% grating +180, which is what the schema's own documentation states. Only the
-% 180 SEPARATION is established by the data; the -45 anchor is the cas->cos
-% conversion under the phase convention cos(2*pi*f.r + phase).
+function recipe = basisRecipe(kx, ky, s, M, contrast, duration)
+%BASISRECIPE One Hartley basis function as a stimulus RECIPE: the term and
+%   parameter entries of a did-schema #88 `method` document
+%   (V_eta_method_plan.md, signed 2026-10-21; `visual_grating`, which this
+%   used to fill, is deleted). Only what this can state is written; the header
+%   says why the degree-domain spatial frequency, size and position are not.
+%
+%     orientation        atan2d(ky, kx) wrapped to [0,360), unit degree. EXACT.
+%     spatial phase      -45 for s = +1, 135 for s = -1, unit degree.
+%                        cas = cos + sin = sqrt(2)*cos(theta - 45deg); only the
+%                        180 SEPARATION is established by the data. Without it
+%                        the 3360 entries dedup to 1680.
+%     spatial frequency  sqrt(kx^2+ky^2)/M, unit CYCLES PER PIXEL: the
+%                        degree-domain value needs rig calibration nobody
+%                        recorded, so the pixel-domain value is stated in its
+%                        own unit rather than written into cycles per degree.
+%     contrast           from the generator spec.
+%     duration           1/fps, unit second -- omitted when fps is absent.
+entries = struct('variable', {}, 'unit', {}, 'form', {}, 'value', {});
+entries(end+1) = struct('variable', 'orientation', 'unit', 'degree', ...
+    'form', 'quantity', 'value', mod(atan2d(double(ky), double(kx)), 360));
+phase = -45;
 if s < 0
-    value.phase = 135;
-else
-    value.phase = -45;
+    phase = 135;
 end
-value.source_geometry = struct( ...
-    'spatial_frequency', hypot(double(kx), double(ky)) / double(M), ...
-    'unit',              'cycles/pixel');
+entries(end+1) = struct('variable', 'spatial phase', 'unit', 'degree', ...
+    'form', 'quantity', 'value', phase);
+entries(end+1) = struct('variable', 'spatial frequency', 'unit', 'cycles per pixel', ...
+    'form', 'quantity', 'value', hypot(double(kx), double(ky)) / double(M));
+entries(end+1) = struct('variable', 'contrast', 'unit', '', ...
+    'form', 'quantity', 'value', contrast);
+if duration > 0
+    entries(end+1) = struct('variable', 'duration', 'unit', 'second', ...
+        'form', 'quantity', 'value', duration);
 end
-
-function k = valueKey(value)
-%VALUEKEY A char key identical exactly when the value struct is.
-%   %.17g round-trips a double, so two keys match only when the numbers do.
-k = sprintf('%.17g;%.17g;%.17g;%.17g;%d;%.17g;%s', ...
-    value.angle, value.phase, value.contrast, value.duration, ...
-    double(value.is_blank), value.source_geometry.spatial_frequency, ...
-    value.source_geometry.unit);
+recipe = struct('term', 'Hartley basis grating', 'parameters', entries);
 end
 
-function g = gratingDocument(id, sessionId, datestamp, index, value, targetVersion)
-g = struct();
-g.document_class = struct('class_name', 'visual_grating', ...
-    'class_version', '1.0.0', ...
-    'superclasses', struct('class_name', 'data_type', 'class_version', '1.0.0'), ...
-    'schema_version', targetVersion);
-g.base = struct('id', id, 'session_id', sessionId, ...
-    'name', sprintf('migrated_hartley_basis_%d', index), ...
-    'creation_timestamp', datestamp);
-% a field or a `session_id` edge, as the schema in use keeps it
-g = ndi.migrate.internal.withSessionId(g, sessionId);
-% Assigned separately: struct(...) with a struct value distributes.
-g.visual_grating = struct();
-g.visual_grating.value = value;
+function k = recipeKey(recipe)
+%RECIPEKEY A char key identical exactly when the recipe is. %.17g
+%   round-trips a double, so two keys match only when the numbers do.
+parts = {recipe.term};
+for i = 1:numel(recipe.parameters)
+    p = recipe.parameters(i);
+    parts{end+1} = sprintf('%s=%.17g%s', p.variable, p.value, p.unit); %#ok<AGROW>
+end
+k = strjoin(parts, ';');
 end
 
 % ===================== v1 readers =========================================

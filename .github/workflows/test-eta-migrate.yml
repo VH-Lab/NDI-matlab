@@ -48,9 +48,38 @@ jobs:
           products: Statistics_and_Machine_Learning_Toolbox
 
       - name: Install MatBox
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         uses: ehennestad/matbox-actions/install-matbox@v1
 
+      # THE STIMULUS FOLD BUILDS WITH did2.build ON did-schema #88, so its
+      # tests need both (the step after the main one). did-schema PR #88 and
+      # DID-matlab PR #218; point both at main / V2 once they merge.
+      - name: Check out did-schema (#88)
+        uses: actions/checkout@v4
+        with:
+          repository: Waltham-Data-Science/did-schema
+          ref: claude/ecstatic-pascal-md91fw
+          path: did-schema
+
+      - name: Check out DID-matlab (#218)
+        uses: actions/checkout@v4
+        with:
+          repository: VH-Lab/DID-matlab
+          ref: claude/ecstatic-pascal-md91fw
+          path: did-matlab
+
+      - name: Assemble the #88 schema set
+        run: |
+          mkdir -p "${GITHUB_WORKSPACE}/eta-schemas"
+          cp did-schema/schemas/V_eta/stable/*.json "${GITHUB_WORKSPACE}/eta-schemas/"
+          cp did-schema/schemas/V_eta/draft/*.json  "${GITHUB_WORKSPACE}/eta-schemas/"
+          cp did-schema/schemas/V_eta/deprecated/*.json "${GITHUB_WORKSPACE}/eta-schemas/"
+          echo "DENOMINATOR: $(ls "${GITHUB_WORKSPACE}/eta-schemas" | wc -l) schema file(s) from did-schema@$(git -C did-schema rev-parse --short HEAD), DID-matlab@$(git -C did-matlab rev-parse --short HEAD)"
+
       - name: Install repo requirements (did, deps)
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         uses: matlab-actions/run-command@v2
         with:
           command: |
@@ -245,13 +274,7 @@ jobs:
             %   here, not a recomputed cross-workflow total.
             results = runtests([ ...
                 "ndi.unittest.migrate.TestBathAssembly", ...
-                "ndi.unittest.migrate.TestStimulusPresentation", ...
-                "ndi.unittest.migrate.TestStimulusPresentationTimedSequence", ...
-                "ndi.unittest.migrate.TestStimulusPresentationTimedSequenceMultiSubject", ...
-                "ndi.unittest.migrate.TestHartleyBasisGratings", ...
-                "ndi.unittest.migrate.TestStimulusPassGating", ...
                 "ndi.unittest.migrate.TestBodyResolver", ...
-                "ndi.unittest.migrate.TestGratingValue", ...
                 "ndi.unittest.migrate.TestPathSPromotion", ...
                 "ndi.unittest.migrate.TestEpochAnchorFold", ...
                 "ndi.unittest.migrate.TestRecordingAttribution", ...
@@ -268,3 +291,29 @@ jobs:
             disp(table(results));
             assert(sum([results.Failed]) == 0, ...
                 sprintf("%d migrate-assembler test(s) failed", sum([results.Failed])));
+
+      - name: Run the stimulus fold tests (did2.build on did-schema #88)
+        uses: matlab-actions/run-command@v2
+        with:
+          command: |
+            addpath(genpath("src"));
+            addpath(genpath("tests"));
+            % ahead of the installed DID-matlab on the path
+            addpath(genpath(fullfile(pwd, "did-matlab", "src")));
+            setenv("DID_SCHEMA_PATH", fullfile(pwd, "eta-schemas"));
+            disp("did2.build from " + string(which("did2.build.statement")));
+            import matlab.unittest.TestSuite;
+            suite = [TestSuite.fromClass(?ndi.unittest.migrate.TestStimulusPresentationItem), ...
+                     TestSuite.fromClass(?ndi.unittest.migrate.TestStimulusPresentationCohort), ...
+                     TestSuite.fromClass(?ndi.unittest.migrate.TestHartleyBasisGratings), ...
+                     TestSuite.fromClass(?ndi.unittest.migrate.TestGratingRecipe), ...
+                     TestSuite.fromClass(?ndi.unittest.migrate.TestStimulusPassGating)];
+            results = run(suite);
+            disp(table(results));
+            nRun = numel(results);
+            nFailed = sum([results.Failed]);
+            nIncomplete = sum([results.Incomplete]);
+            fprintf("VERDICT: %d run, %d failed, %d filtered\n", nRun, nFailed, nIncomplete);
+            assert(nRun > 0, "no stimulus fold tests were selected");
+            assert(nFailed == 0, sprintf("%d stimulus fold test(s) failed", nFailed));
+            assert(nIncomplete == 0, sprintf("%d stimulus fold test(s) were FILTERED -- did2.build or the #88 schema is missing", nIncomplete));
