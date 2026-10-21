@@ -86,8 +86,7 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
             %
             % In a V2 dataset (V_eta_linked_session_plan.md), this writes two
             % documents into the dataset's database: an `included_in` relation
-            % (`part_of` on a schema without it; ndi.v2.recordRelation) from
-            % the session's `session` entity to the dataset (or to the study
+            % from the session's `session` entity to the dataset (or to the study
             % 'PartOf' names), and a `linked_session` document recording the
             % session's folder (relative to the dataset's folder when inside it).
             % The session must be a V2 session.
@@ -192,7 +191,7 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
             % with the files it ingested; files recorded by location stay where
             % they are. Unless the copied documents already file the session
             % under the dataset or one of its studies, an `included_in`
-            % relation (`part_of` on a schema without it) is added. The session must be a V2 session. Its records of what
+            % relation is added. The session must be a V2 session. Its records of what
             % the dataset already records are joined by `same_as`, as
             % add_linked_session joins them ('SameAs', default true; see
             % same_as_report).
@@ -452,7 +451,7 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
 
             if ndi_dataset_obj.v2Listing()
                 % V2: the session leaves the dataset -- its linked_session
-                % document and the part_of relations naming it go; its
+                % document and the included_in relations naming it go; its
                 % folder is untouched
                 session_obj = [];
                 if options.AlsoDeleteSessionAfterUnlinking
@@ -562,7 +561,7 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
             if ndi_dataset_obj.v2Listing()
                 % V2 (V_eta_linked_session_plan.md): copy the session's
                 % documents in, with the files they ingested, and delete the
-                % linked_session document. The part_of relation stays.
+                % linked_session document. The included_in relation stays.
                 if ~ndi_dataset_obj.confirm(options, ['Are you sure you want to convert ' ...
                         'linked session ' session_id ' to an ingested session? This will copy ' ...
                         'all of its documents into the dataset.'], 'Confirm Conversion')
@@ -656,7 +655,7 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
             % in FOLDER, with the files they ingested (files recorded by
             % location stay where they are), deletes them from the dataset's
             % database, and adds a `linked_session` document naming FOLDER.
-            % The `part_of` relations that make the session a member of the
+            % The `included_in` relations that make the session a member of the
             % dataset stay in the dataset's database. FOLDER must not already
             % hold an NDI database.
             %
@@ -898,7 +897,7 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
             % For a V2 dataset, a cellstr: the denominator of the listing
             % (session and linked_session documents read, sessions listed),
             % then every session left out and why -- a session document not
-            % part_of the dataset, a linked folder that is missing or holds
+            % included_in the dataset, a linked folder that is missing or holds
             % another session. {} for a v1 dataset.
             %
             % See also: ndi.dataset/session_list, ndi.v2.datasetSessions
@@ -1441,7 +1440,7 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
             if isempty(session_info_doc) && ndi_dataset_obj.isV2()
                 % A V2 dataset records no session_in_a_dataset documents
                 % (V_eta_linked_session_plan.md, signed 2026-10-09): a session
-                % is in it when its `session` entity is `part_of` the dataset
+                % is in it when its `session` entity is `included_in` the dataset
                 % or a study of it. INGESTED: its documents are in this
                 % database, opened from the dataset's folder. LINKED: a
                 % `linked_session` document names its folder, opened there.
@@ -1449,7 +1448,7 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
                     ndi_dataset_obj.id(), ndi_dataset_obj.getpath());
                 ndi_dataset_obj.SessionNotes = notes;
                 left = notes(startsWith(notes, 'not listed') | ...
-                    contains(notes, ['not ' ndi.v2.recordRelation()]));
+                    contains(notes, 'not included_in'));
                 if ~isempty(left)
                     warning('ndi:dataset:sessionsLeftOut', '%s\n  %s', ...
                         'Some sessions of this dataset could not be listed:', strjoin(left, '\n  '));
@@ -1588,7 +1587,7 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
         function tf = v2Listing(ndi_dataset_obj)
             % V2LISTING - are this dataset's sessions listed the V2 way?
             %   True for a did2 database holding no session_in_a_dataset
-            %   document: membership is `part_of`, a linked session a
+            %   document: membership is `included_in`, a linked session a
             %   `linked_session` document.
             tf = false;
             if ~ndi_dataset_obj.isV2()
@@ -1620,9 +1619,7 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
         function ids = v2MembershipIds(ndi_dataset_obj, entityId)
             % V2MEMBERSHIPIDS - the membership relations in the dataset's
             %   database whose child is ENTITYID (the relations that make a
-            %   session a member: `included_in` where the schema binds it,
-            %   `part_of` before; ndi.v2.recordRelation), as a cellstr of
-            %   document ids
+            %   session a member: `included_in`), as a cellstr of document ids
 
             arguments
                 ndi_dataset_obj (1,1) ndi.dataset
@@ -1632,7 +1629,7 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
             q = ndi.query('', 'isa', 'directed_relation', '') & ...
                 ndi.query('', 'depends_on', 'child_id', entityId);
             rels = ndi_dataset_obj.session.database.search(q);
-            member = ndi.v2.recordRelation();
+            member = 'included_in';
             for k = 1:numel(rels)
                 p = rels{k}.document_properties;
                 if strcmp(ndi.v2.termName(ndi.v2.blockOf(p, 'directed_relation', 'relation', '')), member)
@@ -1643,7 +1640,7 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
 
         function tf = v2HasPartOf(ndi_dataset_obj, childId, parentId)
             % V2HASPARTOF - does the dataset's database file CHILDID under
-            %   PARENTID (included_in, or part_of before: ndi.v2.recordRelation)?
+            %   PARENTID (included_in)?
             arguments
                 ndi_dataset_obj (1,1) ndi.dataset
                 childId {mustBeText}
@@ -1692,11 +1689,6 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
                 error('ndi:dataset:notV2Session', ['Session %s is not a V2 session; only a ' ...
                     'V2 session can be added to a V2 dataset.'], ndi_session_obj.reference);
             end
-            if linked && ~ndi.setup.V2.schemaHasClass('linked_session')
-                error('ndi:dataset:noLinkedSessionClass', ['The schema in use has no ' ...
-                    'linked_session class (V_eta_linked_session_plan.md), so a session cannot ' ...
-                    'be linked to a V2 dataset with it.']);
-            end
             if isempty(ndi_dataset_obj.session_info)
                 ndi_dataset_obj.build_session_info();
             end
@@ -1714,10 +1706,9 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
                     numel(own));
             end
             entityId = own{1}.id();
-            % the parent it is filed under (included_in, or part_of on a
-            % schema without it: ndi.v2.recordRelation): the dataset, or a
+            % the parent it is filed under (included_in): the dataset, or a
             % study of it
-            member = ndi.v2.recordRelation();
+            member = 'included_in';
             dsid = ndi_dataset_obj.id();
             explicit = ~isempty(partOf);
             if ~explicit

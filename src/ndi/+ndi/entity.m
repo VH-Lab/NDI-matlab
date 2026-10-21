@@ -1853,12 +1853,10 @@ classdef entity
             % aside (a type is walked on its own path): those whose `passes`
             % is `assertions` in the V2 schema's registry (V_eta tenet T17,
             % did-schema V_eta_relation_inheritance_plan.md;
-            % ndi.v2.relationPasses, read once per schema file). A registry
-            % with no `passes` (did-schema main) gives the list NDI
-            % hard-coded until then: part_of, sample_of, aliquot_of,
-            % passage_of. So a relation the registry adds with `passes:
-            % assertions` works without a change here, and `included_in`
-            % (records) passes nothing.
+            % ndi.v2.relationPasses, read once per schema file). So a
+            % relation the registry adds with `passes: assertions` works
+            % without a change here, and `included_in` (records) passes
+            % nothing.
 
             P = ndi.v2.relationPasses();
             names = setdiff(P.assertions, {'instance_of'}, 'stable');
@@ -1870,7 +1868,6 @@ classdef entity
             % statement or relation marked distributive on a group holds of
             % each member: those whose `passes` is `distributive` in the V2
             % schema's registry (ndi.v2.relationPasses, as lineageRelations).
-            % A registry with no `passes` (did-schema main) gives member_of.
 
             P = ndi.v2.relationPasses();
             names = reshape(P.distributive, 1, []);
@@ -1881,7 +1878,7 @@ classdef entity
             % container's interactions reach what it held, as context: those
             % whose `passes` is `context` in the V2 schema's registry
             % (ndi.v2.relationPasses, as lineageRelations; ndi.v2.stays reads
-            % the same list). A registry with no `passes` gives contained_in.
+            % the same list).
 
             P = ndi.v2.relationPasses();
             names = reshape(P.context, 1, []);

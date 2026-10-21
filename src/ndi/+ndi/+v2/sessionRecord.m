@@ -14,9 +14,9 @@ function docs = sessionRecord(database, sessionId)
 %        it points at has the session id as its own id; a dataset's documents
 %        point at the dataset entity);
 %     2. when there is none, every `session` document (v1, or a V2 `session`
-%        entity) whose session id is SESSIONID: the only way to find it on
-%        did-schema main and in a v1 database, where the session document has
-%        an id of its own.
+%        entity) whose session id is SESSIONID: the only way to find it in a
+%        v1 or migrated database, where the session document has an id of its
+%        own.
 %   Empty when neither finds one.
 %
 %   See also ndi.session.dir, ndi.dataset.dir, ndi.v2.sessionIdOf.

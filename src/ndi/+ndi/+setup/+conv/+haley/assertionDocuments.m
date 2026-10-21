@@ -17,12 +17,11 @@ function out = assertionDocuments(session, S, subjectIds, options)
 %                              C. elegans assay and acclimation plates,
 %                              OP50-GFP on the E. coli plates. A patch of LB
 %                              alone gets none.
-%   On a schema with one entity class the strain is an `instance_of` relation
-%   to the dataset-level strain entity, and the species is NOT repeated on the
-%   cohort or patch when the strain's own record states it (decision #112,
-%   tenet T17: an assertion about a type holds of each instance); it is stated
-%   here only when no strain entity is known. On did-schema main (a strain
-%   assertion with `strain_id`, no instance_of to a strain) both stay here.
+%   The strain is an `instance_of` relation to the dataset-level strain
+%   entity, and the species is NOT repeated on the cohort or patch when the
+%   strain's own record states it (decision #112, tenet T17: an assertion
+%   about a type holds of each instance); it is stated here only when no
+%   strain entity is known.
 %     assay plate  inclusion in analysis (EMPTY:0000314) = false
 %                              (logical_assertion), where the source excludes
 %                              it (decision #2: tagged, not dropped). Per plate:
@@ -64,13 +63,8 @@ function out = assertionDocuments(session, S, subjectIds, options)
 %     assay plate  spacing (NCIT:C45786), length_assertion: the plate's target
 %                              patch spacing (`lawnSpacing`, mm -> m), with
 %                              the same condition.
-%   A strain assertion carries `strain_id`, the dataset-level strain document
-%   (stage 2), and the strain's term -- its WBStrain node where the spec has
-%   one (`node`), else its name alone -- so it reads on its own. On a schema
-%   with one entity class the strain is an `instance_of` relation instead.
-%   A logical or length assertion is made only when the schema in use can
-%   build it (ndi.setup.V2.schemaHasLeaf); otherwise it is reported in
-%   OUT.skipped.
+%   The strain is an `instance_of` relation to the dataset-level strain
+%   entity (stage 2), not an assertion.
 %
 %   The kind of each subject is NOT an assertion: it is subject.type
 %   (sessionDocuments).
@@ -107,10 +101,7 @@ if isstruct(list), list = num2cell(list); end
 for k = 1:numel(list)
     strains(list{k}.key) = list{k};
 end
-eachMember = struct();
-if ndi.setup.V2.schemaHasField('statement', 'distributive')
-    eachMember.distributive = true;
-end
+eachMember = struct('distributive', true);
 
 out = struct('documents', {{}}, 'skipped', {{}}, 'counts', struct( ...
     'cohort_species', 0, 'cohort_strain', 0, 'cohort_sex', 0, 'patch_species', 0, ...
@@ -126,14 +117,9 @@ if ismember('include', session.Properties.VariableNames) && ~session.include(1) 
     dayReason = char(session.notes{1});
 end
 hasFilmed = ismember('filmed', S.Properties.VariableNames);
-% a statement's notes (did-schema 2026-10-14: moved up from interaction)
-statementHasNotes = ndi.setup.V2.schemaHasField('statement', 'notes');
-schemaHasText = ndi.setup.V2.schemaHasClass('text');
 hasBacteria = ismember('bacteria', S.Properties.VariableNames);
 hasDiameter = ismember('lawn_diameter_mm', S.Properties.VariableNames);
 hasSpacing = ismember('lawn_spacing_mm', S.Properties.VariableNames);
-hasLogical = ndi.setup.V2.schemaHasLeaf('logical_assertion');
-hasLength = ndi.setup.V2.schemaHasLeaf('length_assertion');
 asTarget = did2.build.condition(haleyTerm('value basis'), 'Term', haleyTerm('target'));
 plateKind = struct('assay_plate', 'assay plate', 'acclimation_plate', 'acclimation plate', ...
     'food_deprivation_plate', 'food deprivation plate', 'plate', 'petri dish');
@@ -177,40 +163,24 @@ end
             return;
         end
         st = strains(strainKey);
-        if ndi.setup.V2.mergedEntities()
-            % one entity class (2026-10-08): the subject is `instance_of` its strain
-            % (V_eta_entity_composition_plan.md sec. 5); there is no strain assertion
-            if ~isKey(options.StrainIds, strainKey)
-                out.skipped{end+1} = sprintf('%s: no strain entity for %s; no strain recorded', ...
-                    id, strainKey);
-                speciesOf(st);     % no strain known: the species is stated here
-            elseif ~isKey(subjectIds, id)
-                out.skipped{end+1} = sprintf('%s strain: not a subject of this session', id);
-            else
-                out.documents{end+1} = did2.build.directedRelation(subjectIds(id), ...
-                    options.StrainIds(strainKey), did2.build.term('', 'instance_of'), ...
-                    'Fields', fields, 'SessionId', sid);
-                out.counts.([who '_strain']) = out.counts.([who '_strain']) + 1;
-                % the species is stated ONCE, on the strain (decision #112,
-                % tenet T17's type-to-instance path: instance_of passes
-                % assertions): the dataset metadata asserts each spec
-                % strain's `species` on its entity, so it is not repeated here
-            end
-            sexOf(st);
-            return;
-        end
-        speciesOf(st);
-        edges = struct();
-        if isKey(options.StrainIds, strainKey)
-            edges.strain_id = options.StrainIds(strainKey);
-        else
-            out.skipped{end+1} = sprintf('%s: no strain document for %s; strain asserted by name only', ...
+        % one entity class (2026-10-08): the subject is `instance_of` its strain
+        % (V_eta_entity_composition_plan.md sec. 5); there is no strain assertion
+        if ~isKey(options.StrainIds, strainKey)
+            out.skipped{end+1} = sprintf('%s: no strain entity for %s; no strain recorded', ...
                 id, strainKey);
+            speciesOf(st);     % no strain known: the species is stated here
+        elseif ~isKey(subjectIds, id)
+            out.skipped{end+1} = sprintf('%s strain: not a subject of this session', id);
+        else
+            out.documents{end+1} = did2.build.directedRelation(subjectIds(id), ...
+                options.StrainIds(strainKey), did2.build.term('', 'instance_of'), ...
+                'Fields', fields, 'SessionId', sid);
+            out.counts.([who '_strain']) = out.counts.([who '_strain']) + 1;
+            % the species is stated ONCE, on the strain (decision #112,
+            % tenet T17's type-to-instance path: instance_of passes
+            % assertions): the dataset metadata asserts each spec
+            % strain's `species` on its entity, so it is not repeated here
         end
-        node = '';
-        if isfield(st, 'node') && ~isempty(st.node), node = char(st.node); end
-        out = assert1(out, id, 'term_assertion', haleyTerm('organism strain'), ...
-            did2.build.term(node, st.name), edges, fields, [who '_strain']);
         sexOf(st);
 
         function speciesOf(st)
@@ -236,11 +206,6 @@ end
 
     function out = logical1(out, id, variable, counter, notes)
         % a false logical assertion: the plate is NOT what VARIABLE names
-        if ~hasLogical
-            out.skipped{end+1} = sprintf(['%s %s = false: the schema in use has no ' ...
-                '`logical` value kind; not recorded'], id, variable.name);
-            return;
-        end
         out = assert1(out, id, 'logical_assertion', variable, false, struct(), struct(), ...
             counter, notes);
     end
@@ -248,11 +213,6 @@ end
     function out = target(out, subject, plate, name, mm, counter)
         % a design value (mm) stated as the subject's target, not measured
         if isnan(mm) || mm <= 0
-            return;
-        end
-        if ~hasLength
-            out.skipped{end+1} = sprintf(['%s target %s: the schema in use cannot build ' ...
-                'a length_assertion; not recorded'], subject, name);
             return;
         end
         n = numel(out.documents);
@@ -280,7 +240,7 @@ end
             return;
         end
         noteArgs = {};
-        if ~isempty(notes) && statementHasNotes
+        if ~isempty(notes)
             noteArgs = {'Notes', char(notes)};
         end
         if ~isempty(conditions)
@@ -289,25 +249,5 @@ end
         out.documents{end+1} = did2.build.statement(leaf, subjectIds(id), ...
             variable, value, 'Edges', edges, 'Fields', fields, 'SessionId', sid, noteArgs{:});
         out.counts.(counter) = out.counts.(counter) + 1;
-        if ~isempty(notes) && ~statementHasNotes && ~schemaHasText
-            % neither statement notes nor a text value kind: nowhere to put it
-            if isstruct(variable), variable = variable.name; end
-            out.skipped{end+1} = sprintf(['%s %s: the reason ("%s") is not recorded -- the ' ...
-                'schema has neither statement notes nor a text value'], id, variable, char(notes));
-        elseif ~isempty(notes) && ~statementHasNotes
-            % a schema whose statements have no `notes` (did-schema before
-            % 2026-10-14, when notes was on interaction only): the reason
-            % as its own text statement beside it (decision #73) would need
-            % the variable "reason for <variable>", which has no registered
-            % term, so it is an error, not an unregistered label (Jess Haley,
-            % 2026-10-21)
-            if isstruct(variable), variable = variable.name; end
-            error('ndi:setup:conv:haley:unregisteredLabel', ...
-                ['%s %s: its reason ("%s", from the spec''s assertions) would be written ' ...
-                 'as a text statement with the variable "reason for %s", which has no ' ...
-                 'registered term; the schema in use has no statement notes to hold it. ' ...
-                 'Use a schema with statement notes or register the term.'], ...
-                id, variable, char(notes), variable);
-        end
     end
 end

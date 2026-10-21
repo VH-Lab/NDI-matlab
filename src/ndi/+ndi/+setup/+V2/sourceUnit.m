@@ -1,13 +1,11 @@
 function u = sourceUnit(spelling)
-%SOURCEUNIT A value's source unit in the shape the V2 schema in use declares.
+%SOURCEUNIT A value's source unit as a registered term.
 %
 %   U = ndi.setup.V2.sourceUnit(SPELLING) takes a unit as an import spells it
-%   ('mm', 'h', 'CFU/mL') and returns what a value's `source_unit` holds:
-%     - on did-schema main (`source_unit` is char): SPELLING, unchanged;
-%     - where `source_unit` is a term (did-schema V_eta_source_unit_plan.md,
-%       signed 2026-10-21; ndi.v2.sourceUnitIsTerm): the unit's REGISTERED
-%       term, its label as the name, looked up in DID-schema's term registry
-%       through ndi.setup.V2.registeredTerm.
+%   ('mm', 'h', 'CFU/mL') and returns what a value's `source_unit` holds, a
+%   term (did-schema V_eta_source_unit_plan.md, signed 2026-10-21): the unit's
+%   REGISTERED term, its label as the name, looked up in DID-schema's term
+%   registry through ndi.setup.V2.registeredTerm.
 %   An empty SPELLING gives '' (no source unit: the field is left out).
 %
 %   The spellings with a decided term (Jess Haley, 2026-10-21):
@@ -38,7 +36,7 @@ function u = sourceUnit(spelling)
 %
 %   SPELLING may be a cellstr / string array, giving one per element (a cell).
 %
-%   See also ndi.v2.sourceUnitIsTerm, ndi.setup.V2.registeredTerm.
+%   See also ndi.setup.V2.registeredTerm.
 
 arguments
     spelling {mustBeText}
@@ -49,7 +47,7 @@ if iscellstr(spelling) || (isstring(spelling) && ~isscalar(spelling))
     return;
 end
 spelling = strtrim(char(spelling));
-if isempty(spelling) || ~ndi.v2.sourceUnitIsTerm()
+if isempty(spelling)
     u = spelling;
     return;
 end

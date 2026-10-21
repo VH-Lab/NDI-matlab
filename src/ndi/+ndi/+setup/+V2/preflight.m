@@ -8,7 +8,9 @@ function preflight(options)
 %       DID-matlab PR #210);
 %     * DID_SCHEMA_PATH names a folder holding the V2 (V_eta) schema, assembled
 %       flat from did-schema main's schemas/V_eta/{stable,draft,deprecated};
-%     * that schema carries each class listed in 'Classes'.
+%     * that schema is did-schema #88's shape or later (one `entity` class,
+%       statements by composition, a term registry) and carries each class
+%       listed in 'Classes'.
 %
 %   A missing requirement otherwise surfaces deep inside a stage as "Unable
 %   to resolve the name 'did2.build.label'" or a schema error, which says
@@ -16,10 +18,10 @@ function preflight(options)
 %
 %   Options:
 %     'Classes'  cellstr of schema classes the import needs
-%                (default {'study', 'session'})
+%                (default {'entity', 'statement', 'directed_relation'})
 
 arguments
-    options.Classes cell = {'study', 'session'}
+    options.Classes cell = {'entity', 'statement', 'directed_relation'}
 end
 
 problems = {};
@@ -33,17 +35,12 @@ if isempty(sp) || ~isfolder(sp)
         'main''s schemas/V_eta/{stable,draft,deprecated}/*.json into one folder and ' ...
         'setenv(''DID_SCHEMA_PATH'', <that folder>), then did2.schema.cache.resetSingleton().'], sp);
 else
-    % a class merged into `entity` on 2026-10-08 counts as present (schemaHasClass)
-    missing = options.Classes(~cellfun(@(c) ndi.setup.V2.schemaHasClass(c, sp), options.Classes));
-    if ~isempty(missing)
-        problems{end+1} = sprintf(['The schema in DID_SCHEMA_PATH (%s) has no %s. It predates ' ...
-            'the V2 classes this import uses: re-copy it from did-schema main.'], ...
-            sp, strjoin(strcat('`', missing, '`'), ', '));
-    elseif any(strcmp(options.Classes, 'session'))
-        if ~ndi.setup.V2.schemaHasField('session', 'name')
-            problems{end+1} = sprintf(['The schema in DID_SCHEMA_PATH (%s) has no session.name ' ...
-                '(did-schema PR #79): re-copy it from did-schema main.'], sp);
-        end
+    files = [strcat(options.Classes, '.json'), {'term_registry_meta.json'}];
+    missing = files(~cellfun(@(c) isfile(fullfile(sp, c)), files));
+    if ~isempty(missing) || isfile(fullfile(sp, 'subject.json'))
+        problems{end+1} = sprintf(['The schema in DID_SCHEMA_PATH (%s) predates did-schema ' ...
+            '#88 (one `entity` class, statements by composition, a term registry)%s: ' ...
+            're-copy it from did-schema main.'], sp, missingNote(missing));
     end
 end
 % The schema cache is a SINGLETON: whichever path it saw first (DID_SCHEMA_PATH,
@@ -67,6 +64,17 @@ end
 if ~isempty(problems)
     error('ndi:setup:V2:preflight', 'The V2 import cannot run yet:\n  - %s', ...
         strjoin(problems, sprintf('\n  - ')));
+end
+end
+
+function s = missingNote(missing)
+% ' -- it has no a.json, b.json', or '' when nothing is missing
+arguments
+    missing cell
+end
+s = '';
+if ~isempty(missing)
+    s = sprintf(' -- it has no %s', strjoin(missing, ', '));
 end
 end
 

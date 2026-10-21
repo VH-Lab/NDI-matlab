@@ -3,9 +3,9 @@ function [kind, block] = kindOf(doc)
 %
 %   [KIND, BLOCK] = ndi.v2.kindOf(DOC) is DOC's class name and the block
 %   holding its own fields ('session', 'session') -- except for an `entity`
-%   (a schema built on or after 2026-10-08), where
-%   KIND is its `type` ('session', 'dataset', 'organism', ...) and BLOCK is
-%   'entity'. So code asking "is this the dataset?" works on either schema.
+%   (did2.build's documents), where KIND is its `type` ('session',
+%   'dataset', 'organism', ...) and BLOCK is 'entity'. So code asking "is
+%   this the dataset?" works on built and migrated documents alike.
 
 arguments
     doc

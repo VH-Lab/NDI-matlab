@@ -14,7 +14,6 @@ function [held, undecided] = containersDuring(container, docs, tolerant)
 %       tenet T17, Haley decision #55). The relations that lead from a member
 %       to its group are those whose `passes` is `distributive` in the V2
 %       schema's registry (ndi.v2.relationPasses, as ndi.entity takes them);
-%       a registry with no `passes` (did-schema main) gives member_of;
 %     - then by the container's own stays, nested (a plate in an incubator),
 %       each within the window of the stay that reached it; up to 4 levels.
 %   A stay counts only when its time overlaps the statement's

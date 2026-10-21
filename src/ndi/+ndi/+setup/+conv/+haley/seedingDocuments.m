@@ -75,8 +75,6 @@ out = struct('documents', {{}}, 'ids', containers.Map(), 'counts', struct('solut
 if ~isfield(S, 'solutions') || isempty(S.solutions)
     return;
 end
-hasObservation = ndi.setup.V2.schemaHasLeaf('concentration_observation');
-hasOD = ndi.setup.V2.schemaHasField('concentration', 'value.od600');
 instrument = '';
 if isKey(ids, options.Instrument)
     instrument = ids(options.Instrument);
@@ -97,10 +95,7 @@ for k = 1:numel(S.solutions)
 
     % the solution
     f = struct('local_identifier', x.formulation, 'name', nameOf(x), ...
-        'description', descriptionOf(x));
-    if ndi.setup.V2.schemaHasField('subject', 'type')
-        f.type = did2.build.term('', 'material');
-    end
+        'description', descriptionOf(x), 'type', did2.build.term('', 'material'));
     ent = ndi.setup.V2.entityDocuments('subject', f, struct(), 'SessionId', sessionId, ...
         'Type', 'material');
     out.documents = [out.documents, reshape(ent, 1, [])];
@@ -118,17 +113,8 @@ for k = 1:numel(S.solutions)
     if isnan(x.od)
         continue;
     end
-    if ~hasObservation
-        out.skipped{end+1} = sprintf(['%s: the schema in use has no concentration_observation; ' ...
-            'its measured OD600 %g is not recorded'], x.key, x.od);
-        continue;
-    end
-    if hasOD
-        v = did2.build.valueCell('concentration', x.od, 'Canonical', 'od600', 'SourceValue', x.od, ...
-            'SourceUnit', ndi.setup.V2.sourceUnit('OD600'));
-    else
-        v = did2.build.valueCell('concentration', x.od, 'Canonical', 'source_value', 'SourceUnit', ndi.setup.V2.sourceUnit('OD600'));
-    end
+    v = did2.build.valueCell('concentration', x.od, 'Canonical', 'od600', 'SourceValue', x.od, ...
+        'SourceUnit', ndi.setup.V2.sourceUnit('OD600'));
     args = {};
     if ~isempty(instrument), args = {'InstrumentId', instrument}; end
     out.documents{end+1} = did2.build.statement('concentration_observation', eid, ...

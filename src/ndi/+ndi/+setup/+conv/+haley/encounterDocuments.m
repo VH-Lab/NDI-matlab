@@ -37,8 +37,8 @@ function out = encounterDocuments(dataParentDir, session, R, subjectIds, options
 %                       `encounter period`] (`during the encounter`:
 %                       velocityOn; `after the encounter`: velocityOff, NaN
 %                       after the last encounter when the track ends first),
-%                       its `datum_order` 'F' (the encounter fastest) where
-%                       the schema declares it on `data` (decision #120); um/s
+%                       its `datum_order` 'F' (the encounter fastest)
+%                       (decision #120); um/s
 %                       -> m/s throughout
 %     velocity_calculation  `speed`, method `minimum`, condition `patch
 %                       encounter period` = during (velocityOnMin)
@@ -74,8 +74,7 @@ function out = encounterDocuments(dataParentDir, session, R, subjectIds, options
 %                       where the source left it blank; its method parameters
 %                       the three posterior thresholds and the off-patch search
 %                       encounter's distance rule (0 m into the patch),
-%                       decision #127. A label_calculation of the same names on
-%                       a schema with no term_calculation
+%                       decision #127.
 %   For the gap before the first encounter (the source's id 0 row): one
 %   `speed`, method `median`, and one signed patch-edge distance, method
 %   `minimum` (-distanceOffMax), each with condition `encounter period` =
@@ -129,11 +128,6 @@ file = fullfile(dataParentDir, 'haley', 'celegans', 'encounter.mat');
 if strcmp(folder, 'ecoli') || ~isfile(file)
     return;
 end
-if ~ndi.setup.V2.schemaHasField('time', 'value') || ~ndi.setup.V2.schemaHasLeaf('time_calculation')
-    out.skipped{end+1} = sprintf(['%s: the schema in use has no time_calculation ' ...
-        '(did-schema PR #87); no encounters'], ref);
-    return;
-end
 if isempty(options.OperatingSystemId)
     out.skipped{end+1} = sprintf(['%s: no operating system document (the spec''s `macos`, ' ...
         'built by the metadata stage); no encounters'], ref);
@@ -143,14 +137,9 @@ env = {};
 if ~isempty(options.SoftwareId), env = [env, {'SoftwareId', options.SoftwareId}]; end
 if ~isempty(options.InterpreterId), env = [env, {'InterpreterId', options.InterpreterId}]; end
 env = [env, {'OperatingSystemId', options.OperatingSystemId}];
-hasItem = ndi.setup.V2.schemaHasField('item', 'value');
 % an inline two-key value states its layout (did-schema 59cd34b: `datum_order`
 % on `data`, beside `keys`; decision #120)
-order = {};
-if ndi.setup.V2.schemaHasField('data', 'datum_order')
-    order = {'Fields', struct('datum_order', 'F')};
-end
-byRef = keyByReference();
+order = {'Fields', struct('datum_order', 'F')};
 tz = 'America/Los_Angeles';
 secondFmt = 'yyyy-MM-dd''T''HH:mm:ss';
 
@@ -183,7 +172,6 @@ detection = {'Method', haleyTerm('encounter detection'), 'MethodParameters', ...
     did2.build.list( ...
         did2.build.parameter(haleyTerm('encountered entity'), 'Term', haleyTerm('bacterial patch')), ...
         did2.build.parameter(haleyTerm('body part'), 'Term', haleyTerm('body midpoint')))};
-hasTerm = ndi.setup.V2.schemaHasLeaf('term_calculation');
 
 [G, plates, worms] = findgroups(E.plateNum, E.wormNum);
 for g = 1:max(G)
@@ -286,13 +274,8 @@ for g = 1:max(G)
         'Keys', did2.build.list(did2.build.key(haleyTerm('encounter'), n, 'Origin', 0, 'Spacing', 1)), ...
         detection{:}, 'InputIds', inputs, calc{:});
     docs{end+1} = list; %#ok<AGROW>
-    if byRef
-        encKey = did2.build.key(haleyTerm('encounter'), n, 'PositionsFrom', 0);
-        keyIds = {'KeyIds', {list.base.id}};
-    else                                    % the builder or schema predates key_id
-        encKey = did2.build.key(haleyTerm('encounter'), n, 'Origin', 0, 'Spacing', 1);
-        keyIds = {};
-    end
+    encKey = did2.build.key(haleyTerm('encounter'), n, 'PositionsFrom', 0);
+    keyIds = {'KeyIds', {list.base.id}};
     % the keys of a per-encounter value: the encounter, then any other
     % dimension (its values in column-major order, the encounter fastest,
     % which `datum_order` states)
@@ -304,12 +287,12 @@ for g = 1:max(G)
 
     % which patch
     pIds = patchIds(subjectIds, plate);
-    if hasItem && all(enc.lawnID >= 1 & enc.lawnID <= numel(pIds))
+    if all(enc.lawnID >= 1 & enc.lawnID <= numel(pIds))
         v = struct('item', enc.lawnID(:)' - 1, 'offset', secondsAt(enc.exit)');
         docs{end+1} = did2.build.statement('item_calculation', wormId, ...
             haleyTerm('entity in contact'), v, 'Edges', struct('item_id', {pIds}), ...
             detection{:}, keyed{:}, 'InputIds', [{list.base.id}, inputs, nearest], calc{:}); %#ok<AGROW>
-    elseif hasItem
+    else
         out.skipped{end+1} = sprintf('%s: an encounter names a patch %s does not have; no patch list', ...
             worm, plate);
     end
@@ -387,14 +370,8 @@ for g = 1:max(G)
                 'patch edge (distanceOnMax < 0). Cannot Be Determined marks an encounter with a ' ...
                 'missing posterior, which the source leaves unlabeled.'], ...
             keyed{:}, per{:}};
-        if hasTerm
-            docs{end+1} = did2.build.statement('term_calculation', wormId, ...
-                haleyTerm('encounter type'), encounterTypes(names), typeArgs{:}); %#ok<AGROW>
-        else                                % a schema with no term_calculation
-            t = encounterTypes(names);
-            docs{end+1} = did2.build.statement('label_calculation', wormId, ...
-                haleyTerm('encounter type'), struct('name', {t.name}), typeArgs{:}); %#ok<AGROW>
-        end
+        docs{end+1} = did2.build.statement('term_calculation', wormId, ...
+            haleyTerm('encounter type'), encounterTypes(names), typeArgs{:}); %#ok<AGROW>
     end
 end
 out.documents = docs;
@@ -425,21 +402,6 @@ if f >= 1 && f <= numel(ft{v}) && f == round(f)
     s = seconds(start(v) - t0) + ft{v}(f);
 else
     s = seconds(start(v) - t0) + (f - 1) / rate(v);
-end
-end
-
-function tf = keyByReference()
-% key_id needs both the schema (did-schema PR #87) and the builder (DID-matlab
-% PR #217); before both, the per-encounter documents list the same positions
-tf = false;
-f = fullfile(getenv('DID_SCHEMA_PATH'), 'data.json');
-if ~isfile(f), return; end
-d = jsondecode(fileread(f));
-if ~isfield(d, 'depends_on') || ~any(strcmp({d.depends_on.name}, 'key_id')), return; end
-try
-    did2.build.key(haleyTerm('encounter'), 1, 'PositionsFrom', 0);   % a registered term (T19)
-    tf = true;
-catch
 end
 end
 

@@ -26,8 +26,7 @@ function out = geometryDocuments(dataParentDir, session, R, subjectIds, options)
 %     item_calculation    `lawnClosest` (`nearest bacterial patch`): which patch
 %                         is nearest each pixel, as a 0-based index into the
 %                         plate's patch subjects (item_id, in lawnCenters
-%                         order, decision #38). Only when the schema in use has
-%                         `item` (did-schema PR #87)
+%                         order, decision #38)
 %     score_calculation   `lawnRegistration` (variable `overlap`, method image
 %                         registration): the fraction of the arena that
 %                         overlaps once the lawn clip is registered onto the
@@ -105,11 +104,6 @@ if isempty(options.OperatingSystemId)
     out.skipped{end+1} = sprintf(['%s: no operating system document (the spec''s `macos`, ' ...
         'built by the metadata stage); no calculations'], ref);
     return;
-end
-hasItem = ndi.setup.V2.schemaHasField('item', 'value');
-if ~hasItem
-    out.skipped{end+1} = sprintf(['%s: the schema in use has no `item` (did-schema PR #87); ' ...
-        'no nearest-patch maps'], ref);
 end
 pre = ndi.setup.conv.haley.idPrefix(folder);
 I = load(fullfile(dataParentDir, 'haley', 'celegans', folder, 'experimentInfo.mat'), 'info');
@@ -197,7 +191,7 @@ for k = 1:height(R)
 
     % ---- nearest patch ---------------------------------------------------------
     closest = cellOr(d, 'lawnClosest');
-    if hasItem && ~isempty(closest)
+    if ~isempty(closest)
         pIds = patchIds(subjectIds, plate);
         nPatch = max(closest(:));
         if isempty(pIds) || nPatch > numel(pIds) || any(closest(:) < 1)

@@ -9,9 +9,8 @@ function t = registeredTerm(node, name)
 %   registry does not hold, so a writer that has only a field name
 %   ('accessibility', 'species') takes the registry's spelling here.
 %
-%   When the schema in use has no registry (did-schema main), or the registry
-%   does not hold the term, T is the term as given: did2.build then decides
-%   (a schema with a registry refuses it, naming it).
+%   When the registry does not hold the term, T is the term as given:
+%   did2.build then refuses it, naming it.
 %
 %   See also did2.schema.termIndex, ndi.setup.V2.entityDocuments.
 
@@ -23,9 +22,6 @@ end
 node = strtrim(char(node));
 name = strtrim(char(name));
 t = did2.build.term(node, name);
-if isempty(which('did2.schema.termIndex'))
-    return;
-end
 ix = did2.schema.termIndex();
 if ~ix.present
     return;

@@ -6,8 +6,8 @@ function entries = map()
 %   this package reads it. It is the only declaration of the v1 object
 %   classes' V_eta names, but not the only place NDI names V_eta classes or
 %   edges: ndi.v2.vetaAliases (the 2026-10-08 renames), ndi.v2.entityTypesFor
-%   (the classes merged into `entity`), ndi.setup.V2.schemaHasField and
-%   ndi.v2.recordRelation (`included_in` / `part_of`) carry their own.
+%   (the classes merged into `entity`) and ndi.v2.relationPasses (the relation
+%   rules, from the binding registry) carry their own.
 %
 %   WHY A MAP AND NOT A REWRITE
 %   ---------------------------

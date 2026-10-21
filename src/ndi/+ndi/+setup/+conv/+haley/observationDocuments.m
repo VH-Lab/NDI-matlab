@@ -20,8 +20,7 @@ function out = observationDocuments(session, R, subjectIds, options)
 %                              term the manipulations move a plate into),
 %                              celsius
 %     humidity_observation     variable relative humidity (om:RelativeHumidity),
-%                              percent_relative_humidity (did-schema PR #86;
-%                              only when the schema in use has `humidity`)
+%                              percent_relative_humidity (did-schema PR #86)
 %
 %   Both: subject = the assay plate, instrument = the probe (stage 2), method
 %   NCIT:C53319 Arithmetic Mean (the value is the probe's mean over the hour:
@@ -58,7 +57,6 @@ ref = char(session.local_identifier{1});
 tz = 'America/Los_Angeles';
 cfg = options.Environment;
 secondFmt = 'yyyy-MM-dd''T''HH:mm:ss';
-hasHumidity = ndi.setup.V2.schemaHasField('humidity', 'value');
 
 docs = {};
 out = struct('documents', {{}}, 'skipped', {{}}, 'counts', struct('temperature', 0, 'humidity', 0), ...
@@ -69,10 +67,6 @@ if ~all(ismember({'temp', 'humidity'}, R.Properties.VariableNames))
 end
 R = R(strcmp(R.session, ref) & strcmp(R.kind, 'behaviour'), :);
 R = R(~isnan(R.temp) | ~isnan(R.humidity), :);
-if ~hasHumidity && any(~isnan(R.humidity))
-    out.skipped{end+1} = sprintf(['%s: the schema in use has no `humidity` (did-schema PR #86); ' ...
-        'no humidity observations'], ref);
-end
 
 plates = unique(R.plate, 'stable');
 for k = 1:numel(plates)
@@ -97,7 +91,7 @@ for k = 1:numel(plates)
             'source_value', temp, 'source_unit', ndi.setup.V2.sourceUnit('C')));
         statement('temperature_observation', plate, cfg.temperature.variable, v, timeId, 'temperature');
     end
-    if ~isnan(humidity) && hasHumidity
+    if ~isnan(humidity)
         v = did2.build.composite('humidity_observation', 'value', ...
             struct('percent_relative_humidity', humidity));
         statement('humidity_observation', plate, cfg.humidity.variable, v, timeId, 'humidity');

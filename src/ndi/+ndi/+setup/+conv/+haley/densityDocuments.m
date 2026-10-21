@@ -315,9 +315,6 @@ fluorescence = haleyTerm('fluorescence intensity');
 S = options.Subjects;
 % the relative density's reference (decision #99)
 [rd, why] = densityReference(dataParentDir);
-if isempty(why) && ~ndi.setup.V2.schemaHasLeaf('concentration_calculation')
-    why = 'the schema in use has no concentration_calculation';
-end
 if ~isempty(why)
     out.skipped{end+1} = ['no relative density: ' why];
     rd = [];
@@ -592,10 +589,8 @@ end
 id = regexprep(lower(label), '[^a-z0-9.]+', '_');
 f = struct('local_identifier', ['ecoli_fit_group_' regexprep(id, '^e._coli_patches_', '')], ...
     'name', label, 'description', ['The E. coli patches seeded this way, whose border ' ...
-    'amplitude the lab fitted as one line (decision #65).']);
-if ndi.setup.V2.schemaHasField('subject', 'type')
-    f.type = did2.build.term('', 'group');
-end
+    'amplitude the lab fitted as one line (decision #65).'], ...
+    'type', did2.build.term('', 'group'));
 end
 
 function c = conditionsOf(q)
@@ -824,16 +819,12 @@ d = did2.build.statement('concentration_calculation', entityId, ...
 end
 
 function v = densityCell(x)
-% the relative density as concentration cells: in the `od600` canonical when
-% the schema has it (did-schema, Jess 2026-10-20), the same number as the
-% source value in source unit OD600; before that, the source pair alone
+% the relative density as concentration cells: in the `od600` canonical
+% (did-schema, Jess 2026-10-20), the same number as the source value in source
+% unit OD600
 arguments
     x double
 end
-if ndi.setup.V2.schemaHasField('concentration', 'value.od600')
-    v = did2.build.valueCell('concentration', x, 'Canonical', 'od600', 'SourceValue', x, ...
-        'SourceUnit', ndi.setup.V2.sourceUnit('OD600'));
-else
-    v = did2.build.valueCell('concentration', x, 'Canonical', 'source_value', 'SourceUnit', ndi.setup.V2.sourceUnit('OD600'));
-end
+v = did2.build.valueCell('concentration', x, 'Canonical', 'od600', 'SourceValue', x, ...
+    'SourceUnit', ndi.setup.V2.sourceUnit('OD600'));
 end

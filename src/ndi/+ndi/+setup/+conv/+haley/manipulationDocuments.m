@@ -113,10 +113,7 @@ secondFmt = 'yyyy-MM-dd''T''HH:mm:ss';
 refs = getOr(options.Relations, 'timeReferenceIds', containers.Map());
 spans = getOr(options.Relations, 'assaySpans', containers.Map());
 stayEnds = getOr(options.Relations, 'stayEnds', containers.Map());
-eachMember = struct();
-if ndi.setup.V2.schemaHasField('statement', 'distributive')
-    eachMember.distributive = true;
-end
+eachMember = struct('distributive', true);
 
 docs = {};
 out = struct('documents', {{}}, 'skipped', {{}}, 'counts', struct('pour', 0, ...

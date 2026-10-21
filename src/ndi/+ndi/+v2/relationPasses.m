@@ -17,18 +17,15 @@ function P = relationPasses(schemaPath)
 %   P is a struct of cellstr rows, in the registry's order:
 %     assertions, distributive, context, nothing   the relation names by value
 %     names         every relation the registry binds
-%     declared      true when the registry declares `passes`; false on a schema
-%                   built before it (did-schema main), when the four lists are
-%                   the rules NDI hard-coded until then (assertions: part_of,
-%                   sample_of, aliquot_of, passage_of, instance_of;
-%                   distributive: member_of; context: contained_in) and every
-%                   other bound relation passes nothing. No registry gives
-%                   those lists and NAMES empty.
+%     declared      true when the registry declares `passes` (did-schema #88
+%                   and later). A registry that does not (an older schema
+%                   copy), or no registry, passes nothing along any relation:
+%                   NDI keeps no hard-coded rules of its own.
 %
 %   Read once per file (path, date and size) and kept for the MATLAB session;
 %   `clear ndi.v2.relationPasses` drops it.
 %
-%   See also ndi.entity, ndi.v2.recordRelation.
+%   See also ndi.entity.
 
 arguments
     schemaPath = getenv('DID_SCHEMA_PATH')
@@ -90,14 +87,6 @@ end
 P = struct('assertions', {{}}, 'distributive', {{}}, 'context', {{}}, ...
     'nothing', {{}}, 'names', {reshape(names, 1, [])}, ...
     'declared', any(~cellfun(@isempty, passes)));
-if ~P.declared
-    % the rules NDI hard-coded before the registry declared them
-    P.assertions = {'part_of', 'sample_of', 'aliquot_of', 'passage_of', 'instance_of'};
-    P.distributive = {'member_of'};
-    P.context = {'contained_in'};
-    P.nothing = setdiff(P.names, [P.assertions, P.distributive, P.context], 'stable');
-    return;
-end
 for k = 1:numel(names)
     v = passes{k};
     if ~any(strcmp(v, {'assertions', 'distributive', 'context'}))

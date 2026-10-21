@@ -21,10 +21,8 @@ function [sessions, notes] = datasetSessions(database, datasetSessionId, dataset
 %   The rule (V_eta_linked_session_plan.md, signed 2026-10-09): a session is
 %   in the dataset when its entity document is filed under the dataset, or
 %   under a study that is filed under the dataset; the relation is in the
-%   dataset's database for both kinds. The relation is `included_in` where
-%   the schema binds it (V_eta_relation_inheritance_plan.md, 2026-10-20, a
-%   proposal built ahead of signature), `part_of` before
-%   (ndi.v2.recordRelation). A session is LINKED when a
+%   dataset's database for both kinds. The relation is `included_in`
+%   (V_eta_relation_inheritance_plan.md). A session is LINKED when a
 %   `linked_session` document names it: its `path` is the session's folder
 %   (relative to DATASETPATH when inside it) and its `entity_id` the
 %   session's entity document, which must be in that folder.
@@ -57,7 +55,7 @@ sessions = struct('session_id', {}, 'reference', {}, 'entity_id', {}, ...
 notes = {};
 
 % --- membership: filed under the dataset, directly or through a study ---
-member = ndi.v2.recordRelation();
+member = 'included_in';
 datasetDocs = database.search(ndi.v2.isaQuery('dataset'));
 datasetDocs = datasetDocs(cellfun(@(d) strcmp(ndi.v2.kindOf(d.document_properties), ...
     'dataset'), datasetDocs));
@@ -96,12 +94,7 @@ for i = 1:numel(sessionDocs)
 end
 
 % --- linked: `linked_session` documents ---
-links = {};
-try
-    links = database.search(ndi.query('', 'isa', 'linked_session', ''));
-catch
-    % a schema without the class: no linked sessions
-end
+links = database.search(ndi.query('', 'isa', 'linked_session', ''));
 nLinked = 0;
 problems = {};
 for i = 1:numel(links)
@@ -155,7 +148,7 @@ end
 % -----------------------------------------------------------------------------
 function children = memberChildren(database, parentId, member)
 % the ids of the documents filed under PARENTID by the relation MEMBER
-% (ndi.v2.recordRelation), read from relations in DATABASE
+% (`included_in`), read from relations in DATABASE
 arguments
     database
     parentId {mustBeText}

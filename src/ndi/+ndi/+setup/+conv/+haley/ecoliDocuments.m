@@ -62,8 +62,7 @@ function out = ecoliDocuments(dataParentDir, session, R, subjectIds, options)
 %                         0.5 mm beyond each patch (in its body's description)
 %     item_calculation    the plate's `nearest bacterial patch` map
 %                         (ecoli/closest/<image>.png), a 0-based index into
-%                         the patch subjects -- only for a matched image, and
-%                         only when the schema has `item` (did-schema PR #87)
+%                         the patch subjects -- only for a matched image
 %   and per matched detected patch, about its patch subject, from the image
 %   and the mask, each `fluorescence intensity` in background-normalized
 %   arbitrary units, told apart by method and conditions:
@@ -146,7 +145,6 @@ env = {};
 if ~isempty(options.SoftwareId), env = [env, {'SoftwareId', options.SoftwareId}]; end
 if ~isempty(options.InterpreterId), env = [env, {'InterpreterId', options.InterpreterId}]; end
 env = [env, {'OperatingSystemId', options.OperatingSystemId}];
-hasItem = ndi.setup.V2.schemaHasField('item', 'value');
 
 root = fullfile(dataParentDir, 'haley', 'ecoli');
 B = load(fullfile(root, 'bacteria.mat'));
@@ -230,7 +228,7 @@ for k = 1:height(R)
             'maximum of its smoothed background image, divided by that smoothed image, ' ...
             'rounded to uint16 (analyzeLawnProfiles imageNormalized).']);
         info = dir(normFile);
-        nb = did2.build.document('opaque_body', struct('format', fileFormat('EDAM:format_3591', 'TIFF', 'image/tiff'), ...
+        nb = did2.build.document('opaque_body', struct('format', fileFormat('EDAM:format_3591', 'TIFF'), ...
             'filename', sprintf('%04d.tiff', n), 'size_bytes', info.bytes, ...
             'description', 'The background-normalized image, from ecoli/images.'), ...
             'SessionId', sid, 'Edges', struct('owner_id', nm.base.id), 'Files', {'body_data_0'});
@@ -345,7 +343,7 @@ for k = 1:height(R)
 
     % the nearest-patch map
     closestFile = fullfile(root, 'closest', sprintf('%04d.png', n));
-    if hasItem && isfile(closestFile)
+    if isfile(closestFile)
         c = double(imread(closestFile));
         if all(c(:) >= 1 & c(:) <= nDetected)
             v = slot(c) - 1;

@@ -10,7 +10,7 @@ function nodes = synonymNodes(patterns)
 %   finds NCIT:C53319 Arithmetic Mean, although a document stores 'metre'
 %   and 'Arithmetic Mean'.
 %
-%   {} when the schema in use has no term registry (did-schema main) or
+%   {} when the schema in use has no term registry (a migrated V_eta schema) or
 %   DID-matlab has no did2.schema.termIndex. The registry is what makes this
 %   cheap: it lists every vocabulary term a dataset can hold, so nothing is
 %   read from the database to find candidates.

@@ -45,8 +45,7 @@ function out = trackDocuments(dataParentDir, session, R, subjectIds, options)
 %                           0-based index into the plate's patch subjects
 %                           (item_id). The source reads it at pixel (1, 1) on
 %                           the frames it marks `noTrack`, so those frames
-%                           hold the body's fill value. Only when the schema
-%                           has `item` (did-schema PR #87). Inputs: the
+%                           hold the body's fill value. Inputs: the
 %                           positions and the nearest-patch map (or the lawn
 %                           mask).
 %   A statement holds the body parts whose table has its column. The rest of
@@ -97,7 +96,6 @@ if isempty(options.OperatingSystemId)
         'built by the metadata stage); no track calculations'], ref);
     return;
 end
-hasItem = ndi.setup.V2.schemaHasField('item', 'value');
 env = {};
 if ~isempty(options.SoftwareId), env = [env, {'SoftwareId', options.SoftwareId}]; end
 if ~isempty(options.InterpreterId), env = [env, {'InterpreterId', options.InterpreterId}]; end
@@ -247,7 +245,7 @@ for k = 1:height(R)
 
         % nearest patch
         [has, id] = column(W, 'closestLawnID');
-        if hasItem && any(has)
+        if any(has)
             pIds = patchIds(subjectIds, plate);
             W1 = W(has);
             for j = 1:numel(W1)

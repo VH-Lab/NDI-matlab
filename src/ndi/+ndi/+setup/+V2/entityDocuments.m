@@ -1,16 +1,12 @@
 function docs = entityDocuments(className, fields, edges, options)
-%ENTITYDOCUMENTS The documents that record one entity, for the schema in use.
+%ENTITYDOCUMENTS The documents that record one entity.
 %
 %   DOCS = ndi.setup.V2.entityDocuments(CLASSNAME, FIELDS, EDGES, 'SessionId', SID)
-%   builds an entity written for the pre-2026-10-08 classes (CLASSNAME
+%   builds an entity given as one of the pre-2026-10-08 classes (CLASSNAME
 %   'subject', 'strain', 'person', 'dataset', 'session', 'epoch', ...; FIELDS
 %   and EDGES as that class declared them) and returns a cell array of
-%   documents, the entity's own first.
-%
-%   On a schema that still has CLASSNAME, DOCS is that one document.
-%
-%   On a schema with one `entity` class (did-schema
-%   V_eta_entity_composition_plan.md, 2026-10-08), DOCS is:
+%   documents, the entity's own first. The schema has one `entity` class
+%   (did-schema V_eta_entity_composition_plan.md), so DOCS is:
 %     1. an `entity` with `type` CLASSNAME (for a subject, its own `type`, or the
 %        'Type' option) and the identity fields -- name, local_identifier,
 %        description, global_identifier (as CURIEs, ndi.setup.V2.curie) -- and
@@ -20,15 +16,14 @@ function docs = entityDocuments(className, fields, edges, options)
 %        where one is decided: species NCIT:C45293, accessibility
 %        NCIT:C175887, a strain's genotype NCIT:C16631 as text);
 %     3. one relation per other edge: vendor_id -> sold_by, background_strain_id
-%        -> derived_from, product_id -> distributed_as (derived_from on a schema
-%        without it).
+%        -> derived_from, product_id -> distributed_as.
 %   A field or edge with no home there is an error (ndi:setup:V2:noHome), never
 %   dropped.
 %
 %   Options: 'SessionId' (required), 'Id', 'Validate' (default true),
 %   'Type' (the entity type of a subject that gives none).
 %
-%   See also ndi.setup.V2.mergedEntities, ndi.setup.V2.curie.
+%   See also ndi.setup.V2.curie.
 
 arguments
     className (1,:) char
@@ -41,19 +36,6 @@ arguments
 end
 
 common = {'SessionId', options.SessionId, 'Validate', options.Validate};
-if ~ndi.setup.V2.mergedEntities()
-    % a schema with a `subject` class that declares `type` (did-schema main,
-    % #84: the seven coarse kinds) gets the 'Type' option there, so a device
-    % is not an untyped subject that getsubjects cannot tell from an animal
-    if strcmp(className, 'subject') && ~isempty(options.Type) ...
-            && ~(isfield(fields, 'type') && ~isempty(fields.type)) ...
-            && ndi.setup.V2.schemaHasField('subject', 'type')
-        fields.type = did2.build.term('', options.Type);
-    end
-    docs = {did2.build.document(className, fields, 'Edges', edges, ...
-        'Id', options.Id, common{:})};
-    return;
-end
 
 % ---- 1. the entity ------------------------------------------------------------
 type = className;
@@ -63,8 +45,8 @@ if strcmp(className, 'subject')
     elseif ~isempty(options.Type)
         type = options.Type;
     else
-        error('ndi:setup:V2:noType', ['A subject needs a type on a schema with ' ...
-            'one entity class; pass ''Type'' (organism, device, ...).']);
+        error('ndi:setup:V2:noType', ['A subject needs a type; pass ''Type'' ' ...
+            '(organism, device, ...).']);
     end
 end
 ent = struct('type', did2.build.term('', type));
@@ -159,26 +141,22 @@ for k = 1:numel(names)
         docs{end+1} = did2.build.statement('text_assertion', eid, variable, ...
             did2.build.valueCell('text', cellstr(string(v))), common{:}); %#ok<AGROW>
     else
-        error('ndi:setup:V2:noHome', ['`%s.%s` has no home on a schema with one ' ...
-            'entity class: name it in ndi.setup.V2.entityDocuments.'], className, f);
+        error('ndi:setup:V2:noHome', ['`%s.%s` has no home on the entity: name ' ...
+            'it in ndi.setup.V2.entityDocuments.'], className, f);
     end
 end
 
 % ---- 3. the other edges, as relations ---------------------------------------------
-relationOf = struct('vendor_id', 'sold_by', 'background_strain_id', 'derived_from', ...
-    'product_id', 'derived_from');
 % a strain is DISTRIBUTED AS its product (a stock-centre or vendor listing), not
-% derived from it (Haley import decision #17; did-schema 033a22d, 2026-10-15);
-% `derived_from` stays only on a schema copy without `distributed_as`
-if ndi.setup.V2.schemaHasRelation('distributed_as')
-    relationOf.product_id = 'distributed_as';
-end
+% derived from it (Haley import decision #17; did-schema 033a22d, 2026-10-15)
+relationOf = struct('vendor_id', 'sold_by', 'background_strain_id', 'derived_from', ...
+    'product_id', 'distributed_as');
 enames = setdiff(fieldnames(edges), {'time_reference_id'}, 'stable');
 for k = 1:numel(enames)
     e = enames{k};
     if ~isfield(relationOf, e)
-        error('ndi:setup:V2:noHome', ['Edge `%s.%s` has no home on a schema with ' ...
-            'one entity class: name it in ndi.setup.V2.entityDocuments.'], className, e);
+        error('ndi:setup:V2:noHome', ['Edge `%s.%s` has no home on the entity: ' ...
+            'name it in ndi.setup.V2.entityDocuments.'], className, e);
     end
     parents = cellstr(edges.(e));
     for j = 1:numel(parents)

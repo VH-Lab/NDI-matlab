@@ -236,9 +236,7 @@ end
 % target OD600 10 in the diluent, a dilution the stock at its target fraction.
 % What was MEASURED of the stock (`OD600Real`) is an observation of the stock
 % entity, not a value of its formulation. An OD600 is concentration's `od600`
-% canonical when the schema has it (did-schema, Jess 2026-10-20), with the
-% source pair beside it; before that, the source pair alone.
-hasOD = ndi.setup.V2.schemaHasField('concentration', 'value.od600');
+% canonical (did-schema, Jess 2026-10-20), with the source pair beside it.
 entries = {};
 solutions = struct('key', {}, 'formulation', {}, 'strain', {}, 'diluent', {}, 'day', {}, ...
     'kind', {}, 'target', {}, 'stock', {}, 'od', {}, 'cfu', {}, 'note', {}, 'folders', {});
@@ -250,7 +248,7 @@ for s = 1:numel(sol)
         % unmeasured (decision #82): no stock is known; each target OD600 is
         % its own solution, the strain at that OD600 (its plan alone)
         for n = x.nominal
-            ing = {struct('ingredient', x.strain, 'concentration', target(n, hasOD))};
+            ing = {struct('ingredient', x.strain, 'concentration', target(n))};
             if ~isempty(x.diluent)
                 ing{end+1} = struct('ingredient', x.diluent); %#ok<AGROW>
             end
@@ -262,7 +260,7 @@ for s = 1:numel(sol)
     end
     % the stock's plan: the strain at OD600 10. What was measured of it (its
     % OD600 and CFU) is an observation of the solution (decisions #114, #129)
-    c = target(10, hasOD);
+    c = target(10);
     ing = {struct('ingredient', x.strain, 'concentration', c)};
     if ~isempty(x.diluent)
         ing{end+1} = struct('ingredient', x.diluent); %#ok<AGROW>
@@ -370,15 +368,13 @@ for k = 1:numel(c)
 end
 end
 
-function c = target(n, hasOD)
-% a planned OD600, as a concentration: `od600` when the schema has it, and the
-% source pair (the plan is stated in OD600)
+function c = target(n)
+% a planned OD600, as a concentration: `od600`, and the source pair (the plan
+% is stated in OD600)
 arguments
     n (1,1) double
-    hasOD (1,1) logical
 end
-c = struct();
-if hasOD, c.od600 = n; end
+c = struct('od600', n);
 c.source_value = n;
 c.source_unit = ndi.setup.V2.sourceUnit('OD600');
 end

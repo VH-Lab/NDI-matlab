@@ -25,16 +25,11 @@ function [session, docs] = createSession(path, reference, options)
 %     'Description' free text about the session (session.description)
 %     'StudyIds'    cellstr: studies this session is filed under (a relation
 %                   document each, stored in this session): `included_in`
-%                   where the schema binds it, `part_of` before
-%                   (ndi.v2.recordRelation)
-%     'SessionDocId' base.id of the session document (default: a new id).
-%                   Given when other documents must point at the session
-%                   document before it exists (a time reference's referent).
-%                   WHERE session_id IS AN EDGE (did-schema
-%                   V_eta_relation_inheritance_plan.md, 2026-10-20;
-%                   ndi.v2.sessionIdIsEdge) the session document's id IS the
-%                   session id, so this defaults to it and any other value is
-%                   an error (ndi:setup:V2:sessionDocId).
+%     'SessionDocId' base.id of the session document. session_id is an edge
+%                   (did-schema V_eta_relation_inheritance_plan.md), so the
+%                   session document's id IS the session id: this defaults to
+%                   it and any other value is an error
+%                   (ndi:setup:V2:sessionDocId).
 %     'TimeReferenceId' the session's own time reference
 %                   (session.time_reference_id), e.g. its UTC extent
 %     'Documents'   cell array of further documents (structs, built with the
@@ -75,16 +70,13 @@ if isempty(sid)
     sid = ndi.ido.unique_id();
 end
 docId = options.SessionDocId;
-if ndi.v2.sessionIdIsEdge()
-    % the session entity's base.id IS its session id: every document's
-    % session_id edge, its own included, points at it
-    if ~isempty(docId) && ~strcmp(docId, sid)
-        error('ndi:setup:V2:sessionDocId', ['''SessionDocId'' %s is not the session id ' ...
-            '%s: where session_id is an edge, the session document''s id is the ' ...
-            'session id.'], docId, sid);
-    end
-    docId = sid;
+% the session entity's base.id IS its session id: every document's
+% session_id edge, its own included, points at it
+if ~isempty(docId) && ~strcmp(docId, sid)
+    error('ndi:setup:V2:sessionDocId', ['''SessionDocId'' %s is not the session id ' ...
+        '%s: the session document''s id is the session id.'], docId, sid);
 end
+docId = sid;
 
 ndiDir = fullfile(path, '.ndi');
 if isfolder(ndiDir)
@@ -117,7 +109,7 @@ studies = options.StudyIds;
 if ischar(studies) || isstring(studies)
     studies = cellstr(studies);
 end
-member = ndi.v2.recordRelation();
+member = 'included_in';
 for k = 1:numel(studies)
     docs{end+1} = did2.build.directedRelation(docs{1}.base.id, studies{k}, ...
         member, 'SessionId', sid); %#ok<AGROW>

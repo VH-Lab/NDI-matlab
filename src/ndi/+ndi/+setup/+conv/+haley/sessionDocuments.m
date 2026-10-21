@@ -113,7 +113,7 @@ out = struct('documents', {{}}, 'timeReferenceId', '', 'skipped', {{}}, ...
 
 % ---- subjects ---------------------------------------------------------------
 subjectIds = containers.Map();
-hasType = ndi.setup.V2.schemaHasField('subject', 'type') && ismember('type', S.Properties.VariableNames);
+hasType = ismember('type', S.Properties.VariableNames);
 for k = 1:height(S)
     f = struct('local_identifier', S.local_identifier{k}, 'name', S.name{k});
     if ~isempty(S.description{k})
@@ -418,8 +418,8 @@ arguments
     ext {mustBeText}
 end
 switch lower(ext)
-    case '.mp4',           m = fileFormat('EDAM:format_3997', 'MPEG-4', 'video/mp4');
-    case {'.tif', '.tiff'}, m = fileFormat('EDAM:format_3591', 'TIFF', 'image/tiff');
+    case '.mp4',           m = fileFormat('EDAM:format_3997', 'MPEG-4');
+    case {'.tif', '.tiff'}, m = fileFormat('EDAM:format_3591', 'TIFF');
     otherwise
         error('ndi:setup:conv:haley:unknownFormat', 'No media type for "%s".', ext);
 end

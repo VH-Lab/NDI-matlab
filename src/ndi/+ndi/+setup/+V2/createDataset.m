@@ -12,8 +12,7 @@ function [dataset, report] = createDataset(path, reference, datasetSessionId, da
 %   ndi.dataset opens it there (ndi.dataset/build_session_info lists a V2
 %   dataset's sessions from their `session` documents).
 %
-%   WHERE session_id IS AN EDGE (did-schema V_eta_relation_inheritance_plan.md,
-%   2026-10-20, a proposal built ahead of signature; ndi.v2.sessionIdIsEdge):
+%   session_id is an edge (did-schema V_eta_relation_inheritance_plan.md):
 %   the dataset's own record is the document whose base.id IS
 %   DATASETSESSIONID, which every dataset-level document's `session_id` edge
 %   points at. When DATASETDOCS hold the `dataset` entity, it is that record
@@ -37,8 +36,7 @@ function [dataset, report] = createDataset(path, reference, datasetSessionId, da
 %     duplicateIds  ids carried by more than one document
 %     sessions      session documents found, and those not filed under a
 %                   study that is itself filed under the dataset (the relation
-%                   is ndi.v2.recordRelation: `included_in` where the schema
-%                   binds it, `part_of` before)
+%                   is `included_in`)
 %
 %   Options:
 %     'Name'        the dataset session's display name
@@ -101,26 +99,21 @@ for k = 1:numel(datasetDocs)
 end
 own = {};
 recordAt = [];
-if ndi.v2.sessionIdIsEdge()
-    % the dataset entity is the dataset's own record: its id is the session id
-    for k = 1:numel(datasetDocs)
-        if ~strcmp(ndi.v2.kindOf(datasetDocs{k}), 'dataset'), continue; end
-        if ~strcmp(datasetDocs{k}.base.id, datasetSessionId)
-            error('ndi:setup:V2:datasetId', ['The dataset document has id %s; where ' ...
-                'session_id is an edge its id must be the dataset''s session id, %s ' ...
-                '(ndi.setup.V2.datasetMetadata builds it so by default).'], ...
-                datasetDocs{k}.base.id, datasetSessionId);
-        end
-        recordAt = k;
+% the dataset entity is the dataset's own record: its id is the session id
+for k = 1:numel(datasetDocs)
+    if ~strcmp(ndi.v2.kindOf(datasetDocs{k}), 'dataset'), continue; end
+    if ~strcmp(datasetDocs{k}.base.id, datasetSessionId)
+        error('ndi:setup:V2:datasetId', ['The dataset document has id %s; its id must be ' ...
+            'the dataset''s session id, %s (ndi.setup.V2.datasetMetadata builds it so by ' ...
+            'default).'], datasetDocs{k}.base.id, datasetSessionId);
     end
+    recordAt = k;
 end
 if isempty(recordAt)
     f = struct('local_identifier', reference);
     if ~isempty(options.Name), f.name = options.Name; end
-    idArgs = {};
-    if ndi.v2.sessionIdIsEdge(), idArgs = {'Id', datasetSessionId}; end
     own = ndi.setup.V2.entityDocuments('session', f, struct(), 'SessionId', datasetSessionId, ...
-        idArgs{:});
+        'Id', datasetSessionId);
     own = own(1);
 end
 % A dataset entity standing as the folder's record keeps the local_identifier
@@ -209,9 +202,8 @@ else
         {'class', 'edge'});
 end
 
-% sessions: filed under a study that is filed under the dataset (included_in,
-% or part_of on a schema without it: ndi.v2.recordRelation)
-member = ndi.v2.recordRelation();
+% sessions: filed under a study that is filed under the dataset (included_in)
+member = 'included_in';
 isRel = strcmp(cls, 'directed_relation');
 parentsOf = containers.Map();
 for i = find(isRel)

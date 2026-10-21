@@ -3,8 +3,8 @@ function sid = sessionIdOf(doc)
 %
 %   SID = ndi.v2.sessionIdOf(DOC) reads DOC's session id (DOC an
 %   ndi.document, a did2.document or a property struct):
-%     - its `base.session_id` FIELD, when it has one (a v1 document, and a V2
-%       document built on did-schema main);
+%     - its `base.session_id` FIELD, when it has one (a v1 document, and a
+%       migrated V_eta document);
 %     - otherwise its `session_id` EDGE (did-schema
 %       V_eta_relation_inheritance_plan.md, 2026-10-20, a proposal built ahead
 %       of signature: `base` has no session_id field and every document has a
@@ -15,7 +15,7 @@ function sid = sessionIdOf(doc)
 %   A query on `base.session_id` needs no change: against a did2 database DID
 %   answers it from the field or the edge.
 %
-%   See also ndi.document/session_id, ndi.v2.sessionIdIsEdge.
+%   See also ndi.document/session_id.
 
 arguments
     doc

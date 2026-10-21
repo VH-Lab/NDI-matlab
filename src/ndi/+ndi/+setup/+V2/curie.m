@@ -3,7 +3,7 @@ function [out, local] = curie(identifiers)
 %
 %   [OUT, LOCAL] = ndi.setup.V2.curie(IDENTIFIERS) turns a spec's
 %   `identifiers`, a list of {scheme, value}, into the strings
-%   `entity.global_identifier` holds on a schema built on or after 2026-10-08:
+%   `entity.global_identifier` holds:
 %   a CURIE whose prefix is registered in CURIE_lookups_meta.json, or the full
 %   IRI for a URL. A value given as its resolver's address
 %   ('https://orcid.org/...') is reduced to the local id.

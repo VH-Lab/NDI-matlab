@@ -128,13 +128,12 @@ classdef document < did.document
             %
             % Sets the document's session id to the value indicated: its
             % document_properties.base.session_id field when it has one (a v1
-            % document, and a V2 document built on did-schema main), and
-            % otherwise its `session_id` edge (a V2 document on the shape of
-            % did-schema V_eta_relation_inheritance_plan.md, 2026-10-20, where
-            % `base` has no session_id field and the edge points at the session
-            % or dataset entity, whose base.id is the session id). A V2 document
-            % with neither gets whichever the schema in use declares
-            % (ndi.v2.sessionIdIsEdge); any other document gets the field.
+            % document, and a migrated V_eta document), and otherwise its
+            % `session_id` edge (a V2 document on the shape of did-schema
+            % V_eta_relation_inheritance_plan.md, where `base` has no
+            % session_id field and the edge points at the session or dataset
+            % entity, whose base.id is the session id). A V_eta document with
+            % neither gets the edge; any other document gets the field.
             %
             % See also ndi.document/session_id, ndi.v2.sessionIdOf.
             p = ndi_document_obj.document_properties;
@@ -143,8 +142,7 @@ classdef document < did.document
             if ~hasField
                 useEdge = ~isempty(ndi.v2.edgeIds(p, 'session_id')) || ...
                     (isfield(p, 'document_class') && isfield(p.document_class, 'schema_version') ...
-                    && strcmp(char(p.document_class.schema_version), 'V_eta') ...
-                    && ndi.v2.sessionIdIsEdge());
+                    && strcmp(char(p.document_class.schema_version), 'V_eta'));
             end
             if useEdge
                 ndi_document_obj = ndi_document_obj.set_dependency_value('session_id', ...
@@ -455,9 +453,9 @@ classdef document < did.document
             %
             % Returns the unique session id of an ndi.document: its
             % document_properties.base.session_id field when it has one (v1,
-            % and V2 on did-schema main), otherwise its `session_id` edge (V2 on
-            % the shape of did-schema V_eta_relation_inheritance_plan.md,
-            % 2026-10-20). '' when it has neither.
+            % and migrated V_eta), otherwise its `session_id` edge (V2 as
+            % did2.build writes it, did-schema
+            % V_eta_relation_inheritance_plan.md). '' when it has neither.
             %
             % See also ndi.document/set_session_id, ndi.v2.sessionIdOf.
             %

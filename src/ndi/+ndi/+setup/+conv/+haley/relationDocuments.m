@@ -98,10 +98,7 @@ out = struct('documents', {{}}, 'skipped', {{}}, 'counts', struct( ...
     'timeReferenceIds', containers.Map(), 'assaySpans', containers.Map(), ...
     'stayEnds', containers.Map());
 docs = {};
-eachMember = struct();             % `distributive`, when the schema has it (#84)
-if ndi.setup.V2.schemaHasField('directed_relation', 'distributive')
-    eachMember.distributive = true;
-end
+eachMember = struct('distributive', true);   % did-schema #84
 
 % ---- worm member_of its cohort --------------------------------------------------
 worms = S(strcmp(S.kind, 'worm'), :);

@@ -19,7 +19,7 @@ function types = entityTypesFor(className, schemaPath)
 %   and the class names above plus protocol. Read once per file (path, date
 %   and size); `clear ndi.v2.entityTypesFor` drops it.
 %
-%   See also ndi.v2.isaQuery, ndi.v2.blockOf, ndi.setup.V2.schemaHasField.
+%   See also ndi.v2.isaQuery, ndi.v2.blockOf.
 
 arguments
     className {mustBeText}

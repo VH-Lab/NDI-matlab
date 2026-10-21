@@ -24,23 +24,20 @@ function result = datasetMetadata(spec, sessionId, options)
 %                   recorded. Reported, never silently dropped.
 %
 %   Options:
-%     'DatasetId'   the dataset document's id (default: a new one). WHERE
-%                   session_id IS AN EDGE (did-schema
-%                   V_eta_relation_inheritance_plan.md, 2026-10-20;
-%                   ndi.v2.sessionIdIsEdge) the dataset entity's id IS the
-%                   dataset's session id, SESSIONID, which every document
-%                   here points at: the default is SESSIONID and any other
-%                   value is an error (ndi:setup:V2:datasetId).
+%     'DatasetId'   the dataset document's id. session_id is an edge
+%                   (did-schema V_eta_relation_inheritance_plan.md), so the
+%                   dataset entity's id IS the dataset's session id,
+%                   SESSIONID, which every document here points at: the
+%                   default is SESSIONID and any other value is an error
+%                   (ndi:setup:V2:datasetId).
 %     'Validate'    passed to did2.build (default true)
 %     'Studies'     "include" (default): everything, studies too; "exclude":
 %                   everything but the studies; "only": the studies and the
 %                   relations filing them under the dataset alone, which needs
-%                   'DatasetId' (given, or SESSIONID where session_id is an
-%                   edge) (an import mints studies beside the sessions they
-%                   group -- Haley decision #50 -- and the rest in its
-%                   metadata stage). A study is `included_in` the dataset
-%                   where the schema binds it, `part_of` before
-%                   (ndi.v2.recordRelation).
+%                   'DatasetId' (given, or SESSIONID) (an import mints
+%                   studies beside the sessions they group -- Haley decision
+%                   #50 -- and the rest in its metadata stage). A study is
+%                   `included_in` the dataset.
 %
 %   Errors did2:build:* when an entry does not fit the schema, and
 %   ndi:setup:V2:* for spec problems (a duplicate key, a key that names
@@ -59,15 +56,12 @@ end
 if ischar(spec) || isstring(spec)
     spec = jsondecode(fileread(char(spec)));
 end
-if ndi.v2.sessionIdIsEdge()
-    % the dataset entity is the dataset's own record: its id is the session id
-    if isempty(options.DatasetId)
-        options.DatasetId = sessionId;
-    elseif ~strcmp(options.DatasetId, sessionId)
-        error('ndi:setup:V2:datasetId', ['''DatasetId'' %s is not the session id %s: ' ...
-            'where session_id is an edge, the dataset entity''s id is the dataset''s ' ...
-            'session id.'], options.DatasetId, sessionId);
-    end
+% the dataset entity is the dataset's own record: its id is the session id
+if isempty(options.DatasetId)
+    options.DatasetId = sessionId;
+elseif ~strcmp(options.DatasetId, sessionId)
+    error('ndi:setup:V2:datasetId', ['''DatasetId'' %s is not the session id %s: ' ...
+        'the dataset entity''s id is the dataset''s session id.'], options.DatasetId, sessionId);
 end
 state = struct();
 state.docs = {};
@@ -131,36 +125,22 @@ if ~strcmp(options.Studies, 'only')
         state = add(state, 'publication', p.key, f, struct());
     end
 
-    % On a schema with one entity class (2026-10-08) there is no web_resource:
-    % a URL is an address for the thing it names. A resource the dataset is
-    % `stored_at` becomes one of the dataset's own identifiers; any other one is
-    % an entity of the `type` the spec gives it (software, publication, ...).
-    merged = ndi.setup.V2.mergedEntities();
+    % There is no web_resource entity (2026-10-08): a URL is an address for
+    % the thing it names. A resource the dataset is `stored_at` becomes one of
+    % the dataset's own identifiers; any other one is an entity of the `type`
+    % the spec gives it (software, publication, ...).
     storedAt = asCell(getOr(getOr(spec, 'dataset', struct()), 'stored_at', {}));
     state.storedIds = {};
     state.storedHosts = {};
     for e = entries(spec, 'web_resources')
         w = e{1};
-        if ~merged
-            state = checkKnown(state, 'web_resource', w, {'name', 'identifiers', 'host'}, ...
-                struct('type', ''));
-            state = add(state, 'web_resource', w.key, putIds(struct('name', w.name), w), struct());
-            if isfield(w, 'host')
-                state = relate(state, w.key, w.host, 'hosted_by', {'web_resource'}, {'organization'});
-            end
-        elseif any(strcmp(w.key, storedAt))
+        if any(strcmp(w.key, storedAt))
             % a stored copy is one of the dataset's identifiers; its host is the
             % DATASET's `hosted_by` (did-schema 9bedceb, Jess 2026-10-15)
-            if ndi.setup.V2.schemaHasRelation('hosted_by')
-                state = checkKnown(state, 'web_resource', w, {'name', 'identifiers', 'host'}, ...
-                    struct('type', ''));
-                if isfield(w, 'host')
-                    state.storedHosts{end+1} = w.host;
-                end
-            else
-                state = checkKnown(state, 'web_resource', w, {'name', 'identifiers'}, ...
-                    struct('host', 'a stored copy is an identifier of the dataset; its host is not recorded', ...
-                    'type', ''));
+            state = checkKnown(state, 'web_resource', w, {'name', 'identifiers', 'host'}, ...
+                struct('type', ''));
+            if isfield(w, 'host')
+                state.storedHosts{end+1} = w.host;
             end
             state.storedIds = [state.storedIds, storedIdentifiers(w)];
             state.ids(w.key) = '';
@@ -170,7 +150,7 @@ if ~strcmp(options.Studies, 'only')
                 struct('host', 'the schema in use has no relation from a resource to its host'));
             if ~isfield(w, 'type')
                 error('ndi:setup:V2:noType', ['web resource `%s` needs a `type` ' ...
-                    '(software, publication, protocol, ...) on a schema with one entity class.'], w.key);
+                    '(software, publication, protocol, ...).'], w.key);
             end
             state = add(state, 'web_resource', w.key, putIds(struct('name', w.name), w), ...
                 struct(), '', char(w.type));
@@ -181,16 +161,10 @@ if ~strcmp(options.Studies, 'only')
         s = e{1};
         % its maker: `developed_by` (did-schema 9bedceb, Jess 2026-10-15), not
         % `sold_by` -- free and open-source software was never sold
-        hasDeveloper = ndi.setup.V2.schemaHasRelation('developed_by');
-        if hasDeveloper
-            state = checkKnown(state, 'software', s, {'name', 'version', 'identifiers', 'vendor'});
-        else
-            state = checkKnown(state, 'software', s, {'name', 'version', 'identifiers'}, ...
-                struct('vendor', 'the schema in use has no relation from software to its developer'));
-        end
+        state = checkKnown(state, 'software', s, {'name', 'version', 'identifiers', 'vendor'});
         f = putIf(struct('name', s.name), 'version', s, 'version');
         state = add(state, 'software', s.key, putIds(f, s), struct());
-        if hasDeveloper && isfield(s, 'vendor')
+        if isfield(s, 'vendor')
             state = relate(state, s.key, s.vendor, 'developed_by', {'software'}, {'organization'});
         end
     end
@@ -218,28 +192,19 @@ if ~strcmp(options.Studies, 'only')
             struct('node', '', 'biological_sex', ''));
         f = struct('name', s.name, 'species', s.species, ...
             'genetic_strain_type', asTerm(s.genetic_strain_type));
-        if ndi.setup.V2.mergedEntities()
-            % one entity class: the genotype is a text assertion about the
-            % strain, variable NCIT:C16631 Genotype (ndi.setup.V2.entityDocuments;
-            % Haley decision #117), so it is queryable and reaches the strain's
-            % instances; the description keeps human prose only
-            if isfield(s, 'genotype') && ~isempty(s.genotype)
-                f.genotype = char(s.genotype);
-            end
-            desc = char(getOr(s, 'description', ''));
-        else
-            % a `strain` class has no genotype field (nor does openMINDS
-            % Strain): the genotype string is kept in the description rather
-            % than dropped
-            desc = strjoin(cellfun(@char, [asCell(getOr(s, 'genotype', {})), ...
-                asCell(getOr(s, 'description', {}))], 'UniformOutput', false), '. ');
+        % the genotype is a text assertion about the strain, variable
+        % NCIT:C16631 Genotype (ndi.setup.V2.entityDocuments; Haley decision
+        % #117), so it is queryable and reaches the strain's instances; the
+        % description keeps human prose only
+        if isfield(s, 'genotype') && ~isempty(s.genotype)
+            f.genotype = char(s.genotype);
         end
+        desc = char(getOr(s, 'description', ''));
         if ~isempty(desc)
             f.description = desc;
         end
-        if ndi.setup.V2.mergedEntities() && isfield(s, 'node') ...
-                && ~isempty(wormBaseId(char(s.node)))
-            % the strain's WormBase id is one of its identifiers (one entity class;
+        if isfield(s, 'node') && ~isempty(wormBaseId(char(s.node)))
+            % the strain's WormBase id is one of its identifiers (
             % `WormBase:WBStrain00000001`, V_eta_entity_composition_plan.md sec. 6,
             % spelled per V_eta_prefix_spelling_plan.md), since a subject is
             % `instance_of` the strain rather than asserting it
@@ -271,7 +236,7 @@ if ~strcmp(options.Studies, 'only')
     % `ingredients` name chemicals, formulations or strains by key, each with
     % what the source gave (an added `mass` / `volume`, or a final
     % `concentration`), in order; `type` is the term of the standard recipe it
-    % is (did-schema #84; left out on a schema without it); `documented_by` cites
+    % is (did-schema #84); `documented_by` cites
     % where the recipe is written down.
     for e = entries(spec, 'chemicals')
         c = e{1};
@@ -284,19 +249,12 @@ if ~strcmp(options.Studies, 'only')
         end
         state = add(state, 'chemical', c.key, struct('value', withSourceUnits(v)), edges);
     end
-    formulationHasType = ndi.setup.V2.schemaHasField('formulation', 'value.type');
     for e = entries(spec, 'formulations')
         c = e{1};
-        if formulationHasType
-            state = checkKnown(state, 'formulation', c, {'type', 'ingredients', 'ph', 'product', ...
-                'documented_by'});
-        else
-            state = checkKnown(state, 'formulation', c, {'ingredients', 'ph', 'product', ...
-                'documented_by'}, struct('type', ...
-                'the V2 schema in use has no formulation.value.type (did-schema PR #84)'));
-        end
+        state = checkKnown(state, 'formulation', c, {'type', 'ingredients', 'ph', 'product', ...
+            'documented_by'});
         v = struct();
-        if formulationHasType && isfield(c, 'type')
+        if isfield(c, 'type')
             v.type = asTerm(c.type);
         end
         ingredients = asCell(getOr(c, 'ingredients', {}));
@@ -328,21 +286,11 @@ if ~strcmp(options.Studies, 'only')
         end
     end
 
-    % `subject.name` arrived in did-schema PR #80; until the schema in use declares
-    % it, an instrument's name is reported as unrepresented rather than built.
-    subjectHasName = ndi.setup.V2.schemaHasField('subject', 'name');
     for e = entries(spec, 'instruments')
         i = e{1};
-        if subjectHasName
-            state = checkKnown(state, 'subject', i, {'local_identifier', 'name', 'description', 'product'});
-        else
-            state = checkKnown(state, 'subject', i, {'local_identifier', 'description', 'product'}, ...
-                struct('name', 'the V2 schema in use has no subject.name (did-schema PR #80)'));
-        end
+        state = checkKnown(state, 'subject', i, {'local_identifier', 'name', 'description', 'product'});
         f = putIf(struct('local_identifier', i.local_identifier), 'description', i, 'description');
-        if subjectHasName
-            f = putIf(f, 'name', i, 'name');
-        end
+        f = putIf(f, 'name', i, 'name');
         state = add(state, 'subject', i.key, f, struct(), '', 'device');
         if isfield(i, 'product')
             state = relate(state, i.key, i.product, 'instance_of', {'subject'}, {'product'});
@@ -367,7 +315,7 @@ if ~strcmp(options.Studies, 'only')
     end
     f = putIds(f, d);
     if isfield(state, 'storedIds') && ~isempty(state.storedIds)
-        % a stored copy is one of the dataset's addresses (one entity class only)
+        % a stored copy is one of the dataset's addresses
         extra = cellfun(@(v) struct('scheme', 'URL', 'value', v), state.storedIds, ...
             'UniformOutput', false);
         if isfield(f, 'global_identifier')
@@ -389,11 +337,10 @@ if ~strcmp(options.Studies, 'only')
         end
         state = relate(state, key, a.person, 'has_author', {'dataset'}, {'person'}, extra);
     end
+    % (`stored_at` is not a relation: a stored copy is one of the dataset's
+    % identifiers, above)
     pairs = {'funding', 'funded_by', {'funding'}; 'cites', 'cites', {'publication'}; ...
-            'stored_at', 'stored_at', {'web_resource'}; 'documented_by', 'documented_by', {'web_resource'}}';
-    if ndi.setup.V2.mergedEntities()
-        pairs = pairs(:, ~strcmp(pairs(1, :), 'stored_at'));   % now the dataset's identifiers
-    end
+            'documented_by', 'documented_by', {'web_resource'}}';
     for pair = pairs
         for t = asCell(getOr(d, pair{1}, {}))
             state = relate(state, key, t{1}, pair{2}, {'dataset'}, pair{3});
@@ -430,7 +377,7 @@ if ~strcmp(options.Studies, 'exclude')
         f = putIf(f, 'factors', s, 'factors');
         f = putIf(f, 'design', s, 'design');
         state = add(state, 'study', s.key, putIds(f, s), struct());
-        state = relate(state, s.key, key, ndi.v2.recordRelation(), {'study'}, {'dataset'});
+        state = relate(state, s.key, key, 'included_in', {'study'}, {'dataset'});
     end
 end
 
@@ -439,7 +386,7 @@ result = struct();
 result.documents = state.docs;
 result.ids = state.ids;
 % counted under the per-leaf names (ndi.v2.leafName), so an `entity` counts as
-% its type and the census reads the same on either schema
+% its type
 classes = cellfun(@ndi.v2.leafName, state.docs, 'UniformOutput', false);
 [u, ~, j] = unique(classes);
 result.census = table(u(:), accumarray(j(:), 1), 'VariableNames', {'class', 'count'});
@@ -496,10 +443,8 @@ end
 end
 
 function x = withSourceUnits(x)
-% every `source_unit` the spec spells ('mg', 'g/L', 'mL') in the shape the
-% schema in use declares: unchanged on did-schema main, the unit's registered
-% term where source_unit is a term (ndi.setup.V2.sourceUnit; did-schema
-% V_eta_source_unit_plan.md)
+% every `source_unit` the spec spells ('mg', 'g/L', 'mL') as the unit's
+% registered term (ndi.setup.V2.sourceUnit; did-schema V_eta_source_unit_plan.md)
 arguments
     x
 end
@@ -610,8 +555,8 @@ id = state.ids(key);
 end
 
 function state = add(state, className, key, fields, edges, id, type)
-% TYPE: the entity type, for a subject (or web resource) on a schema with one
-% entity class; ndi.setup.V2.entityDocuments.
+% TYPE: the entity type, for a subject (or web resource);
+% ndi.setup.V2.entityDocuments.
 arguments
     state (1,1) struct
     className {mustBeText}
@@ -629,7 +574,7 @@ entityKinds = {'organization', 'person', 'funding', 'publication', 'web_resource
 if any(strcmp(className, entityKinds))
     buildAs = className;
     if strcmp(className, 'web_resource') && ~isempty(type)
-        buildAs = type;   % on a schema with one entity class, what the resource is
+        buildAs = type;   % what the resource is
     end
     docs = ndi.setup.V2.entityDocuments(buildAs, fields, edges, 'SessionId', state.sid, ...
         'Id', id, 'Validate', state.validate, 'Type', type);
