@@ -209,6 +209,24 @@ classdef TestMigrateLocalEtaSoph < matlab.unittest.TestCase
                 'the destination census read zero documents');
         end
 
+        function testStimulusPresentationFoldByKind(testCase)
+            % REPORT-ONLY. The second pass's stimulus_presentation report:
+            % animal routes, per-kind stimulus counts from the NewStim class
+            % recogniser (Jess Haley, 2026-10-21), presentations by kind set
+            % (decomposed / refused) and the refusal-reason histogram. Soph
+            % holds 175 presentations: by the research census, 118 periodicstim
+            % sine gratings + blank and 57 stochasticgridstim noise, which the
+            % recogniser refuses by class. Decides nothing; the denominator is
+            % asserted, the split is measured.
+            r = testCase.Result.secondPass.stimulusSequence;
+            testCase.assertTrue(isstruct(r) && isfield(r, 'presentations_read'), ...
+                'the migrate result carries no stimulusSequence report');
+            ndi.unittest.migrate.printStimulusFoldReport(r, 'Soph');
+            verifyGreaterThan(testCase, r.presentations_read, 0, ...
+                ['the second pass read 0 stimulus_presentation bodies, so the ' ...
+                 'per-kind report describes nothing -- Soph holds 175']);
+        end
+
         function testTheMigratedSessionOpensAndReadsBackThroughNDI(testCase)
             % THE HEADLINE. If this errors, nothing below it is meaningful.
             % Soph holds 33 sessions in ONE migrated database, so this opens

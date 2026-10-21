@@ -422,46 +422,7 @@ classdef TestMigrateLocalEtaDab < matlab.unittest.TestCase
             testCase.assertTrue(isstruct(r) && isfield(r, 'presentations_read'), ...
                 'the migrate result carries no stimulusSequence report');
 
-            viaSibling = 0;
-            if isfield(r, 'decomposed_via_epoch_sibling')
-                viaSibling = r.decomposed_via_epoch_sibling;
-            end
-            viaStimulator = 0;
-            if isfield(r, 'decomposed_via_stimulator')
-                viaStimulator = r.decomposed_via_stimulator;
-            end
-            fprintf(['\n  STIMULUS-PRESENTATION FOLD (Dab, #31) -- report-only\n' ...
-                     '    DENOMINATOR: %d presentation(s) read\n' ...
-                     '    decomposed to timed_sequence_manipulation: %d\n' ...
-                     '        animal via stimulus_response:      %d\n' ...
-                     '        animal via epoch, own session (FORK 1): %d\n' ...
-                     '        animal via stimulator element (no epoch element): %d\n' ...
-                     '        animal via epoch, sibling session (FORK 2): %d\n' ...
-                     '    refused (left as passthrough):             %d\n'], ...
-                r.presentations_read, r.presentations_decomposed, ...
-                r.decomposed_via_response, r.decomposed_via_epoch, ...
-                viaStimulator, viaSibling, r.presentations_refused);
-
-            % Histogram the refusal reasons. `refusals` is a cell of
-            % struct('id', ..., 'reason', ...) appended once per refusal.
-            counts = containers.Map('KeyType', 'char', 'ValueType', 'double');
-            for k = 1:numel(r.refusals)
-                why = r.refusals{k}.reason;
-                if isempty(why); why = '(empty reason)'; end
-                if isKey(counts, why)
-                    counts(why) = counts(why) + 1;
-                else
-                    counts(why) = 1;
-                end
-            end
-            ks = keys(counts);
-            if isempty(ks)
-                fprintf('        (no refusals recorded)\n');
-            else
-                for i = 1:numel(ks)
-                    fprintf('        %6d  %s\n', counts(ks{i}), ks{i});
-                end
-            end
+            ndi.unittest.migrate.printStimulusFoldReport(r, 'Dab');
 
             % FORK 1 is LIVE: it attributes a response-less presentation to the
             % animal recorded in its OWN session-scoped epoch (the `via epoch,
@@ -475,9 +436,10 @@ classdef TestMigrateLocalEtaDab < matlab.unittest.TestCase
             % is MEASURED AND DISARMED (2026-08-25): cross-session it gives 2-12
             % sibling subjects and the true animal for none of the 68, so `via
             % epoch, sibling session` reads 0. The residual is characterised by
-            % the reasons below; a refusal for "no grating parameter" means an
-            % animal WAS resolved but the stimuli are not gratings -- a
-            % separate, non-visual gap (#48).
+            % the reasons below; a refusal "refused by class: <NewStim class>"
+            % means an animal WAS resolved but the stimuli are not gratings
+            % (the class recogniser, Jess Haley 2026-10-21) -- a separate gap
+            % whose value model is still open (#48).
 
             % Denominator only: a run that read zero presentations would make
             % the histogram a statement about nothing. Dab holds 1242 of them.

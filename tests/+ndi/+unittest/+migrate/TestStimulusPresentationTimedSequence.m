@@ -304,7 +304,119 @@ classdef TestStimulusPresentationTimedSequence < matlab.unittest.TestCase
             testCase.verifyEmpty(body);
             testCase.verifyEqual(report.stimuli_read, 1);
             testCase.verifyEqual(report.non_grating_stimuli, 1);
-            testCase.verifyNotEmpty(report.reason);
+            testCase.verifyEqual(report.stimulus_kinds.hartleystim, 1);
+            testCase.verifySubstring(report.reason, 'hartleystim');
+        end
+
+        % ====== the NewStim class recogniser (Jess Haley, 2026-10-21) =====
+        % Every fixture below is a parameter shape counted in the six-corpus
+        % stimulus census (2026-10-21), with values from the census ranges.
+
+        function testASineGratingIsImageType2AndFolds(testCase)
+            pres = presentationBody('pres_sine', [1 2], ...
+                { gratingStim(0, 0.04, 0.5), blankStim() });
+            [m, gratings, ~, ~, report] = emit(testCase, pres);
+            testCase.verifyNotEmpty(m);
+            testCase.verifyEqual(numel(gratings), 2);
+            testCase.verifyEqual(report.stimulus_kinds.grating, 1);
+            testCase.verifyEqual(report.stimulus_kinds.blank, 1);
+            testCase.verifyEqual(report.non_grating_stimuli, 0);
+        end
+
+        function testASquareGratingIsImageType1AndFolds(testCase)
+            % Dab: periodicstim imageType 1, animType 4 (1,812 stimuli).
+            sq = gratingStim(90, 0.1, 2);
+            sq.parameters.imageType = 1;
+            pres = presentationBody('pres_square', [1 2], { sq, blankStim() });
+            [m, gratings, ~, ~, report] = emit(testCase, pres);
+            testCase.verifyNotEmpty(m);
+            testCase.verifyEqual(numel(gratings), 2);
+            testCase.verifyEqual(report.stimulus_kinds.grating, 1);
+        end
+
+        function testPeriodicstimImageType0BarsAreRefused(testCase)
+            % Dab: imageType 0 (a uniform field) in an oriented thin window,
+            % stepped by lineoffset -- flashed bars (17,260 stimuli). Its
+            % sFrequency has no effect, so it is not a grating.
+            pres = presentationBody('pres_bars', [1 2], { barStim(0), blankStim() });
+            [m, gratings, ~, ~, report] = emit(testCase, pres);
+            testCase.verifyEmpty(m);
+            testCase.verifyEmpty(gratings);
+            testCase.verifyEqual(report.stimulus_kinds.periodicstim_bars, 1);
+            testCase.verifyEqual(report.stimulus_kinds.blank, 1);
+            testCase.verifyEqual(report.non_grating_stimuli, 1);
+            testCase.verifySubstring(report.reason, 'periodicstim imageType 0');
+        end
+
+        function testStochasticGridNoiseIsRefusedDespiteItsAngle(testCase)
+            % Soph: 57 presentations of 20 noise stimuli each, every one
+            % carrying `angle = 0` (the grid's rotation). The old key test
+            % passed them as gratings at 0 cyc/deg.
+            pres = presentationBody('pres_noise', [1 2 3], ...
+                { noiseStim(1), noiseStim(2), noiseStim(3) });
+            [m, ~, ~, ~, report] = emit(testCase, pres);
+            testCase.verifyEmpty(m);
+            testCase.verifyEqual(report.stimulus_kinds.stochasticgridstim, 3);
+            testCase.verifyEqual(report.stimulus_kinds.grating, 0);
+            testCase.verifySubstring(report.reason, 'stochasticgridstim');
+        end
+
+        function testBlinkingstimIsRefused(testCase)
+            % Dab: 129 presentations, one blinkingstim each.
+            pres = presentationBody('pres_blink', 1, blinkingStim());
+            [m, ~, ~, ~, report] = emit(testCase, pres);
+            testCase.verifyEmpty(m);
+            testCase.verifyEqual(report.stimulus_kinds.blinkingstim, 1);
+            testCase.verifySubstring(report.reason, 'blinkingstim');
+        end
+
+        function testShapemoviestimIsRefusedWithAngleOrDisparity(testCase)
+            % Dab: 37 presentations label the movie with `angle` (passed by
+            % the old key test) and 43 with `disparity`.
+            pres = presentationBody('pres_shape', [1 2 3], ...
+                { shapeMovieStim('angle', 22.5), shapeMovieStim('disparity', -400), ...
+                  blankStim() });
+            [m, ~, ~, ~, report] = emit(testCase, pres);
+            testCase.verifyEmpty(m);
+            testCase.verifyEqual(report.stimulus_kinds.shapemoviestim, 2);
+            testCase.verifyEqual(report.stimulus_kinds.blank, 1);
+            testCase.verifySubstring(report.reason, 'shapemoviestim');
+        end
+
+        function testAnUnrecognisedParameterSetIsRefused(testCase)
+            % The positive rule: a set no class's required fields describe is
+            % never a grating, even when it carries angle / sFrequency /
+            % tFrequency (which the old key test accepted).
+            loose = struct('parameters', struct('angle', 45, ...
+                'sFrequency', 0.04, 'tFrequency', 2));
+            pres = presentationBody('pres_loose', 1, loose);
+            [m, ~, ~, ~, report] = emit(testCase, pres);
+            testCase.verifyEmpty(m);
+            testCase.verifyEqual(report.stimulus_kinds.unrecognised, 1);
+            testCase.verifySubstring(report.reason, 'unrecognised');
+        end
+
+        function testAPeriodicstimWithAnotherImageTypeIsRefused(testCase)
+            odd = gratingStim(0, 0.04, 0.5);
+            odd.parameters.imageType = 5;
+            pres = presentationBody('pres_odd', 1, odd);
+            [m, ~, ~, ~, report] = emit(testCase, pres);
+            testCase.verifyEmpty(m);
+            testCase.verifyEqual(report.stimulus_kinds.periodicstim_other, 1);
+        end
+
+        function testKindsAreCountedEvenWhenNoAnimalResolves(testCase)
+            % The per-kind breakdown is taken before the animal is resolved,
+            % so a subject-less presentation still reports what it holds.
+            pres = presentationBody('pres_none', [1 2], ...
+                { noiseStim(1), blankStim() });
+            r = ndi.migrate.internal.bodyResolver({pres});
+            [m, ~, ~, ~, report] = ...
+                ndi.migrate.internal.stimulusPresentationToTimedSequence(pres, r, 'V_eta');
+            testCase.verifyEmpty(m);
+            testCase.verifyEqual(report.stimulus_kinds.stochasticgridstim, 1);
+            testCase.verifyEqual(report.stimulus_kinds.blank, 1);
+            testCase.verifySubstring(report.reason, 'no responding animal');
         end
 
         function testABlankStimulusIsInScope(testCase)
@@ -513,7 +625,7 @@ classdef TestStimulusPresentationTimedSequence < matlab.unittest.TestCase
             % Operating Rule 5. A refusal must print the same SHAPE as a
             % success, so "fell through" is never inferable only by
             % subtracting two other counters.
-            expected = {'stimuli_read'; 'non_grating_stimuli'; ...
+            expected = {'stimuli_read'; 'non_grating_stimuli'; 'stimulus_kinds'; ...
                 'distinct_gratings'; 'blank_gratings'; 'trials'; ...
                 'trials_out_of_range'; 'trials_with_timing'; 'timing_source'; ...
                 'basis_source'; 'shared_refs'; 'frames'; ...
@@ -800,6 +912,54 @@ s = struct('parameters', struct( ...
     'background', 0.5, 'backdrop', 0.5, 'reps', 1, 'fps', 10, ...
     'randState', [0.8301061479240671 0.6704957765200832 0.08449867537860833], ...
     'dispprefs', {{'BGposttime', 3}}));
+end
+
+function s = barStim(lineoffset)
+%BARSTIM periodicstim imageType 0, windowShape 2 (oriented rectangle), a
+%   7-pixel-tall rect -- one light bar of Dab's flashed-bar map (census key set
+%   "periodicstim + linenumber lineoffset", 17,260 stimuli).
+s = gratingStim(0, 0.1, 0);
+s.parameters.imageType = 0;
+s.parameters.animType = 0;
+s.parameters.windowShape = 2;
+s.parameters.rect = [-57 336 743 343];
+s.parameters.linenumber = 1;
+s.parameters.lineoffset = lineoffset;
+end
+
+function s = noiseStim(seed)
+%NOISESTIM Soph's stochasticgridstim noise: key set {BG N angle dispprefs dist
+%   fps pixSize randState rect values}, N 100, pixSize [50 50], rect
+%   [0 0 800 600], 2-colour B/W values, angle 0, fps 15; within a
+%   presentation only randState varies.
+s = struct('parameters', struct( ...
+    'BG', [128 128 128], 'N', 100, 'angle', 0, ...
+    'dispprefs', {{'BGpretime', 0, 'BGposttime', 0}}, ...
+    'dist', [1 1], 'fps', 15, 'pixSize', [50 50], ...
+    'randState', [seed 0.6704957765200832 0.08449867537860833], ...
+    'rect', [0 0 800 600], 'values', [0 0 0; 255 255 255]));
+end
+
+function s = blinkingStim()
+%BLINKINGSTIM Dab's blinkingstim: key set {BG bgpause dispprefs fps pixSize
+%   randState random rect repeat value}; BG [128 128 128], value [0 0 0],
+%   random 1, repeat 30, fps 10, bgpause 0, pixSize [40 40], a 400x400 rect.
+s = struct('parameters', struct( ...
+    'BG', [128 128 128], 'bgpause', 0, ...
+    'dispprefs', {{'BGposttime', 3}}, ...
+    'fps', 10, 'pixSize', [40 40], ...
+    'randState', [0.8301061479240671 0.6704957765200832 0.08449867537860833], ...
+    'random', 1, 'rect', [200 100 600 500], 'repeat', 30, 'value', [0 0 0]));
+end
+
+function s = shapeMovieStim(labelName, labelValue)
+%SHAPEMOVIESTIM Dab's shapemoviestim: key set {BG N dispprefs fps isi rect
+%   scale} plus the experimenter's label `angle` or `disparity`; BG [0 0 0],
+%   N 160, fps 100, isi 0.01, rect [0 0 800 600], scale 1, dispprefs {}.
+p = struct('BG', [0 0 0], 'N', 160, 'dispprefs', {{}}, 'fps', 100, ...
+    'isi', 0.01, 'rect', [0 0 800 600], 'scale', 1);
+p.(labelName) = labelValue;
+s = struct('parameters', p);
 end
 
 function t = trialTime(onset, offset)

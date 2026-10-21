@@ -2351,6 +2351,10 @@ function [convertResult, report] = resolveStimulusPresentations(convertResult, b
         [manip, gratings, bodyDoc, ~, rep, extra] = ...
             ndi.migrate.internal.stimulusPresentationToTimedSequence( ...
                 b, resolver, options.TargetVersion, sequence);
+        % THE PER-KIND BREAKDOWN (NewStim class, per stimulus), summed over
+        % every presentation read, and the presentation-level row it falls in
+        % (its set of stimulus kinds, decomposed or refused).
+        report = tallyStimulusKinds(report, rep, ~isempty(manip));
         if isempty(manip)
             % Left as passthrough with the reason recorded -- a refusal and a
             % crash must not print the same result.
@@ -2523,9 +2527,55 @@ function r = newStimulusSequenceReport()
         'decomposed_via_epoch',       0, ...
         'decomposed_via_stimulator',  0, ...
         'decomposed_via_epoch_sibling', 0, ...
+        'stimulus_kinds',             [], ...
+        'presentations_by_kind',      struct('kinds', {}, 'decomposed', {}, 'refused', {}), ...
         'flattening_pass',            'GATED OFF -- retained for the presentation-less single-grating case, which has no v1 source', ...
         'refusals',                   {{}}, ...
         'hartley',                    []);
+end
+
+function report = tallyStimulusKinds(report, rep, decomposed)
+%TALLYSTIMULUSKINDS Add one presentation's per-kind stimulus counts to the
+%   pass report: `stimulus_kinds` sums them over all presentations read, and
+%   `presentations_by_kind` counts presentations by the SET of kinds they hold
+%   (e.g. 'blank+grating', 'blank+stochasticgridstim'), split decomposed /
+%   refused. A presentation whose report carries no `stimulus_kinds` is
+%   counted under '(not classified)'.
+    kindsKey = '(not classified)';
+    if isfield(rep, 'stimulus_kinds') && isstruct(rep.stimulus_kinds)
+        k = rep.stimulus_kinds;
+        if isempty(report.stimulus_kinds)
+            report.stimulus_kinds = k;
+        else
+            fns = fieldnames(k);
+            for f = 1:numel(fns)
+                report.stimulus_kinds.(fns{f}) = ...
+                    report.stimulus_kinds.(fns{f}) + k.(fns{f});
+            end
+        end
+        fns = fieldnames(k);
+        held = fns(cellfun(@(n) k.(n) > 0, fns));
+        if isempty(held)
+            kindsKey = '(no stimuli)';
+        else
+            kindsKey = strjoin(sort(held(:)'), '+');
+        end
+    end
+    rows = report.presentations_by_kind;
+    hit = 0;
+    for r = 1:numel(rows)
+        if strcmp(rows(r).kinds, kindsKey); hit = r; break; end
+    end
+    if hit == 0
+        rows(end+1) = struct('kinds', kindsKey, 'decomposed', 0, 'refused', 0);
+        hit = numel(rows);
+    end
+    if decomposed
+        rows(hit).decomposed = rows(hit).decomposed + 1;
+    else
+        rows(hit).refused = rows(hit).refused + 1;
+    end
+    report.presentations_by_kind = rows;
 end
 
 function id = bodyBaseId(b)

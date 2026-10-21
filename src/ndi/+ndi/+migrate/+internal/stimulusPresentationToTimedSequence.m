@@ -241,6 +241,22 @@ if isempty(presentationId) || isempty(sessionId) || isempty(datestamp)
     return;
 end
 
+% --- WHAT KIND OF STIMULUS EACH ONE IS (NewStim class recogniser) -------------
+% Classified BEFORE the animal is resolved, so the per-kind counts are reported
+% for every presentation, including the ones refused for having no animal. The
+% classification is used again by the grating guard below.
+earlyBlock = struct();
+if isfield(v1Body, 'stimulus_presentation') && isstruct(v1Body.stimulus_presentation)
+    earlyBlock = v1Body.stimulus_presentation;
+end
+earlyStimuli = stimulusArray(earlyBlock);
+stimulusKinds = cell(1, numel(earlyStimuli));
+for i = 1:numel(earlyStimuli)
+    stimulusKinds{i} = newStimKind(stimParameters(earlyStimuli, i));
+    report.stimulus_kinds.(stimulusKinds{i}) = ...
+        report.stimulus_kinds.(stimulusKinds{i}) + 1;
+end
+
 % subject_id is mustBeNonEmpty on subject_statement and RequiredDependencies is
 % armed by default (+did2/+schema/cache.m), so no animal means no manipulation.
 animals = resolver.subjectsForPresentation(presentationId);
@@ -484,18 +500,35 @@ end
 % a hollow document with every field looking measured -- the shape `isFragment`
 % and the vacuous-field census exist to catch. So a presentation containing any
 % non-grating stimulus is REFUSED here and left as it is.
+%
+% THE GUARD RECOGNISES THE NEWSTIM CLASS, NOT A WORD (Jess Haley, 2026-10-21).
+% It used to pass any stimulus carrying one of angle / sFrequency / tFrequency
+% (or a blank flag). `angle` is a parameter of three NewStim classes with three
+% meanings, so the key test let through Soph's 57 stochasticgridstim noise
+% presentations (`angle` is the grid's rotation) as hollow gratings at 0 cyc/deg,
+% Dab's 37 shapemoviestim+angle presentations, and Dab's 171 periodicstim
+% imageType 0 presentations (a uniform field in a thin window: flashed bars,
+% whose sFrequency has no effect). Each NewStim class is now recognised by the
+% required-field set its own verify*.m checks (newStimKind below), and only a
+% periodicstim with imageType 1 (square) or 2 (sine), or a blank, is a grating.
+% Every other kind is REFUSED with its class named. No new value kind is
+% minted here: how noise, bars and shape movies are modelled is still open.
 nonGrating = 0;
-for i = 1:numel(stimuli)
-    if ~isGratingParameters(stimParameters(stimuli, i))
+refusedKinds = {};
+for i = 1:numel(stimulusKinds)
+    if ~any(strcmp(stimulusKinds{i}, {'grating', 'blank'}))
         nonGrating = nonGrating + 1;
+        if ~any(strcmp(stimulusKinds{i}, refusedKinds))
+            refusedKinds{end+1} = stimulusKinds{i}; %#ok<AGROW>
+        end
     end
 end
 report.non_grating_stimuli = nonGrating;
 if nonGrating > 0
-    report.reason = sprintf(['%d of %d stimuli carry no grating parameter ' ...
-        '(angle / spatial frequency / temporal frequency) and are not marked ' ...
-        'blank -- outside the signed sequence-of-gratings case'], ...
-        nonGrating, numel(stimuli));
+    labels = cellfun(@newStimKindLabel, sort(refusedKinds), 'UniformOutput', false);
+    report.reason = ['not a sequence of gratings, refused by class: ' ...
+        strjoin(labels, '; ') ...
+        ' -- outside the signed sequence-of-gratings case'];
     return;
 end
 
@@ -890,38 +923,120 @@ function tf = bodyRequired(timingOk)
 tf = ~isempty(timingOk) && all(timingOk);
 end
 
-function tf = isGratingParameters(params)
-%ISGRATINGPARAMETERS True when this v1 parameter set describes a grating this
-%   function can type WITHOUT inventing anything: it carries at least one of
-%   the three defining quantities gratingValueFromParameters reads, or it says
-%   outright that it is a blank. Deliberately a POSITIVE test -- listing the
-%   generator keys to exclude would pass every stimulus shape nobody has met
-%   yet, which is the wrong default for a mapper whose misses are silent zeros.
-%   The names are exactly the ones gratingValueFromParameters looks for, so the
-%   two cannot drift into disagreeing about what is readable.
-tf = false;
-defining = {'angle', 'orientation', ...
-            'sFrequency', 'spatial_frequency', 'sf', ...
-            'tFrequency', 'temporal_frequency', 'tf'};
-for k = 1:numel(defining)
-    if isfield(params, defining{k}) && ~isempty(params.(defining{k}))
-        tf = true;
-        return;
-    end
+function kind = newStimKind(params)
+%NEWSTIMKIND The NewStim class (and, for periodicstim, the image type) of ONE v1
+%   stimulus parameter set. The v1 document does not record the class
+%   (NDI's NewStimStims reader keeps only getparameters(...)), so it is
+%   RECOGNISED from the required-field set each class's own verify*.m checks
+%   (vhlab-NewStim-matlab, Stimuli/@<class>/private/verify*.m). A POSITIVE test:
+%   a parameter set no class matches is `unrecognised`, never a grating.
+%
+%     blank               `isblank` (or is_blank / blank) true -- a NewStim
+%                         convention, not a class; every blank in the corpora is
+%                         a 1x1-pixel grey stochasticgridstim
+%     grating             periodicstim, imageType 1 (square) or 2 (sine)
+%     periodicstim_bars   periodicstim, imageType 0 (a uniform field)
+%     periodicstim_other  periodicstim, any other imageType
+%     stochasticgridstim  noise grid
+%     blinkingstim        sparse blinking squares
+%     shapemoviestim      shape movie (the shapes are not in getparameters)
+%     hartleystim         a Hartley generator recipe (enumerated elsewhere)
+%     ambiguous           more than one class's required set is present
+%     unrecognised        no class's required set is present
+kind = 'unrecognised';
+if ~isstruct(params) || ~isscalar(params)
+    return;
 end
 blankNames = {'isblank', 'is_blank', 'blank'};
 for k = 1:numel(blankNames)
     if isfield(params, blankNames{k}) && ~isempty(params.(blankNames{k}))
-        tf = true;
-        return;
+        v = params.(blankNames{k});
+        if (isnumeric(v) || islogical(v)) && logical(v(1))
+            kind = 'blank';
+            return;
+        end
     end
 end
+classes = struct( ...
+    'name', {'periodicstim', 'stochasticgridstim', 'blinkingstim', ...
+             'shapemoviestim', 'hartleystim'}, ...
+    'required', { ...
+        {'imageType', 'animType', 'flickerType', 'angle', 'chromhigh', ...
+         'chromlow', 'sFrequency', 'sPhaseShift', 'distance', 'tFrequency', ...
+         'barWidth', 'rect', 'nCycles', 'contrast', 'background', ...
+         'backdrop', 'barColor', 'nSmoothPixels', 'fixedDur', ...
+         'windowShape', 'loops', 'dispprefs'}, ...                  % verifyperiodicstim.m
+        {'BG', 'dist', 'values', 'rect', 'pixSize', 'N', 'randState', ...
+         'dispprefs'}, ...                                           % verifystochasticgridstim.m
+        {'BG', 'value', 'rect', 'pixSize', 'repeat', 'bgpause', 'fps', ...
+         'randState', 'dispprefs'}, ...                              % @blinkingstim verify.m
+        {'rect', 'BG', 'scale', 'fps', 'N', 'isi', 'dispprefs'}, ... % verifyshapemoviestim.m
+        {'M', 'K_absmax', 'L_absmax', 'sfmax'}});
+        % hartleystim: its verifyhartleystim.m is a verbatim copy of
+        % periodicstim's and does not describe what the class writes; the
+        % generator recipe on 20211116 (10 of 10) carries these four keys and
+        % none of sFrequency / tFrequency / imageType.
+matched = {};
+for c = 1:numel(classes)
+    if all(isfield(params, classes(c).required))
+        matched{end+1} = classes(c).name; %#ok<AGROW>
+    end
+end
+if isempty(matched)
+    return;
+end
+if numel(matched) > 1
+    kind = 'ambiguous';
+    return;
+end
+kind = matched{1};
+if strcmp(kind, 'periodicstim')
+    t = params.imageType;
+    if isnumeric(t) && isscalar(t) && any(t == [1 2])
+        kind = 'grating';
+    elseif isnumeric(t) && isscalar(t) && t == 0
+        kind = 'periodicstim_bars';
+    else
+        kind = 'periodicstim_other';
+    end
+end
+end
+
+function label = newStimKindLabel(kind)
+%NEWSTIMKINDLABEL The reason-string name of a refused kind.
+switch kind
+    case 'periodicstim_bars'
+        label = 'periodicstim imageType 0 (a uniform field: bars, not a grating)';
+    case 'periodicstim_other'
+        label = 'periodicstim with an imageType other than 0, 1 or 2';
+    case 'stochasticgridstim'
+        label = 'stochasticgridstim (noise)';
+    case 'blinkingstim'
+        label = 'blinkingstim (sparse blinking squares)';
+    case 'shapemoviestim'
+        label = 'shapemoviestim (the drawn shapes are not in the v1 document)';
+    case 'hartleystim'
+        label = 'hartleystim (a generator recipe; no hartley_calc enumeration supplied)';
+    case 'ambiguous'
+        label = 'a parameter set matching more than one NewStim class';
+    otherwise
+        label = 'an unrecognised parameter set (no NewStim class matches)';
+end
+end
+
+function k = newStimKindCounts()
+%NEWSTIMKINDCOUNTS One counter per kind newStimKind can return, all present
+%   and zero, so every report carries the same fields (Rule 5).
+k = struct('grating', 0, 'blank', 0, 'periodicstim_bars', 0, ...
+    'periodicstim_other', 0, 'stochasticgridstim', 0, 'blinkingstim', 0, ...
+    'shapemoviestim', 0, 'hartleystim', 0, 'ambiguous', 0, 'unrecognised', 0);
 end
 
 function r = newReport()
 r = struct( ...
     'stimuli_read',        0, ...
     'non_grating_stimuli', 0, ...
+    'stimulus_kinds',      newStimKindCounts(), ...
     'distinct_gratings',   0, ...
     'blank_gratings',      0, ...
     'trials',              0, ...
@@ -1005,7 +1120,7 @@ function params = stimParameters(stimuli, idx)
 %STIMPARAMETERS One stimulus's v1 parameter struct, or an empty struct.
 %   SCALAR is required, not just struct: gratingValueFromParameters declares
 %   `(1,1) struct`, so a non-scalar would throw out of a batch pass. Returning
-%   the blank instead routes the oddity into isGratingParameters, which refuses
+%   the empty struct instead routes the oddity into newStimKind (unrecognised), which refuses
 %   the document with a stated reason -- a refusal beats an exception, and both
 %   beat mapping an unreadable shape onto eight zeros.
 params = struct();
