@@ -225,6 +225,46 @@ if any(strcmp(options.Mode, {'all', 'sites'}))
     end
 end
 
+% ======================= 'sites': a site CONDITION ======================
+% A statement that names its area as a condition {variable NCIT:C13717
+% "Anatomic Site", term <UBERON node>} -- DID-matlab #218's ontology_image
+% raster, one intensity observation of its region (decided 2026-10-21,
+% [ontology image is an observation of its region],
+% V_eta_spatial_transcriptomics_plan.md) -- is about that region: it moves onto
+% the subject's part for the area (no side), and the condition is dropped
+% because the part now says it.
+if any(strcmp(options.Mode, {'all', 'sites'}))
+    for i = 1:n
+        if removeMask(i); continue; end
+        s = structs{i};
+        [k, area] = siteCondition(s);
+        if k == 0; continue; end
+        report.site_conditions_seen = report.site_conditions_seen + 1;
+        if ~isAnatomical(area)
+            report.site_conditions_not_uberon = report.site_conditions_not_uberon + 1;
+            continue;
+        end
+        subject = S.aboutId(s);
+        [ok, why, onSlice] = movableSubject(idx, subject);
+        if ~ok
+            report.(why) = report.(why) + 1;
+            continue;
+        end
+        [partId, idx, newBodies, report, nonUberon] = findOrMintPart(idx, ...
+            subject, area, [], s, report, nonUberon);
+        if ~isempty(newBodies)
+            partBodies = [partBodies, newBodies]; %#ok<AGROW>
+            if onSlice
+                report.parts_minted_on_slices = report.parts_minted_on_slices + 1;
+            end
+        end
+        s = dropCondition(s, k);
+        structs{i} = S.setAbout(s, partId);
+        report.site_conditions_retargeted = report.site_conditions_retargeted + 1;
+        changed = true;
+    end
+end
+
 % ======================= 'located' =====================================
 if any(strcmp(options.Mode, {'all', 'located'}))
     % (1) where each instrument is: the site term observations about it
@@ -374,6 +414,9 @@ r = struct( ...
     'site_observations_promoted',            0, ...
     'site_observations_not_co_anchored',     0, ...
     'site_observations_unanchored',          0, ...
+    'site_conditions_seen',                  0, ...
+    'site_conditions_not_uberon',            0, ...
+    'site_conditions_retargeted',            0, ...
     'sites_laterality_folded',               0, ...
     'sites_several_areas',                   0, ...
     'sites_several_sides',                   0, ...
@@ -568,6 +611,48 @@ function tf = isSiteObservation(s)
 S = ndi.migrate.internal.etaShape;
 tf = S.isStatement(s, 'observation', 'term') ...
     && S.isVariable(s, 'anatomical location');
+end
+
+function [k, area] = siteCondition(s)
+%SITECONDITION The index of S's anatomic-site condition and its term (0, []
+%   when none): an entry of `statement.conditions` whose variable is
+%   NCIT:C13717 (by node; by the registered or the older label when the node
+%   is empty) and that carries a term.
+k = 0;
+area = [];
+if ~(isfield(s, 'statement') && isstruct(s.statement) && isfield(s.statement, 'conditions'))
+    return;
+end
+c = s.statement.conditions;
+want = ndi.migrate.internal.etaShape.anatomicalLocationVariable();
+for j = 1:numel(c)
+    if iscell(c); e = c{j}; else; e = c(j); end
+    if ~isstruct(e) || ~isfield(e, 'variable') || ~isstruct(e.variable); continue; end
+    v = ndi.migrate.internal.etaShape.asTerm(e.variable);
+    if ~isempty(strtrim(v.node))
+        hit = strcmpi(strtrim(v.node), want.node);
+    else
+        hit = any(strcmpi(strtrim(v.name), {want.name, 'anatomical location'}));
+    end
+    if ~hit || ~isfield(e, 'term'); continue; end
+    t = e.term;
+    if isstruct(t) && isfield(t, 'value') && ~isfield(t, 'node'); t = t(1).value; end
+    if ~isstruct(t); continue; end
+    k = j;
+    area = ndi.migrate.internal.etaShape.asTerm(t);
+    return;
+end
+end
+
+function s = dropCondition(s, k)
+%DROPCONDITION S without its K-th condition (the field goes when none is left).
+c = s.statement.conditions;
+c(k) = [];
+if isempty(c)
+    s.statement = rmfield(s.statement, 'conditions');
+else
+    s.statement.conditions = c;
+end
 end
 
 function tf = isManipulation(s)

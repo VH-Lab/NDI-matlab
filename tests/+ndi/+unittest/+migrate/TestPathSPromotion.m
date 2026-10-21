@@ -138,6 +138,58 @@ classdef TestPathSPromotion < matlab.unittest.TestCase
             testCase.verifyFalse(changed, 'a node other than C13717 is not the site variable');
         end
 
+        function testASiteConditionMovesTheObservationOntoItsPart(testCase)
+            % DID-matlab #218's ontology_image raster: ONE intensity
+            % observation of the subject naming its area as a condition
+            % {NCIT:C13717 "Anatomic Site", UBERON term}. The observation
+            % moves onto the subject's part for that area (no side) and the
+            % condition is dropped.
+            obs = conditionObs('img_1', 'animal_1', 'uberon:0002436', 'primary visual cortex');
+            structs = {organism('animal_1'), obs, makeAnchor('img_anchor')};
+            [kept, minted, changed, report] = ...
+                ndi.migrate.internal.pathSPromotion(structs, 'Mode', 'sites');
+            testCase.verifyTrue(changed);
+            testCase.verifyEqual(report.site_conditions_seen, 1);
+            testCase.verifyEqual(report.site_conditions_retargeted, 1);
+            part = firstOfClass(minted, 'entity');
+            testCase.verifyEqual(part.entity.type.name, 'tissue');
+            moved = byId(kept, 'img_1');
+            testCase.verifyEqual(depValue(moved, 'entity_id'), part.base.id);
+            testCase.verifyFalse(isfield(moved.statement, 'conditions'), ...
+                'the anatomic-site condition must be dropped once the part says it');
+            kinds = assertionsAbout(minted, part.base.id);
+            testCase.verifyEqual(numel(kinds), 1, 'no laterality: the area only');
+            testCase.verifyEqual(kinds{1}.term.value.node, 'uberon:0002436');
+            % a second observation of the same area reuses the part
+            obs2 = conditionObs('img_2', 'animal_1', 'UBERON:0002436', 'primary visual cortex');
+            [kept2, minted2] = ndi.migrate.internal.pathSPromotion( ...
+                [kept, minted, {obs2}], 'Mode', 'sites');
+            testCase.verifyEmpty(minted2, 'the existing part is reused');
+            testCase.verifyEqual(depValue(byId(kept2, 'img_2'), 'entity_id'), part.base.id);
+        end
+
+        function testASiteConditionThatIsNotUberonOrNotAboutAnOrganismStays(testCase)
+            % only a UBERON area is a region; other conditions stay
+            obs = conditionObs('img_1', 'animal_1', 'CL:0000540', 'neuron');
+            [kept, ~, changed, report] = ndi.migrate.internal.pathSPromotion( ...
+                {organism('animal_1'), obs, makeAnchor('img_anchor')}, 'Mode', 'sites');
+            testCase.verifyFalse(changed);
+            testCase.verifyEqual(report.site_conditions_not_uberon, 1);
+            testCase.verifyTrue(isfield(byId(kept, 'img_1').statement, 'conditions'));
+            % about a device: not moved, counted
+            obs = conditionObs('img_1', 'probe_1', 'uberon:0002436', 'primary visual cortex');
+            [~, ~, changed, report] = ndi.migrate.internal.pathSPromotion( ...
+                {device('probe_1'), obs, makeAnchor('img_anchor')}, 'Mode', 'sites');
+            testCase.verifyFalse(changed);
+            testCase.verifyEqual(report.left_about_a_device, 1);
+            % a condition with another variable is not a site
+            obs = conditionObs('img_1', 'animal_1', 'uberon:0002436', 'primary visual cortex');
+            obs.statement.conditions(1).variable = term('NCIT:C25185', 'Laterality');
+            [~, ~, changed] = ndi.migrate.internal.pathSPromotion( ...
+                {organism('animal_1'), obs, makeAnchor('img_anchor')}, 'Mode', 'sites');
+            testCase.verifyFalse(changed);
+        end
+
         function testPreCompositeSiteBlockStillResolves(testCase)
             structs = withPreCompositeSite(pre88(treatmentWithSite('anch_1', ...
                 'animal_1', 'uberon:0002436', 'primary visual cortex')));
@@ -846,4 +898,18 @@ for k = 1:numel(s.depends_on)
         v = s.depends_on(k).value; return;
     end
 end
+end
+
+function o = conditionObs(id, subjectId, node, name)
+% an intensity observation of SUBJECTID naming its area as a condition, as
+% DID-matlab #218's ontology_image raster writes it
+o = struct();
+o.document_class = dc('observation', ...
+    {'interaction', 'statement', 'base', 'intensity', 'value', 'data'});
+o.depends_on = [dep('entity_id', subjectId), dep('time_reference_id', 'img_anchor')];
+o.base = base(id);
+o.statement = struct('variable', term('NCIT:C221750', 'Imaging Signal Intensity'), ...
+    'conditions', struct('variable', term('NCIT:C13717', 'Anatomic Site'), ...
+        'term', term(node, name)));
+o.value = struct('data_body', true);
 end
