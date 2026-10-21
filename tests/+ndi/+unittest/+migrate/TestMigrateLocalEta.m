@@ -456,7 +456,13 @@ classdef TestMigrateLocalEta < matlab.unittest.TestCase
             stimEl  = 'aabb1122ccdd3344_5500000000000012';
             presId  = 'aabb1122ccdd3344_5500000000000013';
             respId  = 'aabb1122ccdd3344_5500000000000014';
+            % The session document: on did-schema #88 every document's
+            % `session_id` EDGE names the session entity, whose base.id IS
+            % the session id (V_eta_relation_inheritance_plan.md), so without
+            % one every edge in the graph dangles. It is also the referent of
+            % the manipulation's "during the session" time reference.
             bodies = { ...
+                jsonencode(makeSessionDoc(session())), ...
                 jsonencode(makeSubject(subjId)), ...
                 jsonencode(makeRecordingElement(recElem, subjId)), ...
                 jsonencode(makeStimulatorElement(stimEl, subjId)), ...
@@ -481,6 +487,10 @@ classdef TestMigrateLocalEta < matlab.unittest.TestCase
             verifyEqual(testCase, manip.item.value.item(:)', [0 1]);
             verifyEqual(testCase, manip.item.value.offset(:)', [4 9]);
             verifyEqual(testCase, manip.data.keys(1).quantity.value(:)', [0 5]);
+            tr = depValue(manip, 'time_reference_id');
+            verifyNotEmpty(testCase, tr, ...
+                ['the manipulation carries no time reference: the pass mints ' ...
+                 '"during the session" against the session document. ' resultDiag(result)]);
 
             % TWO DISTINCT STIMULI, so dedup must not collapse them (45 / 90).
             methods = findAllByClass(result.destination, 'method');
