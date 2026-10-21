@@ -387,7 +387,58 @@ NDI-matlab.
 - CI is green: did-schema `tests.yml` (the `gates.py` chain) and NDI-matlab
   `test-import-v2.yml`, which includes `TestTermRegistry`.
 
-## 8. What is v1 only
+## 8. Starting a new import
+
+Start from the template, `ndi.setup.conv.template`: copy
+`src/ndi/+ndi/+setup/+conv/+template/` to `+<yourlab>/` and work through it one
+stage at a time with the dataset's owner. It holds:
+
+| file | what it is |
+|---|---|
+| `import_V2.m` | the stage runner: `'Stages'`, `'Previous'`, `'Write'`, `'RunFolder'`, the preflight, the term check, the per-stage reports, the write |
+| `import_V2_spec.json` | the dataset's mapping (folder pattern, source table and columns, term NAMES, units, corrections); an empty skeleton with comments, and optional |
+| `import_V2_decisions.md` | the decision log, with "Current rules" at the top; keep it from day one |
+| `private/*Documents.m` | one helper per stage, each writing one example document through the public API, with comments saying what a real importer replaces |
+
+The stages run in a fixed order, and later stages read the ids earlier ones
+made: **sessions** (the dataset entity and its studies, then the sessions) ->
+**entities** -> **acquisition** (epochs, times, each raw file recorded by
+location) -> **manipulations** -> **observations** -> **calculations**. Run
+one at a time while building:
+
+```matlab
+r = ndi.setup.conv.template.import_V2(dataFolder, 'Stages', "sessions");
+r = ndi.setup.conv.template.import_V2(dataFolder, 'Stages', "entities", 'Previous', r);
+...
+r = ndi.setup.conv.template.import_V2(dataFolder, 'OutputRoot', outFolder, 'Write', true);
+```
+
+What the template does for you, and a new import should keep:
+
+- **Every stage reports its denominators**: read, written, skipped (each with
+  why) and errors (each with what), and the documents it built; read =
+  written + skipped + errors. On a normal run a row's error is reported and
+  the stage goes on; with `'RunFolder', 'none'` (test mode) it is thrown.
+  With `'Write'` the run keeps `import_log.txt` and `import_report.mat` in a
+  run folder.
+- **Terms by name** through `ndi.setup.V2.registeredTerm`; the run collects
+  every unregistered term and writes nothing until each is registered (see
+  section 7).
+- **Source values verbatim**: `source_value`, `source_unit` as its registered
+  term (`ndi.setup.V2.sourceUnit`), a tolerance where the source states one; a
+  hand-written time is approximate, [60 60] s. Corrections go through one
+  function, only while the source still reads the correction's `was`, and the
+  document says what it was.
+- **The raw data is never copied or written to**: recordings by location
+  (`ndi.setup.V2.attachFile(..., 'Ingest', false)`), sessions in their own
+  folders under `'OutputRoot'`, linked from the dataset.
+
+`TestTemplateImport` runs the template end to end on a tiny folder it writes,
+reads the documents back and checks every stage's denominators; copy it with
+the template and point it at your own fixture. The Haley import,
+`ndi.setup.conv.haley.import_V2`, is the full worked example.
+
+## 9. What is v1 only
 
 - `ndi.subject` is v1's class, with its `@` rule. Read a V2 subject as an
   `ndi.entity`.
