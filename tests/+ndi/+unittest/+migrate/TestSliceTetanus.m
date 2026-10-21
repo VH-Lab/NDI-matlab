@@ -280,15 +280,64 @@ classdef TestSliceTetanus < matlab.unittest.TestCase
                 verifyEqual(testCase, r.(f{1}), r0.(f{1}), f{1});
             end
 
-            % after the slices: every recording is on its slice and stays there
+            % after the slices (Jess Haley, 2026-10-21, "a"): every recording
+            % points at the BNST part OF ITS SLICE, and the slice is part of
+            % the animal (animal -> slice -> region). One part per slice and
+            % region, shared by every recording on that slice; the slice
+            % sliceTetanus minted is reused, never a second one.
             after = applyPlan(k1, plan);
+            sliceOf = containers.Map();      % recording id -> slice it was on
+            slices = mintedEntities(plan, 'tissue');
+            sliceIds = cellfun(@(b) b.base.id, slices, 'UniformOutput', false);
+            for k = 1:numel(after)
+                b = after{k};
+                if strcmp(b.document_class.class_name, 'observation') ...
+                        && any(strcmp(dep(b, 'entity_id'), sliceIds))
+                    sliceOf(b.base.id) = dep(b, 'entity_id');
+                end
+            end
+            verifyEqual(testCase, double(sliceOf.Count), 98);
             [k2, m2, ch2, r2] = ndi.migrate.internal.pathSPromotion(after, 'Mode', 'located');
-            verifyFalse(testCase, ch2);
-            verifyEmpty(testCase, m2);
+            verifyTrue(testCase, ch2);
             verifyEqual(testCase, r2.located_instruments, numel(probes));
+            verifyEqual(testCase, r2.instruments_one_area, numel(probes));
             verifyEqual(testCase, r2.statements_with_located_instrument, 98);
-            verifyEqual(testCase, r2.left_about_a_tissue, 98);
-            verifyEqual(testCase, r2.observations_retargeted, 0);
+            verifyEqual(testCase, r2.statements_retargeted_onto_slice_parts, 98);
+            verifyEqual(testCase, r2.observations_retargeted, 98);
+            verifyEqual(testCase, r2.left_about_a_region_part, 0);
+            verifyEqual(testCase, r2.left_about_a_tissue_part_of_nothing, 0);
+            usedSlices = unique(sliceOf.values);
+            verifyEqual(testCase, r2.parts_minted, numel(usedSlices), ...
+                'one BNST part per slice, not one per recording');
+            verifyEqual(testCase, r2.parts_minted_on_slices, numel(usedSlices));
+            verifyEqual(testCase, [r2.anatomy_terms_inspected r2.anatomy_terms_uberon ...
+                r2.anatomy_terms_non_uberon], [98 98 0]);
+            % no new slice: the only tissue entities minted are the region parts
+            parentOf = containers.Map();
+            for k = 1:numel(m2)
+                if strcmp(m2{k}.document_class.class_name, 'directed_relation')
+                    parentOf(dep(m2{k}, 'child_id')) = dep(m2{k}, 'parent_id');
+                end
+            end
+            ids = sliceOf.keys;
+            for k = 1:numel(ids)
+                rec = [];
+                for j = 1:numel(k2)
+                    if strcmp(k2{j}.base.id, ids{k}); rec = k2{j}; break; end
+                end
+                part = dep(rec, 'entity_id');
+                verifyTrue(testCase, isKey(parentOf, part), ids{k});
+                verifyEqual(testCase, parentOf(part), sliceOf(ids{k}), ...
+                    'the region part is part of the slice the recording was on');
+            end
+            % the bath stays on the slice: same chain
+            for k = 1:numel(k2)
+                b = k2{k};
+                if strcmp(b.document_class.class_name, 'manipulation') ...
+                        && isfield(b, 'formulation')
+                    verifyFalse(testCase, isKey(parentOf, dep(b, 'entity_id')));
+                end
+            end
             verifyEqual(testCase, numel(k2), numel(after));
         end
     end

@@ -239,32 +239,293 @@ classdef TestPathSPromotion < matlab.unittest.TestCase
             testCase.verifyEqual(depValue(byId(k2, 'rec_1'), 'entity_id'), part.base.id);
         end
 
-        function testAProbeWithSeveralLocationsIsLeftAndCounted(testCase)
-            % Soph / 20211116: V1 AND a hemisphere on one probe -- which region
-            % the recording is from is not decided here
+        % ---- LATERALITY (Jess Haley, 2026-10-21, "a") ---------------------
+        % "When a v1 probe/element records several location terms, e.g. a
+        % brain area plus a hemisphere, the migrator makes ONE part entity for
+        % the area, and states the laterality on that part as a term
+        % assertion. It does NOT make a separate part entity per location
+        % term." The fixtures are the writer's shape: vhlab-contrast-matlab
+        % sophie_add_treatment_info.m writes TWO probe_location documents per
+        % probe, {UBERON:0002436, 'primary visual cortex'} and
+        % {UBERON:0002812, 'left cerebral hemisphere'} (or 0002813 right), and
+        % migrators_j.probe_location turns each into its own anchored site
+        % observation about the probe.
+
+        function testAreaPlusHemisphereIsOnePartWithLaterality(testCase)
             structs = [{organism('animal_1'), device('probe_1')}, ...
                 probeWithSite('anch_p', 'probe_1', 'UBERON:0002436', 'primary visual cortex'), ...
                 probeWithSite('anch_q', 'probe_1', 'UBERON:0002812', 'left cerebral hemisphere'), ...
                 recording('rec_1', 'animal_1', 'probe_1', 'anch_r')];
             [kept, minted, changed, report] = ...
                 ndi.migrate.internal.pathSPromotion(structs, 'Mode', 'located');
+            testCase.verifyTrue(changed);
+            testCase.verifyEqual(countClass(minted, 'entity'), 1, ...
+                'one part for the area, not one per location term');
+            part = firstOfClass(minted, 'entity');
+            testCase.verifyEqual(depValue(byId(kept, 'rec_1'), 'entity_id'), part.base.id);
+            kinds = assertionsAbout(minted, part.base.id);
+            testCase.verifyEqual(numel(kinds), 2);
+            v = cellfun(@(x) x.statement.variable.name, kinds, 'UniformOutput', false);
+            kind = kinds{strcmp(v, 'anatomical structure')};
+            lat = kinds{strcmp(v, 'Laterality')};
+            testCase.verifyEqual(kind.term.value.node, 'UBERON:0002436');
+            testCase.verifyEqual(lat.statement.variable.node, 'NCIT:C25185');
+            % the side is kept as the writer wrote it
+            testCase.verifyEqual(lat.term.value.node, 'UBERON:0002812');
+            testCase.verifyEqual(lat.term.value.name, 'left cerebral hemisphere');
+            rel = firstOfClass(minted, 'directed_relation');
+            testCase.verifyEqual(depValue(rel, 'parent_id'), 'animal_1');
+            % both probe_location facts stay on the probe
+            testCase.verifyNotEmpty(byId(kept, 'site_anch_p'));
+            testCase.verifyNotEmpty(byId(kept, 'site_anch_q'));
+            testCase.verifyEqual([report.located_instruments ...
+                report.instruments_area_with_laterality report.laterality_folded ...
+                report.laterality_assertions_minted report.parts_minted], [1 1 1 1 1]);
+            % the laterality term is not an anatomy term for the UBERON rule
+            testCase.verifyEqual([report.anatomy_terms_inspected ...
+                report.anatomy_terms_uberon report.anatomy_terms_non_uberon], [1 1 0]);
+        end
+
+        function testLeftAndRightProbesOnOneAnimalAreTwoParts(testCase)
+            % Soph: 17 of 32 animals carry a left-V1 AND a right-V1 probe. One
+            % part per (animal, area, side): never one V1 part with both sides
+            structs = [{organism('animal_1'), device('probe_L'), device('probe_R')}, ...
+                probeWithSite('a1', 'probe_L', 'UBERON:0002436', 'primary visual cortex'), ...
+                probeWithSite('a2', 'probe_L', 'UBERON:0002812', 'left cerebral hemisphere'), ...
+                probeWithSite('a3', 'probe_R', 'UBERON:0002436', 'primary visual cortex'), ...
+                probeWithSite('a4', 'probe_R', 'UBERON:0002813', 'right cerebral hemisphere'), ...
+                recording('rec_L', 'animal_1', 'probe_L', 'anch_r'), ...
+                recording('rec_L2', 'animal_1', 'probe_L', 'anch_r2'), ...
+                recording('rec_R', 'animal_1', 'probe_R', 'anch_r3')];
+            [kept, minted, ~, report] = ...
+                ndi.migrate.internal.pathSPromotion(structs, 'Mode', 'located');
+            testCase.verifyEqual(countClass(minted, 'entity'), 2);
+            pL = depValue(byId(kept, 'rec_L'), 'entity_id');
+            testCase.verifyEqual(depValue(byId(kept, 'rec_L2'), 'entity_id'), pL);
+            pR = depValue(byId(kept, 'rec_R'), 'entity_id');
+            testCase.verifyNotEqual(pL, pR);
+            testCase.verifyEqual(sideOf(minted, pL), 'UBERON:0002812');
+            testCase.verifyEqual(sideOf(minted, pR), 'UBERON:0002813');
+            testCase.verifyEqual(report.laterality_folded, 3);
+            % a second pass finds both parts by (animal, area, side)
+            [~, m2, ~, r2] = ndi.migrate.internal.pathSPromotion([kept, minted], 'Mode', 'located');
+            testCase.verifyEmpty(m2);
+            testCase.verifyEqual(r2.parts_found_existing, 2);
+        end
+
+        function testSeveralAreasAreLeftAndCounted(testCase)
+            % not laterality: two AREAS on one probe -- left as before, counted
+            structs = [{organism('animal_1'), device('probe_1')}, ...
+                probeWithSite('anch_p', 'probe_1', 'UBERON:0002436', 'primary visual cortex'), ...
+                probeWithSite('anch_q', 'probe_1', 'UBERON:0001950', 'neocortex'), ...
+                recording('rec_1', 'animal_1', 'probe_1', 'anch_r')];
+            [kept, minted, changed, report] = ...
+                ndi.migrate.internal.pathSPromotion(structs, 'Mode', 'located');
             testCase.verifyFalse(changed);
             testCase.verifyEmpty(minted);
             testCase.verifyEqual(depValue(byId(kept, 'rec_1'), 'entity_id'), 'animal_1');
-            testCase.verifyEqual(report.left_instrument_has_several_locations, 1);
+            testCase.verifyEqual(report.instruments_several_areas, 1);
+            testCase.verifyEqual(report.left_instrument_has_several_areas, 1);
         end
 
-        function testARecordingOnASliceStaysOnTheSlice(testCase)
-            % sliceTetanus moved it onto a slice (a tissue with no anatomical
-            % kind): a region part of a slice is not decided
-            structs = [{organism('animal_1'), device('probe_1'), tissue('slice_a')}, ...
-                probeWithSite('anch_p', 'probe_1', 'UBERON:0001880', 'BNST'), ...
-                recording('rec_1', 'slice_a', 'probe_1', 'anch_r')];
-            [kept, ~, changed, report] = ...
+        function testLateralityIsReadFromTheNodeNotTheLabel(testCase)
+            % a label that says "left" on a node not in the laterality table is
+            % an AREA: two areas, left and counted
+            structs = [{organism('animal_1'), device('probe_1')}, ...
+                probeWithSite('anch_p', 'probe_1', 'UBERON:0002436', 'primary visual cortex'), ...
+                probeWithSite('anch_q', 'probe_1', 'UBERON:0001950', 'left neocortex'), ...
+                recording('rec_1', 'animal_1', 'probe_1', 'anch_r')];
+            [~, ~, changed, report] = ...
                 ndi.migrate.internal.pathSPromotion(structs, 'Mode', 'located');
             testCase.verifyFalse(changed);
-            testCase.verifyEqual(depValue(byId(kept, 'rec_1'), 'entity_id'), 'slice_a');
-            testCase.verifyEqual(report.left_about_a_tissue, 1);
+            testCase.verifyEqual(report.instruments_several_areas, 1);
+        end
+
+        function testAHemisphereAloneIsTheRegion(testCase)
+            structs = [{organism('animal_1'), device('probe_1')}, ...
+                probeWithSite('anch_q', 'probe_1', 'UBERON:0002812', 'left cerebral hemisphere'), ...
+                recording('rec_1', 'animal_1', 'probe_1', 'anch_r')];
+            [kept, minted, ~, report] = ...
+                ndi.migrate.internal.pathSPromotion(structs, 'Mode', 'located');
+            part = firstOfClass(minted, 'entity');
+            testCase.verifyEqual(depValue(byId(kept, 'rec_1'), 'entity_id'), part.base.id);
+            kinds = assertionsAbout(minted, part.base.id);
+            testCase.verifyEqual(numel(kinds), 1);
+            testCase.verifyEqual(kinds{1}.term.value.node, 'UBERON:0002812');
+            testCase.verifyEqual(report.instruments_laterality_only, 1);
+            testCase.verifyEqual(report.laterality_assertions_minted, 0);
+        end
+
+        function testABareSideIsNoRegion(testCase)
+            structs = [{organism('animal_1'), device('probe_1')}, ...
+                probeWithSite('anch_q', 'probe_1', 'NCIT:C25229', 'Left'), ...
+                recording('rec_1', 'animal_1', 'probe_1', 'anch_r')];
+            [kept, minted, changed, report] = ...
+                ndi.migrate.internal.pathSPromotion(structs, 'Mode', 'located');
+            testCase.verifyFalse(changed);
+            testCase.verifyEmpty(minted);
+            testCase.verifyEqual(depValue(byId(kept, 'rec_1'), 'entity_id'), 'animal_1');
+            testCase.verifyEqual(report.left_instrument_has_no_region, 1);
+        end
+
+        function testBothSidesOnOneProbeAreLeftAndCounted(testCase)
+            structs = [{organism('animal_1'), device('probe_1')}, ...
+                probeWithSite('a1', 'probe_1', 'UBERON:0002436', 'primary visual cortex'), ...
+                probeWithSite('a2', 'probe_1', 'UBERON:0002812', 'left cerebral hemisphere'), ...
+                probeWithSite('a3', 'probe_1', 'UBERON:0002813', 'right cerebral hemisphere'), ...
+                recording('rec_1', 'animal_1', 'probe_1', 'anch_r')];
+            [~, minted, changed, report] = ...
+                ndi.migrate.internal.pathSPromotion(structs, 'Mode', 'located');
+            testCase.verifyFalse(changed);
+            testCase.verifyEmpty(minted);
+            testCase.verifyEqual(report.left_instrument_has_several_sides, 1);
+        end
+
+        function testAManipulationAndAnObservationShareTheSidedPart(testCase)
+            % manipulations and observations treat their subjects the same: a
+            % stimulation through the located probe lands on the same part
+            stim = recording('stim_1', 'animal_1', 'probe_1', 'anch_s');
+            stim{1}.document_class = dc('manipulation', ...
+                {'interaction', 'statement', 'base', 'current', 'value', 'data'});
+            structs = [{organism('animal_1'), device('probe_1')}, ...
+                probeWithSite('anch_p', 'probe_1', 'UBERON:0002436', 'primary visual cortex'), ...
+                probeWithSite('anch_q', 'probe_1', 'UBERON:0002812', 'left cerebral hemisphere'), ...
+                recording('rec_1', 'animal_1', 'probe_1', 'anch_r'), stim];
+            [kept, minted, ~, report] = ...
+                ndi.migrate.internal.pathSPromotion(structs, 'Mode', 'located');
+            testCase.verifyEqual(countClass(minted, 'entity'), 1);
+            part = firstOfClass(minted, 'entity');
+            testCase.verifyEqual(depValue(byId(kept, 'rec_1'), 'entity_id'), part.base.id);
+            testCase.verifyEqual(depValue(byId(kept, 'stim_1'), 'entity_id'), part.base.id);
+            testCase.verifyEqual([report.observations_retargeted ...
+                report.manipulations_retargeted report.laterality_folded], [1 1 2]);
+        end
+
+        function testSitesFoldTheSideOntoTheAreaPart(testCase)
+            % 'sites': one source document wrote an area AND a side for an
+            % injection (same anchor, same animal) -- one part, laterality
+            % asserted on it, both site observations superseded
+            s = treatmentWithSite('anch_1', 'animal_1', 'UBERON:0002812', ...
+                'left cerebral hemisphere');
+            s{end+1} = siteObs('anch_1', 'animal_1', 'UBERON:0002436', ...
+                'primary visual cortex', 'site_anch_1_area');
+            [kept, minted, changed, report] = ...
+                ndi.migrate.internal.pathSPromotion(s, 'Mode', 'sites');
+            testCase.verifyTrue(changed);
+            testCase.verifyEqual(countClass(minted, 'entity'), 1);
+            part = firstOfClass(minted, 'entity');
+            testCase.verifyEqual(depValue(byId(kept, 'manip_anch_1'), 'entity_id'), part.base.id);
+            testCase.verifyEmpty(byId(kept, 'site_anch_1'));
+            testCase.verifyEmpty(byId(kept, 'site_anch_1_area'));
+            testCase.verifyEqual(sideOf(minted, part.base.id), 'UBERON:0002812');
+            testCase.verifyEqual([report.site_observations_promoted ...
+                report.sites_laterality_folded report.laterality_assertions_minted], [1 1 1]);
+        end
+
+        % ---- SLICES (Jess Haley, 2026-10-21, "a") --------------------------
+        % "The recording observation points at a BNST part entity that is a
+        % part of the SLICE, and the slice is a part of the animal (animal ->
+        % slice -> region)." Dabrowska's writer (doImport.m step 6) gives
+        % every patch probe one probe_location, {UBERON:0001880, 'bed nucleus
+        % of stria terminalis (BNST)'}; sliceTetanus makes the slice.
+
+        function testARecordingOnASliceTargetsTheSlicesRegionPart(testCase)
+            structs = [{organism('animal_1'), device('probe_1'), device('probe_2'), ...
+                tissue('slice_a'), partOf('slice_a', 'animal_1')}, ...
+                probeWithSite('anch_p', 'probe_1', 'UBERON:0001880', ...
+                    'bed nucleus of stria terminalis (BNST)'), ...
+                probeWithSite('anch_p2', 'probe_2', 'UBERON:0001880', ...
+                    'bed nucleus of stria terminalis (BNST)'), ...
+                recording('rec_1', 'slice_a', 'probe_1', 'anch_r'), ...
+                recording('rec_2', 'slice_a', 'probe_2', 'anch_r2')];
+            [kept, minted, changed, report] = ...
+                ndi.migrate.internal.pathSPromotion(structs, 'Mode', 'located');
+            testCase.verifyTrue(changed);
+            testCase.verifyEqual(countClass(minted, 'entity'), 1, ...
+                'one region part per slice, shared by its recordings');
+            part = firstOfClass(minted, 'entity');
+            testCase.verifyEqual(depValue(byId(kept, 'rec_1'), 'entity_id'), part.base.id);
+            testCase.verifyEqual(depValue(byId(kept, 'rec_2'), 'entity_id'), part.base.id);
+            rel = firstOfClass(minted, 'directed_relation');
+            testCase.verifyEqual(depValue(rel, 'child_id'), part.base.id);
+            testCase.verifyEqual(depValue(rel, 'parent_id'), 'slice_a');
+            testCase.verifyEqual([report.statements_retargeted_onto_slice_parts ...
+                report.parts_minted_on_slices], [2 1]);
+        end
+
+        function testASliceRegionIsNotTheAnimalRegion(testCase)
+            % a recording on the slice and one still on the animal: two BNST
+            % parts, one under each
+            structs = [{organism('animal_1'), device('probe_1'), ...
+                tissue('slice_a'), partOf('slice_a', 'animal_1')}, ...
+                probeWithSite('anch_p', 'probe_1', 'UBERON:0001880', 'BNST'), ...
+                recording('rec_1', 'slice_a', 'probe_1', 'anch_r'), ...
+                recording('rec_2', 'animal_1', 'probe_1', 'anch_r2')];
+            [kept, minted] = ndi.migrate.internal.pathSPromotion(structs, 'Mode', 'located');
+            testCase.verifyEqual(countClass(minted, 'entity'), 2);
+            testCase.verifyNotEqual(depValue(byId(kept, 'rec_1'), 'entity_id'), ...
+                depValue(byId(kept, 'rec_2'), 'entity_id'));
+        end
+
+        function testARecordingOnARegionPartOrALooseTissueIsLeft(testCase)
+            structs = [{organism('animal_1'), device('probe_1'), tissue('loose')}, ...
+                probeWithSite('anch_p', 'probe_1', 'UBERON:0001880', 'BNST'), ...
+                recording('rec_1', 'loose', 'probe_1', 'anch_r')];
+            [~, ~, changed, report] = ...
+                ndi.migrate.internal.pathSPromotion(structs, 'Mode', 'located');
+            testCase.verifyFalse(changed);
+            testCase.verifyEqual(report.left_about_a_tissue_part_of_nothing, 1);
+
+            % already on a region part: a second pass leaves it there
+            structs = [{organism('animal_1'), device('probe_1')}, ...
+                probeWithSite('anch_p', 'probe_1', 'UBERON:0001880', 'BNST'), ...
+                recording('rec_1', 'animal_1', 'probe_1', 'anch_r')];
+            [k1, m1] = ndi.migrate.internal.pathSPromotion(structs, 'Mode', 'located');
+            [~, m2, ch2, r2] = ndi.migrate.internal.pathSPromotion([k1, m1], 'Mode', 'located');
+            testCase.verifyFalse(ch2);
+            testCase.verifyEmpty(m2);
+            testCase.verifyEqual(r2.left_about_a_region_part, 1);
+        end
+
+        % ---- UBERON (Jess Haley, 2026-10-21, "b") --------------------------
+        % "A region part entity's anatomy term must be UBERON. A non-UBERON
+        % anatomy term is NOT mapped: it is kept as written, counted and
+        % reported." Dabrowska's optogenetic target (doImport.m step 7,
+        % `anatomy(optoLocation)`) is UBERON:0001930 / 0002034 / 0001929.
+
+        function testDabrowskaOptoTargetIsUberon(testCase)
+            s = treatmentWithSite('anch_1', 'animal_1', 'UBERON:0002034', '');
+            [~, ~, ~, report] = ndi.migrate.internal.pathSPromotion(s, 'Mode', 'sites');
+            testCase.verifyEqual([report.anatomy_terms_inspected ...
+                report.anatomy_terms_uberon report.anatomy_terms_non_uberon], [1 1 0]);
+            testCase.verifyEmpty(report.anatomy_non_uberon);
+        end
+
+        function testANonUberonAnatomyTermIsKeptAndReported(testCase)
+            a = treatmentWithSite('anch_1', 'animal_1', 'WBbt:0005735', 'nerve ring');
+            b = treatmentWithSite('anch_2', 'animal_2', 'WBbt:0005735', 'nerve ring');
+            c = treatmentWithSite('anch_3', 'animal_1', '', 'dorsal horn');
+            [~, minted, changed, report] = ...
+                ndi.migrate.internal.pathSPromotion([a, b, c], 'Mode', 'sites');
+            testCase.verifyTrue(changed);
+            kinds = {};
+            for k = 1:numel(minted)
+                if strcmp(minted{k}.document_class.class_name, 'assertion')
+                    kinds{end+1} = minted{k}.term.value; %#ok<AGROW>
+                end
+            end
+            testCase.verifyEqual(numel(kinds), 3);
+            % kept as written: no mapping to an UBERON node
+            testCase.verifyEqual(kinds{1}.node, 'WBbt:0005735');
+            testCase.verifyEqual(kinds{1}.name, 'nerve ring');
+            testCase.verifyEqual([report.anatomy_terms_inspected ...
+                report.anatomy_terms_uberon report.anatomy_terms_non_uberon], [3 0 3]);
+            list = report.anatomy_non_uberon;
+            testCase.verifyEqual(numel(list), 2);
+            testCase.verifyEqual(list(1).node, 'WBbt:0005735');
+            testCase.verifyEqual(list(1).count, 2);
+            testCase.verifyEqual(list(2).name, 'dorsal horn');
+            testCase.verifyEqual(list(2).count, 1);
         end
 
         function testAnAnatomicalLabelTargetsThePart(testCase)
@@ -316,6 +577,34 @@ o.depends_on = [dep('entity_id', subjectId), dep('time_reference_id', anchorId)]
 o.base = base(id);
 o.statement = struct('variable', term('', 'label'));
 o.term = struct('value', term(node, ''));
+end
+
+function r = partOf(childId, parentId)
+r = struct();
+r.document_class = dc('directed_relation', {'relation', 'base'});
+r.depends_on = [dep('child_id', childId), dep('parent_id', parentId)];
+r.base = base(['rel_' childId]);
+r.directed_relation = struct('relation', term('BFO:0000050', 'part_of'));
+end
+
+function out = assertionsAbout(bodies, id)
+out = {};
+for k = 1:numel(bodies)
+    if strcmp(bodies{k}.document_class.class_name, 'assertion') ...
+            && strcmp(depValue(bodies{k}, 'entity_id'), id)
+        out{end+1} = bodies{k}; %#ok<AGROW>
+    end
+end
+end
+
+function node = sideOf(bodies, partId)
+node = '';
+a = assertionsAbout(bodies, partId);
+for k = 1:numel(a)
+    if strcmp(a{k}.statement.variable.name, 'Laterality')
+        node = a{k}.term.value.node;
+    end
+end
 end
 
 function e = organism(id)
