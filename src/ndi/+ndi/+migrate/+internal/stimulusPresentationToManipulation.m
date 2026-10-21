@@ -33,7 +33,7 @@ end
 manipBody = []; bodyDoc = []; records = [];
 
 presentationId = baseField(v1Body, 'id', '');
-sessionId      = baseField(v1Body, 'session_id', '');
+sessionId      = ndi.v2.sessionIdOf(v1Body);
 datestamp      = baseField(v1Body, 'datestamp', '');
 
 animals = resolver.subjectsForPresentation(presentationId);
@@ -87,6 +87,8 @@ manipBody.document_class = struct('class_name', 'visual_grating_manipulation', .
 manipBody.depends_on = struct('name', {'subject_id'}, 'value', {animalId});
 manipBody.base = struct('id', manipId, 'session_id', sessionId, ...
     'name', 'migrated_visual_stimulus', 'creation_timestamp', datestamp);
+% a field or a `session_id` edge, as the schema in use keeps it
+manipBody = ndi.migrate.internal.withSessionId(manipBody, sessionId);
 % storage_mode: body -> the grating value stream lives in the sampled_body.
 % `datum_type` LIVES ON THE STATEMENT NOW (DID-schema TEAM-SIGN-OFF [data_body]
 % 2026-08-14, sec.5: "datum collapses to datum_type and moves TO THE STATEMENT").
@@ -152,6 +154,7 @@ bodyDoc.document_class = struct('class_name', 'sampled_body', 'class_version', '
 bodyDoc.depends_on = struct('name', {'statement'}, 'value', {manipId});
 bodyDoc.base = struct('id', did.ido.unique_id(), 'session_id', sessionId, ...
     'name', 'migrated_visual_stimulus_series', 'creation_timestamp', datestamp);
+bodyDoc = ndi.migrate.internal.withSessionId(bodyDoc, sessionId);
 bodyDoc.sampled_body = struct();
 % In its own statement for the struct()-distribution reason given above.
 bodyDoc.sampled_body.axes = [trialAxis, paramAxis];

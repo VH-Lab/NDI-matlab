@@ -304,7 +304,7 @@ for i = 1:numel(migratedStructs)
     if isempty(lid)
         continue;
     end
-    key = localKey(baseField(s, 'session_id', ''), lid);
+    key = localKey(ndi.v2.sessionIdOf(s), lid);
     if isKey(localIdIndex, key)
         hits = localIdIndex(key);
         hits{end+1} = id; %#ok<AGROW>
@@ -450,7 +450,7 @@ if allowLocal
     localCell = dataCell(b, 'SubjectLocalIdentifier');
     if ~isempty(localCell)
         sawCandidate = true;
-        key = localKey(baseField(b, 'session_id', ''), localCell);
+        key = localKey(ndi.v2.sessionIdOf(b), localCell);
         if ~isKey(localIdIndex, key)
             sawLocalMissing = true;
         else

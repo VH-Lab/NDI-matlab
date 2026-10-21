@@ -124,7 +124,7 @@ end
 
 stimulatorId = dependencyValue(v1Body, 'stimulus_element_id');
 epochId      = epochIdOf(v1Body);
-sessionId    = baseField(v1Body, 'session_id', '');
+sessionId    = ndi.v2.sessionIdOf(v1Body);
 datestamp    = baseField(v1Body, 'datestamp', '');
 bathId       = baseField(v1Body, 'id', did.ido.unique_id());
 
@@ -171,6 +171,10 @@ if mintReference
     timeRefBody.depends_on = struct('name', 'element_id', 'value', stimulatorId);
     timeRefBody.base = struct('id', timeRefId, 'session_id', sessionId, ...
         'name', 'migrated_stimulator_epoch_anchor', 'creation_timestamp', datestamp);
+    if strcmp(targetVersion, 'V_eta')
+        % a field or a `session_id` edge, as the V_eta schema in use keeps it
+        timeRefBody = ndi.migrate.internal.withSessionId(timeRefBody, sessionId);
+    end
     timeRefBody.time_reference = struct('is_approximate', false);
     timeRefBody.epochid = struct('epochid', epochId);
     timeRefBody.epoch_bounded_reference = struct('epoch_clock', epochClock);
@@ -246,6 +250,8 @@ if strcmp(targetVersion, 'V_eta')
     bathBody.depends_on = bathDeps;
     bathBody.base = struct('id', bathId, 'session_id', sessionId, ...
         'name', 'migrated_bath', 'creation_timestamp', datestamp);
+    % a field or a `session_id` edge, as the schema in use keeps it
+    bathBody = ndi.migrate.internal.withSessionId(bathBody, sessionId);
     bathBody.subject_statement = struct('variable', primaryChemical(mixture), ...
         'storage_mode', 'inline');
     bathBody.subject_interaction = struct('method', struct('node', '', 'name', ''), ...

@@ -127,7 +127,7 @@ function parts = mintPart(animalId, siteTerm, siteObs)
 %MINTPART Build the part-subject, its anatomical-kind term_assertion, and the
 %   part_of relation for an attributed locus. Bare J subject (identity only);
 %   the anatomical term is the kind (a term_assertion, D9), not a field.
-sessionId = baseField(siteObs, 'session_id', '');
+sessionId = ndi.v2.sessionIdOf(siteObs);
 ds = baseField(siteObs, 'datestamp', '2024-01-01T00:00:00.000Z');
 partName = safeName(siteTerm);
 partId = did.ido.unique_id();
@@ -177,6 +177,11 @@ relation.base = struct('id', did.ido.unique_id(), 'session_id', sessionId, ...
     'name', 'migrated_part_of', 'creation_timestamp', ds);
 relation.directed_relation = struct('relation', ...
     struct('node', 'BFO:0000050', 'name', 'part_of'));
+
+% the session id as a field or a `session_id` edge, as the schema in use keeps it
+subj = ndi.migrate.internal.withSessionId(subj, sessionId);
+assertion = ndi.migrate.internal.withSessionId(assertion, sessionId);
+relation = ndi.migrate.internal.withSessionId(relation, sessionId);
 
 parts = struct('subject', subj, 'assertion', assertion, 'relation', relation);
 end

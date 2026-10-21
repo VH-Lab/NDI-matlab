@@ -461,7 +461,7 @@ for i = 1:numel(structs)
         report.distinct_epochs_seen = report.distinct_epochs_seen + 1;
     end
 
-    sessionId = baseField(s, 'session_id', '');
+    sessionId = ndi.v2.sessionIdOf(s);
     ds        = baseField(s, 'datestamp', '2024-01-01T00:00:00.000Z');
     [epochKey, epochStatus] = epochScope(s, sessionId, options.EpochDocumentIdFor);
     switch epochStatus
@@ -623,6 +623,8 @@ end
 body.depends_on = deps;
 body.base = struct('id', did.ido.unique_id(), 'session_id', sessionId, ...
     'name', name, 'creation_timestamp', ds);
+% a field or a `session_id` edge, as the schema in use keeps it
+body = ndi.migrate.internal.withSessionId(body, sessionId);
 block = struct('relation', relTerm);
 if ~isempty(sequence)
     % `sequence` is directed_relation's declared "ordinal for ordered

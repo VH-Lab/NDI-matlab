@@ -247,7 +247,7 @@ for p = 1:numel(presIds)
         duration = 1 / spec.fps;
     end
 
-    sessionId = baseField(pres, 'session_id', '');
+    sessionId = ndi.v2.sessionIdOf(pres);
     datestamp = baseField(pres, 'datestamp', '');
 
     localIndex = containers.Map('KeyType', 'double', 'ValueType', 'double');
@@ -337,6 +337,8 @@ g.document_class = struct('class_name', 'visual_grating', ...
 g.base = struct('id', id, 'session_id', sessionId, ...
     'name', sprintf('migrated_hartley_basis_%d', index), ...
     'creation_timestamp', datestamp);
+% a field or a `session_id` edge, as the schema in use keeps it
+g = ndi.migrate.internal.withSessionId(g, sessionId);
 % Assigned separately: struct(...) with a struct value distributes.
 g.visual_grating = struct();
 g.visual_grating.value = value;

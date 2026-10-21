@@ -368,7 +368,7 @@ for k = 1:numel(migratedStructs)
         report.refused_no_epoch_string = report.refused_no_epoch_string + 1;
         continue;
     end
-    sessionId = baseField(b, 'session_id');
+    sessionId = ndi.v2.sessionIdOf(b);
     if isempty(sessionId)
         report.refused_no_session_id = report.refused_no_session_id + 1;
         continue;
@@ -444,7 +444,11 @@ b.document_class = struct( ...
 % carries it on the manipulation as `instrument_id` (T7), which is where the
 % instrument of an interaction belongs and which does not depend on this fold
 % running.
+% The session id is put back where the schema in use keeps it: on a schema
+% where it is a `session_id` edge, replacing depends_on would drop it.
+sessionId = ndi.v2.sessionIdOf(b);
 b.depends_on = struct('name', 'relative_to', 'value', epochDocId);
+b = ndi.migrate.internal.withSessionId(b, sessionId);
 
 value = struct('relation', struct('node', 'time:intervalDuring', ...
                                   'name', 'intervalDuring'));

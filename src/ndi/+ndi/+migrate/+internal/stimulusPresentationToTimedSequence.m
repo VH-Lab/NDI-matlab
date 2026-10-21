@@ -228,7 +228,7 @@ extraBodies = {};
 report = newReport();
 
 presentationId = baseField(v1Body, 'id', '');
-sessionId      = baseField(v1Body, 'session_id', '');
+sessionId      = ndi.v2.sessionIdOf(v1Body);
 datestamp      = baseField(v1Body, 'datestamp', '');
 report.epoch_id = epochIdOf(v1Body);
 
@@ -509,6 +509,8 @@ for d = 1:numel(distinct)
     g.base = struct('id', gratingIds{d}, 'session_id', sessionId, ...
         'name', sprintf('migrated_visual_grating_%d', d), ...
         'creation_timestamp', datestamp);
+    % a field or a `session_id` edge, as the schema in use keeps it
+    g = ndi.migrate.internal.withSessionId(g, sessionId);
     % Assigned separately: struct(...) with a struct value distributes.
     g.visual_grating = struct();
     g.visual_grating.value = distinct{d};
@@ -581,6 +583,8 @@ bodyDoc.document_class = struct('class_name', 'sampled_body', ...
 bodyDoc.depends_on = struct('name', {'statement'}, 'value', {presentationId});
 bodyDoc.base = struct('id', did.ido.unique_id(), 'session_id', sessionId, ...
     'name', 'migrated_stimulus_sequence_timing', 'creation_timestamp', datestamp);
+% a field or a `session_id` edge, as the schema in use keeps it
+bodyDoc = ndi.migrate.internal.withSessionId(bodyDoc, sessionId);
 bodyDoc.sampled_body = struct();
 % ONE axis, because the payload is 1-D: one duration per trial, indexed by the
 % onset. `datum_order` stays empty -- the schema says it is meaningless for a
@@ -643,6 +647,8 @@ manipBody.depends_on = deps;
 % THE PRESERVED ID. "decomposed around its preserved id, not dissolved."
 manipBody.base = struct('id', presentationId, 'session_id', sessionId, ...
     'name', 'migrated_stimulus_sequence', 'creation_timestamp', datestamp);
+% a field or a `session_id` edge, as the schema in use keeps it
+manipBody = ndi.migrate.internal.withSessionId(manipBody, sessionId);
 
 manipBody.subject_statement = struct( ...
     'variable', struct('node', '', 'name', 'visual grating'), ...
@@ -701,6 +707,8 @@ seq.depends_on = deps;
 % THE PRESERVED ID sits on the body-of-record in reference mode.
 seq.base = struct('id', presentationId, 'session_id', sessionId, ...
     'name', 'migrated_stimulus_sequence', 'creation_timestamp', datestamp);
+% a field or a `session_id` edge, as the schema in use keeps it
+seq = ndi.migrate.internal.withSessionId(seq, sessionId);
 seq.timed_sequence = struct();
 seq.timed_sequence.value = struct();
 seq.timed_sequence.value.presentation_order = presentationOrder;
@@ -752,6 +760,8 @@ m.depends_on = deps;
 % FRESH id: the presentation id lives on the body-of-record, not here.
 m.base = struct('id', did.ido.unique_id(), 'session_id', sessionId, ...
     'name', 'migrated_stimulus_sequence', 'creation_timestamp', datestamp);
+% a field or a `session_id` edge, as the schema in use keeps it
+m = ndi.migrate.internal.withSessionId(m, sessionId);
 
 m.subject_statement = struct( ...
     'variable', struct('node', '', 'name', 'visual grating'), ...

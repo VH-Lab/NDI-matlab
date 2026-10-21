@@ -58,6 +58,8 @@ on:
       - 'src/ndi/+ndi/+cloud/+sync/+internal/updateFileInfoForLocalFiles.m'
       - 'src/ndi/+ndi/+cloud/+sync/+internal/updateFileInfoForRemoteFiles.m'
       - 'tests/+ndi/+unittest/ReconstructSeriesIngestLocationsTest.m'
+      - 'src/ndi/+ndi/+migrate/+internal/withSessionId.m'
+      - 'tests/+ndi/+unittest/+migrate/TestMigrateSessionId.m'
       - '.github/workflows/test-import-v2.yml'
   pull_request:
     branches: [main, V2]
@@ -104,6 +106,8 @@ on:
       - 'src/ndi/+ndi/+cloud/+sync/+internal/updateFileInfoForLocalFiles.m'
       - 'src/ndi/+ndi/+cloud/+sync/+internal/updateFileInfoForRemoteFiles.m'
       - 'tests/+ndi/+unittest/ReconstructSeriesIngestLocationsTest.m'
+      - 'src/ndi/+ndi/+migrate/+internal/withSessionId.m'
+      - 'tests/+ndi/+unittest/+migrate/TestMigrateSessionId.m'
       - '.github/workflows/test-import-v2.yml'
   workflow_dispatch:
 
@@ -203,7 +207,8 @@ jobs:
             suite = [TestSuite.fromPackage("ndi.unittest.setup.V2", "IncludingSubpackages", true), ...
                      TestSuite.fromClass(?ndi.unittest.vintage.TestVintageMap), ...
                      TestSuite.fromClass(?ndi.unittest.vintage.TestLightsheetVintage), ...
-                     TestSuite.fromClass(?ndi.unittest.vintage.TestLightsheetMigratedSession)];
+                     TestSuite.fromClass(?ndi.unittest.vintage.TestLightsheetMigratedSession), ...
+                     TestSuite.fromClass(?ndi.unittest.migrate.TestMigrateSessionId)];
             % The lightsheet readers over the REAL migrator's output need
             % DID-matlab's lightsheet migrators, which only the next leg's
             % DID-matlab has. Selected there, not filtered here.

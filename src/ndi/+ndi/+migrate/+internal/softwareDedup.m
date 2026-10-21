@@ -148,7 +148,7 @@ for i = 1:n
         continue;
     end
     isSoftware(i)  = true;
-    sessOf{i} = baseField(structs{i}, 'session_id', '');
+    sessOf{i} = ndi.v2.sessionIdOf(structs{i});
     nameOf{i} = blockField(structs{i}, 'software', 'name', '');
     versOf{i} = blockField(structs{i}, 'software', 'version', '');
 end

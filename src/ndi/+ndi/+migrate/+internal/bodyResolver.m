@@ -141,7 +141,7 @@ for k = 1:numel(bodies)
         if ~isempty(eid) && ~isempty(ep)
             elementEpochByKey = appendToMap(elementEpochByKey, [eid '|' ep], b);
             elementsByEpoch   = appendToMap(elementsByEpoch, ep, eid);
-            sid = subField(b, 'base', 'session_id');
+            sid = ndi.v2.sessionIdOf(b);
             if ~isempty(sid)
                 elementsBySessionEpoch = ...
                     appendToMap(elementsBySessionEpoch, [sid '|' ep], eid);
@@ -314,7 +314,7 @@ if ~isKey(byId, presentationId)
 end
 pres = byId(presentationId);
 epochId   = epochIdOf(pres);
-sessionId = subField(pres, 'base', 'session_id');
+sessionId = ndi.v2.sessionIdOf(pres);
 if isempty(epochId) || isempty(sessionId)
     return;
 end
@@ -366,7 +366,7 @@ if ~isKey(byId, presentationId)
 end
 pres = byId(presentationId);
 epochId   = epochIdOf(pres);
-sessionId = subField(pres, 'base', 'session_id');
+sessionId = ndi.v2.sessionIdOf(pres);
 if isempty(epochId) || ~isKey(elementsByEpoch, epochId)
     return;
 end
@@ -412,7 +412,7 @@ if ~isKey(byId, presentationId)
 end
 pres = byId(presentationId);
 epochId   = epochIdOf(pres);
-sessionId = subField(pres, 'base', 'session_id');
+sessionId = ndi.v2.sessionIdOf(pres);
 if isempty(epochId) || isempty(sessionId)
     return;
 end

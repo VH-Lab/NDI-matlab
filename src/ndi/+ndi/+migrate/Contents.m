@@ -19,6 +19,9 @@
 %
 %   +internal/  second-pass and I/O helpers (not user-facing):
 %     bodyResolver       - session/element graph over the whole body set.
+%     withSessionId      - a minted body's session id as the schema in use keeps
+%                          it: the base.session_id field, or a `session_id`
+%                          edge (did-schema V_eta_relation_inheritance_plan.md).
 %     stimulusBathToBath - V_epsilon/V_zeta stimulus_bath assembler.
 %     pathSPromotion     - V_eta attributed-locus -> Path-S promotion.
 %     softwareDedup      - V_eta `software` merge on (session, name, version),

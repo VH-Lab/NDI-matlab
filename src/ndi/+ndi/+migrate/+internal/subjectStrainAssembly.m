@@ -415,7 +415,7 @@ for k = 1:numel(strainIdx)
     e = struct();
     e.source_id     = srcId;
     e.assertion_pos = assertionPos;
-    e.session_id    = baseField(b, 'session_id', '');
+    e.session_id    = ndi.v2.sessionIdOf(b);
     e.datestamp     = baseField(b, 'datestamp', '2024-01-01T00:00:00.000Z');
     e.subject_id    = dependencyValueNamed(migratedStructs{assertionPos}, 'subject_id');
     e.name          = charField(f, {'name'});
@@ -558,6 +558,8 @@ for g = 1:nGroups
 
     body.base = struct('id', groupDocId{g}, 'session_id', rep.session_id, ...
         'name', 'migrated_strain', 'creation_timestamp', rep.datestamp);
+    % a field or a `session_id` edge, as the schema in use keeps it
+    body = ndi.migrate.internal.withSessionId(body, rep.session_id);
 
     body.entity = struct();
     body.entity.global_identifier = rep.identifiers;

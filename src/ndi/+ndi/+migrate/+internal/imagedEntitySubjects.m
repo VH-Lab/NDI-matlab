@@ -459,7 +459,7 @@ for i = 1:numel(migratedStructs)
         continue;
     end
     report.plate_subjects_indexed = report.plate_subjects_indexed + 1;
-    key = joinKey(baseField(s, 'session_id', ''), plateId);
+    key = joinKey(ndi.v2.sessionIdOf(s), plateId);
     if isKey(plateSubjects, key)
         hits = plateSubjects(key);
         hits{end+1} = id; %#ok<AGROW>
@@ -625,7 +625,7 @@ if allowJoin
             reason = 'unresolved_no_plate_identifier';
         end
     else
-        key = joinKey(baseField(row, 'session_id', ''), plateId);
+        key = joinKey(ndi.v2.sessionIdOf(row), plateId);
         if ~isKey(plateSubjects, key)
             % The plate is named but no subject carries its handle. Either
             % resolveLawnPlateSubjects withheld the tier (nothing measured about
