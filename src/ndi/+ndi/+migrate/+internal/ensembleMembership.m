@@ -65,12 +65,13 @@ function [kept, minted, report] = ensembleMembership(structs, options)
 %   WHAT IS MINTED
 %   ---------------------------------------------------------------------
 %   Per (map document, neuron_id_i), deduplicated on
-%   (parent, child, sequence, epoch):
+%   (parent, child, order, epoch):
 %
 %     member_of    directed_relation   child_id  = the neuron-subject
 %                                      parent_id = the ensemble group-subject
 %                                      relation {RO:0002350, member_of}
-%                                      sequence = i (the column index)
+%                                      order = i (the column index;
+%                                      `sequence` until did-schema T20)
 %
 %     derived_from directed_relation   child_id  = the cache carrier (the migrated
 %                                               `acquisition_epoch` that holds
@@ -329,7 +330,7 @@ function [kept, minted, report] = ensembleMembership(structs, options)
 %         'parent_types': ['subject'], 'timed': True, 'ordered': True}
 %
 %      (DENOMINATOR: 26 relation_bindings rows read.) So `ordered: true`
-%      licenses the `sequence` this pass emits, and `timed: true` licenses the
+%      licenses the `order` this pass emits, and `timed: true` licenses the
 %      epoch scoping item 2 describes. Nothing here needs a team call.
 %
 %   STATUS: authored without local MATLAB -- CI is the first execution of
@@ -592,7 +593,7 @@ end
 
 % ===================== builders ========================================
 
-function body = relationBody(childId, parentId, relTerm, sequence, epochDocId, ...
+function body = relationBody(childId, parentId, relTerm, order, epochDocId, ...
         sessionId, ds, ~)
 %RELATIONBODY One `directed_relation` (did-schema #88: `child_id` /
 %   `parent_id`, no base.name). Emits only NON-EMPTY edges: `epoch_id` is
@@ -600,7 +601,7 @@ function body = relationBody(childId, parentId, relTerm, sequence, epochDocId, .
 %   the header); the slot is declared and OPTIONAL on directed_relation, so an
 %   unscoped edge cannot quarantine under #37 RequiredDependencies.
 body = ndi.migrate.internal.etaShape.relation(childId, parentId, relTerm, ...
-    'Order', sequence, 'EpochId', epochDocId, ...
+    'Order', order, 'EpochId', epochDocId, ...
     'SessionId', sessionId, 'Datestamp', ds);
 end
 
