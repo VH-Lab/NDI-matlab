@@ -20,6 +20,9 @@ function testCloudApiPart(partIdx, numParts, options)
 %   an entry to manualPartOverrides only when a class shows up as a
 %   sustained bottleneck.
 %
+%   The results are written to docs/reports/test-results.xml in JUnit
+%   format, for the CI test-results check and the combined tests badge.
+%
 %   testCloudApiPart(..., 'CodeCoverage', true) also records code coverage
 %   of the cloud package (src/ndi/+ndi/+cloud) and writes it to
 %   docs/reports/codecoverage.xml in Cobertura format for upload to Codecov.
@@ -35,6 +38,7 @@ function testCloudApiPart(partIdx, numParts, options)
     import matlab.unittest.TestSuite
     import matlab.unittest.TestRunner
     import matlab.unittest.plugins.CodeCoveragePlugin
+    import matlab.unittest.plugins.XMLPlugin
     import matlab.unittest.plugins.codecoverage.CoberturaFormat
 
     if ischar(partIdx) || isstring(partIdx)
@@ -104,11 +108,12 @@ function testCloudApiPart(partIdx, numParts, options)
     end
 
     runner = TestRunner.withTextOutput('OutputDetail', 'Detailed');
+    outputDirectory = fullfile(projectRootDir, "docs", "reports");
+    if ~isfolder(outputDirectory)
+        mkdir(outputDirectory)
+    end
+    runner.addPlugin(XMLPlugin.producingJUnitFormat(fullfile(outputDirectory, 'test-results.xml')));
     if options.CodeCoverage
-        outputDirectory = fullfile(projectRootDir, "docs", "reports");
-        if ~isfolder(outputDirectory)
-            mkdir(outputDirectory)
-        end
         cloudFolder = fullfile(projectRootDir, "src", "ndi", "+ndi", "+cloud");
         mfileListing = dir(fullfile(cloudFolder, '**', '*.m'));
         codecoverageFileList = fullfile({mfileListing.folder}, {mfileListing.name});
