@@ -23,7 +23,7 @@ end
 ids = {};
 
 label = ndi.vintage.elementLabel('class');
-q = ndi.query('', 'isa', 'term_assertion', '') & ...
+q = ndi.v2.statementQuery('assertion', 'term') & ...
     ndi.v2.fieldQuery('statement.variable.name', 'exact_string', label);
 if ~isempty(classFilter)
     q = q & ndi.query('term.value.name', 'contains_string', classFilter, '');
