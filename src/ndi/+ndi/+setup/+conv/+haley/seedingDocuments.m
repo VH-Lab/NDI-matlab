@@ -13,13 +13,14 @@ function out = seedingDocuments(S, ids, sessionId, options)
 %     entity             type material, local_identifier its formulation's
 %                        key, a name and description (and the note of a
 %                        correction applied to it, decision #111)
-%     dose_manipulation  how it was made: variable the strain's term (as a
-%                        seeding dose names it, decision #105),
-%                        formulation_id its formulation -- its PLAN (the
+%     formulation_assertion  what it was made to (decision #146, Jess
+%                        Haley 2026-10-21): an assertion about the solution
+%                        whose value is its formulation -- its PLAN (the
 %                        strain at target OD600 10; a dilution's target
-%                        fraction of the stock) -- with no amount (the source
-%                        gives none) and no method (none is recorded); when:
-%                        the seeding day
+%                        fraction of the stock) -- through `value_id`, its own
+%                        value empty; variable composition (PATO:0000025);
+%                        no method (none is recorded); when: the seeding day.
+%                        Not a dose: nothing was given to the solution.
 %     concentration_observation  the stock's MEASURED OD600 (`OD600Real`),
 %                        variable OD600 (MCO:0000059), in the `od600` canonical
 %                        with the source pair where the schema has it, method
@@ -48,8 +49,6 @@ function out = seedingDocuments(S, ids, sessionId, options)
 %   one, and a dose has no edge for the material it was pipetted from.
 %
 %   Options:
-%     'Names'       containers.Map, strain key -> the term a dose of it reads
-%                   as (import_V2's namesOf)
 %     'Instrument'  the spec key of the spectrophotometer (default
 %                   'spectrophotometer_1')
 %
@@ -64,7 +63,6 @@ arguments
     S (1,1) struct
     ids
     sessionId (1,:) char
-    options.Names = containers.Map()
     options.Instrument (1,:) char = 'spectrophotometer_1'
 end
 
@@ -103,9 +101,10 @@ for k = 1:numel(S.solutions)
     out.ids(x.key) = eid;
     out.counts.solutions = out.counts.solutions + 1;
 
-    % how it was made: to its formulation, its plan
-    out.documents{end+1} = did2.build.statement('dose_manipulation', eid, strainTerm(x.strain), [], ...
-        'Edges', struct('formulation_id', ids(x.formulation)), ...
+    % what it was made to: its formulation, its plan, as the solution's
+    % composition (decision #146; an assertion, not a dose)
+    out.documents{end+1} = did2.build.statement('formulation_assertion', eid, ...
+        haleyTerm('composition'), [], 'ValueId', ids(x.formulation), ...
         'TimeReferenceIds', {when}, 'SessionId', sessionId);
     out.counts.preparations = out.counts.preparations + 1;
 
@@ -152,21 +151,6 @@ end
         out.documents{end+1} = r;
         id = r.base.id;
         dayRefs(key) = id;
-    end
-
-    function t = strainTerm(key)
-        % the term a dose of the strain reads as (decision #105); a strain
-        % with none is an error, not an unregistered label
-        if isKey(options.Names, key)
-            t = options.Names(key);
-        else
-            error('ndi:setup:conv:haley:unregisteredLabel', ...
-                ['The suspension dose of strain "%s" (seedingDocuments, the spec''s ' ...
-                 'seeding strains) has no term: the spec gives "%s" no strain term ' ...
-                 '(the ''Names'' option). Give it one; its key is not written as a label.'], ...
-                key, key);
-        end
-        if ~isstruct(t), t = did2.build.term('', t); end
     end
 end
 

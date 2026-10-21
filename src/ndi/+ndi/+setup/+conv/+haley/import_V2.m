@@ -223,8 +223,7 @@ if any(options.Stages == "metadata")
         % each seeding solution is a material entity made to its formulation
         % (its plan), and the stock's measured OD600 an observation of it
         % (decision #114)
-        sd = ndi.setup.conv.haley.seedingDocuments(result.suspensions, result.metadata.ids, sid, ...
-            'Names', namesOf(spec));
+        sd = ndi.setup.conv.haley.seedingDocuments(result.suspensions, result.metadata.ids, sid);
         result.metadata.documents = [result.metadata.documents, sd.documents];
         for k = sd.ids.keys
             result.metadata.ids(k{1}) = sd.ids(k{1});

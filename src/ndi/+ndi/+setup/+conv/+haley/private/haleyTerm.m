@@ -42,6 +42,7 @@ function m = termTable()
 pairs = {
     % study, dataset, subjects, assertions
     'OD600',                                   'MCO:0000059',             'OD600'
+    'composition',                             'PATO:0000025',            'composition'
     'bacteria growth duration after seeding',  'EMPTY:0000119',           'bacteria growth duration after seeding'
     'food availability',                       'ZECO:0000113',            'food availability'
     'fasting',                                 'ZECO:0000114',            'fasting'

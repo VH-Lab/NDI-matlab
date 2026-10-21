@@ -217,18 +217,23 @@ classdef TestHaleySeeding < matlab.unittest.TestCase
             c = r.census;
             testCase.verifyEqual(sum(c.count(strcmp(c.class, 'formulation'))), ...
                 n0 + numel(testCase.S.entries));
-            % each solution an entity made to its plan (decision #114)
-            names = containers.Map();       % a strain key -> its term (as import_V2's namesOf)
-            st = spec.strains;
-            if isstruct(st), st = num2cell(st); end
-            for k = 1:numel(st)
-                node = '';
-                if isfield(st{k}, 'node') && ~isempty(st{k}.node), node = char(st{k}.node); end
-                names(st{k}.key) = did2.build.term(node, char(st{k}.name));
-            end
-            sd = ndi.setup.conv.haley.seedingDocuments(testCase.S, r.ids, sid, 'Names', names);
+            % each solution an entity made to its plan (decision #114),
+            % asserted as its composition, not dosed (decision #146)
+            sd = ndi.setup.conv.haley.seedingDocuments(testCase.S, r.ids, sid);
             n = numel(testCase.S.solutions);
             testCase.verifyEqual([sd.counts.solutions, sd.counts.preparations], [n n]);
+            leaf = cellfun(@ndi.v2.leafName, sd.documents, 'UniformOutput', false);
+            testCase.verifyFalse(any(strcmp(leaf, 'dose_manipulation')), ...
+                'a solution is not dosed (decision #146)');
+            pa = sd.documents(strcmp(leaf, 'formulation_assertion'));
+            testCase.verifyNumElements(pa, n, 'one composition assertion per solution');
+            x = testCase.S.solutions(1);
+            p1 = pa(cellfun(@(d) strcmp(edgeOf(d, 'entity_id'), sd.ids(x.key)), pa));
+            testCase.verifyNumElements(p1, 1);
+            testCase.verifyEqual(edgeOf(p1{1}, 'value_id'), r.ids(x.formulation), ...
+                'its value is its formulation, through value_id');
+            testCase.verifyEqual(p1{1}.statement.variable.node, 'PATO:0000025', 'composition');
+            testCase.verifyEmpty(edgeOf(p1{1}, 'formulation_id'), 'no dose edge');
             stocks = sum(strcmp({testCase.S.solutions.kind}, 'stock'));
             testCase.verifyEqual(sd.counts.od600_observations, stocks, 'one per measured stock');
             testCase.verifyEqual(sd.counts.days, numel(unique(dateshift([testCase.S.solutions.day], ...
@@ -238,7 +243,6 @@ classdef TestHaleySeeding < matlab.unittest.TestCase
             withCfu = sum(strcmp({testCase.S.solutions.kind}, 'stock') & ~isnan([testCase.S.solutions.cfu]));
             testCase.verifyGreaterThan(withCfu, 0);
             testCase.verifyEqual(sd.counts.cfu_observations, withCfu, 'one per stock with a CFU');
-            leaf = cellfun(@ndi.v2.leafName, sd.documents, 'UniformOutput', false);
             ob = sd.documents(strcmp(leaf, 'concentration_observation'));
             nodeOf = @(t) t.node;
             node = cellfun(@(d) nodeOf(ndi.v2.blockOf(d, 'statement', 'variable')), ob, ...
@@ -284,6 +288,22 @@ classdef TestHaleySeeding < matlab.unittest.TestCase
             x = testCase.S.entries{k};
         end
     end
+end
+
+function v = edgeOf(doc, name)
+% the document id of DOC's first edge NAME ('' when it has none)
+v = '';
+if ~isfield(doc, 'depends_on') || isempty(doc.depends_on)
+    return;
+end
+dep = doc.depends_on;
+if iscell(dep), dep = [dep{:}]; end
+for k = 1:numel(dep)
+    if strcmp(dep(k).name, name)
+        v = dep(k).document_id;
+        return;
+    end
+end
 end
 
 function writeInfo(folder, timeSeed, od, cfu, od600, growthTimeSeed, growthOD600)

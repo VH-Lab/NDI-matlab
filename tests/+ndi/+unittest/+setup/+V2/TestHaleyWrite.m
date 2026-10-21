@@ -510,8 +510,10 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
                 result.metadata.ids('suspension_op50_20220202_od1'));
 
             % the seeding solutions (decision #114): each one pipetted is an
-            % entity of type material, made to its formulation -- its plan --
-            % and only the stock's OD600 was measured, an observation of it
+            % entity of type material, asserted to have its formulation -- its
+            % plan -- as its composition (decision #146: an assertion valued
+            % through value_id, not a dose), and only the stock's OD600 was
+            % measured, an observation of it
             md = cellfun(@newNames, result.metadata.documents, 'UniformOutput', false);
             mk = cellfun(@ndi.v2.leafName, md, 'UniformOutput', false);
             ids = result.metadata.ids;
@@ -519,13 +521,19 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             dilId = ids('suspension_op50_20220202_od1#solution');
             aboutMd = @(id, leaf) md(strcmp(mk, leaf) & cellfun(@(d) strcmp(edge(d, 'entity_id'), id), md));
             obAll = aboutMd(ids('suspension_op50_20220202#solution'), 'concentration_observation');
-            prep = aboutMd(stockId, 'dose_manipulation');
+            testCase.verifyEmpty(aboutMd(stockId, 'dose_manipulation'), ...
+                'a solution is not dosed (decision #146)');
+            prep = aboutMd(stockId, 'formulation_assertion');
             testCase.verifyNumElements(prep, 1, 'the stock was made to its plan');
-            testCase.verifyEqual(edge(prep{1}, 'formulation_id'), ids('suspension_op50_20220202'));
-            testCase.verifyEqual(prep{1}.statement.variable.name, 'OP50');
-            prep = aboutMd(dilId, 'dose_manipulation');
+            testCase.verifyEqual(edge(prep{1}, 'value_id'), ids('suspension_op50_20220202'));
+            testCase.verifyEmpty(edge(prep{1}, 'formulation_id'));
+            testCase.verifyEqual(prep{1}.statement.variable.node, 'PATO:0000025');
+            testCase.verifyEqual(prep{1}.statement.variable.name, 'composition');
+            testCase.verifyEqual(edge(prep{1}, 'time_reference_id'), edge(obAll{1}, 'time_reference_id'), ...
+                'prepared on the seeding day, timed like the OD600');
+            prep = aboutMd(dilId, 'formulation_assertion');
             testCase.verifyNumElements(prep, 1);
-            testCase.verifyEqual(edge(prep{1}, 'formulation_id'), edge(seed{1}, 'formulation_id'), ...
+            testCase.verifyEqual(edge(prep{1}, 'value_id'), edge(seed{1}, 'formulation_id'), ...
                 'the dilution is made to the formulation the patch''s seeding dose names');
             plan = md{cellfun(@(d) strcmp(d.base.id, ids('suspension_op50_20220202')), md)};
             g = entries(ndi.v2.blockOf(plan, 'formulation', 'value').ingredients);
@@ -742,19 +750,6 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
                 "assertions", "manipulations"], 'Sessions', "concentration_0001", 'Spec', spec, ...
                 'OutputRoot', fullfile(fileparts(spec), 'haley_V2'), 'Write', true, ...
                 'Overwrite', true, 'RunFolder', 'none', 'ReadVideos', false), ...
-                'ndi:setup:conv:haley:unregisteredLabel');
-        end
-
-        function testASeedingStrainWithNoTermIsAnError(testCase)
-            % the seeding solutions' strain has no term in 'Names'
-            % (seedingDocuments strainTerm)
-            result = ndi.setup.conv.haley.import_V2(testCase.Root, ...
-                'Stages', ["sessions", "metadata"], 'Sessions', "concentration_0001", ...
-                'OutputRoot', fullfile(testCase.scratchDir(), 'haley_V2'), 'Write', false, ...
-                'ReadVideos', false);
-            testCase.assertTrue(isfield(result, 'suspensions'), 'the fixture has seeding solutions');
-            testCase.verifyError(@() ndi.setup.conv.haley.seedingDocuments(result.suspensions, ...
-                result.metadata.ids, did.ido.unique_id(), 'Names', containers.Map()), ...
                 'ndi:setup:conv:haley:unregisteredLabel');
         end
 
