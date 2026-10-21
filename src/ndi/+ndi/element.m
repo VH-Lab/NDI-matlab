@@ -92,9 +92,9 @@ classdef element < ndi.ido & ndi.epoch.epochset & ndi.documentservice & matlab.m
                 % 'element'". ndi.vintage.elementFields puts them back
                 % together; see there for where each piece went and which
                 % one is inferred rather than stored.
-                [vEntry, vVintage] = ndi.vintage.entryFor(element_doc);
-                isEtaElement = ~isempty(vEntry) && strcmp(vVintage, 'V_eta') ...
-                    && strcmp(vEntry.concept, 'element');
+                % (on did-schema #88 the migrated element is an `entity`;
+                % ndi.vintage.isEtaElement decides both shapes)
+                isEtaElement = ndi.vintage.isEtaElement(element_doc, element_session);
 
                 if isEtaElement
                     ef = ndi.vintage.elementFields(element_doc, element_session);
@@ -162,7 +162,9 @@ classdef element < ndi.ido & ndi.epoch.epochset & ndi.documentservice & matlab.m
                     subject_id = element_doc.dependency_value('subject_id');
                 end
                 [dependency_names,dependencies] = element_doc.dependency();
-                [dependency_names_here,ia] = setdiff(dependency_names,{'subject_id','underlying_element_id'});
+                % `session_id` is an edge on every did-schema #88 document,
+                % not a dependency of the element
+                [dependency_names_here,ia] = setdiff(dependency_names,{'subject_id','underlying_element_id','session_id'});
                 dependencies = dependencies(ia);
                 set_identifier = 1;
                 identifier_value = element_doc.id();
