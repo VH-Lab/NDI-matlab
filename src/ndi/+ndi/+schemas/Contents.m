@@ -1,15 +1,15 @@
-% +schemas  NDI schema loader for DID-schema V_delta classes.
+% +schemas  NDI schema loader for DID-schema V_eta classes.
 %
 %   This package sources NDI's class schemas from the canonical
 %   DID-schema repository at a project-pinned commit / tag, caches them
 %   per-user, and falls back to a frozen snapshot shipped with this
 %   NDI release when the cache is empty and the network is unavailable.
 %
-%   See docs/v2 in DID-matlab for the V_delta wire format, and
+%   See docs/v2 in DID-matlab for the V_eta wire format, and
 %   issue #774 for the loader design.
 %
 %   Cache layout (per user, version-tagged):
-%       ~/.ndi/schemas/V_delta/<ref>/stable/*.json
+%       ~/.ndi/schemas/V_eta/<ref>/stable/*.json
 %
 %   Fallback bundle (per NDI release):
 %       <ndi_common>/schemas/fallback/stable/*.json
@@ -18,7 +18,7 @@
 %       <ndi_common>/schemas/pin.json
 %
 % Files:
-%   init             - point did2.schema.cache at the active V_delta dir.
+%   init             - point did2.schema.cache at the active V_eta dir.
 %   refresh          - download schemas at the current pin into cache.
 %   pin              - read or update the DID-schema pin.
 %   cacheDir         - user cache dir for a given pin ref.

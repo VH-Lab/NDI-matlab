@@ -2,7 +2,7 @@ function p = cacheDir(varargin)
 %NDI.SCHEMAS.CACHEDIR User cache directory for a given pin ref.
 %
 %   P = NDI.SCHEMAS.CACHEDIR() returns the directory for the currently
-%   pinned ref: '~/.ndi/schemas/V_delta/<ref>/stable'. If the pin has
+%   pinned ref: '~/.ndi/schemas/V_eta/<ref>/stable'. If the pin has
 %   no ref set the per-ref segment is replaced with 'unpinned'.
 %
 %   P = NDI.SCHEMAS.CACHEDIR(REF) overrides the ref.
@@ -30,7 +30,7 @@ function p = cacheDir(varargin)
     end
 
     home = char(java.lang.System.getProperty('user.home'));
-    p = fullfile(home, '.ndi', 'schemas', 'V_delta', refSegment, 'stable');
+    p = fullfile(home, '.ndi', 'schemas', 'V_eta', refSegment, 'stable');
 end
 
 function s = sanitize(ref)

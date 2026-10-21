@@ -2,7 +2,7 @@ function p = fallbackDir()
 %NDI.SCHEMAS.FALLBACKDIR Directory of the bundled fallback schema snapshot.
 %
 %   P = NDI.SCHEMAS.FALLBACKDIR() returns the directory shipped with
-%   the NDI-matlab release that holds the frozen V_delta snapshot taken
+%   the NDI-matlab release that holds the frozen V_eta snapshot taken
 %   at the current pin. Used when the user cache is empty and the
 %   network is unavailable.
 %
