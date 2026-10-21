@@ -11,7 +11,10 @@ function [held, undecided] = containersDuring(container, docs, tolerant)
 %   The subject is the statement's entity_id. A container is reached
 %     - by the subject's own stay, or by a DISTRIBUTIVE stay of a group it is
 %       member_of (a worm through its cohort's stay on a plate; did-schema
-%       tenet T17, Haley decision #55);
+%       tenet T17, Haley decision #55). The relations that lead from a member
+%       to its group are those whose `passes` is `distributive` in the V2
+%       schema's registry (ndi.v2.relationPasses, as ndi.entity takes them);
+%       a registry with no `passes` (did-schema main) gives member_of;
 %     - then by the container's own stays, nested (a plate in an incubator),
 %       each within the window of the stay that reached it; up to 4 levels.
 %   A stay counts only when its time overlaps the statement's
@@ -26,7 +29,8 @@ function [held, undecided] = containersDuring(container, docs, tolerant)
 %   container stays on the container": a plate's exclusion does not pass to
 %   the worms on it; an analysis asks the containers).
 %
-%   See also ndi.v2.stays, ndi.v2.overlaps, ndi.statement.search.
+%   See also ndi.v2.stays, ndi.v2.overlaps, ndi.v2.relationPasses,
+%   ndi.statement.search.
 
 arguments
     container
@@ -122,13 +126,18 @@ end
 
 % -----------------------------------------------------------------------------
 function E = memberOf(container, ids)
-% the member_of relations whose child is one of IDS: E.from (the member),
-% E.to (the group), one row per pair
+% the relations that pass distributive (member_of; ndi.v2.relationPasses) whose
+% child is one of IDS: E.from (the member), E.to (the group), one row per pair
 arguments
     container
     ids cell
 end
 from = {}; to = {};
+groupNames = ndi.v2.relationPasses().distributive;
+if isempty(groupNames)
+    E = struct('from', {from}, 'to', {to});
+    return;
+end
 for c = 1:200:numel(ids)
     part = ids(c:min(c + 199, numel(ids)));
     q = ndi.v2.anyOf(cellfun(@(i) ndi.query('', 'depends_on', 'child_id', i), part, ...
@@ -136,8 +145,8 @@ for c = 1:200:numel(ids)
     rels = container.database_search(ndi.query('', 'isa', 'directed_relation', '') & q);
     for k = 1:numel(rels)
         p = ndi.v2.props(rels{k});
-        if ~strcmp(ndi.v2.termName(ndi.v2.blockOf(p, 'directed_relation', 'relation', '')), ...
-                'member_of')
+        if ~ismember(char(ndi.v2.termName(ndi.v2.blockOf(p, 'directed_relation', 'relation', ''))), ...
+                groupNames)
             continue;
         end
         a = ndi.v2.edgeIds(p, 'child_id');

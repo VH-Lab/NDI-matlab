@@ -118,6 +118,42 @@ classdef TestRelationPasses < matlab.unittest.TestCase
             testCase.verifyNumElements(own, 1, 'inherited false: only its own');
         end
 
+        function testContainersDuringFollowsTheDistributiveRelations(testCase)
+            % ndi.v2.containersDuring reaches a member's containers through
+            % the relations that pass `distributive` (ndi.v2.relationPasses,
+            % as ndi.entity), not a hard-coded member_of. A cohort's stay on
+            % a plate, distributive and with no time, is undecidable, so it
+            % shows as UNDECIDED for a worm that is member_of the cohort, and
+            % not for one tied to it by part_of, which passes assertions.
+            if ~ndi.setup.V2.schemaHasField('directed_relation', 'distributive')
+                return;   % a group's stay reaches its members only when distributive
+            end
+            testCase.verifyEqual(ndi.v2.relationPasses().distributive, {'member_of'});
+            sid = ndi.ido.unique_id();
+            c = {'SessionId', sid};
+            id = struct();
+            for n = {'member', 'part', 'cohort', 'plate'}
+                id.(n{1}) = ndi.ido.unique_id();
+            end
+            subj = @(name, type) ndi.setup.V2.entityDocuments('subject', ...
+                struct('local_identifier', name, 'type', did2.build.term('', type)), ...
+                struct(), c{:}, 'Id', id.(name));
+            stmt = {termAssertion(id.member, 'condition', 'a', sid), ...
+                termAssertion(id.part, 'condition', 'a', sid)};
+            docs = [subj('member', 'organism'), subj('part', 'organism'), ...
+                subj('cohort', 'group'), subj('plate', 'device'), ...
+                {did2.build.directedRelation(id.member, id.cohort, 'member_of', c{:}), ...
+                 did2.build.directedRelation(id.part, id.cohort, 'part_of', c{:}), ...
+                 did2.build.directedRelation(id.cohort, id.plate, 'contained_in', c{:}, ...
+                    'Fields', struct('distributive', true))}, stmt];
+            S = ndi.setup.V2.createSession(testCase.Dir, 'containers', 'SessionId', sid, ...
+                'Documents', docs);
+            [held, undecided] = ndi.v2.containersDuring(S, stmt);
+            testCase.verifyEqual(held, {{}, {}}, 'an untimed stay reaches no container');
+            testCase.verifyEqual(undecided, [true false], ...
+                'member_of reaches the cohort''s stay; part_of does not');
+        end
+
         function testTheAccessorReadsTheEdgeOnTheNewShape(testCase)
             % a V2 document with no base.session_id field and a session_id
             % edge; built by hand, so the test does not depend on the schema
