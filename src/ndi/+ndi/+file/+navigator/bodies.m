@@ -229,7 +229,13 @@ classdef bodies < ndi.file.navigator
             end
             p = st.document_properties;
             type = '';
+            % did-schema #88: the term is `interaction.method.term`
             m = ndi.v2.blockOf(p, 'interaction', 'method', []);
+            if isstruct(m) && ~isempty(m) && isfield(m, 'term')
+                m = m(1).term;
+            else
+                m = [];
+            end
             if isstruct(m) && isfield(m, 'node') && ~isempty(m.node)
                 % the method's term names the imaging method by its ontology
                 % label (tenet T19), so the NDI probe type comes from its node

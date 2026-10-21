@@ -87,11 +87,18 @@ double(x)                  % metres per second, by video frame
 x.unit()                   % the canonical unit's field, e.g. 'meters_per_second'
 v{1}.axes()                % what each dimension indexes (video frame, body part)
 v{1}.time()                % when it holds (UTC start and end, with tolerance)
-v{1}.method_parameters()   % the settings, as a table
+v{1}.method_parameters()   % the method's settings, as a table
 v{1}.inputs()              % the statements it was computed from
 a{1}.value().canonical()   % a term's name, e.g. "N2"; a logical, a number
 ndi.summary(a)             % one row per statement
 ```
+
+A statement's method is one block, `interaction.method: {term, parameters}`
+(did-schema #88): `method()` is its `term` and `method_parameters()` its
+`parameters`. A shared, named method is instead a standalone `method` document
+the statement points at by `method_id` (never both); `method()` and
+`method_parameters()` read that document the same way. Searching by `'method'`
+matches `interaction.method.term`.
 
 To search across a whole session instead of one entity:
 

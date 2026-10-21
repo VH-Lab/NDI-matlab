@@ -344,8 +344,8 @@ classdef statement
                 class(i) = string(p.document_class.class_name);
                 vr = ndi.v2.blockOf(p, 'statement', 'variable', '');
                 variable(i) = string(ndi.v2.termName(vr)); variable_node(i) = string(nodeOf(vr));
-                mr = ndi.v2.blockOf(p, 'interaction', 'method', '');
-                method(i) = string(ndi.v2.termName(mr)); method_node(i) = string(nodeOf(mr));
+                mr = ndi.v2.methodOf(st.container_, p, 'interaction');   % inline, or by method_id
+                method(i) = string(ndi.v2.termName(mr.term)); method_node(i) = string(nodeOf(mr.term));
                 [vk, vv, vt, vu] = ndi.v2.statementValue(p);
                 if strcmp(vk, 'term'), value_node(i) = string(nodeOf(vv)); end
                 if strcmp(vk, 'none') && logical(firstOr(ndi.v2.blockOf(p, 'value', 'data_body', false), false))
@@ -552,7 +552,7 @@ if ~isempty(variables)
     q = q & ndi.v2.termQuery('statement.variable', variables);
 end
 if ~isempty(methods)
-    q = q & ndi.v2.termQuery('interaction.method', methods);
+    q = q & ndi.v2.termQuery('interaction.method.term', methods);   % did-schema #88
 end
 end
 

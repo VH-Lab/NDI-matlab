@@ -2,7 +2,7 @@ function [value, sourceValue, kind] = entryValue(entry)
 %ENTRYVALUE The one value of a condition or method-parameter entry.
 %
 %   [VALUE, SOURCEVALUE, KIND] = ndi.v2.entryValue(ENTRY), ENTRY one entry of
-%   a statement's `conditions` or an interaction's `method_parameters` (the
+%   a statement's `conditions` or an interaction's `method.parameters` (the
 %   two are the same entry: variable, unit, source_unit, approximate and ONE
 %   value form). KIND names the form ('term', 'quantity', 'count', 'text', or
 %   '' when the entry holds none). VALUE is the term's name, the quantity's

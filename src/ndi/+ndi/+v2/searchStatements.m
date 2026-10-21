@@ -63,7 +63,7 @@ end
 
 q = ndi.v2.isaQuery(classOf(kind));
 q = andTerm(q, 'statement.variable', filt.variable);
-q = andTerm(q, 'interaction.method', filt.method);
+q = andTerm(q, 'interaction.method.term', filt.method);
 narrowed = false;
 if ~isempty(filt.value) && all(cellfun(@isPlainText, filt.value))
     % a term value can be narrowed in the database; a statement whose value
@@ -89,7 +89,7 @@ if filt.synonyms && isempty(structural)
     if widened
         q = ndi.v2.isaQuery(classOf(kind));
         q = andTerm(q, 'statement.variable', filt.variable);
-        q = andTerm(q, 'interaction.method', filt.method);
+        q = andTerm(q, 'interaction.method.term', filt.method);
         cand = bySubject(container, q, filt.subject, filt.withDataset);
         narrowed = false;
         structural = keepStructural(cand, filt);
@@ -189,8 +189,21 @@ s = {};
 for i = 1:numel(cand)
     p = ndi.v2.props(cand{i});
     if ~patternsMatch(ndi.v2.blockOf(p, 'statement', 'variable', []), filt.variable), continue; end
-    if ~patternsMatch(ndi.v2.blockOf(p, 'interaction', 'method', []), filt.method), continue; end
+    if ~patternsMatch(methodTerm(p), filt.method), continue; end
     s{end+1} = cand{i}; %#ok<AGROW>
+end
+end
+
+function t = methodTerm(p)
+% the inline method's term (did-schema #88: `interaction.method.term`)
+arguments
+    p
+end
+t = ndi.v2.blockOf(p, 'interaction', 'method', []);
+if isstruct(t) && ~isempty(t) && isfield(t, 'term')
+    t = t(1).term;
+else
+    t = [];
 end
 end
 

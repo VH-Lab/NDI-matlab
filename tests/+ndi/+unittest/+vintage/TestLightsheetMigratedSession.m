@@ -45,7 +45,7 @@ classdef TestLightsheetMigratedSession < matlab.unittest.TestCase
             % software but no light-sheet method. The finder keys on the
             % method (Jess 2026-10-15), so it must NOT be listed.
             decoy = F.pyramid('obs_not_lightsheet', 'sw_ls_1');
-            decoy.interaction = struct('method', struct('node', '', 'name', ''));
+            decoy.interaction = struct('method', struct('term', struct('node', '', 'name', '')));
             decoy.statement.notes = '';
             docs = {F.software('sw_ls_1'), ...
                 F.pyramid('pyr_ls_1', 'sw_ls_1'), decoy, ...

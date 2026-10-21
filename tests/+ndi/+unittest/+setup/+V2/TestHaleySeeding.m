@@ -245,7 +245,7 @@ classdef TestHaleySeeding < matlab.unittest.TestCase
                 'UniformOutput', false);
             cd = ob(strcmp(node, 'NCIT:C120538'));
             testCase.verifyNumElements(cd, withCfu);
-            testCase.verifyEqual(nodeOf(ndi.v2.blockOf(cd{1}, 'interaction', 'method')), ...
+            testCase.verifyEqual(nodeOf(ndi.v2.blockOf(cd{1}, 'interaction', 'method').term), ...
                 'NCIT:C130166', 'Viable Cell Count');
             dep = cd{1}.depends_on;
             if iscell(dep), dep = [dep{:}]; end
@@ -258,7 +258,7 @@ classdef TestHaleySeeding < matlab.unittest.TestCase
             testCase.verifyEqual(c(1).particles_per_liter, 1000 * c(1).source_value, 'RelTol', 1e-12, ...
                 'per mL -> per L');
             od = ob(strcmp(node, 'MCO:0000059'));
-            testCase.verifyEqual(nodeOf(ndi.v2.blockOf(od{1}, 'interaction', 'method')), ...
+            testCase.verifyEqual(nodeOf(ndi.v2.blockOf(od{1}, 'interaction', 'method').term), ...
                 'NCIT:C85776', 'Optical Density Measurement (decision #129)');
         end
     end

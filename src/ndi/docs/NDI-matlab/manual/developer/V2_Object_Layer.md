@@ -169,7 +169,7 @@ method or instrument.
 | member | returns |
 |---|---|
 | `time()` | start and end, resolved through the time references (absolute UTC or relative to another document), with tolerance |
-| `method()`, `method_parameters()` | an `ndi.term` (§13); a table of parameters |
+| `method()`, `method_parameters()` | an `ndi.term` (§13); a table of parameters -- the `term` and `parameters` of the statement's one `method` block (did-schema #88), inline or on the `method` document `method_id` names (`ndi.v2.methodOf`) |
 | `instrument()` | the instrument subject, if any |
 
 ### `ndi.observation`, `ndi.manipulation`, `ndi.calculation < ndi.interaction`
@@ -316,7 +316,7 @@ tried on the real Haley dataset before the next.
 | `+ndi/manipulation.m` | `ndi.manipulation`: `formulation` |
 | `+ndi/calculation.m` | `ndi.calculation`: `inputs`, `interpreter`, `operating_system` |
 | `+ndi/data_type.m` | `ndi.value` |
-| `+ndi/+v2/` | helpers: `props`, `classChain`, `directParents`, `edgeIds`, `getDocument`, `blockOf`, `termName`, `readBody` (the sampled-body reader), `axesTable`, `entryValue` (a condition's or method parameter's one value), `parseUtc`, `timeOf` (the time resolver) |
+| `+ndi/+v2/` | helpers: `props`, `methodOf` (a statement's or relation's method block, inline or by `method_id`), `classChain`, `directParents`, `edgeIds`, `getDocument`, `blockOf`, `termName`, `readBody` (the sampled-body reader), `axesTable`, `entryValue` (a condition's or method parameter's one value), `parseUtc`, `timeOf` (the time resolver) |
 
 Tests: `tests/+ndi/+unittest/+setup/+V2/TestObjectLayer.m`, over the Haley CI
 fixture, including the v1 subject constructor. Not yet: a chunked body (an

@@ -18,7 +18,7 @@ function params = syncruleParameters(ruleDoc, ndi_session_obj, objClass)
 %
 %     RENAMED into typed fields on `clock_alignment_configuration` (since
 %     did-schema #73 item 22, `method_parameters` entries named by
-%     `variable`; both forms are read)
+%     `variable` -- `method.parameters` since #88; all forms are read)
 %         epochclocktype           -> clock (an ontology_term; the name half)
 %         number_fullpath_matches  -> minimum_matching_file_paths
 %         syncfilename             -> sync_file_name
@@ -261,7 +261,10 @@ end
 end
 
 function e = methodParameter(cfg, name)
-%METHODPARAMETER A knob held in `method_parameters`, or [] if absent.
+%METHODPARAMETER A knob held in the method's parameters, or [] if absent.
+%   `method.parameters` since did-schema #88 (V_eta_method_plan.md);
+%   `method_parameters` before it -- a session migrated against either
+%   schema is read.
 %   did-schema #73 item 22 turned the typed fields into `parameter[]`
 %   entries named by `variable`. Until that variable is bound it is a LABEL
 %   ({name}, no node), so an entry is matched by the V_eta field name or by
@@ -272,7 +275,17 @@ arguments
     name {mustBeText}
 end
 e = [];
-if ~isstruct(cfg) || ~isfield(cfg, 'method_parameters') || isempty(cfg.method_parameters)
+if ~isstruct(cfg)
+    return;
+end
+if isfield(cfg, 'method') && isstruct(cfg.method) && isfield(cfg.method, 'parameters')
+    mp = cfg.method.parameters;          % did-schema #88: method {term, parameters}
+elseif isfield(cfg, 'method_parameters')
+    mp = cfg.method_parameters;          % #73 item 22, before #88
+else
+    mp = [];
+end
+if isempty(mp)
     return;
 end
 v1Names = struct('minimum_matching_file_paths', 'number_fullpath_matches', ...
@@ -282,7 +295,6 @@ wanted = {name};
 if isfield(v1Names, name)
     wanted{end+1} = v1Names.(name);
 end
-mp = cfg.method_parameters;
 for k = 1:numel(mp)
     if iscell(mp), c = mp{k}; else, c = mp(k); end
     if isfield(c, 'variable') && isstruct(c.variable) && isfield(c.variable, 'name') ...
@@ -318,6 +330,6 @@ if any(strcmp(kind, {'quantity', 'count'}))
 end
 error('NDI:vintage:syncruleMissingField', ...
     ['cannot rebuild `%s` for a %s: the configuration carries no ' ...
-     '`%s`, as a field or as a method_parameters entry.'], ...
+     '`%s`, as a field or as a method parameter.'], ...
     whatV1Called, objClass, etaName);
 end

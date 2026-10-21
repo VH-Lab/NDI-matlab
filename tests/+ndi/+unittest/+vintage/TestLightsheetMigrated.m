@@ -68,7 +68,7 @@ classdef TestLightsheetMigrated < matlab.unittest.TestCase
         function testTheMethodIsTheMigrators(testCase)
             % ndi.vintage.lightsheetPyramidDocs finds migrated pyramids by
             % this method node (Jess 2026-10-15), on the path
-            % interaction.method.node; it must be the migrator's, character
+            % interaction.method.term.node; it must be the migrator's, character
             % for character, and at that path.
             obs = [];
             for k = 1:numel(testCase.Out)
@@ -77,8 +77,9 @@ classdef TestLightsheetMigrated < matlab.unittest.TestCase
             testCase.assertNotEmpty(obs, 'the pyramid''s observation');
             m = ndi.v2.blockOf(obs, 'interaction', 'method', []);
             if iscell(m), m = m{1}; end
-            testCase.assertTrue(isstruct(m) && isfield(m, 'node'), ...
-                'the migrated pyramid carries interaction.method');
+            testCase.assertTrue(isstruct(m) && isfield(m, 'term'), ...
+                'the migrated pyramid carries interaction.method.term (did-schema #88)');
+            m = m.term;
             M = ndi.vintage.lightsheetMethod();
             testCase.verifyEqual(char(m.node), M.node);
             testCase.verifyEqual(char(m.name), M.name);

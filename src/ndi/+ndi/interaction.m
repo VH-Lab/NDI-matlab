@@ -10,6 +10,10 @@ classdef (Abstract) interaction < ndi.statement
     %   time              - when: a struct array, one per time reference
     %   method            - the method, an ndi.term; method_name, its name
     %   method_parameters - table of the method's parameters
+    %
+    % The method is one block, `interaction.method: {term, parameters}`, or a
+    % standalone `method` document named by the `method_id` edge (did-schema
+    % #88, V_eta_method_plan.md); both read the same (ndi.v2.methodOf).
     %   instrument        - the instrument subject(s) (a cell array of ndi.entity)
     %   software          - the software entity (a cell array of ndi.entity)
     %
@@ -43,7 +47,8 @@ classdef (Abstract) interaction < ndi.statement
 
         function m = method(obj)
             % METHOD - the method, an ndi.term; an empty ndi.term when none
-            m = ndi.term.fromStored(ndi.v2.blockOf(obj.document_properties(), 'interaction', 'method', []));
+            m = ndi.v2.methodOf(obj.container_, obj.document_properties(), 'interaction');
+            m = ndi.term.fromStored(m.term);
         end
 
         function n = method_name(obj)
@@ -54,12 +59,13 @@ classdef (Abstract) interaction < ndi.statement
         function T = method_parameters(obj)
             % METHOD_PARAMETERS - table: variable, value, unit, source_unit
             %
-            % One row per parameter stored on the statement. VALUE is the
+            % One row per parameter of the statement's method (inline, or on
+            % the `method` document its `method_id` names). VALUE is the
             % number in `unit` (the canonical unit), a count, a term's name,
             % or text; SOURCE_VALUE is the number as the source wrote it, in
             % SOURCE_UNIT ("" for any other form).
-            m = ndi.v2.blockOf(obj.document_properties(), 'interaction', 'method_parameters', []);
-            m = ndi.v2.entries(m);
+            m = ndi.v2.methodOf(obj.container_, obj.document_properties(), 'interaction');
+            m = ndi.v2.entries(m.parameters);
             variable = strings(0, 1); value = cell(0, 1); unit = strings(0, 1);
             source_value = strings(0, 1); source_unit = strings(0, 1);
             for i = 1:numel(m)

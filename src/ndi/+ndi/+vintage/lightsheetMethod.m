@@ -6,7 +6,7 @@ function m = lightsheetMethod()
 %   M is struct('node', 'FBbi:00000369', 'name', 'selective plane
 %   illumination fluorescence microscopy') -- light-sheet microscopy (checked
 %   on OLS). DID-matlab +migrators_j/lightsheet_zarr_pyramid.m sets it as
-%   `interaction.method` on the intensity observation it makes of EVERY v1
+%   `interaction.method.term` on the intensity observation it makes of EVERY v1
 %   lightsheetZarrPyramid, OME-Zarr and SmartSPIM alike (Jess 2026-10-15). It
 %   is what says "lightsheet pyramid" rather than "some fluorescence
 %   measurement", so ndi.vintage.lightsheetPyramidDocs finds migrated pyramids

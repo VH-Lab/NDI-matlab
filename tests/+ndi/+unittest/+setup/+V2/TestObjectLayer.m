@@ -493,8 +493,7 @@ classdef TestObjectLayer < matlab.unittest.TestCase
             testCase.verifyTrue(all(cellfun(@(x) strcmp(x.via(), 'member_of > contained_in'), ctx)), ...
                 'through its cohort''s distributive stay');
             vars = cellfun(@(x) x.variable_name(), ctx, 'UniformOutput', false);
-            methods_ = cellfun(@(x) char(ndi.v2.termName(ndi.v2.blockOf(x.document_properties(), ...
-                'interaction', 'method', ''))), ctx, 'UniformOutput', false);
+            methods_ = cellfun(@(x) char(x.method_name()), ctx, 'UniformOutput', false);
             testCase.verifyTrue(any(strcmp(vars, 'Environmental Temperature')), ...
                 'the bench and the incubator, while it was there');
             testCase.verifyFalse(any(strcmp(vars, 'nematode growth medium')), ...
@@ -985,6 +984,44 @@ classdef TestObjectLayer < matlab.unittest.TestCase
             testCase.verifyTrue(all(cellfun(@(s) isa(s, 'ndi.manipulation'), moves)));
             P = moves{1}.method_parameters();
             testCase.verifyTrue(any(P.variable == "cleaning step"));
+        end
+
+        function testAMethodDocumentReadsLikeTheInlineBlock(testCase)
+            % did-schema #88 (V_eta_method_plan.md): a statement carries the
+            % inline `method` block OR a `method_id` edge to a standalone
+            % `method` document, never both; ndi.interaction reads either.
+            moves = ndi.statement.search(testCase.Session, 'Variable', 'location', 'Method', 'agar plug transfer');
+            testCase.assertNotEmpty(moves);
+            inline = moves{1}.document_properties();
+            testCase.assertTrue(isfield(inline.interaction.method, 'term'), 'the import writes the block');
+            sid = testCase.Session.id();
+            prev = did2.schema.cache.strictMode('TermRegistry', false);
+            restore = onCleanup(@() did2.schema.cache.strictMode('TermRegistry', prev));
+            m = did2.build.method(inline.interaction.method.term, ...
+                inline.interaction.method.parameters, 'Name', 'house transfer', 'SessionId', sid);
+            clear restore;
+            byEdge = inline;
+            byEdge.base.id = char(ndi.ido.unique_id());
+            byEdge.interaction = rmfield(byEdge.interaction, 'method');
+            dep = byEdge.depends_on;
+            if iscell(dep), dep = [dep{:}]; end
+            dep = struct('name', [{dep.name}, {'method_id'}], ...
+                'document_id', [{dep.document_id}, {m.base.id}]);
+            byEdge.depends_on = dep;
+            folder = fullfile(testCase.Root, ['method_' char(ndi.ido.unique_id())]);
+            copyfile(testCase.Session.getpath(), folder);
+            db = did2.database.sqlitedb(fullfile(folder, '.ndi', ...
+                ndi.database.implementations.database.did2sqlite.DEFAULTFILENAME()));
+            db.add({did2.document(m), did2.document(byEdge)});
+            db.close();
+            S = ndi.session.dir(folder);
+            st = ndi.statement.fromDocument(S, byEdge.base.id);
+            testCase.verifyEqual(st.method_name(), moves{1}.method_name());
+            P = st.method_parameters();
+            testCase.verifyEqual(P.variable, moves{1}.method_parameters().variable);
+            mb = ndi.v2.methodOf(S, byEdge, 'interaction');
+            testCase.verifyEqual(mb.id, m.base.id);
+            testCase.verifyEqual(mb.name, 'house transfer');
         end
 
         function testANestedEdgeTargetReachesDid2(testCase)

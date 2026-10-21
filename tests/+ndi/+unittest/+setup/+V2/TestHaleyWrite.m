@@ -117,7 +117,7 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             % filmed with a card between the light and the plate, oblique
             % illumination imaging (decision #108)
             io = docs(strcmp(classes, 'intensity_observation'));
-            how = cellfun(@(d) d.interaction.method.node, io, 'UniformOutput', false);
+            how = cellfun(@(d) d.interaction.method.term.node, io, 'UniformOutput', false);
             testCase.verifyEqual(sum(strcmp(how, 'EMPTY:0000300')), 4);
             testCase.verifyEqual(sum(strcmp(how, 'EMPTY:0000348')), 2);
             testCase.verifyEqual(count('opaque_body'), 6);
@@ -529,7 +529,7 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             testCase.verifyEqual(numbers(ndi.v2.blockOf(ob{1}, 'concentration', 'value'), ...
                 'source_value'), 10.2, 'AbsTol', 1e-12, 'measured, not the plan');
             testCase.verifyEqual(edge(ob{1}, 'instrument_id'), ids('spectrophotometer_1'));
-            testCase.verifyEqual(ob{1}.interaction.method.node, 'NCIT:C85776', ...
+            testCase.verifyEqual(ob{1}.interaction.method.term.node, 'NCIT:C85776', ...
                 'Optical Density Measurement (decision #129)');
             testCase.verifyEmpty(aboutMd(dilId, 'concentration_observation'), ...
                 'a dilution was not measured: no observation (T14)');
@@ -540,7 +540,7 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             cfu = obAll(cellfun(@(d) strcmp(d.statement.variable.node, 'NCIT:C120538'), obAll));
             testCase.verifyNumElements(cfu, 1);
             testCase.verifyEqual(cfu{1}.statement.variable.name, 'Cell Density');
-            testCase.verifyEqual(cfu{1}.interaction.method.node, 'NCIT:C130166');
+            testCase.verifyEqual(cfu{1}.interaction.method.term.node, 'NCIT:C130166');
             cv = entries(ndi.v2.blockOf(cfu{1}, 'concentration', 'value'));
             testCase.verifyEqual(cv{1}.particles_per_liter, 500 * 2e10, 'RelTol', 1e-12);
             testCase.verifyEqual(cv{1}.source_value, 500 * 2e7, 'RelTol', 1e-12);
@@ -557,7 +557,7 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             tm = on(docs(strcmp(classes, 'temperature_manipulation')), 'concentration_assayPlate0012');
             testCase.verifyEqual(reshape(sort(cellfun(@(d) d.temperature.value.celsius, tm)), 1, []), [4 20]);
             testCase.verifyEqual(tm{1}.statement.variable.node, 'NCIT:C90380');
-            methods = sort(cellfun(@(d) d.interaction.method.name, tm, 'UniformOutput', false));
+            methods = sort(cellfun(@(d) d.interaction.method.term.name, tm, 'UniformOutput', false));
             testCase.verifyEqual(reshape(methods, 1, []), {'ambient exposure', 'refrigeration'});
 
             % the cohort's moves, at its contained_in times
@@ -568,8 +568,8 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             testCase.verifyEqual(toAssay{1}.statement.variable.name, 'Location');
             testCase.verifyEqual(toAssay{1}.term.value.node, 'EMPTY:0000321', 'assay plate');
             testCase.verifyEqual(toAssay{1}.statement.variable.node, 'NCIT:C25341');
-            testCase.verifyEqual(toAssay{1}.interaction.method.name, 'agar plug transfer');
-            mp = toAssay{1}.interaction.method_parameters;
+            testCase.verifyEqual(toAssay{1}.interaction.method.term.name, 'agar plug transfer');
+            mp = toAssay{1}.interaction.method.parameters;
             if iscell(mp), mp = [mp{:}]; end
             testCase.verifyTrue(any(arrayfun(@(q) strcmp(q.variable.name, 'cleaning step'), mp)));
             testCase.verifyFalse(any(arrayfun(@(q) strcmp(q.variable.name, 'droplet'), mp)), ...
@@ -589,7 +589,7 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             toDep = on(tmn, 'concentration_assayPlate0014_worms');
             toDep = toDep(cellfun(@(d) strcmp(d.term.value.name, 'food deprivation plate'), toDep));
             testCase.verifyNumElements(toDep, 1);
-            testCase.verifyEqual(toDep{1}.interaction.method.name, 'agar plug transfer');
+            testCase.verifyEqual(toDep{1}.interaction.method.term.name, 'agar plug transfer');
         end
 
         function testTheDropletIsADoseOfTheCohort(testCase)
@@ -642,10 +642,10 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             tmn = on(docs(strcmp(classes, 'term_manipulation')), 'concentration_assayPlate0012_worms');
             toAssay = tmn(cellfun(@(d) strcmp(d.term.value.name, 'assay plate'), tmn));
             testCase.verifyNumElements(toAssay, 1);
-            testCase.verifyEqual(toAssay{1}.interaction.method.name, 'eyelash picking');
+            testCase.verifyEqual(toAssay{1}.interaction.method.term.name, 'eyelash picking');
             testCase.verifyEqual(edge(dm{1}, 'time_reference_id'), edge(toAssay{1}, 'time_reference_id'), ...
                 'the droplet is at the transfer''s time');
-            mp = toAssay{1}.interaction.method_parameters;
+            mp = toAssay{1}.interaction.method.parameters;
             if iscell(mp), mp = [mp{:}]; end
             testCase.verifyFalse(any(arrayfun(@(q) strcmp(q.variable.name, 'droplet'), mp)), ...
                 'the transfer carries no droplet parameter');
@@ -782,8 +782,8 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             testCase.verifyEqual(edge(t12{1}, 'instrument_id'), probe);
             % the probe's mean over the hour: the statistic is the method (T16,
             % decision #121)
-            testCase.verifyEqual(t12{1}.interaction.method.node, 'NCIT:C53319');
-            testCase.verifyEqual(h12{1}.interaction.method.name, 'Arithmetic Mean');
+            testCase.verifyEqual(t12{1}.interaction.method.term.node, 'NCIT:C53319');
+            testCase.verifyEqual(h12{1}.interaction.method.term.name, 'Arithmetic Mean');
             testCase.verifyEqual(edge(t12{1}, 'time_reference_id'), edge(h12{1}, 'time_reference_id'));
             recs = on(docs(strcmp(classes, 'intensity_observation')), 'concentration_assayPlate0012');
             testCase.verifyTrue(any(cellfun(@(d) ismember(edge(t12{1}, 'time_reference_id'), ...
@@ -889,7 +889,7 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             testCase.verifyEqual(edge(a, 'operating_system_id'), ids('macos'));
             % `datum_type` was renamed `data_type` on 2026-10-08
             testCase.verifyEqual(ndi.v2.blockOf(a, 'value', 'data_type', ndi.v2.blockOf(a, 'value', 'datum_type')), 'bool');
-            mp = entries(a.interaction.method_parameters);
+            mp = entries(a.interaction.method.parameters);
             testCase.verifyEqual(mp{1}.variable.name, 'arena diameter');
             testCase.verifyEqual(mp{1}.variable.node, 'EMPTY:0000122');
             k = entries(a.data.keys);
@@ -925,9 +925,9 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
                 && strcmp(edge(d, 'entity_id'), idOf('concentration_assayPlate0012')), masks));
             testCase.verifyNumElements(lawn, 1);
             testCase.verifyEqual(lawn{1}.statement.variable.node, 'NCIT:C85402');
-            testCase.verifyEqual(lawn{1}.interaction.method.node, 'NCIT:C80145');
-            testCase.verifyFalse(isfield(lawn{1}.interaction, 'method_parameters') ...
-                && ~isempty(lawn{1}.interaction.method_parameters), ...
+            testCase.verifyEqual(lawn{1}.interaction.method.term.node, 'NCIT:C80145');
+            testCase.verifyFalse(isfield(lawn{1}.interaction.method, 'parameters') ...
+                && ~isempty(lawn{1}.interaction.method.parameters), ...
                 'the patches'' target diameter and spacing are statements, not parameters');
             testCase.verifyEqual(edgeAll(lawn{1}, 'input_id'), {video.base.id});
 
@@ -936,7 +936,7 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             sc = sc(cellfun(@(d) strcmp(edge(d, 'entity_id'), idOf('concentration_assayPlate0012')), sc));
             testCase.verifyNumElements(sc, 1);
             testCase.verifyEqual(sc{1}.statement.variable.node, 'NCIT:C54669', 'overlap');
-            testCase.verifyEqual(sc{1}.interaction.method.node, 'NCIT:C80145', 'image registration');
+            testCase.verifyEqual(sc{1}.interaction.method.term.node, 'NCIT:C80145', 'image registration');
             testCase.verifyEqual(sc{1}.score.value.scale.node, 'NCIT:C49159', 'a proportion (#116)');
             testCase.verifyEqual(sc{1}.score.value.score, 0.98, 'AbsTol', 1e-12);
             testCase.verifyNumElements(edgeAll(sc{1}, 'input_id'), 2);
@@ -973,7 +973,7 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             p = pos{1};
             testCase.verifyEqual(p.statement.variable.name, 'position');
             testCase.verifyEqual(p.statement.variable.node, 'PATO:0000140');
-            testCase.verifyEqual(p.interaction.method.node, 'EMPTY:0000301', 'video tracking');
+            testCase.verifyEqual(p.interaction.method.term.node, 'EMPTY:0000301', 'video tracking');
             cs = docs(strcmp(classes, 'coordinate_system'));
             testCase.verifyTrue(any(cellfun(@(d) strcmp(d.base.id, edge(p, 'coordinate_system_id')), cs)), ...
                 'the positions are in their video''s coordinate system');
@@ -987,7 +987,7 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             testCase.verifyEqual(k1{2}.term(1).node, 'EMPTY:0000137', 'body midpoint');
             testCase.verifyEqual(k1{3}.variable.node, 'NCIT:C44465', 'coordinate');
             testCase.verifyEqual({k1{3}.term.node}, {'NCIT:C44477', 'NCIT:C44478'});
-            mp = entries(p.interaction.method_parameters);
+            mp = entries(p.interaction.method.parameters);
             names = cellfun(@(m) m.variable.name, mp, 'UniformOutput', false);
             testCase.verifyEqual(sort(names(:)'), {'interpolation method', 'maximum gap filled'});
             gap = mp{strcmp(names, 'interpolation method')};
@@ -1000,7 +1000,7 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             sp = of('velocity_calculation', 'concentration_worm0121');
             testCase.verifyNumElements(sp, 1);
             testCase.verifyEqual(sp{1}.statement.variable.node, 'PATO:0000008', 'speed');
-            testCase.verifyEqual(sp{1}.interaction.method.node, 'OBI:0200056', 'moving average');
+            testCase.verifyEqual(sp{1}.interaction.method.term.node, 'OBI:0200056', 'moving average');
             testCase.verifyNumElements(entries(sp{1}.data.keys), 2, '[video frame x body part]');
             testCase.verifyEqual(edgeAll(sp{1}, 'input_id'), {p.base.id});
             v = testCase.bodyValues(sessionPath, docs, classes, sp{1}.base.id, 'double');
@@ -1135,7 +1135,7 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             testCase.verifyEqual(e1.underlying_epochs.underlying, ...
                 {fullfile(testCase.Root, 'haley', 'ecoli', 'raw', '0001.tiff')});
             st = docs(strcmp(classes, 'intensity_observation'));
-            how = cellfun(@(d) d.interaction.method.node, st, 'UniformOutput', false);
+            how = cellfun(@(d) d.interaction.method.term.node, st, 'UniformOutput', false);
             testCase.verifyEqual(sum(strcmp(how, 'NCIT:C19827')), 1, ...
                 'one brightfield microscopy recording');
             testCase.verifyEqual(sum(strcmp(how, 'EMPTY:0000300')), 0, ...
@@ -1278,8 +1278,8 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             testCase.verifyEqual(cellfun(@(t) t.name, types, 'UniformOutput', false), ...
                 {'patch exploitation encounter', 'patch sampling encounter'}, 'decision #127');
             testCase.verifyEqual(methodOf(lb{1}), 'Classification');
-            testCase.verifyEqual(lb{1}.interaction.method.node, 'EDAM:operation_2990');
-            pn = cellfun(@(e) e.variable.name, entries(lb{1}.interaction.method_parameters), ...
+            testCase.verifyEqual(lb{1}.interaction.method.term.node, 'EDAM:operation_2990');
+            pn = cellfun(@(e) e.variable.name, entries(lb{1}.interaction.method.parameters), ...
                 'UniformOutput', false);
             testCase.verifyEqual(sort(pn), sort({ ...
                 'patch exploitation encounter: minimum probability of exploitation', ...
@@ -1296,8 +1296,8 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             se = pr{strcmp(state, 'sensing')};
             testCase.verifyEqual(numbers(ex.score.value, 'score'), [0.9 0.2], 'AbsTol', 1e-12);
             testCase.verifyEqual(numbers(se.score.value, 'score'), [0.8 0.6], 'AbsTol', 1e-12);
-            testCase.verifyEqual(ex.interaction.method.node, 'EMPTY:0000316', 'Gaussian mixture model clustering');
-            testCase.verifyEqual(se.interaction.method.node, 'EMPTY:0000317', 'quadratic discriminant analysis');
+            testCase.verifyEqual(ex.interaction.method.term.node, 'EMPTY:0000316', 'Gaussian mixture model clustering');
+            testCase.verifyEqual(se.interaction.method.term.node, 'EMPTY:0000317', 'quadratic discriminant analysis');
             % timeSlowDown is not kept: no figure uses it
             testCase.verifyEmpty(named('time_calculation', 'concentration_worm0121', 'time to slow down'));
 
@@ -1338,9 +1338,9 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             testCase.verifyTrue(all(cellfun(@(d) strcmp(d.statement.variable.node, 'NCIT:C184706'), ic)), ...
                 'all fluorescence intensity');
             border = ic(cellfun(@(d) strcmp(methodOf(d), 'peak amplitude'), ic));
-            testCase.verifyTrue(all(cellfun(@(d) strcmp(d.interaction.method.node, 'EMPTY:0000349'), border)));
+            testCase.verifyTrue(all(cellfun(@(d) strcmp(d.interaction.method.term.node, 'EMPTY:0000349'), border)));
             testCase.verifyTrue(all(cellfun(@(d) isempty(conditionsOf(d)), border)), 'no baseline condition');
-            bp = entries(border{1}.interaction.method_parameters);
+            bp = entries(border{1}.interaction.method.parameters);
             testCase.verifyNumElements(bp, 1);
             testCase.verifyEqual(bp{1}.variable.node, 'NCIT:C45793', 'Reference Point');
             testCase.verifyEqual(bp{1}.term.name, 'bacterial patch edge');
@@ -1466,8 +1466,8 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             testCase.verifyEqual(gc{1}.quantity.value, 0);
             testCase.verifyFalse(isfield(gc{1}, 'approximate') && ~isempty(gc{1}.approximate) ...
                 && logical(gc{1}.approximate), 'exact');
-            testCase.verifyFalse(isfield(lin.interaction, 'method_parameters') ...
-                && ~isempty(lin.interaction.method_parameters), 'no bin width');
+            testCase.verifyFalse(isfield(lin.interaction.method, 'parameters') ...
+                && ~isempty(lin.interaction.method.parameters), 'no bin width');
             % the OD600 the patches were seeded at is the PLANNED one, said by its
             % term (decision #110, tenet T19): target seeding OD600, not OD600
             cv = cellfun(@(e) e.variable.node, conditionsOf(lin), 'UniformOutput', false);
@@ -1546,8 +1546,8 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             v = ndi.value('concentration', r12{1}.concentration.value);
             testCase.verifyEqual(v.unit(), 'od600', 'ndi.value reads the slot the cells fill');
             testCase.verifyEqual(edgeAll(r12{1}, 'input_id'), {e12{1}.base.id}, 'from its estimate');
-            testCase.verifyEqual(r12{1}.interaction.method.node, 'OBI:0200169');
-            pm = entries(r12{1}.interaction.method_parameters);
+            testCase.verifyEqual(r12{1}.interaction.method.term.node, 'OBI:0200169');
+            pm = entries(r12{1}.interaction.method.parameters);
             pv = cellfun(@(e) e.variable.node, pm, 'UniformOutput', false);
             testCase.verifyEqual(sort(pv), sort({'EMPTY:0000323', 'EMPTY:0000105', 'EMPTY:0000324'}), ...
                 'the reference, its target seeding OD600 (#110) and the floor');
@@ -1776,8 +1776,9 @@ arguments
     doc struct
 end
 name = '';
-if isfield(doc, 'interaction') && isfield(doc.interaction, 'method') && isstruct(doc.interaction.method)
-    name = doc.interaction.method.name;
+if isfield(doc, 'interaction') && isfield(doc.interaction, 'method') && isstruct(doc.interaction.method) ...
+        && isfield(doc.interaction.method, 'term')   % did-schema #88: method {term, parameters}
+    name = doc.interaction.method.term.name;
 end
 end
 
