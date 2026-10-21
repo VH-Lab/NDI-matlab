@@ -304,12 +304,12 @@ if ~strcmp(options.Studies, 'only')
     d = spec.dataset;
     state = checkKnown(state, 'dataset', d, {'name', 'short_name', 'version', ...
         'version_innovation', 'description', 'how_to_cite', 'keyword', 'license', ...
-        'accessibility', 'ethics_assessment', 'experimental_approach', 'support_channel', ...
+        'accessibility', 'ethics_jurisdiction', 'experimental_approach', 'support_channel', ...
         'release_date', 'copyright_year', 'identifiers', 'authors', 'funding', 'cites', ...
         'stored_at', 'documented_by'});
     f = struct();
     for fn = {'name', 'short_name', 'version', 'version_innovation', 'description', ...
-            'how_to_cite', 'keyword', 'license', 'accessibility', 'ethics_assessment', ...
+            'how_to_cite', 'keyword', 'license', 'accessibility', 'ethics_jurisdiction', ...
             'experimental_approach', 'support_channel', 'release_date', 'copyright_year'}
         f = putIf(f, fn{1}, d, fn{1});
     end
@@ -366,18 +366,30 @@ else
 end
 
 if ~strcmp(options.Studies, 'exclude')
-    for e = entries(spec, 'studies')
+    % A study's `design` is dropped (Jess Haley, 2026-10-21; proposed, not
+    % signed: DID-schema V_eta_study_plan.md). A study may name a parent
+    % study it is `included_in` (its key); otherwise it is filed under the
+    % dataset. Every study is minted first, so a parent may be listed after
+    % its child.
+    studies = entries(spec, 'studies');
+    for e = studies
         s = e{1};
         state = checkKnown(state, 'study', s, {'name', 'short_name', 'description', ...
-            'factors', 'design', 'identifiers'}, ...
+            'factors', 'identifiers', 'included_in'}, ...
             struct('source_folder', '', 'source_condition', ''));   % import directives
         f = struct('name', s.name);
         f = putIf(f, 'short_name', s, 'short_name');
         f = putIf(f, 'description', s, 'description');
         f = putIf(f, 'factors', s, 'factors');
-        f = putIf(f, 'design', s, 'design');
         state = add(state, 'study', s.key, putIds(f, s), struct());
-        state = relate(state, s.key, key, 'included_in', {'study'}, {'dataset'});
+    end
+    for e = studies
+        s = e{1};
+        if isfield(s, 'included_in') && ~isempty(s.included_in)
+            state = relate(state, s.key, s.included_in, 'included_in', {'study'}, {'study'});
+        else
+            state = relate(state, s.key, key, 'included_in', {'study'}, {'dataset'});
+        end
     end
 end
 

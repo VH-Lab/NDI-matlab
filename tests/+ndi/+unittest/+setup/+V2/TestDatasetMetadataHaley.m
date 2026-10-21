@@ -83,20 +83,24 @@ classdef TestDatasetMetadataHaley < matlab.unittest.TestCase
             testCase.verifyEqual(sum(strcmp(classOf(studies), 'study')), numel(testCase.Spec.studies));
             testCase.verifyEqual(numel(rest.documents) + numel(studies.documents), ...
                 numel(testCase.Result.documents));
-            % each study is filed under the dataset the other call built
+            % each study is filed under the dataset the other call built, or
+            % under the parent study it names (single-patch assays, Jess
+            % Haley 2026-10-21)
             rel = studies.documents(strcmp(classOf(studies), 'directed_relation'));
             testCase.verifyEqual(numel(rel), numel(testCase.Spec.studies));
-            for k = 1:numel(rel)
-                dep = rel{k}.depends_on;
-                testCase.verifyTrue(any(strcmp({dep.document_id}, datasetId)));
-            end
+            nested = nestedStudyKeys(testCase.Spec);
+            parentIds = cellfun(@parentOf, rel, 'UniformOutput', false);
+            testCase.verifyEqual(sum(strcmp(parentIds, datasetId)), ...
+                numel(testCase.Spec.studies) - numel(nested));
+            testCase.verifyEqual(sum(strcmp(parentIds, studies.ids('single_patch_assays'))), 2);
             ds = rest.documents(strcmp(classOf(rest), 'dataset'));
             testCase.verifyEqual(ds{1}.base.id, datasetId);
             % the dataset's id is known from the session id, so "only"
             % needs no 'DatasetId', and another id is refused
             alone = ndi.setup.V2.datasetMetadata(testCase.Spec, sid, 'Studies', "only");
             rel = alone.documents(strcmp(classOf(alone), 'directed_relation'));
-            testCase.verifyTrue(all(cellfun(@(r) any(strcmp({r.depends_on.document_id}, sid)), rel)));
+            toDataset = cellfun(@(r) any(strcmp({r.depends_on.document_id}, sid)), rel);
+            testCase.verifyEqual(sum(toDataset), numel(rel) - numel(nestedStudyKeys(testCase.Spec)));
             testCase.verifyError(@() ndi.setup.V2.datasetMetadata(testCase.Spec, sid, ...
                 'DatasetId', did.ido.unique_id(), 'Studies', "only"), 'ndi:setup:V2:datasetId');
         end
@@ -270,14 +274,49 @@ classdef TestDatasetMetadataHaley < matlab.unittest.TestCase
             end
             testCase.verifyGreaterThan(nFactors, 0);
             testCase.verifyEqual(testCase.Spec.dataset.accessibility.node, 'NCIT:C183346');
+            % ethics jurisdiction replaces ethics assessment (Jess Haley,
+            % 2026-10-21); none was required, so none is asserted
             testCase.verifyFalse(isfield(testCase.Spec.dataset, 'ethics_assessment'));
+            testCase.verifyFalse(isfield(testCase.Spec.dataset, 'ethics_jurisdiction'));
             docs = testCase.Result.documents;
             st = docs(cellfun(@(d) isfield(d, 'statement'), docs));
             vars = cellfun(@(d) d.statement.variable.name, st, 'UniformOutput', false);
             testCase.verifyFalse(any(strcmp(vars, 'ethics assessment')));
+            testCase.verifyFalse(any(strcmp(vars, 'ethics jurisdiction')));
+            % a study's design is dropped (Jess Haley, 2026-10-21)
+            testCase.verifyFalse(any(strcmp(vars, 'study design')));
+            % the dataset's experimental approaches, by their InterLex nodes
+            ea = st(strcmp(vars, 'experimental approach'));
+            testCase.verifyNumElements(ea, 1);
+            testCase.verifyEqual(sort({ea{1}.term.value.node}), ...
+                sort({'ILX:0739413', 'ILX:0739388', 'ILX:0739404'}));
             acc = st(strcmp(vars, 'Open or Controlled Data Access Indicator') | strcmp(vars, 'accessibility'));
             testCase.verifyNumElements(acc, 1);
             testCase.verifyEqual(acc{1}.statement.variable.node, 'NCIT:C175887');
+        end
+
+        function testSinglePatchAssaysGroupTwoStudies(testCase)
+            % Jess Haley, 2026-10-21: the large and small single-patch
+            % assays are included_in a parent study, whose factors are
+            % patch volume, arena diameter and worms per arena; each child
+            % adds bacteria growth duration after seeding (1 h vs 48 h)
+            ids = testCase.Result.ids;
+            parent = ids('single_patch_assays');
+            rels = relationsNamed(testCase.Result.documents, 'included_in');
+            child = rels(cellfun(@(r) strcmp(parentOf(r), parent), rels));
+            childIds = sort(cellfun(@(r) r.depends_on(strcmp({r.depends_on.name}, ...
+                'child_id')).document_id, child, 'UniformOutput', false));
+            testCase.verifyEqual(childIds, sort({ids('large_single_patch'), ids('small_single_patch')}));
+            st = testCase.Spec.studies;
+            if isstruct(st), st = num2cell(st); end
+            byKey = containers.Map(cellfun(@(x) x.key, st, 'UniformOutput', false), st);
+            nodes = @(k) sort(cellfun(@(f) f.node, num2cell(asStructs(byKey(k).factors)), ...
+                'UniformOutput', false));
+            testCase.verifyEqual(nodes('single_patch_assays'), ...
+                sort({'EMPTY:0000120', 'EMPTY:0000122', 'EMPTY:0000365'}));
+            testCase.verifyTrue(any(strcmp(nodes('large_single_patch'), 'EMPTY:0000119')));
+            testCase.verifyTrue(any(strcmp(nodes('small_single_patch'), 'EMPTY:0000119')));
+            testCase.verifyEqual(nodes('mutant_screen'), sort({'NCIT:C14419', 'ZECO:0000113'}));
         end
 
         function testKeywordsAreTextAndTheLicenceIsItsSpdxTerm(testCase)
@@ -346,6 +385,23 @@ end
 isRel = cellfun(@(d) strcmp(d.document_class.class_name, 'directed_relation'), docs);
 rels = docs(isRel);
 rels = rels(cellfun(@(r) strcmp(r.directed_relation.relation.name, name), rels));
+end
+
+function s = asStructs(f)
+if iscell(f), f = [f{:}]; end
+s = f;
+end
+
+function keys = nestedStudyKeys(spec)
+%NESTEDSTUDYKEYS The keys of the studies filed under another study.
+st = spec.studies;
+if isstruct(st), st = num2cell(st); end
+keys = {};
+for k = 1:numel(st)
+    if isfield(st{k}, 'included_in') && ~isempty(st{k}.included_in)
+        keys{end+1} = st{k}.key; %#ok<AGROW>
+    end
+end
 end
 
 function id = parentOf(r)

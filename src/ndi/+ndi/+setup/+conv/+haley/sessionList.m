@@ -69,6 +69,9 @@ if isempty(outRoot)
     outRoot = fullfile(dataParentDir, 'haley_V2');
 end
 studies = asCell(spec.studies);
+% a study with no source folder (a parent study, such as single-patch
+% assays, that only groups others) holds no sessions of its own
+studies = studies(cellfun(@(s) isfield(s, 'source_folder'), studies));
 rows = {};
 checks = struct('sharedDay', {{}}, 'noVideoFolder', {{}}, 'unusedVideoDay', {{}}, ...
     'ecoliSpread', {{}}, 'corrected', {{}}, 'correctionNotApplied', {{}});

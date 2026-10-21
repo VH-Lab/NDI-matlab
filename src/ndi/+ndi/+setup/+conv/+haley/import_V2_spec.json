@@ -1791,6 +1791,26 @@
    ]
   },
   {
+   "key": "single_patch_assays",
+   "name": "Single-patch assays",
+   "short_name": "single patch",
+   "description": "The paper's single-patch assays (Fig. 3): animals forage on one bacterial patch of a single OP50 density (OD600), either one large 20 µl patch in a 30 mm arena with four animals or one small 0.5 µl patch in a 9 mm arena with one animal, the patch grown 1 h or 48 h after seeding. The two assays are the studies included in this one.",
+   "factors": [
+    {
+     "node": "EMPTY:0000120",
+     "name": "bacterial patch volume"
+    },
+    {
+     "node": "EMPTY:0000122",
+     "name": "arena diameter"
+    },
+    {
+     "node": "EMPTY:0000365",
+     "name": "number of organisms per arena"
+    }
+   ]
+  },
+  {
    "key": "large_single_patch",
    "name": "Large, single-patch assay",
    "short_name": "foragingConcentration (single)",
@@ -1801,8 +1821,13 @@
     {
      "node": "MCO:0000059",
      "name": "OD600"
+    },
+    {
+     "node": "EMPTY:0000119",
+     "name": "bacteria growth duration after seeding"
     }
-   ]
+   ],
+   "included_in": "single_patch_assays"
   },
   {
    "key": "small_single_patch",
@@ -1814,8 +1839,13 @@
     {
      "node": "MCO:0000059",
      "name": "OD600"
+    },
+    {
+     "node": "EMPTY:0000119",
+     "name": "bacteria growth duration after seeding"
     }
-   ]
+   ],
+   "included_in": "single_patch_assays"
   },
   {
    "key": "multi_density_multi_patch",
@@ -1894,7 +1924,21 @@
    "node": "NCIT:C183346",
    "name": "Unrestricted Access"
   },
-  "_ethics_assessment": "Not stated: no ethics assessment was required (C. elegans and E. coli), and an assessment that was not required is not asserted (2026-10-19).",
+  "experimental_approach": [
+   {
+    "node": "ILX:0739413",
+    "name": "behavior"
+   },
+   {
+    "node": "ILX:0739388",
+    "name": "ethology"
+   },
+   {
+    "node": "ILX:0739404",
+    "name": "microscopy"
+   }
+  ],
+  "_ethics_jurisdiction": "Not stated: no ethics review was required (C. elegans and E. coli), so no jurisdiction is asserted (Jess Haley, 2026-10-21; ethics jurisdiction replaces ethics assessment, which was not asserted either, 2026-10-19).",
   "release_date": "2025-08-01",
   "identifiers": [
    {
