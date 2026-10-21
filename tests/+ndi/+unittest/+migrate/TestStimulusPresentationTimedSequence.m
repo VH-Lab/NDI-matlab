@@ -536,7 +536,9 @@ classdef TestStimulusPresentationTimedSequence < matlab.unittest.TestCase
 
         function testAStimulatorNamingSeveralSubjectsIsRefused(testCase)
             % Two stimulus_element_id edges reaching two different animals:
-            % ambiguous, so refuse rather than pick one.
+            % SEVERAL animals (Jess Haley, 2026-10-21). Not picked between and
+            % not copied: the cohort + distributive shape is not expressible on
+            % the schema this pass writes, so it is left as v1 and counted.
             pres = presentationBody('pres_two', 1, { gratingStim(0, 0.04, 0.5) });
             sid = pres.base.session_id;
             pres.depends_on(end+1) = struct('name', 'stimulus_element_id', ...
@@ -550,7 +552,8 @@ classdef TestStimulusPresentationTimedSequence < matlab.unittest.TestCase
             testCase.verifyEmpty(m);
             testCase.verifyEqual(report.stimulator_subjects, 2);
             testCase.verifyEqual(report.animal_source, 'none');
-            testCase.verifySubstring(report.reason, 'ambiguous');
+            testCase.verifyEqual(report.several_animals, 2);
+            testCase.verifySubstring(report.reason, 'several animals');
         end
 
         function testAStimulatorInAnotherSessionIsNotFollowed(testCase)
@@ -630,7 +633,7 @@ classdef TestStimulusPresentationTimedSequence < matlab.unittest.TestCase
                 'trials_out_of_range'; 'trials_with_timing'; 'timing_source'; ...
                 'basis_source'; 'shared_refs'; 'frames'; ...
                 'subjects_resolved'; 'sibling_subjects'; 'stimulator_subjects'; ...
-                'instrument_resolved'; 'epoch_id'; ...
+                'several_animals'; 'instrument_resolved'; 'epoch_id'; ...
                 'animal_source'; 'reason'};
 
             pres = presentationBody('pres_1', 1, { gratingStim(0, 0.04, 0.5) });
