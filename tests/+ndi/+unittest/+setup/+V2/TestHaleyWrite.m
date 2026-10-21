@@ -771,8 +771,9 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
         % ---- no unregistered label by fallback (decision #136) ----------------
         % Each source value with no registered term is an error that names it,
         % not a label with no node. Each test edits a FRESH fixture (the class
-        % fixture is shared) and runs the import with 'Write' false, so the
-        % error reaches the caller (a written run records a failure instead).
+        % fixture is shared) and writes it with 'RunFolder' 'none', so the error
+        % reaches the caller (a recorded run catches it and reports a failure
+        % instead; and the session stages run only when writing).
 
         function testAnUnknownEncounterLabelIsAnError(testCase)
             if ~ndi.setup.V2.schemaHasLeaf('time_calculation')
@@ -823,8 +824,9 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             testCase.verifyError(@() ndi.setup.conv.haley.import_V2(testCase.Root, ...
                 'Stages', ["sessions", "subjects", "acquisition", "relations", "metadata", ...
                 "assertions", "manipulations"], 'Sessions', "concentration_0001", 'Spec', spec, ...
-                'OutputRoot', fullfile(fileparts(spec), 'haley_V2'), 'Write', false, ...
-                'ReadVideos', false), 'ndi:setup:conv:haley:unregisteredLabel');
+                'OutputRoot', fullfile(fileparts(spec), 'haley_V2'), 'Write', true, ...
+                'Overwrite', true, 'RunFolder', 'none', 'ReadVideos', false), ...
+                'ndi:setup:conv:haley:unregisteredLabel');
         end
 
         function testASeedingStrainWithNoTermIsAnError(testCase)
@@ -1828,8 +1830,8 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
         end
 
         function result = dryRun(testCase, root, more)
-            % the import over ROOT up to MORE, not written, so an error reaches
-            % the caller
+            % the import over ROOT up to MORE, written with no run record, so an
+            % error reaches the caller
             arguments
                 testCase (1,1) ndi.unittest.setup.V2.TestHaleyWrite
                 root {mustBeText}
@@ -1838,7 +1840,7 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             result = ndi.setup.conv.haley.import_V2(root, ...
                 'Stages', ["sessions", "subjects", "acquisition", "relations", more], ...
                 'Sessions', "concentration_0001", 'OutputRoot', fullfile(root, 'haley_V2'), ...
-                'Write', false, 'ReadVideos', false);
+                'Write', true, 'Overwrite', true, 'RunFolder', 'none', 'ReadVideos', false);
         end
 
         function docs = documents(testCase, sessionPath)
