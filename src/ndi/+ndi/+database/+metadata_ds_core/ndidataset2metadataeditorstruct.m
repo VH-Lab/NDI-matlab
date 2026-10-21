@@ -170,7 +170,11 @@ end
 function strainInstances = loadStrain(D)
     import ndi.database.metadata_app.fun.loadUserInstanceCatalog
     strainInstances = loadUserInstanceCatalog('Strain');
-    strain_docs = D.database_search(ndi.query('openminds.openminds_type', 'exact_string','https://openminds.ebrains.eu/core/Strain'));
+    % openMINDS moved its namespace from openminds.ebrains.eu (core/Strain) to
+    % openminds.om-i.org (types/Strain); match strains written under either (NDI #767).
+    q = ndi.query('openminds.openminds_type', 'exact_string', 'https://openminds.ebrains.eu/core/Strain') | ...
+        ndi.query('openminds.openminds_type', 'exact_string', 'https://openminds.om-i.org/types/Strain');
+    strain_docs = D.database_search(q);
     for i = 1:numel(strain_docs)
         strain_doc = strain_docs{i};
         strain = struct();
