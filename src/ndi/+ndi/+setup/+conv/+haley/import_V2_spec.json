@@ -1233,15 +1233,15 @@
      "ingredient": "mgso4_sigma",
      "concentration": {
       "grams_per_liter": 120.3,
-      "source_value": 12.03,
-      "source_unit": "g in 100 mL"
+      "source_value": 120.3,
+      "source_unit": "g/L"
      }
     },
     {
      "ingredient": "water"
     }
    ],
-   "_note": "MgSO4 stock (Benchling, 27 Sep 2022; protocol adapted from Kathleen Quach): 12.037 g (12.03 g weighed) dissolved in 75 mL dH2O, made up to 100 mL; autoclaved 30 min on liquid cycle #3, stored at room temperature."
+   "_note": "MgSO4 stock (Benchling, 27 Sep 2022; protocol adapted from Kathleen Quach): 12.037 g (12.03 g weighed) dissolved in 75 mL dH2O, made up to 100 mL; autoclaved 30 min on liquid cycle #3, stored at room temperature. Written as g/L; the recipe gives it as 12.03 g in 100 mL (Jess Haley, 2026-10-21)."
   },
   {
    "key": "cacl2_1m",
@@ -1254,15 +1254,15 @@
      "ingredient": "cacl2_2h2o_fisher",
      "concentration": {
       "grams_per_liter": 147,
-      "source_value": 14.7,
-      "source_unit": "g in 100 mL"
+      "source_value": 147,
+      "source_unit": "g/L"
      }
     },
     {
      "ingredient": "water"
     }
    ],
-   "_note": "CaCl2 stock (Benchling, 27 Sep 2022; protocol adapted from Kathleen Quach): 14.7 g calcium chloride dihydrate dissolved in 75 mL dH2O, made up to 100 mL; autoclaved 30 min on liquid cycle #3, stored at room temperature."
+   "_note": "CaCl2 stock (Benchling, 27 Sep 2022; protocol adapted from Kathleen Quach): 14.7 g calcium chloride dihydrate dissolved in 75 mL dH2O, made up to 100 mL; autoclaved 30 min on liquid cycle #3, stored at room temperature. Written as g/L; the recipe gives it as 14.7 g in 100 mL (Jess Haley, 2026-10-21)."
   },
   {
    "key": "kh2po4_1m",
@@ -1275,15 +1275,15 @@
      "ingredient": "kh2po4_fisher",
      "concentration": {
       "grams_per_liter": 136,
-      "source_value": 68,
-      "source_unit": "g in 500 mL"
+      "source_value": 136,
+      "source_unit": "g/L"
      }
     },
     {
      "ingredient": "water"
     }
    ],
-   "_note": "231109_KPO4_stock (Benchling; protocol adapted from Kathleen Quach): 68.00 g dissolved in 400 mL dH2O, made up to 500 mL."
+   "_note": "231109_KPO4_stock (Benchling; protocol adapted from Kathleen Quach): 68.00 g dissolved in 400 mL dH2O, made up to 500 mL. Written as g/L; the recipe gives it as 68 g in 500 mL (Jess Haley, 2026-10-21)."
   },
   {
    "key": "k2hpo4_1m",
@@ -1296,15 +1296,15 @@
      "ingredient": "k2hpo4_3h2o_sigma",
      "concentration": {
       "grams_per_liter": 228.16,
-      "source_value": 57.04,
-      "source_unit": "g in 250 mL"
+      "source_value": 228.16,
+      "source_unit": "g/L"
      }
     },
     {
      "ingredient": "water"
     }
    ],
-   "_note": "231109_KPO4_stock (Benchling): 57.04 g of the trihydrate dissolved in 200 mL dH2O, made up to 250 mL."
+   "_note": "231109_KPO4_stock (Benchling): 57.04 g of the trihydrate dissolved in 200 mL dH2O, made up to 250 mL. Written as g/L; the recipe gives it as 57.04 g in 250 mL (Jess Haley, 2026-10-21)."
   },
   {
    "key": "kpo4_1m_ph6",

@@ -351,9 +351,14 @@ classdef TestDatasetMetadataHaley < matlab.unittest.TestCase
             % Jess Haley, 2026-10-21: the dataset's keywords are its own text
             % (a text assertion), not terms with no node; its licence is the
             % term whose node is its SPDX IRI (no ontology has licence terms)
-            testCase.assumeTrue(ndi.setup.V2.mergedEntities(), ...
-                'the dataset is its own class here: keyword and license are its fields');
             docs = testCase.Result.documents;
+            if ~ndi.setup.V2.mergedEntities()
+                % the dataset is its own class here (did-schema main): keyword
+                % and license are its own fields, written as the spec gives them
+                ds = docs{strcmp(cellfun(@ndi.v2.leafName, docs, 'UniformOutput', false), 'dataset')};
+                testCase.verifyEqual(char(ds.dataset.license), 'CC-BY-4.0');
+                return;
+            end
             st = docs(cellfun(@(d) isfield(d, 'statement'), docs));
             nodes = cellfun(@(d) d.statement.variable.node, st, 'UniformOutput', false);
             kw = st(strcmp(nodes, 'EDAM:data_0968'));

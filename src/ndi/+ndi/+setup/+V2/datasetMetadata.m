@@ -311,7 +311,9 @@ if ~strcmp(options.Studies, 'only')
             v.ingredients = amounts;
         end
         if isfield(c, 'ph')
-            v.ph = struct('ph', c.ph, 'source_value', c.ph, 'source_unit', 'pH');
+            % a pH has no source unit: it is on its own scale, the canonical
+            % `ph` (Jess Haley, 2026-10-21), so source_unit is left blank
+            v.ph = struct('ph', c.ph, 'source_value', c.ph);
         end
         edges = struct();
         if ~isempty(ids)
@@ -494,7 +496,7 @@ end
 end
 
 function x = withSourceUnits(x)
-% every `source_unit` the spec spells ('mg', 'g/L', 'pH') in the shape the
+% every `source_unit` the spec spells ('mg', 'g/L', 'mL') in the shape the
 % schema in use declares: unchanged on did-schema main, the unit's registered
 % term where source_unit is a term (ndi.setup.V2.sourceUnit; did-schema
 % V_eta_source_unit_plan.md)
