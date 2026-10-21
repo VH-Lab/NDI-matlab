@@ -29,7 +29,9 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  # Keyed on the commit: a push never cancels another commit's run;
+  # only a duplicate run of the same commit is cancelled.
+  group: ${{ github.workflow }}-${{ github.sha }}
   cancel-in-progress: true
 
 jobs:
