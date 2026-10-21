@@ -17,7 +17,8 @@ on:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  # false: a push queues behind a run in progress instead of cancelling it.
+  cancel-in-progress: false
 
 jobs:
   run_tests:
