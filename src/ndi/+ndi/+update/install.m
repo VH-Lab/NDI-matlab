@@ -10,8 +10,9 @@ function result = install(options)
 %     - git installs: runs ndi_install on the folder that holds NDI-matlab,
 %       which pulls the latest main branch of NDI-matlab and updates (or
 %       clones) its dependencies. Uncommitted changes in those repositories
-%       are stashed by ndi_install. The NDI-matlab clone must be on the
-%       main branch. If you have changed code (edited tracked files, or
+%       are stashed by ndi_install for the pull and put back afterwards (if
+%       they no longer apply cleanly, 'git stash list' still has them). The
+%       NDI-matlab clone must be on the main branch. If you have changed code (edited tracked files, or
 %       made local commits) in NDI-matlab or a dependency, the changes are
 %       listed first and you are asked whether to update anyway; the
 %       default answer is No. Untracked files of your own are left alone and

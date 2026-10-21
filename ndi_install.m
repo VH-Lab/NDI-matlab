@@ -181,12 +181,13 @@ function b = git_embedded_install(dirname, repository)
     % in the local directory DIRNAME that don't match the remote REPOSITORY are deleted.
     %
     % If DIRNAME does not exist, then the repository is cloned.
-    % If DIRNAME exists and has local changes, the changes are stashed and the
-    %    directory is updated by pulling
+    % If DIRNAME exists and has local changes, the changes are stashed, the
+    %    directory is updated by pulling, and the changes are put back
+    %    (git stash pop). If they no longer apply cleanly, they stay in
+    %    'git stash list' and the user is warned.
     % If the DIRNAME exists and has no local changes, the directory is updated by
     %    pulling.
-    %
-    % Note: if you have any local changes, GIT_INSTALL will stash them and warn the user.
+    % Untracked files are never touched.
     %
     % B is 1 if the operation is successful.
     %
@@ -208,10 +209,20 @@ function b = git_embedded_install(dirname, repository)
 
         if status_good % we can pull without difficulty
             b=git_embedded_pull(dirname);
-        else % stash first, then pull
-            warning(['STASHING changes in ' dirname '...']);
-            git_embedded_stash(dirname);
+        else % set the changes aside, pull, then put them back
+            disp(['Setting aside your changes in ' dirname ' while it is updated...']);
+            stashed = git_embedded_stash(dirname);
             b=git_embedded_pull(dirname);
+            if stashed
+                if git_embedded_stash_pop(dirname)
+                    disp(['Your changes in ' dirname ' were put back.']);
+                else
+                    warning(['Your changes in ' dirname ' could not be put back ' ...
+                        'cleanly after the update. They are still saved: see ' ...
+                        '"git -C ' dirname ' stash list", and use "git stash pop" ' ...
+                        'there once any conflicts are resolved.']);
+                end
+            end
         end
     else
         if exist(dirname,'dir')
@@ -303,6 +314,10 @@ function b = git_embedded_stash(dirname)
     %
     % Stash the local changes to a GIT repository in DIRNAME.
     %
+    % B is 1 only if a new stash entry was made. 'git stash' also succeeds
+    % when there is nothing to stash, and popping then would restore an
+    % older, unrelated stash, so the stash ref is compared before and after.
+    %
 
     localparentdir = fileparts(dirname);
 
@@ -315,12 +330,27 @@ function b = git_embedded_stash(dirname)
     end
 
     if stash_success % if we are still going, try to
+        [~,before]=system(['git -C "' dirname '" rev-parse -q --verify refs/stash']);
         [status,~]=system(['git -C "' dirname '" stash']);
+        [~,after]=system(['git -C "' dirname '" rev-parse -q --verify refs/stash']);
 
-        stash_success=(status==0);
+        stash_success=(status==0) & ~strcmp(strtrim(before),strtrim(after)) & ~isempty(strtrim(after));
     end
 
     b = stash_success;
+
+function b = git_embedded_stash_pop(dirname)
+    % GIT_EMBEDDED_STASH_POP - put back the changes the last stash set aside
+    %
+    % B = GIT_EMBEDDED_STASH_POP(DIRNAME)
+    %
+    % Runs 'git stash pop' in DIRNAME. B is 1 if the changes were put back.
+    % If they conflict with the update, git keeps the stash entry, so
+    % nothing is lost, and B is 0.
+    %
+
+    [status,~]=system(['git -C "' dirname '" stash pop']);
+    b = (status==0);
 
 function b = git_embedded_clone(repository, localparentdir)
     % GIT_EMBEDDED_CLONE - clone a git repository onto the local computer
