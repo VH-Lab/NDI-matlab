@@ -120,10 +120,10 @@ switch objClass
         params.daqsystem2 = require(name2, 'daqsystem2', objClass);
 
     case 'ndi.time.syncrule.filematch'
-        % filematch names NO devices, so the migrator PASSES IT THROUGH as
-        % a v1 `syncrule` and this branch is not reached on real data. It
-        % is here so an unexpected converted filematch fails on the
-        % missing count rather than on a missing case.
+        % filematch names NO devices. On did-schema #88 DID-matlab's
+        % migrator converts it (PRED and 20211116 carry one each, e2e run
+        % 39675528253), with the count as the method parameter labelled
+        % 'minimum matching file paths' -- see spellingKey.
         params.number_fullpath_matches = requireNumber(cfg, ...
             'minimum_matching_file_paths', 'number_fullpath_matches', objClass);
 
@@ -298,11 +298,20 @@ end
 for k = 1:numel(mp)
     if iscell(mp), c = mp{k}; else, c = mp(k); end
     if isfield(c, 'variable') && isstruct(c.variable) && isfield(c.variable, 'name') ...
-            && any(strcmp(c.variable.name, wanted))
+            && any(strcmp(spellingKey(c.variable.name), cellfun(@spellingKey, wanted, ...
+                'UniformOutput', false)))
         e = c;
         return;
     end
 end
+end
+
+function k = spellingKey(name)
+%SPELLINGKEY A parameter label compared without case, spaces or underscores:
+%   DID-matlab's #88 syncrule migrator labels the count 'minimum matching file
+%   paths' (+migrators_j/syncrule.m, jLabel), the V_eta field name is
+%   minimum_matching_file_paths, and v1 called it number_fullpath_matches.
+k = lower(regexprep(char(name), '[\s_]', ''));
 end
 
 function v = require(v, whatV1Called, objClass)
