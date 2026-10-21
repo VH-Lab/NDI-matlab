@@ -315,16 +315,21 @@ classdef TestMigrateLocalEtaDab < matlab.unittest.TestCase
             if isfield(r, 'decomposed_via_epoch_sibling')
                 viaSibling = r.decomposed_via_epoch_sibling;
             end
+            viaStimulator = 0;
+            if isfield(r, 'decomposed_via_stimulator')
+                viaStimulator = r.decomposed_via_stimulator;
+            end
             fprintf(['\n  STIMULUS-PRESENTATION FOLD (Dab, #31) -- report-only\n' ...
                      '    DENOMINATOR: %d presentation(s) read\n' ...
                      '    decomposed to timed_sequence_manipulation: %d\n' ...
                      '        animal via stimulus_response:      %d\n' ...
                      '        animal via epoch, own session (FORK 1): %d\n' ...
+                     '        animal via stimulator element (no epoch element): %d\n' ...
                      '        animal via epoch, sibling session (FORK 2): %d\n' ...
                      '    refused (left as passthrough):             %d\n'], ...
                 r.presentations_read, r.presentations_decomposed, ...
                 r.decomposed_via_response, r.decomposed_via_epoch, ...
-                viaSibling, r.presentations_refused);
+                viaStimulator, viaSibling, r.presentations_refused);
 
             % Histogram the refusal reasons. `refusals` is a cell of
             % struct('id', ..., 'reason', ...) appended once per refusal.
@@ -349,19 +354,19 @@ classdef TestMigrateLocalEtaDab < matlab.unittest.TestCase
 
             % FORK 1 is LIVE: it attributes a response-less presentation to the
             % animal recorded in its OWN session-scoped epoch (the `via epoch,
-            % own session` line). FORK 2 is MEASURED AND DISARMED (2026-08-25):
-            % it measures the sibling-session subject count for the session-id-gap
-            % residual but does NOT attribute, so `via epoch, sibling session`
-            % reads 0. The reason it is disarmed is in the histogram: all 68
-            % session-id-gap presentations resolve to 2-12 sibling subjects
-            % ("ambiguous across sessions"), NONE to exactly one -- genuine
-            % epoch-name collisions, not recoverable linkage gaps. So the RESIDUAL
-            % is characterised by: "ambiguous across sessions" (several sibling
-            % subjects); "exactly one sibling ... DISARMED" (the recoverable case,
-            % if it ever appears -- 0 on Dab); "no element there resolves"; and
-            % "a stimulus-only epoch" (records nothing anywhere). A refusal for
-            % "no grating parameter" instead means an animal WAS resolved but the
-            % stimuli are not gratings -- a separate, non-visual gap (#48).
+            % own session` line). THE STIMULATOR ROUTE is LIVE (Jess Haley,
+            % 2026-10-21, PR #1021): when the own session-epoch records no
+            % element, the presentation's `stimulus_element_id` -> stimulator
+            % element -> its v1 subject. On Dab the 68 presentations fork 1
+            % cannot attribute are recorded epochs with no sorted unit (Dab
+            % writes element_epoch only for sorted units), NOT session-id gaps;
+            % the stimulator route resolves all 68 in the research read. FORK 2
+            % is MEASURED AND DISARMED (2026-08-25): cross-session it gives 2-12
+            % sibling subjects and the true animal for none of the 68, so `via
+            % epoch, sibling session` reads 0. The residual is characterised by
+            % the reasons below; a refusal for "no grating parameter" means an
+            % animal WAS resolved but the stimuli are not gratings -- a
+            % separate, non-visual gap (#48).
 
             % Denominator only: a run that read zero presentations would make
             % the histogram a statement about nothing. Dab holds 1242 of them.

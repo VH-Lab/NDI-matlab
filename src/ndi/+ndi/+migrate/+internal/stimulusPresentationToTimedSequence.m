@@ -253,9 +253,19 @@ if isempty(animals)
     % still attributed to the animal RECORDED IN ITS OWN EPOCH. Session-scoped,
     % because a v1 epoch id is a NAME that repeats across sessions and the bare
     % map pools them. Measured on Dab (run #4, 1242 refused): 1174 resolve to
-    % exactly one subject, 0 to several, 68 to none. The 68 (all session-id
-    % gaps -- measured 68/0, none a genuinely stimulus-only epoch) are the input
-    % to FORK 2 in the scoped==0 branch below.
+    % exactly one subject, 0 to several, 68 to none.
+    %
+    % THE 68 ARE NOT SESSION-ID GAPS. This comment used to call them "all
+    % session-id gaps", on the evidence that each epoch NAME records an element
+    % in some other session. That evidence does not show a gap: v1 epoch names
+    % (t000NN) repeat across animals, and a cross-session search finds 2-12
+    % different subjects for every one of the 68 and the true animal for none.
+    % Read on the Dab corpus 2026-10-21: each of the 68 (session, epoch) pairs
+    % holds 1 stimulus_presentation, 2 daqreader_mfdaq_epochdata_ingested and 1
+    % daqmetadatareader_epochdata_ingested -- raw ephys WAS recorded (median
+    % epoch 347 s) -- and no element_epoch, because Dab writes element_epoch
+    % only for SORTED units and these are epochs where no unit was assigned.
+    % Fork 1 reaches the animal only through a sorted unit, so it finds none.
     scoped = resolver.subjectsViaEpochScoped(presentationId);
     if numel(scoped) == 1
         animals = scoped;
@@ -268,56 +278,73 @@ if isempty(animals)
     else
         report.animal_source = 'none';
         nEl = resolver.epochElementCountScoped(presentationId);
-        if nEl == 0
-            % (b) 2026-08-25: split the no-element case so "genuinely records
-            % nothing" and "a session-id gap" are distinguishable. If the bare
-            % epoch NAME carries recording elements in ANOTHER session, the
-            % recording exists but is keyed to a different session_id (a
-            % linkage gap, potentially recoverable); if it carries none
-            % anywhere, the epoch is genuinely stimulus-only.
+        if nEl > 0
+            report.reason = sprintf(['no responding animal; the epoch''s %d ' ...
+                'recorded element(s) resolve to no subject'], nEl);
+            return;
+        end
+        % THE STIMULATOR ROUTE (Jess Haley, 2026-10-21, NDI-matlab PR #1021).
+        % The epoch records no element in this session, so follow the
+        % presentation's own `stimulus_element_id` edge to the stimulator
+        % element and take that element's v1 subject, through the same
+        % element -> subject resolution used everywhere else
+        % (bodyResolver.subjectOfElement). Session-scoped. On Dab it resolves
+        % all 68 to a real subject and agrees with fork 1 on 1174/1174 of the
+        % presentations fork 1 does attribute. Exactly one subject, or refuse.
+        viaStimulator = resolver.subjectsViaStimulator(presentationId);
+        report.stimulator_subjects = numel(viaStimulator);
+        if numel(viaStimulator) == 1
+            animals = viaStimulator;
+            report.animal_source = 'stimulator';
+        elseif numel(viaStimulator) > 1
+            report.reason = sprintf(['no responding animal; the epoch has no ' ...
+                'recorded element in this session, and the stimulator ' ...
+                'element(s) name %d subjects -- ambiguous'], ...
+                numel(viaStimulator));
+            return;
+        else
+            % Neither the epoch nor the stimulator names an animal. Split the
+            % residual by whether the epoch NAME records elements in another
+            % session -- a measurement only: a positive count is NOT evidence
+            % of a session-id gap (see above).
             nAny = resolver.epochElementCountUnscoped(presentationId);
             if nAny > 0
-                % SESSION-ID GAP. FORK 2 -- MEASURED AND DISARMED (2026-08-25).
-                % The epoch name records only in a sibling session, so a
-                % cross-session widening COULD attribute the presentation to
-                % that session's subject. It was armed and run on Dab (e2e
-                % 32868824054): all 68 such presentations resolved to 2-12
-                % sibling subjects, NONE to exactly one -- genuine epoch-name
-                % collisions across many animals, not one experiment split
-                % across two session ids. The recoverable-linkage hypothesis is
-                % refuted on the only corpus that carries these, so cross-session
-                % ATTRIBUTION is disarmed (team call pending). The sibling-subject
-                % COUNT is still measured and its distinctions still reported, so
-                % a future corpus with a clean one-subject gap is visible in the
+                % FORK 2 -- MEASURED AND DISARMED (2026-08-25). It was armed and
+                % run on Dab (e2e 32868824054): all 68 such presentations
+                % resolved to 2-12 sibling subjects, NONE to exactly one --
+                % epoch-name collisions across animals, and the true animal in
+                % 0 of 68. Cross-session ATTRIBUTION stays disarmed. The
+                % sibling-subject COUNT is still measured and reported, so a
+                % future corpus with a clean one-subject case is visible in the
                 % histogram rather than silently folded on an unproven premise.
                 % See bodyResolver.subjectsViaEpochSibling.
                 sibling = resolver.subjectsViaEpochSibling(presentationId);
                 report.sibling_subjects = numel(sibling);
                 if numel(sibling) == 1
                     report.reason = ['no responding animal; the epoch records ' ...
-                        'no element in THIS session, and exactly one sibling ' ...
-                        'session carries the name -- a recoverable session-id ' ...
-                        'gap, but fork 2 attribution is DISARMED (team call)'];
+                        'no element in THIS session, the stimulator element ' ...
+                        'names no subject, and exactly one sibling session ' ...
+                        'carries the epoch name -- fork 2 attribution is ' ...
+                        'DISARMED (team call)'];
                 elseif numel(sibling) > 1
-                    report.reason = sprintf(['no responding animal; the epoch ' ...
-                        'name records only in sibling session(s), resolving to ' ...
-                        '%d subjects -- ambiguous across sessions'], ...
+                    report.reason = sprintf(['no responding animal; the ' ...
+                        'stimulator element names no subject, and the epoch ' ...
+                        'name records only in sibling session(s), resolving ' ...
+                        'to %d subjects -- ambiguous across sessions'], ...
                         numel(sibling));
                 else
-                    report.reason = ['no responding animal; the epoch name ' ...
-                        'records in a sibling session, but no element there ' ...
-                        'resolves to a subject'];
+                    report.reason = ['no responding animal; the stimulator ' ...
+                        'element names no subject, and the epoch name records ' ...
+                        'in a sibling session, but no element there resolves ' ...
+                        'to a subject'];
                 end
                 return;
             else
                 report.reason = ['no responding animal; the epoch has no ' ...
-                    'recorded element in any session (a stimulus-only epoch)'];
+                    'recorded element in any session and the stimulator ' ...
+                    'element names no subject'];
                 return;
             end
-        else
-            report.reason = sprintf(['no responding animal; the epoch''s %d ' ...
-                'recorded element(s) resolve to no subject'], nEl);
-            return;
         end
     end
 end
@@ -906,6 +933,7 @@ r = struct( ...
     'frames',              0, ...
     'subjects_resolved',   0, ...
     'sibling_subjects',    0, ...
+    'stimulator_subjects', 0, ...
     'instrument_resolved', false, ...
     'epoch_id',            '', ...
     'animal_source',       '', ...

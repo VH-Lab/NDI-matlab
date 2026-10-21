@@ -116,7 +116,7 @@ classdef TestBodyResolver < matlab.unittest.TestCase
         % ============ the epoch fallback: FORK 2 (sibling session) ========
 
         function testEpochSiblingRecoversWhenTheOwnSessionRecordsNothing(testCase)
-            % The session-id-gap case. The presentation's own session (sessA)
+            % The own session (sessA)
             % records no element in epoch t5, but the epoch NAME records
             % elem_9 -> animal_1 in a sibling session (sessB). Fork 2 attributes
             % to animal_1; the counters distinguish it from a stimulus-only epoch.
@@ -176,6 +176,52 @@ classdef TestBodyResolver < matlab.unittest.TestCase
             testCase.verifyEmpty(r.subjectsViaEpochSibling('pres_1'));
         end
 
+        % ======= the stimulator route (Jess Haley, 2026-10-21, PR #1021) ==
+
+        function testStimulatorRouteResolvesTheStimulatorsSubject(testCase)
+            % No response and no element_epoch (Dab: a recorded epoch with no
+            % sorted unit). presentation -> stimulus_element_id -> the
+            % stimulator element -> its subject.
+            bodies = { presentationInEpoch('pres_1', 't5', 'sessA'), ...
+                       elementInSession('stimulator_5', 'animal_1', 'sessA') };
+            r = ndi.migrate.internal.bodyResolver(bodies);
+            testCase.verifyEqual(r.epochElementCountScoped('pres_1'), 0);
+            testCase.verifyEqual(r.subjectsViaStimulator('pres_1'), {'animal_1'});
+        end
+
+        function testStimulatorRouteIgnoresAnElementInAnotherSession(testCase)
+            bodies = { presentationInEpoch('pres_1', 't5', 'sessA'), ...
+                       elementInSession('stimulator_5', 'animal_1', 'sessB') };
+            r = ndi.migrate.internal.bodyResolver(bodies);
+            testCase.verifyEmpty(r.subjectsViaStimulator('pres_1'));
+        end
+
+        function testStimulatorRouteReturnsEverySubjectItsEdgesReach(testCase)
+            % Two stimulus_element_id edges, two animals: both are returned so
+            % the caller can refuse as ambiguous.
+            pres = presentationInEpoch('pres_1', 't5', 'sessA');
+            pres.depends_on(end+1) = struct('name', 'stimulus_element_id', ...
+                'value', 'stimulator_6');
+            bodies = { pres, ...
+                       elementInSession('stimulator_5', 'animal_1', 'sessA'), ...
+                       elementInSession('stimulator_6', 'animal_2', 'sessA') };
+            r = ndi.migrate.internal.bodyResolver(bodies);
+            testCase.verifyEqual(r.subjectsViaStimulator('pres_1'), ...
+                {'animal_1', 'animal_2'});
+        end
+
+        function testStimulatorRouteEmptyWhenTheElementIsAbsentOrSubjectless(testCase)
+            r = ndi.migrate.internal.bodyResolver( ...
+                { presentationInEpoch('pres_1', 't5', 'sessA') });
+            testCase.verifyEmpty(r.subjectsViaStimulator('pres_1'));
+
+            bare = docBody('element', 'stimulator_5');
+            bare.base.session_id = 'sessA';
+            r = ndi.migrate.internal.bodyResolver( ...
+                { presentationInEpoch('pres_1', 't5', 'sessA'), bare });
+            testCase.verifyEmpty(r.subjectsViaStimulator('pres_1'));
+        end
+
     end
 end
 
@@ -205,6 +251,11 @@ end
 
 function b = element(id, subjectId)
 b = docBody('element', id, {'subject_id', subjectId});
+end
+
+function b = elementInSession(id, subjectId, sessionId)
+b = docBody('element', id, {'subject_id', subjectId});
+b.base.session_id = sessionId;
 end
 
 function b = derivedElement(id, underlyingId)

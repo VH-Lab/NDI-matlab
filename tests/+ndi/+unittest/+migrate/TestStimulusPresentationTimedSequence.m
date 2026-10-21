@@ -332,6 +332,129 @@ classdef TestStimulusPresentationTimedSequence < matlab.unittest.TestCase
             testCase.verifyNotEmpty(report.reason);
         end
 
+        % ======== the stimulator route (Jess Haley, 2026-10-21, PR #1021) ===
+
+        function testNoResponseAndNoEpochElementResolvesViaTheStimulator(testCase)
+            % The Dab shape: a recorded epoch with no sorted unit, so no
+            % element_epoch, and no stimulus_response. The presentation's own
+            % stimulus_element_id -> the stimulator element -> its subject.
+            pres = presentationBody('pres_stim', [1 2], ...
+                { gratingStim(0, 0.04, 0.5), gratingStim(45, 0.04, 0.5) });
+            bodies = { pres, stimulatorElement(stimulatorIdOf(pres), ...
+                'animal_stim', pres.base.session_id), ...
+                docBody('subject', 'animal_stim') };
+            r = ndi.migrate.internal.bodyResolver(bodies);
+            [m, gratings, ~, ~, report] = ...
+                ndi.migrate.internal.stimulusPresentationToTimedSequence(pres, r, 'V_eta');
+            testCase.verifyNotEmpty(m);
+            testCase.verifyEqual(numel(gratings), 2);
+            testCase.verifyEqual(depValue(m, 'subject_id'), 'animal_stim');
+            testCase.verifyEqual(report.animal_source, 'stimulator');
+            testCase.verifyEqual(report.subjects_resolved, 0);
+            testCase.verifyEqual(report.stimulator_subjects, 1);
+            testCase.verifyEqual(report.sibling_subjects, 0);
+            testCase.verifyEmpty(report.reason);
+            verifyNoEmptyEdges(testCase, m);
+        end
+
+        function testADerivedStimulatorElementFollowsUpItsChain(testCase)
+            % The element -> subject step is the migration's own
+            % subjectOfElement: an element with no subject of its own resolves
+            % through underlying_element_id.
+            pres = presentationBody('pres_stim_derived', 1, { gratingStim(0, 0.04, 0.5) });
+            sid = pres.base.session_id;
+            derived = docBody('element', stimulatorIdOf(pres), ...
+                {'underlying_element_id', 'probe_1'});
+            derived.base.session_id = sid;
+            bodies = { pres, derived, stimulatorElement('probe_1', 'animal_stim', sid) };
+            r = ndi.migrate.internal.bodyResolver(bodies);
+            [m, ~, ~, ~, report] = ...
+                ndi.migrate.internal.stimulusPresentationToTimedSequence(pres, r, 'V_eta');
+            testCase.verifyEqual(depValue(m, 'subject_id'), 'animal_stim');
+            testCase.verifyEqual(report.animal_source, 'stimulator');
+        end
+
+        function testTheEpochRouteIsStillPreferredWhenItFindsAnElement(testCase)
+            % Fork 1 comes first. The stimulator here names a DIFFERENT
+            % subject on purpose, so the test can tell which route won; the
+            % stimulator route must not even be consulted.
+            pres = presentationBody('pres_epoch', 1, { gratingStim(0, 0.04, 0.5) });
+            sid = pres.base.session_id;
+            ee = docBody('element_epoch', 'ee_1', {'element_id', 'unit_1'});
+            ee.base.session_id = sid;
+            ee.epochid = struct('epochid', pres.epochid.epochid);
+            bodies = { pres, ee, stimulatorElement('unit_1', 'animal_epoch', sid), ...
+                stimulatorElement(stimulatorIdOf(pres), 'animal_stim', sid) };
+            r = ndi.migrate.internal.bodyResolver(bodies);
+            [m, ~, ~, ~, report] = ...
+                ndi.migrate.internal.stimulusPresentationToTimedSequence(pres, r, 'V_eta');
+            testCase.verifyEqual(depValue(m, 'subject_id'), 'animal_epoch');
+            testCase.verifyEqual(report.animal_source, 'epoch');
+            testCase.verifyEqual(report.stimulator_subjects, 0);
+        end
+
+        function testTheResponseRouteIsStillPreferredOverTheStimulator(testCase)
+            pres = presentationBody('pres_resp', 1, { gratingStim(0, 0.04, 0.5) });
+            bodies = { pres, responseScalar('resp_1', pres.base.id, 'elem_9'), ...
+                docBody('element', 'elem_9', {'subject_id', 'animal_resp'}), ...
+                stimulatorElement(stimulatorIdOf(pres), 'animal_stim', pres.base.session_id) };
+            r = ndi.migrate.internal.bodyResolver(bodies);
+            [m, ~, ~, ~, report] = ...
+                ndi.migrate.internal.stimulusPresentationToTimedSequence(pres, r, 'V_eta');
+            testCase.verifyEqual(depValue(m, 'subject_id'), 'animal_resp');
+            testCase.verifyEqual(report.animal_source, 'response');
+        end
+
+        function testAStimulatorNamingNoSubjectIsRefused(testCase)
+            % The stimulator element is present but carries no subject_id and
+            % no underlying element: nothing to attribute, refuse as before.
+            pres = presentationBody('pres_nosub', 1, { gratingStim(0, 0.04, 0.5) });
+            orphan = docBody('element', stimulatorIdOf(pres));
+            orphan.base.session_id = pres.base.session_id;
+            r = ndi.migrate.internal.bodyResolver({ pres, orphan });
+            [m, gratings, body, ~, report] = ...
+                ndi.migrate.internal.stimulusPresentationToTimedSequence(pres, r, 'V_eta');
+            testCase.verifyEmpty(m);
+            testCase.verifyEmpty(gratings);
+            testCase.verifyEmpty(body);
+            testCase.verifyEqual(report.animal_source, 'none');
+            testCase.verifyEqual(report.stimulator_subjects, 0);
+            testCase.verifySubstring(report.reason, 'stimulator element names no subject');
+        end
+
+        function testAStimulatorNamingSeveralSubjectsIsRefused(testCase)
+            % Two stimulus_element_id edges reaching two different animals:
+            % ambiguous, so refuse rather than pick one.
+            pres = presentationBody('pres_two', 1, { gratingStim(0, 0.04, 0.5) });
+            sid = pres.base.session_id;
+            pres.depends_on(end+1) = struct('name', 'stimulus_element_id', ...
+                'value', 'stimulator_2');
+            bodies = { pres, ...
+                stimulatorElement(stimulatorIdOf(pres), 'animal_a', sid), ...
+                stimulatorElement('stimulator_2', 'animal_b', sid) };
+            r = ndi.migrate.internal.bodyResolver(bodies);
+            [m, ~, ~, ~, report] = ...
+                ndi.migrate.internal.stimulusPresentationToTimedSequence(pres, r, 'V_eta');
+            testCase.verifyEmpty(m);
+            testCase.verifyEqual(report.stimulator_subjects, 2);
+            testCase.verifyEqual(report.animal_source, 'none');
+            testCase.verifySubstring(report.reason, 'ambiguous');
+        end
+
+        function testAStimulatorInAnotherSessionIsNotFollowed(testCase)
+            % Session-scoped like fork 1: a stimulator element stored in a
+            % different session is never followed (that is fork 2's risk).
+            pres = presentationBody('pres_xsess', 1, { gratingStim(0, 0.04, 0.5) });
+            bodies = { pres, stimulatorElement(stimulatorIdOf(pres), ...
+                'animal_other', 'some_other_session') };
+            r = ndi.migrate.internal.bodyResolver(bodies);
+            [m, ~, ~, ~, report] = ...
+                ndi.migrate.internal.stimulusPresentationToTimedSequence(pres, r, 'V_eta');
+            testCase.verifyEmpty(m);
+            testCase.verifyEqual(report.stimulator_subjects, 0);
+            testCase.verifyNotEmpty(report.reason);
+        end
+
         function testAPlaylistIndexOutsideTheStimuliListIsRefused(testCase)
             % Dropping the offending trials would silently shorten the
             % playlist; refusing the document does not.
@@ -394,7 +517,7 @@ classdef TestStimulusPresentationTimedSequence < matlab.unittest.TestCase
                 'distinct_gratings'; 'blank_gratings'; 'trials'; ...
                 'trials_out_of_range'; 'trials_with_timing'; 'timing_source'; ...
                 'basis_source'; 'shared_refs'; 'frames'; ...
-                'subjects_resolved'; 'sibling_subjects'; ...
+                'subjects_resolved'; 'sibling_subjects'; 'stimulator_subjects'; ...
                 'instrument_resolved'; 'epoch_id'; ...
                 'animal_source'; 'reason'};
 
@@ -591,6 +714,17 @@ b = docBody('stimulus_response_scalar', id, ...
 b.document_class.superclasses = [ ...
     struct('definition', '$NDIDOCUMENTPATH/base.json'), ...
     struct('definition', '$NDIDOCUMENTPATH/stimulus/stimulus_response.json')];
+end
+
+function b = stimulatorElement(id, subjectId, sessionId)
+%STIMULATORELEMENT A v1 element carrying the animal as its own subject_id, the
+%   shape of Dab's `vhvis_spike2` stimulator element, stored in SESSIONID.
+b = docBody('element', id, {'subject_id', subjectId});
+b.base.session_id = sessionId;
+end
+
+function id = stimulatorIdOf(pres)
+id = depValue(pres, 'stimulus_element_id');
 end
 
 function verifyNoEmptyEdges(testCase, body)
