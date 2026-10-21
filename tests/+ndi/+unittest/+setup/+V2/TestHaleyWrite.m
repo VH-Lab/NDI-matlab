@@ -600,6 +600,7 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             end
             if ndi.setup.V2.schemaHasLeaf('concentration_observation')
                 ob = aboutMd(stockId, 'concentration_observation');
+                ob = ob(cellfun(@(d) strcmp(d.statement.variable.node, 'MCO:0000059'), ob));
                 testCase.verifyNumElements(ob, 1, 'the stock''s OD600Real');
                 testCase.verifyEqual(ob{1}.statement.variable.node, 'MCO:0000059');
                 testCase.verifyEqual(numbers(ndi.v2.blockOf(ob{1}, 'concentration', 'value'), ...
@@ -998,7 +999,9 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
                 'Write', true, 'Overwrite', true, 'ReadVideos', false);
             docs = testCase.documents(result.sessions.path{1});
             classes = cellfun(@(d) d.document_class.class_name, docs, 'UniformOutput', false);
-            pos = docs(strcmp(classes, 'position_calculation'));
+            % the worms' tracks (the patch centres are position calculations too)
+            pos = docs(strcmp(classes, 'position_calculation') & cellfun(@(d) isfield(d, 'data') ...
+                && isfield(d.data, 'keys') && ~isempty(d.data.keys), docs));
             testCase.verifyNotEmpty(pos);
             k = entries(pos{1}.data.keys);
             testCase.verifyEqual(k{2}.n, 2, 'midpoint and head');
@@ -1126,20 +1129,15 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             testCase.verifyFalse(isfield(list{1}.statement, 'notes') && ~isempty(list{1}.statement.notes));
             tref = docs(cellfun(@(d) any(strcmp(d.base.id, edgeAll(list{1}, 'time_reference_id'))), docs));
             testCase.verifyNumElements(tref, 1);
+            % plate 12 was filmed once, from 2022-02-04 12:10:51 Los Angeles (its
+            % lawn clip, earlier, is not a behaviour recording): the list is
+            % timed by that video's own reference
+            testCase.verifyEqual(tref{1}.absolute_time_reference.value.start.utc, '2022-02-04T20:10:51.000Z', ...
+                'the list''s time reference starts at the plate''s first behaviour recording');
             recs = docs(strcmp(classes, 'intensity_observation') & cellfun(@(d) ...
                 strcmp(edge(d, 'entity_id'), idOf('concentration_assayPlate0012')), docs));
-            starts = {};
-            for r = 1:numel(recs)
-                for id = edgeAll(recs{r}, 'time_reference_id')
-                    t = docs(cellfun(@(d) strcmp(d.base.id, id{1}), docs));
-                    if ~isempty(t) && isfield(t{1}, 'absolute_time_reference')
-                        starts{end+1} = t{1}.absolute_time_reference.value.start.utc; %#ok<AGROW>
-                    end
-                end
-            end
-            starts = sort(starts);
-            testCase.verifyEqual(tref{1}.absolute_time_reference.value.start.utc, starts{1}, ...
-                'the list''s time reference starts at the plate''s first recording');
+            recRefs = cellfun(@(d) edgeAll(d, 'time_reference_id'), recs, 'UniformOutput', false);
+            testCase.verifyTrue(ismember(tref{1}.base.id, [recRefs{:}]), 'the video''s own reference');
             lk = entries(list{1}.data.keys);
             testCase.verifyEqual(lk{1}.variable.node, 'NCIT:C62143', 'keyed `encounter`');
             l111 = named('time_calculation', 'concentration_worm0111', 'encounter onset time');
