@@ -78,14 +78,15 @@ jobs:
             testCloudApiProdPart(${{ matrix.part }}, 3, "CodeCoverage", true)
 
       # Coverage of the cloud package only; Codecov merges it with the
-      # no-cloud run's report for the same commit.
+      # no-cloud run's report for the same commit. One flag per shard so
+      # codecov.yml can carry forward each shard on its own.
       - name: Upload code coverage report to Codecov
         if: always() && hashFiles('docs/reports/codecoverage.xml') != ''
         uses: codecov/codecov-action@b9fd7d16f6d7d1b5d2bec1a2887e65ceed900238 # v4
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: docs/reports/codecoverage.xml
-          flags: cloud
+          flags: cloud-${{ matrix.part }}
 
       # Publish test results
       - name: Publish test results
