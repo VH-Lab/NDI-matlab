@@ -104,8 +104,16 @@ if isempty(swId)
         className, props.base.id, entry.object_edge, entry.object_field);
 end
 
-swDocs = ndi_session_obj.database_search( ...
-    ndi.query('base.id', 'exact_string', swId, ''));
+% The software entity may be DATASET-level: identical software is one entity
+% at the dataset (Decided by Jess Haley, 2026-10-21 [shared entities at
+% dataset level]; ndi.migrate.internal.softwareDedup), so its session_id is the
+% dataset's, not this session's. Look in the session first, then without the
+% session restriction (ndi.session/database_search_with_dataset).
+q = ndi.query('base.id', 'exact_string', swId, '');
+swDocs = ndi_session_obj.database_search(q);
+if isempty(swDocs) && isa(ndi_session_obj, 'ndi.session')
+    swDocs = ndi_session_obj.database_search_with_dataset(q);
+end
 if numel(swDocs) ~= 1
     error('NDI:vintage:softwareNotFound', ...
         ['"%s".%s names software document %s and %d document(s) match; ' ...
