@@ -116,6 +116,41 @@ classdef TestMigrateLocalEta20211116 < matlab.unittest.TestCase
             ndi.unittest.migrate.printStimulusFoldReport(r, '20211116');
         end
 
+        function testControlRecordsBecomeCalculationsOrAreCounted(testCase)
+            % Decided by Jess Haley, 2026-10-21 [control record is a
+            % calculation]: a v1 control_stimulus_ids about a folded
+            % presentation becomes a calculation (item value kind, id kept,
+            % input_id = the presentation); NaN / no control writes none and
+            % is counted. The accounting must close: every record read lands
+            % in exactly one bucket.
+            r = testCase.Result.secondPass.stimulusSequence;
+            n = r.control_records_read;
+            verifyEqual(testCase, n, 11, ...
+                '20211116 holds 11 control_stimulus_ids documents');
+            verifyEqual(testCase, n, r.control_calculations_minted + r.control_none + ...
+                r.control_presentation_not_folded + r.control_no_subject + ...
+                r.control_no_position_map + r.control_unmappable, ...
+                'a control record fell into no bucket');
+            dst = destinationBodies(testCase.Result.destination);
+            calcs = {};
+            for k = 1:numel(dst)
+                d = dst{k};
+                if strcmp(d.document_class.class_name, 'calculation') ...
+                        && isfield(d, 'statement') && isfield(d.statement, 'variable') ...
+                        && strcmp(d.statement.variable.name, 'control stimulus')
+                    calcs{end+1} = d; %#ok<AGROW>
+                end
+            end
+            verifyEqual(testCase, numel(calcs), r.control_calculations_minted, ...
+                'every minted control calculation reaches the destination');
+            for k = 1:numel(calcs)
+                c = calcs{k};
+                verifyTrue(testCase, any(strcmp({c.document_class.superclasses.class_name}, 'item')));
+                verifyTrue(testCase, isfield(c, 'item') && isfield(c.item, 'value') ...
+                    && isfield(c.item.value, 'item'), 'the control calculation carries no item value');
+            end
+        end
+
         function testTheWholeCorpusMigratesWithNothingQuarantinedOrDangling(testCase)
             % DENOMINATOR FIRST. A pass over zero documents quarantines
             % zero documents, and that reading prints the same digit as a

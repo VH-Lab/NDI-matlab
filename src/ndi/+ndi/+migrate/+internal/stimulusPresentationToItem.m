@@ -204,6 +204,7 @@ else
     entityId = animals{1};
     report.animals = animals(:)';
 end
+report.entity_id = entityId;
 
 stimulatorId = depValue(v1Body, 'stimulus_element_id');
 report.instrument_resolved = ~isempty(stimulatorId);
@@ -291,6 +292,8 @@ for i = 1:numel(stimuli)
     mapToDistinct(i) = hit;
 end
 report.distinct_stimuli = numel(distinct);
+% v1 stimulus number -> 0-based position in item_id (the control record's map)
+report.stimulus_positions = mapToDistinct - 1;
 report.blank_stimuli = sum(isBlank);
 
 methodBodies = cell(1, numel(distinct));
@@ -609,6 +612,8 @@ r = struct( ...
     'instrument_resolved', false, ...
     'epoch_id',            '', ...
     'animal_source',       '', ...
+    'stimulus_positions',  [], ...
+    'entity_id',           '', ...
     'reason',              '');
 end
 

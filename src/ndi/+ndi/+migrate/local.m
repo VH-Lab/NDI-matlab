@@ -2530,6 +2530,9 @@ function [convertResult, report] = resolveStimulusPresentations(convertResult, b
     cohortIdFor = @(sid) cohortIdOf(cohortIds, sid);
 
     usedShared = containers.Map('KeyType', 'char', 'ValueType', 'logical');
+    % per folded presentation: what its control record needs
+    % ([control record is a calculation])
+    controlInfo = containers.Map('KeyType', 'char', 'ValueType', 'any');
     minted = {};
     manips = {};
     consumed = {};
@@ -2604,6 +2607,9 @@ function [convertResult, report] = resolveStimulusPresentations(convertResult, b
             report.distributive_manipulations = report.distributive_manipulations + 1;
         end
         manips{end+1} = manip; %#ok<AGROW>
+        controlInfo(presId) = struct('entity_id', rep.entity_id, ...
+            'positions', rep.stimulus_positions, ...
+            'session_id', char(ndi.v2.sessionIdOf(b)));
         for g = 1:numel(methods)
             minted{end+1} = methods{g}; %#ok<AGROW>
         end
@@ -2639,6 +2645,42 @@ function [convertResult, report] = resolveStimulusPresentations(convertResult, b
         report.cohort_members = report.cohort_members + numel(members);
     end
 
+    % THE CONTROL RECORDS. Decided by Jess Haley, 2026-10-21 [control record
+    % is a calculation]: each passthrough v1 control_stimulus_ids document
+    % about a folded presentation becomes a calculation (item value kind,
+    % id preserved, input_id = the presentation); NaN / no control writes
+    % none and is counted. See ndi.migrate.internal.controlCalculation.
+    controlReplaced = {};
+    calcs = {};
+    for k = 1:numel(convertResult.migrated)
+        d = convertResult.migrated{k};
+        if ~strcmp(d.className(), 'control_stimulus_ids'); continue; end
+        report.control_records_read = report.control_records_read + 1;
+        cs = d.toStruct();
+        presId = ndi.migrate.internal.etaShape.edge(cs, 'stimulus_presentation_id');
+        if isempty(presId) || ~isKey(controlInfo, presId)
+            report.control_presentation_not_folded = ...
+                report.control_presentation_not_folded + 1;
+            continue;
+        end
+        ci = controlInfo(presId);
+        [calc, why] = ndi.migrate.internal.controlCalculation(cs, presId, ...
+            ci.entity_id, ci.positions, ci.session_id);
+        if isempty(calc)
+            switch why
+                case 'no control', report.control_none = report.control_none + 1;
+                case 'no subject', report.control_no_subject = report.control_no_subject + 1;
+                case 'no position map'
+                    report.control_no_position_map = report.control_no_position_map + 1;
+                otherwise, report.control_unmappable = report.control_unmappable + 1;
+            end
+            continue;
+        end
+        calcs{end+1} = calc; %#ok<AGROW>
+        controlReplaced{end+1} = char(cs.base.id); %#ok<AGROW>
+        report.control_calculations_minted = report.control_calculations_minted + 1;
+    end
+
     % drop the passthrough stimulus_presentation docs that were assembled away,
     % and collect the session documents the time references anchor to
     kept = {};
@@ -2651,6 +2693,10 @@ function [convertResult, report] = resolveStimulusPresentations(convertResult, b
                 && any(strcmp(d.get('base.id'), consumed))
             continue;
         end
+        if strcmp(cls, 'control_stimulus_ids') ...
+                && any(strcmp(d.get('base.id'), controlReplaced))
+            continue;   % superseded by its calculation, same id
+        end
         if any(strcmp(cls, {'session', 'entity'}))
             sessionStructs{end+1} = d.toStruct(); %#ok<AGROW>
             sessionClasses{end+1} = cls; %#ok<AGROW>
@@ -2661,10 +2707,12 @@ function [convertResult, report] = resolveStimulusPresentations(convertResult, b
 
     % "during the session" for every manipulation (the marker each carries)
     nS = numel(sessionStructs);
-    batch = [sessionStructs, manips];
-    classes = [sessionClasses, repmat({'manipulation'}, 1, numel(manips))];
+    marked = [manips, calcs];
+    batch = [sessionStructs, marked];
+    classes = [sessionClasses, repmat({'manipulation'}, 1, numel(manips)), ...
+        repmat({'calculation'}, 1, numel(calcs))];
     [batch, refs, anchorReport] = did2.convert.mintSessionDuring(batch, classes, ...
-        nS + (1:numel(manips)), struct('SchemaCache', options.SchemaCache));
+        nS + (1:numel(marked)), struct('SchemaCache', options.SchemaCache));
     report.time_references = anchorReport;
     minted = [batch(nS+1:end), refs, minted];
 
@@ -2773,6 +2821,13 @@ function r = newStimulusSequenceReport()
         'stimulus_kinds',             [], ...
         'presentations_by_kind',      struct('kinds', {}, 'decomposed', {}, 'refused', {}), ...
         'refusals',                   {{}}, ...
+        'control_records_read',       0, ...
+        'control_calculations_minted', 0, ...
+        'control_none',               0, ...
+        'control_presentation_not_folded', 0, ...
+        'control_no_subject',         0, ...
+        'control_no_position_map',    0, ...
+        'control_unmappable',         0, ...
         'hartley',                    []);
 end
 
