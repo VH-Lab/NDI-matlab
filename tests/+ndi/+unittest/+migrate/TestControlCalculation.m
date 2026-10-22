@@ -45,19 +45,36 @@ classdef TestControlCalculation < matlab.unittest.TestCase
             testCase.verifyEqual(c.item.value.item(:)', [11 11 11]);
         end
 
-        function testNaNMeansNoControlAndNoCalculation(testCase)
-            [c, why] = ndi.migrate.internal.controlCalculation(controlDoc(NaN), ...
-                'pres_1', 'animal_1', [0 1], 'sess_1');
-            testCase.verifyEmpty(c);
-            testCase.verifyEqual(why, 'no control');
-            [c, why] = ndi.migrate.internal.controlCalculation(controlDoc([]), ...
-                'pres_1', 'animal_1', [0 1], 'sess_1');
-            testCase.verifyEmpty(c);
-            testCase.verifyEqual(why, 'no control');
+        function testNaNIsALogicalFalseCalculation(testCase)
+            % Proposed (not decided) [control record with no control]: no
+            % trial was a control -> a calculation with the logical value
+            % kind, variable 'control stimulus present', value false; id kept,
+            % input_id = the presentation, method = the v1 method
+            for v = {NaN, []}
+                [c, why, kind] = ndi.migrate.internal.controlCalculation(controlDoc(v{1}), ...
+                    'pres_1', 'animal_1', [0 1], 'sess_1');
+                testCase.verifyEqual(why, 'no control');
+                testCase.verifyEqual(kind, 'logical');
+                testCase.verifyEqual(c.document_class.class_name, 'calculation');
+                testCase.verifyTrue(any(strcmp({c.document_class.superclasses.class_name}, 'logical')));
+                testCase.verifyEqual(c.statement.variable.name, 'control stimulus present');
+                testCase.verifyEqual(logical(c.logical.value), false);
+                testCase.verifyEqual(c.base.id, 'cs_1');
+                testCase.verifyEqual(edgeValue(c, 'input_id'), 'pres_1');
+                testCase.verifyEqual(c.interaction.method.term.name, 'pseudorandom');
+            end
+            % with no position map too: the record needs none
+            [c, ~, kind] = ndi.migrate.internal.controlCalculation(controlDoc(NaN), ...
+                'pres_1', 'animal_1', [], 'sess_1');
+            testCase.verifyNotEmpty(c);
+            testCase.verifyEqual(kind, 'logical');
         end
 
         function testRefusalsAreNamed(testCase)
             [c, why] = ndi.migrate.internal.controlCalculation(controlDoc(2), ...
+                'pres_1', '', [0 1], 'sess_1');
+            testCase.verifyEmpty(c); testCase.verifyEqual(why, 'no subject');
+            [c, why] = ndi.migrate.internal.controlCalculation(controlDoc(NaN), ...
                 'pres_1', '', [0 1], 'sess_1');
             testCase.verifyEmpty(c); testCase.verifyEqual(why, 'no subject');
             [c, why] = ndi.migrate.internal.controlCalculation(controlDoc(2), ...

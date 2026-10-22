@@ -1,4 +1,4 @@
-function [calc, why] = controlCalculation(v1Body, presentationId, entityId, ...
+function [calc, why, kind] = controlCalculation(v1Body, presentationId, entityId, ...
         positions, sessionId)
 %CONTROLCALCULATION A v1 control_stimulus_ids document as a did-schema #88
 %   calculation.
@@ -13,7 +13,11 @@ function [calc, why] = controlCalculation(v1Body, presentationId, entityId, ...
 %   responses keep pointing at it in `input_id` ([control input told apart by
 %   its document]). So:
 %     base.id     the v1 control_stimulus_ids id, preserved (responses' input_id)
-%     class       `calculation` with the `item` value kind
+%     class       `calculation` with the `item` value kind (or, when the v1
+%                 value is NaN/empty -- no trial was a control -- the
+%                 `logical` value kind, variable 'control stimulus present',
+%                 value false: Proposed (not decided) [control record with no
+%                 control], did-schema V_eta_stimulus_response_model_plan.md)
 %     entity_id   what the presentation's manipulation is about (ENTITYID)
 %     input_id    the presentation (PRESENTATIONID, the manipulation's id)
 %     value.item  per v1 entry (one per trial, as tuning_response writes it),
@@ -36,6 +40,7 @@ function [calc, why] = controlCalculation(v1Body, presentationId, entityId, ...
 
 calc = [];
 why = '';
+kind = '';
 blk = struct();
 if isfield(v1Body, 'control_stimulus_ids') && isstruct(v1Body.control_stimulus_ids)
     blk = v1Body.control_stimulus_ids;
@@ -46,23 +51,35 @@ if iscell(ids)
     ids = cellfun(@(x) double(x), ids);
 end
 ids = double(ids(:)');
-if isempty(ids) || all(isnan(ids))
-    why = 'no control';
-    return;
-end
+noControl = isempty(ids) || all(isnan(ids));
 if isempty(entityId)
     why = 'no subject';
     return;
 end
-if isempty(positions)
+if noControl
+    % Proposed (not decided) [control record with no control] (did-schema
+    % V_eta_stimulus_response_model_plan.md): no trial was a control. The
+    % record is still a calculation -- `logical` value kind, variable
+    % 'control stimulus present', value false -- so it is not left as v1
+    % and responses' input_id still resolves.
+    why = 'no control';
+    kind = 'logical';
+    variable = 'control stimulus present';
+    value = false;
+end
+if ~noControl && isempty(positions)
     why = 'no position map';
     return;
 end
-if any(isnan(ids)) || any(ids < 1 | ids > numel(positions) | ids ~= floor(ids))
-    why = 'unmappable';
-    return;
+if ~noControl
+    if any(isnan(ids)) || any(ids < 1 | ids > numel(positions) | ids ~= floor(ids))
+        why = 'unmappable';
+        return;
+    end
+    kind = 'item';
+    variable = 'control stimulus';
+    value = struct('item', positions(ids));
 end
-value = struct('item', positions(ids));
 
 csId = '';
 if isfield(v1Body, 'base') && isfield(v1Body.base, 'id'); csId = char(v1Body.base.id); end
@@ -98,7 +115,7 @@ if isfield(blk, 'control_stimulus_id_method') && isstruct(blk.control_stimulus_i
 end
 
 standIn = [csId '_time_reference_pending'];
-args = {'ValueKind', 'item', 'Method', methodTerm, ...
+args = {'ValueKind', kind, 'Method', methodTerm, ...
     'TimeReferenceIds', {standIn}, 'InputIds', {presentationId}, ...
     'SessionId', sessionId, 'Id', csId, 'Validate', false};
 if ~isempty(params)
@@ -107,7 +124,7 @@ end
 if ~isempty(ds)
     args = [args, {'CreationTimestamp', ds}];
 end
-calc = did2.build.statement('calculation', entityId, 'control stimulus', value, args{:});
+calc = did2.build.statement('calculation', entityId, variable, value, args{:});
 keep = arrayfun(@(d) ~strcmp(char(d.name), 'time_reference_id'), calc.depends_on);
 calc.depends_on = calc.depends_on(keep);
 e = struct();

@@ -2676,11 +2676,10 @@ function [convertResult, report] = resolveStimulusPresentations(convertResult, b
             continue;
         end
         ci = controlInfo(presId);
-        [calc, why] = ndi.migrate.internal.controlCalculation(cs, presId, ...
+        [calc, why, kind] = ndi.migrate.internal.controlCalculation(cs, presId, ...
             ci.entity_id, ci.positions, ci.session_id);
         if isempty(calc)
             switch why
-                case 'no control', report.control_none = report.control_none + 1;
                 case 'no subject', report.control_no_subject = report.control_no_subject + 1;
                 case 'no position map'
                     report.control_no_position_map = report.control_no_position_map + 1;
@@ -2690,7 +2689,12 @@ function [convertResult, report] = resolveStimulusPresentations(convertResult, b
         end
         calcs{end+1} = calc; %#ok<AGROW>
         controlReplaced{end+1} = char(cs.base.id); %#ok<AGROW>
-        report.control_calculations_minted = report.control_calculations_minted + 1;
+        if strcmp(kind, 'logical')
+            % [control record with no control] (proposed): value false
+            report.control_no_control_minted = report.control_no_control_minted + 1;
+        else
+            report.control_calculations_minted = report.control_calculations_minted + 1;
+        end
     end
 
     % drop the passthrough stimulus_presentation docs that were assembled away,
@@ -2840,7 +2844,7 @@ function r = newStimulusSequenceReport()
         'notes_not_written_standalone', 0, ...
         'control_records_read',       0, ...
         'control_calculations_minted', 0, ...
-        'control_none',               0, ...
+        'control_no_control_minted',  0, ...
         'control_presentation_not_folded', 0, ...
         'control_no_subject',         0, ...
         'control_no_position_map',    0, ...

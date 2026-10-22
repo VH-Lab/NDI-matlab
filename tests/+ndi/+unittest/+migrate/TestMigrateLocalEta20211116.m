@@ -127,19 +127,26 @@ classdef TestMigrateLocalEta20211116 < matlab.unittest.TestCase
             n = r.control_records_read;
             verifyEqual(testCase, n, 11, ...
                 '20211116 holds 11 control_stimulus_ids documents');
-            verifyEqual(testCase, n, r.control_calculations_minted + r.control_none + ...
+            verifyEqual(testCase, n, r.control_calculations_minted + r.control_no_control_minted + ...
                 r.control_presentation_not_folded + r.control_no_subject + ...
                 r.control_no_position_map + r.control_unmappable, ...
                 'a control record fell into no bucket');
             dst = destinationBodies(testCase.Result.destination);
-            calcs = {};
+            calcs = {}; noControl = {};
             for k = 1:numel(dst)
                 d = dst{k};
                 if strcmp(d.document_class.class_name, 'calculation') ...
-                        && isfield(d, 'statement') && isfield(d.statement, 'variable') ...
-                        && strcmp(d.statement.variable.name, 'control stimulus')
-                    calcs{end+1} = d; %#ok<AGROW>
+                        && isfield(d, 'statement') && isfield(d.statement, 'variable')
+                    switch d.statement.variable.name
+                        case 'control stimulus', calcs{end+1} = d; %#ok<AGROW>
+                        case 'control stimulus present', noControl{end+1} = d; %#ok<AGROW>
+                    end
                 end
+            end
+            % [control record with no control] (proposed): logical false
+            verifyEqual(testCase, numel(noControl), r.control_no_control_minted);
+            for k = 1:numel(noControl)
+                verifyEqual(testCase, logical(noControl{k}.logical.value), false);
             end
             verifyEqual(testCase, numel(calcs), r.control_calculations_minted, ...
                 'every minted control calculation reaches the destination');
