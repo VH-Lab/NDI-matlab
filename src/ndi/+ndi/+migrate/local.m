@@ -2510,6 +2510,14 @@ function [convertResult, report] = resolveStimulusPresentations(convertResult, b
 %   option A): the epoch anchor needs a clocktype that lives in
 %   presentation_time.bin, which this pass does not open.
 %
+%   CONTROL (Jess Haley, 2026-10-22, [control as covariate]): each v1
+%   control_stimulus_ids is handed to its presentation's fold and becomes the
+%   `control condition` covariate of the item value; the record itself writes
+%   no V2 document and its id is stripped from every input_id. A record the
+%   fold cannot place (see stimulusPresentationToItem, CONTROL) or whose
+%   presentation did not fold stays as it is; the report counts each, against
+%   control_records_read.
+%
 %   `visual_grating`, `visual_grating_manipulation`, `timed_sequence` and
 %   `timed_sequence_manipulation` are gone from #88; nothing here emits them.
     report = newStimulusSequenceReport();
@@ -2530,9 +2538,30 @@ function [convertResult, report] = resolveStimulusPresentations(convertResult, b
     cohortIdFor = @(sid) cohortIdOf(cohortIds, sid);
 
     usedShared = containers.Map('KeyType', 'char', 'ValueType', 'logical');
-    % per folded presentation: what its control record needs
-    % ([control record is a calculation])
-    controlInfo = containers.Map('KeyType', 'char', 'ValueType', 'any');
+    % THE CONTROL RECORDS, by presentation. Decided by Jess Haley, 2026-10-22
+    % [control as covariate] (did-schema V_eta_stimulus_response_model_plan.md):
+    % a v1 control_stimulus_ids becomes the `control condition` covariate of
+    % its presentation's item value and NO V2 document of its own; responses
+    % then point at the presentation only (its id is stripped from their
+    % input_id below). See ndi.migrate.internal.stimulusPresentationToItem.
+    controlsByPresentation = containers.Map('KeyType', 'char', 'ValueType', 'any');
+    for k = 1:numel(convertResult.migrated)
+        d = convertResult.migrated{k};
+        if ~strcmp(d.className(), 'control_stimulus_ids'); continue; end
+        report.control_records_read = report.control_records_read + 1;
+        cs = d.toStruct();
+        presId = ndi.migrate.internal.etaShape.edge(cs, 'stimulus_presentation_id');
+        if isempty(presId)
+            continue;
+        end
+        held = {};
+        if isKey(controlsByPresentation, presId)
+            held = controlsByPresentation(presId);
+        end
+        held{end+1} = cs; %#ok<AGROW>
+        controlsByPresentation(presId) = held;
+    end
+    controlFolded = {};
     minted = {};
     manips = {};
     consumed = {};
@@ -2547,9 +2576,17 @@ function [convertResult, report] = resolveStimulusPresentations(convertResult, b
         if ~isempty(presId) && isKey(hartleyByPresentation, presId)
             sequence = hartleyByPresentation(presId);
         end
+        controls = {};
+        if ~isempty(presId) && isKey(controlsByPresentation, presId)
+            controls = controlsByPresentation(presId);
+        end
         [manip, methods, rep] = ndi.migrate.internal.stimulusPresentationToItem( ...
-            b, resolver, sequence, 'CohortIdFor', cohortIdFor);
+            b, resolver, sequence, 'CohortIdFor', cohortIdFor, ...
+            'ControlRecords', controls);
         report = tallyStimulusKinds(report, rep, ~isempty(manip));
+        if ~isempty(manip) && ~isempty(controls)
+            [report, controlFolded] = tallyControl(report, rep, controls, controlFolded);
+        end
         if ~isempty(manip)
             % [flashed bar], [shape movie note], [Hartley without enumeration]
             report.flashed_bar_methods = report.flashed_bar_methods + rep.flashed_bars;
@@ -2619,9 +2656,6 @@ function [convertResult, report] = resolveStimulusPresentations(convertResult, b
             report.distributive_manipulations = report.distributive_manipulations + 1;
         end
         manips{end+1} = manip; %#ok<AGROW>
-        controlInfo(presId) = struct('entity_id', rep.entity_id, ...
-            'positions', rep.trial_positions, ...
-            'session_id', char(ndi.v2.sessionIdOf(b)));
         for g = 1:numel(methods)
             minted{end+1} = methods{g}; %#ok<AGROW>
         end
@@ -2636,6 +2670,13 @@ function [convertResult, report] = resolveStimulusPresentations(convertResult, b
             max(numel(methods), rep.shared_refs);
         consumed{end+1} = presId; %#ok<AGROW>
     end
+    % a control record whose presentation was not folded (refused, or not in
+    % this set) stays as it is, counted
+    report.control_presentation_not_folded = ...
+        report.control_records_read - report.control_records_folded ...
+        - report.control_unmappable - report.control_no_position_map ...
+        - report.control_conflicting;
+
     if isempty(consumed)
         report.methods_minted = 0;
         return;
@@ -2657,46 +2698,6 @@ function [convertResult, report] = resolveStimulusPresentations(convertResult, b
         report.cohort_members = report.cohort_members + numel(members);
     end
 
-    % THE CONTROL RECORDS. Decided by Jess Haley, 2026-10-21 [control record
-    % is a calculation]: each passthrough v1 control_stimulus_ids document
-    % about a folded presentation becomes a calculation (item value kind,
-    % id preserved, input_id = the presentation); NaN / no control writes
-    % none and is counted. See ndi.migrate.internal.controlCalculation.
-    controlReplaced = {};
-    calcs = {};
-    for k = 1:numel(convertResult.migrated)
-        d = convertResult.migrated{k};
-        if ~strcmp(d.className(), 'control_stimulus_ids'); continue; end
-        report.control_records_read = report.control_records_read + 1;
-        cs = d.toStruct();
-        presId = ndi.migrate.internal.etaShape.edge(cs, 'stimulus_presentation_id');
-        if isempty(presId) || ~isKey(controlInfo, presId)
-            report.control_presentation_not_folded = ...
-                report.control_presentation_not_folded + 1;
-            continue;
-        end
-        ci = controlInfo(presId);
-        [calc, why, kind] = ndi.migrate.internal.controlCalculation(cs, presId, ...
-            ci.entity_id, ci.positions, ci.session_id);
-        if isempty(calc)
-            switch why
-                case 'no subject', report.control_no_subject = report.control_no_subject + 1;
-                case 'no position map'
-                    report.control_no_position_map = report.control_no_position_map + 1;
-                otherwise, report.control_unmappable = report.control_unmappable + 1;
-            end
-            continue;
-        end
-        calcs{end+1} = calc; %#ok<AGROW>
-        controlReplaced{end+1} = char(cs.base.id); %#ok<AGROW>
-        if strcmp(kind, 'logical')
-            % [control record with no control] (proposed): value false
-            report.control_no_control_minted = report.control_no_control_minted + 1;
-        else
-            report.control_calculations_minted = report.control_calculations_minted + 1;
-        end
-    end
-
     % drop the passthrough stimulus_presentation docs that were assembled away,
     % and collect the session documents the time references anchor to
     kept = {};
@@ -2710,8 +2711,17 @@ function [convertResult, report] = resolveStimulusPresentations(convertResult, b
             continue;
         end
         if strcmp(cls, 'control_stimulus_ids') ...
-                && any(strcmp(d.get('base.id'), controlReplaced))
-            continue;   % superseded by its calculation, same id
+                && any(strcmp(d.get('base.id'), controlFolded))
+            continue;   % folded into its presentation's covariate
+        end
+        if ~isempty(controlFolded)
+            [d, nStripped] = stripInputIds(d, controlFolded);
+            if nStripped > 0
+                report.control_input_edges_stripped = ...
+                    report.control_input_edges_stripped + nStripped;
+                report.control_input_documents_changed = ...
+                    report.control_input_documents_changed + 1;
+            end
         end
         if any(strcmp(cls, {'session', 'entity'}))
             sessionStructs{end+1} = d.toStruct(); %#ok<AGROW>
@@ -2723,10 +2733,9 @@ function [convertResult, report] = resolveStimulusPresentations(convertResult, b
 
     % "during the session" for every manipulation (the marker each carries)
     nS = numel(sessionStructs);
-    marked = [manips, calcs];
+    marked = manips;
     batch = [sessionStructs, marked];
-    classes = [sessionClasses, repmat({'manipulation'}, 1, numel(manips)), ...
-        repmat({'calculation'}, 1, numel(calcs))];
+    classes = [sessionClasses, repmat({'manipulation'}, 1, numel(manips))];
     [batch, refs, anchorReport] = did2.convert.mintSessionDuring(batch, classes, ...
         nS + (1:numel(marked)), struct('SchemaCache', options.SchemaCache));
     report.time_references = anchorReport;
@@ -2744,6 +2753,57 @@ function [convertResult, report] = resolveStimulusPresentations(convertResult, b
     convertResult.quarantine = [convertResult.quarantine, sub.quarantine];
     report.quarantined = numel(sub.quarantine);
     convertResult.summary = recountSummary(convertResult);
+end
+
+function [report, folded] = tallyControl(report, rep, controls, folded)
+%TALLYCONTROL Count one folded presentation's control records ([control as
+%   covariate]): folded into its covariate, or left as v1 with the reason.
+    if rep.control_records_folded > 0
+        report.control_records_folded = report.control_records_folded + ...
+            rep.control_records_folded;
+        report.presentations_with_control_covariate = ...
+            report.presentations_with_control_covariate + 1;
+        if rep.control_true == 0
+            report.control_covariates_all_false = ...
+                report.control_covariates_all_false + 1;
+        end
+        for c = 1:numel(controls)
+            folded{end+1} = char(controls{c}.base.id); %#ok<AGROW>
+        end
+        return;
+    end
+    switch rep.control_unfolded_reason
+        case 'no position map'
+            report.control_no_position_map = report.control_no_position_map + numel(controls);
+        case 'conflicting'
+            report.control_conflicting = report.control_conflicting + numel(controls);
+        otherwise
+            report.control_unmappable = report.control_unmappable + numel(controls);
+    end
+end
+
+function [d, n] = stripInputIds(d, ids)
+%STRIPINPUTIDS Remove from document D's input_id edges every id in IDS (the
+%   folded control records: a response points at the presentation only).
+    n = 0;
+    s = d.toStruct();
+    if ~isfield(s, 'depends_on') || ~isstruct(s.depends_on) || isempty(s.depends_on)
+        return;
+    end
+    keep = true(1, numel(s.depends_on));
+    for k = 1:numel(s.depends_on)
+        e = s.depends_on(k);
+        if strcmp(char(e.name), 'input_id') && ...
+                any(strcmp(ndi.migrate.internal.etaShape.entryValue(e), ids))
+            keep(k) = false;
+        end
+    end
+    n = sum(~keep);
+    if n == 0
+        return;
+    end
+    s.depends_on = s.depends_on(keep);
+    d = did2.document(s);
 end
 
 function id = cohortIdOf(cohortIds, sessionId)
@@ -2843,12 +2903,15 @@ function r = newStimulusSequenceReport()
         'hartley_without_enumeration', 0, ...
         'notes_not_written_standalone', 0, ...
         'control_records_read',       0, ...
-        'control_calculations_minted', 0, ...
-        'control_no_control_minted',  0, ...
+        'control_records_folded',     0, ...
         'control_presentation_not_folded', 0, ...
-        'control_no_subject',         0, ...
         'control_no_position_map',    0, ...
         'control_unmappable',         0, ...
+        'control_conflicting',        0, ...
+        'presentations_with_control_covariate', 0, ...
+        'control_covariates_all_false', 0, ...
+        'control_input_edges_stripped', 0, ...
+        'control_input_documents_changed', 0, ...
         'hartley',                    []);
 end
 

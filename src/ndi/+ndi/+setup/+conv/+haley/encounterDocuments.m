@@ -14,7 +14,7 @@ function out = encounterDocuments(dataParentDir, session, R, subjectIds, options
 %   (stage 9's when it starts at the plate's first recording, else the one
 %   video's own reference, else a window of their own from the first
 %   recording's start), and each time with no anchor of its own -- the onsets,
-%   the item offsets -- is in seconds from that window's START, which is the
+%   the exits' `offset time` covariate -- is in seconds from that window's START, which is the
 %   plate's first recording's start (tenet T14, PROPOSAL 2026-10-20, decision
 %   #118): the video's start plus (frame - 1) / frame rate.
 %
@@ -22,18 +22,22 @@ function out = encounterDocuments(dataParentDir, session, R, subjectIds, options
 %   each statement's variable, method and conditions a decided term
 %   (haleyTerm) unless named as a label:
 %     time calculation  `encounter onset time`: THE ENCOUNTER LIST, one entry
-%                       per encounter (id >= 1), keyed `encounter`; method
+%                       per encounter (id >= 1), one `encounter` dimension
+%                       (covariate `encounter`, origin 0 spacing 1); method
 %                       `patch encounter detection`, method parameter `body
 %                       part` = `midpoint` (the track it reads). Every other
-%                       per-encounter document takes its `encounter` key's
-%                       positions from it (`key_id` / `positions_from`, T14)
+%                       per-encounter document has an `encounter` dimension
+%                       whose `encounter` covariate takes its positions from
+%                       it (`key_id` / covariate `document` 0; data_body plan
+%                       AMENDMENT 6)
 %     item calculation  `entity in contact`: each encounter's patch
 %                       subject (the source's lawnID = its lawnCenters row, #38)
-%                       and, as `offset`, when it ended (`exit`); when the
+%                       and, as the covariate `offset time` along the
+%                       encounter, when it ended (`exit`); when the
 %                       schema has `item`. Inputs also the worm's per-frame
 %                       nearest-patch tracks (stage 10 part B), which the
 %                       patch was read from (decision #122)
-%     velocity calculation  `speed`, method `median`, keyed [encounter x
+%     velocity calculation  `speed`, method `median`, dimensions [encounter x
 %                       `encounter period`] (`during the encounter`:
 %                       velocityOn; `after the encounter`: velocityOff, NaN
 %                       after the last encounter when the track ends first),
@@ -270,17 +274,20 @@ for g = 1:max(G)
 
     % the encounter list
     onset = secondsAt(enc.enter);
+    listAxes = haleyAxes({haleyTerm('encounter'), n, 'Origin', 0, 'Spacing', 1});
     list = did2.build.statement('calculation', wormId, ...
         haleyTerm('encounter onset time'), did2.build.valueCell('time', onset), ...
-        'Keys', did2.build.list(did2.build.key(haleyTerm('encounter'), n, 'Origin', 0, 'Spacing', 1)), ...
+        listAxes.args{:}, ...
         detection{:}, 'InputIds', inputs, calc{:}, 'ValueKind', 'time');
     docs{end+1} = list; %#ok<AGROW>
-    encKey = did2.build.key(haleyTerm('encounter'), n, 'PositionsFrom', 0);
+    encKey = {haleyTerm('encounter'), n, 'Document', 0};
     keyIds = {'KeyIds', {list.base.id}};
-    % the keys of a per-encounter value: the encounter, then any other
-    % dimension (its values in column-major order, the encounter fastest,
-    % which `datum_order` states)
-    keysWith = @(varargin) [{'Keys', did2.build.list(encKey, varargin{:})}, keyIds];
+    % the axes of a per-encounter value: the encounter (its covariate takes
+    % its positions from the list, `document` 0), then any other dimension
+    % (its values in column-major order, the encounter fastest, which
+    % `datum_order` states)
+    axesWith = @(varargin) haleyAxes(encKey, varargin{:});
+    keysWith = @(varargin) [getfield(axesWith(varargin{:}), 'args'), keyIds]; %#ok<GFLD>
     keyed = keysWith();
     per = [{'InputIds', [{list.base.id}, inputs]}, calc];
     out.byWorm(worm) = struct('wormId', wormId, 'listId', list.base.id, 'plate', plate, ...
@@ -289,10 +296,16 @@ for g = 1:max(G)
     % which patch
     pIds = patchIds(subjectIds, plate);
     if all(enc.lawnID >= 1 & enc.lawnID <= numel(pIds))
-        v = struct('item', enc.lawnID(:)' - 1, 'offset', secondsAt(enc.exit)');
+        % each encounter's exit is the `offset time` covariate along the
+        % encounter (data_body plan AMENDMENT 6 removed item.value.offset;
+        % [onset time]: "the end is offset time")
+        v = struct('item', enc.lawnID(:)' - 1);
+        exitAxes = haleyAxes(axesWith(), 'Covariate', did2.build.covariate( ...
+            offsetTimeTerm(), 0, 'Value', secondsAt(enc.exit)', 'Unit', haleyTerm('second')));
         docs{end+1} = did2.build.statement('calculation', wormId, ...
             haleyTerm('entity in contact'), v, 'Edges', struct('item_id', {pIds}), ...
-            detection{:}, keyed{:}, 'InputIds', [{list.base.id}, inputs, nearest], calc{:}, 'ValueKind', 'item'); %#ok<AGROW>
+            detection{:}, exitAxes.args{:}, keyIds{:}, ...
+            'InputIds', [{list.base.id}, inputs, nearest], calc{:}, 'ValueKind', 'item'); %#ok<AGROW>
     else
         out.skipped{end+1} = sprintf('%s: an encounter names a patch %s does not have; no patch list', ...
             worm, plate);
@@ -301,8 +314,8 @@ for g = 1:max(G)
     % median speed during and after each encounter: one array, keyed by period
     if all(ismember({'velocityOn', 'velocityOff'}, enc.Properties.VariableNames))
         x = [double(enc.velocityOn), double(enc.velocityOff)];
-        byPeriod = keysWith(did2.build.key(haleyTerm('encounter period'), 2, 'Labels', ...
-            haleyTerm({'during the encounter', 'after the encounter'})));
+        byPeriod = keysWith({haleyTerm('encounter period'), 2, 'Term', ...
+            haleyTerm({'during the encounter', 'after the encounter'})});
         docs{end+1} = did2.build.statement('calculation', wormId, haleyTerm('speed'), ...
             speed(x), 'Method', haleyTerm('median'), byPeriod{:}, order{:}, ...
             'Notes', 'After the last encounter: NaN when the track ends first.', ...
@@ -465,6 +478,15 @@ end
 c = {did2.build.condition(haleyTerm('reference time point'), 'Term', haleyTerm('encounter onset time')), ...
     did2.build.condition(haleyTerm('analysis window start'), 'Quantity', t0, 'Unit', haleyTerm('second')), ...
     did2.build.condition(haleyTerm('analysis window end'), 'Quantity', t1, 'Unit', haleyTerm('second'))};
+end
+
+function t = offsetTimeTerm()
+% The `offset time` covariate's variable ([onset time], data_body plan
+% AMENDMENT 6): the registered term when DID-schema's term registry holds one
+% named 'offset time'. Until it does, this is the label {name: 'offset
+% time'}, which the import's armed term registry refuses -- the term is being
+% chosen by T19 order ([covariate terms], Jess Haley 2026-10-22).
+t = ndi.setup.V2.registeredTerm('', 'offset time');
 end
 
 function t = encounterTypes(names)

@@ -1,19 +1,25 @@
-function f = lightsheetKeys(keys)
-%LIGHTSHEETKEYS A V_eta lightsheet array's `keys`, read back into v1's terms.
+function f = lightsheetKeys(dimensions, covariates)
+%LIGHTSHEETKEYS A V_eta lightsheet array's axes, read back into v1's terms.
 %
-%   F = ndi.vintage.lightsheetKeys(KEYS)
+%   F = ndi.vintage.lightsheetKeys(DIMENSIONS, COVARIATES)
 %
-%   KEYS is the `keys` list of a migrated lightsheet body (a level's
-%   sampled_body, or the OME-Zarr store's opaque_body): one entry per array
-%   dimension, in dimension order, as DID-matlab
-%   +migrators_j/private/jLightsheetKeys.m writes them. It may arrive as a
-%   struct array or a cell array (a JSON round trip makes either).
+%   DIMENSIONS and COVARIATES are the `dimensions` and `covariates` lists of
+%   a migrated lightsheet body (a level's sampled_body, or the OME-Zarr
+%   store's opaque_body; did-schema V_eta_data_body_model_plan.md AMENDMENT
+%   6, `keys` until 2026-10-22): one dimension per array axis, in axis order,
+%   and per axis the covariate along it alone that states its positions
+%   (origin/spacing for a space or time axis, the channel names for `c`), as
+%   DID-matlab +migrators_j/private/jLightsheetKeys.m writes them. Either may
+%   arrive as a struct array or a cell array (a JSON round trip makes
+%   either). The axis is read from the DIMENSION's term; its positions from
+%   the covariate along it whose variable is that term (else the first
+%   covariate along it alone).
 %
 %   F has the v1 fields NDI's lightsheet readers use, per axis and in the
-%   keys' order:
+%   dimensions' order:
 %     axes_order        'tczyx'-style: time -> t, channel -> c, z/y/x as named
-%     shape             each key's `n`
-%     chunks            each key's `chunk` ([] when no key has one)
+%     shape             each dimension's `n`
+%     chunks            each dimension's `chunk` ([] when none has one)
 %     voxel_size        the axis spacing IN THE SOURCE'S OWN UNIT
 %     translation       the axis origin, likewise
 %     units             cellstr, the source's unit per axis ('' if none), in
@@ -23,7 +29,8 @@ function f = lightsheetKeys(keys)
 %                       since 2026-10-21) is read back by its node
 %     voxel_size_units  the unit of the first space axis (v1 hard-coded
 %                       'micrometer' there; the migrator converts it)
-%     channel_names     the `c` key's terms' names, comma-joined ('' if none)
+%     channel_names     the `c` axis covariate's terms' names, comma-joined
+%                       ('' if none)
 %
 %   SOURCE UNITS, NOT CANONICAL ONES. The migrator converts a space or time
 %   axis to V_eta's canonical unit (meter, second) and keeps what the source
@@ -32,32 +39,35 @@ function f = lightsheetKeys(keys)
 %   source's micrometres, so the source values are read where they exist and
 %   the canonical ones only where the source's were already canonical.
 %
-%   AN AXIS WITH NO SPACING READS AS 1, ORIGIN AS 0. The `c` key is
+%   AN AXIS WITH NO SPACING READS AS 1, ORIGIN AS 0. The `c` axis is
 %   categorical (names or indices, no spacing). v1 stored the NGFF `scale`
 %   there, which for a channel axis is 1. This is a reader's convention so
 %   chooseLevel can compare whole vectors; it is not a value the document
 %   states. A space/time axis the source gave no scale is written by the
-%   migrator as REGULAR with origin 0, spacing 1 and NO unit (its indices
-%   0..n-1; Jess 2026-10-15), so it reads as voxel size 1, translation 0 and
-%   unit '' from the key itself. A key whose positions are stored (a
-%   `quantity` 0..n-1) reads as 1 and 0 by the convention above, the same.
+%   migrator with origin 0, spacing 1 and NO unit (its indices 0..n-1; Jess
+%   2026-10-15), so it reads as voxel size 1, translation 0 and unit '' from
+%   the covariate itself. An axis whose positions are stored (a `quantity`
+%   0..n-1), or that has no covariate at all (a bare dimension), reads as 1
+%   and 0 by the convention above, the same.
 %
 %   See also: ndi.vintage.lightsheetLevel, ndi.vintage.lightsheetPyramid.
 
 arguments
-    keys
+    dimensions
+    covariates = []
 end
 
-list = asList(keys);
-n = numel(list);
+dims = asList(dimensions);
+covs = asList(covariates);
+n = numel(dims);
 f = struct('axes_order', '', 'shape', zeros(1, n), 'chunks', [], ...
     'voxel_size', ones(1, n), 'translation', zeros(1, n), ...
     'units', {repmat({''}, 1, n)}, 'voxel_size_units', '', 'channel_names', '');
 chunks = nan(1, n);
 axes = blanks(n);
 for k = 1:n
-    key = list{k};
-    v = lower(termName(get(key, 'variable')));
+    dim = dims{k};
+    v = lower(termName(get(dim, 'term')));
     switch v
         case 'time',    axes(k) = 't';
         case 'channel', axes(k) = 'c';
@@ -65,28 +75,28 @@ for k = 1:n
         otherwise
             if ~isempty(v), axes(k) = v(1); else, axes(k) = '?'; end
     end
-    f.shape(k) = double(firstOr(get(key, 'n'), 0));
-    c = get(key, 'chunk');
+    f.shape(k) = double(firstOr(get(dim, 'n'), 0));
+    c = get(dim, 'chunk');
     if ~isempty(c), chunks(k) = double(c(1)); end
 
-    % did2.build.key writes a regular axis as origin = {value,
+    cov = covariateAlong(covs, k - 1, v);
+    % did2.build.covariate writes a regular axis as origin = {value,
     % source_value} and spacing = {value, source_value}: the canonical
     % number and, when the unit was converted, the source's own.
-    unit = unitSpelling(get(key, 'source_unit'));
-    [spacing, sourceSpacing] = pairOf(get(key, 'spacing'), get(key, 'source_spacing'));
-    [origin, sourceOrigin] = pairOf(get(key, 'origin'), get(key, 'source_origin'));
+    unit = unitSpelling(get(cov, 'source_unit'));
+    [spacing, sourceSpacing] = pairOf(get(cov, 'spacing'), get(cov, 'source_spacing'));
+    [origin, sourceOrigin] = pairOf(get(cov, 'origin'), get(cov, 'source_origin'));
     if ~isempty(sourceSpacing)
         spacing = sourceSpacing;
         if ~isempty(sourceOrigin), origin = sourceOrigin; end
     elseif isempty(unit)
-        unit = unitSpelling(get(key, 'unit'));
+        unit = unitSpelling(get(cov, 'unit'));
     end
     if ~isempty(spacing), f.voxel_size(k) = double(spacing(1)); end
     if ~isempty(origin),  f.translation(k) = double(origin(1)); end
     f.units{k} = unit;
     if axes(k) == 'c'
-        terms = get(key, 'term');
-        if isempty(terms), terms = get(key, 'labels'); end   % before 2026-10-19
+        terms = get(cov, 'term');
         names = cellfun(@termName, asList(terms), 'UniformOutput', false);
         f.channel_names = strjoin(names, ',');
     end
@@ -102,6 +112,26 @@ if ~isempty(space)
 end
 end
 
+function c = covariateAlong(covs, index, termName_)
+% The covariate along dimension INDEX (0-based) alone whose variable is the
+% dimension's term TERMNAME_; else the first along it alone; else [].
+arguments
+    covs cell
+    index (1,1) double
+    termName_ {mustBeText}
+end
+c = [];
+for i = 1:numel(covs)
+    along = double(get(covs{i}, 'along'));
+    if ~isscalar(along) || along ~= index, continue; end
+    if strcmpi(termName(get(covs{i}, 'variable')), termName_)
+        c = covs{i};
+        return;
+    end
+    if isempty(c), c = covs{i}; end
+end
+end
+
 function v = get(s, name)
 arguments
     s
@@ -114,8 +144,8 @@ end
 end
 
 function [v, source] = pairOf(p, flatSource)
-% A key's origin or spacing: the {value, source_value} pair did2.build.key
-% writes, or a bare number with the source in a sibling field (flatSource).
+% A covariate's origin or spacing: the {value, source_value} pair
+% did2.build.covariate writes, or a bare number with the source in a sibling field (flatSource).
 arguments
     p
     flatSource

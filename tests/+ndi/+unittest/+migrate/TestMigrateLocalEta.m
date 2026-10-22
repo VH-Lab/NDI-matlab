@@ -508,8 +508,18 @@ classdef TestMigrateLocalEta < matlab.unittest.TestCase
             verifyEqual(testCase, depValue(manip, 'entity_id'), subjId);
             verifyEqual(testCase, depValue(manip, 'instrument_id'), stimEl);
             verifyEqual(testCase, manip.item.value.item(:)', [0 1]);
-            verifyEqual(testCase, manip.item.value.offset(:)', [4 9]);
-            verifyEqual(testCase, manip.data.keys(1).quantity.value(:)', [0 5]);
+            % data_body plan AMENDMENT 6: one presentation dimension, the
+            % onsets and ends its `onset time` / `offset time` covariates
+            verifyFalse(testCase, isfield(manip.item.value, 'offset'));
+            dims = ndi.v2.entries(manip.data.dimensions);
+            verifyNumElements(testCase, dims, 1);
+            verifyEqual(testCase, double(dims{1}.n), 2);
+            covs = ndi.v2.entries(manip.data.covariates);
+            names = cellfun(@(c) char(c.variable.name), covs, 'UniformOutput', false);
+            on = covs{strcmp(names, 'onset time')};
+            off = covs{strcmp(names, 'offset time')};
+            verifyEqual(testCase, on.quantity.value(:)', [0 5]);
+            verifyEqual(testCase, off.quantity.value(:)', [4 9]);
             tr = depValue(manip, 'time_reference_id');
             verifyNotEmpty(testCase, tr, ...
                 ['the manipulation carries no time reference: the pass mints ' ...

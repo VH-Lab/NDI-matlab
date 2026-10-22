@@ -918,9 +918,9 @@ classdef TestObjectLayer < matlab.unittest.TestCase
             testCase.verifyEqual(double(v), 121e-6 * ones(5, 1), 'AbsTol', 1e-15, ...
                 'm/s by video frame, decoded from the sampled body');
             ax = sp{1}.axes();
-            testCase.verifyEqual(ax.variable(1), "video frame");
+            testCase.verifyEqual(ax.term(1), "video frame");
             testCase.verifyEqual(ax.n(1), 5);
-            testCase.verifyEqual(ax.variable(2), "Body Part");
+            testCase.verifyEqual(ax.term(2), "Body Part");
             testCase.verifyEqual(ax.n(2), 1, 'one statement for the worm''s body parts: here the midpoint');
 
             in = sp{1}.inputs();

@@ -17,12 +17,12 @@ function [p, vintage] = lightsheetPyramid(pyramidDoc, session, levelRecs)
 %                      value.data_type
 %     axes_order, shape_level0, voxel_size_level0, translation_level0,
 %     voxel_size_units, axes_units, channel_names, n_channels
-%                      the full-resolution array's keys. The migration moves
+%                      the full-resolution array's dimensions and covariates. The migration moves
 %                      them onto the OME-Zarr STORE's unheld opaque_body (owned
 %                      by the observation; did2.convert.foldGenericFiles), so
 %                      with SESSION that body is read first. A SmartSPIM
-%                      store's body (a TIFF folder) has no keys, and without
-%                      SESSION there is no body to read: then level 0's keys
+%                      store's body (a TIFF folder) has no dimensions, and without
+%                      SESSION there is no body to read: then level 0's axes
 %                      (LEVELRECS, ndi.vintage.lightsheetLevels), which the
 %                      same pass completed from the pyramid's units and
 %                      channel names.
@@ -84,9 +84,9 @@ if ~isempty(session)
         if ~isempty(d)
             p.pyramid_name = quoted(charOr(d), 'NGFF multiscales name');
         end
-        keys = blockValue(sp, 'keys');
-        if ~isempty(keys) && isempty(frame)
-            frame = ndi.vintage.lightsheetKeys(keys);
+        dims = blockValue(sp, 'dimensions');
+        if ~isempty(dims) && isempty(frame)
+            frame = ndi.vintage.lightsheetKeys(dims, blockValue(sp, 'covariates'));
         end
     end
 end

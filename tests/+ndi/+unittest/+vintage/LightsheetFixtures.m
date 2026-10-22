@@ -21,10 +21,10 @@ classdef LightsheetFixtures
 %              migrator's BUILDER; no longer the finder's mark).
 %     store    the v1 fileReference as an UNHELD `opaque_body` owned by the
 %              observation, format EMPTY:0000259 OME-Zarr, carrying the
-%              full-resolution keys and a description holding the pyramid's
+%              full-resolution dimensions and covariates and a description holding the pyramid's
 %              NGFF multiscales name (no label, no type: Jess 2026-10-15).
 %     level    a `sampled_body` with the v1 level's id, owner_id = the
-%              observation; keys t,c,z,y,x (t in second, c named by channel,
+%              observation; dimensions t,c,z,y,x (t in second, c named by channel,
 %              z/y/x converted to meter with the micrometre source kept);
 %              datum_order C, byte_order little, fill_value '0'; level 0 is
 %              not redundant, a reduced level is `redundant` with a
@@ -77,7 +77,8 @@ classdef LightsheetFixtures
             s = ndi.unittest.vintage.LightsheetFixtures.etaDoc('opaque_body', ...
                 {'base', 'data_body'}, id);
             s.depends_on = struct('name', 'owner_id', 'document_id', ownerId);
-            s.data = struct('keys', {ndi.unittest.vintage.LightsheetFixtures.keys(1, false)});
+            [d, c] = ndi.unittest.vintage.LightsheetFixtures.axesOf(1, false);
+            s.data = struct('dimensions', {d}, 'covariates', {c});
             s.data_body = struct( ...
                 'format', struct('node', 'EMPTY:0000259', 'name', 'OME-Zarr'), ...
                 'filename', 'brain7.ome.zarr', ...
@@ -103,8 +104,8 @@ classdef LightsheetFixtures
             s = ndi.unittest.vintage.LightsheetFixtures.etaDoc('sampled_body', ...
                 {'base', 'data_body'}, id);
             s.depends_on = struct('name', 'owner_id', 'document_id', ownerId);
-            s.data = struct('keys', {ndi.unittest.vintage.LightsheetFixtures.keys(factor, true)}, ...
-                'complete', true);
+            [d, c] = ndi.unittest.vintage.LightsheetFixtures.axesOf(factor, true);
+            s.data = struct('dimensions', {d}, 'covariates', {c});
             s.sampled_body = struct('datum_order', 'C', 'byte_order', 'little', ...
                 'fill_value', '0');
             db = struct();
@@ -133,10 +134,14 @@ classdef LightsheetFixtures
             end
         end
 
-        function k = keys(factor, withChunks)
-            %KEYS t,c,z,y,x of a 1x2x400x2048x2048 '<u2' volume downsampled
-            %   by FACTOR in z,y,x, voxel 2 x 0.5 x 0.5 micrometre at level 0,
-            %   z translated by 10 micrometre.
+        function [d, c] = axesOf(factor, withChunks)
+            %AXESOF The dimensions t,c,z,y,x of a 1x2x400x2048x2048 '<u2'
+            %   volume downsampled by FACTOR in z,y,x, and their covariates
+            %   (did-schema data_body plan AMENDMENT 6; the mechanical port of
+            %   a key: the dimension's term is the axis, the covariate along
+            %   it alone has the same variable): voxel 2 x 0.5 x 0.5
+            %   micrometre at level 0, z translated by 10 micrometre. D and C
+            %   are cells, one entry each.
 
             arguments
                 factor (1,1) {mustBeNumeric}
@@ -145,27 +150,29 @@ classdef LightsheetFixtures
             n = [1 2 ceil(400 / factor) ceil(2048 / factor) ceil(2048 / factor)];
             chunk = [1 1 64 256 256];
             vox = [2 0.5 0.5] * factor;
-            t = struct('variable', struct('name', 'time'), 'n', n(1), ...
-                'unit', struct('node', 'UO:0000010', 'name', 'second'), ...
-                'regular', true, 'origin', struct('value', 0), 'spacing', struct('value', 1));
-            c = struct('variable', struct('name', 'channel'), 'n', n(2), 'regular', false, ...
+            names = {'time', 'channel', 'z', 'y', 'x'};
+            d = cell(1, 5);
+            for a = 1:5
+                d{a} = struct('term', struct('name', names{a}), 'n', n(a));
+                if withChunks
+                    d{a}.chunk = chunk(a);
+                end
+            end
+            t = struct('variable', struct('name', 'time'), ...
+                'unit', struct('node', 'UO:0000010', 'name', 'second'), 'along', 0, ...
+                'origin', struct('value', 0), 'spacing', struct('value', 1));
+            ch = struct('variable', struct('name', 'channel'), 'along', 1, ...
                 'term', struct('node', '', 'name', {'GCaMP6s', 'tdTomato'}));
             space = cell(1, 3);
-            names = 'zyx';
             origin = [10 0 0];
             for a = 1:3
-                space{a} = struct('variable', struct('name', names(a)), 'n', n(2 + a), ...
+                space{a} = struct('variable', struct('name', names{2 + a}), ...
                     'unit', struct('node', 'UO:0000008', 'name', 'meter'), ...
-                    'source_unit', 'micrometer', 'regular', true, ...
+                    'source_unit', 'micrometer', 'along', 1 + a, ...
                     'origin', struct('value', origin(a) * 1e-6, 'source_value', origin(a)), ...
                     'spacing', struct('value', vox(a) * 1e-6, 'source_value', vox(a)));
             end
-            k = [{t, c}, space];
-            if withChunks
-                for a = 1:5
-                    k{a}.chunk = chunk(a);
-                end
-            end
+            c = [{t, ch}, space];
         end
 
         function s = v1Level(id, pyramidId, level, reduction, memberPaths)

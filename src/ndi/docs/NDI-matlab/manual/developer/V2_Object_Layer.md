@@ -32,7 +32,8 @@ speed from a V2 dataset has to:
 2. pick the one whose `variable` is `midpoint speed`;
 3. follow its `depends_on` to the `sampled_body` that holds the values;
 4. open that body's file, gunzip it, and decode it by the body's `datum_type`,
-   `byte_order` and `keys` (the axes);
+   `byte_order` and `dimensions` (the axes; `keys` until did-schema data_body
+   AMENDMENT 6, 2026-10-22);
 5. follow the statement's time-reference edges to absolute or relative time
    references, and resolve them to a start and end;
 6. read units and tolerances from the value cell.
@@ -153,7 +154,8 @@ The v1 constructor and its `@` check stay as they are (D6).
 | `subject()`, `entity()` | the `ndi.entity` it is about |
 | `variable()` | an `ndi.term` (§13); `variable_name()` its name |
 | `value()` | the value, with units, decoded from the body when stored there (array, with axes) |
-| `axes()` | the value's keys: name, unit, values (e.g. video frame, metre) |
+| `axes()` | the value's dimensions: term, n, unit and coordinates (e.g. video frame, metre), and the covariates along each |
+| `covariates()` | the value's covariates: variable, along (0-based dimension indices), form, unit, values (e.g. a presentation's onset times and control flag) |
 | `conditions()` | table: variable, value, unit |
 | `notes` | text |
 | `body()` | the raw data-body document and file, if any |
@@ -192,7 +194,8 @@ body (answers Q3: a small value class).
 | `unit()` | the canonical field, e.g. `meters`, read from the schema |
 | `source()` | table: source_value, source_unit |
 | `tolerance()`, `approximate()` | per value |
-| `axes()` | the keys: variable, unit, n, coordinates |
+| `axes()` | the dimensions: dimension (0-based), term, n, unit, coordinates, covariates (`ndi.v2.axesTable`) |
+| `covariates()` | the covariates: variable, along, form, unit, values (`ndi.v2.covariatesTable`) |
 | `files()` | file paths, for a value kept in an opaque body (a video) |
 
 ### Entry points (instead of `ndi.session` / `ndi.dataset` additions)
@@ -243,7 +246,7 @@ it cannot name it.
   `ndi.manipulation`, ..., never a hard-coded list of leaves.
 - **Body decoding in one place.** A single reader turns a `sampled_body` into a
   MATLAB array from its `datum_type`, `byte_order`, `datum_order`, `fill_value`,
-  `compression` and `keys`. The Haley import's `ingestedBody` is its writing
+  `compression` and `dimensions`. The Haley import's `ingestedBody` is its writing
   counterpart, so the tests can round-trip.
 - **Time resolution in one place.** A single resolver follows a statement's time
   references, including chains (relative to an epoch relative to a session),
@@ -271,7 +274,7 @@ it cannot name it.
 1. `ndi.entity`, `ndi.subject` (V2 read; `@` relaxed for V2, D6),
    `session.subjects()` / `dataset.subjects()`.
 2. `ndi.statement` and its tree; `value()` with the body reader; `axes()`,
-   `conditions()`.
+   `covariates()`, `conditions()`.
 3. `time()` with the time resolver; `method()`, `instrument()`.
 4. `ndi.calculation.inputs()`, `ndi.manipulation.formulation()`,
    `ndi.strain`, `ndi.study`, `entities()`, `studies()`.
@@ -316,7 +319,7 @@ tried on the real Haley dataset before the next.
 | `+ndi/manipulation.m` | `ndi.manipulation`: `formulation` |
 | `+ndi/calculation.m` | `ndi.calculation`: `inputs`, `interpreter`, `operating_system` |
 | `+ndi/data_type.m` | `ndi.value` |
-| `+ndi/+v2/` | helpers: `props`, `methodOf` (a statement's or relation's method block, inline or by `method_id`), `classChain`, `directParents`, `edgeIds`, `getDocument`, `blockOf`, `termName`, `readBody` (the sampled-body reader), `axesTable`, `entryValue` (a condition's or method parameter's one value), `parseUtc`, `timeOf` (the time resolver) |
+| `+ndi/+v2/` | helpers: `props`, `methodOf` (a statement's or relation's method block, inline or by `method_id`), `classChain`, `directParents`, `edgeIds`, `getDocument`, `blockOf`, `termName`, `readBody` (the sampled-body reader), `axesTable`, `covariatesTable`, `covariateValues`, `entryValue` (a condition's or method parameter's one value), `parseUtc`, `timeOf` (the time resolver) |
 
 Tests: `tests/+ndi/+unittest/+setup/+V2/TestObjectLayer.m`, over the Haley CI
 fixture, including the v1 subject constructor. Not yet: a chunked body (an
@@ -338,10 +341,11 @@ also read migrated documents, whose classes keep the older names:
 | `+ndi/session.m` | `database_search_with_dataset` |
 | `+ndi/+v2/` | `kindOf`, `blockOf` (falls back to the `entity` block), `isaQuery`, `blockQuery`, `leafName`; `classChain` appends the value kind; `matchTerm` / `termQuery` match a CURIE prefix ignoring case; `statementValue` reads the `text` kind; `searchStatements` takes `withDataset` |
 
-Recording keys (decision #70): a Haley video or image statement's `axes()` gives
-the image's rows and columns in pixels (centres at 0.5, 1.5, ...) and, for a
-video, `time`, one per frame from the recording's start at 1 / frame rate. They
-are written only when the file was opened (`'ReadVideos'`, or a TIFF).
+Recording axes (decision #70): a Haley video or image statement's `axes()` gives
+the image's rows and columns (dimensions Y-coordinate, X-coordinate, each with a
+covariate in pixels, centres at 0.5, 1.5, ...) and, for a video, `time`, one per
+frame from the recording's start at 1 / frame rate. They are written only when
+the file was opened (`'ReadVideos'`, or a TIFF).
 
 ## 11. Linked and ingested sessions (2026-10-09)
 

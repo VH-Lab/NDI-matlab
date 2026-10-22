@@ -116,46 +116,87 @@ classdef TestMigrateLocalEta20211116 < matlab.unittest.TestCase
             ndi.unittest.migrate.printStimulusFoldReport(r, '20211116');
         end
 
-        function testControlRecordsBecomeCalculationsOrAreCounted(testCase)
-            % Decided by Jess Haley, 2026-10-21 [control record is a
-            % calculation]: a v1 control_stimulus_ids about a folded
-            % presentation becomes a calculation (item value kind, id kept,
-            % input_id = the presentation); NaN / no control writes none and
-            % is counted. The accounting must close: every record read lands
-            % in exactly one bucket.
+        function testControlRecordsFoldIntoACovariateOrAreCounted(testCase)
+            % Decided by Jess Haley, 2026-10-22 [control as covariate]: a v1
+            % control_stimulus_ids about a folded presentation becomes the
+            % `control condition` covariate (logical, XCO:0000099) of the
+            % presentation's item value -- all false when v1 recorded NaN --
+            % and NO V2 document; responses point at the presentation only.
+            % The accounting must close: every record read lands in exactly
+            % one bucket.
             r = testCase.Result.secondPass.stimulusSequence;
             n = r.control_records_read;
             verifyEqual(testCase, n, 11, ...
                 '20211116 holds 11 control_stimulus_ids documents');
-            verifyEqual(testCase, n, r.control_calculations_minted + r.control_no_control_minted + ...
-                r.control_presentation_not_folded + r.control_no_subject + ...
-                r.control_no_position_map + r.control_unmappable, ...
+            verifyEqual(testCase, n, r.control_records_folded + ...
+                r.control_presentation_not_folded + r.control_no_position_map + ...
+                r.control_unmappable + r.control_conflicting, ...
                 'a control record fell into no bucket');
             dst = destinationBodies(testCase.Result.destination);
-            calcs = {}; noControl = {};
+            withControl = 0; allFalse = 0; leftoverIds = {};
             for k = 1:numel(dst)
                 d = dst{k};
-                if strcmp(d.document_class.class_name, 'calculation') ...
-                        && isfield(d, 'statement') && isfield(d.statement, 'variable')
-                    switch d.statement.variable.name
-                        case 'control stimulus', calcs{end+1} = d; %#ok<AGROW>
-                        case 'control stimulus present', noControl{end+1} = d; %#ok<AGROW>
-                    end
+                cls = d.document_class.class_name;
+                if strcmp(cls, 'control_stimulus_ids')
+                    leftoverIds{end+1} = char(d.base.id); %#ok<AGROW>
+                    continue;
+                end
+                if strcmp(cls, 'calculation') && isfield(d, 'statement') ...
+                        && isfield(d.statement, 'variable')
+                    verifyFalse(testCase, any(strcmp(d.statement.variable.name, ...
+                        {'control stimulus', 'control stimulus present'})), ...
+                        'a control calculation was written ([control as covariate] superseded it)');
+                end
+                c = controlCovariate(d);
+                if ~isempty(c)
+                    withControl = withControl + 1;
+                    if ~any(logical(c.logical(:))), allFalse = allFalse + 1; end
                 end
             end
-            % [control record with no control] (proposed): logical false
-            verifyEqual(testCase, numel(noControl), r.control_no_control_minted);
-            for k = 1:numel(noControl)
-                verifyEqual(testCase, logical(noControl{k}.logical.value), false);
+            folded = n - numel(leftoverIds);
+            verifyEqual(testCase, withControl, r.presentations_with_control_covariate, ...
+                'every control covariate the pass counted reaches the destination');
+            verifyEqual(testCase, allFalse, r.control_covariates_all_false);
+            verifyEqual(testCase, folded, r.control_records_folded, ...
+                'every folded control record is gone from the destination');
+            % no destination input_id names a folded record: the ids of the
+            % source's control records, less those left as v1
+            foldedIds = {};
+            for k = 1:numel(testCase.Bodies)
+                b = testCase.Bodies{k};
+                if ischar(b) || isstring(b)
+                    if ~contains(char(b), '"control_stimulus_ids"'); continue; end
+                    b = jsondecode(char(b));
+                end
+                if isstruct(b) && strcmp(b.document_class.class_name, 'control_stimulus_ids') ...
+                        && ~any(strcmp(char(b.base.id), leftoverIds))
+                    foldedIds{end+1} = char(b.base.id); %#ok<AGROW>
+                end
             end
-            verifyEqual(testCase, numel(calcs), r.control_calculations_minted, ...
-                'every minted control calculation reaches the destination');
-            for k = 1:numel(calcs)
-                c = calcs{k};
-                verifyTrue(testCase, any(strcmp({c.document_class.superclasses.class_name}, 'item')));
-                verifyTrue(testCase, isfield(c, 'item') && isfield(c.item, 'value') ...
-                    && isfield(c.item.value, 'item'), 'the control calculation carries no item value');
+            verifyNumElements(testCase, foldedIds, folded, ...
+                'the source and destination disagree on how many records folded');
+            dangling = 0;
+            for k = 1:numel(dst)
+                d = dst{k};
+                if ~isfield(d, 'depends_on') || ~isstruct(d.depends_on); continue; end
+                for j = 1:numel(d.depends_on)
+                    e = d.depends_on(j);
+                    if ~strcmp(e.name, 'input_id'); continue; end
+                    v = '';
+                    if isfield(e, 'value'); v = e.value; end
+                    if isempty(v) && isfield(e, 'document_id'); v = e.document_id; end
+                    if iscell(v) && ~isempty(v); v = v{1}; end
+                    dangling = dangling + any(strcmp(char(v), foldedIds));
+                end
             end
+            verifyEqual(testCase, dangling, 0, ...
+                'an input_id still names a folded control record');
+            fprintf(['\n  CONTROL RECORDS (20211116): %d read; %d folded into %d ' ...
+                'presentation covariate(s) (%d all false); %d input_id edge(s) on %d ' ...
+                'document(s) stripped; %d left as v1\n'], n, r.control_records_folded, ...
+                r.presentations_with_control_covariate, r.control_covariates_all_false, ...
+                r.control_input_edges_stripped, r.control_input_documents_changed, ...
+                numel(leftoverIds));
         end
 
         function testTheWholeCorpusMigratesWithNothingQuarantinedOrDangling(testCase)
@@ -287,11 +328,11 @@ classdef TestMigrateLocalEta20211116 < matlab.unittest.TestCase
                      'output (a Bar-2 gap, printed by the survivor census)']; ...
                 'control_stimulus_ids', ...
                     ['did-schema #88 deleted `control_designation` (#73 review item 67): ' ...
-                     'the control stimulus is said by the item the presentation becomes ' ...
-                     '(`value.control_item`), in the NDI stimulus fold, so the document ' ...
-                     'passes through pass 1 under its v1 tombstone for that pass to ' ...
-                     'consume (DID-matlab +migrators_j/control_stimulus_ids.m). Until the ' ...
-                     'fold consumes it, it survives to the final output (Bar-2 gap)']};
+                     'the control is the `control condition` covariate of the item the ' ...
+                     'presentation becomes ([control as covariate], Jess Haley 2026-10-22), ' ...
+                     'built in the NDI stimulus fold, so the document passes through pass 1 ' ...
+                     'under its v1 tombstone for that pass to consume (DID-matlab ' ...
+                     '+migrators_j/control_stimulus_ids.m)']};
             % `syncgraph` and `subject` were declared here before the #88 port
             % (DID-matlab #218); both now convert in pass 1 (e2e run
             % 39668356516: "2 of 5 declared deferral(s) no longer fire").
@@ -701,25 +742,31 @@ classdef TestMigrateLocalEta20211116 < matlab.unittest.TestCase
                 'the Hartley spatial frequency is not stated in cycles per pixel');
         end
 
-        function testTheFrameTimesSurviveAsATimeKey(testCase)
+        function testTheFrameTimesSurviveAsOnsetTimes(testCase)
             % frameTimes is the ONLY surviving stimulus timing on this
             % corpus (presentation_time.bin is declared by 11 of 11
-            % presentations and present in 0). Since #88 it is the `time` key
-            % of the item manipulation.
+            % presentations and present in 0). Since data_body AMENDMENT 6
+            % ([onset time], Jess Haley 2026-10-22) it is the `onset time`
+            % covariate along the item manipulation's presentation dimension.
             migrated = destinationBodies(testCase.Result.destination);
             seqs = itemManipulations(migrated);
-            withKey = 0;
+            withOnsets = 0;
             for k = 1:numel(seqs)
                 d = seqs{k};
-                if isfield(d, 'data') && isfield(d.data, 'keys') && ~isempty(d.data.keys) ...
-                        && double(d.data.keys(1).n) > 1
-                    withKey = withKey + 1;
+                if ~isfield(d, 'data') || ~isfield(d.data, 'covariates'); continue; end
+                cs = ndi.v2.entries(d.data.covariates);
+                for j = 1:numel(cs)
+                    if strcmp(cs{j}.variable.name, 'onset time') ...
+                            && numel(cs{j}.quantity.value) > 1
+                        withOnsets = withOnsets + 1;
+                        break;
+                    end
                 end
             end
-            verifyGreaterThanOrEqual(testCase, withKey, 10, sprintf( ...
-                ['%d of the migrated sequences carry a time key. The ten ' ...
+            verifyGreaterThanOrEqual(testCase, withOnsets, 10, sprintf( ...
+                ['%d of the migrated sequences carry onset times. The ten ' ...
                  'Hartley presentations each have a frameTimes of 3360, so ' ...
-                 'fewer than ten means the timing was dropped.'], withKey));
+                 'fewer than ten means the timing was dropped.'], withOnsets));
         end
 
         function testTheCalculatorFamilyKeepsItsIdentities(testCase)
@@ -906,6 +953,21 @@ for k = 1:numel(bodies)
             && isfield(d, 'entity') && isfield(d.entity, 'type') ...
             && isfield(d.entity.type, 'name') && strcmp(d.entity.type.name, 'session')
         doc = d;
+        return;
+    end
+end
+end
+
+function c = controlCovariate(d)
+%CONTROLCOVARIATE The document's `control condition` covariate, or [].
+c = [];
+if ~isfield(d, 'data') || ~isstruct(d.data) || ~isfield(d.data, 'covariates'); return; end
+cs = ndi.v2.entries(d.data.covariates);
+for j = 1:numel(cs)
+    v = cs{j}.variable;
+    if iscell(v), v = v{1}; end
+    if isstruct(v) && isfield(v, 'name') && strcmp(char(v.name), 'control condition')
+        c = cs{j};
         return;
     end
 end

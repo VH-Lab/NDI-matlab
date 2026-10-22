@@ -905,7 +905,7 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             mp = entries(a.interaction.method.parameters);
             testCase.verifyEqual(mp{1}.variable.name, 'arena diameter');
             testCase.verifyEqual(mp{1}.variable.node, 'EMPTY:0000122');
-            k = entries(a.data.keys);
+            k = axisEntries(a);
             testCase.verifyEqual(cellfun(@(x) x.variable.node, k, 'UniformOutput', false), ...
                 {'NCIT:C44478', 'NCIT:C44477'}, '[Y-coordinate, X-coordinate]: [row, column]');
 
@@ -990,7 +990,7 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             cs = docs(strcmp(classes, 'coordinate_system'));
             testCase.verifyTrue(any(cellfun(@(d) strcmp(d.base.id, edge(p, 'coordinate_system_id')), cs)), ...
                 'the positions are in their video''s coordinate system');
-            k1 = entries(p.data.keys);
+            k1 = axisEntries(p);
             testCase.verifyNumElements(k1, 3, '[video frame x body part x coordinate]');
             testCase.verifyEqual(k1{1}.variable.name, 'video frame');
             testCase.verifyEqual(k1{1}.variable.node, 'EMPTY:0000309');
@@ -1014,7 +1014,7 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             testCase.verifyNumElements(sp, 1);
             testCase.verifyEqual(sp{1}.statement.variable.node, 'PATO:0000008', 'speed');
             testCase.verifyEqual(sp{1}.interaction.method.term.node, 'OBI:0200056', 'moving average');
-            testCase.verifyNumElements(entries(sp{1}.data.keys), 2, '[video frame x body part]');
+            testCase.verifyNumElements(axisEntries(sp{1}), 2, '[video frame x body part]');
             testCase.verifyEqual(edgeAll(sp{1}, 'input_id'), {p.base.id});
             v = testCase.bodyValues(sessionPath, docs, classes, sp{1}.base.id, 'double');
             testCase.verifyEqual(v(:)', 121e-6 * ones(1, 5), 'AbsTol', 1e-15, 'm/s');
@@ -1083,9 +1083,9 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             classes = cellfun(@(d) d.document_class.class_name, docs, 'UniformOutput', false);
             % the worms' tracks (the patch centres are position calculations too)
             pos = docs(strcmp(classes, 'position_calculation') & cellfun(@(d) isfield(d, 'data') ...
-                && isfield(d.data, 'keys') && ~isempty(d.data.keys), docs));
+                && isfield(d.data, 'dimensions') && ~isempty(d.data.dimensions), docs));
             testCase.verifyNotEmpty(pos);
-            k = entries(pos{1}.data.keys);
+            k = axisEntries(pos{1});
             testCase.verifyEqual(k{2}.n, 2, 'midpoint and head');
             testCase.verifyEqual({k{2}.term.node}, {'EMPTY:0000137', 'EMPTY:0000352'});
             testCase.verifyEqual({k{2}.term.name}, {'body midpoint', 'anterior end point'});
@@ -1216,7 +1216,7 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
                 strcmp(edge(d, 'entity_id'), idOf('concentration_assayPlate0012')), docs));
             recRefs = cellfun(@(d) edgeAll(d, 'time_reference_id'), recs, 'UniformOutput', false);
             testCase.verifyTrue(ismember(tref{1}.base.id, [recRefs{:}]), 'the video''s own reference');
-            lk = entries(list{1}.data.keys);
+            lk = axisEntries(list{1});
             testCase.verifyEqual(lk{1}.variable.node, 'NCIT:C62143', 'keyed `encounter`');
             l111 = named('time_calculation', 'concentration_worm0111', 'encounter onset time');
             testCase.verifyEqual(l111{1}.time.value.seconds, 3671 + 1 / fr, 'AbsTol', 1e-6, ...
@@ -1231,7 +1231,7 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             testCase.verifyEqual(v(1:3), [10 20 60] * 1e-6, 'AbsTol', 1e-15, ...
                 'column-major: during each encounter, then after');
             testCase.verifyTrue(isnan(v(4)), 'nothing after the last encounter');
-            keys = entries(sp{1}.data.keys);
+            keys = axisEntries(sp{1});
             testCase.verifyNumElements(keys, 2);
             testCase.verifyEqual(keys{2}.variable.name, 'encounter period');
             testCase.verifyEqual({keys{2}.term.name}, {'during the encounter', 'after the encounter'});
@@ -1278,6 +1278,14 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             % the patch in contact is read off the nearest-patch tracks (#122)
             ec = named('item_calculation', 'concentration_worm0121', 'entity in contact');
             testCase.verifyNumElements(ec, 1);
+            % each encounter's exit: the `offset time` covariate along the
+            % encounter dimension (item.value.offset until AMENDMENT 6)
+            testCase.verifyFalse(isfield(ec{1}.item.value, 'offset'));
+            cv = entries(ec{1}.data.covariates);
+            off = cv(cellfun(@(c) strcmp(c.variable.name, 'offset time'), cv));
+            testCase.verifyNumElements(off, 1);
+            testCase.verifyEqual(double(off{1}.along), 0);
+            testCase.verifyNumElements(off{1}.quantity.value, numel(ec{1}.item.value.item));
             np = named('item_calculation', 'concentration_worm0121', 'nearest bacterial patch');
             testCase.verifyNotEmpty(np);
             testCase.verifyTrue(all(ismember(cellfun(@(d) d.base.id, np, 'UniformOutput', false), ...
@@ -1320,11 +1328,11 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             testCase.verifyEqual(g0{1}.velocity.value.meters_per_second, 50e-6, 'AbsTol', 1e-15);
             testCase.verifyEqual(methodOf(g0{1}), 'Median');
 
-            % the key takes its positions from the list, once both repositories have key_id
-            keys = entries(mn{1}.data.keys);
-            if isfield(keys{1}, 'positions_from') && ~isempty(keys{1}.positions_from)
-                testCase.verifyEqual(edgeAll(mn{1}, 'key_id'), {list{1}.base.id});
-            end
+            % the encounter covariate takes its positions from the list
+            % (`document` 0 into key_id; data_body plan AMENDMENT 6)
+            keys = axisEntries(mn{1});
+            testCase.verifyEqual(double(keys{1}.document), 0);
+            testCase.verifyEqual(edgeAll(mn{1}, 'key_id'), {list{1}.base.id});
             testCase.verifyEqual(keys{1}.n, 2);
         end
 
@@ -1391,7 +1399,7 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
                 'a mask is a calculation of its plate');
             testCase.verifyEqual(masks{1}.statement.variable.node, 'NCIT:C85402');
             testCase.verifyEqual(conditionTerm(masks{1}, 'Location'), 'bacterial patch');
-            mk = entries(masks{1}.data.keys);
+            mk = axisEntries(masks{1});
             testCase.verifyEqual(cellfun(@(e) e.variable.node, mk, 'UniformOutput', false), ...
                 {'NCIT:C44478', 'NCIT:C44477'}, 'keyed [Y-coordinate, X-coordinate]');
 
@@ -1425,7 +1433,7 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
                 && strcmp(conditionTerm(d, 'Reference Point'), 'bacterial patch edge'), ic));
             testCase.verifyNumElements(curves, 13);
             p1 = curves{cellfun(@(d) strcmp(edge(d, 'entity_id'), idOf('ecoli_plate0001_patch0001')), curves)};
-            k = entries(p1.data.keys);
+            k = axisEntries(p1);
             testCase.verifyEqual(k{1}.variable.name, 'distance');
             testCase.verifyEqual(k{1}.variable.node, 'PATO:0000040');
             testCase.verifyEqual(k{1}.n, 5);
@@ -1509,7 +1517,7 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             testCase.verifyEqual(numbers(e12{1}.intensity.value, 'arbitrary_units'), ...
                 94 / 300 + [74 80] / 3000, 'AbsTol', 1e-12);
             testCase.verifyEqual(methodOf(e12{1}), 'prediction from a fitted model');
-            ek = entries(e12{1}.data.keys);
+            ek = axisEntries(e12{1});
             testCase.verifyEqual(ek{1}.variable.name, 'encounter onset time');
             testCase.verifyEqual(ek{1}.quantity.value(:)', [1 3] / 2.9991, 'AbsTol', 1e-9, ...
                 'at worm 121''s two encounter onsets');
@@ -1564,7 +1572,7 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             pv = cellfun(@(e) e.variable.node, pm, 'UniformOutput', false);
             testCase.verifyEqual(sort(pv), sort({'EMPTY:0000323', 'EMPTY:0000105', 'EMPTY:0000324'}), ...
                 'the reference, its target seeding OD600 (#110) and the floor');
-            ek12 = entries(r12{1}.data.keys);
+            ek12 = axisEntries(r12{1});
             testCase.verifyEqual(ek12{1}.variable.name, 'encounter onset time', 'keyed as its estimate');
             if ~isempty(acc)
                 ra = rdOf(idOf(acc{1}));
@@ -1809,6 +1817,36 @@ for i = 1:numel(c)
         name = c{i}.term.name;
         return;
     end
+end
+end
+
+function c = axisEntries(doc)
+% a value's axes, one entry per dimension in array order (data_body plan
+% AMENDMENT 6): the covariate along that dimension alone whose variable is
+% the dimension's term (the Haley import's port of a former key), with
+% `variable` the dimension's term and `n` its length; a bare dimension gives
+% {variable, n}
+arguments
+    doc
+end
+dims = entries(doc.data.dimensions);
+covs = {};
+if isfield(doc.data, 'covariates') && ~isempty(doc.data.covariates)
+    covs = entries(doc.data.covariates);
+end
+c = cell(1, numel(dims));
+for k = 1:numel(dims)
+    e = struct();
+    for j = 1:numel(covs)
+        a = double(covs{j}.along);
+        if isscalar(a) && a == k - 1 && strcmp(covs{j}.variable.name, dims{k}.term.name)
+            e = covs{j};
+            break;
+        end
+    end
+    e.variable = dims{k}.term;
+    e.n = dims{k}.n;
+    c{k} = e;
 end
 end
 

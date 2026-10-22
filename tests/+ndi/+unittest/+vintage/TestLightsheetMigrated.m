@@ -163,7 +163,8 @@ classdef TestLightsheetMigrated < matlab.unittest.TestCase
         function testALevelsUnitsAndChannelNamesCameFromItsPyramid(testCase)
             d = testCase.Session.database_search(ndi.query('base.id', 'exact_string', 'lvl_ls_0'));
             testCase.assertNumElements(d, 1);
-            k = ndi.vintage.lightsheetKeys(ndi.v2.blockOf(d{1}.document_properties, 'data', 'keys'));
+            k = ndi.vintage.lightsheetKeys(ndi.v2.blockOf(d{1}.document_properties, 'data', 'dimensions'), ...
+                ndi.v2.blockOf(d{1}.document_properties, 'data', 'covariates'));
             testCase.verifyEqual(k.units{1}, 'second', 'the t unit, from the pyramid (point 8)');
             testCase.verifyEqual(k.units{3}, 'micrometer');
             testCase.verifyEqual(k.channel_names, 'GCaMP6s,tdTomato');

@@ -22,7 +22,9 @@ classdef value
     %                  schema where source_unit is a term, the term's name)
     %   tolerance    - [minus plus] per value, in the canonical unit
     %   approximate  - true per value that is approximate
-    %   axes         - table of the value's keys (what each dimension indexes)
+    %   axes         - table of the value's dimensions (what each axis is)
+    %   covariates   - table of the value's covariates (what is known along
+    %                  the dimensions: onset times, a control flag, ...)
     %   files        - for a value kept as files (a video, an image): paths
     %
     % See also ndi.statement.
@@ -32,7 +34,8 @@ classdef value
         raw = []               % the inline value as stored (struct or array)
         data = []              % the decoded array, when the value is in a sampled body
         file_list = {}         % file paths, when the value is in an opaque body
-        keys = []              % the value's keys (data.keys)
+        dimensions = []        % the value's dimensions (data.dimensions)
+        covariate_list = []    % the value's covariates (data.covariates)
         datum_type = ''        % how the body's bytes are encoded
         canonical_field = ''   % the cell's canonical field, e.g. 'meters'
     end
@@ -42,20 +45,23 @@ classdef value
             % VALUE - wrap a composite value
             %
             % OBJ = ndi.value(CLASSNAME, RAW, 'Data', A, 'Files', F,
-            % 'Keys', K, 'DatumType', T). Made by ndi.statement/value.
+            % 'Dimensions', D, 'Covariates', C, 'DatumType', T). Made by
+            % ndi.statement/value.
             arguments
                 className (1,:) char = ''
                 raw = []
                 options.Data = []
                 options.Files = {}
-                options.Keys = []
+                options.Dimensions = []
+                options.Covariates = []
                 options.DatumType (1,:) char = ''
             end
             obj.class_name = className;
             obj.raw = raw;
             obj.data = options.Data;
             obj.file_list = options.Files;
-            obj.keys = options.Keys;
+            obj.dimensions = options.Dimensions;
+            obj.covariate_list = options.Covariates;
             obj.datum_type = options.DatumType;
             obj.canonical_field = ndi.value.canonicalField(className, raw);
         end
@@ -151,8 +157,15 @@ classdef value
         end
 
         function T = axes(obj)
-            % AXES - table of the value's keys: variable, unit, n, coordinates
-            T = ndi.v2.axesTable(obj.keys);
+            % AXES - table of the value's dimensions: dimension, term, n,
+            % unit, coordinates, covariates (see ndi.v2.axesTable)
+            T = ndi.v2.axesTable(obj.dimensions, obj.covariate_list);
+        end
+
+        function T = covariates(obj)
+            % COVARIATES - table of the value's covariates: variable, along,
+            % form, unit, values (see ndi.v2.covariatesTable)
+            T = ndi.v2.covariatesTable(obj.covariate_list, obj.dimensions);
         end
 
         function f = files(obj)

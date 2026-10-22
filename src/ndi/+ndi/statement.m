@@ -28,6 +28,7 @@ classdef statement
     %   v = st{1}.value();          % an ndi.value
     %   speed = double(v);          % metres per second, by video frame
     %   v.axes()                    % what each dimension indexes
+    %   v.covariates()              % what is known along them
     %
     % ndi.statement Methods:
     %   kind, document, document_properties, document_id
@@ -36,7 +37,8 @@ classdef statement
     %   value          - an ndi.value (decoded from its body when stored there)
     %   raw_value      - the inline value exactly as stored
     %   composite      - the value's composite class, e.g. 'velocity'
-    %   axes           - table of the value's keys
+    %   axes           - table of the value's dimensions
+    %   covariates     - table of the value's covariates
     %   conditions     - table of the conditions it holds under
     %   notes          - text
     %   bodies         - the data-body documents holding the value
@@ -228,11 +230,14 @@ classdef statement
                 q = ndi.v2.props(d);
                 k = char(q.document_class.class_name);
                 v = ndi.value(k, ndi.v2.blockOf(q, k, 'value', []), ...
-                    'Keys', ndi.v2.blockOf(q, 'data', 'keys', []));
+                    'Dimensions', ndi.v2.blockOf(q, 'data', 'dimensions', []), ...
+                    'Covariates', ndi.v2.blockOf(q, 'data', 'covariates', []));
                 return;
             end
             if ~logical(firstOr(ndi.v2.blockOf(p, 'value', 'data_body', false), false))
-                v = ndi.value(c, obj.raw_value(), 'Keys', ndi.v2.blockOf(p, 'data', 'keys', []), ...
+                v = ndi.value(c, obj.raw_value(), ...
+                    'Dimensions', ndi.v2.blockOf(p, 'data', 'dimensions', []), ...
+                    'Covariates', ndi.v2.blockOf(p, 'data', 'covariates', []), ...
                     'DatumType', dt);
                 return;
             end
@@ -243,12 +248,16 @@ classdef statement
                     class(obj.container_));
             end
             bp = ndi.v2.props(b{1});
-            % the keys are the statement's; a body that states its own is the fallback
-            keys = ndi.v2.blockOf(p, 'data', 'keys', []);
-            if isempty(keys), keys = ndi.v2.blockOf(bp, 'data', 'keys', []); end
+            % the dimensions are the statement's; a body that states its own
+            % is the fallback. Covariates: the statement's and the body's.
+            dims = ndi.v2.blockOf(p, 'data', 'dimensions', []);
+            if isempty(dims), dims = ndi.v2.blockOf(bp, 'data', 'dimensions', []); end
+            covs = [ndi.v2.entries(ndi.v2.blockOf(p, 'data', 'covariates', [])), ...
+                ndi.v2.entries(ndi.v2.blockOf(bp, 'data', 'covariates', []))];
+            axesArgs = {'Dimensions', dims, 'Covariates', covs};
             if any(strcmp(ndi.v2.classChain(bp), 'sampled_body'))
-                vals = ndi.v2.readBody(obj.container_, b{1}, dt, keys);
-                v = ndi.value(c, obj.raw_value(), 'Data', vals, 'Keys', keys, 'DatumType', dt);
+                vals = ndi.v2.readBody(obj.container_, b{1}, dt, dims);
+                v = ndi.value(c, obj.raw_value(), 'Data', vals, axesArgs{:}, 'DatumType', dt);
             else
                 files = {};
                 for i = 1:numel(b)
@@ -260,7 +269,7 @@ classdef statement
                         if tf, files{end+1} = f; end %#ok<AGROW>
                     end
                 end
-                v = ndi.value(c, obj.raw_value(), 'Files', files, 'Keys', keys, 'DatumType', dt);
+                v = ndi.value(c, obj.raw_value(), 'Files', files, axesArgs{:}, 'DatumType', dt);
             end
         end
 
@@ -271,8 +280,19 @@ classdef statement
         end
 
         function T = axes(obj)
-            % AXES - table of the value's keys: variable, unit, n, coordinates
-            T = ndi.v2.axesTable(ndi.v2.blockOf(obj.document_properties(), 'data', 'keys', []));
+            % AXES - table of the value's dimensions: dimension, term, n,
+            % unit, coordinates, covariates (see ndi.v2.axesTable)
+            p = obj.document_properties();
+            T = ndi.v2.axesTable(ndi.v2.blockOf(p, 'data', 'dimensions', []), ...
+                ndi.v2.blockOf(p, 'data', 'covariates', []));
+        end
+
+        function T = covariates(obj)
+            % COVARIATES - table of the value's covariates: variable, along,
+            % form, unit, values (see ndi.v2.covariatesTable)
+            p = obj.document_properties();
+            T = ndi.v2.covariatesTable(ndi.v2.blockOf(p, 'data', 'covariates', []), ...
+                ndi.v2.blockOf(p, 'data', 'dimensions', []));
         end
 
         function T = conditions(obj)

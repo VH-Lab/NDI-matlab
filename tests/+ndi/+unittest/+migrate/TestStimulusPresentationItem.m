@@ -67,15 +67,27 @@ classdef TestStimulusPresentationItem < matlab.unittest.TestCase
             testCase.verifyEqual(depValues(m, 'item_id'), ...
                 cellfun(@(d) d.base.id, methods, 'UniformOutput', false));
 
-            % the playlist INDEXES those, 0-based (T14), in trial order, and
-            % the blank is the control
+            % the playlist INDEXES those, 0-based (T14), in trial order
             testCase.verifyEqual(m.item.value.item(:)', [0 3 1 3 2 0]);
-            testCase.verifyEqual(double(m.item.value.control_item), 3);
+            % the blank is NOT made the control: [control as covariate] (Jess
+            % Haley, 2026-10-22) takes the control from a v1 control record,
+            % and this presentation has none -> no control covariate, and
+            % item.value.control_item is gone (data_body plan AMENDMENT 6)
+            testCase.verifyFalse(isfield(m.item.value, 'control_item'));
+            testCase.verifyEmpty(covariateOf(m, 'control condition'));
 
-            % no timing in a real-shaped document -> no key, no offsets
-            testCase.verifyFalse(isfield(m, 'data') && isfield(m.data, 'keys') ...
-                && ~isempty(m.data.keys));
+            % ONE dimension: a presentation per trial
+            d = dimensionsOf(m);
+            testCase.verifyNumElements(d, 1);
+            testCase.verifyEqual(termName(d{1}.term), 'presentation');
+            testCase.verifyEqual(double(d{1}.n), 6);
+            % no timing in a real-shaped document -> no onset or offset
+            % covariate, and no item.value.offset
+            testCase.verifyEmpty(covariateOf(m, 'onset time'));
+            testCase.verifyEmpty(covariateOf(m, 'offset time'));
             testCase.verifyFalse(isfield(m.item.value, 'offset'));
+            testCase.verifyFalse(isfield(m, 'data') && isfield(m.data, 'keys'), ...
+                '`keys` is gone (data_body plan AMENDMENT 6)');
             testCase.verifyEqual(report.trials_with_timing, 0);
         end
 
@@ -101,8 +113,9 @@ classdef TestStimulusPresentationItem < matlab.unittest.TestCase
             % v1 order [1 2 3 2] over {A A B} -> distinct {A B} -> [0 0 1 0]
             testCase.verifyEqual(m.item.value.item(:)', [0 0 1 0]);
             testCase.verifyEqual(numel(depValues(m, 'item_id')), 2);
-            testCase.verifyFalse(isfield(m.item.value, 'control_item'), ...
-                'no blank, so no control');
+            testCase.verifyFalse(isfield(m.item.value, 'control_item'));
+            testCase.verifyEmpty(covariateOf(m, 'control condition'), ...
+                'no control record, so no control covariate');
         end
 
         function testDedupIgnoresFieldsTheRecipeDoesNotCarry(testCase)
@@ -157,33 +170,43 @@ classdef TestStimulusPresentationItem < matlab.unittest.TestCase
 
         % ================= timing ==========================================
 
-        function testInlineTimingIsATimeKeyAndOffsets(testCase)
+        function testInlineTimingIsOnsetAndOffsetTimeCovariates(testCase)
             % The deprecated inline form (decoder.m:154 "old way"): with every
-            % trial timed, the onsets are the `time` key and the ends are
-            % item.value.offset. No body: the keys hold the values inline.
+            % trial timed, the onsets are the `onset time` covariate and the
+            % ends the `offset time` covariate along the presentation
+            % dimension (data_body plan AMENDMENT 6, Decided by Jess Haley,
+            % 2026-10-22 [onset time]). No body: the values are inline.
             pres = presentationBody('pres_timed', [1 2 1], ...
                 { gratingStim(0, 0.04, 0.5), gratingStim(45, 0.04, 0.5) });
             pres.stimulus_presentation.presentation_time = ...
                 [trialTime(0, 4) trialTime(5, 9) trialTime(10, 14)];
             [m, ~, report] = emit(testCase, pres);
             testCase.verifyEqual(report.trials_with_timing, 3);
-            k = m.data.keys;
-            testCase.verifyEqual(numel(k), 1);
-            testCase.verifyEqual(k(1).variable.name, 'time');
-            testCase.verifyEqual(double(k(1).n), 3);
-            testCase.verifyEqual(k(1).quantity.value(:)', [0 5 10]);
-            testCase.verifyEqual(m.item.value.offset(:)', [4 9 14]);
+            d = dimensionsOf(m);
+            testCase.verifyNumElements(d, 1);
+            testCase.verifyEqual(double(d{1}.n), 3);
+            on = covariateOf(m, 'onset time');
+            testCase.verifyEqual(double(on.along(:)'), 0);
+            testCase.verifyEqual(on.quantity.value(:)', [0 5 10]);
+            testCase.verifyEqual(termName(on.unit), 'second');
+            off = covariateOf(m, 'offset time');
+            testCase.verifyEqual(double(off.along(:)'), 0);
+            testCase.verifyEqual(off.quantity.value(:)', [4 9 14]);
+            testCase.verifyFalse(isfield(m.item.value, 'offset'), ...
+                'item.value.offset is gone (AMENDMENT 6)');
         end
 
-        function testPartialTimingWritesNoKeyAtAll(testCase)
+        function testPartialTimingWritesNoTimeCovariates(testCase)
             pres = presentationBody('pres_partial', [1 2], ...
                 { gratingStim(0, 0.04, 0.5), gratingStim(45, 0.04, 0.5) });
             half = trialTime(5, 9);
             half.offset = [];
             pres.stimulus_presentation.presentation_time = [trialTime(0, 4) half];
             [m, ~, report] = emit(testCase, pres);
-            testCase.verifyFalse(isfield(m, 'data') && isfield(m.data, 'keys') ...
-                && ~isempty(m.data.keys));
+            testCase.verifyEmpty(covariateOf(m, 'onset time'));
+            testCase.verifyEmpty(covariateOf(m, 'offset time'));
+            testCase.verifyNumElements(dimensionsOf(m), 1, ...
+                'the presentation dimension is there with or without times');
             testCase.verifyFalse(isfield(m.item.value, 'offset'));
             testCase.verifyEqual(report.trials_with_timing, 1);
         end
@@ -252,7 +275,9 @@ classdef TestStimulusPresentationItem < matlab.unittest.TestCase
                 [-57 336 743 343]);
             testCase.verifyEqual(methods{3}.method.term.name, 'blank screen');
             testCase.verifyEqual(m.item.value.item(:)', [0 1 2 0]);
-            testCase.verifyEqual(double(m.item.value.control_item), 2);
+            testCase.verifyFalse(isfield(m.item.value, 'control_item'));
+            testCase.verifyEmpty(covariateOf(m, 'control condition'), ...
+                'a blank is not a control without a v1 control record');
         end
 
         function testAWideImageType0FieldKeepsUniformLuminanceAndIsCounted(testCase)
@@ -342,7 +367,9 @@ classdef TestStimulusPresentationItem < matlab.unittest.TestCase
             testCase.verifyEqual(methodParam(methods{2}, 'frame count'), 160);
             testCase.verifyEqual(methodParam(methods{2}, 'inter-stimulus interval'), 0.01);
             testCase.verifyEqual(methodParam(methods{2}, 'stimulus rectangle'), [0 0 800 600]);
-            testCase.verifyEqual(double(m.item.value.control_item), 2);
+            testCase.verifyFalse(isfield(m.item.value, 'control_item'));
+            testCase.verifyEmpty(covariateOf(m, 'control condition'), ...
+                'a blank is not a control without a v1 control record');
         end
 
         function testAMixedPlaylistNamesEachStimulusKind(testCase)
@@ -444,7 +471,10 @@ classdef TestStimulusPresentationItem < matlab.unittest.TestCase
             testCase.verifyEqual(depValues(d, 'item_id'), ...
                 cellfun(@(x) x.base.id, methods, 'UniformOutput', false));
             testCase.verifyEqual(d.item.value.item(:)', [0 1 0]);
-            testCase.verifyEqual(double(d.item.value.control_item), 1);
+            testCase.verifyFalse(isfield(d.item.value, 'control_item'));
+            dd = dimensionsOf(d);
+            testCase.verifyNumElements(dd, 1);
+            testCase.verifyEqual(double(dd{1}.n), 3);
             for gone = {'entity_id', 'instrument_id', 'time_reference_id', ...
                     did2.convert.mintSessionDuring('marker')}
                 testCase.verifyEmpty(depValues(d, gone{1}), ...
@@ -578,7 +608,9 @@ classdef TestStimulusPresentationItem < matlab.unittest.TestCase
                 'several_animals'; 'animals'; 'distributive'; ...
                 'standalone'; 'no_subject_reason'; ...
                 'instrument_resolved'; 'epoch_id'; 'animal_source'; ...
-                'trial_positions'; 'flashed_bars'; 'uniform_fields_kept'; ...
+                'trial_positions'; 'control_records'; 'control_records_folded'; ...
+                'control_true'; 'control_unfolded_reason'; ...
+                'flashed_bars'; 'uniform_fields_kept'; ...
                 'shape_movie_note'; 'hartley_without_enumeration'; ...
                 'notes_not_written_standalone'; 'entity_id'; 'reason'};
             pres = presentationBody('pres_1', 1, { gratingStim(0, 0.04, 0.5) });
@@ -591,7 +623,7 @@ classdef TestStimulusPresentationItem < matlab.unittest.TestCase
             testCase.verifyEqual(fieldnames(ok), expected);
             testCase.verifyEmpty(ok.reason);
             testCase.verifyEqual(ok.epoch_id, 't00001');
-            % the control record's map: per trial, its item position
+            % per trial, its item position
             [m, ~, rep2] = emit(testCase, pres);
             testCase.verifyEqual(rep2.trial_positions(:)', m.item.value.item(:)');
         end
@@ -623,20 +655,23 @@ classdef TestStimulusPresentationItem < matlab.unittest.TestCase
             testCase.verifyEqual(report.shared_refs, 3);
             testCase.verifyEqual(report.frames, 5);
             testCase.verifyEqual(report.non_grating_stimuli, 0);
-            k = m.data.keys;
-            testCase.verifyEqual(numel(k), 1);
-            testCase.verifyEqual(k(1).variable.name, 'time');
-            testCase.verifyEqual(k(1).quantity.value(:)', [0 0.1 0.2 0.3 0.4], 'AbsTol', 1e-12);
-            testCase.verifyEqual(m.item.value.offset(:)', [0.1 0.2 0.3 0.4 0.5], 'AbsTol', 1e-12);
+            d = dimensionsOf(m);
+            testCase.verifyNumElements(d, 1);
+            testCase.verifyEqual(double(d{1}.n), 5, 'one presentation per frame');
+            on = covariateOf(m, 'onset time');
+            testCase.verifyEqual(on.quantity.value(:)', [0 0.1 0.2 0.3 0.4], 'AbsTol', 1e-12);
+            off = covariateOf(m, 'offset time');
+            testCase.verifyEqual(off.quantity.value(:)', [0.1 0.2 0.3 0.4 0.5], 'AbsTol', 1e-12);
+            testCase.verifyFalse(isfield(m.item.value, 'offset'));
             testCase.verifyEqual(report.trials_with_timing, 5);
         end
 
-        function testASuppliedSequenceWithNoFrameTimesWritesNoKey(testCase)
+        function testASuppliedSequenceWithNoFrameTimesWritesNoTimeCovariate(testCase)
             pres = presentationBody('pres_hartley', 1, hartleyGeneratorStim());
             seq = struct('item_ids', {{'g_a', 'g_b'}}, 'order', [1 2 1]);
             [m, ~, report] = emit(testCase, pres, seq);
-            testCase.verifyFalse(isfield(m, 'data') && isfield(m.data, 'keys') ...
-                && ~isempty(m.data.keys));
+            testCase.verifyEmpty(covariateOf(m, 'onset time'));
+            testCase.verifyEmpty(covariateOf(m, 'offset time'));
             testCase.verifyEqual(report.trials_with_timing, 0);
             testCase.verifyEqual(report.frames, 3);
         end
@@ -880,6 +915,34 @@ for k = 1:numel(p)
         return;
     end
 end
+end
+
+function d = dimensionsOf(b)
+%DIMENSIONSOF The document's data.dimensions, as a cell (AMENDMENT 6).
+d = {};
+if isfield(b, 'data') && isfield(b.data, 'dimensions')
+    d = ndi.v2.entries(b.data.dimensions);
+end
+end
+
+function c = covariateOf(b, name)
+%COVARIATEOF The document's covariate whose variable's name is NAME, or [].
+c = [];
+if ~isfield(b, 'data') || ~isfield(b.data, 'covariates'); return; end
+cs = ndi.v2.entries(b.data.covariates);
+for k = 1:numel(cs)
+    if strcmp(termName(cs{k}.variable), name)
+        c = cs{k};
+        return;
+    end
+end
+end
+
+function n = termName(t)
+n = '';
+if iscell(t) && ~isempty(t); t = t{1}; end
+if isstruct(t) && isfield(t, 'name'); n = char(t(1).name);
+elseif ischar(t) || isstring(t); n = char(t); end
 end
 
 function tf = isItemManipulation(m)

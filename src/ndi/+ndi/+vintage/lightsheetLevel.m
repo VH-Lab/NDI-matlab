@@ -16,7 +16,8 @@ function [p, vintage] = lightsheetLevel(levelDoc, pyramidDoc)
 %   value, and VINTAGE is 'V_eta':
 %
 %     axes_order, shape, chunks, voxel_size, translation, voxel_size_units
-%                         from the body's `keys` (ndi.vintage.lightsheetKeys;
+%                         from the body's `dimensions` and `covariates`
+%                         (ndi.vintage.lightsheetKeys;
 %                         spacing and origin in the SOURCE's unit, as v1)
 %     chunk_grid          ceil(shape ./ chunks), as makePyramid computes it
 %     n_chunks_stored     the `body_data` series' slot count (series_info),
@@ -58,7 +59,7 @@ if isfield(props, 'lightsheetZarrLevel')
 end
 vintage = 'V_eta';
 
-k = ndi.vintage.lightsheetKeys(etaField(props, 'keys'));
+k = ndi.vintage.lightsheetKeys(etaField(props, 'dimensions'), etaField(props, 'covariates'));
 p = struct();
 p.level = NaN;
 p.label = '';
@@ -91,8 +92,8 @@ end
 
 function v = etaField(props, name)
 % The value of NAME in whichever property block holds it: a V_eta body's
-% fields are routed to the block that declares them (`keys` and `complete` in
-% `data`, `conditions`/`compression`/`redundant` in `data_body`,
+% fields are routed to the block that declares them (`dimensions` and
+% `covariates` in `data`, `conditions`/`compression`/`redundant` in `data_body`,
 % `datum_order`/`byte_order`/`fill_value` in `sampled_body`), and which block
 % that is has moved between did-schema revisions.
 

@@ -5,7 +5,7 @@ classdef TestLightsheetVintage < matlab.unittest.TestCase
 %   makePyramid's chunk reads, ndi.gui.app.LightsheetZarrManager) read a
 %   pyramid and its levels by v1 names. A MIGRATED pyramid is an intensity
 %   `observation` and its levels `sampled_body` documents, with every value
-%   moved: shape/voxel size into `keys`, the reduction into a condition, the
+%   moved: shape/voxel size into `dimensions` and `covariates`, the reduction into a condition, the
 %   dtype onto the pyramid, the chunk series renamed and renumbered from 0.
 %   ndi.vintage.lightsheetLevel / lightsheetLevels / lightsheetPyramid read
 %   both back by v1 name; these tests hold that, one fact at a time, on
@@ -163,14 +163,21 @@ classdef TestLightsheetVintage < matlab.unittest.TestCase
             % Jess 2026-10-15: the migrator writes a space/time axis the
             % source gave no scale as regular, origin 0, spacing 1, no unit
             % (DID-matlab jLightsheetKeys). It reads as v1's 1 and 0, with no
-            % unit; a key with stored positions (`quantity`) reads the same.
-            regular = @(name, n) struct('variable', struct('name', name), 'n', n, ...
-                'regular', true, 'origin', struct('value', 0), 'spacing', struct('value', 1));
-            k = {regular('time', 1), ...
-                struct('variable', struct('name', 'channel'), 'n', 2, 'regular', false, ...
+            % unit; an axis with stored positions (`quantity`), or with no
+            % covariate at all (a bare dimension), reads the same.
+            names = {'time', 'channel', 'z', 'y', 'x'};
+            n = [1 2 400 2048 2048];
+            dims = cell(1, 5);
+            for a = 1:5
+                dims{a} = struct('term', struct('name', names{a}), 'n', n(a));
+            end
+            regular = @(name, along) struct('variable', struct('name', name), ...
+                'along', along, 'origin', struct('value', 0), 'spacing', struct('value', 1));
+            k = {regular('time', 0), ...
+                struct('variable', struct('name', 'channel'), 'along', 1, ...
                     'quantity', struct('value', [0 1], 'source_value', [0 1])), ...
-                regular('z', 400), regular('y', 2048), regular('x', 2048)};
-            f = ndi.vintage.lightsheetKeys(k);
+                regular('z', 2), regular('y', 3), regular('x', 4)};
+            f = ndi.vintage.lightsheetKeys(dims, k);
             testCase.verifyEqual(f.axes_order, 'tczyx');
             testCase.verifyEqual(f.shape, [1 2 400 2048 2048]);
             testCase.verifyEqual(f.voxel_size, [1 1 1 1 1]);
@@ -180,12 +187,16 @@ classdef TestLightsheetVintage < matlab.unittest.TestCase
             testCase.verifyEqual(f.channel_names, '');
             old = k;
             for a = [1 3 4 5]
-                old{a} = struct('variable', k{a}.variable, 'n', k{a}.n, 'regular', false, ...
-                    'quantity', struct('value', 0:(k{a}.n - 1), 'source_value', 0:(k{a}.n - 1)));
+                old{a} = struct('variable', k{a}.variable, 'along', a - 1, ...
+                    'quantity', struct('value', 0:(n(a) - 1), 'source_value', 0:(n(a) - 1)));
             end
-            g = ndi.vintage.lightsheetKeys(old);
+            g = ndi.vintage.lightsheetKeys(dims, old);
             testCase.verifyEqual(g.voxel_size, f.voxel_size);
             testCase.verifyEqual(g.translation, f.translation);
+            b = ndi.vintage.lightsheetKeys(dims, {});
+            testCase.verifyEqual(b.voxel_size, f.voxel_size, 'bare dimensions');
+            testCase.verifyEqual(b.translation, f.translation);
+            testCase.verifyEqual(b.axes_order, 'tczyx');
         end
 
         function testAMigratedPyramidsLabelIsItsNotes(testCase)
@@ -205,25 +216,28 @@ classdef TestLightsheetVintage < matlab.unittest.TestCase
             testCase.verifyEqual(p.label, '', 'no notes, no label');
         end
 
-        function testTheStoreKeysGiveChannelNamesAndUnits(testCase)
+        function testTheStoreAxesGiveChannelNamesAndUnits(testCase)
             F = ndi.unittest.vintage.LightsheetFixtures;
-            k = ndi.vintage.lightsheetKeys(F.keys(1, false));
+            [d, c] = F.axesOf(1, false);
+            k = ndi.vintage.lightsheetKeys(d, c);
             testCase.verifyEqual(k.axes_order, 'tczyx');
             testCase.verifyEqual(k.channel_names, 'GCaMP6s,tdTomato');
             testCase.verifyEqual(k.units, {'second', '', 'micrometer', 'micrometer', 'micrometer'});
-            testCase.verifyEmpty(k.chunks, 'a store body''s keys carry no chunk');
-            % a struct-array key list (what a JSON round trip of uniform keys
-            % makes) reads the same as the cell
-            c = F.keys(1, true);
+            testCase.verifyEmpty(k.chunks, 'a store body''s dimensions carry no chunk');
+            % struct-array lists (what a JSON round trip of uniform entries
+            % makes) read the same as cells; the covariates' order does not
+            % matter (each is found by `along`)
+            [d, c] = F.axesOf(1, true);
+            arr = [d{:}];
             names = unique([fieldnames(c{1}); fieldnames(c{2}); fieldnames(c{3})]);
-            arr = repmat(cell2struct(cell(numel(names), 1), names, 1), 1, 5);
+            carr = repmat(cell2struct(cell(numel(names), 1), names, 1), 1, 5);
             for a = 1:5
                 fn = fieldnames(c{a});
                 for j = 1:numel(fn)
-                    arr(a).(fn{j}) = c{a}.(fn{j});
+                    carr(6 - a).(fn{j}) = c{a}.(fn{j});
                 end
             end
-            k2 = ndi.vintage.lightsheetKeys(arr);
+            k2 = ndi.vintage.lightsheetKeys(arr, carr);
             testCase.verifyEqual(k2.shape, [1 2 400 2048 2048]);
             testCase.verifyEqual(k2.chunks, [1 1 64 256 256]);
             testCase.verifyEqual(k2.voxel_size, [1 1 2 0.5 0.5], 'AbsTol', 1e-12);

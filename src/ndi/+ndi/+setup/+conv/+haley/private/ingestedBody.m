@@ -1,10 +1,11 @@
-function b = ingestedBody(st, a, datumType, keys, sid, description, fillValue)
+function b = ingestedBody(st, a, datumType, ax, sid, description, fillValue)
 %INGESTEDBODY A sampled_body holding array A for statement ST, INGESTED.
 %
-%   B = ingestedBody(ST, A, DATUMTYPE, KEYS, SID, DESCRIPTION) writes A's raw
+%   B = ingestedBody(ST, A, DATUMTYPE, AX, SID, DESCRIPTION) writes A's raw
 %   bytes (column-major, little-endian, as DATUMTYPE: 'bool', 'uint8',
 %   'uint16', 'float64', ...) to a temporary file, gzips it, and returns the
-%   body document, keyed by KEYS, whose file the database COPIES into the
+%   body document, shaped by AX.dimensions (haleyAxes; the covariates are
+%   the statement's and are not repeated on the body), whose file the database COPIES into the
 %   session's .ndi/files when the session is written and then deletes
 %   (files.file_info `ingest` 1, `delete_original` 1). Format
 %   binary (EDAM:format_2333; the media type application/octet-stream on an
@@ -16,7 +17,7 @@ arguments
     st (1,1) struct
     a
     datumType {mustBeText}
-    keys
+    ax (1,1) struct
     sid {mustBeText}
     description {mustBeText}
     fillValue {mustBeText} = ''
@@ -37,9 +38,9 @@ info = dir(gz);
 byteOrder = '';
 if ~any(strcmp(datumType, {'bool', 'uint8', 'int8'})), byteOrder = 'little'; end
 datumOrder = '';
-if numel(keys) > 1, datumOrder = 'F'; end
-b = did2.build.sampledBody(st.base.id, keys, 'DatumOrder', datumOrder, ...
-    'ByteOrder', byteOrder, 'FillValue', fillValue, 'Complete', true, ...
+if numel(ax.dimensionCells) > 1, datumOrder = 'F'; end
+b = did2.build.sampledBody(st.base.id, ax.dimensions, 'DatumOrder', datumOrder, ...
+    'ByteOrder', byteOrder, 'FillValue', fillValue, ...
     'Format', fileFormat('EDAM:format_2333', 'Binary format'), ...
     'Compression', 'gzip', ...
     'ContentHash', ndi.fun.file.MD5(gz), 'HashAlgorithm', 'MD5', ...

@@ -85,7 +85,8 @@ Each returns a cell array of statement objects (`ndi.assertion`,
 x = v{1}.value();          % an ndi.value, decoded from its data body when stored there
 double(x)                  % metres per second, by video frame
 x.unit()                   % the canonical unit's field, e.g. 'meters_per_second'
-v{1}.axes()                % what each dimension indexes (video frame, body part)
+v{1}.axes()                % the value's dimensions (video frame, body part), with coordinates
+v{1}.covariates()          % what is known along them (frame times, a control flag, ...)
 v{1}.time()                % when it holds (UTC start and end, with tolerance)
 v{1}.method_parameters()   % the method's settings, as a table
 v{1}.inputs()              % the statements it was computed from
@@ -246,10 +247,14 @@ isa_ = did2.build.directedRelation(worm{1}.base.id, strain{1}.base.id, 'instance
 % when: an interval after the start of the session
 ref = did2.build.relativeTimeReference(sid, 'Clock', 'dev_local_time', 'Start', 0, 'Duration', 2, S{:});
 
-% an observation whose value is a series in a body
-t = did2.build.key(T('om:Time'), 5, 'Unit', T('om:second-Time'), 'Origin', 0, 'Spacing', 0.5);
+% an observation whose value is a series in a body: one dimension (time, 5
+% positions) and a covariate along it giving each position's time
+% (did-schema data_body plan AMENDMENT 6: dimensions and covariates replace keys)
+t = did2.build.dimension(T('om:Time'), 5);
+tc = did2.build.covariate(T('om:Time'), 0, 'Unit', T('om:second-Time'), 'Origin', 0, 'Spacing', 0.5);
 obs = did2.build.statement('velocity_observation', worm{1}.base.id, T('PATO:0000008'), [], ...
-    'Keys', t, 'DataBody', true, 'DatumType', did2.build.datumType('double'), ...
+    'Dimensions', t, 'Covariates', tc, 'DataBody', true, ...
+    'DatumType', did2.build.datumType('double'), ...
     'TimeReferenceIds', {ref.base.id}, S{:});
 body = did2.build.sampledBody(obs.base.id, t, 'ByteOrder', 'little', S{:});
 fid = fopen(f, 'w', 'ieee-le'); fwrite(fid, speeds, 'double'); fclose(fid);
@@ -290,7 +295,7 @@ r = ndi.setup.conv.haley.import_V2(dataParentDir, ...
 
 ## 7. Adding terms for a new dataset
 
-Every variable, method, unit, condition, parameter and key a V2 import writes
+Every variable, method, unit, condition, parameter, dimension and covariate a V2 import writes
 must be in DID-schema's term registry (`schemas/V_eta_term_registry.json`;
 tenet T19, `V_eta_term_registry_plan.md`). A new dataset usually needs a few
 terms the registry lacks. The steps, in order:

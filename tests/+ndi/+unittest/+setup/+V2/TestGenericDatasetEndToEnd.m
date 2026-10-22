@@ -193,14 +193,19 @@ classdef TestGenericDatasetEndToEnd < matlab.unittest.TestCase
 
             T = o.axes();
             testCase.assertEqual(height(T), 1);
-            testCase.verifyEqual(T.variable(1), "time");
+            testCase.verifyEqual(T.term(1), "time");
             testCase.verifyEqual(T.unit(1), "second");
             testCase.verifyEqual(T.n(1), 5);
             testCase.verifyEqual(T.coordinates{1}(:), (0:4)' * 0.5, 'AbsTol', 1e-12);
-            k = ndi.v2.blockOf(o.document_properties(), 'data', 'keys');
-            testCase.verifyEqual(k(1).source_unit.node, 'om:millisecond-Time', ...
-                'the time key''s source unit is a registered term');
-            testCase.verifyEqual(k(1).spacing.source_value, 500);
+            C = o.covariates();
+            testCase.assertEqual(height(C), 1);
+            testCase.verifyEqual(C.variable(1), "time");
+            testCase.verifyEqual(C.along{1}, 0);
+            testCase.verifyEqual(C.form(1), "origin_spacing");
+            c = ndi.v2.blockOf(o.document_properties(), 'data', 'covariates');
+            testCase.verifyEqual(c(1).source_unit.node, 'om:millisecond-Time', ...
+                'the time covariate''s source unit is a registered term');
+            testCase.verifyEqual(c(1).spacing.source_value, 500);
 
             tm = o.time();
             testCase.assertNumElements(tm, 1);
@@ -303,8 +308,7 @@ classdef TestGenericDatasetEndToEnd < matlab.unittest.TestCase
 
         function testAttachFileRefusesAnUndeclaredName(testCase)
             body = did2.build.sampledBody(testCase.Id.observation, ...
-                did2.build.key(ndi.setup.V2.registeredTerm('om:Time'), 1, ...
-                    'Unit', ndi.setup.V2.registeredTerm('om:second-Time'), 'Origin', 0, 'Spacing', 1), ...
+                did2.build.dimension(ndi.setup.V2.registeredTerm('om:Time'), 1), ...
                 'SessionId', testCase.Id.session);
             f = [tempname '.bin'];
             fid = fopen(f, 'w'); fwrite(fid, 0, 'double'); fclose(fid);
@@ -383,15 +387,17 @@ when = {'TimeReferenceIds', {id.timeReference}};
 % ---- an observation: speed over time, 5 samples every 0.5 s, in a body
 speed = [100 120 150 110 90] * 1e-6;     % metres per second
 second = T('om:second-Time');
-time = did2.build.key(T('om:Time'), numel(speed), 'Unit', second, ...
+time = did2.build.dimension(T('om:Time'), numel(speed));
+timeOf = did2.build.covariate(T('om:Time'), 0, 'Unit', second, ...
     'Origin', 0, 'Spacing', 0.5, ...
     'SourceUnit', T('om:millisecond-Time'), 'SourceOrigin', 0, 'SourceSpacing', 500);
 obs = did2.build.statement('observation', id.organism, T('PATO:0000008'), [], ...
-    'Keys', time, 'DataBody', true, 'DatumType', did2.build.datumType('double'), ...
+    'Dimensions', time, 'Covariates', timeOf, 'DataBody', true, ...
+    'DatumType', did2.build.datumType('double'), ...
     'InstrumentId', id.camera, when{:}, S{:}, 'ValueKind', 'velocity');
 id.observation = obs.base.id;
 body = did2.build.sampledBody(id.observation, time, 'ByteOrder', 'little', ...
-    'Complete', true, 'Format', T('EDAM:format_2333'), S{:});
+    'Format', T('EDAM:format_2333'), S{:});
 id.body = body.base.id;
 bytes = fullfile(root, 'speed.bin');
 fid = fopen(bytes, 'w', 'ieee-le');

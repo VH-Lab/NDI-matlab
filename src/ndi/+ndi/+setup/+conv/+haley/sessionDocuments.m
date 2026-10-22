@@ -49,8 +49,9 @@ function out = sessionDocuments(dataParentDir, session, S, R, options)
 %                             probe from (brightfield-imaging /
 %                             wide-field-imaging); a microscope image
 %                             whose R.contrast is `brightfield` is brightfield
-%                             imaging (decision #97); keys Y-coordinate
-%                             (NCIT:C44478) x X-coordinate (NCIT:C44477) in
+%                             imaging (decision #97); dimensions
+%                             Y-coordinate (NCIT:C44478) x X-coordinate
+%                             (NCIT:C44477), each with a covariate in
 %                             pixels, then for a video `time` in seconds
 %                             datum_type: a video's from VideoReader's
 %                             VideoFormat (RGB24/Grayscale -> uint8,
@@ -221,9 +222,9 @@ for k = 1:height(R)
     if isKey(options.InstrumentIds, instrumentKey)
         instrumentId = options.InstrumentIds(instrumentKey);
     end
-    keys = recordingKeys(hw, isImage, r);
+    ax = recordingAxes(hw, isImage, r);
     keyArgs = {};
-    if ~isempty(keys), keyArgs = {'Keys', keys}; end
+    if ~isempty(ax), keyArgs = ax.args; end
     st = did2.build.statement('observation', subjectIds(plate), ...
         haleyTerm('image intensity'), [], 'DataBody', true, 'DatumType', datumType, ...
         keyArgs{:}, ...
@@ -328,37 +329,38 @@ if ismember('contrast', r.Properties.VariableNames)
 end
 end
 
-function keys = recordingKeys(hw, isImage, r)
-% The recording's dimensions (decision #70, doImport's imageStack_parameters):
+function ax = recordingAxes(hw, isImage, r)
+% The recording's dimensions and covariates (haleyAxes; decision #70,
+% doImport's imageStack_parameters; data_body plan AMENDMENT 6):
 % [Y-coordinate, X-coordinate] (image vertical, horizontal), in pixels from the
 % upper-left corner (pixel centres at 0.5, 1.5, ...; the scale is a
 % calculation, stage 10), then for a video `time`, one per frame from the
 % recording's start: the measured time of each frame when the video was
 % decoded (decision #87: the videos do not have a constant frame rate), else
 % regular at 1 / frame rate. Only when the pixel size is known (the file was
-% opened: 'ReadVideos', or a TIFF), so the keys are always complete.
+% opened: 'ReadVideos', or a TIFF), so every axis has its positions.
 arguments
     hw
     isImage (1,1) logical
     r table
 end
-keys = [];
+ax = [];
 if isempty(hw), return; end
-k = {did2.build.key(haleyTerm('Y-coordinate'), hw(1), 'Unit', haleyTerm('pixel'), 'Origin', 0.5, 'Spacing', 1), ...
-     did2.build.key(haleyTerm('X-coordinate'), hw(2), 'Unit', haleyTerm('pixel'), 'Origin', 0.5, 'Spacing', 1)};
+k = {{haleyTerm('Y-coordinate'), hw(1), 'Unit', haleyTerm('pixel'), 'Origin', 0.5, 'Spacing', 1}, ...
+     {haleyTerm('X-coordinate'), hw(2), 'Unit', haleyTerm('pixel'), 'Origin', 0.5, 'Spacing', 1}};
 if ~isImage
     ft = frameTimesOf(r, 1);
     nf = r.n_frames; fr = r.frame_rate;
     if ~isempty(ft)
-        k{end+1} = did2.build.key(haleyTerm('time'), numel(ft), 'Unit', haleyTerm('second'), 'Values', ft(:)', ...
-            'SourceUnit', ndi.setup.V2.sourceUnit('frame'), 'SourceValues', 0:numel(ft) - 1);
+        k{end+1} = {haleyTerm('time'), numel(ft), 'Unit', haleyTerm('second'), 'Value', ft(:)', ...
+            'SourceUnit', ndi.setup.V2.sourceUnit('frame'), 'SourceValue', 0:numel(ft) - 1};
     else
         if ~(nf > 0 && fr > 0), return; end
-        k{end+1} = did2.build.key(haleyTerm('time'), nf, 'Unit', haleyTerm('second'), 'Origin', 0, 'Spacing', 1 / fr, ...
-            'SourceUnit', ndi.setup.V2.sourceUnit('frame'), 'SourceOrigin', 0, 'SourceSpacing', 1);
+        k{end+1} = {haleyTerm('time'), nf, 'Unit', haleyTerm('second'), 'Origin', 0, 'Spacing', 1 / fr, ...
+            'SourceUnit', ndi.setup.V2.sourceUnit('frame'), 'SourceOrigin', 0, 'SourceSpacing', 1};
     end
 end
-keys = did2.build.list(k{:});
+ax = haleyAxes(k{:});
 end
 
 function [t, why, hw] = datumTypeOf(file, ext, readVideos)

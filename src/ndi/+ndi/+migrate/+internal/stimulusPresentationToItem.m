@@ -8,6 +8,7 @@ function [manipBody, methodBodies, report] = ...
 %   [MANIP, METHODS, REPORT] = stimulusPresentationToItem(V1BODY, RESOLVER)
 %   [...] = stimulusPresentationToItem(V1BODY, RESOLVER, SEQUENCE)
 %   [...] = stimulusPresentationToItem(..., 'CohortIdFor', @(sessionId) id)
+%   [...] = stimulusPresentationToItem(..., 'ControlRecords', {v1Control, ...})
 %
 %   THE SHAPE (did-schema PR #88; all of it built with did2.build, so it is
 %   read from the schema in use and never spelled here):
@@ -37,12 +38,22 @@ function [manipBody, methodBodies, report] = ...
 %                     item_id        the distinct method documents, in order
 %                     item.value.item         the v1 playlist remapped onto
 %                                             the distinct set, 0-BASED (T14)
-%                     item.value.offset       each trial's end, when every
-%                                             trial is timed
-%                     item.value.control_item the blank's 0-based position,
-%                                             when exactly one distinct blank
-%                     keys           one `time` key (the trial onsets), only
-%                                    when every trial is timed
+%                     dimensions     ONE: a presentation (term: the label
+%                                    'presentation' until a registered term
+%                                    is chosen), n = trials (frames on the
+%                                    SEQUENCE path)
+%                     covariates     along that dimension (did-schema
+%                                    V_eta_data_body_model_plan.md AMENDMENT 6,
+%                                    Decided by Jess Haley, 2026-10-22
+%                                    [covariates] / [onset time]):
+%                                      'onset time'  each trial's onset, s,
+%                                                    when every trial is timed
+%                                      'offset time' each trial's end, s, when
+%                                                    v1 recorded the ends
+%                                      'control condition' (XCO:0000099,
+%                                                    logical) see CONTROL
+%                                    ('onset time' / 'offset time' are labels
+%                                    until registered terms are chosen)
 %                     method         inline {term 'visual stimulation'}: how
 %                                    the sequence was delivered (the plan's
 %                                    own example); what each stimulus was is
@@ -107,11 +118,26 @@ function [manipBody, methodBodies, report] = ...
 %   ndi.migrate.internal.hartleyBasisGratings builds it from the hartley_calc
 %   documents that reference the presentation.
 %
+%   CONTROL (Decided by Jess Haley, 2026-10-22 [control as covariate],
+%   did-schema V_eta_stimulus_response_model_plan.md). 'ControlRecords' are
+%   the v1 control_stimulus_ids documents about this presentation. A v1 entry
+%   is a TRIAL number (an index into presentation_order; tuning_response's
+%   control_stimulus writes, per trial, the trial of its control), so the
+%   trials the record names are the controls: the covariate is true at
+%   unique(entries), false elsewhere. A record whose value is NaN / empty (no
+%   trial was a control) gives all false. No record: no covariate. A record
+%   that cannot be placed -- an entry outside 1..trials or NaN among numbers
+%   ('unmappable'), a non-NaN record on the SEQUENCE path whose dimension is
+%   frames, not trials ('no position map'), or several records that disagree
+%   ('conflicting') -- gives no covariate, and REPORT.control_unfolded_reason
+%   says why; the caller leaves such records as v1. REPORT.control_records
+%   (given), .control_records_folded and .control_true count what happened.
+%
 %   TIMING. The v1 writer puts the trial times in presentation_time.bin
 %   (+ndi/+app/+stimulus/decoder.m:132-134), which this pass does not open;
 %   the deprecated inline `presentation_time` is read when EVERY trial has an
-%   onset and an offset, and otherwise no key is written at all ("nobody
-%   looked" is not "it happened at t=0").
+%   onset and an offset, and otherwise no onset or offset covariate is
+%   written ("nobody looked" is not "it happened at t=0").
 %
 %   Returns [] for MANIP and a REPORT carrying `reason` when nothing can be
 %   assembled; the caller leaves the presentation as v1.
@@ -126,6 +152,7 @@ arguments
     resolver (1,1) struct
     sequence = []
     options.CohortIdFor = []
+    options.ControlRecords = {}
 end
 
 manipBody = []; methodBodies = {};
@@ -243,17 +270,20 @@ if ~isempty(sequence)
         return;
     end
     value = struct('item', frameOrder - 1);
-    keys = [];
+    onsets = []; offsets = [];
     if ~isempty(frameTimes)
-        keys = timeKey(frameTimes);
+        onsets = frameTimes;
         if duration > 0
-            value.offset = frameTimes + duration;
+            offsets = frameTimes + duration;
         end
         report.trials_with_timing = numel(frameTimes);
         report.timing_source = 'frameTimes (hartley_calc)';
     end
+    [control, report] = controlCovariate(options.ControlRecords, ...
+        numel(frameOrder), false, report);
+    [dims, covs] = presentationAxes(numel(frameOrder), onsets, offsets, control);
     manipBody = itemBody(report.standalone, presentationId, sessionId, datestamp, ...
-        entityId, stimulatorId, itemIds, value, keys, report.distributive);
+        entityId, stimulatorId, itemIds, value, dims, covs, report.distributive);
     return;
 end
 
@@ -344,12 +374,9 @@ for d = 1:numel(distinct)
 end
 
 value = struct('item', mapToDistinct(order) - 1);   % 0-based (T14)
-% per TRIAL, its 0-based position in item_id: a v1 control_stimulus_ids entry
-% names a trial (an index into presentation_order), not a stimulus
+% per TRIAL, its 0-based position in item_id (a v1 control_stimulus_ids entry
+% names a trial, an index into presentation_order, not a stimulus)
 report.trial_positions = value.item;
-if sum(isBlank) == 1
-    value.control_item = find(isBlank) - 1;
-end
 
 times = struct([]);
 if isfield(block, 'presentation_time') && isstruct(block.presentation_time)
@@ -357,43 +384,43 @@ if isfield(block, 'presentation_time') && isstruct(block.presentation_time)
 end
 [onsets, offsets, timingOk] = trialTiming(times, numel(order));
 report.trials_with_timing = sum(timingOk);
-keys = [];
 if ~isempty(timingOk) && all(timingOk)
     report.timing_source = 'inline (deprecated writer form)';
-    keys = timeKey(onsets);
-    value.offset = offsets;
 else
+    onsets = []; offsets = [];
     report.timing_source = 'none in the document body (presentation_time.bin not read here)';
 end
+[control, report] = controlCovariate(options.ControlRecords, numel(order), true, report);
+[dims, covs] = presentationAxes(numel(order), onsets, offsets, control);
 
 manipBody = itemBody(report.standalone, presentationId, sessionId, datestamp, ...
-    entityId, stimulatorId, itemIds, value, keys, report.distributive, notesText);
+    entityId, stimulatorId, itemIds, value, dims, covs, report.distributive, notesText);
 end
 
 % ===================== the manipulation ===================================
 
 function b = itemBody(standalone, presentationId, sessionId, datestamp, ...
-        entityId, stimulatorId, itemIds, value, keys, distributive, notes)
-if nargin < 11
+        entityId, stimulatorId, itemIds, value, dims, covs, distributive, notes)
+if nargin < 12
     notes = '';
 end
 if standalone
-    b = standaloneItem(presentationId, sessionId, datestamp, itemIds, value, keys);
+    b = standaloneItem(presentationId, sessionId, datestamp, itemIds, value, dims, covs);
 else
     b = itemManipulation(presentationId, sessionId, datestamp, ...
-        entityId, stimulatorId, itemIds, value, keys, distributive, notes);
+        entityId, stimulatorId, itemIds, value, dims, covs, distributive, notes);
 end
 end
 
-function d = standaloneItem(presentationId, sessionId, datestamp, itemIds, value, keys)
+function d = standaloneItem(presentationId, sessionId, datestamp, itemIds, value, dims, covs)
 %STANDALONEITEM The presentation's `item` on its own: the ordered, timed list
 %   of stimuli shown, base.id = the v1 presentation id, and no manipulation,
 %   subject or instrument (Jess Haley, 2026-10-21, "a"). `item` is concrete
 %   on did-schema #88 (draft/item.json declares no `abstract`).
 restore = ndi.migrate.internal.termRegistryOff(); %#ok<NASGU>
-fields = struct('value', value);
-if ~isempty(keys)
-    fields.keys = keys;
+fields = struct('value', value, 'dimensions', {dims});
+if ~isempty(covs)
+    fields.covariates = covs;
 end
 d = did2.build.document('item', fields, ...
     'Edges', struct('item_id', {itemIds}), ...
@@ -402,8 +429,8 @@ d = did2.build.document('item', fields, ...
 end
 
 function m = itemManipulation(presentationId, sessionId, datestamp, ...
-        entityId, stimulatorId, itemIds, value, keys, distributive, notes)
-if nargin < 10
+        entityId, stimulatorId, itemIds, value, dims, covs, distributive, notes)
+if nargin < 11
     notes = '';
 end
 restore = ndi.migrate.internal.termRegistryOff(); %#ok<NASGU>
@@ -423,8 +450,9 @@ end
 if ~isempty(notes)
     args = [args, {'Notes', notes}];
 end
-if ~isempty(keys)
-    args = [args, {'Keys', keys}];
+args = [args, {'Dimensions', dims}];
+if ~isempty(covs)
+    args = [args, {'Covariates', covs}];
 end
 if distributive
     args = [args, {'Fields', struct('distributive', true)}];
@@ -435,10 +463,112 @@ m = removeEdge(m, 'time_reference_id');
 m = addEdge(m, did2.convert.mintSessionDuring('marker'), presentationId);
 end
 
-function k = timeKey(onsets)
+function [dims, covs] = presentationAxes(n, onsets, offsets, control)
+%PRESENTATIONAXES The item value's one dimension (a presentation, N of them)
+%   and its covariates along it (did-schema data_body plan AMENDMENT 6): onset
+%   time and offset time (seconds) when known, and the control condition
+%   (logical) when a v1 control record was placed. The dimension term and the
+%   two time variables are LABELS until registered terms are chosen
+%   (Decided by Jess Haley, 2026-10-22 [covariate terms]: found by T19 order).
 restore = ndi.migrate.internal.termRegistryOff(); %#ok<NASGU>
-k = did2.build.key('time', numel(onsets), 'Unit', 'second', ...
-    'Values', double(onsets(:)'));
+dims = did2.build.list(did2.build.dimension('presentation', n));
+c = {};
+if ~isempty(onsets)
+    c{end+1} = did2.build.covariate('onset time', 0, ...
+        'Value', double(onsets(:)'), 'Unit', 'second');
+end
+if ~isempty(offsets)
+    c{end+1} = did2.build.covariate('offset time', 0, ...
+        'Value', double(offsets(:)'), 'Unit', 'second');
+end
+if ~isempty(control)
+    c{end+1} = did2.build.covariate(controlConditionTerm(), 0, ...
+        'Logical', logical(control(:)'));
+end
+covs = [];
+if ~isempty(c)
+    covs = did2.build.list(c{:});
+end
+end
+
+function t = controlConditionTerm()
+% XCO:0000099 'control condition' ([control as covariate])
+t = did2.build.term('XCO:0000099', 'control condition');
+end
+
+% ===================== the control covariate ==============================
+
+function [control, report] = controlCovariate(records, n, trialsAreThePositions, report)
+%CONTROLCOVARIATE The 'control condition' covariate's values (a 1xN logical)
+%   from the presentation's v1 control_stimulus_ids RECORDS, or [] when there
+%   is none to write. See CONTROL in the help above.
+control = [];
+records = asCell(records);
+report.control_records = numel(records);
+if isempty(records)
+    return;
+end
+vectors = cell(1, numel(records));
+for r = 1:numel(records)
+    ids = controlEntries(records{r});
+    if isempty(ids) || all(isnan(ids))
+        vectors{r} = false(1, n);              % no trial was a control
+        continue;
+    end
+    if ~trialsAreThePositions
+        report.control_unfolded_reason = 'no position map';
+        return;
+    end
+    if any(isnan(ids)) || any(ids < 1 | ids > n | ids ~= floor(ids))
+        report.control_unfolded_reason = 'unmappable';
+        return;
+    end
+    v = false(1, n);
+    v(unique(ids)) = true;
+    vectors{r} = v;
+end
+for r = 2:numel(vectors)
+    if ~isequal(vectors{r}, vectors{1})
+        report.control_unfolded_reason = 'conflicting';
+        return;
+    end
+end
+control = vectors{1};
+report.control_records_folded = numel(records);
+report.control_true = sum(control);
+end
+
+function ids = controlEntries(v1Control)
+ids = [];
+if isstruct(v1Control) && isfield(v1Control, 'control_stimulus_ids') ...
+        && isstruct(v1Control.control_stimulus_ids) ...
+        && isfield(v1Control.control_stimulus_ids, 'control_stimulus_ids')
+    ids = v1Control.control_stimulus_ids.control_stimulus_ids;
+end
+if iscell(ids)
+    ids = cellfun(@(x) firstNumber(x), ids);
+end
+ids = double(ids(:)');
+end
+
+function x = firstNumber(x)
+if isempty(x) || ~isnumeric(x)
+    x = NaN;
+else
+    x = double(x(1));
+end
+end
+
+function c = asCell(x)
+if isempty(x)
+    c = {};
+elseif iscell(x)
+    c = reshape(x, 1, []);
+elseif isstruct(x)
+    c = reshape(num2cell(x), 1, []);
+else
+    c = {};
+end
 end
 
 function b = removeEdge(b, name)
@@ -665,6 +795,10 @@ r = struct( ...
     'epoch_id',            '', ...
     'animal_source',       '', ...
     'trial_positions',     [], ...
+    'control_records',     0, ...
+    'control_records_folded', 0, ...
+    'control_true',        0, ...
+    'control_unfolded_reason', '', ...
     'flashed_bars',        0, ...
     'uniform_fields_kept', 0, ...
     'shape_movie_note',    false, ...

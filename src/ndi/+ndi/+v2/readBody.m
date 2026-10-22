@@ -1,4 +1,4 @@
-function [values, info] = readBody(container, bodyDoc, datumType, keys)
+function [values, info] = readBody(container, bodyDoc, datumType, dimensions)
 %READBODY Decode a sampled_body's bytes into a MATLAB array.
 %
 %   [VALUES, INFO] = ndi.v2.readBody(CONTAINER, BODYDOC, DATUMTYPE) reads the
@@ -7,10 +7,11 @@ function [values, info] = readBody(container, bodyDoc, datumType, keys)
 %   where it is), gunzips it when `compression` is gzip, and decodes it as
 %   DATUMTYPE (the OWNER statement's data_type.datum_type: the one place the
 %   type lives; a body never repeats it) in the body's `byte_order`, shaped
-%   by its keys (`n` per key) in its `datum_order` (F column-major, C
-%   row-major). INFO has the file path and the shape. KEYS (optional) are
-%   the keys to shape by, normally the owner statement's data.keys; when
-%   empty the body's own are used.
+%   by its dimensions (`n` per dimension; did-schema data_body plan AMENDMENT
+%   6) in its `datum_order` (F column-major, C row-major). INFO has the file
+%   path and the shape. DIMENSIONS (optional) are the dimensions to shape by,
+%   normally the owner statement's data.dimensions; when empty the body's
+%   own are used.
 %
 %   One file per body (one chunk); a chunked body is an error for now.
 %
@@ -20,7 +21,7 @@ arguments
     container
     bodyDoc
     datumType
-    keys = []
+    dimensions = []
 end
 
 p = ndi.v2.props(bodyDoc);
@@ -62,14 +63,14 @@ values = fread(fid, Inf, precision);
 fclose(fid);
 values = post(values);
 
-% shape: one size per key (KEYS when given: the owner statement's)
-if isempty(keys), keys = ndi.v2.blockOf(p, 'data', 'keys', []); end
-keys = ndi.v2.entries(keys);
+% shape: one size per dimension (DIMENSIONS when given: the owner statement's)
+if isempty(dimensions), dimensions = ndi.v2.blockOf(p, 'data', 'dimensions', []); end
+dims = ndi.v2.entries(dimensions);
 sz = [];
-for k = 1:numel(keys)
-    if isfield(keys{k}, 'n') && ~isempty(keys{k}.n), sz(end+1) = double(keys{k}.n); end %#ok<AGROW>
+for k = 1:numel(dims)
+    if isfield(dims{k}, 'n') && ~isempty(dims{k}.n), sz(end+1) = double(dims{k}.n); end %#ok<AGROW>
 end
-if numel(sz) == numel(keys) && ~isempty(sz) && prod(sz) == numel(values)
+if numel(sz) == numel(dims) && ~isempty(sz) && prod(sz) == numel(values)
     if numel(sz) == 1
         values = reshape(values, sz, 1);
     elseif strcmpi(char(ndi.v2.blockOf(p, 'sampled_body', 'datum_order', 'F')), 'C')
