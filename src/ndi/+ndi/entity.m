@@ -1583,7 +1583,12 @@ classdef entity
             inherited = spec.inherited;
             T = ndi.entity.targetIds(container, r.target, spec);     % [] = any
             if iscell(T) && isempty(T), ids = {}; return; end
-            if inherited && iscell(T) && ~any(strcmp(cellstr(r.name), 'same_as'))
+            % is the relation asked for same_as itself? by node (Jess Haley
+            % 2026-10-22 [vocabulary nodes] L1): the caller may name it by its
+            % handle, its stored label ('sameAs') or its node ('owl:sameAs')
+            isSameAs = any(cellfun(@(x) ndi.v2.vocabIs('relation', ...
+                struct('node', x, 'name', x), 'same_as'), cellstr(r.name)));
+            if inherited && iscell(T) && ~isSameAs
                 % the other end is one thing, however many records it has:
                 % a relation to either record matches (same_as, V_eta tenet
                 % T18), so the instances of either N2 record are N2's

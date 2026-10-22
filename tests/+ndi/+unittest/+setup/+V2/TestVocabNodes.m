@@ -129,6 +129,18 @@ classdef TestVocabNodes < matlab.unittest.TestCase
             % the label alone, read through the schema's binding
             testCase.verifyEqual(ndi.v2.vocabHandle('relation', 'derives from part of', p), 'sample_of');
             testCase.verifyEqual(ndi.v2.vocabHandle('entity_type', 'Data Set', p), 'dataset');
+            % same_as stored as its label (did-schema dc116fd): read by node,
+            % by the label alone, and a caller's name given as the node or the
+            % label (ndi.entity relatedIds) -- never by comparing the name
+            testCase.verifyTrue(ndi.v2.vocabIs('relation', ...
+                struct('node', 'owl:sameAs', 'name', 'sameAs'), 'same_as', p));
+            testCase.verifyEqual(ndi.v2.vocabHandle('relation', 'sameAs', p), 'same_as');
+            testCase.verifyTrue(ndi.v2.vocabIs('relation', ...
+                struct('node', 'owl:sameAs', 'name', 'owl:sameAs'), 'same_as', p));
+            testCase.verifyEqual(ndi.v2.vocabTerm('relation', 'same_as', p), ...
+                struct('node', 'owl:sameAs', 'name', 'sameAs'));
+            testCase.verifyFalse(ndi.v2.vocabIs('relation', ...
+                struct('node', 'BFO:0000050', 'name', 'part of'), 'same_as', p));
             % K5: the retired relations read as the one that replaced them
             testCase.verifyTrue(ndi.v2.vocabIs('relation', 'aliquot_of', 'sample_of', p));
             testCase.verifyTrue(ndi.v2.vocabIs('relation', ...
@@ -177,6 +189,7 @@ rel = {
     'RO:0001025', 'located in'
     'schema:isPartOf', 'is part of'
     'prov:wasDerivedFrom', 'derived from'
+    'owl:sameAs', 'sameAs'
     };
 reg = struct();
 reg.relation_bindings = cellfun(@(n, l) struct('relation', struct('node', n, 'name', l), ...
