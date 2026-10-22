@@ -241,7 +241,11 @@ classdef TestMigrateLocalEtaB < matlab.unittest.TestCase
             % query finds must be exactly that session's documents pointing at
             % the navigator, and every one must give an epoch id and appear in
             % the navigator's epoch table.
-            src = findAllByClass(testCase.Bodies, 'epochfiles_ingested');
+            % the source bodies are JSON TEXT (readCorpusBodies), so their
+            % class is read from the text, as finalV1SurvivorCensus does
+            src = testCase.Bodies(cellfun(@(x) isequal(regexp(char(x), ...
+                '"class_name"\s*:\s*"([^"]+)"', 'tokens', 'once'), {'epochfiles_ingested'}), ...
+                testCase.Bodies));
             migrated = destinationBodies(testCase.Result.destination);
             manifests = findAllByClass(migrated, 'ingestion_manifest');
             passthrough = findAllByClass(migrated, 'epochfiles_ingested');
