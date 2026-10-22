@@ -306,7 +306,9 @@ end
 report.distinct_stimuli = numel(distinct);
 report.blank_stimuli = sum(isBlank);
 for d = 1:numel(distinct)
-    switch distinct{d}.term
+    t = distinct{d}.term;
+    if isstruct(t); t = t.name; end
+    switch t
         case 'flashed bar', report.flashed_bars = report.flashed_bars + 1;
         case 'uniform luminance field'
             report.uniform_fields_kept = report.uniform_fields_kept + 1;

@@ -88,7 +88,12 @@ classdef TestStimulusRecipe < matlab.unittest.TestCase
         function testANarrowBarIsAFlashedBarAndCarriesEveryPeriodicParameter(testCase)
             % [flashed bar] (Jess Haley, 2026-10-22): a 7-px oriented rectangle
             r = ndi.migrate.internal.stimulusRecipe(bar(), 'periodicstim_bars');
-            testCase.verifyEqual(r.term, 'flashed bar');
+            testCase.verifyEqual(r.term, struct('node', 'EMPTY:0000366', 'name', 'flashed bar'));
+            testCase.verifyEqual(entryOf(r, 'fixed duration').unit, ...
+                struct('node', 'EMPTY:0000260', 'name', 'frame'));
+            testCase.verifyEqual(entryOf(r, 'viewing distance').unit, ...
+                struct('node', 'om:centimetre', 'name', 'centimetre'));
+            testCase.verifyEqual(entryOf(r, 'spatial phase').unit.name, 'radian');
             wide = bar(); wide.rect = [0 0 800 600];
             testCase.verifyEqual(ndi.migrate.internal.stimulusRecipe(wide, ...
                 'periodicstim_bars').term, 'uniform luminance field');

@@ -241,6 +241,7 @@ classdef TestStimulusPresentationItem < matlab.unittest.TestCase
             testCase.verifyEqual(numel(methods), 3);
             testCase.verifyEqual(methods{1}.document_class.class_name, 'method');
             testCase.verifyEqual(methods{1}.method.term.name, 'flashed bar');
+            testCase.verifyEqual(methods{1}.method.term.node, 'EMPTY:0000366');
             testCase.verifyEqual(report.flashed_bars, 2);
             testCase.verifyEqual(report.uniform_fields_kept, 0);
             testCase.verifyEqual(methodParam(methods{1}, 'line offset'), -196);
@@ -340,7 +341,7 @@ classdef TestStimulusPresentationItem < matlab.unittest.TestCase
             testCase.verifyEmpty(paramEntry(methods{2}, 'angle'));
             testCase.verifyEqual(methodParam(methods{2}, 'frame count'), 160);
             testCase.verifyEqual(methodParam(methods{2}, 'inter-stimulus interval'), 0.01);
-            testCase.verifyEqual(methodParam(methods{2}, 'frame rectangle'), [0 0 800 600]);
+            testCase.verifyEqual(methodParam(methods{2}, 'stimulus rectangle'), [0 0 800 600]);
             testCase.verifyEqual(double(m.item.value.control_item), 2);
         end
 
