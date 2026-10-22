@@ -259,6 +259,12 @@ e(k).edges        = cell(0,2);
 e(k).fields       = cell(0,2);
 
 % ---- element_epoch -> acquisition_epoch ------------------------------
+% SINCE 2026-10-22 (Decided by Jess Haley [epoch dissolution before merge])
+% a migrated element_epoch normally DISSOLVES into a per-epoch observation of
+% its element (read by ndi.vintage.epochSeriesOf), and `acquisition_epoch`
+% survives only for an element type with no decided row (JH's position /
+% distance; did2.convert.resolveEpochProbemap counts them). This row serves
+% those survivors, and a session migrated before the dissolution.
 % NOT AN NDI OBJECT TYPE, and it earns a row anyway. Every other entry
 % here exists so `ndi_document2ndi_object` can reconstruct something;
 % this one exists because TWO READ SITES index the block by its v1 name

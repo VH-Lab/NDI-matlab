@@ -532,6 +532,32 @@ classdef element < ndi.ido & ndi.epoch.epochset & ndi.documentservice & matlab.m
                     epochdocs{end+1} = potential_epochdocs{i};
                 end
             end
+            % THE DISSOLVED SHAPE (Decided by Jess Haley, 2026-10-22 [epoch
+            % dissolution before merge]): a migrated element_epoch is an
+            % observation of the element (entity_id), anchored by a
+            % relative_time_reference (clock, start t0, end t1) onto the
+            % minted epoch entity, whose local_identifier is the epoch id.
+            % It depends on the element through `entity_id`, not
+            % `element_id`, so load_all_element_docs does not return it.
+            % Epochs already found above are not added twice.
+            if ~isempty(potential_epochdocs)
+                series = ndi.vintage.epochSeriesOf(ndi_element_obj.session, ...
+                    potential_epochdocs{1}.id());
+                for i = 1:numel(series)
+                    if any(strcmp({et_added.epoch_id}, series(i).epoch_id))
+                        continue;
+                    end
+                    clear newet;
+                    newet.epoch_number = numel(et_added) + 1;
+                    newet.epoch_id = series(i).epoch_id;
+                    newet.epochprobemap = '';
+                    newet.epoch_clock = series(i).epoch_clock;
+                    newet.t0_t1 = series(i).t0_t1;
+                    newet.underlying_epochs = [];
+                    et_added(end+1) = newet; %#ok<AGROW>
+                    epochdocs{end+1} = series(i).observation; %#ok<AGROW>
+                end
+            end
         end % LOADEDEPOCHS(NDI_ELEMENT_OBJ)
 
         function element_doc = load_element_doc(ndi_element_obj)

@@ -67,6 +67,34 @@ classdef timeseries < ndi.element & ndi.time.timeseries
                 E = ndi_element_timeseries_obj.session;
 
                 epochdoc = E.database_search(sq);
+                binaryName = 'epoch_binary_data.vhsb';
+                if numel(epochdoc)==0
+                    % THE DISSOLVED SHAPE (Decided by Jess Haley, 2026-10-22
+                    % [epoch dissolution before merge]): the element's
+                    % observation for this epoch, and the data body that
+                    % holds its .vhsb as member `body_data_0`.
+                    series = [];
+                    bodyFor = [];
+                    try
+                        [series, bodyFor] = ndi.vintage.epochSeriesOf(E, element_doc.id());
+                    catch
+                    end
+                    hit = [];
+                    if ~isempty(series)
+                        hit = find(strcmp({series.epoch_id}, epoch_timeref.epoch));
+                    end
+                    if numel(hit)>1
+                        error(['Found too many epoch observations for epoch ' epoch_timeref.epoch '.']);
+                    end
+                    if ~isempty(hit)
+                        epochdoc = {bodyFor(series(hit).observation)};
+                        if isempty(epochdoc{1})
+                            error(['The observation for epoch ' epoch_timeref.epoch ...
+                                ' has no data body.']);
+                        end
+                        binaryName = 'body_data_0';
+                    end
+                end
                 if numel(epochdoc)==0
                     error(['Could not find epochdoc for epoch ' epoch_timeref.epoch '.']);
                 end
@@ -75,7 +103,7 @@ classdef timeseries < ndi.element & ndi.time.timeseries
                 end
                 epochdoc = epochdoc{1};
 
-                f = E.database_openbinarydoc(epochdoc,'epoch_binary_data.vhsb');
+                f = E.database_openbinarydoc(epochdoc,binaryName);
                 [data,t] = vlt.file.custom_file_formats.vhsb_read(f,epoch_t0_out,epoch_t1_out);
                 E.database_closebinarydoc(f);
 

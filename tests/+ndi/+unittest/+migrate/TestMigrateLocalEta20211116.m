@@ -613,20 +613,60 @@ classdef TestMigrateLocalEta20211116 < matlab.unittest.TestCase
                  'carried: %s'], numel(unexpected), strjoin(unexpected, ', ')));
         end
 
-        function testTheEpochFamilyMigratesAndIsReachable(testCase)
-            % `element_epoch` (252 documents) is the class PRED does not
-            % have, and it is the reason this corpus is the next step. Its
-            % v1 documents carry an `epochid` BLOCK that two NDI readers
-            % index by name; V_eta drops `epochid` for an `epoch_id` edge.
+        function testTheEpochFamilyDissolvesIntoPerEpochTrains(testCase)
+            % UPDATED 2026-10-22, AND THE ASSERTION IS INVERTED ON PURPOSE.
+            % This method was testTheEpochFamilyMigratesAndIsReachable and
+            % asserted that `acquisition_epoch` documents EXIST in the
+            % destination (the interim 1:1 rename). Decided by Jess Haley,
+            % 2026-10-22 [epoch dissolution before merge] (F1) builds the
+            % signed dissolution: each v1 element_epoch becomes ONE
+            % observation of its element per epoch (base.id preserved,
+            % variable GO:0001508 'action potential' for a `spikes` element),
+            % anchored to the minted epoch, owning one data body (its .vhsb).
+            % So the right assertion is now that NONE survive, and that every
+            % source element_epoch id is an observation that owns a body.
             migrated = destinationBodies(testCase.Result.destination);
-            epochs = findAllByClass(migrated, 'acquisition_epoch');
-            verifyNotEmpty(testCase, epochs, ...
-                ['no `acquisition_epoch` documents in the destination. ' ...
-                 '20211116 holds 252 `element_epoch` documents, which is ' ...
-                 'what that class is renamed from -- zero here means the ' ...
-                 'rename did not happen or the class moved again.']);
-            % NOTHING SURVIVES UNDER THE V1 NAME. A migration that emitted
-            % both would double-count every epoch.
+            srcIds = {};
+            for k = 1:numel(testCase.Bodies)
+                j = jsondecode(testCase.Bodies{k});
+                if isfield(j, 'document_class') && isfield(j.document_class, 'class_name') ...
+                        && strcmp(j.document_class.class_name, 'element_epoch')
+                    srcIds{end+1} = char(j.base.id); %#ok<AGROW>
+                end
+            end
+            left = findAllByClass(migrated, 'acquisition_epoch');
+            byId = containers.Map('KeyType', 'char', 'ValueType', 'any');
+            owned = containers.Map('KeyType', 'char', 'ValueType', 'logical');
+            for k = 1:numel(migrated)
+                byId(char(migrated{k}.base.id)) = migrated{k};
+                c = migrated{k}.document_class.class_name;
+                if any(strcmp(c, {'opaque_body', 'sampled_body'}))
+                    ow = depValues(migrated{k}, 'owner_id');
+                    for j = 1:numel(ow); owned(ow{j}) = true; end
+                end
+            end
+            asTrain = 0; withBody = 0;
+            for k = 1:numel(srcIds)
+                if ~isKey(byId, srcIds{k}); continue; end
+                d = byId(srcIds{k});
+                if strcmp(d.document_class.class_name, 'observation') ...
+                        && isfield(d, 'statement') ...
+                        && strcmp(char(d.statement.variable.node), 'GO:0001508')
+                    asTrain = asTrain + 1;
+                    withBody = withBody + isKey(owned, srcIds{k});
+                end
+            end
+            fprintf(['\n  EPOCH DISSOLUTION\n    DENOMINATOR: %d v1 element_epoch ' ...
+                'document(s)\n    acquisition_epoch in the destination: %d\n' ...
+                '    element_epoch ids now a spike-train observation: %d; owning a ' ...
+                'body: %d\n'], numel(srcIds), numel(left), asTrain, withBody);
+            assertNotEmpty(testCase, srcIds, 'no element_epoch in the source: measured nothing');
+            verifyEmpty(testCase, left, sprintf( ...
+                '%d acquisition_epoch document(s) survived the dissolution', numel(left)));
+            verifyEqual(testCase, asTrain, numel(srcIds), ...
+                'every element_epoch id must be its spike-train observation');
+            verifyEqual(testCase, withBody, numel(srcIds), ...
+                'every spike-train observation must own its body');
             verifyEmpty(testCase, findAllByClass(migrated, 'element_epoch'), ...
                 'element_epoch documents survived migration under the v1 name');
         end
@@ -970,5 +1010,18 @@ for j = 1:numel(cs)
         c = cs{j};
         return;
     end
+end
+end
+
+function v = depValues(b, name)
+v = {};
+if ~isfield(b, 'depends_on') || isempty(b.depends_on); return; end
+deps = b.depends_on;
+if isstruct(deps); deps = num2cell(deps); end
+for k = 1:numel(deps)
+    d = deps{k};
+    if ~isstruct(d) || ~strcmp(char(d.name), name); continue; end
+    if isfield(d, 'value') && ~isempty(d.value); v{end+1} = char(d.value); %#ok<AGROW>
+    elseif isfield(d, 'document_id') && ~isempty(d.document_id); v{end+1} = char(d.document_id); end %#ok<AGROW>
 end
 end
