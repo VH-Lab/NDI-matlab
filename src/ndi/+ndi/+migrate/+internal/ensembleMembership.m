@@ -107,14 +107,23 @@ function [kept, minted, report] = ensembleMembership(structs, options)
 %   ---------------------------------------------------------------------
 %   WHAT THIS DOES NOT DO, AND WHY -- read before "finishing" it
 %   ---------------------------------------------------------------------
-%   1. IT DROPS NOTHING. KEPT == STRUCTS. The map document is NOT consumed, the
-%      `acquisition_epoch` is NOT touched, and no bytes are removed. The map
-%      document may only dissolve once the edges can carry the epoch (item 2)
-%      AND the verify-before-delete gate has run on a real corpus (0 stranded
-%      per-neuron trains). This pass MEASURES that gate (REPORT.stranded_*); it
-%      does not act on it. `V_eta_ensemble_plan.md` deferred task 5 says the
-%      same: "until then it stays a green passthrough -- do NOT phase-8-delete
-%      early."
+%   1. THE MAP DOCUMENT DISSOLVES, PER MAP, AND NOTHING ELSE LEAVES. Decided by
+%      Jess Haley, 2026-10-22 [ensemble retired] (D2): the `ensemble` class
+%      retires, and a v1 map becomes its epoch-scoped `member_of` edges. A map
+%      leaves KEPT only when (a) its edges carry its epoch, (b) every neuron it
+%      names is a migrated entity, and (c) every one of those neurons has its
+%      own per-neuron train for THIS epoch in the batch -- the signed
+%      verify-before-delete, applied to the one map it protects. Otherwise the
+%      map stays and is counted in exactly one REPORT.ensemble_maps_kept_*
+%      bucket. Its `ensemble_name` / `value_type` / `value_description` /
+%      `num_neurons` and `neuron_names.txt` go with it, as the plan says: the
+%      names are the neuron entities' own, the count is the edges', and the
+%      value description is the spike-time observation's variable. The
+%      `acquisition_epoch` that holds the COMBINED bytes is NOT touched (item
+%      3), and ndi.migrate.local reverts every dissolution in the batch if a
+%      minted edge does not validate.
+%      (Until 2026-10-22 this item read "IT DROPS NOTHING. KEPT == STRUCTS",
+%      deferring to the plan's "do NOT phase-8-delete early".)
 %
 %   2. THE EDGES ARE NOT EPOCH-SCOPED AS WIRED TODAY -- and this item's OWN
 %      account of why was STALE. Both blockers it named are gone; the reason
@@ -387,6 +396,16 @@ report.maps_unscoped_no_resolver      = 0;  % caller wired no resolver
 report.maps_unscoped_no_epoch_string  = 0;  % document carries no epochid
 report.maps_unscoped_epoch_unresolved = 0;  % epochid named no minted epoch
 report.epoch_scope_available    = ~isempty(options.EpochDocumentIdFor);
+% D2 (Decided by Jess Haley, 2026-10-22 [ensemble retired]): the MAP document
+% dissolves into its epoch-scoped member_of edges, per map, only when that
+% map's own verify-before-delete holds. Every map is in exactly one bucket.
+report.ensemble_maps_dissolved          = 0;
+report.ensemble_maps_kept_not_scoped    = 0;  % no epoch to scope its edges by
+report.ensemble_maps_kept_stranded      = 0;  % a neuron is not in the batch
+report.ensemble_maps_kept_train_missing = 0;  % a neuron has no train this epoch
+report.ensemble_maps_kept_no_neurons    = 0;  % no neuron_id_# edge at all
+report.ensemble_maps_kept_no_group      = 0;  % element_id is no migrated entity
+report.dissolved_map_ids                = {};
 report.changed                  = false;
 
 if isempty(structs)
@@ -447,6 +466,7 @@ for i = 1:numel(structs)
     % element_id resolves to a `subject` in the migrated set.
     if isempty(groupId) || ~isSubject(idClass, groupId)
         report.ensemble_maps_no_group = report.ensemble_maps_no_group + 1;
+        report.ensemble_maps_kept_no_group = report.ensemble_maps_kept_no_group + 1;
         continue;
     end
 
@@ -502,9 +522,12 @@ for i = 1:numel(structs)
         % membership at all, and "fell through" must never be inferable only
         % by subtracting two other counters.
         report.ensemble_maps_no_neurons = report.ensemble_maps_no_neurons + 1;
+        report.ensemble_maps_kept_no_neurons = report.ensemble_maps_kept_no_neurons + 1;
         continue;
     end
     report.ensemble_maps_used = report.ensemble_maps_used + 1;
+    mapStranded = false;
+    mapTrainMissing = false;
 
     for k = 1:numel(neurons)
         report.neuron_edges_seen = report.neuron_edges_seen + 1;
@@ -516,6 +539,7 @@ for i = 1:numel(structs)
         % edge to it would be an orphan; count it for the verify-before-delete
         % gate instead.
         if ~isSubject(idClass, neuronId)
+            mapStranded = true;
             report.neuron_edges_stranded = report.neuron_edges_stranded + 1;
             if ~isKey(seenStranded, neuronId)
                 seenStranded(neuronId) = true;
@@ -528,6 +552,7 @@ for i = 1:numel(structs)
         % VERIFY-BEFORE-DELETE. The subject exists; does its TRAIN? Three
         % buckets, never summed -- see the header.
         if ~isKey(trainEpochs, neuronId)
+            mapTrainMissing = true;
             report.neuron_trains_missing_entirely = ...
                 report.neuron_trains_missing_entirely + 1;
             if ~isKey(seenNoTrain, neuronId)
@@ -538,6 +563,7 @@ for i = 1:numel(structs)
             report.neuron_trains_present_this_epoch = ...
                 report.neuron_trains_present_this_epoch + 1;
         else
+            mapTrainMissing = true;
             % the neuron has data, but not filed under this map's epochid.
             % NDI reaches a neuron's epoch through syncgraph.time_convert, so
             % the two strings need not agree; this is reported, not folded in.
@@ -578,6 +604,29 @@ for i = 1:numel(structs)
             end
         end
     end
+
+    % D2: does THIS map dissolve? Only when everything it says is now said by
+    % edges that carry its epoch, and every per-neuron train it rests on is
+    % in the batch for that epoch (the signed verify-before-delete, per map).
+    if isempty(epochKey)
+        report.ensemble_maps_kept_not_scoped = report.ensemble_maps_kept_not_scoped + 1;
+    elseif mapStranded
+        report.ensemble_maps_kept_stranded = report.ensemble_maps_kept_stranded + 1;
+    elseif mapTrainMissing
+        report.ensemble_maps_kept_train_missing = report.ensemble_maps_kept_train_missing + 1;
+    else
+        report.ensemble_maps_dissolved = report.ensemble_maps_dissolved + 1;
+        report.dissolved_map_ids{end+1} = baseField(s, 'id', ''); %#ok<AGROW>
+    end
+end
+
+% the dissolved maps leave KEPT; nothing else does
+if ~isempty(report.dissolved_map_ids)
+    keepIdx = true(1, numel(kept));
+    for i = 1:numel(kept)
+        keepIdx(i) = ~any(strcmp(baseField(kept{i}, 'id', ''), report.dissolved_map_ids));
+    end
+    kept = kept(keepIdx);
 end
 
 % The verify-before-delete verdict. It is a MEASUREMENT -- nothing in this
@@ -590,7 +639,7 @@ report.verify_before_delete_clear = ...
     report.neuron_trains_missing_entirely == 0 && ...
     report.neuron_trains_other_epoch_only == 0;
 
-report.changed = ~isempty(minted);
+report.changed = ~isempty(minted) || ~isempty(report.dissolved_map_ids);
 end
 
 % ===================== builders ========================================

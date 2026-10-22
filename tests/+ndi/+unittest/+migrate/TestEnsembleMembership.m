@@ -100,15 +100,65 @@ classdef TestEnsembleMembership < matlab.unittest.TestCase
                 'V_eta documents never write base.name (#73 item 54)');
         end
 
-        function testNothingIsEverDropped(testCase)
-            % The map document, the acquisition_epoch and the bytes all
-            % survive: dropping them is gated on a corpus verify-before-delete
-            % that has not run.
+        function testAnUnscopedMapIsKeptAndCounted(testCase)
+            % INVERTED 2026-10-22 (was testNothingIsEverDropped): D2 (Decided
+            % by Jess Haley, 2026-10-22 [ensemble retired]) dissolves a map
+            % into its epoch-scoped member_of edges. With no epoch to scope
+            % them by, the map is the only per-epoch record and STAYS,
+            % counted; the acquisition_epoch is never touched here.
             structs = ensembleCorpus('ens_1', 'epoch_a', {'nrn_1', 'nrn_2'});
-            [kept, ~, ~] = ndi.migrate.internal.ensembleMembership(structs);
+            [kept, ~, report] = ndi.migrate.internal.ensembleMembership(structs);
             testCase.verifyEqual(numel(kept), numel(structs));
             testCase.verifyTrue(anyClass(kept, 'ensemble'));
             testCase.verifyTrue(anyClass(kept, 'acquisition_epoch'));
+            testCase.verifyEqual(report.ensemble_maps_kept_not_scoped, 1);
+            testCase.verifyEqual(report.ensemble_maps_dissolved, 0);
+        end
+
+        function testAScopedVerifiedMapDissolvesIntoItsEdges(testCase)
+            % D2: every neuron resolved, every neuron's own train present for
+            % this epoch, edges scoped by the epoch -> the map leaves; its
+            % edges carry the roster, the column order and the epoch. The
+            % combined-bytes carrier stays (no cache marker in the schema).
+            structs = ensembleCorpus('ens_1', 'epoch_a', {'nrn_1', 'nrn_2'});
+            structs{end+1} = trainBody('nrn_1', 'epoch_a');
+            structs{end+1} = trainBody('nrn_2', 'epoch_a');
+            [kept, minted, report] = ndi.migrate.internal.ensembleMembership( ...
+                structs, 'EpochDocumentIdFor', @(e, sid) ['epochdoc_' e]);
+            testCase.verifyEqual(report.ensemble_maps_dissolved, 1);
+            testCase.verifyEqual(report.dissolved_map_ids, {'map_ens_1_epoch_a'});
+            testCase.verifyFalse(anyClass(kept, 'ensemble'), 'the map dissolved');
+            testCase.verifyEqual(numel(kept), numel(structs) - 1, 'only the map left');
+            testCase.verifyTrue(anyClass(kept, 'acquisition_epoch'));
+            m = ofRelation(minted, 'member_of');
+            testCase.verifyEqual(numel(m), 2);
+            for k = 1:numel(m)
+                testCase.verifyEqual(depValue(m{k}, 'epoch_id'), 'epochdoc_epoch_a');
+                testCase.verifyEqual(depValue(m{k}, 'parent_id'), 'ens_1');
+            end
+            testCase.verifyTrue(report.changed);
+        end
+
+        function testAMapWithAMissingTrainIsKeptAndCounted(testCase)
+            % The verify-before-delete is per map: one neuron with no train
+            % for this epoch keeps the map, in its own bucket.
+            structs = ensembleCorpus('ens_1', 'epoch_a', {'nrn_1', 'nrn_2'});
+            structs{end+1} = trainBody('nrn_1', 'epoch_a');
+            [kept, ~, report] = ndi.migrate.internal.ensembleMembership( ...
+                structs, 'EpochDocumentIdFor', @(e, sid) ['epochdoc_' e]);
+            testCase.verifyEqual(report.ensemble_maps_dissolved, 0);
+            testCase.verifyEqual(report.ensemble_maps_kept_train_missing, 1);
+            testCase.verifyTrue(anyClass(kept, 'ensemble'));
+        end
+
+        function testAMapWithAStrandedNeuronIsKeptAndCounted(testCase)
+            structs = ensembleCorpus('ens_1', 'epoch_a', {'nrn_1', 'nrn_2'});
+            structs{end+1} = trainBody('nrn_1', 'epoch_a');
+            structs = dropId(structs, 'nrn_2');
+            [kept, ~, report] = ndi.migrate.internal.ensembleMembership( ...
+                structs, 'EpochDocumentIdFor', @(e, sid) ['epochdoc_' e]);
+            testCase.verifyEqual(report.ensemble_maps_kept_stranded, 1);
+            testCase.verifyTrue(anyClass(kept, 'ensemble'));
         end
 
         function testColumnOrderComesFromTheEdgeSuffix(testCase)

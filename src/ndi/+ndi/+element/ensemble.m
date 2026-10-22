@@ -172,6 +172,24 @@ classdef ensemble < ndi.element.timeseries
             %
             % Returns a 1-by-N cell array of the neuron element document ids for
             % EPOCH. Column index i of readtimeseries corresponds to IDS{i}.
+            epochidstr = obj.epochid(epoch);
+            sq = ndi.query('','isa','ensemble','') & ...
+                ndi.query('','depends_on','element_id', obj.id()) & ...
+                ndi.query('epochid.epochid','exact_string', epochidstr, '');
+            if isempty(obj.session.database_search(sq))
+                % MIGRATED: the map dissolved into epoch-scoped member_of
+                % edges (Decided by Jess Haley, 2026-10-22 [ensemble retired])
+                rels = obj.session.database_search( ...
+                    ndi.query('','isa','directed_relation','') & ...
+                    ndi.query('','depends_on','parent_id', obj.id()));
+                ids = ndi.vintage.ensembleMembers(rels, ...
+                    @(id) ndi.element.ensemble.propsById(obj.session, id), epochidstr);
+                if isempty(ids)
+                    error('ndi:element:ensemble:noMap', ...
+                        'No ensemble map or member_of edges were found for epoch ''%s''.', epochidstr);
+                end
+                return;
+            end
             d = obj.epochEnsembleDoc(epoch);
             ids = d.dependency_value_n('neuron_id','ErrorIfNotFound',0);
             ids = ids(:).';
@@ -184,6 +202,18 @@ classdef ensemble < ndi.element.timeseries
             %
             % Returns a 1-by-N cell array of the neuron names for EPOCH (the lines
             % of the map document's neuron_names.txt file).
+            epochidstr = obj.epochid(epoch);
+            sq = ndi.query('','isa','ensemble','') & ...
+                ndi.query('','depends_on','element_id', obj.id()) & ...
+                ndi.query('epochid.epochid','exact_string', epochidstr, '');
+            if isempty(obj.session.database_search(sq))
+                % MIGRATED: the map (and its neuron_names.txt) dissolved; the
+                % names are the member neurons' own (V_eta_ensemble_plan.md:
+                % "recoverable from the neuron-subjects")
+                nrns = obj.neurons(epochidstr);
+                names = cellfun(@(n) n.elementstring(), nrns, 'UniformOutput', false);
+                return;
+            end
             d = obj.epochEnsembleDoc(epoch);
             tempfile = ndi.database.fun.copydocfile2temp(d, obj.session, ...
                 'neuron_names.txt', '.txt');
@@ -279,6 +309,14 @@ classdef ensemble < ndi.element.timeseries
     end % private methods
 
     methods (Static, Access=private)
+        function p = propsById(session, id)
+            p = [];
+            d = session.database_search(ndi.query('base.id','exact_string',id,''));
+            if ~isempty(d)
+                p = d{1}.document_properties;
+            end
+        end % propsById()
+
         function names = readlines(filename)
             txt = fileread(filename);
             if isempty(txt)

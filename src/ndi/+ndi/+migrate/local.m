@@ -348,6 +348,7 @@ function result = local(path, options)
     sliceTetanusReport = [];
     regionSitesReport = [];
     regionLocatedReport = [];
+    epochSeriesBodiesReport = [];
     if strcmp(options.TargetVersion, 'V_eta')
         % V_eta's second pass has the kinds of work enumerated below, all
         % needing the whole migrated body set (the corpus-wide session/element
@@ -984,6 +985,23 @@ function result = local(path, options)
         end
         tStep = migrateStepMark('fillLocatedFileFacts', tStart, tStep, convertResult);
         try
+            % F1 (Decided by Jess Haley, 2026-10-22 [epoch dissolution before
+            % merge]; TEAM-SIGN-OFF [epoch] 2026-08-17 Q3): the second pass
+            % describes each spike train's .vhsb (the opaque_body
+            % did2.convert.resolveEpochProbemap carried as attached) as a
+            % sampled_body with complete extents, when the bytes are on this
+            % computer. AFTER resolveEpochProbemap (it makes those bodies).
+            % A document-only corpus has no bytes: nothing changes, counted.
+            [convertResult, epochSeriesBodiesReport] = ...
+                describeEpochSeriesBodies(convertResult, ndiDir, options);
+        catch ME
+            warning('NDI:migrate:epochSeriesBodiesFailed', ...
+                ['Describing the spike-train bodies failed (%s); they stay ' ...
+                 'opaque_body documents carried as attached, which is the ' ...
+                 'state without this step.'], ME.message);
+        end
+        tStep = migrateStepMark('describeEpochSeriesBodies', tStart, tStep, convertResult);
+        try
             % AFTER the epochprobemap fold (it re-attributes that pass's
             % per-epoch statements) and after epochMint (its epoch index is
             % the tetanus window's referent). Dabrowska slices: decided by
@@ -1242,7 +1260,8 @@ function result = local(path, options)
         'dimensionTerms',      dimensionTermReport, ...
         'sliceTetanus',        sliceTetanusReport, ...
         'regionPartsSites',    regionSitesReport, ...
-        'regionPartsLocated',  regionLocatedReport);
+        'regionPartsLocated',  regionLocatedReport, ...
+        'epochSeriesBodies',   epochSeriesBodiesReport);
 
     if options.Verbose
         printSummary(result);
@@ -1684,6 +1703,15 @@ function [convertResult, report] = resolveEnsembleMembership(convertResult, ...
         'SchemaCache', options.SchemaCache, ...
         'TargetVersion', options.TargetVersion, ...
         'Verbose', false);
+    if ~isempty(sub.quarantine) && ~isempty(report.dissolved_map_ids)
+        % D2: a map dissolves INTO its edges. An edge that did not validate
+        % means the map's content is not all said elsewhere, so no map
+        % dissolves in this batch; counted, and the quarantine stays loud.
+        convertResult.migrated = docs;
+        report.ensemble_maps_kept_edges_quarantined = report.ensemble_maps_dissolved;
+        report.ensemble_maps_dissolved = 0;
+        report.dissolved_map_ids = {};
+    end
     convertResult.migrated = [convertResult.migrated, sub.migrated];
     convertResult.quarantine = [convertResult.quarantine, sub.quarantine];
     convertResult.summary = recountSummary(convertResult);
@@ -3069,6 +3097,50 @@ function id = cohortIdOf(cohortIds, sessionId)
         cohortIds(sessionId) = did.ido.unique_id(); %#ok<NASGU>
     end
     id = cohortIds(sessionId);
+end
+
+function [convertResult, rep] = describeEpochSeriesBodies(convertResult, ndiDir, options)
+%DESCRIBEEPOCHSERIESBODIES ndi.migrate.internal.epochSeriesBodies over the
+%   migrated set. Each described body and its owner are re-validated TOGETHER
+%   through did2.convert.v1_to_v2; a pair that does not come back clean is
+%   REVERTED (both left as they were) and counted.
+    docs = convertResult.migrated;
+    structs = cell(1, numel(docs));
+    for k = 1:numel(docs)
+        structs{k} = docs{k}.toStruct();
+    end
+    [structs, rep] = ndi.migrate.internal.epochSeriesBodies(structs, ndiDir);
+    rep.reverted = 0;
+    if isempty(rep.changed_ids)
+        return;
+    end
+    idx = zeros(1, numel(rep.changed_ids));
+    for k = 1:numel(docs)
+        hit = find(strcmp(char(structs{k}.base.id), rep.changed_ids), 1);
+        if ~isempty(hit); idx(hit) = k; end
+    end
+    for p = 1:2:numel(idx)
+        pair = idx(p:p+1);
+        if any(pair == 0); rep.reverted = rep.reverted + 1; continue; end
+        try
+            sub = did2.convert.v1_to_v2(structs(pair), ...
+                'Validate', options.Validate, 'SchemaCache', options.SchemaCache, ...
+                'TargetVersion', options.TargetVersion, 'Verbose', false);
+            if isempty(sub.quarantine) && numel(sub.migrated) == 2
+                for j = 1:2
+                    sid = char(sub.migrated{j}.get('base.id'));
+                    docs{pair(strcmp(rep.changed_ids(p:p+1), sid))} = sub.migrated{j};
+                end
+            else
+                rep.reverted = rep.reverted + 1;
+            end
+        catch
+            rep.reverted = rep.reverted + 1;
+        end
+    end
+    rep.bodies_described = rep.bodies_described - rep.reverted;
+    convertResult.migrated = docs;
+    convertResult.summary = recountSummary(convertResult);
 end
 
 function [convertResult, rep] = fillLocatedFileFacts(convertResult, options)
