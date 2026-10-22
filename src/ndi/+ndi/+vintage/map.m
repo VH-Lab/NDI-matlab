@@ -122,9 +122,12 @@ e = struct('concept', {}, 'v1_class', {}, 'eta_class', {}, ...
 k = 0;
 
 % ---- daqsystem -> acquisition_system ---------------------------------
-% Edge names from schemas/V_eta/stable/acquisition_system.json
-%   deps = software_id, reader_id, epoch_file_pattern_id,
-%          acquisition_metadata_reader_#
+% Edge names from schemas/V_eta/stable/acquisition_system.json (did-schema
+% 152157d; acquisition_system <- base, not entity)
+%   deps = software_id, reader_id (required), epoch_file_pattern_id
+%          (required; Jess Haley 2026-10-22 [required acquisition edges]),
+%          epoch_parameter_reader_id (one repeated name, T15; the numbered
+%          `acquisition_metadata_reader_#` family before #73), device_id
 % and from +migrators_j/daqsystem.m's own "THE EDGE MAPPING" table.
 % NOTE the two software edges are NOT interchangeable, and the migrator
 % says which is which: `software_id` is "the rig's OWN implementation --
@@ -160,7 +163,9 @@ e(k).fields       = {'fileparameters',               {'file_pattern', 'data_file
                      'epochprobemap_fileparameters', 'epoch_map_pattern'; ...
                      'epochprobemap_class',          'epoch_map_format'};
 
-% ---- daqmetadatareader -> acquisition_metadata_reader ----------------
+% ---- daqmetadatareader -> epoch_parameter_reader ---------------------
+% (`acquisition_metadata_reader` until did-schema #73's review; documents
+% written before it still carry that name, so both are listed)
 k = k + 1;
 e(k).concept      = 'daqmetadatareader';
 e(k).v1_class     = 'daqmetadatareader';
