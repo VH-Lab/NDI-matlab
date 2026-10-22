@@ -1508,7 +1508,7 @@
     {
      "ingredient": "cholesterol_5",
      "concentration": {
-      "volume_fraction": 0.001,
+      "liters_per_liter": 0.001,
       "source_value": 1,
       "source_unit": "uL/mL"
      }

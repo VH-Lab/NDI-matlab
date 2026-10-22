@@ -15,7 +15,7 @@ function [S, checks] = seedingSuspensions(dataParentDir, spec)
 %   #114, tenet T19's "a planned value is said by its term"; built by
 %   ndi.setup.conv.haley.seedingDocuments) whose formulation is its PLAN:
 %     OD600 10 solution   formulation: the strain at its target OD600 10
-%                         (`od600` and the source pair, source unit OD600),
+%                         (`optical_density` and the source pair, source unit OD600),
 %                         then the diluent. Its measured OD600 (`OD600Real`)
 %                         and CFU (`CFU`) are observations of the solution
 %                         entity (seedingDocuments), not values of the
@@ -268,7 +268,7 @@ for s = 1:numel(sol)
     entries{end+1} = struct('key', x.key, 'ingredients', {ing}); %#ok<AGROW>
     solutions(end+1) = solution(x.key, x, 'stock', 10, '', x.od, x.cfu, x.note); %#ok<AGROW>
     for n = x.nominal(x.nominal > 0 & x.nominal ~= 10)
-        ing = {struct('ingredient', x.key, 'concentration', struct('volume_fraction', n / 10, ...
+        ing = {struct('ingredient', x.key, 'concentration', struct('liters_per_liter', n / 10, ...
             'source_value', n, 'source_unit', ndi.setup.V2.sourceUnit('OD600')))};
         if ~isempty(x.diluent)
             ing{end+1} = struct('ingredient', x.diluent); %#ok<AGROW>
@@ -369,12 +369,13 @@ end
 end
 
 function c = target(n)
-% a planned OD600, as a concentration: `od600`, and the source pair (the plan
-% is stated in OD600)
+% a planned OD600, as a concentration: `optical_density` (`od600` until
+% did-schema's [ratio slots named by unit], Jess Haley 2026-10-22), and the
+% source pair (the plan is stated in OD600, which says the wavelength)
 arguments
     n (1,1) double
 end
-c = struct('od600', n);
+c = struct('optical_density', n);
 c.source_value = n;
 c.source_unit = ndi.setup.V2.sourceUnit('OD600');
 end

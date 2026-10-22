@@ -88,7 +88,7 @@ classdef TestHaleySeeding < matlab.unittest.TestCase
                 'the measured CFU is an observation of the solution, not its plan (decision #129)');
             testCase.verifyEqual(g.concentration.source_value, 10, 'the plan: target OD600 10');
             testCase.verifyEqual(g.concentration.source_unit, ndi.setup.V2.sourceUnit('OD600'));
-            testCase.verifyEqual(g.concentration.od600, 10, 'the od600 canonical');
+            testCase.verifyEqual(g.concentration.optical_density, 10, 'the optical_density canonical (OD600 by its source unit)');
             st = testCase.solution('suspension_op50_20230217');
             testCase.verifyEqual(st.kind, 'stock');
             testCase.verifyEqual(st.od, 10.1, 'the measured OD600 is the solution''s, not the plan''s');
@@ -96,7 +96,7 @@ classdef TestHaleySeeding < matlab.unittest.TestCase
             d = testCase.entry('suspension_op50_20230217_od5');
             testCase.verifyNumElements(d.ingredients, 1);
             testCase.verifyEqual(d.ingredients{1}.ingredient, 'suspension_op50_20230217');
-            testCase.verifyEqual(d.ingredients{1}.concentration.volume_fraction, 0.5, 'AbsTol', 1e-12);
+            testCase.verifyEqual(d.ingredients{1}.concentration.liters_per_liter, 0.5, 'AbsTol', 1e-12);
             testCase.verifyEqual(d.ingredients{1}.concentration.source_value, 5);
             % the OD600 0 patches that day are each study's own diluent alone
             % (decision #94): Mini's LB, Matching's S-Complete
@@ -157,7 +157,7 @@ classdef TestHaleySeeding < matlab.unittest.TestCase
             testCase.verifyEqual(x.ingredients{1}.ingredient, 'OP50');
             testCase.verifyEqual(x.ingredients{1}.concentration.source_value, 1);
             testCase.verifyEqual(x.ingredients{1}.concentration.source_unit, ndi.setup.V2.sourceUnit('OD600'));
-            testCase.verifyEqual(x.ingredients{1}.concentration.od600, 1, 'the nominal OD600');
+            testCase.verifyEqual(x.ingredients{1}.concentration.optical_density, 1, 'the nominal OD600');
             testCase.verifyFalse(isfield(x.ingredients{1}.concentration, 'particles_per_liter'), ...
                 'no CFU was measured');
             I = testCase.S.index;

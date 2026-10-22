@@ -828,12 +828,13 @@ d = did2.build.statement('calculation', entityId, ...
 end
 
 function v = densityCell(x)
-% the relative density as concentration cells: in the `od600` canonical
-% (did-schema, Jess 2026-10-20), the same number as the source value in source
-% unit OD600
+% the relative density as concentration cells: in the `optical_density`
+% canonical (`od600` until did-schema's [ratio slots named by unit], Jess Haley
+% 2026-10-22), the same number as the source value in source unit OD600, which
+% says the wavelength
 arguments
     x double
 end
-v = did2.build.valueCell('concentration', x, 'Canonical', 'od600', 'SourceValue', x, ...
+v = did2.build.valueCell('concentration', x, 'Canonical', 'optical_density', 'SourceValue', x, ...
     'SourceUnit', ndi.setup.V2.sourceUnit('OD600'));
 end

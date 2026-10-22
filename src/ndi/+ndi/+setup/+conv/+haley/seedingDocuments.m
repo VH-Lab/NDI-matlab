@@ -29,7 +29,7 @@ function out = seedingDocuments(S, ids, sessionId, options)
 %                        solution it was made from, that day's stock (decision
 %                        #147); when: the seeding day
 %     concentration observation  the stock's MEASURED OD600 (`OD600Real`),
-%                        variable OD600 (MCO:0000059), in the `od600` canonical
+%                        variable OD600 (MCO:0000059), in the `optical_density` canonical (source unit OD600)
 %                        with the source pair where the schema has it, method
 %                        NCIT:C85776 Optical Density Measurement (decision
 %                        #129); instrument the spectrophotometer (the spec's
@@ -133,7 +133,7 @@ for k = 1:numel(S.solutions)
     if isnan(x.od)
         continue;
     end
-    v = did2.build.valueCell('concentration', x.od, 'Canonical', 'od600', 'SourceValue', x.od, ...
+    v = did2.build.valueCell('concentration', x.od, 'Canonical', 'optical_density', 'SourceValue', x.od, ...
         'SourceUnit', ndi.setup.V2.sourceUnit('OD600'));
     args = {};
     if ~isempty(instrument), args = {'InstrumentId', instrument}; end

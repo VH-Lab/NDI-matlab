@@ -545,7 +545,7 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             plan = md{cellfun(@(d) strcmp(d.base.id, ids('suspension_op50_20220202')), md)};
             g = entries(ndi.v2.blockOf(plan, 'formulation', 'value').ingredients);
             testCase.verifyEqual(g{1}.concentration.source_value, 10, 'the plan: target OD600 10');
-            testCase.verifyEqual(g{1}.concentration.od600, 10);
+            testCase.verifyEqual(g{1}.concentration.optical_density, 10);
             ob = aboutMd(stockId, 'concentration_observation');
             ob = ob(cellfun(@(d) strcmp(d.statement.variable.node, 'MCO:0000059'), ob));
             testCase.verifyNumElements(ob, 1, 'the stock''s OD600Real');
@@ -1573,10 +1573,10 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             testCase.verifyEqual(unique(cellfun(@(e) ndi.v2.termName(e.source_unit), ...
                 entries(r12{1}.concentration.value), 'UniformOutput', false)), ...
                 {ndi.v2.termName(ndi.setup.V2.sourceUnit('OD600'))});
-            testCase.verifyEqual(numbers(r12{1}.concentration.value, 'od600'), ...
+            testCase.verifyEqual(numbers(r12{1}.concentration.value, 'optical_density'), ...
                 10 * (94 / 300 + [74 80] / 3000) / 2.5, 'AbsTol', 1e-12, 'in the od600 canonical');
             v = ndi.value('concentration', r12{1}.concentration.value);
-            testCase.verifyEqual(v.unit(), 'od600', 'ndi.value reads the slot the cells fill');
+            testCase.verifyEqual(v.unit(), 'optical_density', 'ndi.value reads the slot the cells fill');
             testCase.verifyEqual(edgeAll(r12{1}, 'input_id'), {e12{1}.base.id}, 'from its estimate');
             testCase.verifyEqual(r12{1}.interaction.method.term.node, 'OBI:0200169');
             pm = entries(r12{1}.interaction.method.parameters);

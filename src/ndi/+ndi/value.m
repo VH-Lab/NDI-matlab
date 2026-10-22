@@ -192,7 +192,7 @@ classdef value
             % Read from the V2 schema: the first numeric sub-field of the
             % class's `value` that is not source_value, scale_min or scale_max.
             % A class with several canonical slots (concentration: molar,
-            % grams_per_liter, ..., particles_per_liter, od600) gives the
+            % grams_per_liter, ..., particles_per_liter, optical_density) gives the
             % first one that the stored cells RAW fill, when RAW is given and
             % fills one; else the first declared.
             arguments
