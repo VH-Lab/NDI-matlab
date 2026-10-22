@@ -101,7 +101,7 @@ classdef TestSubjectStrainAssembly < matlab.unittest.TestCase
             testCase.verifyEqual(sd.document_class.class_name, 'entity');
             testCase.verifyEqual(sd.document_class.schema_version, 'V_eta');
             testCase.verifyEqual({sd.document_class.superclasses.class_name}, {'base'});
-            testCase.verifyEqual(sd.entity.type.name, 'strain');
+            testCase.verifyTrue(ndi.v2.vocabIs('entity_type', sd.entity.type, 'strain'));
             testCase.verifyEqual(sd.entity.name, 'SD');
             testCase.verifyFalse(isfield(sd, 'strain'));
             testCase.verifyFalse(isfield(sd.base, 'name'), ...
@@ -1160,7 +1160,7 @@ out = {};
 for k = 1:numel(minted)
     m = minted{k};
     if strcmp(m.document_class.class_name, 'entity') ...
-            && strcmp(m.entity.type.name, 'strain')
+            && ndi.v2.vocabIs('entity_type', m.entity.type, 'strain')
         out{end+1} = m; %#ok<AGROW>
     end
 end
@@ -1196,7 +1196,7 @@ for k = 1:numel(list)
     b = list{k};
     if strcmp(b.document_class.class_name, 'directed_relation') ...
             && strcmp(depValue(b, 'child_id'), childId) ...
-            && strcmp(b.directed_relation.relation.name, relationName)
+            && ndi.v2.vocabIs('relation', b.directed_relation.relation, relationName)
         out{end+1} = b; %#ok<AGROW>
     end
 end

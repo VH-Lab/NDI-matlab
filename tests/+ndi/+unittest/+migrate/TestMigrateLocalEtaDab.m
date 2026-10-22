@@ -340,9 +340,9 @@ classdef TestMigrateLocalEtaDab < matlab.unittest.TestCase
                 elseif strcmp(cn, 'entity') && isfield(b, 'entity') && isfield(b.entity, 'type')
                     desc = '';
                     if isfield(b.entity, 'description'); desc = char(b.entity.description); end
-                    if strcmp(b.entity.type.name, 'tissue') && startsWith(desc, 'brain slice')
+                    if ndi.v2.vocabIs('entity_type', b.entity.type, 'tissue') && startsWith(desc, 'brain slice')
                         sliceIds{end+1} = b.base.id; %#ok<AGROW>
-                    elseif strcmp(b.entity.type.name, 'organism') && contains(desc, 'nested inside')
+                    elseif ndi.v2.vocabIs('entity_type', b.entity.type, 'organism') && contains(desc, 'nested inside')
                         animals = animals + 1;
                     end
                 end
@@ -355,7 +355,7 @@ classdef TestMigrateLocalEtaDab < matlab.unittest.TestCase
             for k = 1:numel(migrated)
                 b = migrated{k};
                 if strcmp(b.document_class.class_name, 'directed_relation') ...
-                        && strcmp(b.directed_relation.relation.name, 'part_of') ...
+                        && ndi.v2.vocabIs('relation', b.directed_relation.relation, 'part_of') ...
                         && any(strcmp(edgeOf(b, 'child_id'), sliceIds))
                     sliceParts = sliceParts + 1;
                 end

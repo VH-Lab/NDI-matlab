@@ -790,7 +790,7 @@ out = {};
 for k = 1:numel(bodies)
     b = bodies{k};
     if ~strcmp(b.document_class.class_name, 'directed_relation'); continue; end
-    if strcmp(b.directed_relation.relation.name, relationName)
+    if ndi.v2.vocabIs('relation', b.directed_relation.relation, relationName)
         out{end+1} = b; %#ok<AGROW>
     end
 end

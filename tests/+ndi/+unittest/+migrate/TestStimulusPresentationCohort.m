@@ -77,13 +77,13 @@ classdef TestStimulusPresentationCohort < matlab.unittest.TestCase
             c = docs{1};
             testCase.verifyEqual(c.document_class.class_name, 'entity');
             testCase.verifyEqual(c.base.id, 'cohort_1');
-            testCase.verifyEqual(c.entity.type.name, 'group');
+            testCase.verifyTrue(ndi.v2.vocabIs('entity_type', c.entity.type, 'group'));
             testCase.verifyNotEmpty(c.entity.local_identifier, ...
                 'a group requires a local_identifier');
             for k = 2:3
                 rel = docs{k};
                 testCase.verifyEqual(rel.document_class.class_name, 'directed_relation');
-                testCase.verifyEqual(rel.directed_relation.relation.name, 'member_of');
+                testCase.verifyTrue(ndi.v2.vocabIs('relation', rel.directed_relation.relation, 'member_of'));
                 testCase.verifyEqual(depValue(rel, 'parent_id'), 'cohort_1');
             end
             testCase.verifyEqual(depValue(docs{2}, 'child_id'), 'animal_1');

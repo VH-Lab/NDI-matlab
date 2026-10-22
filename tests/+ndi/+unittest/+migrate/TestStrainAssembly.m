@@ -46,7 +46,7 @@ classdef TestStrainAssembly < matlab.unittest.TestCase
             testCase.verifyEqual(op50.document_class.schema_version, 'V_eta');
             supers = {op50.document_class.superclasses.class_name};
             testCase.verifyEqual(supers, {'base'});
-            testCase.verifyEqual(op50.entity.type.name, 'strain');
+            testCase.verifyTrue(ndi.v2.vocabIs('entity_type', op50.entity.type, 'strain'));
             testCase.verifyEqual(op50.entity.name, 'Escherichia coli OP50');
             testCase.verifyEqual(op50.entity.description, 'as the source gives it');
             testCase.verifyFalse(isfield(op50, 'strain'));
@@ -96,7 +96,7 @@ classdef TestStrainAssembly < matlab.unittest.TestCase
             testCase.verifyNumElements(r, 1);
             testCase.verifyEqual(r{1}.document_class.class_name, 'directed_relation');
             testCase.verifyEqual(depValue(r{1}, 'parent_id'), 'op50_doc');
-            testCase.verifyEqual(r{1}.directed_relation.relation.name, 'derived_from');
+            testCase.verifyTrue(ndi.v2.vocabIs('relation', r{1}.directed_relation.relation, 'derived_from'));
             testCase.verifyEqual(r{1}.directed_relation.relation.node, ndi.v2.vocabTerm('relation', 'derived_from').node);   % [derived from general]
             testCase.verifyTrue(ndi.v2.vocabIs('relation', r{1}.directed_relation.relation, 'derived_from'));
             testCase.verifyEqual(report.background_edges, 1);
@@ -462,7 +462,7 @@ function b = strainWithId(bodies, id)
 b = [];
 for k = 1:numel(bodies)
     if strcmp(bodies{k}.document_class.class_name, 'entity') ...
-            && strcmp(bodies{k}.entity.type.name, 'strain') ...
+            && ndi.v2.vocabIs('entity_type', bodies{k}.entity.type, 'strain') ...
             && strcmp(bodies{k}.base.id, id)
         b = bodies{k}; return;
     end

@@ -36,7 +36,7 @@ if ~isstruct(b) || ~isfield(b, 'document_class'); return; end
 cn = b.document_class.class_name;
 if strcmp(cn, 'entity') && isfield(b, 'entity') && isfield(b.entity, 'type') ...
         && isfield(b.entity.type, 'name') ...
-        && any(strcmp(b.entity.type.name, {'session', 'dataset'}))
+        && any(ndi.v2.vocabIs('entity_type', b.entity.type, {'session', 'dataset'}))
     tf = true; sid = char(b.base.id);
 elseif strcmp(cn, 'session') && isfield(b.base, 'session_id')
     tf = true; sid = char(b.base.session_id);

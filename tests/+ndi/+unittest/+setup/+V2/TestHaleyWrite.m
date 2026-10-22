@@ -215,7 +215,7 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
                 'plate, 1 (plate 14) in a food deprivation plate (decision #55)']);
             find1 = @(child, parent, name) rel(cellfun(@(r) ...
                 strcmp(edge(r, 'child_id'), idOf(child)) && strcmp(edge(r, 'parent_id'), idOf(parent)) ...
-                && strcmp(r.directed_relation.relation.name, name), rel));
+                && ndi.v2.vocabIs('relation', r.directed_relation.relation, name), rel));
 
             % a patch is contained_in its plate (decision #107), from the
             % plate's seeding to its last recording
@@ -370,7 +370,7 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             testCase.verifyEqual(sum(strcmp(kinds, 'acclimation plate')), 3);
             testCase.verifyEqual(sum(strcmp(kinds, 'food deprivation plate')), 1);
             rel = docs(strcmp(classes, 'directed_relation'));
-            instanceOf = @(local) rel(cellfun(@(r) strcmp(r.directed_relation.relation.name, ...
+            instanceOf = @(local) rel(cellfun(@(r) ndi.v2.vocabIs('relation', r.directed_relation.relation, ...
                 'instance_of') && strcmp(edge(r, 'child_id'), idOf(local)), rel));
             % the species: once, on the strain entity the cohort is an
             % instance_of (decision #112)
@@ -1955,7 +1955,7 @@ arguments
     local {mustBeText}
 end
 d = byLocal(local);
-t = d.subject.type.name;
+t = ndi.v2.vocabHandle('entity_type', d.subject.type);   % by node (L2)
 end
 
 function c = conditionsOf(doc)

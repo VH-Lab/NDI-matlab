@@ -57,7 +57,7 @@ classdef TestCreateSession < matlab.unittest.TestCase
             testCase.verifyNumElements(rel, 1);
             r = rel{1}.document_properties;
             % included_in (did-schema V_eta_relation_inheritance_plan.md)
-            testCase.verifyEqual(r.directed_relation.relation.name, 'included_in');
+            testCase.verifyTrue(ndi.v2.vocabIs('relation', r.directed_relation.relation, 'included_in'));
             parent = r.depends_on(strcmp({r.depends_on.name}, 'parent_id'));
             testCase.verifyEqual(parent.document_id, study);
         end

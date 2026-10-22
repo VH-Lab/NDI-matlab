@@ -75,7 +75,7 @@ classdef TestPathSPromotion < matlab.unittest.TestCase
 
             part = firstOfClass(minted, 'entity');
             partId = part.base.id;
-            testCase.verifyEqual(part.entity.type.name, 'tissue');
+            testCase.verifyTrue(ndi.v2.vocabIs('entity_type', part.entity.type, 'tissue'));
             testCase.verifyNotEmpty(part.entity.local_identifier);
             testCase.verifyFalse(isfield(part.base, 'name'));
 
@@ -84,7 +84,7 @@ classdef TestPathSPromotion < matlab.unittest.TestCase
             rel = firstOfClass(minted, 'directed_relation');
             testCase.verifyEqual(depValue(rel, 'child_id'), partId);
             testCase.verifyEqual(depValue(rel, 'parent_id'), 'animal_1');
-            testCase.verifyEqual(rel.directed_relation.relation.name, 'part_of');
+            testCase.verifyTrue(ndi.v2.vocabIs('relation', rel.directed_relation.relation, 'part_of'));
             testCase.verifyEqual({rel.document_class.superclasses.class_name}, ...
                 {'relation', 'base'});
 
@@ -152,7 +152,7 @@ classdef TestPathSPromotion < matlab.unittest.TestCase
             testCase.verifyEqual(report.site_conditions_seen, 1);
             testCase.verifyEqual(report.site_conditions_retargeted, 1);
             part = firstOfClass(minted, 'entity');
-            testCase.verifyEqual(part.entity.type.name, 'tissue');
+            testCase.verifyTrue(ndi.v2.vocabIs('entity_type', part.entity.type, 'tissue'));
             moved = byId(kept, 'img_1');
             testCase.verifyEqual(depValue(moved, 'entity_id'), part.base.id);
             testCase.verifyFalse(isfield(moved.statement, 'conditions'), ...
@@ -255,7 +255,7 @@ classdef TestPathSPromotion < matlab.unittest.TestCase
                 ndi.migrate.internal.pathSPromotion(structs, 'Mode', 'sites');
             testCase.verifyTrue(changed);
             part = firstOfClass(minted, 'entity');
-            testCase.verifyEqual(part.entity.type.name, 'tissue');
+            testCase.verifyTrue(ndi.v2.vocabIs('entity_type', part.entity.type, 'tissue'));
             bath = firstOfClass(kept, 'manipulation');
             testCase.verifyEqual(depValue(bath, 'entity_id'), part.base.id);
             rel = firstOfClass(minted, 'directed_relation');
@@ -285,7 +285,7 @@ classdef TestPathSPromotion < matlab.unittest.TestCase
                 ndi.migrate.internal.pathSPromotion(structs, 'Mode', 'located');
             testCase.verifyTrue(changed);
             part = firstOfClass(minted, 'entity');
-            testCase.verifyEqual(part.entity.type.name, 'tissue');
+            testCase.verifyTrue(ndi.v2.vocabIs('entity_type', part.entity.type, 'tissue'));
             rec = byId(kept, 'rec_1');
             testCase.verifyEqual(depValue(rec, 'entity_id'), part.base.id);
             testCase.verifyEqual(depValue(rec, 'instrument_id'), 'probe_1');

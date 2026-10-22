@@ -248,12 +248,12 @@ classdef TestMigrateLocalEta < matlab.unittest.TestCase
             verifyNotEmpty(testCase, part, ['the bath names no part. ' resultDiag(result)]);
             if ~isempty(part)
                 verifyEqual(testCase, part.document_class.class_name, 'entity');
-                verifyEqual(testCase, part.entity.type.name, 'tissue');
+                verifyTrue(testCase, ndi.v2.vocabIs('entity_type', part.entity.type, 'tissue'));
             end
             partOf = {};
             for r = findAllByClass(result.destination, 'directed_relation')
                 rel = r{1};
-                if strcmp(rel.directed_relation.relation.name, 'part_of') ...
+                if ndi.v2.vocabIs('relation', rel.directed_relation.relation, 'part_of') ...
                         && strcmp(depValue(rel, 'child_id'), depValue(dose, 'entity_id'))
                     partOf{end+1} = depValue(rel, 'parent_id'); %#ok<AGROW>
                 end
@@ -836,7 +836,7 @@ for b = findAllByClass(dstPath, 'entity')
     s = b{1};
     if isfield(s, 'entity') && isfield(s.entity, 'type') ...
             && isstruct(s.entity.type) && isfield(s.entity.type, 'name') ...
-            && strcmp(char(s.entity.type.name), typeName)
+            && ndi.v2.vocabIs('entity_type', s.entity.type, typeName)
         body = s;
         return;
     end

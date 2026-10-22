@@ -80,7 +80,7 @@ classdef TestSliceTetanus < matlab.unittest.TestCase
             for k = 1:numel(testCase.Migrated)
                 b = testCase.Migrated{k};
                 if strcmp(b.document_class.class_name, 'directed_relation') ...
-                        && strcmp(b.directed_relation.relation.name, 'instance_of') ...
+                        && ndi.v2.vocabIs('relation', b.directed_relation.relation, 'instance_of') ...
                         && strcmp(dep(b, 'child_id'), dec02)
                     nStrain = nStrain + 1;
                 end
@@ -563,7 +563,7 @@ function out = mintedEntities(plan, type)
 out = {};
 e = mintedOfClass(plan, 'entity');
 for k = 1:numel(e)
-    if strcmp(e{k}.entity.type.name, type); out{end+1} = e{k}; end %#ok<AGROW>
+    if ndi.v2.vocabIs('entity_type', e{k}.entity.type, type); out{end+1} = e{k}; end %#ok<AGROW>
 end
 end
 
@@ -571,7 +571,7 @@ function out = mintedRelations(plan, name)
 out = {};
 r = mintedOfClass(plan, 'directed_relation');
 for k = 1:numel(r)
-    if strcmp(r{k}.directed_relation.relation.name, name); out{end+1} = r{k}; end %#ok<AGROW>
+    if ndi.v2.vocabIs('relation', r{k}.directed_relation.relation, name); out{end+1} = r{k}; end %#ok<AGROW>
 end
 end
 

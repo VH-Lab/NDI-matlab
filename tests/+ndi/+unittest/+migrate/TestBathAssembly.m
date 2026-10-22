@@ -104,7 +104,7 @@ classdef TestBathAssembly < matlab.unittest.TestCase
                 [{dose, timeRef}, extra], 'Mode', 'sites');
             testCase.verifyTrue(changed);
             part = minted{cellfun(@(b) strcmp(b.document_class.class_name, 'entity'), minted)};
-            testCase.verifyEqual(part.entity.type.name, 'tissue');
+            testCase.verifyTrue(ndi.v2.vocabIs('entity_type', part.entity.type, 'tissue'));
             bath = kept{cellfun(@(b) strcmp(b.base.id, 'bath_1'), kept)};
             testCase.verifyEqual(depValue(bath, 'entity_id'), part.base.id);
             testCase.verifyEmpty(siteOf(kept), 'the site is superseded by the part');

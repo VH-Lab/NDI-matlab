@@ -388,7 +388,7 @@ arguments
 end
 isRel = cellfun(@(d) strcmp(d.document_class.class_name, 'directed_relation'), docs);
 rels = docs(isRel);
-rels = rels(cellfun(@(r) strcmp(r.directed_relation.relation.name, name), rels));
+rels = rels(cellfun(@(r) ndi.v2.vocabIs('relation', r.directed_relation.relation, name), rels));
 end
 
 function s = asStructs(f)

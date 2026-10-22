@@ -98,7 +98,7 @@ classdef TestOntologyLabelSubjects < matlab.unittest.TestCase
             tc.verifyEqual(r.document_class.class_name, 'directed_relation');
             tc.verifyEqual(depValue(r, 'child_id'), 'lab_1');
             tc.verifyEqual(depValue(r, 'parent_id'), 'img_1');
-            tc.verifyEqual(r.directed_relation.relation.name, 'derived_from');
+            tc.verifyTrue(ndi.v2.vocabIs('relation', r.directed_relation.relation, 'derived_from'));
         end
         function testTheIdIsPreservedSoTheReplacementSupersedesThePassthrough(tc)
             % The calculator lesson: dissolving a referenced document without
