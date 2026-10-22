@@ -308,6 +308,30 @@ e(k).isa_bridges  = true;
 e(k).edges        = cell(0,2);   % `element_id` keeps its name on both
 e(k).fields       = cell(0,2);   % see above -- a shape change, not a rename
 
+% ---- epochfiles_ingested -> ingestion_manifest ------------------------
+% did-schema #88, Decided by Jess Haley, 2026-10-22 [ingested epochs found]
+% (V_eta_epoch_plan.md, "B1a"): the classic navigator's
+% `isa epochfiles_ingested & depends_on filenavigator_id` query must find a
+% migrated `ingestion_manifest`, which points at the SAME id by
+% `epoch_file_pattern_id` (the navigator's epoch_file_pattern keeps its v1
+% id). ndi.vintage.ingestedQuery builds that query from this row.
+% NOT AN NDI OBJECT TYPE (no object_field): the row is the class rename,
+% the edge rename, and `files`, which keeps its name. The epoch id and the
+% probe map are SHAPE changes, not renames -- the id moved to the `epoch`
+% entity the `epoch_id` edge names, and the probe map was decomposed into
+% statements -- so they are read by ndi.vintage.ingestedEpochs, not by
+% ndi.vintage.field.
+k = k + 1;
+e(k).concept      = 'epochfiles_ingested';
+e(k).v1_class     = 'epochfiles_ingested';
+e(k).eta_class    = 'ingestion_manifest';
+e(k).object_field = '';
+e(k).object_edge  = '';
+e(k).object_assertion = '';
+e(k).isa_bridges  = true;   % ingestion_manifest is the target of nothing else
+e(k).edges        = {'filenavigator_id', 'epoch_file_pattern_id'};
+e(k).fields       = {'files', 'files'};
+
 cached = e;
 entries = e;
 end

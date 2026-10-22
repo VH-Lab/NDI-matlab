@@ -226,6 +226,74 @@ classdef TestMigrateLocalEtaB < matlab.unittest.TestCase
                 numel(devs), numel(els));
         end
 
+        function testTheNavigatorFindsTheMigratedIngestedEpochs(testCase)
+            % did-schema #88, Decided by Jess Haley, 2026-10-22 [ingested
+            % epochs found] ("B1a"): the classic navigator's ingested-epoch
+            % query finds a migrated `ingestion_manifest` through
+            % `epoch_file_pattern_id` (ndi.vintage.ingestedQuery), and reads
+            % its epoch id, files and probe map (ndi.vintage.ingestedEpochs).
+            %
+            % DENOMINATORS FIRST, corpus-wide: B carries 2,484 v1
+            % epochfiles_ingested documents; after migration each is an
+            % ingestion_manifest or (a row with no home) a passthrough
+            % epochfiles_ingested. Then, in the session this test opens: for
+            % each acquisition system's navigator, the documents the vintage
+            % query finds must be exactly that session's documents pointing at
+            % the navigator, and every one must give an epoch id and appear in
+            % the navigator's epoch table.
+            src = findAllByClass(testCase.Bodies, 'epochfiles_ingested');
+            migrated = destinationBodies(testCase.Result.destination);
+            manifests = findAllByClass(migrated, 'ingestion_manifest');
+            passthrough = findAllByClass(migrated, 'epochfiles_ingested');
+            fprintf(['\n  INGESTED EPOCHS (B1)\n' ...
+                     '    DENOMINATOR: %d source epochfiles_ingested; migrated to %d ' ...
+                     'ingestion_manifest + %d passthrough\n'], ...
+                numel(src), numel(manifests), numel(passthrough));
+            verifyEqual(testCase, numel(src), 2484, ...
+                'B no longer carries 2,484 ingested epochs; the figures below are about a different corpus');
+            verifyEqual(testCase, numel(manifests) + numel(passthrough), numel(src), ...
+                'an ingested epoch neither became a manifest nor passed through');
+
+            [~, sessionId] = ndi.unittest.migrate.largestSessionRecord(migrated);
+            vlt.file.str2text( ...
+                fullfile(testCase.SessionRoot, '.ndi', 'unique_reference.txt'), sessionId);
+            s = ndi.session.dir(testCase.SessionRoot);
+            devs = s.daqsystem_load();
+            if isempty(devs); devs = {}; elseif ~iscell(devs); devs = {devs}; end
+            totalFound = 0;
+            for k = 1:numel(devs)
+                nav = devs{k}.filenavigator;
+                navId = nav.id();
+                expected = 0;
+                for m = [manifests, passthrough]
+                    b = m{1};
+                    if strcmp(ndi.v2.sessionIdOf(b), s.id()) && ...
+                            (any(strcmp(ndi.v2.edgeIds(b, 'epoch_file_pattern_id'), navId)) || ...
+                             any(strcmp(ndi.v2.edgeIds(b, 'filenavigator_id'), navId)))
+                        expected = expected + 1;
+                    end
+                end
+                found = s.database_search(ndi.vintage.ingestedQuery(navId, s.id()));
+                E = ndi.vintage.ingestedEpochs(s, found, nav.epochprobemap_class);
+                withId = sum(~cellfun(@isempty, {E.epoch_id}));
+                withMap = sum(~cellfun(@isempty, {E.probemap}));
+                et = nav.epochtable();
+                inTable = sum(ismember({E.epoch_id}, {et.epoch_id}));
+                fprintf(['    %s: %d expected, %d found by the vintage query, %d with an ' ...
+                         'epoch id, %d with a probe map, %d in the epoch table (of %d)\n'], ...
+                    devs{k}.name, expected, numel(found), withId, withMap, inTable, numel(et));
+                verifyEqual(testCase, numel(found), expected, sprintf( ...
+                    '%s: the navigator''s ingested-epoch query missed or over-found', devs{k}.name));
+                verifyEqual(testCase, withId, numel(found), sprintf( ...
+                    '%s: an ingested epoch read with no epoch id', devs{k}.name));
+                verifyEqual(testCase, inTable, numel(found), sprintf( ...
+                    '%s: an ingested epoch is missing from the epoch table', devs{k}.name));
+                totalFound = totalFound + numel(found);
+            end
+            fprintf('    session %s: %d ingested epoch(s) found over %d system(s)\n', ...
+                s.id(), totalFound, numel(devs));
+        end
+
         function testStimulusPresentationRefusalsByReason(testCase)
             % REPORT-ONLY (moved here from TestMigrateLocalEtaDab, Jess Haley
             % 2026-10-21: the 1,242 presentations are corpus B's). The second
