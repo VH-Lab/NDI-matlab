@@ -1711,6 +1711,8 @@ function [convertResult, report] = resolveEnsembleMembership(convertResult, ...
         report.ensemble_maps_kept_edges_quarantined = report.ensemble_maps_dissolved;
         report.ensemble_maps_dissolved = 0;
         report.dissolved_map_ids = {};
+        report.combined_bytes_dropped = 0;
+        report.dropped_carrier_ids = {};
     end
     convertResult.migrated = [convertResult.migrated, sub.migrated];
     convertResult.quarantine = [convertResult.quarantine, sub.quarantine];
@@ -3099,35 +3101,48 @@ end
 
 function [convertResult, rep] = describeEpochSeriesBodies(convertResult, ndiDir, options)
 %DESCRIBEEPOCHSERIESBODIES ndi.migrate.internal.epochSeriesBodies over the
-%   migrated set. Each described body and its owner are re-validated TOGETHER
-%   through did2.convert.v1_to_v2; a pair that does not come back clean is
-%   REVERTED (both left as they were) and counted.
+%   migrated set. Each group it changed (a body, its owners, and any body it
+%   added) is re-validated TOGETHER through did2.convert.v1_to_v2; a group that
+%   does not come back clean is REVERTED (left as it was, the added body
+%   dropped) and counted.
     docs = convertResult.migrated;
     structs = cell(1, numel(docs));
     for k = 1:numel(docs)
         structs{k} = docs{k}.toStruct();
     end
-    [structs, rep] = ndi.migrate.internal.epochSeriesBodies(structs, ndiDir);
+    [structs, rep, added] = ndi.migrate.internal.epochSeriesBodies(structs, ndiDir);
     rep.reverted = 0;
-    if isempty(rep.changed_ids)
+    if isempty(rep.changed_groups)
         return;
     end
-    idx = zeros(1, numel(rep.changed_ids));
-    for k = 1:numel(docs)
-        hit = find(strcmp(char(structs{k}.base.id), rep.changed_ids), 1);
-        if ~isempty(hit); idx(hit) = k; end
+    idxById = containers.Map('KeyType', 'char', 'ValueType', 'double');
+    for k = 1:numel(structs)
+        idxById(char(structs{k}.base.id)) = k;
     end
-    for p = 1:2:numel(idx)
-        pair = idx(p:p+1);
-        if any(pair == 0); rep.reverted = rep.reverted + 1; continue; end
+    addedById = containers.Map('KeyType', 'char', 'ValueType', 'any');
+    for k = 1:numel(added)
+        addedById(char(added{k}.base.id)) = added{k};
+    end
+    appendDocs = {};
+    for g = 1:numel(rep.changed_groups)
+        ids = rep.changed_groups{g};
+        grp = cell(1, numel(ids));
+        for j = 1:numel(ids)
+            if isKey(idxById, ids{j}); grp{j} = structs{idxById(ids{j})};
+            else; grp{j} = addedById(ids{j}); end
+        end
         try
-            sub = did2.convert.v1_to_v2(structs(pair), ...
+            sub = did2.convert.v1_to_v2(grp, ...
                 'Validate', options.Validate, 'SchemaCache', options.SchemaCache, ...
                 'TargetVersion', options.TargetVersion, 'Verbose', false);
-            if isempty(sub.quarantine) && numel(sub.migrated) == 2
-                for j = 1:2
+            if isempty(sub.quarantine) && numel(sub.migrated) == numel(ids)
+                for j = 1:numel(sub.migrated)
                     sid = char(sub.migrated{j}.get('base.id'));
-                    docs{pair(strcmp(rep.changed_ids(p:p+1), sid))} = sub.migrated{j};
+                    if isKey(idxById, sid)
+                        docs{idxById(sid)} = sub.migrated{j};
+                    else
+                        appendDocs{end+1} = sub.migrated{j}; %#ok<AGROW>
+                    end
                 end
             else
                 rep.reverted = rep.reverted + 1;
@@ -3136,8 +3151,7 @@ function [convertResult, rep] = describeEpochSeriesBodies(convertResult, ndiDir,
             rep.reverted = rep.reverted + 1;
         end
     end
-    rep.bodies_described = rep.bodies_described - rep.reverted;
-    convertResult.migrated = docs;
+    convertResult.migrated = [docs, appendDocs];
     convertResult.summary = recountSummary(convertResult);
 end
 

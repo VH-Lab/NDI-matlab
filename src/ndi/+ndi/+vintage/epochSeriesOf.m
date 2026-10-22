@@ -28,6 +28,14 @@ end
 q = ndi.query('', 'depends_on', 'entity_id', elementId) & ...
     ndi.query('', 'isa', 'observation', '');
 obs = session.database_search(q);
+% JH (Decided by Jess Haley, 2026-10-22 [JH position and distance]): a
+% position / distance element's series are calculations ABOUT ITS WORM with
+% the element as instrument; the first of a distance epoch's two keeps the
+% epoch's id. One series row per epoch: the epoch is read off each and a
+% repeat is skipped by ndi.element/loadaddedepochs.
+q2 = ndi.query('', 'depends_on', 'instrument_id', elementId) & ...
+    ndi.query('', 'isa', 'calculation', '');
+obs = [obs(:); session.database_search(q2)];
 series = ndi.vintage.epochSeries(obs, @(id) propsById(session, id));
 bodyFor = @(o) bodyOf(session, o);
 end

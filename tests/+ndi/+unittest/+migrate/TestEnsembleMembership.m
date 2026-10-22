@@ -41,13 +41,17 @@ classdef TestEnsembleMembership < matlab.unittest.TestCase
 
     methods (Test)
 
-        function testMembershipAndCacheProvenanceMinted(testCase)
+        function testMembershipMintedAndNoCacheProvenance(testCase)
+            % RENAMED and the derived_from half INVERTED 2026-10-22 (was
+            % testMembershipAndCacheProvenanceMinted): Decided by Jess Haley,
+            % 2026-10-22 [no ensemble cache] -- no cache, so no derived_from
+            % provenance over the combined bytes.
             structs = ensembleCorpus('ens_1', 'epoch_a', {'nrn_1', 'nrn_2'});
             [~, minted, report] = ndi.migrate.internal.ensembleMembership(structs);
 
             testCase.verifyTrue(report.changed);
             testCase.verifyEqual(report.member_of_minted, 2);
-            testCase.verifyEqual(report.derived_from_minted, 2);
+            testCase.verifyEqual(report.derived_from_minted, 0);
 
             m = ofRelation(minted, 'member_of');
             testCase.verifyEqual(numel(m), 2);
@@ -62,17 +66,7 @@ classdef TestEnsembleMembership < matlab.unittest.TestCase
             testCase.verifyEqual(m{2}.directed_relation.order, 1);
             testCase.verifyFalse(isfield(m{1}.directed_relation, 'sequence'));
 
-            d = ofRelation(minted, 'derived_from');
-            testCase.verifyEqual(numel(d), 2);
-            % the cache carrier (the acquisition_epoch holding the combined
-            % binary) is DERIVED FROM each neuron -- this set is the
-            % verify-before-delete manifest.
-            testCase.verifyEqual(depValue(d{1}, 'child_id'), 'aepoch_epoch_a');
-            testCase.verifyEqual(depValue(d{1}, 'parent_id'), 'nrn_1');
-            testCase.verifyEqual(d{1}.directed_relation.relation.node, ndi.v2.vocabTerm('relation', 'derived_from').node);   % [derived from general]
-            % a derived_from edge is unordered -- no order (under either name)
-            testCase.verifyFalse(isfield(d{1}.directed_relation, 'order'));
-            testCase.verifyFalse(isfield(d{1}.directed_relation, 'sequence'));
+            testCase.verifyEmpty(ofRelation(minted, 'derived_from'));
         end
 
         function testMintedRelationShapeIsVEta(testCase)
@@ -118,8 +112,8 @@ classdef TestEnsembleMembership < matlab.unittest.TestCase
         function testAScopedVerifiedMapDissolvesIntoItsEdges(testCase)
             % D2: every neuron resolved, every neuron's own train present for
             % this epoch, edges scoped by the epoch -> the map leaves; its
-            % edges carry the roster, the column order and the epoch. The
-            % combined-bytes carrier stays (no cache marker in the schema).
+            % edges carry the roster, the column order and the epoch, and the
+            % combined-bytes carrier goes with it ([no ensemble cache]).
             structs = ensembleCorpus('ens_1', 'epoch_a', {'nrn_1', 'nrn_2'});
             structs{end+1} = trainBody('nrn_1', 'epoch_a');
             structs{end+1} = trainBody('nrn_2', 'epoch_a');
@@ -128,8 +122,13 @@ classdef TestEnsembleMembership < matlab.unittest.TestCase
             testCase.verifyEqual(report.ensemble_maps_dissolved, 1);
             testCase.verifyEqual(report.dissolved_map_ids, {'map_ens_1_epoch_a'});
             testCase.verifyFalse(anyClass(kept, 'ensemble'), 'the map dissolved');
-            testCase.verifyEqual(numel(kept), numel(structs) - 1, 'only the map left');
-            testCase.verifyTrue(anyClass(kept, 'acquisition_epoch'));
+            testCase.verifyEqual(numel(kept), numel(structs) - 2, 'the map and the combined bytes left');
+            testCase.verifyEqual(report.combined_bytes_dropped, 1);
+            testCase.verifyEqual(report.dropped_carrier_ids, {'aepoch_epoch_a'});
+            ids = cellfun(@(x) x.base.id, kept, 'UniformOutput', false);
+            testCase.verifyFalse(any(strcmp(ids, 'aepoch_epoch_a')));
+            testCase.verifyTrue(all(ismember({'train_nrn_1_epoch_a', 'train_nrn_2_epoch_a'}, ids)), ...
+                'the per-neuron trains stay');
             m = ofRelation(minted, 'member_of');
             testCase.verifyEqual(numel(m), 2);
             for k = 1:numel(m)

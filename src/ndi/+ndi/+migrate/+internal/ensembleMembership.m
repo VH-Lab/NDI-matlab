@@ -184,74 +184,21 @@ function [kept, minted, report] = ensembleMembership(structs, options)
 %      edge kinds and the dedupe key separates epochs. Nothing empty is ever
 %      emitted (rule: never emit an empty edge).
 %
-%   3. NO `sampled_body` CACHE DOCUMENT IS MATERIALISED -- AND THIS ITEM'S OWN
-%      ACCOUNT OF WHY WAS HALF STALE, in the direction that makes the block look
-%      WIDER than it is. Corrected 2026-08-17 with positive evidence. The
-%      CONCLUSION is unchanged; it now rests on ONE blocker instead of two, and
-%      the one that lapsed is the one a reader would have quoted as "the tier
-%      isn't ready yet".
-%
-%      IT SAID `sampled_body` "does not exist in the built schema set" and that
-%      "the whole data_body tier is under redesign (#45, blocked on #32)".
-%      BOTH FALSE NOW. #45 is SIGNED:
-%
-%        $ grep -n "^TEAM-SIGN-OFF" \
-%              DID-schema/schemas/V_eta_data_body_model_plan.md
-%        648:TEAM-SIGN-OFF [data_body]: jess@walthamdatascience.com /
-%            2026-08-14 -- the axis entry replacing all three regularity
-%            encodings; time becomes an ordinary axis and both sample_time
-%            blocks retire; [...]
-%
-%      and `sampled_body` is live, instantiable and ALREADY EMITTED by
-%      production migrators, all through the shared helper:
-%
-%        $ cd DID-matlab && grep -rn "sampled_body" \
-%              src/did/+did2/+convert/+migrators_j/{*.m,private/*.m}
-%        image_stack.m:388   body.sampled_body.axes = jAxis(...)
-%        pyraview.m:431,433  b.sampled_body.axes = timeAxis / [timeAxis, ...]
-%        private/jNgridBody.m:224   body.sampled_body.axes = axesArray
-%        private/jSampledBody.m:22  class_name 'sampled_body'
-%
-%      It is still filed under `draft/`, which is a MATURITY LABEL and not a bar
-%      to emission -- the old wording read the directory as a prohibition.
-%
-%      WHAT ACTUALLY BLOCKS THE CACHE IS THE MARKER, AND ONLY THE MARKER. The
-%      signed model requires the T6 `is_cache` marker precisely so the combined
-%      stream is distinguishable from source-of-truth data. No schema declares
-%      it:
-%
-%        DENOMINATOR: 247 json file(s) under DID-schema schemas/V_eta/ read
-%          declaring `is_cache`: 0
-%        `is_cache` occurs ONLY in prose -- V_eta_tenets.md,
-%        V_eta_tenet_audit.md, V_eta_ensemble_plan.md, V_eta_OPEN_WORK.md
-%        (plus web/public/tenets.json, which renders the first of those).
-%
-%      Minting the body WITHOUT the marker yields a document indistinguishable
-%      from primary archival data -- the single property the signed model exists
-%      to guarantee, dropped silently, on a class whose whole point is that the
-%      per-neuron trains are the source of truth. The absence is a reason not to
-%      build it, not a detail to route around. Adding the marker is a DID-schema
-%      change and is not this pass's to make.
-%
-%      A SECOND FACT, A COST RATHER THAN A BLOCKER: the body needs an OWNER, and
-%      the requirement is easy to miss because it is declared on the PARENT.
-%      `schemas/V_eta/draft/data_body.json` declares
-%      `statement -> subject_statement` with `mustBeNonEmpty: true`, while
-%      `sampled_body.json`'s own `depends_on` is `filter_id` ALONE -- so grepping
-%      the child for `statement` finds nothing and reads as "the requirement
-%      lapsed". It did not; `jSampledBody(statementId, ...)` takes the owner as
-%      its first argument for exactly that reason. Nothing mints a spike-time
-%      statement on the ensemble group-subject today: the only statements it
-%      carries are the two `term_assertion` kind assertions from
-%      migrators_j.element ('element type' = ensemble, 'ndi element class'), and
-%      a marked-point-process body hung off a kind assertion would be wrong.
-%      Emitting one with an EMPTY `statement` is the invented-empty-edge pattern
-%      and would quarantine under #37 RequiredDependencies, which is ARMED by
-%      default.
-%
-%      So the cache is recorded here as PROVENANCE (the `derived_from` edges)
-%      over the carrier that already holds the bytes, which is the half that
-%      can be built correctly today.
+%   3. NO CACHE, AND NO CACHE PROVENANCE. Decided by Jess Haley, 2026-10-22
+%      [no ensemble cache] (V_eta_ensemble_plan.md), replacing the cache
+%      clause of TEAM-SIGN-OFF [ensemble]: "the combined (times, neuron-id)
+%      array is not kept as a cache; NDI rebuilds it on read from the
+%      per-neuron trains, so no data body carries an `is_cache` marker ... A
+%      v1 ensemble's combined bytes are dropped only after every member
+%      neuron's train is verified present for that epoch." So this pass mints
+%      no `derived_from` edge (REPORT.derived_from_minted stays 0, kept so a
+%      reader of older reports finds the field), and when a map dissolves
+%      (item 1, whose conditions ARE that verification) the acquisition_epoch
+%      holding its combined bytes (`element_epoch_id`) leaves KEPT with it
+%      (REPORT.combined_bytes_dropped, REPORT.dropped_carrier_ids).
+%      ndi.element.ensemble/readtimeseries rebuilds the array on read.
+%      (Until 2026-10-22 this item kept the carrier and recorded `derived_from`
+%      provenance over it, waiting on a cache marker no schema declared.)
 %
 %   4. A STRANDED NEURON GETS NO EDGE. An edge to an id that is not in the
 %      migrated set is an ORPHAN, and orphans are the corpus gate (the
@@ -361,7 +308,6 @@ end
 % the binding rows' node and name (Jess Haley 2026-10-22 [vocabulary nodes]
 % L1, [derived from general]), not literals
 MEMBER_OF   = ndi.v2.vocabTerm('relation', 'member_of');
-DERIVED_FROM = ndi.v2.vocabTerm('relation', 'derived_from');
 
 kept   = structs;
 minted = {};
@@ -408,6 +354,8 @@ report.ensemble_maps_kept_train_missing = 0;  % a neuron has no train this epoch
 report.ensemble_maps_kept_no_neurons    = 0;  % no neuron_id_# edge at all
 report.ensemble_maps_kept_no_group      = 0;  % element_id is no migrated entity
 report.dissolved_map_ids                = {};
+report.combined_bytes_dropped           = 0;  % carriers dropped with their map
+report.dropped_carrier_ids              = {};
 report.changed                  = false;
 
 if isempty(structs)
@@ -591,20 +539,10 @@ for i = 1:numel(structs)
             end
         end
 
-        if carrierOk
-            dKey = ['d|' carrierId '|' neuronId '|' epochKey];
-            if ~isKey(seenEdge, dKey)
-                seenEdge(dKey) = true;
-                minted{end+1} = relationBody(carrierId, neuronId, DERIVED_FROM, ...
-                    [], epochKey, sessionId, ds, 'migrated_ensemble_cache_source'); %#ok<AGROW>
-                report.derived_from_minted = report.derived_from_minted + 1;
-                if ~isempty(epochKey)
-                    report.epoch_scoped_edges = report.epoch_scoped_edges + 1;
-                else
-                    report.unscoped_edges = report.unscoped_edges + 1;
-                end
-            end
-        end
+        % NO `derived_from` cache-provenance edge: Decided by Jess Haley,
+        % 2026-10-22 [no ensemble cache] -- the combined array is not kept as
+        % a cache at all; NDI rebuilds it on read from the per-neuron trains
+        % (ndi.element.ensemble/readtimeseries).
     end
 
     % D2: does THIS map dissolve? Only when everything it says is now said by
@@ -619,6 +557,13 @@ for i = 1:numel(structs)
     else
         report.ensemble_maps_dissolved = report.ensemble_maps_dissolved + 1;
         report.dissolved_map_ids{end+1} = baseField(s, 'id', ''); %#ok<AGROW>
+        % [no ensemble cache]: the combined bytes go with the map, now that
+        % every member's own train for this epoch is verified present
+        if carrierOk && isKey(idClass, carrierId) ...
+                && any(strcmp(idClass(carrierId), {'acquisition_epoch', 'element_epoch'}))
+            report.combined_bytes_dropped = report.combined_bytes_dropped + 1;
+            report.dropped_carrier_ids{end+1} = carrierId; %#ok<AGROW>
+        end
     end
 end
 
@@ -626,7 +571,8 @@ end
 if ~isempty(report.dissolved_map_ids)
     keepIdx = true(1, numel(kept));
     for i = 1:numel(kept)
-        keepIdx(i) = ~any(strcmp(baseField(kept{i}, 'id', ''), report.dissolved_map_ids));
+        keepIdx(i) = ~any(strcmp(baseField(kept{i}, 'id', ''), ...
+            [report.dissolved_map_ids, report.dropped_carrier_ids]));
     end
     kept = kept(keepIdx);
 end
