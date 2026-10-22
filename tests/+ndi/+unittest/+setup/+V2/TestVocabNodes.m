@@ -108,10 +108,11 @@ classdef TestVocabNodes < matlab.unittest.TestCase
             % node-less: the name the schema stores
             t = ndi.v2.vocabTerm('entity_type', 'culture', p);
             testCase.verifyEqual(t, struct('node', '', 'name', 'culture'));
-            % [derived from general]: the schema's new node is written, and
+            % [derived from general], [derived from label]: the schema's
+            % new node and PROV-O's label "wasDerivedFrom" are written, and
             % both nodes read as derived_from
             t = ndi.v2.vocabTerm('relation', 'derived_from', p);
-            testCase.verifyEqual(t, struct('node', 'prov:wasDerivedFrom', 'name', 'derived from'));
+            testCase.verifyEqual(t, struct('node', 'prov:wasDerivedFrom', 'name', 'wasDerivedFrom'));
             testCase.verifyTrue(ndi.v2.vocabIs('relation', ...
                 struct('node', 'RO:0001000', 'name', 'derived_from'), 'derived_from', p));
         end
@@ -145,6 +146,13 @@ classdef TestVocabNodes < matlab.unittest.TestCase
             testCase.verifyTrue(ndi.v2.vocabIs('relation', 'aliquot_of', 'sample_of', p));
             testCase.verifyTrue(ndi.v2.vocabIs('relation', ...
                 struct('node', 'ENVO:01003004', 'name', 'derives from part of'), 'passage_of', p));
+            % [derived from label]: "wasDerivedFrom" reads as derived_from,
+            % by node and, node-less, by the name the schema stores
+            testCase.verifyEqual(ndi.v2.vocabHandle('relation', ...
+                struct('node', 'prov:wasDerivedFrom', 'name', 'wasDerivedFrom'), p), 'derived_from');
+            testCase.verifyEqual(ndi.v2.vocabHandle('relation', 'wasDerivedFrom', p), 'derived_from');
+            testCase.verifyTrue(ndi.v2.vocabIs('relation', ...
+                struct('node', 'prov:wasDerivedFrom', 'name', 'derived_from'), 'derived_from', p));
             % K1: the obsolete contained_in node still reads
             testCase.verifyTrue(ndi.v2.vocabIs('relation', ...
                 struct('node', 'RO:0001018', 'name', 'contained_in'), 'contained_in', p));
@@ -188,7 +196,7 @@ rel = {
     'ENVO:01003004', 'derives from part of'
     'RO:0001025', 'located in'
     'schema:isPartOf', 'is part of'
-    'prov:wasDerivedFrom', 'derived from'
+    'prov:wasDerivedFrom', 'wasDerivedFrom'
     'owl:sameAs', 'sameAs'
     };
 reg = struct();
