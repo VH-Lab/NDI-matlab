@@ -223,51 +223,70 @@ jobs:
           free -m || true
           swapon --show || true
 
-      - name: Run the Soph V_eta migrate end-to-end test
-        # A shell step (not matlab-actions/run-command) so a background sampler
-        # can write into THIS step's log while MATLAB runs. The log streams
-        # live, so the last samples survive a lost runner and show whether
-        # memory or disk ran out, and when. The sampler is instrumentation only.
-        # The MATLAB code is unchanged; it is written to a script and run with
-        # setup-matlab's `matlab-batch` (which handles the license).
+      - name: Write the memory sampler
+        # Every 60 s: date, free -m, df -h /, and the MATLAB process RSS. The
+        # MATLAB step below starts it with its output aimed at MATLAB's own
+        # stdout (/proc/<pid>/fd/1), which is that step's live log, so the last
+        # samples survive a lost runner. It also appends to
+        # $RUNNER_TEMP/soph-sampler.log, printed by the last step when the
+        # runner survives. It stops when the MATLAB process it watches exits.
+        # Instrumentation only. (A shell step running `matlab -batch` or
+        # `matlab-batch` cannot be used instead: neither finds a license on the
+        # hosted runner, runs 39743874596 and 39744771099.)
         run: |
-          set -euo pipefail
-          (
-            set +e   # a failed sample must never stop the sampler
-            while true; do
-              echo "[sampler] $(date -u +%FT%TZ)"
-              free -m | sed 's/^/[sampler] /'
-              df -h / | sed 's/^/[sampler] /'
-              ps -o rss,cmd -C MATLAB --sort=-rss 2>/dev/null | head -3 | cut -c1-160 | sed 's/^/[sampler] /' || true
-              sleep 60
-            done
-          ) &
-          sampler=$!
-          trap 'kill "$sampler" 2>/dev/null || true' EXIT
-          cat > soph_ci_run.m <<'MATLAB'
-          addpath(genpath("src"));
-          addpath(genpath("tests"));
-          % THE RESOLVED DID-matlab, ahead of whatever MatBox installed, and
-          % proven: the run stops if did2 resolves anywhere else.
-          addpath(genpath(fullfile(pwd, "did-matlab", "src")));
-          didWhere = string(which("did2.convert.v1_to_v2"));
-          disp("DID-matlab " + string(getenv("DID_MATLAB_REF")) + " @ " + string(getenv("DID_MATLAB_SHA")) + " from " + didWhere);
-          assert(startsWith(didWhere, string(fullfile(pwd, "did-matlab"))), "did2 does not resolve to the checked-out DID-matlab: " + didWhere);
-          % Soph ALONE. On this first landing the test is report-only on its
-          % two census methods and its multi-session read-back counts
-          % (Soph's exact pass-1 unconverted set and final survivor set are
-          % MEASURED here before they are asserted); it hard-asserts
-          % 0 quarantine / 0 orphans, that the session opens on the
-          % did2sqlite backend, and calculator id-preservation. It SKIPS
-          % (never fails) when the corpus download is impossible.
-          results = runtests('ndi.unittest.migrate.TestMigrateLocalEtaSoph');
-          disp(results);
-          assertSuccess(results);
-          MATLAB
-          # `matlab-batch`, not `matlab -batch`: a plain `matlab -batch` finds no
-          # license on the hosted runner ("MathWorks Licensing Error 1", run
-          # 39743874596). setup-matlab installs matlab-batch for exactly this,
-          # and run-command uses it.
-          mb=$(command -v matlab-batch || echo /opt/hostedtoolcache/matlab-batch/v1/x64/matlab-batch)
-          echo "running MATLAB through $mb"
-          "$mb" "soph_ci_run"
+          cat > "$RUNNER_TEMP/soph_sampler.sh" <<'SAMPLER'
+          #!/bin/bash
+          # soph_sampler.sh <pid to watch> <file to also write to, e.g. /proc/<pid>/fd/1>
+          watch="$1"; out="$2"; log="${RUNNER_TEMP:-/tmp}/soph-sampler.log"
+          while kill -0 "$watch" 2>/dev/null; do
+            {
+              date -u +%FT%TZ
+              free -m
+              df -h /
+              ps -o rss,cmd -C MATLAB --sort=-rss 2>/dev/null | head -3 | cut -c1-160
+            } 2>&1 | sed 's/^/[sampler] /' | tee -a "$log" >> "$out" 2>/dev/null
+            sleep 60
+          done
+          SAMPLER
+          chmod +x "$RUNNER_TEMP/soph_sampler.sh"
+          bash -n "$RUNNER_TEMP/soph_sampler.sh"
+
+      - name: Run the Soph V_eta migrate end-to-end test
+        uses: matlab-actions/run-command@v2
+        with:
+          command: |
+            % THE MEMORY SAMPLER (instrumentation only): written by the step
+            % above, aimed at this process's stdout, i.e. this step's live log.
+            % A failure here never stops the test.
+            try
+                samplerPid = feature('getpid');
+                samplerSh = fullfile(getenv("RUNNER_TEMP"), "soph_sampler.sh");
+                [samplerStatus, samplerOut] = system(sprintf('nohup bash "%s" %d "/proc/%d/fd/1" > /dev/null 2>&1 &', samplerSh, samplerPid, samplerPid));
+                disp("memory sampler started for MATLAB pid " + string(samplerPid) + " (status " + string(samplerStatus) + ") " + string(samplerOut));
+            catch samplerErr
+                disp("memory sampler NOT started: " + string(samplerErr.message));
+            end
+            addpath(genpath("src"));
+            addpath(genpath("tests"));
+            % THE RESOLVED DID-matlab, ahead of whatever MatBox installed, and
+            % proven: the run stops if did2 resolves anywhere else.
+            addpath(genpath(fullfile(pwd, "did-matlab", "src")));
+            didWhere = string(which("did2.convert.v1_to_v2"));
+            disp("DID-matlab " + string(getenv("DID_MATLAB_REF")) + " @ " + string(getenv("DID_MATLAB_SHA")) + " from " + didWhere);
+            assert(startsWith(didWhere, string(fullfile(pwd, "did-matlab"))), "did2 does not resolve to the checked-out DID-matlab: " + didWhere);
+            % Soph ALONE. On this first landing the test is report-only on its
+            % two census methods and its multi-session read-back counts
+            % (Soph's exact pass-1 unconverted set and final survivor set are
+            % MEASURED here before they are asserted); it hard-asserts
+            % 0 quarantine / 0 orphans, that the session opens on the
+            % did2sqlite backend, and calculator id-preservation. It SKIPS
+            % (never fails) when the corpus download is impossible.
+            results = runtests('ndi.unittest.migrate.TestMigrateLocalEtaSoph');
+            disp(results);
+            assertSuccess(results);
+
+      - name: Print the memory samples (when the runner survived)
+        if: always()
+        run: |
+          f="$RUNNER_TEMP/soph-sampler.log"
+          if [ -f "$f" ]; then echo "$(grep -cE '^\[sampler\] [0-9]{4}-' "$f") sample(s); the last 120 lines:"; tail -n 120 "$f"; else echo "no sampler log at $f"; fi
