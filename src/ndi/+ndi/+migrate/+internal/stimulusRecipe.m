@@ -236,9 +236,9 @@ function t = CENTIMETRE
 t = struct('node', 'om:centimetre', 'name', 'centimetre');
 end
 function t = RADIAN
-% NewStim periodicstim: "in radians where 2*pi is 1 cycle". No radian term is
-% registered in did-schema yet, so a label (no node).
-t = struct('node', '', 'name', 'radian');
+% NewStim periodicstim: "in radians where 2*pi is 1 cycle" (om:radian,
+% did-schema term registry; recorded there as proposed)
+t = struct('node', 'om:radian', 'name', 'radian');
 end
 function t = AU
 t = struct('node', 'NCIT:C75765', 'name', 'Arbitrary Unit');

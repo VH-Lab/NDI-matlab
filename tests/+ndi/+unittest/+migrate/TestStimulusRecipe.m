@@ -93,7 +93,8 @@ classdef TestStimulusRecipe < matlab.unittest.TestCase
                 struct('node', 'EMPTY:0000260', 'name', 'frame'));
             testCase.verifyEqual(entryOf(r, 'viewing distance').unit, ...
                 struct('node', 'om:centimetre', 'name', 'centimetre'));
-            testCase.verifyEqual(entryOf(r, 'spatial phase').unit.name, 'radian');
+            testCase.verifyEqual(entryOf(r, 'spatial phase').unit, ...
+                struct('node', 'om:radian', 'name', 'radian'));
             wide = bar(); wide.rect = [0 0 800 600];
             testCase.verifyEqual(ndi.migrate.internal.stimulusRecipe(wide, ...
                 'periodicstim_bars').term, 'uniform luminance field');
