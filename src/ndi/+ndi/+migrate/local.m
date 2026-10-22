@@ -191,6 +191,16 @@ function result = local(path, options)
              'session/dataset root.'], path);
     end
 
+    % STEP MARKS (instrumentation only; nothing below depends on them). After
+    % each top-level step one "[migrate step]" line gives the step's wall
+    % time, the time since this function started, the process RSS (Linux
+    % only: VmRSS / VmHWM from /proc/self/status) and the current document
+    % count. The Soph runner was lost inside this function with nothing
+    % printed for the span (NDI-matlab Soph runs 39667921479 .. 39731147165);
+    % these lines say which step it reached and how much memory it held.
+    tStart = tic;
+    tStep = tStart;
+
     lockFile = fullfile(ndiDir, '.migrate.lock');
     lockHandle = acquireLock(lockFile);
     lockCleanup = onCleanup(@() releaseLock(lockHandle));
@@ -221,6 +231,8 @@ function result = local(path, options)
             backupCreated = true;
         end
     end
+    tStep = migrateStepMark(sprintf('read v1 bodies (%d)', numel(bodies)), ...
+        tStart, tStep, []);
 
     % Build the converter args. Only forward TargetVersion when it is NOT
     % the default 'V_delta': the default path must stay call-compatible with
@@ -254,7 +266,11 @@ function result = local(path, options)
                  'epochfiles cache get no recording observation.'], ME.message);
         end
     end
+    tStep = migrateStepMark(sprintf('navigatorEpochFiles (%d input bodies)', ...
+        numel(convertInput)), tStart, tStep, []);
     convertResult = did2.convert.v1_to_v2(convertInput, v2args{:});
+    tStep = migrateStepMark('pass 1 v1_to_v2', tStart, tStep, convertResult);
+    printMigrationNoteCounts(convertResult);
 
     % --- second pass: context-dependent (session-aware) deferrals ----------
     % Some V_eta classes cannot be migrated from a single document alone
@@ -721,6 +737,7 @@ function result = local(path, options)
                 ['Second-pass resolution of session-context deferrals ' ...
                  'failed (%s); leaving them quarantined.'], ME.message);
         end
+        tStep = migrateStepMark('resolveDeferred', tStart, tStep, convertResult);
         try
             [convertResult, ontologyRowReport] = ...
                 resolveOntologyRowSubjects(convertResult, bodies, options);
@@ -729,6 +746,7 @@ function result = local(path, options)
                 ['Second-pass ontology_table_row subject resolution failed ' ...
                  '(%s); leaving the rows as passthrough.'], ME.message);
         end
+        tStep = migrateStepMark('resolveOntologyRowSubjects', tStart, tStep, convertResult);
         try
             [convertResult, ontologyLabelReport] = ...
                 resolveOntologyLabelSubjects(convertResult, options);
@@ -737,6 +755,7 @@ function result = local(path, options)
                 ['Second-pass ontology_label subject resolution failed ' ...
                  '(%s); leaving the labels as passthrough.'], ME.message);
         end
+        tStep = migrateStepMark('resolveOntologyLabelSubjects', tStart, tStep, convertResult);
         try
             [convertResult, stimulusSequenceReport] = ...
                 resolveStimulusPresentations(convertResult, bodies, options);
@@ -745,6 +764,7 @@ function result = local(path, options)
                 ['Second-pass stimulus_presentation decomposition failed ' ...
                  '(%s); leaving presentations as passthrough.'], ME.message);
         end
+        tStep = migrateStepMark('resolveStimulusPresentations', tStart, tStep, convertResult);
         try
             [convertResult, regionSitesReport] = ...
                 resolvePathS(convertResult, options, 'sites');
@@ -753,6 +773,7 @@ function result = local(path, options)
                 ['Second-pass Path-S promotion failed (%s); leaving ' ...
                  'anatomical loci located-by-default.'], ME.message);
         end
+        tStep = migrateStepMark('resolvePathS(sites)', tStart, tStep, convertResult);
         try
             [convertResult, strainReport] = ...
                 resolveStrainAssembly(convertResult, options);
@@ -761,6 +782,7 @@ function result = local(path, options)
                 ['Second-pass strain assembly failed (%s); leaving the ' ...
                  'openminds Strain documents as passthrough.'], ME.message);
         end
+        tStep = migrateStepMark('resolveStrainAssembly', tStart, tStep, convertResult);
         try
             [convertResult, openmindsCitationsReport] = ...
                 did2.convert.resolveOpenmindsCitations( ...
@@ -774,6 +796,7 @@ function result = local(path, options)
                  'leaving the `openminds` documents as passthroughs, which ' ...
                  'is the state they are in without this pass.'], ME.message);
         end
+        tStep = migrateStepMark('resolveOpenmindsCitations', tStart, tStep, convertResult);
         try
             [convertResult, datasetEntitiesReport] = ...
                 resolveDatasetEntitiesPass(convertResult, options);
@@ -783,6 +806,7 @@ function result = local(path, options)
                  'the duplicate `dataset` entities and the unresolvable ' ...
                  '`migrated_session_membership` edges in place.'], ME.message);
         end
+        tStep = migrateStepMark('resolveDatasetEntities', tStart, tStep, convertResult);
         try
             [convertResult, subjectStrainReport] = ...
                 resolveSubjectStrainAssembly(convertResult, bodies, options);
@@ -797,6 +821,7 @@ function result = local(path, options)
                  'here loses the go-forward representation and no fact.'], ...
                 ME.message);
         end
+        tStep = migrateStepMark('resolveSubjectStrainAssembly', tStart, tStep, convertResult);
         try
             [convertResult, epochMintReport] = did2.convert.epochMint( ...
                 convertResult, ...
@@ -808,6 +833,7 @@ function result = local(path, options)
                 ['Second-pass epoch mint failed (%s); leaving the epoch ' ...
                  'association as the did_v1 `epochid` string.'], ME.message);
         end
+        tStep = migrateStepMark('epochMint', tStart, tStep, convertResult);
         try
             [convertResult, ensembleReport] = resolveEnsembleMembership( ...
                 convertResult, epochMintReport, options);
@@ -816,6 +842,7 @@ function result = local(path, options)
                 ['Second-pass ensemble membership failed (%s); leaving the ' ...
                  'ensemble map documents as passthrough.'], ME.message);
         end
+        tStep = migrateStepMark('resolveEnsembleMembership', tStart, tStep, convertResult);
         try
             [convertResult, epochAnchorReport] = ...
                 resolveEpochAnchorFold(convertResult, epochMintReport, options, ...
@@ -826,6 +853,7 @@ function result = local(path, options)
                  'stimulator anchors as pass-1 epoch_bounded_reference ' ...
                  'documents.'], ME.message);
         end
+        tStep = migrateStepMark('resolveEpochAnchorFold', tStart, tStep, convertResult);
         try
             [convertResult, recordingAttributionReport] = ...
                 resolveRecordingAttribution(convertResult, options);
@@ -835,6 +863,7 @@ function result = local(path, options)
                  'probe-attributed observations as pass-1 emitted them.'], ...
                 ME.message);
         end
+        tStep = migrateStepMark('resolveRecordingAttribution', tStart, tStep, convertResult);
         try
             [convertResult, sessionAnchorReport] = ...
                 did2.convert.resolveSessionAnchors( ...
@@ -848,6 +877,7 @@ function result = local(path, options)
                  'time references as pass-1 session_relative_reference / ' ...
                  'session_bounded_reference documents.'], ME.message);
         end
+        tStep = migrateStepMark('resolveSessionAnchors', tStart, tStep, convertResult);
         try
             % THE SAME FUNCTION the three DID-side call sites run, in the same
             % order (after epochMint + resolveSessionAnchors) so the two
@@ -874,6 +904,7 @@ function result = local(path, options)
                  'probemap and #30''s session-scoped observations in place, ' ...
                  'which is the state without this pass.'], ME.message);
         end
+        tStep = migrateStepMark('resolveEpochProbemap', tStart, tStep, convertResult);
         % UNCONDITIONALLY, whether or not the pass above ran: the transient
         % navigator epochs are not v1 documents (nor ingestion manifests) and
         % must never be written.
@@ -887,6 +918,7 @@ function result = local(path, options)
             convertResult.migrated = convertResult.migrated(keepIdx);
             convertResult.summary = recountSummary(convertResult);
         end
+        tStep = migrateStepMark('removeTransientNavigatorEpochs', tStart, tStep, convertResult);
         % the files that ARE on this computer get their size and MD5, as a
         % native V2 recording body does; an absent one stays as recorded
         try
@@ -898,6 +930,7 @@ function result = local(path, options)
             warning('NDI:migrate:locatedFileFactsFailed', ...
                 'Filling size/MD5 of located files failed (%s).', ME.message);
         end
+        tStep = migrateStepMark('fillLocatedFileFacts', tStart, tStep, convertResult);
         try
             % AFTER the epochprobemap fold (it re-attributes that pass's
             % per-epoch statements) and after epochMint (its epoch index is
@@ -913,6 +946,7 @@ function result = local(path, options)
                  'as they were, which is the state without this pass.'], ...
                 ME.message);
         end
+        tStep = migrateStepMark('resolveSliceTetanus', tStart, tStep, convertResult);
         try
             % A statement about an anatomical region targets that region's part
             % entity (Jess Haley, 2026-10-21; see
@@ -930,6 +964,7 @@ function result = local(path, options)
                  'statements failed (%s); leaving them on the subject, which ' ...
                  'is the state without this pass.'], ME.message);
         end
+        tStep = migrateStepMark('resolvePathS(located)', tStart, tStep, convertResult);
         try
             [convertResult, responseParametersReport] = ...
                 did2.convert.resolveResponseParameters( ...
@@ -944,6 +979,7 @@ function result = local(path, options)
                  '`stimulus_response_scalar_parameters_basic` documents with ' ...
                  'the leaf still carrying the edge.'], ME.message);
         end
+        tStep = migrateStepMark('resolveResponseParameters', tStart, tStep, convertResult);
         try
             [convertResult, lawnPlateReport] = ...
                 did2.convert.resolveLawnPlateSubjects( ...
@@ -957,6 +993,7 @@ function result = local(path, options)
                  'the E. coli patch and plate rows as passthroughs.'], ...
                 ME.message);
         end
+        tStep = migrateStepMark('resolveLawnPlateSubjects', tStart, tStep, convertResult);
         try
             [convertResult, imagedEntityReport] = ...
                 resolveImagedEntitySubjects(convertResult, bodies, options);
@@ -966,6 +1003,7 @@ function result = local(path, options)
                  'leaving every subject-less image as a passthrough.'], ...
                 ME.message);
         end
+        tStep = migrateStepMark('resolveImagedEntitySubjects', tStart, tStep, convertResult);
         try
             [convertResult, genericFileFoldReport] = ...
                 did2.convert.foldGenericFiles( ...
@@ -979,6 +1017,7 @@ function result = local(path, options)
                  '`generic_file` document as a passthrough, which is the ' ...
                  'state it is in without this pass.'], ME.message);
         end
+        tStep = migrateStepMark('foldGenericFiles', tStart, tStep, convertResult);
         try
             % TEAM DECISION 2026-08-11: `valid_interval` becomes a
             % boolean-valued `subject_statement`. One `validity_observation`
@@ -1012,6 +1051,7 @@ function result = local(path, options)
                  'here loses the go-forward representation, not the meaning.'], ...
                 ME.message);
         end
+        tStep = migrateStepMark('resolveValidIntervals', tStart, tStep, convertResult);
         try
             % #57 syncgraph half: un-gate syncgraph -> clock_alignment_policy by
             % supplying the session-document id a single-document migrator cannot
@@ -1032,6 +1072,7 @@ function result = local(path, options)
                  '`syncgraph` document as a passthrough, which is the state it ' ...
                  'is in without this pass.'], ME.message);
         end
+        tStep = migrateStepMark('resolveClockAlignment', tStart, tStep, convertResult);
         try
             [convertResult, softwareDedupReport] = ...
                 resolveSoftwareDedup(convertResult);
@@ -1040,6 +1081,7 @@ function result = local(path, options)
                 ['Second-pass software dedup failed (%s); leaving one ' ...
                  '`software` entity per consuming document.'], ME.message);
         end
+        tStep = migrateStepMark('resolveSoftwareDedup', tStart, tStep, convertResult);
     end
 
     % --- ingested files: point them at the bytes v1 already ingested --------
@@ -1054,6 +1096,7 @@ function result = local(path, options)
         [convertResult.migrated, ingestedFilesReport] = ...
             ndi.migrate.internal.settleIngestedFiles(convertResult.migrated, ndiDir);
     end
+    tStep = migrateStepMark('settleIngestedFiles', tStart, tStep, convertResult);
 
     wroteDst = false;
     wroteQuarantineFile = '';
@@ -1082,8 +1125,10 @@ function result = local(path, options)
             delete(quarantineFile);
         end
     end
+    tStep = migrateStepMark('write destination', tStart, tStep, convertResult);
 
     refReport = did2.validate.references(convertResult.migrated);
+    migrateStepMark('validate references', tStart, tStep, convertResult);
 
     result = struct();
     result.path = path;
@@ -1136,6 +1181,69 @@ function result = local(path, options)
             ['Migration of "%s" quarantined %d document(s); ' ...
              'ContinueOnError was false.'], ...
              path, numel(convertResult.quarantine));
+    end
+end
+
+% ---- instrumentation: one line per top-level step --------------------------
+
+function tNext = migrateStepMark(label, tStart, tStep, convertResult)
+%MIGRATESTEPMARK Print one "[migrate step]" line and start the next step clock.
+%   The line carries the step's own wall time, the time since
+%   ndi.migrate.local started, the process memory and, when CONVERTRESULT is a
+%   converter result, its migrated and quarantined counts. Memory is read from
+%   /proc/self/status (VmRSS = resident now, VmHWM = peak resident); where that
+%   file does not exist (not Linux) the memory field is left out, so a missing
+%   figure is visibly absent rather than printed as 0. Changes nothing.
+    mem = '';
+    try
+        if isfile('/proc/self/status')
+            txt = fileread('/proc/self/status');
+            rss = regexp(txt, 'VmRSS:\s*(\d+)\s*kB', 'tokens', 'once');
+            hwm = regexp(txt, 'VmHWM:\s*(\d+)\s*kB', 'tokens', 'once');
+            if ~isempty(rss)
+                mem = sprintf('  VmRSS %.0f MB', str2double(rss{1}) / 1024);
+            end
+            if ~isempty(hwm)
+                mem = sprintf('%s  VmHWM %.0f MB', mem, str2double(hwm{1}) / 1024);
+            end
+        end
+    catch
+        mem = '';
+    end
+    docs = '';
+    if isstruct(convertResult) && isfield(convertResult, 'migrated')
+        nQ = 0;
+        if isfield(convertResult, 'quarantine'); nQ = numel(convertResult.quarantine); end
+        docs = sprintf('  documents %d  quarantined %d', ...
+            numel(convertResult.migrated), nQ);
+    end
+    fprintf('[migrate step] %-40s step %9.1f s  elapsed %9.1f s%s%s\n', ...
+        label, toc(tStep), toc(tStart), mem, docs);
+    tNext = tic;
+end
+
+function printMigrationNoteCounts(convertResult)
+%PRINTMIGRATIONNOTECOUNTS Pass 1's migration-note counts, one line per kind.
+%   did2.convert.reportNote's notes ride on summary.migration_notes; their
+%   number is part of what pass 1 holds in memory, so it is printed beside the
+%   step marks. A summary with no such field prints that it has none.
+    if ~isfield(convertResult, 'summary') || ~isstruct(convertResult.summary) ...
+            || ~isfield(convertResult.summary, 'migration_notes')
+        fprintf('[migrate step]   pass-1 migration notes: no migration_notes field\n');
+        return;
+    end
+    notes = convertResult.summary.migration_notes;
+    if ~isstruct(notes) || isempty(fieldnames(notes))
+        fprintf('[migrate step]   pass-1 migration notes: 0 kinds\n');
+        return;
+    end
+    kinds = fieldnames(notes);
+    for k = 1:numel(kinds)
+        n = notes.(kinds{k});
+        kept = NaN;
+        if isfield(n, 'ids'); kept = numel(n.ids); end
+        fprintf('[migrate step]   pass-1 migration notes: %-28s %d note(s), %d id(s) held\n', ...
+            kinds{k}, n.count, kept);
     end
 end
 

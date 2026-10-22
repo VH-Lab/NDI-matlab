@@ -190,25 +190,78 @@ jobs:
             matbox.installRequirements(nditools.projectdir());
             matbox.installRequirements(fullfile(pwd, "tests"));
 
+      - name: Add a swapfile (memory exhaustion becomes slowness)
+        # The #88-pipeline Soph runs lost their runner ("The runner has received
+        # a shutdown signal") at a consistent work point inside
+        # ndi.migrate.local, which fits the VM running out of memory. A swapfile
+        # turns that into slowness the 350-minute timeout and the sampler below
+        # can show. GUARDED: it goes on whichever of / and /mnt has the most
+        # free space, only if 20 GB stay free for the corpus and the migrated
+        # database after it, and a failure here never fails the job.
+        continue-on-error: true
+        run: |
+          set -x
+          free -m || true
+          swapon --show || true
+          df -h / /mnt || true
+          best=""; bestAvail=0
+          for d in /mnt /; do
+            a=$(df --output=avail -BG "$d" 2>/dev/null | tail -1 | tr -dc 0-9)
+            if [ -n "$a" ] && [ "$a" -gt "$bestAvail" ]; then best="$d"; bestAvail="$a"; fi
+          done
+          size=$(( bestAvail - 20 )); [ "$size" -gt 16 ] && size=16
+          if [ -z "$best" ] || [ "$size" -lt 4 ]; then
+            echo "SWAP: not added (most free space ${bestAvail} GB on '${best}'; keeping 20 GB free)"
+            exit 0
+          fi
+          f="${best%/}/soph-swapfile"
+          if sudo fallocate -l "${size}G" "$f" && sudo chmod 600 "$f" && sudo mkswap "$f" && sudo swapon "$f"; then
+            echo "SWAP: added ${size} GB at $f"
+          else
+            echo "SWAP: adding ${size} GB at $f FAILED; continuing without it"
+          fi
+          free -m || true
+          swapon --show || true
+
       - name: Run the Soph V_eta migrate end-to-end test
-        uses: matlab-actions/run-command@v2
-        with:
-          command: |
-            addpath(genpath("src"));
-            addpath(genpath("tests"));
-            % THE RESOLVED DID-matlab, ahead of whatever MatBox installed, and
-            % proven: the run stops if did2 resolves anywhere else.
-            addpath(genpath(fullfile(pwd, "did-matlab", "src")));
-            didWhere = string(which("did2.convert.v1_to_v2"));
-            disp("DID-matlab " + string(getenv("DID_MATLAB_REF")) + " @ " + string(getenv("DID_MATLAB_SHA")) + " from " + didWhere);
-            assert(startsWith(didWhere, string(fullfile(pwd, "did-matlab"))), "did2 does not resolve to the checked-out DID-matlab: " + didWhere);
-            % Soph ALONE. On this first landing the test is report-only on its
-            % two census methods and its multi-session read-back counts
-            % (Soph's exact pass-1 unconverted set and final survivor set are
-            % MEASURED here before they are asserted); it hard-asserts
-            % 0 quarantine / 0 orphans, that the session opens on the
-            % did2sqlite backend, and calculator id-preservation. It SKIPS
-            % (never fails) when the corpus download is impossible.
-            results = runtests('ndi.unittest.migrate.TestMigrateLocalEtaSoph');
-            disp(results);
-            assertSuccess(results);
+        # A shell step (not matlab-actions/run-command) so a background sampler
+        # can write into THIS step's log while MATLAB runs. The log streams
+        # live, so the last samples survive a lost runner and show whether
+        # memory or disk ran out, and when. The sampler is instrumentation only.
+        # The MATLAB code is unchanged; it is written to a script and run with
+        # `matlab -batch` (setup-matlab puts `matlab` on the PATH).
+        run: |
+          set -euo pipefail
+          (
+            set +e   # a failed sample must never stop the sampler
+            while true; do
+              echo "[sampler] $(date -u +%FT%TZ)"
+              free -m | sed 's/^/[sampler] /'
+              df -h / | sed 's/^/[sampler] /'
+              ps -o rss,cmd -C MATLAB --sort=-rss 2>/dev/null | head -3 | cut -c1-160 | sed 's/^/[sampler] /' || true
+              sleep 60
+            done
+          ) &
+          sampler=$!
+          trap 'kill "$sampler" 2>/dev/null || true' EXIT
+          cat > soph_ci_run.m <<'MATLAB'
+          addpath(genpath("src"));
+          addpath(genpath("tests"));
+          % THE RESOLVED DID-matlab, ahead of whatever MatBox installed, and
+          % proven: the run stops if did2 resolves anywhere else.
+          addpath(genpath(fullfile(pwd, "did-matlab", "src")));
+          didWhere = string(which("did2.convert.v1_to_v2"));
+          disp("DID-matlab " + string(getenv("DID_MATLAB_REF")) + " @ " + string(getenv("DID_MATLAB_SHA")) + " from " + didWhere);
+          assert(startsWith(didWhere, string(fullfile(pwd, "did-matlab"))), "did2 does not resolve to the checked-out DID-matlab: " + didWhere);
+          % Soph ALONE. On this first landing the test is report-only on its
+          % two census methods and its multi-session read-back counts
+          % (Soph's exact pass-1 unconverted set and final survivor set are
+          % MEASURED here before they are asserted); it hard-asserts
+          % 0 quarantine / 0 orphans, that the session opens on the
+          % did2sqlite backend, and calculator id-preservation. It SKIPS
+          % (never fails) when the corpus download is impossible.
+          results = runtests('ndi.unittest.migrate.TestMigrateLocalEtaSoph');
+          disp(results);
+          assertSuccess(results);
+          MATLAB
+          matlab -batch "soph_ci_run"
