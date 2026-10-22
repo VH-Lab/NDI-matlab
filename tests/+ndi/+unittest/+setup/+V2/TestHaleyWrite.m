@@ -846,14 +846,14 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             cs = cs(cellfun(@(d) any(strcmp(edge(d, 'referent_id'), cellfun(@(r) r.base.id, rec, ...
                 'UniformOutput', false))), cs));
             testCase.verifyNumElements(cs, 1);
-            dims = cs{1}.coordinate_system.dimensions;
+            dims = cs{1}.coordinate_system.axes;   % [coordinate system names]
             testCase.verifyEqual(dims(1).axis.node, 'STATO:0000006', 'x-axis');
             testCase.verifyEqual(dims(2).axis.node, 'STATO:0000008', 'y-axis');
             testCase.verifyEqual(dims(1).positive_direction.name, 'image right');
             testCase.verifyEqual(dims(1).positive_direction.node, 'EMPTY:0000311');
             testCase.verifyEqual(dims(2).positive_direction.name, 'image down');
             testCase.verifyEqual(dims(2).positive_direction.node, 'EMPTY:0000312');
-            testCase.verifyEqual(cs{1}.coordinate_system.origin.node, 'EMPTY:0000310', ...
+            testCase.verifyEqual(cs{1}.coordinate_system.reference_point.node, 'EMPTY:0000310', ...
                 'image upper-left corner');
             testCase.verifyEqual(dims(1).spacing.meters, 1e-3 / 33, 'AbsTol', 1e-15);
             video = byId(edge(cs{1}, 'referent_id'));
