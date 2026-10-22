@@ -43,7 +43,7 @@ function out = ecoliDocuments(dataParentDir, session, R, subjectIds, options)
 %   per-patch values are left out; its mask is still stored.
 %
 %   Per image with an ecoli/images TIFF (when raw/ exists):
-%     intensity_calculation  the plate's `fluorescence intensity`, method
+%     intensity calculation  the plate's `fluorescence intensity`, method
 %                         `normalization to background illumination`: the
 %                         TIFF, by location (opaque_body, not ingested), from
 %                         the raw image's recording and its background image's
@@ -54,19 +54,19 @@ function out = ecoliDocuments(dataParentDir, session, R, subjectIds, options)
 %   Per analysed image, all from the normalized image (input):
 %     coordinate_system   the image's pixel grid, as part A's (only when
 %                         bacteria.mat metaData gives the image's `scale`)
-%     label_calculation   the plate's patch mask, variable `Imaging Region of
+%     label calculation   the plate's patch mask, variable `Imaging Region of
 %                         Interest` with the condition `Location` = bacterial
 %                         patch (decision #113): a bool per pixel
 %                         (ingested body) keyed [Y-coordinate, X-coordinate],
 %                         method `image segmentation`; the mask reaches
 %                         0.5 mm beyond each patch (in its body's description)
-%     item_calculation    the plate's `nearest bacterial patch` map
+%     item calculation    the plate's `nearest bacterial patch` map
 %                         (ecoli/closest/<image>.png), a 0-based index into
 %                         the patch subjects -- only for a matched image
 %   and per matched detected patch, about its patch subject, from the image
 %   and the mask, each `fluorescence intensity` in background-normalized
 %   arbitrary units, told apart by method and conditions:
-%     intensity_calculation  yPeak: method `maximum`
+%     intensity calculation  yPeak: method `maximum`
 %                            yOuterEdge: condition `location` = `bacterial
 %                            patch edge`
 %                            centerAmplitude: method `mean`, condition
@@ -76,12 +76,12 @@ function out = ecoliDocuments(dataParentDir, session, R, subjectIds, options)
 %                            `peak amplitude` (EMPTY:0000349), method
 %                            parameter `reference point` = `bacterial patch
 %                            edge` (decision #123)
-%     length_calculation     xPeak, `distance` (mm -> m), conditions
+%     length calculation     xPeak, `distance` (mm -> m), conditions
 %                            `reference point` = `bacterial patch edge` and
 %                            `distance end point` = `bacterial patch
 %                            fluorescence peak`
-%     score_calculation      `circularity` (0-1)
-%     intensity_calculation  the patch's profile curve, method `mean`
+%     score calculation      `circularity` (0-1)
+%     intensity calculation  the patch's profile curve, method `mean`
 %                            (analyzeGFP lawnProfiles.pixelValuesNormalized,
 %                            its row for this patch) in an ingested float64
 %                            body keyed by `distance` (regular, 1 um steps,
@@ -220,13 +220,13 @@ for k = 1:height(R)
     if rawMode && isfile(normFile)
         inputs = {imageId};
         if ~isempty(bgEpoch), inputs{end+1} = options.RecordingStatements(bgEpoch); end %#ok<AGROW>
-        nm = did2.build.statement('intensity_calculation', subjectIds(plate), fi, [], ...
+        nm = did2.build.statement('calculation', subjectIds(plate), fi, [], ...
             'DataBody', true, 'DatumType', 'uint16', ...
             'Method', haleyTerm('normalization to background illumination'), ...
             'InputIds', inputs, calc{:}, 'Notes', ...
             ['The raw image (saturated pixels filled by linear interpolation) times the ' ...
             'maximum of its smoothed background image, divided by that smoothed image, ' ...
-            'rounded to uint16 (analyzeLawnProfiles imageNormalized).']);
+            'rounded to uint16 (analyzeLawnProfiles imageNormalized).'], 'ValueKind', 'intensity');
         info = dir(normFile);
         nb = did2.build.document('opaque_body', struct('format', fileFormat('EDAM:format_3591', 'TIFF'), ...
             'filename', sprintf('%04d.tiff', n), 'size_bytes', info.bytes, ...
@@ -279,12 +279,12 @@ for k = 1:height(R)
     if ~rawMode && ~isempty(bgEpoch)
         inputs{end+1} = options.RecordingStatements(bgEpoch); %#ok<AGROW>
     end
-    ms = did2.build.statement('label_calculation', subjectIds(plate), ...
+    ms = did2.build.statement('calculation', subjectIds(plate), ...
         haleyTerm('region of interest'), [], 'DataBody', true, 'DatumType', 'bool', ...
         'Keys', keys, 'Method', haleyTerm('image segmentation'), ...
         'Conditions', did2.build.list(did2.build.condition(haleyTerm('location'), ...
             'Term', haleyTerm('bacterial patch'))), ...
-        'InputIds', inputs, calc{:});
+        'InputIds', inputs, calc{:}, 'ValueKind', 'label');
     docs = [docs, {ms, ingestedBody(ms, mask, 'bool', keys, sid, ...
         sprintf('The patch mask (1 = within 0.5 mm of a detected patch), from mask/%04d.png.', n))}]; %#ok<AGROW>
     out.counts.mask = out.counts.mask + 1;
@@ -349,10 +349,10 @@ for k = 1:height(R)
             v = slot(c) - 1;
             dt = 'uint8';
             if numel(pIds) > 255, dt = 'uint16'; end
-            np = did2.build.statement('item_calculation', subjectIds(plate), ...
+            np = did2.build.statement('calculation', subjectIds(plate), ...
                 haleyTerm('nearest bacterial patch'), [], 'DataBody', true, 'DatumType', dt, ...
                 'Keys', keys, 'InputIds', {ms.base.id}, ...
-                'Edges', struct('item_id', {pIds}), calc{:}, match{:});
+                'Edges', struct('item_id', {pIds}), calc{:}, match{:}, 'ValueKind', 'item');
             docs = [docs, {np, ingestedBody(np, v, dt, keys, sid, ...
                 'Each pixel''s nearest patch: a 0-based index into item_id.')}]; %#ok<AGROW>
             out.counts.nearest_patch = out.counts.nearest_patch + 1;
@@ -370,14 +370,14 @@ for k = 1:height(R)
         % the profile curve first: the values below are read off it
         fromCurve = in;
         if ~isempty(curves)
-            pc = did2.build.statement('intensity_calculation', patch, fi, [], ...
+            pc = did2.build.statement('calculation', patch, fi, [], ...
                 'DataBody', true, 'DatumType', 'float64', 'Keys', curves.keys, ...
                 'Conditions', did2.build.list(did2.build.condition(haleyTerm('reference point'), ...
                     'Term', patchEdge)), ...
                 'Method', haleyTerm('mean'), ...
                 'MethodParameters', did2.build.list(did2.build.parameter(haleyTerm('bin width'), ...
                     'Value', 1e-6, 'Unit', haleyTerm('meter'), 'SourceValue', '0.001', 'SourceUnit', ndi.setup.V2.sourceUnit('mm'))), ...
-                in{:}, calc{:}, match{:});
+                in{:}, calc{:}, match{:}, 'ValueKind', 'intensity');
             docs = [docs, {pc, ingestedBody(pc, curves.Y(j, :), 'float64', curves.keys, sid, ...
                 ['Mean background-normalized intensity at each distance from the patch edge ' ...
                 '(lawnProfiles pixelValuesNormalized); NaN where the patch has no pixels.'], 'NaN')}]; %#ok<AGROW>
@@ -388,8 +388,8 @@ for k = 1:height(R)
             col = intensityValues{q, 1};
             if ~ismember(col, r.Properties.VariableNames) || isnan(r.(col)), continue; end
             v = did2.build.valueCell('intensity', double(r.(col)));
-            docs{end+1} = did2.build.statement('intensity_calculation', patch, fi, v, ...
-                intensityValues{q, 2}{:}, fromCurve{:}, calc{:}, match{:}); %#ok<AGROW>
+            docs{end+1} = did2.build.statement('calculation', patch, fi, v, ...
+                intensityValues{q, 2}{:}, fromCurve{:}, calc{:}, match{:}, 'ValueKind', 'intensity'); %#ok<AGROW>
             out.counts.patch_values = out.counts.patch_values + 1;
             if strcmp(col, 'borderAmplitude')
                 out.borderValues(end+1) = struct('imageNum', n, 'row', j, 'patchId', patch, ...
@@ -398,19 +398,19 @@ for k = 1:height(R)
         end
         if ismember('xPeak', r.Properties.VariableNames) && ~isnan(r.xPeak)
             v = did2.build.valueCell('length', r.xPeak * 1e-3, 'SourceValue', r.xPeak, 'SourceUnit', ndi.setup.V2.sourceUnit('mm'));
-            docs{end+1} = did2.build.statement('length_calculation', patch, ...
+            docs{end+1} = did2.build.statement('calculation', patch, ...
                 haleyTerm('distance'), v, 'Conditions', did2.build.list( ...
                     did2.build.condition(haleyTerm('reference point'), 'Term', patchEdge), ...
                     did2.build.condition(haleyTerm('distance end point'), ...
                         'Term', haleyTerm('bacterial patch fluorescence peak'))), ...
-                fromCurve{:}, calc{:}, match{:}); %#ok<AGROW>
+                fromCurve{:}, calc{:}, match{:}, 'ValueKind', 'length'); %#ok<AGROW>
             out.counts.patch_values = out.counts.patch_values + 1;
         end
         if ismember('circularity', r.Properties.VariableNames) && ~isnan(r.circularity)
             v = did2.build.valueCell('score', r.circularity, 'Fields', struct( ...
                 'scale', haleyTerm('circularity'), 'scale_min', 0, 'scale_max', 1));
-            docs{end+1} = did2.build.statement('score_calculation', patch, ...
-                haleyTerm('circularity'), v, in{:}, calc{:}, match{:}); %#ok<AGROW>
+            docs{end+1} = did2.build.statement('calculation', patch, ...
+                haleyTerm('circularity'), v, in{:}, calc{:}, match{:}, 'ValueKind', 'score'); %#ok<AGROW>
             out.counts.patch_values = out.counts.patch_values + 1;
         end
     end

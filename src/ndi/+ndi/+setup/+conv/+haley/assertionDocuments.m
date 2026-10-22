@@ -2,7 +2,7 @@ function out = assertionDocuments(session, S, subjectIds, options)
 %ASSERTIONDOCUMENTS Stage 7 (Haley): what one session's subjects are.
 %
 %   OUT = ndi.setup.conv.haley.assertionDocuments(SESSION, S, SUBJECTIDS)
-%   builds the term_assertion documents about the subjects of the one-row
+%   builds the term assertion documents about the subjects of the one-row
 %   session table SESSION (from sessionList, with `session_id` assigned). S
 %   is the subject table (subjectList); SUBJECTIDS maps each subject's
 %   local_identifier to its document id (sessionDocuments returns it).
@@ -23,7 +23,7 @@ function out = assertionDocuments(session, S, subjectIds, options)
 %   about a type holds of each instance); it is stated here only when no
 %   strain entity is known.
 %     assay plate  inclusion in analysis (EMPTY:0000314) = false
-%                              (logical_assertion), where the source excludes
+%                              (logical assertion), where the source excludes
 %                              it (decision #2: tagged, not dropped). Per plate:
 %                              no plate has some videos excluded and others not.
 %                              Its reason, where one was written, is the
@@ -34,7 +34,7 @@ function out = assertionDocuments(session, S, subjectIds, options)
 %                              is marked `include = no` (decision #73). The
 %                              day's flag itself tags nothing: the lab's
 %                              analysis excludes by plate.
-%     assay plate  video recording (NCIT:C91063) = false (logical_assertion),
+%     assay plate  video recording (NCIT:C91063) = false (logical assertion),
 %                              on a plate never filmed (subjectList `filmed`
 %                              false), noted "Prepared but not filmed: no
 %                              video." (as above, a `reason for video
@@ -58,12 +58,12 @@ function out = assertionDocuments(session, S, subjectIds, options)
 %                              the plate's kind is not its patches' (tenet
 %                              T17). NCIT Sample Type is not written: it is
 %                              left for real samples (#139).
-%     assay-plate patch  diameter (PATO:0001334), length_assertion: the
+%     assay-plate patch  diameter (PATO:0001334), length assertion: the
 %                              plate's target patch diameter (`lawnDiameter`,
 %                              mm -> m), with condition value basis
 %                              (EMPTY:0000298) = target (EMPTY:0000299): the
 %                              design, not a measurement.
-%     assay plate  spacing (NCIT:C45786), length_assertion: the plate's target
+%     assay plate  spacing (NCIT:C45786), length assertion: the plate's target
 %                              patch spacing (`lawnSpacing`, mm -> m), with
 %                              the same condition.
 %   The strain is an `instance_of` relation to the dataset-level strain
@@ -129,7 +129,7 @@ plateKind = struct('assay_plate', 'assay plate', 'acclimation_plate', 'acclimati
 for k = 1:height(S)
     id = S.local_identifier{k};
     if isfield(plateKind, S.kind{k})
-        out = assert1(out, id, 'term_assertion', haleyTerm('material type'), ...
+        out = assert1(out, id, 'term', haleyTerm('material type'), ...
             haleyTerm(plateKind.(S.kind{k})), struct(), struct(), 'plate_material_type');
     end
     switch S.kind{k}
@@ -138,7 +138,7 @@ for k = 1:height(S)
         case 'patch'
             if hasBacteria && ~isempty(S.bacteria{k})
                 out = organismAssertions(out, id, S.bacteria{k}, 'patch', struct());
-                out = assert1(out, id, 'term_assertion', haleyTerm('culture type'), ...
+                out = assert1(out, id, 'term', haleyTerm('culture type'), ...
                     haleyTerm('bacterial patch'), struct(), struct(), 'patch_culture_type');
             end
             if hasDiameter
@@ -188,14 +188,14 @@ end
 
         function speciesOf(st)
             if ~hasSpecies(st), return; end
-            out = assert1(out, id, 'term_assertion', haleyTerm('species'), ...
+            out = assert1(out, id, 'term', haleyTerm('species'), ...
                 did2.build.term(st.species.node, st.species.name), struct(), fields, [who '_species']);
         end
 
         function sexOf(st)
             if isfield(st, 'biological_sex') && ~isempty(st.biological_sex)
                 sx = st.biological_sex;
-                out = assert1(out, id, 'term_assertion', did2.build.term('PATO:0000047', 'biological sex'), ...
+                out = assert1(out, id, 'term', did2.build.term('PATO:0000047', 'biological sex'), ...
                     did2.build.term(char(sx.node), char(sx.name)), struct(), fields, [who '_sex']);
             end
         end
@@ -209,7 +209,7 @@ end
 
     function out = logical1(out, id, variable, counter, notes)
         % a false logical assertion: the plate is NOT what VARIABLE names
-        out = assert1(out, id, 'logical_assertion', variable, false, struct(), struct(), ...
+        out = assert1(out, id, 'logical', variable, false, struct(), struct(), ...
             counter, notes);
     end
 
@@ -220,7 +220,7 @@ end
         end
         n = numel(out.documents);
         v = did2.build.valueCell('length', mm * 1e-3, 'SourceValue', mm, 'SourceUnit', ndi.setup.V2.sourceUnit('mm'));
-        out = assert1(out, subject, 'length_assertion', haleyTerm(name), v, struct(), ...
+        out = assert1(out, subject, 'length', haleyTerm(name), v, struct(), ...
             struct(), counter, '', asTarget);
         if numel(out.documents) > n
             ids = {};
@@ -229,7 +229,7 @@ end
         end
     end
 
-    function out = assert1(out, id, leaf, variable, value, edges, fields, counter, notes, conditions)
+    function out = assert1(out, id, kind, variable, value, edges, fields, counter, notes, conditions)
         if nargin < 9
             notes = '';
         end
@@ -249,8 +249,9 @@ end
         if ~isempty(conditions)
             noteArgs = [noteArgs, {'Conditions', conditions}];
         end
-        out.documents{end+1} = did2.build.statement(leaf, subjectIds(id), ...
-            variable, value, 'Edges', edges, 'Fields', fields, 'SessionId', sid, noteArgs{:});
+        out.documents{end+1} = did2.build.statement('assertion', subjectIds(id), ...
+            variable, value, 'Edges', edges, 'Fields', fields, 'SessionId', sid, noteArgs{:}, ...
+            'ValueKind', kind);
         out.counts.(counter) = out.counts.(counter) + 1;
     end
 end

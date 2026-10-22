@@ -36,7 +36,7 @@ function out = densityDocuments(dataParentDir, sessions, built, options)
 %                         the patches of that condition (joint fits: of OD600
 %                         0.5-2), each `member_of` it
 %     directed_relation   patch member_of group
-%     model_fit_calculation  about the group, variable `fluorescence intensity`
+%     model_fit calculation  about the group, variable `fluorescence intensity`
 %                         (unit `arbitrary unit per millisecond`): the line
 %                         (model `linear`, a label), its independent variables
 %                         (`bacteria growth duration after seeding`, min; and
@@ -60,7 +60,7 @@ function out = densityDocuments(dataParentDir, sessions, built, options)
 %   In each C. elegans session (OUT.sessionDocuments{k}), the estimates
 %   labelEncounters made from the fits, about the PATCHES (method `prediction
 %   from a fitted model`, variable `fluorescence intensity`, a.u. per ms):
-%     intensity_calculation  per assay-plate patch a worm encountered:
+%     intensity calculation  per assay-plate patch a worm encountered:
 %                         encounter.mat borderAmplitude at each encounter on
 %                         it, keyed `encounter onset time` (the onsets of the
 %                         worms' encounter lists, counted from the start of
@@ -70,7 +70,7 @@ function out = densityDocuments(dataParentDir, sessions, built, options)
 %                         fit matches), the worms' encounter lists and the
 %                         patch's seeding dose (#122); condition the planned
 %                         growth group
-%     intensity_calculation  per acclimation-plate patch (`<plate>_patch0001`,
+%     intensity calculation  per acclimation-plate patch (`<plate>_patch0001`,
 %                         skipped when the subject list has none): the
 %                         estimate at the pick (encounter.mat
 %                         borderAmplitudeGrowth), from the 200 uL fit at the
@@ -80,7 +80,7 @@ function out = densityDocuments(dataParentDir, sessions, built, options)
 %   Each value is checked against the fit it names (OUT.checks
 %   .encounterDisagrees). Beside each estimate, its RELATIVE DENSITY
 %   (decision #99; modelExploit and fig3_single):
-%     concentration_calculation  `relative cell density`, in OD600
+%     concentration calculation  `relative cell density`, in OD600
 %                         equivalents (concentration's `od600` canonical,
 %                         and the source pair, source unit OD600; a schema
 %                         before od600 gets the source pair alone): 10 x the estimate / the
@@ -96,8 +96,8 @@ function out = densityDocuments(dataParentDir, sessions, built, options)
 %                         model does. An estimate of NaN (no fit matched)
 %                         stays NaN. The model works with its log10.
 %   With no reference (encounter.mat lacks the columns, or not exactly one
-%   OD600 10 group matches) or no `concentration_calculation` leaf, none is
-%   written and OUT.skipped says why.
+%   OD600 10 group matches), no concentration calculation is written and
+%   OUT.skipped says why.
 %
 %   Options: 'DatasetSessionId', 'SoftwareId', 'InterpreterId',
 %   'OperatingSystemId' (the run environment, as stage 10), 'FitsFile',
@@ -294,12 +294,12 @@ for i = 1:numel(fits)
     end
 
     inputs = L.statementId(q.sel & ~cellfun(@isempty, L.statementId))';
-    fit = did2.build.statement('model_fit_calculation', grp.base.id, ...
+    fit = did2.build.statement('calculation', grp.base.id, ...
         haleyTerm('fluorescence intensity'), fitValue(q), ...
         'Conditions', conditionsOf(q), 'Method', haleyTerm('ordinary least squares estimation'), ...
         'InputIds', inputs, 'TimeReferenceIds', timeIds, ...
         'SessionId', dsid, env{:}, 'Notes', ['Border amplitude divided by exposure time ' ...
-        '(a.u. per ms) against growth time (min), as plotForagingGFP fits it.']);
+        '(a.u. per ms) against growth time (min), as plotForagingGFP fits it.'], 'ValueKind', 'model_fit');
     out.datasetDocuments{end+1} = fit;
     fitIds{i} = fit.base.id;
     fits(i) = q;
@@ -412,14 +412,14 @@ for k = 1:numel(built)
             end
             onsetKeys = did2.build.list(did2.build.key(haleyTerm('encounter onset time'), ...
                 numel(a), 'Values', onsets, 'Unit', haleyTerm('second')));
-            docs{end+1} = did2.build.statement('intensity_calculation', a(1).patchId, fluorescence, ...
+            docs{end+1} = did2.build.statement('calculation', a(1).patchId, fluorescence, ...
                 did2.build.valueCell('intensity', [a.value]), 'Keys', onsetKeys, ...
                 'Method', prediction, extra{:}, 'InputIds', in, 'SessionId', sid, ...
                 'TimeReferenceIds', {a(1).timeId}, env{:}, 'Notes', ...
                 ['Border amplitude per ms of exposure at each encounter''s onset, ' ...
                 'from the fit for the patch''s seeding condition at its growth time ' ...
                 '(encounter.mat lawnGrowth, min); 0 for a patch of LB alone; NaN where no fit ' ...
-                'matches (labelEncounters).']); %#ok<AGROW>
+                'matches (labelEncounters).'], 'ValueKind', 'intensity'); %#ok<AGROW>
             out.counts.patches = out.counts.patches + 1;
             out.counts.estimates = out.counts.estimates + 1;
             if ~isempty(rd)
@@ -452,12 +452,12 @@ for k = 1:numel(built)
         if isKey(seeds, subjectIds(accPatch))
             gIn{end+1} = seeds(subjectIds(accPatch)); %#ok<AGROW>
         end
-        docs = [docs, {ref, did2.build.statement('intensity_calculation', subjectIds(accPatch), ...
+        docs = [docs, {ref, did2.build.statement('calculation', subjectIds(accPatch), ...
             fluorescence, did2.build.valueCell('intensity', p.value), 'Method', prediction, ...
             'InputIds', gIn, 'SessionId', sid, 'TimeReferenceIds', {ref.base.id}, env{:}, ...
             'Notes', ['Border amplitude per ms of exposure when the worms were picked from ' ...
             'this plate, from the 200 uL fit at the plate''s growth time then (encounter.mat ' ...
-            'growthLawnGrowth).'])}]; %#ok<AGROW>
+            'growthLawnGrowth).'], 'ValueKind', 'intensity')}]; %#ok<AGROW>
         out.counts.acclimation_patches = out.counts.acclimation_patches + 1;
         out.counts.estimates = out.counts.estimates + 1;
         if ~isempty(rd)
@@ -806,7 +806,7 @@ if floored
     params{end+1} = did2.build.parameter(haleyTerm('lower limit of reported value'), 'Value', 0.01);
     note = ' A value below 0.01 (a patch of LB alone, estimated 0) is given 0.01, as the model does.';
 end
-d = did2.build.statement('concentration_calculation', entityId, ...
+d = did2.build.statement('calculation', entityId, ...
     haleyTerm('relative cell density'), ...
     densityCell(x), ...
     keys{:}, 'Method', haleyTerm('normalization data transformation'), ...
@@ -815,7 +815,7 @@ d = did2.build.statement('concentration_calculation', entityId, ...
     [sprintf(['Relative bacterial density in OD600 equivalents: 10 x the border amplitude ' ...
     'estimate / %.6g, the mean over %d foragingConcentration encounters on OD600 10, 0.5 uL ' ...
     'patches (modelExploit, fig3_single). NaN where the estimate is NaN.'], rd.value, rd.n), ...
-    note, ' The model works with its log10.']);
+    note, ' The model works with its log10.'], 'ValueKind', 'concentration');
 end
 
 function v = densityCell(x)

@@ -16,10 +16,10 @@ function out = observationDocuments(session, R, subjectIds, options)
 %   videos disagree gets none (reported in OUT.skipped). No value, no
 %   observation.
 %
-%     temperature_observation  variable ambient temperature (NCIT:C90380, the
+%     temperature observation  variable ambient temperature (NCIT:C90380, the
 %                              term the manipulations move a plate into),
 %                              celsius
-%     humidity_observation     variable relative humidity (om:RelativeHumidity),
+%     humidity observation     variable relative humidity (om:RelativeHumidity),
 %                              percent_relative_humidity (did-schema PR #86)
 %
 %   Both: subject = the assay plate, instrument = the probe (stage 2), method
@@ -87,14 +87,14 @@ for k = 1:numel(plates)
     out.windows(plate) = timeId;
     out.windowStarts(plate) = wallClock(P.local_start(1), tz);
     if ~isnan(temp)
-        v = did2.build.composite('temperature_observation', 'value', struct('celsius', temp, ...
+        v = did2.build.composite('temperature', 'value', struct('celsius', temp, ...
             'source_value', temp, 'source_unit', ndi.setup.V2.sourceUnit('C')));
-        statement('temperature_observation', plate, cfg.temperature.variable, v, timeId, 'temperature');
+        statement('temperature', plate, cfg.temperature.variable, v, timeId, 'temperature');
     end
     if ~isnan(humidity)
-        v = did2.build.composite('humidity_observation', 'value', ...
+        v = did2.build.composite('humidity', 'value', ...
             struct('percent_relative_humidity', humidity));
-        statement('humidity_observation', plate, cfg.humidity.variable, v, timeId, 'humidity');
+        statement('humidity', plate, cfg.humidity.variable, v, timeId, 'humidity');
     end
 end
 out.documents = docs;
@@ -116,12 +116,12 @@ out.documents = docs;
         id = d.base.id;
     end
 
-    function statement(leaf, plate, variable, value, timeId, counter)
+    function statement(kind, plate, variable, value, timeId, counter)
         args = {'SessionId', sid, 'TimeReferenceIds', {timeId}, 'Method', haleyTerm('mean')};
         if ~isempty(options.InstrumentId), args = [args, {'InstrumentId', options.InstrumentId}]; end
         if isfield(cfg, 'notes') && ~isempty(cfg.notes), args = [args, {'Notes', cfg.notes}]; end
-        docs{end+1} = did2.build.statement(leaf, subjectIds(plate), ...
-            haleyTerm(variable), value, args{:});
+        docs{end+1} = did2.build.statement('observation', subjectIds(plate), ...
+            haleyTerm(variable), value, args{:}, 'ValueKind', kind);
         out.counts.(counter) = out.counts.(counter) + 1;
     end
 end

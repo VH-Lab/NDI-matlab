@@ -15,7 +15,7 @@ function out = seedingDocuments(S, ids, sessionId, options)
 %                        correction applied to it, decision #111); its own
 %                        time_reference_id the seeding day, when it existed
 %                        from its preparation (decision #147)
-%     formulation_assertion  what it was made to (decision #146, Jess
+%     formulation assertion  what it was made to (decision #146, Jess
 %                        Haley 2026-10-21): an assertion about the solution
 %                        whose value is its formulation -- its PLAN (the
 %                        strain at target OD600 10; a dilution's target
@@ -28,13 +28,13 @@ function out = seedingDocuments(S, ids, sessionId, options)
 %     directed_relation  a dilution derived_from (RO:0001000) the stock
 %                        solution it was made from, that day's stock (decision
 %                        #147); when: the seeding day
-%     concentration_observation  the stock's MEASURED OD600 (`OD600Real`),
+%     concentration observation  the stock's MEASURED OD600 (`OD600Real`),
 %                        variable OD600 (MCO:0000059), in the `od600` canonical
 %                        with the source pair where the schema has it, method
 %                        NCIT:C85776 Optical Density Measurement (decision
 %                        #129); instrument the spectrophotometer (the spec's
 %                        `spectrophotometer_1`); when: the seeding day.
-%     concentration_observation  the stock's MEASURED colony count (`CFU`,
+%     concentration observation  the stock's MEASURED colony count (`CFU`,
 %                        where the day has one), variable NCIT:C120538 Cell
 %                        Density, method NCIT:C130166 Viable Cell Count
 %                        (decision #129): `particles_per_liter` CFU x 2e10,
@@ -111,8 +111,8 @@ for k = 1:numel(S.solutions)
 
     % what it was made to: its formulation, its plan, as the solution's
     % composition (decision #146; an assertion, not a dose)
-    out.documents{end+1} = did2.build.statement('formulation_assertion', eid, ...
-        haleyTerm('composition'), [], 'ValueId', ids(x.formulation), 'SessionId', sessionId);
+    out.documents{end+1} = did2.build.statement('assertion', eid, ...
+        haleyTerm('composition'), [], 'ValueId', ids(x.formulation), 'SessionId', sessionId, 'ValueKind', 'formulation');
     out.counts.preparations = out.counts.preparations + 1;
 
     % a dilution was made from that day's stock solution (decision #147)
@@ -137,17 +137,17 @@ for k = 1:numel(S.solutions)
         'SourceUnit', ndi.setup.V2.sourceUnit('OD600'));
     args = {};
     if ~isempty(instrument), args = {'InstrumentId', instrument}; end
-    out.documents{end+1} = did2.build.statement('concentration_observation', eid, ...
+    out.documents{end+1} = did2.build.statement('observation', eid, ...
         haleyTerm('OD600'), v, 'Method', haleyTerm('optical density measurement'), args{:}, ...
-        'TimeReferenceIds', {when}, 'SessionId', sessionId);
+        'TimeReferenceIds', {when}, 'SessionId', sessionId, 'ValueKind', 'concentration');
     out.counts.od600_observations = out.counts.od600_observations + 1;
     if ~isnan(x.cfu)
         % the lab code's conversion: CFU x 2e7 per mL (decision #57)
         c = did2.build.valueCell('concentration', x.cfu * 2e10, 'Canonical', 'particles_per_liter', ...
             'SourceValue', x.cfu * 2e7, 'SourceUnit', ndi.setup.V2.sourceUnit('CFU/mL'));
-        out.documents{end+1} = did2.build.statement('concentration_observation', eid, ...
+        out.documents{end+1} = did2.build.statement('observation', eid, ...
             haleyTerm('cell density'), c, 'Method', haleyTerm('viable cell count'), ...
-            'TimeReferenceIds', {when}, 'SessionId', sessionId);
+            'TimeReferenceIds', {when}, 'SessionId', sessionId, 'ValueKind', 'concentration');
         out.counts.cfu_observations = out.counts.cfu_observations + 1;
     end
 end

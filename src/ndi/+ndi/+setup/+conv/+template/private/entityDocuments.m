@@ -11,7 +11,7 @@ function out = entityDocuments(sessions, cfg, throwErrors)
 %
 %   TEMPLATE: a real importer makes every kind of thing the data is about
 %   (Haley: plates, patches, worm cohorts, worms), adds the assertions that
-%   say what each one is (species, strain, sample type: term_assertion), and
+%   say what each one is (species, strain, sample type: term assertion), and
 %   the relations between them (contained_in, member_of, part_of: 
 %   did2.build.directedRelation). Shared entities -- people, strains,
 %   instruments, software -- are dataset-level and come from the spec

@@ -2,7 +2,7 @@ function [docs, ids] = recordingDocuments(subjectId, file, t0, tz, sid, options)
 %RECORDINGDOCUMENTS The documents that record one raw file, in one call.
 %
 %   [DOCS, IDS] = ndi.setup.V2.recordingDocuments(SUBJECTID, FILE, T0, TZ, SID,
-%   'Leaf', LEAF, 'Variable', VARIABLE, 'Format', FORMAT) builds, in the
+%   'ValueKind', KIND, 'Variable', VARIABLE, 'Format', FORMAT) builds, in the
 %   session SID, the five documents a recorded file needs, already joined:
 %
 %     1 absolute_time_reference  the recording's UTC start T0 (a wall-clock
@@ -11,10 +11,10 @@ function [docs, ids] = recordingDocuments(subjectId, file, t0, tz, sid, options)
 %                                (ndi.setup.V2.utcReference)
 %     2 entity (type epoch)      the recording's epoch, timed by 1
 %     3 relative_time_reference  the epoch's own clock (dev_local_time from 0)
-%     4 LEAF statement           the recording (an observation such as
-%                                'intensity_observation') about SUBJECTID,
-%                                its VARIABLE (a term), its value in a data
-%                                body, timed by BOTH 3 and 1
+%     4 observation              the recording: an `observation` with the
+%                                value kind KIND (e.g. 'intensity') about
+%                                SUBJECTID, its VARIABLE (a term), its value
+%                                in a data body, timed by BOTH 3 and 1
 %     5 opaque_body              FILE, recorded BY LOCATION (ingest 0, its
 %                                absolute path): never copied. Its format
 %                                FORMAT (a term), size, and with 'Checksums'
@@ -26,7 +26,8 @@ function [docs, ids] = recordingDocuments(subjectId, file, t0, tz, sid, options)
 %   from the recording names it as its input) and body_id (5).
 %
 %   Options:
-%     'Leaf'         the statement class (required)
+%     'ValueKind'    the observation's value kind, e.g. 'intensity'
+%                    (required)
 %     'Variable'     the statement's variable, a term (required; look it up
 %                    by name: ndi.setup.V2.registeredTerm('', NAME))
 %     'Format'       the file format, a term (required)
@@ -58,7 +59,7 @@ arguments
     t0 (1,1) datetime
     tz {mustBeTextScalar, mustBeNonzeroLengthText}
     sid {mustBeTextScalar, mustBeNonzeroLengthText}
-    options.Leaf {mustBeTextScalar} = ''
+    options.ValueKind {mustBeTextScalar} = ''
     options.Variable = []
     options.Format = []
     options.Method = []
@@ -69,7 +70,7 @@ arguments
     options.Checksums (1,1) logical = true
     options.Description {mustBeTextScalar} = ''
 end
-for need = {'Leaf', 'Variable', 'Format'}
+for need = {'ValueKind', 'Variable', 'Format'}
     if isempty(options.(need{1}))
         error('ndi:setup:V2:recordingOption', ...
             'recordingDocuments needs ''%s'' (see its help).', need{1});
@@ -104,7 +105,8 @@ end
 if ~isempty(options.Method)
     args = [args, {'Method', options.Method}];
 end
-st = did2.build.statement(char(options.Leaf), char(subjectId), options.Variable, [], args{:});
+st = did2.build.statement('observation', char(subjectId), options.Variable, [], args{:}, ...
+    'ValueKind', char(options.ValueKind));
 
 info = dir(file);
 description = char(options.Description);

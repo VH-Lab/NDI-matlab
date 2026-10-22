@@ -11,7 +11,7 @@ function out = manipulationDocuments(session, S, subjectIds, options)
 %   and the kinds of plate moved to are labels.
 %
 %   Plates (assay, acclimation, food deprivation, E. coli):
-%     pour         dose_manipulation: 25 mL of NGM agar (or NGM agar without
+%     pour         dose manipulation: 25 mL of NGM agar (or NGM agar without
 %                  peptone, from the plate's `peptone`; only Matching and the
 %                  E. coli study used it), formulation_id the recipe, variable
 %                  the recipe's formulation type (nematode growth medium
@@ -20,13 +20,13 @@ function out = manipulationDocuments(session, S, subjectIds, options)
 %                  pour time, a relative_time_reference `intervalBefore` its
 %                  seeding (an unseeded food deprivation plate: before the
 %                  worms went on). No time, no pour.
-%     seeding      dose_manipulation per patch at the patch's volume (assay
+%     seeding      dose manipulation per patch at the patch's volume (assay
 %                  and E. coli plates), and on each acclimation plate's one
 %                  patch (200 uL); variable the strain's term (its WBStrain
 %                  node; the diluent's formulation type for a patch of diluent
 %                  alone), formulation_id that day's suspension
 %                  (seedingSuspensions' index). When: the seeding time.
-%     temperature  temperature_manipulation per move: the temperature moved
+%     temperature  temperature manipulation per move: the temperature moved
 %                  INTO, approximate; variable ambient temperature
 %                  (NCIT:C90380). Assay plate: cold room (`timeColdRoom`
 %                  to `timeRoomTemp`), room temperature (`timeRoomTemp` to the
@@ -44,7 +44,7 @@ function out = manipulationDocuments(session, S, subjectIds, options)
 %                  none. A `timeRoomTemp` the spec's corrections mark as
 %                  estimated is approximate with no bound, and says so.
 %   Worm cohorts (`distributive` true when the schema has it):
-%     transfer           term_manipulation per move (acclimation, food
+%     transfer           term manipulation per move (acclimation, food
 %                        deprivation, assay plate) at the time of the cohort's
 %                        contained_in relation (stage 6): variable location
 %                        (NCIT:C25341), value the kind of plate moved to (a
@@ -54,7 +54,7 @@ function out = manipulationDocuments(session, S, subjectIds, options)
 %                        plate agar plug transfer or eyelash picking, from the
 %                        transfer protocol, with the cleaning step through an
 %                        empty NGM plate as a method parameter).
-%     droplet            formulation_manipulation of the cohort (the direction
+%     droplet            formulation manipulation of the cohort (the direction
 %                        `manipulation` valued by a formulation): the worms
 %                        sit in the droplet, they are not given an amount of it
 %                        (Jess Haley, 2026-10-21; decision #145, superseding
@@ -64,7 +64,7 @@ function out = manipulationDocuments(session, S, subjectIds, options)
 %                        variable its formulation type, no method, at the
 %                        assay transfer's time (the source records no
 %                        evaporation time).
-%     food deprivation   term_manipulation food availability (ZECO:0000113)
+%     food deprivation   term manipulation food availability (ZECO:0000113)
 %                        = fasting (ZECO:0000114) at the food deprivation
 %                        window; no method.
 %   Each temperature manipulation's method says how it was imposed:
@@ -249,7 +249,7 @@ for k = cohorts
         key = [S.deprivation{k} '|' cid];
         move(cid, S.deprivation{k}, 'food deprivation plate', cfg.transfer.deprivation_method, []);
         if isKey(refs, key)
-            statement('term_manipulation', cid, haleyTerm(cfg.food_deprivation.variable), ...
+            statement('manipulation', 'term', cid, haleyTerm(cfg.food_deprivation.variable), ...
                 haleyTerm(cfg.food_deprivation.value), refs(key), ...
                 struct('Fields', eachMember), 'food_deprivation');
         end
@@ -298,9 +298,9 @@ out.documents = docs;
             'End', t1, 'EndTolerance', tol1, 'EndFormat', fmt1);
         docs{end+1} = d;
         refId = d.base.id;
-        v = did2.build.composite('temperature_manipulation', 'value', struct('celsius', celsius, ...
+        v = did2.build.composite('temperature', 'value', struct('celsius', celsius, ...
             'source_value', celsius, 'source_unit', ndi.setup.V2.sourceUnit('C'), 'approximate', true));
-        statement('temperature_manipulation', subject, haleyTerm(cfg.temperature.variable), v, refId, ...
+        statement('manipulation', 'temperature', subject, haleyTerm(cfg.temperature.variable), v, refId, ...
             struct('Notes', note, 'Method', method), 'temperature');
     end
 
@@ -336,7 +336,7 @@ out.documents = docs;
             v = [];
         else
             scale = struct('uL', 1e-6, 'mL', 1e-3);
-            v = did2.build.composite('dose_manipulation', 'value', struct('volume', ...
+            v = did2.build.composite('dose', 'value', struct('volume', ...
                 struct('liters', amount * scale.(unit), 'source_value', amount, ...
                 'source_unit', ndi.setup.V2.sourceUnit(unit))));
         end
@@ -361,7 +361,7 @@ out.documents = docs;
             return;
         end
         n0 = numel(docs);
-        statement('dose_manipulation', subject, variable, v, timeId, x, counter);
+        statement('manipulation', 'dose', subject, variable, v, timeId, x, counter);
         if numel(docs) > n0 && startsWith(counter, 'seed')
             out.seedIds(subjectIds(subject)) = docs{end}.base.id;
         end
@@ -374,7 +374,7 @@ out.documents = docs;
             return;
         end
         x = struct('Fields', eachMember, 'Method', method, 'MethodParameters', params);
-        statement('term_manipulation', cohort, haleyTerm(cfg.transfer.variable), ...
+        statement('manipulation', 'term', cohort, haleyTerm(cfg.transfer.variable), ...
             haleyTerm(value), refs(moveKey), x, 'transfer');
     end
 
@@ -407,8 +407,7 @@ out.documents = docs;
         % by the formulation; a subject given a quantity is a dose"). The
         % worms are eyelash-picked into S-Complete, which evaporates before
         % recording: a transitory bath, not a dose. So a
-        % formulation_manipulation of the cohort (did2.build reads the name
-        % as the direction `manipulation` with the value kind `formulation`):
+        % manipulation of the cohort with the value kind `formulation`:
         % its own `value` empty, a `value_id` edge to the droplet's
         % formulation document, as the migrated baths (DID-matlab
         % resolveDeferredBaths). Variable: the formulation's type; no method.
@@ -424,11 +423,11 @@ out.documents = docs;
                 cohort, formulationKey);
             return;
         end
-        statement('formulation_manipulation', cohort, nameOf(formulationKey), [], refs(moveKey), ...
+        statement('manipulation', 'formulation', cohort, nameOf(formulationKey), [], refs(moveKey), ...
             struct('Fields', eachMember, 'ValueId', options.Ids(formulationKey)), 'droplet');
     end
 
-    function statement(leaf, subject, variable, value, timeId, x, counter)
+    function statement(direction, kind, subject, variable, value, timeId, x, counter)
         if ~isKey(subjectIds, subject)
             out.skipped{end+1} = sprintf('%s %s: not a subject of this session', subject, counter);
             return;
@@ -454,7 +453,8 @@ out.documents = docs;
         if isfield(x, 'ValueId') && ~isempty(x.ValueId)
             args = [args, {'ValueId', x.ValueId}];
         end
-        docs{end+1} = did2.build.statement(leaf, subjectIds(subject), variable, value, args{:});
+        docs{end+1} = did2.build.statement(direction, subjectIds(subject), variable, value, args{:}, ...
+            'ValueKind', kind);
         out.counts.(counter) = out.counts.(counter) + 1;
     end
 
@@ -484,7 +484,7 @@ out.documents = docs;
             out.skipped{end+1} = sprintf('%s: no pick time and no later move; no developmental stage', cid);
             return;
         end
-        statement('term_observation', cid, haleyTerm(st.variable), haleyTerm(st.value), when, ...
+        statement('observation', 'term', cid, haleyTerm(st.variable), haleyTerm(st.value), when, ...
             struct('Fields', eachMember, 'Method', haleyTerm(st.method)), 'developmental_stage');
     end
 

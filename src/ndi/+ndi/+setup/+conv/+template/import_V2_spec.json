@@ -30,13 +30,13 @@
     },
 
     "acquisition": {
-        "_comment": "Stage 3. The row's recording: file_column names a file in the session folder (recorded by location, never copied); start_column + start_format (a datetime InputFormat) + time_zone (IANA) its start, duration_column its length in seconds. leaf is the recording statement's class, variable and method its terms (by name), format the file format's term (by name), datum_type how a sample is stored.",
+        "_comment": "Stage 3. The row's recording: file_column names a file in the session folder (recorded by location, never copied); start_column + start_format (a datetime InputFormat) + time_zone (IANA) its start, duration_column its length in seconds. value_kind is the recording observation's value kind (e.g. intensity), variable and method its terms (by name), format the file format's term (by name), datum_type how a sample is stored.",
         "file_column": "",
         "start_column": "",
         "start_format": "",
         "duration_column": "",
         "time_zone": "",
-        "leaf": "",
+        "value_kind": "",
         "variable": "",
         "method": "",
         "format": "",
@@ -44,9 +44,8 @@
     },
 
     "manipulations": {
-        "_comment": "Stage 4. value_column holds the value as the source wrote it, in unit (as the source spells it: 'C', 'mm', 'uL'; written as its registered term); scale converts it to data_type's canonical unit; tolerance [minus plus] in the canonical unit only where the source states one. time_column + time_format + time_zone say when; time_tolerance [minus plus] seconds for a hand-written time ([60, 60] to the minute).",
+        "_comment": "Stage 4. value_column holds the value as the source wrote it, in unit (as the source spells it: 'C', 'mm', 'uL'; written as its registered term); data_type is the manipulation's value kind (e.g. temperature) and scale converts the value to its canonical unit; tolerance [minus plus] in the canonical unit only where the source states one. time_column + time_format + time_zone say when; time_tolerance [minus plus] seconds for a hand-written time ([60, 60] to the minute).",
         "value_column": "",
-        "leaf": "",
         "data_type": "",
         "unit": "",
         "scale": null,
@@ -62,7 +61,6 @@
     "observations": {
         "_comment": "Stage 5. As manipulations; timed by the row's recording.",
         "value_column": "",
-        "leaf": "",
         "data_type": "",
         "unit": "",
         "scale": null,
@@ -74,7 +72,6 @@
     "calculations": {
         "_comment": "Stage 6. As observations; computed from the row's recording (its input). software, operating_system (required by the schema) and interpreter are keys in `software`.",
         "value_column": "",
-        "leaf": "",
         "data_type": "",
         "unit": "",
         "scale": null,

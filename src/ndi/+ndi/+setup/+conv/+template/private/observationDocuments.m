@@ -3,8 +3,9 @@ function out = observationDocuments(sessions, entityIds, recordings, cfg, throwE
 %
 %   OUT = observationDocuments(SESSIONS, ENTITYIDS, RECORDINGS, CFG,
 %   THROWERRORS) builds, for each row of a session's source table with a
-%   value in CFG.observations.value_column, a CFG.observations.leaf statement
-%   (temperature_observation in the template) about the row's entity, timed
+%   value in CFG.observations.value_column, an observation whose value kind
+%   is CFG.observations.data_type (temperature in the template) about the
+%   row's entity, timed
 %   by the row's recording (stage 3's absolute time reference: the reading
 %   was taken over the recording). Variable and method by NAME from the term
 %   registry; the value through quantityCell, after the spec's corrections.
@@ -56,9 +57,9 @@ for s = 1:n
                 r = skipRow(r, where, 'no entity or no recording to time it by');
                 continue;
             end
-            st = did2.build.statement(o.leaf, subject, variable, quantityCell(o, text), ...
+            st = did2.build.statement('observation', subject, variable, quantityCell(o, text), ...
                 'Method', method, 'TimeReferenceIds', recordings.time_reference_id(rec), ...
-                'Notes', note, 'SessionId', sid);
+                'Notes', note, 'SessionId', sid, 'ValueKind', char(o.data_type));
             docs{s}{end+1} = st;
             r.written = r.written + 1;
             r.documents = r.documents + 1;
