@@ -229,7 +229,7 @@ jobs:
         # live, so the last samples survive a lost runner and show whether
         # memory or disk ran out, and when. The sampler is instrumentation only.
         # The MATLAB code is unchanged; it is written to a script and run with
-        # `matlab -batch` (setup-matlab puts `matlab` on the PATH).
+        # setup-matlab's `matlab-batch` (which handles the license).
         run: |
           set -euo pipefail
           (
@@ -264,4 +264,10 @@ jobs:
           disp(results);
           assertSuccess(results);
           MATLAB
-          matlab -batch "soph_ci_run"
+          # `matlab-batch`, not `matlab -batch`: a plain `matlab -batch` finds no
+          # license on the hosted runner ("MathWorks Licensing Error 1", run
+          # 39743874596). setup-matlab installs matlab-batch for exactly this,
+          # and run-command uses it.
+          mb=$(command -v matlab-batch || echo /opt/hostedtoolcache/matlab-batch/v1/x64/matlab-batch)
+          echo "running MATLAB through $mb"
+          "$mb" "soph_ci_run"
