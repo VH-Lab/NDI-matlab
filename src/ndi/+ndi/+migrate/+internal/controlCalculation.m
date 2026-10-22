@@ -66,6 +66,10 @@ if isfield(v1Body, 'base') && isfield(v1Body.base, 'id'); csId = char(v1Body.bas
 ds = '';
 if isfield(v1Body, 'base') && isfield(v1Body.base, 'datestamp'); ds = char(v1Body.base.datestamp); end
 
+% the method's labels are not registered terms (did2.convert turns the
+% registry off while migrating; this builds outside it), so off before ANY
+% did2.build call, parameters included
+restore = ndi.migrate.internal.termRegistryOff(); %#ok<NASGU>
 methodTerm = 'control stimulus identification';
 params = [];
 if isfield(blk, 'control_stimulus_id_method') && isstruct(blk.control_stimulus_id_method)
@@ -90,7 +94,6 @@ if isfield(blk, 'control_stimulus_id_method') && isstruct(blk.control_stimulus_i
     end
 end
 
-restore = ndi.migrate.internal.termRegistryOff(); %#ok<NASGU>
 standIn = [csId '_time_reference_pending'];
 args = {'ValueKind', 'item', 'Method', methodTerm, ...
     'TimeReferenceIds', {standIn}, 'InputIds', {presentationId}, ...
