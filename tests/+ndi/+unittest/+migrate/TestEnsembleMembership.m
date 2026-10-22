@@ -69,7 +69,7 @@ classdef TestEnsembleMembership < matlab.unittest.TestCase
             % verify-before-delete manifest.
             testCase.verifyEqual(depValue(d{1}, 'child_id'), 'aepoch_epoch_a');
             testCase.verifyEqual(depValue(d{1}, 'parent_id'), 'nrn_1');
-            testCase.verifyEqual(d{1}.directed_relation.relation.node, 'RO:0001000');
+            testCase.verifyEqual(d{1}.directed_relation.relation.node, ndi.v2.vocabTerm('relation', 'derived_from').node);   % [derived from general]
             % a derived_from edge is unordered -- no order (under either name)
             testCase.verifyFalse(isfield(d{1}.directed_relation, 'order'));
             testCase.verifyFalse(isfield(d{1}.directed_relation, 'sequence'));

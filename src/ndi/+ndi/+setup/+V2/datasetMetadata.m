@@ -638,7 +638,9 @@ end
 if isfield(extra, 'roles')
     opts = [opts, {'Fields', struct('roles', extra.roles)}];
 end
-doc = did2.build.directedRelation(child, parent, relation, 'SessionId', state.sid, ...
+% the relation's node and the name the schema stores for it (Jess Haley
+% 2026-10-22 [vocabulary nodes] L1)
+doc = did2.build.directedRelation(child, parent, ndi.v2.vocabTerm('relation', relation), 'SessionId', state.sid, ...
     'Validate', state.validate, opts{:});
 state.docs{end+1} = doc;
 end

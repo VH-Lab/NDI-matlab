@@ -358,8 +358,10 @@ arguments
     options.EpochDocumentIdFor = []      % f(epochidString, sessionId) -> docId | ''
 end
 
-MEMBER_OF   = struct('node', 'RO:0002350', 'name', 'member_of');
-DERIVED_FROM = struct('node', 'RO:0001000', 'name', 'derived_from');
+% the binding rows' node and name (Jess Haley 2026-10-22 [vocabulary nodes]
+% L1, [derived from general]), not literals
+MEMBER_OF   = ndi.v2.vocabTerm('relation', 'member_of');
+DERIVED_FROM = ndi.v2.vocabTerm('relation', 'derived_from');
 
 kept   = structs;
 minted = {};

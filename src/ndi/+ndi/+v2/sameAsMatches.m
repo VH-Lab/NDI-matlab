@@ -173,7 +173,7 @@ arguments
 end
 t = ndi.v2.kindOf(p);
 if strcmp(t, 'subject')
-    k = ndi.v2.termName(ndi.v2.blockOf(p, 'subject', 'type', ''));
+    k = ndi.v2.vocabHandle('entity_type', ndi.v2.blockOf(p, 'subject', 'type', ''));
     if ~isempty(k), t = char(k); end
 end
 end

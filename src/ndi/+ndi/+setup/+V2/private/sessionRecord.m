@@ -41,6 +41,6 @@ docs = ndi.setup.V2.entityDocuments('session', fields, edges, 'SessionId', sid, 
 studies = idList(options.StudyIds);
 for k = 1:numel(studies)
     docs{end+1} = did2.build.directedRelation(docs{1}.base.id, studies{k}, ...
-        'included_in', 'SessionId', sid); %#ok<AGROW>
+        ndi.v2.vocabTerm('relation', 'included_in'), 'SessionId', sid); %#ok<AGROW>
 end
 end

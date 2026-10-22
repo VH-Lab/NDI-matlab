@@ -206,13 +206,13 @@ for k = 1:numel(channels)
     else
         c = channels(k);
     end
+    % the v1 prefix, read BY NODE (ndi.vintage.channelPrefix; Jess Haley
+    % 2026-10-22 [channel types]): 'ai' whether the stored type is
+    % {EMPTY:0000370, 'analog input channel'} or the bare 'ai'; a read mode
+    % with no term ('dep') keeps its name
     t = '';
     if isfield(c, 'type')
-        if isstruct(c.type) && isfield(c.type, 'name')
-            t = c.type.name;
-        elseif ischar(c.type)
-            t = c.type;
-        end
+        t = char(ndi.vintage.channelPrefix(c.type));
     end
     nums = [];
     if isfield(c, 'numbers')

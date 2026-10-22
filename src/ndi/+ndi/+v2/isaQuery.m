@@ -27,10 +27,9 @@ if strcmp(className, 'subject')
     types = {};   % ndi.query's own `isa subject` finds the biological entities
 end
 if ~isempty(types)
-    t = ndi.query('entity.type.name', 'exact_string', types{1}, '');
-    for k = 2:numel(types)
-        t = t | ndi.query('entity.type.name', 'exact_string', types{k}, '');
-    end
+    % by node, or any name the type has gone by (Jess Haley 2026-10-22
+    % [vocabulary nodes] L2)
+    t = ndi.v2.vocabQuery('entity.type', 'entity_type', types);
     q = q | (ndi.query('', 'isa', 'entity', '') & t);
 end
 tok = regexp(char(ndi.v2.vetaName(className)), ...

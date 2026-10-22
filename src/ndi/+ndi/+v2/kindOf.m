@@ -14,8 +14,9 @@ end
 kind = char(doc.document_class.class_name);
 block = kind;
 if strcmp(kind, 'entity') && isfield(doc, 'entity') && isfield(doc.entity, 'type')
-    t = doc.entity.type;
-    if isstruct(t), t = t.name; end
-    kind = char(t);
+    % NDI's handle for the type, read by node (Jess Haley 2026-10-22
+    % [vocabulary nodes] L2), so `kind` is 'dataset' whether the stored name
+    % is 'dataset' or the ontology label
+    kind = char(ndi.v2.vocabHandle('entity_type', doc.entity.type));
 end
 end

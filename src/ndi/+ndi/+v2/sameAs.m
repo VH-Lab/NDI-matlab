@@ -45,8 +45,10 @@ while ~isempty(frontier)
         docs = searchAll(container, q);
         for i = 1:numel(docs)
             p = ndi.v2.props(docs{i});
-            r = ndi.v2.termName(ndi.v2.blockOf(p, 'undirected_relation', 'relation', ''));
-            if ~strcmp(r, 'same_as'), continue; end
+            % by node (Jess Haley 2026-10-22 [vocabulary nodes] L1)
+            if ~ndi.v2.vocabIs('relation', ndi.v2.blockOf(p, 'undirected_relation', 'relation', ''), 'same_as')
+                continue;
+            end
             members = unique(ndi.v2.edgeIds(p, 'entity_id'), 'stable');
             for a = 1:numel(members)
                 rest = members([1:a-1, a+1:end]);

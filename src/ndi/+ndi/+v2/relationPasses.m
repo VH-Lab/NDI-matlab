@@ -7,7 +7,8 @@ function P = relationPasses(schemaPath)
 %   V_eta_relation_inheritance_plan.md and tenet T17, 2026-10-20, a proposal
 %   built ahead of signature), one of:
 %     assertions    an assertion about the parent is true of the child
-%                   (part_of, sample_of, aliquot_of, passage_of, instance_of)
+%                   (part_of, sample_of, instance_of; aliquot_of and
+%                   passage_of retired into sample_of, [vocabulary nodes] K5)
 %     distributive  a statement or relation marked distributive on the group
 %                   is true of each member (member_of)
 %     context       the parent's interactions overlapping the stay, as
@@ -15,7 +16,10 @@ function P = relationPasses(schemaPath)
 %     nothing       nothing (every other row: included_in, same_as, ...)
 %
 %   P is a struct of cellstr rows, in the registry's order:
-%     assertions, distributive, context, nothing   the relation names by value
+%     assertions, distributive, context, nothing   the relations by value, as
+%                   NDI's handles ('part_of'), each row read by its node
+%                   (ndi.v2.vocabHandle; Jess Haley 2026-10-22 [vocabulary
+%                   nodes] L1), so the stored name may be the label
 %     names         every relation the registry binds
 %     declared      true when the registry declares `passes` (did-schema #88
 %                   and later). A registry that does not (an older schema
@@ -63,7 +67,10 @@ try
         if ~isfield(r, 'relation') || ~isstruct(r.relation) || ~isfield(r.relation, 'name')
             continue;
         end
-        names{end+1} = char(r.relation.name); %#ok<AGROW>
+        % NDI's handle for the row's relation, by its node (Jess Haley
+        % 2026-10-22 [vocabulary nodes] L1), so P names 'part_of' whether the
+        % registry stores 'part_of' or the ontology label 'part of'
+        names{end+1} = char(ndi.v2.vocabHandle('relation', r.relation, schemaPath)); %#ok<AGROW>
         v = '';
         if isfield(r, 'passes') && (ischar(r.passes) || isstring(r.passes))
             v = char(r.passes);

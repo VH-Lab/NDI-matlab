@@ -144,8 +144,8 @@ for c = 1:200:numel(ids)
     rels = container.database_search(ndi.query('', 'isa', 'directed_relation', '') & q);
     for k = 1:numel(rels)
         p = ndi.v2.props(rels{k});
-        if ~ismember(char(ndi.v2.termName(ndi.v2.blockOf(p, 'directed_relation', 'relation', ''))), ...
-                groupNames)
+        if ~ismember(ndi.v2.vocabHandle('relation', ndi.v2.blockOf(p, 'directed_relation', 'relation', '')), ...
+                groupNames)   % by node (L1); relationPasses gives handles
             continue;
         end
         a = ndi.v2.edgeIds(p, 'child_id');

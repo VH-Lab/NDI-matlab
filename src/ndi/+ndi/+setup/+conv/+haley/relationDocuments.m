@@ -324,7 +324,9 @@ if ~isKey(ids, child) || ~isKey(ids, parent)
         child, relation, parent);
     return;
 end
-docs{end+1} = did2.build.directedRelation(ids(child), ids(parent), relation, ...
+% the relation's node and the name the schema stores for it (Jess Haley
+% 2026-10-22 [vocabulary nodes] L1)
+docs{end+1} = did2.build.directedRelation(ids(child), ids(parent), ndi.v2.vocabTerm('relation', relation), ...
     'TimeReferenceIds', times, 'SessionId', sid, 'Fields', fields);
 out.counts.(counter) = out.counts.(counter) + 1;
 end

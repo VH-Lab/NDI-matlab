@@ -151,7 +151,10 @@ classdef entity
             %   class) any entity's ('' for an entity with no document)
             t = '';
             if isempty(obj.entity_document_), return; end
-            t = ndi.v2.termName(ndi.v2.blockOf(obj.document_properties(), obj.kind, 'type', ''));
+            % NDI's handle for the type ('organism', 'dataset'), read by node
+            % (Jess Haley 2026-10-22 [vocabulary nodes] L2), so it is the same
+            % whether the stored name is the handle or the ontology label
+            t = ndi.v2.vocabHandle('entity_type', ndi.v2.blockOf(obj.document_properties(), obj.kind, 'type', ''));
         end
 
         function v = get.local_identifier(obj)
@@ -500,7 +503,10 @@ classdef entity
             names = arrayfun(@(x) string(x.name), obj(iu), 'UniformOutput', false);
             nameOf = containers.Map(ids, names);
             container = obj(1).container_;
-            if isempty(relationName), wanted = {}; else, wanted = cellstr(relationName); end
+            % by node (Jess Haley 2026-10-22 [vocabulary nodes] L1): a name the
+            % caller gives and the name a relation stores are both read as
+            % NDI's handle, so either spelling of either vintage matches
+            if isempty(relationName), wanted = {}; else, wanted = cellstr(ndi.v2.vocabHandle('relation', cellstr(relationName))); end
             sides = {'out', 'child_id', 'parent_id'; 'in', 'parent_id', 'child_id'};
             chunk = 200;
             for s = 1:2
@@ -514,7 +520,7 @@ classdef entity
                     docs = container.database_search(ndi.query('', 'isa', 'directed_relation', '') & q);
                     for i = 1:numel(docs)
                         p = ndi.v2.props(docs{i});
-                        r = ndi.v2.termName(ndi.v2.blockOf(p, 'directed_relation', 'relation', ''));
+                        r = ndi.v2.vocabHandle('relation', ndi.v2.blockOf(p, 'directed_relation', 'relation', ''));
                         if ~isempty(wanted) && ~any(strcmp(r, wanted))
                             continue;
                         end
@@ -707,7 +713,11 @@ classdef entity
             filtered = ~isempty(options.Type) || ~isempty(options.Kind);
             filterQuery = [];
             if ~isempty(options.Type)
-                filterQuery = ndi.v2.blockQuery('subject.type.name', 'exact_string', options.Type, '');
+                % an entity's type by node or any name it has had (Jess Haley
+                % 2026-10-22 [vocabulary nodes] L2); a pre-2026-10-08 subject's
+                % by its name
+                filterQuery = ndi.v2.vocabQuery('entity.type', 'entity_type', options.Type) | ...
+                    ndi.query('subject.type.name', 'exact_string', options.Type, '');
             end
             if ~isempty(options.Kind)
                 k = ndi.v2.isaQuery(options.Kind);
@@ -799,8 +809,9 @@ classdef entity
                 docs = container.database_search(ndi.query('', 'isa', 'directed_relation', '') & q);
                 for i = 1:numel(docs)
                     p = ndi.v2.props(docs{i});
-                    r = ndi.v2.termName(ndi.v2.blockOf(p, 'directed_relation', 'relation', ''));
-                    if ~isempty(relationName) && ~any(strcmp(r, cellstr(relationName)))
+                    % by node (L1): both sides read as NDI's handle
+                    r = ndi.v2.vocabHandle('relation', ndi.v2.blockOf(p, 'directed_relation', 'relation', ''));
+                    if ~isempty(relationName) && ~any(strcmp(r, ndi.v2.vocabHandle('relation', cellstr(relationName))))
                         continue;
                     end
                     a = ndi.v2.edgeIds(p, from);
@@ -1269,11 +1280,11 @@ classdef entity
                     spec.filters(end+1) = struct('kind', lp, 'filt', ndi.entity.statementFilter(lp, v));
                 elseif any(strcmp(lp, relationKinds))
                     spec.relations(end+1) = ndi.entity.relationFilter(lp, v);
-                elseif any(strcmpi(p, directed))
-                    spec.relations(end+1) = struct('kind', 'directed_relation', 'name', {{p}}, ...
+                elseif any(strcmpi(ndi.v2.vocabHandle('relation', p), directed))
+                    spec.relations(end+1) = struct('kind', 'directed_relation', 'name', {{ndi.v2.vocabHandle('relation', p)}}, ...
                         'side', 'parent', 'target', {v}, 'time', struct());
-                elseif any(strcmpi(p, undirected))
-                    spec.relations(end+1) = struct('kind', 'undirected_relation', 'name', {{p}}, ...
+                elseif any(strcmpi(ndi.v2.vocabHandle('relation', p), undirected))
+                    spec.relations(end+1) = struct('kind', 'undirected_relation', 'name', {{ndi.v2.vocabHandle('relation', p)}}, ...
                         'side', 'with', 'target', {v}, 'time', struct());
                 else
                     if ~iscell(v), v = {v}; end      % a cell is already "any of"
@@ -1404,7 +1415,8 @@ classdef entity
                 [directed, undirected] = ndi.v2.relationNames();
                 known = [directed, undirected];
                 for k = 1:numel(r.name)
-                    if ~isempty(known) && ~any(cellfun(@(x) ndi.v2.matchTerm(x, r.name{k}), known))
+                    if ~isempty(known) && ~any(cellfun(@(x) ndi.v2.matchTerm(x, ...
+                            ndi.v2.vocabPatterns('relation', r.name{k})), known))
                         error('ndi:entity:search:unknownRelation', 'No relation is called ''%s''. Relations: %s.', ...
                             r.name{k}, strjoin(known, ', '));
                     end
@@ -1655,6 +1667,9 @@ classdef entity
                 T
             end
             base = ndi.query('', 'isa', className, '');
+            % a relation NDI knows is asked for by its node and every name it
+            % has gone by (Jess Haley 2026-10-22 [vocabulary nodes] L1)
+            names = ndi.v2.vocabPatterns('relation', names);
             if ~isempty(names)
                 t = ndi.v2.termQuery([className '.relation'], names);
                 if ~isempty(t), base = base & t; end

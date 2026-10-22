@@ -632,7 +632,7 @@ for g = 1:nGroups
         if isKey(candById, pid)
             minted{end+1} = S.relation(groupDocId{g}, ...
                 groupDocId{cand(candById(pid)).group}, ...
-                S.term('RO:0001000', 'derived_from'), common{:}); %#ok<AGROW>
+                ndi.v2.vocabTerm('relation', 'derived_from'), common{:}); %#ok<AGROW>
             groupParents{g}(end+1) = cand(candById(pid)).group;
             report.background_edges = report.background_edges + 1;
         else
@@ -692,7 +692,7 @@ for c = 1:numel(cand)
     ds = baseField(kept{pos}, 'creation_timestamp', '');
     if isempty(ds); ds = cand(c).datestamp; end
     minted{end+1} = S.relation(cand(c).subject_id, groupDocId{cand(c).group}, ...
-        S.term('', 'instance_of'), 'Id', cand(c).source_id, ...
+        ndi.v2.vocabTerm('relation', 'instance_of'), 'Id', cand(c).source_id, ...
         'SessionId', cand(c).session_id, 'Datestamp', ds); %#ok<AGROW>
     removeMask(pos) = true;
     ownStrain(c) = true;

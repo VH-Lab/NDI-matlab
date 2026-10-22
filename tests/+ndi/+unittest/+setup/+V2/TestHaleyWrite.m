@@ -552,7 +552,7 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             der = md(strcmp(mk, 'directed_relation') & cellfun(@(d) strcmp(edge(d, 'child_id'), dilId), md));
             testCase.verifyNumElements(der, 1, 'the dilution derived_from its stock (decision #147)');
             testCase.verifyEqual(edge(der{1}, 'parent_id'), stockId);
-            testCase.verifyEqual(der{1}.directed_relation.relation.node, 'RO:0001000');
+            testCase.verifyEqual(der{1}.directed_relation.relation.node, ndi.v2.vocabTerm('relation', 'derived_from').node);   % [derived from general]
             prep = aboutMd(dilId, 'formulation_assertion');
             testCase.verifyNumElements(prep, 1);
             testCase.verifyEqual(edge(prep{1}, 'value_id'), edge(seed{1}, 'formulation_id'), ...

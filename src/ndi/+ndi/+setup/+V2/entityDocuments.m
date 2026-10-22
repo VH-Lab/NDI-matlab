@@ -41,7 +41,8 @@ common = {'SessionId', options.SessionId, 'Validate', options.Validate};
 type = className;
 if strcmp(className, 'subject')
     if isfield(fields, 'type') && ~isempty(fields.type)
-        type = termName(fields.type);
+        % NDI's handle for the type, by its node when it has one
+        type = ndi.v2.vocabHandle('entity_type', fields.type);
     elseif ~isempty(options.Type)
         type = options.Type;
     else
@@ -49,7 +50,9 @@ if strcmp(className, 'subject')
             '(organism, device, ...).']);
     end
 end
-ent = struct('type', did2.build.term('', type));
+% the type's node and the name the schema stores for it (Jess Haley 2026-10-22
+% [vocabulary nodes] L2: written with its node, matched by node)
+ent = struct('type', ndi.v2.vocabTerm('entity_type', type));
 if strcmp(className, 'person') && ~isfield(fields, 'name')
     % the type registry asks a person for a display name; the spec gives parts
     parts = {};
@@ -163,19 +166,8 @@ for k = 1:numel(enames)
     parents = cellstr(edges.(e));
     for j = 1:numel(parents)
         docs{end+1} = did2.build.directedRelation(eid, parents{j}, ...
-            did2.build.term('', relationOf.(e)), common{:}); %#ok<AGROW>
+            ndi.v2.vocabTerm('relation', relationOf.(e)), common{:}); %#ok<AGROW>
     end
-end
-end
-
-function n = termName(t)
-arguments
-    t
-end
-if isstruct(t)
-    n = char(t.name);
-else
-    n = char(t);
 end
 end
 

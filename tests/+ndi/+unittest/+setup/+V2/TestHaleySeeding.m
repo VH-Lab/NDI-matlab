@@ -250,7 +250,10 @@ classdef TestHaleySeeding < matlab.unittest.TestCase
             testCase.verifyNumElements(r1, 1);
             testCase.verifyEqual(edgeOf(r1{1}, 'parent_id'), sd.ids([dx.stock '#solution']), ...
                 'derived from its stock solution');
-            testCase.verifyEqual(r1{1}.directed_relation.relation.node, 'RO:0001000');
+            % the binding row's node ([derived from general]: prov:wasDerivedFrom
+            % replaces RO:0001000), not a literal
+            testCase.verifyEqual(r1{1}.directed_relation.relation.node, ndi.v2.vocabTerm('relation', 'derived_from').node);
+            testCase.verifyNotEmpty(r1{1}.directed_relation.relation.node);
             stocks = sum(strcmp({testCase.S.solutions.kind}, 'stock'));
             testCase.verifyEqual(sd.counts.od600_observations, stocks, 'one per measured stock');
             testCase.verifyEqual(sd.counts.days, numel(unique(dateshift([testCase.S.solutions.day], ...

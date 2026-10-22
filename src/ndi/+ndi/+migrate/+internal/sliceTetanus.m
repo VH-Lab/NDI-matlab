@@ -326,7 +326,7 @@ for i = 1:numel(sks)
         'description', sprintf(['brain slice %s of %s; its bath stimulator ' ...
         'is %s'], sliceLabel(sk), lid, elName(s))), ...
         'Id', newId, 'SessionId', sid, 'Datestamp', ds);
-    rel = S.relation(newId, animalId, S.term('BFO:0000050', 'part_of'), ...
+    rel = S.relation(newId, animalId, ndi.v2.vocabTerm('relation', 'part_of'), ...
         'SessionId', sid, 'Datestamp', ds);
     plan.minted = [plan.minted, {sl, rel}];
 end
@@ -902,9 +902,10 @@ s.depends_on = d;
 end
 
 function nm = relationName(s)
-nm = '';
+% NDI's handle for the relation, read by node (Jess Haley 2026-10-22
+% [vocabulary nodes] L1)
 r = blockOf(blockOf(s, 'directed_relation'), 'relation');
-nm = charField(r, 'name');
+nm = char(ndi.v2.vocabHandle('relation', r));
 end
 
 function nm = variableName(s)

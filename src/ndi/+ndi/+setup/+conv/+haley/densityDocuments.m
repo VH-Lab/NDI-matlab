@@ -287,7 +287,7 @@ for i = 1:numel(fits)
     pats = unique(L.patchId(q.members & ~cellfun(@isempty, L.patchId)));
     for p = 1:numel(pats)
         out.datasetDocuments{end+1} = did2.build.directedRelation(pats{p}, grp.base.id, ...
-            'member_of', 'SessionId', dsid);
+            ndi.v2.vocabTerm('relation', 'member_of'), 'SessionId', dsid);
         out.counts.members = out.counts.members + 1;
     end
     lost = sum(q.sel & cellfun(@isempty, L.statementId));
@@ -599,7 +599,7 @@ id = regexprep(lower(label), '[^a-z0-9.]+', '_');
 f = struct('local_identifier', ['ecoli_fit_group_' regexprep(id, '^e._coli_patches_', '')], ...
     'name', label, 'description', ['The E. coli patches seeded this way, whose border ' ...
     'amplitude the lab fitted as one line (decision #65).'], ...
-    'type', did2.build.term('', 'group'));
+    'type', ndi.v2.vocabTerm('entity_type', 'group'));
 end
 
 function c = conditionsOf(q)

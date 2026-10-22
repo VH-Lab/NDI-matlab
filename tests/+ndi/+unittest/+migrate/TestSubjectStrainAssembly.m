@@ -180,7 +180,8 @@ classdef TestSubjectStrainAssembly < matlab.unittest.TestCase
             r = relations(minted, cre.base.id, 'derived_from');
             testCase.verifyNumElements(r, 1);
             testCase.verifyEqual(depValue(r{1}, 'parent_id'), sd.base.id);
-            testCase.verifyEqual(r{1}.directed_relation.relation.node, 'RO:0001000');
+            testCase.verifyEqual(r{1}.directed_relation.relation.node, ndi.v2.vocabTerm('relation', 'derived_from').node);   % [derived from general]
+            testCase.verifyTrue(ndi.v2.vocabIs('relation', r{1}.directed_relation.relation, 'derived_from'));
             testCase.verifyEmpty(relations(minted, sd.base.id, 'derived_from'));
             testCase.verifyEqual(report.background_edges, 1);
             testCase.verifyEqual(report.background_unresolved, 0);

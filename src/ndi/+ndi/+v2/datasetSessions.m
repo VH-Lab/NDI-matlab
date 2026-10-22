@@ -160,8 +160,8 @@ q = ndi.query('', 'isa', 'directed_relation', '') & ...
 rels = database.search(q);
 for k = 1:numel(rels)
     p = rels{k}.document_properties;
-    if ~strcmp(ndi.v2.termName(ndi.v2.blockOf(p, 'directed_relation', 'relation', '')), member)
-        continue;
+    if ~ndi.v2.vocabIs('relation', ndi.v2.blockOf(p, 'directed_relation', 'relation', ''), member)
+        continue;   % by node (Jess Haley 2026-10-22 [vocabulary nodes] L1)
     end
     c = ndi.v2.edgeIds(p, 'child_id');
     children = [children, c(:)']; %#ok<AGROW>

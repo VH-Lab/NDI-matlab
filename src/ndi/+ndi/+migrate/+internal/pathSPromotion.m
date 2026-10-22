@@ -891,7 +891,7 @@ if ~isempty(sideTerm)
         LATERALITY_VARIABLE(), S.asTerm(sideTerm), common{:});
 end
 
-relation = S.relation(partId, parentId, S.term('BFO:0000050', 'part_of'), common{:});
+relation = S.relation(partId, parentId, ndi.v2.vocabTerm('relation', 'part_of'), common{:});
 
 parts = struct('entity', ent, 'assertion', assertion, 'relation', relation);
 parts.laterality = laterality;

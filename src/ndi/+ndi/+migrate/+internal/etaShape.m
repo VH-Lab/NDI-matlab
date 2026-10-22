@@ -107,7 +107,9 @@ classdef etaShape
                     'time_reference_id', opts.TimeReferenceIds{k});
             end
             body.base = ndi.migrate.internal.etaShape.baseBlock(opts.Id, opts.Datestamp);
-            ent = struct('type', struct('node', '', 'name', type));
+            % the type's node and the name the schema stores for it (Jess
+            % Haley 2026-10-22 [vocabulary nodes] L2)
+            ent = struct('type', ndi.v2.vocabTerm('entity_type', type));
             for n = {'name', 'local_identifier', 'description'}
                 if isfield(fields, n{1}) && ~isempty(fields.(n{1}))
                     ent.(n{1}) = char(fields.(n{1}));
@@ -210,7 +212,15 @@ classdef etaShape
                 body = S.addEdge(body, 'epoch_id', opts.EpochId);
             end
             body.base = S.baseBlock(opts.Id, opts.Datestamp);
-            blk = struct('relation', S.asTerm(relationTerm));
+            % a relation NDI knows is written with its node and the name the
+            % schema stores for it, whatever the caller spelled (Jess Haley
+            % 2026-10-22 [vocabulary nodes] L1); any other term as given
+            rt = S.asTerm(relationTerm);
+            h = ndi.v2.vocabHandle('relation', rt);
+            if any(strcmp(h, ndi.v2.vocabNodes('relation').handles))
+                rt = ndi.v2.vocabTerm('relation', h);
+            end
+            blk = struct('relation', rt);
             % 0 is the FIRST position (T14); unordered is -1 or absent
             % (did-schema directed_relation.order blank_value), so an
             % unordered relation writes no `order` and 0 is never "no order"
@@ -437,16 +447,12 @@ classdef etaShape
         end
 
         function t = entityType(s)
-            %ENTITYTYPE The `entity.type` name, '' when none.
+            %ENTITYTYPE NDI's handle for the `entity.type` ('organism'), read by
+            %   node (Jess Haley 2026-10-22 [vocabulary nodes] L2); '' when none.
             t = '';
             if isstruct(s) && isfield(s, 'entity') && isstruct(s.entity) ...
                     && isfield(s.entity, 'type')
-                v = s.entity.type;
-                if isstruct(v) && isfield(v, 'name')
-                    t = char(v.name);
-                elseif ischar(v) || isstring(v)
-                    t = char(v);
-                end
+                t = char(ndi.v2.vocabHandle('entity_type', s.entity.type));
             end
         end
 
@@ -597,15 +603,12 @@ classdef etaShape
         end
 
         function n = relationName(s)
+            %RELATIONNAME NDI's handle for the relation ('part_of'), read by node
+            %   (Jess Haley 2026-10-22 [vocabulary nodes] L1); '' when none.
             n = '';
             if isstruct(s) && isfield(s, 'directed_relation') && isstruct(s.directed_relation) ...
                     && isfield(s.directed_relation, 'relation')
-                r = s.directed_relation.relation;
-                if isstruct(r) && isfield(r, 'name')
-                    n = char(r.name);
-                elseif ischar(r)
-                    n = r;
-                end
+                n = char(ndi.v2.vocabHandle('relation', s.directed_relation.relation));
             end
         end
 

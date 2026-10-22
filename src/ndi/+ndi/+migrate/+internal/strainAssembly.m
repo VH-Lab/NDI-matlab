@@ -312,7 +312,7 @@ for k = 1:numel(strainIdx)
         pid = parents{p};
         if isKey(byId, pid) && assembled(byId(pid))
             minted{end+1} = S.relation(idOf{i}, pid, ...
-                S.term('RO:0001000', 'derived_from'), common{:}); %#ok<AGROW>
+                ndi.v2.vocabTerm('relation', 'derived_from'), common{:}); %#ok<AGROW>
             report.background_edges = report.background_edges + 1;
         else
             report.background_unresolved = report.background_unresolved + 1;

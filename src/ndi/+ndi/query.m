@@ -150,10 +150,9 @@ classdef query < did.query
                 q = q & did.query('subject.type.name', '~exact_string', others{k});
             end
             types = ndi.v2.subjectTypes();
-            t = did.query('entity.type.name', 'exact_string', types{1});
-            for k = 2:numel(types)
-                t = t | did.query('entity.type.name', 'exact_string', types{k});
-            end
+            % by node, or any name the type has gone by (Jess Haley
+            % 2026-10-22 [vocabulary nodes] L2)
+            t = ndi.v2.vocabQuery('entity.type', 'entity_type', types);
             q = q | (did.query('', 'isa', 'entity') & t);
             ss = q.searchstructure;
         end

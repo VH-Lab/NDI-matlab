@@ -82,7 +82,13 @@ try
         for k = 1:numel(rows)
             r = rows{k};
             if isstruct(r) && isfield(r, 'type') && (ischar(r.type) || isstring(r.type))
-                types{end+1} = char(r.type); %#ok<AGROW>
+                % NDI's handle, by the row's node (Jess Haley 2026-10-22
+                % [vocabulary nodes] L2): 'dataset' even once the registry
+                % stores the ontology label
+                node = '';
+                if isfield(r, 'node') && (ischar(r.node) || isstring(r.node)), node = char(r.node); end
+                types{end+1} = char(ndi.v2.vocabHandle('entity_type', ...
+                    struct('node', node, 'name', char(r.type)), schemaPath)); %#ok<AGROW>
             end
         end
     end

@@ -210,7 +210,7 @@ isRel = strcmp(cls, 'directed_relation');
 parentsOf = containers.Map();
 for i = find(isRel)
     d = docs{i};
-    if ~strcmp(relationName(d), member), continue; end
+    if ~ndi.v2.vocabIs('relation', relationTerm(d), member), continue; end   % by node (L1)
     c = edgeOf(d, 'child_id'); p = edgeOf(d, 'parent_id');
     if isKey(parentsOf, c), parentsOf(c) = [parentsOf(c), {p}]; else, parentsOf(c) = {p}; end
 end
@@ -235,14 +235,14 @@ for i = sess
 end
 end
 
-function r = relationName(d)
+function r = relationTerm(d)
+% the relation a directed_relation stores ({node, name} or a name)
 arguments
     d (1,1) struct
 end
 r = '';
 if isfield(d, 'directed_relation') && isfield(d.directed_relation, 'relation')
-    x = d.directed_relation.relation;
-    if isstruct(x) && isfield(x, 'name'), r = x.name; else, r = char(x); end
+    r = d.directed_relation.relation;
 end
 end
 

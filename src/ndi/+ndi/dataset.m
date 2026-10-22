@@ -1632,7 +1632,7 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
             member = 'included_in';
             for k = 1:numel(rels)
                 p = rels{k}.document_properties;
-                if strcmp(ndi.v2.termName(ndi.v2.blockOf(p, 'directed_relation', 'relation', '')), member)
+                if ndi.v2.vocabIs('relation', ndi.v2.blockOf(p, 'directed_relation', 'relation', ''), member)
                     ids{end+1} = p.base.id; %#ok<AGROW>
                 end
             end
@@ -1747,7 +1747,7 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
                     p = docs{k};
                     if strcmp(char(p.document_class.class_name), 'directed_relation') && ...
                             any(strcmp(ndi.v2.edgeIds(p, 'child_id'), entityId)) && ...
-                            strcmp(ndi.v2.termName(ndi.v2.blockOf(p, 'directed_relation', 'relation', '')), member)
+                            ndi.v2.vocabIs('relation', ndi.v2.blockOf(p, 'directed_relation', 'relation', ''), member)
                         parents = [parents, ndi.v2.edgeIds(p, 'parent_id')]; %#ok<AGROW>
                     end
                 end
@@ -1764,7 +1764,10 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
                     return;
                 end
             end
-            add = {did2.build.directedRelation(entityId, partOf, member, 'SessionId', dsid)};
+            % the relation's node and the name the schema stores for it
+            % (Jess Haley 2026-10-22 [vocabulary nodes] L1)
+            add = {did2.build.directedRelation(entityId, partOf, ndi.v2.vocabTerm('relation', member), ...
+                'SessionId', dsid)};
             if linked
                 add{end+1} = did2.build.document('linked_session', ...
                     struct('path', ndi.v2.linkPath(ndi_session_obj.getpath(), ndi_dataset_obj.getpath())), ...
@@ -1814,7 +1817,8 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
                 a = char(report.matches.incoming_id(k));
                 b = char(report.matches.existing_id(k));
                 if ismember(a, joined(b)), continue; end      % joined already
-                d = did2.build.undirectedRelation({a, b}, 'same_as', 'SessionId', dsid);
+                d = did2.build.undirectedRelation({a, b}, ndi.v2.vocabTerm('relation', 'same_as'), ...
+                    'SessionId', dsid);
                 add{end+1} = d; %#ok<AGROW>
                 report.matches.relation_id(k) = string(d.base.id);
                 joined(b) = [joined(b), {a}];

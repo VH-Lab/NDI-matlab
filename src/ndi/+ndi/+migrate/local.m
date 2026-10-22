@@ -2501,8 +2501,7 @@ function c = datasetLayerCensus(docs)
                 t = docs{k}.get('entity.type');
             catch
             end
-            isDataset = isstruct(t) && isfield(t, 'name') ...
-                && strcmpi(char(t.name), 'dataset');
+            isDataset = ~isempty(t) && ndi.v2.vocabIs('entity_type', t, 'dataset');   % by node (L2)
         end
         isMembership = false;
         if strcmp(cls, 'directed_relation')
@@ -2514,8 +2513,7 @@ function c = datasetLayerCensus(docs)
                     r = docs{k}.get('directed_relation.relation');
                 catch
                 end
-                isMembership = isstruct(r) && isfield(r, 'name') ...
-                    && strcmp(char(r.name), 'included_in');
+                isMembership = ~isempty(r) && ndi.v2.vocabIs('relation', r, 'included_in');   % by node (L1)
             end
         end
         if isDataset
