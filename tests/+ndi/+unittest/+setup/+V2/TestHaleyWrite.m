@@ -1165,7 +1165,7 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             for i = 1:numel(obs)
                 A = ndi.statement.fromDocument(session, obs{i}).axes();
                 if height(A) ~= 2 || ~all(A.unit == "pixel"), continue; end
-                testCase.verifyEqual(A.variable, ["Y-Coordinate"; "X-Coordinate"]);
+                testCase.verifyEqual(A.term, ["Y-Coordinate"; "X-Coordinate"]);
                 testCase.verifyEqual(A.coordinates{1}, (0.5:1:A.n(1) - 0.5)');
                 testCase.verifyEqual(A.n(1), A.n(2), 'the fixture''s images are square');
                 sizes{end+1} = A.n(1); %#ok<AGROW>
