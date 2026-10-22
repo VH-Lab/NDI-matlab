@@ -154,6 +154,16 @@ for i = 1:numel(names)
         variable = 'grid square size (fraction of the rectangle)';
         unit = '';
     end
+    if strcmp(f, 'sPhaseShift') && isnumeric(v) && isscalar(v)
+        % [spatial phase in degrees] (did-schema V_eta_method_plan.md, relayed
+        % as decided 2026-10-22): T14's canonical angle unit is the degree;
+        % the v1 radians are the source
+        e = entry(variable, DEGREE, 'quantity', double(v) * 180 / pi);
+        e.source_value = sprintf('%.17g', double(v));
+        e.source_unit = RADIAN;
+        entries(end+1) = e; %#ok<AGROW>
+        continue;
+    end
     entries = addTyped(entries, variable, unit, shape, v);
 end
 if hasColour
@@ -235,6 +245,9 @@ end
 function t = CENTIMETRE
 t = struct('node', 'om:centimetre', 'name', 'centimetre');
 end
+function t = DEGREE
+t = struct('node', 'om:degree', 'name', 'degree');
+end
 function t = RADIAN
 % NewStim periodicstim: "in radians where 2*pi is 1 cycle" (om:radian,
 % did-schema term registry; recorded there as proposed)
@@ -262,11 +275,13 @@ end
 % ===================== entries ============================================
 
 function e = emptyEntries()
-e = struct('variable', {}, 'unit', {}, 'form', {}, 'value', {});
+e = struct('variable', {}, 'unit', {}, 'form', {}, 'value', {}, ...
+    'source_value', {}, 'source_unit', {});
 end
 
 function e = entry(variable, unit, form, value)
-e = struct('variable', variable, 'unit', unit, 'form', form, 'value', value);
+e = struct('variable', variable, 'unit', unit, 'form', form, 'value', value, ...
+    'source_value', '', 'source_unit', []);
 end
 
 function entries = addTyped(entries, variable, unit, shape, v)

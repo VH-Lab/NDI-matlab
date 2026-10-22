@@ -93,8 +93,11 @@ classdef TestStimulusRecipe < matlab.unittest.TestCase
                 struct('node', 'EMPTY:0000260', 'name', 'frame'));
             testCase.verifyEqual(entryOf(r, 'viewing distance').unit, ...
                 struct('node', 'om:centimetre', 'name', 'centimetre'));
-            testCase.verifyEqual(entryOf(r, 'spatial phase').unit, ...
-                struct('node', 'om:radian', 'name', 'radian'));
+            % [spatial phase in degrees] (V_eta_method_plan.md): degrees
+            % canonical (T14), the v1 radians kept as the source
+            sp = entryOf(r, 'spatial phase');
+            testCase.verifyEqual(sp.unit, struct('node', 'om:degree', 'name', 'degree'));
+            testCase.verifyEqual(sp.source_unit, struct('node', 'om:radian', 'name', 'radian'));
             wide = bar(); wide.rect = [0 0 800 600];
             testCase.verifyEqual(ndi.migrate.internal.stimulusRecipe(wide, ...
                 'periodicstim_bars').term, 'uniform luminance field');
@@ -133,6 +136,23 @@ classdef TestStimulusRecipe < matlab.unittest.TestCase
         function testAKindWithNoRecipeIsAnError(testCase)
             testCase.verifyError(@() ndi.migrate.internal.stimulusRecipe( ...
                 struct('M', 200), 'unrecognised'), 'ndi:migrate:stimulusRecipe:kind');
+        end
+
+        function testSpatialPhaseIsDegreesWithTheRadiansAsSource(testCase)
+            p = bar(); p.sPhaseShift = pi / 2;
+            r = ndi.migrate.internal.stimulusRecipe(p, 'periodicstim_bars');
+            sp = entryOf(r, 'spatial phase');
+            testCase.verifyEqual(sp.value, 90, 'AbsTol', 1e-12);
+            testCase.verifyEqual(str2double(sp.source_value), pi / 2, 'AbsTol', 1e-15);
+            testCase.verifyEqual(sp.source_unit.node, 'om:radian');
+            % and the method document carries it
+            m = ndi.migrate.internal.stimulusMethod(r, 'sess_1', '2025-01-01T00:00:00.000Z');
+            prm = m.method.parameters;
+            if iscell(prm); prm = [prm{:}]; end
+            k = find(arrayfun(@(e) strcmp(e.variable.name, 'spatial phase'), prm), 1);
+            testCase.verifyNotEmpty(k);
+            testCase.verifyEqual(prm(k).quantity.value, 90, 'AbsTol', 1e-12);
+            testCase.verifyEqual(prm(k).source_unit.node, 'om:radian');
         end
 
         function testAHartleyStimulusKeepsItsRawParameters(testCase)

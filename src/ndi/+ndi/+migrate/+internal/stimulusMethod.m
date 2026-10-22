@@ -44,6 +44,14 @@ for k = 1:numel(recipe.parameters)
     if any(strcmp(p.form, {'quantity', 'matrix'})) && ~isempty(p.unit)
         args = [args, {'Unit', p.unit}]; %#ok<AGROW>
     end
+    % a converted quantity keeps what the source wrote (did2.build.parameter
+    % 'SourceValue' as text, 'SourceUnit' the source's unit term)
+    if isfield(p, 'source_value') && ~isempty(p.source_value)
+        args = [args, {'SourceValue', p.source_value}]; %#ok<AGROW>
+    end
+    if isfield(p, 'source_unit') && ~isempty(p.source_unit)
+        args = [args, {'SourceUnit', p.source_unit}]; %#ok<AGROW>
+    end
     entries{end+1} = did2.build.parameter(p.variable, args{:}); %#ok<AGROW>
 end
 params = [];
