@@ -532,7 +532,7 @@ classdef TestStimulusPresentationItem < matlab.unittest.TestCase
                 'several_animals'; 'animals'; 'distributive'; ...
                 'standalone'; 'no_subject_reason'; ...
                 'instrument_resolved'; 'epoch_id'; 'animal_source'; ...
-                'stimulus_positions'; 'entity_id'; 'reason'};
+                'trial_positions'; 'entity_id'; 'reason'};
             pres = presentationBody('pres_1', 1, { gratingStim(0, 0.04, 0.5) });
             pres.base.datestamp = '';    % refused before anything is read
             r = ndi.migrate.internal.bodyResolver({pres});
@@ -543,6 +543,9 @@ classdef TestStimulusPresentationItem < matlab.unittest.TestCase
             testCase.verifyEqual(fieldnames(ok), expected);
             testCase.verifyEmpty(ok.reason);
             testCase.verifyEqual(ok.epoch_id, 't00001');
+            % the control record's map: per trial, its item position
+            [m, ~, rep2] = emit(testCase, pres);
+            testCase.verifyEqual(rep2.trial_positions(:)', m.item.value.item(:)');
         end
 
         function testADocumentThatIsNotAResponseIsStillNotSweptIn(testCase)

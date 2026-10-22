@@ -14,7 +14,7 @@ classdef TestControlCalculation < matlab.unittest.TestCase
 
     methods (Test)
         function testAPerTrialControlListBecomesItemPositions(testCase)
-            % stimuli 1..4 map to items [0 1 2 1]; trials name stimulus 4 or 2
+            % per-trial item positions [0 1 2 1]; entries name TRIALS 4 and 2
             cs = controlDoc([4 4 2]);
             [c, why] = ndi.migrate.internal.controlCalculation(cs, 'pres_1', ...
                 'animal_1', [0 1 2 1], 'sess_1');
@@ -29,6 +29,20 @@ classdef TestControlCalculation < matlab.unittest.TestCase
                 'the time reference is the caller''s marker, not a stand-in');
             testCase.verifyEqual(edgeValue(c, did2.convert.mintSessionDuring('marker')), 'cs_1');
             testCase.verifyEqual(c.interaction.method.term.name, 'pseudorandom');
+        end
+
+        function testEntriesAreTrialNumbersNotStimulusNumbers(testCase)
+            % B's shape: 12 stimuli, 60 trials; entries 11 and 20 name TRIALS
+            % (both show stimulus 12, the blank). Read as stimulus numbers 20
+            % would be out of range -- the freeze run (39702282413) minted 0 of
+            % 1242 that way.
+            order = [6 2 10 4 11 3 1 5 9 8 12 7 8 4 9 3 2 6 1 12];
+            itemOfStimulus = 0:11;                 % one item per stimulus
+            trialPositions = itemOfStimulus(order);
+            [c, why] = ndi.migrate.internal.controlCalculation(controlDoc([11 11 20]), ...
+                'pres_1', 'animal_1', trialPositions, 'sess_1');
+            testCase.verifyEmpty(why);
+            testCase.verifyEqual(c.item.value.item(:)', [11 11 11]);
         end
 
         function testNaNMeansNoControlAndNoCalculation(testCase)

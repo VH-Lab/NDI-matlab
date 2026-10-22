@@ -304,8 +304,6 @@ for i = 1:numel(stimuli)
     mapToDistinct(i) = hit;
 end
 report.distinct_stimuli = numel(distinct);
-% v1 stimulus number -> 0-based position in item_id (the control record's map)
-report.stimulus_positions = mapToDistinct - 1;
 report.blank_stimuli = sum(isBlank);
 
 methodBodies = cell(1, numel(distinct));
@@ -316,6 +314,9 @@ for d = 1:numel(distinct)
 end
 
 value = struct('item', mapToDistinct(order) - 1);   % 0-based (T14)
+% per TRIAL, its 0-based position in item_id: a v1 control_stimulus_ids entry
+% names a trial (an index into presentation_order), not a stimulus
+report.trial_positions = value.item;
 if sum(isBlank) == 1
     value.control_item = find(isBlank) - 1;
 end
@@ -624,7 +625,7 @@ r = struct( ...
     'instrument_resolved', false, ...
     'epoch_id',            '', ...
     'animal_source',       '', ...
-    'stimulus_positions',  [], ...
+    'trial_positions',     [], ...
     'entity_id',           '', ...
     'reason',              '');
 end

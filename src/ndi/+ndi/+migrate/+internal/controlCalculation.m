@@ -18,7 +18,10 @@ function [calc, why] = controlCalculation(v1Body, presentationId, entityId, ...
 %     input_id    the presentation (PRESENTATIONID, the manipulation's id)
 %     value.item  per v1 entry (one per trial, as tuning_response writes it),
 %                 the 0-based position into the presentation's item_id of the
-%                 control stimulus: POSITIONS(v1 stimulus number)
+%                 control stimulus. A v1 entry is a TRIAL number (an index into
+%                 presentation_order: B's control lists name trials 11 and 20
+%                 of a 12-stimulus, 60-trial presentation, both showing
+%                 stimulus 12), so POSITIONS is per trial: POSITIONS(entry).
 %     method      the v1 control_stimulus_id_method: its `method` as the term,
 %                 every other field a parameter
 %     time        a stand-in swapped for the "during the session" marker, as
