@@ -427,8 +427,8 @@ classdef TestObjectLayer < matlab.unittest.TestCase
                 'inclusion in analysis'), ex));
             testCase.assertNotEmpty(ex, 'the import excludes plate 0013');
             variable = ndi.v2.blockOf(ex{1}.document_properties, 'statement', 'variable');
-            doc = did2.build.statement('logical_assertion', plate, variable, false, ...
-                'SessionId', sid);
+            doc = did2.build.statement('assertion', plate, variable, false, ...
+                'SessionId', sid, 'ValueKind', 'logical');
             desc = {'inclusion in analysis', false};
             % written into the copy's database file, then the copy is opened
             db = did2.database.sqlitedb(fullfile(folder, '.ndi', ...

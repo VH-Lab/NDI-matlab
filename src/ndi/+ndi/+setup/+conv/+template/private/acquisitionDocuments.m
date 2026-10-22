@@ -12,8 +12,9 @@ function out = acquisitionDocuments(sessions, entityIds, cfg, throwErrors, optio
 %     entity (type epoch)      the recording's epoch, its local_identifier
 %                              <session>_<file stem>
 %     relative_time_reference  the epoch's own clock, dev_local_time from 0
-%     <leaf> statement         the recording: CFG.acquisition.leaf (an
-%                              observation) of the row's entity, variable and
+%     observation              the recording: an observation with the value
+%                              kind CFG.acquisition.value_kind of the row's
+%                              entity, variable and
 %                              method looked up by NAME in the term registry,
 %                              its value in a data body
 %     opaque_body              the raw file, recorded BY LOCATION (ingest 0,
@@ -99,7 +100,7 @@ for s = 1:n
             % the five documents one recorded file needs, joined, in one call
             [~, stem] = fileparts(file);
             [built, ids] = ndi.setup.V2.recordingDocuments(subject, src, t0, a.time_zone, sid, ...
-                'Leaf', a.leaf, 'Variable', variable, 'Method', method, 'Format', fileFormat, ...
+                'ValueKind', a.value_kind, 'Variable', variable, 'Method', method, 'Format', fileFormat, ...
                 'DatumType', a.datum_type, 'Duration', dur, 'SourceText', startText, ...
                 'Epoch', sprintf('%s_%s', ref, stem), 'Checksums', options.Checksums);
             docs{s} = [docs{s}, built];

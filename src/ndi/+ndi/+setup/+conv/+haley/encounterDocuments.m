@@ -21,37 +21,37 @@ function out = encounterDocuments(dataParentDir, session, R, subjectIds, options
 %   Per worm with encounters (V_eta_study_plan.md, "Repeated events", T2),
 %   each statement's variable, method and conditions a decided term
 %   (haleyTerm) unless named as a label:
-%     time_calculation  `encounter onset time`: THE ENCOUNTER LIST, one entry
+%     time calculation  `encounter onset time`: THE ENCOUNTER LIST, one entry
 %                       per encounter (id >= 1), keyed `encounter`; method
 %                       `patch encounter detection`, method parameter `body
 %                       part` = `midpoint` (the track it reads). Every other
 %                       per-encounter document takes its `encounter` key's
 %                       positions from it (`key_id` / `positions_from`, T14)
-%     item_calculation  `entity in contact`: each encounter's patch
+%     item calculation  `entity in contact`: each encounter's patch
 %                       subject (the source's lawnID = its lawnCenters row, #38)
 %                       and, as `offset`, when it ended (`exit`); when the
 %                       schema has `item`. Inputs also the worm's per-frame
 %                       nearest-patch tracks (stage 10 part B), which the
 %                       patch was read from (decision #122)
-%     velocity_calculation  `speed`, method `median`, keyed [encounter x
+%     velocity calculation  `speed`, method `median`, keyed [encounter x
 %                       `encounter period`] (`during the encounter`:
 %                       velocityOn; `after the encounter`: velocityOff, NaN
 %                       after the last encounter when the track ends first),
 %                       its `datum_order` 'F' (the encounter fastest)
 %                       (decision #120); um/s
 %                       -> m/s throughout
-%     velocity_calculation  `speed`, method `minimum`, condition `patch
+%     velocity calculation  `speed`, method `minimum`, condition `patch
 %                       encounter period` = during (velocityOnMin)
-%     velocity_calculation  `speed`, method `peak speed before an event`
+%     velocity calculation  `speed`, method `peak speed before an event`
 %                       (velocityBeforeEnter), conditions `reference
 %                       time point` = `encounter onset time`, `analysis window
 %                       start` -10 s, `analysis window end` 0 s
-%     velocity_calculation  `speed`, method `minimum speed after an event`
+%     velocity calculation  `speed`, method `minimum speed after an event`
 %                       (velocityAfterEnter), the same anchor, window 0..+10 s
-%     acceleration_calculation  `acceleration`, method `ordinary least squares
+%     acceleration calculation  `acceleration`, method `ordinary least squares
 %                       estimation` (decelerate, um/s^2 -> m/s^2), the same
 %                       anchor, window -1.5..+6.5 s
-%     length_calculation  `signed distance from the nearest bacterial patch
+%     length calculation  `signed distance from the nearest bacterial patch
 %                       edge` (EMPTY:0000350: positive inside the patch,
 %                       negative outside; the variable says so, decision #119),
 %                       condition the period: during, method `maximum`
@@ -60,13 +60,13 @@ function out = encounterDocuments(dataParentDir, session, R, subjectIds, options
 %                       SIGNED value -distanceOffMax (the source stores
 %                       abs(min(distanceLawnEdge)) between encounters, lines
 %                       309-310); mm -> m
-%     score_calculation  `posterior probability`, keyed by encounter, one per
+%     score calculation  `posterior probability`, keyed by encounter, one per
 %                       state: condition `behavioral state` = `exploitation`
 %                       (exploitPosterior, method `Gaussian mixture model
 %                       clustering`) and = `sensing` (sensePosterior, method
 %                       `quadratic discriminant analysis`); scale `probability`,
 %                       0-1. timeSlowDown is not kept: no figure uses it
-%     term_calculation  `encounter type`, method EDAM Classification
+%     term calculation  `encounter type`, method EDAM Classification
 %                       (operation_2990): `patch exploitation encounter`
 %                       (source exploit), `patch sampling encounter` (sample),
 %                       `on-patch search encounter` (searchOn), `off-patch
@@ -252,15 +252,15 @@ for g = 1:max(G)
     % the gap before the first encounter
     if height(gap0) == 1
         if ~isnan(gap0.velocityOff)
-            docs{end+1} = did2.build.statement('velocity_calculation', wormId, haleyTerm('speed'), ...
+            docs{end+1} = did2.build.statement('calculation', wormId, haleyTerm('speed'), ...
                 speed(gap0.velocityOff), 'Method', haleyTerm('median'), ...
-                'Conditions', did2.build.list(before), 'InputIds', inputs, calc{:}); %#ok<AGROW>
+                'Conditions', did2.build.list(before), 'InputIds', inputs, calc{:}, 'ValueKind', 'velocity'); %#ok<AGROW>
         end
         if ~isnan(gap0.distanceOffMax)
             % the source's abs(min(distanceLawnEdge)): the minimum, signed
-            docs{end+1} = did2.build.statement('length_calculation', wormId, edgeDistance, ...
+            docs{end+1} = did2.build.statement('calculation', wormId, edgeDistance, ...
                 mm(-gap0.distanceOffMax), 'Method', haleyTerm('minimum'), ...
-                'Conditions', did2.build.list(before), 'InputIds', inputs, calc{:}); %#ok<AGROW>
+                'Conditions', did2.build.list(before), 'InputIds', inputs, calc{:}, 'ValueKind', 'length'); %#ok<AGROW>
         end
     end
     if n == 0
@@ -270,10 +270,10 @@ for g = 1:max(G)
 
     % the encounter list
     onset = secondsAt(enc.enter);
-    list = did2.build.statement('time_calculation', wormId, ...
+    list = did2.build.statement('calculation', wormId, ...
         haleyTerm('encounter onset time'), did2.build.valueCell('time', onset), ...
         'Keys', did2.build.list(did2.build.key(haleyTerm('encounter'), n, 'Origin', 0, 'Spacing', 1)), ...
-        detection{:}, 'InputIds', inputs, calc{:});
+        detection{:}, 'InputIds', inputs, calc{:}, 'ValueKind', 'time');
     docs{end+1} = list; %#ok<AGROW>
     encKey = did2.build.key(haleyTerm('encounter'), n, 'PositionsFrom', 0);
     keyIds = {'KeyIds', {list.base.id}};
@@ -290,9 +290,9 @@ for g = 1:max(G)
     pIds = patchIds(subjectIds, plate);
     if all(enc.lawnID >= 1 & enc.lawnID <= numel(pIds))
         v = struct('item', enc.lawnID(:)' - 1, 'offset', secondsAt(enc.exit)');
-        docs{end+1} = did2.build.statement('item_calculation', wormId, ...
+        docs{end+1} = did2.build.statement('calculation', wormId, ...
             haleyTerm('entity in contact'), v, 'Edges', struct('item_id', {pIds}), ...
-            detection{:}, keyed{:}, 'InputIds', [{list.base.id}, inputs, nearest], calc{:}); %#ok<AGROW>
+            detection{:}, keyed{:}, 'InputIds', [{list.base.id}, inputs, nearest], calc{:}, 'ValueKind', 'item'); %#ok<AGROW>
     else
         out.skipped{end+1} = sprintf('%s: an encounter names a patch %s does not have; no patch list', ...
             worm, plate);
@@ -303,10 +303,10 @@ for g = 1:max(G)
         x = [double(enc.velocityOn), double(enc.velocityOff)];
         byPeriod = keysWith(did2.build.key(haleyTerm('encounter period'), 2, 'Labels', ...
             haleyTerm({'during the encounter', 'after the encounter'})));
-        docs{end+1} = did2.build.statement('velocity_calculation', wormId, haleyTerm('speed'), ...
+        docs{end+1} = did2.build.statement('calculation', wormId, haleyTerm('speed'), ...
             speed(x), 'Method', haleyTerm('median'), byPeriod{:}, order{:}, ...
             'Notes', 'After the last encounter: NaN when the track ends first.', ...
-            per{:}); %#ok<AGROW>
+            per{:}, 'ValueKind', 'velocity'); %#ok<AGROW>
     elseif any(ismember({'velocityOn', 'velocityOff'}, enc.Properties.VariableNames))
         out.skipped{end+1} = sprintf('%s: encounter.mat has only one of velocityOn / velocityOff; no median speeds', ...
             worm);
@@ -314,18 +314,18 @@ for g = 1:max(G)
 
     % the other per-encounter values, each with its own method and conditions
     q = {
-        'velocity_calculation', 'speed', 'velocityOnMin', @speed, ...
+        'velocity', 'speed', 'velocityOnMin', @speed, ...
             {'Method', haleyTerm('minimum')}, {during}, ''
-        'velocity_calculation', 'speed', 'velocityBeforeEnter', @speed, ...
+        'velocity', 'speed', 'velocityBeforeEnter', @speed, ...
             {'Method', haleyTerm('peak speed before an event')}, ...
             eventWindow(-10, 0), ''
-        'velocity_calculation', 'speed', 'velocityAfterEnter', @speed, ...
+        'velocity', 'speed', 'velocityAfterEnter', @speed, ...
             {'Method', haleyTerm('minimum speed after an event')}, eventWindow(0, 10), ''
-        'acceleration_calculation', 'acceleration', 'decelerate', @accel, ...
+        'acceleration', 'acceleration', 'decelerate', @accel, ...
             {'Method', haleyTerm('ordinary least squares estimation')}, eventWindow(-1.5, 6.5), ''
-        'length_calculation', edgeDistance, 'distanceOnMax', @mm, ...
+        'length', edgeDistance, 'distanceOnMax', @mm, ...
             {'Method', haleyTerm('maximum')}, {during}, ''
-        'length_calculation', edgeDistance, 'distanceOffMax', @(x) mm(-x), ...
+        'length', edgeDistance, 'distanceOffMax', @(x) mm(-x), ...
             {'Method', haleyTerm('minimum')}, {after}, ''};
     for j = 1:size(q, 1)
         if ~ismember(q{j, 3}, enc.Properties.VariableNames), continue; end
@@ -334,9 +334,9 @@ for g = 1:max(G)
         if ~isempty(q{j, 7}), note = {'Notes', q{j, 7}}; end
         variable = q{j, 2};
         if ischar(variable), variable = haleyTerm(variable); end
-        docs{end+1} = did2.build.statement(q{j, 1}, wormId, variable, ...
+        docs{end+1} = did2.build.statement('calculation', wormId, variable, ...
             q{j, 4}(x), q{j, 5}{:}, 'Conditions', did2.build.list(q{j, 6}{:}), ...
-            keyed{:}, note{:}, per{:}); %#ok<AGROW>
+            keyed{:}, note{:}, per{:}, 'ValueKind', q{j, 1}); %#ok<AGROW>
     end
 
     % the posterior probabilities of exploitation and sensing: two statements,
@@ -349,12 +349,12 @@ for g = 1:max(G)
         'sensePosterior',   'sensing',      'quadratic discriminant analysis'};
     for j = 1:size(posteriors, 1)
         if ~ismember(posteriors{j, 1}, enc.Properties.VariableNames), continue; end
-        docs{end+1} = did2.build.statement('score_calculation', wormId, ...
+        docs{end+1} = did2.build.statement('calculation', wormId, ...
             haleyTerm('posterior probability'), prob(double(enc.(posteriors{j, 1}))), ...
             'Method', haleyTerm(posteriors{j, 3}), ...
             'Conditions', did2.build.list(did2.build.condition(haleyTerm('behavioral state'), ...
                 'Term', haleyTerm(posteriors{j, 2}))), ...
-            keyed{:}, per{:}); %#ok<AGROW>
+            keyed{:}, per{:}, 'ValueKind', 'score'); %#ok<AGROW>
     end
 
     % the encounter type, from thresholds on the posteriors
@@ -371,8 +371,8 @@ for g = 1:max(G)
                 'patch edge (distanceOnMax < 0). Cannot Be Determined marks an encounter with a ' ...
                 'missing posterior, which the source leaves unlabeled.'], ...
             keyed{:}, per{:}};
-        docs{end+1} = did2.build.statement('term_calculation', wormId, ...
-            haleyTerm('encounter type'), encounterTypes(names), typeArgs{:}); %#ok<AGROW>
+        docs{end+1} = did2.build.statement('calculation', wormId, ...
+            haleyTerm('encounter type'), encounterTypes(names), typeArgs{:}, 'ValueKind', 'term'); %#ok<AGROW>
     end
 end
 out.documents = docs;

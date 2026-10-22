@@ -3,9 +3,9 @@ function out = calculationDocuments(sessions, entityIds, recordings, sharedIds, 
 %
 %   OUT = calculationDocuments(SESSIONS, ENTITYIDS, RECORDINGS, SHAREDIDS, CFG,
 %   THROWERRORS) builds, for each row of a session's source table with a
-%   value in CFG.calculations.value_column, a CFG.calculations.leaf
-%   statement (length_calculation in the template: a diameter in mm, stored
-%   in metres with the source's mm kept) about the row's entity. A
+%   value in CFG.calculations.value_column, a calculation whose value kind
+%   is CFG.calculations.data_type (length in the template: a diameter in
+%   mm, stored in metres with the source's mm kept) about the row's entity. A
 %   calculation lists the statements it was computed from: its input is the
 %   row's recording (stage 3's statement, 'InputIds'), and it is timed by
 %   that recording. Variable and method by NAME from the term registry.
@@ -78,10 +78,10 @@ for s = 1:n
                 r = skipRow(r, where, 'no entity or no recording it was computed from');
                 continue;
             end
-            st = did2.build.statement(c.leaf, subject, variable, quantityCell(c, text), ...
+            st = did2.build.statement('calculation', subject, variable, quantityCell(c, text), ...
                 'Method', method, 'InputIds', recordings.statement_id(rec), ...
                 'TimeReferenceIds', recordings.time_reference_id(rec), ...
-                'Notes', note, 'SessionId', sid, env{:});
+                'Notes', note, 'SessionId', sid, env{:}, 'ValueKind', char(c.data_type));
             docs{s}{end+1} = st;
             r.written = r.written + 1;
             r.documents = r.documents + 1;

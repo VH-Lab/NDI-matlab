@@ -15,7 +15,7 @@ function out = geometryDocuments(dataParentDir, session, R, subjectIds, options)
 %                         positive toward image down, one pixel = 1/`scale` mm
 %                         (the lab's scale: the arena's known diameter over its
 %                         mask's size in pixels, so it is marked approximate)
-%     label_calculation   one per mask, variable `Imaging Region of Interest`
+%     label calculation   one per mask, variable `Imaging Region of Interest`
 %                         (NCIT:C85402) with the condition `Location` = the
 %                         region (decision #113): `arenaMask` (arena),
 %                         `refMask` (reference mark; foragingMini's arenas
@@ -23,24 +23,24 @@ function out = geometryDocuments(dataParentDir, session, R, subjectIds, options)
 %                         `lawnMask` (bacterial patch). A bool per pixel, in a sampled_body keyed
 %                         [Y-coordinate, X-coordinate] (MATLAB's [row,
 %                         column]), metres with pixels as the source unit
-%     item_calculation    `lawnClosest` (`nearest bacterial patch`): which patch
+%     item calculation    `lawnClosest` (`nearest bacterial patch`): which patch
 %                         is nearest each pixel, as a 0-based index into the
 %                         plate's patch subjects (item_id, in lawnCenters
 %                         order, decision #38)
-%     score_calculation   `lawnRegistration` (variable `overlap`, method image
+%     score calculation   `lawnRegistration` (variable `overlap`, method image
 %                         registration): the fraction of the arena that
 %                         overlaps once the lawn clip is registered onto the
 %                         video (0-1, scale `fraction`); its inputs are both
 %                         recordings
 %   And per patch (the plate's patch subjects, in lawnCenters order, #38), each
 %   about the PATCH, its input the recording:
-%     position_calculation `position` (`lawnCenters`, the patch's center), in
+%     position calculation `position` (`lawnCenters`, the patch's center), in
 %                         the video's coordinate system: MATLAB's pixel centers
 %                         are at 1, 2, ..., the system's origin is the image's
 %                         corner, so a center at column x is x - 0.5 pixels
 %                         from it
-%     length_calculation  `radius` (`lawnRadii`, pixels -> metres)
-%     score_calculation   `circularity` (`lawnCircularity`, 0-1)
+%     length calculation  `radius` (`lawnRadii`, pixels -> metres)
+%     score calculation   `circularity` (`lawnCircularity`, 0-1)
 %   (doImport's patch table had these; decision #70)
 %   The arena mask's method parameter is the plate or arena diameter. The lawn
 %   mask's inputs are the recording and the plate's target design statements
@@ -100,7 +100,7 @@ if strcmp(folder, 'ecoli')
     return;
 end
 if isempty(options.OperatingSystemId)
-    % every calculation names the OS it ran on (subject_calculation requires it)
+    % every calculation names the OS it ran on (a calculation requires it)
     out.skipped{end+1} = sprintf(['%s: no operating system document (the spec''s `macos`, ' ...
         'built by the metadata stage); no calculations'], ref);
     return;
@@ -202,11 +202,11 @@ for k = 1:height(R)
             if numel(pIds) > 255, dt = 'uint16'; end
             inputs = {videoId};
             if ~isempty(lawnMaskId), inputs{end+1} = lawnMaskId; end %#ok<AGROW>
-            st = did2.build.statement('item_calculation', subjectIds(plate), ...
+            st = did2.build.statement('calculation', subjectIds(plate), ...
                 haleyTerm('nearest bacterial patch'), [], 'DataBody', true, 'DatumType', dt, ...
                 'Keys', pixelKeys(closest, pixel), 'SessionId', sid, ...
                 'TimeReferenceIds', timeIds, 'InputIds', inputs, ...
-                'Edges', struct('item_id', {pIds}), env{:});
+                'Edges', struct('item_id', {pIds}), env{:}, 'ValueKind', 'item');
             docs = [docs, {st, ingestedBody(st, closest - 1, dt, pixelKeys(closest, pixel), sid, ...
                 'Each pixel''s nearest patch: a 0-based index into item_id.')}]; %#ok<AGROW>
             out.counts.nearest_patch = out.counts.nearest_patch + 1;
@@ -224,10 +224,10 @@ for k = 1:height(R)
             && isKey(options.RecordingStatements, lawnEpoch)
         v = did2.build.valueCell('score', fit, 'Fields', struct( ...
             'scale', haleyTerm('proportion'), 'scale_min', 0, 'scale_max', 1));
-        st = did2.build.statement('score_calculation', subjectIds(plate), ...
+        st = did2.build.statement('calculation', subjectIds(plate), ...
             haleyTerm('overlap'), v, 'Method', haleyTerm('image registration'), ...
             'SessionId', sid, 'TimeReferenceIds', timeIds, ...
-            'InputIds', {videoId, options.RecordingStatements(lawnEpoch)}, env{:});
+            'InputIds', {videoId, options.RecordingStatements(lawnEpoch)}, env{:}, 'ValueKind', 'score');
         docs{end+1} = st; %#ok<AGROW>
         out.counts.registration = out.counts.registration + 1;
     end
@@ -253,30 +253,30 @@ out.documents = docs;
         for j = 1:n
             xy = double(centers(j, 1:2)) - 0.5;
             if all(isfinite(xy))
-                docs{end+1} = did2.build.statement('position_calculation', pIds{j}, ...
+                docs{end+1} = did2.build.statement('calculation', pIds{j}, ...
                     haleyTerm('position'), struct('coordinates', xy), ...
-                    'Edges', struct('coordinate_system_id', csId), calc{:}); %#ok<AGROW>
+                    'Edges', struct('coordinate_system_id', csId), calc{:}, 'ValueKind', 'position'); %#ok<AGROW>
                 out.counts.patch_center = out.counts.patch_center + 1;
             end
             if numel(radii) == n && isfinite(radii(j))
                 v = did2.build.valueCell('length', double(radii(j)) * pixel, ...
                     'SourceValue', double(radii(j)), 'SourceUnit', ndi.setup.V2.sourceUnit('pixel'), 'Approximate', true);
-                docs{end+1} = did2.build.statement('length_calculation', pIds{j}, ...
-                    haleyTerm('radius'), v, calc{:}); %#ok<AGROW>
+                docs{end+1} = did2.build.statement('calculation', pIds{j}, ...
+                    haleyTerm('radius'), v, calc{:}, 'ValueKind', 'length'); %#ok<AGROW>
                 out.counts.patch_radius = out.counts.patch_radius + 1;
             end
             if numel(circ) == n && isfinite(circ(j))
                 v = did2.build.valueCell('score', double(circ(j)), 'Fields', struct( ...
                     'scale', haleyTerm('circularity'), 'scale_min', 0, 'scale_max', 1));
-                docs{end+1} = did2.build.statement('score_calculation', pIds{j}, ...
-                    haleyTerm('circularity'), v, calc{:}); %#ok<AGROW>
+                docs{end+1} = did2.build.statement('calculation', pIds{j}, ...
+                    haleyTerm('circularity'), v, calc{:}, 'ValueKind', 'score'); %#ok<AGROW>
                 out.counts.patch_circularity = out.counts.patch_circularity + 1;
             end
         end
     end
 
     function [docs, n, id] = mask(docs, d, column, region, args)
-        % one label_calculation + its body; none when the mask is absent or
+        % one label calculation + its body; none when the mask is absent or
         % empty. Variable Imaging Region of Interest (decision #113, tenet T16:
         % the pixels say where a region is; `binary mask` named how it is
         % stored), with the condition Location = REGION (a haleyTerm handle):
@@ -289,9 +289,9 @@ out.documents = docs;
         end
         roi = did2.build.list(did2.build.condition(haleyTerm('location'), ...
             'Term', haleyTerm(region)));
-        st = did2.build.statement('label_calculation', subjectIds(plate), ...
+        st = did2.build.statement('calculation', subjectIds(plate), ...
             haleyTerm('region of interest'), [], 'DataBody', true, 'DatumType', 'bool', ...
-            'Keys', pixelKeys(m, pixel), 'Conditions', roi, args{:});
+            'Keys', pixelKeys(m, pixel), 'Conditions', roi, args{:}, 'ValueKind', 'label');
         docs = [docs, {st, ingestedBody(st, logical(m), 'bool', pixelKeys(m, pixel), sid, ...
             sprintf('The %s mask (1 = inside), from the source''s `%s`.', region, column))}];
         n = 1; id = st.base.id;

@@ -3,8 +3,9 @@ function out = manipulationDocuments(sessions, entityIds, cfg, throwErrors)
 %
 %   OUT = manipulationDocuments(SESSIONS, ENTITYIDS, CFG, THROWERRORS) builds,
 %   for each row of a session's source table with a value in
-%   CFG.manipulations.value_column, a CFG.manipulations.leaf statement
-%   (temperature_manipulation in the template) about the row's entity:
+%   CFG.manipulations.value_column, a manipulation whose value kind is
+%   CFG.manipulations.data_type (temperature in the template) about the
+%   row's entity:
 %
 %     variable / method  looked up by NAME in the term registry
 %     value              quantityCell: canonical, source_value, source_unit
@@ -18,9 +19,9 @@ function out = manipulationDocuments(sessions, entityIds, cfg, throwErrors)
 %                        in the source: no time reference and no manipulation.
 %
 %   TEMPLATE: a real importer has many manipulations (Haley: pouring and
-%   seeding as dose_manipulation, moves between temperatures as
-%   temperature_manipulation, transfers and food deprivation as
-%   term_manipulation), each a rule recorded in its decision log.
+%   seeding as dose manipulation, moves between temperatures as
+%   temperature manipulation, transfers and food deprivation as
+%   term manipulation), each a rule recorded in its decision log.
 %
 %   OUT fields: documents (cell per session), report.
 
@@ -72,8 +73,9 @@ for s = 1:n
             if ~isempty(m.time_tolerance), tol = reshape(double(m.time_tolerance), 1, 2); end
             when = ndi.setup.V2.utcReference(t, m.time_zone, sid, 'SourceText', whenText, ...
                 'Tolerance', tol);
-            st = did2.build.statement(m.leaf, subject, variable, value, 'Method', method, ...
-                'TimeReferenceIds', {when.base.id}, 'Notes', note, 'SessionId', sid);
+            st = did2.build.statement('manipulation', subject, variable, value, 'Method', method, ...
+                'TimeReferenceIds', {when.base.id}, 'Notes', note, 'SessionId', sid, ...
+                'ValueKind', char(m.data_type));
             docs{s} = [docs{s}, {when, st}];
             r.written = r.written + 1;
             r.documents = r.documents + 2;

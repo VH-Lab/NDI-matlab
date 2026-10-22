@@ -133,15 +133,15 @@ for k = 1:numel(names)
         v = ndi.setup.V2.registeredTerm(['spdx:' strtrim(char(v))], strtrim(char(v)));
     end
     if any(strcmp(f, terms))
-        docs{end+1} = did2.build.statement('term_assertion', eid, variable, asTerms(v), common{:}); %#ok<AGROW>
+        docs{end+1} = did2.build.statement('assertion', eid, variable, asTerms(v), common{:}, 'ValueKind', 'term'); %#ok<AGROW>
     elseif any(strcmp(f, dates))
         d = cellstr(v);
-        docs{end+1} = did2.build.statement('date_assertion', eid, variable, ...
+        docs{end+1} = did2.build.statement('assertion', eid, variable, ...
             did2.build.valueCell('date', d, 'Fields', struct('precision', precisionOf(d{1}))), ...
-            common{:}); %#ok<AGROW>
+            common{:}, 'ValueKind', 'date'); %#ok<AGROW>
     elseif any(strcmp(f, texts))
-        docs{end+1} = did2.build.statement('text_assertion', eid, variable, ...
-            did2.build.valueCell('text', cellstr(string(v))), common{:}); %#ok<AGROW>
+        docs{end+1} = did2.build.statement('assertion', eid, variable, ...
+            did2.build.valueCell('text', cellstr(string(v))), common{:}, 'ValueKind', 'text'); %#ok<AGROW>
     else
         error('ndi:setup:V2:noHome', ['`%s.%s` has no home on the entity: name ' ...
             'it in ndi.setup.V2.entityDocuments.'], className, f);
