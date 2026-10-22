@@ -182,10 +182,11 @@ classdef TestPathSPromotion < matlab.unittest.TestCase
                 {device('probe_1'), obs, makeAnchor('img_anchor')}, 'Mode', 'sites');
             testCase.verifyFalse(changed);
             testCase.verifyEqual(report.left_about_a_device, 1);
-            % a non-area node rides on NCIT:C211970 "Image Annotation"
-            % ([non-area image node]); it stays on the subject
+            % a non-area node rides on a plain label variable {name: 'ontology
+            % node'} (DID-matlab #218; [non-area image node] is NOT decided, so
+            % no ontology term); it stays on the subject
             obs = conditionObs('img_1', 'animal_1', 'CL:0000540', 'neuron');
-            obs.statement.conditions(1).variable = term('NCIT:C211970', 'Image Annotation');
+            obs.statement.conditions(1).variable = term('', 'ontology node');
             [kept, ~, changed, report] = ndi.migrate.internal.pathSPromotion( ...
                 {organism('animal_1'), obs, makeAnchor('img_anchor')}, 'Mode', 'sites');
             testCase.verifyFalse(changed);

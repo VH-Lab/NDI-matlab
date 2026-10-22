@@ -101,8 +101,21 @@ switch kind
                  'angle', 'angle', 'degree', ''; ...
                  'disparity', 'disparity', '', ''};
     case 'periodicstim_bars'
+        % Decided by Jess Haley, 2026-10-22 [flashed bar]: imageType 0 drawn
+        % in a NARROW oriented rectangle (windowShape 2, short side <= 50 px)
+        % is a "flashed bar"; light vs dark stays the flickerType parameter.
+        % Anything else keeps "uniform luminance field" (the caller counts it).
         term = 'uniform luminance field';
+        if isNarrowRectangle(parameters)
+            term = 'flashed bar';
+        end
         rows = periodicRows();
+    case 'hartleystim'
+        % Decided by Jess Haley, 2026-10-22 [Hartley without enumeration]: a
+        % hartleystim with no hartley_calc enumeration is one method, term
+        % "Hartley stimulus", its raw v1 parameters as entries.
+        term = 'Hartley stimulus';
+        rows = cell(0, 4);
     case 'periodicstim_other'
         term = 'periodic visual stimulus';
         rows = periodicRows();
@@ -150,6 +163,21 @@ recipe = struct('term', term, 'parameters', entries);
 end
 
 % ===================== tables =============================================
+
+function tf = isNarrowRectangle(p)
+%ISNARROWRECTANGLE windowShape 2 (NewStim "oriented rectangle") and a `rect`
+%   [x1 y1 x2 y2] whose short side is at most 50 px.
+tf = false;
+ws = numberOf(p, 'windowShape');
+if isempty(ws) || ws ~= 2
+    return;
+end
+if ~isfield(p, 'rect') || ~isnumeric(p.rect) || numel(p.rect) ~= 4
+    return;
+end
+r = double(p.rect(:)');
+tf = min(abs(r(3) - r(1)), abs(r(4) - r(2))) <= 50;
+end
 
 function t = gridRows()
 t = {'rect', 'stimulus rectangle', PIXEL, 'row'; ...

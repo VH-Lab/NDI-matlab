@@ -190,14 +190,25 @@ classdef TestStimulusPresentationItem < matlab.unittest.TestCase
 
         % ================= the grating guard ===============================
 
-        function testHartleyGeneratorPresentationIsRefusedNotMappedToZeros(testCase)
+        function testHartleyWithoutEnumerationIsOneHartleyStimulusMethod(testCase)
+            % Decided by Jess Haley, 2026-10-22 [Hartley without enumeration]:
+            % no hartley_calc -> one method, term "Hartley stimulus", its raw v1
+            % parameters as entries (nothing mapped to zeros, nothing refused),
+            % and the presentation's notes says the gratings are not listed.
             pres = presentationBody('pres_hartley', 1, hartleyGeneratorStim());
             [m, methods, report] = emit(testCase, pres);
-            testCase.verifyEmpty(m);
-            testCase.verifyEmpty(methods);
-            testCase.verifyEqual(report.non_grating_stimuli, 1);
+            testCase.verifyTrue(isItemManipulation(m));
+            testCase.verifyEmpty(report.reason);
             testCase.verifyEqual(report.stimulus_kinds.hartleystim, 1);
-            testCase.verifySubstring(report.reason, 'hartleystim');
+            testCase.verifyTrue(report.hartley_without_enumeration);
+            testCase.verifyEqual(numel(methods), 1);
+            testCase.verifyEqual(methods{1}.method.term.name, 'Hartley stimulus');
+            testCase.verifyEqual(methodParam(methods{1}, 'M'), 200);
+            testCase.verifyEqual(methodParam(methods{1}, 'K_absmax'), 20);
+            testCase.verifySubstring(m.statement.notes, 'not listed in the source');
+            testCase.verifyFalse(isfield(methods{1}, 'notes') ...
+                || (isfield(methods{1}, 'method') && isfield(methods{1}.method, 'notes')), ...
+                'the method document carries no note');
         end
 
         function testASquareGratingIsImageType1AndFolds(testCase)
@@ -217,7 +228,9 @@ classdef TestStimulusPresentationItem < matlab.unittest.TestCase
         % same way as a grating -- one `method` per distinct stimulus, its term
         % naming the kind, every v1 parameter an entry. No new class.
 
-        function testPeriodicstimImageType0BarsFoldAsUniformFieldMethods(testCase)
+        function testPeriodicstimImageType0BarsFoldAsFlashedBarMethods(testCase)
+            % Decided by Jess Haley, 2026-10-22 [flashed bar]: imageType 0 in a
+            % narrow oriented rectangle (7 px here) is a "flashed bar".
             pres = presentationBody('pres_bars', [1 2 3 1], ...
                 { barStim(-196), barStim(-189), blankStim() });
             [m, methods, report] = emit(testCase, pres);
@@ -227,7 +240,9 @@ classdef TestStimulusPresentationItem < matlab.unittest.TestCase
             testCase.verifyEqual(report.non_grating_stimuli, 2);
             testCase.verifyEqual(numel(methods), 3);
             testCase.verifyEqual(methods{1}.document_class.class_name, 'method');
-            testCase.verifyEqual(methods{1}.method.term.name, 'uniform luminance field');
+            testCase.verifyEqual(methods{1}.method.term.name, 'flashed bar');
+            testCase.verifyEqual(report.flashed_bars, 2);
+            testCase.verifyEqual(report.uniform_fields_kept, 0);
             testCase.verifyEqual(methodParam(methods{1}, 'line offset'), -196);
             testCase.verifyEqual(methodParam(methods{2}, 'line offset'), -189);
             testCase.verifyEqual(methodParam(methods{1}, 'image type'), 0);
@@ -237,6 +252,36 @@ classdef TestStimulusPresentationItem < matlab.unittest.TestCase
             testCase.verifyEqual(methods{3}.method.term.name, 'blank screen');
             testCase.verifyEqual(m.item.value.item(:)', [0 1 2 0]);
             testCase.verifyEqual(double(m.item.value.control_item), 2);
+        end
+
+        function testAWideImageType0FieldKeepsUniformLuminanceAndIsCounted(testCase)
+            % [flashed bar]: short side > 50 px is not a bar
+            wide = barStim(-196);
+            wide.parameters.rect = [0 0 800 600];
+            pres = presentationBody('pres_field', [1 2], { wide, blankStim() });
+            [~, methods, report] = emit(testCase, pres);
+            testCase.verifyEqual(methods{1}.method.term.name, 'uniform luminance field');
+            testCase.verifyEqual(report.uniform_fields_kept, 1);
+            testCase.verifyEqual(report.flashed_bars, 0);
+        end
+
+        function testAShapeMoviePresentationCarriesTheNote(testCase)
+            % Decided by Jess Haley, 2026-10-22 [shape movie note]: the
+            % presentation's statement.notes; the method carries none
+            pres = presentationBody('pres_shape', [1 2], ...
+                { shapeMovieStim('angle', 0), blankStim() });
+            [m, methods, report] = emit(testCase, pres);
+            testCase.verifyTrue(report.shape_movie_note);
+            testCase.verifyEqual(m.statement.notes, ['The shape movies in this ' ...
+                'presentation are recorded by their settings only (NewStim ' ...
+                'shapemoviestim SMSparams); the shapes drawn on each frame ' ...
+                '(nframemovies) are not in the v1 record.']);
+            testCase.verifyFalse(isfield(methods{1}.method, 'notes'));
+            % and a presentation without one has no note
+            [m2, ~, report2] = emit(testCase, presentationBody('pres_g', [1 2], ...
+                { gratingStim(0, 0.04, 0.5), blankStim() }));
+            testCase.verifyFalse(report2.shape_movie_note);
+            testCase.verifyTrue(~isfield(m2.statement, 'notes') || isempty(m2.statement.notes));
         end
 
         function testStochasticGridNoiseFoldsAsDenseNoiseMethods(testCase)
@@ -309,7 +354,7 @@ classdef TestStimulusPresentationItem < matlab.unittest.TestCase
             testCase.verifyEmpty(report.reason);
             terms = cellfun(@(d) d.method.term.name, methods, 'UniformOutput', false);
             testCase.verifyEqual(terms, {'drifting sinusoidal grating', ...
-                'uniform luminance field', 'dense noise', 'blank screen'});
+                'flashed bar', 'dense noise', 'blank screen'});
         end
 
         function testAnUnrecognisedParameterSetIsRefused(testCase)
@@ -532,7 +577,9 @@ classdef TestStimulusPresentationItem < matlab.unittest.TestCase
                 'several_animals'; 'animals'; 'distributive'; ...
                 'standalone'; 'no_subject_reason'; ...
                 'instrument_resolved'; 'epoch_id'; 'animal_source'; ...
-                'trial_positions'; 'entity_id'; 'reason'};
+                'trial_positions'; 'flashed_bars'; 'uniform_fields_kept'; ...
+                'shape_movie_note'; 'hartley_without_enumeration'; ...
+                'notes_not_written_standalone'; 'entity_id'; 'reason'};
             pres = presentationBody('pres_1', 1, { gratingStim(0, 0.04, 0.5) });
             pres.base.datestamp = '';    % refused before anything is read
             r = ndi.migrate.internal.bodyResolver({pres});

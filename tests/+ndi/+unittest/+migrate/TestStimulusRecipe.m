@@ -85,9 +85,16 @@ classdef TestStimulusRecipe < matlab.unittest.TestCase
             testCase.verifyFalse(isequal(a, r));
         end
 
-        function testUniformFieldBarCarriesEveryPeriodicParameter(testCase)
+        function testANarrowBarIsAFlashedBarAndCarriesEveryPeriodicParameter(testCase)
+            % [flashed bar] (Jess Haley, 2026-10-22): a 7-px oriented rectangle
             r = ndi.migrate.internal.stimulusRecipe(bar(), 'periodicstim_bars');
-            testCase.verifyEqual(r.term, 'uniform luminance field');
+            testCase.verifyEqual(r.term, 'flashed bar');
+            wide = bar(); wide.rect = [0 0 800 600];
+            testCase.verifyEqual(ndi.migrate.internal.stimulusRecipe(wide, ...
+                'periodicstim_bars').term, 'uniform luminance field');
+            notRect = bar(); notRect.windowShape = 0;
+            testCase.verifyEqual(ndi.migrate.internal.stimulusRecipe(notRect, ...
+                'periodicstim_bars').term, 'uniform luminance field');
             testCase.verifyEqual(entryOf(r, 'image type').value, 0);
             testCase.verifyEqual(entryOf(r, 'orientation').value, 180);
             testCase.verifyEqual(entryOf(r, 'line offset').value, -196);
@@ -119,7 +126,17 @@ classdef TestStimulusRecipe < matlab.unittest.TestCase
 
         function testAKindWithNoRecipeIsAnError(testCase)
             testCase.verifyError(@() ndi.migrate.internal.stimulusRecipe( ...
-                struct('M', 200), 'hartleystim'), 'ndi:migrate:stimulusRecipe:kind');
+                struct('M', 200), 'unrecognised'), 'ndi:migrate:stimulusRecipe:kind');
+        end
+
+        function testAHartleyStimulusKeepsItsRawParameters(testCase)
+            % [Hartley without enumeration] (Jess Haley, 2026-10-22)
+            r = ndi.migrate.internal.stimulusRecipe(struct('M', 200, 'K_absmax', 20, ...
+                'sfmax', 5), 'hartleystim');
+            testCase.verifyEqual(r.term, 'Hartley stimulus');
+            testCase.verifyEqual(entryOf(r, 'M').value, 200);
+            testCase.verifyEqual(entryOf(r, 'K_absmax').value, 20);
+            testCase.verifyEqual(entryOf(r, 'sfmax').value, 5);
         end
     end
 end

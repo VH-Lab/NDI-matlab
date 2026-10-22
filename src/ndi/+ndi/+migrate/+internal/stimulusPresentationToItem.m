@@ -268,7 +268,7 @@ end
 % Every kind stimulusRecipe describes folds ([non-grating stimuli as
 % methods], Jess Haley 2026-10-21); the rest is refused by class.
 foldable = {'grating', 'blank', 'periodicstim_bars', 'periodicstim_other', ...
-    'stochasticgridstim', 'blinkingstim', 'shapemoviestim'};
+    'stochasticgridstim', 'blinkingstim', 'shapemoviestim', 'hartleystim'};
 refusedKinds = {};
 for i = 1:numel(stimulusKinds)
     if ~any(strcmp(stimulusKinds{i}, {'grating', 'blank'}))
@@ -305,6 +305,34 @@ for i = 1:numel(stimuli)
 end
 report.distinct_stimuli = numel(distinct);
 report.blank_stimuli = sum(isBlank);
+for d = 1:numel(distinct)
+    switch distinct{d}.term
+        case 'flashed bar', report.flashed_bars = report.flashed_bars + 1;
+        case 'uniform luminance field'
+            report.uniform_fields_kept = report.uniform_fields_kept + 1;
+    end
+end
+
+% THE PRESENTATION'S NOTES (statement.notes; the shared methods carry none)
+notes = {};
+if any(strcmp(stimulusKinds, 'shapemoviestim'))
+    % Decided by Jess Haley, 2026-10-22 [shape movie note]
+    notes{end+1} = ['The shape movies in this presentation are recorded by ' ...
+        'their settings only (NewStim shapemoviestim SMSparams); the shapes ' ...
+        'drawn on each frame (nframemovies) are not in the v1 record.'];
+    report.shape_movie_note = true;
+end
+if any(strcmp(stimulusKinds, 'hartleystim'))
+    % Decided by Jess Haley, 2026-10-22 [Hartley without enumeration]
+    notes{end+1} = ['The individual Hartley gratings of this presentation are ' ...
+        'not listed in the source (no hartley_calc enumeration); each Hartley ' ...
+        'stimulus is recorded by its settings.'];
+    report.hartley_without_enumeration = true;
+end
+notesText = strjoin(notes, ' ');
+if ~isempty(notesText) && report.standalone
+    report.notes_not_written_standalone = true;   % an item has no notes field
+end
 
 methodBodies = cell(1, numel(distinct));
 itemIds = cell(1, numel(distinct));
@@ -337,18 +365,21 @@ else
 end
 
 manipBody = itemBody(report.standalone, presentationId, sessionId, datestamp, ...
-    entityId, stimulatorId, itemIds, value, keys, report.distributive);
+    entityId, stimulatorId, itemIds, value, keys, report.distributive, notesText);
 end
 
 % ===================== the manipulation ===================================
 
 function b = itemBody(standalone, presentationId, sessionId, datestamp, ...
-        entityId, stimulatorId, itemIds, value, keys, distributive)
+        entityId, stimulatorId, itemIds, value, keys, distributive, notes)
+if nargin < 11
+    notes = '';
+end
 if standalone
     b = standaloneItem(presentationId, sessionId, datestamp, itemIds, value, keys);
 else
     b = itemManipulation(presentationId, sessionId, datestamp, ...
-        entityId, stimulatorId, itemIds, value, keys, distributive);
+        entityId, stimulatorId, itemIds, value, keys, distributive, notes);
 end
 end
 
@@ -369,7 +400,10 @@ d = did2.build.document('item', fields, ...
 end
 
 function m = itemManipulation(presentationId, sessionId, datestamp, ...
-        entityId, stimulatorId, itemIds, value, keys, distributive)
+        entityId, stimulatorId, itemIds, value, keys, distributive, notes)
+if nargin < 10
+    notes = '';
+end
 restore = ndi.migrate.internal.termRegistryOff(); %#ok<NASGU>
 % did2.build insists on the interaction's time_reference_id min_count; the
 % reference is minted by the caller ("during the session"), so a stand-in
@@ -383,6 +417,9 @@ args = {'Method', 'visual stimulation', ...
     'CreationTimestamp', datestamp, 'Validate', false};
 if ~isempty(stimulatorId)
     args = [args, {'InstrumentId', stimulatorId}];
+end
+if ~isempty(notes)
+    args = [args, {'Notes', notes}];
 end
 if ~isempty(keys)
     args = [args, {'Keys', keys}];
@@ -626,6 +663,11 @@ r = struct( ...
     'epoch_id',            '', ...
     'animal_source',       '', ...
     'trial_positions',     [], ...
+    'flashed_bars',        0, ...
+    'uniform_fields_kept', 0, ...
+    'shape_movie_note',    false, ...
+    'hartley_without_enumeration', false, ...
+    'notes_not_written_standalone', false, ...
     'entity_id',           '', ...
     'reason',              '');
 end
