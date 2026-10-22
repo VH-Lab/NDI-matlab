@@ -321,17 +321,43 @@ classdef TestMigrateLocalEtaDab < matlab.unittest.TestCase
             for k = 1:numel(migrated)
                 byId(migrated{k}.base.id) = migrated{k};
             end
-            tet = {}; slices = 0; sliceParts = 0; animals = 0; survivors = 0;
+            % did-schema #88 writes no base.name, so the minted documents are
+            % told apart by what they ARE (ndi.migrate.internal.sliceTetanus):
+            %   tetanus  a manipulation whose variable is EMPTY:0000358
+            %            "optogenetic tetanus stimulation"
+            %   slice    a tissue entity described as a "brain slice ..."
+            %   part_of  a part_of relation whose child is such a slice
+            %   animal   an organism described as filed under another animal
+            %            ("... nested inside the other animal's date folder")
+            tet = {}; sliceIds = {}; animals = 0; survivors = 0;
             for k = 1:numel(migrated)
                 b = migrated{k};
-                switch b.base.name
-                    case 'migrated_tetanus_manipulation'; tet{end+1} = b; %#ok<AGROW>
-                    case 'migrated_slice'; slices = slices + 1;
-                    case 'migrated_slice_part_of'; sliceParts = sliceParts + 1;
-                    case 'migrated_nested_date_animal'; animals = animals + 1;
+                cn = b.document_class.class_name;
+                if strcmp(cn, 'manipulation') && isfield(b, 'statement') ...
+                        && isfield(b.statement, 'variable') && isfield(b.statement.variable, 'node') ...
+                        && strcmp(b.statement.variable.node, 'EMPTY:0000358')
+                    tet{end+1} = b; %#ok<AGROW>
+                elseif strcmp(cn, 'entity') && isfield(b, 'entity') && isfield(b.entity, 'type')
+                    desc = '';
+                    if isfield(b.entity, 'description'); desc = char(b.entity.description); end
+                    if strcmp(b.entity.type.name, 'tissue') && startsWith(desc, 'brain slice')
+                        sliceIds{end+1} = b.base.id; %#ok<AGROW>
+                    elseif strcmp(b.entity.type.name, 'organism') && contains(desc, 'nested inside')
+                        animals = animals + 1;
+                    end
                 end
-                if strcmp(b.document_class.class_name, 'openminds_stimulus')
+                if strcmp(cn, 'openminds_stimulus')
                     survivors = survivors + 1;
+                end
+            end
+            slices = numel(sliceIds);
+            sliceParts = 0;
+            for k = 1:numel(migrated)
+                b = migrated{k};
+                if strcmp(b.document_class.class_name, 'directed_relation') ...
+                        && strcmp(b.directed_relation.relation.name, 'part_of') ...
+                        && any(strcmp(edgeOf(b, 'child_id'), sliceIds))
+                    sliceParts = sliceParts + 1;
                 end
             end
             fprintf(['  IN THE DATABASE: tetanus manipulations %d, slices %d (part_of %d), ' ...
@@ -340,15 +366,19 @@ classdef TestMigrateLocalEtaDab < matlab.unittest.TestCase
             verifyEqual(testCase, [numel(tet) slices sliceParts animals survivors], [56 203 203 1 0]);
 
             % ---- the windows, as stored ---------------------------------
+            % #88: the window is the manipulation's time_reference_id, a
+            % relative_time_reference whose referent_id is the EPOCH entity
+            % (its local_identifier the v1 epoch id, its session_id edge the
+            % session)
             win = struct('stim', {}, 'session', {}, 'epoch', {}, 'start', {}, 'duration', {});
             for k = 1:numel(tet)
                 m = tet{k};
-                ref = byId(edgeOf(m, 'time_reference_1'));
-                ep = byId(edgeOf(ref, 'relative_to'));
-                v = ref.relative_reference.value;
+                ref = byId(edgeOf(m, 'time_reference_id'));
+                ep = byId(edgeOf(ref, 'referent_id'));
+                v = ref.relative_time_reference.value;
                 verifyEqual(testCase, v.clock.name, 'exp_global_time');
                 win(end+1) = struct('stim', edgeOf(m, 'instrument_id'), ...
-                    'session', ep.base.session_id, 'epoch', ep.epoch.local_identifier, ...
+                    'session', edgeOf(ep, 'session_id'), 'epoch', ep.entity.local_identifier, ...
                     'start', v.start.seconds, 'duration', v.duration.seconds); %#ok<AGROW>
             end
 
