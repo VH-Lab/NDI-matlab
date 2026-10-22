@@ -729,6 +729,16 @@ function result = local(path, options)
         %       corpus gate and this production path cannot silently diverge.
         % Each step is independent; a failure leaves the affected documents in
         % their pass-1 form.
+        %
+        % ONE body resolver for the two steps that read it (resolveDeferred and
+        % resolveStimulusPresentations). It indexes every decoded v1 body, so
+        % building it twice held two whole-corpus indexes at once on Soph. It
+        % is a pure function of `bodies` (which nothing here reassigns) and its
+        % lookups only read, so the second step gets the same answers from
+        % the first one's resolver; it builds its own only if this one failed.
+        % Cleared after its last reader, so the index is not carried through
+        % the rest of the second pass.
+        resolver = [];
         try
             resolver = ndi.migrate.internal.bodyResolver(bodies);
             [convertResult, bathAnchors] = resolveDeferred(convertResult, resolver, options);
@@ -758,12 +768,13 @@ function result = local(path, options)
         tStep = migrateStepMark('resolveOntologyLabelSubjects', tStart, tStep, convertResult);
         try
             [convertResult, stimulusSequenceReport] = ...
-                resolveStimulusPresentations(convertResult, bodies, options);
+                resolveStimulusPresentations(convertResult, bodies, options, resolver);
         catch ME
             warning('NDI:migrate:presentationResolveFailed', ...
                 ['Second-pass stimulus_presentation decomposition failed ' ...
                  '(%s); leaving presentations as passthrough.'], ME.message);
         end
+        clear resolver;   % its last reader is above
         tStep = migrateStepMark('resolveStimulusPresentations', tStart, tStep, convertResult);
         try
             [convertResult, regionSitesReport] = ...
@@ -2585,7 +2596,7 @@ function [convertResult, report] = resolveSoftwareDedup(convertResult)
     convertResult.summary = recountSummary(convertResult);
 end
 
-function [convertResult, report] = resolveStimulusPresentations(convertResult, bodies, options)
+function [convertResult, report] = resolveStimulusPresentations(convertResult, bodies, options, resolver)
 %RESOLVESTIMULUSPRESENTATIONS V_eta second pass: DECOMPOSE each legacy
 %   stimulus_presentation into the did-schema #88 stimulus shape -- one
 %   standalone `method` document per distinct stimulus (a recipe:
@@ -2629,7 +2640,10 @@ function [convertResult, report] = resolveStimulusPresentations(convertResult, b
 %   `visual_grating`, `visual_grating_manipulation`, `timed_sequence` and
 %   `timed_sequence_manipulation` are gone from #88; nothing here emits them.
     report = newStimulusSequenceReport();
-    resolver = ndi.migrate.internal.bodyResolver(bodies);
+    if nargin < 4 || isempty(resolver)
+        % the caller's resolver (built from the same BODIES) when it has one
+        resolver = ndi.migrate.internal.bodyResolver(bodies);
+    end
     bodies = decodeBodies(bodies);
     report.bodies_read = numel(bodies);
 

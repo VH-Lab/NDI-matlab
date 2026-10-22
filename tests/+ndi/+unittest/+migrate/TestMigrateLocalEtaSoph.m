@@ -42,7 +42,9 @@ classdef TestMigrateLocalEtaSoph < matlab.unittest.TestCase
         SessionRoot
         CorpusDir
         Result
-        Bodies
+        % The corpus is NOT held while the migration runs (see gateAndMigrate):
+        % BodyCount is its size, and sourceBodies() reads it again.
+        BodyCount
     end
 
     methods (TestClassSetup)
@@ -73,13 +75,20 @@ classdef TestMigrateLocalEtaSoph < matlab.unittest.TestCase
             % where run #1 timed out, so each phase reports its wall-clock: a
             % future timeout is then localised from the log instead of guessed.
             t = tic;
-            testCase.Bodies = readCorpusBodies(testCase.CorpusDir);
+            bodies = readCorpusBodies(testCase.CorpusDir);
+            testCase.BodyCount = numel(bodies);
             fprintf('  [Soph timing] readCorpusBodies: %d docs in %.1f s\n', ...
-                numel(testCase.Bodies), toc(t));
+                testCase.BodyCount, toc(t));
             t = tic;
             buildV1Sqlite(fullfile(testCase.SessionRoot, '.ndi', 'did-sqlite.sqlite'), ...
-                testCase.Bodies);
+                bodies);
             fprintf('  [Soph timing] buildV1Sqlite: %.1f s\n', toc(t));
+            % RELEASED BEFORE THE MIGRATION. ndi.migrate.local reads the corpus
+            % from the sqlite just built and never sees this copy; holding all
+            % ~101,427 bodies through the migration was one whole-corpus copy
+            % at the memory peak. The two methods that read the source bodies
+            % read them again from the same corpus files (sourceBodies).
+            clear bodies;
 
             t = tic;
             testCase.Result = ndi.migrate.local(testCase.SessionRoot, ...
@@ -106,10 +115,10 @@ classdef TestMigrateLocalEtaSoph < matlab.unittest.TestCase
             % DENOMINATOR FIRST. A pass over zero documents quarantines zero
             % documents, and that reading prints the same digit as a clean
             % migration -- so the corpus size is asserted before anything else.
-            verifyEqual(testCase, numel(testCase.Bodies), 101427, sprintf( ...
+            verifyEqual(testCase, testCase.BodyCount, 101427, sprintf( ...
                 ['the Soph corpus did not read as 101427 documents (got %d); ' ...
                  'every assertion here would be about a different corpus'], ...
-                numel(testCase.Bodies)));
+                testCase.BodyCount));
             verifyGreaterThan(testCase, testCase.Result.summary.total, 0, ...
                 'the migration saw no documents at all');
 
@@ -183,7 +192,7 @@ classdef TestMigrateLocalEtaSoph < matlab.unittest.TestCase
             % V_eta-only ancestor means a real V2 class under a v1 spelling.
             % See finalV1BodyCensus for the full argument and its direction
             % of error.
-            src = testCase.Bodies;
+            src = sourceBodies(testCase);
             dst = destinationBodies(testCase.Result.destination);
             % KNOWN DEFERRALS. stimulus_response_scalar and its _basic
             % parameters are genuinely unconverted on this line: the target
@@ -291,8 +300,9 @@ classdef TestMigrateLocalEtaSoph < matlab.unittest.TestCase
             % because id-preservation is decided, built, and previously green
             % on this exact corpus.
             srcIds = {};
-            for k = 1:numel(testCase.Bodies)
-                j = jsondecode(testCase.Bodies{k});
+            src = sourceBodies(testCase);
+            for k = 1:numel(src)
+                j = jsondecode(src{k});
                 cn = '';
                 if isfield(j,'document_class') && isfield(j.document_class,'class_name')
                     cn = j.document_class.class_name;
@@ -365,6 +375,16 @@ for k = 1:numel(sub)
 end
 error('ndi:corpus:noDir', ...
     'Soph.zip did not extract any directory holding *.json under %s', cacheRoot);
+end
+
+function bodies = sourceBodies(testCase)
+%SOURCEBODIES The v1 corpus again, read from the same files gateAndMigrate read.
+%   It is not kept on the test case (see gateAndMigrate). The count is checked
+%   against the one read before the migration, so a re-read that came back
+%   different is a failure, never a quiet change of denominator.
+bodies = readCorpusBodies(testCase.CorpusDir);
+testCase.assertEqual(numel(bodies), testCase.BodyCount, ...
+    'the corpus re-read after the migration does not hold the documents read before it');
 end
 
 function bodies = readCorpusBodies(corpusDir)
