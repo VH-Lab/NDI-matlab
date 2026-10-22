@@ -560,6 +560,80 @@ classdef TestMigrateLocalEta < matlab.unittest.TestCase
                 ['the graph does not close. ' resultDiag(result)]);
         end
 
+        function testPresentationTimesAreReadFromTheFileInTheStore(testCase)
+            % Decided by Jess Haley, 2026-10-22 [presentation times from the
+            % file] (did-schema V_eta_stimulus_response_model_plan.md): the
+            % second pass reads each presentation's onsets and offsets from
+            % the v1 presentation_time.bin, and the file stays attached to
+            % the presentation's V2 document as its raw source.
+            %
+            % THIS FIXTURE is the current writer's shape: no inline
+            % `presentation_time`, a `files` block naming the file, and the
+            % bytes where the legacy backend put them on add,
+            % <.ndi>/files/<uid>, written by the v1 writer's own function
+            % (ndi.database.fun.write_presentation_time_structure, as
+            % +ndi/+app/+stimulus/decoder.m calls it). The corpora carry no
+            % binaries, so this is the only end-to-end proof that the pass
+            % reaches the bytes.
+            subjId  = 'aabb1122ccdd3344_5500000000000020';
+            recElem = 'aabb1122ccdd3344_5500000000000021';
+            stimEl  = 'aabb1122ccdd3344_5500000000000022';
+            presId  = 'aabb1122ccdd3344_5500000000000023';
+            respId  = 'aabb1122ccdd3344_5500000000000024';
+            uid = 'aabb1122ccdd3344_77000000000000a1';
+            pres = makeStimulusPresentation(presId, stimEl);
+            pres.stimulus_presentation = rmfield(pres.stimulus_presentation, ...
+                'presentation_time');
+            pres.files = struct('file_list', {{'presentation_time.bin'}}, ...
+                'file_info', struct('name', 'presentation_time.bin', ...
+                'locations', struct('delete_original', 1, 'uid', uid, ...
+                'location', '/a/path/on/the/author/computer/tmp123', ...
+                'parameters', '', 'location_type', 'file', 'ingest', 1)));
+            storeDir = fullfile(testCase.SessionRoot, '.ndi', 'files');
+            mkdir(storeDir);
+            pt = struct('clocktype', {'dev_local_time', 'dev_local_time'}, ...
+                'stimopen', {0.5, 6.5}, 'onset', {1, 7}, 'offset', {3, 9}, ...
+                'stimclose', {3.5, 9.5}, 'stimevents', {[1 1; 3 2], [7 1; 9 2]});
+            ndi.database.fun.write_presentation_time_structure( ...
+                fullfile(storeDir, uid), pt);
+            bodies = { ...
+                jsonencode(makeSessionDoc(session())), ...
+                jsonencode(makeSubject(subjId)), ...
+                jsonencode(makeRecordingElement(recElem, subjId)), ...
+                jsonencode(makeStimulatorElement(stimEl, subjId)), ...
+                jsonencode(makeStimulusResponse(respId, presId, recElem)), ...
+                jsonencode(pres)};
+            result = runMigrate(testCase, bodies);
+
+            t = result.secondPass.stimulusSequence.timing;
+            verifyEqual(testCase, t.presentations_folded, 1, resultDiag(result));
+            verifyEqual(testCase, t.from_file, 1, ...
+                'the times did not come from presentation_time.bin');
+            verifyEqual(testCase, t.file_located, 1);
+            manip = findById(result.destination, presId);
+            verifyNotEmpty(testCase, manip, resultDiag(result));
+            covs = ndi.v2.entries(manip.data.covariates);
+            names = cellfun(@(c) char(c.variable.name), covs, 'UniformOutput', false);
+            on = covs{strcmp(names, 'onset time')};
+            off = covs{strcmp(names, 'offset time')};
+            verifyEqual(testCase, on.quantity.value(:)', [1 7]);
+            verifyEqual(testCase, char(on.variable.node), 'EMPTY:0000368');
+            verifyEqual(testCase, off.quantity.value(:)', [3 9]);
+            verifyEqual(testCase, char(off.variable.node), 'EMPTY:0000369');
+            dims = ndi.v2.entries(manip.data.dimensions);
+            verifyEqual(testCase, char(dims{1}.term.node), 'OBI:0000807');
+            % the raw source stays attached, pointing at the bytes in the store
+            verifyTrue(testCase, isfield(manip, 'files') && ...
+                any(strcmp(cellstr(manip.files.file_list), 'presentation_time.bin')), ...
+                'presentation_time.bin is no longer attached to the presentation');
+            % the dimension-term census ([covariate details] 5.4): measured,
+            % and this presentation's dimension has its node
+            dt = result.secondPass.dimensionTerms;
+            verifyTrue(testCase, isstruct(dt), 'the dimension-term census did not run');
+            verifyGreaterThanOrEqual(testCase, dt.dimensions_written, 1);
+            verifyEqual(testCase, result.references.orphan_count, 0, resultDiag(result));
+        end
+
     end
 end
 

@@ -79,7 +79,9 @@ classdef TestStimulusPresentationItem < matlab.unittest.TestCase
             % ONE dimension: a presentation per trial
             d = dimensionsOf(m);
             testCase.verifyNumElements(d, 1);
-            testCase.verifyEqual(termName(d{1}.term), 'presentation');
+            % Decided by Jess Haley, 2026-10-22 [presentation dimension term]
+            testCase.verifyEqual(termName(d{1}.term), 'presentation of stimulus');
+            testCase.verifyEqual(char(d{1}.term.node), 'OBI:0000807');
             testCase.verifyEqual(double(d{1}.n), 6);
             % no timing in a real-shaped document -> no onset or offset
             % covariate, and no item.value.offset
@@ -194,6 +196,113 @@ classdef TestStimulusPresentationItem < matlab.unittest.TestCase
             testCase.verifyEqual(off.quantity.value(:)', [4 9 14]);
             testCase.verifyFalse(isfield(m.item.value, 'offset'), ...
                 'item.value.offset is gone (AMENDMENT 6)');
+        end
+
+        function testTimesComeFromPresentationTimeBin(testCase)
+            % Decided by Jess Haley, 2026-10-22 [presentation times from the
+            % file]: the onsets and offsets are read from the v1
+            % presentation_time.bin, written here by the v1 writer's own
+            % function (ndi.database.fun.write_presentation_time_structure,
+            % as +ndi/+app/+stimulus/decoder.m calls it), and the file stays
+            % attached as the raw source.
+            pres = presentationBody('pres_bin', [1 2 1], ...
+                { gratingStim(0, 0.04, 0.5), gratingStim(45, 0.04, 0.5) });
+            f = writePresentationTimeFile(testCase, [10.5 12.5 14.5], [11.5 13.5 15.5]);
+            [m, ~, report] = emit(testCase, pres, [], 'PresentationTimeFile', f);
+            testCase.verifyEqual(report.timing_source, 'presentation_time.bin');
+            testCase.verifyEqual(report.timing_file, 'read');
+            testCase.verifyEqual(report.timing_file_entries, 3);
+            testCase.verifyEqual(report.timing_clocktype, 'dev_local_time');
+            testCase.verifyEqual(report.trials_with_timing, 3);
+            on = covariateOf(m, 'onset time');
+            testCase.verifyEqual(char(on.variable.node), 'EMPTY:0000368');
+            testCase.verifyEqual(double(on.along(:)'), 0);
+            testCase.verifyEqual(on.quantity.value(:)', [10.5 12.5 14.5]);
+            testCase.verifyEqual(termName(on.unit), 'second');
+            off = covariateOf(m, 'offset time');
+            testCase.verifyEqual(char(off.variable.node), 'EMPTY:0000369');
+            testCase.verifyEqual(off.quantity.value(:)', [11.5 13.5 15.5]);
+            % the raw source stays attached
+            testCase.verifyTrue(isfield(m, 'files'), 'the files block was dropped');
+            testCase.verifyEqual(m.files, pres.files);
+            testCase.verifyEqual(report.files_attached, 1);
+        end
+
+        function testTheFileWinsOverTheInlineBlock(testCase)
+            pres = presentationBody('pres_both', [1 2], ...
+                { gratingStim(0, 0.04, 0.5), gratingStim(45, 0.04, 0.5) });
+            pres.stimulus_presentation.presentation_time = [trialTime(0, 4) trialTime(5, 9)];
+            f = writePresentationTimeFile(testCase, [100 200], [101 201]);
+            [m, ~, report] = emit(testCase, pres, [], 'PresentationTimeFile', f);
+            testCase.verifyEqual(report.timing_source, 'presentation_time.bin');
+            on = covariateOf(m, 'onset time');
+            testCase.verifyEqual(on.quantity.value(:)', [100 200]);
+        end
+
+        function testAFileOfTheWrongLengthFallsBackToInline(testCase)
+            pres = presentationBody('pres_short', [1 2 1], ...
+                { gratingStim(0, 0.04, 0.5), gratingStim(45, 0.04, 0.5) });
+            pres.stimulus_presentation.presentation_time = ...
+                [trialTime(0, 4) trialTime(5, 9) trialTime(10, 14)];
+            f = writePresentationTimeFile(testCase, [100 200], [101 201]);
+            [m, ~, report] = emit(testCase, pres, [], 'PresentationTimeFile', f);
+            testCase.verifyEqual(report.timing_file, '2 entr(ies) for 3 trial(s)');
+            testCase.verifyEqual(report.timing_source, 'inline (deprecated writer form)');
+            on = covariateOf(m, 'onset time');
+            testCase.verifyEqual(on.quantity.value(:)', [0 5 10]);
+        end
+
+        function testAFileThatIsNotHereGivesNoTimesButStaysAttached(testCase)
+            pres = presentationBody('pres_gone', [1 2], ...
+                { gratingStim(0, 0.04, 0.5), gratingStim(45, 0.04, 0.5) });
+            [m, ~, report] = emit(testCase, pres, [], 'PresentationTimeFile', ...
+                fullfile(tempname, 'presentation_time.bin'));
+            testCase.verifyEqual(report.timing_file, 'not on this computer');
+            testCase.verifyEqual(report.timing_source, 'none');
+            testCase.verifyEmpty(covariateOf(m, 'onset time'));
+            testCase.verifyEmpty(covariateOf(m, 'offset time'));
+            testCase.verifyEqual(m.files, pres.files, 'still the raw source');
+            % and with no path at all, the caller's status is reported
+            [~, ~, r2] = emit(testCase, pres, [], 'PresentationTimeFileStatus', ...
+                'not on this computer');
+            testCase.verifyEqual(r2.timing_file, 'not on this computer');
+            [~, ~, r3] = emit(testCase, pres);
+            testCase.verifyEqual(r3.timing_file, 'declared, not located');
+        end
+
+        function testNaNOffsetsInTheFileWriteOnsetsOnly(testCase)
+            pres = presentationBody('pres_nanoff', [1 2], ...
+                { gratingStim(0, 0.04, 0.5), gratingStim(45, 0.04, 0.5) });
+            f = writePresentationTimeFile(testCase, [1 2], [1.5 NaN]);
+            [m, ~, report] = emit(testCase, pres, [], 'PresentationTimeFile', f);
+            testCase.verifyEqual(report.timing_source, 'presentation_time.bin');
+            testCase.verifyEqual(covariateOf(m, 'onset time').quantity.value(:)', [1 2]);
+            testCase.verifyEmpty(covariateOf(m, 'offset time'));
+        end
+
+        function testANaNOnsetInTheFileIsNotUsed(testCase)
+            pres = presentationBody('pres_nanon', [1 2], ...
+                { gratingStim(0, 0.04, 0.5), gratingStim(45, 0.04, 0.5) });
+            f = writePresentationTimeFile(testCase, [NaN 2], [1.5 2.5]);
+            [m, ~, report] = emit(testCase, pres, [], 'PresentationTimeFile', f);
+            testCase.verifyEqual(report.timing_file, 'an onset is not a finite number');
+            testCase.verifyEqual(report.timing_source, 'none');
+            testCase.verifyEmpty(covariateOf(m, 'onset time'));
+        end
+
+        function testTheFileIsNotReadOnAFrameSequence(testCase)
+            % On the SEQUENCE path the dimension is frames, not trials: the
+            % per-trial file times do not index it.
+            pres = presentationBody('pres_hartley', 1, hartleyGeneratorStim());
+            seq = struct('item_ids', {{'g_a', 'g_b'}}, 'order', [1 2 1], ...
+                'frame_times', [0 0.1 0.2], 'duration', 0.1);
+            f = writePresentationTimeFile(testCase, 5, 6);
+            [m, ~, report] = emit(testCase, pres, seq, 'PresentationTimeFile', f);
+            testCase.verifyEqual(report.timing_file, 'not used: the dimension is frames');
+            testCase.verifyEqual(report.timing_source, 'frameTimes (hartley_calc)');
+            testCase.verifyEqual(covariateOf(m, 'onset time').quantity.value(:)', ...
+                [0 0.1 0.2], 'AbsTol', 1e-12);
+            testCase.verifyEqual(m.files, pres.files, 'the file stays attached');
         end
 
         function testPartialTimingWritesNoTimeCovariates(testCase)
@@ -603,6 +712,7 @@ classdef TestStimulusPresentationItem < matlab.unittest.TestCase
             expected = {'stimuli_read'; 'non_grating_stimuli'; 'stimulus_kinds'; ...
                 'distinct_stimuli'; 'blank_stimuli'; 'trials'; ...
                 'trials_out_of_range'; 'trials_with_timing'; 'timing_source'; ...
+                'timing_file'; 'timing_file_entries'; 'timing_clocktype'; 'files_attached'; ...
                 'basis_source'; 'shared_refs'; 'frames'; ...
                 'subjects_resolved'; 'sibling_subjects'; 'stimulator_subjects'; ...
                 'several_animals'; 'animals'; 'distributive'; ...
@@ -692,10 +802,10 @@ end
 
 % ===================== driver =============================================
 
-function [manipBody, methodBodies, report] = emit(~, pres, sequence)
+function [manipBody, methodBodies, report] = emit(~, pres, sequence, varargin)
 %EMIT Run the assembler with one responding animal in scope, through the real
 %   bodyResolver over a `stimulus_response_scalar` body (the class production
-%   writes).
+%   writes). VARARGIN: further name-value options for the assembler.
 if nargin < 3
     sequence = [];
 end
@@ -704,7 +814,31 @@ bodies = { pres, ...
     docBody('element', 'elem_9', {'subject_id', 'animal_1'}) };
 r = ndi.migrate.internal.bodyResolver(bodies);
 [manipBody, methodBodies, report] = ...
-    ndi.migrate.internal.stimulusPresentationToItem(pres, r, sequence);
+    ndi.migrate.internal.stimulusPresentationToItem(pres, r, sequence, varargin{:});
+end
+
+function f = writePresentationTimeFile(testCase, onsets, offsets)
+%WRITEPRESENTATIONTIMEFILE A presentation_time.bin written by the v1 writer's
+%   own function, in the structure +ndi/+app/+stimulus/decoder.m builds (one
+%   entry per trial: clocktype, stimopen, onset, offset, stimclose,
+%   stimevents). The corpora are document-only, so this is the only way a
+%   test sees the bytes.
+pt = struct('clocktype', {}, 'stimopen', {}, 'onset', {}, 'offset', {}, ...
+    'stimclose', {}, 'stimevents', {});
+for k = 1:numel(onsets)
+    pt(end+1) = struct('clocktype', 'dev_local_time', 'stimopen', onsets(k) - 0.5, ...
+        'onset', onsets(k), 'offset', offsets(k), 'stimclose', offsets(k) + 0.5, ...
+        'stimevents', [onsets(k) 1; offsets(k) 2]); %#ok<AGROW>
+end
+f = [tempname '_presentation_time.bin'];
+ndi.database.fun.write_presentation_time_structure(f, pt);
+testCase.addTeardown(@() deleteIfThere(f));
+end
+
+function deleteIfThere(f)
+if isfile(f)
+    delete(f);
+end
 end
 
 function b = responseScalar(id, presentationId, elementId)

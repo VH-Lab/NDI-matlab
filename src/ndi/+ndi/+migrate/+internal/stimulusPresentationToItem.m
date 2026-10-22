@@ -9,6 +9,9 @@ function [manipBody, methodBodies, report] = ...
 %   [...] = stimulusPresentationToItem(V1BODY, RESOLVER, SEQUENCE)
 %   [...] = stimulusPresentationToItem(..., 'CohortIdFor', @(sessionId) id)
 %   [...] = stimulusPresentationToItem(..., 'ControlRecords', {v1Control, ...})
+%   [...] = stimulusPresentationToItem(..., 'PresentationTimeFile', PATH, ...
+%           'PresentationTimeFileStatus', WHY)   (WHY: why PATH is '', from
+%           ndi.migrate.internal.v1AttachedFile)
 %
 %   THE SHAPE (did-schema PR #88; all of it built with did2.build, so it is
 %   read from the schema in use and never spelled here):
@@ -38,22 +41,28 @@ function [manipBody, methodBodies, report] = ...
 %                     item_id        the distinct method documents, in order
 %                     item.value.item         the v1 playlist remapped onto
 %                                             the distinct set, 0-BASED (T14)
-%                     dimensions     ONE: a presentation (term: the label
-%                                    'presentation' until a registered term
-%                                    is chosen), n = trials (frames on the
-%                                    SEQUENCE path)
+%                     dimensions     ONE: a presentation, term OBI:0000807
+%                                    'presentation of stimulus' (Decided by
+%                                    Jess Haley, 2026-10-22 [presentation
+%                                    dimension term]), n = trials (frames on
+%                                    the SEQUENCE path)
 %                     covariates     along that dimension (did-schema
 %                                    V_eta_data_body_model_plan.md AMENDMENT 6,
 %                                    Decided by Jess Haley, 2026-10-22
 %                                    [covariates] / [onset time]):
-%                                      'onset time'  each trial's onset, s,
-%                                                    when every trial is timed
-%                                      'offset time' each trial's end, s, when
-%                                                    v1 recorded the ends
+%                                      'onset time'  (EMPTY:0000368) each
+%                                                    trial's onset, s, see TIMING
+%                                      'offset time' (EMPTY:0000369) each
+%                                                    trial's end, s, see TIMING
 %                                      'control condition' (XCO:0000099,
 %                                                    logical) see CONTROL
-%                                    ('onset time' / 'offset time' are labels
-%                                    until registered terms are chosen)
+%                                    (the two time terms: Decided by Jess
+%                                    Haley, 2026-10-22 [onset and offset
+%                                    terms])
+%                     files          the v1 document's `files` block, carried
+%                                    unchanged: presentation_time.bin stays
+%                                    attached as the presentation's raw source
+%                                    ([presentation times from the file])
 %                     method         inline {term 'visual stimulation'}: how
 %                                    the sequence was delivered (the plan's
 %                                    own example); what each stimulus was is
@@ -63,8 +72,10 @@ function [manipBody, methodBodies, report] = ...
 %                   replaced by the did2.convert.mintSessionDuring marker,
 %                   and ndi.migrate.local mints "during the session" for it
 %                   (the lightsheet decision, Jess 2026-10-14, option A). The
-%                   epoch anchor the plan prefers needs a clocktype that lives
-%                   in presentation_time.bin, which a batch pass does not open.
+%                   epoch anchor the plan prefers needs the clocktype that
+%                   lives in presentation_time.bin; when the file is read, its
+%                   clocktype is reported (REPORT.timing_clocktype) but the
+%                   anchor is still "during the session".
 %
 %   THE STIMULUS KINDS. Decided by Jess Haley, 2026-10-21 [non-grating
 %   stimuli as methods] (V_eta_method_plan.md): a visual stimulus that is not
@@ -133,11 +144,26 @@ function [manipBody, methodBodies, report] = ...
 %   says why; the caller leaves such records as v1. REPORT.control_records
 %   (given), .control_records_folded and .control_true count what happened.
 %
-%   TIMING. The v1 writer puts the trial times in presentation_time.bin
-%   (+ndi/+app/+stimulus/decoder.m:132-134), which this pass does not open;
-%   the deprecated inline `presentation_time` is read when EVERY trial has an
-%   onset and an offset, and otherwise no onset or offset covariate is
-%   written ("nobody looked" is not "it happened at t=0").
+%   TIMING. Decided by Jess Haley, 2026-10-22 [presentation times from the
+%   file] (did-schema V_eta_stimulus_response_model_plan.md). The current v1
+%   writer puts the per-trial times in the attached file presentation_time.bin
+%   (NDI origin/main +ndi/+app/+stimulus/decoder.m, "we now put this in a
+%   file", written by ndi.database.fun.write_presentation_time_structure and
+%   read back by ndi.database.fun.read_presentation_time_structure). In order:
+%     1. 'PresentationTimeFile', the path of those bytes on this computer
+%        (the caller finds them; '' when they are not here): read with NDI's
+%        own reader. Used when it holds one entry per trial and every onset
+%        is a finite number: `onset time` from `onset`, and `offset time` from
+%        `offset` when every offset is finite. REPORT.timing_source
+%        'presentation_time.bin'.
+%     2. the deprecated inline `presentation_time` block (decoder.m's "old
+%        way"), when EVERY trial has an onset and an offset.
+%     3. otherwise no onset or offset covariate ("nobody looked" is not "it
+%        happened at t=0").
+%   REPORT.timing_file says what became of the file (see newReport). On the
+%   SEQUENCE path the dimension is FRAMES, not trials, so the per-trial file
+%   times do not index it; the supplied frame times are used and the file is
+%   not read ('not used: the dimension is frames').
 %
 %   Returns [] for MANIP and a REPORT carrying `reason` when nothing can be
 %   assembled; the caller leaves the presentation as v1.
@@ -153,6 +179,8 @@ arguments
     sequence = []
     options.CohortIdFor = []
     options.ControlRecords = {}
+    options.PresentationTimeFile = ''
+    options.PresentationTimeFileStatus = ''
 end
 
 manipBody = []; methodBodies = {};
@@ -162,6 +190,12 @@ presentationId = baseField(v1Body, 'id', '');
 sessionId      = ndi.v2.sessionIdOf(v1Body);
 datestamp      = baseField(v1Body, 'datestamp', '');
 report.epoch_id = epochIdOf(v1Body);
+if declaresFile(v1Body, 'presentation_time.bin')
+    report.timing_file = 'declared, not located';
+    if ~isempty(options.PresentationTimeFileStatus)
+        report.timing_file = char(options.PresentationTimeFileStatus);
+    end
+end
 if isempty(presentationId) || isempty(sessionId) || isempty(datestamp)
     report.reason = 'base id / session_id / datestamp incomplete';
     return;
@@ -281,9 +315,13 @@ if ~isempty(sequence)
     end
     [control, report] = controlCovariate(options.ControlRecords, ...
         numel(frameOrder), false, report);
+    if ~isempty(options.PresentationTimeFile)
+        report.timing_file = 'not used: the dimension is frames';
+    end
     [dims, covs] = presentationAxes(numel(frameOrder), onsets, offsets, control);
     manipBody = itemBody(report.standalone, presentationId, sessionId, datestamp, ...
         entityId, stimulatorId, itemIds, value, dims, covs, report.distributive);
+    [manipBody, report] = carryFiles(manipBody, v1Body, report);
     return;
 end
 
@@ -378,23 +416,110 @@ value = struct('item', mapToDistinct(order) - 1);   % 0-based (T14)
 % names a trial, an index into presentation_order, not a stimulus)
 report.trial_positions = value.item;
 
-times = struct([]);
-if isfield(block, 'presentation_time') && isstruct(block.presentation_time)
-    times = block.presentation_time;
-end
-[onsets, offsets, timingOk] = trialTiming(times, numel(order));
-report.trials_with_timing = sum(timingOk);
-if ~isempty(timingOk) && all(timingOk)
-    report.timing_source = 'inline (deprecated writer form)';
-else
-    onsets = []; offsets = [];
-    report.timing_source = 'none in the document body (presentation_time.bin not read here)';
-end
+[onsets, offsets, report] = presentationTimes(block, ...
+    options.PresentationTimeFile, numel(order), report);
 [control, report] = controlCovariate(options.ControlRecords, numel(order), true, report);
 [dims, covs] = presentationAxes(numel(order), onsets, offsets, control);
 
 manipBody = itemBody(report.standalone, presentationId, sessionId, datestamp, ...
     entityId, stimulatorId, itemIds, value, dims, covs, report.distributive, notesText);
+[manipBody, report] = carryFiles(manipBody, v1Body, report);
+end
+
+% ===================== timing and the raw source ==========================
+
+function [onsets, offsets, report] = presentationTimes(block, file, nTrials, report)
+%PRESENTATIONTIMES The trial onsets and offsets, from presentation_time.bin,
+%   else the deprecated inline block, else none (see TIMING in the help).
+onsets = []; offsets = [];
+[fOn, fOff, report] = fileTiming(file, nTrials, report);
+if ~isempty(fOn)
+    onsets = fOn;
+    offsets = fOff;
+    report.trials_with_timing = numel(fOn);
+    report.timing_source = 'presentation_time.bin';
+    return;
+end
+times = struct([]);
+if isfield(block, 'presentation_time') && isstruct(block.presentation_time)
+    times = block.presentation_time;
+end
+[iOn, iOff, timingOk] = trialTiming(times, nTrials);
+report.trials_with_timing = sum(timingOk);
+if ~isempty(timingOk) && all(timingOk)
+    onsets = iOn;
+    offsets = iOff;
+    report.timing_source = 'inline (deprecated writer form)';
+else
+    report.timing_source = 'none';
+end
+end
+
+function [onsets, offsets, report] = fileTiming(file, nTrials, report)
+%FILETIMING Read presentation_time.bin with NDI's own reader. Empty ONSETS
+%   when the file is not given or cannot be used; REPORT.timing_file says why.
+onsets = []; offsets = [];
+file = char(file);
+if isempty(file)
+    return;     % the caller's status ('not declared' / 'not on this computer') stands
+end
+if ~isfile(file)
+    report.timing_file = 'not on this computer';
+    return;
+end
+try
+    [~, pt] = ndi.database.fun.read_presentation_time_structure(file);
+catch ME
+    report.timing_file = ['unreadable: ' ME.message];
+    return;
+end
+report.timing_file_entries = numel(pt);
+if numel(pt) ~= nTrials
+    report.timing_file = sprintf('%d entr(ies) for %d trial(s)', numel(pt), nTrials);
+    return;
+end
+on = nan(1, nTrials);
+off = nan(1, nTrials);
+for k = 1:nTrials
+    [v, present] = numericField(pt(k), 'onset');
+    if present; on(k) = v; end
+    [v, present] = numericField(pt(k), 'offset');
+    if present; off(k) = v; end
+end
+if nTrials == 0 || ~all(isfinite(on))
+    report.timing_file = 'an onset is not a finite number';
+    return;
+end
+report.timing_file = 'read';
+ct = unique(arrayfun(@(e) char(e.clocktype), pt(:)', 'UniformOutput', false));
+report.timing_clocktype = strjoin(ct, ', ');
+onsets = on;
+if all(isfinite(off))
+    offsets = off;
+end
+end
+
+function tf = declaresFile(v1Body, name)
+tf = false;
+if isstruct(v1Body) && isfield(v1Body, 'files') && isstruct(v1Body.files) ...
+        && isscalar(v1Body.files) && isfield(v1Body.files, 'file_list')
+    tf = any(strcmp(cellstr(v1Body.files.file_list), name));
+end
+end
+
+function [b, report] = carryFiles(b, v1Body, report)
+%CARRYFILES The v1 document's `files` block stays on the V2 document: its
+%   presentation_time.bin is the presentation's raw source ([presentation
+%   times from the file]). Locations are settled later, with every other
+%   migrated document's, by ndi.migrate.internal.settleIngestedFiles.
+if isempty(b) || ~isstruct(v1Body) || ~isfield(v1Body, 'files') ...
+        || ~isstruct(v1Body.files) || isempty(v1Body.files)
+    return;
+end
+b.files = v1Body.files;
+if isfield(v1Body.files, 'file_list')
+    report.files_attached = numel(cellstr(v1Body.files.file_list));
+end
 end
 
 % ===================== the manipulation ===================================
@@ -467,18 +592,19 @@ function [dims, covs] = presentationAxes(n, onsets, offsets, control)
 %PRESENTATIONAXES The item value's one dimension (a presentation, N of them)
 %   and its covariates along it (did-schema data_body plan AMENDMENT 6): onset
 %   time and offset time (seconds) when known, and the control condition
-%   (logical) when a v1 control record was placed. The dimension term and the
-%   two time variables are LABELS until registered terms are chosen
-%   (Decided by Jess Haley, 2026-10-22 [covariate terms]: found by T19 order).
+%   (logical) when a v1 control record was placed. Terms: Decided by Jess
+%   Haley, 2026-10-22 [presentation dimension term] (OBI:0000807) and [onset
+%   and offset terms] (EMPTY:0000368 / EMPTY:0000369), did-schema
+%   V_eta_data_body_model_plan.md.
 restore = ndi.migrate.internal.termRegistryOff(); %#ok<NASGU>
-dims = did2.build.list(did2.build.dimension('presentation', n));
+dims = did2.build.list(did2.build.dimension(presentationTerm(), n));
 c = {};
 if ~isempty(onsets)
-    c{end+1} = did2.build.covariate('onset time', 0, ...
+    c{end+1} = did2.build.covariate(onsetTimeTerm(), 0, ...
         'Value', double(onsets(:)'), 'Unit', 'second');
 end
 if ~isempty(offsets)
-    c{end+1} = did2.build.covariate('offset time', 0, ...
+    c{end+1} = did2.build.covariate(offsetTimeTerm(), 0, ...
         'Value', double(offsets(:)'), 'Unit', 'second');
 end
 if ~isempty(control)
@@ -489,6 +615,21 @@ covs = [];
 if ~isempty(c)
     covs = did2.build.list(c{:});
 end
+end
+
+function t = presentationTerm()
+% OBI:0000807 'presentation of stimulus' ([presentation dimension term])
+t = did2.build.term('OBI:0000807', 'presentation of stimulus');
+end
+
+function t = onsetTimeTerm()
+% EMPTY:0000368 'onset time' ([onset and offset terms])
+t = did2.build.term('EMPTY:0000368', 'onset time');
+end
+
+function t = offsetTimeTerm()
+% EMPTY:0000369 'offset time' ([onset and offset terms])
+t = did2.build.term('EMPTY:0000369', 'offset time');
 end
 
 function t = controlConditionTerm()
@@ -780,6 +921,10 @@ r = struct( ...
     'trials_out_of_range', 0, ...
     'trials_with_timing',  0, ...
     'timing_source',       'not read', ...
+    'timing_file',         'not declared', ...
+    'timing_file_entries', 0, ...
+    'timing_clocktype',    '', ...
+    'files_attached',      0, ...
     'basis_source',        'the presentation''s own stimuli list', ...
     'shared_refs',         0, ...
     'frames',              0, ...

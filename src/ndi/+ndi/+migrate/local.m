@@ -142,6 +142,18 @@ function result = local(path, options)
 %                      sidecar, '' when nothing was written.
 %       references   - report from did2.validate.references over
 %                      the migrated documents.
+%       secondPass   - (V_eta) one report per second-pass step, including
+%                      softwareDedupAfterPassOne / softwareDedup (the two
+%                      software merges) and dimensionTerms (the census of
+%                      dimensions written whose term has no node).
+%
+%   SoftwareDedupAfterPassOne (V_eta; default true): merge the duplicate
+%   software / operating-system / interpreter entities right after pass 1
+%   as well as at the end (Decided by Jess Haley, 2026-10-22 [software dedup
+%   after pass one], did-schema V_eta_go_forward_class_audit.md), so every
+%   later step carries the deduplicated set. False runs the end-of-run merge
+%   alone; it exists so a test can show the final document set is the same
+%   either way (TestSoftwareDedupAfterPassOne).
 %
 %   Idempotency:
 %       Re-running on a dataset that already has a V_delta.sqlite
@@ -177,6 +189,7 @@ function result = local(path, options)
         options.Validate (1,1) logical = true
         options.SchemaCache = []
         options.TargetVersion (1,:) char {mustBeMember(options.TargetVersion, {'V_delta', 'V_eta'})} = 'V_eta'
+        options.SoftwareDedupAfterPassOne (1,1) logical = true
     end
 
     if ~isfolder(path)
@@ -272,6 +285,31 @@ function result = local(path, options)
     tStep = migrateStepMark('pass 1 v1_to_v2', tStart, tStep, convertResult);
     printMigrationNoteCounts(convertResult);
 
+    % --- software dedup, right after pass 1 ----------------------------------
+    % Decided by Jess Haley, 2026-10-22 [software dedup after pass one]
+    % (did-schema V_eta_go_forward_class_audit.md): pass 1 mints one software /
+    % operating-system / interpreter entity per consuming document (Soph: 665k
+    % documents before the end-of-run merge, 224k after; 14.4 GB RSS plus 5 GB
+    % swap on a 16 GB runner), so every second-pass step used to carry and
+    % copy the duplicates. They are merged HERE, and the end-of-run merge (6)
+    % still runs, for the software entities later steps mint (the clock
+    % alignment rule class, bodies the deferral pass re-folds). The merge is
+    % idempotent on a merged set; TestSoftwareDedupAfterPassOne shows the final
+    % document set is the same with and without this step.
+    softwareDedupEarlyReport = [];
+    if strcmp(options.TargetVersion, 'V_eta') && options.SoftwareDedupAfterPassOne
+        try
+            [convertResult, softwareDedupEarlyReport] = ...
+                resolveSoftwareDedup(convertResult);
+        catch ME
+            warning('NDI:migrate:softwareDedupFailed', ...
+                ['Software dedup after pass 1 failed (%s); the end-of-run ' ...
+                 'merge still runs.'], ME.message);
+        end
+        tStep = migrateStepMark('resolveSoftwareDedup(after pass 1)', ...
+            tStart, tStep, convertResult);
+    end
+
     % --- second pass: context-dependent (session-aware) deferrals ----------
     % Some V_eta classes cannot be migrated from a single document alone
     % (e.g. stimulus_bath -> dose_manipulation needs the stimulator element's subject and
@@ -302,6 +340,7 @@ function result = local(path, options)
     validIntervalReport = [];
     clockAlignmentReport = [];
     softwareDedupReport = [];
+    dimensionTermReport = [];   % [] = not measured
     ontologyRowReport = [];
     ontologyLabelReport = [];
     imagedEntityReport = [];
@@ -698,7 +737,9 @@ function result = local(path, options)
         %       it writes the statement against the element the source named,
         %       leaves `derived_from_#` empty, and REPORTS
         %       `inheritance_candidates` so the decision has a size attached.
-        %   (6) SOFTWARE DEDUP (#25): pass 1 mints one `software` entity per
+        %   (6) SOFTWARE DEDUP (#25), run TWICE: right after pass 1 (Decided
+        %       by Jess Haley, 2026-10-22 [software dedup after pass one]; see
+        %       above) and again here, LAST. Pass 1 mints one `software` entity per
         %       consuming document, because a single-document migrator cannot
         %       know another document already minted the same program. Merge
         %       them on (session_id, name, version) and retarget every inbound
@@ -768,7 +809,7 @@ function result = local(path, options)
         tStep = migrateStepMark('resolveOntologyLabelSubjects', tStart, tStep, convertResult);
         try
             [convertResult, stimulusSequenceReport] = ...
-                resolveStimulusPresentations(convertResult, bodies, options, resolver);
+                resolveStimulusPresentations(convertResult, bodies, options, resolver, ndiDir);
         catch ME
             warning('NDI:migrate:presentationResolveFailed', ...
                 ['Second-pass stimulus_presentation decomposition failed ' ...
@@ -1093,6 +1134,24 @@ function result = local(path, options)
                  '`software` entity per consuming document.'], ME.message);
         end
         tStep = migrateStepMark('resolveSoftwareDedup', tStart, tStep, convertResult);
+
+        % THE DIMENSION-TERM CENSUS (Decided by Jess Haley, 2026-10-22
+        % [covariate details], 5.4 "B"): a dimension's term is bound
+        % `preferred`, so every migration counts the dimensions it wrote whose
+        % term has no node, against the dimensions written. An instrument only.
+        try
+            dimensionTermReport = ndi.migrate.internal.dimensionTermCensus( ...
+                convertResult.migrated);
+            fprintf(['[migrate step]   dimensions written: %d (on %d of %d ' ...
+                'documents); term with no node: %d\n'], ...
+                dimensionTermReport.dimensions_written, ...
+                dimensionTermReport.documents_with_dimensions, ...
+                dimensionTermReport.documents_inspected, ...
+                dimensionTermReport.dimensions_without_node);
+        catch ME
+            warning('NDI:migrate:dimensionTermCensusFailed', ...
+                'The dimension-term census failed (%s); not measured.', ME.message);
+        end
     end
 
     % --- ingested files: point them at the bytes v1 already ingested --------
@@ -1178,7 +1237,9 @@ function result = local(path, options)
         'genericFileFold',     genericFileFoldReport, ...
         'validIntervalDecompose', validIntervalReport, ...
         'clockAlignmentFold',  clockAlignmentReport, ...
+        'softwareDedupAfterPassOne', softwareDedupEarlyReport, ...
         'softwareDedup',       softwareDedupReport, ...
+        'dimensionTerms',      dimensionTermReport, ...
         'sliceTetanus',        sliceTetanusReport, ...
         'regionPartsSites',    regionSitesReport, ...
         'regionPartsLocated',  regionLocatedReport);
@@ -2596,7 +2657,7 @@ function [convertResult, report] = resolveSoftwareDedup(convertResult)
     convertResult.summary = recountSummary(convertResult);
 end
 
-function [convertResult, report] = resolveStimulusPresentations(convertResult, bodies, options, resolver)
+function [convertResult, report] = resolveStimulusPresentations(convertResult, bodies, options, resolver, ndiDir)
 %RESOLVESTIMULUSPRESENTATIONS V_eta second pass: DECOMPOSE each legacy
 %   stimulus_presentation into the did-schema #88 stimulus shape -- one
 %   standalone `method` document per distinct stimulus (a recipe:
@@ -2626,8 +2687,15 @@ function [convertResult, report] = resolveStimulusPresentations(convertResult, b
 %
 %   TIME. Each manipulation is anchored "during the session" by
 %   did2.convert.mintSessionDuring (the lightsheet decision, Jess 2026-10-14,
-%   option A): the epoch anchor needs a clocktype that lives in
-%   presentation_time.bin, which this pass does not open.
+%   option A).
+%
+%   TRIAL TIMES (Decided by Jess Haley, 2026-10-22 [presentation times from
+%   the file]). Each presentation's onsets and offsets are read from its v1
+%   presentation_time.bin when the bytes are on this computer
+%   (ndi.migrate.internal.v1AttachedFile: <NDIDIR>/files/<uid>, else the
+%   recorded location), else from the deprecated inline block, else none; the
+%   file stays attached to the V2 document. REPORT.timing counts each source
+%   against the presentations folded.
 %
 %   CONTROL (Jess Haley, 2026-10-22, [control as covariate]): each v1
 %   control_stimulus_ids is handed to its presentation's fold and becomes the
@@ -2640,6 +2708,9 @@ function [convertResult, report] = resolveStimulusPresentations(convertResult, b
 %   `visual_grating`, `visual_grating_manipulation`, `timed_sequence` and
 %   `timed_sequence_manipulation` are gone from #88; nothing here emits them.
     report = newStimulusSequenceReport();
+    if nargin < 5
+        ndiDir = '';
+    end
     if nargin < 4 || isempty(resolver)
         % the caller's resolver (built from the same BODIES) when it has one
         resolver = ndi.migrate.internal.bodyResolver(bodies);
@@ -2702,10 +2773,20 @@ function [convertResult, report] = resolveStimulusPresentations(convertResult, b
         if ~isempty(presId) && isKey(controlsByPresentation, presId)
             controls = controlsByPresentation(presId);
         end
+        ptFile = '';
+        ptStatus = '';
+        if ~isempty(ndiDir)
+            [ptFile, ptStatus] = ndi.migrate.internal.v1AttachedFile(b, ...
+                'presentation_time.bin', ndiDir);
+        end
         [manip, methods, rep] = ndi.migrate.internal.stimulusPresentationToItem( ...
             b, resolver, sequence, 'CohortIdFor', cohortIdFor, ...
-            'ControlRecords', controls);
+            'ControlRecords', controls, 'PresentationTimeFile', ptFile, ...
+            'PresentationTimeFileStatus', ptStatus);
         report = tallyStimulusKinds(report, rep, ~isempty(manip));
+        if ~isempty(manip)
+            report.timing = tallyTiming(report.timing, rep);
+        end
         if ~isempty(manip) && ~isempty(controls)
             [report, controlFolded] = tallyControl(report, rep, controls, controlFolded);
         end
@@ -2877,6 +2958,58 @@ function [convertResult, report] = resolveStimulusPresentations(convertResult, b
     convertResult.summary = recountSummary(convertResult);
 end
 
+function t = newTimingCensus()
+%NEWTIMINGCENSUS Where each folded presentation's trial times came from
+%   ([presentation times from the file]); `presentations_folded` is the
+%   denominator, and from_file + inline + frame_times + none equals it.
+    t = struct( ...
+        'presentations_folded',      0, ...
+        'from_file',                 0, ...
+        'inline',                    0, ...
+        'frame_times',               0, ...
+        'none',                      0, ...
+        'file_declared',             0, ...
+        'file_located',              0, ...
+        'file_not_on_this_computer', 0, ...
+        'file_unusable',             0, ...
+        'file_unusable_reasons',     {{}}, ...
+        'files_attached',            0);
+end
+
+function t = tallyTiming(t, rep)
+    t.presentations_folded = t.presentations_folded + 1;
+    switch rep.timing_source
+        case 'presentation_time.bin'
+            t.from_file = t.from_file + 1;
+        case 'inline (deprecated writer form)'
+            t.inline = t.inline + 1;
+        case 'frameTimes (hartley_calc)'
+            t.frame_times = t.frame_times + 1;
+        otherwise
+            t.none = t.none + 1;
+    end
+    st = rep.timing_file;
+    if ~strcmp(st, 'not declared')
+        t.file_declared = t.file_declared + 1;
+    end
+    if any(strcmp(st, {'read', 'not used: the dimension is frames'})) ...
+            || strncmp(st, 'unreadable', 10) || ~isempty(regexp(st, 'entr\(ies\)', 'once')) ...
+            || strcmp(st, 'an onset is not a finite number')
+        t.file_located = t.file_located + 1;
+    end
+    if any(strcmp(st, {'not on this computer', 'declared, not located'}))
+        t.file_not_on_this_computer = t.file_not_on_this_computer + 1;
+    end
+    if strncmp(st, 'unreadable', 10) || ~isempty(regexp(st, 'entr\(ies\)', 'once')) ...
+            || strcmp(st, 'an onset is not a finite number')
+        t.file_unusable = t.file_unusable + 1;
+        if numel(t.file_unusable_reasons) < 5
+            t.file_unusable_reasons{end+1} = st;
+        end
+    end
+    t.files_attached = t.files_attached + (rep.files_attached > 0);
+end
+
 function [report, folded] = tallyControl(report, rep, controls, folded)
 %TALLYCONTROL Count one folded presentation's control records ([control as
 %   covariate]): folded into its covariate, or left as v1 with the reason.
@@ -3034,6 +3167,7 @@ function r = newStimulusSequenceReport()
         'control_covariates_all_false', 0, ...
         'control_input_edges_stripped', 0, ...
         'control_input_documents_changed', 0, ...
+        'timing',                     newTimingCensus(), ...
         'hartley',                    []);
 end
 

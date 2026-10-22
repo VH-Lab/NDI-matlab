@@ -32,7 +32,17 @@
 %                          entity per consuming document because a
 %                          single-document migrator cannot see the batch; this
 %                          is the "deduplicated by name+version" half of the
-%                          signed R1 model. Runs LAST of the V_eta sub-passes.
+%                          signed R1 model. Runs right after pass 1 and
+%                          again LAST of the V_eta sub-passes ([software
+%                          dedup after pass one], Jess Haley 2026-10-22).
+%     v1AttachedFile     - where a v1 document's attached file is on this
+%                          computer (<.ndi>/files/<uid>, else the recorded
+%                          location); the stimulus fold reads
+%                          presentation_time.bin through it.
+%     dimensionTermCensus
+%                        - counts the dimensions written whose term has no
+%                          node, against the dimensions written ([covariate
+%                          details] 5.4, Jess Haley 2026-10-22).
 %     stimulusPresentationToItem
 %                        - the stimulus fold in the did-schema #88 shape
 %                          (V_eta_method_plan.md, TEAM-SIGN-OFF [method]
