@@ -328,6 +328,41 @@ classdef TestSoftwareDedup < matlab.unittest.TestCase
             testCase.verifyEqual(report.moved_to_dataset_level, 2);
         end
 
+        function testObjectSoftwareStaysInEachSession(testCase)
+            % Decided by Jess Haley, 2026-10-22, H1 (a): the software an NDI
+            % object is rebuilt from (here an acquisition_system's
+            % `software_id`, the edge ndi.vintage.objectClass follows) stays
+            % in EACH session -- a linked session opened from its own folder
+            % cannot see dataset documents. Descriptive software (the
+            % calculation's) still goes to the dataset level.
+            [o1, vo1] = software88('sw_o1', 'sess_1', 'ndi.daq.system.mfdaq', '');
+            [o2, vo2] = software88('sw_o2', 'sess_2', 'ndi.daq.system.mfdaq', '');
+            s1 = objectBody('acquisition_system', 'sys_1', 'sess_1', 'software_id', 'sw_o1');
+            s2 = objectBody('acquisition_system', 'sys_2', 'sess_2', 'software_id', 'sw_o2');
+            [a, va] = software88('sw_a', 'sess_1', 'ndi.calc.vis.oridir', '1.2');
+            [b, vb] = software88('sw_b', 'sess_2', 'ndi.calc.vis.oridir', '1.2');
+            leaf = leafBody('leaf_2', 'sess_2', 'sw_b');
+            [kept, report] = ndi.migrate.internal.softwareDedup( ...
+                {datasetEntity('ds_1'), o1, vo1, o2, vo2, s1, s2, a, va, b, vb, leaf});
+            testCase.verifyEqual(report.scope, 'dataset');
+            testCase.verifyEqual(report.object_software, 2);
+            testCase.verifyEqual(report.software_merged_away, 1, 'the calculation software only');
+            testCase.verifyEqual(ndi.v2.sessionIdOf(firstWithId(kept, 'sw_o1')), 'sess_1');
+            testCase.verifyEqual(ndi.v2.sessionIdOf(firstWithId(kept, 'sw_o2')), 'sess_2');
+            testCase.verifyEqual(ndi.v2.sessionIdOf(firstWithId(kept, 'sw_o2_version')), 'sess_2');
+            testCase.verifyEqual(depValue(firstWithId(kept, 'sys_2'), 'software_id'), 'sw_o2');
+            testCase.verifyEqual(ndi.v2.sessionIdOf(firstWithId(kept, 'sw_a')), 'ds_1');
+            testCase.verifyEqual(depValue(firstWithId(kept, 'leaf_2'), 'software_id'), 'sw_a');
+            % within ONE session, two mints of the object software still merge
+            [o3, vo3] = software88('sw_o3', 'sess_1', 'ndi.daq.system.mfdaq', '');
+            s3 = objectBody('acquisition_system', 'sys_3', 'sess_1', 'software_id', 'sw_o3');
+            [kept2, r2] = ndi.migrate.internal.softwareDedup( ...
+                {datasetEntity('ds_1'), o1, vo1, o3, vo3, s1, s3});
+            testCase.verifyEqual(r2.software_merged_away, 1);
+            testCase.verifyEqual(depValue(firstWithId(kept2, 'sys_3'), 'software_id'), 'sw_o1');
+            testCase.verifyEqual(ndi.v2.sessionIdOf(firstWithId(kept2, 'sw_o1')), 'sess_1');
+        end
+
         function testALoneSessionKeepsItsSoftware(testCase)
             % "a lone session with no dataset keeps them in the session"
             [a, va] = software88('sw_a', 'sess_1', 'ndi', '1.2');
@@ -418,6 +453,18 @@ d.depends_on = struct('name', {}, 'value', {});
 d.base = struct('id', id, 'session_id', id, ...
     'creation_timestamp', '2024-01-01T00:00:00.000Z');
 d.entity = struct('type', struct('node', '', 'name', 'dataset'), 'name', 'ds');
+end
+
+function s = objectBody(className, id, sessionId, edgeName, softwareId)
+%OBJECTBODY A document an NDI object is rebuilt from, pointing at its software
+%   by the edge ndi.vintage.map names (`object_edge`).
+s = struct();
+s.document_class = struct('class_name', className, 'class_version', '1.0.0', ...
+    'superclasses', struct('class_name', 'base', 'class_version', '1.0.0'), ...
+    'schema_version', 'V_eta');
+s.depends_on = struct('name', edgeName, 'value', softwareId);
+s.base = struct('id', id, 'session_id', sessionId, ...
+    'creation_timestamp', '2024-01-01T00:00:00.000Z');
 end
 
 function s = leafBody(id, sessionId, softwareId)

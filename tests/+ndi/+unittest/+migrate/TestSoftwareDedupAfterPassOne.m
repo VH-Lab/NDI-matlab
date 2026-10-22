@@ -110,9 +110,75 @@ for k = 1:min(5, numel(ib))
     fprintf('    only without it:           %s  %s\n', clsB{ib(k)}, ...
         shorten(onlyB{k}));
 end
+if ~isempty(onlyA) || ~isempty(onlyB)
+    printRootDifferences(early, endOnly, stable, name);
+end
 verifyEmpty(testCase, onlyA, sprintf(['%s: %d document(s) differ between the ' ...
     'early-merge and end-only migrations (listed above)'], name, numel(onlyA)));
 verifyEmpty(testCase, onlyB);
+end
+
+function printRootDifferences(A, B, stable, name)
+%PRINTROOTDIFFERENCES Where the two runs first part. Round 1 compares each
+%   document's OWN content (every minted reference the same placeholder);
+%   round r also compares what its references pointed at r-1 hops away. The
+%   first round with a difference is printed: each differing document around
+%   its first difference from the closest document of its class on the other
+%   side, and, when that difference is a reference, the documents each side's
+%   reference names (their own content).
+[r1A, r1B] = canonicalPair(A, B, stable, 1);
+for r = 1:6
+    [sA, sB, cA, cB, labA, labB] = canonicalPair(A, B, stable, r);
+    [oA, iA] = setdiffMulti(sA, sB);
+    [oB, iB] = setdiffMulti(sB, sA);
+    if ~isempty(oA) || ~isempty(oB)
+        break;
+    end
+end
+fprintf(['  [%s] FIRST DIFFERENCE at round %d (1 = own content, r = r-1 hops ' ...
+    'of references): %d document(s) only with the early merge, %d only without\n'], ...
+    name, r, numel(oA), numel(oB));
+classesA = cA(iA); classesB = cB(iB);
+u = unique([classesA, classesB]);
+for k = 1:numel(u)
+    fprintf('    %-40s early-only %d, end-only-only %d\n', u{k}, ...
+        sum(strcmp(classesA, u{k})), sum(strcmp(classesB, u{k})));
+end
+for k = 1:min(6, numel(oA))
+    pk = find(strcmp(classesB, classesA{k}));
+    if isempty(pk)
+        fprintf('    early-only %s (none of its class on the other side): %s\n', ...
+            classesA{k}, shorten(oA{k}));
+        continue;
+    end
+    best = 0; bestP = pk(1);
+    for j = pk
+        m = min(numel(oB{j}), numel(oA{k}));
+        d = find(oB{j}(1:m) ~= oA{k}(1:m), 1);
+        if isempty(d); d = m + 1; end
+        if d > best; best = d; bestP = j; end
+    end
+    lo = max(1, best - 160);
+    fprintf('    %s differs at char %d:\n      early:    ...%s\n      end-only: ...%s\n', ...
+        classesA{k}, best, oA{k}(lo:min(end, best + 160)), ...
+        oB{bestP}(lo:min(end, best + 160)));
+    tA = regexp(oA{k}(best:end), '^[0-9A-Za-z_]+', 'match', 'once');
+    tB = regexp(oB{bestP}(best:end), '^[0-9A-Za-z_]+', 'match', 'once');
+    % the label may have started a few characters earlier ("M12" vs "M15")
+    pre = regexp(oA{k}(1:best-1), '[0-9A-Za-z_]+$', 'match', 'once');
+    tA = [pre tA]; tB = [pre tB];
+    describeLabel('early', tA, labA, r1A, cA);
+    describeLabel('end-only', tB, labB, r1B, cB);
+end
+end
+
+function describeLabel(side, label, labs, own, cls)
+hits = find(strcmp(labs, label));
+if isempty(hits)
+    return;
+end
+fprintf('      %s reference %s names %d document(s), e.g. %s: %s\n', side, label, ...
+    numel(hits), cls{hits(1)}, shorten(own{hits(1)}));
 end
 
 function [docs, result] = migrateOnce(testCase, bodies, early)
@@ -125,7 +191,7 @@ result = ndi.migrate.local(root, 'Validate', true, 'TargetVersion', 'V_eta', ...
 docs = destinationBodies(result.destination);
 end
 
-function [sigA, sigB, clsA, clsB] = canonicalPair(A, B, stable, rounds)
+function [sigA, sigB, clsA, clsB, prevA, prevB] = canonicalPair(A, B, stable, rounds)
 %CANONICALPAIR Labelled JSON of every document of two runs, minted ids replaced
 %   by the label of the document they name (see the class help).
 [txtA, tokA, clsA, idxA, isStA, idsA] = prepare(A, stable);
@@ -134,6 +200,7 @@ labA = initialLabels(idsA, isStA);
 labB = initialLabels(idsB, isStB);
 sigA = {}; sigB = {};
 for r = 1:rounds
+    prevA = labA; prevB = labB;   % the labels the round's signatures embed
     sigA = relabel(txtA, tokA, idxA, labA, stable);
     sigB = relabel(txtB, tokB, idxB, labB, stable);
     dict = containers.Map('KeyType', 'char', 'ValueType', 'double');

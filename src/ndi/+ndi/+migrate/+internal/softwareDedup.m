@@ -62,6 +62,21 @@ function [kept, report] = softwareDedup(structs)
 %   a session-scoped key would leave beyond a dataset-scoped one;
 %   REPORT.scope / REPORT.dataset_id say which this run used.
 %
+%   OBJECT SOFTWARE STAYS IN EACH SESSION. Decided by Jess Haley, 2026-10-22,
+%   H1 (a): software that an NDI object is rebuilt from -- the entity behind
+%   an acquisition_system, acquisition_reader, epoch_file_pattern (the class
+%   name ndi.vintage.objectClass reads) -- stays in EACH SESSION, as the
+%   Haley import does (its decision #29); only descriptive software (MATLAB,
+%   an acquisition program named as provenance, ...) goes to the dataset
+%   level. Reason: a linked session opened from its own folder cannot see
+%   dataset documents (ndi.session), so objectClass's
+%   database_search_with_dataset fallback cannot find a dataset-level entity.
+%   An entity is OBJECT SOFTWARE when a document of a class ndi.vintage.map
+%   gives an `object_edge` points at it by that edge, or any document points
+%   at it by `reader_id` (the reader object a daq system builds). Object
+%   software is keyed on (session, name, version) and never moved, in either
+%   scope; REPORT.object_software counts it.
+%
 %   ---------------------------------------------------------------------
 %   RETARGETING IS BY TARGET ID, NOT BY EDGE NAME
 %   ---------------------------------------------------------------------
@@ -154,6 +169,7 @@ report.cross_session_collapsible = 0;   % extra entities a dataset-scoped key re
 report.scope                     = 'session';
 report.dataset_id                = '';
 report.moved_to_dataset_level    = 0;   % entities + version assertions
+report.object_software           = 0;   % H1 (a): kept in its session
 report.changed                   = false;
 
 n = numel(structs);
@@ -248,6 +264,29 @@ for j = 1:n
 end
 report.software_pinned = sum(pinned);
 
+% ------------------------------- object software stays in its session (H1 a)
+objectSoftware = false(1, n);
+objectEdges = objectEdgeByClass();
+for j = 1:n
+    cls = classNameOf(structs{j});
+    edgeName = '';
+    if isKey(objectEdges, cls)
+        edgeName = objectEdges(cls);
+    end
+    deps = depsOf(structs{j});
+    for k = 1:numel(deps)
+        nm = depName(deps(k));
+        if ~(strcmp(nm, 'reader_id') || (~isempty(edgeName) && strcmp(nm, edgeName)))
+            continue;
+        end
+        tgt = depTarget(deps(k));
+        if ~isempty(tgt) && isKey(softwareIdx, tgt)
+            objectSoftware(softwareIdx(tgt)) = true;
+        end
+    end
+end
+report.object_software = sum(objectSoftware);
+
 if report.software_seen == 0
     return;     % denominators are populated; there is simply nothing to merge
 end
@@ -267,8 +306,13 @@ for i = find(isSoftware)
         report.unnamed_seen = report.unnamed_seen + 1;
         continue;
     end
-    if scope.is_dataset
+    if scope.is_dataset && ~objectSoftware(i)
         key = [scope.dataset_id '|' nameOf{i} '|' versOf{i}];
+    elseif scope.is_dataset
+        % object software in a dataset (H1 a): its session; the `object|`
+        % prefix keeps it apart from a descriptive mint of the same program,
+        % which goes to the dataset level
+        key = ['object|' sessOf{i} '|' nameOf{i} '|' versOf{i}];
     else
         key = [sessOf{i} '|' nameOf{i} '|' versOf{i}];
     end
@@ -346,6 +390,12 @@ if scope.is_dataset
         if isVersionAssertion(i) && ~isKey(softwareIdx, S.aboutId(structs{i}))
             continue;   % a version of something that is not a software entity here
         end
+        if isSoftware(i) && objectSoftware(i)
+            continue;   % H1 (a): object software stays in its session
+        end
+        if isVersionAssertion(i) && objectSoftware(softwareIdx(S.aboutId(structs{i})))
+            continue;   % ... and so does its version
+        end
         if ~strcmp(ndi.v2.sessionIdOf(structs{i}), scope.dataset_id)
             structs{i} = ndi.migrate.internal.withSessionId(structs{i}, scope.dataset_id);
             report.moved_to_dataset_level = report.moved_to_dataset_level + 1;
@@ -371,6 +421,30 @@ end
 
 kept = structs(~removeMask);
 report.changed = true;
+end
+
+function m = objectEdgeByClass()
+%OBJECTEDGEBYCLASS V_eta class -> the edge ndi.vintage.objectClass follows to
+%   the software entity the object is rebuilt from (ndi.vintage.map
+%   `object_edge`), for every map row that has one.
+persistent cached
+if isempty(cached)
+    cached = containers.Map('KeyType', 'char', 'ValueType', 'char');
+    rows = ndi.vintage.map();
+    for r = 1:numel(rows)
+        if isempty(rows(r).object_edge)
+            continue;
+        end
+        cls = rows(r).eta_class;
+        if ischar(cls)
+            cls = {cls};
+        end
+        for c = 1:numel(cls)
+            cached(cls{c}) = rows(r).object_edge;
+        end
+    end
+end
+m = cached;
 end
 
 % ===================== cross-session measurement ==========================
