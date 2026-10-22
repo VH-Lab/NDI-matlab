@@ -243,12 +243,14 @@ classdef TestMigrateLocalEtaSoph < matlab.unittest.TestCase
                 testCase.Result.destination));
 
             migrated = destinationBodies(testCase.Result.destination);
-            sessionDoc = findByClass(migrated, 'session');
+            % did-schema #88: the session (or, for a dataset's own session,
+            % the dataset) entity; its base.id is the session id
+            [sessionDoc, sessionId] = ndi.unittest.migrate.largestSessionRecord(migrated);
             assertNotEmpty(testCase, sessionDoc, ...
-                'no `session` document in the migrated database');
+                'no session or dataset record in the migrated database');
             vlt.file.str2text( ...
                 fullfile(testCase.SessionRoot, '.ndi', 'unique_reference.txt'), ...
-                sessionDoc.base.session_id);
+                sessionId);
 
             s = ndi.session.dir(testCase.SessionRoot);
             assertTrue(testCase, isa(s, 'ndi.session.dir'), ...
