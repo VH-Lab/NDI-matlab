@@ -35,12 +35,15 @@ function out = trackDocuments(dataParentDir, session, R, subjectIds, options)
 %                           steps faster than 600 um/s left out (method
 %                           parameter window).
 %                           Input: the positions.
-%     length calculation    `signed distance from the nearest bacterial patch
-%                           edge` (`distanceLawnEdge`), m: positive inside a
-%                           patch, negative outside it, as the variable
-%                           (EMPTY:0000350) says (decision #119). Method
-%                           distance transform. Inputs: the positions and the
-%                           lawn mask.
+%     length calculation    `signed distance to region boundary`
+%                           (`distanceLawnEdge`), m: positive inside a patch,
+%                           negative outside it, as the variable
+%                           (EMPTY:0000384) says; the region is the condition
+%                           Location = bacterial patch, and the lawn mask is an
+%                           input (did-schema [Haley terms general], Jess Haley
+%                           2026-10-22, replacing EMPTY:0000350 of decision
+%                           #119). Method distance transform. Inputs: the
+%                           positions and the lawn mask.
 %     item calculation      `nearest bacterial patch` (`closestLawnID`): a
 %                           0-based index into the plate's patch subjects
 %                           (item_id). The source reads it at pixel (1, 1) on
@@ -232,7 +235,8 @@ for k = 1:height(R)
         if any(has) && ~isempty(geo.lawn_mask)
             keys = haleyAxes(frame, bodyPartAxis(kept(has)));
             de = did2.build.statement('calculation', wormId, ...
-                haleyTerm('signed distance from the nearest bacterial patch edge'), [], ...
+                haleyTerm('signed distance to region boundary'), [], ...
+                'Conditions', did2.build.list(regionCondition()), ...
                 'DataBody', true, 'DatumType', 'float64', keys.args{:}, ...
                 'Method', haleyTerm('distance transform'), ...
                 'InputIds', {pos.base.id, geo.lawn_mask}, calc{:}, 'ValueKind', 'length');
@@ -328,4 +332,11 @@ name = strtrim(char(name));
 if isempty(name), return; end
 [~, stem] = fileparts(name);
 e = [pre '_' stem];
+end
+
+function c = regionCondition()
+% the region a signed distance is to (did-schema [Haley terms general], Jess
+% Haley 2026-10-22): the Location condition a bacterial patch mask carries
+% (decision #113); the mask itself is the calculation's input
+c = did2.build.condition(haleyTerm('location'), 'Term', haleyTerm('bacterial patch'));
 end

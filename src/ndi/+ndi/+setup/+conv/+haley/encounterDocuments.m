@@ -58,10 +58,14 @@ function out = encounterDocuments(dataParentDir, session, R, subjectIds, options
 %     acceleration calculation  `acceleration`, method `ordinary least squares
 %                       estimation` (decelerate, um/s^2 -> m/s^2), the same
 %                       anchor, window -1.5..+6.5 s
-%     length calculation  `signed distance from the nearest bacterial patch
-%                       edge` (EMPTY:0000350: positive inside the patch,
-%                       negative outside; the variable says so, decision #119),
-%                       condition the period: during, method `maximum`
+%     length calculation  `signed distance to region boundary` (EMPTY:0000384:
+%                       positive inside the region, negative outside; the
+%                       variable says so; did-schema [Haley terms general],
+%                       Jess Haley 2026-10-22, replacing EMPTY:0000350 of
+%                       decision #119), the region the condition Location =
+%                       bacterial patch, whose mask the per-frame distance
+%                       this is computed from takes as input; condition the
+%                       period: during, method `maximum`
 %                       (distanceOnMax, analyzeEncounters line 273, whose own
 %                       header misnames it); after, method `minimum`, the
 %                       SIGNED value -distanceOffMax (the source stores
@@ -174,7 +178,10 @@ docs = {};
 before = periodCondition('before the first encounter');
 during = periodCondition('during the encounter');
 after = periodCondition('after the encounter');
-edgeDistance = haleyTerm('signed distance from the nearest bacterial patch edge');
+edgeDistance = haleyTerm('signed distance to region boundary');
+% the region the distance is to (did-schema [Haley terms general]): the same
+% Location condition a bacterial patch mask carries (decision #113)
+region = did2.build.condition(haleyTerm('location'), 'Term', haleyTerm('bacterial patch'));
 detection = {'Method', haleyTerm('encounter detection'), 'MethodParameters', ...
     did2.build.list( ...
         did2.build.parameter(haleyTerm('encountered entity'), 'Term', haleyTerm('bacterial patch')), ...
@@ -267,7 +274,7 @@ for g = 1:max(G)
             % the source's abs(min(distanceLawnEdge)): the minimum, signed
             docs{end+1} = did2.build.statement('calculation', wormId, edgeDistance, ...
                 mm(-gap0.distanceOffMax), 'Method', haleyTerm('minimum'), ...
-                'Conditions', did2.build.list(before), 'InputIds', inputs, calc{:}, 'ValueKind', 'length'); %#ok<AGROW>
+                'Conditions', did2.build.list(before, region), 'InputIds', inputs, calc{:}, 'ValueKind', 'length'); %#ok<AGROW>
         end
     end
     if n == 0
@@ -340,9 +347,9 @@ for g = 1:max(G)
         'acceleration', 'acceleration', 'decelerate', @accel, ...
             {'Method', haleyTerm('ordinary least squares estimation')}, eventWindow(-1.5, 6.5), ''
         'length', edgeDistance, 'distanceOnMax', @mm, ...
-            {'Method', haleyTerm('maximum')}, {during}, ''
+            {'Method', haleyTerm('maximum')}, {during, region}, ''
         'length', edgeDistance, 'distanceOffMax', @(x) mm(-x), ...
-            {'Method', haleyTerm('minimum')}, {after}, ''};
+            {'Method', haleyTerm('minimum')}, {after, region}, ''};
     for j = 1:size(q, 1)
         if ~ismember(q{j, 3}, enc.Properties.VariableNames), continue; end
         x = double(enc.(q{j, 3}));

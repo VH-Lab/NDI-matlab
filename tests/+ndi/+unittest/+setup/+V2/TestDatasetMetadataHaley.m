@@ -317,7 +317,7 @@ classdef TestDatasetMetadataHaley < matlab.unittest.TestCase
             nodes = @(k) reshape(sort(cellfun(@(f) f.node, num2cell(asStructs(byKey(k).factors)), ...
                 'UniformOutput', false)), 1, []);
             testCase.verifyEqual(nodes('single_patch_assays'), ...
-                sort({'EMPTY:0000120', 'EMPTY:0000122', 'EMPTY:0000365'}));
+                sort({'EMPTY:0000385', 'PATO:0001334', 'EMPTY:0000365'}));   % [Haley terms general]
             testCase.verifyTrue(any(strcmp(nodes('large_single_patch'), 'EMPTY:0000119')));
             testCase.verifyTrue(any(strcmp(nodes('small_single_patch'), 'EMPTY:0000119')));
             testCase.verifyEqual(nodes('mutant_screen'), sort({'NCIT:C14419', 'ZECO:0000113'}));

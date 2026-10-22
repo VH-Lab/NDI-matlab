@@ -903,8 +903,9 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             % `datum_type` was renamed `data_type` on 2026-10-08
             testCase.verifyEqual(ndi.v2.blockOf(a, 'value', 'data_type', ndi.v2.blockOf(a, 'value', 'datum_type')), 'bool');
             mp = entries(a.interaction.method.parameters);
-            testCase.verifyEqual(mp{1}.variable.name, 'arena diameter');
-            testCase.verifyEqual(mp{1}.variable.node, 'EMPTY:0000122');
+            % [Haley terms general]: PATO:0001334 diameter (EMPTY:0000122 obsolete)
+            testCase.verifyEqual(mp{1}.variable.name, 'diameter');
+            testCase.verifyEqual(mp{1}.variable.node, 'PATO:0001334');
             k = axisEntries(a);
             testCase.verifyEqual(cellfun(@(x) x.variable.node, k, 'UniformOutput', false), ...
                 {'NCIT:C44478', 'NCIT:C44477'}, '[Y-coordinate, X-coordinate]: [row, column]');
@@ -1022,9 +1023,10 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             de = of('length_calculation', 'concentration_worm0121');
             testCase.verifyNumElements(de, 1);
             testCase.verifyNumElements(edgeAll(de{1}, 'input_id'), 2, 'the positions and the lawn mask');
-            testCase.verifyEqual(de{1}.statement.variable.node, 'EMPTY:0000350', ...
-                'signed distance from the nearest bacterial patch edge: the sign is the variable''s (#119)');
-            testCase.verifyEmpty(conditionsOf(de{1}), 'the variable names the edge it is measured from');
+            testCase.verifyEqual(de{1}.statement.variable.node, 'EMPTY:0000384', ...
+                'signed distance to region boundary: the sign is the variable''s ([Haley terms general])');
+            testCase.verifyEqual(conditionTerms(de{1}), {'bacterial patch'}, ...
+                'the region it is measured to: Location = bacterial patch');
             testCase.verifyFalse(isfield(de{1}.statement, 'notes') && ~isempty(de{1}.statement.notes), ...
                 'no sign convention in notes');
             v = testCase.bodyValues(sessionPath, docs, classes, de{1}.base.id, 'double');
@@ -1258,19 +1260,21 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             % the signed distance from the patch edge (decision #119): the
             % largest during each encounter, the smallest (signed) after it
             dist = named('length_calculation', 'concentration_worm0121', ...
-                'signed distance from the nearest bacterial patch edge');
-            testCase.verifyTrue(all(cellfun(@(d) strcmp(d.statement.variable.node, 'EMPTY:0000350'), dist)));
-            on = dist(cellfun(@(d) isequal(conditionTerms(d), {'during the encounter'}), dist));
+                'signed distance to region boundary');
+            testCase.verifyTrue(all(cellfun(@(d) strcmp(d.statement.variable.node, 'EMPTY:0000384'), dist)));
+            testCase.verifyTrue(all(cellfun(@(d) any(strcmp(conditionTerms(d), 'bacterial patch')), dist)), ...
+                'each names its region: Location = bacterial patch');
+            on = dist(cellfun(@(d) isequal(conditionTerms(d), {'during the encounter', 'bacterial patch'}), dist));
             testCase.verifyNumElements(on, 1);
             testCase.verifyEqual(numbers(on{1}.length.value, 'meters'), [0.1 0.2] * 1e-3, 'AbsTol', 1e-15);
             testCase.verifyEqual(methodOf(on{1}), 'maximum observed value');
-            off = dist(cellfun(@(d) isequal(conditionTerms(d), {'after the encounter'}), dist));
+            off = dist(cellfun(@(d) isequal(conditionTerms(d), {'after the encounter', 'bacterial patch'}), dist));
             testCase.verifyNumElements(off, 1);
             offV = numbers(off{1}.length.value, 'meters');
             testCase.verifyEqual(offV(1), -1.1e-3, 'AbsTol', 1e-15, '-distanceOffMax: outside the patch');
             testCase.verifyTrue(isnan(offV(2)), 'nothing after the last encounter');
             testCase.verifyEqual(methodOf(off{1}), 'minimum observed value');
-            gd = dist(cellfun(@(d) isequal(conditionTerms(d), {'before the first encounter'}), dist));
+            gd = dist(cellfun(@(d) isequal(conditionTerms(d), {'before the first encounter', 'bacterial patch'}), dist));
             testCase.verifyNumElements(gd, 1);
             testCase.verifyEqual(gd{1}.length.value.meters, -1.0e-3, 'AbsTol', 1e-15);
             testCase.verifyEqual(methodOf(gd{1}), 'minimum observed value');

@@ -42,7 +42,9 @@ function out = geometryDocuments(dataParentDir, session, R, subjectIds, options)
 %     length calculation  `radius` (`lawnRadii`, pixels -> metres)
 %     score calculation   `circularity` (`lawnCircularity`, 0-1)
 %   (doImport's patch table had these; decision #70)
-%   The arena mask's method parameter is the plate or arena diameter. The lawn
+%   The arena mask's method parameter is the plate or arena diameter (PATO:0001334
+%   diameter; EMPTY:0000122 `arena diameter` until did-schema's [Haley terms
+%   general], Jess Haley 2026-10-22: the mask says it is the arena's). The lawn
 %   mask's inputs are the recording and the plate's target design statements
 %   ('TargetIds': the patches' target diameter and the plate's target
 %   spacing, built by an earlier stage); its method is the patches'
@@ -165,7 +167,7 @@ for k = 1:height(R)
     calc = [common, {'InputIds', {videoId}}];
 
     % ---- masks ---------------------------------------------------------------
-    arenaParams = did2.build.list(did2.build.parameter(haleyTerm('arena diameter'), ...
+    arenaParams = did2.build.list(did2.build.parameter(haleyTerm('diameter'), ...
         'Value', colOr(d, 'arenaDiameter', NaN) * 1e-3, 'Unit', haleyTerm('meter'), ...
         'SourceValue', num2str(colOr(d, 'arenaDiameter', NaN)), 'SourceUnit', ndi.setup.V2.sourceUnit('mm')));
     [docs, n] = mask(docs, d, 'arenaMask', 'arena', ...
