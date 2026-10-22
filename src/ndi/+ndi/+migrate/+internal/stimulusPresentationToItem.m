@@ -22,7 +22,7 @@ function [manipBody, methodBodies, report] = ...
 %
 %   WHAT IT EMITS, per input stimulus_presentation
 %     methodBodies  one `method` document per DISTINCT stimulus
-%                   ({term, parameters}, ndi.migrate.internal.gratingRecipe /
+%                   ({term, parameters}, ndi.migrate.internal.stimulusRecipe /
 %                   stimulusMethod), deduplicated by the recipe itself. New
 %                   ids: nothing in v1 references a single stimulus. Empty on
 %                   the SEQUENCE path (the shared Hartley basis is minted once
@@ -55,12 +55,22 @@ function [manipBody, methodBodies, report] = ...
 %                   epoch anchor the plan prefers needs a clocktype that lives
 %                   in presentation_time.bin, which a batch pass does not open.
 %
-%   THE GRATING GUARD (Jess Haley, 2026-10-21; NDI-matlab 59f8069fb). A
-%   presentation folds only when EVERY stimulus is a NewStim periodicstim
-%   grating (imageType 1 or 2) or a blank; anything else (bars, noise,
-%   blinking squares, shape movies, a Hartley generator recipe with no
-%   enumeration, an unrecognised set) is refused and left as v1, with the
-%   per-kind counts in REPORT.stimulus_kinds.
+%   THE STIMULUS KINDS. Decided by Jess Haley, 2026-10-21 [non-grating
+%   stimuli as methods] (V_eta_method_plan.md): a visual stimulus that is not
+%   a grating migrates the same way as a grating -- one `method` per distinct
+%   stimulus, its term naming the kind, every v1 parameter an entry. The kind
+%   is the NewStim class, recognised from the parameter field set its verify
+%   function fixes (newStimKind below). A presentation folds when EVERY
+%   stimulus is one of the kinds ndi.migrate.internal.stimulusRecipe
+%   describes: a periodicstim grating (imageType 1 or 2), a blank, a
+%   periodicstim uniform field (imageType 0, flashed bars) or other imageType,
+%   a stochasticgridstim (dense noise), a blinkingstim (sparse noise) or a
+%   shapemoviestim (shape movie). It is REFUSED and left as v1 when any
+%   stimulus is a hartleystim generator with no hartley_calc enumeration
+%   supplied (that path is SEQUENCE below), matches more than one class, or
+%   matches none. REPORT.stimulus_kinds has the per-kind counts;
+%   REPORT.non_grating_stimuli counts the stimuli that are neither a grating
+%   nor a blank (folded or not).
 %
 %   WHO RECEIVED IT (stimulus plan, decisions of 2026-10-21), strongest first:
 %   a stimulus response naming the presentation, then the elements recorded
@@ -255,22 +265,24 @@ if outOfRange > 0
     return;
 end
 
-nonGrating = 0;
+% Every kind stimulusRecipe describes folds ([non-grating stimuli as
+% methods], Jess Haley 2026-10-21); the rest is refused by class.
+foldable = {'grating', 'blank', 'periodicstim_bars', 'periodicstim_other', ...
+    'stochasticgridstim', 'blinkingstim', 'shapemoviestim'};
 refusedKinds = {};
 for i = 1:numel(stimulusKinds)
     if ~any(strcmp(stimulusKinds{i}, {'grating', 'blank'}))
-        nonGrating = nonGrating + 1;
-        if ~any(strcmp(stimulusKinds{i}, refusedKinds))
-            refusedKinds{end+1} = stimulusKinds{i}; %#ok<AGROW>
-        end
+        report.non_grating_stimuli = report.non_grating_stimuli + 1;
+    end
+    if ~any(strcmp(stimulusKinds{i}, foldable)) ...
+            && ~any(strcmp(stimulusKinds{i}, refusedKinds))
+        refusedKinds{end+1} = stimulusKinds{i}; %#ok<AGROW>
     end
 end
-report.non_grating_stimuli = nonGrating;
-if nonGrating > 0
+if ~isempty(refusedKinds)
     labels = cellfun(@newStimKindLabel, sort(refusedKinds), 'UniformOutput', false);
-    report.reason = ['not a sequence of gratings, refused by class: ' ...
-        strjoin(labels, '; ') ...
-        ' -- outside the signed sequence-of-gratings case'];
+    report.reason = ['a stimulus kind with no recipe, refused by class: ' ...
+        strjoin(labels, '; ')];
     return;
 end
 
@@ -279,7 +291,7 @@ distinct = {};
 isBlank = false(1, 0);
 mapToDistinct = zeros(1, numel(stimuli));
 for i = 1:numel(stimuli)
-    r = ndi.migrate.internal.gratingRecipe(stimParameters(stimuli, i), stimulusKinds{i});
+    r = ndi.migrate.internal.stimulusRecipe(stimParameters(stimuli, i), stimulusKinds{i});
     hit = 0;
     for d = 1:numel(distinct)
         if isequal(distinct{d}, r); hit = d; break; end

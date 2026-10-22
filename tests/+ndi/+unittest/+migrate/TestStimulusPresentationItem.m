@@ -211,38 +211,105 @@ classdef TestStimulusPresentationItem < matlab.unittest.TestCase
             testCase.verifyEqual(methods{1}.method.term.name, 'drifting square-wave grating');
         end
 
-        function testPeriodicstimImageType0BarsAreRefused(testCase)
-            pres = presentationBody('pres_bars', [1 2], { barStim(0), blankStim() });
+        % ================= every kind is a method ==========================
+        % Decided by Jess Haley, 2026-10-21 [non-grating stimuli as methods]
+        % (V_eta_method_plan.md): a non-grating visual stimulus migrates the
+        % same way as a grating -- one `method` per distinct stimulus, its term
+        % naming the kind, every v1 parameter an entry. No new class.
+
+        function testPeriodicstimImageType0BarsFoldAsUniformFieldMethods(testCase)
+            pres = presentationBody('pres_bars', [1 2 3 1], ...
+                { barStim(-196), barStim(-189), blankStim() });
             [m, methods, report] = emit(testCase, pres);
-            testCase.verifyEmpty(m);
-            testCase.verifyEmpty(methods);
-            testCase.verifyEqual(report.stimulus_kinds.periodicstim_bars, 1);
-            testCase.verifySubstring(report.reason, 'periodicstim imageType 0');
+            testCase.verifyTrue(isItemManipulation(m));
+            testCase.verifyEmpty(report.reason);
+            testCase.verifyEqual(report.stimulus_kinds.periodicstim_bars, 2);
+            testCase.verifyEqual(report.non_grating_stimuli, 2);
+            testCase.verifyEqual(numel(methods), 3);
+            testCase.verifyEqual(methods{1}.document_class.class_name, 'method');
+            testCase.verifyEqual(methods{1}.method.term.name, 'uniform luminance field');
+            testCase.verifyEqual(methodParam(methods{1}, 'line offset'), -196);
+            testCase.verifyEqual(methodParam(methods{2}, 'line offset'), -189);
+            testCase.verifyEqual(methodParam(methods{1}, 'image type'), 0);
+            testCase.verifyEqual(methodParam(methods{1}, 'window shape'), 2);
+            testCase.verifyEqual(methodParam(methods{1}, 'stimulus rectangle'), ...
+                [-57 336 743 343]);
+            testCase.verifyEqual(methods{3}.method.term.name, 'blank screen');
+            testCase.verifyEqual(m.item.value.item(:)', [0 1 2 0]);
+            testCase.verifyEqual(double(m.item.value.control_item), 2);
         end
 
-        function testStochasticGridNoiseIsRefusedDespiteItsAngle(testCase)
-            pres = presentationBody('pres_noise', [1 2 3], ...
+        function testStochasticGridNoiseFoldsAsDenseNoiseMethods(testCase)
+            pres = presentationBody('pres_noise', [1 2 3 1], ...
                 { noiseStim(1), noiseStim(2), noiseStim(3) });
-            [m, ~, report] = emit(testCase, pres);
-            testCase.verifyEmpty(m);
+            [m, methods, report] = emit(testCase, pres);
+            testCase.verifyTrue(isItemManipulation(m));
+            testCase.verifyEmpty(report.reason);
             testCase.verifyEqual(report.stimulus_kinds.stochasticgridstim, 3);
-            testCase.verifySubstring(report.reason, 'stochasticgridstim');
+            testCase.verifyEqual(numel(methods), 3, 'only randState differs: 3 distinct');
+            d = methods{1};
+            testCase.verifyEqual(d.method.term.name, 'dense noise');
+            testCase.verifyEqual(methodParam(d, 'colour palette'), [0 0 0; 255 255 255]);
+            testCase.verifyEqual(methodParam(d, 'colour weights'), [1 1]);
+            testCase.verifyEqual(methodParam(d, 'background colour'), [128 128 128]);
+            testCase.verifyEqual(methodParam(d, 'grid square size'), [50 50]);
+            testCase.verifyEqual(methodParam(d, 'frame count'), 100);
+            testCase.verifyEqual(methodParam(d, 'frame rate'), 15);
+            testCase.verifyEqual(methodParam(d, 'grid rotation'), 0);
+            testCase.verifyEqual(methodParam(d, 'bit depth'), 8);
+            seed = paramEntry(d, 'Random Seed');
+            testCase.verifyEqual(seed.variable.node, 'NCIT:C64220');
+            testCase.verifyEqual(size(seed.matrix), [3 1], 'randState is a column');
+            testCase.verifyEqual(paramEntry(d, 'colour palette').unit.node, 'NCIT:C75765');
+            testCase.verifyEqual(paramEntry(d, 'frame rate').unit.node, 'om:hertz');
+            testCase.verifyNotEmpty(paramEntry(d, 'background duration before stimulus'));
+            testCase.verifyEqual(m.item.value.item(:)', [0 1 2 0]);
         end
 
-        function testBlinkingstimIsRefused(testCase)
+        function testBlinkingstimFoldsAsSparseNoiseMethod(testCase)
             pres = presentationBody('pres_blink', 1, blinkingStim());
-            [m, ~, report] = emit(testCase, pres);
-            testCase.verifyEmpty(m);
+            [m, methods, report] = emit(testCase, pres);
+            testCase.verifyTrue(isItemManipulation(m));
             testCase.verifyEqual(report.stimulus_kinds.blinkingstim, 1);
+            testCase.verifyEqual(numel(methods), 1);
+            d = methods{1};
+            testCase.verifyEqual(d.method.term.name, 'sparse noise');
+            testCase.verifyEqual(methodParam(d, 'square colour'), [0 0 0]);
+            testCase.verifyEqual(methodParam(d, 'random order'), 1);
+            testCase.verifyEqual(methodParam(d, 'repetitions'), 30);
+            testCase.verifyEqual(methodParam(d, 'background pause'), 0);
+            testCase.verifyEqual(paramEntry(d, 'background pause').unit.node, 'EMPTY:0000260');
+            testCase.verifyEqual(methodParam(d, 'stimulus rectangle'), [200 100 600 500]);
         end
 
-        function testShapemoviestimIsRefused(testCase)
-            pres = presentationBody('pres_shape', [1 2 3], ...
-                { shapeMovieStim('angle', 0), shapeMovieStim('disparity', 1), blankStim() });
-            [m, ~, report] = emit(testCase, pres);
-            testCase.verifyEmpty(m);
+        function testShapemoviestimFoldsAsShapeMovieMethods(testCase)
+            pres = presentationBody('pres_shape', [1 2 3 2], ...
+                { shapeMovieStim('angle', 0), shapeMovieStim('disparity', -40), blankStim() });
+            [m, methods, report] = emit(testCase, pres);
+            testCase.verifyTrue(isItemManipulation(m));
             testCase.verifyEqual(report.stimulus_kinds.shapemoviestim, 2);
-            testCase.verifySubstring(report.reason, 'shapemoviestim');
+            testCase.verifyEqual(numel(methods), 3);
+            testCase.verifyEqual(methods{1}.method.term.name, 'shape movie');
+            testCase.verifyEqual(methodParam(methods{1}, 'angle'), 0);
+            testCase.verifyEqual(methodParam(methods{2}, 'disparity'), -40);
+            testCase.verifyEmpty(paramEntry(methods{2}, 'angle'));
+            testCase.verifyEqual(methodParam(methods{2}, 'frame count'), 160);
+            testCase.verifyEqual(methodParam(methods{2}, 'inter-stimulus interval'), 0.01);
+            testCase.verifyEqual(methodParam(methods{2}, 'frame rectangle'), [0 0 800 600]);
+            testCase.verifyEqual(double(m.item.value.control_item), 2);
+        end
+
+        function testAMixedPlaylistNamesEachStimulusKind(testCase)
+            % The method plan's problem 2: one sequence interleaving a grating,
+            % a bar, noise and a blank -- each its own method, by its own term.
+            pres = presentationBody('pres_mix', [1 2 3 4], ...
+                { gratingStim(0, 0.04, 0.5), barStim(-196), noiseStim(1), blankStim() });
+            [m, methods, report] = emit(testCase, pres);
+            testCase.verifyNotEmpty(m);
+            testCase.verifyEmpty(report.reason);
+            terms = cellfun(@(d) d.method.term.name, methods, 'UniformOutput', false);
+            testCase.verifyEqual(terms, {'drifting sinusoidal grating', ...
+                'uniform luminance field', 'dense noise', 'blank screen'});
         end
 
         function testAnUnrecognisedParameterSetIsRefused(testCase)
@@ -257,13 +324,14 @@ classdef TestStimulusPresentationItem < matlab.unittest.TestCase
         function testKindsAreCountedEvenWhenNoAnimalResolves(testCase)
             pres = presentationBody('pres_none', [1 2], { noiseStim(1), blankStim() });
             r = ndi.migrate.internal.bodyResolver({pres});
-            [m, ~, report] = ndi.migrate.internal.stimulusPresentationToItem(pres, r);
-            testCase.verifyEmpty(m, 'the grating guard still refuses noise');
+            [m, methods, report] = ndi.migrate.internal.stimulusPresentationToItem(pres, r);
+            testCase.verifyNotEmpty(m, 'noise folds; with no subject, as a standalone item');
+            testCase.verifyEqual(m.document_class.class_name, 'item');
+            testCase.verifyEqual(numel(methods), 2);
             testCase.verifyEqual(report.stimulus_kinds.stochasticgridstim, 1);
             testCase.verifyEqual(report.stimulus_kinds.blank, 1);
             testCase.verifyTrue(report.standalone);
             testCase.verifySubstring(report.no_subject_reason, 'no responding animal');
-            testCase.verifySubstring(report.reason, 'stochasticgridstim');
         end
 
         % ================= the stimulator route ============================
@@ -349,6 +417,25 @@ classdef TestStimulusPresentationItem < matlab.unittest.TestCase
             restore = ndi.migrate.internal.termRegistryOff(); %#ok<NASGU>
             testCase.verifyWarningFree(@() cache.validateDocument(d), ...
                 'the standalone item does not validate against did-schema #88');
+        end
+
+        function testEveryKindsMethodDocumentValidates(testCase)
+            % [non-grating stimuli as methods]: the method documents of every
+            % kind (matrix, count, text and term-struct entries included)
+            % validate against did-schema #88's `method`.
+            pres = presentationBody('pres_kinds', 1:6, ...
+                { gratingStim(0, 0.04, 0.5), barStim(-196), noiseStim(1), ...
+                  blinkingStim(), shapeMovieStim('disparity', -40), blankStim() });
+            [~, methods, report] = emit(testCase, pres);
+            testCase.verifyEqual(numel(methods), 6);
+            testCase.verifyEmpty(report.reason);
+            cache = did2.schema.cache.shared();
+            restore = ndi.migrate.internal.termRegistryOff(); %#ok<NASGU>
+            for k = 1:numel(methods)
+                testCase.verifyWarningFree(@() cache.validateDocument(methods{k}), ...
+                    sprintf('the %s method does not validate against did-schema #88', ...
+                        methods{k}.method.term.name));
+            end
         end
 
         function testElementsThatResolveToNoSubjectAreStillRefused(testCase)
@@ -719,15 +806,26 @@ end
 
 function v = methodParam(doc, variable)
 %METHODPARAM The value of a `method` document's parameter VARIABLE: the
-%   quantity's value, or the term's name; [] when absent.
+%   quantity's value, the matrix, the count, the term's name or the text;
+%   [] when absent.
 v = [];
+e = paramEntry(doc, variable);
+if isempty(e); return; end
+if isfield(e, 'quantity') && ~isempty(e.quantity); v = e.quantity.value;
+elseif isfield(e, 'matrix') && ~isempty(e.matrix); v = e.matrix;
+elseif isfield(e, 'count') && ~isempty(e.count); v = e.count;
+elseif isfield(e, 'term') && ~isempty(e.term) && ~isempty(e.term.name); v = e.term.name;
+elseif isfield(e, 'text') && ~isempty(e.text); v = e.text; end
+end
+
+function e = paramEntry(doc, variable)
+%PARAMENTRY The entry of a `method` document whose variable's name is VARIABLE.
+e = [];
 p = doc.method.parameters;
 if isstruct(p); p = num2cell(p); end
 for k = 1:numel(p)
-    e = p{k};
-    if strcmp(e.variable.name, variable)
-        if isfield(e, 'quantity') && ~isempty(e.quantity); v = e.quantity.value;
-        elseif isfield(e, 'term') && ~isempty(e.term); v = e.term.name; end
+    if strcmp(p{k}.variable.name, variable)
+        e = p{k};
         return;
     end
 end

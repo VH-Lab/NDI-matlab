@@ -12,8 +12,8 @@ function recipe = gratingRecipe(parameters, kind)
 %                          'term' (value a name)
 %
 %   KIND is the NewStim class the caller recognised (stimulusPresentationToItem
-%   newStimKind): 'grating' or 'blank'. Nothing else is a recipe this
-%   function describes.
+%   newStimKind): 'grating' or 'blank'. Every other kind is
+%   ndi.migrate.internal.stimulusRecipe's, which calls this for these two.
 %
 %   THE SHAPE IS did-schema #88's (V_eta_method_plan.md, signed 2026-10-21):
 %   "Stimuli given as a recipe are `method` documents ... term 'drifting
