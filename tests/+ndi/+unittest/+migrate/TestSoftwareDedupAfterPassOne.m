@@ -62,8 +62,14 @@ end
 % ===================== the comparison =====================================
 
 function compareBothWays(testCase, bodies, name)
-[early, rEarly] = migrateOnce(testCase, bodies, true);
-[endOnly, rEnd] = migrateOnce(testCase, bodies, false);
+[early, rEarly, rootA] = migrateOnce(testCase, bodies, true);
+[endOnly, rEnd, rootB] = migrateOnce(testCase, bodies, false);
+% Each run migrates its own copy of the v1 database, in its own folder, and
+% settleIngestedFiles writes that folder into every file location
+% (<root>/.ndi/files/<uid>). The folder is a property of the test, not of
+% the migration, so it is read as one placeholder on both sides.
+early = withRootPlaceholder(early, rootA);
+endOnly = withRootPlaceholder(endOnly, rootB);
 
 % the early merge ran, and merged something (else this proves nothing)
 e = rEarly.secondPass.softwareDedupAfterPassOne;
@@ -181,7 +187,21 @@ fprintf('      %s reference %s names %d document(s), e.g. %s: %s\n', side, label
     numel(hits), cls{hits(1)}, shorten(own{hits(1)}));
 end
 
-function [docs, result] = migrateOnce(testCase, bodies, early)
+function docs = withRootPlaceholder(docs, root)
+%WITHROOTPLACEHOLDER Every occurrence of the run's session folder in a
+%   document's text, as '<SESSION_ROOT>'.
+enc = jsonencode(root);
+enc = enc(2:end-1);   % the folder as it appears inside JSON text
+for k = 1:numel(docs)
+    t = jsonencode(docs{k});
+    t2 = strrep(strrep(t, enc, '<SESSION_ROOT>'), root, '<SESSION_ROOT>');
+    if ~strcmp(t, t2)
+        docs{k} = jsondecode(t2);
+    end
+end
+end
+
+function [docs, result, root] = migrateOnce(testCase, bodies, early)
 root = tempname();
 mkdir(fullfile(root, '.ndi'));
 testCase.addTeardown(@() rmdirQuiet(root));
