@@ -126,6 +126,21 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             testCase.verifyEqual(count('opaque_body'), 6);
             testCase.verifyEqual(count('acquisition_system'), 2, 'camera1 and camera2');
             testCase.verifyEqual(count('session'), 1);
+            % did-schema [required acquisition edges]: every system names its
+            % reader and its epoch file pattern; [epoch to system link]: its
+            % device is the camera the recordings name as their instrument
+            asys = docs(strcmp(classes, 'acquisition_system'));
+            for k = 1:numel(asys)
+                testCase.verifyNotEmpty(edge(asys{k}, 'reader_id'), 'reader_id is required');
+                testCase.verifyNotEmpty(edge(asys{k}, 'epoch_file_pattern_id'), ...
+                    'epoch_file_pattern_id is required');
+            end
+            instruments = unique(cellfun(@(d) edge(d, 'instrument_id'), io, 'UniformOutput', false));
+            instruments = instruments(~cellfun(@isempty, instruments));
+            devices = cellfun(@(d) edge(d, 'device_id'), asys, 'UniformOutput', false);
+            devices = unique(devices(~cellfun(@isempty, devices)));
+            testCase.verifyEqual(reshape(sort(devices), 1, []), reshape(sort(instruments), 1, []), ...
+                'each system''s device_id is the camera its recordings name as instrument (A1)');
 
             s = docs{strcmp(classes, 'session')};
             testCase.verifyNotEmpty(s.depends_on, 'the session names its UTC extent');

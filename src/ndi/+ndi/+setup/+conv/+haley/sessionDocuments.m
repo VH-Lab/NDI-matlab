@@ -24,10 +24,12 @@ function out = sessionDocuments(dataParentDir, session, S, R, options)
 %     epoch_file_pattern      one per system: the file names that are its
 %                             recordings (the navigator filters bodies by it)
 %     acquisition_system      one per system in the session (camera1, camera2,
-%                             microscope; decision #28)
-%     acquisition_channels    one per system (no channel numbers: a camera has
-%                             no ai/ao/di/do channels, the only types the
-%                             schema binds)
+%                             microscope; decision #28); device_id the
+%                             dataset-level camera / microscope entity when
+%                             'InstrumentIds' has it (decision #150)
+%     acquisition_channels    one per system, naming only its system (a camera
+%                             has no numbered channels of any of the ten
+%                             channel types the schema binds)
 %   and per recording (R row):
 %     epoch                   local_identifier = R.epoch, which is also NDI's
 %                             epoch id (the navigator reads it from here)
@@ -166,9 +168,18 @@ for k = 1:numel(systems)
         'file_pattern', {{filePattern}}, ...
         'epoch_map_format', 'ndi.epoch.epochprobemap_daqsystem'), ...
         'SessionId', sid, 'Edges', struct('software_id', sw.navigator.base.id));
+    % reader_id and epoch_file_pattern_id are REQUIRED (did-schema [required
+    % acquisition edges], Jess Haley 2026-10-22); device_id is the camera or
+    % microscope entity that produced the files, when stage 2 made it (did-schema
+    % [epoch to system link] and [instrument and device]: the same entity as
+    % the recording's instrument, because one device does both)
+    sysEdges = struct('software_id', sw.system.base.id, 'reader_id', readers(readerString), ...
+        'epoch_file_pattern_id', pat.base.id);
+    if isKey(options.InstrumentIds, instrumentFor(sys))
+        sysEdges.device_id = options.InstrumentIds(instrumentFor(sys));
+    end
     asys = did2.build.document('acquisition_system', struct('name', sys), 'SessionId', sid, ...
-        'Edges', struct('software_id', sw.system.base.id, 'reader_id', readers(readerString), ...
-        'epoch_file_pattern_id', pat.base.id));
+        'Edges', sysEdges);
     ch = did2.build.document('acquisition_channels', struct(), 'SessionId', sid, ...
         'Edges', struct('acquisition_system_id', asys.base.id));
     channelIds(sys) = ch.base.id;
