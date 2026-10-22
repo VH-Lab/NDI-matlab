@@ -1,0 +1,94 @@
+name: 'Publish test counts'
+description: >-
+  Record one CI job's test counts (from its JUnit report) on the `badges`
+  branch under `<sanitised-source-ref>/counts/<part>.json`, then rebuild
+  `<sanitised-source-ref>/tests.json`, a shields.io endpoint badge showing
+  the sum over every job. Several jobs publish to the same folder, so a
+  rejected push is retried from a fresh copy of the branch.
+
+inputs:
+  source-ref:
+    description: 'Name of the source branch these counts came from (e.g. main, or a PR head ref).'
+    required: true
+  part:
+    description: 'Name of this job in the badge (one of the EXPECTED_PARTS in .github/scripts/test_badge.py).'
+    required: true
+  junit-file:
+    description: 'JUnit XML report written by the test run.'
+    required: false
+    default: 'docs/reports/test-results.xml'
+  badges-branch:
+    description: 'Name of the dedicated badges branch.'
+    required: false
+    default: 'badges'
+  token:
+    description: 'GITHUB_TOKEN or PAT with write access to the repo.'
+    required: true
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Publish test counts
+      shell: bash
+      env:
+        SOURCE_REF: ${{ inputs.source-ref }}
+        PART: ${{ inputs.part }}
+        JUNIT_FILE: ${{ inputs.junit-file }}
+        BADGES_BRANCH: ${{ inputs.badges-branch }}
+        GH_TOKEN: ${{ inputs.token }}
+        SCRIPT: ${{ github.action_path }}/../../scripts/test_badge.py
+      run: |
+        set -euo pipefail
+
+        if [ ! -f "$JUNIT_FILE" ]; then
+          echo "No test report at $JUNIT_FILE - nothing to publish; the badge keeps this job's previous counts and reads (partial)."
+          exit 0
+        fi
+
+        SRC_SLUG="${SOURCE_REF//\//_}"
+        COUNTS="$(mktemp)"
+        python3 "$SCRIPT" counts \
+          --junit "$JUNIT_FILE" --part "$PART" \
+          --sha "$GITHUB_SHA" --commit-time "$(git log -1 --format=%ct HEAD)" \
+          --out "$COUNTS"
+
+        REMOTE="https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+
+        for attempt in 1 2 3 4 5; do
+          WORKDIR="$(mktemp -d)"
+          cd "$WORKDIR"
+          git init -q -b "$BADGES_BRANCH" .
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git remote add origin "$REMOTE"
+
+          if git fetch -q --depth 1 origin "$BADGES_BRANCH" 2>/dev/null; then
+            git reset -q --hard "origin/$BADGES_BRANCH"
+          else
+            echo "Badges branch does not exist yet; bootstrapping."
+            printf '# CI-generated badges\n\nThis branch is written by CI and holds SVG badges per source branch under `<branch>/`. Do not commit manually.\n' > README.md
+            git add README.md
+            git commit -q -m "Initialise badges branch"
+          fi
+
+          mkdir -p "$SRC_SLUG/counts"
+          cp "$COUNTS" "$SRC_SLUG/counts/$PART.json"
+          python3 "$SCRIPT" badge --dir "$SRC_SLUG/counts" --out "$SRC_SLUG/tests.json"
+
+          git add "$SRC_SLUG/"
+          if git diff --cached --quiet; then
+            echo "Test counts unchanged; nothing to commit."
+            exit 0
+          fi
+          git commit -q -m "Update test counts for ${SOURCE_REF} (${PART}) [skip ci]"
+
+          if git push -q origin "HEAD:$BADGES_BRANCH"; then
+            echo "Pushed test counts (attempt $attempt)."
+            exit 0
+          fi
+          echo "Push failed on attempt $attempt; retrying from a fresh copy."
+          sleep $(( attempt * 2 + RANDOM % 3 ))
+        done
+
+        echo "::error::Failed to push test counts after 5 attempts."
+        exit 1

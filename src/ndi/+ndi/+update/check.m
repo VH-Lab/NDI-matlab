@@ -35,16 +35,19 @@ function result = check(options)
 %       Branch          - checked-out branch (git only)
 %       CommitsBehind   - commits on main not in the running copy (git only)
 %       CommitsAhead    - local commits not on main (git only)
-%       HasModifications - true if the user has changed code: edited or
-%                         added files, or made commits that are not upstream,
-%                         in NDI-matlab or a dependency (git only)
-%       Modifications   - structure array, one entry per repository that has
-%                         modifications (git only), with fields Name, Path,
-%                         ChangedFiles (tracked files edited, deleted or
-%                         staged; ndi_install stashes these), NewFiles
-%                         (untracked files not ignored by .gitignore; left in
-%                         place), and CommitsAhead (local commits; merged
-%                         with the update by git pull). See
+%       HasModifications - true if updating would touch the user's own
+%                         work in NDI-matlab or a dependency (git only): see
+%                         Modifications. Untracked files alone do not count;
+%                         the update leaves them where they are.
+%       Modifications   - structure array, one entry per repository where
+%                         updating touches the user's work (git only), with
+%                         fields Name, Path, ChangedFiles (tracked files
+%                         edited, deleted or staged; ndi_install stashes
+%                         them for the pull and puts them back), BlockingFiles (untracked files at a path
+%                         the update adds a file to; git stops rather than
+%                         overwrite them, so ndi.update.install asks for them
+%                         to be moved first), and CommitsAhead (local
+%                         commits; merged with the update by git pull). See
 %                         ndi.update.modificationSummary.
 %       Dependencies    - structure array, one entry per dependency (git
 %                         only), with fields Name, Path, Status, CommitsBehind
@@ -166,7 +169,8 @@ function result = checkGit(result, info, options)
     result.CommitsBehind = str2double(behind);
     result.CommitsAhead = str2double(ahead);
 
-    mods = localModifications("NDI-matlab", repo, result.CommitsAhead);
+    mods = localModifications("NDI-matlab", repo, result.CommitsAhead, ...
+        incomingNewFiles(repo, "origin/main"));
 
     if options.IncludeDependencies
         [result.Dependencies, depMods] = checkDependencies(repo);
@@ -265,7 +269,8 @@ function [deps, mods] = checkDependencies(repo)
             if s3 ~= 0
                 ahead = "0";
             end
-            mods = [mods, localModifications(name, depPath, str2double(ahead))]; %#ok<AGROW>
+            mods = [mods, localModifications(name, depPath, str2double(ahead), ...
+                incomingNewFiles(depPath, """@{u}"""))]; %#ok<AGROW>
             if s == 0 && s2 == 0
                 d.CommitsBehind = str2double(behind);
                 if d.CommitsBehind > 0
@@ -319,11 +324,16 @@ function result = checkToolbox(result, info, options)
     end
 end
 
-function mods = localModifications(name, repoDir, commitsAhead)
-    % Returns a one-element Modifications structure if REPODIR has edited,
-    % added or committed-but-not-upstream code, otherwise an empty one.
+function mods = localModifications(name, repoDir, commitsAhead, incoming)
+    % Returns a one-element Modifications structure if updating REPODIR
+    % would touch the user's work -- edited tracked files, commits not
+    % upstream, or untracked files in the way of files the update adds
+    % (INCOMING) -- otherwise an empty one. Other untracked files are not
+    % the update's business: git stash and git pull leave them alone.
     mods = emptyModifications();
-    [s, out] = runGit(repoDir, "status --porcelain");
+    % --untracked-files=all lists each file, not just an untracked folder,
+    % so an untracked file can be matched against the update's new paths.
+    [s, out] = runGit(repoDir, "status --porcelain --untracked-files=all");
     if s ~= 0
         return
     end
@@ -332,21 +342,31 @@ function mods = localModifications(name, repoDir, commitsAhead)
     isNew = startsWith(lines, "??");
     files = extractAfter(lines, 3);
     changed = files(~isNew);
-    added = files(isNew);
+    blocking = intersect(files(isNew), incoming, 'stable');
     if isnan(commitsAhead)
         commitsAhead = 0;
     end
-    if isempty(changed) && isempty(added) && commitsAhead == 0
+    if isempty(changed) && isempty(blocking) && commitsAhead == 0
         return
     end
     mods = struct('Name', string(name), 'Path', string(repoDir), ...
-        'ChangedFiles', {changed(:)}, 'NewFiles', {added(:)}, ...
+        'ChangedFiles', {changed(:)}, 'BlockingFiles', {blocking(:)}, ...
         'CommitsAhead', commitsAhead);
+end
+
+function files = incomingNewFiles(repoDir, upstream)
+    % Paths that the update (HEAD -> UPSTREAM) adds as new files.
+    files = strings(0, 1);
+    [s, out] = runGit(repoDir, "diff --name-only --diff-filter=A HEAD " + upstream);
+    if s == 0 && strlength(out) > 0
+        files = splitlines(out);
+        files = files(strlength(files) > 0);
+    end
 end
 
 function mods = emptyModifications()
     mods = struct('Name', {}, 'Path', {}, 'ChangedFiles', {}, ...
-        'NewFiles', {}, 'CommitsAhead', {});
+        'BlockingFiles', {}, 'CommitsAhead', {});
 end
 
 function s = shortHash(h)

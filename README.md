@@ -1,5 +1,5 @@
 # NDI
-[![MATLAB Tests](https://raw.githubusercontent.com/VH-Lab/NDI-matlab/badges/main/tests.svg)](https://github.com/VH-Lab/NDI-matlab/actions/workflows/run-tests.yml)
+[![MATLAB Tests](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2FVH-Lab%2FNDI-matlab%2Fbadges%2Fmain%2Ftests.json)](https://github.com/VH-Lab/NDI-matlab/actions)
 [![codecov](https://codecov.io/gh/VH-Lab/NDI-matlab/branch/main/graph/badge.svg?token=5K3PA9KOT9)](https://codecov.io/gh/VH-Lab/NDI-matlab)
 [![MATLAB Code Issues](https://raw.githubusercontent.com/VH-Lab/NDI-matlab/badges/main/code_issues.svg)](https://github.com/VH-Lab/NDI-matlab/security/code-scanning)
 [![Maintenance](https://img.shields.io/badge/Maintained%3F-yes-green.svg)](https://gitHub.com/VH-Lab/NDI-matlab/graphs/commit-activity)
