@@ -62,7 +62,10 @@ function out = densityDocuments(dataParentDir, sessions, built, options)
 %   from a fitted model`, variable `fluorescence intensity`, a.u. per ms):
 %     intensity calculation  per assay-plate patch a worm encountered:
 %                         encounter.mat borderAmplitude at each encounter on
-%                         it, keyed `encounter onset time` (the onsets of the
+%                         it, along one `encounter` dimension (NCIT:C62143)
+%                         with the covariate `onset time` (EMPTY:0000368;
+%                         Decided by Jess Haley, 2026-10-22 [encounter
+%                         axis]) along it (the onsets of the
 %                         worms' encounter lists, counted from the start of
 %                         the statement's time reference, the plate's window,
 %                         #118); inputs the fit for the patch's condition (none
@@ -410,8 +413,14 @@ for k = 1:numel(built)
             if ~isnan(a(1).bin)
                 extra = {'Conditions', did2.build.list(growthGroupCondition(a(1).bin))};
             end
-            onsetKeys = haleyAxes({haleyTerm('encounter onset time'), ...
-                numel(a), 'Value', onsets, 'Unit', haleyTerm('second')});
+            % [encounter axis] (Decided by Jess Haley, 2026-10-22, did-schema
+            % V_eta_go_forward_class_audit.md): the dimension is the encounter
+            % (NCIT:C62143), and `onset time` (EMPTY:0000368, which replaced
+            % EMPTY:0000140 "encounter onset time" [onset and offset terms]) is
+            % a covariate along it
+            onsetKeys = haleyAxes(haleyAxes({haleyTerm('encounter'), numel(a)}), ...
+                'Covariate', did2.build.covariate(haleyTerm('onset time'), 0, ...
+                'Value', onsets, 'Unit', haleyTerm('second')));
             docs{end+1} = did2.build.statement('calculation', a(1).patchId, fluorescence, ...
                 did2.build.valueCell('intensity', [a.value]), onsetKeys.args{:}, ...
                 'Method', prediction, extra{:}, 'InputIds', in, 'SessionId', sid, ...

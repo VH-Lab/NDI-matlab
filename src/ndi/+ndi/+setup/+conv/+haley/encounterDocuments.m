@@ -21,7 +21,10 @@ function out = encounterDocuments(dataParentDir, session, R, subjectIds, options
 %   Per worm with encounters (V_eta_study_plan.md, "Repeated events", T2),
 %   each statement's variable, method and conditions a decided term
 %   (haleyTerm) unless named as a label:
-%     time calculation  `encounter onset time`: THE ENCOUNTER LIST, one entry
+%     time calculation  `onset time` (EMPTY:0000368, which replaced
+%                       EMPTY:0000140 "encounter onset time": Decided by Jess
+%                       Haley, 2026-10-22 [onset and offset terms]): THE
+%                       ENCOUNTER LIST, one entry
 %                       per encounter (id >= 1), one `encounter` dimension
 %                       (covariate `encounter`, origin 0 spacing 1); method
 %                       `patch encounter detection`, method parameter `body
@@ -48,7 +51,7 @@ function out = encounterDocuments(dataParentDir, session, R, subjectIds, options
 %                       encounter period` = during (velocityOnMin)
 %     velocity calculation  `speed`, method `peak speed before an event`
 %                       (velocityBeforeEnter), conditions `reference
-%                       time point` = `encounter onset time`, `analysis window
+%                       time point` = `onset time`, `analysis window
 %                       start` -10 s, `analysis window end` 0 s
 %     velocity calculation  `speed`, method `minimum speed after an event`
 %                       (velocityAfterEnter), the same anchor, window 0..+10 s
@@ -276,7 +279,7 @@ for g = 1:max(G)
     onset = secondsAt(enc.enter);
     listAxes = haleyAxes({haleyTerm('encounter'), n, 'Origin', 0, 'Spacing', 1});
     list = did2.build.statement('calculation', wormId, ...
-        haleyTerm('encounter onset time'), did2.build.valueCell('time', onset), ...
+        haleyTerm('onset time'), did2.build.valueCell('time', onset), ...
         listAxes.args{:}, ...
         detection{:}, 'InputIds', inputs, calc{:}, 'ValueKind', 'time');
     docs{end+1} = list; %#ok<AGROW>
@@ -475,18 +478,16 @@ arguments
     t0 (1,1) double
     t1 (1,1) double
 end
-c = {did2.build.condition(haleyTerm('reference time point'), 'Term', haleyTerm('encounter onset time')), ...
+c = {did2.build.condition(haleyTerm('reference time point'), 'Term', haleyTerm('onset time')), ...
     did2.build.condition(haleyTerm('analysis window start'), 'Quantity', t0, 'Unit', haleyTerm('second')), ...
     did2.build.condition(haleyTerm('analysis window end'), 'Quantity', t1, 'Unit', haleyTerm('second'))};
 end
 
 function t = offsetTimeTerm()
 % The `offset time` covariate's variable ([onset time], data_body plan
-% AMENDMENT 6): the registered term when DID-schema's term registry holds one
-% named 'offset time'. Until it does, this is the label {name: 'offset
-% time'}, which the import's armed term registry refuses -- the term is being
-% chosen by T19 order ([covariate terms], Jess Haley 2026-10-22).
-t = ndi.setup.V2.registeredTerm('', 'offset time');
+% AMENDMENT 6): EMPTY:0000369 (Decided by Jess Haley, 2026-10-22 [onset and
+% offset terms]).
+t = haleyTerm('offset time');
 end
 
 function t = encounterTypes(names)

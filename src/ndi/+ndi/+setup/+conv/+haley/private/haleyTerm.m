@@ -154,7 +154,8 @@ pairs = {
     'distance end point',                      'EMPTY:0000286',           'distance end point'
     'bin width',                               'EMPTY:0000308',           'bin width'
     % encounters
-    'encounter onset time',                    'EMPTY:0000140',           'encounter onset time'
+    'onset time',                              'EMPTY:0000368',           'onset time'
+    'offset time',                             'EMPTY:0000369',           'offset time'
     'encounter',                               'NCIT:C62143',             'Encounter'
     'encounter detection',                     'EMPTY:0000303',           'encounter detection'
     'entity in contact',                       'EMPTY:0000275',           'entity in contact'

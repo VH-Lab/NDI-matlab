@@ -1195,9 +1195,11 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
                 && strcmp(d.statement.variable.name, var), docs));
 
             fr = 2.9991;
-            list = named('time_calculation', 'concentration_worm0121', 'encounter onset time');
+            list = named('time_calculation', 'concentration_worm0121', 'onset time');
             testCase.verifyNumElements(list, 1);
-            testCase.verifyEqual(list{1}.statement.variable.node, 'EMPTY:0000140');
+            % EMPTY:0000368 replaced EMPTY:0000140 "encounter onset time"
+            % (Decided by Jess Haley, 2026-10-22 [onset and offset terms])
+            testCase.verifyEqual(list{1}.statement.variable.node, 'EMPTY:0000368');
             testCase.verifyEqual([list{1}.time.value.seconds], [1 3] / fr, 'AbsTol', 1e-9, ...
                 'rows 2 and 4 of a one-video track: frames 2 and 4');
             testCase.verifyEqual(methodOf(list{1}), 'encounter detection');
@@ -1218,7 +1220,7 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             testCase.verifyTrue(ismember(tref{1}.base.id, [recRefs{:}]), 'the video''s own reference');
             lk = axisEntries(list{1});
             testCase.verifyEqual(lk{1}.variable.node, 'NCIT:C62143', 'keyed `encounter`');
-            l111 = named('time_calculation', 'concentration_worm0111', 'encounter onset time');
+            l111 = named('time_calculation', 'concentration_worm0111', 'onset time');
             testCase.verifyEqual(l111{1}.time.value.seconds, 3671 + 1 / fr, 'AbsTol', 1e-6, ...
                 'row 7 = frame 2 of the second video, which started 3671 s after the first');
 
@@ -1517,9 +1519,18 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             testCase.verifyEqual(numbers(e12{1}.intensity.value, 'arbitrary_units'), ...
                 94 / 300 + [74 80] / 3000, 'AbsTol', 1e-12);
             testCase.verifyEqual(methodOf(e12{1}), 'prediction from a fitted model');
+            % [encounter axis] (Decided by Jess Haley, 2026-10-22): one
+            % `encounter` dimension (NCIT:C62143), `onset time` (EMPTY:0000368)
+            % a covariate along it
             ek = axisEntries(e12{1});
-            testCase.verifyEqual(ek{1}.variable.name, 'encounter onset time');
-            testCase.verifyEqual(ek{1}.quantity.value(:)', [1 3] / 2.9991, 'AbsTol', 1e-9, ...
+            testCase.verifyNumElements(ek, 1);
+            testCase.verifyEqual(ek{1}.variable.node, 'NCIT:C62143');
+            testCase.verifyEqual(double(ek{1}.n), 2);
+            on12 = covariateNamed(e12{1}, 'onset time');
+            testCase.verifyNumElements(on12, 1);
+            testCase.verifyEqual(on12{1}.variable.node, 'EMPTY:0000368');
+            testCase.verifyEqual(double(on12{1}.along), 0, 'along the encounter');
+            testCase.verifyEqual(on12{1}.quantity.value(:)', [1 3] / 2.9991, 'AbsTol', 1e-9, ...
                 'at worm 121''s two encounter onsets');
             testCase.verifyTrue(ismember(lin.base.id, edgeAll(e12{1}, 'input_id')), ...
                 'from the OD600 1 fit');
@@ -1573,7 +1584,9 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             testCase.verifyEqual(sort(pv), sort({'EMPTY:0000323', 'EMPTY:0000105', 'EMPTY:0000324'}), ...
                 'the reference, its target seeding OD600 (#110) and the floor');
             ek12 = axisEntries(r12{1});
-            testCase.verifyEqual(ek12{1}.variable.name, 'encounter onset time', 'keyed as its estimate');
+            testCase.verifyEqual(ek12{1}.variable.node, 'NCIT:C62143', 'along the encounter, as its estimate');
+            testCase.verifyNumElements(covariateNamed(r12{1}, 'onset time'), 1, ...
+                'with the onset time covariate, as its estimate');
             if ~isempty(acc)
                 ra = rdOf(idOf(acc{1}));
                 testCase.verifyNumElements(ra, 1);
@@ -1817,6 +1830,15 @@ for i = 1:numel(c)
         name = c{i}.term.name;
         return;
     end
+end
+end
+
+function c = covariateNamed(doc, name)
+% the value's covariates whose variable is NAME
+c = {};
+if isfield(doc.data, 'covariates') && ~isempty(doc.data.covariates)
+    covs = entries(doc.data.covariates);
+    c = covs(cellfun(@(x) strcmp(x.variable.name, name), covs));
 end
 end
 
