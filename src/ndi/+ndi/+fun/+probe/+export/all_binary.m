@@ -16,10 +16,14 @@ function all_binary(S, options)
 %       int16_written = multiplier * physical_data
 %
 % so the multiplier is the RECIPROCAL of the scale factor that converts the
-% stored int16 back to physical units. The default (1/0.195) assumes Intan
-% data, whose int16 decode to microvolts via uV = int16 * 0.195.
+% stored int16 back to physical units. By default the multiplier is chosen
+% separately for each probe by ndi.fun.probe.export.autoMultiplier: 1 when the
+% probe returns raw integer counts (an integer class, or whole-number doubles
+% such as SpikeGLX counts), and 1/0.195 otherwise, which assumes Intan data
+% whose int16 decode to microvolts via uV = int16 * 0.195.
 %
-% For SpikeGLX/Neuropixels data, the stored int16 decode to volts via
+% For SpikeGLX/Neuropixels data returned in volts (rather than raw counts),
+% the stored int16 decode to volts via
 %
 %       volts = double(int16) * 0.6 / (512 * 500)
 %
@@ -37,10 +41,12 @@ function all_binary(S, options)
 % |  ('kilosort.bin')   |   subdirectory. (Kilosort/phy do not require a   |
 % |                     |   particular name.)                              |
 % | verbose (1)         | 0/1 Should we be verbose?                        |
-% | multiplier(1/0.195) | Encode multiplier: int16 = multiplier*physical.  |
+% | multiplier ([])     | Encode multiplier: int16 = multiplier*physical.  |
 % |                     |   = 1/(physical-per-int16 decode factor).        |
-% |                     |   Default 1/0.195 assumes Intan (uV) data. For   |
-% |                     |   SpikeGLX use (512*500)/0.6.                    |
+% |                     |   [] => chosen per probe by                      |
+% |                     |   ndi.fun.probe.export.autoMultiplier (1 for raw |
+% |                     |   counts, 1/0.195 for Intan uV). For SpikeGLX    |
+% |                     |   data in volts use (512*500)/0.6.               |
 % | noBinary (false)    | If true, create the per-probe subdirectories and |
 % |                     |   write only the '.metadata' files; do not write |
 % |                     |   the binary files. Useful for setting up the    |
@@ -70,7 +76,7 @@ function all_binary(S, options)
         options.binary_dir (1,:) char = 'kilosort'
         options.binaryFileName (1,:) char = 'kilosort.bin'
         options.verbose (1,1) double = 1
-        options.multiplier (1,1) double = 1/0.195
+        options.multiplier double = []
         options.noBinary (1,1) logical = false
     end
 
@@ -103,7 +109,14 @@ function all_binary(S, options)
             mkdir(this_path);
         end;
         outfile = [this_path filesep binaryFileName];
-        ndi.fun.probe.export.binary(probe_list{p}, outfile, 'verbose',verbose,'multiplier',multiplier,'noBinary',noBinary);
+        mult = multiplier;
+        if isempty(mult),
+            mult = ndi.fun.probe.export.autoMultiplier(probe_list{p});
+        end;
+        if verbose,
+            disp(['  Using multiplier ' num2str(mult) '.']);
+        end;
+        ndi.fun.probe.export.binary(probe_list{p}, outfile, 'verbose',verbose,'multiplier',mult,'noBinary',noBinary);
     end;
 
     if verbose,
