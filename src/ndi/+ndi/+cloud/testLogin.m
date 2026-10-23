@@ -27,7 +27,8 @@ function isGood = testLogin(options)
 %          automatically by the underlying API URL machinery).
 %       3. If those env credentials are set, attempt a non-interactive
 %          re-login via ndi.cloud.authenticate('InteractionEnabled','off')
-%          (which also tries the MATLAB Vault silently). Probe again.
+%          (which uses the MATLAB Vault only if it holds that same user).
+%          Probe again.
 %          The UI login dialog is NOT shown in this case, even if the
 %          silent re-login does not succeed: when env credentials are
 %          present we trust them and report success/failure accordingly.
