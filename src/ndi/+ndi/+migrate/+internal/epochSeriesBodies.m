@@ -39,14 +39,42 @@ function [structs, report, added] = epochSeriesBodies(structs, ndiDir)
 %     distance  column 3 -> the nearest-patch item calculation's own body,
 %               uint8 [video frame x body part] (0-based patch index, 255 =
 %               untracked/NaN; uint16 / 65535 past 254 patches); column 2
-%               (a constant 1) is not kept; column 1 (pixels) is NOT split:
-%               trackDocuments' length is in metres and v1 records no pixel
-%               scale, so the length calculation keeps the .vhsb as its body
-%               (counted length_not_split_no_scale)
+%               (a constant 1) is not kept; column 1 (the signed distance in
+%               pixels) -> the length calculation's own body, float64 [video
+%               frame x body part] in METRES (NaN stays NaN), REPLACING the
+%               .vhsb (id kept) -- see THE JH DISTANCE IN METRES below
 %   Each frame dimension also carries the v1 frame TIMES as a `time`
 %   covariate (origin + spacing, seconds) when they are regular -- the
 %   migrated session has no recording to take them from; irregular times
 %   refuse the split (split_refused_irregular_times), the .vhsb stays.
+%
+%   THE JH DISTANCE IN METRES (Decided by Jess Haley, 2026-10-23 [JH signed
+%   distance in metres], did-schema V_eta_epoch_plan.md). Converted the way
+%   the Haley V2 import does it: metres per pixel = 1e-3 / scale
+%   (ndi.setup.conv.haley.geometryDocuments, `pixel = 1e-3 / scale`), the
+%   distance times that (trackDocuments, `a * geo.pixel`), no half-pixel
+%   offset (a distance is a difference of positions). `scale` is the one the
+%   v1 writer stored on the epoch video's imageStack (doImport.m
+%   `dimension_scale`, [scale scale 1/frameRate]), which is PIXELS PER MM:
+%   the analysis package computes it as sqrt(arena area in pixels / arena
+%   area in mm^2), commented "pixels/mm" (shreklab/Haley-et-al-2024
+%   helper_functions/getAcetateArena.m, `arena.scale`, stored by
+%   analysis/getForagingInfo.m as `info.scale`), and its own distances are
+%   converted with (1000/scale) um per pixel (analysis/analyzeWormLabTracks.m).
+%   doImport's `dimension_scale_units` 'micrometer' is a mislabel of that
+%   number. The video is reached in the migrated set as
+%   did2.convert's +migrators_j/image_stack makes it: an `observation` about
+%   the worm or about a group the worm is `member_of` (the v1 subject_group;
+%   +migrators_j/subject_group), whose sampled_body has a time dimension and
+%   carries the v1 dimension_scale as the Y and X covariates' spacing
+%   `source_value`, source unit micrometre (the v1 label). Exactly one
+%   distinct positive scale must be reachable from the length calculation's
+%   worm: none -> the .vhsb stays (counted length_not_split_no_scale); more
+%   than one (a worm listed on two videos of its plate with different
+%   scales) -> the .vhsb stays (counted length_not_split_scale_ambiguous).
+%   A scale is never invented. The conversion is stated in the body's
+%   description, as trackDocuments states its own (source pixels -> m), with
+%   the scale and the video it came from.
 %
 %   WHY HERE AND NOT IN PASS 1. Decided by Jess Haley, 2026-10-22 [epoch
 %   dissolution before merge] (F1), building TEAM-SIGN-OFF [epoch]
@@ -86,7 +114,9 @@ report = struct( ...
     'jh_bodies_seen',        0, ...
     'position_split',        0, ...
     'nearest_patch_split',   0, ...
+    'length_split_metres',   0, ...
     'length_not_split_no_scale', 0, ...
+    'length_not_split_scale_ambiguous', 0, ...
     'split_refused_irregular_times', 0, ...
     'split_refused_unreadable', 0, ...
     'changed_groups',        {{}}, ...
@@ -99,6 +129,7 @@ for k = 1:numel(structs)
     if ~isempty(id); idxById(id) = k; end
 end
 storeDir = fullfile(ndiDir, 'files');
+videoIdx = [];   % built on the first JH body (the scale lookup)
 
 for k = 1:numel(structs)
     b = structs{k};
@@ -118,7 +149,10 @@ for k = 1:numel(structs)
             report.bytes_not_here = report.bytes_not_here + 1;
             continue;
         end
-        [structs, newDocs, ids, report] = splitJH(structs, k, jh, path, idxById, report);
+        if isempty(videoIdx)
+            videoIdx = videoScaleIndex(structs, idxById);
+        end
+        [structs, newDocs, ids, report] = splitJH(structs, k, jh, path, idxById, report, videoIdx);
         added = [added, newDocs]; %#ok<AGROW>
         if ~isempty(ids)
             report.changed_groups{end+1} = ids;
@@ -208,7 +242,7 @@ end
 if found; jh = roles; end
 end
 
-function [structs, added, ids, report] = splitJH(structs, k, jh, path, idxById, report)
+function [structs, added, ids, report] = splitJH(structs, k, jh, path, idxById, report, videoIdx)
 added = {}; ids = {};
 b = structs{k};
 try
@@ -244,14 +278,33 @@ if jh.position > 0
     report.position_split = report.position_split + 1;
     return;
 end
+% the distance: column 1 (pixels) in metres, when one scale is reachable
+mpp = [];
+lengthDesc = '';
+why = '';
+if (jh.item > 0 && size(y, 2) < 3) || size(y, 2) < 1
+    report.split_refused_unreadable = report.split_refused_unreadable + 1;
+    return;
+end
 if jh.distance > 0
-    report.length_not_split_no_scale = report.length_not_split_no_scale + 1;
+    [scale, videoId, why] = scaleOf(structs{jh.distance}, videoIdx);
+    switch why
+        case 'none'
+            report.length_not_split_no_scale = report.length_not_split_no_scale + 1;
+        case 'ambiguous'
+            report.length_not_split_scale_ambiguous = report.length_not_split_scale_ambiguous + 1;
+        otherwise
+            mpp = 1e-3 / scale;                    % metres per pixel
+            lengthDesc = sprintf(['Signed distance to the nearest patch edge per video ' ...
+                'frame and body part, m (the source''s distanceLawnEdge, pixels; v1 ' ...
+                'element_epoch epoch_binary_data.vhsb column 1, split), times 1e-3 / ' ...
+                'scale metres per pixel: scale %.17g pixels per mm, approximate (from ' ...
+                'the arena mask''s area and the arena''s nominal size), from the video ' ...
+                '%s (v1 imageStack dimension_scale, labelled micrometer).'], scale, videoId);
+    end
 end
 if jh.item > 0
-    if size(y, 2) < 3; report.split_refused_unreadable = report.split_refused_unreadable + 1; return; end
     it = structs{jh.item};
-    o2 = struct();
-    if jh.distance > 0; o2 = structs{jh.distance}; end
     part = bodyPartOf(it, idxById, structs);
     v = double(y(:, 3)) - 1;
     nItems = numel(edgeValues(it, 'item_id'));
@@ -268,15 +321,146 @@ if jh.item > 0
         num2str(fill), '');
     structs{jh.item} = it;
     added{end+1} = nb;
-    % the .vhsb stays, owned by the length calculation alone
-    if jh.distance > 0
-        b.depends_on = keepOwner(b.depends_on, baseId(o2));
-        structs{k} = b;
-        ids = {baseId(b), baseId(it), baseId(nb)};
-    else
-        ids = {baseId(it), baseId(nb)};
-    end
+    ids = [ids, {baseId(it), baseId(nb)}];
     report.nearest_patch_split = report.nearest_patch_split + 1;
+end
+if jh.distance > 0 && ~isempty(mpp)
+    % the length calculation's own body REPLACES the .vhsb, id kept
+    o2 = structs{jh.distance};
+    part = bodyPartOf(o2, idxById, structs);
+    a = double(y(:, 1)) * mpp;                     % NaN stays NaN
+    [dims, covs] = axes2(n, part, tcov);
+    o2.data.dimensions = dims;
+    o2.data.covariates = covs;
+    o2.value.data_type = 'float64';
+    lb = ingested(baseId(o2), reshape(a, n, 1), 'float64', dims, sid, lengthDesc, ...
+        'NaN', baseId(b));
+    structs{jh.distance} = o2;
+    structs{k} = lb;
+    ids = [{baseId(lb), baseId(o2)}, ids];
+    report.length_split_metres = report.length_split_metres + 1;
+elseif jh.distance > 0 && jh.item > 0
+    % the .vhsb stays, owned by the length calculation alone
+    b.depends_on = keepOwner(b.depends_on, baseId(structs{jh.distance}));
+    structs{k} = b;
+    ids = [{baseId(b)}, ids];
+end
+end
+
+% ===================== the JH video scale ==============================
+
+function idx = videoScaleIndex(structs, idxById)
+% IDX.scales: entity id -> {[scale, videoId], ...} for each migrated video
+% (an observation whose sampled_body has a time dimension and Y/X covariates
+% carrying the v1 dimension_scale, source unit micrometre); IDX.groups:
+% entity id -> the ids of the groups it is `member_of`
+idx = struct('scales', containers.Map('KeyType', 'char', 'ValueType', 'any'), ...
+    'groups', containers.Map('KeyType', 'char', 'ValueType', 'any'));
+for k = 1:numel(structs)
+    b = structs{k};
+    switch className(b)
+        case 'directed_relation'
+            if ~isMemberOf(b); continue; end
+            c = edgeValues(b, 'child_id'); p = edgeValues(b, 'parent_id');
+            if isempty(c) || isempty(p); continue; end
+            if isKey(idx.groups, c{1})
+                idx.groups(c{1}) = [idx.groups(c{1}), p(1)];
+            else
+                idx.groups(c{1}) = p(1);
+            end
+        case 'sampled_body'
+            owners = edgeValues(b, 'owner_id');
+            if numel(owners) ~= 1 || ~isKey(idxById, owners{1}); continue; end
+            o = structs{idxById(owners{1})};
+            if ~strcmp(className(o), 'observation'); continue; end
+            ent = edgeValues(o, 'entity_id');
+            if isempty(ent); continue; end
+            s = videoScale(b);
+            if isempty(s); continue; end
+            entry = {s, owners{1}};
+            if isKey(idx.scales, ent{1})
+                idx.scales(ent{1}) = [idx.scales(ent{1}), {entry}];
+            else
+                idx.scales(ent{1}) = {entry};
+            end
+    end
+end
+end
+
+function [scale, videoId, why] = scaleOf(o, idx)
+% the one positive scale reachable from the calculation's entity: its own
+% videos and those of every group it is member_of
+scale = []; videoId = ''; why = 'none';
+ent = edgeValues(o, 'entity_id');
+if isempty(ent); return; end
+cands = ent(1);
+if isKey(idx.groups, ent{1}); cands = [cands, idx.groups(ent{1})]; end
+vals = []; vids = {};
+for i = 1:numel(cands)
+    if ~isKey(idx.scales, cands{i}); continue; end
+    e = idx.scales(cands{i});
+    for j = 1:numel(e)
+        vals(end+1) = e{j}{1}; %#ok<AGROW>
+        vids{end+1} = e{j}{2}; %#ok<AGROW>
+    end
+end
+if isempty(vals); return; end
+u = unique(vals);
+if numel(u) > 1; why = 'ambiguous'; return; end
+scale = u;
+videoId = strjoin(unique(vids), ', ');
+why = 'one';
+end
+
+function s = videoScale(b)
+% the v1 dimension_scale (pixels per mm) a migrated video's body carries as
+% the spacing source_value of its first two covariates (Y, X), when both
+% agree, are positive and are in the v1 label's unit (micrometre); [] else
+s = [];
+if ~isfield(b, 'data') || ~isstruct(b.data) || ~isfield(b.data, 'dimensions') ...
+        || ~isfield(b.data, 'covariates'); return; end
+dims = b.data.dimensions; covs = b.data.covariates;
+if isstruct(dims); dims = num2cell(dims); end
+if isstruct(covs); covs = num2cell(covs); end
+if numel(dims) < 3; return; end
+hasTime = false;
+for i = 1:numel(dims)
+    d = dims{i};
+    if isstruct(d) && isfield(d, 'term') && isstruct(d.term) && isfield(d.term, 'node') ...
+            && strcmp(char(d.term.node), 'om:Time')
+        hasTime = true;
+    end
+end
+if ~hasTime; return; end
+sp = NaN(1, 2);
+for i = 1:numel(covs)
+    c = covs{i};
+    if ~isstruct(c) || ~isfield(c, 'along') || ~isfield(c, 'spacing') ...
+            || ~isfield(c, 'source_unit'); continue; end
+    a = double(c.along);
+    if ~isscalar(a) || a < 0 || a > 1; continue; end
+    u = c.source_unit;
+    if ~isstruct(u) || ~isfield(u, 'node') || ~strcmp(char(u.node), 'om:micrometre'); continue; end
+    if ~isstruct(c.spacing) || ~isfield(c.spacing, 'source_value'); continue; end
+    v = c.spacing.source_value;
+    if ischar(v) || isstring(v); v = str2double(v); end
+    if isnumeric(v) && isscalar(v); sp(a + 1) = double(v); end
+end
+if all(isfinite(sp)) && sp(1) > 0 && sp(1) == sp(2)
+    s = sp(1);
+end
+end
+
+function tf = isMemberOf(b)
+tf = false;
+if ~isfield(b, 'directed_relation') || ~isstruct(b.directed_relation) ...
+        || ~isfield(b.directed_relation, 'relation'); return; end
+r = b.directed_relation.relation;
+if isstruct(r)
+    tf = (isfield(r, 'node') && strcmp(char(r.node), 'RO:0002350')) ...
+        || (isfield(r, 'name') && any(strcmp(char(r.name), {'member of', 'member_of'})));
+elseif ischar(r) || isstring(r)
+    tf = any(strcmp(char(r), {'member of', 'member_of'}));
 end
 end
 
