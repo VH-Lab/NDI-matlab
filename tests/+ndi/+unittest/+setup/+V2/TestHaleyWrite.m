@@ -768,14 +768,13 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
                 'method, in patch order: thresholdBAdjusted, manual, circleB, filter.']), lawn)));
         end
 
-        function testDetectionMethodsWithTwoTermsWriteNone(testCase)
-            % decision #154: segmentation and registration on one plate: no
-            % method, the notes list the source names
+        function testTemplateAndThresholdAreBothSegmentation(testCase)
+            % decision #154: a template-registered patch is a segmentation of
+            % the frame too, so one plate with both still gets a method
             [lawn, ~] = testCase.lawnMasksWith({'templateAdjusted', 'threshold'});
             testCase.assertNotEmpty(lawn);
-            testCase.verifyTrue(all(cellfun(@(d) ~isfield(d.interaction, 'method') ...
-                || isempty(d.interaction.method) || ~isfield(d.interaction.method, 'term') ...
-                || isempty(d.interaction.method.term), lawn)), 'no method');
+            testCase.verifyTrue(all(cellfun(@(d) strcmp(d.interaction.method.term.node, 'OBI:0003918'), lawn)), ...
+                'image segmentation');
             testCase.verifyTrue(all(cellfun(@(d) strcmp(d.statement.notes, ['Each patch''s detection ' ...
                 'method, in patch order: templateAdjusted, threshold.']), lawn)));
         end
@@ -970,15 +969,15 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             expected = false(8); expected(2:7, 2:7) = true;
             testCase.verifyEqual(reshape(bytes, 8, 8), uint8(expected), 'column-major, as written');
 
-            % the lawn mask: every patch was found by template, i.e. image
-            % registration; no target statements were given, so its one input
-            % is the video
+            % the lawn mask: every patch was found by template, a segmentation
+            % of the frame (decision #154); no target statements were given, so
+            % its one input is the video
             lawn = masks(cellfun(@(d) strcmp(d.statement.variable.name, 'Imaging Region of Interest') ...
                 && strcmp(conditionTerm(d, 'Location'), 'bacterial patch') ...
                 && strcmp(edge(d, 'entity_id'), idOf('concentration_assayPlate0012')), masks));
             testCase.verifyNumElements(lawn, 1);
             testCase.verifyEqual(lawn{1}.statement.variable.node, 'NCIT:C85402');
-            testCase.verifyEqual(lawn{1}.interaction.method.term.node, 'NCIT:C80145');
+            testCase.verifyEqual(lawn{1}.interaction.method.term.node, 'OBI:0003918');
             testCase.verifyFalse(isfield(lawn{1}.interaction.method, 'parameters') ...
                 && ~isempty(lawn{1}.interaction.method.parameters), ...
                 'the patches'' target diameter and spacing are statements, not parameters');

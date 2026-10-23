@@ -48,11 +48,10 @@ function out = geometryDocuments(dataParentDir, session, R, subjectIds, options)
 %   mask's inputs are the recording and the plate's target design statements
 %   ('TargetIds': the patches' target diameter and the plate's target
 %   spacing, built by an earlier stage); its method is the patches'
-%   `lawnMethod` mapped to a term when every patch's maps to the same one
-%   (decision #154: the threshold, filter, circle and manual families, with
-%   their B and Adjusted variants, are image segmentation; template and
-%   templateAdjusted are image registration), else none; its notes always
-%   list each patch's source name.
+%   image segmentation for every `lawnMethod` the source names (decision
+%   #154: each method, template registration and manual outlining included,
+%   produces a segmentation of the frame), and its notes list each patch's
+%   source name.
 %   `lawnClosestOD600` (the closest map with each patch's OD600) and
 %   `firstFrame` (frame 0 of the video) are not stored: both are already in
 %   the dataset.
@@ -189,10 +188,7 @@ for k = 1:height(R)
     found = cellfun(@char, found, 'UniformOutput', false);
     if ~isempty(found)
         methods = cellfun(@detectionMethod, found, 'UniformOutput', false);
-        nodes = cellfun(@(t) t.node, methods, 'UniformOutput', false);
-        if numel(unique(nodes)) == 1
-            lawnArgs = [lawnArgs, {'Method', methods{1}}]; %#ok<AGROW>
-        end
+        lawnArgs = [lawnArgs, {'Method', methods{1}}]; %#ok<AGROW>
         lawnArgs = [lawnArgs, {'Notes', sprintf('Each patch''s detection method, in patch order: %s.', ...
             strjoin(found, ', '))}]; %#ok<AGROW>
     end
@@ -347,10 +343,8 @@ end
 % (decision #154); the source name itself goes in the mask's notes
 switch char(name)
     case {'threshold', 'thresholdB', 'thresholdBAdjusted', 'filter', 'filterAdjusted', ...
-            'circle', 'circleB', 'circleAdjusted', 'manual'}
+            'circle', 'circleB', 'circleAdjusted', 'manual', 'template', 'templateAdjusted'}
         t = haleyTerm('image segmentation');
-    case {'template', 'templateAdjusted'}
-        t = haleyTerm('image registration');
     otherwise
         error('ndi:setup:conv:haley:unregisteredLabel', ...
             ['The patch detection method "%s" (the lawn table''s `lawnMethod` column) ' ...
