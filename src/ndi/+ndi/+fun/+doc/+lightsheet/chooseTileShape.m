@@ -106,6 +106,9 @@ function chunks = chooseTileShape(shape, axesOrder, voxelSize, dtype, budgetByte
 end
 
 function b = bytesPerVoxel(dtype)
+    arguments
+        dtype {mustBeText}
+    end
     d = lower(strtrim(char(dtype)));
     if ~isempty(d) && any(d(1) == '<>|=')
         d = d(2:end);

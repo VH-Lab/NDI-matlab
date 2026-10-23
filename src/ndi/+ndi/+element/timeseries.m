@@ -67,6 +67,49 @@ classdef timeseries < ndi.element & ndi.time.timeseries
                 E = ndi_element_timeseries_obj.session;
 
                 epochdoc = E.database_search(sq);
+                binaryName = 'epoch_binary_data.vhsb';
+                if numel(epochdoc)==0
+                    % THE DISSOLVED SHAPE (Decided by Jess Haley, 2026-10-22
+                    % [epoch dissolution before merge]): the element's
+                    % observation for this epoch, and the data body that
+                    % holds its .vhsb as member `body_data_0`.
+                    series = [];
+                    bodyFor = [];
+                    try
+                        [series, bodyFor] = ndi.vintage.epochSeriesOf(E, element_doc.id());
+                    catch
+                    end
+                    hit = [];
+                    if ~isempty(series)
+                        hit = find(strcmp({series.epoch_id}, epoch_timeref.epoch));
+                    end
+                    % a JH distance epoch is TWO calculations sharing its .vhsb
+                    % (Decided by Jess Haley, 2026-10-22 [JH position and
+                    % distance]); the series row is the one whose body still
+                    % holds the .vhsb, else the first
+                    bodies = {};
+                    for h = 1:numel(hit)
+                        bh = bodyFor(series(hit(h)).observation);
+                        if ~isempty(bh); bodies{end+1} = bh; end %#ok<AGROW>
+                    end
+                    pick = [];
+                    for h = 1:numel(bodies)
+                        bp = bodies{h}.document_properties;
+                        if isfield(bp, 'data_body') && isfield(bp.data_body, 'filename') ...
+                                && strcmp(char(bp.data_body.filename), 'epoch_binary_data.vhsb')
+                            pick = h; break;
+                        end
+                    end
+                    if isempty(pick) && ~isempty(bodies); pick = 1; end
+                    if ~isempty(hit) && isempty(pick)
+                        error(['The observation for epoch ' epoch_timeref.epoch ...
+                            ' has no data body.']);
+                    end
+                    if ~isempty(pick)
+                        epochdoc = bodies(pick);
+                        binaryName = 'body_data_0';
+                    end
+                end
                 if numel(epochdoc)==0
                     error(['Could not find epochdoc for epoch ' epoch_timeref.epoch '.']);
                 end
@@ -75,9 +118,20 @@ classdef timeseries < ndi.element & ndi.time.timeseries
                 end
                 epochdoc = epochdoc{1};
 
-                f = E.database_openbinarydoc(epochdoc,'epoch_binary_data.vhsb');
-                [data,t] = vlt.file.custom_file_formats.vhsb_read(f,epoch_t0_out,epoch_t1_out);
-                E.database_closebinarydoc(f);
+                bp = epochdoc.document_properties;
+                if strcmp(binaryName, 'body_data_0') && isfield(bp, 'sampled_body') ...
+                        && ~(isfield(bp, 'data_body') && isfield(bp.data_body, 'filename') ...
+                        && strcmp(char(bp.data_body.filename), 'epoch_binary_data.vhsb'))
+                    % a body the second pass SPLIT out of the .vhsb (a JH
+                    % position): its array, timed by its owner's `time`
+                    % covariate
+                    [data, t] = ndi.vintage.splitSeriesRead(E, epochdoc, ...
+                        series(hit(pick)).observation, epoch_t0_out, epoch_t1_out);
+                else
+                    f = E.database_openbinarydoc(epochdoc,binaryName);
+                    [data,t] = vlt.file.custom_file_formats.vhsb_read(f,epoch_t0_out,epoch_t1_out);
+                    E.database_closebinarydoc(f);
+                end
 
                 if isnumeric(t)
                     t = ndi_element_timeseries_obj.session.syncgraph.time_convert(epoch_timeref, t, ...

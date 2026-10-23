@@ -23,6 +23,11 @@ classdef TestMakeSourceFile < matlab.unittest.TestCase
 
     methods (Access = private)
         function f = aFile(testCase, name, contents)
+            arguments
+                testCase (1,1) ndi.unittest.fun.doc.lightsheet.TestMakeSourceFile
+                name {mustBeText}
+                contents % the bytes or text to write
+            end
             f = fullfile(tempname, name);
             mkdir(fileparts(f));
             testCase.addTeardown(@() rmdir(fileparts(f), 's'));
@@ -30,6 +35,10 @@ classdef TestMakeSourceFile < matlab.unittest.TestCase
         end
 
         function d = aZarrStore(testCase, name)
+            arguments
+                testCase (1,1) ndi.unittest.fun.doc.lightsheet.TestMakeSourceFile
+                name {mustBeText}
+            end
             d = fullfile(tempname, name);
             mkdir(d);
             testCase.addTeardown(@() rmdir(fileparts(d), 's'));

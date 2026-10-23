@@ -1,0 +1,530 @@
+function out = encounterDocuments(dataParentDir, session, R, subjectIds, options)
+%ENCOUNTERDOCUMENTS Stage 11 (Haley): each worm's patch encounters.
+%
+%   OUT = ndi.setup.conv.haley.encounterDocuments(DATAPARENTDIR, SESSION, R,
+%   SUBJECTIDS, ...) builds, for the one-row C. elegans session SESSION, the
+%   encounters celegans/encounter.mat records for its worms: the visits each
+%   worm made to a patch, found and measured by the lab's analysis package
+%   (analyzeEncounters, labelEncounters; Haley et al. 2024). Decision log #63.
+%
+%   ONE WORM ON ONE PLATE. analyzeEncounters finds a worm's encounters over its
+%   whole track on the plate, its videos joined in order, so `enter`/`exit` are
+%   row numbers in that joined track (an encounter can start in one video and
+%   end in the next). The documents are timed by the plate's recording window
+%   (stage 9's when it starts at the plate's first recording, else the one
+%   video's own reference, else a window of their own from the first
+%   recording's start), and each time with no anchor of its own -- the onsets,
+%   the exits' `offset time` covariate -- is in seconds from that window's START, which is the
+%   plate's first recording's start (tenet T14, PROPOSAL 2026-10-20, decision
+%   #118): the video's start plus (frame - 1) / frame rate.
+%
+%   Per worm with encounters (V_eta_study_plan.md, "Repeated events", T2),
+%   each statement's variable, method and conditions a decided term
+%   (haleyTerm) unless named as a label:
+%     time calculation  `onset time` (EMPTY:0000368, which replaced
+%                       EMPTY:0000140 "encounter onset time": Decided by Jess
+%                       Haley, 2026-10-22 [onset and offset terms]): THE
+%                       ENCOUNTER LIST, one entry
+%                       per encounter (id >= 1), one `encounter` dimension
+%                       (covariate `encounter`, origin 0 spacing 1); method
+%                       `patch encounter detection`, method parameter `body
+%                       part` = `midpoint` (the track it reads). Every other
+%                       per-encounter document has an `encounter` dimension
+%                       whose `encounter` covariate takes its positions from
+%                       it (`key_id` / covariate `document` 0; data_body plan
+%                       AMENDMENT 6)
+%     item calculation  `entity in contact`: each encounter's patch
+%                       subject (the source's lawnID = its lawnCenters row, #38)
+%                       and, as the covariate `offset time` along the
+%                       encounter, when it ended (`exit`); when the
+%                       schema has `item`. Inputs also the worm's per-frame
+%                       nearest-patch tracks (stage 10 part B), which the
+%                       patch was read from (decision #122)
+%     velocity calculation  `speed`, method `median`, dimensions [encounter x
+%                       `encounter period`] (`during the encounter`:
+%                       velocityOn; `after the encounter`: velocityOff, NaN
+%                       after the last encounter when the track ends first),
+%                       its `datum_order` 'F' (the encounter fastest)
+%                       (decision #120); um/s
+%                       -> m/s throughout
+%     velocity calculation  `speed`, method `minimum`, condition `patch
+%                       encounter period` = during (velocityOnMin)
+%     velocity calculation  `speed`, method `peak speed before an event`
+%                       (velocityBeforeEnter), conditions `reference
+%                       time point` = `onset time`, `analysis window
+%                       start` -10 s, `analysis window end` 0 s
+%     velocity calculation  `speed`, method `minimum speed after an event`
+%                       (velocityAfterEnter), the same anchor, window 0..+10 s
+%     acceleration calculation  `acceleration`, method `ordinary least squares
+%                       estimation` (decelerate, um/s^2 -> m/s^2), the same
+%                       anchor, window -1.5..+6.5 s
+%     length calculation  `signed distance to region boundary` (EMPTY:0000384:
+%                       positive inside the region, negative outside; the
+%                       variable says so; did-schema [Haley terms general],
+%                       Jess Haley 2026-10-22, replacing EMPTY:0000350 of
+%                       decision #119), the region the condition Location =
+%                       bacterial patch, whose mask the per-frame distance
+%                       this is computed from takes as input; condition the
+%                       period: during, method `maximum`
+%                       (distanceOnMax, analyzeEncounters line 273, whose own
+%                       header misnames it); after, method `minimum`, the
+%                       SIGNED value -distanceOffMax (the source stores
+%                       abs(min(distanceLawnEdge)) between encounters, lines
+%                       309-310); mm -> m
+%     score calculation  `posterior probability`, keyed by encounter, one per
+%                       state: condition `behavioral state` = `exploitation`
+%                       (exploitPosterior, method `Gaussian mixture model
+%                       clustering`) and = `sensing` (sensePosterior, method
+%                       `quadratic discriminant analysis`); scale `probability`,
+%                       0-1. timeSlowDown is not kept: no figure uses it
+%     term calculation  `encounter type`, method EDAM Classification
+%                       (operation_2990): `patch exploitation encounter`
+%                       (source exploit), `patch sampling encounter` (sample),
+%                       `on-patch search encounter` (searchOn), `off-patch
+%                       search encounter` (searchOff); `Cannot Be Determined`
+%                       where the source left it blank; its method parameters
+%                       the three posterior thresholds and the off-patch search
+%                       encounter's distance rule (0 m into the patch),
+%                       decision #127.
+%   For the gap before the first encounter (the source's id 0 row): one
+%   `speed`, method `median`, and one signed patch-edge distance, method
+%   `minimum` (-distanceOffMax), each with condition `encounter period` =
+%   `before the first encounter`.
+%   Inputs: the worm's midpoint speed and patch-edge distance tracks (stage 10
+%   part B) for each of the plate's videos; the per-encounter values also take
+%   the encounter list.
+%   Not stored: duration, timeEnter/timeExit, censorEnter/censorExit (from the
+%   times and the videos' lengths), the plate/strain/growth columns (stages
+%   4-8), borderAmplitude* (stage 12).
+%
+%   Options:
+%     'Tracks'               trackDocuments' OUT.byWorm
+%     'PlateWindows'         observationDocuments' OUT.windows
+%     'PlateWindowStarts'    observationDocuments' OUT.windowStarts: a plate's
+%                            window is used only when it starts at the plate's
+%                            first recording (decision #118)
+%     'RecordingRefs'        containers.Map, epoch -> its UTC reference id
+%     'SoftwareId', 'InterpreterId', 'OperatingSystemId'   as stage 10
+%
+%   OUT fields: documents, counts (struct), skipped (cellstr), byWorm
+%   (containers.Map, worm local_identifier -> struct of wormId, listId,
+%   plate (its assay plate's local_identifier), onset (each encounter's onset,
+%   seconds, as in the list), timeId (the time reference those seconds count
+%   from: they count from its start), calc (the session, time reference and run
+%   environment options its documents are built with) and rows, its
+%   encounter.mat rows in list order; for stage 12, decision #65).
+
+arguments
+    dataParentDir (1,:) char {mustBeFolder}
+    session table
+    R table
+    subjectIds
+    options.Tracks = containers.Map()
+    options.PlateWindows = containers.Map()
+    options.PlateWindowStarts = containers.Map()
+    options.RecordingRefs = containers.Map()
+    options.SoftwareId (1,:) char = ''
+    options.InterpreterId (1,:) char = ''
+    options.OperatingSystemId (1,:) char = ''
+end
+if height(session) ~= 1
+    error('ndi:setup:conv:haley:oneSession', 'Give exactly one session row.');
+end
+sid = char(session.session_id{1});
+ref = char(session.local_identifier{1});
+folder = char(session.folder{1});
+out = struct('documents', {{}}, 'skipped', {{}}, 'counts', struct('worms', 0, ...
+    'encounters', 0, 'documents', 0), 'byWorm', containers.Map());
+file = fullfile(dataParentDir, 'haley', 'celegans', 'encounter.mat');
+if strcmp(folder, 'ecoli') || ~isfile(file)
+    return;
+end
+if isempty(options.OperatingSystemId)
+    out.skipped{end+1} = sprintf(['%s: no operating system document (the spec''s `macos`, ' ...
+        'built by the metadata stage); no encounters'], ref);
+    return;
+end
+env = {};
+if ~isempty(options.SoftwareId), env = [env, {'SoftwareId', options.SoftwareId}]; end
+if ~isempty(options.InterpreterId), env = [env, {'InterpreterId', options.InterpreterId}]; end
+env = [env, {'OperatingSystemId', options.OperatingSystemId}];
+% an inline two-key value states its layout (did-schema 59cd34b: `datum_order`
+% on `data`, beside `keys`; decision #120)
+order = {'Fields', struct('datum_order', 'F')};
+tz = 'America/Los_Angeles';
+secondFmt = 'yyyy-MM-dd''T''HH:mm:ss';
+
+pre = ndi.setup.conv.haley.idPrefix(folder);
+root = fullfile(dataParentDir, 'haley', 'celegans', folder);
+I = load(fullfile(root, 'experimentInfo.mat'), 'info');
+D = I.info;
+D = D(D.expNum == session.experiment(1), :);
+E = load(file, 'encounter');
+E = E.encounter;
+E = E(strcmp(E.expName, folder) & E.expNum == session.experiment(1), :);
+if height(E) == 0
+    return;
+end
+if ~isfile(fullfile(root, 'midpoint.mat'))
+    out.skipped{end+1} = sprintf('%s: no midpoint.mat to place the encounters on; none', ref);
+    return;
+end
+T = trackTable(fullfile(root, 'midpoint.mat'));
+T = T(T.expNum == session.experiment(1), :);
+R = R(strcmp(R.session, ref) & strcmp(R.kind, 'behaviour'), :);
+docs = {};
+
+% what the per-encounter documents share
+before = periodCondition('before the first encounter');
+during = periodCondition('during the encounter');
+after = periodCondition('after the encounter');
+edgeDistance = haleyTerm('signed distance to region boundary');
+% the region the distance is to (did-schema [Haley terms general]): the same
+% Location condition a bacterial patch mask carries (decision #113)
+region = did2.build.condition(haleyTerm('location'), 'Term', haleyTerm('bacterial patch'));
+detection = {'Method', haleyTerm('encounter detection'), 'MethodParameters', ...
+    did2.build.list( ...
+        did2.build.parameter(haleyTerm('encountered entity'), 'Term', haleyTerm('bacterial patch')), ...
+        did2.build.parameter(haleyTerm('body part'), 'Term', haleyTerm('body midpoint')))};
+
+[G, plates, worms] = findgroups(E.plateNum, E.wormNum);
+for g = 1:max(G)
+    rows = E(G == g, :);
+    rows = sortrows(rows, 'id');
+    plate = sprintf('%s_assayPlate%04d', pre, plates(g));
+    worm = sprintf('%s_worm%04d', pre, worms(g));
+    if ~isKey(subjectIds, worm) || ~isKey(subjectIds, plate)
+        continue;
+    end
+    % the worm's joined track: its rows of the track table, in table order
+    W = T(T.plateNum == plates(g) & T.wormNum == worms(g), :);
+    % the plate's videos: epoch, start, frame rate, by videoNum
+    vids = D(D.plateNum == plates(g), :);
+    epochs = arrayfun(@(r) epochOf(pre, vids.videoFileName{r}), (1:height(vids))', 'UniformOutput', false);
+    [onR, where] = ismember(epochs, R.epoch);
+    % A video that is not a recording (a failed start with no file, which
+    % stage 5 reports as rowWithoutFile) holds none of the worm's track; the
+    % worm is skipped only when a row of its track is on such a video.
+    if ~any(onR) || ~all(ismember(unique(W.videoNum), vids.videoNum(onR)))
+        out.skipped{end+1} = sprintf('%s: its track is on a video of %s that is not a recording of this session', ...
+            worm, plate);
+        continue;
+    end
+    vids = vids(onR, :);
+    epochs = epochs(onR);
+    where = where(onR);
+    start = R.local_start(where);
+    rate = R.frame_rate(where);
+    % each video's measured frame times when it was decoded (decision #87),
+    % else frame k is taken at (k-1)/frame rate
+    ft = arrayfun(@(w) {frameTimesOf(R, w)}, where);
+    t0 = min(start);
+    % the plate's window, which must START at t0: the times below count from
+    % it (decision #118). Stage 9's when it starts there, else the one
+    % video's own reference, else a window of its own from t0
+    timeId = '';
+    if isKey(options.PlateWindows, plate) && isKey(options.PlateWindowStarts, plate) ...
+            && isequal(options.PlateWindowStarts(plate), wallClock(t0, tz))
+        timeId = options.PlateWindows(plate);
+    elseif height(vids) == 1 && isKey(options.RecordingRefs, epochs{1})
+        timeId = options.RecordingRefs(epochs{1});
+    else
+        dur = R.duration(where);
+        [t1, k1] = max(start + seconds(dur));
+        t1 = wallClock(t1, tz);
+        if isnan(dur(k1)), t1 = NaT; end
+        w = ndi.setup.V2.utcReference(wallClock(t0, tz), tz, sid, 'Format', secondFmt, 'End', t1);
+        docs{end+1} = w; %#ok<AGROW>
+        timeId = w.base.id;
+    end
+    secondsAt = @(idx) arrayfun(@(i) rowSeconds(W, i, vids, start, rate, t0, ft), idx);
+
+    % inputs: the worm's midpoint speed and patch-edge distance in each video,
+    % and (for the patch in contact) its nearest-patch track
+    inputs = {};
+    nearest = {};
+    for v = 1:numel(epochs)
+        key = [epochs{v} '|' worm];
+        if isKey(options.Tracks, key)
+            t = options.Tracks(key);
+            inputs = [inputs, {t.speed, t.patch_edge_distance}]; %#ok<AGROW>
+            if isfield(t, 'nearest_patch')
+                nearest{end+1} = t.nearest_patch; %#ok<AGROW>
+            end
+        end
+    end
+    inputs = inputs(~cellfun(@isempty, inputs));
+    nearest = nearest(~cellfun(@isempty, nearest));
+    calc = [{'SessionId', sid, 'TimeReferenceIds', {timeId}}, env];
+    wormId = subjectIds(worm);
+
+    enc = rows(rows.id >= 1 & ~isnan(rows.enter), :);
+    gap0 = rows(rows.id == 0, :);
+    n = height(enc);
+    out.counts.worms = out.counts.worms + 1;
+
+    % the gap before the first encounter
+    if height(gap0) == 1
+        if ~isnan(gap0.velocityOff)
+            docs{end+1} = did2.build.statement('calculation', wormId, haleyTerm('speed'), ...
+                speed(gap0.velocityOff), 'Method', haleyTerm('median'), ...
+                'Conditions', did2.build.list(before), 'InputIds', inputs, calc{:}, 'ValueKind', 'velocity'); %#ok<AGROW>
+        end
+        if ~isnan(gap0.distanceOffMax)
+            % the source's abs(min(distanceLawnEdge)): the minimum, signed
+            docs{end+1} = did2.build.statement('calculation', wormId, edgeDistance, ...
+                mm(-gap0.distanceOffMax), 'Method', haleyTerm('minimum'), ...
+                'Conditions', did2.build.list(before, region), 'InputIds', inputs, calc{:}, 'ValueKind', 'length'); %#ok<AGROW>
+        end
+    end
+    if n == 0
+        continue;
+    end
+    out.counts.encounters = out.counts.encounters + n;
+
+    % the encounter list
+    onset = secondsAt(enc.enter);
+    listAxes = haleyAxes({haleyTerm('encounter'), n, 'Origin', 0, 'Spacing', 1});
+    list = did2.build.statement('calculation', wormId, ...
+        haleyTerm('onset time'), did2.build.valueCell('time', onset), ...
+        listAxes.args{:}, ...
+        detection{:}, 'InputIds', inputs, calc{:}, 'ValueKind', 'time');
+    docs{end+1} = list; %#ok<AGROW>
+    encKey = {haleyTerm('encounter'), n, 'Document', 0};
+    keyIds = {'KeyIds', {list.base.id}};
+    % the axes of a per-encounter value: the encounter (its covariate takes
+    % its positions from the list, `document` 0), then any other dimension
+    % (its values in column-major order, the encounter fastest, which
+    % `datum_order` states)
+    axesWith = @(varargin) haleyAxes(encKey, varargin{:});
+    keysWith = @(varargin) [getfield(axesWith(varargin{:}), 'args'), keyIds]; %#ok<GFLD>
+    keyed = keysWith();
+    per = [{'InputIds', [{list.base.id}, inputs]}, calc];
+    out.byWorm(worm) = struct('wormId', wormId, 'listId', list.base.id, 'plate', plate, ...
+        'onset', onset(:), 'timeId', timeId, 'calc', {calc}, 'rows', enc);
+
+    % which patch
+    pIds = patchIds(subjectIds, plate);
+    if all(enc.lawnID >= 1 & enc.lawnID <= numel(pIds))
+        % each encounter's exit is the `offset time` covariate along the
+        % encounter (data_body plan AMENDMENT 6 removed item.value.offset;
+        % [onset time]: "the end is offset time")
+        v = struct('item', enc.lawnID(:)' - 1);
+        exitAxes = haleyAxes(axesWith(), 'Covariate', did2.build.covariate( ...
+            offsetTimeTerm(), 0, 'Value', secondsAt(enc.exit)', 'Unit', haleyTerm('second')));
+        docs{end+1} = did2.build.statement('calculation', wormId, ...
+            haleyTerm('entity in contact'), v, 'Edges', struct('item_id', {pIds}), ...
+            detection{:}, exitAxes.args{:}, keyIds{:}, ...
+            'InputIds', [{list.base.id}, inputs, nearest], calc{:}, 'ValueKind', 'item'); %#ok<AGROW>
+    else
+        out.skipped{end+1} = sprintf('%s: an encounter names a patch %s does not have; no patch list', ...
+            worm, plate);
+    end
+
+    % median speed during and after each encounter: one array, keyed by period
+    if all(ismember({'velocityOn', 'velocityOff'}, enc.Properties.VariableNames))
+        x = [double(enc.velocityOn), double(enc.velocityOff)];
+        byPeriod = keysWith({haleyTerm('encounter period'), 2, 'Term', ...
+            haleyTerm({'during the encounter', 'after the encounter'})});
+        docs{end+1} = did2.build.statement('calculation', wormId, haleyTerm('speed'), ...
+            speed(x), 'Method', haleyTerm('median'), byPeriod{:}, order{:}, ...
+            'Notes', 'After the last encounter: NaN when the track ends first.', ...
+            per{:}, 'ValueKind', 'velocity'); %#ok<AGROW>
+    elseif any(ismember({'velocityOn', 'velocityOff'}, enc.Properties.VariableNames))
+        out.skipped{end+1} = sprintf('%s: encounter.mat has only one of velocityOn / velocityOff; no median speeds', ...
+            worm);
+    end
+
+    % the other per-encounter values, each with its own method and conditions
+    q = {
+        'velocity', 'speed', 'velocityOnMin', @speed, ...
+            {'Method', haleyTerm('minimum')}, {during}, ''
+        'velocity', 'speed', 'velocityBeforeEnter', @speed, ...
+            {'Method', haleyTerm('peak speed before an event')}, ...
+            eventWindow(-10, 0), ''
+        'velocity', 'speed', 'velocityAfterEnter', @speed, ...
+            {'Method', haleyTerm('minimum speed after an event')}, eventWindow(0, 10), ''
+        'acceleration', 'acceleration', 'decelerate', @accel, ...
+            {'Method', haleyTerm('ordinary least squares estimation')}, eventWindow(-1.5, 6.5), ''
+        'length', edgeDistance, 'distanceOnMax', @mm, ...
+            {'Method', haleyTerm('maximum')}, {during, region}, ''
+        'length', edgeDistance, 'distanceOffMax', @(x) mm(-x), ...
+            {'Method', haleyTerm('minimum')}, {after, region}, ''};
+    for j = 1:size(q, 1)
+        if ~ismember(q{j, 3}, enc.Properties.VariableNames), continue; end
+        x = double(enc.(q{j, 3}));
+        note = {};
+        if ~isempty(q{j, 7}), note = {'Notes', q{j, 7}}; end
+        variable = q{j, 2};
+        if ischar(variable), variable = haleyTerm(variable); end
+        docs{end+1} = did2.build.statement('calculation', wormId, variable, ...
+            q{j, 4}(x), q{j, 5}{:}, 'Conditions', did2.build.list(q{j, 6}{:}), ...
+            keyed{:}, note{:}, per{:}, 'ValueKind', q{j, 1}); %#ok<AGROW>
+    end
+
+    % the posterior probabilities of exploitation and sensing: two statements,
+    % because two models made them (labelEncounters: a Gaussian mixture model
+    % of log duration and log on-patch speed; a semi-supervised quadratic
+    % discriminant analysis of three speed features), each with the state as
+    % its condition (T16)
+    posteriors = {
+        'exploitPosterior', 'exploitation', 'Gaussian mixture model clustering'
+        'sensePosterior',   'sensing',      'quadratic discriminant analysis'};
+    for j = 1:size(posteriors, 1)
+        if ~ismember(posteriors{j, 1}, enc.Properties.VariableNames), continue; end
+        docs{end+1} = did2.build.statement('calculation', wormId, ...
+            haleyTerm('posterior probability'), prob(double(enc.(posteriors{j, 1}))), ...
+            'Method', haleyTerm(posteriors{j, 3}), ...
+            'Conditions', did2.build.list(did2.build.condition(haleyTerm('behavioral state'), ...
+                'Term', haleyTerm(posteriors{j, 2}))), ...
+            keyed{:}, per{:}, 'ValueKind', 'score'); %#ok<AGROW>
+    end
+
+    % the encounter type, from thresholds on the posteriors
+    if ismember('label', enc.Properties.VariableNames)
+        names = reshape(cellstr(enc.label), 1, []);
+        typeArgs = {'Method', haleyTerm('classification'), 'MethodParameters', did2.build.list( ...
+                did2.build.parameter(haleyTerm('patch exploitation encounter: minimum probability of exploitation'), 'Value', 0.5), ...
+                did2.build.parameter(haleyTerm('patch sampling encounter: minimum probability of sensing'), 'Value', 0.5), ...
+                did2.build.parameter(haleyTerm('off-patch search encounter: probability of sensing below'), 'Value', 0.05), ...
+                did2.build.parameter(haleyTerm('off-patch search encounter: maximum distance into the patch'), ...
+                    'Value', 0, 'Unit', haleyTerm('meter'))), ...
+            'Notes', ['Each encounter''s type from its two posteriors (labelEncounters lines 379-384). ' ...
+                'An off-patch search encounter also needs the midpoint never to have crossed the ' ...
+                'patch edge (distanceOnMax < 0). Cannot Be Determined marks an encounter with a ' ...
+                'missing posterior, which the source leaves unlabeled.'], ...
+            keyed{:}, per{:}};
+        docs{end+1} = did2.build.statement('calculation', wormId, ...
+            haleyTerm('encounter type'), encounterTypes(names), typeArgs{:}, 'ValueKind', 'term'); %#ok<AGROW>
+    end
+end
+out.documents = docs;
+out.counts.documents = numel(docs);
+end
+
+% -----------------------------------------------------------------------------
+function s = rowSeconds(W, i, vids, start, rate, t0, ft)
+% seconds from T0 of row I of the worm's joined track: the frame's measured
+% time in its video (decision #87) when the video was decoded, else
+% (frame - 1) / frame rate
+arguments
+    W table
+    i (1,1) {mustBeNumeric}
+    vids table
+    start
+    rate
+    t0
+    ft cell
+end
+if isnan(i) || i < 1 || i > height(W)
+    s = NaN;
+    return;
+end
+v = find(vids.videoNum == W.videoNum(i), 1);
+f = double(W.frameNum(i));
+if f >= 1 && f <= numel(ft{v}) && f == round(f)
+    s = seconds(start(v) - t0) + ft{v}(f);
+else
+    s = seconds(start(v) - t0) + (f - 1) / rate(v);
+end
+end
+
+function v = speed(x)
+arguments
+    x
+end
+v = did2.build.valueCell('velocity', x(:)' * 1e-6, 'SourceValue', x(:)', 'SourceUnit', ndi.setup.V2.sourceUnit('um/s'));
+end
+
+function v = accel(x)
+arguments
+    x
+end
+v = did2.build.valueCell('acceleration', x(:)' * 1e-6, 'SourceValue', x(:)', 'SourceUnit', ndi.setup.V2.sourceUnit('um/s^2'));
+end
+
+function v = mm(x)
+arguments
+    x
+end
+v = did2.build.valueCell('length', x(:)' * 1e-3, 'SourceValue', x(:)', 'SourceUnit', ndi.setup.V2.sourceUnit('mm'));
+end
+
+function v = prob(x)
+arguments
+    x
+end
+v = did2.build.valueCell('score', x(:)', 'Fields', struct( ...
+    'scale', haleyTerm('probability'), 'scale_min', 0, 'scale_max', 1));
+end
+
+function e = epochOf(pre, name)
+arguments
+    pre {mustBeText}
+    name
+end
+e = '';
+name = strtrim(char(name));
+if isempty(name), return; end
+[~, stem] = fileparts(name);
+e = [pre '_' stem];
+end
+
+function c = periodCondition(period)
+% the condition `encounter period` = PERIOD (a decided term's handle)
+arguments
+    period {mustBeText}
+end
+c = did2.build.condition(haleyTerm('encounter period'), 'Term', haleyTerm(period));
+end
+
+function c = eventWindow(t0, t1)
+% the conditions of a value computed over a window around each encounter's
+% onset: from T0 to T1 seconds after it
+arguments
+    t0 (1,1) double
+    t1 (1,1) double
+end
+c = {did2.build.condition(haleyTerm('reference time point'), 'Term', haleyTerm('onset time')), ...
+    did2.build.condition(haleyTerm('analysis window start'), 'Quantity', t0, 'Unit', haleyTerm('second')), ...
+    did2.build.condition(haleyTerm('analysis window end'), 'Quantity', t1, 'Unit', haleyTerm('second'))};
+end
+
+function t = offsetTimeTerm()
+% The `offset time` covariate's variable ([onset time], data_body plan
+% AMENDMENT 6): EMPTY:0000369 (Decided by Jess Haley, 2026-10-22 [onset and
+% offset terms]).
+t = haleyTerm('offset time');
+end
+
+function t = encounterTypes(names)
+% each encounter's type as a term: labelEncounters' labels are the decided
+% types (exploit, sample, searchOn, searchOff: the patch exploitation, patch
+% sampling, on-patch and off-patch search encounters; decision #127); a blank label is
+% `Cannot Be Determined` (a posterior is missing, so no rule applies; Jess,
+% 2026-10-20), and any other label is an error: it has no registered term, and
+% writing it as a plain label would be an unregistered term (Jess Haley,
+% 2026-10-21)
+arguments
+    names cell
+end
+source = {'exploit', 'sample', 'searchOn', 'searchOff'};
+decided = {'patch exploitation encounter', 'patch sampling encounter', ...
+    'on-patch search encounter', 'off-patch search encounter'};
+t = cell(1, numel(names));
+for k = 1:numel(names)
+    [hit, at] = ismember(names{k}, source);
+    if hit
+        t{k} = haleyTerm(decided{at});
+    elseif isempty(strtrim(names{k}))
+        t{k} = haleyTerm('cannot be determined');
+    else
+        error('ndi:setup:conv:haley:unregisteredLabel', ...
+            ['Encounter %d is labelled "%s" (labelEncounters, the encounter table''s ' ...
+             'type column), which is none of exploit, sample, searchOn, searchOff or ' ...
+             'blank: it has no registered term. Decide its term and add it to ' ...
+             'haleyTerm and encounterTypes.'], k, names{k});
+    end
+end
+t = [t{:}];
+end

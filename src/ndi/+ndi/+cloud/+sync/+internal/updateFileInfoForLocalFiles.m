@@ -108,7 +108,8 @@ function document = updateFileInfoForLocalFiles(document, fileDirectory, cloudDa
         if hasSeriesInfo
             if strlength(cloudDatasetId) > 0
                 originalSeriesInfo = ndi.cloud.sync.internal.reconstructSeriesIngestLocations( ...
-                    originalSeriesInfo, originalFileInfo, fileDirectory, cloudDatasetId);
+                    originalSeriesInfo, originalFileInfo, fileDirectory, cloudDatasetId, ...
+                    'MemberBase', ndi.vintage.seriesMemberBase(document));
             end
             document = document.setproperties('files.series_info', originalSeriesInfo);
         end

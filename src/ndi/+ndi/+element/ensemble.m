@@ -142,6 +142,92 @@ classdef ensemble < ndi.element.timeseries
             end
         end % addEnsembleEpoch()
 
+        function [data, t, timeref] = readtimeseries(obj, timeref_or_epoch, t0, t1)
+            % READTIMESERIES - [NEURONINDEX, SPIKETIME] for a time window
+            %
+            % As ndi.element.timeseries/readtimeseries. In a MIGRATED session
+            % the combined marked point process is not stored: Decided by Jess
+            % Haley, 2026-10-22 [no ensemble cache] -- "NDI rebuilds it on read
+            % from the per-neuron trains". So when no epoch document holds the
+            % combined binary, it is rebuilt here: each member neuron of the
+            % epoch (its member_of edges, in column order) is read over the
+            % same window and the spikes are merged in time order, the index
+            % being the 1-based column.
+            try
+                [data, t, timeref] = readtimeseries@ndi.element.timeseries(obj, ...
+                    timeref_or_epoch, t0, t1);
+                return;
+            catch ME
+                if ~contains(ME.message, 'Could not find epochdoc')
+                    rethrow(ME);
+                end
+            end
+            if isa(timeref_or_epoch, 'ndi.time.timereference')
+                epochidstr = timeref_or_epoch.epoch;
+            else
+                epochidstr = obj.epochid(timeref_or_epoch);
+            end
+            nrns = obj.neurons(epochidstr);
+            data = zeros(0, 1);
+            t = zeros(0, 1);
+            timeref = [];
+            for k = 1:numel(nrns)
+                [~, tk, timeref] = nrns{k}.readtimeseries(timeref_or_epoch, t0, t1);
+                tk = tk(:);
+                t = [t; tk]; %#ok<AGROW>
+                data = [data; k * ones(numel(tk), 1)]; %#ok<AGROW>
+            end
+            [t, order] = sort(t);
+            data = data(order);
+        end % readtimeseries()
+
+        function [et_added, epochdocs] = loadaddedepochs(obj)
+            % LOADADDEDEPOCHS - as ndi.element; in a MIGRATED session, where
+            % the combined binary is not stored ([no ensemble cache]), the
+            % ensemble's epochs are the epochs of its member_of edges, each
+            % timed as its first member neuron's same epoch.
+            [et_added, epochdocs] = loadaddedepochs@ndi.element(obj);
+            if ~isempty(et_added)
+                return;
+            end
+            rels = obj.session.database_search( ...
+                ndi.query('','isa','directed_relation','') & ...
+                ndi.query('','depends_on','parent_id', obj.id()));
+            seen = {};
+            for i = 1:numel(rels)
+                p = rels{i}.document_properties;
+                try
+                    epochDocId = rels{i}.dependency_value('epoch_id', 'ErrorIfNotFound', 0);
+                    childId = rels{i}.dependency_value('child_id', 'ErrorIfNotFound', 0);
+                catch
+                    continue;
+                end
+                if isempty(epochDocId) || isempty(childId); continue; end
+                ep = ndi.element.ensemble.propsById(obj.session, epochDocId);
+                if isempty(ep) || ~isfield(ep, 'entity'); continue; end
+                eid = char(ep.entity.local_identifier);
+                if any(strcmp(seen, eid)); continue; end
+                if ~(isfield(p, 'directed_relation') && isfield(p.directed_relation, 'relation') ...
+                        && (strcmp(char(p.directed_relation.relation.node), 'RO:0002350') ...
+                        || any(strcmp(char(p.directed_relation.relation.name), {'member_of', 'member of'}))))
+                    continue;
+                end
+                nrn = ndi.database.fun.ndi_document2ndi_object(childId, obj.session);
+                row = [];
+                try
+                    row = nrn.epochtableentry(eid);
+                catch
+                end
+                if isempty(row); continue; end
+                seen{end+1} = eid; %#ok<AGROW>
+                newet = struct('epoch_number', numel(et_added) + 1, 'epoch_id', eid, ...
+                    'epochprobemap', '', 'epoch_clock', {row.epoch_clock}, ...
+                    't0_t1', {row.t0_t1}, 'underlying_epochs', []);
+                et_added(end+1) = newet; %#ok<AGROW>
+                epochdocs{end+1} = rels{i}; %#ok<AGROW>
+            end
+        end % loadaddedepochs()
+
         function d = epochEnsembleDoc(obj, epoch)
             % EPOCHENSEMBLEDOC - the 'ensemble' map document for one epoch
             %
@@ -172,6 +258,24 @@ classdef ensemble < ndi.element.timeseries
             %
             % Returns a 1-by-N cell array of the neuron element document ids for
             % EPOCH. Column index i of readtimeseries corresponds to IDS{i}.
+            epochidstr = obj.epochid(epoch);
+            sq = ndi.query('','isa','ensemble','') & ...
+                ndi.query('','depends_on','element_id', obj.id()) & ...
+                ndi.query('epochid.epochid','exact_string', epochidstr, '');
+            if isempty(obj.session.database_search(sq))
+                % MIGRATED: the map dissolved into epoch-scoped member_of
+                % edges (Decided by Jess Haley, 2026-10-22 [ensemble retired])
+                rels = obj.session.database_search( ...
+                    ndi.query('','isa','directed_relation','') & ...
+                    ndi.query('','depends_on','parent_id', obj.id()));
+                ids = ndi.vintage.ensembleMembers(rels, ...
+                    @(id) ndi.element.ensemble.propsById(obj.session, id), epochidstr);
+                if isempty(ids)
+                    error('ndi:element:ensemble:noMap', ...
+                        'No ensemble map or member_of edges were found for epoch ''%s''.', epochidstr);
+                end
+                return;
+            end
             d = obj.epochEnsembleDoc(epoch);
             ids = d.dependency_value_n('neuron_id','ErrorIfNotFound',0);
             ids = ids(:).';
@@ -184,6 +288,18 @@ classdef ensemble < ndi.element.timeseries
             %
             % Returns a 1-by-N cell array of the neuron names for EPOCH (the lines
             % of the map document's neuron_names.txt file).
+            epochidstr = obj.epochid(epoch);
+            sq = ndi.query('','isa','ensemble','') & ...
+                ndi.query('','depends_on','element_id', obj.id()) & ...
+                ndi.query('epochid.epochid','exact_string', epochidstr, '');
+            if isempty(obj.session.database_search(sq))
+                % MIGRATED: the map (and its neuron_names.txt) dissolved; the
+                % names are the member neurons' own (V_eta_ensemble_plan.md:
+                % "recoverable from the neuron-subjects")
+                nrns = obj.neurons(epochidstr);
+                names = cellfun(@(n) n.elementstring(), nrns, 'UniformOutput', false);
+                return;
+            end
             d = obj.epochEnsembleDoc(epoch);
             tempfile = ndi.database.fun.copydocfile2temp(d, obj.session, ...
                 'neuron_names.txt', '.txt');
@@ -279,6 +395,14 @@ classdef ensemble < ndi.element.timeseries
     end % private methods
 
     methods (Static, Access=private)
+        function p = propsById(session, id)
+            p = [];
+            d = session.database_search(ndi.query('base.id','exact_string',id,''));
+            if ~isempty(d)
+                p = d{1}.document_properties;
+            end
+        end % propsById()
+
         function names = readlines(filename)
             txt = fileread(filename);
             if isempty(txt)

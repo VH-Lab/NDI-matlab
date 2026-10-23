@@ -26,6 +26,16 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
         % SAME map -- Code Analyzer flags this and it is a real bug
         % when two datasets are open in the same MATLAB session.
         BinaryDocSessions = []
+
+        % SessionNotes - a V2 dataset's session listing: its denominator and
+        % every session left out and why (ndi.v2.datasetSessions). Read with
+        % session_notes().
+        SessionNotes = {}
+
+        % SameAsReport - what the last session joined to this V2 dataset
+        % recorded twice (V_eta tenet T18): the same_as relations written
+        % and the name-only candidates listed. Read with same_as_report().
+        SameAsReport = []
     end
 
     methods
@@ -65,15 +75,48 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
             ref = ndi_dataset_obj.session.reference;
         end % unique_reference_string()
 
-        function ndi_dataset_obj = add_linked_session(ndi_dataset_obj, ndi_session_obj)
+        function ndi_dataset_obj = add_linked_session(ndi_dataset_obj, ndi_session_obj, options)
             % ADD_LINKED_SESSION - link an ndi.session to an ndi.dataset
             %
-            % NDI_DATASET_OBJ = ADD_LINKED_SESSION(NDI_DATASET_OBJ, NDI_SESSION_OBJ)
+            % NDI_DATASET_OBJ = ADD_LINKED_SESSION(NDI_DATASET_OBJ, NDI_SESSION_OBJ, ...)
             %
             % Add an ndi.session object to an ndi.dataset, without ingesting the session
             % into the dataset. Instead, the ndi.session is linked to the dataset, but
             % the session remains where it is.
             %
+            % In a V2 dataset (V_eta_linked_session_plan.md), this writes two
+            % documents into the dataset's database: an `included_in` relation
+            % from the session's `session` entity to the dataset (or to the study
+            % 'PartOf' names), and a `linked_session` document recording the
+            % session's folder (relative to the dataset's folder when inside it).
+            % The session must be a V2 session.
+            %
+            % A V2 session joining a V2 dataset may bring its own record of
+            % something the dataset already records (its own N2 strain, its own
+            % record of the microscope). Each such pair found on evidence that
+            % names the thing (the same identifier CURIE, the same serial
+            % number and manufacturer, the same catalog or model number) is
+            % joined by a `same_as` relation written in the dataset's database;
+            % a pair sharing only a name is listed, not written. No id is
+            % deleted or rewritten (V_eta tenet T18). same_as_report() says
+            % what was found.
+            %
+            % Options:
+            %   'PartOf'  V2 only: the id of the dataset's study (an entity
+            %             document in the dataset) the session is included_in;
+            %             default: the dataset itself
+            %   'SameAs'  V2 only: default true; false writes no same_as
+            %             (the report still lists what was found)
+            arguments
+                ndi_dataset_obj (1,1) ndi.dataset
+                ndi_session_obj (1,1) ndi.session
+                options.PartOf (1,:) char = ''
+                options.SameAs (1,1) logical = true
+            end
+            if ndi_dataset_obj.v2Listing()
+                ndi_dataset_obj.addSessionV2(ndi_session_obj, true, options.PartOf, options.SameAs);
+                return;
+            end
             if isempty(ndi_dataset_obj.session_array)
                 ndi_dataset_obj.build_session_info;
             end
@@ -139,11 +182,31 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
             %                          |   to false to force the old staged
             %                          |   copy. See
             %                          |   ndi.dataset.copySessionToDataset.
+            % PartOf ('')              | V2 only: the id of the dataset's
+            %                          |   study the session is included_in
+            %                          |   (default: the dataset itself)
+            %
+            % In a V2 dataset (V_eta_linked_session_plan.md), every document of
+            % the session is copied into the dataset's database, ids unchanged,
+            % with the files it ingested; files recorded by location stay where
+            % they are. Unless the copied documents already file the session
+            % under the dataset or one of its studies, an `included_in`
+            % relation is added. The session must be a V2 session. Its records of what
+            % the dataset already records are joined by `same_as`, as
+            % add_linked_session joins them ('SameAs', default true; see
+            % same_as_report).
             %
             arguments
                 ndi_dataset_obj (1,1) ndi.dataset
                 ndi_session_obj (1,1) ndi.session
                 options.ReferenceInPlace (1,1) logical = true
+                options.PartOf (1,:) char = ''
+                options.SameAs (1,1) logical = true
+            end
+
+            if ndi_dataset_obj.v2Listing()
+                ndi_dataset_obj.addSessionV2(ndi_session_obj, false, options.PartOf, options.SameAs);
+                return;
             end
 
             if isempty(ndi_dataset_obj.session_array)
@@ -386,6 +449,25 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
                  error('Operation not confirmed. Set areYouSure to true or confirm via dialog.');
             end
 
+            if ndi_dataset_obj.v2Listing()
+                % V2: the session leaves the dataset -- its linked_session
+                % document and the included_in relations naming it go; its
+                % folder is untouched
+                session_obj = [];
+                if options.AlsoDeleteSessionAfterUnlinking
+                    session_obj = ndi_dataset_obj.open_session(ndi_session_id);
+                end
+                info = ndi_dataset_obj.session_info(match_idx);
+                entityId = ndi_dataset_obj.v2EntityIdOf(match_idx);
+                ids = [{info.session_doc_in_dataset_id}, ndi_dataset_obj.v2MembershipIds(entityId)];
+                ndi_dataset_obj.v2Remove(ids);
+                ndi_dataset_obj.build_session_info();
+                if ~isempty(session_obj)
+                    session_obj.deleteSessionDataStructures(options.areYouSure, options.DeleteSessionAskToConfirm);
+                end
+                return;
+            end
+
             % If we need to delete the session later, we need the object.
             session_obj = [];
             if options.AlsoDeleteSessionAfterUnlinking
@@ -476,6 +558,23 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
 
             ndi_session_obj = ndi_dataset_obj.open_session(session_id);
 
+            if ndi_dataset_obj.v2Listing()
+                % V2 (V_eta_linked_session_plan.md): copy the session's
+                % documents in, with the files they ingested, and delete the
+                % linked_session document. The included_in relation stays.
+                if ~ndi_dataset_obj.confirm(options, ['Are you sure you want to convert ' ...
+                        'linked session ' session_id ' to an ingested session? This will copy ' ...
+                        'all of its documents into the dataset.'], 'Confirm Conversion')
+                    error('Operation not confirmed. Set areYouSure to true or confirm via dialog.');
+                end
+                linkId = ndi_dataset_obj.session_info(match_idx).session_doc_in_dataset_id;
+                docs = ndi.v2.sessionDocuments(ndi_session_obj.database, session_id);
+                ndi.v2.copyDocuments(ndi_session_obj.database.db, ndi_dataset_obj.v2Db(), docs);
+                ndi_dataset_obj.v2Remove({linkId});
+                ndi_dataset_obj.build_session_info();
+                return;
+            end
+
             if ~ndi_session_obj.isIngested()
                 error(['Session with ID ' session_id ' and reference ' ...
                     ndi_session_obj.reference ' is not yet fully ingested. ' ...
@@ -546,6 +645,161 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
 
         end % convertLinkedSessionToIngested()
 
+        function convertIngestedSessionToLinked(ndi_dataset_obj, session_id, folder, options)
+            % CONVERTINGESTEDSESSIONTOLINKED - move an ingested session out to its own folder
+            %
+            % CONVERTINGESTEDSESSIONTOLINKED(NDI_DATASET_OBJ, SESSION_ID, FOLDER, ...)
+            %
+            % V2 datasets only (V_eta_linked_session_plan.md). Writes every
+            % document of the ingested session SESSION_ID into a new V2 session
+            % in FOLDER, with the files they ingested (files recorded by
+            % location stay where they are), deletes them from the dataset's
+            % database, and adds a `linked_session` document naming FOLDER.
+            % The `included_in` relations that make the session a member of the
+            % dataset stay in the dataset's database. FOLDER must not already
+            % hold an NDI database.
+            %
+            % Options:
+            %   areYouSure (false) - must be true to proceed, unless confirmed by user
+            %   askUserToConfirm (true) - if true, will ask user for confirmation via dialog
+            %
+            % See also: ndi.dataset/convertLinkedSessionToIngested,
+            %   ndi.dataset/add_linked_session
+            arguments
+                ndi_dataset_obj (1,1) ndi.dataset
+                session_id (1,:) char
+                folder (1,:) char
+                options.areYouSure (1,1) logical = false
+                options.askUserToConfirm (1,1) logical = true
+            end
+            if ~ndi_dataset_obj.v2Listing()
+                error('ndi:dataset:notV2', ...
+                    'convertIngestedSessionToLinked works on a V2 dataset; this one is v1.');
+            end
+            if isempty(ndi_dataset_obj.session_info)
+                ndi_dataset_obj.build_session_info();
+            end
+            match_idx = find(strcmp(session_id, {ndi_dataset_obj.session_info.session_id}), 1);
+            if isempty(match_idx)
+                error(['Session with ID ' session_id ' not found in dataset ' ndi_dataset_obj.id() '.']);
+            end
+            info = ndi_dataset_obj.session_info(match_idx);
+            if info.is_linked
+                error(['Session with ID ' session_id ' is already a linked session.']);
+            end
+            ndiDir = fullfile(folder, '.ndi');
+            if isfolder(ndiDir) && ~isempty([dir(fullfile(ndiDir, '*.sqlite')); dir(fullfile(ndiDir, '*.json'))])
+                error('ndi:dataset:folderTaken', '%s already holds an NDI database.', ndiDir);
+            end
+            if ~ndi_dataset_obj.confirm(options, ['Are you sure you want to move ingested session ' ...
+                    session_id ' out of the dataset into ' folder '?'], 'Confirm Conversion')
+                error('Operation not confirmed. Set areYouSure to true or confirm via dialog.');
+            end
+
+            entityId = info.session_doc_in_dataset_id;
+            docs = ndi.v2.sessionDocuments(ndi_dataset_obj.session.database, session_id);
+            stay = ndi_dataset_obj.v2MembershipIds(entityId);
+            move = docs(~ismember(cellfun(@(d) d.base.id, docs, 'UniformOutput', false), stay));
+
+            if ~isfolder(ndiDir), mkdir(ndiDir); end
+            target = did2.database.sqlitedb(fullfile(ndiDir, ...
+                ndi.database.implementations.database.did2sqlite.DEFAULTFILENAME()));
+            ndi.v2.copyDocuments(ndi_dataset_obj.v2Db(), target, move);
+            target.close();
+            % the two files ndi.session.dir reads its id and reference from
+            % (as ndi.setup.V2.createSession writes them)
+            vlt.file.str2text(fullfile(ndiDir, 'unique_reference.txt'), session_id);
+            vlt.file.str2text(fullfile(ndiDir, 'reference.txt'), info.session_reference);
+            S = ndi.session.dir(folder);
+            if ~strcmp(S.id(), session_id)
+                error('ndi:dataset:moveMismatch', ...
+                    'The session written to %s opened with id %s, not %s; the dataset is unchanged.', ...
+                    folder, S.id(), session_id);
+            end
+
+            ndi_dataset_obj.v2Remove(cellfun(@(d) d.base.id, move, 'UniformOutput', false));
+            link = did2.build.document('linked_session', ...
+                struct('path', ndi.v2.linkPath(folder, ndi_dataset_obj.getpath())), ...
+                'SessionId', ndi_dataset_obj.id(), 'Edges', struct('entity_id', entityId));
+            ndi_dataset_obj.v2Db().add({did2.document(link)});
+            ndi_dataset_obj.build_session_info();
+        end % convertIngestedSessionToLinked()
+
+        function report = makeSelfContained(ndi_dataset_obj, options)
+            % MAKESELFCONTAINED - copy every file the dataset records by location into it
+            %
+            % REPORT = MAKESELFCONTAINED(NDI_DATASET_OBJ, ...)
+            %
+            % V2 datasets only (V_eta_linked_session_plan.md). A file is either
+            % INGESTED (copied into the dataset's file store) or recorded BY
+            % LOCATION (read where it is: raw recordings too large to copy).
+            % This copies every by-location file of every document in the
+            % dataset's database into the store and records it as ingested, so
+            % the dataset no longer depends on those folders -- the step before
+            % a dataset is shared. Linked sessions are not touched (their
+            % documents are not in the dataset): convert them to ingested first.
+            %
+            % REPORT (printed first, the denominator first): documents inspected,
+            % documents with a by-location file, files ingested, files whose
+            % location holds nothing on this computer (left by location, each
+            % named), locations that are not files (left), and linked sessions
+            % not included.
+            %
+            % Options:
+            %   'DryRun'  default false: true reports what would be copied and
+            %             changes nothing
+            arguments
+                ndi_dataset_obj (1,1) ndi.dataset
+                options.DryRun (1,1) logical = false
+            end
+            if ~ndi_dataset_obj.v2Listing()
+                error('ndi:dataset:notV2', 'makeSelfContained works on a V2 dataset; this one is v1.');
+            end
+            if isempty(ndi_dataset_obj.session_info)
+                ndi_dataset_obj.build_session_info();
+            end
+            db = ndi_dataset_obj.v2Db();
+            ids = db.allIds();
+            report = struct('documents', numel(ids), 'withByLocation', 0, 'ingested', 0, ...
+                'missing', {{}}, 'notFiles', 0, ...
+                'linkedSessions', sum([ndi_dataset_obj.session_info.is_linked]), ...
+                'dryRun', options.DryRun);
+            stage = tempname;
+            for i = 1:numel(ids)
+                d = db.get(ids{i}).toStruct();
+                [d2, nIn, missing, notFiles, keep] = ingestByLocation(d, db.fileDir, stage);
+                report.missing = [report.missing, missing];
+                report.notFiles = report.notFiles + notFiles;
+                if nIn == 0
+                    continue;
+                end
+                report.withByLocation = report.withByLocation + 1;
+                report.ingested = report.ingested + nIn;
+                if options.DryRun
+                    continue;
+                end
+                % a document's body cannot be changed in place: it is
+                % removed and added again, its already-ingested files staged
+                % first so removing it cannot lose them
+                for k = 1:size(keep, 1)
+                    if ~isfolder(stage), mkdir(stage); end
+                    copyfile(keep{k, 1}, keep{k, 2});
+                end
+                db.remove(ids{i});
+                db.add({did2.document(d2)}, 'Validate', false);
+            end
+            if isfolder(stage), rmdir(stage, 's'); end
+            fprintf(['DENOMINATOR: %d document(s) inspected; %d with a by-location file; ' ...
+                '%d file(s) %s; %d location(s) holding nothing here (left by location); %d ' ...
+                'location(s) not a file (left); %d linked session(s) not included\n'], ...
+                report.documents, report.withByLocation, report.ingested, ...
+                ifelse(options.DryRun, 'would be ingested', 'ingested'), numel(report.missing), ...
+                report.notFiles, report.linkedSessions);
+            for k = 1:min(numel(report.missing), 20)
+                fprintf('  nothing at: %s\n', report.missing{k});
+            end
+        end % makeSelfContained()
+
         function ndi_session_obj = open_session(ndi_dataset_obj, session_id)
             % OPEN_SESSION - open an ndi.session object from an ndi.dataset
             %
@@ -583,7 +837,17 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
                     % ndi_dataset_obj.session_info(match_).session_creator_input5, ...
                     % ndi_dataset_obj.session_info(match_).session_creator_input6);
                     ndi_session_obj = ndi_dataset_obj.session_array(match).session;
-                    mksqlite('close'); % TODO: update ndi.session with a close database files method                
+                    if ndi_dataset_obj.session_info(match_).is_linked && ndi_dataset_obj.isV2()
+                        % it reaches the dataset's documents through the dataset
+                        ndi_session_obj.datasetDatabase = ndi_dataset_obj.session.database;
+                    end
+                    if ~ndi_dataset_obj.isV2()
+                        % closes EVERY mksqlite connection: harmless for the legacy
+                        % backend, which reopens its file per call, but a V2
+                        % database (did2.database.sqlitedb) keeps its connection
+                        % open, and this would close the session just opened
+                        mksqlite('close'); % TODO: update ndi.session with a close database files method
+                    end
                 end
             end
         end % open_session()
@@ -603,7 +867,9 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
             % documents that describe the session in the dataset.
             %
             % DATASET_SESSION_DOC_ID is the document unique id for the 'session' document that
-            % describes the dataset's own session.
+            % describes the dataset's own session (where session_id is an edge,
+            % did-schema V_eta_relation_inheritance_plan.md, the dataset entity whose
+            % id IS the dataset's id: ndi.v2.sessionRecord).
             %
             if isempty(ndi_dataset_obj.session_info)
                 ndi_dataset_obj.build_session_info();
@@ -614,8 +880,7 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
             session_doc_ids = {ndi_dataset_obj.session_info.session_doc_in_dataset_id};
 
             dataset_session_doc_id = '';
-            q_dataset_session_doc = ndi.query('','isa','session') & ndi.query('base.session_id','exact_string',ndi_dataset_obj.id());
-            doc = ndi_dataset_obj.session.database_search(q_dataset_session_doc);
+            doc = ndi.v2.sessionRecord(ndi_dataset_obj.session.database, ndi_dataset_obj.id());
             if isscalar(doc)
                 dataset_session_doc_id = doc{1}.id();
             elseif numel(doc)>1
@@ -623,6 +888,44 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
             end
 
         end % session_list()
+
+        function notes = session_notes(ndi_dataset_obj)
+            % SESSION_NOTES - how a V2 dataset's sessions were listed
+            %
+            % NOTES = SESSION_NOTES(NDI_DATASET_OBJ)
+            %
+            % For a V2 dataset, a cellstr: the denominator of the listing
+            % (session and linked_session documents read, sessions listed),
+            % then every session left out and why -- a session document not
+            % included_in the dataset, a linked folder that is missing or holds
+            % another session. {} for a v1 dataset.
+            %
+            % See also: ndi.dataset/session_list, ndi.v2.datasetSessions
+            if isempty(ndi_dataset_obj.session_info)
+                ndi_dataset_obj.build_session_info();
+            end
+            notes = ndi_dataset_obj.SessionNotes;
+        end % session_notes()
+
+        function report = same_as_report(ndi_dataset_obj)
+            % SAME_AS_REPORT - what the last session joined to a V2 dataset recorded twice
+            %
+            % REPORT = SAME_AS_REPORT(NDI_DATASET_OBJ)
+            %
+            % After add_linked_session or add_ingested_session on a V2
+            % dataset, a struct (ndi.v2.sameAsMatches): DENOMINATOR (the
+            % entities compared), MATCHES (pairs joined on evidence that
+            % names the thing, with the `same_as` relation written for each
+            % in RELATION_ID, "" when it was not written: already joined, or
+            % 'SameAs' false), CANDIDATES (pairs sharing only a name, or a
+            % serial number with no manufacturer on both: listed for a person
+            % to confirm, never written), WRITTEN (how many relations were
+            % written) and NOTES. [] before any session was joined through
+            % this object.
+            %
+            % See also: ndi.v2.sameAsMatches, ndi.entity/sameAs
+            report = ndi_dataset_obj.SameAsReport;
+        end % same_as_report()
 
         function p = getpath(ndi_dataset_obj)
             % GETPATH - Return the path of the dataset
@@ -666,7 +969,7 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
 
             ndi_session_ids_here = {};
             for i=1:numel(document)
-                ndi_session_ids_here{end+1} = document{i}.document_properties.base.session_id;
+                ndi_session_ids_here{end+1} = document{i}.session_id();
             end
 
             usession_ids = setdiff(unique(ndi_session_ids_here),ndi.session.empty_id());
@@ -722,7 +1025,7 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
             doc_input = ndi.session.docinput2docs(ndi_dataset_obj, doc_unique_id); % make sure we have docs
             ndi_session_ids_here = {};
             for i=1:numel(doc_input)
-                ndi_session_ids_here{i} = doc_input{i}.document_properties.base.session_id;
+                ndi_session_ids_here{i} = doc_input{i}.session_id();
             end
 
             usession_ids = setdiff(unique(ndi_session_ids_here),ndi.session.empty_id());
@@ -766,6 +1069,33 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
             end
         end % database_search();
 
+        function subjects = getsubjects(ndi_dataset_obj)
+            % GETSUBJECTS - Return the biological subject documents of the dataset
+            %
+            % SUBJECTS = GETSUBJECTS(NDI_DATASET_OBJ)
+            %
+            % Returns a cell array of ndi.document: the subjects of the
+            % experiment -- organisms, cultures, tissues, cells and groups
+            % (ndi.v2.subjectTypes) -- and NOT the apparatus. A v1 database
+            % holds only such subjects as `subject` documents, so on v1 this
+            % is every `subject` document. On a V2 (V_eta) database a probe,
+            % a camera (device) or a plate (material) is an entity too, and
+            % a MIGRATED element is a `subject`; all of those are left out,
+            % so a V2 or migrated database answers as v1 did (Jess Haley,
+            % 2026-10-21). See ndi.vintage.subjectDocs.
+            %
+            % For V2 data, new code should prefer ndi.entity.search, which
+            % returns ndi.entity objects and can filter on type, statements
+            % and relations; the same subjects are
+            %   ndi.entity.search(NDI_DATASET_OBJ, {'type', ndi.v2.subjectTypes()})
+            % and every entity, the apparatus included, is
+            %   ndi.entity.search(NDI_DATASET_OBJ, {'type', '*'})
+            %
+            % See also: ndi.entity.search, ndi.v2.subjectTypes,
+            % ndi.vintage.subjectDocs
+            subjects = ndi.vintage.subjectDocs(ndi_dataset_obj);
+        end % getsubjects()
+
         function ndi_binarydoc_obj = database_openbinarydoc(ndi_dataset_obj, ndi_document_or_id, filename, options)
             % DATABASE_OPENBINARYDOC - open the ndi.database.binarydoc channel of an ndi.document
             %
@@ -793,7 +1123,7 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
                 doc_input = ndi.session.docinput2docs(ndi_dataset_obj, ndi_document_or_id);
                 if ~isempty(doc_input)
                     doc = doc_input{1};
-                    session_id = doc.document_properties.base.session_id;
+                    session_id = doc.session_id();
 
                     % session matches one of the linked sessions
                     if ~strcmp(session_id, ndi_dataset_obj.id())
@@ -824,7 +1154,7 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
             doc_input = ndi.session.docinput2docs(ndi_dataset_obj, ndi_document_or_id);
             if ~isempty(doc_input)
                 doc = doc_input{1};
-                session_id = doc.document_properties.base.session_id;
+                session_id = doc.session_id();
                 if ~strcmp(session_id, ndi_dataset_obj.id())
                     % session matches one of the linked sessions
                     % (actually docinput2docs found it, so it's either in dataset or linked session)
@@ -874,7 +1204,7 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
             % Given an ndi.document, return an open ndi.session object that contains the
             % the document.
             %
-            session_id = ndi_document_obj.document_properties.base.session_id;
+            session_id = ndi_document_obj.session_id();
             ndi_session_obj = ndi_dataset_obj.open_session(session_id);
         end % document_session()
 
@@ -912,7 +1242,7 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
                  error(['Found too many dataset session info documents (' int2str(numel(doc)) ') for dataset ' ndi_dataset_obj.id() '.']);
             end
 
-            currentDatasetID = doc{1}.document_properties.base.session_id;
+            currentDatasetID = doc{1}.session_id();
             dataset_session_info_struct = doc{1}.document_properties.dataset_session_info.dataset_session_info;
 
             if isstruct(dataset_session_info_struct)
@@ -1050,7 +1380,7 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
             are_empty_session_id_docs = 0;
 
             for i=1:numel(docs)
-                if isempty(docs{i}.document_properties.base.session_id)
+                if isempty(docs{i}.session_id())
                     are_empty_session_id_docs = are_empty_session_id_docs + 1;
                     docs{i} = docs{i}.set_session_id(ndi_session_obj.id());
                 end
@@ -1106,15 +1436,80 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
                 ndi_dataset_obj.session_info(end+1) = info_here;
             end
 
+            opened = {};
+            if isempty(session_info_doc) && ndi_dataset_obj.isV2()
+                % A V2 dataset records no session_in_a_dataset documents
+                % (V_eta_linked_session_plan.md, signed 2026-10-09): a session
+                % is in it when its `session` entity is `included_in` the dataset
+                % or a study of it. INGESTED: its documents are in this
+                % database, opened from the dataset's folder. LINKED: a
+                % `linked_session` document names its folder, opened there.
+                [v2, notes] = ndi.v2.datasetSessions(ndi_dataset_obj.session.database, ...
+                    ndi_dataset_obj.id(), ndi_dataset_obj.getpath());
+                ndi_dataset_obj.SessionNotes = notes;
+                left = notes(startsWith(notes, 'not listed') | ...
+                    contains(notes, 'not included_in'));
+                if ~isempty(left)
+                    warning('ndi:dataset:sessionsLeftOut', '%s\n  %s', ...
+                        'Some sessions of this dataset could not be listed:', strjoin(left, '\n  '));
+                end
+                for i = 1:numel(v2)
+                    patharg = '';
+                    docId = v2(i).entity_id;
+                    if v2(i).is_linked
+                        patharg = v2(i).path;
+                        docId = v2(i).link_id;
+                    end
+                    info_here = struct('session_id', v2(i).session_id, ...
+                        'session_reference', v2(i).reference, 'is_linked', double(v2(i).is_linked), ...
+                        'session_creator', 'ndi.session.dir', ...
+                        'session_creator_input1', v2(i).reference, ...
+                        'session_creator_input2', patharg, 'session_creator_input3', '', ...
+                        'session_creator_input4', '', 'session_creator_input5', '', ...
+                        'session_creator_input6', '', 'session_doc_in_dataset_id', docId);
+                    ndi_dataset_obj.session_info(end+1) = info_here;
+                    opened{end+1} = v2(i).session; %#ok<AGROW>
+                end
+            elseif isempty(session_info_doc)
+                % not a V2 database, and no session_in_a_dataset documents:
+                % each other session document is an ingested session
+                v2 = ndi_dataset_obj.session.database.search(ndi.v2.isaQuery('session'));
+                for i=1:numel(v2)
+                    p = v2{i}.document_properties;
+                    [~, blk] = ndi.v2.kindOf(p);   % `entity` since 2026-10-08
+                    if strcmp(ndi.v2.sessionIdOf(p), ndi_dataset_obj.id()) || ~isfield(p.(blk),'local_identifier')
+                        continue;
+                    end
+                    info_here = struct('session_id', ndi.v2.sessionIdOf(p), ...
+                        'session_reference', p.(blk).local_identifier, 'is_linked', 0, ...
+                        'session_creator', 'ndi.session.dir', ...
+                        'session_creator_input1', p.(blk).local_identifier, ...
+                        'session_creator_input2', '', 'session_creator_input3', '', ...
+                        'session_creator_input4', '', 'session_creator_input5', '', ...
+                        'session_creator_input6', '', 'session_doc_in_dataset_id', v2{i}.id());
+                    ndi_dataset_obj.session_info(end+1) = info_here;
+                end
+            end
+
             % now we have session_info structure, build the initial session_array
 
             ndi_dataset_obj.session_array = did.datastructures.emptystruct('session_id','session');
             for i=1:numel(ndi_dataset_obj.session_info)
                 session_array_here.session_id = ndi_dataset_obj.session_info(i).session_id;
                 session_array_here.session = []; % initially don't open it
+                if i <= numel(opened) && ~isempty(opened{i})
+                    session_array_here.session = opened{i}; % a linked session, opened to list it
+                    opened{i}.datasetDatabase = ndi_dataset_obj.session.database;
+                end
                 ndi_dataset_obj.session_array(i) = session_array_here; % entries will match
             end
         end % build_session_info()
+
+        function tf = isV2(ndi_dataset_obj)
+            % ISV2 - is this dataset's database a V2 (did2) one?
+            tf = isa(ndi_dataset_obj.session.database, ...
+                'ndi.database.implementations.database.did2sqlite');
+        end % isV2()
 
         function open_linked_sessions(ndi_dataset_obj)
             % OPEN_LINKED_SESSIONS - ensure that all linked sessions are open
@@ -1187,5 +1582,328 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
             end
         end % ensureBinaryDocSessions
 
+        % --- V2 datasets (V_eta_linked_session_plan.md) ---
+
+        function tf = v2Listing(ndi_dataset_obj)
+            % V2LISTING - are this dataset's sessions listed the V2 way?
+            %   True for a did2 database holding no session_in_a_dataset
+            %   document: membership is `included_in`, a linked session a
+            %   `linked_session` document.
+            tf = false;
+            if ~ndi_dataset_obj.isV2()
+                return;
+            end
+            q = ndi.query('', 'isa', 'session_in_a_dataset', '');
+            tf = isempty(ndi_dataset_obj.session.database.search(q));
+        end % v2Listing()
+
+        function db = v2Db(ndi_dataset_obj)
+            % V2DB - the dataset's did2.database.sqlitedb
+            db = ndi_dataset_obj.session.database.db;
+        end % v2Db()
+
+        function v2Remove(ndi_dataset_obj, ids)
+            % V2REMOVE - delete documents (by id) from the dataset's database
+            arguments
+                ndi_dataset_obj (1,1) ndi.dataset
+                ids cell
+            end
+            db = ndi_dataset_obj.v2Db();
+            for k = 1:numel(ids)
+                if ~isempty(ids{k}) && db.has(ids{k})
+                    db.remove(ids{k});
+                end
+            end
+        end % v2Remove()
+
+        function ids = v2MembershipIds(ndi_dataset_obj, entityId)
+            % V2MEMBERSHIPIDS - the membership relations in the dataset's
+            %   database whose child is ENTITYID (the relations that make a
+            %   session a member: `included_in`), as a cellstr of document ids
+
+            arguments
+                ndi_dataset_obj (1,1) ndi.dataset
+                entityId {mustBeText}
+            end
+            ids = {};
+            q = ndi.query('', 'isa', 'directed_relation', '') & ...
+                ndi.query('', 'depends_on', 'child_id', entityId);
+            rels = ndi_dataset_obj.session.database.search(q);
+            member = 'included_in';
+            for k = 1:numel(rels)
+                p = rels{k}.document_properties;
+                if ndi.v2.vocabIs('relation', ndi.v2.blockOf(p, 'directed_relation', 'relation', ''), member)
+                    ids{end+1} = p.base.id; %#ok<AGROW>
+                end
+            end
+        end % v2MembershipIds()
+
+        function tf = v2HasPartOf(ndi_dataset_obj, childId, parentId)
+            % V2HASPARTOF - does the dataset's database file CHILDID under
+            %   PARENTID (included_in)?
+            arguments
+                ndi_dataset_obj (1,1) ndi.dataset
+                childId {mustBeText}
+                parentId {mustBeText}
+            end
+            tf = false;
+            ids = ndi_dataset_obj.v2MembershipIds(childId);
+            for k = 1:numel(ids)
+                d = ndi_dataset_obj.session.database.search(ndi.query('base.id', 'exact_string', ids{k}, ''));
+                if ~isempty(d) && any(strcmp(ndi.v2.edgeIds(d{1}.document_properties, 'parent_id'), parentId))
+                    tf = true;
+                    return;
+                end
+            end
+        end % v2HasPartOf()
+
+        function entityId = v2EntityIdOf(ndi_dataset_obj, idx)
+            % V2ENTITYIDOF - the session entity id of session_info(IDX): the
+            %   entity document itself for an ingested session, the
+            %   linked_session's entity_id edge for a linked one
+
+            arguments
+                ndi_dataset_obj (1,1) ndi.dataset
+                idx
+            end
+            info = ndi_dataset_obj.session_info(idx);
+            entityId = info.session_doc_in_dataset_id;
+            if info.is_linked
+                d = ndi_dataset_obj.session.database.search( ...
+                    ndi.query('base.id', 'exact_string', entityId, ''));
+                e = ndi.v2.edgeIds(d{1}.document_properties, 'entity_id');
+                entityId = e{1};
+            end
+        end % v2EntityIdOf()
+
+        function addSessionV2(ndi_dataset_obj, ndi_session_obj, linked, partOf, sameAs)
+            % ADDSESSIONV2 - add a V2 session to a V2 dataset, linked or ingested
+            arguments
+                ndi_dataset_obj (1,1) ndi.dataset
+                ndi_session_obj (1,1) ndi.session
+                linked (1,1) logical
+                partOf {mustBeText}
+                sameAs (1,1) logical = true
+            end
+            if ~isa(ndi_session_obj.database, 'ndi.database.implementations.database.did2sqlite')
+                error('ndi:dataset:notV2Session', ['Session %s is not a V2 session; only a ' ...
+                    'V2 session can be added to a V2 dataset.'], ndi_session_obj.reference);
+            end
+            if isempty(ndi_dataset_obj.session_info)
+                ndi_dataset_obj.build_session_info();
+            end
+            if any(strcmp(ndi_session_obj.id(), {ndi_dataset_obj.session_info.session_id}))
+                error(['ndi.session object with id ' ndi_session_obj.id() ...
+                    ' is already part of dataset ' ndi_dataset_obj.id() '.']);
+            end
+            % the session's own `session` entity document
+            own = ndi_session_obj.database_search(ndi.v2.isaQuery('session'));
+            own = own(cellfun(@(d) strcmp(ndi.v2.kindOf(d.document_properties), 'session') && ...
+                strcmp(d.session_id(), ndi_session_obj.id()), own));
+            if ~isscalar(own)
+                error('ndi:dataset:sessionDocument', ['Session %s holds %d session ' ...
+                    'documents of its own; it must hold exactly one.'], ndi_session_obj.reference, ...
+                    numel(own));
+            end
+            entityId = own{1}.id();
+            % the parent it is filed under (included_in): the dataset, or a
+            % study of it
+            member = 'included_in';
+            dsid = ndi_dataset_obj.id();
+            explicit = ~isempty(partOf);
+            if ~explicit
+                d = ndi_dataset_obj.session.database.search(ndi.v2.isaQuery('dataset'));
+                d = d(cellfun(@(x) strcmp(ndi.v2.kindOf(x.document_properties), 'dataset'), d));
+                if ~isscalar(d)
+                    error('ndi:dataset:noDatasetDocument', ['The dataset holds %d dataset ' ...
+                        'document(s), so ''PartOf'' must name the study the session is %s.'], ...
+                        numel(d), member);
+                end
+                partOf = d{1}.id();
+            elseif isempty(ndi_dataset_obj.session.database.search(ndi.query('base.id', ...
+                    'exact_string', partOf, '')))
+                error('ndi:dataset:noSuchParent', ['''PartOf'' names %s, which is not a ' ...
+                    'document of this dataset.'], partOf);
+            end
+
+            % what the session records that the dataset already does (T18),
+            % found before anything of the session is in the dataset
+            report = ndi.v2.sameAsMatches(ndi_session_obj, ndi_dataset_obj);
+            db = ndi_dataset_obj.v2Db();
+            if ~linked
+                docs = ndi.v2.sessionDocuments(ndi_session_obj.database, ndi_session_obj.id());
+                here = cellfun(@(x) db.has(x.base.id), docs);
+                if any(here)
+                    error('ndi:dataset:documentsPresent', ['%d of the %d documents of session %s ' ...
+                        'are already in the dataset.'], sum(here), numel(docs), ndi_session_obj.reference);
+                end
+                % a membership the session's own documents already state is
+                % not stated again (each fact once, T17): with no 'PartOf',
+                % its own membership of a study of the dataset (or the
+                % dataset) is enough; with one, its own membership of that
+                % parent is
+                parents = {};
+                for k = 1:numel(docs)
+                    p = docs{k};
+                    if strcmp(char(p.document_class.class_name), 'directed_relation') && ...
+                            any(strcmp(ndi.v2.edgeIds(p, 'child_id'), entityId)) && ...
+                            ndi.v2.vocabIs('relation', ndi.v2.blockOf(p, 'directed_relation', 'relation', ''), member)
+                        parents = [parents, ndi.v2.edgeIds(p, 'parent_id')]; %#ok<AGROW>
+                    end
+                end
+                if explicit
+                    stated = ismember(partOf, parents);
+                else
+                    stated = ismember(partOf, parents) || ...
+                        any(cellfun(@(x) ndi_dataset_obj.v2HasPartOf(x, partOf), parents));
+                end
+                ndi.v2.copyDocuments(ndi_session_obj.database.db, db, docs);
+                if stated
+                    ndi_dataset_obj.SameAsReport = ndi_dataset_obj.writeSameAs(report, sameAs);
+                    ndi_dataset_obj.build_session_info();
+                    return;
+                end
+            end
+            % the relation's node and the name the schema stores for it
+            % (Jess Haley 2026-10-22 [vocabulary nodes] L1)
+            add = {did2.build.directedRelation(entityId, partOf, ndi.v2.vocabTerm('relation', member), ...
+                'SessionId', dsid)};
+            if linked
+                add{end+1} = did2.build.document('linked_session', ...
+                    struct('path', ndi.v2.linkPath(ndi_session_obj.getpath(), ndi_dataset_obj.getpath())), ...
+                    'SessionId', dsid, 'Edges', struct('entity_id', entityId));
+            end
+            db.add(cellfun(@(x) did2.document(x), add, 'UniformOutput', false));
+            ndi_dataset_obj.SameAsReport = ndi_dataset_obj.writeSameAs(report, sameAs);
+            ndi_dataset_obj.build_session_info();
+        end % addSessionV2()
+
+        function report = writeSameAs(ndi_dataset_obj, report, write)
+            % WRITESAMEAS - write a `same_as` relation in the dataset's database
+            %   for each match of REPORT (ndi.v2.sameAsMatches) not already
+            %   joined, when WRITE; REPORT gains matches.relation_id, written
+            %   and notes. A schema that binds no `same_as` writes nothing and
+            %   the notes say so. Name-only candidates are never written.
+
+            arguments
+                ndi_dataset_obj (1,1) ndi.dataset
+                report (1,1) struct
+                write (1,1) logical
+            end
+            report.matches.relation_id = strings(height(report.matches), 1);
+            report.written = 0;
+            report.notes = {};
+            if height(report.candidates) > 0
+                report.notes{end+1} = sprintf(['%d pair(s) share only a name (or a serial ' ...
+                    'number with no manufacturer on both): listed in candidates, not ' ...
+                    'written; confirming one writes its same_as'], height(report.candidates));
+            end
+            if height(report.matches) == 0, return; end
+            if ~write
+                report.notes{end+1} = 'SameAs was false: no same_as written';
+                return;
+            end
+            [~, undirected] = ndi.v2.relationNames();
+            if ~any(strcmp(undirected, 'same_as'))
+                report.notes{end+1} = sprintf(['the schema in use binds no same_as relation: ' ...
+                    '%d match(es) found and not written'], height(report.matches));
+                return;
+            end
+            dsid = ndi_dataset_obj.id();
+            existing = cellstr(report.matches.existing_id);
+            joined = ndi.v2.sameAs(ndi_dataset_obj, unique(existing, 'stable'));
+            add = {};
+            for k = 1:height(report.matches)
+                a = char(report.matches.incoming_id(k));
+                b = char(report.matches.existing_id(k));
+                if ismember(a, joined(b)), continue; end      % joined already
+                d = did2.build.undirectedRelation({a, b}, ndi.v2.vocabTerm('relation', 'same_as'), ...
+                    'SessionId', dsid);
+                add{end+1} = d; %#ok<AGROW>
+                report.matches.relation_id(k) = string(d.base.id);
+                joined(b) = [joined(b), {a}];
+            end
+            if ~isempty(add)
+                ndi_dataset_obj.v2Db().add(cellfun(@(x) did2.document(x), add, 'UniformOutput', false));
+            end
+            report.written = numel(add);
+        end % writeSameAs()
+
     end % methods protected
+
+    methods (Static, Access = protected)
+        function tf = confirm(options, question, title)
+            % CONFIRM - options.areYouSure, or the user's answer to a dialog
+            arguments
+                options (1,1) struct
+                question {mustBeText}
+                title {mustBeText}
+            end
+            tf = options.areYouSure;
+            if ~tf && options.askUserToConfirm
+                tf = strcmp(questdlg(question, title, 'Yes', 'No', 'No'), 'Yes');
+            end
+        end % confirm()
+    end % methods (Static, Access = protected)
 end % class
+
+% -----------------------------------------------------------------------------
+function [d, nIn, missing, notFiles, keep] = ingestByLocation(d, fileDir, stage)
+% D with every by-location file location that holds a file here marked
+% ingested; KEEP (N x 2: stored copy, staging path) the files D already
+% ingested, pointed at their staging path so D can be removed and added back.
+
+arguments
+    d
+    fileDir
+    stage
+end
+nIn = 0; missing = {}; notFiles = 0; keep = cell(0, 2);
+if ~isfield(d, 'files') || ~isstruct(d.files) || ~isfield(d.files, 'file_info') ...
+        || isempty(d.files.file_info)
+    return;
+end
+fi = d.files.file_info;
+if iscell(fi), fi = [fi{:}]; end
+for a = 1:numel(fi)
+    if ~isfield(fi(a), 'locations'), continue; end
+    if iscell(fi(a).locations), fi(a).locations = [fi(a).locations{:}]; end
+    for c = 1:numel(fi(a).locations)
+        L = fi(a).locations(c);
+        if isfield(L, 'ingest') && logical(L.ingest)
+            staged = fullfile(stage, char(L.uid));
+            keep(end+1, :) = {fullfile(fileDir, char(L.uid)), staged}; %#ok<AGROW>
+            fi(a).locations(c).location = staged;
+            fi(a).locations(c).delete_original = 1;
+            continue;
+        end
+        type = 'file';
+        if isfield(L, 'location_type') && ~isempty(L.location_type), type = lower(char(L.location_type)); end
+        if ~strcmp(type, 'file')
+            notFiles = notFiles + 1;
+            continue;
+        end
+        if ~isfile(char(L.location))
+            missing{end+1} = sprintf('%s of document %s (%s)', char(fi(a).name), d.base.id, ...
+                char(L.location)); %#ok<AGROW>
+            continue;
+        end
+        if ~isfield(L, 'uid') || isempty(L.uid) || ~did.file.isSafeUid(char(L.uid))
+            fi(a).locations(c).uid = char(ndi.ido.unique_id());
+        end
+        fi(a).locations(c).ingest = 1;
+        fi(a).locations(c).delete_original = 0;
+        nIn = nIn + 1;
+    end
+end
+d.files.file_info = fi;
+end
+
+function out = ifelse(tf, a, b)
+arguments
+    tf
+    a
+    b
+end
+if tf, out = a; else, out = b; end
+end

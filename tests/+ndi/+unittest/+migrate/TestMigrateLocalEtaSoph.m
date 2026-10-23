@@ -42,7 +42,9 @@ classdef TestMigrateLocalEtaSoph < matlab.unittest.TestCase
         SessionRoot
         CorpusDir
         Result
-        Bodies
+        % The corpus is NOT held while the migration runs (see gateAndMigrate):
+        % BodyCount is its size, and sourceBodies() reads it again.
+        BodyCount
     end
 
     methods (TestClassSetup)
@@ -73,13 +75,20 @@ classdef TestMigrateLocalEtaSoph < matlab.unittest.TestCase
             % where run #1 timed out, so each phase reports its wall-clock: a
             % future timeout is then localised from the log instead of guessed.
             t = tic;
-            testCase.Bodies = readCorpusBodies(testCase.CorpusDir);
+            bodies = readCorpusBodies(testCase.CorpusDir);
+            testCase.BodyCount = numel(bodies);
             fprintf('  [Soph timing] readCorpusBodies: %d docs in %.1f s\n', ...
-                numel(testCase.Bodies), toc(t));
+                testCase.BodyCount, toc(t));
             t = tic;
             buildV1Sqlite(fullfile(testCase.SessionRoot, '.ndi', 'did-sqlite.sqlite'), ...
-                testCase.Bodies);
+                bodies);
             fprintf('  [Soph timing] buildV1Sqlite: %.1f s\n', toc(t));
+            % RELEASED BEFORE THE MIGRATION. ndi.migrate.local reads the corpus
+            % from the sqlite just built and never sees this copy; holding all
+            % ~101,427 bodies through the migration was one whole-corpus copy
+            % at the memory peak. The two methods that read the source bodies
+            % read them again from the same corpus files (sourceBodies).
+            clear bodies;
 
             t = tic;
             testCase.Result = ndi.migrate.local(testCase.SessionRoot, ...
@@ -106,10 +115,10 @@ classdef TestMigrateLocalEtaSoph < matlab.unittest.TestCase
             % DENOMINATOR FIRST. A pass over zero documents quarantines zero
             % documents, and that reading prints the same digit as a clean
             % migration -- so the corpus size is asserted before anything else.
-            verifyEqual(testCase, numel(testCase.Bodies), 101427, sprintf( ...
+            verifyEqual(testCase, testCase.BodyCount, 101427, sprintf( ...
                 ['the Soph corpus did not read as 101427 documents (got %d); ' ...
                  'every assertion here would be about a different corpus'], ...
-                numel(testCase.Bodies)));
+                testCase.BodyCount));
             verifyGreaterThan(testCase, testCase.Result.summary.total, 0, ...
                 'the migration saw no documents at all');
 
@@ -162,46 +171,69 @@ classdef TestMigrateLocalEtaSoph < matlab.unittest.TestCase
         end
 
         function testNoV1DocumentSurvivesUnfoldedInTheFinalOutput(testCase)
-            % THE BAR-2 INSTRUMENT, report-only on this first landing. The
-            % census above counts what the single-document migrators did in
-            % pass 1; it cannot see the SECOND PASSES that run afterward
-            % (epochMint's armed folds, resolveResponseParameters,
-            % resolveClockAlignment), so a class that reads "unconverted" there
-            % can still reach its decided shape. The only sound test of "is
-            % this corpus fully at decided shape" is the FINAL output: a v1
-            % SOURCE class name that still labels a destination document did
-            % not fold. Measured before it is asserted.
-            src = testCase.Bodies;
+            % THE BAR-2 INSTRUMENT, report-only (measured, not asserted). The
+            % pass-1 census above cannot see the SECOND PASSES that run
+            % afterward (epochMint's armed folds, resolveResponseParameters,
+            % resolveClockAlignment, resolveStimulusPresentations), so the
+            % only sound test of "is this corpus at decided shape" is the
+            % FINAL output.
+            %
+            % DECIDED PER DOCUMENT, NOT BY CLASS NAME. The previous census
+            % flagged any destination document whose class_name was also a
+            % v1 source class_name. On the pinned schema (did-schema
+            % v_eta-pre73) the calculator leaves REUSE the v1 spellings as
+            % real V2 classes (tuningcurve_calc etc. chain to
+            % tuning_curve_calculation), so ~69k converted calculator
+            % documents read as survivors, as did subject and session. The
+            % signal now is each destination document's own superclass chain,
+            % which v1_to_v2's ensureClassBlocks rebuilt from the pinned
+            % schema: a chain made only of v1 class names means the class is
+            % a v1 tombstone and the body is unconverted; a chain with a
+            % V_eta-only ancestor means a real V2 class under a v1 spelling.
+            % See finalV1BodyCensus for the full argument and its direction
+            % of error.
+            src = sourceBodies(testCase);
             dst = destinationBodies(testCase.Result.destination);
-            survivors = ndi.unittest.migrate.finalV1SurvivorCensus( ...
-                reshape(src, 1, []), reshape(dst, 1, []));
+            % KNOWN DEFERRALS. stimulus_response_scalar and its _basic
+            % parameters are genuinely unconverted on this line: the target
+            % class was deleted by #67 decision 10, so the migrator passes
+            % them through. Still v1 bodies -- listed in their own table, not
+            % hidden.
+            deferrals = struct( ...
+                'class_name', {'stimulus_response_scalar', ...
+                               'stimulus_response_scalar_parameters_basic'}, ...
+                'label', {'deferred to the migrator port (#67 decision 10)', ...
+                          'deferred to the migrator port (#67 decision 10)'});
+            census = ndi.unittest.migrate.finalV1BodyCensus( ...
+                reshape(src, 1, []), reshape(dst, 1, []), 'Deferrals', deferrals);
+            ndi.unittest.migrate.printV1BodyCensus(census, 'Soph');
 
-            fprintf(['\n  BAR-2 FINAL-OUTPUT V1 SURVIVOR CENSUS (Soph)\n' ...
-                     '    DENOMINATOR: %d source document(s), %d destination ' ...
-                     'document(s)\n' ...
-                     '    v1 source class names still labelling a destination ' ...
-                     'document: %d\n'], ...
-                numel(src), numel(dst), numel(survivors));
-            if isempty(survivors)
-                fprintf('      (none -- every v1 class folded)\n');
-            else
-                for k = 1:numel(survivors)
-                    note = 'UNFOLDED -- a Bar-2 gap unless persist or a declared deferral';
-                    if any(strcmp(survivors(k).class_name, {'subject', 'session'}))
-                        note = 'persist (v1 class IS the V_eta class)';
-                    elseif strcmp(survivors(k).class_name, 'stimulus_response_scalar_parameters_basic')
-                        note = 'SIGNED verify-before-delete deferral (#61)';
-                    end
-                    fprintf('      %6d  %-40s %s\n', survivors(k).count, ...
-                        survivors(k).class_name, note);
-                end
-            end
             % A denominator that read nothing is the silentLoss failure; assert
-            % it even while the survivor set itself is report-only.
+            % it even while the survivor sets themselves are report-only.
             verifyEqual(testCase, numel(src), 101427, ...
                 'the source census did not read 101427 documents');
+            verifyEqual(testCase, census.denominator.source_classified, numel(src), ...
+                'the census could not read a class name from every source document');
             verifyGreaterThan(testCase, numel(dst), 0, ...
                 'the destination census read zero documents');
+        end
+
+        function testStimulusPresentationFoldByKind(testCase)
+            % REPORT-ONLY. The second pass's stimulus_presentation report:
+            % animal routes, per-kind stimulus counts from the NewStim class
+            % recogniser (Jess Haley, 2026-10-21), presentations by kind set
+            % (decomposed / refused) and the refusal-reason histogram. Soph
+            % holds 175 presentations: by the research census, 118 periodicstim
+            % sine gratings + blank and 57 stochasticgridstim noise, which the
+            % recogniser refuses by class. Decides nothing; the denominator is
+            % asserted, the split is measured.
+            r = testCase.Result.secondPass.stimulusSequence;
+            testCase.assertTrue(isstruct(r) && isfield(r, 'presentations_read'), ...
+                'the migrate result carries no stimulusSequence report');
+            ndi.unittest.migrate.printStimulusFoldReport(r, 'Soph');
+            verifyGreaterThan(testCase, r.presentations_read, 0, ...
+                ['the second pass read 0 stimulus_presentation bodies, so the ' ...
+                 'per-kind report describes nothing -- Soph holds 175']);
         end
 
         function testTheMigratedSessionOpensAndReadsBackThroughNDI(testCase)
@@ -220,12 +252,14 @@ classdef TestMigrateLocalEtaSoph < matlab.unittest.TestCase
                 testCase.Result.destination));
 
             migrated = destinationBodies(testCase.Result.destination);
-            sessionDoc = findByClass(migrated, 'session');
+            % did-schema #88: the session (or, for a dataset's own session,
+            % the dataset) entity; its base.id is the session id
+            [sessionDoc, sessionId] = ndi.unittest.migrate.largestSessionRecord(migrated);
             assertNotEmpty(testCase, sessionDoc, ...
-                'no `session` document in the migrated database');
+                'no session or dataset record in the migrated database');
             vlt.file.str2text( ...
                 fullfile(testCase.SessionRoot, '.ndi', 'unique_reference.txt'), ...
-                sessionDoc.base.session_id);
+                sessionId);
 
             s = ndi.session.dir(testCase.SessionRoot);
             assertTrue(testCase, isa(s, 'ndi.session.dir'), ...
@@ -266,8 +300,9 @@ classdef TestMigrateLocalEtaSoph < matlab.unittest.TestCase
             % because id-preservation is decided, built, and previously green
             % on this exact corpus.
             srcIds = {};
-            for k = 1:numel(testCase.Bodies)
-                j = jsondecode(testCase.Bodies{k});
+            src = sourceBodies(testCase);
+            for k = 1:numel(src)
+                j = jsondecode(src{k});
                 cn = '';
                 if isfield(j,'document_class') && isfield(j.document_class,'class_name')
                     cn = j.document_class.class_name;
@@ -340,6 +375,16 @@ for k = 1:numel(sub)
 end
 error('ndi:corpus:noDir', ...
     'Soph.zip did not extract any directory holding *.json under %s', cacheRoot);
+end
+
+function bodies = sourceBodies(testCase)
+%SOURCEBODIES The v1 corpus again, read from the same files gateAndMigrate read.
+%   It is not kept on the test case (see gateAndMigrate). The count is checked
+%   against the one read before the migration, so a re-read that came back
+%   different is a failure, never a quiet change of denominator.
+bodies = readCorpusBodies(testCase.CorpusDir);
+testCase.assertEqual(numel(bodies), testCase.BodyCount, ...
+    'the corpus re-read after the migration does not hold the documents read before it');
 end
 
 function bodies = readCorpusBodies(corpusDir)

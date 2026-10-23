@@ -635,6 +635,10 @@ function restoreTimeoutIfAlive(app, originalTimeout)
     % Teardown helper: restore the app's Timeout only if the app is
     % still a live handle. A test that drives AutoDelete to tear the
     % window down cannot then reach through app to write a property.
+    arguments
+        app (1,1) ndi.gui.component.ProgressBarWindow
+        originalTimeout % whatever app.Timeout held
+    end
     if isvalid(app)
         app.Timeout = originalTimeout;
     end

@@ -22,6 +22,9 @@ classdef DeleteFeedback < ndi.cloud.api.call
             %
             %   The server answers 204 on success. A report that does not
             %   exist, or that belongs to another user, is answered with 404.
+            arguments
+                this (1,1) ndi.cloud.api.implementation.feedback.DeleteFeedback
+            end
 
             method = matlab.net.http.RequestMethod.DELETE;
 

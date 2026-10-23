@@ -85,7 +85,7 @@ classdef query < did.query
                                            'exact_number', 'lessthan', 'lessthaneq', ...
                                            'greaterthan', 'greaterthaneq', 'hasfield', ...
                                            'hasanysubfield_contains_string', 'isa', 'depends_on', ...
-                                           'hasmember','exact_string_anycase', ...                                           
+                                           'hasmember','exact_string_anycase','wildcard', ...
                                            'or', ... % Keep 'or' (cannot be negated)
                                            '~regexp', '~exact_string', '~contains_string', ...
                                            '~exact_number', '~lessthan', '~lessthaneq', ...
@@ -127,10 +127,36 @@ classdef query < did.query
             % issue #781 and ndi.compat.translateQueryPaths.
             ndi_query_obj.searchstructure = ndi.compat.translateQueryPaths( ...
                 ndi_query_obj.searchstructure);
+
+            % `isa subject` is the biological subjects (ndi.v2.subjectTypes):
+            % a v1 subject document always was one, while V_eta also makes
+            % probes, cameras (device) and plates (material) subjects, or
+            % (one entity class, 2026-10-08) entities with a type. So a
+            % `subject` of another type is left out, and an `entity` of a
+            % biological type is found; a subject with no type (v1) stays.
+            if nargin > 2 && strcmp(op, 'isa') && (ischar(param1) || isstring(param1)) ...
+                    && strcmp(char(param1), 'subject')
+                ndi_query_obj.searchstructure = ndi.query.subjectSearch();
+            end
         end % query() constructor
     end % methods
 
     methods (Static)
+        function ss = subjectSearch()
+            % SUBJECTSEARCH - the search structure of ndi.query('', 'isa', 'subject')
+            others = setdiff(ndi.v2.entityTypesFor('subject'), ndi.v2.subjectTypes(), 'stable');
+            q = did.query('', 'isa', 'subject');
+            for k = 1:numel(others)
+                q = q & did.query('subject.type.name', '~exact_string', others{k});
+            end
+            types = ndi.v2.subjectTypes();
+            % by node, or any name the type has gone by (Jess Haley
+            % 2026-10-22 [vocabulary nodes] L2)
+            t = ndi.v2.vocabQuery('entity.type', 'entity_type', types);
+            q = q | (did.query('', 'isa', 'entity') & t);
+            ss = q.searchstructure;
+        end
+
         function q = all()
             % ALL - return a query that matches all documents
             %

@@ -126,7 +126,7 @@ function document = updateFileInfoForRemoteFiles(document, cloudDatasetId, optio
             end
             seriesInfo = reconstructFromCloud(seriesInfo, updatedFileInfo, ...
                 cloudDatasetId, documentId, options.customFileHandler, ...
-                options.uploadedUidMap);
+                options.uploadedUidMap, ndi.vintage.seriesMemberBase(document));
             document = document.setproperties('files.series_info', seriesInfo);
         end
     end
@@ -155,7 +155,7 @@ end
 
 
 function seriesInfo = reconstructFromCloud(seriesInfo, fileInfo, ...
-        cloudDatasetId, documentId, customFileHandler, uploadedUidMap)
+        cloudDatasetId, documentId, customFileHandler, uploadedUidMap, memberBase)
     % Fetch each qualifying series' manifest bytes into a scratch dir,
     % reconstruct ingest_locations from them via reconstructSeriesIngestLocations,
     % then delete the scratch dir. Manifests do NOT land in the DID file
@@ -241,7 +241,7 @@ function seriesInfo = reconstructFromCloud(seriesInfo, fileInfo, ...
     end
 
     seriesInfo = ndi.cloud.sync.internal.reconstructSeriesIngestLocations( ...
-        seriesInfo, fileInfo, tmpDir, cloudDatasetId);
+        seriesInfo, fileInfo, tmpDir, cloudDatasetId, 'MemberBase', memberBase);
 end
 
 
@@ -275,6 +275,10 @@ function tf = isUploaded(map, uid)
     % the previous no-check behavior), or when the map says this uid is
     % on the server as uploaded=true. False only when the map is present
     % AND names this uid as not uploaded (or does not name it at all).
+    arguments
+        map % a containers.Map, or [] for no check
+        uid % normally text; any other value reads as not uploaded
+    end
     if isempty(map)
         tf = true;
         return
@@ -295,6 +299,11 @@ function tickBar(app, tag, progress)
     % Guarded progress update. If the bar / window has been closed or
     % culled, drop the update silently rather than crash the download
     % pipeline. Same defensive contract list_binary_files uses.
+    arguments
+        app % an ndi.gui.component.ProgressBarWindow, or [] for none
+        tag {mustBeText}
+        progress {mustBeNumeric}
+    end
     if isempty(app) || ~isvalid(app) || isempty(tag)
         return
     end

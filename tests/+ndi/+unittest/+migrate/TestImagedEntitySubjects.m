@@ -623,22 +623,25 @@ s.ontology_table_row = struct( ...
 end
 
 function s = plateSubject(id, sessionId, handle)
-%PLATESUBJECT What did2.convert.resolveLawnPlateSubjects/makeSubject emits: a
-%   bare subject with a FRESH id, no edges, and plateHandle() as its
-%   local_identifier.
+%PLATESUBJECT What did2.convert.resolveLawnPlateSubjects/makeSubject emits on
+%   did-schema #88: an `entity` of type `material` with a FRESH id, no edges,
+%   and plateHandle() as its local_identifier.
 s = plainSubject(id, sessionId);
-s.subject = struct('local_identifier', handle, ...
+s.entity = struct('type', struct('node', '', 'name', 'material'), ...
+    'local_identifier', handle, ...
     'description', 'bacterial plate (a plate of lawns)');
 end
 
 function s = plainSubject(id, sessionId)
+% a subject on did-schema #88: an `entity` of a physical type
 s = struct();
-s.document_class = struct('class_name', 'subject', 'class_version', '3.0.0', ...
+s.document_class = struct('class_name', 'entity', 'class_version', '1.0.0', ...
     'superclasses', struct('class_name', 'base', 'class_version', '1.0.0'));
 s.depends_on = struct('name', {}, 'document_id', {});
-s.base = struct('id', id, 'session_id', sessionId, 'name', '', ...
-    'datestamp', '2024-01-01T00:00:00.000Z');
-s.subject = struct('local_identifier', ['lid_' id], 'description', '');
+s.base = struct('id', id, 'session_id', sessionId, ...
+    'creation_timestamp', '2024-01-01T00:00:00.000Z');
+s.entity = struct('type', struct('node', '', 'name', 'organism'), ...
+    'local_identifier', ['lid_' id]);
 end
 
 function s = plainDoc(id, sessionId, className)
@@ -653,7 +656,7 @@ end
 
 function mig = replaceSessionOfPlateSubject(mig, sessionId)
 for k = 1:numel(mig)
-    if isfield(mig{k}, 'subject') && strcmp(mig{k}.base.id, 'PLATESUBJ')
+    if isfield(mig{k}, 'entity') && strcmp(mig{k}.base.id, 'PLATESUBJ')
         mig{k}.base.session_id = sessionId;
     end
 end
@@ -661,8 +664,8 @@ end
 
 function mig = setPlateSubjectHandle(mig, handle)
 for k = 1:numel(mig)
-    if isfield(mig{k}, 'subject') && strcmp(mig{k}.base.id, 'PLATESUBJ')
-        mig{k}.subject.local_identifier = handle;
+    if isfield(mig{k}, 'entity') && strcmp(mig{k}.base.id, 'PLATESUBJ')
+        mig{k}.entity.local_identifier = handle;
     end
 end
 end

@@ -10,7 +10,8 @@ function q = isaQuery(concept)
 %
 %   WHY OR AND NOT A TRANSLATION. `isa` walks the class chain, and V_eta
 %   does not put the v1 name in it -- `clock_alignment_policy`'s chain is
-%   [base], `acquisition_system`'s is [entity]. So there is no single name
+%   [base], and so is `acquisition_system`'s (did-schema #88: it is a
+%   class of its own under base, not an entity). So there is no single name
 %   that finds both, and translating v1 -> V_eta would lose the ability to
 %   read a database NDI itself has just written (NDI still writes v1; see
 %   ndi.vintage.map). Both, always, is the only shape that reads a
@@ -44,7 +45,10 @@ if ~entry.isa_bridges
 end
 
 % Both names, so neither vintage is privileged. `|` is did.query/or.
-if ~strcmp(entry.v1_class, entry.eta_class)
-    q = q | ndi.query('', 'isa', entry.eta_class, '');
+etaNames = ndi.vintage.names(entry.eta_class);
+for i = 1:numel(etaNames)
+    if ~strcmp(entry.v1_class, etaNames{i})
+        q = q | ndi.query('', 'isa', etaNames{i}, '');
+    end
 end
 end

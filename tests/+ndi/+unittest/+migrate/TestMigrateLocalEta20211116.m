@@ -105,6 +105,100 @@ classdef TestMigrateLocalEta20211116 < matlab.unittest.TestCase
 
     methods (Test)
 
+        function testTheStimulusFoldReportsItsSeveralAnimalCount(testCase)
+            % REPORT-ONLY (Jess Haley, 2026-10-21): every corpus states how
+            % many presentations resolve to SEVERAL animals in their session,
+            % 0 included. Those become ONE distributive manipulation of the
+            % session's cohort (stimulus plan, decision 2).
+            r = testCase.Result.secondPass.stimulusSequence;
+            testCase.assertTrue(isstruct(r) && isfield(r, 'several_animal_presentations'), ...
+                'the stimulusSequence report carries no several-animal counter');
+            ndi.unittest.migrate.printStimulusFoldReport(r, '20211116');
+        end
+
+        function testControlRecordsFoldIntoACovariateOrAreCounted(testCase)
+            % Decided by Jess Haley, 2026-10-22 [control as covariate]: a v1
+            % control_stimulus_ids about a folded presentation becomes the
+            % `control condition` covariate (logical, XCO:0000099) of the
+            % presentation's item value -- all false when v1 recorded NaN --
+            % and NO V2 document; responses point at the presentation only.
+            % The accounting must close: every record read lands in exactly
+            % one bucket.
+            r = testCase.Result.secondPass.stimulusSequence;
+            n = r.control_records_read;
+            verifyEqual(testCase, n, 11, ...
+                '20211116 holds 11 control_stimulus_ids documents');
+            verifyEqual(testCase, n, r.control_records_folded + ...
+                r.control_presentation_not_folded + r.control_no_position_map + ...
+                r.control_unmappable + r.control_conflicting, ...
+                'a control record fell into no bucket');
+            dst = destinationBodies(testCase.Result.destination);
+            withControl = 0; allFalse = 0; leftoverIds = {};
+            for k = 1:numel(dst)
+                d = dst{k};
+                cls = d.document_class.class_name;
+                if strcmp(cls, 'control_stimulus_ids')
+                    leftoverIds{end+1} = char(d.base.id); %#ok<AGROW>
+                    continue;
+                end
+                if strcmp(cls, 'calculation') && isfield(d, 'statement') ...
+                        && isfield(d.statement, 'variable')
+                    verifyFalse(testCase, any(strcmp(d.statement.variable.name, ...
+                        {'control stimulus', 'control stimulus present'})), ...
+                        'a control calculation was written ([control as covariate] superseded it)');
+                end
+                c = controlCovariate(d);
+                if ~isempty(c)
+                    withControl = withControl + 1;
+                    if ~any(logical(c.logical(:))), allFalse = allFalse + 1; end
+                end
+            end
+            folded = n - numel(leftoverIds);
+            verifyEqual(testCase, withControl, r.presentations_with_control_covariate, ...
+                'every control covariate the pass counted reaches the destination');
+            verifyEqual(testCase, allFalse, r.control_covariates_all_false);
+            verifyEqual(testCase, folded, r.control_records_folded, ...
+                'every folded control record is gone from the destination');
+            % no destination input_id names a folded record: the ids of the
+            % source's control records, less those left as v1
+            foldedIds = {};
+            for k = 1:numel(testCase.Bodies)
+                b = testCase.Bodies{k};
+                if ischar(b) || isstring(b)
+                    if ~contains(char(b), '"control_stimulus_ids"'); continue; end
+                    b = jsondecode(char(b));
+                end
+                if isstruct(b) && strcmp(b.document_class.class_name, 'control_stimulus_ids') ...
+                        && ~any(strcmp(char(b.base.id), leftoverIds))
+                    foldedIds{end+1} = char(b.base.id); %#ok<AGROW>
+                end
+            end
+            verifyNumElements(testCase, foldedIds, folded, ...
+                'the source and destination disagree on how many records folded');
+            dangling = 0;
+            for k = 1:numel(dst)
+                d = dst{k};
+                if ~isfield(d, 'depends_on') || ~isstruct(d.depends_on); continue; end
+                for j = 1:numel(d.depends_on)
+                    e = d.depends_on(j);
+                    if ~strcmp(e.name, 'input_id'); continue; end
+                    v = '';
+                    if isfield(e, 'value'); v = e.value; end
+                    if isempty(v) && isfield(e, 'document_id'); v = e.document_id; end
+                    if iscell(v) && ~isempty(v); v = v{1}; end
+                    dangling = dangling + any(strcmp(char(v), foldedIds));
+                end
+            end
+            verifyEqual(testCase, dangling, 0, ...
+                'an input_id still names a folded control record');
+            fprintf(['\n  CONTROL RECORDS (20211116): %d read; %d folded into %d ' ...
+                'presentation covariate(s) (%d all false); %d input_id edge(s) on %d ' ...
+                'document(s) stripped; %d left as v1\n'], n, r.control_records_folded, ...
+                r.presentations_with_control_covariate, r.control_covariates_all_false, ...
+                r.control_input_edges_stripped, r.control_input_documents_changed, ...
+                numel(leftoverIds));
+        end
+
         function testTheWholeCorpusMigratesWithNothingQuarantinedOrDangling(testCase)
             % DENOMINATOR FIRST. A pass over zero documents quarantines
             % zero documents, and that reading prints the same digit as a
@@ -223,27 +317,25 @@ classdef TestMigrateLocalEta20211116 < matlab.unittest.TestCase
                 'stimulus_presentation', ...
                     ['deliberate passthrough; the decomposition needs the migrated-id graph ' ...
                      'and runs in the NDI second pass ' ...
-                     '(internal/stimulusPresentationToTimedSequence) -- #31']; ...
-                'syncgraph', ...
-                    ['THE SESSION GATE, and like the epoch gate it fires on every document ' ...
-                     'IN PASS 1: +migrators_j/syncgraph.m says of `jSessionDocId` that it ' ...
-                     '"answers '''' by construction in pass 1 -- the same shape as ' ...
-                     'jEpochDocId". The fold has moved into the batch phase (#57): ' ...
-                     'did2.convert.resolveClockAlignment supplies the session-document id ' ...
-                     'and folds it to `clock_alignment_policy`, so syncgraph is a pass-1 ' ...
-                     'passthrough by design and is ABSENT from the final-output survivor ' ...
-                     'census (testNoV1DocumentSurvivesUnfoldedInTheFinalOutput)']; ...
-                'subject', ...
-                    ['PERSIST, NOT A DEFERRAL -- the one row here that is not owed any ' ...
-                     'future work. A v1 `subject` IS the V_eta `subject` (persist), and ' ...
-                     '+migrators_j/subject.m only fills `local_identifier` when it is ' ...
-                     'empty; this corpus''s subject already carries one, so the migrator ' ...
-                     'returns its input and the census counts it as "unconverted". That is ' ...
-                     'the census being literal: "migrator returned its input" spans both a ' ...
-                     'deferral and a correct identity migration, and only the declared ' ...
-                     'reason tells them apart. If `local_identifier` were empty the ' ...
-                     'migrator would fill it, the body would change, and this row would ' ...
-                     'not appear -- so its APPEARANCE is proof the handle was already set']};
+                     '(internal/stimulusPresentationToItem) -- #31']; ...
+                'syncrule', ...
+                    ['did-schema #88: a CHANNEL-BASED rule passes through pass 1 in its ' ...
+                     'v1 form (DID-matlab +migrators_j/syncrule.m, "did-schema #88 PASSES A ' ...
+                     'CHANNEL-BASED RULE THROUGH"): `acquisition_channels` names its ' ...
+                     'system only by an `acquisition_system_id` edge, the v1 rule names ' ...
+                     'its two systems by NAME, and resolving a name to an id needs the ' ...
+                     'batch. No batch pass folds it yet, so it also survives to the final ' ...
+                     'output (a Bar-2 gap, printed by the survivor census)']; ...
+                'control_stimulus_ids', ...
+                    ['did-schema #88 deleted `control_designation` (#73 review item 67): ' ...
+                     'the control is the `control condition` covariate of the item the ' ...
+                     'presentation becomes ([control as covariate], Jess Haley 2026-10-22), ' ...
+                     'built in the NDI stimulus fold, so the document passes through pass 1 ' ...
+                     'under its v1 tombstone for that pass to consume (DID-matlab ' ...
+                     '+migrators_j/control_stimulus_ids.m)']};
+            % `syncgraph` and `subject` were declared here before the #88 port
+            % (DID-matlab #218); both now convert in pass 1 (e2e run
+            % 39668356516: "2 of 5 declared deferral(s) no longer fire").
 
             ndi.unittest.migrate.verifyDeferralsAreDeclared(testCase, ...
                 s.unconverted_by_class, declared);
@@ -310,12 +402,14 @@ classdef TestMigrateLocalEta20211116 < matlab.unittest.TestCase
             % for why only this one file is written and why reference.txt
             % deliberately is not.
             migrated = destinationBodies(testCase.Result.destination);
-            sessionDoc = findByClass(migrated, 'session');
+            % did-schema #88: the session is an `entity` of type session (T1)
+            % whose base.id IS the session id.
+            sessionDoc = findSessionEntity(migrated);
             assertNotEmpty(testCase, sessionDoc, ...
-                'no `session` document in the migrated database');
+                'no entity of type session in the migrated database');
             vlt.file.str2text( ...
                 fullfile(testCase.SessionRoot, '.ndi', 'unique_reference.txt'), ...
-                sessionDoc.base.session_id);
+                sessionDoc.base.id);
 
             s = ndi.session.dir(testCase.SessionRoot);
             assertTrue(testCase, isa(s, 'ndi.session.dir'), ...
@@ -519,20 +613,60 @@ classdef TestMigrateLocalEta20211116 < matlab.unittest.TestCase
                  'carried: %s'], numel(unexpected), strjoin(unexpected, ', ')));
         end
 
-        function testTheEpochFamilyMigratesAndIsReachable(testCase)
-            % `element_epoch` (252 documents) is the class PRED does not
-            % have, and it is the reason this corpus is the next step. Its
-            % v1 documents carry an `epochid` BLOCK that two NDI readers
-            % index by name; V_eta drops `epochid` for an `epoch_id` edge.
+        function testTheEpochFamilyDissolvesIntoPerEpochTrains(testCase)
+            % UPDATED 2026-10-22, AND THE ASSERTION IS INVERTED ON PURPOSE.
+            % This method was testTheEpochFamilyMigratesAndIsReachable and
+            % asserted that `acquisition_epoch` documents EXIST in the
+            % destination (the interim 1:1 rename). Decided by Jess Haley,
+            % 2026-10-22 [epoch dissolution before merge] (F1) builds the
+            % signed dissolution: each v1 element_epoch becomes ONE
+            % observation of its element per epoch (base.id preserved,
+            % variable GO:0001508 'action potential' for a `spikes` element),
+            % anchored to the minted epoch, owning one data body (its .vhsb).
+            % So the right assertion is now that NONE survive, and that every
+            % source element_epoch id is an observation that owns a body.
             migrated = destinationBodies(testCase.Result.destination);
-            epochs = findAllByClass(migrated, 'acquisition_epoch');
-            verifyNotEmpty(testCase, epochs, ...
-                ['no `acquisition_epoch` documents in the destination. ' ...
-                 '20211116 holds 252 `element_epoch` documents, which is ' ...
-                 'what that class is renamed from -- zero here means the ' ...
-                 'rename did not happen or the class moved again.']);
-            % NOTHING SURVIVES UNDER THE V1 NAME. A migration that emitted
-            % both would double-count every epoch.
+            srcIds = {};
+            for k = 1:numel(testCase.Bodies)
+                j = jsondecode(testCase.Bodies{k});
+                if isfield(j, 'document_class') && isfield(j.document_class, 'class_name') ...
+                        && strcmp(j.document_class.class_name, 'element_epoch')
+                    srcIds{end+1} = char(j.base.id); %#ok<AGROW>
+                end
+            end
+            left = findAllByClass(migrated, 'acquisition_epoch');
+            byId = containers.Map('KeyType', 'char', 'ValueType', 'any');
+            owned = containers.Map('KeyType', 'char', 'ValueType', 'logical');
+            for k = 1:numel(migrated)
+                byId(char(migrated{k}.base.id)) = migrated{k};
+                c = migrated{k}.document_class.class_name;
+                if any(strcmp(c, {'opaque_body', 'sampled_body'}))
+                    ow = depValues(migrated{k}, 'owner_id');
+                    for j = 1:numel(ow); owned(ow{j}) = true; end
+                end
+            end
+            asTrain = 0; withBody = 0;
+            for k = 1:numel(srcIds)
+                if ~isKey(byId, srcIds{k}); continue; end
+                d = byId(srcIds{k});
+                if strcmp(d.document_class.class_name, 'observation') ...
+                        && isfield(d, 'statement') ...
+                        && strcmp(char(d.statement.variable.node), 'GO:0001508')
+                    asTrain = asTrain + 1;
+                    withBody = withBody + isKey(owned, srcIds{k});
+                end
+            end
+            fprintf(['\n  EPOCH DISSOLUTION\n    DENOMINATOR: %d v1 element_epoch ' ...
+                'document(s)\n    acquisition_epoch in the destination: %d\n' ...
+                '    element_epoch ids now a spike-train observation: %d; owning a ' ...
+                'body: %d\n'], numel(srcIds), numel(left), asTrain, withBody);
+            assertNotEmpty(testCase, srcIds, 'no element_epoch in the source: measured nothing');
+            verifyEmpty(testCase, left, sprintf( ...
+                '%d acquisition_epoch document(s) survived the dissolution', numel(left)));
+            verifyEqual(testCase, asTrain, numel(srcIds), ...
+                'every element_epoch id must be its spike-train observation');
+            verifyEqual(testCase, withBody, numel(srcIds), ...
+                'every spike-train observation must own its body');
             verifyEmpty(testCase, findAllByClass(migrated, 'element_epoch'), ...
                 'element_epoch documents survived migration under the v1 name');
         end
@@ -557,7 +691,7 @@ classdef TestMigrateLocalEta20211116 < matlab.unittest.TestCase
                  'something else'], numel(srcPres)));
 
             migrated = destinationBodies(testCase.Result.destination);
-            seqs = findAllByClass(migrated, 'timed_sequence_manipulation');
+            seqs = itemManipulations(migrated);
             % THIS DIAGNOSTIC USED TO END "so a shortfall is a refusal to
             % read, not a crash." IT WAS WRONG, AND IT COST A ROUND TRIP.
             % The pass was throwing on EVERY call -- a signature/arguments
@@ -573,7 +707,7 @@ classdef TestMigrateLocalEta20211116 < matlab.unittest.TestCase
             % state -- applied to a test's own diagnostic.
             verifyEqual(testCase, numel(seqs), 11, sprintf( ...
                 ['%d of 11 presentations became a ' ...
-                 'timed_sequence_manipulation. TWO CAUSES PRODUCE THIS ' ...
+                 'manipulation with value kind item (did-schema #88). TWO CAUSES PRODUCE THIS ' ...
                  'AND THEY LOOK IDENTICAL FROM HERE: a per-presentation ' ...
                  'REFUSAL (no responding animal, or stimuli that cannot ' ...
                  'be typed), or the whole pass THROWING -- ' ...
@@ -593,98 +727,86 @@ classdef TestMigrateLocalEta20211116 < matlab.unittest.TestCase
             dstIds = cellfun(@(d) string(d.base.id), seqs(:)');
             verifyTrue(testCase, all(ismember(string(srcPres), dstIds)), ...
                 ['a stimulus_presentation id is missing from the ' ...
-                 'timed_sequence_manipulation set -- the decomposition ' ...
+                 'item-manipulation set -- the decomposition ' ...
                  'reassigned an id instead of preserving it']);
 
             % and NOTHING survives under the v1 name or under the superseded
             % flattened one
             verifyEmpty(testCase, findAllByClass(migrated, 'stimulus_presentation'), ...
                 'stimulus_presentation documents survived the decomposition');
-            verifyEmpty(testCase, ...
-                findAllByClass(migrated, 'visual_grating_manipulation'), ...
-                ['a visual_grating_manipulation was emitted. That pass is ' ...
-                 'GATED OFF: it is retained only for the presentation-less ' ...
-                 'single-grating case, and both emitters claim the same ' ...
-                 'base.id.']);
+            for gone = {'visual_grating', 'visual_grating_manipulation', ...
+                    'timed_sequence', 'timed_sequence_manipulation'}
+                verifyEmpty(testCase, findAllByClass(migrated, gone{1}), ...
+                    sprintf('%s was emitted; did-schema #88 deletes it.', gone{1}));
+            end
         end
 
         function testTheHartleyBasisIsMintedOnceAndCarriesItsPhase(testCase)
             % The enumeration lives in the `hartley_calc` documents, not in
             % the presentations: hartley_numbers {S,KXV,KYV,ORDER} is 3360
             % entries and has ONE distinct value across all 210 of them --
-            % 1680 (kx,ky) pairs x 2 signs, 41*41-1 = 1680 exactly, the DC
-            % term excluded. So ONE basis set serves all ten presentations.
+            % 1680 (kx,ky) pairs x 2 signs. So ONE basis set serves all ten
+            % presentations. Since did-schema #88 each basis function is a
+            % standalone `method` document (term 'Hartley basis grating').
             migrated = destinationBodies(testCase.Result.destination);
-            gratings = findAllByClass(migrated, 'visual_grating');
-            verifyNotEmpty(testCase, gratings, ...
-                ['no standalone visual_grating documents. Either the basis ' ...
-                 'was not assembled or `visual_grating` is abstract again ' ...
-                 '(it stopped being abstract on 2026-08-17).']);
+            methods = findAllByClass(migrated, 'method');
+            basis = {};
+            for k = 1:numel(methods)
+                if isfield(methods{k}, 'method') && isfield(methods{k}.method, 'term') ...
+                        && strcmp(methods{k}.method.term.name, 'Hartley basis grating')
+                    basis{end+1} = methods{k}; %#ok<AGROW>
+                end
+            end
+            verifyNotEmpty(testCase, basis, ...
+                'no Hartley basis `method` documents; the basis was not assembled');
+            % MINTED ONCE: ten copies of the basis would be 33,600.
+            verifyLessThanOrEqual(testCase, numel(basis), 3360, sprintf( ...
+                ['%d Hartley basis method documents. The basis is shared by ' ...
+                 'all ten generator presentations and must be minted ONCE.'], ...
+                numel(basis)));
 
-            % MINTED ONCE: 3360 for the Hartley basis + the distinct gratings
-            % of the single 225-stimulus enumerated presentation. Ten copies
-            % of the basis would be 33,600.
-            verifyLessThan(testCase, numel(gratings), 33600, sprintf( ...
-                ['%d visual_grating documents. The Hartley basis is shared ' ...
-                 'by all ten generator presentations and must be minted ' ...
-                 'ONCE; a per-presentation mint gives ten copies.'], ...
-                numel(gratings)));
-
-            % THE PHASE IS THE FIELD WITHOUT WHICH THE SET COLLAPSES: with it
-            % the 3360 basis functions give 3360 distinct values, without it
-            % 1680. So both signs must be present among the minted documents.
+            % THE PHASE IS THE PARAMETER WITHOUT WHICH THE SET COLLAPSES.
             phases = [];
-            for k = 1:numel(gratings)
-                v = gratings{k}.visual_grating.value;
-                if isfield(v, 'phase') && ~isempty(v.phase)
-                    phases(end+1) = double(v.phase); %#ok<AGROW>
-                end
+            units = {};
+            for k = 1:numel(basis)
+                [ph, ~] = methodEntry(basis{k}, 'spatial phase');
+                if ~isempty(ph); phases(end+1) = double(ph); end %#ok<AGROW>
+                [~, u] = methodEntry(basis{k}, 'spatial frequency');
+                if ~isempty(u); units{end+1} = u; end %#ok<AGROW>
             end
-            verifyNotEmpty(testCase, phases, ...
-                'no visual_grating carries a phase; the signed pair collapses');
             verifyGreaterThanOrEqual(testCase, numel(unique(phases)), 2, ...
-                ['only one distinct phase across the basis -- the s = -1 ' ...
-                 'half of every (kx,ky) pair has deduped away']);
-
-            % and the pixel-domain frequency did NOT go into the
-            % cycles-per-degree field
-            withGeom = 0;
-            for k = 1:numel(gratings)
-                v = gratings{k}.visual_grating.value;
-                if isfield(v, 'source_geometry') && isstruct(v.source_geometry) ...
-                        && isfield(v.source_geometry, 'unit') ...
-                        && strcmp(char(v.source_geometry.unit), 'cycles/pixel')
-                    withGeom = withGeom + 1;
-                end
-            end
-            verifyGreaterThan(testCase, withGeom, 0, ...
-                ['no visual_grating carries source_geometry in ' ...
-                 'cycles/pixel; the Hartley spatial frequency has nowhere ' ...
-                 'correct to live']);
+                ['fewer than two distinct spatial phases across the basis -- ' ...
+                 'the s = -1 half of every (kx,ky) pair has deduped away']);
+            % and the pixel-domain frequency is stated in its own unit
+            verifyTrue(testCase, ~isempty(units) && all(strcmp(units, 'cycles per pixel')), ...
+                'the Hartley spatial frequency is not stated in cycles per pixel');
         end
 
-        function testTheFrameTimesSurviveAsAnIrregularTimeAxis(testCase)
+        function testTheFrameTimesSurviveAsOnsetTimes(testCase)
             % frameTimes is the ONLY surviving stimulus timing on this
-            % corpus. The writer moved `presentation_time` into
-            % presentation_time.bin -- declared by 11 of 11 presentations and
-            % present in 0 of them -- and a struct-level batch pass does not
-            % open attached binaries.
+            % corpus (presentation_time.bin is declared by 11 of 11
+            % presentations and present in 0). Since data_body AMENDMENT 6
+            % ([onset time], Jess Haley 2026-10-22) it is the `onset time`
+            % covariate along the item manipulation's presentation dimension.
             migrated = destinationBodies(testCase.Result.destination);
-            seqs = findAllByClass(migrated, 'timed_sequence_manipulation');
-            withAxis = 0;
+            seqs = itemManipulations(migrated);
+            withOnsets = 0;
             for k = 1:numel(seqs)
-                st = seqs{k}.subject_statement;
-                if isfield(st, 'axes') && ~isempty(st.axes) ...
-                        && isfield(st.axes(1), 'n') && st.axes(1).n > 1
-                    withAxis = withAxis + 1;
+                d = seqs{k};
+                if ~isfield(d, 'data') || ~isfield(d.data, 'covariates'); continue; end
+                cs = ndi.v2.entries(d.data.covariates);
+                for j = 1:numel(cs)
+                    if strcmp(cs{j}.variable.name, 'onset time') ...
+                            && numel(cs{j}.quantity.value) > 1
+                        withOnsets = withOnsets + 1;
+                        break;
+                    end
                 end
             end
-            verifyGreaterThanOrEqual(testCase, withAxis, 10, sprintf( ...
-                ['%d of the migrated sequences carry a time axis. The ten ' ...
+            verifyGreaterThanOrEqual(testCase, withOnsets, 10, sprintf( ...
+                ['%d of the migrated sequences carry onset times. The ten ' ...
                  'Hartley presentations each have a frameTimes of 3360, so ' ...
-                 'fewer than ten means the timing was dropped -- and it is ' ...
-                 'not recoverable from anywhere else in this corpus.'], ...
-                withAxis));
+                 'fewer than ten means the timing was dropped.'], withOnsets));
         end
 
         function testTheCalculatorFamilyKeepsItsIdentities(testCase)
@@ -794,6 +916,38 @@ for k = 1:numel(ids)
 end
 end
 
+function hits = itemManipulations(bodies)
+%ITEMMANIPULATIONS The `manipulation` documents listing the `item` value kind
+%   (did-schema #88: a statement is a direction class plus one value kind).
+hits = {};
+for k = 1:numel(bodies)
+    b = bodies{k};
+    if ~isfield(b, 'document_class') || ~strcmp(b.document_class.class_name, 'manipulation')
+        continue;
+    end
+    sc = b.document_class.superclasses;
+    if isstruct(sc) && any(strcmp({sc.class_name}, 'item'))
+        hits{end+1} = b; %#ok<AGROW>
+    end
+end
+end
+
+function [v, u] = methodEntry(doc, variable)
+%METHODENTRY A `method` document's parameter VARIABLE: value and unit name.
+v = []; u = '';
+if ~isfield(doc.method, 'parameters'); return; end
+p = doc.method.parameters;
+if isstruct(p); p = num2cell(p); end
+for k = 1:numel(p)
+    e = p{k};
+    if strcmp(e.variable.name, variable)
+        if isfield(e, 'quantity') && ~isempty(e.quantity); v = e.quantity.value; end
+        if isfield(e, 'unit') && isstruct(e.unit) && ~isempty(e.unit); u = e.unit.name; end
+        return;
+    end
+end
+end
+
 function hits = findAllByClass(bodies, className)
 hits = {};
 for k = 1:numel(bodies)
@@ -827,4 +981,47 @@ function s = resultDiag(result)
 s = sprintf('[migrated %d, quarantined %d, edges %d] %s', ...
     result.summary.total, numel(result.quarantine), ...
     result.references.edges_examined, quarantineDiag(result));
+end
+
+function doc = findSessionEntity(bodies)
+%FINDSESSIONENTITY The `entity` of type session (did-schema #88, T1).
+doc = [];
+for k = 1:numel(bodies)
+    d = bodies{k};
+    if isstruct(d) && isfield(d, 'document_class') ...
+            && strcmp(d.document_class.class_name, 'entity') ...
+            && isfield(d, 'entity') && isfield(d.entity, 'type') ...
+            && isfield(d.entity.type, 'name') && ndi.v2.vocabIs('entity_type', d.entity.type, 'session')
+        doc = d;
+        return;
+    end
+end
+end
+
+function c = controlCovariate(d)
+%CONTROLCOVARIATE The document's `control condition` covariate, or [].
+c = [];
+if ~isfield(d, 'data') || ~isstruct(d.data) || ~isfield(d.data, 'covariates'); return; end
+cs = ndi.v2.entries(d.data.covariates);
+for j = 1:numel(cs)
+    v = cs{j}.variable;
+    if iscell(v), v = v{1}; end
+    if isstruct(v) && isfield(v, 'name') && strcmp(char(v.name), 'control condition')
+        c = cs{j};
+        return;
+    end
+end
+end
+
+function v = depValues(b, name)
+v = {};
+if ~isfield(b, 'depends_on') || isempty(b.depends_on); return; end
+deps = b.depends_on;
+if isstruct(deps); deps = num2cell(deps); end
+for k = 1:numel(deps)
+    d = deps{k};
+    if ~isstruct(d) || ~strcmp(char(d.name), name); continue; end
+    if isfield(d, 'value') && ~isempty(d.value); v{end+1} = char(d.value); %#ok<AGROW>
+    elseif isfield(d, 'document_id') && ~isempty(d.document_id); v{end+1} = char(d.document_id); end %#ok<AGROW>
+end
 end

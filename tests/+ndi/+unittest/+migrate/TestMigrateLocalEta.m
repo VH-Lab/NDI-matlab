@@ -8,7 +8,7 @@ classdef TestMigrateLocalEta < matlab.unittest.TestCase
 %        per-document converter defers stimulus_bath; the V_eta second pass
 %        (resolveDeferred -> stimulusBathToBath) assembles a dose_manipulation on
 %        the stimulator's subject over its epoch.
-%     2. stimulus_presentation -> visual_grating_manipulation (+ sampled_body).
+%     2. stimulus_presentation -> manipulation (value kind item) + method documents (did-schema #88).
 %        There is no per-document migrator; resolveStimulusPresentations assembles
 %        it from the recording graph (stimulus_response -> element -> subject).
 %     3. THE EPOCH ANCHOR, BOTH WAYS. The bath assembler mints an
@@ -185,19 +185,28 @@ classdef TestMigrateLocalEta < matlab.unittest.TestCase
     methods (Test)
 
         function testStimulusBathResolvesToDose(testCase)
+            % did-schema #88 (VH-Lab/did-schema#88): the bath is a `manipulation`
+            % whose value kind is `formulation`, about the specimen by
+            % `entity_id`, its value the `formulation` document through
+            % `value_id` -- not a dose (Jess Haley, 2026-10-21); the mixture's
+            % chemicals are `chemical` documents. `dose_manipulation` and
+            % `subject_statement` no longer exist.
+            %
+            % THE `session` DOCUMENT IS NOW NEEDED FOR THE GRAPH TO CLOSE. Under
+            % #88 the session is an EDGE (`session_id`) on every document, not
+            % a string in `base`, so a batch without the session document has
+            % one dangling `session_id` per document: e2e run 39636971875 on
+            % this fixture without it reported 11 orphans over 10 documents,
+            % every one a `session_id` (or the session-anchored
+            % `referent_id`) naming aabb1122ccdd3344_9900aabbccddeeff. The
+            % animal `subject` is still needed for the reason the notes above
+            % give.
             stimId  = 'aabb1122ccdd3344_5500000000000002';
             subjId  = 'aabb1122ccdd3344_5500000000000001';
+            sessId  = 'aabb1122ccdd3344_5500000000000005';
             epochId = 'epoch_t00001';
-            % THE ANIMAL `subject` IS NOT DECORATION. Without it this fixture
-            % produces exactly 2 dangling edges, both naming `subjId`:
-            %   did2.convert.migrators_j.element.m  lineageRelation writes
-            %       depends_on {child, PARENT}, parent = the specimen id
-            %   ndi.migrate.internal.stimulusBathToBath  dose_manipulation
-            %       subject_id = resolver.subjectOfElement(stimulator), same id
-            % They were present and unseen for as long as this test has existed,
-            % because it never asked. Adding the document is the same repair the
-            % two anchor tests took, and it leaves every assertion below intact.
             bodies = { ...
+                jsonencode(makeSessionDoc(sessId)), ...
                 jsonencode(makeSubject(subjId)), ...
                 jsonencode(makeStimulatorElement(stimId, subjId)), ...
                 jsonencode(makeElementEpoch(stimId, epochId, 'dev_local_time')), ...
@@ -207,32 +216,69 @@ classdef TestMigrateLocalEta < matlab.unittest.TestCase
             % no needsSessionContext deferral left behind
             assertNoDeferral(testCase, result);
 
-            % THE CORPUS GATE'S HEADLINE CONDITION, asked here for the first
-            % time. `0 quarantine AND 0 orphans` is the gate; this test drove a
-            % real pipeline end to end and only ever asked the first half.
+            % THE CORPUS GATE'S HEADLINE CONDITION
             verifyEqual(testCase, result.references.orphan_count, 0, ...
                 ['the graph does not close. ' resultDiag(result)]);
 
-            % the bath became a dose_manipulation (NOT the retired `bath`)
-            verifyTrue(testCase, isfield(result.summary.by_class, 'dose_manipulation'), ...
-                ['no dose_manipulation produced from stimulus_bath. ' resultDiag(result)]);
+            % the bath became a dose manipulation (NOT the retired `bath`, and
+            % not the pre-#88 `dose_manipulation`)
             verifyFalse(testCase, isfield(result.summary.by_class, 'bath'), ...
                 'retired `bath` class leaked onto the V_eta path');
+            verifyFalse(testCase, ...
+                isfield(result.summary.by_class, 'dose_manipulation'), ...
+                ['the pre-#88 class was written. ' resultDiag(result)]);
+            for c = {'manipulation', 'formulation', 'chemical'}
+                verifyTrue(testCase, isfield(result.summary.by_class, c{1}), ...
+                    ['no `' c{1} '` produced from stimulus_bath. ' resultDiag(result)]);
+            end
 
-            dose = findByClass(result.destination, 'dose_manipulation');
+            dose = findByClass(result.destination, 'manipulation');
             verifyNotEmpty(testCase, dose, resultDiag(result));
-            verifyEqual(testCase, depValue(dose, 'subject_id'), subjId);
-            verifyNotEmpty(testCase, depValue(dose, 'time_reference_1'));
-            % primary mixture chemical is the spine identity
-            verifyEqual(testCase, dose.subject_statement.variable.name, 'muscimol');
+            verifyTrue(testCase, any(strcmp( ...
+                {dose.document_class.superclasses.class_name}, 'formulation')), ...
+                'the manipulation does not carry the `formulation` value kind');
+            verifyFalse(testCase, isfield(dose, 'dose'), 'a bath is not a dose');
+            % The fixture's bath location is CNS (uberon:0001017), an anatomical
+            % region, not the generic bath: "Any statement about an anatomical
+            % region of a subject ... targets that region's part entity (one per
+            % subject and region, shared, type tissue, part_of the subject)"
+            % (Jess Haley, 2026-10-21). So the bath is about the CNS part of
+            % the animal, not the animal.
+            part = findById(result.destination, depValue(dose, 'entity_id'));
+            verifyNotEmpty(testCase, part, ['the bath names no part. ' resultDiag(result)]);
+            if ~isempty(part)
+                verifyEqual(testCase, part.document_class.class_name, 'entity');
+                verifyTrue(testCase, ndi.v2.vocabIs('entity_type', part.entity.type, 'tissue'));
+            end
+            partOf = {};
+            for r = findAllByClass(result.destination, 'directed_relation')
+                rel = r{1};
+                if ndi.v2.vocabIs('relation', rel.directed_relation.relation, 'part_of') ...
+                        && strcmp(depValue(rel, 'child_id'), depValue(dose, 'entity_id'))
+                    partOf{end+1} = depValue(rel, 'parent_id'); %#ok<AGROW>
+                end
+            end
+            verifyEqual(testCase, partOf, {subjId}, 'the CNS part is part_of the animal');
+            verifyEmpty(testCase, findTermObservation(result.destination, ...
+                'anatomical location'), 'the promoted site observation is gone');
+            verifyNotEmpty(testCase, depValue(dose, 'time_reference_id'));
+            verifyEqual(testCase, depValue(dose, 'instrument_id'), stimId);
+            formulation = findById(result.destination, depValue(dose, 'value_id'));
+            verifyNotEmpty(testCase, formulation, ...
+                ['the dose names no formulation in the database. ' resultDiag(result)]);
+            verifyEqual(testCase, formulation.document_class.class_name, 'formulation');
+            % primary mixture chemical is the statement's variable
+            verifyEqual(testCase, dose.statement.variable.name, 'muscimol');
         end
 
         function testEpochAnchorFoldsToRelativeReferenceWithItsIdPreserved(testCase)
             % (a) WITH a `session` document. The whole chain, driven from the
-            % real emitter: the bath is deferred, stimulusBathToBath mints the
-            % pass-1 `epoch_bounded_reference`, epochMint mints the `epoch` for
-            % the (base.session_id, epoch-id string) PAIR, and epochAnchorFold
-            % upgrades the placeholder in place.
+            % real emitter. did-schema #88: the bath assembler mints a VALID
+            % `relative_time_reference` "during the session" (#88 has no
+            % `epoch_bounded_reference` to hold an unresolved epoch), hands the
+            % epoch string and clock to the fold, epochMint mints the `epoch`
+            % entity for the (session, epoch-id string) PAIR, and
+            % epochAnchorFold re-points the reference at that epoch IN PLACE.
             stimId  = 'aabb1122ccdd3344_5500000000000002';
             subjId  = 'aabb1122ccdd3344_5500000000000001';
             sessId  = 'aabb1122ccdd3344_5500000000000005';
@@ -247,8 +293,6 @@ classdef TestMigrateLocalEta < matlab.unittest.TestCase
             assertNoDeferral(testCase, result);
 
             % --- DENOMINATORS FIRST, off the pass's own instrument ---------
-            % Asserted BEFORE any class-name check so that "the fold did not
-            % run" and "the fold ran and refused" are different failures.
             mint = result.secondPass.epochMint;
             verifyNotEmpty(testCase, mint, 'epochMint did not run at all');
             verifyEqual(testCase, mint.session_documents_seen, 1, ...
@@ -262,128 +306,102 @@ classdef TestMigrateLocalEta < matlab.unittest.TestCase
                 ['the epoch anchor fold did not run; ndi.migrate.local warns ' ...
                  'and continues when it throws. ' resultDiag(result)]);
             verifyEqual(testCase, fold.anchors_seen, 1, resultDiag(result));
+            verifyEqual(testCase, fold.bath_anchors_seen, 1, resultDiag(result));
             verifyEqual(testCase, fold.anchors_planned, 1, resultDiag(result));
             verifyEqual(testCase, fold.refused_total, 0, resultDiag(result));
             verifyEqual(testCase, fold.anchors_refolded, 1, resultDiag(result));
             verifyEqual(testCase, fold.refold_quarantined, 0, resultDiag(result));
             verifyTrue(testCase, fold.folded, resultDiag(result));
-            % the accounting invariant, on the real corpus shape rather than a
-            % hand-built one: there is no third bucket an anchor can vanish into
             verifyEqual(testCase, fold.anchors_seen, ...
                 fold.anchors_planned + fold.refused_total);
 
-            % --- the retired class is GONE from the database ---------------
-            verifyFalse(testCase, ...
-                isfield(result.summary.by_class, 'epoch_bounded_reference'), ...
-                ['a class the signed decision RETIRES was written to the ' ...
-                 'destination database. ' resultDiag(result)]);
+            % --- no retired or pre-#88 time class reaches the database -----
+            for c = {'epoch_bounded_reference', 'relative_reference'}
+                verifyFalse(testCase, isfield(result.summary.by_class, c{1}), ...
+                    ['`' c{1} '` was written to the destination. ' resultDiag(result)]);
+            end
             verifyTrue(testCase, ...
-                isfield(result.summary.by_class, 'relative_reference'), ...
-                resultDiag(result));
-            verifyTrue(testCase, isfield(result.summary.by_class, 'epoch'), ...
+                isfield(result.summary.by_class, 'relative_time_reference'), ...
                 resultDiag(result));
 
             % --- THE ID IS PRESERVED (this is the orphan gate) -------------
-            % A dissolution that changed ids produced 11,448 orphans in the Soph
-            % corpus. The dose's `time_reference_1` edge was written by the
-            % assembler in pass 1 and must still name the same document after
-            % the fold has replaced its class.
-            dose = findByClass(result.destination, 'dose_manipulation');
+            dose = findByClass(result.destination, 'manipulation');
             verifyNotEmpty(testCase, dose, resultDiag(result));
-            anchorId = depValue(dose, 'time_reference_1');
+            anchorId = depValue(dose, 'time_reference_id');
             verifyNotEmpty(testCase, anchorId, resultDiag(result));
-
-            % SELECTED BY ID, NOT BY CLASS -- and that distinction is now
-            % load-bearing. `findByClass` returns the FIRST document of a class
-            % in `db.allIds()` order, which was unambiguous while the fold's
-            % output was the only `relative_reference` here. It is not any more:
-            % epochMint gained the epoch EXTENT references (#60 option A,
-            % signed -- "acquisition_epoch won't exist", so the epoch carries
-            % its own clock references), minting one per DISTINCT clock. This
-            % fixture's element_epoch has one, so there are now TWO.
-            %
-            % Selecting by class picked whichever sqlite returned first, and
-            % when that was the extent the test failed on assertions it was
-            % never making. All three CI symptoms are that one substitution:
-            %     :290  base.id mismatch  -- two different minted documents
-            %     :300  relative_to was the SESSION, not the epoch
-            %     :307  'MATLAB:nonExistentField' on value.relation, which an
-            %           extent does not carry (it has clock/start/duration)
-            % and the failure message blamed the fold for moving an id it had
-            % not touched -- a wrong diagnosis aimed at innocent code.
+            % SELECTED BY ID, NOT BY CLASS: epochMint also mints the epoch's
+            % EXTENT references, so there is more than one
+            % relative_time_reference here (see findById).
             ref = findById(result.destination, anchorId);
             verifyNotEmpty(testCase, ref, ['the anchor id the dose names is ' ...
                 'not in the destination at all. ' resultDiag(result)]);
             verifyEqual(testCase, ref.document_class.class_name, ...
-                'relative_reference', ...
-                ['the anchor id resolves to a document of the wrong class; ' ...
-                 'the fold did not upgrade it. ' resultDiag(result)]);
+                'relative_time_reference', resultDiag(result));
 
             % and the whole graph still closes
             verifyEqual(testCase, result.references.orphan_count, 0, ...
                 ['the graph does not close. ' resultDiag(result)]);
 
-            % --- `relative_to` names the epoch epochMint actually minted ----
-            epochDoc = findByClass(result.destination, 'epoch');
-            verifyNotEmpty(testCase, epochDoc, resultDiag(result));
-            verifyEqual(testCase, depValue(ref, 'relative_to'), epochDoc.base.id);
-            % the pass-1 handle does not survive alongside its own resolution
-            verifyEmpty(testCase, depValue(ref, 'element_id'));
+            % --- `referent_id` names the epoch epochMint actually minted ---
+            epochDoc = findEntity(result.destination, 'epoch');
+            verifyNotEmpty(testCase, epochDoc, ['no `epoch` entity. ' resultDiag(result)]);
+            if isempty(epochDoc); return; end
+            verifyEqual(testCase, depValue(ref, 'referent_id'), epochDoc.base.id);
             verifyFalse(testCase, isfield(ref, 'epochid'));
-            verifyFalse(testCase, isfield(ref, 'epoch_bounded_reference'));
 
             % --- the signed value shape ------------------------------------
-            verifyEqual(testCase, ref.relative_reference.value.relation.node, ...
+            verifyEqual(testCase, ref.relative_time_reference.value.relation.node, ...
                 'time:intervalDuring');
-            % the clock is READ THROUGH bodyResolver from the element_epoch
-            % document above, not asserted by the anchor -- so this also pins
-            % that the emitter -> fold clock hand-off survives the round trip.
-            verifyEqual(testCase, ref.relative_reference.value.clock.name, ...
+            % the clock is read from the element_epoch document above and
+            % handed over by the bath assembler, so this pins that hand-off
+            verifyEqual(testCase, ref.relative_time_reference.value.clock.name, ...
                 'dev_local_time');
-            % CHANGE 5 / decision C: the source states no offsets, so none are
-            % invented, and with a single anchor the split-anchored interval
-            % case (fork C) does not arise. NO start_anchor/end_anchor is built.
+            % the source states no offsets, so none are invented
             verifyFalse(testCase, ...
-                isfield(ref.relative_reference.value, 'start'));
+                isfield(ref.relative_time_reference.value, 'start'));
             verifyFalse(testCase, ...
-                isfield(ref.relative_reference.value, 'duration'));
+                isfield(ref.relative_time_reference.value, 'duration'));
 
-            % --- AND THE OTHER relative_reference IS THE EPOCH'S EXTENT -----
-            % Named rather than tolerated. The assertions above were silently
-            % ambiguous from the moment a second one existed: a test that says
-            % "the relative_reference" while two exist can pass against the
-            % wrong one as easily as fail against it, and which it gets is
-            % sqlite's row order. One clock -> exactly two documents.
-            allRefs = findAllByClass(result.destination, 'relative_reference');
+            % --- AND THE OTHER relative_time_reference IS THE EPOCH'S EXTENT
+            allRefs = findAllByClass(result.destination, 'relative_time_reference');
             verifyEqual(testCase, numel(allRefs), 2, ...
                 ['expected the folded anchor plus ONE epoch extent reference. ' ...
                  resultDiag(result)]);
-            extent = allRefs{find(cellfun(@(b) ~strcmp(b.base.id, anchorId), ...
-                allRefs), 1)};
-            % The two are told apart by WHAT THEY ANCHOR TO, the substantive
-            % difference: the fold's anchor is relative to the EPOCH, the
-            % extent to the SESSION.
-            verifyEqual(testCase, depValue(extent, 'relative_to'), sessId, ...
+            others = allRefs(cellfun(@(b) ~strcmp(b.base.id, anchorId), allRefs));
+            verifyNotEmpty(testCase, others, resultDiag(result));
+            if isempty(others); return; end
+            extent = others{1};
+            % told apart by WHAT THEY ANCHOR TO: the fold's anchor names the
+            % EPOCH, the extent names the SESSION entity
+            sessionEntity = findEntity(result.destination, 'session');
+            verifyNotEmpty(testCase, sessionEntity, resultDiag(result));
+            if isempty(sessionEntity); return; end
+            verifyEqual(testCase, depValue(extent, 'referent_id'), ...
+                sessionEntity.base.id, ...
                 ['the epoch extent must be anchored to the session, not to ' ...
                  'the epoch it describes. ' resultDiag(result)]);
-            % and it carries the offsets the anchor deliberately does not
-            verifyTrue(testCase, isfield(extent.relative_reference.value, 'start'));
-            verifyTrue(testCase, isfield(extent.relative_reference.value, 'duration'));
+            verifyTrue(testCase, isfield(extent.relative_time_reference.value, 'start'));
+            verifyTrue(testCase, isfield(extent.relative_time_reference.value, 'duration'));
         end
 
-        function testWithoutASessionDocumentTheRetiredAnchorReachesTheDatabase(testCase)
-            % (b) WITHOUT a `session` document -- the fixture this file has
-            % always used. This is not a test of a hypothetical: it pins what
-            % ACTUALLY HAPPENS to a minted `epoch_bounded_reference` when the
-            % fold cannot resolve it, which is that ndi.migrate.local writes it
-            % to the destination database as a retired class.
+        function testWithoutASessionDocumentTheAnchorStaysOnTheSession(testCase)
+            % (b) WITHOUT a `session` document. RENAMED from
+            % testWithoutASessionDocumentTheRetiredAnchorReachesTheDatabase:
+            % under did-schema #88 there is no retired class to reach the
+            % database. The bath assembler mints a VALID
+            % `relative_time_reference` "during the session" from the start, so
+            % when epochMint refuses (no session document) and the fold
+            % refuses (no epoch), the anchor stays exactly as minted.
             %
-            % It is deliberately NOT written as "the fold is broken": the
-            % refusal is correct behaviour (DISCOVERY MODE -- a subset batch
-            % need not carry the `session` document, and absence is not
-            % evidence). A guess here would be a blank required `relative_to`,
-            % which quarantines under the armed RequiredDependencies check.
-            % What the test forbids is the refusal being SILENT.
+            % What the test still forbids is the refusal being SILENT.
+            %
+            % ORPHANS ARE EXPECTED HERE AND ARE ALL OF ONE KIND. Under #88 the
+            % session is a `session_id` EDGE on every document, so a batch with
+            % no session document leaves each of those edges, and the
+            % session-anchored `referent_id`, naming a document not in the
+            % batch -- the discovery-mode case (a subset batch need not carry
+            % the session document). The assertion is that EVERY orphan names
+            % the session id and nothing else dangles.
             stimId  = 'aabb1122ccdd3344_5500000000000002';
             subjId  = 'aabb1122ccdd3344_5500000000000001';
             epochId = 'epoch_t00001';
@@ -404,9 +422,9 @@ classdef TestMigrateLocalEta < matlab.unittest.TestCase
 
             fold = result.secondPass.epochAnchorFold;
             verifyNotEmpty(testCase, fold, resultDiag(result));
-            % the anchor was SEEN -- the pass read it and declined; it did not
-            % fail to notice it
+            % the anchor was SEEN -- the pass read it and declined
             verifyEqual(testCase, fold.anchors_seen, 1, resultDiag(result));
+            verifyEqual(testCase, fold.bath_anchors_seen, 1, resultDiag(result));
             verifyEqual(testCase, fold.anchors_planned, 0, resultDiag(result));
             verifyEqual(testCase, fold.refused_no_epoch_document, 1, ...
                 resultDiag(result));
@@ -414,70 +432,60 @@ classdef TestMigrateLocalEta < matlab.unittest.TestCase
             verifyEqual(testCase, fold.anchors_refolded, 0, resultDiag(result));
             verifyFalse(testCase, fold.folded, resultDiag(result));
 
-            % THE FINDING, PINNED: the retired class is in the database.
-            verifyTrue(testCase, ...
-                isfield(result.summary.by_class, 'epoch_bounded_reference'), ...
-                ['a refused anchor must be left EXACTLY as it was; it is no ' ...
-                 'longer in the migrated set. ' resultDiag(result)]);
             verifyFalse(testCase, ...
-                isfield(result.summary.by_class, 'relative_reference'), ...
-                ['an anchor was folded with no `epoch` to anchor to -- the ' ...
-                 'guess this pass exists to refuse. ' resultDiag(result)]);
-            verifyFalse(testCase, isfield(result.summary.by_class, 'epoch'), ...
+                isfield(result.summary.by_class, 'epoch_bounded_reference'), ...
+                resultDiag(result));
+            verifyEmpty(testCase, findEntity(result.destination, 'epoch'), ...
                 resultDiag(result));
 
-            % A refusal is a no-op, not a loss: the edge still resolves, so the
-            % un-folded state is not an orphan failure either.
-            dose = findByClass(result.destination, 'dose_manipulation');
+            % A refusal is a no-op: the dose still names the anchor it was
+            % minted with, and that anchor still says "during the session".
+            dose = findByClass(result.destination, 'manipulation');
             verifyNotEmpty(testCase, dose, resultDiag(result));
-            anchor = findByClass(result.destination, 'epoch_bounded_reference');
+            if isempty(dose); return; end
+            anchor = findById(result.destination, depValue(dose, 'time_reference_id'));
             verifyNotEmpty(testCase, anchor, resultDiag(result));
-            verifyEqual(testCase, anchor.base.id, ...
-                depValue(dose, 'time_reference_1'));
-            verifyEqual(testCase, result.references.orphan_count, 0, ...
-                resultDiag(result));
+            if isempty(anchor); return; end
+            verifyEqual(testCase, anchor.document_class.class_name, ...
+                'relative_time_reference');
+            verifyEqual(testCase, depValue(anchor, 'referent_id'), session());
+
+            o = result.references.orphans;
+            verifyGreaterThan(testCase, numel(o), 0, resultDiag(result));
+            for k = 1:numel(o)
+                verifyEqual(testCase, charField(o(k), 'edge_document_id'), session(), ...
+                    ['an orphan other than the absent session document. ' ...
+                     resultDiag(result)]);
+                verifyTrue(testCase, ismember(charField(o(k), 'edge_name'), ...
+                    {'session_id', 'referent_id'}), resultDiag(result));
+            end
         end
 
-        function testStimulusPresentationBecomesATimedSequence(testCase)
-            % INVERTED 2026-08-17, and RENAMED from
-            % testStimulusPresentationBecomesGratingManipulation. It asserted
-            % a `visual_grating_manipulation` -- the model
-            % V_eta_stimulus_model_plan.md SUPERSEDES -- and began failing the
-            % moment the signed decomposition started working, which is the
-            % most misleading way for a test to be red: everything is correct
-            % and the gate says otherwise.
+        function testStimulusPresentationBecomesAnItemManipulation(testCase)
+            % did-schema #88 (V_eta_method_plan.md, TEAM-SIGN-OFF [method]
+            % 2026-10-21): a presentation that carries a sequence of gratings
+            % becomes ONE `manipulation` (listing the `item`
+            % value kind) whose `item_id` names one standalone `method`
+            % document per distinct stimulus. `visual_grating`,
+            % `timed_sequence_manipulation` and `visual_grating_manipulation`
+            % are gone from the schema; this test was
+            % testStimulusPresentationBecomesATimedSequence until then.
             %
-            % THE SIGNATURE THAT SETTLES IT, V_eta_stimulus_model_plan.md:270
-            % (jess, 2026-08-17), which also closed the "keep or retire" item
-            % left open at :133:
-            %
-            %   "a `stimulus_presentation` document that carries a SEQUENCE of
-            %    visual gratings becomes ONE `timed_sequence_manipulation`
-            %    referencing N `visual_grating` documents (deduped,
-            %    `presented_id` -> the distinct gratings,
-            %    `value.presentation_order` the playlist).
-            %    `visual_grating_manipulation` is RETAINED for the genuine
-            %    single-grating, presentation-less case -- it is not a rival
-            %    model to retire, it is the degenerate one."
-            %
-            % THIS FIXTURE IS THE SEQUENCE CASE: two gratings (45 and 90),
-            % presentation_order [1 2], two trial times. So the signed answer
-            % is the timed_sequence, and `visual_grating_manipulation` must
-            % NOT appear -- asserted below, because "retained" is not
-            % "emitted", and a run that produced BOTH would put two documents
-            % on the presentation's one preserved base.id.
-            %
-            % THE EXPECTED CLASSES ARE NOT PREDICTED. They are the by_class
-            % this same fixture produced in e2e run 77 (29b596a54), read from
-            % the old assertion's own failure diagnostic:
-            %   {subject, term_assertion, directed_relation,
-            %    timed_sequence_manipulation, visual_grating, sampled_body}
+            % THIS FIXTURE: two gratings (45 and 90), presentation_order [1 2],
+            % two trial times inline -- so the onsets become a `time` key and
+            % the ends `item.value.offset`, with no body.
             subjId  = 'aabb1122ccdd3344_5500000000000010';
             recElem = 'aabb1122ccdd3344_5500000000000011';
             stimEl  = 'aabb1122ccdd3344_5500000000000012';
             presId  = 'aabb1122ccdd3344_5500000000000013';
             respId  = 'aabb1122ccdd3344_5500000000000014';
+            % The session document: on did-schema #88 every document's
+            % `session_id` EDGE names the session entity, whose base.id IS
+            % the session id (V_eta_relation_inheritance_plan.md), so without
+            % one every edge in the graph dangles. It is also the referent of
+            % the manipulation's "during the session" time reference.
             bodies = { ...
+                jsonencode(makeSessionDoc(session())), ...
                 jsonencode(makeSubject(subjId)), ...
                 jsonencode(makeRecordingElement(recElem, subjId)), ...
                 jsonencode(makeStimulatorElement(stimEl, subjId)), ...
@@ -485,49 +493,55 @@ classdef TestMigrateLocalEta < matlab.unittest.TestCase
                 jsonencode(makeStimulusPresentation(presId, stimEl))};
             result = runMigrate(testCase, bodies);
 
-            % the presentation became ONE body-backed timed_sequence_manipulation
-            verifyTrue(testCase, ...
-                isfield(result.summary.by_class, 'timed_sequence_manipulation'), ...
-                ['no timed_sequence_manipulation produced from ' ...
-                 'stimulus_presentation. Read the run log for "Second-pass ' ...
-                 'stimulus_presentation decomposition failed" FIRST: ' ...
-                 'ndi.migrate.local wraps the pass in a try/catch that warns ' ...
-                 'and leaves everything as passthrough, so a THROW and a ' ...
-                 'per-presentation REFUSAL both arrive here as an absence. ' ...
-                 resultDiag(result)]);
-            verifyTrue(testCase, isfield(result.summary.by_class, 'visual_grating'), ...
-                ['no standalone visual_grating documents. The signed model ' ...
-                 'references them; without them the sequence points at ' ...
-                 'nothing. ' resultDiag(result)]);
-            verifyTrue(testCase, isfield(result.summary.by_class, 'sampled_body'), ...
-                ['no sampled_body produced for the trial times. ' resultDiag(result)]);
+            manip = findById(result.destination, presId);
+            verifyNotEmpty(testCase, manip, ...
+                ['no document carries the presentation id. Read the run log ' ...
+                 'for "Second-pass stimulus_presentation decomposition ' ...
+                 'failed" FIRST: ndi.migrate.local wraps the pass in a ' ...
+                 'try/catch, so a THROW and a REFUSAL both arrive here as an ' ...
+                 'absence. ' resultDiag(result)]);
+            verifyEqual(testCase, manip.document_class.class_name, 'manipulation', ...
+                resultDiag(result));
+            verifyTrue(testCase, any(strcmp( ...
+                {manip.document_class.superclasses.class_name}, 'item')), ...
+                'the manipulation does not list the `item` value kind');
+            verifyEqual(testCase, depValue(manip, 'entity_id'), subjId);
+            verifyEqual(testCase, depValue(manip, 'instrument_id'), stimEl);
+            verifyEqual(testCase, manip.item.value.item(:)', [0 1]);
+            % data_body plan AMENDMENT 6: one presentation dimension, the
+            % onsets and ends its `onset time` / `offset time` covariates
+            verifyFalse(testCase, isfield(manip.item.value, 'offset'));
+            dims = ndi.v2.entries(manip.data.dimensions);
+            verifyNumElements(testCase, dims, 1);
+            verifyEqual(testCase, double(dims{1}.n), 2);
+            covs = ndi.v2.entries(manip.data.covariates);
+            names = cellfun(@(c) char(c.variable.name), covs, 'UniformOutput', false);
+            on = covs{strcmp(names, 'onset time')};
+            off = covs{strcmp(names, 'offset time')};
+            verifyEqual(testCase, on.quantity.value(:)', [0 5]);
+            verifyEqual(testCase, off.quantity.value(:)', [4 9]);
+            tr = depValue(manip, 'time_reference_id');
+            verifyNotEmpty(testCase, tr, ...
+                ['the manipulation carries no time reference: the pass mints ' ...
+                 '"during the session" against the session document. ' resultDiag(result)]);
 
-            % THE SUPERSEDED SHAPE MUST BE ABSENT, not merely unasserted.
-            % Both emitters preserve the presentation id, so a run producing
-            % both would put two documents on one base.id and the sqlite
-            % primary key would reject the second -- the failure
-            % TestStimulusPassGating/testTheFlatteningPassHasNoCaller exists
-            % to prevent, checked here on real output rather than on source.
-            verifyFalse(testCase, ...
-                isfield(result.summary.by_class, 'visual_grating_manipulation'), ...
-                ['visual_grating_manipulation was emitted for a SEQUENCE. It ' ...
-                 'is retained only for the degenerate presentation-less ' ...
-                 'single-grating case (plan :270). ' resultDiag(result)]);
+            % TWO DISTINCT STIMULI, so dedup must not collapse them (45 / 90).
+            methods = findAllByClass(result.destination, 'method');
+            verifyEqual(testCase, numel(methods), 2, sprintf( ...
+                ['%d method document(s) for a 2-grating sequence (45 and 90 ' ...
+                 'degrees). %s'], numel(methods), resultDiag(result)));
+            for k = 1:numel(methods)
+                verifyEqual(testCase, methods{k}.method.term.name, ...
+                    'drifting sinusoidal grating');
+            end
 
-            manip = findByClass(result.destination, 'timed_sequence_manipulation');
-            verifyNotEmpty(testCase, manip, resultDiag(result));
-            verifyEqual(testCase, manip.base.id, presId);            % id preserved
-            verifyEqual(testCase, depValue(manip, 'subject_id'), subjId);
-            verifyEqual(testCase, manip.subject_statement.storage_mode, 'body');
-
-            % TWO DISTINCT GRATINGS, so dedup must not collapse them. The
-            % fixture's angles are 45 and 90; a single grating here would mean
-            % the dedup key ignores `angle`, which would silently merge every
-            % orientation in a real orientation-tuning experiment.
-            gratings = findAllByClass(result.destination, 'visual_grating');
-            verifyEqual(testCase, numel(gratings), 2, sprintf( ...
-                ['%d visual_grating document(s) for a 2-grating sequence ' ...
-                 '(45 and 90 degrees). %s'], numel(gratings), resultDiag(result)));
+            % none of the classes #88 deleted
+            for gone = {'visual_grating', 'visual_grating_manipulation', ...
+                    'timed_sequence', 'timed_sequence_manipulation'}
+                verifyFalse(testCase, isfield(result.summary.by_class, gone{1}), ...
+                    sprintf('%s was emitted; did-schema #88 deletes it. %s', ...
+                    gone{1}, resultDiag(result)));
+            end
 
             % the presentation itself is consumed (assembled away)
             verifyFalse(testCase, isfield(result.summary.by_class, 'stimulus_presentation'), ...
@@ -544,6 +558,80 @@ classdef TestMigrateLocalEta < matlab.unittest.TestCase
             % argument into a check.
             verifyEqual(testCase, result.references.orphan_count, 0, ...
                 ['the graph does not close. ' resultDiag(result)]);
+        end
+
+        function testPresentationTimesAreReadFromTheFileInTheStore(testCase)
+            % Decided by Jess Haley, 2026-10-22 [presentation times from the
+            % file] (did-schema V_eta_stimulus_response_model_plan.md): the
+            % second pass reads each presentation's onsets and offsets from
+            % the v1 presentation_time.bin, and the file stays attached to
+            % the presentation's V2 document as its raw source.
+            %
+            % THIS FIXTURE is the current writer's shape: no inline
+            % `presentation_time`, a `files` block naming the file, and the
+            % bytes where the legacy backend put them on add,
+            % <.ndi>/files/<uid>, written by the v1 writer's own function
+            % (ndi.database.fun.write_presentation_time_structure, as
+            % +ndi/+app/+stimulus/decoder.m calls it). The corpora carry no
+            % binaries, so this is the only end-to-end proof that the pass
+            % reaches the bytes.
+            subjId  = 'aabb1122ccdd3344_5500000000000020';
+            recElem = 'aabb1122ccdd3344_5500000000000021';
+            stimEl  = 'aabb1122ccdd3344_5500000000000022';
+            presId  = 'aabb1122ccdd3344_5500000000000023';
+            respId  = 'aabb1122ccdd3344_5500000000000024';
+            uid = 'aabb1122ccdd3344_77000000000000a1';
+            pres = makeStimulusPresentation(presId, stimEl);
+            pres.stimulus_presentation = rmfield(pres.stimulus_presentation, ...
+                'presentation_time');
+            pres.files = struct('file_list', {{'presentation_time.bin'}}, ...
+                'file_info', struct('name', 'presentation_time.bin', ...
+                'locations', struct('delete_original', 1, 'uid', uid, ...
+                'location', '/a/path/on/the/author/computer/tmp123', ...
+                'parameters', '', 'location_type', 'file', 'ingest', 1)));
+            storeDir = fullfile(testCase.SessionRoot, '.ndi', 'files');
+            mkdir(storeDir);
+            pt = struct('clocktype', {'dev_local_time', 'dev_local_time'}, ...
+                'stimopen', {0.5, 6.5}, 'onset', {1, 7}, 'offset', {3, 9}, ...
+                'stimclose', {3.5, 9.5}, 'stimevents', {[1 1; 3 2], [7 1; 9 2]});
+            ndi.database.fun.write_presentation_time_structure( ...
+                fullfile(storeDir, uid), pt);
+            bodies = { ...
+                jsonencode(makeSessionDoc(session())), ...
+                jsonencode(makeSubject(subjId)), ...
+                jsonencode(makeRecordingElement(recElem, subjId)), ...
+                jsonencode(makeStimulatorElement(stimEl, subjId)), ...
+                jsonencode(makeStimulusResponse(respId, presId, recElem)), ...
+                jsonencode(pres)};
+            result = runMigrate(testCase, bodies);
+
+            t = result.secondPass.stimulusSequence.timing;
+            verifyEqual(testCase, t.presentations_folded, 1, resultDiag(result));
+            verifyEqual(testCase, t.from_file, 1, ...
+                'the times did not come from presentation_time.bin');
+            verifyEqual(testCase, t.file_located, 1);
+            manip = findById(result.destination, presId);
+            verifyNotEmpty(testCase, manip, resultDiag(result));
+            covs = ndi.v2.entries(manip.data.covariates);
+            names = cellfun(@(c) char(c.variable.name), covs, 'UniformOutput', false);
+            on = covs{strcmp(names, 'onset time')};
+            off = covs{strcmp(names, 'offset time')};
+            verifyEqual(testCase, on.quantity.value(:)', [1 7]);
+            verifyEqual(testCase, char(on.variable.node), 'EMPTY:0000368');
+            verifyEqual(testCase, off.quantity.value(:)', [3 9]);
+            verifyEqual(testCase, char(off.variable.node), 'EMPTY:0000369');
+            dims = ndi.v2.entries(manip.data.dimensions);
+            verifyEqual(testCase, char(dims{1}.term.node), 'OBI:0000807');
+            % the raw source stays attached, pointing at the bytes in the store
+            verifyTrue(testCase, isfield(manip, 'files') && ...
+                any(strcmp(cellstr(manip.files.file_list), 'presentation_time.bin')), ...
+                'presentation_time.bin is no longer attached to the presentation');
+            % the dimension-term census ([covariate details] 5.4): measured,
+            % and this presentation's dimension has its node
+            dt = result.secondPass.dimensionTerms;
+            verifyTrue(testCase, isstruct(dt), 'the dimension-term census did not run');
+            verifyGreaterThanOrEqual(testCase, dt.dimensions_written, 1);
+            verifyEqual(testCase, result.references.orphan_count, 0, resultDiag(result));
         end
 
     end
@@ -688,8 +776,21 @@ body.stimulus_presentation = struct('presentation_order', [1 2], ...
 end
 
 function s = gratingStim(angle)
-s = struct('parameters', struct('angle', angle, 'sFrequency', 0.5, ...
-    'tFrequency', 2, 'contrast', 1, 'size', 30, 'isblank', 0));
+%GRATINGSTIM A real periodicstim parameter set (imageType 2, sine, drifting):
+%   the second pass recognises the NewStim class by the required-field set its
+%   verifyperiodicstim.m checks (Jess Haley, 2026-10-21), so a loose
+%   {angle, sFrequency, tFrequency} struct is no longer a grating. Fields as
+%   on the 20211116 225-stimulus oridir run; only `angle` varies here.
+s = struct('parameters', struct( ...
+    'imageType', 2, 'animType', 4, 'flickerType', 0, ...
+    'angle', angle, ...
+    'chromhigh', [255 255 255], 'chromlow', [0 0 0], ...
+    'sFrequency', 0.5, 'sPhaseShift', 0, 'distance', 57, ...
+    'tFrequency', 2, 'barWidth', 0.5, ...
+    'rect', [0 0 800 600], 'nCycles', 1, 'contrast', 1, ...
+    'background', 0.5, 'backdrop', 0.5, 'barColor', 1, ...
+    'nSmoothPixels', 2, 'fixedDur', 0, 'windowShape', 0, 'loops', 0, ...
+    'dispprefs', {{'BGposttime', 3}}));
 end
 
 function t = trialTime(onset, offset)
@@ -728,6 +829,20 @@ for k = 1:numel(ids)
 end
 end
 
+function body = findEntity(dstPath, typeName)
+%FINDENTITY The first did-schema #88 `entity` whose `type.name` is typeName.
+body = [];
+for b = findAllByClass(dstPath, 'entity')
+    s = b{1};
+    if isfield(s, 'entity') && isfield(s.entity, 'type') ...
+            && isstruct(s.entity.type) && isfield(s.entity.type, 'name') ...
+            && ndi.v2.vocabIs('entity_type', s.entity.type, typeName)
+        body = s;
+        return;
+    end
+end
+end
+
 function bodies = findAllByClass(dstPath, className)
 %FINDALLBYCLASS Every document of a class, so a COUNT can be asserted.
 %   findByClass answers "is there one"; this answers "how many, and which".
@@ -739,6 +854,26 @@ for k = 1:numel(ids)
     doc = db.get(ids{k});
     if strcmp(doc.className(), className)
         bodies{end+1} = doc.toStruct(); %#ok<AGROW>
+    end
+end
+end
+
+function body = findTermObservation(dstPath, variableName)
+% the first term observation whose variable is VARIABLENAME ([] when none):
+% its label, or -- for the registered anatomy variables -- its node, so a
+% site written as NCIT:C13717 "Anatomic Site" is found by 'anatomical location'
+body = [];
+nodes = struct('anatomical_location', 'NCIT:C13717', ...
+    'anatomical_structure', 'UBERON:0000061');
+key = strrep(variableName, ' ', '_');
+for d = findAllByClass(dstPath, 'observation')
+    x = d{1};
+    if ~(isfield(x, 'statement') && isfield(x.statement, 'variable')); continue; end
+    v = x.statement.variable;
+    byNode = isfield(nodes, key) && isfield(v, 'node') && strcmpi(v.node, nodes.(key));
+    if byNode || strcmp(v.name, variableName)
+        body = x;
+        return;
     end
 end
 end

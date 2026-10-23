@@ -336,6 +336,14 @@ classdef TestBlobFixture < matlab.unittest.TestCase
         % ingested sessions. Used by tests that vary a performance
         % knob (numWorkers, prefetchBytes, ...) and need to prove
         % it did not change the produced pyramid.
+            arguments
+                testCase (1,1) ndi.unittest.test.lightsheet.TestBlobFixture
+                S1 (1,1)
+                p1 (1,1) ndi.document
+                S2 (1,1)
+                p2 (1,1) ndi.document
+                msg {mustBeText}
+            end
             levels1 = S1.database_search( ...
                 ndi.query('','depends_on', ...
                     'lightsheetZarrPyramid_id', p1.id()) & ...
@@ -536,6 +544,9 @@ function e = firstEntry(coll)
 % First element of either a cell array or a struct array. jsondecode
 % chooses one or the other depending on field homogeneity, so callers
 % that want "element 1" without caring can go through this helper.
+    arguments
+        coll % a cell array or a struct array (jsondecode picks either)
+    end
     if iscell(coll)
         e = coll{1};
     else
@@ -544,6 +555,9 @@ function e = firstEntry(coll)
 end
 
 function n = entryCount(coll)
+    arguments
+        coll % a cell array or a struct array (jsondecode picks either)
+    end
     if iscell(coll)
         n = numel(coll);
     else
@@ -552,6 +566,9 @@ function n = entryCount(coll)
 end
 
 function names = collectPyramidNames(ms)
+    arguments
+        ms % a cell array or a struct array (jsondecode picks either)
+    end
     if iscell(ms)
         names = cellfun(@(e) char(e.name), ms, 'UniformOutput', false);
     else
@@ -561,6 +578,9 @@ function names = collectPyramidNames(ms)
 end
 
 function firsts = collectFirstPaths(ms)
+    arguments
+        ms % a cell array or a struct array (jsondecode picks either)
+    end
     n = numel(ms);
     firsts = cell(1, n);
     for k = 1:n

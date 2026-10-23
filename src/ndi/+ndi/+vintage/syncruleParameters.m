@@ -16,7 +16,9 @@ function params = syncruleParameters(ruleDoc, ndi_session_obj, objClass)
 %   This is that reader change. V_eta does three different things to one v1
 %   `parameters` bag:
 %
-%     RENAMED into typed fields on `clock_alignment_configuration`
+%     RENAMED into typed fields on `clock_alignment_configuration` (since
+%     did-schema #73 item 22, `method_parameters` entries named by
+%     `variable` -- `method.parameters` since #88; all forms are read)
 %         epochclocktype           -> clock (an ontology_term; the name half)
 %         number_fullpath_matches  -> minimum_matching_file_paths
 %         syncfilename             -> sync_file_name
@@ -24,6 +26,8 @@ function params = syncruleParameters(ruleDoc, ndi_session_obj, objClass)
 %
 %     MOVED OUT into two `acquisition_channels` documents, one per device.
 %         daqsystem1_name / daqsystem1 <- acquisition_channels_1.base.name
+%                                         (current schema: its
+%                                         acquisition_system's `name`)
 %         daqsystem_ch1                <- its `channels` array, re-serialised
 %         (and _2 likewise). The pair is UNORDERED by construction -- the
 %         migrator's own note: the rule is symmetric and both consumers
@@ -71,13 +75,19 @@ end
 
 props = ruleDoc.document_properties;
 cfg = struct();
-if isfield(props, entry.eta_class) && isstruct(props.(entry.eta_class))
-    cfg = props.(entry.eta_class);
+blockName = props.document_class.class_name;
+if isfield(props, blockName) && isstruct(props.(blockName))
+    cfg = props.(blockName);
 end
 
 % ---- the two device documents ----------------------------------------
-[name1, ch1] = deviceHalf(ruleDoc, ndi_session_obj, 1);
-[name2, ch2] = deviceHalf(ruleDoc, ndi_session_obj, 2);
+% A numbered pair (`acquisition_channels_1`/`_2`, as the migrators write it)
+% or one repeated name (`acquisition_channels_id` twice, did-schema T15).
+% Unordered either way, so 1 and 2 are positions.
+channelIds = ndi.vintage.edge_n(ruleDoc, 'acquisition_channels', ...
+    'ErrorIfNotFound', 0);
+[name1, ch1] = deviceHalf(channelIds, ndi_session_obj, 1);
+[name2, ch2] = deviceHalf(channelIds, ndi_session_obj, 2);
 
 % ---- the typed fields -------------------------------------------------
 clockName = '';
@@ -110,10 +120,10 @@ switch objClass
         params.daqsystem2 = require(name2, 'daqsystem2', objClass);
 
     case 'ndi.time.syncrule.filematch'
-        % filematch names NO devices, so the migrator PASSES IT THROUGH as
-        % a v1 `syncrule` and this branch is not reached on real data. It
-        % is here so an unexpected converted filematch fails on the
-        % missing count rather than on a missing case.
+        % filematch names NO devices. On did-schema #88 DID-matlab's
+        % migrator converts it (PRED and 20211116 carry one each, e2e run
+        % 39675528253), with the count as the method parameter labelled
+        % 'minimum matching file paths' -- see spellingKey.
         params.number_fullpath_matches = requireNumber(cfg, ...
             'minimum_matching_file_paths', 'number_fullpath_matches', objClass);
 
@@ -128,15 +138,20 @@ end
 
 % ===================== helpers =============================================
 
-function [deviceName, channelSpec] = deviceHalf(ruleDoc, ndi_session_obj, n)
-%DEVICEHALF Resolve `acquisition_channels_<n>` to a device name + channel spec.
+function [deviceName, channelSpec] = deviceHalf(channelIds, ndi_session_obj, n)
+%DEVICEHALF Resolve the n-th channel group to a device name + channel spec.
+arguments
+    channelIds
+    ndi_session_obj
+    n (1,1) {mustBeNumeric}
+end
 deviceName = '';
 channelSpec = '';
-edgeName = sprintf('acquisition_channels_%d', n);
-id = ruleDoc.dependency_value(edgeName, 'ErrorIfNotFound', 0);
-if isempty(id)
+edgeName = sprintf('acquisition_channels (%d)', n);
+if numel(channelIds) < n || isempty(channelIds{n})
     return;
 end
+id = channelIds{n};
 docs = ndi_session_obj.database_search( ...
     ndi.query('base.id', 'exact_string', id, ''));
 if numel(docs) ~= 1
@@ -153,6 +168,16 @@ p = docs{1}.document_properties;
 % (+migrators_j/private/jAcquisitionChannels.m).
 if isfield(p, 'base') && isfield(p.base, 'name')
     deviceName = p.base.name;
+end
+% ...EXCEPT ON A DOCUMENT BUILT TO THE CURRENT SCHEMA. did-schema #73 item 54
+% keeps a device's name on its acquisition_system (`acquisition_system.name`)
+% and `base.name` is did_v1-only, so such a channel group names no device
+% itself and reaches it through `acquisition_system_id`.
+if isempty(deviceName)
+    sysDoc = linkedDoc(docs{1}, ndi_session_obj, 'acquisition_system_id');
+    if ~isempty(sysDoc)
+        deviceName = ndi.vintage.objectName(sysDoc);
+    end
 end
 if isfield(p, 'acquisition_channels') && isstruct(p.acquisition_channels) ...
         && isfield(p.acquisition_channels, 'channels')
@@ -181,13 +206,13 @@ for k = 1:numel(channels)
     else
         c = channels(k);
     end
+    % the v1 prefix, read BY NODE (ndi.vintage.channelPrefix; Jess Haley
+    % 2026-10-22 [channel types]): 'ai' whether the stored type is
+    % {EMPTY:0000370, 'analog input channel'} or the bare 'ai'; a read mode
+    % with no term ('dep') keeps its name
     t = '';
     if isfield(c, 'type')
-        if isstruct(c.type) && isfield(c.type, 'name')
-            t = c.type.name;
-        elseif ischar(c.type)
-            t = c.type;
-        end
+        t = char(ndi.vintage.channelPrefix(c.type));
     end
     nums = [];
     if isfield(c, 'numbers')
@@ -204,7 +229,89 @@ function v = charField(s, name)
 v = '';
 if isstruct(s) && isfield(s, name)
     v = s.(name);
+    return;
 end
+e = methodParameter(s, name);
+if ~isempty(e)
+    [x, sv, kind] = ndi.v2.entryValue(e);
+    if strcmp(kind, 'text')
+        v = x;
+    elseif strcmp(kind, 'quantity')
+        v = char(sv);
+    end
+end
+end
+
+function d = linkedDoc(doc, ndi_session_obj, edgeName)
+%LINKEDDOC The one document an edge names, or [] if it names none.
+arguments
+    doc
+    ndi_session_obj
+    edgeName {mustBeText}
+end
+d = [];
+id = doc.dependency_value(edgeName, 'ErrorIfNotFound', 0);
+if isempty(id)
+    return;
+end
+hits = ndi_session_obj.database_search(ndi.query('base.id', 'exact_string', id, ''));
+if numel(hits) == 1
+    d = hits{1};
+end
+end
+
+function e = methodParameter(cfg, name)
+%METHODPARAMETER A knob held in the method's parameters, or [] if absent.
+%   `method.parameters` since did-schema #88 (V_eta_method_plan.md);
+%   `method_parameters` before it -- a session migrated against either
+%   schema is read.
+%   did-schema #73 item 22 turned the typed fields into `parameter[]`
+%   entries named by `variable`. Until that variable is bound it is a LABEL
+%   ({name}, no node), so an entry is matched by the V_eta field name or by
+%   the v1 parameter name it came from.
+
+arguments
+    cfg
+    name {mustBeText}
+end
+e = [];
+if ~isstruct(cfg)
+    return;
+end
+if isfield(cfg, 'method') && isstruct(cfg.method) && isfield(cfg.method, 'parameters')
+    mp = cfg.method.parameters;          % did-schema #88: method {term, parameters}
+elseif isfield(cfg, 'method_parameters')
+    mp = cfg.method_parameters;          % #73 item 22, before #88
+else
+    mp = [];
+end
+if isempty(mp)
+    return;
+end
+v1Names = struct('minimum_matching_file_paths', 'number_fullpath_matches', ...
+    'sync_file_name', 'syncfilename', ...
+    'minimum_embedded_file_overlap', 'minEmbeddedFileOverlap');
+wanted = {name};
+if isfield(v1Names, name)
+    wanted{end+1} = v1Names.(name);
+end
+for k = 1:numel(mp)
+    if iscell(mp), c = mp{k}; else, c = mp(k); end
+    if isfield(c, 'variable') && isstruct(c.variable) && isfield(c.variable, 'name') ...
+            && any(strcmp(spellingKey(c.variable.name), cellfun(@spellingKey, wanted, ...
+                'UniformOutput', false)))
+        e = c;
+        return;
+    end
+end
+end
+
+function k = spellingKey(name)
+%SPELLINGKEY A parameter label compared without case, spaces or underscores:
+%   DID-matlab's #88 syncrule migrator labels the count 'minimum matching file
+%   paths' (+migrators_j/syncrule.m, jLabel), the V_eta field name is
+%   minimum_matching_file_paths, and v1 called it number_fullpath_matches.
+k = lower(regexprep(char(name), '[\s_]', ''));
 end
 
 function v = require(v, whatV1Called, objClass)
@@ -220,10 +327,18 @@ end
 end
 
 function v = requireNumber(cfg, etaName, whatV1Called, objClass)
-if ~isstruct(cfg) || ~isfield(cfg, etaName) || isempty(cfg.(etaName))
-    error('NDI:vintage:syncruleMissingField', ...
-        ['cannot rebuild `%s` for a %s: the configuration carries no ' ...
-         '`%s`.'], whatV1Called, objClass, etaName);
+if isstruct(cfg) && isfield(cfg, etaName) && ~isempty(cfg.(etaName))
+    v = cfg.(etaName);
+    return;
 end
-v = cfg.(etaName);
+e = methodParameter(cfg, etaName);
+[x, ~, kind] = ndi.v2.entryValue(e);
+if any(strcmp(kind, {'quantity', 'count'}))
+    v = x;
+    return;
+end
+error('NDI:vintage:syncruleMissingField', ...
+    ['cannot rebuild `%s` for a %s: the configuration carries no ' ...
+     '`%s`, as a field or as a method parameter.'], ...
+    whatV1Called, objClass, etaName);
 end

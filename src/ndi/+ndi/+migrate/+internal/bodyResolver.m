@@ -47,6 +47,17 @@ function resolver = bodyResolver(bodies)
 %         A future subclass therefore needs no edit here, and a class that
 %         merely SOUNDS like a response is not swept in.
 %
+%     resolver.subjectsViaStimulator(presentationId)
+%         The animal reached through the presentation's OWN
+%         `stimulus_element_id` edge: presentation -> the stimulator element ->
+%         that element's v1 subject (subjectOfElement, the same element ->
+%         subject resolution used everywhere else here; ids are preserved).
+%         Only elements stored in the presentation's OWN session are followed.
+%         The third route, after the response link and the session-scoped
+%         epoch (fork 1). Decided by Jess Haley 2026-10-21 (NDI-matlab PR
+%         #1021) for presentations whose epoch records no element. Returns a
+%         de-duplicated cell of subject_ids.
+%
 %   This lives in the NDI layer because only here is the whole body set
 %   (the session/element graph) available; the per-document DID converter
 %   defers anything that needs it (see
@@ -91,10 +102,14 @@ resolver.subjectsViaEpochScoped = @(presentationId) ...
     subjectsViaEpochScoped(byId, elementsBySessionEpoch, presentationId);
 resolver.subjectsViaEpochSibling = @(presentationId) ...
     subjectsViaEpochSibling(byId, elementsByEpoch, elementsBySessionEpoch, presentationId);
+resolver.subjectsViaStimulator = @(presentationId) ...
+    subjectsViaStimulator(byId, presentationId);
 resolver.epochElementCountUnscoped = @(presentationId) ...
     epochElementCountUnscoped(byId, elementsByEpoch, presentationId);
 resolver.epochElementCountScoped = @(presentationId) ...
     epochElementCountScoped(byId, elementsBySessionEpoch, presentationId);
+resolver.subjectsRecordedInSession = @(sessionId) ...
+    subjectsRecordedInSession(byId, elementsBySessionEpoch, sessionId);
 end
 
 % ===================== graph index (one O(N) pass) =======================
@@ -141,7 +156,7 @@ for k = 1:numel(bodies)
         if ~isempty(eid) && ~isempty(ep)
             elementEpochByKey = appendToMap(elementEpochByKey, [eid '|' ep], b);
             elementsByEpoch   = appendToMap(elementsByEpoch, ep, eid);
-            sid = subField(b, 'base', 'session_id');
+            sid = ndi.v2.sessionIdOf(b);
             if ~isempty(sid)
                 elementsBySessionEpoch = ...
                     appendToMap(elementsBySessionEpoch, [sid '|' ep], eid);
@@ -314,7 +329,7 @@ if ~isKey(byId, presentationId)
 end
 pres = byId(presentationId);
 epochId   = epochIdOf(pres);
-sessionId = subField(pres, 'base', 'session_id');
+sessionId = ndi.v2.sessionIdOf(pres);
 if isempty(epochId) || isempty(sessionId)
     return;
 end
@@ -366,7 +381,7 @@ if ~isKey(byId, presentationId)
 end
 pres = byId(presentationId);
 epochId   = epochIdOf(pres);
-sessionId = subField(pres, 'base', 'session_id');
+sessionId = ndi.v2.sessionIdOf(pres);
 if isempty(epochId) || ~isKey(elementsByEpoch, epochId)
     return;
 end
@@ -399,6 +414,100 @@ for k = 1:numel(allElements)
 end
 end
 
+function subs = subjectsViaStimulator(byId, presentationId)
+% THE STIMULATOR ROUTE (Jess Haley, 2026-10-21, NDI-matlab PR #1021). The third
+% route to the animal, which the fold uses only when no stimulus_response names
+% the presentation AND its own session-epoch records no element (fork 1 found
+% nothing to follow). A v1 stimulus_presentation names its stimulator through
+% `stimulus_element_id`, and a v1 stimulator probe/element carries the animal it
+% stimulates as its own `subject_id` -- so presentation -> stimulator element ->
+% subjectOfElement reaches the animal without any epoch or response document.
+%
+% Measured on the Dab corpus (27,561 documents read, 1242 presentations): the
+% 68 presentations fork 1 cannot attribute are recorded epochs in which spike
+% sorting assigned no unit (Dab writes element_epoch only for sorted units).
+% The stimulator route resolves all 68 to a real subject document, and on the
+% 1174 presentations fork 1 DOES attribute it names the same subject in
+% 1174/1174. Every one of Dab's 13 presentation sessions has elements naming
+% exactly one subject.
+%
+% SESSION-SCOPED, LIKE FORK 1: a stimulator element stored in a different
+% session from the presentation is not followed. Cross-session attribution is
+% fork 2's risk, and fork 2 stays disarmed (it gives the wrong animal for all
+% 68 on Dab).
+%
+% Every `stimulus_element_id` entry is followed, so a presentation whose
+% stimulator edges reach two different subjects returns both and the caller
+% refuses as ambiguous. Same return contract as the other resolvers (a
+% de-duplicated cell of subject_ids; empty if the presentation has no session,
+% no stimulator edge, the element is absent or in another session, or it
+% resolves to no subject).
+presentationId = char(presentationId);
+subs = {};
+if ~isKey(byId, presentationId)
+    return;
+end
+pres = byId(presentationId);
+sessionId = ndi.v2.sessionIdOf(pres);
+if isempty(sessionId)
+    return;
+end
+stimulatorIds = dependencyValues(pres, 'stimulus_element_id');
+seen = containers.Map('KeyType', 'char', 'ValueType', 'logical');
+for k = 1:numel(stimulatorIds)
+    eid = stimulatorIds{k};
+    if ~isKey(byId, eid)
+        continue;   % the stimulator element is not in the body set
+    end
+    if ~strcmp(ndi.v2.sessionIdOf(byId(eid)), sessionId)
+        continue;   % stored in another session: never followed (fork 2's risk)
+    end
+    try
+        sid = subjectOfElement(byId, eid);
+    catch
+        continue;   % element does not resolve to a subject -> skip
+    end
+    if ~isempty(sid) && ~isKey(seen, sid)
+        seen(sid) = true;
+        subs{end+1} = sid; %#ok<AGROW>
+    end
+end
+end
+
+function subs = subjectsRecordedInSession(byId, elementsBySessionEpoch, sessionId)
+% The animals recorded in SESSIONID: every element any of its epochs records
+% (element_epoch, session-scoped), resolved to its subject. This is the
+% membership of the session's COHORT (stimulus plan, decision 2 of
+% 2026-10-21: "a standing group (the animals recorded together in that
+% session)"). Same return contract as the other resolvers: a de-duplicated
+% cell of subject ids, in body order; empty when nothing resolves.
+sessionId = char(sessionId);
+subs = {};
+if isempty(sessionId)
+    return;
+end
+prefix = [sessionId '|'];
+keys = elementsBySessionEpoch.keys();
+seen = containers.Map('KeyType', 'char', 'ValueType', 'logical');
+for k = 1:numel(keys)
+    if ~startsWith(keys{k}, prefix)
+        continue;
+    end
+    elementIds = elementsBySessionEpoch(keys{k});
+    for e = 1:numel(elementIds)
+        try
+            sid = subjectOfElement(byId, elementIds{e});
+        catch
+            continue;
+        end
+        if ~isempty(sid) && ~isKey(seen, sid)
+            seen(sid) = true;
+            subs{end+1} = sid; %#ok<AGROW>
+        end
+    end
+end
+end
+
 function n = epochElementCountScoped(byId, elementsBySessionEpoch, presentationId)
 % How many elements are recorded in the presentation's own session-epoch,
 % regardless of whether they resolve to a subject. Lets a caller distinguish
@@ -412,7 +521,7 @@ if ~isKey(byId, presentationId)
 end
 pres = byId(presentationId);
 epochId   = epochIdOf(pres);
-sessionId = subField(pres, 'base', 'session_id');
+sessionId = ndi.v2.sessionIdOf(pres);
 if isempty(epochId) || isempty(sessionId)
     return;
 end
@@ -426,9 +535,14 @@ function n = epochElementCountUnscoped(byId, elementsByEpoch, presentationId)
 % How many elements are recorded under the presentation's BARE epoch NAME
 % across ALL sessions. Paired with epochElementCountScoped, it characterises a
 % presentation whose OWN session-epoch has no recorded element (scoped == 0):
-% unscoped > 0 means the epoch name DOES carry recording elements, just in
-% another session -- a session-id gap; unscoped == 0 means the epoch name
-% carries none anywhere -- a genuinely stimulus-only epoch.
+% unscoped > 0 means the epoch NAME carries recording elements in another
+% session; unscoped == 0 means the epoch name carries none anywhere.
+%
+% unscoped > 0 IS NOT EVIDENCE OF A SESSION-ID GAP. A v1 epoch name (t000NN)
+% repeats across animals. On Dab all 68 presentations with scoped == 0 have
+% unscoped > 0, and searching across sessions finds 2-12 different subjects for
+% every one of them and the true animal for none (research 2026-10-21). They
+% are recorded epochs with no sorted unit, not linkage gaps.
 n = 0;
 presentationId = char(presentationId);
 if ~isKey(byId, presentationId)
@@ -571,6 +685,35 @@ if isstruct(body) && isfield(body, block) && isstruct(body.(block)) ...
     raw = body.(block).(name);
     if ischar(raw) || (isstring(raw) && isscalar(raw))
         v = char(raw);
+    end
+end
+end
+
+function vals = dependencyValues(body, name)
+% Every non-empty value of the depends_on entries named NAME, in order, as a
+% cell of char. dependencyValue returns only the first.
+vals = {};
+if ~isstruct(body) || ~isfield(body, 'depends_on')
+    return;
+end
+deps = body.depends_on;
+for k = 1:numel(deps)
+    if iscell(deps)
+        d = deps{k};
+    else
+        d = deps(k);
+    end
+    if ~isstruct(d) || ~isfield(d, 'name') || ~strcmp(d.name, name)
+        continue;
+    end
+    v = '';
+    if isfield(d, 'value') && ~isempty(d.value)
+        v = char(d.value);
+    elseif isfield(d, 'document_id') && ~isempty(d.document_id)
+        v = char(d.document_id);
+    end
+    if ~isempty(v)
+        vals{end+1} = v; %#ok<AGROW>
     end
 end
 end

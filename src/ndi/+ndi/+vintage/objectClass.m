@@ -29,6 +29,19 @@ className = props.document_class.class_name;
 
 [entry, vintage] = ndi.vintage.entryFor(ndi_document_obj);
 
+% did-schema #88 (T1): a migrated element is an `entity` (type device, ...)
+% rather than a `subject`, so the class map does not name it. Its MATLAB
+% class is where it always was on #73: the `ndi element class` assertion
+% about it, read through the element row's object_assertion.
+if isempty(entry) && strcmp(className, 'entity')
+    elementEntry = ndi.vintage.entryFor('element');
+    if ~isempty(elementEntry) && ~isempty(elementEntry.object_assertion)
+        objClass = assertionValue(ndi_document_obj, ndi_session_obj, ...
+            elementEntry.object_assertion);
+        return;
+    end
+end
+
 if isempty(entry) || strcmp(vintage, 'v1')
     % THE ORIGINAL PATH, unchanged. `obj_parent_string` strips a legacy
     % `ndi_document_` prefix exactly as ndi_document2ndi_object always did.
@@ -76,7 +89,7 @@ if isempty(entry.object_field) && isempty(entry.object_edge)
         ['"%s" (v1 "%s") is not an NDI object type -- ndi.vintage.map ' ...
          'carries it for its class rename only, and v1 stored no ' ...
          'implementation class on it. There is nothing to construct.'], ...
-        entry.eta_class, entry.v1_class);
+        className, entry.v1_class);
 end
 
 % V_eta: one hop to the software entity.
@@ -88,26 +101,35 @@ if isempty(swId)
          'The migrator leaves this edge empty only when the source named ' ...
          'no class (+migrators_j/daqsystem.m: jSoftware returns [] for an ' ...
          'empty name).'], ...
-        entry.eta_class, props.base.id, entry.object_edge, entry.object_field);
+        className, props.base.id, entry.object_edge, entry.object_field);
 end
 
-swDocs = ndi_session_obj.database_search( ...
-    ndi.query('base.id', 'exact_string', swId, ''));
+% The software entity may be DATASET-level: identical software is one entity
+% at the dataset (Decided by Jess Haley, 2026-10-21 [shared entities at
+% dataset level]; ndi.migrate.internal.softwareDedup), so its session_id is the
+% dataset's, not this session's. Look in the session first, then without the
+% session restriction (ndi.session/database_search_with_dataset).
+q = ndi.query('base.id', 'exact_string', swId, '');
+swDocs = ndi_session_obj.database_search(q);
+if isempty(swDocs) && isa(ndi_session_obj, 'ndi.session')
+    swDocs = ndi_session_obj.database_search_with_dataset(q);
+end
 if numel(swDocs) ~= 1
     error('NDI:vintage:softwareNotFound', ...
         ['"%s".%s names software document %s and %d document(s) match; ' ...
          'the object class lives on that document'], ...
-        entry.eta_class, entry.object_edge, swId, numel(swDocs));
+        className, entry.object_edge, swId, numel(swDocs));
 end
 
 swProps = swDocs{1}.document_properties;
-if ~isfield(swProps, 'software') || ~isstruct(swProps.software) ...
-        || ~isfield(swProps.software, 'name') || isempty(swProps.software.name)
+% the `software` block, or from 2026-10-08 an `entity` of type software
+objClass = ndi.v2.blockOf(swProps, 'software', 'name');
+if isempty(objClass)
     error('NDI:vintage:softwareHasNoName', ...
         ['software document %s carries no `name`, and `name` is where ' ...
          'jSoftware puts the implementation class string'], swId);
 end
-objClass = swProps.software.name;
+objClass = char(objClass);
 end
 
 function v = assertionValue(ndi_document_obj, ndi_session_obj, label)
@@ -117,13 +139,13 @@ function v = assertionValue(ndi_document_obj, ndi_session_obj, label)
 %   `term.value.name`, with `subject_id` pointing back at the subject
 %   (DID-matlab +migrators_j/element.m, kindAssertion).
 docId = ndi_document_obj.document_properties.base.id;
-q = ndi.query('', 'isa', 'term_assertion', '') & ...
-    ndi.query('subject_statement.variable.name', 'exact_string', label, '') & ...
-    ndi.query('', 'depends_on', 'subject_id', docId);
+q = ndi.v2.statementQuery('assertion', 'term') & ...
+    ndi.v2.fieldQuery('statement.variable.name', 'exact_string', label) & ...
+    ndi.v2.entityQuery(docId);
 docs = ndi_session_obj.database_search(q);
 if numel(docs) ~= 1
     error('NDI:vintage:assertionNotFound', ...
-        ['subject %s carries %d term_assertion(s) labelled "%s"; exactly ' ...
+        ['subject %s carries %d term assertion(s) labelled "%s"; exactly ' ...
          'one holds the MATLAB class to construct. Zero means this ' ...
          'subject was never an element (or the element carried no class ' ...
          'name, which the migrator skips) -- it is not an object NDI can ' ...

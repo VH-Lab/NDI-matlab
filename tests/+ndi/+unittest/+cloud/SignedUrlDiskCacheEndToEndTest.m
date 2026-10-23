@@ -35,12 +35,16 @@ classdef SignedUrlDiskCacheEndToEndTest < matlab.unittest.TestCase
     end
 
     methods (Access = private)
-        function [signer, counter] = countingSigner(~, filesMap)
+        function [signer, counter] = countingSigner(testCase, filesMap)
             % Emitted as a NESTED handle (not an anonymous @()... wrap)
             % so nargout(signer) reads back as a fixed 2 rather than -1
             % -- which is what batchSignedUrlLookup's four-vs-two output
             % probe expects to see for an injected mock. The same
             % pattern BatchSignedUrlLookupTest already uses.
+            arguments
+                testCase (1,1) ndi.unittest.cloud.SignedUrlDiskCacheEndToEndTest %#ok<INUSA> the signer depends only on filesMap
+                filesMap {mustBeA(filesMap, "containers.Map")}
+            end
             counter = containers.Map('KeyType','char','ValueType','any');
             counter('n') = 0;
             % 23 h ahead of now mirrors the server's 24 h URL lifetime,
@@ -143,6 +147,10 @@ classdef SignedUrlDiskCacheEndToEndTest < matlab.unittest.TestCase
 end
 
 function localCleanup(savedEnv, tmp)
+    arguments
+        savedEnv {mustBeText}
+        tmp {mustBeText}
+    end
     setenv('NDI_SIGNED_URL_CACHE_DIR', savedEnv);
     if ~isempty(tmp) && isfolder(tmp)
         try %#ok<TRYNC>

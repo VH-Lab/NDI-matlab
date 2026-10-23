@@ -1,24 +1,36 @@
 classdef TestMigrateLocalEtaDab < matlab.unittest.TestCase
-%TESTMIGRATELOCALETADAB The Dab corpus through the WHOLE V_eta pipeline.
+%TESTMIGRATELOCALETADAB The Dabrowska documents through the WHOLE V_eta pipeline.
 %
 %   The FOURTH corpus to get the PRED / 20211116 / Soph treatment, and the
-%   one that exercises a path none of the others do: ~27,561 v1 documents
-%   (~35 MB compressed), migrated in full through ndi.migrate.local, opened
-%   through ndi.session.dir, and read back through the object API.
+%   one that exercises a path none of the others do: Dabrowska's 14,644 v1
+%   documents, migrated in full through ndi.migrate.local, opened through
+%   ndi.session.dir, and read back through the object API.
 %
-%   WHY DAB IS WORTH ITS OWN e2e. Dab is the WIDEST corpus (26 v1 classes)
-%   and the only one that holds `ontologyTableRow` at scale (~6,205 docs).
+%   DAB.ZIP IS TWO DATASETS, AND THIS TEST READS ONE OF THEM (Jess Haley,
+%   2026-10-21). The zip holds 27,561 documents: Dabrowska's (the session
+%   `Dabrowska_Electrophysiology`, 14,641, plus the `dabrowska_2025` dataset
+%   session, 3) and the WHOLE of corpus B, the Fitzpatrick tree-shrew dataset
+%   `2013_treeshrew_LGNctx` (13 sessions dated 2008 plus its dataset session,
+%   12,917, byte-identical to B.zip). No depends_on edge crosses between the
+%   two halves. keepDabrowskaBodies filters B out at READ time, from the
+%   existing zip, by session: it keeps the `dabrowska_2025` dataset session
+%   and the sessions it lists. B's checks (the 1,242 stimulus_presentation
+%   and the grating census) live in TestMigrateLocalEtaB.
+%
+%   WHY DAB IS WORTH ITS OWN e2e. Dabrowska holds 17 v1 classes and is the
+%   only corpus that holds `ontologyTableRow` at scale (6,205 docs).
 %   That class's decomposition -- ndi.migrate.internal.ontologyRowSubjects,
 %   the D10/D11 two-tier subject fan-out (#53) -- is proven only by a unit
 %   test (TestOntologyRowSubjects) and has NEVER run over a real corpus. Dab
-%   also carries the widest read-back surface: ingestion (~9,419 docs),
-%   openMINDS (~2,344), and syncrule_mapping (~2,484, the class with the live
-%   NDI query). Its Bar-1 (0 quarantine / 0 orphans) is gated independently on
+%   also carries the bath / slice / optogenetic-tetanus path (stimulus_bath
+%   1,605, openminds_stimulus 635, treatment 49), ingestion (3,209 docs) and
+%   openMINDS (2,344). Its Bar-1 (0 quarantine / 0 orphans) is gated independently on
 %   the DID-matlab side (test-corpus.yml); what THIS workflow uniquely adds is
 %   the NDI second passes + object-layer read-back on Dab's real documents.
 %
 %   HARD ASSERTS, because Dab's DID side already proves them clean: the corpus
-%   size, 0 quarantine, 0 orphans, 0 fragments. If the ontologyRowSubjects
+%   size (14,644 kept of 27,561 read, 12,917 excluded -- all three measured
+%   from the zip), 0 quarantine, 0 orphans, 0 fragments. If the ontologyRowSubjects
 %   fan-out breaks at scale, THIS is where it turns red -- that is the point of
 %   running it over the whole corpus rather than a fixture.
 %
@@ -26,7 +38,7 @@ classdef TestMigrateLocalEtaDab < matlab.unittest.TestCase
 %   count methods, DELIBERATELY (same discipline as the Soph landing). Dab's
 %   exact pass-1 unconverted set, final survivor set, per-session read-back
 %   counts, and the ontologyRowSubjects output volume are MEASURED here before
-%   they are pinned -- arming a gate against a guessed 27k-document set would
+%   they are pinned -- arming a gate against a guessed document set would
 %   either pass vacuously or fail on a persist-legitimate survivor.
 %
 %   SKIPS, NEVER FAILS, when the environment cannot support it: no mksqlite,
@@ -42,6 +54,8 @@ classdef TestMigrateLocalEtaDab < matlab.unittest.TestCase
         CorpusDir
         Result
         Bodies
+        ReadCount       % documents in the zip, before the B filter
+        ExcludedCount   % documents the B filter dropped
     end
 
     methods (TestClassSetup)
@@ -71,9 +85,16 @@ classdef TestMigrateLocalEtaDab < matlab.unittest.TestCase
             % PHASE TIMING, kept from the Soph landing so a future timeout is
             % localised from the log rather than guessed.
             t = tic;
-            testCase.Bodies = readCorpusBodies(testCase.CorpusDir);
+            allBodies = readCorpusBodies(testCase.CorpusDir);
+            testCase.ReadCount = numel(allBodies);
             fprintf('  [Dab timing] readCorpusBodies: %d docs in %.1f s\n', ...
-                numel(testCase.Bodies), toc(t));
+                testCase.ReadCount, toc(t));
+            t = tic;
+            testCase.Bodies = keepDabrowskaBodies(allBodies);
+            testCase.ExcludedCount = testCase.ReadCount - numel(testCase.Bodies);
+            clear allBodies;
+            fprintf('  [Dab timing] keepDabrowskaBodies: kept %d, excluded %d (corpus B), in %.1f s\n', ...
+                numel(testCase.Bodies), testCase.ExcludedCount, toc(t));
             t = tic;
             buildV1Sqlite(fullfile(testCase.SessionRoot, '.ndi', 'did-sqlite.sqlite'), ...
                 testCase.Bodies);
@@ -104,8 +125,16 @@ classdef TestMigrateLocalEtaDab < matlab.unittest.TestCase
             % DENOMINATOR FIRST. A pass over zero documents quarantines zero
             % documents, and that reading prints the same digit as a clean
             % migration -- so the corpus size is asserted before anything else.
-            verifyEqual(testCase, numel(testCase.Bodies), 27561, sprintf( ...
-                ['the Dab corpus did not read as 27561 documents (got %d); ' ...
+            % MEASURED from Dab.zip (python zip listing, 2026-10-21): 27,561
+            % documents, 14,644 in the two Dabrowska sessions, 12,917 in the 14
+            % corpus-B sessions.
+            verifyEqual(testCase, [testCase.ReadCount testCase.ExcludedCount], ...
+                [27561 12917], sprintf( ...
+                ['Dab.zip did not read as 27561 documents with 12917 of corpus B ' ...
+                 'filtered out (read %d, excluded %d)'], ...
+                testCase.ReadCount, testCase.ExcludedCount));
+            verifyEqual(testCase, numel(testCase.Bodies), 14644, sprintf( ...
+                ['the Dabrowska half did not read as 14644 documents (got %d); ' ...
                  'every assertion here would be about a different corpus'], ...
                 numel(testCase.Bodies)));
             verifyGreaterThan(testCase, testCase.Result.summary.total, 0, ...
@@ -119,7 +148,7 @@ classdef TestMigrateLocalEtaDab < matlab.unittest.TestCase
 
             % THE GRAPH CLOSES. The fan-out mints subjects + typed statements
             % that reference each other and the row's ontology terms; a dangling
-            % edge among ~6,205 fanned-out rows would show here.
+            % edge among 6,205 fanned-out rows would show here.
             verifyEqual(testCase, testCase.Result.references.orphan_count, 0, ...
                 sprintf('the migrated graph does not close: %d orphan(s). %s', ...
                     testCase.Result.references.orphan_count, ...
@@ -148,8 +177,8 @@ classdef TestMigrateLocalEtaDab < matlab.unittest.TestCase
             ndi.unittest.migrate.printClassTable(s.unconverted_by_class, '    unconverted');
             ndi.unittest.migrate.printClassTable(s.fragment_by_class,    '    fragment');
 
-            verifyEqual(testCase, s.total, 27561, ...
-                'the pass did not see 27561 documents; this figure is about a different corpus');
+            verifyEqual(testCase, s.total, 14644, ...
+                'the pass did not see 14644 documents; this figure is about a different corpus');
 
             % A FRAGMENT IS NEVER DELIBERATE -- a document the migrator DID emit
             % that carries nothing (the isFragment failure). 0 on Dab's DID side.
@@ -194,16 +223,19 @@ classdef TestMigrateLocalEtaDab < matlab.unittest.TestCase
             end
             % A denominator that read nothing is the silentLoss failure; assert
             % it even while the survivor set itself is report-only.
-            verifyEqual(testCase, numel(src), 27561, ...
-                'the source census did not read 27561 documents');
+            verifyEqual(testCase, numel(src), 14644, ...
+                'the source census did not read 14644 documents');
             verifyGreaterThan(testCase, numel(dst), 0, ...
                 'the destination census read zero documents');
         end
 
         function testTheMigratedSessionOpensAndReadsBackThroughNDI(testCase)
             % THE HEADLINE. If this errors, nothing below it is meaningful. Dab
-            % holds several sessions in ONE migrated database, so this opens ONE
-            % of them (the first `session` document) and confirms NDI can reach
+            % holds two sessions in ONE migrated database, so this opens ONE of
+            % them -- the `session` document whose session holds the most
+            % migrated documents (Dabrowska_Electrophysiology; the other is the
+            % 3-document `dabrowska_2025` dataset session, whose read-back
+            % would be empty by construction) -- and confirms NDI can reach
             % it on the did2sqlite backend. Per-session object COUNTS are
             % printed, not pinned, on this first landing. What IS asserted: the
             % session opens, the backend chosen is the did2 one, and anything the
@@ -214,12 +246,14 @@ classdef TestMigrateLocalEtaDab < matlab.unittest.TestCase
                 testCase.Result.destination));
 
             migrated = destinationBodies(testCase.Result.destination);
-            sessionDoc = findByClass(migrated, 'session');
+            % did-schema #88: the session (or, for a dataset's own session,
+            % the dataset) entity; its base.id is the session id
+            [sessionDoc, sessionId] = ndi.unittest.migrate.largestSessionRecord(migrated);
             assertNotEmpty(testCase, sessionDoc, ...
-                'no `session` document in the migrated database');
+                'no session or dataset record in the migrated database');
             vlt.file.str2text( ...
                 fullfile(testCase.SessionRoot, '.ndi', 'unique_reference.txt'), ...
-                sessionDoc.base.session_id);
+                sessionId);
 
             s = ndi.session.dir(testCase.SessionRoot);
             assertTrue(testCase, isa(s, 'ndi.session.dir'), ...
@@ -249,6 +283,147 @@ classdef TestMigrateLocalEtaDab < matlab.unittest.TestCase
                      '    daqsystem_load: %d object(s)\n' ...
                      '    getelements:    %d object(s)\n'], ...
                 numel(devs), numel(els));
+        end
+
+        function testSlicesAndTetanusRunsRebuildEveryApproachLabel(testCase)
+            % DECIDED BY JESS HALEY 2026-10-21 (dabrowska/V2_decisions.md):
+            % each brain slice is an entity `part_of` its animal; one
+            % optogenetic-tetanus manipulation per recording run, on the
+            % slice, timed by a RELATIVE reference on exp_global_time
+            % (relative_to the last "before" epoch; start = that recording's
+            % length, duration = the gap to the first "after" recording);
+            % the 635 before/after approach documents are dropped because the
+            % window rebuilds them (T6). The Nov 28 run filed under the Dec 02
+            % animal is its own animal, slice and run.
+            %
+            % THE LOSSLESS CHECK IS DONE HERE FROM THE DATABASE, not from the
+            % pass's report: every v1 label is rebuilt from the windows the
+            % database holds and the v1 epoch times.
+            r = testCase.Result.secondPass.sliceTetanus;
+            assertNotEmpty(testCase, r, 'the slice / tetanus pass did not run');
+            fprintf(['\n  SLICE / TETANUS REPORT\n    tetanus %d, slices %d, new animals %d, ' ...
+                'labels rebuilt %d/%d, approach docs removed %d, minted quarantined %d\n'], ...
+                r.tetanus_manipulations, r.slices, r.new_animals, r.labels_rebuilt, ...
+                r.approach_labels, r.approach_labels_removed, r.minted_quarantined);
+            verifyEqual(testCase, r.minted_quarantined, 0, 'a minted slice/tetanus document quarantined');
+            verifyEqual(testCase, r.approach_labels, 635, 'the pass did not read 635 approach labels');
+            verifyEqual(testCase, r.tetanus_manipulations, 56, 'expected 56 tetanus runs (55 stimulators + the Nov 28 run)');
+            verifyEqual(testCase, r.slices, 203, 'expected 203 slices (202 bath stimulators + the Nov 28 slice)');
+            verifyEqual(testCase, r.new_animals, 1, 'expected one new animal (the Nov 28 run)');
+            verifyEqual(testCase, [r.tetanus_with_parameters r.tetanus_without_parameters], [9 47], ...
+                'expected 9 runs whose TLS folder states 10 Hz / 20 s and 47 plain TLS');
+            verifyEqual(testCase, [r.tetanus_with_target_region r.tetanus_without_target_region], [55 1], ...
+                'expected a target region on every run but the Nov 28 one (no treatment record)');
+            verifyEqual(testCase, r.labels_not_rebuilt, 0, 'the pass itself could not rebuild a label');
+
+            migrated = destinationBodies(testCase.Result.destination);
+            byId = containers.Map('KeyType', 'char', 'ValueType', 'any');
+            for k = 1:numel(migrated)
+                byId(migrated{k}.base.id) = migrated{k};
+            end
+            % did-schema #88 writes no base.name, so the minted documents are
+            % told apart by what they ARE (ndi.migrate.internal.sliceTetanus):
+            %   tetanus  a manipulation whose variable is EMPTY:0000358
+            %            "optogenetic tetanus stimulation"
+            %   slice    a tissue entity described as a "brain slice ..."
+            %   part_of  a part_of relation whose child is such a slice
+            %   animal   an organism described as filed under another animal
+            %            ("... nested inside the other animal's date folder")
+            tet = {}; sliceIds = {}; animals = 0; survivors = 0;
+            for k = 1:numel(migrated)
+                b = migrated{k};
+                cn = b.document_class.class_name;
+                if strcmp(cn, 'manipulation') && isfield(b, 'statement') ...
+                        && isfield(b.statement, 'variable') && isfield(b.statement.variable, 'node') ...
+                        && strcmp(b.statement.variable.node, 'EMPTY:0000358')
+                    tet{end+1} = b; %#ok<AGROW>
+                elseif strcmp(cn, 'entity') && isfield(b, 'entity') && isfield(b.entity, 'type')
+                    desc = '';
+                    if isfield(b.entity, 'description'); desc = char(b.entity.description); end
+                    if ndi.v2.vocabIs('entity_type', b.entity.type, 'tissue') && startsWith(desc, 'brain slice')
+                        sliceIds{end+1} = b.base.id; %#ok<AGROW>
+                    elseif ndi.v2.vocabIs('entity_type', b.entity.type, 'organism') && contains(desc, 'nested inside')
+                        animals = animals + 1;
+                    end
+                end
+                if strcmp(cn, 'openminds_stimulus')
+                    survivors = survivors + 1;
+                end
+            end
+            slices = numel(sliceIds);
+            sliceParts = 0;
+            for k = 1:numel(migrated)
+                b = migrated{k};
+                if strcmp(b.document_class.class_name, 'directed_relation') ...
+                        && ndi.v2.vocabIs('relation', b.directed_relation.relation, 'part_of') ...
+                        && any(strcmp(edgeOf(b, 'child_id'), sliceIds))
+                    sliceParts = sliceParts + 1;
+                end
+            end
+            fprintf(['  IN THE DATABASE: tetanus manipulations %d, slices %d (part_of %d), ' ...
+                'new animals %d, openminds_stimulus left %d\n'], numel(tet), slices, ...
+                sliceParts, animals, survivors);
+            verifyEqual(testCase, [numel(tet) slices sliceParts animals survivors], [56 203 203 1 0]);
+
+            % ---- the windows, as stored ---------------------------------
+            % #88: the window is the manipulation's time_reference_id, a
+            % relative_time_reference whose referent_id is the EPOCH entity
+            % (its local_identifier the v1 epoch id, its session_id edge the
+            % session)
+            win = struct('stim', {}, 'session', {}, 'epoch', {}, 'start', {}, 'duration', {});
+            for k = 1:numel(tet)
+                m = tet{k};
+                ref = byId(edgeOf(m, 'time_reference_id'));
+                ep = byId(edgeOf(ref, 'referent_id'));
+                v = ref.relative_time_reference.value;
+                verifyEqual(testCase, v.clock.name, 'exp_global_time');
+                win(end+1) = struct('stim', edgeOf(m, 'instrument_id'), ...
+                    'session', edgeOf(ep, 'session_id'), 'epoch', ep.entity.local_identifier, ...
+                    'start', v.start.seconds, 'duration', v.duration.seconds); %#ok<AGROW>
+            end
+
+            % ---- the v1 epoch times and labels ---------------------------
+            t0t1 = containers.Map(); labels = {};
+            for k = 1:numel(testCase.Bodies)
+                txt = testCase.Bodies{k};
+                if contains(txt, '"daqreader_mfdaq_epochdata_ingested"') && contains(txt, 'exp_global_time')
+                    b = jsondecode(txt);
+                    et = b.daqreader_epochdata_ingested.epochtable;
+                    i = find(strcmp(cellstr(et.epochclock), 'exp_global_time'), 1);
+                    t0t1([b.base.session_id '|' b.epochid.epochid]) = [et.t0_t1(1, i) et.t0_t1(2, i)];
+                elseif contains(txt, '"openminds_stimulus"') && contains(txt, 'optogenetic tetanus')
+                    b = jsondecode(txt);
+                    labels{end+1} = b; %#ok<AGROW>
+                end
+            end
+            rebuilt = 0; wrong = 0;
+            for k = 1:numel(labels)
+                b = labels{k};
+                d = b.depends_on; if iscell(d); d = [d{:}]; end
+                stim = d(strcmp({d.name}, 'stimulus_element_id')).value;
+                t = t0t1([b.base.session_id '|' b.epochid.epochid]);
+                truth = 'before';
+                if endsWith(b.openminds.fields.name, 'after optogenetic tetanus'); truth = 'after'; end
+                best = Inf; pred = '';
+                for w = 1:numel(win)
+                    if ~strcmp(win(w).stim, stim) || ~strcmp(win(w).session, b.base.session_id); continue; end
+                    ref = t0t1([win(w).session '|' win(w).epoch]);
+                    ws = ref(1) + win(w).start / 86400;
+                    we = ws + win(w).duration / 86400;
+                    dist = abs(t(1) - ws);
+                    if dist < best
+                        best = dist;
+                        if t(2) <= ws + 1e-3/86400; pred = 'before';
+                        elseif t(1) >= we - 1e-3/86400; pred = 'after';
+                        else; pred = ''; end
+                    end
+                end
+                if strcmp(pred, truth); rebuilt = rebuilt + 1; else; wrong = wrong + 1; end
+            end
+            fprintf('  LABELS REBUILT FROM THE DATABASE WINDOWS: %d/%d (wrong %d)\n', ...
+                rebuilt, numel(labels), wrong);
+            verifyEqual(testCase, [numel(labels) rebuilt], [635 635], ...
+                'not every before/after label rebuilds from the stored tetanus windows');
         end
 
         function testTheOntologyRowFanOutRunsAtScale(testCase)
@@ -293,179 +468,6 @@ classdef TestMigrateLocalEtaDab < matlab.unittest.TestCase
             % what this landing measures; pinning it against a guessed count
             % would fail on a legitimately-unresolvable row. The clean-migration
             % guarantee (0 quarantine / 0 orphans) is the hard gate above.
-        end
-
-        function testStimulusPresentationRefusalsByReason(testCase)
-            % REPORT-ONLY. Dab's survivor census shows all of its
-            % stimulus_presentation UNFOLDED, whereas Soph's e2e folded 173/175.
-            % The second pass records a REASON per refused presentation
-            % (Result.secondPass.stimulusSequence.refusals), and this surfaces
-            % the histogram of those reasons -- which the corpus log did not.
-            % It decides nothing (Operating Rule 4): whether "no responding
-            % animal" (a genuine subject-less presentation, whose home is a bare
-            % `timed_sequence` -- a team call) DOMINATES, or a different reason
-            % (an unresolved-linkage bug the resolver should fix) does, is the
-            % measurement this exists to take. Denominator asserted; the split
-            % is report-only.
-            r = testCase.Result.secondPass.stimulusSequence;
-            testCase.assertTrue(isstruct(r) && isfield(r, 'presentations_read'), ...
-                'the migrate result carries no stimulusSequence report');
-
-            viaSibling = 0;
-            if isfield(r, 'decomposed_via_epoch_sibling')
-                viaSibling = r.decomposed_via_epoch_sibling;
-            end
-            fprintf(['\n  STIMULUS-PRESENTATION FOLD (Dab, #31) -- report-only\n' ...
-                     '    DENOMINATOR: %d presentation(s) read\n' ...
-                     '    decomposed to timed_sequence_manipulation: %d\n' ...
-                     '        animal via stimulus_response:      %d\n' ...
-                     '        animal via epoch, own session (FORK 1): %d\n' ...
-                     '        animal via epoch, sibling session (FORK 2): %d\n' ...
-                     '    refused (left as passthrough):             %d\n'], ...
-                r.presentations_read, r.presentations_decomposed, ...
-                r.decomposed_via_response, r.decomposed_via_epoch, ...
-                viaSibling, r.presentations_refused);
-
-            % Histogram the refusal reasons. `refusals` is a cell of
-            % struct('id', ..., 'reason', ...) appended once per refusal.
-            counts = containers.Map('KeyType', 'char', 'ValueType', 'double');
-            for k = 1:numel(r.refusals)
-                why = r.refusals{k}.reason;
-                if isempty(why); why = '(empty reason)'; end
-                if isKey(counts, why)
-                    counts(why) = counts(why) + 1;
-                else
-                    counts(why) = 1;
-                end
-            end
-            ks = keys(counts);
-            if isempty(ks)
-                fprintf('        (no refusals recorded)\n');
-            else
-                for i = 1:numel(ks)
-                    fprintf('        %6d  %s\n', counts(ks{i}), ks{i});
-                end
-            end
-
-            % FORK 1 is LIVE: it attributes a response-less presentation to the
-            % animal recorded in its OWN session-scoped epoch (the `via epoch,
-            % own session` line). FORK 2 is MEASURED AND DISARMED (2026-08-25):
-            % it measures the sibling-session subject count for the session-id-gap
-            % residual but does NOT attribute, so `via epoch, sibling session`
-            % reads 0. The reason it is disarmed is in the histogram: all 68
-            % session-id-gap presentations resolve to 2-12 sibling subjects
-            % ("ambiguous across sessions"), NONE to exactly one -- genuine
-            % epoch-name collisions, not recoverable linkage gaps. So the RESIDUAL
-            % is characterised by: "ambiguous across sessions" (several sibling
-            % subjects); "exactly one sibling ... DISARMED" (the recoverable case,
-            % if it ever appears -- 0 on Dab); "no element there resolves"; and
-            % "a stimulus-only epoch" (records nothing anywhere). A refusal for
-            % "no grating parameter" instead means an animal WAS resolved but the
-            % stimuli are not gratings -- a separate, non-visual gap (#48).
-
-            % Denominator only: a run that read zero presentations would make
-            % the histogram a statement about nothing. Dab holds 1242 of them.
-            verifyGreaterThan(testCase, r.presentations_read, 0, ...
-                ['the second pass read 0 stimulus_presentation bodies, so the ' ...
-                 'refusal histogram describes nothing -- Dab holds 1242']);
-        end
-
-        function testWhatTheStimulusPresentationParametersActuallyAre(testCase)
-            % REPORT-ONLY. Dabrowska's only stimulator probe is the drug `bath`
-            % (probeTable type 'stimulator'), so its stimulus_presentation are
-            % pharmacological, not visual -- yet 1011 tripped isGratingParameters
-            % (ANY one of angle/orientation/sf/tf present, non-empty). This dumps
-            % the ACTUAL parameter field-name sets across every stimulus, and the
-            % value ranges of the grating-named fields, so what the decoder wrote
-            % is SEEN rather than inferred: a real grating carries angle+sf+tf
-            % with varied values; a bath event mistyped as one carries a stray or
-            % constant field. It decides nothing (Rule 4). The parse mirrors
-            % stimulusArray/stimParameters so the sets match what the fold saw.
-            gratingNames = {'angle', 'orientation', 'sFrequency', ...
-                'spatial_frequency', 'sf', 'tFrequency', 'temporal_frequency', 'tf'};
-            fieldSets = containers.Map('KeyType', 'char', 'ValueType', 'double');
-            gCount    = containers.Map('KeyType', 'char', 'ValueType', 'double');
-            gVals     = containers.Map('KeyType', 'char', 'ValueType', 'any');
-            for g = 1:numel(gratingNames); gCount(gratingNames{g}) = 0; end
-            nPres = 0; nStim = 0;
-
-            for k = 1:numel(testCase.Bodies)
-                j = jsondecode(testCase.Bodies{k});
-                if ~(isfield(j, 'document_class') && isfield(j.document_class, 'class_name') ...
-                        && strcmp(j.document_class.class_name, 'stimulus_presentation'))
-                    continue;
-                end
-                nPres = nPres + 1;
-                if ~isfield(j, 'stimulus_presentation') ...
-                        || ~isfield(j.stimulus_presentation, 'stimuli')
-                    continue;
-                end
-                raw = j.stimulus_presentation.stimuli;
-                stims = {};
-                if isstruct(raw)
-                    for i = 1:numel(raw); stims{end+1} = raw(i); end %#ok<AGROW>
-                elseif iscell(raw)
-                    stims = raw;
-                end
-                for i = 1:numel(stims)
-                    s = stims{i};
-                    if ~(isstruct(s) && isscalar(s) && isfield(s, 'parameters') ...
-                            && isstruct(s.parameters) && isscalar(s.parameters))
-                        continue;
-                    end
-                    nStim = nStim + 1;
-                    p = s.parameters;
-                    fns = sort(fieldnames(p));
-                    key = strjoin(reshape(fns, 1, []), ',');
-                    if isKey(fieldSets, key); fieldSets(key) = fieldSets(key) + 1; ...
-                    else; fieldSets(key) = 1; end
-                    for g = 1:numel(gratingNames)
-                        gn = gratingNames{g};
-                        if isfield(p, gn) && ~isempty(p.(gn))
-                            gCount(gn) = gCount(gn) + 1;
-                            v = p.(gn);
-                            if isnumeric(v) && isscalar(v)
-                                if isKey(gVals, gn); acc = gVals(gn); else; acc = []; end
-                                acc(end+1) = v; %#ok<AGROW>
-                                gVals(gn) = acc;
-                            end
-                        end
-                    end
-                end
-            end
-
-            fprintf('\n  STIMULUS-PARAMETER CENSUS (Dab, #31) -- report-only\n');
-            fprintf(['    DENOMINATOR: %d stimulus_presentation, %d stimulus(i) ' ...
-                     'with a scalar parameters struct\n'], nPres, nStim);
-            fprintf('    distinct parameter field-name set(s): %d\n', fieldSets.Count);
-            ksets = keys(fieldSets);
-            counts = cell2mat(values(fieldSets));
-            [~, ord] = sort(counts, 'descend');
-            for i = 1:min(numel(ksets), 25)
-                kk = ksets{ord(i)};
-                fprintf('        %6d  {%s}\n', fieldSets(kk), kk);
-            end
-            fprintf('    grating-named field presence + value range:\n');
-            anyGrating = false;
-            for g = 1:numel(gratingNames)
-                gn = gratingNames{g};
-                if gCount(gn) == 0; continue; end
-                anyGrating = true;
-                if isKey(gVals, gn) && ~isempty(gVals(gn))
-                    vv = gVals(gn);
-                    fprintf('        %-20s present %6d   distinct-values %d   min %g   max %g\n', ...
-                        gn, gCount(gn), numel(unique(vv)), min(vv), max(vv));
-                else
-                    fprintf('        %-20s present %6d   (non-numeric / non-scalar values)\n', ...
-                        gn, gCount(gn));
-                end
-            end
-            if ~anyGrating
-                fprintf('        (no grating-named field present on any stimulus)\n');
-            end
-
-            verifyGreaterThan(testCase, nPres, 0, ...
-                'no stimulus_presentation bodies read -- census describes nothing');
         end
 
     end
@@ -530,6 +532,53 @@ for k = 1:numel(files)
 end
 end
 
+function bodies = keepDabrowskaBodies(bodies)
+%KEEPDABROWSKABODIES Drop corpus B out of Dab.zip, by session, at read time.
+%   Dab.zip bundles the Dabrowska dataset with the whole of corpus B (the
+%   Fitzpatrick tree-shrew dataset `2013_treeshrew_LGNctx`). Keep the documents
+%   whose base.session_id is the `dabrowska_2025` dataset session or one of the
+%   sessions its `session_in_a_dataset` documents list; drop the rest. Selects
+%   POSITIVELY (what is Dabrowska's), so a third dataset added to the zip later
+%   would be dropped rather than silently tested. Errors when the dataset
+%   session is absent: a filter that keeps nothing is a defect, not a skip.
+datasetRef = 'dabrowska_2025';
+decoded = cell(size(bodies));
+sessionOf = cell(size(bodies));
+for k = 1:numel(bodies)
+    j = jsondecode(bodies{k});
+    decoded{k} = j;
+    sessionOf{k} = '';
+    if isfield(j, 'base') && isfield(j.base, 'session_id')
+        sessionOf{k} = j.base.session_id;
+    end
+end
+keep = {};
+for k = 1:numel(decoded)
+    j = decoded{k};
+    if isfield(j, 'document_class') && strcmp(j.document_class.class_name, 'session') ...
+            && isfield(j, 'session') && isfield(j.session, 'reference') ...
+            && strcmp(j.session.reference, datasetRef)
+        keep{end+1} = sessionOf{k}; %#ok<AGROW>
+    end
+end
+if isempty(keep)
+    error('ndi:corpus:noDabrowskaDataset', ...
+        'Dab.zip holds no `session` document with reference "%s"', datasetRef);
+end
+for k = 1:numel(decoded)
+    j = decoded{k};
+    if isfield(j, 'document_class') ...
+            && strcmp(j.document_class.class_name, 'session_in_a_dataset') ...
+            && any(strcmp(sessionOf{k}, keep)) ...
+            && isfield(j, 'session_in_a_dataset')
+        keep{end+1} = j.session_in_a_dataset.session_id; %#ok<AGROW>
+    end
+end
+keep = unique(keep);
+fprintf('  Dabrowska sessions kept: %s\n', strjoin(keep, ', '));
+bodies = bodies(ismember(sessionOf, keep));
+end
+
 function buildV1Sqlite(tmpFile, bodies)
 %BUILDV1SQLITE A did_v1 sqlite database holding BODIES.
 %   The shape is `docs(doc_id, doc_idx, json_code, timestamp)` because that is
@@ -586,6 +635,26 @@ hits = findAllByClass(bodies, className);
 if ~isempty(hits); doc = hits{1}; end
 end
 
+function doc = largestSession(bodies)
+%LARGESTSESSION The `session` document whose session holds the most documents.
+counts = containers.Map('KeyType', 'char', 'ValueType', 'double');
+for k = 1:numel(bodies)
+    b = bodies{k};
+    if isfield(b, 'base') && isfield(b.base, 'session_id') && ischar(b.base.session_id)
+        sid = b.base.session_id;
+        if isKey(counts, sid); counts(sid) = counts(sid) + 1; else; counts(sid) = 1; end
+    end
+end
+doc = []; best = -1;
+sessions = findAllByClass(bodies, 'session');
+for k = 1:numel(sessions)
+    sid = sessions{k}.base.session_id;
+    n = 0;
+    if isKey(counts, sid); n = counts(sid); end
+    if n > best; best = n; doc = sessions{k}; end
+end
+end
+
 function s = quarantineDiag(result)
 if isempty(result.quarantine)
     s = ''; return;
@@ -602,4 +671,17 @@ function s = resultDiag(result)
 s = sprintf('[migrated %d, quarantined %d, edges %d] %s', ...
     result.summary.total, numel(result.quarantine), ...
     result.references.edges_examined, quarantineDiag(result));
+end
+
+function v = edgeOf(b, name)
+%EDGEOF The value of one depends_on edge of a struct body, '' when absent.
+v = '';
+d = b.depends_on;
+if iscell(d); d = [d{:}]; end
+for k = 1:numel(d)
+    if strcmp(d(k).name, name)
+        if isfield(d(k), 'value'); v = d(k).value; else; v = d(k).document_id; end
+        return;
+    end
+end
 end

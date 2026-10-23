@@ -1,25 +1,42 @@
 function [kept, minted, report] = strainAssembly(structs)
 %STRAINASSEMBLY V_eta second pass: assemble the UNATTACHED `openminds`
-%   documents that carry openMINDS Strain objects into `strain` ENTITIES, with
-%   their ids preserved, consuming their Species / GeneticStrainType FRAGMENT
-%   documents into the strain's `species` and `genetic_strain_type` fields and
-%   wiring `backgroundStrain` into the recursive `background_strain_#` edge.
+%   documents that carry openMINDS Strain objects into strain ENTITIES (an
+%   `entity` of type `strain`), with their ids preserved, consuming their
+%   Species / GeneticStrainType FRAGMENT documents into ASSERTIONS about the
+%   strain, and wiring `backgroundStrain` into `derived_from` relations.
 %
-%   SIGNED MODEL (DID-schema `V_eta_openminds_family_record.md` Part 7,
-%   TEAM-SIGN-OFF jess 2026-08-08): "the 3 unattached Strain documents become
-%   `strain` entities with their ids preserved and OP50-GFP's pedigree as
-%   `background_strain_1`; the other 5 documents are Species/GeneticStrainType
-%   fragments and are consumed into their parent strain's `species` and
-%   `genetic_strain_type` fields; no `term_assertion` is emitted, because there
-%   is no subject; the build is a second-pass assembler, and the `strain_id`
-%   edge is attached by the same pass that mints subjects from
-%   `ontologyTableRow`."
+%   THE SHAPE IS did-schema #88's (V_eta_entity_composition_plan.md, signed
+%   2026-10-08 by Jess):
+%     sec. 4  `strain` is no longer a class: it is an `entity` with
+%             `type: strain`, whose only required field is `name`
+%             (binding_registry_meta.json entity_type_bindings). Its other
+%             fields become statements about it -- `species`,
+%             `genetic_strain_type`, `phenotype` as term assertions,
+%             `laboratory_code`, `synonym` as text assertions -- and
+%             `background_strain_id` becomes a `derived_from` relation
+%             (strain -> strain, RO:0001000).
+%     sec. 1  an assertion is the `assertion` direction plus ONE value-kind
+%             mixin (`term`, `text`), pointing at the strain by `entity_id`.
+%   The variables are the ones ndi.setup.V2.entityDocuments writes for the
+%   same fields (species NCIT:C45293, genetic strain type EMPTY:0000347; the
+%   others by name), so a migrated strain reads like an imported one.
+%
+%   The signed openMINDS model this pass first implemented
+%   (`V_eta_openminds_family_record.md` Part 7, TEAM-SIGN-OFF jess
+%   2026-08-08: "the 3 unattached Strain documents become `strain` entities
+%   with their ids preserved and OP50-GFP's pedigree as `background_strain_1`;
+%   the other 5 documents are Species/GeneticStrainType fragments and are
+%   consumed into their parent strain's `species` and `genetic_strain_type`
+%   fields") is unchanged in substance: the ids, the consumption of the
+%   fragments and the pedigree are the same; only where each fact is written
+%   follows #88.
 %
 %   STRUCTS is a cell of V_eta document body structs (the pass-1 output; the
-%   bare `openminds` class has no migrator and passes through). Returns KEPT
-%   (the surviving bodies, with the consumed Strain and fragment documents
-%   removed), MINTED (the new `strain` bodies, tagged schema_version 'V_eta'),
-%   and REPORT (denominator first; REPORT.changed gates the caller's rebuild).
+%   bare `openminds` class passes through, guarded). Returns KEPT (the
+%   surviving bodies, with the consumed Strain and fragment documents removed),
+%   MINTED (the strain entities, their assertions and their `derived_from`
+%   relations, each tagged schema_version 'V_eta'), and REPORT (denominator
+%   first; REPORT.changed gates the caller's rebuild).
 %
 %   ---------------------------------------------------------------------
 %   WHY THIS IS A SECOND PASS AND NOT A `+migrators_j` FILE
@@ -79,29 +96,49 @@ function [kept, minted, report] = strainAssembly(structs)
 %     (haley/doImport.m:164 and :734) -- not through `depends_on`, so nothing
 %     would flag a re-mint. The minted `strain` reuses the openminds document's
 %     `base.id` exactly.
-%   * NOTHING IS EMITTED HOLLOW. `strain` declares `name`, `species` and
-%     `genetic_strain_type` as mustBeNonEmpty (schemas/V_eta/stable/strain.json).
-%     A Strain missing any of the three is LEFT AS PASSTHROUGH and counted
-%     (REPORT.strains_incomplete), never emitted with a vacuous required field.
+%   * NOTHING IS EMITTED HOLLOW. A strain entity requires `name` (the type
+%     registry); a Strain with no name is LEFT AS PASSTHROUGH and counted
+%     (REPORT.strains_incomplete). Before #88 the `strain` class also required
+%     `species` and `genetic_strain_type`; on #88 those are assertions, so a
+%     Strain without one simply has no such assertion (REPORT.species_missing,
+%     REPORT.genetic_strain_type_missing count them) -- nothing is invented.
 %   * NO EMPTY EDGE. A `backgroundStrain` reference that does not resolve to a
-%     Strain document in this set produces NO `background_strain_#` entry; it is
+%     Strain document in this set produces NO `derived_from` relation; it is
 %     counted (REPORT.background_unresolved).
 %   * A FRAGMENT IS CONSUMED ONLY IF EVERY DOCUMENT THAT REFERENCES IT IS A
 %     STRAIN THIS PASS ASSEMBLED. Otherwise it stays, so a surviving
 %     passthrough's `openminds_#` edge cannot dangle.
-%   * NO `term_assertion` IS EMITTED. These documents carry no `subject_id` --
-%     they are not assertions about anybody. That is the whole reason
-%     `strain` is an entity.
+%   * NOTHING IS SAID ABOUT AN ORGANISM. These documents carry no subject --
+%     every assertion minted here is about the STRAIN (its `entity_id`). That
+%     is the whole reason a strain is an entity.
+%
+%   * ONE STRAIN PER DATASET WHEN A DATASET IS MIGRATED. Decided by Jess
+%     Haley, 2026-10-21: "When a dataset is migrated, shared entities
+%     (strains, software, people, organizations, instruments, products) move
+%     to the dataset level as in native V2 imports (Haley
+%     import_V2_decisions.md #20): one entity per distinct thing in the
+%     dataset's database, with session documents pointing at it and
+%     merged-away ids remapped so every link still resolves; a lone session
+%     with no dataset keeps them in the session." The Haley writer mints one
+%     Strain per session (doImport.m runs per session), so a dataset holds
+%     copies. With exactly one `dataset` entity in the batch
+%     (ndi.migrate.internal.datasetScope), identical strains (same name,
+%     species, genetic strain type, identifier, description and surviving
+%     background strains) merge onto the smallest id, every strain entity and
+%     its assertions and relations are stored at the dataset level (their
+%     `session_id` names the dataset entity), and every reference to a
+%     merged-away id ANYWHERE in the kept set -- edges and ordinary fields,
+%     since the ids sit in table cells -- is rewritten to the survivor
+%     (ndi.migrate.internal.remapIds; REPORT.strains_merged_away,
+%     REPORT.references_remapped). A lone session is left exactly as before.
 %
 %   ---------------------------------------------------------------------
 %   DEFERRED, ON PURPOSE
 %   ---------------------------------------------------------------------
-%   The `strain_id` edge on `term_assertion` is NOT attached here. Part 7 puts
-%   it with the pass that mints subjects from `ontologyTableRow` (#53), because
-%   that is where the row's `bacteriaStrain` cell -- holding this strain's id --
-%   becomes a subject. That pass does not exist yet
-%   (did2.convert.migrators_j.ontology_table_row still carries `subject_id`
-%   forward from the source document). Nothing here blocks it: the id it will
+%   The organism-to-strain `instance_of` relation is NOT minted here. These
+%   strains are bacterial food named in `ontologyTableRow` cells
+%   (`bacteriaStrain`), and whatever becomes an instance of them is minted by
+%   the pass that reads those rows. Nothing here blocks it: the id it will
 %   point at is preserved.
 %
 %   Group B of Part 7 (the metadata-app dataset graph: Dataset / Person /
@@ -112,12 +149,15 @@ function [kept, minted, report] = strainAssembly(structs)
 %   Bare `openminds` documents that are not Strain/Species/GeneticStrainType
 %   are left untouched and counted (REPORT.openminds_other).
 %
-%   STATUS: authored without local MATLAB. The unit tests
-%   (tests/+ndi/+unittest/+migrate/TestStrainAssembly.m) have NOT been run.
+%   Tests: tests/+ndi/+unittest/+migrate/TestStrainAssembly.m (the fast
+%   assembler gate, test-eta-migrate.yml).
 %
 %   See also: ndi.migrate.local, ndi.migrate.internal.pathSPromotion,
 %     ndi.migrate.internal.ensembleMembership,
-%     DID-schema schemas/V_eta_openminds_family_record.md Part 7.
+%     ndi.migrate.internal.subjectStrainAssembly,
+%     ndi.migrate.internal.etaShape,
+%     DID-schema schemas/V_eta_openminds_family_record.md Part 7,
+%     DID-schema schemas/V_eta_entity_composition_plan.md secs. 1, 4, 5.
 
 arguments
     structs cell
@@ -132,14 +172,22 @@ report.openminds_seen         = 0;
 report.openminds_other        = 0;   % bare openminds that is not a strain/fragment
 report.strains_seen           = 0;
 report.strains_assembled      = 0;
-report.strains_incomplete     = 0;   % missing a mustBeNonEmpty field -> passthrough
+report.strains_incomplete     = 0;   % no name -> passthrough
 report.incomplete_reasons     = {};
 report.fragments_seen         = 0;
 report.fragments_consumed     = 0;
 report.fragments_retained     = 0;
 report.background_edges       = 0;
 report.background_unresolved  = 0;
-report.background_over_max    = 0;   % > 2 parents; strain.json declares max_count 2
+report.species_missing        = 0;   % assembled, but no species to assert
+report.genetic_strain_type_missing = 0;
+report.assertions_minted      = 0;   % term + text assertions about strains
+report.scope                  = 'session';
+report.dataset_id             = '';
+report.cross_session_groups   = 0;   % distinct strains written in >1 session
+report.cross_session_collapsible = 0;
+report.strains_merged_away    = 0;   % dataset scope only
+report.references_remapped    = 0;   % merged-away ids rewritten to survivors
 report.changed                = false;
 
 if isempty(structs)
@@ -184,8 +232,8 @@ if ~any(isStrainDoc)
 end
 
 % --- pass 1: which Strain documents can be assembled at all? ----------------
-% background_strain_# must point at a strain document that SURVIVES, so the
-% completeness decision has to be made for every strain before any edge is
+% A `derived_from` relation must point at a strain entity that SURVIVES, so the
+% completeness decision has to be made for every strain before any relation is
 % written.
 strainIdx      = find(isStrainDoc);
 assembled      = false(1, n);
@@ -203,18 +251,10 @@ for k = 1:numel(strainIdx)
     [gstTerm, gstFrag] = resolveTerm(f, ...
         {'geneticStrainType', 'genetic_strain_type'}, byId, structs);
 
-    why = '';
     if isempty(nm)
-        why = 'name';
-    elseif ~termIsPopulated(speciesTerm)
-        why = 'species';
-    elseif ~termIsPopulated(gstTerm)
-        why = 'genetic_strain_type';
-    end
-    if ~isempty(why)
         report.strains_incomplete = report.strains_incomplete + 1;
         report.incomplete_reasons{end+1} = ...
-            sprintf('%s: missing %s', shortId(idOf{i}), why); %#ok<AGROW>
+            sprintf('%s: missing name', shortId(idOf{i})); %#ok<AGROW>
         continue;
     end
 
@@ -231,7 +271,8 @@ if ~any(assembled)
     return;
 end
 
-% --- pass 2: mint the strain entities --------------------------------------
+% --- pass 2: mint the strain entities, their assertions and pedigree --------
+S = ndi.migrate.internal.etaShape;
 for k = 1:numel(strainIdx)
     i = strainIdx(k);
     if ~assembled(i)
@@ -239,68 +280,44 @@ for k = 1:numel(strainIdx)
     end
     s = structs{i};
     f = openmindsFields(s);
+    sid = ndi.v2.sessionIdOf(s);
+    ds  = baseField(s, 'datestamp', '');
+    if isempty(ds)
+        ds = baseField(s, 'creation_timestamp', '');
+    end
+    common = {'SessionId', sid, 'Datestamp', ds};
 
-    body = struct();
-    body.document_class = struct('class_name', 'strain', ...
-        'class_version', '1.0.0', ...
-        'superclasses', struct('class_name', 'entity', 'class_version', '1.0.0'), ...
-        'schema_version', 'V_eta');
+    % base.id PRESERVED -- ontologyTableRow's `bacteriaStrain` cell holds it.
+    ef = struct('name', charField(f, {'name'}));
+    desc = charField(f, {'description'});
+    if ~isempty(desc); ef.description = desc; end
+    gid = charField(f, {'ontologyIdentifier', 'ontology_identifier'});
+    if ~isempty(gid); ef.global_identifier = {S.curie(gid)}; end
+    minted{end+1} = S.entity('strain', ef, 'Id', idOf{i}, common{:}); %#ok<AGROW>
+    report.strains_assembled = report.strains_assembled + 1;
 
-    % background_strain_#: only to strains that survive this pass.
-    deps = struct('name', {}, 'value', {});
+    [docs, nA] = strainStatements(idOf{i}, speciesTermOf{i}, gstTermOf{i}, f, common);
+    minted = [minted, docs]; %#ok<AGROW>
+    report.assertions_minted = report.assertions_minted + nA;
+    if ~termIsPopulated(speciesTermOf{i})
+        report.species_missing = report.species_missing + 1;
+    end
+    if ~termIsPopulated(gstTermOf{i})
+        report.genetic_strain_type_missing = report.genetic_strain_type_missing + 1;
+    end
+
+    % derived_from: only to strains that survive this pass, in source order.
     parents = ndiRefs(getAny(f, {'backgroundStrain', 'background_strain'}));
-    nEdge = 0;
     for p = 1:numel(parents)
         pid = parents{p};
         if isKey(byId, pid) && assembled(byId(pid))
-            nEdge = nEdge + 1;
-            deps(end+1) = struct('name', sprintf('background_strain_%d', nEdge), ...
-                'value', pid); %#ok<AGROW>
+            minted{end+1} = S.relation(idOf{i}, pid, ...
+                ndi.v2.vocabTerm('relation', 'derived_from'), common{:}); %#ok<AGROW>
             report.background_edges = report.background_edges + 1;
         else
             report.background_unresolved = report.background_unresolved + 1;
         end
     end
-    if nEdge > 2
-        % strain.json declares max_count 2. Emitted as found rather than
-        % silently truncated -- a real violation is a finding, not something to
-        % hide. It will show up in validation.
-        report.background_over_max = report.background_over_max + 1;
-    end
-    body.depends_on = deps;
-
-    % base.id PRESERVED -- ontologyTableRow's `bacteriaStrain` cell holds it.
-    body.base = struct('id', idOf{i}, ...
-        'session_id', baseField(s, 'session_id', ''), ...
-        'name', 'migrated_strain', ...
-        'creation_timestamp', baseField(s, 'datestamp', '2024-01-01T00:00:00.000Z'));
-
-    % entity: cross-reference identifiers. Strain.ontologyIdentifier is a CURIE
-    % in one of several regimes (NCBITaxon:, RRID:, WBStrain:, EMPTY:, or absent
-    % -- record Part 2), so scheme/value is split on the first colon and the
-    % array is simply empty when the writer gives none.
-    % (assigned field-by-field, not via struct(): a struct-array value inside
-    % struct() is a well-known way to get a struct ARRAY back by accident.)
-    body.entity = struct();
-    body.entity.global_identifier = ...
-        identifiers(getAny(f, {'ontologyIdentifier', 'ontology_identifier'}));
-
-    blk = struct();
-    blk.name                = charField(f, {'name'});
-    blk.species             = speciesTermOf{i};
-    blk.genetic_strain_type = gstTermOf{i};
-    desc = charField(f, {'description'});
-    if ~isempty(desc); blk.description = desc; end
-    phen = charField(f, {'phenotype'});
-    if ~isempty(phen); blk.phenotype = phen; end
-    lab = charField(f, {'laboratoryCode', 'laboratory_code'});
-    if ~isempty(lab); blk.laboratory_code = lab; end
-    syn = cellstrField(f, {'synonym'});
-    if ~isempty(syn); blk.synonym = syn; end
-    body.strain = blk;
-
-    minted{end+1} = body; %#ok<AGROW>
-    report.strains_assembled = report.strains_assembled + 1;
 end
 
 % --- pass 3: consume the sources -------------------------------------------
@@ -345,7 +362,170 @@ for i = find(isOpenminds)
 end
 
 kept = structs(~removeMask);
+
+% --- pass 4: the dataset level, when a dataset is migrated -----------------
+% Decided by Jess Haley, 2026-10-21 (header): one strain entity per distinct
+% strain in the dataset's database, stored at the dataset level, with every
+% merged-away id remapped to its survivor.
+scope = ndi.migrate.internal.datasetScope(structs);
+[minted, kept, report] = datasetLevel(minted, kept, report, scope, ...
+    find(assembled), idOf, structs, speciesTermOf, gstTermOf, byId, assembled);
 report.changed = true;
+end
+
+% ===================== the dataset level ==================================
+
+function [minted, kept, report] = datasetLevel(minted, kept, report, scope, ...
+        idx, idOf, structs, speciesTermOf, gstTermOf, byId, assembled)
+%DATASETLEVEL Merge identical strains across the dataset and store them there.
+%   The key is the strain's CONTENT -- name, species, genetic strain type,
+%   identifier, description and its background strains (as their SURVIVING
+%   ids) -- iterated to a fixed point so that two copies of a cross whose
+%   parents are themselves copies merge too. Measured in both modes
+%   (REPORT.cross_session_groups / _collapsible); merged and moved only when the
+%   scope is a dataset.
+S = ndi.migrate.internal.etaShape;
+remap = containers.Map('KeyType', 'char', 'ValueType', 'char');
+attrs = cell(1, numel(idx));
+sess  = cell(1, numel(idx));
+parents = cell(1, numel(idx));
+for k = 1:numel(idx)
+    i = idx(k);
+    f = openmindsFields(structs{i});
+    sp = speciesTermOf{i}; g = gstTermOf{i};
+    attrs{k} = strjoin({charField(f, {'name'}), char(sp.node), char(sp.name), ...
+        char(g.node), char(g.name), ...
+        charField(f, {'ontologyIdentifier', 'ontology_identifier'}), ...
+        charField(f, {'description'})}, char(31));
+    sess{k} = ndi.v2.sessionIdOf(structs{i});
+    ps = ndiRefs(getAny(f, {'backgroundStrain', 'background_strain'}));
+    keepP = false(1, numel(ps));
+    for p = 1:numel(ps)
+        keepP(p) = isKey(byId, ps{p}) && assembled(byId(ps{p}));
+    end
+    parents{k} = ps(keepP);
+end
+ids = idOf(idx);
+for iter = 1:numel(idx) + 1
+    keys_ = cell(1, numel(idx));
+    for k = 1:numel(idx)
+        pk = cellfun(@(x) resolveId(remap, x), parents{k}, 'UniformOutput', false);
+        keys_{k} = [attrs{k} char(30) strjoin(pk, ',')];
+    end
+    [u, ~, grp] = unique(keys_);
+    changed = false;
+    for g = 1:numel(u)
+        members = find(grp == g);
+        [~, o] = sort(ids(members));
+        survivor = ids{members(o(1))};
+        for m = members(:)'
+            if ~strcmp(ids{m}, survivor) && ...
+                    ~(isKey(remap, ids{m}) && strcmp(remap(ids{m}), survivor))
+                remap(ids{m}) = survivor;
+                changed = true;
+            end
+        end
+    end
+    if ~changed
+        break;
+    end
+end
+% measurement: session-scoped groups beyond dataset-scoped ones
+sessKeys = cellfun(@(a, b) [a char(29) b], sess, keys_, 'UniformOutput', false);
+report.cross_session_collapsible = numel(unique(sessKeys)) - numel(unique(keys_));
+for g = 1:numel(u)
+    if numel(unique(sess(grp == g))) > 1
+        report.cross_session_groups = report.cross_session_groups + 1;
+    end
+end
+if ~scope.is_dataset
+    return;
+end
+report.scope      = 'dataset';
+report.dataset_id = scope.dataset_id;
+
+gone = remap.keys();
+report.strains_merged_away = numel(gone);
+keepM = true(1, numel(minted));
+seenRel = containers.Map('KeyType', 'char', 'ValueType', 'logical');
+for k = 1:numel(minted)
+    b = minted{k};
+    if S.isEntity(b)
+        about = b.base.id;
+    elseif strcmp(S.className(b), 'directed_relation')
+        [about, par] = S.relationEnds(b);
+    else
+        about = S.aboutId(b);
+    end
+    if isKey(remap, about)
+        keepM(k) = false;   % the survivor carries the same entity and facts
+        continue;
+    end
+    if strcmp(S.className(b), 'directed_relation')
+        newPar = resolveId(remap, par);
+        relKey = [about '|' newPar];
+        if isKey(seenRel, relKey)
+            keepM(k) = false;
+            continue;
+        end
+        seenRel(relKey) = true;
+        if ~strcmp(newPar, par)
+            b = S.setEdge(b, 'parent_id', newPar);
+        end
+    end
+    minted{k} = ndi.migrate.internal.withSessionId(b, scope.dataset_id);
+end
+minted = minted(keepM);
+if ~isempty(gone)
+    flat = containers.Map('KeyType', 'char', 'ValueType', 'char');
+    for k = 1:numel(gone)
+        flat(gone{k}) = resolveId(remap, gone{k});
+    end
+    [kept, report.references_remapped] = ndi.migrate.internal.remapIds(kept, flat);
+end
+end
+
+function id = resolveId(remap, id)
+seen = 0;
+while isKey(remap, id) && seen < remap.Count + 1
+    id = remap(id);
+    seen = seen + 1;
+end
+end
+
+% ===================== the strain's statements =========================
+
+function [docs, nAssertions] = strainStatements(strainId, speciesTerm, gstTerm, f, common)
+%STRAINSTATEMENTS The assertions a strain's openMINDS fields become on #88
+%   (V_eta_entity_composition_plan.md sec. 4): species, genetic strain type and
+%   phenotype as term assertions, laboratory code and synonyms as text
+%   assertions -- the variables ndi.setup.V2.entityDocuments writes.
+S = ndi.migrate.internal.etaShape;
+docs = {};
+if termIsPopulated(speciesTerm)
+    docs{end+1} = S.statement('assertion', 'term', strainId, ...
+        S.term('NCIT:C45293', 'Species'), speciesTerm, common{:});
+end
+if termIsPopulated(gstTerm)
+    docs{end+1} = S.statement('assertion', 'term', strainId, ...
+        S.term('EMPTY:0000347', 'genetic strain type'), gstTerm, common{:});
+end
+phen = charField(f, {'phenotype'});
+if ~isempty(phen)
+    docs{end+1} = S.statement('assertion', 'term', strainId, ...
+        S.term('', 'phenotype'), S.term('', phen), common{:});
+end
+lab = charField(f, {'laboratoryCode', 'laboratory_code'});
+if ~isempty(lab)
+    docs{end+1} = S.statement('assertion', 'text', strainId, ...
+        S.term('', 'laboratory code'), struct('text', lab), common{:});
+end
+syn = cellstrField(f, {'synonym'});
+if ~isempty(syn)
+    docs{end+1} = S.statement('assertion', 'text', strainId, ...
+        S.term('', 'synonym'), struct('text', syn), common{:});
+end
+nAssertions = numel(docs);
 end
 
 % ===================== openMINDS accessors =============================
@@ -428,22 +608,6 @@ for k = 1:numel(v)
     if startsWith(e, 'ndi://') && numel(e) > 6
         ids{end+1} = e(7:end); %#ok<AGROW>
     end
-end
-end
-
-function gid = identifiers(v)
-%IDENTIFIERS entity.global_identifier -- an ARRAY of {scheme, value}, split on
-%   the first colon of the CURIE. Empty when the writer gives none (115 strains
-%   carry no identifier at all; record Part 2).
-gid = struct('scheme', {}, 'value', {});
-raw = firstChar(v);
-if isempty(raw); return; end
-c = strfind(raw, ':');
-if isempty(c)
-    gid(1) = struct('scheme', '', 'value', strtrim(raw));
-else
-    gid(1) = struct('scheme', strtrim(raw(1:c(1)-1)), ...
-        'value', strtrim(raw(c(1)+1:end)));
 end
 end
 

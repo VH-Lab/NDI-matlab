@@ -1,0 +1,93 @@
+{
+    "_about": "The dataset's mapping for ndi.setup.conv.template.import_V2. OPTIONAL: the runner works without it, using its defaults (the template's own example layout, written out in import_V2.m resolveSpec). Every value left empty here keeps that default; every value filled in replaces it. A key starting with _ is a comment and is ignored. Keep every dataset-specific choice HERE, not in the code, and record why in import_V2_decisions.md. Terms are given by NAME, as DID-schema's term registry spells them; the registry supplies the node.",
+
+    "dataset": {
+        "_comment": "The dataset entity (dataset level). Any field ndi.setup.V2.datasetMetadata takes: name, short_name, description, keyword, license (an SPDX id), accessibility, release_date, identifiers, authors, funding, ... See +haley/import_V2_spec.json for a complete one.",
+        "name": "",
+        "description": ""
+    },
+
+    "studies": [],
+    "_studies": "A list of {key, name, short_name, description, factors}; each study is included_in the dataset. Empty: one study, key 'study'.",
+
+    "software": [],
+    "_software": "Dataset-level software, each {key, name, version, identifiers, vendor}: what computed the calculations, and the operating system a calculation requires. Empty: 'analysis' (Template analysis) and 'os' (Linux).",
+
+    "_more_metadata": "Dataset-level entities, each a list with a `key`, exactly as ndi.setup.V2.datasetMetadata reads them: organizations, people, funding, publications, web_resources, software, products, strains, chemicals, formulations, instruments. Add the sections the dataset has.",
+
+    "sessions": {
+        "_comment": "Stage 1. One session per folder of the data folder whose name matches folder_pattern (a regular expression); name_format makes its display name from the folder name (sprintf, one %s); study is the key of the study the sessions are included_in.",
+        "folder_pattern": "",
+        "name_format": "",
+        "study": ""
+    },
+
+    "entities": {
+        "_comment": "Stage 2. Each session folder's source table (CSV), one row per entity: id_column names the entity (its local_identifier is <session>_<id>); type is its entity type (organism, culture, tissue, cell, group, device, material).",
+        "table": "",
+        "id_column": "",
+        "type": ""
+    },
+
+    "acquisition": {
+        "_comment": "Stage 3. The row's recording: file_column names a file in the session folder (recorded by location, never copied); start_column + start_format (a datetime InputFormat) + time_zone (IANA) its start, duration_column its length in seconds. value_kind is the recording observation's value kind (e.g. intensity), variable and method its terms (by name), format the file format's term (by name), datum_type how a sample is stored.",
+        "file_column": "",
+        "start_column": "",
+        "start_format": "",
+        "duration_column": "",
+        "time_zone": "",
+        "value_kind": "",
+        "variable": "",
+        "method": "",
+        "format": "",
+        "datum_type": ""
+    },
+
+    "manipulations": {
+        "_comment": "Stage 4. value_column holds the value as the source wrote it, in unit (as the source spells it: 'C', 'mm', 'uL'; written as its registered term); data_type is the manipulation's value kind (e.g. temperature) and scale converts the value to its canonical unit; tolerance [minus plus] in the canonical unit only where the source states one. time_column + time_format + time_zone say when; time_tolerance [minus plus] seconds for a hand-written time ([60, 60] to the minute).",
+        "value_column": "",
+        "data_type": "",
+        "unit": "",
+        "scale": null,
+        "tolerance": [],
+        "variable": "",
+        "method": "",
+        "time_column": "",
+        "time_format": "",
+        "time_zone": "",
+        "time_tolerance": []
+    },
+
+    "observations": {
+        "_comment": "Stage 5. As manipulations; timed by the row's recording.",
+        "value_column": "",
+        "data_type": "",
+        "unit": "",
+        "scale": null,
+        "tolerance": [],
+        "variable": "",
+        "method": ""
+    },
+
+    "calculations": {
+        "_comment": "Stage 6. As observations; computed from the row's recording (its input). software, operating_system (required by the schema) and interpreter are keys in `software`.",
+        "value_column": "",
+        "data_type": "",
+        "unit": "",
+        "scale": null,
+        "tolerance": [],
+        "variable": "",
+        "method": "",
+        "software": "",
+        "operating_system": "",
+        "interpreter": ""
+    },
+
+    "corrections": [],
+    "_corrections": "Named corrections, each {key, session, row, column, was, value, reason}: applied only while the source cell (session's row whose id is `row`, in `column`) still reads `was`; the document carries 'Corrected from <was>: <reason> (correction <key>)'. Record each in the decision log.",
+
+    "write": {
+        "_comment": "dataset_reference: the dataset folder's reference (.ndi/reference.txt).",
+        "dataset_reference": ""
+    }
+}

@@ -5,7 +5,7 @@ classdef TestEnsembleMembership < matlab.unittest.TestCase
 %   ndi.migrate.internal.ensembleMembership turns each did_v1 `ensemble` MAP
 %   document into graph-native membership: a `member_of` `directed_relation`
 %   from every constituent neuron-subject to the ensemble group-subject
-%   (carrying its column order in `sequence`), plus `derived_from` provenance
+%   (carrying its column order in `order`), plus `derived_from` provenance
 %   recording that the combined marked-point-process binary is a rebuildable
 %   CACHE of those same neurons.
 %
@@ -41,34 +41,32 @@ classdef TestEnsembleMembership < matlab.unittest.TestCase
 
     methods (Test)
 
-        function testMembershipAndCacheProvenanceMinted(testCase)
+        function testMembershipMintedAndNoCacheProvenance(testCase)
+            % RENAMED and the derived_from half INVERTED 2026-10-22 (was
+            % testMembershipAndCacheProvenanceMinted): Decided by Jess Haley,
+            % 2026-10-22 [no ensemble cache] -- no cache, so no derived_from
+            % provenance over the combined bytes.
             structs = ensembleCorpus('ens_1', 'epoch_a', {'nrn_1', 'nrn_2'});
             [~, minted, report] = ndi.migrate.internal.ensembleMembership(structs);
 
             testCase.verifyTrue(report.changed);
             testCase.verifyEqual(report.member_of_minted, 2);
-            testCase.verifyEqual(report.derived_from_minted, 2);
+            testCase.verifyEqual(report.derived_from_minted, 0);
 
             m = ofRelation(minted, 'member_of');
             testCase.verifyEqual(numel(m), 2);
-            % child = the neuron, parent = the ensemble group-subject
-            testCase.verifyEqual(depValue(m{1}, 'child'), 'nrn_1');
-            testCase.verifyEqual(depValue(m{1}, 'parent'), 'ens_1');
+            % child_id = the neuron, parent_id = the ensemble group-subject
+            testCase.verifyEqual(depValue(m{1}, 'child_id'), 'nrn_1');
+            testCase.verifyEqual(depValue(m{1}, 'parent_id'), 'ens_1');
             testCase.verifyEqual(m{1}.directed_relation.relation.node, 'RO:0002350');
-            % column order rides on the declared `sequence` ordinal
-            testCase.verifyEqual(m{1}.directed_relation.sequence, 1);
-            testCase.verifyEqual(m{2}.directed_relation.sequence, 2);
+            % column order rides on the declared `order` ordinal
+            % (`sequence` until did-schema T20; only `order` is emitted)
+            % 0-based (T14): column 1 is order 0
+            testCase.verifyEqual(m{1}.directed_relation.order, 0);
+            testCase.verifyEqual(m{2}.directed_relation.order, 1);
+            testCase.verifyFalse(isfield(m{1}.directed_relation, 'sequence'));
 
-            d = ofRelation(minted, 'derived_from');
-            testCase.verifyEqual(numel(d), 2);
-            % the cache carrier (the acquisition_epoch holding the combined
-            % binary) is DERIVED FROM each neuron -- this set is the
-            % verify-before-delete manifest.
-            testCase.verifyEqual(depValue(d{1}, 'child'), 'aepoch_epoch_a');
-            testCase.verifyEqual(depValue(d{1}, 'parent'), 'nrn_1');
-            testCase.verifyEqual(d{1}.directed_relation.relation.node, 'RO:0001000');
-            % a derived_from edge is unordered -- no sequence
-            testCase.verifyFalse(isfield(d{1}.directed_relation, 'sequence'));
+            testCase.verifyEmpty(ofRelation(minted, 'derived_from'));
         end
 
         function testMintedRelationShapeIsVEta(testCase)
@@ -85,18 +83,81 @@ classdef TestEnsembleMembership < matlab.unittest.TestCase
             testCase.verifyEqual(rel.document_class.class_name, 'directed_relation');
             testCase.verifyEqual(rel.document_class.schema_version, 'V_eta');
             testCase.verifyNotEmpty(rel.base.id);
-            testCase.verifyEqual(rel.base.session_id, 'sess_1');
+            % the session id is a field, or the `session_id` edge on a
+            % schema that keeps it as one (did-schema #88)
+            if isfield(rel.base, 'session_id')
+                testCase.verifyEqual(rel.base.session_id, 'sess_1');
+            else
+                testCase.verifyEqual(depValue(rel, 'session_id'), 'sess_1');
+            end
+            testCase.verifyFalse(isfield(rel.base, 'name'), ...
+                'V_eta documents never write base.name (#73 item 54)');
         end
 
-        function testNothingIsEverDropped(testCase)
-            % The map document, the acquisition_epoch and the bytes all
-            % survive: dropping them is gated on a corpus verify-before-delete
-            % that has not run.
+        function testAnUnscopedMapIsKeptAndCounted(testCase)
+            % INVERTED 2026-10-22 (was testNothingIsEverDropped): D2 (Decided
+            % by Jess Haley, 2026-10-22 [ensemble retired]) dissolves a map
+            % into its epoch-scoped member_of edges. With no epoch to scope
+            % them by, the map is the only per-epoch record and STAYS,
+            % counted; the acquisition_epoch is never touched here.
             structs = ensembleCorpus('ens_1', 'epoch_a', {'nrn_1', 'nrn_2'});
-            [kept, ~, ~] = ndi.migrate.internal.ensembleMembership(structs);
+            [kept, ~, report] = ndi.migrate.internal.ensembleMembership(structs);
             testCase.verifyEqual(numel(kept), numel(structs));
             testCase.verifyTrue(anyClass(kept, 'ensemble'));
             testCase.verifyTrue(anyClass(kept, 'acquisition_epoch'));
+            testCase.verifyEqual(report.ensemble_maps_kept_not_scoped, 1);
+            testCase.verifyEqual(report.ensemble_maps_dissolved, 0);
+        end
+
+        function testAScopedVerifiedMapDissolvesIntoItsEdges(testCase)
+            % D2: every neuron resolved, every neuron's own train present for
+            % this epoch, edges scoped by the epoch -> the map leaves; its
+            % edges carry the roster, the column order and the epoch, and the
+            % combined-bytes carrier goes with it ([no ensemble cache]).
+            structs = ensembleCorpus('ens_1', 'epoch_a', {'nrn_1', 'nrn_2'});
+            structs{end+1} = trainBody('nrn_1', 'epoch_a');
+            structs{end+1} = trainBody('nrn_2', 'epoch_a');
+            [kept, minted, report] = ndi.migrate.internal.ensembleMembership( ...
+                structs, 'EpochDocumentIdFor', @(e, sid) ['epochdoc_' e]);
+            testCase.verifyEqual(report.ensemble_maps_dissolved, 1);
+            testCase.verifyEqual(report.dissolved_map_ids, {'map_ens_1_epoch_a'});
+            testCase.verifyFalse(anyClass(kept, 'ensemble'), 'the map dissolved');
+            testCase.verifyEqual(numel(kept), numel(structs) - 2, 'the map and the combined bytes left');
+            testCase.verifyEqual(report.combined_bytes_dropped, 1);
+            testCase.verifyEqual(report.dropped_carrier_ids, {'aepoch_epoch_a'});
+            ids = cellfun(@(x) x.base.id, kept, 'UniformOutput', false);
+            testCase.verifyFalse(any(strcmp(ids, 'aepoch_epoch_a')));
+            testCase.verifyTrue(all(ismember({'train_nrn_1_epoch_a', 'train_nrn_2_epoch_a'}, ids)), ...
+                'the per-neuron trains stay');
+            m = ofRelation(minted, 'member_of');
+            testCase.verifyEqual(numel(m), 2);
+            for k = 1:numel(m)
+                testCase.verifyEqual(depValue(m{k}, 'epoch_id'), 'epochdoc_epoch_a');
+                testCase.verifyEqual(depValue(m{k}, 'parent_id'), 'ens_1');
+            end
+            testCase.verifyTrue(report.changed);
+        end
+
+        function testAMapWithAMissingTrainIsKeptAndCounted(testCase)
+            % The verify-before-delete is per map: one neuron with no train
+            % for this epoch keeps the map, in its own bucket.
+            structs = ensembleCorpus('ens_1', 'epoch_a', {'nrn_1', 'nrn_2'});
+            structs{end+1} = trainBody('nrn_1', 'epoch_a');
+            [kept, ~, report] = ndi.migrate.internal.ensembleMembership( ...
+                structs, 'EpochDocumentIdFor', @(e, sid) ['epochdoc_' e]);
+            testCase.verifyEqual(report.ensemble_maps_dissolved, 0);
+            testCase.verifyEqual(report.ensemble_maps_kept_train_missing, 1);
+            testCase.verifyTrue(anyClass(kept, 'ensemble'));
+        end
+
+        function testAMapWithAStrandedNeuronIsKeptAndCounted(testCase)
+            structs = ensembleCorpus('ens_1', 'epoch_a', {'nrn_1', 'nrn_2'});
+            structs{end+1} = trainBody('nrn_1', 'epoch_a');
+            structs = dropId(structs, 'nrn_2');
+            [kept, ~, report] = ndi.migrate.internal.ensembleMembership( ...
+                structs, 'EpochDocumentIdFor', @(e, sid) ['epochdoc_' e]);
+            testCase.verifyEqual(report.ensemble_maps_kept_stranded, 1);
+            testCase.verifyTrue(anyClass(kept, 'ensemble'));
         end
 
         function testColumnOrderComesFromTheEdgeSuffix(testCase)
@@ -114,10 +175,10 @@ classdef TestEnsembleMembership < matlab.unittest.TestCase
             m = ofRelation(minted, 'member_of');
             byChild = containers.Map();
             for k = 1:numel(m)
-                byChild(depValue(m{k}, 'child')) = m{k}.directed_relation.sequence;
+                byChild(depValue(m{k}, 'child_id')) = m{k}.directed_relation.order;
             end
-            testCase.verifyEqual(byChild('nrn_1'), 1);
-            testCase.verifyEqual(byChild('nrn_2'), 2);
+            testCase.verifyEqual(byChild('nrn_1'), 0);
+            testCase.verifyEqual(byChild('nrn_2'), 1);
         end
 
         function testStrandedNeuronIsCountedAndGetsNoEdge(testCase)
@@ -135,8 +196,8 @@ classdef TestEnsembleMembership < matlab.unittest.TestCase
             testCase.verifyEqual(report.stranded_neuron_ids, {'nrn_2'});
             testCase.verifyEqual(report.member_of_minted, 1);
             for k = 1:numel(minted)
-                testCase.verifyNotEqual(depValue(minted{k}, 'child'), 'nrn_2');
-                testCase.verifyNotEqual(depValue(minted{k}, 'parent'), 'nrn_2');
+                testCase.verifyNotEqual(depValue(minted{k}, 'child_id'), 'nrn_2');
+                testCase.verifyNotEqual(depValue(minted{k}, 'parent_id'), 'nrn_2');
             end
         end
 
@@ -661,11 +722,13 @@ b.ensemble = struct('ensemble_name', 'V1', 'value_type', 'spiketimes', ...
 end
 
 function b = subjectBody(id)
+% migrators_j.element on did-schema #88: an `entity`, id preserved
 b = struct();
-b.document_class = dc('subject', {'entity'});
+b.document_class = dc('entity', {'base'});
 b.depends_on = struct('name', {}, 'value', {});
 b.base = base(id);
-b.subject = struct('local_identifier', id, 'description', '');
+b.entity = struct('type', struct('node', '', 'name', 'device'), ...
+    'local_identifier', id);
 end
 
 function b = acquisitionEpochBody(id, epochId, elementId)
@@ -726,7 +789,7 @@ out = {};
 for k = 1:numel(bodies)
     b = bodies{k};
     if ~strcmp(b.document_class.class_name, 'directed_relation'); continue; end
-    if strcmp(b.directed_relation.relation.name, relationName)
+    if ndi.v2.vocabIs('relation', b.directed_relation.relation, relationName)
         out{end+1} = b; %#ok<AGROW>
     end
 end

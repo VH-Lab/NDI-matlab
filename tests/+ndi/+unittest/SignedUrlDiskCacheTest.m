@@ -46,16 +46,24 @@ classdef SignedUrlDiskCacheTest < matlab.unittest.TestCase
     end
 
     methods (Access = private)
-        function m = mapOf(~, uidUrlPairs)
+        function m = mapOf(testCase, uidUrlPairs)
+            arguments
+                testCase (1,1) ndi.unittest.SignedUrlDiskCacheTest %#ok<INUSA> the map depends only on uidUrlPairs
+                uidUrlPairs cell
+            end
             m = containers.Map('KeyType','char','ValueType','any');
             for i = 1:size(uidUrlPairs, 1)
                 m(uidUrlPairs{i, 1}) = uidUrlPairs{i, 2};
             end
         end
 
-        function s = futureIso(~, secondsAhead)
+        function s = futureIso(testCase, secondsAhead)
             % ISO-8601 UTC N seconds from now, in the same format the
             % server uses in the getSignedURLSetJob ready-state payload.
+            arguments
+                testCase (1,1) ndi.unittest.SignedUrlDiskCacheTest %#ok<INUSA> the time depends only on secondsAhead
+                secondsAhead (1,1) {mustBeNumeric}
+            end
             dt = datetime('now','TimeZone','UTC') + seconds(secondsAhead);
             dt.Format = 'yyyy-MM-dd''T''HH:mm:ss''Z''';
             s = char(dt);
@@ -274,6 +282,13 @@ classdef SignedUrlDiskCacheTest < matlab.unittest.TestCase
 end
 
 function localCleanup(envKey, savedDir, safetyKey, savedSaf, tmp)
+    arguments
+        envKey {mustBeText}
+        savedDir {mustBeText}
+        safetyKey {mustBeText}
+        savedSaf {mustBeText}
+        tmp {mustBeText}
+    end
     setenv(envKey, savedDir);
     setenv(safetyKey, savedSaf);
     if ~isempty(tmp) && isfolder(tmp)

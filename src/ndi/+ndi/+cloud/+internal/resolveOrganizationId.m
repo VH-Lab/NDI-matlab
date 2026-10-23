@@ -70,6 +70,10 @@ function organizationId = resolveOrganizationId(options)
 end
 
 function s = availableList(names, ids)
+    arguments
+        names cell
+        ids cell
+    end
     parts = strings(1, numel(ids));
     for k = 1:numel(ids)
         if k <= numel(names) && ~isempty(names{k})

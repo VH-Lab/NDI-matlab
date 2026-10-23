@@ -43,7 +43,8 @@ on:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  # false: a push queues behind a run in progress instead of cancelling it.
+  cancel-in-progress: false
 
 jobs:
   eta_migrate_soph:
@@ -56,26 +57,70 @@ jobs:
       # DID-matlab's V_eta migrators merged to V2 (#151, 2026-09-23); validate
       # the cross-repo wiring against V2 so this resolves after the shared topic
       # branch is deleted. A workflow_dispatch input still overrides.
-      DID_MATLAB_REF: ${{ inputs.ref || 'V2' }}
+      # did-schema #88 needs the #88-ported migrators: DID-matlab PR #218
+      # (claude/ecstatic-pascal-md91fw). Back to V2 once #218 merges.
+      DID_MATLAB_REF: ${{ inputs.ref || 'claude/ecstatic-pascal-md91fw' }}
       # V_eta lives on did-schema `main` since #64 merged (2026-09-23) and the
       # shared topic branch was deleted; validate against main.
-      DID_SCHEMA_REF: main
+      # the v_eta-pre73 pin is dropped: the second pass emits did-schema #88's
+      # shape (method / item). PR #88's branch until it merges, then main.
+      DID_SCHEMA_REF: claude/ecstatic-pascal-md91fw
     steps:
       - name: Check out NDI-matlab
         uses: actions/checkout@v4
+
+      - name: Resolve cross-repo refs (print them; fail if one is missing)
+        # A requested ref that does not exist must STOP the run, never fall back
+        # to a default branch: a run against the wrong did-schema / DID-matlab
+        # reads exactly like a run against the right one. Each ref is resolved
+        # to a commit here, the checkouts below use that commit, and the log
+        # says which commit every later step measured.
+        run: |
+          set -euo pipefail
+          resolve() {  # <owner/repo> <ref> <env var for the sha>
+            local sha
+            sha=$(git ls-remote "https://github.com/$1.git" "refs/heads/$2" "refs/tags/$2^{}" "refs/tags/$2" | head -1 | cut -f1)
+            if [ -z "$sha" ] && [[ "$2" =~ ^[0-9a-f]{40}$ ]]; then sha="$2"; fi
+            if [ -z "$sha" ]; then
+              echo "::error::$1 has no branch, tag or commit '$2'. Refusing to fall back to any other ref."
+              exit 1
+            fi
+            echo "RESOLVED: $1 @ $2 = $sha"
+            echo "$3=$sha" >> "$GITHUB_ENV"
+          }
+          resolve Waltham-Data-Science/did-schema "$DID_SCHEMA_REF" DID_SCHEMA_SHA
+          resolve VH-Lab/DID-matlab "$DID_MATLAB_REF" DID_MATLAB_SHA
 
       - name: Check out did-schema (for V_eta schemas)
         uses: actions/checkout@v4
         with:
           repository: Waltham-Data-Science/did-schema
-          ref: ${{ env.DID_SCHEMA_REF }}
+          ref: ${{ env.DID_SCHEMA_SHA }}
           path: did-schema
+
+      - name: Check out DID-matlab (the resolved commit; put ahead of MatBox's copy)
+        uses: actions/checkout@v4
+        with:
+          repository: VH-Lab/DID-matlab
+          ref: ${{ env.DID_MATLAB_SHA }}
+          path: did-matlab
+
+      - name: Print the checked-out cross-repo commits
+        run: |
+          set -euo pipefail
+          s=$(git -C did-schema rev-parse HEAD); d=$(git -C did-matlab rev-parse HEAD)
+          echo "CHECKED OUT: did-schema ${DID_SCHEMA_REF} = ${s}"
+          echo "CHECKED OUT: DID-matlab ${DID_MATLAB_REF} = ${d}"
+          [ "$s" = "$DID_SCHEMA_SHA" ] || { echo "::error::did-schema is at $s, resolved $DID_SCHEMA_SHA"; exit 1; }
+          [ "$d" = "$DID_MATLAB_SHA" ] || { echo "::error::DID-matlab is at $d, resolved $DID_MATLAB_SHA"; exit 1; }
 
       - name: Assemble V_eta schema set (stable + draft)
         run: |
           mkdir -p "${GITHUB_WORKSPACE}/eta-schemas"
           cp did-schema/schemas/V_eta/stable/*.json "${GITHUB_WORKSPACE}/eta-schemas/"
           cp did-schema/schemas/V_eta/draft/*.json  "${GITHUB_WORKSPACE}/eta-schemas/"
+          # #88 keeps the deliberate v1 passthrough shapes in deprecated/
+          cp did-schema/schemas/V_eta/deprecated/*.json "${GITHUB_WORKSPACE}/eta-schemas/"
 
       - name: Export env (schema path + eta test gate)
         run: |
@@ -145,12 +190,90 @@ jobs:
             matbox.installRequirements(nditools.projectdir());
             matbox.installRequirements(fullfile(pwd, "tests"));
 
+      - name: Add a swapfile (memory exhaustion becomes slowness)
+        # The #88-pipeline Soph runs lost their runner ("The runner has received
+        # a shutdown signal") at a consistent work point inside
+        # ndi.migrate.local, which fits the VM running out of memory. A swapfile
+        # turns that into slowness the 350-minute timeout and the sampler below
+        # can show. GUARDED: it goes on whichever of / and /mnt has the most
+        # free space, only if 20 GB stay free for the corpus and the migrated
+        # database after it, and a failure here never fails the job.
+        continue-on-error: true
+        run: |
+          set -x
+          free -m || true
+          swapon --show || true
+          df -h / /mnt || true
+          best=""; bestAvail=0
+          for d in /mnt /; do
+            a=$(df --output=avail -BG "$d" 2>/dev/null | tail -1 | tr -dc 0-9)
+            if [ -n "$a" ] && [ "$a" -gt "$bestAvail" ]; then best="$d"; bestAvail="$a"; fi
+          done
+          size=$(( bestAvail - 20 )); [ "$size" -gt 16 ] && size=16
+          if [ -z "$best" ] || [ "$size" -lt 4 ]; then
+            echo "SWAP: not added (most free space ${bestAvail} GB on '${best}'; keeping 20 GB free)"
+            exit 0
+          fi
+          f="${best%/}/soph-swapfile"
+          if sudo fallocate -l "${size}G" "$f" && sudo chmod 600 "$f" && sudo mkswap "$f" && sudo swapon "$f"; then
+            echo "SWAP: added ${size} GB at $f"
+          else
+            echo "SWAP: adding ${size} GB at $f FAILED; continuing without it"
+          fi
+          free -m || true
+          swapon --show || true
+
+      - name: Write the memory sampler
+        # Every 60 s: date, free -m, df -h /, and the MATLAB process RSS. The
+        # MATLAB step below starts it with its output aimed at MATLAB's own
+        # stdout (/proc/<pid>/fd/1), which is that step's live log, so the last
+        # samples survive a lost runner. It also appends to
+        # $RUNNER_TEMP/soph-sampler.log, printed by the last step when the
+        # runner survives. It stops when the MATLAB process it watches exits.
+        # Instrumentation only. (A shell step running `matlab -batch` or
+        # `matlab-batch` cannot be used instead: neither finds a license on the
+        # hosted runner, runs 39743874596 and 39744771099.)
+        run: |
+          cat > "$RUNNER_TEMP/soph_sampler.sh" <<'SAMPLER'
+          #!/bin/bash
+          # soph_sampler.sh <pid to watch> <file to also write to, e.g. /proc/<pid>/fd/1>
+          watch="$1"; out="$2"; log="${RUNNER_TEMP:-/tmp}/soph-sampler.log"
+          while kill -0 "$watch" 2>/dev/null; do
+            {
+              date -u +%FT%TZ
+              free -m
+              df -h /
+              ps -o rss,cmd -C MATLAB --sort=-rss 2>/dev/null | head -3 | cut -c1-160
+            } 2>&1 | sed 's/^/[sampler] /' | tee -a "$log" >> "$out" 2>/dev/null
+            sleep 60
+          done
+          SAMPLER
+          chmod +x "$RUNNER_TEMP/soph_sampler.sh"
+          bash -n "$RUNNER_TEMP/soph_sampler.sh"
+
       - name: Run the Soph V_eta migrate end-to-end test
         uses: matlab-actions/run-command@v2
         with:
           command: |
+            % THE MEMORY SAMPLER (instrumentation only): written by the step
+            % above, aimed at this process's stdout, i.e. this step's live log.
+            % A failure here never stops the test.
+            try
+                samplerPid = feature('getpid');
+                samplerSh = fullfile(getenv("RUNNER_TEMP"), "soph_sampler.sh");
+                [samplerStatus, samplerOut] = system(sprintf('nohup bash "%s" %d "/proc/%d/fd/1" > /dev/null 2>&1 &', samplerSh, samplerPid, samplerPid));
+                disp("memory sampler started for MATLAB pid " + string(samplerPid) + " (status " + string(samplerStatus) + ") " + string(samplerOut));
+            catch samplerErr
+                disp("memory sampler NOT started: " + string(samplerErr.message));
+            end
             addpath(genpath("src"));
             addpath(genpath("tests"));
+            % THE RESOLVED DID-matlab, ahead of whatever MatBox installed, and
+            % proven: the run stops if did2 resolves anywhere else.
+            addpath(genpath(fullfile(pwd, "did-matlab", "src")));
+            didWhere = string(which("did2.convert.v1_to_v2"));
+            disp("DID-matlab " + string(getenv("DID_MATLAB_REF")) + " @ " + string(getenv("DID_MATLAB_SHA")) + " from " + didWhere);
+            assert(startsWith(didWhere, string(fullfile(pwd, "did-matlab"))), "did2 does not resolve to the checked-out DID-matlab: " + didWhere);
             % Soph ALONE. On this first landing the test is report-only on its
             % two census methods and its multi-session read-back counts
             % (Soph's exact pass-1 unconverted set and final survivor set are
@@ -161,3 +284,9 @@ jobs:
             results = runtests('ndi.unittest.migrate.TestMigrateLocalEtaSoph');
             disp(results);
             assertSuccess(results);
+
+      - name: Print the memory samples (when the runner survived)
+        if: always()
+        run: |
+          f="$RUNNER_TEMP/soph-sampler.log"
+          if [ -f "$f" ]; then echo "$(grep -cE '^\[sampler\] [0-9]{4}-' "$f") sample(s); the last 120 lines:"; tail -n 120 "$f"; else echo "no sampler log at $f"; fi

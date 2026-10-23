@@ -36,7 +36,7 @@ function datasetSessionId = datasetSessionIdFromDocs(docs)
         end
 
         if strcmp(className, 'session')
-            allSessions{end+1} = docs{i}.document_properties.base.session_id;
+            allSessions{end+1} = ndi.v2.sessionIdOf(docs{i}.document_properties);
         elseif strcmp(className, 'dataset_session_info')
             dataset_session_info_doc_inds(end+1) = i;
         elseif strcmp(className, 'session_in_a_dataset')

@@ -65,18 +65,19 @@ function [kept, minted, report] = ensembleMembership(structs, options)
 %   WHAT IS MINTED
 %   ---------------------------------------------------------------------
 %   Per (map document, neuron_id_i), deduplicated on
-%   (parent, child, sequence, epoch):
+%   (parent, child, order, epoch):
 %
-%     member_of    directed_relation   child  = the neuron-subject
-%                                      parent = the ensemble group-subject
+%     member_of    directed_relation   child_id  = the neuron-subject
+%                                      parent_id = the ensemble group-subject
 %                                      relation {RO:0002350, member_of}
-%                                      sequence = i (the column index)
+%                                      order = i (the column index;
+%                                      `sequence` until did-schema T20)
 %
-%     derived_from directed_relation   child  = the cache carrier (the migrated
+%     derived_from directed_relation   child_id  = the cache carrier (the migrated
 %                                               `acquisition_epoch` that holds
 %                                               the combined .vhsb binary --
 %                                               the map's `element_epoch_id`)
-%                                      parent = the neuron-subject
+%                                      parent_id = the neuron-subject
 %                                      relation {RO:0001000, derived_from}
 %
 %   The `derived_from` set IS the verify-before-delete manifest: for a given
@@ -84,9 +85,9 @@ function [kept, minted, report] = ensembleMembership(structs, options)
 %   exist before those bytes may be dropped.
 %
 %   ONE DECLARATIVE MISMATCH, STATED RATHER THAN HIDDEN: `directed_relation`
-%   declares `child` and `parent` as `must_refer_to_document_class: "entity"`,
-%   and the cache carrier (`acquisition_epoch`, superclasses base + epochid) is
-%   NOT an entity. It validates -- must_refer is existence-only, never
+%   declares `child_id` and `parent_id` as `must_refer_to_document_class:
+%   "entity,statement,value"` (did-schema #88), and the cache carrier
+%   (`acquisition_epoch`, superclasses base + epochid) is none of those. It validates -- must_refer is existence-only, never
 %   type-checked -- and the registry row for `derived_from` constrains neither
 %   end (`child_types: []`, `parent_types: []`). It is recorded here because
 %   the right long-term child is the `sampled_body` cache document of item 3,
@@ -106,14 +107,23 @@ function [kept, minted, report] = ensembleMembership(structs, options)
 %   ---------------------------------------------------------------------
 %   WHAT THIS DOES NOT DO, AND WHY -- read before "finishing" it
 %   ---------------------------------------------------------------------
-%   1. IT DROPS NOTHING. KEPT == STRUCTS. The map document is NOT consumed, the
-%      `acquisition_epoch` is NOT touched, and no bytes are removed. The map
-%      document may only dissolve once the edges can carry the epoch (item 2)
-%      AND the verify-before-delete gate has run on a real corpus (0 stranded
-%      per-neuron trains). This pass MEASURES that gate (REPORT.stranded_*); it
-%      does not act on it. `V_eta_ensemble_plan.md` deferred task 5 says the
-%      same: "until then it stays a green passthrough -- do NOT phase-8-delete
-%      early."
+%   1. THE MAP DOCUMENT DISSOLVES, PER MAP, AND NOTHING ELSE LEAVES. Decided by
+%      Jess Haley, 2026-10-22 [ensemble retired] (D2): the `ensemble` class
+%      retires, and a v1 map becomes its epoch-scoped `member_of` edges. A map
+%      leaves KEPT only when (a) its edges carry its epoch, (b) every neuron it
+%      names is a migrated entity, and (c) every one of those neurons has its
+%      own per-neuron train for THIS epoch in the batch -- the signed
+%      verify-before-delete, applied to the one map it protects. Otherwise the
+%      map stays and is counted in exactly one REPORT.ensemble_maps_kept_*
+%      bucket. Its `ensemble_name` / `value_type` / `value_description` /
+%      `num_neurons` and `neuron_names.txt` go with it, as the plan says: the
+%      names are the neuron entities' own, the count is the edges', and the
+%      value description is the spike-time observation's variable. The
+%      `acquisition_epoch` that holds the COMBINED bytes is NOT touched (item
+%      3), and ndi.migrate.local reverts every dissolution in the batch if a
+%      minted edge does not validate.
+%      (Until 2026-10-22 this item read "IT DROPS NOTHING. KEPT == STRUCTS",
+%      deferring to the plan's "do NOT phase-8-delete early".)
 %
 %   2. THE EDGES ARE NOT EPOCH-SCOPED AS WIRED TODAY -- and this item's OWN
 %      account of why was STALE. Both blockers it named are gone; the reason
@@ -174,74 +184,21 @@ function [kept, minted, report] = ensembleMembership(structs, options)
 %      edge kinds and the dedupe key separates epochs. Nothing empty is ever
 %      emitted (rule: never emit an empty edge).
 %
-%   3. NO `sampled_body` CACHE DOCUMENT IS MATERIALISED -- AND THIS ITEM'S OWN
-%      ACCOUNT OF WHY WAS HALF STALE, in the direction that makes the block look
-%      WIDER than it is. Corrected 2026-08-17 with positive evidence. The
-%      CONCLUSION is unchanged; it now rests on ONE blocker instead of two, and
-%      the one that lapsed is the one a reader would have quoted as "the tier
-%      isn't ready yet".
-%
-%      IT SAID `sampled_body` "does not exist in the built schema set" and that
-%      "the whole data_body tier is under redesign (#45, blocked on #32)".
-%      BOTH FALSE NOW. #45 is SIGNED:
-%
-%        $ grep -n "^TEAM-SIGN-OFF" \
-%              DID-schema/schemas/V_eta_data_body_model_plan.md
-%        648:TEAM-SIGN-OFF [data_body]: jess@walthamdatascience.com /
-%            2026-08-14 -- the axis entry replacing all three regularity
-%            encodings; time becomes an ordinary axis and both sample_time
-%            blocks retire; [...]
-%
-%      and `sampled_body` is live, instantiable and ALREADY EMITTED by
-%      production migrators, all through the shared helper:
-%
-%        $ cd DID-matlab && grep -rn "sampled_body" \
-%              src/did/+did2/+convert/+migrators_j/{*.m,private/*.m}
-%        image_stack.m:388   body.sampled_body.axes = jAxis(...)
-%        pyraview.m:431,433  b.sampled_body.axes = timeAxis / [timeAxis, ...]
-%        private/jNgridBody.m:224   body.sampled_body.axes = axesArray
-%        private/jSampledBody.m:22  class_name 'sampled_body'
-%
-%      It is still filed under `draft/`, which is a MATURITY LABEL and not a bar
-%      to emission -- the old wording read the directory as a prohibition.
-%
-%      WHAT ACTUALLY BLOCKS THE CACHE IS THE MARKER, AND ONLY THE MARKER. The
-%      signed model requires the T6 `is_cache` marker precisely so the combined
-%      stream is distinguishable from source-of-truth data. No schema declares
-%      it:
-%
-%        DENOMINATOR: 247 json file(s) under DID-schema schemas/V_eta/ read
-%          declaring `is_cache`: 0
-%        `is_cache` occurs ONLY in prose -- V_eta_tenets.md,
-%        V_eta_tenet_audit.md, V_eta_ensemble_plan.md, V_eta_OPEN_WORK.md
-%        (plus web/public/tenets.json, which renders the first of those).
-%
-%      Minting the body WITHOUT the marker yields a document indistinguishable
-%      from primary archival data -- the single property the signed model exists
-%      to guarantee, dropped silently, on a class whose whole point is that the
-%      per-neuron trains are the source of truth. The absence is a reason not to
-%      build it, not a detail to route around. Adding the marker is a DID-schema
-%      change and is not this pass's to make.
-%
-%      A SECOND FACT, A COST RATHER THAN A BLOCKER: the body needs an OWNER, and
-%      the requirement is easy to miss because it is declared on the PARENT.
-%      `schemas/V_eta/draft/data_body.json` declares
-%      `statement -> subject_statement` with `mustBeNonEmpty: true`, while
-%      `sampled_body.json`'s own `depends_on` is `filter_id` ALONE -- so grepping
-%      the child for `statement` finds nothing and reads as "the requirement
-%      lapsed". It did not; `jSampledBody(statementId, ...)` takes the owner as
-%      its first argument for exactly that reason. Nothing mints a spike-time
-%      statement on the ensemble group-subject today: the only statements it
-%      carries are the two `term_assertion` kind assertions from
-%      migrators_j.element ('element type' = ensemble, 'ndi element class'), and
-%      a marked-point-process body hung off a kind assertion would be wrong.
-%      Emitting one with an EMPTY `statement` is the invented-empty-edge pattern
-%      and would quarantine under #37 RequiredDependencies, which is ARMED by
-%      default.
-%
-%      So the cache is recorded here as PROVENANCE (the `derived_from` edges)
-%      over the carrier that already holds the bytes, which is the half that
-%      can be built correctly today.
+%   3. NO CACHE, AND NO CACHE PROVENANCE. Decided by Jess Haley, 2026-10-22
+%      [no ensemble cache] (V_eta_ensemble_plan.md), replacing the cache
+%      clause of TEAM-SIGN-OFF [ensemble]: "the combined (times, neuron-id)
+%      array is not kept as a cache; NDI rebuilds it on read from the
+%      per-neuron trains, so no data body carries an `is_cache` marker ... A
+%      v1 ensemble's combined bytes are dropped only after every member
+%      neuron's train is verified present for that epoch." So this pass mints
+%      no `derived_from` edge (REPORT.derived_from_minted stays 0, kept so a
+%      reader of older reports finds the field), and when a map dissolves
+%      (item 1, whose conditions ARE that verification) the acquisition_epoch
+%      holding its combined bytes (`element_epoch_id`) leaves KEPT with it
+%      (REPORT.combined_bytes_dropped, REPORT.dropped_carrier_ids).
+%      ndi.element.ensemble/readtimeseries rebuilds the array on read.
+%      (Until 2026-10-22 this item kept the carrier and recorded `derived_from`
+%      provenance over it, waiting on a cache marker no schema declared.)
 %
 %   4. A STRANDED NEURON GETS NO EDGE. An edge to an id that is not in the
 %      migrated set is an ORPHAN, and orphans are the corpus gate (the
@@ -329,7 +286,7 @@ function [kept, minted, report] = ensembleMembership(structs, options)
 %         'parent_types': ['subject'], 'timed': True, 'ordered': True}
 %
 %      (DENOMINATOR: 26 relation_bindings rows read.) So `ordered: true`
-%      licenses the `sequence` this pass emits, and `timed: true` licenses the
+%      licenses the `order` this pass emits, and `timed: true` licenses the
 %      epoch scoping item 2 describes. Nothing here needs a team call.
 %
 %   STATUS: authored without local MATLAB -- CI is the first execution of
@@ -348,8 +305,9 @@ arguments
     options.EpochDocumentIdFor = []      % f(epochidString, sessionId) -> docId | ''
 end
 
-MEMBER_OF   = struct('node', 'RO:0002350', 'name', 'member_of');
-DERIVED_FROM = struct('node', 'RO:0001000', 'name', 'derived_from');
+% the binding rows' node and name (Jess Haley 2026-10-22 [vocabulary nodes]
+% L1, [derived from general]), not literals
+MEMBER_OF   = ndi.v2.vocabTerm('relation', 'member_of');
 
 kept   = structs;
 minted = {};
@@ -386,6 +344,18 @@ report.maps_unscoped_no_resolver      = 0;  % caller wired no resolver
 report.maps_unscoped_no_epoch_string  = 0;  % document carries no epochid
 report.maps_unscoped_epoch_unresolved = 0;  % epochid named no minted epoch
 report.epoch_scope_available    = ~isempty(options.EpochDocumentIdFor);
+% D2 (Decided by Jess Haley, 2026-10-22 [ensemble retired]): the MAP document
+% dissolves into its epoch-scoped member_of edges, per map, only when that
+% map's own verify-before-delete holds. Every map is in exactly one bucket.
+report.ensemble_maps_dissolved          = 0;
+report.ensemble_maps_kept_not_scoped    = 0;  % no epoch to scope its edges by
+report.ensemble_maps_kept_stranded      = 0;  % a neuron is not in the batch
+report.ensemble_maps_kept_train_missing = 0;  % a neuron has no train this epoch
+report.ensemble_maps_kept_no_neurons    = 0;  % no neuron_id_# edge at all
+report.ensemble_maps_kept_no_group      = 0;  % element_id is no migrated entity
+report.dissolved_map_ids                = {};
+report.combined_bytes_dropped           = 0;  % carriers dropped with their map
+report.dropped_carrier_ids              = {};
 report.changed                  = false;
 
 if isempty(structs)
@@ -446,6 +416,7 @@ for i = 1:numel(structs)
     % element_id resolves to a `subject` in the migrated set.
     if isempty(groupId) || ~isSubject(idClass, groupId)
         report.ensemble_maps_no_group = report.ensemble_maps_no_group + 1;
+        report.ensemble_maps_kept_no_group = report.ensemble_maps_kept_no_group + 1;
         continue;
     end
 
@@ -461,8 +432,9 @@ for i = 1:numel(structs)
         report.distinct_epochs_seen = report.distinct_epochs_seen + 1;
     end
 
-    sessionId = baseField(s, 'session_id', '');
-    ds        = baseField(s, 'datestamp', '2024-01-01T00:00:00.000Z');
+    sessionId = ndi.v2.sessionIdOf(s);
+    ds        = baseField(s, 'creation_timestamp', '');
+    if isempty(ds); ds = baseField(s, 'datestamp', ''); end
     [epochKey, epochStatus] = epochScope(s, sessionId, options.EpochDocumentIdFor);
     switch epochStatus
         case 'scoped'
@@ -500,9 +472,12 @@ for i = 1:numel(structs)
         % membership at all, and "fell through" must never be inferable only
         % by subtracting two other counters.
         report.ensemble_maps_no_neurons = report.ensemble_maps_no_neurons + 1;
+        report.ensemble_maps_kept_no_neurons = report.ensemble_maps_kept_no_neurons + 1;
         continue;
     end
     report.ensemble_maps_used = report.ensemble_maps_used + 1;
+    mapStranded = false;
+    mapTrainMissing = false;
 
     for k = 1:numel(neurons)
         report.neuron_edges_seen = report.neuron_edges_seen + 1;
@@ -514,6 +489,7 @@ for i = 1:numel(structs)
         % edge to it would be an orphan; count it for the verify-before-delete
         % gate instead.
         if ~isSubject(idClass, neuronId)
+            mapStranded = true;
             report.neuron_edges_stranded = report.neuron_edges_stranded + 1;
             if ~isKey(seenStranded, neuronId)
                 seenStranded(neuronId) = true;
@@ -526,6 +502,7 @@ for i = 1:numel(structs)
         % VERIFY-BEFORE-DELETE. The subject exists; does its TRAIN? Three
         % buckets, never summed -- see the header.
         if ~isKey(trainEpochs, neuronId)
+            mapTrainMissing = true;
             report.neuron_trains_missing_entirely = ...
                 report.neuron_trains_missing_entirely + 1;
             if ~isKey(seenNoTrain, neuronId)
@@ -536,6 +513,7 @@ for i = 1:numel(structs)
             report.neuron_trains_present_this_epoch = ...
                 report.neuron_trains_present_this_epoch + 1;
         else
+            mapTrainMissing = true;
             % the neuron has data, but not filed under this map's epochid.
             % NDI reaches a neuron's epoch through syncgraph.time_convert, so
             % the two strings need not agree; this is reported, not folded in.
@@ -546,8 +524,10 @@ for i = 1:numel(structs)
         mKey = ['m|' groupId '|' neuronId '|' int2str(column) '|' epochKey];
         if ~isKey(seenEdge, mKey)
             seenEdge(mKey) = true;
+            % `order` counts from 0 (T14; did-schema directed_relation.order,
+            % [author order from 0]); v1's neuron_id_N column is 1-based
             minted{end+1} = relationBody(neuronId, groupId, MEMBER_OF, ...
-                column, epochKey, sessionId, ds, 'migrated_ensemble_member'); %#ok<AGROW>
+                column - 1, epochKey, sessionId, ds, 'migrated_ensemble_member'); %#ok<AGROW>
             report.member_of_minted = report.member_of_minted + 1;
             if ~isempty(epochKey)
                 report.epoch_scoped_edges = report.epoch_scoped_edges + 1;
@@ -559,21 +539,42 @@ for i = 1:numel(structs)
             end
         end
 
-        if carrierOk
-            dKey = ['d|' carrierId '|' neuronId '|' epochKey];
-            if ~isKey(seenEdge, dKey)
-                seenEdge(dKey) = true;
-                minted{end+1} = relationBody(carrierId, neuronId, DERIVED_FROM, ...
-                    [], epochKey, sessionId, ds, 'migrated_ensemble_cache_source'); %#ok<AGROW>
-                report.derived_from_minted = report.derived_from_minted + 1;
-                if ~isempty(epochKey)
-                    report.epoch_scoped_edges = report.epoch_scoped_edges + 1;
-                else
-                    report.unscoped_edges = report.unscoped_edges + 1;
-                end
-            end
+        % NO `derived_from` cache-provenance edge: Decided by Jess Haley,
+        % 2026-10-22 [no ensemble cache] -- the combined array is not kept as
+        % a cache at all; NDI rebuilds it on read from the per-neuron trains
+        % (ndi.element.ensemble/readtimeseries).
+    end
+
+    % D2: does THIS map dissolve? Only when everything it says is now said by
+    % edges that carry its epoch, and every per-neuron train it rests on is
+    % in the batch for that epoch (the signed verify-before-delete, per map).
+    if isempty(epochKey)
+        report.ensemble_maps_kept_not_scoped = report.ensemble_maps_kept_not_scoped + 1;
+    elseif mapStranded
+        report.ensemble_maps_kept_stranded = report.ensemble_maps_kept_stranded + 1;
+    elseif mapTrainMissing
+        report.ensemble_maps_kept_train_missing = report.ensemble_maps_kept_train_missing + 1;
+    else
+        report.ensemble_maps_dissolved = report.ensemble_maps_dissolved + 1;
+        report.dissolved_map_ids{end+1} = baseField(s, 'id', ''); %#ok<AGROW>
+        % [no ensemble cache]: the combined bytes go with the map, now that
+        % every member's own train for this epoch is verified present
+        if carrierOk && isKey(idClass, carrierId) ...
+                && any(strcmp(idClass(carrierId), {'acquisition_epoch', 'element_epoch'}))
+            report.combined_bytes_dropped = report.combined_bytes_dropped + 1;
+            report.dropped_carrier_ids{end+1} = carrierId; %#ok<AGROW>
         end
     end
+end
+
+% the dissolved maps leave KEPT; nothing else does
+if ~isempty(report.dissolved_map_ids)
+    keepIdx = true(1, numel(kept));
+    for i = 1:numel(kept)
+        keepIdx(i) = ~any(strcmp(baseField(kept{i}, 'id', ''), ...
+            [report.dissolved_map_ids, report.dropped_carrier_ids]));
+    end
+    kept = kept(keepIdx);
 end
 
 % The verify-before-delete verdict. It is a MEASUREMENT -- nothing in this
@@ -586,57 +587,21 @@ report.verify_before_delete_clear = ...
     report.neuron_trains_missing_entirely == 0 && ...
     report.neuron_trains_other_epoch_only == 0;
 
-report.changed = ~isempty(minted);
+report.changed = ~isempty(minted) || ~isempty(report.dissolved_map_ids);
 end
 
 % ===================== builders ========================================
 
-function body = relationBody(childId, parentId, relTerm, sequence, epochDocId, ...
-        sessionId, ds, name)
-%RELATIONBODY One `directed_relation`. Emits only NON-EMPTY edges.
-body = struct();
-% `subject_relation` was renamed to `relation` (abstract) in V_eta; emit the
-% current superclass and NO stale block -- an undeclared top-level block
-% quarantines (the JH 163k-orphan regression). ensureClassBlocks rebuilds the
-% chain and any needed empty blocks. Mirrors pathSPromotion exactly.
-body.document_class = struct('class_name', 'directed_relation', ...
-    'class_version', '1.0.0', ...
-    'superclasses', struct('class_name', 'relation', 'class_version', '1.0.0'), ...
-    'schema_version', 'V_eta');
-deps = [struct('name', 'child',  'value', childId), ...
-        struct('name', 'parent', 'value', parentId)];
-if ~isempty(epochDocId)
-    % Only reachable when OPTIONS.EpochDocumentIdFor supplied a real id; see
-    % item 2 of the header. THIS COMMENT SAID "directed_relation does not
-    % declare the slot yet -- that is the DID-schema change this hook waits
-    % on", contradicting item 2(a) of this file's own header. STALE: the slot
-    % is declared, and OPTIONAL, so an unscoped edge cannot quarantine under
-    % #37 RequiredDependencies.
-    %
-    %   $ python3 -c "import json;print([(x['name'],x['mustBeNonEmpty']) for x
-    %         in json.load(open('schemas/V_eta/stable/directed_relation.json')
-    %       )['depends_on']])"
-    %   [('child', True), ('parent', True), ('time_reference_#', False),
-    %    ('epoch_id', False)]
-    deps(end+1) = struct('name', 'epoch_id', 'value', epochDocId);
-end
-body.depends_on = deps;
-body.base = struct('id', did.ido.unique_id(), 'session_id', sessionId, ...
-    'name', name, 'creation_timestamp', ds);
-block = struct('relation', relTerm);
-if ~isempty(sequence)
-    % `sequence` is directed_relation's declared "ordinal for ordered
-    % relations" -- the column index of this neuron in the epoch's combined
-    % binary. THIS COMMENT SAID "NOTE the registry row for member_of
-    % currently says 'ordered': false", contradicting item 5 of this file's
-    % own header, which records the disagreement as CLOSED. STALE: the row
-    % reads `'timed': True, 'ordered': True` (DENOMINATOR: 26
-    % relation_bindings rows read from
-    % schemas/V_eta/stable/binding_registry_meta.json), so `ordered: true`
-    % licenses this ordinal and `timed: true` licenses the epoch scoping.
-    block.sequence = sequence;
-end
-body.directed_relation = block;
+function body = relationBody(childId, parentId, relTerm, order, epochDocId, ...
+        sessionId, ds, ~)
+%RELATIONBODY One `directed_relation` (did-schema #88: `child_id` /
+%   `parent_id`, no base.name). Emits only NON-EMPTY edges: `epoch_id` is
+%   written only when OPTIONS.EpochDocumentIdFor supplied a real id (item 2 of
+%   the header); the slot is declared and OPTIONAL on directed_relation, so an
+%   unscoped edge cannot quarantine under #37 RequiredDependencies.
+body = ndi.migrate.internal.etaShape.relation(childId, parentId, relTerm, ...
+    'Order', order, 'EpochId', epochDocId, ...
+    'SessionId', sessionId, 'Datestamp', ds);
 end
 
 % ===================== struct accessors ================================
@@ -735,7 +700,9 @@ end
 end
 
 function tf = isSubject(idClass, id)
-tf = ~isempty(id) && isKey(idClass, id) && strcmp(idClass(id), 'subject');
+%ISSUBJECT The id names a migrated entity (did-schema #88 `entity`; `subject`
+%   before #88). An element became one, id preserved.
+tf = ~isempty(id) && isKey(idClass, id) && any(strcmp(idClass(id), {'entity', 'subject'}));
 end
 
 function c = classNameOf(s)

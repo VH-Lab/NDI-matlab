@@ -296,6 +296,9 @@ function initDebugLog(logfile)
 % header row so the file is never zero bytes (Finder / editors show it
 % cleanly). The log lands in an OS-writable dir by default (tempdir),
 % but any caller-supplied path works as long as its parent exists.
+    arguments
+        logfile {mustBeText}
+    end
     parent = fileparts(logfile);
     if ~isempty(parent) && ~isfolder(parent)
         mkdir(parent);
@@ -315,6 +318,10 @@ function dumpLogTail(logfile, nlines)
 % under a clear separator. Runs via `tail -n <n> <file>` in a
 % subprocess so a huge log costs one syscall, not a MATLAB-side file
 % read. Falls back silently if the log does not exist yet.
+    arguments
+        logfile {mustBeText}
+        nlines (1,1) {mustBeNumeric}
+    end
     if ~isfile(logfile)
         fprintf('[roundtrip] debug log %s not written yet; nothing to dump.\n', logfile);
         return;
@@ -337,6 +344,15 @@ function launchDebugView(session, pyramidId, launcher, reduction, waitForIt, log
 % TAG is a short label (e.g. 'LOCAL' / 'CLOUD') that lands as a
 % separator in the log, so a single log file can hold both viewer
 % invocations from one run.
+    arguments
+        session (1,1)
+        pyramidId {mustBeText}
+        launcher {mustBeText}
+        reduction {mustBeText}
+        waitForIt (1,1) logical
+        logfile {mustBeText}
+        tag {mustBeText}
+    end
 
     sessionPath = char(session.path);
     cmd = ndi.fun.doc.lightsheet.viewCommand(launcher, sessionPath, pyramidId, ...

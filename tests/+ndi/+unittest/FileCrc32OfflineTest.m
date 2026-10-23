@@ -17,6 +17,10 @@ classdef FileCrc32OfflineTest < matlab.unittest.TestCase
 
     methods (Static, Access = private)
         function filePath = writeTempFile(testCase, bytes)
+            arguments
+                testCase (1,1) ndi.unittest.FileCrc32OfflineTest
+                bytes {mustBeNumeric}
+            end
             folder = testCase.applyFixture(matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
             filePath = fullfile(folder, 'payload.bin');
             fid = fopen(filePath, 'w');

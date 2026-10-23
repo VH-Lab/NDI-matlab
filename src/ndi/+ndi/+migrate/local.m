@@ -1,11 +1,12 @@
 function result = local(path, options)
-%LOCAL Migrate a local NDI dataset/session to V_delta on disk.
+%LOCAL Migrate a local NDI dataset/session to V_eta on disk.
 %
 %   RESULT = ndi.migrate.local(PATH) migrates the on-disk did_v1
-%   database under PATH/.ndi to the V_delta wire format by reading
-%   every document body via the did2 v1 readers, running
-%   did2.convert.v1_to_v2 per body, and writing the surviving docs
-%   into PATH/.ndi/V_delta.sqlite via did2.database.sqlitedb.
+%   database under PATH/.ndi to the V_eta wire format (the default
+%   TargetVersion; 'V_delta' on request) by reading every document
+%   body via the did2 v1 readers, running did2.convert.v1_to_v2 per
+%   body plus the V_eta second pass, and writing the surviving docs
+%   into PATH/.ndi/<TargetVersion>.sqlite via did2.database.sqlitedb.
 %
 %   The function acquires an exclusive lock at PATH/.ndi/.migrate.lock
 %   for the duration of the run, so concurrent migrations of the same
@@ -95,22 +96,24 @@ function result = local(path, options)
 %                      []) - override the shared schema cache. Used
 %                      by tests; production callers should rely on
 %                      ndi.schemas.init having set the active cache.
-%     TargetVersion    (1,:) char, default 'V_delta') - migration
-%                      target wire format. 'V_delta' preserves the
-%                      historical class-preserving behaviour and
-%                      writes V_delta.sqlite. 'V_epsilon' (Brainstorm E)
-%                      'V_zeta' (Brainstorm I) and 'V_eta' (Brainstorm
-%                      J) route split-eligible classes through the
-%                      matching migrators (1 -> N) and run a second pass
-%                      using the open body set. For V_epsilon/V_zeta the
-%                      pass resolves session-context-dependent deferrals
-%                      (e.g. stimulus_bath -> bath); for V_eta it promotes
+%     TargetVersion    (1,:) char, default 'V_eta') - migration
+%                      target wire format. The default became 'V_eta'
+%                      on 2026-10-21 (VH-Lab/NDI-matlab#804; it was
+%                      'V_delta'). 'V_delta' preserves the historical
+%                      class-preserving behaviour and writes
+%                      V_delta.sqlite. 'V_eta' (Brainstorm J)
+%                      routes split-eligible classes through the
+%                      +migrators_j migrators (1 -> N) and runs a second
+%                      pass using the open body set: it resolves
+%                      session-context-dependent deferrals (e.g.
+%                      stimulus_bath -> dose_manipulation) and promotes
 %                      attributed anatomical loci to Path-S part-subjects
 %                      (a part-`subject` + `term_assertion` + `part_of`
 %                      relation, retargeting the co-anchored manipulation).
-%                      Writes <TargetVersion>.sqlite. V_eta (Brainstorm J)
-%                      is the current direction; V_zeta/V_epsilon are
-%                      retained as archived references.
+%                      Writes <TargetVersion>.sqlite. The 'V_epsilon' and
+%                      'V_zeta' targets were removed with did-schema #88,
+%                      which deleted schemas/V_alpha .. V_zeta (OPEN_WORK
+%                      #128); asking for either is an argument error.
 %
 %   RESULT is a struct with fields:
 %       path         - the input PATH (char).
@@ -139,6 +142,18 @@ function result = local(path, options)
 %                      sidecar, '' when nothing was written.
 %       references   - report from did2.validate.references over
 %                      the migrated documents.
+%       secondPass   - (V_eta) one report per second-pass step, including
+%                      softwareDedupAfterPassOne / softwareDedup (the two
+%                      software merges) and dimensionTerms (the census of
+%                      dimensions written whose term has no node).
+%
+%   SoftwareDedupAfterPassOne (V_eta; default true): merge the duplicate
+%   software / operating-system / interpreter entities right after pass 1
+%   as well as at the end (Decided by Jess Haley, 2026-10-22 [software dedup
+%   after pass one], did-schema V_eta_go_forward_class_audit.md), so every
+%   later step carries the deduplicated set. False runs the end-of-run merge
+%   alone; it exists so a test can show the final document set is the same
+%   either way (TestSoftwareDedupAfterPassOne).
 %
 %   Idempotency:
 %       Re-running on a dataset that already has a V_delta.sqlite
@@ -173,7 +188,8 @@ function result = local(path, options)
         options.Verbose (1,1) logical = false
         options.Validate (1,1) logical = true
         options.SchemaCache = []
-        options.TargetVersion (1,:) char = 'V_delta'
+        options.TargetVersion (1,:) char {mustBeMember(options.TargetVersion, {'V_delta', 'V_eta'})} = 'V_eta'
+        options.SoftwareDedupAfterPassOne (1,1) logical = true
     end
 
     if ~isfolder(path)
@@ -187,6 +203,16 @@ function result = local(path, options)
             ['"%s" has no .ndi directory; not an NDI ' ...
              'session/dataset root.'], path);
     end
+
+    % STEP MARKS (instrumentation only; nothing below depends on them). After
+    % each top-level step one "[migrate step]" line gives the step's wall
+    % time, the time since this function started, the process RSS (Linux
+    % only: VmRSS / VmHWM from /proc/self/status) and the current document
+    % count. The Soph runner was lost inside this function with nothing
+    % printed for the span (NDI-matlab Soph runs 39667921479 .. 39731147165);
+    % these lines say which step it reached and how much memory it held.
+    tStart = tic;
+    tStep = tStart;
 
     lockFile = fullfile(ndiDir, '.migrate.lock');
     lockHandle = acquireLock(lockFile);
@@ -210,19 +236,21 @@ function result = local(path, options)
         else
             error('NDI:migrate:noV1Source', ...
                 ['No recognised v1 database (did-sqlite.sqlite or ' ...
-                 'Object_id_*_v*.json) and no V_delta.sqlite found ' ...
-                 'under "%s".'], ndiDir);
+                 'Object_id_*_v*.json) and no %s.sqlite found ' ...
+                 'under "%s".'], options.TargetVersion, ndiDir);
         end
         if options.Backup && ~options.DryRun && ~isfolder(backupDir)
             copyBackup(ndiDir, backupDir);
             backupCreated = true;
         end
     end
+    tStep = migrateStepMark(sprintf('read v1 bodies (%d)', numel(bodies)), ...
+        tStart, tStep, []);
 
     % Build the converter args. Only forward TargetVersion when it is NOT
     % the default 'V_delta': the default path must stay call-compatible with
     % the stable released did-matlab (whose v1_to_v2 predates the
-    % TargetVersion option). A 'V_epsilon' run requires the newer did-matlab
+    % TargetVersion option). A 'V_eta' run requires the newer did-matlab
     % anyway, so adding the name-value there is safe.
     v2args = {'Validate', options.Validate, ...
         'SchemaCache', options.SchemaCache, ...
@@ -230,11 +258,61 @@ function result = local(path, options)
     if ~strcmp(options.TargetVersion, 'V_delta')
         v2args = [v2args, {'TargetVersion', options.TargetVersion}];
     end
-    convertResult = did2.convert.v1_to_v2(bodies, v2args{:});
+    % Migrated recordings link their epoch files as data bodies (Jess Haley,
+    % 2026-10-21, did-schema V_eta_recording_observation_plan.md): one
+    % observation per element per epoch, its epoch files as opaque_bodies by
+    % location. did2.convert.resolveEpochProbemap builds them from the cached
+    % `epochfiles_ingested` documents; a session never ingested has none, so
+    % the file navigators supply the same facts as TRANSIENT bodies (converted
+    % with the rest so epochMint mints their epochs, removed after the
+    % probemap pass). See ndi.migrate.internal.navigatorEpochFiles.
+    navigatorEpochReport = [];
+    convertInput = bodies;
+    if strcmp(options.TargetVersion, 'V_eta') && ~alreadyMigrated
+        try
+            [navBodies, navigatorEpochReport] = ...
+                ndi.migrate.internal.navigatorEpochFiles(path, bodies);
+            convertInput = [bodies(:)', navBodies];
+        catch ME
+            warning('NDI:migrate:navigatorEpochFilesFailed', ...
+                ['Reading the file navigators failed (%s); epochs with no ' ...
+                 'epochfiles cache get no recording observation.'], ME.message);
+        end
+    end
+    tStep = migrateStepMark(sprintf('navigatorEpochFiles (%d input bodies)', ...
+        numel(convertInput)), tStart, tStep, []);
+    convertResult = did2.convert.v1_to_v2(convertInput, v2args{:});
+    tStep = migrateStepMark('pass 1 v1_to_v2', tStart, tStep, convertResult);
+    printMigrationNoteCounts(convertResult);
+
+    % --- software dedup, right after pass 1 ----------------------------------
+    % Decided by Jess Haley, 2026-10-22 [software dedup after pass one]
+    % (did-schema V_eta_go_forward_class_audit.md): pass 1 mints one software /
+    % operating-system / interpreter entity per consuming document (Soph: 665k
+    % documents before the end-of-run merge, 224k after; 14.4 GB RSS plus 5 GB
+    % swap on a 16 GB runner), so every second-pass step used to carry and
+    % copy the duplicates. They are merged HERE, and the end-of-run merge (6)
+    % still runs, for the software entities later steps mint (the clock
+    % alignment rule class, bodies the deferral pass re-folds). The merge is
+    % idempotent on a merged set; TestSoftwareDedupAfterPassOne shows the final
+    % document set is the same with and without this step.
+    softwareDedupEarlyReport = [];
+    if strcmp(options.TargetVersion, 'V_eta') && options.SoftwareDedupAfterPassOne
+        try
+            [convertResult, softwareDedupEarlyReport] = ...
+                resolveSoftwareDedup(convertResult);
+        catch ME
+            warning('NDI:migrate:softwareDedupFailed', ...
+                ['Software dedup after pass 1 failed (%s); the end-of-run ' ...
+                 'merge still runs.'], ME.message);
+        end
+        tStep = migrateStepMark('resolveSoftwareDedup(after pass 1)', ...
+            tStart, tStep, convertResult);
+    end
 
     % --- second pass: context-dependent (session-aware) deferrals ----------
-    % Some V_epsilon classes cannot be migrated from a single document alone
-    % (e.g. stimulus_bath -> bath needs the stimulator element's subject and
+    % Some V_eta classes cannot be migrated from a single document alone
+    % (e.g. stimulus_bath -> dose_manipulation needs the stimulator element's subject and
     % epoch). The per-document converter defers those with reason
     % did2:convert:needsSessionContext; resolve them here, where the whole
     % body set (the session/element graph) is in hand, then fold the
@@ -246,6 +324,7 @@ function result = local(path, options)
     % not they changed anything -- a count with no denominator is not evidence.
     % Empty means "did not run" (a non-V_eta target, or the sub-pass threw).
     ensembleReport = [];
+    bathAnchors = [];   % resolveDeferred -> resolveEpochAnchorFold (did-schema #88)
     strainReport = [];
     subjectStrainReport = [];
     openmindsCitationsReport = [];
@@ -261,20 +340,16 @@ function result = local(path, options)
     validIntervalReport = [];
     clockAlignmentReport = [];
     softwareDedupReport = [];
+    dimensionTermReport = [];   % [] = not measured
     ontologyRowReport = [];
     ontologyLabelReport = [];
     imagedEntityReport = [];
     stimulusSequenceReport = [];
-    if any(strcmp(options.TargetVersion, {'V_epsilon', 'V_zeta'}))
-        try
-            resolver = ndi.migrate.internal.bodyResolver(bodies);
-            convertResult = resolveDeferred(convertResult, resolver, options);
-        catch ME
-            warning('NDI:migrate:deferredResolveFailed', ...
-                ['Second-pass resolution of session-context deferrals ' ...
-                 'failed (%s); leaving them quarantined.'], ME.message);
-        end
-    elseif strcmp(options.TargetVersion, 'V_eta')
+    sliceTetanusReport = [];
+    regionSitesReport = [];
+    regionLocatedReport = [];
+    epochSeriesBodiesReport = [];
+    if strcmp(options.TargetVersion, 'V_eta')
         % V_eta's second pass has the kinds of work enumerated below, all
         % needing the whole migrated body set (the corpus-wide session/element
         % graph).
@@ -315,7 +390,7 @@ function result = local(path, options)
         %       deferral emits can be a Path-S retarget candidate.
         %   (3) ENSEMBLE MEMBERSHIP: each `ensemble` map document becomes
         %       `member_of` edges (neuron-subject -> ensemble group-subject,
-        %       EPOCH-SCOPED, carrying column order in `sequence`) plus
+        %       EPOCH-SCOPED, carrying column order in `order`) plus
         %       `derived_from` provenance for the combined-binary cache.
         %       Adds only; drops nothing (the verify-before-delete gate has not
         %       run). See ndi.migrate.internal.ensembleMembership.
@@ -663,7 +738,9 @@ function result = local(path, options)
         %       it writes the statement against the element the source named,
         %       leaves `derived_from_#` empty, and REPORTS
         %       `inheritance_candidates` so the decision has a size attached.
-        %   (6) SOFTWARE DEDUP (#25): pass 1 mints one `software` entity per
+        %   (6) SOFTWARE DEDUP (#25), run TWICE: right after pass 1 (Decided
+        %       by Jess Haley, 2026-10-22 [software dedup after pass one]; see
+        %       above) and again here, LAST. Pass 1 mints one `software` entity per
         %       consuming document, because a single-document migrator cannot
         %       know another document already minted the same program. Merge
         %       them on (session_id, name, version) and retarget every inbound
@@ -694,14 +771,25 @@ function result = local(path, options)
         %       corpus gate and this production path cannot silently diverge.
         % Each step is independent; a failure leaves the affected documents in
         % their pass-1 form.
+        %
+        % ONE body resolver for the two steps that read it (resolveDeferred and
+        % resolveStimulusPresentations). It indexes every decoded v1 body, so
+        % building it twice held two whole-corpus indexes at once on Soph. It
+        % is a pure function of `bodies` (which nothing here reassigns) and its
+        % lookups only read, so the second step gets the same answers from
+        % the first one's resolver; it builds its own only if this one failed.
+        % Cleared after its last reader, so the index is not carried through
+        % the rest of the second pass.
+        resolver = [];
         try
             resolver = ndi.migrate.internal.bodyResolver(bodies);
-            convertResult = resolveDeferred(convertResult, resolver, options);
+            [convertResult, bathAnchors] = resolveDeferred(convertResult, resolver, options);
         catch ME
             warning('NDI:migrate:deferredResolveFailed', ...
                 ['Second-pass resolution of session-context deferrals ' ...
                  'failed (%s); leaving them quarantined.'], ME.message);
         end
+        tStep = migrateStepMark('resolveDeferred', tStart, tStep, convertResult);
         try
             [convertResult, ontologyRowReport] = ...
                 resolveOntologyRowSubjects(convertResult, bodies, options);
@@ -710,6 +798,7 @@ function result = local(path, options)
                 ['Second-pass ontology_table_row subject resolution failed ' ...
                  '(%s); leaving the rows as passthrough.'], ME.message);
         end
+        tStep = migrateStepMark('resolveOntologyRowSubjects', tStart, tStep, convertResult);
         try
             [convertResult, ontologyLabelReport] = ...
                 resolveOntologyLabelSubjects(convertResult, options);
@@ -718,21 +807,26 @@ function result = local(path, options)
                 ['Second-pass ontology_label subject resolution failed ' ...
                  '(%s); leaving the labels as passthrough.'], ME.message);
         end
+        tStep = migrateStepMark('resolveOntologyLabelSubjects', tStart, tStep, convertResult);
         try
             [convertResult, stimulusSequenceReport] = ...
-                resolveStimulusPresentations(convertResult, bodies, options);
+                resolveStimulusPresentations(convertResult, bodies, options, resolver, ndiDir);
         catch ME
             warning('NDI:migrate:presentationResolveFailed', ...
                 ['Second-pass stimulus_presentation decomposition failed ' ...
                  '(%s); leaving presentations as passthrough.'], ME.message);
         end
+        clear resolver;   % its last reader is above
+        tStep = migrateStepMark('resolveStimulusPresentations', tStart, tStep, convertResult);
         try
-            convertResult = resolvePathS(convertResult, options);
+            [convertResult, regionSitesReport] = ...
+                resolvePathS(convertResult, options, 'sites');
         catch ME
             warning('NDI:migrate:pathSFailed', ...
                 ['Second-pass Path-S promotion failed (%s); leaving ' ...
                  'anatomical loci located-by-default.'], ME.message);
         end
+        tStep = migrateStepMark('resolvePathS(sites)', tStart, tStep, convertResult);
         try
             [convertResult, strainReport] = ...
                 resolveStrainAssembly(convertResult, options);
@@ -741,6 +835,7 @@ function result = local(path, options)
                 ['Second-pass strain assembly failed (%s); leaving the ' ...
                  'openminds Strain documents as passthrough.'], ME.message);
         end
+        tStep = migrateStepMark('resolveStrainAssembly', tStart, tStep, convertResult);
         try
             [convertResult, openmindsCitationsReport] = ...
                 did2.convert.resolveOpenmindsCitations( ...
@@ -754,6 +849,7 @@ function result = local(path, options)
                  'leaving the `openminds` documents as passthroughs, which ' ...
                  'is the state they are in without this pass.'], ME.message);
         end
+        tStep = migrateStepMark('resolveOpenmindsCitations', tStart, tStep, convertResult);
         try
             [convertResult, datasetEntitiesReport] = ...
                 resolveDatasetEntitiesPass(convertResult, options);
@@ -763,6 +859,7 @@ function result = local(path, options)
                  'the duplicate `dataset` entities and the unresolvable ' ...
                  '`migrated_session_membership` edges in place.'], ME.message);
         end
+        tStep = migrateStepMark('resolveDatasetEntities', tStart, tStep, convertResult);
         try
             [convertResult, subjectStrainReport] = ...
                 resolveSubjectStrainAssembly(convertResult, bodies, options);
@@ -777,6 +874,7 @@ function result = local(path, options)
                  'here loses the go-forward representation and no fact.'], ...
                 ME.message);
         end
+        tStep = migrateStepMark('resolveSubjectStrainAssembly', tStart, tStep, convertResult);
         try
             [convertResult, epochMintReport] = did2.convert.epochMint( ...
                 convertResult, ...
@@ -788,6 +886,7 @@ function result = local(path, options)
                 ['Second-pass epoch mint failed (%s); leaving the epoch ' ...
                  'association as the did_v1 `epochid` string.'], ME.message);
         end
+        tStep = migrateStepMark('epochMint', tStart, tStep, convertResult);
         try
             [convertResult, ensembleReport] = resolveEnsembleMembership( ...
                 convertResult, epochMintReport, options);
@@ -796,15 +895,18 @@ function result = local(path, options)
                 ['Second-pass ensemble membership failed (%s); leaving the ' ...
                  'ensemble map documents as passthrough.'], ME.message);
         end
+        tStep = migrateStepMark('resolveEnsembleMembership', tStart, tStep, convertResult);
         try
             [convertResult, epochAnchorReport] = ...
-                resolveEpochAnchorFold(convertResult, epochMintReport, options);
+                resolveEpochAnchorFold(convertResult, epochMintReport, options, ...
+                    bathAnchors);
         catch ME
             warning('NDI:migrate:epochAnchorFoldFailed', ...
                 ['Second-pass epoch anchor fold failed (%s); leaving the ' ...
                  'stimulator anchors as pass-1 epoch_bounded_reference ' ...
                  'documents.'], ME.message);
         end
+        tStep = migrateStepMark('resolveEpochAnchorFold', tStart, tStep, convertResult);
         try
             [convertResult, recordingAttributionReport] = ...
                 resolveRecordingAttribution(convertResult, options);
@@ -814,6 +916,7 @@ function result = local(path, options)
                  'probe-attributed observations as pass-1 emitted them.'], ...
                 ME.message);
         end
+        tStep = migrateStepMark('resolveRecordingAttribution', tStart, tStep, convertResult);
         try
             [convertResult, sessionAnchorReport] = ...
                 did2.convert.resolveSessionAnchors( ...
@@ -827,6 +930,7 @@ function result = local(path, options)
                  'time references as pass-1 session_relative_reference / ' ...
                  'session_bounded_reference documents.'], ME.message);
         end
+        tStep = migrateStepMark('resolveSessionAnchors', tStart, tStep, convertResult);
         try
             % THE SAME FUNCTION the three DID-side call sites run, in the same
             % order (after epochMint + resolveSessionAnchors) so the two
@@ -853,6 +957,84 @@ function result = local(path, options)
                  'probemap and #30''s session-scoped observations in place, ' ...
                  'which is the state without this pass.'], ME.message);
         end
+        tStep = migrateStepMark('resolveEpochProbemap', tStart, tStep, convertResult);
+        % UNCONDITIONALLY, whether or not the pass above ran: the transient
+        % navigator epochs are not v1 documents (nor ingestion manifests) and
+        % must never be written.
+        if isstruct(navigatorEpochReport) && ~isempty(navigatorEpochReport.transient_ids)
+            keepIdx = true(1, numel(convertResult.migrated));
+            for k = 1:numel(convertResult.migrated)
+                keepIdx(k) = ~any(strcmp(char(convertResult.migrated{k}.get('base.id')), ...
+                    navigatorEpochReport.transient_ids));
+            end
+            navigatorEpochReport.transient_removed = sum(~keepIdx);
+            convertResult.migrated = convertResult.migrated(keepIdx);
+            convertResult.summary = recountSummary(convertResult);
+        end
+        tStep = migrateStepMark('removeTransientNavigatorEpochs', tStart, tStep, convertResult);
+        % the files that ARE on this computer get their size and MD5, as a
+        % native V2 recording body does; an absent one stays as recorded
+        try
+            [convertResult, lffReport] = fillLocatedFileFacts(convertResult, options);
+            if isstruct(navigatorEpochReport)
+                navigatorEpochReport.located_file_facts = lffReport;
+            end
+        catch ME
+            warning('NDI:migrate:locatedFileFactsFailed', ...
+                'Filling size/MD5 of located files failed (%s).', ME.message);
+        end
+        tStep = migrateStepMark('fillLocatedFileFacts', tStart, tStep, convertResult);
+        try
+            % F1 (Decided by Jess Haley, 2026-10-22 [epoch dissolution before
+            % merge]; TEAM-SIGN-OFF [epoch] 2026-08-17 Q3): the second pass
+            % describes each spike train's .vhsb (the opaque_body
+            % did2.convert.resolveEpochProbemap carried as attached) as a
+            % sampled_body with complete extents, when the bytes are on this
+            % computer. AFTER resolveEpochProbemap (it makes those bodies).
+            % A document-only corpus has no bytes: nothing changes, counted.
+            [convertResult, epochSeriesBodiesReport] = ...
+                describeEpochSeriesBodies(convertResult, ndiDir, options);
+        catch ME
+            warning('NDI:migrate:epochSeriesBodiesFailed', ...
+                ['Describing the spike-train bodies failed (%s); they stay ' ...
+                 'opaque_body documents carried as attached, which is the ' ...
+                 'state without this step.'], ME.message);
+        end
+        tStep = migrateStepMark('describeEpochSeriesBodies', tStart, tStep, convertResult);
+        try
+            % AFTER the epochprobemap fold (it re-attributes that pass's
+            % per-epoch statements) and after epochMint (its epoch index is
+            % the tetanus window's referent). Dabrowska slices: decided by
+            % Jess Haley 2026-10-21; see ndi.migrate.internal.sliceTetanus.
+            [convertResult, sliceTetanusReport] = resolveSliceTetanus( ...
+                convertResult, bodies, epochMintReport, options);
+        catch ME
+            warning('NDI:migrate:sliceTetanusFailed', ...
+                ['Second-pass slice / tetanus fold failed (%s); leaving the ' ...
+                 'bath and recording statements on the animal, the per-animal ' ...
+                 'tetanus treatment and the before/after approach documents ' ...
+                 'as they were, which is the state without this pass.'], ...
+                ME.message);
+        end
+        tStep = migrateStepMark('resolveSliceTetanus', tStart, tStep, convertResult);
+        try
+            % A statement about an anatomical region targets that region's part
+            % entity (Jess Haley, 2026-10-21; see
+            % ndi.migrate.internal.pathSPromotion). AFTER the epochprobemap
+            % fold (it makes the recording observations whose probe is
+            % located) and AFTER sliceTetanus (it matches slice statements by
+            % the animal they are about, and a statement it moved onto a slice
+            % is not moved again). Finds the parts the 'sites' pass made, so
+            % an injection into a region and a recording from it share one.
+            [convertResult, regionLocatedReport] = ...
+                resolvePathS(convertResult, options, 'located');
+        catch ME
+            warning('NDI:migrate:regionLocatedFailed', ...
+                ['Second-pass region-part retarget of located-instrument ' ...
+                 'statements failed (%s); leaving them on the subject, which ' ...
+                 'is the state without this pass.'], ME.message);
+        end
+        tStep = migrateStepMark('resolvePathS(located)', tStart, tStep, convertResult);
         try
             [convertResult, responseParametersReport] = ...
                 did2.convert.resolveResponseParameters( ...
@@ -867,6 +1049,7 @@ function result = local(path, options)
                  '`stimulus_response_scalar_parameters_basic` documents with ' ...
                  'the leaf still carrying the edge.'], ME.message);
         end
+        tStep = migrateStepMark('resolveResponseParameters', tStart, tStep, convertResult);
         try
             [convertResult, lawnPlateReport] = ...
                 did2.convert.resolveLawnPlateSubjects( ...
@@ -880,6 +1063,7 @@ function result = local(path, options)
                  'the E. coli patch and plate rows as passthroughs.'], ...
                 ME.message);
         end
+        tStep = migrateStepMark('resolveLawnPlateSubjects', tStart, tStep, convertResult);
         try
             [convertResult, imagedEntityReport] = ...
                 resolveImagedEntitySubjects(convertResult, bodies, options);
@@ -889,6 +1073,7 @@ function result = local(path, options)
                  'leaving every subject-less image as a passthrough.'], ...
                 ME.message);
         end
+        tStep = migrateStepMark('resolveImagedEntitySubjects', tStart, tStep, convertResult);
         try
             [convertResult, genericFileFoldReport] = ...
                 did2.convert.foldGenericFiles( ...
@@ -902,6 +1087,7 @@ function result = local(path, options)
                  '`generic_file` document as a passthrough, which is the ' ...
                  'state it is in without this pass.'], ME.message);
         end
+        tStep = migrateStepMark('foldGenericFiles', tStart, tStep, convertResult);
         try
             % TEAM DECISION 2026-08-11: `valid_interval` becomes a
             % boolean-valued `subject_statement`. One `validity_observation`
@@ -935,6 +1121,7 @@ function result = local(path, options)
                  'here loses the go-forward representation, not the meaning.'], ...
                 ME.message);
         end
+        tStep = migrateStepMark('resolveValidIntervals', tStart, tStep, convertResult);
         try
             % #57 syncgraph half: un-gate syncgraph -> clock_alignment_policy by
             % supplying the session-document id a single-document migrator cannot
@@ -955,6 +1142,7 @@ function result = local(path, options)
                  '`syncgraph` document as a passthrough, which is the state it ' ...
                  'is in without this pass.'], ME.message);
         end
+        tStep = migrateStepMark('resolveClockAlignment', tStart, tStep, convertResult);
         try
             [convertResult, softwareDedupReport] = ...
                 resolveSoftwareDedup(convertResult);
@@ -963,7 +1151,40 @@ function result = local(path, options)
                 ['Second-pass software dedup failed (%s); leaving one ' ...
                  '`software` entity per consuming document.'], ME.message);
         end
+        tStep = migrateStepMark('resolveSoftwareDedup', tStart, tStep, convertResult);
+
+        % THE DIMENSION-TERM CENSUS (Decided by Jess Haley, 2026-10-22
+        % [covariate details], 5.4 "B"): a dimension's term is bound
+        % `preferred`, so every migration counts the dimensions it wrote whose
+        % term has no node, against the dimensions written. An instrument only.
+        try
+            dimensionTermReport = ndi.migrate.internal.dimensionTermCensus( ...
+                convertResult.migrated);
+            fprintf(['[migrate step]   dimensions written: %d (on %d of %d ' ...
+                'documents); term with no node: %d\n'], ...
+                dimensionTermReport.dimensions_written, ...
+                dimensionTermReport.documents_with_dimensions, ...
+                dimensionTermReport.documents_inspected, ...
+                dimensionTermReport.dimensions_without_node);
+        catch ME
+            warning('NDI:migrate:dimensionTermCensusFailed', ...
+                'The dimension-term census failed (%s); not measured.', ME.message);
+        end
     end
+
+    % --- ingested files: point them at the bytes v1 already ingested --------
+    % A v1 document still records each file as it was when first added
+    % (`ingest` 1 from a path that is usually gone); the legacy backend copied
+    % the bytes to <.ndi>/files/<uid> at the time. did2.database.sqlitedb
+    % ingests on add and refuses the whole batch when a source is missing
+    % (did2:database:ingestSourceMissing), so without this the migration
+    % writes nothing for any session whose documents carry files.
+    ingestedFilesReport = struct();
+    if ~alreadyMigrated && iscell(convertResult.migrated) && ~isempty(convertResult.migrated)
+        [convertResult.migrated, ingestedFilesReport] = ...
+            ndi.migrate.internal.settleIngestedFiles(convertResult.migrated, ndiDir);
+    end
+    tStep = migrateStepMark('settleIngestedFiles', tStart, tStep, convertResult);
 
     wroteDst = false;
     wroteQuarantineFile = '';
@@ -975,6 +1196,11 @@ function result = local(path, options)
             'SchemaCache', options.SchemaCache);
         dbCleanup = onCleanup(@() db.close());
         if ~isempty(convertResult.migrated)
+            % A repeated id would surface as mksqlite's bare "UNIQUE constraint
+            % failed: documents.id" (B and Dab, runs 39684114775 and
+            % 39668356521), which names neither the id nor the pass that
+            % minted it. Say both before writing anything.
+            assertUniqueIds(convertResult.migrated);
             db.add(convertResult.migrated, 'Validate', options.Validate);
         end
         clear dbCleanup;
@@ -987,8 +1213,10 @@ function result = local(path, options)
             delete(quarantineFile);
         end
     end
+    tStep = migrateStepMark('write destination', tStart, tStep, convertResult);
 
     refReport = did2.validate.references(convertResult.migrated);
+    migrateStepMark('validate references', tStart, tStep, convertResult);
 
     result = struct();
     result.path = path;
@@ -1005,6 +1233,7 @@ function result = local(path, options)
     result.quarantine = convertResult.quarantine;
     result.quarantineFile = wroteQuarantineFile;
     result.references = refReport;
+    result.ingestedFiles = ingestedFilesReport;
     result.secondPass = struct( ...
         'ensembleMembership',  ensembleReport, ...
         'strainAssembly',      strainReport, ...
@@ -1019,13 +1248,20 @@ function result = local(path, options)
         'recordingAttribution', recordingAttributionReport, ...
         'sessionAnchorFold',   sessionAnchorReport, ...
         'epochProbemapFold',   epochProbemapReport, ...
+        'navigatorEpochFiles', navigatorEpochReport, ...
         'responseParametersFold', responseParametersReport, ...
         'lawnPlateSubjects',   lawnPlateReport, ...
         'imagedEntitySubjects', imagedEntityReport, ...
         'genericFileFold',     genericFileFoldReport, ...
         'validIntervalDecompose', validIntervalReport, ...
         'clockAlignmentFold',  clockAlignmentReport, ...
-        'softwareDedup',       softwareDedupReport);
+        'softwareDedupAfterPassOne', softwareDedupEarlyReport, ...
+        'softwareDedup',       softwareDedupReport, ...
+        'dimensionTerms',      dimensionTermReport, ...
+        'sliceTetanus',        sliceTetanusReport, ...
+        'regionPartsSites',    regionSitesReport, ...
+        'regionPartsLocated',  regionLocatedReport, ...
+        'epochSeriesBodies',   epochSeriesBodiesReport);
 
     if options.Verbose
         printSummary(result);
@@ -1039,9 +1275,72 @@ function result = local(path, options)
     end
 end
 
+% ---- instrumentation: one line per top-level step --------------------------
+
+function tNext = migrateStepMark(label, tStart, tStep, convertResult)
+%MIGRATESTEPMARK Print one "[migrate step]" line and start the next step clock.
+%   The line carries the step's own wall time, the time since
+%   ndi.migrate.local started, the process memory and, when CONVERTRESULT is a
+%   converter result, its migrated and quarantined counts. Memory is read from
+%   /proc/self/status (VmRSS = resident now, VmHWM = peak resident); where that
+%   file does not exist (not Linux) the memory field is left out, so a missing
+%   figure is visibly absent rather than printed as 0. Changes nothing.
+    mem = '';
+    try
+        if isfile('/proc/self/status')
+            txt = fileread('/proc/self/status');
+            rss = regexp(txt, 'VmRSS:\s*(\d+)\s*kB', 'tokens', 'once');
+            hwm = regexp(txt, 'VmHWM:\s*(\d+)\s*kB', 'tokens', 'once');
+            if ~isempty(rss)
+                mem = sprintf('  VmRSS %.0f MB', str2double(rss{1}) / 1024);
+            end
+            if ~isempty(hwm)
+                mem = sprintf('%s  VmHWM %.0f MB', mem, str2double(hwm{1}) / 1024);
+            end
+        end
+    catch
+        mem = '';
+    end
+    docs = '';
+    if isstruct(convertResult) && isfield(convertResult, 'migrated')
+        nQ = 0;
+        if isfield(convertResult, 'quarantine'); nQ = numel(convertResult.quarantine); end
+        docs = sprintf('  documents %d  quarantined %d', ...
+            numel(convertResult.migrated), nQ);
+    end
+    fprintf('[migrate step] %-40s step %9.1f s  elapsed %9.1f s%s%s\n', ...
+        label, toc(tStep), toc(tStart), mem, docs);
+    tNext = tic;
+end
+
+function printMigrationNoteCounts(convertResult)
+%PRINTMIGRATIONNOTECOUNTS Pass 1's migration-note counts, one line per kind.
+%   did2.convert.reportNote's notes ride on summary.migration_notes; their
+%   number is part of what pass 1 holds in memory, so it is printed beside the
+%   step marks. A summary with no such field prints that it has none.
+    if ~isfield(convertResult, 'summary') || ~isstruct(convertResult.summary) ...
+            || ~isfield(convertResult.summary, 'migration_notes')
+        fprintf('[migrate step]   pass-1 migration notes: no migration_notes field\n');
+        return;
+    end
+    notes = convertResult.summary.migration_notes;
+    if ~isstruct(notes) || isempty(fieldnames(notes))
+        fprintf('[migrate step]   pass-1 migration notes: 0 kinds\n');
+        return;
+    end
+    kinds = fieldnames(notes);
+    for k = 1:numel(kinds)
+        n = notes.(kinds{k});
+        kept = NaN;
+        if isfield(n, 'ids'); kept = numel(n.ids); end
+        fprintf('[migrate step]   pass-1 migration notes: %-28s %d note(s), %d id(s) held\n', ...
+            kinds{k}, n.count, kept);
+    end
+end
+
 % ---- second pass: session-context-dependent deferrals ---------------------
 
-function convertResult = resolveDeferred(convertResult, resolver, options)
+function [convertResult, bathAnchors] = resolveDeferred(convertResult, resolver, options)
 %RESOLVEDEFERRED Assemble the deferrals that need the session/element graph.
 %   The per-document converter quarantines context-dependent classes with
 %   reason did2:convert:needsSessionContext rather than emitting a partial
@@ -1053,6 +1352,12 @@ function convertResult = resolveDeferred(convertResult, resolver, options)
 %   does not re-migrate. Successfully assembled+validated docs move from
 %   quarantine into migrated; anything that cannot be assembled or fails
 %   validation stays quarantined with a reason.
+%
+%   BATHANCHORS (did-schema #88) is the struct array of the bath time anchors
+%   minted "during the session", each with the stimulator's epoch string and
+%   clock, for resolveEpochAnchorFold to re-point at the epoch entity once
+%   did2.convert.epochMint has minted it. [] when none.
+    bathAnchors = [];
     q = convertResult.quarantine;
     if isempty(q)
         return;
@@ -1065,9 +1370,16 @@ function convertResult = resolveDeferred(convertResult, resolver, options)
         end
         try
             v1Body = jsondecode(q(k).original_body);
-            bodies = assembleDeferred(q(k).class_name, v1Body, resolver, ...
-                options.TargetVersion);
+            [bodies, anchorInfo] = assembleDeferred(q(k).class_name, v1Body, ...
+                resolver, options.TargetVersion);
             assembled = [assembled, bodies]; %#ok<AGROW>
+            if ~isempty(anchorInfo)
+                if isempty(bathAnchors)
+                    bathAnchors = anchorInfo;
+                else
+                    bathAnchors(end+1) = anchorInfo; %#ok<AGROW>
+                end
+            end
             keep(k) = false;   % resolved -> drop the original deferral
         catch
             % leave it quarantined with its original (deferral) reason
@@ -1114,13 +1426,13 @@ function classes = deferredAssemblerClasses()
     classes = {'stimulus_bath'};
 end
 
-function bodies = assembleDeferred(className, v1Body, resolver, targetVersion)
+function [bodies, anchorInfo] = assembleDeferred(className, v1Body, resolver, targetVersion)
 % Dispatch a deferred v1 body to its session-aware assembler. Returns a cell
 % array of target-version bodies (so a 1 -> N assembly fits). Add new
 % context-dependent classes here as their assemblers land.
     switch className
         case 'stimulus_bath'
-            [bathBody, timeRefBody] = ...
+            [bathBody, timeRefBody, extraBodies, anchorInfo] = ...
                 ndi.migrate.internal.stimulusBathToBath(v1Body, resolver, ...
                     targetVersion);
             % timeRefBody is [] when V_eta declines to anchor (no epoch string,
@@ -1134,6 +1446,8 @@ function bodies = assembleDeferred(className, v1Body, resolver, targetVersion)
             else
                 bodies = {timeRefBody, bathBody};
             end
+            % did-schema #88: the bath's formulation and its chemicals
+            bodies = [bodies, extraBodies];
         otherwise
             error('NDI:migrate:noAssembler', ...
                 'No session-aware assembler for deferred class "%s".', ...
@@ -1161,15 +1475,21 @@ function summary = recountSummary(convertResult)
     summary.by_class = byClass;
 end
 
-function convertResult = resolvePathS(convertResult, options)
-%RESOLVEPATHS V_eta second pass: promote attributed anatomical loci to Path-S
-%   part-subjects using the whole migrated body set. The pass-1 J migrators emit
-%   a located-by-default `term_observation` for every anatomical site (D3); here
-%   -- with the corpus-wide subject graph in hand -- a site that is an
-%   intervention target (co-anchored with a manipulation) becomes a part-subject
-%   + a `term_assertion` of its anatomical kind + a `part_of` `directed_relation`,
-%   and the co-anchored manipulation is retargeted onto the part. Merely-located
-%   sites (probe/label) are left untouched. See ndi.migrate.internal.pathSPromotion.
+function [convertResult, report] = resolvePathS(convertResult, options, mode)
+%RESOLVEPATHS V_eta second pass: a statement about an anatomical region of a
+%   subject targets that region's part entity (one per subject and region,
+%   type tissue, `part_of` the subject; Jess Haley, 2026-10-21, replacing D3's
+%   located-by-default). MODE 'sites': a pass-1 site observation co-anchored
+%   with a manipulation becomes the part (+ its kind assertion + `part_of`)
+%   and the manipulation moves onto it. MODE 'located': a statement whose
+%   instrument carries a location (probe_location), or a label naming an
+%   UBERON region, moves onto the part. See ndi.migrate.internal.pathSPromotion.
+%
+%   The minted parts are folded through v1_to_v2 FIRST; if any of them
+%   quarantines, NOTHING moves (the batch is left exactly as it was found and
+%   the count is reported), so no statement can be left pointing at a part
+%   that was not written.
+    report = [];
     docs = convertResult.migrated;
     if isempty(docs)
         return;
@@ -1178,8 +1498,36 @@ function convertResult = resolvePathS(convertResult, options)
     for k = 1:numel(docs)
         structs{k} = docs{k}.toStruct();
     end
-    [kept, minted, changed] = ndi.migrate.internal.pathSPromotion(structs);
+    [kept, minted, changed, report] = ...
+        ndi.migrate.internal.pathSPromotion(structs, 'Mode', mode);
+    report.minted_folded = 0;
+    report.minted_quarantined = 0;
+    report.reverted = false;
     if ~changed
+        printRegionParts(report);
+        return;
+    end
+    % fold the minted part entity / kind assertion / part_of bodies through
+    % v1_to_v2: they are tagged schema_version 'V_eta', so the converter
+    % short-circuits them (isAlreadyTarget) to ensureClassBlocks + validate
+    % rather than re-migrating -- the same footing the deferred-resolution pass
+    % uses.
+    sub = struct('migrated', {{}}, 'quarantine', struct([]));
+    if ~isempty(minted)
+        sub = did2.convert.v1_to_v2(minted, ...
+            'Validate', options.Validate, ...
+            'SchemaCache', options.SchemaCache, ...
+            'TargetVersion', options.TargetVersion, ...
+            'Verbose', false);
+        report.minted_folded = numel(sub.migrated);
+        report.minted_quarantined = numel(sub.quarantine);
+    end
+    if report.minted_quarantined > 0
+        report.reverted = true;
+        printRegionParts(report);
+        warning('NDI:migrate:regionPartQuarantined', ...
+            ['%d minted region-part document(s) did not validate; no statement ' ...
+             'was moved onto a part (%s pass).'], report.minted_quarantined, mode);
         return;
     end
     % rewrap the surviving (possibly retargeted) bodies
@@ -1187,22 +1535,59 @@ function convertResult = resolvePathS(convertResult, options)
     for k = 1:numel(kept)
         keptDocs{k} = did2.document(kept{k});
     end
-    convertResult.migrated = keptDocs;
-    % fold the minted part-subject / term_assertion / part_of bodies through
-    % v1_to_v2: they are tagged schema_version 'V_eta', so the converter
-    % short-circuits them (isAlreadyTarget) to ensureClassBlocks + validate
-    % rather than re-migrating -- the same footing the deferred-resolution pass
-    % uses.
-    if ~isempty(minted)
-        sub = did2.convert.v1_to_v2(minted, ...
-            'Validate', options.Validate, ...
-            'SchemaCache', options.SchemaCache, ...
-            'TargetVersion', options.TargetVersion, ...
-            'Verbose', false);
-        convertResult.migrated = [convertResult.migrated, sub.migrated];
-        convertResult.quarantine = [convertResult.quarantine, sub.quarantine];
-    end
+    convertResult.migrated = [keptDocs, sub.migrated];
     convertResult.summary = recountSummary(convertResult);
+    printRegionParts(report);
+end
+
+function printRegionParts(r)
+%PRINTREGIONPARTS The region-part pass's own census, denominator first.
+    if isempty(r); return; end
+    fprintf(['REGION PARTS (%s)\n' ...
+        '  DENOMINATOR: %d migrated document(s); %d part(s) already in the batch\n' ...
+        '  site observations %d: promoted %d, not co-anchored %d, unanchored %d; ' ...
+        'laterality folded %d; groups with several areas %d, several sides %d\n' ...
+        '  located instruments (probes inspected) %d: one area %d, area + laterality %d, ' ...
+        'laterality only %d, several areas %d, several sides %d, no region %d\n' ...
+        '  statements with a located instrument %d; laterality folded %d; ' ...
+        'onto a region part of a slice %d\n' ...
+        '  labels %d (anatomical %d, retargeted %d)\n' ...
+        '  site conditions %d: retargeted %d, not UBERON %d\n' ...
+        '  retargeted: observations %d, manipulations %d; parts minted %d ' ...
+        '(on slices %d, with a laterality assertion %d; folded %d, quarantined %d, reverted %d)\n' ...
+        '  anatomy terms inspected %d: UBERON %d, non-UBERON %d (kept as written)\n' ...
+        '  left: instrument has several areas %d, several sides %d, no region %d; ' ...
+        'side without region %d; about a region part %d, a tissue part of nothing %d, ' ...
+        'a device %d, an element %d, another entity type %d; subject not in batch %d, ' ...
+        'not an entity %d, no subject %d\n'], ...
+        r.mode, r.documents_read, r.parts_found_existing, ...
+        r.site_observations_seen, r.site_observations_promoted, ...
+        r.site_observations_not_co_anchored, r.site_observations_unanchored, ...
+        r.sites_laterality_folded, r.sites_several_areas, r.sites_several_sides, ...
+        r.located_instruments, r.instruments_one_area, ...
+        r.instruments_area_with_laterality, r.instruments_laterality_only, ...
+        r.instruments_several_areas, r.instruments_several_sides, ...
+        r.instruments_no_region, r.statements_with_located_instrument, ...
+        r.laterality_folded, r.statements_retargeted_onto_slice_parts, ...
+        r.label_observations_seen, r.label_observations_anatomical, ...
+        r.label_observations_retargeted, ...
+        r.site_conditions_seen, r.site_conditions_retargeted, ...
+        r.site_conditions_not_uberon, r.observations_retargeted, ...
+        r.manipulations_retargeted, r.parts_minted, r.parts_minted_on_slices, ...
+        r.laterality_assertions_minted, r.minted_folded, ...
+        r.minted_quarantined, double(r.reverted), ...
+        r.anatomy_terms_inspected, r.anatomy_terms_uberon, r.anatomy_terms_non_uberon, ...
+        r.left_instrument_has_several_areas, r.left_instrument_has_several_sides, ...
+        r.left_instrument_has_no_region, r.left_side_without_region, ...
+        r.left_about_a_region_part, r.left_about_a_tissue_part_of_nothing, ...
+        r.left_about_a_device, r.left_about_an_element, ...
+        r.left_about_another_entity_type, r.left_subject_not_in_batch, ...
+        r.left_subject_not_an_entity, r.left_no_subject);
+    for k = 1:numel(r.anatomy_non_uberon)
+        t = r.anatomy_non_uberon(k);
+        fprintf('    non-UBERON anatomy term %d x  node "%s"  name "%s"\n', ...
+            t.count, t.node, t.name);
+    end
 end
 
 function [convertResult, report] = resolveEnsembleMembership(convertResult, ...
@@ -1318,6 +1703,17 @@ function [convertResult, report] = resolveEnsembleMembership(convertResult, ...
         'SchemaCache', options.SchemaCache, ...
         'TargetVersion', options.TargetVersion, ...
         'Verbose', false);
+    if ~isempty(sub.quarantine) && ~isempty(report.dissolved_map_ids)
+        % D2: a map dissolves INTO its edges. An edge that did not validate
+        % means the map's content is not all said elsewhere, so no map
+        % dissolves in this batch; counted, and the quarantine stays loud.
+        convertResult.migrated = docs;
+        report.ensemble_maps_kept_edges_quarantined = report.ensemble_maps_dissolved;
+        report.ensemble_maps_dissolved = 0;
+        report.dissolved_map_ids = {};
+        report.combined_bytes_dropped = 0;
+        report.dropped_carrier_ids = {};
+    end
     convertResult.migrated = [convertResult.migrated, sub.migrated];
     convertResult.quarantine = [convertResult.quarantine, sub.quarantine];
     convertResult.summary = recountSummary(convertResult);
@@ -1422,6 +1818,155 @@ function [convertResult, report] = resolveOntologyRowSubjects(convertResult, bod
     report.changed = true;
 end
 
+function [convertResult, report] = resolveSliceTetanus(convertResult, bodies, ...
+    epochMintReport, options)
+%RESOLVESLICETETANUS V_eta second pass: Dabrowska brain slices as entities,
+%   one optogenetic-tetanus manipulation per recording run on a relative
+%   window, the before/after approach labels dropped once they rebuild from
+%   it, and a recording day filed under the wrong animal given its own.
+%
+%   ndi.migrate.internal.sliceTetanus plans (pure struct logic). This function
+%   folds the MINTED bodies through did2.convert.v1_to_v2 (validated; a
+%   quarantine there is a real one and is kept, visible), then applies the
+%   edge moves and removals only where every document they point at survived.
+%   The moved documents keep their base.id, so nothing pointing at them breaks.
+    report = [];
+    if ~strcmp(options.TargetVersion, 'V_eta')
+        return;
+    end
+    docs = convertResult.migrated;
+    if isempty(docs)
+        return;
+    end
+    epochIndex = struct('session_id', {}, 'local_identifier', {}, ...
+                        'epoch_document_id', {});
+    if isstruct(epochMintReport) && isfield(epochMintReport, 'epoch_index')
+        epochIndex = epochMintReport.epoch_index;
+    end
+    structs = cell(1, numel(docs));
+    for k = 1:numel(docs)
+        structs{k} = docs{k}.toStruct();
+    end
+    [plan, report] = ndi.migrate.internal.sliceTetanus( ...
+        decodeBodies(bodies), structs, epochIndex);
+    report.minted_folded = 0;
+    report.minted_quarantined = 0;
+    report.folded = false;
+    if ~report.changed
+        printSliceTetanus(report);
+        return;
+    end
+
+    minted = containers.Map('KeyType', 'char', 'ValueType', 'logical');
+    if ~isempty(plan.minted)
+        sub = did2.convert.v1_to_v2(plan.minted, ...
+            'Validate',      options.Validate, ...
+            'SchemaCache',   options.SchemaCache, ...
+            'TargetVersion', options.TargetVersion, ...
+            'Verbose',       false);
+        report.minted_folded = numel(sub.migrated);
+        report.minted_quarantined = numel(sub.quarantine);
+        convertResult.quarantine = [convertResult.quarantine, sub.quarantine];
+        for k = 1:numel(sub.migrated)
+            minted(sub.migrated{k}.get('base.id')) = true;
+        end
+        convertResult.migrated = [convertResult.migrated, sub.migrated];
+    end
+
+    % Apply a move only when its new target was minted; drop a document only
+    % when nothing minted failed (a failed mint keeps what it would replace).
+    replacedById = containers.Map('KeyType', 'char', 'ValueType', 'any');
+    for k = 1:numel(plan.replaced)
+        s = plan.replaced{k};
+        if movedTargetMinted(s, minted)
+            replacedById(s.base.id) = s;
+        end
+    end
+    removed = containers.Map('KeyType', 'char', 'ValueType', 'logical');
+    if report.minted_quarantined == 0
+        for k = 1:numel(plan.removed)
+            removed(plan.removed{k}) = true;
+        end
+    end
+    out = {};
+    for k = 1:numel(convertResult.migrated)
+        d = convertResult.migrated{k};
+        id = d.get('base.id');
+        if isKey(removed, id)
+            continue;
+        end
+        if isKey(replacedById, id)
+            d = did2.document(replacedById(id));
+        end
+        out{end+1} = d; %#ok<AGROW>
+    end
+    report.reattributions_applied = double(replacedById.Count);
+    report.removals_applied = double(removed.Count);
+    convertResult.migrated = out;
+    convertResult.summary = recountSummary(convertResult);
+    report.folded = true;
+    printSliceTetanus(report);
+end
+
+function tf = movedTargetMinted(s, minted)
+% The moved edge -- `entity_id` on a statement, `parent_id` on a relation
+% (did-schema #88; `subject_id` / `parent` before) -- always names a minted
+% slice; the move stands only if that slice was folded.
+    edges = {'entity_id', 'subject_id'};
+    if strcmp(s.document_class.class_name, 'directed_relation')
+        edges = {'parent_id', 'parent'};
+    end
+    tf = false;
+    for k = 1:numel(s.depends_on)
+        if any(strcmp(s.depends_on(k).name, edges))
+            v = '';
+            if isfield(s.depends_on(k), 'value'); v = s.depends_on(k).value;
+            elseif isfield(s.depends_on(k), 'document_id'); v = s.depends_on(k).document_id; end
+            tf = ischar(v) && isKey(minted, v);
+            return;
+        end
+    end
+end
+
+function printSliceTetanus(r)
+%PRINTSLICETETANUS The pass's own census, denominators first, in the log.
+    if isempty(r); return; end
+    fprintf(['SLICE / TETANUS (Dabrowska)\n' ...
+        '  DENOMINATOR: %d v1 document(s), %d migrated document(s), %d epoch index entr(ies)\n' ...
+        '  stimulators %d: slice baths %d, not a slice bath %d, animal mismatch %d\n' ...
+        '  slices minted %d; new animals %d (epochs on a nested date %d); strain assertions copied %d\n' ...
+        '  epoch-anchored statements examined %d: matched %d, unmatched %d\n' ...
+        '  unanchored statements examined %d: matched %d, ambiguous %d\n' ...
+        '  element observes-relations examined %d: matched %d, ambiguous %d\n' ...
+        '  approach labels %d; runs examined %d; refused: not a clean switch %d, no epoch doc %d, no gap %d\n' ...
+        '  tetanus manipulations %d (on a new animal %d): with target region %d, without %d; ' ...
+        'with parameters %d, without %d\n' ...
+        '  labels rebuilt %d/%d (not rebuilt %d); approach documents removed %d\n' ...
+        '  treatment manipulations found %d: superseded %d, kept (no run) %d; part-subjects superseded %d\n' ...
+        '  minted %d (folded %d, quarantined %d); re-attributed %d; removed %d; removals withheld %d\n'], ...
+        r.v1_documents_read, r.migrated_documents_read, r.epoch_index_entries, ...
+        r.stimulators, r.slice_bath_stimulators, r.stimulators_not_a_slice_bath, ...
+        r.stimulators_animal_mismatch, r.slices, r.new_animals, ...
+        r.epochs_on_a_nested_date, r.new_animal_strain_assertions_copied, ...
+        r.epoch_statements_examined, r.epoch_statements_matched, r.epoch_statements_unmatched, ...
+        r.unanchored_statements_examined, r.unanchored_statements_matched, ...
+        r.unanchored_statements_ambiguous, r.element_relations_examined, ...
+        r.element_relations_matched, r.element_relations_ambiguous, ...
+        r.approach_labels, r.runs_examined, r.runs_refused_not_a_clean_switch, ...
+        r.runs_refused_no_epoch_document, r.runs_refused_no_gap, ...
+        r.tetanus_manipulations, r.tetanus_on_new_animal, r.tetanus_with_target_region, ...
+        r.tetanus_without_target_region, r.tetanus_with_parameters, r.tetanus_without_parameters, ...
+        r.labels_rebuilt, r.approach_labels, r.labels_not_rebuilt, r.approach_labels_removed, ...
+        r.treatment_manipulations_found, r.treatment_manipulations_superseded, ...
+        r.treatment_manipulations_kept_no_run, r.treatment_part_subjects_superseded, ...
+        r.documents_minted, r.minted_folded, r.minted_quarantined, ...
+        r.documents_reattributed, r.documents_removed, r.removals_withheld_still_referenced);
+    cls = fieldnames(r.reattributed_by_class);
+    for k = 1:numel(cls)
+        fprintf('    re-attributed %-28s %d\n', cls{k}, r.reattributed_by_class.(cls{k}));
+    end
+end
+
 function [convertResult, report] = resolveRecordingAttribution(convertResult, options)
 %RESOLVERECORDINGATTRIBUTION V_eta second pass: a raw recording is an
 %   observation OF THE SPECIMEN, taken WITH the probe (T7) -- for every emitter,
@@ -1466,6 +2011,19 @@ function [convertResult, report] = resolveRecordingAttribution(convertResult, op
     report.observations_reattributed = 0;
     report.reattribution_quarantined = 0;
     report.folded                    = false;
+    fprintf(['RECORDING ATTRIBUTION\n' ...
+        '  DENOMINATOR: %d migrated document(s); %d observation(s): %d donor(s), %d candidate(s)\n' ...
+        '  attributed %d (via a recording-observation donor %d, via the element''s observes %d); ' ...
+        'observes relations %d\n' ...
+        '  refused: no donor %d, no subject %d, self reference %d, ambiguous probe %d, ' ...
+        'ambiguous observes %d\n'], ...
+        report.documents_inspected, report.observations, report.donors, ...
+        report.candidates, report.attributed, ...
+        report.attributed - report.attributed_via_observes, ...
+        report.attributed_via_observes, report.observes_relations, ...
+        report.refused_no_donor, report.refused_no_subject, ...
+        report.refused_self_reference, report.refused_ambiguous_probe, ...
+        report.refused_ambiguous_observes);
     if isempty(plan)
         return;
     end
@@ -1572,7 +2130,9 @@ function [convertResult, report] = resolveOntologyLabelSubjects(convertResult, o
     newDocs = {};
     for k = 1:numel(plan)
         try
-            sub = did2.convert.v1_to_v2({plan(k).body}, ...
+            % the observation and its `derived_from` relation (did-schema
+            % #88) fold together: either both land or the label stays
+            sub = did2.convert.v1_to_v2([{plan(k).body}, plan(k).related], ...
                 'Validate',      options.Validate, ...
                 'SchemaCache',   options.SchemaCache, ...
                 'TargetVersion', options.TargetVersion, ...
@@ -1746,18 +2306,18 @@ end
 
 function [convertResult, report] = resolveStrainAssembly(convertResult, options)
 %RESOLVESTRAINASSEMBLY V_eta second pass: assemble the unattached `openminds`
-%   Strain documents into `strain` entities with their ids PRESERVED, consuming
-%   the Species / GeneticStrainType fragment documents they reference into the
-%   strain's `species` / `genetic_strain_type` fields and wiring
-%   `backgroundStrain` into `background_strain_#`. A second pass because those
-%   values live in OTHER documents, reachable only through the `ndi://` /
-%   `openminds_#` links a single-document migrator cannot follow.
+%   Strain documents into strain entities (did-schema #88: `entity`, type
+%   `strain`) with their ids PRESERVED, turning the Species /
+%   GeneticStrainType fragment documents they reference into assertions about
+%   the strain and `backgroundStrain` into `derived_from` relations. A second
+%   pass because those values live in OTHER documents, reachable only through
+%   the `ndi://` / `openminds_#` links a single-document migrator cannot follow.
 %
 %   Id preservation is load-bearing rather than tidy: `ontologyTableRow`'s
 %   `bacteriaStrain` column holds the strain document's id as a plain string
-%   (haley/doImport.m:164,734), so nothing would flag a re-mint. The
-%   `strain_id` edge itself is NOT attached here -- it rides with the pass that
-%   mints subjects from `ontologyTableRow` (#53), which does not exist yet.
+%   (haley/doImport.m:164,734), so nothing would flag a re-mint. No
+%   `instance_of` is minted here: what is an instance of these strains is
+%   minted by the pass that reads those rows.
     report = [];
     docs = convertResult.migrated;
     if isempty(docs)
@@ -1788,10 +2348,11 @@ end
 
 function [convertResult, report] = resolveSubjectStrainAssembly(convertResult, bodies, options)
 %RESOLVESUBJECTSTRAINASSEMBLY V_eta second pass (#78): the openminds_subject
-%   half of the strain family -- one deduplicated `strain` entity per distinct
-%   strain, `strain_id` back on the assertion, the `background_strain_#`
-%   pedigree, the `genetic strain type` assertion moved onto the strain, and
-%   the duplicate `species` assertion dropped.
+%   half of the strain family -- one deduplicated strain entity per distinct
+%   strain (did-schema #88), the subject an `instance_of` it in place of its
+%   strain assertion, the pedigree as `derived_from` relations, the `genetic
+%   strain type` assertion moved onto the strain, and the duplicate `species`
+%   assertion dropped.
 %
 %   IT TAKES `bodies`, and that argument is why the pass is NDI-side rather
 %   than a preference. Pass 1 keeps only `subject_id` on the emitted
@@ -1816,10 +2377,11 @@ function [convertResult, report] = resolveSubjectStrainAssembly(convertResult, b
 %   the report's own `v1_openminds_subject_bodies` is 0 and says so). Otherwise
 %   it carries its denominators first. REPORT.changed gates the rebuild.
 %
-%   A MINTED `strain` THAT QUARANTINES DOES NOT UNDO THE EDGES, and that is
-%   deliberate rather than overlooked: the `strain_id` values are minted here,
-%   so a quarantined strain leaves an edge naming a document that is not in
-%   the migrated set -- an ORPHAN, which the gate at the end of ndi.migrate.local
+%   A MINTED STRAIN THAT QUARANTINES DOES NOT UNDO THE RELATIONS, and that is
+%   deliberate rather than overlooked: the strain ids are minted here, so a
+%   quarantined strain leaves `instance_of` / `derived_from` relations naming a
+%   document that is not in the migrated set -- an ORPHAN, which the gate at
+%   the end of ndi.migrate.local
 %   counts and which is exactly the loud failure wanted. The alternative,
 %   silently dropping the edges, would leave a green run with the work
 %   undone. did2.convert.v1_to_v2's quarantine list is carried onto
@@ -1926,17 +2488,43 @@ function c = datasetLayerCensus(docs)
 %   alone would count every entity-layer edge in the batch.
     c = struct('documents', numel(docs), 'dataset_entities', 0, ...
         'distinct_dataset_ids', 0, 'membership_edges', 0);
+    % did-schema #88: a dataset is an `entity` of type `dataset`, and a
+    % session's membership is an `included_in` relation; the pre-#88 class
+    % name and base.name sentinel are read too -- the same two tests
+    % did2.convert.resolveDatasetEntities applies (isDatasetEntity,
+    % isMembership), so the census counts what the pass acts on.
     seenIds = {};
     for k = 1:numel(docs)
         cls = docs{k}.className();
-        if strcmp(cls, 'dataset')
+        isDataset = strcmp(cls, 'dataset');
+        if ~isDataset && strcmp(cls, 'entity')
+            t = [];
+            try
+                t = docs{k}.get('entity.type');
+            catch
+            end
+            isDataset = ~isempty(t) && ndi.v2.vocabIs('entity_type', t, 'dataset');   % by node (L2)
+        end
+        isMembership = false;
+        if strcmp(cls, 'directed_relation')
+            isMembership = strcmp(safeDocGet(docs{k}, 'base.name'), ...
+                'migrated_session_membership');
+            if ~isMembership
+                r = [];
+                try
+                    r = docs{k}.get('directed_relation.relation');
+                catch
+                end
+                isMembership = ~isempty(r) && ndi.v2.vocabIs('relation', r, 'included_in');   % by node (L1)
+            end
+        end
+        if isDataset
             c.dataset_entities = c.dataset_entities + 1;
             id = safeDocGet(docs{k}, 'base.id');
             if ~isempty(id) && ~any(strcmp(id, seenIds))
                 seenIds{end+1} = id; %#ok<AGROW>
             end
-        elseif strcmp(cls, 'directed_relation') && strcmp( ...
-                safeDocGet(docs{k}, 'base.name'), 'migrated_session_membership')
+        elseif isMembership
             c.membership_edges = c.membership_edges + 1;
         end
     end
@@ -1953,7 +2541,7 @@ function v = safeDocGet(doc, path)
 end
 
 function [convertResult, report] = resolveEpochAnchorFold(convertResult, ...
-    epochMintReport, options)
+    epochMintReport, options, bathAnchors)
 %RESOLVEEPOCHANCHORFOLD V_eta second pass: fold the pass-1
 %   `epoch_bounded_reference` placeholders into the signed `relative_reference`,
 %   anchored to the `epoch` documents did2.convert.epochMint just minted.
@@ -1994,7 +2582,12 @@ function [convertResult, report] = resolveEpochAnchorFold(convertResult, ...
     for k = 1:numel(docs)
         structs{k} = docs{k}.toStruct();
     end
-    [plan, report] = ndi.migrate.internal.epochAnchorFold(structs, epochIndex);
+    if nargin < 4 || isempty(bathAnchors)
+        bathAnchors = struct('anchor_id', {}, 'session_id', {}, ...
+            'epoch_string', {}, 'epoch_clock', {});
+    end
+    [plan, report] = ndi.migrate.internal.epochAnchorFold(structs, epochIndex, ...
+        bathAnchors);
 
     % Fold outcomes belong to the same instrument, so they are initialised
     % unconditionally -- a field that appears only on the success path is a
@@ -2035,9 +2628,10 @@ function [convertResult, report] = resolveEpochAnchorFold(convertResult, ...
     kept = {};
     for k = 1:numel(convertResult.migrated)
         d = convertResult.migrated{k};
-        if strcmp(d.className(), 'epoch_bounded_reference') ...
+        if any(strcmp(d.className(), {'epoch_bounded_reference', ...
+                'relative_time_reference'})) ...
                 && any(strcmp(d.get('base.id'), replacedIds))
-            continue;   % superseded by the relative_reference carrying its id
+            continue;   % superseded by the re-anchored reference carrying its id
         end
         kept{end+1} = d; %#ok<AGROW>
     end
@@ -2091,85 +2685,110 @@ function [convertResult, report] = resolveSoftwareDedup(convertResult)
     convertResult.summary = recountSummary(convertResult);
 end
 
-function [convertResult, report] = resolveStimulusPresentations(convertResult, bodies, options)
+function [convertResult, report] = resolveStimulusPresentations(convertResult, bodies, options, resolver, ndiDir)
 %RESOLVESTIMULUSPRESENTATIONS V_eta second pass: DECOMPOSE each legacy
-%   stimulus_presentation into the SIGNED stimulus model -- N deduped
-%   standalone `visual_grating` documents plus ONE
-%   `timed_sequence_manipulation` on the animal that references them, its
-%   playlist an index array into those references.
+%   stimulus_presentation into the did-schema #88 stimulus shape -- one
+%   standalone `method` document per distinct stimulus (a recipe:
+%   {term, parameters}) plus ONE `manipulation` (value kind `item`) whose `item` value is the
+%   playlist into them (V_eta_method_plan.md, TEAM-SIGN-OFF [method]
+%   2026-10-21; `item` replaces `timed_sequence`, V_eta_study_plan.md).
 %
-%   The pass-1 converter has no per-document migrator for
-%   stimulus_presentation (the animal is only knowable from the whole body set
-%   -- the stimulus_response -> element -> subject link), so it passes
-%   through; here it is decomposed. A presentation with no responding animal,
-%   or one this pass cannot type, is left as passthrough. The manipulation
-%   PRESERVES the presentation's id, so every inbound reference resolves to it
-%   (`stimulus_response_scalar.stimulus_presentation_id`,
-%   `hartley_calc.stimulus_presentation_id`,
-%   `control_designation.timed_sequence_id`).
+%   The pass-1 converter passes stimulus_presentation through (the animal is
+%   only knowable from the whole body set); here it is decomposed. The
+%   manipulation PRESERVES the presentation's id, so every inbound reference
+%   resolves to it. A presentation the guard refuses (not a sequence of
+%   gratings), or one with no animal, is left as v1 with its reason.
 %
-%   ------------------------------------------------------------------------
-%   WHAT CHANGED 2026-08-17, AND THE ONE CONSEQUENCE THAT IS NOT GOOD NEWS
-%   ------------------------------------------------------------------------
-%   This pass used to call
-%   ndi.migrate.internal.stimulusPresentationToManipulation, which FLATTENS a
-%   whole presentation into a single `visual_grating_manipulation` with the
-%   per-stimulus parameters in an untyped numeric matrix. The 2026-08-17
-%   signature (DID-schema V_eta_stimulus_model_plan.md) RETAINS that class for
-%   the PRESENTATION-LESS single-grating case and gives the sequence case to
-%   the decomposition -- "not a rival model to retire, the degenerate one".
+%   SEVERAL ANIMALS (Jess Haley, 2026-10-21, stimulus plan decision 2): a
+%   presentation whose response or epoch route resolves to several animals
+%   becomes ONE manipulation of its session's COHORT with `distributive`
+%   true. The cohort is minted here once per session -- a `group` entity
+%   whose members (`member_of`) are the animals recorded in that session plus
+%   any the presentations resolved to -- and reused by every presentation in
+%   the session (ndi.migrate.internal.sessionCohort). Stimulator links that
+%   lead to different animals are refused (decision 4).
 %
-%   The two are therefore mutually exclusive by definition, which is what
-%   removes the id collision: both emitters set base.id = the presentation id,
-%   and `+did2/+database/sqlitedb.m` declares `documents(id TEXT PRIMARY KEY)`,
-%   so two claimants cannot both be stored.
+%   NO SUBJECT (Jess Haley, 2026-10-21, "a"): a presentation with no
+%   response, no element in its session-epoch and no animal behind its
+%   stimulator becomes a standalone `item` (id preserved, no manipulation,
+%   no subject claim) instead of staying v1. Counted as `standalone_items`.
 %
-%   GATING THE FLATTENING PASS TO ITS RETAINED CASE STOPS IT FIRING
-%   ENTIRELY, AND THE RETAINED CASE HAS NO EMITTER. That pass is structurally
-%   a loop over `isPresentationBody(b)`; a presentation-less input never
-%   reaches it. Nothing is stranded TODAY -- no did_v1 class carries a lone
-%   grating, `stimulus_presentation` being the only carrier of grating
-%   parameters -- but if such a source ever appears it has nothing to migrate
-%   into it. Recorded here rather than covered over, and counted in the report
-%   below as `single_grating_candidates`, which is measured, not assumed.
+%   TIME. Each manipulation is anchored "during the session" by
+%   did2.convert.mintSessionDuring (the lightsheet decision, Jess 2026-10-14,
+%   option A).
+%
+%   TRIAL TIMES (Decided by Jess Haley, 2026-10-22 [presentation times from
+%   the file]). Each presentation's onsets and offsets are read from its v1
+%   presentation_time.bin when the bytes are on this computer
+%   (ndi.migrate.internal.v1AttachedFile: <NDIDIR>/files/<uid>, else the
+%   recorded location), else from the deprecated inline block, else none; the
+%   file stays attached to the V2 document. REPORT.timing counts each source
+%   against the presentations folded.
+%
+%   CONTROL (Jess Haley, 2026-10-22, [control as covariate]): each v1
+%   control_stimulus_ids is handed to its presentation's fold and becomes the
+%   `control condition` covariate of the item value; the record itself writes
+%   no V2 document and its id is stripped from every input_id. A record the
+%   fold cannot place (see stimulusPresentationToItem, CONTROL) or whose
+%   presentation did not fold stays as it is; the report counts each, against
+%   control_records_read.
+%
+%   `visual_grating`, `visual_grating_manipulation`, `timed_sequence` and
+%   `timed_sequence_manipulation` are gone from #88; nothing here emits them.
     report = newStimulusSequenceReport();
-    resolver = ndi.migrate.internal.bodyResolver(bodies);
-    % The first-run v1 readers (did2.convert.readers.sqliteV1 / dumbJsonV1)
-    % return raw JSON char bodies -- nothing is decoded there. isPresentationBody
-    % (and the assembler's struct-typed argument) need decoded structs, so
-    % normalise here; the idempotent re-run path already passes structs, which
-    % this leaves untouched.
+    if nargin < 5
+        ndiDir = '';
+    end
+    if nargin < 4 || isempty(resolver)
+        % the caller's resolver (built from the same BODIES) when it has one
+        resolver = ndi.migrate.internal.bodyResolver(bodies);
+    end
     bodies = decodeBodies(bodies);
     report.bodies_read = numel(bodies);
 
-    % THE HARTLEY HALF, BUILT ONCE FOR THE WHOLE SESSION. Ten of the eleven
-    % 20211116 presentations carry a GENERATOR RECIPE and enumerate nothing;
-    % the basis they play is in the `hartley_calc` documents that reference
-    % them, identical across all 210 of them. Minted here rather than inside
-    % the per-presentation assembler because the basis is a property of the
-    % SESSION: minting per presentation would create ten copies of the same
-    % 3,360 gratings.
-    [hartleyGratings, hartleyByPresentation, report.hartley] = ...
-        ndi.migrate.internal.hartleyBasisGratings(bodies, options.TargetVersion);
+    % THE HARTLEY HALF, BUILT ONCE FOR THE WHOLE SESSION (the basis is a
+    % property of the session, shared by every presentation that plays it).
+    [hartleyMethods, hartleyByPresentation, report.hartley] = ...
+        ndi.migrate.internal.hartleyBasisGratings(bodies);
 
-    % The shared basis is added at the END, and only the entries a decomposed
-    % presentation really references. A grating document nothing points at is
-    % an unreachable document, not a preserved fact -- and a Hartley
-    % presentation can still be refused (no responding animal), so "built" and
-    % "referenced" are genuinely different sets.
+    % The session cohorts, minted lazily: one id per session, its members
+    % accumulated over every distributive presentation in it.
+    cohortIds = containers.Map('KeyType', 'char', 'ValueType', 'char');
+    cohortMembers = containers.Map('KeyType', 'char', 'ValueType', 'any');
+    cohortStamp = containers.Map('KeyType', 'char', 'ValueType', 'char');
+    cohortIdFor = @(sid) cohortIdOf(cohortIds, sid);
+
     usedShared = containers.Map('KeyType', 'char', 'ValueType', 'logical');
+    % THE CONTROL RECORDS, by presentation. Decided by Jess Haley, 2026-10-22
+    % [control as covariate] (did-schema V_eta_stimulus_response_model_plan.md):
+    % a v1 control_stimulus_ids becomes the `control condition` covariate of
+    % its presentation's item value and NO V2 document of its own; responses
+    % then point at the presentation only (its id is stripped from their
+    % input_id below). See ndi.migrate.internal.stimulusPresentationToItem.
+    controlsByPresentation = containers.Map('KeyType', 'char', 'ValueType', 'any');
+    for k = 1:numel(convertResult.migrated)
+        d = convertResult.migrated{k};
+        if ~strcmp(d.className(), 'control_stimulus_ids'); continue; end
+        report.control_records_read = report.control_records_read + 1;
+        cs = d.toStruct();
+        presId = ndi.migrate.internal.etaShape.edge(cs, 'stimulus_presentation_id');
+        if isempty(presId)
+            continue;
+        end
+        held = {};
+        if isKey(controlsByPresentation, presId)
+            held = controlsByPresentation(presId);
+        end
+        held{end+1} = cs; %#ok<AGROW>
+        controlsByPresentation(presId) = held;
+    end
+    controlFolded = {};
     minted = {};
-    consumed = {};   % presentation ids that became a manipulation
+    manips = {};
+    consumed = {};
     for k = 1:numel(bodies)
         b = bodies{k};
         if ~isPresentationBody(b)
-            % THE RETAINED-CASE COUNTER. A presentation-less single grating is
-            % what `visual_grating_manipulation` is kept for; nothing in
-            % did_v1 is one, and this counts rather than asserts that.
-            if isSingleGratingCandidate(b)
-                report.single_grating_candidates = ...
-                    report.single_grating_candidates + 1;
-            end
             continue;
         end
         report.presentations_read = report.presentations_read + 1;
@@ -2178,85 +2797,184 @@ function [convertResult, report] = resolveStimulusPresentations(convertResult, b
         if ~isempty(presId) && isKey(hartleyByPresentation, presId)
             sequence = hartleyByPresentation(presId);
         end
-        [manip, gratings, bodyDoc, ~, rep, extra] = ...
-            ndi.migrate.internal.stimulusPresentationToTimedSequence( ...
-                b, resolver, options.TargetVersion, sequence);
+        controls = {};
+        if ~isempty(presId) && isKey(controlsByPresentation, presId)
+            controls = controlsByPresentation(presId);
+        end
+        ptFile = '';
+        ptStatus = '';
+        if ~isempty(ndiDir)
+            [ptFile, ptStatus] = ndi.migrate.internal.v1AttachedFile(b, ...
+                'presentation_time.bin', ndiDir);
+        end
+        [manip, methods, rep] = ndi.migrate.internal.stimulusPresentationToItem( ...
+            b, resolver, sequence, 'CohortIdFor', cohortIdFor, ...
+            'ControlRecords', controls, 'PresentationTimeFile', ptFile, ...
+            'PresentationTimeFileStatus', ptStatus);
+        report = tallyStimulusKinds(report, rep, ~isempty(manip));
+        if ~isempty(manip)
+            report.timing = tallyTiming(report.timing, rep);
+        end
+        if ~isempty(manip) && ~isempty(controls)
+            [report, controlFolded] = tallyControl(report, rep, controls, controlFolded);
+        end
+        if ~isempty(manip)
+            % [flashed bar], [shape movie note], [Hartley without enumeration]
+            report.flashed_bar_methods = report.flashed_bar_methods + rep.flashed_bars;
+            report.uniform_field_methods_kept = ...
+                report.uniform_field_methods_kept + rep.uniform_fields_kept;
+            report.shape_movie_notes = report.shape_movie_notes + ...
+                (rep.shape_movie_note && ~rep.standalone);
+            report.hartley_without_enumeration = ...
+                report.hartley_without_enumeration + rep.hartley_without_enumeration;
+            report.notes_not_written_standalone = ...
+                report.notes_not_written_standalone + rep.notes_not_written_standalone;
+        end
+        if isfield(rep, 'several_animals') && rep.several_animals > 1
+            report.several_animal_presentations = ...
+                report.several_animal_presentations + 1;
+        end
         if isempty(manip)
-            % Left as passthrough with the reason recorded -- a refusal and a
-            % crash must not print the same result.
             report.presentations_refused = report.presentations_refused + 1;
             report.refusals{end+1} = struct('id', presId, 'reason', rep.reason);
+            if rep.several_animals > 1
+                report.several_animal_refused = report.several_animal_refused + 1;
+            end
             continue;
         end
-        % Record HOW the manipulation's animal was resolved: through a
-        % stimulus_response (`response`); through the presentation's own
-        % session-scoped epoch (`epoch`, FORK 1); or through a sibling session's
-        % epoch when the own session recorded nothing (`epoch_sibling`, FORK 2).
-        src = '';
-        if isfield(rep, 'animal_source'); src = rep.animal_source; end
-        switch src
+        if rep.standalone
+            % No subject resolves (Jess Haley, 2026-10-21, "a"): a standalone
+            % `item`, no manipulation, so no time-reference marker either.
+            report.standalone_items = report.standalone_items + 1;
+            report.standalone_ids{end+1} = presId;
+            minted{end+1} = manip; %#ok<AGROW>
+            for g = 1:numel(methods)
+                minted{end+1} = methods{g}; %#ok<AGROW>
+            end
+            if ~isempty(sequence) && isstruct(sequence) && isfield(sequence, 'item_ids')
+                for r = 1:numel(sequence.item_ids)
+                    usedShared(char(sequence.item_ids{r})) = true;
+                end
+            end
+            report.methods_minted = report.methods_minted + numel(methods);
+            consumed{end+1} = presId; %#ok<AGROW>
+            continue;
+        end
+        switch rep.animal_source
             case 'epoch'
                 report.decomposed_via_epoch = report.decomposed_via_epoch + 1;
-            case 'epoch_sibling'
-                report.decomposed_via_epoch_sibling = ...
-                    report.decomposed_via_epoch_sibling + 1;
+            case 'stimulator'
+                report.decomposed_via_stimulator = ...
+                    report.decomposed_via_stimulator + 1;
             otherwise
                 report.decomposed_via_response = report.decomposed_via_response + 1;
         end
-        minted{end+1} = manip; %#ok<AGROW>
-        for g = 1:numel(gratings)
-            minted{end+1} = gratings{g}; %#ok<AGROW>
+        if rep.distributive
+            sid = ndi.v2.sessionIdOf(b);
+            members = {};
+            if isKey(cohortMembers, sid)
+                members = cohortMembers(sid);
+            else
+                members = resolver.subjectsRecordedInSession(sid);
+                cohortStamp(sid) = char(b.base.datestamp);
+            end
+            for a = 1:numel(rep.animals)
+                if ~any(strcmp(members, rep.animals{a}))
+                    members{end+1} = rep.animals{a}; %#ok<AGROW>
+                end
+            end
+            cohortMembers(sid) = members;
+            report.distributive_manipulations = report.distributive_manipulations + 1;
         end
-        if ~isempty(bodyDoc)
-            minted{end+1} = bodyDoc; %#ok<AGROW>
-            report.sampled_bodies = report.sampled_bodies + 1;
+        manips{end+1} = manip; %#ok<AGROW>
+        for g = 1:numel(methods)
+            minted{end+1} = methods{g}; %#ok<AGROW>
         end
-        % MULTI-SUBJECT (storage_mode:reference): the assembler returned the
-        % primary manipulation in `manip`; `extra` carries the ONE shared
-        % standalone timed_sequence body-of-record plus the N-1 further
-        % per-subject manipulations. Empty {} on the single-subject path, so this
-        % loop is inert there.
-        for e = 1:numel(extra)
-            minted{end+1} = extra{e}; %#ok<AGROW>
-            report.reference_bodies_minted = report.reference_bodies_minted + 1;
-        end
-        if ~isempty(sequence) && isstruct(sequence) && isfield(sequence, 'presented_ids')
-            for r = 1:numel(sequence.presented_ids)
-                usedShared(char(sequence.presented_ids{r})) = true;
+        if ~isempty(sequence) && isstruct(sequence) && isfield(sequence, 'item_ids')
+            for r = 1:numel(sequence.item_ids)
+                usedShared(char(sequence.item_ids{r})) = true;
             end
         end
         report.presentations_decomposed = report.presentations_decomposed + 1;
-        report.gratings_minted = report.gratings_minted + numel(gratings);
-        report.refs_declared = report.refs_declared + ...
-            max(numel(gratings), rep.shared_refs);
+        report.methods_minted = report.methods_minted + numel(methods);
+        report.items_declared = report.items_declared + ...
+            max(numel(methods), rep.shared_refs);
         consumed{end+1} = presId; %#ok<AGROW>
     end
+    % a control record whose presentation was not folded (refused, or not in
+    % this set) stays as it is, counted
+    report.control_presentation_not_folded = ...
+        report.control_records_read - report.control_records_folded ...
+        - report.control_unmappable - report.control_no_position_map ...
+        - report.control_conflicting;
+
     if isempty(consumed)
-        % Nothing was decomposed, so nothing may be minted either.
-        report.gratings_minted = 0;
+        report.methods_minted = 0;
         return;
     end
-    for g = 1:numel(hartleyGratings)
-        if isKey(usedShared, hartleyGratings{g}.base.id)
-            minted{end+1} = hartleyGratings{g}; %#ok<AGROW>
-            report.shared_gratings_minted = report.shared_gratings_minted + 1;
+    for g = 1:numel(hartleyMethods)
+        if isKey(usedShared, hartleyMethods{g}.base.id)
+            minted{end+1} = hartleyMethods{g}; %#ok<AGROW>
+            report.shared_methods_minted = report.shared_methods_minted + 1;
         end
     end
-    % drop the passthrough stimulus_presentation docs that were assembled away
+    % the session cohorts, once each
+    sids = cohortIds.keys();
+    for c = 1:numel(sids)
+        members = cohortMembers(sids{c});
+        docs = ndi.migrate.internal.sessionCohort(cohortIds(sids{c}), sids{c}, ...
+            members, cohortStamp(sids{c}));
+        minted = [minted, docs]; %#ok<AGROW>
+        report.cohorts_minted = report.cohorts_minted + 1;
+        report.cohort_members = report.cohort_members + numel(members);
+    end
+
+    % drop the passthrough stimulus_presentation docs that were assembled away,
+    % and collect the session documents the time references anchor to
     kept = {};
+    sessionStructs = {};
+    sessionClasses = {};
     for k = 1:numel(convertResult.migrated)
         d = convertResult.migrated{k};
-        if strcmp(d.className(), 'stimulus_presentation') ...
+        cls = d.className();
+        if strcmp(cls, 'stimulus_presentation') ...
                 && any(strcmp(d.get('base.id'), consumed))
             continue;
+        end
+        if strcmp(cls, 'control_stimulus_ids') ...
+                && any(strcmp(d.get('base.id'), controlFolded))
+            continue;   % folded into its presentation's covariate
+        end
+        if ~isempty(controlFolded)
+            [d, nStripped] = stripInputIds(d, controlFolded);
+            if nStripped > 0
+                report.control_input_edges_stripped = ...
+                    report.control_input_edges_stripped + nStripped;
+                report.control_input_documents_changed = ...
+                    report.control_input_documents_changed + 1;
+            end
+        end
+        if any(strcmp(cls, {'session', 'entity'}))
+            sessionStructs{end+1} = d.toStruct(); %#ok<AGROW>
+            sessionClasses{end+1} = cls; %#ok<AGROW>
         end
         kept{end+1} = d; %#ok<AGROW>
     end
     convertResult.migrated = kept;
-    % fold the minted manipulation + sampled_body through v1_to_v2: they are
-    % tagged schema_version == TargetVersion, so the converter short-circuits them
-    % (isAlreadyTarget) to ensureClassBlocks + validate -- the same footing the
-    % deferred-resolution and Path-S passes use.
+
+    % "during the session" for every manipulation (the marker each carries)
+    nS = numel(sessionStructs);
+    marked = manips;
+    batch = [sessionStructs, marked];
+    classes = [sessionClasses, repmat({'manipulation'}, 1, numel(manips))];
+    [batch, refs, anchorReport] = did2.convert.mintSessionDuring(batch, classes, ...
+        nS + (1:numel(marked)), struct('SchemaCache', options.SchemaCache));
+    report.time_references = anchorReport;
+    minted = [batch(nS+1:end), refs, minted];
+
+    % fold the minted documents through v1_to_v2: they are tagged
+    % schema_version == TargetVersion, so the converter short-circuits them
+    % (isAlreadyTarget) to ensureClassBlocks + validate.
     sub = did2.convert.v1_to_v2(minted, ...
         'Validate', options.Validate, ...
         'SchemaCache', options.SchemaCache, ...
@@ -2264,7 +2982,206 @@ function [convertResult, report] = resolveStimulusPresentations(convertResult, b
         'Verbose', false);
     convertResult.migrated = [convertResult.migrated, sub.migrated];
     convertResult.quarantine = [convertResult.quarantine, sub.quarantine];
+    report.quarantined = numel(sub.quarantine);
     convertResult.summary = recountSummary(convertResult);
+end
+
+function t = newTimingCensus()
+%NEWTIMINGCENSUS Where each folded presentation's trial times came from
+%   ([presentation times from the file]); `presentations_folded` is the
+%   denominator, and from_file + inline + frame_times + none equals it.
+    t = struct( ...
+        'presentations_folded',      0, ...
+        'from_file',                 0, ...
+        'inline',                    0, ...
+        'frame_times',               0, ...
+        'none',                      0, ...
+        'file_declared',             0, ...
+        'file_located',              0, ...
+        'file_not_on_this_computer', 0, ...
+        'file_unusable',             0, ...
+        'file_unusable_reasons',     {{}}, ...
+        'files_attached',            0);
+end
+
+function t = tallyTiming(t, rep)
+    t.presentations_folded = t.presentations_folded + 1;
+    switch rep.timing_source
+        case 'presentation_time.bin'
+            t.from_file = t.from_file + 1;
+        case 'inline (deprecated writer form)'
+            t.inline = t.inline + 1;
+        case 'frameTimes (hartley_calc)'
+            t.frame_times = t.frame_times + 1;
+        otherwise
+            t.none = t.none + 1;
+    end
+    st = rep.timing_file;
+    if ~strcmp(st, 'not declared')
+        t.file_declared = t.file_declared + 1;
+    end
+    if any(strcmp(st, {'read', 'not used: the dimension is frames'})) ...
+            || strncmp(st, 'unreadable', 10) || ~isempty(regexp(st, 'entr\(ies\)', 'once')) ...
+            || strcmp(st, 'an onset is not a finite number')
+        t.file_located = t.file_located + 1;
+    end
+    if any(strcmp(st, {'not on this computer', 'declared, not located'}))
+        t.file_not_on_this_computer = t.file_not_on_this_computer + 1;
+    end
+    if strncmp(st, 'unreadable', 10) || ~isempty(regexp(st, 'entr\(ies\)', 'once')) ...
+            || strcmp(st, 'an onset is not a finite number')
+        t.file_unusable = t.file_unusable + 1;
+        if numel(t.file_unusable_reasons) < 5
+            t.file_unusable_reasons{end+1} = st;
+        end
+    end
+    t.files_attached = t.files_attached + (rep.files_attached > 0);
+end
+
+function [report, folded] = tallyControl(report, rep, controls, folded)
+%TALLYCONTROL Count one folded presentation's control records ([control as
+%   covariate]): folded into its covariate, or left as v1 with the reason.
+    if rep.control_records_folded > 0
+        report.control_records_folded = report.control_records_folded + ...
+            rep.control_records_folded;
+        report.presentations_with_control_covariate = ...
+            report.presentations_with_control_covariate + 1;
+        if rep.control_true == 0
+            report.control_covariates_all_false = ...
+                report.control_covariates_all_false + 1;
+        end
+        for c = 1:numel(controls)
+            folded{end+1} = char(controls{c}.base.id); %#ok<AGROW>
+        end
+        return;
+    end
+    switch rep.control_unfolded_reason
+        case 'no position map'
+            report.control_no_position_map = report.control_no_position_map + numel(controls);
+        case 'conflicting'
+            report.control_conflicting = report.control_conflicting + numel(controls);
+        otherwise
+            report.control_unmappable = report.control_unmappable + numel(controls);
+    end
+end
+
+function [d, n] = stripInputIds(d, ids)
+%STRIPINPUTIDS Remove from document D's input_id edges every id in IDS (the
+%   folded control records: a response points at the presentation only).
+    n = 0;
+    s = d.toStruct();
+    if ~isfield(s, 'depends_on') || ~isstruct(s.depends_on) || isempty(s.depends_on)
+        return;
+    end
+    keep = true(1, numel(s.depends_on));
+    for k = 1:numel(s.depends_on)
+        e = s.depends_on(k);
+        if strcmp(char(e.name), 'input_id') && ...
+                any(strcmp(ndi.migrate.internal.etaShape.entryValue(e), ids))
+            keep(k) = false;
+        end
+    end
+    n = sum(~keep);
+    if n == 0
+        return;
+    end
+    s.depends_on = s.depends_on(keep);
+    d = did2.document(s);
+end
+
+function id = cohortIdOf(cohortIds, sessionId)
+%COHORTIDOF The session's cohort id, minted the first time it is asked for.
+%   containers.Map is a handle, so the caller's map holds every id issued.
+    sessionId = char(sessionId);
+    if ~isKey(cohortIds, sessionId)
+        cohortIds(sessionId) = did.ido.unique_id(); %#ok<NASGU>
+    end
+    id = cohortIds(sessionId);
+end
+
+function [convertResult, rep] = describeEpochSeriesBodies(convertResult, ndiDir, options)
+%DESCRIBEEPOCHSERIESBODIES ndi.migrate.internal.epochSeriesBodies over the
+%   migrated set. Each group it changed (a body, its owners, and any body it
+%   added) is re-validated TOGETHER through did2.convert.v1_to_v2; a group that
+%   does not come back clean is REVERTED (left as it was, the added body
+%   dropped) and counted.
+    docs = convertResult.migrated;
+    structs = cell(1, numel(docs));
+    for k = 1:numel(docs)
+        structs{k} = docs{k}.toStruct();
+    end
+    [structs, rep, added] = ndi.migrate.internal.epochSeriesBodies(structs, ndiDir);
+    rep.reverted = 0;
+    if isempty(rep.changed_groups)
+        return;
+    end
+    idxById = containers.Map('KeyType', 'char', 'ValueType', 'double');
+    for k = 1:numel(structs)
+        idxById(char(structs{k}.base.id)) = k;
+    end
+    addedById = containers.Map('KeyType', 'char', 'ValueType', 'any');
+    for k = 1:numel(added)
+        addedById(char(added{k}.base.id)) = added{k};
+    end
+    appendDocs = {};
+    for g = 1:numel(rep.changed_groups)
+        ids = rep.changed_groups{g};
+        grp = cell(1, numel(ids));
+        for j = 1:numel(ids)
+            if isKey(idxById, ids{j}); grp{j} = structs{idxById(ids{j})};
+            else; grp{j} = addedById(ids{j}); end
+        end
+        try
+            sub = did2.convert.v1_to_v2(grp, ...
+                'Validate', options.Validate, 'SchemaCache', options.SchemaCache, ...
+                'TargetVersion', options.TargetVersion, 'Verbose', false);
+            if isempty(sub.quarantine) && numel(sub.migrated) == numel(ids)
+                for j = 1:numel(sub.migrated)
+                    sid = char(sub.migrated{j}.get('base.id'));
+                    if isKey(idxById, sid)
+                        docs{idxById(sid)} = sub.migrated{j};
+                    else
+                        appendDocs{end+1} = sub.migrated{j}; %#ok<AGROW>
+                    end
+                end
+            else
+                rep.reverted = rep.reverted + 1;
+            end
+        catch
+            rep.reverted = rep.reverted + 1;
+        end
+    end
+    convertResult.migrated = [docs, appendDocs];
+    convertResult.summary = recountSummary(convertResult);
+end
+
+function [convertResult, rep] = fillLocatedFileFacts(convertResult, options)
+%FILLLOCATEDFILEFACTS ndi.migrate.internal.locatedFileFacts over the migrated
+%   set; each changed body is re-validated through did2.convert.v1_to_v2 and
+%   REVERTED (left as it was) if it does not come back clean.
+    docs = convertResult.migrated;
+    structs = cell(1, numel(docs));
+    for k = 1:numel(docs)
+        structs{k} = docs{k}.toStruct();
+    end
+    [structs, rep] = ndi.migrate.internal.locatedFileFacts(structs);
+    rep.reverted = 0;
+    for k = 1:numel(docs)
+        if ~any(strcmp(char(structs{k}.base.id), rep.changed_ids)); continue; end
+        try
+            sub = did2.convert.v1_to_v2({structs{k}}, ...
+                'Validate', options.Validate, 'SchemaCache', options.SchemaCache, ...
+                'TargetVersion', options.TargetVersion, 'Verbose', false);
+            if isempty(sub.quarantine) && isscalar(sub.migrated)
+                docs{k} = sub.migrated{1};
+            else
+                rep.reverted = rep.reverted + 1;
+            end
+        catch
+            rep.reverted = rep.reverted + 1;
+        end
+    end
+    convertResult.migrated = docs;
 end
 
 function out = decodeBodies(bodies)
@@ -2293,43 +3210,6 @@ function tf = isPresentationBody(b)
         && strcmp(b.document_class.class_name, 'stimulus_presentation');
 end
 
-function tf = isSingleGratingCandidate(b)
-%ISSINGLEGRATINGCANDIDATE The case `visual_grating_manipulation` is RETAINED
-%   for by the 2026-08-17 signature: a document describing ONE grating with NO
-%   presentation around it.
-%
-%   THIS IS A COUNTER, NOT A ROUTE. Nothing is emitted for such a document,
-%   because nothing in the did_v1 universe is one -- `stimulus_presentation`
-%   is the only class that carries grating parameters at all, and it is
-%   excluded by construction here. The predicate exists so that the claim "the
-%   retained case has no input" is MEASURED on every corpus this runs on
-%   instead of being asserted once and going stale: if it ever returns
-%   non-zero, the retained case has acquired a source and needs an emitter.
-    tf = false;
-    if ~isstruct(b) || isPresentationBody(b)
-        return;
-    end
-    % One level into each block, because a did_v1 document holds its content
-    % in a block named after its class, never at the top level. The three
-    % names are exactly the ones
-    % ndi.migrate.internal.gratingValueFromParameters reads, so this predicate
-    % and the mapper cannot drift into disagreeing about what a grating is.
-    defining = {'angle', 'sFrequency', 'tFrequency'};
-    blocks = fieldnames(b);
-    for i = 1:numel(blocks)
-        blk = b.(blocks{i});
-        if ~isstruct(blk) || ~isscalar(blk)
-            continue;
-        end
-        for k = 1:numel(defining)
-            if isfield(blk, defining{k}) && ~isempty(blk.(defining{k}))
-                tf = true;
-                return;
-            end
-        end
-    end
-end
-
 function r = newStimulusSequenceReport()
 %NEWSTIMULUSSEQUENCEREPORT Denominators first and unconditionally, so a pass
 %   that did nothing and a pass that saw nothing print differently.
@@ -2338,18 +3218,85 @@ function r = newStimulusSequenceReport()
         'presentations_read',         0, ...
         'presentations_decomposed',   0, ...
         'presentations_refused',      0, ...
-        'gratings_minted',            0, ...
-        'shared_gratings_minted',     0, ...
-        'refs_declared',              0, ...
-        'sampled_bodies',             0, ...
-        'reference_bodies_minted',    0, ...
-        'single_grating_candidates',  0, ...
+        'methods_minted',             0, ...
+        'shared_methods_minted',      0, ...
+        'items_declared',             0, ...
         'decomposed_via_response',    0, ...
         'decomposed_via_epoch',       0, ...
-        'decomposed_via_epoch_sibling', 0, ...
-        'flattening_pass',            'GATED OFF -- retained for the presentation-less single-grating case, which has no v1 source', ...
+        'decomposed_via_stimulator',  0, ...
+        'several_animal_presentations', 0, ...
+        'several_animal_refused',     0, ...
+        'distributive_manipulations', 0, ...
+        'standalone_items',           0, ...
+        'standalone_ids',             {{}}, ...
+        'cohorts_minted',             0, ...
+        'cohort_members',             0, ...
+        'quarantined',                0, ...
+        'time_references',            [], ...
+        'stimulus_kinds',             [], ...
+        'presentations_by_kind',      struct('kinds', {}, 'decomposed', {}, 'refused', {}), ...
         'refusals',                   {{}}, ...
+        'flashed_bar_methods',        0, ...
+        'uniform_field_methods_kept', 0, ...
+        'shape_movie_notes',          0, ...
+        'hartley_without_enumeration', 0, ...
+        'notes_not_written_standalone', 0, ...
+        'control_records_read',       0, ...
+        'control_records_folded',     0, ...
+        'control_presentation_not_folded', 0, ...
+        'control_no_position_map',    0, ...
+        'control_unmappable',         0, ...
+        'control_conflicting',        0, ...
+        'presentations_with_control_covariate', 0, ...
+        'control_covariates_all_false', 0, ...
+        'control_input_edges_stripped', 0, ...
+        'control_input_documents_changed', 0, ...
+        'timing',                     newTimingCensus(), ...
         'hartley',                    []);
+end
+
+function report = tallyStimulusKinds(report, rep, decomposed)
+%TALLYSTIMULUSKINDS Add one presentation's per-kind stimulus counts to the
+%   pass report: `stimulus_kinds` sums them over all presentations read, and
+%   `presentations_by_kind` counts presentations by the SET of kinds they hold
+%   (e.g. 'blank+grating', 'blank+stochasticgridstim'), split decomposed /
+%   refused. A presentation whose report carries no `stimulus_kinds` is
+%   counted under '(not classified)'.
+    kindsKey = '(not classified)';
+    if isfield(rep, 'stimulus_kinds') && isstruct(rep.stimulus_kinds)
+        k = rep.stimulus_kinds;
+        if isempty(report.stimulus_kinds)
+            report.stimulus_kinds = k;
+        else
+            fns = fieldnames(k);
+            for f = 1:numel(fns)
+                report.stimulus_kinds.(fns{f}) = ...
+                    report.stimulus_kinds.(fns{f}) + k.(fns{f});
+            end
+        end
+        fns = fieldnames(k);
+        held = fns(cellfun(@(n) k.(n) > 0, fns));
+        if isempty(held)
+            kindsKey = '(no stimuli)';
+        else
+            kindsKey = strjoin(sort(held(:)'), '+');
+        end
+    end
+    rows = report.presentations_by_kind;
+    hit = 0;
+    for r = 1:numel(rows)
+        if strcmp(rows(r).kinds, kindsKey); hit = r; break; end
+    end
+    if hit == 0
+        rows(end+1) = struct('kinds', kindsKey, 'decomposed', 0, 'refused', 0);
+        hit = numel(rows);
+    end
+    if decomposed
+        rows(hit).decomposed = rows(hit).decomposed + 1;
+    else
+        rows(hit).refused = rows(hit).refused + 1;
+    end
+    report.presentations_by_kind = rows;
 end
 
 function id = bodyBaseId(b)
@@ -2374,7 +3321,9 @@ function [kind, srcPath] = detectV1Source(ndiDir)
 
     sqliteListing = dir(fullfile(ndiDir, '*.sqlite'));
     sqliteListing = sqliteListing(~[sqliteListing.isdir]);
-    sqliteListing = sqliteListing(~strcmpi({sqliteListing.name}, 'V_delta.sqlite'));
+    % a migration OUTPUT is never a v1 source, whichever target wrote it
+    sqliteListing = sqliteListing(~ismember(lower({sqliteListing.name}), ...
+        {'v_delta.sqlite', 'v_eta.sqlite'}));
     if ~isempty(sqliteListing)
         kind = 'sqlite';
         srcPath = fullfile(ndiDir, sqliteListing(1).name);
@@ -2572,34 +3521,50 @@ function printSubjectStrainSummary(result)
         r.strains_candidate, r.distinct_strains, r.strain_docs_collapsed, ...
         r.strains_incomplete, r.strain_docs_not_in_migrated_set, ...
         r.strain_docs_not_a_term_assertion);
-    fprintf(['    pedigree: %d reference(s) -> %d background_strain edge(s), ' ...
-             '%d unresolved, %d over max_count 2, %d cycle(s), ' ...
+    fprintf(['    pedigree: %d reference(s) -> %d derived_from relation(s), ' ...
+             '%d unresolved, %d cycle(s), ' ...
              '%d not corroborated by an openminds_# edge.\n'], ...
         r.background_refs_seen, r.background_edges, r.background_unresolved, ...
-        r.background_over_max, r.pedigree_cycles, ...
-        r.background_refs_not_in_openminds_edges);
-    fprintf('    strain_id: %d edge(s) attached, %d assertion(s) already had one.\n', ...
-        r.strain_id_edges_attached, r.strain_id_assertion_already_had_one);
+        r.pedigree_cycles, r.background_refs_not_in_openminds_edges);
+    fprintf(['    instance_of: %d subject(s) made an instance of their strain ' ...
+             '(their strain assertion replaced), %d strain assertion(s) with ' ...
+             'no subject; %d assertion(s) minted about the strains.\n'], ...
+        r.instance_of_minted, r.strain_assertions_without_subject, ...
+        r.strain_assertions_minted);
     fprintf(['    moved onto the strain: %d of %d genetic-strain-type ' ...
              'assertion(s) removed; KEPT -- %d value not on the strain, ' ...
              '%d shared with an unassembled strain, %d wrong/absent subject, ' ...
-             '%d pinned by an inbound edge, %d not a term_assertion.\n'], ...
+             '%d of an ancestor strain, %d pinned by an inbound edge, ' ...
+             '%d not a term assertion.\n'], ...
         r.gst_assertions_removed, r.gst_fragments_seen, ...
         r.gst_kept_value_not_on_strain, r.gst_kept_shared_with_unassembled, ...
-        r.gst_kept_wrong_subject, r.gst_kept_pinned, ...
-        r.gst_kept_not_a_term_assertion);
+        r.gst_kept_wrong_subject, r.gst_kept_not_the_subjects_strain, ...
+        r.gst_kept_pinned, r.gst_kept_not_a_term_assertion);
     fprintf(['    species: %d fragment(s), %d duplicate group(s) in scope, ' ...
              '%d assertion(s) removed, %d pinned and kept.\n'], ...
         r.species_fragments_seen, r.species_duplicate_groups, ...
         r.species_assertions_removed, r.species_kept_pinned);
-    fprintf(['    MEASURED, NOT ACTED ON: %d ancestor strain assertion(s) ' ...
-             'still on their subject (a modelling call, and modelling calls ' ...
-             'are the team''s); %d duplicate species group(s) this family ' ...
-             'did not cause; %d further entit(ies) a dataset-scoped key ' ...
-             'would merge, across %d cross-session group(s).\n'], ...
+    fprintf(['    ancestor strain assertions on their subject %d: removed %d ' ...
+             '(reachable through derived_from; Jess Haley 2026-10-21), kept ' ...
+             'unreachable %d, kept pinned %d\n'], ...
         r.background_strain_assertions_on_subject, ...
-        r.duplicate_species_groups_out_of_scope, ...
-        r.cross_session_collapsible, r.cross_session_groups);
+        r.background_strain_assertions_removed, ...
+        r.background_kept_unreachable, r.background_kept_pinned);
+    fprintf(['    scope %s%s: %d entit(ies) a session-scoped key would leave ' ...
+             'beyond a dataset-scoped one, across %d cross-session group(s); ' ...
+             'merged this run %d (Jess Haley 2026-10-21: shared entities at ' ...
+             'the dataset level)\n'], r.scope, ...
+        ifDataset(r.dataset_id), r.cross_session_collapsible, ...
+        r.cross_session_groups, r.cross_session_merged);
+    fprintf(['    MEASURED, NOT ACTED ON: %d duplicate species group(s) this family ' ...
+             'did not cause.\n'], r.duplicate_species_groups_out_of_scope);
+end
+
+function s = ifDataset(id)
+s = '';
+if ~isempty(id)
+    s = [' ' id];
+end
 end
 
 function printOntologyRowSummary(result)
@@ -2752,4 +3717,27 @@ key = [sessionId '|' epochStr];
 if isKey(epochByPair, key)
     docId = epochByPair(key);
 end
+end
+
+function assertUniqueIds(docs)
+%ASSERTUNIQUEIDS Error, naming them, when two migrated documents share an id.
+    ids = cellfun(@(d) char(d.get('base.id')), docs, 'UniformOutput', false);
+    [u, ~, j] = unique(ids);
+    counts = accumarray(j(:), 1);
+    dup = u(counts > 1);
+    if isempty(dup)
+        return;
+    end
+    lines = {};
+    for q = 1:min(numel(dup), 10)
+        hit = find(strcmp(ids, dup{q}));
+        cls = cellfun(@(k) char(docs{k}.className()), num2cell(hit), ...
+            'UniformOutput', false);
+        lines{end+1} = sprintf('  %s x%d: %s', dup{q}, numel(hit), ...
+            strjoin(cls, ', ')); %#ok<AGROW>
+    end
+    error('NDI:migrate:duplicateIds', ...
+        ['%d id(s) are carried by more than one migrated document (of %d); ' ...
+         'nothing was written. First %d (id xN: classes):\n%s'], ...
+        numel(dup), numel(docs), numel(lines), strjoin(lines, newline));
 end

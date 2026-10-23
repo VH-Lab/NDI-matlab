@@ -326,6 +326,20 @@ function [pyramidDoc, levelDocs, sharedLevel0] = makePyramid(session, pyramids, 
 end
 
 function [levelDoc, doneChunks] = makeOneLevel(session, pyramidDoc, pyramidEntry, level, levelIndex, reductionFn, options, chunks, chunkGrid, doneChunks, totalChunks, source)
+    arguments
+        session (1,1)
+        pyramidDoc (1,1) ndi.document
+        pyramidEntry (1,1) struct
+        level % one entry of pyramidEntry.levels
+        levelIndex (1,1) {mustBeNumeric}
+        reductionFn {mustBeText}
+        options (1,1) struct
+        chunks {mustBeNumeric}
+        chunkGrid {mustBeNumeric}
+        doneChunks (1,1) {mustBeNumeric}
+        totalChunks (1,1) {mustBeNumeric}
+        source % a resolveLevelSource struct, or [] when chunks are not materialized
+    end
 
     if options.materializeChunks
         nChunksStored = prod(chunkGrid);
@@ -384,6 +398,23 @@ function [levelDoc, tmpRoot, doneChunks] = attachChunkFiles(levelDoc, source, le
 % deletes the temp original as it copies -- so we build each chunk in a
 % new tempname and hand it to add_file. SOURCE (see resolveLevelSource)
 % says where the level's bytes are read from.
+    arguments
+        levelDoc (1,1) ndi.document
+        source (1,1) struct
+        level % one entry of a pyramid entry's levels
+        chunks {mustBeNumeric}
+        chunkGrid {mustBeNumeric}
+        codec {mustBeText}
+        clevel (1,1) {mustBeNumeric}
+        progressFcn % a function handle, or [] for no reporting
+        doneChunks (1,1) {mustBeNumeric}
+        totalChunks (1,1) {mustBeNumeric}
+        levelLabel {mustBeText}
+        numWorkers (1,1) {mustBeNumeric}
+        prefetchBytes (1,1) {mustBeNumeric}
+        asyncPrefetch (1,1) logical
+        debugLog {mustBeText}
+    end
 
     % STREAMING per-chunk read. We call readArray with `Region` per
     % target chunk instead of loading the whole level up front. Previous
@@ -631,6 +662,9 @@ function bytes = levelDocPropertyBytes(levelDoc)
 % on a local copy of the struct so the levelDoc object itself is not
 % traversed (which would add its own overhead). Returns NaN on any
 % error so instrumentation cannot break the ingest.
+    arguments
+        levelDoc % any value; anything without document_properties gives NaN
+    end
     bytes = NaN;
     try
         props = levelDoc.document_properties; %#ok<NASGU>
@@ -643,8 +677,18 @@ end
 function appendDebugLog(path, levelLabel, s, nSuperBlocks, doneChunks, totalChunks, preBytes, postBytes, bboxMB)
 % Append one line of memory diagnostics to `path`. Failures are
 % swallowed; instrumentation must never take down an ingest.
+    arguments
+        path {mustBeText}
+        levelLabel {mustBeText}
+        s {mustBeNumeric}
+        nSuperBlocks {mustBeNumeric}
+        doneChunks {mustBeNumeric}
+        totalChunks {mustBeNumeric}
+        preBytes {mustBeNumeric}
+        postBytes {mustBeNumeric}
+        bboxMB {mustBeNumeric} = NaN
+    end
     if isempty(path), return; end
-    if nargin < 9, bboxMB = NaN; end
     try
         rss = matlabRSSMB();
         futCount = poolFutureCount();
@@ -713,6 +757,16 @@ function [idxs, lo, hi] = growSuperBlock(linearOrder, i0, budgetChunks, chunks, 
 %   chunk in the super-block (the first is always accepted regardless
 %   of bbox cost, because a single chunk cannot cost more than
 %   chunkBytes).
+    arguments
+        linearOrder {mustBeNumeric}
+        i0 (1,1) {mustBeNumeric}
+        budgetChunks (1,1) {mustBeNumeric}
+        chunks {mustBeNumeric}
+        chunkGrid {mustBeNumeric}
+        shape {mustBeNumeric}
+        typesize (1,1) {mustBeNumeric}
+        bboxByteCap (1,1) {mustBeNumeric}
+    end
     idxs  = zeros(1, budgetChunks);
     lo    = zeros(budgetChunks, numel(shape));
     hi    = zeros(budgetChunks, numel(shape));
@@ -754,6 +808,11 @@ function bigTile = readSuperBlockRegion(source, loBBox, hiBBox)
 %   subfunction (not nested), and every source carries file paths
 %   rather than a session, so parfeval can run it on a pool worker
 %   without pulling the caller's workspace or a database handle.
+    arguments
+        source (1,1) struct
+        loBBox {mustBeNumeric}
+        hiBBox {mustBeNumeric}
+    end
     switch source.kind
         case 'omezarr'
             bigTile = ndr.format.omezarr.readArray(source.zarrPath, ...
@@ -776,6 +835,14 @@ function source = resolveLevelSource(session, p, entry, level, options, docByPat
 %   with no session: an OME-Zarr store + array, SmartSPIM slice paths,
 %   or (for a reduced level) the on-disk chunk files of the level it
 %   is reduced from, which was written earlier in this same call.
+    arguments
+        session (1,1)
+        p {mustBeText}
+        entry (1,1) struct
+        level % one entry of entry.levels
+        options (1,1) struct
+        docByPath {mustBeA(docByPath, "containers.Map")}
+    end
     if isKey(options.levelSources, p)
         source = options.levelSources(p);
     else
@@ -807,13 +874,19 @@ function source = resolveLevelSource(session, p, entry, level, options, docByPat
                      'written yet. List finer levels first.'], p, source.fromPath);
             end
             from = docByPath(source.fromPath);
-            fp = from.document_properties.lightsheetZarrLevel;
+            % Read through ndi.vintage so the level may be either vintage:
+            % for the v1 lightsheetZarrLevel this call writes, FP is its
+            % block and chunk i is chunk.bin_i, exactly as before; a
+            % migrated (V_eta) level is a sampled_body whose chunk i is
+            % body_data_<i-1> (V_eta numbers series members from 0).
+            fp = ndi.vintage.lightsheetLevel(from);
             nFrom = prod(double(fp.chunk_grid));
             paths = cell(1, nFrom);
             % Resolve each stored chunk to its file ONCE, here on the
             % main thread; workers then read plain files.
             for i = 1:nFrom
-                f = session.database_openbinarydoc(from, sprintf('chunk.bin_%d', i));
+                f = session.database_openbinarydoc(from, ...
+                    ndi.vintage.lightsheetChunkName(from, i));
                 paths{i} = f.fullpathfilename;
                 session.database_closebinarydoc(f);
             end
@@ -833,6 +906,10 @@ end
 
 function a = readAmplification(source, typesize)
 % How many bytes the reader holds per output byte (see attachChunkFiles).
+    arguments
+        source (1,1) struct
+        typesize (1,1) {mustBeNumeric}
+    end
     a = 1;
     if strcmp(source.kind, 'reduce')
         a = prod(source.factor);
@@ -848,6 +925,11 @@ function out = readSmartSpimRegion(source, lo, hi)
 %   source.slicePaths{c}{z} is the TIFF of channel c at z. Each slice
 %   spans the whole stitched canvas, so only the (y, x) window is read
 %   (imread PixelRegion decodes just the strips that cover it).
+    arguments
+        source (1,1) struct
+        lo {mustBeNumeric}
+        hi {mustBeNumeric}
+    end
     out = zeros(double(hi - lo + 1), source.dtype);
     rows = [lo(4) hi(4)];
     cols = [lo(5) hi(5)];
@@ -870,6 +952,11 @@ function out = readReducedRegion(source, lo, hi)
 %   Output voxel i covers source voxels (i-1)*f+1 .. i*f along each axis
 %   (the last block may be partial), so the region needs source voxels
 %   (lo-1).*f+1 .. min(hi.*f, fromShape).
+    arguments
+        source (1,1) struct
+        lo {mustBeNumeric}
+        hi {mustBeNumeric}
+    end
     f = source.factor;
     srcLo = (lo - 1) .* f + 1;
     srcHi = min(hi .* f, source.fromShape);
@@ -882,6 +969,11 @@ function out = readStoredLevelRegion(source, lo, hi)
 %
 %   Chunks are C-order (last axis fastest), 1-based, each a full
 %   (zero-padded) `chunks`-shaped tile in C byte order, raw or Blosc.
+    arguments
+        source (1,1) struct
+        lo {mustBeNumeric}
+        hi {mustBeNumeric}
+    end
     nd = numel(source.fromShape);
     chunks = source.fromChunks;
     grid = source.fromGrid;
@@ -917,6 +1009,12 @@ function tile = readStoredChunk(path, chunks, codec, dtype)
 %
 %   Inverse of padEncodeAndWrite: bytes are C-order, so reshape to the
 %   reversed shape and permute back.
+    arguments
+        path {mustBeText}
+        chunks {mustBeNumeric}
+        codec {mustBeText}
+        dtype {mustBeText}
+    end
     fid = fopen(path, 'r');
     if fid < 0
         error('NDI:lightsheet:makePyramid:readChunk', ...
@@ -924,7 +1022,9 @@ function tile = readStoredChunk(path, chunks, codec, dtype)
     end
     raw = fread(fid, Inf, '*uint8');
     fclose(fid);
-    if strcmp(codec, 'blosc-zstd')
+    % 'blosc' is how a migrated (V_eta) level records v1's 'blosc-zstd':
+    % a Blosc chunk's header carries its own settings (#73 L4).
+    if any(strcmp(codec, {'blosc-zstd', 'blosc'}))
         raw = ndr.format.blosc.decode(raw);
     end
     vals = typecast(raw(:), dtype);
@@ -950,6 +1050,15 @@ function tmp = padEncodeAndWrite(srcTile, chunks, codec, clevel, typesize, tmpRo
 %   Fallback (v0.1.0 MEX, or codec='raw'): do the pad + permute +
 %   typecast in MATLAB, then either return the raw bytes or hand them
 %   to ndr.format.blosc.encode. Byte-identical output.
+    arguments
+        srcTile {mustBeNumericOrLogical}
+        chunks {mustBeNumeric}
+        codec {mustBeText}
+        clevel (1,1) {mustBeNumeric}
+        typesize (1,1) {mustBeNumeric}
+        tmpRoot {mustBeText}
+        chunkIdx (1,1) {mustBeNumeric}
+    end
     switch codec
         case 'raw'
             payload = padPermuteBytes(srcTile, chunks);
@@ -1009,6 +1118,10 @@ function bytes = padPermuteBytes(srcTile, chunks)
 %   order so the row-major byte layout matches what Zarr writes, then
 %   typecast to bytes. Only used when the v0.2.0 blosc-matlab MEX is
 %   not available.
+    arguments
+        srcTile {mustBeNumericOrLogical}
+        chunks {mustBeNumeric}
+    end
     if isequal(size(srcTile), chunks)
         permuted = permute(srcTile, numel(chunks):-1:1);
     else
@@ -1028,6 +1141,9 @@ function [n, src] = describeParallelPool(numWorkers)
 %   would end up with, and src is a short human string naming why.
 %   No pool is created; used only to print the run banner before the
 %   pyramid loop starts.
+    arguments
+        numWorkers (1,1) {mustBeNumeric}
+    end
     if numWorkers == 0 || numWorkers == 1
         n = 1; src = 'serial, forced by numWorkers'; return;
     end
@@ -1064,6 +1180,9 @@ function n = resolveParallelPool(numWorkers)
 %   In every case a missing PCT or a failed parpool startup degrades
 %   to serial with a warning: a broken pool must not stop an ingest
 %   that may already be hours in.
+    arguments
+        numWorkers (1,1) {mustBeNumeric}
+    end
     if numWorkers == 0 || numWorkers == 1
         n = 1;
         return;
@@ -1107,6 +1226,9 @@ function s = codecParamsJSON(options)
 % JSON string stamped into the level document so a reader knows how to
 % decode. For 'raw' the params are empty; for Blosc-Zstd they name the
 % codec identity numcodecs.Blosc expects.
+    arguments
+        options (1,1) struct
+    end
     switch options.codec
         case 'raw'
             s = '{}';
@@ -1119,6 +1241,9 @@ function s = codecParamsJSON(options)
 end
 
 function b = elementSizeBytes(className)
+    arguments
+        className {mustBeText}
+    end
     switch className
         case {'uint8','int8','logical'}
             b = 1;
@@ -1134,6 +1259,9 @@ function b = elementSizeBytes(className)
 end
 
 function cleanupTmp(d)
+    arguments
+        d {mustBeText}
+    end
     if isfolder(d)
         try
             rmdir(d, 's');
@@ -1149,6 +1277,12 @@ function reportProgress(fcn, done, total, text)
 %   materialized) reports 0 rather than dividing, so the caller's bar
 %   still gets its label refreshed. Any exception is swallowed: a bar
 %   that stopped drawing must not stop an ingest.
+    arguments
+        fcn % a function handle, or [] for no reporting
+        done {mustBeNumeric}
+        total {mustBeNumeric}
+        text {mustBeText}
+    end
     if isempty(fcn), return; end
     frac = 0;
     if total > 0
@@ -1164,6 +1298,9 @@ function idx = allChunkIndices(chunkGrid)
 % Return a matrix whose rows enumerate every 1-based chunk index tuple
 % in C-order (last axis fastest, so the LINEAR order matches
 % index = c1*n2*n3*... + c2*n3*... + ... + cn + 1).
+    arguments
+        chunkGrid {mustBeNumeric}
+    end
     n = numel(chunkGrid);
     counts = cumprod(fliplr(chunkGrid));
     total = counts(end);
@@ -1183,6 +1320,9 @@ function idx = allChunkIndices(chunkGrid)
 end
 
 function s = joinAxisNames(axes)
+    arguments
+        axes % struct array with a `name` field, or empty
+    end
     if isempty(axes)
         s = '';
         return;
@@ -1192,6 +1332,9 @@ function s = joinAxisNames(axes)
 end
 
 function u = collectAxisUnits(axes)
+    arguments
+        axes % struct array with a `unit` field, or empty
+    end
     if isempty(axes)
         u = {};
         return;
@@ -1200,6 +1343,10 @@ function u = collectAxisUnits(axes)
 end
 
 function n = channelCount(shape, axesOrder)
+    arguments
+        shape {mustBeNumeric}
+        axesOrder {mustBeText}
+    end
     c = strfind(axesOrder, 'c');
     if isempty(c) || numel(shape) < c(1)
         n = 1;
@@ -1209,6 +1356,9 @@ function n = channelCount(shape, axesOrder)
 end
 
 function v = ensureRow(x)
+    arguments
+        x % numeric, or empty
+    end
     if isempty(x)
         v = [];
     else
@@ -1217,6 +1367,10 @@ function v = ensureRow(x)
 end
 
 function chunks = clampChunksToShape(chunks, shape)
+    arguments
+        chunks {mustBeNumeric}
+        shape {mustBeNumeric}
+    end
     shape = double(shape(:).');
     chunks = double(chunks(:).');
     if numel(chunks) ~= numel(shape)

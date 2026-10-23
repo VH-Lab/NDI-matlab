@@ -50,6 +50,9 @@ classdef WaitForFileUpload < ndi.cloud.api.call
             %                 pending (uids not yet uploaded) and elapsed.
             %   apiResponse - The ResponseMessage from the last poll.
             %   apiURL      - The URL of the last poll.
+            arguments
+                this (1,1) ndi.cloud.api.implementation.files.WaitForFileUpload
+            end
 
             b = false;
             apiResponse = [];
@@ -102,6 +105,10 @@ classdef WaitForFileUpload < ndi.cloud.api.call
             %   overrides this to script a sequence of lookupFiles results,
             %   so the completion, timeout and retry logic can be exercised
             %   without a server.
+            arguments
+                this (1,1) ndi.cloud.api.implementation.files.WaitForFileUpload
+                uids {mustBeText}
+            end
             [ok, result, apiResponse, apiURL] = ...
                 ndi.cloud.api.files.lookupFiles(this.cloudDatasetID, uids);
         end

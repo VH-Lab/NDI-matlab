@@ -112,6 +112,9 @@ classdef PutFiles
             %   When checksumCRC32 is set, the x-amz-checksum-crc32 header is
             %   sent: the upload URL signs it (NDI Cloud #162), so S3 refuses
             %   the PUT without it and rejects content that does not match.
+            arguments
+                this (1,1) ndi.cloud.api.implementation.files.PutFiles
+            end
             checksumHeader = '';
             if strlength(this.checksumCRC32) > 0
                 checksumHeader = sprintf('-H "x-amz-checksum-crc32: %s" ', char(this.checksumCRC32));

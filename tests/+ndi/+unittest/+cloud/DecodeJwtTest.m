@@ -73,6 +73,10 @@ classdef DecodeJwtTest < matlab.unittest.TestCase
             % 'nonce' field is lengthened until the UTF-8 payload byte count
             % mod 3 equals targetMod3, which fixes how much padding the
             % decoder has to restore.
+            arguments
+                payload (1,1) struct
+                targetMod3 (1,1) {mustBeNumeric}
+            end
             payloadBytes = unicode2native(jsonencode(payload), 'UTF-8');
             while mod(numel(payloadBytes), 3) ~= targetMod3
                 payload.nonce = [payload.nonce, 'x'];
@@ -86,6 +90,9 @@ classdef DecodeJwtTest < matlab.unittest.TestCase
         end
 
         function encoded = base64UrlEncode(bytes)
+            arguments
+                bytes {mustBeNumeric}
+            end
             encoded = char(matlab.net.base64encode(uint8(bytes)));
             encoded = strrep(encoded, '+', '-');
             encoded = strrep(encoded, '/', '_');
@@ -93,6 +100,11 @@ classdef DecodeJwtTest < matlab.unittest.TestCase
         end
 
         function verifyPayload(testCase, decoded, payload)
+            arguments
+                testCase (1,1) ndi.unittest.cloud.DecodeJwtTest
+                decoded % checked to be a struct by the first verification
+                payload (1,1) struct
+            end
             testCase.verifyClass(decoded, 'struct');
             testCase.verifyEqual(decoded.exp, payload.exp);
             testCase.verifyEqual(decoded.email, payload.email);

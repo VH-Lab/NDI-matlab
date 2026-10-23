@@ -75,21 +75,31 @@ classdef TestOntologyLabelSubjects < matlab.unittest.TestCase
             plan = ndi.migrate.internal.ontologyLabelSubjects(batch);
             b = plan(1).body;
 
-            tc.verifyEqual(b.document_class.class_name, 'term_observation');
+            % did-schema #88: the `observation` direction + the `term` kind
+            tc.verifyEqual(b.document_class.class_name, 'observation');
             tc.verifyEqual(b.document_class.schema_version, 'V_eta');
             tc.verifyEqual({b.document_class.superclasses.class_name}, ...
-                {'subject_observation', 'term'});
+                {'interaction', 'statement', 'base', 'term', 'value', 'data'});
 
             % the term, verbatim -- and `name` left EMPTY rather than guessed:
             % the v1 document stores only the node.
             tc.verifyEqual(b.term.value.node, 'EMPTY:0000131');
             tc.verifyEqual(b.term.value.name, '');
+            tc.verifyEqual(b.statement.variable.name, 'label');
 
             % what it was about
-            tc.verifyEqual(depValue(b, 'subject_id'), 'subj_group_9');
-            tc.verifyEqual(depValue(b, 'derived_from_1'), 'img_1');
-        end
+            tc.verifyEqual(depValue(b, 'entity_id'), 'subj_group_9');
+            tc.verifyEmpty(depValue(b, 'subject_id'));
+            tc.verifyEmpty(depValue(b, 'derived_from_1'));
 
+            % what it labelled: a derived_from relation, label -> statement
+            tc.verifyNumElements(plan(1).related, 1);
+            r = plan(1).related{1};
+            tc.verifyEqual(r.document_class.class_name, 'directed_relation');
+            tc.verifyEqual(depValue(r, 'child_id'), 'lab_1');
+            tc.verifyEqual(depValue(r, 'parent_id'), 'img_1');
+            tc.verifyTrue(ndi.v2.vocabIs('relation', r.directed_relation.relation, 'derived_from'));
+        end
         function testTheIdIsPreservedSoTheReplacementSupersedesThePassthrough(tc)
             % The calculator lesson: dissolving a referenced document without
             % keeping its id cost 11,448 orphans. It also means local.m can
@@ -101,7 +111,7 @@ classdef TestOntologyLabelSubjects < matlab.unittest.TestCase
             plan = ndi.migrate.internal.ontologyLabelSubjects(batch);
             tc.verifyEqual(plan(1).source_id, 'lab_1');
             tc.verifyEqual(plan(1).body.base.id, 'lab_1');
-            tc.verifyEqual(plan(1).body.base.session_id, 'sess1');
+            tc.verifyEqual(sessionOf(plan(1).body), 'sess1');
         end
 
         function testTheTimeAnchorIsReusedNotMinted(tc)
@@ -114,7 +124,7 @@ classdef TestOntologyLabelSubjects < matlab.unittest.TestCase
                 labelBody('lab_1', 'sess1', 'img_1', 'EMPTY:0000131') };
             plan = ndi.migrate.internal.ontologyLabelSubjects(batch);
             tc.verifyEqual(plan(1).time_reference_id, 'anchor_1');
-            tc.verifyEqual(depValue(plan(1).body, 'time_reference_1'), 'anchor_1');
+            tc.verifyEqual(depValue(plan(1).body, 'time_reference_id'), 'anchor_1');
         end
 
         function testTheEColiHalfIsBlockedAndCountedSeparately(tc)
@@ -173,7 +183,7 @@ classdef TestOntologyLabelSubjects < matlab.unittest.TestCase
 
         function testAReferentWithNoTimeAnchorIsRefusedRatherThanAnchoredElsewhere(tc)
             obs = imageObservation('img_1', 'sess1', 'subj_group_9', 'anchor_1');
-            obs.depends_on = obs.depends_on(1);     % subject_id only
+            obs.depends_on = obs.depends_on(1);     % entity_id only
             batch = {obs, labelBody('lab_6', 'sess1', 'img_1', 'EMPTY:0000131')};
             [plan, rep] = ndi.migrate.internal.ontologyLabelSubjects(batch);
             tc.verifyEmpty(plan);
@@ -208,6 +218,20 @@ classdef TestOntologyLabelSubjects < matlab.unittest.TestCase
             tc.verifyEmpty(plan2);
             tc.verifyEqual(rep2.labels_passthrough, 0);
             tc.verifyEqual(rep2.resolved, 0);
+        end
+
+        function testAPreEightyEightReferentStillResolves(tc)
+            % pass-1 output from a pre-#88 DID-matlab (subject_id,
+            % time_reference_1) is read the same way
+            obs = imageObservation('img_1', 'sess1', 'subj_group_9', 'anchor_1');
+            obs.depends_on = [ ...
+                struct('name', 'subject_id',       'value', 'subj_group_9'), ...
+                struct('name', 'time_reference_1', 'value', 'anchor_1')];
+            [plan, rep] = ndi.migrate.internal.ontologyLabelSubjects( ...
+                {obs, labelBody('lab_1', 'sess1', 'img_1', 'EMPTY:0000131')});
+            tc.verifyEqual(rep.resolved, 1);
+            tc.verifyEqual(depValue(plan(1).body, 'entity_id'), 'subj_group_9');
+            tc.verifyEqual(depValue(plan(1).body, 'time_reference_id'), 'anchor_1');
         end
 
         function testUnreadableEntriesAreCountedNotDropped(tc)
@@ -250,24 +274,25 @@ b.ontology_label = struct('ontology_node', node);
 end
 
 function b = imageObservation(docId, sessionId, subjectId, anchorId)
-%IMAGEOBSERVATION The BEHAVIOUR-session imageStack after
-%   +migrators_j/image_stack.m: base.id preserved (image_stack.m:85,120), a
-%   subject_id inherited from the source's subjectGroup_id, and the session
-%   anchor it minted (image_stack.m:97,113).
+% what migrators_j.image_stack emits on did-schema #88 for a stack with a
+% subject: an `observation` with the `intensity` kind, id preserved
 b = struct();
-b.document_class = struct('class_name', 'image_observation', ...
+b.document_class = struct('class_name', 'observation', ...
     'class_version', '1.0.0', ...
     'superclasses', [ ...
-        struct('class_name', 'subject_observation', 'class_version', '1.0.0'), ...
-        struct('class_name', 'image',               'class_version', '1.0.0')], ...
+        struct('class_name', 'interaction', 'class_version', '1.0.0'), ...
+        struct('class_name', 'statement',   'class_version', '1.0.0'), ...
+        struct('class_name', 'base',        'class_version', '1.0.0'), ...
+        struct('class_name', 'intensity',   'class_version', '1.0.0'), ...
+        struct('class_name', 'value',       'class_version', '1.0.0'), ...
+        struct('class_name', 'data',        'class_version', '1.0.0')], ...
     'schema_version', 'V_eta');
 b.depends_on = [ ...
-    struct('name', 'subject_id',       'value', subjectId), ...
-    struct('name', 'time_reference_1', 'value', anchorId)];
+    struct('name', 'entity_id',         'value', subjectId), ...
+    struct('name', 'time_reference_id', 'value', anchorId)];
 b.base = struct('id', docId, 'session_id', sessionId, ...
-    'name', 'migrated_image', 'datestamp', '2024-06-01T12:00:00.000Z');
-b.subject_statement = struct( ...
-    'variable', struct('node', '', 'name', 'image'), 'storage_mode', 'body');
+    'creation_timestamp', '2024-06-01T12:00:00.000Z');
+b.statement = struct('variable', struct('node', '', 'name', 'image intensity'));
 end
 
 function b = imageStackPassthrough(docId, sessionId, targetId)
@@ -298,5 +323,13 @@ for k = 1:numel(deps)
         v = char(deps(k).document_id);
     end
     return;
+end
+end
+
+function sid = sessionOf(b)
+if isfield(b.base, 'session_id')
+    sid = b.base.session_id;
+else
+    sid = depValue(b, 'session_id');
 end
 end

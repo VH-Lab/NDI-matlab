@@ -35,7 +35,8 @@ classdef system < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice
                 % EDGE NAMES MOVE, TARGET IDS DO NOT. V_eta renames these
                 % three edges (daqreader_id -> reader_id, filenavigator_id ->
                 % epoch_file_pattern_id, daqmetadatareader_id_# ->
-                % acquisition_metadata_reader_#) while every migrator in the
+                % acquisition_metadata_reader_#, later epoch_parameter_reader_id
+                % repeated) while every migrator in the
                 % family preserves base.id on what it emits -- so the lookups
                 % below by `base.id` are unchanged and only the names need
                 % translating. ndi.vintage.edge is a no-op on a v1 document.
@@ -66,7 +67,9 @@ classdef system < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice
 
                 obj.daqreader = ndi.database.fun.ndi_document2ndi_object(daqreader_doc, session);
                 obj.filenavigator = ndi.database.fun.ndi_document2ndi_object(filenavigator_doc,session);
-                obj.name = daqsystem_doc.document_properties.base.name;
+                % v1 and older V_eta: base.name. did-schema #73 item 54:
+                % `acquisition_system.name`. ndi.vintage.objectName reads both.
+                obj.name = ndi.vintage.objectName(daqsystem_doc);
                 obj.identifier = daqsystem_doc.document_properties.base.id;
                 obj = obj.set_daqmetadatareader(thedaqmetadatareader);
             else
@@ -330,7 +333,11 @@ classdef system < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice
                 else
                     et(i).t0_t1 = t0_t1(ndi_daqsystem_obj, et(i).epoch_number);
                 end
-                if mod(i,10)==0 % only update every tenth so we don't slow it down
+                % only update every tenth so we don't slow it down, and never
+                % to 1 here: the bar closes itself at 1 ('Auto'), so a loop
+                % ending on a multiple of 10 would close it before the final
+                % update below, which then warns "Could not find barID"
+                if mod(i,10)==0 && i < numel(et)
                     currentProgBar.updateBar(ProgBarUuid,i/numel(et)); % Update the bar's progress
                 end
             end

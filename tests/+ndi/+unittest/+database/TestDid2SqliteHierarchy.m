@@ -124,7 +124,9 @@ classdef TestDid2SqliteHierarchy < matlab.unittest.TestCase
             % dropped here would narrow nothing and silently WIDEN a
             % search -- more documents come back, not fewer, so nothing
             % downstream errors.
-            q = and(ndi.query('', 'isa', 'subject'), ...
+            % (not `isa subject`: ndi.query rewrites that one into the
+            % biological entity types, an `or`, so it is not a plain isa term)
+            q = and(ndi.query('', 'isa', 'directed_relation'), ...
                     ndi.query('base.name', 'exact_string', 'abc'));
             q2 = ndi.database.implementations.database.did2sqlite.toDid2Query(q);
             testCase.verifyEqual(numel(q2.searchstructure), 2, sprintf( ...

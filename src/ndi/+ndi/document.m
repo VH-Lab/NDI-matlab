@@ -126,9 +126,30 @@ classdef document < did.document
             %
             % NDI_DOCUMENT_OBJ = SET_SESSION_ID(NDI_DOCUMENT_OBJ, SESSION_ID)
             %
-            % Sets the document_properties.base.session_id field to the value indicated.
+            % Sets the document's session id to the value indicated: its
+            % document_properties.base.session_id field when it has one (a v1
+            % document, and a migrated V_eta document), and otherwise its
+            % `session_id` edge (a V2 document on the shape of did-schema
+            % V_eta_relation_inheritance_plan.md, where `base` has no
+            % session_id field and the edge points at the session or dataset
+            % entity, whose base.id is the session id). A V_eta document with
+            % neither gets the edge; any other document gets the field.
             %
-            ndi_document_obj.document_properties.base.session_id = session_id;
+            % See also ndi.document/session_id, ndi.v2.sessionIdOf.
+            p = ndi_document_obj.document_properties;
+            hasField = isfield(p, 'base') && isstruct(p.base) && isfield(p.base, 'session_id');
+            useEdge = false;
+            if ~hasField
+                useEdge = ~isempty(ndi.v2.edgeIds(p, 'session_id')) || ...
+                    (isfield(p, 'document_class') && isfield(p.document_class, 'schema_version') ...
+                    && strcmp(char(p.document_class.schema_version), 'V_eta'));
+            end
+            if useEdge
+                ndi_document_obj = ndi_document_obj.set_dependency_value('session_id', ...
+                    session_id, 'ErrorIfNotFound', 0);
+            else
+                ndi_document_obj.document_properties.base.session_id = session_id;
+            end
         end % set_session_id
 
         function t = to_table(ndi_document_obj)
@@ -426,14 +447,19 @@ classdef document < did.document
 
 
         function uid = session_id(ndi_document_obj)
-            % ID - return the document session unique identifier for an ndi.document
+            % SESSION_ID - return the document session unique identifier for an ndi.document
             %
             % UID = SESSION_ID (NDI_DOCUMENT_OBJ)
             %
-            % Returns the unique session id of an ndi.document
-            % (Found at NDI_DOCUMENT_OBJ.documentproperties.base.session_id)
+            % Returns the unique session id of an ndi.document: its
+            % document_properties.base.session_id field when it has one (v1,
+            % and migrated V_eta), otherwise its `session_id` edge (V2 as
+            % did2.build writes it, did-schema
+            % V_eta_relation_inheritance_plan.md). '' when it has neither.
             %
-            uid = ndi_document_obj.document_properties.base.session_id;
+            % See also ndi.document/set_session_id, ndi.v2.sessionIdOf.
+            %
+            uid = ndi.v2.sessionIdOf(ndi_document_obj.document_properties);
         end % session_id()
         
         function fuid = get_fuid(ndi_document_obj, filename)

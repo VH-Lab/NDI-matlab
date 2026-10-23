@@ -104,7 +104,13 @@ classdef dir < ndi.session
             read_from_database = 0;
 
             if should_we_try_to_read_from_database
-                session_doc = ndi_session_dir_obj.database_search(ndi.query('','isa','session'));
+                % the session's own record: the session (or dataset) entity
+                % whose base.id IS the session id, where session_id is an edge
+                % (did-schema V_eta_relation_inheritance_plan.md, 2026-10-20);
+                % otherwise its `session` documents (v1, and V2 on did-schema
+                % main), scoped to the session id like every search here
+                session_doc = ndi.v2.sessionRecord(ndi_session_dir_obj, ...
+                    ndi_session_dir_obj.id());
                 if ~isempty(session_doc)
                     % use the oldest
                     time_diff_max = 0;
@@ -133,18 +139,36 @@ classdef dir < ndi.session
                     end
                     session_doc = session_doc{time_loc};
 
-                    ndi_session_dir_obj.identifier = session_doc.document_properties.base.session_id;
+                    ndi_session_dir_obj.identifier = session_doc.session_id();
                     % BOTH VINTAGES. V_eta renamed session.reference ->
                     % session.local_identifier -- the name `subject` and `epoch`
                     % already use for the same fact (did-schema, signed
                     % 2026-08-13). The OBJECT property stays `reference`: that is
                     % ndi.session's own public API, read at 20 call sites, and it
                     % is not what the migration renamed.
-                    session_blk = session_doc.document_properties.session;
-                    if isfield(session_blk,'local_identifier')
+                    % and since 2026-10-08 the session may be an `entity` of type
+                    % session, whose block is `entity` (ndi.v2.kindOf)
+                    [record_kind, session_blk_name] = ndi.v2.kindOf(session_doc.document_properties);
+                    session_blk = session_doc.document_properties.(session_blk_name);
+                    reference_file = fullfile(ndi_session_dir_obj.ndipathname(), 'reference.txt');
+                    if strcmp(record_kind, 'dataset') && isfile(reference_file)
+                        % a dataset entity standing as the folder's own record:
+                        % the folder's reference is its reference.txt, never
+                        % the entity's local_identifier, which is the
+                        % dataset's own (Haley decision #115)
+                        ndi_session_dir_obj.reference = strtrim(vlt.file.textfile2char(reference_file));
+                    elseif isfield(session_blk,'local_identifier') && ~isempty(session_blk.local_identifier)
                         ndi_session_dir_obj.reference = session_blk.local_identifier;
-                    else
+                    elseif isfield(session_blk,'reference')
                         ndi_session_dir_obj.reference = session_blk.reference;
+                    elseif isfile(fullfile(ndi_session_dir_obj.ndipathname(), 'reference.txt'))
+                        % a dataset entity standing as the dataset's own record
+                        % has no local_identifier (ndi.setup.V2.createDataset)
+                        ndi_session_dir_obj.reference = strtrim(vlt.file.textfile2char( ...
+                            fullfile(ndi_session_dir_obj.ndipathname(), 'reference.txt')));
+                    else
+                        ndi_session_dir_obj.reference = char(ndi.v2.blockOf( ...
+                            session_doc.document_properties, 'dataset', 'name', ''));
                     end
                     read_from_database = 1;
                 end

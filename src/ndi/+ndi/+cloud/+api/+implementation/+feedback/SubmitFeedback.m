@@ -25,6 +25,9 @@ classdef SubmitFeedback < ndi.cloud.api.call
             % EXECUTE - Performs the API call to submit a feedback report.
             %
             %   On success (201), ANSWER is the id of the stored report.
+            arguments
+                this (1,1) ndi.cloud.api.implementation.feedback.SubmitFeedback
+            end
 
             method = matlab.net.http.RequestMethod.POST;
             body = matlab.net.http.MessageBody(this.feedbackStruct);

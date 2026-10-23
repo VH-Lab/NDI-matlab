@@ -1,7 +1,17 @@
-function [plan, report] = epochAnchorFold(migratedStructs, epochIndex)
+function [plan, report] = epochAnchorFold(migratedStructs, epochIndex, bathAnchors)
 %EPOCHANCHORFOLD Fold the NDI path's `epoch_bounded_reference` placeholders into
 %   `relative_reference`, anchored to the `epoch` document did2.convert.epochMint
 %   minted for the SAME (session, epoch-id string) PAIR.
+%
+%   ON did-schema #88: the output is a `relative_time_reference` naming its
+%   referent by `referent_id`. The placeholder class is gone from #88, so the
+%   bath assembler (ndi.migrate.internal.stimulusBathToBath) now mints a VALID
+%   "during the session" `relative_time_reference` and hands its epoch string
+%   and clock over as BATHANCHORS (struct array {anchor_id, session_id,
+%   epoch_string, epoch_clock}); this fold re-points each such anchor at the
+%   epoch entity for that (session, epoch string) pair, id PRESERVED, with the
+%   same clock rules as the placeholders. Refused bath anchors stay anchored to
+%   their session and are counted under the same refusal reasons.
 %
 %   ---------------------------------------------------------------------
 %   STATUS: written 2026-08-11 in a container with no MATLAB. FIRST EXECUTED the
@@ -304,6 +314,8 @@ arguments
     migratedStructs cell
     epochIndex struct = struct('session_id', {}, 'local_identifier', {}, ...
                                'epoch_document_id', {})
+    bathAnchors struct = struct('anchor_id', {}, 'session_id', {}, ...
+                                'epoch_string', {}, 'epoch_clock', {})
 end
 
 % DENOMINATOR FIRST, AND UNCONDITIONALLY.
@@ -313,6 +325,8 @@ report = struct( ...
     'epoch_index_rows',               numel(epochIndex), ...
     'epoch_index_pairs_usable',       0, ...
     'anchors_seen',                   0, ...
+    'bath_anchors_handed_over',       numel(bathAnchors), ...
+    'bath_anchors_seen',              0, ...
     'anchors_planned',                0, ...
     'planned_without_clock',          0, ...
     'clock_tolerance_applied',        0, ...
@@ -368,7 +382,7 @@ for k = 1:numel(migratedStructs)
         report.refused_no_epoch_string = report.refused_no_epoch_string + 1;
         continue;
     end
-    sessionId = baseField(b, 'session_id');
+    sessionId = ndi.v2.sessionIdOf(b);
     if isempty(sessionId)
         report.refused_no_session_id = report.refused_no_session_id + 1;
         continue;
@@ -412,6 +426,71 @@ for k = 1:numel(migratedStructs)
         'clock_tolerance_seconds', toleranceSeconds); %#ok<AGROW>
 end
 
+% --- the #88 bath anchors: valid "during the session" references whose epoch
+% string and clock were handed over by the bath assembler -------------------
+bathById = containers.Map('KeyType', 'char', 'ValueType', 'double');
+for k = 1:numel(bathAnchors)
+    bathById(charOf(bathAnchors(k), 'anchor_id')) = k;
+end
+for k = 1:numel(migratedStructs)
+    b = migratedStructs{k};
+    if ~isstruct(b) || ~isscalar(b) || bathById.Count == 0
+        continue;
+    end
+    if ~strcmp(classNameOf(b), 'relative_time_reference')
+        continue;
+    end
+    id = baseField(b, 'id');
+    if isempty(id) || ~isKey(bathById, id)
+        continue;
+    end
+    info = bathAnchors(bathById(id));
+    report.anchors_seen = report.anchors_seen + 1;
+    report.bath_anchors_seen = report.bath_anchors_seen + 1;
+
+    epochString = charOf(info, 'epoch_string');
+    if isempty(epochString)
+        report.refused_no_epoch_string = report.refused_no_epoch_string + 1;
+        continue;
+    end
+    sessionId = charOf(info, 'session_id');
+    if isempty(sessionId)
+        report.refused_no_session_id = report.refused_no_session_id + 1;
+        continue;
+    end
+    key = pairKey(sessionId, epochString);
+    if ~isKey(epochByPair, key)
+        report.refused_no_epoch_document = report.refused_no_epoch_document + 1;
+        continue;
+    end
+    [clockName, toleranceSeconds, verdict] = clockTerm(charOf(info, 'epoch_clock'));
+    switch verdict
+        case 'no_time'
+            report.refused_clock_no_time = report.refused_clock_no_time + 1;
+            continue;
+        case 'inherited'
+            report.refused_clock_inherited = report.refused_clock_inherited + 1;
+            continue;
+        case 'unknown'
+            report.refused_clock_unknown = report.refused_clock_unknown + 1;
+            continue;
+    end
+    epochDocId = epochByPair(key);
+    [body, hadClock] = reanchor(b, epochDocId, clockName, toleranceSeconds);
+    if ~hadClock
+        report.planned_without_clock = report.planned_without_clock + 1;
+    end
+    if toleranceSeconds > 0
+        report.clock_tolerance_applied = report.clock_tolerance_applied + 1;
+    end
+    plan(end+1) = struct( ...
+        'source_id',               id, ...
+        'body',                    body, ...
+        'epoch_document_id',       epochDocId, ...
+        'clock',                   clockName, ...
+        'clock_tolerance_seconds', toleranceSeconds); %#ok<AGROW>
+end
+
 report.anchors_planned = numel(plan);
 report.refused_total = report.refused_no_epoch_string ...
     + report.refused_no_session_id ...
@@ -426,25 +505,26 @@ end
 
 function [b, hadClock] = rebuildAsRelativeReference(b, epochDocId, clockName, ...
     toleranceSeconds)
-%REBUILDASRELATIVEREFERENCE The retired body -> a V_eta relative_reference.
+%REBUILDASRELATIVEREFERENCE The retired body -> a V_eta relative time
+%   reference: did-schema #88's `relative_time_reference` (`relative_reference`
+%   before), naming its referent by `referent_id` (`relative_to` before).
 %   THE base.id IS NOT TOUCHED, so every `time_reference_#` edge pointing at
 %   this document keeps resolving -- the same guarantee resolveSessionAnchors
 %   makes, and the reason the calculator fold produced 0 orphans.
 
-b.document_class = struct( ...
-    'class_name',     'relative_reference', ...
-    'class_version',  '2.0.0', ...
-    'superclasses',   struct('class_name', 'time_reference', ...
-                             'class_version', '4.0.0'), ...
-    'schema_version', 'V_eta');
+b.document_class = ndi.migrate.internal.etaShape.docClass('relative_time_reference');
 
-% The `element_id` edge is REPLACED, not kept: `relative_reference` declares
-% exactly one dependency and an undeclared edge trips the strict-fields check
+% The `element_id` edge is REPLACED, not kept: `relative_time_reference`
+% declares exactly one dependency and an undeclared edge trips the strict-fields check
 % (+did2/+schema/cache.m). The stimulator is not lost -- stimulusBathToBath now
 % carries it on the manipulation as `instrument_id` (T7), which is where the
 % instrument of an interaction belongs and which does not depend on this fold
 % running.
-b.depends_on = struct('name', 'relative_to', 'value', epochDocId);
+% The session id is put back where the schema in use keeps it: on a schema
+% where it is a `session_id` edge, replacing depends_on would drop it.
+sessionId = ndi.v2.sessionIdOf(b);
+b.depends_on = struct('name', 'referent_id', 'value', epochDocId);
+b = ndi.migrate.internal.withSessionId(b, sessionId);
 
 value = struct('relation', struct('node', 'time:intervalDuring', ...
                                   'name', 'intervalDuring'));
@@ -509,10 +589,43 @@ for fn = {'start', 'duration'}
     end
 end
 
-b.relative_reference = struct('value', value);
+b.relative_time_reference = struct('value', value);
 end
 
 % ===================== vocabulary =========================================
+
+function [b, hadClock] = reanchor(b, epochDocId, clockName, toleranceSeconds)
+%REANCHOR A #88 `relative_time_reference` that said "during the session" now
+%   names the epoch entity: `referent_id` -> the epoch, the clock and its
+%   tolerance set the same way as for a placeholder. base.id and the relation
+%   are untouched.
+sessionId = ndi.v2.sessionIdOf(b);
+b.depends_on = struct('name', 'referent_id', 'value', epochDocId);
+b = ndi.migrate.internal.withSessionId(b, sessionId);
+value = struct();
+if isfield(b, 'relative_time_reference') && isstruct(b.relative_time_reference) ...
+        && isfield(b.relative_time_reference, 'value') ...
+        && isstruct(b.relative_time_reference.value)
+    value = b.relative_time_reference.value;
+end
+if ~isfield(value, 'relation') || isempty(value.relation)
+    value.relation = struct('node', 'time:intervalDuring', 'name', 'intervalDuring');
+end
+hadClock = ~isempty(clockName);
+if hadClock
+    value.clock = struct('node', '', 'name', clockName);
+end
+if isfield(b, 'time_reference')
+    b = rmfield(b, 'time_reference');
+end
+if toleranceSeconds > 0
+    b.time_reference = struct('clock_tolerance', ...
+        struct('seconds', toleranceSeconds));
+end
+b.relative_time_reference = struct('value', value);
+b.document_class.schema_version = 'V_eta';
+end
+
 
 function [clockName, toleranceSeconds, verdict] = clockTerm(raw)
 %CLOCKTERM did_v1's nine clocktypes -> the four signed terms + a tolerance.

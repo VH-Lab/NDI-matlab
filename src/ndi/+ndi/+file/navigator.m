@@ -233,7 +233,10 @@ classdef navigator < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice & 
                 % below, which reaches ndi.epoch.epochset.param/getepochprobemap.
                 probemapClass = ndi_file_navigator_obj.epochprobemap_class;
                 ndi.validators.mustBeClassnameOfType(probemapClass, 'ndi.epoch.epochprobemap');
-                epochprobemap = feval(probemapClass, d.document_properties.epochfiles_ingested.epochprobemap);
+                % either vintage: a migrated ingestion_manifest's probe map
+                % is rebuilt from its statements (ndi.vintage.ingestedEpochs)
+                e = ndi.vintage.ingestedEpochs(ndi_file_navigator_obj.session, {d}, probemapClass);
+                epochprobemap = e(1).probemap;
             else
                 epochprobemap = getepochprobemap@ndi.epoch.epochset.param(ndi_file_navigator_obj, N);
             end
@@ -249,11 +252,20 @@ classdef navigator < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice & 
             d = [];
             if ndi.file.navigator.isingested(epochfiles)
                 epochid = ndi.file.navigator.ingestedfiles_epochid(epochfiles);
-                epoch_query = ndi.query('','isa','epochfiles_ingested') & ...
-                    ndi.query('','depends_on','filenavigator_id',ndi_filenavigator_obj.id()) & ...
-                    ndi.query('base.session_id','exact_string',ndi_filenavigator_obj.session.id()) & ...
-                    ndi.query('epochfiles_ingested.epoch_id','exact_string',epochid);
+                % both vintages (ndi.vintage.ingestedQuery; Jess Haley
+                % 2026-10-22 [ingested epochs found]). A v1 document is asked
+                % for its epoch_id in the query; a migrated manifest keeps the
+                % id on its epoch entity, so it is matched after the search.
+                epoch_query = ndi.vintage.ingestedQuery(ndi_filenavigator_obj.id(), ...
+                    ndi_filenavigator_obj.session.id()) & ...
+                    (ndi.query('epochfiles_ingested.epoch_id','exact_string',epochid) | ...
+                     ndi.query('','isa','ingestion_manifest'));
                 d = ndi_filenavigator_obj.session.database_search(epoch_query);
+                if ~isempty(d)
+                    e = ndi.vintage.ingestedEpochs(ndi_filenavigator_obj.session, d, ...
+                        ndi_filenavigator_obj.epochprobemap_class);
+                    d = d(strcmp({e.epoch_id}, epochid));
+                end
                 if numel(d)==1
                     d = d{1};
                 else
@@ -511,9 +523,12 @@ classdef navigator < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice & 
 
             check_ingested = isempty(has_ingested_epoch) || has_ingested_epoch;
             if check_ingested
-                epoch_query = ndi.query('','isa','epochfiles_ingested') & ...
-                    ndi.query('','depends_on','filenavigator_id',ndi_filenavigator_obj.id()) & ...
-                    ndi.query('base.session_id','exact_string',ndi_filenavigator_obj.session.id());
+                % both vintages: v1 epochfiles_ingested by filenavigator_id, a
+                % migrated ingestion_manifest by epoch_file_pattern_id (the
+                % navigator's own id) -- Jess Haley 2026-10-22 [ingested
+                % epochs found], ndi.vintage.ingestedQuery
+                epoch_query = ndi.vintage.ingestedQuery(ndi_filenavigator_obj.id(), ...
+                    ndi_filenavigator_obj.session.id());
                 d_ingested = ndi_filenavigator_obj.session.database_search(epoch_query);
 
                 ndi_filenavigator_obj.add_cached_value('has_ingested_epoch', 'logical', ~isempty(d_ingested));
@@ -532,22 +547,24 @@ classdef navigator < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice & 
                 epoch_id_disk{i} = ndi_filenavigator_obj.epochid(i,epochfiles_disk{i});
             end
 
-            epoch_id_ingested = cellfun(@(x) x.document_properties.epochfiles_ingested.epoch_id, d_ingested, 'UniformOutput', false);
-
-            [c,ia] = unique(cat(1,epoch_id_ingested(:),epoch_id_disk(:)));
-
             % The class name is constant across the loop, so check it once here.
             % feval alone cannot execute an arbitrary expression, but without this
             % it would still instantiate whatever class an untrusted document named.
             probemapClass = ndi_filenavigator_obj.epochprobemap_class;
             ndi.validators.mustBeClassnameOfType(probemapClass, 'ndi.epoch.epochprobemap');
 
+            % id, files and probe map of each, in either vintage
+            ingested = ndi.vintage.ingestedEpochs(ndi_filenavigator_obj.session, d_ingested, probemapClass);
+            epoch_id_ingested = {ingested.epoch_id};
+
+            [c,ia] = unique(cat(1,epoch_id_ingested(:),epoch_id_disk(:)));
+
             epochfiles = {};
             epochprobemaps = {};
             for i=1:numel(c)
                 if ia(i)<=numel(epoch_id_ingested)
-                    epochfiles{i} = d_ingested{ia(i)}.document_properties.epochfiles_ingested.files;
-                    epochprobemaps{i} = feval(probemapClass, d_ingested{ia(i)}.document_properties.epochfiles_ingested.epochprobemap);
+                    epochfiles{i} = ingested(ia(i)).files;
+                    epochprobemaps{i} = ingested(ia(i)).probemap;
                 else
                     epochfiles{i} = epochfiles_disk{ia(i)-numel(epoch_id_ingested)};
                     epochprobemaps{i} = [];
@@ -741,9 +758,9 @@ classdef navigator < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice & 
             % Returns ndi.document objects that correspond to ingested epochs of
             % this NDI_FILENAVIGATOR_OBJ.
             %
-            epoch_query = ndi.query('','isa','epochfiles_ingested') & ...
-                ndi.query('','depends_on','filenavigator_id',ndi_filenavigator_obj.id()) & ...
-                ndi.query('base.session_id','exact_string',ndi_filenavigator_obj.session.id());
+            % both vintages (ndi.vintage.ingestedQuery)
+            epoch_query = ndi.vintage.ingestedQuery(ndi_filenavigator_obj.id(), ...
+                ndi_filenavigator_obj.session.id());
             d_ingested = ndi_filenavigator_obj.session.database_search(epoch_query);
         end
 

@@ -119,7 +119,10 @@ end
 
 function r = lookupResult(rows, missing)
     % A scripted lookupFiles answer. ROWS is a cell array of fileRow structs.
-    if nargin < 2, missing = strings(1, 0); end
+    arguments
+        rows cell
+        missing = strings(1, 0)
+    end
     if isempty(rows)
         files = struct('uid', {}, 'uploaded', {}, 'size', {}, 'crc32', {});
         files = files(:);
@@ -130,6 +133,11 @@ function r = lookupResult(rows, missing)
 end
 
 function call = scriptedCall(results, uids, timeout)
+    arguments
+        results cell
+        uids {mustBeText}
+        timeout (1,1) {mustBeNumeric}
+    end
     call = ndi.test.helper.ScriptedFileUpload(results, ...
         'cloudDatasetID', "ds1", 'cloudFileUIDs', uids, ...
         'timeout', timeout, 'initialInterval', 0.01, 'maxInterval', 0.01);

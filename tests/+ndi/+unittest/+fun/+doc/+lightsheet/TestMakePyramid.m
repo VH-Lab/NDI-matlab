@@ -34,6 +34,12 @@ classdef TestMakePyramid < matlab.unittest.TestCase
         end
 
         function levels = dyadicLevels(paths, shape0, vox0, dtype)
+            arguments
+                paths cell
+                shape0 {mustBeNumeric}
+                vox0 {mustBeNumeric}
+                dtype {mustBeText}
+            end
             n = numel(paths);
             levels = repmat(struct( ...
                 'path', '', 'shape', [], 'chunks', [], 'dtype', dtype, ...
@@ -51,6 +57,11 @@ classdef TestMakePyramid < matlab.unittest.TestCase
         end
 
         function py = pyramidEntry(name, typ, levels)
+            arguments
+                name {mustBeText}
+                typ {mustBeText}
+                levels struct
+            end
             py = struct('name', name, 'type', typ, ...
                 'axes', ndi.unittest.fun.doc.lightsheet.TestMakePyramid.axes3D(), ...
                 'levels', levels);

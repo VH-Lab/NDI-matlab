@@ -6,17 +6,25 @@ function [plan, report] = ontologyLabelSubjects(migratedStructs)
 %   [PLAN, REPORT] = ndi.migrate.internal.ontologyLabelSubjects(MIGRATEDSTRUCTS)
 %   inspects every `ontology_label` document that pass 1 left unconverted and,
 %   for each one whose referent resolves to a statement that HAS a subject,
-%   returns a ready V_eta `term_observation` body to replace it with. REPORT
-%   states its denominators first and splits the unresolved into named reasons.
+%   returns a ready V_eta term observation body to replace it with, plus the
+%   `derived_from` relation that keeps what it labelled. REPORT states its
+%   denominators first and splits the unresolved into named reasons.
+%
+%   THE SHAPE IS did-schema #88's (V_eta_entity_composition_plan.md sec. 1): the
+%   observation is the `observation` direction with the `term` value-kind mixin,
+%   about its `entity_id`, timed by `time_reference_id`. #88 has no
+%   `derived_from_#` edge on a statement; a statement derived from another is a
+%   `derived_from` directed_relation (child_id the label, parent_id the
+%   labelled statement; directed_relation.json: "a label calculation
+%   derived_from an external atlas"). The reads accept the pre-#88 spelling
+%   (`subject_id`, `time_reference_1`) as well.
 %
 %   This function is PURE: it reads structs and returns structs. It calls no
 %   converter, touches no database and needs no schema -- which is what makes it
 %   testable without a corpus. ndi.migrate.local/resolveOntologyLabelSubjects
 %   does the fold.
 %
-%   STATUS: authored WITHOUT local MATLAB. Neither this function nor its unit
-%   tests (tests/+ndi/+unittest/+migrate/TestOntologyLabelSubjects.m) have been
-%   run. Nothing here has been exercised against a corpus.
+%   Tests: tests/+ndi/+unittest/+migrate/TestOntologyLabelSubjects.m.
 %
 %   ---------------------------------------------------------------------
 %   WHY THIS IS A SECOND PASS
@@ -89,11 +97,12 @@ function [plan, report] = ontologyLabelSubjects(migratedStructs)
 %                      cost 11,448 orphans, and existence-only `must_refer` means
 %                      a preserved id keeps every inbound edge resolving whether
 %                      or not one exists today.
-%     subject_id       the subject the referent statement is about
-%     derived_from_1   the referent statement itself -- so BOTH facts survive:
-%                      the term, and what it was about. This is the edge whose
+%     entity_id        the subject the referent statement is about
+%     derived_from     a directed_relation to the referent statement itself
+%                      (`derived_from_1` before #88) -- so BOTH facts survive:
+%                      the term, and what it was about. This is the link whose
 %                      absence made the old behaviour a loss rather than a rename.
-%     time_reference_1 REUSED from the referent statement, not minted. The label
+%     time_reference_id REUSED from the referent statement, not minted. The label
 %                      is about that observation and shares its time; minting a
 %                      second anchor for the same instant would be #52's
 %                      undefined-meaning case, and `time_reference_#` carries
@@ -146,7 +155,7 @@ end
 LABEL_VARIABLE = 'label';
 
 plan = struct('source_id', {}, 'subject_id', {}, 'statement_id', {}, ...
-    'time_reference_id', {}, 'ontology_node', {}, 'body', {});
+    'time_reference_id', {}, 'ontology_node', {}, 'body', {}, 'related', {});
 
 report = struct( ...
     'ran',                                 false, ...
@@ -189,7 +198,10 @@ for k = 1:numel(migratedStructs)
     end
     docId = baseField(b, 'id');
     cn    = classNameOf(b);
-    subjectId = edgeValue(b, {'subject_id'});
+    subjectId = edgeValue(b, {'entity_id', 'subject_id'});
+    if strcmp(cn, 'entity') || strcmp(cn, 'method')
+        subjectId = '';   % an entity, or a method scoped to one, is not a statement
+    end
     if ~isempty(docId)
         byId(docId) = struct('class_name', cn, ...
             'subject_id', subjectId, ...
@@ -250,14 +262,15 @@ for i = 1:numel(labelIdx)
         continue;
     end
 
-    body = termObservationBody(b, target, targetId, node, LABEL_VARIABLE);
+    [body, rel] = termObservationBody(b, target, targetId, node, LABEL_VARIABLE);
     plan(end+1) = struct( ...                                        %#ok<AGROW>
         'source_id',         baseField(b, 'id'), ...
         'subject_id',        target.subject_id, ...
         'statement_id',      targetId, ...
         'time_reference_id', target.time_reference_id, ...
         'ontology_node',     node, ...
-        'body',              body);
+        'body',              body, ...
+        'related',           {{rel}});
     report.resolved = report.resolved + 1;
 end
 
@@ -266,42 +279,21 @@ end
 
 % ===================== the body ========================================
 
-function body = termObservationBody(labelBody, target, targetId, node, variableName)
-%TERMOBSERVATIONBODY One V_eta `term_observation`, tagged so v1_to_v2
-%   short-circuits it (isAlreadyTarget) to ensureClassBlocks + validate rather
-%   than trying to migrate it -- the footing pathSPromotion and
-%   ensembleMembership already use for minted bodies.
-body = struct();
-body.document_class = struct('class_name', 'term_observation', ...
-    'class_version', '1.0.0', ...
-    'superclasses', [ ...
-        struct('class_name', 'subject_observation', 'class_version', '1.0.0'), ...
-        struct('class_name', 'term',                'class_version', '1.0.0')], ...
-    'schema_version', 'V_eta');
-body.depends_on = [ ...
-    struct('name', 'subject_id',       'value', target.subject_id), ...
-    struct('name', 'time_reference_1', 'value', target.time_reference_id), ...
-    struct('name', 'derived_from_1',   'value', targetId)];
-% base PRESERVED, id included. `base.name` is kept as the source wrote it so a
-% by-name query still answers; only an absent name gets a generic stand-in.
-body.base = struct( ...
-    'id',         baseField(labelBody, 'id'), ...
-    'session_id', baseField(labelBody, 'session_id'), ...
-    'name',       defaultTo(baseField(labelBody, 'name'), 'migrated_label'), ...
-    'creation_timestamp',  defaultTo(baseField(labelBody, 'datestamp'), ...
-                            '2024-01-01T00:00:00.000Z'));
-body.subject_statement = struct( ...
-    'variable', struct('node', '', 'name', variableName), ...
-    'storage_mode', 'inline');
-body.subject_interaction = struct( ...
-    'method', struct('node', '', 'name', ''), ...
-    'sample_time', struct('kind', 'point'));
-body.subject_observation = struct();
-% The term itself, VERBATIM. `name` is left empty rather than guessed: the v1
-% document stores only the node, and ndi.ontology.lookup is what turns a node
-% into a label -- doing that here would be this pass inventing a string the
-% source never carried.
-body.term = struct('value', struct('node', node, 'name', ''));
+function [body, rel] = termObservationBody(labelBody, target, targetId, node, variableName)
+%TERMOBSERVATIONBODY The label as a term observation of the referent's subject
+%   (id PRESERVED, time reference REUSED), and the `derived_from` relation from
+%   it to the labelled statement.
+S = ndi.migrate.internal.etaShape;
+sid = ndi.v2.sessionIdOf(labelBody);
+ds = baseField(labelBody, 'creation_timestamp');
+if isempty(ds); ds = baseField(labelBody, 'datestamp'); end
+common = {'SessionId', sid, 'Datestamp', ds};
+body = S.statement('observation', 'term', target.subject_id, ...
+    S.term('', variableName), S.term(node, ''), ...
+    'Id', baseField(labelBody, 'id'), ...
+    'TimeReferenceIds', {target.time_reference_id}, common{:});
+rel = S.relation(body.base.id, targetId, ...
+    ndi.v2.vocabTerm('relation', 'derived_from'), common{:});
 end
 
 % ===================== readers =========================================
@@ -324,28 +316,25 @@ end
 end
 
 function id = firstTimeReference(b)
-%FIRSTTIMEREFERENCE The referent statement's own anchor, '' when it has none.
-%   `time_reference_#` is a numbered family; take the lowest-numbered member
-%   present. Until #52 role-names them, a bare index carries no meaning beyond
-%   order, so "the first" is the only defensible choice and it is the one the
-%   referent itself is anchored by.
-id = edgeValue(b, {'time_reference_1'});
-if ~isempty(id); return; end
-if ~isfield(b, 'depends_on') || isempty(b.depends_on); return; end
+%FIRSTTIMEREFERENCE The statement's first time reference (`time_reference_id`
+%   on #88, the lowest `time_reference_N` before).
+ids = ndi.migrate.internal.etaShape.timeReferenceIds(b);
+id = '';
+if isempty(ids); return; end
+nums = inf(1, numel(ids));
 deps = normaliseDeps(b.depends_on);
-best = inf;
+k2 = 0;
 for k = 1:numel(deps)
-    d = deps{k};
-    if ~isstruct(d) || ~isfield(d, 'name'); continue; end
-    nm = char(d.name);
-    if ~startsWith(nm, 'time_reference_'); continue; end
-    n = str2double(nm(numel('time_reference_')+1:end));
-    if isnan(n) || n >= best; continue; end
-    v = depKeyValue(d);
-    if isempty(v); continue; end
-    best = n;
-    id = v;
+    nm = char(deps{k}.name);
+    if strcmp(nm, 'time_reference_id') || startsWith(nm, 'time_reference_')
+        if isempty(depKeyValue(deps{k})); continue; end
+        k2 = k2 + 1;
+        n = str2double(nm(numel('time_reference_')+1:end));
+        if ~isnan(n); nums(k2) = n; else; nums(k2) = k2; end
+    end
 end
+[~, i] = min(nums);
+id = ids{i};
 end
 
 function v = edgeValue(b, names)
@@ -417,10 +406,6 @@ for k = 1:numel(names)
         return;
     end
 end
-end
-
-function v = defaultTo(v, fallback)
-if isempty(v); v = fallback; end
 end
 
 function s = emptyToUnknown(s)

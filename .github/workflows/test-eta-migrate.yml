@@ -3,7 +3,7 @@ name: V_eta migrate assemblers (fast)
 # Fast, focused gate for the V_eta second-pass assemblers
 # (ndi.migrate.internal.*): the pure struct-assembly unit tests only -- no
 # database, no schema cache, no cloud, no full toolbox suite -- so a change to
-# stimulusBathToBath / stimulusPresentationToManipulation / bodyResolver /
+# stimulusBathToBath / bodyResolver /
 # pathSPromotion / epochAnchorFold / ontologyRowSubjects / ontologyLabelSubjects
 # is validated in a couple of minutes instead of the full run-tests.yml. The
 # full suite stays the milestone gate.
@@ -29,13 +29,19 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  # Keyed on the commit: a push never cancels another commit's run;
+  # only a duplicate run of the same commit is cancelled.
+  group: ${{ github.workflow }}-${{ github.sha }}
   cancel-in-progress: true
 
 jobs:
   eta-migrate:
     name: V_eta migrate assemblers (fast)
     runs-on: ubuntu-latest
+    env:
+      # did-schema PR #88 and DID-matlab PR #218 (main and V2 once they merge)
+      DID_SCHEMA_REF: claude/ecstatic-pascal-md91fw
+      DID_MATLAB_REF: claude/ecstatic-pascal-md91fw
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
@@ -48,9 +54,69 @@ jobs:
           products: Statistics_and_Machine_Learning_Toolbox
 
       - name: Install MatBox
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         uses: ehennestad/matbox-actions/install-matbox@v1
 
+      # THE STIMULUS FOLD BUILDS WITH did2.build ON did-schema #88, so its
+      # tests need both (the step after the main one). did-schema PR #88 and
+      # DID-matlab PR #218; point both at main / V2 once they merge.
+      - name: Resolve cross-repo refs (print them; fail if one is missing)
+        # A requested ref that does not exist must STOP the run, never fall back
+        # to a default branch: a run against the wrong did-schema / DID-matlab
+        # reads exactly like a run against the right one. Each ref is resolved
+        # to a commit here, the checkouts below use that commit, and the log
+        # says which commit every later step measured.
+        run: |
+          set -euo pipefail
+          resolve() {  # <owner/repo> <ref> <env var for the sha>
+            local sha
+            sha=$(git ls-remote "https://github.com/$1.git" "refs/heads/$2" "refs/tags/$2^{}" "refs/tags/$2" | head -1 | cut -f1)
+            if [ -z "$sha" ] && [[ "$2" =~ ^[0-9a-f]{40}$ ]]; then sha="$2"; fi
+            if [ -z "$sha" ]; then
+              echo "::error::$1 has no branch, tag or commit '$2'. Refusing to fall back to any other ref."
+              exit 1
+            fi
+            echo "RESOLVED: $1 @ $2 = $sha"
+            echo "$3=$sha" >> "$GITHUB_ENV"
+          }
+          resolve Waltham-Data-Science/did-schema "$DID_SCHEMA_REF" DID_SCHEMA_SHA
+          resolve VH-Lab/DID-matlab "$DID_MATLAB_REF" DID_MATLAB_SHA
+
+      - name: Check out did-schema (#88)
+        uses: actions/checkout@v4
+        with:
+          repository: Waltham-Data-Science/did-schema
+          ref: ${{ env.DID_SCHEMA_SHA }}
+          path: did-schema
+
+      - name: Check out DID-matlab (#218)
+        uses: actions/checkout@v4
+        with:
+          repository: VH-Lab/DID-matlab
+          ref: ${{ env.DID_MATLAB_SHA }}
+          path: did-matlab
+
+      - name: Print the checked-out cross-repo commits
+        run: |
+          set -euo pipefail
+          s=$(git -C did-schema rev-parse HEAD); d=$(git -C did-matlab rev-parse HEAD)
+          echo "CHECKED OUT: did-schema ${DID_SCHEMA_REF} = ${s}"
+          echo "CHECKED OUT: DID-matlab ${DID_MATLAB_REF} = ${d}"
+          [ "$s" = "$DID_SCHEMA_SHA" ] || { echo "::error::did-schema is at $s, resolved $DID_SCHEMA_SHA"; exit 1; }
+          [ "$d" = "$DID_MATLAB_SHA" ] || { echo "::error::DID-matlab is at $d, resolved $DID_MATLAB_SHA"; exit 1; }
+
+      - name: Assemble the #88 schema set
+        run: |
+          mkdir -p "${GITHUB_WORKSPACE}/eta-schemas"
+          cp did-schema/schemas/V_eta/stable/*.json "${GITHUB_WORKSPACE}/eta-schemas/"
+          cp did-schema/schemas/V_eta/draft/*.json  "${GITHUB_WORKSPACE}/eta-schemas/"
+          cp did-schema/schemas/V_eta/deprecated/*.json "${GITHUB_WORKSPACE}/eta-schemas/"
+          echo "DENOMINATOR: $(ls "${GITHUB_WORKSPACE}/eta-schemas" | wc -l) schema file(s) from did-schema@$(git -C did-schema rev-parse --short HEAD), DID-matlab@$(git -C did-matlab rev-parse --short HEAD)"
+
       - name: Install repo requirements (did, deps)
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         uses: matlab-actions/run-command@v2
         with:
           command: |
@@ -243,15 +309,15 @@ jobs:
             %   not 18. A full non-comment re-sweep of all 11 workflows is a
             %   separate follow-up; this entry documents only the three added
             %   here, not a recomputed cross-workflow total.
+            %   NOTE 2026-10-23: TestStimulusPresentationTimedSequence and
+            %   TestStimulusPresentationTimedSequenceMultiSubject no longer
+            %   exist in tests/+ndi/+unittest/+migrate, nor does
+            %   stimulusPresentationToManipulation; TestHartleyBasisGratings
+            %   and TestStimulusPassGating run in the stimulus fold step
+            %   below, not in this list.
             results = runtests([ ...
                 "ndi.unittest.migrate.TestBathAssembly", ...
-                "ndi.unittest.migrate.TestStimulusPresentation", ...
-                "ndi.unittest.migrate.TestStimulusPresentationTimedSequence", ...
-                "ndi.unittest.migrate.TestStimulusPresentationTimedSequenceMultiSubject", ...
-                "ndi.unittest.migrate.TestHartleyBasisGratings", ...
-                "ndi.unittest.migrate.TestStimulusPassGating", ...
                 "ndi.unittest.migrate.TestBodyResolver", ...
-                "ndi.unittest.migrate.TestGratingValue", ...
                 "ndi.unittest.migrate.TestPathSPromotion", ...
                 "ndi.unittest.migrate.TestEpochAnchorFold", ...
                 "ndi.unittest.migrate.TestRecordingAttribution", ...
@@ -261,7 +327,38 @@ jobs:
                 "ndi.unittest.migrate.TestEnsembleMembership", ...
                 "ndi.unittest.migrate.TestSoftwareDedup", ...
                 "ndi.unittest.migrate.TestStrainAssembly", ...
-                "ndi.unittest.migrate.TestSubjectStrainAssembly"]);
+                "ndi.unittest.migrate.TestSubjectStrainAssembly", ...
+                "ndi.unittest.migrate.TestSliceTetanus", ...
+                "ndi.unittest.migrate.TestMigrateSessionId", ...
+                "ndi.unittest.migrate.TestFinalV1BodyCensus"]);
             disp(table(results));
             assert(sum([results.Failed]) == 0, ...
                 sprintf("%d migrate-assembler test(s) failed", sum([results.Failed])));
+
+      - name: Run the stimulus fold tests (did2.build on did-schema #88)
+        uses: matlab-actions/run-command@v2
+        with:
+          command: |
+            addpath(genpath("src"));
+            addpath(genpath("tests"));
+            % ahead of the installed DID-matlab on the path
+            addpath(genpath(fullfile(pwd, "did-matlab", "src")));
+            setenv("DID_SCHEMA_PATH", fullfile(pwd, "eta-schemas"));
+            disp("did2.build from " + string(which("did2.build.statement")));
+            import matlab.unittest.TestSuite;
+            suite = [TestSuite.fromClass(?ndi.unittest.migrate.TestStimulusPresentationItem), ...
+                     TestSuite.fromClass(?ndi.unittest.migrate.TestStimulusPresentationCohort), ...
+                     TestSuite.fromClass(?ndi.unittest.migrate.TestControlCovariate), ...
+                     TestSuite.fromClass(?ndi.unittest.migrate.TestHartleyBasisGratings), ...
+                     TestSuite.fromClass(?ndi.unittest.migrate.TestGratingRecipe), ...
+                     TestSuite.fromClass(?ndi.unittest.migrate.TestStimulusRecipe), ...
+                     TestSuite.fromClass(?ndi.unittest.migrate.TestStimulusPassGating)];
+            results = run(suite);
+            disp(table(results));
+            nRun = numel(results);
+            nFailed = sum([results.Failed]);
+            nIncomplete = sum([results.Incomplete]);
+            fprintf("VERDICT: %d run, %d failed, %d filtered\n", nRun, nFailed, nIncomplete);
+            assert(nRun > 0, "no stimulus fold tests were selected");
+            assert(nFailed == 0, sprintf("%d stimulus fold test(s) failed", nFailed));
+            assert(nIncomplete == 0, sprintf("%d stimulus fold test(s) were FILTERED -- did2.build or the #88 schema is missing", nIncomplete));

@@ -39,6 +39,12 @@ classdef TestFromSPIM < matlab.unittest.TestCase
 
     methods
         function [P, L, info] = ingest(testCase, varargin)
+            arguments
+                testCase (1,1) ndi.unittest.fun.doc.lightsheet.TestFromSPIM
+            end
+            arguments (Repeating)
+                varargin
+            end
             [P, L, info] = ndi.fun.doc.lightsheet.fromSPIM(testCase.session, ...
                 testCase.root, 'subjectID', testCase.subjectID, ...
                 'voxelSizeUm', [1 1 1], 'minLevelSize', 8, ...
@@ -48,6 +54,10 @@ classdef TestFromSPIM < matlab.unittest.TestCase
 
         function vol = readLevel(testCase, levelDoc)
             % Independent read-back: every stored chunk, decoded and placed.
+            arguments
+                testCase (1,1) ndi.unittest.fun.doc.lightsheet.TestFromSPIM
+                levelDoc (1,1) ndi.document
+            end
             p = levelDoc.document_properties.lightsheetZarrLevel;
             shape = double(p.shape(:).');
             chunks = double(p.chunks(:).');
@@ -79,7 +89,12 @@ classdef TestFromSPIM < matlab.unittest.TestCase
             end
         end
 
-        function L = levelsOf(~, levelDocs, reduction)
+        function L = levelsOf(testCase, levelDocs, reduction)
+            arguments
+                testCase (1,1) ndi.unittest.fun.doc.lightsheet.TestFromSPIM %#ok<INUSA> selection reads only levelDocs
+                levelDocs cell
+                reduction {mustBeText}
+            end
             keep = cellfun(@(d) any(strcmp(d.document_properties.lightsheetZarrLevel.reduction_function, ...
                 {reduction, 'none'})), levelDocs);
             L = levelDocs(keep);

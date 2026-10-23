@@ -235,6 +235,10 @@ end
 % =====================================================================
 
 function names = resolveChannelNames(userNames, numChannels)
+    arguments
+        userNames % cellstr, string array, or empty (checked below)
+        numChannels (1,1) {mustBeNumeric}
+    end
     if isempty(userNames)
         names = arrayfun(@(k) sprintf('Ch%d', k), 1:numChannels, ...
             'UniformOutput', false);
@@ -261,6 +265,11 @@ function vol = buildBlobVolume(shape, numChannels, hasChannels)
 % variations in the medium blob and spike positions so channels read
 % differently in each napari colour. Single-channel path returns
 % (Z, Y, X) that matches the pre-channel fixture byte-for-byte.
+    arguments
+        shape {mustBeNumeric}
+        numChannels (1,1) {mustBeNumeric}
+        hasChannels (1,1) logical
+    end
     if ~hasChannels
         vol = oneChannelVolume(shape, 1, 1);
         return;
@@ -273,6 +282,11 @@ function vol = buildBlobVolume(shape, numChannels, hasChannels)
 end
 
 function vol = oneChannelVolume(shape, ch, numChannels)
+    arguments
+        shape {mustBeNumeric}
+        ch (1,1) {mustBeNumeric}
+        numChannels (1,1) {mustBeNumeric}
+    end
     Z = shape(1); Y = shape(2); X = shape(3);
     [zz, yy, xx] = ndgrid(1:Z, 1:Y, 1:X);
     sigmaWide   = mean(shape) / 8;
@@ -318,6 +332,11 @@ function vol = oneChannelVolume(shape, ch, numChannels)
 end
 
 function y = lerp(a, b, t)
+    arguments
+        a {mustBeNumeric}
+        b {mustBeNumeric}
+        t {mustBeNumeric}
+    end
     y = a + (b - a) * t;
 end
 
@@ -325,6 +344,12 @@ function out = downsampleSpatial(vol, factor, reducer, hasChannels)
 % Downsample by FACTOR on spatial axes only. When HASCHANNELS is
 % true, the leading axis is the channel dim and is preserved
 % verbatim; otherwise we fall back to the pre-channel 3-D reducer.
+    arguments
+        vol {mustBeNumeric}
+        factor (1,1) {mustBeNumeric}
+        reducer (1,1) function_handle
+        hasChannels (1,1) logical
+    end
     if ~hasChannels
         out = downsampleBlockUint16(vol, factor, reducer);
         return;
@@ -346,6 +371,11 @@ function out = downsampleBlockUint16(vol, factor, reducer)
 % REDUCER (a function handle). Output shape is ceil(size / factor);
 % trailing edge blocks are smaller. Mirrors what OME-Zarr writers
 % commonly do (bioformats2raw, make_zarr_levels.py).
+    arguments
+        vol {mustBeNumeric}
+        factor (1,1) {mustBeNumeric}
+        reducer (1,1) function_handle
+    end
     sz = size(vol);
     out_shape = ceil(sz / factor);
     out = zeros(out_shape, 'like', vol);
@@ -366,10 +396,16 @@ function out = downsampleBlockUint16(vol, factor, reducer)
 end
 
 function v = meanReduce(block)
+    arguments
+        block {mustBeNumeric}
+    end
     v = uint16(round(mean(double(block(:)))));
 end
 
 function v = maxReduce(block)
+    arguments
+        block {mustBeNumeric}
+    end
     v = max(block(:));
 end
 
@@ -377,6 +413,11 @@ function writeZarrLevel(arrayDir, vol, chunkShape)
 % Write one Zarr v2 array: a .zarray metadata file plus one raw chunk
 % file per non-empty tile. Handles both 3-D (z,y,x) and 4-D (c,z,y,x)
 % layouts; chunkShape must match the array's dimensionality.
+    arguments
+        arrayDir {mustBeText}
+        vol {mustBeNumeric}
+        chunkShape {mustBeNumeric}
+    end
     if ~isfolder(arrayDir), mkdir(arrayDir); end
     shape = size(vol);
     if numel(shape) ~= numel(chunkShape)
@@ -403,6 +444,16 @@ end
 function writeChunks(arrayDir, vol, shape, chunkShape, nChunks, subs, key, dim)
 % Recursively walk the chunk grid across all dimensions, so the writer
 % is agnostic to how many axes the array has.
+    arguments
+        arrayDir {mustBeText}
+        vol {mustBeNumeric}
+        shape {mustBeNumeric}
+        chunkShape {mustBeNumeric}
+        nChunks {mustBeNumeric}
+        subs cell
+        key {mustBeNumeric}
+        dim (1,1) {mustBeNumeric}
+    end
     if dim > numel(shape)
         lo = zeros(1, numel(shape));
         hi = zeros(1, numel(shape));
@@ -436,6 +487,10 @@ function writeChunks(arrayDir, vol, shape, chunkShape, nChunks, subs, key, dim)
 end
 
 function d = zarrDataset(pathStr, scale)
+    arguments
+        pathStr {mustBeText}
+        scale {mustBeNumeric}
+    end
     d = struct('path', pathStr, ...
         'coordinateTransformations', {{ ...
             struct('type', 'scale', 'scale', scale) }});
@@ -446,6 +501,9 @@ function channels = buildOmeroChannels(channelNames)
 % per-channel names + display colours. Palette matches the client's
 % default (green, magenta, ...). Windows are wide-open so napari's
 % auto-contrast still runs.
+    arguments
+        channelNames cell
+    end
     palette = {'00FF00', 'FF00FF', '00FFFF', 'FFFF00', ...
                '0080FF', 'FF8000', '808080'};
     n = numel(channelNames);
@@ -462,6 +520,9 @@ function channels = buildOmeroChannels(channelNames)
 end
 
 function writeZGroup(dir)
+    arguments
+        dir {mustBeText}
+    end
     writeJSON(fullfile(dir, '.zgroup'), struct('zarr_format', 2));
 end
 
@@ -471,6 +532,10 @@ function writeJSON(filePath, s)
     % refused by the zarr-python 3 reader with "Expected None, a
     % numcodecs.abc.Codec, or a dict ... Got <class 'list'> instead."
     % Post-process the string so those two fields become JSON null.
+    arguments
+        filePath {mustBeText}
+        s % anything jsonencode accepts
+    end
     txt = jsonencode(s);
     txt = regexprep(txt, '"compressor":\[\]', '"compressor":null');
     txt = regexprep(txt, '"filters":\[\]',    '"filters":null');

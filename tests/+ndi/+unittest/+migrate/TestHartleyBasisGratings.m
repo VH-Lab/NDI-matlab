@@ -2,7 +2,10 @@ classdef TestHartleyBasisGratings < matlab.unittest.TestCase
 %TESTHARTLEYBASISGRATINGS Unit tests for
 %   ndi.migrate.internal.hartleyBasisGratings -- the half of the Hartley
 %   decomposition that the stimulus_presentation document does not contain.
-%   Pure struct assembly: no database, no schema, no toolbox.
+%   Each basis function is a standalone `method` document (did-schema #88,
+%   V_eta_method_plan.md: recipe stimuli are method documents;
+%   `visual_grating` is deleted), built with did2.build, so these tests need
+%   DID-matlab V2 and a #88 schema set on DID_SCHEMA_PATH. No database.
 %
 %   THE FIXTURES ARE TRANSCRIBED FROM REAL 20211116 DOCUMENTS. The numbers
 %   they are scaled down from were all re-derived from the corpus rather than
@@ -28,6 +31,17 @@ classdef TestHartleyBasisGratings < matlab.unittest.TestCase
 %
 %   Run with:  runtests('ndi.unittest.migrate.TestHartleyBasisGratings')
 
+    methods (TestClassSetup)
+        function needTheV2Builder(testCase)
+            testCase.assumeTrue(~isempty(which('did2.build.method')), ...
+                'did2.build (DID-matlab V2) is not on the path');
+            schemaPath = getenv('DID_SCHEMA_PATH');
+            testCase.assumeTrue(~isempty(schemaPath) && ...
+                isfile(fullfile(schemaPath, 'method.json')), ...
+                'DID_SCHEMA_PATH does not hold did-schema #88 (`method`)');
+        end
+    end
+
     methods (Test)
 
         % ================= the shared basis ==============================
@@ -43,7 +57,7 @@ classdef TestHartleyBasisGratings < matlab.unittest.TestCase
                        presentationAndCalcs('pres_b', basis, [9 9.1 9.2 9.3]) ];
 
             [gratings, byPres, report] = ...
-                ndi.migrate.internal.hartleyBasisGratings(bodies, 'V_eta');
+                ndi.migrate.internal.hartleyBasisGratings(bodies);
 
             testCase.verifyEqual(report.generator_presentations, 2);
             testCase.verifyEqual(report.presentations_assembled, 2);
@@ -54,7 +68,7 @@ classdef TestHartleyBasisGratings < matlab.unittest.TestCase
 
             a = byPres('pres_a');
             b = byPres('pres_b');
-            testCase.verifyEqual(a.presented_ids, b.presented_ids, ...
+            testCase.verifyEqual(a.item_ids, b.item_ids, ...
                 'the two presentations do not reference the same documents');
         end
 
@@ -66,28 +80,28 @@ classdef TestHartleyBasisGratings < matlab.unittest.TestCase
                 'order', [1 2]);
             bodies = presentationAndCalcs('pres_a', basis, [0 0.1]);
             [gratings, byPres] = ...
-                ndi.migrate.internal.hartleyBasisGratings(bodies, 'V_eta');
+                ndi.migrate.internal.hartleyBasisGratings(bodies);
 
             testCase.verifyEqual(numel(gratings), 2, ...
                 ['the two signs of one (kx,ky) collapsed into one document ' ...
                  '-- `phase` is not separating them']);
             % cas = cos + sin = sqrt(2)*cos(theta - 45deg), and s = -1 is
             % that +180. Only the SEPARATION is established by the data.
-            testCase.verifyEqual(gratings{1}.visual_grating.value.phase, -45);
-            testCase.verifyEqual(gratings{2}.visual_grating.value.phase, 135);
+            testCase.verifyEqual(methodParam(gratings{1}, 'spatial phase'), -45);
+            testCase.verifyEqual(methodParam(gratings{2}, 'spatial phase'), 135);
             testCase.verifyEqual( ...
-                gratings{2}.visual_grating.value.phase ...
-                - gratings{1}.visual_grating.value.phase, 180);
+                methodParam(gratings{2}, 'spatial phase') ...
+                - methodParam(gratings{1}, 'spatial phase'), 180);
 
             % everything else about the pair IS the same, which is the point
-            testCase.verifyEqual(gratings{1}.visual_grating.value.angle, ...
-                gratings{2}.visual_grating.value.angle);
+            testCase.verifyEqual(methodParam(gratings{1}, 'orientation'), ...
+                methodParam(gratings{2}, 'orientation'));
             testCase.verifyEqual( ...
-                gratings{1}.visual_grating.value.source_geometry.spatial_frequency, ...
-                gratings{2}.visual_grating.value.source_geometry.spatial_frequency);
+                methodParam(gratings{1}, 'spatial frequency'), ...
+                methodParam(gratings{2}, 'spatial frequency'));
 
             e = byPres('pres_a');
-            testCase.verifyEqual(numel(e.presented_ids), 2);
+            testCase.verifyEqual(numel(e.item_ids), 2);
             testCase.verifyEqual(e.order, [1 2]);
         end
 
@@ -100,72 +114,59 @@ classdef TestHartleyBasisGratings < matlab.unittest.TestCase
             basis = struct('kx', [1 0 -1 0], 'ky', [0 1 0 -1], ...
                 's', [1 1 1 1], 'order', 1:4);
             bodies = presentationAndCalcs('pres_a', basis, [0 1 2 3]);
-            gratings = ndi.migrate.internal.hartleyBasisGratings(bodies, 'V_eta');
+            gratings = ndi.migrate.internal.hartleyBasisGratings(bodies);
             testCase.verifyEqual(numel(gratings), 4);
-            testCase.verifyEqual(gratings{1}.visual_grating.value.angle, 0);
-            testCase.verifyEqual(gratings{2}.visual_grating.value.angle, 90);
-            testCase.verifyEqual(gratings{3}.visual_grating.value.angle, 180);
-            testCase.verifyEqual(gratings{4}.visual_grating.value.angle, 270);
+            testCase.verifyEqual(methodParam(gratings{1}, 'orientation'), 0);
+            testCase.verifyEqual(methodParam(gratings{2}, 'orientation'), 90);
+            testCase.verifyEqual(methodParam(gratings{3}, 'orientation'), 180);
+            testCase.verifyEqual(methodParam(gratings{4}, 'orientation'), 270);
         end
 
-        function testTheSpatialFrequencyGoesToSourceGeometryInCyclesPerPixel(testCase)
-            % THE ONE THAT MUST NOT BE GOT WRONG. sqrt(kx^2+ky^2)/M is
-            % CYCLES PER PIXEL; `value.spatial_frequency` is documented as
-            % cycles per DEGREE, and the conversion factor is rig calibration
-            % (NewStim `pixels_per_cm` x distance x tan(1 deg)). A sweep of
-            % all 1220 documents of 20211116 over the 229 distinct field
-            % names they contain finds `distance` and no other term of that
-            % formula. Writing one into the other is a 20-50x error wearing
-            % the right unit.
+        function testTheSpatialFrequencyIsStatedInCyclesPerPixel(testCase)
+            % THE ONE THAT MUST NOT BE GOT WRONG. sqrt(kx^2+ky^2)/M is CYCLES
+            % PER PIXEL; the degree-domain value needs rig calibration nobody
+            % recorded (NewStim `pixels_per_cm` x distance x tan(1 deg); a
+            % sweep of all 1220 documents of 20211116 finds `distance` and no
+            % other term of that formula). So the parameter carries its own
+            % unit, never cycles per degree -- a 20-50x error wearing the
+            % right unit.
             basis = struct('kx', 3, 'ky', 4, 's', 1, 'order', 1);
             bodies = presentationAndCalcs('pres_a', basis, 0);
-            gratings = ndi.migrate.internal.hartleyBasisGratings(bodies, 'V_eta');
-            v = gratings{1}.visual_grating.value;
-
-            testCase.verifyEqual(v.source_geometry.spatial_frequency, 5/200, ...
+            gratings = ndi.migrate.internal.hartleyBasisGratings(bodies);
+            g = gratings{1};
+            testCase.verifyEqual(methodParam(g, 'spatial frequency'), 5/200, ...
                 'AbsTol', 1e-12);   % hypot(3,4)/M, M = 200
-            testCase.verifyEqual(v.source_geometry.unit, 'cycles/pixel');
-
-            % the degree-domain fields are ABSENT, not zero: a present 0 is
-            % the composite's blank value and would be indistinguishable from
-            % a measurement of zero
-            testCase.verifyFalse(isfield(v, 'spatial_frequency'));
-            testCase.verifyFalse(isfield(v, 'size'));
-            testCase.verifyFalse(isfield(v, 'position'));
-            testCase.verifyFalse(isfield(v.source_geometry, 'pixels_per_degree'));
-            % and a static basis frame has no drift rate to report
-            testCase.verifyFalse(isfield(v, 'temporal_frequency'));
+            testCase.verifyEqual(methodUnit(g, 'spatial frequency'), 'cycles per pixel');
+            % size, position and a drift rate are ABSENT, not zero
+            testCase.verifyEmpty(methodParam(g, 'size'));
+            testCase.verifyEmpty(methodParam(g, 'position'));
+            testCase.verifyEmpty(methodParam(g, 'temporal frequency'));
         end
 
-        function testDurationIsOneOverFpsAndTheBasisIsNeverBlank(testCase)
+        function testDurationIsOneOverFps(testCase)
             basis = struct('kx', 3, 'ky', 4, 's', 1, 'order', 1);
             bodies = presentationAndCalcs('pres_a', basis, 0);
-            [gratings, byPres] = ...
-                ndi.migrate.internal.hartleyBasisGratings(bodies, 'V_eta');
-            v = gratings{1}.visual_grating.value;
-            testCase.verifyEqual(v.duration, 0.1);      % fps = 10
-            testCase.verifyEqual(v.contrast, 1);
-            % the generator excludes the DC term (measured: (0,0) absent from
-            % all 3360 entries), so no basis function is a blank
-            testCase.verifyFalse(v.is_blank);
+            [gratings, byPres] = ndi.migrate.internal.hartleyBasisGratings(bodies);
+            g = gratings{1};
+            testCase.verifyEqual(methodParam(g, 'duration'), 0.1);      % fps = 10
+            testCase.verifyEqual(methodUnit(g, 'duration'), 'second');
+            testCase.verifyEqual(methodParam(g, 'contrast'), 1);
             testCase.verifyEqual(byPres('pres_a').duration, 0.1);
         end
 
-        function testTheMintedDocumentIsAStandaloneVisualGrating(testCase)
+        function testTheMintedDocumentIsAStandaloneMethod(testCase)
             basis = struct('kx', 3, 'ky', 4, 's', 1, 'order', 1);
             bodies = presentationAndCalcs('pres_a', basis, 0);
-            gratings = ndi.migrate.internal.hartleyBasisGratings(bodies, 'V_eta');
+            gratings = ndi.migrate.internal.hartleyBasisGratings(bodies);
             g = gratings{1};
-            testCase.verifyEqual(g.document_class.class_name, 'visual_grating');
-            testCase.verifyEqual(g.document_class.superclasses.class_name, 'data_type');
-            testCase.verifyEqual(g.document_class.schema_version, 'V_eta');
-            % base declares id / session_id / creation_timestamp mustBeNonEmpty
+            testCase.verifyEqual(g.document_class.class_name, 'method');
+            testCase.verifyEqual(g.method.term.name, 'Hartley basis grating');
             testCase.verifyNotEmpty(g.base.id);
-            testCase.verifyNotEmpty(g.base.session_id);
             testCase.verifyNotEmpty(g.base.creation_timestamp);
-            % a standalone stimulus document names no subject and no
-            % instrument -- it is a value, not a statement
-            testCase.verifyFalse(isfield(g, 'depends_on'));
+            % a stimulus recipe names no entity: it is a method, not a statement
+            if isfield(g, 'depends_on') && ~isempty(g.depends_on)
+                testCase.verifyFalse(any(strcmp({g.depends_on.name}, 'entity_id')));
+            end
         end
 
         % ================= the playlist and the timing ===================
@@ -185,12 +186,12 @@ classdef TestHartleyBasisGratings < matlab.unittest.TestCase
                 'order', [2 1 3]);
             bodies = presentationAndCalcs('pres_a', basis, [0 0.1 0.2]);
             [gratings, byPres] = ...
-                ndi.migrate.internal.hartleyBasisGratings(bodies, 'V_eta');
+                ndi.migrate.internal.hartleyBasisGratings(bodies);
             e = byPres('pres_a');
             testCase.verifyEqual(e.order, [1 2 3]);
-            testCase.verifyEqual(gratings{e.order(1)}.visual_grating.value.angle, 0);
-            testCase.verifyEqual(gratings{e.order(2)}.visual_grating.value.angle, 90);
-            testCase.verifyEqual(gratings{e.order(3)}.visual_grating.value.angle, 180);
+            testCase.verifyEqual(methodParam(gratings{e.order(1)}, 'orientation'), 0);
+            testCase.verifyEqual(methodParam(gratings{e.order(2)}, 'orientation'), 90);
+            testCase.verifyEqual(methodParam(gratings{e.order(3)}, 'orientation'), 180);
         end
 
         function testFrameTimesAreCarriedThrough(testCase)
@@ -201,7 +202,7 @@ classdef TestHartleyBasisGratings < matlab.unittest.TestCase
             % attached binaries.
             basis = smallBasis();
             bodies = presentationAndCalcs('pres_a', basis, [2.6884 2.7887 2.8891 2.9894]);
-            [~, byPres] = ndi.migrate.internal.hartleyBasisGratings(bodies, 'V_eta');
+            [~, byPres] = ndi.migrate.internal.hartleyBasisGratings(bodies);
             e = byPres('pres_a');
             testCase.verifyEqual(e.frame_times, ...
                 [2.6884 2.7887 2.8891 2.9894], 'AbsTol', 1e-12);
@@ -215,7 +216,7 @@ classdef TestHartleyBasisGratings < matlab.unittest.TestCase
             basis = smallBasis();
             bodies = presentationAndCalcs('pres_a', basis, [0 0.1]);   % 2 for 4
             [gratings, byPres, report] = ...
-                ndi.migrate.internal.hartleyBasisGratings(bodies, 'V_eta');
+                ndi.migrate.internal.hartleyBasisGratings(bodies);
             testCase.verifyEmpty(gratings);
             testCase.verifyEqual(double(byPres.Count), 0);
             testCase.verifyEqual(report.presentations_with_mismatched_frame_times, 1);
@@ -234,7 +235,7 @@ classdef TestHartleyBasisGratings < matlab.unittest.TestCase
             other.s = [-1 -1 -1 -1];
             bodies{end+1} = calcBody('calc_x', 'pres_a', other, [0 0.1 0.2 0.3]);
             [gratings, ~, report] = ...
-                ndi.migrate.internal.hartleyBasisGratings(bodies, 'V_eta');
+                ndi.migrate.internal.hartleyBasisGratings(bodies);
             testCase.verifyEmpty(gratings);
             testCase.verifyEqual(report.presentations_with_disagreeing_calcs, 1);
         end
@@ -242,7 +243,7 @@ classdef TestHartleyBasisGratings < matlab.unittest.TestCase
         function testAPresentationWithNoCalculatorIsCountedNotAssembled(testCase)
             bodies = { hartleyPresentation('pres_a') };
             [gratings, ~, report] = ...
-                ndi.migrate.internal.hartleyBasisGratings(bodies, 'V_eta');
+                ndi.migrate.internal.hartleyBasisGratings(bodies);
             testCase.verifyEmpty(gratings);
             testCase.verifyEqual(report.generator_presentations, 1);
             testCase.verifyEqual(report.presentations_without_calc, 1);
@@ -255,7 +256,7 @@ classdef TestHartleyBasisGratings < matlab.unittest.TestCase
             pres.stimulus_presentation.stimuli = struct('parameters', ...
                 struct('angle', 45, 'sFrequency', 0.04, 'tFrequency', 2));
             [~, ~, report] = ...
-                ndi.migrate.internal.hartleyBasisGratings({pres}, 'V_eta');
+                ndi.migrate.internal.hartleyBasisGratings({pres});
             testCase.verifyEqual(report.presentations_read, 1);
             testCase.verifyEqual(report.generator_presentations, 0);
             testCase.verifyNotEmpty(report.reason);
@@ -277,13 +278,13 @@ classdef TestHartleyBasisGratings < matlab.unittest.TestCase
                 'presentations_without_M'; 'presentations_assembled'; ...
                 'frames_assembled'; 'distinct_gratings_minted'; 'reason'};
 
-            [~, ~, empty] = ndi.migrate.internal.hartleyBasisGratings({}, 'V_eta');
+            [~, ~, empty] = ndi.migrate.internal.hartleyBasisGratings({});
             testCase.verifyEqual(fieldnames(empty), expected);
             testCase.verifyEqual(empty.bodies_read, 0);
             testCase.verifyNotEmpty(empty.reason);
 
             bodies = presentationAndCalcs('pres_a', smallBasis(), [0 0.1 0.2 0.3]);
-            [~, ~, ok] = ndi.migrate.internal.hartleyBasisGratings(bodies, 'V_eta');
+            [~, ~, ok] = ndi.migrate.internal.hartleyBasisGratings(bodies);
             testCase.verifyEqual(fieldnames(ok), expected);
             testCase.verifyEqual(ok.bodies_read, numel(bodies));
             testCase.verifyEqual(ok.hartley_calcs_read, 2);
@@ -299,7 +300,7 @@ classdef TestHartleyBasisGratings < matlab.unittest.TestCase
             bodies = presentationAndCalcs('pres_a', smallBasis(), [0 0.1 0.2 0.3]);
             bodies{2}.hartley_reverse_correlation.stimulus_properties.M = 999;
             [~, ~, report] = ...
-                ndi.migrate.internal.hartleyBasisGratings(bodies, 'V_eta');
+                ndi.migrate.internal.hartleyBasisGratings(bodies);
             testCase.verifyEqual(report.presentations_with_disagreeing_properties, 1);
             % and the PRESENTATION still wins -- it is the source document
             % for the stimulus, so the basis is assembled, not dropped
@@ -374,4 +375,30 @@ b.hartley_reverse_correlation.hartley_numbers = struct( ...
 b.hartley_reverse_correlation.stimulus_properties = struct( ...
     'M', 200, 'L_max', 20, 'K_max', 20, 'sf_max', 5, 'fps', 10, ...
     'rect', [-7 -138 793 662]);
+end
+
+function v = methodParam(doc, variable)
+%METHODPARAM A `method` document's parameter VARIABLE: the quantity's value or
+%   the term's name; [] when the document has no such parameter.
+[v, ~] = methodEntry(doc, variable);
+end
+
+function u = methodUnit(doc, variable)
+[~, u] = methodEntry(doc, variable);
+end
+
+function [v, u] = methodEntry(doc, variable)
+v = []; u = '';
+if ~isfield(doc.method, 'parameters'); return; end
+p = doc.method.parameters;
+if isstruct(p); p = num2cell(p); end
+for k = 1:numel(p)
+    e = p{k};
+    if strcmp(e.variable.name, variable)
+        if isfield(e, 'quantity') && ~isempty(e.quantity); v = e.quantity.value;
+        elseif isfield(e, 'term') && ~isempty(e.term); v = e.term.name; end
+        if isfield(e, 'unit') && isstruct(e.unit) && ~isempty(e.unit); u = e.unit.name; end
+        return;
+    end
+end
 end

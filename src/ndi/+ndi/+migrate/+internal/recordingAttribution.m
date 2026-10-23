@@ -2,7 +2,10 @@ function [plan, report] = recordingAttribution(structs)
 %RECORDINGATTRIBUTION Re-attribute a raw recording to the SPECIMEN it came from.
 %
 %   [PLAN, REPORT] = RECORDINGATTRIBUTION(STRUCTS) finds migrated
-%   `<modality>_observation` documents that name a PROBE as their subject and no
+%   modality observations (did-schema #88: an `observation` with a modality
+%   value kind, about its `entity_id`; before #88 a `<modality>_observation`
+%   about its `subject_id` -- both are read, and an edit keeps the spelling
+%   the document already has) that name a PROBE as their subject and no
 %   instrument at all, and plans the signed attribution for each: `subject_id`
 %   becomes the specimen, and the probe moves to `instrument_id` (T7).
 %
@@ -112,6 +115,9 @@ report = struct( ...
     'attributed',               0, ...
     'variable_carried',         0, ...
     'refused_no_donor',         0, ...
+    'observes_relations',       0, ...   % probe observes specimen, as kept
+    'attributed_via_observes',  0, ...   % no donor: the element's observes
+    'refused_ambiguous_observes', 0, ...
     'refused_no_subject',       0, ...
     'refused_self_reference',   0, ...
     'refused_ambiguous_probe',  0, ...
@@ -128,6 +134,31 @@ donorVariable = containers.Map('KeyType', 'char', 'ValueType', 'any');
 ambiguous     = containers.Map('KeyType', 'char', 'ValueType', 'logical');
 candidates    = {};
 
+% THE ELEMENT'S OWN `observes` RELATION (probe observes specimen), which the
+% migration keeps. Decided by Jess Haley, 2026-10-21 [preview attribution
+% without epoch files] (did-schema V_eta_recording_observation_plan.md): when
+% a corpus has no epoch files, so no per-epoch recording observation exists to
+% be the donor, a pyraview's observation takes its specimen from here. A probe
+% observing two different specimens is ambiguous and refused.
+S = ndi.migrate.internal.etaShape;
+observesOf = containers.Map('KeyType', 'char', 'ValueType', 'char');
+observesAmbiguous = containers.Map('KeyType', 'char', 'ValueType', 'logical');
+for k = 1:numel(structs)
+    body = structs{k};
+    if ~strcmp(S.className(body), 'directed_relation') ...
+            || ~strcmp(S.relationName(body), 'observes')
+        continue;
+    end
+    [ch, pa] = S.relationEnds(body);
+    if isempty(ch) || isempty(pa); continue; end
+    report.observes_relations = report.observes_relations + 1;
+    if isKey(observesOf, ch) && ~strcmp(observesOf(ch), pa)
+        observesAmbiguous(ch) = true;
+    else
+        observesOf(ch) = pa;
+    end
+end
+
 for k = 1:numel(structs)
     body = structs{k};
     if ~isObservation(body)
@@ -135,7 +166,7 @@ for k = 1:numel(structs)
     end
     report.observations = report.observations + 1;
     instrumentId = depValue(body, 'instrument_id');
-    subjectId    = depValue(body, 'subject_id');
+    subjectId    = ndi.migrate.internal.etaShape.aboutId(body);
     if ~isempty(instrumentId)
         report.donors = report.donors + 1;
         if isempty(subjectId)
@@ -161,7 +192,7 @@ report.ambiguous_probes = sort(keys(ambiguous));
 % ---- pass 2: plan an attribution per candidate ------------------------------
 for k = 1:numel(candidates)
     body     = candidates{k};
-    probeId  = depValue(body, 'subject_id');
+    probeId  = ndi.migrate.internal.etaShape.aboutId(body);
     if isempty(probeId)
         report.refused_no_subject = report.refused_no_subject + 1;
         continue;
@@ -170,25 +201,35 @@ for k = 1:numel(candidates)
         report.refused_ambiguous_probe = report.refused_ambiguous_probe + 1;
         continue;
     end
-    if ~isKey(donorSpecimen, probeId)
+    viaObserves = false;
+    if isKey(donorSpecimen, probeId)
+        specimenId = donorSpecimen(probeId);
+    elseif isKey(observesAmbiguous, probeId)
+        report.refused_ambiguous_observes = report.refused_ambiguous_observes + 1;
+        continue;
+    elseif isKey(observesOf, probeId)
+        % no per-epoch recording observation names this probe (no epoch
+        % files): the element's kept `observes` relation is the donor
+        specimenId = observesOf(probeId);
+        viaObserves = true;
+    else
         % The common, correct refusal: this observation's subject is not a probe
         % any signed emitter has attributed. Leaving it alone is right.
         report.refused_no_donor = report.refused_no_donor + 1;
         continue;
     end
-    specimenId = donorSpecimen(probeId);
     if strcmp(specimenId, probeId)
         report.refused_self_reference = report.refused_self_reference + 1;
         continue;
     end
 
     out = body;
-    out = setDep(out, 'subject_id',    specimenId);
+    out = ndi.migrate.internal.etaShape.setAbout(out, specimenId);
     out = setDep(out, 'instrument_id', probeId);
-    if isUnresolvedVariable(out)
+    if ~viaObserves && isUnresolvedVariable(out)
         donorVar = donorVariable(probeId);
         if ~isempty(donorVar) && ~isempty(nodeOf(donorVar))
-            out.subject_statement.variable = donorVar;
+            out.(variableBlock(out)).variable = donorVar;
             report.variable_carried = report.variable_carried + 1;
         end
     end
@@ -203,6 +244,9 @@ for k = 1:numel(candidates)
         'specimen_id',   specimenId, ...
         'instrument_id', probeId); %#ok<AGROW>
     report.attributed = report.attributed + 1;
+    if viaObserves
+        report.attributed_via_observes = report.attributed_via_observes + 1;
+    end
 end
 
 report.changed = ~isempty(plan);
@@ -211,19 +255,9 @@ end
 % ===================== helpers =========================================
 
 function tf = isObservation(body)
-%ISOBSERVATION A migrated observation document, by class name.
-%   The `_observation` suffix is the whole test, and it is deliberately broad:
-%   the donor map is keyed by instrument id and a candidate only matches when
-%   its subject IS a probe some donor named, so a `count_observation` or an
-%   `image_observation` that happens through here simply finds no donor. A
-%   narrower whitelist of modality classes would go stale the first time a
-%   modality is added and would fail SILENTLY, which is the worse direction.
-tf = false;
-name = className(body);
-if isempty(name)
-    return;
-end
-tf = numel(name) > 12 && strcmp(name(end-11:end), '_observation');
+% the `observation` direction on did-schema #88 (any value kind), or a
+% pre-#88 `<kind>_observation` leaf
+tf = strcmp(ndi.migrate.internal.etaShape.direction(body), 'observation');
 end
 
 function name = className(body)
@@ -241,36 +275,33 @@ if ~isfield(body, 'depends_on') || ~isstruct(body.depends_on)
 end
 for k = 1:numel(body.depends_on)
     d = body.depends_on(k);
-    if isfield(d, 'name') && strcmp(char(d.name), name) && isfield(d, 'value')
-        value = char(d.value);
+    if isfield(d, 'name') && strcmp(char(d.name), name)
+        value = ndi.migrate.internal.etaShape.entryValue(d);
         return;
     end
 end
 end
 
 function body = setDep(body, name, value)
-%SETDEP Set a dependency, replacing it in place or appending it.
-entry = struct('name', name, 'value', value);
-if ~isfield(body, 'depends_on') || ~isstruct(body.depends_on) ...
-        || isempty(body.depends_on)
-    body.depends_on = entry;
-    return;
-end
-for k = 1:numel(body.depends_on)
-    if isfield(body.depends_on(k), 'name') ...
-            && strcmp(char(body.depends_on(k).name), name)
-        body.depends_on(k).value = value;
-        return;
-    end
-end
-body.depends_on(end+1) = entry;
+body = ndi.migrate.internal.etaShape.setEdge(body, name, value);
 end
 
 function v = getVariable(body)
 v = [];
-if isfield(body, 'subject_statement') && isstruct(body.subject_statement) ...
-        && isfield(body.subject_statement, 'variable')
-    v = body.subject_statement.variable;
+blk = variableBlock(body);
+if ~isempty(blk) && isfield(body.(blk), 'variable')
+    v = body.(blk).variable;
+end
+end
+
+function blk = variableBlock(body)
+% `statement` on did-schema #88, `subject_statement` before
+blk = '';
+for b = {'statement', 'subject_statement'}
+    if isfield(body, b{1}) && isstruct(body.(b{1}))
+        blk = b{1};
+        return;
+    end
 end
 end
 

@@ -1,0 +1,2313 @@
+{
+ "_about": "Dataset-level metadata for the Haley V2 import (stage 2). Sources: the eLife paper (Haley, Chen, Aoi, Chalasani, eLife 13:RP103191, doi:10.7554/eLife.103191; Key resources table, Materials and methods, Funding, Author contributions, Author ORCIDs, Data availability) and the NDI Cloud dataset page (licence). Organization identifiers were checked against the ROR registry (api.ror.org) and settled with Jess in decision #89. Every entry has a local `key`; references between entries use keys, which the maker resolves to document ids. See import_V2_decisions.md.",
+ "organizations": [
+  {
+   "key": "salk",
+   "name": "Salk Institute for Biological Studies",
+   "identifiers": [
+    {
+     "scheme": "ROR",
+     "value": "https://ror.org/03xez1567"
+    }
+   ]
+  },
+  {
+   "key": "salk_mnl",
+   "name": "Molecular Neurobiology Laboratory",
+   "parent": "salk"
+  },
+  {
+   "key": "ucsd",
+   "name": "University of California, San Diego",
+   "short_name": "UC San Diego",
+   "identifiers": [
+    {
+     "scheme": "ROR",
+     "value": "https://ror.org/0168r3w48"
+    }
+   ]
+  },
+  {
+   "key": "ucsd_ngp",
+   "name": "Neurosciences Graduate Program",
+   "parent": "ucsd",
+   "identifiers": [
+    {
+     "scheme": "URL",
+     "value": "https://neurograd.ucsd.edu/"
+    }
+   ]
+  },
+  {
+   "key": "ucsd_hdsi",
+   "name": "Halıcıoğlu Data Science Institute",
+   "parent": "ucsd",
+   "identifiers": [
+    {
+     "scheme": "URL",
+     "value": "https://datascience.ucsd.edu/"
+    }
+   ]
+  },
+  {
+   "key": "ucsd_neurobiology",
+   "name": "Department of Neurobiology",
+   "parent": "ucsd",
+   "identifiers": [
+    {
+     "scheme": "URL",
+     "value": "https://biology.ucsd.edu/research/academic-departments/nb/index.html"
+    }
+   ]
+  },
+  {
+   "key": "nih",
+   "name": "National Institutes of Health",
+   "short_name": "NIH",
+   "identifiers": [
+    {
+     "scheme": "ROR",
+     "value": "https://ror.org/01cwqze88"
+    }
+   ]
+  },
+  {
+   "key": "nimh",
+   "name": "National Institute of Mental Health",
+   "short_name": "NIMH",
+   "identifiers": [
+    {
+     "scheme": "ROR",
+     "value": "https://ror.org/05xj56w78"
+    }
+   ],
+   "parent": "nih"
+  },
+  {
+   "key": "nsf",
+   "name": "U.S. National Science Foundation",
+   "short_name": "NSF",
+   "identifiers": [
+    {
+     "scheme": "ROR",
+     "value": "https://ror.org/021nxhr62"
+    }
+   ]
+  },
+  {
+   "key": "dorsett_brown",
+   "name": "Joe W. and Dorothy Dorsett Brown Foundation",
+   "identifiers": [
+    {
+     "scheme": "ROR",
+     "value": "https://ror.org/043291659"
+    }
+   ]
+  },
+  {
+   "key": "cgc",
+   "name": "Caenorhabditis Genetics Center",
+   "short_name": "CGC",
+   "identifiers": [
+    {
+     "scheme": "URL",
+     "value": "https://cgc.umn.edu/"
+    }
+   ]
+  },
+  {
+   "key": "ndi_cloud",
+   "name": "NDI Cloud",
+   "identifiers": [
+    {
+     "scheme": "URL",
+     "value": "https://ndi-cloud.com/"
+    }
+   ]
+  },
+  {
+   "key": "norpix",
+   "name": "NorPix",
+   "identifiers": [
+    {
+     "scheme": "URL",
+     "value": "https://www.norpix.com/"
+    }
+   ]
+  },
+  {
+   "key": "mbf",
+   "name": "MBF Bioscience",
+   "identifiers": [
+    {
+     "scheme": "ROR",
+     "value": "https://ror.org/02zynam48"
+    }
+   ]
+  },
+  {
+   "key": "mathworks",
+   "name": "MathWorks",
+   "identifiers": [
+    {
+     "scheme": "ROR",
+     "value": "https://ror.org/01n8qtk87"
+    }
+   ]
+  },
+  {
+   "key": "adobe",
+   "name": "Adobe",
+   "identifiers": [
+    {
+     "scheme": "ROR",
+     "value": "https://ror.org/059tvcg64"
+    }
+   ]
+  },
+  {
+   "key": "pixelink",
+   "name": "PixeLink",
+   "identifiers": [
+    {
+     "scheme": "URL",
+     "value": "https://www.navitar.com/pixelink"
+    }
+   ],
+   "parent": "navitar"
+  },
+  {
+   "key": "navitar",
+   "name": "Navitar",
+   "identifiers": [
+    {
+     "scheme": "URL",
+     "value": "https://www.navitar.com/"
+    }
+   ]
+  },
+  {
+   "key": "advanced_illumination",
+   "name": "Advanced Illumination",
+   "identifiers": [
+    {
+     "scheme": "URL",
+     "value": "https://advancedillumination.com/"
+    }
+   ]
+  },
+  {
+   "key": "zeiss",
+   "name": "Carl Zeiss",
+   "identifiers": [
+    {
+     "scheme": "ROR",
+     "value": "https://ror.org/02mp31p96"
+    }
+   ]
+  },
+  {
+   "key": "molecular_devices",
+   "name": "Molecular Devices",
+   "identifiers": [
+    {
+     "scheme": "ROR",
+     "value": "https://ror.org/0018wmh19"
+    }
+   ]
+  },
+  {
+   "key": "cricut",
+   "name": "Cricut",
+   "identifiers": [
+    {
+     "scheme": "URL",
+     "value": "https://cricut.com/"
+    }
+   ]
+  },
+  {
+   "key": "bd",
+   "name": "Becton, Dickinson and Company",
+   "short_name": "BD",
+   "identifiers": [
+    {
+     "scheme": "ROR",
+     "value": "https://ror.org/048vrgr14"
+    }
+   ]
+  },
+  {
+   "key": "salk_media_kitchen",
+   "name": "Media Kitchen",
+   "parent": "salk",
+   "_note": "Made the LB and S-Complete (Jess, 2026-10-02; decision #56)."
+  },
+  {
+   "key": "emd_millipore",
+   "name": "EMD Millipore",
+   "identifiers": [
+    {
+     "scheme": "ROR",
+     "value": "https://ror.org/04cyww122"
+    }
+   ]
+  },
+  {
+   "key": "fisher",
+   "name": "Thermo Fisher Scientific",
+   "identifiers": [
+    {
+     "scheme": "ROR",
+     "value": "https://ror.org/03x1ewr52"
+    }
+   ]
+  },
+  {
+   "key": "sigma_aldrich",
+   "name": "Sigma-Aldrich",
+   "identifiers": [
+    {
+     "scheme": "URL",
+     "value": "https://www.sigmaaldrich.com/"
+    }
+   ],
+   "parent": "emd_millipore"
+  },
+  {
+   "key": "alfa_aesar",
+   "name": "Alfa Aesar",
+   "identifiers": [
+    {
+     "scheme": "URL",
+     "value": "https://www.alfa.com/"
+    }
+   ],
+   "parent": "fisher",
+   "_note": "Now part of Thermo Fisher Scientific: alfa.com redirects to Thermo Fisher's chemicals pages (checked 2026-10-19)."
+  },
+  {
+   "key": "decon_labs",
+   "name": "Decon Labs",
+   "identifiers": [
+    {
+     "scheme": "URL",
+     "value": "https://deconlabs.com/"
+    }
+   ],
+   "_note": "Maker of Koptec ethanol."
+  }
+ ],
+ "people": [
+  {
+   "key": "haley",
+   "given_name": "Jessica A",
+   "family_name": "Haley",
+   "identifiers": [
+    {
+     "scheme": "ORCID",
+     "value": "https://orcid.org/0000-0001-6282-7124"
+    }
+   ],
+   "affiliations": [
+    "ucsd_ngp",
+    "salk_mnl"
+   ]
+  },
+  {
+   "key": "chen",
+   "given_name": "Tianyi",
+   "family_name": "Chen",
+   "identifiers": [
+    {
+     "scheme": "ORCID",
+     "value": "https://orcid.org/0009-0003-7572-2155"
+    }
+   ],
+   "affiliations": [
+    "salk_mnl"
+   ]
+  },
+  {
+   "key": "aoi",
+   "given_name": "Mikio",
+   "family_name": "Aoi",
+   "email": "maoi@ucsd.edu",
+   "identifiers": [
+    {
+     "scheme": "ORCID",
+     "value": "https://orcid.org/0000-0002-7052-880X"
+    }
+   ],
+   "affiliations": [
+    "ucsd_hdsi",
+    "ucsd_neurobiology"
+   ]
+  },
+  {
+   "key": "chalasani",
+   "given_name": "Sreekanth H",
+   "family_name": "Chalasani",
+   "email": "schalasani@salk.edu",
+   "identifiers": [
+    {
+     "scheme": "ORCID",
+     "value": "https://orcid.org/0000-0003-2522-8338"
+    }
+   ],
+   "affiliations": [
+    "salk_mnl"
+   ]
+  }
+ ],
+ "funding": [
+  {
+   "key": "nih_r01",
+   "name": "RO1 MH096881",
+   "identifiers": [
+    {
+     "scheme": "AwardNumber",
+     "value": "R01 MH096881"
+    }
+   ],
+   "funder": "nimh",
+   "recipients": [
+    "chalasani"
+   ]
+  },
+  {
+   "key": "dorsett_brown_award",
+   "name": "Dorsett Brown Foundation award",
+   "funder": "dorsett_brown",
+   "recipients": [
+    "haley",
+    "chalasani"
+   ]
+  },
+  {
+   "key": "salk_innovation",
+   "name": "Salk Innovation Grant",
+   "funder": "salk",
+   "recipients": [
+    "haley",
+    "chalasani"
+   ]
+  },
+  {
+   "key": "nsf_grfp",
+   "name": "Graduate Research Fellowship Program",
+   "identifiers": [
+    {
+     "scheme": "AwardNumber",
+     "value": "DGE-1650112"
+    }
+   ],
+   "funder": "nsf",
+   "recipients": [
+    "haley"
+   ]
+  },
+  {
+   "key": "ucsd_ssra",
+   "name": "Undergraduate Summer Research Award",
+   "funder": "ucsd",
+   "recipients": [
+    "chen"
+   ]
+  }
+ ],
+ "publications": [
+  {
+   "key": "elife_2025",
+   "name": "Accept–reject decision-making revealed via a quantitative and ethological study of C. elegans foraging",
+   "publication_date": "2025-09-10",
+   "authors": "Haley JA, Chen T, Aoi M, Chalasani SH",
+   "identifiers": [
+    {
+     "scheme": "DOI",
+     "value": "https://doi.org/10.7554/eLife.103191"
+    }
+   ]
+  }
+ ],
+ "web_resources": [
+  {
+   "key": "code", "type": "software",
+   "name": "Analysis code (GitHub)",
+   "identifiers": [
+    {
+     "scheme": "URL",
+     "value": "https://github.com/shreklab/Haley-et-al-2024"
+    }
+   ]
+  },
+  {
+   "key": "ndi_cloud_page",
+   "name": "NDI Cloud dataset page",
+   "identifiers": [
+    {
+     "scheme": "URL",
+     "value": "https://ndi-cloud.com/datasets/682e7772cdf3f24938176fac"
+    }
+   ],
+   "host": "ndi_cloud"
+  },
+  {
+   "key": "wormbook_maintenance", "type": "publication",
+   "name": "Stiernagle T (2006) Maintenance of C. elegans. WormBook",
+   "identifiers": [
+    {
+     "scheme": "DOI",
+     "value": "https://doi.org/10.1895/wormbook.1.101.1"
+    }
+   ],
+   "_note": "Source of truth for the standard recipes (S Basal, S-Complete, trace metals, 1 M potassium citrate, 1 M potassium phosphate pH 6, LB); decision #56."
+  }
+ ],
+ "software": [
+  {
+   "key": "streampix",
+   "name": "StreamPix",
+   "version": "8",
+   "identifiers": [
+    {
+     "scheme": "RRID",
+     "value": "RRID:SCR_015773"
+    }
+   ],
+   "vendor": "norpix"
+  },
+  {
+   "key": "wormlab",
+   "name": "WormLab",
+   "identifiers": [
+    {
+     "scheme": "RRID",
+     "value": "RRID:SCR_017669"
+    }
+   ],
+   "vendor": "mbf"
+  },
+  {
+   "key": "matlab",
+   "name": "MATLAB",
+   "version": "2024a",
+   "identifiers": [
+    {
+     "scheme": "RRID",
+     "value": "RRID:SCR_001622"
+    }
+   ],
+   "vendor": "mathworks"
+  },
+  {
+   "key": "photoshop",
+   "name": "Photoshop",
+   "version": "2024",
+   "identifiers": [
+    {
+     "scheme": "RRID",
+     "value": "RRID:SCR_014199"
+    }
+   ],
+   "vendor": "adobe"
+  },
+  {
+   "key": "illustrator",
+   "name": "Illustrator",
+   "version": "2024",
+   "identifiers": [
+    {
+     "scheme": "RRID",
+     "value": "RRID:SCR_010279"
+    }
+   ],
+   "vendor": "adobe"
+  },
+  {
+   "key": "haley_analysis",
+   "name": "Haley et al. 2024 analysis package",
+   "version": "44a89de21430cea3312d312e17054647a074f90c",
+   "identifiers": [
+    {
+     "scheme": "URL",
+     "value": "https://github.com/shreklab/Haley-et-al-2024"
+    }
+   ]
+  },
+  {
+   "key": "macos",
+   "name": "macOS"
+  }
+ ],
+ "products": [
+  {
+   "key": "camera",
+   "name": "PL-B741F camera",
+   "vendor": "pixelink"
+  },
+  {
+   "key": "lens_60135",
+   "name": "Navitar lens",
+   "catalog_number": "1-60135",
+   "vendor": "navitar"
+  },
+  {
+   "key": "lens_6044",
+   "name": "Navitar 0.25x lens",
+   "catalog_number": "1-6044",
+   "vendor": "navitar"
+  },
+  {
+   "key": "backlight",
+   "name": "Edge-lit backlight",
+   "vendor": "advanced_illumination"
+  },
+  {
+   "key": "axio_zoom",
+   "name": "Axio Zoom.V16",
+   "vendor": "zeiss"
+  },
+  {
+   "key": "spectrophotometer",
+   "name": "SpectraMax Plus 384",
+   "vendor": "molecular_devices"
+  },
+  {
+   "key": "cutter",
+   "name": "Cricut Maker 3",
+   "vendor": "cricut"
+  },
+  {
+   "key": "peptone",
+   "name": "Bacto peptone",
+   "catalog_number": "211677",
+   "vendor": "bd"
+  },
+  {
+   "key": "agar",
+   "name": "Agar",
+   "catalog_number": "101614",
+   "vendor": "emd_millipore",
+   "_note": "240102B_NGM_plates (Benchling)."
+  },
+  {
+   "key": "nacl_s271",
+   "name": "Sodium chloride",
+   "catalog_number": "S271-1",
+   "vendor": "fisher",
+   "_note": "240102B_NGM_plates (Benchling)."
+  },
+  {
+   "key": "kh2po4_bp362",
+   "name": "Potassium phosphate monobasic",
+   "catalog_number": "BP362",
+   "vendor": "fisher",
+   "_note": "231109_KPO4_stock (Benchling)."
+  },
+  {
+   "key": "k2hpo4_p5504",
+   "name": "Potassium phosphate dibasic trihydrate",
+   "catalog_number": "P5504",
+   "vendor": "sigma_aldrich",
+   "_note": "231109_KPO4_stock (Benchling): the 500 g bottle, P5504-500G."
+  },
+  {
+   "key": "lb_kitchen",
+   "name": "LB",
+   "vendor": "salk_media_kitchen"
+  },
+  {
+   "key": "s_complete_kitchen",
+   "name": "S-Complete",
+   "vendor": "salk_media_kitchen"
+  },
+  {
+   "key": "cholesterol_a11470",
+   "name": "Cholesterol, 95%",
+   "catalog_number": "A11470",
+   "vendor": "alfa_aesar",
+   "_note": "Cholesterol stock (Benchling): 95% Cholesterol - Alfa A11470."
+  },
+  {
+   "key": "ethanol_koptec_190",
+   "name": "Koptec 190 Proof Ethanol",
+   "vendor": "decon_labs",
+   "_note": "Cholesterol stock (Benchling): 190 Proof Ethanol - Koptec. 190 proof is 95% ethanol by volume."
+  },
+  {
+   "key": "mgso4_m7506",
+   "name": "Magnesium sulfate",
+   "catalog_number": "M7506",
+   "vendor": "sigma_aldrich",
+   "_note": "MgSO4 stock (Benchling): the 500 g bottle, M7506-500G. Anhydrous: 12.037 g in 100 mL is 1 M at 120.37 g/mol."
+  },
+  {
+   "key": "cacl2_c70",
+   "name": "Calcium chloride dihydrate",
+   "catalog_number": "C70",
+   "vendor": "fisher",
+   "_note": "CaCl2 stock (Benchling): 14.7 g in 100 mL is 1 M at 147.01 g/mol, the dihydrate."
+  }
+ ],
+ "strains": [
+  {
+   "key": "OP50",
+   "name": "OP50",
+   "node": "WormBase:WBStrain00041969",
+   "_node_synonym": "Also NCBITaxon:637912 (the V1 import's identifier, Escherichia coli OP50): a term carries one node, so it is a second identifier below (Jess, 2026-10-08), beside its URL.",
+   "species": {
+    "node": "NCBITaxon:562",
+    "name": "Escherichia coli"
+   },
+   "genetic_strain_type": {
+    "node": "BAO:0000089",
+    "name": "wild type"
+   },
+   "identifiers": [
+    {
+     "scheme": "RRID",
+     "value": "RRID:WB-STRAIN:WBStrain00041969"
+    },
+    {
+     "scheme": "URL",
+     "value": "https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?id=637912"
+    },
+    {
+     "scheme": "NCBITaxon",
+     "value": "NCBITaxon:637912"
+    }
+   ],
+   "source": "cgc"
+  },
+  {
+   "key": "OP50-GFP",
+   "name": "OP50-GFP",
+   "node": "WormBase:WBStrain00041972",
+   "species": {
+    "node": "NCBITaxon:562",
+    "name": "Escherichia coli"
+   },
+   "genetic_strain_type": {
+    "node": "OBI:1000048",
+    "name": "transgenic organism"
+   },
+   "background": [
+    "OP50"
+   ],
+   "description": "OP50 carrying a GFP plasmid (pFPV25.1); ampicillin resistant.",
+   "source": "cgc",
+   "identifiers": [
+    {
+     "scheme": "RRID",
+     "value": "RRID:WB-STRAIN:WBStrain00041972"
+    }
+   ]
+  },
+  {
+   "key": "N2",
+   "name": "N2",
+   "node": "WormBase:WBStrain00000001",
+   "species": {
+    "node": "NCBITaxon:6239",
+    "name": "Caenorhabditis elegans"
+   },
+   "biological_sex": {
+    "node": "PATO:0001340",
+    "name": "hermaphrodite"
+   },
+   "genetic_strain_type": {
+    "node": "BAO:0000089",
+    "name": "wild type"
+   },
+   "description": "N2 Bristol, wild isolate.",
+   "source": "cgc",
+   "identifiers": [
+    {
+     "scheme": "RRID",
+     "value": "RRID:WB-STRAIN:WBStrain00000001"
+    }
+   ]
+  },
+  {
+   "key": "PR811",
+   "name": "PR811",
+   "background": [
+    "N2"
+   ],
+   "node": "WormBase:WBStrain00030796",
+   "genotype": "osm-6(p811) V",
+   "species": {
+    "node": "NCBITaxon:6239",
+    "name": "Caenorhabditis elegans"
+   },
+   "biological_sex": {
+    "node": "PATO:0001340",
+    "name": "hermaphrodite"
+   },
+   "genetic_strain_type": {
+    "node": "NCIT:C25360",
+    "name": "Mutant"
+   },
+   "source": "cgc",
+   "identifiers": [
+    {
+     "scheme": "RRID",
+     "value": "RRID:WB-STRAIN:WBStrain00030796"
+    }
+   ]
+  },
+  {
+   "key": "TU253",
+   "name": "TU253",
+   "background": [
+    "N2"
+   ],
+   "node": "WormBase:WBStrain00035037",
+   "genotype": "mec-4(u253) X",
+   "species": {
+    "node": "NCBITaxon:6239",
+    "name": "Caenorhabditis elegans"
+   },
+   "biological_sex": {
+    "node": "PATO:0001340",
+    "name": "hermaphrodite"
+   },
+   "genetic_strain_type": {
+    "node": "NCIT:C25360",
+    "name": "Mutant"
+   },
+   "source": "cgc",
+   "identifiers": [
+    {
+     "scheme": "RRID",
+     "value": "RRID:WB-STRAIN:WBStrain00035037"
+    }
+   ]
+  },
+  {
+   "key": "CB1112",
+   "name": "CB1112",
+   "background": [
+    "N2"
+   ],
+   "node": "WormBase:WBStrain00004246",
+   "_node": "WormBase id from the V1 import (doImport.m, strainNames for strains its lookup could not resolve); the V2 search found none (2026-10-07).",
+   "genotype": "cat-2(e1112) II",
+   "species": {
+    "node": "NCBITaxon:6239",
+    "name": "Caenorhabditis elegans"
+   },
+   "biological_sex": {
+    "node": "PATO:0001340",
+    "name": "hermaphrodite"
+   },
+   "genetic_strain_type": {
+    "node": "NCIT:C25360",
+    "name": "Mutant"
+   },
+   "source": "cgc",
+   "identifiers": [
+    {
+     "scheme": "RRID",
+     "value": "RRID:WB-STRAIN:WBStrain00004246"
+    }
+   ]
+  },
+  {
+   "key": "CX6448",
+   "name": "CX6448",
+   "background": [
+    "N2"
+   ],
+   "node": "WormBase:WBStrain00005280",
+   "_node": "WormBase id from the V1 import (doImport.m, strainNames for strains its lookup could not resolve); the V2 search found none (2026-10-07).",
+   "genotype": "gcy-35(ok769) I",
+   "species": {
+    "node": "NCBITaxon:6239",
+    "name": "Caenorhabditis elegans"
+   },
+   "biological_sex": {
+    "node": "PATO:0001340",
+    "name": "hermaphrodite"
+   },
+   "genetic_strain_type": {
+    "node": "NCIT:C25360",
+    "name": "Mutant"
+   },
+   "source": "cgc",
+   "identifiers": [
+    {
+     "scheme": "RRID",
+     "value": "RRID:WB-STRAIN:WBStrain00005280"
+    }
+   ]
+  },
+  {
+   "key": "DA465",
+   "name": "DA465",
+   "background": [
+    "N2"
+   ],
+   "node": "WormBase:WBStrain00005463",
+   "genotype": "eat-2(ad465) II",
+   "species": {
+    "node": "NCBITaxon:6239",
+    "name": "Caenorhabditis elegans"
+   },
+   "biological_sex": {
+    "node": "PATO:0001340",
+    "name": "hermaphrodite"
+   },
+   "genetic_strain_type": {
+    "node": "NCIT:C25360",
+    "name": "Mutant"
+   },
+   "source": "cgc",
+   "identifiers": [
+    {
+     "scheme": "RRID",
+     "value": "RRID:WB-STRAIN:WBStrain00005463"
+    }
+   ]
+  },
+  {
+   "key": "DA609",
+   "name": "DA609",
+   "background": [
+    "N2"
+   ],
+   "node": "WormBase:WBStrain00005493",
+   "genotype": "npr-1(ad609) X",
+   "species": {
+    "node": "NCBITaxon:6239",
+    "name": "Caenorhabditis elegans"
+   },
+   "biological_sex": {
+    "node": "PATO:0001340",
+    "name": "hermaphrodite"
+   },
+   "genetic_strain_type": {
+    "node": "NCIT:C25360",
+    "name": "Mutant"
+   },
+   "source": "cgc",
+   "identifiers": [
+    {
+     "scheme": "RRID",
+     "value": "RRID:WB-STRAIN:WBStrain00005493"
+    }
+   ]
+  },
+  {
+   "key": "FK103",
+   "name": "FK103",
+   "background": [
+    "N2"
+   ],
+   "node": "WormBase:WBStrain00007498",
+   "_node": "Looked up by hand on wormbase.org by Jess, 2026-10-07 (ndi.ontology.lookup WBStrain:<name> fails: the WormBase scrape and API both error).",
+   "genotype": "tax-4(ks28) III",
+   "species": {
+    "node": "NCBITaxon:6239",
+    "name": "Caenorhabditis elegans"
+   },
+   "biological_sex": {
+    "node": "PATO:0001340",
+    "name": "hermaphrodite"
+   },
+   "genetic_strain_type": {
+    "node": "NCIT:C25360",
+    "name": "Mutant"
+   },
+   "source": "cgc",
+   "identifiers": [
+    {
+     "scheme": "RRID",
+     "value": "RRID:WB-STRAIN:WBStrain00007498"
+    }
+   ]
+  },
+  {
+   "key": "MT13113",
+   "name": "MT13113",
+   "background": [
+    "N2"
+   ],
+   "node": "WormBase:WBStrain00027424",
+   "_node": "Looked up by hand on wormbase.org by Jess, 2026-10-07 (ndi.ontology.lookup WBStrain:<name> fails: the WormBase scrape and API both error).",
+   "genotype": "tdc-1(n3419) II",
+   "species": {
+    "node": "NCBITaxon:6239",
+    "name": "Caenorhabditis elegans"
+   },
+   "biological_sex": {
+    "node": "PATO:0001340",
+    "name": "hermaphrodite"
+   },
+   "genetic_strain_type": {
+    "node": "NCIT:C25360",
+    "name": "Mutant"
+   },
+   "source": "cgc",
+   "identifiers": [
+    {
+     "scheme": "RRID",
+     "value": "RRID:WB-STRAIN:WBStrain00027424"
+    }
+   ]
+  },
+  {
+   "key": "MT15434",
+   "name": "MT15434",
+   "background": [
+    "N2"
+   ],
+   "node": "WormBase:WBStrain00027519",
+   "_node": "WormBase id from the V1 import (doImport.m, strainNames for strains its lookup could not resolve); the V2 search found none (2026-10-07).",
+   "genotype": "tph-1(mg280) II",
+   "species": {
+    "node": "NCBITaxon:6239",
+    "name": "Caenorhabditis elegans"
+   },
+   "biological_sex": {
+    "node": "PATO:0001340",
+    "name": "hermaphrodite"
+   },
+   "genetic_strain_type": {
+    "node": "NCIT:C25360",
+    "name": "Mutant"
+   },
+   "source": "cgc",
+   "identifiers": [
+    {
+     "scheme": "RRID",
+     "value": "RRID:WB-STRAIN:WBStrain00027519"
+    }
+   ]
+  },
+  {
+   "key": "MT9455",
+   "name": "MT9455",
+   "background": [
+    "N2"
+   ],
+   "node": "WormBase:WBStrain00027363",
+   "_node": "Looked up by hand on wormbase.org by Jess, 2026-10-07 (ndi.ontology.lookup WBStrain:<name> fails: the WormBase scrape and API both error).",
+   "genotype": "tbh-1(n3247) X",
+   "species": {
+    "node": "NCBITaxon:6239",
+    "name": "Caenorhabditis elegans"
+   },
+   "biological_sex": {
+    "node": "PATO:0001340",
+    "name": "hermaphrodite"
+   },
+   "genetic_strain_type": {
+    "node": "NCIT:C25360",
+    "name": "Mutant"
+   },
+   "source": "cgc",
+   "identifiers": [
+    {
+     "scheme": "RRID",
+     "value": "RRID:WB-STRAIN:WBStrain00027363"
+    }
+   ]
+  }
+ ],
+ "chemicals": [
+  {
+   "key": "water",
+   "substance": {
+    "node": "CHEBI:15377",
+    "name": "water"
+   }
+  },
+  {
+   "key": "agar_emd",
+   "substance": {
+    "node": "CHEBI:2509",
+    "name": "agar"
+   },
+   "product": "agar"
+  },
+  {
+   "key": "nacl_fisher",
+   "substance": {
+    "node": "CHEBI:26710",
+    "name": "sodium chloride"
+   },
+   "product": "nacl_s271"
+  },
+  {
+   "key": "nacl",
+   "substance": {
+    "node": "CHEBI:26710",
+    "name": "sodium chloride"
+   }
+  },
+  {
+   "key": "peptone_bd",
+   "substance": {
+    "node": "MICRO:0000178",
+    "name": "peptone"
+   },
+   "product": "peptone"
+  },
+  {
+   "key": "kh2po4",
+   "substance": {
+    "node": "CHEBI:63036",
+    "name": "potassium dihydrogen phosphate"
+   }
+  },
+  {
+   "key": "k2hpo4",
+   "substance": {
+    "node": "CHEBI:131527",
+    "name": "dipotassium hydrogen phosphate"
+   }
+  },
+  {
+   "key": "kh2po4_fisher",
+   "substance": {
+    "node": "CHEBI:63036",
+    "name": "potassium dihydrogen phosphate"
+   },
+   "product": "kh2po4_bp362"
+  },
+  {
+   "key": "k2hpo4_3h2o_sigma",
+   "substance": {
+    "node": "EMPTY:0000313",
+    "name": "dipotassium hydrogen phosphate trihydrate"
+   },
+   "product": "k2hpo4_p5504"
+  },
+  {
+   "key": "mgso4_sigma",
+   "substance": {
+    "node": "CHEBI:32599",
+    "name": "magnesium sulfate"
+   },
+   "product": "mgso4_m7506"
+  },
+  {
+   "key": "cacl2_2h2o_fisher",
+   "substance": {
+    "node": "CHEBI:86158",
+    "name": "calcium chloride dihydrate"
+   },
+   "product": "cacl2_c70"
+  },
+  {
+   "key": "cholesterol_alfa",
+   "substance": {
+    "node": "CHEBI:16113",
+    "name": "cholesterol"
+   },
+   "product": "cholesterol_a11470"
+  },
+  {
+   "key": "ethanol_koptec",
+   "substance": {
+    "node": "CHEBI:16236",
+    "name": "ethanol"
+   },
+   "product": "ethanol_koptec_190"
+  },
+  {
+   "key": "tryptone",
+   "substance": {
+    "node": "MICRO:0000182",
+    "name": "tryptone"
+   }
+  },
+  {
+   "key": "yeast_extract",
+   "substance": {
+    "node": "MICRO:0000201",
+    "name": "yeast extract"
+   }
+  },
+  {
+   "key": "citric_acid_monohydrate",
+   "substance": {
+    "node": "CHEBI:31404",
+    "name": "Citric acid monohydrate"
+   }
+  },
+  {
+   "key": "tripotassium_citrate_monohydrate",
+   "substance": {
+    "node": "CHEBI:64746",
+    "name": "potassium citrate monohydrate"
+   }
+  },
+  {
+   "key": "edta_disodium",
+   "substance": {
+    "node": "CHEBI:64758",
+    "name": "EDTA disodium salt dihydrate"
+   },
+   "_note": "The dihydrate: the trace metals recipe's 1.86 g/L is 5 mM only at 372.24 g/mol, and each of its other metals is a round molarity only as its hydrate (decision #91)."
+  },
+  {
+   "key": "feso4",
+   "substance": {
+    "node": "CHEBI:75836",
+    "name": "iron(2+) sulfate heptahydrate"
+   }
+  },
+  {
+   "key": "mncl2",
+   "substance": {
+    "node": "CHEBI:86368",
+    "name": "manganese(II) chloride tetrahydrate"
+   }
+  },
+  {
+   "key": "znso4",
+   "substance": {
+    "node": "CHEBI:32312",
+    "name": "zinc sulfate heptahydrate"
+   }
+  },
+  {
+   "key": "cuso4",
+   "substance": {
+    "node": "CHEBI:31440",
+    "name": "copper(II) sulfate pentahydrate"
+   }
+  },
+  {
+   "key": "carbenicillin_50",
+   "substance": {
+    "node": "CHEBI:3393",
+    "name": "carbenicillin"
+   },
+   "concentration": {
+    "grams_per_liter": 50,
+    "source_value": 50,
+    "source_unit": "g/L"
+   },
+   "_note": "Frozen stock, 50 mg/mL (231229_OP50_OP50-GFP_cultures). Salt form not recorded; commercial carbenicillin is usually the disodium salt (CHEBI:34609), so 50 mg/mL may be by salt mass. Written as 50 g/L, the same number (Jess Haley, 2026-10-21)."
+  }
+ ],
+ "formulations": [
+  {
+   "key": "cholesterol_5",
+   "type": {
+    "node": "EMPTY:0000271",
+    "name": "cholesterol solution"
+   },
+   "ingredients": [
+    {
+     "ingredient": "cholesterol_alfa",
+     "mass": {
+      "grams": 0.5007,
+      "source_value": 500.7,
+      "source_unit": "mg"
+     }
+    },
+    {
+     "ingredient": "ethanol_koptec",
+     "volume": {
+      "liters": 0.1,
+      "source_value": 100,
+      "source_unit": "mL"
+     }
+    }
+   ],
+   "_note": "Cholesterol stock (Benchling, protocol adapted from Kathleen Quach): 500 mg cholesterol (500.7 mg weighed) in 100 mL 190 proof ethanol, stirred on high (~350 rpm) until dissolved, transferred to a 100 mL bottle, not autoclaved, stored at 4 C. Nominally 5 mg/mL (decision #90)."
+  },
+  {
+   "key": "mgso4_1m",
+   "type": {
+    "node": "EMPTY:0000267",
+    "name": "magnesium sulfate solution"
+   },
+   "ingredients": [
+    {
+     "ingredient": "mgso4_sigma",
+     "concentration": {
+      "grams_per_liter": 120.3,
+      "source_value": 120.3,
+      "source_unit": "g/L"
+     }
+    },
+    {
+     "ingredient": "water"
+    }
+   ],
+   "_note": "MgSO4 stock (Benchling, 27 Sep 2022; protocol adapted from Kathleen Quach): 12.037 g (12.03 g weighed) dissolved in 75 mL dH2O, made up to 100 mL; autoclaved 30 min on liquid cycle #3, stored at room temperature. Written as g/L; the recipe gives it as 12.03 g in 100 mL (Jess Haley, 2026-10-21)."
+  },
+  {
+   "key": "cacl2_1m",
+   "type": {
+    "node": "EMPTY:0000268",
+    "name": "calcium chloride solution"
+   },
+   "ingredients": [
+    {
+     "ingredient": "cacl2_2h2o_fisher",
+     "concentration": {
+      "grams_per_liter": 147,
+      "source_value": 147,
+      "source_unit": "g/L"
+     }
+    },
+    {
+     "ingredient": "water"
+    }
+   ],
+   "_note": "CaCl2 stock (Benchling, 27 Sep 2022; protocol adapted from Kathleen Quach): 14.7 g calcium chloride dihydrate dissolved in 75 mL dH2O, made up to 100 mL; autoclaved 30 min on liquid cycle #3, stored at room temperature. Written as g/L; the recipe gives it as 14.7 g in 100 mL (Jess Haley, 2026-10-21)."
+  },
+  {
+   "key": "kh2po4_1m",
+   "type": {
+    "node": "EMPTY:0000269",
+    "name": "potassium phosphate monobasic solution"
+   },
+   "ingredients": [
+    {
+     "ingredient": "kh2po4_fisher",
+     "concentration": {
+      "grams_per_liter": 136,
+      "source_value": 136,
+      "source_unit": "g/L"
+     }
+    },
+    {
+     "ingredient": "water"
+    }
+   ],
+   "_note": "231109_KPO4_stock (Benchling; protocol adapted from Kathleen Quach): 68.00 g dissolved in 400 mL dH2O, made up to 500 mL. Written as g/L; the recipe gives it as 68 g in 500 mL (Jess Haley, 2026-10-21)."
+  },
+  {
+   "key": "k2hpo4_1m",
+   "type": {
+    "node": "EMPTY:0000270",
+    "name": "potassium phosphate dibasic solution"
+   },
+   "ingredients": [
+    {
+     "ingredient": "k2hpo4_3h2o_sigma",
+     "concentration": {
+      "grams_per_liter": 228.16,
+      "source_value": 228.16,
+      "source_unit": "g/L"
+     }
+    },
+    {
+     "ingredient": "water"
+    }
+   ],
+   "_note": "231109_KPO4_stock (Benchling): 57.04 g of the trihydrate dissolved in 200 mL dH2O, made up to 250 mL. Written as g/L; the recipe gives it as 57.04 g in 250 mL (Jess Haley, 2026-10-21)."
+  },
+  {
+   "key": "kpo4_1m_ph6",
+   "type": {
+    "node": "EMPTY:0000329",
+    "name": "potassium phosphate buffer"
+   },
+   "ingredients": [
+    {
+     "ingredient": "kh2po4_1m",
+     "volume": {
+      "liters": 0.5,
+      "source_value": 500,
+      "source_unit": "mL"
+     }
+    },
+    {
+     "ingredient": "k2hpo4_1m",
+     "volume": {
+      "liters": 0.2,
+      "source_value": 200,
+      "source_unit": "mL",
+      "approximate": true
+     }
+    }
+   ],
+   "ph": 6.0,
+   "_note": "231109_KPO4_stock (Benchling; Jess Haley, 9 Nov 2023, protocol adapted from Kathleen Quach): the 1 M dibasic solution titrated into 500 mL of 1 M monobasic until the pH read 6.0 (measured 5.999), about 200 mL; autoclaved 30 min, stored at room temperature. Replaces WormBook's 108.3 g KH2PO4 + 35.6 g K2HPO4 per litre (decision #86)."
+  },
+  {
+   "key": "ngm",
+   "type": {
+    "node": "EMPTY:0000262",
+    "name": "nematode growth medium"
+   },
+   "ingredients": [
+    {
+     "ingredient": "water",
+     "volume": {
+      "liters": 0.73,
+      "source_value": 730,
+      "source_unit": "mL"
+     }
+    },
+    {
+     "ingredient": "agar_emd",
+     "mass": {
+      "grams": 22.5,
+      "source_value": 22.5,
+      "source_unit": "g"
+     }
+    },
+    {
+     "ingredient": "nacl_fisher",
+     "mass": {
+      "grams": 2.25,
+      "source_value": 2.25,
+      "source_unit": "g"
+     }
+    },
+    {
+     "ingredient": "peptone_bd",
+     "mass": {
+      "grams": 1.875,
+      "source_value": 1.875,
+      "source_unit": "g"
+     }
+    },
+    {
+     "ingredient": "kpo4_1m_ph6",
+     "volume": {
+      "liters": 0.0188,
+      "source_value": 18.8,
+      "source_unit": "mL"
+     }
+    },
+    {
+     "ingredient": "mgso4_1m",
+     "volume": {
+      "liters": 0.00075,
+      "source_value": 750,
+      "source_unit": "uL"
+     }
+    },
+    {
+     "ingredient": "cacl2_1m",
+     "volume": {
+      "liters": 0.00075,
+      "source_value": 750,
+      "source_unit": "uL"
+     }
+    },
+    {
+     "ingredient": "cholesterol_5",
+     "volume": {
+      "liters": 0.00075,
+      "source_value": 750,
+      "source_unit": "uL"
+     }
+    }
+   ],
+   "_note": "240102B_NGM_plates (Benchling; Kathleen Quach, adapted from WormBook): one batch, 25 mL per 100 mm plate."
+  },
+  {
+   "key": "ngm_no_peptone",
+   "type": {
+    "node": "EMPTY:0000263",
+    "name": "nematode growth medium without peptone"
+   },
+   "ingredients": [
+    {
+     "ingredient": "water",
+     "volume": {
+      "liters": 0.73,
+      "source_value": 730,
+      "source_unit": "mL"
+     }
+    },
+    {
+     "ingredient": "agar_emd",
+     "mass": {
+      "grams": 22.5,
+      "source_value": 22.5,
+      "source_unit": "g"
+     }
+    },
+    {
+     "ingredient": "nacl_fisher",
+     "mass": {
+      "grams": 2.25,
+      "source_value": 2.25,
+      "source_unit": "g"
+     }
+    },
+    {
+     "ingredient": "kpo4_1m_ph6",
+     "volume": {
+      "liters": 0.0188,
+      "source_value": 18.8,
+      "source_unit": "mL"
+     }
+    },
+    {
+     "ingredient": "mgso4_1m",
+     "volume": {
+      "liters": 0.00075,
+      "source_value": 750,
+      "source_unit": "uL"
+     }
+    },
+    {
+     "ingredient": "cacl2_1m",
+     "volume": {
+      "liters": 0.00075,
+      "source_value": 750,
+      "source_unit": "uL"
+     }
+    },
+    {
+     "ingredient": "cholesterol_5",
+     "volume": {
+      "liters": 0.00075,
+      "source_value": 750,
+      "source_unit": "uL"
+     }
+    }
+   ],
+   "_note": "240102B_NGM_plates without the peptone (the source `peptone` = without)."
+  },
+  {
+   "key": "s_basal",
+   "type": {
+    "node": "EMPTY:0000265",
+    "name": "S basal"
+   },
+   "ingredients": [
+    {
+     "ingredient": "nacl",
+     "concentration": {
+      "grams_per_liter": 5.85,
+      "source_value": 5.85,
+      "source_unit": "g/L"
+     }
+    },
+    {
+     "ingredient": "k2hpo4",
+     "concentration": {
+      "grams_per_liter": 1,
+      "source_value": 1,
+      "source_unit": "g/L"
+     }
+    },
+    {
+     "ingredient": "kh2po4",
+     "concentration": {
+      "grams_per_liter": 6,
+      "source_value": 6,
+      "source_unit": "g/L"
+     }
+    },
+    {
+     "ingredient": "cholesterol_5",
+     "concentration": {
+      "liters_per_liter": 0.001,
+      "source_value": 1,
+      "source_unit": "uL/mL"
+     }
+    },
+    {
+     "ingredient": "water"
+    }
+   ],
+   "documented_by": [
+    "wormbook_maintenance"
+   ],
+   "_note": "Cholesterol 1 mL per litre in the recipe; written as 1 uL/mL, the same number (Jess Haley, 2026-10-21)."
+  },
+  {
+   "key": "trace_metals",
+   "type": {
+    "node": "MICRO:0000455",
+    "name": "trace elements solution"
+   },
+   "ingredients": [
+    {
+     "ingredient": "edta_disodium",
+     "concentration": {
+      "grams_per_liter": 1.86,
+      "source_value": 1.86,
+      "source_unit": "g/L"
+     }
+    },
+    {
+     "ingredient": "feso4",
+     "concentration": {
+      "grams_per_liter": 0.69,
+      "source_value": 0.69,
+      "source_unit": "g/L"
+     }
+    },
+    {
+     "ingredient": "mncl2",
+     "concentration": {
+      "grams_per_liter": 0.2,
+      "source_value": 0.2,
+      "source_unit": "g/L"
+     }
+    },
+    {
+     "ingredient": "znso4",
+     "concentration": {
+      "grams_per_liter": 0.29,
+      "source_value": 0.29,
+      "source_unit": "g/L"
+     }
+    },
+    {
+     "ingredient": "cuso4",
+     "concentration": {
+      "grams_per_liter": 0.025,
+      "source_value": 0.025,
+      "source_unit": "g/L"
+     }
+    },
+    {
+     "ingredient": "water"
+    }
+   ],
+   "documented_by": [
+    "wormbook_maintenance"
+   ]
+  },
+  {
+   "key": "k_citrate_1m_ph6",
+   "type": {
+    "node": "EMPTY:0000330",
+    "name": "potassium citrate solution"
+   },
+   "ingredients": [
+    {
+     "ingredient": "citric_acid_monohydrate",
+     "concentration": {
+      "grams_per_liter": 20,
+      "source_value": 20,
+      "source_unit": "g/L"
+     }
+    },
+    {
+     "ingredient": "tripotassium_citrate_monohydrate",
+     "concentration": {
+      "grams_per_liter": 293.5,
+      "source_value": 293.5,
+      "source_unit": "g/L"
+     }
+    },
+    {
+     "ingredient": "water"
+    }
+   ],
+   "ph": 6.0,
+   "documented_by": [
+    "wormbook_maintenance"
+   ]
+  },
+  {
+   "key": "s_complete",
+   "type": {
+    "node": "EMPTY:0000266",
+    "name": "S medium"
+   },
+   "ingredients": [
+    {
+     "ingredient": "s_basal",
+     "volume": {
+      "liters": 1,
+      "source_value": 1,
+      "source_unit": "L"
+     }
+    },
+    {
+     "ingredient": "k_citrate_1m_ph6",
+     "volume": {
+      "liters": 0.01,
+      "source_value": 10,
+      "source_unit": "mL"
+     }
+    },
+    {
+     "ingredient": "trace_metals",
+     "volume": {
+      "liters": 0.01,
+      "source_value": 10,
+      "source_unit": "mL"
+     }
+    },
+    {
+     "ingredient": "cacl2_1m",
+     "volume": {
+      "liters": 0.003,
+      "source_value": 3,
+      "source_unit": "mL"
+     }
+    },
+    {
+     "ingredient": "mgso4_1m",
+     "volume": {
+      "liters": 0.003,
+      "source_value": 3,
+      "source_unit": "mL"
+     }
+    }
+   ],
+   "product": "s_complete_kitchen",
+   "documented_by": [
+    "wormbook_maintenance"
+   ],
+   "_note": "S Medium in WormBook; made by the Salk media kitchen. The diluent for every Matching seeding (decision #56)."
+  },
+  {
+   "key": "lb",
+   "type": {
+    "node": "MCO:0000030",
+    "name": "LB medium, Lennox"
+   },
+   "ingredients": [
+    {
+     "ingredient": "tryptone",
+     "concentration": {
+      "grams_per_liter": 10,
+      "source_value": 10,
+      "source_unit": "g/L"
+     }
+    },
+    {
+     "ingredient": "yeast_extract",
+     "concentration": {
+      "grams_per_liter": 5,
+      "source_value": 5,
+      "source_unit": "g/L"
+     }
+    },
+    {
+     "ingredient": "nacl",
+     "concentration": {
+      "grams_per_liter": 5,
+      "source_value": 5,
+      "source_unit": "g/L"
+     }
+    },
+    {
+     "ingredient": "water"
+    }
+   ],
+   "product": "lb_kitchen",
+   "documented_by": [
+    "wormbook_maintenance"
+   ],
+   "_note": "WormBook's LB (5 g NaCl per litre, the Lennox form); made by the Salk media kitchen."
+  },
+  {
+   "key": "lb_carb",
+   "type": {
+    "node": "EMPTY:0000264",
+    "name": "LB with carbenicillin"
+   },
+   "ingredients": [
+    {
+     "ingredient": "lb"
+    },
+    {
+     "ingredient": "carbenicillin_50",
+     "concentration": {
+      "grams_per_liter": 0.1,
+      "source_value": 100,
+      "source_unit": "ug/mL"
+     }
+    }
+   ],
+   "_note": "OP50-GFP is grown and diluted in it (231229_OP50_OP50-GFP_cultures: 300 uL of 50 mg/mL per 150 mL)."
+  }
+ ],
+ "instruments": [
+  {
+   "key": "camera_1",
+   "local_identifier": "camera1",
+   "name": "Camera 1",
+   "product": "camera",
+   "description": "Behaviour camera (1 of 2; experimentInfo `camera`)."
+  },
+  {
+   "key": "camera_2",
+   "local_identifier": "camera2",
+   "name": "Camera 2",
+   "product": "camera",
+   "description": "Behaviour camera (2 of 2; experimentInfo `camera`)."
+  },
+  {
+   "key": "axio_zoom_1",
+   "local_identifier": "axiozoom1",
+   "name": "Axio Zoom.V16",
+   "product": "axio_zoom",
+   "description": "Fluorescence stereo microscope used for the E. coli lawn imaging."
+  },
+  {
+   "key": "spectrophotometer_1",
+   "local_identifier": "spectramax1",
+   "name": "SpectraMax Plus 384",
+   "product": "spectrophotometer"
+  },
+  {
+   "key": "temperature_probe_1",
+   "local_identifier": "temperatureprobe1",
+   "name": "Temperature probe",
+   "description": "The probe at the behaviour rigs that read the temperature and humidity of each recording (experimentInfo `temp`, `humidity`); make and model not recorded."
+  }
+ ],
+ "environment": {
+  "instrument": "temperature_probe_1",
+  "temperature": {
+   "variable": "ambient temperature"
+  },
+  "humidity": {
+   "variable": "relative humidity"
+  },
+  "notes": "The probe's mean over the recording, noted by hand."
+ },
+ "studies": [
+  {
+   "key": "single_density_multi_patch",
+   "name": "Single-density, multi-patch assay",
+   "short_name": "foragingConcentration (grid)",
+   "source_folder": "foragingConcentration",
+   "source_condition": "grid",
+   "description": "Four young adult hermaphrodites forage in a 30 mm arena on an isometric grid of 19 patches (0.5 µl, 6 mm apart), all of one OP50 density (OD600 0-10; also 1 (12H) and 1 (48H) grown patches); 1 h at 3 fps.",
+   "factors": [
+    {
+     "node": "MCO:0000059",
+     "name": "OD600"
+    },
+    {
+     "node": "EMPTY:0000119",
+     "name": "bacteria growth duration after seeding"
+    }
+   ]
+  },
+  {
+   "key": "single_patch_assays",
+   "name": "Single-patch assays",
+   "short_name": "single patch",
+   "description": "The paper's single-patch assays (Fig. 3): animals forage on one bacterial patch of a single OP50 density (OD600), either one large 20 µl patch in a 30 mm arena with four animals or one small 0.5 µl patch in a 9 mm arena with one animal, the patch grown 1 h or 48 h after seeding. The two assays are the studies included in this one.",
+   "factors": [
+    {
+     "node": "EMPTY:0000385",
+     "name": "seeding volume"
+    },
+    {
+     "node": "PATO:0001334",
+     "name": "diameter"
+    },
+    {
+     "node": "EMPTY:0000365",
+     "name": "number of organisms per arena"
+    }
+   ]
+  },
+  {
+   "key": "large_single_patch",
+   "name": "Large, single-patch assay",
+   "short_name": "foragingConcentration (single)",
+   "source_folder": "foragingConcentration",
+   "source_condition": "single",
+   "description": "As the single-density multi-patch assay, but one large 20 µl patch in the centre of the 30 mm arena.",
+   "factors": [
+    {
+     "node": "MCO:0000059",
+     "name": "OD600"
+    },
+    {
+     "node": "EMPTY:0000119",
+     "name": "bacteria growth duration after seeding"
+    }
+   ],
+   "included_in": "single_patch_assays"
+  },
+  {
+   "key": "small_single_patch",
+   "name": "Small, single-patch assay",
+   "short_name": "foragingMini",
+   "source_folder": "foragingMini",
+   "description": "One young adult in a 9 mm arena with one 0.5 µl patch (OD600 0, 0.5, 1, 5, 10); 1 h at 8 fps and ~105 px/mm, head and tail tracked.",
+   "factors": [
+    {
+     "node": "MCO:0000059",
+     "name": "OD600"
+    },
+    {
+     "node": "EMPTY:0000119",
+     "name": "bacteria growth duration after seeding"
+    }
+   ],
+   "included_in": "single_patch_assays"
+  },
+  {
+   "key": "multi_density_multi_patch",
+   "name": "Multi-density, multi-patch assay",
+   "short_name": "foragingMatching",
+   "source_folder": "foragingMatching",
+   "description": "Grids of 18 patches combining OD600 1, 5 and 10 on peptone-free NGM; animals released from an S-Complete droplet at the arena centre; 2 h recordings.",
+   "factors": [
+    {
+     "node": "MCO:0000059",
+     "name": "OD600"
+    }
+   ]
+  },
+  {
+   "key": "mutant_screen",
+   "name": "Mutant screen and food deprivation (single-density, multi-patch)",
+   "short_name": "foragingMutants",
+   "source_folder": "foragingMutants",
+   "description": "Single-density, multi-patch environments with ten mutant strains and N2, well-fed and 3-h food-deprived. The paper's food-deprivation analysis is the N2 subset; most strains are not reported in the paper.",
+   "factors": [
+    {
+     "node": "NCIT:C14419",
+     "name": "Organism Strain"
+    },
+    {
+     "node": "ZECO:0000113",
+     "name": "food availability"
+    }
+   ]
+  },
+  {
+   "key": "sensory_mutants",
+   "name": "Sensory mutants (single-density, multi-patch)",
+   "short_name": "foragingSensory",
+   "source_folder": "foragingSensory",
+   "description": "Wild type (N2) and the sensory mutants osm-6 (PR811) and mec-4 (TU253) in single-density, multi-patch environments.",
+   "factors": [
+    {
+     "node": "NCIT:C14419",
+     "name": "Organism Strain"
+    }
+   ]
+  },
+  {
+   "key": "patch_density_estimation",
+   "name": "Bacterial patch density estimation",
+   "short_name": "ecoli",
+   "source_folder": "ecoli",
+   "description": "OP50-GFP patches seeded as in the behaviour assays and imaged for several hours on a Zeiss Axio Zoom.V16 to estimate relative bacterial density from the patch-edge fluorescence.",
+   "factors": [
+    {
+     "node": "MCO:0000059",
+     "name": "OD600"
+    },
+    {
+     "node": "EMPTY:0000119",
+     "name": "bacteria growth duration after seeding"
+    }
+   ]
+  }
+ ],
+ "dataset": {
+  "name": "Accept-reject decision-making revealed via a quantitative and ethological study of C. elegans foraging",
+  "short_name": "haley_2025",
+  "description": "All raw (behaviour videos, fluorescence microscopy images) and processed (animal and bacterial patch locations over time) data for Haley et al., eLife (2025).",
+  "keyword": [
+   "C. elegans",
+   "foraging",
+   "decision-making",
+   "behavior",
+   "E. coli"
+  ],
+  "license": "CC-BY-4.0",
+  "accessibility": {
+   "node": "NCIT:C183346",
+   "name": "Unrestricted Access"
+  },
+  "experimental_approach": [
+   {
+    "node": "ILX:0739413",
+    "name": "behavior"
+   },
+   {
+    "node": "ILX:0739388",
+    "name": "ethology"
+   },
+   {
+    "node": "ILX:0739404",
+    "name": "microscopy"
+   }
+  ],
+  "_ethics_jurisdiction": "Not stated: no ethics review was required (C. elegans and E. coli), so no jurisdiction is asserted (Jess Haley, 2026-10-21; ethics jurisdiction replaces ethics assessment, which was not asserted either, 2026-10-19).",
+  "release_date": "2025-08-01",
+  "identifiers": [
+   {
+    "scheme": "DOI",
+    "value": "https://doi.org/10.63884/ndic.2025.pb77mj2s"
+   }
+  ],
+  "authors": [
+   {
+    "person": "haley",
+    "roles": [
+     "conceptualization",
+     "resources",
+     "data curation",
+     "software",
+     "formal analysis",
+     "supervision",
+     "funding acquisition",
+     "validation",
+     "investigation",
+     "visualization",
+     "methodology",
+     "writing - original draft",
+     "project administration",
+     "writing - review & editing"
+    ]
+   },
+   {
+    "person": "chen",
+    "roles": [
+     "data curation",
+     "investigation",
+     "writing - review & editing"
+    ]
+   },
+   {
+    "person": "aoi",
+    "roles": [
+     "formal analysis",
+     "supervision",
+     "visualization",
+     "methodology",
+     "writing - review & editing",
+     "corresponding author"
+    ]
+   },
+   {
+    "person": "chalasani",
+    "roles": [
+     "conceptualization",
+     "resources",
+     "supervision",
+     "funding acquisition",
+     "writing - review & editing",
+     "corresponding author"
+    ]
+   }
+  ],
+  "funding": [
+   "nih_r01",
+   "dorsett_brown_award",
+   "salk_innovation",
+   "nsf_grfp",
+   "ucsd_ssra"
+  ],
+  "cites": [
+   "elife_2025"
+  ],
+  "stored_at": [
+   "ndi_cloud_page"
+  ],
+  "documented_by": [
+   "code"
+  ]
+ },
+ "transfer_protocol": {
+  "_about": "How and when the worms were moved onto each assay plate -- an import directive (decision #52), not dataset metadata. The transfer time is not recorded: on a plate whose 'contrast' (lawn) video was filmed AFTER the worms went on, the transfer is taken as that video's start; otherwise as the first behaviour video's start; approximate either way. Methods: the eLife paper, Assay preparation and recording (agar plugs; eyelash pick into an S-Complete droplet for multi-density). Contrast-video order: from the gap between each plate's lawn clip and its recording, checked by eye in the videos, 2026-10-02 (Matching day 1, 2023-02-24, is worms first; days 2-3 lawn first).",
+  "max_before_seconds": 300,
+  "_max_before": "T is read off the first video after the transfer, so the transfer was at most this long before it (Jess Haley, 2026-10-02: 5 min; 10 would be big). On a lawn-first plate the lawn clip's end bounds it more tightly when closer.",
+  "hand_written_tolerance_seconds": [60, 60],
+  "_hand_written": "Pick (growthTimePicked) and food-deprivation (starvedTime) times were read off a clock -- possibly analog (e.g. an Apple Watch face) -- and written to the minute: +/- 60 s covers a truncated digital reading and a by-eye analog one (Jess Haley, 2026-10-02).",
+  "rules": [
+   {
+    "source_folder": "foragingConcentration",
+    "method": "agar plug, through an empty NGM plate",
+    "contrast_video": "before_worms"
+   },
+   {
+    "source_folder": "foragingMini",
+    "method": "agar plug, through an empty NGM plate",
+    "contrast_video": "after_worms"
+   },
+   {
+    "source_folder": "foragingMatching",
+    "to_date": "2023-02-24",
+    "method": "eyelash pick into an S-Complete droplet",
+    "contrast_video": "after_worms"
+   },
+   {
+    "source_folder": "foragingMatching",
+    "from_date": "2023-03-01",
+    "to_date": "2023-04-04",
+    "method": "eyelash pick into an S-Complete droplet",
+    "contrast_video": "before_worms"
+   },
+   {
+    "source_folder": "foragingMatching",
+    "from_date": "2023-05-18",
+    "method": "eyelash pick into an S-Complete droplet",
+    "contrast_video": "after_worms"
+   },
+   {
+    "source_folder": "foragingMutants",
+    "method": "eyelash pick into an S-Complete droplet",
+    "contrast_video": "after_worms"
+   },
+   {
+    "source_folder": "foragingSensory",
+    "method": "eyelash pick into an S-Complete droplet",
+    "contrast_video": "after_worms"
+   }
+  ],
+  "exceptions": [
+   {
+    "video": "2023-04-04_16-10-14_2",
+    "contrast_video": "after_worms",
+    "why": "worms visible in the contrast video (checked by eye, 2026-10-02); the rest of that day was lawn first"
+   },
+   {
+    "video": "2022-09-02_08-48-41_1",
+    "contrast_video": "after_worms",
+    "why": "lawn clip 2.6 s before recording; the contrast video was taken late, once the worms were on (Jess Haley, 2026-10-02); the rest of that day was lawn first"
+   },
+   {
+    "video": "2022-09-02_08-48-41_2",
+    "contrast_video": "after_worms",
+    "why": "as 2022-09-02_08-48-41_1, the other camera of the same pair"
+   }
+  ]
+ },
+ "seeding": {
+  "_about": "Stage 8 part B (decisions #56, #57): which strain and diluent each study's seeding suspensions used. Read by ndi.setup.conv.haley.seedingSuspensions. Acclimation (growth) plates were all seeded the same way, 200 uL at OD600 1 in LB (the paper; Jess, 2026-10-03: Matching's too), so a growth seeding uses that day's LB solution: its own study's, else another study's (Matching's days have Mini's).",
+  "strain": {
+   "default": "OP50",
+   "ecoli": "OP50-GFP"
+  },
+  "diluent": {
+   "default": "lb",
+   "foragingMatching": "s_complete",
+   "ecoli": "lb_carb"
+  },
+  "growth_diluent": "lb"
+ },
+ "preparation": {
+  "_about": "Stage 8 part C (decisions #54, #56, #57): how the plates were prepared and the worms moved, read by ndi.setup.conv.haley.manipulationDocuments. Every value is from the eLife paper's Methods, the lab's Benchling protocols or Jess Haley. A `variable` or `value` here is a name in the import's term table (haleyTerm), which gives its node; methods are labels.",
+  "pour": {
+   "_about": "Every plate is 25 mL of NGM in a 100 mm dish (240102B_NGM_plates; Jess: Mini's too). The agar is NGM, or NGM without peptone where the plate's `peptone` says so (Matching, E. coli); acclimation and food deprivation plates have no `peptone` column and are the plain recipe. The dose's variable is the recipe's formulation type.",
+   "method": "pouring",
+   "volume_ml": 25,
+   "agar": {
+    "with": "ngm",
+    "without": "ngm_no_peptone"
+   },
+   "default_peptone": "with",
+   "notes": {
+    "ecoli": "The NGM entry for this pour records no antibiotic. Carbenicillin was probably added (the NGM protocol requires an antibiotic for plasmid-carrying bacteria such as OP50-GFP) but is unrecorded (Jess Haley, 2026-10-02)."
+   }
+  },
+  "seed": {
+   "_about": "One dose per patch at the patch's volume (`lawnVolume`) and OD600; one per acclimation plate, 200 uL (the paper: 'one large patch of 200 µl of OD600 = 1'). The suspension is the day's (seedingSuspensions).",
+   "method": "seeding",
+   "growth_volume_ul": 200
+  },
+  "temperature": {
+   "_about": "The temperature a plate was moved INTO, not heat applied; approximate, no tolerance (no bound is known). Cold room ~4 C, room temperature 20 C (the paper: 'stored at 20C until the experiment'); acclimation and food deprivation plates go into the 20 C incubator when the worms are put on them.",
+   "variable": "ambient temperature",
+   "methods": {
+    "cold_room": "refrigeration",
+    "room": "ambient exposure",
+    "incubator": "incubation"
+   },
+   "_methods": "How the temperature was imposed (Jess, 2026-10-03): the method is what tells the uncontrolled bench (ambient exposure) from the controlled 20 C incubator (incubation).",
+   "cold_room_celsius": 4,
+   "room_celsius": 20,
+   "incubator_celsius": 20,
+   "out_before_seeding_seconds": 300,
+   "_out_before_seeding": "An E. coli plate left the cold room shortly before it was seeded: the paper seeds onto cold, low-moisture NGM plates (Methods, Bacterial cultures), and Jess puts it at about 5 min. So the cold-room window after pouring ends at the seeding time, approximate, up to this much earlier (plus the seeding time's own hand-written bound)."
+  },
+  "transfer": {
+   "_about": "One term manipulation per move, on the cohort, at its contained_in relation's time. The variable is the cohort's location and the value the kind of plate moved to (the plate itself is the parent of the contained_in relation at the same time); the method the move's last step (onto a food deprivation plate: agar plug, per Jess), and `droplet` the formulation key of the droplet the worms were released in; every move onto an assay plate first went through an empty NGM plate for about a minute to shed bacteria (Jess, 2026-10-02).",
+   "variable": "location",
+   "pick_method": "worm picking",
+   "deprivation_method": "agar plug transfer",
+   "assay_methods": [
+    {
+     "contains": "eyelash",
+     "method": "eyelash picking",
+     "droplet": "s_complete"
+    },
+    {
+     "contains": "agar plug",
+     "method": "agar plug transfer"
+    }
+   ],
+   "cleaning": "agar plug onto an empty NGM plate for about 1 min, to shed bacteria"
+  },
+  "food_deprivation": {
+   "variable": "food availability",
+   "value": "fasting"
+  },
+  "developmental_stage": {
+   "_about": "One term observation per cohort (decision #69, Jess 2026-10-08): the worms were chosen as L4 larvae by eye when picked onto the acclimation plate. At the pick's time (hand-written, with its tolerance), or, with no pick time, a relative time before the cohort's next move. Distributive: it holds of each worm. No stage at the assay: it follows from the pick and assay times. Terms (haleyTerm): developmental stage NCIT:C43531, L4 larva Ce WBls:0000038 (named as WBls labels it, Jess 2026-10-20), visual inspection NCIT:C214703.",
+   "variable": "developmental stage",
+   "value": "L4 larva Ce",
+   "method": "visual inspection"
+  }
+ },
+ "ecoli_patch_layout": {"positions_mm": [[-10.46, -5.199], [-10.425, 5.262], [-7.491, 0.06], [-4.439, -5.217], [-4.374, 5.249], [-1.375, -0.008], [1.649, -5.192], [1.619, 5.185], [4.698, -0.059], [7.719, -5.29], [7.734, 5.231], [10.686, -0.068]], "angle_sign": -1, "max_distance_mm": 2.0, "source": "ndi.setup.conv.haley.patchLayout, run by Jess Haley 2026-10-14: the median position of each patch, in the acetate template's frame (mm), over every analysed full 12-patch image of a rectangle plate; median deviation 0.26-0.33 mm per patch, maximum 1.54 mm; closest two positions 5.97 mm apart. The angle sign is immaterial at these angles (median deviation 0.303 mm with +, 0.301 mm with -). max_distance_mm is a third of the 5.97 mm spacing, above the largest deviation seen (decision #80)."},
+ "corrections": [
+  {
+   "key": "conditions_concentration_experiment_14",
+   "folder": "foragingConcentration",
+   "experiment": 14,
+   "table": "tableOfContents",
+   "column": "conditions",
+   "value": "single [OD600 = 0, 0.05, 0.1, 0.5, 1, 2, 3, 4, 5, 10, 1 (48H)]",
+   "was": "grid [OD600 = 0, 0.05, 0.1, 0.5, 1, 2, 3, 4, 5, 10, 1 (48H)]",
+   "reason": "Row 0014 says grid, but all 12 of its plates (133-144) say single in experimentInfo and each has one patch, as experiment 3's single plates do, while the grid days either side (13, 15) have 19 patches per plate. The row's first word is a copy of its neighbours'; the session is in large_single_patch (Jess Haley, 2026-10-14; decision #72)."
+  },
+  {
+   "key": "cfu_matching_2023_03_27",
+   "folder": "foragingMatching",
+   "seed_day": "2023-03-27",
+   "column": "CFU",
+   "value": null,
+   "was": 846,
+   "reason": "The S-Complete seeding of 27 Mar 2023 measured no CFU (230327_seeding_S-complete has no CFU section); 846 is the LB seeding's (Mini) count from the same day, copied (Jess, 2026-10-03)."
+  },
+  {
+   "key": "cfu_ecoli_2022_04_28",
+   "folder": "ecoli",
+   "seed_day": "2022-04-28",
+   "column": "CFU",
+   "value": null,
+   "was": 457,
+   "reason": "457 is the OP50 count of Concentration's seeding the same day; an OP50-GFP suspension cannot share it, so it was copied and the real value is unknown (Jess, 2026-10-03)."
+  },
+  {
+   "key": "peptone_ecoli_plate_90",
+   "folder": "ecoli",
+   "plate": 90,
+   "column": "peptone",
+   "value": "without",
+   "was": "with",
+   "reason": "Plate 90 is labelled with peptone, but its label is wrong: it is from the 16 Nov 2023 pour, without peptone (Jess Haley, 2026-10-02; decision #56)."
+  },
+  {
+   "key": "growth_room_temp_mini_experiment_24",
+   "folder": "foragingMini",
+   "experiment": 24,
+   "column": "growthTimeRoomTemp",
+   "value": "2023-08-28T09:02",
+   "was": ["2023-08-28T08:52", "2023-08-28T09:03"],
+   "reason": "The 12 assay plates of foragingMini experiment 24 share one acclimation plate (one seeding, cold room and pick), but growthTimeRoomTemp steps down a minute per plate, a spreadsheet fill-down; it is the only one of the 24 Mini experiments with more than one. Plates 225 and 230 were prepared on the acclimation plate's schedule (cold room 24 Aug 14:25, the acclimation plate's) and record its room temperature time: 28 Aug 09:02. On experiment 23 the same pairing (plates 213, 218) gives exactly that day's single time. Inferred from the data, 2026-10-08: Jess does not recall the day, and her notes were not checked (decision #70e)."
+  },
+  {
+   "key": "room_temp_estimated_mini_plate_55",
+   "folder": "foragingMini",
+   "plate": 55,
+   "column": "timeRoomTemp",
+   "approximate": true,
+   "reason": "timeRoomTemp is exactly the recording's start minus 1 h, the value getExperimentInfo.m fills in when the notebook cell is blank (shreklab/Haley-et-al-2024 at 44a89de, getExperimentInfo.m:269-270). The notebook is not with the data, so the blank cannot be confirmed; it is marked an estimate with no known bound (decision #74, Jess Haley 2026-10-14)."
+  },
+  {
+   "key": "room_temp_estimated_mini_plate_189",
+   "folder": "foragingMini",
+   "plate": 189,
+   "column": "timeRoomTemp",
+   "approximate": true,
+   "reason": "timeRoomTemp is exactly the recording's start minus 1 h, the value getExperimentInfo.m fills in when the notebook cell is blank (shreklab/Haley-et-al-2024 at 44a89de, getExperimentInfo.m:269-270). The notebook is not with the data, so the blank cannot be confirmed; it is marked an estimate with no known bound (decision #74, Jess Haley 2026-10-14)."
+  },
+  {
+   "key": "growth_room_temp_sensory_experiment_2",
+   "folder": "foragingSensory",
+   "experiment": 2,
+   "column": "growthTimeRoomTemp",
+   "value": "2024-01-04T09:49",
+   "was": "2024-01-05T09:49",
+   "reason": "Experiment 2's acclimation plates are recorded out of the cold room on 5 Jan 2024 09:49, after their worms were picked onto them on 4 Jan (11:08, 11:16, 11:24); every other step is in order (seeded 29 Dec 11:16, cold room 30 Dec 11:16, recorded 5 Jan from 08:11). The day is a typo, likely copied from the recording date: 4 Jan 09:49 is 1 h 19 min to 1 h 35 min before the picks, in line with other days (Jess Haley, 2026-10-14; decision #77)."
+  },
+  {
+   "key": "room_temp_estimated_concentration_plate_01",
+   "folder": "foragingConcentration",
+   "plate": 1,
+   "column": "timeRoomTemp",
+   "approximate": true,
+   "reason": "timeRoomTemp was not recorded for this plate; it was filled in as the recording's start minus 1 h (getExperimentInfo.m), so it is an estimate with no known bound (decision #54d; listed from the data, Jess Haley 2026-10-03)."
+  },
+  {
+   "key": "room_temp_estimated_concentration_plate_02",
+   "folder": "foragingConcentration",
+   "plate": 2,
+   "column": "timeRoomTemp",
+   "approximate": true,
+   "reason": "timeRoomTemp was not recorded for this plate; it was filled in as the recording's start minus 1 h (getExperimentInfo.m), so it is an estimate with no known bound (decision #54d; listed from the data, Jess Haley 2026-10-03)."
+  },
+  {
+   "key": "room_temp_estimated_concentration_plate_03",
+   "folder": "foragingConcentration",
+   "plate": 3,
+   "column": "timeRoomTemp",
+   "approximate": true,
+   "reason": "timeRoomTemp was not recorded for this plate; it was filled in as the recording's start minus 1 h (getExperimentInfo.m), so it is an estimate with no known bound (decision #54d; listed from the data, Jess Haley 2026-10-03)."
+  },
+  {
+   "key": "room_temp_estimated_concentration_plate_04",
+   "folder": "foragingConcentration",
+   "plate": 4,
+   "column": "timeRoomTemp",
+   "approximate": true,
+   "reason": "timeRoomTemp was not recorded for this plate; it was filled in as the recording's start minus 1 h (getExperimentInfo.m), so it is an estimate with no known bound (decision #54d; listed from the data, Jess Haley 2026-10-03)."
+  },
+  {
+   "key": "room_temp_estimated_concentration_plate_05",
+   "folder": "foragingConcentration",
+   "plate": 5,
+   "column": "timeRoomTemp",
+   "approximate": true,
+   "reason": "timeRoomTemp was not recorded for this plate; it was filled in as the recording's start minus 1 h (getExperimentInfo.m), so it is an estimate with no known bound (decision #54d; listed from the data, Jess Haley 2026-10-03)."
+  },
+  {
+   "key": "room_temp_estimated_concentration_plate_06",
+   "folder": "foragingConcentration",
+   "plate": 6,
+   "column": "timeRoomTemp",
+   "approximate": true,
+   "reason": "timeRoomTemp was not recorded for this plate; it was filled in as the recording's start minus 1 h (getExperimentInfo.m), so it is an estimate with no known bound (decision #54d; listed from the data, Jess Haley 2026-10-03)."
+  },
+  {
+   "key": "room_temp_estimated_concentration_plate_07",
+   "folder": "foragingConcentration",
+   "plate": 7,
+   "column": "timeRoomTemp",
+   "approximate": true,
+   "reason": "timeRoomTemp was not recorded for this plate; it was filled in as the recording's start minus 1 h (getExperimentInfo.m), so it is an estimate with no known bound (decision #54d; listed from the data, Jess Haley 2026-10-03)."
+  },
+  {
+   "key": "room_temp_estimated_concentration_plate_08",
+   "folder": "foragingConcentration",
+   "plate": 8,
+   "column": "timeRoomTemp",
+   "approximate": true,
+   "reason": "timeRoomTemp was not recorded for this plate; it was filled in as the recording's start minus 1 h (getExperimentInfo.m), so it is an estimate with no known bound (decision #54d; listed from the data, Jess Haley 2026-10-03)."
+  },
+  {
+   "key": "room_temp_estimated_concentration_plate_09",
+   "folder": "foragingConcentration",
+   "plate": 9,
+   "column": "timeRoomTemp",
+   "approximate": true,
+   "reason": "timeRoomTemp was not recorded for this plate; it was filled in as the recording's start minus 1 h (getExperimentInfo.m), so it is an estimate with no known bound (decision #54d; listed from the data, Jess Haley 2026-10-03)."
+  },
+  {
+   "key": "room_temp_estimated_concentration_plate_10",
+   "folder": "foragingConcentration",
+   "plate": 10,
+   "column": "timeRoomTemp",
+   "approximate": true,
+   "reason": "timeRoomTemp was not recorded for this plate; it was filled in as the recording's start minus 1 h (getExperimentInfo.m), so it is an estimate with no known bound (decision #54d; listed from the data, Jess Haley 2026-10-03)."
+  }
+ ]
+}

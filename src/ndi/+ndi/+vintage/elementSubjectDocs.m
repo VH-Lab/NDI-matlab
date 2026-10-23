@@ -40,7 +40,8 @@ function docs = elementSubjectDocs(ndi_session_obj, classFilter)
 %   other tooling with no class name is not, and cannot be, because nothing
 %   about it says it was ever an element.
 %
-%   See also: ndi.vintage.elementLabel, ndi.vintage.objectClass,
+%   See also: ndi.vintage.elementSubjectIds, ndi.vintage.elementLabel,
+%             ndi.vintage.objectClass,
 %             ndi.session/getelements, ndi.session/getprobes.
 
 arguments
@@ -50,29 +51,7 @@ end
 
 docs = {};
 
-label = ndi.vintage.elementLabel('class');
-q = ndi.query('', 'isa', 'term_assertion', '') & ...
-    ndi.query('subject_statement.variable.name', 'exact_string', label, '');
-if ~isempty(classFilter)
-    q = q & ndi.query('term.value.name', 'contains_string', classFilter, '');
-end
-
-assertions = ndi_session_obj.database_search(q);
-if isempty(assertions)
-    return;
-end
-
-% Collect the subject ids, keeping FIRST-SEEN order. `unique` would sort,
-% and the caller's order would then depend on how ids happen to compare
-% rather than on anything meaningful.
-ids = {};
-for i = 1:numel(assertions)
-    sid = assertions{i}.dependency_value('subject_id', 'ErrorIfNotFound', 0);
-    if isempty(sid) || any(strcmp(sid, ids))
-        continue;
-    end
-    ids{end+1} = sid; %#ok<AGROW>
-end
+[ids, label] = ndi.vintage.elementSubjectIds(ndi_session_obj, classFilter);
 
 for i = 1:numel(ids)
     hit = ndi_session_obj.database_search( ...

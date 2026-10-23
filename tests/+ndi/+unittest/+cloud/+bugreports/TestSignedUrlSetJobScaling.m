@@ -183,6 +183,10 @@ classdef TestSignedUrlSetJobScaling < matlab.unittest.TestCase
             % if setup / upload / local extraction goes wrong, since those
             % would poison the row and mask the server-side outcome we are
             % here to observe. The row is what the reader reads.
+            arguments
+                testCase (1,1) ndi.unittest.cloud.bugreports.TestSignedUrlSetJobScaling
+                targetMemberCount (1,1) {mustBeNumeric}
+            end
 
             % Huge-N gate. 50k / 100k rows upload ~50-100k files each,
             % which currently takes tens of minutes and burns cloud
@@ -403,6 +407,10 @@ classdef TestSignedUrlSetJobScaling < matlab.unittest.TestCase
 
     methods (Access = private)
         function row = freshRow(testCase, N) %#ok<INUSL>
+            arguments
+                testCase (1,1) ndi.unittest.cloud.bugreports.TestSignedUrlSetJobScaling %#ok<INUSA> the row depends only on N
+                N (1,1) {mustBeNumeric}
+            end
             row = struct( ...
                 'N',                 N, ...
                 'actualMemberCount', 0, ...
@@ -428,6 +436,10 @@ function [shape, chunkShape] = pickShapeForTarget(target, baseChunkShape)
     % the lightsheet levels the failing dataset carries are cubic-ish
     % too; a stringy 1xN layout could miss a shape-dependent bug the
     % server has.
+    arguments
+        target (1,1) {mustBeNumeric}
+        baseChunkShape {mustBeNumeric}
+    end
     chunkShape = baseChunkShape;
     if target <= 1
         chunks = [1 1 1];
@@ -445,6 +457,9 @@ function d = firstLevelDoc(levelDocs)
     % levelDocs can be a cell array or a struct-of-arrays or a single
     % doc depending on the fromOMEZarr version. Normalize to a scalar
     % ndi.document.
+    arguments
+        levelDocs % a cell array, an array of documents, or one document
+    end
     if iscell(levelDocs)
         d = levelDocs{1};
     elseif numel(levelDocs) > 1
@@ -460,6 +475,9 @@ function printRow(r)
     % cases run in fresh test instances -- rows do not accumulate on
     % one testCase across parameter values, so the log itself IS the
     % table. Grep for [scaleprobe] in a CI run to pull the rows out.
+    arguments
+        r (1,1) struct
+    end
     detail = char(r.errorMessage);
     if numel(detail) > 60, detail = [detail(1:57) '...']; end
     fprintf(['[scaleprobe] N=%-6d actual=%-6d state=%-10s ' ...
@@ -471,6 +489,9 @@ function printRow(r)
 end
 
 function s = mapSizeAsText(value)
+    arguments
+        value % a number, or anything else (printed as '-')
+    end
     if isnumeric(value) && isscalar(value) && ~isnan(value)
         s = sprintf('%d', round(value));
     else
@@ -481,6 +502,9 @@ end
 function m = extractMessage(payload)
     % Server-side error payloads travel in a few shapes. Try the common
     % ones so the table row carries whatever the server said, verbatim.
+    arguments
+        payload % a struct, text, or anything else (gives "")
+    end
     m = "";
     if isstruct(payload)
         if isfield(payload, 'message') && ~isempty(payload.message)
@@ -496,6 +520,11 @@ function m = extractMessage(payload)
 end
 
 function v = safeField(s, name, defaultValue)
+    arguments
+        s % a struct, or anything else (gives defaultValue)
+        name {mustBeText}
+        defaultValue
+    end
     if isstruct(s) && isfield(s, name) && ~isempty(s.(name))
         v = s.(name);
     else
@@ -504,6 +533,9 @@ function v = safeField(s, name, defaultValue)
 end
 
 function safeDeleteDataset(cloudDatasetId)
+    arguments
+        cloudDatasetId {mustBeText}
+    end
     try
         ndi.cloud.api.datasets.deleteDataset(char(cloudDatasetId), ...
             'when', 'now'); %#ok<TRYNC>

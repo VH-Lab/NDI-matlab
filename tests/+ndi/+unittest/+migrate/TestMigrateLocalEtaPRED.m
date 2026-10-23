@@ -213,23 +213,13 @@ classdef TestMigrateLocalEtaPRED < matlab.unittest.TestCase
                 ['%d document(s) migrated to a FRAGMENT. A passthrough is a ' ...
                  'deferral; a fragment is silent loss.'], s.fragment_count));
 
-            declared = { ...
-                'syncgraph', ...
-                    ['THE SESSION GATE, and it fires on every document IN PASS 1: ' ...
-                     '+migrators_j/syncgraph.m says of `jSessionDocId` that it "answers '''' ' ...
-                     'by construction in pass 1 -- the same shape as jEpochDocId". The fold ' ...
-                     'has moved into the batch phase (#57): did2.convert.resolveClockAlignment ' ...
-                     'supplies the session-document id and folds it to `clock_alignment_policy`, ' ...
-                     'so syncgraph is a pass-1 passthrough by design and is ABSENT from the ' ...
-                     'final-output survivor census (which for PRED is now subject + session ' ...
-                     'only -- both persist)']; ...
-                'subject', ...
-                    ['PERSIST, NOT A DEFERRAL. A v1 `subject` IS the V_eta `subject`, and ' ...
-                     '+migrators_j/subject.m only fills `local_identifier` when empty; this ' ...
-                     'subject already carries one, so the migrator returns its input and the ' ...
-                     'census counts "unconverted". The census is literal -- "returned its ' ...
-                     'input" spans a deferral and a correct identity migration -- and this ' ...
-                     'row''s appearance is proof the handle was already set']};
+            % NO DECLARED DEFERRALS ON did-schema #88. The two rows this held
+            % (`syncgraph`, the pass-1 session gate; `subject`, the identity
+            % migration) both stopped firing when the migrators were ported to
+            % #88 (DID-matlab #218): e2e run 39668356516 printed "unconverted:
+            % 0" over PRED's 14 documents and "2 of 2 declared deferral(s) no
+            % longer fire". The helper still fails on any NEW passthrough.
+            declared = cell(0, 2);
 
             ndi.unittest.migrate.verifyDeferralsAreDeclared(testCase, ...
                 s.unconverted_by_class, declared);
@@ -292,70 +282,113 @@ classdef TestMigrateLocalEtaPRED < matlab.unittest.TestCase
                 ['the epoch anchor fold did not run; ndi.migrate.local warns ' ...
                  'and continues when it throws, so its absence is silent. ' ...
                  resultDiag(result)]);
-            % PRED holds ONE pyraview with a populated epochid, so the pass-1
-            % handle count is 1. Asserted rather than assumed: if pyraview
-            % stops emitting the handle this reads 0 and the rest of this test
-            % would pass vacuously.
-            verifyEqual(testCase, fold.anchors_seen, 1, ...
-                ['no pass-1 epoch anchor reached the fold; pyraview did not ' ...
-                 'emit its epoch_bounded_reference handle. ' resultDiag(result)]);
+            % ON did-schema #88 THE PYRAVIEW ANCHOR IS NOT A HANDLE ANY MORE.
+            % Pre-#88 pyraview emitted an `epoch_bounded_reference` (the epoch
+            % named by its string) that NDI's epochAnchorFold re-pointed. On
+            % #88 (DID-matlab +migrators_j/pyraview.m, "the time anchor") a
+            % pyraview naming an epoch DEFERS in pass 1, and
+            % did2.convert.epochMint mints the epoch entity and folds it, with
+            % a `relative_time_reference` onto that entity. So the chain is
+            % asserted through epochMint's own pyraview counters, and NDI's
+            % fold -- which on #88 re-points only the stimulus-bath anchors --
+            % must see nothing here (PRED has no bath).
+            verifyEqual(testCase, mint.pyraview_deferred_seen, 1, ...
+                ['PRED holds ONE pyraview with a populated epochid and ' ...
+                 'epochMint did not see it deferred. ' resultDiag(result)]);
+            verifyEqual(testCase, mint.pyraview_deferred_resolved, 1, ...
+                ['epochMint saw the deferred pyraview and did not fold it. ' ...
+                 resultDiag(result)]);
+            verifyGreaterThanOrEqual(testCase, mint.epochs_minted, 1, ...
+                resultDiag(result));
+            verifyEqual(testCase, fold.anchors_seen, 0, ...
+                ['NDI''s epoch anchor fold found a pass-1 anchor in a corpus ' ...
+                 'with no stimulus bath; on #88 no migrator emits one. ' ...
+                 resultDiag(result)]);
             verifyEqual(testCase, fold.refused_total, 0, resultDiag(result));
-            verifyEqual(testCase, fold.anchors_refolded, 1, resultDiag(result));
             verifyEqual(testCase, fold.refold_quarantined, 0, resultDiag(result));
             % the accounting invariant: no third bucket an anchor can vanish into
             verifyEqual(testCase, fold.anchors_seen, ...
                 fold.anchors_planned + fold.refused_total, resultDiag(result));
 
-            % THE RETIRED CLASS IS GONE. `epoch_bounded_reference` is a pass-1
-            % TRANSPORT HANDLE, not a destination -- it is `in_progress` in
-            % V_eta_final_class_set.md and not in the persist set. One reaching
-            % the destination database means the fold silently did nothing.
-            verifyFalse(testCase, ...
-                isfield(result.summary.by_class, 'epoch_bounded_reference'), ...
-                ['a class the signed decision RETIRES was written to the ' ...
-                 'destination database. ' resultDiag(result)]);
-            verifyTrue(testCase, isfield(result.summary.by_class, 'epoch'), ...
-                resultDiag(result));
+            % NO RETIRED OR PRE-#88 TIME CLASS REACHES THE DATABASE, and the
+            % #88 one does. The epoch is an `entity` of type epoch (T1), so it
+            % is looked for by type, not by a class of its own.
+            for c = {'epoch_bounded_reference', 'relative_reference', 'epoch'}
+                verifyFalse(testCase, isfield(result.summary.by_class, c{1}), ...
+                    ['`' c{1} '` was written to the destination. ' resultDiag(result)]);
+            end
             verifyTrue(testCase, ...
-                isfield(result.summary.by_class, 'relative_reference'), ...
+                isfield(result.summary.by_class, 'relative_time_reference'), ...
                 resultDiag(result));
+            docs = destinationBodies(result.destination);
+            verifyNotEmpty(testCase, findEntity(docs, 'epoch'), ...
+                ['no entity of type epoch in the destination. ' resultDiag(result)]);
         end
 
         function testTheObservationStillNamesItsEpochAfterTheFold(testCase)
-            % THE ORPHAN GATE, AT THE ONE EDGE THAT ONLY THIS PASS CAN BREAK.
-            % pyraview writes `time_reference_2` in pass 1, pointing at the
-            % handle's id. epochAnchorFold then REPLACES that document's class.
-            % If it mints a fresh id instead of preserving it, the edge dangles
-            % -- the 11,448-orphan dissolution failure, one class over.
-            result = runPredMigrate(testCase);
+            % THE ORPHAN GATE, AT THE ONE EDGE THE EPOCH FOLD CAN BREAK. On
+            % did-schema #88 pyraview's observation (an `observation` listing
+            % the `voltage` value kind) names its time through
+            % `time_reference_id`, a `relative_time_reference` whose
+            % `referent_id` is the EPOCH ENTITY epochMint minted. If the fold
+            % mints the reference and drops the edge, or points it at nothing,
+            % the observation is no longer attached to its epoch.
+            [result, bodies] = runPredMigrate(testCase);
 
             docs = destinationBodies(result.destination);
-            obs = pyraviewObservation(testCase, docs);
-            verifyNotEmpty(testCase, obs, ...
-                ['pyraview did not produce a voltage_observation. ' ...
-                 resultDiag(result)]);
-            epochRefId = depValue(obs, 'time_reference_2');
-            verifyNotEmpty(testCase, epochRefId, ...
-                ['the observation carries no `time_reference_2`, so it is no ' ...
+            obs = pyraviewObservation(testCase, docs, bodies);
+            refIds = depValues(obs, 'time_reference_id');
+            verifyNotEmpty(testCase, refIds, ...
+                ['the observation carries no `time_reference_id`, so it is no ' ...
                  'longer attached to its epoch. ' resultDiag(result)]);
+            if isempty(refIds); return; end
 
-            ref = findById(docs, epochRefId);
-            verifyNotEmpty(testCase, ref, ...
-                ['`time_reference_2` names a document that is not in the ' ...
-                 'destination -- the fold moved the anchor id. ' ...
-                 resultDiag(result)]);
-            verifyEqual(testCase, ref.document_class.class_name, ...
-                'relative_reference', ...
-                ['the epoch anchor did not become a relative_reference. ' ...
-                 resultDiag(result)]);
-
-            % ...and it points at the epoch epochMint actually minted.
-            epochDoc = findByClass(docs, 'epoch');
+            epochDoc = findEntity(docs, 'epoch');
             verifyNotEmpty(testCase, epochDoc, resultDiag(result));
-            verifyEqual(testCase, depValue(ref, 'relative_to'), ...
-                epochDoc.base.id, ...
-                ['the folded reference does not name the minted epoch. ' ...
+            if isempty(epochDoc); return; end
+            refs = cellfun(@(id) findById(docs, id), refIds, 'UniformOutput', false);
+            verifyFalse(testCase, any(cellfun(@isempty, refs)), ...
+                ['a `time_reference_id` names a document that is not in the ' ...
+                 'destination. ' resultDiag(result)]);
+            refs = refs(~cellfun(@isempty, refs));
+            onEpoch = cellfun(@(r) strcmp(r.document_class.class_name, ...
+                'relative_time_reference') && strcmp(depValue(r, 'referent_id'), ...
+                epochDoc.base.id), refs);
+            verifyEqual(testCase, sum(onEpoch), 1, ...
+                ['exactly one of the observation''s time references must be a ' ...
+                 'relative_time_reference onto the minted epoch. ' resultDiag(result)]);
+        end
+
+        function testPyraviewIsAttributedToTheSpecimen(testCase)
+            % TEAM-SIGN-OFF [raw recording observation], 2026-08-10: a raw
+            % recording is about the SPECIMEN, with the probe as its
+            % instrument (T7). recordingAttribution makes pyraview's
+            % observation agree with the element's recording observation
+            % (the donor). On did-schema #88 the element emits no recording
+            % observation in pass 1 (DID-matlab jRecordingObservation, "SINCE
+            % 2026-10-21 IT EMITS NO OBSERVATION"): it is minted per epoch
+            % from the epoch's files, which PRED does not carry, so there is
+            % no such donor. Decided by Jess Haley, 2026-10-21 [preview
+            % attribution without epoch files] (did-schema
+            % V_eta_recording_observation_plan.md): the element's kept
+            % `observes` relation (probe observes organism) is the donor.
+            [result, bodies] = runPredMigrate(testCase);
+            docs = destinationBodies(result.destination);
+            obs = pyraviewObservation(testCase, docs, bodies);
+            organism = findEntity(docs, 'organism');
+            assertNotEmpty(testCase, organism, ...
+                ['PRED holds one animal and no entity of type organism came ' ...
+                 'back. ' resultDiag(result)]);
+            ra = result.secondPass.recordingAttribution;
+            verifyEqual(testCase, ra.attributed_via_observes, 1, ...
+                'PRED''s one pyraview is attributed through the element''s observes');
+            verifyEqual(testCase, ra.refused_no_donor, 0, resultDiag(result));
+            probe = findById(docs, depValue(obs, 'instrument_id'));
+            verifyEqual(testCase, depValue(obs, 'entity_id'), organism.base.id, ...
+                ['pyraview''s observation is not about the specimen. ' ...
                  resultDiag(result)]);
+            verifyNotEmpty(testCase, probe, ...
+                'pyraview''s observation names no probe as its instrument (T7)');
         end
 
         function testTheMigratedSessionOpensAndReadsBackThroughNDI(testCase)
@@ -426,13 +459,16 @@ classdef TestMigrateLocalEtaPRED < matlab.unittest.TestCase
             % database being read at all, which is the one thing it exists to
             % prove. The id comes from the MIGRATED session document.
             migrated = destinationBodies(result.destination);
-            sessionDoc = findByClass(migrated, 'session');
+            % did-schema #88: the session is an `entity` of type session
+            % (T1) whose base.id IS the session id; every other document
+            % names it through its `session_id` edge.
+            sessionDoc = findEntity(migrated, 'session');
             assertNotEmpty(testCase, sessionDoc, ...
-                ['no `session` document in the migrated database -- ' ...
+                ['no entity of type session in the migrated database -- ' ...
                  'ndi.session.dir has nothing to identify the session by']);
             vlt.file.str2text( ...
                 fullfile(testCase.SessionRoot, '.ndi', 'unique_reference.txt'), ...
-                sessionDoc.base.session_id);
+                sessionDoc.base.id);
 
             % THE HEADLINE. If this errors, NDI cannot open a migrated session
             % and every assertion below is moot.
@@ -480,10 +516,13 @@ classdef TestMigrateLocalEtaPRED < matlab.unittest.TestCase
             % test would pass just as well against the unmigrated database --
             % it would be reading did-sqlite.sqlite either way, and the copy
             % above would be the only thing that made it meaningful.
+            % did-schema #88: a subject is an `entity` (T1), so its handle is
+            % entity.local_identifier (subject.local_identifier before #88).
             sub = subs{1}.document_properties;
-            assertTrue(testCase, isfield(sub, 'subject') ...
-                && isfield(sub.subject, 'local_identifier'), ...
-                ['the subject read back has no subject.local_identifier -- ' ...
+            assertTrue(testCase, isfield(sub, 'entity') ...
+                && isfield(sub.entity, 'local_identifier') ...
+                && ~isempty(sub.entity.local_identifier), ...
+                ['the subject read back has no entity.local_identifier -- ' ...
                  'either the V_eta database was not the one opened, or the ' ...
                  'signed rename did not survive the round trip']);
             assertTrue(testCase, isfield(sub.base, 'creation_timestamp'), ...
@@ -571,45 +610,60 @@ classdef TestMigrateLocalEtaPRED < matlab.unittest.TestCase
             assertEqual(testCase, classes, ...
                 ["ndi.probe.timeseries.mfdaq", "ndi.probe.timeseries.stimulator"], ...
                 'the elements did not rebuild as their recorded probe classes');
+
+            % ---- getsubjects: THE ANIMAL, NOT THE PROBES ------------------
+            % did-schema #88: the two probes are entities of type DEVICE, so
+            % `isa subject` (the biological entity types, ndi.v2.subjectTypes)
+            % no longer sweeps them in; before #88 they were `subject`
+            % documents and getsubjects had to drop them. Either way the
+            % answer is v1's: biological subjects only (Jess Haley,
+            % 2026-10-21), the animal and not the probes.
+            subIds = cellfun(@(d) char(d.id()), subs, 'UniformOutput', false);
+            elIds = ndi.vintage.elementSubjectIds(s);
+            assertEqual(testCase, numel(elIds), 2, ...
+                'PRED holds 2 elements, each with an `ndi element class` assertion');
+            verifyFalse(testCase, any(ismember(elIds, subIds)), ...
+                'an element (a device entity) came back from `isa subject`');
+            gs = s.getsubjects();
+            gsIds = cellfun(@(d) char(d.id()), gs, 'UniformOutput', false);
+            verifyFalse(testCase, any(ismember(elIds, gsIds)), ...
+                'getsubjects returned a probe');
+            verifyEqual(testCase, sort(gsIds), sort(subIds), ...
+                'getsubjects and `isa subject` disagree');
+            verifyEqual(testCase, numel(gs), 1, sprintf( ...
+                'getsubjects returned %d; PRED holds 1 animal', numel(gs)));
         end
 
-        function testTheTimeReferenceFamilyIsTheFirstOfSizeTwoAndIsLegal(testCase)
-            % `referent_unique_by` declares a `time_reference_#` family unique
-            % by `value.clock`, and until PRED nothing in reach carried two
-            % members -- the digest prints that zero as "untested, not clean".
-            % This is where the rule first has something to say.
-            %
-            % IT IS LEGAL BY CONSTRUCTION, and the point of asserting it is
-            % that the construction could change without anyone noticing: the
-            % session anchor folds to a `relative_reference` whose value is
-            % `struct('relation', term)` with NO clock, while the epoch anchor
-            % folds to one carrying `dev_local_time`. Two members, two distinct
-            % keys. If either fold ever starts writing the other's clock, this
-            % is the test that says so.
-            result = runPredMigrate(testCase);
+        function testTheTimeReferenceFamilyIsLegal(testCase)
+            % `time_reference_id` is a family (`multiple`) whose members must
+            % differ by `value.clock` on the referenced document
+            % (did-schema #88 interaction.json, time_reference_model CHANGE 5).
+            % Pre-#88 PRED's pyraview carried TWO members (a session anchor
+            % with no clock and the epoch anchor on dev_local_time), and this
+            % test was where that rule first had two members to compare. On
+            % #88 the session is the `session_id` edge, not a time reference,
+            % so the family's size is printed and the uniqueness is asserted
+            % over whatever members there are; one member is reported as
+            % such, never as a pass of the two-member case.
+            [result, bodies] = runPredMigrate(testCase);
             docs = destinationBodies(result.destination);
-            obs = pyraviewObservation(testCase, docs);
-            verifyNotEmpty(testCase, obs, resultDiag(result));
+            obs = pyraviewObservation(testCase, docs, bodies);
+            ids = depValues(obs, 'time_reference_id');
+            fprintf(['\n  TIME-REFERENCE FAMILY (PRED pyraview)\n' ...
+                     '    DENOMINATOR: %d member(s)\n'], numel(ids));
+            verifyNotEmpty(testCase, ids, resultDiag(result));
 
-            ids = {depValue(obs, 'time_reference_1'), ...
-                   depValue(obs, 'time_reference_2')};
-            verifyNotEmpty(testCase, ids{1}, ...
-                ['the observation lost its session anchor, so this family is ' ...
-                 'no longer of size 2 and the rule cannot fire. ' ...
-                 resultDiag(result)]);
-            verifyNotEmpty(testCase, ids{2}, resultDiag(result));
-
-            clocks = {};
+            clocks = cell(1, numel(ids));
             for k = 1:numel(ids)
                 doc = findById(docs, ids{k});
                 verifyNotEmpty(testCase, doc, sprintf( ...
-                    'time_reference_%d names a document not in the destination', k));
-                clocks{end+1} = clockOf(doc); %#ok<AGROW>
+                    'time_reference_id member %d names a document not in the destination', k));
+                clocks{k} = clockOf(doc);
+                fprintf('      %s  clock %s\n', ids{k}, clocks{k});
             end
-            verifyNotEqual(testCase, clocks{1}, clocks{2}, sprintf( ...
-                ['both members of the time_reference_# family resolve to the ' ...
-                 'same clock (%s); `referent_unique_by` declares it UNIQUE. ' ...
-                 '%s'], clocks{1}, resultDiag(result)));
+            verifyEqual(testCase, numel(unique(clocks)), numel(clocks), sprintf( ...
+                ['two members of the time_reference_id family resolve to the ' ...
+                 'same clock; the rule declares it UNIQUE. %s'], resultDiag(result)));
         end
 
     end
@@ -729,85 +783,63 @@ for k = 1:numel(bodies)
 end
 end
 
-function obs = pyraviewObservation(testCase, bodies)
-%PYRAVIEWOBSERVATION PRED's pyraview observation, told apart from element's.
-%   PRED YIELDS **TWO** `voltage_observation` DOCUMENTS and the first draft of
-%   this file assumed one. `findByClass` returned whichever the database
-%   happened to yield first, and on the first real run that was ELEMENT's --
-%   which legitimately carries `time_reference_1` and no `time_reference_2`.
-%   The test then reported the epoch link as missing when it was looking at
-%   the wrong document. A migration defect and a selector defect printed
-%   identically, which is the whole reason this helper exists.
-%
-%   THE DISCRIMINATOR IS NOT `time_reference_2`. Selecting on the very edge
-%   under test would make the assertion vacuous -- it would find whichever
-%   document already satisfies it, or none, and never report a real loss.
-%   `instrument_id` is used instead, and it is the RECORDED difference between
-%   the two emitters (DID-schema status_board.py, family `raw recording
-%   observation`):
-%
-%     element   private/jRecordingObservation.m:211-212
-%         subject_id = the SPECIMEN, instrument_id = the electrode
-%     pyraview  migrators_j/pyraview.m:225
-%         subject_id = element_id (the probe-as-subject), NO instrument_id
-%
-%   So pyraview's is the one WITHOUT an instrument edge. Both the count and
-%   the partition are asserted, so if either emitter changes shape this fails
-%   loudly rather than silently picking the other document.
-allObs = findAllByClass(bodies, 'voltage_observation');
-assertEqual(testCase, numel(allObs), 2, sprintf( ...
-    ['PRED should yield exactly 2 voltage_observation documents (element''s ' ...
-     'raw recording and pyraview''s pyramid); found %d. The selector below ' ...
-     'cannot be trusted until this holds.'], numel(allObs)));
-%   THE DISCRIMINATOR CHANGED 2026-08-13, AND THE OLD ONE IS WHY. It was
-%   `instrument_id` -- present on element's, absent on pyraview's. The
-%   second-pass `recordingAttribution` now gives pyraview's observation the
-%   same specimen and the same instrument edge, which is the entire point of
-%   that pass and which makes the old discriminator select NOTHING. A test
-%   whose selector is the property under repair cannot survive the repair.
-%
-%   `base.name` is used instead, and it is a WRITER-SIDE constant on both
-%   sides rather than anything this pass touches:
-%       element   private/jRecordingObservation.m:215  'migrated_recording_observation'
-%       pyraview  migrators_j/pyraview.m               'migrated_signal'
-byName = containers.Map('KeyType', 'char', 'ValueType', 'any');
-for k = 1:numel(allObs)
-    nm = '';
-    st = allObs{k};
-    if isfield(st, 'base') && isstruct(st.base) && isfield(st.base, 'name')
-        nm = char(st.base.name);
+function obs = pyraviewObservation(testCase, bodies, sourceBodies)
+%PYRAVIEWOBSERVATION PRED's pyraview observation in the destination.
+%   SELECTED BY ITS SOURCE ID. pyraview.m preserves the v1 document's id on the
+%   observation it emits (base.id = the pyraview id), which is a writer-side
+%   constant and touches none of the edges under test. The earlier selectors
+%   (instrument_id, then base.name) each became the property under repair or
+%   stopped being written (did-schema #88 writes no base.name), and the old
+%   "exactly two voltage observations" premise does not hold on #88, where
+%   the element's recording observation is minted per epoch from files PRED
+%   does not carry.
+pyrIds = {};
+for k = 1:numel(sourceBodies)
+    j = jsondecode(sourceBodies{k});
+    if isfield(j, 'document_class') && strcmp(j.document_class.class_name, 'pyraview')
+        pyrIds{end+1} = char(j.base.id); %#ok<AGROW>
     end
-    if ~isKey(byName, nm)
-        byName(nm) = {};
-    end
-    acc = byName(nm);
-    acc{end+1} = allObs{k}; %#ok<AGROW>
-    byName(nm) = acc;
 end
-assertTrue(testCase, isKey(byName, 'migrated_signal'), ...
-    ['no voltage_observation carries base.name `migrated_signal` -- pyraview ' ...
-     'stopped naming its observation, and the selector needs a new discriminator']);
-assertTrue(testCase, isKey(byName, 'migrated_recording_observation'), ...
-    ['no voltage_observation carries base.name `migrated_recording_observation` ' ...
-     '-- element''s raw-recording observation is missing entirely']);
-pyr = byName('migrated_signal');
-assertEqual(testCase, numel(pyr), 1, ...
-    'more than one pyraview observation; the selector is ambiguous');
-obs = pyr{1};
+assertEqual(testCase, numel(pyrIds), 1, sprintf( ...
+    'PRED should hold exactly 1 pyraview document; found %d', numel(pyrIds)));
+obs = findById(bodies, pyrIds{1});
+assertNotEmpty(testCase, obs, ...
+    'the pyraview id is not in the destination: pyraview.m stopped preserving it');
+assertEqual(testCase, obs.document_class.class_name, 'observation', ...
+    'pyraview''s document is not an observation');
+kinds = {obs.document_class.superclasses.class_name};
+assertTrue(testCase, any(strcmp(kinds, 'voltage')), ...
+    'pyraview''s observation does not list the voltage value kind');
+end
 
-% THE SIGNED ATTRIBUTION, asserted on pyraview's document specifically. Before
-% recordingAttribution this observation named the PROBE as its subject and no
-% instrument at all, so "every recording from this specimen" missed it.
-elemObs = byName('migrated_recording_observation');
-specimenId = depValue(elemObs{1}, 'subject_id');
-probeId    = depValue(elemObs{1}, 'instrument_id');
-assertNotEmpty(testCase, specimenId, ...
-    'element''s observation names no specimen; the donor map would be empty');
-assertEqual(testCase, depValue(obs, 'subject_id'), specimenId, ...
-    ['pyraview''s observation is not attributed to the SPECIMEN -- ' ...
-     'recordingAttribution did not run, or refused it']);
-assertEqual(testCase, depValue(obs, 'instrument_id'), probeId, ...
-    'pyraview''s observation does not name the probe as its instrument (T7)');
+function doc = findEntity(bodies, typeName)
+%FINDENTITY The first `entity` whose type is TYPENAME (did-schema #88, T1).
+doc = [];
+for k = 1:numel(bodies)
+    d = bodies{k};
+    if isstruct(d) && isfield(d, 'document_class') ...
+            && strcmp(d.document_class.class_name, 'entity') ...
+            && isfield(d, 'entity') && isfield(d.entity, 'type') ...
+            && isfield(d.entity.type, 'name') && ndi.v2.vocabIs('entity_type', d.entity.type, typeName)
+        doc = d;
+        return;
+    end
+end
+end
+
+function v = depValues(body, name)
+%DEPVALUES Every value of the edge NAME (a `multiple` edge repeats).
+v = {};
+if isempty(body) || ~isfield(body, 'depends_on') || ~isstruct(body.depends_on)
+    return;
+end
+for k = 1:numel(body.depends_on)
+    d = body.depends_on(k);
+    if isfield(d, 'name') && strcmp(d.name, name)
+        if isfield(d, 'value'); v{end+1} = d.value; %#ok<AGROW>
+        elseif isfield(d, 'document_id'); v{end+1} = d.document_id; end %#ok<AGROW>
+    end
+end
 end
 
 function doc = findById(bodies, docId)
@@ -846,7 +878,7 @@ function c = clockOf(doc)
 %   uniqueness assertion compares two values rather than special-casing one.
 c = '<no clock>';
 if isempty(doc); return; end
-for blk = {'relative_reference', 'epoch_bounded_reference', 'absolute_reference'}
+for blk = {'relative_time_reference', 'absolute_time_reference', 'relative_reference', 'epoch_bounded_reference', 'absolute_reference'}
     if ~isfield(doc, blk{1}); continue; end
     b = doc.(blk{1});
     if isstruct(b) && isfield(b, 'value') && isstruct(b.value) ...

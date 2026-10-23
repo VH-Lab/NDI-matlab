@@ -1,8 +1,10 @@
-function seriesInfo = reconstructSeriesIngestLocations(seriesInfo, fileInfo, fileDirectory, cloudDatasetId)
+function seriesInfo = reconstructSeriesIngestLocations(seriesInfo, fileInfo, fileDirectory, cloudDatasetId, options)
 %RECONSTRUCTSERIESINGESTLOCATIONS Rebuild series ingest_locations from a downloaded manifest.
 %
 %   SERIESINFO = ndi.cloud.sync.internal.reconstructSeriesIngestLocations( ...
 %       SERIESINFO, FILEINFO, FILEDIRECTORY, CLOUDDATASETID)
+%   SERIESINFO = ndi.cloud.sync.internal.reconstructSeriesIngestLocations( ...
+%       ..., 'MemberBase', BASE)
 %
 %   For every series in SERIESINFO that declares `n_present > 0` and
 %   carries no `ingest_locations`, this reads the downloaded manifest file
@@ -42,6 +44,17 @@ function seriesInfo = reconstructSeriesIngestLocations(seriesInfo, fileInfo, fil
 %                         `location`, matching the URI scheme
 %                         `download_file_from_cloud` understands.
 %
+%   Options:
+%       MemberBase      - The number of the series' FIRST member, read off
+%                         the DOCUMENT'S VINTAGE with
+%                         ndi.vintage.seriesMemberBase(document): 1 for a v1
+%                         document (NAME_1 is manifest slot 0), 0 for a
+%                         V_eta document (NAME_0 is slot 0; DID-schema #73
+%                         item 17, DID-matlab 1a6bd9f). Default 1, the v1
+%                         behaviour. Callers holding the document must pass
+%                         it: the default names the wrong members of a V_eta
+%                         document.
+%
 %   Outputs:
 %       seriesInfo      - The updated struct array.
 %
@@ -65,6 +78,7 @@ function seriesInfo = reconstructSeriesIngestLocations(seriesInfo, fileInfo, fil
         fileInfo
         fileDirectory   (1,1) string
         cloudDatasetId  (1,1) string
+        options.MemberBase (1,1) double {mustBeMember(options.MemberBase, [0 1])} = 1
     end
 
     if isempty(seriesInfo), return, end
@@ -92,7 +106,7 @@ function seriesInfo = reconstructSeriesIngestLocations(seriesInfo, fileInfo, fil
             continue
         end
 
-        ingestLocations = buildIngestLocations(manifest, cloudDatasetId);
+        ingestLocations = buildIngestLocations(manifest, cloudDatasetId, options.MemberBase);
         if isempty(ingestLocations), continue, end
 
         seriesInfo(k).ingest_locations = ingestLocations;
@@ -112,16 +126,25 @@ function manifestUid = lookupManifestUid(fileInfo, seriesName)
     end
 end
 
-function ingestLocations = buildIngestLocations(manifest, cloudDatasetId)
+function ingestLocations = buildIngestLocations(manifest, cloudDatasetId, memberBase)
 % One ingest_locations entry per present slot of the manifest.
-% Order matches DID's authoring shape and its `sprintf('%s_%d', name, index)`
-% naming (index is 1-based, same as manifest.uids{index}).
+% `index` is the member NUMBER as named, not the manifest position: DID
+% names the member `sprintf('%s_%d', name, index)` when it ingests it
+% (did.implementations.sqlitedb/do_add_doc), and did.document/addFileSeries
+% writes `index` as the number in the document's own base. So manifest
+% position `slot` (1-based, manifest.uids{slot}) is member number
+% slot - 1 + memberBase: slot for a v1 document, slot - 1 for a V_eta one.
 %
 % Preallocated + trimmed rather than grown: a lightsheet pyramid level's
 % manifest names tens of thousands of members, and growing the struct
 % array one entry at a time with `end+1` reallocates the whole array on
 % every step -- classic O(N^2), turning a linear pass into minutes.
 % See NDI-matlab lightsheet 2026-09-24 download hang.
+    arguments
+        manifest
+        cloudDatasetId {mustBeText}
+        memberBase (1,1) double
+    end
     prototype = struct( ...
         'index', 0, ...
         'uid', '', ...
@@ -137,7 +160,7 @@ function ingestLocations = buildIngestLocations(manifest, cloudDatasetId)
         memberUid = manifest.uids{slot};
         if isempty(memberUid), continue, end
         kept = kept + 1;
-        entries(kept).index           = slot;
+        entries(kept).index           = slot - 1 + memberBase;
         entries(kept).uid             = memberUid;
         entries(kept).location        = sprintf('ndic://%s/%s', cloudDatasetIdChar, memberUid);
         entries(kept).location_type   = 'ndicloud';

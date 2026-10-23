@@ -83,9 +83,13 @@ f = struct('name', '', 'reference', [], 'type', '', 'direct', false, ...
 
 % --- name + reference, out of the one combined field -------------------
 localId = '';
-if isfield(props, 'subject') && isstruct(props.subject) ...
-        && isfield(props.subject, 'local_identifier')
-    localId = props.subject.local_identifier;
+% did-schema #88 (T1): the element is an `entity`; #73: a `subject`
+for blk = {'entity', 'subject'}
+    if isfield(props, blk{1}) && isstruct(props.(blk{1})) ...
+            && isfield(props.(blk{1}), 'local_identifier')
+        localId = props.(blk{1}).local_identifier;
+        break;
+    end
 end
 tok = regexp(localId, '^(.*) \(ref (.+)\)$', 'tokens', 'once');
 if isempty(tok)
@@ -139,9 +143,9 @@ function v = assertionValue(ndi_session_obj, docId, label)
 %   element had nothing to say. Returning '' reproduces exactly what the
 %   v1 read would have produced from an empty field.
 v = '';
-q = ndi.query('', 'isa', 'term_assertion', '') & ...
-    ndi.query('subject_statement.variable.name', 'exact_string', label, '') & ...
-    ndi.query('', 'depends_on', 'subject_id', docId);
+q = ndi.v2.statementQuery('assertion', 'term') & ...
+    ndi.v2.fieldQuery('statement.variable.name', 'exact_string', label) & ...
+    ndi.v2.entityQuery(docId);
 docs = ndi_session_obj.database_search(q);
 if isempty(docs)
     return;
@@ -175,14 +179,15 @@ function [specimen, found] = specimenViaInstrument(ndi_session_obj, elementId)
 %   repository.
 specimen = '';
 found = false;
-q = ndi.query('', 'isa', 'subject_observation', '') & ...
+q = ndi.v2.isaQuery('observation') & ...
     ndi.query('', 'depends_on', 'instrument_id', elementId);
 docs = ndi_session_obj.database_search(q);
 if isempty(docs)
     return;
 end
 found = true;
-specimen = docs{1}.dependency_value('subject_id', 'ErrorIfNotFound', 0);
+specimen = ndi.v2.edgeIds(ndi.v2.props(docs{1}), 'entity_id');
+if isempty(specimen), specimen = ''; else, specimen = specimen{1}; end
 end
 
 function target = relationTarget(ndi_session_obj, childId, relationName)
@@ -199,8 +204,9 @@ function target = relationTarget(ndi_session_obj, childId, relationName)
 %   not pull them all into MATLAB to filter.
 target = '';
 q = ndi.query('', 'isa', 'directed_relation', '') & ...
-    ndi.query('directed_relation.relation.name', 'exact_string', relationName, '') & ...
-    ndi.query('', 'depends_on', 'child', childId);
+    ndi.v2.vocabQuery('directed_relation.relation', 'relation', relationName) & ...
+    (ndi.query('', 'depends_on', 'child_id', childId) | ...   % did-schema #88
+     ndi.query('', 'depends_on', 'child', childId));
 docs = ndi_session_obj.database_search(q);
 if isempty(docs)
     return;

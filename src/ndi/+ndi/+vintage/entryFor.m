@@ -40,7 +40,7 @@ for i = 1:numel(m)
         vintage = 'v1';
         return;
     end
-    if strcmp(name, m(i).eta_class)
+    if any(strcmp(name, ndi.vintage.names(m(i).eta_class)))
         entry = m(i);
         vintage = 'V_eta';
         return;

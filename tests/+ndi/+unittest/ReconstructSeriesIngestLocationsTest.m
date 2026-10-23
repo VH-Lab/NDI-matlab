@@ -87,6 +87,69 @@ classdef ReconstructSeriesIngestLocationsTest < matlab.unittest.TestCase
             end
         end
 
+        function testV1DocumentNumbersMembersFromOne(testCase)
+            % A v1 document (MemberBase 1, the default): member NAME_1 is
+            % manifest slot 0, so `index` equals the 1-based manifest
+            % position. Passing the base explicitly gives exactly what the
+            % default gives -- v1 behaviour is unchanged.
+            [manifestUid, uids] = testCase.writeManifest(5, [1 3 5]);
+            fi = testCase.fileInfoFor('chunkdata.bin', manifestUid);
+            si = testCase.seriesInfoFor('chunkdata.bin', 5, 3);
+
+            outDefault = ndi.cloud.sync.internal.reconstructSeriesIngestLocations( ...
+                si, fi, testCase.Dir, "ds");
+            outV1 = ndi.cloud.sync.internal.reconstructSeriesIngestLocations( ...
+                si, fi, testCase.Dir, "ds", 'MemberBase', 1);
+
+            testCase.verifyEqual([outV1(1).ingest_locations.index], [1 3 5]);
+            testCase.verifyEqual({outV1(1).ingest_locations.uid}, uids([1 3 5]));
+            testCase.verifyEqual(outV1, outDefault);
+        end
+
+        function testVetaDocumentNumbersMembersFromZero(testCase)
+            % A V_eta document (MemberBase 0; DID-schema #73 item 17,
+            % DID-matlab 1a6bd9f): member NAME_0 is manifest slot 0. `index`
+            % is the number DID puts in the member's name
+            % (sprintf('%s_%d', name, index) in sqlitedb/do_add_doc), so the
+            % same manifest slots 1,3,5 (1-based) are members 0,2,4 -- with
+            % the SAME uids, because the manifest does not depend on vintage.
+            [manifestUid, uids] = testCase.writeManifest(5, [1 3 5]);
+            fi = testCase.fileInfoFor('chunkdata.bin', manifestUid);
+            si = testCase.seriesInfoFor('chunkdata.bin', 5, 3);
+
+            out = ndi.cloud.sync.internal.reconstructSeriesIngestLocations( ...
+                si, fi, testCase.Dir, "ds", 'MemberBase', 0);
+
+            il = out(1).ingest_locations;
+            testCase.assertNumElements(il, 3);
+            testCase.verifyEqual([il.index], [0 2 4]);
+            testCase.verifyEqual({il.uid}, uids([1 3 5]));
+        end
+
+        function testMemberBaseReadFromDocumentVintage(testCase)
+            % The callers read the base with ndi.vintage.seriesMemberBase
+            % from the document itself. A V_eta schema_version gives 0, a
+            % document without one gives 1, and feeding that into the
+            % reconstruction names the first present member accordingly.
+            [manifestUid, ~] = testCase.writeManifest(2, [1 2]);
+            fi = testCase.fileInfoFor('body_data', manifestUid);
+            si = testCase.seriesInfoFor('body_data', 2, 2);
+
+            veta = struct('document_class', struct('schema_version', 'V_eta'));
+            v1   = struct('document_class', struct('class_name', 'x'));
+            testCase.verifyEqual(ndi.vintage.seriesMemberBase(veta), 0);
+            testCase.verifyEqual(ndi.vintage.seriesMemberBase(v1), 1);
+
+            outVeta = ndi.cloud.sync.internal.reconstructSeriesIngestLocations( ...
+                si, fi, testCase.Dir, "ds", ...
+                'MemberBase', ndi.vintage.seriesMemberBase(veta));
+            outV1 = ndi.cloud.sync.internal.reconstructSeriesIngestLocations( ...
+                si, fi, testCase.Dir, "ds", ...
+                'MemberBase', ndi.vintage.seriesMemberBase(v1));
+            testCase.verifyEqual([outVeta(1).ingest_locations.index], [0 1]);
+            testCase.verifyEqual([outV1(1).ingest_locations.index], [1 2]);
+        end
+
         function testLeavesExistingIngestLocationsAlone(testCase)
             % A series that already carries ingest_locations (a doc built
             % locally and never round-tripped, say) is not touched. The
