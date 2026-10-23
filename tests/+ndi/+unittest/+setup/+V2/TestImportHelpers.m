@@ -211,6 +211,33 @@ classdef TestImportHelpers < matlab.unittest.TestCase
             testCase.verifyEmpty(rel);
         end
 
+        function testASessionOfANestedStudyIsInTheDataset(testCase)
+            % Jess Haley 2026-10-23 [nested studies]: a study may be included_in
+            % a parent study (Haley #144); its sessions are in the dataset, both
+            % for the write check and for ndi.dataset's listing
+            testCase.needRegistry();
+            dsid = char(ndi.ido.unique_id());
+            m = ndi.setup.V2.datasetMetadata(struct( ...
+                'dataset', struct('name', 'Helpers dataset', 'description', 'A test.'), ...
+                'studies', {{struct('key', 'parent', 'name', 'Parent study', ...
+                'description', 'Holds the other.'), struct('key', 'child', 'name', ...
+                'Child study', 'description', 'Inside the parent.', 'included_in', 'parent')}}), ...
+                dsid, 'Studies', "include");
+            dsPath = fullfile(testCase.Root, 'dataset');
+            s1 = char(ndi.ido.unique_id());
+            T = table({'s1'}, {fullfile(testCase.Root, 's1')}, {s1}, {m.ids('child')}, ...
+                'VariableNames', {'local_identifier', 'path', 'session_id', 'study_ids'});
+            out = ndi.setup.V2.writeDataset(dsPath, 'dataset', dsid, m.documents, T, ...
+                'Progress', false);
+            testCase.verifyEmpty(out.report.sessions.notInDataset, ...
+                'session -> child study -> parent study -> dataset');
+            ds = ndi.dataset.dir(dsPath);
+            [refs, ids] = ds.session_list();
+            testCase.verifyEqual(numel(refs), 1, 'the one session is listed');
+            testCase.verifyTrue(ismember('s1', refs));
+            testCase.verifyTrue(ismember(s1, ids));
+        end
+
         function testWriteDatasetIsStrictByDefault(testCase)
             testCase.needRegistry();
             dsid = char(ndi.ido.unique_id());

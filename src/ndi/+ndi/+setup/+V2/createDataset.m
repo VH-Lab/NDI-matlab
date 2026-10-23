@@ -203,8 +203,9 @@ else
         {'class', 'edge'});
 end
 
-% sessions: filed under the dataset, directly or through a study that is
-% filed under it (included_in: a session's parent is a study or a dataset)
+% sessions: filed under the dataset, directly or through studies at any depth
+% (included_in: a session's parent is a study or a dataset; a study's parent
+% is a dataset or a parent study; Jess Haley 2026-10-23 [nested studies])
 member = 'included_in';
 isRel = strcmp(cls, 'directed_relation');
 parentsOf = containers.Map();
@@ -220,13 +221,17 @@ report.sessions.found = numel(sess);
 report.sessions.notInDataset = {};
 for i = sess
     ok = false;
-    if isKey(parentsOf, ids{i})
-        for p = parentsOf(ids{i})
-            if ismember(p{1}, datasetIds) || ...
-                    (isKey(parentsOf, p{1}) && any(ismember(parentsOf(p{1}), datasetIds)))
-                ok = true;
-            end
+    seen = ids(i);
+    frontier = ids(i);
+    while ~ok && ~isempty(frontier)
+        up = {};
+        for f = frontier
+            if isKey(parentsOf, f{1}), up = [up, parentsOf(f{1})]; end %#ok<AGROW>
         end
+        up = setdiff(unique(up), seen);   % each record once, so a cycle ends the walk
+        ok = any(ismember(up, datasetIds));
+        seen = [seen, up]; %#ok<AGROW>
+        frontier = up;
     end
     if ~ok
         [~, blk] = ndi.v2.kindOf(docs{i});

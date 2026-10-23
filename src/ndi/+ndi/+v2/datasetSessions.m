@@ -18,9 +18,11 @@ function [sessions, notes] = datasetSessions(database, datasetSessionId, dataset
 %     session       the linked session, opened (an ndi.session.dir; [] when
 %                   ingested)
 %
-%   The rule (V_eta_linked_session_plan.md, signed 2026-10-09): a session is
-%   in the dataset when its entity document is filed under the dataset, or
-%   under a study that is filed under the dataset; the relation is in the
+%   The rule (V_eta_linked_session_plan.md, signed 2026-10-09; amended by
+%   Jess Haley 2026-10-23 [nested studies]): a session is in the dataset when
+%   its entity document is filed under the dataset, or under a study that is
+%   filed under it at any depth (a study may be filed under a parent study);
+%   the relation is in the
 %   dataset's database for both kinds. The relation is `included_in`
 %   (V_eta_relation_inheritance_plan.md). A session is LINKED when a
 %   `linked_session` document names it: its `path` is the session's folder
@@ -60,16 +62,24 @@ datasetDocs = database.search(ndi.v2.isaQuery('dataset'));
 datasetDocs = datasetDocs(cellfun(@(d) strcmp(ndi.v2.kindOf(d.document_properties), ...
     'dataset'), datasetDocs));
 knowMembership = ~isempty(datasetDocs);
-% level 1: filed under the dataset (studies, or sessions directly); level 2:
-% filed under one of those (the sessions of a study)
-level1 = {};
+% filed under the dataset at any depth: studies, studies within studies
+% (Haley #144), and the sessions of any of them (Jess Haley 2026-10-23
+% [nested studies]); each record is visited once, so a cycle ends the walk
+members = {};
+frontier = {};
 for k = 1:numel(datasetDocs)
-    level1 = [level1, memberChildren(database, datasetDocs{k}.id(), member)]; %#ok<AGROW>
+    frontier = [frontier, {datasetDocs{k}.id()}]; %#ok<AGROW>
 end
-level1 = unique(level1);
-members = level1;
-for k = 1:numel(level1)
-    members = [members, memberChildren(database, level1{k}, member)]; %#ok<AGROW>
+visited = frontier;
+while ~isempty(frontier)
+    next = {};
+    for k = 1:numel(frontier)
+        next = [next, memberChildren(database, frontier{k}, member)]; %#ok<AGROW>
+    end
+    next = setdiff(unique(next), visited);
+    members = [members, next]; %#ok<AGROW>
+    visited = [visited, next]; %#ok<AGROW>
+    frontier = next;
 end
 members = unique(members);
 
