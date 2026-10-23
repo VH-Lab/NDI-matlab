@@ -3,7 +3,7 @@ https://github.com/VH-lab/vhlab-toolbox-matlab
 https://github.com/VH-lab/vhlab-library-matlab
 https://github.com/VH-lab/vhlab-thirdparty-matlab
 https://github.com/VH-Lab/vhlab-NewStim-matlab
-https://github.com/VH-lab/DID-matlab@915f92b49c71f552220562676938e03b8a97c8a1
+https://github.com/VH-lab/DID-matlab@bd369daaedff496b63bf8b4e4d66f00e65350122
 https://github.com/VH-lab/NDR-matlab
 https://github.com/ehennestad/Catalog
 https://github.com/a-ma72/mksqlite
