@@ -3,7 +3,7 @@ name: V_eta migrate assemblers (fast)
 # Fast, focused gate for the V_eta second-pass assemblers
 # (ndi.migrate.internal.*): the pure struct-assembly unit tests only -- no
 # database, no schema cache, no cloud, no full toolbox suite -- so a change to
-# stimulusBathToBath / stimulusPresentationToManipulation / bodyResolver /
+# stimulusBathToBath / bodyResolver /
 # pathSPromotion / epochAnchorFold / ontologyRowSubjects / ontologyLabelSubjects
 # is validated in a couple of minutes instead of the full run-tests.yml. The
 # full suite stays the milestone gate.
@@ -309,6 +309,12 @@ jobs:
             %   not 18. A full non-comment re-sweep of all 11 workflows is a
             %   separate follow-up; this entry documents only the three added
             %   here, not a recomputed cross-workflow total.
+            %   NOTE 2026-10-23: TestStimulusPresentationTimedSequence and
+            %   TestStimulusPresentationTimedSequenceMultiSubject no longer
+            %   exist in tests/+ndi/+unittest/+migrate, nor does
+            %   stimulusPresentationToManipulation; TestHartleyBasisGratings
+            %   and TestStimulusPassGating run in the stimulus fold step
+            %   below, not in this list.
             results = runtests([ ...
                 "ndi.unittest.migrate.TestBathAssembly", ...
                 "ndi.unittest.migrate.TestBodyResolver", ...

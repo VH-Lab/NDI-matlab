@@ -2,17 +2,20 @@ name: V_eta migrate (end-to-end)
 
 # Real-session verification of the V_eta (Brainstorm J) second pass:
 # ndi.migrate.local must resolve a deferred stimulus_bath into a validated
-# dose_manipulation (D8 retired the bath family) AND assemble a
-# stimulus_presentation into a body-backed visual_grating_manipulation
-# (+ sampled_body) from the recording graph. That path needs BOTH the
+# `manipulation` with the `formulation` value kind (its value the formulation
+# document by `value_id`; not a dose) AND assemble a stimulus_presentation into
+# one `manipulation` with the `item` value kind whose `item_id` names one
+# `method` document per distinct stimulus (did-schema #88; TestMigrateLocalEta
+# testStimulusBathResolvesToDose, testStimulusPresentationBecomesAnItemManipulation).
+# That path needs BOTH the
 # TargetVersion-aware DID-matlab (with +migrators_j) and the assembled V_eta
 # schema set -- which the fast test-eta-migrate.yml (struct assemblers only) and
 # run-tests.yml do not provide. This job assembles that environment and runs the
 # gated TestMigrateLocalEta (which skips everywhere else).
 #
-# The DID-matlab, did-schema, and NDI-matlab V_eta branches share a name, so the
-# dep refs default to this run's branch (github.ref_name); override via the
-# workflow_dispatch input if needed.
+# The dep refs default to did-schema PR #88's and DID-matlab PR #218's branch,
+# claude/ecstatic-pascal-md91fw (DID_MATLAB_REF and DID_SCHEMA_REF below);
+# override via the workflow_dispatch inputs `ref` and `schema_ref`.
 
 on:
   push:
@@ -80,14 +83,10 @@ jobs:
     name: V_eta second-pass end-to-end
     runs-on: ubuntu-latest
     env:
-      # DID-matlab's V_eta migrators merged to V2 (#151, 2026-09-23); validate
-      # the cross-repo wiring against V2 so this resolves after the shared topic
-      # branch is deleted. A workflow_dispatch input still overrides.
+      # A workflow_dispatch input overrides.
       # did-schema #88 needs the #88-ported migrators: DID-matlab PR #218
       # (claude/ecstatic-pascal-md91fw). Back to V2 once #218 merges.
       DID_MATLAB_REF: ${{ inputs.ref || 'claude/ecstatic-pascal-md91fw' }}
-      # V_eta lives on did-schema `main` since #64 merged (2026-09-23) and the
-      # shared topic branch was deleted; validate against main.
       # the v_eta-pre73 pin is dropped: the second pass emits did-schema #88's
       # shape (method / item). PR #88's branch until it merges, then main.
       DID_SCHEMA_REF: ${{ inputs.schema_ref || 'claude/ecstatic-pascal-md91fw' }}
