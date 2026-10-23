@@ -53,8 +53,6 @@ classdef WaitForDocumentCount < ndi.cloud.api.call
             %   apiURL      - The URL of the last poll.
 
             b = false;
-            apiResponse = [];
-            apiURL = [];
             answer = struct('state', 'unknown', 'count', NaN, ...
                 'expectedCount', this.expectedCount, 'elapsed', 0);
 
