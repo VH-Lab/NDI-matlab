@@ -9,17 +9,20 @@
 The support for did-schema main's older shape (per-leaf classes, separate
 entity classes, `part_of` for records, a `base.session_id` field) is removed,
 so NDI-matlab #1021 merges after #88 and #218. The read path for MIGRATED
-documents is unchanged: the migrators are pinned to did-schema `v_eta-pre73`
-and still write older names, which `ndi.v2.vetaAliases`, `ndi.v2.entityTypesFor`
-and `ndi.vintage` read. Where this document below says "either schema" or
+documents (`ndi.v2.vetaAliases`, `ndi.v2.entityTypesFor`, `ndi.vintage`) is
+unchanged. The `v_eta-pre73` pin is dropped: every NDI-matlab workflow that checks out did-schema sets
+`DID_SCHEMA_REF` to did-schema #88's branch (`claude/ecstatic-pascal-md91fw`),
+and the v1 to V_eta second pass writes #88's shape. Where this document below says "either schema" or
 "did-schema main", that describes the history of the change, not code that runs.
 
-**Status: PARTLY BUILT (2026-10-06), for review by Jess Haley and Steve Van Hooser.**
-Built (read side): `ndi.entity`, the statement tree,
-`ndi.value`, and the `ndi.v2` helpers. **Not built, on purpose:** any change to
-`ndi.session` or `ndi.dataset` (section 4, "Entry points"); the `ndi.strain` and
+**Status: PARTLY BUILT, for review by Jess Haley and Steve Van Hooser.**
+Built (read side, 2026-10-06; section 9): `ndi.entity`, the statement tree,
+`ndi.value`, and the `ndi.v2` helpers. Built since, by the dated sections
+below: `ndi.dataset`'s linked and ingested sessions (section 11), and
+`ndi.session.dir` / `ndi.dataset.dir` finding their own record by id
+(`ndi.v2.sessionRecord`, section 14). **Not built:** the `ndi.strain` and
 `ndi.study` subclasses (they do not exist; a strain and a study are plain `ndi.entity`);
-`subject.location(t)`; the `'During'` filter. Section 9 lists what was built.
+`subject.location(t)`; the `'During'` filter.
 
 ## 1. Why
 
@@ -28,7 +31,7 @@ observed, manipulated, calculated about or asserted about, when, how and with
 what result. NDI's objects do not know this yet. Today a user who wants one worm's
 speed from a V2 dataset has to:
 
-1. search for `velocity_calculation` documents whose `subject_id` edge is the worm;
+1. search for `calculation` statements with the `velocity` value kind whose `entity_id` edge is the worm;
 2. pick the one whose `variable` is `midpoint speed`;
 3. follow its `depends_on` to the `sampled_body` that holds the values;
 4. open that body's file, gunzip it, and decode it by the body's `datum_type`,
@@ -352,8 +355,7 @@ the file was opened (`'ReadVideos'`, or a TIFF).
 did-schema `V_eta_linked_session_plan.md` (signed 2026-10-09): a session is in
 a dataset when its `session` entity is filed under the dataset, or under a
 study that is filed under the dataset; the relation is in the dataset's
-database. The relation is `included_in` (section 14); "`part_of`" below
-means `included_in`.
+database. The relation is `included_in` (section 14).
 An INGESTED session's documents are in the dataset's database too; a LINKED
 session's are in its own folder, which a `linked_session` document (`path`,
 relative to the dataset's folder when inside it, and an `entity_id` edge to the
@@ -362,12 +364,12 @@ session's entity) names. v1's `session_in_a_dataset` is not used.
 | method / function | what it does on a V2 dataset |
 |---|---|
 | `session_list`, `open_session`, `database_search` | list the members (`ndi.v2.datasetSessions`), open a linked one from its folder (checked to hold that session), search the dataset and each linked session |
-| `session_notes` | the listing's denominator, and every session left out and why (not `part_of` the dataset; a linked folder missing, unopenable or holding another session; also a warning, `ndi:dataset:sessionsLeftOut`) |
+| `session_notes` | the listing's denominator, and every session left out and why (not `included_in` the dataset; a linked folder missing, unopenable or holding another session; also a warning, `ndi:dataset:sessionsLeftOut`) |
 | `add_linked_session(S, 'PartOf', id)` | an `included_in` relation to the dataset, or the study `PartOf` names, and a `linked_session` document |
-| `add_ingested_session(S, 'PartOf', id)` | copies every document of S, with the files it ingested; adds a `part_of` relation unless S's own relations already make it a member |
+| `add_ingested_session(S, 'PartOf', id)` | copies every document of S, with the files it ingested; adds an `included_in` relation unless S's own relations already make it a member |
 | `convertLinkedSessionToIngested` | copies the linked session's documents in, deletes the `linked_session` |
-| `convertIngestedSessionToLinked(id, folder)` | writes the session's documents to a new V2 session in `folder`, deletes them from the dataset, adds a `linked_session`; the `part_of` relations stay |
-| `unlink_session` | deletes the `linked_session` and the `part_of` relations naming the session; the folder stays |
+| `convertIngestedSessionToLinked(id, folder)` | writes the session's documents to a new V2 session in `folder`, deletes them from the dataset, adds a `linked_session`; the `included_in` relations stay |
+| `unlink_session` | deletes the `linked_session` and the `included_in` relations naming the session; the folder stays |
 | `makeSelfContained('DryRun', tf)` | copies every file the dataset's documents record by location into its file store |
 
 Documents are copied with `ndi.v2.copyDocuments`, as stored
@@ -456,7 +458,8 @@ signature, did-schema#88; Haley decision #109). Since 2026-10-21 this is the
 only shape NDI's writers build.
 
 - **What passes is the registry's.** Each `relation_bindings` row declares
-  `passes`: `assertions` (part_of, sample_of, aliquot_of, passage_of,
+  `passes`: `assertions` (part_of, sample_of -- `derives from part of`,
+  which the retired aliquot_of and passage_of are read as -- and
   instance_of), `distributive` (member_of), `context` (contained_in) or
   `nothing` (every other row). `ndi.v2.relationPasses` reads it once per
   schema file; `ndi.entity` walks the `assertions` relations (instance_of on
@@ -475,9 +478,10 @@ only shape NDI's writers build.
   document has a `session_id` edge to the session or dataset entity it is
   stored with, whose `base.id` IS the session id. `ndi.document/session_id`,
   `set_session_id` and `ndi.v2.sessionIdOf` read and write the field or the
-  edge, whichever the document has (v1 keeps the field: NDI still writes v1;
-  so do the migrators, pinned to `v_eta-pre73`, and only the second pass
-  asks `ndi.v2.sessionIdIsEdge`).
+  edge, whichever the document has (v1 keeps the field: NDI still writes v1).
+  Only the v1 to V_eta second pass asks `ndi.v2.sessionIdIsEdge`; on did-schema
+  #88, which every NDI-matlab workflow that checks out did-schema now sets as
+  `DID_SCHEMA_REF`, it is an edge.
   A query on `base.session_id` needs no change: DID answers it from either
   (`did2sqlite` translates query terms one for one, no field is rewritten).
   `createSession` gives the session entity the session id as its id

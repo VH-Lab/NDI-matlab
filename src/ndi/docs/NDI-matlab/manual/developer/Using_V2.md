@@ -130,7 +130,7 @@ answers:
 
 | passes | relations | meaning |
 |---|---|---|
-| `assertions` | `part_of`, `sample_of`, `aliquot_of`, `passage_of`, `instance_of` | an assertion about the parent holds of the child (a strain's species holds of its worms) |
+| `assertions` | `part_of`, `sample_of` (`derives from part of`; the retired `aliquot_of` and `passage_of` are read as it), `instance_of` | an assertion about the parent holds of the child (a strain's species holds of its worms) |
 | `distributive` | `member_of` | a statement marked distributive on a group holds of each member |
 | `context` | `contained_in` | the container's interactions reach what it held, as context, only while it held it, and only with `'context', true` |
 | `nothing` | `included_in`, `same_as`, every other relation | nothing |
@@ -191,16 +191,19 @@ V2 documents are built with DID-matlab's `did2.build` and written with
 sid = ndi.ido.unique_id();
 worm = ndi.setup.V2.entityDocuments('subject', struct('local_identifier', 'worm1', ...
     'type', did2.build.term('', 'organism')), struct(), 'SessionId', sid);
-sp = did2.build.statement('term_assertion', worm{1}.base.id, ...
+sp = did2.build.statement('assertion', worm{1}.base.id, ...
     did2.build.term('NCIT:C45293', 'Species'), ...
-    did2.build.term('NCBITaxon:6239', 'Caenorhabditis elegans'), 'SessionId', sid);
+    did2.build.term('NCBITaxon:6239', 'Caenorhabditis elegans'), 'SessionId', sid, ...
+    'ValueKind', 'term');
 S = ndi.setup.V2.createSession(folder, 'day 1', 'SessionId', sid, ...
     'Documents', [worm, {sp}]);
 ```
 
 - `did2.build.document(className, fields, 'SessionId', sid, 'Edges', ...)`
   builds any document and checks it against its schema;
-  `did2.build.statement(leaf, subjectId, variable, value, ...)` a statement;
+  `did2.build.statement(direction, subjectId, variable, value, ..., 'ValueKind', kind)`
+  a statement (direction `assertion`, `observation`, `manipulation` or
+  `calculation`; the value kind, e.g. `term`, `text`, `velocity`, a mixin);
   `did2.build.term(node, name)` a term; `did2.build.directedRelation(child,
   parent, relation, 'SessionId', sid)` a relation.
 - `ndi.setup.V2.createSession(path, reference, ...)` makes a session folder
@@ -234,8 +237,8 @@ D = {'SessionId', dsid};     S = {'SessionId', sid};
 % the dataset, and a strain stated once with its species
 ds = ndi.setup.V2.entityDocuments('dataset', struct('name', 'My dataset'), struct(), D{:}, 'Id', dsid);
 strain = ndi.setup.V2.entityDocuments('strain', struct('name', 'N2'), struct(), D{:});
-sp = did2.build.statement('term_assertion', strain{1}.base.id, T('NCIT:C45293'), T('NCBITaxon:6239'), D{:});
-note = did2.build.statement('text_assertion', dsid, T('NCIT:C42610'), did2.build.valueCell('text', {'MD'}), D{:});
+sp = did2.build.statement('assertion', strain{1}.base.id, T('NCIT:C45293'), T('NCBITaxon:6239'), D{:}, 'ValueKind', 'term');
+note = did2.build.statement('assertion', dsid, T('NCIT:C42610'), did2.build.valueCell('text', {'MD'}), D{:}, 'ValueKind', 'text');
 
 % the session, its subjects and their relations
 sess = ndi.setup.V2.entityDocuments('session', struct('local_identifier', 'day1'), struct(), S{:}, 'Id', sid);
@@ -252,29 +255,30 @@ ref = did2.build.relativeTimeReference(sid, 'Clock', 'dev_local_time', 'Start', 
 % (did-schema data_body plan AMENDMENT 6: dimensions and covariates replace keys)
 t = did2.build.dimension(T('om:Time'), 5);
 tc = did2.build.covariate(T('om:Time'), 0, 'Unit', T('om:second-Time'), 'Origin', 0, 'Spacing', 0.5);
-obs = did2.build.statement('velocity_observation', worm{1}.base.id, T('PATO:0000008'), [], ...
+obs = did2.build.statement('observation', worm{1}.base.id, T('PATO:0000008'), [], ...
     'Dimensions', t, 'Covariates', tc, 'DataBody', true, ...
     'DatumType', did2.build.datumType('double'), ...
-    'TimeReferenceIds', {ref.base.id}, S{:});
+    'TimeReferenceIds', {ref.base.id}, S{:}, 'ValueKind', 'velocity');
 body = did2.build.sampledBody(obs.base.id, t, 'ByteOrder', 'little', S{:});
 fid = fopen(f, 'w', 'ieee-le'); fwrite(fid, speeds, 'double'); fclose(fid);
 body = ndi.setup.V2.attachFile(body, 'body_data_0', f);
 
 % a method inline ...
-man = did2.build.statement('temperature_manipulation', worm{1}.base.id, T('NCIT:C90380'), ...
+man = did2.build.statement('manipulation', worm{1}.base.id, T('NCIT:C90380'), ...
     did2.build.valueCell('temperature', 20, 'SourceValue', 20, 'SourceUnit', T('om:degreeCelsius')), ...
     'Method', T('EMPTY:0000333'), 'MethodParameters', did2.build.parameter(T('om:Time'), ...
-        'Value', 3600, 'Unit', T('om:second-Time')), 'TimeReferenceIds', {ref.base.id}, S{:});
+        'Value', 3600, 'Unit', T('om:second-Time')), 'TimeReferenceIds', {ref.base.id}, S{:}, ...
+    'ValueKind', 'temperature');
 % ... or a shared `method` document, named by the statement's method_id.
 % A calculation must name the software that computed it and the operating
 % system it ran on, both `software` entities.
 app = ndi.setup.V2.entityDocuments('software', struct('name', 'my analysis', 'version', '1.0'), struct(), D{:});
 os = ndi.setup.V2.entityDocuments('software', struct('name', 'Linux', 'version', '6.8'), struct(), D{:});
 m = did2.build.method(T('NCIT:C53319'), [], 'Name', 'mean speed', S{:});
-calc = did2.build.statement('velocity_calculation', worm{1}.base.id, T('PATO:0000008'), ...
+calc = did2.build.statement('calculation', worm{1}.base.id, T('PATO:0000008'), ...
     did2.build.valueCell('velocity', mean(speeds)), 'MethodId', m.base.id, ...
     'InputIds', {obs.base.id}, 'SoftwareId', app{1}.base.id, 'OperatingSystemId', os{1}.base.id, ...
-    'TimeReferenceIds', {ref.base.id}, S{:});
+    'TimeReferenceIds', {ref.base.id}, S{:}, 'ValueKind', 'velocity');
 
 dataset = ndi.setup.V2.createDataset(folder, 'my dataset', dsid, [ds, strain, app, os, {sp, note}], ...
     {[sess, {inc}, worm, {isa_, ref, obs, body, man, m, calc}]}, 'Strict', true);

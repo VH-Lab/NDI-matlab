@@ -8,7 +8,7 @@
     },
 
     "studies": [],
-    "_studies": "A list of {key, name, short_name, description, factors, design}; each study is included_in the dataset. Empty: one study, key 'study'.",
+    "_studies": "A list of {key, name, short_name, description, factors}; each study is included_in the dataset. Empty: one study, key 'study'.",
 
     "software": [],
     "_software": "Dataset-level software, each {key, name, version, identifiers, vendor}: what computed the calculations, and the operating system a calculation requires. Empty: 'analysis' (Template analysis) and 'os' (Linux).",

@@ -6,12 +6,13 @@ function tf = sessionIdIsEdge()
 %   V_eta_relation_inheritance_plan.md (#88), where every document has a
 %   required `session_id` edge to the session or dataset entity it is stored
 %   with, and that entity's base.id IS the session id. False on a schema whose
-%   `base` keeps the field (the v_eta-pre73 schema the migrators are pinned to)
+%   `base` keeps the field (every V_eta schema before #88, e.g. v_eta-pre73)
 %   and when no V2 schema is set.
 %
-%   Only the v1 -> V_eta second pass asks (ndi.migrate.internal.withSessionId):
-%   the migrators still write the pre-#73 shape, so the pass follows the schema
-%   in use. Documents built with did2.build always carry the edge. Asked by
+%   Only the v1 -> V_eta second pass asks (ndi.migrate.internal.withSessionId),
+%   so the pass follows the schema in use; every NDI-matlab workflow that
+%   checks out did-schema sets DID_SCHEMA_REF to #88's branch, where this is
+%   true. Documents built with did2.build always carry the edge. Asked by
 %   file, so it works before the schema cache is loaded.
 %
 %   See also ndi.v2.sessionIdOf.

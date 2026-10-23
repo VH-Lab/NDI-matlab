@@ -10,12 +10,14 @@ classdef TestCohortStimulus < matlab.unittest.TestCase
 %   you receive?" finds the cohort's distributive manipulation, through
 %   member_of, and an animal outside the cohort does not.
 %
-%   The migration pass does NOT write this shape yet: it writes the did-schema
-%   the NDI e2e workflows pin (v_eta-pre73), which has no
-%   subject_statement.distributive, so it leaves such presentations as v1 and
-%   counts them (ndi.migrate.internal.stimulusPresentationToTimedSequence,
-%   severalAnimals). The documents here are built with did2.build on the #88
-%   schema, as the Haley import builds its cohorts.
+%   The migration pass writes this shape (a429e60): the stimulus fold
+%   (ndi.migrate.internal.stimulusPresentationToItem; the cohort minted by
+%   ndi.migrate.internal.sessionCohort, called from ndi.migrate.local) makes
+%   one manipulation of the
+%   session's cohort, a group entity with member_of edges, marked
+%   distributive (TestStimulusPresentationCohort is the writer half). The
+%   documents here are built with did2.build on the #88 schema, as the Haley
+%   import builds its cohorts.
 %
 %   UNVERIFIED: written without MATLAB; test-import-v2.yml is the first run.
 
