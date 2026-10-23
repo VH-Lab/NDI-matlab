@@ -368,8 +368,9 @@ else
 end
 
 if ~strcmp(options.Studies, 'exclude')
-    % A study's `design` is dropped (Jess Haley, 2026-10-21; proposed, not
-    % signed: DID-schema V_eta_study_plan.md). A study may name a parent
+    % A study's `design` is dropped (Jess Haley, 2026-10-21; signed:
+    % DID-schema V_eta_study_plan.md, TEAM-SIGN-OFF 2026-10-21 "drop the
+    % study design field"). A study may name a parent
     % study it is `included_in` (its key); otherwise it is filed under the
     % dataset. Every study is minted first, so a parent may be listed after
     % its child.

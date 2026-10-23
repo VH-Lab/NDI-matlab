@@ -21,7 +21,7 @@ function [S, checks] = seedingSuspensions(dataParentDir, spec)
 %                         entity (seedingDocuments), not values of the
 %                         formulation (decisions #114, #129).
 %     dilution, per OD600 formulation: the OD600 10 solution as a
-%                         volume_fraction of target/10 (source value: the
+%                         liters_per_liter of target/10 (source value: the
 %                         target OD600), then the diluent
 %   OD600 10 is the solution itself and OD600 0 the diluent alone, so neither
 %   is a dilution. There is no master or culture entry (decision #57, option
