@@ -24,6 +24,23 @@ function [b, report] = uploadDocumentCollection(datasetId, documentList, options
 %                    archive for batch uploads. Defaults to the preference
 %                    Cloud.Upload.Max_Document_Batch_Count (see ndi.preferences).
 %
+%   options.onlyUploadMissing - (1,1) logical
+%                    If true (default), documents whose ids the dataset
+%                    already lists are skipped.
+%
+%   options.waitForIngestion - (1,1) logical
+%                    If true (default), a batch upload does not return until
+%                    the server lists the uploaded documents, or until
+%                    options.ingestionTimeout elapses. A batch upload returns
+%                    once each zip is stored, before the server has ingested
+%                    it, so without this a listing made straight afterwards
+%                    can miss documents. Serial uploads are not affected.
+%
+%   options.ingestionTimeout - (1,1) double
+%                    Seconds to wait for ingestion. Default 300. On a timeout
+%                    the function warns (NDI:Cloud:Upload:IngestionTimeout)
+%                    and still returns B according to the upload itself.
+%
 % OUTPUTS:
 %   b              - (1,1) logical
 %                    A boolean that is true if the entire upload operation
@@ -39,6 +56,10 @@ function [b, report] = uploadDocumentCollection(datasetId, documentList, options
 %                                individual document IDs.
 %                    'status': A cell array with 'success' or 'failure' for
 %                              each corresponding entry in the manifest.
+%                    'ingestion': Present when a batch upload waited for
+%                                 ingestion; the ANSWER struct of
+%                                 ndi.cloud.api.documents.waitForDocumentCount
+%                                 (state, count, expectedCount, elapsed).
 %
 % EXAMPLE:
 %   % Upload a collection of documents in chunks of 100
@@ -48,12 +69,15 @@ function [b, report] = uploadDocumentCollection(datasetId, documentList, options
 % See also:
 %   ndi.cloud.api.documents.get_bulk_upload_url
 %   ndi.cloud.upload.internal.zip_documents_for_upload
+%   ndi.cloud.api.documents.waitForDocumentCount
 
     arguments
         datasetId (1,1) string
         documentList (1,:) cell
         options.maxDocumentChunk (1,1) double {mustBePositive} = ndi.preferences.get('Cloud.Upload.Max_Document_Batch_Count')
         options.onlyUploadMissing (1,1) logical = true
+        options.waitForIngestion (1,1) logical = true
+        options.ingestionTimeout (1,1) double {mustBePositive} = 300
     end
     assert(~isempty(documentList), 'List of documents was empty.')
 
@@ -140,7 +164,20 @@ function [b, report] = uploadDocumentCollection(datasetId, documentList, options
         report.uploadType = 'batch';
         report.manifest = {};
         report.status = {};
-        
+
+        % The server's count before this upload, so the ingestion wait
+        % below knows what count to expect. NaN skips the wait.
+        countBefore = NaN;
+        if options.waitForIngestion
+            try
+                [okCount, countAnswer] = ndi.cloud.api.documents.documentCount(datasetId);
+                if okCount && isnumeric(countAnswer) && isscalar(countAnswer)
+                    countBefore = double(countAnswer);
+                end
+            catch
+            end
+        end
+
         docCount = numel(documentList);
         for i = 1:options.maxDocumentChunk:docCount
             startIndex = i;
@@ -193,4 +230,32 @@ function [b, report] = uploadDocumentCollection(datasetId, documentList, options
 
     % Close progress bar window upon completion
     delete(app);
+
+    % A stored zip is not yet an ingested one, and bulk document uploads
+    % have no job to wait on, so wait for the server's document count to
+    % take in every document from the batches that were stored. The server
+    % adds a new document for each one uploaded, even one whose id it
+    % already lists, so the count grows by exactly that many.
+    if strcmp(report.uploadType, 'batch') && ~isnan(countBefore)
+        numStored = sum(cellfun(@numel, report.manifest(strcmp(report.status, 'success'))));
+        if numStored > 0
+            expectedCount = countBefore + numStored;
+            fprintf('Waiting for the server to list %d uploaded documents...\n', numStored);
+            try
+                [ingested, report.ingestion] = ndi.cloud.api.documents.waitForDocumentCount(...
+                    datasetId, expectedCount, 'timeout', options.ingestionTimeout);
+            catch ME
+                ingested = false;
+                report.ingestion = struct('state', 'error', 'count', NaN, ...
+                    'expectedCount', expectedCount, 'elapsed', NaN, 'message', ME.message);
+            end
+            if ~ingested
+                warning('NDI:Cloud:Upload:IngestionTimeout', ...
+                    ['Dataset %s lists %g of the %d documents expected after this upload ' ...
+                    '(state: %s). The upload succeeded; the server may still be ' ...
+                    'ingesting the rest.'], ...
+                    datasetId, report.ingestion.count, expectedCount, report.ingestion.state);
+            end
+        end
+    end
 end
