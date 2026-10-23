@@ -110,12 +110,12 @@ function all_binary(S, options)
         end;
         outfile = [this_path filesep binaryFileName];
         mult = multiplier;
-        if isempty(mult),
+        if isempty(mult)
             mult = ndi.fun.probe.export.autoMultiplier(probe_list{p});
-        end;
-        if verbose,
+        end
+        if verbose
             disp(['  Using multiplier ' num2str(mult) '.']);
-        end;
+        end
         ndi.fun.probe.export.binary(probe_list{p}, outfile, 'verbose',verbose,'multiplier',mult,'noBinary',noBinary);
     end;
 

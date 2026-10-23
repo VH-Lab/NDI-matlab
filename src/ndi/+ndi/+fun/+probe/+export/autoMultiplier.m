@@ -39,14 +39,14 @@ function mult = autoMultiplier(probe)
             t1 = t0; % no sample rate available: examine a single sample
         end
         [d,~] = probe.readtimeseries(et(1).epoch_id, t0, t1);
-        if isinteger(d),
+        if isinteger(d)
             mult = 1; % already int16-style counts: pass through unchanged
-            return;
-        end;
+            return
+        end
         d = d(isfinite(d));
-        if ~isempty(d) && any(d~=0) && all(d==round(d)),
+        if ~isempty(d) && any(d~=0) && all(d==round(d))
             mult = 1; % whole-number counts stored as floating point
-        end;
+        end
     catch
         % leave the default if we cannot sample the probe
     end
