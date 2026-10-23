@@ -749,11 +749,35 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
                 f = fullfile(files(k).folder, files(k).name);
                 x = load(f, 'info');
                 info = x.info;
-                info.lawnMethod = repmat({{'manual'}}, height(info), 1); %#ok<NASGU> (saved)
+                info.lawnMethod = repmat({{'byHand'}}, height(info), 1); %#ok<NASGU> (saved)
                 save(f, 'info');
             end
             testCase.verifyError(@() testCase.dryRun(root, ["metadata", "calculations"]), ...
                 'ndi:setup:conv:haley:unregisteredLabel');
+        end
+
+        function testDetectionMethodFamiliesShareATerm(testCase)
+            % decision #154: the source's detection-method names map by family;
+            % patches whose names differ but map to one term give the lawn mask
+            % that term, and the notes keep every patch's source name
+            [lawn, ~] = testCase.lawnMasksWith({'thresholdBAdjusted', 'manual', 'circleB', 'filter'});
+            testCase.assertNotEmpty(lawn);
+            testCase.verifyTrue(all(cellfun(@(d) strcmp(d.interaction.method.term.node, 'OBI:0003918'), lawn)), ...
+                'image segmentation');
+            testCase.verifyTrue(all(cellfun(@(d) strcmp(d.statement.notes, ['Each patch''s detection ' ...
+                'method, in patch order: thresholdBAdjusted, manual, circleB, filter.']), lawn)));
+        end
+
+        function testDetectionMethodsWithTwoTermsWriteNone(testCase)
+            % decision #154: segmentation and registration on one plate: no
+            % method, the notes list the source names
+            [lawn, ~] = testCase.lawnMasksWith({'templateAdjusted', 'threshold'});
+            testCase.assertNotEmpty(lawn);
+            testCase.verifyTrue(all(cellfun(@(d) ~isfield(d.interaction, 'method') ...
+                || isempty(d.interaction.method) || ~isfield(d.interaction.method, 'term') ...
+                || isempty(d.interaction.method.term), lawn)), 'no method');
+            testCase.verifyTrue(all(cellfun(@(d) strcmp(d.statement.notes, ['Each patch''s detection ' ...
+                'method, in patch order: templateAdjusted, threshold.']), lawn)));
         end
 
         function testADoseKeyWithNoTermIsAnError(testCase)
@@ -1743,6 +1767,29 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             mkdir(root);
             testCase.addTeardown(@() rmdir(root, 's'));
             ndi.unittest.setup.V2.TestHaleyRecordings.writeFixture(root);
+        end
+
+        function [lawn, docs] = lawnMasksWith(testCase, methods)
+            % the lawn masks written from a fresh fixture whose every video's
+            % patches carry METHODS (`lawnMethod`)
+            root = testCase.freshFixture();
+            files = dir(fullfile(root, '**', 'experimentInfo.mat'));
+            testCase.assertNotEmpty(files, 'the fixture has an experiment table');
+            for k = 1:numel(files)
+                f = fullfile(files(k).folder, files(k).name);
+                x = load(f, 'info');
+                info = x.info;
+                info.lawnMethod = repmat({methods}, height(info), 1); %#ok<NASGU> (saved)
+                save(f, 'info');
+            end
+            result = testCase.dryRun(root, ["metadata", "calculations"]);
+            docs = testCase.documents(result.sessions.path{1});
+            subj = docs(cellfun(@(d) strcmp(d.document_class.class_name, 'subject'), docs));
+            plates = cellfun(@(d) d.base.id, subj(cellfun(@(d) contains(d.subject.local_identifier, ...
+                'assayPlate') && ~contains(d.subject.local_identifier, 'patch'), subj)), 'UniformOutput', false);
+            lawn = docs(cellfun(@(d) strcmp(d.document_class.class_name, 'label_calculation') ...
+                && strcmp(conditionTerm(d, 'Location'), 'bacterial patch') ...
+                && ismember(edge(d, 'entity_id'), plates), docs));
         end
 
         function d = scratchDir(testCase)
