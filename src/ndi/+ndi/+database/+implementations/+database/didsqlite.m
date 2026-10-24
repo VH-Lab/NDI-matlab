@@ -81,9 +81,9 @@ classdef  didsqlite < ndi.database
 
         function [ndi_document_obj] = do_read(ndi_didsqlite_obj, ndi_document_id)
             [ndi_document_obj] = ndi_didsqlite_obj.db.get_docs(ndi_document_id);
-            % Route raw did.document bodies through the v1->V_delta
-            % normaliser so callers above the ndi.database abstraction
-            % only ever see V_delta-shaped ndi.document objects.
+            % Wrap each stored body in an ndi.document. Nothing is converted:
+            % a v1 body is read as stored (see
+            % ndi.database.internal.applyReadNormalization).
             if iscell(ndi_document_obj)
                 for i=1:numel(ndi_document_obj)
                     ndi_document_obj{i} = ndi.database.internal.applyReadNormalization(ndi_document_obj{i});
