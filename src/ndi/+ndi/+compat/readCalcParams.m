@@ -43,7 +43,7 @@ function params = readCalcParams(doc, propertyListName)
 %       pattern this helper replaces.
 %
 %   See also: ndi.calculator/search_for_calculator_docs,
-%             ndi.compat.augmentRead, ndi.util.getfieldpath.
+%             ndi.util.getfieldpath.
 
     arguments
         doc (1,1) ndi.document

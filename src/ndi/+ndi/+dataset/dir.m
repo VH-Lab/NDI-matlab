@@ -17,6 +17,26 @@ classdef dir < ndi.dataset
             %
             % D = ndi.dataset.dir(PATH_NAME)
             %
+            % Opening a dataset that still holds v1 documents warns once
+            % ('NDI:V2:v1DocumentsPresent', ndi.database.fun.warnIfV1Documents).
+
+            % The session opens below would each warn; the dataset warns once,
+            % at the end. A creation (an empty folder) has nothing to warn
+            % about, so whether the folder held a database is noted first.
+            v1WarnId = 'NDI:V2:v1DocumentsPresent';
+            v1WarnState = warning('query', v1WarnId);
+            restoreV1Warn = onCleanup(@() warning(v1WarnState.state, v1WarnId));
+            warning('off', v1WarnId);
+            if nargin==1
+                existedBefore = ndi.dataset.dir.holdsDatabase(reference);
+            elseif nargin>=2
+                % documents handed in (a download) are opened, not created
+                existedBefore = ndi.dataset.dir.holdsDatabase(path_name) || ...
+                    (nargin==3 && ~isempty(docs));
+            else
+                existedBefore = false;
+            end
+
             if nargin==1
                 path_name = reference;
                 ndi.dataset.dir.mustNotBeSession(path_name);
@@ -26,6 +46,7 @@ classdef dir < ndi.dataset
                 ndi_dataset_dir_obj.session = ndi.session.dir(reference, path_name);
             elseif nargin==3 % hidden third option
                 if iscell(docs) && isempty(docs)
+                    clear restoreV1Warn % the two-argument open warns for itself
                     ndi_dataset_dir_obj = ndi.dataset.dir(reference, path_name);
                     return;
                 end
@@ -137,10 +158,30 @@ classdef dir < ndi.dataset
             % correctly marked, and so that older datasets are migrated the next time
             % they are opened. See ndi.session.dir.directorytype.
             ndi_dataset_dir_obj.session.setObjectTypeMarker('dataset');
+
+            % One warning for the whole open (Decided by Jess Haley,
+            % 2026-10-23 [warn on v1 open]).
+            clear restoreV1Warn
+            if existedBefore
+                ndi.database.fun.warnIfV1Documents(ndi_dataset_dir_obj.session.database, ...
+                    'dataset', char(ndi_dataset_dir_obj.path));
+            end
         end % dir(), creator
     end % methods
 
     methods (Static, Access = protected)
+        function tf = holdsDatabase(path)
+            % HOLDSDATABASE - does PATH already hold an NDI database?
+            %
+            % TF = ndi.dataset.dir.holdsDatabase(PATH) is true when PATH/.ndi
+            % holds a .sqlite or .json file, the test ndi.dataset uses before
+            % writing a session into a folder. A folder without one is being
+            % created, not opened.
+            ndiDir = fullfile(char(path), '.ndi');
+            tf = isfolder(ndiDir) && ~isempty([dir(fullfile(ndiDir, '*.sqlite')); ...
+                dir(fullfile(ndiDir, '*.json'))]);
+        end % holdsDatabase()
+
         function mustNotBeSession(path)
             % MUSTNOTBESESSION - error if PATH holds a plain session, not a dataset
             %

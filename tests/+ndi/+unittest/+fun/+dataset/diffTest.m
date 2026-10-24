@@ -351,6 +351,9 @@ classdef diffTest < matlab.unittest.TestCase
             doc = S.newdocument('demoNDI', 'base.name', 'identity probe', ...
                 'demoNDI.value', 1);
             doc = doc + S.newdocument();
+            % demoNDI declares filename1.ext, which DID requires since
+            % 31813f53d; this test was written before that and never got it
+            doc = attachDemoFile(doc, tempDir);
             S.database_add(doc);
 
             found = S.database_search(ndi.query('base.id', 'exact_string', doc.id(), ''));
@@ -364,7 +367,7 @@ classdef diffTest < matlab.unittest.TestCase
 
             legacy = S.database_search(ndi.query('ndi_document.id', 'exact_string', doc.id(), ''));
             testCase.verifyEmpty(legacy, ...
-                'ndi_document.id is not aliased by ndi.compat.translateQueryPaths, so it matches nothing.');
+                'ndi_document.id is not rewritten by ndi.query, so it matches nothing.');
         end
     end
 end

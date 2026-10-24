@@ -1,41 +1,42 @@
 classdef TranslateQueryPathsTest < matlab.unittest.TestCase
 %TRANSLATEQUERYPATHSTEST Unit tests for ndi.compat.translateQueryPaths.
 %
-%   Covers field-level alias rewrites, depends_on substring rewrites,
-%   'or' recursion, identity for non-aliased paths, and the
-%   acceptance check that ndi.query constructed with a legacy path
-%   ends up with the V2 canonical path in its searchstructure.
+%   Covers the depends_on entry-key rewrites, 'or' recursion, identity for
+%   every other path, and that ndi.query applies it.
+%
+%   The probe_location / treatment field aliases are gone (Decided by Jess
+%   Haley, 2026-10-23 [compat write layer removed]; VH-Lab/NDI-matlab#1055):
+%   v1 documents are written in the v1 template's shape, so a query on a v1
+%   path must reach that path unchanged. The tests that pinned the old
+%   rewrite (probe_location.ontology_name -> probe_location.location.node,
+%   treatment.ontology_name -> treatment.treatment_name.node) now pin that
+%   the path is left as written.
 
     methods (Test)
 
-        % ---- field-level scalar rows ----
+        % ---- the v1 probe_location / treatment paths are not rewritten ----
 
-        function test_probe_location_ontology_name_rewritten(testCase)
+        function test_probe_location_ontology_name_unchanged(testCase)
             ss = i_ss('probe_location.ontology_name', 'exact_string', 'uberon:1234');
             out = ndi.compat.translateQueryPaths(ss);
-            testCase.verifyEqual(out.field, 'probe_location.location.node');
+            testCase.verifyEqual(out.field, 'probe_location.ontology_name');
             testCase.verifyEqual(out.operation, 'exact_string');
             testCase.verifyEqual(out.param1, 'uberon:1234');
         end
 
-        function test_probe_location_name_rewritten(testCase)
+        function test_probe_location_name_unchanged(testCase)
             ss = i_ss('probe_location.name', 'exact_string', 'V1');
             out = ndi.compat.translateQueryPaths(ss);
-            testCase.verifyEqual(out.field, 'probe_location.location.name');
+            testCase.verifyEqual(out.field, 'probe_location.name');
         end
 
-        function test_treatment_ontology_name_rewritten(testCase)
-            ss = i_ss('treatment.ontology_name', 'exact_string', 'chebi:9999');
-            out = ndi.compat.translateQueryPaths(ss);
-            testCase.verifyEqual(out.field, 'treatment.treatment_name.node');
+        function test_treatment_paths_unchanged(testCase)
+            % the v1 template's own spelling is ontologyName
+            for f = {'treatment.ontologyName', 'treatment.ontology_name', 'treatment.name'}
+                out = ndi.compat.translateQueryPaths(i_ss(f{1}, 'exact_string', 'chebi:9999'));
+                testCase.verifyEqual(out.field, f{1});
+            end
         end
-
-
-
-
-        % ---- composite legacy paths collapse to one V2 path ----
-
-
 
         % ---- depends_on substring rewrites ----
 
@@ -104,28 +105,24 @@ classdef TranslateQueryPathsTest < matlab.unittest.TestCase
         function test_or_param1_param2_recursed(testCase)
             % An 'or' searchstructure stores nested searchstructures in
             % param1 and param2; both branches must be translated.
-            innerA = i_ss('probe_location.ontology_name', 'exact_string', 'a');
-            innerB = i_ss('treatment.ontology_name', 'exact_string', 'b');
+            innerA = i_ss('depends_on.id', 'exact_string', 'a');
+            innerB = i_ss('probe_location.ontology_name', 'exact_string', 'b');
             outer = struct('field', '', 'operation', 'or', ...
                 'param1', innerA, 'param2', innerB);
             out = ndi.compat.translateQueryPaths(outer);
-            testCase.verifyEqual(out.param1.field, ...
-                'probe_location.location.node');
-            testCase.verifyEqual(out.param2.field, ...
-                'treatment.treatment_name.node');
+            testCase.verifyEqual(out.param1.field, 'depends_on.document_id');
+            testCase.verifyEqual(out.param2.field, 'probe_location.ontology_name');
         end
 
         function test_nested_or_recurses_deeply(testCase)
-            deepest = i_ss('probe_location.ontology_name', 'exact_string', 'x');
+            deepest = i_ss('depends_on.value', 'exact_string', 'x');
             mid = struct('field', '', 'operation', 'or', ...
                 'param1', deepest, 'param2', i_ss('base.id', 'exact_string', 'y'));
             outer = struct('field', '', 'operation', 'or', ...
-                'param1', mid, 'param2', i_ss('treatment.ontology_name', 'exact_string', 'z'));
+                'param1', mid, 'param2', i_ss('depends_on(2).id', 'exact_string', 'z'));
             out = ndi.compat.translateQueryPaths(outer);
-            testCase.verifyEqual(out.param1.param1.field, ...
-                'probe_location.location.node');
-            testCase.verifyEqual(out.param2.field, ...
-                'treatment.treatment_name.node');
+            testCase.verifyEqual(out.param1.param1.field, 'depends_on.document_id');
+            testCase.verifyEqual(out.param2.field, 'depends_on(2).document_id');
             testCase.verifyEqual(out.param1.param2.field, 'base.id');
         end
 
@@ -139,30 +136,29 @@ classdef TranslateQueryPathsTest < matlab.unittest.TestCase
 
         function test_string_field_handled(testCase)
             % Some callers pass MATLAB strings rather than char.
-            ss = struct('field', "probe_location.ontology_name", ...
+            ss = struct('field', "depends_on.id", ...
                 'operation', 'exact_string', 'param1', 'x', 'param2', '');
             out = ndi.compat.translateQueryPaths(ss);
-            testCase.verifyEqual(char(out.field), ...
-                'probe_location.location.node');
+            testCase.verifyEqual(char(out.field), 'depends_on.document_id');
         end
 
         function test_struct_array_each_entry_translated(testCase)
-            ss(1) = i_ss('probe_location.ontology_name', 'exact_string', 'a');
-            ss(2) = i_ss('treatment.ontology_name', 'exact_string', 'b');
+            ss(1) = i_ss('depends_on.id', 'exact_string', 'a');
+            ss(2) = i_ss('treatment.ontologyName', 'exact_string', 'b');
             ss(3) = i_ss('base.id', 'exact_string', 'c');
             out = ndi.compat.translateQueryPaths(ss);
-            testCase.verifyEqual(out(1).field, 'probe_location.location.node');
-            testCase.verifyEqual(out(2).field, 'treatment.treatment_name.node');
+            testCase.verifyEqual(out(1).field, 'depends_on.document_id');
+            testCase.verifyEqual(out(2).field, 'treatment.ontologyName');
             testCase.verifyEqual(out(3).field, 'base.id');
         end
 
         % ---- acceptance: ndi.query constructor wires in the translation ----
 
-        function test_ndi_query_constructor_rewrites_field(testCase)
+        function test_ndi_query_constructor_leaves_a_v1_path(testCase)
             q = ndi.query('probe_location.ontology_name', 'exact_string', ...
                 'uberon:1234');
             testCase.verifyEqual(q.searchstructure.field, ...
-                'probe_location.location.node');
+                'probe_location.ontology_name');
             testCase.verifyEqual(q.searchstructure.param1, 'uberon:1234');
         end
 
@@ -185,9 +181,9 @@ classdef TranslateQueryPathsTest < matlab.unittest.TestCase
             % goes through searchcellarray2searchstructure and
             % builds the struct internally before our translation
             % hook runs.
-            q = ndi.query({'probe_location.ontology_name', 'X'});
+            q = ndi.query({'depends_on.id', 'X'});
             testCase.verifyEqual(q.searchstructure.field, ...
-                'probe_location.location.node');
+                'depends_on.document_id');
         end
     end
 end

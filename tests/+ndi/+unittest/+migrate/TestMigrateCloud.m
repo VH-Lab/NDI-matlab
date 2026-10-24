@@ -122,6 +122,21 @@ classdef TestMigrateCloud < matlab.unittest.TestCase
         end
 
         function testReferencesReported(testCase)
+            % ONE DELIBERATELY DANGLING EDGE, beta's parent_id, and nothing
+            % else dangles. Under V_eta `base.session_id` is the `session_id`
+            % EDGE (did-schema V_eta_relation_inheritance_plan.md; DID-matlab
+            % did2.convert.v1_to_v2 renameOutboundBaseFields moves it when
+            % did2.schema.cache.sessionIdIsEdge() is true), so every migrated
+            % document carries one, to the session. The session document is
+            % therefore in the batch: migrators_j.session gives the session
+            % entity the session id as its base.id (DID-matlab
+            % testSessionIdEdge, "the session entity points at itself"), so
+            % those edges resolve. Without it, alpha's and beta's session_id
+            % edges dangled too (3 orphans of 3 edges, run 40108434320).
+            testCase.assumeTrue(~isempty(which('did2.schema.cache')) && ...
+                did2.schema.cache.shared().sessionIdIsEdge(), ...
+                'no V_eta schema where did2.schema.cache looks (`base` declares no session_id edge)');
+            sess = makeV1SessionBody();
             good = makeV1Body('alpha');
             orphan = makeV1Body('beta');
             orphan.depends_on = struct( ...
@@ -130,14 +145,21 @@ classdef TestMigrateCloud < matlab.unittest.TestCase
 
             fake = ndi.unittest.migrate.FakeCloudClient( ...
                 'datasetInfo', struct('id', 'd-1', 'isPublished', false), ...
-                'documents', {good, orphan});
+                'documents', {sess, good, orphan});
 
             result = ndi.migrate.cloud("d-1", ...
                 'Validate', false, 'DryRun', true, 'Client', fake);
 
-            verifyEqual(testCase, result.summary.migrated_count, 2);
+            verifyEqual(testCase, result.summary.migrated_count, 3);
+            verifyEqual(testCase, result.summary.quarantine_count, 0);
+            % edges: alpha session_id, beta parent_id + session_id, and the
+            % session entity's own session_id (to itself) = 4; 1 dangles
+            verifyEqual(testCase, result.references.edges_examined, 4);
             verifyEqual(testCase, result.references.orphan_count, 1);
-            verifyEqual(testCase, result.references.edges_examined, 1);
+            testCase.assertNumElements(result.references.orphans, 1);
+            verifyEqual(testCase, result.references.orphans(1).edge_name, 'parent_id');
+            verifyEqual(testCase, result.references.orphans(1).edge_document_id, ...
+                'deadbeefdeadbeef_0000111122223333');
         end
 
         function testEmptyDatasetSkipsUpload(testCase)
@@ -173,6 +195,26 @@ body.base = struct( ...
     'name',       name, ...
     'datestamp',  '2024-06-01T12:00:00.000Z');
 body.demo_a = struct('marker', name);
+end
+
+function body = makeV1SessionBody()
+% A v1 `session` document as ndi.session writes it: its base.id is minted
+% separately from the session id its siblings carry (ndi.document), and
+% session.reference is the session's handle (required as local_identifier).
+body = struct();
+body.document_class = struct( ...
+    'class_name',    'session', ...
+    'class_version', '1.0.0', ...
+    'superclasses',  struct( ...
+        'class_name',    'base', ...
+        'class_version', '1.0.0'));
+body.depends_on = struct('name', {}, 'value', {});
+body.base = struct( ...
+    'id',         'aabb1122ccdd3344_5e55000000000001', ...
+    'session_id', 'aabb1122ccdd3344_9900aabbccddeeff', ...
+    'name',       'session', ...
+    'datestamp',  '2024-06-01T12:00:00.000Z');
+body.session = struct('reference', 'exp_cloud_1');
 end
 
 function body = makeVEtaBody(name)

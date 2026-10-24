@@ -17,9 +17,7 @@ function body = normalizeDependsOn(body)
 %   add_dependency_value_n, remove_dependency_value_n, dependency)
 %   rely on that invariant.
 %
-%   This intentionally does NOT live in ndi.compat.fieldAliases
-%   or in ndi.compat.augmentRead. depends_on entry-key
-%   compatibility is handled in code (here, plus
+%   depends_on entry-key compatibility is handled in code (here, plus
 %   ndi.compat.translateQueryPaths on the query side) rather than
 %   by mirroring legacy keys onto the body, which would extend the
 %   struct-array schema and create the heterogeneousStrucAssignment
@@ -32,8 +30,7 @@ function body = normalizeDependsOn(body)
 %   Outputs:
 %     BODY  1x1 struct  - Same body with depends_on normalised.
 %
-%   See also: ndi.document, ndi.compat.augmentRead,
-%             ndi.compat.translateQueryPaths.
+%   See also: ndi.document, ndi.compat.translateQueryPaths.
 
     arguments
         body (1,1) struct

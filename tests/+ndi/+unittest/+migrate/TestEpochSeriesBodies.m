@@ -11,6 +11,18 @@ classdef TestEpochSeriesBodies < matlab.unittest.TestCase
         Dir
     end
 
+    methods (TestClassSetup)
+        function needSchema(testCase)
+            % Builds did-schema #88 documents (did2.build), so it needs a V_eta
+            % schema set where did2.schema.cache looks (DID_SCHEMA_PATH, or a
+            % did-schema checkout beside DID-matlab). run-tests.yml provides
+            % none; test-eta-migrate-e2e.yml does, and runs this class there.
+            testCase.assumeTrue(~isempty(which('did2.schema.cache')) && ...
+                did2.schema.cache.shared().hasClass('entity'), ...
+                'no V_eta schema set (did-schema #88, `entity`) where did2.schema.cache looks');
+        end
+    end
+
     methods (TestMethodSetup)
         function makeDir(testCase)
             testCase.Dir = tempname();
