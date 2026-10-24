@@ -521,7 +521,7 @@ end
 function tf = isOntologyRowBody(b)
 % did_v1 spells it `ontologyTableRow`; a body that has already been through
 % universalRenames spells it `ontology_table_row`. Accept both -- the
-% idempotent re-run path (readBodiesFromVDelta) hands back migrated structs.
+% idempotent re-run path (readBodiesFromTarget) hands back migrated structs.
 c = classNameOf(b);
 tf = strcmp(c, 'ontologyTableRow') || strcmp(c, 'ontology_table_row');
 end

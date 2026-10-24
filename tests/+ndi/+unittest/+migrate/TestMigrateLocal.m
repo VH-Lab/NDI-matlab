@@ -8,8 +8,8 @@ classdef TestMigrateLocal < matlab.unittest.TestCase
 %   the lock semantics, and the idempotency fast pass.
 %
 %   Every call but testDefaultTargetIsVeta's explicit one relies on the
-%   DEFAULT TargetVersion, which is 'V_eta' since 2026-10-21
-%   (VH-Lab/NDI-matlab#804; it was 'V_delta'), so these tests run the
+%   DEFAULT TargetVersion, 'V_eta' (since 2026-10-21, VH-Lab/NDI-matlab#804;
+%   and the only value accepted since 2026-10-23), so these tests run the
 %   V_eta path: +migrators_j in pass 1 and the second pass.
 %
 %   Tests run with Validate=false so the test runner does not need a
@@ -62,6 +62,7 @@ classdef TestMigrateLocal < matlab.unittest.TestCase
             [~, name, ext] = fileparts(result.destination);
             verifyEqual(testCase, [name ext], 'V_eta.sqlite');
             verifyTrue(testCase, isfile(fullfile(testCase.SessionRoot, '.ndi', 'V_eta.sqlite')));
+            % no file of the target removed on 2026-10-23 is written
             verifyFalse(testCase, isfile(fullfile(testCase.SessionRoot, '.ndi', 'V_delta.sqlite')));
             % result.secondPass exists on every target, but its reports are
             % [] unless the V_eta second pass ran; the strain pass reports
@@ -77,9 +78,19 @@ classdef TestMigrateLocal < matlab.unittest.TestCase
                 'an explicit V_eta run finds the default run''s V_eta.sqlite');
         end
 
-        function testMigratesV1SqliteToVDelta(testCase)
+        function testTheRemovedTargetIsRefused(testCase)
+            % Jess Haley, 2026-10-23: no TargetVersion 'V_delta' exists.
+            % Asking for it is an argument error, before anything is read.
+            srcSqlite = fullfile(testCase.SessionRoot, '.ndi', 'did-sqlite.sqlite');
+            buildV1Sqlite(srcSqlite, {jsonencode(makeV1Body('alpha'))});
+            verifyError(testCase, @() ndi.migrate.local(testCase.SessionRoot, ...
+                'Validate', false, 'TargetVersion', 'V_delta'), ...
+                'MATLAB:validators:mustBeMember');
+        end
+
+        function testMigratesV1SqliteToVEta(testCase)
             % Round-trip a synthetic v1 sqlite store: produces the
-            % V_delta sqlite file with one row per source doc.
+            % V_eta sqlite file with one row per source doc.
             bodies = { ...
                 jsonencode(makeV1Body('alpha')), ...
                 jsonencode(makeV1Body('beta')), ...
@@ -148,7 +159,7 @@ classdef TestMigrateLocal < matlab.unittest.TestCase
         end
 
         function testDryRunWritesNothing(testCase)
-            % DryRun must not touch the V_delta file, the backup,
+            % DryRun must not touch the V_eta file, the backup,
             % or the quarantine sidecar.
             srcSqlite = fullfile(testCase.SessionRoot, '.ndi', 'did-sqlite.sqlite');
             buildV1Sqlite(srcSqlite, {jsonencode(makeV1Body('alpha'))});
@@ -165,7 +176,7 @@ classdef TestMigrateLocal < matlab.unittest.TestCase
 
         function testIdempotentSecondRunIsFastPass(testCase)
             % After a successful migration, re-running uses the
-            % V_delta file as the source (alreadyMigrated=true) and
+            % V_eta file as the source (alreadyMigrated=true) and
             % does not re-write it or re-create the backup.
             srcSqlite = fullfile(testCase.SessionRoot, '.ndi', 'did-sqlite.sqlite');
             buildV1Sqlite(srcSqlite, {jsonencode(makeV1Body('alpha'))});
@@ -185,7 +196,7 @@ classdef TestMigrateLocal < matlab.unittest.TestCase
         function testQuarantineWrittenForMalformedDoc(testCase)
             % One good body + one malformed body: the migrated count
             % is 1, the quarantine count is 1, and the sidecar file
-            % is written next to the V_delta sqlite.
+            % is written next to the V_eta sqlite.
             srcSqlite = fullfile(testCase.SessionRoot, '.ndi', 'did-sqlite.sqlite');
             buildV1Sqlite(srcSqlite, ...
                 {jsonencode(makeV1Body('alpha')), 'not json {'});

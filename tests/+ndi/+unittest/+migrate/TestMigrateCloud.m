@@ -6,8 +6,9 @@ classdef TestMigrateCloud < matlab.unittest.TestCase
 %   The tests cover the orchestration the cloud function is responsible
 %   for — lock acquire/release, published-state guard and restoration,
 %   listing → fetching → converting → uploading happy path, dry-run
-%   suppression of the write side, idempotent re-run on already-V_delta
-%   content, and quarantine surfacing.
+%   suppression of the write side, idempotent re-run on already-V_eta
+%   content, and quarantine surfacing. Since 2026-10-23 the conversion
+%   targets V_eta (it took the removed class-preserving default before).
 %
 %   These tests run with Validate=false so the test runner doesn't
 %   need a checked-out did-schema next to it.
@@ -122,12 +123,12 @@ classdef TestMigrateCloud < matlab.unittest.TestCase
             verifyEmpty(testCase, result.upload);
         end
 
-        function testIdempotentReRunOnAlreadyVDeltaContent(testCase)
-            % Already-V_delta bodies short-circuit the converter and
+        function testIdempotentReRunOnAlreadyVEtaContent(testCase)
+            % Bodies already at V_eta short-circuit the converter and
             % the function still uploads them back (no information
             % about whether the cloud already has them — the cloud is
             % responsible for de-dup on bulk-upload).
-            bodies = {makeVDeltaBody('alpha'), makeVDeltaBody('beta')};
+            bodies = {makeVEtaBody('alpha'), makeVEtaBody('beta')};
             fake = ndi.unittest.migrate.FakeCloudClient( ...
                 'datasetInfo', struct('id', 'd-1', 'isPublished', false), ...
                 'documents', bodies);
@@ -253,9 +254,9 @@ body.base = struct( ...
 body.demo_a = struct('marker', name);
 end
 
-function body = makeVDeltaBody(name)
+function body = makeVEtaBody(name)
 body = makeV1Body(name);
-body.base.schema_version = 'V_delta';
+body.document_class.schema_version = 'V_eta';
 end
 
 function s = pad16(name)

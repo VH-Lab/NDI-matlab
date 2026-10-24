@@ -85,14 +85,14 @@ classdef cloudClient < handle
             docs = answer;
         end
 
-        function report = uploadBodies(this, datasetId, vDeltaBodies) %#ok<INUSL>
-            %UPLOADBODIES Push converted V_delta bodies back to the cloud.
+        function report = uploadBodies(this, datasetId, v2Bodies) %#ok<INUSL>
+            %UPLOADBODIES Push converted V2 bodies back to the cloud.
             %
-            %   VDELTABODIES is a cell array of struct V_delta bodies
+            %   V2BODIES is a cell array of struct V2 (V_eta) bodies
             %   (one per migrated document). Uses the existing bulk
             %   upload endpoint (zip-then-PUT).
-            report = ndi.migrate.internal.uploadVDeltaBodies( ...
-                datasetId, vDeltaBodies);
+            report = ndi.migrate.internal.uploadV2Bodies( ...
+                datasetId, v2Bodies);
         end
 
         function unpublishDataset(this, datasetId) %#ok<INUSL>

@@ -2,9 +2,9 @@
 %
 %   The +migrate subpackage holds user-facing commands that move an
 %   existing NDI dataset or session from the legacy did_v1 storage
-%   shape to a chosen target wire format (V_delta by default, or V_eta
-%   via TargetVersion; V_epsilon and V_zeta were removed with did-schema
-%   #88). Each command produces a summary
+%   shape to the V_eta wire format (the only target: V_epsilon and V_zeta
+%   were removed with did-schema #88, and the class-preserving earlier
+%   target on 2026-10-23). Each command produces a summary
 %   struct the caller can inspect; nothing aborts the whole run on a
 %   single bad document (see did2.convert.v1_to_v2's quarantine
 %   convention). For V_eta the command also runs a second pass

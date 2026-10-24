@@ -112,7 +112,7 @@ classdef FakeCloudClient < ndi.migrate.internal.cloudClient
             docs = entries;
         end
 
-        function report = uploadBodies(obj, ~, vDeltaBodies)
+        function report = uploadBodies(obj, ~, v2Bodies)
             if obj.FailUpload
                 error('FakeCloud:uploadFailed', ...
                     'Fake cloud: upload deliberately failed.');
@@ -120,12 +120,12 @@ classdef FakeCloudClient < ndi.migrate.internal.cloudClient
             obj.UploadCalls = obj.UploadCalls + 1;
             obj.OperationCounter = obj.OperationCounter + 1;
             obj.UploadOrder = obj.OperationCounter;
-            ids = cell(1, numel(vDeltaBodies));
-            for k = 1:numel(vDeltaBodies)
-                if isstruct(vDeltaBodies{k}) ...
-                        && isfield(vDeltaBodies{k}, 'base') ...
-                        && isfield(vDeltaBodies{k}.base, 'id')
-                    ids{k} = char(vDeltaBodies{k}.base.id);
+            ids = cell(1, numel(v2Bodies));
+            for k = 1:numel(v2Bodies)
+                if isstruct(v2Bodies{k}) ...
+                        && isfield(v2Bodies{k}, 'base') ...
+                        && isfield(v2Bodies{k}.base, 'id')
+                    ids{k} = char(v2Bodies{k}.base.id);
                 else
                     ids{k} = '';
                 end

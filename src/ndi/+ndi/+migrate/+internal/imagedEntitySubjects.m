@@ -775,7 +775,7 @@ function tf = isImageBody(b)
 % did_v1 spells them `imageStack` / `ontologyImage`; a body that has already been
 % through universalRenames spells them snake_case (universalRenames.m:23 renames
 % document_class.class_name). Accept both -- the idempotent re-run path
-% (readBodiesFromVDelta) hands back migrated structs.
+% (readBodiesFromTarget) hands back migrated structs.
 c = classNameOf(b);
 tf = isImageClass(c) || strcmp(c, 'imageStack') || strcmp(c, 'ontologyImage');
 end
