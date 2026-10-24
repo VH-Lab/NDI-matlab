@@ -29,32 +29,29 @@ classdef system < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice
             %
             obj = obj@ndi.ido();
             loadfromfile = 0;
-            if nargin==2 & isa(name,'ndi.session') & isa(thefilenavigator,'ndi.document')
+            if (nargin==2 || (nargin==3 && isa(thedaqreader,'containers.Map'))) ...
+                    && isa(name,'ndi.session') && isa(thefilenavigator,'ndi.document')
+                % Built from a 'daqsystem' document. An optional third input is a
+                % containers.Map (id -> ndi.document) of dependency documents
+                % already fetched by the caller (see ndi.session/daqsystem_load),
+                % which saves one database search per dependency.
                 session = name;
                 daqsystem_doc = thefilenavigator;
+                if nargin==3
+                    prefetched = thedaqreader;
+                else
+                    prefetched = containers.Map('KeyType','char','ValueType','any');
+                end
                 daqreader_id = daqsystem_doc.dependency_value('daqreader_id');
                 filenavigator_id = daqsystem_doc.dependency_value('filenavigator_id');
-                docs = session.database_search(ndi.query('base.id','exact_string',daqreader_id,''));
-                if numel(docs)~=1
-                    error(['Could not find daqreader document with id ' daqreader_id '.']);
-                end
-                daqreader_doc = docs{1};
-                docs = session.database_search(ndi.query('base.id','exact_string',filenavigator_id,''));
-                if numel(docs)~=1
-                    error(['Could not find file navivgator document with id ' filenavigator_id'.']);
-                end
-                filenavigator_doc = docs{1};
+                daqreader_doc = ndi.daq.system.dependency_doc(session, prefetched, daqreader_id, 'daqreader');
+                filenavigator_doc = ndi.daq.system.dependency_doc(session, prefetched, filenavigator_id, 'file navigator');
 
                 D = daqsystem_doc.dependency_value_n('daqmetadatareader_id','ErrorIfNotFound',0);
-                metadatadocs = {};
                 thedaqmetadatareader = {};
                 for i=1:numel(D)
-                    metadatadocs{i} = session.database_search(ndi.query('base.id','exact_string',D{i},''));
-                    if numel(metadatadocs{i})~=1
-                        error(['Could not find daqmetadatareader document with id ' D{i} '.']);
-                    end
-                    metadatadocs{i} = metadatadocs{i}{1};
-                    thedaqmetadatareader{i} = ndi.database.fun.ndi_document2ndi_object(metadatadocs{i},session);
+                    metadatadoc = ndi.daq.system.dependency_doc(session, prefetched, D{i}, 'daqmetadatareader');
+                    thedaqmetadatareader{i} = ndi.database.fun.ndi_document2ndi_object(metadatadoc,session);
                 end
 
                 obj.daqreader = ndi.database.fun.ndi_document2ndi_object(daqreader_doc, session);
@@ -515,4 +512,27 @@ classdef system < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice
         end % searchquery()
 
     end % methods
+
+    methods (Static, Access = protected)
+        function doc = dependency_doc(session, prefetched, id, what)
+            % DEPENDENCY_DOC - the document with ID, from PREFETCHED or the database
+            %
+            % DOC = ndi.daq.system.dependency_doc(SESSION, PREFETCHED, ID, WHAT)
+            %
+            % Returns the ndi.document with id ID, taken from the containers.Map
+            % PREFETCHED when it is there and otherwise found by searching
+            % SESSION's database. WHAT names the dependency in the error raised
+            % when exactly one such document cannot be found.
+            %
+            if isKey(prefetched, id)
+                doc = prefetched(id);
+                return;
+            end
+            docs = session.database_search(ndi.query('base.id','exact_string',id,''));
+            if numel(docs)~=1
+                error(['Could not find ' what ' document with id ' id '.']);
+            end
+            doc = docs{1};
+        end % dependency_doc()
+    end % methods (Static, Access = protected)
 end % ndi.daq.system classdef

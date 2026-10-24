@@ -174,9 +174,17 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
                 q = q & ndi.query(varargin);
             end
             dev_doc = ndi_session_obj.database_search(q);
-            % dev is cell list of ndi.document objects
+
+            % Each daqsystem depends on a daqreader, a filenavigator and any
+            % number of daqmetadatareaders. Rather than let every daqsystem
+            % look these up one search at a time (each search is slow on a
+            % large database), fetch all of them in one search and hand them
+            % to the constructors.
+            prefetched = ndi.session.daqsystem_prefetch(ndi_session_obj, dev_doc);
+
+            % dev is cell list of ndi.daq.system objects
             for i=1:numel(dev_doc)
-                dev{i} = ndi.database.fun.ndi_document2ndi_object(dev_doc{i},ndi_session_obj);
+                dev{i} = ndi.session.daqsystem_from_doc(ndi_session_obj, dev_doc{i}, prefetched);
             end
 
             if numel(dev)==1
@@ -1024,5 +1032,85 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
         end % all_docs_in_session
 
     end % methods Static
+
+    methods (Static, Hidden)
+        function prefetched = daqsystem_prefetch(ndi_session_obj, daqsystem_docs)
+            % DAQSYSTEM_PREFETCH - fetch the documents daqsystems depend on, in one search
+            %
+            % PREFETCHED = ndi.session.daqsystem_prefetch(NDI_SESSION_OBJ, DAQSYSTEM_DOCS)
+            %
+            % Collects the daqreader_id, filenavigator_id and daqmetadatareader_id
+            % dependencies of the 'daqsystem' documents DAQSYSTEM_DOCS (a cell
+            % array of ndi.document) and retrieves all of those documents with a
+            % single database search. PREFETCHED is a containers.Map from
+            % document id to ndi.document, for ndi.daq.system to use instead of
+            % searching for each dependency separately. Any id that cannot be
+            % read or found is simply absent from the map; ndi.daq.system then
+            % falls back to its own search for it.
+            %
+            prefetched = containers.Map('KeyType','char','ValueType','any');
+            ids = {};
+            for i=1:numel(daqsystem_docs)
+                d = daqsystem_docs{i};
+                try
+                    ids{end+1} = d.dependency_value('daqreader_id'); %#ok<AGROW>
+                catch
+                end
+                try
+                    ids{end+1} = d.dependency_value('filenavigator_id'); %#ok<AGROW>
+                catch
+                end
+                try
+                    ids = [ids reshape(d.dependency_value_n('daqmetadatareader_id','ErrorIfNotFound',0),1,[])]; %#ok<AGROW>
+                catch
+                end
+            end
+            ids = unique(ids(~cellfun(@isempty,ids)));
+            if isempty(ids)
+                return;
+            end
+            q = ndi.query('base.id','exact_string',ids{1},'');
+            for i=2:numel(ids)
+                q = q | ndi.query('base.id','exact_string',ids{i},'');
+            end
+            docs = ndi_session_obj.database_search(q);
+            for i=1:numel(docs)
+                prefetched(docs{i}.document_properties.base.id) = docs{i};
+            end
+        end % daqsystem_prefetch()
+
+        function dev = daqsystem_from_doc(ndi_session_obj, daqsystem_doc, prefetched)
+            % DAQSYSTEM_FROM_DOC - build an ndi.daq.system from its document
+            %
+            % DEV = ndi.session.daqsystem_from_doc(NDI_SESSION_OBJ, DAQSYSTEM_DOC, PREFETCHED)
+            %
+            % Like ndi.database.fun.ndi_document2ndi_object, but passes the
+            % PREFETCHED dependency documents (see DAQSYSTEM_PREFETCH) to the
+            % daqsystem constructor. A daqsystem class whose constructor does not
+            % take a third input is built the ordinary way, with its own searches.
+            %
+            cls = '';
+            try
+                cls = daqsystem_doc.document_properties.daqsystem.ndi_daqsystem_class;
+            catch
+            end
+            takesPrefetch = false;
+            if ~isempty(cls)
+                try
+                    n = nargin(cls);
+                    takesPrefetch = n < 0 || n >= 3; % varargin, or a 3rd input
+                catch
+                end
+            end
+            if takesPrefetch
+                % same safety check ndi_document2ndi_object makes on the class
+                % name read from the document before instantiating it
+                ndi.validators.mustBeClassnameOfType(cls, 'ndi.daq.system');
+                dev = feval(cls, ndi_session_obj, daqsystem_doc, prefetched);
+            else
+                dev = ndi.database.fun.ndi_document2ndi_object(daqsystem_doc, ndi_session_obj);
+            end
+        end % daqsystem_from_doc()
+    end % methods (Static, Hidden)
 
 end % classdef
