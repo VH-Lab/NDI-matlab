@@ -77,7 +77,7 @@ classdef TestDid2SqliteHierarchy < matlab.unittest.TestCase
                  'derived from that shape and is now guessing.']);
 
             % HALF TWO -- the version pinned. It is V_eta (also the
-            % option's only accepted value since 2026-10-23), because V_alpha..V_zeta
+            % option's only accepted value), because V_alpha..V_zeta
             % were brainstorm iterations that never held data and V_eta is
             % the first successor intended to. The reasoning is at
             % did2sqlite.DEFAULTFILENAME; this asserts the value so a

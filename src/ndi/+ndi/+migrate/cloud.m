@@ -1,5 +1,5 @@
 function result = cloud(datasetId, options)
-%CLOUD Migrate a cloud-hosted NDI dataset to V_eta (per-document pass only).
+%CLOUD Report a cloud-hosted NDI dataset's V_eta pass 1 (DryRun only, for now).
 %
 %   RESULT = ndi.migrate.cloud(DATASETID) migrates the cloud-hosted
 %   dataset DATASETID to the V_eta wire format. The migration runs
@@ -13,13 +13,16 @@ function result = cloud(datasetId, options)
 %   resume by re-running this command — already-migrated docs
 %   short-circuit through the conversion.
 %
-%   THIS IS PASS 1 ONLY. ndi.migrate.local also runs the DID batch
-%   post-passes and the NDI second pass over the whole document set
-%   (epochMint, session anchors, stimulus and bath folds, software dedup,
-%   ...); this command does not, so what it uploads is not a complete V_eta
-%   migration. Until 2026-10-23 it took v1_to_v2's default target, the
-%   class-preserving 'V_delta', which was then removed (Jess Haley: "there
-%   should be no mention of V_delta"; DID-matlab #224).
+%   IT REFUSES TO WRITE. This command runs only pass 1 (v1_to_v2 per
+%   document). ndi.migrate.local also runs the DID batch post-passes and the
+%   NDI second pass over the whole document set (epochMint, session anchors,
+%   stimulus and bath folds, software dedup, ...), and only that is a
+%   complete V_eta migration. Until this command runs the same pipeline, any
+%   call without 'DryRun', true raises NDI:migrate:cloudIncomplete before it
+%   contacts the cloud (Jess Haley, 2026-10-24). 'DryRun', true lists,
+%   fetches and converts, and writes nothing. The lock, unpublish/publish
+%   and upload steps described below are kept for when the pipeline is
+%   complete; they are not reached today.
 %
 %   The cloud's per-dataset exclusive write lock (see issue
 %   waltham-data-science/ndi-cloud-node#11) gates the migration:
@@ -102,6 +105,9 @@ function result = cloud(datasetId, options)
 %                          documents survived conversion).
 %
 %   Errors:
+%       NDI:migrate:cloudIncomplete       - DryRun is false: this command
+%                                           runs pass 1 only and refuses
+%                                           to upload (see above).
 %       NDI:migrate:cloud:publishedRefuse - dataset is published and
 %                                           ForceUnpublish is false.
 %       NDI:migrate:cloud:lockHeld        - another client holds the
@@ -128,6 +134,16 @@ function result = cloud(datasetId, options)
         options.LockTTLSeconds (1,1) double = 0
         options.Verbose (1,1) logical = false
         options.Client = []
+    end
+
+    % Refused before anything is contacted, locked, unpublished or uploaded.
+    if ~options.DryRun
+        error('NDI:migrate:cloudIncomplete', ...
+            ['ndi.migrate.cloud runs only pass 1 of the V_eta migration ' ...
+             '(did2.convert.v1_to_v2 per document); it does not run the batch ' ...
+             'passes or the NDI second pass, so it refuses to upload to ' ...
+             'dataset "%s". ndi.migrate.local produces a complete migration. ' ...
+             'Pass ''DryRun'', true for a report that writes nothing.'], datasetId);
     end
 
     if isempty(options.Client)

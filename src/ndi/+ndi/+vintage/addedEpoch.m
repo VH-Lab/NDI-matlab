@@ -33,9 +33,7 @@ function [epochId, clockTypes, t0t1, found, shape] = addedEpoch(ndi_document_obj
 %               (DID-matlab +migrators/element_epoch.m) produced, kept
 %               rather than reverted by team decision (NDI-matlab
 %               bcc6b4e14, 2026-05-22, to keep that new structural
-%               shape). Until 2026-10-23 NDI's read path produced it on
-%               every read of a v1 element_epoch; it no longer converts,
-%               but documents written in it stay on disk.
+%               shape). Documents written in it can be on disk.
 %
 %     'V_eta'   block `acquisition_epoch`, same `clocks` records. The
 %               migrator renames the class and its block and reuses the

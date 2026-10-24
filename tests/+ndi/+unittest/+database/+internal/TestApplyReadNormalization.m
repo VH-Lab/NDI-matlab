@@ -2,12 +2,9 @@ classdef TestApplyReadNormalization < matlab.unittest.TestCase
 %TESTAPPLYREADNORMALIZATION Unit tests for the read-time wrapper that
 %   concrete ndi.database subclasses call from do_read and do_search.
 %
-%   Since 2026-10-23 (Jess Haley: "there should be no mention of V_delta")
-%   the read path converts nothing: a v1 body is read exactly as stored
+%   The read path converts nothing: a v1 body is read exactly as stored
 %   (beyond what ndi.document's own constructor does to every body), and a
-%   V_eta body is read as V_eta. The tests that asserted the removed
-%   v1 -> V_delta read-time conversion (schema_version stamped 'V_delta',
-%   the converter's idempotency short-circuit) were replaced by these.
+%   V_eta body is read as V_eta.
 
     methods (Test)
 

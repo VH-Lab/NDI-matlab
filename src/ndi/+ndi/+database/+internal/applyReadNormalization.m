@@ -9,22 +9,15 @@ function ndiDocumentObj = applyReadNormalization(rawDoc)
 %       'V_eta', no v1 underscore markers) is read as V_eta. The only
 %       change is did2.convert.ensureClassBlocks, which pads an empty
 %       property block for any class of its V_eta superclass chain the
-%       stored body lacks. That is what this read did for V_eta documents
-%       before 2026-10-23 too.
+%       stored body lacks.
 %     - every other body -- a did_v1 document, or one carrying an older
 %       stamp -- is wrapped exactly as stored.
 %
-%   WHY THERE IS NO READ-TIME CONVERSION (Jess Haley, 2026-10-23). Until
-%   then every read of a v1 body ran did2.convert.v1_to_v2 at the
-%   class-preserving target 'V_delta': schema_version stamping, depends_on
-%   rewrite, `app` field renames, the `ndi_document` -> `base` move and the
-%   per-class base migrators (element_epoch, epochclocktimes, filter,
-%   stimulus_bath, jrclust_clusters, ...). That target is removed. The one
-%   way from v1 to V2 is now an explicit migration, ndi.migrate.local
-%   (did2.convert.v1_to_v2 at 'V_eta' plus the batch passes), and a v1
-%   dataset opened by NDI is read by the v1 code paths in the shape it was
-%   written in -- the shape NDI's v1 readers (ndi.vintage, ndi.app,
-%   stimulus and probe helpers) read.
+%   NO READ-TIME CONVERSION. The one way from v1 to V2 is an explicit
+%   migration, ndi.migrate.local (did2.convert.v1_to_v2 at 'V_eta' plus the
+%   batch passes). A v1 dataset opened by NDI is read by the v1 code paths
+%   in the shape it was written in -- the shape NDI's v1 readers
+%   (ndi.vintage, ndi.app, stimulus and probe helpers) read.
 %
 %   What ndi.document's own constructor does to EVERY body is unchanged
 %   and separate from this function: ndi.compat.augmentRead (a no-op on a

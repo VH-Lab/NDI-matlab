@@ -69,7 +69,7 @@ function aliases = fieldAliases()
 %   The probe_location and treatment rows below ARE real and stay: their
 %   templates genuinely carry {ontology_name, name} and {ontologyName, name}.
 %
-%   KNOWN LIMITATION, RECORDED 2026-10-23 AND NOT CHANGED: these rows are
+%   KNOWN LIMITATION: these rows are
 %   produced only on WRITE (ndi.compat.reconcileWrite moves the legacy fields
 %   to the canonical path and strips them), and ndi.query rewrites a legacy
 %   query path to the canonical one (ndi.compat.translateQueryPaths). A
@@ -77,9 +77,8 @@ function aliases = fieldAliases()
 %   NDI v1 and never re-written by NDI V2 -- carries only the legacy fields,
 %   so reading it works (augmentRead is a no-op and the legacy fields are
 %   there) but a query on the legacy path is rewritten to a path it does not
-%   have. Read from the code, not run. Until 2026-10-23 no read-time step
-%   produced these canonical paths either (no base migrator exists for
-%   either class), so this is not new; whether this layer stays is open.
+%   have. Read from the code, not run. This write layer is to be removed
+%   (Jess Haley, 2026-10-24), in a separate change.
 %
 %   NOT DONE HERE: whether `ontologyNode` deserves a correct row of its own
 %   (e.g. ontology_label.term.node <- ontology_label.ontology_node) is a

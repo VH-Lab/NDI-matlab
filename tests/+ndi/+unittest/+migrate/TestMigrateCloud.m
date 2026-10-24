@@ -3,54 +3,43 @@ classdef TestMigrateCloud < matlab.unittest.TestCase
 %
 %   Drives ndi.migrate.cloud against an in-memory FakeCloudClient that
 %   implements the same interface as ndi.migrate.internal.cloudClient.
-%   The tests cover the orchestration the cloud function is responsible
-%   for — lock acquire/release, published-state guard and restoration,
-%   listing → fetching → converting → uploading happy path, dry-run
-%   suppression of the write side, idempotent re-run on already-V_eta
-%   content, and quarantine surfacing. Since 2026-10-23 the conversion
-%   targets V_eta (it took the removed class-preserving default before).
+%   ndi.migrate.cloud runs only pass 1 of the V_eta migration, so it refuses
+%   to write (NDI:migrate:cloudIncomplete) unless 'DryRun' is true. These
+%   tests cover that refusal (before any client call that locks, unpublishes
+%   or uploads) and the DryRun report: listing -> fetching -> converting,
+%   the published-state guard, idempotent re-run on already-V_eta content,
+%   quarantine surfacing and the references report.
 %
 %   These tests run with Validate=false so the test runner doesn't
 %   need a checked-out did-schema next to it.
 
     methods (Test)
 
-        function testRefreshLockCalledDuringMigration(testCase)
-            % The function refreshes the lock between bulk-fetch
-            % batches and once again before the final upload pass.
-            bodies = {makeV1Body('alpha'), makeV1Body('beta')};
+        function testRefusesToWriteBecauseItRunsPassOneOnly(testCase)
+            % Jess Haley, 2026-10-24: no upload until this runs the same
+            % full pipeline as ndi.migrate.local. Refused before the
+            % client is asked for anything that writes.
             fake = ndi.unittest.migrate.FakeCloudClient( ...
                 'datasetInfo', struct('id', 'd-1', 'isPublished', false), ...
-                'documents', bodies);
-
-            ndi.migrate.cloud("d-1", 'Validate', false, 'Client', fake);
-
-            verifyGreaterThanOrEqual(testCase, fake.RefreshLockCalls, 1);
-        end
-
-        function testHappyPathMigratesAndReleasesLock(testCase)
-            bodies = {makeV1Body('alpha'), makeV1Body('beta')};
-            fake = ndi.unittest.migrate.FakeCloudClient( ...
-                'datasetInfo', struct('id', 'd-1', 'isPublished', false), ...
-                'documents', bodies);
-
-            result = ndi.migrate.cloud("d-1", ...
-                'Validate', false, 'Client', fake);
-
-            verifyEqual(testCase, result.summary.total, 2);
-            verifyEqual(testCase, result.summary.migrated_count, 2);
-            verifyEqual(testCase, result.summary.quarantine_count, 0);
-            verifyTrue(testCase, result.lock.acquired);
-            verifyTrue(testCase, result.lock.released);
-            verifyFalse(testCase, result.publishState.wasPublished);
-            verifyFalse(testCase, result.publishState.republished);
-
-            verifyEqual(testCase, fake.AcquireLockCalls, 1);
-            verifyEqual(testCase, fake.ReleaseLockCalls, 1);
-            verifyEqual(testCase, fake.UploadCalls, 1);
+                'documents', {makeV1Body('alpha'), makeV1Body('beta')});
+            verifyError(testCase, ...
+                @() ndi.migrate.cloud("d-1", 'Validate', false, 'Client', fake), ...
+                'NDI:migrate:cloudIncomplete');
+            verifyEqual(testCase, fake.AcquireLockCalls, 0);
             verifyEqual(testCase, fake.UnpublishCalls, 0);
+            verifyEqual(testCase, fake.UploadCalls, 0);
             verifyEqual(testCase, fake.PublishCalls, 0);
-            verifyNotEmpty(testCase, result.upload);
+
+            % ForceUnpublish on a published dataset does not get past it either
+            fake2 = ndi.unittest.migrate.FakeCloudClient( ...
+                'datasetInfo', struct('id', 'd-1', 'isPublished', true), ...
+                'documents', {makeV1Body('alpha')});
+            verifyError(testCase, ...
+                @() ndi.migrate.cloud("d-1", 'Validate', false, ...
+                    'ForceUnpublish', true, 'Client', fake2), ...
+                'NDI:migrate:cloudIncomplete');
+            verifyEqual(testCase, fake2.UnpublishCalls, 0);
+            verifyEqual(testCase, fake2.UploadCalls, 0);
         end
 
         function testRefusesPublishedDatasetWithoutForce(testCase)
@@ -60,47 +49,13 @@ classdef TestMigrateCloud < matlab.unittest.TestCase
 
             verifyError(testCase, ...
                 @() ndi.migrate.cloud("d-1", ...
-                    'Validate', false, 'Client', fake), ...
+                    'Validate', false, 'DryRun', true, 'Client', fake), ...
                 'NDI:migrate:cloud:publishedRefuse');
 
             % Refused before acquiring the lock or uploading anything.
             verifyEqual(testCase, fake.AcquireLockCalls, 0);
             verifyEqual(testCase, fake.UnpublishCalls, 0);
             verifyEqual(testCase, fake.UploadCalls, 0);
-        end
-
-        function testForceUnpublishUnpublishesAndRepublishes(testCase)
-            fake = ndi.unittest.migrate.FakeCloudClient( ...
-                'datasetInfo', struct('id', 'd-1', 'isPublished', true), ...
-                'documents', {makeV1Body('alpha')});
-
-            result = ndi.migrate.cloud("d-1", ...
-                'Validate', false, 'ForceUnpublish', true, ...
-                'Client', fake);
-
-            verifyTrue(testCase, result.publishState.wasPublished);
-            verifyTrue(testCase, result.publishState.republished);
-            verifyEqual(testCase, fake.UnpublishCalls, 1);
-            verifyEqual(testCase, fake.PublishCalls, 1);
-            verifyEqual(testCase, fake.UnpublishOrder, 1, ...
-                'unpublish must happen before upload');
-            verifyEqual(testCase, fake.UploadOrder, 2);
-            verifyEqual(testCase, fake.PublishOrder, 3);
-        end
-
-        function testLockHeldByOtherClientRaises(testCase)
-            fake = ndi.unittest.migrate.FakeCloudClient( ...
-                'datasetInfo', struct('id', 'd-1', 'isPublished', false), ...
-                'documents', {makeV1Body('alpha')}, ...
-                'lockHeldByOther', true);
-
-            verifyError(testCase, ...
-                @() ndi.migrate.cloud("d-1", ...
-                    'Validate', false, 'Client', fake), ...
-                'NDI:migrate:cloud:lockHeld');
-
-            verifyEqual(testCase, fake.UploadCalls, 0);
-            verifyEqual(testCase, fake.ReleaseLockCalls, 0);
         end
 
         function testDryRunSkipsWritesAndLock(testCase)
@@ -125,16 +80,14 @@ classdef TestMigrateCloud < matlab.unittest.TestCase
 
         function testIdempotentReRunOnAlreadyVEtaContent(testCase)
             % Bodies already at V_eta short-circuit the converter and
-            % the function still uploads them back (no information
-            % about whether the cloud already has them — the cloud is
-            % responsible for de-dup on bulk-upload).
+            % are still counted as migrated.
             bodies = {makeVEtaBody('alpha'), makeVEtaBody('beta')};
             fake = ndi.unittest.migrate.FakeCloudClient( ...
                 'datasetInfo', struct('id', 'd-1', 'isPublished', false), ...
                 'documents', bodies);
 
             result = ndi.migrate.cloud("d-1", ...
-                'Validate', false, 'Client', fake);
+                'Validate', false, 'DryRun', true, 'Client', fake);
 
             verifyEqual(testCase, result.summary.migrated_count, 2);
             verifyEqual(testCase, result.summary.quarantine_count, 0);
@@ -146,26 +99,26 @@ classdef TestMigrateCloud < matlab.unittest.TestCase
                 'documents', {makeV1Body('alpha'), 'not json {'});
 
             % With ContinueOnError=true (the default), the quarantine
-            % is surfaced in the result and the rest of the migration
+            % is surfaced in the result and the rest of the run
             % proceeds.
             result = ndi.migrate.cloud("d-1", ...
-                'Validate', false, 'Client', fake);
+                'Validate', false, 'DryRun', true, 'Client', fake);
             verifyEqual(testCase, result.summary.total, 2);
             verifyEqual(testCase, result.summary.migrated_count, 1);
             verifyEqual(testCase, result.summary.quarantine_count, 1);
-            verifyTrue(testCase, result.lock.released);
+            verifyFalse(testCase, result.lock.acquired);
 
             % With ContinueOnError=false, the function raises after
-            % conversion (the lock is still released by cleanup).
+            % conversion.
             fake2 = ndi.unittest.migrate.FakeCloudClient( ...
                 'datasetInfo', struct('id', 'd-1', 'isPublished', false), ...
                 'documents', {makeV1Body('alpha'), 'not json {'});
             verifyError(testCase, ...
                 @() ndi.migrate.cloud("d-1", ...
-                    'Validate', false, 'ContinueOnError', false, ...
+                    'Validate', false, 'DryRun', true, 'ContinueOnError', false, ...
                     'Client', fake2), ...
                 'NDI:migrate:cloud:hadQuarantine');
-            verifyEqual(testCase, fake2.ReleaseLockCalls, 1);
+            verifyEqual(testCase, fake2.UploadCalls, 0);
         end
 
         function testReferencesReported(testCase)
@@ -180,7 +133,7 @@ classdef TestMigrateCloud < matlab.unittest.TestCase
                 'documents', {good, orphan});
 
             result = ndi.migrate.cloud("d-1", ...
-                'Validate', false, 'Client', fake);
+                'Validate', false, 'DryRun', true, 'Client', fake);
 
             verifyEqual(testCase, result.summary.migrated_count, 2);
             verifyEqual(testCase, result.references.orphan_count, 1);
@@ -193,43 +146,11 @@ classdef TestMigrateCloud < matlab.unittest.TestCase
                 'documents', {});
 
             result = ndi.migrate.cloud("d-1", ...
-                'Validate', false, 'Client', fake);
+                'Validate', false, 'DryRun', true, 'Client', fake);
 
             verifyEqual(testCase, result.summary.total, 0);
             verifyEqual(testCase, fake.UploadCalls, 0);
-            verifyTrue(testCase, result.lock.released);
             verifyEmpty(testCase, result.upload);
-        end
-
-        function testLockReleasedOnUploadFailure(testCase)
-            fake = ndi.unittest.migrate.FakeCloudClient( ...
-                'datasetInfo', struct('id', 'd-1', 'isPublished', false), ...
-                'documents', {makeV1Body('alpha')}, ...
-                'failUpload', true);
-
-            verifyError(testCase, ...
-                @() ndi.migrate.cloud("d-1", ...
-                    'Validate', false, 'Client', fake), ...
-                'FakeCloud:uploadFailed');
-            verifyEqual(testCase, fake.ReleaseLockCalls, 1);
-        end
-
-        function testRepublishAttemptedOnFailureIfWasPublished(testCase)
-            fake = ndi.unittest.migrate.FakeCloudClient( ...
-                'datasetInfo', struct('id', 'd-1', 'isPublished', true), ...
-                'documents', {makeV1Body('alpha')}, ...
-                'failUpload', true);
-
-            verifyError(testCase, ...
-                @() ndi.migrate.cloud("d-1", ...
-                    'Validate', false, 'ForceUnpublish', true, ...
-                    'Client', fake), ...
-                'FakeCloud:uploadFailed');
-
-            % unpublish ran once; cleanup re-publishes once.
-            verifyEqual(testCase, fake.UnpublishCalls, 1);
-            verifyEqual(testCase, fake.PublishCalls, 1);
-            verifyEqual(testCase, fake.ReleaseLockCalls, 1);
         end
 
     end

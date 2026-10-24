@@ -8,8 +8,8 @@ function body = augmentRead(body)
 %   customer code that still reads `doc.document_properties.probe_location.ontology_name`
 %   (and the three other affected classes) keeps working on a body whose
 %   canonical paths were written by ndi.compat.reconcileWrite (the write
-%   path). Nothing produces them on read: since 2026-10-23 the database
-%   layer reads a stored body as stored
+%   path). Nothing produces them on read: the database layer reads a
+%   stored body as stored
 %   (ndi.database.internal.applyReadNormalization).
 %
 %   Field-level rows in the alias table cover the two classes whose

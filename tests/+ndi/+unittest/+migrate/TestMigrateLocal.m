@@ -8,8 +8,7 @@ classdef TestMigrateLocal < matlab.unittest.TestCase
 %   the lock semantics, and the idempotency fast pass.
 %
 %   Every call but testDefaultTargetIsVeta's explicit one relies on the
-%   DEFAULT TargetVersion, 'V_eta' (since 2026-10-21, VH-Lab/NDI-matlab#804;
-%   and the only value accepted since 2026-10-23), so these tests run the
+%   DEFAULT TargetVersion, 'V_eta' (the only value accepted), so these tests run the
 %   V_eta path: +migrators_j in pass 1 and the second pass.
 %
 %   Tests run with Validate=false so the test runner does not need a
@@ -62,8 +61,6 @@ classdef TestMigrateLocal < matlab.unittest.TestCase
             [~, name, ext] = fileparts(result.destination);
             verifyEqual(testCase, [name ext], 'V_eta.sqlite');
             verifyTrue(testCase, isfile(fullfile(testCase.SessionRoot, '.ndi', 'V_eta.sqlite')));
-            % no file of the target removed on 2026-10-23 is written
-            verifyFalse(testCase, isfile(fullfile(testCase.SessionRoot, '.ndi', 'V_delta.sqlite')));
             % result.secondPass exists on every target, but its reports are
             % [] unless the V_eta second pass ran; the strain pass reports
             % its denominator whenever it is handed documents
@@ -78,13 +75,13 @@ classdef TestMigrateLocal < matlab.unittest.TestCase
                 'an explicit V_eta run finds the default run''s V_eta.sqlite');
         end
 
-        function testTheRemovedTargetIsRefused(testCase)
-            % Jess Haley, 2026-10-23: no TargetVersion 'V_delta' exists.
-            % Asking for it is an argument error, before anything is read.
+        function testAnyOtherTargetIsRefused(testCase)
+            % V_eta is the only target. Asking for another is an argument
+            % error, before anything is read.
             srcSqlite = fullfile(testCase.SessionRoot, '.ndi', 'did-sqlite.sqlite');
             buildV1Sqlite(srcSqlite, {jsonencode(makeV1Body('alpha'))});
             verifyError(testCase, @() ndi.migrate.local(testCase.SessionRoot, ...
-                'Validate', false, 'TargetVersion', 'V_delta'), ...
+                'Validate', false, 'TargetVersion', 'V_none'), ...
                 'MATLAB:validators:mustBeMember');
         end
 

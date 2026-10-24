@@ -2,9 +2,8 @@
 %
 %   The +migrate subpackage holds user-facing commands that move an
 %   existing NDI dataset or session from the legacy did_v1 storage
-%   shape to the V_eta wire format (the only target: V_epsilon and V_zeta
-%   were removed with did-schema #88, and the class-preserving earlier
-%   target on 2026-10-23). Each command produces a summary
+%   shape to the V_eta wire format, the only target. Each command produces
+%   a summary
 %   struct the caller can inspect; nothing aborts the whole run on a
 %   single bad document (see did2.convert.v1_to_v2's quarantine
 %   convention). For V_eta the command also runs a second pass
@@ -14,9 +13,9 @@
 %
 % Files:
 %   local   - migrate a local on-disk dataset/session.
-%   cloud   - migrate a cloud-hosted dataset (uses the cloud write-lock
-%             to quiesce other writers and the existing
-%             list/bulk-fetch/bulk-upload endpoints).
+%   cloud   - pass 1 over a cloud-hosted dataset, as a DryRun report only:
+%             it refuses to upload (NDI:migrate:cloudIncomplete) until it
+%             runs the full pipeline ndi.migrate.local runs.
 %
 %   +internal/  second-pass and I/O helpers (not user-facing):
 %     bodyResolver       - session/element graph over the whole body set.

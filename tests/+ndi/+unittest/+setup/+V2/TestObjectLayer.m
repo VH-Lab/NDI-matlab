@@ -1176,9 +1176,7 @@ classdef TestObjectLayer < matlab.unittest.TestCase
             % Every document of the written session is read as stored: a
             % V_eta one with any missing class block padded
             % (did2.convert.ensureClassBlocks), any other exactly as stored;
-            % nothing is converted. (Until 2026-10-23 this compared the read
-            % against a full v1_to_v2 pass at the class-preserving target,
-            % which was then removed.)
+            % nothing is converted.
             db = did2.database.sqlitedb(fullfile(testCase.Result.sessions.path{1}, '.ndi', ...
                 ndi.database.implementations.database.did2sqlite.DEFAULTFILENAME()));
             closer = onCleanup(@() db.close());

@@ -98,10 +98,8 @@ function result = local(path, options)
 %                      ndi.schemas.init having set the active cache.
 %     TargetVersion    (1,:) char, default 'V_eta') - migration
 %                      target wire format, and 'V_eta' is the only value
-%                      accepted: the earlier class-preserving target was
-%                      removed on 2026-10-23 (Jess Haley: "there should
-%                      be no mention of V_delta"), and asking for it is an
-%                      argument error. The option is kept so a caller can
+%                      accepted; any other is an argument error. The
+%                      option is kept so a caller can
 %                      name the target it means. 'V_eta' (Brainstorm J)
 %                      routes split-eligible classes through the
 %                      +migrators_j migrators (1 -> N) and runs a second
@@ -165,8 +163,6 @@ function result = local(path, options)
 %       written when DryRun is true OR the file is
 %       byte-equivalent to what would have been produced. To force
 %       a full re-migration, delete PATH/.ndi/V_eta.sqlite first.
-%       (A V_delta.sqlite left by a run of the target removed on 2026-10-23
-%       is neither read nor touched.)
 %
 %   Errors:
 %       NDI:migrate:badPath         - PATH is not a directory.
@@ -3319,11 +3315,9 @@ function [kind, srcPath] = detectV1Source(ndiDir)
 
     sqliteListing = dir(fullfile(ndiDir, '*.sqlite'));
     sqliteListing = sqliteListing(~[sqliteListing.isdir]);
-    % a migration OUTPUT is never a v1 source, whichever target wrote it
-    % (V2.sqlite: written by the class-preserving target removed on
-    % 2026-10-23; such files stay on disk and must still be skipped here)
+    % a migration OUTPUT is never a v1 source
     sqliteListing = sqliteListing(~ismember(lower({sqliteListing.name}), ...
-        {'v_delta.sqlite', 'v_eta.sqlite'}));
+        {'v_eta.sqlite'}));
     if ~isempty(sqliteListing)
         kind = 'sqlite';
         srcPath = fullfile(ndiDir, sqliteListing(1).name);
