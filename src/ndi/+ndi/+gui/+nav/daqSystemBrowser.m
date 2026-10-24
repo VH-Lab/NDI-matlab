@@ -430,6 +430,7 @@ classdef daqSystemBrowser < handle
             if ~isempty(mdr) && ~iscell(mdr)
                 mdr = {mdr};
             end
+            s.metadataReaders = cell(1, numel(mdr));
             for i = 1:numel(mdr)
                 m = mdr{i};
                 entry = class(m);
@@ -437,7 +438,7 @@ classdef daqSystemBrowser < handle
                 if ~isempty(tsv)
                     entry = [entry ' (' tsv ')'];
                 end
-                s.metadataReaders{end+1} = entry;
+                s.metadataReaders{i} = entry;
             end
         end
 
