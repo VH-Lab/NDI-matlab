@@ -7,17 +7,18 @@ name: V_eta migrate B (on-demand)
 #
 # WHY B HAS ITS OWN, DISPATCH-ONLY WORKFLOW. B holds all 1,242 vhlab NewStim
 # `stimulus_presentation` documents (53,144 stimuli) these corpora carry, and
-# they are what the stimulus second pass folds to timed_sequence_manipulation
-# or refuses by NewStim class. Those checks used to ride inside the Dab e2e,
+# they are what the stimulus second pass folds to method documents and one
+# `item` manipulation (ndi.migrate.internal.stimulusPresentationToItem), or
+# refuses by NewStim class. Those checks used to ride inside the Dab e2e,
 # because Dab.zip bundles the whole of B beside Dabrowska's sessions; Jess
 # Haley, 2026-10-21, moved them here so the Dab tests read only Dabrowska's
 # documents. The corpus is the same B.zip DID-matlab's testCorpusB reads. Run
 # alone, with a generous timeout, and never on every push: it does not gate the
 # fast e2e check.
 #
-# The DID-matlab, did-schema, and NDI-matlab V_eta branches share a name, so the
-# dep refs default to this run's branch (github.ref_name); override via the
-# workflow_dispatch input if needed.
+# The dep refs default to did-schema `main` and DID-matlab `V2` (DID_SCHEMA_REF
+# and DID_MATLAB_REF below; #88 and #218 merged 2026-10-23); override the
+# DID-matlab ref via the workflow_dispatch input if needed.
 
 on:
   # Runs ONLY when B's own files change -- the test or this workflow -- so a
@@ -50,17 +51,11 @@ jobs:
     # took ~2h10m over B plus Dabrowska; B alone is set well above its share.
     timeout-minutes: 180
     env:
-      # DID-matlab's V_eta migrators merged to V2 (#151, 2026-09-23); validate
-      # the cross-repo wiring against V2 so this resolves after the shared topic
-      # branch is deleted. A workflow_dispatch input still overrides.
-      # did-schema #88 needs the #88-ported migrators: DID-matlab PR #218
-      # (claude/ecstatic-pascal-md91fw). Back to V2 once #218 merges.
-      DID_MATLAB_REF: ${{ inputs.ref || 'claude/ecstatic-pascal-md91fw' }}
-      # V_eta lives on did-schema `main` since #64 merged (2026-09-23) and the
-      # shared topic branch was deleted; validate against main.
-      # the v_eta-pre73 pin is dropped: the second pass emits did-schema #88's
-      # shape (method / item). PR #88's branch until it merges, then main.
-      DID_SCHEMA_REF: claude/ecstatic-pascal-md91fw
+      # did-schema #88 merged into main and DID-matlab #218 into V2
+      # (2026-10-23): validate against them. A workflow_dispatch input still
+      # overrides the DID-matlab ref.
+      DID_MATLAB_REF: ${{ inputs.ref || 'V2' }}
+      DID_SCHEMA_REF: main
     steps:
       - name: Check out NDI-matlab
         uses: actions/checkout@v4

@@ -129,9 +129,9 @@ jobs:
     name: V2 import stages
     runs-on: ubuntu-latest
     env:
-      # did-schema PR #88 and DID-matlab PR #218 (main and V2 once they merge)
-      DID_SCHEMA_REF: claude/ecstatic-pascal-md91fw
-      DID_MATLAB_REF: claude/ecstatic-pascal-md91fw
+      # did-schema #88 merged into main and DID-matlab #218 into V2 (2026-10-23)
+      DID_SCHEMA_REF: main
+      DID_MATLAB_REF: V2
     steps:
       - name: Check out NDI-matlab
         uses: actions/checkout@v4
