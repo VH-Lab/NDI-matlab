@@ -61,6 +61,11 @@ classdef datasetsPane < ndi.gui.nav.pane
 %                 Choosing one resolves the underlying ndi.session and
 %                 launches the app.
 %       Session - actions and information about the session itself:
+%                   Clear Cache       clears the session's cache.
+%                   DAQ Systems...    opens ndi.gui.nav.daqSystemBrowser, a
+%                                     read-only table of the DAQ systems
+%                                     with their file and epoch probe map
+%                                     file parameters.
 %                   Info...           opens ndi.gui.nav.sessionInfo, a
 %                                     vital-statistics window (DAQ systems,
 %                                     elements, subjects).
@@ -73,6 +78,10 @@ classdef datasetsPane < ndi.gui.nav.pane
 %   Right-clicking a dataset node opens a context menu whose actions are
 %   grouped by topic. The one topic at present is "Cloud", which gathers the
 %   NDI Cloud synchronisation actions for that dataset:
+%       Check Cloud status      reports whether the dataset is in NDI Cloud
+%                               in an ndi.gui.nav.cloudStatusDialog, which
+%                               shows the cloud dataset id with a Copy
+%                               button (greyed out when not in the cloud).
 %       Upload to Cloud         creates (on first upload) and uploads the
 %                               dataset's documents and files to NDI Cloud.
 %       Check Cloud for New     reports how many cloud documents are not yet
@@ -453,11 +462,13 @@ classdef datasetsPane < ndi.gui.nav.pane
             end
 
             % "Session" groups actions and information about the session
-            % itself. Its items are alphabetical: Clear Cache, Info...,
-            % Ingest, Ingestion Status.
+            % itself. Its items are alphabetical: Clear Cache, DAQ Systems...,
+            % Info..., Ingest, Ingestion Status.
             sessionRoot = uimenu(cm, 'Text', 'Session');
             uimenu(sessionRoot, 'Text', 'Clear Cache', ...
                 'MenuSelectedFcn', @(~,~) obj.clearSessionCache(node));
+            uimenu(sessionRoot, 'Text', 'DAQ Systems...', ...
+                'MenuSelectedFcn', @(~,~) obj.showDaqSystems(node));
             uimenu(sessionRoot, 'Text', 'Info...', ...
                 'MenuSelectedFcn', @(~,~) obj.showSessionInfo(node));
             uimenu(sessionRoot, 'Text', 'Ingest', ...
@@ -622,14 +633,17 @@ classdef datasetsPane < ndi.gui.nav.pane
             %   action that queries the dataset (ds.isInCloud, a local,
             %   network-free check for the 'dataset_remote' document); the
             %   result is cached on the node (badging it and enabling the right
-            %   menu items) and reported to the user. Because it is on demand,
-            %   the cost is paid only when the user asks, not on every refresh.
+            %   menu items) and reported to the user in an
+            %   ndi.gui.nav.cloudStatusDialog, which shows the NDI Cloud dataset
+            %   id and a button to copy it to the clipboard. Because it is on
+            %   demand, the cost is paid only when the user asks, not on every
+            %   refresh.
             fig = obj.Navigator.Figure;
             title = 'Check Cloud Status';
             dlg = uiprogressdlg(fig, 'Title', title, ...
                 'Message', 'Checking NDI Cloud status...', 'Indeterminate', 'on');
             try
-                inCloud = ds.isInCloud();
+                [inCloud, cloudDatasetId] = ds.isInCloud();
             catch ME
                 delete(dlg);
                 uialert(fig, ME.message, title);
@@ -638,13 +652,12 @@ classdef datasetsPane < ndi.gui.nav.pane
             delete(dlg);
             if inCloud
                 obj.setDatasetCloudState(node, 'incloud');
-                uialert(fig, 'This dataset is linked to NDI Cloud.', title, ...
-                    'Icon', 'success');
             else
                 obj.setDatasetCloudState(node, 'notincloud');
-                uialert(fig, ['This dataset is not in NDI Cloud. Use ' ...
-                    '"Upload to Cloud" to add it.'], title, 'Icon', 'info');
             end
+            % The result window shows the cloud dataset id with a Copy button
+            % (greyed out when the dataset is not in the cloud).
+            ndi.gui.nav.cloudStatusDialog(inCloud, cloudDatasetId, 'Parent', fig);
         end
 
         function cloudUploadDataset(obj, ds, node)
@@ -864,6 +877,24 @@ classdef datasetsPane < ndi.gui.nav.pane
                 ndi.gui.nav.sessionInfo(s);
             catch ME
                 uialert(obj.Navigator.Figure, ME.message, 'Session Info');
+            end
+        end
+
+        function showDaqSystems(obj, node)
+            %SHOWDAQSYSTEMS Open the DAQ system browser for NODE's session.
+            if isempty(node) || ~isvalid(node)
+                return;
+            end
+            s = obj.resolveSession(node.NodeData);
+            if isempty(s)
+                uialert(obj.Navigator.Figure, ...
+                    'Could not open the session for this node.', 'DAQ Systems');
+                return;
+            end
+            try
+                ndi.gui.nav.daqSystemBrowser(s);
+            catch ME
+                uialert(obj.Navigator.Figure, ME.message, 'DAQ Systems');
             end
         end
 
