@@ -2,8 +2,8 @@ function result = local(path, options)
 %LOCAL Migrate a local NDI dataset/session to V_eta on disk.
 %
 %   RESULT = ndi.migrate.local(PATH) migrates the on-disk did_v1
-%   database under PATH/.ndi to the V_eta wire format (the default
-%   TargetVersion; 'V_delta' on request) by reading every document
+%   database under PATH/.ndi to the V_eta wire format (the only
+%   TargetVersion) by reading every document
 %   body via the did2 v1 readers, running did2.convert.v1_to_v2 per
 %   body plus the V_eta second pass, and writing the surviving docs
 %   into PATH/.ndi/<TargetVersion>.sqlite via did2.database.sqlitedb.
@@ -70,7 +70,7 @@ function result = local(path, options)
 %
 %   Options (name-value):
 %     DryRun           (1,1 logical, default false) - report what
-%                      would change without writing the V_delta
+%                      would change without writing the V_eta
 %                      database, the quarantine sidecar, or the
 %                      backup directory. The result struct still
 %                      carries the migrated documents in-memory and
@@ -87,9 +87,9 @@ function result = local(path, options)
 %     Verbose          (1,1 logical, default false) - print the
 %                      end-of-run summary to stdout.
 %     Validate         (1,1 logical, default true)  - validate each
-%                      migrated document against its V_delta schema
+%                      migrated document against its V_eta schema
 %                      during conversion and again on insert into
-%                      the V_delta database. Tests with no schema
+%                      the V_eta database. Tests with no schema
 %                      cache available may pass false; production
 %                      callers should leave this true.
 %     SchemaCache      ([] or a did2.schema.cache handle, default
@@ -97,11 +97,10 @@ function result = local(path, options)
 %                      by tests; production callers should rely on
 %                      ndi.schemas.init having set the active cache.
 %     TargetVersion    (1,:) char, default 'V_eta') - migration
-%                      target wire format. The default became 'V_eta'
-%                      on 2026-10-21 (VH-Lab/NDI-matlab#804; it was
-%                      'V_delta'). 'V_delta' preserves the historical
-%                      class-preserving behaviour and writes
-%                      V_delta.sqlite. 'V_eta' (Brainstorm J)
+%                      target wire format, and 'V_eta' is the only value
+%                      accepted; any other is an argument error. The
+%                      option is kept so a caller can
+%                      name the target it means. 'V_eta' (Brainstorm J)
 %                      routes split-eligible classes through the
 %                      +migrators_j migrators (1 -> N) and runs a second
 %                      pass using the open body set: it resolves
@@ -120,14 +119,14 @@ function result = local(path, options)
 %       source       - struct describing the v1 source that was
 %                      read: `kind` ('sqlite', 'dumbjsondb', or
 %                      'none' when the function consumed the
-%                      existing V_delta file instead) and `path`
+%                      existing V_eta.sqlite instead) and `path`
 %                      (char).
-%       destination  - absolute path of the V_delta sqlite file
+%       destination  - absolute path of the V_eta.sqlite file
 %                      this run wrote (or would write, when DryRun
 %                      is true).
-%       alreadyMigrated - logical; true when a V_delta sqlite file
+%       alreadyMigrated - logical; true when V_eta.sqlite
 %                      already existed and the run did a fast
-%                      idempotent pass (read V_delta, re-validate).
+%                      idempotent pass (read it, re-validate).
 %       dryRun       - logical mirror of the DryRun option.
 %       backup       - struct with `enabled` (the option value),
 %                      `path` (target directory), and `created`
@@ -156,14 +155,14 @@ function result = local(path, options)
 %   either way (TestSoftwareDedupAfterPassOne).
 %
 %   Idempotency:
-%       Re-running on a dataset that already has a V_delta.sqlite
+%       Re-running on a dataset that already has a V_eta.sqlite
 %       under .ndi is a fast no-op modulo validation: the function
-%       loads every document from the existing V_delta file,
-%       re-runs did2.convert.v1_to_v2 (which short-circuits already-
-%       V_delta bodies), and re-validates references. Nothing is
-%       written when DryRun is true OR the V_delta file is
+%       loads every document from the existing V_eta.sqlite,
+%       re-runs did2.convert.v1_to_v2 (which short-circuits bodies
+%       already at V_eta), and re-validates references. Nothing is
+%       written when DryRun is true OR the file is
 %       byte-equivalent to what would have been produced. To force
-%       a full re-migration, delete PATH/.ndi/V_delta.sqlite first.
+%       a full re-migration, delete PATH/.ndi/V_eta.sqlite first.
 %
 %   Errors:
 %       NDI:migrate:badPath         - PATH is not a directory.
@@ -171,7 +170,7 @@ function result = local(path, options)
 %                                     an NDI session/dataset root.
 %       NDI:migrate:noV1Source      - .ndi exists but contains no
 %                                     recognised v1 store and no
-%                                     V_delta file.
+%                                     V_eta.sqlite.
 %       NDI:migrate:locked          - another migration is in
 %                                     flight (or left a stale lock).
 %       NDI:migrate:hadQuarantine   - ContinueOnError=false and at
@@ -188,7 +187,7 @@ function result = local(path, options)
         options.Verbose (1,1) logical = false
         options.Validate (1,1) logical = true
         options.SchemaCache = []
-        options.TargetVersion (1,:) char {mustBeMember(options.TargetVersion, {'V_delta', 'V_eta'})} = 'V_eta'
+        options.TargetVersion (1,:) char {mustBeMember(options.TargetVersion, {'V_eta'})} = 'V_eta'
         options.SoftwareDedupAfterPassOne (1,1) logical = true
     end
 
@@ -225,7 +224,7 @@ function result = local(path, options)
     alreadyMigrated = isfile(dstPath);
     backupCreated = false;
     if alreadyMigrated
-        [bodies, srcInfo] = readBodiesFromVDelta(dstPath);
+        [bodies, srcInfo] = readBodiesFromTarget(dstPath);
     else
         [srcKind, srcPath] = detectV1Source(ndiDir);
         srcInfo = struct('kind', srcKind, 'path', srcPath);
@@ -247,17 +246,12 @@ function result = local(path, options)
     tStep = migrateStepMark(sprintf('read v1 bodies (%d)', numel(bodies)), ...
         tStart, tStep, []);
 
-    % Build the converter args. Only forward TargetVersion when it is NOT
-    % the default 'V_delta': the default path must stay call-compatible with
-    % the stable released did-matlab (whose v1_to_v2 predates the
-    % TargetVersion option). A 'V_eta' run requires the newer did-matlab
-    % anyway, so adding the name-value there is safe.
+    % The converter args. The target is always named, never left to
+    % did2.convert.v1_to_v2's default.
     v2args = {'Validate', options.Validate, ...
         'SchemaCache', options.SchemaCache, ...
-        'Verbose', false};
-    if ~strcmp(options.TargetVersion, 'V_delta')
-        v2args = [v2args, {'TargetVersion', options.TargetVersion}];
-    end
+        'Verbose', false, ...
+        'TargetVersion', options.TargetVersion};
     % Migrated recordings link their epoch files as data bodies (Jess Haley,
     % 2026-10-21, did-schema V_eta_recording_observation_plan.md): one
     % observation per element per epoch, its epoch files as opaque_bodies by
@@ -3321,9 +3315,9 @@ function [kind, srcPath] = detectV1Source(ndiDir)
 
     sqliteListing = dir(fullfile(ndiDir, '*.sqlite'));
     sqliteListing = sqliteListing(~[sqliteListing.isdir]);
-    % a migration OUTPUT is never a v1 source, whichever target wrote it
+    % a migration OUTPUT is never a v1 source
     sqliteListing = sqliteListing(~ismember(lower({sqliteListing.name}), ...
-        {'v_delta.sqlite', 'v_eta.sqlite'}));
+        {'v_eta.sqlite'}));
     if ~isempty(sqliteListing)
         kind = 'sqlite';
         srcPath = fullfile(ndiDir, sqliteListing(1).name);
@@ -3347,9 +3341,9 @@ function [kind, srcPath] = detectV1Source(ndiDir)
     end
 end
 
-% ---- read V_delta bodies (idempotent re-run path) --------------------------
+% ---- read the target database's bodies (idempotent re-run path) ------------
 
-function [bodies, srcInfo] = readBodiesFromVDelta(dstPath)
+function [bodies, srcInfo] = readBodiesFromTarget(dstPath)
     srcInfo = struct('kind', 'none', 'path', dstPath);
     db = did2.database.sqlitedb(dstPath);
     dbCleanup = onCleanup(@() db.close());
@@ -3421,7 +3415,8 @@ end
 function printSummary(result)
     fprintf('ndi.migrate.local summary for "%s":\n', result.path);
     if result.alreadyMigrated
-        fprintf('  already-migrated fast pass (V_delta.sqlite present).\n');
+        [~, dstName, dstExt] = fileparts(result.destination);
+        fprintf('  already-migrated fast pass (%s present).\n', [dstName dstExt]);
     else
         fprintf('  source:           %s (%s)\n', ...
             result.source.kind, result.source.path);

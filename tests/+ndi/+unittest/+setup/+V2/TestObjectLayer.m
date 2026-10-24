@@ -1172,30 +1172,36 @@ classdef TestObjectLayer < matlab.unittest.TestCase
             testCase.verifyEqual(f.class_name, 'formulation');
         end
 
-        function testReadingAV2DocumentGivesTheFullPassResult(testCase)
-            % applyReadNormalization takes a shortcut for documents already
-            % at the read target (when DID-matlab has it). Every document of
-            % the written session must come out exactly as the full
-            % v1_to_v2 pass makes it.
+        function testReadingAV2DocumentGivesTheStoredDocument(testCase)
+            % Every document of the written session is read as stored: a
+            % V_eta one with any missing class block padded
+            % (did2.convert.ensureClassBlocks), any other exactly as stored;
+            % nothing is converted.
             db = did2.database.sqlitedb(fullfile(testCase.Result.sessions.path{1}, '.ndi', ...
                 ndi.database.implementations.database.did2sqlite.DEFAULTFILENAME()));
             closer = onCleanup(@() db.close());
             ids = db.allIds();
             testCase.assertGreaterThan(numel(ids), 100, 'the written session has documents');
-            nDiffer = 0; first = '';
+            nDiffer = 0; first = ''; nEta = 0;
             for i = 1:numel(ids)
                 d = db.get(ids{i});
+                stored = d.toStruct();
                 got = ndi.database.internal.applyReadNormalization(d);
-                full = did2.convert.v1_to_v2(d.toStruct(), 'Validate', false, ...
-                    'RenameClassNames', false, 'TargetVersion', 'V_delta');
-                want = ndi.document(full.migrated{1}.toStruct());
+                if did2.convert.isAlreadyTarget(stored, 'V_eta')
+                    nEta = nEta + 1;
+                    stored = did2.convert.ensureClassBlocks(stored, []);
+                end
+                want = ndi.document(stored);
                 if ~isequaln(got.document_properties, want.document_properties)
                     nDiffer = nDiffer + 1;
                     if isempty(first), first = ids{i}; end
                 end
             end
-            testCase.verifyEqual(nDiffer, 0, sprintf(['%d of %d document(s) read differently ' ...
-                'from the full pass; first: %s'], nDiffer, numel(ids), first));
+            testCase.verifyGreaterThan(nEta, 0, ...
+                sprintf('none of the %d documents is at V_eta', numel(ids)));
+            testCase.verifyEqual(nDiffer, 0, sprintf(['%d of %d document(s) (%d at V_eta) ' ...
+                'read differently from the stored document; first: %s'], ...
+                nDiffer, numel(ids), nEta, first));
         end
 
         function testInteractionIsAbstract(testCase)

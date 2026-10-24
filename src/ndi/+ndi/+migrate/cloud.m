@@ -1,16 +1,28 @@
 function result = cloud(datasetId, options)
-%CLOUD Migrate a cloud-hosted NDI dataset to V_delta.
+%CLOUD Report a cloud-hosted NDI dataset's V_eta pass 1 (DryRun only, for now).
 %
 %   RESULT = ndi.migrate.cloud(DATASETID) migrates the cloud-hosted
-%   dataset DATASETID to the V_delta wire format. The migration runs
+%   dataset DATASETID to the V_eta wire format. The migration runs
 %   client-side: the documents are streamed down via the existing
 %   list/bulk-fetch endpoints, each is converted with
-%   did2.convert.v1_to_v2 (idempotent — already-V_delta docs are
-%   skipped cheaply), and the surviving bodies are pushed back via the
-%   existing bulk-upload endpoint. Because each successfully written
-%   doc carries `base.schema_version: 'V_delta'`, an interrupted run
-%   can resume by re-running this command — already-migrated docs
+%   did2.convert.v1_to_v2 at TargetVersion 'V_eta' (idempotent —
+%   documents already at V_eta are skipped cheaply), and the surviving
+%   bodies are pushed back via the existing bulk-upload endpoint. Because
+%   each successfully written doc carries
+%   `document_class.schema_version: 'V_eta'`, an interrupted run can
+%   resume by re-running this command — already-migrated docs
 %   short-circuit through the conversion.
+%
+%   IT REFUSES TO WRITE. This command runs only pass 1 (v1_to_v2 per
+%   document). ndi.migrate.local also runs the DID batch post-passes and the
+%   NDI second pass over the whole document set (epochMint, session anchors,
+%   stimulus and bath folds, software dedup, ...), and only that is a
+%   complete V_eta migration. Until this command runs the same pipeline, any
+%   call without 'DryRun', true raises NDI:migrate:cloudIncomplete before it
+%   contacts the cloud (Jess Haley, 2026-10-24). 'DryRun', true lists,
+%   fetches and converts, and writes nothing. The lock, unpublish/publish
+%   and upload steps described below are kept for when the pipeline is
+%   complete; they are not reached today.
 %
 %   The cloud's per-dataset exclusive write lock (see issue
 %   waltham-data-science/ndi-cloud-node#11) gates the migration:
@@ -47,7 +59,7 @@ function result = cloud(datasetId, options)
 %                        unpublish/publish a currently-published
 %                        dataset around the migration.
 %       Validate         (1,1 logical, default true)  - validate
-%                        each converted document against its V_delta
+%                        each converted document against its V_eta
 %                        schema during conversion.
 %       SchemaCache      ([] or a did2.schema.cache handle, default
 %                        []) - override the shared schema cache.
@@ -93,6 +105,9 @@ function result = cloud(datasetId, options)
 %                          documents survived conversion).
 %
 %   Errors:
+%       NDI:migrate:cloudIncomplete       - DryRun is false: this command
+%                                           runs pass 1 only and refuses
+%                                           to upload (see above).
 %       NDI:migrate:cloud:publishedRefuse - dataset is published and
 %                                           ForceUnpublish is false.
 %       NDI:migrate:cloud:lockHeld        - another client holds the
@@ -119,6 +134,16 @@ function result = cloud(datasetId, options)
         options.LockTTLSeconds (1,1) double = 0
         options.Verbose (1,1) logical = false
         options.Client = []
+    end
+
+    % Refused before anything is contacted, locked, unpublished or uploaded.
+    if ~options.DryRun
+        error('NDI:migrate:cloudIncomplete', ...
+            ['ndi.migrate.cloud runs only pass 1 of the V_eta migration ' ...
+             '(did2.convert.v1_to_v2 per document); it does not run the batch ' ...
+             'passes or the NDI second pass, so it refuses to upload to ' ...
+             'dataset "%s". ndi.migrate.local produces a complete migration. ' ...
+             'Pass ''DryRun'', true for a report that writes nothing.'], datasetId);
     end
 
     if isempty(options.Client)
@@ -174,6 +199,7 @@ function result = cloud(datasetId, options)
     refreshFcn();
 
     convertResult = did2.convert.v1_to_v2(bodies, ...
+        'TargetVersion', 'V_eta', ...
         'Validate', options.Validate, ...
         'SchemaCache', options.SchemaCache, ...
         'Verbose', false);

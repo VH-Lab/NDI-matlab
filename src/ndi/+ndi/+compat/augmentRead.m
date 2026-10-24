@@ -1,24 +1,26 @@
 function body = augmentRead(body)
-%AUGMENTREAD Inject did_v1 legacy aliases into a V_delta document body.
+%AUGMENTREAD Inject did_v1 legacy aliases into a V2 document body.
 %
 %   BODY = ndi.compat.augmentRead(BODY) walks the static alias table
 %   returned by ndi.compat.fieldAliases and, for each row, mirrors the
-%   V_delta canonical value into the corresponding legacy did_v1 path.
+%   V2 canonical value into the corresponding legacy did_v1 path.
 %   The result is a body that satisfies both shapes simultaneously, so
 %   customer code that still reads `doc.document_properties.probe_location.ontology_name`
-%   (and the three other affected classes) keeps working after the
-%   database layer has normalised the stored body to V_delta on read
-%   (see ndi.database.internal.applyReadNormalization).
+%   (and the three other affected classes) keeps working on a body whose
+%   canonical paths were written by ndi.compat.reconcileWrite (the write
+%   path). Nothing produces them on read: the database layer reads a
+%   stored body as stored
+%   (ndi.database.internal.applyReadNormalization).
 %
 %   Field-level rows in the alias table cover the two classes whose
-%   shape genuinely changed between did_v1 and V_delta:
+%   shape genuinely changed between did_v1 and V2:
 %     probe_location, treatment.
 %   ontology_image and ontology_label USED to be listed here. Their rows
 %   were fabricated -- both templates have only ever carried `ontologyNode`,
 %   never `ontology_name`/`ontology_region`/`label_id`/`label` -- so they
 %   could never fire on a real document. See ndi.compat.fieldAliases.
 %   Note: `depends_on` is NOT touched here. Cross-document references
-%   use only the V_delta canonical entry shape `{name, document_id}`
+%   use only the V2 canonical entry shape `{name, document_id}`
 %   on the body. Compatibility for callers that read or write
 %   legacy keys (`.id`, `.value`) is provided by the
 %   ndi.document dependency accessors (set_dependency_value,
@@ -28,21 +30,20 @@ function body = augmentRead(body)
 %   heterogeneousStrucAssignment fragility class. See #801.
 %
 %   Behaviour notes:
-%     - Rows whose V_delta top-level block is absent in the body are
+%     - Rows whose V2 top-level block is absent in the body are
 %       skipped silently. That makes the function safe to call on any
 %       document class: a treatment document does not gain a phantom
 %       probe_location block.
 %     - The function is idempotent. Re-running on an already-augmented
 %       body overwrites legacy fields with values re-derived from the
-%       V_delta canonical, which leaves the body unchanged. The V_delta
+%       V2 canonical, which leaves the body unchanged. The V2
 %       canonical is the source of truth at read time; write-time
-%       reconciliation (legacy edits -> V_delta) is a separate concern
+%       reconciliation (legacy edits -> V2) is a separate concern
 %       handled by issue #780 (ndi.document write-time re-derivation).
 %     - The function is also safe to call on v1-shaped bodies. v1 lacks
-%       every V_delta path consulted here, so every row is a no-op.
+%       every V2 path consulted here, so every row is a no-op.
 %       That lets the constructor of ndi.document call augmentRead
-%       unconditionally regardless of whether the database backend has
-%       already normalised the body to V_delta.
+%       unconditionally, on any body.
 %
 %   Inputs:
 %     BODY  1x1 struct  - A document body, typically the
@@ -62,34 +63,34 @@ function body = augmentRead(body)
     aliases = ndi.compat.fieldAliases();
 
     for rowIdx = 1:size(aliases.fields, 1)
-        vDeltaPath = aliases.fields{rowIdx, 1};
+        canonicalPath = aliases.fields{rowIdx, 1};
         legacyPath = aliases.fields{rowIdx, 2};
         transform  = aliases.fields{rowIdx, 3};
-        body = i_augmentFieldRow(body, vDeltaPath, legacyPath, transform);
+        body = i_augmentFieldRow(body, canonicalPath, legacyPath, transform);
     end
 end
 
-function body = i_augmentFieldRow(body, vDeltaPath, legacyPath, transform)
-% Skip the row if the V_delta top-level block is absent — the row
+function body = i_augmentFieldRow(body, canonicalPath, legacyPath, transform)
+% Skip the row if the V2 top-level block is absent — the row
 % does not apply to this document class.
-topLevel = i_firstPathComponent(vDeltaPath);
+topLevel = i_firstPathComponent(canonicalPath);
 if ~isfield(body, topLevel)
     return;
 end
 
-[vValue, found] = i_getPath(body, vDeltaPath);
+[vValue, found] = i_getPath(body, canonicalPath);
 if ~found
     return;
 end
 
 if iscell(legacyPath)
-    % Composite: V_delta value decomposes into multiple legacy values.
+    % Composite: V2 value decomposes into multiple legacy values.
     if isempty(transform) || numel(transform) < 2 ...
             || ~isa(transform{2}, 'function_handle')
         error('NDI:compat:augmentRead:missingComposite', ...
             ['Alias row "%s" has a multi-path legacy target but no ' ...
-             '{toVDelta, toLegacy} transform pair to decompose.'], ...
-            vDeltaPath);
+             '{toCanonical, toLegacy} transform pair to decompose.'], ...
+            canonicalPath);
     end
     toLegacy = transform{2};
     legacyValues = toLegacy(vValue);

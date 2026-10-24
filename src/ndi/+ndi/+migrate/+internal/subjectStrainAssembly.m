@@ -125,7 +125,7 @@ function [kept, minted, report] = subjectStrainAssembly(v1Bodies, migratedStruct
 %   migrator lesson that any NESTED sub-field a migrator reads needs both.
 %   These bodies are also read BEFORE universalRenames in the normal path
 %   (ndi.migrate.local hands over the raw reader output), so the fallback is
-%   what makes the idempotent re-run path -- readBodiesFromVDelta, which hands
+%   what makes the idempotent re-run path -- readBodiesFromTarget, which hands
 %   back already-migrated bodies -- behave the same way.
 %
 %   ---------------------------------------------------------------------

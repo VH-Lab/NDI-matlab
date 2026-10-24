@@ -58,9 +58,9 @@ classdef  matlabdumbjsondb2 < ndi.database
 
         function [ndi_document_obj] = do_read(ndi_matlabdumbjsondb_obj, ndi_document_id)
             [doc] = ndi_matlabdumbjsondb_obj.db.read(ndi_document_id,0); % all versions are 0
-            % Route raw bodies through the v1->V_delta normaliser so
-            % callers above the ndi.database abstraction only ever see
-            % V_delta-shaped ndi.document objects.
+            % Wrap each stored body in an ndi.document. Nothing is converted:
+            % a v1 body is read as stored (see
+            % ndi.database.internal.applyReadNormalization).
             ndi_document_obj = ndi.database.internal.applyReadNormalization(doc);
         end % do_read
 

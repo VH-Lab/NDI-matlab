@@ -116,10 +116,9 @@ classdef did2sqlite < ndi.database
             % `fullfile(ndiDir, [options.TargetVersion '.sqlite'])`, so the
             % file this has to match is `<TargetVersion>.sqlite`.
             %
-            % IT IS PINNED TO V_eta AND NOT TO THAT OPTION'S DEFAULT, WHICH
-            % IS STILL 'V_delta' (`local.m`, `options.TargetVersion (1,:)
-            % char = 'V_delta'`). Two reasons, and the second is the one
-            % that matters:
+            % IT IS PINNED TO V_eta, which is also the only value that option
+            % accepts (2026-10-23). Two reasons it is pinned rather than
+            % searched for, and the second is the one that matters:
             %
             %   * V_alpha..V_zeta were BRAINSTORM iterations. None was ever
             %     used for real data. V_eta is the first successor intended
@@ -237,11 +236,9 @@ classdef did2sqlite < ndi.database
             raw = obj.db.get(ndi_document_id);
             % Route the stored body through the same read normaliser every
             % other backend uses, so callers above the ndi.database
-            % abstraction only ever see ndi.document objects. It already
-            % accepts a did2.document (its own docstring says so), and a
-            % V_eta body now ranks BEYOND the read target, so it passes
-            % through untouched rather than being pushed back through
-            % migrators aimed at a version it has already passed.
+            % abstraction only ever see ndi.document objects. It accepts a
+            % did2.document, and a V_eta body is read as V_eta (its class
+            % blocks padded, nothing converted).
             if iscell(raw)
                 ndi_document_obj = cell(size(raw));
                 for i = 1:numel(raw)

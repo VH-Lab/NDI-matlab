@@ -2,14 +2,16 @@ name: Run NDI Test Suite No Cloud
 
 on:
   # Triggers the workflow on push or pull request events for the "main" branch
+  # V2 added 2026-10-24 (Jess Haley): the V2 line had no run of the unit
+  # suite on its pushes or PRs.
   push:
-    branches: [ "main", "Vnext" ]
+    branches: [ "main", "Vnext", "V2" ]
     paths-ignore:
       - '*.md'
       - '.github/**'
       - 'docs/reports/**'
   pull_request:
-    branches: [ "main", "Vnext" ]
+    branches: [ "main", "Vnext", "V2" ]
     paths-ignore:
       - '*.md'
       - '.github/workflows/**'

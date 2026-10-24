@@ -48,7 +48,7 @@ classdef AugmentReadTest < matlab.unittest.TestCase
 
         function test_idempotent_when_legacy_alias_already_present(testCase)
             % If a body already carries the legacy alias and matches
-            % the V_delta canonical, augmentRead leaves it untouched.
+            % the V2 canonical, augmentRead leaves it untouched.
             body = i_baseBody('probe_location');
             body.probe_location = struct( ...
                 'location', struct('node', 'uberon:1234', 'name', 'V1'), ...
@@ -64,8 +64,8 @@ classdef AugmentReadTest < matlab.unittest.TestCase
 
         function test_legacy_alias_overwritten_when_inconsistent(testCase)
             % If a body carries a stale legacy alias that disagrees
-            % with the V_delta canonical, the V_delta value wins
-            % (V_delta is the source of truth at read time).
+            % with the V2 canonical, the V2 value wins
+            % (V2 is the source of truth at read time).
             body = i_baseBody('probe_location');
             body.probe_location = struct( ...
                 'location', struct('node', 'uberon:1234', 'name', 'V1'), ...
@@ -91,7 +91,7 @@ classdef AugmentReadTest < matlab.unittest.TestCase
         end
 
         function test_noop_on_v1_shaped_body(testCase)
-            % A v1 body has no V_delta paths; every alias row is a
+            % A v1 body has no V2 paths; every alias row is a
             % no-op, so the body must come out structurally
             % unchanged.
             body = i_baseBody('probe_location');
@@ -106,7 +106,7 @@ classdef AugmentReadTest < matlab.unittest.TestCase
         end
 
         function test_partial_block_skips_missing_subfields(testCase)
-            % If only one of the V_delta subfields is present, only
+            % If only one of the V2 subfields is present, only
             % that legacy alias is mirrored.
             body = i_baseBody('probe_location');
             body.probe_location = struct( ...
@@ -149,7 +149,7 @@ classdef AugmentReadTest < matlab.unittest.TestCase
 end
 
 function body = i_baseBody(className)
-% Build a minimal V_delta-shaped document body for the given class.
+% Build a minimal V2-shaped document body for the given class.
 % Mirrors the helper in TestApplyReadNormalization but exposes the
 % class name so we can build per-class fixtures.
 body = struct();
