@@ -29,8 +29,7 @@ classdef TestWarnOnV1Open < matlab.unittest.TestCase
     methods (Test)
 
         function testCreatingASessionDoesNotWarn(testCase)
-            id = testCase.lastWarningIdOf(@() ndi.session.dir('ref_new', testCase.Root));
-            testCase.verifyNotEqual(id, testCase.Id, ...
+            testCase.verifyNoV1Warning(@() ndi.session.dir('ref_new', testCase.Root), ...
                 'a new session holds nothing when it is opened, so there is nothing to warn about');
         end
 
@@ -71,8 +70,8 @@ classdef TestWarnOnV1Open < matlab.unittest.TestCase
         end
 
         function testADatasetWarnsOnceNotOncePerSessionOpen(testCase)
-            id = testCase.lastWarningIdOf(@() ndi.dataset.dir('ds_v1', testCase.Root));
-            testCase.verifyNotEqual(id, testCase.Id, 'creating a dataset does not warn');
+            testCase.verifyNoV1Warning(@() ndi.dataset.dir('ds_v1', testCase.Root), ...
+                'creating a dataset does not warn (its session opens are silenced)');
 
             % ndi.dataset.dir opens its folder as a session two or three
             % times on the way; the dataset still warns once
@@ -84,20 +83,40 @@ classdef TestWarnOnV1Open < matlab.unittest.TestCase
             testCase.verifySubstring(msg, 'The dataset at ');
         end
 
-        function testTheWarningCanBeTurnedOff(testCase)
-            ndi.session.dir('ref_off', testCase.Root);
+        function testTurningTheWarningOffIsKept(testCase)
+            % ndi.dataset.dir switches the warning off for its inner session
+            % opens and restores it; a caller's 'off' must survive that, and
+            % its 'on' too
+            ndi.dataset.dir('ds_off', testCase.Root);
             warnState = warning('off', testCase.Id);
             testCase.addTeardown(@() warning(warnState));
-            id = testCase.lastWarningIdOf(@() ndi.session.dir('ref_off', testCase.Root));
-            testCase.verifyNotEqual(id, testCase.Id);
+            ndi.dataset.dir(testCase.Root);
+            testCase.verifyEqual(getfield(warning('query', testCase.Id), 'state'), 'off');
+            warning('on', testCase.Id);
+            testCase.verifyWarning(@() ndi.dataset.dir(testCase.Root), testCase.Id);
+            testCase.verifyEqual(getfield(warning('query', testCase.Id), 'state'), 'on');
         end
     end
 
     methods
+        function verifyNoV1Warning(testCase, fn, diagnostic)
+            % FN issues no enabled NDI:V2:v1DocumentsPresent. Every other
+            % warning is off while FN runs, so only this one can be seen
+            % (IssuesNoWarnings counts enabled warnings only, which is also
+            % why a warning silenced inside ndi.dataset.dir is not seen).
+            allState = warning;
+            restore = onCleanup(@() warning(allState));
+            warning('off', 'all');
+            warning('on', testCase.Id);
+            testCase.verifyThat(fn, matlab.unittest.constraints.IssuesNoWarnings, diagnostic);
+            clear restore
+        end
+
         function [id, msg] = lastWarningIdOf(testCase, fn)
-            % the last warning FN issues among this test's identifier only:
-            % every other warning is off while FN runs (a warning that is off
-            % does not update lastwarn), and the earlier state is restored
+            % the last warning FN issues, for its message: every other
+            % warning is off while FN runs. (lastwarn is updated by a
+            % disabled warning too, so this is only used where FN is
+            % expected to warn last.)
             allState = warning;
             restore = onCleanup(@() warning(allState));
             warning('off', 'all');
