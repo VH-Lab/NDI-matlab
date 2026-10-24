@@ -116,15 +116,12 @@ classdef query < did.query
             end
             ndi_query_obj@did.query(inputs{:});
 
-            % Rewrite any did_v1 legacy alias paths in the
-            % searchstructure to their V2 canonical counterparts.
-            % This is the read-side mirror of ndi.compat.augmentRead
-            % for the query path: customer code that queries against
-            % legacy paths (e.g., 'probe_location.ontology_name')
-            % finds bodies written through ndi.compat.reconcileWrite.
-            % The rewritten paths are what hits
-            % do_search and (for cloud) goes over the wire. See
-            % issue #781 and ndi.compat.translateQueryPaths.
+            % Rewrite a legacy depends_on entry key (`id`, `value`) to
+            % `document_id`, the key every stored entry carries
+            % (ndi.compat.normalizeDependsOn). Every other path, a v1 one
+            % included, is left as written: v1 documents are stored in
+            % their v1 shape (Decided by Jess Haley, 2026-10-23 [compat
+            % write layer removed]). See ndi.compat.translateQueryPaths.
             ndi_query_obj.searchstructure = ndi.compat.translateQueryPaths( ...
                 ndi_query_obj.searchstructure);
 

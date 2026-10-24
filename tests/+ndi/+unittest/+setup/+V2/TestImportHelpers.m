@@ -60,7 +60,7 @@ classdef TestImportHelpers < matlab.unittest.TestCase
 
         % ---- utcReference ----------------------------------------------------------
         function testAHandWrittenInstantKeepsItsPrecision(testCase)
-            testCase.needBuild();
+            testCase.needSchema();
             d = ndi.setup.V2.utcReference(datetime(2026, 1, 5, 10, 0, 0), 'America/New_York', ...
                 'sid_test', 'Format', 'yyyy-MM-dd''T''HH:mm', 'Tolerance', [60 60]);
             j = jsonencode(d);
@@ -72,7 +72,7 @@ classdef TestImportHelpers < matlab.unittest.TestCase
         end
 
         function testAWindowAcrossADaylightSavingChange(testCase)
-            testCase.needBuild();
+            testCase.needSchema();
             % 8 March 2026, 01:00 -> 04:00 New York: the clocks say 3 h, it was 2 h
             d = ndi.setup.V2.utcReference(datetime(2026, 3, 8, 1, 0, 0), 'America/New_York', ...
                 'sid_test', 'End', datetime(2026, 3, 8, 4, 0, 0));
@@ -82,7 +82,7 @@ classdef TestImportHelpers < matlab.unittest.TestCase
         end
 
         function testSourceTextAndDurationForARecordingStart(testCase)
-            testCase.needBuild();
+            testCase.needSchema();
             d = ndi.setup.V2.utcReference(datetime(2026, 1, 5, 10, 0, 0), 'UTC', 'sid_test', ...
                 'SourceText', '2026-01-05T10:00:00', 'Duration', 60);
             j = jsonencode(d);
@@ -263,6 +263,15 @@ classdef TestImportHelpers < matlab.unittest.TestCase
         function needBuild(testCase)
             testCase.assumeTrue(~isempty(which('did2.build.document')), ...
                 'did2.build (DID-matlab V2) is not on the path');
+        end
+
+        function needSchema(testCase)
+            % did2.build checks against the schema, so a document can only be
+            % built where a V_eta schema set is (DID_SCHEMA_PATH, or a
+            % did-schema checkout beside DID-matlab), as this file's header says
+            testCase.needBuild();
+            testCase.assumeTrue(did2.schema.cache.shared().hasClass('entity'), ...
+                'no V_eta schema set (did-schema #88, `entity`) where did2.schema.cache looks');
         end
 
         function needRegistry(testCase)

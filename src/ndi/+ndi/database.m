@@ -73,13 +73,10 @@ classdef database
             Update = 1;
             vlt.data.assign(varargin{:});
             add_parameters = vlt.data.var2struct('Update');
-            % Reconcile any did_v1 legacy alias edits back into the
-            % V2 canonical and strip the legacy fields before
-            % storage so only V2 hits the underlying database.
-            % This is the write-path mirror of the read-time
-            % augmentation in ndi.document's constructor. See
-            % ndi.compat.reconcileWrite and issue #780.
-            ndi_document_obj = ndi.database.internal.applyWriteReconciliation(ndi_document_obj);
+            % Stored as it is: a v1 document in its v1 template's shape. The
+            % ndi.compat layer that reshaped probe_location and treatment
+            % here is removed (Decided by Jess Haley, 2026-10-23 [compat
+            % write layer removed]; VH-Lab/NDI-matlab#1055).
             ndi_database_obj = do_add(ndi_database_obj, ndi_document_obj, add_parameters);
         end % add()
 

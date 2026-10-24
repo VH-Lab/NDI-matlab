@@ -20,9 +20,11 @@ function ndiDocumentObj = applyReadNormalization(rawDoc)
 %   (ndi.vintage, ndi.app, stimulus and probe helpers) read.
 %
 %   What ndi.document's own constructor does to EVERY body is unchanged
-%   and separate from this function: ndi.compat.augmentRead (a no-op on a
-%   v1 body) and ndi.compat.normalizeDependsOn (depends_on keys `id` /
-%   `value` -> `document_id`, as did.document's constructor also does).
+%   and separate from this function: ndi.compat.normalizeDependsOn
+%   (depends_on keys `id` / `value` -> `document_id`, as did.document's
+%   constructor also does). The ndi.compat field aliases for
+%   probe_location and treatment (augmentRead / reconcileWrite) are removed
+%   (Decided by Jess Haley, 2026-10-23 [compat write layer removed]).
 %
 %   Concrete ndi.database subclasses call this helper from their
 %   do_read / do_search implementations so the abstract ndi.database

@@ -98,8 +98,19 @@ classdef dir < ndi.session
                 end
             end
 
-            ndi_session_dir_obj.database = ndi.database.fun.opendatabase(...
+            % (a local first: `database` is not readable from this subclass,
+            % only settable; ndi.session limits its GetAccess)
+            db = ndi.database.fun.opendatabase(...
                 ndi_session_dir_obj.ndipathname(), ndi_session_dir_obj.id());
+            ndi_session_dir_obj.database = db;
+
+            % Warn once if what was opened still holds v1 documents (Decided
+            % by Jess Haley, 2026-10-23 [warn on v1 open]). Counted before
+            % this constructor writes anything, so creating a new session
+            % does not warn about the session document it is about to add.
+            % ndi.dataset.dir silences this for the session opens it makes
+            % and warns once for the dataset.
+            ndi.database.fun.warnIfV1Documents(db, 'session', ndi_session_dir_obj.path);
 
             read_from_database = 0;
 
