@@ -29,14 +29,17 @@ function [epochId, clockTypes, t0t1, found, shape] = addedEpoch(ndi_document_obj
 %                       'epochid.epochid', epochid);
 %
 %     'clocks'  block `element_epoch`, field `clocks`: an array of records
-%               {name, t0, t1}. The V_delta restructure, kept rather than
-%               reverted by team decision (NDI-matlab bcc6b4e14,
-%               2026-05-22: "the user elected to keep V_delta's new
-%               structural shape").
+%               {name, t0, t1}. The restructure the base migrator
+%               (DID-matlab +migrators/element_epoch.m) produced, kept
+%               rather than reverted by team decision (NDI-matlab
+%               bcc6b4e14, 2026-05-22, to keep that new structural
+%               shape). Until 2026-10-23 NDI's read path produced it on
+%               every read of a v1 element_epoch; it no longer converts,
+%               but documents written in it stay on disk.
 %
 %     'V_eta'   block `acquisition_epoch`, same `clocks` records. The
 %               migrator renames the class and its block and reuses the
-%               V_delta clock transform verbatim
+%               base migrator's clock transform verbatim
 %               (DID-matlab +migrators_j/element_epoch.m).
 %
 %   ---------------------------------------------------------------------
@@ -156,7 +159,7 @@ end
 % ===================== the three shapes ================================
 
 function [clockTypes, t0t1] = fromClockRecords(clocks)
-%FROMCLOCKRECORDS The V_delta / V_eta array-of-records {name, t0, t1}.
+%FROMCLOCKRECORDS The array-of-records {name, t0, t1} ('clocks' and V_eta shapes).
 clockTypes = {};
 t0t1 = {};
 % A one-element array decodes as a SCALAR struct and an N-element array as

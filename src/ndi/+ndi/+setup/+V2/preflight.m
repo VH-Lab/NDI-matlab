@@ -44,9 +44,10 @@ else
     end
 end
 % The schema cache is a SINGLETON: whichever path it saw first (DID_SCHEMA_PATH,
-% or DID's own default -- a V_delta folder -- when the variable was unset) it
-% keeps until reset. Setting DID_SCHEMA_PATH afterwards changes nothing, which
-% is how a correct setenv still produced "No schema file ... V_delta/stable".
+% or DID's own default when the variable was unset -- before did-schema #88,
+% a folder of the earlier schema generation) it keeps until reset. Setting
+% DID_SCHEMA_PATH afterwards changes nothing, which is how a correct setenv
+% still produced a "No schema file" error naming that earlier folder.
 % So compare the path the cache is ACTUALLY using, and reset it when stale.
 if isempty(problems)
     cache = did2.schema.cache.shared();

@@ -74,8 +74,8 @@ classdef database
             vlt.data.assign(varargin{:});
             add_parameters = vlt.data.var2struct('Update');
             % Reconcile any did_v1 legacy alias edits back into the
-            % V_delta canonical and strip the legacy fields before
-            % storage so only V_delta hits the underlying database.
+            % V2 canonical and strip the legacy fields before
+            % storage so only V2 hits the underlying database.
             % This is the write-path mirror of the read-time
             % augmentation in ndi.document's constructor. See
             % ndi.compat.reconcileWrite and issue #780.

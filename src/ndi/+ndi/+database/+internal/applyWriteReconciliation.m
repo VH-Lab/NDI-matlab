@@ -1,12 +1,12 @@
 function ndoc = applyWriteReconciliation(ndoc)
-%APPLYWRITERECONCILIATION Reconcile a doc to V_delta canonical before storage.
+%APPLYWRITERECONCILIATION Reconcile a doc to V2 canonical before storage.
 %
 %   NDOC = ndi.database.internal.applyWriteReconciliation(NDOC) is the
 %   write-path counterpart to ndi.database.internal.applyReadNormalization.
 %   It takes an ndi.document whose body may carry did_v1 legacy aliases
 %   (added by ndi.compat.augmentRead on read), reconciles any legacy
-%   edits back into the V_delta canonical paths, and strips the legacy
-%   fields so only V_delta hits the database.
+%   edits back into the V2 canonical paths, and strips the legacy
+%   fields so only V2 hits the database.
 %
 %   The reconciliation work itself lives in ndi.compat.reconcileWrite
 %   (data-driven by ndi.compat.fieldAliases); this helper just bridges

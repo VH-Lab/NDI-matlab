@@ -79,11 +79,11 @@ classdef document < did.document
                 end
             end
 
-            % Inject did_v1 legacy aliases into the V_delta body so
+            % Inject did_v1 legacy aliases into the V2 body so
             % callers that still read legacy paths (e.g.,
             % document_properties.probe_location.ontology_name) keep
-            % working after the database layer normalised the stored
-            % body to V_delta on read. Idempotent and a no-op on
+            % working on a body whose canonical paths were written by
+            % ndi.compat.reconcileWrite. Idempotent and a no-op on
             % v1-shaped bodies and on classes without any aliased
             % fields. See ndi.compat.fieldAliases for the alias table
             % and issue #779 for the broader did2 plan.
@@ -418,7 +418,7 @@ classdef document < did.document
             sc = cell(1, numel(supers));
             for i=1:numel(supers)
                 if isfield(supers(i), 'class_name') && ~isempty(supers(i).class_name)
-                    % did2-form documents (V_delta / V_zeta) carry the bare
+                    % did2-form documents (V2) carry the bare
                     % superclass name directly in `.class_name` and have no
                     % `.definition` path to load -- use it as-is (equivalent to
                     % loading the definition and reading its doc_class()).
@@ -646,7 +646,7 @@ classdef document < did.document
                 hasdependencies = numel(ndi_document_obj.document_properties.depends_on)>=1;
             end
             % The constructor's ndi.compat.normalizeDependsOn pass
-            % guarantees the body's depends_on entries use the V_delta
+            % guarantees the body's depends_on entries use the V2
             % canonical key `document_id`. We build d_struct with the
             % same key so struct-array assignment / append succeeds.
             d_struct = struct('name', dependency_name, 'document_id', value);
@@ -796,8 +796,8 @@ classdef document < did.document
                 options.session ndi.session = ndi.session.empty()
             end
 
-            % Reconcile did_v1 legacy alias edits back into V_delta
-            % canonical and strip legacy fields so only V_delta lands
+            % Reconcile did_v1 legacy alias edits back into V2
+            % canonical and strip legacy fields so only V2 lands
             % in the JSON export. Mirrors the ndi.database/add hook;
             % keeps the on-disk artefact canonical regardless of
             % which path produced it.
@@ -900,10 +900,10 @@ classdef document < did.document
             % id from a single depends_on struct entry.
             %
             % The constructor's normalizeDependsOn pass guarantees
-            % entries carry `document_id` (V_delta canonical), but
+            % entries carry `document_id` (V2 canonical), but
             % callers occasionally hand us hand-built structs that
             % skip the constructor and still use `value` (earlier
-            % V_delta draft) or `id` (V_alpha legacy). This helper
+            % V2 draft) or `id` (V_alpha legacy). This helper
             % accepts all three with precedence
             % document_id > value > id.
             if ~isstruct(entry) || ~isscalar(entry)

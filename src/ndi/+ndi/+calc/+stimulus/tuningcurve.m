@@ -30,7 +30,7 @@ classdef tuningcurve < ndi.calculator
             tuningcurve_calc = parameters;
 
             % vlt.db.struct_name_value_search requires a `.value`
-            % field; depends_on is now V_delta-canonical `document_id`.
+            % field; depends_on is now V2-canonical `document_id`.
             % Inline the name-based lookup via i_readDependencyTarget
             % so all three spellings (document_id / value / id) work.
             depMatch = find(strcmpi({parameters.depends_on.name}, 'stimulus_response_scalar_id'), 1);

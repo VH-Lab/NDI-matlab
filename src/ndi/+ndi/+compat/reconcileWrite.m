@@ -1,20 +1,20 @@
 function body = reconcileWrite(body)
-%RECONCILEWRITE Reconcile did_v1 legacy aliases back into V_delta canonical.
+%RECONCILEWRITE Reconcile did_v1 legacy aliases back into V2 canonical.
 %
 %   BODY = ndi.compat.reconcileWrite(BODY) is the write-side mirror of
 %   ndi.compat.augmentRead. It walks the static alias table from
 %   ndi.compat.fieldAliases and, for each row:
 %     1. Reads the legacy did_v1 value(s) from the body, if present.
-%     2. Reads the V_delta canonical value, if present.
+%     2. Reads the V2 canonical value, if present.
 %     3. If the legacy form is present and disagrees with (or precedes)
-%        the V_delta canonical, treats the legacy form as authoritative
+%        the V2 canonical, treats the legacy form as authoritative
 %        — the customer edited it — and writes the corresponding
-%        V_delta canonical value back via the row's transform.
-%     4. Strips the legacy field(s) from the body so only the V_delta
+%        V2 canonical value back via the row's transform.
+%     4. Strips the legacy field(s) from the body so only the V2
 %        canonical hits storage.
 %
 %   Note: `depends_on` is NOT touched here. Cross-document references
-%   live on the body only in the V_delta canonical entry shape
+%   live on the body only in the V2 canonical entry shape
 %   `{name, document_id}`. ndi.document's dependency accessors
 %   (set_dependency_value, dependency_value, etc.) read legacy
 %   keys tolerantly and always write `document_id`, so a write-time
@@ -22,25 +22,25 @@ function body = reconcileWrite(body)
 %
 %   This is the function callers should run on a document body just
 %   before handing it to the database layer (or any other long-term
-%   storage path) — it keeps the on-disk shape exclusively V_delta
+%   storage path) — it keeps the on-disk shape exclusively V2
 %   while letting callers above the abstraction continue to interact
 %   with legacy aliases at read time (ndi.compat.augmentRead).
 %
 %   Behaviour notes:
 %     - Idempotent. Re-running on a body that has already been
-%       reconciled (only V_delta paths remain) is a no-op because
+%       reconciled (only V2 paths remain) is a no-op because
 %       the legacy fields are absent.
-%     - V_delta wins only when the legacy field is absent. If the
-%       legacy field is present and equals the V_delta canonical,
+%     - V2 wins only when the legacy field is absent. If the
+%       legacy field is present and equals the V2 canonical,
 %       the legacy field is stripped and the canonical is unchanged.
 %     - Known limitation (documented in issue #780): if a caller
 %       reads a doc — which augments legacy aliases on the body —
-%       then edits the V_delta canonical path directly while
+%       then edits the V2 canonical path directly while
 %       leaving the now-stale legacy alias in place, this function
 %       will treat the stale legacy as authoritative and overwrite
-%       the V_delta edit. Callers who edit V_delta canonical paths
+%       the V2 edit. Callers who edit V2 canonical paths
 %       directly must either rmfield the legacy alias first or use
-%       ndi.document/setproperties on the V_delta path (which keeps
+%       ndi.document/setproperties on the V2 path (which keeps
 %       the legacy alias in sync via subsequent augmentation).
 %
 %   Inputs:
@@ -50,7 +50,7 @@ function body = reconcileWrite(body)
 %
 %   Outputs:
 %     BODY  1x1 struct  - The same body with legacy aliases reconciled
-%                         back into V_delta canonical and the legacy
+%                         back into V2 canonical and the legacy
 %                         fields stripped.
 %
 %   See also: ndi.compat.augmentRead, ndi.compat.fieldAliases,
@@ -64,17 +64,17 @@ function body = reconcileWrite(body)
     aliases = ndi.compat.fieldAliases();
 
     for rowIdx = 1:size(aliases.fields, 1)
-        vDeltaPath = aliases.fields{rowIdx, 1};
+        canonicalPath = aliases.fields{rowIdx, 1};
         legacyPath = aliases.fields{rowIdx, 2};
         transform  = aliases.fields{rowIdx, 3};
-        body = i_reconcileFieldRow(body, vDeltaPath, legacyPath, transform);
+        body = i_reconcileFieldRow(body, canonicalPath, legacyPath, transform);
     end
 end
 
-function body = i_reconcileFieldRow(body, vDeltaPath, legacyPath, transform)
-% Skip the row if the V_delta top-level block is absent — neither
-% V_delta nor legacy can apply.
-topLevel = i_firstPathComponent(vDeltaPath);
+function body = i_reconcileFieldRow(body, canonicalPath, legacyPath, transform)
+% Skip the row if the V2 top-level block is absent — neither
+% V2 nor legacy can apply.
+topLevel = i_firstPathComponent(canonicalPath);
 if ~isfield(body, topLevel)
     return;
 end
@@ -89,12 +89,12 @@ if iscell(legacyPath)
             || ~isa(transform{1}, 'function_handle')
         error('NDI:compat:reconcileWrite:missingComposite', ...
             ['Alias row "%s" has a multi-path legacy target but no ' ...
-             '{toVDelta, toLegacy} transform pair to compose.'], ...
-            vDeltaPath);
+             '{toCanonical, toLegacy} transform pair to compose.'], ...
+            canonicalPath);
     end
-    toVDelta = transform{1};
-    newVDeltaValue = toVDelta(legacyValues);
-    body = i_setPath(body, vDeltaPath, newVDeltaValue);
+    toCanonical = transform{1};
+    newCanonicalValue = toCanonical(legacyValues);
+    body = i_setPath(body, canonicalPath, newCanonicalValue);
     for j = 1:numel(legacyPath)
         body = i_stripPath(body, legacyPath{j});
     end
@@ -104,12 +104,12 @@ else
         return;
     end
     if isempty(transform)
-        newVDeltaValue = legacyValue;
+        newCanonicalValue = legacyValue;
     else
-        toVDelta = transform{1};
-        newVDeltaValue = toVDelta(legacyValue);
+        toCanonical = transform{1};
+        newCanonicalValue = toCanonical(legacyValue);
     end
-    body = i_setPath(body, vDeltaPath, newVDeltaValue);
+    body = i_setPath(body, canonicalPath, newCanonicalValue);
     body = i_stripPath(body, legacyPath);
 end
 end

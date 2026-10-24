@@ -1,8 +1,8 @@
 function aliases = fieldAliases()
-%FIELDALIASES Static V_delta <-> did_v1 field-alias table.
+%FIELDALIASES Static V2 <-> did_v1 field-alias table.
 %
 %   ALIASES = NDI.COMPAT.FIELDALIASES() returns a struct describing every
-%   field whose path or shape differs between the V_delta canonical schema
+%   field whose path or shape differs between the V2 canonical schema
 %   and the did_v1 legacy schema. The struct is consumed by:
 %     - ndi.document read-time augmentation (issue 6),
 %     - ndi.document write-time re-derivation (issue 7),
@@ -11,16 +11,16 @@ function aliases = fieldAliases()
 %
 %   The returned struct has one field:
 %
-%     aliases.fields    - cell N-by-3 of {vDeltaPath, legacyPath, transform}
+%     aliases.fields    - cell N-by-3 of {canonicalPath, legacyPath, transform}
 %                         describing dot-path field aliases inside the
 %                         document body (under the class-scoped property
 %                         blocks).
 %
 %   Note: depends_on entry-key compatibility (did_v1 `id` /
-%   `value` <-> V_delta `document_id`) is NOT in this table. It is
+%   `value` <-> V2 `document_id`) is NOT in this table. It is
 %   handled instead by the ndi.document dependency accessors
 %   (set_dependency_value, dependency_value, etc.) which read
-%   tolerantly across all three key spellings and write the V_delta
+%   tolerantly across all three key spellings and write the V2
 %   canonical, and by ndi.compat.translateQueryPaths which rewrites
 %   query paths. The body itself only ever carries `document_id`,
 %   so the depends_on struct-array schema never grows to include
@@ -28,18 +28,18 @@ function aliases = fieldAliases()
 %   class — see #801).
 %
 %   Row columns (for `aliases.fields`):
-%     vDeltaPath / vDeltaKey - char, the canonical V_delta path or key.
+%     canonicalPath / canonicalKey - char, the canonical V2 path or key.
 %     legacyPath  / legacyKey - char (single path) or cellstr (multi-path
 %                               composition). A cellstr indicates that the
-%                               V_delta value is composed from more than
+%                               V2 value is composed from more than
 %                               one legacy field, and the transform handles
 %                               the reshape in both directions.
 %     transform               - [] for scalar identity (the value moves
 %                               between paths unchanged), or a 1x2 cell
-%                               {toVDelta, toLegacy} of function handles:
-%                                 toVDelta(legacyValue)   -> vDeltaValue
-%                                 toLegacy(vDeltaValue)   -> legacyValue
-%                               When legacyPath is a cellstr, toVDelta
+%                               {toCanonical, toLegacy} of function handles:
+%                                 toCanonical(legacyValue)   -> canonicalValue
+%                                 toLegacy(canonicalValue)   -> legacyValue
+%                               When legacyPath is a cellstr, toCanonical
 %                               receives a cell array of legacy values in
 %                               the same order and toLegacy returns a cell
 %                               array in the same order.
@@ -48,7 +48,7 @@ function aliases = fieldAliases()
 %   an NDI document template in ndi_common/database_documents ACTUALLY HAS.
 %
 %   It used to say the source of truth was the per-class conversion markdown in
-%   did-schema/schemas/V_delta/conversions/from_did_v1/*.md. That was wrong, and
+%   did-schema's per-class conversion notes (deleted with did-schema #88). That was wrong, and
 %   it put four fabricated rows in this table. Those markdown files were written
 %   against did-schema's own V_alpha/V_beta snapshots, which for the two ontology
 %   classes do not match anything NDI ever shipped. Checked against the full
@@ -68,6 +68,18 @@ function aliases = fieldAliases()
 %
 %   The probe_location and treatment rows below ARE real and stay: their
 %   templates genuinely carry {ontology_name, name} and {ontologyName, name}.
+%
+%   KNOWN LIMITATION, RECORDED 2026-10-23 AND NOT CHANGED: these rows are
+%   produced only on WRITE (ndi.compat.reconcileWrite moves the legacy fields
+%   to the canonical path and strips them), and ndi.query rewrites a legacy
+%   query path to the canonical one (ndi.compat.translateQueryPaths). A
+%   probe_location or treatment document stored in the v1 shape -- written by
+%   NDI v1 and never re-written by NDI V2 -- carries only the legacy fields,
+%   so reading it works (augmentRead is a no-op and the legacy fields are
+%   there) but a query on the legacy path is rewritten to a path it does not
+%   have. Read from the code, not run. Until 2026-10-23 no read-time step
+%   produced these canonical paths either (no base migrator exists for
+%   either class), so this is not new; whether this layer stays is open.
 %
 %   NOT DONE HERE: whether `ontologyNode` deserves a correct row of its own
 %   (e.g. ontology_label.term.node <- ontology_label.ontology_node) is a

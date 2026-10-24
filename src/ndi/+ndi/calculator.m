@@ -145,7 +145,7 @@ classdef (Abstract) calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
             t_start = tic;
             fixed_input_parameters = parameters_specification.input_parameters;
             if isfield(parameters_specification,'depends_on'), fixed_depends_on = parameters_specification.depends_on; else, fixed_depends_on = vlt.data.emptystruct('name','document_id'); end
-            % Normalise fixed_depends_on to the V_delta canonical key
+            % Normalise fixed_depends_on to the V2 canonical key
             % so it concatenates cleanly with `extra_depends` below.
             % parameters_specification may arrive from older code paths
             % that built depends_on with .value or .id.

@@ -1,26 +1,28 @@
 function ss = translateQueryPaths(ss)
-%TRANSLATEQUERYPATHS Rewrite did_v1 legacy field paths to V_delta.
+%TRANSLATEQUERYPATHS Rewrite did_v1 legacy field paths to V2.
 %
 %   SS = ndi.compat.translateQueryPaths(SS) walks a search-structure
 %   array (the shape stored on `did.query.searchstructure`) and rewrites
-%   any `.field` path that names a did_v1 legacy alias to its V_delta
+%   any `.field` path that names a did_v1 legacy alias to its V2
 %   canonical counterpart, using ndi.compat.fieldAliases as the table.
 %
 %   This is the read-side mirror of ndi.compat.augmentRead for the
 %   query path: customer code that constructs queries against the
 %   legacy paths (e.g., `ndi.query('probe_location.ontology_name', ...)`)
-%   keeps working after storage normalised to V_delta, because the
-%   rewritten path hits the V_delta-side indexes both locally and over
-%   the wire to the cloud.
+%   finds bodies written through ndi.compat.reconcileWrite, because the
+%   rewritten path hits the V2-side indexes both locally and over
+%   the wire to the cloud. (A body stored in the v1 shape -- one never
+%   re-written by NDI V2 -- carries only the legacy path; see the
+%   note at ndi.compat.fieldAliases.)
 %
 %   Translation rules:
 %     - Field-level alias rows: exact-path match in `.field`. A legacy
 %       path that matches a row's second column is rewritten to the
-%       row's first column (the V_delta canonical path).
+%       row's first column (the V2 canonical path).
 %     - depends_on entry keys: paths shaped `depends_on.id`,
 %       `depends_on.value`, `depends_on(N).id`, and
 %       `depends_on(N).value` rewrite to `depends_on[.N].document_id`
-%       (V_delta canonical). This rewrite is not driven by
+%       (V2 canonical). This rewrite is not driven by
 %       ndi.compat.fieldAliases — depends_on entry-key compatibility
 %       lives in code (here for queries; in ndi.document accessors
 %       for body reads/writes) rather than in the alias table, so
@@ -34,12 +36,12 @@ function ss = translateQueryPaths(ss)
 %
 %   Composite limitation: alias rows whose legacy side is a cell-array
 %   composition collapse multiple legacy paths onto
-%   a single V_delta path. The rewritten query reaches the right field
-%   but the value semantics differ — the V_delta canonical for that
+%   a single V2 path. The rewritten query reaches the right field
+%   but the value semantics differ — the V2 canonical for that
 %   row is a CURIE like `<ontology_name>:<label_id>`, so an
 %   exact_string match against the bare legacy value will no longer
 %   succeed. Callers querying composite rows must update the value
-%   (or operation) to match the V_delta shape; the corpus tests
+%   (or operation) to match the V2 shape; the corpus tests
 %   (#785) are the catch-net for real-world breakage.
 %
 %   Inputs:
@@ -82,29 +84,29 @@ if ~ischar(field) || isempty(field)
     return;
 end
 
-% Field-level rows: legacy is column 2, V_delta canonical is column 1.
+% Field-level rows: legacy is column 2, V2 canonical is column 1.
 % A legacy path may be a single char (scalar row) or a cell array of
-% paths (composite row that collapses onto one V_delta path).
+% paths (composite row that collapses onto one V2 path).
 for r = 1:size(aliases.fields, 1)
-    vDeltaPath = aliases.fields{r, 1};
+    canonicalPath = aliases.fields{r, 1};
     legacyPath = aliases.fields{r, 2};
     if iscell(legacyPath)
         for j = 1:numel(legacyPath)
             if strcmp(field, legacyPath{j})
-                field = vDeltaPath;
+                field = canonicalPath;
                 return;
             end
         end
     else
         if strcmp(field, legacyPath)
-            field = vDeltaPath;
+            field = canonicalPath;
             return;
         end
     end
 end
 
 % depends_on entry-key rewrite: any of the legacy entry keys
-% (`id`, `value`) collapses to the V_delta canonical `document_id`.
+% (`id`, `value`) collapses to the V2 canonical `document_id`.
 % The optional capture group `(\(\d+\))?` preserves any `(N)` array
 % index so the rewrite is shape-preserving. This is hardcoded rather
 % than data-driven because depends_on entry-key compatibility is

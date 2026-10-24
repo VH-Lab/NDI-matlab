@@ -62,10 +62,10 @@ classdef FieldAliasesTest < matlab.unittest.TestCase
     end
 end
 
-function row = i_findRow(table, vDeltaPath)
-    idx = find(strcmp(table(:, 1), vDeltaPath));
+function row = i_findRow(table, canonicalPath)
+    idx = find(strcmp(table(:, 1), canonicalPath));
     assert(numel(idx) == 1, ...
-        'Expected exactly one row for vDeltaPath "%s", found %d.', ...
-        vDeltaPath, numel(idx));
+        'Expected exactly one row for canonicalPath "%s", found %d.', ...
+        canonicalPath, numel(idx));
     row = table(idx, :);
 end

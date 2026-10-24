@@ -4,7 +4,7 @@ classdef TestAddedEpoch < matlab.unittest.TestCase
 %   `ndi.vintage.addedEpoch` is what `ndi.element.loadaddedepochs` calls for
 %   every candidate document, and the three shapes it must read are all
 %   live at once: what NDI WRITES today (v1 `epoch_clock` + `t0_t1`), what
-%   the V_delta restructure produced (`element_epoch.clocks`), and what the
+%   the base-migrator restructure produced (`element_epoch.clocks`), and what the
 %   V_eta migrator emits (`acquisition_epoch.clocks`).
 %
 %   WHY THESE ARE HAND-BUILT DOCUMENTS AND NOT A CORPUS RUN. The failure
@@ -19,7 +19,7 @@ classdef TestAddedEpoch < matlab.unittest.TestCase
 %   THE SYMPTOM EACH SHAPE PRODUCED BEFORE THIS EXISTED, so a regression is
 %   recognisable:
 %     v1      -> an ERROR, "Unrecognized field name 'clocks'"
-%     V_delta -> correct (the one shape the old reader handled)
+%     clocks -> correct (the one shape the old reader handled)
 %     V_eta   -> SILENCE. The `isfield(...,'element_epoch')` gate failed,
 %                the loop ran zero times, and every derived element
 %                reported no epochs at all.
@@ -96,7 +96,7 @@ classdef TestAddedEpoch < matlab.unittest.TestCase
 
         % ===================== the two `clocks` shapes =================
 
-        function testTheVDeltaClocksShapeIsStillRead(testCase)
+        function testTheClocksRecordShapeIsStillRead(testCase)
             % Kept by team decision rather than reverted (NDI-matlab
             % bcc6b4e14). This is the one shape the old reader handled, so
             % it is the regression guard on the rewrite.

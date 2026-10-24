@@ -2,8 +2,8 @@ classdef NormalizeDependsOnTest < matlab.unittest.TestCase
 %NORMALIZEDEPENDSONTEST Unit tests for ndi.compat.normalizeDependsOn.
 %
 %   Covers the constructor-time normalisation that canonicalises
-%   depends_on entry keys to V_delta `document_id`, accepting v1
-%   `id` and the earlier V_delta-draft `value` as synonyms.
+%   depends_on entry keys to V2 `document_id`, accepting v1
+%   `id` and the earlier V2-draft `value` as synonyms.
 
     methods (Test)
 

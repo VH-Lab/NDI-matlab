@@ -2,8 +2,8 @@ classdef ReconcileWriteTest < matlab.unittest.TestCase
 %RECONCILEWRITETEST Unit tests for ndi.compat.reconcileWrite.
 %
 %   Covers the write-side reconciliation of legacy did_v1 aliases back
-%   into V_delta canonical paths plus the strip step that keeps only
-%   V_delta on the wire to the database.
+%   into V2 canonical paths plus the strip step that keeps only
+%   V2 on the wire to the database.
 
     methods (Test)
 
@@ -11,7 +11,7 @@ classdef ReconcileWriteTest < matlab.unittest.TestCase
 
         function test_probe_location_legacy_edit_wins(testCase)
             % User edited the legacy `ontology_name` after a read; the
-            % V_delta canonical still carries the (stale) read-time
+            % V2 canonical still carries the (stale) read-time
             % value. Reconciliation should take the legacy edit and
             % strip the legacy alias.
             body = i_baseBody('probe_location');
@@ -31,7 +31,7 @@ classdef ReconcileWriteTest < matlab.unittest.TestCase
 
         function test_probe_location_legacy_only(testCase)
             % Customer constructed a doc with only legacy paths.
-            % Reconciliation should populate V_delta canonical and
+            % Reconciliation should populate V2 canonical and
             % strip legacy.
             body = i_baseBody('probe_location');
             body.probe_location = struct( ...
@@ -65,7 +65,7 @@ classdef ReconcileWriteTest < matlab.unittest.TestCase
 
 
         function test_legacy_absent_no_op(testCase)
-            % If only V_delta canonical is present, reconciliation
+            % If only V2 canonical is present, reconciliation
             % is a no-op (nothing to copy, nothing to strip).
             body = i_baseBody('probe_location');
             body.probe_location = struct( ...
@@ -125,8 +125,8 @@ classdef ReconcileWriteTest < matlab.unittest.TestCase
         end
 
         function test_round_trip_augment_then_reconcile(testCase)
-            % Pristine V_delta -> augment -> reconcile must return
-            % byte-equivalent V_delta.
+            % Pristine V2 -> augment -> reconcile must return
+            % byte-equivalent V2.
             pristine = i_baseBody('probe_location');
             pristine.probe_location = struct( ...
                 'location', struct('node', 'uberon:1234', 'name', 'V1'));
@@ -140,7 +140,7 @@ classdef ReconcileWriteTest < matlab.unittest.TestCase
 
         function test_round_trip_after_legacy_edit(testCase)
             % Read -> augment -> user edits legacy -> write reconcile.
-            % The reconciled body must reflect the edit in V_delta
+            % The reconciled body must reflect the edit in V2
             % canonical with no legacy fields remaining.
             pristine = i_baseBody('probe_location');
             pristine.probe_location = struct( ...

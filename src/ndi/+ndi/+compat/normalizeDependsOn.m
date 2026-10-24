@@ -3,8 +3,8 @@ function body = normalizeDependsOn(body)
 %
 %   BODY = ndi.compat.normalizeDependsOn(BODY) walks the body's
 %   `depends_on` struct array (if present) and ensures every entry
-%   uses the V_delta canonical key `document_id`. did_v1 bodies
-%   carry the dependency target under `id`; an earlier V_delta
+%   uses the V2 canonical key `document_id`. did_v1 bodies
+%   carry the dependency target under `id`; an earlier V2
 %   draft used `value`. This helper accepts either of those (with
 %   precedence `document_id > value > id` when more than one is
 %   populated on the same entry) and produces a depends_on whose
