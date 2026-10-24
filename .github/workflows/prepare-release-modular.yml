@@ -56,6 +56,9 @@ jobs:
             Statistics_and_Machine_Learning_Toolbox
             Signal_Processing_Toolbox
 
+      - name: Clone NDIcalc-vis-matlab as sibling directory
+        run: git clone https://github.com/VH-Lab/NDIcalc-vis-matlab.git ../NDIcalc-vis-matlab
+
       - name: Install MatBox
         uses: ehennestad/matbox-actions/install-matbox@8fe220fbaec9e119ec5081eb917c8e016e275f1e # v1
 
@@ -68,6 +71,7 @@ jobs:
           command: |
             setenv("NDI_CLOUD_USERNAME", "${{ secrets.NDI_CLOUD_USERNAME }}")
             setenv("NDI_CLOUD_PASSWORD", "${{ secrets.NDI_CLOUD_PASSWORD }}")
+            setenv("NDI_CLOUD_TEST_USER_HAS_MATLAB_LICENSE", "false")
 
             addpath(genpath( "src" ));
             ndi.cloud.authenticate("InteractionEnabled", "off")
