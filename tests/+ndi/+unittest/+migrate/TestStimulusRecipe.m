@@ -8,6 +8,11 @@ classdef TestStimulusRecipe < matlab.unittest.TestCase
 %   migrates the same way as a grating -- its term naming the kind, every v1
 %   parameter an entry, a parameter with no ontology term taking a label.
 %
+%   One test, testSpatialPhaseIsDegreesWithTheRadiansAsSource, also builds
+%   the `method` document (ndi.migrate.internal.stimulusMethod, did2.build),
+%   so it needs a V_eta schema set and is filtered without one;
+%   test-eta-migrate.yml and test-eta-migrate-e2e.yml run it with one.
+%
 %   The parameter sets are the Dab / B corpus key sets (census of the corpus
 %   zips, 2026-10-21), values transcribed from real documents
 %   (412690002a5a4f00_c0d24bd3bf80db54, 4126900a24601cb3_40b1ac1ec3fe452c,
@@ -145,7 +150,10 @@ classdef TestStimulusRecipe < matlab.unittest.TestCase
             testCase.verifyEqual(sp.value, 90, 'AbsTol', 1e-12);
             testCase.verifyEqual(str2double(sp.source_value), pi / 2, 'AbsTol', 1e-15);
             testCase.verifyEqual(sp.source_unit.node, 'om:radian');
-            % and the method document carries it
+            % and the method document carries it (did2.build: needs the schema)
+            testCase.assumeTrue(~isempty(which('did2.schema.cache')) && ...
+                did2.schema.cache.shared().hasClass('entity'), ...
+                'no V_eta schema set (did-schema #88, `entity`) where did2.schema.cache looks');
             m = ndi.migrate.internal.stimulusMethod(r, 'sess_1', '2025-01-01T00:00:00.000Z');
             prm = m.method.parameters;
             if iscell(prm); prm = [prm{:}]; end

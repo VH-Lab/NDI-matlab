@@ -279,6 +279,15 @@ classdef TestMigrateLocal < matlab.unittest.TestCase
             % (V_eta_relation_inheritance_plan.md item 4), so every document
             % carries one more edge -- and without the session document every
             % one of them would be an orphan. The ONE orphan is the parent_id.
+            %
+            % The `session` document is migrated by DID-matlab's session
+            % migrator, which builds an `entity` with did2.build, so this test
+            % needs a V_eta schema set; without one that document is
+            % quarantined (did2:schema:missingClass) and two of three migrate.
+            % test-eta-migrate-e2e.yml runs this class with the schema.
+            testCase.assumeTrue(~isempty(which('did2.schema.cache')) && ...
+                did2.schema.cache.shared().hasClass('entity'), ...
+                'no V_eta schema set (did-schema #88, `entity`) where did2.schema.cache looks');
             session = makeV1Session();
             good = makeV1Body('alpha');
             orphan = makeV1Body('beta');
