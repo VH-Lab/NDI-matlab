@@ -56,7 +56,7 @@ classdef daqSystemBrowser < handle
                      %   fields number and id (see loadEpochs)
     end
 
-    properties (Access = private)
+    properties (SetAccess = private)
         EpochDropdown   % uidropdown of the selected DAQ system's epochs
         EpochButton     % "Load epochs" uibutton
         EpochTable      % uitable of the chosen epoch's files
@@ -86,6 +86,50 @@ classdef daqSystemBrowser < handle
             end
             obj.List.Value = k;
             obj.showDetails(k);
+        end
+
+        function loadEpochs(obj, k)
+            %LOADEPOCHS Read DAQ system K's epochs (on request) and list them.
+            %   This is the "Load epochs" button. It reads the DAQ system's
+            %   epoch table (which reads the disk), fills the epoch chooser and
+            %   shows the files of the first epoch. K must be the DAQ system
+            %   currently shown (see select).
+            nav = ndi.gui.nav.daqSystemBrowser.getProp(obj.Daqs{k}, 'filenavigator');
+            dlg = [];
+            if strcmp(obj.Figure.Visible, 'on')
+                dlg = uiprogressdlg(obj.Figure, 'Title', 'Load epochs', ...
+                    'Message', 'Reading epochs...', 'Indeterminate', 'on');
+            end
+            try
+                et = nav.epochtable();
+            catch ME
+                delete(dlg);
+                uialert(obj.Figure, ME.message, 'Load epochs');
+                return;
+            end
+            delete(dlg);
+            ep = struct('number', {}, 'id', {});
+            for i = 1:numel(et)
+                ep(i).number = i;
+                ep(i).id = '';
+                if isfield(et, 'epoch_id')
+                    ep(i).id = char(et(i).epoch_id);
+                end
+            end
+            obj.Epochs{k} = ep;
+            obj.fillEpochDropdown(k);
+        end
+
+        function chooseEpoch(obj, n)
+            %CHOOSEEPOCH Show the files of epoch N of the selected DAQ system.
+            %   Same as picking epoch N in the epoch chooser; the epochs must
+            %   have been loaded (loadEpochs) first.
+            k = obj.List.Value;
+            if isempty(obj.Epochs{k}) || ~any([obj.Epochs{k}.number] == n)
+                return;
+            end
+            obj.EpochDropdown.Value = n;
+            obj.showEpochFiles(k, n);
         end
     end
 
@@ -257,31 +301,6 @@ classdef daqSystemBrowser < handle
                 'BackgroundColor', c.lightBlue, ...
                 'FontColor',       c.darkBlue, ...
                 'ButtonPushedFcn', @(~,~) obj.loadEpochs(k));
-        end
-
-        function loadEpochs(obj, k)
-            %LOADEPOCHS Read DAQ system K's epochs (on request) and list them.
-            nav = ndi.gui.nav.daqSystemBrowser.getProp(obj.Daqs{k}, 'filenavigator');
-            dlg = uiprogressdlg(obj.Figure, 'Title', 'Load epochs', ...
-                'Message', 'Reading epochs...', 'Indeterminate', 'on');
-            try
-                et = nav.epochtable();
-            catch ME
-                delete(dlg);
-                uialert(obj.Figure, ME.message, 'Load epochs');
-                return;
-            end
-            delete(dlg);
-            ep = struct('number', {}, 'id', {});
-            for i = 1:numel(et)
-                ep(i).number = i;
-                ep(i).id = '';
-                if isfield(et, 'epoch_id')
-                    ep(i).id = char(et(i).epoch_id);
-                end
-            end
-            obj.Epochs{k} = ep;
-            obj.fillEpochDropdown(k);
         end
 
         function fillEpochDropdown(obj, k)
