@@ -63,9 +63,10 @@ classdef datasetsPane < ndi.gui.nav.pane
 %       Session - actions and information about the session itself:
 %                   Clear Cache       clears the session's cache.
 %                   DAQ Systems...    opens ndi.gui.nav.daqSystemBrowser, a
-%                                     read-only table of the DAQ systems
-%                                     with their file and epoch probe map
-%                                     file parameters.
+%                                     read-only view of each DAQ system's
+%                                     reader, file and epoch probe map file
+%                                     parameters, and an example epoch's
+%                                     actual files.
 %                   Info...           opens ndi.gui.nav.sessionInfo, a
 %                                     vital-statistics window (DAQ systems,
 %                                     elements, subjects).

@@ -35,35 +35,53 @@ classdef daqSystemBrowser_test < matlab.unittest.TestCase
             testCase.verifyEmpty(s.metadataReaders);
         end
 
-        function testTableRows(testCase)
-            info = ndi.gui.nav.daqSystemBrowser.describeAll({testCase.fakeDaq()});
-            rows = ndi.gui.nav.daqSystemBrowser.tableRows(info);
-            testCase.verifySize(rows, [1 8]);
-            testCase.verifyEqual(rows{1, 5}, '#.rhd, #.epochprobemap.txt');
-            testCase.verifyEqual(rows{1, 7}, '#.epochprobemap.txt');
-            testCase.verifyEqual(rows{1, 8}, '(none)');
+        function testShortClassName(testCase)
+            f = @ndi.gui.nav.daqSystemBrowser.shortClassName;
+            testCase.verifyEqual(f('ndi.daq.reader.mfdaq.intan'), 'intan');
+            testCase.verifyEqual(f('struct'), 'struct');
+            testCase.verifyEqual(f(''), '');
         end
 
-        function testTableRowsDefaultEpochProbeMap(testCase)
-            d = testCase.fakeDaq();
-            d.filenavigator.epochprobemap_fileparameters = [];
-            info = ndi.gui.nav.daqSystemBrowser.describeAll({d});
-            rows = ndi.gui.nav.daqSystemBrowser.tableRows(info);
-            testCase.verifySubstring(rows{1, 7}, 'default');
+        function testEpochLabels(testCase)
+            labels = ndi.gui.nav.daqSystemBrowser.epochLabels([1 2], {'t00001', ''});
+            testCase.verifyEqual(labels, {'Epoch 1  (t00001)', 'Epoch 2'});
         end
 
-        function testTableRowsNoDaqSystems(testCase)
-            info = ndi.gui.nav.daqSystemBrowser.describeAll({});
-            rows = ndi.gui.nav.daqSystemBrowser.tableRows(info);
-            testCase.verifyEqual(rows{1, 1}, '(no DAQ systems)');
-            testCase.verifySize(rows, [1 8]);
+        function testEpochFileRowsMarksProbeMap(testCase)
+            d = fullfile(tempdir, 't00001');
+            files = {fullfile(d, 'reference.txt'), fullfile(d, 'data.rhd'), ...
+                fullfile(d, 'vhintan_channelgrouping.txt')};
+            patterns = {'reference.txt', '.*\.rhd\>', 'vhintan_channelgrouping.txt'};
+            rows = ndi.gui.nav.daqSystemBrowser.epochFileRows(files, patterns, files{3});
+            testCase.verifySize(rows, [3 3]);
+            testCase.verifyEqual(rows(:, 1)', ...
+                {'reference.txt', 'data.rhd', 'vhintan_channelgrouping.txt'});
+            testCase.verifyEqual(rows{1, 2}, 'reference.txt');
+            testCase.verifyEqual(rows{3, 3}, 'epoch probe map');
+            testCase.verifyEmpty(rows{1, 3});
         end
 
-        function testDetailLinesOnePatternPerLine(testCase)
-            s = ndi.gui.nav.daqSystemBrowser.describe(testCase.fakeDaq());
-            lines = ndi.gui.nav.daqSystemBrowser.detailLines(s);
-            testCase.verifyTrue(any(strcmp(lines, '    #.rhd')));
-            testCase.verifyTrue(any(strcmp(lines, '    #.epochprobemap.txt')));
+        function testEpochFileRowsDefaultProbeMapGetsOwnRow(testCase)
+            d = fullfile(tempdir, 'no_such_epoch_dir');
+            files = {fullfile(d, 'data.rhd')};
+            pm = fullfile(d, '.data.rhd.epochprobemap.ndi');
+            rows = ndi.gui.nav.daqSystemBrowser.epochFileRows(files, {}, pm);
+            testCase.verifySize(rows, [2 3]);
+            testCase.verifyEqual(rows{2, 1}, '.data.rhd.epochprobemap.ndi');
+            testCase.verifySubstring(rows{2, 3}, 'default location');
+            testCase.verifySubstring(rows{2, 3}, 'not found');
+        end
+
+        function testEpochFileRowsEmpty(testCase)
+            rows = ndi.gui.nav.daqSystemBrowser.epochFileRows({}, {}, '');
+            testCase.verifySubstring(rows{1, 1}, 'no files');
+        end
+
+        function testMatchingPatternNoMatch(testCase)
+            testCase.verifyEqual( ...
+                ndi.gui.nav.daqSystemBrowser.matchingPattern({'a.txt'}, 'b.dat'), '');
+            testCase.verifyEqual( ...
+                ndi.gui.nav.daqSystemBrowser.matchingPattern({}, 'b.dat'), '');
         end
     end
 
