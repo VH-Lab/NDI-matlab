@@ -55,11 +55,16 @@ classdef datasetsPane < ndi.gui.nav.pane
 %   Either way the session is added to the Unaffiliated list and survives a
 %   Refresh.
 %
-%   Right-clicking a session node opens a context menu with two submenus,
-%   in alphabetical order:
+%   Right-clicking a session node opens a context menu, in alphabetical
+%   order:
 %       Apps    - the apps that can run on a session (see sessionApps).
 %                 Choosing one resolves the underlying ndi.session and
 %                 launches the app.
+%       Assign to workspace...
+%               - prompts for a variable name (default "S") and assigns the
+%                 ndi.session to it in the base workspace (a session inside
+%                 a dataset is opened first). The node label then shows the
+%                 name.
 %       Session - actions and information about the session itself:
 %                   Clear Cache       clears the session's cache.
 %                   DAQ Systems...    opens ndi.gui.nav.daqSystemBrowser, a
@@ -76,8 +81,10 @@ classdef datasetsPane < ndi.gui.nav.pane
 %                   Ingestion Status  computes the session's ingestion state
 %                                     and shows it as a node badge.
 %
-%   Right-clicking a dataset node opens a context menu whose actions are
-%   grouped by topic. The one topic at present is "Cloud", which gathers the
+%   Right-clicking a dataset node opens a context menu. Its first item,
+%   "Assign to workspace...", prompts for a variable name (default "D") and
+%   assigns the ndi.dataset to it in the base workspace. The other actions
+%   are grouped by topic. The one topic at present is "Cloud", which gathers the
 %   NDI Cloud synchronisation actions for that dataset:
 %       Check Cloud status      reports whether the dataset is in NDI Cloud
 %                               in an ndi.gui.nav.cloudStatusDialog, which
@@ -311,28 +318,32 @@ classdef datasetsPane < ndi.gui.nav.pane
             obj.attachUnaffiliatedMenu(unaffiliated);
             sessions = obj.unaffiliatedSessions();
             for i = 1:numel(sessions)
-                label = obj.decorateWithWorkspaceVars( ...
-                    obj.sessionLabel(sessions{i}), obj.objId(sessions{i}));
+                base = obj.sessionLabel(sessions{i});
+                id   = obj.objId(sessions{i});
                 node = uitreenode(unaffiliated, ...
-                    'Text',     label, ...
-                    'NodeData', obj.sessionNodeData(sessions{i}, [], ''));
+                    'Text',     obj.decorateWithWorkspaceVars(base, id), ...
+                    'NodeData', obj.sessionNodeData(sessions{i}, [], ''), ...
+                    'UserData', struct('baseLabel', base, 'id', id));
                 obj.attachSessionMenu(node, apps);
             end
 
             % --- Datasets: user-added ("+") + search path + workspace ---
-            datasets = [obj.UserDatasets, obj.searchPathDatasets(), ...
-                obj.scanWorkspace('ndi.dataset')];
+            % A dataset can come from more than one source (e.g. added via "+"
+            % and also assigned to a workspace variable), so list each id once.
+            datasets = obj.uniqueById([obj.UserDatasets, obj.searchPathDatasets(), ...
+                obj.scanWorkspace('ndi.dataset')]);
             for i = 1:numel(datasets)
                 ds       = datasets{i};
                 % Store the dataset handle on the node so a bulk action (see
                 % checkAllCloudStatus) can act on every dataset without
                 % re-deriving the list; the per-item menu callbacks capture ds
                 % directly and do not rely on this.
-                label = obj.decorateWithWorkspaceVars( ...
-                    obj.datasetLabel(ds), obj.objId(ds));
+                base = obj.datasetLabel(ds);
+                id   = obj.objId(ds);
                 node = uitreenode(obj.Tree, ...
-                    'Text',     label, ...
-                    'NodeData', struct('kind', 'dataset', 'dataset', ds));
+                    'Text',     obj.decorateWithWorkspaceVars(base, id), ...
+                    'NodeData', struct('kind', 'dataset', 'dataset', ds), ...
+                    'UserData', struct('baseLabel', base, 'id', id));
                 obj.attachDatasetMenu(node, ds);
                 obj.addSessionChildren(node, ds, apps);
             end
@@ -355,10 +366,10 @@ classdef datasetsPane < ndi.gui.nav.pane
                 if k <= numel(idList); id = idList{k}; else; id = ''; end
                 % The session id is known here, so a workspace variable holding
                 % this same session can be shown without opening the session.
-                label = obj.decorateWithWorkspaceVars(char(ref), id);
                 child = uitreenode(node, ...
-                    'Text',     label, ...
-                    'NodeData', obj.sessionNodeData([], ds, id));
+                    'Text',     obj.decorateWithWorkspaceVars(char(ref), id), ...
+                    'NodeData', obj.sessionNodeData([], ds, id), ...
+                    'UserData', struct('baseLabel', char(ref), 'id', char(id)));
                 obj.attachSessionMenu(child, apps);
             end
         end
@@ -432,9 +443,9 @@ classdef datasetsPane < ndi.gui.nav.pane
             %   list from sessionApps, discovered once per tree build.
             cm = uicontextmenu(obj.Navigator.Figure);
 
-            % Top-level submenus appear in alphabetical order: "Apps" then
-            % "Session" (uimenu items appear in creation order, so we create
-            % them in that order).
+            % Top-level submenus appear in alphabetical order: "Apps",
+            % "Assign to workspace..." then "Session" (uimenu items appear in
+            % creation order, so we create them in that order).
             appsRoot = uimenu(cm, 'Text', 'Apps');
             % Apps that declare a Category are grouped under a submenu of that
             % name; the rest stay at the top level of the Apps menu. The top
@@ -465,6 +476,9 @@ classdef datasetsPane < ndi.gui.nav.pane
             % "Session" groups actions and information about the session
             % itself. Its items are alphabetical: Clear Cache, DAQ Systems...,
             % Info..., Ingest, Ingestion Status.
+            uimenu(cm, 'Text', 'Assign to workspace...', ...
+                'MenuSelectedFcn', @(~,~) obj.assignSessionToWorkspace(node));
+
             sessionRoot = uimenu(cm, 'Text', 'Session');
             uimenu(sessionRoot, 'Text', 'Clear Cache', ...
                 'MenuSelectedFcn', @(~,~) obj.clearSessionCache(node));
@@ -509,8 +523,9 @@ classdef datasetsPane < ndi.gui.nav.pane
 
         function attachDatasetMenu(obj, node, ds)
             %ATTACHDATASETMENU Context menu for a top-level dataset node.
-            %   The menu is organised by topic; currently the only topic is
-            %   "Cloud", which groups the NDI Cloud synchronisation actions for
+            %   "Assign to workspace..." puts DS in a base workspace variable
+            %   (see assignToWorkspace). The rest of the menu is organised by
+            %   topic; currently the only topic is "Cloud", which groups the NDI Cloud synchronisation actions for
             %   the dataset DS. Each item captures DS directly, so the action
             %   does not depend on the tree selection (a right-click does not
             %   reliably commit a selection before the menu opens). The menu is
@@ -542,6 +557,8 @@ classdef datasetsPane < ndi.gui.nav.pane
             %   enable/disable state below reads the last-known status cached on
             %   the node; it does not query the database on menu open.
             cm    = uicontextmenu(obj.Navigator.Figure);
+            uimenu(cm, 'Text', 'Assign to workspace...', ...
+                'MenuSelectedFcn', @(~,~) obj.assignToWorkspace(ds, 'D', node));
             cloud = uimenu(cm, 'Text', 'Cloud');
 
             % "Check Cloud status" is the only item that queries the dataset; it
@@ -878,6 +895,92 @@ classdef datasetsPane < ndi.gui.nav.pane
                 ndi.gui.nav.sessionInfo(s);
             catch ME
                 uialert(obj.Navigator.Figure, ME.message, 'Session Info');
+            end
+        end
+
+        function assignSessionToWorkspace(obj, node)
+            %ASSIGNSESSIONTOWORKSPACE Put NODE's session in a workspace variable.
+            %   A session inside a dataset is opened first (ds.open_session).
+            if isempty(node) || ~isvalid(node)
+                return;
+            end
+            s = obj.resolveSession(node.NodeData);
+            if isempty(s)
+                uialert(obj.Navigator.Figure, ...
+                    'Could not open the session for this node.', 'Assign to workspace');
+                return;
+            end
+            obj.assignToWorkspace(s, 'S', node);
+        end
+
+        function assignToWorkspace(obj, value, defaultName, node)
+            %ASSIGNTOWORKSPACE Assign VALUE to a base workspace variable.
+            %   Prompts for a variable name (DEFAULTNAME, e.g. 'D' or 'S'),
+            %   checks it is a valid MATLAB name, confirms before overwriting
+            %   an existing variable, and assigns VALUE in the base workspace.
+            %   The tree labels are then updated in place (relabelNodes) so the
+            %   new name appears on NODE without rebuilding the tree, which
+            %   keeps expansion and status badges.
+            fig = obj.Navigator.Figure;
+            title = 'Assign to workspace';
+            answer = inputdlg('Workspace variable name:', title, [1 40], {defaultName});
+            if isempty(answer)
+                return;   % cancelled
+            end
+            name = strtrim(answer{1});
+            msg = ndi.gui.nav.datasetsPane.workspaceNameError(name);
+            if ~isempty(msg)
+                uialert(fig, msg, title);
+                return;
+            end
+            exists = false;
+            try
+                exists = evalin('base', sprintf('exist(''%s'', ''var'')', name)) == 1;
+            catch
+            end
+            if exists
+                sel = uiconfirm(fig, ...
+                    sprintf('The workspace already has a variable "%s". Replace it?', name), ...
+                    title, 'Options', {'Replace', 'Cancel'}, ...
+                    'DefaultOption', 2, 'CancelOption', 2, 'Icon', 'warning');
+                if ~strcmp(sel, 'Replace')
+                    return;
+                end
+            end
+            try
+                assignin('base', name, value);
+            catch ME
+                uialert(fig, ME.message, title);
+                return;
+            end
+            obj.relabelNodes();
+            if ~isempty(node) && isvalid(node)
+                % A session opened from a dataset may report a different
+                % id than the node carries; make sure the name shows anyway.
+                ud = node.UserData;
+                if isstruct(ud) && isfield(ud, 'baseLabel') && ...
+                        ~contains(node.Text, ['"' name '"'])
+                    node.Text = obj.decorateWithWorkspaceVars(ud.baseLabel, ...
+                        obj.objId(value));
+                end
+            end
+        end
+
+        function relabelNodes(obj)
+            %RELABELNODES Refresh workspace-variable suffixes on every node.
+            %   Re-indexes the base workspace and recomputes each node's label
+            %   from the base label and id stored in its UserData, without
+            %   rebuilding the tree.
+            if isempty(obj.Tree) || ~isvalid(obj.Tree)
+                return;
+            end
+            obj.WsVarIndex = obj.buildWorkspaceVarIndex();
+            nodes = findall(obj.Tree, 'Type', 'uitreenode');
+            for i = 1:numel(nodes)
+                ud = nodes(i).UserData;
+                if isstruct(ud) && isfield(ud, 'baseLabel') && isfield(ud, 'id')
+                    nodes(i).Text = obj.decorateWithWorkspaceVars(ud.baseLabel, ud.id);
+                end
             end
         end
 
@@ -1391,6 +1494,19 @@ classdef datasetsPane < ndi.gui.nav.pane
     end
 
     methods (Static)
+        function msg = workspaceNameError(name)
+            %WORKSPACENAMEERROR Why NAME cannot be a workspace variable, or ''.
+            name = char(name);
+            if isempty(name)
+                msg = 'A variable name is required.';
+            elseif ~isvarname(name)
+                msg = sprintf(['"%s" is not a valid MATLAB variable name. ' ...
+                    'Use letters, digits and underscores, starting with a letter.'], name);
+            else
+                msg = '';
+            end
+        end
+
         function label = appendWorkspaceVarNames(label, names)
             %APPENDWORKSPACEVARNAMES Append quoted variable names to a label.
             %
@@ -1617,6 +1733,23 @@ classdef datasetsPane < ndi.gui.nav.pane
     end
 
     methods (Access = private, Static)
+        function out = uniqueById(objs)
+            %UNIQUEBYID Drop later objects whose id was already seen.
+            %   Objects whose id cannot be read are always kept.
+            out = {};
+            seen = {};
+            for i = 1:numel(objs)
+                id = ndi.gui.nav.datasetsPane.objId(objs{i});
+                if ~isempty(id) && any(strcmp(seen, id))
+                    continue;
+                end
+                if ~isempty(id)
+                    seen{end+1} = id; %#ok<AGROW>
+                end
+                out{end+1} = objs{i}; %#ok<AGROW>
+            end
+        end
+
         function id = objId(o)
             %OBJID Best-effort char id of a session/dataset object, '' on failure.
             id = '';
