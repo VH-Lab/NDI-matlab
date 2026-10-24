@@ -79,16 +79,6 @@ classdef document < did.document
                 end
             end
 
-            % Inject did_v1 legacy aliases into the V2 body so
-            % callers that still read legacy paths (e.g.,
-            % document_properties.probe_location.ontology_name) keep
-            % working on a body whose canonical paths were written by
-            % ndi.compat.reconcileWrite. Idempotent and a no-op on
-            % v1-shaped bodies and on classes without any aliased
-            % fields. See ndi.compat.fieldAliases for the alias table
-            % and issue #779 for the broader did2 plan.
-            document_properties = ndi.compat.augmentRead(document_properties);
-
             % Canonicalize depends_on entry keys to `document_id`. The
             % parent constructor's own i_normalizeDependsOn already does
             % this on V2 DID, but this call keeps the invariant explicit
@@ -796,13 +786,10 @@ classdef document < did.document
                 options.session ndi.session = ndi.session.empty()
             end
 
-            % Reconcile did_v1 legacy alias edits back into V2
-            % canonical and strip legacy fields so only V2 lands
-            % in the JSON export. Mirrors the ndi.database/add hook;
-            % keeps the on-disk artefact canonical regardless of
-            % which path produced it.
-            reconciledBody = ndi.compat.reconcileWrite(ndi_document_obj.document_properties);
-            jsonStr = jsonencode(reconciledBody, 'ConvertInfAndNaN', true, 'PrettyPrint', true);
+            % Written as it is: a v1 document in its v1 shape (Decided by
+            % Jess Haley, 2026-10-23 [compat write layer removed]).
+            jsonStr = jsonencode(ndi_document_obj.document_properties, ...
+                'ConvertInfAndNaN', true, 'PrettyPrint', true);
 
             fid = fopen([filePrefix '.json'], 'w');
             if fid<0
@@ -871,29 +858,6 @@ classdef document < did.document
     end % methods
 
     methods (Static, Hidden)
-
-        function obj = fromBody(body)
-            % FROMBODY - wrap a document body without applying
-            % ndi.compat.augmentRead.
-            %
-            % OBJ = ndi.document.fromBody(BODY) is the bypass-augmentation
-            % factory used by the write path (see
-            % ndi.database.internal.applyWriteReconciliation). The
-            % regular constructor calls ndi.compat.augmentRead so the
-            % returned ndi.document carries the legacy did_v1 aliases
-            % that customer code still reads. When the caller has
-            % already reconciled and stripped those aliases via
-            % ndi.compat.reconcileWrite, re-augmenting would undo
-            % the strip — this factory provides the bypass.
-            %
-            % Internal use only. Hidden to keep it out of
-            % methods(ndi.document) listings.
-            arguments
-                body (1,1) struct
-            end
-            obj = ndi.document();
-            obj.document_properties = body;
-        end % fromBody
 
         function targetId = i_readDependencyTarget(entry)
             % i_readDependencyTarget - read the cross-document target

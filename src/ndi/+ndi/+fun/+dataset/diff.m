@@ -72,7 +72,7 @@ function [report] = diff(D1,D2, options)
             % matches nothing: no shipped template declares the block,
             % ndi.document writes document_properties.base.id, the on-disk
             % databases index base.id as unique_object_id_field, and
-            % ndi.compat.translateQueryPaths does not alias the old path.
+            % ndi.query does not rewrite the old path.
             % The search therefore returned {} and the doc1{1} indexing
             % below threw, breaking every 'recheckFileReport' call.
             doc1 = D1.database_search(ndi.query('base.id', 'exact_string', entry.documentA_uid, ''));
