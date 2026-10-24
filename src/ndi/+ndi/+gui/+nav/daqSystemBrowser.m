@@ -336,7 +336,10 @@ classdef daqSystemBrowser < handle
         function daqs = daqSystems(obj)
             %DAQSYSTEMS Cell array of the session's DAQ system objects.
             try
-                daqs = obj.Session.daqsystem_load('name', '(.*)');
+                % No name filter: a 'name' regexp makes the database search
+                % much slower on large databases, and every DAQ system is
+                % wanted anyway.
+                daqs = obj.Session.daqsystem_load();
             catch
                 daqs = {};
             end
