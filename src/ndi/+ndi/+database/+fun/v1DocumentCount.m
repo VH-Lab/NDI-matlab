@@ -7,14 +7,16 @@ function [n, how] = v1DocumentCount(db)
 %   stored because they carry no V_eta stamp. HOW is a short description of
 %   what was counted, for a message.
 %
-%   A V_eta document is one whose document_class.schema_version is 'V_eta'
-%   (did2.convert.v1_to_v2 stamps every document it emits, including a v1
-%   document it carries unchanged). Every other document is counted.
+%   A V2 document is one whose document_class.schema_version is a V2 stamp,
+%   did2.schema.v2Stamps ('did_v2', and 'V_eta' only until the writers stamp
+%   'did_v2': Decided by Jess Haley, 2026-10-25 [document stamps], [V_eta
+%   stamp not accepted]). Every other document is counted, including a v1
+%   document ndi.migrate.local carried unchanged and stamped 'did_v1'.
 %
 %   How each backend is counted, without reading every document:
 %
 %     did2sqlite   one query, document_class.schema_version ~exact_string
-%                  'V_eta'; only the matching (v1) documents are read.
+%                  each V2 stamp; only the matching (v1) document ids are read.
 %     didsqlite    the v1 backend. Its index leaves out document_class
 %                  (did.implementations.doc2sql), so the stamp cannot be
 %                  queried there; N is the number of documents in it, read
@@ -31,9 +33,13 @@ function [n, how] = v1DocumentCount(db)
     end
 
     if isa(db, 'ndi.database.implementations.database.did2sqlite')
-        q = did2.query('document_class.schema_version', '~exact_string', 'V_eta');
+        stamps = did2.schema.v2Stamps();
+        q = did2.query('document_class.schema_version', '~exact_string', stamps{1});
+        for k = 2:numel(stamps)
+            q = and(q, did2.query('document_class.schema_version', '~exact_string', stamps{k}));
+        end
         n = numel(db.db.searchIds(q));
-        how = 'documents without a V_eta stamp';
+        how = 'documents without a V2 stamp';
     elseif isa(db, 'ndi.database.implementations.database.didsqlite')
         n = numel(db.alldocids());
         how = 'documents in a v1 (did-sqlite) database';
