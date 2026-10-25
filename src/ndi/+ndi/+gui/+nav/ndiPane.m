@@ -93,9 +93,10 @@ classdef ndiPane < ndi.gui.nav.pane
             %   dialog and lists every package in ndi.gui.nav.updateDialog:
             %   NDI-matlab (git clone or toolbox), its dependencies, the
             %   NDIcalc calculator repositories and NDI-python, each with
-            %   its status and notes. If the user presses Update, runs
-            %   ndi.update.install without its command-window prompts (the
-            %   dialog has already shown what updating will do).
+            %   its status, notes and a tick box. If the user presses Update,
+            %   runs ndi.update.install for the ticked packages only, without
+            %   its command-window prompts (the dialog has already shown what
+            %   updating will do).
             fig = obj.Navigator.Figure;
             title = 'NDI Update';
 
@@ -110,17 +111,19 @@ classdef ndiPane < ndi.gui.nav.pane
             end
             close(busy);
 
-            if ~ndi.gui.nav.updateDialog.ask(r, fig)
+            [go, packages] = ndi.gui.nav.updateDialog.ask(r, fig);
+            if ~go || isempty(packages)
                 return;
             end
             rows = ndi.update.packageStatus(r);
-            updated = rows([rows.WillUpdate]);
+            updated = rows(ismember([rows.Name], packages));
 
             busy = uiprogressdlg(fig, 'Title', title, ...
                 'Message', 'Installing the update. This can take a few minutes...', ...
                 'Indeterminate', 'on');
             try
-                ndi.update.install(Confirm = false, AllowModified = true);
+                ndi.update.install(Confirm = false, AllowModified = true, ...
+                    Packages = packages);
             catch ME
                 if isvalid(busy), close(busy); end
                 uialert(fig, ME.message, title);

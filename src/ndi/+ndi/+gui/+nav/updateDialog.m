@@ -3,9 +3,9 @@ classdef updateDialog < handle
 %
 %   D = NDI.GUI.NAV.UPDATEDIALOG(RESULT) opens a modal window listing each
 %   package that ndi.update.install looks at (see ndi.update.packageStatus)
-%   for RESULT, the output of ndi.update.check. The table shows each
-%   package's installed and latest version, its status, whether it will be
-%   updated, and an icon for its most serious note:
+%   for RESULT, the output of ndi.update.check. The table shows, for each
+%   package, a tick box saying whether to update it, its installed and
+%   latest version, its status, and an icon for its most serious note:
 %       info    - something to know (restart MATLAB, a package skipped)
 %       warning - updating touches your work (edits stashed and put back,
 %                 local commits merged, toolbox folder overwritten)
@@ -14,16 +14,22 @@ classdef updateDialog < handle
 %   Selecting a row shows its notes and the files they are about in the
 %   box under the table.
 %
-%   The Update button is greyed out when there is nothing to update or a
-%   package is blocked. When updating touches code you changed it reads
-%   "Update anyway" and Cancel is the default.
+%   Only ticked packages are updated, so you can leave alone a package you
+%   are working on. Packages that need updating start ticked, except those
+%   where updating touches your own work (edits, local commits); packages
+%   that are up to date or blocked cannot be ticked. The Update button
+%   names how many packages are ticked and is greyed out when none are;
+%   it reads "Update anyway" when a ticked package has your changes, and
+%   Cancel is then the default.
 %
 %   D = NDI.GUI.NAV.UPDATEDIALOG(..., 'Parent', FIG) centres the window
 %   over the uifigure FIG, and 'Visible', 'off' builds it hidden (for
 %   headless tests).
 %
-%   GO = NDI.GUI.NAV.UPDATEDIALOG.ASK(RESULT, FIG) opens the window, waits
-%   for it to close, and returns true if the user pressed Update.
+%   [GO, PACKAGES] = NDI.GUI.NAV.UPDATEDIALOG.ASK(RESULT, FIG) opens the
+%   window, waits for it to close, and returns true if the user pressed
+%   Update, with the names of the ticked packages (for the Packages option
+%   of ndi.update.install).
 %
 %   See also: ndi.gui.nav.ndiPane, ndi.update.packageStatus,
 %   ndi.update.check, ndi.update.install
@@ -34,13 +40,14 @@ classdef updateDialog < handle
         Figure           % the uifigure
         Table            % the package uitable
         DetailsArea      % read-only uitextarea with the selected row's details
-        UpdateButton     % "Update" / "Update anyway" uibutton
+        UpdateButton     % "Update (N)" / "Update anyway (N)" uibutton
         CancelButton     % "Cancel" / "Close" uibutton
+        Selected logical % which rows are ticked
         Choice (1,1) string = "cancel"  % "update" once Update is pressed
     end
 
     properties (Constant)
-        Columns = {'Package', 'Installed', 'Latest', 'Status', 'Action', 'Notes'}
+        Columns = {'Update', 'Package', 'Installed', 'Latest', 'Status', 'Notes'}
     end
 
     methods
@@ -51,7 +58,25 @@ classdef updateDialog < handle
                 options.Visible (1,:) char = 'on'
             end
             [obj.Rows, obj.Summary] = ndi.update.packageStatus(result);
+            obj.Selected = [obj.Rows.Selected];
             obj.build(options.Parent, options.Visible);
+        end
+
+        function setSelected(obj, row, tf)
+            %SETSELECTED Tick (TF true) or untick table row ROW.
+            %   A row that cannot be updated stays unticked.
+            tf = tf && obj.Rows(row).Selectable;
+            obj.Selected(row) = tf;
+            obj.Table.Data{row, 1} = tf;
+            obj.refreshUpdateButton();
+        end
+
+        function names = selectedPackages(obj)
+            %SELECTEDPACKAGES Names of the ticked packages.
+            names = [obj.Rows(obj.Selected).Name];
+            if isempty(names)
+                names = strings(1, 0);
+            end
         end
 
         function showDetails(obj, row)
@@ -71,33 +96,23 @@ classdef updateDialog < handle
     end
 
     methods (Static)
-        function go = ask(result, parent)
-            %ASK Open the dialog, wait for it to close, return true for Update.
+        function [go, packages] = ask(result, parent)
+            %ASK Open the dialog and wait for it to close.
+            %   GO is true for Update; PACKAGES names the ticked packages.
             d = ndi.gui.nav.updateDialog(result, 'Parent', parent);
             uiwait(d.Figure);
             go = d.Choice == "update";
+            packages = d.selectedPackages();
         end
 
-        function data = tableData(rows)
-            %TABLEDATA The uitable Data cell array for ROWS.
+        function data = tableData(rows, selected)
+            %TABLEDATA The uitable Data cell array for ROWS, ticked as SELECTED.
             n = numel(rows);
             data = cell(n, numel(ndi.gui.nav.updateDialog.Columns));
             for i = 1:n
                 r = rows(i);
-                data(i, :) = {char(r.Name), char(r.Installed), char(r.Latest), ...
-                    char(r.Status), ndi.gui.nav.updateDialog.actionText(r), ...
-                    ndi.gui.nav.updateDialog.noteText(r)};
-            end
-        end
-
-        function txt = actionText(row)
-            %ACTIONTEXT What the update does to ROW: 'Update', 'Install' or ''.
-            if ~row.WillUpdate
-                txt = '';
-            elseif row.Status == "Not installed; will be added"
-                txt = 'Install';
-            else
-                txt = 'Update';
+                data(i, :) = {logical(selected(i)), char(r.Name), char(r.Installed), ...
+                    char(r.Latest), char(r.Status), ndi.gui.nav.updateDialog.noteText(r)};
             end
         end
 
@@ -115,17 +130,21 @@ classdef updateDialog < handle
             end
         end
 
-        function [text, enable] = updateButtonState(summary)
+        function [text, enable] = updateButtonState(rows, selected)
             %UPDATEBUTTONSTATE Text and Enable of the Update button.
-            if summary.HasUserChanges
-                text = 'Update anyway';
-            else
+            %   'Update (N)' for N ticked packages, 'Update anyway (N)' if a
+            %   ticked package has your changes, and greyed out for none.
+            n = nnz(selected);
+            if n == 0
                 text = 'Update';
-            end
-            if summary.CanUpdate
-                enable = 'on';
-            else
                 enable = 'off';
+                return
+            end
+            enable = 'on';
+            if any(selected(:)' & [rows.TouchesChanges])
+                text = sprintf('Update anyway (%d)', n);
+            else
+                text = sprintf('Update (%d)', n);
             end
         end
     end
@@ -164,11 +183,12 @@ classdef updateDialog < handle
             msg.Layout.Column = [1 3];
 
             obj.Table = uitable(g, ...
-                'Data',                  ndi.gui.nav.updateDialog.tableData(obj.Rows), ...
+                'Data',                  ndi.gui.nav.updateDialog.tableData(obj.Rows, obj.Selected), ...
                 'ColumnName',            ndi.gui.nav.updateDialog.Columns, ...
-                'ColumnWidth',           {170, 75, 75, 130, 60, 'auto'}, ...
+                'ColumnWidth',           {55, 170, 75, 75, 130, 'auto'}, ...
                 'RowName',               {}, ...
-                'ColumnEditable',        false, ...
+                'ColumnEditable',        [true false false false false false], ...
+                'CellEditCallback',      @(~, evt) obj.onEdit(evt), ...
                 'CellSelectionCallback', @(~, evt) obj.onSelect(evt), ...
                 'Tag',                   'ndiUpdateTable');
             obj.Table.Layout.Row = 2;
@@ -190,7 +210,7 @@ classdef updateDialog < handle
                 obj.showDetails(first);
             end
 
-            [text, enable] = ndi.gui.nav.updateDialog.updateButtonState(obj.Summary);
+            [text, enable] = ndi.gui.nav.updateDialog.updateButtonState(obj.Rows, obj.Selected);
             obj.UpdateButton = uibutton(g, ...
                 'Text',            text, ...
                 'Enable',          enable, ...
@@ -219,7 +239,8 @@ classdef updateDialog < handle
             % Enter should not stash someone's work: focus Cancel then.
             if strcmp(visible, 'on')
                 try % focus needs R2022a
-                    if obj.Summary.HasUserChanges || ~obj.Summary.CanUpdate
+                    if strcmp(obj.UpdateButton.Enable, 'off') || ...
+                            any(obj.Selected & [obj.Rows.TouchesChanges])
                         focus(obj.CancelButton);
                     else
                         focus(obj.UpdateButton);
@@ -230,8 +251,9 @@ classdef updateDialog < handle
         end
 
         function styleTable(obj, c)
-            %STYLETABLE Bold the packages to be updated; icon the notes.
+            %STYLETABLE Bold the packages that can be updated; icon the notes.
             notesCol = numel(ndi.gui.nav.updateDialog.Columns);
+            statusCol = 5;
             willUpdate = find([obj.Rows.WillUpdate]);
             if ~isempty(willUpdate)
                 addStyle(obj.Table, uistyle('FontWeight', 'bold'), 'row', willUpdate);
@@ -239,7 +261,7 @@ classdef updateDialog < handle
             upToDate = find(arrayfun(@(r) r.Status == "Up to date", obj.Rows));
             if ~isempty(upToDate)
                 addStyle(obj.Table, uistyle('FontColor', c.okGreen), 'cell', ...
-                    [upToDate(:), repmat(4, numel(upToDate), 1)]);
+                    [upToDate(:), repmat(statusCol, numel(upToDate), 1)]);
             end
             for level = ["info", "warning", "error"]
                 rows = find(arrayfun(@(r) r.NoteLevel == level, obj.Rows));
@@ -264,6 +286,21 @@ classdef updateDialog < handle
             if ~isempty(evt.Indices)
                 obj.showDetails(evt.Indices(1, 1));
             end
+        end
+
+        function onEdit(obj, evt)
+            % A tick box changed. Rows that cannot be updated snap back.
+            row = evt.Indices(1);
+            obj.setSelected(row, logical(evt.NewData));
+            if ~obj.Rows(row).Selectable
+                obj.showDetails(row);
+            end
+        end
+
+        function refreshUpdateButton(obj)
+            [text, enable] = ndi.gui.nav.updateDialog.updateButtonState(obj.Rows, obj.Selected);
+            obj.UpdateButton.Text = text;
+            obj.UpdateButton.Enable = enable;
         end
     end
 end

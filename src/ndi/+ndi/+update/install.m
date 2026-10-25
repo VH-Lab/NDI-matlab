@@ -62,9 +62,20 @@ function result = install(options)
 %       RepoRoot     - update the git clone of NDI-matlab in this folder
 %                      instead of the running copy (default "", the
 %                      running copy)
+%       Packages     - update only these packages (default: all that
+%                      need it): "NDI-matlab" (or "NDI-matlab toolbox"),
+%                      names of dependencies and calculator repositories
+%                      (as in ndi.update.check's Dependencies and
+%                      Calculators), and "NDI-python". Named packages that
+%                      are up to date are skipped. For a git install,
+%                      ndi_install is then given just the named
+%                      dependencies, the others are not touched, and
+%                      NDI-matlab need not be on main unless it is named.
+%                      Only changes in the named packages need consent.
 %
 %   Example:
 %       ndi.update.install()
+%       ndi.update.install(Packages = ["DID-matlab", "NDIcalc-vis-matlab"])
 %
 %   See also: ndi.update.check, ndi_install
 
@@ -77,27 +88,36 @@ function result = install(options)
         options.RepoRoot (1,1) string = ""
         options.IncludePython (1,1) logical = true
         options.IncludeCalculators (1,1) logical = true
+        options.Packages (1,:) string = string.empty(1, 0)
     end
 
     result = ndi.update.check(Verbose = true, Timeout = options.Timeout, ...
         RepoRoot = options.RepoRoot, IncludePython = options.IncludePython, ...
         IncludeCalculators = options.IncludeCalculators);
 
-    updateMatlab = result.UpdateAvailable || options.Force;
-    updateCalcs = options.IncludeCalculators && result.CalculatorUpdateAvailable;
-    updatePython = options.IncludePython && result.Python.UpdateAvailable && ...
-        result.Python.CanInstall;
+    sel = selectPackages(result, options.Packages);
+    if sel.All
+        updateMatlab = result.UpdateAvailable || options.Force;
+    elseif result.InstallType == "git"
+        updateMatlab = sel.Ndi || ~isempty(sel.DepUrls);
+    else
+        updateMatlab = sel.Ndi && result.UpdateAvailable;
+    end
+    updateCalcs = options.IncludeCalculators && any(sel.Calcs);
+    updatePython = options.IncludePython && sel.Python && ...
+        result.Python.UpdateAvailable && result.Python.CanInstall;
     if ~updateMatlab && ~updateCalcs && ~updatePython
         return
     end
 
     % True once the user has agreed to every change listed in
-    % result.Modifications (installGit asks about all of them).
+    % result.Modifications (installGit asks about all of them, unless only
+    % some packages are being updated).
     modsAgreed = false;
     if updateMatlab
         switch result.InstallType
             case "git"
-                modsAgreed = installGit(result, options);
+                modsAgreed = installGit(result, options, sel) && sel.All;
             case "toolbox"
                 installToolbox(result, options);
             otherwise
@@ -108,7 +128,7 @@ function result = install(options)
     end
 
     if updateCalcs
-        installCalculators(result, options, modsAgreed);
+        installCalculators(result, options, modsAgreed, sel.Calcs);
     end
 
     if updatePython
@@ -130,19 +150,37 @@ function installPython(py, options)
     disp('NDI-python update finished.');
 end
 
-function modsAgreed = installGit(result, options)
-    % MODSAGREED is true if the update went ahead, so that the user agreed
-    % to (or AllowModified covered) every entry of result.Modifications.
+function modsAgreed = installGit(result, options, sel)
+    % Updates NDI-matlab and its dependencies, or, when only some packages
+    % were named (SEL), just those. MODSAGREED is true if the update went
+    % ahead, so that the user agreed to (or AllowModified covered) the
+    % changes in the repositories it touches.
     modsAgreed = false;
     repoRoot = result.RepoRoot;
 
-    if result.Branch ~= "main"
+    if sel.All
+        pullNdi = result.CommitsBehind > 0;
+        runInstaller = true;
+        mods = result.Modifications;
+    else
+        pullNdi = sel.Ndi;
+        runInstaller = ~isempty(sel.DepUrls);
+        touched = sel.DepNames;
+        if pullNdi
+            touched(end+1) = "NDI-matlab";
+        end
+        mods = result.Modifications(arrayfun(@(m) any(m.Name == touched), ...
+            result.Modifications));
+    end
+
+    % Updating only dependencies leaves NDI-matlab's branch alone.
+    if (sel.All || pullNdi) && result.Branch ~= "main"
         error('ndi:update:install:notOnMain', ...
             ['NDI-matlab in %s is on branch ''%s''. Updates come from main; ' ...
              'run ''git checkout main'' there first.'], repoRoot, result.Branch);
     end
 
-    blocking = blockingFiles(result);
+    blocking = blockingFiles(struct('Modifications', mods));
     if ~isempty(blocking)
         % git pull would stop part-way rather than overwrite these, so no
         % answer to "update anyway?" could make the update work.
@@ -153,8 +191,9 @@ function modsAgreed = installGit(result, options)
             strjoin("  " + blocking, newline));
     end
 
-    if result.HasModifications
-        summary = ndi.update.modificationSummary(result, MaxFiles = 25);
+    if ~isempty(mods)
+        summary = ndi.update.modificationSummary(struct('Modifications', mods), ...
+            MaxFiles = 25);
         if options.Confirm
             disp(summary);
             prompt = "Update anyway? Y/N [N]: ";
@@ -169,16 +208,21 @@ function modsAgreed = installGit(result, options)
                  'AllowModified=true) to update anyway.'], summary);
         end
     elseif options.Confirm
-        prompt = "This will run ndi_install to update NDI-matlab and its " + ...
-            "dependencies in " + fileparts(repoRoot) + "." + newline + ...
-            "Continue? Y/N [Y]: ";
+        if sel.All
+            prompt = "This will run ndi_install to update NDI-matlab and its " + ...
+                "dependencies in " + fileparts(repoRoot) + "." + newline + ...
+                "Continue? Y/N [Y]: ";
+        else
+            prompt = "This will update " + strjoin(touched, ", ") + " in " + ...
+                fileparts(repoRoot) + "." + newline + "Continue? Y/N [Y]: ";
+        end
         if ~confirmed(prompt)
             disp('Update cancelled.');
             return
         end
     end
 
-    if ~isfile(fullfile(repoRoot, 'ndi_install.m'))
+    if runInstaller && ~isfile(fullfile(repoRoot, 'ndi_install.m'))
         error('ndi:update:install:noInstaller', ...
             'Could not find ndi_install.m in %s.', repoRoot);
     end
@@ -187,22 +231,30 @@ function modsAgreed = installGit(result, options)
     % Pull NDI-matlab itself first, so that main's ndi_install.m is the one
     % run: an older ndi_install updates only the repositories listed in
     % requirements.txt, which does not include NDI-matlab.
-    if result.CommitsBehind > 0
+    if pullNdi
         fprintf('Updating NDI-matlab in %s...\n', repoRoot);
         pullRepo(repoRoot, "origin main");
     end
 
-    % Put this clone's ndi_install first on the path, so it is the one run.
-    addpath(char(repoRoot));
-    ndi_install(char(fileparts(repoRoot)), options.Dependencies);
+    if runInstaller
+        % Put this clone's ndi_install first on the path, so it is the one run.
+        addpath(char(repoRoot));
+        if sel.All
+            ndi_install(char(fileparts(repoRoot)), options.Dependencies);
+        else
+            % Given a list, ndi_install updates (or clones) just those.
+            ndi_install(char(fileparts(repoRoot)), cellstr(sel.DepUrls));
+        end
+    end
     clearCaches();
     disp('NDI-matlab update finished.');
 end
 
-function installCalculators(result, options, modsAgreed)
-    % Pulls each NDIcalc-*-matlab clone that is behind its upstream branch.
-    % MODSAGREED: the user already agreed to result.Modifications.
-    calcs = result.Calculators(arrayfun(@(c) c.Status == "behind", result.Calculators));
+function installCalculators(result, options, modsAgreed, which)
+    % Pulls the NDIcalc-*-matlab clones selected by the logical mask WHICH
+    % (each behind its upstream branch). MODSAGREED: the user already
+    % agreed to result.Modifications.
+    calcs = result.Calculators(which);
     names = [calcs.Name];
     mods = result.Modifications(arrayfun(@(m) any(m.Name == names), result.Modifications));
 
@@ -247,6 +299,49 @@ function installCalculators(result, options, modsAgreed)
     end
     clearCaches();
     disp('Calculator update finished.');
+end
+
+function sel = selectPackages(result, packages)
+    % Which packages to update. With no PACKAGES, all that need it
+    % (sel.All). Otherwise only the named ones: "NDI-matlab" (or "NDI-matlab
+    % toolbox"), dependency and calculator names, and "NDI-python". Named
+    % packages that are up to date are left alone.
+    calcBehind = logical(arrayfun(@(c) c.Status == "behind", result.Calculators));
+    sel = struct('All', isempty(packages), 'Ndi', false, 'DepNames', strings(1, 0), ...
+        'DepUrls', strings(1, 0), 'Calcs', calcBehind, 'Python', true);
+    if sel.All
+        return
+    end
+
+    depNames = strings(1, 0);
+    for i = 1:numel(result.Dependencies)
+        depNames(end+1) = result.Dependencies(i).Name; %#ok<AGROW>
+    end
+    calcNames = strings(1, 0);
+    for i = 1:numel(result.Calculators)
+        calcNames(end+1) = result.Calculators(i).Name; %#ok<AGROW>
+    end
+    known = ["NDI-matlab", "NDI-matlab toolbox", "NDI-python", depNames, calcNames];
+    unknown = setdiff(packages, known);
+    if ~isempty(unknown)
+        error('ndi:update:install:unknownPackage', ...
+            'Unknown package(s): %s. The packages are: %s.', ...
+            strjoin(unknown, ", "), strjoin(known, ", "));
+    end
+
+    sel.Ndi = any(ismember(["NDI-matlab", "NDI-matlab toolbox"], packages));
+    if result.InstallType == "git"
+        sel.Ndi = sel.Ndi && result.CommitsBehind > 0;
+    end
+    for i = 1:numel(result.Dependencies)
+        d = result.Dependencies(i);
+        if any(d.Name == packages) && ismember(d.Status, ["behind", "missing"])
+            sel.DepNames(end+1) = d.Name;
+            sel.DepUrls(end+1) = d.Url;
+        end
+    end
+    sel.Calcs = calcBehind & ismember(calcNames, packages);
+    sel.Python = any(packages == "NDI-python");
 end
 
 function files = blockingFiles(result)
