@@ -1,4 +1,4 @@
-function [structs, report, added] = epochSeriesBodies(structs, ndiDir)
+function [structs, report, added] = epochSeriesBodies(structs, ndiDir, options)
 %EPOCHSERIESBODIES Describe each migrated spike train's .vhsb as a sampled_body,
 %   with complete extents, when its bytes are on this computer.
 %

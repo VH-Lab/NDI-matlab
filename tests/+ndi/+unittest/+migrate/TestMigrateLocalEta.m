@@ -461,6 +461,34 @@ classdef TestMigrateLocalEta < matlab.unittest.TestCase
             end
         end
 
+        function testAGratingPresentationIsCarriedAsV1(testCase)
+            % [generic stage is lossless] / [partly placed is carried as v1]
+            % (Jess Haley, 2026-10-25, audit item 4): gratingRecipe writes
+            % five of a periodicstim's parameters, so the generic stage leaves
+            % a grating presentation as it is and the last step stores it as
+            % its v1 source, stamped did_v1, id unchanged.
+            subjId  = 'aabb1122ccdd3344_5500000000000030';
+            recElem = 'aabb1122ccdd3344_5500000000000031';
+            stimEl  = 'aabb1122ccdd3344_5500000000000032';
+            presId  = 'aabb1122ccdd3344_5500000000000033';
+            respId  = 'aabb1122ccdd3344_5500000000000034';
+            bodies = { ...
+                jsonencode(makeSessionDoc(session())), ...
+                jsonencode(makeSubject(subjId)), ...
+                jsonencode(makeRecordingElement(recElem, subjId)), ...
+                jsonencode(makeStimulatorElement(stimEl, subjId)), ...
+                jsonencode(makeStimulusResponse(respId, presId, recElem)), ...
+                jsonencode(makeGratingPresentation(presId, stimEl))};
+            result = runMigrate(testCase, bodies);
+            verifyEqual(testCase, result.secondPass.stimulusSequence.presentations_refused_unplaced, 1, ...
+                resultDiag(result));
+            d = findById(result.destination, presId);
+            verifyNotEmpty(testCase, d, resultDiag(result));
+            verifyEqual(testCase, d.document_class.class_name, 'stimulus_presentation');
+            verifyEqual(testCase, char(d.document_class.schema_version), 'did_v1');
+            verifyEmpty(testCase, findAllByClass(result.destination, 'method'));
+        end
+
         function testStimulusPresentationBecomesAnItemManipulation(testCase)
             % did-schema #88 (V_eta_method_plan.md, TEAM-SIGN-OFF [method]
             % 2026-10-21): a presentation that carries a sequence of gratings
@@ -525,14 +553,14 @@ classdef TestMigrateLocalEta < matlab.unittest.TestCase
                 ['the manipulation carries no time reference: the pass mints ' ...
                  '"during the session" against the session document. ' resultDiag(result)]);
 
-            % TWO DISTINCT STIMULI, so dedup must not collapse them (45 / 90).
+            % TWO DISTINCT STIMULI, so dedup must not collapse them (two seeds).
+            % UPDATED 2026-10-25: noise stimuli (see makeStimulusPresentation).
             methods = findAllByClass(result.destination, 'method');
             verifyEqual(testCase, numel(methods), 2, sprintf( ...
-                ['%d method document(s) for a 2-grating sequence (45 and 90 ' ...
-                 'degrees). %s'], numel(methods), resultDiag(result)));
+                ['%d method document(s) for a 2-stimulus sequence (two noise ' ...
+                 'seeds). %s'], numel(methods), resultDiag(result)));
             for k = 1:numel(methods)
-                verifyEqual(testCase, methods{k}.method.term.name, ...
-                    'drifting sinusoidal grating');
+                verifyEqual(testCase, methods{k}.method.term.name, 'dense noise');
             end
 
             % none of the classes #88 deleted
@@ -764,7 +792,12 @@ body.stimulus_response = struct('response_type', 'mean');
 end
 
 function body = makeStimulusPresentation(presId, stimEl)
-s1 = gratingStim(45); s2 = gratingStim(90);
+% TWO NOISE STIMULI (stochasticgridstim, every parameter an entry), not
+% gratings: since [generic stage is lossless] (Jess Haley, 2026-10-25) a grating
+% presentation is left as v1 by the generic stage (gratingRecipe writes five of
+% its parameters; makeGratingPresentation / testAGratingPresentationIsCarriedAsV1),
+% and these tests are of the decomposition.
+s1 = noiseStim(1); s2 = noiseStim(2);
 body = struct();
 body.document_class = struct('class_name', 'stimulus_presentation', 'class_version', '1.0.0', ...
     'superclasses', struct('class_name', 'base', 'class_version', '1.0.0'));
@@ -773,6 +806,23 @@ body.base = struct('id', presId, 'session_id', session(), ...
     'name', 'sp', 'datestamp', datestamp());
 body.stimulus_presentation = struct('presentation_order', [1 2], ...
     'presentation_time', [trialTime(0, 4) trialTime(5, 9)], 'stimuli', [s1 s2]);
+end
+
+function body = makeGratingPresentation(presId, stimEl)
+%MAKEGRATINGPRESENTATION The two-grating presentation (45 and 90 degrees).
+body = makeStimulusPresentation(presId, stimEl);
+body.stimulus_presentation.stimuli = [gratingStim(45) gratingStim(90)];
+end
+
+function s = noiseStim(seed)
+%NOISESTIM A NewStim stochasticgridstim parameter set (the required fields of
+%   verifystochasticgridstim.m); only randState varies.
+s = struct('parameters', struct( ...
+    'BG', [128 128 128], 'N', 100, 'angle', 0, ...
+    'dispprefs', {{'BGpretime', 0, 'BGposttime', 0}}, ...
+    'dist', [1 1], 'fps', 15, 'pixSize', [50 50], ...
+    'randState', [seed 0.6704957765200832 0.08449867537860833], ...
+    'rect', [0 0 800 600], 'values', [0 0 0; 255 255 255]));
 end
 
 function s = gratingStim(angle)
