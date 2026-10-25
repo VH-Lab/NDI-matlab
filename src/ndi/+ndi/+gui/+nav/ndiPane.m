@@ -8,7 +8,8 @@ classdef ndiPane < ndi.gui.nav.pane
 %   always the first pane in ndi.gui.navigator and cannot be collapsed.
 %
 %   See also: ndi.gui.navigator, ndi.gui.nav.pane, ndi.gui.preferencesEditor,
-%   ndi.fun.clearAllCaches, ndi.update.check, ndi.update.install
+%   ndi.fun.clearAllCaches, ndi.update.check, ndi.update.install,
+%   ndi.gui.nav.updateDialog
 
     methods
         function obj = ndiPane(navigator)
@@ -57,7 +58,7 @@ classdef ndiPane < ndi.gui.nav.pane
 
             update = uibutton(grid, ...
                 'Text',            'Update', ...
-                'Tooltip',         'Check for a newer version of NDI-matlab', ...
+                'Tooltip',         'Check for updates to NDI-matlab, its calculators and NDI-python', ...
                 'ButtonPushedFcn', @(~,~) obj.checkForUpdates());
             update.Layout.Row    = 1;
             update.Layout.Column = 2;
@@ -87,12 +88,14 @@ classdef ndiPane < ndi.gui.nav.pane
         end
 
         function checkForUpdates(obj)
-            %CHECKFORUPDATES Check for, and offer to install, an NDI update.
+            %CHECKFORUPDATES Check for, and offer to install, NDI updates.
             %   Update button callback. Runs ndi.update.check behind a busy
-            %   dialog and reports the result. If an update can be installed,
-            %   asks the user to confirm and then runs ndi.update.install
-            %   without its command-window prompt. An installed NDI-python
-            %   that is behind its main branch is offered (and updated) too.
+            %   dialog and lists every package in ndi.gui.nav.updateDialog:
+            %   NDI-matlab (git clone or toolbox), its dependencies, the
+            %   NDIcalc calculator repositories and NDI-python, each with
+            %   its status and notes. If the user presses Update, runs
+            %   ndi.update.install without its command-window prompts (the
+            %   dialog has already shown what updating will do).
             fig = obj.Navigator.Figure;
             title = 'NDI Update';
 
@@ -107,58 +110,11 @@ classdef ndiPane < ndi.gui.nav.pane
             end
             close(busy);
 
-            updatePython = r.Python.UpdateAvailable && r.Python.CanInstall;
-            if ~r.UpdateAvailable && ~updatePython
-                if r.Status == "unknown"
-                    icon = 'warning';
-                else
-                    icon = 'success';
-                end
-                uialert(fig, char(r.Message), title, 'Icon', icon);
+            if ~ndi.gui.nav.updateDialog.ask(r, fig)
                 return;
             end
-
-            if r.UpdateAvailable && r.InstallType == "git" && r.Branch ~= "main"
-                % ndi.update.install refuses this case; say why up front.
-                uialert(fig, char(r.Message), title, 'Icon', 'warning');
-                return;
-            end
-
-            % The message ends with command-line hints; the dialog replaces them.
-            msg = regexprep(char(r.Message), '\n?Run ndi\.update\.install\(\) to update[^\n]*', '');
-            msg = regexprep(msg, '\n?Note: you have changed code[^\n]*', '');
-            blocking = r.UpdateAvailable && r.HasModifications && ...
-                any(arrayfun(@(m) ~isempty(m.BlockingFiles), r.Modifications));
-            if blocking
-                % Untracked files sit where the update adds files; git will
-                % not overwrite them, so updating cannot work until they move.
-                uialert(fig, sprintf(['%s\n\n%s\n\nMove or rename the files ' ...
-                    'marked "in the way", then press Update again.'], msg, ...
-                    char(ndi.update.modificationSummary(r))), title, 'Icon', 'warning');
-                return;
-            end
-            if r.UpdateAvailable && r.HasModifications
-                % The user has changed code: list it, and make Cancel the
-                % default so a stray Enter does not stash their work.
-                summary = char(ndi.update.modificationSummary(r));
-                choice = uiconfirm(fig, sprintf('%s\n\n%s\n\nUpdate anyway?', msg, summary), ...
-                    title, 'Icon', 'warning', ...
-                    'Options', {'Update anyway', 'Cancel'}, ...
-                    'DefaultOption', 2, 'CancelOption', 2);
-                go = strcmp(choice, 'Update anyway');
-            else
-                if r.UpdateAvailable && r.InstallType == "toolbox"
-                    msg = sprintf(['%s\n\nAny files you changed or added inside ' ...
-                        'the installed toolbox folder will be lost.'], msg);
-                end
-                choice = uiconfirm(fig, sprintf('%s\n\nUpdate now?', msg), title, ...
-                    'Options', {'Update', 'Cancel'}, ...
-                    'DefaultOption', 1, 'CancelOption', 2);
-                go = strcmp(choice, 'Update');
-            end
-            if ~go
-                return;
-            end
+            rows = ndi.update.packageStatus(r);
+            updated = rows([rows.WillUpdate]);
 
             busy = uiprogressdlg(fig, 'Title', title, ...
                 'Message', 'Installing the update. This can take a few minutes...', ...
@@ -171,15 +127,12 @@ classdef ndiPane < ndi.gui.nav.pane
                 return;
             end
             if isvalid(busy), close(busy); end
-            done = {};
-            if r.UpdateAvailable
-                done{end+1} = ['NDI-matlab was updated. Restart MATLAB to make ' ...
-                    'sure the new version is used.'];
+            done = sprintf('Updated: %s.', strjoin([updated.Name], ', '));
+            if any(ismember([updated.Kind], ["ndi", "toolbox", "dependency", "calculator"]))
+                done = sprintf(['%s\n\nRestart MATLAB to make sure the new ' ...
+                    'versions are used.'], done);
             end
-            if updatePython
-                done{end+1} = 'NDI-python was updated.';
-            end
-            uialert(fig, strjoin(done, newline), title, 'Icon', 'success');
+            uialert(fig, done, title, 'Icon', 'success');
         end
     end
 end

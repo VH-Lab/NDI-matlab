@@ -14,6 +14,13 @@ function result = check(options)
 %     - toolbox installs (Add-On Explorer or a .mltbx file) are compared
 %       with the latest NDI-matlab release on GitHub.
 %
+%   NDIcalc-*-matlab calculator repositories are checked too, in either kind
+%   of install: the git clones of them next to NDI-matlab (where
+%   ndi_install would put them) or anywhere on the MATLAB path, each
+%   against the upstream of its checked-out branch. Their results are in
+%   the Calculators field and set CalculatorUpdateAvailable, not
+%   UpdateAvailable.
+%
 %   If NDI-python is installed (its 'ndi' command is found), it is checked
 %   too, against the latest commit on NDI-python's main branch; see
 %   ndi.update.checkPython. Its result is in the Python field and adds a
@@ -48,9 +55,21 @@ function result = check(options)
 %                         overwrite them, so ndi.update.install asks for them
 %                         to be moved first), and CommitsAhead (local
 %                         commits; merged with the update by git pull). See
-%                         ndi.update.modificationSummary.
+%                         ndi.update.modificationSummary. Includes the
+%                         calculator repositories, in either kind of
+%                         install.
 %       Dependencies    - structure array, one entry per dependency (git
-%                         only), with fields Name, Path, Status, CommitsBehind
+%                         only), with fields Name, Path, Status
+%                         ("upToDate", "behind", "missing", "pinned",
+%                         "notFound", "notGit", or "unknown"),
+%                         CommitsBehind, and CurrentVersion and
+%                         LatestVersion (short commit hashes, or "")
+%       Calculators     - structure array, one entry per NDIcalc-*-matlab
+%                         repository found, with the fields of
+%                         Dependencies (Status "upToDate", "behind",
+%                         "notGit", or "unknown")
+%       CalculatorUpdateAvailable - true if a calculator repository is
+%                         behind its upstream branch
 %       ReleaseUrl      - web page of the latest release (toolbox only)
 %       MltbxUrl        - download URL of the latest toolbox (toolbox only)
 %       BothInstalled   - true if a git clone and the toolbox are both
@@ -66,9 +85,13 @@ function result = check(options)
 %       Timeout             - seconds to wait for GitHub (default 10)
 %       IncludePython       - also check NDI-python, if it is installed
 %                             (default true)
-%       RepoRoot            - check the git clone of NDI-matlab in this
+%       IncludeCalculators  - also check the NDIcalc-*-matlab repositories
+%                             (default true)
+%       RepoRoot          - check the git clone of NDI-matlab in this
 %                             folder instead of the running copy (default
-%                             "", the running copy)
+%                             "", the running copy). Calculators are then
+%                             looked for next to that clone only, not on
+%                             the MATLAB path.
 %
 %   Example:
 %       r = ndi.update.check();
@@ -82,6 +105,7 @@ function result = check(options)
         options.Timeout (1,1) double {mustBePositive} = 10
         options.RepoRoot (1,1) string = ""
         options.IncludePython (1,1) logical = true
+        options.IncludeCalculators (1,1) logical = true
     end
 
     [type, info] = ndi.update.installType();
@@ -103,13 +127,16 @@ function result = check(options)
         'CommitsAhead', NaN, ...
         'HasModifications', false, ...
         'Modifications', emptyModifications(), ...
-        'Dependencies', struct('Name', {}, 'Path', {}, 'Status', {}, 'CommitsBehind', {}), ...
+        'Dependencies', emptyRepos(), ...
+        'Calculators', emptyRepos(), ...
+        'CalculatorUpdateAvailable', false, ...
         'ReleaseUrl', "", ...
         'MltbxUrl', "", ...
         'BothInstalled', info.BothInstalled, ...
         'RepoRoot', info.RepoRoot, ...
         'Python', struct('Installed', false, 'Kind', "none", 'Status', "notChecked", ...
-            'UpdateAvailable', false, 'CanInstall', false, 'Message', ""));
+            'UpdateAvailable', false, 'CanInstall', false, 'Message', "", ...
+            'CurrentVersion', "", 'LatestVersion', "", 'CommitsBehind', NaN));
 
     switch type
         case "git"
@@ -119,6 +146,10 @@ function result = check(options)
         otherwise
             result.Message = "Could not tell how NDI-matlab was installed, " + ...
                 "so cannot check for updates.";
+    end
+
+    if options.IncludeCalculators
+        result = checkCalculators(result, info, options);
     end
 
     if result.BothInstalled
@@ -228,7 +259,7 @@ function [deps, mods] = checkDependencies(repo)
     if s ~= 0
         reqFile = fullfile(repo, 'requirements.txt');
         if ~isfile(reqFile)
-            deps = struct('Name', {}, 'Path', {}, 'Status', {}, 'CommitsBehind', {});
+            deps = emptyRepos();
             return
         end
         txt = string(fileread(reqFile));
@@ -241,7 +272,7 @@ function [deps, mods] = checkDependencies(repo)
     % there, a missing dependency is one that ndi_install has yet to clone.
     isNdiInstallLayout = isfolder(fullfile(installDir, 'vhlab_vhtools'));
 
-    deps = struct('Name', {}, 'Path', {}, 'Status', {}, 'CommitsBehind', {});
+    deps = emptyRepos();
     for i = 1:numel(lines)
         url = lines(i);
         pinned = contains(extractAfter(url, "://"), "@");
@@ -251,37 +282,96 @@ function [deps, mods] = checkDependencies(repo)
         name = parts(end);
         depPath = fullfile(installDir, name);
 
-        d = struct('Name', name, 'Path', depPath, 'Status', "unknown", 'CommitsBehind', NaN);
         if pinned
+            d = repoEntry(name, depPath);
             d.Status = "pinned";
         elseif ~isfolder(depPath)
+            d = repoEntry(name, depPath);
             if isNdiInstallLayout
                 d.Status = "missing";
             else
                 d.Status = "notFound";
             end
-        elseif exist(fullfile(depPath, '.git'), 'file') == 0
-            d.Status = "notGit";
         else
-            [s, ~] = runGit(depPath, "fetch --quiet");
-            [s2, behind] = runGit(depPath, "rev-list --count ""HEAD..@{u}""");
-            [s3, ahead] = runGit(depPath, "rev-list --count ""@{u}..HEAD""");
-            if s3 ~= 0
-                ahead = "0";
-            end
-            mods = [mods, localModifications(name, depPath, str2double(ahead), ...
-                incomingNewFiles(depPath, """@{u}"""))]; %#ok<AGROW>
-            if s == 0 && s2 == 0
-                d.CommitsBehind = str2double(behind);
-                if d.CommitsBehind > 0
-                    d.Status = "behind";
-                else
-                    d.Status = "upToDate";
-                end
-            end
+            [d, m] = checkClone(name, depPath);
+            mods = [mods, m]; %#ok<AGROW>
         end
         deps(end+1) = d; %#ok<AGROW>
     end
+end
+
+function result = checkCalculators(result, info, options)
+    % NDIcalc-*-matlab clones next to NDI-matlab and, for the running copy,
+    % anywhere on the path. Their modifications join result.Modifications,
+    % because ndi.update.install pulls them too.
+    if strlength(info.RepoRoot) > 0
+        installDir = string(fileparts(info.RepoRoot));
+    else
+        % src/ndi -> src -> NDI-matlab -> the folder holding NDI-matlab
+        installDir = string(fileparts(fileparts(fileparts(info.SourceDir))));
+    end
+    folders = findCalculators(installDir, ...
+        SearchPath = strlength(options.RepoRoot) == 0);
+
+    calcs = emptyRepos();
+    mods = emptyModifications();
+    for i = 1:numel(folders)
+        [~, name] = fileparts(folders(i));
+        [d, m] = checkClone(string(name), folders(i));
+        calcs(end+1) = d; %#ok<AGROW>
+        mods = [mods, m]; %#ok<AGROW>
+    end
+    result.Calculators = calcs;
+    result.Modifications = [result.Modifications, mods];
+    result.HasModifications = ~isempty(result.Modifications);
+
+    behind = arrayfun(@(c) c.Status == "behind", calcs);
+    result.CalculatorUpdateAvailable = any(behind);
+    if result.CalculatorUpdateAvailable
+        result.Message = result.Message + newline + "Calculator updates are " + ...
+            "available for: " + strjoin([calcs(behind).Name], ", ") + ...
+            ". Run ndi.update.install() to update.";
+    end
+end
+
+function [d, mods] = checkClone(name, repoDir)
+    % Compares a git clone with the upstream of its checked-out branch.
+    d = repoEntry(name, repoDir);
+    mods = emptyModifications();
+    if exist(fullfile(repoDir, '.git'), 'file') == 0
+        d.Status = "notGit";
+        return
+    end
+    [~, localHash] = runGit(repoDir, "rev-parse HEAD");
+    d.CurrentVersion = shortHash(localHash);
+    [s, ~] = runGit(repoDir, "fetch --quiet");
+    [s2, behind] = runGit(repoDir, "rev-list --count ""HEAD..@{u}""");
+    [s3, ahead] = runGit(repoDir, "rev-list --count ""@{u}..HEAD""");
+    if s3 ~= 0
+        ahead = "0";
+    end
+    mods = localModifications(name, repoDir, str2double(ahead), ...
+        incomingNewFiles(repoDir, """@{u}"""));
+    if s == 0 && s2 == 0
+        [~, upstreamHash] = runGit(repoDir, "rev-parse ""@{u}""");
+        d.LatestVersion = shortHash(upstreamHash);
+        d.CommitsBehind = str2double(behind);
+        if d.CommitsBehind > 0
+            d.Status = "behind";
+        else
+            d.Status = "upToDate";
+        end
+    end
+end
+
+function d = repoEntry(name, repoDir)
+    d = struct('Name', string(name), 'Path', string(repoDir), 'Status', "unknown", ...
+        'CommitsBehind', NaN, 'CurrentVersion', "", 'LatestVersion', "");
+end
+
+function repos = emptyRepos()
+    repos = struct('Name', {}, 'Path', {}, 'Status', {}, 'CommitsBehind', {}, ...
+        'CurrentVersion', {}, 'LatestVersion', {});
 end
 
 function result = checkToolbox(result, info, options)
