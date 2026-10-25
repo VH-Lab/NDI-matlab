@@ -87,16 +87,74 @@ jobs:
           name: reports-${{ matrix.MATLABVersion }}
           path: docs/reports
 
+  # Same steps as matbox-actions' package-toolbox-job, minus its
+  # "Final check-ins" commit: that pushes to main, which branch protection
+  # rejects. The packaged toolbox still carries the updated Contents.m.
   release:
     name: Package toolbox and create draft release
     needs: [test, validate_version]
-    uses: ehennestad/matbox-actions/.github/workflows/package-toolbox-job.yml@8fe220fbaec9e119ec5081eb917c8e016e275f1e # v1
-    with:
-      version_number: ${{ needs.validate_version.outputs.version_number }}
-      source_directory: src/ndi
-      tools_directory: tools
-    secrets:
-      DEPLOY_KEY: ${{ secrets.DEPLOY_KEY }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    outputs:
+      toolbox_name: ${{ steps.package.outputs.toolbox_name }}
+      mltbx_path: ${{ steps.package.outputs.mltbx_path }}
+    env:
+      VERSION_NUMBER: ${{ needs.validate_version.outputs.version_number }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Set up MATLAB
+        uses: matlab-actions/setup-matlab@aa8bbc7b76daa63c5d456d1430cbd6cb5b626ab4 # v2
+
+      - name: Install MatBox
+        uses: ehennestad/matbox-actions/install-matbox@1ede222d531237858dcafa59cdcee2f8461acf1d # v1
+
+      # Pushes to the gh-badges branch, not main.
+      - name: Generate "tested with" badge
+        uses: ehennestad/matbox-actions/generate-tested-with-badge@1ede222d531237858dcafa59cdcee2f8461acf1d # v1
+        with:
+          version_number: ${{ env.VERSION_NUMBER }}
+          tools_directory: tools
+
+      - name: Package toolbox
+        id: package
+        uses: ehennestad/matbox-actions/package-toolbox@1ede222d531237858dcafa59cdcee2f8461acf1d # v1
+        with:
+          version_number: ${{ env.VERSION_NUMBER }}
+          source_directory: src/ndi
+          tools_directory: tools
+
+      - name: Save packaged toolbox
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: ${{ steps.package.outputs.toolbox_name }}.mltbx
+          path: ${{ steps.package.outputs.mltbx_path }}
+          retention-days: 1
+
+      # On a manual run the tag doesn't exist yet. Create it here with
+      # GITHUB_TOKEN: pushes made with that token don't trigger workflows,
+      # whereas a tag created by publishing the draft would start this
+      # workflow again.
+      - name: Create tag
+        run: |
+          tag="v${VERSION_NUMBER}"
+          if git ls-remote --exit-code --tags origin "refs/tags/${tag}" > /dev/null; then
+            echo "Tag ${tag} already exists"
+          else
+            git tag "${tag}" "${GITHUB_SHA}"
+            git push origin "refs/tags/${tag}"
+          fi
+
+      - name: Create draft GitHub release
+        uses: ncipollo/release-action@339a81892b84b4eeb0f6e744e4574d79d0d9b8dd # v1.21.0
+        with:
+          draft: true
+          artifacts: ${{ steps.package.outputs.mltbx_path }}
+          tag: v${{ env.VERSION_NUMBER }}
+          generateReleaseNotes: true
+          body: "![MATLAB Versions Tested](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2F${{ github.repository }}%2Fgh-badges%2F.github%2Fbadges%2Fv${{ env.VERSION_NUMBER }}%2Ftested_with.json)"
 
   verify_installation:
     name: Verify toolbox installation
