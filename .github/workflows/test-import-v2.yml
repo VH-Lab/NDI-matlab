@@ -131,7 +131,8 @@ jobs:
     env:
       # did-schema #88 merged into main and DID-matlab #218 into V2 (2026-10-23)
       DID_SCHEMA_REF: main
-      DID_MATLAB_REF: V2
+      DID_MATLAB_REQUESTED: ''
+      NDI_BRANCH: ${{ github.head_ref || github.ref_name }}
     steps:
       - name: Check out NDI-matlab
         uses: actions/checkout@v4
@@ -156,6 +157,17 @@ jobs:
             echo "$3=$sha" >> "$GITHUB_ENV"
           }
           resolve Waltham-Data-Science/did-schema "$DID_SCHEMA_REF" DID_SCHEMA_SHA
+          # DID-matlab: the requested ref, else the DID-matlab branch with this
+          # NDI-matlab branch's name, else V2 ([NDI CI picks DID branch], Jess
+          # Haley, 2026-10-25), so a DID/NDI pair is tested together.
+          DID_MATLAB_REF="${DID_MATLAB_REQUESTED:-}"
+          if [ -z "$DID_MATLAB_REF" ] && [ -n "${NDI_BRANCH:-}" ] && [ "$NDI_BRANCH" != "main" ] \
+             && [ -n "$(git ls-remote https://github.com/VH-Lab/DID-matlab.git "refs/heads/$NDI_BRANCH")" ]; then
+            DID_MATLAB_REF="$NDI_BRANCH"
+          fi
+          DID_MATLAB_REF="${DID_MATLAB_REF:-V2}"
+          echo "PICKED: DID-matlab ref $DID_MATLAB_REF (requested '${DID_MATLAB_REQUESTED:-}', NDI branch '${NDI_BRANCH:-}')"
+          echo "DID_MATLAB_REF=$DID_MATLAB_REF" >> "$GITHUB_ENV"
           resolve VH-Lab/DID-matlab "$DID_MATLAB_REF" DID_MATLAB_SHA
 
       - name: Check out did-schema
