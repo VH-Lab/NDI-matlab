@@ -42,7 +42,7 @@ function checkOnStartup()
         ndi.preferences.set('Update.MATLAB.LastCheckTime', string(nowTime));
 
         r = ndi.update.check(Verbose = false, Timeout = 5);
-        if r.UpdateAvailable || r.Python.UpdateAvailable
+        if r.UpdateAvailable || r.CalculatorUpdateAvailable || r.Python.UpdateAvailable
             if usejava('desktop')
                 cmd = '<a href="matlab:ndi.update.install">ndi.update.install()</a>';
             else
@@ -51,10 +51,14 @@ function checkOnStartup()
             if r.UpdateAvailable
                 summary = splitlines(r.Message);
                 summary = summary(1);
+            elseif r.CalculatorUpdateAvailable
+                calcs = r.Calculators([r.Calculators.Status] == "behind");
+                summary = "Calculator updates are available for: " + ...
+                    strjoin([calcs.Name], ", ") + ".";
             else
                 summary = regexprep(r.Python.Message, ' Run ndi\.update\.install\(\).*$', '');
             end
-            if r.UpdateAvailable || r.Python.CanInstall
+            if r.UpdateAvailable || r.CalculatorUpdateAvailable || r.Python.CanInstall
                 fprintf('%s Run %s to update, or ndi.update.check() for details.\n', ...
                     summary, cmd);
             else

@@ -3,7 +3,8 @@ classdef TestCheckGitClone < matlab.unittest.TestCase
     % clones laid out the way ndi_install leaves them.
     %
     % Hermetic: each test builds bare repositories that stand in for GitHub,
-    % plus ndi_install-style clones of them, in a temp folder, and points
+    % plus ndi_install-style clones of them (including an NDIcalc
+    % calculator repository next to NDI-matlab), in a temp folder, and points
     % check/install at the fake NDI-matlab clone with RepoRoot. No network.
     % The fake NDI-matlab has no ndi_install.m, so install can never run
     % the real installer.
@@ -13,6 +14,11 @@ classdef TestCheckGitClone < matlab.unittest.TestCase
         Seeds   % upstream working copies, used to push new commits
         Tools   % the "installed" clones (what ndi_install makes)
         Ndi     % the fake NDI-matlab clone
+        Calc    % the fake NDIcalc clone next to it
+    end
+
+    properties (Constant)
+        CalcName = "NDIcalc-test-matlab"
     end
 
     properties (Constant)
@@ -36,7 +42,7 @@ classdef TestCheckGitClone < matlab.unittest.TestCase
             testCase.Tools = fullfile(testCase.Root, "tools");
             remotes = fullfile(testCase.Root, "remotes");
 
-            names = ["NDI-matlab", "depA", "vhlab_vhtools"];
+            names = ["NDI-matlab", "depA", "vhlab_vhtools", testCase.CalcName];
             for name = names
                 seed = fullfile(testCase.Seeds, name);
                 testCase.git(testCase.Root, "init -q -b main """ + seed + """");
@@ -56,6 +62,7 @@ classdef TestCheckGitClone < matlab.unittest.TestCase
                     fullfile(testCase.Tools, name) + """");
             end
             testCase.Ndi = fullfile(testCase.Tools, "NDI-matlab");
+            testCase.Calc = fullfile(testCase.Tools, testCase.CalcName);
         end
     end
 
@@ -214,6 +221,86 @@ classdef TestCheckGitClone < matlab.unittest.TestCase
                 "mine");
         end
 
+        function testCalculatorUpToDate(testCase)
+            r = testCase.check();
+            testCase.verifyEqual(testCase.calcStatus(r), "upToDate");
+            testCase.verifyFalse(r.CalculatorUpdateAvailable);
+            testCase.verifyEqual(r.Calculators(1).Path, testCase.Calc);
+            testCase.verifyEqual(r.Calculators(1).CurrentVersion, ...
+                r.Calculators(1).LatestVersion);
+        end
+
+        function testCalculatorBehind(testCase)
+            testCase.pushUpstream(testCase.CalcName, "README.md", "calculator change");
+            r = testCase.check();
+            testCase.verifyEqual(testCase.calcStatus(r), "behind");
+            testCase.verifyEqual(r.Calculators(1).CommitsBehind, 1);
+            testCase.verifyTrue(r.CalculatorUpdateAvailable);
+            % Calculators do not make NDI-matlab itself out of date.
+            testCase.verifyFalse(r.UpdateAvailable);
+            testCase.verifyEqual(r.Status, "upToDate");
+            testCase.verifySubstring(r.Message, testCase.CalcName);
+        end
+
+        function testCalculatorsCanBeSkipped(testCase)
+            testCase.pushUpstream(testCase.CalcName, "README.md", "calculator change");
+            r = ndi.update.check(RepoRoot = testCase.Ndi, Verbose = false, ...
+                IncludePython = false, IncludeCalculators = false);
+            testCase.verifyEmpty(r.Calculators);
+            testCase.verifyFalse(r.CalculatorUpdateAvailable);
+        end
+
+        function testDependencyVersionsAreReported(testCase)
+            testCase.pushUpstream("depA", "README.md", "dependency change");
+            r = testCase.check();
+            d = r.Dependencies([r.Dependencies.Name] == "depA");
+            testCase.verifyNotEqual(d.CurrentVersion, "");
+            testCase.verifyNotEqual(d.CurrentVersion, d.LatestVersion);
+        end
+
+        function testInstallPullsCalculator(testCase)
+            testCase.pushUpstream(testCase.CalcName, "README.md", "calculator change");
+            testCase.install();
+            testCase.verifySubstring(string(fileread(fullfile(testCase.Calc, "README.md"))), ...
+                "calculator change");
+            testCase.verifyEqual(testCase.calcStatus(testCase.check()), "upToDate");
+        end
+
+        function testInstallKeepsCalculatorEdits(testCase)
+            testCase.pushUpstream(testCase.CalcName, "added.m", "upstream", Append = false);
+            readme = fullfile(testCase.Calc, "README.md");
+            testCase.writeFile(readme, "my edit");
+            r = testCase.check();
+            testCase.verifyEqual([r.Modifications.Name], testCase.CalcName);
+            % Without consent the edit is left as it is...
+            testCase.verifyError(@() testCase.install(), ...
+                'ndi:update:install:localModifications');
+            testCase.verifyFalse(isfile(fullfile(testCase.Calc, "added.m")));
+            % ...with it, the update comes in and the edit is put back.
+            testCase.install(AllowModified = true);
+            testCase.verifyTrue(isfile(fullfile(testCase.Calc, "added.m")));
+            testCase.verifyEqual(strtrim(string(fileread(readme))), "my edit");
+        end
+
+        function testInstallPullsNdiMatlab(testCase)
+            % ndi_install only visits requirements.txt, which does not list
+            % NDI-matlab, so install pulls NDI-matlab itself. A stand-in
+            % ndi_install.m that does nothing gets install past the
+            % installer step.
+            testCase.pushUpstream("NDI-matlab", "ndi_install.m", ...
+                "function ndi_install(varargin)" + newline + "end", Append = false);
+            testCase.git(testCase.Ndi, "pull -q");
+            testCase.pushUpstream("NDI-matlab", "README.md", "new upstream line");
+            oldPath = path;
+            testCase.addTeardown(@() path(oldPath));
+            testCase.addTeardown(@() clear('ndi_install'));
+            testCase.install();
+            testCase.verifySubstring(string(fileread(fullfile(testCase.Ndi, "README.md"))), ...
+                "new upstream line");
+            r = testCase.check();
+            testCase.verifyEqual(r.CommitsBehind, 0);
+        end
+
         function testInstallRefusesOtherBranch(testCase)
             testCase.pushUpstream("NDI-matlab", "README.md", "new upstream line");
             testCase.git(testCase.Ndi, "checkout -q -b myFeature");
@@ -244,6 +331,11 @@ classdef TestCheckGitClone < matlab.unittest.TestCase
             match = [r.Dependencies.Name] == name;
             testCase.assertEqual(nnz(match), 1, "Expected one dependency named " + name);
             s = r.Dependencies(match).Status;
+        end
+
+        function s = calcStatus(testCase, r)
+            testCase.assertNumElements(r.Calculators, 1);
+            s = r.Calculators(1).Status;
         end
 
         function url = remoteUrl(testCase, name)

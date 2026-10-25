@@ -7,13 +7,14 @@ function result = install(options)
 %   confirmation, installs it in the way that matches how NDI-matlab was
 %   installed:
 %
-%     - git installs: runs ndi_install on the folder that holds NDI-matlab,
-%       which pulls the latest main branch of NDI-matlab and updates (or
+%     - git installs: pulls the latest main branch of NDI-matlab, then runs
+%       ndi_install on the folder that holds NDI-matlab, which updates (or
 %       clones) its dependencies. Uncommitted changes in those repositories
-%       are stashed by ndi_install for the pull and put back afterwards (if
-%       they no longer apply cleanly, 'git stash list' still has them). The
-%       NDI-matlab clone must be on the main branch. If you have changed code (edited tracked files, or
-%       made local commits) in NDI-matlab or a dependency, the changes are
+%       are stashed for the pull and put back afterwards (if they no
+%       longer apply cleanly, 'git stash list' still has them). The
+%       NDI-matlab clone must be on the main branch. If you have changed
+%       code (edited tracked files, or made local commits) in NDI-matlab, a
+%       dependency or a calculator repository, the changes are
 %       listed first and you are asked whether to update anyway; the
 %       default answer is No. Untracked files of your own are left alone and
 %       need no answer, unless one is at a path the update adds a file to:
@@ -28,6 +29,13 @@ function result = install(options)
 %   After either kind of update, NDI's in-memory caches are cleared with
 %   ndi.fun.clearAllCaches, so document definitions, schemas and lookups
 %   are re-read from the new files.
+%
+%   NDIcalc-*-matlab calculator repositories (git clones; see
+%   ndi.update.check) that are behind their upstream branch are then
+%   pulled the same way, stashing and restoring edits. This happens in
+%   either kind of install, and even if NDI-matlab itself is up to date.
+%   If you have changed code in them and were not already asked about it,
+%   you are asked (Confirm) or AllowModified decides, as above.
 %
 %   If NDI-python was installed with ndi.python.install (or the NDI
 %   installer) and is behind its main branch, it is updated afterwards by
@@ -49,6 +57,8 @@ function result = install(options)
 %       Timeout      - seconds to wait for GitHub (default 10)
 %       IncludePython - also update NDI-python when it needs it and can be
 %                      updated (default true)
+%       IncludeCalculators - also update the NDIcalc-*-matlab repositories
+%                      that are behind (default true)
 %       RepoRoot     - update the git clone of NDI-matlab in this folder
 %                      instead of the running copy (default "", the
 %                      running copy)
@@ -66,22 +76,28 @@ function result = install(options)
         options.Timeout (1,1) double {mustBePositive} = 10
         options.RepoRoot (1,1) string = ""
         options.IncludePython (1,1) logical = true
+        options.IncludeCalculators (1,1) logical = true
     end
 
     result = ndi.update.check(Verbose = true, Timeout = options.Timeout, ...
-        RepoRoot = options.RepoRoot, IncludePython = options.IncludePython);
+        RepoRoot = options.RepoRoot, IncludePython = options.IncludePython, ...
+        IncludeCalculators = options.IncludeCalculators);
 
     updateMatlab = result.UpdateAvailable || options.Force;
+    updateCalcs = options.IncludeCalculators && result.CalculatorUpdateAvailable;
     updatePython = options.IncludePython && result.Python.UpdateAvailable && ...
         result.Python.CanInstall;
-    if ~updateMatlab && ~updatePython
+    if ~updateMatlab && ~updateCalcs && ~updatePython
         return
     end
 
+    % True once the user has agreed to every change listed in
+    % result.Modifications (installGit asks about all of them).
+    modsAgreed = false;
     if updateMatlab
         switch result.InstallType
             case "git"
-                installGit(result, options);
+                modsAgreed = installGit(result, options);
             case "toolbox"
                 installToolbox(result, options);
             otherwise
@@ -89,6 +105,10 @@ function result = install(options)
                     ['Could not tell how NDI-matlab was installed. Reinstall with ' ...
                      'ndi_install or from the Add-On Explorer.']);
         end
+    end
+
+    if updateCalcs
+        installCalculators(result, options, modsAgreed);
     end
 
     if updatePython
@@ -110,7 +130,10 @@ function installPython(py, options)
     disp('NDI-python update finished.');
 end
 
-function installGit(result, options)
+function modsAgreed = installGit(result, options)
+    % MODSAGREED is true if the update went ahead, so that the user agreed
+    % to (or AllowModified covered) every entry of result.Modifications.
+    modsAgreed = false;
     repoRoot = result.RepoRoot;
 
     if result.Branch ~= "main"
@@ -160,11 +183,70 @@ function installGit(result, options)
             'Could not find ndi_install.m in %s.', repoRoot);
     end
 
+    modsAgreed = true;
+    % Pull NDI-matlab itself first, so that main's ndi_install.m is the one
+    % run: an older ndi_install updates only the repositories listed in
+    % requirements.txt, which does not include NDI-matlab.
+    if result.CommitsBehind > 0
+        fprintf('Updating NDI-matlab in %s...\n', repoRoot);
+        pullRepo(repoRoot, "origin main");
+    end
+
     % Put this clone's ndi_install first on the path, so it is the one run.
     addpath(char(repoRoot));
     ndi_install(char(fileparts(repoRoot)), options.Dependencies);
     clearCaches();
     disp('NDI-matlab update finished.');
+end
+
+function installCalculators(result, options, modsAgreed)
+    % Pulls each NDIcalc-*-matlab clone that is behind its upstream branch.
+    % MODSAGREED: the user already agreed to result.Modifications.
+    calcs = result.Calculators(arrayfun(@(c) c.Status == "behind", result.Calculators));
+    names = [calcs.Name];
+    mods = result.Modifications(arrayfun(@(m) any(m.Name == names), result.Modifications));
+
+    blocking = blockingFiles(struct('Modifications', mods));
+    if ~isempty(blocking)
+        error('ndi:update:install:untrackedFilesInTheWay', ...
+            ['The calculator update adds files at these paths, where you have ' ...
+             'untracked files of your own. git will not overwrite them, so the ' ...
+             'update would stop part-way. Move or rename them, then update again:\n%s'], ...
+            strjoin("  " + blocking, newline));
+    end
+
+    if ~modsAgreed
+        if ~isempty(mods)
+            summary = ndi.update.modificationSummary(struct('Modifications', mods), ...
+                MaxFiles = 25);
+            if options.Confirm
+                disp(summary);
+                if ~confirmed("Update the calculators anyway? Y/N [N]: ", false)
+                    disp('Calculator update cancelled; your changes were not touched.');
+                    return
+                end
+            elseif ~options.AllowModified
+                error('ndi:update:install:localModifications', ...
+                    ['%s\n\nUpdate cancelled. Commit, move or discard these ' ...
+                     'changes, or call ndi.update.install(Confirm=false, ' ...
+                     'AllowModified=true) to update anyway.'], summary);
+            end
+        elseif options.Confirm
+            prompt = "Update the calculators " + strjoin(names, ", ") + ...
+                " (git pull)? Y/N [Y]: ";
+            if ~confirmed(prompt)
+                disp('Calculator update cancelled.');
+                return
+            end
+        end
+    end
+
+    for i = 1:numel(calcs)
+        fprintf('Updating %s in %s...\n', calcs(i).Name, calcs(i).Path);
+        pullRepo(calcs(i).Path);
+    end
+    clearCaches();
+    disp('Calculator update finished.');
 end
 
 function files = blockingFiles(result)
