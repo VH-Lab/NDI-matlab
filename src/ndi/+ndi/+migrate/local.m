@@ -223,7 +223,7 @@ function result = local(path, options)
     % pass write the same one, and released when this returns.
     if isempty(did2.convert.migrationTime('get'))
         did2.convert.migrationTime('pin');
-        unpinMigrationTime = onCleanup(@() did2.convert.migrationTime('unpin')); %#ok<NASGU>
+        unpinMigrationTime = onCleanup(@() did2.convert.migrationTime('unpin'));
     end
 
     dstPath = fullfile(ndiDir, [options.TargetVersion '.sqlite']);
