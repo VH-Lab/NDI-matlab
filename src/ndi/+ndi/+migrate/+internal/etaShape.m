@@ -333,12 +333,13 @@ classdef etaShape
 
         function b = baseBlock(id, datestamp)
             %BASEBLOCK The base block: a fresh id unless ID is given, and the
-            %   creation_timestamp (the sentinel jBase states when none).
+            %   creation_timestamp (the time the migration ran when none:
+            %   did2.convert.migrationTime, [no invented values]).
             if isempty(id)
                 id = did.ido.unique_id();
             end
             if isempty(datestamp)
-                datestamp = '2024-01-01T00:00:00.000Z';
+                datestamp = did2.convert.migrationTime();
             end
             b = struct('id', char(id), 'creation_timestamp', char(datestamp));
         end
