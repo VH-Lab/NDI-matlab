@@ -34,6 +34,39 @@ classdef TestStimulusPresentationItem < matlab.unittest.TestCase
 
     methods (Test)
 
+        % ================= the generic stage: nothing unplaced ==============
+
+        function testTheGenericStageLeavesAGratingPresentationAsV1(testCase)
+            % [generic stage is lossless] / [partly placed is carried as v1]
+            % (Jess Haley, 2026-10-25, audit item 4): gratingRecipe writes five
+            % of a periodicstim's parameters, so by default (the generic
+            % stage) a grating presentation is REFUSED -- left as it is for the
+            % end of ndi.migrate.local to carry as v1 -- with the fields named.
+            % The tests below drive the recipes with 'LeaveUnplaced', false.
+            stimuli = { gratingStim(0, 0.04, 0.5), blankStim() };
+            pres = presentationBody('pres_g', [1 2], stimuli);
+            bodies = { pres, ...
+                responseScalar('resp_1', pres.base.id, 'elem_9'), ...
+                docBody('element', 'elem_9', {'subject_id', 'animal_1'}) };
+            r = ndi.migrate.internal.bodyResolver(bodies);
+            [m, methods, report] = ndi.migrate.internal.stimulusPresentationToItem(pres, r);
+            testCase.verifyEmpty(m);
+            testCase.verifyEmpty(methods);
+            testCase.verifyTrue(startsWith(report.reason, 'unplaced (carried as v1)'), report.reason);
+            testCase.verifyTrue(any(strcmp(report.unplaced_fields, 'parameters.chromhigh')));
+            testCase.verifyTrue(any(strcmp(report.unplaced_fields, 'parameters.BG')), ...
+                'a blank''s parameters are written nowhere either');
+            % a presentation whose every parameter is an entry is still folded
+            pres2 = presentationBody('pres_n', [1 2], { noiseStim(1), noiseStim(2) });
+            bodies2 = { pres2, ...
+                responseScalar('resp_2', pres2.base.id, 'elem_9'), ...
+                docBody('element', 'elem_9', {'subject_id', 'animal_1'}) };
+            r2 = ndi.migrate.internal.bodyResolver(bodies2);
+            [m2, ~, report2] = ndi.migrate.internal.stimulusPresentationToItem(pres2, r2);
+            testCase.verifyNotEmpty(m2, report2.reason);
+            testCase.verifyEmpty(report2.unplaced_fields);
+        end
+
         % ================= the #88 shape ===================================
 
         function testSequenceOfGratingsBecomesOneItemManipulation(testCase)
@@ -506,7 +539,7 @@ classdef TestStimulusPresentationItem < matlab.unittest.TestCase
         function testKindsAreCountedEvenWhenNoAnimalResolves(testCase)
             pres = presentationBody('pres_none', [1 2], { noiseStim(1), blankStim() });
             r = ndi.migrate.internal.bodyResolver({pres});
-            [m, methods, report] = ndi.migrate.internal.stimulusPresentationToItem(pres, r);
+            [m, methods, report] = ndi.migrate.internal.stimulusPresentationToItem(pres, r, [], 'LeaveUnplaced', false);
             testCase.verifyNotEmpty(m, 'noise folds; with no subject, as a standalone item');
             testCase.verifyEqual(m.document_class.class_name, 'item');
             testCase.verifyEqual(numel(methods), 2);
@@ -524,7 +557,7 @@ classdef TestStimulusPresentationItem < matlab.unittest.TestCase
             bodies = { pres, stimulatorElement(stimulatorIdOf(pres), ...
                 'animal_stim', pres.base.session_id), docBody('subject', 'animal_stim') };
             r = ndi.migrate.internal.bodyResolver(bodies);
-            [m, methods, report] = ndi.migrate.internal.stimulusPresentationToItem(pres, r);
+            [m, methods, report] = ndi.migrate.internal.stimulusPresentationToItem(pres, r, [], 'LeaveUnplaced', false);
             testCase.verifyNotEmpty(m);
             testCase.verifyEqual(numel(methods), 2);
             testCase.verifyEqual(depValue(m, 'entity_id'), 'animal_stim');
@@ -542,7 +575,7 @@ classdef TestStimulusPresentationItem < matlab.unittest.TestCase
             bodies = { pres, ee, stimulatorElement('unit_1', 'animal_epoch', sid), ...
                 stimulatorElement(stimulatorIdOf(pres), 'animal_stim', sid) };
             r = ndi.migrate.internal.bodyResolver(bodies);
-            [m, ~, report] = ndi.migrate.internal.stimulusPresentationToItem(pres, r);
+            [m, ~, report] = ndi.migrate.internal.stimulusPresentationToItem(pres, r, [], 'LeaveUnplaced', false);
             testCase.verifyEqual(depValue(m, 'entity_id'), 'animal_epoch');
             testCase.verifyEqual(report.animal_source, 'epoch');
             testCase.verifyEqual(report.stimulator_subjects, 0);
@@ -554,7 +587,7 @@ classdef TestStimulusPresentationItem < matlab.unittest.TestCase
                 docBody('element', 'elem_9', {'subject_id', 'animal_resp'}), ...
                 stimulatorElement(stimulatorIdOf(pres), 'animal_stim', pres.base.session_id) };
             r = ndi.migrate.internal.bodyResolver(bodies);
-            [m, ~, report] = ndi.migrate.internal.stimulusPresentationToItem(pres, r);
+            [m, ~, report] = ndi.migrate.internal.stimulusPresentationToItem(pres, r, [], 'LeaveUnplaced', false);
             testCase.verifyEqual(depValue(m, 'entity_id'), 'animal_resp');
             testCase.verifyEqual(report.animal_source, 'response');
         end
@@ -568,7 +601,7 @@ classdef TestStimulusPresentationItem < matlab.unittest.TestCase
             orphan = docBody('element', stimulatorIdOf(pres));
             orphan.base.session_id = pres.base.session_id;
             r = ndi.migrate.internal.bodyResolver({ pres, orphan });
-            [d, methods, report] = ndi.migrate.internal.stimulusPresentationToItem(pres, r);
+            [d, methods, report] = ndi.migrate.internal.stimulusPresentationToItem(pres, r, [], 'LeaveUnplaced', false);
             testCase.verifyTrue(report.standalone);
             testCase.verifyEqual(report.animal_source, 'none');
             testCase.verifySubstring(report.no_subject_reason, ...
@@ -596,7 +629,7 @@ classdef TestStimulusPresentationItem < matlab.unittest.TestCase
             pres = presentationBody('pres_valid', [1 2], ...
                 { gratingStim(0, 0.04, 0.5), gratingStim(45, 0.04, 0.5) });
             r = ndi.migrate.internal.bodyResolver({pres});
-            [d, ~, report] = ndi.migrate.internal.stimulusPresentationToItem(pres, r);
+            [d, ~, report] = ndi.migrate.internal.stimulusPresentationToItem(pres, r, [], 'LeaveUnplaced', false);
             testCase.verifyTrue(report.standalone);
             cache = did2.schema.cache.shared();
             restore = ndi.migrate.internal.termRegistryOff(); %#ok<NASGU>
@@ -634,7 +667,7 @@ classdef TestStimulusPresentationItem < matlab.unittest.TestCase
             el = docBody('element', 'unit_1');
             el.base.session_id = sid;
             r = ndi.migrate.internal.bodyResolver({ pres, ee, el });
-            [m, ~, report] = ndi.migrate.internal.stimulusPresentationToItem(pres, r);
+            [m, ~, report] = ndi.migrate.internal.stimulusPresentationToItem(pres, r, [], 'LeaveUnplaced', false);
             testCase.verifyEmpty(m);
             testCase.verifyFalse(report.standalone);
             testCase.verifySubstring(report.reason, 'resolve to no subject');
@@ -653,7 +686,7 @@ classdef TestStimulusPresentationItem < matlab.unittest.TestCase
                 stimulatorElement('stimulator_2', 'animal_b', sid) };
             r = ndi.migrate.internal.bodyResolver(bodies);
             [m, ~, report] = ndi.migrate.internal.stimulusPresentationToItem(pres, r, ...
-                [], 'CohortIdFor', @(s) 'cohort_x');
+                [], 'CohortIdFor', @(s) 'cohort_x', 'LeaveUnplaced', false);
             testCase.verifyEmpty(m);
             testCase.verifyEqual(report.stimulator_subjects, 2);
             testCase.verifyEqual(report.several_animals, 2);
@@ -665,7 +698,7 @@ classdef TestStimulusPresentationItem < matlab.unittest.TestCase
             bodies = { pres, stimulatorElement(stimulatorIdOf(pres), ...
                 'animal_other', 'some_other_session') };
             r = ndi.migrate.internal.bodyResolver(bodies);
-            [d, ~, report] = ndi.migrate.internal.stimulusPresentationToItem(pres, r);
+            [d, ~, report] = ndi.migrate.internal.stimulusPresentationToItem(pres, r, [], 'LeaveUnplaced', false);
             testCase.verifyEqual(report.stimulator_subjects, 0);
             testCase.verifyTrue(report.standalone, ...
                 'never followed into another session, so no subject: a standalone item');
@@ -722,11 +755,11 @@ classdef TestStimulusPresentationItem < matlab.unittest.TestCase
                 'control_true'; 'control_unfolded_reason'; ...
                 'flashed_bars'; 'uniform_fields_kept'; ...
                 'shape_movie_note'; 'hartley_without_enumeration'; ...
-                'notes_not_written_standalone'; 'entity_id'; 'reason'};
+                'notes_not_written_standalone'; 'entity_id'; 'unplaced_fields'; 'reason'};
             pres = presentationBody('pres_1', 1, { gratingStim(0, 0.04, 0.5) });
             pres.base.datestamp = '';    % refused before anything is read
             r = ndi.migrate.internal.bodyResolver({pres});
-            [~, ~, refused] = ndi.migrate.internal.stimulusPresentationToItem(pres, r);
+            [~, ~, refused] = ndi.migrate.internal.stimulusPresentationToItem(pres, r, [], 'LeaveUnplaced', false);
             testCase.verifyEqual(fieldnames(refused), expected);
             pres.base.datestamp = '2025-09-11T12:48:21.932Z';
             [~, ~, ok] = emit(testCase, pres);
@@ -814,7 +847,7 @@ bodies = { pres, ...
     docBody('element', 'elem_9', {'subject_id', 'animal_1'}) };
 r = ndi.migrate.internal.bodyResolver(bodies);
 [manipBody, methodBodies, report] = ...
-    ndi.migrate.internal.stimulusPresentationToItem(pres, r, sequence, varargin{:});
+    ndi.migrate.internal.stimulusPresentationToItem(pres, r, sequence, varargin{:}, 'LeaveUnplaced', false);
 end
 
 function f = writePresentationTimeFile(testCase, onsets, offsets)

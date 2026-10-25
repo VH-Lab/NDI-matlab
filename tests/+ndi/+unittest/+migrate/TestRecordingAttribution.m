@@ -138,8 +138,11 @@ classdef TestRecordingAttribution < matlab.unittest.TestCase
             testCase.verifyEqual(dep(plan(1).body, 'instrument_id'), 'probe-1');
             testCase.verifyEmpty(dep(plan(1).body, 'subject_id'));
             testCase.verifyEqual(dep(plan(1).body, 'time_reference_id'), 'tr-1');
-            testCase.verifyEqual(plan(1).body.statement.variable.node, 'NDIC:voltage');
-            testCase.verifyEqual(report.variable_carried, 1);
+            % INVERTED 2026-10-25 ([generic stage is lossless], Jess Haley):
+            % the candidate's own label 'ctx_1' used to be overwritten by the
+            % donor's term; it is a v1 value and is kept
+            testCase.verifyEqual(plan(1).body.statement.variable.name, 'ctx_1');
+            testCase.verifyEqual(report.variable_carried, 0);
         end
 
         function theDenominatorIsReportedUnconditionally(testCase)
@@ -251,11 +254,27 @@ classdef TestRecordingAttribution < matlab.unittest.TestCase
             testCase.verifyEqual(report.observations, 0);
         end
 
-        function anUnresolvedVariableTakesTheDonorsTerm(testCase)
-            % pyraview writes the signal LABEL with an empty node; element
-            % writes the modality term. An empty node is a label, not a term.
+        function aLabelledVariableKeepsItsLabel(testCase)
+            % INVERTS anUnresolvedVariableTakesTheDonorsTerm, which asserted the
+            % pyraview signal LABEL ('ctx_1', empty node) overwritten by the
+            % donor's term. [generic stage is lossless] (Jess Haley,
+            % 2026-10-25, audit item 7): the label is a v1 value, so it stays;
+            % the observation is still attributed to the specimen.
             structs = {testCase.donor('probe-1', 'mouse-7', 'NDIC:voltage'), ...
                        testCase.candidate('probe-1', 'cand-1', '')};
+            [plan, report] = ndi.migrate.internal.recordingAttribution(structs);
+            testCase.verifyEqual(report.attributed, 1);
+            testCase.verifyEqual(report.variable_carried, 0);
+            testCase.verifyEqual(plan(1).body.subject_statement.variable.name, 'ctx_1');
+            testCase.verifyEmpty(plan(1).body.subject_statement.variable.node);
+        end
+
+        function anEmptyVariableTakesTheDonorsTerm(testCase)
+            % nothing to lose: an observation whose variable has neither node
+            % nor name takes the donor's term
+            c = testCase.candidate('probe-1', 'cand-1', '');
+            c.subject_statement.variable.name = '';
+            structs = {testCase.donor('probe-1', 'mouse-7', 'NDIC:voltage'), c};
             [plan, report] = ndi.migrate.internal.recordingAttribution(structs);
             testCase.verifyEqual(report.variable_carried, 1);
             testCase.verifyEqual(plan(1).body.subject_statement.variable.node, ...

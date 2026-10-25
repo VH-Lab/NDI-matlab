@@ -116,13 +116,41 @@ classdef TestStrainAssembly < matlab.unittest.TestCase
             testCase.verifyEqual(report.background_edges, 2);
         end
 
-        function testUnresolvableParentProducesNoRelation(testCase)
+        function testUnresolvableParentLeavesTheChildAsV1(testCase)
+            % INVERTED 2026-10-25 (was testUnresolvableParentProducesNoRelation:
+            % the child was assembled and its backgroundStrain written
+            % nowhere, counted background_unresolved). [generic stage is
+            % lossless] (Jess Haley): the child is left as passthrough.
             structs = haleyBacteria();
             structs = dropId(structs, 'op50_doc');     % the pedigree target
-            [~, minted, report] = ndi.migrate.internal.strainAssembly(structs);
+            [kept, minted, report] = ndi.migrate.internal.strainAssembly(structs);
             testCase.verifyEmpty(relationsFrom(minted, 'op50gfp_doc'));
+            testCase.verifyEmpty(strainWithId(minted, 'op50gfp_doc'));
+            testCase.verifyTrue(anyId(kept, 'op50gfp_doc'));
             testCase.verifyEqual(report.background_edges, 0);
-            testCase.verifyEqual(report.background_unresolved, 1);
+            testCase.verifyEqual(report.background_unresolved, 0);
+            testCase.verifyEqual(report.strains_unplaced, 1);
+        end
+
+        function testAStrainFieldThePassDoesNotWriteLeavesItAsV1(testCase)
+            % [generic stage is lossless] (Jess Haley, 2026-10-25, audit
+            % item 2): breedingType, stockNumber, diseaseModel, lookupLabel,
+            % digitalIdentifier, alternateIdentifier have no place; a strain
+            % stating one is left as passthrough, and so is every strain
+            % whose background it is.
+            structs = haleyBacteria();
+            for k = 1:numel(structs)
+                if strcmp(structs{k}.base.id, 'op50_doc')
+                    structs{k}.openminds.fields.stockNumber = 'CGC-OP50';
+                end
+            end
+            [kept, minted, report] = ndi.migrate.internal.strainAssembly(structs);
+            testCase.verifyEmpty(strainWithId(minted, 'op50_doc'));
+            testCase.verifyEmpty(strainWithId(minted, 'op50gfp_doc'), ...
+                'its background is not assembled, so neither is the child');
+            testCase.verifyTrue(anyId(kept, 'op50_doc'));
+            testCase.verifyEqual(report.strains_unplaced, 2);
+            testCase.verifyTrue(any(contains(report.incomplete_reasons, 'stockNumber')));
         end
 
         function testGlobalIdentifierIsACurie(testCase)
@@ -149,9 +177,15 @@ classdef TestStrainAssembly < matlab.unittest.TestCase
             structs = haleyBacteria();
             [kept, ~, report] = ndi.migrate.internal.strainAssembly(structs);
             testCase.verifyEqual(report.fragments_seen, 2);
-            testCase.verifyEqual(report.fragments_consumed, 2);
-            testCase.verifyEqual(report.fragments_retained, 0);
-            testCase.verifyFalse(anyClass(kept, 'openminds'));
+            % UPDATED 2026-10-25 ([generic stage is lossless], Jess Haley): the
+            % Species fragment also states a definition and a synonym, which
+            % the strain's Species term does not write, so it is KEPT (carried
+            % as v1); the GeneticStrainType fragment is fully placed and goes.
+            testCase.verifyEqual(report.fragments_consumed, 1);
+            testCase.verifyEqual(report.fragments_retained, 1);
+            testCase.verifyTrue(anyId(kept, 'species_doc'));
+            testCase.verifyFalse(anyId(kept, 'gst_doc'));
+            testCase.verifyFalse(anyId(kept, 'op50_doc'), 'the strains are replaced');
         end
 
         function testFragmentSharedWithAnUnassembledStrainIsRetained(testCase)

@@ -226,7 +226,11 @@ for k = 1:numel(candidates)
     out = body;
     out = ndi.migrate.internal.etaShape.setAbout(out, specimenId);
     out = setDep(out, 'instrument_id', probeId);
-    if ~viaObserves && isUnresolvedVariable(out)
+    % [generic stage is lossless] (Jess Haley, 2026-10-25, audit item 7): the
+    % donor's term replaces the variable only when the observation's own
+    % variable is EMPTY (no node and no name). A label (pyraview's signal
+    % name, e.g. 'ctx_1') is a v1 value: it is kept, never overwritten.
+    if ~viaObserves && isUnresolvedVariable(out) && isempty(nameOf(getVariable(out)))
         donorVar = donorVariable(probeId);
         if ~isempty(donorVar) && ~isempty(nodeOf(donorVar))
             out.(variableBlock(out)).variable = donorVar;
@@ -309,6 +313,14 @@ function node = nodeOf(v)
 node = '';
 if isstruct(v) && isfield(v, 'node')
     node = char(v.node);
+end
+end
+
+function n = nameOf(t)
+%NAMEOF A term's name, '' when it has none.
+n = '';
+if isstruct(t) && isscalar(t) && isfield(t, 'name') && ~isempty(t.name)
+    n = strtrim(char(t.name));
 end
 end
 

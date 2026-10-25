@@ -163,6 +163,8 @@ report.software_surviving        = 0;
 report.pinned_key_collisions     = 0;   % >1 pinned entity on one key -> untouched
 report.edges_retargeted          = 0;
 report.local_identifier_repaired = 0;
+report.not_merged_content_differs = 0;  % [generic stage is lossless]: left apart
+report.local_identifier_kept      = 0;  % a handle not derived from name/version
 report.version_assertions_dropped = 0;  % #88: the merged-away entity's own
 report.cross_session_groups      = 0;   % (name,version) keys spanning >1 session
 report.cross_session_collapsible = 0;   % extra entities a dataset-scoped key removes
@@ -358,6 +360,17 @@ for g = 1:numel(keys_)
         if m == survivor
             continue;
         end
+        % [generic stage is lossless] (Jess Haley, 2026-10-25, audit item 8):
+        % merging away writes only the entity's global identifiers onto the
+        % survivor and drops its version assertions. A member whose other
+        % content (any entity field but global_identifier and a handle
+        % derived from name/version) or whose version assertions differ from
+        % the survivor's is NOT merged: it stays, with its own edges.
+        if ~mergeLosesNothing(structs, m, survivor, nameOf{m}, versOf{m}, ...
+                versionAssertion, idOf)
+            report.not_merged_content_differs = report.not_merged_content_differs + 1;
+            continue;
+        end
         if ~isempty(idOf{m})
             survivorOf(idOf{m}) = idOf{survivor};
         end
@@ -371,10 +384,16 @@ for g = 1:numel(keys_)
                 report.version_assertions_dropped + numel(va);
         end
     end
-    % Repair the dedup handle on the survivor from the fields that ARE the key.
-    [structs{survivor}, fixed] = repairLocalIdentifier(structs{survivor}, ...
-        nameOf{survivor}, versOf{survivor});
-    report.local_identifier_repaired = report.local_identifier_repaired + fixed;
+    % Repair the dedup handle on the survivor from the fields that ARE the key
+    % -- only a handle that is itself derived (empty, NAME or NAME@VERSION):
+    % any other handle is a v1 value and is kept ([generic stage is lossless]).
+    if isDerivedHandle(structs{survivor}, nameOf{survivor}, versOf{survivor})
+        [structs{survivor}, fixed] = repairLocalIdentifier(structs{survivor}, ...
+            nameOf{survivor}, versOf{survivor});
+        report.local_identifier_repaired = report.local_identifier_repaired + fixed;
+    else
+        report.local_identifier_kept = report.local_identifier_kept + 1;
+    end
 end
 
 report.software_surviving = report.software_seen - report.software_merged_away;
@@ -553,6 +572,64 @@ scheme = ''; value = '';
 if isfield(entry, 'scheme'); scheme = char(entry.scheme); end
 if isfield(entry, 'value');  value  = char(entry.value);  end
 k = [scheme '|' value];
+end
+
+function tf = mergeLosesNothing(structs, m, survivor, name, version, versionAssertion, idOf)
+%MERGELOSESNOTHING Merging member M into SURVIVOR writes nowhere only its
+%   global identifiers (unioned) and its version assertions (dropped), and
+%   recomputes a derived handle. True when nothing else of M would be lost:
+%   its software/entity block equals the survivor's except for
+%   global_identifier and a derived local_identifier, and its version
+%   assertions all state the survivor's version text.
+tf = false;
+a = contentBlock(structs{m});
+b = contentBlock(structs{survivor});
+if isfield(a, 'local_identifier') && isDerivedHandle(structs{m}, name, version)
+    a = rmfield(a, 'local_identifier');
+end
+if isfield(b, 'local_identifier') && isDerivedHandle(structs{survivor}, name, version)
+    b = rmfield(b, 'local_identifier');
+end
+if ~isequaln(orderfields(a), orderfields(b))
+    return;
+end
+if isKey(versionAssertion, idOf{m})
+    va = versionAssertion(idOf{m});
+    for k = 1:numel(va)
+        if ~strcmp(textValue(structs{va(k)}), version)
+            return;
+        end
+    end
+end
+tf = true;
+end
+
+function c = contentBlock(s)
+%CONTENTBLOCK The software entity's own fields, without global_identifier.
+c = struct();
+for blk = {'software', 'entity'}
+    if isfield(s, blk{1}) && isstruct(s.(blk{1})) && isscalar(s.(blk{1}))
+        c = s.(blk{1});
+        break;
+    end
+end
+if isfield(c, 'global_identifier')
+    c = rmfield(c, 'global_identifier');
+end
+end
+
+function tf = isDerivedHandle(s, name, version)
+%ISDERIVEDHANDLE The local_identifier is empty, NAME, or NAME@VERSION (what
+%   private/jSoftware.m writes), so recomputing it loses nothing.
+have = '';
+for blk = {'software', 'entity'}
+    if isfield(s, blk{1}) && isstruct(s.(blk{1})) && isscalar(s.(blk{1})) ...
+            && isfield(s.(blk{1}), 'local_identifier')
+        have = char(s.(blk{1}).local_identifier);
+        break;
+    end
+end
+tf = isempty(have) || strcmp(have, name) || strcmp(have, [name '@' version]);
 end
 
 function [s, fixed] = repairLocalIdentifier(s, name, version)

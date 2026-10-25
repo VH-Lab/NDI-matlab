@@ -117,7 +117,7 @@ classdef TestControlCovariate < matlab.unittest.TestCase
             pres = presentationBody('pres_1', [1 2 1], 2);
             r = ndi.migrate.internal.bodyResolver({pres});
             [d, ~, rep] = ndi.migrate.internal.stimulusPresentationToItem(pres, r, [], ...
-                'ControlRecords', {controlDoc('cs_1', [2 2 2])});
+                'ControlRecords', {controlDoc('cs_1', [2 2 2])}, 'LeaveUnplaced', false);
             testCase.verifyTrue(rep.standalone);
             c = covariateOf(d, 'control condition');
             testCase.verifyEqual(logical(c.logical(:)'), [false true false]);
@@ -144,7 +144,7 @@ bodies{2}.document_class.superclasses = [ ...
     struct('definition', '$NDIDOCUMENTPATH/stimulus/stimulus_response.json')];
 r = ndi.migrate.internal.bodyResolver(bodies);
 [m, methods, report] = ndi.migrate.internal.stimulusPresentationToItem(pres, r, ...
-    sequence, 'ControlRecords', controls);
+    sequence, 'ControlRecords', controls, 'LeaveUnplaced', false);
 end
 
 function b = presentationBody(id, order, nStimuli)

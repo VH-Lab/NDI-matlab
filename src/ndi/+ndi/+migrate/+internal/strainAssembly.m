@@ -172,7 +172,8 @@ report.openminds_seen         = 0;
 report.openminds_other        = 0;   % bare openminds that is not a strain/fragment
 report.strains_seen           = 0;
 report.strains_assembled      = 0;
-report.strains_incomplete     = 0;   % no name -> passthrough
+report.strains_incomplete     = 0;   % no name, or unplaced -> passthrough
+report.strains_unplaced       = 0;   % of those: a field this pass cannot place
 report.incomplete_reasons     = {};
 report.fragments_seen         = 0;
 report.fragments_consumed     = 0;
@@ -240,6 +241,7 @@ assembled      = false(1, n);
 speciesTermOf  = cell(1, n);
 gstTermOf      = cell(1, n);
 usedFragments  = containers.Map('KeyType', 'char', 'ValueType', 'any');
+usedFrags      = cell(1, n);
 
 for k = 1:numel(strainIdx)
     i = strainIdx(k);
@@ -257,13 +259,58 @@ for k = 1:numel(strainIdx)
             sprintf('%s: missing name', shortId(idOf{i})); %#ok<AGROW>
         continue;
     end
+    % [generic stage is lossless] and [partly placed is carried as v1] (Jess
+    % Haley, 2026-10-25, did-schema V_eta_go_forward_class_audit.md): a Strain
+    % with a field this pass does not write (breedingType, stockNumber,
+    % diseaseModel, lookupLabel, digitalIdentifier, alternateIdentifier, ...),
+    % a second value where one is read, or a reference that does not resolve
+    % is LEFT AS PASSTHROUGH (carried as v1 by ndi.migrate.local's last step),
+    % counted with its reason. A fragment with a field the term does not write
+    % is kept rather than consumed (fragmentFullyPlaced).
+    unplaced = unplacedStrainFields(f, byId, structs);
+    if ~isempty(unplaced)
+        report.strains_incomplete = report.strains_incomplete + 1;
+        report.strains_unplaced = report.strains_unplaced + 1;
+        report.incomplete_reasons{end+1} = sprintf('%s: cannot place %s', ...
+            shortId(idOf{i}), strjoin(unplaced, ', ')); %#ok<AGROW>
+        continue;
+    end
 
     assembled(i)     = true;
     speciesTermOf{i} = speciesTerm;
     gstTermOf{i}     = gstTerm;
-    frags = [reshape(speciesFrag, 1, []), reshape(gstFrag, 1, [])];
-    for fr = 1:numel(frags)
-        addUse(usedFragments, frags{fr}, idOf{i});
+    usedFrags{i} = [reshape(speciesFrag, 1, []), reshape(gstFrag, 1, [])];
+end
+
+% A background strain that is not assembled would be a `derived_from` written
+% nowhere ([generic stage is lossless]): its child is left as passthrough too,
+% to a fixed point (a cross of a cross).
+changedSet = true;
+while changedSet
+    changedSet = false;
+    for k = 1:numel(strainIdx)
+        i = strainIdx(k);
+        if ~assembled(i); continue; end
+        ps = ndiRefs(getAny(openmindsFields(structs{i}), {'backgroundStrain', 'background_strain'}));
+        for p = 1:numel(ps)
+            if ~(isKey(byId, ps{p}) && assembled(byId(ps{p})))
+                assembled(i) = false;
+                changedSet = true;
+                report.strains_incomplete = report.strains_incomplete + 1;
+                report.strains_unplaced = report.strains_unplaced + 1;
+                report.incomplete_reasons{end+1} = sprintf( ...
+                    '%s: cannot place backgroundStrain %s (not assembled)', ...
+                    shortId(idOf{i}), shortId(ps{p})); %#ok<AGROW>
+                break;
+            end
+        end
+    end
+end
+for k = 1:numel(strainIdx)
+    i = strainIdx(k);
+    if ~assembled(i); continue; end
+    for fr = 1:numel(usedFrags{i})
+        addUse(usedFragments, usedFrags{i}{fr}, idOf{i});
     end
 end
 
@@ -353,10 +400,12 @@ for i = find(isOpenminds)
     end
     who = {};
     if isKey(referrers, idOf{i}); who = referrers(idOf{i}); end
-    if all(ismember(who, consumedStrains))
+    if all(ismember(who, consumedStrains)) && fragmentFullyPlaced(structs{i})
         removeMask(i) = true;
         report.fragments_consumed = report.fragments_consumed + 1;
     else
+        % still referenced by a strain left as v1, or holding a field the
+        % strain's term does not write ([generic stage is lossless]): kept
         report.fragments_retained = report.fragments_retained + 1;
     end
 end
@@ -526,6 +575,87 @@ if ~isempty(syn)
         S.term('', 'synonym'), struct('text', syn), common{:});
 end
 nAssertions = numel(docs);
+end
+
+% ===================== what this pass places =============================
+
+function unplaced = unplacedStrainFields(f, byId, structs)
+%UNPLACEDSTRAINFIELDS The Strain fields this pass would
+%   not write ([generic stage is lossless], Jess Haley, 2026-10-25). Written:
+%   name, description, ontologyIdentifier (the global identifier), ONE species
+%   and ONE genetic strain type (inline, or one resolvable fragment whose name
+%   and ONE identifier are read), phenotype (one), laboratoryCode (one),
+%   synonym (all), backgroundStrain (as `derived_from`, checked by the
+%   caller). Anything else non-empty is unplaced.
+placed = {'name', 'description', 'ontologyIdentifier', 'ontology_identifier', ...
+    'species', 'geneticStrainType', 'genetic_strain_type', ...
+    'backgroundStrain', 'background_strain', 'phenotype', ...
+    'laboratoryCode', 'laboratory_code', 'synonym'};
+unplaced = {};
+fn = fieldnames(f);
+for k = 1:numel(fn)
+    v = f.(fn{k});
+    if isEmptyValue(v); continue; end
+    if ~any(strcmp(fn{k}, placed))
+        unplaced{end+1} = fn{k}; %#ok<AGROW>
+    end
+end
+single = {{'name'}, {'description'}, {'ontologyIdentifier', 'ontology_identifier'}, ...
+    {'phenotype'}, {'laboratoryCode', 'laboratory_code'}};
+for k = 1:numel(single)
+    v = getAny(f, single{k});
+    if (iscell(v) || isstring(v)) && numel(v) > 1
+        unplaced{end+1} = sprintf('%s (%d values)', single{k}{1}, numel(v)); %#ok<AGROW>
+    end
+end
+for termField = {{'species'}, {'geneticStrainType', 'genetic_strain_type'}}
+    v = getAny(f, termField{1});
+    if isEmptyValue(v); continue; end
+    nm = termField{1}{1};
+    if (iscell(v) || isstring(v)) && numel(v) > 1
+        unplaced{end+1} = sprintf('%s (%d values)', nm, numel(v)); %#ok<AGROW>
+        continue;
+    end
+    refs = ndiRefs(v);
+    if isempty(refs); continue; end   % inline: its text is the term's name
+    if ~isKey(byId, refs{1})
+        unplaced{end+1} = sprintf('%s (reference %s not in the batch)', nm, refs{1}); %#ok<AGROW>
+        continue;
+    end
+    ff = openmindsFields(structs{byId(refs{1})});
+    a = charField(ff, {'preferredOntologyIdentifier', 'preferred_ontology_identifier'});
+    b = charField(ff, {'ontologyIdentifier', 'ontology_identifier'});
+    if isempty(charField(ff, {'name'})) && isempty(a) && isempty(b)
+        unplaced{end+1} = sprintf('%s (fragment %s states nothing this pass reads)', nm, refs{1}); %#ok<AGROW>
+    end
+end
+end
+
+function tf = fragmentFullyPlaced(fragment)
+%FRAGMENTFULLYPLACED A Species / GeneticStrainType fragment whose every
+%   non-empty field the strain's term writes: its name and ONE identifier.
+%   Any other field (a Species' definition or synonym, say) means the fragment
+%   is kept, carried as v1, rather than consumed ([generic stage is lossless]).
+ff = openmindsFields(fragment);
+fragPlaced = {'name', 'preferredOntologyIdentifier', ...
+    'preferred_ontology_identifier', 'ontologyIdentifier', 'ontology_identifier'};
+tf = false;
+fn = fieldnames(ff);
+for j = 1:numel(fn)
+    if ~isEmptyValue(ff.(fn{j})) && ~any(strcmp(fn{j}, fragPlaced))
+        return;
+    end
+end
+a = charField(ff, {'preferredOntologyIdentifier', 'preferred_ontology_identifier'});
+b = charField(ff, {'ontologyIdentifier', 'ontology_identifier'});
+if ~isempty(a) && ~isempty(b) && ~strcmp(a, b)
+    return;
+end
+tf = true;
+end
+
+function tf = isEmptyValue(v)
+tf = isempty(v) || ((ischar(v) || (isstring(v) && isscalar(v))) && strlength(strtrim(string(v))) == 0);
 end
 
 % ===================== openMINDS accessors =============================

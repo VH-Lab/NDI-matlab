@@ -181,6 +181,12 @@ arguments
     options.ControlRecords = {}
     options.PresentationTimeFile = ''
     options.PresentationTimeFileStatus = ''
+    % [generic stage is lossless] (Jess Haley, 2026-10-25): true (the default,
+    % the generic stage) refuses a presentation with any field the
+    % decomposition does not write; false runs the recipes regardless -- the
+    % NewStim recipe as a per-software workbook default ([NewStim recipes are
+    % a default], 2026-10-25), and the tests of the recipes themselves.
+    options.LeaveUnplaced (1,1) logical = true
 end
 
 manipBody = []; methodBodies = {};
@@ -210,6 +216,23 @@ for i = 1:numel(earlyStimuli)
     stimulusKinds{i} = newStimKind(stimParameters(earlyStimuli, i));
     report.stimulus_kinds.(stimulusKinds{i}) = ...
         report.stimulus_kinds.(stimulusKinds{i}) + 1;
+end
+
+% ---- lossless: nothing the decomposition cannot place ----------------------
+% [generic stage is lossless] and [partly placed is carried as v1] (Jess Haley,
+% 2026-10-25, did-schema V_eta_go_forward_class_audit.md): a presentation with
+% any v1 field the item, its methods and its covariates do not write -- a
+% grating parameter gratingRecipe does not read (it reads five), a blank's
+% parameters, a Hartley generator parameter the shared basis does not read, a
+% second element where one is read, a stimulus field beside `parameters`, a
+% block field beside stimuli / presentation_order / presentation_time -- is
+% REFUSED: left as it is, so the end of ndi.migrate.local carries it as v1.
+unplaced = unplacedPresentationFields(earlyBlock, earlyStimuli, stimulusKinds, ...
+    ~isempty(sequence));
+report.unplaced_fields = unplaced;
+if ~isempty(unplaced) && options.LeaveUnplaced
+    report.reason = ['unplaced (carried as v1): ' strjoin(unplaced, ', ')];
+    return;
 end
 
 % ---- who received it -------------------------------------------------------
@@ -950,10 +973,73 @@ r = struct( ...
     'hartley_without_enumeration', false, ...
     'notes_not_written_standalone', false, ...
     'entity_id',           '', ...
+    'unplaced_fields',     {{}}, ...
     'reason',              '');
 end
 
 % ===================== v1 readers =========================================
+
+function unplaced = unplacedPresentationFields(block, stimuli, kinds, hartleyRoute)
+%UNPLACEDPRESENTATIONFIELDS The v1 fields of one presentation the
+%   decomposition would not write ([generic stage is lossless], Jess Haley,
+%   2026-10-25). Field names, de-duplicated, in a stable order.
+unplaced = {};
+if isstruct(block)
+    other = setdiff(fieldnames(block), {'stimuli', 'presentation_order', 'presentation_time'});
+    for k = 1:numel(other)
+        if ~isempty(block.(other{k}))
+            unplaced{end+1} = ['stimulus_presentation.' other{k}]; %#ok<AGROW>
+        end
+    end
+    if isfield(block, 'stimuli')
+        raw = block.stimuli;
+        if isstruct(raw); raw = num2cell(raw); end
+        if iscell(raw)
+            for k = 1:numel(raw)
+                if ~isstruct(raw{k}); continue; end
+                other = setdiff(fieldnames(raw{k}), {'parameters'});
+                for j = 1:numel(other)
+                    if ~isempty(raw{k}.(other{j}))
+                        unplaced{end+1} = ['stimuli.' other{j}]; %#ok<AGROW>
+                    end
+                end
+            end
+        end
+    end
+end
+gratingRead = {'angle', 'orientation', 'sFrequency', 'spatial_frequency', 'sf', ...
+    'tFrequency', 'temporal_frequency', 'tf', 'contrast', 'imageType'};
+hartleyRead = {'M', 'K_absmax', 'L_absmax', 'fps', 'contrast', 'sfmax'};
+blankNames = {'isblank', 'is_blank', 'blank'};
+for i = 1:numel(stimuli)
+    p = stimParameters(stimuli, i);
+    fn = fieldnames(p);
+    read = [];
+    if hartleyRoute
+        read = hartleyRead;
+    elseif strcmp(kinds{i}, 'grating')
+        read = gratingRead;
+    elseif strcmp(kinds{i}, 'blank')
+        read = {};
+    end
+    if ~iscell(read)
+        continue;   % every other kind: every parameter is an entry (stimulusRecipe)
+    end
+    for k = 1:numel(fn)
+        v = p.(fn{k});
+        if isempty(v) || any(strcmp(fn{k}, blankNames)); continue; end
+        if ~any(strcmp(fn{k}, read))
+            unplaced{end+1} = ['parameters.' fn{k}]; %#ok<AGROW>
+        elseif isnumeric(v) && numel(v) > 1
+            unplaced{end+1} = ['parameters.' fn{k} ' (more than one value)']; %#ok<AGROW>
+        elseif ~hartleyRoute && strcmp(fn{k}, 'imageType') ...
+                && ~(isnumeric(v) && isscalar(v) && any(v == [1 2]))
+            unplaced{end+1} = 'parameters.imageType'; %#ok<AGROW>
+        end
+    end
+end
+unplaced = unique(unplaced, 'stable');
+end
 
 function block = presentationBlock(body)
 block = struct();

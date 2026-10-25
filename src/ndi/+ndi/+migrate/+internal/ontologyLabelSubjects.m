@@ -170,6 +170,7 @@ report = struct( ...
     'unresolved_target_not_in_batch',      0, ...
     'unresolved_target_no_time_reference', 0, ...
     'unresolved_no_ontology_node',         0, ...
+    'unresolved_unplaced_fields',          0, ...
     'changed',                             false);
 
 if isempty(migratedStructs)
@@ -261,6 +262,17 @@ for i = 1:numel(labelIdx)
             report.unresolved_no_ontology_node + 1;
         continue;
     end
+    % [generic stage is lossless] and [partly placed is carried as v1] (Jess
+    % Haley, 2026-10-25, did-schema V_eta_go_forward_class_audit.md): the
+    % observation writes the label's `ontology_node` and its `document_id`
+    % edge (as `derived_from`) and nothing else. A label stating any other
+    % field or edge is left as it is (carried as v1 at the end of
+    % ndi.migrate.local), counted here.
+    if labelHasUnplaced(b)
+        report.unresolved_unplaced_fields = ...
+            report.unresolved_unplaced_fields + 1;
+        continue;
+    end
 
     [body, rel] = termObservationBody(b, target, targetId, node, LABEL_VARIABLE);
     plan(end+1) = struct( ...                                        %#ok<AGROW>
@@ -297,6 +309,37 @@ rel = S.relation(body.base.id, targetId, ...
 end
 
 % ===================== readers =========================================
+
+function tf = labelHasUnplaced(b)
+%LABELHASUNPLACED A non-empty label field other than ontology_node, or a
+%   non-empty edge other than document_id ([generic stage is lossless]).
+tf = false;
+for blk = {'ontology_label', 'ontologyLabel'}
+    if ~isfield(b, blk{1}) || ~isstruct(b.(blk{1})) || ~isscalar(b.(blk{1}))
+        continue;
+    end
+    fn = setdiff(fieldnames(b.(blk{1})), {'ontology_node', 'ontologyNode'});
+    for k = 1:numel(fn)
+        if ~isempty(b.(blk{1}).(fn{k}))
+            tf = true;
+            return;
+        end
+    end
+end
+if isfield(b, 'depends_on') && ~isempty(b.depends_on)
+    deps = normaliseDeps(b.depends_on);
+    for k = 1:numel(deps)
+        d = deps{k};
+        if ~isstruct(d) || ~isfield(d, 'name'); continue; end
+        if any(strcmp(char(d.name), {'document_id', 'session_id'})); continue; end
+        if ~isempty(depKeyValue(d))
+            tf = true;
+            return;
+        end
+    end
+end
+end
+
 
 function v = labelNode(b)
 %LABELNODE `ontologyLabel.ontologyNode`, snake-cased by universalRenames.
