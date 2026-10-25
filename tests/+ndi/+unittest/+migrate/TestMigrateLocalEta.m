@@ -812,6 +812,12 @@ function body = makeGratingPresentation(presId, stimEl)
 %MAKEGRATINGPRESENTATION The two-grating presentation (45 and 90 degrees).
 body = makeStimulusPresentation(presId, stimEl);
 body.stimulus_presentation.stimuli = [gratingStim(45) gratingStim(90)];
+% the epoch string every real presentation carries (stimulus_presentation.json
+% lists `epochid` as a superclass): the v1 document is carried as it stands,
+% so it must be one its tombstone accepts
+body.document_class.superclasses = [body.document_class.superclasses, ...
+    struct('class_name', 'epochid', 'class_version', '1.0.0')];
+body.epochid = struct('epochid', 't00001');
 end
 
 function s = noiseStim(seed)
