@@ -184,9 +184,9 @@ function modsAgreed = installGit(result, options)
     end
 
     modsAgreed = true;
-    % ndi_install updates only the repositories in requirements.txt, which
-    % does not list NDI-matlab, so pull NDI-matlab itself first. That also
-    % brings in main's ndi_install.m.
+    % Pull NDI-matlab itself first, so that main's ndi_install.m is the one
+    % run: an older ndi_install updates only the repositories listed in
+    % requirements.txt, which does not include NDI-matlab.
     if result.CommitsBehind > 0
         fprintf('Updating NDI-matlab in %s...\n', repoRoot);
         pullRepo(repoRoot, "origin main");
