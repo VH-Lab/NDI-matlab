@@ -11,7 +11,7 @@ classdef updateDialog_test < matlab.unittest.TestCase
 
     methods (Test)
         function testCalculatorUpdate(testCase)
-            r = updateDialog_test.result();
+            r = ndi.unittest.gui.nav.updateDialog_test.result();
             r.Calculators(1).Status = "behind";
             r.Calculators(1).CommitsBehind = 2;
             r.CalculatorUpdateAvailable = true;
@@ -24,14 +24,14 @@ classdef updateDialog_test < matlab.unittest.TestCase
         end
 
         function testNothingToUpdate(testCase)
-            d = ndi.gui.nav.updateDialog(updateDialog_test.result(), 'Visible', 'off');
+            d = ndi.gui.nav.updateDialog(ndi.unittest.gui.nav.updateDialog_test.result(), 'Visible', 'off');
             testCase.addTeardown(@() delete(d.Figure));
             testCase.verifyEqual(char(d.UpdateButton.Enable), 'off');
             testCase.verifyEqual(char(d.CancelButton.Text), 'Close');
         end
 
         function testDetailsAndChoice(testCase)
-            r = updateDialog_test.result();
+            r = ndi.unittest.gui.nav.updateDialog_test.result();
             r.UpdateAvailable = true;
             r.CommitsBehind = 1;
             r.Modifications = struct('Name', "NDI-matlab", 'Path', r.RepoRoot, ...

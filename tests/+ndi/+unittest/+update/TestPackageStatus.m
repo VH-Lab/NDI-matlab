@@ -4,7 +4,7 @@ classdef TestPackageStatus < matlab.unittest.TestCase
 
     methods (Test)
         function testGitUpToDate(testCase)
-            [rows, summary] = ndi.update.packageStatus(TestPackageStatus.gitResult());
+            [rows, summary] = ndi.update.packageStatus(ndi.unittest.update.TestPackageStatus.gitResult());
             testCase.verifyEqual([rows.Name], ["NDI-matlab", "depA", "NDIcalc-vis-matlab"]);
             testCase.verifyEqual([rows.Kind], ["ndi", "dependency", "calculator"]);
             testCase.verifyEqual([rows.Status], repmat("Up to date", 1, 3));
@@ -14,12 +14,12 @@ classdef TestPackageStatus < matlab.unittest.TestCase
         end
 
         function testBehindDependencyWithEditsIsStashed(testCase)
-            r = TestPackageStatus.gitResult();
+            r = ndi.unittest.update.TestPackageStatus.gitResult();
             r.UpdateAvailable = true;
             r.Status = "updateAvailable";
             r.Dependencies(1).Status = "behind";
             r.Dependencies(1).CommitsBehind = 3;
-            r.Modifications = TestPackageStatus.mods("depA", ["a.m"; "b.m"], strings(0, 1), 0);
+            r.Modifications = ndi.unittest.update.TestPackageStatus.mods("depA", ["a.m"; "b.m"], strings(0, 1), 0);
             [rows, summary] = ndi.update.packageStatus(r);
             dep = rows(2);
             testCase.verifyEqual(dep.Status, "3 new commits");
@@ -35,10 +35,10 @@ classdef TestPackageStatus < matlab.unittest.TestCase
         end
 
         function testUntrackedFileInTheWayBlocks(testCase)
-            r = TestPackageStatus.gitResult();
+            r = ndi.unittest.update.TestPackageStatus.gitResult();
             r.UpdateAvailable = true;
             r.CommitsBehind = 1;
-            r.Modifications = TestPackageStatus.mods("NDI-matlab", strings(0, 1), "new.m", 0);
+            r.Modifications = ndi.unittest.update.TestPackageStatus.mods("NDI-matlab", strings(0, 1), "new.m", 0);
             [rows, summary] = ndi.update.packageStatus(r);
             testCase.verifyTrue(rows(1).Blocked);
             testCase.verifyEqual(rows(1).NoteLevel, "error");
@@ -48,7 +48,7 @@ classdef TestPackageStatus < matlab.unittest.TestCase
         end
 
         function testOtherBranchBlocks(testCase)
-            r = TestPackageStatus.gitResult();
+            r = ndi.unittest.update.TestPackageStatus.gitResult();
             r.UpdateAvailable = true;
             r.CommitsBehind = 2;
             r.Branch = "myFeature";
@@ -58,8 +58,8 @@ classdef TestPackageStatus < matlab.unittest.TestCase
         end
 
         function testEditsInPackageNotUpdatedAreLeftAlone(testCase)
-            r = TestPackageStatus.gitResult();
-            r.Modifications = TestPackageStatus.mods("NDIcalc-vis-matlab", "x.m", strings(0, 1), 0);
+            r = ndi.unittest.update.TestPackageStatus.gitResult();
+            r.Modifications = ndi.unittest.update.TestPackageStatus.mods("NDIcalc-vis-matlab", "x.m", strings(0, 1), 0);
             [rows, summary] = ndi.update.packageStatus(r);
             testCase.verifyEqual(rows(3).NoteLevel, "info");
             testCase.verifySubstring(rows(3).Notes(1), "not touched");
@@ -67,7 +67,7 @@ classdef TestPackageStatus < matlab.unittest.TestCase
         end
 
         function testCalculatorBehind(testCase)
-            r = TestPackageStatus.gitResult();
+            r = ndi.unittest.update.TestPackageStatus.gitResult();
             r.Calculators(1).Status = "behind";
             r.Calculators(1).CommitsBehind = 1;
             r.CalculatorUpdateAvailable = true;
@@ -79,7 +79,7 @@ classdef TestPackageStatus < matlab.unittest.TestCase
         end
 
         function testMissingDependencyIsInstalled(testCase)
-            r = TestPackageStatus.gitResult();
+            r = ndi.unittest.update.TestPackageStatus.gitResult();
             r.UpdateAvailable = true;
             r.Dependencies(1).Status = "missing";
             rows = ndi.update.packageStatus(r);
@@ -88,7 +88,7 @@ classdef TestPackageStatus < matlab.unittest.TestCase
         end
 
         function testToolboxUpdate(testCase)
-            r = TestPackageStatus.toolboxResult();
+            r = ndi.unittest.update.TestPackageStatus.toolboxResult();
             [rows, summary] = ndi.update.packageStatus(r);
             testCase.verifyEqual(rows(1).Name, "NDI-matlab toolbox");
             testCase.verifyEqual(rows(1).Installed, "1.2.0");
@@ -101,7 +101,7 @@ classdef TestPackageStatus < matlab.unittest.TestCase
         end
 
         function testToolboxWithoutMltbxBlocks(testCase)
-            r = TestPackageStatus.toolboxResult();
+            r = ndi.unittest.update.TestPackageStatus.toolboxResult();
             r.MltbxUrl = "";
             [rows, summary] = ndi.update.packageStatus(r);
             testCase.verifyTrue(rows(1).Blocked);
@@ -109,7 +109,7 @@ classdef TestPackageStatus < matlab.unittest.TestCase
         end
 
         function testPythonNotInstalledByNdiIsNotUpdated(testCase)
-            r = TestPackageStatus.toolboxResult();
+            r = ndi.unittest.update.TestPackageStatus.toolboxResult();
             r.UpdateAvailable = false;
             r.Status = "upToDate";
             r.Python = struct('Installed', true, 'Kind', "other", 'Status', "updateAvailable", ...
@@ -125,11 +125,11 @@ classdef TestPackageStatus < matlab.unittest.TestCase
         end
 
         function testDialogTable(testCase)
-            r = TestPackageStatus.gitResult();
+            r = ndi.unittest.update.TestPackageStatus.gitResult();
             r.Calculators(1).Status = "behind";
             r.Calculators(1).CommitsBehind = 2;
             r.CalculatorUpdateAvailable = true;
-            r.Modifications = TestPackageStatus.mods("NDIcalc-vis-matlab", "x.m", strings(0, 1), 0);
+            r.Modifications = ndi.unittest.update.TestPackageStatus.mods("NDIcalc-vis-matlab", "x.m", strings(0, 1), 0);
             rows = ndi.update.packageStatus(r);
             data = ndi.gui.nav.updateDialog.tableData(rows);
             testCase.verifySize(data, [3 numel(ndi.gui.nav.updateDialog.Columns)]);
@@ -140,7 +140,7 @@ classdef TestPackageStatus < matlab.unittest.TestCase
         end
 
         function testNoteTextShowsMostSeriousNote(testCase)
-            r = TestPackageStatus.toolboxResult();
+            r = ndi.unittest.update.TestPackageStatus.toolboxResult();
             r.MltbxUrl = "";
             rows = ndi.update.packageStatus(r);
             txt = ndi.gui.nav.updateDialog.noteText(rows(1));
@@ -163,7 +163,7 @@ classdef TestPackageStatus < matlab.unittest.TestCase
     methods (Static, Access = private)
         function r = gitResult()
             % An up-to-date git install with one dependency and one calculator.
-            r = TestPackageStatus.baseResult("git");
+            r = ndi.unittest.update.TestPackageStatus.baseResult("git");
             r.RepoRoot = "/tools/NDI-matlab";
             r.Branch = "main";
             r.CurrentVersion = "1111111";
@@ -171,13 +171,13 @@ classdef TestPackageStatus < matlab.unittest.TestCase
             r.CommitsBehind = 0;
             r.CommitsAhead = 0;
             r.Status = "upToDate";
-            r.Dependencies = TestPackageStatus.repo("depA", "/tools/depA");
-            r.Calculators = TestPackageStatus.repo("NDIcalc-vis-matlab", "/tools/NDIcalc-vis-matlab");
+            r.Dependencies = ndi.unittest.update.TestPackageStatus.repo("depA", "/tools/depA");
+            r.Calculators = ndi.unittest.update.TestPackageStatus.repo("NDIcalc-vis-matlab", "/tools/NDIcalc-vis-matlab");
         end
 
         function r = toolboxResult()
             % A toolbox install with a newer release.
-            r = TestPackageStatus.baseResult("toolbox");
+            r = ndi.unittest.update.TestPackageStatus.baseResult("toolbox");
             r.Status = "updateAvailable";
             r.UpdateAvailable = true;
             r.CurrentVersion = "1.2.0";
@@ -192,7 +192,7 @@ classdef TestPackageStatus < matlab.unittest.TestCase
             r = struct('InstallType', type, 'Status', "unknown", 'UpdateAvailable', false, ...
                 'CurrentVersion', "", 'LatestVersion', "", 'Message', "", 'Branch', "", ...
                 'CommitsBehind', NaN, 'CommitsAhead', NaN, 'HasModifications', false, ...
-                'Modifications', TestPackageStatus.mods(strings(1, 0), {}, {}, {}), ...
+                'Modifications', ndi.unittest.update.TestPackageStatus.mods(strings(1, 0), {}, {}, {}), ...
                 'Dependencies', noRepos, 'Calculators', noRepos, ...
                 'CalculatorUpdateAvailable', false, 'ReleaseUrl', "", 'MltbxUrl', "", ...
                 'BothInstalled', false, 'RepoRoot', "", ...
