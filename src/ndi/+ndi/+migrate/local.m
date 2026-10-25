@@ -217,6 +217,15 @@ function result = local(path, options)
     lockHandle = acquireLock(lockFile);
     lockCleanup = onCleanup(@() releaseLock(lockHandle));
 
+    % A document whose v1 source states no creation time carries the time the
+    % migration ran ([no invented values], Jess Haley, 2026-10-25): one time
+    % for the whole pipeline, pinned here so every DID pass and NDI's second
+    % pass write the same one, and released when this returns.
+    if isempty(did2.convert.migrationTime('get'))
+        did2.convert.migrationTime('pin');
+        unpinMigrationTime = onCleanup(@() did2.convert.migrationTime('unpin'));
+    end
+
     dstPath = fullfile(ndiDir, [options.TargetVersion '.sqlite']);
     quarantineFile = fullfile(ndiDir, 'migrate_quarantine.json');
     backupDir = fullfile(path, '.v1-backup');

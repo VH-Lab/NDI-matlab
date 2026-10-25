@@ -815,7 +815,7 @@ else; base = lid(1:at(1)-1); dom = lid(at(1):end); end
 end
 
 function v = dsOr(v)
-if isempty(v); v = '2024-01-01T00:00:00.000Z'; end
+if isempty(v); v = did2.convert.migrationTime(); end   % [no invented values]
 end
 
 function c = className(s)
