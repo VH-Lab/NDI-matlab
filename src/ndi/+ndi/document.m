@@ -131,8 +131,7 @@ classdef document < did.document
             useEdge = false;
             if ~hasField
                 useEdge = ~isempty(ndi.v2.edgeIds(p, 'session_id')) || ...
-                    (isfield(p, 'document_class') && isfield(p.document_class, 'schema_version') ...
-                    && strcmp(char(p.document_class.schema_version), 'V_eta'));
+                    did2.schema.isV2Stamp(p);
             end
             if useEdge
                 ndi_document_obj = ndi_document_obj.set_dependency_value('session_id', ...
