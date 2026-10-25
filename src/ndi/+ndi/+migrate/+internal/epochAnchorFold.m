@@ -623,7 +623,7 @@ if toleranceSeconds > 0
         struct('seconds', toleranceSeconds));
 end
 b.relative_time_reference = struct('value', value);
-b.document_class.schema_version = 'did_v2';   % the V2 stamp (Jess Haley, 2026-10-25 [document stamps]: 'did_v2')
+b.document_class.schema_version = did2.schema.v2Stamp();   % the V2 stamp (Jess Haley, 2026-10-25 [document stamps]: 'did_v2')
 end
 
 
