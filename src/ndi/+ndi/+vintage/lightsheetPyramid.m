@@ -38,9 +38,11 @@ function [p, vintage] = lightsheetPyramid(pyramidDoc, session, levelRecs)
 %     pyramid_name     parsed from the store body's `description`
 %                      ('NGFF multiscales name "..."'); '' when there is no
 %                      store body (or no SESSION).
-%     pyramid_type     '' always: the migration DROPS it (Jess 2026-10-15; it
-%                      repeats the levels' summary statistic, and the v1
-%                      docs say not to trust it).
+%     pyramid_type     parsed from the same `description`
+%                      ('NGFF multiscales type "..."'), verbatim source text
+%                      ([pyramid type kept as text], Jess Haley, 2026-10-25;
+%                      it was dropped before, Jess 2026-10-15). Descriptive
+%                      only: branch on the levels' reduction_function.
 %     pipeline_version ''. It became a `version` text_assertion about the
 %                      software entity, not read here.
 %     byte_order       level 0's, if given.
@@ -83,6 +85,7 @@ if ~isempty(session)
         d = blockValue(sp, 'description');
         if ~isempty(d)
             p.pyramid_name = quoted(charOr(d), 'NGFF multiscales name');
+            p.pyramid_type = quoted(charOr(d), 'NGFF multiscales type');
         end
         dims = blockValue(sp, 'dimensions');
         if ~isempty(dims) && isempty(frame)

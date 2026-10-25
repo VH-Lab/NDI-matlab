@@ -200,8 +200,10 @@ classdef TestLightsheetVintage < matlab.unittest.TestCase
         end
 
         function testAMigratedPyramidsLabelIsItsNotes(testCase)
-            % Jess 2026-10-15: the label stays on the observation's notes;
-            % pyramid_type is dropped. Notes the batch pass did not split
+            % Jess 2026-10-15: the label stays on the observation's notes.
+            % pyramid_type is read from the store body's description
+            % ([pyramid type kept as text], 2026-10-25); with no session there
+            % is no store body, so it reads ''. Notes the batch pass did not split
             % (label, separator, the store body's text) give the label alone.
             F = ndi.unittest.vintage.LightsheetFixtures;
             s = F.pyramid('pyr_ls_1', 'sw_1');
