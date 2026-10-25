@@ -354,12 +354,7 @@ classdef TestMigrateLocal < matlab.unittest.TestCase
 
             % the migrated document keeps its V2 stamp and its migrated shape
             gotF = db.get(filt.base.id).toStruct();
-            % DID-matlab writes this stamp (v1_to_v2): 'V_eta' on DID-matlab V2
-            % until its writers stamp 'did_v2' ([document stamps]); either is a
-            % V2 stamp until 'V_eta' stops being accepted, when this checks
-            % did2.schema.v2Stamp exactly.
-            verifyTrue(testCase, did2.schema.isV2Stamp(gotF), ...
-                'the migrated document must carry a V2 stamp');
+            verifyEqual(testCase, gotF.document_class.schema_version, did2.schema.v2Stamp());
             verifyTrue(testCase, isfield(gotF.filter, 'filter_type'));
             verifyFalse(testCase, isfield(gotF.filter, 'type'));
         end
@@ -398,12 +393,7 @@ classdef TestMigrateLocal < matlab.unittest.TestCase
             expected = a;
             expected.document_class.schema_version = 'did_v1';
             verifyTrue(testCase, isequaln(out{1}.toStruct(), expected));
-            % DID-matlab writes this stamp (v1_to_v2): 'V_eta' on DID-matlab V2
-            % until its writers stamp 'did_v2' ([document stamps]); either is a
-            % V2 stamp until 'V_eta' stops being accepted, when this checks
-            % did2.schema.v2Stamp exactly.
-            verifyTrue(testCase, did2.schema.isV2Stamp(out{2}.toStruct()), ...
-                'the migrated document must carry a V2 stamp');
+            verifyEqual(testCase, out{2}.toStruct().document_class.schema_version, did2.schema.v2Stamp());
         end
     end
 end

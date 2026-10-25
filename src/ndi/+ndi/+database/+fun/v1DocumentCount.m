@@ -1,17 +1,18 @@
 function [n, how] = v1DocumentCount(db)
-%V1DOCUMENTCOUNT How many documents in an NDI database are not V2 (V_eta) documents.
+%V1DOCUMENTCOUNT How many documents in an NDI database are not V2 (did_v2) documents.
 %
 %   [N, HOW] = ndi.database.fun.v1DocumentCount(DB) returns the number N of
 %   documents in the ndi.database DB that are stored as v1 documents, that
 %   is, documents that ndi.database.internal.applyReadNormalization reads as
-%   stored because they carry no V_eta stamp. HOW is a short description of
+%   stored because they carry no V2 stamp. HOW is a short description of
 %   what was counted, for a message.
 %
 %   A V2 document is one whose document_class.schema_version is a V2 stamp,
-%   did2.schema.v2Stamps ('did_v2', and 'V_eta' only until the writers stamp
-%   'did_v2': Decided by Jess Haley, 2026-10-25 [document stamps], [V_eta
-%   stamp not accepted]). Every other document is counted, including a v1
-%   document ndi.migrate.local carried unchanged and stamped 'did_v1'.
+%   did2.schema.v2Stamps ('did_v2': Decided by Jess Haley, 2026-10-25
+%   [document stamps]; 'V_eta' is not accepted, [V_eta stamp not accepted]).
+%   Every other document is counted, including a v1 document
+%   ndi.migrate.local carried unchanged and stamped 'did_v1', and one still
+%   stamped 'V_eta'.
 %
 %   How each backend is counted, without reading every document:
 %

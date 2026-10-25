@@ -298,7 +298,7 @@ for i = 1:numel(aks)
         else
             cp = S.setAbout(cp, newId);
         end
-        cp.document_class.schema_version = 'did_v2';   % the V2 stamp (Jess Haley, 2026-10-25 [document stamps]: 'did_v2')
+        cp.document_class.schema_version = did2.schema.v2Stamp();   % the V2 stamp (Jess Haley, 2026-10-25 [document stamps]: 'did_v2')
         plan.minted{end+1} = cp; %#ok<AGROW>
         report.new_animal_strain_assertions_copied = ...
             report.new_animal_strain_assertions_copied + 1;

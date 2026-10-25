@@ -61,7 +61,7 @@ classdef etaShape
                     'class_version', '1.0.0'); %#ok<AGROW>
             end
             dc = struct('class_name', className, 'class_version', '1.0.0', ...
-                'superclasses', sc, 'schema_version', 'did_v2');   % the V2 stamp (Jess Haley, 2026-10-25 [document stamps]: 'did_v2')
+                'superclasses', sc, 'schema_version', did2.schema.v2Stamp());   % the V2 stamp (Jess Haley, 2026-10-25 [document stamps]: 'did_v2')
         end
 
         function names = ancestors(className)
