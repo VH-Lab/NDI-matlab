@@ -529,7 +529,7 @@ end
 function b = body(cls, id, s, deps)
 b = struct();
 b.document_class = struct('class_name', cls, 'class_version', '1.0.0', ...
-    'superclasses', struct('class_name', {}, 'class_version', {}), 'schema_version', 'V_eta');
+    'superclasses', struct('class_name', {}, 'class_version', {}), 'schema_version', 'did_v2');
 b.depends_on = deps;
 b.base = struct('id', id, 'session_id', s, 'name', '', 'creation_timestamp', 'x');
 end

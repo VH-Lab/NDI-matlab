@@ -21,7 +21,7 @@ classdef etaShape
 %       which, from the schema in use).
 %
 %   This class is pure struct assembly: no schema cache, no converter, no
-%   database. Every minted body is tagged schema_version 'V_eta' and is
+%   database. Every minted body is tagged schema_version 'did_v2' and is
 %   folded back through did2.convert.v1_to_v2 by its caller, where
 %   ensureClassBlocks rewrites the superclass list from the loaded schema
 %   (reading the value kind at the position this class writes it) and
@@ -61,7 +61,7 @@ classdef etaShape
                     'class_version', '1.0.0'); %#ok<AGROW>
             end
             dc = struct('class_name', className, 'class_version', '1.0.0', ...
-                'superclasses', sc, 'schema_version', 'V_eta');
+                'superclasses', sc, 'schema_version', did2.schema.v2Stamp());   % the V2 stamp (Jess Haley, 2026-10-25 [document stamps]: 'did_v2')
         end
 
         function names = ancestors(className)

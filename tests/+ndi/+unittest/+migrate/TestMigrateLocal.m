@@ -354,7 +354,7 @@ classdef TestMigrateLocal < matlab.unittest.TestCase
 
             % the migrated document keeps its V2 stamp and its migrated shape
             gotF = db.get(filt.base.id).toStruct();
-            verifyEqual(testCase, gotF.document_class.schema_version, 'V_eta');
+            verifyEqual(testCase, gotF.document_class.schema_version, did2.schema.v2Stamp());
             verifyTrue(testCase, isfield(gotF.filter, 'filter_type'));
             verifyFalse(testCase, isfield(gotF.filter, 'type'));
         end
@@ -393,7 +393,7 @@ classdef TestMigrateLocal < matlab.unittest.TestCase
             expected = a;
             expected.document_class.schema_version = 'did_v1';
             verifyTrue(testCase, isequaln(out{1}.toStruct(), expected));
-            verifyEqual(testCase, out{2}.toStruct().document_class.schema_version, 'V_eta');
+            verifyEqual(testCase, out{2}.toStruct().document_class.schema_version, did2.schema.v2Stamp());
         end
     end
 end

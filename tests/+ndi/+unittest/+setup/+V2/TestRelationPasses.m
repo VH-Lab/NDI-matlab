@@ -149,7 +149,7 @@ classdef TestRelationPasses < matlab.unittest.TestCase
             p = struct();
             p.document_class = struct('class_name', 'entity', 'class_version', '1.0.0', ...
                 'superclasses', struct('class_name', {'base'}, 'class_version', {'1.0.0'}), ...
-                'schema_version', 'V_eta');
+                'schema_version', 'did_v2');
             p.depends_on = struct('name', {'session_id'}, 'document_id', {sid});
             p.base = struct('id', sid, 'creation_timestamp', '2026-10-20T00:00:00.000Z');
             d = ndi.document(p);

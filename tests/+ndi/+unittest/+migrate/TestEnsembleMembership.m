@@ -81,7 +81,7 @@ classdef TestEnsembleMembership < matlab.unittest.TestCase
             testCase.verifyTrue(any(strcmp(supers, 'relation')));
             testCase.verifyFalse(any(strcmp(supers, 'subject_relation')));
             testCase.verifyEqual(rel.document_class.class_name, 'directed_relation');
-            testCase.verifyEqual(rel.document_class.schema_version, 'V_eta');
+            testCase.verifyEqual(rel.document_class.schema_version, 'did_v2');
             testCase.verifyNotEmpty(rel.base.id);
             % the session id is a field, or the `session_id` edge on a
             % schema that keeps it as one (did-schema #88)
@@ -771,7 +771,7 @@ for i = 1:numel(supers)
     sc(i) = struct('class_name', supers{i}, 'class_version', '1.0.0');
 end
 x = struct('class_name', name, 'class_version', '1.0.0', ...
-    'superclasses', sc, 'schema_version', 'V_eta');
+    'superclasses', sc, 'schema_version', 'did_v2');
 end
 
 function x = dep(name, value)

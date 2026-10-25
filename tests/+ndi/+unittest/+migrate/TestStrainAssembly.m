@@ -43,7 +43,7 @@ classdef TestStrainAssembly < matlab.unittest.TestCase
             testCase.verifyNotEmpty(op50);
             testCase.verifyEqual(op50.base.id, 'op50_doc');
             testCase.verifyEqual(op50.document_class.class_name, 'entity');
-            testCase.verifyEqual(op50.document_class.schema_version, 'V_eta');
+            testCase.verifyEqual(op50.document_class.schema_version, 'did_v2');
             supers = {op50.document_class.superclasses.class_name};
             testCase.verifyEqual(supers, {'base'});
             testCase.verifyTrue(ndi.v2.vocabIs('entity_type', op50.entity.type, 'strain'));
@@ -480,7 +480,7 @@ for i = 1:numel(supers)
     sc(i) = struct('class_name', supers{i}, 'class_version', '1.0.0');
 end
 x = struct('class_name', name, 'class_version', '1.0.0', ...
-    'superclasses', sc, 'schema_version', 'V_eta');
+    'superclasses', sc, 'schema_version', 'did_v2');
 end
 
 function x = dep(name, value)

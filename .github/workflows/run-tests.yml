@@ -55,6 +55,27 @@ jobs:
       - name: Check out repo
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
 
+      # DID-matlab: the DID-matlab branch with this NDI-matlab branch's name,
+      # else V2 ([NDI CI picks DID branch], Jess Haley, 2026-10-25), so a
+      # DID/NDI pair is tested together. MatBox installs DID-matlab from the
+      # requirements files, so the pin there is rewritten.
+      - name: Pick the DID-matlab branch
+        env:
+          NDI_BRANCH: ${{ github.head_ref || github.ref_name }}
+        run: |
+          set -euo pipefail
+          ref=V2
+          if [ -n "${NDI_BRANCH:-}" ] && [ "$NDI_BRANCH" != "main" ] \
+             && [ -n "$(git ls-remote https://github.com/VH-Lab/DID-matlab.git "refs/heads/$NDI_BRANCH")" ]; then
+            ref="$NDI_BRANCH"
+          fi
+          echo "PICKED: DID-matlab ref $ref (NDI branch '${NDI_BRANCH:-}')"
+          for f in requirements.txt tests/requirements.txt; do
+            [ -f "$f" ] || continue
+            sed -i -E "s#^(https://github.com/VH-[Ll]ab/DID-matlab)(@.*)?\$#\\1@${ref}#" "$f"
+          done
+          grep -i did-matlab requirements.txt tests/requirements.txt || true
+
       # THE V_eta SCHEMA (2026-10-24, Jess Haley: install it here rather than
       # let the schema-dependent tests skip). Without DID_SCHEMA_PATH the
       # V_eta migration and V2 import tests filter themselves out by

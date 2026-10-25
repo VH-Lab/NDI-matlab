@@ -1561,7 +1561,7 @@ function [convertResult, report] = resolvePathS(convertResult, options, mode)
         return;
     end
     % fold the minted part entity / kind assertion / part_of bodies through
-    % v1_to_v2: they are tagged schema_version 'V_eta', so the converter
+    % v1_to_v2: they are tagged schema_version 'did_v2', so the converter
     % short-circuits them (isAlreadyTarget) to ensureClassBlocks + validate
     % rather than re-migrating -- the same footing the deferred-resolution pass
     % uses.
@@ -1748,7 +1748,7 @@ function [convertResult, report] = resolveEnsembleMembership(convertResult, ...
         keptDocs{k} = did2.document(kept{k});
     end
     convertResult.migrated = keptDocs;
-    % The minted relations are tagged schema_version 'V_eta', so v1_to_v2
+    % The minted relations are tagged schema_version 'did_v2', so v1_to_v2
     % short-circuits them (isAlreadyTarget) to ensureClassBlocks + validate --
     % the same footing the deferred-resolution and Path-S passes use.
     sub = did2.convert.v1_to_v2(minted, ...
@@ -2133,7 +2133,7 @@ function [convertResult, report] = resolveOntologyLabelSubjects(convertResult, o
 %   logic, no converter, no schema) and returns a plan carrying a ready V_eta
 %   body per resolvable label. This function does the FOLD, one label at a time,
 %   through did2.convert.v1_to_v2 at TargetVersion V_eta -- where the body is
-%   tagged schema_version 'V_eta' and is therefore short-circuited
+%   tagged schema_version 'did_v2' and is therefore short-circuited
 %   (isAlreadyTarget) to ensureClassBlocks + validate, the same footing Path-S
 %   and ensembleMembership use for minted bodies.
 %
@@ -2421,7 +2421,7 @@ function [convertResult, report] = resolveSubjectStrainAssembly(convertResult, b
 %   struct logic, no converter, no schema). This wrapper does the two things
 %   that need the converter: rewrap the survivors (whose edges changed) and
 %   fold the minted `strain` bodies through did2.convert.v1_to_v2 at
-%   TargetVersion V_eta, where they are tagged schema_version 'V_eta' and are
+%   TargetVersion V_eta, where they are tagged schema_version 'did_v2' and are
 %   therefore short-circuited (isAlreadyTarget) to ensureClassBlocks +
 %   validate, the same footing Path-S, ensembleMembership and (4) use.
 %

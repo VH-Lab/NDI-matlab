@@ -6,8 +6,8 @@ function ndiDocumentObj = applyReadNormalization(rawDoc)
 %   ndi.document. It converts NOTHING between schema versions:
 %
 %     - a V2 document (document_class.schema_version a V2 stamp,
-%       did2.schema.v2Stamps: 'did_v2', and 'V_eta' only until the writers
-%       stamp 'did_v2'; no v1 underscore markers) is read as V2. The only
+%       did2.schema.v2Stamps: 'did_v2'; 'V_eta' is not accepted; no v1
+%       underscore markers) is read as V2. The only
 %       change is did2.convert.ensureClassBlocks, which pads an empty
 %       property block for any class of its V_eta superclass chain the
 %       stored body lacks.

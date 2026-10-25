@@ -219,7 +219,7 @@ end
 
 function body = makeVEtaBody(name)
 body = makeV1Body(name);
-body.document_class.schema_version = 'V_eta';
+body.document_class.schema_version = 'did_v2';
 end
 
 function s = pad16(name)

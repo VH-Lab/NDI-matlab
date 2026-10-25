@@ -29,10 +29,15 @@ on:
   #
   # 2026-09-23: touched to re-run Soph on the ndi_document2ndi_object read-path
   # fix (V2-merge break) on the fixed head, validating against did-schema main.
+  #
+  # PAUSED 2026-10-25 (Jess Haley: "Can we just stop running soph for now?"):
+  # Soph no longer runs when its test changes, only when THIS file does.
+  # workflow_dispatch is not offered (this file is not on the default
+  # branch), so to run Soph by hand, bump the token below and push.
+  #   soph-run-token: 1
   push:
     paths:
       - '.github/workflows/test-eta-migrate-soph.yml'
-      - 'tests/*ndi/*unittest/*migrate/TestMigrateLocalEtaSoph.m'
   workflow_dispatch:
     inputs:
       ref:
@@ -57,7 +62,8 @@ jobs:
       # did-schema #88 merged into main and DID-matlab #218 into V2
       # (2026-10-23): validate against them. A workflow_dispatch input still
       # overrides the DID-matlab ref.
-      DID_MATLAB_REF: ${{ inputs.ref || 'V2' }}
+      DID_MATLAB_REQUESTED: ${{ inputs.ref }}
+      NDI_BRANCH: ${{ github.head_ref || github.ref_name }}
       DID_SCHEMA_REF: main
     steps:
       - name: Check out NDI-matlab
@@ -83,6 +89,17 @@ jobs:
             echo "$3=$sha" >> "$GITHUB_ENV"
           }
           resolve Waltham-Data-Science/did-schema "$DID_SCHEMA_REF" DID_SCHEMA_SHA
+          # DID-matlab: the requested ref, else the DID-matlab branch with this
+          # NDI-matlab branch's name, else V2 ([NDI CI picks DID branch], Jess
+          # Haley, 2026-10-25), so a DID/NDI pair is tested together.
+          DID_MATLAB_REF="${DID_MATLAB_REQUESTED:-}"
+          if [ -z "$DID_MATLAB_REF" ] && [ -n "${NDI_BRANCH:-}" ] && [ "$NDI_BRANCH" != "main" ] \
+             && [ -n "$(git ls-remote https://github.com/VH-Lab/DID-matlab.git "refs/heads/$NDI_BRANCH")" ]; then
+            DID_MATLAB_REF="$NDI_BRANCH"
+          fi
+          DID_MATLAB_REF="${DID_MATLAB_REF:-V2}"
+          echo "PICKED: DID-matlab ref $DID_MATLAB_REF (requested '${DID_MATLAB_REQUESTED:-}', NDI branch '${NDI_BRANCH:-}')"
+          echo "DID_MATLAB_REF=$DID_MATLAB_REF" >> "$GITHUB_ENV"
           resolve VH-Lab/DID-matlab "$DID_MATLAB_REF" DID_MATLAB_SHA
 
       - name: Check out did-schema (for V_eta schemas)

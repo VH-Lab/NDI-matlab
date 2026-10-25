@@ -45,9 +45,9 @@ else
     return;
 end
 
-% did2.schema.isV2Stamp reads the V2 stamps, 'did_v2' and (only until the
-% writers stamp 'did_v2') 'V_eta' (Decided by Jess Haley, 2026-10-25
-% [document stamps], [V_eta stamp not accepted]).
+% did2.schema.isV2Stamp reads the V2 stamp, 'did_v2' (Decided by Jess Haley,
+% 2026-10-25 [document stamps]; 'V_eta' is not accepted, [V_eta stamp not
+% accepted]).
 if did2.schema.isV2Stamp(props)
     base = 0;
 end
