@@ -32,10 +32,18 @@ function [rows, summary] = packageStatus(result)
 %                     code you changed in this package
 %       Files       - the files the notes are about, one per line, each
 %                     marked "changed:" or "in the way:"
+%       Selectable  - true if the package can be ticked for updating
+%                     (WillUpdate and not Blocked)
+%       Selected    - whether it starts ticked: Selectable packages are,
+%                     except those where updating touches your own work
+%                     (TouchesChanges)
+%
+%   WillUpdate, TouchesChanges and the notes describe what happens to a
+%   package if it is ticked: ndi.update.install(Packages=...) updates only
+%   the packages named, so the others are not touched.
 %
 %   SUMMARY is a structure with fields:
-%       CanUpdate     - true if there is something to update and nothing
-%                       blocks it
+%       CanUpdate     - true if any row is Selectable
 %       AnyUpdate     - true if any row has WillUpdate
 %       Blocked       - true if any row is blocked
 %       HasUserChanges - true if any row has TouchesChanges
@@ -84,16 +92,27 @@ function [rows, summary] = packageStatus(result)
         rows(i).Details = details(rows(i));
     end
 
+    for i = 1:numel(rows)
+        rows(i).Selectable = rows(i).WillUpdate && ~rows(i).Blocked;
+        % Leave out, at first, packages where you have work of your own.
+        rows(i).Selected = rows(i).Selectable && ~rows(i).TouchesChanges;
+    end
+
     summary.AnyUpdate = any([rows.WillUpdate]);
     summary.Blocked = any([rows.Blocked]);
-    summary.CanUpdate = summary.AnyUpdate && ~summary.Blocked;
+    summary.CanUpdate = any([rows.Selectable]);
     summary.HasUserChanges = any([rows.TouchesChanges]);
-    if summary.Blocked
-        summary.Message = "The update cannot go ahead yet: see the packages " + ...
-            "marked with an error.";
+    n = nnz([rows.Selectable]);
+    if summary.AnyUpdate && n == 0
+        summary.Message = "Updates are available, but none can be installed " + ...
+            "yet: see the packages marked with an error.";
     elseif summary.AnyUpdate
-        n = nnz([rows.WillUpdate]);
-        summary.Message = n + " package(s) will be updated.";
+        summary.Message = n + " package(s) can be updated. Tick the ones " + ...
+            "to update.";
+        if summary.Blocked
+            summary.Message = summary.Message + " Packages marked with an " + ...
+                "error cannot be updated yet.";
+        end
     else
         summary.Message = "Everything is up to date.";
     end
@@ -143,9 +162,8 @@ function rows = gitRows(result)
             case "notGit"
                 r = addNote(r, "info", "Not a git clone, so it is not updated here.");
         end
-        % ndi_install stashes and restores edits in every dependency it
-        % visits, not only the ones that are behind.
-        r = modificationNotes(r, result, result.UpdateAvailable);
+        % Updating the ticked packages only, ndi_install visits just these.
+        r = modificationNotes(r, result, r.WillUpdate);
         rows(end+1) = r; %#ok<AGROW>
     end
 end
@@ -311,5 +329,6 @@ function r = newRow(name, kind, folder)
         'Installed', "", 'Latest', "", 'Status', "", 'WillUpdate', false, ...
         'Notes', strings(1, 0), 'NoteLevels', strings(1, 0), 'NoteLevel', "", ...
         'Details', "", ...
-        'Blocked', false, 'TouchesChanges', false, 'Files', strings(0, 1));
+        'Blocked', false, 'TouchesChanges', false, 'Files', strings(0, 1), ...
+        'Selectable', false, 'Selected', false);
 end

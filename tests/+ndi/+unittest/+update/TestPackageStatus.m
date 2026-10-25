@@ -75,7 +75,9 @@ classdef TestPackageStatus < matlab.unittest.TestCase
             testCase.verifyTrue(rows(3).WillUpdate);
             testCase.verifyEqual(rows(3).Status, "1 new commit");
             testCase.verifyTrue(summary.CanUpdate);
-            testCase.verifyEqual(summary.Message, "1 package(s) will be updated.");
+            testCase.verifySubstring(summary.Message, "1 package(s) can be updated.");
+            testCase.verifyTrue(rows(3).Selectable);
+            testCase.verifyTrue(rows(3).Selected);
         end
 
         function testMissingDependencyIsInstalled(testCase)
@@ -84,7 +86,8 @@ classdef TestPackageStatus < matlab.unittest.TestCase
             r.Dependencies(1).Status = "missing";
             rows = ndi.update.packageStatus(r);
             testCase.verifyTrue(rows(2).WillUpdate);
-            testCase.verifyEqual(ndi.gui.nav.updateDialog.actionText(rows(2)), 'Install');
+            testCase.verifyEqual(rows(2).Status, "Not installed; will be added");
+            testCase.verifyTrue(rows(2).Selected);
         end
 
         function testToolboxUpdate(testCase)
@@ -131,12 +134,17 @@ classdef TestPackageStatus < matlab.unittest.TestCase
             r.CalculatorUpdateAvailable = true;
             r.Modifications = ndi.unittest.update.TestPackageStatus.mods("NDIcalc-vis-matlab", "x.m", strings(0, 1), 0);
             rows = ndi.update.packageStatus(r);
-            data = ndi.gui.nav.updateDialog.tableData(rows);
+            data = ndi.gui.nav.updateDialog.tableData(rows, [rows.Selected]);
             testCase.verifySize(data, [3 numel(ndi.gui.nav.updateDialog.Columns)]);
-            testCase.verifyEqual(data{3, 1}, 'NDIcalc-vis-matlab');
-            testCase.verifyEqual(data{3, 5}, 'Update');
+            testCase.verifyEqual(data{3, 2}, 'NDIcalc-vis-matlab');
+            testCase.verifyEqual(data{3, 5}, '2 new commits');
             testCase.verifySubstring(data{3, 6}, 'stashed');
             testCase.verifyEqual(data{1, 6}, '');
+            % It has your edits, so it starts unticked, but can be ticked.
+            testCase.verifyEqual(data{3, 1}, false);
+            testCase.verifyTrue(rows(3).Selectable);
+            testCase.verifyEqual(data{1, 1}, false);
+            testCase.verifyFalse(rows(1).Selectable);
         end
 
         function testNoteTextShowsMostSeriousNote(testCase)
@@ -149,14 +157,33 @@ classdef TestPackageStatus < matlab.unittest.TestCase
         end
 
         function testUpdateButtonState(testCase)
-            s = struct('CanUpdate', true, 'HasUserChanges', true);
-            [text, enable] = ndi.gui.nav.updateDialog.updateButtonState(s);
-            testCase.verifyEqual(text, 'Update anyway');
+            rows = struct('TouchesChanges', {false, true, false});
+            [text, enable] = ndi.gui.nav.updateDialog.updateButtonState(rows, [true false true]);
+            testCase.verifyEqual(text, 'Update (2)');
             testCase.verifyEqual(enable, 'on');
-            s = struct('CanUpdate', false, 'HasUserChanges', false);
-            [text, enable] = ndi.gui.nav.updateDialog.updateButtonState(s);
+            [text, enable] = ndi.gui.nav.updateDialog.updateButtonState(rows, [true true false]);
+            testCase.verifyEqual(text, 'Update anyway (2)');
+            testCase.verifyEqual(enable, 'on');
+            [text, enable] = ndi.gui.nav.updateDialog.updateButtonState(rows, [false false false]);
             testCase.verifyEqual(text, 'Update');
             testCase.verifyEqual(enable, 'off');
+        end
+
+        function testBlockedPackageDoesNotBlockOthers(testCase)
+            % NDI-matlab is on another branch, so it cannot be updated, but
+            % a dependency still can.
+            r = ndi.unittest.update.TestPackageStatus.gitResult();
+            r.UpdateAvailable = true;
+            r.CommitsBehind = 2;
+            r.Branch = "myFeature";
+            r.Dependencies(1).Status = "behind";
+            r.Dependencies(1).CommitsBehind = 1;
+            [rows, summary] = ndi.update.packageStatus(r);
+            testCase.verifyTrue(rows(1).Blocked);
+            testCase.verifyFalse(rows(1).Selectable);
+            testCase.verifyTrue(rows(2).Selected);
+            testCase.verifyTrue(summary.CanUpdate);
+            testCase.verifySubstring(summary.Message, "cannot be updated yet");
         end
     end
 

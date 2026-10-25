@@ -301,6 +301,55 @@ classdef TestCheckGitClone < matlab.unittest.TestCase
             testCase.verifyEqual(r.CommitsBehind, 0);
         end
 
+        function testInstallOnlyNamedPackages(testCase)
+            % With Packages, only the named calculator is pulled; the
+            % dependency that is also behind is left as it is.
+            testCase.pushUpstream(testCase.CalcName, "README.md", "calculator change");
+            testCase.pushUpstream("depA", "README.md", "dependency change");
+            testCase.install(Packages = testCase.CalcName);
+            r = testCase.check();
+            testCase.verifyEqual(testCase.calcStatus(r), "upToDate");
+            testCase.verifyEqual(testCase.depStatus(r, "depA"), "behind");
+        end
+
+        function testEditsInUnnamedPackagesNeedNoConsent(testCase)
+            % Your edits in NDI-matlab are not touched when only a
+            % calculator is updated, so no consent is needed for them.
+            testCase.pushUpstream("NDI-matlab", "README.md", "new upstream line");
+            testCase.writeFile(fullfile(testCase.Ndi, "README.md"), "my edit");
+            testCase.pushUpstream(testCase.CalcName, "README.md", "calculator change");
+            testCase.install(Packages = testCase.CalcName);
+            testCase.verifyEqual(testCase.calcStatus(testCase.check()), "upToDate");
+            testCase.verifyEqual(strtrim(string(fileread(fullfile(testCase.Ndi, "README.md")))), ...
+                "my edit");
+            r = testCase.check();
+            testCase.verifyEqual(r.CommitsBehind, 1);
+        end
+
+        function testDependencyOnlyUpdateAllowsOtherBranch(testCase)
+            % A developer on a feature branch of NDI-matlab can still update
+            % a dependency: the branch check is for NDI-matlab itself. (The
+            % fake clone has no ndi_install.m, so the run stops there.)
+            testCase.pushUpstream("NDI-matlab", "README.md", "new upstream line");
+            testCase.pushUpstream("depA", "README.md", "dependency change");
+            testCase.git(testCase.Ndi, "checkout -q -b myFeature");
+            testCase.verifyError(@() testCase.install(Packages = "depA"), ...
+                'ndi:update:install:noInstaller');
+            testCase.verifyError(@() testCase.install(Packages = ["NDI-matlab", "depA"]), ...
+                'ndi:update:install:notOnMain');
+        end
+
+        function testUnknownPackageErrors(testCase)
+            testCase.verifyError(@() testCase.install(Packages = "noSuchPackage"), ...
+                'ndi:update:install:unknownPackage');
+        end
+
+        function testDependencyUrlIsReported(testCase)
+            r = testCase.check();
+            d = r.Dependencies([r.Dependencies.Name] == "depA");
+            testCase.verifyEqual(d.Url, testCase.remoteUrl("depA"));
+        end
+
         function testInstallRefusesOtherBranch(testCase)
             testCase.pushUpstream("NDI-matlab", "README.md", "new upstream line");
             testCase.git(testCase.Ndi, "checkout -q -b myFeature");
@@ -321,10 +370,12 @@ classdef TestCheckGitClone < matlab.unittest.TestCase
             arguments
                 testCase
                 options.AllowModified (1,1) logical = false
+                options.Packages (1,:) string = string.empty(1, 0)
             end
             r = [];
             evalc(['r = ndi.update.install(RepoRoot = testCase.Ndi, Confirm = false, ' ...
-                'AllowModified = options.AllowModified, IncludePython = false);']);
+                'AllowModified = options.AllowModified, IncludePython = false, ' ...
+                'Packages = options.Packages);']);
         end
 
         function s = depStatus(testCase, r, name)

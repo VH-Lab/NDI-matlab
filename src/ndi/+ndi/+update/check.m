@@ -63,7 +63,9 @@ function result = check(options)
 %                         ("upToDate", "behind", "missing", "pinned",
 %                         "notFound", "notGit", or "unknown"),
 %                         CommitsBehind, and CurrentVersion and
-%                         LatestVersion (short commit hashes, or "")
+%                         LatestVersion (short commit hashes, or ""), and
+%                         Url (the requirements.txt line; "" for
+%                         calculators)
 %       Calculators     - structure array, one entry per NDIcalc-*-matlab
 %                         repository found, with the fields of
 %                         Dependencies (Status "upToDate", "behind",
@@ -296,6 +298,7 @@ function [deps, mods] = checkDependencies(repo)
             [d, m] = checkClone(name, depPath);
             mods = [mods, m]; %#ok<AGROW>
         end
+        d.Url = url;
         deps(end+1) = d; %#ok<AGROW>
     end
 end
@@ -366,12 +369,12 @@ end
 
 function d = repoEntry(name, repoDir)
     d = struct('Name', string(name), 'Path', string(repoDir), 'Status', "unknown", ...
-        'CommitsBehind', NaN, 'CurrentVersion', "", 'LatestVersion', "");
+        'CommitsBehind', NaN, 'CurrentVersion', "", 'LatestVersion', "", 'Url', "");
 end
 
 function repos = emptyRepos()
     repos = struct('Name', {}, 'Path', {}, 'Status', {}, 'CommitsBehind', {}, ...
-        'CurrentVersion', {}, 'LatestVersion', {});
+        'CurrentVersion', {}, 'LatestVersion', {}, 'Url', {});
 end
 
 function result = checkToolbox(result, info, options)

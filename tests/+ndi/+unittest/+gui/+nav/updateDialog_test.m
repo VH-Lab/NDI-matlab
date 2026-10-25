@@ -19,8 +19,13 @@ classdef updateDialog_test < matlab.unittest.TestCase
             testCase.addTeardown(@() delete(d.Figure));
             testCase.verifySize(d.Table.Data, [2 numel(ndi.gui.nav.updateDialog.Columns)]);
             testCase.verifyEqual(char(d.UpdateButton.Enable), 'on');
-            testCase.verifyEqual(char(d.UpdateButton.Text), 'Update');
+            testCase.verifyEqual(char(d.UpdateButton.Text), 'Update (1)');
             testCase.verifyEqual(char(d.CancelButton.Text), 'Cancel');
+            testCase.verifyEqual(d.selectedPackages(), "NDIcalc-vis-matlab");
+            % Unticking the only package leaves nothing to update.
+            d.setSelected(2, false);
+            testCase.verifyEqual(char(d.UpdateButton.Enable), 'off');
+            testCase.verifyEmpty(d.selectedPackages());
         end
 
         function testNothingToUpdate(testCase)
@@ -38,7 +43,16 @@ classdef updateDialog_test < matlab.unittest.TestCase
                 'ChangedFiles', {"README.md"}, 'BlockingFiles', {strings(0, 1)}, ...
                 'CommitsAhead', 0);
             d = ndi.gui.nav.updateDialog(r, 'Visible', 'off');
-            testCase.verifyEqual(char(d.UpdateButton.Text), 'Update anyway');
+            % NDI-matlab has your edits, so it starts unticked.
+            testCase.verifyFalse(d.Table.Data{1, 1});
+            testCase.verifyEqual(char(d.UpdateButton.Enable), 'off');
+            d.setSelected(1, true);
+            testCase.verifyTrue(d.Table.Data{1, 1});
+            testCase.verifyEqual(char(d.UpdateButton.Text), 'Update anyway (1)');
+            % An up-to-date package cannot be ticked.
+            d.setSelected(2, true);
+            testCase.verifyFalse(d.Table.Data{2, 1});
+            testCase.verifyEqual(d.selectedPackages(), "NDI-matlab");
             % The row with notes is shown first.
             testCase.verifyTrue(any(contains(d.DetailsArea.Value, 'README.md')));
             d.showDetails(2);
