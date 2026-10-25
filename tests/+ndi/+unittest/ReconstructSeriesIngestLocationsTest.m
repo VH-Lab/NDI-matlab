@@ -135,7 +135,7 @@ classdef ReconstructSeriesIngestLocationsTest < matlab.unittest.TestCase
             fi = testCase.fileInfoFor('body_data', manifestUid);
             si = testCase.seriesInfoFor('body_data', 2, 2);
 
-            veta = struct('document_class', struct('schema_version', 'V_eta'));
+            veta = struct('document_class', struct('schema_version', 'did_v2'));
             v1   = struct('document_class', struct('class_name', 'x'));
             testCase.verifyEqual(ndi.vintage.seriesMemberBase(veta), 0);
             testCase.verifyEqual(ndi.vintage.seriesMemberBase(v1), 1);

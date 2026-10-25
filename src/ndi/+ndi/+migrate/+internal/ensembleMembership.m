@@ -18,7 +18,7 @@ function [kept, minted, report] = ensembleMembership(structs, options)
 %   did2.document.toStruct), i.e. the pass-1 output -- the same contract
 %   ndi.migrate.internal.pathSPromotion takes. Returns KEPT (the surviving
 %   bodies -- see "WHAT THIS DOES NOT DO"), MINTED (the new `directed_relation`
-%   bodies, tagged schema_version 'V_eta' so they fold back through v1_to_v2),
+%   bodies, tagged schema_version 'did_v2' so they fold back through v1_to_v2),
 %   and REPORT (denominator first; REPORT.changed is false when nothing was
 %   minted, so the caller can skip the rebuild).
 %

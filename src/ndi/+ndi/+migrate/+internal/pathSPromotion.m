@@ -115,7 +115,7 @@ function [kept, minted, changed, report] = pathSPromotion(structs, options)
 %   STRUCTS is a cell of V_eta document body structs (from did2.document.toStruct).
 %   Returns KEPT (the surviving bodies, with retargeted statements and the
 %   promoted site observations removed), MINTED (the new part entity / term
-%   assertions / directed_relation bodies, tagged schema_version 'V_eta' so
+%   assertions / directed_relation bodies, tagged schema_version 'did_v2' so
 %   they can be folded back through v1_to_v2), CHANGED (false if nothing
 %   moved, so the caller can skip the rebuild) and REPORT (every count,
 %   denominators first; `anatomy_non_uberon` lists the non-UBERON anatomy

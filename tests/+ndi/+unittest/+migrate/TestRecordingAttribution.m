@@ -189,13 +189,13 @@ classdef TestRecordingAttribution < matlab.unittest.TestCase
         end
 
         function theBodyIsTaggedSoTheConverterShortCircuits(testCase)
-            % Without schema_version V_eta the caller's v1_to_v2 would try to
+            % Without the V2 stamp (schema_version 'did_v2') the caller's v1_to_v2 would try to
             % MIGRATE an already-migrated body instead of validating it.
             structs = {testCase.donor('probe-1', 'mouse-7'), ...
                        testCase.candidate('probe-1')};
             plan = ndi.migrate.internal.recordingAttribution(structs);
             testCase.verifyEqual(plan(1).body.document_class.schema_version, ...
-                'V_eta');
+                'did_v2');
         end
 
         function noDonorMeansREFUSED_notInvented(testCase)
