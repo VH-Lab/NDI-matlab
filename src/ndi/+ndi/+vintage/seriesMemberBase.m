@@ -18,9 +18,8 @@ function base = seriesMemberBase(doc)
 %   did.document/seriesMemberBase (DID-matlab 1a6bd9f), this asks it, so NDI
 %   and DID can never disagree. An older DID-matlab (the V2 line NDI's
 %   requirements.txt pins, which predates it) gets the same rule restated
-%   here: rank document_class.schema_version with
-%   did2.convert.schemaVersionRank when that exists, else compare it to
-%   'V_eta'. A version neither recognises is v1 (base 1), which is what every
+%   here: did2.schema.isV2Stamp (DID-matlab's one list of V2 stamps). A
+%   version that is not a V2 stamp is v1 (base 1), which is what every
 %   document written before V_eta is.
 %
 %   Callers that walk a series' slots (ndi.database.fun.extract_docs_files,
@@ -46,28 +45,10 @@ else
     return;
 end
 
-if ~isfield(props, 'document_class') || ~isstruct(props.document_class) ...
-        || ~isfield(props.document_class, 'schema_version')
-    return;
-end
-sv = props.document_class.schema_version;
-if isstring(sv) && isscalar(sv), sv = char(sv); end
-if ~ischar(sv) || isempty(sv)
-    return;
-end
-if ~isempty(which('did2.convert.schemaVersionRank'))
-    try
-        [rank, known] = did2.convert.schemaVersionRank(sv);
-        etaRank = did2.convert.schemaVersionRank('V_eta');
-        if known && rank >= etaRank
-            base = 0;
-        end
-        return;
-    catch
-        % fall through to the literal comparison
-    end
-end
-if strcmp(sv, 'V_eta')
+% did2.schema.isV2Stamp reads the V2 stamps, 'did_v2' and (only until the
+% writers stamp 'did_v2') 'V_eta' (Decided by Jess Haley, 2026-10-25
+% [document stamps], [V_eta stamp not accepted]).
+if did2.schema.isV2Stamp(props)
     base = 0;
 end
 end

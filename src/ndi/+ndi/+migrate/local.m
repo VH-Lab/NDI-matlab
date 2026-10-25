@@ -277,6 +277,13 @@ function result = local(path, options)
         numel(convertInput)), tStart, tStep, []);
     convertResult = did2.convert.v1_to_v2(convertInput, v2args{:});
     tStep = migrateStepMark('pass 1 v1_to_v2', tStart, tStep, convertResult);
+    % Pass 1's record of the v1 documents no migrator changed, kept here
+    % before any later step can touch convertResult (see the final v1 stamp
+    % below, [passthrough stays v1: how]).
+    passOneRecord = [];
+    if isfield(convertResult, 'passthrough')
+        passOneRecord = convertResult.passthrough;
+    end
     printMigrationNoteCounts(convertResult);
 
     % --- software dedup, right after pass 1 ----------------------------------
@@ -1166,6 +1173,45 @@ function result = local(path, options)
         end
     end
 
+    % --- the final v1 stamp: a document no step changed stays v1 -------------
+    % Decided by Jess Haley, 2026-10-24 [passthrough stays v1] and
+    % [passthrough stays v1: how], and 2026-10-25 [document stamps]
+    % (did-schema V_eta_go_forward_class_audit.md): a v1 document the
+    % migration carries through unchanged stays a v1 document, judged after
+    % the WHOLE pipeline -- here, after pass 1, the DID batch passes and the
+    % second pass, all of which received it as they did before. Each document
+    % still identical to the body pass 1 emitted for it is replaced by its v1
+    % SOURCE body stamped 'did_v1'; did2.database.sqlitedb stores it without
+    % V_eta validation and counts it. Before settleIngestedFiles, which then
+    % points its files at the bytes v1 ingested, as for every document.
+    carriedAsV1Report = struct('not_measured', ...
+        'did2.convert.v1_to_v2 returned no passthrough record');
+    carriedAsV1 = NaN;
+    if isstruct(passOneRecord) && iscell(convertResult.migrated)
+        [convertResult.migrated, carriedAsV1Report] = ...
+            ndi.migrate.internal.carryUnchangedAsV1(convertResult.migrated, ...
+            passOneRecord, bodies);
+        carriedAsV1 = carriedAsV1Report.carried_as_v1;
+        fprintf(['[migrate step]   carried as v1 (did_v1): %d of %d documents ' ...
+            '(%d passed through pass 1; %d changed later, %d absent at the end)\n'], ...
+            carriedAsV1Report.carried_as_v1, carriedAsV1Report.documents_inspected, ...
+            carriedAsV1Report.passed_through_pass_one, ...
+            carriedAsV1Report.changed_after_pass_one, carriedAsV1Report.absent_at_end);
+        tabs = {'carried', carriedAsV1Report.carried_by_class; ...
+                'changed later', carriedAsV1Report.changed_by_class; ...
+                'absent at the end', carriedAsV1Report.absent_by_class};
+        for t = 1:size(tabs, 1)
+            tbl = tabs{t, 2};
+            if isempty(tbl), continue; end
+            shown = tbl(1:min(8, numel(tbl)));
+            parts = arrayfun(@(e) sprintf('%s %d', e.class_name, e.count), ...
+                shown, 'UniformOutput', false);
+            fprintf('[migrate step]     %s, by class (%d class(es)): %s\n', ...
+                tabs{t, 1}, numel(tbl), strjoin(parts, ', '));
+        end
+    end
+    tStep = migrateStepMark('carryUnchangedAsV1', tStart, tStep, convertResult);
+
     % --- ingested files: point them at the bytes v1 already ingested --------
     % A v1 document still records each file as it was when first added
     % (`ingest` 1 from a path that is usually gone); the legacy backend copied
@@ -1224,6 +1270,10 @@ function result = local(path, options)
         'path',    backupDir, ...
         'created', backupCreated);
     result.summary = convertResult.summary;
+    % of the documents written, how many are v1 documents ('did_v1'), carried
+    % unchanged by the final v1 stamp (NaN: not measured)
+    result.summary.carried_as_v1 = carriedAsV1;
+    result.carriedAsV1 = carriedAsV1Report;
     result.quarantine = convertResult.quarantine;
     result.quarantineFile = wroteQuarantineFile;
     result.references = refReport;
@@ -3429,6 +3479,9 @@ function printSummary(result)
     fprintf('  total docs:       %d\n', result.summary.total);
     fprintf('  migrated:         %d\n', result.summary.migrated_count);
     fprintf('  quarantined:      %d\n', result.summary.quarantine_count);
+    if isfield(result.summary, 'carried_as_v1')
+        fprintf('  carried as v1:    %d (stamped did_v1)\n', result.summary.carried_as_v1);
+    end
     fprintf('  orphan refs:      %d (of %d edges)\n', ...
         result.references.orphan_count, result.references.edges_examined);
     % The ensemble verify-before-delete gate. It is a DATA-LOSS gate

@@ -303,16 +303,111 @@ classdef TestMigrateLocal < matlab.unittest.TestCase
 
             verifyEqual(testCase, result.summary.migrated_count, 3);
             verifyEqual(testCase, result.references.orphan_count, 1);
+            % The two demo_a documents have no migrator and no step changes
+            % them, so they are carried as v1 documents, stamped 'did_v1'
+            % (Decided by Jess Haley, 2026-10-24 [passthrough stays v1: how]):
+            % a v1 body records its session in the base.session_id FIELD, not
+            % as an edge. Only the migrated session entity carries the edge.
+            verifyEqual(testCase, result.summary.carried_as_v1, 2);
             sessionEdges = 0;
             if ndi.v2.sessionIdIsEdge()
-                sessionEdges = 3;     % one per document, the session's own included
+                sessionEdges = 1;     % the session's own; the v1 documents carry a field
             end
             verifyEqual(testCase, result.references.edges_examined, 1 + sessionEdges);
+        end
+
+        % ---- the final v1 stamp ([passthrough stays v1: how]) --------------
+        % Decided by Jess Haley, 2026-10-24 [passthrough stays v1] and
+        % [passthrough stays v1: how], 2026-10-25 [document stamps]: a v1
+        % document no migrator or pass changes stays a v1 document, judged at
+        % the end of ndi.migrate.local, stamped 'did_v1', stored without V_eta
+        % validation and counted.
+
+        function testAnUnchangedDocumentIsCarriedAsItsV1Source(testCase)
+            alpha = makeV1Body('alpha');      % demo_a: no migrator, no pass
+            filt = makeV1Filter('lowpass');   % filter: its migrator renames type
+            srcSqlite = fullfile(testCase.SessionRoot, '.ndi', 'did-sqlite.sqlite');
+            buildV1Sqlite(srcSqlite, {jsonencode(alpha), jsonencode(filt)});
+
+            result = ndi.migrate.local(testCase.SessionRoot, 'Validate', false);
+
+            verifyEqual(testCase, result.summary.quarantine_count, 0);
+            verifyEqual(testCase, result.summary.migrated_count, 2);
+            % the summary reports the count carried as v1, denominator first
+            verifyEqual(testCase, result.summary.carried_as_v1, 1);
+            verifyEqual(testCase, result.carriedAsV1.documents_inspected, 2);
+            verifyEqual(testCase, result.carriedAsV1.passed_through_pass_one, 1);
+            verifyEqual(testCase, result.carriedAsV1.carried_as_v1, 1);
+            verifyEqual(testCase, {result.carriedAsV1.carried_by_class.class_name}, {'demo_a'});
+
+            db = did2.database.sqlitedb(result.destination);
+            cleanup = onCleanup(@() db.close()); %#ok<NASGU>
+            [nV1, nTotal] = db.countV1();
+            verifyEqual(testCase, [nV1, nTotal], [1, 2]);
+
+            % the unchanged document IS its v1 source, plus the stamp
+            expected = jsondecode(jsonencode(alpha));
+            expected.document_class.schema_version = 'did_v1';
+            got = db.get(alpha.base.id).toStruct();
+            verifyTrue(testCase, isequaln(got, expected), ...
+                'an unchanged document must be stored as its v1 source stamped did_v1');
+
+            % the migrated document keeps its V2 stamp and its migrated shape
+            gotF = db.get(filt.base.id).toStruct();
+            verifyEqual(testCase, gotF.document_class.schema_version, 'V_eta');
+            verifyTrue(testCase, isfield(gotF.filter, 'filter_type'));
+            verifyFalse(testCase, isfield(gotF.filter, 'type'));
+        end
+
+        function testCarryUnchangedAsV1ReportsEveryOutcome(testCase)
+            % The step on its own: one record carried, one changed after
+            % pass 1, one absent at the end, one past the sources.
+            a = makeV1Body('alpha');
+            b = makeV1Body('beta');
+            c = makeV1Body('gamma');
+            r = did2.convert.v1_to_v2({a, b, c}, 'Validate', false);
+            verifyEqual(testCase, numel(r.passthrough), 3);
+            docs = r.migrated;
+            % beta changed by a later step
+            sb = docs{2}.toStruct();
+            sb.demo_a.marker = 'changed later';
+            docs{2} = did2.document(sb);
+            % gamma removed by a later step
+            docs(3) = [];
+            rec = r.passthrough;
+            rec(end+1) = rec(1);
+            rec(end).input_index = 99;   % a transient body, not a source
+            [out, rep] = ndi.migrate.internal.carryUnchangedAsV1(docs, rec, {a, b, c});
+            verifyEqual(testCase, rep.documents_inspected, 2);
+            verifyEqual(testCase, rep.passed_through_pass_one, 4);
+            verifyEqual(testCase, rep.carried_as_v1, 1);
+            verifyEqual(testCase, rep.changed_after_pass_one, 1);
+            verifyEqual(testCase, rep.absent_at_end, 1);
+            verifyEqual(testCase, rep.not_a_source, 1);
+            verifyEqual(testCase, {rep.changed_by_class.class_name}, {'demo_a'});
+            verifyEqual(testCase, [rep.changed_by_class.count], 1);
+            verifyEqual(testCase, {rep.absent_by_class.class_name}, {'demo_a'});
+            verifyEqual(testCase, rep.carried_as_v1 + rep.changed_after_pass_one ...
+                + rep.absent_at_end + rep.not_a_source + rep.source_unreadable ...
+                + rep.source_id_mismatch, rep.passed_through_pass_one);
+            expected = a;
+            expected.document_class.schema_version = 'did_v1';
+            verifyTrue(testCase, isequaln(out{1}.toStruct(), expected));
+            verifyEqual(testCase, out{2}.toStruct().document_class.schema_version, 'V_eta');
         end
     end
 end
 
 % ---- helpers --------------------------------------------------------------
+
+function body = makeV1Filter(name)
+% a did_v1 `filter` document: did2.convert.migrators.filter renames
+% filter.type -> filter.filter_type, so pass 1 changes it
+body = makeV1Body(name);
+body.document_class.class_name = 'filter';
+body = rmfield(body, 'demo_a');
+body.filter = struct('type', 'cheby1', 'order', 4);
+end
 
 function body = makeV1Body(name)
 body = struct();
