@@ -236,7 +236,8 @@ for k = 1:numel(candidates)
     % Tag so did2.convert.v1_to_v2 SHORT-CIRCUITS (isAlreadyTarget) to
     % ensureClassBlocks + validate instead of trying to migrate an already
     % migrated body -- the footing ontologyLabelSubjects and pathSPromotion use.
-    out.document_class.schema_version = 'V_eta';
+    % the V2 stamp (Jess Haley, 2026-10-25 [document stamps]: 'did_v2')
+    out.document_class.schema_version = 'did_v2';
 
     plan(end+1) = struct( ...
         'source_id',     baseField(body, 'id'), ...

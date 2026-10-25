@@ -9,7 +9,7 @@ function result = cloud(datasetId, options)
 %   documents already at V_eta are skipped cheaply), and the surviving
 %   bodies are pushed back via the existing bulk-upload endpoint. Because
 %   each successfully written doc carries
-%   `document_class.schema_version: 'V_eta'`, an interrupted run can
+%   `document_class.schema_version: 'did_v2'`, an interrupted run can
 %   resume by re-running this command — already-migrated docs
 %   short-circuit through the conversion.
 %

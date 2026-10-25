@@ -99,7 +99,7 @@ classdef TestSubjectStrainAssembly < matlab.unittest.TestCase
             [~, minted, ~] = runOn(@twoRatsSameGenotype);
             sd = strainNamed(minted, 'SD');
             testCase.verifyEqual(sd.document_class.class_name, 'entity');
-            testCase.verifyEqual(sd.document_class.schema_version, 'V_eta');
+            testCase.verifyEqual(sd.document_class.schema_version, 'did_v2');
             testCase.verifyEqual({sd.document_class.superclasses.class_name}, {'base'});
             testCase.verifyTrue(ndi.v2.vocabIs('entity_type', sd.entity.type, 'strain'));
             testCase.verifyEqual(sd.entity.name, 'SD');
@@ -908,7 +908,7 @@ b.depends_on = dep('openminds', '');
 v1 = {b};
 
 m = b;
-m.document_class.schema_version = 'V_eta';
+m.document_class.schema_version = 'did_v2';
 mig = {m};
 end
 
@@ -1011,7 +1011,7 @@ function b = assertionDoc(id, sessionId, subjectId, variableName, node, name)
 %   block.
 b = struct();
 b.document_class = dc('assertion', {'statement', 'base', 'term', 'value', 'data'});
-b.document_class.schema_version = 'V_eta';
+b.document_class.schema_version = 'did_v2';
 b.depends_on = dep('entity_id', subjectId);
 b.base = struct('id', id, 'session_id', sessionId, ...
     'creation_timestamp', '2024-06-01T12:00:00.000Z');
@@ -1024,7 +1024,7 @@ function d = datasetEntity(id)
 %   dataset's session id).
 d = struct();
 d.document_class = dc('entity', {'base'});
-d.document_class.schema_version = 'V_eta';
+d.document_class.schema_version = 'did_v2';
 d.depends_on = struct('name', {}, 'value', {});
 d.base = struct('id', id, 'session_id', id, ...
     'creation_timestamp', '2024-06-01T12:00:00.000Z');
@@ -1036,7 +1036,7 @@ function b = subjectDoc(id)
 %   of type `organism`, id preserved.
 b = struct();
 b.document_class = dc('entity', {'base'});
-b.document_class.schema_version = 'V_eta';
+b.document_class.schema_version = 'did_v2';
 b.depends_on = struct('name', {}, 'value', {});
 b.base = struct('id', id, 'session_id', 'sess_A', ...
     'creation_timestamp', '2024-06-01T12:00:00.000Z');

@@ -853,7 +853,7 @@ for i = 1:numel(supers)
     sc(i) = struct('class_name', supers{i}, 'class_version', '1.0.0');
 end
 x = struct('class_name', name, 'class_version', '1.0.0', ...
-    'superclasses', sc, 'schema_version', 'V_eta');
+    'superclasses', sc, 'schema_version', 'did_v2');
 end
 
 function x = dep(name, value)

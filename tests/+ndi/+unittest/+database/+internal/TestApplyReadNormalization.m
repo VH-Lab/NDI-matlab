@@ -52,15 +52,15 @@ classdef TestApplyReadNormalization < matlab.unittest.TestCase
         end
 
         function testAVEtaBodyIsReadAsVEta(testCase)
-            % A V_eta body keeps its stamp and its fields; it is not pushed
+            % A V2 body (stamped did_v2) keeps its stamp and its fields; it is not pushed
             % through any migrator.
             b = makeV1Body('eta');
-            b.document_class.schema_version = 'V_eta';
+            b.document_class.schema_version = 'did_v2';
             b.base = rmfield(b.base, 'datestamp');
             b.base.creation_timestamp = '2024-06-01T12:00:00.000Z';
             doc = ndi.database.internal.applyReadNormalization(b);
             p = doc.document_properties;
-            verifyEqual(testCase, char(p.document_class.schema_version), 'V_eta');
+            verifyEqual(testCase, char(p.document_class.schema_version), 'did_v2');
             verifyEqual(testCase, p.base.creation_timestamp, '2024-06-01T12:00:00.000Z');
             verifyFalse(testCase, isfield(p.base, 'datestamp'));
             verifyEqual(testCase, p.demo_a.marker, 'eta');

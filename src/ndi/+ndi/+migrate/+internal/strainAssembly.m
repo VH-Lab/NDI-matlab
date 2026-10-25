@@ -35,7 +35,7 @@ function [kept, minted, report] = strainAssembly(structs)
 %   bare `openminds` class passes through, guarded). Returns KEPT (the
 %   surviving bodies, with the consumed Strain and fragment documents removed),
 %   MINTED (the strain entities, their assertions and their `derived_from`
-%   relations, each tagged schema_version 'V_eta'), and REPORT (denominator
+%   relations, each tagged schema_version 'did_v2'), and REPORT (denominator
 %   first; REPORT.changed gates the caller's rebuild).
 %
 %   ---------------------------------------------------------------------
