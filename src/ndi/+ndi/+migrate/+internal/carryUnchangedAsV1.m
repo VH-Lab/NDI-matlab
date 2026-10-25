@@ -39,6 +39,9 @@ function [docs, report] = carryUnchangedAsV1(docs, passthrough, sourceBodies)
 %     source_unreadable       the source body could not be read as a document
 %     source_id_mismatch      the source at that position has another base.id
 %     carried_by_class        struct array {class_name, count}, most first
+%     changed_by_class        the same, for changed_after_pass_one
+%     absent_by_class         the same, for absent_at_end
+%   (class_name is the class pass 1 recorded for the document)
 %   The six outcomes after the first two sum to passed_through_pass_one.
 %
 %   See also ndi.migrate.local, did2.convert.v1_to_v2,
@@ -63,7 +66,9 @@ report = struct( ...
     'not_a_source',            0, ...
     'source_unreadable',       0, ...
     'source_id_mismatch',      0, ...
-    'carried_by_class',        struct('class_name', {}, 'count', {}));
+    'carried_by_class',        struct('class_name', {}, 'count', {}), ...
+    'changed_by_class',        struct('class_name', {}, 'count', {}), ...
+    'absent_by_class',         struct('class_name', {}, 'count', {}));
 if isempty(passthrough)
     return;
 end
@@ -78,8 +83,9 @@ for k = 1:numel(docs)
     end
 end
 
-classNames = {};
-classCounts = [];
+carried = newTally();
+changed = newTally();
+absent = newTally();
 for r = 1:numel(passthrough)
     rec = passthrough(r);
     if rec.input_index > numel(sourceBodies)
@@ -89,11 +95,13 @@ for r = 1:numel(passthrough)
     id = char(rec.id);
     if isempty(id) || ~isKey(where, id)
         report.absent_at_end = report.absent_at_end + 1;
+        absent = bump(absent, rec.class_name);
         continue;
     end
     j = where(id);
     if ~isequaln(docs{j}.toStruct(), rec.body)
         report.changed_after_pass_one = report.changed_after_pass_one + 1;
+        changed = bump(changed, rec.class_name);
         continue;
     end
     src = readSource(sourceBodies{rec.input_index});
@@ -112,18 +120,35 @@ for r = 1:numel(passthrough)
     if isfield(src.document_class, 'class_name')
         cn = char(src.document_class.class_name);
     end
-    ix = find(strcmp(classNames, cn), 1);
-    if isempty(ix)
-        classNames{end+1} = cn; %#ok<AGROW>
-        classCounts(end+1) = 0; %#ok<AGROW>
-        ix = numel(classNames);
-    end
-    classCounts(ix) = classCounts(ix) + 1;
+    carried = bump(carried, cn);
 end
-[classCounts, order] = sort(classCounts, 'descend');
-classNames = classNames(order);
-report.carried_by_class = struct('class_name', classNames, ...
-    'count', num2cell(classCounts));
+report.carried_by_class = asTable(carried);
+report.changed_by_class = asTable(changed);
+report.absent_by_class = asTable(absent);
+end
+
+function t = newTally()
+t = struct('names', {{}}, 'counts', []);
+end
+
+function t = bump(t, name)
+name = char(name);
+ix = find(strcmp(t.names, name), 1);
+if isempty(ix)
+    t.names{end+1} = name;
+    t.counts(end+1) = 0;
+    ix = numel(t.names);
+end
+t.counts(ix) = t.counts(ix) + 1;
+end
+
+function tbl = asTable(t)
+[counts, order] = sort(t.counts, 'descend');
+names = t.names(order);
+tbl = struct('class_name', names, 'count', num2cell(counts));
+if isempty(names)
+    tbl = struct('class_name', {}, 'count', {});
+end
 end
 
 function id = idOf(d)

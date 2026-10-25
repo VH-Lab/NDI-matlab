@@ -384,6 +384,9 @@ classdef TestMigrateLocal < matlab.unittest.TestCase
             verifyEqual(testCase, rep.changed_after_pass_one, 1);
             verifyEqual(testCase, rep.absent_at_end, 1);
             verifyEqual(testCase, rep.not_a_source, 1);
+            verifyEqual(testCase, {rep.changed_by_class.class_name}, {'demo_a'});
+            verifyEqual(testCase, [rep.changed_by_class.count], 1);
+            verifyEqual(testCase, {rep.absent_by_class.class_name}, {'demo_a'});
             verifyEqual(testCase, rep.carried_as_v1 + rep.changed_after_pass_one ...
                 + rep.absent_at_end + rep.not_a_source + rep.source_unreadable ...
                 + rep.source_id_mismatch, rep.passed_through_pass_one);
