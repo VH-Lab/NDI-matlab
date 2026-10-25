@@ -7,7 +7,10 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Version number in major.minor.patch format'
+        # Shown in the "Run workflow" form. This workflow no longer commits
+        # the Contents.m version bump to main (branch protection), so it has
+        # to be done by hand beforehand.
+        description: 'Version number in major.minor.patch format. REMINDER: first update the version line in src/ndi/Contents.m to this version (via a PR to main).'
         required: true
         type: string
 
@@ -72,6 +75,7 @@ jobs:
             setenv("NDI_CLOUD_USERNAME", "${{ secrets.NDI_CLOUD_USERNAME }}")
             setenv("NDI_CLOUD_PASSWORD", "${{ secrets.NDI_CLOUD_PASSWORD }}")
             setenv("NDI_CLOUD_TEST_USER_HAS_MATLAB_LICENSE", "false")
+            setenv("NDI_CLOUD_TEST_ORGANIZATION_ID", "${{ secrets.NDI_CLOUD_TEST_ORGANIZATION_ID }}")
 
             addpath(genpath( "src" ));
             ndi.cloud.authenticate("InteractionEnabled", "off")
