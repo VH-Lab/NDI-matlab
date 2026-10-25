@@ -62,6 +62,13 @@ end
 % ===================== the comparison =====================================
 
 function compareBothWays(testCase, bodies, name)
+% A document whose v1 source states no creation time carries the time the
+% migration ran ([no invented values], Jess Haley, 2026-10-25). The two runs
+% are one comparison, not two migrations, so they share one pinned time;
+% ndi.migrate.local keeps a pin a caller set.
+did2.convert.migrationTime('unpin');
+did2.convert.migrationTime('pin');
+unpin = onCleanup(@() did2.convert.migrationTime('unpin'));
 [early, rEarly, rootA] = migrateOnce(testCase, bodies, true);
 [endOnly, rEnd, rootB] = migrateOnce(testCase, bodies, false);
 % Each run migrates its own copy of the v1 database, in its own folder, and
