@@ -21,7 +21,7 @@
       
       
       <link rel="icon" href="../../../../../../../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.0">
     
     
       
@@ -29,10 +29,10 @@
       
     
     
-      <link rel="stylesheet" href="../../../../../../../assets/stylesheets/main.ec1eaa64.min.css">
+      <link rel="stylesheet" href="../../../../../../../assets/stylesheets/main.57a0d79d.min.css">
       
         
-        <link rel="stylesheet" href="../../../../../../../assets/stylesheets/palette.ab4e12ef.min.css">
+        <link rel="stylesheet" href="../../../../../../../assets/stylesheets/palette.fb2fffe2.min.css">
       
       
 
@@ -9937,6 +9937,34 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../%2Bcloud/%2Bapi/%2Bdocuments/waitForDocumentCount.m/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ndi.cloud.api.documents.waitForDocumentCount
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -12624,6 +12652,34 @@
     
   
     ndi.cloud.api.implementation.documents.UpdateDocument
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../%2Bcloud/%2Bapi/%2Bimplementation/%2Bdocuments/WaitForDocumentCount.m/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ndi.cloud.api.implementation.documents.WaitForDocumentCount
   
 
     
@@ -29818,6 +29874,62 @@
   
   
     <li class="md-nav__item">
+      <a href="../../../../%2Bgui/%2Bnav/cloudStatusDialog.m/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ndi.gui.nav.cloudStatusDialog
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../%2Bgui/%2Bnav/daqSystemBrowser.m/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ndi.gui.nav.daqSystemBrowser
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../../../%2Bgui/%2Bnav/datasetsPane.m/" class="md-nav__link">
         
   
@@ -40219,12 +40331,17 @@
 
   Returns an encode multiplier for ndi.fun.probe.export.binary / .all_binary
   (which write int16 = MULT * physical) chosen from what PROBE.readtimeseries
-  actually returns:
+  actually returns for a short stretch at the start of the first epoch:
 
-    * If the probe returns integer-class samples (e.g. int16 raw ADC counts), the
-      data are already int16, so MULT = 1 passes them through losslessly.
+    * If the probe returns raw ADC counts, the data are already int16-style, so
+      MULT = 1 passes them through losslessly. Counts are recognized either by an
+      integer class (e.g. int16) or by floating-point values that are all whole
+      numbers (e.g. SpikeGLX counts returned as double).
     * Otherwise (floating-point physical units) MULT = 1/0.195, the Intan
       microvolt-to-int16 default used by ndi.fun.probe.export.all_binary.
+
+  If the stretch read is entirely zero the check is inconclusive and the
+  floating-point default is returned.
 
   The floating-point default assumes Intan (uV) data; for SpikeGLX/Neuropixels
   recordings returned in volts you must instead pass 'multiplier', (512*500)/0.6
@@ -40286,10 +40403,10 @@
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "../../../../../../..", "features": ["navigation"], "search": "../../../../../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../../../../../..", "features": ["navigation"], "search": "../../../../../../../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
-      <script src="../../../../../../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      <script src="../../../../../../../assets/javascripts/bundle.c21346df.min.js"></script>
       
     
   </body>

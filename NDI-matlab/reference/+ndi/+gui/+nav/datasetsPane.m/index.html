@@ -11,7 +11,7 @@
       
       
       
-        <link rel="prev" href="../cloudPane.m/">
+        <link rel="prev" href="../daqSystemBrowser.m/">
       
       
         <link rel="next" href="../ndiPane.m/">
@@ -21,7 +21,7 @@
       
       
       <link rel="icon" href="../../../../../../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.0">
     
     
       
@@ -29,10 +29,10 @@
       
     
     
-      <link rel="stylesheet" href="../../../../../../assets/stylesheets/main.ec1eaa64.min.css">
+      <link rel="stylesheet" href="../../../../../../assets/stylesheets/main.57a0d79d.min.css">
       
         
-        <link rel="stylesheet" href="../../../../../../assets/stylesheets/palette.ab4e12ef.min.css">
+        <link rel="stylesheet" href="../../../../../../assets/stylesheets/palette.fb2fffe2.min.css">
       
       
 
@@ -9937,6 +9937,34 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../%2Bcloud/%2Bapi/%2Bdocuments/waitForDocumentCount.m/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ndi.cloud.api.documents.waitForDocumentCount
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -12624,6 +12652,34 @@
     
   
     ndi.cloud.api.implementation.documents.UpdateDocument
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../%2Bcloud/%2Bapi/%2Bimplementation/%2Bdocuments/WaitForDocumentCount.m/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ndi.cloud.api.implementation.documents.WaitForDocumentCount
   
 
     
@@ -29803,6 +29859,62 @@
                 
   
   
+  
+  
+    <li class="md-nav__item">
+      <a href="../cloudStatusDialog.m/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ndi.gui.nav.cloudStatusDialog
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../daqSystemBrowser.m/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ndi.gui.nav.daqSystemBrowser
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
     
   
   
@@ -40412,12 +40524,23 @@
     Either way the session is added to the Unaffiliated list and survives a
     Refresh.
 
-    Right-clicking a session node opens a context menu with two submenus,
-    in alphabetical order:
+    Right-clicking a session node opens a context menu, in alphabetical
+    order:
         Apps    - the apps that can run on a session (see sessionApps).
                   Choosing one resolves the underlying ndi.session and
                   launches the app.
+        Assign to workspace...
+                - prompts for a variable name (default &quot;S&quot;) and assigns the
+                  ndi.session to it in the base workspace (a session inside
+                  a dataset is opened first). The node label then shows the
+                  name.
         Session - actions and information about the session itself:
+                    Clear Cache       clears the session's cache.
+                    DAQ Systems...    opens ndi.gui.nav.daqSystemBrowser, a
+                                      read-only view of each DAQ system's
+                                      reader, file and epoch probe map file
+                                      parameters, and an example epoch's
+                                      actual files.
                     Info...           opens ndi.gui.nav.sessionInfo, a
                                       vital-statistics window (DAQ systems,
                                       elements, subjects).
@@ -40427,9 +40550,15 @@
                     Ingestion Status  computes the session's ingestion state
                                       and shows it as a node badge.
 
-    Right-clicking a dataset node opens a context menu whose actions are
-    grouped by topic. The one topic at present is &quot;Cloud&quot;, which gathers the
+    Right-clicking a dataset node opens a context menu. Its first item,
+    &quot;Assign to workspace...&quot;, prompts for a variable name (default &quot;D&quot;) and
+    assigns the ndi.dataset to it in the base workspace. The other actions
+    are grouped by topic. The one topic at present is &quot;Cloud&quot;, which gathers the
     NDI Cloud synchronisation actions for that dataset:
+        Check Cloud status      reports whether the dataset is in NDI Cloud
+                                in an ndi.gui.nav.cloudStatusDialog, which
+                                shows the cloud dataset id with a Copy
+                                button (greyed out when not in the cloud).
         Upload to Cloud         creates (on first upload) and uploads the
                                 dataset's documents and files to NDI Cloud.
         Check Cloud for New     reports how many cloud documents are not yet
@@ -40683,6 +40812,10 @@
 <td><em>toggle</em></td>
 <td>TOGGLE Flip a collapsible pane between engaged and collapsed.</td>
 </tr>
+<tr>
+<td><em>workspaceNameError</em></td>
+<td>WORKSPACENAMEERROR Why NAME cannot be a workspace variable, or ''.</td>
+</tr>
 </tbody>
 </table>
 <h3 id="methods-help">Methods help</h3>
@@ -40857,12 +40990,23 @@ Help for ndi.gui.nav.datasetsPane/currentHeight is inherited from superclass ndi
     Either way the session is added to the Unaffiliated list and survives a
     Refresh.
 
-    Right-clicking a session node opens a context menu with two submenus,
-    in alphabetical order:
+    Right-clicking a session node opens a context menu, in alphabetical
+    order:
         Apps    - the apps that can run on a session (see sessionApps).
                   Choosing one resolves the underlying ndi.session and
                   launches the app.
+        Assign to workspace...
+                - prompts for a variable name (default &quot;S&quot;) and assigns the
+                  ndi.session to it in the base workspace (a session inside
+                  a dataset is opened first). The node label then shows the
+                  name.
         Session - actions and information about the session itself:
+                    Clear Cache       clears the session's cache.
+                    DAQ Systems...    opens ndi.gui.nav.daqSystemBrowser, a
+                                      read-only view of each DAQ system's
+                                      reader, file and epoch probe map file
+                                      parameters, and an example epoch's
+                                      actual files.
                     Info...           opens ndi.gui.nav.sessionInfo, a
                                       vital-statistics window (DAQ systems,
                                       elements, subjects).
@@ -40872,9 +41016,15 @@ Help for ndi.gui.nav.datasetsPane/currentHeight is inherited from superclass ndi
                     Ingestion Status  computes the session's ingestion state
                                       and shows it as a node badge.
 
-    Right-clicking a dataset node opens a context menu whose actions are
-    grouped by topic. The one topic at present is &quot;Cloud&quot;, which gathers the
+    Right-clicking a dataset node opens a context menu. Its first item,
+    &quot;Assign to workspace...&quot;, prompts for a variable name (default &quot;D&quot;) and
+    assigns the ndi.dataset to it in the base workspace. The other actions
+    are grouped by topic. The one topic at present is &quot;Cloud&quot;, which gathers the
     NDI Cloud synchronisation actions for that dataset:
+        Check Cloud status      reports whether the dataset is in NDI Cloud
+                                in an ndi.gui.nav.cloudStatusDialog, which
+                                shows the cloud dataset id with a Copy
+                                button (greyed out when not in the cloud).
         Upload to Cloud         creates (on first upload) and uploads the
                                 dataset's documents and files to NDI Cloud.
         Check Cloud for New     reports how many cloud documents are not yet
@@ -41331,6 +41481,10 @@ Help for ndi.gui.nav.datasetsPane/setEngagedQuietly is inherited from superclass
 Help for ndi.gui.nav.datasetsPane/toggle is inherited from superclass ndi.gui.nav.pane
 </code></pre>
 <hr />
+<p><strong>workspaceNameError</strong> - <em>WORKSPACENAMEERROR Why NAME cannot be a workspace variable, or ''.</em></p>
+<pre><code>
+</code></pre>
+<hr />
 
 
 
@@ -41382,10 +41536,10 @@ Help for ndi.gui.nav.datasetsPane/toggle is inherited from superclass ndi.gui.na
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "../../../../../..", "features": ["navigation"], "search": "../../../../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../../../../..", "features": ["navigation"], "search": "../../../../../../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
-      <script src="../../../../../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      <script src="../../../../../../assets/javascripts/bundle.c21346df.min.js"></script>
       
     
   </body>

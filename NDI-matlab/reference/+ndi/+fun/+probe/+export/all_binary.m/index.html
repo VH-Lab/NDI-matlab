@@ -21,7 +21,7 @@
       
       
       <link rel="icon" href="../../../../../../../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.0">
     
     
       
@@ -29,10 +29,10 @@
       
     
     
-      <link rel="stylesheet" href="../../../../../../../assets/stylesheets/main.ec1eaa64.min.css">
+      <link rel="stylesheet" href="../../../../../../../assets/stylesheets/main.57a0d79d.min.css">
       
         
-        <link rel="stylesheet" href="../../../../../../../assets/stylesheets/palette.ab4e12ef.min.css">
+        <link rel="stylesheet" href="../../../../../../../assets/stylesheets/palette.fb2fffe2.min.css">
       
       
 
@@ -9937,6 +9937,34 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../%2Bcloud/%2Bapi/%2Bdocuments/waitForDocumentCount.m/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ndi.cloud.api.documents.waitForDocumentCount
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -12624,6 +12652,34 @@
     
   
     ndi.cloud.api.implementation.documents.UpdateDocument
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../%2Bcloud/%2Bapi/%2Bimplementation/%2Bdocuments/WaitForDocumentCount.m/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ndi.cloud.api.implementation.documents.WaitForDocumentCount
   
 
     
@@ -29818,6 +29874,62 @@
   
   
     <li class="md-nav__item">
+      <a href="../../../../%2Bgui/%2Bnav/cloudStatusDialog.m/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ndi.gui.nav.cloudStatusDialog
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../%2Bgui/%2Bnav/daqSystemBrowser.m/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ndi.gui.nav.daqSystemBrowser
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../../../%2Bgui/%2Bnav/datasetsPane.m/" class="md-nav__link">
         
   
@@ -40230,10 +40342,14 @@
         int16_written = multiplier * physical_data
 
   so the multiplier is the RECIPROCAL of the scale factor that converts the
-  stored int16 back to physical units. The default (1/0.195) assumes Intan
-  data, whose int16 decode to microvolts via uV = int16 * 0.195.
+  stored int16 back to physical units. By default the multiplier is chosen
+  separately for each probe by ndi.fun.probe.export.autoMultiplier: 1 when the
+  probe returns raw integer counts (an integer class, or whole-number doubles
+  such as SpikeGLX counts), and 1/0.195 otherwise, which assumes Intan data
+  whose int16 decode to microvolts via uV = int16 * 0.195.
 
-  For SpikeGLX/Neuropixels data, the stored int16 decode to volts via
+  For SpikeGLX/Neuropixels data returned in volts (rather than raw counts),
+  the stored int16 decode to volts via
 
         volts = double(int16) * 0.6 / (512 * 500)
 
@@ -40251,10 +40367,12 @@
   |  ('kilosort.bin')   |   subdirectory. (Kilosort/phy do not require a   |
   |                     |   particular name.)                              |
   | verbose (1)         | 0/1 Should we be verbose?                        |
-  | multiplier(1/0.195) | Encode multiplier: int16 = multiplier*physical.  |
+  | multiplier ([])     | Encode multiplier: int16 = multiplier*physical.  |
   |                     |   = 1/(physical-per-int16 decode factor).        |
-  |                     |   Default 1/0.195 assumes Intan (uV) data. For   |
-  |                     |   SpikeGLX use (512*500)/0.6.                    |
+  |                     |   [] =&gt; chosen per probe by                      |
+  |                     |   ndi.fun.probe.export.autoMultiplier (1 for raw |
+  |                     |   counts, 1/0.195 for Intan uV). For SpikeGLX    |
+  |                     |   data in volts use (512*500)/0.6.               |
   | noBinary (false)    | If true, create the per-probe subdirectories and |
   |                     |   write only the '.metadata' files; do not write |
   |                     |   the binary files. Useful for setting up the    |
@@ -40330,10 +40448,10 @@
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "../../../../../../..", "features": ["navigation"], "search": "../../../../../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../../../../../..", "features": ["navigation"], "search": "../../../../../../../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
-      <script src="../../../../../../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      <script src="../../../../../../../assets/javascripts/bundle.c21346df.min.js"></script>
       
     
   </body>

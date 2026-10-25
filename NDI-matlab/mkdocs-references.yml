@@ -129,6 +129,7 @@
               - ndi.cloud.api.documents.ndiquery: 'NDI-matlab/reference/+ndi/+cloud/+api/+documents/ndiquery.m.md'
               - ndi.cloud.api.documents.ndiqueryAll: 'NDI-matlab/reference/+ndi/+cloud/+api/+documents/ndiqueryAll.m.md'
               - ndi.cloud.api.documents.updateDocument: 'NDI-matlab/reference/+ndi/+cloud/+api/+documents/updateDocument.m.md'
+              - ndi.cloud.api.documents.waitForDocumentCount: 'NDI-matlab/reference/+ndi/+cloud/+api/+documents/waitForDocumentCount.m.md'
             - feedback PACKAGE:
               - ndi.cloud.api.feedback.deleteFeedback: 'NDI-matlab/reference/+ndi/+cloud/+api/+feedback/deleteFeedback.m.md'
               - ndi.cloud.api.feedback.submitFeedback: 'NDI-matlab/reference/+ndi/+cloud/+api/+feedback/submitFeedback.m.md'
@@ -218,6 +219,7 @@
                 - ndi.cloud.api.implementation.documents.NdiQuery: 'NDI-matlab/reference/+ndi/+cloud/+api/+implementation/+documents/NdiQuery.m.md'
                 - ndi.cloud.api.implementation.documents.NdiQueryAll: 'NDI-matlab/reference/+ndi/+cloud/+api/+implementation/+documents/NdiQueryAll.m.md'
                 - ndi.cloud.api.implementation.documents.UpdateDocument: 'NDI-matlab/reference/+ndi/+cloud/+api/+implementation/+documents/UpdateDocument.m.md'
+                - ndi.cloud.api.implementation.documents.WaitForDocumentCount: 'NDI-matlab/reference/+ndi/+cloud/+api/+implementation/+documents/WaitForDocumentCount.m.md'
               - feedback PACKAGE:
                 - ndi.cloud.api.implementation.feedback.DeleteFeedback: 'NDI-matlab/reference/+ndi/+cloud/+api/+implementation/+feedback/DeleteFeedback.m.md'
                 - ndi.cloud.api.implementation.feedback.SubmitFeedback: 'NDI-matlab/reference/+ndi/+cloud/+api/+implementation/+feedback/SubmitFeedback.m.md'
@@ -755,6 +757,8 @@
               - ndi.gui.component.abstract.ProgressMonitor: 'NDI-matlab/reference/+ndi/+gui/+component/+abstract/ProgressMonitor.m.md'
           - nav PACKAGE:
             - ndi.gui.nav.cloudPane: 'NDI-matlab/reference/+ndi/+gui/+nav/cloudPane.m.md'
+            - ndi.gui.nav.cloudStatusDialog: 'NDI-matlab/reference/+ndi/+gui/+nav/cloudStatusDialog.m.md'
+            - ndi.gui.nav.daqSystemBrowser: 'NDI-matlab/reference/+ndi/+gui/+nav/daqSystemBrowser.m.md'
             - ndi.gui.nav.datasetsPane: 'NDI-matlab/reference/+ndi/+gui/+nav/datasetsPane.m.md'
             - ndi.gui.nav.ndiPane: 'NDI-matlab/reference/+ndi/+gui/+nav/ndiPane.m.md'
             - ndi.gui.nav.pane: 'NDI-matlab/reference/+ndi/+gui/+nav/pane.m.md'
