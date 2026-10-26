@@ -118,25 +118,59 @@ classdef TestControlCovariate < matlab.unittest.TestCase
         end
 
         function testAStandaloneItemCarriesItsControlAndValidates(testCase)
-            % no subject resolves -> a standalone item; its value still gets
-            % the covariate, and the document validates against the schema
+            % no subject resolves -> a standalone item; a record with no
+            % control selection still folds into its covariate, and the
+            % document validates against the schema
             pres = presentationBody('pres_1', [1 2 1], 2);
             r = ndi.migrate.internal.bodyResolver({pres});
+            ctl = controlDoc('cs_1', [2 2 2]);
+            ctl.control_stimulus_ids = rmfield(ctl.control_stimulus_ids, ...
+                'control_stimulus_id_method');
             [d, ~, rep] = ndi.migrate.internal.stimulusPresentationToItem(pres, r, [], ...
-                'ControlRecords', {controlDoc('cs_1', [2 2 2])}, 'LeaveUnplaced', false);
+                'ControlRecords', {ctl}, 'LeaveUnplaced', false);
             testCase.verifyTrue(rep.standalone);
             c = covariateOf(d, 'control condition');
             testCase.verifyEqual(logical(c.logical(:)'), [false true false]);
-            % an item has no method: the control selection is not written
-            % there, and the report says so
-            testCase.verifyTrue(rep.control_method_not_placed);
-            testCase.verifyEqual(rep.control_method_parameters, 0);
+            testCase.verifyEqual(rep.control_records_folded, 1);
             cache = did2.schema.cache.shared();
             restore = ndi.migrate.internal.termRegistryOff(); %#ok<NASGU>
             testCase.verifyWarningFree(@() cache.validateDocument(d));
         end
 
         % ============ [control selection on the presentation method] =========
+
+        function testAStandaloneItemLeavesARecordWithAMethodAsV1(testCase)
+            % INVERTED (it folded the record and lost the method): an item
+            % has no method, so under [generic stage is lossless] the record
+            % is not folded -- no covariate, reason 'unplaced' -- and the end
+            % of ndi.migrate.local carries it as v1
+            pres = presentationBody('pres_1', [1 2 1], 2);
+            r = ndi.migrate.internal.bodyResolver({pres});
+            [d, ~, rep] = ndi.migrate.internal.stimulusPresentationToItem(pres, r, [], ...
+                'ControlRecords', {controlDoc('cs_1', [2 2 2])}, 'LeaveUnplaced', false);
+            testCase.verifyTrue(rep.standalone);
+            testCase.verifyEmpty(covariateOf(d, 'control condition'));
+            testCase.verifyEqual(rep.control_unfolded_reason, 'unplaced');
+            testCase.verifyEqual(rep.control_unplaced_fields, ...
+                {'control_stimulus_ids.control_stimulus_id_method'});
+            testCase.verifyEqual(rep.control_records_folded, 0);
+            testCase.verifyEqual(rep.control_method_parameters, 0);
+        end
+
+        function testARecordFieldTheFoldCannotPlaceLeavesItAsV1(testCase)
+            ctl = controlDoc('cs_1', [2 2]);
+            ctl.control_stimulus_ids.note = 'chosen by hand';
+            [m, ~, r] = emit(ctl, [1 2]);
+            testCase.verifyEmpty(covariateOf(m, 'control condition'));
+            testCase.verifyEmpty(manipParam(m, 'control selection method'));
+            testCase.verifyEqual(r.control_unfolded_reason, 'unplaced');
+            testCase.verifyEqual(r.control_unplaced_fields, {'control_stimulus_ids.note'});
+            ctl = withApp(controlDoc('cs_1', [2 2]), 'ndi_app_tuning_response', 'v9');
+            ctl.app.build = '7';
+            [~, ~, r] = emit(ctl, [1 2]);
+            testCase.verifyEqual(r.control_unplaced_fields, {'app.build'});
+            testCase.verifyEqual(r.software_minted, 0, 'an unfolded record mints nothing');
+        end
 
         function testTheControlSelectionIsMethodParametersOnTheManipulation(testCase)
             % 20211116's record: method "pseudorandom", controlid "isblank",

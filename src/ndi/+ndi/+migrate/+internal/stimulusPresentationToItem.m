@@ -182,8 +182,16 @@ function [manipBody, methodBodies, report, softwareBodies] = ...
 %                                                       v1 wrote text)
 %     any other field -> 'control selection <field>'
 %   Several records must agree on it, else the records are 'conflicting' and
-%   stay as v1. A standalone item has no method: the parameters are not
-%   written there (REPORT.control_method_not_placed).
+%   stay as v1. A standalone item has no method, so there a record carrying
+%   a control_stimulus_id_method is NOT folded ([generic stage is lossless]):
+%   it stays as it is and the end of ndi.migrate.local carries it as v1,
+%   reason 'unplaced', REPORT.control_unplaced_fields naming the fields. The
+%   same holds for any record field this fold cannot place: a field of the
+%   control_stimulus_ids block other than control_stimulus_ids /
+%   control_stimulus_id_method, or an `app` field outside NDI's app.json
+%   (name, version, url, os, os_version, interpreter, interpreter_version).
+%   (The app's os / interpreter are not written either -- see SOFTWARE --
+%   but are counted, not carried: an open question for the team.)
 %
 %   TIMING. Decided by Jess Haley, 2026-10-22 [presentation times from the
 %   file] (did-schema V_eta_stimulus_response_model_plan.md). The current v1
@@ -746,6 +754,16 @@ report.control_records = numel(records);
 if isempty(records)
     return;
 end
+% lossless: a record with a field this fold cannot place is not folded
+unplaced = {};
+for r = 1:numel(records)
+    unplaced = [unplaced, unplacedControlFields(records{r}, report.standalone)]; %#ok<AGROW>
+end
+if ~isempty(unplaced)
+    report.control_unfolded_reason = 'unplaced';
+    report.control_unplaced_fields = reshape(unique(unplaced, 'stable'), 1, []);
+    return;
+end
 vectors = cell(1, numel(records));
 for r = 1:numel(records)
     ids = controlEntries(records{r});
@@ -785,6 +803,38 @@ end
 control = vectors{1};
 report.control_records_folded = numel(records);
 report.control_true = sum(control);
+end
+
+function unplaced = unplacedControlFields(v1Control, standalone)
+%UNPLACEDCONTROLFIELDS The fields of one v1 control_stimulus_ids record this
+%   fold would not write ([generic stage is lossless]). See CONTROL SELECTION.
+unplaced = {};
+if ~isstruct(v1Control)
+    return;
+end
+if isfield(v1Control, 'control_stimulus_ids') && isstruct(v1Control.control_stimulus_ids)
+    blk = v1Control.control_stimulus_ids;
+    other = setdiff(fieldnames(blk), {'control_stimulus_ids', 'control_stimulus_id_method'});
+    for k = 1:numel(other)
+        if ~isempty(blk.(other{k}))
+            unplaced{end+1} = ['control_stimulus_ids.' other{k}]; %#ok<AGROW>
+        end
+    end
+end
+if standalone && ~isempty(fieldnames(controlMethodOf(v1Control)))
+    % a standalone item has no method to carry it
+    unplaced{end+1} = 'control_stimulus_ids.control_stimulus_id_method';
+end
+if isfield(v1Control, 'app') && isstruct(v1Control.app) && isscalar(v1Control.app)
+    known = {'name', 'app_name', 'version', 'app_version', 'url', 'app_url', ...
+        'os', 'os_version', 'interpreter', 'interpreter_version'};
+    other = setdiff(fieldnames(v1Control.app), known);
+    for k = 1:numel(other)
+        if ~isempty(v1Control.app.(other{k}))
+            unplaced{end+1} = ['app.' other{k}]; %#ok<AGROW>
+        end
+    end
+end
 end
 
 function m = controlMethodOf(v1Control)
@@ -1157,6 +1207,7 @@ r = struct( ...
     'control_records_folded', 0, ...
     'control_true',        0, ...
     'control_unfolded_reason', '', ...
+    'control_unplaced_fields', {{}}, ...
     'control_method_conflict', false, ...
     'control_method_parameters', 0, ...
     'control_method_not_placed', false, ...
