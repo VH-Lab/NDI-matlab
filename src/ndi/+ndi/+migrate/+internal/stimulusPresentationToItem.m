@@ -128,8 +128,9 @@ function [manipBody, methodBodies, report, softwareBodies, controlCalcs] = ...
 %   presentation id -- with no manipulation, no entity and no instrument.
 %   REPORT.standalone is true and REPORT.no_subject_reason says why no
 %   subject resolved. A presentation whose epoch DOES record elements that
-%   resolve to no subject is still refused (its reason says so), as is one
-%   the grating guard refuses.
+%   resolve to no subject is a standalone item too (Jess Haley, 2026-10-26
+%   [unresolved recorded elements make a standalone item], "1 a"); the
+%   stimulator route is not tried for it.
 %
 %   SEQUENCE (optional) supplies an enumeration the presentation lacks:
 %     .item_ids     cell of ALREADY-MINTED method ids
@@ -307,15 +308,25 @@ if isempty(animals)
     else
         report.animal_source = 'none';
         nEl = resolver.epochElementCountScoped(presentationId);
-        if nEl > 0
-            % carry-register: carry-082
-            report.reason = sprintf(['[carry-082] no responding animal; the epoch''s %d ' ...
-                'recorded element(s) resolve to no subject'], nEl);
-            return;
+        viaStimulator = {};
+        if nEl == 0
+            viaStimulator = resolver.subjectsViaStimulator(presentationId);
         end
-        viaStimulator = resolver.subjectsViaStimulator(presentationId);
         report.stimulator_subjects = numel(viaStimulator);
-        if numel(viaStimulator) == 1
+        if nEl > 0
+            % The epoch records elements but none resolves to a subject.
+            % Decided by Jess Haley, 2026-10-26 [unresolved recorded elements
+            % make a standalone item] ("1 a"; did-schema
+            % V_eta_go_forward_class_audit.md): such a presentation becomes a
+            % STANDALONE `item`, as one with no element at all does
+            % ([presentation with no subject], 2026-10-21), instead of being
+            % carried as v1. The stimulator route is not tried: the epoch's
+            % own recorded elements outrank it, as before.
+            report.no_subject_reason = sprintf(['no responding animal; the ' ...
+                'epoch''s %d recorded element(s) resolve to no subject'], nEl);
+            report.sibling_subjects = siblingCount(resolver, presentationId);
+            report.standalone = true;
+        elseif numel(viaStimulator) == 1
             animals = viaStimulator;
             report.animal_source = 'stimulator';
         elseif numel(viaStimulator) > 1

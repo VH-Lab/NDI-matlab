@@ -13,6 +13,10 @@ function [docs, report] = carryUnchangedAsV1(docs, passthrough, sourceBodies, se
 %   second pass declined to convert, with the carry register row its reason
 %   cites (Decided by Jess Haley, 2026-10-26 [carry register]; did-schema
 %   schemas/V_eta_carry_register.json). The first row named for an id counts.
+%   A record may also carry `dependency`: the id of the document that blocked
+%   it. When that document is itself carried as v1, the record counts under
+%   carry-064 instead ([dependents of a carried document carry], Jess Haley,
+%   2026-10-26): it was carried because what it depends on was.
 %
 %   Decided by Jess Haley, 2026-10-24 [passthrough stays v1] and
 %   [passthrough stays v1: how] (did-schema V_eta_go_forward_class_audit.md):
@@ -65,7 +69,7 @@ arguments
     docs cell
     passthrough struct
     sourceBodies
-    secondPassRows struct = struct('id', {}, 'row', {})
+    secondPassRows struct = struct('id', {}, 'row', {}, 'dependency', {})
 end
 
 if ~iscell(sourceBodies)
@@ -103,6 +107,8 @@ end
 
 % second-pass carry rows by document id (the first named wins)
 rowOf = containers.Map('KeyType', 'char', 'ValueType', 'char');
+depOf = containers.Map('KeyType', 'char', 'ValueType', 'char');
+hasDep = isfield(secondPassRows, 'dependency');
 for r = 1:numel(secondPassRows)
     if ~isfield(secondPassRows, 'id') || ~isfield(secondPassRows, 'row')
         break;
@@ -111,8 +117,12 @@ for r = 1:numel(secondPassRows)
     rrow = char(secondPassRows(r).row);
     if ~isempty(rid) && ~isempty(rrow) && ~isKey(rowOf, rid)
         rowOf(rid) = rrow;
+        if hasDep && ~isempty(secondPassRows(r).dependency)
+            depOf(rid) = char(secondPassRows(r).dependency);
+        end
     end
 end
+carriedIds = {};
 
 carried = newTally();
 byRow = newTally();
@@ -153,9 +163,24 @@ for r = 1:numel(passthrough)
         cn = char(src.document_class.class_name);
     end
     carried = bump(carried, cn);
+    carriedIds{end+1} = id; %#ok<AGROW>
+end
+% by row, once every carry is known (a dependency is judged against the
+% whole carried set)
+carriedSet = containers.Map('KeyType', 'char', 'ValueType', 'logical');
+for c = 1:numel(carriedIds)
+    carriedSet(carriedIds{c}) = true;
+end
+for c = 1:numel(carriedIds)
+    id = carriedIds{c};
     if isKey(rowOf, id)
         report.carried_with_second_pass_row = report.carried_with_second_pass_row + 1;
-        byRow = bump(byRow, rowOf(id));
+        row = rowOf(id);
+        % carry-register: carry-064
+        if isKey(depOf, id) && isKey(carriedSet, depOf(id))
+            row = 'carry-064';   % [dependents of a carried document carry]
+        end
+        byRow = bump(byRow, row);
     else
         report.carried_without_second_pass_row = ...
             report.carried_without_second_pass_row + 1;

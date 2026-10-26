@@ -429,6 +429,25 @@ classdef TestMigrateLocal < matlab.unittest.TestCase
             verifyEmpty(testCase, rep0.carried_by_row);
         end
 
+        function testADependentOfACarriedDocumentCountsUnderCarry064(testCase)
+            % [dependents of a carried document carry] (Jess Haley,
+            % 2026-10-26): a record whose `dependency` is itself carried as
+            % v1 counts under carry-064; one whose dependency converted (or
+            % is absent) keeps its own row.
+            a = makeV1Body('alpha');
+            b = makeV1Body('beta');
+            r = did2.convert.v1_to_v2({a, b}, 'Validate', false);
+            rows = struct('id', {a.base.id, b.base.id}, ...
+                'row', {'carry-096', 'carry-096'}, ...
+                'dependency', {b.base.id, 'not-a-document'});
+            [~, rep] = ndi.migrate.internal.carryUnchangedAsV1(r.migrated, ...
+                r.passthrough, {a, b}, rows);
+            verifyEqual(testCase, rep.carried_with_second_pass_row, 2);
+            got = containers.Map({rep.carried_by_row.row}, {rep.carried_by_row.count});
+            verifyEqual(testCase, got('carry-064'), 1);
+            verifyEqual(testCase, got('carry-096'), 1);
+        end
+
         function testCarryRowOfReadsTheFirstTag(testCase)
             verifyEqual(testCase, ndi.migrate.internal.carryRowOf( ...
                 '[carry-080] unplaced (carried as v1): x'), 'carry-080');
