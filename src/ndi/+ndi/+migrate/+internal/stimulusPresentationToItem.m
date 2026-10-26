@@ -1,4 +1,4 @@
-function [manipBody, methodBodies, report] = ...
+function [manipBody, methodBodies, report, softwareBodies] = ...
         stimulusPresentationToItem(v1Body, resolver, sequence, options)
 %STIMULUSPRESENTATIONTOITEM Decompose one legacy stimulus_presentation into the
 %   did-schema #88 stimulus shape: N deduplicated standalone `method`
@@ -6,6 +6,7 @@ function [manipBody, methodBodies, report] = ...
 %   `manipulation` (value kind `item`) whose `item` value is the playlist into them.
 %
 %   [MANIP, METHODS, REPORT] = stimulusPresentationToItem(V1BODY, RESOLVER)
+%   [MANIP, METHODS, REPORT, SOFTWARE] = stimulusPresentationToItem(...)
 %   [...] = stimulusPresentationToItem(V1BODY, RESOLVER, SEQUENCE)
 %   [...] = stimulusPresentationToItem(..., 'CohortIdFor', @(sessionId) id)
 %   [...] = stimulusPresentationToItem(..., 'ControlRecords', {v1Control, ...})
@@ -68,6 +69,15 @@ function [manipBody, methodBodies, report] = ...
 %                                    own example); what each stimulus was is
 %                                    on the documents the playlist names
 %                     statement.distributive  true on a cohort manipulation
+%                     software_id    the presentation's `app` as a `software`
+%                                    entity (see SOFTWARE)
+%                     method.parameters  how the controls were chosen (see
+%                                    CONTROL SELECTION)
+%     SOFTWARE      the `software` entities (with their version assertions)
+%                   minted from the presentation's and its folded control
+%                   records' `app` blocks; the caller adds them to the
+%                   documents it folds (ndi.migrate.local's software dedup
+%                   merges duplicates after this pass)
 %                   Its time reference is NOT minted here: the edge is
 %                   replaced by the did2.convert.mintSessionDuring marker,
 %                   and ndi.migrate.local mints "during the session" for it
@@ -144,6 +154,37 @@ function [manipBody, methodBodies, report] = ...
 %   says why; the caller leaves such records as v1. REPORT.control_records
 %   (given), .control_records_folded and .control_true count what happened.
 %
+%   SOFTWARE. Decided by Jess Haley, 2026-10-26 [presentation app is
+%   software] (did-schema V_eta_go_forward_class_audit.md; rule R1,
+%   TEAM-SIGN-OFF [software]): the v1 `app` block (name, version, url) becomes
+%   a `software` entity (ndi.migrate.internal.appSoftware) referenced by the
+%   manipulation's `software_id`. A folded control record's `app` becomes one
+%   too ([control selection on the presentation method]); `software_id` is
+%   ONE edge, so it is referenced only when the presentation has no app of its
+%   own, and otherwise minted unreferenced when it names a different program
+%   or version (REPORT.software_unreferenced). A standalone item has no
+%   software edge: its software is minted unreferenced.
+%   THE RUN ENVIRONMENT (os, os_version, interpreter, interpreter_version) IS
+%   NOT WRITTEN: the decision places it "in its execution environment", but on
+%   did-schema main `manipulation` declares neither `operating_system_id` nor
+%   `interpreter_id` (only `calculation` does, #73 item 53) and no
+%   `execution_environment` field exists. REPORT.app_environment_not_written
+%   names the fields, so the gap is counted, not silent.
+%
+%   CONTROL SELECTION. Decided by Jess Haley, 2026-10-26 [control selection
+%   on the presentation method]: a folded control record's
+%   `control_stimulus_id_method` becomes method parameters on the
+%   manipulation (`method.parameters`), each a label variable (no registered
+%   term yet; as stimulusRecipe's unnamed fields) with one value form:
+%     method          -> 'control selection method'     text, verbatim
+%     controlid       -> 'control identifier parameter' text
+%     controlid_value -> 'control identifier value'     quantity (text when
+%                                                       v1 wrote text)
+%     any other field -> 'control selection <field>'
+%   Several records must agree on it, else the records are 'conflicting' and
+%   stay as v1. A standalone item has no method: the parameters are not
+%   written there (REPORT.control_method_not_placed).
+%
 %   TIMING. Decided by Jess Haley, 2026-10-22 [presentation times from the
 %   file] (did-schema V_eta_stimulus_response_model_plan.md). The current v1
 %   writer puts the per-trial times in the attached file presentation_time.bin
@@ -189,7 +230,7 @@ arguments
     options.LeaveUnplaced (1,1) logical = true
 end
 
-manipBody = []; methodBodies = {};
+manipBody = []; methodBodies = {}; softwareBodies = {};
 report = newReport();
 
 presentationId = baseField(v1Body, 'id', '');
@@ -336,14 +377,17 @@ if ~isempty(sequence)
         report.trials_with_timing = numel(frameTimes);
         report.timing_source = 'frameTimes (hartley_calc)';
     end
-    [control, report] = controlCovariate(options.ControlRecords, ...
+    [control, report, controlMethod] = controlCovariate(options.ControlRecords, ...
         numel(frameOrder), false, report);
     if ~isempty(options.PresentationTimeFile)
         report.timing_file = 'not used: the dimension is frames';
     end
     [dims, covs] = presentationAxes(numel(frameOrder), onsets, offsets, control);
+    [softwareBodies, swId, params, report] = provenance(v1Body, ...
+        options.ControlRecords, ~isempty(control), controlMethod, report);
     manipBody = itemBody(report.standalone, presentationId, sessionId, datestamp, ...
-        entityId, stimulatorId, itemIds, value, dims, covs, report.distributive);
+        entityId, stimulatorId, itemIds, value, dims, covs, report.distributive, ...
+        '', swId, params);
     [manipBody, report] = carryFiles(manipBody, v1Body, report);
     return;
 end
@@ -441,11 +485,15 @@ report.trial_positions = value.item;
 
 [onsets, offsets, report] = presentationTimes(block, ...
     options.PresentationTimeFile, numel(order), report);
-[control, report] = controlCovariate(options.ControlRecords, numel(order), true, report);
+[control, report, controlMethod] = controlCovariate(options.ControlRecords, ...
+    numel(order), true, report);
 [dims, covs] = presentationAxes(numel(order), onsets, offsets, control);
+[softwareBodies, swId, params, report] = provenance(v1Body, ...
+    options.ControlRecords, ~isempty(control), controlMethod, report);
 
 manipBody = itemBody(report.standalone, presentationId, sessionId, datestamp, ...
-    entityId, stimulatorId, itemIds, value, dims, covs, report.distributive, notesText);
+    entityId, stimulatorId, itemIds, value, dims, covs, report.distributive, ...
+    notesText, swId, params);
 [manipBody, report] = carryFiles(manipBody, v1Body, report);
 end
 
@@ -548,15 +596,23 @@ end
 % ===================== the manipulation ===================================
 
 function b = itemBody(standalone, presentationId, sessionId, datestamp, ...
-        entityId, stimulatorId, itemIds, value, dims, covs, distributive, notes)
+        entityId, stimulatorId, itemIds, value, dims, covs, distributive, notes, ...
+        softwareId, params)
 if nargin < 12
     notes = '';
+end
+if nargin < 13
+    softwareId = '';
+end
+if nargin < 14
+    params = {};
 end
 if standalone
     b = standaloneItem(presentationId, sessionId, datestamp, itemIds, value, dims, covs);
 else
     b = itemManipulation(presentationId, sessionId, datestamp, ...
-        entityId, stimulatorId, itemIds, value, dims, covs, distributive, notes);
+        entityId, stimulatorId, itemIds, value, dims, covs, distributive, notes, ...
+        softwareId, params);
 end
 end
 
@@ -577,9 +633,16 @@ d = did2.build.document('item', fields, ...
 end
 
 function m = itemManipulation(presentationId, sessionId, datestamp, ...
-        entityId, stimulatorId, itemIds, value, dims, covs, distributive, notes)
+        entityId, stimulatorId, itemIds, value, dims, covs, distributive, notes, ...
+        softwareId, params)
 if nargin < 11
     notes = '';
+end
+if nargin < 12
+    softwareId = '';
+end
+if nargin < 13
+    params = {};
 end
 restore = ndi.migrate.internal.termRegistryOff(); %#ok<NASGU>
 % did2.build insists on the interaction's time_reference_id min_count; the
@@ -594,6 +657,14 @@ args = {'Method', 'visual stimulation', ...
     'CreationTimestamp', datestamp, 'Validate', false};
 if ~isempty(stimulatorId)
     args = [args, {'InstrumentId', stimulatorId}];
+end
+if ~isempty(softwareId)
+    % [presentation app is software] (Jess Haley, 2026-10-26)
+    args = [args, {'SoftwareId', softwareId}];
+end
+if ~isempty(params)
+    % [control selection on the presentation method] (Jess Haley, 2026-10-26)
+    args = [args, {'MethodParameters', did2.build.list(params{:})}];
 end
 if ~isempty(notes)
     args = [args, {'Notes', notes}];
@@ -662,11 +733,14 @@ end
 
 % ===================== the control covariate ==============================
 
-function [control, report] = controlCovariate(records, n, trialsAreThePositions, report)
+function [control, report, method] = controlCovariate(records, n, trialsAreThePositions, report)
 %CONTROLCOVARIATE The 'control condition' covariate's values (a 1xN logical)
 %   from the presentation's v1 control_stimulus_ids RECORDS, or [] when there
-%   is none to write. See CONTROL in the help above.
+%   is none to write. See CONTROL in the help above. METHOD is the records'
+%   shared control_stimulus_id_method block (struct() when none); records
+%   that disagree on it are 'conflicting' (see CONTROL SELECTION).
 control = [];
+method = struct();
 records = asCell(records);
 report.control_records = numel(records);
 if isempty(records)
@@ -697,9 +771,125 @@ for r = 2:numel(vectors)
         return;
     end
 end
+method = controlMethodOf(records{1});
+for r = 2:numel(records)
+    if ~isequal(controlMethodOf(records{r}), method)
+        % one method block on the manipulation: records that say different
+        % things about how the controls were chosen cannot share it
+        report.control_unfolded_reason = 'conflicting';
+        report.control_method_conflict = true;
+        method = struct();
+        return;
+    end
+end
 control = vectors{1};
 report.control_records_folded = numel(records);
 report.control_true = sum(control);
+end
+
+function m = controlMethodOf(v1Control)
+%CONTROLMETHODOF The record's control_stimulus_id_method, its empty fields
+%   dropped (absence is empty); struct() when there is none.
+m = struct();
+if isstruct(v1Control) && isfield(v1Control, 'control_stimulus_ids') ...
+        && isstruct(v1Control.control_stimulus_ids) ...
+        && isfield(v1Control.control_stimulus_ids, 'control_stimulus_id_method') ...
+        && isstruct(v1Control.control_stimulus_ids.control_stimulus_id_method) ...
+        && isscalar(v1Control.control_stimulus_ids.control_stimulus_id_method)
+    raw = v1Control.control_stimulus_ids.control_stimulus_id_method;
+    fn = fieldnames(raw);
+    for k = 1:numel(fn)
+        if ~isempty(raw.(fn{k}))
+            m.(fn{k}) = raw.(fn{k});
+        end
+    end
+end
+end
+
+function [docs, swId, params, report] = provenance(v1Body, records, controlFolded, ...
+        controlMethod, report)
+%PROVENANCE The `software` entities for the presentation's `app` and its
+%   folded control records' `app`, the id for `software_id`, and the control
+%   selection as method parameters. See SOFTWARE and CONTROL SELECTION above.
+[docs, swId, env, key] = ndi.migrate.internal.appSoftware(v1Body);
+keys = {};
+if ~isempty(swId)
+    keys{end+1} = key;
+end
+envNames = prefixed('app.', env);
+if controlFolded
+    records = asCell(records);
+    for r = 1:numel(records)
+        [cDocs, cId, cEnv, key] = ndi.migrate.internal.appSoftware(records{r});
+        envNames = [envNames, prefixed('control_stimulus_ids.app.', cEnv)]; %#ok<AGROW>
+        if isempty(cId)
+            continue;
+        end
+        if any(strcmp(keys, key))
+            continue;   % the same program and version: one entity
+        end
+        keys{end+1} = key; %#ok<AGROW>
+        docs = [docs, cDocs]; %#ok<AGROW>
+        if isempty(swId)
+            swId = cId;
+        else
+            report.software_unreferenced = report.software_unreferenced + 1;
+        end
+    end
+end
+report.software_minted = numel(keys);
+report.app_environment_not_written = reshape(unique(envNames, 'stable'), 1, []);
+if report.standalone
+    % an item has no software_id edge
+    report.software_unreferenced = numel(keys);
+    report.software_referenced = false;
+    swId = '';
+else
+    report.software_referenced = ~isempty(swId);
+end
+params = {};
+if ~controlFolded
+    return;
+end
+fn = fieldnames(controlMethod);
+if isempty(fn)
+    return;
+end
+if report.standalone
+    report.control_method_not_placed = true;   % an item has no method
+    return;
+end
+% label variables: the registry carries no term for them yet
+restore = ndi.migrate.internal.termRegistryOff(); %#ok<NASGU>
+for k = 1:numel(fn)
+    switch fn{k}
+        case 'method',          label = 'control selection method';
+        case 'controlid',       label = 'control identifier parameter';
+        case 'controlid_value', label = 'control identifier value';
+        otherwise,              label = ['control selection ' fn{k}];
+    end
+    params{end+1} = methodParameter(label, controlMethod.(fn{k})); %#ok<AGROW>
+end
+report.control_method_parameters = numel(params);
+end
+
+function p = methodParameter(label, v)
+% One value form, read from the value (stimulusRecipe's addAuto rule).
+if ischar(v) || (isstring(v) && isscalar(v))
+    p = did2.build.parameter(label, 'Text', char(v));
+elseif islogical(v)
+    p = did2.build.parameter(label, 'Count', double(v(1)));
+elseif isnumeric(v) && isscalar(v)
+    p = did2.build.parameter(label, 'Value', double(v));
+elseif isnumeric(v)
+    p = did2.build.parameter(label, 'Matrix', double(v(:)'));
+else
+    p = did2.build.parameter(label, 'Text', jsonencode(v));
+end
+end
+
+function names = prefixed(prefix, s)
+names = cellfun(@(f) [prefix f], reshape(fieldnames(s), 1, []), 'UniformOutput', false);
 end
 
 function ids = controlEntries(v1Control)
@@ -967,6 +1157,13 @@ r = struct( ...
     'control_records_folded', 0, ...
     'control_true',        0, ...
     'control_unfolded_reason', '', ...
+    'control_method_conflict', false, ...
+    'control_method_parameters', 0, ...
+    'control_method_not_placed', false, ...
+    'software_minted',     0, ...
+    'software_referenced', false, ...
+    'software_unreferenced', 0, ...
+    'app_environment_not_written', {{}}, ...
     'flashed_bars',        0, ...
     'uniform_fields_kept', 0, ...
     'shape_movie_note',    false, ...

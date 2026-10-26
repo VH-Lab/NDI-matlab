@@ -13,6 +13,12 @@ classdef TestControlCovariate < matlab.unittest.TestCase
 %   superseded [control record is a calculation] and the withdrawn
 %   [control record with no control] (a logical-false calculation).
 %
+%   Decided by Jess Haley, 2026-10-26 [control selection on the presentation
+%   method] (did-schema V_eta_go_forward_class_audit.md): the record's
+%   `control_stimulus_id_method` becomes method parameters on the
+%   presentation's manipulation, and its `app` a `software` entity. Before
+%   that decision both were dropped with the record.
+%
 %   ndi.migrate.internal.stimulusPresentationToItem builds the covariate from
 %   'ControlRecords'; ndi.migrate.local's stimulus pass hands it the records
 %   and drops the folded ones (TestMigrateLocalEta20211116 checks that on a
@@ -121,16 +127,146 @@ classdef TestControlCovariate < matlab.unittest.TestCase
             testCase.verifyTrue(rep.standalone);
             c = covariateOf(d, 'control condition');
             testCase.verifyEqual(logical(c.logical(:)'), [false true false]);
+            % an item has no method: the control selection is not written
+            % there, and the report says so
+            testCase.verifyTrue(rep.control_method_not_placed);
+            testCase.verifyEqual(rep.control_method_parameters, 0);
             cache = did2.schema.cache.shared();
             restore = ndi.migrate.internal.termRegistryOff(); %#ok<NASGU>
             testCase.verifyWarningFree(@() cache.validateDocument(d));
+        end
+
+        % ============ [control selection on the presentation method] =========
+
+        function testTheControlSelectionIsMethodParametersOnTheManipulation(testCase)
+            % 20211116's record: method "pseudorandom", controlid "isblank",
+            % controlid_value 1. Each a label variable with one value form.
+            [m, ~, r] = emit(controlDoc('cs_1', [4 4 2 4]), [1 2 1 2]);
+            testCase.verifyEqual(m.interaction.method.term.name, 'visual stimulation', ...
+                'the delivery method is unchanged');
+            testCase.verifyEqual(manipParam(m, 'control selection method'), 'pseudorandom');
+            testCase.verifyEqual(manipParam(m, 'control identifier parameter'), 'isblank');
+            testCase.verifyEqual(manipParam(m, 'control identifier value'), 1);
+            testCase.verifyEqual(r.control_method_parameters, 3);
+            testCase.verifyFalse(r.control_method_not_placed);
+            % Dab's spelling is kept verbatim
+            dab = controlDoc('cs_1', [4 4 2 4]);
+            dab.control_stimulus_ids.control_stimulus_id_method.method = 'psuedorandom';
+            m = emit(dab, [1 2 1 2]);
+            testCase.verifyEqual(manipParam(m, 'control selection method'), 'psuedorandom');
+        end
+
+        function testNoFoldedRecordWritesNoControlSelection(testCase)
+            [m, ~, r] = emit({}, [1 2 1]);
+            testCase.verifyEmpty(manipParam(m, 'control selection method'));
+            testCase.verifyEqual(r.control_method_parameters, 0);
+            % a record that cannot be placed stays v1 whole: nothing of it
+            % is written
+            [m, ~, r] = emit(controlDoc('cs_1', [1 9]), [1 2]);
+            testCase.verifyEmpty(manipParam(m, 'control selection method'));
+            testCase.verifyEqual(r.control_method_parameters, 0);
+            testCase.verifyEqual(r.software_minted, 0);
+        end
+
+        function testRecordsThatDisagreeOnTheMethodAreConflicting(testCase)
+            a = controlDoc('cs_1', [2 2]);
+            b = controlDoc('cs_2', [2 2]);
+            b.control_stimulus_ids.control_stimulus_id_method.method = 'sequential';
+            [m, ~, r] = emit({a, b}, [1 2]);
+            testCase.verifyEmpty(covariateOf(m, 'control condition'));
+            testCase.verifyEqual(r.control_unfolded_reason, 'conflicting');
+            testCase.verifyTrue(r.control_method_conflict);
+            testCase.verifyEqual(r.control_records_folded, 0);
+            testCase.verifyEmpty(manipParam(m, 'control selection method'));
+        end
+
+        function testTheControlAppBecomesASoftwareEntity(testCase)
+            % the presentation has no app: the control's is the software_id
+            ctl = withApp(controlDoc('cs_1', [2 2]), 'ndi_app_tuning_response', 'v9');
+            [m, ~, r, sw] = emit(ctl, [1 2]);
+            testCase.verifyNumElements(sw, 2, 'the entity and its version assertion');
+            testCase.verifyEqual(sw{1}.entity.name, 'ndi_app_tuning_response');
+            testCase.verifyEqual(sw{1}.entity.local_identifier, 'ndi_app_tuning_response@v9');
+            testCase.verifyEqual(depValue(m, 'software_id'), sw{1}.base.id);
+            testCase.verifyEqual(r.software_minted, 1);
+            testCase.verifyEqual(r.software_unreferenced, 0);
+            % the presentation has its own app: software_id is ONE edge, so
+            % the control's program is minted and counted unreferenced
+            pres = withApp(presentationBody('pres_1', [1 2], 2), ...
+                'ndi_app_stimulus_decoder', 'v9');
+            [m, ~, r, sw] = emitPres(pres, ctl);
+            testCase.verifyNumElements(sw, 4);
+            testCase.verifyEqual(depValue(m, 'software_id'), sw{1}.base.id);
+            testCase.verifyEqual(sw{1}.entity.name, 'ndi_app_stimulus_decoder');
+            testCase.verifyEqual(r.software_minted, 2);
+            testCase.verifyEqual(r.software_unreferenced, 1);
+            % the same program and version: one entity
+            same = withApp(controlDoc('cs_1', [2 2]), 'ndi_app_stimulus_decoder', 'v9');
+            [~, ~, r, sw] = emitPres(pres, same);
+            testCase.verifyNumElements(sw, 2);
+            testCase.verifyEqual(r.software_minted, 1);
+            % the run environment has no slot on a manipulation: counted
+            testCase.verifyEqual(sort(r.app_environment_not_written), sort({ ...
+                'app.os', 'app.interpreter', ...
+                'control_stimulus_ids.app.os', 'control_stimulus_ids.app.interpreter'}));
         end
     end
 end
 
 % ===================== driver and fixtures ================================
 
-function [m, methods, report] = emit(controls, order, nStimuli, sequence)
+function [m, methods, report, software] = emitPres(pres, controls)
+bodies = { pres, ...
+    docBody('stimulus_response_scalar', 'resp_1', ...
+        {'stimulus_presentation_id', pres.base.id}, {'element_id', 'elem_9'}), ...
+    docBody('element', 'elem_9', {'subject_id', 'animal_1'}) };
+bodies{2}.document_class.superclasses = [ ...
+    struct('definition', '$NDIDOCUMENTPATH/base.json'), ...
+    struct('definition', '$NDIDOCUMENTPATH/stimulus/stimulus_response.json')];
+r = ndi.migrate.internal.bodyResolver(bodies);
+if ~iscell(controls), controls = {controls}; end
+[m, methods, report, software] = ndi.migrate.internal.stimulusPresentationToItem( ...
+    pres, r, [], 'ControlRecords', controls, 'LeaveUnplaced', false);
+end
+
+function d = withApp(d, name, version)
+% the v1 app block as NDI's app.json writes it (20211116's values)
+d.app = struct('name', name, 'version', version, ...
+    'url', 'https://github.com/VH-lab/NDI-matlab', 'os', 'MACA64', ...
+    'os_version', '', 'interpreter', 'MATLAB', 'interpreter_version', '');
+end
+
+function v = manipParam(m, variable)
+% the value of the manipulation's inline method parameter VARIABLE, or []
+v = [];
+if ~isfield(m, 'interaction') || ~isfield(m.interaction, 'method') ...
+        || ~isfield(m.interaction.method, 'parameters')
+    return;
+end
+p = m.interaction.method.parameters;
+if isstruct(p); p = num2cell(p); end
+for k = 1:numel(p)
+    if ~strcmp(p{k}.variable.name, variable); continue; end
+    e = p{k};
+    if isfield(e, 'text') && ~isempty(e.text); v = e.text;
+    elseif isfield(e, 'quantity') && ~isempty(e.quantity); v = e.quantity.value;
+    elseif isfield(e, 'count') && ~isempty(e.count); v = e.count; end
+    return;
+end
+end
+
+function v = depValue(b, name)
+v = '';
+if ~isfield(b, 'depends_on'); return; end
+for k = 1:numel(b.depends_on)
+    d = b.depends_on(k);
+    if ~strcmp(d.name, name); continue; end
+    if isfield(d, 'document_id'); v = d.document_id; else; v = d.value; end
+    return;
+end
+end
+
+function [m, methods, report, software] = emit(controls, order, nStimuli, sequence)
 if nargin < 3, nStimuli = max(order); end
 if nargin < 4, sequence = []; end
 if ~iscell(controls), controls = {controls}; end
@@ -143,7 +279,7 @@ bodies{2}.document_class.superclasses = [ ...
     struct('definition', '$NDIDOCUMENTPATH/base.json'), ...
     struct('definition', '$NDIDOCUMENTPATH/stimulus/stimulus_response.json')];
 r = ndi.migrate.internal.bodyResolver(bodies);
-[m, methods, report] = ndi.migrate.internal.stimulusPresentationToItem(pres, r, ...
+[m, methods, report, software] = ndi.migrate.internal.stimulusPresentationToItem(pres, r, ...
     sequence, 'ControlRecords', controls, 'LeaveUnplaced', false);
 end
 

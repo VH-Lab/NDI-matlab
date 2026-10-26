@@ -182,6 +182,89 @@ classdef TestStimulusPresentationItem < matlab.unittest.TestCase
             verifyNoEmptyEdges(testCase, m);
         end
 
+        % ============ [presentation app is software] =======================
+
+        function testTheAppBecomesASoftwareEntityOnSoftwareId(testCase)
+            % Decided by Jess Haley, 2026-10-26 [presentation app is software]
+            % (rule R1): the v1 `app` block, which this fold used to drop,
+            % is a `software` entity (name, NAME@VERSION, url) with a text
+            % version assertion, referenced by the manipulation's software_id.
+            % 20211116's values.
+            pres = withApp(presentationBody('pres_app', [1 2], ...
+                { gratingStim(0, 0.04, 0.5), gratingStim(45, 0.04, 0.5) }));
+            [m, ~, report, sw] = emit(testCase, pres);
+            testCase.verifyNumElements(sw, 2, 'the entity and its version assertion');
+            e = sw{1};
+            testCase.verifyEqual(e.document_class.class_name, 'entity');
+            testCase.verifyEqual(e.entity.name, 'ndi_app_stimulus_decoder');
+            testCase.verifyEqual(e.entity.local_identifier, ...
+                'ndi_app_stimulus_decoder@fa67d45d0d957ce9ab3bb2e272a6799f02333996');
+            testCase.verifySubstring(jsonencode(e.entity.global_identifier), ...
+                'https://github.com/VH-lab/NDI-matlab');
+            testCase.verifyEqual(sw{2}.document_class.class_name, 'assertion');
+            testCase.verifyEqual(depValue(sw{2}, 'entity_id'), e.base.id);
+            testCase.verifySubstring(jsonencode(sw{2}), ...
+                'fa67d45d0d957ce9ab3bb2e272a6799f02333996');
+            testCase.verifyEqual(depValue(m, 'software_id'), e.base.id);
+            testCase.verifyEqual(report.software_minted, 1);
+            testCase.verifyTrue(report.software_referenced);
+            testCase.verifyEqual(report.software_unreferenced, 0);
+            % the run environment: `manipulation` declares no
+            % operating_system_id / interpreter_id on did-schema main, so it
+            % is not written, and the report names what was not
+            testCase.verifyEmpty(depValues(m, 'operating_system_id'));
+            testCase.verifyEmpty(depValues(m, 'interpreter_id'));
+            testCase.verifyEqual(report.app_environment_not_written, ...
+                {'app.os', 'app.os_version', 'app.interpreter', 'app.interpreter_version'});
+            verifyNoEmptyEdges(testCase, m);
+            cache = did2.schema.cache.shared();
+            restore = ndi.migrate.internal.termRegistryOff(); %#ok<NASGU>
+            for k = 1:numel(sw)
+                testCase.verifyWarningFree(@() cache.validateDocument(sw{k}), ...
+                    'a software document does not validate');
+            end
+        end
+
+        function testTheRenamedAppSpellingIsReadToo(testCase)
+            % did2.convert.universalRenames writes app_name / app_version
+            pres = presentationBody('pres_app2', 1, { gratingStim(0, 0.04, 0.5) });
+            pres.app = struct('app_name', 'ndi_app_stimulus_decoder', ...
+                'app_version', 'abc', 'url', '');
+            [m, ~, report, sw] = emit(testCase, pres);
+            testCase.verifyEqual(sw{1}.entity.local_identifier, 'ndi_app_stimulus_decoder@abc');
+            testCase.verifyEqual(depValue(m, 'software_id'), sw{1}.base.id);
+            testCase.verifyEmpty(report.app_environment_not_written);
+        end
+
+        function testNoAppGivesNoSoftware(testCase)
+            pres = presentationBody('pres_noapp', 1, { gratingStim(0, 0.04, 0.5) });
+            [m, ~, report, sw] = emit(testCase, pres);
+            testCase.verifyEmpty(sw);
+            testCase.verifyEmpty(depValues(m, 'software_id'));
+            testCase.verifyEqual(report.software_minted, 0);
+            testCase.verifyFalse(report.software_referenced);
+            % a nameless app block names no program: no entity
+            pres.app = struct('name', '', 'version', '1', 'os', 'MACA64');
+            [m, ~, report, sw] = emit(testCase, pres);
+            testCase.verifyEmpty(sw);
+            testCase.verifyEmpty(depValues(m, 'software_id'));
+            testCase.verifyEqual(report.app_environment_not_written, {'app.os'});
+        end
+
+        function testAStandaloneItemsSoftwareIsMintedUnreferenced(testCase)
+            % an item has no software_id edge
+            pres = withApp(presentationBody('pres_sa', [1 2], ...
+                { gratingStim(0, 0.04, 0.5), gratingStim(45, 0.04, 0.5) }));
+            r = ndi.migrate.internal.bodyResolver({pres});
+            [d, ~, report, sw] = ndi.migrate.internal.stimulusPresentationToItem( ...
+                pres, r, [], 'LeaveUnplaced', false);
+            testCase.verifyTrue(report.standalone);
+            testCase.verifyEmpty(depValues(d, 'software_id'));
+            testCase.verifyNumElements(sw, 2);
+            testCase.verifyFalse(report.software_referenced);
+            testCase.verifyEqual(report.software_unreferenced, 1);
+        end
+
         function testTheStimulatorBecomesInstrumentIdAndIsOmittedWhenAbsent(testCase)
             pres = presentationBody('pres_instr', 1, { gratingStim(0, 0.04, 0.5) });
             m = emit(testCase, pres);
@@ -753,6 +836,10 @@ classdef TestStimulusPresentationItem < matlab.unittest.TestCase
                 'instrument_resolved'; 'epoch_id'; 'animal_source'; ...
                 'trial_positions'; 'control_records'; 'control_records_folded'; ...
                 'control_true'; 'control_unfolded_reason'; ...
+                'control_method_conflict'; 'control_method_parameters'; ...
+                'control_method_not_placed'; 'software_minted'; ...
+                'software_referenced'; 'software_unreferenced'; ...
+                'app_environment_not_written'; ...
                 'flashed_bars'; 'uniform_fields_kept'; ...
                 'shape_movie_note'; 'hartley_without_enumeration'; ...
                 'notes_not_written_standalone'; 'entity_id'; 'unplaced_fields'; 'reason'};
@@ -835,7 +922,7 @@ end
 
 % ===================== driver =============================================
 
-function [manipBody, methodBodies, report] = emit(~, pres, sequence, varargin)
+function [manipBody, methodBodies, report, software] = emit(~, pres, sequence, varargin)
 %EMIT Run the assembler with one responding animal in scope, through the real
 %   bodyResolver over a `stimulus_response_scalar` body (the class production
 %   writes). VARARGIN: further name-value options for the assembler.
@@ -846,7 +933,7 @@ bodies = { pres, ...
     responseScalar('resp_1', pres.base.id, 'elem_9'), ...
     docBody('element', 'elem_9', {'subject_id', 'animal_1'}) };
 r = ndi.migrate.internal.bodyResolver(bodies);
-[manipBody, methodBodies, report] = ...
+[manipBody, methodBodies, report, software] = ...
     ndi.migrate.internal.stimulusPresentationToItem(pres, r, sequence, varargin{:}, 'LeaveUnplaced', false);
 end
 
@@ -925,6 +1012,14 @@ b.files = struct('file_list', {{'presentation_time.bin'}});
 b.stimulus_presentation = struct();
 b.stimulus_presentation.presentation_order = order;
 b.stimulus_presentation.stimuli = stimuli;
+end
+
+function b = withApp(b)
+% the v1 app block, as on 20211116's presentations
+b.app = struct('name', 'ndi_app_stimulus_decoder', ...
+    'version', 'fa67d45d0d957ce9ab3bb2e272a6799f02333996', ...
+    'url', 'https://github.com/VH-lab/NDI-matlab', 'os', 'MACA64', ...
+    'os_version', '15.6.1', 'interpreter', 'MATLAB', 'interpreter_version', '24.2');
 end
 
 function s = gratingStim(angle, sFrequency, tFrequency)
