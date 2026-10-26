@@ -312,6 +312,13 @@ classdef TestMigrateLocalEta20211116 < matlab.unittest.TestCase
                      'built in the NDI stimulus fold, so the document passes through pass 1 ' ...
                      'under its v1 tombstone for that pass to consume (DID-matlab ' ...
                      '+migrators_j/control_stimulus_ids.m)']; ...
+                'treatment', ...
+                    ['carried whole as v1 by [one correct reading] and [dataset audit ' ...
+                     'batch 1 and 2] (4) (Jess Haley, 2026-10-26): the two treatments ' ...
+                     '("natural right / left eye opening", EMPTY:10000009 / EMPTY:10000008, ' ...
+                     'no number) state no reading by themselves -- not a term that ' ...
+                     'states its number''s kind, not a ChEBI substance -- so DID-matlab ' ...
+                     '+migrators_j/treatment.m carries them with a needs_mapping note']; ...
                 'tuningcurve_calc', ...
                     ['carried whole as v1 by [generic stage is lossless] / [partly placed ' ...
                      'is carried as v1] (Jess Haley, 2026-10-25): the writer fills ' ...
@@ -599,17 +606,19 @@ classdef TestMigrateLocalEta20211116 < matlab.unittest.TestCase
         end
 
         function testTheEpochFamilyDissolvesIntoPerEpochTrains(testCase)
-            % UPDATED 2026-10-22, AND THE ASSERTION IS INVERTED ON PURPOSE.
-            % This method was testTheEpochFamilyMigratesAndIsReachable and
-            % asserted that `acquisition_epoch` documents EXIST in the
-            % destination (the interim 1:1 rename). Decided by Jess Haley,
-            % 2026-10-22 [epoch dissolution before merge] (F1) builds the
-            % signed dissolution: each v1 element_epoch becomes ONE
-            % observation of its element per epoch (base.id preserved,
-            % variable GO:0001508 'action potential' for a `spikes` element),
-            % anchored to the minted epoch, owning one data body (its .vhsb).
-            % So the right assertion is now that NONE survive, and that every
-            % source element_epoch id is an observation that owns a body.
+            % UPDATED 2026-10-26. Decided by Jess Haley, 2026-10-22 [epoch
+            % dissolution before merge] (F1): each v1 element_epoch becomes ONE
+            % observation of its element per epoch (base.id preserved, variable
+            % GO:0001508 for a `spikes` element) owning one data body (its
+            % .vhsb). AMENDED by [device clocks on one epoch] (Jess Haley,
+            % 2026-10-26): each epoch extent is tied to its acquisition system,
+            % and an extent that cannot be tied to EXACTLY ONE system mints
+            % nothing; did2.convert.epochMint lists its source as carried
+            % (epoch_extent_carried_source_ids) and resolveEpochProbemap keeps
+            % that acquisition_epoch whole. So every source element_epoch is
+            % EITHER a spike-train observation owning a body OR carried whole
+            % under that rule, and every surviving acquisition_epoch is one of
+            % the carried ones.
             migrated = destinationBodies(testCase.Result.destination);
             srcIds = {};
             for k = 1:numel(testCase.Bodies)
@@ -619,7 +628,13 @@ classdef TestMigrateLocalEta20211116 < matlab.unittest.TestCase
                     srcIds{end+1} = char(j.base.id); %#ok<AGROW>
                 end
             end
+            mint = testCase.Result.secondPass.epochMint;
+            carriedIds = {};
+            if isstruct(mint) && isfield(mint, 'epoch_extent_carried_source_ids')
+                carriedIds = cellstr(mint.epoch_extent_carried_source_ids);
+            end
             left = findAllByClass(migrated, 'acquisition_epoch');
+            leftIds = cellfun(@(d) char(d.base.id), left, 'UniformOutput', false);
             byId = containers.Map('KeyType', 'char', 'ValueType', 'any');
             owned = containers.Map('KeyType', 'char', 'ValueType', 'logical');
             for k = 1:numel(migrated)
@@ -630,28 +645,37 @@ classdef TestMigrateLocalEta20211116 < matlab.unittest.TestCase
                     for j = 1:numel(ow); owned(ow{j}) = true; end
                 end
             end
-            asTrain = 0; withBody = 0;
+            asTrain = 0; withBody = 0; carried = 0; neither = {};
             for k = 1:numel(srcIds)
-                if ~isKey(byId, srcIds{k}); continue; end
-                d = byId(srcIds{k});
-                if strcmp(d.document_class.class_name, 'observation') ...
-                        && isfield(d, 'statement') ...
-                        && strcmp(char(d.statement.variable.node), 'GO:0001508')
-                    asTrain = asTrain + 1;
-                    withBody = withBody + isKey(owned, srcIds{k});
+                if any(strcmp(srcIds{k}, carriedIds)) && any(strcmp(srcIds{k}, leftIds))
+                    carried = carried + 1;
+                    continue;
                 end
+                if isKey(byId, srcIds{k})
+                    d = byId(srcIds{k});
+                    if strcmp(d.document_class.class_name, 'observation') ...
+                            && isfield(d, 'statement') ...
+                            && strcmp(char(d.statement.variable.node), 'GO:0001508')
+                        asTrain = asTrain + 1;
+                        withBody = withBody + isKey(owned, srcIds{k});
+                        continue;
+                    end
+                end
+                neither{end+1} = srcIds{k}; %#ok<AGROW>
             end
             fprintf(['\n  EPOCH DISSOLUTION\n    DENOMINATOR: %d v1 element_epoch ' ...
-                'document(s)\n    acquisition_epoch in the destination: %d\n' ...
-                '    element_epoch ids now a spike-train observation: %d; owning a ' ...
-                'body: %d\n'], numel(srcIds), numel(left), asTrain, withBody);
+                'document(s)\n    spike-train observations: %d (owning a body: %d)\n' ...
+                '    carried whole by [device clocks on one epoch] (no one system): %d\n' ...
+                '    acquisition_epoch in the destination: %d\n'], numel(srcIds), ...
+                asTrain, withBody, carried, numel(left));
             assertNotEmpty(testCase, srcIds, 'no element_epoch in the source: measured nothing');
-            verifyEmpty(testCase, left, sprintf( ...
-                '%d acquisition_epoch document(s) survived the dissolution', numel(left)));
-            verifyEqual(testCase, asTrain, numel(srcIds), ...
-                'every element_epoch id must be its spike-train observation');
-            verifyEqual(testCase, withBody, numel(srcIds), ...
+            verifyEmpty(testCase, neither, sprintf(['%d element_epoch(s) are neither a ' ...
+                'spike-train observation nor carried by [device clocks on one epoch]'], ...
+                numel(neither)));
+            verifyEqual(testCase, withBody, asTrain, ...
                 'every spike-train observation must own its body');
+            verifyEmpty(testCase, setdiff(leftIds, carriedIds), ...
+                'an acquisition_epoch survived that epochMint did not list as carried');
             verifyEmpty(testCase, findAllByClass(migrated, 'element_epoch'), ...
                 'element_epoch documents survived migration under the v1 name');
         end

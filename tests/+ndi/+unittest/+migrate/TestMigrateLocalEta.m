@@ -362,26 +362,23 @@ classdef TestMigrateLocalEta < matlab.unittest.TestCase
             verifyFalse(testCase, ...
                 isfield(ref.relative_time_reference.value, 'duration'));
 
-            % --- AND THE OTHER relative_time_reference IS THE EPOCH'S EXTENT
+            % --- THE EPOCH'S EXTENT IS CARRIED, NOT MINTED --------------
+            % [device clocks on one epoch] (Jess Haley, 2026-10-26, did-schema
+            % V_eta_go_forward_class_audit.md): each extent is its own
+            % relative_time_reference whose referent is ITS ACQUISITION
+            % SYSTEM, and an extent that cannot be tied to exactly one system
+            % mints nothing; its source is listed as carried and kept whole.
+            % This fixture's element_epoch belongs to a stimulator with no
+            % acquisition system, so the only relative_time_reference is the
+            % folded anchor. (Inverted: it asserted a second, session-anchored
+            % extent reference.)
             allRefs = findAllByClass(result.destination, 'relative_time_reference');
-            verifyEqual(testCase, numel(allRefs), 2, ...
-                ['expected the folded anchor plus ONE epoch extent reference. ' ...
+            verifyEqual(testCase, numel(allRefs), 1, ...
+                ['expected the folded anchor only: the extent has no one system. ' ...
                  resultDiag(result)]);
-            others = allRefs(cellfun(@(b) ~strcmp(b.base.id, anchorId), allRefs));
-            verifyNotEmpty(testCase, others, resultDiag(result));
-            if isempty(others); return; end
-            extent = others{1};
-            % told apart by WHAT THEY ANCHOR TO: the fold's anchor names the
-            % EPOCH, the extent names the SESSION entity
-            sessionEntity = findEntity(result.destination, 'session');
-            verifyNotEmpty(testCase, sessionEntity, resultDiag(result));
-            if isempty(sessionEntity); return; end
-            verifyEqual(testCase, depValue(extent, 'referent_id'), ...
-                sessionEntity.base.id, ...
-                ['the epoch extent must be anchored to the session, not to ' ...
-                 'the epoch it describes. ' resultDiag(result)]);
-            verifyTrue(testCase, isfield(extent.relative_time_reference.value, 'start'));
-            verifyTrue(testCase, isfield(extent.relative_time_reference.value, 'duration'));
+            verifyEqual(testCase, mint.epoch_extent_carried_sources, 1, resultDiag(result));
+            verifyTrue(testCase, isfield(result.summary.by_class, 'acquisition_epoch'), ...
+                ['the carried acquisition_epoch is not in the destination. ' resultDiag(result)]);
         end
 
         function testWithoutASessionDocumentTheAnchorStaysOnTheSession(testCase)
