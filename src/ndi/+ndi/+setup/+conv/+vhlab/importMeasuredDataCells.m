@@ -29,12 +29,10 @@ for i=1:numel(cells)
     end
 
     et = probeHere.epochtable();
-    all_intervals = [];
-    all_global_starts = [];
+    all_intervals = nan(numel(et),2);
+    all_global_starts = nan(numel(et),1);
     for j=1:numel(et)
-        [interval_here, global_start_here] = getintervalfromdir([S.getpath filesep et(j).epoch_id]);
-        all_intervals = [all_intervals; interval_here];
-        all_global_starts = [all_global_starts; global_start_here];
+        [all_intervals(j,:), all_global_starts(j)] = getintervalfromdir([S.getpath filesep et(j).epoch_id]);
     end
     ImatchesInAll = [];
     for j=1:size(I,1)
