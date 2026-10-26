@@ -83,7 +83,7 @@ function T = treatmentTable(S)
     row1 = {'EMPTY:Treatment: Grating direction-of-motion visual stimulation', "", duration_hours};
     
     % Row 2: Date of birth
-    row2 = {'EMPTY:Treatment: Date of birth', string(dateOfBirth), NaN};
+    row2 = {'EMPTY:date of birth', string(dateOfBirth), NaN};
     
     % Row 3: Experiment time
     row3 = {'EMPTY:Treatment: Non-survival experiment time', string(sessionDirName), NaN};

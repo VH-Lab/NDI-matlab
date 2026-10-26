@@ -1,0 +1,84 @@
+{
+    "approachMappings": [
+        {
+            "name": "preDirSF",
+            "value": "EMPTY:purpose: assessing direction of motion tuning"
+        },
+        {
+            "name": "preDirSF",
+            "value": "EMPTY:purpose: assessing spatial frequency tuning"
+        },
+        {
+            "name": "preDirSF",
+            "value": "EMPTY:approach: before artificial visual stimulation"
+        },
+        {
+            "name": "postDirSF",
+            "value": "EMPTY:purpose: assessing direction of motion tuning"
+        },
+        {
+            "name": "postDirSF",
+            "value": "EMPTY:purpose: assessing spatial frequency tuning"
+        },
+        {
+            "name": "postDirSF",
+            "value": "EMPTY:approach: after artificial visual stimulation"
+        },
+        {
+            "name": "preDirTF",
+            "value": "EMPTY:purpose: assessing direction of motion tuning"
+        },
+        {
+            "name": "preDirTF",
+            "value": "EMPTY:purpose: assessing temporal frequency tuning"
+        },
+        {
+            "name": "preDirTF",
+            "value": "EMPTY:approach: before artificial visual stimulation"
+        },
+        {
+            "name": "postDirTF",
+            "value": "EMPTY:purpose: assessing direction of motion tuning"
+        },
+        {
+            "name": "postDirTF",
+            "value": "EMPTY:purpose: assessing temporal frequency tuning"
+        },
+        {
+            "name": "postDirTF",
+            "value": "EMPTY:approach: after artificial visual stimulation"
+        },
+        {
+            "name": "preSpatialPhase",
+            "value": "EMPTY:purpose: assessing spatial phase tuning"
+        },
+        {
+            "name": "preSpatialPhase",
+            "value": "EMPTY:approach: before artificial visual stimulation"
+        },
+        {
+            "name": "postSpatialPhase",
+            "value": "EMPTY:purpose: assessing spatial phase tuning"
+        },
+        {
+            "name": "postSpatialPhase",
+            "value": "EMPTY:approach: after artificial visual stimulation"
+        },
+        {
+            "name": "preRC",
+            "value": "EMPTY:purpose: reverse correlation"
+        },
+        {
+            "name": "preRC",
+            "value": "EMPTY:approach: before artificial visual stimulation"
+        },
+        {
+            "name": "postRC",
+            "value": "EMPTY:purpose: reverse correlation"
+        },
+        {
+            "name": "postRC",
+            "value": "EMPTY:approach: after artificial visual stimulation"
+        }
+    ]
+}
