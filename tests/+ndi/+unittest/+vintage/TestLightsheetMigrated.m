@@ -8,7 +8,8 @@ classdef TestLightsheetMigrated < matlab.unittest.TestCase
 %   NDI's makePyramid writes them -- a pyramid, its OME-Zarr fileReference,
 %   level 0 with two materialized chunks (chunk.bin_1, chunk.bin_2, recorded
 %   by location), a reduced max level with one chunk, and a level that held
-%   no bytes -- writes what comes out into a V2 session, reopens it with
+%   no bytes (kept as a file-less sampled_body, [compression block and
+%   empty levels], Jess Haley 2026-10-26) -- writes what comes out into a V2 session, reopens it with
 %   ndi.session.dir, and asks the same readers.
 %
 %   NEEDS DID-matlab's lightsheet migrators (DID-matlab #218, f363d98 and
@@ -132,33 +133,56 @@ classdef TestLightsheetMigrated < matlab.unittest.TestCase
             rows = ndi.gui.app.LightsheetZarrManager.pyramidRows(testCase.Session);
             testCase.verifyNumElements(rows, 1);
             testCase.verifyEqual(rows(1).subjectID, 'subj_ls_1');
-            testCase.verifyEqual(rows(1).nLevels, 2, ...
-                'the level that held no bytes folded to nothing (#73 L3(c))');
-            testCase.verifyEqual(rows(1).reduction, 'max');
+            % [compression block and empty levels] (Jess Haley, 2026-10-26),
+            % part 2: a level that held no bytes becomes a file-less
+            % sampled_body that keeps its id and metadata, so it is still
+            % listed, as it is in v1. INVERTED: #73 L3(c) folded it to nothing.
+            testCase.verifyEqual(rows(1).nLevels, 3, ...
+                'the level that held no bytes is kept, file-less');
+            testCase.verifyEqual(rows(1).reduction, 'max/mean');
             testCase.verifyEqual(rows(1).label, 'brain 7 cleared');
             testCase.verifyEqual(rows(1).dtype, '<u2');
         end
 
         function testLevelTableReadsTheMigratorsOutput(testCase)
             t = ndi.fun.doc.lightsheet.levelTable(testCase.Session, 'pyr_ls_1');
-            testCase.verifyEqual(height(t), 2);
-            testCase.verifyEqual(t.level.', [0 1]);
-            testCase.verifyEqual(t.id.', {'lvl_ls_0', 'lvl_ls_1_max'}, 'level ids kept (point 11)');
-            testCase.verifyEqual(t.reduction_function.', {'none', 'max'});
+            % [compression block and empty levels] (Jess Haley, 2026-10-26),
+            % part 2: the level that held no bytes (lvl_ls_1_mean) is a
+            % file-less sampled_body with its id kept, read back with no
+            % stored chunks. INVERTED: #73 L3(c) folded it to nothing. The two
+            % level-1 rows share a level, so their order is not asserted.
+            testCase.verifyEqual(height(t), 3);
+            testCase.verifyEqual(t.level.', [0 1 1]);
+            testCase.verifyEqual(t.id{1}, 'lvl_ls_0', 'level ids kept (point 11)');
+            testCase.verifyEqual(sort(t.id(2:3)).', {'lvl_ls_1_max', 'lvl_ls_1_mean'}, ...
+                'level ids kept (point 11)');
+            iMax = find(strcmp(t.id, 'lvl_ls_1_max'));
+            iMean = find(strcmp(t.id, 'lvl_ls_1_mean'));
+            testCase.verifyEqual(t.reduction_function{1}, 'none');
+            testCase.verifyEqual(t.reduction_function{iMax}, 'max');
+            testCase.verifyEqual(t.reduction_function{iMean}, 'mean');
             testCase.verifyEqual(t.shape{1}, [1 2 400 2048 2048]);
-            testCase.verifyEqual(t.shape{2}, [1 2 200 1024 1024]);
+            testCase.verifyEqual(t.shape{iMax}, [1 2 200 1024 1024]);
+            testCase.verifyEqual(t.shape{iMean}, [1 2 200 1024 1024], ...
+                'the empty level keeps its dimensions');
             testCase.verifyEqual(t.chunks{1}, [1 1 64 256 256]);
-            testCase.verifyEqual(t.n_chunks_stored.', [2 1]);
+            testCase.verifyEqual(t.n_chunks_stored([1 iMax iMean]).', [2 1 0], ...
+                'the empty level stores no chunks');
             testCase.verifyEqual(t.voxel_size{1}([3 4 5]), [2 0.5 0.5], 'AbsTol', 1e-9, ...
                 'z/y/x voxel size in micrometre, as the v1 level said');
-            testCase.verifyEqual(t.voxel_size{2}([3 4 5]), [4 1 1], 'AbsTol', 1e-9);
+            testCase.verifyEqual(t.voxel_size{iMax}([3 4 5]), [4 1 1], 'AbsTol', 1e-9);
             testCase.verifyEqual(t.translation{1}(3), 10, 'AbsTol', 1e-9);
             testCase.verifyEqual(t.dtype{1}, '<u2');
             f = t.Properties.UserData;
             testCase.verifyEqual(f.axes_order, 'tczyx');
             testCase.verifyEqual(f.pyramid_name, 'mean');
             testCase.verifyEqual(f.voxel_size_level0([3 4 5]), [2 0.5 0.5], 'AbsTol', 1e-9);
-            [idx, row] = ndi.fun.doc.lightsheet.chooseLevel(t, 4);
+            % Two level-1 rows tie on voxel size; a caller picks its
+            % reduction first (levelTable's 'reduction' option).
+            tMax = ndi.fun.doc.lightsheet.levelTable(testCase.Session, 'pyr_ls_1', ...
+                'reduction', 'max');
+            testCase.verifyEqual(tMax.id.', {'lvl_ls_0', 'lvl_ls_1_max'});
+            [idx, row] = ndi.fun.doc.lightsheet.chooseLevel(tMax, 4);
             testCase.verifyEqual(idx, 1);
             testCase.verifyEqual(row.id{1}, 'lvl_ls_1_max');
         end
