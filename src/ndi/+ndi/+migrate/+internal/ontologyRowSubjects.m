@@ -282,6 +282,9 @@ report.unresolved_local_identifier_missing       = 0;
 report.unresolved_local_identifier_ambiguous     = 0;
 report.unresolved_conflicting_candidates         = 0;
 report.unresolved_edge_would_be_dropped          = 0;
+% every row left unresolved is carried as v1 at the end of ndi.migrate.local;
+% its carry register row ([carry register], Jess Haley, 2026-10-26)
+report.carry_rows = struct('id', {}, 'row', {});
 
 report.changed = false;
 
@@ -372,7 +375,9 @@ for i = 1:numel(v1Bodies)
     report.local_identifier_overridden = report.local_identifier_overridden + overridden;
 
     if isempty(subjectId)
+        % carry-register: carry-081
         report.unresolved = report.unresolved + 1;
+        report.carry_rows(end+1) = struct('id', srcId, 'row', 'carry-081');
         field = ['unresolved_' reason];
         report.(field) = report.(field) + 1;
         report.data_cells_on_unresolved_rows = ...

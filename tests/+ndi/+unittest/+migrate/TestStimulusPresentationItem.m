@@ -52,7 +52,7 @@ classdef TestStimulusPresentationItem < matlab.unittest.TestCase
             [m, methods, report] = ndi.migrate.internal.stimulusPresentationToItem(pres, r);
             testCase.verifyEmpty(m);
             testCase.verifyEmpty(methods);
-            testCase.verifyTrue(startsWith(report.reason, 'unplaced (carried as v1)'), report.reason);
+            testCase.verifyTrue(startsWith(report.reason, '[carry-062] unplaced (carried as v1)'), report.reason);
             testCase.verifyTrue(any(strcmp(report.unplaced_fields, 'parameters.chromhigh')));
             testCase.verifyTrue(any(strcmp(report.unplaced_fields, 'parameters.BG')), ...
                 'a blank''s parameters are written nowhere either');

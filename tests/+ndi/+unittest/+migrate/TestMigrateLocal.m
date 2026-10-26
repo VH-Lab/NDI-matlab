@@ -402,6 +402,41 @@ classdef TestMigrateLocal < matlab.unittest.TestCase
             verifyTrue(testCase, isequaln(out{1}.toStruct(), expected));
             verifyEqual(testCase, out{2}.toStruct().document_class.schema_version, did2.schema.v2Stamp());
         end
+
+        function testCarryUnchangedAsV1CountsSecondPassRows(testCase)
+            % [carry register] (Jess Haley, 2026-10-26): a carried document a
+            % second-pass step named is counted under the register row its
+            % reason cites; the rest are counted apart, and the two sum to
+            % carried_as_v1. A row for a document that is not carried counts
+            % nowhere; the first row named for an id wins.
+            a = makeV1Body('alpha');
+            b = makeV1Body('beta');
+            r = did2.convert.v1_to_v2({a, b}, 'Validate', false);
+            rows = struct('id', {a.base.id, a.base.id, 'not-a-document'}, ...
+                'row', {'carry-062', 'carry-065', 'carry-070'});
+            [~, rep] = ndi.migrate.internal.carryUnchangedAsV1(r.migrated, ...
+                r.passthrough, {a, b}, rows);
+            verifyEqual(testCase, rep.carried_as_v1, 2);
+            verifyEqual(testCase, rep.carried_with_second_pass_row, 1);
+            verifyEqual(testCase, rep.carried_without_second_pass_row, 1);
+            verifyEqual(testCase, {rep.carried_by_row.row}, {'carry-062'});
+            verifyEqual(testCase, [rep.carried_by_row.count], 1);
+            % without rows: nothing is attributed
+            [~, rep0] = ndi.migrate.internal.carryUnchangedAsV1(r.migrated, ...
+                r.passthrough, {a, b});
+            verifyEqual(testCase, rep0.carried_with_second_pass_row, 0);
+            verifyEqual(testCase, rep0.carried_without_second_pass_row, 2);
+            verifyEmpty(testCase, rep0.carried_by_row);
+        end
+
+        function testCarryRowOfReadsTheFirstTag(testCase)
+            verifyEqual(testCase, ndi.migrate.internal.carryRowOf( ...
+                '[carry-062] unplaced (carried as v1): x'), 'carry-062');
+            verifyEqual(testCase, ndi.migrate.internal.carryRowOf( ...
+                "a: [carry-074] cannot place y [carry-075]"), 'carry-074');
+            verifyEqual(testCase, ndi.migrate.internal.carryRowOf('no tag'), '');
+            verifyEqual(testCase, ndi.migrate.internal.carryRowOf(''), '');
+        end
     end
 end
 

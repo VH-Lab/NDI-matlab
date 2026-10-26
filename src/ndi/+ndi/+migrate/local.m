@@ -1124,15 +1124,31 @@ function result = local(path, options)
         'did2.convert.v1_to_v2 returned no passthrough record');
     carriedAsV1 = NaN;
     if isstruct(passOneRecord) && iscell(convertResult.migrated)
+        % [carry register] (Jess Haley, 2026-10-26): the documents NDI's
+        % second pass declined, each with the carry register row its reason
+        % cites, so the stamp counts second-pass carries by row
+        secondPassRows = secondPassCarryRows({stimulusSequenceReport, ...
+            strainReport, ontologyLabelReport, ontologyRowReport, ensembleReport});
         [convertResult.migrated, carriedAsV1Report] = ...
             ndi.migrate.internal.carryUnchangedAsV1(convertResult.migrated, ...
-            passOneRecord, bodies);
+            passOneRecord, bodies, secondPassRows);
         carriedAsV1 = carriedAsV1Report.carried_as_v1;
         fprintf(['[migrate step]   carried as v1 (did_v1): %d of %d documents ' ...
             '(%d passed through pass 1; %d changed later, %d absent at the end)\n'], ...
             carriedAsV1Report.carried_as_v1, carriedAsV1Report.documents_inspected, ...
             carriedAsV1Report.passed_through_pass_one, ...
             carriedAsV1Report.changed_after_pass_one, carriedAsV1Report.absent_at_end);
+        fprintf(['[migrate step]   carried as v1 by a second-pass reason: %d of %d ' ...
+            'carried (%d with no second-pass row: pass-1 carries and passthrough ' ...
+            'classes)\n'], carriedAsV1Report.carried_with_second_pass_row, ...
+            carriedAsV1Report.carried_as_v1, ...
+            carriedAsV1Report.carried_without_second_pass_row);
+        if ~isempty(carriedAsV1Report.carried_by_row)
+            parts = arrayfun(@(e) sprintf('%s %d', e.row, e.count), ...
+                carriedAsV1Report.carried_by_row, 'UniformOutput', false);
+            fprintf('[migrate step]     second-pass carries, by carry register row: %s\n', ...
+                strjoin(parts, ', '));
+        end
         tabs = {'carried', carriedAsV1Report.carried_by_class; ...
                 'changed later', carriedAsV1Report.changed_by_class; ...
                 'absent at the end', carriedAsV1Report.absent_by_class};
@@ -1697,6 +1713,22 @@ function [convertResult, report] = resolveEnsembleMembership(convertResult, ...
     convertResult.summary = recountSummary(convertResult);
 end
 
+function rows = secondPassCarryRows(reports)
+%SECONDPASSCARRYROWS The {id, row} records of every document a second-pass
+%   step left as v1 (each step's REPORT.carry_rows), concatenated. A step that
+%   did not run (its report is []) contributes none. [carry register], Jess
+%   Haley, 2026-10-26 (did-schema V_eta_go_forward_class_audit.md).
+rows = struct('id', {}, 'row', {});
+for k = 1:numel(reports)
+    r = reports{k};
+    if isstruct(r) && isscalar(r) && isfield(r, 'carry_rows') && isstruct(r.carry_rows) ...
+            && isfield(r.carry_rows, 'id') && isfield(r.carry_rows, 'row')
+        add = r.carry_rows;
+        rows = [rows, reshape(struct('id', {add.id}, 'row', {add.row}), 1, [])]; %#ok<AGROW>
+    end
+end
+end
+
 function [convertResult, report] = resolveOntologyRowSubjects(convertResult, bodies, options)
 %RESOLVEONTOLOGYROWSUBJECTS V_eta second pass (#53): give each passed-through
 %   `ontology_table_row` the subject it names, then re-fold it so the pass-1
@@ -1769,7 +1801,10 @@ function [convertResult, report] = resolveOntologyRowSubjects(convertResult, bod
         end
         if isscalar(sub.migrated) ...
                 && strcmp(sub.migrated{1}.className(), 'ontology_table_row')
+            % carry-register: carry-081 (the row is carried as v1)
             report.refold_no_statements = report.refold_no_statements + 1;
+            report.carry_rows(end+1) = struct('id', char(plan(k).source_id), ...
+                'row', 'carry-081');
             continue;   % REVERT
         end
         replacedIds{end+1} = plan(k).source_id; %#ok<AGROW>
@@ -2694,6 +2729,11 @@ function [convertResult, report] = resolveStimulusPresentations(convertResult, b
             report.control_records_converted = report.control_records_converted + ...
                 rep.control_calculations;
             for c = 1:numel(rep.control_carried)
+                % [carry register] (Jess Haley, 2026-10-26): every control
+                % record carried, with the row its reason cites (uncapped)
+                report.carry_rows(end+1) = struct( ...
+                    'id', char(rep.control_carried{c}.id), ...
+                    'row', ndi.migrate.internal.carryRowOf(rep.control_carried{c}.reason));
                 if numel(report.control_carried) < 20
                     report.control_carried{end+1} = rep.control_carried{c};
                 end
@@ -2705,14 +2745,19 @@ function [convertResult, report] = resolveStimulusPresentations(convertResult, b
         end
         if isempty(manip)
             report.presentations_refused = report.presentations_refused + 1;
+            % carry-register: carry-062 (counts the unplaced refusals)
             if isfield(rep, 'unplaced_fields') && ~isempty(rep.unplaced_fields) ...
-                    && startsWith(rep.reason, 'unplaced')
+                    && strcmp(ndi.migrate.internal.carryRowOf(rep.reason), 'carry-062')
                 % [generic stage is lossless] (Jess Haley, 2026-10-25): left
                 % as it is, carried as v1 by the last step
                 report.presentations_refused_unplaced = ...
                     report.presentations_refused_unplaced + 1;
             end
             report.refusals{end+1} = struct('id', presId, 'reason', rep.reason);
+            % [carry register]: the refused presentation is carried as v1 by
+            % the last step; its reason cites its row
+            report.carry_rows(end+1) = struct('id', char(presId), ...
+                'row', ndi.migrate.internal.carryRowOf(rep.reason));
             if rep.several_animals > 1
                 report.several_animal_refused = report.several_animal_refused + 1;
             end
@@ -2788,6 +2833,18 @@ function [convertResult, report] = resolveStimulusPresentations(convertResult, b
 
     if isempty(consumed)
         report.methods_minted = 0;
+        % no presentation was decomposed, so no ingested stimulus file has
+        % an owner: report each one left, with its row ([carry register])
+        ingested = {};
+        for k = 1:numel(convertResult.migrated)
+            if strcmp(convertResult.migrated{k}.className(), ...
+                    'daqmetadatareader_epochdata_ingested')
+                ingested{end+1} = convertResult.migrated{k}.toStruct(); %#ok<AGROW>
+            end
+        end
+        [~, ~, report.ingested_stimulus] = ...
+            ndi.migrate.internal.ingestedStimulusBodies(ingested, presentationKeys, bodies);
+        report.carry_rows = [report.carry_rows, report.ingested_stimulus.left_rows];
         return;
     end
     for g = 1:numel(hartleyMethods)
@@ -2820,6 +2877,7 @@ function [convertResult, report] = resolveStimulusPresentations(convertResult, b
     end
     [ingestedBodies, ingestedConsumed, report.ingested_stimulus] = ...
         ndi.migrate.internal.ingestedStimulusBodies(ingested, presentationKeys, bodies);
+    report.carry_rows = [report.carry_rows, report.ingested_stimulus.left_rows];
     minted = [minted, ingestedBodies];
 
     % drop the passthrough stimulus_presentation docs that were assembled away,
@@ -3117,6 +3175,7 @@ function r = newStimulusSequenceReport()
         'control_covariates_all_false', 0, ...
         'control_records_converted',  0, ...
         'control_carried',            {{}}, ...
+        'carry_rows',                 struct('id', {}, 'row', {}), ...
         'software_minted',            0, ...
         'software_referenced',        0, ...
         'software_unreferenced',      0, ...
