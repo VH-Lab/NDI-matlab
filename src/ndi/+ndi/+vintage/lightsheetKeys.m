@@ -17,7 +17,11 @@ function f = lightsheetKeys(dimensions, covariates)
 %
 %   F has the v1 fields NDI's lightsheet readers use, per axis and in the
 %   dimensions' order:
-%     axes_order        'tczyx'-style: time -> t, channel -> c, z/y/x as named
+%     axes_order        'tczyx'-style, read BY NODE first (NCIT:C44477/
+%                       C44478/C44479 -> x/y/z, om:Time -> t, the terms
+%                       DID-matlab writes), then by name ('x' or
+%                       'X-Coordinate', 'time' -> t, 'channel' -> c), then
+%                       the name's first letter
 %     shape             each dimension's `n`
 %     chunks            each dimension's `chunk` ([] when none has one)
 %     voxel_size        the axis spacing IN THE SOURCE'S OWN UNIT
@@ -67,19 +71,13 @@ chunks = nan(1, n);
 axes = blanks(n);
 for k = 1:n
     dim = dims{k};
-    v = lower(termName(get(dim, 'term')));
-    switch v
-        case 'time',    axes(k) = 't';
-        case 'channel', axes(k) = 'c';
-        case {'z', 'y', 'x'}, axes(k) = v;
-        otherwise
-            if ~isempty(v), axes(k) = v(1); else, axes(k) = '?'; end
-    end
+    dimTerm = get(dim, 'term');
+    axes(k) = axisLetter(dimTerm);
     f.shape(k) = double(firstOr(get(dim, 'n'), 0));
     c = get(dim, 'chunk');
     if ~isempty(c), chunks(k) = double(c(1)); end
 
-    cov = covariateAlong(covs, k - 1, v);
+    cov = covariateAlong(covs, k - 1, dimTerm);
     % did2.build.covariate writes a regular axis as origin = {value,
     % source_value} and spacing = {value, source_value}: the canonical
     % number and, when the unit was converted, the source's own.
@@ -112,23 +110,83 @@ if ~isempty(space)
 end
 end
 
-function c = covariateAlong(covs, index, termName_)
+function c = covariateAlong(covs, index, dimTerm)
 % The covariate along dimension INDEX (0-based) alone whose variable is the
-% dimension's term TERMNAME_; else the first along it alone; else [].
+% dimension's term DIMTERM (by node when both have one, else by name); else
+% the first along it alone; else [].
 arguments
     covs cell
     index (1,1) double
-    termName_ {mustBeText}
+    dimTerm
 end
 c = [];
 for i = 1:numel(covs)
     along = double(get(covs{i}, 'along'));
     if ~isscalar(along) || along ~= index, continue; end
-    if strcmpi(termName(get(covs{i}, 'variable')), termName_)
+    if sameTerm(get(covs{i}, 'variable'), dimTerm)
         c = covs{i};
         return;
     end
     if isempty(c), c = covs{i}; end
+end
+end
+
+function tf = sameTerm(a, b)
+% By node first (CLAUDE.md: code compares by node, then by name), else by
+% name, ignoring case.
+na = termNode(a);
+nb = termNode(b);
+if ~isempty(na) && ~isempty(nb)
+    tf = strcmpi(na, nb);
+    return;
+end
+tf = strcmpi(termName(a), termName(b));
+end
+
+function a = axisLetter(t)
+% A dimension's axis, as v1's axes_order letter. BY NODE FIRST: the terms
+% DID-matlab writes for image axes (NCIT:C44477 "X-Coordinate", NCIT:C44478
+% "Y-Coordinate", NCIT:C44479 "Z-Coordinate", om:Time "time"); then by
+% name, in either spelling ('x' or 'X-Coordinate', 'time', 'channel'); then
+% the name's first letter, as before; '?' for no term.
+arguments
+    t
+end
+persistent byNode byName
+if isempty(byNode)
+    byNode = containers.Map(lower({'NCIT:C44477', 'NCIT:C44478', 'NCIT:C44479', 'om:Time'}), ...
+        {'x', 'y', 'z', 't'});
+    byName = containers.Map({'x', 'y', 'z', 'x-coordinate', 'y-coordinate', ...
+        'z-coordinate', 'time', 't', 'channel', 'c'}, ...
+        {'x', 'y', 'z', 'x', 'y', 'z', 't', 't', 'c', 'c'});
+end
+node = lower(termNode(t));
+if ~isempty(node) && isKey(byNode, node)
+    a = byNode(node);
+    return;
+end
+v = lower(strtrim(termName(t)));
+if isKey(byName, v)
+    a = byName(v);
+elseif ~isempty(v)
+    a = v(1);
+else
+    a = '?';
+end
+end
+
+function n = termNode(t)
+% A term's node ('' for a bare name or no node).
+arguments
+    t
+end
+n = '';
+if iscell(t)
+    if isempty(t), return; end
+    t = t{1};
+end
+if isstruct(t) && ~isempty(t) && isfield(t, 'node') && ~isempty(t(1).node)
+    n = char(t(1).node);
 end
 end
 
