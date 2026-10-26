@@ -413,13 +413,13 @@ classdef TestMigrateLocal < matlab.unittest.TestCase
             b = makeV1Body('beta');
             r = did2.convert.v1_to_v2({a, b}, 'Validate', false);
             rows = struct('id', {a.base.id, a.base.id, 'not-a-document'}, ...
-                'row', {'carry-062', 'carry-065', 'carry-070'});
+                'row', {'carry-065', 'carry-068', 'carry-073'});
             [~, rep] = ndi.migrate.internal.carryUnchangedAsV1(r.migrated, ...
                 r.passthrough, {a, b}, rows);
             verifyEqual(testCase, rep.carried_as_v1, 2);
             verifyEqual(testCase, rep.carried_with_second_pass_row, 1);
             verifyEqual(testCase, rep.carried_without_second_pass_row, 1);
-            verifyEqual(testCase, {rep.carried_by_row.row}, {'carry-062'});
+            verifyEqual(testCase, {rep.carried_by_row.row}, {'carry-065'});
             verifyEqual(testCase, [rep.carried_by_row.count], 1);
             % without rows: nothing is attributed
             [~, rep0] = ndi.migrate.internal.carryUnchangedAsV1(r.migrated, ...
@@ -431,9 +431,9 @@ classdef TestMigrateLocal < matlab.unittest.TestCase
 
         function testCarryRowOfReadsTheFirstTag(testCase)
             verifyEqual(testCase, ndi.migrate.internal.carryRowOf( ...
-                '[carry-062] unplaced (carried as v1): x'), 'carry-062');
+                '[carry-065] unplaced (carried as v1): x'), 'carry-065');
             verifyEqual(testCase, ndi.migrate.internal.carryRowOf( ...
-                "a: [carry-074] cannot place y [carry-075]"), 'carry-074');
+                "a: [carry-077] cannot place y [carry-064]"), 'carry-077');
             verifyEqual(testCase, ndi.migrate.internal.carryRowOf('no tag'), '');
             verifyEqual(testCase, ndi.migrate.internal.carryRowOf(''), '');
         end

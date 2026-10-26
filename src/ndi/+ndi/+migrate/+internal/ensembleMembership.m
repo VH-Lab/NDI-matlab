@@ -419,9 +419,9 @@ for i = 1:numel(structs)
     % element_id resolves to a `subject` in the migrated set.
     if isempty(groupId) || ~isSubject(idClass, groupId)
         report.ensemble_maps_no_group = report.ensemble_maps_no_group + 1;
-        % carry-register: carry-082
+        % carry-register: carry-084
         report.ensemble_maps_kept_no_group = report.ensemble_maps_kept_no_group + 1;
-        report.carry_rows(end+1) = struct('id', char(baseField(s, 'id', '')), 'row', 'carry-082');
+        report.carry_rows(end+1) = struct('id', char(baseField(s, 'id', '')), 'row', 'carry-084');
         continue;
     end
 
@@ -477,9 +477,9 @@ for i = 1:numel(structs)
         % membership at all, and "fell through" must never be inferable only
         % by subtracting two other counters.
         report.ensemble_maps_no_neurons = report.ensemble_maps_no_neurons + 1;
-        % carry-register: carry-082
+        % carry-register: carry-084
         report.ensemble_maps_kept_no_neurons = report.ensemble_maps_kept_no_neurons + 1;
-        report.carry_rows(end+1) = struct('id', char(baseField(s, 'id', '')), 'row', 'carry-082');
+        report.carry_rows(end+1) = struct('id', char(baseField(s, 'id', '')), 'row', 'carry-084');
         continue;
     end
     report.ensemble_maps_used = report.ensemble_maps_used + 1;
@@ -555,16 +555,16 @@ for i = 1:numel(structs)
     % D2: does THIS map dissolve? Only when everything it says is now said by
     % edges that carry its epoch, and every per-neuron train it rests on is
     % in the batch for that epoch (the signed verify-before-delete, per map).
-    % carry-register: carry-082 (the three kept buckets)
+    % carry-register: carry-084 (the three kept buckets)
     if isempty(epochKey)
         report.ensemble_maps_kept_not_scoped = report.ensemble_maps_kept_not_scoped + 1;
-        report.carry_rows(end+1) = struct('id', char(baseField(s, 'id', '')), 'row', 'carry-082');
+        report.carry_rows(end+1) = struct('id', char(baseField(s, 'id', '')), 'row', 'carry-084');
     elseif mapStranded
         report.ensemble_maps_kept_stranded = report.ensemble_maps_kept_stranded + 1;
-        report.carry_rows(end+1) = struct('id', char(baseField(s, 'id', '')), 'row', 'carry-082');
+        report.carry_rows(end+1) = struct('id', char(baseField(s, 'id', '')), 'row', 'carry-084');
     elseif mapTrainMissing
         report.ensemble_maps_kept_train_missing = report.ensemble_maps_kept_train_missing + 1;
-        report.carry_rows(end+1) = struct('id', char(baseField(s, 'id', '')), 'row', 'carry-082');
+        report.carry_rows(end+1) = struct('id', char(baseField(s, 'id', '')), 'row', 'carry-084');
     else
         report.ensemble_maps_dissolved = report.ensemble_maps_dissolved + 1;
         report.dissolved_map_ids{end+1} = baseField(s, 'id', ''); %#ok<AGROW>

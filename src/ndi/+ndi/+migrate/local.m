@@ -1801,10 +1801,10 @@ function [convertResult, report] = resolveOntologyRowSubjects(convertResult, bod
         end
         if isscalar(sub.migrated) ...
                 && strcmp(sub.migrated{1}.className(), 'ontology_table_row')
-            % carry-register: carry-081 (the row is carried as v1)
+            % carry-register: carry-083 (the row is carried as v1)
             report.refold_no_statements = report.refold_no_statements + 1;
             report.carry_rows(end+1) = struct('id', char(plan(k).source_id), ...
-                'row', 'carry-081');
+                'row', 'carry-083');
             continue;   % REVERT
         end
         replacedIds{end+1} = plan(k).source_id; %#ok<AGROW>
@@ -2745,9 +2745,9 @@ function [convertResult, report] = resolveStimulusPresentations(convertResult, b
         end
         if isempty(manip)
             report.presentations_refused = report.presentations_refused + 1;
-            % carry-register: carry-062 (counts the unplaced refusals)
+            % carry-register: carry-065 (counts the unplaced refusals)
             if isfield(rep, 'unplaced_fields') && ~isempty(rep.unplaced_fields) ...
-                    && strcmp(ndi.migrate.internal.carryRowOf(rep.reason), 'carry-062')
+                    && strcmp(ndi.migrate.internal.carryRowOf(rep.reason), 'carry-065')
                 % [generic stage is lossless] (Jess Haley, 2026-10-25): left
                 % as it is, carried as v1 by the last step
                 report.presentations_refused_unplaced = ...
@@ -2826,6 +2826,20 @@ function [convertResult, report] = resolveStimulusPresentations(convertResult, b
     end
     % a control record whose presentation was not folded (refused, or not in
     % this set) stays as it is, counted
+    % carry-register: carry-064 ([dependents of a carried document carry],
+    %   Jess Haley, 2026-10-26: it points at a presentation carried as v1)
+    presWithControls = controlsByPresentation.keys();
+    for p = 1:numel(presWithControls)
+        if any(strcmp(presWithControls{p}, consumed))
+            continue;
+        end
+        held = controlsByPresentation(presWithControls{p});
+        for h = 1:numel(held)
+            report.carry_rows(end+1) = struct( ...
+                'id', char(bodyBaseId(held{h})), ...
+                'row', 'carry-064');
+        end
+    end
     report.control_presentation_not_folded = ...
         report.control_records_read - report.control_records_folded ...
         - report.control_unmappable - report.control_no_position_map ...
