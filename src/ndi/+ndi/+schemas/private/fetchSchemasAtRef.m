@@ -65,8 +65,18 @@ function fetchSchemasAtRef(info, destDir)
         error('NDI:schemas:FetchFailed', ...
             'Unexpected tarball layout in %s.', extractDir);
     end
-    sourceDir = fullfile(extractDir, entries(1).name, info.path);
-    if ~isfolder(sourceDir)
+    % [schema set renamed did_v2] (Jess Haley, 2026-10-25), step 1 "accept
+    % both names": a pinned schemas/V_eta/... path is read from schemas/did_v2/...
+    % when the tarball has it, and the other way round.
+    sourceDir = '';
+    for c = setNameCandidates(info.path)
+        candidate = fullfile(extractDir, entries(1).name, c{1});
+        if isfolder(candidate)
+            sourceDir = candidate;
+            break;
+        end
+    end
+    if isempty(sourceDir)
         error('NDI:schemas:FetchFailed', ...
             'Pinned path "%s" not found in tarball.', info.path);
     end
@@ -78,6 +88,15 @@ function fetchSchemasAtRef(info, destDir)
     mkdir(destDir);
 
     copyJsonFiles(sourceDir, destDir);
+end
+
+function c = setNameCandidates(p)
+%SETNAMECANDIDATES The pinned path under schemas/did_v2/ first, then under
+%   schemas/V_eta/ (one entry when the path names neither).
+p = char(p);
+didv2 = regexprep(p, '(^|/)V_eta(/|$)', '$1did_v2$2', 'once');
+veta  = regexprep(p, '(^|/)did_v2(/|$)', '$1V_eta$2', 'once');
+c = unique({didv2, veta, p}, 'stable');
 end
 
 function copyJsonFiles(srcDir, destDir)

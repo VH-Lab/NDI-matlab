@@ -168,8 +168,16 @@ function [plan, report] = ontologyRowSubjects(v1Bodies, migratedStructs, options
 %     REPORT.unresolved_no_candidate. Forcing a subject on them would be the
 %     `distance_metadata` mistake (a non-gating passthrough turned into a
 %     gating orphan failure).
-%   * CONFLICT IS NOT RESOLVED BY PRECEDENCE. If two routes both resolve and
-%     disagree, the row is left alone (REPORT.unresolved_conflicting_candidates).
+%   * THE DOCUMENT ID WINS OVER THE LOCAL IDENTIFIER. Decided by Jess Haley,
+%     2026-10-25 [subject local identifier is an identifier] and 2026-10-26
+%     [dataset audit batch 1 and 2] (3) (did-schema
+%     V_eta_go_forward_class_audit.md): both are identifiers, "tho the
+%     document identifier is more certain". When a document-id route (the
+%     edge, or SubjectDocumentIdentifier) and the local-identifier route both
+%     resolve and disagree, the document id is taken and the override is
+%     counted (REPORT.local_identifier_overridden). Two DOCUMENT-ID routes
+%     that disagree are still refused (REPORT.unresolved_conflicting_candidates):
+%     neither is more certain than the other.
 %   * NO OTHER REFERENT IS TRADED AWAY. Converting a row costs it every edge
 %     but `subject_id`, because migrators_j's `startStatement` ASSIGNS
 %     `body.depends_on = carrySubject(preBody)` rather than extending it. A row
@@ -264,6 +272,7 @@ report.resolved                            = 0;
 report.resolved_via_document_id_edge       = 0;
 report.resolved_via_subject_column         = 0;
 report.resolved_via_local_identifier       = 0;
+report.local_identifier_overridden         = 0;
 
 report.unresolved                                = 0;
 report.unresolved_no_candidate                   = 0;
@@ -358,8 +367,9 @@ for i = 1:numel(v1Bodies)
     nCells = dataCellCount(b);
     report.data_cells_seen = report.data_cells_seen + nCells;
 
-    [subjectId, route, reason] = resolveRowSubject(b, byId, localIdIndex, ...
-        options.LocalIdentifierJoin);
+    [subjectId, route, reason, overridden] = resolveRowSubject(b, byId, ...
+        localIdIndex, options.LocalIdentifierJoin);
+    report.local_identifier_overridden = report.local_identifier_overridden + overridden;
 
     if isempty(subjectId)
         report.unresolved = report.unresolved + 1;
@@ -398,12 +408,15 @@ end
 
 % ===================== resolution =========================================
 
-function [subjectId, route, reason] = resolveRowSubject(b, byId, localIdIndex, allowLocal)
+function [subjectId, route, reason, overridden] = resolveRowSubject(b, byId, localIdIndex, allowLocal)
 %RESOLVEROWSUBJECT The migrated subject this row is about, or '' with a reason.
 %
-%   Candidates are gathered from ALL routes before any is accepted, so a
-%   disagreement between two routes is visible rather than hidden by a
-%   precedence order.
+%   Candidates are gathered from ALL routes before any is accepted. The
+%   document-id routes outrank the local identifier ([subject local
+%   identifier is an identifier]); OVERRIDDEN is true when a local-identifier
+%   hit was set aside for a different document id. Document-id routes that
+%   disagree with each other are refused.
+overridden = false;
 subjectId = '';
 route     = '';
 reason    = 'no_candidate';
@@ -469,10 +482,17 @@ end
 
 % --- accept, or explain why not ------------------------------------------
 if ~isempty(hits)
-    ids = cellfun(@(h) h{1}, hits, 'UniformOutput', false);
-    if numel(unique(ids)) > 1
-        reason = 'conflicting_candidates';
-        return;
+    isLocal = cellfun(@(h) strcmp(h{2}, 'local_identifier'), hits);
+    idHits = hits(~isLocal);
+    if ~isempty(idHits)
+        ids = cellfun(@(h) h{1}, idHits, 'UniformOutput', false);
+        if numel(unique(ids)) > 1
+            reason = 'conflicting_candidates';
+            return;
+        end
+        localIds = cellfun(@(h) h{1}, hits(isLocal), 'UniformOutput', false);
+        overridden = any(~strcmp(localIds, ids{1}));
+        hits = idHits;
     end
     candidate = hits{1}{1};
     % CONVERTING A ROW COSTS IT ITS OTHER EDGES. migrators_j's `startStatement`

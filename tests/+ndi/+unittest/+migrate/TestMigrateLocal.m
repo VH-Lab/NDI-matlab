@@ -73,6 +73,13 @@ classdef TestMigrateLocal < matlab.unittest.TestCase
                 'TargetVersion', 'V_eta');
             verifyTrue(testCase, explicit.alreadyMigrated, ...
                 'an explicit V_eta run finds the default run''s V_eta.sqlite');
+
+            % [schema set renamed did_v2] (Jess Haley, 2026-10-25), step 1
+            % "accept both names": 'did_v2' names the same set
+            renamed = ndi.migrate.local(testCase.SessionRoot, 'Validate', false, ...
+                'TargetVersion', 'did_v2');
+            verifyTrue(testCase, renamed.alreadyMigrated, ...
+                'a did_v2 run finds the V_eta run''s database: the same set');
         end
 
         function testAnyOtherTargetIsRefused(testCase)

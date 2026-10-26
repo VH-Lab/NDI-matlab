@@ -151,10 +151,14 @@ jobs:
       - name: Assemble V_eta schema set (stable + draft)
         run: |
           mkdir -p "${GITHUB_WORKSPACE}/eta-schemas"
-          cp did-schema/schemas/V_eta/stable/*.json "${GITHUB_WORKSPACE}/eta-schemas/"
-          cp did-schema/schemas/V_eta/draft/*.json  "${GITHUB_WORKSPACE}/eta-schemas/"
-          # #88 keeps the deliberate v1 passthrough shapes in deprecated/
-          cp did-schema/schemas/V_eta/deprecated/*.json "${GITHUB_WORKSPACE}/eta-schemas/"
+          # [schema set renamed did_v2] (Jess Haley, 2026-10-25), step 1 "accept
+          # both names": schemas/did_v2/ when the checkout has it, else
+          # schemas/V_eta/; deprecated/ (the v1 passthrough shapes) only if present.
+          SET=did-schema/schemas/did_v2; [ -d "$SET" ] || SET=did-schema/schemas/V_eta
+          echo "SCHEMA SET: $SET"
+          cp "$SET"/stable/*.json "${GITHUB_WORKSPACE}/eta-schemas/"
+          cp "$SET"/draft/*.json  "${GITHUB_WORKSPACE}/eta-schemas/"
+          if [ -d "$SET/deprecated" ]; then cp "$SET"/deprecated/*.json "${GITHUB_WORKSPACE}/eta-schemas/"; fi
 
       - name: Export env (schema path + eta test gate)
         run: |
@@ -324,7 +328,6 @@ jobs:
                 'ndi.unittest.migrate.TestBathAssembly', ...
                 'ndi.unittest.migrate.TestBodyResolver', ...
                 'ndi.unittest.migrate.TestEnsembleMembership', ...
-                'ndi.unittest.migrate.TestImagedEntitySubjects', ...
                 'ndi.unittest.migrate.TestOntologyLabelSubjects', ...
                 'ndi.unittest.migrate.TestOntologyRowSubjects', ...
                 'ndi.unittest.migrate.TestPathSPromotion', ...
@@ -338,6 +341,7 @@ jobs:
                 ... % run-tests.yml (no schema there) and runs here (2026-10-24,
                 ... % VH-Lab/NDI-matlab#1056)
                 'ndi.unittest.migrate.TestEpochSeriesBodies', ...
+                'ndi.unittest.migrate.TestIngestedStimulusBodies', ...
                 'ndi.unittest.migrate.TestV1AttachedFile', ...
                 'ndi.unittest.migrate.TestDimensionTermCensus'});
             disp(results);
