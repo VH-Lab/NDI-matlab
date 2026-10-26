@@ -187,6 +187,23 @@ classdef TestLightsheetMigrated < matlab.unittest.TestCase
             testCase.verifyEqual(row.id{1}, 'lvl_ls_1_max');
         end
 
+        function testChooseLevelSkipsTheEmptyLevelInATie(testCase)
+            % [chooseLevel skips empty levels] (Jess Haley, 2026-10-26): on
+            % the whole table, with no reduction picked first, the two
+            % level-1 rows tie on voxel size and lvl_ls_1_mean stores no
+            % bytes (the file-less sampled_body of [compression block and
+            % empty levels]); the level that holds bytes is chosen, in either
+            % order of the two level-1 rows.
+            t = ndi.fun.doc.lightsheet.levelTable(testCase.Session, 'pyr_ls_1');
+            testCase.assertEqual(height(t), 3);
+            [idx, row] = ndi.fun.doc.lightsheet.chooseLevel(t, 4);
+            testCase.verifyEqual(idx, 1);
+            testCase.verifyEqual(row.id{1}, 'lvl_ls_1_max');
+            [idx, row] = ndi.fun.doc.lightsheet.chooseLevel(t([1 3 2], :), 4);   % the two level-1 rows swapped
+            testCase.verifyEqual(idx, 1);
+            testCase.verifyEqual(row.id{1}, 'lvl_ls_1_max', 'with the two level-1 rows in either order');
+        end
+
         function testALevelsUnitsAndChannelNamesCameFromItsPyramid(testCase)
             d = testCase.Session.database_search(ndi.query('base.id', 'exact_string', 'lvl_ls_0'));
             testCase.assertNumElements(d, 1);

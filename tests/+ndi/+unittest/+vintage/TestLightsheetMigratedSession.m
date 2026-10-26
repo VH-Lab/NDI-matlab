@@ -107,11 +107,17 @@ classdef TestLightsheetMigratedSession < matlab.unittest.TestCase
         end
 
         function testChooseLevelOnTheMigratedTable(testCase)
+            % INVERTED by [chooseLevel skips empty levels] (Jess Haley,
+            % 2026-10-26): lvl_mean1 is written with no members, so it
+            % stores no bytes and is never chosen while level 0 (two chunks)
+            % is there. It was chosen for a 4 um target before.
             t = ndi.fun.doc.lightsheet.levelTable(testCase.Session, 'pyr_ls_1', ...
                 'reduction', 'mean');
+            testCase.assertEqual(t.n_chunks_stored.', [2 0], ...
+                'the fixture: level 0 stores two chunks, the mean level none');
             [idx, row] = ndi.fun.doc.lightsheet.chooseLevel(t, 4);
-            testCase.verifyEqual(idx, 1);
-            testCase.verifyEqual(row.id{1}, 'lvl_mean1');
+            testCase.verifyEqual(idx, 0);
+            testCase.verifyEqual(row.id{1}, 'lvl_0');
             idx = ndi.fun.doc.lightsheet.chooseLevel(t, 2);
             testCase.verifyEqual(idx, 0);
         end
