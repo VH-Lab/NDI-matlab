@@ -6,10 +6,10 @@ function [docs, swId, env, key] = appSoftware(v1Body)
 %   TEAM-SIGN-OFF [software] (jess, 2026-08-06, did-schema
 %   V_eta_tenet_audit.md): "the `app` mixin is replaced by a `software` ENTITY
 %   (deduplicated by name+version) referenced from a statement by
-%   `software_id`". Decided by Jess Haley, 2026-10-26 [presentation app is
-%   software] and [control selection on the presentation method] (did-schema
-%   V_eta_go_forward_class_audit.md) apply it to a v1 stimulus_presentation's
-%   and control_stimulus_ids's `app`.
+%   `software_id`". Used for a v1 control_stimulus_ids's `app` (the
+%   tuning_response app that computed the pairing), Decided by Jess Haley,
+%   2026-10-26 [control pairing is a calculation] (did-schema
+%   V_eta_go_forward_class_audit.md).
 %
 %   The SAME SHAPE DID-matlab's private jSoftwareFromApp / jSoftware write
 %   (ndi.migrate.internal.softwareEntity):
@@ -24,8 +24,8 @@ function [docs, swId, env, key] = appSoftware(v1Body)
 %
 %   ENV is the run environment the block names (os, os_version, interpreter,
 %   interpreter_version; only the non-empty ones), what jSoftwareFromApp
-%   returns as its third output. Placing it is the CALLER's job: on did-schema
-%   main only `calculation` declares `operating_system_id` / `interpreter_id`.
+%   returns as its third output; the caller places it (a calculation's
+%   `operating_system_id` / `interpreter_id`).
 %
 %   DOCS is {} and SWID '' when the block names no program (no identity, no
 %   entity) or the document has no session (base.session_id is required).

@@ -69,10 +69,9 @@ function [manipBody, methodBodies, report, softwareBodies, controlCalcs] = ...
 %                                    own example); what each stimulus was is
 %                                    on the documents the playlist names
 %                     statement.distributive  true on a cohort manipulation
-%                     software_id    the presentation's `app` (see SOFTWARE)
 %     SOFTWARE      the `software` entities (with version assertions) minted
-%                   from the presentation's `app` and for each control
-%                   calculation (its app, OS and interpreter); the caller
+%                   for each control calculation (its app, OS and
+%                   interpreter); the caller
 %                   adds them to the documents it folds, and
 %                   ndi.migrate.local's software dedup merges duplicates
 %     CONTROLCALCS  one `calculation` per v1 control_stimulus_ids record
@@ -153,19 +152,6 @@ function [manipBody, methodBodies, report, softwareBodies, controlCalcs] = ...
 %   ('conflicting') -- gives no covariate, and REPORT.control_unfolded_reason
 %   says why; the caller leaves such records as v1. REPORT.control_records
 %   (given), .control_records_folded and .control_true count what happened.
-%
-%   SOFTWARE. Decided by Jess Haley, 2026-10-26 [presentation app is
-%   software] (did-schema V_eta_go_forward_class_audit.md; rule R1,
-%   TEAM-SIGN-OFF [software]): the v1 `app` block (name, version, url) becomes
-%   a `software` entity (ndi.migrate.internal.appSoftware) referenced by the
-%   manipulation's `software_id`. A standalone item has no software edge: its
-%   software is minted unreferenced (REPORT.software_unreferenced).
-%   THE RUN ENVIRONMENT (os, os_version, interpreter, interpreter_version) IS
-%   NOT WRITTEN YET: [run environment on interactions] (Jess Haley,
-%   2026-10-26) moves `operating_system_id` / `interpreter_id` up to
-%   `interaction`, but did-schema has not built that move, so `manipulation`
-%   does not declare them. REPORT.app_environment_not_written names the
-%   fields, so the gap is counted, not silent.
 %
 %   CONTROL PAIRING. Decided by Jess Haley, 2026-10-26 [control pairing is a
 %   calculation] (replaces [control selection on the presentation method],
@@ -395,13 +381,10 @@ if ~isempty(sequence)
         report.timing_file = 'not used: the dimension is frames';
     end
     [dims, covs] = presentationAxes(numel(frameOrder), onsets, offsets, control);
-    [softwareBodies, swId, report] = presentationSoftware(v1Body, report);
-    [controlCalcs, calcSoftware, report] = controlCalculations( ...
+    [controlCalcs, softwareBodies, report] = controlCalculations( ...
         options.ControlRecords, presentationId, entityId, numel(order), false, report);
-    softwareBodies = [softwareBodies, calcSoftware];
     manipBody = itemBody(report.standalone, presentationId, sessionId, datestamp, ...
-        entityId, stimulatorId, itemIds, value, dims, covs, report.distributive, ...
-        '', swId);
+        entityId, stimulatorId, itemIds, value, dims, covs, report.distributive);
     [manipBody, report] = carryFiles(manipBody, v1Body, report);
     return;
 end
@@ -501,14 +484,11 @@ report.trial_positions = value.item;
     options.PresentationTimeFile, numel(order), report);
 [control, report] = controlCovariate(options.ControlRecords, numel(order), true, report);
 [dims, covs] = presentationAxes(numel(order), onsets, offsets, control);
-[softwareBodies, swId, report] = presentationSoftware(v1Body, report);
-[controlCalcs, calcSoftware, report] = controlCalculations( ...
+[controlCalcs, softwareBodies, report] = controlCalculations( ...
     options.ControlRecords, presentationId, entityId, numel(order), true, report);
-softwareBodies = [softwareBodies, calcSoftware];
 
 manipBody = itemBody(report.standalone, presentationId, sessionId, datestamp, ...
-    entityId, stimulatorId, itemIds, value, dims, covs, report.distributive, ...
-    notesText, swId);
+    entityId, stimulatorId, itemIds, value, dims, covs, report.distributive, notesText);
 [manipBody, report] = carryFiles(manipBody, v1Body, report);
 end
 
@@ -611,20 +591,15 @@ end
 % ===================== the manipulation ===================================
 
 function b = itemBody(standalone, presentationId, sessionId, datestamp, ...
-        entityId, stimulatorId, itemIds, value, dims, covs, distributive, notes, ...
-        softwareId)
+        entityId, stimulatorId, itemIds, value, dims, covs, distributive, notes)
 if nargin < 12
     notes = '';
-end
-if nargin < 13
-    softwareId = '';
 end
 if standalone
     b = standaloneItem(presentationId, sessionId, datestamp, itemIds, value, dims, covs);
 else
     b = itemManipulation(presentationId, sessionId, datestamp, ...
-        entityId, stimulatorId, itemIds, value, dims, covs, distributive, notes, ...
-        softwareId);
+        entityId, stimulatorId, itemIds, value, dims, covs, distributive, notes);
 end
 end
 
@@ -645,13 +620,9 @@ d = did2.build.document('item', fields, ...
 end
 
 function m = itemManipulation(presentationId, sessionId, datestamp, ...
-        entityId, stimulatorId, itemIds, value, dims, covs, distributive, notes, ...
-        softwareId)
+        entityId, stimulatorId, itemIds, value, dims, covs, distributive, notes)
 if nargin < 11
     notes = '';
-end
-if nargin < 12
-    softwareId = '';
 end
 restore = ndi.migrate.internal.termRegistryOff(); %#ok<NASGU>
 % did2.build insists on the interaction's time_reference_id min_count; the
@@ -666,10 +637,6 @@ args = {'Method', 'visual stimulation', ...
     'CreationTimestamp', datestamp, 'Validate', false};
 if ~isempty(stimulatorId)
     args = [args, {'InstrumentId', stimulatorId}];
-end
-if ~isempty(softwareId)
-    % [presentation app is software] (Jess Haley, 2026-10-26)
-    args = [args, {'SoftwareId', softwareId}];
 end
 if ~isempty(notes)
     args = [args, {'Notes', notes}];
@@ -779,19 +746,6 @@ report.control_true = sum(control);
 end
 
 % ===================== software and the control pairing ==================
-
-function [docs, swId, report] = presentationSoftware(v1Body, report)
-%PRESENTATIONSOFTWARE The presentation's `app` as a `software` entity, and the
-%   id for the manipulation's software_id. See SOFTWARE above.
-[docs, swId, env] = ndi.migrate.internal.appSoftware(v1Body);
-report.software_minted = report.software_minted + ~isempty(swId);
-report.app_environment_not_written = prefixed('app.', env);
-if report.standalone && ~isempty(swId)
-    report.software_unreferenced = report.software_unreferenced + 1;   % an item has no software_id
-    swId = '';
-end
-report.software_referenced = ~isempty(swId);
-end
 
 function [calcs, software, report] = controlCalculations(records, presentationId, ...
         entityId, nTrials, positionsAreTrials, report)
@@ -1271,10 +1225,6 @@ r = struct( ...
     'control_calculations', 0, ...
     'control_converted_ids', {{}}, ...
     'control_carried',     {{}}, ...
-    'software_minted',     0, ...
-    'software_referenced', false, ...
-    'software_unreferenced', 0, ...
-    'app_environment_not_written', {{}}, ...
     'flashed_bars',        0, ...
     'uniform_fields_kept', 0, ...
     'shape_movie_note',    false, ...
