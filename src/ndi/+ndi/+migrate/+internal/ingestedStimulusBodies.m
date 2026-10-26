@@ -94,9 +94,9 @@ for k = 1:numel(structs)
     end
     key = joinKey(sid, epochId);
     if ~isKey(byKey, key)
-        % carry-register: carry-073
+        % carry-register: carry-088
         report = leave(report, 'left_no_presentation', id, ...
-            '[carry-073] no stimulus-presentation manipulation for its session and epoch');
+            '[carry-088] no stimulus-presentation manipulation for its session and epoch');
         continue;
     end
     owners = unique(byKey(key));
@@ -136,16 +136,16 @@ function why = unplaced(s, id, sid, epochId)
 %UNPLACED Why this document cannot be written whole as the body; '' if it can.
 why = '';
 if isempty(id) || isempty(sid)
-    % carry-register: carry-071
-    why = '[carry-071] no base.id / session';
+    % carry-register: carry-086
+    why = '[carry-086] no base.id / session';
 elseif isempty(epochId)
-    % carry-register: carry-071
-    why = '[carry-071] no epoch id';
+    % carry-register: carry-086
+    why = '[carry-086] no epoch id';
 elseif ~isfield(s, 'files') || ~isstruct(s.files) || ~isfield(s.files, 'file_list') ...
         || ~isequal(cellstr(s.files.file_list), {'data.bin'}) ...
         || isempty(dataBinLocations(s))
-    % carry-register: carry-071
-    why = '[carry-071] its files are not the one data.bin with a location';
+    % carry-register: carry-086
+    why = '[carry-086] its files are not the one data.bin with a location';
 else
     blk = struct();
     if isfield(s, 'daqmetadatareader_epochdata_ingested')
@@ -155,8 +155,8 @@ else
         fn = fieldnames(blk);
         for k = 1:numel(fn)
             if ~isempty(blk.(fn{k}))
-                % carry-register: carry-072
-                why = ['[carry-072] a field the body does not write: ' fn{k}];
+                % carry-register: carry-087
+                why = ['[carry-087] a field the body does not write: ' fn{k}];
                 return;
             end
         end
@@ -172,8 +172,8 @@ else
         if any(strcmp(char(d.name), {'daqmetadatareader_id', 'session_id'})); continue; end
         v = ndi.migrate.internal.etaShape.entryValue(d);
         if ~isempty(v)
-            % carry-register: carry-072
-            why = ['[carry-072] an edge the body does not write: ' char(d.name)];
+            % carry-register: carry-087
+            why = ['[carry-087] an edge the body does not write: ' char(d.name)];
             return;
         end
     end

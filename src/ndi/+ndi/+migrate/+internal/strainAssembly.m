@@ -259,10 +259,10 @@ for k = 1:numel(strainIdx)
 
     if isempty(nm)
         report.strains_incomplete = report.strains_incomplete + 1;
-        % carry-register: carry-078
+        % carry-register: carry-093
         report.incomplete_reasons{end+1} = ...
-            sprintf('%s: [carry-078] missing name', shortId(idOf{i})); %#ok<AGROW>
-        report.carry_rows(end+1) = struct('id', idOf{i}, 'row', 'carry-078');
+            sprintf('%s: [carry-093] missing name', shortId(idOf{i})); %#ok<AGROW>
+        report.carry_rows(end+1) = struct('id', idOf{i}, 'row', 'carry-093');
         continue;
     end
     % [generic stage is lossless] and [partly placed is carried as v1] (Jess
@@ -277,10 +277,10 @@ for k = 1:numel(strainIdx)
     if ~isempty(unplaced)
         report.strains_incomplete = report.strains_incomplete + 1;
         report.strains_unplaced = report.strains_unplaced + 1;
-        % carry-register: carry-077
-        report.incomplete_reasons{end+1} = sprintf('%s: [carry-077] cannot place %s', ...
+        % carry-register: carry-092
+        report.incomplete_reasons{end+1} = sprintf('%s: [carry-092] cannot place %s', ...
             shortId(idOf{i}), strjoin(unplaced, ', ')); %#ok<AGROW>
-        report.carry_rows(end+1) = struct('id', idOf{i}, 'row', 'carry-077');
+        report.carry_rows(end+1) = struct('id', idOf{i}, 'row', 'carry-092');
         continue;
     end
 
@@ -405,9 +405,9 @@ for i = find(isOpenminds)
         continue;   % not a fragment of this family; leave it alone
     end
     if ~isKey(usedFragments, idOf{i})
-        % carry-register: carry-079
+        % carry-register: carry-094
         report.fragments_retained = report.fragments_retained + 1;
-        report.carry_rows(end+1) = struct('id', idOf{i}, 'row', 'carry-079');
+        report.carry_rows(end+1) = struct('id', idOf{i}, 'row', 'carry-094');
         continue;   % referenced by no assembled strain
     end
     who = {};
@@ -418,9 +418,9 @@ for i = find(isOpenminds)
     else
         % still referenced by a strain left as v1, or holding a field the
         % strain's term does not write ([generic stage is lossless]): kept
-        % carry-register: carry-079
+        % carry-register: carry-094
         report.fragments_retained = report.fragments_retained + 1;
-        report.carry_rows(end+1) = struct('id', idOf{i}, 'row', 'carry-079');
+        report.carry_rows(end+1) = struct('id', idOf{i}, 'row', 'carry-094');
     end
 end
 

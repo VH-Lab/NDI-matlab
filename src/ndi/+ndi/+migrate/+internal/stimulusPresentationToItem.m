@@ -261,8 +261,8 @@ if declaresFile(v1Body, 'presentation_time.bin')
     end
 end
 if isempty(presentationId) || isempty(sessionId) || isempty(datestamp)
-    % carry-register: carry-068
-    report.reason = '[carry-068] base id / session_id / datestamp incomplete';
+    % carry-register: carry-083
+    report.reason = '[carry-083] base id / session_id / datestamp incomplete';
     return;
 end
 
@@ -290,8 +290,8 @@ unplaced = unplacedPresentationFields(earlyBlock, earlyStimuli, stimulusKinds, .
     ~isempty(sequence));
 report.unplaced_fields = unplaced;
 if ~isempty(unplaced) && options.LeaveUnplaced
-    % carry-register: carry-065
-    report.reason = ['[carry-065] unplaced (carried as v1): ' strjoin(unplaced, ', ')];
+    % carry-register: carry-080
+    report.reason = ['[carry-080] unplaced (carried as v1): ' strjoin(unplaced, ', ')];
     return;
 end
 
@@ -308,8 +308,8 @@ if isempty(animals)
         report.animal_source = 'none';
         nEl = resolver.epochElementCountScoped(presentationId);
         if nEl > 0
-            % carry-register: carry-067
-            report.reason = sprintf(['[carry-067] no responding animal; the epoch''s %d ' ...
+            % carry-register: carry-082
+            report.reason = sprintf(['[carry-082] no responding animal; the epoch''s %d ' ...
                 'recorded element(s) resolve to no subject'], nEl);
             return;
         end
@@ -322,8 +322,8 @@ if isempty(animals)
             % Decision 4: different animals by different stimulator links
             % are conflicting records, not a shared event.
             report.several_animals = numel(viaStimulator);
-            % carry-register: carry-066
-            report.reason = sprintf(['[carry-066] several animals: the stimulator links ' ...
+            % carry-register: carry-081
+            report.reason = sprintf(['[carry-081] several animals: the stimulator links ' ...
                 'lead to %d different animals -- conflicting records, ' ...
                 'refused and listed, not resolved through the cohort'], ...
                 numel(viaStimulator));
@@ -349,8 +349,8 @@ elseif numel(animals) > 1
     report.several_animals = numel(animals);
     report.animals = animals(:)';
     if isempty(options.CohortIdFor)
-        % carry-register: carry-066
-        report.reason = sprintf(['[carry-066] several animals: the %s route resolves to %d ' ...
+        % carry-register: carry-081
+        report.reason = sprintf(['[carry-081] several animals: the %s route resolves to %d ' ...
             'animals in this session, and no session cohort was supplied'], ...
             report.animal_source, numel(animals));
         return;
@@ -372,8 +372,8 @@ order   = orderVector(block);
 report.stimuli_read = numel(stimuli);
 report.trials       = numel(order);
 if isempty(stimuli) || isempty(order)
-    % carry-register: carry-068
-    report.reason = '[carry-068] no stimuli / no presentation_order';
+    % carry-register: carry-083
+    report.reason = '[carry-083] no stimuli / no presentation_order';
     return;
 end
 
@@ -384,8 +384,8 @@ if ~isempty(sequence)
     report.shared_refs  = numel(itemIds);
     report.frames       = numel(frameOrder);
     if ~isempty(why)
-        % carry-register: carry-070 (readSequence's reasons, below)
-        report.reason = ['[carry-070] ' why];
+        % carry-register: carry-085 (readSequence's reasons, below)
+        report.reason = ['[carry-085] ' why];
         report.basis_source = 'not read';
         report.shared_refs = 0;
         report.frames = 0;
@@ -422,8 +422,8 @@ end
 outOfRange = sum(order < 1 | order > numel(stimuli) | order ~= floor(order));
 report.trials_out_of_range = outOfRange;
 if outOfRange > 0
-    % carry-register: carry-068
-    report.reason = '[carry-068] presentation_order indexes outside the stimuli list';
+    % carry-register: carry-083
+    report.reason = '[carry-083] presentation_order indexes outside the stimuli list';
     return;
 end
 
@@ -443,8 +443,8 @@ for i = 1:numel(stimulusKinds)
 end
 if ~isempty(refusedKinds)
     labels = cellfun(@newStimKindLabel, sort(refusedKinds), 'UniformOutput', false);
-    % carry-register: carry-069
-    report.reason = ['[carry-069] a stimulus kind with no recipe, refused by class: ' ...
+    % carry-register: carry-084
+    report.reason = ['[carry-084] a stimulus kind with no recipe, refused by class: ' ...
         strjoin(labels, '; ')];
     return;
 end
@@ -859,8 +859,8 @@ for r = 1:numel(records)
     end
     why = controlUnplaced(rec, nTrials, positionsAreTrials, report.standalone);
     if isempty(why) && isempty(recId)
-        % carry-register: carry-076
-        why = '[carry-076] no base.id';
+        % carry-register: carry-091
+        why = '[carry-091] no base.id';
     end
     if ~isempty(why)
         report.control_carried{end+1} = struct('id', recId, 'reason', why);
@@ -880,18 +880,18 @@ function why = controlUnplaced(rec, nTrials, positionsAreTrials, standalone)
 %   '' when it can ([generic stage is lossless]).
 why = '';
 if standalone
-    % carry-register: carry-075
-    why = '[carry-075] no subject: the presentation is a standalone item';
+    % carry-register: carry-090
+    why = '[carry-090] no subject: the presentation is a standalone item';
     return;
 end
 if ~positionsAreTrials
-    % carry-register: carry-075
-    why = '[carry-075] the presentation is a frame sequence, not trials';
+    % carry-register: carry-090
+    why = '[carry-090] the presentation is a frame sequence, not trials';
     return;
 end
 if isempty(char(ndi.v2.sessionIdOf(rec)))
-    % carry-register: carry-076
-    why = '[carry-076] no session';
+    % carry-register: carry-091
+    why = '[carry-091] no session';
     return;
 end
 raw = [];
@@ -900,8 +900,8 @@ if isfield(rec, 'control_stimulus_ids') && isstruct(rec.control_stimulus_ids)
     other = setdiff(fieldnames(blk), {'control_stimulus_ids', 'control_stimulus_id_method'});
     for k = 1:numel(other)
         if ~isempty(blk.(other{k}))
-            % carry-register: carry-074
-            why = ['[carry-074] a field the calculation does not write: control_stimulus_ids.' other{k}];
+            % carry-register: carry-089
+            why = ['[carry-089] a field the calculation does not write: control_stimulus_ids.' other{k}];
             return;
         end
     end
@@ -910,31 +910,31 @@ if isfield(rec, 'control_stimulus_ids') && isstruct(rec.control_stimulus_ids)
     end
     if isfield(blk, 'control_stimulus_id_method') && ~isempty(blk.control_stimulus_id_method) ...
             && ~(isstruct(blk.control_stimulus_id_method) && isscalar(blk.control_stimulus_id_method))
-        % carry-register: carry-076
-        why = '[carry-076] control_stimulus_id_method is not a block';
+        % carry-register: carry-091
+        why = '[carry-091] control_stimulus_id_method is not a block';
         return;
     end
 end
 if iscell(raw) || ~isnumeric(raw) || isempty(raw) || any(~isfinite(double(raw(:))))
-    % carry-register: carry-076
-    why = '[carry-076] a trial with no control (NaN or empty) has no pairing value';
+    % carry-register: carry-091
+    why = '[carry-091] a trial with no control (NaN or empty) has no pairing value';
     return;
 end
 ids = double(raw(:)');
 if numel(ids) ~= nTrials
-    % carry-register: carry-076
-    why = sprintf('[carry-076] %d pairing entr(ies) for %d trial(s)', numel(ids), nTrials);
+    % carry-register: carry-091
+    why = sprintf('[carry-091] %d pairing entr(ies) for %d trial(s)', numel(ids), nTrials);
     return;
 end
 if any(ids < 1 | ids > nTrials | ids ~= floor(ids))
-    % carry-register: carry-076
-    why = '[carry-076] an entry is not a trial number of the presentation';
+    % carry-register: carry-091
+    why = '[carry-091] an entry is not a trial number of the presentation';
     return;
 end
 if isfield(rec, 'app') && ~isempty(rec.app)
     if ~(isstruct(rec.app) && isscalar(rec.app))
-        % carry-register: carry-076
-        why = '[carry-076] app is not a block';
+        % carry-register: carry-091
+        why = '[carry-091] app is not a block';
         return;
     end
     known = {'name', 'app_name', 'version', 'app_version', 'url', 'app_url', ...
@@ -944,27 +944,27 @@ if isfield(rec, 'app') && ~isempty(rec.app)
         v = rec.app.(fn{k});
         if isempty(v); continue; end
         if ~any(strcmp(fn{k}, known))
-            % carry-register: carry-074
-            why = ['[carry-074] a field the calculation does not write: app.' fn{k}];
+            % carry-register: carry-089
+            why = ['[carry-089] a field the calculation does not write: app.' fn{k}];
             return;
         end
         if ~(ischar(v) || (isstring(v) && isscalar(v)))
-            % carry-register: carry-076
-            why = ['[carry-076] app.' fn{k} ' is not text'];
+            % carry-register: carry-091
+            why = ['[carry-091] app.' fn{k} ' is not text'];
             return;
         end
     end
     [~, swId] = ndi.migrate.internal.appSoftware(rec);
     if isempty(swId) && any(cellfun(@(f) ~isempty(rec.app.(f)), fn))
-        % carry-register: carry-076
-        why = '[carry-076] the app names no program';
+        % carry-register: carry-091
+        why = '[carry-091] the app names no program';
         return;
     end
     [~, ~, env] = ndi.migrate.internal.appSoftware(rec);
     if (isfield(env, 'os_version') && ~isfield(env, 'os')) ...
             || (isfield(env, 'interpreter_version') && ~isfield(env, 'interpreter'))
-        % carry-register: carry-076
-        why = '[carry-076] an OS or interpreter version with no name';
+        % carry-register: carry-091
+        why = '[carry-091] an OS or interpreter version with no name';
         return;
     end
 end
@@ -980,8 +980,8 @@ if isfield(rec, 'depends_on') && ~isempty(rec.depends_on)
             if isfield(d, f{1}) && ~isempty(d.(f{1})); v = d.(f{1}); end
         end
         if ~isempty(v)
-            % carry-register: carry-074
-            why = ['[carry-074] an edge the calculation does not write: ' char(d.name)];
+            % carry-register: carry-089
+            why = ['[carry-089] an edge the calculation does not write: ' char(d.name)];
             return;
         end
     end

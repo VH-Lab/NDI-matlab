@@ -1801,10 +1801,10 @@ function [convertResult, report] = resolveOntologyRowSubjects(convertResult, bod
         end
         if isscalar(sub.migrated) ...
                 && strcmp(sub.migrated{1}.className(), 'ontology_table_row')
-            % carry-register: carry-083 (the row is carried as v1)
+            % carry-register: carry-098 (the row is carried as v1)
             report.refold_no_statements = report.refold_no_statements + 1;
             report.carry_rows(end+1) = struct('id', char(plan(k).source_id), ...
-                'row', 'carry-083');
+                'row', 'carry-098');
             continue;   % REVERT
         end
         replacedIds{end+1} = plan(k).source_id; %#ok<AGROW>
@@ -2745,9 +2745,9 @@ function [convertResult, report] = resolveStimulusPresentations(convertResult, b
         end
         if isempty(manip)
             report.presentations_refused = report.presentations_refused + 1;
-            % carry-register: carry-065 (counts the unplaced refusals)
+            % carry-register: carry-080 (counts the unplaced refusals)
             if isfield(rep, 'unplaced_fields') && ~isempty(rep.unplaced_fields) ...
-                    && strcmp(ndi.migrate.internal.carryRowOf(rep.reason), 'carry-065')
+                    && strcmp(ndi.migrate.internal.carryRowOf(rep.reason), 'carry-080')
                 % [generic stage is lossless] (Jess Haley, 2026-10-25): left
                 % as it is, carried as v1 by the last step
                 report.presentations_refused_unplaced = ...
