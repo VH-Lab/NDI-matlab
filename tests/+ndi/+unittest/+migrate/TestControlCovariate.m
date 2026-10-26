@@ -196,13 +196,24 @@ classdef TestControlCovariate < matlab.unittest.TestCase
             testCase.verifyEqual(calcParam(calcs{1}, 'method'), 'psuedorandom');
         end
 
+        function testANaNControlIsConvertedAsNoControl(testCase)
+            % [NaN control means no control] (Jess Haley, 2026-10-26): NDI's
+            % tuning_response writes NaN for a trial with no control, so the
+            % record converts and the calculation records NaN for that trial.
+            [~, ~, r, ~, calcs] = emit(controlDoc('cs_1', [2 NaN 2]), [1 2 1]);
+            testCase.verifyEmpty(r.control_carried);
+            testCase.verifyNumElements(calcs, 1);
+            c = calcs{1};
+            got = arrayfun(@(v) double(v.count), c.count.value(:)');
+            testCase.verifyEqual(got([1 3]), [1 1]);
+            testCase.verifyTrue(isnan(got(2)), 'the trial with no control records NaN');
+        end
+
         function testARecordThatCannotBePlacedWholeIsCarriedAsV1(testCase)
-            % NaN: no pairing value (the covariate is still all false)
-            [m, ~, r, ~, calcs] = emit(controlDoc('cs_1', NaN), [1 2 1]);
+            % empty: no pairing at all
+            [~, ~, r, ~, calcs] = emit(controlDoc('cs_1', []), [1 2 1]);
             testCase.verifyEmpty(calcs);
-            testCase.verifySubstring(r.control_carried{1}.reason, 'NaN');
-            testCase.verifyEqual(logical(covariateOf(m, 'control condition').logical(:)'), ...
-                false(1, 3));
+            testCase.verifySubstring(r.control_carried{1}.reason, '[carry-091]');
             % B's shape: fewer entries than trials
             order = [6 2 10 4 11 3 1 5 9 8 12 7 8 4 9 3 2 6 1 12];
             [~, ~, r, ~, calcs] = emit(controlDoc('cs_1', [11 11 20]), order, 12);

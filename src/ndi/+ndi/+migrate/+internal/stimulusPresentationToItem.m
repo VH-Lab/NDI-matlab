@@ -360,9 +360,15 @@ elseif numel(animals) > 1
     report.several_animals = numel(animals);
     report.animals = animals(:)';
     if isempty(options.CohortIdFor)
-        % carry-register: carry-081
-        report.reason = sprintf(['[carry-081] several animals: the %s route resolves to %d ' ...
-            'animals in this session, and no session cohort was supplied'], ...
+        % NOT a carry: [conflicting animal records need a map] (Jess Haley,
+        % 2026-10-26) keeps carry-081 for conflicting records only; animals
+        % recorded together get one manipulation on the session's standing
+        % cohort (stimulus plan rule 2, T17 amendment). ndi.migrate.local
+        % always supplies CohortIdFor (cohortIdOf mints one per session), so
+        % this refusal is reached only by a caller that supplies none.
+        report.reason = sprintf(['several animals: the %s route resolves to %d ' ...
+            'animals in this session, and the caller supplied no session ' ...
+            'cohort (CohortIdFor)'], ...
             report.animal_source, numel(animals));
         return;
     end
@@ -926,9 +932,14 @@ if isfield(rec, 'control_stimulus_ids') && isstruct(rec.control_stimulus_ids)
         return;
     end
 end
-if iscell(raw) || ~isnumeric(raw) || isempty(raw) || any(~isfinite(double(raw(:))))
+% Decided by Jess Haley, 2026-10-26 [NaN control means no control]
+% (did-schema V_eta_go_forward_class_audit.md): NaN is NDI's writer's value
+% for a trial with no control (tuning_response.m writes it; its reader skips
+% it), so a NaN entry is converted -- the calculation records NaN for that
+% trial -- and only an empty, non-numeric or infinite entry is malformed.
+if iscell(raw) || ~isnumeric(raw) || isempty(raw) || any(isinf(double(raw(:))))
     % carry-register: carry-091
-    why = '[carry-091] a trial with no control (NaN or empty) has no pairing value';
+    why = '[carry-091] the pairing is empty, not numeric, or infinite';
     return;
 end
 ids = double(raw(:)');
@@ -937,7 +948,8 @@ if numel(ids) ~= nTrials
     why = sprintf('[carry-091] %d pairing entr(ies) for %d trial(s)', numel(ids), nTrials);
     return;
 end
-if any(ids < 1 | ids > nTrials | ids ~= floor(ids))
+paired = ids(~isnan(ids));
+if any(paired < 1 | paired > nTrials | paired ~= floor(paired))
     % carry-register: carry-091
     why = '[carry-091] an entry is not a trial number of the presentation';
     return;
