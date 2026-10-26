@@ -118,34 +118,45 @@ classdef TestMigrateLocalEta20211116 < matlab.unittest.TestCase
 
         function testControlRecordsFoldIntoACovariateOrAreCounted(testCase)
             % Decided by Jess Haley, 2026-10-22 [control as covariate]: a v1
-            % control_stimulus_ids about a folded presentation becomes the
-            % `control condition` covariate (logical, XCO:0000099) of the
-            % presentation's item value -- all false when v1 recorded NaN --
-            % and NO V2 document; responses point at the presentation only.
-            % The accounting must close: every record read lands in exactly
-            % one bucket.
+            % control_stimulus_ids about a folded presentation is read into
+            % the `control condition` covariate (logical, XCO:0000099) of the
+            % presentation's item value -- all false when v1 recorded NaN.
+            % Amended 2026-10-26 [control pairing is a calculation]: the record
+            % itself becomes a `calculation` (same id) when it can be placed
+            % whole, and is otherwise carried as v1. The accounting must close:
+            % every record read lands in exactly one bucket, and every record
+            % is either a calculation or a v1 document in the destination.
             r = testCase.Result.secondPass.stimulusSequence;
             n = r.control_records_read;
             verifyEqual(testCase, n, 11, ...
                 '20211116 holds 11 control_stimulus_ids documents');
             verifyEqual(testCase, n, r.control_records_folded + ...
                 r.control_presentation_not_folded + r.control_no_position_map + ...
-                r.control_unmappable + r.control_conflicting + r.control_unplaced, ...
+                r.control_unmappable + r.control_conflicting, ...
                 'a control record fell into no bucket');
+            sourceIds = {};
+            for k = 1:numel(testCase.Bodies)
+                b = testCase.Bodies{k};
+                if ischar(b) || isstring(b)
+                    if ~contains(char(b), '"control_stimulus_ids"'); continue; end
+                    b = jsondecode(char(b));
+                end
+                if isstruct(b) && strcmp(b.document_class.class_name, 'control_stimulus_ids')
+                    sourceIds{end+1} = char(b.base.id); %#ok<AGROW>
+                end
+            end
+            verifyNumElements(testCase, sourceIds, n);
             dst = destinationBodies(testCase.Result.destination);
-            withControl = 0; allFalse = 0; leftoverIds = {};
+            withControl = 0; allFalse = 0; leftover = 0; converted = 0;
             for k = 1:numel(dst)
                 d = dst{k};
                 cls = d.document_class.class_name;
-                if strcmp(cls, 'control_stimulus_ids')
-                    leftoverIds{end+1} = char(d.base.id); %#ok<AGROW>
-                    continue;
-                end
-                if strcmp(cls, 'calculation') && isfield(d, 'statement') ...
-                        && isfield(d.statement, 'variable')
-                    verifyFalse(testCase, any(strcmp(d.statement.variable.name, ...
-                        {'control stimulus', 'control stimulus present'})), ...
-                        'a control calculation was written ([control as covariate] superseded it)');
+                if any(strcmp(char(d.base.id), sourceIds))
+                    if strcmp(cls, 'control_stimulus_ids')
+                        leftover = leftover + 1;
+                    elseif strcmp(cls, 'calculation')
+                        converted = converted + 1;
+                    end
                 end
                 c = controlCovariate(d);
                 if ~isempty(c)
@@ -153,50 +164,18 @@ classdef TestMigrateLocalEta20211116 < matlab.unittest.TestCase
                     if ~any(logical(c.logical(:))), allFalse = allFalse + 1; end
                 end
             end
-            folded = n - numel(leftoverIds);
             verifyEqual(testCase, withControl, r.presentations_with_control_covariate, ...
                 'every control covariate the pass counted reaches the destination');
             verifyEqual(testCase, allFalse, r.control_covariates_all_false);
-            verifyEqual(testCase, folded, r.control_records_folded, ...
-                'every folded control record is gone from the destination');
-            % no destination input_id names a folded record: the ids of the
-            % source's control records, less those left as v1
-            foldedIds = {};
-            for k = 1:numel(testCase.Bodies)
-                b = testCase.Bodies{k};
-                if ischar(b) || isstring(b)
-                    if ~contains(char(b), '"control_stimulus_ids"'); continue; end
-                    b = jsondecode(char(b));
-                end
-                if isstruct(b) && strcmp(b.document_class.class_name, 'control_stimulus_ids') ...
-                        && ~any(strcmp(char(b.base.id), leftoverIds))
-                    foldedIds{end+1} = char(b.base.id); %#ok<AGROW>
-                end
-            end
-            verifyNumElements(testCase, foldedIds, folded, ...
-                'the source and destination disagree on how many records folded');
-            dangling = 0;
-            for k = 1:numel(dst)
-                d = dst{k};
-                if ~isfield(d, 'depends_on') || ~isstruct(d.depends_on); continue; end
-                for j = 1:numel(d.depends_on)
-                    e = d.depends_on(j);
-                    if ~strcmp(e.name, 'input_id'); continue; end
-                    v = '';
-                    if isfield(e, 'value'); v = e.value; end
-                    if isempty(v) && isfield(e, 'document_id'); v = e.document_id; end
-                    if iscell(v) && ~isempty(v); v = v{1}; end
-                    dangling = dangling + any(strcmp(char(v), foldedIds));
-                end
-            end
-            verifyEqual(testCase, dangling, 0, ...
-                'an input_id still names a folded control record');
-            fprintf(['\n  CONTROL RECORDS (20211116): %d read; %d folded into %d ' ...
-                'presentation covariate(s) (%d all false); %d input_id edge(s) on %d ' ...
-                'document(s) stripped; %d left as v1\n'], n, r.control_records_folded, ...
+            verifyEqual(testCase, converted, r.control_records_converted, ...
+                'every converted control record is a calculation with its v1 id');
+            verifyEqual(testCase, leftover + converted, n, ...
+                'a control record is neither a calculation nor carried as v1');
+            fprintf(['\n  CONTROL RECORDS (20211116): %d read; %d read into %d ' ...
+                'presentation covariate(s) (%d all false); %d converted to a pairing ' ...
+                'calculation; %d left as v1\n'], n, r.control_records_folded, ...
                 r.presentations_with_control_covariate, r.control_covariates_all_false, ...
-                r.control_input_edges_stripped, r.control_input_documents_changed, ...
-                numel(leftoverIds));
+                converted, leftover);
         end
 
         function testTheWholeCorpusMigratesWithNothingQuarantinedOrDangling(testCase)

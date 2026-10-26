@@ -12,8 +12,7 @@ function [docs, swId, env, key] = appSoftware(v1Body)
 %   and control_stimulus_ids's `app`.
 %
 %   The SAME SHAPE DID-matlab's private jSoftwareFromApp / jSoftware write
-%   (they are private to +migrators_j, so this is the NDI-side copy, built
-%   with did2.build so the shape is read from the schema in use):
+%   (ndi.migrate.internal.softwareEntity):
 %     DOCS{1}  an `entity`, type `software`: name, local_identifier
 %              NAME@VERSION (NAME without a version), global_identifier {URL}
 %     DOCS{2}  when VERSION is given: a text `assertion` about it, variable
@@ -57,30 +56,8 @@ datestamp = '';
 if isfield(v1Body, 'base') && isstruct(v1Body.base) && isfield(v1Body.base, 'datestamp')
     datestamp = char(v1Body.base.datestamp);
 end
-if isempty(name) || isempty(sessionId)
-    return;
-end
-
-restore = ndi.migrate.internal.termRegistryOff(); %#ok<NASGU>
-ent = struct('type', did2.build.term('', 'software'), 'name', name, ...
-    'local_identifier', name);
-if ~isempty(version)
-    ent.local_identifier = [name '@' version];
-end
-if ~isempty(url)
-    ent.global_identifier = {url};
-end
-opts = {'SessionId', sessionId, 'CreationTimestamp', datestamp, 'Validate', false};
-e = did2.build.document('entity', ent, opts{:});
-swId = e.base.id;
-key = ent.local_identifier;
-docs = {e};
-if ~isempty(version)
-    docs{end+1} = did2.build.statement('assertion', swId, ...
-        did2.build.term('IAO:0000129', 'version number'), ...
-        did2.build.valueCell('text', {version}, 'Canonical', 'text'), ...
-        'ValueKind', 'text', opts{:});
-end
+[docs, swId, key] = ndi.migrate.internal.softwareEntity(name, version, url, ...
+    sessionId, datestamp);
 end
 
 function v = charField(s, names)

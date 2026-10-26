@@ -2780,11 +2780,12 @@ function [convertResult, report] = resolveStimulusPresentations(convertResult, b
 %
 %   CONTROL (Jess Haley, 2026-10-22, [control as covariate]): each v1
 %   control_stimulus_ids is handed to its presentation's fold and becomes the
-%   `control condition` covariate of the item value; the record itself writes
-%   no V2 document and its id is stripped from every input_id. A record the
-%   fold cannot place (see stimulusPresentationToItem, CONTROL) or whose
-%   presentation did not fold stays as it is; the report counts each, against
-%   control_records_read.
+%   `control condition` covariate of the item value. [control pairing is a
+%   calculation] (Jess Haley, 2026-10-26) amends it: the record itself becomes
+%   a `calculation` (the per-trial pairing, id preserved, so inbound input_id
+%   edges keep resolving) when the fold can place all of it, and otherwise
+%   stays as it is and is carried as v1 (stimulusPresentationToItem, CONTROL
+%   PAIRING). The report counts each, against control_records_read.
 %
 %   `visual_grating`, `visual_grating_manipulation`, `timed_sequence` and
 %   `timed_sequence_manipulation` are gone from #88; nothing here emits them.
@@ -2836,6 +2837,8 @@ function [convertResult, report] = resolveStimulusPresentations(convertResult, b
         controlsByPresentation(presId) = held;
     end
     controlFolded = {};
+    controlConverted = {};
+    calcs = {};
     minted = {};
     manips = {};
     consumed = {};
@@ -2860,7 +2863,8 @@ function [convertResult, report] = resolveStimulusPresentations(convertResult, b
             [ptFile, ptStatus] = ndi.migrate.internal.v1AttachedFile(b, ...
                 'presentation_time.bin', ndiDir);
         end
-        [manip, methods, rep, software] = ndi.migrate.internal.stimulusPresentationToItem( ...
+        [manip, methods, rep, software, controlCalcs] = ...
+            ndi.migrate.internal.stimulusPresentationToItem( ...
             b, resolver, sequence, 'CohortIdFor', cohortIdFor, ...
             'ControlRecords', controls, 'PresentationTimeFile', ptFile, ...
             'PresentationTimeFileStatus', ptStatus);
@@ -2882,23 +2886,26 @@ function [convertResult, report] = resolveStimulusPresentations(convertResult, b
                 report.hartley_without_enumeration + rep.hartley_without_enumeration;
             report.notes_not_written_standalone = ...
                 report.notes_not_written_standalone + rep.notes_not_written_standalone;
-            % [presentation app is software], [control selection on the
-            % presentation method] (Jess Haley, 2026-10-26): the app blocks
-            % as software entities (deduplicated by resolveSoftwareDedup,
-            % which runs after this pass), the control selection as method
-            % parameters. The run environment has no slot on a manipulation
-            % (stimulusPresentationToItem, SOFTWARE) and is counted.
+            % [presentation app is software] and [control pairing is a
+            % calculation] (Jess Haley, 2026-10-26): software entities
+            % (merged by resolveSoftwareDedup, which runs after this pass),
+            % and one calculation per control record placed whole
             minted = [minted, software]; %#ok<AGROW>
+            calcs = [calcs, controlCalcs]; %#ok<AGROW>
+            controlConverted = [controlConverted, rep.control_converted_ids]; %#ok<AGROW>
             report.software_minted = report.software_minted + rep.software_minted;
             report.software_referenced = report.software_referenced + rep.software_referenced;
             report.software_unreferenced = report.software_unreferenced + ...
                 rep.software_unreferenced;
             report.app_environment_not_written = report.app_environment_not_written + ...
                 ~isempty(rep.app_environment_not_written);
-            report.control_method_parameters_written = ...
-                report.control_method_parameters_written + rep.control_method_parameters;
-            report.control_method_not_placed = report.control_method_not_placed + ...
-                rep.control_method_not_placed;
+            report.control_records_converted = report.control_records_converted + ...
+                rep.control_calculations;
+            for c = 1:numel(rep.control_carried)
+                if numel(report.control_carried) < 20
+                    report.control_carried{end+1} = rep.control_carried{c};
+                end
+            end
         end
         if isfield(rep, 'several_animals') && rep.several_animals > 1
             report.several_animal_presentations = ...
@@ -2983,7 +2990,7 @@ function [convertResult, report] = resolveStimulusPresentations(convertResult, b
     report.control_presentation_not_folded = ...
         report.control_records_read - report.control_records_folded ...
         - report.control_unmappable - report.control_no_position_map ...
-        - report.control_conflicting - report.control_unplaced;
+        - report.control_conflicting;
 
     if isempty(consumed)
         report.methods_minted = 0;
@@ -3019,17 +3026,8 @@ function [convertResult, report] = resolveStimulusPresentations(convertResult, b
             continue;
         end
         if strcmp(cls, 'control_stimulus_ids') ...
-                && any(strcmp(d.get('base.id'), controlFolded))
-            continue;   % folded into its presentation's covariate
-        end
-        if ~isempty(controlFolded)
-            [d, nStripped] = stripInputIds(d, controlFolded);
-            if nStripped > 0
-                report.control_input_edges_stripped = ...
-                    report.control_input_edges_stripped + nStripped;
-                report.control_input_documents_changed = ...
-                    report.control_input_documents_changed + 1;
-            end
+                && any(strcmp(d.get('base.id'), controlConverted))
+            continue;   % replaced by its calculation (same id)
         end
         if any(strcmp(cls, {'session', 'entity'}))
             sessionStructs{end+1} = d.toStruct(); %#ok<AGROW>
@@ -3041,9 +3039,10 @@ function [convertResult, report] = resolveStimulusPresentations(convertResult, b
 
     % "during the session" for every manipulation (the marker each carries)
     nS = numel(sessionStructs);
-    marked = manips;
+    marked = [manips, calcs];
     batch = [sessionStructs, marked];
-    classes = [sessionClasses, repmat({'manipulation'}, 1, numel(manips))];
+    classes = [sessionClasses, repmat({'manipulation'}, 1, numel(manips)), ...
+        repmat({'calculation'}, 1, numel(calcs))];
     [batch, refs, anchorReport] = did2.convert.mintSessionDuring(batch, classes, ...
         nS + (1:numel(marked)), struct('SchemaCache', options.SchemaCache));
     report.time_references = anchorReport;
@@ -3137,38 +3136,9 @@ function [report, folded] = tallyControl(report, rep, controls, folded)
             report.control_no_position_map = report.control_no_position_map + numel(controls);
         case 'conflicting'
             report.control_conflicting = report.control_conflicting + numel(controls);
-        case 'unplaced'
-            % [generic stage is lossless]: a field the fold cannot place
-            % (e.g. the control selection on a standalone item); left as it
-            % is, carried as v1 by the last step
-            report.control_unplaced = report.control_unplaced + numel(controls);
         otherwise
             report.control_unmappable = report.control_unmappable + numel(controls);
     end
-end
-
-function [d, n] = stripInputIds(d, ids)
-%STRIPINPUTIDS Remove from document D's input_id edges every id in IDS (the
-%   folded control records: a response points at the presentation only).
-    n = 0;
-    s = d.toStruct();
-    if ~isfield(s, 'depends_on') || ~isstruct(s.depends_on) || isempty(s.depends_on)
-        return;
-    end
-    keep = true(1, numel(s.depends_on));
-    for k = 1:numel(s.depends_on)
-        e = s.depends_on(k);
-        if strcmp(char(e.name), 'input_id') && ...
-                any(strcmp(ndi.migrate.internal.etaShape.entryValue(e), ids))
-            keep(k) = false;
-        end
-    end
-    n = sum(~keep);
-    if n == 0
-        return;
-    end
-    s.depends_on = s.depends_on(keep);
-    d = did2.document(s);
 end
 
 function id = cohortIdOf(cohortIds, sessionId)
@@ -3324,23 +3294,20 @@ function r = newStimulusSequenceReport()
         'shape_movie_notes',          0, ...
         'hartley_without_enumeration', 0, ...
         'notes_not_written_standalone', 0, ...
-        'software_minted',            0, ...
-        'software_referenced',        0, ...
-        'software_unreferenced',      0, ...
-        'app_environment_not_written', 0, ...
-        'control_method_parameters_written', 0, ...
-        'control_method_not_placed',  0, ...
         'control_records_read',       0, ...
         'control_records_folded',     0, ...
         'control_presentation_not_folded', 0, ...
         'control_no_position_map',    0, ...
         'control_unmappable',         0, ...
         'control_conflicting',        0, ...
-        'control_unplaced',           0, ...
         'presentations_with_control_covariate', 0, ...
         'control_covariates_all_false', 0, ...
-        'control_input_edges_stripped', 0, ...
-        'control_input_documents_changed', 0, ...
+        'control_records_converted',  0, ...
+        'control_carried',            {{}}, ...
+        'software_minted',            0, ...
+        'software_referenced',        0, ...
+        'software_unreferenced',      0, ...
+        'app_environment_not_written', 0, ...
         'timing',                     newTimingCensus(), ...
         'hartley',                    []);
 end
