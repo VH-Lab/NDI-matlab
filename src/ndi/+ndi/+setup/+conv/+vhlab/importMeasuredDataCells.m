@@ -15,7 +15,7 @@ p = S.getprobes();
 
 ds = dirstruct(S.getpath);
 
-[cells,cellnames] = load2celllist(getexperimentfile(ds),'cell*')
+[cells,cellnames] = load2celllist(getexperimentfile(ds),'cell*','-mat');
 
 for i=1:numel(cells)
     disp(['Working on cell ' int2str(i) ' of ' int2str(numel(cells)) ': ' cellnames{i}]);
@@ -58,7 +58,7 @@ for i=1:numel(cells)
 
     % now make epochs
     for j=1:size(I,1)
-        spikes_here = get_data(cells{j},[I(j,1) I(j,2)]);
+        spikes_here = get_data(cells{i},[I(j,1) I(j,2)]);
         spike_times_here = spikes_here - I(j,1); % convert to dev_local_time
         t0_t1 = [0 I(j,2)-I(j,1)]; 
 		element_neuron.addepoch(et(ImatchesInAll(j)).epoch_id,ndi.time.clocktype('dev_local_time'),...

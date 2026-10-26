@@ -3,7 +3,7 @@ function T = treatmentTable(S)
 %
 % T = TREATMENTTABLE(S)
 %
-% Creates a table with variables 'treatment', 'stringValue', 'numericValue',
+% Creates a table with variables 'treatmentType', 'treatment', 'stringValue', 'numericValue',
 % 'subjectIdentifier', and 'sessionPath'. The table will contain multiple rows,
 % one for each treatment type.
 %
@@ -80,25 +80,25 @@ function T = treatmentTable(S)
 
     % Create data for each row
     % Row 1: Grating stimulation
-    row1 = {'EMPTY:Treatment: Grating direction-of-motion visual stimulation', "", duration_hours};
+    row1 = {'treatment', 'EMPTY:Treatment: Grating direction-of-motion visual stimulation', "", duration_hours};
     
-    % Row 2: Date of birth
-    row2 = {'EMPTY:date of birth', string(dateOfBirth), NaN};
+    % Row 2: Date of birth (a measurement of the subject rather than a treatment)
+    row2 = {'measurement', 'EMPTY:date of birth', string(dateOfBirth), NaN};
     
     % Row 3: Experiment time
-    row3 = {'EMPTY:Treatment: Non-survival experiment time', string(sessionDirName), NaN};
+    row3 = {'treatment', 'EMPTY:Treatment: Non-survival experiment time', string(sessionDirName), NaN};
     
     % Combine rows into a cell array
     table_data_cell = [row1; row2; row3];
     
     % Convert cell to a preliminary table
-    T_prelim = cell2table(table_data_cell, 'VariableNames', {'treatment', 'stringValue', 'numericValue'});
+    T_prelim = cell2table(table_data_cell, 'VariableNames', {'treatmentType', 'treatment', 'stringValue', 'numericValue'});
     
     % Add the constant columns for subject and session path
     T_prelim.subjectIdentifier = repmat(string(subjectIdentifier), height(T_prelim), 1);
     T_prelim.sessionPath = repmat(string(sessionPath), height(T_prelim), 1);
     
     % Reorder columns to the final desired order
-    T = T_prelim(:, {'sessionPath', 'subjectIdentifier', 'treatment', 'stringValue', 'numericValue'});
+    T = T_prelim(:, {'sessionPath', 'subjectIdentifier', 'treatmentType', 'treatment', 'stringValue', 'numericValue'});
 
 end

@@ -13,8 +13,8 @@ function doStacyImport(S, options)
 %   2.  Stimulus Approaches: Reads epoch-specific approaches and purposes
 %       using `approachMappingTable` and creates the corresponding NDI
 %       documents using `stimulusDocMaker`.
-%   3.  Treatments: (Placeholder) A section is reserved for importing
-%       treatment data.
+%   3.  Treatments: Reads subject treatments using `treatmentTable` and
+%       creates the corresponding NDI documents using `treatmentMaker`.
 %
 %   This function can also take name/value pairs that modify its behavior:
 %   |------------------|----------------------------------------------------|
@@ -50,7 +50,7 @@ function doStacyImport(S, options)
     subM = ndi.setup.NDIMaker.subjectMaker();
 
     [subjectInfo, ~] = subM.getSubjectInfoFromTable(subject_info_table, ...
-        @ndi.setup.conv.vhlab.createSubjectInformation);
+        ndi.setup.conv.vhlab.SubjectInformationCreator());
 
     % Make documents, providing the existing ones to avoid duplicates
     subDocStruct = subM.makeSubjectDocuments(subjectInfo, ...
@@ -58,9 +58,6 @@ function doStacyImport(S, options)
     
     % Add any newly created documents to the session
     subM.addSubjectsToSessions({S}, subDocStruct.documents);
-
-    treatmentTable = ndi.setup.conv.vhlab.treatmentTable(S);
-    subM.makeSubjectTreatments(S,treatmentTable,"doAdd",true);
 
     disp('Stage 1: Subject information processing complete.');
     
@@ -85,23 +82,18 @@ function doStacyImport(S, options)
     disp('Stage 2: Stimulus approach processing complete.');
 
     %% Stage 3: Treatments
-    disp('Stage 3: Processing treatments (placeholder)...');
-    % This section is for importing treatment information.
-    %
-    % % 1. Get treatment data from the lab-specific function
-    % treatment_T = ndi.setup.conv.vhlab.treatmentTable(S);
-    %
-    % % 2. Process the treatment table. This might involve creating 'treatment'
-    % %    documents or using the tableDocMaker for more complex data.
-    % %    For example:
-    % % tdm = ndi.setup.NDIMaker.tableDocMaker(S, 'vhlab');
-    % % tdm.table2ontologyTableRowDocs(treatment_T, {'subjectIdentifier','treatment'});
-    %
+    disp('Stage 3: Processing treatments...');
+
+    % Treatments depend on the subject documents made in Stage 1
+    treatment_T = ndi.setup.conv.vhlab.treatmentTable(S);
+    treatM = ndi.setup.NDIMaker.treatmentMaker();
+    treatM.addTreatmentsFromTable(S, treatment_T, 'doAdd', true);
+
     disp('Stage 3: Complete.');
 
     disp('Stage 4: Add probe locations for Andrea Stacy (LGN always)')
 
-    p = S.getprobes('type','n-trode')
+    p = S.getprobes('type','n-trode');
     pld = ndi.fun.doc.probe.probeLocations4probes(S,p,repmat({'UBERON:0002479'},numel(p),1),'doAdd',true);
 
     disp('Stage 4: Complete')
