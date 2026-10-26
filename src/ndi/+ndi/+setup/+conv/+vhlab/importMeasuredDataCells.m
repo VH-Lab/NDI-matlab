@@ -11,8 +11,6 @@ arguments
 	S (1,1) ndi.session.dir
 end
 
-p = S.getprobes();
-
 ds = dirstruct(S.getpath);
 
 [cells,cellnames] = load2celllist(getexperimentfile(ds),'cell*','-mat');
@@ -32,9 +30,11 @@ for i=1:numel(cells)
 
     et = probeHere.epochtable();
     all_intervals = [];
+    all_global_starts = [];
     for j=1:numel(et)
-        interval_here = getintervalfromdir([S.getpath filesep et(j).epoch_id]);
+        [interval_here, global_start_here] = getintervalfromdir([S.getpath filesep et(j).epoch_id]);
         all_intervals = [all_intervals; interval_here];
+        all_global_starts = [all_global_starts; global_start_here];
     end
     ImatchesInAll = [];
     for j=1:size(I,1)
@@ -58,26 +58,48 @@ for i=1:numel(cells)
 
     % now make epochs
     for j=1:size(I,1)
+        epoch_here = et(ImatchesInAll(j));
         spikes_here = get_data(cells{i},[I(j,1) I(j,2)]);
-        spike_times_here = spikes_here - I(j,1); % convert to dev_local_time
-        t0_t1 = [0 I(j,2)-I(j,1)]; 
-		element_neuron.addepoch(et(ImatchesInAll(j)).epoch_id,ndi.time.clocktype('dev_local_time'),...
+        % Legacy spike times are on the legacy global clock, which is the Spike2
+        % (stimulator) clock plus stims.mat's start (see vhlabcorrectmti with
+        % globaltime = 1). Subtract it to get the stimulator's dev_local_time,
+        % then convert to the probe's own clock through the syncgraph.
+        spike_times_stim = spikes_here(:) - all_global_starts(ImatchesInAll(j));
+        spike_times_here = stimulatorTimeToProbeTime(S, spike_times_stim, epoch_here.epoch_id, probeHere);
+        t0_t1 = epoch_here.t0_t1{find(cellfun(@(c) c==ndi.time.clocktype('dev_local_time'), epoch_here.epoch_clock), 1)};
+		element_neuron.addepoch(epoch_here.epoch_id,ndi.time.clocktype('dev_local_time'),...
 			t0_t1,spike_times_here(:),ones(size(spike_times_here(:))));
     end
 end
 
 
 
-function [interval,starttime] = getintervalfromdir(dirname)
-%dirname,
-starttime = 0;
+function [interval,global_start] = getintervalfromdir(dirname)
+% GETINTERVALFROMDIR - the legacy interval of an epoch directory, and stims.mat's start
+%
+% INTERVAL is the interval the legacy analysis stored with each cell, used here
+% only to match a cell's intervals to epochs. GLOBAL_START is g.start from
+% stims.mat: legacy global time = Spike2 time + GLOBAL_START.
 if exist([dirname filesep 'stims.mat'])&exist([dirname filesep 'stimtimes.txt']),
 	g = load([dirname filesep 'stims.mat']);
 	[mti2,starttime]=tpcorrectmti(g.MTI2,[dirname filesep 'stimtimes.txt'],1);
 	interval = [starttime mti2{end}.frameTimes(end)+10]; % assume 10 sec of post recording
-	interval = interval; % + g.start;
-	starttime = g.start;
+	global_start = g.start;
 	clear g;
 else,
     error(['could not find interval']);
 end;
+
+
+function t_probe = stimulatorTimeToProbeTime(S, t_stim, epoch_id, probe)
+% STIMULATORTIMETOPROBETIME - convert times from the stimulator's dev_local_time to PROBE's
+stimprobes = S.getprobes('type','stimulator');
+if isempty(stimprobes)
+    error('Could not find a stimulator probe.');
+end
+ct = ndi.time.clocktype('dev_local_time');
+tr = ndi.time.timereference(stimprobes{1}, ct, epoch_id, 0);
+[t_probe, ~, msg] = S.syncgraph.time_convert(tr, t_stim, probe, ct);
+if isempty(t_probe) && ~isempty(t_stim)
+    error(['Could not convert stimulator time to probe time for epoch ' epoch_id ': ' msg]);
+end
