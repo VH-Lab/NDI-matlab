@@ -105,8 +105,10 @@ function [isValid, report] = validateStacyDirectory(dirname, options)
     else
         try
             % read the file the same way as ndi.setup.conv.vhlab.approachMappingTable
-            opts = detectImportOptions(testdirinfo_file, 'FileType', 'text');
-            opts.Delimiter = '\t';
+            opts = detectImportOptions(testdirinfo_file, 'FileType', 'text', 'Delimiter', '\t');
+            opts = setvartype(opts, 'char');
+            opts.VariableNamesLine = 1; % the first line holds the column titles
+            opts.DataLines = [2 Inf];
             epochInfo = readtable(testdirinfo_file, opts);
             if width(epochInfo) ~= 2
                 error('Expected 2 tab-delimited columns (testdir, types) but found %d.', width(epochInfo));
@@ -177,7 +179,7 @@ function [isValid, report] = validateStacyDirectory(dirname, options)
         reference_file = fullfile(epochDir, 'reference.txt');
         if isfile(reference_file)
             try
-                r = loadStructArray(reference_file);
+                r = vlt.file.loadStructArray(reference_file);
                 if ~all(isfield(r, {'name', 'ref', 'type'}))
                     error('Expected columns name, ref and type.');
                 end
@@ -203,10 +205,17 @@ function [isValid, report] = validateStacyDirectory(dirname, options)
                 addProblem('error', fullfile('analysis', 'experiment'), 'File has no cell* variables.');
             end
             for j = 1:numel(cellnames)
-                nameref = cellname2nameref(cellnames{j});
-                match = strcmp({references.name}, nameref.name) & ([references.ref] == nameref.ref);
+                % cell names are cell_NAME_REF_INDEX_..., as read by cellname2nameref
+                parts = strsplit(cellnames{j}, '_');
+                if numel(parts) < 4
+                    addProblem('error', fullfile('analysis', 'experiment'), ['Cell ' cellnames{j} ' does not have a name of the form cell_NAME_REF_INDEX_DATE.']);
+                    continue;
+                end
+                refName = parts{2};
+                refNumber = round(str2double(parts{3}));
+                match = strcmp({references.name}, refName) & ([references.ref] == refNumber);
                 if ~any(match)
-                    addProblem('error', fullfile('analysis', 'experiment'), ['Cell ' cellnames{j} ' has name ''' nameref.name ''' and reference ' int2str(nameref.ref) ', which are in no reference.txt file.']);
+                    addProblem('error', fullfile('analysis', 'experiment'), ['Cell ' cellnames{j} ' has name ''' refName ''' and reference ' int2str(refNumber) ', which are in no reference.txt file.']);
                 end
             end
         catch ME

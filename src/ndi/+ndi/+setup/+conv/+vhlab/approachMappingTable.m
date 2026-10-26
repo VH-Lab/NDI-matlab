@@ -68,8 +68,12 @@ function T = approachMappingTable(S, varargin)
 
     % Read the tab-delimited epoch list
     % We use readtable, which is robust for handling headers and different delimiters
-    opts = detectImportOptions(epoch_list_fullfile, 'FileType', 'text');
-    opts.Delimiter = '\t'; % Ensure tab is the delimiter
+    % Give the tab delimiter up front so a comma-separated list of types is not
+    % detected as extra columns
+    opts = detectImportOptions(epoch_list_fullfile, 'FileType', 'text', 'Delimiter', '\t');
+    opts = setvartype(opts, 'char');
+    opts.VariableNamesLine = 1; % the first line holds the column titles
+    opts.DataLines = [2 Inf];
     epochInfo = readtable(epoch_list_fullfile, opts);
     % Standardize variable names for easier access
     epochInfo.Properties.VariableNames = {'epochid', 'type'};
