@@ -94,7 +94,7 @@ function doStacyImport(S, options)
     disp('Stage 4: Add probe locations for Andrea Stacy (LGN always)')
 
     p = S.getprobes('type','n-trode');
-    pld = ndi.fun.doc.probe.probeLocations4probes(S,p,repmat({'UBERON:0002479'},numel(p),1),'doAdd',true);
+    pld = ndi.fun.doc.probe.probeLocations4probes(S,p(:)',repmat({'UBERON:0002479'},1,numel(p)),'doAdd',true);
 
     disp('Stage 4: Complete')
     
