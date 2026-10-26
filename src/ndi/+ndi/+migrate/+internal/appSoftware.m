@@ -35,9 +35,8 @@ function [docs, swId, env, key] = appSoftware(v1Body)
 %   `name` / `version`, did2.convert.universalRenames writes `app_name` /
 %   `app_version`.
 
-docs = {};
-swId = '';
-key = '';
+% DOCS, SWID and KEY are not pre-set: softwareEntity assigns all three on
+% every path, at the end (Code Analyzer flagged the pre-sets as unused).
 env = struct();
 app = struct();
 if isstruct(v1Body) && isfield(v1Body, 'app') && isstruct(v1Body.app) ...
