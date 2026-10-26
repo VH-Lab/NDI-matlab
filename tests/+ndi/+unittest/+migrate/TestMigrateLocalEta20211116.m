@@ -118,12 +118,14 @@ classdef TestMigrateLocalEta20211116 < matlab.unittest.TestCase
 
         function testControlRecordsFoldIntoACovariateOrAreCounted(testCase)
             % Decided by Jess Haley, 2026-10-22 [control as covariate]: a v1
-            % control_stimulus_ids about a folded presentation becomes the
-            % `control condition` covariate (logical, XCO:0000099) of the
-            % presentation's item value -- all false when v1 recorded NaN --
-            % and NO V2 document; responses point at the presentation only.
-            % The accounting must close: every record read lands in exactly
-            % one bucket.
+            % control_stimulus_ids about a folded presentation is read into
+            % the `control condition` covariate (logical, XCO:0000099) of the
+            % presentation's item value -- all false when v1 recorded NaN.
+            % Amended 2026-10-26 [control pairing is a calculation]: the record
+            % itself becomes a `calculation` (same id) when it can be placed
+            % whole, and is otherwise carried as v1. The accounting must close:
+            % every record read lands in exactly one bucket, and every record
+            % is either a calculation or a v1 document in the destination.
             r = testCase.Result.secondPass.stimulusSequence;
             n = r.control_records_read;
             verifyEqual(testCase, n, 11, ...
@@ -132,20 +134,29 @@ classdef TestMigrateLocalEta20211116 < matlab.unittest.TestCase
                 r.control_presentation_not_folded + r.control_no_position_map + ...
                 r.control_unmappable + r.control_conflicting, ...
                 'a control record fell into no bucket');
+            sourceIds = {};
+            for k = 1:numel(testCase.Bodies)
+                b = testCase.Bodies{k};
+                if ischar(b) || isstring(b)
+                    if ~contains(char(b), '"control_stimulus_ids"'); continue; end
+                    b = jsondecode(char(b));
+                end
+                if isstruct(b) && strcmp(b.document_class.class_name, 'control_stimulus_ids')
+                    sourceIds{end+1} = char(b.base.id); %#ok<AGROW>
+                end
+            end
+            verifyNumElements(testCase, sourceIds, n);
             dst = destinationBodies(testCase.Result.destination);
-            withControl = 0; allFalse = 0; leftoverIds = {};
+            withControl = 0; allFalse = 0; leftover = 0; converted = 0;
             for k = 1:numel(dst)
                 d = dst{k};
                 cls = d.document_class.class_name;
-                if strcmp(cls, 'control_stimulus_ids')
-                    leftoverIds{end+1} = char(d.base.id); %#ok<AGROW>
-                    continue;
-                end
-                if strcmp(cls, 'calculation') && isfield(d, 'statement') ...
-                        && isfield(d.statement, 'variable')
-                    verifyFalse(testCase, any(strcmp(d.statement.variable.name, ...
-                        {'control stimulus', 'control stimulus present'})), ...
-                        'a control calculation was written ([control as covariate] superseded it)');
+                if any(strcmp(char(d.base.id), sourceIds))
+                    if strcmp(cls, 'control_stimulus_ids')
+                        leftover = leftover + 1;
+                    elseif strcmp(cls, 'calculation')
+                        converted = converted + 1;
+                    end
                 end
                 c = controlCovariate(d);
                 if ~isempty(c)
@@ -153,50 +164,18 @@ classdef TestMigrateLocalEta20211116 < matlab.unittest.TestCase
                     if ~any(logical(c.logical(:))), allFalse = allFalse + 1; end
                 end
             end
-            folded = n - numel(leftoverIds);
             verifyEqual(testCase, withControl, r.presentations_with_control_covariate, ...
                 'every control covariate the pass counted reaches the destination');
             verifyEqual(testCase, allFalse, r.control_covariates_all_false);
-            verifyEqual(testCase, folded, r.control_records_folded, ...
-                'every folded control record is gone from the destination');
-            % no destination input_id names a folded record: the ids of the
-            % source's control records, less those left as v1
-            foldedIds = {};
-            for k = 1:numel(testCase.Bodies)
-                b = testCase.Bodies{k};
-                if ischar(b) || isstring(b)
-                    if ~contains(char(b), '"control_stimulus_ids"'); continue; end
-                    b = jsondecode(char(b));
-                end
-                if isstruct(b) && strcmp(b.document_class.class_name, 'control_stimulus_ids') ...
-                        && ~any(strcmp(char(b.base.id), leftoverIds))
-                    foldedIds{end+1} = char(b.base.id); %#ok<AGROW>
-                end
-            end
-            verifyNumElements(testCase, foldedIds, folded, ...
-                'the source and destination disagree on how many records folded');
-            dangling = 0;
-            for k = 1:numel(dst)
-                d = dst{k};
-                if ~isfield(d, 'depends_on') || ~isstruct(d.depends_on); continue; end
-                for j = 1:numel(d.depends_on)
-                    e = d.depends_on(j);
-                    if ~strcmp(e.name, 'input_id'); continue; end
-                    v = '';
-                    if isfield(e, 'value'); v = e.value; end
-                    if isempty(v) && isfield(e, 'document_id'); v = e.document_id; end
-                    if iscell(v) && ~isempty(v); v = v{1}; end
-                    dangling = dangling + any(strcmp(char(v), foldedIds));
-                end
-            end
-            verifyEqual(testCase, dangling, 0, ...
-                'an input_id still names a folded control record');
-            fprintf(['\n  CONTROL RECORDS (20211116): %d read; %d folded into %d ' ...
-                'presentation covariate(s) (%d all false); %d input_id edge(s) on %d ' ...
-                'document(s) stripped; %d left as v1\n'], n, r.control_records_folded, ...
+            verifyEqual(testCase, converted, r.control_records_converted, ...
+                'every converted control record is a calculation with its v1 id');
+            verifyEqual(testCase, leftover + converted, n, ...
+                'a control record is neither a calculation nor carried as v1');
+            fprintf(['\n  CONTROL RECORDS (20211116): %d read; %d read into %d ' ...
+                'presentation covariate(s) (%d all false); %d converted to a pairing ' ...
+                'calculation; %d left as v1\n'], n, r.control_records_folded, ...
                 r.presentations_with_control_covariate, r.control_covariates_all_false, ...
-                r.control_input_edges_stripped, r.control_input_documents_changed, ...
-                numel(leftoverIds));
+                converted, leftover);
         end
 
         function testTheWholeCorpusMigratesWithNothingQuarantinedOrDangling(testCase)
@@ -333,6 +312,13 @@ classdef TestMigrateLocalEta20211116 < matlab.unittest.TestCase
                      'built in the NDI stimulus fold, so the document passes through pass 1 ' ...
                      'under its v1 tombstone for that pass to consume (DID-matlab ' ...
                      '+migrators_j/control_stimulus_ids.m)']; ...
+                'treatment', ...
+                    ['carried whole as v1 by [one correct reading] and [dataset audit ' ...
+                     'batch 1 and 2] (4) (Jess Haley, 2026-10-26): the two treatments ' ...
+                     '("natural right / left eye opening", EMPTY:10000009 / EMPTY:10000008, ' ...
+                     'no number) state no reading by themselves -- not a term that ' ...
+                     'states its number''s kind, not a ChEBI substance -- so DID-matlab ' ...
+                     '+migrators_j/treatment.m carries them with a needs_mapping note']; ...
                 'tuningcurve_calc', ...
                     ['carried whole as v1 by [generic stage is lossless] / [partly placed ' ...
                      'is carried as v1] (Jess Haley, 2026-10-25): the writer fills ' ...
@@ -620,17 +606,19 @@ classdef TestMigrateLocalEta20211116 < matlab.unittest.TestCase
         end
 
         function testTheEpochFamilyDissolvesIntoPerEpochTrains(testCase)
-            % UPDATED 2026-10-22, AND THE ASSERTION IS INVERTED ON PURPOSE.
-            % This method was testTheEpochFamilyMigratesAndIsReachable and
-            % asserted that `acquisition_epoch` documents EXIST in the
-            % destination (the interim 1:1 rename). Decided by Jess Haley,
-            % 2026-10-22 [epoch dissolution before merge] (F1) builds the
-            % signed dissolution: each v1 element_epoch becomes ONE
-            % observation of its element per epoch (base.id preserved,
-            % variable GO:0001508 'action potential' for a `spikes` element),
-            % anchored to the minted epoch, owning one data body (its .vhsb).
-            % So the right assertion is now that NONE survive, and that every
-            % source element_epoch id is an observation that owns a body.
+            % UPDATED 2026-10-26. Decided by Jess Haley, 2026-10-22 [epoch
+            % dissolution before merge] (F1): each v1 element_epoch becomes ONE
+            % observation of its element per epoch (base.id preserved, variable
+            % GO:0001508 for a `spikes` element) owning one data body (its
+            % .vhsb). AMENDED by [device clocks on one epoch] (Jess Haley,
+            % 2026-10-26): each epoch extent is tied to its acquisition system,
+            % and an extent that cannot be tied to EXACTLY ONE system mints
+            % nothing; did2.convert.epochMint lists its source as carried
+            % (epoch_extent_carried_source_ids) and resolveEpochProbemap keeps
+            % that acquisition_epoch whole. So every source element_epoch is
+            % EITHER a spike-train observation owning a body OR carried whole
+            % under that rule, and every surviving acquisition_epoch is one of
+            % the carried ones.
             migrated = destinationBodies(testCase.Result.destination);
             srcIds = {};
             for k = 1:numel(testCase.Bodies)
@@ -640,7 +628,13 @@ classdef TestMigrateLocalEta20211116 < matlab.unittest.TestCase
                     srcIds{end+1} = char(j.base.id); %#ok<AGROW>
                 end
             end
+            mint = testCase.Result.secondPass.epochMint;
+            carriedIds = {};
+            if isstruct(mint) && isfield(mint, 'epoch_extent_carried_source_ids')
+                carriedIds = cellstr(mint.epoch_extent_carried_source_ids);
+            end
             left = findAllByClass(migrated, 'acquisition_epoch');
+            leftIds = cellfun(@(d) char(d.base.id), left, 'UniformOutput', false);
             byId = containers.Map('KeyType', 'char', 'ValueType', 'any');
             owned = containers.Map('KeyType', 'char', 'ValueType', 'logical');
             for k = 1:numel(migrated)
@@ -651,28 +645,37 @@ classdef TestMigrateLocalEta20211116 < matlab.unittest.TestCase
                     for j = 1:numel(ow); owned(ow{j}) = true; end
                 end
             end
-            asTrain = 0; withBody = 0;
+            asTrain = 0; withBody = 0; carried = 0; neither = {};
             for k = 1:numel(srcIds)
-                if ~isKey(byId, srcIds{k}); continue; end
-                d = byId(srcIds{k});
-                if strcmp(d.document_class.class_name, 'observation') ...
-                        && isfield(d, 'statement') ...
-                        && strcmp(char(d.statement.variable.node), 'GO:0001508')
-                    asTrain = asTrain + 1;
-                    withBody = withBody + isKey(owned, srcIds{k});
+                if any(strcmp(srcIds{k}, carriedIds)) && any(strcmp(srcIds{k}, leftIds))
+                    carried = carried + 1;
+                    continue;
                 end
+                if isKey(byId, srcIds{k})
+                    d = byId(srcIds{k});
+                    if strcmp(d.document_class.class_name, 'observation') ...
+                            && isfield(d, 'statement') ...
+                            && strcmp(char(d.statement.variable.node), 'GO:0001508')
+                        asTrain = asTrain + 1;
+                        withBody = withBody + isKey(owned, srcIds{k});
+                        continue;
+                    end
+                end
+                neither{end+1} = srcIds{k}; %#ok<AGROW>
             end
             fprintf(['\n  EPOCH DISSOLUTION\n    DENOMINATOR: %d v1 element_epoch ' ...
-                'document(s)\n    acquisition_epoch in the destination: %d\n' ...
-                '    element_epoch ids now a spike-train observation: %d; owning a ' ...
-                'body: %d\n'], numel(srcIds), numel(left), asTrain, withBody);
+                'document(s)\n    spike-train observations: %d (owning a body: %d)\n' ...
+                '    carried whole by [device clocks on one epoch] (no one system): %d\n' ...
+                '    acquisition_epoch in the destination: %d\n'], numel(srcIds), ...
+                asTrain, withBody, carried, numel(left));
             assertNotEmpty(testCase, srcIds, 'no element_epoch in the source: measured nothing');
-            verifyEmpty(testCase, left, sprintf( ...
-                '%d acquisition_epoch document(s) survived the dissolution', numel(left)));
-            verifyEqual(testCase, asTrain, numel(srcIds), ...
-                'every element_epoch id must be its spike-train observation');
-            verifyEqual(testCase, withBody, numel(srcIds), ...
+            verifyEmpty(testCase, neither, sprintf(['%d element_epoch(s) are neither a ' ...
+                'spike-train observation nor carried by [device clocks on one epoch]'], ...
+                numel(neither)));
+            verifyEqual(testCase, withBody, asTrain, ...
                 'every spike-train observation must own its body');
+            verifyEmpty(testCase, setdiff(leftIds, carriedIds), ...
+                'an acquisition_epoch survived that epochMint did not list as carried');
             verifyEmpty(testCase, findAllByClass(migrated, 'element_epoch'), ...
                 'element_epoch documents survived migration under the v1 name');
         end

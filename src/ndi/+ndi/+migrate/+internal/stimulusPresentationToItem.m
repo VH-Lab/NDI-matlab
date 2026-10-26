@@ -1,4 +1,4 @@
-function [manipBody, methodBodies, report] = ...
+function [manipBody, methodBodies, report, softwareBodies, controlCalcs] = ...
         stimulusPresentationToItem(v1Body, resolver, sequence, options)
 %STIMULUSPRESENTATIONTOITEM Decompose one legacy stimulus_presentation into the
 %   did-schema #88 stimulus shape: N deduplicated standalone `method`
@@ -6,6 +6,7 @@ function [manipBody, methodBodies, report] = ...
 %   `manipulation` (value kind `item`) whose `item` value is the playlist into them.
 %
 %   [MANIP, METHODS, REPORT] = stimulusPresentationToItem(V1BODY, RESOLVER)
+%   [MANIP, METHODS, REPORT, SOFTWARE, CONTROLCALCS] = stimulusPresentationToItem(...)
 %   [...] = stimulusPresentationToItem(V1BODY, RESOLVER, SEQUENCE)
 %   [...] = stimulusPresentationToItem(..., 'CohortIdFor', @(sessionId) id)
 %   [...] = stimulusPresentationToItem(..., 'ControlRecords', {v1Control, ...})
@@ -68,6 +69,15 @@ function [manipBody, methodBodies, report] = ...
 %                                    own example); what each stimulus was is
 %                                    on the documents the playlist names
 %                     statement.distributive  true on a cohort manipulation
+%                     software_id    the presentation's `app` (see SOFTWARE)
+%     SOFTWARE      the `software` entities (with version assertions) minted
+%                   from the presentation's `app` and for each control
+%                   calculation (its app, OS and interpreter); the caller
+%                   adds them to the documents it folds, and
+%                   ndi.migrate.local's software dedup merges duplicates
+%     CONTROLCALCS  one `calculation` per v1 control_stimulus_ids record
+%                   (see CONTROL PAIRING), carrying the same session marker
+%                   as the manipulation
 %                   Its time reference is NOT minted here: the edge is
 %                   replaced by the did2.convert.mintSessionDuring marker,
 %                   and ndi.migrate.local mints "during the session" for it
@@ -144,6 +154,54 @@ function [manipBody, methodBodies, report] = ...
 %   says why; the caller leaves such records as v1. REPORT.control_records
 %   (given), .control_records_folded and .control_true count what happened.
 %
+%   SOFTWARE. Decided by Jess Haley, 2026-10-26 [presentation app is
+%   software] (did-schema V_eta_go_forward_class_audit.md; rule R1,
+%   TEAM-SIGN-OFF [software]): the v1 `app` block (name, version, url) becomes
+%   a `software` entity (ndi.migrate.internal.appSoftware) referenced by the
+%   manipulation's `software_id`: the software that PRODUCED the statement,
+%   here the decoder that wrote the presentation ([software_id is what
+%   produced the statement], Jess Haley, 2026-10-26). A standalone item has no software edge: its
+%   software is minted unreferenced (REPORT.software_unreferenced).
+%   THE RUN ENVIRONMENT. Decided by Jess Haley, 2026-10-26 [run environment
+%   on interactions] (built in did-schema #131): `operating_system_id` and
+%   `interpreter_id` are on `interaction`, so the app's os (os_version) and
+%   interpreter (interpreter_version) are `software` entities on the
+%   manipulation's two edges, as a calculation's are
+%   (ndi.migrate.internal.softwareEntity). REPORT.run_environment_written
+%   counts the edges written; a standalone item has neither edge, so there
+%   they are not minted and REPORT.run_environment_unplaced names the fields
+%   (as does a version stated with no name).
+%
+%   CONTROL PAIRING. Decided by Jess Haley, 2026-10-26 [control pairing is a
+%   calculation] (replaces [control selection on the presentation method],
+%   amends [control as covariate]): each v1 control_stimulus_ids record is
+%   what NDI's tuning_response computed afterwards -- the pairing of each
+%   presented trial with its control trial -- and becomes a `calculation`
+%   about the presentation, base.id = THE RECORD's id (so every inbound edge
+%   keeps resolving):
+%     entity_id        the manipulation's entity (the animal, or the cohort,
+%                      `distributive` as the manipulation)
+%     input_id         the presentation
+%     software_id      the record's `app` (ndi_app_tuning_response)
+%     operating_system_id / interpreter_id   the record's app OS and
+%                      interpreter, as software entities
+%     method           {term 'control stimulus pairing' (a label), parameters:
+%                      the rule's fields verbatim, each its v1 name as a label
+%                      variable -- method, controlid, controlid_value}
+%     value            kind `count`, one per trial along ONE dimension
+%                      'presentation of stimulus' (OBI:0000807, n = trials):
+%                      the 0-based position of that trial's control trial
+%                      (v1 writes 1-based trial numbers; T14). Variable
+%                      'control trial' (a label).
+%   The record is converted only when ALL of it is placed ([generic stage is
+%   lossless]); otherwise it is left as it is (the end of ndi.migrate.local
+%   carries it as v1) and REPORT.control_carried says why: a standalone item
+%   (no subject), a frame sequence, an entry that is NaN / empty / not a
+%   trial number, an entry count other than the trials, a field or edge the
+%   calculation does not write, or an app naming no program.
+%   The `control condition` covariate stays on the presentation as a
+%   convenience (recoverable from the records), whatever becomes of them.
+%
 %   TIMING. Decided by Jess Haley, 2026-10-22 [presentation times from the
 %   file] (did-schema V_eta_stimulus_response_model_plan.md). The current v1
 %   writer puts the per-trial times in the attached file presentation_time.bin
@@ -189,7 +247,7 @@ arguments
     options.LeaveUnplaced (1,1) logical = true
 end
 
-manipBody = []; methodBodies = {};
+manipBody = []; methodBodies = {}; softwareBodies = {}; controlCalcs = {};
 report = newReport();
 
 presentationId = baseField(v1Body, 'id', '');
@@ -342,8 +400,13 @@ if ~isempty(sequence)
         report.timing_file = 'not used: the dimension is frames';
     end
     [dims, covs] = presentationAxes(numel(frameOrder), onsets, offsets, control);
+    [softwareBodies, swIds, report] = presentationSoftware(v1Body, report);
+    [controlCalcs, calcSoftware, report] = controlCalculations( ...
+        options.ControlRecords, presentationId, entityId, numel(order), false, report);
+    softwareBodies = [softwareBodies, calcSoftware];
     manipBody = itemBody(report.standalone, presentationId, sessionId, datestamp, ...
-        entityId, stimulatorId, itemIds, value, dims, covs, report.distributive);
+        entityId, stimulatorId, itemIds, value, dims, covs, report.distributive, ...
+        '', swIds);
     [manipBody, report] = carryFiles(manipBody, v1Body, report);
     return;
 end
@@ -443,9 +506,14 @@ report.trial_positions = value.item;
     options.PresentationTimeFile, numel(order), report);
 [control, report] = controlCovariate(options.ControlRecords, numel(order), true, report);
 [dims, covs] = presentationAxes(numel(order), onsets, offsets, control);
+[softwareBodies, swIds, report] = presentationSoftware(v1Body, report);
+[controlCalcs, calcSoftware, report] = controlCalculations( ...
+    options.ControlRecords, presentationId, entityId, numel(order), true, report);
+softwareBodies = [softwareBodies, calcSoftware];
 
 manipBody = itemBody(report.standalone, presentationId, sessionId, datestamp, ...
-    entityId, stimulatorId, itemIds, value, dims, covs, report.distributive, notesText);
+    entityId, stimulatorId, itemIds, value, dims, covs, report.distributive, ...
+    notesText, swIds);
 [manipBody, report] = carryFiles(manipBody, v1Body, report);
 end
 
@@ -548,15 +616,20 @@ end
 % ===================== the manipulation ===================================
 
 function b = itemBody(standalone, presentationId, sessionId, datestamp, ...
-        entityId, stimulatorId, itemIds, value, dims, covs, distributive, notes)
+        entityId, stimulatorId, itemIds, value, dims, covs, distributive, notes, ...
+        swIds)
 if nargin < 12
     notes = '';
+end
+if nargin < 13
+    swIds = struct('software', '', 'os', '', 'interpreter', '');
 end
 if standalone
     b = standaloneItem(presentationId, sessionId, datestamp, itemIds, value, dims, covs);
 else
     b = itemManipulation(presentationId, sessionId, datestamp, ...
-        entityId, stimulatorId, itemIds, value, dims, covs, distributive, notes);
+        entityId, stimulatorId, itemIds, value, dims, covs, distributive, notes, ...
+        swIds);
 end
 end
 
@@ -577,9 +650,13 @@ d = did2.build.document('item', fields, ...
 end
 
 function m = itemManipulation(presentationId, sessionId, datestamp, ...
-        entityId, stimulatorId, itemIds, value, dims, covs, distributive, notes)
+        entityId, stimulatorId, itemIds, value, dims, covs, distributive, notes, ...
+        swIds)
 if nargin < 11
     notes = '';
+end
+if nargin < 12
+    swIds = struct('software', '', 'os', '', 'interpreter', '');
 end
 restore = ndi.migrate.internal.termRegistryOff(); %#ok<NASGU>
 % did2.build insists on the interaction's time_reference_id min_count; the
@@ -594,6 +671,17 @@ args = {'Method', 'visual stimulation', ...
     'CreationTimestamp', datestamp, 'Validate', false};
 if ~isempty(stimulatorId)
     args = [args, {'InstrumentId', stimulatorId}];
+end
+if ~isempty(swIds.software)
+    % [presentation app is software] (Jess Haley, 2026-10-26)
+    args = [args, {'SoftwareId', swIds.software}];
+end
+% [run environment on interactions] (Jess Haley, 2026-10-26)
+if ~isempty(swIds.os)
+    args = [args, {'OperatingSystemId', swIds.os}];
+end
+if ~isempty(swIds.interpreter)
+    args = [args, {'InterpreterId', swIds.interpreter}];
 end
 if ~isempty(notes)
     args = [args, {'Notes', notes}];
@@ -700,6 +788,260 @@ end
 control = vectors{1};
 report.control_records_folded = numel(records);
 report.control_true = sum(control);
+end
+
+% ===================== software and the control pairing ==================
+
+function [docs, swIds, report] = presentationSoftware(v1Body, report)
+%PRESENTATIONSOFTWARE The presentation's `app` as `software` entities: the
+%   program for software_id, and the run's OS and interpreter for
+%   operating_system_id / interpreter_id. See SOFTWARE above.
+[docs, swId, env] = ndi.migrate.internal.appSoftware(v1Body);
+swIds = struct('software', swId, 'os', '', 'interpreter', '');
+report.software_minted = report.software_minted + ~isempty(swId);
+if report.standalone
+    % an item has no software_id, operating_system_id or interpreter_id
+    if ~isempty(swId)
+        report.software_unreferenced = report.software_unreferenced + 1;
+    end
+    swIds.software = '';
+    report.run_environment_unplaced = prefixed('app.', env);
+    report.software_referenced = false;
+    return;
+end
+report.software_referenced = ~isempty(swId);
+sid = char(ndi.v2.sessionIdOf(v1Body));
+ts = '';
+if isfield(v1Body, 'base') && isfield(v1Body.base, 'datestamp'); ts = char(v1Body.base.datestamp); end
+pairs = {'os', 'os_version', 'os'; 'interpreter', 'interpreter_version', 'interpreter'};
+for k = 1:size(pairs, 1)
+    if isfield(env, pairs{k, 1})
+        [d, id] = ndi.migrate.internal.softwareEntity(env.(pairs{k, 1}), ...
+            fieldOr(env, pairs{k, 2}), '', sid, ts);
+        if ~isempty(id)
+            docs = [docs, d]; %#ok<AGROW>
+            swIds.(pairs{k, 3}) = id;
+            report.run_environment_written = report.run_environment_written + 1;
+            continue;
+        end
+    end
+    % a version with no name (or no session) names no program
+    for f = pairs(k, 1:2)
+        if isfield(env, f{1})
+            report.run_environment_unplaced{end+1} = ['app.' f{1}];
+        end
+    end
+end
+end
+
+function [calcs, software, report] = controlCalculations(records, presentationId, ...
+        entityId, nTrials, positionsAreTrials, report)
+%CONTROLCALCULATIONS One `calculation` per v1 control_stimulus_ids record
+%   that can be placed whole; the rest are left as v1, with the reason. See
+%   CONTROL PAIRING above.
+calcs = {};
+software = {};
+records = asCell(records);
+for r = 1:numel(records)
+    rec = records{r};
+    recId = '';
+    if isstruct(rec) && isfield(rec, 'base') && isfield(rec.base, 'id')
+        recId = char(rec.base.id);
+    end
+    why = controlUnplaced(rec, nTrials, positionsAreTrials, report.standalone);
+    if isempty(why) && isempty(recId)
+        why = 'no base.id';
+    end
+    if ~isempty(why)
+        report.control_carried{end+1} = struct('id', recId, 'reason', why);
+        continue;
+    end
+    [c, sw] = controlCalculation(rec, recId, presentationId, entityId, nTrials, ...
+        report.distributive);
+    calcs{end+1} = c; %#ok<AGROW>
+    software = [software, sw]; %#ok<AGROW>
+    report.control_converted_ids{end+1} = recId;
+end
+report.control_calculations = numel(calcs);
+end
+
+function why = controlUnplaced(rec, nTrials, positionsAreTrials, standalone)
+%CONTROLUNPLACED Why this record cannot be written whole as a calculation;
+%   '' when it can ([generic stage is lossless]).
+why = '';
+if standalone
+    why = 'no subject: the presentation is a standalone item';
+    return;
+end
+if ~positionsAreTrials
+    why = 'the presentation is a frame sequence, not trials';
+    return;
+end
+if isempty(char(ndi.v2.sessionIdOf(rec)))
+    why = 'no session';
+    return;
+end
+raw = [];
+if isfield(rec, 'control_stimulus_ids') && isstruct(rec.control_stimulus_ids)
+    blk = rec.control_stimulus_ids;
+    other = setdiff(fieldnames(blk), {'control_stimulus_ids', 'control_stimulus_id_method'});
+    for k = 1:numel(other)
+        if ~isempty(blk.(other{k}))
+            why = ['a field the calculation does not write: control_stimulus_ids.' other{k}];
+            return;
+        end
+    end
+    if isfield(blk, 'control_stimulus_ids')
+        raw = blk.control_stimulus_ids;
+    end
+    if isfield(blk, 'control_stimulus_id_method') && ~isempty(blk.control_stimulus_id_method) ...
+            && ~(isstruct(blk.control_stimulus_id_method) && isscalar(blk.control_stimulus_id_method))
+        why = 'control_stimulus_id_method is not a block';
+        return;
+    end
+end
+if iscell(raw) || ~isnumeric(raw) || isempty(raw) || any(~isfinite(double(raw(:))))
+    why = 'a trial with no control (NaN or empty) has no pairing value';
+    return;
+end
+ids = double(raw(:)');
+if numel(ids) ~= nTrials
+    why = sprintf('%d pairing entr(ies) for %d trial(s)', numel(ids), nTrials);
+    return;
+end
+if any(ids < 1 | ids > nTrials | ids ~= floor(ids))
+    why = 'an entry is not a trial number of the presentation';
+    return;
+end
+if isfield(rec, 'app') && ~isempty(rec.app)
+    if ~(isstruct(rec.app) && isscalar(rec.app))
+        why = 'app is not a block';
+        return;
+    end
+    known = {'name', 'app_name', 'version', 'app_version', 'url', 'app_url', ...
+        'os', 'os_version', 'interpreter', 'interpreter_version'};
+    fn = fieldnames(rec.app);
+    for k = 1:numel(fn)
+        v = rec.app.(fn{k});
+        if isempty(v); continue; end
+        if ~any(strcmp(fn{k}, known))
+            why = ['a field the calculation does not write: app.' fn{k}];
+            return;
+        end
+        if ~(ischar(v) || (isstring(v) && isscalar(v)))
+            why = ['app.' fn{k} ' is not text'];
+            return;
+        end
+    end
+    [~, swId] = ndi.migrate.internal.appSoftware(rec);
+    if isempty(swId) && any(cellfun(@(f) ~isempty(rec.app.(f)), fn))
+        why = 'the app names no program';
+        return;
+    end
+    [~, ~, env] = ndi.migrate.internal.appSoftware(rec);
+    if (isfield(env, 'os_version') && ~isfield(env, 'os')) ...
+            || (isfield(env, 'interpreter_version') && ~isfield(env, 'interpreter'))
+        why = 'an OS or interpreter version with no name';
+        return;
+    end
+end
+if isfield(rec, 'depends_on') && ~isempty(rec.depends_on)
+    deps = rec.depends_on;
+    if isstruct(deps); deps = num2cell(deps); end
+    for k = 1:numel(deps)
+        d = deps{k};
+        if ~isstruct(d) || ~isfield(d, 'name'); continue; end
+        if any(strcmp(char(d.name), {'stimulus_presentation_id', 'session_id'})); continue; end
+        v = '';
+        for f = {'value', 'document_id'}
+            if isfield(d, f{1}) && ~isempty(d.(f{1})); v = d.(f{1}); end
+        end
+        if ~isempty(v)
+            why = ['an edge the calculation does not write: ' char(d.name)];
+            return;
+        end
+    end
+end
+end
+
+function [c, software] = controlCalculation(rec, recId, presentationId, entityId, ...
+        nTrials, distributive)
+%CONTROLCALCULATION The calculation for one placeable record (CONTROL PAIRING).
+sid = char(ndi.v2.sessionIdOf(rec));
+ts = '';
+if isfield(rec.base, 'datestamp'); ts = char(rec.base.datestamp); end
+[software, swId, env] = ndi.migrate.internal.appSoftware(rec);
+osId = '';
+interpreterId = '';
+if isfield(env, 'os')
+    [d, osId] = ndi.migrate.internal.softwareEntity(env.os, ...
+        fieldOr(env, 'os_version'), '', sid, ts);
+    software = [software, d];
+end
+if isfield(env, 'interpreter')
+    [d, interpreterId] = ndi.migrate.internal.softwareEntity(env.interpreter, ...
+        fieldOr(env, 'interpreter_version'), '', sid, ts);
+    software = [software, d];
+end
+restore = ndi.migrate.internal.termRegistryOff(); %#ok<NASGU>
+params = {};
+blk = rec.control_stimulus_ids;
+if isfield(blk, 'control_stimulus_id_method') && isstruct(blk.control_stimulus_id_method)
+    rule = blk.control_stimulus_id_method;
+    fn = fieldnames(rule);
+    for k = 1:numel(fn)
+        if isempty(rule.(fn{k})); continue; end
+        % the rule verbatim: its v1 field name is the variable (a label)
+        params{end+1} = methodParameter(fn{k}, rule.(fn{k})); %#ok<AGROW>
+    end
+end
+ids = double(blk.control_stimulus_ids(:)');
+standIn = [recId '_time_reference_pending'];
+args = {'Method', 'control stimulus pairing', ...
+    'InputIds', {presentationId}, ...
+    'TimeReferenceIds', {standIn}, ...
+    'Dimensions', did2.build.list(did2.build.dimension(presentationTerm(), nTrials)), ...
+    'Notes', ['Per presented trial, the 0-based position (along the ' ...
+        'presentation of stimulus dimension) of the control trial NDI''s ' ...
+        'tuning_response paired it with (v1 control_stimulus_ids).'], ...
+    'SessionId', sid, 'Id', recId, 'CreationTimestamp', ts, 'Validate', false};
+if ~isempty(params)
+    args = [args, {'MethodParameters', did2.build.list(params{:})}];
+end
+if ~isempty(swId);          args = [args, {'SoftwareId', swId}]; end
+if ~isempty(osId);          args = [args, {'OperatingSystemId', osId}]; end
+if ~isempty(interpreterId); args = [args, {'InterpreterId', interpreterId}]; end
+if distributive
+    args = [args, {'Fields', struct('distributive', true)}];
+end
+c = did2.build.statement('calculation', entityId, 'control trial', ...
+    did2.build.valueCell('count', ids - 1), 'ValueKind', 'count', args{:});
+c = removeEdge(c, 'time_reference_id');
+c = addEdge(c, did2.convert.mintSessionDuring('marker'), recId);
+end
+
+function p = methodParameter(label, v)
+% One value form, read from the value (stimulusRecipe's addAuto rule).
+if ischar(v) || (isstring(v) && isscalar(v))
+    p = did2.build.parameter(label, 'Text', char(v));
+elseif islogical(v)
+    p = did2.build.parameter(label, 'Count', double(v(1)));
+elseif isnumeric(v) && isscalar(v)
+    p = did2.build.parameter(label, 'Value', double(v));
+elseif isnumeric(v)
+    p = did2.build.parameter(label, 'Matrix', double(v(:)'));
+else
+    p = did2.build.parameter(label, 'Text', jsonencode(v));
+end
+end
+
+function v = fieldOr(s, name)
+v = '';
+if isfield(s, name); v = s.(name); end
+end
+
+function names = prefixed(prefix, s)
+names = cellfun(@(f) [prefix f], reshape(fieldnames(s), 1, []), 'UniformOutput', false);
 end
 
 function ids = controlEntries(v1Control)
@@ -967,6 +1309,14 @@ r = struct( ...
     'control_records_folded', 0, ...
     'control_true',        0, ...
     'control_unfolded_reason', '', ...
+    'control_calculations', 0, ...
+    'control_converted_ids', {{}}, ...
+    'control_carried',     {{}}, ...
+    'software_minted',     0, ...
+    'software_referenced', false, ...
+    'software_unreferenced', 0, ...
+    'run_environment_written', 0, ...
+    'run_environment_unplaced', {{}}, ...
     'flashed_bars',        0, ...
     'uniform_fields_kept', 0, ...
     'shape_movie_note',    false, ...

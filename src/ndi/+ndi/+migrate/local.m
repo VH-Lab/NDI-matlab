@@ -187,8 +187,16 @@ function result = local(path, options)
         options.Verbose (1,1) logical = false
         options.Validate (1,1) logical = true
         options.SchemaCache = []
-        options.TargetVersion (1,:) char {mustBeMember(options.TargetVersion, {'V_eta'})} = 'V_eta'
+        options.TargetVersion (1,:) char {mustBeMember(options.TargetVersion, {'V_eta', 'did_v2'})} = 'V_eta'
         options.SoftwareDedupAfterPassOne (1,1) logical = true
+    end
+
+    % [schema set renamed did_v2] (Jess Haley, 2026-10-25), step 1 "accept
+    % both names": 'did_v2' is the same set as 'V_eta'. Until DID-matlab and
+    % did-schema take the new name, it is passed on (and names the database
+    % file) as 'V_eta'.
+    if strcmp(options.TargetVersion, 'did_v2')
+        options.TargetVersion = 'V_eta';
     end
 
     if ~isfolder(path)
@@ -345,7 +353,6 @@ function result = local(path, options)
     sessionAnchorReport = [];
     epochProbemapReport = [];
     responseParametersReport = [];
-    lawnPlateReport = [];
     genericFileFoldReport = [];
     validIntervalReport = [];
     clockAlignmentReport = [];
@@ -353,7 +360,6 @@ function result = local(path, options)
     dimensionTermReport = [];   % [] = not measured
     ontologyRowReport = [];
     ontologyLabelReport = [];
-    imagedEntityReport = [];
     stimulusSequenceReport = [];
     sliceTetanusReport = [];
     regionSitesReport = [];
@@ -620,68 +626,13 @@ function result = local(path, options)
         %       (did2.convert.resolveResponseParameters) beside epochMint,
         %       resolveSessionAnchors and resolveDatasetEntities, so the corpus
         %       discovery harness runs the same code this does.
-        %   (7c) LAWN / PLATE SUBJECTS: mint the bacterial LAWN and PLATE
-        %       subject tiers from Haley's E. coli tables, join them with
-        %       `member_of`, and give every patch subject the
-        %       (experiment, plate, patch) `local_identifier`. The patch row
-        %       keys on `imageID` and carries neither `plateID` nor `expID`
-        %       (+setup/+conv/+haley/doImport.m:714-723), so both the
-        %       membership and the identifier come off the same two-hop chain
-        %       patch -> image row -> plate row, which no single-document
-        %       migrator can walk. Lives DID-side
-        %       (did2.convert.resolveLawnPlateSubjects).
-        %
-        %       THIS IS THE MODELLING CALL THE TWO ONTOLOGY PASSES DEFERRED,
-        %       now made. ndi.migrate.internal.ontologyLabelSubjects says in
-        %       its own words: "Whether a bacterial patch ever gets a subject
-        %       -- a plate? a lawn? nothing? -- is a modelling call, and
-        %       modelling calls are the team's"; step (1c)'s note above and
-        %       ontologyRowSubjects' "A ROW WITH NO SUBJECT COLUMN IS NOT A
-        %       DEFECT" say the same thing from the other side. The team
-        %       answered on 2026-08-11 ("each lawn can be a subject and a plate
-        %       of lawns is another subject where each lawn is a member of
-        %       it"), so those two passes' `blocked_target_has_no_subject` and
-        %       `unresolved_no_candidate` counts now have somewhere to go. They
-        %       are NOT changed here -- this pass adds the subject tier; it
-        %       does not re-run them.
-        %
-        %       ORDER: (7b) then (7c), after (7) and before (6), which is the
-        %       relative order all three DID call sites use
-        %       (runCorpusDiscovery.m:70/88/108/145/178/211). Within that,
-        %       (7c) commutes with everything above it -- it reads
-        %       `ontology_table_row` and `subject` documents, which no other
-        %       sub-pass in this block writes -- and (6) stays LAST so it still
-        %       sees any `software` minted by a re-folded body, which is the
-        %       reason its own note gives for running there.
-        %  (7c2) IMAGED-ENTITY SUBJECTS (team decision, 2026-08-11: "Mint a
-        %       subject for what the image is of. And shouldn't there be an
-        %       accompanying ontology_table_row that gives that information?").
-        %       The answer to the second half is yes and it is the mechanism:
-        %       an image names an `ontologyTableRow`, and the row is what says
-        %       what the image depicts. A subject-less image is attributed by
-        %       walking image -> row -> subject and is then RE-FOLDED, so
-        %       +migrators_j/image_stack.m's guard passes and the
-        %       image_observation + sampled_body fold finally runs on the
-        %       E. coli half (doImport.m:789,811,827 -- the 4,563 documents of
-        %       the `image_observation.subject_id` census row).
-        %       See ndi.migrate.internal.imagedEntitySubjects.
-        %
-        %       IT MINTS NOTHING, AND THAT IS THE POINT. (7c) ALREADY MINTED
-        %       the plate subject an E. coli image is of, and says in its own
-        %       "WHAT IT DOES NOT DO": "NO IMAGE SUBJECT. An image is not a
-        %       subject; the image rows are read as the JOIN TABLE they are and
-        %       are left exactly as pass 1 emitted them." This pass closes that
-        %       gap by ATTACHING. A second mint here would put two subjects on
-        %       one plate -- both valid, both referenced, invisible to every
-        %       gate. Where no subject exists it REFUSES and COUNTS
-        %       (`unresolved_no_plate_subject`), which is the number that tells
-        %       the team whether (7c)'s "only where that tier has something
-        %       measured about it" rule should treat an image as a measurement.
-        %
-        %       ORDER: IMMEDIATELY AFTER (7c), AND THE DEPENDENCY IS REAL. It
-        %       reads the plate subjects (7c) mints; run any earlier it would
-        %       find none and report a zero that meant "too early", not "clean".
-        %       It is the one sub-pass here that does NOT commute.
+        %   (7c) LAWN / PLATE SUBJECTS and (7c2) IMAGED-ENTITY SUBJECTS are
+        %       GONE from the generic stage: Decided by Jess Haley, 2026-10-26
+        %       [Haley logic leaves the generic migration], [dataset-specific
+        %       logic leaves the generic migration] and [dataset audit batch 1
+        %       and 2] (5) (did-schema V_eta_go_forward_class_audit.md). The
+        %       Haley dataset's V2 shape comes from its V2 re-import; what the
+        %       generic stage cannot place is carried as v1.
         %  (7d) GENERIC FILE FOLD (team decision, 2026-08-11): a did_v1
         %       `generic_file` becomes a `term_observation` (base.id
         %       PRESERVED) whose `variable` is the SIBLING ontologyLabel's
@@ -1061,30 +1012,6 @@ function result = local(path, options)
         end
         tStep = migrateStepMark('resolveResponseParameters', tStart, tStep, convertResult);
         try
-            [convertResult, lawnPlateReport] = ...
-                did2.convert.resolveLawnPlateSubjects( ...
-                convertResult, ...
-                'Validate',      options.Validate, ...
-                'SchemaCache',   options.SchemaCache, ...
-                'TargetVersion', options.TargetVersion);
-        catch ME
-            warning('NDI:migrate:lawnPlateSubjectsFailed', ...
-                ['Second-pass lawn/plate subject mint failed (%s); leaving ' ...
-                 'the E. coli patch and plate rows as passthroughs.'], ...
-                ME.message);
-        end
-        tStep = migrateStepMark('resolveLawnPlateSubjects', tStart, tStep, convertResult);
-        try
-            [convertResult, imagedEntityReport] = ...
-                resolveImagedEntitySubjects(convertResult, bodies, options);
-        catch ME
-            warning('NDI:migrate:imagedEntitySubjectsFailed', ...
-                ['Second-pass imaged-entity subject attribution failed (%s); ' ...
-                 'leaving every subject-less image as a passthrough.'], ...
-                ME.message);
-        end
-        tStep = migrateStepMark('resolveImagedEntitySubjects', tStart, tStep, convertResult);
-        try
             [convertResult, genericFileFoldReport] = ...
                 did2.convert.foldGenericFiles( ...
                 convertResult, ...
@@ -1303,8 +1230,6 @@ function result = local(path, options)
         'epochProbemapFold',   epochProbemapReport, ...
         'navigatorEpochFiles', navigatorEpochReport, ...
         'responseParametersFold', responseParametersReport, ...
-        'lawnPlateSubjects',   lawnPlateReport, ...
-        'imagedEntitySubjects', imagedEntityReport, ...
         'genericFileFold',     genericFileFoldReport, ...
         'validIntervalDecompose', validIntervalReport, ...
         'clockAlignmentFold',  clockAlignmentReport, ...
@@ -2221,142 +2146,6 @@ function [convertResult, report] = resolveOntologyLabelSubjects(convertResult, o
     report.changed = true;
 end
 
-function [convertResult, report] = resolveImagedEntitySubjects(convertResult, bodies, options)
-%RESOLVEIMAGEDENTITYSUBJECTS V_eta second pass: attribute each subject-less
-%   image to the subject of WHAT IT IS AN IMAGE OF, then re-fold it so the
-%   pass-1 image_observation + sampled_body fold runs.
-%
-%   ndi.migrate.internal.imagedEntitySubjects does the RESOLUTION (pure struct
-%   logic, no converter, no schema) and returns a plan: for every image whose
-%   depicted subject it could resolve against the migrated set, a copy of the
-%   did_v1 body with a `subject_id` dependency added. This function does the
-%   FOLD, one image at a time, through did2.convert.v1_to_v2 at TargetVersion
-%   V_eta -- where did2.convert.migrators_j.image_stack's guard now passes.
-%
-%   ORDER: IMMEDIATELY AFTER did2.convert.resolveLawnPlateSubjects, AND THE
-%   DEPENDENCY IS REAL, not a preference. That pass mints the plate subjects
-%   this one attaches to; run before it, this pass would find no plate subject
-%   for any image and report a clean-looking zero that meant only "too early".
-%
-%   ONE IMAGE AT A TIME, AND REVERTIBLE, ON PURPOSE -- the rule
-%   resolveOntologyRowSubjects sets, for the same reason:
-%
-%     * the re-fold QUARANTINES -> keep the passthrough. A quarantine is a
-%       gating failure and a passthrough is not, and trading the second for the
-%       first is the `epochfiles_ingested` regression.
-%     * the re-fold produces only the image again (the migrator took a
-%       passthrough arm anyway) -> keep the ORIGINAL. Writing the re-folded copy
-%       would add a `subject_id` edge to a tombstone and nothing else: a
-%       document that looks converted and says exactly what it said before.
-%
-%   THE SESSION ANCHORS IT CREATES ARE FOLDED, and this is not optional. The
-%   image_stack fold mints a `session_relative_reference` per image
-%   (+migrators_j/image_stack.m, the "session-relative time anchor" block), but
-%   did2.convert.resolveSessionAnchors -- which rewrites those into
-%   `relative_reference` -- has ALREADY RUN by the time this pass can go, because
-%   it sits above resolveLawnPlateSubjects in the call order. Left alone, this
-%   pass would emit anchors in the pass-1 form while every other anchor in the
-%   batch had been folded: not a quarantine and not an orphan, but a batch that
-%   is internally inconsistent for no reason a reader could see. So the fold is
-%   re-run, ONLY when this pass actually replaced something. It is safe to run
-%   twice: resolveSessionAnchors selects documents BY CLASS NAME
-%   (`session_relative_reference` / `session_bounded_reference`), and an
-%   already-folded anchor is a `relative_reference`, so the second run cannot
-%   see it. Re-running is not free on a large batch, which is exactly why it is
-%   conditional on `changed` rather than unconditional.
-%
-%   REPORT carries the resolver's denominators plus the fold outcomes;
-%   REPORT.changed is true only when an image was actually REPLACED.
-    report = [];
-    docs = convertResult.migrated;
-    if isempty(docs)
-        return;
-    end
-    structs = cell(1, numel(docs));
-    for k = 1:numel(docs)
-        structs{k} = docs{k}.toStruct();
-    end
-    [plan, report] = ndi.migrate.internal.imagedEntitySubjects(bodies, structs);
-
-    % Fold outcomes belong to the same instrument, so they are initialised
-    % unconditionally -- a field that appears only on the success path is a
-    % counter that cannot report a zero.
-    report.images_refolded         = 0;
-    report.refold_no_observation   = 0;
-    report.refold_quarantined      = 0;
-    report.documents_emitted       = 0;
-    report.session_anchors_refolded = false;
-    report.changed                 = false;
-    if isempty(plan)
-        return;
-    end
-
-    replacedIds = {};
-    newDocs = {};
-    for k = 1:numel(plan)
-        try
-            sub = did2.convert.v1_to_v2({plan(k).body}, ...
-                'Validate',      options.Validate, ...
-                'SchemaCache',   options.SchemaCache, ...
-                'TargetVersion', options.TargetVersion, ...
-                'Verbose',       false);
-        catch
-            report.refold_quarantined = report.refold_quarantined + 1;
-            continue;   % REVERT: keep the passthrough
-        end
-        if ~isempty(sub.quarantine) || isempty(sub.migrated)
-            report.refold_quarantined = report.refold_quarantined + 1;
-            continue;   % REVERT
-        end
-        if isscalar(sub.migrated) ...
-                && any(strcmp(sub.migrated{1}.className(), ...
-                    {'image_stack', 'ontology_image'}))
-            report.refold_no_observation = report.refold_no_observation + 1;
-            continue;   % REVERT
-        end
-        replacedIds{end+1} = plan(k).source_id; %#ok<AGROW>
-        newDocs = [newDocs, sub.migrated]; %#ok<AGROW>
-        report.images_refolded = report.images_refolded + 1;
-        report.documents_emitted = report.documents_emitted + numel(sub.migrated);
-    end
-
-    if isempty(replacedIds)
-        return;
-    end
-
-    kept = {};
-    for k = 1:numel(convertResult.migrated)
-        d = convertResult.migrated{k};
-        if any(strcmp(d.className(), {'image_stack', 'ontology_image'})) ...
-                && any(strcmp(d.get('base.id'), replacedIds))
-            continue;   % superseded by the re-folded observation
-        end
-        kept{end+1} = d; %#ok<AGROW>
-    end
-    convertResult.migrated = [kept, newDocs];
-    convertResult.summary = recountSummary(convertResult);
-    report.changed = true;
-
-    % Fold the anchors this pass just created -- see the header for why this is
-    % conditional and why running twice is safe.
-    try
-        convertResult = did2.convert.resolveSessionAnchors( ...
-            convertResult, ...
-            'Validate',      options.Validate, ...
-            'SchemaCache',   options.SchemaCache, ...
-            'TargetVersion', options.TargetVersion);
-        report.session_anchors_refolded = true;
-    catch ME
-        % Reported, never swallowed: the anchors stay in their pass-1 form and
-        % the false in this field is what says so.
-        warning('NDI:migrate:imagedEntityAnchorFoldFailed', ...
-            ['Re-folding the session anchors minted by the imaged-entity ' ...
-             'pass failed (%s); those anchors remain ' ...
-             '`session_relative_reference`.'], ME.message);
-    end
-    convertResult.summary = recountSummary(convertResult);
-end
-
 function [convertResult, report] = resolveStrainAssembly(convertResult, options)
 %RESOLVESTRAINASSEMBLY V_eta second pass: assemble the unattached `openminds`
 %   Strain documents into strain entities (did-schema #88: `entity`, type
@@ -2780,11 +2569,12 @@ function [convertResult, report] = resolveStimulusPresentations(convertResult, b
 %
 %   CONTROL (Jess Haley, 2026-10-22, [control as covariate]): each v1
 %   control_stimulus_ids is handed to its presentation's fold and becomes the
-%   `control condition` covariate of the item value; the record itself writes
-%   no V2 document and its id is stripped from every input_id. A record the
-%   fold cannot place (see stimulusPresentationToItem, CONTROL) or whose
-%   presentation did not fold stays as it is; the report counts each, against
-%   control_records_read.
+%   `control condition` covariate of the item value. [control pairing is a
+%   calculation] (Jess Haley, 2026-10-26) amends it: the record itself becomes
+%   a `calculation` (the per-trial pairing, id preserved, so inbound input_id
+%   edges keep resolving) when the fold can place all of it, and otherwise
+%   stays as it is and is carried as v1 (stimulusPresentationToItem, CONTROL
+%   PAIRING). The report counts each, against control_records_read.
 %
 %   `visual_grating`, `visual_grating_manipulation`, `timed_sequence` and
 %   `timed_sequence_manipulation` are gone from #88; nothing here emits them.
@@ -2836,6 +2626,9 @@ function [convertResult, report] = resolveStimulusPresentations(convertResult, b
         controlsByPresentation(presId) = held;
     end
     controlFolded = {};
+    controlConverted = {};
+    calcs = {};
+    presentationKeys = struct('session_id', {}, 'epoch_id', {}, 'id', {});
     minted = {};
     manips = {};
     consumed = {};
@@ -2860,7 +2653,8 @@ function [convertResult, report] = resolveStimulusPresentations(convertResult, b
             [ptFile, ptStatus] = ndi.migrate.internal.v1AttachedFile(b, ...
                 'presentation_time.bin', ndiDir);
         end
-        [manip, methods, rep] = ndi.migrate.internal.stimulusPresentationToItem( ...
+        [manip, methods, rep, software, controlCalcs] = ...
+            ndi.migrate.internal.stimulusPresentationToItem( ...
             b, resolver, sequence, 'CohortIdFor', cohortIdFor, ...
             'ControlRecords', controls, 'PresentationTimeFile', ptFile, ...
             'PresentationTimeFileStatus', ptStatus);
@@ -2882,6 +2676,28 @@ function [convertResult, report] = resolveStimulusPresentations(convertResult, b
                 report.hartley_without_enumeration + rep.hartley_without_enumeration;
             report.notes_not_written_standalone = ...
                 report.notes_not_written_standalone + rep.notes_not_written_standalone;
+            % [presentation app is software] and [control pairing is a
+            % calculation] (Jess Haley, 2026-10-26): software entities
+            % (merged by resolveSoftwareDedup, which runs after this pass),
+            % and one calculation per control record placed whole
+            minted = [minted, software]; %#ok<AGROW>
+            calcs = [calcs, controlCalcs]; %#ok<AGROW>
+            controlConverted = [controlConverted, rep.control_converted_ids]; %#ok<AGROW>
+            report.software_minted = report.software_minted + rep.software_minted;
+            report.software_referenced = report.software_referenced + rep.software_referenced;
+            report.software_unreferenced = report.software_unreferenced + ...
+                rep.software_unreferenced;
+            report.run_environment_written = report.run_environment_written + ...
+                rep.run_environment_written;
+            report.run_environment_unplaced = report.run_environment_unplaced + ...
+                ~isempty(rep.run_environment_unplaced);
+            report.control_records_converted = report.control_records_converted + ...
+                rep.control_calculations;
+            for c = 1:numel(rep.control_carried)
+                if numel(report.control_carried) < 20
+                    report.control_carried{end+1} = rep.control_carried{c};
+                end
+            end
         end
         if isfield(rep, 'several_animals') && rep.several_animals > 1
             report.several_animal_presentations = ...
@@ -2947,6 +2763,8 @@ function [convertResult, report] = resolveStimulusPresentations(convertResult, b
             report.distributive_manipulations = report.distributive_manipulations + 1;
         end
         manips{end+1} = manip; %#ok<AGROW>
+        presentationKeys(end+1) = struct('session_id', char(ndi.v2.sessionIdOf(b)), ...
+            'epoch_id', char(rep.epoch_id), 'id', presId); %#ok<AGROW>
         for g = 1:numel(methods)
             minted{end+1} = methods{g}; %#ok<AGROW>
         end
@@ -2989,6 +2807,21 @@ function [convertResult, report] = resolveStimulusPresentations(convertResult, b
         report.cohort_members = report.cohort_members + numel(members);
     end
 
+    % [ingested stimulus file is a body of the presentation] (Jess Haley,
+    % 2026-10-26): a v1 daqmetadatareader_epochdata_ingested becomes an
+    % opaque_body of its epoch's presentation manipulation (session + epoch
+    % id); with no single match it stays v1.
+    ingested = {};
+    for k = 1:numel(convertResult.migrated)
+        if strcmp(convertResult.migrated{k}.className(), ...
+                'daqmetadatareader_epochdata_ingested')
+            ingested{end+1} = convertResult.migrated{k}.toStruct(); %#ok<AGROW>
+        end
+    end
+    [ingestedBodies, ingestedConsumed, report.ingested_stimulus] = ...
+        ndi.migrate.internal.ingestedStimulusBodies(ingested, presentationKeys, bodies);
+    minted = [minted, ingestedBodies];
+
     % drop the passthrough stimulus_presentation docs that were assembled away,
     % and collect the session documents the time references anchor to
     kept = {};
@@ -2997,22 +2830,17 @@ function [convertResult, report] = resolveStimulusPresentations(convertResult, b
     for k = 1:numel(convertResult.migrated)
         d = convertResult.migrated{k};
         cls = d.className();
+        if strcmp(cls, 'daqmetadatareader_epochdata_ingested') ...
+                && any(strcmp(d.get('base.id'), ingestedConsumed))
+            continue;   % now its presentation's opaque_body (same id)
+        end
         if strcmp(cls, 'stimulus_presentation') ...
                 && any(strcmp(d.get('base.id'), consumed))
             continue;
         end
         if strcmp(cls, 'control_stimulus_ids') ...
-                && any(strcmp(d.get('base.id'), controlFolded))
-            continue;   % folded into its presentation's covariate
-        end
-        if ~isempty(controlFolded)
-            [d, nStripped] = stripInputIds(d, controlFolded);
-            if nStripped > 0
-                report.control_input_edges_stripped = ...
-                    report.control_input_edges_stripped + nStripped;
-                report.control_input_documents_changed = ...
-                    report.control_input_documents_changed + 1;
-            end
+                && any(strcmp(d.get('base.id'), controlConverted))
+            continue;   % replaced by its calculation (same id)
         end
         if any(strcmp(cls, {'session', 'entity'}))
             sessionStructs{end+1} = d.toStruct(); %#ok<AGROW>
@@ -3024,9 +2852,10 @@ function [convertResult, report] = resolveStimulusPresentations(convertResult, b
 
     % "during the session" for every manipulation (the marker each carries)
     nS = numel(sessionStructs);
-    marked = manips;
+    marked = [manips, calcs];
     batch = [sessionStructs, marked];
-    classes = [sessionClasses, repmat({'manipulation'}, 1, numel(manips))];
+    classes = [sessionClasses, repmat({'manipulation'}, 1, numel(manips)), ...
+        repmat({'calculation'}, 1, numel(calcs))];
     [batch, refs, anchorReport] = did2.convert.mintSessionDuring(batch, classes, ...
         nS + (1:numel(marked)), struct('SchemaCache', options.SchemaCache));
     report.time_references = anchorReport;
@@ -3123,30 +2952,6 @@ function [report, folded] = tallyControl(report, rep, controls, folded)
         otherwise
             report.control_unmappable = report.control_unmappable + numel(controls);
     end
-end
-
-function [d, n] = stripInputIds(d, ids)
-%STRIPINPUTIDS Remove from document D's input_id edges every id in IDS (the
-%   folded control records: a response points at the presentation only).
-    n = 0;
-    s = d.toStruct();
-    if ~isfield(s, 'depends_on') || ~isstruct(s.depends_on) || isempty(s.depends_on)
-        return;
-    end
-    keep = true(1, numel(s.depends_on));
-    for k = 1:numel(s.depends_on)
-        e = s.depends_on(k);
-        if strcmp(char(e.name), 'input_id') && ...
-                any(strcmp(ndi.migrate.internal.etaShape.entryValue(e), ids))
-            keep(k) = false;
-        end
-    end
-    n = sum(~keep);
-    if n == 0
-        return;
-    end
-    s.depends_on = s.depends_on(keep);
-    d = did2.document(s);
 end
 
 function id = cohortIdOf(cohortIds, sessionId)
@@ -3310,10 +3115,16 @@ function r = newStimulusSequenceReport()
         'control_conflicting',        0, ...
         'presentations_with_control_covariate', 0, ...
         'control_covariates_all_false', 0, ...
-        'control_input_edges_stripped', 0, ...
-        'control_input_documents_changed', 0, ...
+        'control_records_converted',  0, ...
+        'control_carried',            {{}}, ...
+        'software_minted',            0, ...
+        'software_referenced',        0, ...
+        'software_unreferenced',      0, ...
+        'run_environment_written',    0, ...
+        'run_environment_unplaced',   0, ...
         'timing',                     newTimingCensus(), ...
-        'hartley',                    []);
+        'hartley',                    [], ...
+        'ingested_stimulus',          []);
 end
 
 function report = tallyStimulusKinds(report, rep, decomposed)

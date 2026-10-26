@@ -13,6 +13,14 @@ classdef TestControlCovariate < matlab.unittest.TestCase
 %   superseded [control record is a calculation] and the withdrawn
 %   [control record with no control] (a logical-false calculation).
 %
+%   Amended by Jess Haley, 2026-10-26 [control pairing is a calculation]
+%   (did-schema V_eta_go_forward_class_audit.md; it replaces [control
+%   selection on the presentation method]): the record is NOT dropped. It
+%   becomes a `calculation` about the presentation -- software from its
+%   `app`, method = the pairing rule verbatim, value = the per-trial pairing
+%   -- when it can be placed whole, and is otherwise carried as v1. The
+%   covariate stays.
+%
 %   ndi.migrate.internal.stimulusPresentationToItem builds the covariate from
 %   'ControlRecords'; ndi.migrate.local's stimulus pass hands it the records
 %   and drops the folded ones (TestMigrateLocalEta20211116 checks that on a
@@ -121,16 +129,156 @@ classdef TestControlCovariate < matlab.unittest.TestCase
             testCase.verifyTrue(rep.standalone);
             c = covariateOf(d, 'control condition');
             testCase.verifyEqual(logical(c.logical(:)'), [false true false]);
+            % no subject, so no calculation: the record is carried as v1
+            testCase.verifyEqual(rep.control_calculations, 0);
+            testCase.verifyEmpty(rep.control_converted_ids);
+            testCase.verifySubstring(rep.control_carried{1}.reason, 'standalone');
             cache = did2.schema.cache.shared();
             restore = ndi.migrate.internal.termRegistryOff(); %#ok<NASGU>
             testCase.verifyWarningFree(@() cache.validateDocument(d));
+        end
+
+        % ============ [control pairing is a calculation] ====================
+
+        function testARecordBecomesAPairingCalculation(testCase)
+            % 4 trials; v1 pairs trials 1,2,4 with trial 4 and trial 3 with 2
+            ctl = withApp(controlDoc('cs_1', [4 4 2 4]));
+            [m, ~, r, sw, calcs] = emit(ctl, [1 2 1 2]);
+            testCase.verifyNumElements(calcs, 1);
+            c = calcs{1};
+            testCase.verifyEqual(c.document_class.class_name, 'calculation');
+            testCase.verifyEqual(c.base.id, 'cs_1', 'the v1 id is kept');
+            testCase.verifyEqual(depValue(c, 'entity_id'), 'animal_1');
+            testCase.verifyEqual(depValue(c, 'input_id'), 'pres_1');
+            testCase.verifyEqual(c.statement.variable.name, 'control trial');
+            testCase.verifyEqual(arrayfun(@(v) double(v.count), c.count.value(:)'), ...
+                [3 3 1 3], 'per trial, the 0-based control trial');
+            d = dimensionsOf(c);
+            testCase.verifyNumElements(d, 1);
+            testCase.verifyEqual(char(d{1}.term.node), 'OBI:0000807');
+            testCase.verifyEqual(double(d{1}.n), 4);
+            % the rule, verbatim
+            testCase.verifyEqual(c.interaction.method.term.name, 'control stimulus pairing');
+            testCase.verifyEqual(calcParam(c, 'method'), 'pseudorandom');
+            testCase.verifyEqual(calcParam(c, 'controlid'), 'isblank');
+            testCase.verifyEqual(calcParam(c, 'controlid_value'), 1);
+            % the software, and the run environment on the calculation's edges
+            ids = cellfun(@(x) x.base.id, sw, 'UniformOutput', false);
+            names = cellfun(@entityName, sw, 'UniformOutput', false);
+            swId = depValue(c, 'software_id');
+            testCase.verifyEqual(names{strcmp(ids, swId)}, 'ndi_app_tuning_response');
+            testCase.verifyEqual(names{strcmp(ids, depValue(c, 'operating_system_id'))}, 'MACA64');
+            testCase.verifyEqual(names{strcmp(ids, depValue(c, 'interpreter_id'))}, 'MATLAB');
+            % the time marker, as on the manipulation
+            testCase.verifyEqual(depValue(c, did2.convert.mintSessionDuring('marker')), 'cs_1');
+            % the covariate stays
+            testCase.verifyNotEmpty(covariateOf(m, 'control condition'));
+            testCase.verifyEqual(r.control_calculations, 1);
+            testCase.verifyEqual(r.control_converted_ids, {'cs_1'});
+            testCase.verifyEmpty(r.control_carried);
+            % it validates once its time reference is minted
+            v = c;
+            v.depends_on = v.depends_on(~strcmp({v.depends_on.name}, ...
+                did2.convert.mintSessionDuring('marker')));
+            e = v.depends_on(1); e.name = 'time_reference_id';
+            if isfield(e, 'document_id'), e.document_id = 'tref_1'; else, e.value = 'tref_1'; end
+            v.depends_on(end+1) = e;
+            cache = did2.schema.cache.shared();
+            restore = ndi.migrate.internal.termRegistryOff(); %#ok<NASGU>
+            testCase.verifyWarningFree(@() cache.validateDocument(v), ...
+                'the pairing calculation does not validate');
+        end
+
+        function testDabsSpellingIsKeptVerbatim(testCase)
+            ctl = controlDoc('cs_1', [2 2]);
+            ctl.control_stimulus_ids.control_stimulus_id_method.method = 'psuedorandom';
+            [~, ~, ~, ~, calcs] = emit(ctl, [1 2]);
+            testCase.verifyEqual(calcParam(calcs{1}, 'method'), 'psuedorandom');
+        end
+
+        function testARecordThatCannotBePlacedWholeIsCarriedAsV1(testCase)
+            % NaN: no pairing value (the covariate is still all false)
+            [m, ~, r, ~, calcs] = emit(controlDoc('cs_1', NaN), [1 2 1]);
+            testCase.verifyEmpty(calcs);
+            testCase.verifySubstring(r.control_carried{1}.reason, 'NaN');
+            testCase.verifyEqual(logical(covariateOf(m, 'control condition').logical(:)'), ...
+                false(1, 3));
+            % B's shape: fewer entries than trials
+            order = [6 2 10 4 11 3 1 5 9 8 12 7 8 4 9 3 2 6 1 12];
+            [~, ~, r, ~, calcs] = emit(controlDoc('cs_1', [11 11 20]), order, 12);
+            testCase.verifyEmpty(calcs);
+            testCase.verifySubstring(r.control_carried{1}.reason, '3 pairing entr');
+            % a field the calculation does not write
+            ctl = controlDoc('cs_1', [2 2]);
+            ctl.control_stimulus_ids.note = 'chosen by hand';
+            [~, ~, r, ~, calcs] = emit(ctl, [1 2]);
+            testCase.verifyEmpty(calcs);
+            testCase.verifySubstring(r.control_carried{1}.reason, 'control_stimulus_ids.note');
+            % an app field outside app.json
+            ctl = withApp(controlDoc('cs_1', [2 2]));
+            ctl.app.build = '7';
+            [~, ~, r, sw, calcs] = emit(ctl, [1 2]);
+            testCase.verifyEmpty(calcs);
+            testCase.verifyEmpty(sw, 'a carried record mints nothing');
+            testCase.verifySubstring(r.control_carried{1}.reason, 'app.build');
+            % a frame sequence: the trials are not the dimension
+            seq = struct('item_ids', {{'g_a', 'g_b'}}, 'order', [1 2 1 2 1]);
+            [~, ~, r, ~, calcs] = emit(controlDoc('cs_1', 1), 1, 1, seq);
+            testCase.verifyEmpty(calcs);
+            testCase.verifySubstring(r.control_carried{1}.reason, 'frame sequence');
         end
     end
 end
 
 % ===================== driver and fixtures ================================
 
-function [m, methods, report] = emit(controls, order, nStimuli, sequence)
+function d = withApp(d)
+% 20211116's control record app block
+d.app = struct('name', 'ndi_app_tuning_response', ...
+    'version', 'fa67d45d0d957ce9ab3bb2e272a6799f02333996', ...
+    'url', 'https://github.com/VH-lab/NDI-matlab', 'os', 'MACA64', ...
+    'os_version', '15.6.1', 'interpreter', 'MATLAB', 'interpreter_version', '24.2');
+end
+
+function n = entityName(doc)
+n = '';
+if isfield(doc, 'entity') && isfield(doc.entity, 'name'); n = char(doc.entity.name); end
+end
+
+function v = calcParam(c, variable)
+v = [];
+p = c.interaction.method.parameters;
+if isstruct(p); p = num2cell(p); end
+for k = 1:numel(p)
+    if ~strcmp(p{k}.variable.name, variable); continue; end
+    e = p{k};
+    if isfield(e, 'text') && ~isempty(e.text); v = e.text;
+    elseif isfield(e, 'quantity') && ~isempty(e.quantity); v = e.quantity.value;
+    elseif isfield(e, 'count') && ~isempty(e.count); v = e.count; end
+    return;
+end
+end
+
+function v = depValue(b, name)
+v = '';
+if ~isfield(b, 'depends_on'); return; end
+for k = 1:numel(b.depends_on)
+    d = b.depends_on(k);
+    if ~strcmp(d.name, name); continue; end
+    if isfield(d, 'document_id'); v = d.document_id; else; v = d.value; end
+    if iscell(v) && ~isempty(v); v = v{1}; end
+    return;
+end
+end
+
+function d = dimensionsOf(b)
+d = {};
+if isfield(b, 'data') && isfield(b.data, 'dimensions')
+    d = ndi.v2.entries(b.data.dimensions);
+end
+end
+
+function [m, methods, report, software, calcs] = emit(controls, order, nStimuli, sequence)
 if nargin < 3, nStimuli = max(order); end
 if nargin < 4, sequence = []; end
 if ~iscell(controls), controls = {controls}; end
@@ -143,7 +291,7 @@ bodies{2}.document_class.superclasses = [ ...
     struct('definition', '$NDIDOCUMENTPATH/base.json'), ...
     struct('definition', '$NDIDOCUMENTPATH/stimulus/stimulus_response.json')];
 r = ndi.migrate.internal.bodyResolver(bodies);
-[m, methods, report] = ndi.migrate.internal.stimulusPresentationToItem(pres, r, ...
+[m, methods, report, software, calcs] = ndi.migrate.internal.stimulusPresentationToItem(pres, r, ...
     sequence, 'ControlRecords', controls, 'LeaveUnplaced', false);
 end
 

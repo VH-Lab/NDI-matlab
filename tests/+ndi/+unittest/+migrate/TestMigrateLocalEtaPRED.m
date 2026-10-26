@@ -266,7 +266,7 @@ classdef TestMigrateLocalEtaPRED < matlab.unittest.TestCase
             % before any class-name check -- so "the fold did not run" and
             % "the fold ran and refused" are different failures rather than
             % one shared silence.
-            result = runPredMigrate(testCase);
+            [result, bodies] = runPredMigrate(testCase);
 
             mint = result.secondPass.epochMint;
             verifyNotEmpty(testCase, mint, 'epochMint did not run at all');
@@ -317,10 +317,16 @@ classdef TestMigrateLocalEtaPRED < matlab.unittest.TestCase
                 verifyFalse(testCase, isfield(result.summary.by_class, c{1}), ...
                     ['`' c{1} '` was written to the destination. ' resultDiag(result)]);
             end
-            verifyTrue(testCase, ...
-                isfield(result.summary.by_class, 'relative_time_reference'), ...
-                resultDiag(result));
             docs = destinationBodies(result.destination);
+            [~, carried] = pyraviewObservation(testCase, docs, ...
+                bodies);
+            if ~carried
+                % PRED's one relative_time_reference is pyraview's onto its
+                % epoch; a carried pyraview has none
+                verifyTrue(testCase, ...
+                    isfield(result.summary.by_class, 'relative_time_reference'), ...
+                    resultDiag(result));
+            end
             verifyNotEmpty(testCase, findEntity(docs, 'epoch'), ...
                 ['no entity of type epoch in the destination. ' resultDiag(result)]);
         end
@@ -337,6 +343,7 @@ classdef TestMigrateLocalEtaPRED < matlab.unittest.TestCase
 
             docs = destinationBodies(result.destination);
             obs = pyraviewObservation(testCase, docs, bodies);
+            if isempty(obs); return; end   % carried as v1 by a decided rule
             refIds = depValues(obs, 'time_reference_id');
             verifyNotEmpty(testCase, refIds, ...
                 ['the observation carries no `time_reference_id`, so it is no ' ...
@@ -375,6 +382,7 @@ classdef TestMigrateLocalEtaPRED < matlab.unittest.TestCase
             [result, bodies] = runPredMigrate(testCase);
             docs = destinationBodies(result.destination);
             obs = pyraviewObservation(testCase, docs, bodies);
+            if isempty(obs); return; end   % carried as v1 by a decided rule
             organism = findEntity(docs, 'organism');
             assertNotEmpty(testCase, organism, ...
                 ['PRED holds one animal and no entity of type organism came ' ...
@@ -648,6 +656,7 @@ classdef TestMigrateLocalEtaPRED < matlab.unittest.TestCase
             [result, bodies] = runPredMigrate(testCase);
             docs = destinationBodies(result.destination);
             obs = pyraviewObservation(testCase, docs, bodies);
+            if isempty(obs); return; end   % carried as v1 by a decided rule
             ids = depValues(obs, 'time_reference_id');
             fprintf(['\n  TIME-REFERENCE FAMILY (PRED pyraview)\n' ...
                      '    DENOMINATOR: %d member(s)\n'], numel(ids));
@@ -783,7 +792,7 @@ for k = 1:numel(bodies)
 end
 end
 
-function obs = pyraviewObservation(testCase, bodies, sourceBodies)
+function [obs, carried] = pyraviewObservation(testCase, bodies, sourceBodies)
 %PYRAVIEWOBSERVATION PRED's pyraview observation in the destination.
 %   SELECTED BY ITS SOURCE ID. pyraview.m preserves the v1 document's id on the
 %   observation it emits (base.id = the pyraview id), which is a writer-side
@@ -805,11 +814,55 @@ assertEqual(testCase, numel(pyrIds), 1, sprintf( ...
 obs = findById(bodies, pyrIds{1});
 assertNotEmpty(testCase, obs, ...
     'the pyraview id is not in the destination: pyraview.m stopped preserving it');
+% CARRIED BY A DECIDED RULE. [small unread settings] (2) (Jess Haley,
+% 2026-10-26, did-schema V_eta_go_forward_class_audit.md): a filter's
+% sampleFrequency becomes a method parameter, and [partly placed is carried as
+% v1] (2026-10-25): where the schema in use has no method for it (did-schema
+% main before [filters are methods] is built: sampled_body declares no
+% method_id), DID-matlab pyraview.m carries the document whole as v1. PRED's
+% filter states sampleFrequency 20000. Then the observation tests have nothing
+% to inspect and say so; the carry itself is verified here.
+carried = strcmp(obs.document_class.class_name, 'pyraview');
+if carried
+    src = [];
+    for k = 1:numel(sourceBodies)
+        j = jsondecode(sourceBodies{k});
+        if isfield(j, 'base') && strcmp(char(j.base.id), pyrIds{1}); src = j; break; end
+    end
+    verifyTrue(testCase, ~isempty(src) && isfield(src, 'filter') ...
+        && isfield(src.filter, 'parameters') ...
+        && isfield(src.filter.parameters, 'sampleFrequency'), ...
+        'pyraview was carried as v1, but its filter states no sampleFrequency');
+    verifyFalse(testCase, sampledBodyTakesMethod(), ...
+        ['pyraview was carried as v1 although sampled_body now declares ' ...
+         'method_id: the filter has a home and the carry is no longer the decided one']);
+    fprintf(['\n  PRED pyraview %s CARRIED AS v1 ([small unread settings] (2): ' ...
+        'its filter''s sampleFrequency has no method on this schema)\n'], pyrIds{1});
+    obs = [];
+    return;
+end
 assertEqual(testCase, obs.document_class.class_name, 'observation', ...
     'pyraview''s document is not an observation');
 kinds = {obs.document_class.superclasses.class_name};
 assertTrue(testCase, any(strcmp(kinds, 'voltage')), ...
     'pyraview''s observation does not list the voltage value kind');
+end
+
+function tf = sampledBodyTakesMethod()
+% true when the loaded schema's sampled_body chain declares method_id
+tf = false;
+c = did2.schema.cache.shared();
+chain = c.classChain('sampled_body');
+for k = 1:numel(chain)
+    sc = c.getClass(chain{k});
+    if ~isfield(sc, 'depends_on') || isempty(sc.depends_on); continue; end
+    d = sc.depends_on;
+    if isstruct(d); d = num2cell(d); end
+    if any(cellfun(@(x) strcmp(char(x.name), 'method_id'), d))
+        tf = true;
+        return;
+    end
+end
 end
 
 function doc = findEntity(bodies, typeName)

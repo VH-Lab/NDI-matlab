@@ -304,7 +304,38 @@ classdef TestOntologyRowSubjects < matlab.unittest.TestCase
             testCase.verifyFalse(report.changed);
         end
 
-        function testConflictingRoutesAreRefusedNotRanked(testCase)
+        function testTheDocumentIdWinsOverTheLocalIdentifier(testCase)
+            % INVERTED: a document-id route and the local identifier that
+            % disagree were refused. [subject local identifier is an
+            % identifier] / [dataset audit batch 1 and 2] (3), Jess Haley:
+            % the document id is more certain and wins; the override is
+            % counted.
+            [v1, mig] = haleyWorm();
+            v1{1}.ontologyTableRow.data = rmfield(v1{1}.ontologyTableRow.data, ...
+                'SubjectDocumentIdentifier');
+            v1{1}.depends_on = struct('name', 'document_id', 'value', 'subj_other');
+            mig{end+1} = migratedSubject('subj_other', 'sess_jh', 'other');
+            [plan, report] = ndi.migrate.internal.ontologyRowSubjects(v1, mig);
+            testCase.verifyNumElements(plan, 1);
+            testCase.verifyEqual(plan(1).subject_id, 'subj_other');
+            testCase.verifyEqual(plan(1).route, 'document_id_edge');
+            testCase.verifyEqual(report.local_identifier_overridden, 1);
+            testCase.verifyEqual(report.unresolved_conflicting_candidates, 0);
+        end
+
+        function testTheLocalIdentifierAloneStillResolves(testCase)
+            % Dabrowska's only route: the label match stays
+            [v1, mig] = haleyWorm();
+            v1{1}.ontologyTableRow.data = rmfield(v1{1}.ontologyTableRow.data, ...
+                'SubjectDocumentIdentifier');
+            [plan, report] = ndi.migrate.internal.ontologyRowSubjects(v1, mig);
+            testCase.verifyNumElements(plan, 1);
+            testCase.verifyEqual(plan(1).subject_id, 'subj_worm');
+            testCase.verifyEqual(report.resolved_via_local_identifier, 1);
+            testCase.verifyEqual(report.local_identifier_overridden, 0);
+        end
+
+        function testTwoDocumentIdRoutesThatDisagreeAreRefused(testCase)
             [v1, mig] = haleyWorm();
             v1{1}.depends_on = struct('name', 'document_id', 'value', 'subj_other');
             mig{end+1} = migratedSubject('subj_other', 'sess_jh', 'other');
