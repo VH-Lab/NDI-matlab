@@ -1,4 +1,4 @@
-function [structs, report, added] = epochSeriesBodies(structs, ndiDir)
+function [structs, report, added] = epochSeriesBodies(structs, ndiDir, options)
 %EPOCHSERIESBODIES Describe each migrated spike train's .vhsb as a sampled_body,
 %   with complete extents, when its bytes are on this computer.
 %
@@ -101,6 +101,7 @@ function [structs, report, added] = epochSeriesBodies(structs, ndiDir)
 arguments
     structs cell
     ndiDir (1,:) char
+    options.SplitJH (1,1) logical = false
 end
 
 report = struct( ...
@@ -112,6 +113,7 @@ report = struct( ...
     'other_owner',           0, ...
     'owner_missing',         0, ...
     'jh_bodies_seen',        0, ...
+    'jh_split_withheld',     0, ...
     'position_split',        0, ...
     'nearest_patch_split',   0, ...
     'length_split_metres',   0, ...
@@ -144,6 +146,17 @@ for k = 1:numel(structs)
     jh = jhOwners(owners, idxById, structs);
     if ~isempty(jh)
         report.jh_bodies_seen = report.jh_bodies_seen + 1;
+        if ~options.SplitJH
+            % [generic stage is lossless] and [partly placed is carried as v1]
+            % (Jess Haley, 2026-10-25, did-schema
+            % V_eta_go_forward_class_audit.md, audit item 5): the JH split
+            % drops column 2 and rewrites the values (minus 0.5 / minus 1,
+            % pixels to metres), so the generic stage does not run it: the
+            % opaque body is left as pass 1 wrote it, bytes unchanged. The
+            % split stays for the JH dataset map ('SplitJH', true).
+            report.jh_split_withheld = report.jh_split_withheld + 1;
+            continue;
+        end
         path = bytesHere(b, storeDir);
         if isempty(path)
             report.bytes_not_here = report.bytes_not_here + 1;

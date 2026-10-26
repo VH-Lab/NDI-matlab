@@ -97,7 +97,10 @@ classdef TestLightsheetMigrated < matlab.unittest.TestCase
             testCase.verifyEqual(vintage, 'V_eta');
             testCase.verifyEqual(p.label, 'brain 7 cleared');
             testCase.verifyEqual(p.pyramid_name, 'mean');
-            testCase.verifyEqual(p.pyramid_type, '', 'pyramid_type is dropped');
+            % [pyramid type kept as text] (Jess Haley, 2026-10-25): the writer's
+            % NGFF multiscales type is kept verbatim in the store body's
+            % description. INVERTED: it was dropped (Jess 2026-10-15).
+            testCase.verifyEqual(p.pyramid_type, 'mean', 'pyramid_type is kept as text');
         end
 
         function testWithoutThePassTheReaderStillGetsTheLabel(testCase)

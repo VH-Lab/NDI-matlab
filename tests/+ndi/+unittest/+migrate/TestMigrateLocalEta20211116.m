@@ -332,7 +332,13 @@ classdef TestMigrateLocalEta20211116 < matlab.unittest.TestCase
                      'presentation becomes ([control as covariate], Jess Haley 2026-10-22), ' ...
                      'built in the NDI stimulus fold, so the document passes through pass 1 ' ...
                      'under its v1 tombstone for that pass to consume (DID-matlab ' ...
-                     '+migrators_j/control_stimulus_ids.m)']};
+                     '+migrators_j/control_stimulus_ids.m)']; ...
+                'tuningcurve_calc', ...
+                    ['carried whole as v1 by [generic stage is lossless] / [partly placed ' ...
+                     'is carried as v1] (Jess Haley, 2026-10-25): the writer fills ' ...
+                     '`stimulus_tuningcurve.stimid` and `stimulus_presentation_number` on ' ...
+                     'every document (84 of 84 here) and the tuning_curve value has no home ' ...
+                     'for them yet (DID-matlab jTuningCurve); closes when they get one']};
             % `syncgraph` and `subject` were declared here before the #88 port
             % (DID-matlab #218); both now convert in pass 1 (e2e run
             % 39668356516: "2 of 5 declared deferral(s) no longer fire").
@@ -671,11 +677,15 @@ classdef TestMigrateLocalEta20211116 < matlab.unittest.TestCase
                 'element_epoch documents survived migration under the v1 name');
         end
 
-        function testEveryStimulusPresentationIsDecomposedAroundItsPreservedId(testCase)
-            % THE SIGNED STIMULUS MODEL, on the only corpus that holds it.
-            % Read from the corpus rather than quoted: 11
-            % stimulus_presentation documents, 1 enumerating 225 stimuli and
-            % 10 carrying a Hartley GENERATOR recipe that enumerates nothing.
+        function testEveryStimulusPresentationIsCarriedAsV1(testCase)
+            % INVERTS testEveryStimulusPresentationIsDecomposedAroundItsPreservedId.
+            % [generic stage is lossless] / [partly placed is carried as v1]
+            % (Jess Haley, 2026-10-25, audit item 4): every presentation here
+            % holds fields the decomposition does not write (the grating
+            % run's periodicstim parameters beyond the five gratingRecipe
+            % reads; the Hartley generator's beyond the six the basis reads),
+            % so the generic stage leaves all 11 as they are and the last step
+            % stores each as its v1 source, its id unchanged.
             srcPres = {};
             for k = 1:numel(testCase.Bodies)
                 j = jsondecode(testCase.Bodies{k});
@@ -689,124 +699,53 @@ classdef TestMigrateLocalEta20211116 < matlab.unittest.TestCase
                 ['the corpus did not read as 11 stimulus_presentation ' ...
                  'documents (got %d); every count below would be about ' ...
                  'something else'], numel(srcPres)));
-
+            r = testCase.Result.secondPass.stimulusSequence;
+            verifyEqual(testCase, r.presentations_refused_unplaced, 11, ...
+                'every presentation is refused for its unplaced fields');
             migrated = destinationBodies(testCase.Result.destination);
-            seqs = itemManipulations(migrated);
-            % THIS DIAGNOSTIC USED TO END "so a shortfall is a refusal to
-            % read, not a crash." IT WAS WRONG, AND IT COST A ROUND TRIP.
-            % The pass was throwing on EVERY call -- a signature/arguments
-            % mismatch, so not one line of it executed -- and
-            % `resolveStimulusPresentations` is wrapped in a try/catch that
-            % warns and falls back to passthrough. A reader who believed
-            % the old sentence went looking at the refusal guards, which
-            % had never run.
-            %
-            % ZERO IS THE ONE VALUE THAT CANNOT DISTINGUISH THEM, so the
-            % text now says what to check instead of asserting which it is.
-            % That is this project's own rule -- "nobody looked" is a third
-            % state -- applied to a test's own diagnostic.
-            verifyEqual(testCase, numel(seqs), 11, sprintf( ...
-                ['%d of 11 presentations became a ' ...
-                 'manipulation with value kind item (did-schema #88). TWO CAUSES PRODUCE THIS ' ...
-                 'AND THEY LOOK IDENTICAL FROM HERE: a per-presentation ' ...
-                 'REFUSAL (no responding animal, or stimuli that cannot ' ...
-                 'be typed), or the whole pass THROWING -- ' ...
-                 'ndi.migrate.local wraps resolveStimulusPresentations in ' ...
-                 'a try/catch that warns and leaves everything as ' ...
-                 'passthrough. Read the run log for "Second-pass ' ...
-                 'stimulus_presentation decomposition failed" FIRST; a ' ...
-                 'refusal names its reason per presentation, a throw ' ...
-                 'names a file and a line.'], ...
-                numel(seqs)));
-
-            % THE ID IS PRESERVED, WHICH IS THE WHOLE MODEL. 494 inbound
-            % edges point at these 11 ids on this corpus (273
-            % stimulus_response_scalar + 210 hartley_calc + 11
-            % control_stimulus_ids); reassigning one dangles all of them,
-            % which is the 11,448-orphan failure in a different family.
-            dstIds = cellfun(@(d) string(d.base.id), seqs(:)');
-            verifyTrue(testCase, all(ismember(string(srcPres), dstIds)), ...
-                ['a stimulus_presentation id is missing from the ' ...
-                 'item-manipulation set -- the decomposition ' ...
-                 'reassigned an id instead of preserving it']);
-
-            % and NOTHING survives under the v1 name or under the superseded
-            % flattened one
-            verifyEmpty(testCase, findAllByClass(migrated, 'stimulus_presentation'), ...
-                'stimulus_presentation documents survived the decomposition');
-            for gone = {'visual_grating', 'visual_grating_manipulation', ...
-                    'timed_sequence', 'timed_sequence_manipulation'}
-                verifyEmpty(testCase, findAllByClass(migrated, gone{1}), ...
-                    sprintf('%s was emitted; did-schema #88 deletes it.', gone{1}));
+            verifyEmpty(testCase, itemManipulations(migrated), ...
+                'no presentation was decomposed');
+            kept = findAllByClass(migrated, 'stimulus_presentation');
+            verifyNumElements(testCase, kept, 11);
+            ids = cellfun(@(d) string(d.base.id), kept(:)');
+            verifyTrue(testCase, all(ismember(string(srcPres), ids)), ...
+                'a presentation id is missing: it was not carried');
+            for k = 1:numel(kept)
+                verifyEqual(testCase, char(kept{k}.document_class.schema_version), ...
+                    'did_v1', 'a carried presentation is stamped did_v1');
             end
         end
 
-        function testTheHartleyBasisIsMintedOnceAndCarriesItsPhase(testCase)
-            % The enumeration lives in the `hartley_calc` documents, not in
-            % the presentations: hartley_numbers {S,KXV,KYV,ORDER} is 3360
-            % entries and has ONE distinct value across all 210 of them --
-            % 1680 (kx,ky) pairs x 2 signs. So ONE basis set serves all ten
-            % presentations. Since did-schema #88 each basis function is a
-            % standalone `method` document (term 'Hartley basis grating').
+        function testNoHartleyBasisIsMintedWhenNoPresentationIsDecomposed(testCase)
+            % INVERTS testTheHartleyBasisIsMintedOnceAndCarriesItsPhase: the
+            % shared basis is minted only for a presentation the pass folds,
+            % and since [generic stage is lossless] (Jess Haley, 2026-10-25)
+            % none of the ten Hartley presentations is folded (their generator
+            % parameters beyond M, K_absmax, L_absmax, fps, contrast and sfmax
+            % have no place) -- so no basis method is minted.
             migrated = destinationBodies(testCase.Result.destination);
             methods = findAllByClass(migrated, 'method');
-            basis = {};
+            nBasis = 0;
             for k = 1:numel(methods)
                 if isfield(methods{k}, 'method') && isfield(methods{k}.method, 'term') ...
                         && strcmp(methods{k}.method.term.name, 'Hartley basis grating')
-                    basis{end+1} = methods{k}; %#ok<AGROW>
+                    nBasis = nBasis + 1;
                 end
             end
-            verifyNotEmpty(testCase, basis, ...
-                'no Hartley basis `method` documents; the basis was not assembled');
-            % MINTED ONCE: ten copies of the basis would be 33,600.
-            verifyLessThanOrEqual(testCase, numel(basis), 3360, sprintf( ...
-                ['%d Hartley basis method documents. The basis is shared by ' ...
-                 'all ten generator presentations and must be minted ONCE.'], ...
-                numel(basis)));
-
-            % THE PHASE IS THE PARAMETER WITHOUT WHICH THE SET COLLAPSES.
-            phases = [];
-            units = {};
-            for k = 1:numel(basis)
-                [ph, ~] = methodEntry(basis{k}, 'spatial phase');
-                if ~isempty(ph); phases(end+1) = double(ph); end %#ok<AGROW>
-                [~, u] = methodEntry(basis{k}, 'spatial frequency');
-                if ~isempty(u); units{end+1} = u; end %#ok<AGROW>
-            end
-            verifyGreaterThanOrEqual(testCase, numel(unique(phases)), 2, ...
-                ['fewer than two distinct spatial phases across the basis -- ' ...
-                 'the s = -1 half of every (kx,ky) pair has deduped away']);
-            % and the pixel-domain frequency is stated in its own unit
-            verifyTrue(testCase, ~isempty(units) && all(strcmp(units, 'cycles per pixel')), ...
-                'the Hartley spatial frequency is not stated in cycles per pixel');
+            verifyEqual(testCase, nBasis, 0);
+            verifyEqual(testCase, testCase.Result.secondPass.stimulusSequence.shared_methods_minted, 0);
         end
 
-        function testTheFrameTimesSurviveAsOnsetTimes(testCase)
-            % frameTimes is the ONLY surviving stimulus timing on this
-            % corpus (presentation_time.bin is declared by 11 of 11
-            % presentations and present in 0). Since data_body AMENDMENT 6
-            % ([onset time], Jess Haley 2026-10-22) it is the `onset time`
-            % covariate along the item manipulation's presentation dimension.
+        function testTheFrameTimesStayOnTheirV1Sources(testCase)
+            % INVERTS testTheFrameTimesSurviveAsOnsetTimes (onset-time
+            % covariates on the ten Hartley item manipulations). With no
+            % presentation decomposed ([generic stage is lossless], Jess
+            % Haley, 2026-10-25) there is no item manipulation to carry them;
+            % the presentations they time are carried as v1 instead
+            % (testEveryStimulusPresentationIsCarriedAsV1).
             migrated = destinationBodies(testCase.Result.destination);
-            seqs = itemManipulations(migrated);
-            withOnsets = 0;
-            for k = 1:numel(seqs)
-                d = seqs{k};
-                if ~isfield(d, 'data') || ~isfield(d.data, 'covariates'); continue; end
-                cs = ndi.v2.entries(d.data.covariates);
-                for j = 1:numel(cs)
-                    if strcmp(cs{j}.variable.name, 'onset time') ...
-                            && numel(cs{j}.quantity.value) > 1
-                        withOnsets = withOnsets + 1;
-                        break;
-                    end
-                end
-            end
-            verifyGreaterThanOrEqual(testCase, withOnsets, 10, sprintf( ...
-                ['%d of the migrated sequences carry onset times. The ten ' ...
-                 'Hartley presentations each have a frameTimes of 3360, so ' ...
-                 'fewer than ten means the timing was dropped.'], withOnsets));
+            verifyEmpty(testCase, itemManipulations(migrated));
+            verifyNumElements(testCase, findAllByClass(migrated, 'stimulus_presentation'), 11);
         end
 
         function testTheCalculatorFamilyKeepsItsIdentities(testCase)

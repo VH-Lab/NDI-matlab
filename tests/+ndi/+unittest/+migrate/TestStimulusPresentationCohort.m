@@ -63,7 +63,7 @@ classdef TestStimulusPresentationCohort < matlab.unittest.TestCase
                 docBody('element', 'elem_9', {'subject_id', 'animal_1'}) };
             r = ndi.migrate.internal.bodyResolver(bodies);
             [m, ~, report] = ndi.migrate.internal.stimulusPresentationToItem( ...
-                pres, r, [], 'CohortIdFor', @(sid) 'cohort_1');
+                pres, r, [], 'CohortIdFor', @(sid) 'cohort_1', 'LeaveUnplaced', false);
             testCase.verifyEqual(report.several_animals, 0);
             testCase.verifyFalse(report.distributive);
             testCase.verifyEqual(depValue(m, 'entity_id'), 'animal_1', ...
@@ -125,7 +125,7 @@ bodies = { pres, ...
     docBody('element', 'elem_2', {'subject_id', 'animal_2'}) };
 r = ndi.migrate.internal.bodyResolver(bodies);
 [manipBody, methodBodies, report] = ndi.migrate.internal.stimulusPresentationToItem( ...
-    pres, r, [], 'CohortIdFor', cohortIdFor);
+    pres, r, [], 'CohortIdFor', cohortIdFor, 'LeaveUnplaced', false);
 end
 
 function b = responseScalar(id, presentationId, elementId)

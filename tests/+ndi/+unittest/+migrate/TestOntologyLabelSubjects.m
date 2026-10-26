@@ -181,6 +181,26 @@ classdef TestOntologyLabelSubjects < matlab.unittest.TestCase
             tc.verifyEqual(rep.unresolved_no_ontology_node, 1);
         end
 
+        function testALabelWithAFieldTheObservationCannotPlaceIsLeftAsV1(tc)
+            % [generic stage is lossless] / [partly placed is carried as v1]
+            % (Jess Haley, 2026-10-25): the observation writes only the node
+            % and the document_id edge. A label stating anything else is not
+            % replaced (it stays for the end of ndi.migrate.local to carry as
+            % v1), and is counted.
+            lab = labelBody('lab_8', 'sess1', 'img_1', 'EMPTY:0000131');
+            lab.ontology_label.note = 'an extra field';
+            batch = { ...
+                imageObservation('img_1', 'sess1', 'subj_group_9', 'anchor_1'), lab};
+            [plan, rep] = ndi.migrate.internal.ontologyLabelSubjects(batch);
+            tc.verifyEmpty(plan);
+            tc.verifyEqual(rep.unresolved_unplaced_fields, 1);
+            % the same label without the extra field is placed
+            [plan2, rep2] = ndi.migrate.internal.ontologyLabelSubjects({batch{1}, ...
+                labelBody('lab_8', 'sess1', 'img_1', 'EMPTY:0000131')});
+            tc.verifyNumElements(plan2, 1);
+            tc.verifyEqual(rep2.unresolved_unplaced_fields, 0);
+        end
+
         function testAReferentWithNoTimeAnchorIsRefusedRatherThanAnchoredElsewhere(tc)
             obs = imageObservation('img_1', 'sess1', 'subj_group_9', 'anchor_1');
             obs.depends_on = obs.depends_on(1);     % entity_id only

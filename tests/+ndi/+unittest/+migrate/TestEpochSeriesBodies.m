@@ -74,6 +74,25 @@ classdef TestEpochSeriesBodies < matlab.unittest.TestCase
             testCase.verifyEqual(rep.bodies_described, 0);
         end
 
+        function testTheGenericStageLeavesAJHBodyAsItIs(testCase)
+            % [generic stage is lossless] (Jess Haley, 2026-10-25, audit
+            % item 5): the split drops column 2 and rewrites the values, so
+            % ndi.migrate.local (no 'SplitJH') leaves the .vhsb body exactly
+            % as pass 1 wrote it, counted. The tests below drive the split
+            % itself with 'SplitJH', true -- the rule stays for the JH map.
+            t = (0:4)' * 0.25;
+            xy = [10 20; 11 21; 12 22; NaN NaN; 14 24];
+            vlt.file.custom_file_formats.vhsb_write( ...
+                fullfile(testCase.Dir, 'files', 'u_pos_g'), t, xy, 'use_filelock', 0);
+            structs = jhPositionTriple('u_pos_g');
+            [out, rep, added] = ndi.migrate.internal.epochSeriesBodies(structs, testCase.Dir);
+            testCase.verifyEqual(rep.jh_bodies_seen, 1);
+            testCase.verifyEqual(rep.jh_split_withheld, 1);
+            testCase.verifyEqual(rep.position_split, 0);
+            testCase.verifyEmpty(added);
+            testCase.verifyEqual(out, structs, 'nothing changed');
+        end
+
         function testAJHPositionIsSplitIntoTrackDocumentsArray(testCase)
             % Decided by Jess Haley, 2026-10-22 [JH position and distance]:
             % the second pass splits the columns where the bytes are present.
@@ -82,7 +101,7 @@ classdef TestEpochSeriesBodies < matlab.unittest.TestCase
             vlt.file.custom_file_formats.vhsb_write( ...
                 fullfile(testCase.Dir, 'files', 'u_pos'), t, xy, 'use_filelock', 0);
             structs = jhPositionTriple('u_pos');
-            [out, rep, added] = ndi.migrate.internal.epochSeriesBodies(structs, testCase.Dir);
+            [out, rep, added] = ndi.migrate.internal.epochSeriesBodies(structs, testCase.Dir, 'SplitJH', true);
             testCase.verifyEqual(rep.jh_bodies_seen, 1);
             testCase.verifyEqual(rep.position_split, 1);
             testCase.verifyEmpty(added);
@@ -110,7 +129,7 @@ classdef TestEpochSeriesBodies < matlab.unittest.TestCase
             vlt.file.custom_file_formats.vhsb_write( ...
                 fullfile(testCase.Dir, 'files', 'u_dist'), t, y, 'use_filelock', 0);
             structs = jhDistanceQuad('u_dist');
-            [out, rep, added] = ndi.migrate.internal.epochSeriesBodies(structs, testCase.Dir);
+            [out, rep, added] = ndi.migrate.internal.epochSeriesBodies(structs, testCase.Dir, 'SplitJH', true);
             testCase.verifyEqual(rep.nearest_patch_split, 1);
             testCase.verifyEqual(rep.length_not_split_no_scale, 1);
             testCase.assertNumElements(added, 1);
@@ -140,7 +159,7 @@ classdef TestEpochSeriesBodies < matlab.unittest.TestCase
             scale = 32.930525883464774;
             structs = [jhDistanceQuad('u_dm'), videoOf('grp_1', 'vid_1', scale), ...
                 {memberOf('worm_1', 'grp_1')}];
-            [out, rep, added] = ndi.migrate.internal.epochSeriesBodies(structs, testCase.Dir);
+            [out, rep, added] = ndi.migrate.internal.epochSeriesBodies(structs, testCase.Dir, 'SplitJH', true);
             testCase.verifyEqual(rep.length_split_metres, 1);
             testCase.verifyEqual(rep.length_not_split_no_scale, 0);
             testCase.verifyEqual(rep.length_not_split_scale_ambiguous, 0);
@@ -175,7 +194,7 @@ classdef TestEpochSeriesBodies < matlab.unittest.TestCase
                 fullfile(testCase.Dir, 'files', 'u_amb'), t, y, 'use_filelock', 0);
             structs = [jhDistanceQuad('u_amb'), videoOf('grp_1', 'vid_1', 32.4924), ...
                 videoOf('worm_1', 'vid_2', 32.4920), {memberOf('worm_1', 'grp_1')}];
-            [out, rep] = ndi.migrate.internal.epochSeriesBodies(structs, testCase.Dir);
+            [out, rep] = ndi.migrate.internal.epochSeriesBodies(structs, testCase.Dir, 'SplitJH', true);
             testCase.verifyEqual(rep.length_split_metres, 0);
             testCase.verifyEqual(rep.length_not_split_scale_ambiguous, 1);
             testCase.verifyEqual(rep.nearest_patch_split, 1);
@@ -194,7 +213,7 @@ classdef TestEpochSeriesBodies < matlab.unittest.TestCase
                 vid{2}.data.covariates(i).source_unit = struct('node', 'om:metre', 'name', 'metre');
             end
             [~, rep] = ndi.migrate.internal.epochSeriesBodies( ...
-                [jhDistanceQuad('u_unit'), vid], testCase.Dir);
+                [jhDistanceQuad('u_unit'), vid], testCase.Dir, 'SplitJH', true);
             testCase.verifyEqual(rep.length_split_metres, 0);
             testCase.verifyEqual(rep.length_not_split_no_scale, 1);
         end
