@@ -8,7 +8,7 @@ classdef SubjectInformationCreator < ndi.setup.NDIMaker.SubjectInformationCreato
 % See also: ndi.setup.conv.vhlab.subjectInfoTable, ndi.setup.NDIMaker.subjectMaker
 
 methods
-    function [subjectIdentifier, strain, species, biologicalSex] = create(obj, tableRow)
+    function [subjectIdentifier, strain, species, biologicalSex] = create(~, tableRow)
         % CREATE - Generates subject data from a VH Lab subject info table row.
         %
         %   [SUBJECTIDENTIFIER, STRAIN, SPECIES, BIOLOGICALSEX] = CREATE(OBJ, TABLEROW)

@@ -167,12 +167,13 @@ function [isValid, report] = validateStacyDirectory(dirname, options)
         for k = 1:numel(daqNames)
             for p = 1:numel(daqPatterns{k})
                 if ~any(~cellfun(@isempty, regexp(filenames, ['^' daqPatterns{k}{p} '$'], 'once')))
-                    msg = ['Missing file matching ''' daqPatterns{k}{p} ''' needed by DAQ system ' daqNames{k} '.'];
+                    renameNote = '';
                     if startsWith(daqPatterns{k}{p}, 'vhintan_') && ...
                             any(strcmp(filenames, strrep(daqPatterns{k}{p}, 'vhintan_', 'vhlv_')))
-                        msg = [msg ' A ' strrep(daqPatterns{k}{p}, 'vhintan_', 'vhlv_') ' file is present and may need to be renamed.'];
+                        renameNote = [' A ' strrep(daqPatterns{k}{p}, 'vhintan_', 'vhlv_') ' file is present and may need to be renamed.'];
                     end
-                    addProblem('error', epochids{i}, msg);
+                    addProblem('error', epochids{i}, ['Missing file matching ''' daqPatterns{k}{p} ...
+                        ''' needed by DAQ system ' daqNames{k} '.' renameNote]);
                 end
             end
         end
