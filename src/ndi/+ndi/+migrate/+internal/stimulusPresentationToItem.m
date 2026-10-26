@@ -162,12 +162,15 @@ function [manipBody, methodBodies, report, softwareBodies, controlCalcs] = ...
 %   here the decoder that wrote the presentation ([software_id is what
 %   produced the statement], Jess Haley, 2026-10-26). A standalone item has no software edge: its
 %   software is minted unreferenced (REPORT.software_unreferenced).
-%   THE RUN ENVIRONMENT (os, os_version, interpreter, interpreter_version) IS
-%   NOT WRITTEN YET: [run environment on interactions] (Jess Haley,
-%   2026-10-26) moves `operating_system_id` / `interpreter_id` up to
-%   `interaction`, but did-schema has not built that move, so `manipulation`
-%   does not declare them. REPORT.app_environment_not_written names the
-%   fields, so the gap is counted, not silent.
+%   THE RUN ENVIRONMENT. Decided by Jess Haley, 2026-10-26 [run environment
+%   on interactions] (built in did-schema #131): `operating_system_id` and
+%   `interpreter_id` are on `interaction`, so the app's os (os_version) and
+%   interpreter (interpreter_version) are `software` entities on the
+%   manipulation's two edges, as a calculation's are
+%   (ndi.migrate.internal.softwareEntity). REPORT.run_environment_written
+%   counts the edges written; a standalone item has neither edge, so there
+%   they are not minted and REPORT.run_environment_unplaced names the fields
+%   (as does a version stated with no name).
 %
 %   CONTROL PAIRING. Decided by Jess Haley, 2026-10-26 [control pairing is a
 %   calculation] (replaces [control selection on the presentation method],
@@ -397,13 +400,13 @@ if ~isempty(sequence)
         report.timing_file = 'not used: the dimension is frames';
     end
     [dims, covs] = presentationAxes(numel(frameOrder), onsets, offsets, control);
-    [softwareBodies, swId, report] = presentationSoftware(v1Body, report);
+    [softwareBodies, swIds, report] = presentationSoftware(v1Body, report);
     [controlCalcs, calcSoftware, report] = controlCalculations( ...
         options.ControlRecords, presentationId, entityId, numel(order), false, report);
     softwareBodies = [softwareBodies, calcSoftware];
     manipBody = itemBody(report.standalone, presentationId, sessionId, datestamp, ...
         entityId, stimulatorId, itemIds, value, dims, covs, report.distributive, ...
-        '', swId);
+        '', swIds);
     [manipBody, report] = carryFiles(manipBody, v1Body, report);
     return;
 end
@@ -503,14 +506,14 @@ report.trial_positions = value.item;
     options.PresentationTimeFile, numel(order), report);
 [control, report] = controlCovariate(options.ControlRecords, numel(order), true, report);
 [dims, covs] = presentationAxes(numel(order), onsets, offsets, control);
-[softwareBodies, swId, report] = presentationSoftware(v1Body, report);
+[softwareBodies, swIds, report] = presentationSoftware(v1Body, report);
 [controlCalcs, calcSoftware, report] = controlCalculations( ...
     options.ControlRecords, presentationId, entityId, numel(order), true, report);
 softwareBodies = [softwareBodies, calcSoftware];
 
 manipBody = itemBody(report.standalone, presentationId, sessionId, datestamp, ...
     entityId, stimulatorId, itemIds, value, dims, covs, report.distributive, ...
-    notesText, swId);
+    notesText, swIds);
 [manipBody, report] = carryFiles(manipBody, v1Body, report);
 end
 
@@ -614,19 +617,19 @@ end
 
 function b = itemBody(standalone, presentationId, sessionId, datestamp, ...
         entityId, stimulatorId, itemIds, value, dims, covs, distributive, notes, ...
-        softwareId)
+        swIds)
 if nargin < 12
     notes = '';
 end
 if nargin < 13
-    softwareId = '';
+    swIds = struct('software', '', 'os', '', 'interpreter', '');
 end
 if standalone
     b = standaloneItem(presentationId, sessionId, datestamp, itemIds, value, dims, covs);
 else
     b = itemManipulation(presentationId, sessionId, datestamp, ...
         entityId, stimulatorId, itemIds, value, dims, covs, distributive, notes, ...
-        softwareId);
+        swIds);
 end
 end
 
@@ -648,12 +651,12 @@ end
 
 function m = itemManipulation(presentationId, sessionId, datestamp, ...
         entityId, stimulatorId, itemIds, value, dims, covs, distributive, notes, ...
-        softwareId)
+        swIds)
 if nargin < 11
     notes = '';
 end
 if nargin < 12
-    softwareId = '';
+    swIds = struct('software', '', 'os', '', 'interpreter', '');
 end
 restore = ndi.migrate.internal.termRegistryOff(); %#ok<NASGU>
 % did2.build insists on the interaction's time_reference_id min_count; the
@@ -669,9 +672,16 @@ args = {'Method', 'visual stimulation', ...
 if ~isempty(stimulatorId)
     args = [args, {'InstrumentId', stimulatorId}];
 end
-if ~isempty(softwareId)
+if ~isempty(swIds.software)
     % [presentation app is software] (Jess Haley, 2026-10-26)
-    args = [args, {'SoftwareId', softwareId}];
+    args = [args, {'SoftwareId', swIds.software}];
+end
+% [run environment on interactions] (Jess Haley, 2026-10-26)
+if ~isempty(swIds.os)
+    args = [args, {'OperatingSystemId', swIds.os}];
+end
+if ~isempty(swIds.interpreter)
+    args = [args, {'InterpreterId', swIds.interpreter}];
 end
 if ~isempty(notes)
     args = [args, {'Notes', notes}];
@@ -782,17 +792,46 @@ end
 
 % ===================== software and the control pairing ==================
 
-function [docs, swId, report] = presentationSoftware(v1Body, report)
-%PRESENTATIONSOFTWARE The presentation's `app` as a `software` entity, and the
-%   id for the manipulation's software_id. See SOFTWARE above.
+function [docs, swIds, report] = presentationSoftware(v1Body, report)
+%PRESENTATIONSOFTWARE The presentation's `app` as `software` entities: the
+%   program for software_id, and the run's OS and interpreter for
+%   operating_system_id / interpreter_id. See SOFTWARE above.
 [docs, swId, env] = ndi.migrate.internal.appSoftware(v1Body);
+swIds = struct('software', swId, 'os', '', 'interpreter', '');
 report.software_minted = report.software_minted + ~isempty(swId);
-report.app_environment_not_written = prefixed('app.', env);
-if report.standalone && ~isempty(swId)
-    report.software_unreferenced = report.software_unreferenced + 1;   % an item has no software_id
-    swId = '';
+if report.standalone
+    % an item has no software_id, operating_system_id or interpreter_id
+    if ~isempty(swId)
+        report.software_unreferenced = report.software_unreferenced + 1;
+    end
+    swIds.software = '';
+    report.run_environment_unplaced = prefixed('app.', env);
+    report.software_referenced = false;
+    return;
 end
 report.software_referenced = ~isempty(swId);
+sid = char(ndi.v2.sessionIdOf(v1Body));
+ts = '';
+if isfield(v1Body, 'base') && isfield(v1Body.base, 'datestamp'); ts = char(v1Body.base.datestamp); end
+pairs = {'os', 'os_version', 'os'; 'interpreter', 'interpreter_version', 'interpreter'};
+for k = 1:size(pairs, 1)
+    if isfield(env, pairs{k, 1})
+        [d, id] = ndi.migrate.internal.softwareEntity(env.(pairs{k, 1}), ...
+            fieldOr(env, pairs{k, 2}), '', sid, ts);
+        if ~isempty(id)
+            docs = [docs, d]; %#ok<AGROW>
+            swIds.(pairs{k, 3}) = id;
+            report.run_environment_written = report.run_environment_written + 1;
+            continue;
+        end
+    end
+    % a version with no name (or no session) names no program
+    for f = pairs(k, 1:2)
+        if isfield(env, f{1})
+            report.run_environment_unplaced{end+1} = ['app.' f{1}];
+        end
+    end
+end
 end
 
 function [calcs, software, report] = controlCalculations(records, presentationId, ...
@@ -1276,7 +1315,8 @@ r = struct( ...
     'software_minted',     0, ...
     'software_referenced', false, ...
     'software_unreferenced', 0, ...
-    'app_environment_not_written', {{}}, ...
+    'run_environment_written', 0, ...
+    'run_environment_unplaced', {{}}, ...
     'flashed_bars',        0, ...
     'uniform_fields_kept', 0, ...
     'shape_movie_note',    false, ...

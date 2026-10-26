@@ -193,7 +193,9 @@ classdef TestStimulusPresentationItem < matlab.unittest.TestCase
             pres = withApp(presentationBody('pres_app', [1 2], ...
                 { gratingStim(0, 0.04, 0.5), gratingStim(45, 0.04, 0.5) }));
             [m, ~, report, sw] = emit(testCase, pres);
-            testCase.verifyNumElements(sw, 2, 'the entity and its version assertion');
+            % the program, then the OS and the interpreter: each an entity
+            % with its version assertion
+            testCase.verifyNumElements(sw, 6);
             e = sw{1};
             testCase.verifyEqual(e.document_class.class_name, 'entity');
             testCase.verifyEqual(e.entity.name, 'ndi_app_stimulus_decoder');
@@ -209,13 +211,18 @@ classdef TestStimulusPresentationItem < matlab.unittest.TestCase
             testCase.verifyEqual(report.software_minted, 1);
             testCase.verifyTrue(report.software_referenced);
             testCase.verifyEqual(report.software_unreferenced, 0);
-            % the run environment: `manipulation` declares no
-            % operating_system_id / interpreter_id on did-schema main, so it
-            % is not written, and the report names what was not
-            testCase.verifyEmpty(depValues(m, 'operating_system_id'));
-            testCase.verifyEmpty(depValues(m, 'interpreter_id'));
-            testCase.verifyEqual(report.app_environment_not_written, ...
-                {'app.os', 'app.os_version', 'app.interpreter', 'app.interpreter_version'});
+            % INVERTED: the run environment was counted and not written.
+            % [run environment on interactions] (Jess Haley, 2026-10-26;
+            % did-schema #131) puts operating_system_id / interpreter_id on
+            % `interaction`: the app's OS and interpreter are software
+            % entities on the manipulation's two edges
+            ids = cellfun(@(d) d.base.id, sw, 'UniformOutput', false);
+            os = sw{strcmp(ids, depValue(m, 'operating_system_id'))};
+            testCase.verifyEqual(os.entity.local_identifier, 'MACA64@15.6.1');
+            it = sw{strcmp(ids, depValue(m, 'interpreter_id'))};
+            testCase.verifyEqual(it.entity.local_identifier, 'MATLAB@24.2');
+            testCase.verifyEqual(report.run_environment_written, 2);
+            testCase.verifyEmpty(report.run_environment_unplaced);
             verifyNoEmptyEdges(testCase, m);
             cache = did2.schema.cache.shared();
             restore = ndi.migrate.internal.termRegistryOff(); %#ok<NASGU>
@@ -233,7 +240,8 @@ classdef TestStimulusPresentationItem < matlab.unittest.TestCase
             [m, ~, report, sw] = emit(testCase, pres);
             testCase.verifyEqual(sw{1}.entity.local_identifier, 'ndi_app_stimulus_decoder@abc');
             testCase.verifyEqual(depValue(m, 'software_id'), sw{1}.base.id);
-            testCase.verifyEmpty(report.app_environment_not_written);
+            testCase.verifyEqual(report.run_environment_written, 0);
+            testCase.verifyEmpty(depValues(m, 'operating_system_id'));
         end
 
         function testNoAppGivesNoSoftware(testCase)
@@ -243,12 +251,19 @@ classdef TestStimulusPresentationItem < matlab.unittest.TestCase
             testCase.verifyEmpty(depValues(m, 'software_id'));
             testCase.verifyEqual(report.software_minted, 0);
             testCase.verifyFalse(report.software_referenced);
-            % a nameless app block names no program: no entity
+            % a nameless app block names no program: no software_id; its OS
+            % is still the run's, on operating_system_id
             pres.app = struct('name', '', 'version', '1', 'os', 'MACA64');
             [m, ~, report, sw] = emit(testCase, pres);
-            testCase.verifyEmpty(sw);
+            testCase.verifyNumElements(sw, 1, 'the OS entity (no version stated)');
             testCase.verifyEmpty(depValues(m, 'software_id'));
-            testCase.verifyEqual(report.app_environment_not_written, {'app.os'});
+            testCase.verifyEqual(depValue(m, 'operating_system_id'), sw{1}.base.id);
+            testCase.verifyEqual(report.run_environment_written, 1);
+            % an interpreter version with no interpreter names nothing
+            pres.app = struct('name', '', 'interpreter_version', '24.2');
+            [m, ~, report] = emit(testCase, pres);
+            testCase.verifyEmpty(depValues(m, 'interpreter_id'));
+            testCase.verifyEqual(report.run_environment_unplaced, {'app.interpreter_version'});
         end
 
         function testAStandaloneItemsSoftwareIsMintedUnreferenced(testCase)
@@ -260,9 +275,11 @@ classdef TestStimulusPresentationItem < matlab.unittest.TestCase
                 pres, r, [], 'LeaveUnplaced', false);
             testCase.verifyTrue(report.standalone);
             testCase.verifyEmpty(depValues(d, 'software_id'));
-            testCase.verifyNumElements(sw, 2);
+            testCase.verifyNumElements(sw, 2, 'the program only; no OS / interpreter edges');
             testCase.verifyFalse(report.software_referenced);
             testCase.verifyEqual(report.software_unreferenced, 1);
+            testCase.verifyEqual(report.run_environment_unplaced, ...
+                {'app.os', 'app.os_version', 'app.interpreter', 'app.interpreter_version'});
         end
 
         function testTheStimulatorBecomesInstrumentIdAndIsOmittedWhenAbsent(testCase)
@@ -839,7 +856,7 @@ classdef TestStimulusPresentationItem < matlab.unittest.TestCase
                 'control_calculations'; 'control_converted_ids'; ...
                 'control_carried'; 'software_minted'; ...
                 'software_referenced'; 'software_unreferenced'; ...
-                'app_environment_not_written'; ...
+                'run_environment_written'; 'run_environment_unplaced'; ...
                 'flashed_bars'; 'uniform_fields_kept'; ...
                 'shape_movie_note'; 'hartley_without_enumeration'; ...
                 'notes_not_written_standalone'; 'entity_id'; 'unplaced_fields'; 'reason'};
