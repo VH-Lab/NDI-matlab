@@ -425,49 +425,99 @@ classdef system < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice
             end
         end % getmetadata()
 
-        function [b,d] = ingest(ndi_daqsystem_obj)
+        function [b,d] = ingest(ndi_daqsystem_obj, options)
             % INGEST - ingest the data from an ndi.daq.system into the database
             %
-            % [B,D] = INGEST(NDI_DAQSYSTEM_OBJ)
+            % [B,D] = INGEST(NDI_DAQSYSTEM_OBJ, ...)
             %
             % Ingest any uningested epochs from an ndi.daq.system object into the database.
             % B is 1 if the operation is successful. D is a cell array of new ndi.document objects
             % that were created and added to the database.
             %
+            % The per-epoch work (reading the raw data and compressing it into
+            % .nbf.tgz files) can optionally run on a parallel pool. All database
+            % writes are made serially on the client after the epochs are computed,
+            % and the documents are added in the same order as a serial ingest.
+            %
+            % This function takes name/value pairs that modify its behavior:
+            % |---------------------------|-----------------------------------------------|
+            % | Parameter (default)       | Description                                   |
+            % |---------------------------|-----------------------------------------------|
+            % | UseParallel (false)       | Read/compress epochs on a parallel pool. Falls|
+            % |                           |   back to serial (with a warning) if the      |
+            % |                           |   Parallel Computing Toolbox or a process     |
+            % |                           |   pool is unavailable.                        |
+            % | NumWorkers ([])           | Pool size when UseParallel is true. Empty     |
+            % |                           |   uses gcp() (the open pool, or a default one)|
+            % | ShowProgress (true)       | Show a progress bar using                     |
+            % |                           |   ndi.gui.component.ProgressBarWindow (silent |
+            % |                           |   automatically in headless sessions).        |
+            % | ProgressBar ([])          | An existing ProgressBarWindow to add the bar  |
+            % |                           |   to. Empty opens/reuses one titled           |
+            % |                           |   'NDI Ingest'.                               |
+            % |---------------------------|-----------------------------------------------|
+            %
+            % Example:
+            %    [b,d] = mydaqsystem.ingest('UseParallel',true);
+            %
+            % See also: ndi.session/ingest, ndi.daq.fun.ingestEpochDocuments
+            arguments
+                ndi_daqsystem_obj
+                options.UseParallel (1,1) logical = false
+                options.NumWorkers double {mustBeScalarOrEmpty, mustBeNonnegative, mustBeInteger} = []
+                options.ShowProgress (1,1) logical = true
+                options.ProgressBar = []
+            end
             b = 0;
             et = ndi_daqsystem_obj.epochtable();
-            filenavigator_ingest_called = 0;
             d = {}; % our array of many documents to be added to database
 
+            % find the epochs that still need to be ingested
+            epochFiles = {};
+            epochIds = {};
             for i=1:numel(et)
                 ef = et(i).underlying_epochs.underlying; % epochfiles
-                if ndi.file.navigator.isingested(ef) % already ingested, skip it
-                else % not ingested, we need to ingest it
-                    % future note: down the road we might want to add one epoch at a time
-                    if ~filenavigator_ingest_called
-                        new_d = ndi_daqsystem_obj.filenavigator.ingest();
-                        d = cat(1,d,new_d(:));
-                        filenavigator_ingest_called = 1;
-                    end
-                    new_d = ndi_daqsystem_obj.daqreader.ingest_epochfiles(ef,et(i).epoch_id);
-                    if ~iscell(new_d)
-                        new_d = {new_d};
-                    end
-                    d = cat(1,d,new_d(:));
-                    for j=1:numel(ndi_daqsystem_obj.daqmetadatareader)
-                        new_d = ndi_daqsystem_obj.daqmetadatareader{j}.ingest_epochfiles(ef,et(i).epoch_id);
-                        if ~iscell(new_d)
-                            new_d = {new_d};
-                        end
-                        d = cat(1,d,new_d(:));
-                    end
+                if ~ndi.file.navigator.isingested(ef) % not ingested, we need to ingest it
+                    epochFiles{end+1} = ef;
+                    epochIds{end+1} = et(i).epoch_id;
                 end
             end
-            for i=1:numel(d)
-                d{i} = d{i}.set_session_id(ndi_daqsystem_obj.filenavigator.session.id());
+
+            progressBar = [];
+            barTag = '';
+            if options.ShowProgress && ~isempty(epochFiles)
+                [progressBar, barTag] = ndi.daq.system.addIngestProgressBar(options.ProgressBar, ...
+                    ['Ingesting ' char(ndi_daqsystem_obj.name) ' (' int2str(numel(epochFiles)) ' epochs)']);
             end
-            ndi_daqsystem_obj.filenavigator.session.database_add(d);
-            ndi_daqsystem_obj.session.cache.clear();
+            % the database add is one more step after all of the epochs
+            numSteps = numel(epochFiles) + 1;
+
+            try
+                if ~isempty(epochFiles)
+                    % the file navigator documents are made once, serially; they
+                    % need the session and its database
+                    new_d = ndi_daqsystem_obj.filenavigator.ingest();
+                    d = cat(1,d,new_d(:));
+
+                    docsPerEpoch = ndi.daq.fun.ingestEpochDocuments(ndi_daqsystem_obj.daqreader, ...
+                        ndi_daqsystem_obj.daqmetadatareader, epochFiles, epochIds, ...
+                        'UseParallel', options.UseParallel, 'NumWorkers', options.NumWorkers, ...
+                        'ProgressFcn', @(numDone, numTotal) ndi.daq.system.updateIngestProgressBar( ...
+                            progressBar, barTag, numDone/numSteps));
+                    for i=1:numel(docsPerEpoch)
+                        d = cat(1,d,docsPerEpoch{i}(:));
+                    end
+                end
+                for i=1:numel(d)
+                    d{i} = d{i}.set_session_id(ndi_daqsystem_obj.filenavigator.session.id());
+                end
+                ndi_daqsystem_obj.filenavigator.session.database_add(d);
+                ndi_daqsystem_obj.session.cache.clear();
+            catch ME
+                ndi.daq.system.removeIngestProgressBar(progressBar, barTag);
+                rethrow(ME);
+            end
+            ndi.daq.system.updateIngestProgressBar(progressBar, barTag, 1);
             b = 1;
         end % ingest()
 
@@ -515,4 +565,90 @@ classdef system < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice
         end % searchquery()
 
     end % methods
+
+    methods (Static, Hidden)
+        % Helpers for reporting ingestion progress through
+        % ndi.gui.component.ProgressBarWindow. They are shared with
+        % ndi.session/ingest. Progress reporting must never break an ingest,
+        % so every call is guarded.
+
+        function [progressBar, barTag] = addIngestProgressBar(progressBar, label, options)
+            % ADDINGESTPROGRESSBAR - add an ingestion bar to a ProgressBarWindow
+            %
+            % [PROGRESSBAR, BARTAG] = ndi.daq.system.addIngestProgressBar(PROGRESSBAR, LABEL, ...)
+            %
+            % Adds a bar labeled LABEL to the ndi.gui.component.ProgressBarWindow
+            % PROGRESSBAR. If PROGRESSBAR is empty, a window titled 'NDI Ingest' is
+            % opened (or the most recent progress window is reused). Returns the
+            % window and the tag of the new bar; on any failure both are empty and
+            % a warning is issued.
+            %
+            % Optional name/value pairs: 'Tag' (default: a new unique id) and
+            % 'Auto' (default true; remove the bar when it completes).
+            arguments
+                progressBar
+                label (1,:) char
+                options.Tag (1,:) char = ''
+                options.Auto (1,1) logical = true
+            end
+            barTag = options.Tag;
+            if isempty(barTag)
+                barTag = did.ido.unique_id();
+            end
+            try
+                if isempty(progressBar)
+                    progressBar = ndi.gui.component.ProgressBarWindow('NDI Ingest','Overwrite',false);
+                end
+                % ingesting a single epoch can take longer than the window's
+                % default timeout, so these bars never time out
+                progressBar = progressBar.addBar('Label',label,'Tag',barTag,...
+                    'Auto',options.Auto,'Timeout',minutes(Inf));
+            catch ME
+                warning('NDI:daq:ingest:progressFailed', ...
+                    'Could not create an ingestion progress bar: %s', ME.message);
+                progressBar = [];
+                barTag = '';
+            end
+        end % addIngestProgressBar()
+
+        function updateIngestProgressBar(progressBar, barTag, fraction)
+            % UPDATEINGESTPROGRESSBAR - set an ingestion bar's progress
+            %
+            % ndi.daq.system.updateIngestProgressBar(PROGRESSBAR, BARTAG, FRACTION)
+            %
+            % Does nothing if PROGRESSBAR is empty, deleted, or no longer has the
+            % bar (for example, because the user closed it).
+            if isempty(progressBar) || isempty(barTag) || ~isvalid(progressBar)
+                return;
+            end
+            try
+                barNum = progressBar.getBarNum(barTag);
+                if isempty(barNum) || strcmpi(progressBar.ProgressBars(barNum).State,'Closed')
+                    return;
+                end
+                progressBar.updateBar(barTag, min(max(fraction,0),1));
+            catch ME
+                warning('NDI:daq:ingest:progressFailed', ...
+                    'Could not update the ingestion progress bar: %s', ME.message);
+            end
+        end % updateIngestProgressBar()
+
+        function removeIngestProgressBar(progressBar, barTag)
+            % REMOVEINGESTPROGRESSBAR - remove an ingestion bar (used on error)
+            %
+            % ndi.daq.system.removeIngestProgressBar(PROGRESSBAR, BARTAG)
+            %
+            if isempty(progressBar) || isempty(barTag) || ~isvalid(progressBar)
+                return;
+            end
+            try
+                barNum = progressBar.getBarNum(barTag);
+                if ~isempty(barNum) && ~strcmpi(progressBar.ProgressBars(barNum).State,'Closed')
+                    progressBar.removeBar(barTag);
+                end
+            catch
+                % nothing more to do; the ingest error is what matters
+            end
+        end % removeIngestProgressBar()
+    end % methods (Static, Hidden)
 end % ndi.daq.system classdef
