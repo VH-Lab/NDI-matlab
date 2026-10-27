@@ -85,6 +85,7 @@ classdef TestIngestedStimulusRead < matlab.unittest.TestCase
             p = testCase.Reader.readmetadata_ingested({'epochid://t00074'}, testCase.Session);
             want = ndi.unittest.vintage.TestIngestedStimulusRead.params74();
             testCase.assertNotEmpty(p, 'the parameters of a migrated ingested epoch are read');
+            p = ndi.unittest.vintage.TestIngestedStimulusRead.asCell(p);
             testCase.assertNumElements(p, numel(want));
             for k = 1:numel(want)
                 testCase.verifyEqual(double(p{k}.stimid), want{k}.stimid);
@@ -95,6 +96,7 @@ classdef TestIngestedStimulusRead < matlab.unittest.TestCase
         function testEachEpochReadsItsOwnFile(testCase)
             p = testCase.Reader.readmetadata_ingested({'epochid://t00075'}, testCase.Session);
             want = ndi.unittest.vintage.TestIngestedStimulusRead.params75();
+            p = ndi.unittest.vintage.TestIngestedStimulusRead.asCell(p);
             testCase.assertNumElements(p, numel(want));
             testCase.verifyEqual(double(p{1}.angle), want{1}.angle);
         end
@@ -157,6 +159,17 @@ classdef TestIngestedStimulusRead < matlab.unittest.TestCase
             d.files = struct('file_list', {{'data.bin'}}, 'file_info', struct('name', 'data.bin', ...
                 'locations', struct('delete_original', 0, 'uid', uid, 'location', file, ...
                 'parameters', '', 'location_type', 'file', 'ingest', 0)));
+        end
+
+        function c = asCell(p)
+            % ndi.compress.expand_metadata hands back a struct array (CI run
+            % 40420613743), the same for v1 and migrated documents; compare
+            % per stimulus either way
+            if isstruct(p)
+                c = num2cell(p);
+            else
+                c = p;
+            end
         end
 
         function e = epochOf(body)
