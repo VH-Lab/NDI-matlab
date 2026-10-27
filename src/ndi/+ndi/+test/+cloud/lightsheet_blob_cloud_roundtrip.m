@@ -33,8 +33,10 @@ function info = lightsheet_blob_cloud_roundtrip(options)
 %        launch napariViewLightsheet on the first hit.
 %
 %   Name-Value Arguments:
-%     Launcher - char, path to napariViewLightsheet. Default
-%                '/usr/local/bin/napariViewLightsheet'.
+%     Launcher - char, path to napariViewLightsheet. An explicit
+%                launcher always wins. Default '' (found with
+%                ndi.python.findCommand; install it with
+%                ndi.python.install()).
 %     Shape        - fixture spatial shape, default [128 128 128].
 %     NumChannels  - default 2.
 %     ChunkShape   - default [32 32 32].
@@ -77,7 +79,7 @@ function info = lightsheet_blob_cloud_roundtrip(options)
 %             ndi.cloud.downloadDataset
 
     arguments
-        options.Launcher (1,:) char = '/usr/local/bin/napariViewLightsheet'
+        options.Launcher (1,:) char = ''
         options.Shape (1,3) double {mustBePositive, mustBeInteger} = [128 128 128]
         options.NumChannels (1,1) double {mustBePositive, mustBeInteger} = 2
         options.ChunkShape (1,3) double {mustBePositive, mustBeInteger} = [32 32 32]
@@ -354,6 +356,9 @@ function launchDebugView(session, pyramidId, launcher, reduction, waitForIt, log
         tag {mustBeText}
     end
 
+    if isempty(strtrim(launcher))
+        launcher = ndi.python.findCommand('napariViewLightsheet');
+    end
     sessionPath = char(session.path);
     cmd = ndi.fun.doc.lightsheet.viewCommand(launcher, sessionPath, pyramidId, ...
         'reduction', reduction);
@@ -370,15 +375,12 @@ function launchDebugView(session, pyramidId, launcher, reduction, waitForIt, log
 
     % Route Python-side debug prints (NDI_LIGHTSHEET_DEBUG=1 triggers
     % the [lightsheet] chunk-fetch failure lines) into the log file.
-    % Redirect both stdout and stderr; the launcher wrapper's own
-    % output lands in the same file so a chunk miss and its cause
+    % Redirect both stdout and stderr so a chunk miss and its cause
     % (auth, HTTP status, missing manifest) sit adjacent.
-    quotedLog = ['''' strrep(logfile, '''', '''\''''') ''''];
-    if ~waitForIt && ~ispc
-        fullCmd = ['NDI_LIGHTSHEET_DEBUG=1 ' cmd ' >>' quotedLog ' 2>&1 &'];
-    else
-        fullCmd = ['NDI_LIGHTSHEET_DEBUG=1 ' cmd ' >>' quotedLog ' 2>&1'];
-    end
+    % viewerShellCommand also sets NDI_FROM_MATLAB=1 and builds the
+    % right form for each OS.
+    fullCmd = ndi.fun.doc.lightsheet.viewerShellCommand(cmd, logfile, ...
+        waitForIt, true, ispc);
     fprintf('Executing: %s\n', fullCmd);
     status = system(fullCmd);
     if status ~= 0 && waitForIt

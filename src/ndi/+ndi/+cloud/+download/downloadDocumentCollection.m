@@ -6,7 +6,8 @@ function documents = downloadDocumentCollection(datasetId, documentIds, options)
 %
 %   To improve performance and avoid server errors with large requests, this
 %   function automatically splits the list of document IDs into smaller chunks
-%   (default size: 2000) and performs a separate download for each chunk.
+%   (size set by the preference Cloud.Download.Max_Document_Batch_Count) and
+%   performs a separate download for each chunk.
 %
 % INPUTS:
 %    datasetId    - (1,1) string
@@ -24,12 +25,13 @@ function documents = downloadDocumentCollection(datasetId, documentIds, options)
 %                   directly to avoid an extra API call to fetch the list again.
 %
 %    options.Timeout - (1,1) double, optional
-%                   The timeout in seconds for the download operation.
-%                   Default is 20.
+%                   How long, in seconds, to keep retrying each chunk's download
+%                   while the server builds its archive. Default is 60.
 %
 %    options.ChunkSize - (1,1) double, optional
 %                   The maximum number of document IDs to request in a single
-%                   bulk download operation. Default is 2000.
+%                   bulk download operation. Defaults to the preference
+%                   Cloud.Download.Max_Document_Batch_Count (see ndi.preferences).
 %
 %    options.AllDocumentsMode - (1,1) logical, optional
 %                   When true and no documentIds are supplied, the server's
@@ -54,8 +56,8 @@ function documents = downloadDocumentCollection(datasetId, documentIds, options)
     arguments
         datasetId (1,1) string
         documentIds (1,:) string = "" % Default: Will download all documents
-        options.Timeout = 20 % Default timeout increased to 20 seconds
-        options.ChunkSize = 2000 % Default chunk size
+        options.Timeout = 60 % seconds to wait for each chunk's archive
+        options.ChunkSize (1,1) double {mustBePositive} = ndi.preferences.get('Cloud.Download.Max_Document_Batch_Count')
         options.AllDocumentsMode (1,1) logical = false
     end
 

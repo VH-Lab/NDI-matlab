@@ -6,9 +6,11 @@ function view(session, pyramidID, options)
 %   ndi.fun.doc.lightsheet.VIEW(..., 'launcher', '/path/to/napariViewLightsheet')
 %
 %   Builds the napariViewLightsheet command line (via
-%   ndi.fun.doc.lightsheet.VIEWCOMMAND) and dispatches it through SYSTEM.
-%   The launcher path defaults to /usr/local/bin/napariViewLightsheet,
-%   the shell wrapper installed alongside NDI-python.
+%   ndi.fun.doc.lightsheet.VIEWCOMMAND) and dispatches it through SYSTEM
+%   with NDI_FROM_MATLAB=1 set. Unless 'launcher' is passed, NDI-python's
+%   napariViewLightsheet is found with
+%   ndi.python.findCommand('napariViewLightsheet'); if it is not
+%   installed, run ndi.python.install().
 %
 %   PYRAMIDID is optional. When omitted, the launcher runs in --list
 %   mode: it enumerates every lightsheetZarrPyramid in the session and
@@ -16,8 +18,9 @@ function view(session, pyramidID, options)
 %   call. When PYRAMIDID is passed, the pyramid is opened in napari.
 %
 %   Optional Name-Value Arguments:
-%     launcher    - char, path to the shell wrapper. Default
-%                   /usr/local/bin/napariViewLightsheet.
+%     launcher    - char, path to napariViewLightsheet. An explicit
+%                   launcher always wins. Default '' (find it with
+%                   ndi.python.findCommand).
 %     sessionPath - char, override the session directory used for the
 %                   viewer's --session argument. Default: session.path().
 %     reduction   - char, '' | 'mean' | 'max'. Passed through to
@@ -52,7 +55,7 @@ function view(session, pyramidID, options)
     arguments
         session (1,1)
         pyramidID char = ''
-        options.launcher (1,:) char = '/usr/local/bin/napariViewLightsheet'
+        options.launcher (1,:) char = ''
         options.sessionPath (1,:) char = ''
         options.reduction (1,:) char {mustBeMember(options.reduction, {'', 'mean', 'max'})} = ''
         options.channel (1,1) double {mustBeInteger} = -1
@@ -63,6 +66,11 @@ function view(session, pyramidID, options)
         options.verbose (1,1) logical = true
         options.debug (1,1) logical = true
         options.logFile (1,:) char = ''
+    end
+
+    launcher = strtrim(options.launcher);
+    if isempty(launcher)
+        launcher = ndi.python.findCommand('napariViewLightsheet');
     end
 
     sessionPath = options.sessionPath;
@@ -77,9 +85,9 @@ function view(session, pyramidID, options)
     end
 
     if isempty(pyramidID)
-        cmd = sprintf('%s %s --list', shq(options.launcher), shq(sessionPath));
+        listArgs = {sessionPath, '--list'};
     else
-        cmd = ndi.fun.doc.lightsheet.viewCommand(options.launcher, ...
+        cmd = ndi.fun.doc.lightsheet.viewCommand(launcher, ...
             sessionPath, pyramidID, ...
             'channel',   options.channel, ...
             'reduction', options.reduction, ...
@@ -90,16 +98,12 @@ function view(session, pyramidID, options)
 
     if isempty(pyramidID)
         % --list prints the ids for the caller to read: keep it on screen.
-        if ~options.wait && ~ispc
-            % Background the process on POSIX so MATLAB does not block.
-            % On Windows fall back to a foreground wait (simple; no
-            % `start` handling here).
-            cmd = [cmd ' &'];
-        end
-        if options.verbose
-            fprintf('Executing: %s\n', cmd);
-        end
-        status = system(cmd);
+        % Backgrounded on POSIX so MATLAB does not block; on Windows a
+        % detached `start` window would close before the ids could be
+        % read, so it runs in the foreground there.
+        status = ndi.python.launch('napariViewLightsheet', listArgs, ...
+            'Launcher', launcher, 'Wait', options.wait || ispc, ...
+            'Verbose', options.verbose);
     else
         % The viewer itself: debugging lines on, and stdout/stderr kept
         % in a log in NDI's temporary folder -- launched from MATLAB it
@@ -117,14 +121,4 @@ function view(session, pyramidID, options)
                 'Launcher returned status %d; see %s.', status, logFile);
         end
     end
-end
-
-function s = shq(s)
-% Minimal POSIX shell quoting: wrap in single quotes and escape any
-% single quote inside. Enough for paths and identifiers; not a general
-% shell escaper.
-    arguments
-        s {mustBeText}
-    end
-    s = ['''' strrep(s, '''', '''\''''') ''''];
 end

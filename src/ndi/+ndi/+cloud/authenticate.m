@@ -2,8 +2,8 @@ function [token, organizationID] = authenticate(options)
 % authenticate - Authenticate using secret, environment variables or GUI Form
 % 
 % Syntax:
-%   ndi.cloud.authenticate() will attempt authentication in the following
-%       order:
+%   ndi.cloud.authenticate() keeps a valid active token (NDI_CLOUD_TOKEN).
+%       Without one, it logs in with the first of these that applies:
 %       1) If MATLAB Vault for storing secrets is available, will check if
 %          credentials already exist. If credentials exist, they will be used for
 %          logging in to NDI cloud. If they don't exist, used will be prompted
@@ -15,6 +15,12 @@ function [token, organizationID] = authenticate(options)
 %       3) If none of the above results in successful authentication, user
 %          will be prompted for username (email) and password in a login
 %          dialog.
+%
+%       When NDI_CLOUD_USERNAME and NDI_CLOUD_PASSWORD are both set, that user
+%       is the one logged in: the Vault is used only if it holds the same
+%       email. Setting them -- by hand, or with ndi.cloud.profile.switchProfile
+%       -- and logging out therefore switches account even when the Vault holds
+%       someone else's credentials, which would otherwise win.
 %
 %   ndi.cloud.authenticate("UserName", anotherUserName) to force
 %   authentication with new/different credentials
@@ -30,18 +36,37 @@ function [token, organizationID] = authenticate(options)
 %
 % Output Arguments: (optional)
 %   token - The authentication token retrieved after successful authentication.
-%   organizationID - The organization ID fetched from the environment variable.
+%   organizationID - (deprecated) An organization ID. A user may belong to
+%       several organizations, so there is no single "logged-in"
+%       organization. If the user belongs to exactly one, its id is
+%       returned; otherwise ndi.cloud.internal.chooseOrganization decides
+%       (a selection dialog when interaction is enabled, an error listing
+%       the organizations otherwise). New code should call
+%       ndi.cloud.internal.chooseOrganization or
+%       ndi.cloud.internal.getOrganizations directly.
+%
+% The organizations the user belongs to (ids, names and upload permission)
+% are cached at login; see ndi.cloud.internal.getOrganizations.
 
     arguments
         options.UserName (1,1) string = missing
         options.InteractionEnabled (1,1) matlab.lang.OnOffSwitchState = "on"
     end
 
+    % The user to log in as when a login is needed. Credentials set in the
+    % environment name that user; without this the Vault, which is tried
+    % first, logged in as whoever it holds, and an account switch made with
+    % ndi.cloud.profile.switchProfile never took effect.
+    loginUserName = options.UserName;
+    if ismissing(loginUserName)
+        loginUserName = environmentUserName();
+    end
+
     if isAuthenticated(options.UserName)
         % pass
-    elseif authenticatedWithSecret(options.UserName, options.InteractionEnabled)
+    elseif authenticatedWithSecret(loginUserName, options.InteractionEnabled)
         % pass
-    elseif authenticatedWithEnvironmentVariable(options.UserName)
+    elseif authenticatedWithEnvironmentVariable(loginUserName)
         % pass
     else
         if options.InteractionEnabled
@@ -55,14 +80,15 @@ function [token, organizationID] = authenticate(options)
         token = ndi.cloud.internal.getActiveToken();
     end
     if nargout >= 2
-        organizationID = getenv("NDI_CLOUD_ORGANIZATION_ID");
+        organizationID = ndi.cloud.internal.chooseOrganization( ...
+            'Interactive', logical(options.InteractionEnabled));
     end
 end
 
 
 function result = isAuthenticated(username)
-    [token, organization_id] = ndi.cloud.internal.getActiveToken();
-    result = ~isempty(token) && ~isempty(organization_id);
+    token = ndi.cloud.internal.getActiveToken();
+    result = ~isempty(token);
 
     if result && ndi.cloud.internal.isTokenExpired(token)
         result = false;
@@ -86,7 +112,7 @@ function isSuccess = authenticatedWithSecret(userName, interactionEnabled)
             if isSecret("NDICloud:Email")
                 secretUserName = getSecret("NDICloud:Email");
                 secretPassword = getSecret("NDICloud:Password");
-                if ismissing(userName) || strcmp(secretUserName, userName)
+                if ismissing(userName) || strcmpi(secretUserName, userName)
                     isSuccess = login(secretUserName, secretPassword);
                 else
                     isSuccess = false;
@@ -101,6 +127,16 @@ function isSuccess = authenticatedWithSecret(userName, interactionEnabled)
         catch ME                
             warning(ME.identifier,'Could not get credentials from MATLAB Vault. Reason:\n%s', ME.message)
         end
+    end
+end
+
+function userName = environmentUserName()
+% The user named by NDI_CLOUD_USERNAME, if NDI_CLOUD_PASSWORD is set too;
+% otherwise missing.
+    userName = string(missing);
+    envUser = getenv("NDI_CLOUD_USERNAME");
+    if ~isempty(envUser) && ~isempty(getenv("NDI_CLOUD_PASSWORD"))
+        userName = string(envUser);
     end
 end
 
@@ -154,10 +190,12 @@ function isSuccess = login(userName, password)
     [b, answer, apiResponse, ~] = ndi.cloud.api.auth.login(userName, password);
     
     if b
-        token = answer.token;
-        organization_id = extractFirstOrganizationId(answer.user);
-        setenv('NDI_CLOUD_TOKEN', token)
-        setenv('NDI_CLOUD_ORGANIZATION_ID', organization_id)
+        setenv('NDI_CLOUD_TOKEN', answer.token)
+        organizations = [];
+        if isfield(answer, 'user') && isfield(answer.user, 'organizations')
+            organizations = answer.user.organizations;
+        end
+        ndi.cloud.internal.setOrganizations(organizations);
         isSuccess = true;
     else
         body_details = jsonencode(answer, "PrettyPrint", true);
@@ -168,41 +206,3 @@ function isSuccess = login(userName, password)
         error('NDI:Cloud:AuthenticationFailed', error_message);
     end
 end
-
-function organization_id = extractFirstOrganizationId(user)
-    % Accept 1x1 struct, 1xN struct array, or cell array of structs.
-    if ~isfield(user, 'organizations')
-        error('NDI:Cloud:NoOrganizations', ...
-            'Login response did not include an organizations field.');
-    end
-
-    orgs = user.organizations;
-    if isstruct(orgs) && numel(orgs) >= 1 && isfield(orgs, 'id')
-        organization_id = orgs(1).id;
-        nOrgs = numel(orgs);
-    elseif iscell(orgs) && ~isempty(orgs) && isstruct(orgs{1}) && isfield(orgs{1}, 'id')
-        organization_id = orgs{1}.id;
-        nOrgs = numel(orgs);
-    else
-        error('NDI:Cloud:NoOrganizations', ...
-            'Could not extract an organization id from the login response.');
-    end
-
-    % TODO: support selecting among multiple organizations explicitly.
-    if nOrgs > 1
-        warning('NDI:Cloud:MultipleOrganizations', ...
-            ['Login response contained %d organizations; using the first ', ...
-             '("%s"). Selection among multiple organizations is not yet ', ...
-             'supported.'], nOrgs, char(organization_id));
-    end
-
-    if isstring(organization_id)
-        organization_id = char(organization_id);
-    end
-    if isempty(organization_id)
-        error('NDI:Cloud:NoOrganizations', ...
-            'Login response contained an empty organization id.');
-    end
-end
-
-

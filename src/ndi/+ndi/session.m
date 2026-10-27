@@ -169,6 +169,12 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
             % One can also search for 'name' as a parameter; this will be automatically changed to search
             % for database documents with fields 'base.name' equal to the corresponding value.
             %
+            % A 'name' that matches every name, such as '(.*)' or '.*', is dropped from the
+            % search rather than sent to the database as a regular expression: every
+            % daqsystem has a name, so the result is the same, and a regular expression
+            % search is slow on large databases. DAQSYSTEM_LOAD(NDI_SESSION_OBJ,'name','(.*)')
+            % is therefore the same search as DAQSYSTEM_LOAD(NDI_SESSION_OBJ).
+            %
             % If more than one object is requested, then DEV will be a cell list of matching objects.
             % Otherwise, the object will be a single element. If there are no matches, empty ([]) is returned.
             %
@@ -185,7 +191,15 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
             if numel(varargin)>0
                 rest = {};
                 for i=1:2:numel(varargin)
-                    if strcmpi(varargin{i},'name')
+                    isName = strcmpi(varargin{i},'name');
+                    if (isName || strcmp(varargin{i},'base.name')) && i<numel(varargin) && ...
+                            ndi.session.isMatchAllRegexp(varargin{i+1})
+                        % Matches every name, so skip the slow regexp: every
+                        % daqsystem has a base.name, and every V_eta
+                        % acquisition_system a non-empty name.
+                        continue
+                    end
+                    if isName
                         % A name lives in base.name (v1, and V_eta as the
                         % migrators write it) or in acquisition_system.name
                         % (did-schema #73 item 54), so ask for either. The
@@ -1128,6 +1142,31 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
             end
 
         end % all_docs_in_session
+
+        function b = isMatchAllRegexp(value)
+            % ISMATCHALLREGEXP - does a regular expression match every string?
+            %
+            % B = ndi.session.isMatchAllRegexp(VALUE)
+            %
+            % Returns true if VALUE is one of the regular expressions commonly used
+            % to mean "any value": '(.*)', '.*', optionally anchored with '^' and/or
+            % '$'. Returns false for anything else, including non-text values.
+            % Used by DAQSYSTEM_LOAD to drop a 'name' search that would match every
+            % daqsystem.
+            %
+            b = false;
+            if ~(ischar(value) || (isstring(value) && isscalar(value)))
+                return;
+            end
+            v = char(value);
+            if startsWith(v,'^')
+                v = v(2:end);
+            end
+            if endsWith(v,'$')
+                v = v(1:end-1);
+            end
+            b = any(strcmp(v, {'(.*)', '.*'}));
+        end % isMatchAllRegexp
 
     end % methods Static
 

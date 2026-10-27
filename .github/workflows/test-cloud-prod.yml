@@ -75,7 +75,18 @@ jobs:
             addpath(genpath( "tests" ));
             addpath(genpath( "tools" ));
             ndi.cloud.authenticate("InteractionEnabled", "off")
-            testCloudApiProdPart(${{ matrix.part }}, 3)
+            testCloudApiProdPart(${{ matrix.part }}, 3, "CodeCoverage", true)
+
+      # Coverage of the cloud package only; Codecov merges it with the
+      # no-cloud run's report for the same commit. One flag per shard so
+      # codecov.yml can carry forward each shard on its own.
+      - name: Upload code coverage report to Codecov
+        if: always() && hashFiles('docs/reports/codecoverage.xml') != ''
+        uses: codecov/codecov-action@b9fd7d16f6d7d1b5d2bec1a2887e65ceed900238 # v4
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: docs/reports/codecoverage.xml
+          flags: cloud-${{ matrix.part }}
 
       # Publish test results
       - name: Publish test results
@@ -84,3 +95,13 @@ jobs:
         with:
           report_paths: 'docs/reports/test-results.xml'
           check_name: 'Cloud CI ${{ matrix.part }} test results'
+
+      # The "tests" badge sums these shards with the no-cloud run
+      # (run-tests.yml); each job publishes its own counts.
+      - name: Publish test counts for the tests badge
+        if: always() && (github.event_name == 'push' || (github.event_name == 'pull_request' && !github.event.pull_request.draft && github.event.pull_request.head.repo.full_name == github.repository))
+        uses: ./.github/actions/publish-test-counts
+        with:
+          source-ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.ref || github.ref_name }}
+          part: cloud-${{ matrix.part }}
+          token: ${{ secrets.GITHUB_TOKEN }}

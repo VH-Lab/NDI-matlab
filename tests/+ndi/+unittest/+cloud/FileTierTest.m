@@ -79,7 +79,7 @@ classdef FileTierTest < matlab.unittest.TestCase
             end
 
             unique_name = testCase.DatasetNamePrefix + string(did.ido.unique_id());
-            [b, cloudId] = ndi.cloud.api.datasets.createDataset(struct("name", unique_name));
+            [b, cloudId] = ndi.cloud.api.datasets.createDataset(struct("name", unique_name), 'organizationID', ndi.unittest.cloud.testOrganizationID());
             testCase.assertTrue(b, "Failed to create cloud dataset for FileTierTest.");
             testCase.DatasetID = cloudId;
             testCase.addTeardown(@() testCase.cleanupCloudDataset());
@@ -87,7 +87,7 @@ classdef FileTierTest < matlab.unittest.TestCase
             remoteDoc = ndi.cloud.internal.createRemoteDatasetDoc(cloudId, testCase.LocalDataset);
             testCase.LocalDataset.database_add(remoteDoc);
 
-            success_upload = ndi.cloud.uploadDataset(testCase.LocalDataset);
+            success_upload = ndi.cloud.uploadDataset(testCase.LocalDataset, 'organizationID', ndi.unittest.cloud.testOrganizationID());
             testCase.assertTrue(success_upload, "Failed to upload test dataset to cloud.");
             ndi.cloud.api.files.waitForAllBulkUploads(testCase.DatasetID);
 
@@ -97,12 +97,23 @@ classdef FileTierTest < matlab.unittest.TestCase
             testCase.assertEqual(numel(testCase.FileUIDs), testCase.NumFiles, ...
                 "Dataset did not report the expected number of uploaded files.");
 
+            % waitForAllBulkUploads covers the bulk FILE upload only; the
+            % bulk document upload has no job, so wait for the server to
+            % list every document uploadDataset sent before looking one up.
+            numLocalDocs = numel(testCase.LocalDataset.database_search(ndi.query('','isa','base')));
+            [b_n, n_ans, n_resp, n_url] = ndi.cloud.api.documents.waitForDocumentCount(...
+                testCase.DatasetID, numLocalDocs, 'timeout', 120);
+            testCase.assertTrue(b_n, "Cloud dataset did not list all " + numLocalDocs + ...
+                " uploaded documents. " + ndi.unittest.cloud.APIMessage(...
+                "Waiting for document ingestion.", b_n, n_ans, n_resp, n_url));
+
             [b_docs, docs_list] = ndi.cloud.api.documents.listDatasetDocumentsAll(...
                 testCase.DatasetID, 'checkForUpdates', true);
             testCase.assertTrue(b_docs, "listDatasetDocumentsAll failed.");
             cloudId1 = testCase.findCloudDocID(docs_list, 'file_tier_doc_1');
             testCase.assertFalse(ismissing(cloudId1), ...
-                "Could not find cloud id for local doc file_tier_doc_1.");
+                "Could not find cloud id for local doc file_tier_doc_1 among the " + ...
+                numel(docs_list) + " documents listed (" + numLocalDocs + " uploaded).");
             testCase.CloudDocumentID = cloudId1;
         end
     end

@@ -65,7 +65,17 @@ Authenticates the user with the NDI Cloud. Authentication is attempted in the fo
 
 **Outputs:**
 - `token` — The authentication token retrieved after successful authentication.
-- `organizationID` — The organization ID fetched from the environment variable `NDI_CLOUD_ORGANIZATION_ID`.
+- `organizationID` — *(deprecated)* An organization ID. A user may belong to several organizations, so there is no single "logged-in" organization: if the user belongs to exactly one, its ID is returned; otherwise `ndi.cloud.internal.chooseOrganization` decides (see below).
+
+### Organizations
+
+An NDI Cloud user may belong to more than one organization. At login, the list of the user's organizations (ID, name and whether datasets may be uploaded to it) is cached for the MATLAB session.
+
+- `ndi.cloud.internal.getOrganizations()` returns that list as a struct array with fields `id`, `name` and `canUploadDataset`. Pass `'Refresh', true` to re-fetch it from the server.
+- `ndi.cloud.internal.chooseOrganization(...)` decides which organization an operation should act on. Given `'organizationName'` or `'organizationID'`, it returns that organization (if the user belongs to it). Otherwise, if exactly one organization qualifies it is used; if several do, the user picks one by name in a dialog (in the MATLAB desktop), or an error lists the available organizations by name and ID (e.g. under `matlab -batch`). With `'RequireUpload', true`, only organizations that allow dataset upload qualify.
+- `ndi.cloud.ui.dialog.selectOrganization()` always shows the picker.
+
+Creating a dataset (`ndi.cloud.uploadDataset`, `ndi.cloud.api.datasets.createDataset`) accepts `'organizationName'` or `'organizationID'`; without them, `chooseOrganization` decides.
 
 ### `ndi.cloud.logout`
 
@@ -73,7 +83,7 @@ Authenticates the user with the NDI Cloud. Authentication is attempted in the fo
 ndi.cloud.logout()
 ```
 
-Logs out the current user. This calls the NDI Cloud API to invalidate the session token server-side and clears the `NDI_CLOUD_TOKEN` and `NDI_CLOUD_ORGANIZATION_ID` environment variables locally. After calling this function, subsequent cloud calls will require re-authentication.
+Logs out the current user. This calls the NDI Cloud API to invalidate the session token server-side and clears the locally stored token (`NDI_CLOUD_TOKEN`) and the cached organization list. After calling this function, subsequent cloud calls will require re-authentication.
 
 ---
 
@@ -138,7 +148,7 @@ Downloads a collection of documents from a cloud dataset using the bulk download
 
 **Optional name-value inputs:**
 - `Timeout` (double) — Timeout in seconds for the download operation. Default: `20`.
-- `ChunkSize` (double) — Maximum number of document IDs per bulk download request. Default: `2000`.
+- `ChunkSize` (double) — Maximum number of document IDs per bulk download request. Default: the preference `Cloud.Download.Max_Document_Batch_Count` (10000 unless changed; see `ndi.preferences`).
 
 **Outputs:**
 - `documents` — A cell array of `ndi.document` objects.
@@ -193,7 +203,7 @@ Uploads a collection of `ndi.document` objects to a cloud dataset. Uses bulk (ZI
 - `documentList` (cell array) — A cell array of `ndi.document` objects to upload.
 
 **Optional name-value inputs:**
-- `maxDocumentChunk` (double) — Maximum number of documents per ZIP batch. Default: `Inf` (all in one batch).
+- `maxDocumentChunk` (double) — Maximum number of documents per ZIP batch. Default: the preference `Cloud.Upload.Max_Document_Batch_Count` (100000 unless changed; see `ndi.preferences`).
 - `onlyUploadMissing` (logical) — If `true`, documents already present on the remote are skipped. Default: `true`.
 
 **Outputs:**
@@ -393,15 +403,34 @@ Where:
 | `ndi.cloud.api.users.createUser` | `createUser(email, name, password)` | Registers a new user account. |
 | `ndi.cloud.api.users.GetUser` | `GetUser(userId)` | Retrieves profile information for a user specified by ID. |
 
+### Administration (`ndi.cloud.api.admin.*`)
+
+These call the `/admin` endpoints and require an account with administrator rights; other accounts get `b = false` and a 403 response. The one exception is `getUserOrganizations()` with no input, which lists the logged-in user's own organizations. Users must already have an NDI Cloud account to be added to an organization; there is no invitation by email. The API cannot delete organizations.
+
+| Function | Signature | Description |
+|---|---|---|
+| `ndi.cloud.api.admin.listOrganizations` | `listOrganizations('query', q, 'page', p, 'pageSize', n)` | Lists organizations, optionally filtered by a substring of the name. |
+| `ndi.cloud.api.admin.getOrganization` | `getOrganization(orgId)` | Retrieves an organization with its members (`memberID`, `memberName`, `memberEmail`). |
+| `ndi.cloud.api.admin.createOrganization` | `createOrganization(name, 'canUploadDataset', tf)` | Creates an organization with no members. |
+| `ndi.cloud.api.admin.updateOrganization` | `updateOrganization(orgId, 'name', name, 'canUploadDataset', tf)` | Renames an organization or changes its upload permission. |
+| `ndi.cloud.api.admin.addOrganizationMember` | `addOrganizationMember(orgId, userId)` | Adds a user to an organization. |
+| `ndi.cloud.api.admin.removeOrganizationMember` | `removeOrganizationMember(orgId, userId)` | Removes a user from an organization. |
+| `ndi.cloud.api.admin.addOrganizationMemberByEmail` | `addOrganizationMemberByEmail(orgId, email)` | Adds a user to an organization by exact email address. |
+| `ndi.cloud.api.admin.removeOrganizationMemberByEmail` | `removeOrganizationMemberByEmail(orgId, email)` | Removes a user from an organization by exact email address. |
+| `ndi.cloud.api.admin.listUsers` | `listUsers('query', q, 'page', p, 'pageSize', n)` | Lists active users, optionally filtered by a substring of the name or email. |
+| `ndi.cloud.api.admin.getUser` | `getUser(userId)` | Retrieves a user, including the organizations they belong to. |
+| `ndi.cloud.api.admin.findUserByEmail` | `findUserByEmail(email)` | Finds the one active user with this exact email address (any case). |
+| `ndi.cloud.api.admin.getUserOrganizations` | `getUserOrganizations()` or `getUserOrganizations(userIdOrEmail)` | Lists the organizations of the logged-in user (no admin rights needed) or of another user. |
+
 ### Datasets (`ndi.cloud.api.datasets.*`)
 
 | Function | Signature | Description |
 |---|---|---|
-| `ndi.cloud.api.datasets.createDataset` | `createDataset(datasetInfoStruct)` | Creates a new dataset record in the cloud. Returns the new `cloudDatasetID`. |
+| `ndi.cloud.api.datasets.createDataset` | `createDataset(datasetInfoStruct, 'organizationName', name)` or `createDataset(datasetInfoStruct, 'organizationID', id)` | Creates a new dataset record in the given organization (chosen by `ndi.cloud.internal.chooseOrganization` if omitted). Returns the new `cloudDatasetID`. |
 | `ndi.cloud.api.datasets.getDataset` | `getDataset(cloudDatasetID)` | Retrieves a dataset's metadata. The response reports `fileCount` (and a document count) but does **not** embed the file list — use `ndi.cloud.api.files.listFilesAll` to enumerate files. |
 | `ndi.cloud.api.datasets.updateDataset` | `updateDataset(cloudDatasetID, datasetInfoStruct)` | Updates a dataset's metadata. |
 | `ndi.cloud.api.datasets.deleteDataset` | `deleteDataset(cloudDatasetID, 'when', '7d')` | Marks a dataset for deletion. The `when` option specifies when deletion occurs (e.g., `'7d'`, `'now'`). |
-| `ndi.cloud.api.datasets.listDatasets` | `listDatasets('page', P, 'pageSize', PS)` | Lists datasets in the current user's organization. Supports pagination. |
+| `ndi.cloud.api.datasets.listDatasets` | `listDatasets()` or `listDatasets('cloudOrganizationID', id, 'page', P, 'pageSize', PS)` | With no organization, lists all datasets in all of the user's organizations (each tagged with `organizationId` and `organizationName`). With an organization, lists one page of that organization's datasets. |
 | `ndi.cloud.api.datasets.listDeletedDatasets` | `listDeletedDatasets()` | Lists datasets that have been marked for deletion. |
 | `ndi.cloud.api.datasets.undeleteDataset` | `undeleteDataset(cloudDatasetID)` | Restores a dataset that was marked for deletion. |
 | `ndi.cloud.api.datasets.publishDataset` | `publishDataset(cloudDatasetID)` | Marks a dataset as publicly published. |

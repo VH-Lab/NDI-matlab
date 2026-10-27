@@ -479,6 +479,11 @@ classdef ctest
             % returns. Returns a leading-space sentence naming the fields that were out
             % of tolerance, or '' if there is nothing to say.
             %
+            % When the report carries the compared values, each field is followed by
+            % a line giving the actual value, the expected value, their absolute
+            % difference, and the comparison's own message, so that a failure on CI
+            % says how far out of tolerance it was and not only that it was.
+            %
             str = '';
             if isempty(report)
                 return;
@@ -487,7 +492,53 @@ classdef ctest
                 str = [' ' char(report)];
             elseif isstruct(report) && isfield(report,'name')
                 str = [' Out of tolerance: ' strjoin({report.name},', ') '.'];
+                if ~all(isfield(report,{'actualValue','expectedValue'}))
+                    return;
+                end
+                for k = 1:numel(report)
+                    actualValue = report(k).actualValue;
+                    expectedValue = report(k).expectedValue;
+                    str = [str newline '    ' report(k).name ': actual ' ...
+                        ndi.mock.ctest.valueString(actualValue) ...
+                        ', expected ' ndi.mock.ctest.valueString(expectedValue)]; %#ok<AGROW>
+                    if (isnumeric(actualValue) || islogical(actualValue)) && ...
+                            (isnumeric(expectedValue) || islogical(expectedValue)) && ...
+                            isequal(size(actualValue),size(expectedValue))
+                        str = [str ', abs difference ' ndi.mock.ctest.valueString( ...
+                            abs(double(actualValue)-double(expectedValue)))]; %#ok<AGROW>
+                    end
+                    if isfield(report,'comment') && ~isempty(report(k).comment)
+                        str = [str ' (' char(report(k).comment) ')']; %#ok<AGROW>
+                    end
+                end
             end
         end % reportSummary()
+
+        function str = valueString(value)
+            % VALUESTRING - render a compared value compactly for a failure message
+            %
+            % STR = ndi.mock.ctest.valueString(VALUE)
+            %
+            % Numeric and logical values are written with mat2str at 6 significant
+            % digits (arrays of more than two dimensions as a row), text as itself,
+            % and anything else as its size and class. Long renderings are cut at
+            % 200 characters, since some compared fields hold whole fitted curves.
+            %
+            maxLength = 200;
+            if isnumeric(value) || islogical(value)
+                if ndims(value) > 2
+                    value = value(:)';
+                end
+                str = mat2str(value, 6);
+            elseif ischar(value) || (isstring(value) && isscalar(value))
+                str = ['''' char(value) ''''];
+            else
+                str = sprintf('[%s %s]', strjoin(string(size(value)),'x'), class(value));
+                str = char(str);
+            end
+            if numel(str) > maxLength
+                str = [str(1:maxLength) ' ...'];
+            end
+        end % valueString()
     end % static methods
 end

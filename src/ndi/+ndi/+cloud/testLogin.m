@@ -27,7 +27,8 @@ function isGood = testLogin(options)
 %          automatically by the underlying API URL machinery).
 %       3. If those env credentials are set, attempt a non-interactive
 %          re-login via ndi.cloud.authenticate('InteractionEnabled','off')
-%          (which also tries the MATLAB Vault silently). Probe again.
+%          (which uses the MATLAB Vault only if it holds that same user).
+%          Probe again.
 %          The UI login dialog is NOT shown in this case, even if the
 %          silent re-login does not succeed: when env credentials are
 %          present we trust them and report success/failure accordingly.
@@ -338,7 +339,7 @@ function reportTokenState(verbose, label)
         return;
     end
     rawToken = getenv('NDI_CLOUD_TOKEN');
-    rawOrg = getenv('NDI_CLOUD_ORGANIZATION_ID');
+    rawOrgs = getenv('NDI_CLOUD_ORGANIZATIONS');
     if isempty(rawToken)
         fprintf('[testLogin] [token state - %s] NDI_CLOUD_TOKEN is empty.\n', label);
     else
@@ -370,9 +371,9 @@ function reportTokenState(verbose, label)
             fprintf('[testLogin] [token state - %s] could not decode JWT: %s\n', label, ME.message);
         end
     end
-    if isempty(rawOrg)
-        fprintf('[testLogin] [token state - %s] NDI_CLOUD_ORGANIZATION_ID is empty.\n', label);
+    if isempty(rawOrgs)
+        fprintf('[testLogin] [token state - %s] no cached organizations (NDI_CLOUD_ORGANIZATIONS is empty).\n', label);
     else
-        fprintf('[testLogin] [token state - %s] NDI_CLOUD_ORGANIZATION_ID = %s.\n', label, rawOrg);
+        fprintf('[testLogin] [token state - %s] cached organizations: %s\n', label, rawOrgs);
     end
 end

@@ -36,7 +36,7 @@ classdef FilesTest < matlab.unittest.TestCase
             unique_name = testCase.DatasetNamePrefix + string(did.ido.unique_id());
             datasetInfo = struct("name", unique_name);
             
-            [b, cloudDatasetID, resp, url] = ndi.cloud.api.datasets.createDataset(datasetInfo);
+            [b, cloudDatasetID, resp, url] = ndi.cloud.api.datasets.createDataset(datasetInfo, 'organizationID', ndi.unittest.cloud.testOrganizationID());
             
             if ~b
                 setup_narrative = "TestMethodSetup: Failed to create temporary dataset " + unique_name;

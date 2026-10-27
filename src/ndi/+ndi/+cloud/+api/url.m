@@ -136,6 +136,20 @@ function url = url(endpointName, options)
         % their own reports; triage happens in the admin site.
         endpointMap("submit_feedback")                = "/feedback";
         endpointMap("delete_feedback")                = "/feedback/{feedbackId}";
+
+        % Admin endpoints (ndi-cloud-node admin.router.ts). The server answers
+        % 403 unless the caller's account has isAdmin set. The optional search
+        % and paging query parameters (q, page, limit) of the list endpoints
+        % are appended by the implementation classes, because
+        % replacePathParameter asserts every templated parameter is non-empty.
+        endpointMap("admin_list_organizations")       = "/admin/organizations";
+        endpointMap("admin_create_organization")      = "/admin/organizations";
+        endpointMap("admin_get_organization")         = "/admin/organizations/{organizationId}";
+        endpointMap("admin_update_organization")      = "/admin/organizations/{organizationId}";
+        endpointMap("admin_add_organization_member")  = "/admin/organizations/{organizationId}/members";
+        endpointMap("admin_remove_organization_member") = "/admin/organizations/{organizationId}/members/{userId}";
+        endpointMap("admin_list_users")               = "/admin/users";
+        endpointMap("admin_get_user")                 = "/admin/users/{userId}";
     end
 
     endpointPath = endpointMap(endpointName);

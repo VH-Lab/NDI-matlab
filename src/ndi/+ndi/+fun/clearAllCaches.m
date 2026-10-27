@@ -22,6 +22,9 @@ function clearAllCaches(varargin)
 %      via ndi.database.fun.clearcaches).
 %   5. The database hierarchy (persistent inside
 %      ndi.common.getDatabaseHierarchy).
+%   6. Where external programs were found: ffmpeg, Rscript and NDI-python's
+%      command-line tools (persistent inside ndi.fun.findExecutable, which
+%      ndi.python.findCommand uses).
 %
 % Configuration singletons that hold user state or static lookups are left
 % untouched (e.g. ndi.preferences, ndi.common.getLogger,
@@ -74,6 +77,13 @@ function clearAllCaches(varargin)
     % 5) the database hierarchy (persistent inside getDatabaseHierarchy)
     try
         clear('ndi.common.getDatabaseHierarchy');
+    catch
+        % ignore: nothing to clear or not clearable in this context
+    end
+
+    % 6) the external program locations (also NDI-python's commands)
+    try
+        ndi.fun.findExecutable('clear');
     catch
         % ignore: nothing to clear or not clearable in this context
     end

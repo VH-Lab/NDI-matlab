@@ -1,13 +1,13 @@
 function logout()
-% LOGOUT - Log out from NDI Cloud by clearing the authentication token and organization ID.
+% LOGOUT - Log out from NDI Cloud by clearing the authentication token and organization list.
 %
 %   ndi.cloud.logout()
 %
 %   This function performs the following actions:
 %   1. Calls the NDI Cloud API to invalidate the current session token on the server.
-%   2. Clears the environment variables 'NDI_CLOUD_TOKEN' and
-%      'NDI_CLOUD_ORGANIZATION_ID', which are used to store the NDI Cloud
-%      authentication token and organization ID locally.
+%   2. Clears the locally stored NDI Cloud authentication token (the
+%      'NDI_CLOUD_TOKEN' environment variable) and the cached list of the
+%      user's organizations (see ndi.cloud.internal.setOrganizations).
 %
 %   After calling this function, any subsequent calls to NDI Cloud functions
 %   that require authentication will prompt for a login or fail until authentication
@@ -25,5 +25,5 @@ function logout()
     end
 
     setenv('NDI_CLOUD_TOKEN', '');
-    setenv('NDI_CLOUD_ORGANIZATION_ID', '');
+    ndi.cloud.internal.setOrganizations([]);
 end

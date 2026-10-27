@@ -27,15 +27,36 @@ classdef TestLightsheetZarrManager < matlab.unittest.TestCase
 
     methods (Test)
 
-        function testLauncherPathFallsBackToDefault(testCase)
-            % Without a preference set, the launcher is the class's
-            % declared default. Should be an absolute path ending in
-            % 'napariViewLightsheet'.
+        function testLauncherPathIsFoundAutomatically(testCase)
+            % Without a preference set, the launcher is wherever
+            % ndi.python.findCommand finds napariViewLightsheet; here a
+            % dummy in a temp folder named by NDI_PYTHON_BIN.
+            import matlab.unittest.fixtures.EnvironmentVariableFixture
+            binDir = tempname;
+            mkdir(binDir);
+            testCase.addTeardown(@() rmdir(binDir, 's'));
+            fake = fullfile(binDir, 'napariViewLightsheet');
+            if ispc, fake = [fake '.exe']; end
+            fclose(fopen(fake, 'w'));
+            testCase.applyFixture(EnvironmentVariableFixture('NDI_PYTHON_BIN', binDir));
+            old = ndi.preferences.get('GUI.LightsheetZarrManager.ViewerLauncher');
+            testCase.addTeardown(@() ndi.preferences.set( ...
+                'GUI.LightsheetZarrManager.ViewerLauncher', old));
+            ndi.preferences.set('GUI.LightsheetZarrManager.ViewerLauncher', "");
+            ndi.python.clearCommandCache();
+            testCase.addTeardown(@() ndi.python.clearCommandCache());
+
             p = ndi.gui.app.LightsheetZarrManager.launcherPath();
             testCase.verifyClass(p, 'char');
-            testCase.verifyNotEmpty(p);
-            [~, name] = fileparts(p);
-            testCase.verifyEqual(name, 'napariViewLightsheet');
+            testCase.verifyEqual(p, fake);
+            testCase.verifyEqual( ...
+                ndi.gui.app.LightsheetZarrManager.resolveLauncher('/my/viewer'), ...
+                '/my/viewer', 'an explicit launcher always wins');
+        end
+
+        function testTheDefaultLauncherMeansFindIt(testCase)
+            testCase.verifyEqual( ...
+                char(ndi.gui.app.LightsheetZarrManager.DefaultViewerLauncher), '');
         end
 
         function testDeletionPlanCollectsLevelsAndParent(testCase)
