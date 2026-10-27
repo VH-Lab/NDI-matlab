@@ -590,7 +590,7 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
             ndi.daq.system.updateIngestProgressBar(progressBar, barTag, 1/numSteps);
             errmsg = '';
 
-            daq_d = {};
+            daq_d = cell(1,numel(daqs));
             b = 1;
             for i=1:numel(daqs)
                 try
@@ -608,7 +608,9 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
             end
             if b==0 % things didn't go well, bail
                 for i=1:numel(daq_d)
-                    ndi_session_obj.database_rm(daq_d{i});
+                    if ~isempty(daq_d{i})
+                        ndi_session_obj.database_rm(daq_d{i});
+                    end
                 end
                 ndi.daq.system.removeIngestProgressBar(progressBar, barTag);
             else % add the syncgraph documents and we are done

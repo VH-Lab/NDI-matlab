@@ -468,15 +468,16 @@ classdef system < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice
             d = {}; % our array of many documents to be added to database
 
             % find the epochs that still need to be ingested
-            epochFiles = {};
-            epochIds = {};
+            needsIngest = false(1,numel(et));
             for i=1:numel(et)
-                ef = et(i).underlying_epochs.underlying; % epochfiles
-                if ~ndi.file.navigator.isingested(ef) % not ingested, we need to ingest it
-                    epochFiles{end+1} = ef;
-                    epochIds{end+1} = et(i).epoch_id;
-                end
+                needsIngest(i) = ~ndi.file.navigator.isingested(et(i).underlying_epochs.underlying);
             end
+            etToIngest = et(needsIngest);
+            epochFiles = cell(1,numel(etToIngest));
+            for i=1:numel(etToIngest)
+                epochFiles{i} = etToIngest(i).underlying_epochs.underlying; % epochfiles
+            end
+            epochIds = {etToIngest.epoch_id};
 
             progressBar = [];
             barTag = '';
@@ -498,9 +499,7 @@ classdef system < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice
                         ndi_daqsystem_obj.daqmetadatareader, epochFiles, epochIds, ...
                         'ProgressFcn', @(numDone, numTotal) ndi.daq.system.updateIngestProgressBar( ...
                             progressBar, barTag, numDone/numSteps));
-                    for i=1:numel(docsPerEpoch)
-                        d = cat(1,d,docsPerEpoch{i}(:));
-                    end
+                    d = cat(1,d,docsPerEpoch{:});
                 end
                 for i=1:numel(d)
                     d{i} = d{i}.set_session_id(ndi_daqsystem_obj.filenavigator.session.id());
