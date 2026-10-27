@@ -175,6 +175,10 @@ report.strains_assembled      = 0;
 report.strains_incomplete     = 0;   % no name, or unplaced -> passthrough
 report.strains_unplaced       = 0;   % of those: a field this pass cannot place
 report.incomplete_reasons     = {};
+% every Strain or fragment left as v1, with the carry register row its reason
+% cites ([carry register], Jess Haley, 2026-10-26), for the final v1 stamp's
+% count by row
+report.carry_rows             = struct('id', {}, 'row', {});
 report.fragments_seen         = 0;
 report.fragments_consumed     = 0;
 report.fragments_retained     = 0;
@@ -255,8 +259,10 @@ for k = 1:numel(strainIdx)
 
     if isempty(nm)
         report.strains_incomplete = report.strains_incomplete + 1;
+        % carry-register: carry-093
         report.incomplete_reasons{end+1} = ...
-            sprintf('%s: missing name', shortId(idOf{i})); %#ok<AGROW>
+            sprintf('%s: [carry-093] missing name', shortId(idOf{i})); %#ok<AGROW>
+        report.carry_rows(end+1) = struct('id', idOf{i}, 'row', 'carry-093');
         continue;
     end
     % [generic stage is lossless] and [partly placed is carried as v1] (Jess
@@ -271,8 +277,10 @@ for k = 1:numel(strainIdx)
     if ~isempty(unplaced)
         report.strains_incomplete = report.strains_incomplete + 1;
         report.strains_unplaced = report.strains_unplaced + 1;
-        report.incomplete_reasons{end+1} = sprintf('%s: cannot place %s', ...
+        % carry-register: carry-092
+        report.incomplete_reasons{end+1} = sprintf('%s: [carry-092] cannot place %s', ...
             shortId(idOf{i}), strjoin(unplaced, ', ')); %#ok<AGROW>
+        report.carry_rows(end+1) = struct('id', idOf{i}, 'row', 'carry-092');
         continue;
     end
 
@@ -298,9 +306,11 @@ while changedSet
                 changedSet = true;
                 report.strains_incomplete = report.strains_incomplete + 1;
                 report.strains_unplaced = report.strains_unplaced + 1;
+                % carry-register: carry-064
                 report.incomplete_reasons{end+1} = sprintf( ...
-                    '%s: cannot place backgroundStrain %s (not assembled)', ...
+                    '%s: [carry-064] cannot place backgroundStrain %s (not assembled)', ...
                     shortId(idOf{i}), shortId(ps{p})); %#ok<AGROW>
+                report.carry_rows(end+1) = struct('id', idOf{i}, 'row', 'carry-064');
                 break;
             end
         end
@@ -395,7 +405,9 @@ for i = find(isOpenminds)
         continue;   % not a fragment of this family; leave it alone
     end
     if ~isKey(usedFragments, idOf{i})
+        % carry-register: carry-094
         report.fragments_retained = report.fragments_retained + 1;
+        report.carry_rows(end+1) = struct('id', idOf{i}, 'row', 'carry-094');
         continue;   % referenced by no assembled strain
     end
     who = {};
@@ -406,7 +418,9 @@ for i = find(isOpenminds)
     else
         % still referenced by a strain left as v1, or holding a field the
         % strain's term does not write ([generic stage is lossless]): kept
+        % carry-register: carry-094
         report.fragments_retained = report.fragments_retained + 1;
+        report.carry_rows(end+1) = struct('id', idOf{i}, 'row', 'carry-094');
     end
 end
 

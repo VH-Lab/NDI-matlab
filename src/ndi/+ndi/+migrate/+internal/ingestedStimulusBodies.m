@@ -55,7 +55,8 @@ report = struct( ...
     'left_no_presentation',      0, ...
     'left_several_presentations', 0, ...
     'left_unplaced',             0, ...
-    'left_reasons',              {{}});
+    'left_reasons',              {{}}, ...
+    'left_rows',                 struct('id', {}, 'row', {}));
 
 byKey = containers.Map('KeyType', 'char', 'ValueType', 'any');
 for k = 1:numel(presentations)
@@ -97,14 +98,16 @@ for k = 1:numel(structs)
     end
     key = joinKey(sid, epochId);
     if ~isKey(byKey, key)
+        % carry-register: carry-088
         report = leave(report, 'left_no_presentation', id, ...
-            'no stimulus-presentation manipulation for its session and epoch');
+            '[carry-088] no stimulus-presentation manipulation for its session and epoch');
         continue;
     end
     owners = unique(byKey(key));
     if numel(owners) > 1
+        % carry-register: carry-047
         report = leave(report, 'left_several_presentations', id, sprintf( ...
-            '%d stimulus-presentation manipulations share its session and epoch', ...
+            '[carry-047] %d stimulus-presentation manipulations share its session and epoch', ...
             numel(owners)));
         continue;
     end
@@ -139,13 +142,16 @@ function why = unplaced(s, id, sid, epochId)
 %UNPLACED Why this document cannot be written whole as the body; '' if it can.
 why = '';
 if isempty(id) || isempty(sid)
-    why = 'no base.id / session';
+    % carry-register: carry-086
+    why = '[carry-086] no base.id / session';
 elseif isempty(epochId)
-    why = 'no epoch id';
+    % carry-register: carry-086
+    why = '[carry-086] no epoch id';
 elseif ~isfield(s, 'files') || ~isstruct(s.files) || ~isfield(s.files, 'file_list') ...
         || ~isequal(cellstr(s.files.file_list), {'data.bin'}) ...
         || isempty(dataBinLocations(s))
-    why = 'its files are not the one data.bin with a location';
+    % carry-register: carry-086
+    why = '[carry-086] its files are not the one data.bin with a location';
 else
     blk = struct();
     if isfield(s, 'daqmetadatareader_epochdata_ingested')
@@ -155,7 +161,8 @@ else
         fn = fieldnames(blk);
         for k = 1:numel(fn)
             if ~isempty(blk.(fn{k}))
-                why = ['a field the body does not write: ' fn{k}];
+                % carry-register: carry-087
+                why = ['[carry-087] a field the body does not write: ' fn{k}];
                 return;
             end
         end
@@ -171,7 +178,8 @@ else
         if any(strcmp(char(d.name), {'daqmetadatareader_id', 'session_id'})); continue; end
         v = ndi.migrate.internal.etaShape.entryValue(d);
         if ~isempty(v)
-            why = ['an edge the body does not write: ' char(d.name)];
+            % carry-register: carry-087
+            why = ['[carry-087] an edge the body does not write: ' char(d.name)];
             return;
         end
     end
@@ -196,7 +204,12 @@ end
 end
 
 function report = leave(report, bucket, id, why)
+% every document left, with the carry register row its reason cites
+% (uncapped, unlike left_reasons), so the final v1 stamp can count carries by
+% row ([carry register], Jess Haley, 2026-10-26)
 report.(bucket) = report.(bucket) + 1;
+report.left_rows(end+1) = struct('id', char(id), ...
+    'row', ndi.migrate.internal.carryRowOf(why));
 if numel(report.left_reasons) < 20
     report.left_reasons{end+1} = struct('id', id, 'reason', why);
 end

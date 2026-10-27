@@ -128,8 +128,9 @@ function [manipBody, methodBodies, report, softwareBodies, controlCalcs] = ...
 %   presentation id -- with no manipulation, no entity and no instrument.
 %   REPORT.standalone is true and REPORT.no_subject_reason says why no
 %   subject resolved. A presentation whose epoch DOES record elements that
-%   resolve to no subject is still refused (its reason says so), as is one
-%   the grating guard refuses.
+%   resolve to no subject is a standalone item too (Jess Haley, 2026-10-26
+%   [unresolved recorded elements make a standalone item], "1 a"); the
+%   stimulator route is not tried for it.
 %
 %   SEQUENCE (optional) supplies an enumeration the presentation lacks:
 %     .item_ids     cell of ALREADY-MINTED method ids
@@ -261,7 +262,8 @@ if declaresFile(v1Body, 'presentation_time.bin')
     end
 end
 if isempty(presentationId) || isempty(sessionId) || isempty(datestamp)
-    report.reason = 'base id / session_id / datestamp incomplete';
+    % carry-register: carry-083
+    report.reason = '[carry-083] base id / session_id / datestamp incomplete';
     return;
 end
 
@@ -289,7 +291,8 @@ unplaced = unplacedPresentationFields(earlyBlock, earlyStimuli, stimulusKinds, .
     ~isempty(sequence));
 report.unplaced_fields = unplaced;
 if ~isempty(unplaced) && options.LeaveUnplaced
-    report.reason = ['unplaced (carried as v1): ' strjoin(unplaced, ', ')];
+    % carry-register: carry-080
+    report.reason = ['[carry-080] unplaced (carried as v1): ' strjoin(unplaced, ', ')];
     return;
 end
 
@@ -305,21 +308,33 @@ if isempty(animals)
     else
         report.animal_source = 'none';
         nEl = resolver.epochElementCountScoped(presentationId);
-        if nEl > 0
-            report.reason = sprintf(['no responding animal; the epoch''s %d ' ...
-                'recorded element(s) resolve to no subject'], nEl);
-            return;
+        viaStimulator = {};
+        if nEl == 0
+            viaStimulator = resolver.subjectsViaStimulator(presentationId);
         end
-        viaStimulator = resolver.subjectsViaStimulator(presentationId);
         report.stimulator_subjects = numel(viaStimulator);
-        if numel(viaStimulator) == 1
+        if nEl > 0
+            % The epoch records elements but none resolves to a subject.
+            % Decided by Jess Haley, 2026-10-26 [unresolved recorded elements
+            % make a standalone item] ("1 a"; did-schema
+            % V_eta_go_forward_class_audit.md): such a presentation becomes a
+            % STANDALONE `item`, as one with no element at all does
+            % ([presentation with no subject], 2026-10-21), instead of being
+            % carried as v1. The stimulator route is not tried: the epoch's
+            % own recorded elements outrank it, as before.
+            report.no_subject_reason = sprintf(['no responding animal; the ' ...
+                'epoch''s %d recorded element(s) resolve to no subject'], nEl);
+            report.sibling_subjects = siblingCount(resolver, presentationId);
+            report.standalone = true;
+        elseif numel(viaStimulator) == 1
             animals = viaStimulator;
             report.animal_source = 'stimulator';
         elseif numel(viaStimulator) > 1
             % Decision 4: different animals by different stimulator links
             % are conflicting records, not a shared event.
             report.several_animals = numel(viaStimulator);
-            report.reason = sprintf(['several animals: the stimulator links ' ...
+            % carry-register: carry-081
+            report.reason = sprintf(['[carry-081] several animals: the stimulator links ' ...
                 'lead to %d different animals -- conflicting records, ' ...
                 'refused and listed, not resolved through the cohort'], ...
                 numel(viaStimulator));
@@ -345,8 +360,15 @@ elseif numel(animals) > 1
     report.several_animals = numel(animals);
     report.animals = animals(:)';
     if isempty(options.CohortIdFor)
+        % NOT a carry: [conflicting animal records need a map] (Jess Haley,
+        % 2026-10-26) keeps carry-081 for conflicting records only; animals
+        % recorded together get one manipulation on the session's standing
+        % cohort (stimulus plan rule 2, T17 amendment). ndi.migrate.local
+        % always supplies CohortIdFor (cohortIdOf mints one per session), so
+        % this refusal is reached only by a caller that supplies none.
         report.reason = sprintf(['several animals: the %s route resolves to %d ' ...
-            'animals in this session, and no session cohort was supplied'], ...
+            'animals in this session, and the caller supplied no session ' ...
+            'cohort (CohortIdFor)'], ...
             report.animal_source, numel(animals));
         return;
     end
@@ -367,7 +389,8 @@ order   = orderVector(block);
 report.stimuli_read = numel(stimuli);
 report.trials       = numel(order);
 if isempty(stimuli) || isempty(order)
-    report.reason = 'no stimuli / no presentation_order';
+    % carry-register: carry-083
+    report.reason = '[carry-083] no stimuli / no presentation_order';
     return;
 end
 
@@ -378,7 +401,8 @@ if ~isempty(sequence)
     report.shared_refs  = numel(itemIds);
     report.frames       = numel(frameOrder);
     if ~isempty(why)
-        report.reason = why;
+        % carry-register: carry-085 (readSequence's reasons, below)
+        report.reason = ['[carry-085] ' why];
         report.basis_source = 'not read';
         report.shared_refs = 0;
         report.frames = 0;
@@ -415,7 +439,8 @@ end
 outOfRange = sum(order < 1 | order > numel(stimuli) | order ~= floor(order));
 report.trials_out_of_range = outOfRange;
 if outOfRange > 0
-    report.reason = 'presentation_order indexes outside the stimuli list';
+    % carry-register: carry-083
+    report.reason = '[carry-083] presentation_order indexes outside the stimuli list';
     return;
 end
 
@@ -435,7 +460,8 @@ for i = 1:numel(stimulusKinds)
 end
 if ~isempty(refusedKinds)
     labels = cellfun(@newStimKindLabel, sort(refusedKinds), 'UniformOutput', false);
-    report.reason = ['a stimulus kind with no recipe, refused by class: ' ...
+    % carry-register: carry-084
+    report.reason = ['[carry-084] a stimulus kind with no recipe, refused by class: ' ...
         strjoin(labels, '; ')];
     return;
 end
@@ -850,7 +876,8 @@ for r = 1:numel(records)
     end
     why = controlUnplaced(rec, nTrials, positionsAreTrials, report.standalone);
     if isempty(why) && isempty(recId)
-        why = 'no base.id';
+        % carry-register: carry-091
+        why = '[carry-091] no base.id';
     end
     if ~isempty(why)
         report.control_carried{end+1} = struct('id', recId, 'reason', why);
@@ -870,15 +897,18 @@ function why = controlUnplaced(rec, nTrials, positionsAreTrials, standalone)
 %   '' when it can ([generic stage is lossless]).
 why = '';
 if standalone
-    why = 'no subject: the presentation is a standalone item';
+    % carry-register: carry-090
+    why = '[carry-090] no subject: the presentation is a standalone item';
     return;
 end
 if ~positionsAreTrials
-    why = 'the presentation is a frame sequence, not trials';
+    % carry-register: carry-090
+    why = '[carry-090] the presentation is a frame sequence, not trials';
     return;
 end
 if isempty(char(ndi.v2.sessionIdOf(rec)))
-    why = 'no session';
+    % carry-register: carry-091
+    why = '[carry-091] no session';
     return;
 end
 raw = [];
@@ -887,7 +917,8 @@ if isfield(rec, 'control_stimulus_ids') && isstruct(rec.control_stimulus_ids)
     other = setdiff(fieldnames(blk), {'control_stimulus_ids', 'control_stimulus_id_method'});
     for k = 1:numel(other)
         if ~isempty(blk.(other{k}))
-            why = ['a field the calculation does not write: control_stimulus_ids.' other{k}];
+            % carry-register: carry-089
+            why = ['[carry-089] a field the calculation does not write: control_stimulus_ids.' other{k}];
             return;
         end
     end
@@ -896,26 +927,37 @@ if isfield(rec, 'control_stimulus_ids') && isstruct(rec.control_stimulus_ids)
     end
     if isfield(blk, 'control_stimulus_id_method') && ~isempty(blk.control_stimulus_id_method) ...
             && ~(isstruct(blk.control_stimulus_id_method) && isscalar(blk.control_stimulus_id_method))
-        why = 'control_stimulus_id_method is not a block';
+        % carry-register: carry-091
+        why = '[carry-091] control_stimulus_id_method is not a block';
         return;
     end
 end
-if iscell(raw) || ~isnumeric(raw) || isempty(raw) || any(~isfinite(double(raw(:))))
-    why = 'a trial with no control (NaN or empty) has no pairing value';
+% Decided by Jess Haley, 2026-10-26 [NaN control means no control]
+% (did-schema V_eta_go_forward_class_audit.md): NaN is NDI's writer's value
+% for a trial with no control (tuning_response.m writes it; its reader skips
+% it), so a NaN entry is converted -- the calculation records NaN for that
+% trial -- and only an empty, non-numeric or infinite entry is malformed.
+if iscell(raw) || ~isnumeric(raw) || isempty(raw) || any(isinf(double(raw(:))))
+    % carry-register: carry-091
+    why = '[carry-091] the pairing is empty, not numeric, or infinite';
     return;
 end
 ids = double(raw(:)');
 if numel(ids) ~= nTrials
-    why = sprintf('%d pairing entr(ies) for %d trial(s)', numel(ids), nTrials);
+    % carry-register: carry-091
+    why = sprintf('[carry-091] %d pairing entr(ies) for %d trial(s)', numel(ids), nTrials);
     return;
 end
-if any(ids < 1 | ids > nTrials | ids ~= floor(ids))
-    why = 'an entry is not a trial number of the presentation';
+paired = ids(~isnan(ids));
+if any(paired < 1 | paired > nTrials | paired ~= floor(paired))
+    % carry-register: carry-091
+    why = '[carry-091] an entry is not a trial number of the presentation';
     return;
 end
 if isfield(rec, 'app') && ~isempty(rec.app)
     if ~(isstruct(rec.app) && isscalar(rec.app))
-        why = 'app is not a block';
+        % carry-register: carry-091
+        why = '[carry-091] app is not a block';
         return;
     end
     known = {'name', 'app_name', 'version', 'app_version', 'url', 'app_url', ...
@@ -925,23 +967,27 @@ if isfield(rec, 'app') && ~isempty(rec.app)
         v = rec.app.(fn{k});
         if isempty(v); continue; end
         if ~any(strcmp(fn{k}, known))
-            why = ['a field the calculation does not write: app.' fn{k}];
+            % carry-register: carry-089
+            why = ['[carry-089] a field the calculation does not write: app.' fn{k}];
             return;
         end
         if ~(ischar(v) || (isstring(v) && isscalar(v)))
-            why = ['app.' fn{k} ' is not text'];
+            % carry-register: carry-091
+            why = ['[carry-091] app.' fn{k} ' is not text'];
             return;
         end
     end
     [~, swId] = ndi.migrate.internal.appSoftware(rec);
     if isempty(swId) && any(cellfun(@(f) ~isempty(rec.app.(f)), fn))
-        why = 'the app names no program';
+        % carry-register: carry-091
+        why = '[carry-091] the app names no program';
         return;
     end
     [~, ~, env] = ndi.migrate.internal.appSoftware(rec);
     if (isfield(env, 'os_version') && ~isfield(env, 'os')) ...
             || (isfield(env, 'interpreter_version') && ~isfield(env, 'interpreter'))
-        why = 'an OS or interpreter version with no name';
+        % carry-register: carry-091
+        why = '[carry-091] an OS or interpreter version with no name';
         return;
     end
 end
@@ -957,7 +1003,8 @@ if isfield(rec, 'depends_on') && ~isempty(rec.depends_on)
             if isfield(d, f{1}) && ~isempty(d.(f{1})); v = d.(f{1}); end
         end
         if ~isempty(v)
-            why = ['an edge the calculation does not write: ' char(d.name)];
+            % carry-register: carry-089
+            why = ['[carry-089] an edge the calculation does not write: ' char(d.name)];
             return;
         end
     end

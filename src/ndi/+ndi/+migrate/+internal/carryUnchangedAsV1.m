@@ -1,13 +1,22 @@
-function [docs, report] = carryUnchangedAsV1(docs, passthrough, sourceBodies)
+function [docs, report] = carryUnchangedAsV1(docs, passthrough, sourceBodies, secondPassRows)
 %CARRYUNCHANGEDASV1 Store each document no step changed as its v1 source, stamped 'did_v1'.
 %
 %   [DOCS, REPORT] = ndi.migrate.internal.carryUnchangedAsV1(DOCS, PASSTHROUGH, SOURCEBODIES)
+%   [DOCS, REPORT] = ndi.migrate.internal.carryUnchangedAsV1(..., SECONDPASSROWS)
 %   is the last migration step of ndi.migrate.local. DOCS is the cell of
 %   did2.document the whole pipeline produced (pass 1, the DID batch passes
 %   and NDI's second pass). PASSTHROUGH is pass 1's record of the v1
 %   documents no migrator changed (did2.convert.v1_to_v2's
 %   result.passthrough: input_index, id, class_name, body -- the body pass 1
 %   emitted). SOURCEBODIES is the v1 input, in pass 1's order.
+%   SECONDPASSROWS (optional) is a struct array {id, row}: each document NDI's
+%   second pass declined to convert, with the carry register row its reason
+%   cites (Decided by Jess Haley, 2026-10-26 [carry register]; did-schema
+%   schemas/V_eta_carry_register.json). The first row named for an id counts.
+%   A record may also carry `dependency`: the id of the document that blocked
+%   it. When that document is itself carried as v1, the record counts under
+%   carry-064 instead ([dependents of a carried document carry], Jess Haley,
+%   2026-10-26): it was carried because what it depends on was.
 %
 %   Decided by Jess Haley, 2026-10-24 [passthrough stays v1] and
 %   [passthrough stays v1: how] (did-schema V_eta_go_forward_class_audit.md):
@@ -39,6 +48,15 @@ function [docs, report] = carryUnchangedAsV1(docs, passthrough, sourceBodies)
 %     source_unreadable       the source body could not be read as a document
 %     source_id_mismatch      the source at that position has another base.id
 %     carried_by_class        struct array {class_name, count}, most first
+%     carried_with_second_pass_row     of carried_as_v1, those SECONDPASSROWS
+%                             names (a second-pass carry, by register row)
+%     carried_without_second_pass_row  of carried_as_v1, the rest (pass 1
+%                             passed them through and no second-pass step
+%                             named a row: pass-1 carries cite their rows in
+%                             DID-matlab's notes)
+%     carried_by_row          struct array {row, count}, most first: the
+%                             second-pass carries by register row; the counts
+%                             sum to carried_with_second_pass_row
 %     changed_by_class        the same, for changed_after_pass_one
 %     absent_by_class         the same, for absent_at_end
 %   (class_name is the class pass 1 recorded for the document)
@@ -51,6 +69,7 @@ arguments
     docs cell
     passthrough struct
     sourceBodies
+    secondPassRows struct = struct('id', {}, 'row', {}, 'dependency', {})
 end
 
 if ~iscell(sourceBodies)
@@ -67,6 +86,9 @@ report = struct( ...
     'source_unreadable',       0, ...
     'source_id_mismatch',      0, ...
     'carried_by_class',        struct('class_name', {}, 'count', {}), ...
+    'carried_with_second_pass_row',    0, ...
+    'carried_without_second_pass_row', 0, ...
+    'carried_by_row',          struct('row', {}, 'count', {}), ...
     'changed_by_class',        struct('class_name', {}, 'count', {}), ...
     'absent_by_class',         struct('class_name', {}, 'count', {}));
 if isempty(passthrough)
@@ -83,7 +105,27 @@ for k = 1:numel(docs)
     end
 end
 
+% second-pass carry rows by document id (the first named wins)
+rowOf = containers.Map('KeyType', 'char', 'ValueType', 'char');
+depOf = containers.Map('KeyType', 'char', 'ValueType', 'char');
+hasDep = isfield(secondPassRows, 'dependency');
+for r = 1:numel(secondPassRows)
+    if ~isfield(secondPassRows, 'id') || ~isfield(secondPassRows, 'row')
+        break;
+    end
+    rid = char(secondPassRows(r).id);
+    rrow = char(secondPassRows(r).row);
+    if ~isempty(rid) && ~isempty(rrow) && ~isKey(rowOf, rid)
+        rowOf(rid) = rrow;
+        if hasDep && ~isempty(secondPassRows(r).dependency)
+            depOf(rid) = char(secondPassRows(r).dependency);
+        end
+    end
+end
+carriedIds = {};
+
 carried = newTally();
+byRow = newTally();
 changed = newTally();
 absent = newTally();
 for r = 1:numel(passthrough)
@@ -121,8 +163,32 @@ for r = 1:numel(passthrough)
         cn = char(src.document_class.class_name);
     end
     carried = bump(carried, cn);
+    carriedIds{end+1} = id; %#ok<AGROW>
+end
+% by row, once every carry is known (a dependency is judged against the
+% whole carried set)
+carriedSet = containers.Map('KeyType', 'char', 'ValueType', 'logical');
+for c = 1:numel(carriedIds)
+    carriedSet(carriedIds{c}) = true;
+end
+for c = 1:numel(carriedIds)
+    id = carriedIds{c};
+    if isKey(rowOf, id)
+        report.carried_with_second_pass_row = report.carried_with_second_pass_row + 1;
+        row = rowOf(id);
+        % carry-register: carry-064
+        if isKey(depOf, id) && isKey(carriedSet, depOf(id))
+            row = 'carry-064';   % [dependents of a carried document carry]
+        end
+        byRow = bump(byRow, row);
+    else
+        report.carried_without_second_pass_row = ...
+            report.carried_without_second_pass_row + 1;
+    end
 end
 report.carried_by_class = asTable(carried);
+rowTable = asTable(byRow);
+report.carried_by_row = struct('row', {rowTable.class_name}, 'count', {rowTable.count});
 report.changed_by_class = asTable(changed);
 report.absent_by_class = asTable(absent);
 end
