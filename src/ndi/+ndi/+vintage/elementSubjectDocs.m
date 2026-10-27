@@ -49,7 +49,10 @@ arguments
     classFilter (1,:) char = ''
 end
 
-docs = {};
+% A COLUMN, so callers can stack it under a column of v1 hits
+% (ndi.session/getelements, ndi.session/getprobes); see
+% ndi.unittest.vintage.TestElementDocsBothVintages.
+docs = cell(0, 1);
 
 [ids, label] = ndi.vintage.elementSubjectIds(ndi_session_obj, classFilter);
 
@@ -62,6 +65,6 @@ for i = 1:numel(ids)
              'the migrator preserves the element id onto the subject, so ' ...
              'this edge should always resolve'], label, ids{i}, numel(hit));
     end
-    docs{end+1} = hit{1}; %#ok<AGROW>
+    docs{end+1, 1} = hit{1}; %#ok<AGROW>
 end
 end

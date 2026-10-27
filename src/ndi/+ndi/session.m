@@ -781,8 +781,12 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
             % contains_string 'probe' test now runs (in the database, not
             % over everything in MATLAB).
             existing_probes = ndi_session_obj.database_search(ndi.query('element.ndi_element_class','contains_string','probe'));
-            existing_probes = [existing_probes(:); ...
-                ndi.vintage.elementSubjectDocs(ndi_session_obj, 'probe')];
+            % Both sides are made columns: a session can hold both
+            % vintages at once (a migration carries some v1 elements
+            % unchanged), and a row stacked under a column does not
+            % concatenate (MATLAB:catenate:dimensionMismatch).
+            etaProbes = ndi.vintage.elementSubjectDocs(ndi_session_obj, 'probe');
+            existing_probes = [existing_probes(:); etaProbes(:)];
             existing_subjects = ndi_session_obj.database_search(ndi.query('','isa','subject'));
             subjectlist.a = 0;
             for i=1:numel(existing_subjects)
@@ -882,8 +886,16 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
             % The two searches are UNIONED rather than switched between: a
             % session can hold both vintages at once (NDI still writes v1),
             % and a document found twice is impossible because the class
-            % names are disjoint.
-            doc = [doc(:); ndi.vintage.elementSubjectDocs(ndi_session_obj)];
+            % names are disjoint. A v1 element a migration CARRIED unchanged
+            % (DID-matlab carry-062, B's sorted units) is found by the
+            % first search and returned as the v1 element it is.
+            %
+            % Both sides are made columns before stacking. With v1 and
+            % migrated elements both present, a column of v1 hits under a
+            % row of migrated ones raised MATLAB:catenate:dimensionMismatch
+            % (the B corpus end-to-end, 2026-10-27).
+            etaDocs = ndi.vintage.elementSubjectDocs(ndi_session_obj);
+            doc = [doc(:); etaDocs(:)];
 
             elements = {};
             for i=1:numel(doc)
