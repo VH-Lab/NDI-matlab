@@ -13,7 +13,7 @@ name: V_eta migrate (end-to-end)
 # run-tests.yml do not provide. This job assembles that environment and runs the
 # gated TestMigrateLocalEta (which skips everywhere else).
 #
-# The dep refs default to did-schema `main` and DID-matlab `V2`, where #88 and
+# The dep refs default to the same-name branch, else did-schema `main` and DID-matlab `V2`, where #88 and
 # #218 merged on 2026-10-23 (DID_MATLAB_REF and DID_SCHEMA_REF below);
 # override via the workflow_dispatch inputs `ref` and `schema_ref`.
 
@@ -67,7 +67,7 @@ on:
         default: ''
         type: string
       schema_ref:
-        description: 'did-schema ref to validate against (default: the pin below)'
+        description: 'did-schema ref to validate against (default: the did-schema branch named like this NDI branch, else main)'
         required: false
         default: ''
         type: string
@@ -87,7 +87,7 @@ jobs:
       # and DID-matlab #218 into V2 (2026-10-23).
       DID_MATLAB_REQUESTED: ${{ inputs.ref }}
       NDI_BRANCH: ${{ github.head_ref || github.ref_name }}
-      DID_SCHEMA_REF: ${{ inputs.schema_ref || 'main' }}
+      DID_SCHEMA_REQUESTED: ${{ inputs.schema_ref }}
     steps:
       - name: Check out NDI-matlab
         uses: actions/checkout@v4
@@ -111,6 +111,17 @@ jobs:
             echo "RESOLVED: $1 @ $2 = $sha"
             echo "$3=$sha" >> "$GITHUB_ENV"
           }
+          # did-schema: the requested ref, else the did-schema branch with this
+          # NDI-matlab branch's name, else main ([NDI CI picks did-schema
+          # branch], Jess Haley, 2026-10-27), the same rule as DID-matlab below.
+          DID_SCHEMA_REF="${DID_SCHEMA_REQUESTED:-}"
+          if [ -z "$DID_SCHEMA_REF" ] && [ -n "${NDI_BRANCH:-}" ] && [ "$NDI_BRANCH" != "main" ] \
+             && [ -n "$(git ls-remote https://github.com/Waltham-Data-Science/did-schema.git "refs/heads/$NDI_BRANCH")" ]; then
+            DID_SCHEMA_REF="$NDI_BRANCH"
+          fi
+          DID_SCHEMA_REF="${DID_SCHEMA_REF:-main}"
+          echo "PICKED: did-schema ref $DID_SCHEMA_REF (requested '${DID_SCHEMA_REQUESTED:-}', NDI branch '${NDI_BRANCH:-}')"
+          echo "DID_SCHEMA_REF=$DID_SCHEMA_REF" >> "$GITHUB_ENV"
           resolve Waltham-Data-Science/did-schema "$DID_SCHEMA_REF" DID_SCHEMA_SHA
           # DID-matlab: the requested ref, else the DID-matlab branch with this
           # NDI-matlab branch's name, else V2 ([NDI CI picks DID branch], Jess
