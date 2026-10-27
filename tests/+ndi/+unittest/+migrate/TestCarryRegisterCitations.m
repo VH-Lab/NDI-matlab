@@ -29,6 +29,12 @@ classdef TestCarryRegisterCitations < matlab.unittest.TestCase
 %   else ../DID-schema. On CI (GITHUB_ACTIONS set) a missing register fails;
 %   elsewhere the test is filtered with the reason.
 %
+%   BOTH NAMES: did-schema renames V_eta_carry_register.json to
+%   did_v2_carry_register.json (Decided by Jess Haley, 2026-10-26 [markdown
+%   cleanup and rename], did-schema V_eta_go_forward_class_audit.md, part
+%   (6): "Siblings first"). In each checkout the new name is read if present,
+%   else the old one.
+%
 %   ORDER: the rows NDI cites land in did-schema first (did-schema PR #151
 %   and the NDI rows carry-080 onward); until they are on the did-schema
 %   ref the CI checks out, this test FAILS and names the missing ids.
@@ -63,6 +69,32 @@ classdef TestCarryRegisterCitations < matlab.unittest.TestCase
             end
         end
 
+        function testTheRegisterIsReadByEitherName(testCase)
+            % [markdown cleanup and rename]: the old name alone, the new name
+            % alone, and the new name when both are present.
+            tmp = testCase.applyFixture( ...
+                matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
+            mkdir(fullfile(tmp, 'schemas'));
+            names = registerNames();
+            newPath = fullfile(tmp, 'schemas', names{1});
+            oldPath = fullfile(tmp, 'schemas', names{2});
+            testCase.verifyEqual(names, ...
+                {'did_v2_carry_register.json', 'V_eta_carry_register.json'});
+            testCase.verifyEmpty(registerIn(tmp), 'no register: nothing found');
+            writeRegister(oldPath, 'carry-001');
+            testCase.verifyEqual(registerIn(tmp), oldPath, 'the old name alone');
+            writeRegister(newPath, 'carry-002');
+            testCase.verifyEqual(registerIn(tmp), newPath, ...
+                'the new name wins when both are present');
+            testCase.applyFixture(matlab.unittest.fixtures.EnvironmentVariableFixture( ...
+                'DID_SCHEMA_ROOT', tmp));
+            [ids, regPath] = readRegister(testCase);
+            testCase.verifyEqual(regPath, newPath);
+            testCase.verifyEqual(ids, {'carry-002'});
+            delete(oldPath);
+            testCase.verifyEqual(registerIn(tmp), newPath, 'the new name alone');
+        end
+
         function testMarkersMatchTheCode(testCase)
             cites = scanCitations();
             testCase.verifyGreaterThan(numel(cites.file_rows), 0, ...
@@ -90,8 +122,32 @@ here = fileparts(mfilename('fullpath'));
 root = fileparts(fileparts(fileparts(fileparts(here))));
 end
 
+function names = registerNames()
+% The register's names, the one read first first (see BOTH NAMES above).
+names = {'did_v2_carry_register.json', 'V_eta_carry_register.json'};
+end
+
+function p = registerIn(schemaRoot)
+% The register in one did-schema checkout, by the first name present, or ''.
+p = '';
+names = registerNames();
+for k = 1:numel(names)
+    candidate = fullfile(schemaRoot, 'schemas', names{k});
+    if isfile(candidate)
+        p = candidate;
+        return;
+    end
+end
+end
+
+function writeRegister(path, id)
+fid = fopen(path, 'w');
+fprintf(fid, '{"rows": [{"id": "%s"}]}', id);
+fclose(fid);
+end
+
 function [ids, regPath] = readRegister(testCase)
-rel = fullfile('schemas', 'V_eta_carry_register.json');
+rel = strjoin(fullfile('schemas', registerNames()), ' or ');
 root = repoRoot();
 candidates = {};
 env = getenv('DID_SCHEMA_ROOT');
@@ -102,9 +158,8 @@ candidates = [candidates, {fullfile(root, 'did-schema'), ...
     fullfile(fileparts(root), 'did-schema'), fullfile(fileparts(root), 'DID-schema')}];
 regPath = '';
 for k = 1:numel(candidates)
-    p = fullfile(candidates{k}, rel);
-    if isfile(p)
-        regPath = p;
+    regPath = registerIn(candidates{k});
+    if ~isempty(regPath)
         break;
     end
 end
