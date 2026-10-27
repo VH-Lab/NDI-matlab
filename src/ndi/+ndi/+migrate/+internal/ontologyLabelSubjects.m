@@ -171,6 +171,7 @@ report = struct( ...
     'unresolved_target_no_time_reference', 0, ...
     'unresolved_no_ontology_node',         0, ...
     'unresolved_unplaced_fields',          0, ...
+    'carry_rows',                          struct('id', {}, 'row', {}, 'dependency', {}), ...
     'changed',                             false);
 
 if isempty(migratedStructs)
@@ -221,22 +222,36 @@ report.labels_passthrough = numel(labelIdx);
 for i = 1:numel(labelIdx)
     b = migratedStructs{labelIdx(i)};
 
+    % Each label left unresolved is carried as v1 at the end of
+    % ndi.migrate.local; its carry register row ([carry register], Jess
+    % Haley, 2026-10-26) is recorded in REPORT.carry_rows. A label blocked
+    % by its target also names the target as `dependency`: when the target
+    % is itself carried as v1, the final stamp counts the label under
+    % carry-064 instead ([dependents of a carried document carry], Jess
+    % Haley, 2026-10-26), since a v1 target has no subject to observe.
+    labelId = baseField(b, 'id');
     targetId = edgeValue(b, {'document_id'});
     if isempty(targetId)
+        % carry-register: carry-097
         report.unresolved_no_document_edge = ...
             report.unresolved_no_document_edge + 1;
+        report.carry_rows(end+1) = struct('id', labelId, 'row', 'carry-097', 'dependency', '');
         continue;
     end
     if ~isKey(byId, targetId)
+        % carry-register: carry-097
         report.unresolved_target_not_in_batch = ...
             report.unresolved_target_not_in_batch + 1;
+        report.carry_rows(end+1) = struct('id', labelId, 'row', 'carry-097', 'dependency', '');
         continue;
     end
     target = byId(targetId);
 
     if isempty(target.subject_id)
+        % carry-register: carry-096
         report.blocked_target_has_no_subject = ...
             report.blocked_target_has_no_subject + 1;
+        report.carry_rows(end+1) = struct('id', labelId, 'row', 'carry-096', 'dependency', char(targetId));
         fn = matlab.lang.makeValidName(emptyToUnknown(target.class_name));
         if isfield(report.blocked_by_target_class, fn)
             report.blocked_by_target_class.(fn) = ...
@@ -251,15 +266,19 @@ for i = 1:numel(labelIdx)
         % there is no honest way to emit the observation without one, and
         % minting a session anchor here would put a SECOND, differently-anchored
         % reference beside the referent's own.
+        % carry-register: carry-096
         report.unresolved_target_no_time_reference = ...
             report.unresolved_target_no_time_reference + 1;
+        report.carry_rows(end+1) = struct('id', labelId, 'row', 'carry-096', 'dependency', char(targetId));
         continue;
     end
 
     node = labelNode(b);
     if isempty(node)
+        % carry-register: carry-097
         report.unresolved_no_ontology_node = ...
             report.unresolved_no_ontology_node + 1;
+        report.carry_rows(end+1) = struct('id', labelId, 'row', 'carry-097', 'dependency', '');
         continue;
     end
     % [generic stage is lossless] and [partly placed is carried as v1] (Jess
@@ -269,8 +288,10 @@ for i = 1:numel(labelIdx)
     % field or edge is left as it is (carried as v1 at the end of
     % ndi.migrate.local), counted here.
     if labelHasUnplaced(b)
+        % carry-register: carry-095
         report.unresolved_unplaced_fields = ...
             report.unresolved_unplaced_fields + 1;
+        report.carry_rows(end+1) = struct('id', labelId, 'row', 'carry-095', 'dependency', '');
         continue;
     end
 

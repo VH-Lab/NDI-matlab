@@ -52,7 +52,7 @@ classdef TestStimulusPresentationItem < matlab.unittest.TestCase
             [m, methods, report] = ndi.migrate.internal.stimulusPresentationToItem(pres, r);
             testCase.verifyEmpty(m);
             testCase.verifyEmpty(methods);
-            testCase.verifyTrue(startsWith(report.reason, 'unplaced (carried as v1)'), report.reason);
+            testCase.verifyTrue(startsWith(report.reason, '[carry-080] unplaced (carried as v1)'), report.reason);
             testCase.verifyTrue(any(strcmp(report.unplaced_fields, 'parameters.chromhigh')));
             testCase.verifyTrue(any(strcmp(report.unplaced_fields, 'parameters.BG')), ...
                 'a blank''s parameters are written nowhere either');
@@ -756,9 +756,11 @@ classdef TestStimulusPresentationItem < matlab.unittest.TestCase
             end
         end
 
-        function testElementsThatResolveToNoSubjectAreStillRefused(testCase)
-            % Outside the decision: the epoch DOES record an element, it just
-            % names no subject. Still left as v1, with its reason.
+        function testElementsThatResolveToNoSubjectGiveAStandaloneItem(testCase)
+            % The epoch DOES record an element, it just names no subject.
+            % Decided by Jess Haley, 2026-10-26 [unresolved recorded elements
+            % make a standalone item] ("1 a"): a standalone `item`, as with no
+            % element at all, not a carry.
             pres = presentationBody('pres_nosubj_el', 1, { gratingStim(0, 0.04, 0.5) });
             sid = pres.base.session_id;
             ee = docBody('element_epoch', 'ee_1', {'element_id', 'unit_1'});
@@ -768,9 +770,12 @@ classdef TestStimulusPresentationItem < matlab.unittest.TestCase
             el.base.session_id = sid;
             r = ndi.migrate.internal.bodyResolver({ pres, ee, el });
             [m, ~, report] = ndi.migrate.internal.stimulusPresentationToItem(pres, r, [], 'LeaveUnplaced', false);
-            testCase.verifyEmpty(m);
-            testCase.verifyFalse(report.standalone);
-            testCase.verifySubstring(report.reason, 'resolve to no subject');
+            testCase.verifyTrue(report.standalone);
+            testCase.verifyEqual(report.animal_source, 'none');
+            testCase.verifySubstring(report.no_subject_reason, 'resolve to no subject');
+            testCase.verifyEmpty(report.reason, 'a standalone item is not a refusal');
+            testCase.verifyEqual(m.document_class.class_name, 'item');
+            testCase.verifyEqual(m.base.id, 'pres_nosubj_el');
         end
 
         function testStimulatorLinksToDifferentAnimalsAreRefused(testCase)
