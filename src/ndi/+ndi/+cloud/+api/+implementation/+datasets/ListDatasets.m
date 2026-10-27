@@ -7,10 +7,11 @@ classdef ListDatasets < ndi.cloud.api.call
             %
             %   THIS = ndi.cloud.api.implementation.datasets.ListDatasets(...)
             %
-            %   Optional Inputs (Name-Value Pairs):
-            %       'cloudOrganizationID' - The ID of the organization. If not
-            %           provided, the environment variable NDI_CLOUD_ORGANIZATION_ID
-            %           will be used.
+            %   Inputs (Name-Value Pairs):
+            %       'cloudOrganizationID' - (required) The ID of the
+            %           organization. To list across all of the user's
+            %           organizations, use ndi.cloud.api.datasets.listDatasets
+            %           without an organization.
             %       'page' - The page number to retrieve (default 1).
             %       'pageSize' - The number of datasets per page (default 20).
             %
@@ -20,6 +21,11 @@ classdef ListDatasets < ndi.cloud.api.call
                 args.pageSize (1,1) double = 20
             end
             
+            if ismissing(args.cloudOrganizationID) || strlength(args.cloudOrganizationID) == 0
+                error('NDI:Cloud:OrganizationRequired', ...
+                    'ListDatasets requires a cloudOrganizationID.');
+            end
+
             this.cloudOrganizationID = args.cloudOrganizationID;
             this.page = args.page;
             this.pageSize = args.pageSize;
@@ -43,14 +49,9 @@ classdef ListDatasets < ndi.cloud.api.call
             b = false;
             answer = {};
 
-            [token, org_id_env] = ndi.cloud.authenticate();
+            token = ndi.cloud.authenticate();
             
-            organization_id = this.cloudOrganizationID;
-            if ismissing(organization_id)
-                organization_id = org_id_env;
-            end
-            
-            apiURL = ndi.cloud.api.url('list_datasets', 'organization_id', organization_id, ...
+            apiURL = ndi.cloud.api.url('list_datasets', 'organization_id', this.cloudOrganizationID, ...
                 'page', this.page, 'page_size', this.pageSize);
 
             method = matlab.net.http.RequestMethod.GET;

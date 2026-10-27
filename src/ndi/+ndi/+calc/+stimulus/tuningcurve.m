@@ -230,7 +230,7 @@ classdef tuningcurve < ndi.calculator
 
                 constraints_mod = constraint;
                 if numel(deal_constraints_dim)==1
-                    eval(['[' deal_str ']=1;']);
+                    sz_{1} = i;
                 else
                     eval(['[' deal_str ']=ind2sub(deal_constraints_dim,i);']);
                 end
@@ -238,7 +238,7 @@ classdef tuningcurve < ndi.calculator
                     deal_here = deal_constraints{j}(sz_{j});
                     if isstruct(deal_here)
                         constraints_mod(end+1) = deal_here;
-                        deal_log_str = cat(2,deal_str,['dealing ' deal_here.field ' = ' num2str(deal_here.param1) ',']);
+                        deal_log_str = cat(2,deal_log_str,['dealing ' deal_here.field ' = ' num2str(deal_here.param1) ',']);
                         stim_prop_index = find(strcmp(deal_here.field,stim_property_list));
                         % has to be a match, all dealt properties are in stim_property_list
                         stim_property_list_values(stim_prop_index) = deal_here.param1;

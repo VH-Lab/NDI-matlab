@@ -143,7 +143,7 @@ classdef FileSeriesRoundTripTest < matlab.unittest.TestCase
 
             unique_name = testCase.DatasetNamePrefix + string(did.ido.unique_id());
             narrative(end+1) = "Creating cloud dataset named " + unique_name + ".";
-            [b, cloudId] = ndi.cloud.api.datasets.createDataset(struct("name", unique_name));
+            [b, cloudId] = ndi.cloud.api.datasets.createDataset(struct("name", unique_name), 'organizationID', ndi.unittest.cloud.testOrganizationID());
             msg = ndi.unittest.cloud.APIMessage(narrative, b, cloudId, ...
                 matlab.net.http.ResponseMessage.empty, "datasets.createDataset");
             testCase.assertTrue(b, "Failed to create cloud dataset. " + msg);
@@ -155,7 +155,7 @@ classdef FileSeriesRoundTripTest < matlab.unittest.TestCase
 
             narrative(end+1) = "Uploading the dataset (documents are batched " + ...
                 "as one JSON array by zip_documents_for_upload).";
-            successUpload = ndi.cloud.uploadDataset(testCase.LocalDataset);
+            successUpload = ndi.cloud.uploadDataset(testCase.LocalDataset, 'organizationID', ndi.unittest.cloud.testOrganizationID());
             msg = ndi.unittest.cloud.APIMessage(narrative, successUpload, ...
                 successUpload, matlab.net.http.ResponseMessage.empty, ...
                 "ndi.cloud.uploadDataset");
@@ -870,7 +870,7 @@ classdef FileSeriesRoundTripTest < matlab.unittest.TestCase
             narrative(end+1) = "Added a second document with a " + ...
                 testCase.MemberCount + "-member series AND " + ...
                 numel(sidecarNames) + " sidecar files, then re-uploading.";
-            successUpload = ndi.cloud.uploadDataset(testCase.LocalDataset);
+            successUpload = ndi.cloud.uploadDataset(testCase.LocalDataset, 'organizationID', ndi.unittest.cloud.testOrganizationID());
             testCase.assertTrue(successUpload, ...
                 "failed to upload the mixed document");
             ndi.cloud.api.files.waitForAllBulkUploads(testCase.DatasetID);

@@ -16,6 +16,9 @@ function [success, message] = uploadFilesForDatasetDocuments(cloudDatasetId, ndi
 % | 'Verbose'             | (logical) Display verbose output (default true) |
 % | 'FileUploadStrategy'  | ('serial' or 'batch') Upload strategy (default 'batch') |
 % | 'onlyMissing'         | (logical) Only upload missing files (default true) |
+% | 'FileBatchSizeLimit'  | (double) Maximum size in bytes of each zip batch when |
+% |                       | FileUploadStrategy is 'batch'. Empty (default) uses the |
+% |                       | preference Cloud.Upload.Max_File_Batch_Size. |
 %
 % Outputs:
 % | Name                  | Description                               |
@@ -33,6 +36,7 @@ function [success, message] = uploadFilesForDatasetDocuments(cloudDatasetId, ndi
         options.FileUploadStrategy (1,1) string ...
             {mustBeMember(options.FileUploadStrategy, ["serial", "batch"])} = "batch"
         options.onlyMissing (1,1) logical = true
+        options.FileBatchSizeLimit double {mustBeScalarOrEmpty, mustBePositive} = []
     end
 
     success = true;
@@ -61,11 +65,10 @@ function [success, message] = uploadFilesForDatasetDocuments(cloudDatasetId, ndi
             if options.Verbose
                 fprintf(['ERROR while checking which files are already ', ...
                     'in the cloud: %s\n', ...
-                    'This often means the active NDI_CLOUD_ORGANIZATION_ID ', ...
-                    'does not own dataset %s. Pass ndi.cloud.uploadDataset ', ...
-                    'the ''organizationName'' or ''organizationID'' the ', ...
-                    'dataset was created under. Current active org: %s.\n'], ...
-                    message, cloudDatasetId, getenv('NDI_CLOUD_ORGANIZATION_ID'));
+                    'This often means dataset %s belongs to an organization ', ...
+                    'the logged-in user is not a member of. Your ', ...
+                    'organizations: %s.\n'], ...
+                    message, cloudDatasetId, organizationSummary());
             end
             return;
         end
@@ -125,7 +128,11 @@ function [success, message] = uploadFilesForDatasetDocuments(cloudDatasetId, ndi
                 fprintf('Uploaded %d of %d files.\n', files_uploaded_count, numel(file_manifest));
             end
         case "batch"
-            [batch_success, batch_message] = ndi.cloud.upload.zipForUpload(ndiDataset, file_manifest, totalSizeKb, cloudDatasetId);
+            zipArgs = {};
+            if ~isempty(options.FileBatchSizeLimit)
+                zipArgs = {'SizeLimit', options.FileBatchSizeLimit};
+            end
+            [batch_success, batch_message] = ndi.cloud.upload.zipForUpload(ndiDataset, file_manifest, totalSizeKb, cloudDatasetId, zipArgs{:});
             if ~batch_success
                 success = false;
                 message = batch_message;
@@ -135,5 +142,17 @@ function [success, message] = uploadFilesForDatasetDocuments(cloudDatasetId, ndi
             elseif options.Verbose
                 fprintf('Uploaded %d files in batch mode.\n', numel(file_manifest));
             end
+    end
+end
+
+function s = organizationSummary()
+    % Names and ids of the user's organizations, for diagnostics only.
+    try
+        organizations = ndi.cloud.internal.getOrganizations();
+        parts = arrayfun(@(o) sprintf('"%s" (%s)', o.name, o.id), ...
+            organizations, 'UniformOutput', false);
+        s = strjoin(parts, ', ');
+    catch
+        s = '(could not be retrieved)';
     end
 end

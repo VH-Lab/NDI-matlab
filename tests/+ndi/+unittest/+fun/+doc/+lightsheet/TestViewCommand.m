@@ -9,7 +9,9 @@ classdef TestViewCommand < matlab.unittest.TestCase
     % --reduction fails here rather than in a demo.
 
     properties (Constant)
-        Launcher = '/usr/local/bin/napariViewLightsheet'
+        % An explicit launcher, so nothing here depends on what is
+        % installed on the machine running the test.
+        Launcher = '/opt/ndi test/bin/napariViewLightsheet'
         Session  = '/tmp/session1'
         Pyramid  = '4126a1b2c3d4e5f6_a1b2c3d4e5f6a1b2'
     end

@@ -155,6 +155,16 @@ jobs:
           source-ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.ref || github.ref_name }}
           token: ${{ secrets.GITHUB_TOKEN }}
 
+      # The "tests" badge sums this run with the Cloud CI shards
+      # (test-cloud-prod.yml); each job publishes its own counts.
+      - name: Publish test counts for the tests badge
+        if: always() && (github.event_name == 'push' || (github.event_name == 'pull_request' && !github.event.pull_request.draft && github.event.pull_request.head.repo.full_name == github.repository))
+        uses: ./.github/actions/publish-test-counts
+        with:
+          source-ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.ref || github.ref_name }}
+          part: nocloud
+          token: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Upload code coverage report to Codecov
         uses: codecov/codecov-action@b9fd7d16f6d7d1b5d2bec1a2887e65ceed900238 # v4
         with:

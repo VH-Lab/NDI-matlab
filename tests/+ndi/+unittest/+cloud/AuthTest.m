@@ -14,7 +14,7 @@ classdef AuthTest < matlab.unittest.TestCase
 
     methods (TestMethodSetup)
         function snapshotCloudEnv(testCase)
-            names = {'NDI_CLOUD_TOKEN', 'NDI_CLOUD_ORGANIZATION_ID', ...
+            names = {'NDI_CLOUD_TOKEN', 'NDI_CLOUD_ORGANIZATIONS', ...
                      'NDI_CLOUD_USERNAME', 'NDI_CLOUD_PASSWORD', ...
                      'CLOUD_API_ENVIRONMENT'};
             saved = struct();
@@ -60,13 +60,18 @@ classdef AuthTest < matlab.unittest.TestCase
             narrative(end+1) = "Login call successful. Verifying token and organization ID.";
             testCase.verifyClass(answer_login.token, 'char', login_message);
             % `organizations` may be a struct array on a multi-org
-            % account -- `answer_login.user.organizations.id` then
-            % expands to a comma-separated list and verifyClass reads
-            % it as extra positional args (MATLAB:narginchk:
-            % tooManyInputs). ndi.cloud.authenticate already picks the
-            % first (extractFirstOrganizationId); mirror that here.
-            testCase.verifyClass(answer_login.user.organizations(1).id, 'char', login_message);
-            narrative(end+1) = "Token and organization ID are of the correct class.";
+            % account -- `answer_login.user.organizations.id` would then
+            % expand to a comma-separated list. Normalize it the way
+            % ndi.cloud.authenticate does before caching it, and check
+            % every entry.
+            organizations = ndi.cloud.internal.normalizeOrganizations(answer_login.user.organizations);
+            testCase.verifyNotEmpty(organizations, login_message);
+            for k = 1:numel(organizations)
+                testCase.verifyClass(organizations(k).id, 'char', login_message);
+                testCase.verifyClass(organizations(k).name, 'char', login_message);
+                testCase.verifyClass(organizations(k).canUploadDataset, 'logical', login_message);
+            end
+            narrative(end+1) = "Token and organizations are of the correct class.";
 
             % Step 3: Test Logout
             narrative(end+1) = "Preparing to call ndi.cloud.api.auth.logout.";
@@ -79,12 +84,36 @@ classdef AuthTest < matlab.unittest.TestCase
             narrative(end+1) = "Logout call successful.";
         end
 
+        function testAuthenticateAfterLogoutUsesTheEnvironmentUser(testCase)
+            % After a logout, authenticate() must log in as the user in
+            % NDI_CLOUD_USERNAME / NDI_CLOUD_PASSWORD. It used to try the
+            % MATLAB Vault first and log in as whoever the Vault held, so
+            % setting these variables -- by hand or with
+            % ndi.cloud.profile.switchProfile -- did not switch account on
+            % any machine with Vault credentials for someone else. On a CI
+            % runner, with no Vault, this is the path every cloud test takes.
+            username = getenv("NDI_CLOUD_USERNAME");
+            testCase.assumeNotEmpty(username, 'NDI_CLOUD_USERNAME is not set.');
+            testCase.assumeNotEmpty(getenv("NDI_CLOUD_PASSWORD"), 'NDI_CLOUD_PASSWORD is not set.');
+
+            warning('off', 'NDI:Cloud:LogoutAPIError');
+            cleanup = onCleanup(@() warning('on', 'NDI:Cloud:LogoutAPIError')); %#ok<NASGU>
+            ndi.cloud.logout();
+
+            token = ndi.cloud.authenticate('InteractionEnabled', 'off');
+            testCase.assertNotEmpty(token, 'authenticate() did not log in.');
+            claims = ndi.cloud.internal.decodeJwt(token);
+            testCase.verifyEqual(lower(string(claims.email)), lower(string(username)), ...
+                'authenticate() logged in as someone other than NDI_CLOUD_USERNAME.');
+        end
+
         function testHighLevelLogout(testCase)
             % This test verifies the behavior of ndi.cloud.logout
 
             % Setup: Set environment variables to simulate a logged-in state
             setenv('NDI_CLOUD_TOKEN', 'fake_token');
-            setenv('NDI_CLOUD_ORGANIZATION_ID', 'fake_org_id');
+            ndi.cloud.internal.setOrganizations(struct('id', 'fake_org_id', ...
+                'name', 'Fake Org', 'canUploadDataset', true));
 
             % Action: Call logout
             % We expect a warning because the token is fake and API call will likely fail,
@@ -96,10 +125,10 @@ classdef AuthTest < matlab.unittest.TestCase
 
             % Verify: Environment variables should be empty
             token = getenv('NDI_CLOUD_TOKEN');
-            org_id = getenv('NDI_CLOUD_ORGANIZATION_ID');
+            organizations = getenv('NDI_CLOUD_ORGANIZATIONS');
 
             testCase.verifyEmpty(token, 'NDI_CLOUD_TOKEN should be empty after logout');
-            testCase.verifyEmpty(org_id, 'NDI_CLOUD_ORGANIZATION_ID should be empty after logout');
+            testCase.verifyEmpty(organizations, 'The cached organization list should be empty after logout');
         end
 
         function testTestLoginWithNoCredentialsReturnsFalse(testCase)
@@ -128,7 +157,8 @@ classdef AuthTest < matlab.unittest.TestCase
             warningCleanup = onCleanup(@() warning('on', 'NDI:Cloud:LogoutAPIError')); %#ok<NASGU>
 
             setenv('NDI_CLOUD_TOKEN', 'not.a.real.jwt');
-            setenv('NDI_CLOUD_ORGANIZATION_ID', 'fake_org_id');
+            ndi.cloud.internal.setOrganizations(struct('id', 'fake_org_id', ...
+                'name', 'Fake Org', 'canUploadDataset', true));
 
             isGood = ndi.cloud.testLogin('UseUILogin', false);
 
@@ -191,11 +221,11 @@ classdef AuthTest < matlab.unittest.TestCase
                 b_login, answer_login, apiResponse_login, apiURL_login);
             testCase.verifyTrue(b_login, login_message);
 
-            % Populate token / org so that ndi.cloud functions see the
-            % login. (auth.login only returns the token; the higher-level
-            % authenticate() is what normally exports it.)
+            % Populate token / organizations so that ndi.cloud functions
+            % see the login. (auth.login only returns them; the
+            % higher-level authenticate() is what normally stores them.)
             setenv('NDI_CLOUD_TOKEN', answer_login.token);
-            setenv('NDI_CLOUD_ORGANIZATION_ID', answer_login.user.organizations(1).id);
+            ndi.cloud.internal.setOrganizations(answer_login.user.organizations);
 
             % Clear silent re-auth credentials so we are exercising the
             % "Attempt 1 succeeds" path purely on the strength of the
@@ -265,7 +295,7 @@ function clearAllCloudEnv()
 % Wipe the NDI cloud env vars so testLogin sees a known clean state.
 % TestMethodTeardown restores them after the test.
     setenv('NDI_CLOUD_TOKEN', '');
-    setenv('NDI_CLOUD_ORGANIZATION_ID', '');
+    setenv('NDI_CLOUD_ORGANIZATIONS', '');
     setenv('NDI_CLOUD_USERNAME', '');
     setenv('NDI_CLOUD_PASSWORD', '');
     setenv('CLOUD_API_ENVIRONMENT', '');
