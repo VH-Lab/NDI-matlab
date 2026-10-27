@@ -332,7 +332,11 @@ classdef TestMigrateLocal < matlab.unittest.TestCase
 
         function testAnUnchangedDocumentIsCarriedAsItsV1Source(testCase)
             alpha = makeV1Body('alpha');      % demo_a: no migrator, no pass
-            filt = makeV1Filter('lowpass');   % filter: its migrator renames type
+            % a document pass 1 changes: the image_stack_parameters superclass
+            % migrator drops its empty `timestamp` placeholder (this used a
+            % `filter`, whose superclass migrator DID-matlab deleted:
+            % [unreached superclass migrators deleted], Jess Haley, 2026-10-27)
+            filt = makeV1Changed('lowpass');
             srcSqlite = fullfile(testCase.SessionRoot, '.ndi', 'did-sqlite.sqlite');
             buildV1Sqlite(srcSqlite, {jsonencode(alpha), jsonencode(filt)});
 
@@ -362,8 +366,8 @@ classdef TestMigrateLocal < matlab.unittest.TestCase
             % the migrated document keeps its V2 stamp and its migrated shape
             gotF = db.get(filt.base.id).toStruct();
             verifyEqual(testCase, gotF.document_class.schema_version, did2.schema.v2Stamp());
-            verifyTrue(testCase, isfield(gotF.filter, 'filter_type'));
-            verifyFalse(testCase, isfield(gotF.filter, 'type'));
+            verifyFalse(testCase, isfield(gotF.image_stack_parameters, 'timestamp'));
+            verifyEqual(testCase, gotF.image_stack_parameters.label, 'kept');
         end
 
         function testCarryUnchangedAsV1ReportsEveryOutcome(testCase)
@@ -461,13 +465,18 @@ end
 
 % ---- helpers --------------------------------------------------------------
 
-function body = makeV1Filter(name)
-% a did_v1 `filter` document: did2.convert.migrators.filter renames
-% filter.type -> filter.filter_type, so pass 1 changes it
+function body = makeV1Changed(name)
+% a did_v1 document pass 1 changes: a class no migrator names, whose
+% `image_stack_parameters` superclass block holds the template's empty
+% `timestamp` placeholder, which DID-matlab's superclass migrator
+% (+migrators_j/+super/image_stack_parameters) drops
 body = makeV1Body(name);
-body.document_class.class_name = 'filter';
+body.document_class.class_name = 'some_unregistered_class';
+body.document_class.superclasses = struct('class_name', ...
+    {'base', 'image_stack_parameters'}, 'class_version', '1.0.0');
 body = rmfield(body, 'demo_a');
-body.filter = struct('type', 'cheby1', 'order', 4);
+body.some_unregistered_class = struct('foo', 'bar');
+body.image_stack_parameters = struct('timestamp', [], 'label', 'kept');
 end
 
 function body = makeV1Body(name)
