@@ -560,12 +560,18 @@ classdef TestMigrateLocalEta < matlab.unittest.TestCase
             verifyGreaterThanOrEqual(testCase, olab.labels_passthrough, 1, ...
                 'the second pass did not find the raw label');
             verifyEqual(testCase, olab.resolved, 0);
+            % counted under either spelling: the class is the one pass 1
+            % recorded, which was `ontology_label` before the switch (a run
+            % against DID-matlab claude/phase2 at aa34109f printed "changed
+            % later, by class: ontology_label 1" for this fixture: the
+            % duplicate record)
             c = result.carriedAsV1;
-            verifyEqual(testCase, classCount(c.carried_by_class, 'ontologyLabel'), 2, ...
+            labels = {'ontologyLabel', 'ontology_label'};
+            verifyEqual(testCase, classCount(c.carried_by_class, labels), 2, ...
                 'each label is carried, once');
-            verifyEqual(testCase, classCount(c.changed_by_class, 'ontologyLabel'), 0, ...
+            verifyEqual(testCase, classCount(c.changed_by_class, labels), 0, ...
                 'a label was also counted as changed: two pass-1 records for one document');
-            verifyEqual(testCase, classCount(c.absent_by_class, 'ontologyLabel'), 0);
+            verifyEqual(testCase, classCount(c.absent_by_class, labels), 0);
         end
 
         function testStimulusPresentationBecomesAnItemManipulation(testCase)
@@ -945,13 +951,14 @@ d = d.setproperties('base.session_id', session());
 d = d.set_dependency_value('document_id', targetId);
 end
 
-function n = classCount(byClass, className)
-% the count for CLASSNAME in a {class_name, count} struct array; 0 when absent
+function n = classCount(byClass, classNames)
+% the summed count for CLASSNAMES (a cellstr) in a {class_name, count} struct
+% array; 0 when absent
 n = 0;
 if ~isstruct(byClass) || isempty(byClass) || ~isfield(byClass, 'class_name')
     return;
 end
-hit = strcmp({byClass.class_name}, className);
+hit = ismember({byClass.class_name}, classNames);
 if any(hit)
     n = sum([byClass(hit).count]);
 end
