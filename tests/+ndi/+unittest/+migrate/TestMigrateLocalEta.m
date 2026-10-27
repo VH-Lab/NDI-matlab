@@ -362,23 +362,40 @@ classdef TestMigrateLocalEta < matlab.unittest.TestCase
             verifyFalse(testCase, ...
                 isfield(ref.relative_time_reference.value, 'duration'));
 
-            % --- THE EPOCH'S EXTENT IS CARRIED, NOT MINTED --------------
-            % [device clocks on one epoch] (Jess Haley, 2026-10-26, did-schema
-            % V_eta_go_forward_class_audit.md): each extent is its own
-            % relative_time_reference whose referent is ITS ACQUISITION
-            % SYSTEM, and an extent that cannot be tied to exactly one system
-            % mints nothing; its source is listed as carried and kept whole.
-            % This fixture's element_epoch belongs to a stimulator with no
-            % acquisition system, so the only relative_time_reference is the
-            % folded anchor. (Inverted: it asserted a second, session-anchored
-            % extent reference.)
+            % --- THE UNTIED EXTENT KEEPS THE SESSION ANCHOR ---------------
+            % [untied epochs keep the session anchor] (Jess Haley, 2026-10-26,
+            % did-schema V_eta_go_forward_class_audit.md), amending [device
+            % clocks on one epoch]: an element epoch that cannot be tied to an
+            % acquisition system "is not carried when all of its extents come
+            % from one untied source and agree: it keeps a session-anchored
+            % time reference, using only the times the epoch states". This
+            % fixture's element_epoch belongs to a stimulator with no
+            % acquisition system and is the epoch's one source, so the
+            % destination holds TWO relative_time_references: the folded
+            % anchor, and the extent anchored on the session. (Inverts the
+            % [device clocks on one epoch] version, which asserted the folded
+            % anchor only and the source carried.)
             allRefs = findAllByClass(result.destination, 'relative_time_reference');
-            verifyEqual(testCase, numel(allRefs), 1, ...
-                ['expected the folded anchor only: the extent has no one system. ' ...
+            verifyEqual(testCase, numel(allRefs), 2, ...
+                ['expected the folded anchor and one session-anchored extent. ' ...
                  resultDiag(result)]);
-            verifyEqual(testCase, mint.epoch_extent_carried_sources, 1, resultDiag(result));
-            verifyTrue(testCase, isfield(result.summary.by_class, 'acquisition_epoch'), ...
-                ['the carried acquisition_epoch is not in the destination. ' resultDiag(result)]);
+            verifyEqual(testCase, mint.epoch_extent_refused_no_system, 1, resultDiag(result));
+            verifyEqual(testCase, mint.epoch_extent_untied_session_anchored, 1, resultDiag(result));
+            verifyEqual(testCase, mint.epoch_extent_carried_sources, 0, resultDiag(result));
+            extent = {};
+            for r = allRefs
+                if ~strcmp(r{1}.base.id, anchorId); extent{end+1} = r{1}; end %#ok<AGROW>
+            end
+            verifyNumElements(testCase, extent, 1, resultDiag(result));
+            if numel(extent) == 1
+                verifyEqual(testCase, depValue(extent{1}, 'referent_id'), ...
+                    depValue(epochDoc, 'session_id'), ...
+                    'the untied extent is anchored on the session the epoch belongs to');
+                clk = extent{1}.relative_time_reference.value.clock;
+                if isstruct(clk); clk = clk.name; end
+                verifyEqual(testCase, char(clk), 'dev_local_time', ...
+                    'the extent keeps the clock the element_epoch states');
+            end
         end
 
         function testWithoutASessionDocumentTheAnchorStaysOnTheSession(testCase)
