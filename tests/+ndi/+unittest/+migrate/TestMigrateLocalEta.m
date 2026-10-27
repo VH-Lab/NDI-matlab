@@ -503,6 +503,77 @@ classdef TestMigrateLocalEta < matlab.unittest.TestCase
             verifyEmpty(testCase, findAllByClass(result.destination, 'method'));
         end
 
+        function testARawV1OntologyLabelIsCarriedOnceUnderItsV1Name(testCase)
+            % DID-matlab claude/phase2-label lists `ontologyLabel` in
+            % did2.convert.rawV1Classes: pass 1 hands a label over as v1 wrote
+            % it (class `ontologyLabel`), and the second pass finds it under
+            % either name (ndi.migrate.internal.isOntologyLabelClass, #1076).
+            % Built by the writer, +setup/+conv/+haley/doImport.m: a
+            % behaviour imageStack (document_id AND subject_id, so pass 1
+            % carries it, carry-052) and two labels, one on the stack (carried
+            % with it, carry-064) and one on the subject (handed to the second
+            % pass, which cannot make an observation of an entity, so it is
+            % stored as its v1 source at the end). Each label is stored ONCE,
+            % as v1, under its v1 class name; the final stamp counts each once
+            % (a label pass 1 recorded twice was counted once changed and once
+            % carried).
+            subjId  = 'aabb1122ccdd3344_5500000000000040';
+            rowId   = 'aabb1122ccdd3344_5500000000000041';
+            stack = ndi.document('imageStack', 'imageStack', struct( ...
+                'label', ['A video recording capturing the behavior of C. ' ...
+                'elegans during an experimental assay.'], ...
+                'formatOntology', 'NCIT:C190180'), ...
+                'imageStack_parameters', struct('dimension_order', 'YXT', ...
+                'dimension_labels', 'height,width,time', ...
+                'dimension_size', [1024 1024 10797], ...
+                'dimension_scale', [32.93 32.93 0.3334], ...
+                'dimension_scale_units', 'micrometer,micrometer,second', ...
+                'data_type', 'uint8', 'data_limits', [0 255], ...
+                'timestamp', 738637.4600694445, 'clocktype', 'exp_global_time'));
+            stack = stack.setproperties('base.session_id', session());
+            stack = stack.set_dependency_value('document_id', rowId);
+            stack = stack.set_dependency_value('subject_id', subjId);
+            onStack = rawLabel(stack.id(), 'EMPTY:0000129');
+            onSubject = rawLabel(subjId, 'EMPTY:0000131');
+            bodies = { ...
+                jsonencode(makeSessionDoc(session())), ...
+                jsonencode(makeSubject(subjId)), ...
+                jsonencode(stack.document_properties), ...
+                jsonencode(onStack.document_properties), ...
+                jsonencode(onSubject.document_properties)};
+            result = runMigrate(testCase, bodies);
+            verifyEmpty(testCase, result.quarantine, resultDiag(result));
+            for lab = {onStack, onSubject}
+                d = findById(result.destination, lab{1}.id());
+                verifyNotEmpty(testCase, d, resultDiag(result));
+                if isempty(d); continue; end
+                verifyEqual(testCase, d.document_class.class_name, 'ontologyLabel');
+                verifyEqual(testCase, char(d.document_class.schema_version), 'did_v1');
+                verifyEqual(testCase, d.ontologyLabel, ...
+                    lab{1}.document_properties.ontologyLabel, 'the v1 block');
+                verifyEqual(testCase, depValue(d, 'document_id'), ...
+                    lab{1}.dependency_value('document_id'), 'the label''s only join');
+            end
+            verifyEqual(testCase, numel(findAllByClass(result.destination, 'ontologyLabel')), 2);
+            verifyEmpty(testCase, findAllByClass(result.destination, 'ontology_label'));
+            olab = result.secondPass.ontologyLabelSubjects;
+            verifyGreaterThanOrEqual(testCase, olab.labels_passthrough, 1, ...
+                'the second pass did not find the raw label');
+            verifyEqual(testCase, olab.resolved, 0);
+            % counted under either spelling: the class is the one pass 1
+            % recorded, which was `ontology_label` before the switch (a run
+            % against DID-matlab claude/phase2 at aa34109f printed "changed
+            % later, by class: ontology_label 1" for this fixture: the
+            % duplicate record)
+            c = result.carriedAsV1;
+            labels = {'ontologyLabel', 'ontology_label'};
+            verifyEqual(testCase, classCount(c.carried_by_class, labels), 2, ...
+                'each label is carried, once');
+            verifyEqual(testCase, classCount(c.changed_by_class, labels), 0, ...
+                'a label was also counted as changed: two pass-1 records for one document');
+            verifyEqual(testCase, classCount(c.absent_by_class, labels), 0);
+        end
+
         function testStimulusPresentationBecomesAnItemManipulation(testCase)
             % did-schema #88 (V_eta_method_plan.md, TEAM-SIGN-OFF [method]
             % 2026-10-21): a presentation that carries a sequence of gratings
@@ -732,13 +803,22 @@ body.session = struct('reference', 'exp_eta_1');
 end
 
 function body = makeStimulatorElement(stimId, subjId)
+% The stimulator probe as NDI writes it: `ndi_element_class` is the class
+% probetype2object.json maps type `stimulator` to,
+% ndi.probe.timeseries.stimulator. [element types have no default] (Jess
+% Haley, 2026-10-26, did-schema V_eta_go_forward_class_audit.md): "A
+% registered probe type ... is a `device` ONLY when the element's
+% `ndi_element_class` is `ndi.probe.*` ... Any other type, or a probe type on
+% a non-probe class, is carried as v1". With the old 'ndi.element' the
+% stimulator was carried (carry-063) and, by [dependents of a carried document
+% carry], its element_epoch too, so no untied extent reached epochMint.
 body = struct();
 body.document_class = struct('class_name', 'element', 'class_version', '1.0.0', ...
     'superclasses', struct('class_name', 'base', 'class_version', '1.0.0'));
 body.depends_on = struct('name', {'subject_id'}, 'value', {subjId});
 body.base = struct('id', stimId, 'session_id', session(), ...
     'name', 'stimulator', 'datestamp', datestamp());
-body.element = struct('ndi_element_class', 'ndi.element', 'name', 'stim', ...
+body.element = struct('ndi_element_class', 'ndi.probe.timeseries.stimulator', 'name', 'stim', ...
     'reference', 1, 'type', 'stimulator', 'direct', 0);
 end
 
@@ -869,6 +949,28 @@ end
 
 function s = session()
 s = 'aabb1122ccdd3344_9900aabbccddeeff';
+end
+
+function d = rawLabel(targetId, node)
+% +setup/+conv/+haley/doImport.m: ndi.document('ontologyLabel', 'ontologyLabel',
+% struct('ontologyNode', ...)) + session.newdocument, then
+% set_dependency_value('document_id', ...)
+d = ndi.document('ontologyLabel', 'ontologyLabel', struct('ontologyNode', node));
+d = d.setproperties('base.session_id', session());
+d = d.set_dependency_value('document_id', targetId);
+end
+
+function n = classCount(byClass, classNames)
+% the summed count for CLASSNAMES (a cellstr) in a {class_name, count} struct
+% array; 0 when absent
+n = 0;
+if ~isstruct(byClass) || isempty(byClass) || ~isfield(byClass, 'class_name')
+    return;
+end
+hit = ismember({byClass.class_name}, classNames);
+if any(hit)
+    n = sum([byClass(hit).count]);
+end
 end
 
 function d = datestamp()
