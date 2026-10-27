@@ -742,6 +742,58 @@ classdef TestMigrateLocalEta < matlab.unittest.TestCase
                 ['the graph does not close. ' resultDiag(result)]);
         end
 
+        function testAPresentationWhoseEpochIsNotMintedIsCarriedAsV1(testCase)
+            % Decided by Jess Haley, 2026-10-27 [epoch-less presentations
+            % carry]: no document but the presentation names epoch t00002, so
+            % epochMint mints no epoch for it and the manipulation could not be
+            % anchored to its epoch. The presentation is carried whole as v1
+            % with register row carry-109, not written anchored to the session.
+            subjId  = 'aabb1122ccdd3344_5500000000000010';
+            recElem = 'aabb1122ccdd3344_5500000000000011';
+            stimEl  = 'aabb1122ccdd3344_5500000000000012';
+            presId  = 'aabb1122ccdd3344_5500000000000013';
+            respId  = 'aabb1122ccdd3344_5500000000000014';
+            pres = makeStimulusPresentation(presId, stimEl);
+            pres.document_class.superclasses = [pres.document_class.superclasses, ...
+                struct('class_name', 'epochid', 'class_version', '1.0.0')];
+            pres.epochid = struct('epochid', 't00002');
+            bodies = { ...
+                jsonencode(makeSessionDoc(session())), ...
+                jsonencode(makeSubject(subjId)), ...
+                jsonencode(makeRecordingElement(recElem, subjId)), ...
+                jsonencode(makeStimulatorElement(stimEl, subjId)), ...
+                jsonencode(makeElementEpoch(stimEl, 't00001', 'dev_local_time')), ...
+                jsonencode(makeStimulusResponse(respId, presId, recElem)), ...
+                jsonencode(pres)};
+            result = runMigrate(testCase, bodies);
+
+            r = result.secondPass.stimulusSequence;
+            verifyNotEmpty(testCase, r, resultDiag(result));
+            verifyEqual(testCase, r.presentations_read, 1, resultDiag(result));
+            verifyEqual(testCase, r.epoch_carried.total, 1, resultDiag(result));
+            verifyEqual(testCase, r.epoch_carried.no_epoch_minted, 1, resultDiag(result));
+            verifyEqual(testCase, r.presentations_decomposed, 0, resultDiag(result));
+            verifyEqual(testCase, r.presentations_refused, 1, resultDiag(result));
+            rows = r.carry_rows;
+            hit = strcmp({rows.id}, presId);
+            verifyEqual(testCase, sum(hit), 1, 'the carried presentation has no register row');
+            if any(hit)
+                verifyEqual(testCase, rows(find(hit, 1)).row, 'carry-109');
+            end
+            verifyEqual(testCase, r.epoch_anchor, [], ...
+                'no manipulation was written, so no epoch anchor was handed over');
+
+            % the presentation is in the destination whole, as v1
+            doc = findById(result.destination, presId);
+            verifyNotEmpty(testCase, doc, resultDiag(result));
+            if isempty(doc); return; end
+            verifyEqual(testCase, doc.document_class.class_name, 'stimulus_presentation');
+            verifyEqual(testCase, doc.document_class.schema_version, 'did_v1');
+            verifyEmpty(testCase, findAllByClass(result.destination, 'manipulation'), ...
+                'a manipulation was written for the carried presentation');
+            verifyEqual(testCase, result.secondPassErrors.total, 0, resultDiag(result));
+        end
+
         function testPresentationTimesAreReadFromTheFileInTheStore(testCase)
             % Decided by Jess Haley, 2026-10-22 [presentation times from the
             % file] (did-schema V_eta_stimulus_response_model_plan.md): the

@@ -884,6 +884,17 @@ function result = local(path, options)
                     [anchorRows(bathAnchors), anchorRows(presentationAnchors)]);
             stimulusSequenceReport = tallyPresentationAnchors( ...
                 stimulusSequenceReport, presentationAnchors, epochAnchorReport);
+            if isstruct(stimulusSequenceReport) ...
+                    && isstruct(stimulusSequenceReport.epoch_anchor) ...
+                    && stimulusSequenceReport.epoch_anchor.anchors_left_on_session > 0
+                % [epoch-less presentations carry] (Jess Haley, 2026-10-27):
+                % every presentation decomposed was predicted foldable, so one
+                % the fold refused is a defect of the prediction, not a carry
+                stepErrors(end+1) = struct('step', 'presentationEpochAnchorMissed', ...
+                    'message', sprintf(['%d presentation manipulation(s) were ' ...
+                    'predicted to anchor to their epoch and stayed on the ' ...
+                    'session'], stimulusSequenceReport.epoch_anchor.anchors_left_on_session)); %#ok<AGROW>
+            end
         catch ME
             stepErrors(end+1) = struct('step', 'epochAnchorFoldFailed', 'message', ME.message); %#ok<AGROW>
             warning('NDI:migrate:epochAnchorFoldFailed', ...
@@ -2635,6 +2646,8 @@ function rows = anchorRows(a)
 end
 
 function report = tallyPresentationAnchors(report, presentationAnchors, foldReport)
+% (the caller reports anchors_left_on_session > 0 as a defect: [epoch-less
+% presentations carry] predicted each of them foldable)
 %TALLYPRESENTATIONANCHORS After resolveEpochAnchorFold: how many presentation
 %   anchors were re-pointed at their epoch, and how many stayed on their
 %   session ([presentation anchored to its epoch], Jess Haley, 2026-10-27).
@@ -2759,12 +2772,41 @@ function [convertResult, report, presentationAnchors] = resolveStimulusPresentat
 %   REPORT.epoch_anchor counts them; one the fold refuses stays on its
 %   session and is counted as anchors_left_on_session.
 %
+%   EPOCH-LESS PRESENTATIONS CARRY. Decided by Jess Haley, 2026-10-27
+%   [epoch-less presentations carry]: a presentation whose manipulation the
+%   epoch anchor fold would refuse -- no epoch is minted for its (session,
+%   epoch string), or its stimulator's clock for the epoch is no_time,
+%   inherited or unknown -- is carried whole as v1 with its register row,
+%   not written anchored to the session. This pass runs before epochMint, so
+%   it decides from ndi.migrate.internal.expectedEpochPairs (epochMint's own
+%   rules over the batch less the presentations); ndi.migrate.local checks
+%   the fold afterwards and reports a presentation it still refused as a
+%   defect (secondPassErrors). REPORT.epoch_carried counts the carries by
+%   reason. A presentation that names no epoch at all keeps its session
+%   anchor (counted in REPORT.epoch_anchor.no_epoch_string).
+%
 %   `visual_grating`, `visual_grating_manipulation`, `timed_sequence` and
 %   `timed_sequence_manipulation` are gone from #88; nothing here emits them.
     report = newStimulusSequenceReport();
     presentationAnchors = struct('anchor_id', {}, 'session_id', {}, ...
         'epoch_string', {}, 'epoch_clock', {});
     manipEpochs = struct('session_id', {}, 'epoch_string', {}, 'epoch_clock', {});
+    % [epoch-less presentations carry]: the pairs epochMint will mint, from
+    % the batch without the presentations this pass consumes
+    batchStructs = {};
+    for k = 1:numel(convertResult.migrated)
+        d = convertResult.migrated{k};
+        % the presentations, and the ingested stimulus files that become
+        % their bodies, are consumed before epochMint reads the batch
+        if any(strcmp(d.className(), {'stimulus_presentation', ...
+                'daqmetadatareader_epochdata_ingested'}))
+            continue;
+        end
+        batchStructs{end+1} = d.toStruct(); %#ok<AGROW>
+    end
+    [expectedPairs, report.epoch_prediction] = ...
+        ndi.migrate.internal.expectedEpochPairs(batchStructs);
+    clear batchStructs;
     if nargin < 5
         ndiDir = '';
     end
@@ -2844,6 +2886,27 @@ function [convertResult, report, presentationAnchors] = resolveStimulusPresentat
             b, resolver, sequence, 'CohortIdFor', cohortIdFor, ...
             'ControlRecords', controls, 'PresentationTimeFile', ptFile, ...
             'PresentationTimeFileStatus', ptStatus);
+        epochClock = '';
+        if ~isempty(manip) && ~rep.standalone && ~isempty(rep.epoch_id)
+            % [epoch-less presentations carry] (Jess Haley, 2026-10-27): the
+            % clock is the stimulator's for that epoch, read as the bath
+            % assembler reads it; a manipulation the epoch anchor fold would
+            % refuse is not written, and the presentation is carried as v1
+            epochClock = resolver.epochClockOfElement( ...
+                ndi.migrate.internal.etaShape.edge(b, 'stimulus_element_id'), ...
+                char(rep.epoch_id));
+            why = epochCarryReason(expectedPairs, char(ndi.v2.sessionIdOf(b)), ...
+                char(rep.epoch_id), char(epochClock));
+            if ~isempty(why)
+                report.epoch_carried.(why) = report.epoch_carried.(why) + 1;
+                report.epoch_carried.total = report.epoch_carried.total + 1;
+                manip = [];
+                % carry-register: carry-109
+                rep.reason = ['[carry-109] its epoch cannot anchor the ' ...
+                    'manipulation (' strrep(why, '_', ' ') '): epoch ''' ...
+                    char(rep.epoch_id) ''', clock ''' char(epochClock) ''''];
+            end
+        end
         report = tallyStimulusKinds(report, rep, ~isempty(manip));
         if ~isempty(manip)
             report.timing = tallyTiming(report.timing, rep);
@@ -2961,14 +3024,8 @@ function [convertResult, report, presentationAnchors] = resolveStimulusPresentat
         manips{end+1} = manip; %#ok<AGROW>
         presentationKeys(end+1) = struct('session_id', char(ndi.v2.sessionIdOf(b)), ...
             'epoch_id', char(rep.epoch_id), 'id', presId); %#ok<AGROW>
-        % [presentation anchored to its epoch]: the clock is the
-        % stimulator's for that epoch, read as the bath assembler reads it
-        epochClock = '';
-        if ~isempty(rep.epoch_id)
-            epochClock = resolver.epochClockOfElement( ...
-                ndi.migrate.internal.etaShape.edge(b, 'stimulus_element_id'), ...
-                char(rep.epoch_id));
-        end
+        % [presentation anchored to its epoch]: epochClock is the
+        % stimulator's for that epoch, read above
         manipEpochs(end+1) = struct('session_id', char(ndi.v2.sessionIdOf(b)), ...
             'epoch_string', char(rep.epoch_id), 'epoch_clock', char(epochClock)); %#ok<AGROW>
         for g = 1:numel(methods)
@@ -3346,6 +3403,10 @@ function r = newStimulusSequenceReport()
         'hartley_without_enumeration', 0, ...
         'notes_not_written_standalone', 0, ...
         'epoch_anchor',               [], ...
+        'epoch_prediction',           [], ...
+        'epoch_carried',              struct('total', 0, ...
+            'no_epoch_minted', 0, 'clock_no_time', 0, ...
+            'clock_inherited', 0, 'clock_unknown', 0), ...
         'control_records_read',       0, ...
         'control_records_folded',     0, ...
         'control_presentation_not_folded', 0, ...
@@ -3365,6 +3426,31 @@ function r = newStimulusSequenceReport()
         'timing',                     newTimingCensus(), ...
         'hartley',                    [], ...
         'ingested_stimulus',          []);
+end
+
+function why = epochCarryReason(expectedPairs, sessionId, epochString, clock)
+%EPOCHCARRYREASON Why the epoch anchor fold would refuse this presentation's
+%   manipulation ([epoch-less presentations carry]), '' when it would not.
+%   The clock rules are ndi.migrate.internal.epochAnchorFold's clockTerm.
+    why = '';
+    switch clock
+        case {'', 'utc', 'dev_local_time', 'dev_global_time', ...
+                'exp_global_time', 'approx_utc', 'approx_dev_global_time', ...
+                'approx_exp_global_time'}
+        case 'no_time'
+            why = 'clock_no_time';
+            return;
+        case 'inherited'
+            why = 'clock_inherited';
+            return;
+        otherwise
+            why = 'clock_unknown';
+            return;
+    end
+    if isempty(sessionId) || ~isKey(expectedPairs, ...
+            did2.convert.epochIndex.pairKey(sessionId, epochString))
+        why = 'no_epoch_minted';
+    end
 end
 
 function report = tallyStimulusKinds(report, rep, decomposed)
