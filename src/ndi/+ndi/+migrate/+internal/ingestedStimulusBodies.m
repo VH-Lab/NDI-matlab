@@ -34,6 +34,10 @@ function [bodies, consumed, report] = ingestedStimulusBodies(structs, presentati
 %   ndi.migrate.internal.settleIngestedFiles) -- and a description naming
 %   the epoch, the metadata reader (its id and NDI class) and the source
 %   class, so the v1 document can be rebuilt ([lossless means round trip]).
+%   The description opens with ndi.vintage.ingestedStimulusKey (epoch and
+%   reader), which ndi.daq.metadatareader/get_ingested_document finds the
+%   body by ([ingested stimulus reader finds the body], Jess Haley,
+%   2026-10-26).
 %   CONSUMED lists the v1 ids converted; the caller drops those documents.
 
 arguments
@@ -112,11 +116,13 @@ for k = 1:numel(structs)
     if ~isempty(readerId) && isKey(readerClass, readerId)
         cls = readerClass(readerId);
     end
-    desc = sprintf(['The ingested stimulus file of epoch %s: the metadata the ' ...
-        'NDI metadata reader %s%s read from the epoch''s files, stored by NDI ' ...
-        'as a gzip''d .nbf.tgz (ndi.compress.compress_metadata). Migrated from ' ...
-        'a v1 daqmetadatareader_epochdata_ingested.'], epochId, readerId, ...
-        classPart(cls));
+    % the opening names the epoch and the reader, and is what
+    % ndi.daq.metadatareader finds the body by ([ingested stimulus reader
+    % finds the body]): one function builds it for both
+    desc = [ndi.vintage.ingestedStimulusKey(epochId, char(readerId)), classPart(cls), ...
+        ' read from the epoch''s files, stored by NDI as a gzip''d .nbf.tgz ' ...
+        '(ndi.compress.compress_metadata). Migrated from a v1 ' ...
+        'daqmetadatareader_epochdata_ingested.'];
     ts = baseField(s, 'datestamp');
     args = {'Fields', struct('filename', 'data.bin'), 'Compression', 'gzip', ...
         'Description', desc, 'Id', id, 'SessionId', sid, 'Validate', false};

@@ -11,12 +11,14 @@ function f = elementFields(subjectDoc, ndi_session_obj)
 %   `element` became five documents; this puts the parts NDI needs back
 %   together. Where each piece went:
 %
-%     name / reference  -> `subject.local_identifier`, COMBINED. The
-%                          migrator writes `sprintf('%s (ref %s)', name,
-%                          reference)` and plain `name` when there is no
-%                          reference (+migrators_j/element.m:84-85), so
-%                          the split below is the exact inverse of that
-%                          one format string.
+%     name / reference  -> `entity.local_identifier`, COMBINED, as NDI's
+%                          display form '<name> | <reference>' (Jess Haley,
+%                          2026-10-26 [element local identifier is name and
+%                          reference]), or, as migrated before it,
+%                          '<name> (ref <reference>)'; plain `name` when
+%                          there is no reference. Both are read by
+%                          ndi.vintage.elementNameReference, the inverse of
+%                          ndi.vintage.elementLocalIdentifier.
 %     type              -> a `term_assertion` labelled `element type`
 %     ndi_element_class -> a `term_assertion` labelled `ndi element class`
 %     underlying_element_id -> a `directed_relation` `derived_from`
@@ -64,13 +66,13 @@ function f = elementFields(subjectDoc, ndi_session_obj)
 %   matters (`ndi.probe` sets `direct` = 1 and has no underlying element),
 %   so it is named here rather than guessed at.
 %
-%   THE NAME SPLIT IS THE LOSSY PART, AND IT IS NAMED RATHER THAN HIDDEN.
-%   An element whose NAME genuinely ends in " (ref something)" is
-%   indistinguishable from a name+reference pair after the fold. That is a
-%   property of the stored format, not of this function: the two facts
-%   were concatenated into one required field and the separator is not
-%   escaped. PRED is unaffected ("electrode16 (ref 1)", "rayostim (ref
-%   1)"), and any element with no reference round-trips exactly.
+%   THE NAME SPLIT. The display form '<name> | <reference>' is split at the
+%   LAST ' | ', and the reference is an integer, so every name round-trips,
+%   ' | ' and ' (ref ' included. The old form '<name> (ref X)' was not
+%   escaped: a NAME that itself ends in " (ref something)" cannot be told
+%   from a pair, which is why it was replaced (did-schema OPEN_WORK #142).
+%   DID-matlab's migrator refused such names (carried the element as v1),
+%   so what it wrote reads back exactly.
 %
 %   See also: ndi.vintage.elementSubjectDocs, ndi.vintage.elementLabel,
 %             ndi.element.
@@ -91,22 +93,9 @@ for blk = {'entity', 'subject'}
         break;
     end
 end
-tok = regexp(localId, '^(.*) \(ref (.+)\)$', 'tokens', 'once');
-if isempty(tok)
-    f.name = localId;
-    f.reference = [];
-else
-    f.name = tok{1};
-    % v1 `reference` is numeric on every NDI-written element; the migrator
-    % stringified it. Restore the number when it is one, and keep the text
-    % when it is not, rather than silently producing NaN.
-    refNum = str2double(tok{2});
-    if isnan(refNum)
-        f.reference = tok{2};
-    else
-        f.reference = refNum;
-    end
-end
+% '<name> | <reference>' (split at the last ' | '), the old
+% '<name> (ref <reference>)', or a bare name
+[f.name, f.reference] = ndi.vintage.elementNameReference(localId);
 
 % --- the two kind assertions -------------------------------------------
 f.type = assertionValue(ndi_session_obj, docId, ndi.vintage.elementLabel('type'));

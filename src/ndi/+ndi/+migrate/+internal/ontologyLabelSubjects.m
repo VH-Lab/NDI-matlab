@@ -10,6 +10,11 @@ function [plan, report] = ontologyLabelSubjects(migratedStructs)
 %   `derived_from` relation that keeps what it labelled. REPORT states its
 %   denominators first and splits the unresolved into named reasons.
 %
+%   A label document is found under EITHER class name, the renamed
+%   `ontology_label` or the v1 `ontologyLabel` (a label DID-matlab carries as
+%   raw v1), and both are handled identically; the test is
+%   ndi.migrate.internal.isOntologyLabelClass, the one place that decides.
+%
 %   THE SHAPE IS did-schema #88's (V_eta_entity_composition_plan.md sec. 1): the
 %   observation is the `observation` direction with the `term` value-kind mixin,
 %   about its `entity_id`, timed by `time_reference_id`. #88 has no
@@ -212,7 +217,7 @@ for k = 1:numel(migratedStructs)
     if ~isempty(subjectId)
         report.statements_indexed = report.statements_indexed + 1;
     end
-    if strcmp(cn, 'ontology_label')
+    if ndi.migrate.internal.isOntologyLabelClass(cn)   % either spelling
         labelIdx(end+1) = k; %#ok<AGROW>
     end
 end

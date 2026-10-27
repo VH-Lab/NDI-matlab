@@ -254,6 +254,92 @@ classdef TestOntologyLabelSubjects < matlab.unittest.TestCase
             tc.verifyEqual(depValue(plan(1).body, 'time_reference_id'), 'anchor_1');
         end
 
+        function testTheLabelClassHelperAcceptsBothSpellingsOnly(tc)
+            % ONE helper decides "is this a label document", for both the
+            % renamed spelling pass 1 gives a passthrough and the v1 class name
+            % a raw-v1 carry keeps (did-schema CLAUDE.md, "Changes the siblings
+            % must follow land in the siblings first").
+            f = @ndi.migrate.internal.isOntologyLabelClass;
+            tc.verifyTrue(f('ontology_label'));
+            tc.verifyTrue(f('ontologyLabel'));
+            tc.verifyTrue(f("ontology_label"));
+            tc.verifyTrue(f("ontologyLabel"));
+            tc.verifyFalse(f('OntologyLabel'));
+            tc.verifyFalse(f('ontologylabel'));
+            tc.verifyFalse(f('ontology_label_x'));
+            tc.verifyFalse(f('ontologyTableRow'));
+            tc.verifyFalse(f('observation'));
+            tc.verifyFalse(f(''));
+            tc.verifyFalse(f([]));
+            tc.verifyFalse(f({'ontology_label'}));
+        end
+
+        function testARawV1LabelIsFoundUnderItsV1ClassName(tc)
+            % DID-matlab carrying `ontologyLabel` as raw v1 hands the second
+            % pass a document whose class_name is `ontologyLabel`. It must be
+            % found, counted and resolved like the renamed one.
+            batch = { ...
+                imageObservation('img_1', 'sess1', 'subj_group_9', 'anchor_1'), ...
+                labelBodyV1('lab_1', 'sess1', 'img_1', 'EMPTY:0000131') };
+            [plan, rep] = ndi.migrate.internal.ontologyLabelSubjects(batch);
+            tc.verifyEqual(rep.labels_passthrough, 1);
+            tc.verifyEqual(rep.resolved, 1);
+            tc.verifyNumElements(plan, 1);
+            tc.verifyEqual(plan(1).source_id, 'lab_1');
+            tc.verifyEqual(plan(1).subject_id, 'subj_group_9');
+            tc.verifyEqual(plan(1).body.document_class.class_name, 'observation');
+            tc.verifyEqual(plan(1).body.term.value.node, 'EMPTY:0000131');
+        end
+
+        function testBothSpellingsAreHandledIdentically(tc)
+            % Every outcome the resolver has, once per spelling: resolved,
+            % blocked (referent has no subject), referent absent, no edge, no
+            % node and an unplaced field. The plan bodies and the whole report
+            % must be equal; only the relation's own minted id may differ.
+            cases = { ...
+                {'resolved',   @(mk) {imageObservation('img_1', 'sess1', 'subj_group_9', 'anchor_1'), ...
+                                      mk('lab_1', 'sess1', 'img_1', 'EMPTY:0000131')}}, ...
+                {'blocked',    @(mk) {imageStackPassthrough('img_2', 'sess2', 'platerow_5'), ...
+                                      mk('lab_2', 'sess2', 'img_2', 'EMPTY:0000132')}}, ...
+                {'absent',     @(mk) {mk('lab_3', 'sess2', 'img_absent', 'EMPTY:0000132')}}, ...
+                {'no edge',    @(mk) {mk('lab_4', 'sess1', '', 'EMPTY:0000131')}}, ...
+                {'no node',    @(mk) {imageObservation('img_1', 'sess1', 'subj_group_9', 'anchor_1'), ...
+                                      mk('lab_5', 'sess1', 'img_1', '')}}, ...
+                {'unplaced',   @(mk) {imageObservation('img_1', 'sess1', 'subj_group_9', 'anchor_1'), ...
+                                      withExtraField(mk('lab_8', 'sess1', 'img_1', 'EMPTY:0000131'))}}};
+            for c = 1:numel(cases)
+                name = cases{c}{1};
+                build = cases{c}{2};
+                [planR, repR] = ndi.migrate.internal.ontologyLabelSubjects(build(@labelBody));
+                [planV, repV] = ndi.migrate.internal.ontologyLabelSubjects(build(@labelBodyV1));
+                tc.verifyEqual(repR.labels_passthrough, 1, name);
+                tc.verifyEqual(repV, repR, name);
+                tc.verifyNumElements(planV, numel(planR), name);
+                for k = 1:min(numel(planR), numel(planV))
+                    tc.verifyEqual(planV(k).body, planR(k).body, name);
+                    tc.verifyEqual(rmfield(planV(k), {'body', 'related'}), ...
+                        rmfield(planR(k), {'body', 'related'}), name);
+                    tc.verifyEqual(depValue(planV(k).related{1}, 'child_id'), ...
+                        depValue(planR(k).related{1}, 'child_id'), name);
+                    tc.verifyEqual(depValue(planV(k).related{1}, 'parent_id'), ...
+                        depValue(planR(k).related{1}, 'parent_id'), name);
+                end
+            end
+        end
+
+        function testAMixedBatchFindsLabelsUnderBothNames(tc)
+            % A batch holding one label of each spelling (e.g. a re-run after
+            % DID-matlab switched) counts and resolves both.
+            batch = { ...
+                imageObservation('img_1', 'sess1', 'subj_group_9', 'anchor_1'), ...
+                labelBody('lab_1', 'sess1', 'img_1', 'EMPTY:0000131'), ...
+                labelBodyV1('lab_2', 'sess1', 'img_1', 'EMPTY:0000132') };
+            [plan, rep] = ndi.migrate.internal.ontologyLabelSubjects(batch);
+            tc.verifyEqual(rep.labels_passthrough, 2);
+            tc.verifyEqual(rep.resolved, 2);
+            tc.verifyEqual(sort({plan.source_id}), {'lab_1', 'lab_2'});
+        end
+
         function testUnreadableEntriesAreCountedNotDropped(tc)
             % The silentLoss failure: a census that cannot read its input must
             % say so rather than report a clean zero.
@@ -291,6 +377,39 @@ end
 b.base = struct('id', docId, 'session_id', sessionId, ...
     'name', '', 'datestamp', '2024-06-01T12:00:00.000Z');
 b.ontology_label = struct('ontology_node', node);
+end
+
+function b = labelBodyV1(docId, sessionId, targetId, node)
+%LABELBODYV1 The same label carried as RAW v1: the NDI template's own class
+%   name (`ontologyLabel`), block (`ontologyLabel.ontologyNode`) and v1
+%   document_class, as NDI writes it
+%   (git show origin/main:src/ndi/ndi_common/database_documents/data/ontologyLabel.json).
+b = struct();
+b.document_class = struct( ...
+    'definition', '$NDIDOCUMENTPATH/data/ontologyLabel.json', ...
+    'validation', '$NDISCHEMAPATH/data/ontologyLabel_schema.json', ...
+    'class_name', 'ontologyLabel', ...
+    'property_list_name', 'ontologyLabel', ...
+    'class_version', 1, ...
+    'superclasses', struct('definition', '$NDIDOCUMENTPATH/base.json'));
+if isempty(targetId)
+    b.depends_on = struct('name', {}, 'value', {});
+else
+    b.depends_on = struct('name', 'document_id', 'value', targetId);
+end
+b.base = struct('id', docId, 'session_id', sessionId, ...
+    'name', '', 'datestamp', '2024-06-01T12:00:00.000Z');
+b.ontologyLabel = struct('ontologyNode', node);
+end
+
+function b = withExtraField(b)
+%WITHEXTRAFIELD A label stating a field the observation cannot place, in
+%   whichever block spelling the label carries.
+if isfield(b, 'ontology_label')
+    b.ontology_label.note = 'an extra field';
+else
+    b.ontologyLabel.note = 'an extra field';
+end
 end
 
 function b = imageObservation(docId, sessionId, subjectId, anchorId)

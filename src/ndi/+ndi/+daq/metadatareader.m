@@ -106,10 +106,18 @@ classdef metadatareader < ndi.ido & ndi.documentservice
             % stimulus or stimuli that were prepared to be presented in epoch with file list EPOCHFILES.
             % S is the ndi.session object associated with the data.
             %
+            % BOTH VINTAGES: a v1 daqmetadatareader_epochdata_ingested holds the
+            % file as 'data.bin'; the migrated opaque_body (the presentation's
+            % data body, Jess Haley 2026-10-26 [ingested stimulus reader finds
+            % the body]) holds the same bytes as its one member 'body_data_0'.
             parameters = {};
             d = ndi_daqmetadatareader_obj.get_ingested_document(epochfiles,S);
             if ~isempty(d)
-                [tname,tname_without_ext] = ndi.database.fun.copydocfile2temp(d,S,'data.bin','.nbf.tgz');
+                filename = 'data.bin';
+                if isfield(d.document_properties,'data_body')
+                    filename = 'body_data_0';
+                end
+                [tname,tname_without_ext] = ndi.database.fun.copydocfile2temp(d,S,filename,'.nbf.tgz');
                 parameters = ndi.compress.expand_metadata(tname_without_ext);
                 delete(tname);
             end
@@ -162,6 +170,16 @@ classdef metadatareader < ndi.ido & ndi.documentservice
             % Returns empty if there is no such document or the single document if
             % there is such a document.
             %
+            % BOTH VINTAGES. v1: the daqmetadatareader_epochdata_ingested that
+            % depends on this reader and names the epoch. A MIGRATED session
+            % has none: the file is an opaque_body of the epoch's
+            % stimulus-presentation manipulation, joined by session and epoch
+            % (Jess Haley, 2026-10-26, [ingested stimulus file is a body of the
+            % presentation]), and is found by ndi.vintage.ingestedStimulusBody
+            % ([ingested stimulus reader finds the body]). Without it every
+            % stimulus-parameter read on a migrated ingested dataset came back
+            % {} with no error. v1 is asked first and is unchanged.
+            %
             d = [];
             epochid = [];
 
@@ -173,6 +191,8 @@ classdef metadatareader < ndi.ido & ndi.documentservice
             d = S.database_search(q);
             if numel(d)==1
                 d = d{1};
+            elseif isempty(d) && ~isempty(epochid)
+                d = ndi.vintage.ingestedStimulusBody(S, ndi_daqmetadatareader_obj.id(), epochid);
             end
         end % get_ingested_document()
 
