@@ -732,13 +732,22 @@ body.session = struct('reference', 'exp_eta_1');
 end
 
 function body = makeStimulatorElement(stimId, subjId)
+% The stimulator probe as NDI writes it: `ndi_element_class` is the class
+% probetype2object.json maps type `stimulator` to,
+% ndi.probe.timeseries.stimulator. [element types have no default] (Jess
+% Haley, 2026-10-26, did-schema V_eta_go_forward_class_audit.md): "A
+% registered probe type ... is a `device` ONLY when the element's
+% `ndi_element_class` is `ndi.probe.*` ... Any other type, or a probe type on
+% a non-probe class, is carried as v1". With the old 'ndi.element' the
+% stimulator was carried (carry-063) and, by [dependents of a carried document
+% carry], its element_epoch too, so no untied extent reached epochMint.
 body = struct();
 body.document_class = struct('class_name', 'element', 'class_version', '1.0.0', ...
     'superclasses', struct('class_name', 'base', 'class_version', '1.0.0'));
 body.depends_on = struct('name', {'subject_id'}, 'value', {subjId});
 body.base = struct('id', stimId, 'session_id', session(), ...
     'name', 'stimulator', 'datestamp', datestamp());
-body.element = struct('ndi_element_class', 'ndi.element', 'name', 'stim', ...
+body.element = struct('ndi_element_class', 'ndi.probe.timeseries.stimulator', 'name', 'stim', ...
     'reference', 1, 'type', 'stimulator', 'direct', 0);
 end
 
