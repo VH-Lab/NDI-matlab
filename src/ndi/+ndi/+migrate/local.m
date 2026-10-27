@@ -347,6 +347,9 @@ function result = local(path, options)
     % DEFECT, reported in RESULT.secondPassErrors apart from the carries
     stepErrors = struct('step', {}, 'message', {});
     bathAnchors = [];   % resolveDeferred -> resolveEpochAnchorFold (did-schema #88)
+    % resolveStimulusPresentations -> resolveEpochAnchorFold ([presentation
+    % anchored to its epoch], Jess Haley, 2026-10-27)
+    presentationAnchors = [];
     strainReport = [];
     subjectStrainReport = [];
     openmindsCitationsReport = [];
@@ -777,7 +780,7 @@ function result = local(path, options)
         end
         tStep = migrateStepMark('resolveOntologyLabelSubjects', tStart, tStep, convertResult);
         try
-            [convertResult, stimulusSequenceReport] = ...
+            [convertResult, stimulusSequenceReport, presentationAnchors] = ...
                 resolveStimulusPresentations(convertResult, bodies, options, resolver, ndiDir);
         catch ME
             stepErrors(end+1) = struct('step', 'presentationResolveFailed', 'message', ME.message); %#ok<AGROW>
@@ -873,9 +876,14 @@ function result = local(path, options)
         end
         tStep = migrateStepMark('resolveEnsembleMembership', tStart, tStep, convertResult);
         try
+            % the bath anchors and, [presentation anchored to its epoch]
+            % (Jess Haley, 2026-10-27), each presentation manipulation's
+            % session anchor: one fold re-points both at the minted epoch
             [convertResult, epochAnchorReport] = ...
                 resolveEpochAnchorFold(convertResult, epochMintReport, options, ...
-                    bathAnchors);
+                    [anchorRows(bathAnchors), anchorRows(presentationAnchors)]);
+            stimulusSequenceReport = tallyPresentationAnchors( ...
+                stimulusSequenceReport, presentationAnchors, epochAnchorReport);
         catch ME
             stepErrors(end+1) = struct('step', 'epochAnchorFoldFailed', 'message', ME.message); %#ok<AGROW>
             warning('NDI:migrate:epochAnchorFoldFailed', ...
@@ -2567,6 +2575,7 @@ function [convertResult, report] = resolveEpochAnchorFold(convertResult, ...
     report.anchors_refolded   = 0;
     report.refold_quarantined = 0;
     report.folded             = false;
+    report.refolded_ids       = {};
     if isempty(plan)
         return;
     end
@@ -2592,6 +2601,7 @@ function [convertResult, report] = resolveEpochAnchorFold(convertResult, ...
         newDocs = [newDocs, sub.migrated]; %#ok<AGROW>
         report.anchors_refolded = report.anchors_refolded + 1;
     end
+    report.refolded_ids = replacedIds;
 
     if isempty(replacedIds)
         return;
@@ -2610,6 +2620,38 @@ function [convertResult, report] = resolveEpochAnchorFold(convertResult, ...
     convertResult.migrated = [kept, newDocs];
     convertResult.summary = recountSummary(convertResult);
     report.folded = true;
+end
+
+function rows = anchorRows(a)
+%ANCHORROWS An anchor list as the struct array epochAnchorFold reads ([] -> 0x0).
+    rows = struct('anchor_id', {}, 'session_id', {}, 'epoch_string', {}, ...
+        'epoch_clock', {});
+    for k = 1:numel(a)
+        rows(end+1) = struct('anchor_id', char(a(k).anchor_id), ...
+            'session_id', char(a(k).session_id), ...
+            'epoch_string', char(a(k).epoch_string), ...
+            'epoch_clock', char(a(k).epoch_clock)); %#ok<AGROW>
+    end
+end
+
+function report = tallyPresentationAnchors(report, presentationAnchors, foldReport)
+%TALLYPRESENTATIONANCHORS After resolveEpochAnchorFold: how many presentation
+%   anchors were re-pointed at their epoch, and how many stayed on their
+%   session ([presentation anchored to its epoch], Jess Haley, 2026-10-27).
+    if ~isstruct(report) || ~isfield(report, 'epoch_anchor') ...
+            || ~isstruct(report.epoch_anchor)
+        return;
+    end
+    refolded = {};
+    if isstruct(foldReport) && isfield(foldReport, 'refolded_ids')
+        refolded = foldReport.refolded_ids;
+    end
+    n = 0;
+    for k = 1:numel(presentationAnchors)
+        n = n + any(strcmp(presentationAnchors(k).anchor_id, refolded));
+    end
+    report.epoch_anchor.anchors_refolded = n;
+    report.epoch_anchor.anchors_left_on_session = numel(presentationAnchors) - n;
 end
 
 function [convertResult, report] = resolveSoftwareDedup(convertResult)
@@ -2657,7 +2699,7 @@ function [convertResult, report] = resolveSoftwareDedup(convertResult)
     convertResult.summary = recountSummary(convertResult);
 end
 
-function [convertResult, report] = resolveStimulusPresentations(convertResult, bodies, options, resolver, ndiDir)
+function [convertResult, report, presentationAnchors] = resolveStimulusPresentations(convertResult, bodies, options, resolver, ndiDir)
 %RESOLVESTIMULUSPRESENTATIONS V_eta second pass: DECOMPOSE each legacy
 %   stimulus_presentation into the did-schema #88 stimulus shape -- one
 %   standalone `method` document per distinct stimulus (a recipe:
@@ -2706,9 +2748,23 @@ function [convertResult, report] = resolveStimulusPresentations(convertResult, b
 %   stays as it is and is carried as v1 (stimulusPresentationToItem, CONTROL
 %   PAIRING). The report counts each, against control_records_read.
 %
+%   EPOCH ANCHOR. Decided by Jess Haley, 2026-10-27 [presentation anchored
+%   to its epoch] (option a, no new field): the manipulation's time reference
+%   is anchored to the entity of the epoch the presentation was in. The epoch
+%   entities are minted after this pass (did2.convert.epochMint), so each
+%   manipulation keeps its "during the session" anchor here and
+%   PRESENTATIONANCHORS names it with the presentation's (session, epoch
+%   string, clock) (ndi.migrate.internal.presentationEpochAnchors);
+%   resolveEpochAnchorFold re-points it at the epoch, as it does a bath's.
+%   REPORT.epoch_anchor counts them; one the fold refuses stays on its
+%   session and is counted as anchors_left_on_session.
+%
 %   `visual_grating`, `visual_grating_manipulation`, `timed_sequence` and
 %   `timed_sequence_manipulation` are gone from #88; nothing here emits them.
     report = newStimulusSequenceReport();
+    presentationAnchors = struct('anchor_id', {}, 'session_id', {}, ...
+        'epoch_string', {}, 'epoch_clock', {});
+    manipEpochs = struct('session_id', {}, 'epoch_string', {}, 'epoch_clock', {});
     if nargin < 5
         ndiDir = '';
     end
@@ -2905,6 +2961,16 @@ function [convertResult, report] = resolveStimulusPresentations(convertResult, b
         manips{end+1} = manip; %#ok<AGROW>
         presentationKeys(end+1) = struct('session_id', char(ndi.v2.sessionIdOf(b)), ...
             'epoch_id', char(rep.epoch_id), 'id', presId); %#ok<AGROW>
+        % [presentation anchored to its epoch]: the clock is the
+        % stimulator's for that epoch, read as the bath assembler reads it
+        epochClock = '';
+        if ~isempty(rep.epoch_id)
+            epochClock = resolver.epochClockOfElement( ...
+                ndi.migrate.internal.etaShape.edge(b, 'stimulus_element_id'), ...
+                char(rep.epoch_id));
+        end
+        manipEpochs(end+1) = struct('session_id', char(ndi.v2.sessionIdOf(b)), ...
+            'epoch_string', char(rep.epoch_id), 'epoch_clock', char(epochClock)); %#ok<AGROW>
         for g = 1:numel(methods)
             minted{end+1} = methods{g}; %#ok<AGROW>
         end
@@ -3026,6 +3092,11 @@ function [convertResult, report] = resolveStimulusPresentations(convertResult, b
     [batch, refs, anchorReport] = did2.convert.mintSessionDuring(batch, classes, ...
         nS + (1:numel(marked)), struct('SchemaCache', options.SchemaCache));
     report.time_references = anchorReport;
+    % [presentation anchored to its epoch]: name each manipulation's session
+    % anchor with its epoch, for resolveEpochAnchorFold
+    [presentationAnchors, report.epoch_anchor] = ...
+        ndi.migrate.internal.presentationEpochAnchors( ...
+        batch(nS + (1:numel(manips))), manipEpochs);
     minted = [batch(nS+1:end), refs, minted];
 
     % fold the minted documents through v1_to_v2: they are tagged
@@ -3274,6 +3345,7 @@ function r = newStimulusSequenceReport()
         'shape_movie_notes',          0, ...
         'hartley_without_enumeration', 0, ...
         'notes_not_written_standalone', 0, ...
+        'epoch_anchor',               [], ...
         'control_records_read',       0, ...
         'control_records_folded',     0, ...
         'control_presentation_not_folded', 0, ...
