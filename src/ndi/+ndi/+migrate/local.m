@@ -2265,7 +2265,7 @@ function [convertResult, report] = resolveOntologyLabelSubjects(convertResult, o
     kept = {};
     for k = 1:numel(convertResult.migrated)
         d = convertResult.migrated{k};
-        if strcmp(d.className(), 'ontology_label') ...
+        if ndi.migrate.internal.isOntologyLabelClass(d.className()) ...
                 && any(strcmp(d.get('base.id'), replacedIds))
             continue;   % superseded by the term_observation carrying its id
         end
