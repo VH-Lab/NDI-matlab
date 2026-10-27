@@ -435,7 +435,9 @@ classdef system < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice
             % that were created and added to the database.
             %
             % The per-epoch work (reading the raw data and compressing it into
-            % .nbf.tgz files) can optionally run on a parallel pool. All database
+            % .nbf.tgz files) runs on a parallel pool when NDI's parallel
+            % preferences allow it (see ndi.fun.parallelWorkers: by default, a pool
+            % that is already open is used and none is ever opened). All database
             % writes are made serially on the client after the epochs are computed,
             % and the documents are added in the same order as a serial ingest.
             %
@@ -443,12 +445,6 @@ classdef system < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice
             % |---------------------------|-----------------------------------------------|
             % | Parameter (default)       | Description                                   |
             % |---------------------------|-----------------------------------------------|
-            % | UseParallel (false)       | Read/compress epochs on a parallel pool. Falls|
-            % |                           |   back to serial (with a warning) if the      |
-            % |                           |   Parallel Computing Toolbox or a process     |
-            % |                           |   pool is unavailable.                        |
-            % | NumWorkers ([])           | Pool size when UseParallel is true. Empty     |
-            % |                           |   uses gcp() (the open pool, or a default one)|
             % | ShowProgress (true)       | Show a progress bar using                     |
             % |                           |   ndi.gui.component.ProgressBarWindow (silent |
             % |                           |   automatically in headless sessions).        |
@@ -458,13 +454,12 @@ classdef system < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice
             % |---------------------------|-----------------------------------------------|
             %
             % Example:
-            %    [b,d] = mydaqsystem.ingest('UseParallel',true);
+            %    [b,d] = mydaqsystem.ingest();
             %
-            % See also: ndi.session/ingest, ndi.daq.fun.ingestEpochDocuments
+            % See also: ndi.session/ingest, ndi.daq.fun.ingestEpochDocuments,
+            %    ndi.fun.parallelWorkers
             arguments
                 ndi_daqsystem_obj
-                options.UseParallel (1,1) logical = false
-                options.NumWorkers double {mustBeScalarOrEmpty, mustBeNonnegative, mustBeInteger} = []
                 options.ShowProgress (1,1) logical = true
                 options.ProgressBar = []
             end
@@ -501,7 +496,6 @@ classdef system < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice
 
                     docsPerEpoch = ndi.daq.fun.ingestEpochDocuments(ndi_daqsystem_obj.daqreader, ...
                         ndi_daqsystem_obj.daqmetadatareader, epochFiles, epochIds, ...
-                        'UseParallel', options.UseParallel, 'NumWorkers', options.NumWorkers, ...
                         'ProgressFcn', @(numDone, numTotal) ndi.daq.system.updateIngestProgressBar( ...
                             progressBar, barTag, numDone/numSteps));
                     for i=1:numel(docsPerEpoch)

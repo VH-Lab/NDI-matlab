@@ -18,23 +18,24 @@ function [docsPerEpoch, usedParallel] = ingestEpochDocuments(daqreader, daqmetad
 % so the caller remains responsible for serializing all database writes. That
 % is what makes it safe to compute the epochs on parallel workers.
 %
+% Whether the epochs are computed on a parallel pool follows NDI's parallel
+% preferences, through ndi.fun.parallelWorkers: by default a pool the user has
+% already opened is used, otherwise the epochs run serially, and NDI never
+% opens a pool unless Parallel.OpenPoolIfNone is true. Thread pools are not
+% used (the raw-file readers and the compression are not thread-safe).
+% Results do not depend on the number of workers.
+%
 % This function takes name/value pairs that modify its behavior:
 % |---------------------------|-----------------------------------------------|
 % | Parameter (default)       | Description                                   |
 % |---------------------------|-----------------------------------------------|
-% | UseParallel (false)       | Compute the epochs on a parallel pool. Falls  |
-% |                           |   back to serial (with a warning) when the    |
-% |                           |   Parallel Computing Toolbox is unavailable,  |
-% |                           |   the pool cannot be started, or the pool is  |
-% |                           |   a thread pool.                              |
-% | NumWorkers ([])           | Pool size to use when UseParallel is true.    |
-% |                           |   Empty uses gcp() (the open pool, or a new   |
-% |                           |   default pool). N > 0 ensures a pool of N    |
-% |                           |   workers.                                    |
 % | ProgressFcn ([])          | Function handle called as                     |
 % |                           |   ProgressFcn(NUMDONE, NUMTOTAL) on the client|
 % |                           |   after each epoch completes (in parallel     |
 % |                           |   mode via a parallel.pool.DataQueue).        |
+% | NumberOfWorkers ([])      | Overrides the preferences for this call;      |
+% |                           |   passed to ndi.fun.parallelWorkers. 0 forces |
+% |                           |   serial.                                     |
 % |---------------------------|-----------------------------------------------|
 %
 % USEDPARALLEL is true if the epochs were actually computed on a pool.
@@ -47,9 +48,8 @@ arguments
     daqmetadatareaders cell
     epochFiles cell
     epochIds cell
-    options.UseParallel (1,1) logical = false
-    options.NumWorkers double {mustBeScalarOrEmpty, mustBeNonnegative, mustBeInteger} = []
     options.ProgressFcn = []
+    options.NumberOfWorkers double {mustBeScalarOrEmpty, mustBeNonnegative} = []
 end
 
 numEpochs = numel(epochFiles);
@@ -63,16 +63,16 @@ usedParallel = false;
 counter = containers.Map('KeyType','char','ValueType','double');
 counter('done') = 0;
 
-pool = [];
-if options.UseParallel && numEpochs > 1
-    pool = resolvePool(options.NumWorkers);
+numberOfWorkers = 0;
+if numEpochs > 1
+    numberOfWorkers = resolveWorkers(options.NumberOfWorkers);
 end
 
-if ~isempty(pool)
+if numberOfWorkers > 0
     usedParallel = true;
     q = parallel.pool.DataQueue;
     listener = afterEach(q, @(~) tick(counter, numEpochs, options.ProgressFcn));
-    parfor k=1:numEpochs
+    parfor (k=1:numEpochs, numberOfWorkers)
         docsPerEpoch{k} = ingestOneEpoch(daqreader, daqmetadatareaders, epochFiles{k}, epochIds{k});
         send(q, k);
     end
@@ -124,44 +124,26 @@ function tick(counter, numTotal, progressFcn)
     end
 end % tick()
 
-function pool = resolvePool(numWorkers)
-% RESOLVEPOOL - return a usable process-based parallel pool, or [] for serial
-    pool = [];
-    if isempty(ver('parallel')) || ~license('test','Distrib_Computing_Toolbox')
-        warning('NDI:daq:ingest:parallelUnavailable', ...
-            ['UseParallel was requested but the Parallel Computing Toolbox ' ...
-             'is not available. Ingesting serially.']);
+function numberOfWorkers = resolveWorkers(numberOfWorkersOverride)
+% RESOLVEWORKERS - worker limit for the parfor, following NDI's parallel preferences
+    if isempty(numberOfWorkersOverride)
+        numberOfWorkers = ndi.fun.parallelWorkers();
+    elseif numberOfWorkersOverride < 1
+        numberOfWorkers = 0; % forced serial
         return;
+    else
+        numberOfWorkers = ndi.fun.parallelWorkers('numberOfWorkers', numberOfWorkersOverride);
     end
-    try
-        p = gcp('nocreate');
-        if isempty(numWorkers)
-            if isempty(p)
-                p = gcp();
-            end
-        elseif isempty(p) || p.NumWorkers ~= numWorkers
-            if ~isempty(p)
-                delete(p);
-            end
-            p = parpool(numWorkers);
+    if numberOfWorkers > 0
+        pool = gcp('nocreate');
+        if isa(pool, 'parallel.ThreadPool')
+            % ingestion reads raw files with third-party readers and writes
+            % compressed archives; that is not supported on thread workers
+            warning('NDI:daq:ingest:threadPool', ...
+                ['The open parallel pool is a thread pool, which ingestion does ' ...
+                 'not support. Open a process pool (parpool(''Processes'')) to ' ...
+                 'ingest in parallel. Ingesting serially.']);
+            numberOfWorkers = 0;
         end
-    catch ME
-        warning('NDI:daq:ingest:parallelUnavailable', ...
-            'Could not start a parallel pool (%s). Ingesting serially.', ME.message);
-        return;
     end
-    if isempty(p)
-        warning('NDI:daq:ingest:parallelUnavailable', ...
-            'No parallel pool is available. Ingesting serially.');
-        return;
-    end
-    if isa(p, 'parallel.ThreadPool')
-        % ingestion reads raw files with third-party readers and writes
-        % compressed archives; that is not supported on thread workers
-        warning('NDI:daq:ingest:threadPool', ...
-            ['The current parallel pool is a thread pool, which ingestion does ' ...
-             'not support. Open a process pool (parpool(''Processes'')). Ingesting serially.']);
-        return;
-    end
-    pool = p;
-end % resolvePool()
+end % resolveWorkers()

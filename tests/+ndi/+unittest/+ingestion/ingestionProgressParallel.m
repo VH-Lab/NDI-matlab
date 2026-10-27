@@ -12,8 +12,9 @@ classdef ingestionProgressParallel < ndi.unittest.session.buildSession
     %   figure is needed and the bars can be checked through their
     %   bookkeeping.
     %
-    %   On a runner without the Parallel Computing Toolbox the parallel tests
-    %   exercise the serial fallback; with the toolbox they exercise parfor.
+    %   Parallel use follows NDI's parallel preferences (ndi.fun.parallelWorkers).
+    %   The test that compares a parallel ingest with a serial one opens its
+    %   own process pool and is skipped without the Parallel Computing Toolbox.
     %
     %   Run with: results = runtests('ndi.unittest.ingestion.ingestionProgressParallel');
     %
@@ -114,20 +115,58 @@ classdef ingestionProgressParallel < ndi.unittest.session.buildSession
             end
         end
 
+        function testForcedSerialDoesNotUsePool(testCase)
+            % NumberOfWorkers 0 on the helper always runs in the client,
+            % whatever pool or preferences exist.
+            S = testCase.Session;
+            dev = S.daqsystem_load('name','intan1');
+            et = dev.epochtable();
+            epochFiles = arrayfun(@(e) e.underlying_epochs.underlying, et, 'UniformOutput', false);
+            [docsPerEpoch, usedParallel] = ndi.daq.fun.ingestEpochDocuments(dev.daqreader, ...
+                dev.daqmetadatareader, epochFiles(:)', {et.epoch_id}, 'NumberOfWorkers', 0);
+            testCase.verifyFalse(usedParallel);
+            testCase.verifyNumElements(docsPerEpoch, numel(et));
+        end
+
+        function testNoPoolIsOpenedByDefault(testCase)
+            % With Parallel.OpenPoolIfNone off (the default) and no pool open,
+            % ingestion runs serially and does not start a pool.
+            testCase.assumeFalse(logical(ndi.preferences.get('Parallel.OpenPoolIfNone')), ...
+                'Only meaningful when Parallel.OpenPoolIfNone is false.');
+            testCase.assumeTrue(~hasParallelToolbox() || isempty(gcp('nocreate')), ...
+                'Only meaningful when no parallel pool is open.');
+            S = testCase.Session;
+            [b, msg] = S.ingest('ShowProgress', false);
+            testCase.verifyTrue(logical(b), ['Ingestion failed: ' msg]);
+            testCase.verifyEqual(numel(ingestedEpochDocs(S)), 2);
+            if hasParallelToolbox()
+                testCase.verifyEmpty(gcp('nocreate'), 'ingest should not open a pool.');
+            end
+        end
+
         function testParallelMatchesSerial(testCase)
-            % Two copies of the same session: one ingested serially, one with
-            % UseParallel. The ingested documents and the data read back from
-            % them must agree.
+            % Two copies of the same session: one ingested with no pool, one
+            % with a process pool open (which the default preferences use).
+            % The ingested documents, the data read back from them, and the
+            % progress bars must agree.
+            testCase.assumeTrue(hasParallelToolbox(), ...
+                'Requires the Parallel Computing Toolbox.');
+            testCase.assumeEmpty(gcp('nocreate'), ...
+                'Needs to control the pool itself; close any open pool first.');
+            testCase.assumeFalse(logical(ndi.preferences.get('Parallel.OpenPoolIfNone')), ...
+                'The serial run needs Parallel.OpenPoolIfNone to be false.');
             [S1, S2] = copySession(testCase);
 
             [b1, msg1] = S1.ingest('ShowProgress', false);
             testCase.verifyTrue(logical(b1), ['Serial ingestion failed: ' msg1]);
 
-            warnState = warning('off', 'NDI:daq:ingest:parallelUnavailable');
-            restoreWarn = onCleanup(@() warning(warnState));
-            [b2, msg2] = S2.ingest('UseParallel', true, 'NumWorkers', 2, 'ShowProgress', false);
+            pool = parpool('Processes', 2);
+            testCase.addTeardown(@() delete(pool));
+            w = ndi.gui.component.ProgressBarWindow('ingest test', ...
+                'Silent', true, 'AutoDelete', false, 'GrabMostRecent', false);
+            testCase.addTeardown(@() deleteIfValid(w));
+            [b2, msg2] = S2.ingest('ProgressBar', w, 'ProgressBarTag', 'sessionBar');
             testCase.verifyTrue(logical(b2), ['Parallel ingestion failed: ' msg2]);
-            clear restoreWarn;
 
             d1 = ingestedEpochDocs(S1);
             d2 = ingestedEpochDocs(S2);
@@ -146,38 +185,14 @@ classdef ingestionProgressParallel < ndi.unittest.session.buildSession
                 testCase.verifyEqual(data2, data1, 'Ingested data should match.');
                 testCase.verifyEqual(t2, t1, 'Ingested time should match.');
             end
-        end
 
-        function testParallelProgressBarCompletes(testCase)
-            S = testCase.Session;
-            w = ndi.gui.component.ProgressBarWindow('ingest test', ...
-                'Silent', true, 'AutoDelete', false, 'GrabMostRecent', false);
-            testCase.addTeardown(@() deleteIfValid(w));
-
-            warnState = warning('off', 'NDI:daq:ingest:parallelUnavailable');
-            restoreWarn = onCleanup(@() warning(warnState));
-            [b, msg] = S.ingest('UseParallel', true, 'NumWorkers', 2, ...
-                'ProgressBar', w, 'ProgressBarTag', 'sessionBar');
-            clear restoreWarn;
-            testCase.verifyTrue(logical(b), ['Ingestion failed: ' msg]);
-
+            % progress reached completion through the DataQueue path
             barNum = w.getBarNum('sessionBar');
             testCase.assertNotEmpty(barNum);
             testCase.verifyEqual(w.ProgressBars(barNum).Progress, 1);
             otherBars = setdiff(1:numel(w.ProgressBars), barNum);
             testCase.verifyEqual(w.ProgressBars(otherBars).Progress, 1, ...
                 'The daq system bar should reach 100% in parallel mode too.');
-        end
-
-        function testParallelFallsBackWithoutToolbox(testCase)
-            testCase.assumeTrue(isempty(ver('parallel')) || ...
-                ~license('test','Distrib_Computing_Toolbox'), ...
-                'Only meaningful without the Parallel Computing Toolbox.');
-            S = testCase.Session;
-            [b, msg] = testCase.verifyWarning(@() S.ingest('UseParallel', true, ...
-                'ShowProgress', false), 'NDI:daq:ingest:parallelUnavailable');
-            testCase.verifyTrue(logical(b), ['Fallback ingestion failed: ' msg]);
-            testCase.verifyEqual(numel(ingestedEpochDocs(S)), 2);
         end
     end
 
@@ -210,6 +225,10 @@ function [ids, files] = summarize(d)
     for k = 1:numel(order)
         files{k} = sort({d{order(k)}.document_properties.files.file_info.name});
     end
+end
+
+function tf = hasParallelToolbox()
+    tf = ~isempty(ver('parallel')) && license('test','Distrib_Computing_Toolbox');
 end
 
 function recordCall(calls, numDone, numTotal)

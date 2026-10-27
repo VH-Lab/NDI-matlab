@@ -535,8 +535,12 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
             %
             % Ingest all raw data and synchronization information into the database.
             %
-            % The reading and compression of each epoch's raw data can optionally
-            % run on a parallel pool; all database writes stay serial. Progress is
+            % The reading and compression of each epoch's raw data runs on a parallel
+            % pool when NDI's parallel preferences allow it (Parallel.OpenPoolIfNone,
+            % Parallel.UseDefaultNumberOfWorkers, Parallel.NumberOfWorkers; see
+            % ndi.fun.parallelWorkers). With the default preferences a pool that is
+            % already open is used, and otherwise the epochs run serially; NDI does
+            % not open a pool on its own. All database writes stay serial. Progress is
             % shown with ndi.gui.component.ProgressBarWindow: one bar for the session
             % and one for each ndi.daq.system as it is ingested. In headless sessions
             % (e.g., -batch) the progress window is silent automatically.
@@ -545,11 +549,6 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
             % |---------------------------|-----------------------------------------------|
             % | Parameter (default)       | Description                                   |
             % |---------------------------|-----------------------------------------------|
-            % | UseParallel (false)       | Read/compress epochs on a parallel pool       |
-            % |                           |   (requires the Parallel Computing Toolbox;   |
-            % |                           |   falls back to serial with a warning).       |
-            % | NumWorkers ([])           | Pool size when UseParallel is true. Empty     |
-            % |                           |   uses gcp() (the open pool, or a default one)|
             % | ShowProgress (true)       | Show ingestion progress bars.                 |
             % | ProgressBar ([])          | An existing                                   |
             % |                           |   ndi.gui.component.ProgressBarWindow to use. |
@@ -559,14 +558,12 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
             % |---------------------------|-----------------------------------------------|
             %
             % Example:
-            %    [b,errmsg] = S.ingest();                   % serial, with a progress bar
-            %    [b,errmsg] = S.ingest('UseParallel',true);  % epochs on the parallel pool
+            %    [b,errmsg] = S.ingest();
+            %    parpool(4); [b,errmsg] = S.ingest();  % epochs on the open pool
             %
-            % See also: ndi.daq.system/ingest
+            % See also: ndi.daq.system/ingest, ndi.fun.parallelWorkers
             arguments
                 ndi_session_obj
-                options.UseParallel (1,1) logical = false
-                options.NumWorkers double {mustBeScalarOrEmpty, mustBeNonnegative, mustBeInteger} = []
                 options.ShowProgress (1,1) logical = true
                 options.ProgressBar = []
                 options.ProgressBarTag (1,:) char = ''
@@ -597,8 +594,7 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
             b = 1;
             for i=1:numel(daqs)
                 try
-                    [b_here,daq_d{i}] = daqs{i}.ingest('UseParallel', options.UseParallel, ...
-                        'NumWorkers', options.NumWorkers, 'ShowProgress', options.ShowProgress, ...
+                    [b_here,daq_d{i}] = daqs{i}.ingest('ShowProgress', options.ShowProgress, ...
                         'ProgressBar', progressBar);
                 catch ME
                     ndi.daq.system.removeIngestProgressBar(progressBar, barTag);
