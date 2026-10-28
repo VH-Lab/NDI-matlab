@@ -2760,6 +2760,11 @@ function [convertResult, report, presentationAnchors] = resolveStimulusPresentat
 %   edges keep resolving) when the fold can place all of it, and otherwise
 %   stays as it is and is carried as v1 (stimulusPresentationToItem, CONTROL
 %   PAIRING). The report counts each, against control_records_read.
+%   [second pass reads control stimuli from v1] (Jess Haley, 2026-10-27): the
+%   records are read from the ORIGINAL v1 bodies
+%   (ndi.migrate.internal.controlRecordsByPresentation; REPORT.control_v1),
+%   not from pass 1's output, so DID-matlab can move the class to its raw-v1
+%   path.
 %
 %   EPOCH ANCHOR. Decided by Jess Haley, 2026-10-27 [presentation anchored
 %   to its epoch] (option a, no new field): the manipulation's time reference
@@ -2836,23 +2841,20 @@ function [convertResult, report, presentationAnchors] = resolveStimulusPresentat
     % its presentation's item value and NO V2 document of its own; responses
     % then point at the presentation only (its id is stripped from their
     % input_id below). See ndi.migrate.internal.stimulusPresentationToItem.
-    controlsByPresentation = containers.Map('KeyType', 'char', 'ValueType', 'any');
+    %
+    % READ FROM v1. Decided by Jess Haley, 2026-10-27 [second pass reads
+    % control stimuli from v1]: the records are the ORIGINAL v1 documents
+    % (BODIES), not pass 1's output, so DID-matlab can move the class to its
+    % raw-v1 path. Pass 1's output is consulted only for which ids it handed
+    % on (a record it quarantined is not folded) and, below, to drop the
+    % handed-on copy of each record converted (same id).
+    handedOnIds = cell(1, numel(convertResult.migrated));
     for k = 1:numel(convertResult.migrated)
-        d = convertResult.migrated{k};
-        if ~strcmp(d.className(), 'control_stimulus_ids'); continue; end
-        report.control_records_read = report.control_records_read + 1;
-        cs = d.toStruct();
-        presId = ndi.migrate.internal.etaShape.edge(cs, 'stimulus_presentation_id');
-        if isempty(presId)
-            continue;
-        end
-        held = {};
-        if isKey(controlsByPresentation, presId)
-            held = controlsByPresentation(presId);
-        end
-        held{end+1} = cs; %#ok<AGROW>
-        controlsByPresentation(presId) = held;
+        handedOnIds{k} = char(convertResult.migrated{k}.get('base.id'));
     end
+    [controlsByPresentation, report.control_v1] = ...
+        ndi.migrate.internal.controlRecordsByPresentation(bodies, handedOnIds);
+    report.control_records_read = report.control_v1.control_records_read;
     controlFolded = {};
     controlConverted = {};
     calcs = {};
@@ -3128,9 +3130,11 @@ function [convertResult, report, presentationAnchors] = resolveStimulusPresentat
                 && any(strcmp(d.get('base.id'), consumed))
             continue;
         end
-        if strcmp(cls, 'control_stimulus_ids') ...
-                && any(strcmp(d.get('base.id'), controlConverted))
-            continue;   % replaced by its calculation (same id)
+        if any(strcmp(d.get('base.id'), controlConverted))
+            % replaced by its calculation (same id). By id, whatever class
+            % pass 1 handed it on as ([second pass reads control stimuli
+            % from v1]: the record itself is read from v1).
+            continue;
         end
         if any(strcmp(cls, {'session', 'entity'}))
             sessionStructs{end+1} = d.toStruct(); %#ok<AGROW>
@@ -3407,6 +3411,7 @@ function r = newStimulusSequenceReport()
         'epoch_carried',              struct('total', 0, ...
             'no_epoch_minted', 0, 'clock_no_time', 0, ...
             'clock_inherited', 0, 'clock_unknown', 0), ...
+        'control_v1',                 [], ...
         'control_records_read',       0, ...
         'control_records_folded',     0, ...
         'control_presentation_not_folded', 0, ...

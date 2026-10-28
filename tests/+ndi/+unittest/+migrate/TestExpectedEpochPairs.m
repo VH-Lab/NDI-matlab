@@ -27,6 +27,29 @@ classdef TestExpectedEpochPairs < matlab.unittest.TestCase
             testCase.verifyTrue(isKey(p, did2.convert.epochIndex.pairKey('S1', 't00001')));
         end
 
+        function testAMigratedSessionEntityIsASessionDocument(testCase)
+            % on did-schema #88 pass 1 turns the v1 `session` into an `entity`
+            % of type session; epochMint counts it, so the prediction must too
+            v1 = struct();
+            v1.document_class = struct('class_name', 'session', 'class_version', '1.0.0', ...
+                'superclasses', struct('class_name', 'base', 'class_version', '1.0.0'));
+            v1.depends_on = struct('name', {}, 'value', {});
+            v1.base = struct('id', 'aabb1122ccdd3344_77000000000000aa', ...
+                'session_id', 'aabb1122ccdd3344_77000000000000bb', ...
+                'name', 'session', 'datestamp', '2024-06-01T12:00:00.000Z');
+            v1.session = struct('reference', 'exp_1');
+            r1 = did2.convert.v1_to_v2({v1}, 'Validate', false);
+            testCase.assumeNotEmpty(r1.migrated, 'pass 1 did not migrate the session');
+            sess = r1.migrated{1}.toStruct();
+            [p, r] = ndi.migrate.internal.expectedEpochPairs({sess, ...
+                carrier('c1', 'aabb1122ccdd3344_77000000000000bb', 't00001')});
+            testCase.verifyEqual(r.session_documents, 1, ...
+                sprintf('the migrated session (class %s) was not counted', ...
+                sess.document_class.class_name));
+            testCase.verifyTrue(isKey(p, did2.convert.epochIndex.pairKey( ...
+                'aabb1122ccdd3344_77000000000000bb', 't00001')));
+        end
+
         function testTheKeyIsThePairNotTheString(testCase)
             s = {sessionDoc('sessdoc', 'S1'), carrier('c1', 'S1', 't00001')};
             p = ndi.migrate.internal.expectedEpochPairs(s);

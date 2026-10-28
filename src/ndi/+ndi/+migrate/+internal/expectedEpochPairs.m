@@ -17,7 +17,8 @@ function [pairs, report] = expectedEpochPairs(structs)
 %   off a document, keyed on the PAIR (did2.convert.epochIndex.pairKey), is
 %   minted unless the string is synthetic (`whole_session_...`), the document
 %   has no session id, or its session has no `session` document or more than
-%   one. An `epoch` document already in the batch counts as its pair.
+%   one (a #88 `entity` of type session counts, as in epochMint's
+%   classNameOf). An `epoch` document already in the batch counts as its pair.
 %
 %   STRUCTS  cell of document property structs (the batch as it will reach
 %            epochMint, without the documents the caller is about to consume).
@@ -116,10 +117,17 @@ report.pairs_expected = double(pairs.Count);
 end
 
 function c = classNameOf(b)
+% as epochMint's classNameOf: an `entity` (did-schema #88) answers its type's
+% handle ('session', 'epoch'), so a session entity counts as a session document
 c = '';
 if isfield(b, 'document_class') && isstruct(b.document_class) ...
         && isfield(b.document_class, 'class_name')
     c = char(b.document_class.class_name);
+end
+if strcmp(c, 'entity') && isfield(b, 'entity') && isstruct(b.entity) ...
+        && isfield(b.entity, 'type')
+    t = did2.build.vocabularyHandle('entity_type', b.entity.type);
+    if ~isempty(t); c = char(t); end
 end
 end
 
