@@ -142,6 +142,45 @@ classdef ingestionProgressParallel < ndi.unittest.session.buildSession
             testCase.verifyTrue(all(f >= 0 & f <= 1));
         end
 
+        function testPlanAndSegmentsMatchIngestEpochfiles(testCase)
+            % The parallel path builds each epoch from INGEST_EPOCHFILES_PLAN,
+            % INGEST_SEGMENT and INGEST_ATTACH_SEGMENTS. Done by hand here (no
+            % pool needed), that must give the same document as
+            % INGEST_EPOCHFILES: the same files, in the same order, holding the
+            % same data.
+            S = testCase.Session;
+            dev = S.daqsystem_load('name','intan1');
+            et = dev.epochtable();
+            ef = et(1).underlying_epochs.underlying;
+            reader = dev.daqreader;
+
+            dSerial = reader.ingest_epochfiles(ef, et(1).epoch_id);
+
+            [d, plan] = reader.ingest_epochfiles_plan(ef, et(1).epoch_id);
+            testCase.verifyNotEmpty(plan, 'The example epoch has data segments to write.');
+            testCase.verifyEqual(sum([plan.weight]), 1, 'AbsTol', 1e-12, ...
+                'Segment weights should sum to the whole epoch.');
+            files = cell(1,numel(plan));
+            for t = numel(plan):-1:1 % any order: segments are independent
+                files{t} = reader.ingest_segment(ef, plan(t));
+            end
+            dPlanned = ndi.daq.reader.mfdaq.ingest_attach_segments(d, plan, files);
+
+            namesSerial = {dSerial.document_properties.files.file_info.name};
+            namesPlanned = {dPlanned.document_properties.files.file_info.name};
+            testCase.verifyEqual(namesPlanned, namesSerial, ...
+                'The planned document should list the same files in the same order.');
+
+            for i = 1:numel(namesSerial)
+                if ~startsWith(namesSerial{i}, 'ai_')
+                    continue;
+                end
+                a = expandFile(dSerial, i);
+                b = expandFile(dPlanned, i);
+                testCase.verifyEqual(b, a, ['Segment ' namesSerial{i} ' should hold the same data.']);
+            end
+        end
+
         function testForcedSerialDoesNotUsePool(testCase)
             % NumberOfWorkers 0 on the helper always runs in the client,
             % whatever pool or preferences exist.
@@ -256,6 +295,13 @@ end
 
 function tf = hasParallelToolbox()
     tf = ~isempty(ver('parallel')) && license('test','Distrib_Computing_Toolbox');
+end
+
+function data = expandFile(d, i)
+    % EXPANDFILE - decompress the I-th (ephys) file attached to document D
+    location = d.document_properties.files.file_info(i).locations(1).location;
+    % expand_ephys takes the name without the .nbf.tgz extension
+    data = ndi.compress.expand_ephys(extractBefore(location, '.nbf.tgz'));
 end
 
 function recordCall(calls, numDone, numTotal)

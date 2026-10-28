@@ -772,6 +772,12 @@ classdef mfdaq < ndi.daq.reader
             % Creates an ndi.document of type 'daqreader_epochdata_ingested' that contains the data
             % for an ndi.daq.reader object. The document D is not added to any database.
             %
+            % The work is done in two steps that can also be called separately (as
+            % ndi.daq.fun.ingestEpochDocuments does to spread segments over a parallel
+            % pool): INGEST_EPOCHFILES_PLAN builds the document and the list of segments
+            % to write, INGEST_SEGMENT reads and compresses one segment, and
+            % INGEST_ATTACH_SEGMENTS adds the segment files to the document in plan order.
+            %
             % This function takes name/value pairs that modify its behavior:
             % |---------------------------|-----------------------------------------------|
             % | Parameter (default)       | Description                                   |
@@ -786,6 +792,9 @@ classdef mfdaq < ndi.daq.reader
             %
             % Example:
             %    D = mydaqreader.ingest_epochfiles(epochfiles,epoch_id);
+            %
+            % See also: ndi.daq.reader.mfdaq/ingest_epochfiles_plan,
+            %    ndi.daq.reader.mfdaq/ingest_segment, ndi.daq.reader.mfdaq.ingest_attach_segments
             arguments
                 ndi_daqreader_mfdaq_obj
                 epochfiles
@@ -793,10 +802,50 @@ classdef mfdaq < ndi.daq.reader
                 options.ProgressFcn = []
             end
 
+            [d, plan] = ndi_daqreader_mfdaq_obj.ingest_epochfiles_plan(epochfiles, epoch_id);
+            ndi.daq.reader.mfdaq.reportIngestProgress(options.ProgressFcn, 0);
+            weightTotal = sum([plan.weight]);
+            weightDone = 0;
+            segmentFiles = cell(1,numel(plan));
+            for t=1:numel(plan)
+                segmentFiles{t} = ndi_daqreader_mfdaq_obj.ingest_segment(epochfiles, plan(t));
+                weightDone = weightDone + plan(t).weight;
+                ndi.daq.reader.mfdaq.reportIngestProgress(options.ProgressFcn, weightDone/max(weightTotal,eps));
+            end
+            d = ndi.daq.reader.mfdaq.ingest_attach_segments(d, plan, segmentFiles);
+            ndi.daq.reader.mfdaq.reportIngestProgress(options.ProgressFcn, 1);
+        end % ingest_epochfiles()
+
+        function [d, plan] = ingest_epochfiles_plan(ndi_daqreader_mfdaq_obj, epochfiles, epoch_id)
+            % INGEST_EPOCHFILES_PLAN - plan the ingestion of an epoch, segment by segment
+            %
+            % [D, PLAN] = INGEST_EPOCHFILES_PLAN(NDI_DAQREADER_MFDAQ_OBJ, EPOCHFILES, EPOCH_ID)
+            %
+            % Creates the 'daqreader_mfdaq_epochdata_ingested' document D for the epoch,
+            % with its channel list already attached, and PLAN, a structure array with
+            % one entry per data segment still to be written, in the order the segment
+            % files are added to D. Each entry can be computed independently (and on a
+            % different worker) with INGEST_SEGMENT; INGEST_ATTACH_SEGMENTS then adds the
+            % resulting files to D. Fields of each PLAN entry:
+            %
+            %   kind              - 'ephys', 'digital', 'eventmarktext' or 'time'
+            %   channeltype       - the channel type to read
+            %   channels          - the channel numbers to read
+            %   eventchanneltypes - (eventmarktext) the type of each channel
+            %   s0, s1            - first and last sample of the segment
+            %   poly              - polynomial converting scaled to underlying data
+            %   datasize          - size of an underlying sample, in bits
+            %   underlying_format - the underlying data type (e.g., 'uint16')
+            %   docfilename       - the name of the file in D (e.g., 'ai_group1_seg.nbf_3')
+            %   segment, numSegments - this segment's number within its group
+            %   weight            - this segment's share of the epoch's work (sums to 1)
+            %
+            % D is not added to any database.
+            %
+            % See also: ndi.daq.reader.mfdaq/ingest_epochfiles
+
             sample_analog_segment = 1e6; %(1M)
             sample_digital_segment = 1e7; % 10M
-
-            mylog = ndi.common.getLogger;
 
             daqreader_mfdaq_epochdata_ingested.parameters.sample_analog_segment = sample_analog_segment;
             daqreader_mfdaq_epochdata_ingested.parameters.sample_digital_segment = sample_digital_segment;
@@ -817,7 +866,6 @@ classdef mfdaq < ndi.daq.reader
                 'epochid',epochid_struct);
             d = d.set_dependency_value('daqreader_id',ndi_daqreader_mfdaq_obj.id());
 
-            filenames_we_made = {};
 
             % Step 1: add channel list
             ch = ndi_daqreader_mfdaq_obj.getchannelsepoch(epochfiles);
@@ -854,7 +902,6 @@ classdef mfdaq < ndi.daq.reader
             if ~b
                 error(errmsg);
             end
-            filenames_we_made{end+1} = channel_file_name;
             d = d.add_file('channel_list.bin',channel_file_name);
 
             ci = mfdaq_epoch_channel_obj.channel_information;  %% need to update to combine eventmarktext
@@ -876,8 +923,11 @@ classdef mfdaq < ndi.daq.reader
                 end
                 progressWeightTotal = progressWeightTotal + nnz(entries_here);
             end
-            progressWeightDone = 0;
-            ndi.daq.reader.mfdaq.reportIngestProgress(options.ProgressFcn, 0);
+
+            planEntry = struct('kind','','channeltype','','channels',[],'eventchanneltypes',{{}},...
+                's0',[],'s1',[],'poly',[],'datasize',[],'underlying_format','',...
+                'docfilename','','segment',[],'numSegments',[],'weight',[]);
+            plan = repmat(planEntry,1,0);
 
             for i = 1:numel(types)
                 if strcmp(types{i},'eventmarktext')
@@ -908,7 +958,7 @@ classdef mfdaq < ndi.daq.reader
                 groups = unique([ci(chan_entries_indexes).group]);
                 for g = 1:numel(groups)
                     group_indexes = find([ci(chan_entries_indexes).group]==groups(g));
-                    progressWeightHere = numel(group_indexes);
+                    groupWeight = numel(group_indexes)/max(progressWeightTotal,1);
                     % Step 2b: check to make sure all channels have the same sampling rate
                     % will this work for all channel types? Probably not
                     [underlying_format,mypoly,datasize] = ndi_daqreader_mfdaq_obj.underlying_datatype(epochfiles,...
@@ -937,13 +987,16 @@ classdef mfdaq < ndi.daq.reader
                         error(['Sample rates are not all identical for ' types{i} ' group ' int2str(groups(g)) '.']);
                     end
 
+                    entry = planEntry;
+                    entry.channeltype = types{i};
+                    entry.poly = mypoly;
+                    entry.datasize = datasize;
+                    entry.underlying_format = underlying_format;
+
                     % now, do different things depending upon the underlying data types
 
                     switch ci(chan_entries_indexes(group_indexes(1))).dataclass
                         case 'ephys'
-                            % read in the data and convert it to its underlying data type
-                            %   (e.g., convert from double to uint16 if that's the underlying form)
-
                             if isnan(sample_rates_here_unique)
                                 error(['Analog records have a NaN sample rate.']);
                             end
@@ -952,27 +1005,11 @@ classdef mfdaq < ndi.daq.reader
                             t0t1 = ndi_daqreader_mfdaq_obj.t0_t1(epochfiles);
                             S0 = 1;
                             S1 = ndi_daqreader_mfdaq_obj.epochtimes2samples(types{i}, channels_here, epochfiles, t0t1{1}(end));
-
                             s_starts = [S0:sample_analog_segment:S1];
-                            compressClass = ndi.compress.datatypestring(underlying_format);
-                            for s=1:numel(s_starts)
-                                mylog.msg('system',5,['Working on ephys/analog ingestion segment ' int2str(s) ' of ' int2str(numel(s_starts)) '.']);
-                                s0 = s_starts(s);
-                                s1 = min(s0+sample_analog_segment-1,S1);
-                                data = ndi_daqreader_mfdaq_obj.readchannels_epochsamples(types{i}, ...
-                                    channels_here, epochfiles, s0, s1);
-                                data = ndi.compress.scaled2underlying(data, mypoly);
-                                output_bit_size = datasize;
-                                filename_here = ndi.file.temp_name();
-                                [ratio] = ndi.compress.compress_ephys(data,output_bit_size,filename_here,'data_format',compressClass,'data_is_unsigned','u'==lower(underlying_format(1)));
-                                d = d.add_file([fileprefix '_group' int2str(groups(g)) '_seg.nbf_' int2str(s) ],...
-                                    [filename_here '.nbf.tgz']);
-                                filenames_we_made{end+1} = [filename_here '.nbf.tgz'];
-                                ndi.daq.reader.mfdaq.reportIngestProgress(options.ProgressFcn, ...
-                                    (progressWeightDone + progressWeightHere*s/numel(s_starts))/progressWeightTotal);
-                            end
+                            entry.kind = 'ephys';
+                            entry.channels = channels_here;
+                            segmentLength = sample_analog_segment;
                         case 'digital'
-                            % do prep
                             if isnan(sample_rates_here_unique)
                                 error(['Analog records have a NaN sample rate.']);
                             end
@@ -982,60 +1019,94 @@ classdef mfdaq < ndi.daq.reader
                             S0 = 1;
                             S1 = ndi_daqreader_mfdaq_obj.epochtimes2samples(types{i}, channels_here, epochfiles, t0t1{1}(end));
                             s_starts = [S0:sample_digital_segment:S1];
-                            for s=1:numel(s_starts)
-                                mylog.msg('system',5,['Working on digital ingestion segment ' int2str(s) ' of ' int2str(numel(s_starts)) '.']);
-                                s0 = s_starts(s);
-                                s1 = min(s0+sample_digital_segment-1,S1);
-                                data = ndi_daqreader_mfdaq_obj.readchannels_epochsamples(types{i}, ...
-                                    channels_here, epochfiles, s0, s1);
-                                data = ndi.compress.scaled2underlying(data, mypoly);
-                                output_bit_size = datasize;
-                                filename_here = ndi.file.temp_name();
-                                [ratio] = ndi.compress.compress_digital(data,filename_here);
-                                d = d.add_file([fileprefix '_group' int2str(groups(g)) '_seg.nbf_' int2str(s) ],...
-                                    [filename_here '.nbf.tgz']);
-                                filenames_we_made{end+1} = [filename_here '.nbf.tgz'];
-                                ndi.daq.reader.mfdaq.reportIngestProgress(options.ProgressFcn, ...
-                                    (progressWeightDone + progressWeightHere*s/numel(s_starts))/progressWeightTotal);
-                            end
+                            entry.kind = 'digital';
+                            entry.channels = channels_here;
+                            segmentLength = sample_digital_segment;
                         case 'eventmarktext'
-                            mylog.msg('system',5,['Working on event/marker/text ingestion segment 1 of 1.']);
                             channels_here = [ci(chan_entries_indexes(group_indexes)).number];
                             channeltype = {};
                             for ii=1:numel(channels_here)
                                 channeltype{end+1} = ci(chan_entries_indexes(group_indexes(ii))).type;
                             end
-                            [T,D] = ndi_daqreader_mfdaq_obj.readevents_epochsamples_native(channeltype,channels_here,epochfiles,-Inf,Inf);
-                            filename_here = ndi.file.temp_name();
-                            ratio = ndi.compress.compress_eventmarktext(channeltype,channels_here,T,D,filename_here);
-                            d = d.add_file(['evmktx_group' int2str(groups(g)) '_seg.nbf_1'],[filename_here '.nbf.tgz']);
-                            filenames_we_made{end+1} = [filename_here '.nbf.tgz'];
+                            entry.kind = 'eventmarktext';
+                            entry.channels = channels_here;
+                            entry.eventchanneltypes = channeltype;
+                            entry.docfilename = ['evmktx_group' int2str(groups(g)) '_seg.nbf_1'];
+                            entry.segment = 1;
+                            entry.numSegments = 1;
+                            entry.weight = groupWeight;
+                            plan(end+1) = entry;
+                            continue;
                         case 'time'
+                            % as before this change: the time segments use the sample
+                            % range and channels of the group planned just before
                             s_starts = [S0:sample_analog_segment:S1];
-                            for s=1:numel(s_starts)
-                                mylog.msg('system',5,['Working on time ingestion segment ' int2str(s) ' of ' int2str(numel(s_starts)) '.']);
-                                s0 = s_starts(s);
-                                s1 = min(s0+sample_analog_segment-1,S1);
-                                data = ndi_daqreader_mfdaq_obj.readchannels_epochsamples(types{i}, channels_here, epochfiles, s0, s1);
-                                filename_here = ndi.file.temp_name();
-                                [ratio] = ndi.compress.compress_time(data,filename_here);
-                                d = d.add_file([fileprefix '_group' int2str(groups(g)) '_seg.nbf_' int2str(s) ],...
-                                    [filename_here '.nbf.tgz']);
-                                filenames_we_made{end+1} = [filename_here '.nbf.tgz'];
-                                ndi.daq.reader.mfdaq.reportIngestProgress(options.ProgressFcn, ...
-                                    (progressWeightDone + progressWeightHere*s/numel(s_starts))/progressWeightTotal);
-                            end
-
+                            entry.kind = 'time';
+                            entry.channels = channels_here;
+                            segmentLength = sample_analog_segment;
                         otherwise
                             error(['Unknown channel type ' types{i} '.']);
                     end
-                    progressWeightDone = progressWeightDone + progressWeightHere;
-                    ndi.daq.reader.mfdaq.reportIngestProgress(options.ProgressFcn, ...
-                        progressWeightDone/max(progressWeightTotal,1));
+                    for s=1:numel(s_starts)
+                        entry.s0 = s_starts(s);
+                        entry.s1 = min(s_starts(s)+segmentLength-1,S1);
+                        entry.docfilename = [fileprefix '_group' int2str(groups(g)) '_seg.nbf_' int2str(s)];
+                        entry.segment = s;
+                        entry.numSegments = numel(s_starts);
+                        entry.weight = groupWeight/numel(s_starts);
+                        plan(end+1) = entry; %#ok<AGROW> one entry per segment
+                    end
                 end
             end
-            ndi.daq.reader.mfdaq.reportIngestProgress(options.ProgressFcn, 1);
-        end % ingest_epochfiles()
+        end % ingest_epochfiles_plan()
+
+        function filename = ingest_segment(ndi_daqreader_mfdaq_obj, epochfiles, planEntry)
+            % INGEST_SEGMENT - read and compress one planned segment of an epoch
+            %
+            % FILENAME = INGEST_SEGMENT(NDI_DAQREADER_MFDAQ_OBJ, EPOCHFILES, PLANENTRY)
+            %
+            % Reads the data described by PLANENTRY (one entry of the plan returned by
+            % INGEST_EPOCHFILES_PLAN) and writes it, compressed, to a new temporary file.
+            % Returns the full path of that .nbf.tgz file. Touches no database, so it can
+            % run on a parallel worker.
+            %
+            % See also: ndi.daq.reader.mfdaq/ingest_epochfiles_plan
+            mylog = ndi.common.getLogger;
+            filename_here = ndi.file.temp_name();
+            switch planEntry.kind
+                case 'ephys'
+                    mylog.msg('system',5,['Working on ephys/analog ingestion segment ' ...
+                        int2str(planEntry.segment) ' of ' int2str(planEntry.numSegments) '.']);
+                    data = ndi_daqreader_mfdaq_obj.readchannels_epochsamples(planEntry.channeltype, ...
+                        planEntry.channels, epochfiles, planEntry.s0, planEntry.s1);
+                    data = ndi.compress.scaled2underlying(data, planEntry.poly);
+                    compressClass = ndi.compress.datatypestring(planEntry.underlying_format);
+                    ndi.compress.compress_ephys(data,planEntry.datasize,filename_here,...
+                        'data_format',compressClass,...
+                        'data_is_unsigned','u'==lower(planEntry.underlying_format(1)));
+                case 'digital'
+                    mylog.msg('system',5,['Working on digital ingestion segment ' ...
+                        int2str(planEntry.segment) ' of ' int2str(planEntry.numSegments) '.']);
+                    data = ndi_daqreader_mfdaq_obj.readchannels_epochsamples(planEntry.channeltype, ...
+                        planEntry.channels, epochfiles, planEntry.s0, planEntry.s1);
+                    data = ndi.compress.scaled2underlying(data, planEntry.poly);
+                    ndi.compress.compress_digital(data,filename_here);
+                case 'eventmarktext'
+                    mylog.msg('system',5,'Working on event/marker/text ingestion segment 1 of 1.');
+                    [T,D] = ndi_daqreader_mfdaq_obj.readevents_epochsamples_native(planEntry.eventchanneltypes,...
+                        planEntry.channels,epochfiles,-Inf,Inf);
+                    ndi.compress.compress_eventmarktext(planEntry.eventchanneltypes,planEntry.channels,T,D,filename_here);
+                case 'time'
+                    mylog.msg('system',5,['Working on time ingestion segment ' ...
+                        int2str(planEntry.segment) ' of ' int2str(planEntry.numSegments) '.']);
+                    data = ndi_daqreader_mfdaq_obj.readchannels_epochsamples(planEntry.channeltype, ...
+                        planEntry.channels, epochfiles, planEntry.s0, planEntry.s1);
+                    ndi.compress.compress_time(data,filename_here);
+                otherwise
+                    error(['Unknown segment kind ' planEntry.kind '.']);
+            end
+            filename = [filename_here '.nbf.tgz'];
+        end % ingest_segment()
         function t = epochsamples2times(ndi_daqreader_mfdaq_obj, channeltype, channel, epochfiles, s)
             % EPOCHSAMPLES2TIMES - convert samples to time
             %
@@ -1238,6 +1309,19 @@ classdef mfdaq < ndi.daq.reader
             tf = ~isempty(intersect(base_types, analog_event_prefixes));
         end % is_analog_event_type
 
+
+        function d = ingest_attach_segments(d, plan, segmentFiles)
+            % INGEST_ATTACH_SEGMENTS - add planned segment files to an ingested-epoch document
+            %
+            % D = ndi.daq.reader.mfdaq.ingest_attach_segments(D, PLAN, SEGMENTFILES)
+            %
+            % Adds SEGMENTFILES{t}, the file INGEST_SEGMENT wrote for PLAN(t), to the
+            % document D under PLAN(t).docfilename, in plan order.
+            %
+            for t=1:numel(plan)
+                d = d.add_file(plan(t).docfilename, segmentFiles{t});
+            end
+        end % ingest_attach_segments()
 
         function reportIngestProgress(progressFcn, fraction)
             % REPORTINGESTPROGRESS - call an ingest_epochfiles ProgressFcn, safely
