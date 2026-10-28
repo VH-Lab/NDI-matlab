@@ -105,14 +105,41 @@ classdef ingestionProgressParallel < ndi.unittest.session.buildSession
                 dev.daqmetadatareader, epochFiles(:)', epochIds, 'ProgressFcn', progressFcn);
 
             testCase.verifyNumElements(docsPerEpoch, numel(et));
-            testCase.verifyEqual(double(calls.Count), numel(et), ...
-                'ProgressFcn should be called once per epoch.');
-            testCase.verifyEqual(calls(numel(et)), [numel(et) numel(et)], ...
+            reported = cell2mat(calls.values(num2cell(1:double(calls.Count)))');
+            numDone = reported(:,1);
+            testCase.verifyEqual(reported(:,2), repmat(numel(et), numel(numDone), 1), ...
+                'Every call should report the total number of epochs.');
+            testCase.verifyEqual(numDone(numDone==round(numDone))', 1:numel(et), ...
+                'Each whole number of epochs should be reported exactly once, in order.');
+            testCase.verifyTrue(all(diff(numDone) > 0), ...
+                'Progress should only move forward.');
+            testCase.verifyTrue(any(numDone ~= round(numDone)), ...
+                'The mfdaq reader should report progress within each epoch.');
+            testCase.verifyEqual(numDone(end), numel(et), ...
                 'The last call should report all epochs done.');
             for k = 1:numel(docsPerEpoch)
                 testCase.verifyEqual(docsPerEpoch{k}{1}.document_properties.epochid.epochid, ...
                     epochIds{k}, 'Documents should be returned in epoch order.');
             end
+        end
+
+        function testReaderReportsWithinEpochProgress(testCase)
+            % ndi.daq.reader.mfdaq/ingest_epochfiles reports the fraction of the
+            % epoch done after each segment: starting at 0, never going back,
+            % and ending at 1.
+            S = testCase.Session;
+            dev = S.daqsystem_load('name','intan1');
+            et = dev.epochtable();
+            fractions = containers.Map('KeyType','double','ValueType','double');
+            d = dev.daqreader.ingest_epochfiles(et(1).underlying_epochs.underlying, ...
+                et(1).epoch_id, 'ProgressFcn', @(f) recordFraction(fractions, f));
+            testCase.verifyClass(d, 'ndi.document');
+            f = cell2mat(fractions.values(num2cell(1:double(fractions.Count))));
+            testCase.verifyGreaterThan(numel(f), 2, 'Expected a report per segment.');
+            testCase.verifyEqual(f(1), 0, 'Progress should start at 0.');
+            testCase.verifyEqual(f(end), 1, 'Progress should end at 1.');
+            testCase.verifyTrue(all(diff(f) >= 0), 'Progress should never go back.');
+            testCase.verifyTrue(all(f >= 0 & f <= 1));
         end
 
         function testForcedSerialDoesNotUsePool(testCase)
@@ -232,7 +259,12 @@ function tf = hasParallelToolbox()
 end
 
 function recordCall(calls, numDone, numTotal)
-    calls(numDone) = [numDone numTotal];
+    % keyed by call order, so repeated or fractional values are all kept
+    calls(double(calls.Count)+1) = [numDone numTotal];
+end
+
+function recordFraction(fractions, f)
+    fractions(double(fractions.Count)+1) = f;
 end
 
 function deleteIfValid(w)
