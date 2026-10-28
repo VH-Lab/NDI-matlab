@@ -68,8 +68,12 @@ function T = approachMappingTable(S, varargin)
 
     % Read the tab-delimited epoch list
     % We use readtable, which is robust for handling headers and different delimiters
-    opts = detectImportOptions(epoch_list_fullfile, 'FileType', 'text');
-    opts.Delimiter = '\t'; % Ensure tab is the delimiter
+    % Give the tab delimiter up front so a comma-separated list of types is not
+    % detected as extra columns
+    opts = detectImportOptions(epoch_list_fullfile, 'FileType', 'text', 'Delimiter', '\t');
+    opts = setvartype(opts, 'char');
+    opts.VariableNamesLine = 1; % the first line holds the column titles
+    opts.DataLines = [2 Inf];
     epochInfo = readtable(epoch_list_fullfile, opts);
     % Standardize variable names for easier access
     epochInfo.Properties.VariableNames = {'epochid', 'type'};
@@ -97,10 +101,14 @@ function T = approachMappingTable(S, varargin)
     
     % Calculate total rows needed
     total_rows = 0;
+    % The type field of testdirinfo.txt can be a comma-separated list of types
+    epochTypes = cell(height(epochInfo), 1);
     for i = 1:height(epochInfo)
-        current_type = epochInfo.type{i};
-        if isKey(type_counts, current_type)
-            total_rows = total_rows + type_counts(current_type);
+        epochTypes{i} = strtrim(strsplit(epochInfo.type{i}, ','));
+        for k = 1:numel(epochTypes{i})
+            if isKey(type_counts, epochTypes{i}{k})
+                total_rows = total_rows + type_counts(epochTypes{i}{k});
+            end
         end
     end
 
@@ -112,19 +120,20 @@ function T = approachMappingTable(S, varargin)
     % Iterate through each epoch in the list
     for i = 1:height(epochInfo)
         epoch_id = epochInfo.epochid{i};
-        epoch_type = epochInfo.type{i};
         
-        % Find all matching mappings for the current epoch type
-        for j = 1:numel(mappings)
-            if strcmp(mappings(j).name, epoch_type)
-                % A match is found, add a row to our output data
-                output_data(currentRow, :) = { ...
-                    epoch_id, ...
-                    mappings(j).value, ...
-                    subjectIdentifier, ...
-                    sessionPath ...
-                };
-                currentRow = currentRow + 1;
+        % Find all matching mappings for each of the current epoch's types
+        for k = 1:numel(epochTypes{i})
+            for j = 1:numel(mappings)
+                if strcmp(mappings(j).name, epochTypes{i}{k})
+                    % A match is found, add a row to our output data
+                    output_data(currentRow, :) = { ...
+                        epoch_id, ...
+                        mappings(j).value, ...
+                        subjectIdentifier, ...
+                        sessionPath ...
+                    };
+                    currentRow = currentRow + 1;
+                end
             end
         end
     end

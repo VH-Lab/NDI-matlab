@@ -43,7 +43,7 @@ for d = 1:numel(dev)
         fileInd = cellfun(@(f) any(contains(underlyingFiles,f)),filename);
 
         if any(fileInd)
-            epochid{fileInd} = et(e).epoch_id;
+            epochid(fileInd) = {et(e).epoch_id}; % several filenames can name the same epoch
         end
     end
 end

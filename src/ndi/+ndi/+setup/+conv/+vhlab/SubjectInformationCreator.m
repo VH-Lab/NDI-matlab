@@ -1,0 +1,93 @@
+classdef SubjectInformationCreator < ndi.setup.NDIMaker.SubjectInformationCreator
+% SUBJECTINFORMATIONCREATOR - Creates NDI subject information for the VH Lab.
+%
+% This class implements the 'create' method to generate subject identifiers
+% and openMINDS objects from a row of the table made by
+% ndi.setup.conv.vhlab.subjectInfoTable.
+%
+% See also: ndi.setup.conv.vhlab.subjectInfoTable, ndi.setup.NDIMaker.subjectMaker
+
+methods
+    function [subjectIdentifier, strain, species, biologicalSex] = create(~, tableRow)
+        % CREATE - Generates subject data from a VH Lab subject info table row.
+        %
+        %   [SUBJECTIDENTIFIER, STRAIN, SPECIES, BIOLOGICALSEX] = CREATE(OBJ, TABLEROW)
+        %
+        %   Inputs:
+        %       tableRow (table): A single-row table containing subject information with
+        %                         the following columns:
+        %                         - 'subjectIdentifier' (string/char)
+        %                         - 'species' (string/char, e.g., 'Mustela putorius furo')
+        %                         - 'BiologicalSex' (string/char, e.g., 'female')
+        %
+        %   Outputs:
+        %       subjectIdentifier (char): The local identifier for the subject. Returns NaN
+        %                                 on failure.
+        %       strain (NaN): The VH Lab subject table does not specify strain, so this
+        %                     is always returned as NaN.
+        %       species (openminds.controlledterms.Species): An openMINDS object representing
+        %                     the subject's species. Returns NaN on failure.
+        %       biologicalSex (openminds.controlledterms.BiologicalSex): An openMINDS object for
+        %                     the subject's biological sex. Returns NaN on failure.
+        %
+
+        % --- Initialize Outputs to NaN for robustness ---
+        subjectIdentifier = NaN;
+        strain = NaN; % Strain is not provided in the vhlab.subjectInfoTable
+        species = NaN;
+        biologicalSex = NaN;
+
+        % --- Extract and Validate Data from Input Table Row ---
+
+        % 1. Subject Identifier
+        try
+            subjectId_val = string(tableRow.subjectIdentifier);
+            if ~isempty(subjectId_val) && strlength(subjectId_val) > 0
+                subjectIdentifier = char(subjectId_val);
+            else
+                warning('createSubjectInformation:InvalidInput', 'subjectIdentifier in tableRow is empty.');
+                return; % Exit if no valid identifier
+            end
+        catch ME
+            warning('createSubjectInformation:InputError', 'Could not read subjectIdentifier from tableRow: %s', ME.message);
+            return;
+        end
+
+        % 2. Species
+        try
+            species_val = string(tableRow.species);
+            if strcmpi(species_val, 'Mustela putorius furo')
+                species = openminds.controlledterms.Species(...
+                    'name', 'Mustela putorius furo', ...
+                    'preferredOntologyIdentifier', 'NCBITaxon:9669');
+            else
+                warning('createSubjectInformation:UnknownSpecies', 'Species ''%s'' is not currently handled.', species_val);
+                % species remains NaN
+            end
+        catch ME
+            warning('createSubjectInformation:SpeciesError', 'Failed to create species object: %s', ME.message);
+            species = NaN; % Ensure it's NaN on failure
+        end
+
+        % 3. Biological Sex
+        try
+            sex_val = string(tableRow.BiologicalSex);
+            if strcmpi(sex_val, 'female')
+                biologicalSex = openminds.controlledterms.BiologicalSex(...
+                    'name', 'female', ...
+                    'preferredOntologyIdentifier', 'PATO:0000383');
+            elseif strcmpi(sex_val, 'male')
+                biologicalSex = openminds.controlledterms.BiologicalSex(...
+                    'name', 'male', ...
+                    'preferredOntologyIdentifier', 'PATO:0000384');
+            else
+                warning('createSubjectInformation:UnknownSex', 'BiologicalSex ''%s'' is not currently handled.', sex_val);
+                % biologicalSex remains NaN
+            end
+        catch ME
+            warning('createSubjectInformation:SexError', 'Failed to create biologicalSex object: %s', ME.message);
+            biologicalSex = NaN; % Ensure it's NaN on failure
+        end
+    end
+end
+end

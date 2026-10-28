@@ -66,7 +66,7 @@ for p = 1:numel(elements)
         epochInd = strcmpi(epochid,et(e).epoch_id);
         
         if any(epochInd)
-            element{epochInd} = elements(p);
+            element(epochInd) = {elements(p)}; % several entries can name the same epoch
         end
     end
 
