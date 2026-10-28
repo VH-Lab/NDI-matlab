@@ -143,7 +143,7 @@ function updateProgress(state, k, fraction, progressFcn)
         return;
     end
     frac(k) = newFraction;
-    state('frac') = frac;
+    state('frac') = frac; %#ok<NASGU> state is a containers.Map, a handle: this updates the caller's map
     if ~isempty(progressFcn)
         try
             progressFcn(sum(frac), numel(frac));
