@@ -31,8 +31,14 @@ function [docsPerEpoch, usedParallel] = ingestEpochDocuments(daqreader, daqmetad
 % |---------------------------|-----------------------------------------------|
 % | ProgressFcn ([])          | Function handle called as                     |
 % |                           |   ProgressFcn(NUMDONE, NUMTOTAL) on the client|
-% |                           |   after each epoch completes (in parallel     |
-% |                           |   mode via a parallel.pool.DataQueue).        |
+% |                           |   as epochs progress (in parallel mode via a  |
+% |                           |   parallel.pool.DataQueue). NUMDONE counts    |
+% |                           |   epochs and is fractional while an epoch is  |
+% |                           |   underway: readers whose ingest_epochfiles   |
+% |                           |   is ndi.daq.reader.mfdaq's report each       |
+% |                           |   segment they write. It is called only when  |
+% |                           |   NUMDONE changes, so each whole number is    |
+% |                           |   reported once.                              |
 % | NumberOfWorkers ([])      | Overrides the preferences for this call;      |
 % |                           |   passed to ndi.fun.parallelWorkers. 0 forces |
 % |                           |   serial.                                     |
@@ -59,9 +65,13 @@ assert(numel(epochIds)==numEpochs, ...
 docsPerEpoch = cell(numEpochs,1);
 usedParallel = false;
 
-% a counter that lives in a handle so the DataQueue callback can update it
-counter = containers.Map('KeyType','char','ValueType','double');
-counter('done') = 0;
+% per-epoch fractions done, in a handle so the DataQueue callback can update them
+state = containers.Map('KeyType','char','ValueType','any');
+state('frac') = zeros(1,numEpochs);
+
+% only readers using ndi.daq.reader.mfdaq's ingest_epochfiles take a ProgressFcn;
+% any other reader reports per epoch only
+withinEpoch = ~isempty(options.ProgressFcn) && readerReportsProgress(daqreader);
 
 numberOfWorkers = 0;
 if numEpochs > 1
@@ -71,32 +81,43 @@ end
 if numberOfWorkers > 0
     usedParallel = true;
     q = parallel.pool.DataQueue;
-    listener = afterEach(q, @(~) tick(counter, numEpochs, options.ProgressFcn));
+    listener = afterEach(q, @(msg) updateProgress(state, msg(1), msg(2), options.ProgressFcn));
     parfor (k=1:numEpochs, numberOfWorkers)
-        docsPerEpoch{k} = ingestOneEpoch(daqreader, daqmetadatareaders, epochFiles{k}, epochIds{k});
-        send(q, k);
+        epochProgress = [];
+        if withinEpoch
+            epochProgress = @(f) send(q, [k f]);
+        end
+        docsPerEpoch{k} = ingestOneEpoch(daqreader, daqmetadatareaders, epochFiles{k}, epochIds{k}, epochProgress);
+        send(q, [k 1]);
     end
     % afterEach callbacks run asynchronously on the client; flush what is
     % pending, stop listening, and report the final tally if it was missed
     drawnow;
     delete(listener);
-    if counter('done') < numEpochs
-        counter('done') = numEpochs - 1;
-        tick(counter, numEpochs, options.ProgressFcn);
+    for k=1:numEpochs
+        updateProgress(state, k, 1, options.ProgressFcn);
     end
 else
     for k=1:numEpochs
-        docsPerEpoch{k} = ingestOneEpoch(daqreader, daqmetadatareaders, epochFiles{k}, epochIds{k});
-        tick(counter, numEpochs, options.ProgressFcn);
+        epochProgress = [];
+        if withinEpoch
+            epochProgress = @(f) updateProgress(state, k, f, options.ProgressFcn);
+        end
+        docsPerEpoch{k} = ingestOneEpoch(daqreader, daqmetadatareaders, epochFiles{k}, epochIds{k}, epochProgress);
+        updateProgress(state, k, 1, options.ProgressFcn);
     end
 end
 
 end % ingestEpochDocuments()
 
-function d = ingestOneEpoch(daqreader, daqmetadatareaders, ef, epochId)
+function d = ingestOneEpoch(daqreader, daqmetadatareaders, ef, epochId, epochProgress)
 % INGESTONEEPOCH - create the documents for a single epoch (no database access)
     d = {};
-    new_d = daqreader.ingest_epochfiles(ef, epochId);
+    if isempty(epochProgress)
+        new_d = daqreader.ingest_epochfiles(ef, epochId);
+    else
+        new_d = daqreader.ingest_epochfiles(ef, epochId, 'ProgressFcn', epochProgress);
+    end
     if ~iscell(new_d)
         new_d = {new_d};
     end
@@ -110,19 +131,43 @@ function d = ingestOneEpoch(daqreader, daqmetadatareaders, ef, epochId)
     end
 end % ingestOneEpoch()
 
-function tick(counter, numTotal, progressFcn)
-% TICK - count one finished epoch and report it
-    counter('done') = counter('done') + 1;
+function updateProgress(state, k, fraction, progressFcn)
+% UPDATEPROGRESS - record that epoch K is FRACTION done and report the total
+%
+% Fractions only move forward, and PROGRESSFCN is called only when the total
+% changes, so a reader's own final report and the epoch's completion do not
+% count the epoch twice.
+    frac = state('frac');
+    newFraction = max(frac(k), min(max(fraction,0),1));
+    if newFraction == frac(k)
+        return;
+    end
+    frac(k) = newFraction;
+    state('frac') = frac; %#ok<NASGU> state is a containers.Map, a handle: this updates the caller's map
     if ~isempty(progressFcn)
         try
-            progressFcn(counter('done'), numTotal);
+            progressFcn(sum(frac), numel(frac));
         catch ME
             % progress reporting must never break an ingest
             warning('NDI:daq:ingest:progressFailed', ...
                 'Progress reporting failed: %s', ME.message);
         end
     end
-end % tick()
+end % updateProgress()
+
+function tf = readerReportsProgress(daqreader)
+% READERREPORTSPROGRESS - does DAQREADER's ingest_epochfiles take a ProgressFcn?
+%
+% True when the method is ndi.daq.reader.mfdaq's own; a subclass that overrides
+% ingest_epochfiles keeps its own signature and is called without one.
+    tf = false;
+    if isempty(daqreader)
+        return;
+    end
+    mc = metaclass(daqreader);
+    m = mc.MethodList(strcmp({mc.MethodList.Name}, 'ingest_epochfiles'));
+    tf = ~isempty(m) && strcmp(m(1).DefiningClass.Name, 'ndi.daq.reader.mfdaq');
+end % readerReportsProgress()
 
 function numberOfWorkers = resolveWorkers(numberOfWorkersOverride)
 % RESOLVEWORKERS - worker limit for the parfor, following NDI's parallel preferences

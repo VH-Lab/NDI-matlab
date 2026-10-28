@@ -764,16 +764,34 @@ classdef mfdaq < ndi.daq.reader
 
         % 012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789 - 80 characters for documentation
 
-        function d = ingest_epochfiles(ndi_daqreader_mfdaq_obj, epochfiles, epoch_id)
+        function d = ingest_epochfiles(ndi_daqreader_mfdaq_obj, epochfiles, epoch_id, options)
             % INGEST_EPOCHFILES - create an document that describes the data read by an ndi.daq.reader
             %
-            % D = INGEST_EPOCHFILES(NDI_DAQREADER_OBJ, EPOCHFILES, EPOCH_ID)
+            % D = INGEST_EPOCHFILES(NDI_DAQREADER_OBJ, EPOCHFILES, EPOCH_ID, ...)
             %
             % Creates an ndi.document of type 'daqreader_epochdata_ingested' that contains the data
             % for an ndi.daq.reader object. The document D is not added to any database.
             %
+            % This function takes name/value pairs that modify its behavior:
+            % |---------------------------|-----------------------------------------------|
+            % | Parameter (default)       | Description                                   |
+            % |---------------------------|-----------------------------------------------|
+            % | ProgressFcn ([])          | Function handle called as ProgressFcn(F) with |
+            % |                           |   F, the fraction of this epoch done (0..1),  |
+            % |                           |   after each segment is written. Each channel |
+            % |                           |   group counts in proportion to its number of |
+            % |                           |   channels. Errors in it are turned into      |
+            % |                           |   warnings.                                   |
+            % |---------------------------|-----------------------------------------------|
+            %
             % Example:
             %    D = mydaqreader.ingest_epochfiles(epochfiles,epoch_id);
+            arguments
+                ndi_daqreader_mfdaq_obj
+                epochfiles
+                epoch_id
+                options.ProgressFcn = []
+            end
 
             sample_analog_segment = 1e6; %(1M)
             sample_digital_segment = 1e7; % 10M
@@ -847,6 +865,20 @@ classdef mfdaq < ndi.daq.reader
             types(index_emt) = [];
             types{end+1} = 'eventmarktext';
 
+            % progress weights: each channel group counts in proportion to its
+            % number of channels, which tracks the work of reading/compressing it
+            progressWeightTotal = 0;
+            for i = 1:numel(types)
+                if strcmp(types{i},'eventmarktext')
+                    entries_here = strcmp('event',{ci.type}) | strcmp('marker',{ci.type}) | strcmp('text',{ci.type});
+                else
+                    entries_here = strcmp(types{i},{ci.type});
+                end
+                progressWeightTotal = progressWeightTotal + nnz(entries_here);
+            end
+            progressWeightDone = 0;
+            ndi.daq.reader.mfdaq.reportIngestProgress(options.ProgressFcn, 0);
+
             for i = 1:numel(types)
                 if strcmp(types{i},'eventmarktext')
                     chan_entries_indexes = find(strcmp('event',{ci.type}) | strcmp('marker',{ci.type}) | strcmp('text',{ci.type}) );
@@ -876,6 +908,7 @@ classdef mfdaq < ndi.daq.reader
                 groups = unique([ci(chan_entries_indexes).group]);
                 for g = 1:numel(groups)
                     group_indexes = find([ci(chan_entries_indexes).group]==groups(g));
+                    progressWeightHere = numel(group_indexes);
                     % Step 2b: check to make sure all channels have the same sampling rate
                     % will this work for all channel types? Probably not
                     [underlying_format,mypoly,datasize] = ndi_daqreader_mfdaq_obj.underlying_datatype(epochfiles,...
@@ -923,7 +956,7 @@ classdef mfdaq < ndi.daq.reader
                             s_starts = [S0:sample_analog_segment:S1];
                             compressClass = ndi.compress.datatypestring(underlying_format);
                             for s=1:numel(s_starts)
-                                mylog.msg('system',1,['Working on ephys/analog ingestion segment ' int2str(s) ' of ' int2str(numel(s_starts)) '.']);
+                                mylog.msg('system',5,['Working on ephys/analog ingestion segment ' int2str(s) ' of ' int2str(numel(s_starts)) '.']);
                                 s0 = s_starts(s);
                                 s1 = min(s0+sample_analog_segment-1,S1);
                                 data = ndi_daqreader_mfdaq_obj.readchannels_epochsamples(types{i}, ...
@@ -935,6 +968,8 @@ classdef mfdaq < ndi.daq.reader
                                 d = d.add_file([fileprefix '_group' int2str(groups(g)) '_seg.nbf_' int2str(s) ],...
                                     [filename_here '.nbf.tgz']);
                                 filenames_we_made{end+1} = [filename_here '.nbf.tgz'];
+                                ndi.daq.reader.mfdaq.reportIngestProgress(options.ProgressFcn, ...
+                                    (progressWeightDone + progressWeightHere*s/numel(s_starts))/progressWeightTotal);
                             end
                         case 'digital'
                             % do prep
@@ -948,7 +983,7 @@ classdef mfdaq < ndi.daq.reader
                             S1 = ndi_daqreader_mfdaq_obj.epochtimes2samples(types{i}, channels_here, epochfiles, t0t1{1}(end));
                             s_starts = [S0:sample_digital_segment:S1];
                             for s=1:numel(s_starts)
-                                mylog.msg('system',1,['Working on digital ingestion segment ' int2str(s) ' of ' int2str(numel(s_starts)) '.']);
+                                mylog.msg('system',5,['Working on digital ingestion segment ' int2str(s) ' of ' int2str(numel(s_starts)) '.']);
                                 s0 = s_starts(s);
                                 s1 = min(s0+sample_digital_segment-1,S1);
                                 data = ndi_daqreader_mfdaq_obj.readchannels_epochsamples(types{i}, ...
@@ -960,9 +995,11 @@ classdef mfdaq < ndi.daq.reader
                                 d = d.add_file([fileprefix '_group' int2str(groups(g)) '_seg.nbf_' int2str(s) ],...
                                     [filename_here '.nbf.tgz']);
                                 filenames_we_made{end+1} = [filename_here '.nbf.tgz'];
+                                ndi.daq.reader.mfdaq.reportIngestProgress(options.ProgressFcn, ...
+                                    (progressWeightDone + progressWeightHere*s/numel(s_starts))/progressWeightTotal);
                             end
                         case 'eventmarktext'
-                            mylog.msg('system',1,['Working on event/marker/text ingestion segment 1 of 1.']);
+                            mylog.msg('system',5,'Working on event/marker/text ingestion segment 1 of 1.');
                             channels_here = [ci(chan_entries_indexes(group_indexes)).number];
                             channeltype = {};
                             for ii=1:numel(channels_here)
@@ -976,7 +1013,7 @@ classdef mfdaq < ndi.daq.reader
                         case 'time'
                             s_starts = [S0:sample_analog_segment:S1];
                             for s=1:numel(s_starts)
-                                mylog.msg('system',1,['Working on time ingestion segment ' int2str(s) ' of ' int2str(numel(s_starts)) '.']);
+                                mylog.msg('system',5,['Working on time ingestion segment ' int2str(s) ' of ' int2str(numel(s_starts)) '.']);
                                 s0 = s_starts(s);
                                 s1 = min(s0+sample_analog_segment-1,S1);
                                 data = ndi_daqreader_mfdaq_obj.readchannels_epochsamples(types{i}, channels_here, epochfiles, s0, s1);
@@ -985,13 +1022,19 @@ classdef mfdaq < ndi.daq.reader
                                 d = d.add_file([fileprefix '_group' int2str(groups(g)) '_seg.nbf_' int2str(s) ],...
                                     [filename_here '.nbf.tgz']);
                                 filenames_we_made{end+1} = [filename_here '.nbf.tgz'];
+                                ndi.daq.reader.mfdaq.reportIngestProgress(options.ProgressFcn, ...
+                                    (progressWeightDone + progressWeightHere*s/numel(s_starts))/progressWeightTotal);
                             end
 
                         otherwise
                             error(['Unknown channel type ' types{i} '.']);
                     end
+                    progressWeightDone = progressWeightDone + progressWeightHere;
+                    ndi.daq.reader.mfdaq.reportIngestProgress(options.ProgressFcn, ...
+                        progressWeightDone/max(progressWeightTotal,1));
                 end
             end
+            ndi.daq.reader.mfdaq.reportIngestProgress(options.ProgressFcn, 1);
         end % ingest_epochfiles()
         function t = epochsamples2times(ndi_daqreader_mfdaq_obj, channeltype, channel, epochfiles, s)
             % EPOCHSAMPLES2TIMES - convert samples to time
@@ -1194,6 +1237,26 @@ classdef mfdaq < ndi.daq.reader
             end
             tf = ~isempty(intersect(base_types, analog_event_prefixes));
         end % is_analog_event_type
+
+
+        function reportIngestProgress(progressFcn, fraction)
+            % REPORTINGESTPROGRESS - call an ingest_epochfiles ProgressFcn, safely
+            %
+            % ndi.daq.reader.mfdaq.reportIngestProgress(PROGRESSFCN, FRACTION)
+            %
+            % Calls PROGRESSFCN(FRACTION) if PROGRESSFCN is not empty. Progress
+            % reporting must never break an ingest, so an error becomes a warning.
+            %
+            if isempty(progressFcn)
+                return;
+            end
+            try
+                progressFcn(min(max(fraction,0),1));
+            catch ME
+                warning('NDI:daq:ingest:progressFailed', ...
+                    'Progress reporting failed: %s', ME.message);
+            end
+        end % reportIngestProgress()
 
     end % methods(Static)
 end % classdef
