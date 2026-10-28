@@ -1035,7 +1035,7 @@ classdef mfdaq < ndi.daq.reader
                             entry.segment = 1;
                             entry.numSegments = 1;
                             entry.weight = groupWeight;
-                            plan(end+1) = entry;
+                            plan(end+1) = entry; %#ok<AGROW> one entry per group; the count is not known in advance
                             continue;
                         case 'time'
                             % as before this change: the time segments use the sample
