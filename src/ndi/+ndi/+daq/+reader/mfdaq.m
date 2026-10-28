@@ -999,7 +999,7 @@ classdef mfdaq < ndi.daq.reader
                                     (progressWeightDone + progressWeightHere*s/numel(s_starts))/progressWeightTotal);
                             end
                         case 'eventmarktext'
-                            mylog.msg('system',5,['Working on event/marker/text ingestion segment 1 of 1.']);
+                            mylog.msg('system',5,'Working on event/marker/text ingestion segment 1 of 1.');
                             channels_here = [ci(chan_entries_indexes(group_indexes)).number];
                             channeltype = {};
                             for ii=1:numel(channels_here)
