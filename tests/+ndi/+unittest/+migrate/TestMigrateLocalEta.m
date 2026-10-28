@@ -637,6 +637,13 @@ classdef TestMigrateLocalEta < matlab.unittest.TestCase
             verifyNotEmpty(testCase, tr, ...
                 ['the manipulation carries no time reference: the pass mints ' ...
                  '"during the session" against the session document. ' resultDiag(result)]);
+            % [presentation anchored to its epoch] (Jess Haley, 2026-10-27):
+            % this presentation names no epoch, so its anchor stays on the
+            % session, and the pass says why
+            ea = result.secondPass.stimulusSequence.epoch_anchor;
+            verifyEqual(testCase, ea.manipulations_inspected, 1, resultDiag(result));
+            verifyEqual(testCase, ea.no_epoch_string, 1, resultDiag(result));
+            verifyEqual(testCase, ea.anchors_handed_over, 0, resultDiag(result));
 
             % TWO DISTINCT STIMULI, so dedup must not collapse them (two seeds).
             % UPDATED 2026-10-25: noise stimuli (see makeStimulusPresentation).
@@ -669,6 +676,68 @@ classdef TestMigrateLocalEta < matlab.unittest.TestCase
             % between that and a dangling `stimulus_presentation_id` is the id
             % preservation asserted on manip.base.id. This turns that from an
             % argument into a check.
+            verifyEqual(testCase, result.references.orphan_count, 0, ...
+                ['the graph does not close. ' resultDiag(result)]);
+        end
+
+        function testAPresentationManipulationIsAnchoredToItsEpoch(testCase)
+            % Decided by Jess Haley, 2026-10-27 [presentation anchored to its
+            % epoch] (did-schema V_eta_go_forward_class_audit.md, option a): the
+            % manipulation's time reference names the epoch entity of the
+            % epoch the presentation was in. The pass anchors it "during the
+            % session" first (the epoch is minted later, by epochMint), then
+            % the epoch anchor fold re-points it, id preserved.
+            subjId  = 'aabb1122ccdd3344_5500000000000010';
+            recElem = 'aabb1122ccdd3344_5500000000000011';
+            stimEl  = 'aabb1122ccdd3344_5500000000000012';
+            presId  = 'aabb1122ccdd3344_5500000000000013';
+            respId  = 'aabb1122ccdd3344_5500000000000014';
+            pres = makeStimulusPresentation(presId, stimEl);
+            pres.document_class.superclasses = [pres.document_class.superclasses, ...
+                struct('class_name', 'epochid', 'class_version', '1.0.0')];
+            pres.epochid = struct('epochid', 't00001');
+            bodies = { ...
+                jsonencode(makeSessionDoc(session())), ...
+                jsonencode(makeSubject(subjId)), ...
+                jsonencode(makeRecordingElement(recElem, subjId)), ...
+                jsonencode(makeStimulatorElement(stimEl, subjId)), ...
+                jsonencode(makeElementEpoch(stimEl, 't00001', 'dev_local_time')), ...
+                jsonencode(makeStimulusResponse(respId, presId, recElem)), ...
+                jsonencode(pres)};
+            result = runMigrate(testCase, bodies);
+
+            % --- denominators first ----------------------------------------
+            ea = result.secondPass.stimulusSequence.epoch_anchor;
+            verifyNotEmpty(testCase, ea, ['the stimulus pass reported no epoch ' ...
+                'anchors (did it throw?). ' resultDiag(result)]);
+            verifyEqual(testCase, ea.manipulations_inspected, 1, resultDiag(result));
+            verifyEqual(testCase, ea.anchors_handed_over, 1, resultDiag(result));
+            verifyEqual(testCase, ea.anchors_refolded, 1, resultDiag(result));
+            verifyEqual(testCase, ea.anchors_left_on_session, 0, resultDiag(result));
+
+            manip = findById(result.destination, presId);
+            verifyNotEmpty(testCase, manip, resultDiag(result));
+            if isempty(manip); return; end
+            verifyEqual(testCase, manip.document_class.class_name, 'manipulation');
+            tr = depValue(manip, 'time_reference_id');
+            verifyNotEmpty(testCase, tr, resultDiag(result));
+            ref = findById(result.destination, tr);
+            verifyNotEmpty(testCase, ref, ['the anchor the manipulation names ' ...
+                'is not in the destination. ' resultDiag(result)]);
+            if isempty(ref); return; end
+            verifyEqual(testCase, ref.document_class.class_name, 'relative_time_reference');
+
+            % --- the referent is the epoch entity epochMint minted ---------
+            epochDoc = findEntity(result.destination, 'epoch');
+            verifyNotEmpty(testCase, epochDoc, ['no `epoch` entity. ' resultDiag(result)]);
+            if isempty(epochDoc); return; end
+            verifyEqual(testCase, depValue(ref, 'referent_id'), epochDoc.base.id, ...
+                ['the presentation''s manipulation is not anchored to its ' ...
+                 'epoch. ' resultDiag(result)]);
+            % the stimulator's clock for that epoch (the element_epoch above)
+            verifyEqual(testCase, ref.relative_time_reference.value.clock.name, ...
+                'dev_local_time');
+
             verifyEqual(testCase, result.references.orphan_count, 0, ...
                 ['the graph does not close. ' resultDiag(result)]);
         end
