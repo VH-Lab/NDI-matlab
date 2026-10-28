@@ -528,35 +528,94 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
             ndi_session_obj.syncgraph = update_syncgraph_in_db(ndi_session_obj);
         end % syncgraph_rmrule
 
-        function [b,errmsg] = ingest(ndi_session_obj)
+        function [b,errmsg] = ingest(ndi_session_obj, options)
             % INGEST - ingest the raw data and synchronization information into the database
             %
-            % [B,ERRMSG] = INGEST(NDI_SESSION_OBJ)
+            % [B,ERRMSG] = INGEST(NDI_SESSION_OBJ, ...)
             %
             % Ingest all raw data and synchronization information into the database.
             %
-            d_syncgraph = ndi_session_obj.syncgraph.ingest();
-            errmsg = '';
+            % The reading and compression of each epoch's raw data runs on a parallel
+            % pool when NDI's parallel preferences allow it (Parallel.OpenPoolIfNone,
+            % Parallel.UseDefaultNumberOfWorkers, Parallel.NumberOfWorkers; see
+            % ndi.fun.parallelWorkers). With the default preferences a pool that is
+            % already open is used, and otherwise the epochs run serially; NDI does
+            % not open a pool on its own. All database writes stay serial. Progress is
+            % shown with ndi.gui.component.ProgressBarWindow: one bar for the session
+            % and one for each ndi.daq.system as it is ingested. In headless sessions
+            % (e.g., -batch) the progress window is silent automatically.
+            %
+            % This function takes name/value pairs that modify its behavior:
+            % |---------------------------|-----------------------------------------------|
+            % | Parameter (default)       | Description                                   |
+            % |---------------------------|-----------------------------------------------|
+            % | ShowProgress (true)       | Show ingestion progress bars.                 |
+            % | ProgressBar ([])          | An existing                                   |
+            % |                           |   ndi.gui.component.ProgressBarWindow to use. |
+            % |                           |   Empty opens/reuses one titled 'NDI Ingest'. |
+            % | ProgressBarTag ('')       | Tag for the session-level bar. Empty makes a  |
+            % |                           |   new unique id.                              |
+            % |---------------------------|-----------------------------------------------|
+            %
+            % Example:
+            %    [b,errmsg] = S.ingest();
+            %    parpool(4); [b,errmsg] = S.ingest();  % epochs on the open pool
+            %
+            % See also: ndi.daq.system/ingest, ndi.fun.parallelWorkers
+            arguments
+                ndi_session_obj
+                options.ShowProgress (1,1) logical = true
+                options.ProgressBar = []
+                options.ProgressBarTag (1,:) char = ''
+            end
 
             daqs = ndi_session_obj.daqsystem_load('name','(.*)');
-            if ~iscell(daqs)
+            if isempty(daqs)
+                daqs = {};
+            elseif ~iscell(daqs)
                 daqs = {daqs};
             end
-            daq_d = {};
+
+            progressBar = [];
+            barTag = '';
+            if options.ShowProgress
+                [progressBar, barTag] = ndi.daq.system.addIngestProgressBar(options.ProgressBar, ...
+                    ['Ingesting session ' char(ndi_session_obj.reference)], ...
+                    'Tag', options.ProgressBarTag, 'Auto', false);
+            end
+            % steps: the syncgraph, each daq system, and the final syncgraph add
+            numSteps = numel(daqs) + 2;
+
+            d_syncgraph = ndi_session_obj.syncgraph.ingest();
+            ndi.daq.system.updateIngestProgressBar(progressBar, barTag, 1/numSteps);
+            errmsg = '';
+
+            daq_d = cell(1,numel(daqs));
             b = 1;
             for i=1:numel(daqs)
-                [b_here,daq_d{i}] = daqs{i}.ingest();
+                try
+                    [b_here,daq_d{i}] = daqs{i}.ingest('ShowProgress', options.ShowProgress, ...
+                        'ProgressBar', progressBar);
+                catch ME
+                    ndi.daq.system.removeIngestProgressBar(progressBar, barTag);
+                    rethrow(ME);
+                end
                 b = b & b_here;
                 if ~b
                     errmsg = ['Error in daq ' daqs{i}.name];
                 end
+                ndi.daq.system.updateIngestProgressBar(progressBar, barTag, (1+i)/numSteps);
             end
             if b==0 % things didn't go well, bail
-                for i=1:numel(daqs)
-                    ndi_session_obj.database_rm(daq_d{i});
+                for i=1:numel(daq_d)
+                    if ~isempty(daq_d{i})
+                        ndi_session_obj.database_rm(daq_d{i});
+                    end
                 end
+                ndi.daq.system.removeIngestProgressBar(progressBar, barTag);
             else % add the syncgraph documents and we are done
                 ndi_session_obj.database_add(d_syncgraph);
+                ndi.daq.system.updateIngestProgressBar(progressBar, barTag, 1);
             end
         end % ingest()
 
