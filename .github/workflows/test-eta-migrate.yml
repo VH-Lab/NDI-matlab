@@ -40,7 +40,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       # did-schema #88 merged into main and DID-matlab #218 into V2 (2026-10-23)
-      DID_SCHEMA_REF: main
+      DID_SCHEMA_REQUESTED: ''
       DID_MATLAB_REQUESTED: ''
       NDI_BRANCH: ${{ github.head_ref || github.ref_name }}
     steps:
@@ -81,6 +81,17 @@ jobs:
             echo "RESOLVED: $1 @ $2 = $sha"
             echo "$3=$sha" >> "$GITHUB_ENV"
           }
+          # did-schema: the requested ref, else the did-schema branch with this
+          # NDI-matlab branch's name, else main ([NDI CI picks did-schema
+          # branch], Jess Haley, 2026-10-27), the same rule as DID-matlab below.
+          DID_SCHEMA_REF="${DID_SCHEMA_REQUESTED:-}"
+          if [ -z "$DID_SCHEMA_REF" ] && [ -n "${NDI_BRANCH:-}" ] && [ "$NDI_BRANCH" != "main" ] \
+             && [ -n "$(git ls-remote https://github.com/Waltham-Data-Science/did-schema.git "refs/heads/$NDI_BRANCH")" ]; then
+            DID_SCHEMA_REF="$NDI_BRANCH"
+          fi
+          DID_SCHEMA_REF="${DID_SCHEMA_REF:-main}"
+          echo "PICKED: did-schema ref $DID_SCHEMA_REF (requested '${DID_SCHEMA_REQUESTED:-}', NDI branch '${NDI_BRANCH:-}')"
+          echo "DID_SCHEMA_REF=$DID_SCHEMA_REF" >> "$GITHUB_ENV"
           resolve Waltham-Data-Science/did-schema "$DID_SCHEMA_REF" DID_SCHEMA_SHA
           # DID-matlab: the requested ref, else the DID-matlab branch with this
           # NDI-matlab branch's name, else V2 ([NDI CI picks DID branch], Jess
@@ -347,6 +358,7 @@ jobs:
                 "ndi.unittest.migrate.TestSliceTetanus", ...
                 "ndi.unittest.migrate.TestMigrateSessionId", ...
                 "ndi.unittest.migrate.TestPresentationEpochAnchors", ...
+                "ndi.unittest.migrate.TestControlRecordsFromV1", ...
                 "ndi.unittest.migrate.TestFinalV1BodyCensus"]);
             disp(table(results));
             assert(sum([results.Failed]) == 0, ...
