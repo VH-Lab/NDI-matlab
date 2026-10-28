@@ -24,14 +24,27 @@ function params = syncruleParameters(ruleDoc, ndi_session_obj, objClass)
 %         syncfilename             -> sync_file_name
 %         minEmbeddedFileOverlap   -> minimum_embedded_file_overlap
 %
-%     MOVED OUT into two `acquisition_channels` documents, one per device.
+%     LINKED to the two rigs, in one of two shapes (both are read):
+%       the current shape (did-schema `V_eta_go_forward_class_audit.md`,
+%       Jess Haley 2026-10-27 [sync configuration links its rigs] and
+%       [sync rule direction is recorded]): role-named edges straight to
+%       the two `acquisition_system` documents, the trigger channels as
+%       method parameters
+%         daqsystem1_name / daqsystem1 <- from_acquisition_system_id's
+%                                         acquisition_system `name`
+%         daqsystem2_name / daqsystem2 <- to_acquisition_system_id's
+%         daqsystem_ch1, daqsystem_ch2 <- the method parameters of those
+%                                         names (written 'daqsystem ch1')
+%         The pair is ORDERED: a filefind rule maps daqsystem1's clock to
+%         daqsystem2's (+time/+syncrule/filefind.m `apply`), so from is 1
+%         and to is 2.
+%       the earlier shape, read when the configuration has no
+%       from/to edge: two `acquisition_channels` documents, one per device
 %         daqsystem1_name / daqsystem1 <- acquisition_channels_1.base.name
 %                                         (current schema: its
 %                                         acquisition_system's `name`)
 %         daqsystem_ch1                <- its `channels` array, re-serialised
-%         (and _2 likewise). The pair is UNORDERED by construction -- the
-%         migrator's own note: the rule is symmetric and both consumers
-%         accept either order -- so 1 and 2 here are just the edge indices.
+%         (and _2 likewise), 1 and 2 being the edge positions.
 %
 %     DROPPED
 %         errorOnFailure. "throw-or-return-quietly is runtime behaviour, not
@@ -56,6 +69,7 @@ function params = syncruleParameters(ruleDoc, ndi_session_obj, objClass)
 %       NDI:vintage:syncruleUnknownClass    no parameter set known for OBJCLASS
 %       NDI:vintage:syncruleMissingField    a required parameter cannot be recovered
 %       NDI:vintage:syncruleChannelsNotFound  an acquisition_channels edge does not resolve
+%       NDI:vintage:syncruleSystemNotFound    a from/to acquisition_system edge does not resolve
 %
 %   See also: ndi.time.syncrule, ndi.vintage.map, ndi.vintage.objectClass.
 
@@ -80,14 +94,26 @@ if isfield(props, blockName) && isstruct(props.(blockName))
     cfg = props.(blockName);
 end
 
-% ---- the two device documents ----------------------------------------
-% A numbered pair (`acquisition_channels_1`/`_2`, as the migrators write it)
-% or one repeated name (`acquisition_channels_id` twice, did-schema T15).
-% Unordered either way, so 1 and 2 are positions.
-channelIds = ndi.vintage.edge_n(ruleDoc, 'acquisition_channels', ...
-    'ErrorIfNotFound', 0);
-[name1, ch1] = deviceHalf(channelIds, ndi_session_obj, 1);
-[name2, ch2] = deviceHalf(channelIds, ndi_session_obj, 2);
+% ---- the two rigs ------------------------------------------------------
+% The current shape first: `from_acquisition_system_id` (v1 daqsystem1) and
+% `to_acquisition_system_id` (v1 daqsystem2), the trigger channels as method
+% parameters. A configuration with neither edge is read the earlier way,
+% through its `acquisition_channels` documents: a numbered pair
+% (`acquisition_channels_1`/`_2`) or one repeated name
+% (`acquisition_channels_id` twice, did-schema T15), 1 and 2 being positions.
+fromId = ruleDoc.dependency_value('from_acquisition_system_id', 'ErrorIfNotFound', 0);
+toId   = ruleDoc.dependency_value('to_acquisition_system_id', 'ErrorIfNotFound', 0);
+if ~isempty(fromId) || ~isempty(toId)
+    name1 = systemName(fromId, 'from_acquisition_system_id', ndi_session_obj);
+    name2 = systemName(toId, 'to_acquisition_system_id', ndi_session_obj);
+    ch1 = charField(cfg, 'daqsystem_ch1');
+    ch2 = charField(cfg, 'daqsystem_ch2');
+else
+    channelIds = ndi.vintage.edge_n(ruleDoc, 'acquisition_channels', ...
+        'ErrorIfNotFound', 0);
+    [name1, ch1] = deviceHalf(channelIds, ndi_session_obj, 1);
+    [name2, ch2] = deviceHalf(channelIds, ndi_session_obj, 2);
+end
 
 % ---- the typed fields -------------------------------------------------
 clockName = '';
@@ -108,8 +134,10 @@ switch objClass
             params.minEmbeddedFileOverlap = requireNumber(cfg, ...
                 'minimum_embedded_file_overlap', 'minEmbeddedFileOverlap', objClass);
         end
-        % THE ONE INVENTED VALUE. See the header.
-        params.errorOnFailure = true;
+        % THE ONE INVENTED VALUE, when the configuration does not carry it
+        % (DID-matlab writes it as a method parameter since [small unread
+        % settings] (3)). See the header.
+        params.errorOnFailure = logicalParameter(cfg, 'errorOnFailure', true);
 
     case 'ndi.time.syncrule.filefind'
         params.number_fullpath_matches = requireNumber(cfg, ...
@@ -137,6 +165,37 @@ end
 end
 
 % ===================== helpers =============================================
+
+function name = systemName(id, edgeName, ndi_session_obj)
+%SYSTEMNAME The name of the acquisition_system a from/to edge names ('' if none).
+name = '';
+if isempty(id)
+    return;
+end
+docs = ndi_session_obj.database_search( ...
+    ndi.query('base.id', 'exact_string', id, ''));
+if numel(docs) ~= 1
+    error('NDI:vintage:syncruleSystemNotFound', ...
+        ['%s names acquisition_system document %s and %d document(s) ' ...
+         'match; the device name lives on it'], edgeName, id, numel(docs));
+end
+name = ndi.vintage.objectName(docs{1});
+end
+
+function v = logicalParameter(cfg, name, default)
+%LOGICALPARAMETER A true/false method parameter, or DEFAULT when absent.
+%   DID-matlab's jParameterList writes a v1 logical as a quantity (1 or 0);
+%   a `logical` entry is read too.
+v = default;
+e = methodParameter(cfg, name);
+if isempty(e)
+    return;
+end
+[x, ~, kind] = ndi.v2.entryValue(e);
+if any(strcmp(kind, {'quantity', 'count', 'logical'})) && isscalar(x)
+    v = logical(x);
+end
+end
 
 function [deviceName, channelSpec] = deviceHalf(channelIds, ndi_session_obj, n)
 %DEVICEHALF Resolve the n-th channel group to a device name + channel spec.
