@@ -29,6 +29,9 @@ function [b, report] = compare(rawSession, ingestedSession, options)
 % |                           |   epoch. See ndi.test.ingest.mfdaq_compare.   |
 % | ChunkSeconds (60)         | Length of each read in 'full' mode.           |
 % | SpotSeconds (300)         | Length of the window in 'spot' mode.          |
+% | RelativeTolerance (1e-12) | Largest relative difference allowed between   |
+% |                           |   raw and ingested samples (rounding of       |
+% |                           |   scaled channels). See mfdaq_compare.        |
 % | TimeTolerance (1e-6)      | Largest difference allowed for time channels. |
 % | DaqSystemNames ({})       | Compare only these DAQ systems (default: all).|
 % | Verbose (true)            | Print progress and each failed check.         |
@@ -48,6 +51,7 @@ arguments
     options.Mode (1,:) char {mustBeMember(options.Mode,{'full','spot'})} = 'full'
     options.ChunkSeconds (1,1) double {mustBePositive} = 60
     options.SpotSeconds (1,1) double {mustBePositive} = 300
+    options.RelativeTolerance (1,1) double {mustBeNonnegative} = 1e-12
     options.TimeTolerance (1,1) double {mustBeNonnegative} = 1e-6
     options.DaqSystemNames {mustBeText} = {}
     options.Verbose (1,1) logical = true
@@ -99,6 +103,7 @@ for i=1:numel(daqs1)
     [~, ~, reportHere] = ndi.test.ingest.mfdaq_compare(daqs1{i}, daqs2{j}, ...
         'Mode', options.Mode, 'ChunkSeconds', options.ChunkSeconds, ...
         'SpotSeconds', options.SpotSeconds, 'TimeTolerance', options.TimeTolerance, ...
+        'RelativeTolerance', options.RelativeTolerance, ...
         'Verbose', options.Verbose, 'ProgressBar', progressBar);
     report = cat(2, report, reportHere);
 end

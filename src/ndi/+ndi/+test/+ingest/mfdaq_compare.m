@@ -14,7 +14,8 @@ function [b, errmsg, report] = mfdaq_compare(daq1, daq2, options)
 %     lists share, e.g., type, sample rate, offset, scale);
 %   - every continuous channel type present (analog_in, analog_out,
 %     auxiliary_in, digital_in, digital_out, time): the number of samples, and
-%     the samples themselves (exactly; time channels to TimeTolerance);
+%     the samples themselves (to RelativeTolerance; time channels to
+%     TimeTolerance);
 %   - every event channel type present (event, marker, text): the timestamps
 %     and values over the whole epoch.
 %
@@ -45,6 +46,15 @@ function [b, errmsg, report] = mfdaq_compare(daq1, daq2, options)
 % | ChunkSeconds (60)         | Length of each read in 'full' mode, which     |
 % |                           |   bounds memory use.                          |
 % | SpotSeconds (300)         | Length of the window in 'spot' mode.          |
+% | RelativeTolerance (1e-12) | Largest difference allowed between raw and    |
+% |                           |   ingested samples, relative to the larger of |
+% |                           |   the two values. Scaled channels (e.g., an   |
+% |                           |   Intan auxiliary input, 3.74e-5 V per step)  |
+% |                           |   can differ in the last bit because the two  |
+% |                           |   paths round the scaling differently; 1e-12  |
+% |                           |   allows that while staying far below one     |
+% |                           |   sample's quantization step. 0 demands       |
+% |                           |   exact equality.                             |
 % | TimeTolerance (1e-6)      | Largest difference allowed for time channels. |
 % | Verbose (true)            | Print each epoch as it is compared, and each  |
 % |                           |   failed check.                               |
@@ -65,6 +75,7 @@ arguments
     options.Mode (1,:) char {mustBeMember(options.Mode,{'full','spot'})} = 'full'
     options.ChunkSeconds (1,1) double {mustBePositive} = 60
     options.SpotSeconds (1,1) double {mustBePositive} = 300
+    options.RelativeTolerance (1,1) double {mustBeNonnegative} = 1e-12
     options.TimeTolerance (1,1) double {mustBeNonnegative} = 1e-6
     options.Verbose (1,1) logical = true
     options.ProgressBar = []
@@ -269,8 +280,16 @@ function [ok, msg, nCompared, maxAbsDiff] = compareContinuous(daq1, daq2, epochI
         d(isnan(D1) & isnan(D2)) = 0;
         d(xor(isnan(D1), isnan(D2))) = Inf;
         maxAbsDiff = max(maxAbsDiff, max(d(:)));
-        if (isTime && maxAbsDiff > options.TimeTolerance) || (~isTime && maxAbsDiff > 0)
-            [row, col] = find(d == max(d(:)), 1);
+        if isTime
+            allowed = options.TimeTolerance;
+        else
+            allowed = options.RelativeTolerance * max(abs(double(D1)), abs(double(D2)));
+        end
+        tooLarge = d > allowed;
+        if any(tooLarge(:))
+            excess = d;
+            excess(~tooLarge) = -Inf;
+            [row, col] = find(excess == max(excess(:)), 1);
             ok = false;
             msg = sprintf(['Data differ (max |difference| %g) starting by sample %d, channel %d ' ...
                 '(read window %d..%d).'], maxAbsDiff, s0 + row - 1, channels(col), s0, sEnd);
