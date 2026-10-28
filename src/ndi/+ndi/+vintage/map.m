@@ -217,9 +217,10 @@ e(k).fields       = cell(0,2);
 
 % ---- syncrule -> clock_alignment_configuration -----------------------
 % `parameters` is NOT a field rename: V_eta exploded the bag into typed
-% fields and moved the device pair into two `acquisition_channels`
-% documents. ndi.vintage.syncruleParameters does that reassembly; there is
-% no one-to-one row to put here.
+% fields and links the device pair as `from_acquisition_system_id` /
+% `to_acquisition_system_id` (earlier: two `acquisition_channels`
+% documents). ndi.vintage.syncruleParameters does that reassembly, reading
+% both shapes; there is no one-to-one row to put here.
 k = k + 1;
 e(k).concept      = 'syncrule';
 e(k).v1_class     = 'syncrule';
