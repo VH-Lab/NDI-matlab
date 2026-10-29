@@ -475,12 +475,15 @@ classdef TestMigrateLocalEta < matlab.unittest.TestCase
             end
         end
 
-        function testAGratingPresentationIsCarriedAsV1(testCase)
-            % [generic stage is lossless] / [partly placed is carried as v1]
-            % (Jess Haley, 2026-10-25, audit item 4): gratingRecipe writes
-            % five of a periodicstim's parameters, so the generic stage leaves
-            % a grating presentation as it is and the last step stores it as
-            % its v1 source, stamped did_v1, id unchanged.
+        function testAGratingPresentationFoldsWithItsUnreadKeysAsMethodParameters(testCase)
+            % INVERTED 2026-10-29 from testAGratingPresentationIsCarriedAsV1.
+            % Decided by Jess Haley, 2026-10-27 [unread stimulus parameters
+            % are method parameters] ("Q6 yes", did-schema
+            % V_eta_go_forward_class_audit.md): a periodicstim key gratingRecipe
+            % does not read is a parameter entry on the grating's `method`, so
+            % the generic stage no longer refuses a grating presentation for
+            % it. With its epoch minted (the element_epoch below, as in
+            % testAPresentationManipulationIsAnchoredToItsEpoch) it folds.
             subjId  = 'aabb1122ccdd3344_5500000000000030';
             recElem = 'aabb1122ccdd3344_5500000000000031';
             stimEl  = 'aabb1122ccdd3344_5500000000000032';
@@ -491,16 +494,34 @@ classdef TestMigrateLocalEta < matlab.unittest.TestCase
                 jsonencode(makeSubject(subjId)), ...
                 jsonencode(makeRecordingElement(recElem, subjId)), ...
                 jsonencode(makeStimulatorElement(stimEl, subjId)), ...
+                jsonencode(makeElementEpoch(stimEl, 't00001', 'dev_local_time')), ...
                 jsonencode(makeStimulusResponse(respId, presId, recElem)), ...
                 jsonencode(makeGratingPresentation(presId, stimEl))};
             result = runMigrate(testCase, bodies);
-            verifyEqual(testCase, result.secondPass.stimulusSequence.presentations_refused_unplaced, 1, ...
-                resultDiag(result));
+            r = result.secondPass.stimulusSequence;
+            verifyEqual(testCase, r.presentations_read, 1, resultDiag(result));
+            verifyEqual(testCase, r.presentations_refused_unplaced, 0, resultDiag(result));
+            verifyEqual(testCase, r.presentations_decomposed, 1, resultDiag(result));
             d = findById(result.destination, presId);
             verifyNotEmpty(testCase, d, resultDiag(result));
-            verifyEqual(testCase, d.document_class.class_name, 'stimulus_presentation');
-            verifyEqual(testCase, char(d.document_class.schema_version), 'did_v1');
-            verifyEmpty(testCase, findAllByClass(result.destination, 'method'));
+            if isempty(d); return; end
+            verifyEqual(testCase, d.document_class.class_name, 'manipulation');
+            % the two gratings' methods carry the keys gratingRecipe does not read
+            methods = findAllByClass(result.destination, 'method');
+            withUnread = 0;
+            for k = 1:numel(methods)
+                if ~isfield(methods{k}.method, 'parameters'); continue; end
+                p = methods{k}.method.parameters;
+                if isstruct(p); p = num2cell(p); end
+                names = cellfun(@variableName, p, 'UniformOutput', false);
+                if any(strcmp(names, 'orientation')) && any(strcmp(names, 'animation type')) ...
+                        && any(strcmp(names, 'high colour'))
+                    withUnread = withUnread + 1;
+                end
+            end
+            verifyEqual(testCase, withUnread, 2, ['each grating''s method carries ' ...
+                'its unread periodicstim keys. ' resultDiag(result)]);
+            verifyEqual(testCase, result.references.orphan_count, 0, resultDiag(result));
         end
 
         function testARawV1OntologyLabelIsCarriedOnceUnderItsV1Name(testCase)
@@ -1007,11 +1028,11 @@ body.stimulus_response = struct('response_type', 'mean');
 end
 
 function body = makeStimulusPresentation(presId, stimEl)
-% TWO NOISE STIMULI (stochasticgridstim, every parameter an entry), not
-% gratings: since [generic stage is lossless] (Jess Haley, 2026-10-25) a grating
-% presentation is left as v1 by the generic stage (gratingRecipe writes five of
-% its parameters; makeGratingPresentation / testAGratingPresentationIsCarriedAsV1),
-% and these tests are of the decomposition.
+% TWO NOISE STIMULI (stochasticgridstim, every parameter an entry). Written
+% when [generic stage is lossless] (Jess Haley, 2026-10-25) left a grating
+% presentation as v1; since [unread stimulus parameters are method parameters]
+% (2026-10-27) a grating folds too (makeGratingPresentation /
+% testAGratingPresentationFoldsWithItsUnreadKeysAsMethodParameters).
 s1 = noiseStim(1); s2 = noiseStim(2);
 body = struct();
 body.document_class = struct('class_name', 'stimulus_presentation', 'class_version', '1.0.0', ...
@@ -1070,6 +1091,16 @@ end
 
 function s = session()
 s = 'aabb1122ccdd3344_9900aabbccddeeff';
+end
+
+function n = variableName(e)
+% a method parameter entry's variable: a term {node, name} or a label {name}
+n = '';
+if isstruct(e) && isfield(e, 'variable')
+    v = e.variable;
+    if isstruct(v) && isfield(v, 'name'); n = char(v(1).name);
+    elseif ischar(v) || isstring(v); n = char(v); end
+end
 end
 
 function d = rawLabel(targetId, node)

@@ -678,42 +678,63 @@ classdef TestMigrateLocalEta20211116 < matlab.unittest.TestCase
                 'element_epoch documents survived migration under the v1 name');
         end
 
-        function testEveryStimulusPresentationIsCarriedAsV1(testCase)
-            % INVERTS testEveryStimulusPresentationIsDecomposedAroundItsPreservedId.
-            % [generic stage is lossless] / [partly placed is carried as v1]
-            % (Jess Haley, 2026-10-25, audit item 4): every presentation here
-            % holds fields the decomposition does not write (the grating
-            % run's periodicstim parameters beyond the five gratingRecipe
-            % reads; the Hartley generator's beyond the six the basis reads),
-            % so the generic stage leaves all 11 as they are and the last step
-            % stores each as its v1 source, its id unchanged.
+        function testTheHartleyPresentationsAreCarriedAndTheGratingRunIsNot(testCase)
+            % INVERTED 2026-10-29 from testEveryStimulusPresentationIsCarriedAsV1
+            % (which inverted testEveryStimulusPresentationIsDecomposedAroundItsPreservedId).
+            % Decided by Jess Haley, 2026-10-27 [unread stimulus parameters
+            % are method parameters] ("Q6 yes", did-schema
+            % V_eta_go_forward_class_audit.md): the grating run's periodicstim
+            % keys beyond the five gratingRecipe reads, and its blank's keys,
+            % are now method parameter entries, so the grating run is no
+            % longer refused for them. The ten Hartley generator presentations
+            % are still refused for theirs (carry-080): their methods are the
+            % session's SHARED basis, and the decision names no method of a
+            % presentation for a generator key the basis does not read.
+            % Whether the grating run then folds (subject, epoch anchor) is
+            % printed, not pinned: no run of this branch has measured it.
             srcPres = {};
+            hartley = {};
             for k = 1:numel(testCase.Bodies)
                 j = jsondecode(testCase.Bodies{k});
                 if isfield(j, 'document_class') ...
                         && isfield(j.document_class, 'class_name') ...
                         && strcmp(j.document_class.class_name, 'stimulus_presentation')
                     srcPres{end+1} = j.base.id; %#ok<AGROW>
+                    if isHartleyGenerator(j)
+                        hartley{end+1} = j.base.id; %#ok<AGROW>
+                    end
                 end
             end
             verifyEqual(testCase, numel(srcPres), 11, sprintf( ...
                 ['the corpus did not read as 11 stimulus_presentation ' ...
                  'documents (got %d); every count below would be about ' ...
                  'something else'], numel(srcPres)));
+            verifyEqual(testCase, numel(hartley), 10, ...
+                '20211116 holds 10 Hartley generator presentations');
             r = testCase.Result.secondPass.stimulusSequence;
-            verifyEqual(testCase, r.presentations_refused_unplaced, 11, ...
-                'every presentation is refused for its unplaced fields');
+            verifyEqual(testCase, r.presentations_refused_unplaced, 10, ...
+                'the ten Hartley presentations, and only they, are refused for unplaced keys');
             migrated = destinationBodies(testCase.Result.destination);
-            verifyEmpty(testCase, itemManipulations(migrated), ...
-                'no presentation was decomposed');
             kept = findAllByClass(migrated, 'stimulus_presentation');
-            verifyNumElements(testCase, kept, 11);
-            ids = cellfun(@(d) string(d.base.id), kept(:)');
-            verifyTrue(testCase, all(ismember(string(srcPres), ids)), ...
-                'a presentation id is missing: it was not carried');
+            keptIds = cellfun(@(d) string(d.base.id), kept(:)');
+            verifyTrue(testCase, all(ismember(string(hartley), keptIds)), ...
+                'a Hartley presentation id is missing: it was not carried');
             for k = 1:numel(kept)
                 verifyEqual(testCase, char(kept{k}.document_class.schema_version), ...
                     'did_v1', 'a carried presentation is stamped did_v1');
+            end
+            % the grating run: carried with another row, or decomposed; its id
+            % is in the destination either way
+            allIds = cellfun(@(d) string(d.base.id), migrated(:)');
+            others = setdiff(string(srcPres), string(hartley));
+            verifyNumElements(testCase, others, 1);
+            verifyTrue(testCase, all(ismember(others, allIds)), ...
+                'the grating run''s id is missing from the destination');
+            for k = 1:numel(others)
+                hit = migrated(allIds == others(k));
+                if isempty(hit); continue; end
+                fprintf('\n  GRATING RUN (20211116) %s: destination class %s\n', ...
+                    others(k), hit{1}.document_class.class_name);
             end
         end
 
@@ -740,13 +761,35 @@ classdef TestMigrateLocalEta20211116 < matlab.unittest.TestCase
         function testTheFrameTimesStayOnTheirV1Sources(testCase)
             % INVERTS testTheFrameTimesSurviveAsOnsetTimes (onset-time
             % covariates on the ten Hartley item manipulations). With no
-            % presentation decomposed ([generic stage is lossless], Jess
-            % Haley, 2026-10-25) there is no item manipulation to carry them;
-            % the presentations they time are carried as v1 instead
-            % (testEveryStimulusPresentationIsCarriedAsV1).
+            % Hartley presentation decomposed ([generic stage is lossless],
+            % Jess Haley, 2026-10-25) there is no item manipulation to carry
+            % them; the presentations they time are carried as v1 instead
+            % (testTheHartleyPresentationsAreCarriedAndTheGratingRunIsNot).
+            % AMENDED 2026-10-29 for [unread stimulus parameters are method
+            % parameters] (Jess Haley, 2026-10-27): the grating run may now
+            % fold, so the check is on the Hartley ids, not on every item
+            % manipulation.
+            hartley = {};
+            for k = 1:numel(testCase.Bodies)
+                j = jsondecode(testCase.Bodies{k});
+                if isfield(j, 'document_class') && isfield(j.document_class, 'class_name') ...
+                        && strcmp(j.document_class.class_name, 'stimulus_presentation') ...
+                        && isHartleyGenerator(j)
+                    hartley{end+1} = j.base.id; %#ok<AGROW>
+                end
+            end
+            verifyNumElements(testCase, hartley, 10);
             migrated = destinationBodies(testCase.Result.destination);
-            verifyEmpty(testCase, itemManipulations(migrated));
-            verifyNumElements(testCase, findAllByClass(migrated, 'stimulus_presentation'), 11);
+            items = itemManipulations(migrated);
+            itemIds = strings(1, 0);
+            if ~isempty(items)
+                itemIds = cellfun(@(d) string(d.base.id), items(:)');
+            end
+            verifyFalse(testCase, any(ismember(string(hartley), itemIds)), ...
+                'a Hartley presentation became an item manipulation');
+            kept = findAllByClass(migrated, 'stimulus_presentation');
+            keptIds = cellfun(@(d) string(d.base.id), kept(:)');
+            verifyTrue(testCase, all(ismember(string(hartley), keptIds)));
         end
 
         function testTheCalculatorFamilyKeepsItsIdentities(testCase)
@@ -853,6 +896,26 @@ ids = db.allIds();
 bodies = cell(1, numel(ids));
 for k = 1:numel(ids)
     bodies{k} = db.get(ids{k}).toStruct();
+end
+end
+
+function tf = isHartleyGenerator(j)
+%ISHARTLEYGENERATOR A v1 stimulus_presentation whose stimuli carry the Hartley
+%   generator keys (M, K_absmax, L_absmax, sfmax: newStimKind's hartleystim).
+tf = false;
+if ~isfield(j, 'stimulus_presentation') || ~isfield(j.stimulus_presentation, 'stimuli')
+    return;
+end
+raw = j.stimulus_presentation.stimuli;
+if isstruct(raw); raw = num2cell(raw); end
+if ~iscell(raw); return; end
+for k = 1:numel(raw)
+    s = raw{k};
+    if isstruct(s) && isfield(s, 'parameters') && isstruct(s.parameters) ...
+            && all(isfield(s.parameters, {'M', 'K_absmax', 'L_absmax', 'sfmax'}))
+        tf = true;
+        return;
+    end
 end
 end
 

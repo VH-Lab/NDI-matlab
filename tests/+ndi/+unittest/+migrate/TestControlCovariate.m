@@ -209,6 +209,24 @@ classdef TestControlCovariate < matlab.unittest.TestCase
             testCase.verifyTrue(isnan(got(2)), 'the trial with no control records NaN');
         end
 
+        function testTheAppsOSAndInterpreterVersionsGoToTheSoftwareEntities(testCase)
+            % [control record fields split] (Jess Haley, 2026-10-27): the
+            % `app` fields beyond name/version/url/os/interpreter -- the
+            % writer's os_version and interpreter_version (ndi.app
+            % newdocument) -- go to the software entities, as [presentation
+            % app is software]: each is the version of its program's entity.
+            ctl = withApp(controlDoc('cs_1', [2 2]));
+            [~, ~, r, sw, calcs] = emit(ctl, [1 2]);
+            testCase.verifyNumElements(calcs, 1);
+            testCase.verifyEmpty(r.control_carried);
+            ids = cellfun(@(x) x.base.id, sw, 'UniformOutput', false);
+            lids = cellfun(@localId, sw, 'UniformOutput', false);
+            testCase.verifyEqual(lids{strcmp(ids, depValue(calcs{1}, 'operating_system_id'))}, ...
+                'MACA64@15.6.1');
+            testCase.verifyEqual(lids{strcmp(ids, depValue(calcs{1}, 'interpreter_id'))}, ...
+                'MATLAB@24.2');
+        end
+
         function testARecordThatCannotBePlacedWholeIsCarriedAsV1(testCase)
             % empty: no pairing at all
             [~, ~, r, ~, calcs] = emit(controlDoc('cs_1', []), [1 2 1]);
@@ -219,19 +237,32 @@ classdef TestControlCovariate < matlab.unittest.TestCase
             [~, ~, r, ~, calcs] = emit(controlDoc('cs_1', [11 11 20]), order, 12);
             testCase.verifyEmpty(calcs);
             testCase.verifySubstring(r.control_carried{1}.reason, '3 pairing entr');
-            % a field the calculation does not write
+            % a field outside the template. [control record fields split]
+            % (Jess Haley, 2026-10-27, did-schema
+            % V_eta_go_forward_class_audit.md): carry-100 (malformed), no
+            % longer carry-089
             ctl = controlDoc('cs_1', [2 2]);
             ctl.control_stimulus_ids.note = 'chosen by hand';
             [~, ~, r, ~, calcs] = emit(ctl, [1 2]);
             testCase.verifyEmpty(calcs);
             testCase.verifySubstring(r.control_carried{1}.reason, 'control_stimulus_ids.note');
-            % an app field outside app.json
+            testCase.verifySubstring(r.control_carried{1}.reason, '[carry-100]');
+            % an app field outside app.json: carry-100 too
             ctl = withApp(controlDoc('cs_1', [2 2]));
             ctl.app.build = '7';
             [~, ~, r, sw, calcs] = emit(ctl, [1 2]);
             testCase.verifyEmpty(calcs);
             testCase.verifyEmpty(sw, 'a carried record mints nothing');
             testCase.verifySubstring(r.control_carried{1}.reason, 'app.build');
+            testCase.verifySubstring(r.control_carried{1}.reason, '[carry-100]');
+            % an edge outside the template (the writer sets only
+            % stimulus_presentation_id): carry-100 too
+            ctl = controlDoc('cs_1', [2 2]);
+            ctl.depends_on(end+1) = struct('name', 'element_id', 'value', 'elem_9');
+            [~, ~, r, ~, calcs] = emit(ctl, [1 2]);
+            testCase.verifyEmpty(calcs);
+            testCase.verifySubstring(r.control_carried{1}.reason, '[carry-100]');
+            testCase.verifySubstring(r.control_carried{1}.reason, 'element_id');
             % a frame sequence: the trials are not the dimension
             seq = struct('item_ids', {{'g_a', 'g_b'}}, 'order', [1 2 1 2 1]);
             [~, ~, r, ~, calcs] = emit(controlDoc('cs_1', 1), 1, 1, seq);
@@ -254,6 +285,13 @@ end
 function n = entityName(doc)
 n = '';
 if isfield(doc, 'entity') && isfield(doc.entity, 'name'); n = char(doc.entity.name); end
+end
+
+function n = localId(doc)
+n = '';
+if isfield(doc, 'entity') && isfield(doc.entity, 'local_identifier')
+    n = char(doc.entity.local_identifier);
+end
 end
 
 function v = calcParam(c, variable)

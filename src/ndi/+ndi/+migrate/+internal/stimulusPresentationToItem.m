@@ -198,8 +198,9 @@ function [manipBody, methodBodies, report, softwareBodies, controlCalcs] = ...
 %   lossless]); otherwise it is left as it is (the end of ndi.migrate.local
 %   carries it as v1) and REPORT.control_carried says why: a standalone item
 %   (no subject), a frame sequence, an entry that is NaN / empty / not a
-%   trial number, an entry count other than the trials, a field or edge the
-%   calculation does not write, or an app naming no program.
+%   trial number, an entry count other than the trials, a field or edge
+%   outside NDI's template (carry-100, [control record fields split], Jess
+%   Haley, 2026-10-27), or an app naming no program.
 %   The `control condition` covariate stays on the presentation as a
 %   convenience (recoverable from the records), whatever becomes of them.
 %
@@ -281,18 +282,31 @@ end
 % ---- lossless: nothing the decomposition cannot place ----------------------
 % [generic stage is lossless] and [partly placed is carried as v1] (Jess Haley,
 % 2026-10-25, did-schema V_eta_go_forward_class_audit.md): a presentation with
-% any v1 field the item, its methods and its covariates do not write -- a
-% grating parameter gratingRecipe does not read (it reads five), a blank's
-% parameters, a Hartley generator parameter the shared basis does not read, a
-% second element where one is read, a stimulus field beside `parameters`, a
-% block field beside stimuli / presentation_order / presentation_time -- is
+% any v1 field the item, its methods and its covariates do not write is
 % REFUSED: left as it is, so the end of ndi.migrate.local carries it as v1.
-unplaced = unplacedPresentationFields(earlyBlock, earlyStimuli, stimulusKinds, ...
-    ~isempty(sequence));
-report.unplaced_fields = unplaced;
-if ~isempty(unplaced) && options.LeaveUnplaced
-    % carry-register: carry-080
-    report.reason = ['[carry-080] unplaced (carried as v1): ' strjoin(unplaced, ', ')];
+% Decided by Jess Haley, 2026-10-27 [unread stimulus parameters are method
+% parameters] ("Q6 yes", did-schema V_eta_go_forward_class_audit.md): a
+% grating's or a blank's `parameters` key that gratingRecipe does not read is
+% now a method parameter entry (ndi.migrate.internal.stimulusRecipe), so it no
+% longer refuses the presentation; a field outside NDI's template (a block
+% field beside stimuli / presentation_order / presentation_time, a stimulus
+% field beside `parameters`) is carried under carry-100 (malformed). Still
+% refused under carry-080, because the decision names no home for them (see
+% unplacedPresentationFields): a Hartley generator parameter the SHARED basis
+% does not read (the basis methods are minted once per session, not per
+% presentation), and a second value of a key gratingRecipe reads one of.
+[outside, unplaced] = unplacedPresentationFields(earlyBlock, earlyStimuli, ...
+    stimulusKinds, ~isempty(sequence));
+report.unplaced_fields = [outside, unplaced];
+if ~isempty(report.unplaced_fields) && options.LeaveUnplaced
+    if ~isempty(outside)
+        % carry-register: carry-100
+        report.reason = ['[carry-100] outside the stimulus_presentation template ' ...
+            '(carried as v1): ' strjoin(outside, ', ')];
+    else
+        % carry-register: carry-080
+        report.reason = ['[carry-080] unplaced (carried as v1): ' strjoin(unplaced, ', ')];
+    end
     return;
 end
 
@@ -895,6 +909,24 @@ end
 function why = controlUnplaced(rec, nTrials, positionsAreTrials, standalone)
 %CONTROLUNPLACED Why this record cannot be written whole as a calculation;
 %   '' when it can ([generic stage is lossless]).
+%   Decided by Jess Haley, 2026-10-27 [control record fields split] ("Q5
+%   yes", did-schema V_eta_go_forward_class_audit.md): "a field outside NDI's
+%   template is carried under carry-100 (malformed); `app` fields beyond
+%   name/version/url/os/interpreter go to the `software` entity, as
+%   [presentation app is software]; carry-089 keeps only template fields with
+%   no home". NDI's template here is what its writer writes
+%   (+ndi/+app/+stimulus/tuning_response.m control_stimulus at the locked
+%   main: control_stimulus_ids.json's block {control_stimulus_ids,
+%   control_stimulus_id_method} plus ndi.app's newdocument `app` block {name,
+%   version, url, os, os_version, interpreter, interpreter_version}, and the
+%   `stimulus_presentation_id` edge). So a block field beside the two, an
+%   `app` field outside those seven (or the app_name / app_version / app_url
+%   spellings did2.convert.universalRenames writes), and an edge other than
+%   stimulus_presentation_id / session_id are carry-100. The two app fields
+%   beyond the five, os_version and interpreter_version, already go to the
+%   software entities (the OS and interpreter, each with its version:
+%   controlCalculation). Every template field now has a home, so no site
+%   here cites carry-089.
 why = '';
 if standalone
     % carry-register: carry-090
@@ -917,8 +949,9 @@ if isfield(rec, 'control_stimulus_ids') && isstruct(rec.control_stimulus_ids)
     other = setdiff(fieldnames(blk), {'control_stimulus_ids', 'control_stimulus_id_method'});
     for k = 1:numel(other)
         if ~isempty(blk.(other{k}))
-            % carry-register: carry-089
-            why = ['[carry-089] a field the calculation does not write: control_stimulus_ids.' other{k}];
+            % carry-register: carry-100
+            why = ['[carry-100] a field outside the control_stimulus_ids template: ' ...
+                'control_stimulus_ids.' other{k}];
             return;
         end
     end
@@ -967,8 +1000,8 @@ if isfield(rec, 'app') && ~isempty(rec.app)
         v = rec.app.(fn{k});
         if isempty(v); continue; end
         if ~any(strcmp(fn{k}, known))
-            % carry-register: carry-089
-            why = ['[carry-089] a field the calculation does not write: app.' fn{k}];
+            % carry-register: carry-100
+            why = ['[carry-100] a field outside the app template: app.' fn{k}];
             return;
         end
         if ~(ischar(v) || (isstring(v) && isscalar(v)))
@@ -1003,8 +1036,8 @@ if isfield(rec, 'depends_on') && ~isempty(rec.depends_on)
             if isfield(d, f{1}) && ~isempty(d.(f{1})); v = d.(f{1}); end
         end
         if ~isempty(v)
-            % carry-register: carry-089
-            why = ['[carry-089] an edge the calculation does not write: ' char(d.name)];
+            % carry-register: carry-100
+            why = ['[carry-100] an edge outside the control_stimulus_ids template: ' char(d.name)];
             return;
         end
     end
@@ -1376,16 +1409,29 @@ end
 
 % ===================== v1 readers =========================================
 
-function unplaced = unplacedPresentationFields(block, stimuli, kinds, hartleyRoute)
+function [outside, unplaced] = unplacedPresentationFields(block, stimuli, kinds, hartleyRoute)
 %UNPLACEDPRESENTATIONFIELDS The v1 fields of one presentation the
 %   decomposition would not write ([generic stage is lossless], Jess Haley,
 %   2026-10-25). Field names, de-duplicated, in a stable order.
+%   OUTSIDE  fields outside NDI's stimulus_presentation template (a block
+%            field beside stimuli / presentation_order / presentation_time, a
+%            stimulus field beside `parameters`): carry-100, [unread
+%            stimulus parameters are method parameters] (Jess Haley,
+%            2026-10-27).
+%   UNPLACED `parameters` keys with no home decided: on the Hartley route,
+%            a generator key the shared basis does not read; on a grating, a
+%            second value of a key gratingRecipe reads one of (and an
+%            imageType other than 1 or 2, which newStimKind never calls a
+%            grating). Every other unread key is a method parameter entry
+%            ([unread stimulus parameters are method parameters],
+%            ndi.migrate.internal.stimulusRecipe), so it is not listed.
+outside = {};
 unplaced = {};
 if isstruct(block)
     other = setdiff(fieldnames(block), {'stimuli', 'presentation_order', 'presentation_time'});
     for k = 1:numel(other)
         if ~isempty(block.(other{k}))
-            unplaced{end+1} = ['stimulus_presentation.' other{k}]; %#ok<AGROW>
+            outside{end+1} = ['stimulus_presentation.' other{k}]; %#ok<AGROW>
         end
     end
     if isfield(block, 'stimuli')
@@ -1397,7 +1443,7 @@ if isstruct(block)
                 other = setdiff(fieldnames(raw{k}), {'parameters'});
                 for j = 1:numel(other)
                     if ~isempty(raw{k}.(other{j}))
-                        unplaced{end+1} = ['stimuli.' other{j}]; %#ok<AGROW>
+                        outside{end+1} = ['stimuli.' other{j}]; %#ok<AGROW>
                     end
                 end
             end
@@ -1411,22 +1457,21 @@ blankNames = {'isblank', 'is_blank', 'blank'};
 for i = 1:numel(stimuli)
     p = stimParameters(stimuli, i);
     fn = fieldnames(p);
-    read = [];
     if hartleyRoute
         read = hartleyRead;
     elseif strcmp(kinds{i}, 'grating')
         read = gratingRead;
-    elseif strcmp(kinds{i}, 'blank')
-        read = {};
-    end
-    if ~iscell(read)
-        continue;   % every other kind: every parameter is an entry (stimulusRecipe)
+    else
+        continue;   % a blank and every other kind: every parameter is an entry (stimulusRecipe)
     end
     for k = 1:numel(fn)
         v = p.(fn{k});
         if isempty(v) || any(strcmp(fn{k}, blankNames)); continue; end
         if ~any(strcmp(fn{k}, read))
-            unplaced{end+1} = ['parameters.' fn{k}]; %#ok<AGROW>
+            if hartleyRoute
+                unplaced{end+1} = ['parameters.' fn{k}]; %#ok<AGROW>
+            end
+            % a grating: an entry on its method (gratingOrBlank, stimulusRecipe)
         elseif isnumeric(v) && numel(v) > 1
             unplaced{end+1} = ['parameters.' fn{k} ' (more than one value)']; %#ok<AGROW>
         elseif ~hartleyRoute && strcmp(fn{k}, 'imageType') ...
@@ -1435,7 +1480,9 @@ for i = 1:numel(stimuli)
         end
     end
 end
-unplaced = unique(unplaced, 'stable');
+% rows, so the two lists concatenate (unique gives a column for an empty cell)
+outside = reshape(unique(outside, 'stable'), 1, []);
+unplaced = reshape(unique(unplaced, 'stable'), 1, []);
 end
 
 function block = presentationBlock(body)
