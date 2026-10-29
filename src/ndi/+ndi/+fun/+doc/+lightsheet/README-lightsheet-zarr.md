@@ -74,11 +74,53 @@ axis is at most `minLevelSize` (512) voxels. Chunking, encoding,
 parallel compression and installation are `makePyramid`'s, through its
 `levelSources` option.
 
+## Straight to a cloud session: `ndi.cloud.upload.SessionWriter`
+
+Both builders accept an `ndi.cloud.upload.SessionWriter` in place of a
+session. The documents then go directly to one session of an NDI Cloud
+dataset, without a local session or `uploadDataset` step:
+
+```matlab
+sessions = ndi.cloud.upload.SessionWriter.listSessions(datasetId);
+subjects = ndi.cloud.upload.SessionWriter.listSubjects(datasetId, sessionId);
+W = ndi.cloud.upload.SessionWriter(datasetId, sessionId);
+[P, L, info] = ndi.fun.doc.lightsheet.fromOMEZarr(W, zarrPath, ...
+    'subjectID', subjectId, 'codec', 'blosc-zstd');
+```
+
+- **A session, never just the dataset.** `sessionId` must be one of the
+  dataset's sessions (its `session_in_a_dataset` records). Every document
+  gets it as `base.session_id`, so the pyramid is in that session when
+  the dataset is downloaded.
+- **The subject must already be there, in that session.** The builders
+  check this (and `elementID` / `sourceFileID`, if given) before any
+  chunk is built.
+- **Chunks are always materialized.** The cloud cannot read a store on
+  local disk.
+- **Files are sent first and checked; the documents go up last.** Each
+  level's chunk files and series manifest are uploaded as soon as the
+  level is built, under the uids DID assigned them. For a document with
+  many files they go in zip batches, otherwise one at a time with a
+  signed CRC-32. Each file is then compared against the CRC-32 NDI Cloud
+  records (`lookupFiles`; size when no checksum was recorded). A file
+  that is missing or different is uploaded again on its own; if it is
+  still wrong, that is an error. Documents are added only by
+  `SessionWriter/commit`, after every file has passed, so a failed run
+  leaves no document in the cloud pointing at missing files.
+- **Disk.** The writer keeps a local copy of what it sent until the
+  commit, so `fromSPIM` can reduce each level from the one before it.
+  This takes as much space as a local ingest would.
+
 ## GUI
 
 `ndi.gui.app.LightsheetZarrManager(session)` mirrors `GEFManager`:
 lists pyramids in a session, and drives Add / View / Delete. `View`
-builds the napari command from `viewCommand` and shells out.
+builds the napari command from `viewCommand` and shells out. `Add...`
+asks whether the pyramid goes to this session or to an NDI Cloud
+session. For the cloud, it then asks for the dataset, one of its
+sessions, and a subject of that session, and runs `fromOMEZarr` through
+a `SessionWriter`. The table lists the local session only, so a pyramid
+added to the cloud does not appear in it.
 
 ### Viewer logs
 

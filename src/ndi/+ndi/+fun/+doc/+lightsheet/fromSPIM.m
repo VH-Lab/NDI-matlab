@@ -51,12 +51,21 @@ function [pyramidDoc, levelDocs, info] = fromSPIM(session, rootDir, options)
 %                     that codec defaults to 'blosc-zstd': chunks are
 %                     always materialized here.
 %
+%   STRAIGHT TO THE CLOUD. SESSION may be an
+%   ndi.cloud.upload.SessionWriter instead of an ndi.session, to add the
+%   documents to a session of an NDI Cloud dataset directly; see
+%   ndi.fun.doc.lightsheet.fromOMEZarr. The subject must already be in
+%   that session. Each coarser level is reduced from the local copy of
+%   the level before it, which the writer keeps until the end.
+%
 %   INFO returns a struct with fields:
 %     rootDir       - ROOTDIR
 %     channelNames  - cellstr, the channels on the c axis, in order
 %     levels        - struct array (path, reduction, shape, voxelSize, factor)
 %     sourceFileID  - id of the fileReference document for ROOTDIR
 %     sharedLevel0  - logical, true when level 0 is shared by the ladders
+%     cloud         - (cloud target only) the report SessionWriter/commit
+%                     returns
 %
 %   Example:
 %     S = ndi.session.dir('/path/to/session');
@@ -64,6 +73,7 @@ function [pyramidDoc, levelDocs, info] = fromSPIM(session, rootDir, options)
 %         'subjectID', subj.id(), 'numWorkers', 8);
 %
 %   See also: ndi.fun.doc.lightsheet.fromOMEZarr,
+%             ndi.cloud.upload.SessionWriter,
 %             ndi.fun.doc.lightsheet.makePyramid,
 %             ndi.fun.doc.lightsheet.reduceBlocks,
 %             ndr.format.smartspim.readAllChannelsInfo,
@@ -97,6 +107,7 @@ function [pyramidDoc, levelDocs, info] = fromSPIM(session, rootDir, options)
         error('NDI:lightsheet:fromSPIM:noSubject', ...
             'A lightsheetZarrPyramid depends_on a subject; pass ''subjectID''.');
     end
+    toCloud = isa(session, 'ndi.cloud.upload.SessionWriter');
     if ~isfolder(rootDir)
         error('NDI:lightsheet:fromSPIM:noSuchFolder', ...
             'SmartSPIM folder not found at %s.', rootDir);
@@ -179,6 +190,16 @@ function [pyramidDoc, levelDocs, info] = fromSPIM(session, rootDir, options)
     end
 
     % ---- source description + progress ---------------------------------
+    if toCloud
+        % Before the ladder is built, not after: see fromOMEZarr.
+        session.requireSubject(options.subjectID);
+        if ~isempty(options.elementID)
+            session.requireDocument(options.elementID);
+        end
+        if ~isempty(options.sourceFileID)
+            session.requireDocument(options.sourceFileID);
+        end
+    end
     sourceFileID = options.sourceFileID;
     if isempty(sourceFileID)
         srcDoc = ndi.fun.doc.lightsheet.makeSourceFile(session, rootDir);
@@ -217,6 +238,9 @@ function [pyramidDoc, levelDocs, info] = fromSPIM(session, rootDir, options)
         'levels', levelInfo, ...
         'sourceFileID', sourceFileID, ...
         'sharedLevel0', sharedLevel0);
+    if toCloud
+        info.cloud = session.commit();
+    end
 end
 
 function steps = planLadder(shape0, scale0, minLevelSize, maxLevels)
