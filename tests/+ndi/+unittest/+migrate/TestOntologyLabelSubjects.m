@@ -201,6 +201,29 @@ classdef TestOntologyLabelSubjects < matlab.unittest.TestCase
             tc.verifyEqual(rep2.unresolved_unplaced_fields, 0);
         end
 
+        function testALabelOutsideItsTemplateIsCarriedUnderCarry100(tc)
+            % [ontologyLabel row split] (Jess Haley, 2026-10-27, did-schema
+            % V_eta_go_forward_class_audit.md): a field outside NDI's
+            % `ontologyLabel` template, or an edge other than `document_id`,
+            % is carried under carry-100 (malformed), not carry-095. The
+            % template (ontologyLabel.json at the locked NDI-matlab main) has
+            % one field, `ontologyNode`, and one edge, `document_id`. Both
+            % spellings, and both the stray field and the stray edge.
+            obs = imageObservation('img_1', 'sess1', 'subj_group_9', 'anchor_1');
+            makers = {@labelBody, @labelBodyV1};
+            for m = 1:numel(makers)
+                withField = withExtraField(makers{m}('lab_f', 'sess1', 'img_1', 'EMPTY:0000131'));
+                withEdge = makers{m}('lab_e', 'sess1', 'img_1', 'EMPTY:0000131');
+                withEdge.depends_on(end+1) = struct('name', 'element_id', 'value', 'elem_7');
+                [plan, rep] = ndi.migrate.internal.ontologyLabelSubjects({obs, withField, withEdge});
+                tc.verifyEmpty(plan);
+                tc.verifyEqual(rep.unresolved_unplaced_fields, 2);
+                tc.verifyEqual({rep.carry_rows.id}, {'lab_f', 'lab_e'});
+                tc.verifyEqual({rep.carry_rows.row}, {'carry-100', 'carry-100'});
+                tc.verifyFalse(any(strcmp({rep.carry_rows.row}, 'carry-095')));
+            end
+        end
+
         function testAReferentWithNoTimeAnchorIsRefusedRatherThanAnchoredElsewhere(tc)
             obs = imageObservation('img_1', 'sess1', 'subj_group_9', 'anchor_1');
             obs.depends_on = obs.depends_on(1);     % entity_id only

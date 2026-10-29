@@ -88,6 +88,17 @@ function [plan, report] = ontologyLabelSubjects(migratedStructs)
 %   exactly as it does today. Nothing is lost by waiting; something would be
 %   invented by guessing.
 %
+%   DECIDED SINCE: [labels are a field on what they label] (Jess Haley,
+%   2026-10-27, did-schema V_eta_go_forward_class_audit.md; "an ontologyLabel
+%   is almost certainly meant to be a field on the document it references.
+%   The method, variable, condition, method parameter, etc."): a label on a
+%   document with no subject or no time reference is carried whole as v1,
+%   `needs_mapping` (carry-096), and each dataset's map names which slot of
+%   the labelled document (its method, a variable, a condition, a method
+%   parameter) the label fills. That is what this pass does at both carry-096
+%   sites below; no dataset's map is written yet, so nothing here fills a
+%   slot.
+%
 %   ---------------------------------------------------------------------
 %   WHAT IS EMITTED, AND WHAT IS DELIBERATELY NOT
 %   ---------------------------------------------------------------------
@@ -253,6 +264,9 @@ for i = 1:numel(labelIdx)
     target = byId(targetId);
 
     if isempty(target.subject_id)
+        % [labels are a field on what they label] (Jess Haley, 2026-10-27):
+        % carried whole as v1, needs_mapping, until the dataset's map names
+        % the slot of the labelled document the label fills.
         % carry-register: carry-096
         report.blocked_target_has_no_subject = ...
             report.blocked_target_has_no_subject + 1;
@@ -270,7 +284,9 @@ for i = 1:numel(labelIdx)
         % `time_reference_#` carries min_count 1 on subject_interaction, so
         % there is no honest way to emit the observation without one, and
         % minting a session anchor here would put a SECOND, differently-anchored
-        % reference beside the referent's own.
+        % reference beside the referent's own. [labels are a field on what
+        % they label] (Jess Haley, 2026-10-27): carried whole as v1,
+        % needs_mapping, as a label on a subject-less document is.
         % carry-register: carry-096
         report.unresolved_target_no_time_reference = ...
             report.unresolved_target_no_time_reference + 1;
@@ -292,11 +308,24 @@ for i = 1:numel(labelIdx)
     % edge (as `derived_from`) and nothing else. A label stating any other
     % field or edge is left as it is (carried as v1 at the end of
     % ndi.migrate.local), counted here.
+    %
+    % ITS ROW IS carry-100, NOT carry-095. [ontologyLabel row split] (Jess
+    % Haley, 2026-10-27, did-schema V_eta_go_forward_class_audit.md): "a
+    % field outside NDI's `ontologyLabel` template, or an edge other than
+    % `document_id`, is carried under carry-100 (malformed); carry-095 keeps
+    % only template fields with no home". The template at the locked NDI-matlab
+    % main (ontologyLabel.json + base.json) has ONE label field, `ontologyNode`
+    % (`ontology_node` once renamed), and ONE edge, `document_id`, and the
+    % observation writes both. So everything labelHasUnplaced finds -- another
+    % label field, or another edge (the `session_id` edge the migration adds
+    % is not one) -- is outside the template, and no template field of a
+    % label is left without a home here: carry-095 has no site in this pass,
+    % as it has none in DID-matlab's +migrators_j/ontology_label.m.
     if labelHasUnplaced(b)
-        % carry-register: carry-095
+        % carry-register: carry-100
         report.unresolved_unplaced_fields = ...
             report.unresolved_unplaced_fields + 1;
-        report.carry_rows(end+1) = struct('id', labelId, 'row', 'carry-095', 'dependency', '');
+        report.carry_rows(end+1) = struct('id', labelId, 'row', 'carry-100', 'dependency', '');
         continue;
     end
 
