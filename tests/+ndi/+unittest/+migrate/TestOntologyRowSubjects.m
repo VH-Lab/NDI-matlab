@@ -110,7 +110,8 @@ classdef TestOntologyRowSubjects < matlab.unittest.TestCase
                 + report.unresolved_local_identifier_missing ...
                 + report.unresolved_local_identifier_ambiguous ...
                 + report.unresolved_conflicting_candidates ...
-                + report.unresolved_edge_would_be_dropped);
+                + report.unresolved_edge_would_be_dropped ...
+                + report.unresolved_plural_pre_repair);
         end
 
         % ---------------- route 1: the document_id edge ------------------
@@ -156,11 +157,14 @@ classdef TestOntologyRowSubjects < matlab.unittest.TestCase
             testCase.verifyEqual(plan(1).subject_id, 'subj_babu');
         end
 
-        function testASecondEdgeThatWouldBeDroppedRefusesTheRow(testCase)
-            % migrators_j's startStatement ASSIGNS depends_on = carrySubject(),
-            % so an emitted statement carries subject_id and nothing else. A
-            % second, non-subject referent would vanish on conversion -- which
-            % is the discard ontology_label's migrator comment names. Refuse.
+        function testAPreRepairPluralRowWithASecondEdgeIsCarried(testCase)
+            % INVERTED 2026-10-29 from testASecondEdgeThatWouldBeDroppedRefusesTheRow:
+            % [old table rows carried by NDI] (Jess Haley, 2026-10-29, did-schema
+            % V_eta_go_forward_class_audit.md). babuRow is the pre-repair shape
+            % (the dependency column was deleted from `data`), so a row with
+            % document_id_1..n is carried and counted as a pre-repair plural
+            % row, before any route is tried; it is no longer refused as an
+            % edge that would be dropped.
             [v1, mig] = babuRow();
             v1{1}.depends_on = struct( ...
                 'name',  {'document_id_1', 'document_id_2'}, ...
@@ -168,7 +172,29 @@ classdef TestOntologyRowSubjects < matlab.unittest.TestCase
             mig{end+1} = migratedDoc('plate_doc', 'sess_babu', 'ontology_table_row');
             [plan, report] = ndi.migrate.internal.ontologyRowSubjects(v1, mig);
             testCase.verifyEmpty(plan);
+            testCase.verifyEqual(report.unresolved_plural_pre_repair, 1);
+            testCase.verifyEqual(report.unresolved_edge_would_be_dropped, 0);
+            testCase.verifyEqual(report.unresolved, 1);
+        end
+
+        function testASecondEdgeThatWouldBeDroppedRefusesTheRow(testCase)
+            % The post-repair shape (NDI 40dc9aa86: each dependency column is
+            % kept in `data`, so every edge value is a cell). migrators_j's
+            % startStatement ASSIGNS depends_on = carrySubject(), so an
+            % emitted statement carries subject_id and nothing else. A second,
+            % non-subject referent would vanish on conversion -- which is the
+            % discard ontology_label's migrator comment names. Refuse.
+            [v1, mig] = babuRow();
+            v1{1}.depends_on = struct( ...
+                'name',  {'document_id_1', 'document_id_2'}, ...
+                'value', {'subj_babu',     'plate_doc'});
+            v1{1}.ontologyTableRow.data.SubjectDocumentIdentifier = 'subj_babu';
+            v1{1}.ontologyTableRow.data.PlateDocumentIdentifier = 'plate_doc';
+            mig{end+1} = migratedDoc('plate_doc', 'sess_babu', 'ontology_table_row');
+            [plan, report] = ndi.migrate.internal.ontologyRowSubjects(v1, mig);
+            testCase.verifyEmpty(plan);
             testCase.verifyEqual(report.unresolved_edge_would_be_dropped, 1);
+            testCase.verifyEqual(report.unresolved_plural_pre_repair, 0);
         end
 
         function testAnEmptyEdgeAlongsideASubjectColumnIsNotAnObstacle(testCase)
@@ -417,7 +443,7 @@ classdef TestOntologyRowSubjects < matlab.unittest.TestCase
             testCase.verifyEqual(report.rows_with_plural_document_id, 0);
         end
 
-        function testPluralDocumentIdIsCountedEvenWhenTheRowIsRefused(testCase)
+        function testPluralDocumentIdIsCountedWhenThePreRepairRowIsCarried(testCase)
             % THE COUNTER V_eta_OPEN_WORK.md row #105 records as missing from
             % all three repositories. Arity is a property of the ROW, not of
             % the outcome -- and a refused row is precisely the one whose
@@ -433,25 +459,63 @@ classdef TestOntologyRowSubjects < matlab.unittest.TestCase
             v1{1}.depends_on = struct( ...
                 'name',  {'document_id_1', 'document_id_2'}, ...
                 'value', {'subj_babu',     'plate_doc'});
+            % INVERTED 2026-10-29 from
+            % testPluralDocumentIdIsCountedEvenWhenTheRowIsRefused:
+            % [old table rows carried by NDI] (Jess Haley,
+            % 2026-10-29, did-schema V_eta_go_forward_class_audit.md). The row
+            % is pre-repair (no `data` cell holds its edges), so it is carried
+            % as a pre-repair plural row, not refused as an edge that would be
+            % dropped; the arity is counted either way.
             mig{end+1} = migratedDoc('plate_doc', 'sess_babu', 'ontology_table_row');
             [plan, report] = ndi.migrate.internal.ontologyRowSubjects(v1, mig);
             testCase.verifyEmpty(plan);
-            testCase.verifyEqual(report.unresolved_edge_would_be_dropped, 1);
+            testCase.verifyEqual(report.unresolved_plural_pre_repair, 1);
             testCase.verifyEqual(report.document_id_edges_seen, 2);
             testCase.verifyEqual(report.rows_with_plural_document_id, 1);
         end
 
-        function testPluralDocumentIdIsCountedWhenTheRowResolves(testCase)
-            % Two edges naming the SAME subject resolve (unique(ids) is 1) and
-            % the arity is still 2. Deriving arity from the resolution would
-            % report this row as singular.
+        function testAPreRepairPluralRowIsCarriedEvenWhenItsEdgesAgree(testCase)
+            % INVERTED 2026-10-29 from testPluralDocumentIdIsCountedWhenTheRowResolves:
+            % [old table rows counted and carried] (Jess Haley, 2026-10-27) and
+            % [old table rows carried by NDI] (Jess Haley, 2026-10-29), did-schema
+            % V_eta_go_forward_class_audit.md. Two pre-repair edges naming the
+            % SAME subject used to resolve (unique(ids) is 1); a pre-repair
+            % plural row is now carried as v1 needs_mapping and counted. The
+            % arity is still 2. The carry cites register row carry-125
+            % (did-schema 64ad58b8; until then this test pinned an empty
+            % REPORT.carry_rows, "no carry register row exists for this case
+            % yet").
             [v1, mig] = babuRow();
             v1{1}.depends_on = struct( ...
                 'name',  {'document_id_1', 'document_id_2'}, ...
                 'value', {'subj_babu',     'subj_babu'});
             [plan, report] = ndi.migrate.internal.ontologyRowSubjects(v1, mig);
+            testCase.verifyEmpty(plan);
+            testCase.verifyEqual(report.resolved, 0);
+            testCase.verifyEqual(report.unresolved_plural_pre_repair, 1);
+            testCase.verifyEqual(report.document_id_edges_seen, 2);
+            testCase.verifyEqual(report.rows_with_plural_document_id, 1);
+            testCase.verifyEqual(numel(report.carry_rows), 1);
+            if ~isempty(report.carry_rows)
+                testCase.verifyEqual(report.carry_rows(1).id, 'row_babu');
+                testCase.verifyEqual(report.carry_rows(1).row, 'carry-125');
+            end
+        end
+
+        function testAPostRepairPluralRowStillResolves(testCase)
+            % A plural row whose every edge value is a `data` cell was written
+            % after NDI 40dc9aa86 and is not pre-repair: it goes through the
+            % routes, and two edges naming the same subject resolve. The arity
+            % is still 2.
+            [v1, mig] = babuRow();
+            v1{1}.depends_on = struct( ...
+                'name',  {'document_id_1', 'document_id_2'}, ...
+                'value', {'subj_babu',     'subj_babu'});
+            v1{1}.ontologyTableRow.data.SubjectDocumentIdentifier = 'subj_babu';
+            [plan, report] = ndi.migrate.internal.ontologyRowSubjects(v1, mig);
             testCase.verifyEqual(numel(plan), 1);
-            testCase.verifyEqual(report.resolved_via_document_id_edge, 1);
+            testCase.verifyEqual(plan(1).subject_id, 'subj_babu');
+            testCase.verifyEqual(report.unresolved_plural_pre_repair, 0);
             testCase.verifyEqual(report.document_id_edges_seen, 2);
             testCase.verifyEqual(report.rows_with_plural_document_id, 1);
         end

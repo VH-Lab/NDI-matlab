@@ -185,6 +185,25 @@ function [plan, report] = ontologyRowSubjects(v1Bodies, migratedStructs, options
 %     therefore left as a passthrough
 %     (REPORT.unresolved_edge_would_be_dropped) -- relocating a silent loss is
 %     not repairing one.
+%   * A PRE-REPAIR ROW WITH A PLURAL `document_id` IS CARRIED, NOT RESOLVED.
+%     [old table rows counted and carried] (Jess Haley, 2026-10-27) and
+%     [old table rows carried by NDI] (Jess Haley, 2026-10-29), did-schema
+%     V_eta_go_forward_class_audit.md: "a pre-repair `ontologyTableRow` with
+%     plural `document_id_1..n` is carried `needs_mapping`, and the count is
+%     added to the next corpus run"; NDI's second pass, which reads these
+%     rows, does it. PLURAL is the arity `rows_with_plural_document_id`
+%     already counts (more than one non-empty `document_id` / `document_id_<n>`
+%     value). PRE-REPAIR is read from the row, by the writer's own rule:
+%     since NDI 40dc9aa86 tableDocMaker keeps each dependency column in
+%     `data`, so "a consumer holding an edge value looks up the `data` field
+%     whose value IS that id" (tableDocMaker.createOntologyTableRowDoc). A
+%     plural row with an edge value that is the value of NO `data` cell was
+%     written before that repair: its edges are anonymous, and nothing here
+%     can say which column produced which. Such a row is never planned (not
+%     even when its edges agree on one subject), is left a passthrough (so
+%     ndi.migrate.local carries it whole as v1), and is counted in
+%     REPORT.unresolved_plural_pre_repair. A plural row whose every edge value
+%     is a `data` cell (post-repair) goes through the routes as before.
 %   * `element_id` IS NOT TREATED AS A DANGLING NON-SUBJECT EDGE. It is not one:
 %     did2.convert.migrators_j.element promotes elements to subjects with their
 %     ids PRESERVED, so an element id resolves to a `subject` in the migrated
@@ -249,9 +268,9 @@ report.local_identifier_join_enabled = options.LocalIdentifierJoin;
 %     'DependencyVariable' is passed at exactly four sites, all
 %     +setup/+conv/+babu/import.m:380,383,386,389, each naming ONE column --
 %     so a NON-ZERO count here means an OUT-OF-TREE writer, which is exactly
-%     the unmeasured population #105 names. COUNTING IS NOT DECIDING: the
-%     refuse-and-count behaviour below is unchanged, and what rule a plural
-%     row should follow stays a team question.
+%     the unmeasured population #105 names. The rule for a PRE-REPAIR plural
+%     row is decided: carried and counted (`unresolved_plural_pre_repair`,
+%     [old table rows carried by NDI], see RULES OBSERVED above).
 % (b) DATA CELLS. `rows_passthrough` counts ROWS; the 76,766 recorded for this
 %     defect counts STATEMENTS, and the two differ by roughly the column
 %     count -- so neither number can be read off the other. A cell is an
@@ -282,6 +301,9 @@ report.unresolved_local_identifier_missing       = 0;
 report.unresolved_local_identifier_ambiguous     = 0;
 report.unresolved_conflicting_candidates         = 0;
 report.unresolved_edge_would_be_dropped          = 0;
+% [old table rows carried by NDI] (Jess Haley, 2026-10-29): a pre-repair row
+% with a plural document_id, carried whole as v1, needs_mapping
+report.unresolved_plural_pre_repair              = 0;
 % every row left unresolved is carried as v1 at the end of ndi.migrate.local;
 % its carry register row ([carry register], Jess Haley, 2026-10-26)
 report.carry_rows = struct('id', {}, 'row', {});
@@ -369,6 +391,26 @@ for i = 1:numel(v1Bodies)
     end
     nCells = dataCellCount(b);
     report.data_cells_seen = report.data_cells_seen + nCells;
+
+    if numel(edgeVals) > 1 && ~allValuesAreDataCells(b, edgeVals)
+        % [old table rows counted and carried] (Jess Haley, 2026-10-27) and
+        % [old table rows carried by NDI] (Jess Haley, 2026-10-29), did-schema
+        % V_eta_go_forward_class_audit.md: a pre-repair row with a plural
+        % document_id is carried whole as v1, needs_mapping, and counted.
+        % Not planned, so it stays a passthrough and ndi.migrate.local
+        % carries it (carryUnchangedAsV1).
+        % Its register row is carry-125 (did-schema 64ad58b8), recorded in
+        % REPORT.carry_rows; the carry is also counted here and in the
+        % carried-as-v1 totals.
+        % carry-register: carry-125
+        report.unresolved = report.unresolved + 1;
+        report.carry_rows(end+1) = struct('id', srcId, 'row', 'carry-125');
+        report.unresolved_plural_pre_repair = ...
+            report.unresolved_plural_pre_repair + 1;
+        report.data_cells_on_unresolved_rows = ...
+            report.data_cells_on_unresolved_rows + nCells;
+        continue;
+    end
 
     [subjectId, route, reason, overridden] = resolveRowSubject(b, byId, ...
         localIdIndex, options.LocalIdentifierJoin);
@@ -657,6 +699,36 @@ for k = 1:numel(vals)
     keep(k) = ~isempty(vals{k});
 end
 vals = vals(keep);
+end
+
+function tf = allValuesAreDataCells(b, vals)
+%ALLVALUESAREDATACELLS True when every value in VALS is the value of some
+%   `data` cell of the row.
+%
+%   NDI 40dc9aa86 made tableDocMaker keep each dependency column in `data`,
+%   so on a row written after it every `document_id` edge value is also a
+%   `data` cell (the join is "by VALUE", tableDocMaker's own comment). A row
+%   with an edge value no cell holds was written before the repair: the
+%   column that produced that edge was deleted. Used to tell a pre-repair
+%   plural row ([old table rows carried by NDI]) from a post-repair one.
+tf = true;
+blk = rowBlock(b);
+cells = {};
+if isfield(blk, 'data') && isstruct(blk.data) && isscalar(blk.data)
+    fns = fieldnames(blk.data);
+    for k = 1:numel(fns)
+        c = charOf(blk.data.(fns{k}));
+        if ~isempty(c)
+            cells{end+1} = c; %#ok<AGROW>
+        end
+    end
+end
+for k = 1:numel(vals)
+    if ~any(strcmp(cells, vals{k}))
+        tf = false;
+        return;
+    end
+end
 end
 
 function n = dataCellCount(b)
