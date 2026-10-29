@@ -481,7 +481,10 @@ classdef TestOntologyRowSubjects < matlab.unittest.TestCase
             % V_eta_go_forward_class_audit.md. Two pre-repair edges naming the
             % SAME subject used to resolve (unique(ids) is 1); a pre-repair
             % plural row is now carried as v1 needs_mapping and counted. The
-            % arity is still 2.
+            % arity is still 2. The carry cites register row carry-125
+            % (did-schema 64ad58b8; until then this test pinned an empty
+            % REPORT.carry_rows, "no carry register row exists for this case
+            % yet").
             [v1, mig] = babuRow();
             v1{1}.depends_on = struct( ...
                 'name',  {'document_id_1', 'document_id_2'}, ...
@@ -492,8 +495,11 @@ classdef TestOntologyRowSubjects < matlab.unittest.TestCase
             testCase.verifyEqual(report.unresolved_plural_pre_repair, 1);
             testCase.verifyEqual(report.document_id_edges_seen, 2);
             testCase.verifyEqual(report.rows_with_plural_document_id, 1);
-            testCase.verifyEmpty(report.carry_rows, ...
-                'no carry register row exists for this case yet');
+            testCase.verifyEqual(numel(report.carry_rows), 1);
+            if ~isempty(report.carry_rows)
+                testCase.verifyEqual(report.carry_rows(1).id, 'row_babu');
+                testCase.verifyEqual(report.carry_rows(1).row, 'carry-125');
+            end
         end
 
         function testAPostRepairPluralRowStillResolves(testCase)

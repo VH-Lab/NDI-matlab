@@ -399,11 +399,12 @@ for i = 1:numel(v1Bodies)
         % document_id is carried whole as v1, needs_mapping, and counted.
         % Not planned, so it stays a passthrough and ndi.migrate.local
         % carries it (carryUnchangedAsV1).
-        % carry-register: none yet. did-schema holds no register row for this
-        % case ([old table rows carried by NDI]: "Build pending: did-schema (a
-        % register row)"), so no row id is recorded in REPORT.carry_rows; the
-        % carry is counted here and in the carried-as-v1 totals.
+        % Its register row is carry-125 (did-schema 64ad58b8), recorded in
+        % REPORT.carry_rows; the carry is also counted here and in the
+        % carried-as-v1 totals.
+        % carry-register: carry-125
         report.unresolved = report.unresolved + 1;
+        report.carry_rows(end+1) = struct('id', srcId, 'row', 'carry-125');
         report.unresolved_plural_pre_repair = ...
             report.unresolved_plural_pre_repair + 1;
         report.data_cells_on_unresolved_rows = ...
