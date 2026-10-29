@@ -36,13 +36,18 @@ classdef TestStimulusPresentationItem < matlab.unittest.TestCase
 
         % ================= the generic stage: nothing unplaced ==============
 
-        function testTheGenericStageLeavesAGratingPresentationAsV1(testCase)
-            % [generic stage is lossless] / [partly placed is carried as v1]
-            % (Jess Haley, 2026-10-25, audit item 4): gratingRecipe writes five
-            % of a periodicstim's parameters, so by default (the generic
-            % stage) a grating presentation is REFUSED -- left as it is for the
-            % end of ndi.migrate.local to carry as v1 -- with the fields named.
-            % The tests below drive the recipes with 'LeaveUnplaced', false.
+        function testTheGenericStageFoldsAGratingWithItsUnreadKeysAsParameters(testCase)
+            % INVERTED 2026-10-29 from testTheGenericStageLeavesAGratingPresentationAsV1.
+            % Decided by Jess Haley, 2026-10-27 [unread stimulus parameters
+            % are method parameters] ("Q6 yes", did-schema
+            % V_eta_go_forward_class_audit.md): a `parameters` key no recipe
+            % reads becomes a `method` parameter entry, with a label as its
+            % variable when no term fits. So by default (the generic stage,
+            % [generic stage is lossless]) the 20211116 grating and blank
+            % shapes FOLD: the grating's periodicstim keys beyond the five
+            % gratingRecipe reads are entries on its method (periodicstim's
+            % rows), and the blank's keys are entries on the blank's (its v1
+            % names as labels, randState the Random Seed).
             stimuli = { gratingStim(0, 0.04, 0.5), blankStim() };
             pres = presentationBody('pres_g', [1 2], stimuli);
             bodies = { pres, ...
@@ -50,12 +55,24 @@ classdef TestStimulusPresentationItem < matlab.unittest.TestCase
                 docBody('element', 'elem_9', {'subject_id', 'animal_1'}) };
             r = ndi.migrate.internal.bodyResolver(bodies);
             [m, methods, report] = ndi.migrate.internal.stimulusPresentationToItem(pres, r);
-            testCase.verifyEmpty(m);
-            testCase.verifyEmpty(methods);
-            testCase.verifyTrue(startsWith(report.reason, '[carry-080] unplaced (carried as v1)'), report.reason);
-            testCase.verifyTrue(any(strcmp(report.unplaced_fields, 'parameters.chromhigh')));
-            testCase.verifyTrue(any(strcmp(report.unplaced_fields, 'parameters.BG')), ...
-                'a blank''s parameters are written nowhere either');
+            testCase.verifyNotEmpty(m, report.reason);
+            testCase.verifyEmpty(report.reason);
+            testCase.verifyEmpty(report.unplaced_fields);
+            testCase.verifyNumElements(methods, 2);
+            % the grating: the five it read, and the keys it did not
+            testCase.verifyEqual(methodParam(methods{1}, 'orientation'), 0);
+            testCase.verifyEqual(methodParam(methods{1}, 'high colour'), [255 255 255]);
+            testCase.verifyEqual(methodParam(methods{1}, 'animation type'), 4);
+            testCase.verifyEqual(methodParam(methods{1}, 'viewing distance'), 57);
+            testCase.verifyEqual(methodParam(methods{1}, 'bit depth'), 8);
+            testCase.verifyNotEmpty(paramEntry(methods{1}, 'background duration after stimulus'));
+            % the blank: still 'blank screen', its keys as labels
+            testCase.verifyEqual(methods{2}.method.term.name, 'blank screen');
+            testCase.verifyEqual(methodParam(methods{2}, 'BG'), [127.5 127.5 127.5]);
+            testCase.verifyEqual(methodParam(methods{2}, 'N'), 1);
+            testCase.verifyNotEmpty(paramEntry(methods{2}, 'Random Seed'));
+            testCase.verifyEmpty(paramEntry(methods{2}, 'isblank'), ...
+                'the blank flag is the kind, not an entry');
             % a presentation whose every parameter is an entry is still folded
             pres2 = presentationBody('pres_n', [1 2], { noiseStim(1), noiseStim(2) });
             bodies2 = { pres2, ...
@@ -153,13 +170,61 @@ classdef TestStimulusPresentationItem < matlab.unittest.TestCase
                 'no control record, so no control covariate');
         end
 
-        function testDedupIgnoresFieldsTheRecipeDoesNotCarry(testCase)
+        function testStimuliDifferingInAnUnreadKeyAreTwoMethods(testCase)
+            % INVERTED 2026-10-29 from testDedupIgnoresFieldsTheRecipeDoesNotCarry.
+            % [unread stimulus parameters are method parameters] (Jess Haley,
+            % 2026-10-27): nCycles, which gratingRecipe does not read, is now
+            % an entry on the method, so two gratings that differ only in it
+            % are two stimuli, not one.
             a = gratingStim(45, 0.04, 0.5); a.parameters.nCycles = 1;
             b = gratingStim(45, 0.04, 0.5); b.parameters.nCycles = 64;
             pres = presentationBody('pres_ncycles', [1 2], {a, b});
-            [~, methods, report] = emit(testCase, pres);
-            testCase.verifyEqual(report.distinct_stimuli, 1);
-            testCase.verifyEqual(numel(methods), 1);
+            [m, methods, report] = emit(testCase, pres);
+            testCase.verifyEqual(report.distinct_stimuli, 2);
+            testCase.verifyEqual(numel(methods), 2);
+            testCase.verifyEqual(methodParam(methods{1}, 'cycle count'), 1);
+            testCase.verifyEqual(methodParam(methods{2}, 'cycle count'), 64);
+            testCase.verifyEqual(m.item.value.item(:)', [0 1]);
+        end
+
+        function testAFieldOutsideTheTemplateIsCarriedUnderCarry100(testCase)
+            % [unread stimulus parameters are method parameters] (Jess Haley,
+            % 2026-10-27): "a field outside the template is carried under
+            % carry-100". NDI's stimulus_presentation template holds
+            % presentation_order, presentation_time and stimuli{parameters}.
+            s = gratingStim(0, 0.04, 0.5);
+            s.note = 'left eye';
+            pres = presentationBody('pres_x', 1, { s });
+            pres.stimulus_presentation.extra = 1;
+            bodies = { pres, ...
+                responseScalar('resp_1', pres.base.id, 'elem_9'), ...
+                docBody('element', 'elem_9', {'subject_id', 'animal_1'}) };
+            r = ndi.migrate.internal.bodyResolver(bodies);
+            [m, methods, report] = ndi.migrate.internal.stimulusPresentationToItem(pres, r);
+            testCase.verifyEmpty(m);
+            testCase.verifyEmpty(methods);
+            testCase.verifyTrue(startsWith(report.reason, '[carry-100]'), report.reason);
+            testCase.verifyTrue(any(strcmp(report.unplaced_fields, 'stimuli.note')));
+            testCase.verifyTrue(any(strcmp(report.unplaced_fields, 'stimulus_presentation.extra')));
+        end
+
+        function testAHartleyGeneratorKeyTheBasisDoesNotReadIsStillCarried(testCase)
+            % NOT decided: on the Hartley route the methods are the session's
+            % SHARED basis gratings (hartleyBasisGratings, minted once), so
+            % [unread stimulus parameters are method parameters] names no
+            % method of this presentation for a generator key the basis does
+            % not read (randState, rect, distance, ...). The presentation stays
+            % carried under carry-080 until the team says where those go.
+            pres = presentationBody('pres_hartley', 1, hartleyGeneratorStim());
+            bodies = { pres, ...
+                responseScalar('resp_1', pres.base.id, 'elem_9'), ...
+                docBody('element', 'elem_9', {'subject_id', 'animal_1'}) };
+            r = ndi.migrate.internal.bodyResolver(bodies);
+            seq = struct('item_ids', {{'g_a', 'g_b'}}, 'order', [1 2 1]);
+            [m, ~, report] = ndi.migrate.internal.stimulusPresentationToItem(pres, r, seq);
+            testCase.verifyEmpty(m);
+            testCase.verifyTrue(startsWith(report.reason, '[carry-080]'), report.reason);
+            testCase.verifyTrue(any(strcmp(report.unplaced_fields, 'parameters.randState')));
         end
 
         % ================= edges ===========================================

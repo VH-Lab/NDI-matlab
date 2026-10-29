@@ -24,7 +24,10 @@ function recipe = stimulusRecipe(parameters, kind)
 %   ontology term taking a label as its variable. No new class."
 %
 %   KINDS
-%     'grating', 'blank'     ndi.migrate.internal.gratingRecipe, unchanged
+%     'grating', 'blank'     ndi.migrate.internal.gratingRecipe, then every key
+%                            it does not read as an entry ([unread stimulus
+%                            parameters are method parameters], see
+%                            gratingOrBlank below)
 %     'stochasticgridstim'   term 'dense noise'         (NewStim verifystochasticgridstim)
 %     'blinkingstim'         term 'sparse noise' when `random` is 1, else
 %                            'sequential grid flash'    (@blinkingstim verify)
@@ -73,7 +76,7 @@ end
 
 switch kind
     case {'grating', 'blank'}
-        recipe = ndi.migrate.internal.gratingRecipe(parameters, kind);
+        recipe = gratingOrBlank(parameters, kind);
         return;
     case 'stochasticgridstim'
         term = 'dense noise';
@@ -124,6 +127,62 @@ switch kind
             'stimulusRecipe: no recipe for stimulus kind ''%s''.', kind);
 end
 
+recipe = struct('term', term, 'parameters', recipeEntries(parameters, rows));
+end
+
+% ===================== a grating or a blank ===============================
+
+function recipe = gratingOrBlank(parameters, kind)
+%GRATINGORBLANK gratingRecipe's term and entries, then every parameter key
+%   gratingRecipe does not read as one more entry. Decided by Jess Haley,
+%   2026-10-27 [unread stimulus parameters are method parameters] ("Q6 yes",
+%   did-schema V_eta_go_forward_class_audit.md): "a v1 stimulus_presentation
+%   `parameters` key that no recipe reads becomes a `method` parameter entry,
+%   with a label as its variable when no term fits ([non-grating stimuli as
+%   methods])". The unread keys go through the same rows every other kind
+%   uses: a grating is a periodicstim (imageType 1 or 2), so periodicstim's
+%   rows (the variables periodicstim_other already writes); a blank's own
+%   NewStim class is not read, so its keys take their v1 names as labels.
+%   `randState` takes the registered Random Seed in both, as on every other
+%   kind. The blank flag itself is the kind (term 'blank screen'), not an
+%   entry, as before.
+recipe = ndi.migrate.internal.gratingRecipe(parameters, kind);
+entries = emptyEntries();
+for k = 1:numel(recipe.parameters)
+    g = recipe.parameters(k);
+    entries(end+1) = entry(g.variable, g.unit, g.form, g.value); %#ok<AGROW>
+end
+skip = intersect(fieldnames(parameters), [gratingReads(), {'isblank', 'is_blank', 'blank'}]);
+unread = parameters;
+if ~isempty(skip)
+    unread = rmfield(parameters, skip);
+end
+if strcmp(kind, 'grating')
+    rows = [periodicRows(); seedRow()];
+else
+    rows = seedRow();
+end
+recipe.parameters = [entries, recipeEntries(unread, rows)];
+end
+
+function names = gratingReads()
+% The keys ndi.migrate.internal.gratingRecipe reads (orientation, spatial
+% frequency, temporal frequency, contrast, waveform), every spelling; the
+% same list stimulusPresentationToItem's unplacedPresentationFields holds.
+names = {'angle', 'orientation', 'sFrequency', 'spatial_frequency', 'sf', ...
+    'tFrequency', 'temporal_frequency', 'tf', 'contrast', 'imageType'};
+end
+
+function t = seedRow()
+t = {'randState', 'Random Seed', '', 'column'};
+end
+
+% ===================== every parameter an entry ===========================
+
+function entries = recipeEntries(parameters, rows)
+%RECIPEENTRIES Every field of PARAMETERS as an entry: by ROWS where a row
+%   names it, else its v1 name as a label (see EVERY v1 PARAMETER IS AN ENTRY
+%   in the help above).
 entries = emptyEntries();
 names = fieldnames(parameters);
 hasColour = false;
@@ -169,7 +228,6 @@ end
 if hasColour
     entries(end+1) = entry('bit depth', '', 'count', 8);
 end
-recipe = struct('term', term, 'parameters', entries);
 end
 
 % ===================== tables =============================================

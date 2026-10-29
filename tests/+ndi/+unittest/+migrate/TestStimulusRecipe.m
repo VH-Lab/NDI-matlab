@@ -128,14 +128,52 @@ classdef TestStimulusRecipe < matlab.unittest.TestCase
             testCase.verifyEqual(entryOf(r, 'note').form, 'text');
         end
 
-        function testGratingAndBlankAreGratingRecipeUnchanged(testCase)
+        function testGratingAndBlankAreGratingRecipePlusTheUnreadKeys(testCase)
+            % INVERTED 2026-10-29 from testGratingAndBlankAreGratingRecipeUnchanged.
+            % Decided by Jess Haley, 2026-10-27 [unread stimulus parameters
+            % are method parameters] ("Q6 yes", did-schema
+            % V_eta_go_forward_class_audit.md): a `parameters` key no recipe
+            % reads becomes an entry, with a label as its variable when no
+            % term fits. gratingRecipe's term and entries come first,
+            % unchanged in value; then the keys it does not read.
             g = struct('imageType', 2, 'angle', 90, 'sFrequency', 0.1, ...
                 'tFrequency', 4, 'contrast', 1);
-            testCase.verifyEqual(ndi.migrate.internal.stimulusRecipe(g, 'grating'), ...
-                ndi.migrate.internal.gratingRecipe(g, 'grating'));
+            r = ndi.migrate.internal.stimulusRecipe(g, 'grating');
+            gr = ndi.migrate.internal.gratingRecipe(g, 'grating');
+            testCase.verifyEqual(r.term, gr.term);
+            testCase.verifyEqual(arrayfun(@(e) nameOf(e.variable), r.parameters, ...
+                'UniformOutput', false), arrayfun(@(e) nameOf(e.variable), ...
+                gr.parameters, 'UniformOutput', false), ...
+                'a grating with only the keys gratingRecipe reads gains no entry');
+            testCase.verifyEqual(entryOf(r, 'orientation').value, 90);
+            % the keys gratingRecipe does not read: periodicstim's rows, else
+            % the v1 name as a label
+            g.chromhigh = [255 255 255];
+            g.nCycles = 3;
+            g.mystery = 'x';
+            r = ndi.migrate.internal.stimulusRecipe(g, 'grating');
+            testCase.verifyEqual(r.term, gr.term);
+            testCase.verifyEqual(entryOf(r, 'orientation').value, 90);
+            testCase.verifyEqual(entryOf(r, 'high colour').value, [255 255 255]);
+            testCase.verifyEqual(entryOf(r, 'high colour').unit.node, 'NCIT:C75765');
+            testCase.verifyEqual(entryOf(r, 'cycle count').form, 'count');
+            testCase.verifyEqual(entryOf(r, 'cycle count').value, 3);
+            testCase.verifyEqual(entryOf(r, 'mystery').form, 'text');
+            testCase.verifyEqual(entryOf(r, 'bit depth').value, 8);
+            % a blank: still 'blank screen'; its keys as labels, randState
+            % the registered Random Seed, the blank flag no entry
             b = struct('isblank', 1);
             testCase.verifyEqual(ndi.migrate.internal.stimulusRecipe(b, 'blank').term, ...
                 'blank screen');
+            testCase.verifyEmpty(ndi.migrate.internal.stimulusRecipe(b, 'blank').parameters);
+            b.BG = [127.5 127.5 127.5];
+            b.randState = [1; 2; 3];
+            r = ndi.migrate.internal.stimulusRecipe(b, 'blank');
+            testCase.verifyEqual(r.term, 'blank screen');
+            testCase.verifyEqual(entryOf(r, 'BG').value, [127.5 127.5 127.5]);
+            testCase.verifyEqual(entryOf(r, 'Random Seed').variable.node, 'NCIT:C64220');
+            testCase.verifyEqual(entryOf(r, 'Random Seed').value, [1; 2; 3]);
+            testCase.verifyEmpty(entryOf(r, 'isblank'));
         end
 
         function testAKindWithNoRecipeIsAnError(testCase)
