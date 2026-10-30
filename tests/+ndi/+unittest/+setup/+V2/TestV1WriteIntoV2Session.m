@@ -110,6 +110,10 @@ classdef TestV1WriteIntoV2Session < matlab.unittest.TestCase
         end
 
         function testAV2DocumentIsStillValidatedAsV2(testCase)
+            % the test's made-up variable ('short name') is not a registered
+            % term; the term registry is not what this test is about
+            prevTerms = did2.schema.cache.strictMode('TermRegistry', false);
+            testCase.addTeardown(@() did2.schema.cache.strictMode('TermRegistry', prevTerms));
             sid = testCase.Session.id();
             d = termAssertion(sid, 'short name', 'X', sid);
             testCase.assertTrue(did2.schema.isV2Stamp(d), 'did2.build stamps V2');
