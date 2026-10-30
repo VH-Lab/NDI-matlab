@@ -34,19 +34,19 @@ for i=1:numel(cells)
     for j=1:numel(et)
         [all_intervals(j,:), all_global_starts(j)] = getintervalfromdir([S.getpath filesep et(j).epoch_id]);
     end
-    ImatchesInAll = [];
-    for j=1:size(I,1)
-        ImatchesInAll(j) = NaN;
-        for k=1:size(all_intervals,1)
-            if all_intervals(k,1)==I(j,1) && all_intervals(k,2)==I(j,2)
-                ImatchesInAll(j) = k;
-                break;
-            end
-        end
+    % the cell's stored intervals can differ slightly from the recomputed ones
+    ImatchesInAll = ndi.setup.conv.vhlab.matchCellIntervalsToEpochs(I, all_intervals);
+    for j = find(isnan(ImatchesInAll(:)))'
+        warning('ndi:setup:conv:vhlab:importMeasuredDataCells:NoEpoch', ...
+            'Cell %s: no epoch of probe %s | %d matches interval [%.3f %.3f]; its spikes there are not imported.', ...
+            cellnames{i}, nameref.name, nameref.ref, I(j,1), I(j,2));
     end
-
-    if any(isnan(ImatchesInAll))
-        error(['Could not find an epoch match: ' cellnames{i}])
+    I = I(~isnan(ImatchesInAll), :);
+    ImatchesInAll = ImatchesInAll(~isnan(ImatchesInAll));
+    if isempty(ImatchesInAll)
+        warning('ndi:setup:conv:vhlab:importMeasuredDataCells:NoEpochs', ...
+            'Cell %s matches no epoch of probe %s | %d; skipping it.', cellnames{i}, nameref.name, nameref.ref);
+        continue;
     end
 
     % make an element
