@@ -1,9 +1,18 @@
-function T = channelTypes()
+function [T, earlier] = channelTypes()
 %CHANNELTYPES The v1 channel-type prefixes and the term each became.
 %
-%   T = ndi.vintage.channelTypes() returns a 10-by-2 cell, {prefix, node},
-%   one row per hardware channel type NDI's mfdaq systems name
-%   (ndi.daq.system.mfdaq, ndi.daq.daqsystemstring).
+%   [T, EARLIER] = ndi.vintage.channelTypes() returns T, a 10-by-2 cell,
+%   {prefix, node}, one row per hardware channel type NDI's mfdaq systems name
+%   (ndi.daq.system.mfdaq, ndi.daq.daqsystemstring), with the node a channel
+%   type is written with now; and EARLIER, an N-by-2 cell {prefix, node} of
+%   nodes a channel type was written with before, which documents already
+%   migrated may still carry. Readers accept both (ndi.v2.vocabNodes).
+%
+%   Decided by Jess Haley, 2026-10-29 [text channel replaces NCIT Text]
+%   (V_eta_go_forward_class_audit.md): the channel type of v1 prefix `tx` is
+%   EMPTY:0000410 "text channel", replacing NCIT:C25704 Text. NDI reads
+%   EMPTY:0000410 as 'tx' before DID-matlab's map writes it, and keeps reading
+%   NCIT:C25704 as 'tx' for sessions already migrated.
 %
 %   did-schema #88, Decided by Jess Haley, 2026-10-22 [channel types]
 %   (V_eta_go_forward_class_audit.md): `acquisition_channels.channels.type`
@@ -31,6 +40,9 @@ T = {
     'e',  'EMPTY:0000376'   % event channel
     'mk', 'EMPTY:0000377'   % marker channel
     'md', 'NCIT:C52095'     % Metadata
-    'tx', 'NCIT:C25704'     % Text
+    'tx', 'EMPTY:0000410'   % text channel
+    };
+earlier = {
+    'tx', 'NCIT:C25704'     % Text, before [text channel replaces NCIT Text]
     };
 end

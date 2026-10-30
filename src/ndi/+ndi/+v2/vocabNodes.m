@@ -192,8 +192,17 @@ switch kind
             'web_resource', {}
             };
     case 'channel_type'
-        C = ndi.vintage.channelTypes();
+        % the node written now first, then nodes documents may still carry
+        % ([text channel replaces NCIT Text]: 'tx' reads EMPTY:0000410 and
+        % NCIT:C25704)
+        [C, E] = ndi.vintage.channelTypes();
         T = [C(:, 1), cellfun(@(n) {n}, C(:, 2), 'UniformOutput', false)];
+        for k = 1:size(E, 1)
+            i = find(strcmp(T(:, 1), E{k, 1}), 1);
+            if ~isempty(i)
+                T{i, 2}{end+1} = E{k, 2};
+            end
+        end
 end
 handles = reshape(T(:, 1), 1, []);
 nodes = reshape(T(:, 2), 1, []);

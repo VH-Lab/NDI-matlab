@@ -169,6 +169,33 @@ classdef TestVocabNodes < matlab.unittest.TestCase
                 {'organism', 'culture'}, p), [true true false]);
         end
 
+        function testTextChannelReadsBothNodes(testCase)
+            % Decided by Jess Haley, 2026-10-29 [text channel replaces NCIT
+            % Text]: 'tx' is EMPTY:0000410 "text channel"; NCIT:C25704 Text,
+            % which sessions already migrated carry, still reads as 'tx'.
+            [C, E] = ndi.vintage.channelTypes();
+            testCase.verifySize(C, [10 2]);
+            testCase.verifyEqual(C{strcmp(C(:, 1), 'tx'), 2}, 'EMPTY:0000410');
+            testCase.verifyEqual(E, {'tx', 'NCIT:C25704'});
+            p = flippedSchema(testCase);
+            V = ndi.v2.vocabNodes('channel_type', p);
+            testCase.verifyEqual(V.nodes{strcmp(V.handles, 'tx')}, ...
+                {'EMPTY:0000410', 'NCIT:C25704'});
+            testCase.verifyEqual(V.nodeHandle('EMPTY:0000410'), 'tx');
+            testCase.verifyEqual(V.nodeHandle('NCIT:C25704'), 'tx');
+            testCase.verifyEqual(ndi.v2.vocabHandle('channel_type', ...
+                struct('node', 'EMPTY:0000410', 'name', 'text channel'), p), 'tx');
+            testCase.verifyEqual(ndi.v2.vocabHandle('channel_type', ...
+                struct('node', 'NCIT:C25704', 'name', 'Text'), p), 'tx');
+            testCase.verifyEqual(ndi.vintage.channelPrefix( ...
+                struct('node', 'EMPTY:0000410', 'name', 'text channel')), 'tx');
+            testCase.verifyEqual(ndi.vintage.channelPrefix( ...
+                struct('node', 'NCIT:C25704', 'name', 'Text')), 'tx');
+            % a writer stores the schema's row for the node written now
+            testCase.verifyEqual(ndi.v2.vocabTerm('channel_type', 'tx', p), ...
+                struct('node', 'EMPTY:0000410', 'name', 'text channel'));
+        end
+
         function testPatternsFindEitherSpelling(testCase)
             p = flippedSchema(testCase);
             pat = ndi.v2.vocabPatterns('relation', 'member_of', p);
@@ -215,7 +242,7 @@ fprintf(fid, '%s', jsonencode(reg));
 fclose(fid);
 labels = {'analog input channel', 'analog output channel', 'digital input channel', ...
     'digital output channel', 'time channel', 'auxiliary input channel', 'event channel', ...
-    'marker channel', 'Metadata', 'Text'};
+    'marker channel', 'Metadata', 'text channel'};
 C = ndi.vintage.channelTypes();
 values = cellfun(@(n, l) struct('node', n, 'name', l), C(:, 2)', labels, 'UniformOutput', false);
 ac = struct('fields', {{struct('name', 'channels', 'fields', {{struct('name', 'type', ...
