@@ -11,14 +11,22 @@ function f = elementFields(subjectDoc, ndi_session_obj)
 %   `element` became five documents; this puts the parts NDI needs back
 %   together. Where each piece went:
 %
-%     name / reference  -> `entity.local_identifier`, COMBINED, as NDI's
-%                          display form '<name> | <reference>' (Jess Haley,
-%                          2026-10-26 [element local identifier is name and
-%                          reference]), or, as migrated before it,
-%                          '<name> (ref <reference>)'; plain `name` when
-%                          there is no reference. Both are read by
-%                          ndi.vintage.elementNameReference, the inverse of
-%                          ndi.vintage.elementLocalIdentifier.
+%     name              -> `entity.name`, exactly (Decided by Jess Haley,
+%                          2026-10-29 [element name and reference stored
+%                          apart], 2026-10-30 [element name kept apart,
+%                          base.name carried])
+%     reference         -> what follows that name in
+%                          `entity.local_identifier` '<name> | <reference>'
+%                          ([element local identifier is name and
+%                          reference], 2026-10-26): a number when it reads
+%                          as one, else the text. Read by
+%                          ndi.vintage.elementNameReferenceApart. An entity
+%                          migrated before, with no `name` (or one that does
+%                          not lead its local_identifier), is read from
+%                          `local_identifier` alone, as before:
+%                          ndi.vintage.elementNameReference ('<name> |
+%                          <integer>', the old '<name> (ref <reference>)',
+%                          or a bare name).
 %     type              -> a `term_assertion` labelled `element type`
 %     ndi_element_class -> a `term_assertion` labelled `ndi element class`
 %     underlying_element_id -> a `directed_relation` `derived_from`
@@ -66,13 +74,14 @@ function f = elementFields(subjectDoc, ndi_session_obj)
 %   matters (`ndi.probe` sets `direct` = 1 and has no underlying element),
 %   so it is named here rather than guessed at.
 %
-%   THE NAME SPLIT. The display form '<name> | <reference>' is split at the
-%   LAST ' | ', and the reference is an integer, so every name round-trips,
-%   ' | ' and ' (ref ' included. The old form '<name> (ref X)' was not
-%   escaped: a NAME that itself ends in " (ref something)" cannot be told
-%   from a pair, which is why it was replaced (did-schema OPEN_WORK #142).
-%   DID-matlab's migrator refused such names (carried the element as v1),
-%   so what it wrote reads back exactly.
+%   THE NAME SPLIT. The name is read from `entity.name`, and the reference
+%   is the text after [name ' | '] in `local_identifier`, so every name
+%   round-trips (' | ' and ' (ref ' included, and an empty name, whose
+%   identifier is ' | <reference>'), and so does a non-integer or text
+%   reference. Without `name` (migrated before [element name and reference
+%   stored apart]) the display form is split at the LAST ' | ' before an
+%   integer, as before; DID-matlab's migrator then carried every pair that
+%   split could not read back.
 %
 %   See also: ndi.vintage.elementSubjectDocs, ndi.vintage.elementLabel,
 %             ndi.element.
@@ -83,19 +92,23 @@ docId = props.base.id;
 f = struct('name', '', 'reference', [], 'type', '', 'direct', false, ...
     'ndi_element_class', '', 'underlying_element_id', '', 'subject_id', '');
 
-% --- name + reference, out of the one combined field -------------------
+% --- name + reference: `name` first, then local_identifier --------------
 localId = '';
+entityName = '';
 % did-schema #88 (T1): the element is an `entity`; #73: a `subject`
 for blk = {'entity', 'subject'}
     if isfield(props, blk{1}) && isstruct(props.(blk{1})) ...
             && isfield(props.(blk{1}), 'local_identifier')
         localId = props.(blk{1}).local_identifier;
+        if isfield(props.(blk{1}), 'name')
+            entityName = props.(blk{1}).name;
+        end
         break;
     end
 end
-% '<name> | <reference>' (split at the last ' | '), the old
-% '<name> (ref <reference>)', or a bare name
-[f.name, f.reference] = ndi.vintage.elementNameReference(localId);
+% [element name and reference stored apart]: the name is `name`, the
+% reference what follows [name ' | ']; without `name`, today's split
+[f.name, f.reference] = ndi.vintage.elementNameReferenceApart(entityName, localId);
 
 % --- the two kind assertions -------------------------------------------
 f.type = assertionValue(ndi_session_obj, docId, ndi.vintage.elementLabel('type'));

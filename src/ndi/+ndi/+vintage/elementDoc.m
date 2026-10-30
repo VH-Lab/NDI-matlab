@@ -13,11 +13,14 @@ function [doc, vintage] = elementDoc(ndi_element_obj)
 %   `ndi.element.searchquery` matches FOUR fields of the v1 `element`
 %   block, and a migrated document has none of them:
 %
-%       element.name                -> `entity.local_identifier`, COMBINED
-%                                      with `reference` as '<name> | <ref>'
-%                                      (or, migrated before 2026-10-26,
-%                                      '<name> (ref <ref>)')
-%       element.reference           -> the same combined field
+%       element.name                -> `entity.name` ([element name and
+%                                      reference stored apart], 2026-10-29;
+%                                      before it, `entity.local_identifier`
+%                                      only)
+%       element.reference           -> what follows the name in
+%                                      `entity.local_identifier`
+%                                      '<name> | <ref>' (or, migrated before
+%                                      2026-10-26, '<name> (ref <ref>)')
 %       element.type                -> an inbound `term_assertion`
 %       element.ndi_element_class   -> an inbound `term_assertion`
 %
@@ -110,9 +113,10 @@ if numel(matches) > 1
     % silently behave differently from the session it was migrated from.
     error('NDI:vintage:tooManyElementDocs', ...
         ['More than one V_eta subject matches the ELEMENT definition ' ...
-         '("%s", type "%s", class %s): %d found. In the old ' ...
-         '"<name> (ref X)" form a name ending in " (ref X)" can ' ...
-         'collide -- see ndi.vintage.elementNameReference.'], ...
+         '("%s", type "%s", class %s): %d found. An entity migrated ' ...
+         'before its name was stored apart is read from ' ...
+         'local_identifier alone and can collide -- see ' ...
+         'ndi.vintage.elementNameReferenceApart.'], ...
         ndi_element_obj.name, ndi_element_obj.type, wantClass, ...
         numel(matches));
 elseif ~isempty(matches)
