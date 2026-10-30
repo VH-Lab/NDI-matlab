@@ -102,8 +102,13 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
             % lookup in daqsystem_load: this is the DUPLICATE check on add.
             % Blind to `acquisition_system`, it would report "no match" for a
             % rig the migrated session already holds and add a second one.
+            % The name in either home: `acquisition_system.name` (the class's
+            % own name field, did-schema #73 item 54; [carried v1 validates
+            % against NDI templates], Jess Haley, 2026-10-27) or base.name
+            % (v1, and V2 documents migrated before).
             sq1 = ndi.vintage.isaQuery('daqsystem') & ...
-                ndi.query('base.name','exact_string',dev.name,'');
+                ( ndi.query('acquisition_system.name','exact_string',dev.name,'') | ...
+                  ndi.query('base.name','exact_string',dev.name,'') );
             search_result1 = ndi_session_obj.database_search(sq1);
             if (numel(search_result) == 0) & (numel(search_result1) == 0)
                 % no match was found, can add to the database

@@ -9,7 +9,11 @@ function name = objectName(ndi_document_obj)
 %   (`acquisition_system.name`), and `base.name` is did_v1-only. Documents
 %   migrated before that change still carry `base.name`. This returns the
 %   block's `name` when the document has a non-empty one, else `base.name`,
-%   else ''.
+%   else ''. Decided by Jess Haley, 2026-10-27 [carried v1 validates against
+%   NDI templates] (did-schema V_eta_go_forward_class_audit.md): NDI's
+%   `base.name` reads that run on V2 documents read the class's own name
+%   field; base.name stays the fallback until [base.name kept until retire
+%   classes leave] deletes it.
 %
 %   See also: ndi.vintage.field, ndi.vintage.map.
 

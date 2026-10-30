@@ -520,8 +520,13 @@ classdef system < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice
             % Returns SQ, an ndi.query object that searches the database for the ndi.daq.system object
             %
             sq = ndi.query({'base.id',ndi_daqsystem_obj.id(), ...  % really this is the only one necessary
-                'base.name', ndi_daqsystem_obj.name, ...
                 'base.session_id', ndi_daqsystem_obj.session.id()});
+            % The name in either home: the class's own `acquisition_system.name`
+            % (did-schema #73 item 54; [carried v1 validates against NDI
+            % templates], Jess Haley, 2026-10-27) or base.name (v1, and V2
+            % documents migrated before).
+            sq = sq & ( ndi.query('acquisition_system.name','exact_string',ndi_daqsystem_obj.name,'') | ...
+                ndi.query('base.name','exact_string',ndi_daqsystem_obj.name,'') );
 
             sq = sq & ndi.query('','depends_on','filenavigator_id',ndi_daqsystem_obj.filenavigator.id()) & ...
                 ndi.query('','depends_on','daqreader_id',ndi_daqsystem_obj.daqreader.id());
