@@ -1,13 +1,14 @@
 function V = vocabNodes(kind, schemaPath)
-%VOCABNODES How NDI names a relation, an entity type or a channel type, and the node each one is.
+%VOCABNODES How NDI names a relation, an entity type, a channel type or a clock, and the node each one is.
 %
-%   V = ndi.v2.vocabNodes(KIND) for KIND 'relation', 'entity_type' or
-%   'channel_type' (SCHEMAPATH defaults to DID_SCHEMA_PATH). V has fields
+%   V = ndi.v2.vocabNodes(KIND) for KIND 'relation', 'entity_type',
+%   'channel_type' or 'clock' (SCHEMAPATH defaults to DID_SCHEMA_PATH). V has fields
 %
 %     handles      1xN cellstr, the names NDI's code uses: the snake_case
 %                  relation and entity-type names the schema stored until
-%                  2026-10-22 ('part_of', 'dataset'), and the v1 channel
-%                  prefixes ('ai')
+%                  2026-10-22 ('part_of', 'dataset'), the v1 channel
+%                  prefixes ('ai'), and the v1 clocktype strings
+%                  ('dev_local_time')
 %     nodes        1xN cell, each handle's nodes (cellstr; the current node
 %                  first, then nodes documents may still carry; {} when the
 %                  term has no node, e.g. entity type `culture`)
@@ -36,6 +37,18 @@ function V = vocabNodes(kind, schemaPath)
 %   vocabIs / vocabQuery keep working on the day the schema flips the names,
 %   with no change here.
 %
+%   CLOCKS. Decided by Jess Haley, 2026-10-26 [clock terms get nodes]
+%   (did-schema V_eta_go_forward_class_audit.md): the four `value.clock`
+%   values of relative_time_reference (and clock_alignment_configuration.clock)
+%   get nodes -- utc wikidata:Q1536 "UTC", dev_local_time EMPTY:0000403
+%   "device local time", dev_global_time EMPTY:0000404 "device global time",
+%   exp_global_time EMPTY:0000405 "experiment global time" (did-schema
+%   V_eta_term_registry.json) -- and the stored name becomes the label once
+%   NDI and DID-matlab compare clock nodes first. The schema's rows are read
+%   from relative_time_reference.json's value.clock binding. While those rows
+%   still hold EMPTY nodes, `storedNode` is '' and ndi.v2.vocabTerm writes
+%   the decided node from the table below (see its CLOCKS note).
+%
 %   The handle table is checked against the schema by
 %   ndi.unittest.setup.V2.TestVocabNodes: every node the binding registry
 %   holds is here, and every handle that is still the stored name has the
@@ -47,7 +60,7 @@ function V = vocabNodes(kind, schemaPath)
 %   ndi.v2.vocabQuery, ndi.vintage.channelTypes.
 
 arguments
-    kind (1,:) char {mustBeMember(kind, {'relation', 'entity_type', 'channel_type'})}
+    kind (1,:) char {mustBeMember(kind, {'relation', 'entity_type', 'channel_type', 'clock'})}
     schemaPath = getenv('DID_SCHEMA_PATH')
 end
 
@@ -191,6 +204,22 @@ switch kind
             % retired (did-schema #88), read only
             'web_resource', {}
             };
+    case 'clock'
+        % [clock terms get nodes] (Jess Haley, 2026-10-26); the handles are
+        % ndi.time.clocktype's strings. The labels are aliases, so a
+        % node-less document written after the schema flips reads too.
+        T = {
+            'utc',             {'wikidata:Q1536'}
+            'dev_local_time',  {'EMPTY:0000403'}
+            'dev_global_time', {'EMPTY:0000404'}
+            'exp_global_time', {'EMPTY:0000405'}
+            };
+        aliases = {
+            'UTC',                    'utc'
+            'device local time',      'dev_local_time'
+            'device global time',     'dev_global_time'
+            'experiment global time', 'exp_global_time'
+            };
     case 'channel_type'
         % the node written now first, then nodes documents may still carry
         % ([text channel replaces NCIT Text]: 'tx' reads EMPTY:0000410 and
@@ -220,6 +249,8 @@ end
 switch kind
     case 'channel_type'
         f = fullfile(char(schemaPath), 'acquisition_channels.json');
+    case 'clock'
+        f = fullfile(char(schemaPath), 'relative_time_reference.json');
     otherwise
         f = fullfile(char(schemaPath), 'binding_registry_meta.json');
 end
@@ -250,6 +281,11 @@ try
             for k = 1:numel(v)
                 rows(end+1, :) = {strOf(v{k}, 'node'), strOf(v{k}, 'name')}; %#ok<AGROW>
             end
+        case 'clock'
+            v = clockBindingValues(s);
+            for k = 1:numel(v)
+                rows(end+1, :) = {strOf(v{k}, 'node'), strOf(v{k}, 'name')}; %#ok<AGROW>
+            end
     end
 catch
     rows = cell(0, 2);
@@ -265,6 +301,23 @@ for k = 1:numel(fs)
     sub = listOf(fs{k}, 'fields');
     for j = 1:numel(sub)
         if strcmp(strOf(sub{j}, 'name'), 'type') && isfield(sub{j}, 'constraints') ...
+                && isstruct(sub{j}.constraints) && isfield(sub{j}.constraints, 'binding') ...
+                && isfield(sub{j}.constraints.binding, 'values')
+            v = listOf(sub{j}.constraints.binding, 'values');
+        end
+    end
+end
+end
+
+function v = clockBindingValues(s)
+% relative_time_reference.value.clock's binding values ([clock terms get nodes])
+v = {};
+fs = listOf(s, 'fields');
+for k = 1:numel(fs)
+    if ~strcmp(strOf(fs{k}, 'name'), 'value'), continue; end
+    sub = listOf(fs{k}, 'fields');
+    for j = 1:numel(sub)
+        if strcmp(strOf(sub{j}, 'name'), 'clock') && isfield(sub{j}, 'constraints') ...
                 && isstruct(sub{j}.constraints) && isfield(sub{j}.constraints, 'binding') ...
                 && isfield(sub{j}.constraints.binding, 'values')
             v = listOf(sub{j}.constraints.binding, 'values');

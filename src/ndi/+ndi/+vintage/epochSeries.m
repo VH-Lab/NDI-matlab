@@ -111,8 +111,15 @@ if ~isstruct(blk) || ~isfield(blk, 'value') || ~isstruct(blk.value)
     return;
 end
 v = blk.value;
-if ~isfield(v, 'clock') || ~isstruct(v.clock) || ~isfield(v.clock, 'name') ...
-        || isempty(v.clock.name) || ~isfield(v, 'start')
+if ~isfield(v, 'clock') || ~isstruct(v.clock) || ~isfield(v, 'start')
+    return;
+end
+% the ndi.time.clocktype string, read by node first and then by name
+% (ndi.v2.vocabHandle 'clock'): the stored name becomes the label
+% ("device local time") once did-schema fills the clock nodes (Decided by
+% Jess Haley, 2026-10-26 [clock terms get nodes])
+clockName = ndi.v2.vocabHandle('clock', v.clock);
+if isempty(clockName)
     return;
 end
 t0 = secondsOf(v.start);
@@ -133,7 +140,7 @@ if isempty(ids)
     return;
 end
 referentId = ids{1};
-clockName = char(v.clock.name);
+clockName = char(clockName);
 ok = true;
 end
 
