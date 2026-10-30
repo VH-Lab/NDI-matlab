@@ -357,7 +357,15 @@ extra{end+1} = f;
 % So the manipulation's value kind is `formulation`, its own `value` stays
 % empty, and the formulation document above is its value through `value_id`
 % (DID-matlab resolveDeferredBaths, ff6d542, builds the same shape).
-dose = S.statement('manipulation', 'formulation', subjectId, primaryChemical(mixture), [], ...
+% The variable is the general bath-solution term, not the first mixture row:
+% Decided by Jess Haley, 2026-10-26 [bath is two statements] ("the generic
+% stage, a manipulation 'the subject sat in this solution': variable a general
+% bath-solution term, value the whole formulation, written for every bath";
+% "The variable is no longer the first mixture row") and 2026-10-27 [bath
+% solution minted] (EMPTY:0000409 "bath solution"; did-schema
+% V_eta_go_forward_class_audit.md, term registry row). The ingredient really
+% changed is the dataset map's separate manipulation, not this one.
+dose = S.statement('manipulation', 'formulation', subjectId, bathSolutionVariable(), [], ...
     'Id', bathId, 'InstrumentId', stimulatorId, 'TimeReferenceIds', trIds, ...
     'Edges', {'value_id', f.base.id}, common{:});
 
@@ -451,6 +459,13 @@ while k <= numel(line)
     k = k + 1;
 end
 cols{end+1} = strtrim(cur);
+end
+
+function variable = bathSolutionVariable()
+%BATHSOLUTIONVARIABLE The variable of every migrated bath manipulation (V_eta):
+%   EMPTY:0000409 "bath solution", as the term registry names it ([bath is two
+%   statements], [bath solution minted], Jess Haley, 2026-10-26 / 2026-10-27).
+variable = struct('node', 'EMPTY:0000409', 'name', 'bath solution');
 end
 
 function variable = primaryChemical(mixture)

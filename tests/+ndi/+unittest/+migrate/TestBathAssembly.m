@@ -32,8 +32,11 @@ classdef TestBathAssembly < matlab.unittest.TestCase
             testCase.verifyEqual(dose.base.id, 'bath_1');          % source id preserved
             testCase.verifyEqual(depValue(dose, 'entity_id'), 'animal_1');
             testCase.verifyEmpty(depValue(dose, 'subject_id'));
-            testCase.verifyEqual(dose.statement.variable.node, 'chebi:6904');
-            testCase.verifyEqual(dose.statement.variable.name, 'muscimol');
+            % [bath is two statements] / [bath solution minted] (Jess Haley,
+            % 2026-10-26 / 2026-10-27): the variable is the general bath-
+            % solution term, not the first mixture row (muscimol here)
+            testCase.verifyEqual(dose.statement.variable.node, 'EMPTY:0000409');
+            testCase.verifyEqual(dose.statement.variable.name, 'bath solution');
 
             % the formulation and its one chemical
             classes = cellfun(@(b) b.document_class.class_name, extra, ...
