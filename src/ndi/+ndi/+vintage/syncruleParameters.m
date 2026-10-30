@@ -33,8 +33,14 @@ function params = syncruleParameters(ruleDoc, ndi_session_obj, objClass)
 %         daqsystem1_name / daqsystem1 <- from_acquisition_system_id's
 %                                         acquisition_system `name`
 %         daqsystem2_name / daqsystem2 <- to_acquisition_system_id's
-%         daqsystem_ch1, daqsystem_ch2 <- the method parameters of those
-%                                         names (written 'daqsystem ch1')
+%         daqsystem_ch1, daqsystem_ch2 <- the method parameters labelled
+%                                         'from trigger channel' / 'to
+%                                         trigger channel' (Jess Haley
+%                                         2026-10-30 [trigger channels
+%                                         named by their link]), or, in a
+%                                         session migrated before DID-matlab
+%                                         wrote those labels, by the v1
+%                                         names ('daqsystem ch1' / '... ch2')
 %         The pair is ORDERED: a filefind rule maps daqsystem1's clock to
 %         daqsystem2's (+time/+syncrule/filefind.m `apply`), so from is 1
 %         and to is 2.
@@ -106,8 +112,8 @@ toId   = ruleDoc.dependency_value('to_acquisition_system_id', 'ErrorIfNotFound',
 if ~isempty(fromId) || ~isempty(toId)
     name1 = systemName(fromId, 'from_acquisition_system_id', ndi_session_obj);
     name2 = systemName(toId, 'to_acquisition_system_id', ndi_session_obj);
-    ch1 = charField(cfg, 'daqsystem_ch1');
-    ch2 = charField(cfg, 'daqsystem_ch2');
+    ch1 = triggerChannel(cfg, 1);
+    ch2 = triggerChannel(cfg, 2);
 else
     channelIds = ndi.vintage.edge_n(ruleDoc, 'acquisition_channels', ...
         'ErrorIfNotFound', 0);
@@ -180,6 +186,28 @@ if numel(docs) ~= 1
          'match; the device name lives on it'], edgeName, id, numel(docs));
 end
 name = ndi.vintage.objectName(docs{1});
+end
+
+function v = triggerChannel(cfg, n)
+%TRIGGERCHANNEL The n-th trigger channel string ('' if the configuration has none).
+%   The two trigger channels are method parameters named by the link they
+%   belong to: 'from trigger channel' goes with from_acquisition_system_id
+%   (v1 daqsystem_ch1), 'to trigger channel' with to_acquisition_system_id
+%   (v1 daqsystem_ch2) (did-schema V_eta_go_forward_class_audit.md, Jess
+%   Haley 2026-10-30 [trigger channels named by their link]). A session
+%   migrated before DID-matlab wrote those labels holds them under the v1
+%   names, which jParameterList writes as 'daqsystem ch1' / 'daqsystem ch2';
+%   those are read too, so a session migrated either way opens. The new
+%   label wins when both are present.
+names = {{'from trigger channel', 'daqsystem_ch1'}, ...
+         {'to trigger channel',   'daqsystem_ch2'}};
+v = '';
+for k = 1:numel(names{n})
+    v = charField(cfg, names{n}{k});
+    if ~isempty(v)
+        return;
+    end
+end
 end
 
 function v = logicalParameter(cfg, name, default)
