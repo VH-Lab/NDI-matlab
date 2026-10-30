@@ -267,8 +267,25 @@ classdef TestMigrateLocalEta < matlab.unittest.TestCase
             verifyNotEmpty(testCase, formulation, ...
                 ['the dose names no formulation in the database. ' resultDiag(result)]);
             verifyEqual(testCase, formulation.document_class.class_name, 'formulation');
-            % primary mixture chemical is the statement's variable
-            verifyEqual(testCase, dose.statement.variable.name, 'muscimol');
+            % [bath is two statements] / [bath solution minted] (Jess Haley,
+            % 2026-10-26 / 2026-10-27, did-schema
+            % V_eta_go_forward_class_audit.md): the variable is the general
+            % bath-solution term, EMPTY:0000409, not the first mixture row
+            verifyEqual(testCase, dose.statement.variable.node, 'EMPTY:0000409');
+            verifyEqual(testCase, dose.statement.variable.name, 'bath solution');
+            % muscimol now lives where the value is: the formulation's one
+            % ingredient, a `chemical` document whose substance is muscimol
+            if isempty(formulation); return; end
+            ingredientId = depValue(formulation, 'ingredient_id');
+            verifyNotEmpty(testCase, ingredientId, ...
+                ['the formulation names no ingredient. ' resultDiag(result)]);
+            chem = findById(result.destination, ingredientId);
+            verifyNotEmpty(testCase, chem, ...
+                ['the ingredient is not in the destination. ' resultDiag(result)]);
+            if isempty(chem); return; end
+            verifyEqual(testCase, chem.document_class.class_name, 'chemical');
+            verifyEqual(testCase, chem.chemical.value.substance.name, 'muscimol');
+            verifyEqual(testCase, chem.chemical.value.substance.node, 'chebi:6904');
         end
 
         function testEpochAnchorFoldsToRelativeReferenceWithItsIdPreserved(testCase)
