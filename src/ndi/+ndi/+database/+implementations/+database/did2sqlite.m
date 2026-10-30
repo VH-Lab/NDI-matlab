@@ -42,6 +42,14 @@ classdef did2sqlite < ndi.database
     %   DID-matlab whose did2 database has no file store yet, only the
     %   by-location path exists.
     %
+    %   V1 DOCUMENTS WRITTEN INTO THIS DATABASE (Decided by Jess Haley,
+    %   2026-10-29 [v1 writes into a V2 session]): a v1-template document
+    %   NDI writes here (no document_class.schema_version) is checked
+    %   against NDI's own v1 template and stamped 'did_v1', as a carried
+    %   document is; V2 documents are validated as V2. See do_add and
+    %   ndi.database.internal.stampV1Write. The end state is that every NDI
+    %   writer writes V2 documents.
+    %
     %   See also: ndi.database, did2.database.sqlitedb,
     %             ndi.database.implementations.database.didsqlite,
     %             ndi.database.fun.databasehierarchyinit.
@@ -229,6 +237,18 @@ classdef did2sqlite < ndi.database
         function obj = do_add(obj, ndi_document_obj, add_parameters) %#ok<INUSD>
             docs = ndi.database.implementations.database.did2sqlite.toDid2Documents( ...
                 ndi_document_obj);
+            % A v1-template document (unstamped: one of NDI's v1 writers
+            % built it) is checked against NDI's v1 template for its class
+            % and stamped 'did_v1', so did2 stores it as a v1 document
+            % instead of validating it against the V_eta class of the same
+            % name. A stamped document (V2, or already did_v1) is unchanged
+            % and validated as before. Every document is checked before any
+            % is added. Decided by Jess Haley, 2026-10-29 [v1 writes into a
+            % V2 session] (did-schema V_eta_go_forward_class_audit.md); see
+            % ndi.database.internal.stampV1Write.
+            for i = 1:numel(docs)
+                docs{i} = ndi.database.internal.stampV1Write(docs{i});
+            end
             obj.db.add(docs);
         end % do_add
 
