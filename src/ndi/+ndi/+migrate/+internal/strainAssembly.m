@@ -149,6 +149,24 @@ function [kept, minted, report] = strainAssembly(structs)
 %   Bare `openminds` documents that are not Strain/Species/GeneticStrainType
 %   are left untouched and counted (REPORT.openminds_other).
 %
+%   ---------------------------------------------------------------------
+%   THE OTHER STRAIN FIELDS
+%   ---------------------------------------------------------------------
+%   Decided by Jess Haley, 2026-10-27 [openMINDS strain leftovers] and
+%   2026-10-30 [openMINDS strain leftovers settled] (did-schema
+%   V_eta_go_forward_class_audit.md, G49): digitalIdentifier and
+%   alternateIdentifier go to `global_identifier` (a list); stockNumber is an
+%   RRID there when its vendor is JAX, MMRRC or Bloomington, else a "Catalog
+%   Number" (NCIT:C99286) text assertion; breedingType ("breeding",
+%   NCIT:C42877) and diseaseModel ("disease model", BAO:0010279) are term
+%   assertions; lookupLabel is not stored. ndi.migrate.internal.strainLeftovers
+%   reads them. A Species or GeneticStrainType fragment's definition and
+%   synonyms are not stored (read back from the term), so they no longer
+%   keep the fragment. The child documents those fields point at (an
+%   identifier, a StockNumber, a breeding-type or disease term) are consumed
+%   with the same rule as a fragment when every field of theirs is written;
+%   an Organization is never consumed here.
+%
 %   Tests: tests/+ndi/+unittest/+migrate/TestStrainAssembly.m (the fast
 %   assembler gate, test-eta-migrate.yml).
 %
@@ -182,6 +200,7 @@ report.carry_rows             = struct('id', {}, 'row', {});
 report.fragments_seen         = 0;
 report.fragments_consumed     = 0;
 report.fragments_retained     = 0;
+report.children_consumed      = 0;   % identifier / StockNumber / breeding / disease documents
 report.background_edges       = 0;
 report.background_unresolved  = 0;
 report.species_missing        = 0;   % assembled, but no species to assert
@@ -246,6 +265,8 @@ speciesTermOf  = cell(1, n);
 gstTermOf      = cell(1, n);
 usedFragments  = containers.Map('KeyType', 'char', 'ValueType', 'any');
 usedFrags      = cell(1, n);
+leftoverOf     = cell(1, n);
+lookup = @(id) lookupDoc(byId, structs, id);
 
 for k = 1:numel(strainIdx)
     i = strainIdx(k);
@@ -267,13 +288,17 @@ for k = 1:numel(strainIdx)
     end
     % [generic stage is lossless] and [partly placed is carried as v1] (Jess
     % Haley, 2026-10-25, did-schema V_eta_go_forward_class_audit.md): a Strain
-    % with a field this pass does not write (breedingType, stockNumber,
-    % diseaseModel, lookupLabel, digitalIdentifier, alternateIdentifier, ...),
-    % a second value where one is read, or a reference that does not resolve
+    % with a field this pass does not write (any field outside the openMINDS
+    % Strain set read here), a second value where one is read, or a
+    % reference that does not resolve
     % is LEFT AS PASSTHROUGH (carried as v1 by ndi.migrate.local's last step),
     % counted with its reason. A fragment with a field the term does not write
     % is kept rather than consumed (fragmentFullyPlaced).
-    unplaced = unplacedStrainFields(f, byId, structs);
+    % [openMINDS strain leftovers] (Jess Haley, 2026-10-27, settled
+    % 2026-10-30): the identifiers, stock number, breeding type and disease
+    % models; what of them cannot be placed is listed with the rest
+    leftoverOf{i} = ndi.migrate.internal.strainLeftovers(f, lookup);
+    unplaced = [unplacedStrainFields(f, byId, structs), leftoverOf{i}.unplaced];
     if ~isempty(unplaced)
         report.strains_incomplete = report.strains_incomplete + 1;
         report.strains_unplaced = report.strains_unplaced + 1;
@@ -287,7 +312,8 @@ for k = 1:numel(strainIdx)
     assembled(i)     = true;
     speciesTermOf{i} = speciesTerm;
     gstTermOf{i}     = gstTerm;
-    usedFrags{i} = [reshape(speciesFrag, 1, []), reshape(gstFrag, 1, [])];
+    usedFrags{i} = [reshape(speciesFrag, 1, []), reshape(gstFrag, 1, []), ...
+        reshape(leftoverOf{i}.consumable, 1, [])];
 end
 
 % A background strain that is not assembled would be a `derived_from` written
@@ -349,11 +375,20 @@ for k = 1:numel(strainIdx)
     desc = charField(f, {'description'});
     if ~isempty(desc); ef.description = desc; end
     gid = charField(f, {'ontologyIdentifier', 'ontology_identifier'});
-    if ~isempty(gid); ef.global_identifier = {S.curie(gid)}; end
+    gids = {};
+    if ~isempty(gid); gids = {S.curie(gid)}; end
+    % [openMINDS strain leftovers]: every identifier goes in the list
+    for g = 1:numel(leftoverOf{i}.identifiers)
+        if ~any(strcmp(gids, leftoverOf{i}.identifiers{g}))
+            gids{end+1} = leftoverOf{i}.identifiers{g}; %#ok<AGROW>
+        end
+    end
+    if ~isempty(gids); ef.global_identifier = gids; end
     minted{end+1} = S.entity('strain', ef, 'Id', idOf{i}, common{:}); %#ok<AGROW>
     report.strains_assembled = report.strains_assembled + 1;
 
-    [docs, nA] = strainStatements(idOf{i}, speciesTermOf{i}, gstTermOf{i}, f, common);
+    [docs, nA] = strainStatements(idOf{i}, speciesTermOf{i}, gstTermOf{i}, f, common, ...
+        leftoverOf{i});
     minted = [minted, docs]; %#ok<AGROW>
     report.assertions_minted = report.assertions_minted + nA;
     if ~termIsPopulated(speciesTermOf{i})
@@ -402,7 +437,19 @@ for i = find(isOpenminds)
     end
     if ~(isOpenmindsType(structs{i}, 'Species') ...
             || isOpenmindsType(structs{i}, 'GeneticStrainType'))
-        continue;   % not a fragment of this family; leave it alone
+        % a child document a strain field points at ([openMINDS strain
+        % leftovers]: an identifier, a StockNumber, a breeding-type or
+        % disease term), fully written into the strain: consumed by the same
+        % rule as a fragment. Anything else is not this family's; left alone.
+        if isKey(usedFragments, idOf{i})
+            who = {};
+            if isKey(referrers, idOf{i}); who = referrers(idOf{i}); end
+            if all(ismember(who, consumedStrains))
+                removeMask(i) = true;
+                report.children_consumed = report.children_consumed + 1;
+            end
+        end
+        continue;
     end
     if ~isKey(usedFragments, idOf{i})
         % carry-register: carry-094
@@ -432,14 +479,15 @@ kept = structs(~removeMask);
 % merged-away id remapped to its survivor.
 scope = ndi.migrate.internal.datasetScope(structs);
 [minted, kept, report] = datasetLevel(minted, kept, report, scope, ...
-    find(assembled), idOf, structs, speciesTermOf, gstTermOf, byId, assembled);
+    find(assembled), idOf, structs, speciesTermOf, gstTermOf, byId, assembled, ...
+    leftoverOf);
 report.changed = true;
 end
 
 % ===================== the dataset level ==================================
 
 function [minted, kept, report] = datasetLevel(minted, kept, report, scope, ...
-        idx, idOf, structs, speciesTermOf, gstTermOf, byId, assembled)
+        idx, idOf, structs, speciesTermOf, gstTermOf, byId, assembled, leftoverOf)
 %DATASETLEVEL Merge identical strains across the dataset and store them there.
 %   The key is the strain's CONTENT -- name, species, genetic strain type,
 %   identifier, description and its background strains (as their SURVIVING
@@ -459,7 +507,7 @@ for k = 1:numel(idx)
     attrs{k} = strjoin({charField(f, {'name'}), char(sp.node), char(sp.name), ...
         char(g.node), char(g.name), ...
         charField(f, {'ontologyIdentifier', 'ontology_identifier'}), ...
-        charField(f, {'description'})}, char(31));
+        charField(f, {'description'}), leftoverOf{i}.key}, char(31));
     sess{k} = ndi.v2.sessionIdOf(structs{i});
     ps = ndiRefs(getAny(f, {'backgroundStrain', 'background_strain'}));
     keepP = false(1, numel(ps));
@@ -558,7 +606,7 @@ end
 
 % ===================== the strain's statements =========================
 
-function [docs, nAssertions] = strainStatements(strainId, speciesTerm, gstTerm, f, common)
+function [docs, nAssertions] = strainStatements(strainId, speciesTerm, gstTerm, f, common, L)
 %STRAINSTATEMENTS The assertions a strain's openMINDS fields become on #88
 %   (V_eta_entity_composition_plan.md sec. 4): species, genetic strain type and
 %   phenotype as term assertions, laboratory code and synonyms as text
@@ -588,6 +636,19 @@ if ~isempty(syn)
     docs{end+1} = S.statement('assertion', 'text', strainId, ...
         S.term('', 'synonym'), struct('text', syn), common{:});
 end
+% [openMINDS strain leftovers] / [... settled] (Jess Haley, 2026-10-27/30)
+if ~isempty(L.catalog_number)
+    docs{end+1} = S.statement('assertion', 'text', strainId, ...
+        S.term('NCIT:C99286', 'Catalog Number'), struct('text', L.catalog_number), common{:});
+end
+if termIsPopulated(L.breeding)
+    docs{end+1} = S.statement('assertion', 'term', strainId, ...
+        S.term('NCIT:C42877', 'breeding'), L.breeding, common{:});
+end
+for k = 1:numel(L.diseases)
+    docs{end+1} = S.statement('assertion', 'term', strainId, ...
+        S.term('BAO:0010279', 'disease model'), L.diseases{k}, common{:}); %#ok<AGROW>
+end
 nAssertions = numel(docs);
 end
 
@@ -600,11 +661,18 @@ function unplaced = unplacedStrainFields(f, byId, structs)
 %   and ONE genetic strain type (inline, or one resolvable fragment whose name
 %   and ONE identifier are read), phenotype (one), laboratoryCode (one),
 %   synonym (all), backgroundStrain (as `derived_from`, checked by the
-%   caller). Anything else non-empty is unplaced.
+%   caller), and the fields ndi.migrate.internal.strainLeftovers places
+%   (which lists its own unplaced ones). Anything else non-empty is unplaced.
 placed = {'name', 'description', 'ontologyIdentifier', 'ontology_identifier', ...
     'species', 'geneticStrainType', 'genetic_strain_type', ...
     'backgroundStrain', 'background_strain', 'phenotype', ...
-    'laboratoryCode', 'laboratory_code', 'synonym'};
+    'laboratoryCode', 'laboratory_code', 'synonym', ...
+    ... % [openMINDS strain leftovers]: strainLeftovers reads these and lists
+    ... % what of them it cannot place; lookupLabel is not stored
+    'digitalIdentifier', 'digital_identifier', ...
+    'alternateIdentifier', 'alternate_identifier', ...
+    'stockNumber', 'stock_number', 'breedingType', 'breeding_type', ...
+    'diseaseModel', 'disease_model', 'lookupLabel', 'lookup_label'};
 unplaced = {};
 fn = fieldnames(f);
 for k = 1:numel(fn)
@@ -648,11 +716,14 @@ end
 function tf = fragmentFullyPlaced(fragment)
 %FRAGMENTFULLYPLACED A Species / GeneticStrainType fragment whose every
 %   non-empty field the strain's term writes: its name and ONE identifier.
-%   Any other field (a Species' definition or synonym, say) means the fragment
-%   is kept, carried as v1, rather than consumed ([generic stage is lossless]).
+%   Its definition and synonyms are not stored, read back from the term
+%   ([openMINDS strain leftovers], Jess Haley, 2026-10-27). Any other field
+%   means the fragment is kept, carried as v1, rather than consumed
+%   ([generic stage is lossless]).
 ff = openmindsFields(fragment);
 fragPlaced = {'name', 'preferredOntologyIdentifier', ...
-    'preferred_ontology_identifier', 'ontologyIdentifier', 'ontology_identifier'};
+    'preferred_ontology_identifier', 'ontologyIdentifier', 'ontology_identifier', ...
+    'definition', 'synonym'};
 tf = false;
 fn = fieldnames(ff);
 for j = 1:numel(fn)
@@ -666,6 +737,14 @@ if ~isempty(a) && ~isempty(b) && ~strcmp(a, b)
     return;
 end
 tf = true;
+end
+
+function d = lookupDoc(byId, structs, id)
+%LOOKUPDOC The body whose base.id is ID, or [] when it is not in the set.
+d = [];
+if ischar(id) && isKey(byId, id)
+    d = structs{byId(id)};
+end
 end
 
 function tf = isEmptyValue(v)

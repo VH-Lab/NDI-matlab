@@ -339,6 +339,11 @@ report.strain_docs_not_a_term_assertion    = 0;   % e.g. already a `strain`
 report.strains_candidate                   = 0;
 report.strains_incomplete                  = 0;
 report.incomplete_reasons                  = {};
+% [openMINDS strain leftovers]: strains minted with a leftover field
+% strainLeftovers could not place (counted, as before this pass never
+% carried a subject strain for an unread field)
+report.leftover_fields_unplaced            = 0;
+report.leftover_unplaced_reasons           = {};
 
 report.distinct_strains                    = 0;   % dedup groups
 report.strains_minted                      = 0;
@@ -491,7 +496,18 @@ for k = 1:numel(strainIdx)
     e.phenotype       = charField(f, {'phenotype'});
     e.laboratory_code = charField(f, {'laboratoryCode', 'laboratory_code'});
     e.synonym         = cellstrField(f, {'synonym'});
-    e.identifiers     = identifiers(f);
+    % [openMINDS strain leftovers] (Jess Haley, 2026-10-27, settled
+    % 2026-10-30): digitalIdentifier / alternateIdentifier / a vendor's stock
+    % RRID join the identifiers; a Catalog Number, breeding type and disease
+    % models become assertions (strainStatements)
+    e.leftovers       = ndi.migrate.internal.strainLeftovers(f, ...
+        @(id) v1BodyById(v1Pos, v1Bodies, id));
+    e.identifiers     = identifiers(f, e.leftovers.identifiers);
+    if ~isempty(e.leftovers.unplaced)
+        report.leftover_fields_unplaced = report.leftover_fields_unplaced + 1;
+        report.leftover_unplaced_reasons{end+1} = sprintf('%s: %s', ...
+            shortId(srcId), strjoin(e.leftovers.unplaced, ', '));
+    end
     e.parents         = ndiRefs(getAny(f, {'backgroundStrain', 'background_strain'}));
     e.content_key     = '';
     e.key             = '';
@@ -926,7 +942,7 @@ parts = {cand(c).name, ...
     cand(c).species.node, cand(c).species.name, ...
     cand(c).gst.node, cand(c).gst.name, ...
     cand(c).description, cand(c).phenotype, cand(c).laboratory_code, ...
-    identifierKey(cand(c).identifiers)};
+    identifierKey(cand(c).identifiers), cand(c).leftovers.key};
 
 for p = 1:numel(cand(c).parents)
     pid = cand(c).parents{p};
@@ -1061,7 +1077,7 @@ for k = 1:numel(v)
 end
 end
 
-function gid = identifiers(f)
+function gid = identifiers(f, more)
 %IDENTIFIERS entity.global_identifier -- a list of CURIE strings (did-schema
 %   #88 sec. 6: "`global_identifier` is a list of strings"). Empty when the
 %   writer gives none: 115 strains carry no identifier at all (dabrowska's Cre
@@ -1072,10 +1088,13 @@ function gid = identifiers(f)
 %   so `ontologyIdentifier`, `digitalIdentifier` and `alternateIdentifier` are
 %   all read, and each CURIE is written as given (etaShape.curie applies the
 %   one rewrite the signed plan names, WBStrain -> WormBase).
+%   MORE: the identifiers ndi.migrate.internal.strainLeftovers read from
+%   digitalIdentifier, alternateIdentifier and a stock RRID ([openMINDS strain
+%   leftovers]), which also resolves an `ndi://` identifier document rather
+%   than writing the reference as an identifier.
+if nargin < 2; more = {}; end
 gid = {};
-for nm = {'ontologyIdentifier', 'ontology_identifier', ...
-          'digitalIdentifier', 'digital_identifier', ...
-          'alternateIdentifier', 'alternate_identifier'}
+for nm = {'ontologyIdentifier', 'ontology_identifier'}
     v = getAny(f, nm);
     if isempty(v); continue; end
     if ischar(v); v = {v}; end
@@ -1090,6 +1109,19 @@ for nm = {'ontologyIdentifier', 'ontology_identifier', ...
             gid{end+1} = g; %#ok<AGROW>
         end
     end
+end
+for k = 1:numel(more)
+    if ~any(strcmp(gid, more{k}))
+        gid{end+1} = more{k}; %#ok<AGROW>
+    end
+end
+end
+
+function d = v1BodyById(v1Pos, v1Bodies, id)
+%V1BODYBYID The did_v1 openMINDS body whose id is ID, or [] when absent.
+d = [];
+if ischar(id) && isKey(v1Pos, id)
+    d = v1Bodies{v1Pos(id)};
 end
 end
 
@@ -1122,6 +1154,20 @@ end
 if ~isempty(rep.synonym)
     docs{end+1} = S.statement('assertion', 'text', strainId, ...
         S.term('', 'synonym'), struct('text', rep.synonym), common{:});
+end
+% [openMINDS strain leftovers] / [... settled] (Jess Haley, 2026-10-27/30)
+L = rep.leftovers;
+if ~isempty(L.catalog_number)
+    docs{end+1} = S.statement('assertion', 'text', strainId, ...
+        S.term('NCIT:C99286', 'Catalog Number'), struct('text', L.catalog_number), common{:});
+end
+if termIsPopulated(L.breeding)
+    docs{end+1} = S.statement('assertion', 'term', strainId, ...
+        S.term('NCIT:C42877', 'breeding'), L.breeding, common{:});
+end
+for k = 1:numel(L.diseases)
+    docs{end+1} = S.statement('assertion', 'term', strainId, ...
+        S.term('BAO:0010279', 'disease model'), L.diseases{k}, common{:}); %#ok<AGROW>
 end
 end
 
@@ -1206,7 +1252,7 @@ c = struct('source_id', {}, 'assertion_pos', {}, 'session_id', {}, ...
     'datestamp', {}, 'subject_id', {}, 'name', {}, 'species', {}, ...
     'species_frag', {}, 'gst', {}, 'gst_frag', {}, 'description', {}, ...
     'phenotype', {}, 'laboratory_code', {}, 'synonym', {}, ...
-    'identifiers', {}, 'parents', {}, 'content_key', {}, 'key', {}, ...
+    'identifiers', {}, 'leftovers', {}, 'parents', {}, 'content_key', {}, 'key', {}, ...
     'group', {});
 end
 
