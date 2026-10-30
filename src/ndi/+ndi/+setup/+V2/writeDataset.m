@@ -10,8 +10,20 @@ function out = writeDataset(path, reference, datasetSessionId, datasetDocs, sess
 %       documents, each with session id DATASETSESSIONID: the dataset entity,
 %       its studies, people, software, ... e.g. from
 %       ndi.setup.V2.datasetMetadata) and, per session, its `included_in`
-%       relations (one per study id) and a `linked_session` naming the
-%       session's folder (ndi.v2.linkPath: relative when it is inside PATH);
+%       relations (one per study id) and ONE direct session -> dataset
+%       `included_in` relation whose method records the link: "database
+%       linking" (EMPTY:0000400) with "software class" ndi.session.dir and the
+%       session folder's Pathname (NCIT:C47922; ndi.v2.linkPath: relative,
+%       with '/', when it is inside PATH; absolute otherwise). Ingested
+%       ('Linked' false), that relation's method is "database ingestion"
+%       (EMPTY:0000399). (did-schema V_eta_go_forward_class_audit.md, Jess
+%       Haley 2026-10-29 [linked session link on a direct dataset relation],
+%       [linked session link details], [linked session pathname]; it replaces
+%       the withdrawn `linked_session` document,
+%       V_eta_linked_session_plan.md [linked_session withdrawn].) Where
+%       DATASETDOCS hold no `dataset` document the method goes on the
+%       session's relation to its first study; a linked session with neither
+%       is ndi:setup:V2:noLinkParent;
 %     * each session's own documents -- its `session` entity (whose id IS the
 %       session id) and SESSIONS.documents -- are written ONCE, to its folder
 %       (ndi.setup.V2.makeSessions), after the dataset;
@@ -107,6 +119,13 @@ if isempty(name)
     end
 end
 
+% the parent of each session's link relation: the one dataset document
+isDs = cellfun(@(d) strcmp(ndi.v2.kindOf(d), 'dataset'), datasetDocs);
+datasetDocId = '';
+if nnz(isDs) == 1
+    datasetDocId = datasetDocs{isDs}.base.id;
+end
+
 sessDocs = cell(1, n);
 external = {};
 for k = 1:n
@@ -117,16 +136,15 @@ for k = 1:n
     docs = cellOf(T, 'documents', k);
     if isempty(docs), docs = {}; end
     docs = reshape(docs, 1, []);
+    [own, link] = withLink(own, datasetDocId, options.Linked, ...
+        char(cellOf(T, 'path', k)), path, datasetSessionId, char(cellOf(T, 'local_identifier', k)));
     if options.Linked
-        % in the dataset: the session's included_in relations and where it
-        % lives; its own documents go to its folder (checked here as one set)
-        link = did2.build.document('linked_session', ...
-            struct('path', ndi.v2.linkPath(char(cellOf(T, 'path', k)), path)), ...
-            'SessionId', datasetSessionId, 'Edges', struct('entity_id', own{1}.base.id));
-        sessDocs{k} = [own(2:end), {link}];
+        % in the dataset: the session's included_in relations and how it is
+        % linked; its own documents go to its folder (checked here as one set)
+        sessDocs{k} = [own(2:end), link];
         external = [external, own(1), docs]; %#ok<AGROW>
     else
-        d = [own, docs];
+        d = [own, link, docs];
         if options.KeepOriginals
             d = keepOriginals(d);
         end
@@ -160,6 +178,43 @@ end
 out.sessions.session_id = Tw.session_id;
 ds = ndi.dataset.dir(path);
 [out.sessionReferences, out.sessionIds] = ds.session_list();
+end
+
+function [own, link] = withLink(own, datasetDocId, linked, folder, path, datasetSessionId, reference)
+% LINK, a cell holding the session's link relation
+% (ndi.v2.sessionLinkRelation) to the dataset document; with none, to its
+% first study, whose plain relation it replaces in OWN (one relation per
+% parent). {} for an ingested session with neither.
+arguments
+    own cell
+    datasetDocId (1,:) char
+    linked (1,1) logical
+    folder (1,:) char
+    path (1,:) char
+    datasetSessionId (1,:) char
+    reference (1,:) char
+end
+entityId = own{1}.base.id;
+parentId = datasetDocId;
+if isempty(parentId) && numel(own) > 1
+    p = ndi.v2.edgeIds(own{2}, 'parent_id');
+    parentId = p{1};
+    own(2) = [];
+end
+if isempty(parentId)
+    if linked
+        error('ndi:setup:V2:noLinkParent', ['Session %s is to be linked, but there is no ' ...
+            'dataset document and no study to record its link on.'], reference);
+    end
+    link = {};
+    return;
+end
+pathname = '';
+if linked
+    pathname = ndi.v2.linkPath(folder, path);
+end
+link = {ndi.v2.sessionLinkRelation(entityId, parentId, linked, 'ndi.session.dir', ...
+    pathname, datasetSessionId)};
 end
 
 function v = cellOf(T, var, k)

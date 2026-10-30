@@ -117,7 +117,7 @@ disp(byClass);
 % ---- 3 edges ------------------------------------------------------------------
 % an edge dangles when no database of the dataset holds its target: a linked
 % session's documents point at the dataset's (a strain, a study), and the
-% dataset's included_in (part_of) relations and linked_session documents at the sessions'
+% dataset's included_in relations (and an older dataset's linked_session documents) at the sessions'
 fprintf('\n== 3 edges ==\n');
 checked = 0;
 dangRows = cell(0, 2);
