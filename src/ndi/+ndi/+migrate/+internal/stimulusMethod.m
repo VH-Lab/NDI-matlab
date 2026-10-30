@@ -25,39 +25,7 @@ end
 
 restore = ndi.migrate.internal.termRegistryOff(); %#ok<NASGU>
 
-entries = {};
-for k = 1:numel(recipe.parameters)
-    p = recipe.parameters(k);
-    switch p.form
-        case 'term'
-            args = {'Term', p.value};
-        case 'count'
-            args = {'Count', p.value};
-        case 'text'
-            args = {'Text', p.value};
-        case 'matrix'
-            % data_body AMENDMENT 4 (did-schema #88): one numeric array is ONE value
-            args = {'Matrix', p.value};
-        otherwise
-            args = {'Value', p.value};
-    end
-    if any(strcmp(p.form, {'quantity', 'matrix'})) && ~isempty(p.unit)
-        args = [args, {'Unit', p.unit}]; %#ok<AGROW>
-    end
-    % a converted quantity keeps what the source wrote (did2.build.parameter
-    % 'SourceValue' as text, 'SourceUnit' the source's unit term)
-    if isfield(p, 'source_value') && ~isempty(p.source_value)
-        args = [args, {'SourceValue', p.source_value}]; %#ok<AGROW>
-    end
-    if isfield(p, 'source_unit') && ~isempty(p.source_unit)
-        args = [args, {'SourceUnit', p.source_unit}]; %#ok<AGROW>
-    end
-    entries{end+1} = did2.build.parameter(p.variable, args{:}); %#ok<AGROW>
-end
-params = [];
-if ~isempty(entries)
-    params = did2.build.list(entries{:});
-end
+params = ndi.migrate.internal.recipeParameterList(recipe.parameters);
 doc = did2.build.method(recipe.term, params, 'SessionId', sessionId, ...
     'CreationTimestamp', creationTimestamp, 'Validate', false);
 end

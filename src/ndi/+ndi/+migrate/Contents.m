@@ -66,7 +66,11 @@
 %                          3360 entries, ONE distinct value across all 210),
 %                          with a `frameTimes` of the same length. Mints the
 %                          basis ONCE per session and hands the playlist +
-%                          frame times to the assembler above.
+%                          frame times to the assembler above. The generator
+%                          keys the basis does not read are the presentation
+%                          manipulation's inline method parameters
+%                          ([Hartley settings on the inline method], Jess
+%                          Haley 2026-10-30; recipeParameterList).
 %     (stimulusPresentationToManipulation, stimulusPresentationToTimedSequence
 %      and gratingValueFromParameters were deleted 2026-10-21 with the
 %      `visual_grating`, `visual_grating_manipulation` and `timed_sequence`

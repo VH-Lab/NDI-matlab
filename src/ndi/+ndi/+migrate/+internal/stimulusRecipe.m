@@ -36,6 +36,13 @@ function recipe = stimulusRecipe(parameters, kind)
 %                            imageType 0: "field (single luminance across
 %                            field)"; the bar is the window: windowShape, rect)
 %     'periodicstim_other'   term 'periodic visual stimulus' (imageType not 0/1/2)
+%     'hartley_generator'    term 'Hartley stimulus'; the caller passes ONLY
+%                            the generator keys the shared Hartley basis does
+%                            not read, and uses the entries as the inline
+%                            method parameters of the presentation's
+%                            manipulation ([Hartley settings on the inline
+%                            method], Jess Haley, 2026-10-30; see
+%                            stimulusPresentationToItem)
 %   Any other KIND is an error: the caller refuses it before asking.
 %
 %   TERMS. No stimulus-kind term is in the term registry
@@ -122,6 +129,18 @@ switch kind
     case 'periodicstim_other'
         term = 'periodic visual stimulus';
         rows = periodicRows();
+    case 'hartley_generator'
+        % Decided by Jess Haley, 2026-10-30 [Hartley settings on the inline
+        % method] (did-schema V_eta_go_forward_class_audit.md, G35): the
+        % generator settings the shared basis does not read (randState, rect,
+        % distance, chromhigh, reps, ...) are the presentation manipulation's
+        % own inline method parameters. NewStim hartleystim shares
+        % periodicstim's display keys (rect, distance, chromhigh, chromlow,
+        % background, backdrop, windowShape), so they take the same
+        % variables; `reps` is its repetition count.
+        term = 'Hartley stimulus';
+        rows = [periodicRows(); {'reps', 'repetitions', '', 'count'; ...
+                                 'randState', 'Random Seed', '', 'column'}];
     otherwise
         error('ndi:migrate:stimulusRecipe:kind', ...
             'stimulusRecipe: no recipe for stimulus kind ''%s''.', kind);

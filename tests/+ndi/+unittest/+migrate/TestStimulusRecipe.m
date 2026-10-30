@@ -210,6 +210,28 @@ classdef TestStimulusRecipe < matlab.unittest.TestCase
             testCase.verifyEqual(entryOf(r, 'K_absmax').value, 20);
             testCase.verifyEqual(entryOf(r, 'sfmax').value, 5);
         end
+
+        function testHartleyGeneratorSettingsTakeTheDisplayVariables(testCase)
+            % [Hartley settings on the inline method] (Jess Haley,
+            % 2026-10-30): the generator keys the shared basis does not read,
+            % as the presentation manipulation's inline method parameters
+            r = ndi.migrate.internal.stimulusRecipe(struct( ...
+                'rect', [-7 -138 793 662], 'distance', 30, ...
+                'chromhigh', [255 255 255], 'reps', 2, ...
+                'randState', [0.1 0.2 0.3], 'mystery', 4), 'hartley_generator');
+            testCase.verifyEqual(entryOf(r, 'stimulus rectangle').value, [-7 -138 793 662]);
+            testCase.verifyEqual(entryOf(r, 'stimulus rectangle').unit.node, 'om:pixel');
+            testCase.verifyEqual(entryOf(r, 'viewing distance').value, 30);
+            testCase.verifyEqual(entryOf(r, 'viewing distance').unit.node, 'om:centimetre');
+            testCase.verifyEqual(entryOf(r, 'high colour').value, [255 255 255]);
+            testCase.verifyEqual(entryOf(r, 'repetitions').form, 'count');
+            testCase.verifyEqual(entryOf(r, 'repetitions').value, 2);
+            seed = entryOf(r, 'Random Seed');
+            testCase.verifyEqual(seed.variable.node, 'NCIT:C64220');
+            testCase.verifyEqual(size(seed.value), [3 1], 'randState is a column');
+            % a key no row names is still an entry, its v1 name a label
+            testCase.verifyEqual(entryOf(r, 'mystery').value, 4);
+        end
     end
 end
 
