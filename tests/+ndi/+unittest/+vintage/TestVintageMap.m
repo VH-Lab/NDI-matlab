@@ -361,6 +361,28 @@ classdef TestVintageMap < matlab.unittest.TestCase
             testCase.verifyEqual(ndi.vintage.objectName(old), 'intan1');
         end
 
+        function testObjectNamePrefersTheOwnNameOverBaseName(testCase)
+            % [carried v1 validates against NDI templates] (Jess Haley,
+            % 2026-10-27): a V2 document's name is read from the class's own
+            % name field; base.name is the fallback for documents migrated
+            % before. A document carrying both reads the own field.
+            both = ndi.unittest.vintage.TestVintageMap.doc('acquisition_system', ...
+                'acquisition_system', struct('name', 'camera1'), [], 'stale_base_name');
+            testCase.verifyEqual(ndi.vintage.objectName(both), 'camera1');
+            % an empty own name falls back to base.name
+            emptyOwn = ndi.unittest.vintage.TestVintageMap.doc('acquisition_system', ...
+                'acquisition_system', struct('name', ''), [], 'intan1');
+            testCase.verifyEqual(ndi.vintage.objectName(emptyOwn), 'intan1');
+            % v1 `daqsystem` has no own name field: base.name
+            v1 = ndi.unittest.vintage.TestVintageMap.doc('daqsystem', ...
+                'daqsystem', struct('ndi_daqsystem_class', 'ndi.daq.system.mfdaq'), [], 'intan1');
+            testCase.verifyEqual(ndi.vintage.objectName(v1), 'intan1');
+            % an entity reads entity.name
+            ent = ndi.unittest.vintage.TestVintageMap.doc('entity', ...
+                'entity', struct('name', 'mouse 1'), [], '');
+            testCase.verifyEqual(ndi.vintage.objectName(ent), 'mouse 1');
+        end
+
         function testTheV1ObjectClassPathIsByteForByteTheOldOne(testCase)
             % ndi_document2ndi_object's inline read moved into
             % ndi.vintage.objectClass. If the v1 branch changed at all,

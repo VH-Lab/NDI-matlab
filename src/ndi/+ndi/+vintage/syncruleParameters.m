@@ -46,9 +46,10 @@ function params = syncruleParameters(ruleDoc, ndi_session_obj, objClass)
 %         and to is 2.
 %       the earlier shape, read when the configuration has no
 %       from/to edge: two `acquisition_channels` documents, one per device
-%         daqsystem1_name / daqsystem1 <- acquisition_channels_1.base.name
-%                                         (current schema: its
-%                                         acquisition_system's `name`)
+%         daqsystem1_name / daqsystem1 <- its acquisition_system's own
+%                                         `name` (acquisition_system_id),
+%                                         else acquisition_channels_1.base.name
+%                                         (migrated before)
 %         daqsystem_ch1                <- its `channels` array, re-serialised
 %         (and _2 likewise), 1 and 2 being the edge positions.
 %
@@ -248,23 +249,25 @@ if numel(docs) ~= 1
         edgeName, id, numel(docs));
 end
 p = docs{1}.document_properties;
-% THE DEVICE NAME IS ON `base.name`, NOT BEHIND AN EDGE. The migrator
-% deliberately does not emit `acquisition_system_id` -- resolving name to
-% id needs the migrated-id graph, which a per-document migrator does not
-% have -- so it carries the name where a name belongs
-% (+migrators_j/private/jAcquisitionChannels.m).
-if isfield(p, 'base') && isfield(p.base, 'name')
-    deviceName = p.base.name;
+% THE DEVICE'S OWN NAME FIELD FIRST. did-schema #73 item 54 keeps a device's
+% name on its acquisition_system (`acquisition_system.name`), and Decided by
+% Jess Haley, 2026-10-27 [carried v1 validates against NDI templates]
+% (did-schema V_eta_go_forward_class_audit.md): "NDI-matlab's `base.name`
+% reads that run on V2 documents move to the class's own name field". A
+% channel group built to the current schema names no device itself and
+% reaches it through `acquisition_system_id`.
+sysDoc = linkedDoc(docs{1}, ndi_session_obj, 'acquisition_system_id');
+if ~isempty(sysDoc)
+    deviceName = ndi.vintage.objectName(sysDoc);
 end
-% ...EXCEPT ON A DOCUMENT BUILT TO THE CURRENT SCHEMA. did-schema #73 item 54
-% keeps a device's name on its acquisition_system (`acquisition_system.name`)
-% and `base.name` is did_v1-only, so such a channel group names no device
-% itself and reaches it through `acquisition_system_id`.
-if isempty(deviceName)
-    sysDoc = linkedDoc(docs{1}, ndi_session_obj, 'acquisition_system_id');
-    if ~isempty(sysDoc)
-        deviceName = ndi.vintage.objectName(sysDoc);
-    end
+% ...THEN `base.name`, for a channel group migrated before: that migrator
+% did not emit `acquisition_system_id` -- resolving name to id needs the
+% migrated-id graph, which a per-document migrator does not have -- and
+% carried the device name on `base.name`
+% (+migrators_j/private/jAcquisitionChannels.m). V2 `base.name` stays until
+% [base.name kept until retire classes leave] deletes it.
+if isempty(deviceName) && isfield(p, 'base') && isfield(p.base, 'name')
+    deviceName = p.base.name;
 end
 if isfield(p, 'acquisition_channels') && isstruct(p.acquisition_channels) ...
         && isfield(p.acquisition_channels, 'channels')

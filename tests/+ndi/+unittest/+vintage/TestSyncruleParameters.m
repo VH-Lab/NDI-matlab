@@ -176,6 +176,37 @@ classdef TestSyncruleParameters < matlab.unittest.TestCase
             testCase.verifyEqual(params.daqsystem2, 'vhvis1');
         end
 
+        function testTheSystemSOwnNameWinsOverBaseName(testCase)
+            % [carried v1 validates against NDI templates] (Jess Haley,
+            % 2026-10-27): the device name is read from the linked
+            % acquisition_system's own `name` first, base.name after
+            entries = {param('minimum matching file paths', 'count', 1), ...
+                param('sync file name', 'text', 'sync.txt')};
+            doc = configWithEdges(entries, ...
+                {'acquisition_channels_id', 'ch_a'; 'acquisition_channels_id', 'ch_b'}, '');
+            session = mockSession({systemDoc('sys_a', 'intan1'), systemDoc('sys_b', 'vhvis1'), ...
+                channelsDoc('ch_a', 'sys_a', 'stale_a'), channelsDoc('ch_b', 'sys_b', 'stale_b')});
+            params = ndi.vintage.syncruleParameters(doc, session, ...
+                'ndi.time.syncrule.filefind');
+            testCase.verifyEqual(params.daqsystem1, 'intan1');
+            testCase.verifyEqual(params.daqsystem2, 'vhvis1');
+        end
+
+        function testBaseNameStillReadsWithNoSystemEdge(testCase)
+            % a channel group migrated before: no acquisition_system_id, the
+            % device name on base.name
+            entries = {param('minimum matching file paths', 'count', 1), ...
+                param('sync file name', 'text', 'sync.txt')};
+            doc = configWithEdges(entries, ...
+                {'acquisition_channels_id', 'ch_a'; 'acquisition_channels_id', 'ch_b'}, '');
+            session = mockSession({channelsDoc('ch_a', '', 'intan1'), ...
+                channelsDoc('ch_b', '', 'vhvis1')});
+            params = ndi.vintage.syncruleParameters(doc, session, ...
+                'ndi.time.syncrule.filefind');
+            testCase.verifyEqual(params.daqsystem1, 'intan1');
+            testCase.verifyEqual(params.daqsystem2, 'vhvis1');
+        end
+
     end
 end
 
@@ -223,14 +254,23 @@ p.acquisition_system = struct('name', name);
 doc = ndi.document(p);
 end
 
-function doc = channelsDoc(id, systemId)
+function doc = channelsDoc(id, systemId, baseName)
+%CHANNELSDOC An acquisition_channels document; SYSTEMID '' omits the
+%   acquisition_system_id edge, BASENAME (optional) sets base.name.
 p = struct();
 p.document_class = struct('class_name', 'acquisition_channels', 'class_version', '1.0.0', ...
     'superclasses', struct('class_name', 'base', 'class_version', '1.0.0'), ...
     'schema_version', 'did_v2');
-p.depends_on = struct('name', {'session_id', 'acquisition_system_id'}, ...
-    'value', {'sess_1', systemId});
+if isempty(systemId)
+    p.depends_on = struct('name', 'session_id', 'value', 'sess_1');
+else
+    p.depends_on = struct('name', {'session_id', 'acquisition_system_id'}, ...
+        'value', {'sess_1', systemId});
+end
 p.base = struct('id', id, 'creation_timestamp', '2026-01-01T00:00:00.000Z');
+if nargin >= 3
+    p.base.name = baseName;
+end
 p.acquisition_channels = struct('channels', {{}});
 doc = ndi.document(p);
 end
