@@ -245,8 +245,19 @@ classdef TestStrainAssembly < matlab.unittest.TestCase
             testCase.verifyEqual(a{1}.statement.variable.node, 'NCIT:C42877');
             testCase.verifyEqual(a{1}.term.value.node, 'NCIT:C28422');
             testCase.verifyEqual(a{1}.term.value.name, 'Inbred Strain');
-            testCase.verifyFalse(anyId(kept, 'bt_doc'), ...
-                'a term''s definition is read back from the term, not stored');
+            testCase.verifyTrue(anyId(kept, 'bt_doc'), ...
+                ['a breeding-type document with a definition is kept (carried ' ...
+                 'as v1): the not-stored rule is decided for Species and ' ...
+                 'GeneticStrainType fragments only']);
+        end
+
+        function testAFullyPlacedBreedingTypeDocumentIsConsumed(testCase)
+            f = struct('name', 'X', 'breedingType', {{'ndi://bt_doc'}});
+            structs = {strainOm('s_doc', f, {'bt_doc'}), ...
+                childOm('bt_doc', 'BreedingType', struct('name', 'inbred'))};
+            [kept, ~, report] = ndi.migrate.internal.strainAssembly(structs);
+            testCase.verifyFalse(anyId(kept, 'bt_doc'));
+            testCase.verifyEqual(report.children_consumed, 1);
         end
 
         function testAnOutbredInlineBreedingType(testCase)
