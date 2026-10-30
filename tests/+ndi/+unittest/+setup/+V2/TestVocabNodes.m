@@ -196,6 +196,60 @@ classdef TestVocabNodes < matlab.unittest.TestCase
                 struct('node', 'EMPTY:0000410', 'name', 'text channel'));
         end
 
+        function testClockWritersStoreTheDecidedNodeOnTodaysSchema(testCase)
+            % Decided by Jess Haley, 2026-10-26 [clock terms get nodes]: the
+            % schema's rows still hold EMPTY nodes and the snake_case
+            % names; a writer stores the decided node with the schema's
+            % name.
+            p = clockSchema(testCase, 'today', {
+                '', 'utc'; '', 'dev_local_time'; '', 'dev_global_time'; '', 'exp_global_time'});
+            testCase.verifyEqual(ndi.v2.vocabTerm('clock', 'utc', p), ...
+                struct('node', 'wikidata:Q1536', 'name', 'utc'));
+            testCase.verifyEqual(ndi.v2.vocabTerm('clock', 'dev_local_time', p), ...
+                struct('node', 'EMPTY:0000403', 'name', 'dev_local_time'));
+            testCase.verifyEqual(ndi.v2.vocabTerm('clock', 'dev_global_time', p), ...
+                struct('node', 'EMPTY:0000404', 'name', 'dev_global_time'));
+            testCase.verifyEqual(ndi.v2.vocabTerm('clock', 'exp_global_time', p), ...
+                struct('node', 'EMPTY:0000405', 'name', 'exp_global_time'));
+            % no schema copy at all: the table's node and the handle
+            testCase.verifyEqual(ndi.v2.vocabTerm('clock', 'dev_local_time', ''), ...
+                struct('node', 'EMPTY:0000403', 'name', 'dev_local_time'));
+            % a clock outside the four is written as before
+            testCase.verifyEqual(ndi.v2.vocabTerm('clock', 'inherited', p), ...
+                struct('node', '', 'name', 'inherited'));
+        end
+
+        function testClockWritersStoreTheLabelAfterTheFlip(testCase)
+            p = clockSchema(testCase, 'flipped', {
+                'wikidata:Q1536', 'UTC'; 'EMPTY:0000403', 'device local time'; ...
+                'EMPTY:0000404', 'device global time'; 'EMPTY:0000405', 'experiment global time'});
+            testCase.verifyEqual(ndi.v2.vocabTerm('clock', 'utc', p), ...
+                struct('node', 'wikidata:Q1536', 'name', 'UTC'));
+            testCase.verifyEqual(ndi.v2.vocabTerm('clock', 'dev_local_time', p), ...
+                struct('node', 'EMPTY:0000403', 'name', 'device local time'));
+        end
+
+        function testClockReadersGiveTheHandleInEveryShape(testCase)
+            p = clockSchema(testCase, 'flipped', {
+                'wikidata:Q1536', 'UTC'; 'EMPTY:0000403', 'device local time'; ...
+                'EMPTY:0000404', 'device global time'; 'EMPTY:0000405', 'experiment global time'});
+            for q = {p, ''}
+                h = @(t) ndi.v2.vocabHandle('clock', t, q{1});
+                testCase.verifyEqual(h(struct('node', 'EMPTY:0000403', 'name', 'dev_local_time')), 'dev_local_time');
+                testCase.verifyEqual(h(struct('node', 'EMPTY:0000403', 'name', 'device local time')), 'dev_local_time');
+                testCase.verifyEqual(h(struct('node', '', 'name', 'dev_local_time')), 'dev_local_time');
+                testCase.verifyEqual(h(struct('node', '', 'name', 'device local time')), 'dev_local_time');
+                testCase.verifyEqual(h(struct('node', 'EMPTY:0000405', 'name', '')), 'exp_global_time');
+                testCase.verifyEqual(h(struct('node', '', 'name', 'UTC')), 'utc');
+                testCase.verifyEqual(h('inherited'), 'inherited');
+                % by node: the node decides even when the name says otherwise
+                testCase.verifyTrue(ndi.v2.vocabIs('clock', ...
+                    struct('node', 'EMPTY:0000404', 'name', 'device global time'), 'dev_global_time', q{1}));
+                testCase.verifyFalse(ndi.v2.vocabIs('clock', ...
+                    struct('node', 'EMPTY:0000404', 'name', 'dev_local_time'), 'dev_local_time', q{1}));
+            end
+        end
+
         function testPatternsFindEitherSpelling(testCase)
             p = flippedSchema(testCase);
             pat = ndi.v2.vocabPatterns('relation', 'member_of', p);
@@ -211,6 +265,23 @@ function p = schemaPathOrSkip(testCase, file)
 p = getenv('DID_SCHEMA_PATH');
 testCase.assumeTrue(~isempty(p) && isfile(fullfile(p, file)), ...
     sprintf('DID_SCHEMA_PATH has no %s', file));
+end
+
+function p = clockSchema(testCase, sub, rows)
+% a scratch schema folder holding only relative_time_reference.json, whose
+% value.clock binding lists ROWS ({node, name}) -- the read
+% ndi.v2.vocabNodes('clock') makes ([clock terms get nodes])
+p = fullfile(testCase.Dir, sub);
+mkdir(p);
+vals = cellfun(@(n, l) struct('node', n, 'name', l), rows(:, 1), rows(:, 2), ...
+    'UniformOutput', false);
+clk = struct('name', 'clock', 'type', 'ontology_term', ...
+    'constraints', struct('binding', struct('root', 'did_clocktype', ...
+    'expansion', 'value_set', 'values', {vals}, 'strength', 'required')));
+s = struct('fields', {{struct('name', 'value', 'type', 'structure', 'fields', {{clk}})}});
+fid = fopen(fullfile(p, 'relative_time_reference.json'), 'w');
+fwrite(fid, jsonencode(s));
+fclose(fid);
 end
 
 function p = flippedSchema(testCase)

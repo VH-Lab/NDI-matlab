@@ -308,16 +308,23 @@ classdef TestEpochAnchorFold < matlab.unittest.TestCase
         function testTheFourSignedClocksPassThrough(testCase)
             names = {'utc', 'dev_local_time', 'dev_global_time', ...
                      'exp_global_time'};
+            % Decided by Jess Haley, 2026-10-26 [clock terms get nodes]
+            % (did-schema V_eta_go_forward_class_audit.md). INVERTED: this
+            % test asserted an EMPTY node ("none is invented") until the
+            % nodes were decided; the fold now writes the decided node.
+            nodes = {'wikidata:Q1536', 'EMPTY:0000403', 'EMPTY:0000404', ...
+                     'EMPTY:0000405'};
             for k = 1:numel(names)
                 docs = {anchorDoc('anchor_1', 'sess_09', 't00001', names{k})};
                 idx  = epochRow('sess_09', 't00001', 'epoch_doc_A');
                 [plan, report] = ndi.migrate.internal.epochAnchorFold(docs, idx);
                 testCase.verifyEqual(numel(plan), 1, names{k});
                 clk = plan(1).body.relative_time_reference.value.clock;
-                testCase.verifyEqual(clk.name, names{k});
-                % Nodes are STAGED EMPTY in the schema's own binding: no NDIC
-                % identifier can be assigned, so none is invented.
-                testCase.verifyEqual(clk.node, '');
+                testCase.verifyEqual(clk.node, nodes{k}, names{k});
+                % the name is the schema's for that node (the handle today,
+                % the label once did-schema fills the nodes); read by node
+                % it is the same clock
+                testCase.verifyEqual(ndi.v2.vocabHandle('clock', clk), names{k});
                 testCase.verifyEqual(report.clock_tolerance_applied, 0);
             end
         end
@@ -337,8 +344,8 @@ classdef TestEpochAnchorFold < matlab.unittest.TestCase
                 [plan, report] = ndi.migrate.internal.epochAnchorFold(docs, idx);
                 testCase.verifyEqual(numel(plan), 1, pairs{k,1});
                 b = plan(1).body;
-                testCase.verifyEqual( ...
-                    b.relative_time_reference.value.clock.name, pairs{k,2});
+                testCase.verifyEqual(ndi.v2.vocabHandle('clock', ...
+                    b.relative_time_reference.value.clock), pairs{k,2});
                 testCase.verifyEqual(b.time_reference.clock_tolerance.seconds, 5);
                 testCase.verifyEqual(plan(1).clock_tolerance_seconds, 5);
                 testCase.verifyEqual(report.clock_tolerance_applied, 1);

@@ -13,6 +13,16 @@ function t = vocabTerm(kind, handle, schemaPath)
 %   binding for it (an older copy, or no DID_SCHEMA_PATH). A HANDLE NDI does
 %   not know is returned as {'' , HANDLE}, which is what writers stored before.
 %
+%   CLOCKS (KIND 'clock'). Decided by Jess Haley, 2026-10-26 [clock terms
+%   get nodes] (did-schema V_eta_go_forward_class_audit.md). While the
+%   schema's clock rows still hold EMPTY nodes, T is the decided node from
+%   ndi.v2.vocabNodes' table with the name the schema stores
+%   ({EMPTY:0000403, 'dev_local_time'}); once did-schema fills the nodes, T is
+%   the schema's row ({EMPTY:0000403, 'device local time'}). Writing the node
+%   now cannot be refused: DID-matlab's binding check
+%   (did2.schema.cache, bindingValueNotInSet) admits a value whose node is in
+%   no member when its name is one.
+%
 %   HANDLE may be a cellstr; T is then a 1xN struct array.
 %
 %   Example:
@@ -48,6 +58,11 @@ for k = 1:numel(handle)
     if ~isempty(stored)
         node{k} = V.storedNode(h);
         name{k} = stored;
+        if isempty(node{k}) && strcmp(kind, 'clock') && ~isempty(V.nodes{i})
+            % [clock terms get nodes]: the decided node, while the schema's
+            % row is still empty
+            node{k} = V.nodes{i}{1};
+        end
     else
         if ~isempty(V.nodes{i})
             node{k} = V.nodes{i}{1};

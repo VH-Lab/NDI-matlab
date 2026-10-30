@@ -91,6 +91,29 @@ classdef TestSyncruleParameters < matlab.unittest.TestCase
             testCase.verifyEqual(params.errorOnFailure, false);
         end
 
+        function testTheClockIsReadByNodeInEitherShape(testCase)
+            % Decided by Jess Haley, 2026-10-26 [clock terms get nodes]: the
+            % clock is written with its node, and its stored name becomes
+            % the label once did-schema fills the nodes. Every shape reads
+            % as the same ndi.time.clocktype string.
+            entries = {param('daqsystem ch1', 'text', 'dep1'), ...
+                param('daqsystem ch2', 'text', 'mk1'), ...
+                param('minimum embedded file overlap', 'quantity', 2), ...
+                param('errorOnFailure', 'quantity', 0)};
+            session = mockSession({systemDoc('sys_a', 'intan1'), systemDoc('sys_b', 'vhvis1')});
+            shapes = {struct('node', 'EMPTY:0000403', 'name', 'dev_local_time'), ...
+                struct('node', 'EMPTY:0000403', 'name', 'device local time'), ...
+                struct('node', '', 'name', 'dev_local_time'), ...
+                struct('node', '', 'name', 'device local time')};
+            for k = 1:numel(shapes)
+                doc = linkedConfigDoc(entries, 'sys_a', 'sys_b', shapes{k});
+                params = ndi.vintage.syncruleParameters(doc, session, ...
+                    'ndi.time.syncrule.commonTriggersOverlappingEpochs');
+                testCase.verifyEqual(params.epochclocktype, 'dev_local_time', ...
+                    sprintf('shape %d', k));
+            end
+        end
+
         function testTriggerChannelsNamedByTheirLink(testCase)
             % Jess Haley 2026-10-30 [trigger channels named by their link]:
             % the labels match the from / to edges
@@ -207,7 +230,9 @@ for k = 1:size(edges, 1)
 end
 p.depends_on = deps;
 p.base = struct('id', 'cfg_1', 'creation_timestamp', '2026-01-01T00:00:00.000Z');
-p.clock_alignment_configuration = struct('clock', struct('node', '', 'name', clockName), ...
+clk = clockName;
+if ~isstruct(clk); clk = struct('node', '', 'name', clockName); end
+p.clock_alignment_configuration = struct('clock', clk, ...
     'method', struct('parameters', {entries}));
 doc = ndi.document(p);
 end

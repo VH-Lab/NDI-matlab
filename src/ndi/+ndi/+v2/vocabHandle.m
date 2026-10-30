@@ -1,8 +1,9 @@
 function h = vocabHandle(kind, term, schemaPath)
 %VOCABHANDLE The name NDI's code uses for a stored relation, entity type or channel type.
 %
-%   H = ndi.v2.vocabHandle(KIND, TERM) for KIND 'relation', 'entity_type' or
-%   'channel_type'. TERM is what a document stores -- an ontology_term
+%   H = ndi.v2.vocabHandle(KIND, TERM) for KIND 'relation', 'entity_type',
+%   'channel_type' or 'clock' (the ndi.time.clocktype string of a stored
+%   value.clock: Jess Haley 2026-10-26 [clock terms get nodes]). TERM is what a document stores -- an ontology_term
 %   ({node, name}) or a char name. H is NDI's handle for it ('part_of',
 %   'dataset', 'ai'), found
 %

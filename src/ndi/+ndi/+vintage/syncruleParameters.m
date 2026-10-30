@@ -123,8 +123,11 @@ end
 
 % ---- the typed fields -------------------------------------------------
 clockName = '';
-if isfield(cfg, 'clock') && isstruct(cfg.clock) && isfield(cfg.clock, 'name')
-    clockName = cfg.clock.name;
+if isfield(cfg, 'clock') && isstruct(cfg.clock)
+    % the ndi.time.clocktype string, by node first, then by name (Decided by
+    % Jess Haley, 2026-10-26 [clock terms get nodes]: the stored name becomes
+    % the label once did-schema fills the clock nodes)
+    clockName = ndi.v2.vocabHandle('clock', cfg.clock);
 end
 
 params = struct();
