@@ -71,7 +71,9 @@ classdef TestSyncruleParameters < matlab.unittest.TestCase
 
         function testTriggerChannelsAreMethodParameters(testCase)
             % a channel-based rule: the channels are the parameters
-            % DID-matlab's jParameterList writes ('daqsystem ch1', text)
+            % DID-matlab's jParameterList writes ('daqsystem ch1', text);
+            % a session migrated before [trigger channels named by their
+            % link] holds these labels and must still open
             entries = {param('daqsystem ch1', 'text', 'dep1'), ...
                 param('daqsystem ch2', 'text', 'mk1'), ...
                 param('minimum embedded file overlap', 'quantity', 2), ...
@@ -87,6 +89,57 @@ classdef TestSyncruleParameters < matlab.unittest.TestCase
             testCase.verifyEqual(params.epochclocktype, 'dev_local_time');
             testCase.verifyEqual(params.minEmbeddedFileOverlap, 2);
             testCase.verifyEqual(params.errorOnFailure, false);
+        end
+
+        function testTriggerChannelsNamedByTheirLink(testCase)
+            % Jess Haley 2026-10-30 [trigger channels named by their link]:
+            % the labels match the from / to edges
+            entries = {param('from trigger channel', 'text', 'dep1'), ...
+                param('to trigger channel', 'text', 'mk1'), ...
+                param('minimum embedded file overlap', 'quantity', 2)};
+            doc = linkedConfigDoc(entries, 'sys_a', 'sys_b', 'dev_local_time');
+            session = mockSession({systemDoc('sys_a', 'intan1'), systemDoc('sys_b', 'vhvis1')});
+            params = ndi.vintage.syncruleParameters(doc, session, ...
+                'ndi.time.syncrule.commonTriggersOverlappingEpochs');
+            testCase.verifyEqual(params.daqsystem1_name, 'intan1');
+            testCase.verifyEqual(params.daqsystem2_name, 'vhvis1');
+            testCase.verifyEqual(params.daqsystem_ch1, 'dep1');
+            testCase.verifyEqual(params.daqsystem_ch2, 'mk1');
+        end
+
+        function testTriggerChannelLabelsAreSpellingTolerant(testCase)
+            % compared without case, spaces or underscores, as every
+            % other method parameter here
+            entries = {param('From_Trigger_Channel', 'text', 'dep1'), ...
+                param('to_trigger_channel', 'text', 'mk1')};
+            doc = linkedConfigDoc(entries, 'sys_a', 'sys_b', 'dev_local_time');
+            session = mockSession({systemDoc('sys_a', 'intan1'), systemDoc('sys_b', 'vhvis1')});
+            params = ndi.vintage.syncruleParameters(doc, session, ...
+                'ndi.time.syncrule.randomPulses');
+            testCase.verifyEqual(params.daqsystem_ch1, 'dep1');
+            testCase.verifyEqual(params.daqsystem_ch2, 'mk1');
+        end
+
+        function testTheNewTriggerLabelWinsOverTheOld(testCase)
+            entries = {param('daqsystem ch1', 'text', 'old1'), ...
+                param('from trigger channel', 'text', 'dep1'), ...
+                param('daqsystem ch2', 'text', 'old2'), ...
+                param('to trigger channel', 'text', 'mk1')};
+            doc = linkedConfigDoc(entries, 'sys_a', 'sys_b', 'dev_local_time');
+            session = mockSession({systemDoc('sys_a', 'intan1'), systemDoc('sys_b', 'vhvis1')});
+            params = ndi.vintage.syncruleParameters(doc, session, ...
+                'ndi.time.syncrule.randomPulses');
+            testCase.verifyEqual(params.daqsystem_ch1, 'dep1');
+            testCase.verifyEqual(params.daqsystem_ch2, 'mk1');
+        end
+
+        function testAMissingTriggerChannelIsStillAnError(testCase)
+            % only one of the two: the reader still refuses to invent one
+            entries = {param('from trigger channel', 'text', 'dep1')};
+            doc = linkedConfigDoc(entries, 'sys_a', 'sys_b', 'dev_local_time');
+            session = mockSession({systemDoc('sys_a', 'intan1'), systemDoc('sys_b', 'vhvis1')});
+            testCase.verifyError(@() ndi.vintage.syncruleParameters(doc, session, ...
+                'ndi.time.syncrule.randomPulses'), 'NDI:vintage:syncruleMissingField');
         end
 
         function testErrorOnFailureDefaultsWhenAbsent(testCase)
