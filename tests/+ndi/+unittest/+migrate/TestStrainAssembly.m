@@ -134,14 +134,15 @@ classdef TestStrainAssembly < matlab.unittest.TestCase
 
         function testAStrainFieldThePassDoesNotWriteLeavesItAsV1(testCase)
             % [generic stage is lossless] (Jess Haley, 2026-10-25, audit
-            % item 2): breedingType, stockNumber, diseaseModel, lookupLabel,
-            % digitalIdentifier, alternateIdentifier have no place; a strain
-            % stating one is left as passthrough, and so is every strain
-            % whose background it is.
+            % item 2): a field with no place leaves the strain as
+            % passthrough, and every strain whose background it is.
+            % AMENDED 2026-10-30: stockNumber (the field this used) now has
+            % a place ([openMINDS strain leftovers]), so a field outside the
+            % openMINDS Strain set stands in for "no place".
             structs = haleyBacteria();
             for k = 1:numel(structs)
                 if strcmp(structs{k}.base.id, 'op50_doc')
-                    structs{k}.openminds.fields.stockNumber = 'CGC-OP50';
+                    structs{k}.openminds.fields.notAStrainField = 'x';
                 end
             end
             [kept, minted, report] = ndi.migrate.internal.strainAssembly(structs);
@@ -150,7 +151,149 @@ classdef TestStrainAssembly < matlab.unittest.TestCase
                 'its background is not assembled, so neither is the child');
             testCase.verifyTrue(anyId(kept, 'op50_doc'));
             testCase.verifyEqual(report.strains_unplaced, 2);
-            testCase.verifyTrue(any(contains(report.incomplete_reasons, 'stockNumber')));
+            testCase.verifyTrue(any(contains(report.incomplete_reasons, 'notAStrainField')));
+            testCase.verifyTrue(any(contains(report.incomplete_reasons, '[carry-092]')));
+        end
+
+        % ---------------- [openMINDS strain leftovers] -------------------
+        % Decided by Jess Haley, 2026-10-27 [openMINDS strain leftovers] and
+        % 2026-10-30 [openMINDS strain leftovers settled] (did-schema
+        % V_eta_go_forward_class_audit.md, G49).
+
+        function testIdentifiersAllGoInTheGlobalIdentifierList(testCase)
+            f = struct('name', 'C57BL/6J', 'ontologyIdentifier', 'RRID:IMSR_JAX:000664', ...
+                'digitalIdentifier', {{'ndi://rrid_doc'}}, ...
+                'alternateIdentifier', {{'B6', 'C57BL/6'}});
+            structs = {strainOm('b6_doc', f, {'rrid_doc'}), ...
+                childOm('rrid_doc', 'RRID', struct('identifier', 'RRID:MGI:3028467'))};
+            [kept, minted, report] = ndi.migrate.internal.strainAssembly(structs);
+            testCase.verifyEqual(report.strains_assembled, 1);
+            e = strainWithId(minted, 'b6_doc');
+            testCase.verifyEqual(e.entity.global_identifier, ...
+                {'RRID:IMSR_JAX:000664', 'RRID:MGI:3028467', 'B6', 'C57BL/6'});
+            testCase.verifyFalse(anyId(kept, 'rrid_doc'), ...
+                'the identifier document is fully written, so it is consumed');
+            testCase.verifyEqual(report.children_consumed, 1);
+        end
+
+        function testAJaxStockNumberIsAnRrid(testCase)
+            structs = stockFixture('JAX', '000664');
+            [kept, minted, ~] = ndi.migrate.internal.strainAssembly(structs);
+            e = strainWithId(minted, 's_doc');
+            testCase.verifyEqual(e.entity.global_identifier, {'RRID:IMSR_JAX:000664'});
+            testCase.verifyEmpty(assertionAbout(minted, 's_doc', 'Catalog Number'));
+            testCase.verifyFalse(anyId(kept, 'stock_doc'), 'the RRID says the vendor');
+            testCase.verifyTrue(anyId(kept, 'org_doc'), 'an Organization is never consumed here');
+        end
+
+        function testMmrrcAndBloomingtonStockNumbersAreRrids(testCase)
+            [~, minted] = ndi.migrate.internal.strainAssembly(stockFixture('MMRRC', '000231-UNC'));
+            testCase.verifyEqual(strainWithId(minted, 's_doc').entity.global_identifier, ...
+                {'RRID:MMRRC_000231-UNC'});
+            [~, minted] = ndi.migrate.internal.strainAssembly(stockFixture('BDSC', '3605'));
+            testCase.verifyEqual(strainWithId(minted, 's_doc').entity.global_identifier, ...
+                {'RRID:BDSC_3605'});
+        end
+
+        function testAnyOtherVendorIsACatalogNumber(testCase)
+            % CGC included: a WormBase RRID needs the WBStrain id, which a
+            % CGC stock number does not give
+            structs = stockFixture('CGC', 'OP50');
+            [kept, minted, report] = ndi.migrate.internal.strainAssembly(structs);
+            testCase.verifyEqual(report.strains_assembled, 1);
+            e = strainWithId(minted, 's_doc');
+            testCase.verifyFalse(isfield(e.entity, 'global_identifier'));
+            a = assertionAbout(minted, 's_doc', 'Catalog Number');
+            testCase.verifyNumElements(a, 1);
+            testCase.verifyEqual(a{1}.statement.variable.node, 'NCIT:C99286');
+            testCase.verifyEqual(a{1}.text.value.text, 'OP50');
+            testCase.verifyTrue(anyId(kept, 'stock_doc'), ...
+                'its vendor link is not in the catalog number, so the StockNumber is kept');
+        end
+
+        function testAnInlineStockNumberIsACatalogNumber(testCase)
+            structs = haleyBacteria();
+            for k = 1:numel(structs)
+                if strcmp(structs{k}.base.id, 'op50_doc')
+                    structs{k}.openminds.fields.stockNumber = 'CGC-OP50';
+                end
+            end
+            [~, minted, report] = ndi.migrate.internal.strainAssembly(structs);
+            testCase.verifyEqual(report.strains_assembled, 2);
+            a = assertionAbout(minted, 'op50_doc', 'Catalog Number');
+            testCase.verifyNumElements(a, 1);
+            testCase.verifyEqual(a{1}.text.value.text, 'CGC-OP50');
+        end
+
+        function testAnUnresolvedStockNumberLeavesTheStrainAsV1(testCase)
+            f = struct('name', 'X', 'stockNumber', {{'ndi://missing_doc'}});
+            structs = {strainOm('s_doc', f, {'missing_doc'})};
+            [kept, minted, report] = ndi.migrate.internal.strainAssembly(structs);
+            testCase.verifyEmpty(strainWithId(minted, 's_doc'));
+            testCase.verifyTrue(anyId(kept, 's_doc'));
+            testCase.verifyTrue(any(contains(report.incomplete_reasons, '[carry-092]')));
+        end
+
+        function testBreedingTypeIsATermAssertion(testCase)
+            f = struct('name', 'X', 'breedingType', {{'ndi://bt_doc'}});
+            structs = {strainOm('s_doc', f, {'bt_doc'}), ...
+                childOm('bt_doc', 'BreedingType', struct('name', 'inbred', ...
+                    'definition', 'Mated with close relatives.'))};
+            [kept, minted, ~] = ndi.migrate.internal.strainAssembly(structs);
+            a = assertionAbout(minted, 's_doc', 'breeding');
+            testCase.verifyNumElements(a, 1);
+            testCase.verifyEqual(a{1}.statement.variable.node, 'NCIT:C42877');
+            testCase.verifyEqual(a{1}.term.value.node, 'NCIT:C28422');
+            testCase.verifyEqual(a{1}.term.value.name, 'Inbred Strain');
+            testCase.verifyFalse(anyId(kept, 'bt_doc'), ...
+                'a term''s definition is read back from the term, not stored');
+        end
+
+        function testAnOutbredInlineBreedingType(testCase)
+            f = struct('name', 'X', 'breedingType', 'outbred');
+            [~, minted, ~] = ndi.migrate.internal.strainAssembly({strainOm('s_doc', f, {})});
+            a = assertionAbout(minted, 's_doc', 'breeding');
+            testCase.verifyEqual(a{1}.term.value.node, 'EFO:0004430');
+        end
+
+        function testEachDiseaseModelIsATermAssertion(testCase)
+            f = struct('name', 'X', 'diseaseModel', {{'ndi://d1_doc', 'ndi://d2_doc'}});
+            structs = {strainOm('s_doc', f, {'d1_doc', 'd2_doc'}), ...
+                childOm('d1_doc', 'Disease', struct('name', 'Alzheimer disease', ...
+                    'preferredOntologyIdentifier', 'MONDO:0004975')), ...
+                childOm('d2_doc', 'Disease', struct('name', 'epilepsy', ...
+                    'preferredOntologyIdentifier', 'MONDO:0005027'))};
+            [~, minted, ~] = ndi.migrate.internal.strainAssembly(structs);
+            a = assertionAbout(minted, 's_doc', 'disease model');
+            testCase.verifyNumElements(a, 2);
+            testCase.verifyEqual(a{1}.statement.variable.node, 'BAO:0010279');
+            testCase.verifyEqual(a{1}.term.value.node, 'MONDO:0004975');
+            testCase.verifyEqual(a{2}.term.value.node, 'MONDO:0005027');
+        end
+
+        function testLookupLabelIsNotStoredAndDoesNotRefuse(testCase)
+            f = struct('name', 'X', 'lookupLabel', 'X (mouse)');
+            [~, minted, report] = ndi.migrate.internal.strainAssembly({strainOm('s_doc', f, {})});
+            testCase.verifyEqual(report.strains_assembled, 1);
+            testCase.verifyEqual(report.assertions_minted, 0);
+        end
+
+        function testStrainsDifferingOnlyInStockNumberDoNotMerge(testCase)
+            a = stockFixture('CGC', 'OP50');
+            b = stockFixture('CGC', 'OP51');
+            for k = 1:numel(b)
+                b{k}.base.id = [b{k}.base.id '_b'];
+                b{k}.base.session_id = 'sess_2';
+            end
+            b{1}.openminds.fields.stockNumber = {'ndi://stock_doc_b'};
+            b{1}.depends_on(1).value = 'stock_doc_b';
+            b{2}.openminds.fields.vendor = {'ndi://org_doc_b'};
+            b{2}.depends_on(1).value = 'org_doc_b';
+            structs = [a, b, {datasetEntity('ds_1')}];
+            [~, minted, report] = ndi.migrate.internal.strainAssembly(structs);
+            testCase.verifyEqual(report.strains_merged_away, 0);
+            testCase.verifyNotEmpty(strainWithId(minted, 's_doc'));
+            testCase.verifyNotEmpty(strainWithId(minted, 's_doc_b'));
         end
 
         function testGlobalIdentifierIsACurie(testCase)
@@ -177,13 +320,14 @@ classdef TestStrainAssembly < matlab.unittest.TestCase
             structs = haleyBacteria();
             [kept, ~, report] = ndi.migrate.internal.strainAssembly(structs);
             testCase.verifyEqual(report.fragments_seen, 2);
-            % UPDATED 2026-10-25 ([generic stage is lossless], Jess Haley): the
-            % Species fragment also states a definition and a synonym, which
-            % the strain's Species term does not write, so it is KEPT (carried
-            % as v1); the GeneticStrainType fragment is fully placed and goes.
-            testCase.verifyEqual(report.fragments_consumed, 1);
-            testCase.verifyEqual(report.fragments_retained, 1);
-            testCase.verifyTrue(anyId(kept, 'species_doc'));
+            % UPDATED 2026-10-30 ([openMINDS strain leftovers], Jess Haley,
+            % 2026-10-27): the Species fragment's definition and synonym are
+            % read back from the term, not stored, so it is fully placed and
+            % consumed with the GeneticStrainType fragment. (2026-10-25 to
+            % 2026-10-30 it was kept, carried as v1, for those two fields.)
+            testCase.verifyEqual(report.fragments_consumed, 2);
+            testCase.verifyEqual(report.fragments_retained, 0);
+            testCase.verifyFalse(anyId(kept, 'species_doc'));
             testCase.verifyFalse(anyId(kept, 'gst_doc'));
             testCase.verifyFalse(anyId(kept, 'op50_doc'), 'the strains are replaced');
         end
@@ -390,6 +534,28 @@ d = struct('document_class', dc('entity', {'base'}), ...
     'base', struct('id', id, 'session_id', id, 'name', 'n', ...
         'datestamp', '2024-01-01T00:00:00.000Z'), ...
     'entity', struct('type', struct('node', '', 'name', 'dataset'), 'name', 'ds'));
+end
+
+function b = strainOm(id, f, childRefs)
+b = openmindsDoc(id, 'openminds.core.research.Strain', ...
+    'https://openminds.om-i.org/types/Strain', f, childRefs);
+end
+
+function b = childOm(id, typeName, f, childRefs)
+if nargin < 4; childRefs = {}; end
+b = openmindsDoc(id, ['openminds.x.' typeName], ...
+    ['https://openminds.om-i.org/types/' typeName], f, childRefs);
+end
+
+function s = stockFixture(vendorShortName, number)
+% a Strain whose stockNumber is a StockNumber document whose vendor is an
+% Organization document (openMINDSobj2struct flattens each into its own)
+f = struct('name', 'S', 'stockNumber', {{'ndi://stock_doc'}});
+s = { strainOm('s_doc', f, {'stock_doc'}), ...
+    childOm('stock_doc', 'StockNumber', struct('identifier', number, ...
+        'vendor', {{'ndi://org_doc'}}), {'org_doc'}), ...
+    childOm('org_doc', 'Organization', struct('shortName', vendorShortName, ...
+        'fullName', [vendorShortName ' (full name)']))};
 end
 
 function s = twoParentCross()
