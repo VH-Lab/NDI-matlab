@@ -305,7 +305,7 @@ function [kept, minted, report] = subjectStrainAssembly(v1Bodies, migratedStruct
 %
 %   See also: ndi.migrate.local, ndi.migrate.internal.strainAssembly,
 %     ndi.migrate.internal.softwareDedup,
-%     ndi.migrate.internal.ontologyRowSubjects,
+%     ndi.migrate.internal.ontologyRowsCarried,
 %     did2.convert.migrators_j.openminds_subject,
 %     DID-schema schemas/V_eta_openminds_family_record.md Parts 2 and 6.
 

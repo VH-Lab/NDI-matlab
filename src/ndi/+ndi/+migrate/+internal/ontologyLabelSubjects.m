@@ -160,7 +160,7 @@ function [plan, report] = ontologyLabelSubjects(migratedStructs)
 %     unresolved_no_ontology_node
 %     changed                    true iff PLAN is non-empty
 %
-%   See also: ndi.migrate.internal.ontologyRowSubjects,
+%   See also: ndi.migrate.internal.ontologyRowsCarried,
 %   ndi.migrate.internal.pathSPromotion.
 
 arguments
