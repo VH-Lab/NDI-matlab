@@ -115,5 +115,121 @@ classdef TestElementLocalIdentifier < matlab.unittest.TestCase
                 testCase.verifyEqual(f.reference, wantRef{k}, lids{k});
             end
         end
+
+        % ---- [element name and reference stored apart] (2026-10-29) and
+        % [element name kept apart, base.name carried] (2026-10-30): the name
+        % is entity.name; the reference is what follows [name ' | ']
+
+        function testApartNameHoldingPipe(testCase)
+            % a name holding ' | ' and ending in ' | <integer>': the known
+            % name, not the last ' | ', decides where the reference starts
+            [n, r, apart] = ndi.vintage.elementNameReferenceApart( ...
+                'a | 4', 'a | 4 | 3');
+            testCase.verifyTrue(apart);
+            testCase.verifyEqual(n, 'a | 4');
+            testCase.verifyEqual(r, 3);
+            % the same name with no reference
+            [n, r, apart] = ndi.vintage.elementNameReferenceApart('a | 4', 'a | 4');
+            testCase.verifyTrue(apart);
+            testCase.verifyEqual(n, 'a | 4');
+            testCase.verifyEmpty(r);
+        end
+
+        function testApartTextReference(testCase)
+            [n, r, apart] = ndi.vintage.elementNameReferenceApart('ctx', 'ctx | A2');
+            testCase.verifyTrue(apart);
+            testCase.verifyEqual(n, 'ctx');
+            testCase.verifyEqual(r, 'A2');
+            % text after the name that holds ' | ' stays whole
+            [~, r] = ndi.vintage.elementNameReferenceApart('ctx', 'ctx | x | y');
+            testCase.verifyEqual(r, 'x | y');
+        end
+
+        function testApartNonIntegerReference(testCase)
+            [n, r, apart] = ndi.vintage.elementNameReferenceApart('ctx', 'ctx | 1.5');
+            testCase.verifyTrue(apart);
+            testCase.verifyEqual(n, 'ctx');
+            testCase.verifyEqual(r, 1.5);
+        end
+
+        function testApartEmptyName(testCase)
+            % an element with an empty name: no entity.name, identifier
+            % ' | <reference>'
+            [n, r, apart] = ndi.vintage.elementNameReferenceApart('', ' | 2');
+            testCase.verifyTrue(apart);
+            testCase.verifyEqual(n, '');
+            testCase.verifyEqual(r, 2);
+            [n, r] = ndi.vintage.elementNameReferenceApart([], ' | B');
+            testCase.verifyEqual(n, '');
+            testCase.verifyEqual(r, 'B');
+        end
+
+        function testApartOldEntityWithoutName(testCase)
+            % migrated before the decision: no `name`; today's split
+            [n, r, apart] = ndi.vintage.elementNameReferenceApart('', 'leftcortex | 2');
+            testCase.verifyFalse(apart);
+            testCase.verifyEqual(n, 'leftcortex');
+            testCase.verifyEqual(r, 2);
+            [n, r, apart] = ndi.vintage.elementNameReferenceApart([], 'electrode16 (ref 1)');
+            testCase.verifyFalse(apart);
+            testCase.verifyEqual(n, 'electrode16');
+            testCase.verifyEqual(r, 1);
+            [n, r] = ndi.vintage.elementNameReferenceApart('', 'rayostim');
+            testCase.verifyEqual(n, 'rayostim');
+            testCase.verifyEmpty(r);
+        end
+
+        function testApartOldEntityWhoseNameIsBaseName(testCase)
+            % migrated 2026-10-27..29: `name` was the v1 base.name and does
+            % not lead the identifier; the identifier alone is read
+            [n, r, apart] = ndi.vintage.elementNameReferenceApart( ...
+                'some base name', 'leftcortex | 3');
+            testCase.verifyFalse(apart);
+            testCase.verifyEqual(n, 'leftcortex');
+            testCase.verifyEqual(r, 3);
+        end
+
+        function testApartOldRefFormAfterTheName(testCase)
+            [n, r, apart] = ndi.vintage.elementNameReferenceApart( ...
+                'x (ref 7)', 'x (ref 7) (ref 1)');
+            testCase.verifyTrue(apart);
+            testCase.verifyEqual(n, 'x (ref 7)');
+            testCase.verifyEqual(r, 1);
+        end
+
+        function testApartAcceptsStrings(testCase)
+            [n, r] = ndi.vintage.elementNameReferenceApart("ctx", "ctx | 4");
+            testCase.verifyEqual(n, 'ctx');
+            testCase.verifyEqual(r, 4);
+        end
+
+        function testElementFieldsReadsTheNameFirst(testCase)
+            testCase.assumeTrue(~isempty(getenv('DID_SCHEMA_PATH')), ...
+                'DID_SCHEMA_PATH is not set (ndi.v2.vocabQuery reads it)');
+            S = ndi.unittest.vintage.FakeFileSession({}, ...
+                containers.Map('KeyType', 'char', 'ValueType', 'char'));
+            % {entity.name ([] = no field), local_identifier, name, reference}
+            cases = {
+                'a | 4',  'a | 4 | 3',       'a | 4',  3
+                'ctx',    'ctx | A2',        'ctx',    'A2'
+                'ctx',    'ctx | 1.5',       'ctx',    1.5
+                [],       ' | 2',            '',       2
+                [],       'leftcortex | 2',  'leftcortex', 2
+                'base',   'leftcortex | 2',  'leftcortex', 2
+                };
+            for k = 1:size(cases, 1)
+                ent = struct('local_identifier', cases{k, 2});
+                if ~isempty(cases{k, 1})
+                    ent.name = cases{k, 1};
+                end
+                doc.document_properties = struct( ...
+                    'base', struct('id', sprintf('el_apart_%d', k)), ...
+                    'document_class', struct('class_name', 'entity'), ...
+                    'entity', ent);
+                f = ndi.vintage.elementFields(doc, S);
+                testCase.verifyEqual(f.name, cases{k, 3}, cases{k, 2});
+                testCase.verifyEqual(f.reference, cases{k, 4}, cases{k, 2});
+            end
+        end
     end
 end

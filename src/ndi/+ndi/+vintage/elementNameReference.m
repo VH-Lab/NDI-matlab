@@ -22,7 +22,13 @@ function [name, reference, form] = elementNameReference(localId)
 %   The display form is tried first and cannot be mistaken for the old one:
 %   an old identifier ends in ')', never in ' | <integer>'.
 %
-%   See also ndi.vintage.elementLocalIdentifier, ndi.vintage.elementFields.
+%   SINCE [element name and reference stored apart] (Jess Haley, 2026-10-29)
+%   a migrated element's name is the entity's `name`; ndi.vintage.elementFields
+%   calls ndi.vintage.elementNameReferenceApart, which reads the reference
+%   after that name and falls back to this split for an entity without one.
+%
+%   See also ndi.vintage.elementLocalIdentifier, ndi.vintage.elementFields,
+%            ndi.vintage.elementNameReferenceApart.
 
 arguments
     localId
