@@ -8,7 +8,11 @@ function r = timeOf(container, refDoc, depth, cache)
 %                   when it cannot be)
 %     start_offset, end_offset  seconds from the referent (relative only)
 %     relation      the OWL-Time relation to the referent, when given
-%     clock         the clock the offsets are on
+%     clock         the clock the offsets are on, as its ndi.time.clocktype
+%                   string ('dev_local_time'), read by node first, then by
+%                   name (ndi.v2.vocabHandle 'clock'; Jess Haley 2026-10-26
+%                   [clock terms get nodes]), so it is the same whether the
+%                   document stores the node, the label, or the old name
 %     referent_id   the document the reference is relative to
 %     approximate   true when the start or end is marked approximate
 %     tolerance     [minus plus] seconds of the start (NaN when none)
@@ -62,7 +66,7 @@ if strcmp(k, 'absolute_time_reference')
 end
 r.kind = 'relative';
 r.relation = ndi.v2.termName(getOr(v, 'relation', ''));
-r.clock = ndi.v2.termName(getOr(v, 'clock', ''));
+r.clock = ndi.v2.vocabHandle('clock', getOr(v, 'clock', ''));   % by node first
 ids = ndi.v2.edgeIds(p, 'referent_id');
 if ~isempty(ids), r.referent_id = ids{1}; end
 st = getOr(v, 'start', struct());

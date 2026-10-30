@@ -620,9 +620,61 @@ classdef TestSubjectStrainAssembly < matlab.unittest.TestCase
         end
 
         function testIdentifierlessStrainStillAssembles(testCase)
-            [~, minted, ~] = runOn(@twoRatsSameGenotype);
+            % no ontology id and no openminds_id: nothing to write
+            [v1, mig] = twoRatsSameGenotype();
+            v1 = clearOpenmindsIds(v1);
+            [~, minted, report] = ndi.migrate.internal.subjectStrainAssembly(v1, mig);
             cre = strainNamed(minted, 'OTR-IRES-Cre');
             testCase.verifyFalse(isfield(cre.entity, 'global_identifier'));
+            testCase.verifyEqual(report.openminds_ids_on_strains, 0);
+        end
+
+        function testLabMadeStrainCarriesItsOpenmindsId(testCase)
+            % Decided by Jess Haley, 2026-10-27 [openMINDS subject leftovers]
+            % (did-schema V_eta_go_forward_class_audit.md): "a lab-made
+            % strain's `openminds_id` goes on the strain entity's
+            % `global_identifier` as `openminds:<id>`". OTR-IRES-Cre has no
+            % ontology node; the writer gave each row's Strain its own id, and
+            % both survive the collapse into one entity, in row order.
+            [~, minted, report] = runOn(@twoRatsSameGenotype);
+            cre = strainNamed(minted, 'OTR-IRES-Cre');
+            testCase.verifyEqual(cre.entity.global_identifier, { ...
+                'openminds:https://openminds.om-i.org/instances/rat1_strain', ...
+                'openminds:https://openminds.om-i.org/instances/rat2_strain'});
+            testCase.verifyEqual(report.openminds_ids_on_strains, 2);
+        end
+
+        function testOpenmindsIdDoesNotSplitTheDedup(testCase)
+            % the per-row ids differ, the strain is the same: still 2 entities
+            [~, minted, report] = runOn(@twoRatsSameGenotype);
+            testCase.verifyEqual(report.distinct_strains, 2);
+            testCase.verifyNumElements(strainEntities(minted), 2);
+        end
+
+        function testControlledStrainDoesNotCarryItsOpenmindsId(testCase)
+            % SD has an ontology node (RRID:RGD_70508): its id is rebuilt from
+            % the term, not written ([openMINDS subject leftovers])
+            [~, minted, ~] = runOn(@twoRatsSameGenotype);
+            sd = strainNamed(minted, 'SD');
+            testCase.verifyEqual(sd.entity.global_identifier, {'RRID:RGD_70508'});
+        end
+
+        function testAnAlternateIdentifierMakesAStrainNotLabMade(testCase)
+            % the same predicate as DID-matlab's carry-117 branch
+            % (migrators_j.openminds_subject): any of preferredOntologyIdentifier,
+            % ontologyIdentifier, interlexIdentifier, alternateIdentifier
+            [v1, mig] = twoRatsSameGenotype();
+            for k = 1:numel(v1)
+                if endsWith(v1{k}.base.id, '_strain')
+                    v1{k}.openminds.fields.interlexIdentifier = 'ILX:0000001';
+                end
+            end
+            [~, minted, report] = ndi.migrate.internal.subjectStrainAssembly(v1, mig);
+            cre = strainNamed(minted, 'OTR-IRES-Cre');
+            if isfield(cre.entity, 'global_identifier')
+                testCase.verifyFalse(any(startsWith(cre.entity.global_identifier, 'openminds:')));
+            end
+            testCase.verifyEqual(report.openminds_ids_on_strains, 0);
         end
 
         % ---------------- denominators ------------------------------------
@@ -1182,6 +1234,15 @@ for k = 1:numel(v1)
     end
 end
 error('fixture has no document %s', id);
+end
+
+function v1 = clearOpenmindsIds(v1)
+%CLEAROPENMINDSIDS Blank every did_v1 body's `openminds.openminds_id`.
+for k = 1:numel(v1)
+    if isfield(v1{k}, 'openminds')
+        v1{k}.openminds.openminds_id = '';
+    end
+end
 end
 
 function mig = resubject(mig, id, subjectId)

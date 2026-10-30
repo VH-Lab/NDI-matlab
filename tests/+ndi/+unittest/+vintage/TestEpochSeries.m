@@ -41,6 +41,23 @@ classdef TestEpochSeries < matlab.unittest.TestCase
             testCase.verifyEmpty(s);
         end
 
+        function testTheClockIsReadByNodeInEitherShape(testCase)
+            % Decided by Jess Haley, 2026-10-26 [clock terms get nodes]: a
+            % clock written with its node, with the label once did-schema
+            % fills the nodes, or with neither, is the same clocktype.
+            shapes = {{'dev_local_time', 'EMPTY:0000403'}, ...
+                {'device local time', 'EMPTY:0000403'}, ...
+                {'device local time', ''}, ...
+                {'UTC', 'wikidata:Q1536'}};
+            want = {'dev_local_time', 'dev_local_time', 'dev_local_time', 'utc'};
+            for k = 1:numel(shapes)
+                [obs, lookup] = fixture('t00009', 'epoch', shapes{k}{1}, 0, 1, shapes{k}{2});
+                s = ndi.vintage.epochSeries({obs}, lookup);
+                testCase.assertNumElements(s, 1, sprintf('shape %d', k));
+                testCase.verifyEqual(s.epoch_clock{1}.type, want{k}, sprintf('shape %d', k));
+            end
+        end
+
         function testNoObservationsIsEmptyNotAnError(testCase)
             s = ndi.vintage.epochSeries({}, @(id) []);
             testCase.verifyEmpty(s);
@@ -49,7 +66,8 @@ classdef TestEpochSeries < matlab.unittest.TestCase
     end
 end
 
-function [obs, lookup] = fixture(epochString, typeName, clockName, t0, t1)
+function [obs, lookup] = fixture(epochString, typeName, clockName, t0, t1, clockNode)
+if nargin < 6, clockNode = ''; end
 obs = struct();
 obs.document_class = struct('class_name', 'observation');
 obs.base = struct('id', 'ee_1', 'session_id', 'sess');
@@ -57,7 +75,7 @@ obs.depends_on = [struct('name', 'entity_id', 'value', 'el_neuron'), ...
     struct('name', 'time_reference_id', 'value', 'tr_1')];
 v = struct();
 if ~isempty(clockName)
-    v.clock = struct('node', '', 'name', clockName);
+    v.clock = struct('node', clockNode, 'name', clockName);
     v.start = struct('seconds', t0);
     v.end = struct('seconds', t1);
 else

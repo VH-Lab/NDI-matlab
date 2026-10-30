@@ -530,11 +530,15 @@ value = struct('relation', struct('node', 'time:intervalDuring', ...
                                   'name', 'intervalDuring'));
 hadClock = ~isempty(clockName);
 if hadClock
-    % Nodes are STAGED EMPTY in the schema's own binding (`did_clocktype`): no
-    % NDIC identifier can be assigned from any repository in scope, and the
-    % schema says so in its own documentation. Writing a made-up CURIE here
-    % would be worse than leaving it blank.
-    value.clock = struct('node', '', 'name', clockName);
+    % The clock's decided node and the name the schema lists (Decided by Jess
+    % Haley, 2026-10-26 [clock terms get nodes], did-schema
+    % V_eta_go_forward_class_audit.md: utc wikidata:Q1536, dev_local_time
+    % EMPTY:0000403, dev_global_time EMPTY:0000404, exp_global_time
+    % EMPTY:0000405). The schema's binding still lists EMPTY nodes; a node in
+    % no member is admitted by its name (DID-matlab did2.schema.cache), so
+    % this cannot be refused, and once the schema fills the nodes
+    % ndi.v2.vocabTerm writes its label with no change here.
+    value.clock = ndi.v2.vocabTerm('clock', clockName);
 end
 
 % CAPTURED BEFORE THE rmfield BELOW DESTROYS IT. The extent copy further down
@@ -613,7 +617,7 @@ if ~isfield(value, 'relation') || isempty(value.relation)
 end
 hadClock = ~isempty(clockName);
 if hadClock
-    value.clock = struct('node', '', 'name', clockName);
+    value.clock = ndi.v2.vocabTerm('clock', clockName);   % [clock terms get nodes]
 end
 if isfield(b, 'time_reference')
     b = rmfield(b, 'time_reference');
