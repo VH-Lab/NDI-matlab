@@ -128,17 +128,14 @@ jobs:
           [ "$s" = "$DID_SCHEMA_SHA" ] || { echo "::error::did-schema is at $s, resolved $DID_SCHEMA_SHA"; exit 1; }
           [ "$d" = "$DID_MATLAB_SHA" ] || { echo "::error::DID-matlab is at $d, resolved $DID_MATLAB_SHA"; exit 1; }
 
-      - name: Assemble V_eta schema set (stable + draft)
+      - name: Assemble V_eta schema set (tiered or flat)
         run: |
           mkdir -p "${GITHUB_WORKSPACE}/eta-schemas"
-          # [schema set renamed did_v2] (Jess Haley, 2026-10-25), step 1 "accept
-          # both names": schemas/did_v2/ when the checkout has it, else
-          # schemas/V_eta/; deprecated/ (the v1 passthrough shapes) only if present.
-          SET=did-schema/schemas/did_v2; [ -d "$SET" ] || SET=did-schema/schemas/V_eta
-          echo "SCHEMA SET: $SET"
-          cp "$SET"/stable/*.json "${GITHUB_WORKSPACE}/eta-schemas/"
-          cp "$SET"/draft/*.json  "${GITHUB_WORKSPACE}/eta-schemas/"
-          if [ -d "$SET/deprecated" ]; then cp "$SET"/deprecated/*.json "${GITHUB_WORKSPACE}/eta-schemas/"; fi
+          # Both layouts: the tiers (stable/, draft/, deprecated/ if present) and
+          # the flat schemas/did_v2/*.json of [one folder, final classes only]
+          # (Jess Haley, 2026-10-29); did_v2/ or V_eta/ ([schema set renamed
+          # did_v2]). See the script's header.
+          bash .github/scripts/assemble_did_schema_set.sh did-schema "${GITHUB_WORKSPACE}/eta-schemas"
 
       - name: Export env (schema path + eta test gate)
         run: |

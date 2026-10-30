@@ -2,8 +2,9 @@ function fetchSchemasAtRef(info, destDir)
 %FETCHSCHEMASATREF Download a DID-schema ref and extract the stable tree.
 %
 %   FETCHSCHEMASATREF(INFO, DESTDIR) downloads the GitHub tarball for
-%   INFO.repo at INFO.ref, extracts INFO.path inside it, and copies the
-%   resulting `*.json` files (plus any `index.json`) to DESTDIR.
+%   INFO.repo at INFO.ref, extracts INFO.path inside it (or, when that
+%   tier is gone, its flat parent: ndi.schemas.setFiles), and copies the
+%   resulting `*.json` files to DESTDIR.
 %
 %   The tarball mechanism is the lightest of the three options listed
 %   in issue #774 (submodule / tarball / shallow clone): a single HTTPS
@@ -65,21 +66,10 @@ function fetchSchemasAtRef(info, destDir)
         error('NDI:schemas:FetchFailed', ...
             'Unexpected tarball layout in %s.', extractDir);
     end
-    % [schema set renamed did_v2] (Jess Haley, 2026-10-25), step 1 "accept
-    % both names": a pinned schemas/V_eta/... path is read from schemas/did_v2/...
-    % when the tarball has it, and the other way round.
-    sourceDir = '';
-    for c = setNameCandidates(info.path)
-        candidate = fullfile(extractDir, entries(1).name, c{1});
-        if isfolder(candidate)
-            sourceDir = candidate;
-            break;
-        end
-    end
-    if isempty(sourceDir)
-        error('NDI:schemas:FetchFailed', ...
-            'Pinned path "%s" not found in tarball.', info.path);
-    end
+    % The pinned folder, or (once did-schema has no tiers) its flat parent:
+    % [one folder, final classes only] (Jess Haley, 2026-10-29) and
+    % [schema set renamed did_v2] (2026-10-25); see ndi.schemas.setFiles.
+    files = ndi.schemas.setFiles(fullfile(extractDir, entries(1).name), info.path);
 
     if isfolder(destDir)
         % Clear stale contents so the cache exactly mirrors the ref.
@@ -87,28 +77,9 @@ function fetchSchemasAtRef(info, destDir)
     end
     mkdir(destDir);
 
-    copyJsonFiles(sourceDir, destDir);
-end
-
-function c = setNameCandidates(p)
-%SETNAMECANDIDATES The pinned path under schemas/did_v2/ first, then under
-%   schemas/V_eta/ (one entry when the path names neither).
-p = char(p);
-didv2 = regexprep(p, '(^|/)V_eta(/|$)', '$1did_v2$2', 'once');
-veta  = regexprep(p, '(^|/)did_v2(/|$)', '$1V_eta$2', 'once');
-c = unique({didv2, veta, p}, 'stable');
-end
-
-function copyJsonFiles(srcDir, destDir)
-    listing = dir(fullfile(srcDir, '*.json'));
-    if isempty(listing)
-        error('NDI:schemas:FetchFailed', ...
-            'No *.json schemas found in %s.', srcDir);
-    end
-    for k = 1:numel(listing)
-        copyfile( ...
-            fullfile(srcDir, listing(k).name), ...
-            fullfile(destDir, listing(k).name));
+    for k = 1:numel(files)
+        [~, n, e] = fileparts(files{k});
+        copyfile(files{k}, fullfile(destDir, [n e]));
     end
 end
 

@@ -114,5 +114,63 @@ classdef TestSchemasLoader < matlab.unittest.TestCase
                 'NDI:schemas:UnpinnedRefresh');
         end
 
+        % ---- ndi.schemas.setFiles: tiered and flat did-schema layouts ----
+        % [one folder, final classes only] (Jess Haley, 2026-10-29): the
+        % loader must read schemas/did_v2/*.json once the tiers are gone,
+        % and keep reading schemas/did_v2/stable while they exist.
+
+        function testSetFilesReadsTheTieredLayout(testCase)
+            root = testCase.applyFixture( ...
+                matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
+            writeJson(fullfile(root, 'schemas', 'did_v2', 'stable'), {'entity', 'term_registry_meta'});
+            writeJson(fullfile(root, 'schemas', 'did_v2', 'draft'), {'item'});
+            writeJson(fullfile(root, 'schemas', 'did_v2'), {'index', 'topics'});
+            [files, src, layout] = ndi.schemas.setFiles(root, 'schemas/V_eta/stable');
+            testCase.verifyEqual(layout, 'pinned');
+            testCase.verifyEqual(src, fullfile(root, 'schemas', 'did_v2', 'stable'));
+            testCase.verifyEqual(names(files), {'entity.json', 'term_registry_meta.json'});
+        end
+
+        function testSetFilesReadsTheFlatLayout(testCase)
+            root = testCase.applyFixture( ...
+                matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
+            writeJson(fullfile(root, 'schemas', 'did_v2'), ...
+                {'entity', 'item', 'term_registry_meta', 'index', 'topics'});
+            [files, src, layout] = ndi.schemas.setFiles(root, 'schemas/V_eta/stable');
+            testCase.verifyEqual(layout, 'flat');
+            testCase.verifyEqual(src, fullfile(root, 'schemas', 'did_v2'));
+            % index.json and topics.json are not schemas
+            testCase.verifyEqual(names(files), ...
+                {'entity.json', 'item.json', 'term_registry_meta.json'});
+        end
+
+        function testSetFilesErrorsWhenNothingIsThere(testCase)
+            root = testCase.applyFixture( ...
+                matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
+            testCase.verifyError(@() ndi.schemas.setFiles(root, 'schemas/V_eta/stable'), ...
+                'NDI:schemas:FetchFailed');
+            % a non-tier pinned path has no flat fallback
+            writeJson(fullfile(root, 'schemas', 'did_v2'), {'entity'});
+            testCase.verifyError(@() ndi.schemas.setFiles(root, 'schemas/did_v2/other'), ...
+                'NDI:schemas:FetchFailed');
+        end
+
     end
+end
+
+function writeJson(folder, stems)
+if ~isfolder(folder); mkdir(folder); end
+for k = 1:numel(stems)
+    fid = fopen(fullfile(folder, [stems{k} '.json']), 'wt');
+    fprintf(fid, '{}');
+    fclose(fid);
+end
+end
+
+function n = names(files)
+n = cell(1, numel(files));
+for k = 1:numel(files)
+    [~, b, e] = fileparts(files{k});
+    n{k} = [b e];
+end
 end
