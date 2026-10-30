@@ -91,10 +91,12 @@ jobs:
       - name: Assemble the V_eta schema set
         run: |
           mkdir -p "${GITHUB_WORKSPACE}/eta-schemas"
-          # Both layouts: the tiers (stable/, draft/, deprecated/ if present) and
-          # the flat schemas/did_v2/*.json of [one folder, final classes only]
-          # (Jess Haley, 2026-10-29); did_v2/ or V_eta/ ([schema set renamed
-          # did_v2]). See the script's header.
+          # Every layout: the tiers, the flat did_v2/, and the family folders of
+          # [schema folders by family] (Jess Haley, 2026-10-30) with registries
+          # in schemas/registry/ and schemas/generated/; did_v2/ or V_eta/
+          # ([schema set renamed did_v2]). See the script's header. Its own test
+          # (both layouts built in a temp dir) runs first.
+          bash .github/scripts/test_assemble_did_schema_set.sh
           bash .github/scripts/assemble_did_schema_set.sh did-schema "${GITHUB_WORKSPACE}/eta-schemas"
           echo "DENOMINATOR: $(ls "${GITHUB_WORKSPACE}/eta-schemas" | wc -l) schema file(s) from did-schema@$(git -C did-schema rev-parse --short HEAD)"
           echo "DID_SCHEMA_PATH=${GITHUB_WORKSPACE}/eta-schemas" >> "$GITHUB_ENV"

@@ -32,7 +32,7 @@ classdef TestVocabNodes < matlab.unittest.TestCase
     methods (Test)
         function testEveryRegistryRelationNodeIsInTheTable(testCase)
             p = schemaPathOrSkip(testCase, 'binding_registry_meta.json');
-            reg = jsondecode(fileread(fullfile(p, 'binding_registry_meta.json')));
+            reg = jsondecode(fileread(ndi.v2.schemaFile(p, 'binding_registry_meta.json')));
             rows = reg.relation_bindings;
             if isstruct(rows), rows = num2cell(rows); end
             V = ndi.v2.vocabNodes('relation', p);
@@ -60,7 +60,7 @@ classdef TestVocabNodes < matlab.unittest.TestCase
 
         function testEveryRegistryEntityTypeNodeIsInTheTable(testCase)
             p = schemaPathOrSkip(testCase, 'binding_registry_meta.json');
-            reg = jsondecode(fileread(fullfile(p, 'binding_registry_meta.json')));
+            reg = jsondecode(fileread(ndi.v2.schemaFile(p, 'binding_registry_meta.json')));
             rows = reg.entity_type_bindings;
             if isstruct(rows), rows = num2cell(rows); end
             V = ndi.v2.vocabNodes('entity_type', p);
@@ -209,7 +209,7 @@ end
 
 function p = schemaPathOrSkip(testCase, file)
 p = getenv('DID_SCHEMA_PATH');
-testCase.assumeTrue(~isempty(p) && isfile(fullfile(p, file)), ...
+testCase.assumeTrue(~isempty(p) && isfile(ndi.v2.schemaFile(p, file)), ...
     sprintf('DID_SCHEMA_PATH has no %s', file));
 end
 

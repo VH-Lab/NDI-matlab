@@ -219,9 +219,9 @@ if isempty(schemaPath)
 end
 switch kind
     case 'channel_type'
-        f = fullfile(char(schemaPath), 'acquisition_channels.json');
+        f = ndi.v2.schemaFile(char(schemaPath), 'acquisition_channels.json');   % any layout
     otherwise
-        f = fullfile(char(schemaPath), 'binding_registry_meta.json');
+        f = ndi.v2.schemaFile(char(schemaPath), 'binding_registry_meta.json');   % by name, any layout
 end
 if ~isfile(f)
     return;

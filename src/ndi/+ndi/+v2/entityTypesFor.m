@@ -64,7 +64,7 @@ types = {};
 if isempty(schemaPath)
     return;
 end
-f = fullfile(char(schemaPath), 'binding_registry_meta.json');
+f = ndi.v2.schemaFile(char(schemaPath), 'binding_registry_meta.json');   % by name, any layout
 if ~isfile(f)
     return;
 end

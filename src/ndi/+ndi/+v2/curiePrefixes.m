@@ -46,7 +46,7 @@ if isempty(cache)
 end
 f = '';
 if ~isempty(schemaPath)
-    f = fullfile(char(schemaPath), 'CURIE_lookups_meta.json');
+    f = ndi.v2.schemaFile(char(schemaPath), 'CURIE_lookups_meta.json');   % by name, any layout
 end
 if isempty(f) || ~isfile(f)
     ix = buildIndex(struct());

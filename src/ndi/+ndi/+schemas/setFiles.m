@@ -23,6 +23,18 @@ function [files, sourceDir, layout] = setFiles(treeRoot, pinnedPath)
 %   names": a pinned schemas/V_eta/... path is looked for under
 %   schemas/did_v2/... first, and the other way round.
 %
+%   FAMILY FOLDERS AND REGISTRIES. Decided by Jess Haley, 2026-10-30 [schema
+%   folders by family] (did-schema V_eta_go_forward_class_audit.md):
+%   schemas/did_v2/ holds class files only, in family subfolders (value/,
+%   calculation/, data_body/, time_reference/, retiring/), and the registries
+%   move to schemas/registry/ and schemas/generated/. So FILES is every class
+%   file at any depth under SOURCEDIR (ndi.v2.schemaClassFiles: registry/,
+%   generated/ and non-class names skipped) plus each registry the loader
+%   needs (*_meta.json, ndi_reserved_keys.json) found by its name anywhere
+%   under the tree's schemas/ folder (ndi.v2.schemaFile). On the tiered
+%   layout this is what the flat listing of stable/ gave. A class or registry
+%   held twice errors NDI:v2:duplicateSchemaFile.
+%
 %   Errors NDI:schemas:FetchFailed when no candidate folder exists or the
 %   one found holds no schema file.
 %
@@ -32,6 +44,11 @@ function [files, sourceDir, layout] = setFiles(treeRoot, pinnedPath)
         treeRoot (1,:) char
         pinnedPath (1,:) char
     end
+
+    % the registries the V2 loader reads, by name (ndi.v2.schemaFile)
+    REGISTRIES = {'CURIE_lookups_meta.json', 'term_registry_meta.json', ...
+        'binding_registry_meta.json', 'class_disposition_meta.json', ...
+        'quantity_list_meta.json', 'did_schema_meta.json', 'ndi_reserved_keys.json'};
 
     files = {};
     sourceDir = '';
@@ -68,16 +85,25 @@ function [files, sourceDir, layout] = setFiles(treeRoot, pinnedPath)
             pinnedPath, treeRoot);
     end
 
-    listing = dir(fullfile(sourceDir, '*.json'));
-    names = sort({listing.name});
-    if strcmp(layout, 'flat')
-        names = names(~ismember(names, {'index.json', 'topics.json'}));
-    end
-    if isempty(names)
+    classes = ndi.v2.schemaClassFiles(sourceDir);
+    if classes.Count == 0
         error('NDI:schemas:FetchFailed', ...
             'No *.json schemas found in %s.', sourceDir);
     end
-    files = cellfun(@(n) fullfile(sourceDir, n), names, 'UniformOutput', false);
+    found = classes.values();
+    for k = 1:numel(REGISTRIES)
+        f = ndi.v2.schemaFile(sourceDir, REGISTRIES{k});
+        if isfile(f)
+            found{end+1} = f; %#ok<AGROW>
+        end
+    end
+    [~, order] = sort(cellfun(@nameOf, found, 'UniformOutput', false));
+    files = reshape(found(order), 1, []);
+end
+
+function n = nameOf(f)
+[~, b, e] = fileparts(f);
+n = [b e];
 end
 
 function c = setNameCandidates(p)

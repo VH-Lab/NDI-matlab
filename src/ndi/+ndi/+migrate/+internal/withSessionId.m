@@ -83,7 +83,7 @@ end
 p = getenv('DID_SCHEMA_PATH');
 f = '';
 if ~isempty(p)
-    f = fullfile(p, 'base.json');
+    f = ndi.v2.schemaFile(p, 'base.json');   % any layout ([schema folders by family])
 end
 if isempty(f) || ~isfile(f)
     tf = false;

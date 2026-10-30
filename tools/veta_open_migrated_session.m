@@ -326,8 +326,10 @@ if ~isempty(schemaRepo)
         end
     end
     if isempty(root) && (isfolder(fullfile(repo, 'stable')) ...
-            || isfile(fullfile(repo, 'index.json')))
-        % handed the set folder itself, tiered (stable/) or flat (index.json)
+            || isfile(fullfile(repo, 'index.json')) ...
+            || ~isempty(ndi.v2.schemaClassFiles(repo).keys()))
+        % handed the set folder itself: tiered (stable/), flat (index.json),
+        % or by family (class files at any depth)
         root = repo;
     end
     if isempty(root)
@@ -336,33 +338,29 @@ if ~isempty(schemaRepo)
              'schemas/did_v2 or schemas/V_eta) nor a schema set folder ' ...
              '(no stable/ and no index.json).'], repo);
     end
-    % BOTH LAYOUTS. The tiers (stable/, draft/, deprecated/ while each
-    % exists) and the flat set/*.json of [one folder, final classes only]
-    % (Jess Haley, 2026-10-29). An absent tier is skipped: deprecated/ was
-    % deleted ([carried v1 validates against NDI templates]) and the flat
-    % layout has none. index.json and topics.json at the set's root are not
-    % schemas. A file name found in two places is an error, never a pick.
-    sources = {root, fullfile(root, 'stable'), fullfile(root, 'draft'), ...
-        fullfile(root, 'deprecated')};
+    % EVERY LAYOUT. [schema folders by family] (Decided by Jess Haley,
+    % 2026-10-30): the classes at any depth under the set folder (family
+    % subfolders, or the old stable/ and draft/ tiers), skipping registry/,
+    % generated/ and non-class files (ndi.v2.schemaClassFiles); each registry
+    % by its name anywhere under did-schema's schemas/ (registry/, generated/,
+    % or the old stable/; ndi.v2.schemaFile). A class or registry held twice is
+    % an error, never a pick.
     dest = fullfile(tempdir, 'eta-schemas');
     if isfolder(dest); rmdir(dest, 's'); end
     mkdir(dest);
-    copied = 0;
-    seen = containers.Map('KeyType', 'char', 'ValueType', 'char');
-    for i = 1:numel(sources)
-        if ~isfolder(sources{i}); continue; end
-        listing = dir(fullfile(sources{i}, '*.json'));
-        for k = 1:numel(listing)
-            nm = listing(k).name;
-            if i == 1 && any(strcmp(nm, {'index.json', 'topics.json'}))
-                continue;
-            end
-            if isKey(seen, nm)
-                error('veta:duplicateSchema', ...
-                    '%s is in both %s and %s.', nm, seen(nm), sources{i});
-            end
-            seen(nm) = sources{i};
-            copyfile(fullfile(sources{i}, nm), dest);
+    classes = ndi.v2.schemaClassFiles(root);
+    names = classes.keys();
+    for k = 1:numel(names)
+        copyfile(classes(names{k}), fullfile(dest, [names{k} '.json']));
+    end
+    copied = numel(names);
+    registries = {'CURIE_lookups_meta.json', 'term_registry_meta.json', ...
+        'binding_registry_meta.json', 'class_disposition_meta.json', ...
+        'quantity_list_meta.json', 'did_schema_meta.json', 'ndi_reserved_keys.json'};
+    for k = 1:numel(registries)
+        f = ndi.v2.schemaFile(root, registries{k});
+        if isfile(f)
+            copyfile(f, fullfile(dest, registries{k}));
             copied = copied + 1;
         end
     end
@@ -398,9 +396,9 @@ if ~isfolder(resolved)
         'DID_SCHEMA_PATH points at "%s", which is not a directory.', resolved);
 end
 
-sentinelFile = fullfile(resolved, [SENTINEL '.json']);
+sentinelFile = ndi.v2.schemaFile(resolved, [SENTINEL '.json']);   % any depth
 if isfile(sentinelFile)
-    n = numel(dir(fullfile(resolved, '*.json')));
+    n = numel(ndi.v2.schemaClassFiles(resolved).keys());
     fprintf('  DENOMINATOR: %d schema file(s) visible at DID_SCHEMA_PATH\n', n);
 
     % SETTING THE ENVIRONMENT VARIABLE IS NOT ENOUGH, AND THIS FUNCTION
@@ -448,5 +446,5 @@ error('veta:schemaPathHasNoClasses', ...
      'the very first class lookup will fail. It holds %d *.json file(s). ' ...
      'Point it at an assembled V_eta set (stable + draft + deprecated ' ...
      'flattened into one directory).'], ...
-    resolved, SENTINEL, numel(dir(fullfile(resolved, '*.json'))));
+    resolved, SENTINEL, numel(dir(fullfile(resolved, '**', '*.json'))));
 end
