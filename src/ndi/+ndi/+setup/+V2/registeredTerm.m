@@ -32,8 +32,8 @@ if ~isempty(node)
         e = ix.byNode(key);
         t = did2.build.term(e.node, e.name);
     end
-elseif isKey(ix.byName, lower(name))
-    e = ix.byName(lower(name));
+elseif isKey(ix.byName, did2.schema.termNameKey(name))
+    e = ix.byName(did2.schema.termNameKey(name));
     t = did2.build.term(e.node, e.name);
 end
 end

@@ -93,8 +93,8 @@ if ~ix.present
 end
 if contains(spelling, ':') && isKey(ix.byNode, did2.schema.curieKey(spelling))
     e = ix.byNode(did2.schema.curieKey(spelling));        % a CURIE
-elseif isKey(ix.byName, lower(spelling))
-    e = ix.byName(lower(spelling));                      % a label
+elseif isKey(ix.byName, did2.schema.termNameKey(spelling))
+    e = ix.byName(did2.schema.termNameKey(spelling));                      % a label
 else
     return;
 end
