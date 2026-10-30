@@ -312,6 +312,9 @@ jobs:
                 ... % where DID-matlab #304 drops the "element type" assertion
                 'ndi.unittest.vintage.TestElementTypeFromKind', ...
                 'ndi.unittest.vintage.TestLightsheetKeys', ...   % axes by node first
+                ... % [compression block and empty levels] (Jess Haley,
+                ... % 2026-10-26): `compression` read as the char or the block
+                'ndi.unittest.vintage.TestCompressionOf', ...
                 ... % getelements on a session holding carried v1 elements
                 ... % and migrated ones (the B end-to-end, 2026-10-27)
                 'ndi.unittest.vintage.TestElementDocsBothVintages', ...

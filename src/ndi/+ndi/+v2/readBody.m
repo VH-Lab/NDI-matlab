@@ -4,7 +4,8 @@ function [values, info] = readBody(container, bodyDoc, datumType, dimensions)
 %   [VALUES, INFO] = ndi.v2.readBody(CONTAINER, BODYDOC, DATUMTYPE) reads the
 %   file of the sampled_body BODYDOC (through CONTAINER's database, so an
 %   ingested file is read from the file store and one recorded by location
-%   where it is), gunzips it when `compression` is gzip, and decodes it as
+%   where it is), gunzips it when `compression` is gzip (the codec name, or
+%   the {term, parameters} block: ndi.v2.compressionOf), and decodes it as
 %   DATUMTYPE (the OWNER statement's data_type.datum_type: the one place the
 %   type lives; a body never repeats it) in the body's `byte_order`, shaped
 %   by its dimensions (`n` per dimension; did-schema data_body plan AMENDMENT
@@ -44,7 +45,9 @@ info = struct('file', file, 'shape', []);
 
 raw = file;
 cleanup = [];
-if strcmpi(char(ndi.v2.blockOf(p, 'data_body', 'compression', '')), 'gzip')
+% `compression` in either shape: the codec name, or the {term, parameters}
+% block ([compression block and empty levels], Jess Haley, 2026-10-26)
+if strcmpi(ndi.v2.compressionOf(ndi.v2.blockOf(p, 'data_body', 'compression', '')), 'gzip')
     tmp = [tempname '.gz'];
     copyfile(file, tmp);
     out = gunzip(tmp);

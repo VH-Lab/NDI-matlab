@@ -9,7 +9,12 @@ function b = ingestedBody(st, a, datumType, ax, sid, description, fillValue)
 %   session's .ndi/files when the session is written and then deletes
 %   (files.file_info `ingest` 1, `delete_original` 1). Format
 %   binary (EDAM:format_2333; the media type application/octet-stream on an
-%   older schema), compression gzip, MD5 of the stored file.
+%   older schema), compression gzip, MD5 of the stored file. The compression
+%   is handed to did2.build.sampledBody as the codec name; the builder writes
+%   it as the loaded schema declares `compression` -- the char, or the {term,
+%   parameters} block once did-schema declares it ([compression block and
+%   empty levels], Jess Haley, 2026-10-26; did2.build.compression). With the
+%   term registry armed, the block's codec term must then be registered.
 %   FILLVALUE (optional, char) is what a position with no value holds.
 %   Stage 10, decision #60.
 

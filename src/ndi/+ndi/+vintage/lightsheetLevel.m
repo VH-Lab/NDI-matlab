@@ -27,8 +27,16 @@ function [p, vintage] = lightsheetLevel(levelDoc, pyramidDoc)
 %     chunk_order         sampled_body.datum_order
 %     byte_order, fill_value   sampled_body's (fill_value parsed as a number)
 %     codec               'raw' when the body has no `compression`, else the
-%                         compression ('blosc' for v1's 'blosc-zstd': a Blosc
-%                         chunk's header carries its own settings, #73 L4)
+%                         codec it names, in either shape (ndi.v2.compressionOf):
+%                         the char ('blosc' for v1's 'blosc-zstd' on bodies
+%                         migrated under #73 L4; 'blosc-zstd' verbatim since
+%                         [lossless means round trip]), or the {term,
+%                         parameters} block's codec ('Blosc' with inner
+%                         compressor zstd -> 'blosc-zstd')
+%     codec_params        only when the body's compression is the block and
+%                         has parameters: them, as v1's JSON ('{"cname":
+%                         "zstd","clevel":5,...}', [compression block and
+%                         empty levels] (1), Jess Haley, 2026-10-26)
 %     reduction_function  the `summary statistic` condition: NCIT:C25564 ->
 %                         'max', NCIT:C53319 -> 'mean', else the term's name;
 %                         'none' for a body with no such condition
@@ -80,7 +88,14 @@ if ~isempty(pyramidDoc)
 end
 p.fill_value = fillOf(etaField(props, 'fill_value'));
 p.byte_order = charOr(etaField(props, 'byte_order'), '');
-p.codec = charOr(etaField(props, 'compression'), 'raw');
+% `compression` in either shape (ndi.v2.compressionOf): the codec name, or the
+% {term, parameters} block whose parameters are the level's codec_params
+% ([compression block and empty levels] (1), Jess Haley, 2026-10-26)
+[codec, settings] = ndi.v2.compressionOf(etaField(props, 'compression'));
+p.codec = charOr(codec, 'raw');
+if ~isempty(fieldnames(settings))
+    p.codec_params = jsonencode(settings);
+end
 p.voxel_size = k.voxel_size;
 p.voxel_size_units = k.voxel_size_units;
 p.translation = k.translation;
