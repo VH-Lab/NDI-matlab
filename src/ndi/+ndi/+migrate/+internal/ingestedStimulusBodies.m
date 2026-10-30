@@ -124,6 +124,9 @@ for k = 1:numel(structs)
         '(ndi.compress.compress_metadata). Migrated from a v1 ' ...
         'daqmetadatareader_epochdata_ingested.'];
     ts = baseField(s, 'datestamp');
+    % 'gzip' as the codec name: the builder writes it as the schema declares
+    % `compression`, the char or the {term, parameters} block ([compression
+    % block and empty levels], Jess Haley, 2026-10-26; did2.build.compression)
     args = {'Fields', struct('filename', 'data.bin'), 'Compression', 'gzip', ...
         'Description', desc, 'Id', id, 'SessionId', sid, 'Validate', false};
     if ~isempty(ts); args = [args, {'CreationTimestamp', ts}]; end %#ok<AGROW>

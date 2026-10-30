@@ -100,6 +100,34 @@ classdef TestLightsheetVintage < matlab.unittest.TestCase
             testCase.verifyEqual(pMax.dtype, '', 'no pyramid given, no dtype');
         end
 
+        function testALevelWithACompressionBlockReadsItsCodecAndParams(testCase)
+            % [compression block and empty levels] (1) (Decided by Jess
+            % Haley, 2026-10-26, did-schema V_eta_go_forward_class_audit.md;
+            % did-schema #137): once did-schema declares `compression` as a
+            % {term, parameters} block, a migrated level holds the codec as
+            % the term (Blosc) and its codec_params as the parameters. Read
+            % back by v1 name: codec 'blosc-zstd', codec_params as v1's JSON.
+            F = ndi.unittest.vintage.LightsheetFixtures;
+            s = F.level('lvl_max1', 'pyr_ls_1', 2, 'max', {});
+            s.data_body.compression = struct( ...
+                'term', struct('node', '', 'name', 'Blosc'), ...
+                'parameters', {{ ...
+                    struct('variable', struct('node', '', 'name', 'inner compressor'), 'text', 'zstd'), ...
+                    struct('variable', struct('node', '', 'name', 'compression level'), 'count', 5), ...
+                    struct('variable', struct('node', '', 'name', 'shuffle'), 'count', 1), ...
+                    struct('variable', struct('node', '', 'name', 'block size'), 'count', 0)}});
+            p = ndi.vintage.lightsheetLevel(ndi.document(s));
+            testCase.verifyEqual(p.codec, 'blosc-zstd');
+            testCase.verifyEqual(p.codec_params, ...
+                '{"cname":"zstd","clevel":5,"shuffle":1,"blocksize":0}', ...
+                'makePyramid.m codecParamsJSON, read back');
+            % the char shape is read as before, with no codec_params
+            pChar = ndi.vintage.lightsheetLevel(ndi.document( ...
+                F.level('lvl_max2', 'pyr_ls_1', 2, 'max', {})));
+            testCase.verifyEqual(pChar.codec, 'blosc');
+            testCase.verifyFalse(isfield(pChar, 'codec_params'));
+        end
+
         function testLevelIndicesAreDerivedFromTheSet(testCase)
             % The migration drops `level`; level 0 is the non-redundant body
             % and each reduction's ladder is ranked finest-first.

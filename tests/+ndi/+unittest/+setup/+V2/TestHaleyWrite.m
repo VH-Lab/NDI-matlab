@@ -951,7 +951,8 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             % its body is held by the session's database, not left in a temp file
             b = docs(strcmp(classes, 'sampled_body'));
             b = b{cellfun(@(d) strcmp(edge(d, 'owner_id'), a.base.id), b)};
-            testCase.verifyEqual(b.data_body.compression, 'gzip');
+            % either shape ([compression block and empty levels])
+            testCase.verifyEqual(ndi.v2.compressionOf(b.data_body.compression), 'gzip');
             testCase.verifyEqual(b.files.file_info.locations.ingest, 1);
             testCase.verifyFalse(isfile(b.files.file_info.locations.location), 'the original is deleted');
             db = did2.database.sqlitedb(fullfile(sessionPath, '.ndi', ...

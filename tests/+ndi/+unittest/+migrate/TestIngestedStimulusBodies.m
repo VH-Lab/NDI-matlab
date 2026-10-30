@@ -28,7 +28,9 @@ classdef TestIngestedStimulusBodies < matlab.unittest.TestCase
                 'the v1 id is kept');
             testCase.verifyEqual(depValue(b, 'owner_id'), 'pres_74');
             testCase.verifyEqual(b.data_body.filename, 'data.bin');
-            testCase.verifyEqual(b.data_body.compression, 'gzip');
+            % either shape ([compression block and empty levels]): the char,
+            % or the {term, parameters} block once did-schema declares it
+            testCase.verifyEqual(ndi.v2.compressionOf(b.data_body.compression), 'gzip');
             testCase.verifyEqual(char(b.data_body.format.node), 'EMPTY:0000367', ...
                 '[NDI binary format]');
             testCase.verifySubstring(b.data_body.description, 't00074');
@@ -45,6 +47,25 @@ classdef TestIngestedStimulusBodies < matlab.unittest.TestCase
             restore = ndi.migrate.internal.termRegistryOff(); %#ok<NASGU>
             testCase.verifyWarningFree(@() cache.validateDocument(b), ...
                 'the opaque_body does not validate');
+        end
+
+        function testTheBodyWritesTheDeclaredCompressionBlock(testCase)
+            % [compression block and empty levels] (1) (Decided by Jess
+            % Haley, 2026-10-26, did-schema V_eta_go_forward_class_audit.md;
+            % did-schema #137): on a schema that declares `compression` as
+            % the {term, parameters} block, the body's gzip is written as
+            % the block (by DID-matlab's builder, did2.build.compression). Run
+            % on a copy of the loaded schema that declares it until
+            % did-schema does.
+            testCase.assumeTrue(~isempty(which('did2.build.compressionBlockDeclared')), ...
+                'the DID-matlab on the path predates did2.build.compression');
+            useCompressionBlockSchema(testCase);
+            bodies = ndi.migrate.internal.ingestedStimulusBodies( ...
+                {ingestedDoc()}, presentation('pres_74', 't00074'), {readerDoc()});
+            testCase.verifyNumElements(bodies, 1);
+            c = bodies{1}.data_body.compression;
+            testCase.verifyTrue(isstruct(c) && isfield(c, 'term'), 'compression is the block');
+            testCase.verifyEqual(ndi.v2.compressionOf(c), 'gzip');
         end
 
         function testNoMatchingPresentationLeavesItV1(testCase)
@@ -85,6 +106,47 @@ classdef TestIngestedStimulusBodies < matlab.unittest.TestCase
             testCase.verifyEqual(r.ingested_seen, 0);
         end
     end
+end
+
+function useCompressionBlockSchema(testCase)
+% Point did2.schema.cache at a copy of the loaded schema whose data_body
+% declares `compression` as interaction.json's `method` block, renamed: the
+% {term, parameters} shape of [compression block and empty levels] (1).
+% Nothing is copied when the loaded schema already declares it. Restored and
+% removed on teardown. The same copy DID-matlab's
+% did2.unittest.helpers.compressionBlockSchema makes.
+cache = did2.schema.cache.shared();
+src = cache.schemaPath;
+if did2.build.compressionBlockDeclared(cache)
+    return;
+end
+dataBody = fullfile(src, 'data_body.json');
+interaction = fullfile(src, 'interaction.json');
+testCase.assumeTrue(isfile(dataBody) && isfile(interaction), ...
+    'the loaded schema has no data_body.json or interaction.json');
+ia = jsondecode(fileread(interaction));
+defs = ia.fields;
+if isstruct(defs), defs = num2cell(reshape(defs, 1, [])); end
+hit = cellfun(@(d) isstruct(d) && isfield(d, 'name') && strcmp(char(d.name), 'method'), defs);
+testCase.assumeTrue(any(hit), 'interaction.json declares no `method` block');
+decl = defs{find(hit, 1)};
+decl.name = 'compression';
+decl.documentation = 'declared for this test: [compression block and empty levels] (1)';
+txt = fileread(dataBody);
+old = regexp(txt, ['\{\s*"name"\s*:\s*"compression"\s*,\s*"type"\s*:\s*"char"' ...
+    '[^{}]*"constraints"\s*:\s*\{\}\s*\}'], 'match', 'once');
+testCase.assertNotEmpty(old, 'data_body.json declares no char `compression` to replace');
+tmp = tempname;
+mkdir(tmp);
+testCase.addTeardown(@() rmdir(tmp, 's'));
+copyfile(fullfile(src, '*.json'), tmp);
+fid = fopen(fullfile(tmp, 'data_body.json'), 'w');
+fwrite(fid, strrep(txt, old, jsonencode(decl)));
+fclose(fid);
+did2.schema.cache.setSchemaPath(tmp);
+testCase.addTeardown(@() did2.schema.cache.setSchemaPath(src));
+testCase.assertTrue(did2.build.compressionBlockDeclared(), ...
+    'the copy does not declare the compression block');
 end
 
 function d = ingestedDoc()
