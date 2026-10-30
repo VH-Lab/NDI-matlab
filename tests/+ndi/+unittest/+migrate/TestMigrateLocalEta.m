@@ -954,12 +954,17 @@ function body = makeStimulatorElement(stimId, subjId)
 % a non-probe class, is carried as v1". With the old 'ndi.element' the
 % stimulator was carried (carry-063) and, by [dependents of a carried document
 % carry], its element_epoch too, so no untied extent reached epochMint.
+% base.name is '' because ndi.element/newdocument sets element.* only and
+% never writes one; [element name kept apart, base.name carried] (Jess Haley,
+% 2026-10-30, did-schema V_eta_go_forward_class_audit.md; DID-matlab #299,
+% carry-149) carries an element whose base.name is non-empty, and with it,
+% by [dependents of a carried document carry], its epoch and presentations.
 body = struct();
 body.document_class = struct('class_name', 'element', 'class_version', '1.0.0', ...
     'superclasses', struct('class_name', 'base', 'class_version', '1.0.0'));
 body.depends_on = struct('name', {'subject_id'}, 'value', {subjId});
 body.base = struct('id', stimId, 'session_id', session(), ...
-    'name', 'stimulator', 'datestamp', datestamp());
+    'name', '', 'datestamp', datestamp());
 body.element = struct('ndi_element_class', 'ndi.probe.timeseries.stimulator', 'name', 'stim', ...
     'reference', 1, 'type', 'stimulator', 'direct', 0);
 end
@@ -1005,12 +1010,14 @@ body.subject = struct('local_identifier', 'animalA', 'description', '');
 end
 
 function body = makeRecordingElement(elemId, subjId)
+% base.name '' as ndi.element/newdocument writes it (see makeStimulatorElement;
+% a non-empty one is carry-149).
 body = struct();
 body.document_class = struct('class_name', 'element', 'class_version', '1.0.0', ...
     'superclasses', struct('class_name', 'base', 'class_version', '1.0.0'));
 body.depends_on = struct('name', {'subject_id'}, 'value', {subjId});
 body.base = struct('id', elemId, 'session_id', session(), ...
-    'name', 'ctx', 'datestamp', datestamp());
+    'name', '', 'datestamp', datestamp());
 body.element = struct('ndi_element_class', 'ndi.element', 'name', 'ctx', ...
     'reference', 1, 'type', 'lfp', 'direct', 1);
 end
