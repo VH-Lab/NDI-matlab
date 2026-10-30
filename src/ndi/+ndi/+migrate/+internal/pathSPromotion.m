@@ -109,7 +109,8 @@ function [kept, minted, changed, report] = pathSPromotion(structs, options)
 %       Left / Right): there is no region to make a part of.
 %     * a statement already about a region part, a tissue that is part of
 %       nothing, a device, a v1 element (a sorted unit recorded by the probe:
-%       the migrators assert its `element type`), another entity type (a
+%       the migrators assert its `element type`, or for a device a kind that
+%       rebuilds one v1 type), another entity type (a
 %       cell, a culture), or a subject not in the batch.
 %
 %   STRUCTS is a cell of V_eta document body structs (from did2.document.toStruct).
@@ -768,7 +769,13 @@ for k = 1:numel(structs)
         v = S.variable(s).name;
         isKind = S.isVariable(s, 'anatomical structure');
         a = S.aboutId(s);
-        if strcmp(v, 'element type') && ~isempty(a)
+        % a v1 element: its `element type` assertion, or, where DID-matlab
+        % PR #304 no longer writes it ([element type is a device kind term],
+        % [element types batch 1] .. [element types batch 4]), a device
+        % kind that rebuilds exactly one v1 type (ndi.vintage.elementTypeOfKind)
+        if ~isempty(a) && (strcmp(v, 'element type') || ...
+                (ndi.vintage.isEquipmentTypeVariable(S.variable(s)) && ...
+                 ~isempty(ndi.vintage.elementTypeOfKind(S.termValue(s).node))))
             idx.elements(a) = true;
         end
         k2 = regionKey(S.termValue(s));

@@ -27,7 +27,13 @@ function f = elementFields(subjectDoc, ndi_session_obj)
 %                          ndi.vintage.elementNameReference ('<name> |
 %                          <integer>', the old '<name> (ref <reference>)',
 %                          or a bare name).
-%     type              -> a `term_assertion` labelled `element type`
+%     type              -> a `term_assertion` labelled `element type`, or,
+%                          where DID-matlab PR #304 no longer writes it (a
+%                          device kind with one v1 type), the device-kind
+%                          assertion (`Equipment Type`) read back through
+%                          ndi.vintage.elementTypeOfKind. The `element
+%                          type` assertion wins when both are there
+%                          (ndi.vintage.elementTypeOf).
 %     ndi_element_class -> a `term_assertion` labelled `ndi element class`
 %     underlying_element_id -> a `directed_relation` `derived_from`
 %     subject_id (the specimen) -> a `directed_relation` `observes`,
@@ -111,7 +117,7 @@ end
 [f.name, f.reference] = ndi.vintage.elementNameReferenceApart(entityName, localId);
 
 % --- the two kind assertions -------------------------------------------
-f.type = assertionValue(ndi_session_obj, docId, ndi.vintage.elementLabel('type'));
+f.type = elementTypeValue(ndi_session_obj, docId);
 f.ndi_element_class = assertionValue(ndi_session_obj, docId, ...
     ndi.vintage.elementLabel('class'));
 
@@ -157,6 +163,26 @@ if isfield(p, 'term') && isstruct(p.term) && isfield(p.term, 'value') ...
         && isfield(p.term.value, 'name')
     v = p.term.value.name;
 end
+end
+
+function v = elementTypeValue(ndi_session_obj, docId)
+%ELEMENTTYPEVALUE The v1 `type`: the `element type` assertion, else the kind.
+%   Decided by Jess Haley, did-schema V_eta_go_forward_class_audit.md,
+%   [element type is a device kind term], [element types batch 1] ..
+%   [element types batch 4]: DID-matlab PR #304 drops the `element type`
+%   assertion where the device kind alone rebuilds the v1 word. Both
+%   assertions are fetched in one search; ndi.vintage.elementTypeOf picks
+%   (the `element type` assertion first). '' when neither is there, as
+%   before.
+kindVar = ndi.vintage.equipmentTypeVariable();
+q = ndi.v2.statementQuery('assertion', 'term') & ...
+    (ndi.v2.fieldQuery('statement.variable.name', 'exact_string', ...
+        ndi.vintage.elementLabel('type')) | ...
+     ndi.v2.fieldQuery('statement.variable.node', 'exact_string', kindVar.node) | ...
+     ndi.v2.fieldQuery('statement.variable.name', 'exact_string', kindVar.name)) & ...
+    ndi.v2.entityQuery(docId);
+docs = ndi_session_obj.database_search(q);
+v = ndi.vintage.elementTypeOf(docs);
 end
 
 function [specimen, found] = specimenViaInstrument(ndi_session_obj, elementId)

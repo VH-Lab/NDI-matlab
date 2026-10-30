@@ -537,6 +537,37 @@ classdef TestPathSPromotion < matlab.unittest.TestCase
             testCase.verifyEqual(report.left_about_an_element, 2);
         end
 
+        function testADeviceKindAloneMarksAnElement(testCase)
+            % DID-matlab PR #304 ([element type is a device kind term],
+            % [element types batch 1] .. [element types batch 4]) drops the
+            % `element type` assertion where the device kind alone rebuilds
+            % the v1 type: an n-trode carries only its Equipment Type
+            % assertion and is still read as a v1 element
+            lbl = labelObs('lbl_p', 'probe_1', 'UBERON:0002436', 'anch_l');
+            structs = {device('probe_1'), deviceKind('probe_1', 'wikidata:Q1952355'), ...
+                lbl, makeAnchor('anch_l')};
+            [~, ~, changed, report] = ...
+                ndi.migrate.internal.pathSPromotion(structs, 'Mode', 'located');
+            testCase.verifyFalse(changed);
+            testCase.verifyEqual(report.left_about_an_element, 1);
+            testCase.verifyEqual(report.left_about_a_device, 0);
+            % a shared kind (microscope) keeps its `element type` assertion;
+            % without one it reads as a device, as today
+            structs = {device('probe_1'), deviceKind('probe_1', 'OBI:0400169'), ...
+                lbl, makeAnchor('anch_l')};
+            [~, ~, changed, report] = ...
+                ndi.migrate.internal.pathSPromotion(structs, 'Mode', 'located');
+            testCase.verifyFalse(changed);
+            testCase.verifyEqual(report.left_about_an_element, 0);
+            testCase.verifyEqual(report.left_about_a_device, 1);
+            % with both, the element type assertion marks it, as before
+            structs = {device('probe_1'), deviceKind('probe_1', 'OBI:0400169'), ...
+                elementType('probe_1', 'two-photon-imaging'), lbl, makeAnchor('anch_l')};
+            [~, ~, ~, report] = ...
+                ndi.migrate.internal.pathSPromotion(structs, 'Mode', 'located');
+            testCase.verifyEqual(report.left_about_an_element, 1);
+        end
+
         function testACellOrCultureIsNotARegionParent(testCase)
             structs = [{entityOf('cell_1', 'cell'), entityOf('cult_1', 'culture'), ...
                 device('probe_1')}, ...
@@ -743,6 +774,17 @@ a.depends_on = dep('entity_id', entityId);
 a.base = base(['etype_' entityId]);
 a.statement = struct('variable', term('', 'element type'));
 a.term = struct('value', term('', type));
+end
+
+function a = deviceKind(entityId, node)
+% the device-kind assertion migrators_j.element writes about a device
+% (variable NCIT:C178920 "Equipment Type", did2.convert.elementDeviceKind)
+a = struct();
+a.document_class = dc('assertion', {'statement', 'base', 'term', 'value', 'data'});
+a.depends_on = dep('entity_id', entityId);
+a.base = base(['ekind_' entityId]);
+a.statement = struct('variable', term('NCIT:C178920', 'Equipment Type'));
+a.term = struct('value', term(node, ''));
 end
 
 function e = organism(id)
