@@ -18,7 +18,7 @@ function tf = sessionIdIsEdge()
 %   See also ndi.v2.sessionIdOf.
 
 p = getenv('DID_SCHEMA_PATH');
-f = fullfile(p, 'base.json');
+f = ndi.v2.schemaFile(p, 'base.json');   % any layout ([schema folders by family])
 tf = false;
 if isempty(p) || ~isfile(f)
     return;

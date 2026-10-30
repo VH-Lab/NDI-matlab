@@ -56,11 +56,17 @@ function veta_open_migrated_session(sessionPath, options)
 %   under its own class. Omitting the tier quarantines every one of them
 %   (corpus run 31421715133 lost 4,563 `image_stack` documents that way).
 %
-%   By hand:
+%   (deprecated/ has since been deleted: a document carried as v1 is checked
+%   against NDI's v1 templates, [carried v1 validates against NDI
+%   templates]; and [one folder, final classes only] (Jess Haley,
+%   2026-10-29) moves every class into schemas/did_v2/ itself.)
+%
+%   By hand (NDI-matlab's CI does it with .github/scripts/
+%   assemble_did_schema_set.sh, which reads both layouts):
 %       mkdir -p /tmp/eta-schemas
-%       cp ~/did-schema/schemas/V_eta/stable/*.json     /tmp/eta-schemas/
-%       cp ~/did-schema/schemas/V_eta/draft/*.json      /tmp/eta-schemas/
-%       cp ~/did-schema/schemas/V_eta/deprecated/*.json /tmp/eta-schemas/
+%       cp ~/did-schema/schemas/did_v2/stable/*.json /tmp/eta-schemas/   % tiered
+%       cp ~/did-schema/schemas/did_v2/draft/*.json  /tmp/eta-schemas/
+%       % flat: every schemas/did_v2/*.json except index.json and topics.json
 %       setenv('DID_SCHEMA_PATH','/tmp/eta-schemas');
 %
 %   Or let this function do it -- pass the CHECKOUT, not a tier:
@@ -298,8 +304,8 @@ end
 function localPrepareSchemaPath(schemaRepo)
 %LOCALPREPARESCHEMAPATH Make DID_SCHEMA_PATH usable, or say exactly why not.
 %
-%   Two jobs. If SCHEMAREPO is given, assemble the three tiers into one
-%   flat directory and point DID_SCHEMA_PATH at it. Either way, PROVE the
+%   Two jobs. If SCHEMAREPO is given, assemble the schema set (its tiers,
+%   or the one flat folder) into one directory and point DID_SCHEMA_PATH at it. Either way, PROVE the
 %   resulting path can answer a lookup before anything is migrated.
 %
 %   The proof is a sentinel class. `session` is the right one: every
@@ -310,39 +316,59 @@ SENTINEL = 'session';
 
 if ~isempty(schemaRepo)
     repo = localExpandTilde(schemaRepo);
-    root = fullfile(repo, 'schemas', 'V_eta');
-    if ~isfolder(root)
-        % Tolerate being handed schemas/V_eta itself rather than the checkout.
-        if isfolder(fullfile(repo, 'stable'))
-            root = repo;
-        else
-            error('veta:badSchemaRepo', ...
-                ['SchemaRepo "%s" is neither a did-schema checkout (no ' ...
-                 '%s) nor a schemas/V_eta directory (no stable/).'], ...
-                repo, fullfile('schemas', 'V_eta'));
+    % did_v2/ ([schema set renamed did_v2], Jess Haley, 2026-10-25), else
+    % the older V_eta/; or the set folder itself.
+    root = '';
+    for cand = {fullfile(repo, 'schemas', 'did_v2'), fullfile(repo, 'schemas', 'V_eta')}
+        if isfolder(cand{1})
+            root = cand{1};
+            break;
         end
     end
-    tiers = {'stable', 'draft', 'deprecated'};
+    if isempty(root) && (isfolder(fullfile(repo, 'stable')) ...
+            || isfile(fullfile(repo, 'index.json')) ...
+            || ~isempty(ndi.v2.schemaClassFiles(repo).keys()))
+        % handed the set folder itself: tiered (stable/), flat (index.json),
+        % or by family (class files at any depth)
+        root = repo;
+    end
+    if isempty(root)
+        error('veta:badSchemaRepo', ...
+            ['SchemaRepo "%s" is neither a did-schema checkout (no ' ...
+             'schemas/did_v2 or schemas/V_eta) nor a schema set folder ' ...
+             '(no stable/ and no index.json).'], repo);
+    end
+    % EVERY LAYOUT. [schema folders by family] (Decided by Jess Haley,
+    % 2026-10-30): the classes at any depth under the set folder (family
+    % subfolders, or the old stable/ and draft/ tiers), skipping registry/,
+    % generated/ and non-class files (ndi.v2.schemaClassFiles); each registry
+    % by its name anywhere under did-schema's schemas/ (registry/, generated/,
+    % or the old stable/; ndi.v2.schemaFile). A class or registry held twice is
+    % an error, never a pick.
     dest = fullfile(tempdir, 'eta-schemas');
-    if ~isfolder(dest); mkdir(dest); end
-    copied = 0;
-    for i = 1:numel(tiers)
-        tierDir = fullfile(root, tiers{i});
-        if ~isfolder(tierDir)
-            error('veta:missingTier', ...
-                ['Schema tier "%s" is missing from %s. All THREE tiers are ' ...
-                 'part of the validation set -- deprecated/ holds the v1 ' ...
-                 'shapes that pass through unmodelled, and omitting it ' ...
-                 'quarantines every one of them.'], tiers{i}, root);
-        end
-        listing = dir(fullfile(tierDir, '*.json'));
-        for k = 1:numel(listing)
-            copyfile(fullfile(tierDir, listing(k).name), dest);
+    if isfolder(dest); rmdir(dest, 's'); end
+    mkdir(dest);
+    classes = ndi.v2.schemaClassFiles(root);
+    names = classes.keys();
+    for k = 1:numel(names)
+        copyfile(classes(names{k}), fullfile(dest, [names{k} '.json']));
+    end
+    copied = numel(names);
+    registries = {'CURIE_lookups_meta.json', 'term_registry_meta.json', ...
+        'binding_registry_meta.json', 'class_disposition_meta.json', ...
+        'quantity_list_meta.json', 'did_schema_meta.json', 'ndi_reserved_keys.json'};
+    for k = 1:numel(registries)
+        f = ndi.v2.schemaFile(root, registries{k});
+        if isfile(f)
+            copyfile(f, fullfile(dest, registries{k}));
             copied = copied + 1;
         end
     end
-    fprintf('  DENOMINATOR: assembled %d schema file(s) from %d tier(s) into %s\n', ...
-        copied, numel(tiers), dest);
+    if copied == 0
+        error('veta:noSchemaFiles', 'No schema file found under %s.', root);
+    end
+    fprintf('  DENOMINATOR: assembled %d schema file(s) from %s into %s\n', ...
+        copied, root, dest);
     setenv('DID_SCHEMA_PATH', dest);
 end
 
@@ -370,9 +396,9 @@ if ~isfolder(resolved)
         'DID_SCHEMA_PATH points at "%s", which is not a directory.', resolved);
 end
 
-sentinelFile = fullfile(resolved, [SENTINEL '.json']);
+sentinelFile = ndi.v2.schemaFile(resolved, [SENTINEL '.json']);   % any depth
 if isfile(sentinelFile)
-    n = numel(dir(fullfile(resolved, '*.json')));
+    n = numel(ndi.v2.schemaClassFiles(resolved).keys());
     fprintf('  DENOMINATOR: %d schema file(s) visible at DID_SCHEMA_PATH\n', n);
 
     % SETTING THE ENVIRONMENT VARIABLE IS NOT ENOUGH, AND THIS FUNCTION
@@ -407,13 +433,12 @@ if isfolder(fullfile(resolved, 'stable'))
     error('veta:schemaPathNotAssembled', ...
         ['DID_SCHEMA_PATH points at the V_eta ROOT ("%s"), not at an ' ...
          'assembled schema set. That directory holds index.json and ' ...
-         'topics.json; the classes live in stable/, draft/ and ' ...
-         'deprecated/. The lookup is FLAT -- did2.schema.cache.getClass ' ...
+         'topics.json; the classes live in its tiers (stable/, draft/). The lookup is FLAT -- did2.schema.cache.getClass ' ...
          'does fullfile(schemaPath, [className ''.json'']) with no ' ...
          'recursion -- so no class is findable from here.\n' ...
          'Fix: re-run with ''SchemaRepo'', ''<did-schema checkout>'', or ' ...
-         'copy stable/*.json, draft/*.json and deprecated/*.json into one ' ...
-         'directory and point DID_SCHEMA_PATH at that.'], resolved);
+         'copy stable/*.json and draft/*.json (deprecated/*.json where it ' ...
+         'still exists) into one directory and point DID_SCHEMA_PATH at that.'], resolved);
 end
 
 error('veta:schemaPathHasNoClasses', ...
@@ -421,5 +446,5 @@ error('veta:schemaPathHasNoClasses', ...
      'the very first class lookup will fail. It holds %d *.json file(s). ' ...
      'Point it at an assembled V_eta set (stable + draft + deprecated ' ...
      'flattened into one directory).'], ...
-    resolved, SENTINEL, numel(dir(fullfile(resolved, '*.json'))));
+    resolved, SENTINEL, numel(dir(fullfile(resolved, '**', '*.json'))));
 end

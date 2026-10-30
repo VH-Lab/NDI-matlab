@@ -24,3 +24,4 @@
 %   cacheDir         - user cache dir for a given pin ref.
 %   fallbackDir      - bundled fallback schema dir.
 %   activeSchemaPath - resolve cache -> fallback to a usable schema dir.
+%   setFiles         - the schema files of a did-schema tree, tiered or flat.

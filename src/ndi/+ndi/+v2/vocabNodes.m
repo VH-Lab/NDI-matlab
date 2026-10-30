@@ -248,11 +248,11 @@ if isempty(schemaPath)
 end
 switch kind
     case 'channel_type'
-        f = fullfile(char(schemaPath), 'acquisition_channels.json');
+        f = ndi.v2.schemaFile(char(schemaPath), 'acquisition_channels.json');   % any layout
     case 'clock'
-        f = fullfile(char(schemaPath), 'relative_time_reference.json');
+        f = ndi.v2.schemaFile(char(schemaPath), 'relative_time_reference.json');   % any layout
     otherwise
-        f = fullfile(char(schemaPath), 'binding_registry_meta.json');
+        f = ndi.v2.schemaFile(char(schemaPath), 'binding_registry_meta.json');   % by name, any layout
 end
 if ~isfile(f)
     return;

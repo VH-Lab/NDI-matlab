@@ -41,7 +41,7 @@ if isempty(cache)
 end
 f = '';
 if ~isempty(schemaPath)
-    f = fullfile(char(schemaPath), 'binding_registry_meta.json');
+    f = ndi.v2.schemaFile(char(schemaPath), 'binding_registry_meta.json');   % by name, any layout
 end
 if isempty(f) || ~isfile(f)
     P = fromRows({}, {});
