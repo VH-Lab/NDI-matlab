@@ -344,6 +344,9 @@ report.incomplete_reasons                  = {};
 % carried a subject strain for an unread field)
 report.leftover_fields_unplaced            = 0;
 report.leftover_unplaced_reasons           = {};
+% [openMINDS subject leftovers]: distinct `openminds:<id>` identifiers written
+% onto minted strain entities (lab-made strains only)
+report.openminds_ids_on_strains            = 0;
 
 report.distinct_strains                    = 0;   % dedup groups
 report.strains_minted                      = 0;
@@ -503,6 +506,15 @@ for k = 1:numel(strainIdx)
     e.leftovers       = ndi.migrate.internal.strainLeftovers(f, ...
         @(id) v1BodyById(v1Pos, v1Bodies, id));
     e.identifiers     = identifiers(f, e.leftovers.identifiers);
+    % [openMINDS subject leftovers] (Decided by Jess Haley, 2026-10-27,
+    % did-schema V_eta_go_forward_class_audit.md): "a lab-made strain's
+    % `openminds_id` goes on the strain entity's `global_identifier` as
+    % `openminds:<id>`". Read here, NOT put in the dedup key: the writer
+    % mints a fresh openMINDS id for every subject row's Strain (two
+    % `AVP-Cre` rows in dab_slice_tetanus_v1.json carry Strain/5b9a95df...
+    % and Strain/117f4762...), so keying on it would stop every duplicate
+    % from merging. The group's entity carries each member's id (below).
+    e.openminds_id    = labStrainOpenmindsId(b);
     if ~isempty(e.leftovers.unplaced)
         report.leftover_fields_unplaced = report.leftover_fields_unplaced + 1;
         report.leftover_unplaced_reasons{end+1} = sprintf('%s: %s', ...
@@ -635,7 +647,20 @@ for g = 1:nGroups
 
     ef = struct('name', rep.name);
     if ~isempty(rep.description); ef.description = rep.description; end
-    if ~isempty(rep.identifiers); ef.global_identifier = rep.identifiers; end
+    gid = rep.identifiers;
+    % [openMINDS subject leftovers]: every lab-made member's openMINDS id, as
+    % `openminds:<id>`, in candidate order, once each. Every member's, not the
+    % representative's alone, so no row's id is lost when the rows collapse.
+    for c = find([cand.group] == g)
+        omId = cand(c).openminds_id;
+        if isempty(omId); continue; end
+        curie = ['openminds:' omId];
+        if ~any(strcmp(gid, curie))
+            gid{end+1} = curie; %#ok<AGROW>
+            report.openminds_ids_on_strains = report.openminds_ids_on_strains + 1;
+        end
+    end
+    if ~isempty(gid); ef.global_identifier = gid; end
     minted{end+1} = S.entity('strain', ef, 'Id', groupDocId{g}, common{:}); %#ok<AGROW>
     report.strains_minted = report.strains_minted + 1;
 
@@ -1117,6 +1142,33 @@ for k = 1:numel(more)
 end
 end
 
+function omId = labStrainOpenmindsId(b)
+%LABSTRAINOPENMINDSID The `openminds_id` of a LAB-MADE Strain, or ''.
+%   [openMINDS subject leftovers] (Decided by Jess Haley, 2026-10-27): "a
+%   lab-made strain's `openminds_id` goes on the strain entity's
+%   `global_identifier` as `openminds:<id>`". LAB-MADE is the predicate
+%   DID-matlab's did2.convert.migrators_j.openminds_subject uses for its
+%   carry-117 branch, so the two sides agree on which documents this is: a
+%   Strain with no ontology node in any of `preferredOntologyIdentifier`,
+%   `ontologyIdentifier`, `interlexIdentifier` or `alternateIdentifier`. (The
+%   caller only passes Strain-typed documents.) A controlled strain's id is
+%   rebuilt from its term instead ([term equivalents recorded]) and is not
+%   written here. The id is written as the writer stored it, trimmed.
+omId = '';
+blk = openmindsBlock(b);
+if ~isfield(blk, 'openminds_id'); return; end
+v = firstChar(blk.openminds_id);
+if isempty(v); return; end
+f = openmindsFields(b);
+for nm = {'preferredOntologyIdentifier', 'ontologyIdentifier', ...
+        'interlexIdentifier', 'alternateIdentifier'}
+    if ~isempty(firstChar(getAny(f, nm)))
+        return;   % it has an ontology node: not lab-made
+    end
+end
+omId = v;
+end
+
 function d = v1BodyById(v1Pos, v1Bodies, id)
 %V1BODYBYID The did_v1 openMINDS body whose id is ID, or [] when absent.
 d = [];
@@ -1252,7 +1304,7 @@ c = struct('source_id', {}, 'assertion_pos', {}, 'session_id', {}, ...
     'datestamp', {}, 'subject_id', {}, 'name', {}, 'species', {}, ...
     'species_frag', {}, 'gst', {}, 'gst_frag', {}, 'description', {}, ...
     'phenotype', {}, 'laboratory_code', {}, 'synonym', {}, ...
-    'identifiers', {}, 'leftovers', {}, 'parents', {}, 'content_key', {}, 'key', {}, ...
+    'identifiers', {}, 'openminds_id', {}, 'leftovers', {}, 'parents', {}, 'content_key', {}, 'key', {}, ...
     'group', {});
 end
 
