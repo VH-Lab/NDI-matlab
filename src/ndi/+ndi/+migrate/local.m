@@ -301,6 +301,12 @@ function result = local(path, options)
     if isfield(convertResult, 'passthrough')
         passOneRecord = convertResult.passthrough;
     end
+    % and what each source became (its pass-1 output ids), for the final
+    % sweep of [dependents of a carried document carry] below
+    passOneSourceOutputs = struct('input_index', {}, 'id', {}, 'output_ids', {});
+    if isfield(convertResult, 'source_outputs') && isstruct(convertResult.source_outputs)
+        passOneSourceOutputs = convertResult.source_outputs;
+    end
     printMigrationNoteCounts(convertResult);
 
     % --- software dedup, right after pass 1 ----------------------------------
@@ -1211,6 +1217,37 @@ function result = local(path, options)
     end
     tStep = migrateStepMark('carryUnchangedAsV1', tStart, tStep, convertResult);
 
+    % --- the final sweep: dependents of a final carry carry too --------------
+    % Decided by Jess Haley, 2026-10-26 [dependents of a carried document
+    % carry] and 2026-10-27 [handed-on documents do not carry dependents]
+    % (did-schema V_eta_go_forward_class_audit.md): a document whose edge
+    % names a document carried as v1 is carried too, down the chain
+    % (carry-064); only a document that stays v1 at the end of both passes
+    % counts, so this runs after the final v1 stamp, on the final carries.
+    carriedDependentsReport = struct('not_measured', ...
+        'did2.convert.v1_to_v2 returned no passthrough record');
+    if isstruct(passOneRecord) && iscell(convertResult.migrated)
+        [convertResult.migrated, carriedDependentsReport] = ...
+            ndi.migrate.internal.carryFinalDependents(convertResult.migrated, ...
+            bodies, passOneSourceOutputs);
+        fprintf(['[migrate step]   final carry sweep: %d document(s) inspected ' ...
+            '(%d not v1, %d edge(s)); %d final carries at the start; carried ' ...
+            '(carry-064): %d; pass-1 outputs dropped: %d, kept (still named): %d; ' ...
+            'naming a carry with no source (left): %d; session_id edges to a ' ...
+            'carry (not followed): %d; %d round(s)\n'], ...
+            carriedDependentsReport.documents_inspected, ...
+            carriedDependentsReport.v2_documents_inspected, ...
+            carriedDependentsReport.edges_examined, ...
+            carriedDependentsReport.carried_at_start, ...
+            carriedDependentsReport.carried_by_sweep, ...
+            carriedDependentsReport.outputs_dropped, ...
+            carriedDependentsReport.outputs_kept_referenced, ...
+            carriedDependentsReport.left_no_source, ...
+            carriedDependentsReport.session_edges_to_v1, ...
+            carriedDependentsReport.rounds);
+    end
+    tStep = migrateStepMark('carryFinalDependents', tStart, tStep, convertResult);
+
     % --- ingested files: point them at the bytes v1 already ingested --------
     % A v1 document still records each file as it was when first added
     % (`ingest` 1 from a path that is usually gone); the legacy backend copied
@@ -1273,6 +1310,8 @@ function result = local(path, options)
     % unchanged by the final v1 stamp (NaN: not measured)
     result.summary.carried_as_v1 = carriedAsV1;
     result.carriedAsV1 = carriedAsV1Report;
+    % the final sweep's carries (carry-064), apart from carried_as_v1 above
+    result.carriedDependents = carriedDependentsReport;
     % [pipeline defects are not carries] (Jess Haley, 2026-10-26): the
     % documents left as v1 because of the pipeline, not the data, reported
     % as ERRORS apart from the carries: a second-pass step that threw, and
