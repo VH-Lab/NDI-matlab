@@ -1,5 +1,5 @@
 function path = linkPath(folder, datasetPath)
-%LINKPATH The `path` a linked_session document records for FOLDER.
+%LINKPATH The Pathname a session's "database linking" relation records for FOLDER.
 %
 %   PATH = ndi.v2.linkPath(FOLDER, DATASETPATH): FOLDER relative to the
 %   dataset's folder DATASETPATH when FOLDER is inside it (written with '/',

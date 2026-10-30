@@ -11,10 +11,13 @@ function [sessions, notes] = datasetSessions(database, datasetSessionId, dataset
 %     reference     its local_identifier
 %     entity_id     the id of its `session` entity document
 %     is_linked     false: ingested (its documents are in DATABASE)
-%                   true:  linked (they are in the folder a `linked_session`
-%                          document names)
+%                   true:  linked (they are in the folder its link names)
 %     path          a linked session's folder, absolute ('' when ingested)
-%     link_id       the `linked_session` document's id ('' when ingested)
+%     link_id       the id of the document that links it: its "database
+%                   linking" relation, or, in a dataset written before that
+%                   relation, its `linked_session` document ('' when ingested)
+%     software_class the class that opens a linked session (the relation's
+%                   "software class"; 'ndi.session.dir' when not recorded)
 %     session       the linked session, opened (an ndi.session.dir; [] when
 %                   ingested)
 %
@@ -24,10 +27,18 @@ function [sessions, notes] = datasetSessions(database, datasetSessionId, dataset
 %   filed under it at any depth (a study may be filed under a parent study);
 %   the relation is in the
 %   dataset's database for both kinds. The relation is `included_in`
-%   (V_eta_relation_inheritance_plan.md). A session is LINKED when a
-%   `linked_session` document names it: its `path` is the session's folder
-%   (relative to DATASETPATH when inside it) and its `entity_id` the
-%   session's entity document, which must be in that folder.
+%   (V_eta_relation_inheritance_plan.md). A session is LINKED when its
+%   direct session -> dataset `included_in` relation has the method "database
+%   linking" (EMPTY:0000400; Jess Haley 2026-10-29 [linked session link on a
+%   direct dataset relation], [linked session link details], did-schema
+%   V_eta_go_forward_class_audit.md): the method's Pathname parameter
+%   (NCIT:C47922) is the session's folder (relative to DATASETPATH when inside
+%   it, ndi.v2.resolveLinkPath) and the relation's child the session's entity
+%   document, which must be in that folder (ndi.v2.sessionLinkOf). The
+%   relation is read first; a dataset written before it names the folder in
+%   a `linked_session` document (withdrawn: V_eta_linked_session_plan.md
+%   [linked_session withdrawn]), which is still read for a session no
+%   relation links.
 %
 %   NOTES is a cellstr of what was left out and why, the denominator first:
 %     - a `session` document in DATABASE that is not in the dataset;
@@ -53,7 +64,7 @@ arguments
 end
 
 sessions = struct('session_id', {}, 'reference', {}, 'entity_id', {}, ...
-    'is_linked', {}, 'path', {}, 'link_id', {}, 'session', {});
+    'is_linked', {}, 'path', {}, 'link_id', {}, 'software_class', {}, 'session', {});
 notes = {};
 
 % --- membership: filed under the dataset, directly or through a study ---
@@ -71,10 +82,13 @@ for k = 1:numel(datasetDocs)
     frontier = [frontier, {datasetDocs{k}.id()}]; %#ok<AGROW>
 end
 visited = frontier;
+memberRels = {};   % every membership relation read on the walk
 while ~isempty(frontier)
     next = {};
     for k = 1:numel(frontier)
-        next = [next, memberChildren(database, frontier{k}, member)]; %#ok<AGROW>
+        [c, r] = memberChildren(database, frontier{k}, member);
+        next = [next, c]; %#ok<AGROW>
+        memberRels = [memberRels, r]; %#ok<AGROW>
     end
     next = setdiff(unique(next), visited);
     members = [members, next]; %#ok<AGROW>
@@ -100,13 +114,54 @@ for i = 1:numel(sessionDocs)
     nIngested = nIngested + 1;
     sessions(end+1) = struct('session_id', ndi.v2.sessionIdOf(p), 'reference', ref, ...
         'entity_id', p.base.id, 'is_linked', false, 'path', '', 'link_id', '', ...
-        'session', []); %#ok<AGROW>
+        'software_class', '', 'session', []); %#ok<AGROW>
 end
 
-% --- linked: `linked_session` documents ---
-links = database.search(ndi.query('', 'isa', 'linked_session', ''));
+% --- linked: the "database linking" relation, then (older datasets) the
+% `linked_session` document ---
+if ~knowMembership
+    % no dataset document to walk from: every relation is read
+    memberRels = database.search(ndi.query('', 'isa', 'directed_relation', ''));
+end
 nLinked = 0;
+nLinkRels = 0;
 problems = {};
+% a session listed as ingested (its documents are here) is not listed again
+linkedEntities = {sessions.entity_id};
+for i = 1:numel(memberRels)
+    p = memberRels{i}.document_properties;
+    link = ndi.v2.sessionLinkOf(p);
+    if ~strcmp(link.kind, 'linked')
+        continue;
+    end
+    nLinkRels = nLinkRels + 1;
+    if isempty(link.child_id)
+        problems{end+1} = sprintf('linking relation %s names no session entity', p.base.id); %#ok<AGROW>
+        continue;
+    end
+    if ismember(link.child_id, linkedEntities)
+        continue;   % linked once already
+    end
+    if isempty(link.path)
+        problems{end+1} = sprintf('linking relation %s names no Pathname', p.base.id); %#ok<AGROW>
+        continue;
+    end
+    folder = ndi.v2.resolveLinkPath(link.path, datasetPath);
+    [row, why] = linkedRow(folder, link.child_id, p.base.id, link.software_class, options);
+    linkedEntities{end+1} = link.child_id; %#ok<AGROW>
+    if isempty(row)
+        problems{end+1} = why; %#ok<AGROW>
+        continue;
+    end
+    nLinked = nLinked + 1;
+    sessions(end+1) = row; %#ok<AGROW>
+end
+
+try
+    links = database.search(ndi.query('', 'isa', 'linked_session', ''));
+catch
+    links = {};   % a schema that no longer declares the class
+end
 for i = 1:numel(links)
     p = links{i}.document_properties;
     rel = char(ndi.v2.blockOf(p, 'linked_session', 'path', ''));
@@ -116,32 +171,29 @@ for i = 1:numel(links)
         continue;
     end
     entityId = e{1};
+    if ismember(entityId, linkedEntities)
+        continue;   % its linking relation is read instead
+    end
     folder = ndi.v2.resolveLinkPath(rel, datasetPath);
     if knowMembership && ~ismember(entityId, members)
         problems{end+1} = sprintf('%s (linked) is not %s the dataset', folder, member); %#ok<AGROW>
         continue;
     end
-    row = struct('session_id', '', 'reference', '', 'entity_id', entityId, ...
-        'is_linked', true, 'path', folder, 'link_id', p.base.id, 'session', []);
-    if options.OpenLinked
-        [S, sp, why] = openLinked(folder, entityId);
-        if isempty(S)
-            problems{end+1} = why; %#ok<AGROW>
-            continue;
-        end
-        row.session = S;
-        row.session_id = S.id();
-        row.reference = char(ndi.v2.blockOf(sp, 'session', 'local_identifier', ''));
+    [row, why] = linkedRow(folder, entityId, p.base.id, '', options);
+    linkedEntities{end+1} = entityId; %#ok<AGROW>
+    if isempty(row)
+        problems{end+1} = why; %#ok<AGROW>
+        continue;
     end
     nLinked = nLinked + 1;
     sessions(end+1) = row; %#ok<AGROW>
 end
 
-notes{end+1} = sprintf(['DENOMINATOR: %d session document(s) and %d linked_session ' ...
-    'document(s) read; %d ingested and %d linked session(s) listed'], ...
+notes{end+1} = sprintf(['DENOMINATOR: %d session document(s), %d linking relation(s) ' ...
+    'and %d linked_session document(s) read; %d ingested and %d linked session(s) listed'], ...
     sum(cellfun(@(d) strcmp(ndi.v2.kindOf(d.document_properties), 'session') && ...
     ~strcmp(d.session_id(), datasetSessionId), sessionDocs)), ...
-    numel(links), nIngested, nLinked);
+    nLinkRels, numel(links), nIngested, nLinked);
 if ~knowMembership
     notes{end+1} = sprintf(['no dataset document: membership (%s) cannot be read, so every ' ...
         'session is listed'], member);
@@ -156,15 +208,16 @@ end
 end
 
 % -----------------------------------------------------------------------------
-function children = memberChildren(database, parentId, member)
+function [children, used] = memberChildren(database, parentId, member)
 % the ids of the documents filed under PARENTID by the relation MEMBER
-% (`included_in`), read from relations in DATABASE
+% (`included_in`), read from relations in DATABASE; USED the relations
 arguments
     database
     parentId {mustBeText}
     member {mustBeText}
 end
 children = {};
+used = {};
 q = ndi.query('', 'isa', 'directed_relation', '') & ...
     ndi.query('', 'depends_on', 'parent_id', parentId);
 rels = database.search(q);
@@ -175,7 +228,38 @@ for k = 1:numel(rels)
     end
     c = ndi.v2.edgeIds(p, 'child_id');
     children = [children, c(:)']; %#ok<AGROW>
+    used{end+1} = rels{k}; %#ok<AGROW>
 end
+end
+
+function [row, why] = linkedRow(folder, entityId, linkId, softwareClass, options)
+% the listing row of the session linked from FOLDER ([] and WHY when it
+% cannot be listed)
+arguments
+    folder {mustBeText}
+    entityId {mustBeText}
+    linkId {mustBeText}
+    softwareClass
+    options (1,1) struct
+end
+why = '';
+if isempty(softwareClass)
+    softwareClass = 'ndi.session.dir';
+end
+row = struct('session_id', '', 'reference', '', 'entity_id', entityId, ...
+    'is_linked', true, 'path', folder, 'link_id', linkId, ...
+    'software_class', char(softwareClass), 'session', []);
+if ~options.OpenLinked
+    return;
+end
+[S, sp, why] = openLinked(folder, entityId);
+if isempty(S)
+    row = [];
+    return;
+end
+row.session = S;
+row.session_id = S.id();
+row.reference = char(ndi.v2.blockOf(sp, 'session', 'local_identifier', ''));
 end
 
 function [S, sp, why] = openLinked(folder, entityId)

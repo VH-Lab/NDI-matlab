@@ -115,9 +115,9 @@ function result = import_V2(dataParentDir, options)
 %                         session into the dataset and writes no folders: the
 %                         self-contained form to publish, and the fastest. true
 %                         writes each session ONCE, to its own folder, and the
-%                         dataset LINKS it (a `linked_session` document and the
-%                         session's `included_in` relation in the dataset's
-%                         database). Either converts to the other later
+%                         dataset LINKS it (the session's direct `included_in`
+%                         relation to the dataset, method "database linking"
+%                         with its Pathname, in the dataset's database). Either converts to the other later
 %                         (ndi.dataset/convertLinkedSessionToIngested,
 %                         convertIngestedSessionToLinked).
 %     'WriteBatchSize'    documents per write batch (default 2000); progress
@@ -709,8 +709,9 @@ else
     fprintf('(stages 4 and 5 did not run: writing the sessions alone)\n');
 end
 % Decision #71: with 'SessionFolders', each session is written ONCE, to its own
-% folder, and the dataset LINKS it (a `linked_session` document and the session's
-% `included_in` relation in the dataset's database).
+% folder, and the dataset LINKS it (the session's direct `included_in` relation to
+% the dataset, method "database linking" with its Pathname, in the dataset's
+% database: ndi.v2.sessionLinkRelation).
 linked = options.SessionFolders && any(options.Stages == "dataset");
 if any(options.Stages == "dataset")
     fprintf('\n== stage 13: check & write the dataset ==\n');
@@ -779,7 +780,7 @@ end
 function out = writeDataset(result, T, dataParentDir, options, linked)
 % Stage 13 (decision #66): every document of this run checked as one set, and
 % written into ONE V2 database -- or, LINKED (decision #71), the dataset-level
-% documents, each session's included_in relations and a linked_session per session,
+% documents, each session's included_in relations (its "database linking" one among them),
 % with the sessions' own documents written to their folders afterwards (by
 % writeSessions, which also writes them when the dataset stage does not run).
 % The writing is ndi.setup.V2.writeDataset; 'Strict' stays off here: this

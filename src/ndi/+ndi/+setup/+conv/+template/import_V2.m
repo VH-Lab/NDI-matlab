@@ -54,8 +54,8 @@ function result = import_V2(dataFolder, options)
 %     * Raw data is NEVER copied or written to: each recording's file is
 %       recorded by location (ndi.setup.V2.recordingDocuments); sessions are
 %       written to their own folders under 'OutputRoot' (outside DATAFOLDER),
-%       and the dataset LINKS them (a `linked_session` each,
-%       V_eta_linked_session_plan.md; ndi.setup.V2.writeDataset).
+%       and the dataset LINKS them (a "database linking" `included_in`
+%       relation each; ndi.setup.V2.writeDataset).
 %     * The did-schema #88 shape only: one `entity` class, a statement's
 %       method one block {term, parameters} (or a shared `method` document by
 %       `method_id`), `included_in` for records, `session_id` an edge (the
@@ -257,7 +257,7 @@ end
 % =============================================================================
 function w = writeAll(result, options)
 % The dataset folder holds the dataset-level documents and, per session, its
-% `included_in` relations and a `linked_session` naming its folder; each
+% `included_in` relations, its "database linking" one naming its folder; each
 % session's own documents are written ONCE, to its own folder. The whole set
 % is checked as one before anything is written (ndi.setup.V2.writeDataset).
 arguments

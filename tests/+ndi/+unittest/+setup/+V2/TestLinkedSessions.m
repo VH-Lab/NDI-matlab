@@ -4,7 +4,14 @@ classdef TestLinkedSessions < matlab.unittest.TestCase
 %   V_eta_linked_session_plan.md (signed 2026-10-09): a session is in a
 %   dataset when it is `included_in` the dataset or a study of it; an INGESTED
 %   session's documents are in the dataset's database, a LINKED one's in its
-%   own folder, which a `linked_session` document names. Writes
+%   own folder. How it is in the dataset is the method of ONE direct
+%   session -> dataset `included_in` relation (did-schema
+%   V_eta_go_forward_class_audit.md, Jess Haley 2026-10-29 [linked session
+%   link on a direct dataset relation], [linked session link details],
+%   [linked session pathname]): "database linking" with "software class" and
+%   Pathname, or "database ingestion"; converting replaces it. The
+%   `linked_session` document is withdrawn ([linked_session withdrawn]) and
+%   read only from a dataset written before. Writes
 %   TestHaleyRecordings' synthetic concentration_0001 into a dataset once,
 %   then each test works on its own copy of that dataset.
 
@@ -87,6 +94,14 @@ classdef TestLinkedSessions < matlab.unittest.TestCase
             testCase.verifyTrue(contains(notes{1}, '0 ingested and 1 linked'), notes{1});
             S = ds.open_session(sid);
             testCase.verifyEqual(canonical(S.path), canonical(folder));
+            % the link was REPLACED: one "database linking" relation, no
+            % "database ingestion" one, no linked_session document
+            [links, kinds] = linkRelations(ds, sid);
+            testCase.verifyEqual(kinds, {'linked'}, 'one linking relation, nothing else');
+            linkedId = links{1}.id();
+            testCase.verifyEqual(canonical(ndi.v2.resolveLinkPath( ...
+                ndi.v2.sessionLinkOf(links{1}).path, testCase.Path)), canonical(folder));
+            testCase.verifyEmpty(ds.database_search(ndi.query('', 'isa', 'linked_session', '')));
             % every document is still reached through the dataset
             testCase.verifyEqual(sort(idsOf(testCase.sessionDocuments(sid, ds))), sort(idsOf(before)));
             if ~isempty(docId)
@@ -98,6 +113,10 @@ classdef TestLinkedSessions < matlab.unittest.TestCase
             ds = ndi.dataset.dir(testCase.Path);
             notes = ds.session_notes();
             testCase.verifyTrue(contains(notes{1}, '1 ingested and 0 linked'), notes{1});
+            [links, kinds] = linkRelations(ds, sid);
+            testCase.verifyEqual(kinds, {'ingested'}, ...
+                'converting back replaces the linking relation with an ingestion one');
+            testCase.verifyNotEqual(links{1}.id(), linkedId, 'a new relation, not an edited one');
             testCase.verifyEqual(sort(idsOf(testCase.sessionDocuments(sid, ds))), sort(idsOf(before)));
             if ~isempty(docId)
                 testCase.verifyTrue(ds.database_existbinarydoc(docId, name), ...
@@ -112,6 +131,18 @@ classdef TestLinkedSessions < matlab.unittest.TestCase
             testCase.Dataset.add_linked_session(S2);
             [refs, ids] = testCase.Dataset.session_list();
             testCase.verifyEqual(sort(refs), sort({'concentration_0001', 'extra'}));
+            % ONE direct relation to the dataset document records the link
+            [links, kinds] = linkRelations(testCase.Dataset, S2.id());
+            testCase.verifyEqual(kinds, {'linked'});
+            link = ndi.v2.sessionLinkOf(links{1});
+            testCase.verifyEqual(link.parent_id, datasetDocId(testCase.Dataset), ...
+                'the link is on the session -> dataset relation');
+            testCase.verifyEqual(link.software_class, 'ndi.session.dir');
+            testCase.verifyEqual(link.path, ndi.v2.linkPath(folder, testCase.Path));
+            testCase.verifyTrue(isAbsolutePath(link.path), ...
+                'a folder outside the dataset''s is recorded absolute');
+            testCase.verifyEmpty(testCase.Dataset.database_search( ...
+                ndi.query('', 'isa', 'linked_session', '')), 'no linked_session is written');
             % its documents are found through the dataset
             found = testCase.Dataset.database_search(ndi.query('base.session_id', 'exact_string', S2.id(), ''));
             testCase.verifyNotEmpty(found);
@@ -145,6 +176,15 @@ classdef TestLinkedSessions < matlab.unittest.TestCase
             % session but its part_of relation
             files = ndi.setup.V2.datasetDatabaseFiles(L.dataset.path);
             testCase.verifyNumElements(files, 2, 'the dataset''s database and the session folder''s');
+            % the link is the session's direct relation to the dataset
+            [links, kinds] = linkRelations(ds, ids{1});
+            testCase.verifyEqual(kinds, {'linked'});
+            link = ndi.v2.sessionLinkOf(links{1});
+            testCase.verifyEqual(link.parent_id, datasetDocId(ds));
+            testCase.verifyEqual(canonical(ndi.v2.resolveLinkPath(link.path, L.dataset.path)), ...
+                canonical(L.sessions.path{1}));
+            testCase.verifyEmpty(ds.database_search(ndi.query('', 'isa', 'linked_session', '')), ...
+                'the import writes no linked_session');
             db = did2.database.sqlitedb(files{1});
             n = mksqlite(db.testHookDbId(), sprintf(['SELECT COUNT(*) AS n FROM documents ' ...
                 'WHERE session_id = ''%s'' AND classname <> ''directed_relation'''], ids{1}));
@@ -170,6 +210,13 @@ classdef TestLinkedSessions < matlab.unittest.TestCase
             S2 = ndi.setup.V2.createSession(folder, 'ingested_extra');
             testCase.Dataset.add_ingested_session(S2);
             ds = ndi.dataset.dir(testCase.Path);
+            [links, kinds] = linkRelations(ds, S2.id());
+            testCase.verifyEqual(kinds, {'ingested'}, ...
+                'an ingested session gets the direct relation, method "database ingestion"');
+            link = ndi.v2.sessionLinkOf(links{1});
+            testCase.verifyEqual(link.parent_id, datasetDocId(ds));
+            testCase.verifyEqual(link.software_class, 'ndi.session.dir');
+            testCase.verifyEmpty(link.path, 'an ingested session has no Pathname');
             [refs, ids] = ds.session_list();
             testCase.verifyEqual(sort(refs), sort({'concentration_0001', 'ingested_extra'}));
             notes = ds.session_notes();
@@ -177,6 +224,65 @@ classdef TestLinkedSessions < matlab.unittest.TestCase
             S = ds.open_session(ids{strcmp(refs, 'ingested_extra')});
             testCase.verifyEqual(canonical(S.path), canonical(testCase.Path), ...
                 'An ingested session opens from the dataset''s folder.');
+        end
+
+        function testAFolderInsideTheDatasetIsRecordedRelative(testCase)
+            % Jess Haley 2026-10-29 [linked session pathname]: relative to the
+            % dataset's folder, with '/', when the session folder is inside it
+            folder = fullfile(testCase.Path, 'sessions', 'inside');
+            mkdir(folder);
+            S2 = ndi.setup.V2.createSession(folder, 'inside');
+            testCase.Dataset.add_linked_session(S2);
+            links = linkRelations(testCase.Dataset, S2.id());
+            testCase.verifyEqual(ndi.v2.sessionLinkOf(links{1}).path, 'sessions/inside');
+            % the dataset moved as one folder still finds it
+            moved = [testCase.Path '_moved'];
+            movefile(testCase.Path, moved);
+            testCase.Path = moved;
+            ds = ndi.dataset.dir(moved);
+            refs = ds.session_list();
+            testCase.verifyTrue(ismember('inside', refs), strjoin(ds.session_notes(), newline));
+        end
+
+        function testAnOlderLinkedSessionDocumentIsStillRead(testCase)
+            % a dataset written before the linking relation names the folder in
+            % a `linked_session` document: it is read when no relation links
+            testCase.assumeTrue(did2.schema.cache.shared().hasClass('linked_session'), ...
+                'the schema in use no longer declares linked_session');
+            [~, ids] = testCase.Dataset.session_list();
+            sid = ids{1};
+            folder = fullfile(testCase.Root, ['older_' char(ndi.ido.unique_id())]);
+            testCase.Dataset.convertIngestedSessionToLinked(sid, folder, 'areYouSure', true);
+            links = linkRelations(testCase.Dataset, sid);
+            entityId = ndi.v2.sessionLinkOf(links{1}).child_id;
+            % rewrite the dataset as an older writer left it
+            db = did2.database.sqlitedb(fullfile(testCase.Path, '.ndi', ...
+                ndi.database.implementations.database.did2sqlite.DEFAULTFILENAME()));
+            closer = onCleanup(@() db.close());
+            db.remove(links{1}.id());
+            dsDoc = datasetDocId(testCase.Dataset);
+            plain = did2.build.directedRelation(entityId, dsDoc, ...
+                ndi.v2.vocabTerm('relation', 'included_in'), 'SessionId', testCase.Dataset.id());
+            older = did2.build.document('linked_session', ...
+                struct('path', ndi.v2.linkPath(folder, testCase.Path)), ...
+                'SessionId', testCase.Dataset.id(), 'Edges', struct('entity_id', entityId));
+            db.add({did2.document(plain), did2.document(older)});
+            clear closer;
+            ds = ndi.dataset.dir(testCase.Path);
+            [refs, ids2] = ds.session_list();
+            testCase.verifyEqual(refs, {'concentration_0001'});
+            testCase.verifyEqual(ids2, {sid});
+            notes = ds.session_notes();
+            testCase.verifyTrue(contains(notes{1}, '0 ingested and 1 linked'), notes{1});
+            testCase.verifyTrue(contains(notes{1}, '0 linking relation(s) and 1 linked_session'), notes{1});
+            S = ds.open_session(sid);
+            testCase.verifyEqual(canonical(S.path), canonical(folder));
+            % converting it replaces the older document with an ingestion relation
+            ds.convertLinkedSessionToIngested(sid, 'areYouSure', true);
+            ds = ndi.dataset.dir(testCase.Path);
+            [~, kinds] = linkRelations(ds, sid);
+            testCase.verifyEqual(kinds, {'ingested'});
+            testCase.verifyEmpty(ds.database_search(ndi.query('', 'isa', 'linked_session', '')));
         end
 
         function testAFolderThatMovedIsReported(testCase)
@@ -216,6 +322,47 @@ classdef TestLinkedSessions < matlab.unittest.TestCase
             docs = cellfun(@(d) d.document_properties, found, 'UniformOutput', false);
         end
     end
+end
+
+function [links, kinds] = linkRelations(ds, entityId)
+% the relations of DS whose child is ENTITYID and whose method records how it
+% is in the dataset (ndi.v2.sessionLinkOf), and their kinds
+arguments
+    ds
+    entityId {mustBeText}
+end
+q = ndi.query('', 'isa', 'directed_relation', '') & ...
+    ndi.query('', 'depends_on', 'child_id', entityId);
+rels = ds.database_search(q);
+links = {};
+kinds = {};
+for k = 1:numel(rels)
+    kind = ndi.v2.sessionLinkOf(rels{k}).kind;
+    if ~isempty(kind)
+        links{end+1} = rels{k}; %#ok<AGROW>
+        kinds{end+1} = kind; %#ok<AGROW>
+    end
+end
+end
+
+function id = datasetDocId(ds)
+% the id of DS's one `dataset` entity document
+arguments
+    ds
+end
+d = ds.database_search(ndi.v2.isaQuery('dataset'));
+d = d(cellfun(@(x) strcmp(ndi.v2.kindOf(x.document_properties), 'dataset'), d));
+id = '';
+if isscalar(d)
+    id = d{1}.id();
+end
+end
+
+function tf = isAbsolutePath(p)
+arguments
+    p {mustBeText}
+end
+tf = startsWith(p, '/') || startsWith(p, '\') || ~isempty(regexp(p, '^[A-Za-z]:', 'once'));
 end
 
 function ids = idsOf(docs)

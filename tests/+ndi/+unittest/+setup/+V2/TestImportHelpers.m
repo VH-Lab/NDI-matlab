@@ -209,6 +209,27 @@ classdef TestImportHelpers < matlab.unittest.TestCase
             % the session folder has no study relation of its own: membership is the dataset's
             rel = S.database_search(ndi.v2.isaQuery('directed_relation'));
             testCase.verifyEmpty(rel);
+            % each session's link is one direct relation to the dataset document,
+            % method "database linking" with its Pathname (Jess Haley
+            % 2026-10-29 [linked session link details]); no linked_session
+            dsDoc = m.documents(cellfun(@(d) strcmp(ndi.v2.kindOf(d), 'dataset'), m.documents));
+            sids = {s1, s2};
+            refs = {'s1', 's2'};
+            for k = 1:2
+                q = ndi.query('', 'isa', 'directed_relation', '') & ...
+                    ndi.query('', 'depends_on', 'child_id', sids{k});
+                rels = ds.database_search(q);
+                links = cellfun(@(r) ndi.v2.sessionLinkOf(r), rels, 'UniformOutput', false);
+                links = links(cellfun(@(x) strcmp(x.kind, 'linked'), links));
+                links = [links{:}];
+                testCase.verifyNumElements(links, 1, 'one linking relation per session');
+                if isempty(links), continue; end
+                testCase.verifyEqual(links(1).parent_id, dsDoc{1}.base.id);
+                testCase.verifyEqual(links(1).software_class, 'ndi.session.dir');
+                testCase.verifyEqual(links(1).path, ...
+                    ndi.v2.linkPath(fullfile(testCase.Root, refs{k}), dsPath));
+            end
+            testCase.verifyEmpty(ds.database_search(ndi.query('', 'isa', 'linked_session', '')));
         end
 
         function testASessionOfANestedStudyIsInTheDataset(testCase)
