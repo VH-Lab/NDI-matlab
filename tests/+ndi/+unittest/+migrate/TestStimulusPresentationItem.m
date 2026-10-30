@@ -208,14 +208,84 @@ classdef TestStimulusPresentationItem < matlab.unittest.TestCase
             testCase.verifyTrue(any(strcmp(report.unplaced_fields, 'stimulus_presentation.extra')));
         end
 
-        function testAHartleyGeneratorKeyTheBasisDoesNotReadIsStillCarried(testCase)
-            % NOT decided: on the Hartley route the methods are the session's
-            % SHARED basis gratings (hartleyBasisGratings, minted once), so
-            % [unread stimulus parameters are method parameters] names no
-            % method of this presentation for a generator key the basis does
-            % not read (randState, rect, distance, ...). The presentation stays
-            % carried under carry-080 until the team says where those go.
+        function testHartleyGeneratorKeysAreTheInlineMethodParameters(testCase)
+            % INVERTED 2026-10-30 from
+            % testAHartleyGeneratorKeyTheBasisDoesNotReadIsStillCarried.
+            % Decided by Jess Haley, 2026-10-30 [Hartley settings on the
+            % inline method] (did-schema V_eta_go_forward_class_audit.md,
+            % G35): a generator key the SHARED basis does not read (randState,
+            % rect, distance, chromhigh, reps, ...) is a parameter of the
+            % presentation manipulation's own inline method, so the
+            % presentation is no longer carried under carry-080 for it. Run
+            % through the real lossless check (LeaveUnplaced defaults true).
             pres = presentationBody('pres_hartley', 1, hartleyGeneratorStim());
+            bodies = { pres, ...
+                responseScalar('resp_1', pres.base.id, 'elem_9'), ...
+                docBody('element', 'elem_9', {'subject_id', 'animal_1'}) };
+            r = ndi.migrate.internal.bodyResolver(bodies);
+            seq = struct('item_ids', {{'g_a', 'g_b'}}, 'order', [1 2 1]);
+            [m, methods, report] = ndi.migrate.internal.stimulusPresentationToItem(pres, r, seq);
+            testCase.verifyEmpty(report.reason);
+            testCase.verifyEmpty(report.unplaced_fields);
+            testCase.verifyTrue(isItemManipulation(m));
+            testCase.verifyEmpty(methods, 'the shared basis is minted by the caller');
+            testCase.verifyEqual(depValues(m, 'item_id'), {'g_a', 'g_b'});
+            own = struct('method', m.interaction.method);
+            testCase.verifyEqual(own.method.term.name, 'visual stimulation');
+            % the generator spec's keys beyond M, K_absmax, L_absmax, sfmax,
+            % contrast and fps: rect, windowShape, distance, chromhigh,
+            % chromlow, background, backdrop, reps, randState, and dispprefs'
+            % one pair
+            testCase.verifyEqual(report.hartley_own_parameters, 10);
+            testCase.verifyEqual(methodParam(own, 'stimulus rectangle'), [-7 -138 793 662]);
+            testCase.verifyEqual(methodParam(own, 'viewing distance'), 30);
+            testCase.verifyEqual(methodParam(own, 'high colour'), [255 255 255]);
+            testCase.verifyEqual(methodParam(own, 'low colour'), [0 0 0]);
+            testCase.verifyEqual(methodParam(own, 'repetitions'), 1);
+            testCase.verifyEqual(methodParam(own, 'window shape'), 0);
+            testCase.verifyEqual(methodParam(own, 'background duration after stimulus'), 3);
+            seed = paramEntry(own, 'Random Seed');
+            testCase.verifyNotEmpty(seed, 'randState is the registered Random Seed');
+            testCase.verifyEqual(seed.variable.node, 'NCIT:C64220');
+            testCase.verifyEqual(seed.matrix(:)', ...
+                [0.8301061479240671 0.6704957765200832 0.08449867537860833]);
+        end
+
+        function testHartleyInlineMethodSharesNoVariableWithTheBasis(testCase)
+            % [method shared plus own] (Jess Haley, 2026-10-22): the shared
+            % methods and the inline one share no variable. The basis reads
+            % M, K_absmax, L_absmax, fps, contrast and sfmax; none of them,
+            % nor any basis variable, is an inline parameter.
+            pres = presentationBody('pres_hartley', 1, hartleyGeneratorStim());
+            seq = struct('item_ids', {{'g_a', 'g_b'}}, 'order', [1 2 1]);
+            m = emit(testCase, pres, seq);
+            own = struct('method', m.interaction.method);
+            for v = {'M', 'K_absmax', 'L_absmax', 'fps', 'frame rate', 'contrast', ...
+                    'sfmax', 'orientation', 'spatial phase', 'spatial frequency', 'duration'}
+                testCase.verifyEmpty(paramEntry(own, v{1}), v{1});
+            end
+        end
+
+        function testAHartleyStandaloneItemStillCarriesItsGeneratorKeys(testCase)
+            % a presentation with no subject is a standalone item, which has
+            % no method: the generator keys have no home there, so it stays
+            % carried under carry-080
+            pres = presentationBody('pres_hartley', 1, hartleyGeneratorStim());
+            r = ndi.migrate.internal.bodyResolver({pres});
+            seq = struct('item_ids', {{'g_a', 'g_b'}}, 'order', [1 2 1]);
+            [m, ~, report] = ndi.migrate.internal.stimulusPresentationToItem(pres, r, seq);
+            testCase.verifyEmpty(m);
+            testCase.verifyTrue(report.standalone);
+            testCase.verifyTrue(startsWith(report.reason, '[carry-080]'), report.reason);
+            testCase.verifyTrue(any(strcmp(report.unplaced_fields, 'parameters.randState')));
+        end
+
+        function testASecondValueOfABasisKeyIsStillCarried(testCase)
+            % a key the basis reads once, given twice: no home decided
+            % ([image raw round trip and single-read keys], G36), carry-080
+            stim = hartleyGeneratorStim();
+            stim.parameters.contrast = [1 0.5];
+            pres = presentationBody('pres_hartley', 1, stim);
             bodies = { pres, ...
                 responseScalar('resp_1', pres.base.id, 'elem_9'), ...
                 docBody('element', 'elem_9', {'subject_id', 'animal_1'}) };
@@ -224,7 +294,8 @@ classdef TestStimulusPresentationItem < matlab.unittest.TestCase
             [m, ~, report] = ndi.migrate.internal.stimulusPresentationToItem(pres, r, seq);
             testCase.verifyEmpty(m);
             testCase.verifyTrue(startsWith(report.reason, '[carry-080]'), report.reason);
-            testCase.verifyTrue(any(strcmp(report.unplaced_fields, 'parameters.randState')));
+            testCase.verifyTrue(any(strcmp(report.unplaced_fields, ...
+                'parameters.contrast (more than one value)')));
         end
 
         % ================= edges ===========================================

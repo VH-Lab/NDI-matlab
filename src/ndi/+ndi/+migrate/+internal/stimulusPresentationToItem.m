@@ -67,7 +67,11 @@ function [manipBody, methodBodies, report, softwareBodies, controlCalcs] = ...
 %                     method         inline {term 'visual stimulation'}: how
 %                                    the sequence was delivered (the plan's
 %                                    own example); what each stimulus was is
-%                                    on the documents the playlist names
+%                                    on the documents the playlist names. On
+%                                    the SEQUENCE (Hartley) path its
+%                                    `parameters` are the generator settings
+%                                    the shared basis does not read (see
+%                                    HARTLEY GENERATOR SETTINGS)
 %                     statement.distributive  true on a cohort manipulation
 %                     software_id    the presentation's `app` (see SOFTWARE)
 %     SOFTWARE      the `software` entities (with version assertions) minted
@@ -139,6 +143,19 @@ function [manipBody, methodBodies, report, softwareBodies, controlCalcs] = ...
 %     .duration     seconds per frame (optional; gives the offsets)
 %   ndi.migrate.internal.hartleyBasisGratings builds it from the hartley_calc
 %   documents that reference the presentation.
+%
+%   HARTLEY GENERATOR SETTINGS. Decided by Jess Haley, 2026-10-30 [Hartley
+%   settings on the inline method] (did-schema
+%   V_eta_go_forward_class_audit.md, answering docs/V2_PLAN.md G35; under
+%   [method shared plus own], 2026-10-22): on the SEQUENCE path the methods
+%   the playlist names are the session's SHARED basis, minted once, so a
+%   generator key the basis does not read (randState, rect, distance,
+%   chromhigh, reps, ...; the basis reads M, K_absmax, L_absmax, fps,
+%   contrast, sfmax) is a parameter of this manipulation's own inline
+%   `method` (ndi.migrate.internal.stimulusRecipe kind 'hartley_generator').
+%   REPORT.hartley_own_parameters counts them. A STANDALONE item has no
+%   method, so such a presentation with no subject is still refused under
+%   carry-080, as is a second value of a key the basis reads.
 %
 %   CONTROL (Decided by Jess Haley, 2026-10-22 [control as covariate],
 %   did-schema V_eta_stimulus_response_model_plan.md). 'ControlRecords' are
@@ -292,11 +309,14 @@ end
 % field beside stimuli / presentation_order / presentation_time, a stimulus
 % field beside `parameters`) is carried under carry-100 (malformed). Still
 % refused under carry-080, because the decision names no home for them (see
-% unplacedPresentationFields): a Hartley generator parameter the SHARED basis
-% does not read (the basis methods are minted once per session, not per
-% presentation), and a second value of a key gratingRecipe reads one of.
-[outside, unplaced] = unplacedPresentationFields(earlyBlock, earlyStimuli, ...
-    stimulusKinds, ~isempty(sequence));
+% unplacedPresentationFields): a second value of a key gratingRecipe (or the
+% Hartley basis) reads one of. A Hartley generator parameter the SHARED basis
+% does not read is the manipulation's inline method parameter ([Hartley
+% settings on the inline method], Jess Haley, 2026-10-30); GENERATORKEYS
+% lists them, and they refuse only a standalone item (below), which has no
+% method to hold them.
+[outside, unplaced, generatorKeys] = unplacedPresentationFields(earlyBlock, ...
+    earlyStimuli, stimulusKinds, ~isempty(sequence));
 report.unplaced_fields = [outside, unplaced];
 if ~isempty(report.unplaced_fields) && options.LeaveUnplaced
     if ~isempty(outside)
@@ -365,6 +385,17 @@ if isempty(animals)
             report.standalone = true;
         end
     end
+end
+
+if report.standalone && ~isempty(generatorKeys) && options.LeaveUnplaced
+    % [Hartley settings on the inline method] puts the generator keys on the
+    % MANIPULATION's inline method; a standalone item has none, so they have
+    % no home and the presentation is carried as v1
+    report.unplaced_fields = [report.unplaced_fields, generatorKeys];
+    % carry-register: carry-080
+    report.reason = ['[carry-080] unplaced (carried as v1; a standalone item ' ...
+        'has no method for them): ' strjoin(generatorKeys, ', ')];
+    return;
 end
 
 entityId = '';
@@ -442,9 +473,15 @@ if ~isempty(sequence)
     [controlCalcs, calcSoftware, report] = controlCalculations( ...
         options.ControlRecords, presentationId, entityId, numel(order), false, report);
     softwareBodies = [softwareBodies, calcSoftware];
+    % [Hartley settings on the inline method] (Jess Haley, 2026-10-30)
+    ownParams = [];
+    if ~report.standalone
+        [ownParams, report.hartley_own_parameters] = ...
+            hartleyOwnParameters(stimParameters(stimuli, 1));
+    end
     manipBody = itemBody(report.standalone, presentationId, sessionId, datestamp, ...
         entityId, stimulatorId, itemIds, value, dims, covs, report.distributive, ...
-        '', swIds);
+        '', swIds, ownParams);
     [manipBody, report] = carryFiles(manipBody, v1Body, report);
     return;
 end
@@ -657,20 +694,61 @@ end
 
 function b = itemBody(standalone, presentationId, sessionId, datestamp, ...
         entityId, stimulatorId, itemIds, value, dims, covs, distributive, notes, ...
-        swIds)
+        swIds, methodParams)
 if nargin < 12
     notes = '';
 end
 if nargin < 13
     swIds = struct('software', '', 'os', '', 'interpreter', '');
 end
+if nargin < 14
+    methodParams = [];
+end
 if standalone
     b = standaloneItem(presentationId, sessionId, datestamp, itemIds, value, dims, covs);
 else
     b = itemManipulation(presentationId, sessionId, datestamp, ...
         entityId, stimulatorId, itemIds, value, dims, covs, distributive, notes, ...
-        swIds);
+        swIds, methodParams);
 end
+end
+
+function [params, n] = hartleyOwnParameters(p)
+%HARTLEYOWNPARAMETERS The generator settings of a Hartley presentation's one
+%   stimulus that the shared basis does not read, as inline method
+%   parameters ([Hartley settings on the inline method], Jess Haley,
+%   2026-10-30). N is how many v1 keys were placed. The variables are
+%   stimulusRecipe's ('hartley_generator'); none is a variable of a basis
+%   method (orientation, spatial phase, spatial frequency, contrast,
+%   duration), as [method shared plus own] requires.
+params = [];
+n = 0;
+if ~isstruct(p) || ~isscalar(p)
+    return;
+end
+own = p;
+read = intersect(fieldnames(p), hartleyReads());
+if ~isempty(read)
+    own = rmfield(p, read);
+end
+fn = fieldnames(own);
+for k = 1:numel(fn)
+    if ~isempty(own.(fn{k})) && ~strcmp(fn{k}, 'isblank')
+        n = n + 1;
+    end
+end
+if n == 0
+    return;
+end
+recipe = ndi.migrate.internal.stimulusRecipe(own, 'hartley_generator');
+restore = ndi.migrate.internal.termRegistryOff(); %#ok<NASGU>   % most variables are labels
+params = ndi.migrate.internal.recipeParameterList(recipe.parameters);
+end
+
+function names = hartleyReads()
+% The generator keys the shared Hartley basis reads
+% (ndi.migrate.internal.hartleyBasisGratings generatorSpec).
+names = {'M', 'K_absmax', 'L_absmax', 'fps', 'contrast', 'sfmax'};
 end
 
 function d = standaloneItem(presentationId, sessionId, datestamp, itemIds, value, dims, covs)
@@ -691,12 +769,15 @@ end
 
 function m = itemManipulation(presentationId, sessionId, datestamp, ...
         entityId, stimulatorId, itemIds, value, dims, covs, distributive, notes, ...
-        swIds)
+        swIds, methodParams)
 if nargin < 11
     notes = '';
 end
 if nargin < 12
     swIds = struct('software', '', 'os', '', 'interpreter', '');
+end
+if nargin < 13
+    methodParams = [];
 end
 restore = ndi.migrate.internal.termRegistryOff(); %#ok<NASGU>
 % did2.build insists on the interaction's time_reference_id min_count; the
@@ -725,6 +806,10 @@ if ~isempty(swIds.interpreter)
 end
 if ~isempty(notes)
     args = [args, {'Notes', notes}];
+end
+if ~isempty(methodParams)
+    % [Hartley settings on the inline method] (Jess Haley, 2026-10-30)
+    args = [args, {'MethodParameters', methodParams}];
 end
 args = [args, {'Dimensions', dims}];
 if ~isempty(covs)
@@ -1401,6 +1486,7 @@ r = struct( ...
     'uniform_fields_kept', 0, ...
     'shape_movie_note',    false, ...
     'hartley_without_enumeration', false, ...
+    'hartley_own_parameters', 0, ...
     'notes_not_written_standalone', false, ...
     'entity_id',           '', ...
     'unplaced_fields',     {{}}, ...
@@ -1409,7 +1495,7 @@ end
 
 % ===================== v1 readers =========================================
 
-function [outside, unplaced] = unplacedPresentationFields(block, stimuli, kinds, hartleyRoute)
+function [outside, unplaced, generator] = unplacedPresentationFields(block, stimuli, kinds, hartleyRoute)
 %UNPLACEDPRESENTATIONFIELDS The v1 fields of one presentation the
 %   decomposition would not write ([generic stage is lossless], Jess Haley,
 %   2026-10-25). Field names, de-duplicated, in a stable order.
@@ -1418,15 +1504,19 @@ function [outside, unplaced] = unplacedPresentationFields(block, stimuli, kinds,
 %            stimulus field beside `parameters`): carry-100, [unread
 %            stimulus parameters are method parameters] (Jess Haley,
 %            2026-10-27).
-%   UNPLACED `parameters` keys with no home decided: on the Hartley route,
-%            a generator key the shared basis does not read; on a grating, a
-%            second value of a key gratingRecipe reads one of (and an
+%   UNPLACED `parameters` keys with no home decided: a second value of a
+%            key the Hartley basis or gratingRecipe reads one of (and an
 %            imageType other than 1 or 2, which newStimKind never calls a
 %            grating). Every other unread key is a method parameter entry
 %            ([unread stimulus parameters are method parameters],
 %            ndi.migrate.internal.stimulusRecipe), so it is not listed.
+%   GENERATOR on the Hartley route, the generator keys the shared basis does
+%            not read: the manipulation's inline method parameters
+%            ([Hartley settings on the inline method], Jess Haley,
+%            2026-10-30), unplaced only for a standalone item.
 outside = {};
 unplaced = {};
+generator = {};
 if isstruct(block)
     other = setdiff(fieldnames(block), {'stimuli', 'presentation_order', 'presentation_time'});
     for k = 1:numel(other)
@@ -1452,7 +1542,7 @@ if isstruct(block)
 end
 gratingRead = {'angle', 'orientation', 'sFrequency', 'spatial_frequency', 'sf', ...
     'tFrequency', 'temporal_frequency', 'tf', 'contrast', 'imageType'};
-hartleyRead = {'M', 'K_absmax', 'L_absmax', 'fps', 'contrast', 'sfmax'};
+hartleyRead = hartleyReads();
 blankNames = {'isblank', 'is_blank', 'blank'};
 for i = 1:numel(stimuli)
     p = stimParameters(stimuli, i);
@@ -1469,7 +1559,7 @@ for i = 1:numel(stimuli)
         if isempty(v) || any(strcmp(fn{k}, blankNames)); continue; end
         if ~any(strcmp(fn{k}, read))
             if hartleyRoute
-                unplaced{end+1} = ['parameters.' fn{k}]; %#ok<AGROW>
+                generator{end+1} = ['parameters.' fn{k}]; %#ok<AGROW>
             end
             % a grating: an entry on its method (gratingOrBlank, stimulusRecipe)
         elseif isnumeric(v) && numel(v) > 1
@@ -1483,6 +1573,7 @@ end
 % rows, so the two lists concatenate (unique gives a column for an empty cell)
 outside = reshape(unique(outside, 'stable'), 1, []);
 unplaced = reshape(unique(unplaced, 'stable'), 1, []);
+generator = reshape(unique(generator, 'stable'), 1, []);
 end
 
 function block = presentationBlock(body)

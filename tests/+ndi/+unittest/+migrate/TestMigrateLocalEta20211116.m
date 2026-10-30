@@ -678,33 +678,19 @@ classdef TestMigrateLocalEta20211116 < matlab.unittest.TestCase
                 'element_epoch documents survived migration under the v1 name');
         end
 
-        function testTheHartleyPresentationsAreCarriedAndTheGratingRunIsNot(testCase)
-            % INVERTED 2026-10-29 from testEveryStimulusPresentationIsCarriedAsV1
-            % (which inverted testEveryStimulusPresentationIsDecomposedAroundItsPreservedId).
-            % Decided by Jess Haley, 2026-10-27 [unread stimulus parameters
-            % are method parameters] ("Q6 yes", did-schema
-            % V_eta_go_forward_class_audit.md): the grating run's periodicstim
-            % keys beyond the five gratingRecipe reads, and its blank's keys,
-            % are now method parameter entries, so the grating run is no
-            % longer refused for them. The ten Hartley generator presentations
-            % are still refused for theirs (carry-080): their methods are the
-            % session's SHARED basis, and the decision names no method of a
-            % presentation for a generator key the basis does not read.
-            % Whether the grating run then folds (subject, epoch anchor) is
+        function testNoHartleyPresentationIsRefusedForItsGeneratorKeys(testCase)
+            % INVERTED 2026-10-30 from
+            % testTheHartleyPresentationsAreCarriedAndTheGratingRunIsNot.
+            % Decided by Jess Haley, 2026-10-30 [Hartley settings on the
+            % inline method] (did-schema V_eta_go_forward_class_audit.md,
+            % G35): a generator key the shared basis does not read is a
+            % parameter of the presentation manipulation's inline method, so
+            % none of the ten Hartley presentations is refused under carry-080
+            % for it any more -- except one that becomes a STANDALONE item
+            % (no subject), which has no method to hold them. Whether each
+            % Hartley presentation then folds (subject, epoch anchor) is
             % printed, not pinned: no run of this branch has measured it.
-            srcPres = {};
-            hartley = {};
-            for k = 1:numel(testCase.Bodies)
-                j = jsondecode(testCase.Bodies{k});
-                if isfield(j, 'document_class') ...
-                        && isfield(j.document_class, 'class_name') ...
-                        && strcmp(j.document_class.class_name, 'stimulus_presentation')
-                    srcPres{end+1} = j.base.id; %#ok<AGROW>
-                    if isHartleyGenerator(j)
-                        hartley{end+1} = j.base.id; %#ok<AGROW>
-                    end
-                end
-            end
+            [srcPres, hartley] = presentationIds(testCase.Bodies);
             verifyEqual(testCase, numel(srcPres), 11, sprintf( ...
                 ['the corpus did not read as 11 stimulus_presentation ' ...
                  'documents (got %d); every count below would be about ' ...
@@ -712,39 +698,46 @@ classdef TestMigrateLocalEta20211116 < matlab.unittest.TestCase
             verifyEqual(testCase, numel(hartley), 10, ...
                 '20211116 holds 10 Hartley generator presentations');
             r = testCase.Result.secondPass.stimulusSequence;
-            verifyEqual(testCase, r.presentations_refused_unplaced, 10, ...
-                'the ten Hartley presentations, and only they, are refused for unplaced keys');
-            migrated = destinationBodies(testCase.Result.destination);
-            kept = findAllByClass(migrated, 'stimulus_presentation');
-            keptIds = cellfun(@(d) string(d.base.id), kept(:)');
-            verifyTrue(testCase, all(ismember(string(hartley), keptIds)), ...
-                'a Hartley presentation id is missing: it was not carried');
-            for k = 1:numel(kept)
-                verifyEqual(testCase, char(kept{k}.document_class.schema_version), ...
-                    'did_v1', 'a carried presentation is stamped did_v1');
+            for k = 1:numel(r.refusals)
+                f = r.refusals{k};
+                if ~any(strcmp(char(f.id), hartley)); continue; end
+                if startsWith(char(f.reason), '[carry-080]')
+                    verifySubstring(testCase, char(f.reason), 'standalone item', ...
+                        sprintf(['Hartley presentation %s is still refused for ' ...
+                        'its generator keys: %s'], char(f.id), char(f.reason)));
+                end
             end
-            % the grating run: carried with another row, or decomposed; its id
-            % is in the destination either way
+            migrated = destinationBodies(testCase.Result.destination);
             allIds = cellfun(@(d) string(d.base.id), migrated(:)');
-            others = setdiff(string(srcPres), string(hartley));
-            verifyNumElements(testCase, others, 1);
-            verifyTrue(testCase, all(ismember(others, allIds)), ...
-                'the grating run''s id is missing from the destination');
-            for k = 1:numel(others)
-                hit = migrated(allIds == others(k));
+            verifyTrue(testCase, all(ismember(string(srcPres), allIds)), ...
+                'a stimulus_presentation id is missing from the destination');
+            fprintf('\n  HARTLEY PRESENTATIONS (20211116): %d read, %d refused for unplaced keys\n', ...
+                numel(hartley), r.presentations_refused_unplaced);
+            for k = 1:numel(srcPres)
+                hit = migrated(allIds == string(srcPres{k}));
                 if isempty(hit); continue; end
-                fprintf('\n  GRATING RUN (20211116) %s: destination class %s\n', ...
-                    others(k), hit{1}.document_class.class_name);
+                d = hit{1};
+                fprintf('    %s: destination class %s\n', srcPres{k}, ...
+                    d.document_class.class_name);
+                % a folded Hartley manipulation carries its generator keys
+                if any(strcmp(srcPres{k}, hartley)) ...
+                        && strcmp(d.document_class.class_name, 'manipulation')
+                    verifyTrue(testCase, hasInlineParameter(d, 'Random Seed'), ...
+                        sprintf(['folded Hartley presentation %s has no ' ...
+                        'Random Seed on its inline method'], srcPres{k}));
+                end
             end
         end
 
-        function testNoHartleyBasisIsMintedWhenNoPresentationIsDecomposed(testCase)
-            % INVERTS testTheHartleyBasisIsMintedOnceAndCarriesItsPhase: the
-            % shared basis is minted only for a presentation the pass folds,
-            % and since [generic stage is lossless] (Jess Haley, 2026-10-25)
-            % none of the ten Hartley presentations is folded (their generator
-            % parameters beyond M, K_absmax, L_absmax, fps, contrast and sfmax
-            % have no place) -- so no basis method is minted.
+        function testTheHartleyBasisIsMintedOnlyForAFoldedPresentation(testCase)
+            % INVERTS testNoHartleyBasisIsMintedWhenNoPresentationIsDecomposed
+            % ([Hartley settings on the inline method], Jess Haley,
+            % 2026-10-30): the shared basis is minted only for a presentation
+            % the pass folds, so the basis methods in the destination are
+            % exactly the ones the pass reports, and there are some exactly
+            % when a Hartley presentation folded.
+            [~, hartley] = presentationIds(testCase.Bodies);
+            verifyNumElements(testCase, hartley, 10);
             migrated = destinationBodies(testCase.Result.destination);
             methods = findAllByClass(migrated, 'method');
             nBasis = 0;
@@ -754,42 +747,49 @@ classdef TestMigrateLocalEta20211116 < matlab.unittest.TestCase
                     nBasis = nBasis + 1;
                 end
             end
-            verifyEqual(testCase, nBasis, 0);
-            verifyEqual(testCase, testCase.Result.secondPass.stimulusSequence.shared_methods_minted, 0);
-        end
-
-        function testTheFrameTimesStayOnTheirV1Sources(testCase)
-            % INVERTS testTheFrameTimesSurviveAsOnsetTimes (onset-time
-            % covariates on the ten Hartley item manipulations). With no
-            % Hartley presentation decomposed ([generic stage is lossless],
-            % Jess Haley, 2026-10-25) there is no item manipulation to carry
-            % them; the presentations they time are carried as v1 instead
-            % (testTheHartleyPresentationsAreCarriedAndTheGratingRunIsNot).
-            % AMENDED 2026-10-29 for [unread stimulus parameters are method
-            % parameters] (Jess Haley, 2026-10-27): the grating run may now
-            % fold, so the check is on the Hartley ids, not on every item
-            % manipulation.
-            hartley = {};
-            for k = 1:numel(testCase.Bodies)
-                j = jsondecode(testCase.Bodies{k});
-                if isfield(j, 'document_class') && isfield(j.document_class, 'class_name') ...
-                        && strcmp(j.document_class.class_name, 'stimulus_presentation') ...
-                        && isHartleyGenerator(j)
-                    hartley{end+1} = j.base.id; %#ok<AGROW>
+            verifyEqual(testCase, nBasis, ...
+                testCase.Result.secondPass.stimulusSequence.shared_methods_minted);
+            nFolded = 0;
+            for k = 1:numel(migrated)
+                d = migrated{k};
+                if any(strcmp(char(d.base.id), hartley)) ...
+                        && any(strcmp(d.document_class.class_name, {'manipulation', 'item'}))
+                    nFolded = nFolded + 1;
                 end
             end
+            fprintf('\n  HARTLEY BASIS (20211116): %d presentation(s) folded, %d basis method(s)\n', ...
+                nFolded, nBasis);
+            verifyEqual(testCase, nBasis > 0, nFolded > 0, ...
+                'basis methods are minted exactly when a Hartley presentation folds');
+        end
+
+        function testTheFrameTimesGoWithTheirPresentation(testCase)
+            % AMENDED 2026-10-30 from testTheFrameTimesStayOnTheirV1Sources
+            % ([Hartley settings on the inline method], Jess Haley,
+            % 2026-10-30): a Hartley presentation may now fold. Each one is
+            % EITHER an item manipulation (or a standalone item) with its frame
+            % onsets as the 'onset time' covariate, OR carried as v1.
+            [~, hartley] = presentationIds(testCase.Bodies);
             verifyNumElements(testCase, hartley, 10);
             migrated = destinationBodies(testCase.Result.destination);
-            items = itemManipulations(migrated);
-            itemIds = strings(1, 0);
-            if ~isempty(items)
-                itemIds = cellfun(@(d) string(d.base.id), items(:)');
+            allIds = cellfun(@(d) string(d.base.id), migrated(:)');
+            for k = 1:numel(hartley)
+                hit = migrated(allIds == string(hartley{k}));
+                verifyNotEmpty(testCase, hit, ...
+                    sprintf('Hartley presentation %s is missing', hartley{k}));
+                if isempty(hit); continue; end
+                d = hit{1};
+                cn = d.document_class.class_name;
+                if strcmp(cn, 'stimulus_presentation')
+                    verifyEqual(testCase, char(d.document_class.schema_version), ...
+                        'did_v1', 'a carried presentation is stamped did_v1');
+                else
+                    verifyTrue(testCase, any(strcmp(cn, {'manipulation', 'item'})), ...
+                        sprintf('Hartley presentation %s became a %s', hartley{k}, cn));
+                    verifyTrue(testCase, hasCovariate(d, 'onset time'), ...
+                        sprintf('folded Hartley presentation %s has no onset time', hartley{k}));
+                end
             end
-            verifyFalse(testCase, any(ismember(string(hartley), itemIds)), ...
-                'a Hartley presentation became an item manipulation');
-            kept = findAllByClass(migrated, 'stimulus_presentation');
-            keptIds = cellfun(@(d) string(d.base.id), kept(:)');
-            verifyTrue(testCase, all(ismember(string(hartley), keptIds)));
         end
 
         function testTheCalculatorFamilyKeepsItsIdentities(testCase)
@@ -896,6 +896,57 @@ ids = db.allIds();
 bodies = cell(1, numel(ids));
 for k = 1:numel(ids)
     bodies{k} = db.get(ids{k}).toStruct();
+end
+end
+
+function [srcPres, hartley] = presentationIds(bodies)
+%PRESENTATIONIDS The ids of the corpus's v1 stimulus_presentation documents,
+%   and of those that are Hartley generators.
+srcPres = {};
+hartley = {};
+for k = 1:numel(bodies)
+    j = jsondecode(bodies{k});
+    if isfield(j, 'document_class') && isfield(j.document_class, 'class_name') ...
+            && strcmp(j.document_class.class_name, 'stimulus_presentation')
+        srcPres{end+1} = char(j.base.id); %#ok<AGROW>
+        if isHartleyGenerator(j)
+            hartley{end+1} = char(j.base.id); %#ok<AGROW>
+        end
+    end
+end
+end
+
+function tf = hasInlineParameter(d, variable)
+%HASINLINEPARAMETER True when an interaction's inline method has a parameter
+%   whose variable is named VARIABLE.
+tf = false;
+if ~isfield(d, 'interaction') || ~isfield(d.interaction, 'method') ...
+        || ~isfield(d.interaction.method, 'parameters')
+    return;
+end
+p = d.interaction.method.parameters;
+if isstruct(p); p = num2cell(p); end
+for k = 1:numel(p)
+    if isstruct(p{k}) && isfield(p{k}, 'variable') && isstruct(p{k}.variable) ...
+            && strcmp(char(p{k}.variable.name), variable)
+        tf = true;
+        return;
+    end
+end
+end
+
+function tf = hasCovariate(d, name)
+%HASCOVARIATE True when the document has a covariate whose variable is NAME.
+tf = false;
+if ~isfield(d, 'data') || ~isstruct(d.data) || ~isfield(d.data, 'covariates'); return; end
+cs = ndi.v2.entries(d.data.covariates);
+for j = 1:numel(cs)
+    v = cs{j}.variable;
+    if iscell(v), v = v{1}; end
+    if isstruct(v) && isfield(v, 'name') && strcmp(char(v.name), name)
+        tf = true;
+        return;
+    end
 end
 end
 
