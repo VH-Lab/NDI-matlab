@@ -388,16 +388,15 @@ function result = local(path, options)
         %       session context -- stimulus_bath (-> dose_manipulation, D8
         %       retired the bath family). Resolve them the same way the older
         %       targets do (assembleDeferred), just at TargetVersion V_eta.
-        %   (1b) ONTOLOGY ROW SUBJECTS (#53): an `ontologyTableRow` names its
-        %       subject in a way a single document cannot follow -- a
-        %       `document_id` edge, or a plain table cell holding a subject
-        %       document id or local identifier. Pass 1 therefore guards and
-        %       passes the row through (20,583 documents in the last measured
-        %       census: JH 14,378 + Dab 6,205, run 31415147934). Here the
-        %       subject is resolved against the migrated set and the row is
-        %       re-folded through v1_to_v2, where the pass-1 fan-out runs.
-        %       Runs BEFORE Path-S so the statements it emits are Path-S
-        %       candidates. See ndi.migrate.internal.ontologyRowSubjects.
+        %   (1b) ONTOLOGY TABLE ROWS ARE COUNTED, NOT RESOLVED: Decided by
+        %       Jess Haley, 2026-10-30 [table rows carried as v1] (did-schema
+        %       V_eta_go_forward_class_audit.md): the generic migration
+        %       carries every v1 `ontologyTableRow` whole as v1; it resolves
+        %       no subject and fans out no statements, because a row does not
+        %       state which entity each column is about. Pass 1 carries every
+        %       row (carry-026). This step only counts the rows and how many
+        %       the migrated set still holds as a table row. See
+        %       ndi.migrate.internal.ontologyRowsCarried.
         %   (1c) ONTOLOGY LABEL SUBJECTS: an `ontologyLabel` names the document
         %       it labels (`document_id`), never a subject, so pass 1 passes it
         %       through (~7,007 documents in JH). Here the referent is followed
@@ -575,8 +574,8 @@ function result = local(path, options)
         %       insertion.
         %
         %       IT NEEDS THE did_v1 BODIES, which is what makes it NDI-side
-        %       (the same contract fact as ontologyRowSubjects and
-        %       imagedEntitySubjects: every DID-side pass is f(result,
+        %       (the same contract fact as imagedEntitySubjects: every DID-side
+        %       pass is f(result,
         %       options) and `result` never carries the bodies).
         %   (5) EPOCH MINT (#60): one `epoch` entity per distinct
         %       (base.session_id, epoch-id string). The KEY IS THE PAIR --
@@ -759,16 +758,17 @@ function result = local(path, options)
                  'failed (%s); leaving them quarantined.'], ME.message);
         end
         tStep = migrateStepMark('resolveDeferred', tStart, tStep, convertResult);
+        % [table rows carried as v1] (Jess Haley, 2026-10-30): every row is
+        % carried by pass 1; this step counts them and changes nothing.
         try
-            [convertResult, ontologyRowReport] = ...
-                resolveOntologyRowSubjects(convertResult, bodies, options);
+            ontologyRowReport = countOntologyRows(convertResult, bodies);
         catch ME
-            stepErrors(end+1) = struct('step', 'ontologyRowSubjectsFailed', 'message', ME.message); %#ok<AGROW>
-            warning('NDI:migrate:ontologyRowSubjectsFailed', ...
-                ['Second-pass ontology_table_row subject resolution failed ' ...
-                 '(%s); leaving the rows as passthrough.'], ME.message);
+            stepErrors(end+1) = struct('step', 'ontologyRowCountFailed', 'message', ME.message); %#ok<AGROW>
+            warning('NDI:migrate:ontologyRowCountFailed', ...
+                ['Second-pass ontology_table_row count failed (%s); the ' ...
+                 'rows are not counted (nothing was changed).'], ME.message);
         end
-        tStep = migrateStepMark('resolveOntologyRowSubjects', tStart, tStep, convertResult);
+        tStep = migrateStepMark('countOntologyRows', tStart, tStep, convertResult);
         try
             [convertResult, ontologyLabelReport] = ...
                 resolveOntologyLabelSubjects(convertResult, options);
@@ -1175,7 +1175,7 @@ function result = local(path, options)
         % second pass declined, each with the carry register row its reason
         % cites, so the stamp counts second-pass carries by row
         secondPassRows = secondPassCarryRows({stimulusSequenceReport, ...
-            strainReport, ontologyLabelReport, ontologyRowReport, ensembleReport});
+            strainReport, ontologyLabelReport, ensembleReport});
         [convertResult.migrated, carriedAsV1Report] = ...
             ndi.migrate.internal.carryUnchangedAsV1(convertResult.migrated, ...
             passOneRecord, bodies, secondPassRows);
@@ -1278,13 +1278,12 @@ function result = local(path, options)
     % as ERRORS apart from the carries: a second-pass step that threw, and
     % a re-fold whose output quarantined (the document is then reverted).
     result.secondPassErrors = secondPassErrorReport(stepErrors, ...
-        ontologyRowReport, ontologyLabelReport, ensembleReport);
+        ontologyLabelReport, ensembleReport);
     if result.secondPassErrors.total > 0
         fprintf(['[migrate step]   SECOND-PASS ERRORS (defects, not carries): %d ' ...
-            '(%d step(s) threw; re-folds quarantined: %d table row(s), %d label(s), ' ...
+            '(%d step(s) threw; re-folds quarantined: %d label(s), ' ...
             '%d ensemble map(s))\n'], result.secondPassErrors.total, ...
             result.secondPassErrors.steps_failed, ...
-            result.secondPassErrors.refold_quarantined.ontology_table_row, ...
             result.secondPassErrors.refold_quarantined.ontology_label, ...
             result.secondPassErrors.refold_quarantined.ensemble);
         for e = 1:numel(stepErrors)
@@ -1302,7 +1301,7 @@ function result = local(path, options)
         'ensembleMembership',  ensembleReport, ...
         'strainAssembly',      strainReport, ...
         'subjectStrainAssembly', subjectStrainReport, ...
-        'ontologyRowSubjects', ontologyRowReport, ...
+        'ontologyRowsCarried', ontologyRowReport, ...
         'ontologyLabelSubjects', ontologyLabelReport, ...
         'stimulusSequence',    stimulusSequenceReport, ...
         'openmindsCitations',  openmindsCitationsReport, ...
@@ -1781,18 +1780,18 @@ function [convertResult, report] = resolveEnsembleMembership(convertResult, ...
     convertResult.summary = recountSummary(convertResult);
 end
 
-function e = secondPassErrorReport(stepErrors, rowReport, labelReport, ensembleReport)
+function e = secondPassErrorReport(stepErrors, labelReport, ensembleReport)
 %SECONDPASSERRORREPORT The second pass's DEFECTS, apart from its carries
 %   ([pipeline defects are not carries], Jess Haley, 2026-10-26): the steps
 %   that threw (STEPERRORS, {step, message}) and the re-folds whose output
-%   quarantined, so the source document was reverted (table rows, labels,
-%   ensemble maps). A count is NaN when its step did not report (not
-%   measured); TOTAL sums the measured counts.
+%   quarantined, so the source document was reverted (labels, ensemble maps;
+%   table rows are no longer re-folded, [table rows carried as v1]). A count
+%   is NaN when its step did not report (not measured); TOTAL sums the
+%   measured counts.
 e = struct();
 e.steps_failed = numel(stepErrors);
 e.steps = stepErrors;
 e.refold_quarantined = struct( ...
-    'ontology_table_row', fieldOr(rowReport, 'refold_quarantined'), ...
     'ontology_label',     fieldOr(labelReport, 'refold_quarantined'), ...
     'ensemble',           fieldOr(ensembleReport, 'ensemble_maps_kept_edges_quarantined', 0));
 q = struct2cell(e.refold_quarantined);
@@ -1843,106 +1842,24 @@ for k = 1:numel(reports)
 end
 end
 
-function [convertResult, report] = resolveOntologyRowSubjects(convertResult, bodies, options)
-%RESOLVEONTOLOGYROWSUBJECTS V_eta second pass (#53): give each passed-through
-%   `ontology_table_row` the subject it names, then re-fold it so the pass-1
-%   per-column fan-out runs.
+function report = countOntologyRows(convertResult, bodies)
+%COUNTONTOLOGYROWS V_eta second pass: count the v1 `ontologyTableRow`
+%   documents and how many of them the migrated set still carries as a table
+%   row. It changes nothing.
 %
-%   ndi.migrate.internal.ontologyRowSubjects does the RESOLUTION (pure struct
-%   logic, no converter, no schema) and returns a plan: for every row whose
-%   subject it could resolve against the migrated set, a copy of the did_v1
-%   body with a `subject_id` dependency added. This function does the FOLD, one
-%   row at a time, through did2.convert.v1_to_v2 at TargetVersion V_eta --
-%   where did2.convert.migrators_j.ontology_table_row's guard now passes.
-%
-%   ONE ROW AT A TIME, AND REVERTIBLE, ON PURPOSE. Two outcomes must not be
-%   allowed to make anything worse than the passthrough they replace:
-%
-%     * the re-fold QUARANTINES -> keep the passthrough. A quarantine is a
-%       gating failure; a passthrough is not. Trading the second for the first
-%       is the `epochfiles_ingested` regression, and it is what happened when
-%       distance_metadata's endpoint relation was minted (a non-gating
-%       quarantine became a GATING orphan failure).
-%     * the re-fold produces ONLY the row again (every column was an identity
-%       column, so migrateRow skipped them all and the migrator returned
-%       `{preBody}`) -> keep the ORIGINAL passthrough. Writing the re-folded
-%       copy would add a `subject_id` edge to a tombstone and nothing else:
-%       a document that looks converted and says exactly what it said before.
-%       Haley's plateSubjectTable is `{subject_id, plate_id}` and lands here.
-%
-%   REPORT carries the resolver's denominators plus the fold outcomes;
-%   REPORT.changed is true only when a row was actually REPLACED.
-    report = [];
+%   Decided by Jess Haley, 2026-10-30 [table rows carried as v1] (did-schema
+%   V_eta_go_forward_class_audit.md): the generic migration carries every v1
+%   `ontologyTableRow` whole as v1; it resolves no subject and fans out no
+%   statements. This replaces the step that resolved a row's subject and
+%   re-folded the row through did2.convert.v1_to_v2. The count is kept so the
+%   rows still have a denominator in the log
+%   (ndi.migrate.internal.ontologyRowsCarried).
     docs = convertResult.migrated;
-    if isempty(docs)
-        return;
-    end
     structs = cell(1, numel(docs));
     for k = 1:numel(docs)
         structs{k} = docs{k}.toStruct();
     end
-    [plan, report] = ndi.migrate.internal.ontologyRowSubjects(bodies, structs);
-
-    % Fold outcomes are part of the same instrument, so they are initialised
-    % unconditionally -- a field that appears only on the success path is a
-    % counter that cannot report a zero.
-    report.rows_planned          = numel(plan);
-    report.rows_replaced         = 0;
-    report.refold_no_statements  = 0;
-    report.refold_quarantined    = 0;
-    report.statements_emitted    = 0;
-    report.changed               = false;
-    if isempty(plan)
-        return;
-    end
-
-    replacedIds = {};
-    newDocs = {};
-    for k = 1:numel(plan)
-        try
-            sub = did2.convert.v1_to_v2({plan(k).body}, ...
-                'Validate',      options.Validate, ...
-                'SchemaCache',   options.SchemaCache, ...
-                'TargetVersion', options.TargetVersion, ...
-                'Verbose',       false);
-        catch
-            report.refold_quarantined = report.refold_quarantined + 1;
-            continue;   % REVERT: keep the passthrough
-        end
-        if ~isempty(sub.quarantine) || isempty(sub.migrated)
-            report.refold_quarantined = report.refold_quarantined + 1;
-            continue;   % REVERT
-        end
-        if isscalar(sub.migrated) ...
-                && strcmp(sub.migrated{1}.className(), 'ontology_table_row')
-            % carry-register: carry-098 (the row is carried as v1)
-            report.refold_no_statements = report.refold_no_statements + 1;
-            report.carry_rows(end+1) = struct('id', char(plan(k).source_id), ...
-                'row', 'carry-098');
-            continue;   % REVERT
-        end
-        replacedIds{end+1} = plan(k).source_id; %#ok<AGROW>
-        newDocs = [newDocs, sub.migrated]; %#ok<AGROW>
-        report.rows_replaced = report.rows_replaced + 1;
-        report.statements_emitted = report.statements_emitted + numel(sub.migrated);
-    end
-
-    if isempty(replacedIds)
-        return;
-    end
-
-    kept = {};
-    for k = 1:numel(convertResult.migrated)
-        d = convertResult.migrated{k};
-        if strcmp(d.className(), 'ontology_table_row') ...
-                && any(strcmp(d.get('base.id'), replacedIds))
-            continue;   % superseded by the re-folded statements
-        end
-        kept{end+1} = d; %#ok<AGROW>
-    end
-    convertResult.migrated = [kept, newDocs];
-    convertResult.summary = recountSummary(convertResult);
-    report.changed = true;
+    report = ndi.migrate.internal.ontologyRowsCarried(decodeBodies(bodies), structs);
 end
 
 function [convertResult, report] = resolveSliceTetanus(convertResult, bodies, ...
@@ -2216,8 +2133,7 @@ function [convertResult, report] = resolveOntologyLabelSubjects(convertResult, o
 %   database has a meaning for. The passthrough is removed only for labels whose
 %   replacement actually came back out of the re-fold.
 %
-%   ONE AT A TIME, AND REVERTIBLE, ON PURPOSE -- the rule
-%   resolveOntologyRowSubjects states and the reason is the same: a re-fold that
+%   ONE AT A TIME, AND REVERTIBLE, ON PURPOSE: a re-fold that
 %   QUARANTINES must not replace a passthrough that validated. Trading a
 %   non-gating passthrough for a gating quarantine is the `epochfiles_ingested`
 %   regression (2,484 documents) and the reverted distance_metadata endpoint
@@ -2352,8 +2268,7 @@ function [convertResult, report] = resolveSubjectStrainAssembly(convertResult, b
 %   documents' contents are ALL unreachable from convertResult.migrated. Every
 %   DID-side pass is f(result, options) and `result` carries migrated /
 %   quarantine / summary and never the did_v1 bodies -- the same contract fact
-%   ndi.migrate.internal.ontologyRowSubjects and imagedEntitySubjects are
-%   NDI-side for.
+%   imagedEntitySubjects is NDI-side for.
 %
 %   ndi.migrate.internal.subjectStrainAssembly does the whole decision (pure
 %   struct logic, no converter, no schema). This wrapper does the two things
@@ -3656,15 +3571,13 @@ function printSummary(result)
     % direction -- fewer unrendered reports than there really are. The
     % `result.secondPass` struct built above is its own denominator, and the
     % standing fact is unchanged: MOST second-pass reports are still stored
-    % and rendered by nothing. THREE are rendered, and all three for the same
-    % stated reason -- they are the sub-passes that can LOSE A DOCUMENT: this
-    % one, the ensemble verify-before-delete gate; printSubjectStrainSummary
-    % below, which removes the moved genetic-strain-type and duplicate species
-    % assertions; and printOntologyRowSummary below that, which DROPS every
-    % `ontology_table_row` it re-folds and puts statements in its place.
-    % The third was stored-and-unrendered from the commit that added it until
-    % the one that added its printer, which is the same position the ensemble
-    % gate was in when this comment was written.)
+    % and rendered by nothing. Two are rendered because they are sub-passes
+    % that can LOSE A DOCUMENT: this one, the ensemble verify-before-delete
+    % gate; and printSubjectStrainSummary below, which removes the moved
+    % genetic-strain-type and duplicate species assertions.
+    % printOntologyRowSummary below that renders the table-row count: since
+    % [table rows carried as v1] (Jess Haley, 2026-10-30) that step drops
+    % nothing, and it is printed so the carried rows have a denominator.)
     ensembleReport = [];
     if isfield(result, 'secondPass') && isstruct(result.secondPass) ...
             && isfield(result.secondPass, 'ensembleMembership')
@@ -3775,119 +3688,38 @@ end
 end
 
 function printOntologyRowSummary(result)
-%PRINTONTOLOGYROWSUMMARY Render the #53 ontology-row subject report.
+%PRINTONTOLOGYROWSUMMARY Render the ontology table-row count.
 %
-%   RENDERED, not merely stored, on exactly the criterion the note above
-%   printSummary states: this pass CAN LOSE A DOCUMENT.
-%   resolveOntologyRowSubjects drops every `ontology_table_row` it re-folds
-%   from convertResult.migrated and puts the emitted statements in its place,
-%   so a row that goes wrong here does not survive as a passthrough to be
-%   counted later -- it is gone, into a shape no other counter recognises.
-%
-%   It also carries the two figures that were UNMEASURED rather than zero:
-%   the plural-`document_id` arity (V_eta_OPEN_WORK.md row #105) and the data
-%   cells still sitting on unresolved rows, which is the quantity comparable
-%   in scale to the 76,766 hollow statements this defect was measured at.
+%   [table rows carried as v1] (Jess Haley, 2026-10-30): every v1
+%   `ontologyTableRow` is carried whole as v1 by pass 1; the second pass
+%   resolves no subject and re-folds nothing. This prints the denominator and
+%   how many rows the migrated set still holds as a table row.
     r = [];
     if isfield(result, 'secondPass') && isstruct(result.secondPass) ...
-            && isfield(result.secondPass, 'ontologyRowSubjects')
-        r = result.secondPass.ontologyRowSubjects;
+            && isfield(result.secondPass, 'ontologyRowsCarried')
+        r = result.secondPass.ontologyRowsCarried;
     end
-    fprintf('  ontology-row subjects (#53):\n');
+    fprintf('  ontology table rows ([table rows carried as v1]):\n');
     if isempty(r) || ~isstruct(r)
-        % NOT "nothing to do". Three different things produce this and none of
-        % them is a clean run: a non-V_eta target, no migrated documents at
-        % all, or the pass threw and its warning is above.
-        fprintf(['    DID NOT RUN -- non-V_eta target, no migrated ' ...
-                 'document(s), or the pass threw (see the warning above). ' ...
-                 'This is NOT "no rows to resolve".\n']);
+        % NOT "no rows": the count did not run (no V_eta second pass, or it
+        % threw and its warning is above).
+        fprintf(['    NOT MEASURED -- the count did not run (see any warning ' ...
+                 'above). This is NOT "no rows".\n']);
         return;
     end
     fprintf(['    DENOMINATOR: %d did_v1 body(ies) read, %d migrated ' ...
-             'document(s) indexed, %d of them subject(s) (%d unique ' ...
-             'session+local_identifier key(s)).\n'], ...
+             'document(s) read.\n'], ...
         reportNum(r, 'v1_bodies_inspected'), ...
-        reportNum(r, 'documents_inspected'), ...
-        reportNum(r, 'subjects_indexed'), ...
-        reportNum(r, 'subject_local_ids_unique'));
-    fprintf(['    rows: %d did_v1 ontologyTableRow body(ies), %d still a ' ...
-             'passthrough after pass 1, %d already converted by a per-table ' ...
-             'map.\n'], ...
+        reportNum(r, 'documents_inspected'));
+    fprintf(['    rows: %d did_v1 ontologyTableRow body(ies); %d still a ' ...
+             'table row (carried); %d not found as a table row.\n'], ...
         reportNum(r, 'v1_ontology_rows'), ...
-        reportNum(r, 'rows_passthrough'), ...
-        reportNum(r, 'rows_converted_in_pass_1'));
-    if reportNum(r, 'rows_passthrough') == 0
-        % The two zeroes that must never print the same. A batch holding no
-        % ontologyTableRow at all and a batch full of them that pass 1 already
-        % converted are different facts, and only the row line above tells
-        % them apart.
-        fprintf(['    NO PASSTHROUGH ROW IN REACH -- nothing to resolve. ' ...
-                 'Read the row line above before reading this as clean: ' ...
-                 '0 of 0 and 0 of many are different results.\n']);
-        return;
-    end
-    fprintf(['    resolved: %d of %d -- %d via the document_id edge, %d via ' ...
-             'a SubjectDocumentIdentifier cell, %d via a local-identifier ' ...
-             'string join (join enabled: %d).\n'], ...
-        reportNum(r, 'resolved'), reportNum(r, 'rows_passthrough'), ...
-        reportNum(r, 'resolved_via_document_id_edge'), ...
-        reportNum(r, 'resolved_via_subject_column'), ...
-        reportNum(r, 'resolved_via_local_identifier'), ...
-        reportNum(r, 'local_identifier_join_enabled'));
-    fprintf(['    unresolved: %d -- %d no candidate, %d candidate not in ' ...
-             'this batch, %d candidate not a subject, %d local id not ' ...
-             'found, %d local id ambiguous, %d routes conflicted, %d edge ' ...
-             'would have been dropped, %d pre-repair plural document_id ' ...
-             '(carried, [old table rows carried by NDI]).\n'], ...
-        reportNum(r, 'unresolved'), ...
-        reportNum(r, 'unresolved_no_candidate'), ...
-        reportNum(r, 'unresolved_candidate_missing'), ...
-        reportNum(r, 'unresolved_candidate_not_subject'), ...
-        reportNum(r, 'unresolved_local_identifier_missing'), ...
-        reportNum(r, 'unresolved_local_identifier_ambiguous'), ...
-        reportNum(r, 'unresolved_conflicting_candidates'), ...
-        reportNum(r, 'unresolved_edge_would_be_dropped'), ...
-        reportNum(r, 'unresolved_plural_pre_repair'));
-    fprintf(['    fold: %d row(s) planned, %d REPLACED by %d statement(s); ' ...
-             'reverted -- %d re-fold quarantined, %d produced no statement ' ...
-             '(every column was an identity column).\n'], ...
-        reportNum(r, 'rows_planned'), reportNum(r, 'rows_replaced'), ...
-        reportNum(r, 'statements_emitted'), ...
-        reportNum(r, 'refold_quarantined'), ...
-        reportNum(r, 'refold_no_statements'));
-    % SCALE. `rows_passthrough` counts rows and the 76,766 this defect was
-    % measured at counts STATEMENTS, so neither can be read off the other.
-    % A data cell is an UPPER BOUND, never an estimate -- migrateRow skips
-    % identity and empty columns and that rule is the migrator's.
-    fprintf(['    scale: %d data cell(s) on the rows in scope -- %d on ' ...
-             'resolved rows, %d STILL ON UNRESOLVED ROWS. A cell is an ' ...
-             'upper bound on statements, not an estimate.\n'], ...
-        reportNum(r, 'data_cells_seen'), ...
-        reportNum(r, 'data_cells_on_resolved_rows'), ...
-        reportNum(r, 'data_cells_on_unresolved_rows'));
-    fprintf(['    document_id arity: %d non-empty edge(s) across %d row(s) ' ...
-             'carrying one; %d row(s) carry a PLURAL document_id.\n'], ...
-        reportNum(r, 'document_id_edges_seen'), ...
-        reportNum(r, 'rows_with_document_id_edge'), ...
-        reportNum(r, 'rows_with_plural_document_id'));
-    if reportNum(r, 'rows_with_plural_document_id') > 0
-        % The measurement V_eta_OPEN_WORK.md row #105 asked for, arriving with
-        % a non-zero. It is NOT a failure. [old table rows counted and
-        % carried] (Jess Haley, 2026-10-27) and [old table rows carried by
-        % NDI] (Jess Haley, 2026-10-29), did-schema
-        % V_eta_go_forward_class_audit.md: a PRE-REPAIR plural row (an edge
-        % value no `data` cell holds) is carried whole as v1, needs_mapping,
-        % and this count goes to the corpus run.
-        fprintf(['    *** %d row(s) carry document_id_1..n; %d of them ' ...
-                 'pre-repair (an edge no data cell names), CARRIED as v1 ' ...
-                 '([old table rows carried by NDI]; no carry register row ' ...
-                 'yet). NO IN-TREE CONVERTER CAN WRITE ONE -- origin/main ' ...
-                 'passes ''DependencyVariable'' at four sites, all in ' ...
-                 '+setup/+conv/+babu/import.m, each naming ONE column -- so ' ...
-                 'these came from an out-of-tree writer. That is the ' ...
-                 'population V_eta_OPEN_WORK.md row #105 calls UNMEASURED.\n'], ...
-            reportNum(r, 'rows_with_plural_document_id'), ...
-            reportNum(r, 'unresolved_plural_pre_repair'));
+        reportNum(r, 'rows_carried'), ...
+        reportNum(r, 'rows_not_carried'));
+    if reportNum(r, 'rows_not_carried') > 0
+        fprintf(['    *** %d row(s) are not carried as a table row; ' ...
+                 '[table rows carried as v1] expects every row carried.\n'], ...
+            reportNum(r, 'rows_not_carried'));
     end
 end
 

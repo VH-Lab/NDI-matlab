@@ -11,11 +11,10 @@ name: V_eta migrate Dab (on-demand)
 #
 # WHY DAB HAS ITS OWN, DISPATCH-ONLY WORKFLOW rather than a line in
 # test-eta-migrate-e2e.yml. Dabrowska is the only corpus that holds
-# `ontologyTableRow` at scale (6,205 docs). Its
-# decomposition -- ndi.migrate.internal.ontologyRowSubjects, the two-tier
-# subject fan-out (#53) -- is proven only by a fixture (TestOntologyRowSubjects)
-# and has never run over a real corpus. This workflow is the first full-corpus
-# exercise of that pass, plus the bath / slice / optogenetic-tetanus pass and
+# `ontologyTableRow` at scale (6,205 docs). Every row is carried whole as v1
+# ([table rows carried as v1], Jess Haley, 2026-10-30; did-schema
+# V_eta_go_forward_class_audit.md); this workflow checks that over the whole
+# corpus, plus the bath / slice / optogenetic-tetanus pass and
 # the ingestion (3,209) and openMINDS (2,344) read-back. Run alone, with a generous
 # timeout, and never on every push: it does not gate the fast e2e check, and a
 # Dab timeout/OOM here cannot turn that check red. Dab's MIGRATION (0 quarantine
@@ -58,8 +57,7 @@ jobs:
     name: V_eta Dab end-to-end (on-demand)
     runs-on: ubuntu-latest
     # Generous headroom. Dab is ~1/4 of Soph by document count and migrates fast
-    # on the DID side; the unknown is the ontologyRowSubjects fan-out at scale,
-    # so the ceiling is set well above the expected wall clock.
+    # on the DID side; the ceiling is set well above the expected wall clock.
     timeout-minutes: 180
     env:
       # did-schema #88 merged into main and DID-matlab #218 into V2
@@ -234,8 +232,8 @@ jobs:
             % Dabrowska ALONE (corpus B filtered out at read time). Hard-asserts
             % corpus size, 0 quarantine / 0 orphans /
             % 0 fragments, that the session opens on the did2sqlite backend, and
-            % that the ontologyRowSubjects fan-out (#53) leaves no unfolded
-            % `ontologyTableRow` in the output. The pass-1 census, final survivor
+            % that every `ontologyTableRow` is carried as a table row
+            % ([table rows carried as v1]). The pass-1 census, final survivor
             % set, per-session read-back counts, and fan-out OUTPUT volume are
             % report-only on this first landing (measured before pinned). SKIPS
             % (never fails) when the corpus download is impossible.

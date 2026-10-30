@@ -19,9 +19,10 @@ classdef TestMigrateLocalEtaDab < matlab.unittest.TestCase
 %
 %   WHY DAB IS WORTH ITS OWN e2e. Dabrowska holds 17 v1 classes and is the
 %   only corpus that holds `ontologyTableRow` at scale (6,205 docs).
-%   That class's decomposition -- ndi.migrate.internal.ontologyRowSubjects,
-%   the D10/D11 two-tier subject fan-out (#53) -- is proven only by a unit
-%   test (TestOntologyRowSubjects) and has NEVER run over a real corpus. Dab
+%   Since [table rows carried as v1] (Jess Haley, 2026-10-30, did-schema
+%   V_eta_go_forward_class_audit.md) every one of those rows is carried whole
+%   as v1: the generic migration resolves no subject and fans out no
+%   statements, so this corpus is where "every row carried" is checked. Dab
 %   also carries the bath / slice / optogenetic-tetanus path (stimulus_bath
 %   1,605, openminds_stimulus 635, treatment 49), ingestion (3,209 docs) and
 %   openMINDS (2,344). Its Bar-1 (0 quarantine / 0 orphans) is gated independently on
@@ -30,14 +31,14 @@ classdef TestMigrateLocalEtaDab < matlab.unittest.TestCase
 %
 %   HARD ASSERTS, because Dab's DID side already proves them clean: the corpus
 %   size (14,644 kept of 27,561 read, 12,917 excluded -- all three measured
-%   from the zip), 0 quarantine, 0 orphans, 0 fragments. If the ontologyRowSubjects
-%   fan-out breaks at scale, THIS is where it turns red -- that is the point of
-%   running it over the whole corpus rather than a fixture.
+%   from the zip), 0 quarantine, 0 orphans, 0 fragments, and every
+%   `ontologyTableRow` carried ([table rows carried as v1]) -- the point of
+%   running over the whole corpus rather than a fixture.
 %
 %   REPORT-ONLY ON THIS FIRST LANDING for the census + navigation + fan-out
 %   count methods, DELIBERATELY (same discipline as the Soph landing). Dab's
 %   exact pass-1 unconverted set, final survivor set, per-session read-back
-%   counts, and the ontologyRowSubjects output volume are MEASURED here before
+%   counts are MEASURED here before
 %   they are pinned -- arming a gate against a guessed document set would
 %   either pass vacuously or fail on a persist-legitimate survivor.
 %
@@ -140,9 +141,7 @@ classdef TestMigrateLocalEtaDab < matlab.unittest.TestCase
             verifyGreaterThan(testCase, testCase.Result.summary.total, 0, ...
                 'the migration saw no documents at all');
 
-            % HARD, and this is the arm the whole workflow exists for: the
-            % ontologyRowSubjects fan-out (#53) runs here at scale for the first
-            % time. If it quarantines a row, this turns red.
+            % HARD: the whole corpus migrates with nothing quarantined.
             verifyEmpty(testCase, testCase.Result.quarantine, ...
                 quarantineDiag(testCase.Result));
 
@@ -190,7 +189,7 @@ classdef TestMigrateLocalEtaDab < matlab.unittest.TestCase
         function testNoV1DocumentSurvivesUnfoldedInTheFinalOutput(testCase)
             % THE BAR-2 INSTRUMENT, report-only on this first landing. The
             % census above counts pass 1; it cannot see the SECOND PASSES that
-            % run afterward (ontologyRowSubjects, stimulusPresentationToTimed-
+            % run afterward (stimulusPresentationToTimed-
             % Sequence, resolveDeferredBaths, resolveResponseParameters), so a
             % class that reads "unconverted" there can still reach decided shape.
             % The only sound test of "is this corpus fully at decided shape" is
@@ -426,48 +425,50 @@ classdef TestMigrateLocalEtaDab < matlab.unittest.TestCase
                 'not every before/after label rebuilds from the stored tetanus windows');
         end
 
-        function testTheOntologyRowFanOutRunsAtScale(testCase)
-            % DAB'S HEADLINE, and the reason it earns its own e2e. The
-            % ontologyRowSubjects second pass (#53, local.m ~706) fans each
-            % `ontologyTableRow` it can RESOLVE A SUBJECT FOR out into typed
-            % subject statements; a row it cannot resolve, or a fan-out that
-            % throws (the try/catch falls back to passthrough), leaves the row
-            % as `ontology_table_row`. It is proven by a fixture
-            % (TestOntologyRowSubjects); Dab is the first real corpus to run it,
-            % at ~6,205 rows. REPORT-ONLY on this landing -- the resolved vs
-            % surviving split is exactly what this run MEASURES before it is
-            % pinned, so nothing about that split is asserted here. The
-            % DENOMINATOR is asserted: a fan-out test that read zero source rows
-            % would be vacuous, and Dab is the corpus that is supposed to hold
-            % them.
+        function testEveryOntologyRowIsCarried(testCase)
+            % INVERTED from the fan-out test. Decided by Jess Haley,
+            % 2026-10-30 [table rows carried as v1] (did-schema
+            % V_eta_go_forward_class_audit.md): the generic migration carries
+            % every v1 `ontologyTableRow` whole as v1; it resolves no subject
+            % and fans out no statements. So every source row is still a
+            % table row in the destination, under its own id. The DENOMINATOR
+            % is asserted first: a carry test that read zero source rows
+            % would be vacuous, and Dab is the corpus that holds them.
             nSrc = 0;
+            srcIds = {};
             for k = 1:numel(testCase.Bodies)
                 j = jsondecode(testCase.Bodies{k});
                 if isfield(j,'document_class') && isfield(j.document_class,'class_name') ...
                         && strcmp(j.document_class.class_name, 'ontologyTableRow')
                     nSrc = nSrc + 1;
+                    srcIds{end+1} = j.base.id; %#ok<AGROW>
                 end
             end
 
             dst = destinationBodies(testCase.Result.destination);
-            nSurvive = numel(findAllByClass(dst, 'ontologyTableRow'));
-            nSubjects = numel(findAllByClass(dst, 'subject'));
+            rows = [findAllByClass(dst, 'ontologyTableRow'), ...
+                    findAllByClass(dst, 'ontology_table_row')];
+            dstIds = cellfun(@(b) b.base.id, rows, 'UniformOutput', false);
+            nCarried = sum(ismember(srcIds, dstIds));
 
-            fprintf(['\n  ONTOLOGY-ROW FAN-OUT (Dab, #53) -- report-only\n' ...
+            fprintf(['\n  ONTOLOGY TABLE ROWS (Dab, [table rows carried as v1])\n' ...
                      '    DENOMINATOR: %d source `ontologyTableRow` document(s)\n' ...
-                     '    resolved + fanned out (source - survivors):    %d\n' ...
-                     '    surviving as `ontology_table_row` (unresolved): %d\n' ...
-                     '    `subject` documents in the output (all sources): %d\n'], ...
-                nSrc, nSrc - nSurvive, nSurvive, nSubjects);
+                     '    carried as a table row, same id:   %d\n' ...
+                     '    table rows in the destination:     %d\n'], ...
+                nSrc, nCarried, numel(rows));
 
             verifyGreaterThan(testCase, nSrc, 0, ...
                 ['no `ontologyTableRow` documents in the Dab corpus -- the ' ...
-                 'fan-out test would be vacuous, and Dab is the corpus that ' ...
+                 'carry test would be vacuous, and Dab is the corpus that ' ...
                  'is supposed to hold them']);
-            % NOT asserted here: how many rows fan out vs survive. That split is
-            % what this landing measures; pinning it against a guessed count
-            % would fail on a legitimately-unresolvable row. The clean-migration
-            % guarantee (0 quarantine / 0 orphans) is the hard gate above.
+            verifyEqual(testCase, nCarried, nSrc, ...
+                ['[table rows carried as v1]: every source ontologyTableRow ' ...
+                 'must reach the destination as a table row under its own id']);
+            count = testCase.Result.secondPass.ontologyRowsCarried;
+            verifyNotEmpty(testCase, count, ...
+                'the second-pass table-row count did not run');
+            verifyEqual(testCase, count.v1_ontology_rows, nSrc);
+            verifyEqual(testCase, count.rows_not_carried, 0);
         end
 
     end
@@ -483,8 +484,8 @@ end
 function corpusDir = ensureDabCorpus()
 %ENSUREDABCORPUS Download (once) and extract Dab.zip.
 %   Same URL shape and cache layout as the PRED / 20211116 / Soph helpers.
-%   Dab.zip is ~35 MB, so the download is quick; the migration + the
-%   ontologyRowSubjects fan-out at scale are why this is a dispatched job.
+%   Dab.zip is ~35 MB, so the download is quick; the migration at scale is
+%   why this is a dispatched job.
 corpusURL = 'https://ndi-programming-development.s3.us-east-1.amazonaws.com/Dab.zip';
 cacheRoot = fullfile(tempdir(), 'ndi-corpus-Dab');
 corpusDir = fullfile(cacheRoot, 'Dab');
