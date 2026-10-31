@@ -371,8 +371,8 @@ classdef TestMigrateLocalEta < matlab.unittest.TestCase
                 'time:intervalDuring');
             % the clock is read from the element_epoch document above and
             % handed over by the bath assembler, so this pins that hand-off
-            verifyEqual(testCase, ref.relative_time_reference.value.clock.name, ...
-                'dev_local_time');
+            ndi.unittest.migrate.verifyClock(testCase, ref.relative_time_reference.value.clock, ...
+                'dev_local_time');   % by node [clock terms get nodes]
             % the source states no offsets, so none are invented
             verifyFalse(testCase, ...
                 isfield(ref.relative_time_reference.value, 'start'));
@@ -409,9 +409,8 @@ classdef TestMigrateLocalEta < matlab.unittest.TestCase
                     depValue(epochDoc, 'session_id'), ...
                     'the untied extent is anchored on the session the epoch belongs to');
                 clk = extent{1}.relative_time_reference.value.clock;
-                if isstruct(clk); clk = clk.name; end
-                verifyEqual(testCase, char(clk), 'dev_local_time', ...
-                    'the extent keeps the clock the element_epoch states');
+                ndi.unittest.migrate.verifyClock(testCase, clk, 'dev_local_time', ...
+                    'the extent keeps the clock the element_epoch states:');   % by node [clock terms get nodes]
             end
         end
 
@@ -773,8 +772,8 @@ classdef TestMigrateLocalEta < matlab.unittest.TestCase
                 ['the presentation''s manipulation is not anchored to its ' ...
                  'epoch. ' resultDiag(result)]);
             % the stimulator's clock for that epoch (the element_epoch above)
-            verifyEqual(testCase, ref.relative_time_reference.value.clock.name, ...
-                'dev_local_time');
+            ndi.unittest.migrate.verifyClock(testCase, ref.relative_time_reference.value.clock, ...
+                'dev_local_time');   % by node [clock terms get nodes]
 
             verifyEqual(testCase, result.references.orphan_count, 0, ...
                 ['the graph does not close. ' resultDiag(result)]);

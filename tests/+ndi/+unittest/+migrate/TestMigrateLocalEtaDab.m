@@ -375,7 +375,7 @@ classdef TestMigrateLocalEtaDab < matlab.unittest.TestCase
                 ref = byId(edgeOf(m, 'time_reference_id'));
                 ep = byId(edgeOf(ref, 'referent_id'));
                 v = ref.relative_time_reference.value;
-                verifyEqual(testCase, v.clock.name, 'exp_global_time');
+                ndi.unittest.migrate.verifyClock(testCase, v.clock, 'exp_global_time');   % by node [clock terms get nodes]
                 win(end+1) = struct('stim', edgeOf(m, 'instrument_id'), ...
                     'session', edgeOf(ep, 'session_id'), 'epoch', ep.entity.local_identifier, ...
                     'start', v.start.seconds, 'duration', v.duration.seconds); %#ok<AGROW>

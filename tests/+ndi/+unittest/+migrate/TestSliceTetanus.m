@@ -172,7 +172,7 @@ classdef TestSliceTetanus < matlab.unittest.TestCase
             for k = 1:numel(ms)
                 ref = refs{cellfun(@(x) strcmp(x.base.id, dep(ms{k}, 'time_reference_id')), refs)};
                 v = ref.relative_time_reference.value;
-                verifyEqual(testCase, v.clock.name, 'exp_global_time');
+                ndi.unittest.migrate.verifyClock(testCase, v.clock, 'exp_global_time');   % by node [clock terms get nodes]
                 verifyGreaterThan(testCase, v.start.seconds, 0);
                 verifyGreaterThan(testCase, v.duration.seconds, 0);
                 verifyLessThan(testCase, v.duration.seconds, 10 * 60);

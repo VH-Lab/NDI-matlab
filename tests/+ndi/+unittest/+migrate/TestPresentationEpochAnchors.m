@@ -70,8 +70,8 @@ classdef TestPresentationEpochAnchors < matlab.unittest.TestCase
             b = plan(1).body;
             testCase.verifyEqual(b.base.id, 'ref1');
             testCase.verifyEqual(depValue(b, 'referent_id'), 'epoch_doc_A');
-            testCase.verifyEqual(b.relative_time_reference.value.clock.name, ...
-                'dev_local_time');
+            ndi.unittest.migrate.verifyClock(testCase, b.relative_time_reference.value.clock, ...
+                'dev_local_time');   % by node [clock terms get nodes]
         end
 
         function testAnEpochNotMintedLeavesTheAnchorOnItsSession(testCase)
