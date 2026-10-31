@@ -34,6 +34,18 @@ for i=1:numel(cells)
     for j=1:numel(et)
         [all_intervals(j,:), all_global_starts(j)] = getintervalfromdir([S.getpath filesep et(j).epoch_id]);
     end
+    % An interval whose end is before its start was saved from a recording
+    % whose last frame time is broken (2019-02-15 t00008); its start is still
+    % right, so take the end of the epoch that starts there.
+    for j = find(I(:,2) <= I(:,1))'
+        [d, k] = min(abs(all_intervals(:,1) - I(j,1)));
+        if d < 1
+            warning('ndi:setup:conv:vhlab:importMeasuredDataCells:RepairedInterval', ...
+                'Cell %s: interval [%.3f %.3f] ends before it starts; using the end of epoch %s, %.3f.', ...
+                cellnames{i}, I(j,1), I(j,2), et(k).epoch_id, all_intervals(k,2));
+            I(j,2) = all_intervals(k,2);
+        end
+    end
     % the cell's stored intervals can differ slightly from the recomputed ones
     ImatchesInAll = ndi.setup.conv.vhlab.matchCellIntervalsToEpochs(I, all_intervals);
     for j = find(isnan(ImatchesInAll(:)))'
@@ -85,10 +97,18 @@ function [interval,global_start] = getintervalfromdir(dirname)
 % INTERVAL is the interval the legacy analysis stored with each cell, used here
 % only to match a cell's intervals to epochs. GLOBAL_START is g.start from
 % stims.mat: legacy global time = Spike2 time + GLOBAL_START.
+%
+% The legacy end was the last stimulus's last frame time plus 10 s. In some
+% recordings that one frame time is broken (2019-02-15 t00008: the end comes
+% out negative), so the end is the latest time of any stimulus, plus 10 s.
+% Where the last frame time is good, the two are close (the latest time can be
+% the last stimulus's stop time, just after its last frame); intervals are
+% matched by overlap, so this does not change which epoch a cell interval pairs with.
 if exist([dirname filesep 'stims.mat'])&exist([dirname filesep 'stimtimes.txt']),
 	g = load([dirname filesep 'stims.mat']);
 	[mti2,starttime]=tpcorrectmti(g.MTI2,[dirname filesep 'stimtimes.txt'],1);
-	interval = [starttime mti2{end}.frameTimes(end)+10]; % assume 10 sec of post recording
+	lastTimes = cellfun(@(m) max([m.frameTimes(:); m.startStopTimes(:); -Inf]), mti2);
+	interval = [starttime max(lastTimes)+10]; % assume 10 sec of post recording
 	global_start = g.start;
 	clear g;
 else,
