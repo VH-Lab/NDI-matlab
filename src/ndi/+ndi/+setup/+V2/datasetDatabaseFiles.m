@@ -7,8 +7,7 @@ function [files, folders, problems] = datasetDatabaseFiles(path)
 %     FILES     the dataset's own database file, then that of each LINKED
 %               session (the Pathname of its "database linking" relation
 %               names its folder, ndi.v2.sessionLinkOf: Jess Haley 2026-10-29
-%               [linked session link details]; in a dataset written before
-%               that relation, a `linked_session` document names it)
+%               [linked session link details])
 %     FOLDERS   the folder each file's documents are in (PATH first)
 %     PROBLEMS  each linked session whose folder holds no V2 database
 %
@@ -31,8 +30,9 @@ folders = {path};
 problems = {};
 db = did2.database.sqlitedb(own);
 closer = onCleanup(@() db.close());
-% the folders: each "database linking" relation's Pathname, then each
-% (older) linked_session document's path, each folder once
+% the folders: each "database linking" relation's Pathname, each folder once
+% (an older `linked_session` document is not read: Jess Haley 2026-10-31,
+% did-schema did_v2_linked_session_plan.md [older linked_session reader deleted])
 links = {};
 rows = mksqlite(db.testHookDbId(), ...
     'SELECT body FROM documents WHERE classname = ''directed_relation'' ORDER BY id');
@@ -41,12 +41,6 @@ for k = 1:numel(rows)
     if strcmp(link.kind, 'linked') && ~isempty(link.path)
         links{end+1} = link.path; %#ok<AGROW>
     end
-end
-rows = mksqlite(db.testHookDbId(), ...
-    'SELECT body FROM documents WHERE classname = ''linked_session'' ORDER BY id');
-for k = 1:numel(rows)
-    p = jsondecode(rows(k).body);
-    links{end+1} = char(p.linked_session.path); %#ok<AGROW>
 end
 seen = {};
 for k = 1:numel(links)

@@ -464,8 +464,7 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
             if ndi_dataset_obj.v2Listing()
                 % V2: the session leaves the dataset -- the included_in
                 % relations naming it (its "database linking" one among
-                % them; in an older dataset, its linked_session document)
-                % go; its folder is untouched
+                % them) go; its folder is untouched
                 session_obj = [];
                 if options.AlsoDeleteSessionAfterUnlinking
                     session_obj = ndi_dataset_obj.open_session(ndi_session_id);
@@ -575,8 +574,7 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
                 % V2: copy the session's documents in, with the files they
                 % ingested, and REPLACE its link (Jess Haley 2026-10-29
                 % [linked session link details] (2)): the "database linking"
-                % relation (or, in an older dataset, the linked_session
-                % document) is deleted and a new direct included_in relation
+                % relation is deleted and a new direct included_in relation
                 % with the method "database ingestion" is written. Any other
                 % included_in relation (a study's) stays.
                 if ~ndi_dataset_obj.confirm(options, ['Are you sure you want to convert ' ...
@@ -922,8 +920,8 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
             % NOTES = SESSION_NOTES(NDI_DATASET_OBJ)
             %
             % For a V2 dataset, a cellstr: the denominator of the listing
-            % (session documents, linking relations and linked_session
-            % documents read, sessions listed),
+            % (session documents and linking relations read, sessions
+            % listed),
             % then every session left out and why -- a session document not
             % included_in the dataset, a linked folder that is missing or holds
             % another session. {} for a v1 dataset.
@@ -1472,8 +1470,7 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
                 % or a study of it. INGESTED: its documents are in this
                 % database, opened from the dataset's folder. LINKED: its
                 % "database linking" relation names its folder (Jess Haley
-                % 2026-10-29 [linked session link details]; an older dataset's
-                % `linked_session` document is read too), opened there
+                % 2026-10-29 [linked session link details]), opened there
                 % (ndi.v2.datasetSessions).
                 [v2, notes] = ndi.v2.datasetSessions(ndi_dataset_obj.session.database, ...
                     ndi_dataset_obj.id(), ndi_dataset_obj.getpath());
@@ -1623,8 +1620,7 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
             % V2LISTING - are this dataset's sessions listed the V2 way?
             %   True for a did2 database holding no session_in_a_dataset
             %   document: membership is `included_in`, a linked session's
-            %   folder the Pathname of its "database linking" relation (an
-            %   older dataset's `linked_session` document).
+            %   folder the Pathname of its "database linking" relation.
             tf = false;
             if ~ndi_dataset_obj.isV2()
                 return;
@@ -1696,8 +1692,7 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
         function entityId = v2EntityIdOf(ndi_dataset_obj, idx)
             % V2ENTITYIDOF - the session entity id of session_info(IDX): the
             %   entity document itself for an ingested session; for a linked
-            %   one, the child of its "database linking" relation (or, in an
-            %   older dataset, the linked_session's entity_id edge)
+            %   one, the child of its "database linking" relation
 
             arguments
                 ndi_dataset_obj (1,1) ndi.dataset
@@ -1709,9 +1704,6 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
                 d = ndi_dataset_obj.session.database.search( ...
                     ndi.query('base.id', 'exact_string', entityId, ''));
                 e = ndi.v2.edgeIds(d{1}.document_properties, 'child_id');
-                if isempty(e)
-                    e = ndi.v2.edgeIds(d{1}.document_properties, 'entity_id');
-                end
                 entityId = e{1};
             end
         end % v2EntityIdOf()

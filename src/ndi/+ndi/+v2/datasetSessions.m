@@ -14,8 +14,7 @@ function [sessions, notes] = datasetSessions(database, datasetSessionId, dataset
 %                   true:  linked (they are in the folder its link names)
 %     path          a linked session's folder, absolute ('' when ingested)
 %     link_id       the id of the document that links it: its "database
-%                   linking" relation, or, in a dataset written before that
-%                   relation, its `linked_session` document ('' when ingested)
+%                   linking" relation ('' when ingested)
 %     software_class the class that opens a linked session (the relation's
 %                   "software class"; 'ndi.session.dir' when not recorded)
 %     session       the linked session, opened (an ndi.session.dir; [] when
@@ -34,11 +33,11 @@ function [sessions, notes] = datasetSessions(database, datasetSessionId, dataset
 %   V_eta_go_forward_class_audit.md): the method's Pathname parameter
 %   (NCIT:C47922) is the session's folder (relative to DATASETPATH when inside
 %   it, ndi.v2.resolveLinkPath) and the relation's child the session's entity
-%   document, which must be in that folder (ndi.v2.sessionLinkOf). The
-%   relation is read first; a dataset written before it names the folder in
-%   a `linked_session` document (withdrawn: V_eta_linked_session_plan.md
-%   [linked_session withdrawn]), which is still read for a session no
-%   relation links.
+%   document, which must be in that folder (ndi.v2.sessionLinkOf). A
+%   `linked_session` document (withdrawn: V_eta_linked_session_plan.md
+%   [linked_session withdrawn]) is not read (Jess Haley 2026-10-31
+%   [older linked_session reader deleted]: no dataset written with one is in
+%   use).
 %
 %   NOTES is a cellstr of what was left out and why, the denominator first:
 %     - a `session` document in DATABASE that is not in the dataset;
@@ -117,8 +116,7 @@ for i = 1:numel(sessionDocs)
         'software_class', '', 'session', []); %#ok<AGROW>
 end
 
-% --- linked: the "database linking" relation, then (older datasets) the
-% `linked_session` document ---
+% --- linked: the "database linking" relation ---
 if ~knowMembership
     % no dataset document to walk from: every relation is read
     memberRels = database.search(ndi.query('', 'isa', 'directed_relation', ''));
@@ -157,43 +155,11 @@ for i = 1:numel(memberRels)
     sessions(end+1) = row; %#ok<AGROW>
 end
 
-try
-    links = database.search(ndi.query('', 'isa', 'linked_session', ''));
-catch
-    links = {};   % a schema that no longer declares the class
-end
-for i = 1:numel(links)
-    p = links{i}.document_properties;
-    rel = char(ndi.v2.blockOf(p, 'linked_session', 'path', ''));
-    e = ndi.v2.edgeIds(p, 'entity_id');
-    if isempty(e)
-        problems{end+1} = sprintf('linked_session %s names no session entity', p.base.id); %#ok<AGROW>
-        continue;
-    end
-    entityId = e{1};
-    if ismember(entityId, linkedEntities)
-        continue;   % its linking relation is read instead
-    end
-    folder = ndi.v2.resolveLinkPath(rel, datasetPath);
-    if knowMembership && ~ismember(entityId, members)
-        problems{end+1} = sprintf('%s (linked) is not %s the dataset', folder, member); %#ok<AGROW>
-        continue;
-    end
-    [row, why] = linkedRow(folder, entityId, p.base.id, '', options);
-    linkedEntities{end+1} = entityId; %#ok<AGROW>
-    if isempty(row)
-        problems{end+1} = why; %#ok<AGROW>
-        continue;
-    end
-    nLinked = nLinked + 1;
-    sessions(end+1) = row; %#ok<AGROW>
-end
-
-notes{end+1} = sprintf(['DENOMINATOR: %d session document(s), %d linking relation(s) ' ...
-    'and %d linked_session document(s) read; %d ingested and %d linked session(s) listed'], ...
+notes{end+1} = sprintf(['DENOMINATOR: %d session document(s) and %d linking relation(s) ' ...
+    'read; %d ingested and %d linked session(s) listed'], ...
     sum(cellfun(@(d) strcmp(ndi.v2.kindOf(d.document_properties), 'session') && ...
     ~strcmp(d.session_id(), datasetSessionId), sessionDocs)), ...
-    nLinkRels, numel(links), nIngested, nLinked);
+    nLinkRels, nIngested, nLinked);
 if ~knowMembership
     notes{end+1} = sprintf(['no dataset document: membership (%s) cannot be read, so every ' ...
         'session is listed'], member);
