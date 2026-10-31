@@ -17,7 +17,9 @@ ds = dirstruct(S.getpath);
 
 for i=1:numel(cells)
     disp(['Working on cell ' int2str(i) ' of ' int2str(numel(cells)) ': ' cellnames{i}]);
-    [nameref,index] = cellname2nameref(cellnames{i});
+    % NAME may contain underscores, which cellname2nameref splits wrongly
+    [refName, refNumber, index] = ndi.setup.conv.vhlab.parseCellName(cellnames{i});
+    nameref = struct('name', refName, 'ref', refNumber);
     I = get_intervals(cells{i});
     probeHere = S.getprobes('name',nameref.name,'reference',nameref.ref);
     if isempty(probeHere)

@@ -138,6 +138,18 @@ classdef StacyImportTest < matlab.unittest.TestCase
             testCase.verifyEqual(idx, [1; NaN; NaN]);
         end
 
+        function cellNamesParse(testCase)
+            [n, r, i, d] = ndi.setup.conv.vhlab.parseCellName('cell_extra10_001_251_2018_10_02');
+            testCase.verifyEqual({n, r, i, d}, {'extra10', 1, 251, '2018_10_02'});
+            % a probe name with an underscore (2019-02-26)
+            [n, r, i] = ndi.setup.conv.vhlab.parseCellName('cell_extra_t1_001_252_2019_02_26');
+            testCase.verifyEqual({n, r, i}, {'extra_t1', 1, 252});
+            [n, r, i] = ndi.setup.conv.vhlab.parseCellName('cell_extra_001_000_2018_02_16');
+            testCase.verifyEqual({n, r, i}, {'extra', 1, 0});
+            testCase.verifyError(@() ndi.setup.conv.vhlab.parseCellName('cell_extra10_001'), ...
+                'ndi:setup:conv:vhlab:parseCellName:BadName');
+        end
+
         function eachEpochIsMatchedOnce(testCase)
             % two cell intervals in one epoch: the larger overlap keeps it
             idx = ndi.setup.conv.vhlab.matchCellIntervalsToEpochs([0 60; 0 100], [0 100]);

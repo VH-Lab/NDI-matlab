@@ -206,14 +206,13 @@ function [isValid, report] = validateStacyDirectory(dirname, options)
                 addProblem('error', fullfile('analysis', 'experiment'), 'File has no cell* variables.');
             end
             for j = 1:numel(cellnames)
-                % cell names are cell_NAME_REF_INDEX_..., as read by cellname2nameref
-                parts = strsplit(cellnames{j}, '_');
-                if numel(parts) < 4
-                    addProblem('error', fullfile('analysis', 'experiment'), ['Cell ' cellnames{j} ' does not have a name of the form cell_NAME_REF_INDEX_DATE.']);
+                % cell names are cell_NAME_REF_INDEX_YYYY_MM_DD; NAME may contain underscores
+                try
+                    [refName, refNumber] = ndi.setup.conv.vhlab.parseCellName(cellnames{j});
+                catch
+                    addProblem('error', fullfile('analysis', 'experiment'), ['Cell ' cellnames{j} ' does not have a name of the form cell_NAME_REF_INDEX_YYYY_MM_DD.']);
                     continue;
                 end
-                refName = parts{2};
-                refNumber = round(str2double(parts{3}));
                 match = strcmp({references.name}, refName) & ([references.ref] == refNumber);
                 if ~any(match)
                     addProblem('error', fullfile('analysis', 'experiment'), ['Cell ' cellnames{j} ' has name ''' refName ''' and reference ' int2str(refNumber) ', which are in no reference.txt file.']);
