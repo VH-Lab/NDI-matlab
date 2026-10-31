@@ -2,8 +2,7 @@ function folder = resolveLinkPath(path, datasetPath)
 %RESOLVELINKPATH A linked session's folder, as an absolute path.
 %
 %   FOLDER = ndi.v2.resolveLinkPath(PATH, DATASETPATH): a linked session's
-%   Pathname (ndi.v2.sessionLinkOf; an older dataset's `linked_session`
-%   path) is relative to the dataset's folder DATASETPATH when the session
+%   Pathname (ndi.v2.sessionLinkOf) is relative to the dataset's folder DATASETPATH when the session
 %   is inside it, else absolute. Either way FOLDER is absolute. '/' and '\' are
 %   both read as separators, so a dataset written on one system opens on
 %   another.

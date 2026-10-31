@@ -11,7 +11,7 @@ classdef TestLinkedSessions < matlab.unittest.TestCase
 %   [linked session pathname]): "database linking" with "software class" and
 %   Pathname, or "database ingestion"; converting replaces it. The
 %   `linked_session` document is withdrawn ([linked_session withdrawn]) and
-%   read only from a dataset written before. Writes
+%   not read (Jess Haley 2026-10-31 [older linked_session reader deleted]). Writes
 %   TestHaleyRecordings' synthetic concentration_0001 into a dataset once,
 %   then each test works on its own copy of that dataset.
 
@@ -242,47 +242,6 @@ classdef TestLinkedSessions < matlab.unittest.TestCase
             ds = ndi.dataset.dir(moved);
             refs = ds.session_list();
             testCase.verifyTrue(ismember('inside', refs), strjoin(ds.session_notes(), newline));
-        end
-
-        function testAnOlderLinkedSessionDocumentIsStillRead(testCase)
-            % a dataset written before the linking relation names the folder in
-            % a `linked_session` document: it is read when no relation links
-            testCase.assumeTrue(did2.schema.cache.shared().hasClass('linked_session'), ...
-                'the schema in use no longer declares linked_session');
-            [~, ids] = testCase.Dataset.session_list();
-            sid = ids{1};
-            folder = fullfile(testCase.Root, ['older_' char(ndi.ido.unique_id())]);
-            testCase.Dataset.convertIngestedSessionToLinked(sid, folder, 'areYouSure', true);
-            links = linkRelations(testCase.Dataset, sid);
-            entityId = ndi.v2.sessionLinkOf(links{1}).child_id;
-            % rewrite the dataset as an older writer left it
-            db = did2.database.sqlitedb(fullfile(testCase.Path, '.ndi', ...
-                ndi.database.implementations.database.did2sqlite.DEFAULTFILENAME()));
-            closer = onCleanup(@() db.close());
-            db.remove(links{1}.id());
-            dsDoc = datasetDocId(testCase.Dataset);
-            plain = did2.build.directedRelation(entityId, dsDoc, ...
-                ndi.v2.vocabTerm('relation', 'included_in'), 'SessionId', testCase.Dataset.id());
-            older = did2.build.document('linked_session', ...
-                struct('path', ndi.v2.linkPath(folder, testCase.Path)), ...
-                'SessionId', testCase.Dataset.id(), 'Edges', struct('entity_id', entityId));
-            db.add({did2.document(plain), did2.document(older)});
-            clear closer;
-            ds = ndi.dataset.dir(testCase.Path);
-            [refs, ids2] = ds.session_list();
-            testCase.verifyEqual(refs, {'concentration_0001'});
-            testCase.verifyEqual(ids2, {sid});
-            notes = ds.session_notes();
-            testCase.verifyTrue(contains(notes{1}, '0 ingested and 1 linked'), notes{1});
-            testCase.verifyTrue(contains(notes{1}, '0 linking relation(s) and 1 linked_session'), notes{1});
-            S = ds.open_session(sid);
-            testCase.verifyEqual(canonical(S.path), canonical(folder));
-            % converting it replaces the older document with an ingestion relation
-            ds.convertLinkedSessionToIngested(sid, 'areYouSure', true);
-            ds = ndi.dataset.dir(testCase.Path);
-            [~, kinds] = linkRelations(ds, sid);
-            testCase.verifyEqual(kinds, {'ingested'});
-            testCase.verifyEmpty(ds.database_search(ndi.query('', 'isa', 'linked_session', '')));
         end
 
         function testAFolderThatMovedIsReported(testCase)
