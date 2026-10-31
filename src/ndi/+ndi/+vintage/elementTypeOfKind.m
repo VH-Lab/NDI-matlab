@@ -77,6 +77,7 @@ types = {
     'accelerometer',       'NCIT:C88166'
     'thermometer',         'NCIT:C50059'
     'ppg',                 'NCIT:C224112'
+    'stimulator',          'SNOMEDCT:36645008'
     'electrode-$',         'NCIT:C49936'};
 end
 
