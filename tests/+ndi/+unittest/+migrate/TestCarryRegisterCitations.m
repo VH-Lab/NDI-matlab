@@ -95,6 +95,22 @@ classdef TestCarryRegisterCitations < matlab.unittest.TestCase
             testCase.verifyEqual(registerIn(tmp), newPath, 'the new name alone');
         end
 
+        function testTheRegisterIsReadFromRegistryFolder(testCase)
+            % [schema folders by family] (did-schema #248): the register is
+            % in schemas/registry/, and that copy wins over one in schemas/.
+            tmp = testCase.applyFixture( ...
+                matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
+            mkdir(fullfile(tmp, 'schemas', 'registry'));
+            names = registerNames();
+            regPath = fullfile(tmp, 'schemas', 'registry', names{1});
+            flatPath = fullfile(tmp, 'schemas', names{1});
+            writeRegister(regPath, 'carry-003');
+            testCase.verifyEqual(registerIn(tmp), regPath, 'the registry folder alone');
+            writeRegister(flatPath, 'carry-004');
+            testCase.verifyEqual(registerIn(tmp), regPath, ...
+                'the registry folder wins over schemas/');
+        end
+
         function testMarkersMatchTheCode(testCase)
             cites = scanCitations();
             testCase.verifyGreaterThan(numel(cites.file_rows), 0, ...
@@ -129,13 +145,18 @@ end
 
 function p = registerIn(schemaRoot)
 % The register in one did-schema checkout, by the first name present, or ''.
+% did-schema keeps it in schemas/registry/ since [schema folders by family]
+% (did-schema #248); schemas/ itself is the layout before that.
 p = '';
 names = registerNames();
-for k = 1:numel(names)
-    candidate = fullfile(schemaRoot, 'schemas', names{k});
-    if isfile(candidate)
-        p = candidate;
-        return;
+folders = {fullfile(schemaRoot, 'schemas', 'registry'), fullfile(schemaRoot, 'schemas')};
+for f = 1:numel(folders)
+    for k = 1:numel(names)
+        candidate = fullfile(folders{f}, names{k});
+        if isfile(candidate)
+            p = candidate;
+            return;
+        end
     end
 end
 end
@@ -147,7 +168,7 @@ fclose(fid);
 end
 
 function [ids, regPath] = readRegister(testCase)
-rel = strjoin(fullfile('schemas', registerNames()), ' or ');
+rel = strjoin([fullfile('schemas', 'registry', registerNames()), fullfile('schemas', registerNames())], ' or ');
 root = repoRoot();
 candidates = {};
 env = getenv('DID_SCHEMA_ROOT');

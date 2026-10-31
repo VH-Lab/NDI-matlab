@@ -113,6 +113,8 @@ classdef TestElementTypeFromKind < matlab.unittest.TestCase
             testCase.verifyEqual(ndi.vintage.elementTypeOfKind('OBI:0400169', true), '');
             testCase.verifyEqual(ndi.vintage.elementTypeOfKind('', true), '');
             testCase.verifyEqual(ndi.vintage.elementTypeOfKind('ncit:C224112', true), 'ppg');
+            % [stimulator is SNOMED CT Stimulator], DID-matlab #304
+            testCase.verifyEqual(ndi.vintage.elementTypeOfKind('SNOMEDCT:36645008', true), 'stimulator');
         end
     end
 end
