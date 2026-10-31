@@ -164,7 +164,7 @@ classdef TestEpochAnchorFold < matlab.unittest.TestCase
             testCase.verifyEqual(b.base.id, 'bath_anchor_1');
             testCase.verifyEqual(b.document_class.class_name, 'relative_time_reference');
             testCase.verifyEqual(depValue(b, 'referent_id'), 'epoch_doc_A');
-            testCase.verifyEqual(b.relative_time_reference.value.clock.name, 'dev_global_time');
+            ndi.unittest.migrate.verifyClock(testCase, b.relative_time_reference.value.clock, 'dev_global_time');   % by node [clock terms get nodes]
             testCase.verifyEqual(b.relative_time_reference.value.relation.name, 'intervalDuring');
             testCase.verifyEqual(b.time_reference.clock_tolerance.seconds, 5);
         end
