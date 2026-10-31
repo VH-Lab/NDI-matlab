@@ -57,7 +57,11 @@ for i=1:numel(cells)
     % now make epochs
     for j=1:size(I,1)
         epoch_here = et(ImatchesInAll(j));
-        spikes_here = get_data(cells{i},[I(j,1) I(j,2)]);
+        % The legacy intervals were padded 10 s past each recording's end, so
+        % neighbours can overlap, and get_data then refuses an interval that is
+        % overlapped on both sides. Read it without that check (warn = 2); the
+        % spikes are clipped to this epoch's own recording below.
+        spikes_here = get_data(cells{i},[I(j,1) I(j,2)],2);
         % Legacy spike times are on the legacy global clock, which is the Spike2
         % (stimulator) clock plus stims.mat's start (see vhlabcorrectmti with
         % globaltime = 1). Subtract it to get the stimulator's dev_local_time,
@@ -65,6 +69,9 @@ for i=1:numel(cells)
         spike_times_stim = spikes_here(:) - all_global_starts(ImatchesInAll(j));
         spike_times_here = stimulatorTimeToProbeTime(S, spike_times_stim, epoch_here.epoch_id, probeHere);
         t0_t1 = epoch_here.t0_t1{find(cellfun(@(c) c==ndi.time.clocktype('dev_local_time'), epoch_here.epoch_clock), 1)};
+        % keep only spikes inside this epoch's recording, so a spike in an
+        % overlap belongs to the epoch that recorded it, and to no other
+        spike_times_here = spike_times_here(spike_times_here >= t0_t1(1) & spike_times_here <= t0_t1(2));
 		element_neuron.addepoch(epoch_here.epoch_id,ndi.time.clocktype('dev_local_time'),...
 			t0_t1,spike_times_here(:),ones(size(spike_times_here(:))));
     end
