@@ -515,6 +515,21 @@ classdef system < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice
             % a cell array of documents (ndi.file.navigator/newdocument,
             % ndi.daq.reader/newdocument, ndi.daq.metadatareader/newdocument);
             % the set is flat
+            if ~isempty(ndi_daqsystem_obj.session) && ndi_daqsystem_obj.session.writesV2()
+                % A V2 database gets the V2 record of the system itself: an
+                % `acquisition_system` whose id is the system's id and whose
+                % `name` is its name, with `software_id` naming a `software`
+                % entity whose `name` is the system's class, and `reader_id`,
+                % `epoch_file_pattern_id` and `epoch_parameter_reader_id`
+                % naming its components by their ids -- the shape DID-matlab's
+                % +migrators_j/daqsystem.m writes for a v1 `daqsystem`, and the
+                % one this constructor, ndi.vintage.objectClass and
+                % daqsystem_load already read. Decided by Jess Haley,
+                % 2026-10-29 [v1 writes into a V2 session] (did-schema
+                % did_v2_go_forward_class_audit.md): "the end state is that
+                % every NDI writer writes V2 documents".
+                ndi_document_obj_set{3} = ndi_daqsystem_obj.newdocumentV2();
+            end
             flat = {};
             for i=1:numel(ndi_document_obj_set)
                 if iscell(ndi_document_obj_set{i})
@@ -525,6 +540,36 @@ classdef system < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice
             end
             ndi_document_obj_set = flat;
         end  % newdocument()
+
+        function docs = newdocumentV2(ndi_daqsystem_obj)
+            % NEWDOCUMENTV2 - the V2 record of the system itself (see NEWDOCUMENT)
+            %
+            % DOCS = NEWDOCUMENTV2(NDI_DAQSYSTEM_OBJ)
+            %
+            % Returns {acquisition_system, software entity} as ndi.document
+            % objects, in the system's session. The components' own records
+            % are made by their newdocument methods.
+            %
+            sid = ndi_daqsystem_obj.session.id();
+            cls = class(ndi_daqsystem_obj);
+            sw = ndi.setup.V2.entityDocuments('software', ...
+                struct('name', cls, 'local_identifier', cls), struct(), 'SessionId', sid);
+            edges = struct('software_id', sw{1}.base.id, ...
+                'reader_id', ndi_daqsystem_obj.daqreader.id(), ...
+                'epoch_file_pattern_id', ndi_daqsystem_obj.filenavigator.id());
+            if ~isempty(ndi_daqsystem_obj.daqmetadatareader)
+                edges.epoch_parameter_reader_id = cellfun(@(m) m.id(), ...
+                    ndi_daqsystem_obj.daqmetadatareader, 'UniformOutput', false);
+            end
+            f = struct();
+            if ~isempty(ndi_daqsystem_obj.name)
+                f.name = ndi_daqsystem_obj.name;
+            end
+            a = did2.build.document('acquisition_system', f, 'Edges', edges, ...
+                'Id', ndi_daqsystem_obj.id(), 'SessionId', sid);
+            docs = [{ndi.document(a)}, ...
+                cellfun(@(x) ndi.document(x), sw, 'UniformOutput', false)];
+        end % newdocumentV2()
 
         function sq = searchquery(ndi_daqsystem_obj)
             % SEARCHQUERY - search for an ndi.daq.system
