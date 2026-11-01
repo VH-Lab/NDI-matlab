@@ -194,9 +194,26 @@ classdef dir < ndi.session
                     error(['Could not load the REFERENCE field from the database or path ' ndi_session_dir_obj.ndipathname() '.']);
                 end
                 % now we have both reference and id from either the files or the database, add it to db
-                g = ndi.document('session','session.reference',ndi_session_dir_obj.reference) + ...
-                    ndi_session_dir_obj.newdocument();
-                ndi_session_dir_obj.database_add(g);
+                if isa(db, 'ndi.database.implementations.database.did2sqlite')
+                    % A V2 (did2) database gets the V2 session record: an
+                    % `entity` of type session whose id IS the session id,
+                    % as ndi.setup.V2.createSession writes it, not a v1
+                    % `session` document stamped did_v1. Decided by Jess
+                    % Haley, 2026-10-29 [v1 writes into a V2 session]
+                    % (did-schema did_v2_go_forward_class_audit.md): "the end
+                    % state is that every NDI writer writes V2 documents".
+                    % A v1 database keeps the v1 document below.
+                    sid = ndi_session_dir_obj.id();
+                    g = ndi.setup.V2.entityDocuments('session', ...
+                        struct('local_identifier', ndi_session_dir_obj.reference), ...
+                        struct(), 'SessionId', sid, 'Id', sid);
+                    ndi_session_dir_obj.database_add(cellfun(@(x) ndi.document(x), ...
+                        g, 'UniformOutput', false));
+                else
+                    g = ndi.document('session','session.reference',ndi_session_dir_obj.reference) + ...
+                        ndi_session_dir_obj.newdocument();
+                    ndi_session_dir_obj.database_add(g);
+                end
             end
 
             % BOTH VINTAGES. V_eta renames `syncgraph` to
