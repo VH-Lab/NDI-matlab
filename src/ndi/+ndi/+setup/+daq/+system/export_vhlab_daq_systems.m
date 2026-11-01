@@ -84,30 +84,6 @@ daqSystemConfig = ndi.setup.DaqSystemConfiguration( daqSystemName, ...
 
 daqSystemConfig.export(fullfile(exportDir, [daqSystemName, '.json']))
 
-% Export "vhneuropixelsGLX_nidq" DAQ System
-% - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-% Reads the SpikeGLX NI-DAQ stream (*.nidq.bin / *.nidq.meta) of a vhlab
-% Neuropixels GLX session with the NDR neuropixelsGLX reader. The companion
-% vhneuropixelsGLX system reads the IMEC .ap.bin, so its digital lines are
-% the IMEC SY bits; this system exposes the NI-DAQ analog inputs (ai1..aiN)
-% and the NI-DAQ digital lines, where SpikeGLX line XDn is NDI channel
-% di(n+1) (XD0 -> di1, XD4 -> di5). Epoch probe map entries use devicestrings
-% such as 'vhneuropixelsGLX_nidq:dimp5' (pulses on XD4, e.g. an optogenetic
-% fiber). It shares the epochprobemap.txt and .nidq.meta files with
-% vhneuropixelsGLX, so the default 2-file filematch sync rule links them.
-daqSystemName = 'vhneuropixelsGLX_nidq';
-daqSystemConfig = ndi.setup.DaqSystemConfiguration( daqSystemName, ...
-    'DaqReaderClass', 'ndi.daq.reader.mfdaq.ndr', ...
-    'DaqReaderFileParameters', 'neuropixelsGLX', ...
-    'EpochProbeMapClass', 'ndi.epoch.epochprobemap_daqsystem', ...
-    'FileParameters', {'#.nidq\.bin\>', ...
-    '#.nidq\.meta\>', ...
-    'epochprobemap.txt'}, ...
-    'EpochProbeMapFileParameters', 'epochprobemap.txt', ...
-    'HasEpochDirectories', true);
-
-daqSystemConfig.export(fullfile(exportDir, [daqSystemName, '.json']))
-
 % Export "vhprairieview" DAQ System
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 % vhlab PrairieView 2-photon imaging. This is an image-series DAQ system:
