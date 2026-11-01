@@ -20,8 +20,8 @@ function [files, folders, problems] = datasetDatabaseFiles(path)
 arguments
     path (1,:) char {mustBeFolder}
 end
-name = ndi.database.implementations.database.did2sqlite.DEFAULTFILENAME();
-own = fullfile(path, '.ndi', name);
+% did_v2.sqlite, or a V_eta.sqlite written before [V2 database file renamed]
+own = ndi.database.implementations.database.did2sqlite.FILEIN(fullfile(path, '.ndi'));
 if ~isfile(own)
     error('ndi:setup:V2:noDataset', 'No V2 database at %s.', own);
 end
@@ -50,7 +50,7 @@ for k = 1:numel(links)
         continue;
     end
     seen{end+1} = key; %#ok<AGROW>
-    f = fullfile(folder, '.ndi', name);
+    f = ndi.database.implementations.database.did2sqlite.FILEIN(fullfile(folder, '.ndi'));
     if isfile(f)
         files{end+1} = f; %#ok<AGROW>
         folders{end+1} = folder; %#ok<AGROW>

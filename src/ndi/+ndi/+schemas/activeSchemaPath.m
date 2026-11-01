@@ -5,7 +5,8 @@ function [p, source] = activeSchemaPath()
 %   ndi.schemas.init() will hand to did2.schema.cache.setSchemaPath
 %   and a tag describing where it came from:
 %
-%       'cache'    - user cache populated at the current pin
+%       'cache'    - user cache populated at the current pin (under
+%                    did_v2, else under the earlier name V_eta)
 %       'fallback' - bundled snapshot shipped with this release
 %       'none'     - neither populated; P is '' (loader cannot run)
 %
@@ -21,6 +22,15 @@ function [p, source] = activeSchemaPath()
 
     if hasSchemas(cacheP)
         p = cacheP;
+        source = 'cache';
+        return;
+    end
+
+    % a cache written under the set's earlier name, V_eta, before
+    % [schema set renamed did_v2]: read when the did_v2 one is not populated
+    legacyP = ndi.schemas.legacyCacheDir();
+    if hasSchemas(legacyP)
+        p = legacyP;
         source = 'cache';
         return;
     end

@@ -24,7 +24,7 @@ classdef TestBathAssembly < matlab.unittest.TestCase
             v1 = stimulusBathDoc('stim_1', 't00001');
             r  = mockResolver('animal_1', 'dev_local_time');
             [dose, timeRef, extra, anchorInfo] = ...
-                ndi.migrate.internal.stimulusBathToBath(v1, r, 'V_eta');
+                ndi.migrate.internal.stimulusBathToBath(v1, r, 'did_v2');
 
             testCase.verifyEqual(dose.document_class.class_name, 'manipulation');
             testCase.verifyEqual({dose.document_class.superclasses.class_name}, ...
@@ -91,7 +91,7 @@ classdef TestBathAssembly < matlab.unittest.TestCase
                 'name', 'lower compartment');
             r  = mockResolver('prep_1', 'dev_local_time');
             [dose, timeRef, extra] = ...
-                ndi.migrate.internal.stimulusBathToBath(v1, r, 'V_eta');
+                ndi.migrate.internal.stimulusBathToBath(v1, r, 'did_v2');
             site = siteOf(extra);
             testCase.verifyNumElements(site, 1);
             site = site{1};
@@ -123,7 +123,7 @@ classdef TestBathAssembly < matlab.unittest.TestCase
                 v1.stimulus_bath.location = loc{1};
                 r  = mockResolver('slice_animal', 'dev_local_time');
                 [dose, timeRef, extra] = ...
-                    ndi.migrate.internal.stimulusBathToBath(v1, r, 'V_eta');
+                    ndi.migrate.internal.stimulusBathToBath(v1, r, 'did_v2');
                 testCase.verifyEmpty(siteOf(extra));
                 [kept, minted, changed] = ndi.migrate.internal.pathSPromotion( ...
                     [{dose, timeRef}, extra]);
@@ -138,7 +138,7 @@ classdef TestBathAssembly < matlab.unittest.TestCase
             % nothing to co-anchor on: the bath stays on the subject (a gap)
             v1 = stimulusBathDoc('stim_1', 't00001');
             r  = mockResolver('animal_1', 'no_time');
-            [~, ~, extra] = ndi.migrate.internal.stimulusBathToBath(v1, r, 'V_eta');
+            [~, ~, extra] = ndi.migrate.internal.stimulusBathToBath(v1, r, 'did_v2');
             testCase.verifyEmpty(siteOf(extra));
         end
 
@@ -152,7 +152,7 @@ classdef TestBathAssembly < matlab.unittest.TestCase
             % promotes an element to a `subject` with its id PRESERVED.
             v1 = stimulusBathDoc('stim_1', 't00001');
             r  = mockResolver('animal_1', 'dev_local_time');
-            dose = ndi.migrate.internal.stimulusBathToBath(v1, r, 'V_eta');
+            dose = ndi.migrate.internal.stimulusBathToBath(v1, r, 'did_v2');
             testCase.verifyEqual(depValue(dose, 'instrument_id'), 'stim_1');
         end
 
@@ -164,7 +164,7 @@ classdef TestBathAssembly < matlab.unittest.TestCase
             v1 = stimulusBathDoc('stim_1', 't00001');
             r  = mockResolver('animal_1', 'no_time');
             [dose, timeRef, ~, anchorInfo] = ...
-                ndi.migrate.internal.stimulusBathToBath(v1, r, 'V_eta');
+                ndi.migrate.internal.stimulusBathToBath(v1, r, 'did_v2');
             testCase.verifyEmpty(timeRef);
             testCase.verifyEmpty(anchorInfo);
             testCase.verifyEmpty(depValue(dose, 'time_reference_id'));
@@ -175,7 +175,7 @@ classdef TestBathAssembly < matlab.unittest.TestCase
             v1.epochid = struct('epochid', '');
             r  = mockResolver('animal_1', 'dev_local_time');
             [dose, timeRef] = ...
-                ndi.migrate.internal.stimulusBathToBath(v1, r, 'V_eta');
+                ndi.migrate.internal.stimulusBathToBath(v1, r, 'did_v2');
             testCase.verifyEmpty(timeRef);
             testCase.verifyEmpty(depValue(dose, 'time_reference_id'));
         end
@@ -188,7 +188,7 @@ classdef TestBathAssembly < matlab.unittest.TestCase
                 'CHEBI:1,"sodium phosphate, monobasic",0.0012,UO:0000062,Molar\n' ...
                 'CHEBI:2,pH,7.4,,\n']);
             r  = mockResolver('animal_1', 'dev_local_time');
-            [~, ~, extra] = ndi.migrate.internal.stimulusBathToBath(v1, r, 'V_eta');
+            [~, ~, extra] = ndi.migrate.internal.stimulusBathToBath(v1, r, 'did_v2');
             classes = cellfun(@(b) b.document_class.class_name, extra, ...
                 'UniformOutput', false);
             testCase.verifyEqual(sum(strcmp(classes, 'chemical')), 1);
@@ -214,7 +214,7 @@ classdef TestBathAssembly < matlab.unittest.TestCase
                 'chebi:6904,muscimol,5,,mg/ml\n' ...
                 'chebi:26710,sodium chloride,,,\n']);
             r  = mockResolver('animal_1', 'dev_local_time');
-            [~, ~, extra] = ndi.migrate.internal.stimulusBathToBath(v1, r, 'V_eta');
+            [~, ~, extra] = ndi.migrate.internal.stimulusBathToBath(v1, r, 'did_v2');
             classes = cellfun(@(b) b.document_class.class_name, extra, ...
                 'UniformOutput', false);
             f = extra{strcmp(classes, 'formulation')};
@@ -223,7 +223,7 @@ classdef TestBathAssembly < matlab.unittest.TestCase
             testCase.verifyEqual(numel(depValues(f, 'ingredient_id')), 2);
             % folded as ndi.migrate.local folds it: nothing may quarantine
             % (the old shape quarantined with did2:validation:valueNowhere)
-            res = did2.convert.v1_to_v2({f}, 'TargetVersion', 'V_eta', 'Verbose', false);
+            res = did2.convert.v1_to_v2({f}, 'TargetVersion', 'did_v2', 'Verbose', false);
             testCase.verifyEmpty(res.quarantine, 'the formulation was quarantined');
             testCase.verifyNumElements(res.migrated, 1);
         end
