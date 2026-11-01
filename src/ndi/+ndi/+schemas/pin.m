@@ -10,10 +10,12 @@ function info = pin(varargin)
 %
 %   INFO = NDI.SCHEMAS.PIN(REF, 'repo', REPO, 'path', PATH) also
 %   overrides the repository (e.g. 'waltham-data-science/did-schema')
-%   and/or source path (e.g. 'schemas/V_eta/stable').
+%   and/or source path (e.g. 'schemas/did_v2/stable').
 %
-%   The default path is schemas/V_eta/stable: did-schema #88 deleted
-%   schemas/V_alpha .. V_zeta (OPEN_WORK #128), so V_eta is the only set.
+%   The default path is schemas/did_v2/stable (the set was named V_eta
+%   before [schema set renamed did_v2]; ndi.schemas.setFiles reads a pin
+%   naming either). did-schema #88 deleted
+%   schemas/V_alpha .. V_zeta (OPEN_WORK #128), so it is the only set.
 %
 %   Updating the pin does not refresh the cache. Call
 %   NDI.SCHEMAS.REFRESH afterwards to fetch the new schemas.
@@ -50,14 +52,14 @@ function info = readPinFile(pinFile)
         info = struct( ...
             'repo', 'waltham-data-science/did-schema', ...
             'ref',  '', ...
-            'path', 'schemas/V_eta/stable');
+            'path', 'schemas/did_v2/stable');
         return;
     end
     raw = jsondecode(fileread(pinFile));
     info = struct( ...
         'repo', getOr(raw, 'repo', 'waltham-data-science/did-schema'), ...
         'ref',  getOr(raw, 'ref',  ''), ...
-        'path', getOr(raw, 'path', 'schemas/V_eta/stable'));
+        'path', getOr(raw, 'path', 'schemas/did_v2/stable'));
 end
 
 function writePinFile(pinFile, info)

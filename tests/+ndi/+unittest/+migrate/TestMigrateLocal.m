@@ -7,9 +7,9 @@ classdef TestMigrateLocal < matlab.unittest.TestCase
 %   inspects the resulting sqlite, the backup, the quarantine sidecar,
 %   the lock semantics, and the idempotency fast pass.
 %
-%   Every call but testDefaultTargetIsVeta's explicit one relies on the
-%   DEFAULT TargetVersion, 'V_eta' (the only value accepted), so these tests run the
-%   V_eta path: +migrators_j in pass 1 and the second pass.
+%   Most calls rely on the DEFAULT TargetVersion, 'did_v2' (its earlier
+%   name 'V_eta' is also accepted), so these tests run the V2 path:
+%   +migrators_j in pass 1 and the second pass.
 %
 %   Tests run with Validate=false so the test runner does not need a
 %   checked-out did-schema tree next to it. The mksqlite gate lives in
@@ -49,37 +49,98 @@ classdef TestMigrateLocal < matlab.unittest.TestCase
 
     methods (Test)
 
-        function testDefaultTargetIsVeta(testCase)
-            % ndi.migrate.local migrates to V_eta unless asked otherwise
-            % (VH-Lab/NDI-matlab#804): it writes V_eta.sqlite and runs the
-            % V_eta second pass, whose report is carried on the result.
+        function testDefaultTargetIsDidV2(testCase)
+            % ndi.migrate.local migrates to the V2 set unless asked otherwise
+            % (VH-Lab/NDI-matlab#804). The set is 'did_v2' and its database
+            % file did_v2.sqlite ([schema set renamed did_v2], [V2 database
+            % file renamed], Jess Haley, 2026-10-25 and 2026-11-01); the V2
+            % second pass runs and its report is carried on the result.
             srcSqlite = fullfile(testCase.SessionRoot, '.ndi', 'did-sqlite.sqlite');
             buildV1Sqlite(srcSqlite, {jsonencode(makeV1Body('alpha'))});
 
             result = ndi.migrate.local(testCase.SessionRoot, 'Validate', false);
 
             [~, name, ext] = fileparts(result.destination);
-            verifyEqual(testCase, [name ext], 'V_eta.sqlite');
-            verifyTrue(testCase, isfile(fullfile(testCase.SessionRoot, '.ndi', 'V_eta.sqlite')));
+            verifyEqual(testCase, [name ext], 'did_v2.sqlite');
+            verifyTrue(testCase, isfile(fullfile(testCase.SessionRoot, '.ndi', 'did_v2.sqlite')));
+            verifyFalse(testCase, isfile(fullfile(testCase.SessionRoot, '.ndi', 'V_eta.sqlite')), ...
+                'a new migration wrote the earlier file name');
             % result.secondPass exists on every target, but its reports are
-            % [] unless the V_eta second pass ran; the strain pass reports
+            % [] unless the V2 second pass ran; the strain pass reports
             % its denominator whenever it is handed documents
             verifyNotEmpty(testCase, result.secondPass.strainAssembly, ...
-                'the V_eta second pass did not run on the default target');
+                'the V2 second pass did not run on the default target');
             verifyGreaterThan(testCase, result.secondPass.strainAssembly.documents_inspected, 0);
 
             % the default is declared, not inferred from a file name
             explicit = ndi.migrate.local(testCase.SessionRoot, 'Validate', false, ...
-                'TargetVersion', 'V_eta');
-            verifyTrue(testCase, explicit.alreadyMigrated, ...
-                'an explicit V_eta run finds the default run''s V_eta.sqlite');
-
-            % [schema set renamed did_v2] (Jess Haley, 2026-10-25), step 1
-            % "accept both names": 'did_v2' names the same set
-            renamed = ndi.migrate.local(testCase.SessionRoot, 'Validate', false, ...
                 'TargetVersion', 'did_v2');
+            verifyTrue(testCase, explicit.alreadyMigrated, ...
+                'an explicit did_v2 run finds the default run''s did_v2.sqlite');
+
+            % the set's earlier name is still accepted: the same set
+            renamed = ndi.migrate.local(testCase.SessionRoot, 'Validate', false, ...
+                'TargetVersion', 'V_eta');
             verifyTrue(testCase, renamed.alreadyMigrated, ...
-                'a did_v2 run finds the V_eta run''s database: the same set');
+                'a V_eta run finds the did_v2 run''s database: the same set');
+            [~, name, ext] = fileparts(renamed.destination);
+            verifyEqual(testCase, [name ext], 'did_v2.sqlite');
+        end
+
+        function testTheEarlierNameMigratesTheSameDocuments(testCase)
+            % 'V_eta' is the same set as 'did_v2' ([schema set renamed
+            % did_v2]): a FRESH migration under either name runs the same
+            % steps and writes the same documents. (A 'V_eta' run used to
+            % pass the argument check and then skip every V2 step, which
+            % compare 'did_v2'.)
+            bodies = {jsonencode(makeV1Body('alpha')), jsonencode(makeV1Body('beta'))};
+            buildV1Sqlite(fullfile(testCase.SessionRoot, '.ndi', 'did-sqlite.sqlite'), bodies);
+            other = tempname();
+            mkdir(fullfile(other, '.ndi'));
+            testCase.addTeardown(@() rmdir(other, 's'));
+            buildV1Sqlite(fullfile(other, '.ndi', 'did-sqlite.sqlite'), bodies);
+
+            a = ndi.migrate.local(testCase.SessionRoot, 'Validate', false, ...
+                'TargetVersion', 'did_v2');
+            b = ndi.migrate.local(other, 'Validate', false, 'TargetVersion', 'V_eta');
+            verifyFalse(testCase, a.alreadyMigrated);
+            verifyFalse(testCase, b.alreadyMigrated);
+            verifyNotEmpty(testCase, b.secondPass.strainAssembly, ...
+                'a V_eta migration skipped the V2 second pass');
+            verifyEqual(testCase, b.secondPass.strainAssembly.documents_inspected, ...
+                a.secondPass.strainAssembly.documents_inspected);
+            ca = destinationClasses(a.destination);
+            cb = destinationClasses(b.destination);
+            verifyNotEmpty(testCase, ca, 'the did_v2 migration wrote no documents');
+            verifyEqual(testCase, cb, ca, ...
+                'a V_eta migration wrote different documents than a did_v2 one');
+        end
+
+        function testAnExistingVetaDatabaseIsStillOpened(testCase)
+            % [V2 database file renamed]: NDI still opens an existing
+            % V_eta.sqlite. A session migrated before the rename is found
+            % by a re-run (which continues it, under its own name) and by
+            % the database hierarchy, and no did_v2.sqlite is made beside it.
+            srcSqlite = fullfile(testCase.SessionRoot, '.ndi', 'did-sqlite.sqlite');
+            buildV1Sqlite(srcSqlite, {jsonencode(makeV1Body('alpha'))});
+            first = ndi.migrate.local(testCase.SessionRoot, 'Validate', false);
+            ndiDir = fullfile(testCase.SessionRoot, '.ndi');
+            movefile(first.destination, fullfile(ndiDir, 'V_eta.sqlite'));
+
+            verifyEqual(testCase, ...
+                ndi.database.implementations.database.did2sqlite.FILEIN(ndiDir), ...
+                fullfile(ndiDir, 'V_eta.sqlite'));
+            again = ndi.migrate.local(testCase.SessionRoot, 'Validate', false);
+            verifyTrue(testCase, again.alreadyMigrated, ...
+                'a re-run did not find the existing V_eta.sqlite');
+            [~, name, ext] = fileparts(again.destination);
+            verifyEqual(testCase, [name ext], 'V_eta.sqlite');
+            verifyFalse(testCase, isfile(fullfile(ndiDir, 'did_v2.sqlite')), ...
+                'a re-run made a second database beside the existing one');
+
+            db = ndi.database.fun.opendatabase(ndiDir, 'ref');
+            verifyClass(testCase, db, 'ndi.database.implementations.database.did2sqlite');
+            verifyEqual(testCase, db.database_filename, fullfile(ndiDir, 'V_eta.sqlite'));
         end
 
         function testAnyOtherTargetIsRefused(testCase)
@@ -564,4 +625,12 @@ fid = fopen(fullPath, 'w');
 fwrite(fid, body, 'char');
 fclose(fid);
 try fileattrib(fullPath, '+r'); catch, end
+end
+
+function names = destinationClasses(dbFile)
+%DESTINATIONCLASSES The sorted class names of every document in a did2 database.
+db = did2.database.sqlitedb(dbFile);
+closer = onCleanup(@() db.close());
+rows = mksqlite(db.testHookDbId(), 'SELECT classname FROM documents');
+names = sort({rows.classname});
 end

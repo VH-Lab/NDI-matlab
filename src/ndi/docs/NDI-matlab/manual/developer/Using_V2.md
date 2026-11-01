@@ -213,7 +213,7 @@ S = ndi.setup.V2.createSession(folder, 'day 1', 'SessionId', sid, ...
   datasetSessionId, datasetDocs, sessionDocs)` writes a whole dataset (every
   session ingested) and opens it; `ndi.setup.V2.writeDocuments(dbFile, docs)`
   adds documents to an existing V2 database
-  (`.ndi/V_eta.sqlite` in the folder).
+  (`.ndi/did_v2.sqlite` in the folder; a database written before 2026-11-01 is `.ndi/V_eta.sqlite` and still opens).
 
 - `ndi.setup.V2.attachFile(doc, name, path)` says where the bytes of a
   document's file are (`did2.build.sampledBody` names its file

@@ -50,8 +50,8 @@ classdef TestLightsheetMigrated < matlab.unittest.TestCase
                 F.v1Level('lvl_ls_0', 'pyr_ls_1', 0, 'none', {testCase.Chunk1, c2}), ...
                 F.v1Level('lvl_ls_1_max', 'pyr_ls_1', 1, 'max', {m1}), ...
                 F.v1Level('lvl_ls_1_mean', 'pyr_ls_1', 1, 'mean', {})};
-            out = did2.convert.v1_to_v2(batch, 'Validate', true, 'TargetVersion', 'V_eta');
-            [out, ~] = did2.convert.foldGenericFiles(out, 'Validate', true, 'TargetVersion', 'V_eta');
+            out = did2.convert.v1_to_v2(batch, 'Validate', true, 'TargetVersion', 'did_v2');
+            [out, ~] = did2.convert.foldGenericFiles(out, 'Validate', true, 'TargetVersion', 'did_v2');
             testCase.assertEmpty(out.quarantine, ...
                 ndi.unittest.vintage.TestLightsheetMigrated.reasons(out));
             testCase.Out = cellfun(@(d) d.toStruct(), out.migrated, 'UniformOutput', false);
@@ -109,7 +109,7 @@ classdef TestLightsheetMigrated < matlab.unittest.TestCase
             % migrator's separator in notes; the reader's separator must be
             % the same literal, so the label it reads is the label alone.
             out = did2.convert.v1_to_v2({ndi.unittest.vintage.TestLightsheetMigrated.v1Pyramid()}, ...
-                'Validate', true, 'TargetVersion', 'V_eta');
+                'Validate', true, 'TargetVersion', 'did_v2');
             testCase.assertEmpty(out.quarantine, ...
                 ndi.unittest.vintage.TestLightsheetMigrated.reasons(out));
             obs = [];
