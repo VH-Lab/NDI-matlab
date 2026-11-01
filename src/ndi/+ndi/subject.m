@@ -75,13 +75,40 @@ classdef subject < ndi.ido & ndi.documentservice
 
         %%% ndi.documentservice methods
 
-        function ndi_document_obj = newdocument(ndi_subject_obj)
+        function ndi_document_obj = newdocument(ndi_subject_obj, ndi_session_obj)
             % NEWDOCUMENT - return a new database document of type ndi.document based on a subject
             %
             % NDI_DOCUMENT_OBJ = NEWDOCUMENT(NDI_SUBJECT_OBJ)
             %
             % Creates a new ndi.document of type 'subject'.
             %
+            % NDI_DOCUMENT_OBJ = NEWDOCUMENT(NDI_SUBJECT_OBJ, NDI_SESSION_OBJ)
+            %
+            % Writes for the database of NDI_SESSION_OBJ. When that database is
+            % V2 (ndi.session/writesV2), NDI_DOCUMENT_OBJ is a cell array holding
+            % the V2 subject record: an `entity` of type organism whose id is the
+            % subject's id, with `local_identifier` and `name` the local
+            % identifier and `notes` the description, in the session -- the shape
+            % DID-matlab's +migrators_j/subject.m writes for a v1 `subject`. On a
+            % v1 database it is the v1 `subject` document, as with no session.
+            %
+            % Decided by Jess Haley, 2026-10-29 [v1 writes into a V2 session]
+            % (did-schema did_v2_go_forward_class_audit.md): "the end state is
+            % that every NDI writer writes V2 documents". The V2 home of v1
+            % `subject` is `entity (subject)` (did-schema coverage ledger).
+            %
+            if nargin>1 && ~isempty(ndi_session_obj) && ndi_session_obj.writesV2()
+                f = struct('local_identifier', ndi_subject_obj.local_identifier, ...
+                    'name', ndi_subject_obj.local_identifier);
+                if ~isempty(ndi_subject_obj.description)
+                    f.notes = ndi_subject_obj.description;
+                end
+                v2 = ndi.setup.V2.entityDocuments('subject', f, struct(), ...
+                    'Type', 'organism', 'SessionId', ndi_session_obj.id(), ...
+                    'Id', ndi_subject_obj.id());
+                ndi_document_obj = cellfun(@(x) ndi.document(x), v2, 'UniformOutput', false);
+                return;
+            end
             ndi_document_obj = ndi.document('subject',...
                 'subject.local_identifier', ndi_subject_obj.local_identifier,...
                 'subject.description', ndi_subject_obj.description,...
@@ -146,8 +173,15 @@ classdef subject < ndi.ido & ndi.documentservice
 
             islocal = ndi.subject.isvalidlocalidentifierstring(subjectstring);
             if islocal
-                subject_doc = ndi_session_obj.database_search(...
-                    ndi.query('subject.local_identifier','exact_string',subjectstring,''));
+                if ndi_session_obj.writesV2()
+                    % on a V2 database a subject is an `entity`:
+                    % 'subject.local_identifier' also matches its
+                    % `entity.local_identifier` (ndi.v2.blockQuery)
+                    q = ndi.v2.blockQuery('subject.local_identifier','exact_string',subjectstring,'');
+                else
+                    q = ndi.query('subject.local_identifier','exact_string',subjectstring,'');
+                end
+                subject_doc = ndi_session_obj.database_search(q);
             else
                 subject_doc = ndi_session_obj.database_search(...
                     ndi.query('base.id','exact_string',subjectstring,''));
@@ -159,9 +193,10 @@ classdef subject < ndi.ido & ndi.documentservice
             elseif numel(subject_doc)==0
                 if islocal&makeit
                     newsubject = ndi.subject(subjectstring,'');
-                    subject_doc = newsubject.newdocument();
+                    % the session's database decides the vintage written
+                    subject_doc = newsubject.newdocument(ndi_session_obj);
                     ndi_session_obj.database_add(subject_doc);
-                    subject_id = subject_doc.document_properties.base.id;
+                    subject_id = newsubject.id();
                     b = 1;
                 else
                     return;

@@ -291,6 +291,22 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
 
         % ndi.database / ndi.document methods
 
+        function tf = writesV2(ndi_session_obj)
+            % WRITESV2 - does this session's database take V2 documents?
+            %
+            % TF = WRITESV2(NDI_SESSION_OBJ)
+            %
+            % True when the session's database is a V2 (did2sqlite) database.
+            % A writer that knows its session uses this to write V2 documents
+            % into a V2 database and v1 documents into a v1 one. Decided by
+            % Jess Haley, 2026-10-29 [v1 writes into a V2 session] (did-schema
+            % did_v2_go_forward_class_audit.md): "the end state is that every
+            % NDI writer writes V2 documents".
+            %
+            tf = isa(ndi_session_obj.database, ...
+                'ndi.database.implementations.database.did2sqlite');
+        end % writesV2()
+
         function ndi_session_obj = database_add(ndi_session_obj, document)
             %DATABASE_ADD - Add an ndi.document to an ndi.session object
             %

@@ -772,6 +772,23 @@ classdef navigator < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice & 
             %
             % Creates an ndi.document of type 'filenavigator'
             %
+            % When the navigator's session has a V2 database
+            % (ndi.session/writesV2), NDI_DOCUMENT_OBJ is instead a cell array
+            % of the V2 record: an `epoch_file_pattern` whose id is the
+            % navigator's id (`file_pattern` and `epoch_map_pattern` the
+            % file-match lists, `epoch_map_format` the epoch probe map
+            % class), and the `software` entity its `software_id` names, whose
+            % `name` is the navigator's class -- the shape DID-matlab's
+            % +migrators_j/filenavigator.m writes for a v1 `filenavigator`,
+            % and the one this constructor already reads. Decided by Jess
+            % Haley, 2026-10-29 [v1 writes into a V2 session] (did-schema
+            % did_v2_go_forward_class_audit.md): "the end state is that every
+            % NDI writer writes V2 documents".
+            %
+            if ~isempty(ndi_filenavigator_obj.session) && ndi_filenavigator_obj.session.writesV2()
+                ndi_document_obj = ndi_filenavigator_obj.newdocumentV2();
+                return;
+            end
             filenavigator_structure.ndi_filenavigator_class = class(ndi_filenavigator_obj);
             if ~isempty(ndi_filenavigator_obj.fileparameters)
                 filenavigator_structure.fileparameters = cell2str(ndi_filenavigator_obj.fileparameters.filematch); % convert to a string
@@ -792,6 +809,35 @@ classdef navigator < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice & 
                 'base.id', ndi_filenavigator_obj.id(),...
                 'base.session_id', ndi_filenavigator_obj.session.id());
         end % newdocument()
+
+        function docs = newdocumentV2(ndi_filenavigator_obj)
+            % NEWDOCUMENTV2 - the V2 record of this navigator (see NEWDOCUMENT)
+            %
+            % DOCS = NEWDOCUMENTV2(NDI_FILENAVIGATOR_OBJ)
+            %
+            % Returns {epoch_file_pattern, software entity} as ndi.document objects.
+            %
+            sid = ndi_filenavigator_obj.session.id();
+            cls = class(ndi_filenavigator_obj);
+            sw = ndi.setup.V2.entityDocuments('software', ...
+                struct('name', cls, 'local_identifier', cls), struct(), 'SessionId', sid);
+            efp = struct();
+            if ~isempty(ndi_filenavigator_obj.fileparameters)
+                efp.file_pattern = cellstr(ndi_filenavigator_obj.fileparameters.filematch);
+            end
+            if ~isempty(ndi_filenavigator_obj.epochprobemap_fileparameters)
+                efp.epoch_map_pattern = ...
+                    cellstr(ndi_filenavigator_obj.epochprobemap_fileparameters.filematch);
+            end
+            if ~isempty(ndi_filenavigator_obj.epochprobemap_class)
+                efp.epoch_map_format = ndi_filenavigator_obj.epochprobemap_class;
+            end
+            efpDoc = did2.build.document('epoch_file_pattern', efp, ...
+                'Edges', struct('software_id', sw{1}.base.id), ...
+                'Id', ndi_filenavigator_obj.id(), 'SessionId', sid);
+            docs = [{ndi.document(efpDoc)}, ...
+                cellfun(@(x) ndi.document(x), sw, 'UniformOutput', false)];
+        end % newdocumentV2()
 
         function sq = searchquery(ndi_filenavigator_obj)
             % SEARCHQUERY - create a search query that will search for this object
