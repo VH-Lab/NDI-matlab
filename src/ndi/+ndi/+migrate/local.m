@@ -194,7 +194,9 @@ function result = local(path, options)
     % [schema set renamed did_v2] (Jess Haley, 2026-10-25) and [V2 database
     % file renamed] (Jess Haley, 2026-11-01): the set is 'did_v2'; its
     % earlier name 'V_eta' is still accepted and is passed on as 'did_v2'.
-    if strcmp(options.TargetVersion, 'did_v2')
+    % Every V2 step below is gated on 'did_v2', so the old name must be
+    % turned into the new one HERE, before any of them.
+    if did2.convert.isV2Set(options.TargetVersion)
         options.TargetVersion = 'did_v2';
     end
 

@@ -7,9 +7,9 @@ classdef TestMigrateLocal < matlab.unittest.TestCase
 %   inspects the resulting sqlite, the backup, the quarantine sidecar,
 %   the lock semantics, and the idempotency fast pass.
 %
-%   Every call but testDefaultTargetIsVeta's explicit one relies on the
-%   DEFAULT TargetVersion, 'V_eta' (the only value accepted), so these tests run the
-%   V_eta path: +migrators_j in pass 1 and the second pass.
+%   Most calls rely on the DEFAULT TargetVersion, 'did_v2' (its earlier
+%   name 'V_eta' is also accepted), so these tests run the V2 path:
+%   +migrators_j in pass 1 and the second pass.
 %
 %   Tests run with Validate=false so the test runner does not need a
 %   checked-out did-schema tree next to it. The mksqlite gate lives in
@@ -85,6 +85,35 @@ classdef TestMigrateLocal < matlab.unittest.TestCase
                 'a V_eta run finds the did_v2 run''s database: the same set');
             [~, name, ext] = fileparts(renamed.destination);
             verifyEqual(testCase, [name ext], 'did_v2.sqlite');
+        end
+
+        function testTheEarlierNameMigratesTheSameDocuments(testCase)
+            % 'V_eta' is the same set as 'did_v2' ([schema set renamed
+            % did_v2]): a FRESH migration under either name runs the same
+            % steps and writes the same documents. (A 'V_eta' run used to
+            % pass the argument check and then skip every V2 step, which
+            % compare 'did_v2'.)
+            bodies = {jsonencode(makeV1Body('alpha')), jsonencode(makeV1Body('beta'))};
+            buildV1Sqlite(fullfile(testCase.SessionRoot, '.ndi', 'did-sqlite.sqlite'), bodies);
+            other = tempname();
+            mkdir(fullfile(other, '.ndi'));
+            testCase.addTeardown(@() rmdir(other, 's'));
+            buildV1Sqlite(fullfile(other, '.ndi', 'did-sqlite.sqlite'), bodies);
+
+            a = ndi.migrate.local(testCase.SessionRoot, 'Validate', false, ...
+                'TargetVersion', 'did_v2');
+            b = ndi.migrate.local(other, 'Validate', false, 'TargetVersion', 'V_eta');
+            verifyFalse(testCase, a.alreadyMigrated);
+            verifyFalse(testCase, b.alreadyMigrated);
+            verifyNotEmpty(testCase, b.secondPass.strainAssembly, ...
+                'a V_eta migration skipped the V2 second pass');
+            verifyEqual(testCase, b.secondPass.strainAssembly.documents_inspected, ...
+                a.secondPass.strainAssembly.documents_inspected);
+            ca = destinationClasses(a.destination);
+            cb = destinationClasses(b.destination);
+            verifyNotEmpty(testCase, ca, 'the did_v2 migration wrote no documents');
+            verifyEqual(testCase, cb, ca, ...
+                'a V_eta migration wrote different documents than a did_v2 one');
         end
 
         function testAnExistingVetaDatabaseIsStillOpened(testCase)
@@ -596,4 +625,12 @@ fid = fopen(fullPath, 'w');
 fwrite(fid, body, 'char');
 fclose(fid);
 try fileattrib(fullPath, '+r'); catch, end
+end
+
+function names = destinationClasses(dbFile)
+%DESTINATIONCLASSES The sorted class names of every document in a did2 database.
+db = did2.database.sqlitedb(dbFile);
+closer = onCleanup(@() db.close());
+rows = mksqlite(db.testHookDbId(), 'SELECT classname FROM documents');
+names = sort({rows.classname});
 end
