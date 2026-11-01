@@ -77,10 +77,6 @@ function T = approachMappingTable(S, varargin)
     epochInfo = readtable(epoch_list_fullfile, opts);
     % Standardize variable names for easier access
     epochInfo.Properties.VariableNames = {'epochid', 'type'};
-    % A listed directory with no reference.txt is not an epoch (renaming
-    % reference.txt excludes an epoch from the import), so it gets no approaches
-    isEpoch = cellfun(@(e) isfile(fullfile(sessionPath, e, 'reference.txt')), epochInfo.epochid);
-    epochInfo = epochInfo(isEpoch, :);
 
     % Read and decode the JSON mapping file
     json_string = fileread(json_filename);

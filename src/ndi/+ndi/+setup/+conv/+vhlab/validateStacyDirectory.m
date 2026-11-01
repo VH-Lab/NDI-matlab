@@ -21,10 +21,7 @@ function [isValid, report] = validateStacyDirectory(dirname, options)
 %   Each epoch directory (t*) listed in testdirinfo.txt:
 %     - has the files of the vhintan and vhvis_spike2 DAQ systems, as given by
 %       the 'FileParameters' in ndi_common/daq_systems/vhlab/*.json
-%     - has a 'reference.txt' file with name, ref and type columns (a listed
-%       directory with no reference.txt is not an epoch: that is a warning,
-%       and its other checks are skipped, since renaming reference.txt is
-%       how an epoch is excluded from the import)
+%     - has a 'reference.txt' file with name, ref and type columns
 %
 % ISVALID is true if no errors were found. REPORT is a table with one row per
 % problem found and the variables 'level' ("error" or "warning"),
@@ -163,13 +160,6 @@ function [isValid, report] = validateStacyDirectory(dirname, options)
         epochDir = fullfile(dirname, epochids{i});
         if ~isfolder(epochDir)
             addProblem('error', epochids{i}, 'Epoch directory listed in testdirinfo.txt does not exist.');
-            continue;
-        end
-        if ~isfile(fullfile(epochDir, 'reference.txt'))
-            % without reference.txt the directory is not an epoch: it is how an
-            % epoch is excluded from the import (e.g. by renaming reference.txt)
-            addProblem('warning', epochids{i}, ['Listed in testdirinfo.txt but has no reference.txt, ' ...
-                'so it is not an epoch and is excluded from the import.']);
             continue;
         end
         f = dir(epochDir);
