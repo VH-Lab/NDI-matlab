@@ -187,8 +187,12 @@ jobs:
           # MatBox's installFexPackage passes. Unpin when MatBox is updated.
           release: R2026a
           cache: true
+          # Signal Processing: NDI-compress's ephys compressor (lpc), which
+          # TestIngestedArchiveBodies uses to write ingested segments as
+          # ndi.daq.reader.mfdaq/ingest_epochfiles does (run-tests.yml has it too)
           products: |
             Statistics_and_Machine_Learning_Toolbox
+            Signal_Processing_Toolbox
 
       - name: Install MatBox
         env:
