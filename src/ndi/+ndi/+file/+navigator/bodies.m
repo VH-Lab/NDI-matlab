@@ -9,9 +9,14 @@ classdef bodies < ndi.file.navigator
     % For the acquisition system that names this navigator (its
     % `epoch_file_pattern_id`), each epoch is one recording statement:
     %
-    %   acquisition_system  <- acquisition_channels (acquisition_system_id)
-    %                       <- subject_statement     (acquisition_channels_id)
+    %   acquisition_system  <- statement             (acquisition_system_id)
     %                       <- data_body             (owner_id)
+    %
+    % (did-schema, Jess Haley 2026-11-01 [probe wiring is a relation]: a
+    % recording points straight at its system.) A session written before
+    % that reaches the statement through an `acquisition_channels`
+    % document (acquisition_system_id, then the statement's
+    % acquisition_channels_id); both shapes are read, each statement once.
     %
     %   epoch files   each body's files, at the location the body records
     %                 (files.file_info.locations, not ingested), resolved by
@@ -127,11 +132,9 @@ classdef bodies < ndi.file.navigator
                 ndi.query('', 'depends_on', 'epoch_file_pattern_id', obj.id()) & inSession);
             for a = 1:numel(systems)
                 sysName = systems{a}.document_properties.acquisition_system.name;
-                channels = S.database_search(ndi.query('', 'isa', 'acquisition_channels', '') & ...
-                    ndi.query('', 'depends_on', 'acquisition_system_id', systems{a}.id()) & inSession);
-                for c = 1:numel(channels)
-                    statements = S.database_search(ndi.v2.isaQuery('statement') & ...
-                        ndi.query('', 'depends_on', 'acquisition_channels_id', channels{c}.id()) & inSession);
+                found = obj.systemStatements(S, systems{a}.id(), inSession);
+                for c = 1:numel(found)
+                    statements = found{c};
                     for t = 1:numel(statements)
                         st = statements{t};
                         [files, names] = obj.statementFiles(st, pattern);
@@ -156,6 +159,29 @@ classdef bodies < ndi.file.navigator
             end
             [~, order] = sort({R.epoch_id});
             R = R(order);
+        end
+
+        function found = systemStatements(~, S, systemId, inSession)
+            % the recording statements of one acquisition system, as a cell of
+            % cell arrays: those naming it by acquisition_system_id ([probe
+            % wiring is a relation]) and, for a session written before that,
+            % those naming one of its acquisition_channels documents. A
+            % statement is listed once.
+            found = {S.database_search(ndi.v2.isaQuery('statement') & ...
+                ndi.query('', 'depends_on', 'acquisition_system_id', systemId) & inSession)};
+            seen = cellfun(@(d) d.id(), found{1}, 'UniformOutput', false);
+            channels = S.database_search(ndi.query('', 'isa', 'acquisition_channels', '') & ...
+                ndi.query('', 'depends_on', 'acquisition_system_id', systemId) & inSession);
+            for c = 1:numel(channels)
+                st = S.database_search(ndi.v2.isaQuery('statement') & ...
+                    ndi.query('', 'depends_on', 'acquisition_channels_id', channels{c}.id()) & inSession);
+                keep = true(1, numel(st));
+                for t = 1:numel(st)
+                    keep(t) = ~any(strcmp(seen, st{t}.id()));
+                    seen{end+1} = st{t}.id(); %#ok<AGROW>
+                end
+                found{end+1} = st(keep); %#ok<AGROW>
+            end
         end
 
         function [files, names] = statementFiles(obj, st, pattern)

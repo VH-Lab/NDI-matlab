@@ -248,7 +248,15 @@ if isempty(schemaPath)
 end
 switch kind
     case 'channel_type'
+        % acquisition_channels.channels.type's binding while the class exists;
+        % once did-schema retires it ([probe wiring is a relation], Jess Haley
+        % 2026-11-01: a probe's channels are the conditions of its wiring
+        % relation, each variable a channel-type term), the term registry's
+        % rows for the channel-type nodes
         f = ndi.v2.schemaFile(char(schemaPath), 'acquisition_channels.json');   % any layout
+        if ~isfile(f)
+            f = ndi.v2.schemaFile(char(schemaPath), 'term_registry_meta.json');
+        end
     case 'clock'
         f = ndi.v2.schemaFile(char(schemaPath), 'relative_time_reference.json');   % any layout
     otherwise
@@ -277,7 +285,11 @@ try
                 end
             end
         case 'channel_type'
-            v = channelBindingValues(s);
+            if isfield(s, 'terms')
+                v = channelRegistryRows(s);
+            else
+                v = channelBindingValues(s);
+            end
             for k = 1:numel(v)
                 rows(end+1, :) = {strOf(v{k}, 'node'), strOf(v{k}, 'name')}; %#ok<AGROW>
             end
@@ -289,6 +301,19 @@ try
     end
 catch
     rows = cell(0, 2);
+end
+end
+
+function v = channelRegistryRows(s)
+% the term registry's rows whose node is a channel type's (ndi.vintage.channelTypes)
+v = {};
+C = ndi.vintage.channelTypes();
+nodes = C(:, 2);
+rows = listOf(s, 'terms');
+for k = 1:numel(rows)
+    if any(strcmp(strOf(rows{k}, 'node'), nodes))
+        v{end+1} = rows{k}; %#ok<AGROW>
+    end
 end
 end
 
