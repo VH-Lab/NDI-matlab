@@ -122,7 +122,7 @@ classdef TestIngestedStimulusRead < matlab.unittest.TestCase
             b = testCase.Bodies{1};
             key = ndi.vintage.ingestedStimulusKey(ndi.unittest.vintage.TestIngestedStimulusRead.epochOf(b), ...
                 testCase.Reader.id());
-            testCase.verifyTrue(startsWith(b.data_body.description, [key ' ']));
+            testCase.verifyTrue(startsWith(ndi.v2.notesOf(b.data_body), [key ' ']));
         end
     end
 
@@ -173,7 +173,7 @@ classdef TestIngestedStimulusRead < matlab.unittest.TestCase
         end
 
         function e = epochOf(body)
-            tok = regexp(body.data_body.description, '^The ingested stimulus file of epoch (\S+):', ...
+            tok = regexp(ndi.v2.notesOf(body.data_body), '^The ingested stimulus file of epoch (\S+):', ...
                 'tokens', 'once');
             e = tok{1};
         end
