@@ -27,9 +27,6 @@ function out = sessionDocuments(dataParentDir, session, S, R, options)
 %                             microscope; decision #28); device_id the
 %                             dataset-level camera / microscope entity when
 %                             'InstrumentIds' has it (decision #150)
-%     acquisition_channels    one per system, naming only its system (a camera
-%                             has no numbered channels of any of the ten
-%                             channel types the schema binds)
 %   and per recording (R row):
 %     epoch                   local_identifier = R.epoch, which is also NDI's
 %                             epoch id (the navigator reads it from here)
@@ -40,7 +37,11 @@ function out = sessionDocuments(dataParentDir, session, S, R, options)
 %                             (NCIT:C221750); subject = the plate, instrument =
 %                             the dataset-level camera / microscope subject
 %                             (when 'InstrumentIds' has it), acquisition
-%                             channels = this session's system; times = a
+%                             system = this session's system, pointed at
+%                             straight (did-schema, Jess Haley 2026-11-01
+%                             [probe wiring is a relation]; a camera has no
+%                             numbered channels, so no wiring relation);
+%                             times = a
 %                             relative reference to the EPOCH (videos: the
 %                             same extent; images: time:intervalDuring) + the
 %                             UTC one; method = the imaging method, its node
@@ -154,7 +155,7 @@ if ~isempty(systems)
     docs = [docs, {sw.system, sw.navigator, sw.reader}];
 end
 readers = containers.Map();
-channelIds = containers.Map();
+systemIds = containers.Map();
 for k = 1:numel(systems)
     sys = systems{k};
     [readerString, filePattern] = systemFiles(sys);
@@ -180,10 +181,8 @@ for k = 1:numel(systems)
     end
     asys = did2.build.document('acquisition_system', struct('name', sys), 'SessionId', sid, ...
         'Edges', sysEdges);
-    ch = did2.build.document('acquisition_channels', struct(), 'SessionId', sid, ...
-        'Edges', struct('acquisition_system_id', asys.base.id));
-    channelIds(sys) = ch.base.id;
-    docs = [docs, {pat, asys, ch}]; %#ok<AGROW>
+    systemIds(sys) = asys.base.id;
+    docs = [docs, {pat, asys}]; %#ok<AGROW>
 end
 
 % ---- recordings: epoch, times, statement, body, files -----------------------
@@ -240,7 +239,7 @@ for k = 1:height(R)
         haleyTerm('image intensity'), [], 'DataBody', true, 'DatumType', datumType, ...
         keyArgs{:}, ...
         'Method', probeType(r.system{1}, contrastOf(r), r.kind{1}), ...
-        'InstrumentId', instrumentId, 'AcquisitionChannelsId', channelIds(r.system{1}), ...
+        'InstrumentId', instrumentId, 'AcquisitionSystemId', systemIds(r.system{1}), ...
         'TimeReferenceIds', {relEpoch.base.id, absRef.base.id}, 'SessionId', sid, ...
         'Notes', noteOf(r), 'ValueKind', 'intensity');
 
