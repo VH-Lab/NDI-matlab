@@ -55,7 +55,7 @@ function build_intan_flat_exp(dirname)
     E.daqsystem_add(dev1);
 
     subject = ndi.subject('anteater27@nosuchlab.org','');
-    E.database_add(subject.newdocument());
+    E.database_add(subject.newdocument(E));
 
     % Step 3: let's add a document
 

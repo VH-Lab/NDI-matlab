@@ -254,18 +254,61 @@ classdef reader < ndi.ido & ndi.documentservice
 
         %% functions that override ndi.documentservice
 
-        function ndi_document_obj = newdocument(ndi_daqreader_obj)
+        function ndi_document_obj = newdocument(ndi_daqreader_obj, ndi_session_obj)
             % NEWDOCUMENT - create a new ndi.document for an ndi.daq.reader object
             %
             % DOC = NEWDOCUMENT(NDI_DAQREADER_OBJ)
             %
             % Creates an ndi.document object DOC that represents the
             %    ndi.daq.reader object.
+            %
+            % DOC = NEWDOCUMENT(NDI_DAQREADER_OBJ, NDI_SESSION_OBJ)
+            %
+            % Writes for the database of NDI_SESSION_OBJ (a reader holds no
+            % session; ndi.daq.system/newdocument passes its own). When that
+            % database is V2 (ndi.session/writesV2), DOC is a cell array of the
+            % V2 record (see NEWDOCUMENTV2); otherwise the v1 document.
+            %
+            if nargin>1 && ~isempty(ndi_session_obj) && ndi_session_obj.writesV2()
+                ndi_document_obj = ndi_daqreader_obj.newdocumentV2(ndi_session_obj, '');
+                return;
+            end
             ndi_document_obj = ndi.document('daqreader',...
                 'daqreader.ndi_daqreader_class',class(ndi_daqreader_obj),...
                 'base.id', ndi_daqreader_obj.id(),...
                 'base.session_id',ndi.session.empty_id());
         end % newdocument()
+
+        function docs = newdocumentV2(ndi_daqreader_obj, ndi_session_obj, reader_string)
+            % NEWDOCUMENTV2 - the V2 record of this reader
+            %
+            % DOCS = NEWDOCUMENTV2(NDI_DAQREADER_OBJ, NDI_SESSION_OBJ, READER_STRING)
+            %
+            % Returns, as ndi.document objects, an `acquisition_reader` whose
+            % id is the reader's id (`reader_string` READER_STRING when it is
+            % not empty) and the `software` entity its `software_id` names,
+            % whose `name` is the reader's class, in NDI_SESSION_OBJ -- the
+            % shape DID-matlab's +migrators_j/daqreader.m and daqreader_ndr.m
+            % write for a v1 `daqreader` / `daqreader_ndr`, and the one the
+            % reader constructors and ndi.vintage.objectClass already read.
+            % Decided by Jess Haley, 2026-10-29 [v1 writes into a V2 session]
+            % (did-schema did_v2_go_forward_class_audit.md): "the end state is
+            % that every NDI writer writes V2 documents".
+            %
+            sid = ndi_session_obj.id();
+            cls = class(ndi_daqreader_obj);
+            sw = ndi.setup.V2.entityDocuments('software', ...
+                struct('name', cls, 'local_identifier', cls), struct(), 'SessionId', sid);
+            f = struct();
+            if ~isempty(reader_string)
+                f.reader_string = char(reader_string);
+            end
+            r = did2.build.document('acquisition_reader', f, ...
+                'Edges', struct('software_id', sw{1}.base.id), ...
+                'Id', ndi_daqreader_obj.id(), 'SessionId', sid);
+            docs = [{ndi.document(r)}, ...
+                cellfun(@(x) ndi.document(x), sw, 'UniformOutput', false)];
+        end % newdocumentV2()
 
         function sq = searchquery(ndi_daqreader_obj)
             % SEARCHQUERY - create a search for this ndi.daq.reader object
