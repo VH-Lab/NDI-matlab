@@ -36,7 +36,7 @@ end
 
 report = struct('failed', {{}});
 ndiDir = fullfile(path, '.ndi');
-dbFile = fullfile(ndiDir, ndi.database.implementations.database.did2sqlite.DEFAULTFILENAME());
+dbFile = ndi.database.implementations.database.did2sqlite.FILEIN(ndiDir);   % or an earlier V_eta.sqlite
 if ~isfile(dbFile)
     error('ndi:setup:conv:haley:noDataset', 'No V2 database at %s.', dbFile);
 end

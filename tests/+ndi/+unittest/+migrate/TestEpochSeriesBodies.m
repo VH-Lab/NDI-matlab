@@ -53,7 +53,7 @@ classdef TestEpochSeriesBodies < matlab.unittest.TestCase
             testCase.verifyEqual(out{1}.value.data_type, 'float64');
             testCase.verifyEqual(sort(rep.changed_ids), sort({'body_1', 'ee_1'}));
             % the pair validates against the real schema
-            res = did2.convert.v1_to_v2(out, 'Validate', true, 'TargetVersion', 'V_eta');
+            res = did2.convert.v1_to_v2(out, 'Validate', true, 'TargetVersion', 'did_v2');
             testCase.verifyEmpty(res.quarantine);
         end
 

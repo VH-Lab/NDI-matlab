@@ -72,7 +72,8 @@ classdef did2sqlite < ndi.database
             %
             % COMMAND is 'load' or 'new'. FILENAME, when given, is the full
             % path of the did2 sqlite file; when omitted the default name
-            % (see DEFAULTFILENAME) inside PATH is used.
+            % (see DEFAULTFILENAME, and FILEIN for the earlier
+            % name) inside PATH is used.
             %
             % UNLIKE `didsqlite`, THE FILENAME IS NOT HARD-CODED. didsqlite
             % ignores the FILENAME it is handed and always opens
@@ -87,8 +88,7 @@ classdef did2sqlite < ndi.database
                 fname = char(varargin{4});
             end
             if isempty(fname)
-                fname = fullfile(obj.path, ...
-                    ndi.database.implementations.database.did2sqlite.DEFAULTFILENAME());
+                fname = ndi.database.implementations.database.did2sqlite.FILEIN(obj.path);
             end
             obj.database_filename = fname;
 
@@ -120,30 +120,51 @@ classdef did2sqlite < ndi.database
         function name = DEFAULTFILENAME()
             % DEFAULTFILENAME - the did2 database file name inside a session's .ndi directory
             %
-            % `ndi.migrate.local` names its output
-            % `fullfile(ndiDir, [options.TargetVersion '.sqlite'])`, so the
-            % file this has to match is `<TargetVersion>.sqlite`.
+            % 'did_v2.sqlite' ([V2 database file renamed], Decided by Jess
+            % Haley, 2026-11-01, did-schema did_v2_go_forward_class_audit.md):
+            % the name every writer uses (`ndi.migrate.local`,
+            % `ndi.setup.V2.createSession`, `ndi.setup.V2.createDataset`).
+            % A database written before that decision is named
+            % LEGACYFILENAME ('V_eta.sqlite') and is still opened: see
+            % FILEIN and ndi.database.fun.databasehierarchyinit.
             %
-            % IT IS PINNED TO V_eta, which is also the only value that option
-            % accepts (2026-10-23). Two reasons it is pinned rather than
-            % searched for, and the second is the one that matters:
-            %
-            %   * V_alpha..V_zeta were BRAINSTORM iterations. None was ever
-            %     used for real data. V_eta is the first successor intended
-            %     to hold anything, so it is the only version a database on
-            %     disk should be found under.
-            %   * The search cannot be widened to any `*.sqlite`:
-            %     `opendatabase` globs `['*' extension]` and ERRORS on more
-            %     than one match, and every session already contains
-            %     `did-sqlite.sqlite`. A wildcard would turn "open a
-            %     migrated session" into "too many matching files" for
-            %     every session in existence.
+            % It is a fixed name rather than a search because the search
+            % cannot be widened to any `*.sqlite`: `opendatabase` globs
+            % `['*' extension]` and ERRORS on more than one match, and every
+            % session already contains `did-sqlite.sqlite`.
             %
             % Stated ONCE, here, so "what file does NDI look for" is
             % greppable rather than spread across a hierarchy entry and a
             % constructor default.
-            name = 'V_eta.sqlite';
+            name = 'did_v2.sqlite';
         end % DEFAULTFILENAME()
+
+        function name = LEGACYFILENAME()
+            % LEGACYFILENAME - the did2 database file name used before 2026-11-01
+            %
+            % 'V_eta.sqlite', the schema set's earlier name. NDI still OPENS
+            % a database of this name ([V2 database file renamed]); nothing
+            % writes a new one.
+            name = 'V_eta.sqlite';
+        end % LEGACYFILENAME()
+
+        function f = FILEIN(ndiDir)
+            % FILEIN - the did2 database file to open in an .ndi directory
+            %
+            % F = FILEIN(NDIDIR) is NDIDIR/did_v2.sqlite when that file
+            % exists, else NDIDIR/V_eta.sqlite when THAT exists (a database
+            % written before [V2 database file renamed]), else
+            % NDIDIR/did_v2.sqlite (the name a new database gets).
+            f = fullfile(ndiDir, ...
+                ndi.database.implementations.database.did2sqlite.DEFAULTFILENAME());
+            if ~isfile(f)
+                old = fullfile(ndiDir, ...
+                    ndi.database.implementations.database.did2sqlite.LEGACYFILENAME());
+                if isfile(old)
+                    f = old;
+                end
+            end
+        end % FILEIN()
 
         function q2 = toDid2Query(q)
             % TODID2QUERY - convert an ndi.query / did.query to a did2.query

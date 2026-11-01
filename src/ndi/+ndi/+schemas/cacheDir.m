@@ -2,8 +2,14 @@ function p = cacheDir(varargin)
 %NDI.SCHEMAS.CACHEDIR User cache directory for a given pin ref.
 %
 %   P = NDI.SCHEMAS.CACHEDIR() returns the directory for the currently
-%   pinned ref: '~/.ndi/schemas/V_eta/<ref>/stable'. If the pin has
+%   pinned ref: '~/.ndi/schemas/did_v2/<ref>/stable'. If the pin has
 %   no ref set the per-ref segment is replaced with 'unpinned'.
+%
+%   The folder is named after the schema set, `did_v2` ([schema set renamed
+%   did_v2] and [V2 database file renamed], Jess Haley, 2026-10-25 and
+%   2026-11-01). A cache written under the earlier name, `V_eta`, is still
+%   read: see ndi.schemas.legacyCacheDir and ndi.schemas.activeSchemaPath.
+%   ndi.schemas.refresh writes only here.
 %
 %   P = NDI.SCHEMAS.CACHEDIR(REF) overrides the ref.
 %
@@ -16,23 +22,5 @@ function p = cacheDir(varargin)
         varargin
     end
 
-    if isempty(varargin)
-        info = ndi.schemas.pin();
-        ref = info.ref;
-    else
-        ref = char(string(varargin{1}));
-    end
-
-    if isempty(ref)
-        refSegment = 'unpinned';
-    else
-        refSegment = sanitize(ref);
-    end
-
-    home = char(java.lang.System.getProperty('user.home'));
-    p = fullfile(home, '.ndi', 'schemas', 'V_eta', refSegment, 'stable');
-end
-
-function s = sanitize(ref)
-    s = regexprep(ref, '[^A-Za-z0-9._-]', '_');
+    p = cachePathFor('did_v2', varargin{:});
 end

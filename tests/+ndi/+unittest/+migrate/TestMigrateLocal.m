@@ -49,37 +49,69 @@ classdef TestMigrateLocal < matlab.unittest.TestCase
 
     methods (Test)
 
-        function testDefaultTargetIsVeta(testCase)
-            % ndi.migrate.local migrates to V_eta unless asked otherwise
-            % (VH-Lab/NDI-matlab#804): it writes V_eta.sqlite and runs the
-            % V_eta second pass, whose report is carried on the result.
+        function testDefaultTargetIsDidV2(testCase)
+            % ndi.migrate.local migrates to the V2 set unless asked otherwise
+            % (VH-Lab/NDI-matlab#804). The set is 'did_v2' and its database
+            % file did_v2.sqlite ([schema set renamed did_v2], [V2 database
+            % file renamed], Jess Haley, 2026-10-25 and 2026-11-01); the V2
+            % second pass runs and its report is carried on the result.
             srcSqlite = fullfile(testCase.SessionRoot, '.ndi', 'did-sqlite.sqlite');
             buildV1Sqlite(srcSqlite, {jsonencode(makeV1Body('alpha'))});
 
             result = ndi.migrate.local(testCase.SessionRoot, 'Validate', false);
 
             [~, name, ext] = fileparts(result.destination);
-            verifyEqual(testCase, [name ext], 'V_eta.sqlite');
-            verifyTrue(testCase, isfile(fullfile(testCase.SessionRoot, '.ndi', 'V_eta.sqlite')));
+            verifyEqual(testCase, [name ext], 'did_v2.sqlite');
+            verifyTrue(testCase, isfile(fullfile(testCase.SessionRoot, '.ndi', 'did_v2.sqlite')));
+            verifyFalse(testCase, isfile(fullfile(testCase.SessionRoot, '.ndi', 'V_eta.sqlite')), ...
+                'a new migration wrote the earlier file name');
             % result.secondPass exists on every target, but its reports are
-            % [] unless the V_eta second pass ran; the strain pass reports
+            % [] unless the V2 second pass ran; the strain pass reports
             % its denominator whenever it is handed documents
             verifyNotEmpty(testCase, result.secondPass.strainAssembly, ...
-                'the V_eta second pass did not run on the default target');
+                'the V2 second pass did not run on the default target');
             verifyGreaterThan(testCase, result.secondPass.strainAssembly.documents_inspected, 0);
 
             % the default is declared, not inferred from a file name
             explicit = ndi.migrate.local(testCase.SessionRoot, 'Validate', false, ...
-                'TargetVersion', 'V_eta');
-            verifyTrue(testCase, explicit.alreadyMigrated, ...
-                'an explicit V_eta run finds the default run''s V_eta.sqlite');
-
-            % [schema set renamed did_v2] (Jess Haley, 2026-10-25), step 1
-            % "accept both names": 'did_v2' names the same set
-            renamed = ndi.migrate.local(testCase.SessionRoot, 'Validate', false, ...
                 'TargetVersion', 'did_v2');
+            verifyTrue(testCase, explicit.alreadyMigrated, ...
+                'an explicit did_v2 run finds the default run''s did_v2.sqlite');
+
+            % the set's earlier name is still accepted: the same set
+            renamed = ndi.migrate.local(testCase.SessionRoot, 'Validate', false, ...
+                'TargetVersion', 'V_eta');
             verifyTrue(testCase, renamed.alreadyMigrated, ...
-                'a did_v2 run finds the V_eta run''s database: the same set');
+                'a V_eta run finds the did_v2 run''s database: the same set');
+            [~, name, ext] = fileparts(renamed.destination);
+            verifyEqual(testCase, [name ext], 'did_v2.sqlite');
+        end
+
+        function testAnExistingVetaDatabaseIsStillOpened(testCase)
+            % [V2 database file renamed]: NDI still opens an existing
+            % V_eta.sqlite. A session migrated before the rename is found
+            % by a re-run (which continues it, under its own name) and by
+            % the database hierarchy, and no did_v2.sqlite is made beside it.
+            srcSqlite = fullfile(testCase.SessionRoot, '.ndi', 'did-sqlite.sqlite');
+            buildV1Sqlite(srcSqlite, {jsonencode(makeV1Body('alpha'))});
+            first = ndi.migrate.local(testCase.SessionRoot, 'Validate', false);
+            ndiDir = fullfile(testCase.SessionRoot, '.ndi');
+            movefile(first.destination, fullfile(ndiDir, 'V_eta.sqlite'));
+
+            verifyEqual(testCase, ...
+                ndi.database.implementations.database.did2sqlite.FILEIN(ndiDir), ...
+                fullfile(ndiDir, 'V_eta.sqlite'));
+            again = ndi.migrate.local(testCase.SessionRoot, 'Validate', false);
+            verifyTrue(testCase, again.alreadyMigrated, ...
+                'a re-run did not find the existing V_eta.sqlite');
+            [~, name, ext] = fileparts(again.destination);
+            verifyEqual(testCase, [name ext], 'V_eta.sqlite');
+            verifyFalse(testCase, isfile(fullfile(ndiDir, 'did_v2.sqlite')), ...
+                'a re-run made a second database beside the existing one');
+
+            db = ndi.database.fun.opendatabase(ndiDir, 'ref');
+            verifyClass(testCase, db, 'ndi.database.implementations.database.did2sqlite');
+            verifyEqual(testCase, db.database_filename, fullfile(ndiDir, 'V_eta.sqlite'));
         end
 
         function testAnyOtherTargetIsRefused(testCase)

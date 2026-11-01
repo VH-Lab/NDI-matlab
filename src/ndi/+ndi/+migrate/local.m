@@ -187,16 +187,15 @@ function result = local(path, options)
         options.Verbose (1,1) logical = false
         options.Validate (1,1) logical = true
         options.SchemaCache = []
-        options.TargetVersion (1,:) char {mustBeMember(options.TargetVersion, {'V_eta', 'did_v2'})} = 'V_eta'
+        options.TargetVersion (1,:) char {mustBeMember(options.TargetVersion, {'V_eta', 'did_v2'})} = 'did_v2'
         options.SoftwareDedupAfterPassOne (1,1) logical = true
     end
 
-    % [schema set renamed did_v2] (Jess Haley, 2026-10-25), step 1 "accept
-    % both names": 'did_v2' is the same set as 'V_eta'. Until DID-matlab and
-    % did-schema take the new name, it is passed on (and names the database
-    % file) as 'V_eta'.
+    % [schema set renamed did_v2] (Jess Haley, 2026-10-25) and [V2 database
+    % file renamed] (Jess Haley, 2026-11-01): the set is 'did_v2'; its
+    % earlier name 'V_eta' is still accepted and is passed on as 'did_v2'.
     if strcmp(options.TargetVersion, 'did_v2')
-        options.TargetVersion = 'V_eta';
+        options.TargetVersion = 'did_v2';
     end
 
     if ~isfolder(path)
@@ -234,7 +233,9 @@ function result = local(path, options)
         unpinMigrationTime = onCleanup(@() did2.convert.migrationTime('unpin'));
     end
 
-    dstPath = fullfile(ndiDir, [options.TargetVersion '.sqlite']);
+    % did_v2.sqlite, or an existing V_eta.sqlite written before
+    % [V2 database file renamed] (NDI still opens it, and a re-run continues it)
+    dstPath = ndi.database.implementations.database.did2sqlite.FILEIN(ndiDir);
     quarantineFile = fullfile(ndiDir, 'migrate_quarantine.json');
     backupDir = fullfile(path, '.v1-backup');
 
@@ -252,8 +253,8 @@ function result = local(path, options)
         else
             error('NDI:migrate:noV1Source', ...
                 ['No recognised v1 database (did-sqlite.sqlite or ' ...
-                 'Object_id_*_v*.json) and no %s.sqlite found ' ...
-                 'under "%s".'], options.TargetVersion, ndiDir);
+                 'Object_id_*_v*.json) and no %s found ' ...
+                 'under "%s".'], ndi.database.implementations.database.did2sqlite.DEFAULTFILENAME(), ndiDir);
         end
         if options.Backup && ~options.DryRun && ~isfolder(backupDir)
             copyBackup(ndiDir, backupDir);
@@ -279,7 +280,7 @@ function result = local(path, options)
     % probemap pass). See ndi.migrate.internal.navigatorEpochFiles.
     navigatorEpochReport = [];
     convertInput = bodies;
-    if strcmp(options.TargetVersion, 'V_eta') && ~alreadyMigrated
+    if strcmp(options.TargetVersion, 'did_v2') && ~alreadyMigrated
         try
             [navBodies, navigatorEpochReport] = ...
                 ndi.migrate.internal.navigatorEpochFiles(path, bodies);
@@ -321,7 +322,7 @@ function result = local(path, options)
     % idempotent on a merged set; TestSoftwareDedupAfterPassOne shows the final
     % document set is the same with and without this step.
     softwareDedupEarlyReport = [];
-    if strcmp(options.TargetVersion, 'V_eta') && options.SoftwareDedupAfterPassOne
+    if strcmp(options.TargetVersion, 'did_v2') && options.SoftwareDedupAfterPassOne
         try
             [convertResult, softwareDedupEarlyReport] = ...
                 resolveSoftwareDedup(convertResult);
@@ -378,7 +379,7 @@ function result = local(path, options)
     regionSitesReport = [];
     regionLocatedReport = [];
     epochSeriesBodiesReport = [];
-    if strcmp(options.TargetVersion, 'V_eta')
+    if strcmp(options.TargetVersion, 'did_v2')
         % V_eta's second pass has the kinds of work enumerated below, all
         % needing the whole migrated body set (the corpus-wide session/element
         % graph).
@@ -1914,7 +1915,7 @@ function [convertResult, report] = resolveSliceTetanus(convertResult, bodies, ..
 %   edge moves and removals only where every document they point at survived.
 %   The moved documents keep their base.id, so nothing pointing at them breaks.
     report = [];
-    if ~strcmp(options.TargetVersion, 'V_eta')
+    if ~strcmp(options.TargetVersion, 'did_v2')
         return;
     end
     docs = convertResult.migrated;
@@ -2075,7 +2076,7 @@ function [convertResult, report] = resolveRecordingAttribution(convertResult, op
 %
 %   STATUS: WRITTEN 2026-08-13 IN A CONTAINER WITH NO MATLAB. NOT EXECUTED HERE.
     report = [];
-    if ~strcmp(options.TargetVersion, 'V_eta')
+    if ~strcmp(options.TargetVersion, 'did_v2')
         return;     % `instrument_id` on an observation is a V_eta shape.
     end
     docs = convertResult.migrated;
@@ -2506,7 +2507,7 @@ function [convertResult, report] = resolveEpochAnchorFold(convertResult, ...
 %
 %   STATUS: WRITTEN 2026-08-11 IN A CONTAINER WITH NO MATLAB. NOT EXECUTED.
     report = [];
-    if ~strcmp(options.TargetVersion, 'V_eta')
+    if ~strcmp(options.TargetVersion, 'did_v2')
         return;     % `relative_reference` exists only in V_eta.
     end
     docs = convertResult.migrated;

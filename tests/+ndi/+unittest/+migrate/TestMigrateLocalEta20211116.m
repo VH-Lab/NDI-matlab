@@ -87,7 +87,7 @@ classdef TestMigrateLocalEta20211116 < matlab.unittest.TestCase
                 testCase.Bodies);
 
             testCase.Result = ndi.migrate.local(testCase.SessionRoot, ...
-                'Validate', true, 'TargetVersion', 'V_eta', 'Backup', false);
+                'Validate', true, 'TargetVersion', 'did_v2', 'Backup', false);
         end
 
     end
