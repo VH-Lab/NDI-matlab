@@ -388,6 +388,7 @@ function result = local(path, options)
     regionSitesReport = [];
     regionLocatedReport = [];
     epochSeriesBodiesReport = [];
+    ingestedArchiveReport = [];
     if strcmp(options.TargetVersion, 'did_v2')
         % V_eta's second pass has the kinds of work enumerated below, all
         % needing the whole migrated body set (the corpus-wide session/element
@@ -1019,6 +1020,49 @@ function result = local(path, options)
         end
         tStep = migrateStepMark('describeEpochSeriesBodies', tStart, tStep, convertResult);
         try
+            % Decided by Jess Haley, 2026-11-01 [ingested archives are sampled
+            % bodies] with [evenly spaced time is a covariate] and [clock only
+            % on the time reference] (did-schema
+            % did_v2_go_forward_class_audit.md): each v1 ingested mfdaq
+            % channel group, carried by pass 1 as an opaque_body of its
+            % segment files, becomes one sampled_body whose channel list is
+            % covariates, when the bytes are on this computer. AFTER
+            % resolveEpochProbemap (it makes those bodies). A document-only
+            % corpus has no bytes: nothing changes, counted.
+            [convertResult, ingestedArchiveReport] = ...
+                describeIngestedArchiveBodies(convertResult, ndiDir, bodies, options);
+            fprintf(['[migrate step]   ingested archives: %d document(s) inspected; ' ...
+                '%d archive(s) seen, %d converted (%d of %d channel-group bodies ' ...
+                'now sampled bodies; %d evenly spaced time bodies and %d ' ...
+                'channel_list.bin removed, %d channel_list.bin kept); left: bytes ' ...
+                'not here %d, time not evenly spaced %d, v1 archive not found %d, ' ...
+                'channel list missing %d / unreadable %d, unconvertible %d, ' ...
+                'reverted %d; event bodies left as they are %d\n'], ...
+                ingestedArchiveReport.documents_inspected, ...
+                ingestedArchiveReport.archives_seen, ...
+                ingestedArchiveReport.archives_converted, ...
+                ingestedArchiveReport.group_bodies_described, ...
+                ingestedArchiveReport.group_bodies_seen, ...
+                ingestedArchiveReport.time_bodies_removed, ...
+                ingestedArchiveReport.channel_list_removed, ...
+                ingestedArchiveReport.channel_list_kept, ...
+                ingestedArchiveReport.bytes_not_here, ...
+                ingestedArchiveReport.time_not_evenly_spaced, ...
+                ingestedArchiveReport.v1_archive_not_found, ...
+                ingestedArchiveReport.channel_list_missing, ...
+                ingestedArchiveReport.channel_list_unreadable, ...
+                ingestedArchiveReport.unconvertible, ...
+                ingestedArchiveReport.reverted, ...
+                ingestedArchiveReport.event_bodies_left);
+        catch ME
+            stepErrors(end+1) = struct('step', 'ingestedArchiveBodiesFailed', 'message', ME.message); %#ok<AGROW>
+            warning('NDI:migrate:ingestedArchiveBodiesFailed', ...
+                ['Converting the ingested archives failed (%s); they stay ' ...
+                 'opaque_body documents carried as attached, which is the ' ...
+                 'state without this step.'], ME.message);
+        end
+        tStep = migrateStepMark('describeIngestedArchiveBodies', tStart, tStep, convertResult);
+        try
             % AFTER the epochprobemap fold (it re-attributes that pass's
             % per-epoch statements) and after epochMint (its epoch index is
             % the tetanus window's referent). Dabrowska slices: decided by
@@ -1416,7 +1460,8 @@ function result = local(path, options)
         'sliceTetanus',        sliceTetanusReport, ...
         'regionPartsSites',    regionSitesReport, ...
         'regionPartsLocated',  regionLocatedReport, ...
-        'epochSeriesBodies',   epochSeriesBodiesReport);
+        'epochSeriesBodies',   epochSeriesBodiesReport, ...
+        'ingestedArchiveBodies', ingestedArchiveReport);
 
     if options.Verbose
         printSummary(result);
@@ -3325,6 +3370,60 @@ function [convertResult, rep] = describeEpochSeriesBodies(convertResult, ndiDir,
         end
     end
     convertResult.migrated = [docs, appendDocs];
+    convertResult.summary = recountSummary(convertResult);
+end
+
+function [convertResult, rep] = describeIngestedArchiveBodies(convertResult, ndiDir, v1Bodies, options)
+%DESCRIBEINGESTEDARCHIVEBODIES ndi.migrate.internal.ingestedArchiveBodies over
+%   the migrated set. Each archive it converted (its replaced bodies) is
+%   re-validated TOGETHER through did2.convert.v1_to_v2; the bodies it
+%   removed (an evenly spaced time group, a channel_list.bin every row of
+%   which is now covariates) are dropped only when that group comes back
+%   clean. A group that does not is REVERTED (left as pass 1 wrote it) and
+%   counted.
+    docs = convertResult.migrated;
+    structs = cell(1, numel(docs));
+    for k = 1:numel(docs)
+        structs{k} = docs{k}.toStruct();
+    end
+    [structs, rep, removed] = ndi.migrate.internal.ingestedArchiveBodies( ...
+        structs, ndiDir, v1Bodies);
+    rep.reverted = 0;
+    if isempty(rep.changed_groups)
+        return;
+    end
+    idxById = containers.Map('KeyType', 'char', 'ValueType', 'double');
+    for k = 1:numel(structs)
+        idxById(char(structs{k}.base.id)) = k;
+    end
+    drop = false(1, numel(docs));
+    for g = 1:numel(rep.changed_groups)
+        ids = rep.changed_groups{g};
+        gone = ids(ismember(ids, removed));
+        kept = ids(~ismember(ids, removed));
+        grp = cell(1, numel(kept));
+        for j = 1:numel(kept)
+            grp{j} = structs{idxById(kept{j})};
+        end
+        try
+            sub = did2.convert.v1_to_v2(grp, ...
+                'Validate', options.Validate, 'SchemaCache', options.SchemaCache, ...
+                'TargetVersion', options.TargetVersion, 'Verbose', false);
+            if isempty(sub.quarantine) && numel(sub.migrated) == numel(kept)
+                for j = 1:numel(sub.migrated)
+                    docs{idxById(char(sub.migrated{j}.get('base.id')))} = sub.migrated{j};
+                end
+                for j = 1:numel(gone)
+                    drop(idxById(gone{j})) = true;
+                end
+            else
+                rep.reverted = rep.reverted + 1;
+            end
+        catch
+            rep.reverted = rep.reverted + 1;
+        end
+    end
+    convertResult.migrated = docs(~drop);
     convertResult.summary = recountSummary(convertResult);
 end
 
