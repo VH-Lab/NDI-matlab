@@ -74,8 +74,12 @@ if isstruct(term) && isfield(term, 'name') && ~isempty(term.name), name = strtri
 node = '';
 if isstruct(term) && isfield(term, 'node') && ~isempty(term.node), node = strtrim(char(term.node)); end
 
-% {key, variable name}: DID-matlab +build/private/compressionTable.m, settings
+% {key, variable name}: DID-matlab +build/private/compressionTable.m, settings.
+% The names are the approved labels ([compression term definitions approved],
+% Jess Haley, 2026-11-01: EMPTY:0000430, 0000427, 0000429, 0000428); the last
+% two rows are the names written before, read only
 keyTable = {'cname', 'inner compressor'; 'clevel', 'compression level'; ...
+    'shuffle', 'shuffle filter'; 'blocksize', 'compression block size'; ...
     'shuffle', 'shuffle'; 'blocksize', 'block size'};
 if isstruct(params), params = num2cell(reshape(params, 1, [])); end
 if ~iscell(params), params = {}; end
@@ -93,6 +97,14 @@ end
 
 % {spelling, term name, inner compressor}: the same file, codecs
 codecTable = {'gzip', 'gzip', ''; 'lzw', 'LZW', ''; 'blosc-zstd', 'Blosc', 'zstd'};
+% a registered codec term read by its node ([compression terms registered],
+% [compression term definitions approved], Jess Haley, 2026-11-01): its name
+% is the registry's ('GZIP format'), so the node says which row it is
+nodeTable = {'EDAM:format_3989', 'gzip'; 'wikidata:Q2681', 'LZW'; 'EMPTY:0000426', 'Blosc'};
+hitNode = find(strcmpi(nodeTable(:, 1), node), 1);
+if ~isempty(node) && ~isempty(hitNode)
+    name = nodeTable{hitNode, 2};
+end
 rows = find(strcmp(squash(codecTable(:, 2)), squashOne(name)) | ...
     strcmp(squash(codecTable(:, 1)), squashOne(name)));
 if isempty(rows)
@@ -129,6 +141,14 @@ elseif isfield(e, 'quantity') && isstruct(e.quantity) && isfield(e.quantity, 'va
     v = double(e.quantity.value);
 elseif isfield(e, 'term') && isstruct(e.term) && isfield(e.term, 'name')
     v = char(e.term.name);
+    % an inner compressor written as a term: the table's spelling
+    % (DID-matlab compressionTable.m, compressors: zstd -> Zstandard,
+    % wikidata:Q26737171)
+    tnode = '';
+    if isfield(e.term, 'node') && ~isempty(e.term.node), tnode = char(e.term.node); end
+    if strcmpi(squashOne(v), 'zstandard') || strcmpi(tnode, 'wikidata:Q26737171')
+        v = 'zstd';
+    end
 elseif isfield(e, 'text')
     v = '';
 end
