@@ -373,7 +373,7 @@ for k = 1:numel(strainIdx)
     % base.id PRESERVED -- ontologyTableRow's `bacteriaStrain` cell holds it.
     ef = struct('name', charField(f, {'name'}));
     desc = charField(f, {'description'});
-    if ~isempty(desc); ef.description = desc; end
+    if ~isempty(desc); ef.notes = desc; end   % v1 description -> entity.notes
     gid = charField(f, {'ontologyIdentifier', 'ontology_identifier'});
     gids = {};
     if ~isempty(gid); gids = {S.curie(gid)}; end

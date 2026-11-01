@@ -7,8 +7,8 @@ function T = covariatesTable(covariates, dimensions)
 %     variable   the covariate's variable (its term's name)
 %     along      the 0-based dimension indices it runs along (a cell)
 %     form       how its values are stored: origin_spacing, quantity, count,
-%                term, text, logical, matrix or key (`document` until
-%                did-schema [covariate key], 2026-11-01)
+%                term, text, logical, matrix or key (did-schema
+%                [covariate key], 2026-11-01)
 %     unit       its unit's name ("" when none)
 %     values     a cell: the values, shaped by the extents of the `along`
 %                dimensions (see ndi.v2.covariateValues)

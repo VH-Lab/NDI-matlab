@@ -114,7 +114,7 @@ if isempty(description)
     description = sprintf('The raw recording, %s, where the source keeps it.', [stem ext]);
 end
 f = struct('format', options.Format, 'filename', [stem ext], 'size_bytes', info.bytes, ...
-    'description', description);
+    'notes', description);
 if options.Checksums
     f.content_hash = ndi.fun.file.MD5(file);
     f.hash_algorithm = 'MD5';

@@ -65,7 +65,7 @@ if strcmp(className, 'person') && ~isfield(fields, 'name')
         fields.name = strjoin(parts, ' ');
     end
 end
-for n = {'name', 'local_identifier', 'description'}
+for n = {'name', 'local_identifier', 'notes'}
     if isfield(fields, n{1}) && ~isempty(fields.(n{1}))
         ent.(n{1}) = fields.(n{1});
     end
@@ -87,7 +87,7 @@ docs = {did2.build.document('entity', ent, 'Edges', entEdges, 'Id', options.Id, 
 eid = docs{1}.base.id;
 
 % ---- 2. the other fields, as assertions ------------------------------------------
-identity = {'type', 'name', 'local_identifier', 'description', 'global_identifier'};
+identity = {'type', 'name', 'local_identifier', 'notes', 'global_identifier'};
 % a keyword is the dataset's own free text, not a term (Jess Haley, 2026-10-21)
 terms = {'species', 'genetic_strain_type', 'phenotype', 'breeding_type', 'disease_model', ...
     'license', 'accessibility', 'ethics_jurisdiction', 'experimental_approach', ...

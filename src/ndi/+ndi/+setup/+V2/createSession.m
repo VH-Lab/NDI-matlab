@@ -22,7 +22,7 @@ function [session, docs] = createSession(path, reference, options)
 %   Options:
 %     'SessionId'   the session id (default: a new ndi.ido id)
 %     'Name'        the session's display name (session.name)
-%     'Description' free text about the session (session.description)
+%     'Description' free text about the session (its entity's `notes`)
 %     'StudyIds'    the studies this session is filed under (a relation
 %                   document each, stored in this session): `included_in`.
 %                   A cellstr, one id as char or string, or a table cell

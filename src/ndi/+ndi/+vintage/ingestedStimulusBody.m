@@ -19,7 +19,7 @@ function doc = ingestedStimulusBody(session, readerId, epochId)
 %   (ndi.vintage.ingestedStimulusKey), the only place the body records them.
 %
 %   THE LOOKUP (Jess Haley, 2026-10-26, [ingested stimulus reader finds the
-%   body]): an `opaque_body` of this session whose `data_body.description`
+%   body]): an `opaque_body` of this session whose `data_body.notes`
 %   opens with the key for this epoch and this reader, followed by a space
 %   (the key ends at the reader id; ' (<class>)' or ' read from' follows), and
 %   whose `data_body.filename` is the v1 file's name, 'data.bin'. The
@@ -45,11 +45,10 @@ if isempty(readerId) || isempty(epochId)
     return;
 end
 key = ndi.vintage.ingestedStimulusKey(epochId, readerId);
-% the body's free text is `notes` since did-schema [one free-text field:
-% notes] (Jess Haley, 2026-10-25), `description` before: either is searched
+% the body's free text is `notes` (did-schema [one free-text field: notes],
+% Jess Haley, 2026-10-25)
 q = ndi.query('', 'isa', 'opaque_body', '') & ...
-    (ndi.query('data_body.notes', 'contains_string', key, '') | ...
-     ndi.query('data_body.description', 'contains_string', key, ''));
+    ndi.query('data_body.notes', 'contains_string', key, '');
 sid = '';
 try
     sid = char(session.id());

@@ -16,8 +16,8 @@ function [v, form] = covariateValues(covariate, dimensions)
 %     matrix          the stored array
 %     key             the 0-based position of the `key_id` entry whose value
 %                     gives the positions (resolve it against the document);
-%                     the covariate's `key`, or its `document` before
-%                     did-schema [covariate key] (2026-11-01)
+%                     the covariate's `key` (did-schema [covariate key],
+%                     2026-11-01)
 %   Each is shaped by the extents of the `along` dimensions when its element
 %   count fits them (a vector along one dimension is a column).
 %
@@ -70,14 +70,10 @@ elseif has(c, 'matrix')
     v = c.matrix;
     return;
 elseif isfield(c, 'key') && ~isempty(c.key) && ~isequal(c.key, -1)
-    % `key` since did-schema [covariate key] (Jess Haley, 2026-11-01: "Yes,
-    % rename document to key"); `document` before, read too
+    % did-schema [covariate key] (Jess Haley, 2026-11-01: "Yes, rename
+    % document to key")
     form = "key";
     v = double(c.key);
-    return;
-elseif isfield(c, 'document') && ~isempty(c.document) && ~isequal(c.document, -1)
-    form = "key";
-    v = double(c.document);
     return;
 else
     return;

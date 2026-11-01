@@ -201,7 +201,7 @@ if ~strcmp(options.Studies, 'only')
         end
         desc = char(getOr(s, 'description', ''));
         if ~isempty(desc)
-            f.description = desc;
+            f.notes = desc;   % the spec's description -> entity.notes
         end
         if isfield(s, 'node') && ~isempty(wormBaseId(char(s.node)))
             % the strain's WormBase id is one of its identifiers (
@@ -289,7 +289,7 @@ if ~strcmp(options.Studies, 'only')
     for e = entries(spec, 'instruments')
         i = e{1};
         state = checkKnown(state, 'subject', i, {'local_identifier', 'name', 'description', 'product'});
-        f = putIf(struct('local_identifier', i.local_identifier), 'description', i, 'description');
+        f = putIf(struct('local_identifier', i.local_identifier), 'notes', i, 'description');
         f = putIf(f, 'name', i, 'name');
         state = add(state, 'subject', i.key, f, struct(), '', 'device');
         if isfield(i, 'product')
@@ -308,7 +308,8 @@ if ~strcmp(options.Studies, 'only')
         'release_date', 'copyright_year', 'identifiers', 'authors', 'funding', 'cites', ...
         'stored_at', 'documented_by'});
     f = struct();
-    for fn = {'name', 'short_name', 'version', 'version_innovation', 'description', ...
+    f = putIf(f, 'notes', d, 'description');   % the spec's description -> entity.notes
+    for fn = {'name', 'short_name', 'version', 'version_innovation', ...
             'how_to_cite', 'keyword', 'license', 'accessibility', 'ethics_jurisdiction', ...
             'experimental_approach', 'support_channel', 'release_date', 'copyright_year'}
         f = putIf(f, fn{1}, d, fn{1});
@@ -382,7 +383,7 @@ if ~strcmp(options.Studies, 'exclude')
             struct('source_folder', '', 'source_condition', ''));   % import directives
         f = struct('name', s.name);
         f = putIf(f, 'short_name', s, 'short_name');
-        f = putIf(f, 'description', s, 'description');
+        f = putIf(f, 'notes', s, 'description');
         f = putIf(f, 'factors', s, 'factors');
         state = add(state, 'study', s.key, putIds(f, s), struct());
     end
