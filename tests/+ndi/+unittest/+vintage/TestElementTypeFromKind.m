@@ -75,6 +75,35 @@ classdef TestElementTypeFromKind < matlab.unittest.TestCase
             testCase.verifyEqual(t, '');
         end
 
+        function testASortedUnitReadsSpikesFromItsEntityType(testCase)
+            % [cell spellings are one meaning], [cell spellings amended]
+            % (did-schema did_v2_go_forward_class_audit.md, Decided by Jess
+            % Haley, 2026-10-27): DID-matlab writes no "element type"
+            % assertion for a sorted unit; its entity type (`cell` or
+            % `group`, by node) reads back as 'spikes'
+            rows = {
+                struct('node', 'CL:0000000', 'name', 'cell')
+                struct('node', 'NCIT:C43359', 'name', 'Group')
+                struct('node', 'NCIT:C43359', 'name', 'group')
+                struct('node', '', 'name', 'cell')};
+            testCase.log(sprintf('DENOMINATOR: %d unit entity type spelling(s)', numel(rows)));
+            for k = 1:numel(rows)
+                [t, how] = ndi.vintage.elementTypeOf({}, rows{k});
+                testCase.verifyEqual(t, 'spikes', rows{k}.name);
+                testCase.verifyEqual(how, 'entity type', rows{k}.name);
+            end
+            % the "element type" assertion still wins: an ensemble is a group
+            [t, how] = ndi.vintage.elementTypeOf({typeAssertion('el_7', 'ensemble')}, rows{2});
+            testCase.verifyEqual(t, 'ensemble');
+            testCase.verifyEqual(how, 'element type');
+            % any other entity type, and none, read '' as before
+            for other = {struct('node', 'COB:0001300', 'name', 'device'), ''}
+                [t, how] = ndi.vintage.elementTypeOf({}, other{1});
+                testCase.verifyEqual(t, '');
+                testCase.verifyEqual(how, '');
+            end
+        end
+
         function testAKindByLabelOnly(testCase)
             % a variable with no node is compared by its label
             a = kindAssertion('el_5', 'OBI:0003806');

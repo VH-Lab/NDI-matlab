@@ -772,8 +772,12 @@ for k = 1:numel(structs)
         % a v1 element: its `element type` assertion, or, where DID-matlab
         % PR #304 no longer writes it ([element type is a device kind term],
         % [element types batch 1] .. [element types batch 4]), a device
-        % kind that rebuilds exactly one v1 type (ndi.vintage.elementTypeOfKind)
+        % kind that rebuilds exactly one v1 type (ndi.vintage.elementTypeOfKind);
+        % or its `ndi element class` assertion, which every migrated element
+        % has, and which is all a sorted unit keeps once DID-matlab drops its
+        % `element type` assertion ([cell spellings are one meaning])
         if ~isempty(a) && (strcmp(v, 'element type') || ...
+                strcmp(v, ndi.vintage.elementLabel('class')) || ...
                 (ndi.vintage.isEquipmentTypeVariable(S.variable(s)) && ...
                  ~isempty(ndi.vintage.elementTypeOfKind(S.termValue(s).node))))
             idx.elements(a) = true;
