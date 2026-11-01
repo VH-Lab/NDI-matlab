@@ -132,7 +132,7 @@ classdef bodies < ndi.file.navigator
                 ndi.query('', 'depends_on', 'epoch_file_pattern_id', obj.id()) & inSession);
             for a = 1:numel(systems)
                 sysName = systems{a}.document_properties.acquisition_system.name;
-                found = obj.systemStatements(S, systems{a}.id(), inSession);
+                found = ndi.vintage.systemStatements(S, systems{a}.id(), inSession);
                 for c = 1:numel(found)
                     statements = found{c};
                     for t = 1:numel(statements)
@@ -161,28 +161,6 @@ classdef bodies < ndi.file.navigator
             R = R(order);
         end
 
-        function found = systemStatements(~, S, systemId, inSession)
-            % the recording statements of one acquisition system, as a cell of
-            % cell arrays: those naming it by acquisition_system_id ([probe
-            % wiring is a relation]) and, for a session written before that,
-            % those naming one of its acquisition_channels documents. A
-            % statement is listed once.
-            found = {S.database_search(ndi.v2.isaQuery('statement') & ...
-                ndi.query('', 'depends_on', 'acquisition_system_id', systemId) & inSession)};
-            seen = cellfun(@(d) d.id(), found{1}, 'UniformOutput', false);
-            channels = S.database_search(ndi.query('', 'isa', 'acquisition_channels', '') & ...
-                ndi.query('', 'depends_on', 'acquisition_system_id', systemId) & inSession);
-            for c = 1:numel(channels)
-                st = S.database_search(ndi.v2.isaQuery('statement') & ...
-                    ndi.query('', 'depends_on', 'acquisition_channels_id', channels{c}.id()) & inSession);
-                keep = true(1, numel(st));
-                for t = 1:numel(st)
-                    keep(t) = ~any(strcmp(seen, st{t}.id()));
-                    seen{end+1} = st{t}.id(); %#ok<AGROW>
-                end
-                found{end+1} = st(keep); %#ok<AGROW>
-            end
-        end
 
         function [files, names] = statementFiles(obj, st, pattern)
             % FILES: local paths of the statement's bodies' files; NAMES:
