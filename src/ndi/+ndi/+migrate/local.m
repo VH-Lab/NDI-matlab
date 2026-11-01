@@ -3479,9 +3479,10 @@ function [kind, srcPath] = detectV1Source(ndiDir)
 
     sqliteListing = dir(fullfile(ndiDir, '*.sqlite'));
     sqliteListing = sqliteListing(~[sqliteListing.isdir]);
-    % a migration OUTPUT is never a v1 source
+    % a migration OUTPUT is never a v1 source (did_v2.sqlite, or the earlier
+    % V_eta.sqlite: [V2 database file renamed])
     sqliteListing = sqliteListing(~ismember(lower({sqliteListing.name}), ...
-        {'v_eta.sqlite'}));
+        {'did_v2.sqlite', 'v_eta.sqlite'}));
     if ~isempty(sqliteListing)
         kind = 'sqlite';
         srcPath = fullfile(ndiDir, sqliteListing(1).name);
