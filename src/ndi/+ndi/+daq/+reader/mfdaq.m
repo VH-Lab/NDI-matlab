@@ -382,7 +382,7 @@ classdef mfdaq < ndi.daq.reader
                         end
                     elseif any(strcmp(channeltype{i},{'den','dimn'})) % look for 1 to 0 transitions
                         transitions_on_samples = 1 + find( (data_here(1:end-1)==1) & (data_here(2:end) == 0));
-                        if strcmp(channeltype{i},'dimp')
+                        if strcmp(channeltype{i},'dimn')
                             transitions_off_samples = 1+ find( (data_here(1:end-1)==0) & (data_here(2:end) == 1));
                         else
                             transitions_off_samples = [];
@@ -520,7 +520,7 @@ classdef mfdaq < ndi.daq.reader
                         end
                     elseif any(strcmp(channeltype{i},{'den','dimn'})) % look for 1 to 0 transitions
                         transitions_on_samples = 1 + find( (data_here(1:end-1)==1) & (data_here(2:end) == 0));
-                        if strcmp(channeltype{i},'dimp')
+                        if strcmp(channeltype{i},'dimn')
                             transitions_off_samples = 1+ find( (data_here(1:end-1)==0) & (data_here(2:end) == 1));
                         else
                             transitions_off_samples = [];
