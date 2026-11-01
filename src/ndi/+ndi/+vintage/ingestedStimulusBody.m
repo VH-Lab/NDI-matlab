@@ -45,8 +45,11 @@ if isempty(readerId) || isempty(epochId)
     return;
 end
 key = ndi.vintage.ingestedStimulusKey(epochId, readerId);
+% the body's free text is `notes` since did-schema [one free-text field:
+% notes] (Jess Haley, 2026-10-25), `description` before: either is searched
 q = ndi.query('', 'isa', 'opaque_body', '') & ...
-    ndi.query('data_body.description', 'contains_string', key, '');
+    (ndi.query('data_body.notes', 'contains_string', key, '') | ...
+     ndi.query('data_body.description', 'contains_string', key, ''));
 sid = '';
 try
     sid = char(session.id());
@@ -64,7 +67,7 @@ for k = 1:numel(hits)
     if ~isfield(p, 'data_body') || ~isstruct(p.data_body)
         continue;
     end
-    desc = textOf(p.data_body, 'description');
+    desc = ndi.v2.notesOf(p.data_body);
     if ~startsWith(desc, [key ' ']) || ~strcmp(textOf(p.data_body, 'filename'), 'data.bin')
         continue;
     end

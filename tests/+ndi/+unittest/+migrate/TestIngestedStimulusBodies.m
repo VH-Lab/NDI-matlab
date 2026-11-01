@@ -33,9 +33,9 @@ classdef TestIngestedStimulusBodies < matlab.unittest.TestCase
             testCase.verifyEqual(ndi.v2.compressionOf(b.data_body.compression), 'gzip');
             testCase.verifyEqual(char(b.data_body.format.node), 'EMPTY:0000367', ...
                 '[NDI binary format]');
-            testCase.verifySubstring(b.data_body.description, 't00074');
-            testCase.verifySubstring(b.data_body.description, '4126900ae50fa7e6_40de2d125a0b8212');
-            testCase.verifySubstring(b.data_body.description, 'ndi.daq.metadatareader.NewStimStims');
+            testCase.verifySubstring(ndi.v2.notesOf(b.data_body), 't00074');
+            testCase.verifySubstring(ndi.v2.notesOf(b.data_body), '4126900ae50fa7e6_40de2d125a0b8212');
+            testCase.verifySubstring(ndi.v2.notesOf(b.data_body), 'ndi.daq.metadatareader.NewStimStims');
             % carried as attached: body_data_0 with data.bin's locations
             v1 = ingestedDoc();
             testCase.verifyEqual(b.files.file_info.name, 'body_data_0');

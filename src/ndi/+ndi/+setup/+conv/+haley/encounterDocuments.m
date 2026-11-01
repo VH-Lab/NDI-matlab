@@ -31,7 +31,7 @@ function out = encounterDocuments(dataParentDir, session, R, subjectIds, options
 %                       part` = `midpoint` (the track it reads). Every other
 %                       per-encounter document has an `encounter` dimension
 %                       whose `encounter` covariate takes its positions from
-%                       it (`key_id` / covariate `document` 0; data_body plan
+%                       it (`key_id` / covariate `key` 0, `document` until [covariate key]; data_body plan
 %                       AMENDMENT 6)
 %     item calculation  `entity in contact`: each encounter's patch
 %                       subject (the source's lawnID = its lawnCenters row, #38)
@@ -290,10 +290,10 @@ for g = 1:max(G)
         listAxes.args{:}, ...
         detection{:}, 'InputIds', inputs, calc{:}, 'ValueKind', 'time');
     docs{end+1} = list; %#ok<AGROW>
-    encKey = {haleyTerm('encounter'), n, 'Document', 0};
+    encKey = {haleyTerm('encounter'), n, 'Key', 0};   % `document` until [covariate key]
     keyIds = {'KeyIds', {list.base.id}};
     % the axes of a per-encounter value: the encounter (its covariate takes
-    % its positions from the list, `document` 0), then any other dimension
+    % its positions from the list, `key` 0), then any other dimension
     % (its values in column-major order, the encounter fastest, which
     % `datum_order` states)
     axesWith = @(varargin) haleyAxes(encKey, varargin{:});

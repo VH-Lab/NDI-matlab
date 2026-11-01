@@ -1374,9 +1374,14 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             testCase.verifyEqual(methodOf(g0{1}), 'Median');
 
             % the encounter covariate takes its positions from the list
-            % (`document` 0 into key_id; data_body plan AMENDMENT 6)
+            % (`key` 0 into key_id, `document` until [covariate key]; data_body
+            % plan AMENDMENT 6)
             keys = axisEntries(mn{1});
-            testCase.verifyEqual(double(keys{1}.document), 0);
+            if isfield(keys{1}, 'key')
+                testCase.verifyEqual(double(keys{1}.key), 0);
+            else
+                testCase.verifyEqual(double(keys{1}.document), 0);
+            end
             testCase.verifyEqual(edgeAll(mn{1}, 'key_id'), {list{1}.base.id});
             testCase.verifyEqual(keys{1}.n, 2);
         end

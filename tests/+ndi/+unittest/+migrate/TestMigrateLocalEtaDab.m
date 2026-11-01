@@ -338,7 +338,7 @@ classdef TestMigrateLocalEtaDab < matlab.unittest.TestCase
                     tet{end+1} = b; %#ok<AGROW>
                 elseif strcmp(cn, 'entity') && isfield(b, 'entity') && isfield(b.entity, 'type')
                     desc = '';
-                    if isfield(b.entity, 'description'); desc = char(b.entity.description); end
+                    desc = ndi.v2.notesOf(b.entity);   % `notes` or `description`
                     if ndi.v2.vocabIs('entity_type', b.entity.type, 'tissue') && startsWith(desc, 'brain slice')
                         sliceIds{end+1} = b.base.id; %#ok<AGROW>
                     elseif ndi.v2.vocabIs('entity_type', b.entity.type, 'organism') && contains(desc, 'nested inside')

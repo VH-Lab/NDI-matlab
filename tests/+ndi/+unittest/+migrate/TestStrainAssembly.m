@@ -48,7 +48,7 @@ classdef TestStrainAssembly < matlab.unittest.TestCase
             testCase.verifyEqual(supers, {'base'});
             testCase.verifyTrue(ndi.v2.vocabIs('entity_type', op50.entity.type, 'strain'));
             testCase.verifyEqual(op50.entity.name, 'Escherichia coli OP50');
-            testCase.verifyEqual(op50.entity.description, 'as the source gives it');
+            testCase.verifyEqual(ndi.v2.notesOf(op50.entity), 'as the source gives it');   % [one free-text field: notes]
             testCase.verifyFalse(isfield(op50, 'strain'));
             testCase.verifyFalse(isfield(op50.base, 'name'), ...
                 'V_eta documents never write base.name (#73 item 54)');

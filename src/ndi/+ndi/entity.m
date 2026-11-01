@@ -168,7 +168,12 @@ classdef entity
             % DESCRIPTION - free text, from the document
             v = '';
             if isempty(obj.entity_document_), return; end
-            v = char(ndi.v2.blockOf(obj.document_properties(), obj.kind, 'description', ''));
+            % `notes` since did-schema [one free-text field: notes] (Jess
+            % Haley, 2026-10-25); `description` before, read too
+            v = char(ndi.v2.blockOf(obj.document_properties(), obj.kind, 'notes', ''));
+            if isempty(v)
+                v = char(ndi.v2.blockOf(obj.document_properties(), obj.kind, 'description', ''));
+            end
         end
 
         function s = statements(obj, kind, filters, options)

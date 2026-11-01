@@ -173,7 +173,10 @@ classdef TestDatasetMetadataHaley < matlab.unittest.TestCase
             docs = testCase.Result.documents;
             pr = testCase.Result.ids('PR811');
             ent = docs{cellfun(@(d) strcmp(d.base.id, pr), docs)};
-            desc = char(ndi.v2.blockOf(ent, 'strain', 'description', ''));
+            desc = char(ndi.v2.blockOf(ent, 'strain', 'notes', ''));   % [one free-text field: notes]
+            if isempty(desc)
+                desc = char(ndi.v2.blockOf(ent, 'strain', 'description', ''));
+            end
             testCase.verifyFalse(contains(desc, 'osm-6'), 'not in the description');
             about = @(d) isfield(d, 'depends_on') && any(strcmp({d.depends_on.document_id}, pr));
             g = docs(cellfun(@(d) about(d) && isstruct(ndi.v2.blockOf(d, 'statement', 'variable')) ...
