@@ -1147,8 +1147,9 @@ function omId = labStrainOpenmindsId(b)
 %   [openMINDS subject leftovers] (Decided by Jess Haley, 2026-10-27): "a
 %   lab-made strain's `openminds_id` goes on the strain entity's
 %   `global_identifier` as `openminds:<id>`". LAB-MADE is the predicate
-%   DID-matlab's did2.convert.migrators_j.openminds_subject uses for its
-%   carry-117 branch, so the two sides agree on which documents this is: a
+%   DID-matlab's did2.convert.migrators_j.openminds_subject uses to convert
+%   such a document without checking its id against the term registry (pass 1
+%   no longer carries it), so the two sides agree on which documents this is: a
 %   Strain with no ontology node in any of `preferredOntologyIdentifier`,
 %   `ontologyIdentifier`, `interlexIdentifier` or `alternateIdentifier`. (The
 %   caller only passes Strain-typed documents.) A controlled strain's id is
