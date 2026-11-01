@@ -1630,10 +1630,13 @@ classdef entity
             end
             if any(strcmp(r.kind, {'relation', 'undirected_relation'})) && ...
                     (isempty(r.side) || strcmp(r.side, 'with'))
-                docs = ndi.entity.relationDocs(container, 'undirected_relation', r.name, 'entity_id', T);
+                % the ends under either name: `relatum_id`, or `entity_id`
+                % before [undirected ends are relata] (ndi.v2.relataEdges)
+                docs = ndi.entity.relationDocs(container, 'undirected_relation', r.name, ...
+                    ndi.v2.relataEdges(), T);
                 docs = ndi.entity.timed(container, docs, r, spec);
                 for i = 1:numel(docs)
-                    pair = ndi.v2.edgeIds(ndi.v2.props(docs{i}), 'entity_id');
+                    pair = ndi.v2.relata(ndi.v2.props(docs{i}));
                     for j = 1:numel(pair)
                         others = pair([1:j-1, j+1:end]);
                         if ~iscell(T) || any(ismember(others, T))
@@ -1665,7 +1668,8 @@ classdef entity
 
         function docs = relationDocs(container, className, names, edge, T)
             % RELATIONDOCS - relation documents of CLASSNAME named one of NAMES
-            % ({} any) whose EDGE is one of the ids T ([] any)
+            % ({} any) whose EDGE is one of the ids T ([] any). EDGE may be a
+            % cellstr: an edge stored under any of those names matches.
             arguments
                 container
                 className {mustBeText}
@@ -1673,6 +1677,7 @@ classdef entity
                 edge {mustBeText}
                 T
             end
+            edge = cellstr(edge);
             base = ndi.query('', 'isa', className, '');
             % a relation NDI knows is asked for by its node and every name it
             % has gone by (Jess Haley 2026-10-22 [vocabulary nodes] L1)
@@ -1687,8 +1692,12 @@ classdef entity
                 docs = {};
                 for c = 1:200:numel(T)
                     part = T(c:min(c + 199, numel(T)));
-                    q = ndi.entity.anyOf(cellfun(@(i) ndi.query('', 'depends_on', edge, i), part, ...
-                        'UniformOutput', false));
+                    qs = {};
+                    for e = edge
+                        qs = [qs, cellfun(@(i) ndi.query('', 'depends_on', e{1}, i), part, ...
+                            'UniformOutput', false)]; %#ok<AGROW>
+                    end
+                    q = ndi.entity.anyOf(qs);
                     docs = [docs, reshape(container.database_search(base & q), 1, [])]; %#ok<AGROW>
                 end
             end
