@@ -495,7 +495,7 @@ classdef system < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice
             % Creates a set of documents that describe an ndi.daq.system.
 
             ndi_document_obj_set{1} = ndi_daqsystem_obj.filenavigator.newdocument();
-            ndi_document_obj_set{2} = ndi_daqsystem_obj.daqreader.newdocument();
+            ndi_document_obj_set{2} = ndi_daqsystem_obj.daqreader.newdocument(ndi_daqsystem_obj.session);
             ndi_document_obj_set{3} = ndi.document('daqsystem',...
                 'daqsystem.ndi_daqsystem_class', class(ndi_daqsystem_obj),...
                 'base.id', ndi_daqsystem_obj.id(),...
@@ -511,8 +511,8 @@ classdef system < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice
                     ndi_document_obj_set{end}.id());
             end
             % a component writing into a V2 database returns its V2 record as
-            % a cell array of documents (ndi.file.navigator/newdocument); the
-            % set is flat
+            % a cell array of documents (ndi.file.navigator/newdocument,
+            % ndi.daq.reader/newdocument); the set is flat
             flat = {};
             for i=1:numel(ndi_document_obj_set)
                 if iscell(ndi_document_obj_set{i})
