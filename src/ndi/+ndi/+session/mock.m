@@ -59,7 +59,7 @@ classdef mock < ndi.session.dir
             a = ndi_session_mock_obj.database_search(ndi.query('subject','exact_string','anteater27@nosuchlab.org',''));
             if isempty(a)
                 subject = ndi.subject('anteater27@nosuchlab.org','');
-                ndi_session_mock_obj.database_add(subject.newdocument());
+                ndi_session_mock_obj.database_add(subject.newdocument(ndi_session_mock_obj));
             end
         end % (ndi.session.mock)
     end % methods()
