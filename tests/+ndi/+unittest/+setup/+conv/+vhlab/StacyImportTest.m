@@ -116,6 +116,21 @@ classdef StacyImportTest < matlab.unittest.TestCase
             testCase.verifyEqual(string(T.stringValue(3)), "2020-07-16");
         end
 
+        function epochWithoutReferenceIsExcluded(testCase)
+            % renaming reference.txt is how an epoch is excluded (2020-11-20 t00001)
+            d = ndi.test.helper.stacyFixtureDirectory(testCase.TempFolder);
+            movefile(fullfile(d, 't00001', 'reference.txt'), fullfile(d, 't00001', 'reference0.txt'));
+            [~, report] = ndi.setup.conv.vhlab.validateStacyDirectory(d, 'Verbose', false);
+            here = report(report.location == "t00001", :);
+            testCase.verifyEqual(height(here), 1);
+            testCase.verifyEqual(here.level, "warning");
+            testCase.verifyTrue(contains(here.message, 'excluded from the import'));
+            % and it gets no stimulus approaches
+            S = ndi.session.dir('2020-07-16', d);
+            T = ndi.setup.conv.vhlab.approachMappingTable(S);
+            testCase.verifyEmpty(T);
+        end
+
         function cellIntervalsMatchApproximately(testCase)
             % intervals of 2017-09-29: the epochs' recomputed intervals, and a
             % cell's stored ones that differ in the last digits and in the end
