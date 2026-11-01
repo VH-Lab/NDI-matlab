@@ -240,6 +240,13 @@ function result = local(path, options)
 
     alreadyMigrated = isfile(dstPath);
     backupCreated = false;
+    % THE RUN'S MIGRATION REPORT (Decided by Jess Haley, 2026-11-01, did-schema
+    % did_v2_go_forward_class_audit.md [migration record], [gap accepted when
+    % the report lists it], [migration record writer]): one report for the
+    % whole run, which every did2.convert call below adds to; a document may
+    % lack a required field only when it lists the gap. A database already
+    % migrated is re-checked against the report its migration record holds.
+    did2.convert.migrationReport('begin');
     if alreadyMigrated
         [bodies, srcInfo] = readBodiesFromTarget(dstPath);
     else
@@ -1182,6 +1189,7 @@ function result = local(path, options)
         % cites, so the stamp counts second-pass carries by row
         secondPassRows = secondPassCarryRows({stimulusSequenceReport, ...
             strainReport, ontologyLabelReport, ensembleReport});
+        reportCarries(secondPassRows, 'NDI''s second pass declined to convert it');
         [convertResult.migrated, carriedAsV1Report] = ...
             ndi.migrate.internal.carryUnchangedAsV1(convertResult.migrated, ...
             passOneRecord, bodies, secondPassRows);
@@ -1230,6 +1238,8 @@ function result = local(path, options)
         [convertResult.migrated, carriedDependentsReport] = ...
             ndi.migrate.internal.carryFinalDependents(convertResult.migrated, ...
             bodies, passOneSourceOutputs);
+        reportCarries(carriedDependentsReport.carry_rows, ...
+            'a document it depends on is carried as v1');
         fprintf(['[migrate step]   final carry sweep: %d document(s) inspected ' ...
             '(%d not v1, %d edge(s)); %d final carries at the start; carried ' ...
             '(carry-064): %d; pass-1 outputs dropped: %d, kept (still named): %d; ' ...
@@ -1261,6 +1271,44 @@ function result = local(path, options)
             ndi.migrate.internal.settleIngestedFiles(convertResult.migrated, ndiDir);
     end
     tStep = migrateStepMark('settleIngestedFiles', tStart, tStep, convertResult);
+
+    % --- the migration record: one per run, written by NDI ----------------
+    % [migration record writer] (Jess Haley, 2026-11-01): "by NDI-matlab for an
+    % NDI migration, from the reports of all its DID-matlab calls". One
+    % `migration` document and its report (a JSON file attached as an
+    % opaque_body; did2.convert.migrationRecord), pointing at the dataset, else
+    % the session ([migration record points at the dataset]). A dry run and a
+    % re-check of a database already migrated write none; the report is still
+    % returned.
+    migrationReport = struct();
+    migrationRecordIds = struct('migration_id', '', 'report_id', '');
+    if ~alreadyMigrated && iscell(convertResult.migrated)
+        counts = struct('source_documents', numel(bodies), ...
+            'quarantined', numel(convertResult.quarantine));
+        if options.DryRun
+            migrationReport = did2.convert.migrationReport('collect', convertResult.migrated);
+            f = fieldnames(counts);
+            for k = 1:numel(f)
+                migrationReport.counts.(f{k}) = counts.(f{k});
+            end
+        else
+            [records, migrationReport] = did2.convert.migrationRecord( ...
+                convertResult.migrated, 'Counts', counts, ...
+                'Validate', options.Validate, 'SchemaCache', options.SchemaCache);
+            if ~isempty(records)
+                migrationRecordIds.migration_id = records{1}.get('base.id');
+                migrationRecordIds.report_id = records{2}.get('base.id');
+                convertResult.migrated = [reshape(convertResult.migrated, 1, []), records];
+            end
+        end
+        fprintf(['[migrate step]   migration report: %d document(s); %d gap(s) on %d ' ...
+            'document(s); %d carried as v1 (%d citing a carry register row)\n'], ...
+            migrationReport.counts.documents, migrationReport.counts.gaps, ...
+            migrationReport.counts.documents_with_gaps, ...
+            migrationReport.counts.carried_as_v1, ...
+            migrationReport.counts.carried_citing_a_row);
+    end
+    tStep = migrateStepMark('migration record', tStart, tStep, convertResult);
 
     wroteDst = false;
     wroteQuarantineFile = '';
@@ -1334,6 +1382,10 @@ function result = local(path, options)
     end
     result.quarantine = convertResult.quarantine;
     result.quarantineFile = wroteQuarantineFile;
+    % the run's migration report (gaps, carried_as_v1, counts) and the ids of
+    % its `migration` document and the report's body ('' when none was written)
+    result.migrationReport = migrationReport;
+    result.migrationRecord = migrationRecordIds;
     result.references = refReport;
     result.ingestedFiles = ingestedFilesReport;
     result.secondPass = struct( ...
@@ -3515,6 +3567,58 @@ function [bodies, srcInfo] = readBodiesFromTarget(dstPath)
     for k = 1:numel(ids)
         doc = db.get(ids{k});
         bodies{k} = doc.toStruct();
+    end
+    % the report of the run that wrote it, so its gaps are accepted again
+    % ([gap accepted when the report lists it]: "the report stays in the
+    % dataset, so a later re-check reads it too")
+    loadStoredMigrationReport(db, bodies);
+end
+
+function loadStoredMigrationReport(db, bodies)
+%LOADSTOREDMIGRATIONREPORT Load the report attached to the database's
+%   `migration` document into did2.convert.migrationReport. A database with
+%   no migration record (migrated before 2026-11-01) loads nothing, and a
+%   document whose required field it never stated then fails its re-check.
+    migrationIds = {};
+    for k = 1:numel(bodies)
+        b = bodies{k};
+        if isfield(b, 'document_class') && strcmp(char(b.document_class.class_name), 'migration')
+            migrationIds{end+1} = char(b.base.id); %#ok<AGROW>
+        end
+    end
+    if isempty(migrationIds)
+        return;
+    end
+    for k = 1:numel(bodies)
+        b = bodies{k};
+        if ~isfield(b, 'document_class') || ~strcmp(char(b.document_class.class_name), 'opaque_body') ...
+                || ~isfield(b, 'depends_on') || ~isstruct(b.depends_on)
+            continue;
+        end
+        owners = {b.depends_on(strcmp({b.depends_on.name}, 'owner_id')).document_id};
+        if ~any(ismember(owners, migrationIds))
+            continue;
+        end
+        report = jsondecode(fileread(db.filePath(b.base.id, 'body_data_0')));
+        did2.convert.migrationReport('load', report);
+        return;
+    end
+end
+
+function reportCarries(rows, reason)
+%REPORTCARRIES Each {id, row, dependency} carry of NDI's second pass, in the
+%   run's migration report ([migration report is an attached file], Jess
+%   Haley, 2026-11-01: `carried_as_v1` (document_id, class, carry, reason)).
+    if ~isstruct(rows)
+        return;
+    end
+    for k = 1:numel(rows)
+        why = reason;
+        if isfield(rows, 'dependency') && ~isempty(rows(k).dependency)
+            why = sprintf('%s (it depends on %s)', reason, char(rows(k).dependency));
+        end
+        did2.convert.migrationReport('carried', char(rows(k).id), '', ...
+            char(rows(k).row), why);
     end
 end
 

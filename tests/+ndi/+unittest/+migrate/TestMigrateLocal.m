@@ -115,7 +115,21 @@ classdef TestMigrateLocal < matlab.unittest.TestCase
 
             db = did2.database.sqlitedb(result.destination);
             cleanup = onCleanup(@() db.close()); %#ok<NASGU>
-            verifyEqual(testCase, db.count(), 3);
+            % the 3 documents, the run's `migration` document and its report
+            % (Decided by Jess Haley, 2026-11-01 [migration record writer]:
+            % NDI writes one record per run)
+            verifyEqual(testCase, db.count(), 3 + 2);
+            m = db.get(result.migrationRecord.migration_id);
+            verifyEqual(testCase, m.className(), 'migration');
+            verifyEqual(testCase, char(m.get('migration.method').term.node), ...
+                'EDAM:operation_3434');
+            report = jsondecode(fileread(db.filePath( ...
+                result.migrationRecord.report_id, 'body_data_0')));
+            verifyEqual(testCase, report.counts.documents, 3);
+            verifyEqual(testCase, report.counts.source_documents, 3);
+            verifyEqual(testCase, report.counts.carried_as_v1, 3, ...
+                'the three unchanged documents are carried as v1');
+            verifyEqual(testCase, result.migrationReport.counts.carried_as_v1, 3);
         end
 
         function testMigratesDumbJsonDb(testCase)
@@ -133,7 +147,7 @@ classdef TestMigrateLocal < matlab.unittest.TestCase
             verifyEqual(testCase, result.summary.migrated_count, 2);
             db = did2.database.sqlitedb(result.destination);
             cleanup = onCleanup(@() db.close()); %#ok<NASGU>
-            verifyEqual(testCase, db.count(), 2);
+            verifyEqual(testCase, db.count(), 2 + 2);   % + the migration record
         end
 
         function testBackupCreatedByDefault(testCase)
@@ -194,7 +208,8 @@ classdef TestMigrateLocal < matlab.unittest.TestCase
             verifyTrue(testCase, second.alreadyMigrated);
             verifyFalse(testCase, second.wroteDestination);
             verifyFalse(testCase, second.backup.created);
-            verifyEqual(testCase, second.summary.migrated_count, 1);
+            % the document and the first run's migration record and report
+            verifyEqual(testCase, second.summary.migrated_count, 1 + 2);
         end
 
         function testQuarantineWrittenForMalformedDoc(testCase)
@@ -320,7 +335,10 @@ classdef TestMigrateLocal < matlab.unittest.TestCase
             if ndi.v2.sessionIdIsEdge()
                 sessionEdges = 1;     % the session's own; the v1 documents carry a field
             end
-            verifyEqual(testCase, result.references.edges_examined, 1 + sessionEdges);
+            % + the migration record's own edges: its report's owner_id, and
+            % the session_id of the record and of its report
+            verifyEqual(testCase, result.references.edges_examined, ...
+                1 + sessionEdges + 1 + 2 * sessionEdges);
         end
 
         % ---- the final v1 stamp ([passthrough stays v1: how]) --------------
@@ -354,7 +372,7 @@ classdef TestMigrateLocal < matlab.unittest.TestCase
             db = did2.database.sqlitedb(result.destination);
             cleanup = onCleanup(@() db.close()); %#ok<NASGU>
             [nV1, nTotal] = db.countV1();
-            verifyEqual(testCase, [nV1, nTotal], [1, 2]);
+            verifyEqual(testCase, [nV1, nTotal], [1, 2 + 2]);   % + the migration record
 
             % the unchanged document IS its v1 source, plus the stamp
             expected = jsondecode(jsonencode(alpha));
