@@ -166,6 +166,9 @@ switch kind
             'developed_by',       {'schema:producer'}
             'hosted_by',          {'schema:provider'}
             'distributed_as',     {'EMPTY:0000379'}
+            % [probe wiring is a relation], [wiring relation term] (Jess Haley
+            % 2026-11-01): a probe wired to its acquisition system's channels
+            'connected_to',       {'RO:0002170'}
             'temporally_aligned_with', {}
             % retired, read only: v1 lineage the migrator wrote before #30
             % retired it (ndi.vintage.elementFields)
