@@ -83,9 +83,6 @@ if ~isempty(session)
     for k = 1:numel(stores)
         sp = stores{k}.document_properties;
         d = blockValue(sp, 'notes');   % [one free-text field: notes]
-        if isempty(d)
-            d = blockValue(sp, 'description');   % before the rename
-        end
         if ~isempty(d)
             p.pyramid_name = quoted(charOr(d), 'NGFF multiscales name');
             p.pyramid_type = quoted(charOr(d), 'NGFF multiscales type');

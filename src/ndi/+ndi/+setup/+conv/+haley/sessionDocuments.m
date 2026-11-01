@@ -120,7 +120,7 @@ hasType = ismember('type', S.Properties.VariableNames);
 for k = 1:height(S)
     f = struct('local_identifier', S.local_identifier{k}, 'name', S.name{k});
     if ~isempty(S.description{k})
-        f.description = S.description{k};
+        f.notes = S.description{k};
     end
     if hasType                      % decision #55; did-schema #84
         f.type = did2.build.term('', S.type{k});
@@ -248,7 +248,7 @@ for k = 1:height(R)
     f = struct('format', mediaType(ext), 'filename', [base ext], ...
         'size_bytes', info.bytes, ...
         'file_modified', isoUtc(datetime(info.datenum, 'ConvertFrom', 'datenum', 'TimeZone', 'local')), ...
-        'description', sprintf('The recording; the source table names it %s.', r.source_name{1}));
+        'notes', sprintf('The recording; the source table names it %s.', r.source_name{1}));
     if options.Checksums
         f.content_hash = ndi.fun.file.MD5(src);
         f.hash_algorithm = 'MD5';

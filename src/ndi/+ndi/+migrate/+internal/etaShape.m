@@ -92,8 +92,7 @@ classdef etaShape
 
         function body = entity(type, fields, varargin)
             %ENTITY An `entity` of TYPE ('organism', 'tissue', 'strain', ...).
-            %   FIELDS: name, local_identifier, notes (or description),
-            %   global_identifier
+            %   FIELDS: name, local_identifier, notes, global_identifier
             %   (cellstr). Options: Id, SessionId, Datestamp, TimeReferenceIds.
             opts = ndi.migrate.internal.etaShape.options(struct('Id', '', ...
                 'SessionId', '', 'Datestamp', '', 'TimeReferenceIds', {{}}), varargin);
@@ -116,12 +115,11 @@ classdef etaShape
                     ent.(n{1}) = char(fields.(n{1}));
                 end
             end
-            % the free text: FIELDS may name it `notes` or `description`; it
-            % is written as the schema in use spells it ([one free-text
-            % field: notes], Jess Haley 2026-10-25; ndi.v2.notesField)
+            % the free text, `notes` ([one free-text field: notes], Jess
+            % Haley 2026-10-25)
             notes = ndi.v2.notesOf(fields);
             if ~isempty(notes)
-                ent.(ndi.v2.notesField('entity')) = notes;
+                ent.notes = notes;
             end
             if isfield(fields, 'global_identifier') && ~isempty(fields.global_identifier)
                 g = fields.global_identifier;

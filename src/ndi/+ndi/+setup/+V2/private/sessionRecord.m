@@ -26,7 +26,7 @@ if ~isempty(options.Name)
     fields.name = char(options.Name);
 end
 if ~isempty(options.Description)
-    fields.description = char(options.Description);
+    fields.notes = char(options.Description);   % entity.notes
 end
 edges = struct();
 if ~isempty(options.TimeReferenceId)

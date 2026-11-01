@@ -131,10 +131,9 @@ for k = 1:numel(structs)
     if ~isempty(fmt) && isstruct(fmt) && isfield(fmt, 'node') && ~isempty(fmt.node)
         args = [args, {'Format', fmt}]; %#ok<AGROW>
     end
-    % `notes` or `description` ([one free-text field: notes]); did2.build
-    % writes it as the schema spells it
+    % the free text, `notes` ([one free-text field: notes])
     if ~isempty(ndi.v2.notesOf(b.data_body))
-        args = [args, {'Description', ndi.v2.notesOf(b.data_body)}]; %#ok<AGROW>
+        args = [args, {'Notes', ndi.v2.notesOf(b.data_body)}]; %#ok<AGROW>
     end
     nb = did2.build.sampledBody(owners{1}, dims, args{:});
     if isfield(b, 'files')

@@ -128,7 +128,7 @@ for k = 1:numel(structs)
     % `compression`, the char or the {term, parameters} block ([compression
     % block and empty levels], Jess Haley, 2026-10-26; did2.build.compression)
     args = {'Fields', struct('filename', 'data.bin'), 'Compression', 'gzip', ...
-        'Description', desc, 'Id', id, 'SessionId', sid, 'Validate', false};
+        'Notes', desc, 'Id', id, 'SessionId', sid, 'Validate', false};
     if ~isempty(ts); args = [args, {'CreationTimestamp', ts}]; end %#ok<AGROW>
     restore = ndi.migrate.internal.termRegistryOff(); %#ok<NASGU>
     body = did2.build.opaqueBody(owners(1), ...

@@ -646,7 +646,7 @@ for g = 1:nGroups
     common = {'SessionId', home, 'Datestamp', rep.datestamp};
 
     ef = struct('name', rep.name);
-    if ~isempty(rep.description); ef.description = rep.description; end
+    if ~isempty(rep.description); ef.notes = rep.description; end   % v1 description -> entity.notes
     gid = rep.identifiers;
     % [openMINDS subject leftovers]: every lab-made member's openMINDS id, as
     % `openminds:<id>`, in candidate order, once each. Every member's, not the
