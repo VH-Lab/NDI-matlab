@@ -1,10 +1,13 @@
-function [elementType, how] = elementTypeOf(assertions)
+function [elementType, how] = elementTypeOf(assertions, entityType)
 %ELEMENTTYPEOF The v1 element type of a migrated element, from its term assertions.
 %
 %   [ELEMENTTYPE, HOW] = ndi.vintage.elementTypeOf(ASSERTIONS) reads the v1
 %   `element.type` back from the term assertions about one migrated element
 %   (a cell of ndi.document, did2.document or body structs; documents of any
-%   other kind, or about nothing recognisable, are ignored):
+%   other kind, or about nothing recognisable, are ignored).
+%   [ELEMENTTYPE, HOW] = ndi.vintage.elementTypeOf(ASSERTIONS, ENTITYTYPE)
+%   also reads the element's own `entity.type` (an ontology_term {node, name}
+%   or a name) when no assertion names the type (step 3):
 %
 %     1. the "element type" assertion (ndi.vintage.elementLabel('type')), when
 %        there is one: its value's name, exactly. HOW = 'element type'.
@@ -14,7 +17,19 @@ function [elementType, how] = elementTypeOf(assertions)
 %     2. else the device-kind assertion (variable NCIT:C178920 "Equipment
 %        Type"): the one v1 type that kind rebuilds
 %        (ndi.vintage.elementTypeOfKind). HOW = 'device kind'.
-%     3. else ''. HOW = ''. A shared kind with no "element type" assertion
+%     3. else, when ENTITYTYPE is `cell` or `group` (read by node,
+%        ndi.v2.vocabHandle): 'spikes'. HOW = 'entity type'. A sorted unit
+%        is the one element that becomes a cell or a group with no "element
+%        type" assertion (an ensemble, also a group, keeps its assertion, so
+%        step 1 reads it). Decided by Jess Haley, did-schema
+%        did_v2_go_forward_class_audit.md, [cell spellings are one meaning]
+%        and [cell spellings amended] (2026-10-27): the v1 types `spikes`,
+%        `neuron` and `cell` are "not kept as a statement or a note", each
+%        becomes the entity type [sorted units are cells or groups] gives
+%        it, and the three are equivalent spellings. 'spikes' is the
+%        spelling NDI's own writers use (ndi.element.spikesForProbe,
+%        ndi.app.spikesorter) and the one ndi.neuron readers query.
+%     4. else ''. HOW = ''. A shared kind with no "element type" assertion
 %        reads '' here, as an element with no assertion read before.
 %
 %   Decided by Jess Haley, did-schema V_eta_go_forward_class_audit.md,
@@ -27,6 +42,7 @@ function [elementType, how] = elementTypeOf(assertions)
 
 arguments
     assertions = {}
+    entityType = ''
 end
 
 elementType = '';
@@ -55,7 +71,26 @@ end
 if ~isempty(kindType)
     elementType = kindType;
     how = 'device kind';
+    return;
 end
+if isUnitEntityType(entityType)
+    elementType = 'spikes';
+    how = 'entity type';
+end
+end
+
+function tf = isUnitEntityType(entityType)
+% a sorted unit's entity type: `cell` (CL:0000000) or `group` (NCIT:C43359),
+% by node (ndi.v2.vocabHandle), so the stored name ('cell', 'Group') is notation
+tf = false;
+if isempty(entityType)
+    return;
+end
+if isstruct(entityType)
+    entityType = entityType(1);
+end
+h = ndi.v2.vocabHandle('entity_type', entityType);
+tf = any(strcmp(char(h), {'cell', 'group'}));
 end
 
 function p = propsOf(doc)

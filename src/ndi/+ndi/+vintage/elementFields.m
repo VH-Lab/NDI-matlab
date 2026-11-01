@@ -33,7 +33,11 @@ function f = elementFields(subjectDoc, ndi_session_obj)
 %                          assertion (`Equipment Type`) read back through
 %                          ndi.vintage.elementTypeOfKind. The `element
 %                          type` assertion wins when both are there
-%                          (ndi.vintage.elementTypeOf).
+%                          (ndi.vintage.elementTypeOf). A sorted unit,
+%                          which has neither ([cell spellings are one
+%                          meaning], [cell spellings amended]), reads
+%                          'spikes' from its own `entity.type` (`cell` or
+%                          `group`).
 %     ndi_element_class -> a `term_assertion` labelled `ndi element class`
 %     underlying_element_id -> a `directed_relation` `derived_from`
 %     subject_id (the specimen) -> a `directed_relation` `observes`,
@@ -101,6 +105,7 @@ f = struct('name', '', 'reference', [], 'type', '', 'direct', false, ...
 % --- name + reference: `name` first, then local_identifier --------------
 localId = '';
 entityName = '';
+entityType = '';
 % did-schema #88 (T1): the element is an `entity`; #73: a `subject`
 for blk = {'entity', 'subject'}
     if isfield(props, blk{1}) && isstruct(props.(blk{1})) ...
@@ -108,6 +113,9 @@ for blk = {'entity', 'subject'}
         localId = props.(blk{1}).local_identifier;
         if isfield(props.(blk{1}), 'name')
             entityName = props.(blk{1}).name;
+        end
+        if isfield(props.(blk{1}), 'type')
+            entityType = props.(blk{1}).type;
         end
         break;
     end
@@ -117,7 +125,7 @@ end
 [f.name, f.reference] = ndi.vintage.elementNameReferenceApart(entityName, localId);
 
 % --- the two kind assertions -------------------------------------------
-f.type = elementTypeValue(ndi_session_obj, docId);
+f.type = elementTypeValue(ndi_session_obj, docId, entityType);
 f.ndi_element_class = assertionValue(ndi_session_obj, docId, ...
     ndi.vintage.elementLabel('class'));
 
@@ -165,8 +173,9 @@ if isfield(p, 'term') && isstruct(p.term) && isfield(p.term, 'value') ...
 end
 end
 
-function v = elementTypeValue(ndi_session_obj, docId)
-%ELEMENTTYPEVALUE The v1 `type`: the `element type` assertion, else the kind.
+function v = elementTypeValue(ndi_session_obj, docId, entityType)
+%ELEMENTTYPEVALUE The v1 `type`: the `element type` assertion, else the kind,
+%   else, for a sorted unit (entity type `cell` or `group`), 'spikes'.
 %   Decided by Jess Haley, did-schema V_eta_go_forward_class_audit.md,
 %   [element type is a device kind term], [element types batch 1] ..
 %   [element types batch 4]: DID-matlab PR #304 drops the `element type`
@@ -182,7 +191,7 @@ q = ndi.v2.statementQuery('assertion', 'term') & ...
      ndi.v2.fieldQuery('statement.variable.name', 'exact_string', kindVar.name)) & ...
     ndi.v2.entityQuery(docId);
 docs = ndi_session_obj.database_search(q);
-v = ndi.vintage.elementTypeOf(docs);
+v = ndi.vintage.elementTypeOf(docs, entityType);
 end
 
 function [specimen, found] = specimenViaInstrument(ndi_session_obj, elementId)
