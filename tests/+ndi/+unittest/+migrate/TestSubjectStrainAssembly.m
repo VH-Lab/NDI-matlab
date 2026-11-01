@@ -660,7 +660,7 @@ classdef TestSubjectStrainAssembly < matlab.unittest.TestCase
         end
 
         function testAnAlternateIdentifierMakesAStrainNotLabMade(testCase)
-            % the same predicate as DID-matlab's carry-117 branch
+            % the same lab-made predicate as DID-matlab's
             % (migrators_j.openminds_subject): any of preferredOntologyIdentifier,
             % ontologyIdentifier, interlexIdentifier, alternateIdentifier
             [v1, mig] = twoRatsSameGenotype();
