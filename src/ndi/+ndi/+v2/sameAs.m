@@ -16,7 +16,7 @@ function others = sameAs(container, ids)
 %   also searches the dataset's documents (ndi.session/
 %   database_search_with_dataset); a session opened on its own sees none.
 %
-%   See also ndi.entity, ndi.v2.sameAsMatches.
+%   See also ndi.entity, ndi.v2.sameAsMatches, ndi.v2.relata.
 
 arguments
     container
@@ -39,9 +39,14 @@ while ~isempty(frontier)
     next = {};
     for c = 1:200:numel(frontier)
         part = frontier(c:min(c + 199, numel(frontier)));
-        q = ndi.query('', 'isa', 'undirected_relation', '') & ...
-            ndi.v2.anyOf(cellfun(@(i) ndi.query('', 'depends_on', 'entity_id', i), part, ...
-            'UniformOutput', false));
+        % either name of the ends: `relatum_id`, or `entity_id` before
+        % [undirected ends are relata] (ndi.v2.relataEdges)
+        ends = {};
+        for e = ndi.v2.relataEdges()
+            ends = [ends, cellfun(@(i) ndi.query('', 'depends_on', e{1}, i), part, ...
+                'UniformOutput', false)]; %#ok<AGROW>
+        end
+        q = ndi.query('', 'isa', 'undirected_relation', '') & ndi.v2.anyOf(ends);
         docs = searchAll(container, q);
         for i = 1:numel(docs)
             p = ndi.v2.props(docs{i});
@@ -49,7 +54,7 @@ while ~isempty(frontier)
             if ~ndi.v2.vocabIs('relation', ndi.v2.blockOf(p, 'undirected_relation', 'relation', ''), 'same_as')
                 continue;
             end
-            members = unique(ndi.v2.edgeIds(p, 'entity_id'), 'stable');
+            members = unique(ndi.v2.relata(p), 'stable');
             for a = 1:numel(members)
                 rest = members([1:a-1, a+1:end]);
                 if isKey(adj, members{a})
