@@ -38,6 +38,10 @@
 %                          computer (<.ndi>/files/<uid>, else the recorded
 %                          location); the stimulus fold reads
 %                          presentation_time.bin through it.
+%     v1FileReader       - the reader ndi.migrate.local gives pass 1
+%                          ('V1FileReader'): a v1 document's attached file,
+%                          found by v1AttachedFile (gene_list_mapping reads
+%                          mapping.tsv through it).
 %     dimensionTermCensus
 %                        - counts the dimensions written whose term has no
 %                          node, against the dimensions written ([covariate
