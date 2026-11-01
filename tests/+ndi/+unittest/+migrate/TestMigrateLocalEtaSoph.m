@@ -92,7 +92,7 @@ classdef TestMigrateLocalEtaSoph < matlab.unittest.TestCase
 
             t = tic;
             testCase.Result = ndi.migrate.local(testCase.SessionRoot, ...
-                'Validate', true, 'TargetVersion', 'V_eta', 'Backup', false);
+                'Validate', true, 'TargetVersion', 'did_v2', 'Backup', false);
             fprintf('  [Soph timing] ndi.migrate.local: %.1f s\n', toc(t));
         end
 

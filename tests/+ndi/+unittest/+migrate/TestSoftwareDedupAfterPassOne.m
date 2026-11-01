@@ -213,7 +213,7 @@ root = tempname();
 mkdir(fullfile(root, '.ndi'));
 testCase.addTeardown(@() rmdirQuiet(root));
 buildV1Sqlite(fullfile(root, '.ndi', 'did-sqlite.sqlite'), bodies);
-result = ndi.migrate.local(root, 'Validate', true, 'TargetVersion', 'V_eta', ...
+result = ndi.migrate.local(root, 'Validate', true, 'TargetVersion', 'did_v2', ...
     'Backup', false, 'SoftwareDedupAfterPassOne', early);
 docs = destinationBodies(result.destination);
 end

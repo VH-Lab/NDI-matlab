@@ -11,7 +11,8 @@ is empty and the network is unavailable.
   `ndi.schemas.pin(...)` or as part of an NDI release.
 - `fallback/stable/` — frozen snapshot of the schemas pulled at the
   pinned ref. Populated by the release process; intentionally empty
-  in a fresh checkout. The user cache at `~/.ndi/schemas/V_eta/<ref>`
+  in a fresh checkout. The user cache at `~/.ndi/schemas/did_v2/<ref>`
+  (or, written before the set was renamed, `~/.ndi/schemas/V_eta/<ref>`)
   is preferred; this directory is the offline fallback.
 
 See `+ndi/+schemas/` for the loader implementation and issue

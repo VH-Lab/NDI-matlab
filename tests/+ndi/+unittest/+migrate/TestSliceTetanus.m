@@ -187,7 +187,7 @@ classdef TestSliceTetanus < matlab.unittest.TestCase
             end
             bodies = testCase.Plan.minted;
             sub = did2.convert.v1_to_v2(bodies, 'Validate', true, ...
-                'TargetVersion', 'V_eta', 'Verbose', false);
+                'TargetVersion', 'did_v2', 'Verbose', false);
             msg = '';
             for k = 1:numel(sub.quarantine)
                 msg = sprintf('%s\n  %s: %s', msg, sub.quarantine(k).class_name, sub.quarantine(k).reason);

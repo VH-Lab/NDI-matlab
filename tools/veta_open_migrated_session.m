@@ -135,7 +135,7 @@ end
 if options.Migrate
     fprintf('\n--- 1. migrating to V_eta ---\n');
     result = ndi.migrate.local(sessionPath, ...
-        'TargetVersion', 'V_eta', ...
+        'TargetVersion', 'did_v2', ...
         'Validate', true, ...
         'DryRun', options.DryRun, ...
         'Backup', options.Backup);
@@ -151,7 +151,7 @@ if options.Migrate
     % (local.m:199) and then reads bodies back out of the DESTINATION
     % instead of the v1 source. That is right for a completed migration and
     % wrong for a POISONED one -- and a poisoned one is easy to make,
-    % because the first run writes V_eta.sqlite even when every document
+    % because the first run writes did_v2.sqlite even when every document
     % quarantines. So a failed run leaves an EMPTY destination, and every
     % run after it reports `documents seen: 0` and changes nothing.
     %

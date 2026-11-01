@@ -70,7 +70,7 @@ function ndiDocumentObj = applyReadNormalization(rawDoc)
              '(got "%s").'], class(rawDoc));
     end
 
-    if did2.convert.isAlreadyTarget(body, 'V_eta')
+    if did2.convert.isAlreadyTarget(body, 'did_v2')
         body = did2.convert.ensureClassBlocks(body, []);
     end
     ndiDocumentObj = ndi.document(body);
