@@ -329,6 +329,9 @@ end
 end
 
 function body = sampledFromOpaque(b, rows, ci, type, types, abbrev, sr, n, seg)
+% the channel number variable is a label no registry row carries yet, as the
+% other second-pass builders' labels (ndi.migrate.internal.termRegistryOff)
+restore = ndi.migrate.internal.termRegistryOff(); %#ok<NASGU>
 ab = abbrev{strcmp(types, type)};
 [node, label] = channelTypeTerm(ab);
 timeTerm = struct('node', 'om:Time', 'name', 'time');
