@@ -386,7 +386,7 @@ classdef TestMigrateLocal < matlab.unittest.TestCase
 
             verifyEqual(testCase, result.summary.migrated_count, 3);
             verifyEqual(testCase, result.references.orphan_count, 1);
-            % The two demo_a documents have no migrator and no step changes
+            % The two projectvar documents have no migrator and no step changes
             % them, so they are carried as v1 documents, stamped 'did_v1'
             % (Decided by Jess Haley, 2026-10-24 [passthrough stays v1: how]):
             % a v1 body records its session in the base.session_id FIELD, not
@@ -410,11 +410,8 @@ classdef TestMigrateLocal < matlab.unittest.TestCase
         % validation and counted.
 
         function testAnUnchangedDocumentIsCarriedAsItsV1Source(testCase)
-            alpha = makeV1Body('alpha');      % demo_a: no migrator, no pass
-            % a document pass 1 changes: the image_stack_parameters superclass
-            % migrator drops its empty `timestamp` placeholder (this used a
-            % `filter`, whose superclass migrator DID-matlab deleted:
-            % [unreached superclass migrators deleted], Jess Haley, 2026-10-27)
+            alpha = makeV1Body('alpha');      % projectvar: no migrator, no pass
+            % a document pass 1 changes: a v1 subject, converted to an entity
             filt = makeV1Changed('lowpass');
             srcSqlite = fullfile(testCase.SessionRoot, '.ndi', 'did-sqlite.sqlite');
             buildV1Sqlite(srcSqlite, {jsonencode(alpha), jsonencode(filt)});
@@ -428,7 +425,7 @@ classdef TestMigrateLocal < matlab.unittest.TestCase
             verifyEqual(testCase, result.carriedAsV1.documents_inspected, 2);
             verifyEqual(testCase, result.carriedAsV1.passed_through_pass_one, 1);
             verifyEqual(testCase, result.carriedAsV1.carried_as_v1, 1);
-            verifyEqual(testCase, {result.carriedAsV1.carried_by_class.class_name}, {'demo_a'});
+            verifyEqual(testCase, {result.carriedAsV1.carried_by_class.class_name}, {'projectvar'});
 
             db = did2.database.sqlitedb(result.destination);
             cleanup = onCleanup(@() db.close()); %#ok<NASGU>
@@ -445,8 +442,8 @@ classdef TestMigrateLocal < matlab.unittest.TestCase
             % the migrated document keeps its V2 stamp and its migrated shape
             gotF = db.get(filt.base.id).toStruct();
             verifyEqual(testCase, gotF.document_class.schema_version, did2.schema.v2Stamp());
-            verifyFalse(testCase, isfield(gotF.image_stack_parameters, 'timestamp'));
-            verifyEqual(testCase, gotF.image_stack_parameters.label, 'kept');
+            verifyEqual(testCase, gotF.document_class.class_name, 'entity');
+            verifyEqual(testCase, gotF.entity.local_identifier, 'lowpass');
         end
 
         function testCarryUnchangedAsV1ReportsEveryOutcome(testCase)
@@ -460,7 +457,7 @@ classdef TestMigrateLocal < matlab.unittest.TestCase
             docs = r.migrated;
             % beta changed by a later step
             sb = docs{2}.toStruct();
-            sb.demo_a.marker = 'changed later';
+            sb.projectvar.description = 'changed later';
             docs{2} = did2.document(sb);
             % gamma removed by a later step
             docs(3) = [];
@@ -474,16 +471,18 @@ classdef TestMigrateLocal < matlab.unittest.TestCase
             verifyEqual(testCase, rep.changed_after_pass_one, 1);
             verifyEqual(testCase, rep.absent_at_end, 1);
             verifyEqual(testCase, rep.not_a_source, 1);
-            verifyEqual(testCase, {rep.changed_by_class.class_name}, {'demo_a'});
+            verifyEqual(testCase, {rep.changed_by_class.class_name}, {'projectvar'});
             verifyEqual(testCase, [rep.changed_by_class.count], 1);
-            verifyEqual(testCase, {rep.absent_by_class.class_name}, {'demo_a'});
+            verifyEqual(testCase, {rep.absent_by_class.class_name}, {'projectvar'});
             verifyEqual(testCase, rep.carried_as_v1 + rep.changed_after_pass_one ...
                 + rep.absent_at_end + rep.not_a_source + rep.source_unreadable ...
                 + rep.source_id_mismatch, rep.passed_through_pass_one);
             expected = a;
             expected.document_class.schema_version = 'did_v1';
             verifyTrue(testCase, isequaln(out{1}.toStruct(), expected));
-            verifyEqual(testCase, out{2}.toStruct().document_class.schema_version, did2.schema.v2Stamp());
+            % beta was carried whole by pass 1 (carry-162), so it is a v1
+            % document whether or not this step carries it again
+            verifyEqual(testCase, out{2}.toStruct().document_class.schema_version, 'did_v1');
         end
 
         function testCarryUnchangedAsV1CountsSecondPassRows(testCase)
@@ -545,23 +544,30 @@ end
 % ---- helpers --------------------------------------------------------------
 
 function body = makeV1Changed(name)
-% a did_v1 document pass 1 changes: a class no migrator names, whose
-% `image_stack_parameters` superclass block holds the template's empty
-% `timestamp` placeholder, which DID-matlab's superclass migrator
-% (+migrators_j/+super/image_stack_parameters) drops
+% a did_v1 document pass 1 changes: a v1 `subject` (NDI's template,
+% subject.json), which DID-matlab's subject migrator converts to one V2
+% `entity`, id preserved. (It was a class no migrator names whose
+% image_stack_parameters block the superclass pass reshaped; that pass and the
+% identity fallback are deleted, DID-matlab #351.)
 body = makeV1Body(name);
-body.document_class.class_name = 'some_unregistered_class';
-body.document_class.superclasses = struct('class_name', ...
-    {'base', 'image_stack_parameters'}, 'class_version', '1.0.0');
-body = rmfield(body, 'demo_a');
-body.some_unregistered_class = struct('foo', 'bar');
-body.image_stack_parameters = struct('timestamp', [], 'label', 'kept');
+body.document_class.class_name = 'subject';
+body = rmfield(body, 'projectvar');
+body.base.name = name;
+body.subject = struct('local_identifier', name, 'description', '');
 end
 
 function body = makeV1Body(name)
+% a v1 `projectvar` as NDI's template spells it (database_documents/
+% projectvar.json). It has no migrator and its route is recorded: DID-matlab
+% carries it whole as v1 (did2.convert.noMigratorCarryRows, carry-162; Decided
+% by Jess Haley, 2026-10-31 [classes without a migrator carry as v1]). These
+% tests used `demo_a`, a class no NDI template or writer defines, which passed
+% through DID-matlab's identity fallback; that fallback is deleted (DID-matlab
+% #351, [early migration pieces fixed] (1)), and a class with no migrator and
+% no recorded decision is quarantined (did2:convert:noMigrator).
 body = struct();
 body.document_class = struct( ...
-    'class_name',    'demo_a', ...
+    'class_name',    'projectvar', ...
     'class_version', '1.0.0', ...
     'superclasses',  struct( ...
         'class_name',    'base', ...
@@ -572,7 +578,8 @@ body.base = struct( ...
     'session_id', 'aabb1122ccdd3344_9900aabbccddeeff', ...
     'name',       name, ...
     'datestamp',  '2024-06-01T12:00:00.000Z');
-body.demo_a = struct('marker', name);
+body.projectvar = struct('project', '', 'type', '', 'user', '', 'lab', '', ...
+    'description', name, 'data', '');
 end
 
 function body = makeV1Session()

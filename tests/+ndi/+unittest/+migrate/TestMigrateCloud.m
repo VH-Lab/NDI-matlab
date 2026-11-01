@@ -152,9 +152,11 @@ classdef TestMigrateCloud < matlab.unittest.TestCase
 
             verifyEqual(testCase, result.summary.migrated_count, 3);
             verifyEqual(testCase, result.summary.quarantine_count, 0);
-            % edges: alpha session_id, beta parent_id + session_id, and the
-            % session entity's own session_id (to itself) = 4; 1 dangles
-            verifyEqual(testCase, result.references.edges_examined, 4);
+            % edges: beta parent_id and the session entity's own session_id
+            % (to itself) = 2; 1 dangles. alpha and beta are carried whole as
+            % v1 by pass 1 (projectvar, carry-162), so each keeps v1's
+            % base.session_id FIELD, not the edge ([passthrough stays v1: how])
+            verifyEqual(testCase, result.references.edges_examined, 2);
             verifyEqual(testCase, result.references.orphan_count, 1);
             testCase.assertNumElements(result.references.orphans, 1);
             verifyEqual(testCase, result.references.orphans(1).edge_name, 'parent_id');
@@ -181,9 +183,17 @@ end
 % ---- helpers --------------------------------------------------------------
 
 function body = makeV1Body(name)
+% a v1 `projectvar` as NDI's template spells it (database_documents/
+% projectvar.json). It has no migrator and its route is recorded: DID-matlab
+% carries it whole as v1 (did2.convert.noMigratorCarryRows, carry-162; Decided
+% by Jess Haley, 2026-10-31 [classes without a migrator carry as v1]). These
+% tests used `demo_a`, a class no NDI template or writer defines, which passed
+% through DID-matlab's identity fallback; that fallback is deleted (DID-matlab
+% #351, [early migration pieces fixed] (1)), and a class with no migrator and
+% no recorded decision is quarantined (did2:convert:noMigrator).
 body = struct();
 body.document_class = struct( ...
-    'class_name',    'demo_a', ...
+    'class_name',    'projectvar', ...
     'class_version', '1.0.0', ...
     'superclasses',  struct( ...
         'class_name',    'base', ...
@@ -194,7 +204,8 @@ body.base = struct( ...
     'session_id', 'aabb1122ccdd3344_9900aabbccddeeff', ...
     'name',       name, ...
     'datestamp',  '2024-06-01T12:00:00.000Z');
-body.demo_a = struct('marker', name);
+body.projectvar = struct('project', '', 'type', '', 'user', '', 'lab', '', ...
+    'description', name, 'data', '');
 end
 
 function body = makeV1SessionBody()
