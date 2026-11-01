@@ -115,5 +115,45 @@ classdef StacyImportTest < matlab.unittest.TestCase
             testCase.verifyEqual(string(T.stringValue(2)), "2020-06-14");
             testCase.verifyEqual(string(T.stringValue(3)), "2020-07-16");
         end
+
+        function cellIntervalsMatchApproximately(testCase)
+            % intervals of 2017-09-29: the epochs' recomputed intervals, and a
+            % cell's stored ones that differ in the last digits and in the end
+            % padding; t00005's padded end overlaps t00006's start
+            epochs = [17188213.031750 17188823.460426; 17188950.750284 17190964.796034; ...
+                17191209.512533 17192901.265934; 17214617.669371 17216328.161863; ...
+                17216309.176442 17218321.783805; 17218328.768405 17218759.291787];
+            cellIntervals = epochs + [0.0004 -3.1];
+            idx = ndi.setup.conv.vhlab.matchCellIntervalsToEpochs(cellIntervals, epochs);
+            testCase.verifyEqual(idx, (1:6)');
+            % order does not matter
+            idx = ndi.setup.conv.vhlab.matchCellIntervalsToEpochs(cellIntervals([3 1 2], :), epochs);
+            testCase.verifyEqual(idx, [3; 1; 2]);
+        end
+
+        function cellIntervalWithoutEpochIsNaN(testCase)
+            epochs = [0 100; 200 300];
+            % the second interval lies between the epochs; the third barely touches one
+            idx = ndi.setup.conv.vhlab.matchCellIntervalsToEpochs([0 99; 120 180; 290 400], epochs);
+            testCase.verifyEqual(idx, [1; NaN; NaN]);
+        end
+
+        function cellNamesParse(testCase)
+            [n, r, i, d] = ndi.setup.conv.vhlab.parseCellName('cell_extra10_001_251_2018_10_02');
+            testCase.verifyEqual({n, r, i, d}, {'extra10', 1, 251, '2018_10_02'});
+            % a probe name with an underscore (2019-02-26)
+            [n, r, i] = ndi.setup.conv.vhlab.parseCellName('cell_extra_t1_001_252_2019_02_26');
+            testCase.verifyEqual({n, r, i}, {'extra_t1', 1, 252});
+            [n, r, i] = ndi.setup.conv.vhlab.parseCellName('cell_extra_001_000_2018_02_16');
+            testCase.verifyEqual({n, r, i}, {'extra', 1, 0});
+            testCase.verifyError(@() ndi.setup.conv.vhlab.parseCellName('cell_extra10_001'), ...
+                'ndi:setup:conv:vhlab:parseCellName:BadName');
+        end
+
+        function eachEpochIsMatchedOnce(testCase)
+            % two cell intervals in one epoch: the larger overlap keeps it
+            idx = ndi.setup.conv.vhlab.matchCellIntervalsToEpochs([0 60; 0 100], [0 100]);
+            testCase.verifyEqual(idx, [NaN; 1]);
+        end
     end
 end
