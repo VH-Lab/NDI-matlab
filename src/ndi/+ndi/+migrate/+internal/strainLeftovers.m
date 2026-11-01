@@ -226,11 +226,14 @@ end
 
 function [terms, why, frags] = readTerms(v, lookup, fieldName)
 %READTERMS Each value as a term: an inline name, or an `ndi://` controlled-term
-%   document's name and ONE identifier. Any other field (a definition or
-%   synonym included) keeps the document, carried as v1: [openMINDS strain
-%   leftovers] drops a fragment's definition and synonyms only for Species
-%   and GeneticStrainType (strainAssembly fragmentFullyPlaced). FRAGS lists
-%   only the fully placed ones.
+%   document's name and ONE identifier. A term document's definition and
+%   synonyms are read back from the term, not stored: [openMINDS strain
+%   leftovers] for Species and GeneticStrainType fragments, and, for the
+%   breeding-type and disease-model fragments read here, Decided by Jess
+%   Haley, 2026-11-01 [breeding type and disease model text not stored]
+%   (did-schema did_v2_go_forward_class_audit.md; docs/V2_PLAN.md G61: "Yes"
+%   to "do the same for breeding type and disease model?"). Any other field
+%   keeps the document (FRAGS lists only the fully placed ones).
 terms = {};
 why = {};
 frags = {};
@@ -264,7 +267,7 @@ for k = 1:numel(vals)
     terms{end+1} = struct('node', node, 'name', nm); %#ok<AGROW>
     if onlyFields(ff, {'name', 'preferredOntologyIdentifier', ...
             'preferred_ontology_identifier', 'ontologyIdentifier', ...
-            'ontology_identifier'}) ...
+            'ontology_identifier', 'definition', 'synonym'}) ...
             && (isempty(a) || isempty(b) || strcmp(a, b))
         frags{end+1} = id; %#ok<AGROW>
     end

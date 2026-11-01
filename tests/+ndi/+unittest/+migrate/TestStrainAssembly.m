@@ -245,10 +245,11 @@ classdef TestStrainAssembly < matlab.unittest.TestCase
             testCase.verifyEqual(a{1}.statement.variable.node, 'NCIT:C42877');
             testCase.verifyEqual(a{1}.term.value.node, 'NCIT:C28422');
             testCase.verifyEqual(a{1}.term.value.name, 'Inbred Strain');
-            testCase.verifyTrue(anyId(kept, 'bt_doc'), ...
-                ['a breeding-type document with a definition is kept (carried ' ...
-                 'as v1): the not-stored rule is decided for Species and ' ...
-                 'GeneticStrainType fragments only']);
+            % [breeding type and disease model text not stored] (Jess
+            % Haley, 2026-11-01; V2_PLAN G61): as for Species and
+            % GeneticStrainType, the definition is read back from the term
+            testCase.verifyFalse(anyId(kept, 'bt_doc'), ...
+                'a term''s definition is read back from the term, not stored');
         end
 
         function testAFullyPlacedBreedingTypeDocumentIsConsumed(testCase)
@@ -280,6 +281,26 @@ classdef TestStrainAssembly < matlab.unittest.TestCase
             testCase.verifyEqual(a{1}.statement.variable.node, 'BAO:0010279');
             testCase.verifyEqual(a{1}.term.value.node, 'MONDO:0004975');
             testCase.verifyEqual(a{2}.term.value.node, 'MONDO:0005027');
+        end
+
+        function testADiseaseModelsDefinitionAndSynonymAreNotStored(testCase)
+            % [breeding type and disease model text not stored] (Decided by
+            % Jess Haley, 2026-11-01, did-schema
+            % did_v2_go_forward_class_audit.md; docs/V2_PLAN.md G61): a
+            % disease-model fragment's definition and synonyms are read back
+            % from the term, so the fragment is consumed, not carried
+            f = struct('name', 'X', 'diseaseModel', {{'ndi://d1_doc'}});
+            structs = {strainOm('s_doc', f, {'d1_doc'}), ...
+                childOm('d1_doc', 'Disease', struct('name', 'Alzheimer disease', ...
+                    'preferredOntologyIdentifier', 'MONDO:0004975', ...
+                    'definition', 'A dementia that results in progressive memory loss.', ...
+                    'synonym', {{'AD'}}))};
+            [kept, minted, ~] = ndi.migrate.internal.strainAssembly(structs);
+            a = assertionAbout(minted, 's_doc', 'disease model');
+            testCase.verifyNumElements(a, 1);
+            testCase.verifyEqual(a{1}.term.value.node, 'MONDO:0004975');
+            testCase.verifyFalse(anyId(kept, 'd1_doc'), ...
+                'a disease term''s definition and synonyms are read back from the term');
         end
 
         function testLookupLabelIsNotStoredAndDoesNotRefuse(testCase)
