@@ -247,13 +247,22 @@ classdef ndr < ndi.daq.reader.mfdaq
             end
         end
 
-        function ndi_document_obj = newdocument(ndi_daqreader_obj)
+        function ndi_document_obj = newdocument(ndi_daqreader_obj, ndi_session_obj)
             % NEWDOCUMENT - create a new ndi.document for an ndi.daq.reader object
             %
             % DOC = NEWDOCUMENT(NDI_DAQREADER_OBJ)
             %
             % Creates an ndi.document object DOC that represents the
             %    ndi.daq.reader object.
+            % With NDI_SESSION_OBJ whose database is V2 (ndi.session/writesV2),
+            % the V2 record instead: an `acquisition_reader` whose
+            % `reader_string` is the NDR reader string, and its `software`
+            % entity (ndi.daq.reader/newdocumentV2).
+            if nargin>1 && ~isempty(ndi_session_obj) && ndi_session_obj.writesV2()
+                ndi_document_obj = ndi_daqreader_obj.newdocumentV2(ndi_session_obj, ...
+                    ndi_daqreader_obj.ndr_reader_string);
+                return;
+            end
             ndi_document_obj = ndi.document('daqreader_ndr',...
                 'daqreader.ndi_daqreader_class',class(ndi_daqreader_obj),...
                 'daqreader_ndr.ndr_reader_string', ndi_daqreader_obj.ndr_reader_string,...
