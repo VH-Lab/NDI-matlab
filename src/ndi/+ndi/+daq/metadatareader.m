@@ -211,13 +211,46 @@ classdef metadatareader < ndi.ido & ndi.documentservice
 
         % documentservices overridden methods
 
-        function ndi_document_obj = newdocument(ndi_daqmetadatareader_obj)
+        function ndi_document_obj = newdocument(ndi_daqmetadatareader_obj, ndi_session_obj)
             % NEWDOCUMENT - create a new ndi.document for an ndi.daq.metadatareader object
             %
             % DOC = NEWDOCUMENT(ndi.daq.metadatareader OBJ)
             %
             % Creates an ndi.document object DOC that represents the
             %    ndi.daq.reader object.
+            %
+            % DOC = NEWDOCUMENT(OBJ, NDI_SESSION_OBJ)
+            %
+            % Writes for the database of NDI_SESSION_OBJ (a metadata reader
+            % holds no session; ndi.daq.system/newdocument passes its own).
+            % When that database is V2 (ndi.session/writesV2), DOC is a cell
+            % array of the V2 record: an `epoch_parameter_reader` whose id is
+            % the reader's id (`file_regex` the tab-separated file parameter)
+            % and the `software` entity its `software_id` names, whose `name`
+            % is the reader's class, in the session -- the shape DID-matlab's
+            % +migrators_j/daqmetadatareader.m writes for a v1
+            % `daqmetadatareader`, and the one this constructor and
+            % ndi.vintage.objectClass already read. Decided by Jess Haley,
+            % 2026-10-29 [v1 writes into a V2 session] (did-schema
+            % did_v2_go_forward_class_audit.md): "the end state is that every
+            % NDI writer writes V2 documents".
+            %
+            if nargin>1 && ~isempty(ndi_session_obj) && ndi_session_obj.writesV2()
+                sid = ndi_session_obj.id();
+                cls = class(ndi_daqmetadatareader_obj);
+                sw = ndi.setup.V2.entityDocuments('software', ...
+                    struct('name', cls, 'local_identifier', cls), struct(), 'SessionId', sid);
+                f = struct();
+                if ~isempty(ndi_daqmetadatareader_obj.tab_separated_file_parameter)
+                    f.file_regex = char(ndi_daqmetadatareader_obj.tab_separated_file_parameter);
+                end
+                r = did2.build.document('epoch_parameter_reader', f, ...
+                    'Edges', struct('software_id', sw{1}.base.id), ...
+                    'Id', ndi_daqmetadatareader_obj.id(), 'SessionId', sid);
+                ndi_document_obj = [{ndi.document(r)}, ...
+                    cellfun(@(x) ndi.document(x), sw, 'UniformOutput', false)];
+                return;
+            end
             ndi_document_obj = ndi.document('daqmetadatareader',...
                 'daqmetadatareader.ndi_daqmetadatareader_class',class(ndi_daqmetadatareader_obj),...
                 'daqmetadatareader.tab_separated_file_parameter', ndi_daqmetadatareader_obj.tab_separated_file_parameter, ...
