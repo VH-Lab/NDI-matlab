@@ -9,7 +9,7 @@ classdef TestV1FileReader < matlab.unittest.TestCase
     %   the bytes to <.ndi>/files/<uid>, so that is where it looks first; a
     %   local `file` location second. A file found nowhere is an error, which
     %   DID-matlab's did2.convert.v1Files turns into a carry of the whole
-    %   document (carry-167), never an empty file.
+    %   document (with its carry note), never an empty file.
     %
     %   Self-contained: the store is a temp folder. The conversion test runs
     %   on a copy of the loaded schema set that declares the covariate `index`

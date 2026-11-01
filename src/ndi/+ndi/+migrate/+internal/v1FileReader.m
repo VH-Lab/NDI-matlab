@@ -14,8 +14,8 @@ function reader = v1FileReader(ndiDir)
 %   the location the document records. TEXT is the file's bytes as char. It
 %   errors (NDI:migrate:v1FileNotFound) when the document attaches no such
 %   file or its bytes are not on this computer; did2.convert.v1Files turns
-%   the error into a carry of the whole document (carry-167 for a gene-list
-%   mapping), never an empty file.
+%   the error into a carry of the whole document (for a gene-list mapping,
+%   the register row for an unreadable mapping.tsv), never an empty file.
 %
 %   See also ndi.migrate.local, ndi.migrate.internal.v1AttachedFile.
 
