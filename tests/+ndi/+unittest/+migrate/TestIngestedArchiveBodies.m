@@ -45,8 +45,8 @@ classdef TestIngestedArchiveBodies < matlab.unittest.TestCase
             dims = b.data.dimensions;
             testCase.verifyEqual(numel(dims), 2);
             testCase.verifyEqual(char(dims(1).term.node), 'om:Time');
-            testCase.verifyEqual(double(dims(1).n), 8);
-            testCase.verifyEqual(double(dims(1).chunk), 5, 'chunk = the v1 segment length');
+            testCase.verifyEqual(double(dims(1).n), 160);
+            testCase.verifyEqual(double(dims(1).chunk), 100, 'chunk = the v1 segment length');
             testCase.verifyEqual(char(dims(2).term.node), 'NCIT:C44170');
             testCase.verifyEqual(double(dims(2).n), 3);
             covs = b.data.covariates;
@@ -104,8 +104,10 @@ classdef TestIngestedArchiveBodies < matlab.unittest.TestCase
 
     methods
         function [s, v1] = archive(testCase, withTime, evenTime)
-            % an epoch of 8 samples at 10 kHz, 3 analog inputs in segments
-            % of 5, and (WITHTIME) the time channel t1
+            % an epoch of 160 samples at 10 kHz, 3 analog inputs in
+            % segments of 100 (NDI's ephys compressor fits a predictor, so
+            % a segment needs more samples than its order), and
+            % (WITHTIME) the time channel t1
             sr = 10000;
             ch = struct('name', {'ai1', 'ai2', 'ai3'}, 'type', 'analog_in', ...
                 'time_channel', NaN, 'sample_rate', sr, 'offset', -2, 'scale', 0.195);
@@ -117,8 +119,8 @@ classdef TestIngestedArchiveBodies < matlab.unittest.TestCase
             ec = ndi.file.type.mfdaq_epoch_channel(ch);
             [ok, msg] = ec.writeToFile(fullfile(files, 'u_cl'));
             testCase.assertTrue(logical(ok), msg);
-            data = reshape(int16(1:24), 8, 3);
-            segs = {data(1:5, :), data(6:8, :)};
+            data = int16(round(1000 * sin((1:160)' * [0.05 0.11 0.23])));
+            segs = {data(1:100, :), data(101:160, :)};
             for k = 1:2
                 stem = tempname();
                 ndi.compress.compress_ephys(double(segs{k}), 16, stem, ...
@@ -132,9 +134,9 @@ classdef TestIngestedArchiveBodies < matlab.unittest.TestCase
                 body('body_ai', 'ai_group1_seg.nbf_#', {'u_ai_1', 'u_ai_2'}), ...
                 body('body_cl', 'channel_list.bin', {'u_cl'})};
             if withTime
-                t = (0:7)' / sr;
-                if ~evenTime; t(5) = t(5) + 0.3 / sr; end
-                tsegs = {t(1:5), t(6:8)};
+                t = (0:159)' / sr;
+                if ~evenTime; t(50) = t(50) + 0.3 / sr; end
+                tsegs = {t(1:100), t(101:160)};
                 for k = 1:2
                     stem = tempname();
                     ndi.compress.compress_time(tsegs{k}, stem);
@@ -150,9 +152,9 @@ classdef TestIngestedArchiveBodies < matlab.unittest.TestCase
             v1 = {struct('base', struct('id', 'arch_1'), ...
                 'document_class', struct('class_name', 'daqreader_mfdaq_epochdata_ingested'), ...
                 'daqreader_mfdaq_epochdata_ingested', struct('parameters', ...
-                    struct('sample_analog_segment', 5, 'sample_digital_segment', 50)), ...
+                    struct('sample_analog_segment', 100, 'sample_digital_segment', 1000)), ...
                 'daqreader_epochdata_ingested', struct('epochtable', ...
-                    struct('epochclock', {{'dev_local_time'}}, 't0_t1', [0; 7/sr])), ...
+                    struct('epochclock', {{'dev_local_time'}}, 't0_t1', [0; 159/sr])), ...
                 'files', struct('file_list', {{'channel_list.bin'}}, 'file_info', fi))};
         end
     end
