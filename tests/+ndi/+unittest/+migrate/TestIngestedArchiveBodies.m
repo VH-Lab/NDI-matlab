@@ -68,7 +68,7 @@ classdef TestIngestedArchiveBodies < matlab.unittest.TestCase
             testCase.verifyEqual(rep.channel_list_kept, 1);
             % the converted set validates against the real schema
             keep = ~cellfun(@(s) any(strcmp(s.base.id, removed)), out);
-            res = did2.convert.v1_to_v2(out(keep), 'Validate', true, 'TargetVersion', 'V_eta');
+            res = did2.convert.v1_to_v2(out(keep), 'Validate', true, 'TargetVersion', 'did_v2');
             testCase.verifyEmpty(res.quarantine);
         end
 

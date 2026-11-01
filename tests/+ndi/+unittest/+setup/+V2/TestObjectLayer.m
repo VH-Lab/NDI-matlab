@@ -1187,7 +1187,7 @@ classdef TestObjectLayer < matlab.unittest.TestCase
                 d = db.get(ids{i});
                 stored = d.toStruct();
                 got = ndi.database.internal.applyReadNormalization(d);
-                if did2.convert.isAlreadyTarget(stored, 'V_eta')
+                if did2.convert.isAlreadyTarget(stored, 'did_v2')
                     nEta = nEta + 1;
                     stored = did2.convert.ensureClassBlocks(stored, []);
                 end

@@ -914,9 +914,9 @@ function result = runMigrate(testCase, bodies)
 srcSqlite = fullfile(testCase.SessionRoot, '.ndi', 'did-sqlite.sqlite');
 buildV1Sqlite(srcSqlite, bodies);
 result = ndi.migrate.local(testCase.SessionRoot, ...
-    'Validate', true, 'TargetVersion', 'V_eta', 'Backup', false);
+    'Validate', true, 'TargetVersion', 'did_v2', 'Backup', false);
 [~, dstName] = fileparts(result.destination);
-verifyEqual(testCase, dstName, 'V_eta');
+verifyEqual(testCase, dstName, 'did_v2');
 end
 
 function assertNoDeferral(testCase, result)

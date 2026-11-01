@@ -46,7 +46,7 @@ classdef TestSchemasLoader < matlab.unittest.TestCase
             testCase.verifyTrue(isfield(info, 'repo'));
             testCase.verifyTrue(isfield(info, 'ref'));
             testCase.verifyTrue(isfield(info, 'path'));
-            testCase.verifyEqual(info.path, 'schemas/V_eta/stable');
+            testCase.verifyEqual(info.path, 'schemas/did_v2/stable');
         end
 
         function testPinWriteRoundTrip(testCase)
@@ -65,7 +65,7 @@ classdef TestSchemasLoader < matlab.unittest.TestCase
         function testCacheDirReflectsPin(testCase)
             ndi.schemas.pin('v1.2.3');
             p = ndi.schemas.cacheDir();
-            testCase.verifySubstring(p, 'V_eta');
+            testCase.verifySubstring(p, 'did_v2');
             testCase.verifySubstring(p, 'v1.2.3');
             testCase.verifyTrue(endsWith(p, fullfile('v1.2.3', 'stable')));
         end
@@ -81,7 +81,34 @@ classdef TestSchemasLoader < matlab.unittest.TestCase
         function testCacheDirUnpinnedSegment(testCase)
             ndi.schemas.pin('');
             p = ndi.schemas.cacheDir();
-            testCase.verifySubstring(p, fullfile('V_eta', 'unpinned'));
+            testCase.verifySubstring(p, fullfile('did_v2', 'unpinned'));
+            % the cache under the set's earlier name ([schema set renamed did_v2])
+            testCase.verifySubstring(ndi.schemas.legacyCacheDir(), fullfile('V_eta', 'unpinned'));
+        end
+
+        function testTheCacheUnderTheEarlierNameIsStillRead(testCase)
+            % [schema set renamed did_v2]: the cache folder follows the new
+            % name, and a cache under the earlier name (V_eta) is read when
+            % the did_v2 one is not populated; did_v2 wins when both are.
+            home = tempname;
+            mkdir(home);
+            prevHome = char(java.lang.System.getProperty('user.home'));
+            java.lang.System.setProperty('user.home', home);
+            testCase.addTeardown(@() java.lang.System.setProperty('user.home', prevHome));
+            testCase.addTeardown(@() rmdir(home, 's'));
+            ndi.schemas.pin('v9.9.9');
+            oldP = ndi.schemas.legacyCacheDir();
+            mkdir(oldP);
+            fclose(fopen(fullfile(oldP, 'session.json'), 'w'));
+            [p, source] = ndi.schemas.activeSchemaPath();
+            testCase.verifyEqual(p, oldP);
+            testCase.verifyEqual(source, 'cache');
+            newP = ndi.schemas.cacheDir();
+            mkdir(newP);
+            fclose(fopen(fullfile(newP, 'session.json'), 'w'));
+            [p, source] = ndi.schemas.activeSchemaPath();
+            testCase.verifyEqual(p, newP);
+            testCase.verifyEqual(source, 'cache');
         end
 
         function testFallbackDirExists(testCase)

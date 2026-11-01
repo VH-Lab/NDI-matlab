@@ -38,7 +38,7 @@ classdef TestCreateSession < matlab.unittest.TestCase
                 'SessionId', sid);
             testCase.verifyEqual(session.id(), sid);
             testCase.verifyEqual(session.reference, 'day 22-02-01');
-            testCase.verifyTrue(isfile(fullfile(testCase.Dir, '.ndi', 'V_eta.sqlite')));
+            testCase.verifyTrue(isfile(fullfile(testCase.Dir, '.ndi', 'did_v2.sqlite')));
 
             reopened = ndi.session.dir(testCase.Dir);
             testCase.verifyEqual(reopened.id(), sid);
