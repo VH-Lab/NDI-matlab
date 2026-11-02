@@ -131,7 +131,13 @@ classdef vhlabvisspike2 < ndi.daq.reader.mfdaq.cedspike2
 
             for i=1:numel(mti)
                 if stimid(i)~=mod(mti{i}.stimid,256)
-                    error(['Stimulus number ' int2str(i) ' does not line up between Spike2 and stimulus computer record: Spike2 says ' int2str(stimid(i)) ' while stimulus computer says ' int2str(mti{i}.stimid) '.']);
+                    % the epoch directory's name is the vhlab epoch id (e.g. t00006)
+                    [~, epochName] = fileparts(pathname{1});
+                    error('ndi:setup:daq:reader:mfdaq:stimulus:vhlabvisspike2:StimulusMismatch', ...
+                        ['Epoch %s: stimulus number %d does not line up between Spike2 and stimulus computer record: ' ...
+                        'Spike2 says %d while stimulus computer says %d (%s). If the two records are offset, a ' ...
+                        'stimtimes2stimtimes_mapping.txt or mti2stimtimes_mapping.txt file in that directory can pair them.'], ...
+                        epochName, i, stimid(i), mti{i}.stimid, pathname{1});
                 end
                 stimid(i) = mti{i}.stimid; % needed because now we only know stims on Spike2 up to mod 256
                 % spike2time = mactime + timeshift
