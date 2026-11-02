@@ -129,6 +129,16 @@ jobs:
           [ "$s" = "$DID_SCHEMA_SHA" ] || { echo "::error::did-schema is at $s, resolved $DID_SCHEMA_SHA"; exit 1; }
           [ "$d" = "$DID_MATLAB_SHA" ] || { echo "::error::DID-matlab is at $d, resolved $DID_MATLAB_SHA"; exit 1; }
 
+      - name: The second pass's order is derived from its declarations and checked (python, <1s)
+        # [migration reliability practices] (c) (Jess Haley, 2026-10-26, did-schema
+        # docs/plans/did_v2_go_forward_class_audit.md): each step of NDI's second
+        # pass in ndi.migrate.local declares what it reads, adds, changes and
+        # removes (the DID-matlab passes it calls declare theirs in DID-matlab);
+        # DID-matlab tools/batch_pass_order.py derives the order and fails when a
+        # step reads what a later step writes, reads what an earlier step
+        # removed, or declares nothing.
+        run: python3 did-matlab/tools/batch_pass_order.py --ndi .
+
       - name: Assemble the #88 schema set
         run: |
           mkdir -p "${GITHUB_WORKSPACE}/eta-schemas"
