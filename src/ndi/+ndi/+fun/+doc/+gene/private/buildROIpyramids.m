@@ -35,8 +35,11 @@ function [pyrDocs, tileDocsCell, geneListDoc, sourceDoc, info] = ...
 %   SOURCEDOC     - the single shared sourceFile document, or [] if
 %                   OPTIONS.recordSource is false
 %   INFO          - struct with META, SOURCEDOC, NOTES (same shape as
-%                   fromGEF's INFO) and NKEEPPERROI (1xN count of records
-%                   that landed in each polygon)
+%                   fromGEF's INFO), NKEEPPERROI (1xN count of records
+%                   that landed in each polygon), and ROIDOCS (1xN cell
+%                   array of spatialGeneExpressionROI provenance
+%                   documents, written next to each pyramid so a future
+%                   V2 importer can lift the drawn geometry)
 %
 arguments
     session (1,1)
@@ -99,9 +102,11 @@ end
 % docs above, 0.65-1.00 is the N pyramids divided evenly.
 pyrDocs = cell(1, n);
 tileDocsCell = cell(1, n);
+roiDocs = cell(1, n);
 nKeepPerROI = zeros(1, n);
 pyramidSpan = 1 - 0.65;
 pyramidPerROI = pyramidSpan / n;
+sourceFileID = localDocID(sourceDoc);
 
 % Double once, for inpolygon only; the records go to makePyramid in the
 % type the reader gave them. Promoting them for the whole build would cost
@@ -146,7 +151,16 @@ for k = 1:n
     if nKeepPerROI(k) == 0
         warning('NDI:gene:buildROIpyramids:emptyROI', ...
             ['Polygon %d (subject %s) contained no records; no pyramid ' ...
-             'was built.'], k, subjectID);
+             'was built. The ROI document is still recorded.'], ...
+            k, subjectID);
+        % Record the geometry anyway. The pyramid dependency stays unset
+        % (the ROI schema allows that), so a query for ROIs sharing a
+        % source file still finds this one; a query for ROIs under a
+        % pyramid naturally does not.
+        roiDocs{k} = ndi.fun.doc.gene.makeROI(session, [], poly, ...
+            'sourceFileID', sourceFileID, ...
+            'label', options.label, ...
+            'nRecordsIn', 0);
         continue;
     end
 
@@ -165,8 +179,17 @@ for k = 1:n
         'assay', options.assay, 'chipSerial', chipSerial, ...
         'pipelineVersion', options.pipelineVersion, ...
         'origin', options.origin, ...
-        'sourceFileID', localDocID(sourceDoc), ...
+        'sourceFileID', sourceFileID, ...
         'progressFcn', sub);
+
+    % Provenance sidecar: keep the drawn polygon on record next to the
+    % pyramid it carved out. No current tool reads it; a future V2
+    % importer will look for it when migrating per-subject pyramids back
+    % into a chip-level pyramid with a group subject.
+    roiDocs{k} = ndi.fun.doc.gene.makeROI(session, pyrDocs{k}, poly, ...
+        'sourceFileID', sourceFileID, ...
+        'label', options.label, ...
+        'nRecordsIn', nKeepPerROI(k));
 end
 
 localTick(options.progressFcn, 1, 'Done.');
@@ -176,6 +199,7 @@ info.meta = meta;
 info.sourceDoc = sourceDoc;
 info.notes = ndi.fun.doc.gene.readNotes(meta, geneID);
 info.nKeepPerROI = nKeepPerROI;
+info.roiDocs = roiDocs;
 
 end % buildROIpyramids
 

@@ -50,7 +50,8 @@ function [pyrDocs, tileDocsCell, geneListDoc, sourceDoc, info] = ...
 %       (plus every option fromGEFbyROI accepts, passed through to
 %        makePyramid for each ROI)
 %
-%   Outputs: same as fromGEFbyROI.
+%   Outputs: same as fromGEFbyROI. INFO.roiDocs holds one
+%   spatialGeneExpressionROI provenance document per drawn polygon.
 %
 %   See also: ndi.fun.doc.gene.fromGEF,
 %             ndi.fun.doc.gene.fromGEFbyROI,

@@ -48,7 +48,10 @@ function [pyrDocs, tileDocsCell, geneListDoc, sourceDoc, info] = ...
 %   GENELISTDOC   - the single shared geneList document
 %   SOURCEDOC     - the single shared sourceFile document, or [] if
 %                   recordSource is false
-%   INFO          - struct with meta, sourceDoc, notes, nKeepPerROI
+%   INFO          - struct with meta, sourceDoc, notes, nKeepPerROI, and
+%                   roiDocs (a 1xN cell array of spatialGeneExpressionROI
+%                   provenance documents, one per polygon, so a future
+%                   V2 importer can lift the drawn geometry)
 %
 %   Example:
 %       polyA = [1000 500; 3000 500; 3000 2500; 1000 2500];
