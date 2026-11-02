@@ -213,7 +213,7 @@ epochClock = resolver.epochClockOfElement(stimulatorId, epochId);
 extraBodies = {};
 anchorInfo  = [];
 
-if did2.convert.isV2Set(targetVersion)   % 'did_v2', or its earlier name 'V_eta'
+if did2.convert.isV2Set(targetVersion)   % 'did_v2' ([V_eta not kept as an alias])
     [bathBody, timeRefBody, extraBodies, anchorInfo] = vetaBath(v1Body, ...
         stimulatorId, epochId, sessionId, datestamp, bathId, subjectId, epochClock);
     return;
