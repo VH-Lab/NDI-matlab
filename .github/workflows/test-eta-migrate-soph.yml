@@ -177,8 +177,8 @@ jobs:
 
       - name: Point requirements at the DID-matlab V_eta branch
         # requirements.txt pins a DID-matlab that predates +migrators_j /
-        # TargetVersion='V_eta'. Rewrite it to the V_eta branch so v1_to_v2
-        # accepts TargetVersion='V_eta'.
+        # TargetVersion. Rewrite it to the DID-matlab V2 line so v1_to_v2
+        # accepts TargetVersion='did_v2'.
         run: |
           set -eux
           python3 - <<'PY'

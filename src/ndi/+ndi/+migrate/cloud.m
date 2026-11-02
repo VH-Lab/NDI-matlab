@@ -5,8 +5,8 @@ function result = cloud(datasetId, options)
 %   dataset DATASETID to the V_eta wire format. The migration runs
 %   client-side: the documents are streamed down via the existing
 %   list/bulk-fetch endpoints, each is converted with
-%   did2.convert.v1_to_v2 at TargetVersion 'V_eta' (idempotent —
-%   documents already at V_eta are skipped cheaply), and the surviving
+%   did2.convert.v1_to_v2 at TargetVersion 'did_v2' (idempotent —
+%   documents already at did_v2 are skipped cheaply), and the surviving
 %   bodies are pushed back via the existing bulk-upload endpoint. Because
 %   each successfully written doc carries
 %   `document_class.schema_version: 'did_v2'`, an interrupted run can

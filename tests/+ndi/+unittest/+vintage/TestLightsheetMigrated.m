@@ -3,7 +3,7 @@ classdef TestLightsheetMigrated < matlab.unittest.TestCase
 %
 %   ndi.unittest.vintage.TestLightsheetMigratedSession reads hand-built
 %   documents, shaped from DID-matlab's migrators. This class removes the
-%   "shaped from": it runs did2.convert.v1_to_v2 (TargetVersion V_eta) and
+%   "shaped from": it runs did2.convert.v1_to_v2 (TargetVersion did_v2) and
 %   the did2.convert.foldGenericFiles batch pass over v1 documents shaped as
 %   NDI's makePyramid writes them -- a pyramid, its OME-Zarr fileReference,
 %   level 0 with two materialized chunks (chunk.bin_1, chunk.bin_2, recorded

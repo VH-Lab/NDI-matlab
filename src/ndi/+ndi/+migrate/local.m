@@ -96,11 +96,13 @@ function result = local(path, options)
 %                      []) - override the shared schema cache. Used
 %                      by tests; production callers should rely on
 %                      ndi.schemas.init having set the active cache.
-%     TargetVersion    (1,:) char, default 'V_eta') - migration
-%                      target wire format, and 'V_eta' is the only value
-%                      accepted; any other is an argument error. The
-%                      option is kept so a caller can
-%                      name the target it means. 'V_eta' (Brainstorm J)
+%     TargetVersion    (1,:) char, default 'did_v2') - migration
+%                      target wire format, and 'did_v2' is the only value
+%                      accepted; any other is an argument error,
+%                      including the set's earlier name 'V_eta'
+%                      (Decided by Jess Haley, 2026-11-02 [V_eta not kept
+%                      as an alias]). The option is kept so a caller can
+%                      name the target it means. 'did_v2' (Brainstorm J)
 %                      routes split-eligible classes through the
 %                      +migrators_j migrators (1 -> N) and runs a second
 %                      pass using the open body set: it resolves
@@ -187,18 +189,15 @@ function result = local(path, options)
         options.Verbose (1,1) logical = false
         options.Validate (1,1) logical = true
         options.SchemaCache = []
-        options.TargetVersion (1,:) char {mustBeMember(options.TargetVersion, {'V_eta', 'did_v2'})} = 'did_v2'
+        options.TargetVersion (1,:) char {mustBeMember(options.TargetVersion, {'did_v2'})} = 'did_v2'
         options.SoftwareDedupAfterPassOne (1,1) logical = true
     end
 
-    % [schema set renamed did_v2] (Jess Haley, 2026-10-25) and [V2 database
-    % file renamed] (Jess Haley, 2026-11-01): the set is 'did_v2'; its
-    % earlier name 'V_eta' is still accepted and is passed on as 'did_v2'.
-    % Every V2 step below is gated on 'did_v2', so the old name must be
-    % turned into the new one HERE, before any of them.
-    if did2.convert.isV2Set(options.TargetVersion)
-        options.TargetVersion = 'did_v2';
-    end
+    % [schema set renamed did_v2] (Jess Haley, 2026-10-25), [V2 database file
+    % renamed] (Jess Haley, 2026-11-01) and [V_eta not kept as an alias]
+    % (Jess Haley, 2026-11-02): the set is 'did_v2', the only name accepted
+    % above; the earlier name 'V_eta' is an argument error, so nothing here
+    % turns one name into the other.
 
     if ~isfolder(path)
         error('NDI:migrate:badPath', ...
