@@ -165,8 +165,9 @@ else
     % sets one edge, daqmetadatareader_id, so any field in the block and any
     % other edge is outside it. Decided by Jess Haley, 2026-10-27 [fields
     % outside the template are malformed]: such a document is carried under
-    % the ONE generic row, carry-100, for every class (this site cited
-    % carry-087 before; the second pass reads raw v1 since DID-matlab #351).
+    % the ONE generic row, carry-100, for every class (this site cited a
+    % class-specific row before, now retired; the second pass reads raw v1
+    % since DID-matlab #351).
     if isstruct(blk) && ~isempty(fieldnames(blk))
         fn = fieldnames(blk);
         for k = 1:numel(fn)
