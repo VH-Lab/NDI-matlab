@@ -115,7 +115,9 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
             if ~isa(dev,'ndi.daq.system')
                 error(['dev is not a ndi.daq.system']);
             end
-            daqsys = ndi_session_obj.daqsystem_load('name',dev.name);
+            % anchor the name: 'name' is a regular expression, and an unanchored
+            % one would also match other daqsystems whose names contain dev.name
+            daqsys = ndi_session_obj.daqsystem_load('name',['^' regexptranslate('escape',dev.name) '$']);
             if ~isempty(daqsys)
                 if ~iscell(daqsys)
                     daqsys = {daqsys};
@@ -733,7 +735,7 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
             end
 
             if trydaqsystem
-                obj_here = ndi_session_obj.daqsystem_load('name',obj_name);
+                obj_here = ndi_session_obj.daqsystem_load('name',['^' regexptranslate('escape',obj_name) '$']);
                 if ~isempty(obj_here)
                     if strcmp(class(obj_here),obj_classname)
                         % it is our match

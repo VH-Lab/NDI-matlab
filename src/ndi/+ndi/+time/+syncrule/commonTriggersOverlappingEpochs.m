@@ -128,14 +128,14 @@ classdef commonTriggersOverlappingEpochs < ndi.time.syncrule
                 daqsystem1 = daqsystem_a;
                 % We need daqsystem2. Get session from daqsystem1.
                 session = daqsystem1.session;
-                daqsystem2 = session.daqsystem_load('name', p.daqsystem2_name);
+                daqsystem2 = session.daqsystem_load('name', ['^' regexptranslate('escape', p.daqsystem2_name) '$']);
                 epochnode1 = epochnode_a;
                 epochnode2 = epochnode_b;
             else
                 % A is 2, B is 1
                 daqsystem2 = daqsystem_a;
                 session = daqsystem2.session;
-                daqsystem1 = session.daqsystem_load('name', p.daqsystem1_name);
+                daqsystem1 = session.daqsystem_load('name', ['^' regexptranslate('escape', p.daqsystem1_name) '$']);
                 epochnode1 = epochnode_b;
                 epochnode2 = epochnode_a;
             end
