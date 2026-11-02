@@ -94,6 +94,19 @@ classdef TestIngestedStimulusBodies < matlab.unittest.TestCase
             testCase.verifyEmpty(bodies);
             testCase.verifyEqual(r.left_unplaced, 1);
             testCase.verifySubstring(r.left_reasons{1}.reason, 'element_id');
+            % outside NDI's template: the one generic row, carry-100
+            % ([fields outside the template are malformed], Jess Haley,
+            % 2026-10-27), for an edge and for a field in the block alike
+            testCase.verifySubstring(r.left_reasons{1}.reason, '[carry-100]');
+            d = ingestedDoc();
+            d.daqmetadatareader_epochdata_ingested = struct('note', 'x');
+            [bodies, ~, r] = ndi.migrate.internal.ingestedStimulusBodies( ...
+                {d}, presentation('pres_74', 't00074'), {});
+            testCase.verifyEmpty(bodies);
+            testCase.verifyEqual(r.left_unplaced, 1);
+            testCase.verifySubstring(r.left_reasons{1}.reason, '[carry-100]');
+            testCase.verifySubstring(r.left_reasons{1}.reason, ...
+                'daqmetadatareader_epochdata_ingested.note');
         end
 
         function testOtherDocumentsAreNotTouched(testCase)

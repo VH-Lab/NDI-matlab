@@ -255,6 +255,15 @@ classdef TestControlCovariate < matlab.unittest.TestCase
             testCase.verifyEmpty(sw, 'a carried record mints nothing');
             testCase.verifySubstring(r.control_carried{1}.reason, 'app.build');
             testCase.verifySubstring(r.control_carried{1}.reason, '[carry-100]');
+            % the spelling universalRenames wrote (deleted, DID-matlab #351) is
+            % outside app.json too: the record is read as raw v1
+            ctl = controlDoc('cs_1', [2 2]);
+            ctl.app = struct('app_name', 'ndi_app_tuning_response', 'version', 'abc');
+            [~, ~, r, sw, calcs] = emit(ctl, [1 2]);
+            testCase.verifyEmpty(calcs);
+            testCase.verifyEmpty(sw, 'a carried record mints nothing');
+            testCase.verifySubstring(r.control_carried{1}.reason, 'app.app_name');
+            testCase.verifySubstring(r.control_carried{1}.reason, '[carry-100]');
             % an edge outside the template (the writer sets only
             % stimulus_presentation_id): carry-100 too
             ctl = controlDoc('cs_1', [2 2]);

@@ -668,10 +668,11 @@ end
 function [s, nFixed] = retargetDeps(s, survivorOf)
 %RETARGETDEPS Point every edge at the survivor of whatever it referenced.
 %   Writes back through the SAME key it read (`value` or `document_id`), because
-%   both spellings are live on this path -- a body a migrator built carries
-%   `value`, a body that came through did2.convert.universalRenames carries
+%   both spellings are live on this path -- a raw v1 body (and a body some
+%   migrators assemble by hand) carries `value`, a body did2.build wrote carries
 %   `document_id` -- and rewriting one while the validator reads the other would
-%   leave the edge silently unchanged.
+%   leave the edge silently unchanged. (DID-matlab #351 deleted
+%   did2.convert.universalRenames, which also wrote `document_id`.)
 nFixed = 0;
 if ~isfield(s, 'depends_on') || ~isstruct(s.depends_on) || isempty(s.depends_on)
     return;

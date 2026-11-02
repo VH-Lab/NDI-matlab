@@ -368,16 +368,35 @@ classdef TestStimulusPresentationItem < matlab.unittest.TestCase
             end
         end
 
-        function testTheRenamedAppSpellingIsReadToo(testCase)
-            % did2.convert.universalRenames writes app_name / app_version
+        function testTheRenamedAppSpellingIsOutsideTheTemplate(testCase)
+            % INVERTED 2026-11-02 from testTheRenamedAppSpellingIsReadToo.
+            % DID-matlab #351 deleted did2.convert.universalRenames, so a
+            % presentation reaches the second pass as raw v1 and its `app`
+            % block is NDI's app.json spelling (name, version, url, os,
+            % os_version, interpreter, interpreter_version). `app_name` /
+            % `app_version` are fields outside that template: the
+            % presentation is carried under carry-100 ([rename clashes are
+            % malformed], [fields outside the template are malformed], Jess
+            % Haley, 2026-11-01 / 2026-10-27). Run through the real lossless
+            % check (LeaveUnplaced defaults true).
             pres = presentationBody('pres_app2', 1, { gratingStim(0, 0.04, 0.5) });
             pres.app = struct('app_name', 'ndi_app_stimulus_decoder', ...
                 'app_version', 'abc', 'url', '');
-            [m, ~, report, sw] = emit(testCase, pres);
+            bodies = { pres, ...
+                responseScalar('resp_1', pres.base.id, 'elem_9'), ...
+                docBody('element', 'elem_9', {'subject_id', 'animal_1'}) };
+            r = ndi.migrate.internal.bodyResolver(bodies);
+            [m, ~, report] = ndi.migrate.internal.stimulusPresentationToItem(pres, r);
+            testCase.verifyEmpty(m);
+            testCase.verifyTrue(startsWith(report.reason, '[carry-100]'), report.reason);
+            testCase.verifyTrue(any(strcmp(report.unplaced_fields, 'app.app_name')));
+            testCase.verifyTrue(any(strcmp(report.unplaced_fields, 'app.app_version')));
+            % the same block in NDI's spelling is converted, its software minted
+            pres.app = struct('name', 'ndi_app_stimulus_decoder', ...
+                'version', 'abc', 'url', '');
+            [m, ~, ~, sw] = emit(testCase, pres);
             testCase.verifyEqual(sw{1}.entity.local_identifier, 'ndi_app_stimulus_decoder@abc');
             testCase.verifyEqual(depValue(m, 'software_id'), sw{1}.base.id);
-            testCase.verifyEqual(report.run_environment_written, 0);
-            testCase.verifyEmpty(depValues(m, 'operating_system_id'));
         end
 
         function testNoAppGivesNoSoftware(testCase)
