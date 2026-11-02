@@ -1630,8 +1630,8 @@ classdef entity
             end
             if any(strcmp(r.kind, {'relation', 'undirected_relation'})) && ...
                     (isempty(r.side) || strcmp(r.side, 'with'))
-                % the ends under either name: `relatum_id`, or `entity_id`
-                % before [undirected ends are relata] (ndi.v2.relataEdges)
+                % the ends' edge, `relatum_id` ([undirected ends are
+                % relata]; ndi.v2.relataEdges)
                 docs = ndi.entity.relationDocs(container, 'undirected_relation', r.name, ...
                     ndi.v2.relataEdges(), T);
                 docs = ndi.entity.timed(container, docs, r, spec);
