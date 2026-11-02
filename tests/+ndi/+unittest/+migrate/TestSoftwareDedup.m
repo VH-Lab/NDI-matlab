@@ -183,10 +183,9 @@ classdef TestSoftwareDedup < matlab.unittest.TestCase
         end
 
         function testRetargetsAnEdgeSpelledDocumentId(testCase)
-            % Both spellings are live on this path: a body a migrator built
-            % carries `value`, a body that came through
-            % did2.convert.universalRenames carries `document_id`. Rewriting the
-            % wrong one leaves the edge silently unchanged.
+            % Both spellings are live on this path: a raw v1 body carries
+            % `value`, a body did2.build wrote carries `document_id`.
+            % Rewriting the wrong one leaves the edge silently unchanged.
             leaf = leafBody('leaf_a', 'sess_1', 'sw_b');
             leaf.depends_on = struct('name', 'software_id', 'document_id', 'sw_b');
             structs = { ...
@@ -532,8 +531,8 @@ end
 end
 
 function v = depValue(s, name)
-%DEPVALUE Read an edge accepting BOTH live spellings (`value` from a body a
-%   migrator built, `document_id` after did2.convert.universalRenames).
+%DEPVALUE Read an edge accepting BOTH live spellings (`value` on a raw v1
+%   body, `document_id` on one did2.build wrote).
 v = '';
 if ~isstruct(s) || ~isfield(s, 'depends_on') || ~isstruct(s.depends_on)
     return;

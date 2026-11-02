@@ -116,17 +116,16 @@ function [kept, minted, report] = subjectStrainAssembly(v1Bodies, migratedStruct
 %   ---------------------------------------------------------------------
 %   THE `fields` KEYS STAY camelCase
 %   ---------------------------------------------------------------------
-%   did2.convert.universalRenames snake-cases only ONE level --
-%   `snakeCaseBlockFields` walks `fieldnames(block)` for each top-level
-%   property block and stops -- and `fields` is a nested struct inside the
-%   `openminds` block, so `geneticStrainType`, `backgroundStrain`,
-%   `ontologyIdentifier` and `preferredOntologyIdentifier` arrive unchanged.
-%   Every read below still takes a snake_case fallback, per the standing
-%   migrator lesson that any NESTED sub-field a migrator reads needs both.
-%   These bodies are also read BEFORE universalRenames in the normal path
-%   (ndi.migrate.local hands over the raw reader output), so the fallback is
-%   what makes the idempotent re-run path -- readBodiesFromTarget, which hands
-%   back already-migrated bodies -- behave the same way.
+%   These bodies are the raw v1 reader output (ndi.migrate.local hands it
+%   over), and nothing renames them: DID-matlab #351 deleted
+%   did2.convert.universalRenames ([migrators read raw v1]), which in any case
+%   snake-cased only a block's immediate fields, never the nested `fields`.
+%   So `geneticStrainType`, `backgroundStrain`, `ontologyIdentifier` and
+%   `preferredOntologyIdentifier` are read in NDI's camelCase. Every read
+%   below still takes a snake_case fallback, per the standing migrator lesson
+%   that any NESTED sub-field a migrator reads needs both; it is what keeps the
+%   idempotent re-run path -- readBodiesFromTarget, which hands back
+%   already-migrated bodies -- behaving the same way.
 %
 %   ---------------------------------------------------------------------
 %   IDS ARE NOT PRESERVED HERE, AND THAT IS FORCED, NOT CHOSEN
@@ -1283,7 +1282,7 @@ end
 end
 
 function v = dependencyValueOf(d)
-% v1 writes {name,value} (or {name,id}); universalRenames rewrites both to
+% v1 writes {name,value} (or {name,id}); a body did2.build wrote carries
 % {name,document_id}. Accept whichever is populated.
 v = '';
 if ~isstruct(d)

@@ -19,10 +19,10 @@ classdef TestStrainAssembly < matlab.unittest.TestCase
 %   `ndi://<childId>` string (openMINDSobj2struct.m), which is why this is a
 %   second pass at all.
 %
-%   `fields` keys stay camelCase after migration: universalRenames snake-cases
-%   only one level, and `fields` is nested inside the `openminds` block.
-%   testSnakeCaseFieldKeysAlsoResolve pins the fallback anyway, per the
-%   standing migrator lesson.
+%   `fields` keys are camelCase: pass 1 hands the document on as raw v1
+%   (DID-matlab #351 deleted universalRenames, which never renamed the nested
+%   `fields` anyway). testSnakeCaseFieldKeysAlsoResolve pins the fallback
+%   anyway, per the standing migrator lesson.
 %
 %   Run with:  runtests('ndi.unittest.migrate.TestStrainAssembly')
 %

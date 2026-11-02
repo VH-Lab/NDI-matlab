@@ -1,21 +1,16 @@
 function tf = isOntologyLabelClass(className)
 %ISONTOLOGYLABELCLASS True when CLASSNAME names a v1 ontology-label document.
 %
-%   TF = ndi.migrate.internal.isOntologyLabelClass(CLASSNAME) is true for both
-%   spellings the second pass can receive from pass 1:
+%   TF = ndi.migrate.internal.isOntologyLabelClass(CLASSNAME) is true for
+%   'ontologyLabel', the v1 class name (NDI template
+%   database_documents/data/ontologyLabel.json), which is how pass 1 hands a
+%   label to the second pass. DID-matlab #351 deleted
+%   did2.convert.universalRenames, so the renamed spelling 'ontology_label' no
+%   longer reaches the second pass and is not a label ([migrators read raw
+%   v1]; [ndi_document read as base], [rename clashes are malformed], Jess
+%   Haley, did-schema did_v2_go_forward_class_audit.md).
 %
-%     'ontologyLabel'    the v1 class name (NDI template
-%                        database_documents/data/ontologyLabel.json), which
-%                        reaches the second pass when DID-matlab carries the
-%                        document as raw v1;
-%     'ontology_label'   the renamed spelling DID-matlab's universalRenames
-%                        gives it when it passes the document through.
-%
-%   This is the ONE place the second pass decides "is this a label document",
-%   so a change in which spelling DID-matlab hands over is a change here only.
-%   did-schema CLAUDE.md, "Changes the siblings must follow land in the
-%   siblings first": NDI accepts both before DID-matlab switches the label to
-%   raw v1.
+%   This is the ONE place the second pass decides "is this a label document".
 %
 %   CLASSNAME may be a char vector or a string scalar; anything else is false.
 %
@@ -24,5 +19,5 @@ function tf = isOntologyLabelClass(className)
 if isstring(className) && isscalar(className)
     className = char(className);
 end
-tf = ischar(className) && any(strcmp(className, {'ontology_label', 'ontologyLabel'}));
+tf = ischar(className) && strcmp(className, 'ontologyLabel');
 end

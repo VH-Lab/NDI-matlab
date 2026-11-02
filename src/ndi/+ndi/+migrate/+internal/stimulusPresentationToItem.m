@@ -317,6 +317,12 @@ end
 % method to hold them.
 [outside, unplaced, generatorKeys] = unplacedPresentationFields(earlyBlock, ...
     earlyStimuli, stimulusKinds, ~isempty(sequence));
+% the `app` block the writer adds (ndi.app newdocument: app.json's seven
+% fields): a field outside them is outside the template too, carry-100
+% ([fields outside the template are malformed]; the renamed app_name /
+% app_version are such fields since DID-matlab #351 deleted universalRenames,
+% [rename clashes are malformed])
+outside = [outside, appFieldsOutsideTemplate(v1Body)];
 report.unplaced_fields = [outside, unplaced];
 if ~isempty(report.unplaced_fields) && options.LeaveUnplaced
     if ~isempty(outside)
@@ -1005,9 +1011,12 @@ function why = controlUnplaced(rec, nTrials, positionsAreTrials, standalone)
 %   control_stimulus_id_method} plus ndi.app's newdocument `app` block {name,
 %   version, url, os, os_version, interpreter, interpreter_version}, and the
 %   `stimulus_presentation_id` edge). So a block field beside the two, an
-%   `app` field outside those seven (or the app_name / app_version / app_url
-%   spellings did2.convert.universalRenames writes), and an edge other than
-%   stimulus_presentation_id / session_id are carry-100. The two app fields
+%   `app` field outside those seven, and an edge other than
+%   stimulus_presentation_id / session_id are carry-100. The record is read
+%   as raw v1: DID-matlab #351 deleted did2.convert.universalRenames, so the
+%   app_name / app_version / app_url spellings it wrote are fields outside the
+%   app template like any other ([rename clashes are malformed], Jess Haley,
+%   2026-11-01). The two app fields
 %   beyond the five, os_version and interpreter_version, already go to the
 %   software entities (the OS and interpreter, each with its version:
 %   controlCalculation). Every template field now has a home, so no site
@@ -1078,8 +1087,7 @@ if isfield(rec, 'app') && ~isempty(rec.app)
         why = '[carry-091] app is not a block';
         return;
     end
-    known = {'name', 'app_name', 'version', 'app_version', 'url', 'app_url', ...
-        'os', 'os_version', 'interpreter', 'interpreter_version'};
+    known = appTemplateFields();
     fn = fieldnames(rec.app);
     for k = 1:numel(fn)
         v = rec.app.(fn{k});
@@ -1494,6 +1502,28 @@ r = struct( ...
 end
 
 % ===================== v1 readers =========================================
+
+function names = appTemplateFields()
+%APPTEMPLATEFIELDS The `app` block's fields: NDI's app.json at the locked
+%   NDI-matlab main, which ndi.app's newdocument writes.
+names = {'name', 'version', 'url', 'os', 'os_version', 'interpreter', ...
+    'interpreter_version'};
+end
+
+function outside = appFieldsOutsideTemplate(body)
+%APPFIELDSOUTSIDETEMPLATE The non-empty `app` fields of BODY outside NDI's
+%   app template, as 'app.<field>' (a row cell; carry-100).
+outside = {};
+if ~isfield(body, 'app') || ~isstruct(body.app) || ~isscalar(body.app)
+    return;
+end
+fn = setdiff(fieldnames(body.app), appTemplateFields(), 'stable');
+for k = 1:numel(fn)
+    if ~isempty(body.app.(fn{k}))
+        outside{end+1} = ['app.' fn{k}]; %#ok<AGROW>
+    end
+end
+end
 
 function [outside, unplaced, generator] = unplacedPresentationFields(block, stimuli, kinds, hartleyRoute)
 %UNPLACEDPRESENTATIONFIELDS The v1 fields of one presentation the

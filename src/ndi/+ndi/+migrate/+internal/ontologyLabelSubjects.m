@@ -1,18 +1,23 @@
 function [plan, report] = ontologyLabelSubjects(migratedStructs)
 %ONTOLOGYLABELSUBJECTS V_eta second pass: give each passed-through
-%   `ontology_label` the SUBJECT it is about, by following its one edge through
+%   `ontologyLabel` the SUBJECT it is about, by following its one edge through
 %   the migrated-id graph.
 %
 %   [PLAN, REPORT] = ndi.migrate.internal.ontologyLabelSubjects(MIGRATEDSTRUCTS)
-%   inspects every `ontology_label` document that pass 1 left unconverted and,
+%   inspects every `ontologyLabel` document that pass 1 left unconverted and,
 %   for each one whose referent resolves to a statement that HAS a subject,
 %   returns a ready V_eta term observation body to replace it with, plus the
 %   `derived_from` relation that keeps what it labelled. REPORT states its
 %   denominators first and splits the unresolved into named reasons.
 %
-%   A label document is found under EITHER class name, the renamed
-%   `ontology_label` or the v1 `ontologyLabel` (a label DID-matlab carries as
-%   raw v1), and both are handled identically; the test is
+%   A label document is found under its v1 class name, `ontologyLabel`, and
+%   read in NDI's own spelling (block `ontologyLabel`, field `ontologyNode`,
+%   edge `document_id` by its v1 `value`): pass 1 hands it on unrenamed, since
+%   DID-matlab #351 deleted did2.convert.universalRenames ([migrators read raw
+%   v1]; [ndi_document read as base], [rename clashes are malformed], Jess
+%   Haley, 2026-10-31 / 2026-11-01). The renamed spelling (`ontology_label`,
+%   `ontology_node`) is not read: a label block field by that name is a field
+%   outside the template (carry-100). The class test is
 %   ndi.migrate.internal.isOntologyLabelClass, the one place that decides.
 %
 %   THE SHAPE IS did-schema #88's (V_eta_entity_composition_plan.md sec. 1): the
@@ -149,7 +154,7 @@ function [plan, report] = ontologyLabelSubjects(migratedStructs)
 %     ran                        false only if it returned before reading
 %     documents_inspected        migrated documents handed in
 %     documents_unreadable       could not be read -- COUNTED, never dropped
-%     labels_passthrough         `ontology_label` documents still unconverted
+%     labels_passthrough         `ontologyLabel` documents still unconverted
 %     statements_indexed         migrated documents carrying a subject_id
 %     resolved                   labels with a plan entry
 %     blocked_target_has_no_subject          THE E. COLI HALF
@@ -228,7 +233,7 @@ for k = 1:numel(migratedStructs)
     if ~isempty(subjectId)
         report.statements_indexed = report.statements_indexed + 1;
     end
-    if ndi.migrate.internal.isOntologyLabelClass(cn)   % either spelling
+    if ndi.migrate.internal.isOntologyLabelClass(cn)   % the v1 class name
         labelIdx(end+1) = k; %#ok<AGROW>
     end
 end
@@ -304,7 +309,7 @@ for i = 1:numel(labelIdx)
     end
     % [generic stage is lossless] and [partly placed is carried as v1] (Jess
     % Haley, 2026-10-25, did-schema V_eta_go_forward_class_audit.md): the
-    % observation writes the label's `ontology_node` and its `document_id`
+    % observation writes the label's `ontologyNode` and its `document_id`
     % edge (as `derived_from`) and nothing else. A label stating any other
     % field or edge is left as it is (carried as v1 at the end of
     % ndi.migrate.local), counted here.
@@ -314,8 +319,8 @@ for i = 1:numel(labelIdx)
     % field outside NDI's `ontologyLabel` template, or an edge other than
     % `document_id`, is carried under carry-100 (malformed); carry-095 keeps
     % only template fields with no home". The template at the locked NDI-matlab
-    % main (ontologyLabel.json + base.json) has ONE label field, `ontologyNode`
-    % (`ontology_node` once renamed), and ONE edge, `document_id`, and the
+    % main (ontologyLabel.json + base.json) has ONE label field, `ontologyNode`,
+    % and ONE edge, `document_id`, and the
     % observation writes both. So everything labelHasUnplaced finds -- another
     % label field, or another edge (the `session_id` edge the migration adds
     % is not one) -- is outside the template, and no template field of a
@@ -366,16 +371,15 @@ end
 % ===================== readers =========================================
 
 function tf = labelHasUnplaced(b)
-%LABELHASUNPLACED A non-empty label field other than ontology_node, or a
-%   non-empty edge other than document_id ([generic stage is lossless]).
+%LABELHASUNPLACED A non-empty `ontologyLabel` field other than ontologyNode, or
+%   a non-empty edge other than document_id ([generic stage is lossless];
+%   outside NDI's template: carry-100). The renamed spelling `ontology_node`
+%   is such a field: nothing renames a label any more.
 tf = false;
-for blk = {'ontology_label', 'ontologyLabel'}
-    if ~isfield(b, blk{1}) || ~isstruct(b.(blk{1})) || ~isscalar(b.(blk{1}))
-        continue;
-    end
-    fn = setdiff(fieldnames(b.(blk{1})), {'ontology_node', 'ontologyNode'});
+if isfield(b, 'ontologyLabel') && isstruct(b.ontologyLabel) && isscalar(b.ontologyLabel)
+    fn = setdiff(fieldnames(b.ontologyLabel), {'ontologyNode'});
     for k = 1:numel(fn)
-        if ~isempty(b.(blk{1}).(fn{k}))
+        if ~isempty(b.ontologyLabel.(fn{k}))
             tf = true;
             return;
         end
@@ -397,19 +401,15 @@ end
 
 
 function v = labelNode(b)
-%LABELNODE `ontologyLabel.ontologyNode`, snake-cased by universalRenames.
-%   Read snake-first with the camelCase fallback, per the standing migrator
-%   lesson. The three DID-side inventions (`ontology_name`, `label_id`, `label`)
-%   are NOT read: +migrators_j/ontology_label.m ERRORS on a body carrying them,
-%   because their presence means a fixture was built against the V_alpha
-%   snapshot rather than the real document.
+%LABELNODE `ontologyLabel.ontologyNode`, NDI's own spelling (pass 1 renames
+%   nothing since DID-matlab #351). The three DID-side inventions
+%   (`ontology_name`, `label_id`, `label`) are NOT read:
+%   +migrators_j/ontology_label.m ERRORS on a body carrying them, because their
+%   presence means a fixture was built against the V_alpha snapshot rather than
+%   the real document.
 v = '';
-for blk = {'ontology_label', 'ontologyLabel'}
-    if ~isfield(b, blk{1}) || ~isstruct(b.(blk{1})) || ~isscalar(b.(blk{1}))
-        continue;
-    end
-    v = charField(b.(blk{1}), {'ontology_node', 'ontologyNode'});
-    if ~isempty(v); return; end
+if isfield(b, 'ontologyLabel') && isstruct(b.ontologyLabel) && isscalar(b.ontologyLabel)
+    v = charField(b.ontologyLabel, {'ontologyNode'});
 end
 end
 

@@ -160,12 +160,20 @@ else
     if isfield(s, 'daqmetadatareader_epochdata_ingested')
         blk = s.daqmetadatareader_epochdata_ingested;
     end
+    % OUTSIDE THE TEMPLATE: carry-100. NDI's template (and its writer,
+    % +daq/metadatareader.m ingest_epochfiles) leaves this block empty and
+    % sets one edge, daqmetadatareader_id, so any field in the block and any
+    % other edge is outside it. Decided by Jess Haley, 2026-10-27 [fields
+    % outside the template are malformed]: such a document is carried under
+    % the ONE generic row, carry-100, for every class (this site cited
+    % carry-087 before; the second pass reads raw v1 since DID-matlab #351).
     if isstruct(blk) && ~isempty(fieldnames(blk))
         fn = fieldnames(blk);
         for k = 1:numel(fn)
             if ~isempty(blk.(fn{k}))
-                % carry-register: carry-087
-                why = ['[carry-087] a field the body does not write: ' fn{k}];
+                % carry-register: carry-100
+                why = ['[carry-100] a field outside the template: ' ...
+                    'daqmetadatareader_epochdata_ingested.' fn{k}];
                 return;
             end
         end
@@ -181,8 +189,8 @@ else
         if any(strcmp(char(d.name), {'daqmetadatareader_id', 'session_id'})); continue; end
         v = ndi.migrate.internal.etaShape.entryValue(d);
         if ~isempty(v)
-            % carry-register: carry-087
-            why = ['[carry-087] an edge the body does not write: ' char(d.name)];
+            % carry-register: carry-100
+            why = ['[carry-100] an edge outside the template: ' char(d.name)];
             return;
         end
     end

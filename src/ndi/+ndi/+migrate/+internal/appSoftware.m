@@ -31,9 +31,11 @@ function [docs, swId, env, key] = appSoftware(v1Body)
 %
 %   DOCS is {} and SWID '' when the block names no program (no identity, no
 %   entity) or the document has no session (base.session_id is required).
-%   Both spellings of the name and version are read: NDI's app.json writes
-%   `name` / `version`, did2.convert.universalRenames writes `app_name` /
-%   `app_version`.
+%   The block is read as raw v1, NDI's app.json spelling: `name`, `version`,
+%   `url`. DID-matlab #351 deleted did2.convert.universalRenames, so the
+%   `app_name` / `app_version` it wrote are no longer read; a caller carries a
+%   document holding them under carry-100 as fields outside the app template
+%   ([rename clashes are malformed], Jess Haley, 2026-11-01).
 
 % DOCS, SWID and KEY are not pre-set: softwareEntity assigns all three on
 % every path, at the end (Code Analyzer flagged the pre-sets as unused).
@@ -49,9 +51,9 @@ for f = {'os', 'os_version', 'interpreter', 'interpreter_version'}
         env.(f{1}) = v;
     end
 end
-name    = charField(app, {'app_name', 'name'});
-version = charField(app, {'app_version', 'version'});
-url     = charField(app, {'url', 'app_url'});
+name    = charField(app, {'name'});
+version = charField(app, {'version'});
+url     = charField(app, {'url'});
 sessionId = char(ndi.v2.sessionIdOf(v1Body));
 datestamp = '';
 if isfield(v1Body, 'base') && isstruct(v1Body.base) && isfield(v1Body.base, 'datestamp')

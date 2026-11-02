@@ -686,7 +686,7 @@ function result = local(path, options)
         %
         %       ORDER: after (7c) and before (6), the same relative order the
         %       three DID call sites use. It commutes with everything above:
-        %       it reads only `generic_file` and `ontology_label` documents,
+        %       it reads only `generic_file` and `ontologyLabel` documents,
         %       which no other sub-pass in this block writes, and it removes
         %       nothing any of them points at (the statement keeps the source
         %       id). (6) still runs LAST; this pass mints no `software`.

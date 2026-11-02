@@ -58,13 +58,13 @@ function [kept, minted, report] = strainAssembly(structs)
 %   So the pedigree and the vocabulary values are reachable only across
 %   documents, which a single-document migrator cannot follow.
 %
-%   THE `fields` KEYS STAY camelCase. did2.convert.universalRenames snake-cases
-%   only ONE level -- `snakeCaseBlockFields` walks `fieldnames(block)` for each
-%   top-level property block and stops (universalRenames.m:351-367). `fields`
-%   is a nested struct inside the `openminds` block, so `geneticStrainType`,
-%   `backgroundStrain`, `ontologyIdentifier`, `preferredOntologyIdentifier`
-%   arrive unchanged. Every read below still takes a snake_case fallback, per
-%   the standing migrator lesson.
+%   THE `fields` KEYS ARE camelCase. Pass 1 hands an `openminds` document on
+%   as raw v1 (DID-matlab #351 deleted did2.convert.universalRenames, which in
+%   any case snake-cased only a block's immediate fields, never the nested
+%   `fields`), so `geneticStrainType`, `backgroundStrain`,
+%   `ontologyIdentifier`, `preferredOntologyIdentifier` arrive in NDI's
+%   spelling. Every read below still takes a snake_case fallback, per the
+%   standing migrator lesson.
 %
 %   ---------------------------------------------------------------------
 %   THE SOURCE, FROM THE WRITER
