@@ -338,6 +338,17 @@ function result = local(path, options)
     % document set is the same with and without this step.
     softwareDedupEarlyReport = [];
     if strcmp(options.TargetVersion, 'did_v2') && options.SoftwareDedupAfterPassOne
+        %   WHAT THIS STEP READS AND WRITES: [migration reliability practices] (c),
+        %   Jess Haley, 2026-10-26; DID-matlab tools/batch_pass_order.py derives the
+        %   second pass's order from these and checks it.
+        %   The duplicate software entities pass 1 minted are merged; the edges
+        %   that named a merged one are retargeted.
+        %   BATCH-PASS-READS: entity(software minted by pass 1)
+        %   BATCH-PASS-ADDS: NONE -- it merges; nothing is minted
+        %   BATCH-PASS-CHANGES: entity(software minted by pass 1)
+        %   BATCH-PASS-REMOVES: NONE -- a merged duplicate's edges are
+        %       retargeted (CHANGES); the end-of-run merge takes the software
+        %       later steps mint
         try
             [convertResult, softwareDedupEarlyReport] = ...
                 resolveSoftwareDedup(convertResult);
@@ -771,6 +782,19 @@ function result = local(path, options)
         % Cleared after its last reader, so the index is not carried through
         % the rest of the second pass.
         resolver = [];
+        %   WHAT THIS STEP READS AND WRITES: [migration reliability practices] (c),
+        %   Jess Haley, 2026-10-26; DID-matlab tools/batch_pass_order.py derives the
+        %   second pass's order from these and checks it.
+        %   Reads the deferred stimulus_bath entries of the quarantine (and the
+        %   v1 bodies, through the resolver).
+        %   BATCH-PASS-READS: stimulus_bath
+        %   BATCH-PASS-ADDS: manipulation(bath), formulation, chemical,
+        %       relative_time_reference(bath anchor),
+        %       epoch_bounded_reference(bath anchor), ndi.bath_anchors
+        %   BATCH-PASS-CHANGES: NONE -- the assembled baths are appended; their
+        %       deferrals leave the quarantine, not the batch
+        %   BATCH-PASS-REMOVES: NONE -- it folds no document that is in the
+        %       batch
         try
             resolver = ndi.migrate.internal.bodyResolver(bodies);
             [convertResult, bathAnchors] = resolveDeferred(convertResult, resolver, options);
@@ -783,6 +807,14 @@ function result = local(path, options)
         tStep = migrateStepMark('resolveDeferred', tStart, tStep, convertResult);
         % [table rows carried as v1] (Jess Haley, 2026-10-30): every row is
         % carried by pass 1; this step counts them and changes nothing.
+        %   WHAT THIS STEP READS AND WRITES: [migration reliability practices] (c),
+        %   Jess Haley, 2026-10-26; DID-matlab tools/batch_pass_order.py derives the
+        %   second pass's order from these and checks it.
+        %   BATCH-PASS-READS: NONE -- it counts the ontology table rows the
+        %       migrated set carries (a report), and decides nothing from them
+        %   BATCH-PASS-ADDS: NONE -- a count
+        %   BATCH-PASS-CHANGES: NONE -- a count
+        %   BATCH-PASS-REMOVES: NONE -- a count
         try
             ontologyRowReport = countOntologyRows(convertResult, bodies);
         catch ME
@@ -792,6 +824,23 @@ function result = local(path, options)
                  'rows are not counted (nothing was changed).'], ME.message);
         end
         tStep = migrateStepMark('countOntologyRows', tStart, tStep, convertResult);
+        %   WHAT THIS STEP READS AND WRITES: [migration reliability practices] (c),
+        %   Jess Haley, 2026-10-26; DID-matlab tools/batch_pass_order.py derives the
+        %   second pass's order from these and checks it.
+        %   A label is resolved only when the document it labels states a
+        %   subject (entity_id / subject_id): a v1 generic_file declares only a
+        %   document_id edge (NDI origin/main generic_file.json), so a
+        %   generic_file's label is never taken here and
+        %   did2.convert.foldGenericFiles still reads it.
+        %   BATCH-PASS-READS: ontology_label(of a statement about a subject),
+        %       ontologyLabel(of a statement about a subject)
+        %   BATCH-PASS-ADDS: observation(ontology label),
+        %       directed_relation(ontology label)
+        %   BATCH-PASS-CHANGES: ontology_label(of a statement about a subject),
+        %       ontologyLabel(of a statement about a subject)
+        %   BATCH-PASS-REMOVES: NONE -- only the labels it resolves are
+        %       replaced (CHANGES); every other label is left for a later
+        %       reader
         try
             [convertResult, ontologyLabelReport] = ...
                 resolveOntologyLabelSubjects(convertResult, options);
@@ -802,6 +851,21 @@ function result = local(path, options)
                  '(%s); leaving the labels as passthrough.'], ME.message);
         end
         tStep = migrateStepMark('resolveOntologyLabelSubjects', tStart, tStep, convertResult);
+        %   WHAT THIS STEP READS AND WRITES: [migration reliability practices] (c),
+        %   Jess Haley, 2026-10-26; DID-matlab tools/batch_pass_order.py derives the
+        %   second pass's order from these and checks it.
+        %   The control records are read from the v1 bodies, not the batch.
+        %   BATCH-PASS-READS: stimulus_presentation,
+        %       daqmetadatareader_epochdata_ingested(stimulus presentation
+        %       data), entity(subject)
+        %   BATCH-PASS-ADDS: method(stimulus), manipulation(stimulus
+        %       presentation), entity(group), directed_relation(member_of),
+        %       calculation(control pairing), opaque_body(stimulus presentation
+        %       data), relative_time_reference(presentation anchor),
+        %       ndi.presentation_anchors
+        %   BATCH-PASS-CHANGES: daqmetadatareader_epochdata_ingested(stimulus
+        %       presentation data)
+        %   BATCH-PASS-REMOVES: stimulus_presentation
         try
             [convertResult, stimulusSequenceReport, presentationAnchors] = ...
                 resolveStimulusPresentations(convertResult, bodies, options, resolver, ndiDir);
@@ -813,6 +877,17 @@ function result = local(path, options)
         end
         clear resolver;   % its last reader is above
         tStep = migrateStepMark('resolveStimulusPresentations', tStart, tStep, convertResult);
+        %   WHAT THIS STEP READS AND WRITES: [migration reliability practices] (c),
+        %   Jess Haley, 2026-10-26; DID-matlab tools/batch_pass_order.py derives the
+        %   second pass's order from these and checks it.
+        %   BATCH-PASS-READS: observation(anatomical site),
+        %       manipulation(co-anchored with an anatomical site),
+        %       entity(subject)
+        %   BATCH-PASS-ADDS: entity(tissue at an anatomical site),
+        %       assertion(tissue kind), directed_relation(part_of)
+        %   BATCH-PASS-CHANGES: manipulation(co-anchored with an anatomical
+        %       site)
+        %   BATCH-PASS-REMOVES: observation(anatomical site)
         try
             [convertResult, regionSitesReport] = ...
                 resolvePathS(convertResult, options, 'sites');
@@ -823,6 +898,16 @@ function result = local(path, options)
                  'anatomical loci located-by-default.'], ME.message);
         end
         tStep = migrateStepMark('resolvePathS(sites)', tStart, tStep, convertResult);
+        %   WHAT THIS STEP READS AND WRITES: [migration reliability practices] (c),
+        %   Jess Haley, 2026-10-26; DID-matlab tools/batch_pass_order.py derives the
+        %   second pass's order from these and checks it.
+        %   BATCH-PASS-READS: openminds(unattached Strain)
+        %   BATCH-PASS-ADDS: entity(strain), assertion(strain),
+        %       directed_relation(strain background)
+        %   BATCH-PASS-CHANGES: openminds(unattached Strain)
+        %   BATCH-PASS-REMOVES: NONE -- the Strain documents and fragments it
+        %       assembles are replaced (CHANGES); other openminds documents are
+        %       left for later readers
         try
             [convertResult, strainReport] = ...
                 resolveStrainAssembly(convertResult, options);
@@ -859,6 +944,17 @@ function result = local(path, options)
                  '`migrated_session_membership` edges in place.'], ME.message);
         end
         tStep = migrateStepMark('resolveDatasetEntities', tStart, tStep, convertResult);
+        %   WHAT THIS STEP READS AND WRITES: [migration reliability practices] (c),
+        %   Jess Haley, 2026-10-26; DID-matlab tools/batch_pass_order.py derives the
+        %   second pass's order from these and checks it.
+        %   BATCH-PASS-READS: openminds(subject-attached Strain),
+        %       assertion(species), assertion(genetic strain type)
+        %   BATCH-PASS-ADDS: entity(strain), directed_relation(instance_of),
+        %       directed_relation(strain background)
+        %   BATCH-PASS-CHANGES: openminds(subject-attached Strain),
+        %       assertion(species), assertion(genetic strain type)
+        %   BATCH-PASS-REMOVES: NONE -- the assertions it moves or drops are
+        %       CHANGES
         try
             [convertResult, subjectStrainReport] = ...
                 resolveSubjectStrainAssembly(convertResult, bodies, options);
@@ -888,6 +984,16 @@ function result = local(path, options)
                  'association as the did_v1 `epochid` string.'], ME.message);
         end
         tStep = migrateStepMark('epochMint', tStart, tStep, convertResult);
+        %   WHAT THIS STEP READS AND WRITES: [migration reliability practices] (c),
+        %   Jess Haley, 2026-10-26; DID-matlab tools/batch_pass_order.py derives the
+        %   second pass's order from these and checks it.
+        %   BATCH-PASS-READS: ensemble, entity(neuron), element_epoch,
+        %       acquisition_epoch, result.epoch_mint
+        %   BATCH-PASS-ADDS: directed_relation(member_of),
+        %       directed_relation(ensemble cache)
+        %   BATCH-PASS-CHANGES: NONE -- the ensemble keeps its id; its
+        %       membership is minted
+        %   BATCH-PASS-REMOVES: ensemble
         try
             [convertResult, ensembleReport] = resolveEnsembleMembership( ...
                 convertResult, epochMintReport, options);
@@ -898,6 +1004,15 @@ function result = local(path, options)
                  'ensemble map documents as passthrough.'], ME.message);
         end
         tStep = migrateStepMark('resolveEnsembleMembership', tStart, tStep, convertResult);
+        %   WHAT THIS STEP READS AND WRITES: [migration reliability practices] (c),
+        %   Jess Haley, 2026-10-26; DID-matlab tools/batch_pass_order.py derives the
+        %   second pass's order from these and checks it.
+        %   BATCH-PASS-READS: epoch_bounded_reference, entity(epoch),
+        %       result.epoch_mint, ndi.bath_anchors, ndi.presentation_anchors
+        %   BATCH-PASS-ADDS: relative_time_reference(epoch anchor)
+        %   BATCH-PASS-CHANGES: relative_time_reference(bath anchor),
+        %       relative_time_reference(presentation anchor)
+        %   BATCH-PASS-REMOVES: epoch_bounded_reference
         try
             % the bath anchors and, [presentation anchored to its epoch]
             % (Jess Haley, 2026-10-27), each presentation manipulation's
@@ -926,6 +1041,14 @@ function result = local(path, options)
                  'documents.'], ME.message);
         end
         tStep = migrateStepMark('resolveEpochAnchorFold', tStart, tStep, convertResult);
+        %   WHAT THIS STEP READS AND WRITES: [migration reliability practices] (c),
+        %   Jess Haley, 2026-10-26; DID-matlab tools/batch_pass_order.py derives the
+        %   second pass's order from these and checks it.
+        %   BATCH-PASS-READS: observation(pyraview),
+        %       directed_relation(observes), entity(element)
+        %   BATCH-PASS-ADDS: NONE -- it re-attributes
+        %   BATCH-PASS-CHANGES: observation(pyraview)
+        %   BATCH-PASS-REMOVES: NONE -- it re-attributes
         try
             [convertResult, recordingAttributionReport] = ...
                 resolveRecordingAttribution(convertResult, options);
@@ -983,6 +1106,17 @@ function result = local(path, options)
         % UNCONDITIONALLY, whether or not the pass above ran: the transient
         % navigator epochs are not v1 documents (nor ingestion manifests) and
         % must never be written.
+        %   WHAT THIS STEP READS AND WRITES: [migration reliability practices] (c),
+        %   Jess Haley, 2026-10-26; DID-matlab tools/batch_pass_order.py derives the
+        %   second pass's order from these and checks it.
+        %   Every reader of the transient epochfiles_ingested bodies
+        %   (did2.convert.epochMint, did2.convert.resolveEpochProbemap) must
+        %   run before this step.
+        %   BATCH-PASS-READS: ndi.navigator_epochs
+        %   BATCH-PASS-ADDS: NONE -- it only removes
+        %   BATCH-PASS-CHANGES: NONE -- it only removes
+        %   BATCH-PASS-REMOVES: epochfiles_ingested(transient navigator epoch),
+        %       ingestion_manifest(transient navigator epoch)
         if isstruct(navigatorEpochReport) && ~isempty(navigatorEpochReport.transient_ids)
             keepIdx = true(1, numel(convertResult.migrated));
             for k = 1:numel(convertResult.migrated)
@@ -996,6 +1130,18 @@ function result = local(path, options)
         tStep = migrateStepMark('removeTransientNavigatorEpochs', tStart, tStep, convertResult);
         % the files that ARE on this computer get their size and MD5, as a
         % native V2 recording body does; an absent one stays as recorded
+        %   WHAT THIS STEP READS AND WRITES: [migration reliability practices] (c),
+        %   Jess Haley, 2026-10-26; DID-matlab tools/batch_pass_order.py derives the
+        %   second pass's order from these and checks it.
+        %   Its subject is the epoch files did2.convert.resolveEpochProbemap
+        %   records by location (V_eta_recording_observation_plan.md); the code
+        %   fills any single-member opaque_body recorded by location whose path
+        %   is a file (isfile), so a located single file a LATER pass adds is
+        %   not described.
+        %   BATCH-PASS-READS: opaque_body(epoch file by location)
+        %   BATCH-PASS-ADDS: NONE -- it describes
+        %   BATCH-PASS-CHANGES: opaque_body(epoch file by location)
+        %   BATCH-PASS-REMOVES: NONE -- it describes
         try
             [convertResult, lffReport] = fillLocatedFileFacts(convertResult, options);
             if isstruct(navigatorEpochReport)
@@ -1007,6 +1153,14 @@ function result = local(path, options)
                 'Filling size/MD5 of located files failed (%s).', ME.message);
         end
         tStep = migrateStepMark('fillLocatedFileFacts', tStart, tStep, convertResult);
+        %   WHAT THIS STEP READS AND WRITES: [migration reliability practices] (c),
+        %   Jess Haley, 2026-10-26; DID-matlab tools/batch_pass_order.py derives the
+        %   second pass's order from these and checks it.
+        %   BATCH-PASS-READS: opaque_body(spike train)
+        %   BATCH-PASS-ADDS: sampled_body(spike train)
+        %   BATCH-PASS-CHANGES: NONE -- each described body replaces its
+        %       opaque_body
+        %   BATCH-PASS-REMOVES: opaque_body(spike train)
         try
             % F1 (Decided by Jess Haley, 2026-10-22 [epoch dissolution before
             % merge]; TEAM-SIGN-OFF [epoch] 2026-08-17 Q3): the second pass
@@ -1025,6 +1179,14 @@ function result = local(path, options)
                  'state without this step.'], ME.message);
         end
         tStep = migrateStepMark('describeEpochSeriesBodies', tStart, tStep, convertResult);
+        %   WHAT THIS STEP READS AND WRITES: [migration reliability practices] (c),
+        %   Jess Haley, 2026-10-26; DID-matlab tools/batch_pass_order.py derives the
+        %   second pass's order from these and checks it.
+        %   BATCH-PASS-READS: opaque_body(ingested archive)
+        %   BATCH-PASS-ADDS: sampled_body(ingested archive)
+        %   BATCH-PASS-CHANGES: NONE -- each described body replaces its
+        %       opaque_body
+        %   BATCH-PASS-REMOVES: opaque_body(ingested archive)
         try
             % Decided by Jess Haley, 2026-11-01 [ingested archives are sampled
             % bodies] with [evenly spaced time is a covariate] and [clock only
@@ -1068,6 +1230,21 @@ function result = local(path, options)
                  'state without this step.'], ME.message);
         end
         tStep = migrateStepMark('describeIngestedArchiveBodies', tStart, tStep, convertResult);
+        %   WHAT THIS STEP READS AND WRITES: [migration reliability practices] (c),
+        %   Jess Haley, 2026-10-26; DID-matlab tools/batch_pass_order.py derives the
+        %   second pass's order from these and checks it.
+        %   BATCH-PASS-READS: observation(recording per epoch),
+        %       manipulation(stimulator per epoch), manipulation(bath),
+        %       manipulation(treatment), entity(element), entity(tissue at an
+        %       anatomical site), result.epoch_mint
+        %   BATCH-PASS-ADDS: entity(slice), entity(slice animal),
+        %       assertion(strain), directed_relation(part_of),
+        %       manipulation(optogenetic tetanus), relative_reference(tetanus)
+        %   BATCH-PASS-CHANGES: observation(recording per epoch),
+        %       manipulation(stimulator per epoch), manipulation(bath),
+        %       manipulation(treatment), entity(tissue at an anatomical site)
+        %   BATCH-PASS-REMOVES: NONE -- the treatment manipulations and part
+        %       entities it supersedes are pruned (CHANGES)
         try
             % AFTER the epochprobemap fold (it re-attributes that pass's
             % per-epoch statements) and after epochMint (its epoch index is
@@ -1085,6 +1262,15 @@ function result = local(path, options)
                 ME.message);
         end
         tStep = migrateStepMark('resolveSliceTetanus', tStart, tStep, convertResult);
+        %   WHAT THIS STEP READS AND WRITES: [migration reliability practices] (c),
+        %   Jess Haley, 2026-10-26; DID-matlab tools/batch_pass_order.py derives the
+        %   second pass's order from these and checks it.
+        %   BATCH-PASS-READS: observation(located), manipulation(located),
+        %       entity(element), entity(tissue), entity(subject)
+        %   BATCH-PASS-ADDS: entity(tissue of a located statement),
+        %       assertion(tissue kind), directed_relation(part_of)
+        %   BATCH-PASS-CHANGES: observation(located), manipulation(located)
+        %   BATCH-PASS-REMOVES: NONE -- statements move onto a part (CHANGES)
         try
             % A statement about an anatomical region targets that region's part
             % entity (Jess Haley, 2026-10-21; see
@@ -1192,6 +1378,16 @@ function result = local(path, options)
                  'is in without this pass.'], ME.message);
         end
         tStep = migrateStepMark('resolveClockAlignment', tStart, tStep, convertResult);
+        %   WHAT THIS STEP READS AND WRITES: [migration reliability practices] (c),
+        %   Jess Haley, 2026-10-26; DID-matlab tools/batch_pass_order.py derives the
+        %   second pass's order from these and checks it.
+        %   The end-of-run merge: every software entity, whichever step minted
+        %   it.
+        %   BATCH-PASS-READS: entity(software)
+        %   BATCH-PASS-ADDS: NONE -- it merges
+        %   BATCH-PASS-CHANGES: entity(software)
+        %   BATCH-PASS-REMOVES: NONE -- a merged duplicate's edges are
+        %       retargeted (CHANGES)
         try
             [convertResult, softwareDedupReport] = ...
                 resolveSoftwareDedup(convertResult);
