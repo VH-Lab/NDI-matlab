@@ -279,6 +279,12 @@ function result = local(path, options)
         'SchemaCache', options.SchemaCache, ...
         'Verbose', false, ...
         'TargetVersion', options.TargetVersion};
+    % A migrator that must read a file a v1 document attaches (first:
+    % gene_list_mapping's mapping.tsv, Jess Haley 2026-11-01 [key covariate
+    % index], [mapping rows counted, indices 0-based]) reads it from this
+    % session's file store, where v1 ingested it (did2.convert.v1Files). Pass
+    % 1 only: no later pass reads a v1 file.
+    passOneArgs = [v2args, {'V1FileReader', ndi.migrate.internal.v1FileReader(ndiDir)}];
     % Migrated recordings link their epoch files as data bodies (Jess Haley,
     % 2026-10-21, did-schema V_eta_recording_observation_plan.md): one
     % observation per element per epoch, its epoch files as opaque_bodies by
@@ -302,7 +308,7 @@ function result = local(path, options)
     end
     tStep = migrateStepMark(sprintf('navigatorEpochFiles (%d input bodies)', ...
         numel(convertInput)), tStart, tStep, []);
-    convertResult = did2.convert.v1_to_v2(convertInput, v2args{:});
+    convertResult = did2.convert.v1_to_v2(convertInput, passOneArgs{:});
     tStep = migrateStepMark('pass 1 v1_to_v2', tStart, tStep, convertResult);
     % Pass 1's record of the v1 documents no migrator changed, kept here
     % before any later step can touch convertResult (see the final v1 stamp
