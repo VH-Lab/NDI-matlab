@@ -39,8 +39,8 @@ while ~isempty(frontier)
     next = {};
     for c = 1:200:numel(frontier)
         part = frontier(c:min(c + 199, numel(frontier)));
-        % either name of the ends: `relatum_id`, or `entity_id` before
-        % [undirected ends are relata] (ndi.v2.relataEdges)
+        % the ends' edge, `relatum_id` ([undirected ends are relata];
+        % ndi.v2.relataEdges)
         ends = {};
         for e = ndi.v2.relataEdges()
             ends = [ends, cellfun(@(i) ndi.query('', 'depends_on', e{1}, i), part, ...

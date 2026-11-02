@@ -56,26 +56,26 @@ classdef TestSameAs < matlab.unittest.TestCase
             testCase.verifyTrue(any(strcmp(ndi.v2.relationPasses().names, 'instance_of')));
         end
 
-        function testTheEndsAreReadUnderEitherName(testCase)
+        function testTheEndsAreReadAsRelatumIdOnly(testCase)
             % did-schema [undirected ends are relata] (Jess Haley,
-            % 2026-11-01): the ends are renamed `entity_id` -> `relatum_id`,
-            % readers first. A relation written before the rename and one
-            % written after read the same ends (ndi.v2.relata), and
-            % relationDocs/sameAs search both names (ndi.v2.relataEdges)
-            testCase.verifyEqual(ndi.v2.relataEdges(), {'relatum_id', 'entity_id'});
-            before = struct('depends_on', struct('name', {'session_id', 'entity_id', 'entity_id'}, ...
+            % 2026-11-01): the ends were renamed `entity_id` -> `relatum_id`,
+            % readers first, then the schema, then the code dropped
+            % `entity_id`. Only `relatum_id` edges are ends (ndi.v2.relata),
+            % and relationDocs/sameAs search only that name
+            % (ndi.v2.relataEdges); what the builder writes is read back.
+            testCase.verifyEqual(ndi.v2.relataEdges(), {'relatum_id'});
+            old = struct('depends_on', struct('name', {'session_id', 'entity_id', 'entity_id'}, ...
                 'document_id', {'s', 'a', 'b'}));
-            after = struct('depends_on', struct('name', {'relatum_id', 'session_id', 'relatum_id'}, ...
+            cur = struct('depends_on', struct('name', {'relatum_id', 'session_id', 'relatum_id'}, ...
                 'document_id', {'a', 's', 'b'}));
-            testCase.verifyEqual(ndi.v2.relata(before), {'a', 'b'});
-            testCase.verifyEqual(ndi.v2.relata(after), {'a', 'b'});
+            testCase.verifyEqual(ndi.v2.relata(old), {});
+            testCase.verifyEqual(ndi.v2.relata(cur), {'a', 'b'});
             testCase.verifyEqual(ndi.v2.relata(struct('depends_on', [])), {});
-            % what the builder writes is read back, whichever name the schema
-            % in use declares
             a = ndi.ido.unique_id(); b = ndi.ido.unique_id();
             rel = did2.build.undirectedRelation({a, b}, ndi.v2.vocabTerm('relation', 'same_as'), ...
                 'SessionId', ndi.ido.unique_id());
             testCase.verifyEqual(ndi.v2.relata(rel), {a, b});
+            testCase.verifyFalse(any(strcmp({rel.depends_on.name}, 'entity_id')));
         end
 
         function testASearchForEitherRecordFindsTheGroupsInstances(testCase)
