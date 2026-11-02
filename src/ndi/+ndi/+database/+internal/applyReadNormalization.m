@@ -5,18 +5,16 @@ function ndiDocumentObj = applyReadNormalization(rawDoc)
 %   wraps a body read from a concrete ndi.database backend in an
 %   ndi.document. It converts NOTHING between schema versions:
 %
-%     - a V2 document (document_class.schema_version a V2 stamp,
-%       did2.schema.v2Stamps: 'did_v2'; 'V_eta' is not accepted; no v1
-%       underscore markers) is read as V2. The only
-%       change is did2.convert.ensureClassBlocks, which pads an empty
-%       property block for any class of its V_eta superclass chain the
-%       stored body lacks.
-%     - every other body -- a did_v1 document (stamped 'did_v1' or not
-%       stamped), or one carrying an older stamp -- is wrapped exactly as
-%       stored.
+%     - every body -- a V2 document (stamped 'did_v2'), a did_v1 document
+%       (stamped 'did_v1' or not stamped), or one carrying an older stamp
+%       -- is wrapped exactly as stored. A V2 document used to be padded
+%       here by did2.convert.ensureClassBlocks; that padding is deleted
+%       (Decided by Jess Haley, 2026-11-02 [handed-on classes carried at
+%       the end] (2); 2026-10-26 [early migration pieces fixed] (2): "the
+%       builder produces a complete document").
 %
 %   NO READ-TIME CONVERSION. The one way from v1 to V2 is an explicit
-%   migration, ndi.migrate.local (did2.convert.v1_to_v2 at 'V_eta' plus the
+%   migration, ndi.migrate.local (did2.convert.v1_to_v2 at 'did_v2' plus the
 %   batch passes). A v1 dataset opened by NDI is read by the v1 code paths
 %   in the shape it was written in -- the shape NDI's v1 readers
 %   (ndi.vintage, ndi.app, stimulus and probe helpers) read.
@@ -44,7 +42,7 @@ function ndiDocumentObj = applyReadNormalization(rawDoc)
 %       NDI:database:normalizeBadInput  - RAWDOC is not a recognised
 %                                         document/body type.
 %
-%   See also: did2.convert.isAlreadyTarget, did2.convert.ensureClassBlocks,
+%   See also: did2.convert.isAlreadyTarget,
 %             ndi.migrate.local, ndi.compat.normalizeDependsOn, ndi.database,
 %             ndi.database.implementations.database.didsqlite,
 %             ndi.database.implementations.database.did2sqlite.
@@ -70,8 +68,5 @@ function ndiDocumentObj = applyReadNormalization(rawDoc)
              '(got "%s").'], class(rawDoc));
     end
 
-    if did2.convert.isAlreadyTarget(body, 'did_v2')
-        body = did2.convert.ensureClassBlocks(body, []);
-    end
     ndiDocumentObj = ndi.document(body);
 end

@@ -1173,10 +1173,10 @@ classdef TestObjectLayer < matlab.unittest.TestCase
         end
 
         function testReadingAV2DocumentGivesTheStoredDocument(testCase)
-            % Every document of the written session is read as stored: a
-            % V_eta one with any missing class block padded
-            % (did2.convert.ensureClassBlocks), any other exactly as stored;
-            % nothing is converted.
+            % Every document of the written session is read exactly as
+            % stored, V2 or not: nothing is converted and nothing is padded
+            % (did2.convert.ensureClassBlocks is deleted: [handed-on classes
+            % carried at the end] (2), Jess Haley, 2026-11-02).
             db = did2.database.sqlitedb(fullfile(testCase.Result.sessions.path{1}, '.ndi', ...
                 ndi.database.implementations.database.did2sqlite.DEFAULTFILENAME()));
             closer = onCleanup(@() db.close());
@@ -1189,7 +1189,6 @@ classdef TestObjectLayer < matlab.unittest.TestCase
                 got = ndi.database.internal.applyReadNormalization(d);
                 if did2.convert.isAlreadyTarget(stored, 'did_v2')
                     nEta = nEta + 1;
-                    stored = did2.convert.ensureClassBlocks(stored, []);
                 end
                 want = ndi.document(stored);
                 if ~isequaln(got.document_properties, want.document_properties)
