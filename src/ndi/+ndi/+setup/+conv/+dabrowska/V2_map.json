@@ -1,0 +1,2775 @@
+{
+    "_about": "DRAFT Dabrowska (Dab) dataset map, for review by Jess Haley. Not applied by any code: the map step ([dataset map location], [dataset map edits V2], [map rows match exact values]) is not built. Each row cites the decision tag(s) it rests on, in did-schema docs/plans/did_v2_go_forward_class_audit.md (or V2_decisions.md beside this file). Every column whose meaning the decided lines and the data do not settle is listed under 'open' with its question id in did-schema docs/V2_PLAN.md, 'Dab map questions (later)' ([Claude drafts the Dab map]).",
+    "format": "Proposed (not decided): the row shape of did-schema docs/v2_working/DATASET_MAP_PROPOSAL.md section 3.2 ('pass' and 'rule' rows), plus 'column' rows that hold only the decided terms of a table column. The file name V2_map.json is also Proposed (not decided).",
+    "dataset": "Dabrowska (Dab)",
+    "read_at": {
+        "corpus": "Dab.zip from https://ndi-programming-development.s3.us-east-1.amazonaws.com/Dab.zip, sha256 506fbbdfdab157eb7ba7fdf562c846cfd3c63ea8ca1ddd7d7ec26a2d6388c735, 27561 documents, 26 classes",
+        "did-schema": "origin/main 3f0bf6a",
+        "NDI-matlab": "origin/V2 90215e2a3",
+        "empty-ontology": "origin/V2 6511b77"
+    },
+    "tables": {
+        "EPM": {
+            "v1_class": "ontologyTableRow",
+            "rows": 45,
+            "columns": 51,
+            "match_ontologyNodes": "EMPTY:0000051,EMPTY:0000200,EMPTY:0000006,EMPTY:0000007,EMPTY:0000008,EMPTY:0000009,EMPTY:0000010,EMPTY:0000011,EMPTY:0000012,EMPTY:0000013,EMPTY:0000014,EMPTY:0000015,EMPTY:0000016,EMPTY:0000017,EMPTY:0000018,EMPTY:0000019,EMPTY:0000020,EMPTY:0000021,EMPTY:0000022,EMPTY:0000023,EMPTY:0000024,EMPTY:0000025,EMPTY:0000026,EMPTY:0000027,EMPTY:0000028,EMPTY:0000029,EMPTY:0000030,EMPTY:0000031,EMPTY:0000032,EMPTY:0000033,EMPTY:0000034,EMPTY:0000035,EMPTY:0000036,EMPTY:0000037,EMPTY:0000038,EMPTY:0000039,EMPTY:0000040,EMPTY:0000041,EMPTY:0000042,EMPTY:0000043,EMPTY:0000044,EMPTY:0000045,EMPTY:0000046,EMPTY:0000047,EMPTY:0000048,EMPTY:0000049,EMPTY:0000050,EMPTY:0000068,EMPTY:0000059,EMPTY:0000069,EMPTY:0000052",
+            "match_note": "exact v1 value ([map rows match exact values]); whether the whole string or one node identifies the table is DQ20"
+        },
+        "FPS": {
+            "v1_class": "ontologyTableRow",
+            "rows": 6160,
+            "columns": 13,
+            "match_ontologyNodes": "EMPTY:0000075,EMPTY:0000057,EMPTY:0000058,EMPTY:0000059,EMPTY:0000060,EMPTY:0000061,EMPTY:0000062,EMPTY:0000063,EMPTY:0000064,EMPTY:0000065,EMPTY:0000066,EMPTY:0000067,EMPTY:0000052",
+            "match_note": "as EPM"
+        }
+    },
+    "rows": [
+        {
+            "id": "dab-p01",
+            "kind": "pass",
+            "function": "ndi.migrate.internal.sliceTetanus",
+            "function_note": "Today called from the generic second pass (ndi.migrate.local, resolveSliceTetanus). Moving it into +dabrowska and running it from the map step is not built ([sliceTetanus to Dab map], [dataset map edits V2]: Build pending).",
+            "consumes": {
+                "stimulus_bath": 1605,
+                "element": 896,
+                "subject": 228,
+                "openminds_stimulus": 635,
+                "treatment": 49
+            },
+            "does": "mints one slice entity (type tissue, part_of its animal) per bath stimulator; one optogenetic tetanus manipulation (EMPTY:0000358) per run with the animal's EMPTY:0000074 target as a condition; a relative tetanus window; the Nov 28 animal; folder protocol parameters; moves baths and statements onto the slice; drops the 635 before/after labels (EMPTY:0000220 180, EMPTY:0000221 455) after rebuilding them",
+            "decision": [
+                "sliceTetanus to Dab map",
+                "dataset map edits V2",
+                "V2_decisions.md rows 1-7, 9"
+            ],
+            "status": "draft"
+        },
+        {
+            "id": "dab-r01",
+            "kind": "rule",
+            "match": {
+                "v1_class": "treatment",
+                "equals": {
+                    "treatment.ontologyName": "EMPTY:0000074",
+                    "treatment.name": "Optogenetic Tetanus Stimulation Target Location"
+                },
+                "when": "no tetanus run is found for the treatment's subject (dab-p01)"
+            },
+            "home": {
+                "class": "assertion",
+                "value_kind": "term",
+                "entity": "the treatment's subject (depends_on subject_id)"
+            },
+            "settings": {
+                "variable": "EMPTY:0000074",
+                "value_from": "treatment.string_value"
+            },
+            "data": "49 treatment documents, 49 animals; string_value UBERON:0002034 18, UBERON:0001929 16, UBERON:0001930 15; numeric_value empty in 49. Animals with no before/after-labelled stimulator: 0 of 49 (so this row matches nothing in the Dab corpus; when a run exists, dab-p01 writes the target as a condition of the run, V2_decisions.md row 2).",
+            "decision": [
+                "opto target without a run"
+            ],
+            "status": "draft"
+        },
+        {
+            "id": "dab-s01",
+            "kind": "rule",
+            "match": {
+                "v1_class": "ontologyTableRow",
+                "column": "SubjectLocalIdentifier",
+                "node": "EMPTY:0000052"
+            },
+            "home": "not a statement: the entity of every statement made from the row is the subject whose local_identifier equals this cell, in the row's session",
+            "data": "EPM 45 of 45 rows and FPS 6160 of 6160 rows match exactly one subject; 0 of 6205 rows have depends_on",
+            "decision": [
+                "dataset audit batch 1 and 2"
+            ],
+            "status": "draft"
+        },
+        {
+            "id": "dab-d01",
+            "kind": "rule",
+            "match": {
+                "v1_class": "ontologyTableRow",
+                "table": "FPS",
+                "column": "Fear_potentiatedStartle_ApparatusChamberIdentifier",
+                "node": "EMPTY:0000058"
+            },
+            "home": {
+                "class": "entity",
+                "type": "device",
+                "local_identifier_from": "the cell value"
+            },
+            "data": "values 1..8 (8 distinct); each of the 28 animals sits in one chamber in every trial",
+            "decision": [
+                "assay labels batch 5"
+            ],
+            "open": [
+                "DQ19"
+            ],
+            "status": "draft"
+        },
+        {
+            "id": "dab-epm-01",
+            "kind": "column",
+            "table": "EPM",
+            "match": {
+                "v1_class": "ontologyTableRow",
+                "column": "ElevatedPlusMaze_TestIdentifier",
+                "node": "EMPTY:0000051"
+            },
+            "terms": {
+                "variable": "EMPTY:0000420",
+                "method": "MMO:0000262"
+            },
+            "decision": [
+                "assay labels batch 6",
+                "assay relabels become new terms"
+            ],
+            "data": {
+                "empty_cells": 17,
+                "distinct": 28,
+                "range": [
+                    2,
+                    29
+                ],
+                "examples": [
+                    29,
+                    9,
+                    6
+                ]
+            },
+            "terms_not_in_did_schema_registry": [
+                "MMO:0000262"
+            ],
+            "blocked_by": [
+                "DQ1",
+                "DQ3",
+                "DQ18",
+                "DQ20"
+            ],
+            "status": "draft (terms decided; the statement it makes waits for blocked_by)"
+        },
+        {
+            "id": "dab-epm-03",
+            "kind": "column",
+            "table": "EPM",
+            "match": {
+                "v1_class": "ontologyTableRow",
+                "column": "ElevatedPlusMaze_OpenArmNorth_Entries",
+                "node": "EMPTY:0000006"
+            },
+            "terms": {
+                "variable": "CMO:0000960",
+                "location": "MMO:0000266",
+                "direction": "PATO:0045091",
+                "method": "MMO:0000262"
+            },
+            "decision": [
+                "assay labels batch 1"
+            ],
+            "source_unit": {
+                "unit": "count",
+                "from": "empty-ontology V2 empty-edit.owl line 617 (EMPTY:0000006 definition: 'Unit: count')"
+            },
+            "data": {
+                "empty_cells": 0,
+                "distinct": 15,
+                "range": [
+                    0,
+                    15
+                ],
+                "examples": [
+                    4,
+                    6,
+                    5
+                ]
+            },
+            "terms_not_in_did_schema_registry": [
+                "CMO:0000960",
+                "MMO:0000266",
+                "PATO:0045091",
+                "MMO:0000262"
+            ],
+            "blocked_by": [
+                "DQ1",
+                "DQ3",
+                "DQ20"
+            ],
+            "status": "draft (terms decided; the statement it makes waits for blocked_by)"
+        },
+        {
+            "id": "dab-epm-04",
+            "kind": "column",
+            "table": "EPM",
+            "match": {
+                "v1_class": "ontologyTableRow",
+                "column": "ElevatedPlusMaze_OpenArmSouth_Entries",
+                "node": "EMPTY:0000007"
+            },
+            "terms": {
+                "variable": "CMO:0000960",
+                "location": "MMO:0000266",
+                "direction": "PATO:0045093",
+                "method": "MMO:0000262"
+            },
+            "decision": [
+                "assay labels batch 1"
+            ],
+            "source_unit": {
+                "unit": "count",
+                "from": "empty-ontology V2 empty-edit.owl line 625 (EMPTY:0000007 definition: 'Unit: count')"
+            },
+            "data": {
+                "empty_cells": 0,
+                "distinct": 9,
+                "range": [
+                    0,
+                    9
+                ],
+                "examples": [
+                    5,
+                    4,
+                    3
+                ]
+            },
+            "terms_not_in_did_schema_registry": [
+                "CMO:0000960",
+                "MMO:0000266",
+                "PATO:0045093",
+                "MMO:0000262"
+            ],
+            "blocked_by": [
+                "DQ1",
+                "DQ3",
+                "DQ20"
+            ],
+            "status": "draft (terms decided; the statement it makes waits for blocked_by)"
+        },
+        {
+            "id": "dab-epm-05",
+            "kind": "column",
+            "table": "EPM",
+            "match": {
+                "v1_class": "ontologyTableRow",
+                "column": "ElevatedPlusMaze_OpenArmTotalEntries",
+                "node": "EMPTY:0000008"
+            },
+            "terms": {
+                "variable": "CMO:0004010",
+                "method": "MMO:0000262"
+            },
+            "decision": [
+                "assay labels batch 1"
+            ],
+            "source_unit": {
+                "unit": "count",
+                "from": "empty-ontology V2 empty-edit.owl line 633 (EMPTY:0000008 definition: 'Unit: count')"
+            },
+            "data": {
+                "empty_cells": 0,
+                "distinct": 16,
+                "range": [
+                    0,
+                    20
+                ],
+                "examples": [
+                    8,
+                    10,
+                    11
+                ]
+            },
+            "terms_not_in_did_schema_registry": [
+                "CMO:0004010",
+                "MMO:0000262"
+            ],
+            "blocked_by": [
+                "DQ1",
+                "DQ3",
+                "DQ5",
+                "DQ20"
+            ],
+            "status": "draft (terms decided; the statement it makes waits for blocked_by)"
+        },
+        {
+            "id": "dab-epm-06",
+            "kind": "column",
+            "table": "EPM",
+            "match": {
+                "v1_class": "ontologyTableRow",
+                "column": "ElevatedPlusMaze_OpenArmNorth_HeadEntries",
+                "node": "EMPTY:0000009"
+            },
+            "terms": {
+                "variable": "EMPTY:0000417",
+                "location": "MMO:0000266",
+                "direction": "PATO:0045091",
+                "method": "MMO:0000262"
+            },
+            "decision": [
+                "assay labels batch 2",
+                "assay relabels become new terms"
+            ],
+            "source_unit": {
+                "unit": "count",
+                "from": "empty-ontology V2 empty-edit.owl line 641 (EMPTY:0000009 definition: 'Unit: count')"
+            },
+            "data": {
+                "empty_cells": 0,
+                "distinct": 14,
+                "range": [
+                    2,
+                    17
+                ],
+                "examples": [
+                    8,
+                    9,
+                    12
+                ]
+            },
+            "terms_not_in_did_schema_registry": [
+                "MMO:0000266",
+                "PATO:0045091",
+                "MMO:0000262"
+            ],
+            "blocked_by": [
+                "DQ1",
+                "DQ3",
+                "DQ20"
+            ],
+            "status": "draft (terms decided; the statement it makes waits for blocked_by)"
+        },
+        {
+            "id": "dab-epm-07",
+            "kind": "column",
+            "table": "EPM",
+            "match": {
+                "v1_class": "ontologyTableRow",
+                "column": "ElevatedPlusMaze_OpenArmSouth_HeadEntries",
+                "node": "EMPTY:0000010"
+            },
+            "terms": {
+                "variable": "EMPTY:0000417",
+                "location": "MMO:0000266",
+                "direction": "PATO:0045093",
+                "method": "MMO:0000262"
+            },
+            "decision": [
+                "assay labels batch 2",
+                "assay relabels become new terms"
+            ],
+            "source_unit": {
+                "unit": "count",
+                "from": "empty-ontology V2 empty-edit.owl line 649 (EMPTY:0000010 definition: 'Unit: count')"
+            },
+            "data": {
+                "empty_cells": 0,
+                "distinct": 17,
+                "range": [
+                    2,
+                    30
+                ],
+                "examples": [
+                    11,
+                    12,
+                    9
+                ]
+            },
+            "terms_not_in_did_schema_registry": [
+                "MMO:0000266",
+                "PATO:0045093",
+                "MMO:0000262"
+            ],
+            "blocked_by": [
+                "DQ1",
+                "DQ3",
+                "DQ20"
+            ],
+            "status": "draft (terms decided; the statement it makes waits for blocked_by)"
+        },
+        {
+            "id": "dab-epm-08",
+            "kind": "column",
+            "table": "EPM",
+            "match": {
+                "v1_class": "ontologyTableRow",
+                "column": "ElevatedPlusMaze_OpenArmTotalHeadEntries",
+                "node": "EMPTY:0000011"
+            },
+            "terms": {
+                "variable": "EMPTY:0000417",
+                "location": "MMO:0000266",
+                "method": "MMO:0000262"
+            },
+            "decision": [
+                "assay labels batch 2",
+                "assay relabels become new terms"
+            ],
+            "source_unit": {
+                "unit": "count",
+                "from": "empty-ontology V2 empty-edit.owl line 657 (EMPTY:0000011 definition: 'Unit: count')"
+            },
+            "data": {
+                "empty_cells": 0,
+                "distinct": 21,
+                "range": [
+                    4,
+                    37
+                ],
+                "examples": [
+                    20,
+                    19,
+                    21
+                ]
+            },
+            "terms_not_in_did_schema_registry": [
+                "MMO:0000266",
+                "MMO:0000262"
+            ],
+            "blocked_by": [
+                "DQ1",
+                "DQ3",
+                "DQ5",
+                "DQ20"
+            ],
+            "status": "draft (terms decided; the statement it makes waits for blocked_by)"
+        },
+        {
+            "id": "dab-epm-09",
+            "kind": "column",
+            "table": "EPM",
+            "match": {
+                "v1_class": "ontologyTableRow",
+                "column": "ElevatedPlusMaze_OpenArmNorth_Time",
+                "node": "EMPTY:0000012"
+            },
+            "terms": {
+                "variable": "CMO:0000958",
+                "location": "MMO:0000266",
+                "direction": "PATO:0045091",
+                "method": "MMO:0000262"
+            },
+            "decision": [
+                "assay labels batch 2"
+            ],
+            "source_unit": {
+                "unit": "s",
+                "from": "empty-ontology V2 empty-edit.owl line 665 (EMPTY:0000012 definition: 'Unit: seconds')"
+            },
+            "data": {
+                "empty_cells": 0,
+                "distinct": 41,
+                "range": [
+                    0,
+                    73.1
+                ],
+                "examples": [
+                    22.9,
+                    44.1,
+                    35.3
+                ]
+            },
+            "terms_not_in_did_schema_registry": [
+                "CMO:0000958",
+                "MMO:0000266",
+                "PATO:0045091",
+                "MMO:0000262"
+            ],
+            "blocked_by": [
+                "DQ1",
+                "DQ3",
+                "DQ20"
+            ],
+            "status": "draft (terms decided; the statement it makes waits for blocked_by)"
+        },
+        {
+            "id": "dab-epm-10",
+            "kind": "column",
+            "table": "EPM",
+            "match": {
+                "v1_class": "ontologyTableRow",
+                "column": "ElevatedPlusMaze_OpenArmSouth_Time",
+                "node": "EMPTY:0000013"
+            },
+            "terms": {
+                "variable": "CMO:0000958",
+                "location": "MMO:0000266",
+                "direction": "PATO:0045093",
+                "method": "MMO:0000262"
+            },
+            "decision": [
+                "assay labels batch 2"
+            ],
+            "source_unit": {
+                "unit": "s",
+                "from": "empty-ontology V2 empty-edit.owl line 673 (EMPTY:0000013 definition: 'Unit: seconds')"
+            },
+            "data": {
+                "empty_cells": 0,
+                "distinct": 44,
+                "range": [
+                    0,
+                    124.5
+                ],
+                "examples": [
+                    0,
+                    39,
+                    33.2
+                ]
+            },
+            "terms_not_in_did_schema_registry": [
+                "CMO:0000958",
+                "MMO:0000266",
+                "PATO:0045093",
+                "MMO:0000262"
+            ],
+            "blocked_by": [
+                "DQ1",
+                "DQ3",
+                "DQ20"
+            ],
+            "status": "draft (terms decided; the statement it makes waits for blocked_by)"
+        },
+        {
+            "id": "dab-epm-11",
+            "kind": "column",
+            "table": "EPM",
+            "match": {
+                "v1_class": "ontologyTableRow",
+                "column": "ElevatedPlusMaze_OpenArmTotalTime",
+                "node": "EMPTY:0000014"
+            },
+            "terms": {
+                "variable": "CMO:0004014",
+                "method": "MMO:0000262"
+            },
+            "decision": [
+                "assay labels batch 2"
+            ],
+            "source_unit": {
+                "unit": "s",
+                "from": "empty-ontology V2 empty-edit.owl line 681 (EMPTY:0000014 definition: 'Unit: seconds')"
+            },
+            "data": {
+                "empty_cells": 0,
+                "distinct": 45,
+                "range": [
+                    0,
+                    196.8
+                ],
+                "examples": [
+                    42.3,
+                    59.2,
+                    49.1
+                ]
+            },
+            "terms_not_in_did_schema_registry": [
+                "CMO:0004014",
+                "MMO:0000262"
+            ],
+            "blocked_by": [
+                "DQ1",
+                "DQ3",
+                "DQ5",
+                "DQ20"
+            ],
+            "status": "draft (terms decided; the statement it makes waits for blocked_by)"
+        },
+        {
+            "id": "dab-epm-12",
+            "kind": "column",
+            "table": "EPM",
+            "match": {
+                "v1_class": "ontologyTableRow",
+                "column": "ElevatedPlusMaze_OpenArmTotal_PercentTimeDuringTestDuration",
+                "node": "EMPTY:0000015"
+            },
+            "terms": {
+                "variable": "CMO:0004075",
+                "method": "MMO:0000262"
+            },
+            "decision": [
+                "assay labels batch 3"
+            ],
+            "source_unit": {
+                "unit": "%",
+                "from": "empty-ontology V2 empty-edit.owl line 689 (EMPTY:0000015 definition: 'Unit: %')"
+            },
+            "data": {
+                "empty_cells": 2,
+                "distinct": 43,
+                "range": [
+                    0,
+                    65.60000000000001
+                ],
+                "examples": [
+                    14.099999999999998,
+                    19.733333333333334,
+                    16.366666666666667
+                ]
+            },
+            "terms_not_in_did_schema_registry": [
+                "CMO:0004075",
+                "MMO:0000262"
+            ],
+            "blocked_by": [
+                "DQ1",
+                "DQ3",
+                "DQ6",
+                "DQ20"
+            ],
+            "status": "draft (terms decided; the statement it makes waits for blocked_by)"
+        },
+        {
+            "id": "dab-epm-13",
+            "kind": "column",
+            "table": "EPM",
+            "match": {
+                "v1_class": "ontologyTableRow",
+                "column": "ElevatedPlusMaze_OpenArmNorth_LatencyToFirstEntry",
+                "node": "EMPTY:0000016"
+            },
+            "terms": {
+                "variable": "EMPTY:0000418",
+                "location": "MMO:0000266",
+                "direction": "PATO:0045091",
+                "method": "MMO:0000262"
+            },
+            "decision": [
+                "assay labels batch 3",
+                "assay relabels become new terms"
+            ],
+            "source_unit": {
+                "unit": "s",
+                "from": "empty-ontology V2 empty-edit.owl line 697 (EMPTY:0000016 definition: 'Unit: seconds')"
+            },
+            "data": {
+                "empty_cells": 1,
+                "distinct": 19,
+                "range": [
+                    0,
+                    167.5
+                ],
+                "examples": [
+                    0,
+                    0.7,
+                    2.3
+                ]
+            },
+            "terms_not_in_did_schema_registry": [
+                "MMO:0000266",
+                "PATO:0045091",
+                "MMO:0000262"
+            ],
+            "blocked_by": [
+                "DQ1",
+                "DQ3",
+                "DQ20"
+            ],
+            "status": "draft (terms decided; the statement it makes waits for blocked_by)"
+        },
+        {
+            "id": "dab-epm-14",
+            "kind": "column",
+            "table": "EPM",
+            "match": {
+                "v1_class": "ontologyTableRow",
+                "column": "ElevatedPlusMaze_OpenArmSouth_LatencyToFirstEntry",
+                "node": "EMPTY:0000017"
+            },
+            "terms": {
+                "variable": "EMPTY:0000418",
+                "location": "MMO:0000266",
+                "direction": "PATO:0045093",
+                "method": "MMO:0000262"
+            },
+            "decision": [
+                "assay labels batch 3",
+                "assay relabels become new terms"
+            ],
+            "source_unit": {
+                "unit": "s",
+                "from": "empty-ontology V2 empty-edit.owl line 705 (EMPTY:0000017 definition: 'Unit: seconds')"
+            },
+            "data": {
+                "empty_cells": 2,
+                "distinct": 41,
+                "range": [
+                    0,
+                    112.1
+                ],
+                "examples": [
+                    17.6,
+                    13,
+                    18.7
+                ]
+            },
+            "terms_not_in_did_schema_registry": [
+                "MMO:0000266",
+                "PATO:0045093",
+                "MMO:0000262"
+            ],
+            "blocked_by": [
+                "DQ1",
+                "DQ3",
+                "DQ20"
+            ],
+            "status": "draft (terms decided; the statement it makes waits for blocked_by)"
+        },
+        {
+            "id": "dab-epm-15",
+            "kind": "column",
+            "table": "EPM",
+            "match": {
+                "v1_class": "ontologyTableRow",
+                "column": "ElevatedPlusMaze_OpenArmTotalLatencyToFirstEntry",
+                "node": "EMPTY:0000018"
+            },
+            "terms": {
+                "variable": "EMPTY:0000418",
+                "location": "MMO:0000266",
+                "method": "MMO:0000262"
+            },
+            "decision": [
+                "assay labels batch 3",
+                "assay relabels become new terms"
+            ],
+            "source_unit": {
+                "unit": "s",
+                "from": "empty-ontology V2 empty-edit.owl line 713 (EMPTY:0000018 definition: 'Unit: seconds')"
+            },
+            "data": {
+                "empty_cells": 0,
+                "distinct": 44,
+                "range": [
+                    0,
+                    186.2
+                ],
+                "examples": [
+                    17.2,
+                    186.2,
+                    157.7
+                ]
+            },
+            "terms_not_in_did_schema_registry": [
+                "MMO:0000266",
+                "MMO:0000262"
+            ],
+            "blocked_by": [
+                "DQ1",
+                "DQ3",
+                "DQ20"
+            ],
+            "status": "draft (terms decided; the statement it makes waits for blocked_by)"
+        },
+        {
+            "id": "dab-epm-16",
+            "kind": "column",
+            "table": "EPM",
+            "match": {
+                "v1_class": "ontologyTableRow",
+                "column": "ElevatedPlusMaze_OpenArmNorth_TimeMovingTowards",
+                "node": "EMPTY:0000019"
+            },
+            "terms": {
+                "variable": "EMPTY:0000419",
+                "location": "MMO:0000266",
+                "direction": "PATO:0045091",
+                "method": "MMO:0000262"
+            },
+            "decision": [
+                "assay labels batch 3",
+                "assay relabels become new terms"
+            ],
+            "source_unit": {
+                "unit": "s",
+                "from": "empty-ontology V2 empty-edit.owl line 721 (EMPTY:0000019 definition: 'Unit: seconds')"
+            },
+            "data": {
+                "empty_cells": 0,
+                "distinct": 43,
+                "range": [
+                    49.3,
+                    185.9
+                ],
+                "examples": [
+                    95.6,
+                    82.9,
+                    75.8
+                ]
+            },
+            "terms_not_in_did_schema_registry": [
+                "MMO:0000266",
+                "PATO:0045091",
+                "MMO:0000262"
+            ],
+            "blocked_by": [
+                "DQ1",
+                "DQ3",
+                "DQ20"
+            ],
+            "status": "draft (terms decided; the statement it makes waits for blocked_by)"
+        },
+        {
+            "id": "dab-epm-17",
+            "kind": "column",
+            "table": "EPM",
+            "match": {
+                "v1_class": "ontologyTableRow",
+                "column": "ElevatedPlusMaze_OpenArmSouth_TimeMovingTowards",
+                "node": "EMPTY:0000020"
+            },
+            "terms": {
+                "variable": "EMPTY:0000419",
+                "location": "MMO:0000266",
+                "direction": "PATO:0045093",
+                "method": "MMO:0000262"
+            },
+            "decision": [
+                "assay labels batch 3",
+                "assay relabels become new terms"
+            ],
+            "source_unit": {
+                "unit": "s",
+                "from": "empty-ontology V2 empty-edit.owl line 729 (EMPTY:0000020 definition: 'Unit: seconds')"
+            },
+            "data": {
+                "empty_cells": 0,
+                "distinct": 41,
+                "range": [
+                    45.2,
+                    185.4
+                ],
+                "examples": [
+                    96.1,
+                    93.6,
+                    100.4
+                ]
+            },
+            "terms_not_in_did_schema_registry": [
+                "MMO:0000266",
+                "PATO:0045093",
+                "MMO:0000262"
+            ],
+            "blocked_by": [
+                "DQ1",
+                "DQ3",
+                "DQ20"
+            ],
+            "status": "draft (terms decided; the statement it makes waits for blocked_by)"
+        },
+        {
+            "id": "dab-epm-18",
+            "kind": "column",
+            "table": "EPM",
+            "match": {
+                "v1_class": "ontologyTableRow",
+                "column": "ElevatedPlusMaze_OpenArmTotalTimeMovingTowards",
+                "node": "EMPTY:0000021"
+            },
+            "terms": {
+                "variable": "EMPTY:0000419",
+                "location": "MMO:0000266",
+                "method": "MMO:0000262"
+            },
+            "decision": [
+                "assay labels batch 3",
+                "assay relabels become new terms"
+            ],
+            "source_unit": {
+                "unit": "s",
+                "from": "empty-ontology V2 empty-edit.owl line 737 (EMPTY:0000021 definition: 'Unit: seconds')"
+            },
+            "data": {
+                "empty_cells": 0,
+                "distinct": 45,
+                "range": [
+                    107.4,
+                    371.3
+                ],
+                "examples": [
+                    194,
+                    155.8,
+                    196.4
+                ]
+            },
+            "terms_not_in_did_schema_registry": [
+                "MMO:0000266",
+                "MMO:0000262"
+            ],
+            "blocked_by": [
+                "DQ1",
+                "DQ3",
+                "DQ5",
+                "DQ20"
+            ],
+            "status": "draft (terms decided; the statement it makes waits for blocked_by)"
+        },
+        {
+            "id": "dab-epm-19",
+            "kind": "column",
+            "table": "EPM",
+            "match": {
+                "v1_class": "ontologyTableRow",
+                "column": "ElevatedPlusMaze_OpenArmNorth_TimeFreezing",
+                "node": "EMPTY:0000022"
+            },
+            "terms": {
+                "variable": "CMO:0001043",
+                "location": "MMO:0000266",
+                "direction": "PATO:0045091",
+                "method": "MMO:0000262"
+            },
+            "decision": [
+                "assay labels batch 3"
+            ],
+            "source_unit": {
+                "unit": "s",
+                "from": "empty-ontology V2 empty-edit.owl line 745 (EMPTY:0000022 definition: 'Unit: seconds')"
+            },
+            "data": {
+                "empty_cells": 0,
+                "distinct": 18,
+                "range": [
+                    0,
+                    9.8
+                ],
+                "examples": [
+                    0,
+                    1.1,
+                    1.3
+                ]
+            },
+            "terms_not_in_did_schema_registry": [
+                "CMO:0001043",
+                "MMO:0000266",
+                "PATO:0045091",
+                "MMO:0000262"
+            ],
+            "blocked_by": [
+                "DQ1",
+                "DQ3",
+                "DQ20"
+            ],
+            "status": "draft (terms decided; the statement it makes waits for blocked_by)"
+        },
+        {
+            "id": "dab-epm-20",
+            "kind": "column",
+            "table": "EPM",
+            "match": {
+                "v1_class": "ontologyTableRow",
+                "column": "ElevatedPlusMaze_OpenArmSouth_TimeFreezing",
+                "node": "EMPTY:0000023"
+            },
+            "terms": {
+                "variable": "CMO:0001043",
+                "location": "MMO:0000266",
+                "direction": "PATO:0045093",
+                "method": "MMO:0000262"
+            },
+            "decision": [
+                "assay labels batch 3"
+            ],
+            "source_unit": {
+                "unit": "s",
+                "from": "empty-ontology V2 empty-edit.owl line 753 (EMPTY:0000023 definition: 'Unit: seconds')"
+            },
+            "data": {
+                "empty_cells": 0,
+                "distinct": 39,
+                "range": [
+                    0,
+                    38
+                ],
+                "examples": [
+                    0,
+                    7.7,
+                    5.3
+                ]
+            },
+            "terms_not_in_did_schema_registry": [
+                "CMO:0001043",
+                "MMO:0000266",
+                "PATO:0045093",
+                "MMO:0000262"
+            ],
+            "blocked_by": [
+                "DQ1",
+                "DQ3",
+                "DQ20"
+            ],
+            "status": "draft (terms decided; the statement it makes waits for blocked_by)"
+        },
+        {
+            "id": "dab-epm-21",
+            "kind": "column",
+            "table": "EPM",
+            "match": {
+                "v1_class": "ontologyTableRow",
+                "column": "ElevatedPlusMaze_OpenArmTotalTimeFreezing",
+                "node": "EMPTY:0000024"
+            },
+            "terms": {
+                "variable": "CMO:0001043",
+                "location": "MMO:0000266",
+                "method": "MMO:0000262"
+            },
+            "decision": [
+                "assay labels batch 3"
+            ],
+            "source_unit": {
+                "unit": "s",
+                "from": "empty-ontology V2 empty-edit.owl line 761 (EMPTY:0000024 definition: 'Unit: seconds')"
+            },
+            "data": {
+                "empty_cells": 0,
+                "distinct": 41,
+                "range": [
+                    0,
+                    42.1
+                ],
+                "examples": [
+                    0,
+                    1.3,
+                    7.3
+                ]
+            },
+            "terms_not_in_did_schema_registry": [
+                "CMO:0001043",
+                "MMO:0000266",
+                "MMO:0000262"
+            ],
+            "blocked_by": [
+                "DQ1",
+                "DQ3",
+                "DQ5",
+                "DQ20"
+            ],
+            "status": "draft (terms decided; the statement it makes waits for blocked_by)"
+        },
+        {
+            "id": "dab-epm-22",
+            "kind": "column",
+            "table": "EPM",
+            "match": {
+                "v1_class": "ontologyTableRow",
+                "column": "ElevatedPlusMaze_ClosedArmWest_Entries",
+                "node": "EMPTY:0000025"
+            },
+            "terms": {
+                "variable": "CMO:0000960",
+                "location": "MMO:0000265",
+                "direction": "PATO:0045094",
+                "method": "MMO:0000262"
+            },
+            "decision": [
+                "assay labels batch 3"
+            ],
+            "source_unit": {
+                "unit": "count",
+                "from": "empty-ontology V2 empty-edit.owl line 769 (EMPTY:0000025 definition: 'Unit: count')"
+            },
+            "data": {
+                "empty_cells": 0,
+                "distinct": 10,
+                "range": [
+                    3,
+                    14
+                ],
+                "examples": [
+                    4,
+                    7,
+                    6
+                ]
+            },
+            "terms_not_in_did_schema_registry": [
+                "CMO:0000960",
+                "MMO:0000265",
+                "PATO:0045094",
+                "MMO:0000262"
+            ],
+            "blocked_by": [
+                "DQ1",
+                "DQ3",
+                "DQ20"
+            ],
+            "status": "draft (terms decided; the statement it makes waits for blocked_by)"
+        },
+        {
+            "id": "dab-epm-23",
+            "kind": "column",
+            "table": "EPM",
+            "match": {
+                "v1_class": "ontologyTableRow",
+                "column": "ElevatedPlusMaze_ClosedArmEast_Entries",
+                "node": "EMPTY:0000026"
+            },
+            "terms": {
+                "variable": "CMO:0000960",
+                "location": "MMO:0000265",
+                "direction": "PATO:0045092",
+                "method": "MMO:0000262"
+            },
+            "decision": [
+                "assay labels batch 3"
+            ],
+            "source_unit": {
+                "unit": "count",
+                "from": "empty-ontology V2 empty-edit.owl line 777 (EMPTY:0000026 definition: 'Unit: count')"
+            },
+            "data": {
+                "empty_cells": 0,
+                "distinct": 15,
+                "range": [
+                    1,
+                    15
+                ],
+                "examples": [
+                    5,
+                    8,
+                    4
+                ]
+            },
+            "terms_not_in_did_schema_registry": [
+                "CMO:0000960",
+                "MMO:0000265",
+                "PATO:0045092",
+                "MMO:0000262"
+            ],
+            "blocked_by": [
+                "DQ1",
+                "DQ3",
+                "DQ20"
+            ],
+            "status": "draft (terms decided; the statement it makes waits for blocked_by)"
+        },
+        {
+            "id": "dab-epm-24",
+            "kind": "column",
+            "table": "EPM",
+            "match": {
+                "v1_class": "ontologyTableRow",
+                "column": "ElevatedPlusMaze_ClosedArmTotalEntries",
+                "node": "EMPTY:0000027"
+            },
+            "terms": {
+                "variable": "CMO:0004009",
+                "method": "MMO:0000262"
+            },
+            "decision": [
+                "assay labels batch 3"
+            ],
+            "source_unit": {
+                "unit": "count",
+                "from": "empty-ontology V2 empty-edit.owl line 785 (EMPTY:0000027 definition: 'Unit: count')"
+            },
+            "data": {
+                "empty_cells": 0,
+                "distinct": 14,
+                "range": [
+                    7,
+                    25
+                ],
+                "examples": [
+                    12,
+                    14,
+                    10
+                ]
+            },
+            "terms_not_in_did_schema_registry": [
+                "CMO:0004009",
+                "MMO:0000262"
+            ],
+            "blocked_by": [
+                "DQ1",
+                "DQ3",
+                "DQ5",
+                "DQ20"
+            ],
+            "status": "draft (terms decided; the statement it makes waits for blocked_by)"
+        },
+        {
+            "id": "dab-epm-25",
+            "kind": "column",
+            "table": "EPM",
+            "match": {
+                "v1_class": "ontologyTableRow",
+                "column": "ElevatedPlusMaze_ClosedArmWest_HeadEntries",
+                "node": "EMPTY:0000028"
+            },
+            "terms": {
+                "variable": "EMPTY:0000417",
+                "location": "MMO:0000265",
+                "direction": "PATO:0045094",
+                "method": "MMO:0000262"
+            },
+            "decision": [
+                "assay labels batch 4",
+                "assay relabels become new terms"
+            ],
+            "source_unit": {
+                "unit": "count",
+                "from": "empty-ontology V2 empty-edit.owl line 793 (EMPTY:0000028 definition: 'Unit: count')"
+            },
+            "data": {
+                "empty_cells": 0,
+                "distinct": 11,
+                "range": [
+                    3,
+                    14
+                ],
+                "examples": [
+                    8,
+                    7,
+                    9
+                ]
+            },
+            "terms_not_in_did_schema_registry": [
+                "MMO:0000265",
+                "PATO:0045094",
+                "MMO:0000262"
+            ],
+            "blocked_by": [
+                "DQ1",
+                "DQ3",
+                "DQ20"
+            ],
+            "status": "draft (terms decided; the statement it makes waits for blocked_by)"
+        },
+        {
+            "id": "dab-epm-26",
+            "kind": "column",
+            "table": "EPM",
+            "match": {
+                "v1_class": "ontologyTableRow",
+                "column": "ElevatedPlusMaze_ClosedArmEast_HeadEntries",
+                "node": "EMPTY:0000029"
+            },
+            "terms": {
+                "variable": "EMPTY:0000417",
+                "location": "MMO:0000265",
+                "direction": "PATO:0045092",
+                "method": "MMO:0000262"
+            },
+            "decision": [
+                "assay labels batch 4",
+                "assay relabels become new terms"
+            ],
+            "source_unit": {
+                "unit": "count",
+                "from": "empty-ontology V2 empty-edit.owl line 801 (EMPTY:0000029 definition: 'Unit: count')"
+            },
+            "data": {
+                "empty_cells": 0,
+                "distinct": 17,
+                "range": [
+                    2,
+                    31
+                ],
+                "examples": [
+                    10,
+                    11,
+                    16
+                ]
+            },
+            "terms_not_in_did_schema_registry": [
+                "MMO:0000265",
+                "PATO:0045092",
+                "MMO:0000262"
+            ],
+            "blocked_by": [
+                "DQ1",
+                "DQ3",
+                "DQ20"
+            ],
+            "status": "draft (terms decided; the statement it makes waits for blocked_by)"
+        },
+        {
+            "id": "dab-epm-27",
+            "kind": "column",
+            "table": "EPM",
+            "match": {
+                "v1_class": "ontologyTableRow",
+                "column": "ElevatedPlusMaze_ClosedArmTotalHeadEntries",
+                "node": "EMPTY:0000030"
+            },
+            "terms": {
+                "variable": "EMPTY:0000417",
+                "location": "MMO:0000265",
+                "method": "MMO:0000262"
+            },
+            "decision": [
+                "assay labels batch 4",
+                "assay relabels become new terms"
+            ],
+            "source_unit": {
+                "unit": "count",
+                "from": "empty-ontology V2 empty-edit.owl line 809 (EMPTY:0000030 definition: 'Unit: count')"
+            },
+            "data": {
+                "empty_cells": 0,
+                "distinct": 19,
+                "range": [
+                    11,
+                    39
+                ],
+                "examples": [
+                    22,
+                    20,
+                    23
+                ]
+            },
+            "terms_not_in_did_schema_registry": [
+                "MMO:0000265",
+                "MMO:0000262"
+            ],
+            "blocked_by": [
+                "DQ1",
+                "DQ3",
+                "DQ5",
+                "DQ20"
+            ],
+            "status": "draft (terms decided; the statement it makes waits for blocked_by)"
+        },
+        {
+            "id": "dab-epm-28",
+            "kind": "column",
+            "table": "EPM",
+            "match": {
+                "v1_class": "ontologyTableRow",
+                "column": "ElevatedPlusMaze_ClosedArmWest_Time",
+                "node": "EMPTY:0000031"
+            },
+            "terms": {
+                "variable": "CMO:0000958",
+                "location": "MMO:0000265",
+                "direction": "PATO:0045094",
+                "method": "MMO:0000262"
+            },
+            "decision": [
+                "assay labels batch 4"
+            ],
+            "source_unit": {
+                "unit": "s",
+                "from": "empty-ontology V2 empty-edit.owl line 817 (EMPTY:0000031 definition: 'Unit: seconds')"
+            },
+            "data": {
+                "empty_cells": 0,
+                "distinct": 44,
+                "range": [
+                    15.8,
+                    274.7
+                ],
+                "examples": [
+                    35.8,
+                    103.1,
+                    69.9
+                ]
+            },
+            "terms_not_in_did_schema_registry": [
+                "CMO:0000958",
+                "MMO:0000265",
+                "PATO:0045094",
+                "MMO:0000262"
+            ],
+            "blocked_by": [
+                "DQ1",
+                "DQ3",
+                "DQ20"
+            ],
+            "status": "draft (terms decided; the statement it makes waits for blocked_by)"
+        },
+        {
+            "id": "dab-epm-29",
+            "kind": "column",
+            "table": "EPM",
+            "match": {
+                "v1_class": "ontologyTableRow",
+                "column": "ElevatedPlusMaze_ClosedArmEast_Time",
+                "node": "EMPTY:0000032"
+            },
+            "terms": {
+                "variable": "CMO:0000958",
+                "location": "MMO:0000265",
+                "direction": "PATO:0045092",
+                "method": "MMO:0000262"
+            },
+            "decision": [
+                "assay labels batch 4"
+            ],
+            "source_unit": {
+                "unit": "s",
+                "from": "empty-ontology V2 empty-edit.owl line 825 (EMPTY:0000032 definition: 'Unit: seconds')"
+            },
+            "data": {
+                "empty_cells": 0,
+                "distinct": 42,
+                "range": [
+                    14.1,
+                    207.1
+                ],
+                "examples": [
+                    42.1,
+                    26,
+                    26.6
+                ]
+            },
+            "terms_not_in_did_schema_registry": [
+                "CMO:0000958",
+                "MMO:0000265",
+                "PATO:0045092",
+                "MMO:0000262"
+            ],
+            "blocked_by": [
+                "DQ1",
+                "DQ3",
+                "DQ20"
+            ],
+            "status": "draft (terms decided; the statement it makes waits for blocked_by)"
+        },
+        {
+            "id": "dab-epm-30",
+            "kind": "column",
+            "table": "EPM",
+            "match": {
+                "v1_class": "ontologyTableRow",
+                "column": "ElevatedPlusMaze_ClosedArmTotalTime",
+                "node": "EMPTY:0000033"
+            },
+            "terms": {
+                "variable": "CMO:0004012",
+                "location": "MMO:0000265",
+                "method": "MMO:0000262"
+            },
+            "decision": [
+                "assay labels batch 4"
+            ],
+            "source_unit": {
+                "unit": "s",
+                "from": "empty-ontology V2 empty-edit.owl line 833 (EMPTY:0000033 definition: 'Unit: seconds')"
+            },
+            "data": {
+                "empty_cells": 0,
+                "distinct": 45,
+                "range": [
+                    42.400000000000006,
+                    293.5
+                ],
+                "examples": [
+                    175.8,
+                    146.89999999999998,
+                    185.10000000000002
+                ]
+            },
+            "terms_not_in_did_schema_registry": [
+                "CMO:0004012",
+                "MMO:0000265",
+                "MMO:0000262"
+            ],
+            "blocked_by": [
+                "DQ1",
+                "DQ3",
+                "DQ5",
+                "DQ20"
+            ],
+            "status": "draft (terms decided; the statement it makes waits for blocked_by)"
+        },
+        {
+            "id": "dab-epm-31",
+            "kind": "column",
+            "table": "EPM",
+            "match": {
+                "v1_class": "ontologyTableRow",
+                "column": "ElevatedPlusMaze_ClosedArmTotal_PercentTimeDuringTestDuration",
+                "node": "EMPTY:0000034"
+            },
+            "terms": {
+                "variable": "CMO:0000959",
+                "location": "MMO:0000265",
+                "method": "MMO:0000262"
+            },
+            "decision": [
+                "assay labels batch 4"
+            ],
+            "source_unit": {
+                "unit": "%",
+                "from": "empty-ontology V2 empty-edit.owl line 841 (EMPTY:0000034 definition: 'Unit: %')"
+            },
+            "data": {
+                "empty_cells": 2,
+                "distinct": 42,
+                "range": [
+                    14.133333333333335,
+                    97.83333333333334
+                ],
+                "examples": [
+                    29.9,
+                    58.60000000000001,
+                    48.96666666666666
+                ]
+            },
+            "terms_not_in_did_schema_registry": [
+                "CMO:0000959",
+                "MMO:0000265",
+                "MMO:0000262"
+            ],
+            "blocked_by": [
+                "DQ1",
+                "DQ3",
+                "DQ6",
+                "DQ20"
+            ],
+            "status": "draft (terms decided; the statement it makes waits for blocked_by)"
+        },
+        {
+            "id": "dab-epm-32",
+            "kind": "column",
+            "table": "EPM",
+            "match": {
+                "v1_class": "ontologyTableRow",
+                "column": "ElevatedPlusMaze_ClosedArmWest_LatencyToFirstEntry",
+                "node": "EMPTY:0000035"
+            },
+            "terms": {
+                "variable": "EMPTY:0000418",
+                "location": "MMO:0000265",
+                "direction": "PATO:0045094",
+                "method": "MMO:0000262"
+            },
+            "decision": [
+                "assay labels batch 4",
+                "assay relabels become new terms"
+            ],
+            "source_unit": {
+                "unit": "s",
+                "from": "empty-ontology V2 empty-edit.owl line 849 (EMPTY:0000035 definition: 'Unit: seconds')"
+            },
+            "data": {
+                "empty_cells": 0,
+                "distinct": 43,
+                "range": [
+                    0,
+                    156.1
+                ],
+                "examples": [
+                    0,
+                    156.1,
+                    80
+                ]
+            },
+            "terms_not_in_did_schema_registry": [
+                "MMO:0000265",
+                "PATO:0045094",
+                "MMO:0000262"
+            ],
+            "blocked_by": [
+                "DQ1",
+                "DQ3",
+                "DQ20"
+            ],
+            "status": "draft (terms decided; the statement it makes waits for blocked_by)"
+        },
+        {
+            "id": "dab-epm-33",
+            "kind": "column",
+            "table": "EPM",
+            "match": {
+                "v1_class": "ontologyTableRow",
+                "column": "ElevatedPlusMaze_ClosedArmEast_LatencyToFirstEntry",
+                "node": "EMPTY:0000036"
+            },
+            "terms": {
+                "variable": "EMPTY:0000418",
+                "location": "MMO:0000265",
+                "direction": "PATO:0045092",
+                "method": "MMO:0000262"
+            },
+            "decision": [
+                "assay labels batch 4",
+                "assay relabels become new terms"
+            ],
+            "source_unit": {
+                "unit": "s",
+                "from": "empty-ontology V2 empty-edit.owl line 857 (EMPTY:0000036 definition: 'Unit: seconds')"
+            },
+            "data": {
+                "empty_cells": 0,
+                "distinct": 43,
+                "range": [
+                    0,
+                    281.2
+                ],
+                "examples": [
+                    0,
+                    39.3,
+                    24.9
+                ]
+            },
+            "terms_not_in_did_schema_registry": [
+                "MMO:0000265",
+                "PATO:0045092",
+                "MMO:0000262"
+            ],
+            "blocked_by": [
+                "DQ1",
+                "DQ3",
+                "DQ20"
+            ],
+            "status": "draft (terms decided; the statement it makes waits for blocked_by)"
+        },
+        {
+            "id": "dab-epm-34",
+            "kind": "column",
+            "table": "EPM",
+            "match": {
+                "v1_class": "ontologyTableRow",
+                "column": "ElevatedPlusMaze_ClosedArmTotalLatencyToFirstEntry",
+                "node": "EMPTY:0000037"
+            },
+            "terms": {
+                "variable": "EMPTY:0000418",
+                "location": "MMO:0000265",
+                "method": "MMO:0000262"
+            },
+            "decision": [
+                "assay labels batch 4",
+                "assay relabels become new terms"
+            ],
+            "source_unit": {
+                "unit": "s",
+                "from": "empty-ontology V2 empty-edit.owl line 865 (EMPTY:0000037 definition: 'Unit: seconds')"
+            },
+            "data": {
+                "empty_cells": 0,
+                "distinct": 43,
+                "range": [
+                    11.1,
+                    281.2
+                ],
+                "examples": [
+                    89.2,
+                    89.3,
+                    181
+                ]
+            },
+            "terms_not_in_did_schema_registry": [
+                "MMO:0000265",
+                "MMO:0000262"
+            ],
+            "blocked_by": [
+                "DQ1",
+                "DQ3",
+                "DQ20"
+            ],
+            "status": "draft (terms decided; the statement it makes waits for blocked_by)"
+        },
+        {
+            "id": "dab-epm-35",
+            "kind": "column",
+            "table": "EPM",
+            "match": {
+                "v1_class": "ontologyTableRow",
+                "column": "ElevatedPlusMaze_ClosedArmWest_TimeMovingTowards",
+                "node": "EMPTY:0000038"
+            },
+            "terms": {
+                "variable": "EMPTY:0000419",
+                "location": "MMO:0000265",
+                "direction": "PATO:0045094",
+                "method": "MMO:0000262"
+            },
+            "decision": [
+                "assay labels batch 4",
+                "assay relabels become new terms"
+            ],
+            "source_unit": {
+                "unit": "s",
+                "from": "empty-ontology V2 empty-edit.owl line 873 (EMPTY:0000038 definition: 'Unit: seconds')"
+            },
+            "data": {
+                "empty_cells": 0,
+                "distinct": 44,
+                "range": [
+                    8.5,
+                    176.3
+                ],
+                "examples": [
+                    87.4,
+                    134.5,
+                    55.8
+                ]
+            },
+            "terms_not_in_did_schema_registry": [
+                "MMO:0000265",
+                "PATO:0045094",
+                "MMO:0000262"
+            ],
+            "blocked_by": [
+                "DQ1",
+                "DQ3",
+                "DQ20"
+            ],
+            "status": "draft (terms decided; the statement it makes waits for blocked_by)"
+        },
+        {
+            "id": "dab-epm-36",
+            "kind": "column",
+            "table": "EPM",
+            "match": {
+                "v1_class": "ontologyTableRow",
+                "column": "ElevatedPlusMaze_ClosedArmEast_TimeMovingTowards",
+                "node": "EMPTY:0000039"
+            },
+            "terms": {
+                "variable": "EMPTY:0000419",
+                "location": "MMO:0000265",
+                "direction": "PATO:0045092",
+                "method": "MMO:0000262"
+            },
+            "decision": [
+                "assay labels batch 4",
+                "assay relabels become new terms"
+            ],
+            "source_unit": {
+                "unit": "s",
+                "from": "empty-ontology V2 empty-edit.owl line 881 (EMPTY:0000039 definition: 'Unit: seconds')"
+            },
+            "data": {
+                "empty_cells": 0,
+                "distinct": 45,
+                "range": [
+                    48,
+                    218.4
+                ],
+                "examples": [
+                    81,
+                    145.3,
+                    74.6
+                ]
+            },
+            "terms_not_in_did_schema_registry": [
+                "MMO:0000265",
+                "PATO:0045092",
+                "MMO:0000262"
+            ],
+            "blocked_by": [
+                "DQ1",
+                "DQ3",
+                "DQ20"
+            ],
+            "status": "draft (terms decided; the statement it makes waits for blocked_by)"
+        },
+        {
+            "id": "dab-epm-37",
+            "kind": "column",
+            "table": "EPM",
+            "match": {
+                "v1_class": "ontologyTableRow",
+                "column": "ElevatedPlusMaze_ClosedArmTotalTimeMovingTowards",
+                "node": "EMPTY:0000040"
+            },
+            "terms": {
+                "variable": "EMPTY:0000419",
+                "location": "MMO:0000265",
+                "method": "MMO:0000262"
+            },
+            "decision": [
+                "assay labels batch 4",
+                "assay relabels become new terms"
+            ],
+            "source_unit": {
+                "unit": "s",
+                "from": "empty-ontology V2 empty-edit.owl line 889 (EMPTY:0000040 definition: 'Unit: seconds')"
+            },
+            "data": {
+                "empty_cells": 0,
+                "distinct": 44,
+                "range": [
+                    91.80000000000001,
+                    326.70000000000005
+                ],
+                "examples": [
+                    201.10000000000002,
+                    215.5,
+                    158.2
+                ]
+            },
+            "terms_not_in_did_schema_registry": [
+                "MMO:0000265",
+                "MMO:0000262"
+            ],
+            "blocked_by": [
+                "DQ1",
+                "DQ3",
+                "DQ5",
+                "DQ20"
+            ],
+            "status": "draft (terms decided; the statement it makes waits for blocked_by)"
+        },
+        {
+            "id": "dab-epm-38",
+            "kind": "column",
+            "table": "EPM",
+            "match": {
+                "v1_class": "ontologyTableRow",
+                "column": "ElevatedPlusMaze_ClosedArmWest_TimeFreezing",
+                "node": "EMPTY:0000041"
+            },
+            "terms": {
+                "variable": "CMO:0001043",
+                "location": "MMO:0000265",
+                "direction": "PATO:0045094",
+                "method": "MMO:0000262"
+            },
+            "decision": [
+                "assay labels batch 4"
+            ],
+            "source_unit": {
+                "unit": "s",
+                "from": "empty-ontology V2 empty-edit.owl line 897 (EMPTY:0000041 definition: 'Unit: seconds')"
+            },
+            "data": {
+                "empty_cells": 0,
+                "distinct": 20,
+                "range": [
+                    0,
+                    111.5
+                ],
+                "examples": [
+                    0,
+                    6.7,
+                    7.7
+                ]
+            },
+            "terms_not_in_did_schema_registry": [
+                "CMO:0001043",
+                "MMO:0000265",
+                "PATO:0045094",
+                "MMO:0000262"
+            ],
+            "blocked_by": [
+                "DQ1",
+                "DQ3",
+                "DQ20"
+            ],
+            "status": "draft (terms decided; the statement it makes waits for blocked_by)"
+        },
+        {
+            "id": "dab-epm-39",
+            "kind": "column",
+            "table": "EPM",
+            "match": {
+                "v1_class": "ontologyTableRow",
+                "column": "ElevatedPlusMaze_ClosedArmEast_TimeFreezing",
+                "node": "EMPTY:0000042"
+            },
+            "terms": {
+                "variable": "CMO:0001043",
+                "location": "MMO:0000265",
+                "direction": "PATO:0045092",
+                "method": "MMO:0000262"
+            },
+            "decision": [
+                "assay labels batch 5"
+            ],
+            "source_unit": {
+                "unit": "s",
+                "from": "empty-ontology V2 empty-edit.owl line 905 (EMPTY:0000042 definition: 'Unit: seconds')"
+            },
+            "data": {
+                "empty_cells": 0,
+                "distinct": 23,
+                "range": [
+                    0,
+                    85.9
+                ],
+                "examples": [
+                    0,
+                    1.9,
+                    10.7
+                ]
+            },
+            "terms_not_in_did_schema_registry": [
+                "CMO:0001043",
+                "MMO:0000265",
+                "PATO:0045092",
+                "MMO:0000262"
+            ],
+            "blocked_by": [
+                "DQ1",
+                "DQ3",
+                "DQ20"
+            ],
+            "status": "draft (terms decided; the statement it makes waits for blocked_by)"
+        },
+        {
+            "id": "dab-epm-40",
+            "kind": "column",
+            "table": "EPM",
+            "match": {
+                "v1_class": "ontologyTableRow",
+                "column": "ElevatedPlusMaze_ClosedArmTotalTimeFreezing",
+                "node": "EMPTY:0000043"
+            },
+            "terms": {
+                "variable": "CMO:0001043",
+                "location": "MMO:0000265",
+                "method": "MMO:0000262"
+            },
+            "decision": [
+                "assay labels batch 5"
+            ],
+            "source_unit": {
+                "unit": "s",
+                "from": "empty-ontology V2 empty-edit.owl line 913 (EMPTY:0000043 definition: 'Unit: seconds')"
+            },
+            "data": {
+                "empty_cells": 0,
+                "distinct": 32,
+                "range": [
+                    0,
+                    113.4
+                ],
+                "examples": [
+                    0,
+                    6.7,
+                    3.2
+                ]
+            },
+            "terms_not_in_did_schema_registry": [
+                "CMO:0001043",
+                "MMO:0000265",
+                "MMO:0000262"
+            ],
+            "blocked_by": [
+                "DQ1",
+                "DQ3",
+                "DQ5",
+                "DQ20"
+            ],
+            "status": "draft (terms decided; the statement it makes waits for blocked_by)"
+        },
+        {
+            "id": "dab-epm-41",
+            "kind": "column",
+            "table": "EPM",
+            "match": {
+                "v1_class": "ontologyTableRow",
+                "column": "ElevatedPlusMaze_Center_Entries",
+                "node": "EMPTY:0000044"
+            },
+            "terms": {
+                "variable": "CMO:0000960",
+                "location": "MMO:0000263",
+                "method": "MMO:0000262"
+            },
+            "decision": [
+                "assay labels batch 5"
+            ],
+            "source_unit": {
+                "unit": "count",
+                "from": "empty-ontology V2 empty-edit.owl line 921 (EMPTY:0000044 definition: 'Unit: count')"
+            },
+            "data": {
+                "empty_cells": 2,
+                "distinct": 20,
+                "range": [
+                    9,
+                    35
+                ],
+                "examples": [
+                    20,
+                    19,
+                    24
+                ]
+            },
+            "terms_not_in_did_schema_registry": [
+                "CMO:0000960",
+                "MMO:0000263",
+                "MMO:0000262"
+            ],
+            "blocked_by": [
+                "DQ1",
+                "DQ3",
+                "DQ20"
+            ],
+            "status": "draft (terms decided; the statement it makes waits for blocked_by)"
+        },
+        {
+            "id": "dab-epm-42",
+            "kind": "column",
+            "table": "EPM",
+            "match": {
+                "v1_class": "ontologyTableRow",
+                "column": "ElevatedPlusMaze_Center_HeadEntries",
+                "node": "EMPTY:0000045"
+            },
+            "terms": {
+                "variable": "EMPTY:0000417",
+                "location": "MMO:0000263",
+                "method": "MMO:0000262"
+            },
+            "decision": [
+                "assay labels batch 5",
+                "assay relabels become new terms"
+            ],
+            "source_unit": {
+                "unit": "count",
+                "from": "empty-ontology V2 empty-edit.owl line 929 (EMPTY:0000045 definition: 'Unit: count')"
+            },
+            "data": {
+                "empty_cells": 2,
+                "distinct": 23,
+                "range": [
+                    15,
+                    58
+                ],
+                "examples": [
+                    40,
+                    33,
+                    46
+                ]
+            },
+            "terms_not_in_did_schema_registry": [
+                "MMO:0000263",
+                "MMO:0000262"
+            ],
+            "blocked_by": [
+                "DQ1",
+                "DQ3",
+                "DQ20"
+            ],
+            "status": "draft (terms decided; the statement it makes waits for blocked_by)"
+        },
+        {
+            "id": "dab-epm-43",
+            "kind": "column",
+            "table": "EPM",
+            "match": {
+                "v1_class": "ontologyTableRow",
+                "column": "ElevatedPlusMaze_Center_Time",
+                "node": "EMPTY:0000046"
+            },
+            "terms": {
+                "variable": "CMO:0000958",
+                "location": "MMO:0000263",
+                "method": "MMO:0000262"
+            },
+            "decision": [
+                "assay labels batch 5"
+            ],
+            "source_unit": {
+                "unit": "s",
+                "from": "empty-ontology V2 empty-edit.owl line 937 (EMPTY:0000046 definition: 'Unit: seconds')"
+            },
+            "data": {
+                "empty_cells": 2,
+                "distinct": 43,
+                "range": [
+                    6.5,
+                    113.4
+                ],
+                "examples": [
+                    81.9,
+                    94,
+                    65.8
+                ]
+            },
+            "terms_not_in_did_schema_registry": [
+                "CMO:0000958",
+                "MMO:0000263",
+                "MMO:0000262"
+            ],
+            "blocked_by": [
+                "DQ1",
+                "DQ3",
+                "DQ20"
+            ],
+            "status": "draft (terms decided; the statement it makes waits for blocked_by)"
+        },
+        {
+            "id": "dab-epm-44",
+            "kind": "column",
+            "table": "EPM",
+            "match": {
+                "v1_class": "ontologyTableRow",
+                "column": "ElevatedPlusMaze_Center_PercentTimeDuringTestDuration",
+                "node": "EMPTY:0000047"
+            },
+            "terms": {
+                "variable": "CMO:0000959",
+                "location": "MMO:0000263",
+                "method": "MMO:0000262"
+            },
+            "decision": [
+                "assay labels batch 5"
+            ],
+            "source_unit": {
+                "unit": "%",
+                "from": "empty-ontology V2 empty-edit.owl line 945 (EMPTY:0000047 definition: 'Unit: %')"
+            },
+            "data": {
+                "empty_cells": 3,
+                "distinct": 42,
+                "range": [
+                    2.166666666666667,
+                    37.8
+                ],
+                "examples": [
+                    27.3,
+                    31.333333333333336,
+                    21.933333333333334
+                ]
+            },
+            "terms_not_in_did_schema_registry": [
+                "CMO:0000959",
+                "MMO:0000263",
+                "MMO:0000262"
+            ],
+            "blocked_by": [
+                "DQ1",
+                "DQ3",
+                "DQ6",
+                "DQ20"
+            ],
+            "status": "draft (terms decided; the statement it makes waits for blocked_by)"
+        },
+        {
+            "id": "dab-epm-45",
+            "kind": "column",
+            "table": "EPM",
+            "match": {
+                "v1_class": "ontologyTableRow",
+                "column": "ElevatedPlusMaze_Center_LatencyToFirstEntry",
+                "node": "EMPTY:0000048"
+            },
+            "terms": {
+                "variable": "EMPTY:0000418",
+                "location": "MMO:0000263",
+                "method": "MMO:0000262"
+            },
+            "decision": [
+                "assay labels batch 5",
+                "assay relabels become new terms"
+            ],
+            "source_unit": {
+                "unit": "s",
+                "from": "empty-ontology V2 empty-edit.owl line 953 (EMPTY:0000048 definition: 'Unit: seconds')"
+            },
+            "data": {
+                "empty_cells": 2,
+                "distinct": 27,
+                "range": [
+                    0,
+                    233.5
+                ],
+                "examples": [
+                    0,
+                    11.7,
+                    15.3
+                ]
+            },
+            "terms_not_in_did_schema_registry": [
+                "MMO:0000263",
+                "MMO:0000262"
+            ],
+            "blocked_by": [
+                "DQ1",
+                "DQ3",
+                "DQ20"
+            ],
+            "status": "draft (terms decided; the statement it makes waits for blocked_by)"
+        },
+        {
+            "id": "dab-epm-46",
+            "kind": "column",
+            "table": "EPM",
+            "match": {
+                "v1_class": "ontologyTableRow",
+                "column": "ElevatedPlusMaze_Center_TimeMovingTowards",
+                "node": "EMPTY:0000049"
+            },
+            "terms": {
+                "variable": "EMPTY:0000419",
+                "location": "MMO:0000263",
+                "method": "MMO:0000262"
+            },
+            "decision": [
+                "assay labels batch 5",
+                "assay relabels become new terms"
+            ],
+            "source_unit": {
+                "unit": "s",
+                "from": "empty-ontology V2 empty-edit.owl line 961 (EMPTY:0000049 definition: 'Unit: seconds')"
+            },
+            "data": {
+                "empty_cells": 2,
+                "distinct": 43,
+                "range": [
+                    116,
+                    254.3
+                ],
+                "examples": [
+                    203,
+                    214.5,
+                    198
+                ]
+            },
+            "terms_not_in_did_schema_registry": [
+                "MMO:0000263",
+                "MMO:0000262"
+            ],
+            "blocked_by": [
+                "DQ1",
+                "DQ3",
+                "DQ20"
+            ],
+            "status": "draft (terms decided; the statement it makes waits for blocked_by)"
+        },
+        {
+            "id": "dab-epm-47",
+            "kind": "column",
+            "table": "EPM",
+            "match": {
+                "v1_class": "ontologyTableRow",
+                "column": "ElevatedPlusMaze_Center_TimeFreezing",
+                "node": "EMPTY:0000050"
+            },
+            "terms": {
+                "variable": "CMO:0001043",
+                "location": "MMO:0000263",
+                "method": "MMO:0000262"
+            },
+            "decision": [
+                "assay labels batch 5"
+            ],
+            "source_unit": {
+                "unit": "s",
+                "from": "empty-ontology V2 empty-edit.owl line 969 (EMPTY:0000050 definition: 'Unit: seconds')"
+            },
+            "data": {
+                "empty_cells": 2,
+                "distinct": 32,
+                "range": [
+                    0,
+                    16.9
+                ],
+                "examples": [
+                    0,
+                    1.7,
+                    7.8
+                ]
+            },
+            "terms_not_in_did_schema_registry": [
+                "CMO:0001043",
+                "MMO:0000263",
+                "MMO:0000262"
+            ],
+            "blocked_by": [
+                "DQ1",
+                "DQ3",
+                "DQ20"
+            ],
+            "status": "draft (terms decided; the statement it makes waits for blocked_by)"
+        },
+        {
+            "id": "dab-epm-48",
+            "kind": "column",
+            "table": "EPM",
+            "match": {
+                "v1_class": "ontologyTableRow",
+                "column": "ElevatedPlusMaze_TestDuration",
+                "node": "EMPTY:0000068"
+            },
+            "terms": {
+                "variable": "SNOMEDCT:252129004",
+                "method": "MMO:0000262"
+            },
+            "decision": [
+                "assay labels batch 5"
+            ],
+            "source_unit": {
+                "unit": "s",
+                "from": "empty-ontology V2 empty-edit.owl line 1107 (EMPTY:0000068 definition: 'Unit: seconds')"
+            },
+            "data": {
+                "empty_cells": 0,
+                "distinct": 1,
+                "range": [
+                    300,
+                    300
+                ],
+                "examples": [
+                    300
+                ]
+            },
+            "terms_not_in_did_schema_registry": [
+                "SNOMEDCT:252129004",
+                "MMO:0000262"
+            ],
+            "blocked_by": [
+                "DQ1",
+                "DQ3",
+                "DQ10",
+                "DQ20"
+            ],
+            "status": "draft (terms decided; the statement it makes waits for blocked_by)"
+        },
+        {
+            "id": "dab-fps-02",
+            "kind": "column",
+            "table": "FPS",
+            "match": {
+                "v1_class": "ontologyTableRow",
+                "column": "Fear_potentiatedStartle_TrialTypeIdentifier",
+                "node": "EMPTY:0000057"
+            },
+            "terms": {
+                "variable": "EMPTY:0000421"
+            },
+            "decision": [
+                "assay labels batch 5",
+                "assay relabels become new terms"
+            ],
+            "data": {
+                "empty_cells": 0,
+                "distinct": 4,
+                "range": null,
+                "examples": [
+                    "Startle 95 dB Trial",
+                    "FPS (N) Testing Trial",
+                    "FPS (L+N) Testing Trial"
+                ]
+            },
+            "terms_not_in_did_schema_registry": [],
+            "blocked_by": [
+                "DQ2",
+                "DQ4",
+                "DQ7",
+                "DQ11",
+                "DQ20"
+            ],
+            "status": "draft (terms decided; the statement it makes waits for blocked_by)"
+        },
+        {
+            "id": "dab-fps-05",
+            "kind": "column",
+            "table": "FPS",
+            "match": {
+                "v1_class": "ontologyTableRow",
+                "column": "AcousticStartleResponse_NumberOfSamples",
+                "node": "EMPTY:0000060"
+            },
+            "terms": {
+                "variable": "AFO:AFR_0000956"
+            },
+            "decision": [
+                "assay labels batch 5"
+            ],
+            "source_unit": {
+                "unit": "count",
+                "from": "empty-ontology V2 empty-edit.owl line 1044 (EMPTY:0000060 definition: 'Unit: count')"
+            },
+            "data": {
+                "empty_cells": 0,
+                "distinct": 2,
+                "range": [
+                    200,
+                    500
+                ],
+                "examples": [
+                    200,
+                    500
+                ]
+            },
+            "terms_not_in_did_schema_registry": [
+                "AFO:AFR_0000956"
+            ],
+            "blocked_by": [
+                "DQ2",
+                "DQ4",
+                "DQ7",
+                "DQ9",
+                "DQ20"
+            ],
+            "status": "draft (terms decided; the statement it makes waits for blocked_by)"
+        },
+        {
+            "id": "dab-fps-06",
+            "kind": "column",
+            "table": "FPS",
+            "match": {
+                "v1_class": "ontologyTableRow",
+                "column": "AcousticStartleResponse_SamplingRate",
+                "node": "EMPTY:0000061"
+            },
+            "terms": {
+                "variable": "NCIT:C142234"
+            },
+            "decision": [
+                "assay labels batch 5"
+            ],
+            "source_unit": {
+                "unit": "Hz",
+                "from": "empty-ontology V2 empty-edit.owl line 1052 (EMPTY:0000061 definition: 'Unit: Hertz (Hz)')"
+            },
+            "data": {
+                "empty_cells": 0,
+                "distinct": 1,
+                "range": [
+                    1000,
+                    1000
+                ],
+                "examples": [
+                    1000
+                ]
+            },
+            "terms_not_in_did_schema_registry": [
+                "NCIT:C142234"
+            ],
+            "blocked_by": [
+                "DQ2",
+                "DQ4",
+                "DQ7",
+                "DQ9",
+                "DQ20"
+            ],
+            "status": "draft (terms decided; the statement it makes waits for blocked_by)"
+        },
+        {
+            "id": "dab-fps-07",
+            "kind": "column",
+            "table": "FPS",
+            "match": {
+                "v1_class": "ontologyTableRow",
+                "column": "AcousticStartleResponse_StartleWindowOnsetAmplitude",
+                "node": "EMPTY:0000062"
+            },
+            "terms": {
+                "variable": "EMPTY:0000422"
+            },
+            "decision": [
+                "assay labels batch 5",
+                "assay relabels become new terms"
+            ],
+            "data": {
+                "empty_cells": 0,
+                "distinct": 86,
+                "range": [
+                    0,
+                    233
+                ],
+                "examples": [
+                    2,
+                    5,
+                    1
+                ]
+            },
+            "terms_not_in_did_schema_registry": [],
+            "blocked_by": [
+                "DQ2",
+                "DQ4",
+                "DQ7",
+                "DQ8",
+                "DQ20"
+            ],
+            "status": "draft (terms decided; the statement it makes waits for blocked_by)"
+        },
+        {
+            "id": "dab-fps-08",
+            "kind": "column",
+            "table": "FPS",
+            "match": {
+                "v1_class": "ontologyTableRow",
+                "column": "AcousticStartleResponse_MaximumAmplitude",
+                "node": "EMPTY:0000063"
+            },
+            "terms": {
+                "variable": "EMPTY:0000349"
+            },
+            "decision": [
+                "assay labels batch 5"
+            ],
+            "data": {
+                "empty_cells": 0,
+                "distinct": 632,
+                "range": [
+                    4,
+                    4520
+                ],
+                "examples": [
+                    15,
+                    16,
+                    14
+                ]
+            },
+            "terms_not_in_did_schema_registry": [],
+            "blocked_by": [
+                "DQ2",
+                "DQ4",
+                "DQ7",
+                "DQ8",
+                "DQ20"
+            ],
+            "status": "draft (terms decided; the statement it makes waits for blocked_by)"
+        },
+        {
+            "id": "dab-fps-09",
+            "kind": "column",
+            "table": "FPS",
+            "match": {
+                "v1_class": "ontologyTableRow",
+                "column": "AcousticStartleResponse_TimeToMaximumAmplitude",
+                "node": "EMPTY:0000064"
+            },
+            "terms": {
+                "variable": "NCIT:C156560"
+            },
+            "decision": [
+                "assay labels batch 5"
+            ],
+            "source_unit": {
+                "unit": "ms",
+                "from": "empty-ontology V2 empty-edit.owl line 1076 (EMPTY:0000064 definition: 'Unit: milliseconds (ms)')"
+            },
+            "data": {
+                "empty_cells": 0,
+                "distinct": 279,
+                "range": [
+                    0,
+                    498
+                ],
+                "examples": [
+                    41,
+                    42,
+                    40
+                ]
+            },
+            "terms_not_in_did_schema_registry": [
+                "NCIT:C156560"
+            ],
+            "blocked_by": [
+                "DQ2",
+                "DQ4",
+                "DQ7",
+                "DQ20"
+            ],
+            "status": "draft (terms decided; the statement it makes waits for blocked_by)"
+        },
+        {
+            "id": "dab-fps-10",
+            "kind": "column",
+            "table": "FPS",
+            "match": {
+                "v1_class": "ontologyTableRow",
+                "column": "AcousticStartleResponse_AverageAmplitude",
+                "node": "EMPTY:0000065"
+            },
+            "terms": {
+                "variable": "NCIT:C70831",
+                "method": "OBI:0200079"
+            },
+            "decision": [
+                "assay labels batch 5"
+            ],
+            "data": {
+                "empty_cells": 0,
+                "distinct": 296,
+                "range": [
+                    1,
+                    695
+                ],
+                "examples": [
+                    7,
+                    8,
+                    6
+                ]
+            },
+            "terms_not_in_did_schema_registry": [
+                "NCIT:C70831",
+                "OBI:0200079"
+            ],
+            "blocked_by": [
+                "DQ2",
+                "DQ4",
+                "DQ7",
+                "DQ8",
+                "DQ20"
+            ],
+            "status": "draft (terms decided; the statement it makes waits for blocked_by)"
+        },
+        {
+            "id": "dab-fps-12",
+            "kind": "column",
+            "table": "FPS",
+            "match": {
+                "v1_class": "ontologyTableRow",
+                "column": "Fear_potentiatedStartle_ExperimentalPhaseOrTestName",
+                "node": "EMPTY:0000067"
+            },
+            "terms": {
+                "variable": "NCIT:C25257"
+            },
+            "decision": [
+                "assay labels batch 5"
+            ],
+            "data": {
+                "empty_cells": 0,
+                "distinct": 8,
+                "range": null,
+                "examples": [
+                    "Pre-test 1",
+                    "Pre-test 2",
+                    "Cue test 3"
+                ]
+            },
+            "terms_not_in_did_schema_registry": [
+                "NCIT:C25257"
+            ],
+            "blocked_by": [
+                "DQ2",
+                "DQ4",
+                "DQ7",
+                "DQ12",
+                "DQ20"
+            ],
+            "status": "draft (terms decided; the statement it makes waits for blocked_by)"
+        }
+    ],
+    "open": [
+        {
+            "table": "EPM",
+            "column": "Treatment_CNOOrSalineAdministration",
+            "node": "EMPTY:0000200",
+            "questions": [
+                "DQ17"
+            ],
+            "data": {
+                "empty_cells": 0,
+                "distinct": 2,
+                "range": null,
+                "examples": [
+                    "CNO",
+                    "Saline"
+                ]
+            }
+        },
+        {
+            "table": "EPM",
+            "column": "ExperimentalGroupCode",
+            "node": "EMPTY:0000059",
+            "questions": [
+                "DQ15"
+            ],
+            "data": {
+                "empty_cells": 0,
+                "distinct": 2,
+                "range": [
+                    1,
+                    2
+                ],
+                "examples": [
+                    1,
+                    2
+                ]
+            }
+        },
+        {
+            "table": "EPM",
+            "column": "DataExclusionFlag",
+            "node": "EMPTY:0000069",
+            "questions": [
+                "DQ16"
+            ],
+            "data": {
+                "empty_cells": 0,
+                "distinct": 2,
+                "range": [
+                    false,
+                    true
+                ],
+                "examples": [
+                    false,
+                    true
+                ]
+            }
+        },
+        {
+            "table": "FPS",
+            "column": "ExperimentalTrialNumber",
+            "node": "EMPTY:0000075",
+            "questions": [
+                "DQ13"
+            ],
+            "data": {
+                "empty_cells": 0,
+                "distinct": 30,
+                "range": [
+                    1,
+                    30
+                ],
+                "examples": [
+                    4,
+                    10,
+                    5
+                ]
+            }
+        },
+        {
+            "table": "FPS",
+            "column": "ExperimentalGroupCode",
+            "node": "EMPTY:0000059",
+            "questions": [
+                "DQ14"
+            ],
+            "data": {
+                "empty_cells": 0,
+                "distinct": 4,
+                "range": [
+                    1,
+                    4
+                ],
+                "examples": [
+                    1,
+                    3,
+                    2
+                ]
+            }
+        },
+        {
+            "table": "FPS",
+            "column": "ExperimentTrialExecutionTimestamp",
+            "node": "EMPTY:0000066",
+            "questions": [
+                "DQ2"
+            ],
+            "data": {
+                "empty_cells": 0,
+                "distinct": 1309,
+                "range": null,
+                "examples": [
+                    "8/19/2022 9:22:39 AM",
+                    "8/20/2022 11:01:30 AM",
+                    "8/24/2022 11:10:35 AM"
+                ]
+            }
+        },
+        {
+            "v1_class": "stimulus_bath",
+            "what": "the second bath statement of [bath is two statements] (the ingredient that was really changed)",
+            "questions": [
+                "DQ21",
+                "DQ22"
+            ],
+            "data": "1605 baths, 15 distinct mixture tables: 1041 plain ACSF (10 rows); 131 ACSF + one added row (a vasotocin antagonist, 0.4 uM, node written 'NCIm:' with no id); 433 tables listing only 1 or 2 drugs (e.g. arginine-vasopressin 0.2 uM; nelivaptan 1 uM + arginine-vasopressin 0.2 uM)"
+        }
+    ],
+    "not_in_corpus": {
+        "_note": "decided map work whose v1 input the Dab corpus does not hold (a corpus is a sample, so the Dab dataset may still hold them)",
+        "subject_group ([unnamed groups named by the map])": 0,
+        "treatment_drug ([vehicle rate needs a map])": 0,
+        "measurement / subjectmeasurement ([second measurement value needs a map])": 0,
+        "oneepoch elements ([oneepoch is a redundant calculation], [oneepoch method is data combination], [global-clock oneepoch details])": 0
+    }
+}
