@@ -69,6 +69,37 @@ classdef TestEnsembleMembership < matlab.unittest.TestCase
             testCase.verifyEmpty(ofRelation(minted, 'derived_from'));
         end
 
+        function testTheMapPassOneHandsOnIsRead(testCase)
+            % [ensemble and generic_file keep their conversions] and
+            % [ensemble and generic_file checked as v1] (Jess Haley,
+            % 2026-11-01): DID-matlab's pass 1 hands a v1 `ensemble` on
+            % unchanged, stamped did_v1 (universalRenames is deleted, DID-matlab
+            % #351). Run the map through did2.convert.v1_to_v2 and give THAT
+            % output to this pass: it must be the raw v1 map, and it must still
+            % become membership.
+            structs = ensembleCorpus('ens_1', 'epoch_a', {'nrn_1', 'nrn_2'});
+            map = structs{end};
+            raw = rmfield(map, 'document_class');
+            raw.document_class = rmfield(map.document_class, 'schema_version');
+            out = did2.convert.v1_to_v2({raw}, 'Validate', false, ...
+                'TargetVersion', 'did_v2');
+            testCase.assertEmpty(out.quarantine);
+            testCase.assertNumElements(out.migrated, 1);
+            handed = out.migrated{1}.toStruct();
+            testCase.verifyEqual(handed.document_class.class_name, 'ensemble');
+            testCase.verifyEqual(handed.document_class.schema_version, 'did_v1');
+            testCase.verifyEqual(handed.app.name, 'ndi.element.ensemble');
+            testCase.verifyEqual(depValue(handed, 'neuron_id_2'), 'nrn_2');
+            structs{end} = handed;
+            [~, minted, report] = ndi.migrate.internal.ensembleMembership(structs);
+            testCase.verifyEqual(report.ensemble_maps_seen, 1);
+            testCase.verifyEqual(report.ensemble_maps_used, 1);
+            testCase.verifyEqual(report.member_of_minted, 2);
+            m = ofRelation(minted, 'member_of');
+            testCase.verifyEqual(depValue(m{2}, 'child_id'), 'nrn_2');
+            testCase.verifyEqual(depValue(m{2}, 'parent_id'), 'ens_1');
+        end
+
         function testMintedRelationShapeIsVEta(testCase)
             structs = ensembleCorpus('ens_1', 'epoch_a', {'nrn_1'});
             [~, minted, ~] = ndi.migrate.internal.ensembleMembership(structs);
@@ -705,8 +736,15 @@ s = {acquisitionEpochBody(['aepoch_' epochId], epochId, ensembleId), ...
 end
 
 function b = mapBody(ensembleId, epochId, neuronIds)
+% The map AS PASS 1 HANDS IT ON: the raw v1 document, NDI's own spelling
+% (NDI-matlab main database_documents/ensemble/ensemble.json and its writer
+% +ndi/+element/ensemble.m buildMapDoc), stamped did_v1. DID-matlab's
+% did2.convert.v1_to_v2 renames nothing since #351 deleted universalRenames
+% ([ensemble and generic_file checked as v1], Jess Haley, 2026-11-01):
+% superclasses by `definition`, edges {name, value}, `app` name/version.
 b = struct();
-b.document_class = dc('ensemble', {'base', 'epochid', 'app'});
+b.document_class = v1dc('ensemble', 'ensemble/ensemble.json', ...
+    {'base.json', 'epochid.json', 'app.json'});
 deps = [dep('element_id', ensembleId), ...
         dep('element_epoch_id', ['aepoch_' epochId])];
 for k = 1:numel(neuronIds)
@@ -715,10 +753,23 @@ end
 b.depends_on = deps;
 b.base = base(['map_' ensembleId '_' epochId]);
 b.epochid = struct('epochid', epochId);
-b.app = struct('name', 'ndi.element.ensemble');
+b.app = struct('name', 'ndi.element.ensemble', 'version', '1.0', 'url', '', ...
+    'os', '', 'os_version', '', 'interpreter', '', 'interpreter_version', '');
+b.files = struct('file_list', {{'neuron_names.txt'}});
 b.ensemble = struct('ensemble_name', 'V1', 'value_type', 'spiketimes', ...
     'value_description', '', 'num_neurons', numel(neuronIds), ...
     'clocktype', 'dev_local_time');
+end
+
+function x = v1dc(name, definition, superDefinitions)
+% a v1 document_class as NDI writes it (superclasses name only their
+% `definition`), with the did_v1 stamp pass 1 adds
+x = struct('definition', ['$NDIDOCUMENTPATH/' definition], ...
+    'validation', ['$NDISCHEMAPATH/' strrep(definition, '.json', '_schema.json')], ...
+    'class_name', name, 'property_list_name', name, 'class_version', 1, ...
+    'superclasses', struct('definition', ...
+        cellfun(@(d) ['$NDIDOCUMENTPATH/' d], superDefinitions, 'UniformOutput', false)), ...
+    'schema_version', 'did_v1');
 end
 
 function b = subjectBody(id)
