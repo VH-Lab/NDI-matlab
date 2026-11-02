@@ -14,9 +14,27 @@ function [kept, minted, report] = ensembleMembership(structs, options)
 %   MAP document dissolves; and a verify-before-delete (0 stranded per-neuron
 %   trains) gates dropping the combined bytes.
 %
-%   STRUCTS is a cell of V_eta document body structs (from
-%   did2.document.toStruct), i.e. the pass-1 output -- the same contract
-%   ndi.migrate.internal.pathSPromotion takes. Returns KEPT (the surviving
+%   STRUCTS is a cell of document body structs (from did2.document.toStruct),
+%   i.e. the pass-1 output -- the same contract
+%   ndi.migrate.internal.pathSPromotion takes.
+%
+%   THE MAP IS READ AS RAW v1. Pass 1 hands a v1 `ensemble` on UNCHANGED,
+%   stamped `did_v1`, after checking it against NDI's v1 template when one is
+%   set (DID-matlab did2.convert.v1_to_v2 LATER_STEP_CLASSES; Decided by Jess
+%   Haley, 2026-11-01 [ensemble and generic_file keep their conversions] and
+%   [ensemble and generic_file checked as v1], did-schema
+%   did_v2_go_forward_class_audit.md). DID-matlab #351 deleted
+%   did2.convert.universalRenames, so nothing renames it first ([migrators
+%   read raw v1]). What this pass reads is NDI's own spelling
+%   (ensemble.json and its writer +ndi/+element/ensemble.m buildMapDoc at
+%   NDI-matlab main): `document_class.class_name` 'ensemble'; the edges as
+%   v1 `depends_on` {name, value} -- `element_id`, `element_epoch_id`,
+%   `neuron_id_1`, `neuron_id_2`, ...; `epochid.epochid`; `base.id`,
+%   `base.session_id`, `base.datestamp`. The `ensemble` block, the `app` block
+%   and `files` are not read. The other documents it reads (the neuron and
+%   ensemble entities, the acquisition_epoch trains) are V2 documents pass 1
+%   built, whose edges are {name, document_id}; ONE edge reader takes both
+%   keys (depEntryValue). Returns KEPT (the surviving
 %   bodies -- see "WHAT THIS DOES NOT DO"), MINTED (the new `directed_relation`
 %   bodies, tagged schema_version 'did_v2' so they fold back through v1_to_v2),
 %   and REPORT (denominator first; REPORT.changed is false when nothing was
@@ -237,9 +255,8 @@ function [kept, minted, report] = ensembleMembership(structs, options)
 %
 %   i.e. a train is an `element_epoch` whose `element_id` is the neuron, whose
 %   `epochid.epochid` is the epoch, carrying the binary. `element_epoch` is
-%   RENAMED to `acquisition_epoch` in V_eta (base.id preserved), and
-%   `universalRenames.m` skips the structural keys `file`/`files`, so the file
-%   block survives verbatim. The writer agrees with the reader:
+%   RENAMED to `acquisition_epoch` in V_eta (base.id preserved), and its
+%   migrator keeps the file block. The writer agrees with the reader:
 %   +ndi/element.m:382-393 mints `element_epoch` and sets `element_id`, and
 %   +ndi/+element/timeseries.m:114-116 attaches `epoch_binary_data.vhsb`.
 %
@@ -685,10 +702,9 @@ function tf = hasBinaryPayload(s)
 %HASBINARYPAYLOAD True when the epoch document actually carries bytes.
 %   NDI attaches `epoch_binary_data.vhsb`
 %   (+ndi/+element/timeseries.m:114-116) and the template declares it under
-%   `files.file_list`. `universalRenames.m` skips the structural keys
-%   `file`/`files`, so the block survives migration verbatim -- both
-%   spellings are accepted because the restated-tombstone defect showed the
-%   two are not reliably distinguished across the tree.
+%   `files.file_list`; both spellings are accepted because the
+%   restated-tombstone defect showed the two are not reliably distinguished
+%   across the tree.
 tf = false;
 for blk = {'files', 'file'}
     name = blk{1};
@@ -725,6 +741,8 @@ end
 end
 
 function v = depEntryValue(d)
+% `value` is the v1 key (the raw map); `document_id` the key a V2 document
+% pass 1 built carries (the acquisition_epoch trains' `element_id`)
 v = '';
 if isfield(d, 'value') && ~isempty(d.value)
     v = char(d.value);
