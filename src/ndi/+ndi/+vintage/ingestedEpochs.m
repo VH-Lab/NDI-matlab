@@ -26,12 +26,22 @@ function E = ingestedEpochs(ndi_session_obj, docs, probemapClass)
 %                                         (ndi.vintage.elementFields)
 %                  subjectstring          the entity_id entity's
 %                                         local_identifier
-%                  devicestring           the acquisition_channels_id
-%                                         document: its system's name, ':',
-%                                         then each channel group's v1 prefix
-%                                         -- found BY NODE through
+%                  devicestring           the statement's acquisition_system_id
+%                                         system's name, ':', then the
+%                                         conditions of the probe's wiring
+%                                         relation (a directed_relation
+%                                         `connected to`, RO:0002170, child
+%                                         the probe, parent the system, timed
+%                                         by the statement's anchor; did-schema
+%                                         [probe wiring is a relation]), each
+%                                         a channel type's v1 prefix -- found
+%                                         BY NODE through
 %                                         ndi.vintage.channelPrefix ([channel
-%                                         types]) -- and its numbers
+%                                         types]) -- and its numbers. A
+%                                         session migrated before that names
+%                                         system and channels through an
+%                                         acquisition_channels_id document;
+%                                         both are read.
 %                Rows are kept once each, in statement order. A manifest whose
 %                statements give no row reads as probemap [].
 %
@@ -99,9 +109,10 @@ seen = {};
 for i = 1:numel(statements)
     st = statements{i};
     acId = st.dependency_value('acquisition_channels_id', 'ErrorIfNotFound', 0);
+    sysId = st.dependency_value('acquisition_system_id', 'ErrorIfNotFound', 0);
     elId = st.dependency_value('instrument_id', 'ErrorIfNotFound', 0);
-    if isempty(acId) || isempty(elId)
-        continue;   % not a probe-map row: no wiring or no probe
+    if (isempty(acId) && isempty(sysId)) || isempty(elId)
+        continue;   % not a probe-map row: no rig or no probe
     end
     [el, cache] = elementOf(S, elId, cache);
     if isempty(el)
@@ -114,7 +125,11 @@ for i = 1:numel(statements)
     if ~isempty(sDoc)
         subjectString = localIdentifier(sDoc.document_properties);
     end
-    [devicestring, cache] = deviceString(S, acId, cache);
+    if ~isempty(acId)
+        [devicestring, cache] = deviceString(S, acId, cache);
+    else
+        [devicestring, cache] = ndi.vintage.wiredDeviceString(S, st, sysId, elId, cache);
+    end
     key = strjoin({el.name, num2str(el.reference), el.type, devicestring, subjectString}, char(0));
     if any(strcmp(seen, key))
         continue;
@@ -130,7 +145,8 @@ end
 end
 
 function [s, cache] = deviceString(S, acId, cache)
-% 'vhspike2:ai11-14;di1' from an acquisition_channels document
+% 'vhspike2:ai11-14;di1' from an acquisition_channels document (a session
+% migrated before [probe wiring is a relation])
 s = '';
 [ac, cache] = docById(S, acId, cache);
 if isempty(ac)

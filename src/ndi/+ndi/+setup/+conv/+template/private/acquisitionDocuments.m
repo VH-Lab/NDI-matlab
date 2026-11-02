@@ -27,10 +27,13 @@ function out = acquisitionDocuments(sessions, entityIds, cfg, throwErrors, optio
 %   a recording is timed by the recording's reference.
 %
 %   TEMPLATE: a real importer adds what NDI's acquisition objects are rebuilt
-%   from -- an acquisition_system per device with its acquisition_reader,
-%   epoch_file_pattern and acquisition_channels (the Haley import's
-%   sessionDocuments.m) -- the instrument (a dataset-level device entity,
-%   'InstrumentId'), and the recording's keys (its dimensions).
+%   from -- an acquisition_system per device with its acquisition_reader and
+%   epoch_file_pattern, named by each recording's acquisition_system_id (the
+%   Haley import's sessionDocuments.m) -- the instrument (a dataset-level
+%   device entity, 'InstrumentId'), and the recording's keys (its
+%   dimensions). A probe wired to numbered channels is `connected to` its
+%   system by a directed_relation with one condition per channel type
+%   (did-schema [probe wiring is a relation]).
 %
 %   Options: 'Checksums' (default true).
 %

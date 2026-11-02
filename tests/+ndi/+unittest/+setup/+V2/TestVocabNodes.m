@@ -80,9 +80,15 @@ classdef TestVocabNodes < matlab.unittest.TestCase
         end
 
         function testEveryBoundChannelTypeHasItsPrefix(testCase)
-            p = schemaPathOrSkip(testCase, 'acquisition_channels.json');
+            % the channel types are read from acquisition_channels' binding, or,
+            % once did-schema retires that class ([probe wiring is a
+            % relation]), from the term registry
+            p = getenv('DID_SCHEMA_PATH');
+            if ~isfile(ndi.v2.schemaFile(p, 'acquisition_channels.json'))
+                p = schemaPathOrSkip(testCase, 'term_registry_meta.json');
+            end
             V = ndi.v2.vocabNodes('channel_type', p);
-            testCase.verifyTrue(V.declared, 'acquisition_channels.channels.type binds its values');
+            testCase.verifyTrue(V.declared, 'the schema names the channel types');
             prefixes = ndi.vintage.channelTypes();
             for k = 1:size(prefixes, 1)
                 testCase.verifyTrue(isKey(V.nodeHandle, prefixes{k, 2}));
