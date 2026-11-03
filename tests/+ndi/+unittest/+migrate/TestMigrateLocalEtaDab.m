@@ -284,6 +284,24 @@ classdef TestMigrateLocalEtaDab < matlab.unittest.TestCase
                 numel(devs), numel(els));
         end
 
+        function testTheSameObjectsBeforeAndAfterMigration(testCase)
+            % Object-level equivalence over the whole corpus
+            % (VH-Lab/NDI-matlab#785; Jess Haley, 2026-11-03, queued it):
+            % every session of Dab, opened through ndi.session.dir before
+            % migration (the same documents in a DID v1 database) and after
+            % (a copy of the migrated database), must give the same
+            % subjects, subject facts, elements, probes, probe epoch tables,
+            % acquisition systems and their epochs, and element epochs; and
+            % a document added to a migrated session must read back after
+            % reopening. Every category prints its denominator first
+            % (ndi.unittest.migrate.corpusObjectEquivalence). Apparatus and
+            % equipment entities have no v1 subject object to compare with,
+            % so they are counted, not compared.
+            R = ndi.unittest.migrate.corpusObjectEquivalence(testCase.Bodies, ...
+                fileparts(testCase.Result.destination), 'Dab');
+            ndi.unittest.migrate.verifyObjectEquivalence(testCase, R);
+        end
+
         function testBathsInOsmOrSaturationAreCarriedAsV1(testCase)
             % Decided by Jess Haley, 2026-11-03 [Dab bath units are
             % Dabrowska's] (did-schema did_v2_go_forward_class_audit.md): the

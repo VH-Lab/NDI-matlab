@@ -30,6 +30,8 @@ on:
     paths:
       - '.github/workflows/test-eta-migrate-b.yml'
       - 'tests/*ndi/*unittest/*migrate/TestMigrateLocalEtaB.m'
+      - 'tests/*ndi/*unittest/*migrate/corpusObjectEquivalence.m'
+      - 'tests/*ndi/*unittest/*migrate/verifyObjectEquivalence.m'
   workflow_dispatch:
     inputs:
       ref:
