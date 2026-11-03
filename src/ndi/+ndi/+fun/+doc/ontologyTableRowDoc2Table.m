@@ -32,6 +32,13 @@ function [dataTables,docIDs,sessionIDs,dependencyIDs] = ontologyTableRowDoc2Tabl
 %        structure mirrors `dataTables`. Each cell contains the document IDs
 %        corresponding to the data in the equivalent `dataTables` cell.
 %
+%     sessionIDs (cell) - The session ID of each document, structured as
+%        `docIDs`.
+%
+%     dependencyIDs (cell) - The `document_id` dependencies of each document,
+%        structured as `docIDs`. Each entry is a cell array of the document
+%        IDs that row depends on, or an empty cell when the row has none.
+%
 %   See also: vlt.data.flattenstruct2table, ndi.fun.table.vstack
 
 % Input argument validation
@@ -59,7 +66,12 @@ for i = 1:numel(tableRowDoc)
     variableNames{i} = tableRowDoc{i}.document_properties.ontologyTableRow.variableNames;
     docID{i} = tableRowDoc{i}.id;
     sessionID{i} = tableRowDoc{i}.session_id();  
-    dependencyID{i} = tableRowDoc{i}.dependency_value_n('document_id');
+    % A row need not depend on any document: tableDocMaker adds a
+    % `document_id` dependency only when the table names one, and the
+    % blank template's empty entry is no dependency (#1016). Such a row
+    % gets an empty cell here instead of an error.
+    dependencyID{i} = tableRowDoc{i}.dependency_value_n('document_id', ...
+        'ErrorIfNotFound', false);
 end
 
 if options.StackAll

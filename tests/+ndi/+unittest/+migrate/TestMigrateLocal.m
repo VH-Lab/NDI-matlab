@@ -170,6 +170,47 @@ classdef TestMigrateLocal < matlab.unittest.TestCase
             verifyEqual(testCase, result.migrationReport.counts.carried_as_v1, 3);
         end
 
+        function testTwoSessionsWriteOneMigrationRecordEach(testCase)
+            % [one migration document per dataset] (Decided by Jess Haley,
+            % 2026-11-03, did-schema did_v2_go_forward_class_audit.md): a run
+            % with two or more sessions and no dataset writes one `migration`
+            % document per session, each pointing at its session with its own
+            % report (DID-matlab did2.convert.migrationRecord). It stopped with
+            % did2:convert:migrationAnchor until then.
+            b3 = makeV1Body('gamma');
+            b3.base.session_id = 'aabb1122ccdd3344_7700aabbccddeeff';
+            bodies = {jsonencode(makeV1Body('alpha')), jsonencode(makeV1Body('beta')), ...
+                jsonencode(b3)};
+            srcSqlite = fullfile(testCase.SessionRoot, '.ndi', 'did-sqlite.sqlite');
+            buildV1Sqlite(srcSqlite, bodies);
+            result = ndi.migrate.local(testCase.SessionRoot, 'Validate', false);
+            verifyEmpty(testCase, result.quarantine);
+            ids = result.migrationRecord.migration_ids;
+            verifyNumElements(testCase, ids, 2);
+            verifyNumElements(testCase, result.migrationRecord.report_ids, 2);
+            verifyNumElements(testCase, result.migrationReport, 2);
+            db = did2.database.sqlitedb(result.destination);
+            cleanup = onCleanup(@() db.close()); %#ok<NASGU>
+            verifyEqual(testCase, db.count(), 3 + 2 * 2, ...
+                'three documents, two migration records and two reports');
+            anchors = cell(1, 2);
+            for k = 1:2
+                m = db.get(ids{k});
+                verifyEqual(testCase, m.className(), 'migration');
+                ms = m.toStruct();
+                anchors{k} = char(ms.depends_on(strcmp({ms.depends_on.name}, 'session_id')).document_id);
+                report = jsondecode(fileread(db.filePath( ...
+                    result.migrationRecord.report_ids{k}, 'body_data_0')));
+                verifyEqual(testCase, report.anchor, anchors{k});
+                verifyEqual(testCase, report.counts.run.source_documents, 3);
+            end
+            verifyEqual(testCase, sort(anchors), sort({'aabb1122ccdd3344_9900aabbccddeeff', ...
+                'aabb1122ccdd3344_7700aabbccddeeff'}));
+            docs = arrayfun(@(r) r.counts.documents, result.migrationReport);
+            verifyEqual(testCase, sort(docs), [1 2], ...
+                'each report counts its own session''s documents');
+        end
+
         function testMigratesDumbJsonDb(testCase)
             % Round-trip a synthetic dumbjsondb store under .ndi.
             ndiDir = fullfile(testCase.SessionRoot, '.ndi');
