@@ -15,6 +15,26 @@ classdef TestBathAssembly < matlab.unittest.TestCase
 
     methods (Test)
 
+        function testOsmAndSaturationRowsAreNotRead(testCase)
+            % [Dab bath units are Dabrowska's] (Decided by Jess Haley,
+            % 2026-11-03): a row stated in "osm" or "saturation" is not read by
+            % the generic stage (ndi.migrate.local's resolveDeferred carries
+            % the bath as v1, carry-155); rows in a read unit are not named
+            hdr = sprintf('ontologyName,name,value,ontologyUnit,unitName\n');
+            acsf = [hdr ...
+                sprintf('NCIm:C0037494,"sodium chloride",0.1225,OM:MolarVolumeUnit,Molar\n') ...
+                sprintf('NCIm:C4048290,"pH",7.4,OM:Acidity,pH\n') ...
+                sprintf('NCIm:CL1445492,"carbogen",1,NCIm:C0522534,saturation\n') ...
+                sprintf('NCIm:C0439186,"osm",0.29,NCIm:C0439186,osm\n')];
+            b = struct('stimulus_bath', struct('mixture_table', acsf));
+            testCase.verifyEqual(ndi.migrate.internal.bathUnreadUnitRows(b), ...
+                {'carbogen: 1 saturation', 'osm: 0.29 osm'});
+            b.stimulus_bath.mixture_table = [hdr ...
+                sprintf('NCIm:C0037494,"sodium chloride",0.1225,OM:MolarVolumeUnit,Molar\n')];
+            testCase.verifyEmpty(ndi.migrate.internal.bathUnreadUnitRows(b));
+            testCase.verifyEmpty(ndi.migrate.internal.bathUnreadUnitRows(struct()));
+        end
+
         function testVetaIsAManipulationValuedByItsFormulation(testCase)
             % did-schema #88: the `manipulation` direction + the `formulation`
             % kind, its value the formulation document through `value_id`
