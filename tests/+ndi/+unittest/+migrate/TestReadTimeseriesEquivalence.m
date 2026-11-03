@@ -203,8 +203,25 @@ classdef TestReadTimeseriesEquivalence < matlab.unittest.TestCase
             % (its clocks and t0_t1), its samples and its times, and the
             % acquisition system's time channel, read the same before and
             % after migration.
-            testCase.verifySameReading('Ingested', 'ctx');
+            %
+            % THE TIMES TO THE DECIDED TOLERANCE, NOT TO THE BIT. The v1
+            % ingest stores the time channel as samples (`ti_group1`).
+            % Migration removes that body because the series is evenly
+            % spaced, and only when every sample is t0 + (k-1)/rate to
+            % max(1e-9 s, a millionth of a sample)
+            % (ndi.migrate.internal.ingestedArchiveBodies). After that, the
+            % time is the covariate origin plus spacing (Decided by Jess Haley,
+            % 2026-11-01 [evenly spaced time is a covariate]). The reader
+            % computes t0 + (s-1)/rate, which differs from v1's stored doubles
+            % by a few units in the last place (e.g. 5e-19 s at 0.0009 s, on
+            % run 41675185510). The epoch table and the samples are compared
+            % exactly; the times are compared to the tolerance migration
+            % itself checked.
             r = testCase.Ingested;
+            testCase.assertEmpty(r.v1dev.samplerate.err, ...
+                ['v1 ingested sample rate raised: ' r.v1dev.samplerate.err]);
+            timeTol = max(1e-9, 1e-6 / double(r.v1dev.samplerate.value));
+            testCase.verifySameReading('Ingested', 'ctx', timeTol);
             a = r.v1dev.time;
             b = r.v2dev.time;
             fprintf('  Ingested / intan1 time\n    v1: %s\n    v2: %s\n', ...
@@ -213,7 +230,7 @@ classdef TestReadTimeseriesEquivalence < matlab.unittest.TestCase
             testCase.assertEmpty(a.err, ['v1 ingested time channel raised: ' a.err]);
             testCase.assertNotEmpty(a.value, 'the v1 ingested time channel is empty');
             testCase.verifyEmpty(b.err, ['the MIGRATED ingested time channel raised: ' b.err]);
-            testCase.verifyEqual(b.value, a.value, ...
+            testCase.verifyEqual(b.value, a.value, 'AbsTol', timeTol, ...
                 'the ingested time channel differs after migration');
         end
 
@@ -221,7 +238,10 @@ classdef TestReadTimeseriesEquivalence < matlab.unittest.TestCase
 
     methods (Access = private)
 
-        function verifySameReading(testCase, which, name)
+        function verifySameReading(testCase, which, name, timeTol)
+            % TIMETOL (default 0: equal to the bit) is the absolute
+            % tolerance, in seconds, of the times comparison only.
+            if nargin < 4; timeTol = 0; end
             r = testCase.(which);
             testCase.assertEmpty(r.setupError, ...
                 sprintf('building the %s session raised: %s', which, r.setupError));
@@ -244,8 +264,14 @@ classdef TestReadTimeseriesEquivalence < matlab.unittest.TestCase
                 sprintf('%s/%s: sample array size differs after migration', which, name));
             testCase.verifyEqual(b.data, a.data, ...
                 sprintf('%s/%s: samples differ after migration', which, name));
-            testCase.verifyEqual(b.t, a.t, ...
-                sprintf('%s/%s: times differ after migration', which, name));
+            if timeTol == 0
+                testCase.verifyEqual(b.t, a.t, ...
+                    sprintf('%s/%s: times differ after migration', which, name));
+            else
+                testCase.verifyEqual(b.t, a.t, 'AbsTol', timeTol, ...
+                    sprintf('%s/%s: times differ after migration (tolerance %g s)', ...
+                    which, name, timeTol));
+            end
         end
 
     end
