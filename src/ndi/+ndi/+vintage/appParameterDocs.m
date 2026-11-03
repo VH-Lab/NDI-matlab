@@ -1,8 +1,8 @@
-function docs = appParameterDocs(search, name, v1Class, block, fieldNames, isValid)
+function docs = appParameterDocs(search, name, v1Class, readParams, isValid)
 %APPPARAMETERDOCS Find an app's named parameter documents, v1 or migrated `method`.
 %
-%   DOCS = ndi.vintage.appParameterDocs(SEARCH, NAME, V1CLASS, BLOCK,
-%   FIELDNAMES, ISVALID) finds the parameter set an app saved as NAME, in
+%   DOCS = ndi.vintage.appParameterDocs(SEARCH, NAME, V1CLASS, READPARAMS,
+%   ISVALID) finds the parameter set an app saved as NAME, in
 %   either shape (issue #1053):
 %
 %     v1   a V1CLASS document whose `base.name` is NAME (what the app writes);
@@ -14,9 +14,12 @@ function docs = appParameterDocs(search, name, v1Class, block, fieldNames, isVal
 %
 %   A `method` carries no class to tell an extraction preset from a sorting
 %   preset of the same name, so a `method` is kept only when its parameters,
-%   read with ndi.vintage.appParameters(DOC, BLOCK, FIELDNAMES), pass ISVALID
-%   (a function handle taking that struct and returning true, e.g. the app's
-%   own isvalid_appdoc_struct).
+%   read by READPARAMS (a function handle taking the document and returning
+%   the app's v1 parameter struct, e.g. the app's own reader built on
+%   ndi.vintage.appParameters, so that settings the migration renamed are
+%   restored), pass ISVALID (a function handle taking that struct and
+%   returning true, e.g. the app's own isvalid_appdoc_struct). A method whose
+%   parameters cannot be read is not kept.
 %
 %   SEARCH is a function handle taking an ndi.query and returning documents
 %   (e.g. @(q) S.database_search(q)). DOCS is a cell array: the v1 documents
@@ -29,8 +32,7 @@ arguments
     search function_handle
     name (1,:) char
     v1Class (1,:) char
-    block (1,:) char
-    fieldNames cell
+    readParams function_handle
     isValid function_handle
 end
 
@@ -46,12 +48,9 @@ for k = 1:numel(mdocs)
     if ismember(d.id(), have)
         continue;
     end
-    params = ndi.vintage.appParameters(d, block, fieldNames);
-    if isempty(params) || ~isstruct(params)
-        continue;
-    end
     try
-        ok = isValid(params);
+        params = readParams(d);
+        ok = isstruct(params) && ~isempty(params) && isValid(params);
     catch
         ok = false;
     end
