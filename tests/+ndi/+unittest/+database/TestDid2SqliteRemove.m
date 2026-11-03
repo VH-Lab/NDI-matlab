@@ -46,6 +46,17 @@ classdef TestDid2SqliteRemove < matlab.unittest.TestCase
             % removing it again is not an error
             S.database_rm(sub.id());
 
+            % at the database: a missing id is ignored by default, warned
+            % about with 'warn', and an error with 'error'
+            db = ndi.database.fun.opendatabase(fullfile(testCase.Dir, '.ndi'), S.id());
+            testCase.verifyClass(db, 'ndi.database.implementations.database.did2sqlite');
+            db.remove(sub.id());
+            testCase.verifyWarning(@() db.remove(sub.id(), 'OnMissing', 'warn'), ...
+                'NDI:did2sqlite:missingDocument');
+            testCase.verifyError(@() db.remove(sub.id(), 'OnMissing', 'error'), ...
+                'NDI:did2sqlite:missingDocument');
+            clear db
+
             S.database_add(sub.newdocument(S));
             S.database_clear('yes');
             testCase.verifyEmpty(S.database_search(q), 'database_clear left the document');
