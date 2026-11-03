@@ -235,7 +235,7 @@ classdef docViewer < handle
                     depends = obj.fullDocuments(i).document_properties.depends_on;
                     for j = 1:numel(depends)
                         for k = 1:numel(obj.fullDocuments)
-                            if isequal(obj.fullDocuments(k).document_properties.ndi_document.id, depends(j).value)
+                            if isequal(obj.fullDocuments(k).document_properties.ndi_document.id, ndi.document.i_readDependencyTarget(depends(j)))
                                 s = [s i];
                                 t = [t k];
                             end
@@ -266,12 +266,12 @@ classdef docViewer < handle
                 if isfield(obj.fullDocuments(i).document_properties, 'depends_on')
                     depends = obj.fullDocuments(i).document_properties.depends_on;
                     for j = 1:numel(depends)
-                        if isequal(d.document_properties.ndi_document.id, depends(j).value)
+                        if isequal(d.document_properties.ndi_document.id, ndi.document.i_readDependencyTarget(depends(j)))
                             s = [s i];
                             t = [t ind];
                         elseif eq(obj.fullDocuments(i), d)
                             for k = 1:numel(obj.fullDocuments)
-                                if isequal(obj.fullDocuments(k).document_properties.ndi_document.id, depends(j).value)
+                                if isequal(obj.fullDocuments(k).document_properties.ndi_document.id, ndi.document.i_readDependencyTarget(depends(j)))
                                     s = [s ind];
                                     t = [t k];
                                 end

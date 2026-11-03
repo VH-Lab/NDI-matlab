@@ -1,8 +1,14 @@
 classdef TranslateQueryPathsTest < matlab.unittest.TestCase
 %TRANSLATEQUERYPATHSTEST Unit tests for ndi.compat.translateQueryPaths.
 %
-%   Covers the depends_on entry-key rewrites, 'or' recursion, identity for
-%   every other path, and that ndi.query applies it.
+%   Covers the depends_on entry-key expansion (a test on any one key
+%   spelling -- `document_id`, `value`, `id` -- becomes the test on all
+%   three, because a document keeps the dependency shape it was read in:
+%   did-schema [v2 line reads and writes both], after VH-Lab/DID-matlab#204;
+%   DID-matlab #389), 'or' recursion, identity for every other path, and
+%   that ndi.query applies it. These tests used to pin a rewrite of `id` /
+%   `value` to `document_id` alone; that rewrite would miss every v1
+%   document, which now keeps its `value` key.
 %
 %   The probe_location / treatment field aliases are gone (Decided by Jess
 %   Haley, 2026-10-23 [compat write layer removed]; VH-Lab/NDI-matlab#1055):
@@ -38,43 +44,46 @@ classdef TranslateQueryPathsTest < matlab.unittest.TestCase
             end
         end
 
-        % ---- depends_on substring rewrites ----
+        % ---- depends_on target keys: every spelling is tested ----
 
-        function test_depends_on_id_rewritten(testCase)
-            ss = i_ss('depends_on.id', 'exact_string', 'aabb1122ccdd3344_0011223344556677');
-            out = ndi.compat.translateQueryPaths(ss);
-            testCase.verifyEqual(out.field, 'depends_on.document_id');
+        function test_depends_on_each_key_becomes_all_three(testCase)
+            for key = {'id', 'value', 'document_id'}
+                ss = i_ss(['depends_on.' key{1}], 'exact_string', 'aabb1122ccdd3344_0011223344556677');
+                out = ndi.compat.translateQueryPaths(ss);
+                testCase.verifyEqual(i_orFields(out), ...
+                    {'depends_on.document_id', 'depends_on.value', 'depends_on.id'}, key{1});
+                testCase.verifyEqual(i_orLeaf(out, 1).operation, 'exact_string');
+                testCase.verifyEqual(i_orLeaf(out, 3).param1, 'aabb1122ccdd3344_0011223344556677');
+            end
         end
 
-        function test_depends_on_indexed_id_rewritten(testCase)
+        function test_depends_on_indexed_key_keeps_its_index(testCase)
             ss = i_ss('depends_on(1).id', 'exact_string', 'aabb1122ccdd3344_0011223344556677');
             out = ndi.compat.translateQueryPaths(ss);
-            testCase.verifyEqual(out.field, 'depends_on(1).document_id');
+            testCase.verifyEqual(i_orFields(out), ...
+                {'depends_on(1).document_id', 'depends_on(1).value', 'depends_on(1).id'});
         end
 
-        function test_depends_on_indexed_two_digit_id_rewritten(testCase)
-            ss = i_ss('depends_on(42).id', 'exact_string', 'aabb1122ccdd3344_0011223344556677');
+        function test_depends_on_indexed_two_digit_key_keeps_its_index(testCase)
+            ss = i_ss('depends_on(42).value', 'exact_string', 'aabb1122ccdd3344_0011223344556677');
             out = ndi.compat.translateQueryPaths(ss);
-            testCase.verifyEqual(out.field, 'depends_on(42).document_id');
+            testCase.verifyEqual(i_orFields(out), ...
+                {'depends_on(42).document_id', 'depends_on(42).value', 'depends_on(42).id'});
         end
 
-        function test_depends_on_value_rewritten(testCase)
-            % The earlier v2-draft key `value` also gets rewritten
-            % to the current canonical `document_id`.
-            ss = i_ss('depends_on.value', 'exact_string', 'aabb1122ccdd3344_0011223344556677');
+        function test_negated_depends_on_key_is_and_of_negations(testCase)
+            % De Morgan: no key matches = each key fails; fieldsearch ANDs
+            % a struct array.
+            ss = i_ss('depends_on.value', '~exact_string', 'x');
             out = ndi.compat.translateQueryPaths(ss);
-            testCase.verifyEqual(out.field, 'depends_on.document_id');
-        end
-
-        function test_depends_on_document_id_unchanged(testCase)
-            % Already v2 canonical; identity.
-            ss = i_ss('depends_on.document_id', 'exact_string', 'aabb1122ccdd3344_0011223344556677');
-            out = ndi.compat.translateQueryPaths(ss);
-            testCase.verifyEqual(out.field, 'depends_on.document_id');
+            testCase.verifyNumElements(out, 3);
+            testCase.verifyEqual({out.field}, ...
+                {'depends_on.document_id', 'depends_on.value', 'depends_on.id'});
+            testCase.verifyEqual(unique({out.operation}), {'~exact_string'});
         end
 
         function test_depends_on_unrelated_subfield_unchanged(testCase)
-            % `depends_on.name` is not the legacy `id` alias.
+            % `depends_on.name` is not a target key.
             ss = i_ss('depends_on.name', 'exact_string', 'parent');
             out = ndi.compat.translateQueryPaths(ss);
             testCase.verifyEqual(out.field, 'depends_on.name');
@@ -110,7 +119,8 @@ classdef TranslateQueryPathsTest < matlab.unittest.TestCase
             outer = struct('field', '', 'operation', 'or', ...
                 'param1', innerA, 'param2', innerB);
             out = ndi.compat.translateQueryPaths(outer);
-            testCase.verifyEqual(out.param1.field, 'depends_on.document_id');
+            testCase.verifyEqual(i_orFields(out.param1), ...
+                {'depends_on.document_id', 'depends_on.value', 'depends_on.id'});
             testCase.verifyEqual(out.param2.field, 'probe_location.ontology_name');
         end
 
@@ -121,8 +131,10 @@ classdef TranslateQueryPathsTest < matlab.unittest.TestCase
             outer = struct('field', '', 'operation', 'or', ...
                 'param1', mid, 'param2', i_ss('depends_on(2).id', 'exact_string', 'z'));
             out = ndi.compat.translateQueryPaths(outer);
-            testCase.verifyEqual(out.param1.param1.field, 'depends_on.document_id');
-            testCase.verifyEqual(out.param2.field, 'depends_on(2).document_id');
+            testCase.verifyEqual(i_orFields(out.param1.param1), ...
+                {'depends_on.document_id', 'depends_on.value', 'depends_on.id'});
+            testCase.verifyEqual(i_orFields(out.param2), ...
+                {'depends_on(2).document_id', 'depends_on(2).value', 'depends_on(2).id'});
             testCase.verifyEqual(out.param1.param2.field, 'base.id');
         end
 
@@ -139,7 +151,8 @@ classdef TranslateQueryPathsTest < matlab.unittest.TestCase
             ss = struct('field', "depends_on.id", ...
                 'operation', 'exact_string', 'param1', 'x', 'param2', '');
             out = ndi.compat.translateQueryPaths(ss);
-            testCase.verifyEqual(char(out.field), 'depends_on.document_id');
+            testCase.verifyEqual(i_orFields(out), ...
+                {'depends_on.document_id', 'depends_on.value', 'depends_on.id'});
         end
 
         function test_struct_array_each_entry_translated(testCase)
@@ -147,7 +160,9 @@ classdef TranslateQueryPathsTest < matlab.unittest.TestCase
             ss(2) = i_ss('treatment.ontologyName', 'exact_string', 'b');
             ss(3) = i_ss('base.id', 'exact_string', 'c');
             out = ndi.compat.translateQueryPaths(ss);
-            testCase.verifyEqual(out(1).field, 'depends_on.document_id');
+            testCase.verifyNumElements(out, 3);
+            testCase.verifyEqual(i_orFields(out(1)), ...
+                {'depends_on.document_id', 'depends_on.value', 'depends_on.id'});
             testCase.verifyEqual(out(2).field, 'treatment.ontologyName');
             testCase.verifyEqual(out(3).field, 'base.id');
         end
@@ -162,10 +177,11 @@ classdef TranslateQueryPathsTest < matlab.unittest.TestCase
             testCase.verifyEqual(q.searchstructure.param1, 'uberon:1234');
         end
 
-        function test_ndi_query_constructor_rewrites_depends_on_id(testCase)
+        function test_ndi_query_constructor_expands_depends_on_id(testCase)
             q = ndi.query('depends_on.id', 'exact_string', ...
                 'aabb1122ccdd3344_0011223344556677');
-            testCase.verifyEqual(q.searchstructure.field, 'depends_on.document_id');
+            testCase.verifyEqual(i_orFields(q.searchstructure), ...
+                {'depends_on.document_id', 'depends_on.value', 'depends_on.id'});
         end
 
         function test_ndi_query_constructor_passes_unaliased_path(testCase)
@@ -182,8 +198,8 @@ classdef TranslateQueryPathsTest < matlab.unittest.TestCase
             % builds the struct internally before our translation
             % hook runs.
             q = ndi.query({'depends_on.id', 'X'});
-            testCase.verifyEqual(q.searchstructure.field, ...
-                'depends_on.document_id');
+            testCase.verifyEqual(i_orFields(q.searchstructure), ...
+                {'depends_on.document_id', 'depends_on.value', 'depends_on.id'});
         end
     end
 end
@@ -191,4 +207,28 @@ end
 function s = i_ss(field, op, p1)
 s = struct('field', field, 'operation', op, ...
     'param1', p1, 'param2', '');
+end
+
+function f = i_orFields(ss)
+% the fields of an 'or' chain's leaves, left to right
+f = {};
+if strcmp(ss.operation, 'or')
+    f = [i_orFields(ss.param1), i_orFields(ss.param2)];
+else
+    f = {char(ss.field)};
+end
+end
+
+function leaf = i_orLeaf(ss, n)
+% the Nth leaf of an 'or' chain
+leaves = i_orLeaves(ss);
+leaf = leaves{n};
+end
+
+function leaves = i_orLeaves(ss)
+if strcmp(ss.operation, 'or')
+    leaves = [i_orLeaves(ss.param1), i_orLeaves(ss.param2)];
+else
+    leaves = {ss};
+end
 end

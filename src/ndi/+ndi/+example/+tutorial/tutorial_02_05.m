@@ -169,7 +169,7 @@ function tutorial_02_05(prefix, testing)
     % what is this node at 412687d3ae63489a_40d1d65fa08bb81a ?
 
     mydoc = S.database_search(ndi.query('base.id','exact_string', ...
-        stim_pres_doc{1}.document_properties.depends_on(1).value,''));
+        ndi.document.i_readDependencyTarget(stim_pres_doc{1}.document_properties.depends_on(1)),''));
 
     mydoc{1}.document_properties
     % ans =

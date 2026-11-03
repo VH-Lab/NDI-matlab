@@ -79,11 +79,18 @@ classdef document < did.document
                 end
             end
 
-            % Canonicalize depends_on entry keys to `document_id`. The
-            % parent constructor's own i_normalizeDependsOn already does
-            % this on v2 DID, but this call keeps the invariant explicit
-            % at the NDI layer (belt-and-suspenders, idempotent). See #801.
-            document_properties = ndi.compat.normalizeDependsOn(document_properties);
+            % depends_on is kept in the shape it was read or defined in: a
+            % v1 body keeps its v1 entry key (`value`, or the older `id`), a
+            % v2 body its `document_id`. Nothing is converted here, as in
+            % did.document's constructor (DID-matlab #389). did-schema
+            % did_v2_go_forward_class_audit.md [v2 line reads and writes
+            % both] (Jess Haley, 2026-11-03), after VH-Lab/DID-matlab#204:
+            % read v1 -> write v1, read v2 -> write v2; migration is an
+            % explicit action (ndi.migrate.local). did.document's setters
+            % write the key the entries already carry, and its readers
+            % (and i_readDependencyTarget below) accept every key.
+            % ndi.compat.normalizeDependsOn stays as the explicit
+            % conversion for a caller that asks for it.
 
             % Hand the resolved properties to did.document's struct path.
             % That path is what makes subclassing possible: did.document's
@@ -168,7 +175,9 @@ classdef document < did.document
             t = table();
             [names,depend] = ndi_document_obj.dependency();
             for i=1:numel(names)
-                t_new = cell2table({depend(i).value},'variableNames',{['depends_on_' depend(i).name]});
+                % either key: v1 `value` (or `id`), v2 `document_id`
+                t_new = cell2table({ndi.document.i_readDependencyTarget(depend(i))}, ...
+                    'variableNames',{['depends_on_' depend(i).name]});
                 t = cat(2,t,t_new);
             end
 
@@ -261,7 +270,10 @@ classdef document < did.document
             % [NAMES, DEPEND_STRUCT] = DEPENDENCY(NDI_DOCUMENT_OBJ)
             %
             % Returns in the cell array NAMES the 'name' of all 'depends_on' entries in the ndi.document NDI_DOCUMENT_OBJ.
-            % Further, this function returns a structure with all 'name' and 'value' entries in DEPEND_STRUCT.
+            % Further, this function returns the 'depends_on' structure itself in DEPEND_STRUCT,
+            % in the shape the document was read in: each entry's target is under 'value'
+            % (v1; 'id' in older v1) or 'document_id' (v2). Read a target with
+            % ndi.document.i_readDependencyTarget(DEPEND_STRUCT(i)), which accepts every key.
             %
             names = {};
             depend_struct = vlt.data.emptystruct('name','value');
@@ -505,13 +517,13 @@ classdef document < did.document
             % i_readDependencyTarget - read the cross-document target
             % id from a single depends_on struct entry.
             %
-            % The constructor's normalizeDependsOn pass guarantees
-            % entries carry `document_id` (v2 canonical), but
-            % callers occasionally hand us hand-built structs that
-            % skip the constructor and still use `value` (earlier
-            % v2 draft) or `id` (V_alpha legacy). This helper
+            % A document keeps the dependency shape it was read in
+            % (DID-matlab #389; did-schema [v2 line reads and writes
+            % both]): `document_id` (v2), `value` (v1, as NDI's v1
+            % templates write it) or `id` (older v1). This helper
             % accepts all three with precedence
-            % document_id > value > id.
+            % document_id > value > id, as
+            % did.document.i_readDependencyTarget does.
             if ~isstruct(entry) || ~isscalar(entry)
                 targetId = '';
                 return;

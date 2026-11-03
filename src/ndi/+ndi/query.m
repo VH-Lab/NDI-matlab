@@ -116,12 +116,15 @@ classdef query < did.query
             end
             ndi_query_obj@did.query(inputs{:});
 
-            % Rewrite a legacy depends_on entry key (`id`, `value`) to
-            % `document_id`, the key every stored entry carries
-            % (ndi.compat.normalizeDependsOn). Every other path, a v1 one
-            % included, is left as written: v1 documents are stored in
-            % their v1 shape (Decided by Jess Haley, 2026-10-23 [compat
-            % write layer removed]). See ndi.compat.translateQueryPaths.
+            % A test on a depends_on entry's target key (`document_id`,
+            % `value` or `id`) is made a test on all three, because a
+            % document keeps the dependency shape it was read in: v1
+            % entries keyed `value`, v2 entries `document_id` (did-schema
+            % [v2 line reads and writes both]; DID-matlab #389). Every
+            % other path, a v1 one included, is left as written: v1
+            % documents are stored in their v1 shape (Decided by Jess
+            % Haley, 2026-10-23 [compat write layer removed]). See
+            % ndi.compat.translateQueryPaths.
             ndi_query_obj.searchstructure = ndi.compat.translateQueryPaths( ...
                 ndi_query_obj.searchstructure);
 
