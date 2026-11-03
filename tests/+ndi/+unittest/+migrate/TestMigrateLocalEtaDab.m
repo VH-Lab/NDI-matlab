@@ -284,6 +284,49 @@ classdef TestMigrateLocalEtaDab < matlab.unittest.TestCase
                 numel(devs), numel(els));
         end
 
+        function testBathsInOsmOrSaturationAreCarriedAsV1(testCase)
+            % Decided by Jess Haley, 2026-11-03 [Dab bath units are
+            % Dabrowska's] (did-schema did_v2_go_forward_class_audit.md): the
+            % Dabrowska bath rows stated in "osm" and "saturation" (the aCSF and
+            % cutting solution, +dabrowska/dabrowska_mixtures.json) are not read
+            % by the generic stage; each such bath is carried whole as v1
+            % (carry-155) until the Dabrowska dataset map states their meaning.
+            % The slices and tetanus runs below are minted from the v1 bath
+            % stimulators, so they do not depend on the baths converting.
+            expected = {};
+            for k = 1:numel(testCase.Bodies)
+                txt = testCase.Bodies{k};
+                if ~contains(txt, '"stimulus_bath"'); continue; end
+                b = jsondecode(txt);
+                if ~isempty(ndi.migrate.internal.bathUnreadUnitRows(b))
+                    expected{end+1} = b.base.id; %#ok<AGROW>
+                end
+            end
+            r = testCase.Result.secondPass.deferred;
+            assertNotEmpty(testCase, r, 'resolveDeferred reported nothing');
+            fprintf(['\n  BATHS IN OSM / SATURATION (Dab)\n    deferrals read %d; v1 baths ' ...
+                'with such a row %d; carried as v1 %d\n'], r.deferred_seen, ...
+                numel(expected), r.baths_carried_unread_unit);
+            verifyGreaterThan(testCase, numel(expected), 0, ...
+                'no Dab bath has an osm or saturation row: this checks nothing');
+            verifyEqual(testCase, r.baths_carried_unread_unit, numel(expected));
+            verifyEqual(testCase, sort({r.carry_rows.id}), sort(expected));
+            verifyTrue(testCase, all(strcmp({r.carry_rows.row}, 'carry-155')));
+            dst = destinationBodies(testCase.Result.destination);
+            stamp = containers.Map('KeyType', 'char', 'ValueType', 'char');
+            for k = 1:numel(dst)
+                b = dst{k};
+                if strcmp(b.document_class.class_name, 'stimulus_bath')
+                    stamp(b.base.id) = char(b.document_class.schema_version);
+                end
+            end
+            for k = 1:numel(expected)
+                verifyTrue(testCase, isKey(stamp, expected{k}) ...
+                    && strcmp(stamp(expected{k}), 'did_v1'), ...
+                    sprintf('bath %s is not stored as a v1 document', expected{k}));
+            end
+        end
+
         function testSlicesAndTetanusRunsRebuildEveryApproachLabel(testCase)
             % DECIDED BY JESS HALEY 2026-10-21 (dabrowska/V2_decisions.md):
             % each brain slice is an entity `part_of` its animal; one
