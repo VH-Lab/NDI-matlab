@@ -176,8 +176,14 @@ classdef subject < ndi.ido & ndi.documentservice
                 if ndi_session_obj.writesV2()
                     % on a V2 database a subject is an `entity`:
                     % 'subject.local_identifier' also matches its
-                    % `entity.local_identifier` (ndi.v2.blockQuery)
-                    q = ndi.v2.blockQuery('subject.local_identifier','exact_string',subjectstring,'');
+                    % `entity.local_identifier` (ndi.v2.blockQuery). Only an
+                    % entity of a subject type matches -- organism, culture,
+                    % tissue, cell or group (ndi.v2.subjectTypes), never a
+                    % device or session of the same name (Decided by Jess
+                    % Haley, 2026-11-03 [subject match takes the subject
+                    % types], did-schema did_v2_go_forward_class_audit.md)
+                    q = ndi.v2.blockQuery('subject.local_identifier','exact_string',subjectstring,'') & ...
+                        ndi.v2.vocabQuery('entity.type', 'entity_type', ndi.v2.subjectTypes());
                 else
                     q = ndi.query('subject.local_identifier','exact_string',subjectstring,'');
                 end

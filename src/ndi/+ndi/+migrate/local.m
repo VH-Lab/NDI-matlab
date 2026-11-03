@@ -379,6 +379,7 @@ function result = local(path, options)
     % DEFECT, reported in RESULT.secondPassErrors apart from the carries
     stepErrors = struct('step', {}, 'message', {});
     bathAnchors = [];   % resolveDeferred -> resolveEpochAnchorFold (did-schema #88)
+    deferredReport = [];   % resolveDeferred's carries ([Dab bath units are Dabrowska's])
     % resolveStimulusPresentations -> resolveEpochAnchorFold ([presentation
     % anchored to its epoch], Jess Haley, 2026-10-27)
     presentationAnchors = [];
@@ -789,14 +790,16 @@ function result = local(path, options)
         %   BATCH-PASS-READS: stimulus_bath
         %   BATCH-PASS-ADDS: manipulation(bath), formulation, chemical,
         %       relative_time_reference(bath anchor),
-        %       epoch_bounded_reference(bath anchor), ndi.bath_anchors
+        %       epoch_bounded_reference(bath anchor), ndi.bath_anchors,
+        %       stimulus_bath(carried as v1)
         %   BATCH-PASS-CHANGES: NONE -- the assembled baths are appended; their
         %       deferrals leave the quarantine, not the batch
         %   BATCH-PASS-REMOVES: NONE -- it folds no document that is in the
         %       batch
         try
             resolver = ndi.migrate.internal.bodyResolver(bodies);
-            [convertResult, bathAnchors] = resolveDeferred(convertResult, resolver, options);
+            [convertResult, bathAnchors, deferredReport] = ...
+                resolveDeferred(convertResult, resolver, options);
         catch ME
             stepErrors(end+1) = struct('step', 'deferredResolveFailed', 'message', ME.message); %#ok<AGROW>
             warning('NDI:migrate:deferredResolveFailed', ...
@@ -1436,7 +1439,7 @@ function result = local(path, options)
         % second pass declined, each with the carry register row its reason
         % cites, so the stamp counts second-pass carries by row
         secondPassRows = secondPassCarryRows({stimulusSequenceReport, ...
-            strainReport, ontologyLabelReport, ensembleReport});
+            strainReport, ontologyLabelReport, ensembleReport, deferredReport});
         reportCarries(secondPassRows, 'NDI''s second pass declined to convert it');
         [convertResult.migrated, carriedAsV1Report] = ...
             ndi.migrate.internal.carryUnchangedAsV1(convertResult.migrated, ...
@@ -1654,6 +1657,7 @@ function result = local(path, options)
     result.ingestedFiles = ingestedFilesReport;
     result.secondPass = struct( ...
         'ensembleMembership',  ensembleReport, ...
+        'deferred',            deferredReport, ...
         'strainAssembly',      strainReport, ...
         'subjectStrainAssembly', subjectStrainReport, ...
         'ontologyRowsCarried', ontologyRowReport, ...
@@ -1757,7 +1761,7 @@ end
 
 % ---- second pass: session-context-dependent deferrals ---------------------
 
-function [convertResult, bathAnchors] = resolveDeferred(convertResult, resolver, options)
+function [convertResult, bathAnchors, report] = resolveDeferred(convertResult, resolver, options)
 %RESOLVEDEFERRED Assemble the deferrals that need the session/element graph.
 %   The per-document converter quarantines context-dependent classes with
 %   reason did2:convert:needsSessionContext rather than emitting a partial
@@ -1774,7 +1778,22 @@ function [convertResult, bathAnchors] = resolveDeferred(convertResult, resolver,
 %   minted "during the session", each with the stimulator's epoch string and
 %   clock, for resolveEpochAnchorFold to re-point at the epoch entity once
 %   did2.convert.epochMint has minted it. [] when none.
+%
+%   A BATH WITH A ROW IN A UNIT THE GENERIC STAGE DOES NOT READ IS CARRIED.
+%   Decided by Jess Haley, 2026-11-03 [Dab bath units are Dabrowska's]
+%   (did-schema did_v2_go_forward_class_audit.md): rows stated in "osm" (an
+%   amount; per litre or per kg is not stated) and "saturation" (not a unit)
+%   are not read; the bath is carried whole as v1 (its v1 body, stamped
+%   'did_v1', leaves the quarantine into the migrated set), citing carry-155
+%   ([canonical absent only as needs info]); the Dabrowska dataset map states
+%   their meaning. The rule [bath ph and osmolarity are formulation fields] is
+%   unchanged for a row NAMED osm / osmolarity in a unit the stage reads
+%   (stimulusBathToBath). REPORT, denominators first: deferred_seen (the
+%   deferrals this step read), baths_carried_unread_unit, and carry_rows
+%   {id, row, dependency} (secondPassCarryRows reads them).
     bathAnchors = [];
+    report = struct('deferred_seen', 0, 'baths_carried_unread_unit', 0, ...
+        'carry_rows', struct('id', {}, 'row', {}, 'dependency', {}));
     q = convertResult.quarantine;
     if isempty(q)
         return;
@@ -1785,8 +1804,25 @@ function [convertResult, bathAnchors] = resolveDeferred(convertResult, resolver,
         if ~isDeferredForContext(q(k))
             continue;
         end
+        report.deferred_seen = report.deferred_seen + 1;
         try
             v1Body = jsondecode(q(k).original_body);
+            if strcmp(q(k).class_name, 'stimulus_bath')
+                unread = ndi.migrate.internal.bathUnreadUnitRows(v1Body);
+                if ~isempty(unread)
+                    % [Dab bath units are Dabrowska's]: carried whole as v1
+                    % carry-register: carry-155
+                    if isfield(v1Body, 'document_class') && isstruct(v1Body.document_class)
+                        v1Body.document_class.schema_version = 'did_v1';
+                    end
+                    convertResult.migrated{end+1} = did2.document(v1Body);
+                    report.baths_carried_unread_unit = report.baths_carried_unread_unit + 1;
+                    report.carry_rows(end+1) = struct('id', char(v1Body.base.id), ...
+                        'row', 'carry-155', 'dependency', '');
+                    keep(k) = false;   % carried -> drop the original deferral
+                    continue;
+                end
+            end
             [bodies, anchorInfo] = assembleDeferred(q(k).class_name, v1Body, ...
                 resolver, options.TargetVersion);
             assembled = [assembled, bodies]; %#ok<AGROW>
@@ -1802,7 +1838,12 @@ function [convertResult, bathAnchors] = resolveDeferred(convertResult, resolver,
             % leave it quarantined with its original (deferral) reason
         end
     end
+    fprintf(['[migrate step]   deferred baths carried as v1, a row in osm / ' ...
+        'saturation (carry-155): %d of %d deferral(s) read\n'], ...
+        report.baths_carried_unread_unit, report.deferred_seen);
     if isempty(assembled)
+        convertResult.quarantine = q(keep);
+        convertResult.summary = recountSummary(convertResult);
         return;
     end
     sub = did2.convert.v1_to_v2(assembled, ...
