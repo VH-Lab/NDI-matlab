@@ -55,6 +55,7 @@ nav:
         - 8. Search and analyze NDI databases on the web: 'NDI-matlab/tutorials/search_ndi_databases.md'
     - Manual (in progress):
        - User manual:
+         - Moving from v1 to v2: 'NDI-matlab/manual/Migrating_to_v2.md'
          - Queries: 'NDI-matlab/manual/Queries.md'
          - Spike sorting with JRCLUST: 'NDI-matlab/manual/spike_sorting_jrclust.md'
        - Developer Manual:
