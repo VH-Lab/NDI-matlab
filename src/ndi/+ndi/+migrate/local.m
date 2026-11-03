@@ -1532,7 +1532,12 @@ function result = local(path, options)
     % re-check of a database already migrated write none; the report is still
     % returned.
     migrationReport = struct();
-    migrationRecordIds = struct('migration_id', '', 'report_id', '');
+    % [one migration document per dataset] (Jess Haley, 2026-11-03): a run of
+    % two or more datasets (or sessions, with no dataset) writes one record per
+    % dataset, each with its own report; migration_id / report_id are the
+    % first pair's, migration_ids / report_ids every pair's
+    migrationRecordIds = struct('migration_id', '', 'report_id', '', ...
+        'migration_ids', {{}}, 'report_ids', {{}});
     if ~alreadyMigrated && iscell(convertResult.migrated)
         counts = struct('source_documents', numel(bodies), ...
             'quarantined', numel(convertResult.quarantine));
@@ -1547,17 +1552,28 @@ function result = local(path, options)
                 convertResult.migrated, 'Counts', counts, ...
                 'Validate', options.Validate, 'SchemaCache', options.SchemaCache);
             if ~isempty(records)
-                migrationRecordIds.migration_id = records{1}.get('base.id');
-                migrationRecordIds.report_id = records{2}.get('base.id');
+                migrationRecordIds.migration_ids = cellfun(@(d) char(d.get('base.id')), ...
+                    records(1:2:end), 'UniformOutput', false);
+                migrationRecordIds.report_ids = cellfun(@(d) char(d.get('base.id')), ...
+                    records(2:2:end), 'UniformOutput', false);
+                migrationRecordIds.migration_id = migrationRecordIds.migration_ids{1};
+                migrationRecordIds.report_id = migrationRecordIds.report_ids{1};
                 convertResult.migrated = [reshape(convertResult.migrated, 1, []), records];
             end
         end
-        fprintf(['[migrate step]   migration report: %d document(s); %d gap(s) on %d ' ...
-            'document(s); %d carried as v1 (%d citing a carry register row)\n'], ...
-            migrationReport.counts.documents, migrationReport.counts.gaps, ...
-            migrationReport.counts.documents_with_gaps, ...
-            migrationReport.counts.carried_as_v1, ...
-            migrationReport.counts.carried_citing_a_row);
+        for r = 1:numel(migrationReport)
+            rr = migrationReport(r);
+            where = '';
+            if isfield(rr, 'anchor')
+                where = sprintf(' (record %d of %d, for %s)', r, numel(migrationReport), rr.anchor);
+            end
+            fprintf(['[migrate step]   migration report%s: %d document(s); %d gap(s) on %d ' ...
+                'document(s); %d carried as v1 (%d citing a carry register row)\n'], ...
+                where, rr.counts.documents, rr.counts.gaps, ...
+                rr.counts.documents_with_gaps, ...
+                rr.counts.carried_as_v1, ...
+                rr.counts.carried_citing_a_row);
+        end
     end
     tStep = migrateStepMark('migration record', tStart, tStep, convertResult);
 
@@ -3944,9 +3960,10 @@ function loadStoredMigrationReport(db, bodies)
         if ~any(ismember(owners, migrationIds))
             continue;
         end
+        % every record's report: one per dataset ([one migration document
+        % per dataset], Jess Haley, 2026-11-03)
         report = jsondecode(fileread(db.filePath(b.base.id, 'body_data_0')));
         did2.convert.migrationReport('load', report);
-        return;
     end
 end
 
