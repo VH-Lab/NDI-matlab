@@ -82,6 +82,34 @@ classdef TestSubjectWriterV2 < matlab.unittest.TestCase
                 'finding the subject again wrote another document');
         end
 
+        function testADeviceOfTheSameNameIsNotTheSubject(testCase)
+            % [subject match takes the subject types] (Decided by Jess Haley,
+            % 2026-11-03, did-schema did_v2_go_forward_class_audit.md): on a V2
+            % database the name matches only an entity of a subject type
+            % (organism, culture, tissue, cell or group), never a device that
+            % shares it
+            [S, dbFile] = testCase.v2Session();
+            name = 'rig9@nosuchlab.org';
+            dev = ndi.setup.V2.entityDocuments('subject', ...
+                struct('local_identifier', name, 'name', name), struct(), ...
+                'Type', 'device', 'SessionId', S.id());
+            S.database_add(cellfun(@(x) ndi.document(x), dev, 'UniformOutput', false));
+            devId = dev{1}.base.id;
+
+            [b, sid] = ndi.subject.does_subjectstring_match_session_document(S, name, 0);
+            testCase.verifyFalse(logical(b), 'the device was taken for the subject');
+            testCase.verifyEmpty(sid);
+
+            [b, sid] = ndi.subject.does_subjectstring_match_session_document(S, name, 1);
+            testCase.verifyTrue(logical(b));
+            testCase.verifyNotEqual(sid, devId, 'the device was returned as the subject');
+            ent = testCase.onlySubject(dbFile, sid);
+            testCase.verifyTrue(ndi.v2.vocabIs('entity_type', ent.entity.type, 'organism'));
+            [b2, sid2] = ndi.subject.does_subjectstring_match_session_document(S, name, 0);
+            testCase.verifyTrue(logical(b2));
+            testCase.verifyEqual(sid2, sid, 'the subject, not the device, is found by name');
+        end
+
         function testAV1DatabaseKeepsTheV1SubjectDocument(testCase)
             % a new folder gets a v1 database (databasehierarchyinit entry 1)
             S = ndi.session.dir('ref1', testCase.Dir);
