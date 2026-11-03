@@ -1,15 +1,15 @@
 function [dataset, report] = createDataset(path, reference, datasetSessionId, datasetDocs, sessionDocs, options)
-%CREATEDATASET Create a V2 dataset: ONE did2 database holding every document.
+%CREATEDATASET Create a v2 dataset: ONE did2 database holding every document.
 %
 %   [DATASET, REPORT] = ndi.setup.V2.createDataset(PATH, REFERENCE,
-%   DATASETSESSIONID, DATASETDOCS, SESSIONDOCS) writes, into PATH/.ndi's V2
+%   DATASETSESSIONID, DATASETDOCS, SESSIONDOCS) writes, into PATH/.ndi's v2
 %   database (did2), the dataset's own `session` document, DATASETDOCS (the
 %   dataset-level documents: the dataset, people, studies, ...; each with
 %   session id DATASETSESSIONID) and SESSIONDOCS (a cell, one cell of
 %   documents per session, each holding that session's `session` document,
 %   with its own session_id), then opens it as an ndi.dataset.dir. Every
 %   session is INGESTED: its documents live in the dataset's database and
-%   ndi.dataset opens it there (ndi.dataset/build_session_info lists a V2
+%   ndi.dataset opens it there (ndi.dataset/build_session_info lists a v2
 %   dataset's sessions from their `session` documents).
 %
 %   session_id is an edge (did-schema V_eta_relation_inheritance_plan.md):
@@ -265,7 +265,7 @@ end
 end
 
 function v = edgeTarget(e)
-% V2 (did2.build) stores an edge as {name, document_id}; v1 as {name, value}
+% v2 (did2.build) stores an edge as {name, document_id}; v1 as {name, value}
 arguments
     e (1,1) struct
 end

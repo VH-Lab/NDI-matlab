@@ -772,9 +772,9 @@ classdef navigator < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice & 
             %
             % Creates an ndi.document of type 'filenavigator'
             %
-            % When the navigator's session has a V2 database
+            % When the navigator's session has a v2 database
             % (ndi.session/writesV2), NDI_DOCUMENT_OBJ is instead a cell array
-            % of the V2 record: an `epoch_file_pattern` whose id is the
+            % of the v2 record: an `epoch_file_pattern` whose id is the
             % navigator's id (`file_pattern` and `epoch_map_pattern` the
             % file-match lists, `epoch_map_format` the epoch probe map
             % class), and the `software` entity its `software_id` names, whose
@@ -811,7 +811,7 @@ classdef navigator < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice & 
         end % newdocument()
 
         function docs = newdocumentV2(ndi_filenavigator_obj)
-            % NEWDOCUMENTV2 - the V2 record of this navigator (see NEWDOCUMENT)
+            % NEWDOCUMENTV2 - the v2 record of this navigator (see NEWDOCUMENT)
             %
             % DOCS = NEWDOCUMENTV2(NDI_FILENAVIGATOR_OBJ)
             %

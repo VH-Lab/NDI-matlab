@@ -1,5 +1,5 @@
 classdef TestImportHelpers < matlab.unittest.TestCase
-%TESTIMPORTHELPERS The public pieces every V2 import shares (ndi.setup.V2).
+%TESTIMPORTHELPERS The public pieces every v2 import shares (ndi.setup.V2).
 %
 %   The Haley import and the starter template both call these, so a new
 %   import calls them too instead of copying them:

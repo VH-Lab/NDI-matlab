@@ -1,5 +1,5 @@
 classdef TestHaleySubjects < matlab.unittest.TestCase
-%TESTHALEYSUBJECTS Stage 4 of the Haley V2 import (subjects), over a synthetic fixture.
+%TESTHALEYSUBJECTS Stage 4 of the Haley v2 import (subjects), over a synthetic fixture.
 %
 %   Writes a small stand-in for the raw data -- a tableOfContents.xlsx and
 %   an experimentInfo.mat `info` table per C. elegans folder (column names
@@ -214,7 +214,7 @@ classdef TestHaleySubjects < matlab.unittest.TestCase
 
         function testAPlateDoImportExcludedForNoGrowthConditionIsListed(testCase)
             % doImport also excluded rows with NaN growthCondition
-            % (identifyValidRows); V2 lists them instead, for a decision
+            % (identifyValidRows); v2 lists them instead, for a decision
             [S, checks] = testCase.list();
             testCase.verifyEqual(checks.noGrowthCondition, ...
                 {'foragingMutants: plate 4 (expNum 1) has NaN growthCondition and is not excluded; doImport excluded it'});

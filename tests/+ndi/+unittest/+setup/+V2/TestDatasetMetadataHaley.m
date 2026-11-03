@@ -1,13 +1,13 @@
 classdef TestDatasetMetadataHaley < matlab.unittest.TestCase
-%TESTDATASETMETADATAHALEY Stage 2 of the Haley V2 import, over its real spec.
+%TESTDATASETMETADATAHALEY Stage 2 of the Haley v2 import, over its real spec.
 %
 %   Builds every dataset-level document from
 %   +ndi/+setup/+conv/+haley/import_V2_spec.json with
 %   ndi.setup.V2.datasetMetadata (which validates each one through
 %   did2.build) and checks what came out: the counts, the links, and that
-%   spec content with no V2 home is REPORTED rather than dropped.
+%   spec content with no v2 home is REPORTED rather than dropped.
 %
-%   Needs DID-matlab's did2.build and a V2 schema that has `study`,
+%   Needs DID-matlab's did2.build and a v2 schema that has `study`,
 %   `instance_of`, `awarded_to` and `directed_relation.roles`
 %   (Waltham-Data-Science/did-schema PR #78). Without them every test is
 %   FILTERED with a message, never passed; test-import-v2.yml runs this with
@@ -27,7 +27,7 @@ classdef TestDatasetMetadataHaley < matlab.unittest.TestCase
             schemaPath = getenv('DID_SCHEMA_PATH');
             testCase.assumeTrue(~isempty(schemaPath) && ...
                 isfile(ndi.v2.schemaFile(schemaPath, 'entity.json')), ...
-                'DID_SCHEMA_PATH does not hold a V2 schema with `entity` (did-schema #88)');
+                'DID_SCHEMA_PATH does not hold a v2 schema with `entity` (did-schema #88)');
             specFile = fullfile(fileparts(which('ndi.setup.conv.haley.import_V2')), ...
                 'import_V2_spec.json');
             testCase.Spec = jsondecode(fileread(specFile));

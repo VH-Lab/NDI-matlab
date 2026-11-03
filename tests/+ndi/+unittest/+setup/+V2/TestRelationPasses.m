@@ -23,7 +23,7 @@ classdef TestRelationPasses < matlab.unittest.TestCase
             schemaPath = getenv('DID_SCHEMA_PATH');
             testCase.assumeTrue(~isempty(schemaPath) && ...
                 isfile(ndi.v2.schemaFile(schemaPath, 'entity.json')), ...
-                'DID_SCHEMA_PATH does not hold a V2 schema with `entity` (did-schema #88)');
+                'DID_SCHEMA_PATH does not hold a v2 schema with `entity` (did-schema #88)');
             % 'short name', 'species' and the values below are this test's own
             % vocabulary; what is tested is inheritance, not the term registry
             if ~isempty(which('did2.schema.termIndex'))
@@ -143,7 +143,7 @@ classdef TestRelationPasses < matlab.unittest.TestCase
         end
 
         function testTheAccessorReadsTheEdgeOnTheNewShape(testCase)
-            % a V2 document with no base.session_id field and a session_id
+            % a v2 document with no base.session_id field and a session_id
             % edge; built by hand, so the test does not depend on the schema
             sid = ndi.ido.unique_id();
             p = struct();

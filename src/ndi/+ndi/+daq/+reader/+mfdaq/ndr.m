@@ -254,8 +254,8 @@ classdef ndr < ndi.daq.reader.mfdaq
             %
             % Creates an ndi.document object DOC that represents the
             %    ndi.daq.reader object.
-            % With NDI_SESSION_OBJ whose database is V2 (ndi.session/writesV2),
-            % the V2 record instead: an `acquisition_reader` whose
+            % With NDI_SESSION_OBJ whose database is v2 (ndi.session/writesV2),
+            % the v2 record instead: an `acquisition_reader` whose
             % `reader_string` is the NDR reader string, and its `software`
             % entity (ndi.daq.reader/newdocumentV2).
             if nargin>1 && ~isempty(ndi_session_obj) && ndi_session_obj.writesV2()

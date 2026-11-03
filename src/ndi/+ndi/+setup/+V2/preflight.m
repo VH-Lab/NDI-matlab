@@ -1,12 +1,12 @@
 function preflight(options)
-%PREFLIGHT Check that a V2 import can run, and say how to fix it if not.
+%PREFLIGHT Check that a v2 import can run, and say how to fix it if not.
 %
 %   ndi.setup.V2.preflight() errors (ndi:setup:V2:preflight) with ONE message
 %   listing every missing requirement, before any stage runs:
 %
 %     * DID-matlab's did2.build is on the MATLAB path (DID-matlab `V2`, since
 %       DID-matlab PR #210);
-%     * DID_SCHEMA_PATH names a folder holding the V2 (V_eta) schema, assembled
+%     * DID_SCHEMA_PATH names a folder holding the v2 (V_eta) schema, assembled
 %       flat from did-schema main's schemas/V_eta/{stable,draft,deprecated};
 %     * that schema is did-schema #88's shape or later (one `entity` class,
 %       statements by composition, a term registry) and carries each class
@@ -69,7 +69,7 @@ if isempty(problems)
     end
 end
 if ~isempty(problems)
-    error('ndi:setup:V2:preflight', 'The V2 import cannot run yet:\n  - %s', ...
+    error('ndi:setup:V2:preflight', 'The v2 import cannot run yet:\n  - %s', ...
         strjoin(problems, sprintf('\n  - ')));
 end
 end

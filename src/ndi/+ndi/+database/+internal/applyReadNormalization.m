@@ -5,15 +5,15 @@ function ndiDocumentObj = applyReadNormalization(rawDoc)
 %   wraps a body read from a concrete ndi.database backend in an
 %   ndi.document. It converts NOTHING between schema versions:
 %
-%     - every body -- a V2 document (stamped 'did_v2'), a did_v1 document
+%     - every body -- a v2 document (stamped 'did_v2'), a did_v1 document
 %       (stamped 'did_v1' or not stamped), or one carrying an older stamp
-%       -- is wrapped exactly as stored. A V2 document used to be padded
+%       -- is wrapped exactly as stored. A v2 document used to be padded
 %       here by did2.convert.ensureClassBlocks; that padding is deleted
 %       (Decided by Jess Haley, 2026-11-02 [handed-on classes carried at
 %       the end] (2); 2026-10-26 [early migration pieces fixed] (2): "the
 %       builder produces a complete document").
 %
-%   NO READ-TIME CONVERSION. The one way from v1 to V2 is an explicit
+%   NO READ-TIME CONVERSION. The one way from v1 to v2 is an explicit
 %   migration, ndi.migrate.local (did2.convert.v1_to_v2 at 'did_v2' plus the
 %   batch passes). A v1 dataset opened by NDI is read by the v1 code paths
 %   in the shape it was written in -- the shape NDI's v1 readers

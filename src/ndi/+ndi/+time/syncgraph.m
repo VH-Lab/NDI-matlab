@@ -845,8 +845,8 @@ classdef syncgraph < ndi.ido
             % Creates an ndi.document object DOC that represents the
             %    ndi.time.syncrule object.
             %
-            % When the syncgraph's session has a V2 database
-            % (ndi.session/writesV2), the set is the V2 record instead (see
+            % When the syncgraph's session has a v2 database
+            % (ndi.session/writesV2), the set is the v2 record instead (see
             % NEWDOCUMENTV2). Jess Haley 2026-11-03 [v2 line reads and writes
             % both] (did-schema did_v2_go_forward_class_audit.md): a v2
             % database is written as v2, a v1 database as v1.
@@ -865,7 +865,7 @@ classdef syncgraph < ndi.ido
         end % newdocument()
 
         function [docs, carried] = newdocumentV2(ndi_syncgraph_obj)
-            % NEWDOCUMENTV2 - the V2 record of the syncgraph and its rules
+            % NEWDOCUMENTV2 - the v2 record of the syncgraph and its rules
             %
             % [DOCS, CARRIED] = NEWDOCUMENTV2(NDI_SYNCGRAPH_OBJ)
             %

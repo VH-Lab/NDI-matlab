@@ -1,20 +1,20 @@
 classdef TestDatasetWriterV2 < matlab.unittest.TestCase
-%TESTDATASETWRITERV2 a new ndi.dataset.dir writes the dataset's V2 record into a V2 database.
+%TESTDATASETWRITERV2 a new ndi.dataset.dir writes the dataset's v2 record into a v2 database.
 %
 %   Jess Haley 2026-11-03 [v2 line reads and writes both] (did-schema
 %   did_v2_go_forward_class_audit.md): a v1 database is written as v1, a v2
 %   database as v2. When ndi.dataset.dir creates a dataset in a folder whose
-%   database is V2 (did2) and holds no record yet, the dataset's own record
+%   database is v2 (did2) and holds no record yet, the dataset's own record
 %   is the `dataset` entity whose id is the dataset's (session) id, with no
 %   separate session record beside it, and the reference stays in
 %   .ndi/reference.txt (TEAM-SIGN-OFF [relation inheritance], Jess Haley
 %   2026-10-21, did-schema did_v2_relation_inheritance_plan.md). It is the
 %   bare dataset entity DID-matlab's migration writes for a dataset with no
 %   metadata (+migrators_j/private/jBareDataset.m). The dataset opens again
-%   from it, and a V2 session can be added to it. A v1 database keeps the v1
+%   from it, and a v2 session can be added to it. A v1 database keeps the v1
 %   `session` document.
 %
-%   Filtered (never passed) when did2.build or a V2 schema with `entity` is
+%   Filtered (never passed) when did2.build or a v2 schema with `entity` is
 %   missing.
 
     properties
@@ -28,7 +28,7 @@ classdef TestDatasetWriterV2 < matlab.unittest.TestCase
             schemaPath = getenv('DID_SCHEMA_PATH');
             testCase.assumeTrue(~isempty(schemaPath) && ...
                 isfile(ndi.v2.schemaFile(schemaPath, 'entity.json')), ...
-                'DID_SCHEMA_PATH does not hold a V2 schema with `entity` (did-schema #88)');
+                'DID_SCHEMA_PATH does not hold a v2 schema with `entity` (did-schema #88)');
         end
     end
 
@@ -47,7 +47,7 @@ classdef TestDatasetWriterV2 < matlab.unittest.TestCase
             D = ndi.dataset.dir('ds1', dsPath);
             testCase.assertFalse(isfile(fullfile(dsPath, '.ndi', ...
                 ndi.database.implementations.database.did2sqlite.DEFAULTFILENAME())), ...
-                'a new folder was given a V2 database; this test is about a v1 one');
+                'a new folder was given a v2 database; this test is about a v1 one');
             d = D.database_search(ndi.query('', 'isa', 'session'));
             testCase.verifyNumElements(d, 1, 'a v1 dataset holds one v1 session document');
             testCase.verifyEqual(d{1}.document_properties.document_class.class_name, 'session');
@@ -55,7 +55,7 @@ classdef TestDatasetWriterV2 < matlab.unittest.TestCase
             testCase.verifyEqual(d{1}.session_id(), D.id(), ...
                 'the session document is not in the dataset''s session');
             testCase.verifyEmpty(D.database_search(ndi.query('', 'isa', 'entity')), ...
-                'a v1 database got V2 entities');
+                'a v1 database got v2 entities');
             testCase.verifyEqual(ndi.session.dir.directorytype(dsPath), 'dataset');
 
             D2 = ndi.dataset.dir(dsPath);
@@ -69,7 +69,7 @@ classdef TestDatasetWriterV2 < matlab.unittest.TestCase
 
             D = ndi.dataset.dir('ds1', dsPath);
             testCase.assertFalse(isfile(fullfile(dsPath, '.ndi', 'did-sqlite.sqlite')), ...
-                'the dataset was given a v1 database beside the V2 one');
+                'the dataset was given a v1 database beside the v2 one');
             testCase.verifyEqual(D.reference(), 'ds1');
 
             % DENOMINATOR FIRST: what the database now holds
@@ -82,7 +82,7 @@ classdef TestDatasetWriterV2 < matlab.unittest.TestCase
             testCase.verifyEqual(ndi.v2.kindOf(e), 'dataset');
             testCase.verifyEqual(e.base.id, D.id(), 'the dataset entity''s id is the dataset id');
             testCase.verifyEqual(ndi.v2.edgeIds(e, 'session_id'), {D.id()});
-            testCase.verifyTrue(did2.schema.isV2Stamp(e), 'the dataset entity is stamped V2');
+            testCase.verifyTrue(did2.schema.isV2Stamp(e), 'the dataset entity is stamped v2');
             testCase.verifyFalse(isfield(e.entity, 'local_identifier') && ...
                 ~isempty(e.entity.local_identifier), ...
                 'the folder''s reference was written into the dataset entity');
@@ -105,7 +105,7 @@ classdef TestDatasetWriterV2 < matlab.unittest.TestCase
             testCase.verifyNumElements(testCase.storedBodies(dbFile), 1, ...
                 'reopening the dataset wrote another record');
 
-            % and a V2 session can be added to it (ndi.dataset/addSessionV2
+            % and a v2 session can be added to it (ndi.dataset/addSessionV2
             % files it under the dataset entity)
             sPath = fullfile(testCase.Dir, 's1');
             mkdir(sPath);

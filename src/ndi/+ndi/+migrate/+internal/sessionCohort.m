@@ -22,7 +22,7 @@ function docs = sessionCohort(cohortId, sessionId, memberIds, creationTimestamp)
 %   group's finer kind ("cohort"): that is the proposed, unsigned T20.
 %
 %   Built with did2.build (Validate false; the caller's v1_to_v2 fold
-%   validates), so the shape is the schema's, as the V2 Haley import builds
+%   validates), so the shape is the schema's, as the v2 Haley import builds
 %   its cohorts and as ndi.unittest.setup.V2.TestCohortStimulus reads them.
 
 arguments

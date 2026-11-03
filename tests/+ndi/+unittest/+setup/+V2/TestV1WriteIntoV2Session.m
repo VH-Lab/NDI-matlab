@@ -1,5 +1,5 @@
 classdef TestV1WriteIntoV2Session < matlab.unittest.TestCase
-%TESTV1WRITEINTOV2SESSION A v1 document NDI writes into a V2 session is stamped did_v1 and template-checked.
+%TESTV1WRITEINTOV2SESSION A v1 document NDI writes into a v2 session is stamped did_v1 and template-checked.
 %
 %   Decided by Jess Haley, 2026-10-29 [v1 writes into a V2 session]
 %   (did-schema schemas/V_eta_go_forward_class_audit.md): "for now, a
@@ -14,7 +14,7 @@ classdef TestV1WriteIntoV2Session < matlab.unittest.TestCase
 %   asserted is the one on disk, not the one on the object handed in.
 %
 %   Filtered (never passed) when did2.build, did2.validate.v1Document or a
-%   V2 schema with `entity` is missing.
+%   v2 schema with `entity` is missing.
 %
 %   UNVERIFIED: written without MATLAB; test-import-v2.yml is the first run.
 
@@ -32,7 +32,7 @@ classdef TestV1WriteIntoV2Session < matlab.unittest.TestCase
             schemaPath = getenv('DID_SCHEMA_PATH');
             testCase.assumeTrue(~isempty(schemaPath) && ...
                 isfile(ndi.v2.schemaFile(schemaPath, 'entity.json')), ...
-                'DID_SCHEMA_PATH does not hold a V2 schema with `entity` (did-schema #88)');
+                'DID_SCHEMA_PATH does not hold a v2 schema with `entity` (did-schema #88)');
         end
     end
 
@@ -116,7 +116,7 @@ classdef TestV1WriteIntoV2Session < matlab.unittest.TestCase
             testCase.addTeardown(@() did2.schema.cache.strictMode('TermRegistry', prevTerms));
             sid = testCase.Session.id();
             d = termAssertion(sid, 'short name', 'X', sid);
-            testCase.assertTrue(did2.schema.isV2Stamp(d), 'did2.build stamps V2');
+            testCase.assertTrue(did2.schema.isV2Stamp(d), 'did2.build stamps v2');
 
             % unchanged by the v1 step
             [same, how] = ndi.database.internal.stampV1Write(did2.document(d));
@@ -126,21 +126,21 @@ classdef TestV1WriteIntoV2Session < matlab.unittest.TestCase
             testCase.Session.database_add(ndi.document(d));
             stored = testCase.storedBody(d.base.id);
             testCase.verifyEqual(did2.schema.stampOf(stored), did2.schema.v2Stamp(), ...
-                'a V2 document keeps its V2 stamp');
+                'a v2 document keeps its v2 stamp');
 
-            % a V2 document that breaks its V2 class is refused by the V2
+            % a v2 document that breaks its v2 class is refused by the v2
             % validation, not passed to the v1 template check
             bad = termAssertion(sid, 'short name', 'Y', sid);
             bad.base.not_a_v2_field = 'x';
             try
                 testCase.Session.database_add(ndi.document(bad));
-                testCase.verifyFail('a V2 document with an undeclared field was stored');
+                testCase.verifyFail('a v2 document with an undeclared field was stored');
             catch ME
                 testCase.verifyTrue(startsWith(ME.identifier, 'did2:'), sprintf( ...
                     'refused by "%s", not by did2 validation: %s', ...
                     ME.identifier, ME.message));
                 testCase.verifyFalse(startsWith(ME.identifier, 'NDI:did2sqlite:v1'), ...
-                    'a V2 document went to the v1 template check');
+                    'a v2 document went to the v1 template check');
             end
         end
     end

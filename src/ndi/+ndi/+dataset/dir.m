@@ -44,7 +44,7 @@ classdef dir < ndi.dataset
             elseif nargin==2
                 ndi.dataset.dir.mustNotBeSession(path_name);
                 % Mark the folder a dataset BEFORE the session open below,
-                % so that, when the folder's database is V2 and holds no
+                % so that, when the folder's database is v2 and holds no
                 % record yet, ndi.session.dir writes the dataset's own
                 % record (the `dataset` entity, ndi.session.dir.markedDataset)
                 % rather than a session record. The marker is the one this
@@ -91,10 +91,10 @@ classdef dir < ndi.dataset
                 if ~isempty(session_in_a_dataset_docs)
                     correctSessionId = session_in_a_dataset_docs{1}.session_id();
                 else
-                    % A V2 dataset (ndi.setup.V2.createDataset) has no
+                    % A v2 dataset (ndi.setup.V2.createDataset) has no
                     % session_in_a_dataset documents: its sessions are ingested
                     % `session` documents, so the dataset's own session is the
-                    % one that shares its session_id with the V2 `dataset`
+                    % one that shares its session_id with the v2 `dataset`
                     % document (a class v1 never had). Read unscoped: the
                     % folder's unique_reference.txt names whichever session was
                     % opened last, not necessarily the dataset.
@@ -147,7 +147,7 @@ classdef dir < ndi.dataset
                     session_id = candidate_session_doc{1}.session_id();
                     ndi_dataset_dir_obj.session = ndi.session.dir(ref,ndi_dataset_dir_obj.session.path,session_id);
                     % the session list may have been built while the folder was
-                    % open under another session's id (a V2 dataset's
+                    % open under another session's id (a v2 dataset's
                     % unique_reference.txt names the session opened last); rebuild
                     ndi_dataset_dir_obj.session_info = [];
                     ndi_dataset_dir_obj.session_array = [];

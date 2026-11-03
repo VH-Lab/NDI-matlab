@@ -302,7 +302,7 @@ classdef TestSoftwareDedup < matlab.unittest.TestCase
         function testInADatasetOneProgramIsOneEntityAtTheDatasetLevel(testCase)
             % Decided by Jess Haley, 2026-10-21: "When a dataset is migrated,
             % shared entities (strains, software, people, organizations,
-            % instruments, products) move to the dataset level as in native V2
+            % instruments, products) move to the dataset level as in native v2
             % imports [...] one entity per distinct thing in the dataset's
             % database, with session documents pointing at it and merged-away
             % ids remapped so every link still resolves". With a `dataset`
@@ -443,7 +443,7 @@ end
 
 function d = datasetEntity(id)
 %DATASETENTITY A did-schema #88 `entity` of type dataset; its id is the
-%   dataset's session id, as the native V2 import writes it.
+%   dataset's session id, as the native v2 import writes it.
 d = struct();
 d.document_class = struct('class_name', 'entity', 'class_version', '1.0.0', ...
     'superclasses', struct('class_name', 'base', 'class_version', '1.0.0'), ...

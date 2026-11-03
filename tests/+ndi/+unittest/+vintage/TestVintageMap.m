@@ -363,7 +363,7 @@ classdef TestVintageMap < matlab.unittest.TestCase
 
         function testObjectNamePrefersTheOwnNameOverBaseName(testCase)
             % [carried v1 validates against NDI templates] (Jess Haley,
-            % 2026-10-27): a V2 document's name is read from the class's own
+            % 2026-10-27): a v2 document's name is read from the class's own
             % name field; base.name is the fallback for documents migrated
             % before. A document carrying both reads the own field.
             both = ndi.unittest.vintage.TestVintageMap.doc('acquisition_system', ...

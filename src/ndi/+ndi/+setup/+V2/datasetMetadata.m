@@ -1,8 +1,8 @@
 function result = datasetMetadata(spec, sessionId, options)
-%DATASETMETADATA Build the dataset-level V2 documents described by a spec.
+%DATASETMETADATA Build the dataset-level v2 documents described by a spec.
 %
 %   RESULT = ndi.setup.V2.datasetMetadata(SPEC, SESSIONID) turns the dataset
-%   metadata section of an import spec into V2 (V_eta) documents, built and
+%   metadata section of an import spec into v2 (V_eta) documents, built and
 %   validated with did2.build. SPEC is a struct (jsondecode of the spec file)
 %   or the path to a JSON spec file. SESSIONID is the session the documents
 %   belong to: for dataset-level entities, the dataset's own session.
@@ -20,7 +20,7 @@ function result = datasetMetadata(spec, sessionId, options)
 %     ids           containers.Map, spec key -> document id
 %     census        table: one row per class, with the count built
 %     unrepresented struct array {kind, key, field, why}: spec content that
-%                   has NO place in the V2 schema and was therefore NOT
+%                   has NO place in the v2 schema and was therefore NOT
 %                   recorded. Reported, never silently dropped.
 %
 %   Options:
@@ -186,7 +186,7 @@ if ~strcmp(options.Studies, 'only')
         s = e{1};
         % `node` (the strain's ontology term) and `biological_sex` are stated by
         % the import's assertions about the subjects of the strain, not held
-        % on the strain entity (V2 `strain` has neither field).
+        % on the strain entity (v2 `strain` has neither field).
         state = checkKnown(state, 'strain', s, {'name', 'species', 'genetic_strain_type', ...
             'description', 'genotype', 'identifiers', 'background', 'source'}, ...
             struct('node', '', 'biological_sex', ''));

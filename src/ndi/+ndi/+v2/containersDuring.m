@@ -12,7 +12,7 @@ function [held, undecided] = containersDuring(container, docs, tolerant)
 %     - by the subject's own stay, or by a DISTRIBUTIVE stay of a group it is
 %       member_of (a worm through its cohort's stay on a plate; did-schema
 %       tenet T17, Haley decision #55). The relations that lead from a member
-%       to its group are those whose `passes` is `distributive` in the V2
+%       to its group are those whose `passes` is `distributive` in the v2
 %       schema's registry (ndi.v2.relationPasses, as ndi.entity takes them);
 %     - then by the container's own stays, nested (a plate in an incubator),
 %       each within the window of the stay that reached it; up to 4 levels.

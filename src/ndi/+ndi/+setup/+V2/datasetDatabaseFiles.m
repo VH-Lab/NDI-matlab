@@ -1,15 +1,15 @@
 function [files, folders, problems] = datasetDatabaseFiles(path)
-%DATASETDATABASEFILES The V2 database files of a dataset: its own, then its linked sessions'.
+%DATASETDATABASEFILES The v2 database files of a dataset: its own, then its linked sessions'.
 %
 %   [FILES, FOLDERS, PROBLEMS] = ndi.setup.V2.datasetDatabaseFiles(PATH) reads
-%   the V2 dataset at PATH (the folder holding .ndi) and returns, as cellstrs:
+%   the v2 dataset at PATH (the folder holding .ndi) and returns, as cellstrs:
 %
 %     FILES     the dataset's own database file, then that of each LINKED
 %               session (the Pathname of its "database linking" relation
 %               names its folder, ndi.v2.sessionLinkOf: Jess Haley 2026-10-29
 %               [linked session link details])
 %     FOLDERS   the folder each file's documents are in (PATH first)
-%     PROBLEMS  each linked session whose folder holds no V2 database
+%     PROBLEMS  each linked session whose folder holds no v2 database
 %
 %   For tools that read a dataset's documents directly (a census, an edge
 %   check, a term inventory): an INGESTED session is in the first file; a
@@ -23,7 +23,7 @@ end
 % did_v2.sqlite, or a V_eta.sqlite written before [V2 database file renamed]
 own = ndi.database.implementations.database.did2sqlite.FILEIN(fullfile(path, '.ndi'));
 if ~isfile(own)
-    error('ndi:setup:V2:noDataset', 'No V2 database at %s.', own);
+    error('ndi:setup:V2:noDataset', 'No v2 database at %s.', own);
 end
 files = {own};
 folders = {path};
@@ -55,7 +55,7 @@ for k = 1:numel(links)
         files{end+1} = f; %#ok<AGROW>
         folders{end+1} = folder; %#ok<AGROW>
     else
-        problems{end+1} = sprintf('linked session folder %s holds no V2 database', folder); %#ok<AGROW>
+        problems{end+1} = sprintf('linked session folder %s holds no v2 database', folder); %#ok<AGROW>
     end
 end
 end

@@ -105,7 +105,7 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
             % The name in either home: `acquisition_system.name` (the class's
             % own name field, did-schema #73 item 54; [carried v1 validates
             % against NDI templates], Jess Haley, 2026-10-27) or base.name
-            % (v1, and V2 documents migrated before).
+            % (v1, and v2 documents migrated before).
             sq1 = ndi.vintage.isaQuery('daqsystem') & ...
                 ( ndi.query('acquisition_system.name','exact_string',dev.name,'') | ...
                   ndi.query('base.name','exact_string',dev.name,'') );
@@ -292,12 +292,12 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
         % ndi.database / ndi.document methods
 
         function tf = writesV2(ndi_session_obj)
-            % WRITESV2 - does this session's database take V2 documents?
+            % WRITESV2 - does this session's database take v2 documents?
             %
             % TF = WRITESV2(NDI_SESSION_OBJ)
             %
-            % True when the session's database is a V2 (did2sqlite) database.
-            % A writer that knows its session uses this to write V2 documents
+            % True when the session's database is a v2 (did2sqlite) database.
+            % A writer that knows its session uses this to write v2 documents
             % into a V2 database and v1 documents into a v1 one. Decided by
             % Jess Haley, 2026-10-29 [v1 writes into a V2 session] (did-schema
             % did_v2_go_forward_class_audit.md): "the end state is that every
@@ -947,13 +947,13 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
             % experiment -- organisms, cultures, tissues, cells and groups
             % (ndi.v2.subjectTypes) -- and NOT the apparatus. A v1 database
             % holds only such subjects as `subject` documents, so on v1 this
-            % is every `subject` document. On a V2 (V_eta) database a probe,
+            % is every `subject` document. On a v2 (V_eta) database a probe,
             % a camera (device) or a plate (material) is an entity too, and
             % a MIGRATED element is a `subject`; all of those are left out,
-            % so a V2 or migrated database answers as v1 did (Jess Haley,
+            % so a v2 or migrated database answers as v1 did (Jess Haley,
             % 2026-10-21). See ndi.vintage.subjectDocs.
             %
-            % For V2 data, new code should prefer ndi.entity.search, which
+            % For v2 data, new code should prefer ndi.entity.search, which
             % returns ndi.entity objects and can filter on type, statements
             % and relations; the same subjects are
             %   ndi.entity.search(NDI_SESSION_OBJ, {'type', ndi.v2.subjectTypes()})
@@ -1064,7 +1064,7 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
                     end
                 end
             else
-                % The V2 set (ndi.time.syncgraph/newdocumentV2) also holds
+                % The v2 set (ndi.time.syncgraph/newdocumentV2) also holds
                 % the `software` entity each record names by `software_id`.
                 % A rule whose record is already stored keeps it, and the
                 % software entity built with the new copy is not added.
@@ -1084,7 +1084,7 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
             % Delete before adding: removing a stale syncrule document also removes whatever
             % depends on it, which would include the syncgraph document we are about to add.
 
-            % In a V2 database the records going away name `software`
+            % In a v2 database the records going away name `software`
             % entities (the policy's and each stale rule's); each goes with
             % them unless another document still names it.
             goneSoftware = {};

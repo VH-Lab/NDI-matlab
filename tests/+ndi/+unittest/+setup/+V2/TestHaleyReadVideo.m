@@ -1,5 +1,5 @@
 classdef TestHaleyReadVideo < matlab.unittest.TestCase
-%TESTHALEYREADVIDEO A real video frame, read through NDI's V2 read path.
+%TESTHALEYREADVIDEO A real video frame, read through NDI's v2 read path.
 %
 %   Builds TestHaleyRecordings' synthetic fixture, replaces ONE placeholder
 %   (camera 2's 2022-02-04_12-10-51_2.mp4, plate 12) with a real short video
@@ -39,7 +39,7 @@ classdef TestHaleyReadVideo < matlab.unittest.TestCase
             schemaPath = getenv('DID_SCHEMA_PATH');
             testCase.assumeTrue(~isempty(schemaPath) && ...
                 isfile(ndi.v2.schemaFile(schemaPath, 'entity.json')), ...
-                'DID_SCHEMA_PATH does not hold a V2 schema with `entity` (did-schema #88)');
+                'DID_SCHEMA_PATH does not hold a v2 schema with `entity` (did-schema #88)');
             testCase.Root = tempname;
             testCase.addTeardown(@() rmdir(testCase.Root, 's'));
             ndi.unittest.setup.V2.TestHaleyRecordings.writeFixture(testCase.Root);

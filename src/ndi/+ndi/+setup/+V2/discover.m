@@ -1,5 +1,5 @@
 function files = discover(root, options)
-%DISCOVER Stage 0 of a V2 import: list the source files under ROOT.
+%DISCOVER Stage 0 of a v2 import: list the source files under ROOT.
 %
 %   FILES = ndi.setup.V2.discover(ROOT) walks ROOT and returns a table with
 %   one row per file: path (relative to ROOT), folder, name, ext, bytes and

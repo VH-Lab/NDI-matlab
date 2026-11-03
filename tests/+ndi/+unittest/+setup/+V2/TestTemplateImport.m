@@ -1,5 +1,5 @@
 classdef TestTemplateImport < matlab.unittest.TestCase
-%TESTTEMPLATEIMPORT The starter V2 importer, run end to end so it cannot rot.
+%TESTTEMPLATEIMPORT The starter v2 importer, run end to end so it cannot rot.
 %
 %   ndi.setup.conv.template.import_V2 is the folder a new import is copied
 %   from. These tests run it over a tiny data folder they write (one session

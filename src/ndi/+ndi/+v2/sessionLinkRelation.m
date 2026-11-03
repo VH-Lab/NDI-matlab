@@ -1,5 +1,5 @@
 function doc = sessionLinkRelation(entityId, parentId, linked, softwareClass, pathname, datasetSessionId)
-%SESSIONLINKRELATION The relation that puts a session in a V2 dataset, with HOW it joined.
+%SESSIONLINKRELATION The relation that puts a session in a v2 dataset, with HOW it joined.
 %
 %   DOC = ndi.v2.sessionLinkRelation(ENTITYID, PARENTID, LINKED, SOFTWARECLASS,
 %   PATHNAME, DATASETSESSIONID) builds (did2.build.directedRelation) the one

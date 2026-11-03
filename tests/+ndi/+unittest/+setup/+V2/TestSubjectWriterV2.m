@@ -1,8 +1,8 @@
 classdef TestSubjectWriterV2 < matlab.unittest.TestCase
-%TESTSUBJECTWRITERV2 ndi.subject writes the V2 subject record into a V2 database.
+%TESTSUBJECTWRITERV2 ndi.subject writes the v2 subject record into a v2 database.
 %
 %   Given the session it writes for, ndi.subject/newdocument writes, into a
-%   V2 (did2) database, an `entity` of type organism whose id is the
+%   v2 (did2) database, an `entity` of type organism whose id is the
 %   subject's id (the shape DID-matlab's +migrators_j/subject.m writes for a
 %   v1 `subject`), not a v1 `subject` document stamped did_v1. So does
 %   ndi.subject.does_subjectstring_match_session_document, which ndi.element
@@ -14,7 +14,7 @@ classdef TestSubjectWriterV2 < matlab.unittest.TestCase
 %   every NDI writer writes V2 documents and a V2 session accepts only V2
 %   documents".
 %
-%   Filtered (never passed) when did2.build or a V2 schema with `entity` is
+%   Filtered (never passed) when did2.build or a v2 schema with `entity` is
 %   missing.
 
     properties
@@ -28,7 +28,7 @@ classdef TestSubjectWriterV2 < matlab.unittest.TestCase
             schemaPath = getenv('DID_SCHEMA_PATH');
             testCase.assumeTrue(~isempty(schemaPath) && ...
                 isfile(ndi.v2.schemaFile(schemaPath, 'entity.json')), ...
-                'DID_SCHEMA_PATH does not hold a V2 schema with `entity` (did-schema #88)');
+                'DID_SCHEMA_PATH does not hold a v2 schema with `entity` (did-schema #88)');
         end
     end
 
@@ -43,14 +43,14 @@ classdef TestSubjectWriterV2 < matlab.unittest.TestCase
     methods (Test)
         function testNewdocumentOnAV2DatabaseIsTheV2Record(testCase)
             [S, dbFile] = testCase.v2Session();
-            testCase.verifyTrue(S.writesV2(), 'the session does not report its V2 database');
+            testCase.verifyTrue(S.writesV2(), 'the session does not report its v2 database');
             sub = ndi.subject('mouse23@nosuchlab.org', 'a test mouse');
             docs = sub.newdocument(S);
             S.database_add(docs);
 
             ent = testCase.onlySubject(dbFile, sub.id());
             testCase.verifyTrue(did2.schema.isV2Stamp(ent), ...
-                'the subject entity is stamped V2 (not did_v1)');
+                'the subject entity is stamped v2 (not did_v1)');
             want = ndi.v2.vocabTerm('entity_type', 'organism');
             testCase.verifyEqual(char(ent.entity.type.name), char(want.name));
             testCase.verifyEqual(char(ent.entity.local_identifier), 'mouse23@nosuchlab.org');
@@ -77,14 +77,14 @@ classdef TestSubjectWriterV2 < matlab.unittest.TestCase
             [b2, sid2] = ndi.subject.does_subjectstring_match_session_document(S, ...
                 'rat7@nosuchlab.org', 1);
             testCase.verifyTrue(logical(b2));
-            testCase.verifyEqual(sid2, sid, 'the V2 subject was not found by its local identifier');
+            testCase.verifyEqual(sid2, sid, 'the v2 subject was not found by its local identifier');
             testCase.verifyNumElements(testCase.storedBodies(dbFile), n, ...
                 'finding the subject again wrote another document');
         end
 
         function testADeviceOfTheSameNameIsNotTheSubject(testCase)
             % [subject match takes the subject types] (Decided by Jess Haley,
-            % 2026-11-03, did-schema did_v2_go_forward_class_audit.md): on a V2
+            % 2026-11-03, did-schema did_v2_go_forward_class_audit.md): on a v2
             % database the name matches only an entity of a subject type
             % (organism, culture, tissue, cell or group), never a device that
             % shares it
@@ -113,7 +113,7 @@ classdef TestSubjectWriterV2 < matlab.unittest.TestCase
         function testAV1DatabaseKeepsTheV1SubjectDocument(testCase)
             % a new folder gets a v1 database (databasehierarchyinit entry 1)
             S = ndi.session.dir('ref1', testCase.Dir);
-            testCase.verifyFalse(S.writesV2(), 'a new folder was given a V2 database');
+            testCase.verifyFalse(S.writesV2(), 'a new folder was given a v2 database');
             sub = ndi.subject('mouse23@nosuchlab.org', 'a test mouse');
             d = sub.newdocument(S);
             testCase.verifyClass(d, 'ndi.document');
@@ -147,10 +147,10 @@ classdef TestSubjectWriterV2 < matlab.unittest.TestCase
         function ent = onlySubject(testCase, dbFile, id)
             % DENOMINATOR FIRST: what the database holds
             stored = testCase.storedBodies(dbFile);
-            testCase.assertNotEmpty(stored, 'the V2 database holds nothing');
+            testCase.assertNotEmpty(stored, 'the v2 database holds nothing');
             classes = cellfun(@(s) s.document_class.class_name, stored, 'UniformOutput', false);
             testCase.verifyFalse(any(strcmp(classes, 'subject')), sprintf( ...
-                'a v1 `subject` document was written into a V2 database (classes: %s)', ...
+                'a v1 `subject` document was written into a v2 database (classes: %s)', ...
                 strjoin(classes, ', ')));
             hit = cellfun(@(s) strcmp(s.base.id, id), stored);
             testCase.assertEqual(nnz(hit), 1, sprintf( ...

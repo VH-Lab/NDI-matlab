@@ -1,4 +1,4 @@
-# NDI V2 object layer: subjects, statements and entities
+# NDI v2 object layer: subjects, statements and entities
 
 **Using it:** [Using_V2.md](Using_V2.md) is the short user guide (open, search, read, walk, write).
 
@@ -26,10 +26,10 @@ below: `ndi.dataset`'s linked and ingested sessions (section 11), and
 
 ## 1. Why
 
-A V2 (V_eta) dataset is a set of statements about subjects: who or what was
+A v2 (V_eta) dataset is a set of statements about subjects: who or what was
 observed, manipulated, calculated about or asserted about, when, how and with
 what result. NDI's objects do not know this yet. Today a user who wants one worm's
-speed from a V2 dataset has to:
+speed from a v2 dataset has to:
 
 1. search for `calculation` statements with the `velocity` value kind whose `entity_id` edge is the worm;
 2. pick the one whose `variable` is `midpoint speed`;
@@ -46,12 +46,12 @@ once, so the user writes `w.statements('statement', {'variable', 'midpoint speed
 
 ## 2. What exists today (NDI-matlab, branch `claude/haley-import-v2`)
 
-| object | what it does | V2 status |
+| object | what it does | v2 status |
 |---|---|---|
-| `ndi.dataset` | opens a dataset, lists and opens its sessions, searches its database | opens a V2 dataset and lists its sessions (import stage 13, decision #66); no subjects, statements, studies or entities |
-| `ndi.session` | database front end; DAQ systems, probes, elements, syncgraph | opens a V2 session; no subjects, statements or entities |
+| `ndi.dataset` | opens a dataset, lists and opens its sessions, searches its database | opens a v2 dataset and lists its sessions (import stage 13, decision #66); no subjects, statements, studies or entities |
+| `ndi.session` | database front end; DAQ systems, probes, elements, syncgraph | opens a v2 session; no subjects, statements or entities |
 | `ndi.subject` | `local_identifier`, `description`; `newdocument`, `searchquery`; a string check | requires an `@` in `local_identifier` (`subject.m:120`); no navigation |
-| `ndi.element`, `ndi.probe` | acquisition objects, raw-data reading | V2 read through `ndi.vintage` (the v1/V2 name map) |
+| `ndi.element`, `ndi.probe` | acquisition objects, raw-data reading | v2 read through `ndi.vintage` (the v1/V2 name map) |
 | statements, entities | none | only as raw documents from `database_search` |
 
 When this section was written there was no method that listed a session's
@@ -84,12 +84,12 @@ subjects. There is now: `ndi.entity.search(S, {'type', ndi.v2.subjectTypes()})`
   `session`, `dataset`, `study`, `person`, `strain`, ... are all `entity`
   (`formulation` is a `data_type`, not an entity).
 - **D5 Back compatibility with v1** (section 6).
-- **D6 The `@` in `local_identifier` is a v1 rule, not a V2 rule.** `ndi.subject`
-  keeps requiring it when it CREATES a v1 subject, unchanged. A V2 subject read
+- **D6 The `@` in `local_identifier` is a v1 rule, not a v2 rule.** `ndi.subject`
+  keeps requiring it when it CREATES a v1 subject, unchanged. A v2 subject read
   from a document is accepted without one. Reasons:
   - uniqueness is already given: every subject has a globally unique `id`, and the
     schema makes `local_identifier` unique within its dataset;
-  - the lab is structure, and V2 declares structure rather than encoding it in
+  - the lab is structure, and v2 declares structure rather than encoding it in
     strings (tenet T14). The lab is an `organization` entity reached through
     relations, not a suffix that code splits on (four places in NDI split a
     subject name on `@` today: the Birren, Dabrowska and Haley v1 converters and
@@ -261,20 +261,20 @@ it cannot name it.
 1. **Every existing method keeps its exact behaviour on v1 data:**
    `ndi.subject`'s constructor and `@` check, `ndi.session` and `ndi.dataset`
    search and open, elements, probes, DAQ, syncgraph.
-2. **New methods work on V2, and on v1 where `ndi.vintage` defines an
+2. **New methods work on v2, and on v1 where `ndi.vintage` defines an
    equivalent** (for example, a v1 `subject` document becomes an `ndi.subject`
    with no statements). **Where v1 has no equivalent, they return empty, never
    an error.**
 3. **No v1 document is rewritten or reinterpreted on read.** Migration stays
    `ndi.migrate`'s job.
-4. **Every new class is tested on a v1 session and a V2 session**, as
+4. **Every new class is tested on a v1 session and a v2 session**, as
    `TestVintageMap` already does for the read path.
 5. **`ndi.session` and `ndi.dataset` gain entity behaviour last** (Q1), because
    their class trees are the deepest and the most used.
 
 ## 7. Build order
 
-1. `ndi.entity`, `ndi.subject` (V2 read; `@` relaxed for V2, D6),
+1. `ndi.entity`, `ndi.subject` (v2 read; `@` relaxed for v2, D6),
    `session.subjects()` / `dataset.subjects()`.
 2. `ndi.statement` and its tree; `value()` with the body reader; `axes()`,
    `covariates()`, `conditions()`.
@@ -283,7 +283,7 @@ it cannot name it.
    `ndi.strain`, `ndi.study`, `entities()`, `studies()`.
 5. `ndi.session` / `ndi.dataset` as entities (Q1).
 
-Each step lands with tests on the Haley CI fixture (V2) and a v1 session, and is
+Each step lands with tests on the Haley CI fixture (v2) and a v1 session, and is
 tried on the real Haley dataset before the next.
 
 ## 8. Open questions
@@ -361,14 +361,14 @@ session's are in its own folder, which a `linked_session` document (`path`,
 relative to the dataset's folder when inside it, and an `entity_id` edge to the
 session's entity) names. v1's `session_in_a_dataset` is not used.
 
-| method / function | what it does on a V2 dataset |
+| method / function | what it does on a v2 dataset |
 |---|---|
 | `session_list`, `open_session`, `database_search` | list the members (`ndi.v2.datasetSessions`), open a linked one from its folder (checked to hold that session), search the dataset and each linked session |
 | `session_notes` | the listing's denominator, and every session left out and why (not `included_in` the dataset; a linked folder missing, unopenable or holding another session; also a warning, `ndi:dataset:sessionsLeftOut`) |
 | `add_linked_session(S, 'PartOf', id)` | an `included_in` relation to the dataset, or the study `PartOf` names, and a `linked_session` document |
 | `add_ingested_session(S, 'PartOf', id)` | copies every document of S, with the files it ingested; adds an `included_in` relation unless S's own relations already make it a member |
 | `convertLinkedSessionToIngested` | copies the linked session's documents in, deletes the `linked_session` |
-| `convertIngestedSessionToLinked(id, folder)` | writes the session's documents to a new V2 session in `folder`, deletes them from the dataset, adds a `linked_session`; the `included_in` relations stay |
+| `convertIngestedSessionToLinked(id, folder)` | writes the session's documents to a new v2 session in `folder`, deletes them from the dataset, adds a `linked_session`; the `included_in` relations stay |
 | `unlink_session` | deletes the `linked_session` and the `included_in` relations naming the session; the folder stays |
 | `makeSelfContained('DryRun', tf)` | copies every file the dataset's documents record by location into its file store |
 
@@ -399,7 +399,7 @@ deleted or rewritten. A physical merge is not decided and not built.
 | `statements`, `assertions`, `summary` | what is ASSERTED of another record holds of the entity (`via()` ends in `same_as`), from the entity itself and from each group, whole and type it reaches (a worm whose strain is recorded twice gets both records' assertions); interactions and context do not pass through a `same_as`, since T18 names assertions |
 | `e.sameAs()` | the other records, as entities |
 | `e.disagreements()` | a table (about, variable, record_id, value): where the records of one group assert different values of a variable. The reader returns every value and picks none; `statements` and `summary` also warn, `ndi:entity:sameAs:disagree` |
-| `add_linked_session`, `add_ingested_session` (V2, `'SameAs'` default true) | before the session joins, `ndi.v2.sameAsMatches` compares its entities with the dataset's, pair by pair within one type: the same identifier CURIE (prefix ignoring case), the same serial number and manufacturer on two devices, or the same catalog or model number on two products is a MATCH, and a `same_as` is written in the dataset's database for each not already joined; the same name alone, or the same serial number without a manufacturer on both, is a CANDIDATE, listed and never written; differing identifiers (or serial or catalog numbers) make two things, neither. `same_as_report()` returns the denominator, the matches (with the relation written), the candidates and notes |
+| `add_linked_session`, `add_ingested_session` (v2, `'SameAs'` default true) | before the session joins, `ndi.v2.sameAsMatches` compares its entities with the dataset's, pair by pair within one type: the same identifier CURIE (prefix ignoring case), the same serial number and manufacturer on two devices, or the same catalog or model number on two products is a MATCH, and a `same_as` is written in the dataset's database for each not already joined; the same name alone, or the same serial number without a manufacturer on both, is a CANDIDATE, listed and never written; differing identifiers (or serial or catalog numbers) make two things, neither. `same_as_report()` returns the denominator, the matches (with the relation written), the candidates and notes |
 
 Serial numbers and manufacturers are read from assertions whose variable is
 `serial number` and `manufacturer` (the unit's serial number has no field of

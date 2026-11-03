@@ -8,7 +8,7 @@ classdef TestControlCovariate < matlab.unittest.TestCase
 %   condition` (XCO:0000099) along the presentation dimension of the stimulus
 %   `item` value, true where the presentation was a control. A v1 record
 %   saying no trial was a control (NaN) gives all false; a presentation with
-%   no v1 control record gives no covariate. The record becomes no V2
+%   no v1 control record gives no covariate. The record becomes no v2
 %   document. This replaces TestControlCalculation, which asserted the
 %   superseded [control record is a calculation] and the withdrawn
 %   [control record with no control] (a logical-false calculation).

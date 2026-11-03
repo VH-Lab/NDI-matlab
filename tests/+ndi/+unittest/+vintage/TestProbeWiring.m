@@ -10,14 +10,14 @@ classdef TestProbeWiring < matlab.unittest.TestCase
 %   matrix of its numbers); a recording names its system by
 %   `acquisition_system_id`.
 %
-%   The fixture is one V2 session written with ndi.setup.V2.createSession:
+%   The fixture is one v2 session written with ndi.setup.V2.createSession:
 %   an acquisition system 'intan1', an epoch anchor, a recording observation
 %   naming the system and its probe, and the probe's wiring relation (ai11-14
 %   and di1). The tests read it back as NDI's readers do:
 %   ndi.vintage.wiredDeviceString rebuilds v1's devicestring, and
 %   ndi.vintage.systemStatements finds the system's recordings.
 %
-%   Filtered (never passed) when did2.build or a V2 schema with a term
+%   Filtered (never passed) when did2.build or a v2 schema with a term
 %   registry is missing.
 
     properties
@@ -33,7 +33,7 @@ classdef TestProbeWiring < matlab.unittest.TestCase
             schemaPath = getenv('DID_SCHEMA_PATH');
             testCase.assumeTrue(~isempty(schemaPath) && ...
                 isfile(ndi.v2.schemaFile(schemaPath, 'term_registry_meta.json')), ...
-                'DID_SCHEMA_PATH does not hold a V2 schema with a term registry');
+                'DID_SCHEMA_PATH does not hold a v2 schema with a term registry');
 
             testCase.Dir = tempname;
             mkdir(testCase.Dir);

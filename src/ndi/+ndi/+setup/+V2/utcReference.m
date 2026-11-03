@@ -34,7 +34,7 @@ function d = utcReference(t0, tz, sid, options)
 %                    with 'End'
 %
 %   This is the Haley import's rule (decisions #54d, #87), made public for
-%   every V2 import: ndi.setup.conv.haley and ndi.setup.conv.template both
+%   every v2 import: ndi.setup.conv.haley and ndi.setup.conv.template both
 %   build their absolute times here.
 %
 %   See also did2.build.absoluteTimeReference, did2.build.relativeTimeReference.

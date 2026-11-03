@@ -98,7 +98,7 @@ function [S, checks] = subjectList(dataParentDir, sessions, options)
 %                          disagree, or a plateNum used by two experiments
 %     noGrowthCondition    an assay plate whose `growthCondition` is NaN that
 %                          the source does not exclude. doImport ALSO
-%                          excluded these (identifyValidRows); V2 excludes on
+%                          excluded these (identifyValidRows); v2 excludes on
 %                          `exclude` alone, so each is listed for a decision
 %     assayTypeDisagrees   a plate whose original assay type (doImport: folder
 %                          + its `condition`) is not its session's study's

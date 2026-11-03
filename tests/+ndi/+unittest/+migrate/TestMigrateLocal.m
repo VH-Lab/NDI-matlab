@@ -8,7 +8,7 @@ classdef TestMigrateLocal < matlab.unittest.TestCase
 %   the lock semantics, and the idempotency fast pass.
 %
 %   Most calls rely on the DEFAULT TargetVersion, 'did_v2' (the only name
-%   accepted: [V_eta not kept as an alias]), so these tests run the V2 path:
+%   accepted: [V_eta not kept as an alias]), so these tests run the v2 path:
 %   +migrators_j in pass 1 and the second pass.
 %
 %   Tests run with Validate=false so the test runner does not need a
@@ -50,10 +50,10 @@ classdef TestMigrateLocal < matlab.unittest.TestCase
     methods (Test)
 
         function testDefaultTargetIsDidV2(testCase)
-            % ndi.migrate.local migrates to the V2 set unless asked otherwise
+            % ndi.migrate.local migrates to the v2 set unless asked otherwise
             % (VH-Lab/NDI-matlab#804). The set is 'did_v2' and its database
             % file did_v2.sqlite ([schema set renamed did_v2], [V2 database
-            % file renamed], Jess Haley, 2026-10-25 and 2026-11-01); the V2
+            % file renamed], Jess Haley, 2026-10-25 and 2026-11-01); the v2
             % second pass runs and its report is carried on the result.
             srcSqlite = fullfile(testCase.SessionRoot, '.ndi', 'did-sqlite.sqlite');
             buildV1Sqlite(srcSqlite, {jsonencode(makeV1Body('alpha'))});
@@ -66,10 +66,10 @@ classdef TestMigrateLocal < matlab.unittest.TestCase
             verifyFalse(testCase, isfile(fullfile(testCase.SessionRoot, '.ndi', 'V_eta.sqlite')), ...
                 'a new migration wrote the earlier file name');
             % result.secondPass exists on every target, but its reports are
-            % [] unless the V2 second pass ran; the strain pass reports
+            % [] unless the v2 second pass ran; the strain pass reports
             % its denominator whenever it is handed documents
             verifyNotEmpty(testCase, result.secondPass.strainAssembly, ...
-                'the V2 second pass did not run on the default target');
+                'the v2 second pass did not run on the default target');
             verifyGreaterThan(testCase, result.secondPass.strainAssembly.documents_inspected, 0);
 
             % the default is declared, not inferred from a file name
@@ -457,7 +457,7 @@ classdef TestMigrateLocal < matlab.unittest.TestCase
             verifyTrue(testCase, isequaln(got, expected), ...
                 'an unchanged document must be stored as its v1 source stamped did_v1');
 
-            % the migrated document keeps its V2 stamp and its migrated shape
+            % the migrated document keeps its v2 stamp and its migrated shape
             gotF = db.get(filt.base.id).toStruct();
             verifyEqual(testCase, gotF.document_class.schema_version, did2.schema.v2Stamp());
             verifyEqual(testCase, gotF.document_class.class_name, 'entity');
@@ -563,7 +563,7 @@ end
 
 function body = makeV1Changed(name)
 % a did_v1 document pass 1 changes: a v1 `subject` (NDI's template,
-% subject.json), which DID-matlab's subject migrator converts to one V2
+% subject.json), which DID-matlab's subject migrator converts to one v2
 % `entity`, id preserved. (It was a class no migrator names whose
 % image_stack_parameters block the superclass pass reshaped; that pass and the
 % identity fallback are deleted, DID-matlab #351.)

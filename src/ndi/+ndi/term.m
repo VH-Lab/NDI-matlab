@@ -1,7 +1,7 @@
 classdef term
     % ndi.term - an ontology term as a statement stores it
     %
-    % A V2 statement names things with terms: its variable, its method, the
+    % A v2 statement names things with terms: its variable, its method, the
     % variables of its conditions, parameters and keys, units, and the value
     % of a term-valued statement. Each is stored as {node, name}: NODE a
     % CURIE ('WBls:0000038'), NAME what the import wrote ('L4 larva Ce'). An

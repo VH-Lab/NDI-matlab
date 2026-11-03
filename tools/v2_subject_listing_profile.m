@@ -2,7 +2,7 @@ function T = v2_subject_listing_profile(datasetPath, options)
 %V2_SUBJECT_LISTING_PROFILE Where the time goes when every subject of a dataset is listed.
 %
 %   T = v2_subject_listing_profile(DATASETPATH) runs ndi.subject.search on the
-%   V2 dataset at DATASETPATH, then times each layer it goes through, one
+%   v2 dataset at DATASETPATH, then times each layer it goes through, one
 %   at a time, over the same subjects:
 %
 %     sql          the SELECT (id, body) for every `isa subject` document
@@ -13,7 +13,7 @@ function T = v2_subject_listing_profile(datasetPath, options)
 %     get by id    did2 sqlitedb.get once per id (what NDI's backend does
 %                  AFTER search, reading every document a second time)
 %     normalize    ndi.database.internal.applyReadNormalization (the
-%                  v1->V2 read pass NDI applies to every document read)
+%                  v1->v2 read pass NDI applies to every document read)
 %     ndi.document ndi.document(struct), the object NDI hands back
 %     database_search  ndi.dataset/database_search, all of the above
 %     unique_id    did.ido.unique_id (each new ndi.subject makes one, then
@@ -81,7 +81,7 @@ add('get by id', toc(t0) * scale, N, 'NDI reads every document a second time');
 fprintf('== NDI ==\n');
 t0 = tic; nd = cell(1, M);
 for k = 1:M, nd{k} = ndi.database.internal.applyReadNormalization(again{k}); end
-add('normalize', toc(t0) * scale, N, 'v1->V2 read pass + ndi.document');
+add('normalize', toc(t0) * scale, N, 'v1->v2 read pass + ndi.document');
 structs = cellfun(@(d) d.toStruct(), again, 'UniformOutput', false);
 t0 = tic; for k = 1:M, ndi.document(structs{k}); end
 add('ndi.document', toc(t0) * scale, N, 'construction alone (inside normalize)');

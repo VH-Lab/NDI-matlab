@@ -6,7 +6,7 @@ function params = appParameters(doc, block, fieldNames, options)
 %
 %     v1      DOC.document_properties.(BLOCK), returned as stored (e.g.
 %             BLOCK 'spike_extraction_parameters' or 'sorting_parameters').
-%     V2      a `method` document, as DID-matlab's migration writes a v1
+%     v2      a `method` document, as DID-matlab's migration writes a v1
 %             settings document (+migrators_j/private/jMethodParameters.m):
 %             the preset's name in `method.name` (Jess Haley 2026-10-30
 %             [preset name stays on method], did-schema
@@ -14,7 +14,7 @@ function params = appParameters(doc, block, fieldNames, options)
 %             entry of `method.parameters`, its `variable` the v1 field name
 %             with underscores as spaces (jParameterList).
 %
-%   For the V2 shape each entry becomes one field of PARAMS. An entry's
+%   For the v2 shape each entry becomes one field of PARAMS. An entry's
 %   variable is its label; a label jParameterList wrote for a nested v1
 %   field ('filter.do filter') is read by its last part ('do filter').
 %   FIELDNAMES (a cellstr) are the v1 field names the app reads; a label is

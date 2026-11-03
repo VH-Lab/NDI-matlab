@@ -6,7 +6,7 @@ function census = finalV1BodyCensus(sourceBodies, destBodies, options)
 %   WHY NOT finalV1SurvivorCensus. That helper flags every destination document
 %   whose class_name is also a v1 source class_name. On the pinned schema
 %   (did-schema `v_eta-pre73`) that is wrong in both directions it can be wrong:
-%   the calculator leaves REUSE the v1 spellings as real V2 classes
+%   the calculator leaves REUSE the v1 spellings as real v2 classes
 %   (`tuningcurve_calc`, `contrasttuning_calc`, `oridirtuning_calc`, ... chain
 %   to `tuning_curve_calculation` / `subject_calculation`), so ~69k CONVERTED
 %   calculator documents on Soph read as survivors, and so do `subject` and
@@ -25,7 +25,7 @@ function census = finalV1BodyCensus(sourceBodies, destBodies, options)
 %       class as a RESTATEMENT of v1 (a tombstone). A document of that class
 %       validates only against the v1 shape: it is an unconverted v1 body.
 %     * some ancestor is NOT a v1 class name (`entity`, `subject_calculation`,
-%       `tuning_curve_calculation`, `data_type`, ...) -> the class is a real V2
+%       `tuning_curve_calculation`, `data_type`, ...) -> the class is a real v2
 %       class that happens to keep a v1 spelling. Counted, not flagged.
 %
 %   This is the most direct signal available to a test that sees only the two
@@ -33,7 +33,7 @@ function census = finalV1BodyCensus(sourceBodies, destBodies, options)
 %   draft/ class files, not index.json with its `disposition` markers), and it
 %   does not depend on what a migrator chose to name its output. It is read off
 %   the document, so a reshaped class cannot hide behind its name and a
-%   tombstone cannot pass for a V2 class.
+%   tombstone cannot pass for a v2 class.
 %
 %   THE SAME-ID COMPARISON is reported beside it, per row: how many of the
 %   destination documents have a SOURCE document of the same base.id AND the
@@ -54,7 +54,7 @@ function census = finalV1BodyCensus(sourceBodies, destBodies, options)
 %   NO superclass chain (ensureClassBlocks was a no-op) has no non-v1 ancestor
 %   and reads as an UNCONVERTED v1 body -- the pessimistic direction, on
 %   purpose. A tombstone whose v1 ancestor was renamed in V_eta would read as a
-%   V2 class (the optimistic direction); the (b) table prints the V_eta-only
+%   v2 class (the optimistic direction); the (b) table prints the V_eta-only
 %   ancestor that put each class there, so that case is visible in the output.
 %
 %   INPUTS

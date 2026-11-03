@@ -1,5 +1,5 @@
 classdef TestLinkedSessions < matlab.unittest.TestCase
-%TESTLINKEDSESSIONS Linked and ingested sessions in a V2 dataset.
+%TESTLINKEDSESSIONS Linked and ingested sessions in a v2 dataset.
 %
 %   V_eta_linked_session_plan.md (signed 2026-10-09): a session is in a
 %   dataset when it is `included_in` the dataset or a study of it; an INGESTED
@@ -31,7 +31,7 @@ classdef TestLinkedSessions < matlab.unittest.TestCase
             schemaPath = getenv('DID_SCHEMA_PATH');
             testCase.assumeTrue(~isempty(schemaPath) && ...
                 isfile(ndi.v2.schemaFile(schemaPath, 'entity.json')), ...
-                'DID_SCHEMA_PATH does not hold a V2 schema with `entity` (did-schema #88)');
+                'DID_SCHEMA_PATH does not hold a v2 schema with `entity` (did-schema #88)');
             testCase.Root = tempname;
             testCase.addTeardown(@() rmdir(testCase.Root, 's'));
             ndi.unittest.setup.V2.TestHaleyRecordings.writeFixture(testCase.Root);

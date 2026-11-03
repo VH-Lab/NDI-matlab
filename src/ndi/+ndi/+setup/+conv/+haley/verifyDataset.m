@@ -1,7 +1,7 @@
 function report = verifyDataset(path, options)
-%VERIFYDATASET Check a written Haley V2 dataset against what the import built.
+%VERIFYDATASET Check a written Haley v2 dataset against what the import built.
 %
-%   REPORT = ndi.setup.conv.haley.verifyDataset(PATH) reads the V2 dataset
+%   REPORT = ndi.setup.conv.haley.verifyDataset(PATH) reads the v2 dataset
 %   at PATH (the folder holding .ndi, e.g. <data>/haley_V2/dataset) -- its
 %   own database and each LINKED session's (ndi.setup.V2.datasetDatabaseFiles)
 %   -- and checks it, printing each check's denominator first:
@@ -38,7 +38,7 @@ report = struct('failed', {{}});
 ndiDir = fullfile(path, '.ndi');
 dbFile = ndi.database.implementations.database.did2sqlite.FILEIN(ndiDir);   % or an earlier V_eta.sqlite
 if ~isfile(dbFile)
-    error('ndi:setup:conv:haley:noDataset', 'No V2 database at %s.', dbFile);
+    error('ndi:setup:conv:haley:noDataset', 'No v2 database at %s.', dbFile);
 end
 
 prog = progressBar();
@@ -225,7 +225,7 @@ function prog = progressBar()
 % printed line about every 5% with elapsed time and an estimate of the rest
 w = [];
 try
-    w = ndi.gui.component.ProgressBarWindow('NDI V2 verify', 'GrabMostRecent', true);
+    w = ndi.gui.component.ProgressBarWindow('NDI v2 verify', 'GrabMostRecent', true);
     w.setTimeout(hours(12));
 catch
     w = [];

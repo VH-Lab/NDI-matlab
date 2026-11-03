@@ -28,7 +28,7 @@ function [structs, report, added] = epochSeriesBodies(structs, ndiDir)
 %   columns, pixels to metres) left the generic migration: Decided by Jess
 %   Haley, 2026-10-26 [dataset-specific logic leaves the generic migration]
 %   and [dataset audit batch 1 and 2] (1) (did-schema
-%   V_eta_go_forward_class_audit.md); the Haley V2 import makes the tracks.
+%   V_eta_go_forward_class_audit.md); the Haley v2 import makes the tracks.
 %   A .vhsb owned by anything but a spike train is left as pass 1 wrote it
 %   (counted other_owner / owner_missing).
 %

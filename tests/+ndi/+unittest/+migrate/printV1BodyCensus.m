@@ -2,7 +2,7 @@ function printV1BodyCensus(census, corpusName)
 %PRINTV1BODYCENSUS Print a finalV1BodyCensus result, DENOMINATOR FIRST.
 %   printV1BodyCensus(CENSUS, CORPUSNAME) prints the three tables separately:
 %     (a) unconverted v1 bodies          -- FLAGGED, a Bar-2 gap
-%     (b) v1-spelled real V2 classes     -- counted, not flagged
+%     (b) v1-spelled real v2 classes     -- counted, not flagged
 %     (c) known deferrals                -- FLAGGED, still v1 bodies, declared
 %   `same-id` is how many rows have a SOURCE document with the same base.id
 %   and the same class: for an unconverted body that is every one of them.

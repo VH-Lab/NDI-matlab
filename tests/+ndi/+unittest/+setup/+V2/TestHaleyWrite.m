@@ -1,9 +1,9 @@
 classdef TestHaleyWrite < matlab.unittest.TestCase
-%TESTHALEYWRITE The Haley V2 import, written: one C. elegans session and one
+%TESTHALEYWRITE The Haley v2 import, written: one C. elegans session and one
 %E. coli session, over TestHaleyRecordings' synthetic fixture.
 %
 %   Runs import_V2 with 'Write', true and 'Sessions' set, then reads the
-%   session back: the documents in its V2 database (each recording's file
+%   session back: the documents in its v2 database (each recording's file
 %   recorded by location, not held), an otherwise empty session folder, and
 %   the acquisition systems as NDI rebuilds them (daqsystem_load), whose
 %   navigator (ndi.file.navigator.bodies) finds the epochs, raw files and
@@ -22,7 +22,7 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             schemaPath = getenv('DID_SCHEMA_PATH');
             testCase.assumeTrue(~isempty(schemaPath) && ...
                 isfile(ndi.v2.schemaFile(schemaPath, 'entity.json')), ...
-                'DID_SCHEMA_PATH does not hold a V2 schema with `entity` (did-schema #88)');
+                'DID_SCHEMA_PATH does not hold a v2 schema with `entity` (did-schema #88)');
             testCase.Root = tempname;
             testCase.addTeardown(@() rmdir(testCase.Root, 's'));
             ndi.unittest.setup.V2.TestHaleyRecordings.writeFixture(testCase.Root);
@@ -1641,7 +1641,7 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
         end
 
         function testDataset(testCase)
-            % stage 13 (decision #66): one V2 database holding the dataset-level
+            % stage 13 (decision #66): one v2 database holding the dataset-level
             % documents and both sessions, ingested; checked, and opened as NDI does
             result = testCase.write(["ecoli_0001", "concentration_0001"], ...
                 ["metadata", "observations", "calculations", "encounters", "density", "dataset"]);

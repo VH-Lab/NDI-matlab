@@ -1,5 +1,5 @@
 classdef TestNoOldLeafNames < matlab.unittest.TestCase
-%TESTNOOLDLEAFNAMES The V2 import code writes no pre-composition leaf name.
+%TESTNOOLDLEAFNAMES The v2 import code writes no pre-composition leaf name.
 %
 %   did-schema #88: a statement is a direction class (assertion, observation,
 %   manipulation, calculation) plus ONE value-kind mixin in `superclasses`,
@@ -10,7 +10,7 @@ classdef TestNoOldLeafNames < matlab.unittest.TestCase
 %   be one. (DID-matlab's twin: tests/+did2/+unittest/testNoOldLeafNames.m.)
 %
 %   Two rules:
-%     1. The Haley import (src/ndi/+ndi/+setup/+conv/+haley), the V2 import
+%     1. The Haley import (src/ndi/+ndi/+setup/+conv/+haley), the v2 import
 %        helpers (+setup/+V2) and the template importer (+setup/+conv/+template):
 %        no joined leaf name anywhere in a .m or .json file, comments
 %        included, and no quoted '_<direction>' suffix (the piece that builds
@@ -51,7 +51,7 @@ classdef TestNoOldLeafNames < matlab.unittest.TestCase
             testCase.verifyGreaterThan(numel(files), 40, ...
                 sprintf('only %d files found under the import areas: wrong root %s?', numel(files), root));
             testCase.verifyEmpty(hits, sprintf( ...
-                ['%d pre-composition leaf name(s) in the V2 import source. Build a statement ' ...
+                ['%d pre-composition leaf name(s) in the v2 import source. Build a statement ' ...
                  'as its direction with ''ValueKind'' (did2.build.statement), and describe it ' ...
                  'in words ("a velocity calculation"):\n%s'], numel(hits), strjoin(hits, newline)));
         end

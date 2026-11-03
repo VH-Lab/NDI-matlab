@@ -3,7 +3,7 @@ function out = sessionDocuments(dataParentDir, session, S, R, options)
 %
 %   OUT = ndi.setup.conv.haley.sessionDocuments(DATAPARENTDIR, SESSION, S, R)
 %   builds, for the one-row session table SESSION (from sessionList, with
-%   `session_id` already assigned), the V2 documents of its subjects (S rows,
+%   `session_id` already assigned), the v2 documents of its subjects (S rows,
 %   from subjectList) and recordings (R rows, from recordingList). Nothing is
 %   written here (ndi.setup.V2.makeSessions writes the documents), and
 %   nothing is ever written into the session folder or the raw data: NDI

@@ -46,9 +46,9 @@ classdef did2sqlite < ndi.database
     %   2026-10-29 [v1 writes into a V2 session]): a v1-template document
     %   NDI writes here (no document_class.schema_version) is checked
     %   against NDI's own v1 template and stamped 'did_v1', as a carried
-    %   document is; V2 documents are validated as V2. See do_add and
+    %   document is; v2 documents are validated as v2. See do_add and
     %   ndi.database.internal.stampV1Write. The end state is that every NDI
-    %   writer writes V2 documents.
+    %   writer writes v2 documents.
     %
     %   See also: ndi.database, did2.database.sqlitedb,
     %             ndi.database.implementations.database.didsqlite,
@@ -262,7 +262,7 @@ classdef did2sqlite < ndi.database
             % built it) is checked against NDI's v1 template for its class
             % and stamped 'did_v1', so did2 stores it as a v1 document
             % instead of validating it against the V_eta class of the same
-            % name. A stamped document (V2, or already did_v1) is unchanged
+            % name. A stamped document (v2, or already did_v1) is unchanged
             % and validated as before. Every document is checked before any
             % is added. Decided by Jess Haley, 2026-10-29 [v1 writes into a
             % V2 session] (did-schema V_eta_go_forward_class_audit.md); see
@@ -324,7 +324,7 @@ classdef did2sqlite < ndi.database
             % The search already decodes every matching document; each is
             % normalised from there rather than fetched and decoded a second
             % time by id (do_read), which cost a query and a decode per
-            % document (8 s of 51 s profiled over the 10,536 Haley V2
+            % document (8 s of 51 s profiled over the 10,536 Haley v2
             % subjects).
             docs = obj.db.search(q2);
             ndi_document_objs = {};

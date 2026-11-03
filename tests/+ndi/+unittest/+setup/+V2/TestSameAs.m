@@ -28,7 +28,7 @@ classdef TestSameAs < matlab.unittest.TestCase
             schemaPath = getenv('DID_SCHEMA_PATH');
             testCase.assumeTrue(~isempty(schemaPath) && ...
                 isfile(ndi.v2.schemaFile(schemaPath, 'entity.json')), ...
-                'DID_SCHEMA_PATH does not hold a V2 schema with `entity` (did-schema #88)');
+                'DID_SCHEMA_PATH does not hold a v2 schema with `entity` (did-schema #88)');
             % the fixtures' terms ('illumination',
             % 'objective', 'serial number', 'manufacturer') are this test's own
             % vocabulary, not a dataset's, so they are not in DID-schema's term

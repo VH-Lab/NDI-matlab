@@ -1,7 +1,7 @@
 classdef statement
     % ndi.statement - something stated about a subject
     %
-    % A V2 dataset is a set of statements about subjects: a worm's speed
+    % A v2 dataset is a set of statements about subjects: a worm's speed
     % (calculated), a plate's temperature (manipulated), a recording
     % (observed), a patch's strain (asserted). An ndi.statement is a read-only
     % view of one statement document, with the session or dataset it was

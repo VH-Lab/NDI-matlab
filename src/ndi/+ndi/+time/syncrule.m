@@ -202,14 +202,14 @@ classdef syncrule < ndi.ido & ndi.documentservice
         end % newdocument()
 
         function [docs, carriedWhy] = newdocumentV2(ndi_syncrule_obj, ndi_session_obj)
-            % NEWDOCUMENTV2 - the V2 record of this rule, for a V2 database
+            % NEWDOCUMENTV2 - the v2 record of this rule, for a v2 database
             %
             % [DOCS, CARRIEDWHY] = NEWDOCUMENTV2(NDI_SYNCRULE_OBJ, NDI_SESSION_OBJ)
             %
             % Returns the rule as DID-matlab's +migrators_j/syncrule.m (with
             % its second pass, did2.convert.resolveClockAlignment) writes a
             % v1 `syncrule`, in the session NDI_SESSION_OBJ (whose database
-            % is V2, ndi.session/writesV2):
+            % is v2, ndi.session/writesV2):
             %
             %   {clock_alignment_configuration, software entity}, as
             %   ndi.document objects. The configuration's id is the rule's
@@ -227,7 +227,7 @@ classdef syncrule < ndi.ido & ndi.documentservice
             %   ndi.vintage.syncruleParameters reads back.
             %
             % Where the migration carries a rule whole as v1, so does this,
-            % and CARRIEDWHY says why ('' when the rule is written as V2);
+            % and CARRIEDWHY says why ('' when the rule is written as v2);
             % DOCS is then {NEWDOCUMENT(NDI_SYNCRULE_OBJ)}, the v1 document
             % unchanged:
             %   - a rule class NDI cannot rebuild from a configuration
@@ -264,7 +264,7 @@ classdef syncrule < ndi.ido & ndi.documentservice
                 case 'ndi.time.syncrule.filematch'
                     nameKeys = {};
                 otherwise
-                    carriedWhy = sprintf(['%s: no V2 configuration is defined for this ' ...
+                    carriedWhy = sprintf(['%s: no v2 configuration is defined for this ' ...
                         'rule class (ndi.vintage.syncruleParameters could not rebuild it)'], cls);
                     docs = {ndi_syncrule_obj.newdocument()};
                     return;

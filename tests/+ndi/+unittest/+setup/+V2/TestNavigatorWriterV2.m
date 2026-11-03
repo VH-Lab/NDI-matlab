@@ -1,7 +1,7 @@
 classdef TestNavigatorWriterV2 < matlab.unittest.TestCase
-%TESTNAVIGATORWRITERV2 ndi.file.navigator writes the V2 epoch_file_pattern into a V2 database.
+%TESTNAVIGATORWRITERV2 ndi.file.navigator writes the v2 epoch_file_pattern into a v2 database.
 %
-%   When a daq system is added to a session whose database is V2 (did2),
+%   When a daq system is added to a session whose database is v2 (did2),
 %   its file navigator's record is an `epoch_file_pattern` whose id is the
 %   navigator's id, with the `software` entity its `software_id` names (the
 %   shape DID-matlab's +migrators_j/filenavigator.m writes for a v1
@@ -13,7 +13,7 @@ classdef TestNavigatorWriterV2 < matlab.unittest.TestCase
 %   every NDI writer writes V2 documents and a V2 session accepts only V2
 %   documents".
 %
-%   Filtered (never passed) when did2.build or a V2 schema with `entity` is
+%   Filtered (never passed) when did2.build or a v2 schema with `entity` is
 %   missing.
 
     properties
@@ -27,7 +27,7 @@ classdef TestNavigatorWriterV2 < matlab.unittest.TestCase
             schemaPath = getenv('DID_SCHEMA_PATH');
             testCase.assumeTrue(~isempty(schemaPath) && ...
                 isfile(ndi.v2.schemaFile(schemaPath, 'entity.json')), ...
-                'DID_SCHEMA_PATH does not hold a V2 schema with `entity` (did-schema #88)');
+                'DID_SCHEMA_PATH does not hold a v2 schema with `entity` (did-schema #88)');
         end
     end
 
@@ -42,7 +42,7 @@ classdef TestNavigatorWriterV2 < matlab.unittest.TestCase
     methods (Test)
         function testAV2DatabaseGetsTheEpochFilePattern(testCase)
             S = ndi.setup.V2.createSession(testCase.Dir, 'd1');
-            testCase.assertTrue(S.writesV2(), 'createSession did not make a V2 session');
+            testCase.assertTrue(S.writesV2(), 'createSession did not make a v2 session');
             nav = ndi.file.navigator(S, {'#.rhd', '#.epochprobemap.ndi'}, ...
                 'ndi.epoch.epochprobemap_daqsystem', {'(.*)epochprobemap.ndi'});
             dev = ndi.daq.system.mfdaq('intan1', nav, ndi.daq.reader.mfdaq.intan());
@@ -50,10 +50,10 @@ classdef TestNavigatorWriterV2 < matlab.unittest.TestCase
 
             % DENOMINATOR FIRST: what the database now holds
             stored = testCase.storedBodies(S.getpath());
-            testCase.assertNotEmpty(stored, 'the V2 database holds nothing');
+            testCase.assertNotEmpty(stored, 'the v2 database holds nothing');
             classes = cellfun(@(s) s.document_class.class_name, stored, 'UniformOutput', false);
             testCase.verifyFalse(any(strcmp(classes, 'filenavigator')), sprintf( ...
-                'a v1 `filenavigator` document was written into a V2 database (classes: %s)', ...
+                'a v1 `filenavigator` document was written into a v2 database (classes: %s)', ...
                 strjoin(classes, ', ')));
             hit = cellfun(@(s) strcmp(s.base.id, nav.id()), stored);
             testCase.assertEqual(nnz(hit), 1, sprintf( ...
@@ -62,7 +62,7 @@ classdef TestNavigatorWriterV2 < matlab.unittest.TestCase
             efp = stored{find(hit, 1)};
             testCase.verifyEqual(efp.document_class.class_name, 'epoch_file_pattern');
             testCase.verifyTrue(did2.schema.isV2Stamp(efp), ...
-                'the epoch_file_pattern is stamped V2 (not did_v1)');
+                'the epoch_file_pattern is stamped v2 (not did_v1)');
             testCase.verifyEqual(asRow(efp.epoch_file_pattern.file_pattern), ...
                 {'#.rhd', '#.epochprobemap.ndi'});
             testCase.verifyEqual(asRow(efp.epoch_file_pattern.epoch_map_pattern), ...
@@ -94,7 +94,7 @@ classdef TestNavigatorWriterV2 < matlab.unittest.TestCase
 
         function testAV1DatabaseKeepsTheV1Navigator(testCase)
             S = ndi.session.dir('ref1', testCase.Dir);
-            testCase.assertFalse(S.writesV2(), 'a new folder was given a V2 database');
+            testCase.assertFalse(S.writesV2(), 'a new folder was given a v2 database');
             nav = ndi.file.navigator(S, {'#.rhd', '#.epochprobemap.ndi'}, ...
                 'ndi.epoch.epochprobemap_daqsystem', {'(.*)epochprobemap.ndi'});
             d = nav.newdocument();

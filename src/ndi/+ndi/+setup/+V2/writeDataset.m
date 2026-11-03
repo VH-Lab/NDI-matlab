@@ -1,5 +1,5 @@
 function out = writeDataset(path, reference, datasetSessionId, datasetDocs, sessions, options)
-%WRITEDATASET Write a V2 dataset and its sessions, checked as one set.
+%WRITEDATASET Write a v2 dataset and its sessions, checked as one set.
 %
 %   OUT = ndi.setup.V2.writeDataset(PATH, REFERENCE, DATASETSESSIONID,
 %   DATASETDOCS, SESSIONS) writes the dataset at PATH and, by default, each of

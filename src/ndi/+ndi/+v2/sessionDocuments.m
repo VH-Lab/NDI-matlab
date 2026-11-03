@@ -2,7 +2,7 @@ function docs = sessionDocuments(database, sessionId)
 %SESSIONDOCUMENTS Every document of one session, as stored.
 %
 %   DOCS = ndi.v2.sessionDocuments(DATABASE, SESSIONID) returns the documents
-%   of a V2 database (DATABASE, an ndi did2sqlite database) whose
+%   of a v2 database (DATABASE, an ndi did2sqlite database) whose
 %   base.session_id is SESSIONID: a cell array of property structs, read from
 %   the did2 database itself, so each is exactly what is stored (the ndi read
 %   path adds class blocks a copy must not carry). What

@@ -5,7 +5,7 @@ function n = warnIfV1Documents(db, what, location)
 %   v1 documents in the ndi.database DB (ndi.database.fun.v1DocumentCount)
 %   and, if there are any, issues ONE warning with the identifier
 %   'NDI:V2:v1DocumentsPresent' saying how many there are, that they are
-%   read as stored, and that a migration or a V2 import makes V2 shapes.
+%   read as stored, and that a migration or a v2 import makes v2 shapes.
 %   WHAT ('session' or 'dataset') and LOCATION (its folder) name what was
 %   opened. N is the count (NaN when it was not measured).
 %
@@ -46,7 +46,7 @@ function n = warnIfV1Documents(db, what, location)
         warning('NDI:V2:v1DocumentsPresent', ...
             ['The %s at %s holds %d unmigrated v1 document(s) (%s). They are ' ...
              'read as stored, in their v1 shapes; only a migration ' ...
-             '(ndi.migrate.local) or a V2 import writes V2 (V_eta) shapes.'], ...
+             '(ndi.migrate.local) or a v2 import writes v2 (V_eta) shapes.'], ...
             what, location, n, how);
     end
 end

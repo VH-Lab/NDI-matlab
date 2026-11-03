@@ -1,11 +1,11 @@
 classdef TestDid2SqliteRemove < matlab.unittest.TestCase
-%TESTDID2SQLITEREMOVE Removing documents from a V2 (did2) session.
+%TESTDID2SQLITEREMOVE Removing documents from a v2 (did2) session.
 %
 %   ndi.database/remove passes 'OnMissing' to do_remove on every call, so
 %   did2sqlite's do_remove must take it: before, database_rm and
-%   database_clear on a V2 session failed with MATLAB:TooManyInputs.
+%   database_clear on a v2 session failed with MATLAB:TooManyInputs.
 %
-%   Filtered (never passed) when did2.build or a V2 schema with `entity` is
+%   Filtered (never passed) when did2.build or a v2 schema with `entity` is
 %   missing.
 
     properties
@@ -19,7 +19,7 @@ classdef TestDid2SqliteRemove < matlab.unittest.TestCase
             schemaPath = getenv('DID_SCHEMA_PATH');
             testCase.assumeTrue(~isempty(schemaPath) && ...
                 isfile(ndi.v2.schemaFile(schemaPath, 'entity.json')), ...
-                'DID_SCHEMA_PATH does not hold a V2 schema with `entity`');
+                'DID_SCHEMA_PATH does not hold a v2 schema with `entity`');
         end
     end
 

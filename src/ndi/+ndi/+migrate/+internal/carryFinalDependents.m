@@ -27,7 +27,7 @@ function [docs, report] = carryFinalDependents(docs, sourceBodies, sourceOutputs
 %   WHICH DOCUMENTS ARE CARRIED AS v1 HERE. Only the FINAL carries: a document
 %   of DOCS whose stamp is 'did_v1' when this sweep runs
 %   (did2.schema.isV1Stamp(..., 'Explicit', true), the stamp did2.database.
-%   sqlitedb stores without V2 validation). A document pass 1 handed on
+%   sqlitedb stores without v2 validation). A document pass 1 handed on
 %   (stimulus_presentation, daqmetadatareader_epochdata_ingested,
 %   control_stimulus_ids) and the second pass converted is no longer v1 here,
 %   so it makes nothing carry ([handed-on documents do not carry dependents]);
