@@ -54,7 +54,7 @@ function nRemoved = resolveExistingNeurons(S, probe, clusterDocs, options)
     end
 
     nRemoved = 0;
-    if ~iscell(clusterDocs), clusterDocs = {clusterDocs}; end;
+    if ~iscell(clusterDocs), clusterDocs = {clusterDocs}; end
 
     % 1) every ndi.neuron in this session with the probe's reference and an importer-style name
 
@@ -66,26 +66,26 @@ function nRemoved = resolveExistingNeurons(S, probe, clusterDocs, options)
 
     namePattern = ['^' regexptranslate('escape', [probe.name '_' int2str(probe.reference) '_']) '\d+$'];
     keep = false(1,numel(candidates));
-    for i=1:numel(candidates),
+    for i=1:numel(candidates)
         keep(i) = ~isempty(regexp(candidates{i}.document_properties.element.name, namePattern, 'once'));
-    end;
+    end
     candidates = candidates(keep);
-    if isempty(candidates), return; end;
+    if isempty(candidates), return; end
 
     % 2) leave out the neurons that belong to the cluster documents the importer found
 
     ownedIds = {};
-    for i=1:numel(clusterDocs),
+    for i=1:numel(clusterDocs)
         qn = ndi.query('','isa','neuron_extracellular','') & ...
             ndi.query('','depends_on','spike_clusters_id', clusterDocs{i}.id());
         nd = S.database_search(qn);
-        for j=1:numel(nd),
+        for j=1:numel(nd)
             ownedIds{end+1} = nd{j}.dependency_value('element_id', 'ErrorIfNotFound', 0); %#ok<AGROW>
-        end;
-    end;
+        end
+    end
     candidateIds = cellfun(@(d) d.id(), candidates, 'UniformOutput', false);
     strays = candidates(~ismember(candidateIds, ownedIds));
-    if isempty(strays), return; end;
+    if isempty(strays), return; end
 
     strayNames = cellfun(@(d) d.document_properties.element.name, strays, 'UniformOutput', false);
     nDuplicated = numel(strayNames) - numel(unique(strayNames));
@@ -94,97 +94,97 @@ function nRemoved = resolveExistingNeurons(S, probe, clusterDocs, options)
 
     nShow = min(numel(strays), 10);
     listing = sprintf('    %s\n', strayNames{1:nShow});
-    if numel(strays) > nShow,
+    if numel(strays) > nShow
         listing = [listing sprintf('    ... and %d more\n', numel(strays)-nShow)];
-    end;
+    end
     msg = sprintf(['%s: found %d neuron element(s) for probe %s that were made by an earlier ' ...
         'import of this probe but are not linked to its current cluster document:\n%s'], ...
         options.importer, numel(strays), probe.elementstring(), listing);
-    if nDuplicated > 0,
+    if nDuplicated > 0
         msg = [msg sprintf(['  %d of these names appear more than once already, which makes ' ...
             'ndi.element/load_element_doc fail with "More than one document matches the ' ...
             'ELEMENT definition".\n'], nDuplicated)];
-    end;
+    end
     msg = [msg sprintf(['  Importing again without removing them would create a second neuron ' ...
         'with the same name for each one.\n'])];
 
-    if options.dryRun,
+    if options.dryRun
         disp(['[dry run] ' msg '[dry run] A real run would ' ...
             describeAction(options.ExistingNeurons) ' (option ''ExistingNeurons'').']);
         return;
-    end;
+    end
 
     % 4) decide
 
     mode = options.ExistingNeurons;
-    if strcmp(mode,'ask') && ~isInteractive(),
+    if strcmp(mode,'ask') && ~isInteractive()
         mode = 'error';
-    end;
+    end
 
-    switch mode,
-        case 'error',
+    switch mode
+        case 'error'
             error('ndi:fun:probe:import:existingNeurons', '%s%s', msg, ...
                 ['  Pass ''ExistingNeurons'',''remove'' to remove them and import, or remove them ' ...
                 'yourself with ndi.fun.probe.import.resolveExistingNeurons.']);
-        case 'ask',
+        case 'ask'
             disp(msg);
             answer = input('  Remove them and continue with the import (r), or cancel (c)? [c]: ', 's');
-            if ~strcmpi(strtrim(answer), 'r'),
+            if ~strcmpi(strtrim(answer), 'r')
                 error('ndi:fun:probe:import:existingNeurons', ...
                     '%s cancelled; the database was not changed.', options.importer);
-            end;
-        case 'remove',
-            if options.verbose, disp(msg); end;
-    end;
+            end
+        case 'remove'
+            if options.verbose, disp(msg); end
+    end
 
     % 5) remove each neuron, the documents that depend on it, and any cluster document
     %    left with no neurons
 
     staleClusterIds = {};
-    for i=1:numel(strays),
+    for i=1:numel(strays)
         eid = strays{i}.id();
         dependents = S.database_search(ndi.query('','depends_on','element_id', eid));
-        for j=1:numel(dependents),
-            if isfield(dependents{j}.document_properties,'neuron_extracellular'),
+        for j=1:numel(dependents)
+            if isfield(dependents{j}.document_properties,'neuron_extracellular')
                 cid = dependents{j}.dependency_value('spike_clusters_id', 'ErrorIfNotFound', 0);
-                if ~isempty(cid), staleClusterIds{end+1} = cid; end; %#ok<AGROW>
-            end;
-        end;
-        S.database_rm(cat(1, {strays{i}}, dependents(:)));
+                if ~isempty(cid), staleClusterIds{end+1} = cid; end %#ok<AGROW>
+            end
+        end
+        S.database_rm(cat(1, strays(i), dependents(:)));
         nRemoved = nRemoved + 1;
-    end;
+    end
 
     currentIds = cellfun(@(d) d.id(), clusterDocs, 'UniformOutput', false);
     staleClusterIds = setdiff(unique(staleClusterIds), currentIds);
-    for i=1:numel(staleClusterIds),
+    for i=1:numel(staleClusterIds)
         remaining = S.database_search(ndi.query('','depends_on','spike_clusters_id', staleClusterIds{i}));
-        if isempty(remaining),
+        if isempty(remaining)
             S.database_rm(staleClusterIds{i});
-        end;
-    end;
+        end
+    end
 
-    if options.verbose,
-        disp(sprintf('%s: removed %d earlier neuron element(s) for probe %s.', ...
-            options.importer, nRemoved, probe.elementstring()));
-    end;
+    if options.verbose
+        fprintf('%s: removed %d earlier neuron element(s) for probe %s.\n', ...
+            options.importer, nRemoved, probe.elementstring());
+    end
 
 end % resolveExistingNeurons()
 
 function s = describeAction(mode)
-    switch mode,
+    switch mode
         case 'ask',    s = 'ask whether to remove them';
         case 'remove', s = 'remove them';
         case 'error',  s = 'stop with an error';
-    end;
+    end
 end
 
 function b = isInteractive()
     b = true;
     try
-        if batchStartupOptionUsed, b = false; end;
+        if batchStartupOptionUsed, b = false; end
     catch
-    end;
-    if ~usejava('jvm') && ~isempty(getenv('CI')),
+    end
+    if ~usejava('jvm') && ~isempty(getenv('CI'))
         b = false;
-    end;
+    end
 end
