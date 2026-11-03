@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Assemble did-schema's V2 schema set into ONE flat directory (DID_SCHEMA_PATH).
+# Assemble did-schema's v2 schema set into ONE flat directory (DID_SCHEMA_PATH).
 #
 #   bash .github/scripts/assemble_did_schema_set.sh <did-schema checkout> <destination dir>
 #
