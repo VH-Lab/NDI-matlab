@@ -52,7 +52,8 @@ classdef TestDatasetWriterV2 < matlab.unittest.TestCase
             testCase.verifyNumElements(d, 1, 'a v1 dataset holds one v1 session document');
             testCase.verifyEqual(d{1}.document_properties.document_class.class_name, 'session');
             testCase.verifyEqual(d{1}.document_properties.session.reference, 'ds1');
-            testCase.verifyEqual(d{1}.id(), D.id(), 'the session document''s id is not the dataset id');
+            testCase.verifyEqual(d{1}.session_id(), D.id(), ...
+                'the session document is not in the dataset''s session');
             testCase.verifyEmpty(D.database_search(ndi.query('', 'isa', 'entity')), ...
                 'a v1 database got V2 entities');
             testCase.verifyEqual(ndi.session.dir.directorytype(dsPath), 'dataset');
