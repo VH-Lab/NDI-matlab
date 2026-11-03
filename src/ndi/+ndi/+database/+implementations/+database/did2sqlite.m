@@ -292,7 +292,29 @@ classdef did2sqlite < ndi.database
             end
         end % do_read
 
-        function obj = do_remove(obj, ndi_document_id)
+        function obj = do_remove(obj, ndi_document_id, options)
+            % OnMissing, as ndi.database/remove passes it on every call (the
+            % same option didsqlite takes): 'ignore' (NDI's default) removes
+            % nothing for an id that is not stored, 'warn' warns, 'error'
+            % raises NDI:did2sqlite:missingDocument.
+            arguments
+                obj
+                ndi_document_id
+                options.OnMissing {mustBeMember(options.OnMissing,{'ignore','warn','error'})} = 'ignore'
+            end
+            if ~obj.db.has(ndi_document_id)
+                switch options.OnMissing
+                    case 'error'
+                        error('NDI:did2sqlite:missingDocument', ...
+                            'No document with id %s is stored in %s.', ...
+                            char(ndi_document_id), obj.database_filename);
+                    case 'warn'
+                        warning('NDI:did2sqlite:missingDocument', ...
+                            'No document with id %s is stored in %s.', ...
+                            char(ndi_document_id), obj.database_filename);
+                end
+                return;
+            end
             obj.db.remove(ndi_document_id);
         end % do_remove
 
