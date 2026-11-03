@@ -69,6 +69,11 @@ function probe(S, probe, options)
 % | waveform_source          | 'samples' (mean waveform from KIASORT's per-unit    |
 % |   ('samples')            |   sample statistics) or 'none'.                     |
 % | force (0)                | Re-import even if the checksum is unchanged.        |
+% | ExistingNeurons ('ask')  | Neurons from an earlier import that are not         |
+% |                          |   linked to this probe's cluster document would     |
+% |                          |   be duplicated: 'ask' whether to remove them,      |
+% |                          |   'remove' them, or 'error'. See                    |
+% |                          |   ndi.fun.probe.import.resolveExistingNeurons.      |
 % | dryRun (false)           | Report what would be imported without changing the  |
 % |                          |   database.                                         |
 % | progressbar (false)      | Show an ndi.gui.component.ProgressBarWindow.        |
@@ -96,6 +101,7 @@ function probe(S, probe, options)
         options.kiasort_version (1,:) char = ''
         options.waveform_source (1,:) char {mustBeMember(options.waveform_source,{'samples','none'})} = 'samples'
         options.force (1,1) double = 0
+        options.ExistingNeurons (1,:) char {mustBeMember(options.ExistingNeurons,{'ask','remove','error'})} = 'ask'
         options.dryRun (1,1) logical = false
         options.progressbar (1,1) logical = false
         options.verbose (1,1) double = 1
@@ -155,6 +161,13 @@ function probe(S, probe, options)
     q_existing = ndi.query('','isa','kiasort_clusters','') & ...
         ndi.query('','depends_on','element_id',probe.id());
     olddocs = S.database_search(q_existing);
+
+    % Neurons from an earlier import that the cluster-document lookup above cannot see
+    % (e.g. the probe's id changed, or an earlier import stopped part-way) would
+    % otherwise be duplicated by this import; find them and ask what to do.
+    ndi.fun.probe.import.resolveExistingNeurons(S, probe, olddocs, ...
+        'ExistingNeurons', options.ExistingNeurons, 'dryRun', dryRun, ...
+        'verbose', logical(report), 'importer', 'ndi.fun.probe.import.kiasort.probe');
 
     if ~isempty(olddocs),
         if numel(olddocs)==1 && ~options.force,
