@@ -12,7 +12,14 @@ classdef CloudRunnersWriteJUnitTest < matlab.unittest.TestCase
     methods (Test)
 
         function testEachCloudWorkflowRunnerWritesTheReport(testCase)
-            root = nditools.projectdir();
+            % this repository's root, from this file's place in it
+            % (tests/+ndi/+unittest/+ci/): nditools.projectdir resolves to
+            % whichever nditools is first on the path, which in CI is an
+            % add-on's (ndi-ontology-matlab)
+            root = fileparts(fileparts(fileparts(fileparts(fileparts( ...
+                mfilename('fullpath'))))));
+            testCase.assertTrue(isfolder(fullfile(root, 'tools', 'tasks')), ...
+                sprintf('%s is not the NDI-matlab root', root));
             % workflow -> the runner file it calls (testCloudApiProdPart
             % calls testCloudApiPart)
             pairs = { ...

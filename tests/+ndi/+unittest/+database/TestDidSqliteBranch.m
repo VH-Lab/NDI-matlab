@@ -32,7 +32,7 @@ classdef TestDidSqliteBranch < matlab.unittest.TestCase
 
         function testDocumentsAreWrittenAndReadOnTheBranch(testCase)
             db = ndi.database.implementations.database.didsqlite(testCase.Dir, 'ref1');
-            doc = ndi.document('base', 'base.session_id', 'session_for_test');
+            doc = ndi.document('base', 'base.session_id', ndi.ido.unique_id());
             db.add(doc);
             testCase.verifyTrue(ismember(doc.id(), db.alldocids()));
             hits = db.search(ndi.query('base.id', 'exact_string', doc.id(), ''));
