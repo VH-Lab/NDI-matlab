@@ -307,6 +307,17 @@ classdef TestReadTimeseriesEquivalence < matlab.unittest.TestCase
                 result = ndi.migrate.local(root, 'Validate', true, 'Backup', false);
                 fprintf('\n  MIGRATED %s: %d source document(s), %d quarantined\n', root, ...
                     result.summary.total, numel(result.quarantine));
+                % what was carried whole as v1, and why: a document carried
+                % as v1 is read by the v1 code path after migration too
+                rep = result.migrationReport;
+                for i = 1:numel(rep)
+                    c = rep(i).carried_as_v1;
+                    for k = 1:numel(c)
+                        fprintf('    carried as v1: %s %s [%s] %s\n', char(c(k).class), ...
+                            char(c(k).document_id), strjoin(cellstr(c(k).carry), ', '), ...
+                            char(c(k).reason));
+                    end
+                end
             catch ME
                 err = sprintf('%s (%s)', ME.message, ME.identifier);
             end
