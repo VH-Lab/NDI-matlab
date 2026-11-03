@@ -32,7 +32,7 @@ function [kept, minted, report] = ensembleMembership(structs, options)
 %   `neuron_id_1`, `neuron_id_2`, ...; `epochid.epochid`; `base.id`,
 %   `base.session_id`, `base.datestamp`. The `ensemble` block, the `app` block
 %   and `files` are not read. The other documents it reads (the neuron and
-%   ensemble entities, the acquisition_epoch trains) are V2 documents pass 1
+%   ensemble entities, the acquisition_epoch trains) are v2 documents pass 1
 %   built, whose edges are {name, document_id}; ONE edge reader takes both
 %   keys (depEntryValue). Returns KEPT (the surviving
 %   bodies -- see "WHAT THIS DOES NOT DO"), MINTED (the new `directed_relation`
@@ -741,7 +741,7 @@ end
 end
 
 function v = depEntryValue(d)
-% `value` is the v1 key (the raw map); `document_id` the key a V2 document
+% `value` is the v1 key (the raw map); `document_id` the key a v2 document
 % pass 1 built carries (the acquisition_epoch trains' `element_id`)
 v = '';
 if isfield(d, 'value') && ~isempty(d.value)

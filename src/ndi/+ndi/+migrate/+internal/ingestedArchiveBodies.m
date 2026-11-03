@@ -16,7 +16,7 @@ function [structs, report, removed] = ingestedArchiveBodies(structs, ndiDir, v1B
 %   Decided by Jess Haley, 2026-11-01 [ingested archives are sampled bodies]
 %   (did-schema did_v2_go_forward_class_audit.md): "a v1 ingested channel
 %   group (`ai/ao/ax/di/do/ti_group<g>_seg.nbf_<s>`) becomes one
-%   `sampled_body` per group, the same shape NDI V2's ingest writes ([V2
+%   `sampled_body` per group, the same shape NDI v2's ingest writes ([V2
 %   ingest is one sampled body per channel group]); its channel list (channel
 %   numbers, offset, scale; the sample rate as the time axis's spacing) is
 %   covariates on that body, not the `channel_list.bin` file." Pass 1

@@ -27,12 +27,12 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
         % when two datasets are open in the same MATLAB session.
         BinaryDocSessions = []
 
-        % SessionNotes - a V2 dataset's session listing: its denominator and
+        % SessionNotes - a v2 dataset's session listing: its denominator and
         % every session left out and why (ndi.v2.datasetSessions). Read with
         % session_notes().
         SessionNotes = {}
 
-        % SameAsReport - what the last session joined to this V2 dataset
+        % SameAsReport - what the last session joined to this v2 dataset
         % recorded twice (V_eta tenet T18): the same_as relations written
         % and the name-only candidates listed. Read with same_as_report().
         SameAsReport = []
@@ -84,7 +84,7 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
             % into the dataset. Instead, the ndi.session is linked to the dataset, but
             % the session remains where it is.
             %
-            % In a V2 dataset, this writes into the dataset's database ONE
+            % In a v2 dataset, this writes into the dataset's database ONE
             % direct `included_in` relation from the session's `session` entity
             % to the dataset's `dataset` document, whose method records the
             % link: "database linking" (EMPTY:0000400), with the parameters
@@ -97,9 +97,9 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
             % session link on a direct dataset relation], [linked session link
             % details], [linked session pathname]; the `linked_session`
             % document is withdrawn, V_eta_linked_session_plan.md
-            % [linked_session withdrawn].) The session must be a V2 session.
+            % [linked_session withdrawn].) The session must be a v2 session.
             %
-            % A V2 session joining a V2 dataset may bring its own record of
+            % A v2 session joining a v2 dataset may bring its own record of
             % something the dataset already records (its own N2 strain, its own
             % record of the microscope). Each such pair found on evidence that
             % names the thing (the same identifier CURIE, the same serial
@@ -110,10 +110,10 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
             % what was found.
             %
             % Options:
-            %   'PartOf'  V2 only: the id of the dataset's study (an entity
+            %   'PartOf'  v2 only: the id of the dataset's study (an entity
             %             document in the dataset) the session is included_in;
             %             default: the dataset itself
-            %   'SameAs'  V2 only: default true; false writes no same_as
+            %   'SameAs'  v2 only: default true; false writes no same_as
             %             (the report still lists what was found)
             arguments
                 ndi_dataset_obj (1,1) ndi.dataset
@@ -190,11 +190,11 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
             %                          |   to false to force the old staged
             %                          |   copy. See
             %                          |   ndi.dataset.copySessionToDataset.
-            % PartOf ('')              | V2 only: the id of the dataset's
+            % PartOf ('')              | v2 only: the id of the dataset's
             %                          |   study the session is included_in
             %                          |   (default: the dataset itself)
             %
-            % In a V2 dataset (V_eta_linked_session_plan.md), every document of
+            % In a v2 dataset (V_eta_linked_session_plan.md), every document of
             % the session is copied into the dataset's database, ids unchanged,
             % with the files it ingested; files recorded by location stay where
             % they are. A direct `included_in` relation from the session to the
@@ -203,7 +203,7 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
             % (Jess Haley 2026-10-29 [linked session link details]); with
             % 'PartOf' naming a study, the session is also filed under it
             % unless its own copied documents already say so. The session must
-            % be a V2 session. Its records of what
+            % be a v2 session. Its records of what
             % the dataset already records are joined by `same_as`, as
             % add_linked_session joins them ('SameAs', default true; see
             % same_as_report).
@@ -462,7 +462,7 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
             end
 
             if ndi_dataset_obj.v2Listing()
-                % V2: the session leaves the dataset -- the included_in
+                % v2: the session leaves the dataset -- the included_in
                 % relations naming it (its "database linking" one among
                 % them) go; its folder is untouched
                 session_obj = [];
@@ -571,7 +571,7 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
             ndi_session_obj = ndi_dataset_obj.open_session(session_id);
 
             if ndi_dataset_obj.v2Listing()
-                % V2: copy the session's documents in, with the files they
+                % v2: copy the session's documents in, with the files they
                 % ingested, and REPLACE its link (Jess Haley 2026-10-29
                 % [linked session link details] (2)): the "database linking"
                 % relation is deleted and a new direct included_in relation
@@ -671,8 +671,8 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
             %
             % CONVERTINGESTEDSESSIONTOLINKED(NDI_DATASET_OBJ, SESSION_ID, FOLDER, ...)
             %
-            % V2 datasets only. Writes every document of the ingested session
-            % SESSION_ID into a new V2 session in FOLDER, with the files they
+            % v2 datasets only. Writes every document of the ingested session
+            % SESSION_ID into a new v2 session in FOLDER, with the files they
             % ingested (files recorded by location stay where they are), and
             % deletes them from the dataset's database. Its link is REPLACED
             % (Jess Haley 2026-10-29 [linked session link details] (2)): its
@@ -698,7 +698,7 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
             end
             if ~ndi_dataset_obj.v2Listing()
                 error('ndi:dataset:notV2', ...
-                    'convertIngestedSessionToLinked works on a V2 dataset; this one is v1.');
+                    'convertIngestedSessionToLinked works on a v2 dataset; this one is v1.');
             end
             if isempty(ndi_dataset_obj.session_info)
                 ndi_dataset_obj.build_session_info();
@@ -755,7 +755,7 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
             %
             % REPORT = MAKESELFCONTAINED(NDI_DATASET_OBJ, ...)
             %
-            % V2 datasets only (V_eta_linked_session_plan.md). A file is either
+            % v2 datasets only (V_eta_linked_session_plan.md). A file is either
             % INGESTED (copied into the dataset's file store) or recorded BY
             % LOCATION (read where it is: raw recordings too large to copy).
             % This copies every by-location file of every document in the
@@ -778,7 +778,7 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
                 options.DryRun (1,1) logical = false
             end
             if ~ndi_dataset_obj.v2Listing()
-                error('ndi:dataset:notV2', 'makeSelfContained works on a V2 dataset; this one is v1.');
+                error('ndi:dataset:notV2', 'makeSelfContained works on a v2 dataset; this one is v1.');
             end
             if isempty(ndi_dataset_obj.session_info)
                 ndi_dataset_obj.build_session_info();
@@ -868,7 +868,7 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
                     end
                     if ~ndi_dataset_obj.isV2()
                         % closes EVERY mksqlite connection: harmless for the legacy
-                        % backend, which reopens its file per call, but a V2
+                        % backend, which reopens its file per call, but a v2
                         % database (did2.database.sqlitedb) keeps its connection
                         % open, and this would close the session just opened
                         mksqlite('close'); % TODO: update ndi.session with a close database files method
@@ -915,11 +915,11 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
         end % session_list()
 
         function notes = session_notes(ndi_dataset_obj)
-            % SESSION_NOTES - how a V2 dataset's sessions were listed
+            % SESSION_NOTES - how a v2 dataset's sessions were listed
             %
             % NOTES = SESSION_NOTES(NDI_DATASET_OBJ)
             %
-            % For a V2 dataset, a cellstr: the denominator of the listing
+            % For a v2 dataset, a cellstr: the denominator of the listing
             % (session documents and linking relations read, sessions
             % listed),
             % then every session left out and why -- a session document not
@@ -934,11 +934,11 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
         end % session_notes()
 
         function report = same_as_report(ndi_dataset_obj)
-            % SAME_AS_REPORT - what the last session joined to a V2 dataset recorded twice
+            % SAME_AS_REPORT - what the last session joined to a v2 dataset recorded twice
             %
             % REPORT = SAME_AS_REPORT(NDI_DATASET_OBJ)
             %
-            % After add_linked_session or add_ingested_session on a V2
+            % After add_linked_session or add_ingested_session on a v2
             % dataset, a struct (ndi.v2.sameAsMatches): DENOMINATOR (the
             % entities compared), MATCHES (pairs joined on evidence that
             % names the thing, with the `same_as` relation written for each
@@ -1104,13 +1104,13 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
             % experiment -- organisms, cultures, tissues, cells and groups
             % (ndi.v2.subjectTypes) -- and NOT the apparatus. A v1 database
             % holds only such subjects as `subject` documents, so on v1 this
-            % is every `subject` document. On a V2 (V_eta) database a probe,
+            % is every `subject` document. On a v2 (V_eta) database a probe,
             % a camera (device) or a plate (material) is an entity too, and
             % a MIGRATED element is a `subject`; all of those are left out,
-            % so a V2 or migrated database answers as v1 did (Jess Haley,
+            % so a v2 or migrated database answers as v1 did (Jess Haley,
             % 2026-10-21). See ndi.vintage.subjectDocs.
             %
-            % For V2 data, new code should prefer ndi.entity.search, which
+            % For v2 data, new code should prefer ndi.entity.search, which
             % returns ndi.entity objects and can filter on type, statements
             % and relations; the same subjects are
             %   ndi.entity.search(NDI_DATASET_OBJ, {'type', ndi.v2.subjectTypes()})
@@ -1464,7 +1464,7 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
 
             opened = {};
             if isempty(session_info_doc) && ndi_dataset_obj.isV2()
-                % A V2 dataset records no session_in_a_dataset documents
+                % A v2 dataset records no session_in_a_dataset documents
                 % (V_eta_linked_session_plan.md, signed 2026-10-09): a session
                 % is in it when its `session` entity is `included_in` the dataset
                 % or a study of it. INGESTED: its documents are in this
@@ -1503,7 +1503,7 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
                     opened{end+1} = v2(i).session; %#ok<AGROW>
                 end
             elseif isempty(session_info_doc)
-                % not a V2 database, and no session_in_a_dataset documents:
+                % not a v2 database, and no session_in_a_dataset documents:
                 % each other session document is an ingested session
                 v2 = ndi_dataset_obj.session.database.search(ndi.v2.isaQuery('session'));
                 for i=1:numel(v2)
@@ -1538,7 +1538,7 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
         end % build_session_info()
 
         function tf = isV2(ndi_dataset_obj)
-            % ISV2 - is this dataset's database a V2 (did2) one?
+            % ISV2 - is this dataset's database a v2 (did2) one?
             tf = isa(ndi_dataset_obj.session.database, ...
                 'ndi.database.implementations.database.did2sqlite');
         end % isV2()
@@ -1614,10 +1614,10 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
             end
         end % ensureBinaryDocSessions
 
-        % --- V2 datasets (V_eta_linked_session_plan.md) ---
+        % --- v2 datasets (V_eta_linked_session_plan.md) ---
 
         function tf = v2Listing(ndi_dataset_obj)
-            % V2LISTING - are this dataset's sessions listed the V2 way?
+            % V2LISTING - are this dataset's sessions listed the v2 way?
             %   True for a did2 database holding no session_in_a_dataset
             %   document: membership is `included_in`, a linked session's
             %   folder the Pathname of its "database linking" relation.
@@ -1772,7 +1772,7 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
         end % v2LinkParent()
 
         function addSessionV2(ndi_dataset_obj, ndi_session_obj, linked, partOf, sameAs)
-            % ADDSESSIONV2 - add a V2 session to a V2 dataset, linked or ingested
+            % ADDSESSIONV2 - add a v2 session to a v2 dataset, linked or ingested
             %
             %   The helper add_linked_session and add_ingested_session share
             %   (Jess Haley 2026-10-29 [addSessionV2 folded back]: folded back
@@ -1794,8 +1794,8 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
                 sameAs (1,1) logical = true
             end
             if ~isa(ndi_session_obj.database, 'ndi.database.implementations.database.did2sqlite')
-                error('ndi:dataset:notV2Session', ['Session %s is not a V2 session; only a ' ...
-                    'V2 session can be added to a V2 dataset.'], ndi_session_obj.reference);
+                error('ndi:dataset:notV2Session', ['Session %s is not a v2 session; only a ' ...
+                    'v2 session can be added to a v2 dataset.'], ndi_session_obj.reference);
             end
             if isempty(ndi_dataset_obj.session_info)
                 ndi_dataset_obj.build_session_info();

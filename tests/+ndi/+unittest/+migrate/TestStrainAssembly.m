@@ -459,7 +459,7 @@ classdef TestStrainAssembly < matlab.unittest.TestCase
         function testInADatasetEachStrainIsOneEntityAtTheDatasetLevel(testCase)
             % Decided by Jess Haley, 2026-10-21: "When a dataset is migrated,
             % shared entities (strains, ...) move to the dataset level as in
-            % native V2 imports [...]: one entity per distinct thing in the
+            % native v2 imports [...]: one entity per distinct thing in the
             % dataset's database, with session documents pointing at it and
             % merged-away ids remapped so every link still resolves". Haley
             % writes OP50 and OP50-GFP once per session; with a dataset in the

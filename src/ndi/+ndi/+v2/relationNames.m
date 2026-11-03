@@ -1,5 +1,5 @@
 function [directed, undirected] = relationNames()
-%RELATIONNAMES The relation names the V2 schema binds, directed and undirected.
+%RELATIONNAMES The relation names the v2 schema binds, directed and undirected.
 %
 %   [DIRECTED, UNDIRECTED] = ndi.v2.relationNames() reads the bound values of
 %   directed_relation.relation and undirected_relation.relation from the

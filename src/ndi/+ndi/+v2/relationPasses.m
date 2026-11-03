@@ -1,5 +1,5 @@
 function P = relationPasses(schemaPath)
-%RELATIONPASSES What passes along each relation, read from the V2 schema's registry.
+%RELATIONPASSES What passes along each relation, read from the v2 schema's registry.
 %
 %   P = ndi.v2.relationPasses(SCHEMAPATH) (SCHEMAPATH defaults to
 %   DID_SCHEMA_PATH) reads SCHEMAPATH/binding_registry_meta.json. Each

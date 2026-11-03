@@ -1,5 +1,5 @@
 function doc = attachFile(doc, name, location, options)
-%ATTACHFILE Say where the bytes of one of a V2 document's files are.
+%ATTACHFILE Say where the bytes of one of a v2 document's files are.
 %
 %   DOC = ndi.setup.V2.attachFile(DOC, NAME, LOCATION) records that the file
 %   NAME of DOC (a document struct built by did2.build: a sampled_body's

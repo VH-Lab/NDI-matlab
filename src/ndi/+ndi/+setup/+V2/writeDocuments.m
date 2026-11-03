@@ -1,5 +1,5 @@
 function stats = writeDocuments(dbFile, docs, options)
-%WRITEDOCUMENTS Write V2 document structs into a did2 database in batches.
+%WRITEDOCUMENTS Write v2 document structs into a did2 database in batches.
 %
 %   STATS = ndi.setup.V2.writeDocuments(DBFILE, DOCS) adds DOCS (a cell of
 %   document structs, as built by did2.build) to the did2 sqlite database
@@ -54,7 +54,7 @@ if options.Progress
     fprintf('writing %d %s (%d ingested file(s)) in %d batch(es) of up to %d\n', ...
         n, options.Label, stats.files, stats.batches, options.BatchSize);
     try
-        bar = ndi.gui.component.ProgressBarWindow('NDI V2 write', 'GrabMostRecent', true);
+        bar = ndi.gui.component.ProgressBarWindow('NDI v2 write', 'GrabMostRecent', true);
         bar.setTimeout(hours(12));
         tag = ['write ' options.Label ' ' char(ndi.ido.unique_id())];
         bar.addBar('Label', sprintf('Writing %d %s', n, options.Label), 'Tag', tag, 'Auto', true);

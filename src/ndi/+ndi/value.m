@@ -1,7 +1,7 @@
 classdef value
     % ndi.value - a statement's value: what was measured, set or computed
     %
-    % Every V2 statement's value is a `value` composite (`data_type` until
+    % Every v2 statement's value is a `value` composite (`data_type` until
     % 2026-10-08) (length, time,
     % intensity, velocity, temperature, term, label, score, dose, position,
     % model_fit, ...). A dimensioned one stores each value as a cell: the
@@ -189,7 +189,7 @@ classdef value
         function f = canonicalField(className, raw)
             % CANONICALFIELD - the numeric field of CLASSNAME's value cell, e.g. 'meters'
             %
-            % Read from the V2 schema: the first numeric sub-field of the
+            % Read from the v2 schema: the first numeric sub-field of the
             % class's `value` that is not source_value, scale_min or scale_max.
             % A class with several canonical slots (concentration: molar,
             % grams_per_liter, ..., particles_per_liter, optical_density) gives the

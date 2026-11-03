@@ -45,7 +45,7 @@ function [files, sourceDir, layout] = setFiles(treeRoot, pinnedPath)
         pinnedPath (1,:) char
     end
 
-    % the registries the V2 loader reads, by name (ndi.v2.schemaFile)
+    % the registries the v2 loader reads, by name (ndi.v2.schemaFile)
     REGISTRIES = {'CURIE_lookups_meta.json', 'term_registry_meta.json', ...
         'binding_registry_meta.json', 'class_disposition_meta.json', ...
         'quantity_list_meta.json', 'did_schema_meta.json', 'ndi_reserved_keys.json'};

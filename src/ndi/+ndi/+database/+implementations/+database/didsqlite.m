@@ -359,7 +359,7 @@ function q = v1SubjectSearch(q)
     % SQL, where '~exact_string' needs the field to exist, so it would also
     % leave out every v1 subject, none of which has a subject.type. A v1
     % subject always was a biological subject, so here the plain search is
-    % the right one. V2 sessions are did2sqlite and keep the rewrite.
+    % the right one. v2 sessions are did2sqlite and keep the rewrite.
     arguments
         q {mustBeA(q, "did.query")}
     end

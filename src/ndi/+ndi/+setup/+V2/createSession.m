@@ -1,5 +1,5 @@
 function [session, docs] = createSession(path, reference, options)
-%CREATESESSION Create a new NDI session whose database is V2 (did2).
+%CREATESESSION Create a new NDI session whose database is v2 (did2).
 %
 %   [SESSION, DOCS] = ndi.setup.V2.createSession(PATH, REFERENCE) creates a
 %   session in directory PATH, backed by a did2 database
@@ -7,14 +7,14 @@ function [session, docs] = createSession(path, reference, options)
 %   ordinary ndi.session.dir. REFERENCE becomes the session's
 %   `local_identifier` (the object's `reference` property).
 %
-%   WHY THIS EXISTS. ndi.session.dir can OPEN a V2 session -- it tries each
+%   WHY THIS EXISTS. ndi.session.dir can OPEN a v2 session -- it tries each
 %   entry of the database hierarchy and `did_v2.sqlite` is entry 2 -- but it
 %   can only CREATE a legacy one: only entry 1 (didsqlite) has creation code
 %   (ndi.database.fun.databasehierarchyinit). This function does the creating
 %   and leaves ndi.session.dir unchanged, so nothing that makes or opens a
 %   legacy session behaves any differently (backwards compatible).
 %
-%   It writes exactly one document before opening, the V2 `session` document
+%   It writes exactly one document before opening, the v2 `session` document
 %   built with did2.build, so that ndi.session.dir's own lookup (the oldest
 %   `isa session` document) finds it and takes the session id and reference
 %   from it.

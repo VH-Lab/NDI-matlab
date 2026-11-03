@@ -131,7 +131,7 @@ classdef ndr < ndi.daq.reader.image
                 end
             elseif nargin==2 & isa(varargin{1},'ndi.session') & isa(varargin{2},'ndi.document')
                 obj.identifier = varargin{2}.document_properties.base.id;
-                % BOTH VINTAGES, as in ndi.daq.reader.mfdaq.ndr: a V2
+                % BOTH VINTAGES, as in ndi.daq.reader.mfdaq.ndr: a v2
                 % document carries the reader string as
                 % acquisition_reader.reader_string, not in a daqreader_ndr block.
                 [v, found] = ndi.vintage.field(varargin{2}, 'ndr_reader_string');
@@ -139,7 +139,7 @@ classdef ndr < ndi.daq.reader.image
                     error('NDI:daqreaderimagendr:noReaderString', ...
                         ['document %s carries no reader string under ' ...
                          'either spelling (v1 ' ...
-                         'daqreader_ndr.ndr_reader_string, V2 ' ...
+                         'daqreader_ndr.ndr_reader_string, v2 ' ...
                          'acquisition_reader.reader_string)'], ...
                         varargin{2}.document_properties.base.id);
                 end
@@ -467,8 +467,8 @@ classdef ndr < ndi.daq.reader.image
             %     NDI_DOCUMENT_OBJ - an ndi.document of type 'daqreader_ndr'.
             %
             %   See also: ndi.document, ndi.daq.reader.image.ndr/ndr
-            % With NDI_SESSION_OBJ whose database is V2 (ndi.session/writesV2),
-            % the V2 record instead: an `acquisition_reader` whose
+            % With NDI_SESSION_OBJ whose database is v2 (ndi.session/writesV2),
+            % the v2 record instead: an `acquisition_reader` whose
             % `reader_string` is the NDR reader string, and its `software`
             % entity (ndi.daq.reader/newdocumentV2).
             if nargin>1 && ~isempty(ndi_session_obj) && ndi_session_obj.writesV2()

@@ -201,7 +201,7 @@ function gui(varargin)
             name_list = {};
             doc_ref = {};
             for i=1:numel(doc_list)
-                % the class's own name field first, then base.name: a V2
+                % the class's own name field first, then base.name: a v2
                 % document need not carry base.name ([carried v1 validates
                 % against NDI templates], Jess Haley, 2026-10-27, did-schema
                 % V_eta_go_forward_class_audit.md); ndi.vintage.objectName

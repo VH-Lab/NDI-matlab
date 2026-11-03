@@ -11,7 +11,7 @@ function name = objectName(ndi_document_obj)
 %   block's `name` when the document has a non-empty one, else `base.name`,
 %   else ''. Decided by Jess Haley, 2026-10-27 [carried v1 validates against
 %   NDI templates] (did-schema V_eta_go_forward_class_audit.md): NDI's
-%   `base.name` reads that run on V2 documents read the class's own name
+%   `base.name` reads that run on v2 documents read the class's own name
 %   field; base.name stays the fallback until [base.name kept until retire
 %   classes leave] deletes it.
 %

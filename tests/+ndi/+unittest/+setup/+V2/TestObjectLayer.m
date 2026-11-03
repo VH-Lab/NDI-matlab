@@ -1,5 +1,5 @@
 classdef TestObjectLayer < matlab.unittest.TestCase
-%TESTOBJECTLAYER The V2 object layer (ndi.entity, ndi.statement and its
+%TESTOBJECTLAYER The v2 object layer (ndi.entity, ndi.statement and its
 %children, ndi.value) over a written Haley session.
 %
 %   Writes TestHaleyRecordings' synthetic concentration_0001 with its
@@ -26,7 +26,7 @@ classdef TestObjectLayer < matlab.unittest.TestCase
             schemaPath = getenv('DID_SCHEMA_PATH');
             testCase.assumeTrue(~isempty(schemaPath) && ...
                 isfile(ndi.v2.schemaFile(schemaPath, 'entity.json')), ...
-                'DID_SCHEMA_PATH does not hold a V2 schema with `entity` (did-schema #88)');
+                'DID_SCHEMA_PATH does not hold a v2 schema with `entity` (did-schema #88)');
             testCase.Root = tempname;
             testCase.addTeardown(@() rmdir(testCase.Root, 's'));
             ndi.unittest.setup.V2.TestHaleyRecordings.writeFixture(testCase.Root);
@@ -54,7 +54,7 @@ classdef TestObjectLayer < matlab.unittest.TestCase
             testCase.verifyEqual(w.name, char(ndi.v2.blockOf(p, 'subject', 'name')), 'a subject''s display name is its own name');
             testCase.verifyEqual(w.name(), 'Worm 0121');
             testCase.verifyEqual(w.local_identifier, 'concentration_worm0121', ...
-                'no @ is required of a V2 subject read from a document (D6)');
+                'no @ is required of a v2 subject read from a document (D6)');
             testCase.verifyEqual(w.type, 'organism');
             g = ndi.entity.search(testCase.Session, {'Type', 'group'});
             testCase.verifyNumElements(g, 4, 'one cohort per assay plate');
@@ -717,7 +717,7 @@ classdef TestObjectLayer < matlab.unittest.TestCase
         end
 
         function testGetsubjectsReturnsOnlyBiologicalSubjects(testCase)
-            % getsubjects on V2 answers as on v1 (Jess Haley, 2026-10-21):
+            % getsubjects on v2 answers as on v1 (Jess Haley, 2026-10-21):
             % the organisms, cultures, tissues, cells and groups, never a
             % plate (material) or an instrument (device). Session and dataset.
             bio = ndi.v2.subjectTypes();
@@ -749,7 +749,7 @@ classdef TestObjectLayer < matlab.unittest.TestCase
             end
             testCase.verifyEqual(idsOf(testCase.Session.getsubjects()), ...
                 idsOf(testCase.Session.database_search(ndi.query('', 'isa', 'subject'))), ...
-                'on V2, getsubjects is `isa subject` (already the biological types)');
+                'on v2, getsubjects is `isa subject` (already the biological types)');
         end
 
         function testTypesPassTheirAssertionsToInstances(testCase)
@@ -1174,7 +1174,7 @@ classdef TestObjectLayer < matlab.unittest.TestCase
 
         function testReadingAV2DocumentGivesTheStoredDocument(testCase)
             % Every document of the written session is read exactly as
-            % stored, V2 or not: nothing is converted and nothing is padded
+            % stored, v2 or not: nothing is converted and nothing is padded
             % (did2.convert.ensureClassBlocks is deleted: [handed-on classes
             % carried at the end] (2), Jess Haley, 2026-11-02).
             db = did2.database.sqlitedb(fullfile(testCase.Result.sessions.path{1}, '.ndi', ...
@@ -1208,7 +1208,7 @@ classdef TestObjectLayer < matlab.unittest.TestCase
         end
 
         function testV1SubjectUnchanged(testCase)
-            % ndi.subject is v1's, as on V2: the @ is required, and it is not
+            % ndi.subject is v1's, as on v2: the @ is required, and it is not
             % an ndi.entity
             testCase.verifyError(@() ndi.subject('nolab', 'a subject'), ?MException);
             s = ndi.subject('anteater23@nosuchlab.org', 'a subject');

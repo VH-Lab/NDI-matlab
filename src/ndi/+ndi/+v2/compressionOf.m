@@ -24,7 +24,7 @@ function [codec, settings] = compressionOf(value)
 %   declares it.
 %
 %   THE READING IS DID-matlab's did2.build.compressionCodec (the inverse of
-%   did2.build.compression, the writer every V2 body builder uses), which
+%   did2.build.compression, the writer every v2 body builder uses), which
 %   also resolves a registered codec term through the term registry. When the
 %   DID-matlab on the path predates it, a local reading of the same table is
 %   used: a term matched by its own name only (gzip, LZW, Blosc), settings by

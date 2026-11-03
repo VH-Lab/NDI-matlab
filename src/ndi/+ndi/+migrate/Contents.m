@@ -1,4 +1,4 @@
-% +migrate  Tools for migrating NDI datasets/sessions to a V2 wire format.
+% +migrate  Tools for migrating NDI datasets/sessions to a v2 wire format.
 %
 %   The +migrate subpackage holds user-facing commands that move an
 %   existing NDI dataset or session from the legacy did_v1 storage

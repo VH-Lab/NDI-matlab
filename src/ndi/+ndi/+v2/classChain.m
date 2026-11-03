@@ -3,7 +3,7 @@ function chain = classChain(p)
 %
 %   CHAIN = ndi.v2.classChain(P) returns a cellstr, the document's class
 %   first. P is document properties (ndi.v2.props). The chain comes from the
-%   V2 schema (did2.schema.cache); a class the schema does not know (a v1
+%   v2 schema (did2.schema.cache); a class the schema does not know (a v1
 %   document) falls back to the superclasses the document itself lists.
 %
 %   See also ndi.v2.directParents, ndi.statement.fromDocument.

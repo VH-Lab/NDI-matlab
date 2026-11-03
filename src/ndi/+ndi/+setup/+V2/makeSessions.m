@@ -1,7 +1,7 @@
 function [T, sessions] = makeSessions(T, options)
-%MAKESESSIONS Stage 3 of a V2 import: create one session per row of T.
+%MAKESESSIONS Stage 3 of a v2 import: create one session per row of T.
 %
-%   [T, SESSIONS] = ndi.setup.V2.makeSessions(T) creates a V2 session for
+%   [T, SESSIONS] = ndi.setup.V2.makeSessions(T) creates a v2 session for
 %   each row of the table T (with ndi.setup.V2.createSession) and returns T
 %   with a `session_id` column filled in, plus the opened ndi.session.dir
 %   objects in the same order.

@@ -1,10 +1,10 @@
 classdef TestCreateSession < matlab.unittest.TestCase
 %TESTCREATESESSION ndi.setup.V2.createSession makes a session NDI can open.
 %
-%   The point of the function is the round trip: a V2 (did2) database is
+%   The point of the function is the round trip: a v2 (did2) database is
 %   written, and the ordinary ndi.session.dir(PATH) then opens it with the
 %   same id and reference, through the did2sqlite backend. Filtered (never
-%   passed) when did2.build or a V2 schema with `study` is missing.
+%   passed) when did2.build or a v2 schema with `study` is missing.
 %
 %   UNVERIFIED: written without MATLAB; test-import-v2.yml is the first run.
 
@@ -19,7 +19,7 @@ classdef TestCreateSession < matlab.unittest.TestCase
             schemaPath = getenv('DID_SCHEMA_PATH');
             testCase.assumeTrue(~isempty(schemaPath) && ...
                 isfile(ndi.v2.schemaFile(schemaPath, 'entity.json')), ...
-                'DID_SCHEMA_PATH does not hold a V2 schema with `entity` (did-schema #88)');
+                'DID_SCHEMA_PATH does not hold a v2 schema with `entity` (did-schema #88)');
         end
     end
 

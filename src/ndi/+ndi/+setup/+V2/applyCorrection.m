@@ -5,7 +5,7 @@ function [v, applied, note, line] = applyCorrection(x, have, where)
 %   applies the spec correction X (its `key`, `column`, `value`, `was` and
 %   `reason`) to HAVE, the value the source holds now, at WHERE (text naming
 %   the cell, for the report: 'foragingMini experiment 24', 'session_0001
-%   worm0001'). It is THE correction function of a V2 import: every
+%   worm0001'). It is THE correction function of a v2 import: every
 %   correction goes through it, so every one is checked and recorded the same
 %   way (the Haley import's decision #111; tenet T14 "A correction is named
 %   and travels with the value"):

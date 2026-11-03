@@ -8,7 +8,7 @@ function [tf, location] = externalFileLocation(document_properties, filename)
 %   taken into the database (`ingest` false) and that exists on this
 %   computer. TF is false (LOCATION '') when there is no such location.
 %
-%   This is how a document points at bytes it does not hold: a V2
+%   This is how a document points at bytes it does not hold: a v2
 %   `opaque_body` written at import names its recording this way, and the
 %   bytes stay where they are until ingestion (Haley import decision #34).
 %   A location that is recorded but missing on this computer gives TF false,

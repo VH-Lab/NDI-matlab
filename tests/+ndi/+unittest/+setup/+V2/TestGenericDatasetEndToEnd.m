@@ -1,8 +1,8 @@
 classdef TestGenericDatasetEndToEnd < matlab.unittest.TestCase
-%TESTGENERICDATASETENDTOEND A small made-up V2 dataset, written and read back.
+%TESTGENERICDATASETENDTOEND A small made-up v2 dataset, written and read back.
 %
-%   Every other V2 test here goes through the Haley import. This one builds a
-%   dataset ONLY with the public V2 API that Using_V2.md tells a user to use
+%   Every other v2 test here goes through the Haley import. This one builds a
+%   dataset ONLY with the public v2 API that Using_V2.md tells a user to use
 %   (did2.build.*, ndi.setup.V2.entityDocuments / registeredTerm /
 %   attachFile / createDataset), writes it to a temporary folder, re-opens it
 %   with ndi.dataset.dir, and reads every piece back through the object layer
@@ -47,7 +47,7 @@ classdef TestGenericDatasetEndToEnd < matlab.unittest.TestCase
             schemaPath = getenv('DID_SCHEMA_PATH');
             testCase.assumeTrue(~isempty(schemaPath) && ...
                 isfile(ndi.v2.schemaFile(schemaPath, 'entity.json')), ...
-                'DID_SCHEMA_PATH does not hold a V2 schema with `entity` (did-schema #88)');
+                'DID_SCHEMA_PATH does not hold a v2 schema with `entity` (did-schema #88)');
             testCase.assumeTrue(~isempty(which('did2.schema.termIndex')) && ...
                 did2.schema.termIndex().present, ...
                 'no term registry: needs did-schema #88 and DID-matlab #218');
@@ -323,7 +323,7 @@ end
 
 % -----------------------------------------------------------------------------
 function [dsDocs, sessDocs, id, speed] = buildDataset(root)
-% The dataset, with the public V2 API only. Every term is the registry's
+% The dataset, with the public v2 API only. Every term is the registry's
 % (ndi.setup.V2.registeredTerm), so did2.build's term check accepts it.
 arguments
     root {mustBeText}

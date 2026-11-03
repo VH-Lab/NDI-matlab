@@ -1,7 +1,7 @@
 classdef TestLightsheetMigratedSession < matlab.unittest.TestCase
-%TESTLIGHTSHEETMIGRATEDSESSION The lightsheet readers over a V2 session holding a MIGRATED pyramid.
+%TESTLIGHTSHEETMIGRATEDSESSION The lightsheet readers over a v2 session holding a MIGRATED pyramid.
 %
-%   Writes, into a V2 (did2) session made by ndi.setup.V2.createSession and
+%   Writes, into a v2 (did2) session made by ndi.setup.V2.createSession and
 %   reopened with the ordinary ndi.session.dir, one pyramid as DID-matlab's
 %   lightsheet migration leaves it (ndi.unittest.vintage.LightsheetFixtures):
 %   the intensity observation, its builder software entity, its OME-Zarr
@@ -11,7 +11,7 @@ classdef TestLightsheetMigratedSession < matlab.unittest.TestCase
 %   levelTable, chooseLevel, LightsheetZarrManager's rows and deletion plan,
 %   and whether a level's member 0 resolves to its bytes.
 %
-%   Filtered (never passed) when did2.build or a V2 schema with `study` is
+%   Filtered (never passed) when did2.build or a v2 schema with `study` is
 %   missing, as TestCreateSession is; test-import-v2.yml fails on a
 %   filtered test, so a green run means these ran.
 %
@@ -30,7 +30,7 @@ classdef TestLightsheetMigratedSession < matlab.unittest.TestCase
             schemaPath = getenv('DID_SCHEMA_PATH');
             testCase.assumeTrue(~isempty(schemaPath) && ...
                 isfile(ndi.v2.schemaFile(schemaPath, 'entity.json')), ...
-                'DID_SCHEMA_PATH does not hold a V2 schema with `entity` (did-schema #88)');
+                'DID_SCHEMA_PATH does not hold a v2 schema with `entity` (did-schema #88)');
             % One method, not two: TestClassSetup methods run in no
             % guaranteed order, and the write needs the checks above first.
             F = ndi.unittest.vintage.LightsheetFixtures;

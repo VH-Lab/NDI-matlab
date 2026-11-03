@@ -18,8 +18,8 @@ function base = seriesMemberBase(doc)
 %   did.document/seriesMemberBase (DID-matlab 1a6bd9f), this asks it, so NDI
 %   and DID can never disagree. An older DID-matlab (the V2 line NDI's
 %   requirements.txt pins, which predates it) gets the same rule restated
-%   here: did2.schema.isV2Stamp (DID-matlab's one list of V2 stamps). A
-%   version that is not a V2 stamp is v1 (base 1), which is what every
+%   here: did2.schema.isV2Stamp (DID-matlab's one list of v2 stamps). A
+%   version that is not a v2 stamp is v1 (base 1), which is what every
 %   document written before V_eta is.
 %
 %   Callers that walk a series' slots (ndi.database.fun.extract_docs_files,

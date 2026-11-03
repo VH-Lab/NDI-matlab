@@ -41,7 +41,7 @@ function o = ndi_document2ndi_object(ndi_document_obj, ndi_session_obj)
     % Use feval, not eval: eval would execute an arbitrary expression built from
     % the field's value, whereas feval calls only the named constructor.
     %
-    % NOTE (V2 merge, 2026-09-23): V2 added a lineage check here
+    % NOTE (v2 merge, 2026-09-23): V2 added a lineage check here
     % (local_requiredtype + ndi.validators.mustBeClassnameOfType) keyed on the
     % v1-only document block name `obj_parent_string`. The vintage read above
     % (ndi.vintage.objectClass) that V_eta requires abstracts that key away and

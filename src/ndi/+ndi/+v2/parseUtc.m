@@ -1,5 +1,5 @@
 function t = parseUtc(s)
-%PARSEUTC A V2 `utc` timestamp string as a datetime in UTC (NaT when empty or unreadable).
+%PARSEUTC A v2 `utc` timestamp string as a datetime in UTC (NaT when empty or unreadable).
 arguments
     s
 end

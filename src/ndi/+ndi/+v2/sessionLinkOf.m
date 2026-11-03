@@ -1,5 +1,5 @@
 function link = sessionLinkOf(p)
-%SESSIONLINKOF How a session is in a V2 dataset, read from its membership relation.
+%SESSIONLINKOF How a session is in a v2 dataset, read from its membership relation.
 %
 %   LINK = ndi.v2.sessionLinkOf(P), P the properties of a `directed_relation`
 %   (a struct, or an ndi.document / did2.document). The relation

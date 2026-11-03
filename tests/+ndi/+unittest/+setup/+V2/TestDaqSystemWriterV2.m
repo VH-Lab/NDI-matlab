@@ -1,14 +1,14 @@
 classdef TestDaqSystemWriterV2 < matlab.unittest.TestCase
-%TESTDAQSYSTEMWRITERV2 ndi.daq.system writes the V2 acquisition_system into a V2 database.
+%TESTDAQSYSTEMWRITERV2 ndi.daq.system writes the v2 acquisition_system into a v2 database.
 %
-%   When a daq system is added to a session whose database is V2 (did2),
+%   When a daq system is added to a session whose database is v2 (did2),
 %   the system's own record is an `acquisition_system` whose id is the
 %   system's id and whose `name` is its name, with `software_id` naming the
 %   `software` entity of its class and `reader_id`, `epoch_file_pattern_id`
 %   and `epoch_parameter_reader_id` naming its components (the shape
 %   DID-matlab's +migrators_j/daqsystem.m writes for a v1 `daqsystem`), not
 %   a v1 `daqsystem` document stamped did_v1. With the navigator, reader
-%   and metadata reader moved before it, the whole set is V2, and the daq
+%   and metadata reader moved before it, the whole set is v2, and the daq
 %   system loads again from it. A v1 database keeps the v1 documents.
 %
 %   Decided by Jess Haley, 2026-10-29 [v1 writes into a V2 session]
@@ -16,7 +16,7 @@ classdef TestDaqSystemWriterV2 < matlab.unittest.TestCase
 %   every NDI writer writes V2 documents and a V2 session accepts only V2
 %   documents".
 %
-%   Filtered (never passed) when did2.build or a V2 schema with `entity` is
+%   Filtered (never passed) when did2.build or a v2 schema with `entity` is
 %   missing.
 
     properties
@@ -30,7 +30,7 @@ classdef TestDaqSystemWriterV2 < matlab.unittest.TestCase
             schemaPath = getenv('DID_SCHEMA_PATH');
             testCase.assumeTrue(~isempty(schemaPath) && ...
                 isfile(ndi.v2.schemaFile(schemaPath, 'entity.json')), ...
-                'DID_SCHEMA_PATH does not hold a V2 schema with `entity` (did-schema #88)');
+                'DID_SCHEMA_PATH does not hold a v2 schema with `entity` (did-schema #88)');
         end
     end
 
@@ -45,7 +45,7 @@ classdef TestDaqSystemWriterV2 < matlab.unittest.TestCase
     methods (Test)
         function testAV2DatabaseGetsOnlyV2AcquisitionDocuments(testCase)
             S = ndi.setup.V2.createSession(testCase.Dir, 'd1');
-            testCase.assertTrue(S.writesV2(), 'createSession did not make a V2 session');
+            testCase.assertTrue(S.writesV2(), 'createSession did not make a v2 session');
             nStart = numel(testCase.storedBodies(S.getpath()));
             nav = ndi.file.navigator(S, {'#.rhd', '#.epochprobemap.ndi', 'stims.tsv'}, ...
                 'ndi.epoch.epochprobemap_daqsystem', {'(.*)epochprobemap.ndi'});
@@ -60,11 +60,11 @@ classdef TestDaqSystemWriterV2 < matlab.unittest.TestCase
             classes = cellfun(@(s) s.document_class.class_name, stored, 'UniformOutput', false);
             v1 = {'daqsystem', 'filenavigator', 'daqreader', 'daqreader_ndr', 'daqmetadatareader'};
             testCase.verifyFalse(any(ismember(classes, v1)), sprintf( ...
-                'a v1 acquisition document was written into a V2 database (classes: %s)', ...
+                'a v1 acquisition document was written into a v2 database (classes: %s)', ...
                 strjoin(classes, ', ')));
             stamps = cellfun(@(s) did2.schema.isV2Stamp(s), stored);
             testCase.verifyTrue(all(stamps), sprintf( ...
-                '%d of %d stored documents are not stamped V2 (classes: %s)', ...
+                '%d of %d stored documents are not stamped v2 (classes: %s)', ...
                 nnz(~stamps), numel(stamps), strjoin(classes(~stamps), ', ')));
 
             a = testCase.onlyDoc(stored, dev.id(), 'acquisition_system');
@@ -94,7 +94,7 @@ classdef TestDaqSystemWriterV2 < matlab.unittest.TestCase
 
         function testAV1DatabaseKeepsTheV1DaqSystem(testCase)
             S = ndi.session.dir('ref1', testCase.Dir);
-            testCase.assertFalse(S.writesV2(), 'a new folder was given a V2 database');
+            testCase.assertFalse(S.writesV2(), 'a new folder was given a v2 database');
             nav = ndi.file.navigator(S, {'#.rhd', '#.epochprobemap.ndi'}, ...
                 'ndi.epoch.epochprobemap_daqsystem', {'(.*)epochprobemap.ndi'});
             dev = ndi.daq.system.mfdaq('intan1', nav, ndi.daq.reader.mfdaq.intan());

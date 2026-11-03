@@ -682,7 +682,7 @@ end
 end
 
 function [b, report] = carryFiles(b, v1Body, report)
-%CARRYFILES The v1 document's `files` block stays on the V2 document: its
+%CARRYFILES The v1 document's `files` block stays on the v2 document: its
 %   presentation_time.bin is the presentation's raw source ([presentation
 %   times from the file]). Locations are settled later, with every other
 %   migrated document's, by ndi.migrate.internal.settleIngestedFiles.

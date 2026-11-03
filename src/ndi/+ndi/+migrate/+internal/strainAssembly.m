@@ -115,7 +115,7 @@ function [kept, minted, report] = strainAssembly(structs)
 %   * ONE STRAIN PER DATASET WHEN A DATASET IS MIGRATED. Decided by Jess
 %     Haley, 2026-10-21: "When a dataset is migrated, shared entities
 %     (strains, software, people, organizations, instruments, products) move
-%     to the dataset level as in native V2 imports (Haley
+%     to the dataset level as in native v2 imports (Haley
 %     import_V2_decisions.md #20): one entity per distinct thing in the
 %     dataset's database, with session documents pointing at it and
 %     merged-away ids remapped so every link still resolves; a lone session

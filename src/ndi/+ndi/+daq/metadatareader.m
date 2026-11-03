@@ -223,8 +223,8 @@ classdef metadatareader < ndi.ido & ndi.documentservice
             %
             % Writes for the database of NDI_SESSION_OBJ (a metadata reader
             % holds no session; ndi.daq.system/newdocument passes its own).
-            % When that database is V2 (ndi.session/writesV2), DOC is a cell
-            % array of the V2 record: an `epoch_parameter_reader` whose id is
+            % When that database is v2 (ndi.session/writesV2), DOC is a cell
+            % array of the v2 record: an `epoch_parameter_reader` whose id is
             % the reader's id (`file_regex` the tab-separated file parameter)
             % and the `software` entity its `software_id` names, whose `name`
             % is the reader's class, in the session -- the shape DID-matlab's
