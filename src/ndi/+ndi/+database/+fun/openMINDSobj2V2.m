@@ -291,7 +291,23 @@ function t = textOf(v)
 t = '';
 if isstring(v), v = char(strjoin(v, ' ')); end
 if iscell(v) && numel(v) == 1, v = v{1}; end
+v = flatChar(v);
 if ischar(v), t = strtrim(v); end
+end
+
+function x = flatChar(x)
+% text as a row of characters; an empty value of any shape (openMINDS
+% gives an unset text property as an empty array that need not be 2-D) is ''
+if isstring(x)
+    x = char(strjoin(x, ' '));
+end
+if ischar(x)
+    if isempty(x)
+        x = '';
+    elseif ~isrow(x)
+        x = reshape(x, 1, []);
+    end
+end
 end
 
 function c = asTextList(v)
@@ -301,8 +317,7 @@ if isstring(v), v = cellstr(v); end
 if ischar(v), v = {v}; end
 if ~iscell(v), return; end
 for j = 1:numel(v)
-    x = v{j};
-    if isstring(x), x = char(x); end
+    x = flatChar(v{j});
     if ischar(x) && ~isempty(strtrim(x)) && ~startsWith(x, 'ndi://')
         c{end+1} = strtrim(x); %#ok<AGROW>
     end
