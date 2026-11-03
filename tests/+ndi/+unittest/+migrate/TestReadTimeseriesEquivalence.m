@@ -42,7 +42,7 @@ classdef TestReadTimeseriesEquivalence < matlab.unittest.TestCase
 %   taken inside try/catch and kept with its error, so one failing read does
 %   not hide the others and each test method reports its own.
 %
-%   Filtered (never passed) when mksqlite, DID-matlab's did2 converter, a V2
+%   Filtered (never passed) when mksqlite, DID-matlab's did2 converter, a v2
 %   schema set with `entity`, or NDI-compress is missing.
 %   test-eta-migrate-e2e.yml runs it with all four.
 
@@ -59,7 +59,7 @@ classdef TestReadTimeseriesEquivalence < matlab.unittest.TestCase
                 'did2.convert.v1_to_v2 (DID-matlab V2) is not on the path');
             testCase.assumeTrue(~isempty(which('did2.schema.cache')) && ...
                 did2.schema.cache.shared().hasClass('entity'), ...
-                'no V2 schema set (did-schema #88, `entity`) where did2.schema.cache looks');
+                'no v2 schema set (did-schema #88, `entity`) where did2.schema.cache looks');
             testCase.assumeFalse(isempty(which('ndi.compress.compress_ephys')), ...
                 'NDI-compress is not on the path (ingest needs it)');
 
