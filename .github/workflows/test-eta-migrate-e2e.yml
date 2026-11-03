@@ -54,6 +54,12 @@ on:
       # they changed.
       - 'src/ndi/*ndi/element.m'
       - 'src/ndi/*ndi/*element/timeseries.m'
+      # THE INGESTED READ PATH. ndi.daq.reader and ndi.daq.reader.mfdaq read
+      # a migrated ingested epoch from its v2 data bodies ([V2 ingest is one
+      # sampled body per channel group]); TestReadTimeseriesEquivalence below
+      # is the test that reads them.
+      - 'src/ndi/*ndi/*daq/reader.m'
+      - 'src/ndi/*ndi/*daq/*reader/mfdaq.m'
       # THE SECOND-PASS ASSEMBLERS AND THEIR OWN UNIT TESTS. `+migrate/**`
       # above already covers the sources; this adds the tests, which lived
       # in a directory no workflow on this branch swept -- see the note by

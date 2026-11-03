@@ -23,6 +23,9 @@ on:
     paths:
       - '.github/workflows/tmp-r5-probe.yml'
       - 'tests/r5probe/**'
+      - 'src/ndi/*ndi/*daq/**'
+      - 'src/ndi/*ndi/*vintage/**'
+      - 'tests/*ndi/*unittest/*migrate/TestReadTimeseriesEquivalence.m'
 
 concurrency:
   # Keyed on the commit: a push never cancels another commit's run;
@@ -237,8 +240,9 @@ jobs:
             % and the job was killed ~2h41m in (run 84, 2026-08-19) without
             % producing a census. It runs on demand instead, alone and with a
             % generous timeout, in test-eta-migrate-soph.yml (workflow_dispatch).
-            addpath(fullfile(pwd,'tests','r5probe'));
-            r5probe(fullfile(pwd,'r5out'));
+            results = runtests({'ndi.unittest.migrate.TestReadTimeseriesEquivalence'});
+            disp(results);
+            assertSuccess(results);
 
       - name: Upload dump
         if: always()
