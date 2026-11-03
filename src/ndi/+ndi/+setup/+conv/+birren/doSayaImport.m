@@ -30,7 +30,7 @@ subM = ndi.setup.NDIMaker.subjectMaker();
 si = ndi.setup.NDIMaker.SubjectInformationCreator.birren();
 
 [subjectInfo,allSubjectNamesFromTable] = subM.getSubjectInfoFromTable(variableTable, @si.create);
-subDocStruct = subM.makeSubjectDocuments(subjectInfo);
+subDocStruct = subM.makeSubjectDocuments(subjectInfo, 'Sessions', {S});
 subM.addSubjectsToSessions({S}, subDocStruct.documents);
 
 

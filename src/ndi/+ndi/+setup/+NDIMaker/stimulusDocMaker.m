@@ -408,8 +408,12 @@ classdef stimulusDocMaker < handle
                     'name',ontologyLabel,...
                     'preferredOntologyIdentifier',ontologyNode,...
                     'description',OntologyDescription);
+                % given the session ([writers are given the session], Jess
+                % Haley, 2026-11-03); an openMINDS object about a stimulus
+                % stays a v1 `openminds_stimulus` document on either database
+                % (no decided v2 target; openMINDSobj2ndi_document)
                 current_doc = ndi.database.fun.openMINDSobj2ndi_document(new_approach,...
-                    obj.session.id,'stimulus',stimulator_id,'epochid.epochid', epoch_id);
+                    obj.session,'stimulus',stimulator_id,'epochid.epochid', epoch_id);
 
                 % Add document to list
                 docs{a} = current_doc;

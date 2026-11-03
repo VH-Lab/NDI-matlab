@@ -161,7 +161,7 @@ subM = ndi.setup.NDIMaker.subjectMaker();
 % We have no need to delete any previously made subjects because we remade all the sessions
 % but if we did we could use the subM.deleteSubjectDocs method
 % subM.deleteSubjectDocs(sessionArray,subjectInfo_ephys.subjectName);
-subDocStruct = subM.makeSubjectDocuments(subjectInfo_ephys);
+subDocStruct = subM.makeSubjectDocuments(subjectInfo_ephys, 'Sessions', sessionArray);
 subM.addSubjectsToSessions(sessionArray, subDocStruct.documents);
 
 %% Step 4: EPOCHPROBEMAPS. Build epochprobemaps.
@@ -423,7 +423,7 @@ subjectTable_behavior{:,'SubjectPostfix'} = arrayfun(@(si) ...
 [subjectInfo_behavior,subjectTable_behavior.SubjectString] = ...
     subM.getSubjectInfoFromTable(subjectTable_behavior,...
     @ndi.setup.conv.dabrowska.createSubjectInformation);
-subDocStruct = subM.makeSubjectDocuments(subjectInfo_behavior);
+subDocStruct = subM.makeSubjectDocuments(subjectInfo_behavior, 'Sessions', sessionArray);
 subM.addSubjectsToSessions(sessionArray, subDocStruct.documents);
 
 % Add subject strings to data tables

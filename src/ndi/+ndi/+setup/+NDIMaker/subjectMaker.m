@@ -73,7 +73,7 @@ classdef subjectMaker < handle
 
                 % 2. Create NDI documents for the unique subjects
                 disp('Creating NDI documents for subjects...');
-                subDocStruct = obj.makeSubjectDocuments(subjectInfo);
+                subDocStruct = obj.makeSubjectDocuments(subjectInfo, 'Sessions', {session});
 
                 % 3. Add the new subject documents to the session
                 disp('Adding new subject documents to the session database...');
@@ -191,14 +191,32 @@ classdef subjectMaker < handle
         function output = makeSubjectDocuments(obj, subjectInfo, options)
             %MAKESUBJECTDOCUMENTS Creates NDI subject documents from a subjectInfo structure.
             %
-            %   OUTPUT = MAKESUBJECTDOCUMENTS(OBJ, SUBJECTINFO, 'existingSubjectDocs', DOCS)
+            %   OUTPUT = MAKESUBJECTDOCUMENTS(OBJ, SUBJECTINFO, 'Sessions', SESSIONS, 'existingSubjectDocs', DOCS)
             %
             %   This method converts the clean `subjectInfo` structure (from `getSubjectInfoFromTable`)
             %   into a set of `ndi.document` objects ready to be added to a database.
             %
+            %   Given the sessions ('Sessions'), each subject's documents are written for
+            %   the database of the session whose id is its `sessionID`: on a v2 database
+            %   (ndi.session/writesV2) the subject is an `entity` of type organism
+            %   (ndi.setup.V2.entityDocuments, as ndi.subject/newdocument writes it) and its
+            %   species, strain and biological sex are the v2 documents
+            %   ndi.database.fun.openMINDSobj2V2 builds (term assertions about the subject;
+            %   a strain entity the subject is `instance_of`, written once per distinct
+            %   strain in the call); on a v1 database they are the v1 `subject` and
+            %   `openminds_subject` documents. A subject whose session is not among
+            %   SESSIONS is an error. Decided by Jess Haley, 2026-11-03 [writers are
+            %   given the session] and [v2 line reads and writes both] (did-schema
+            %   did_v2_go_forward_class_audit.md): a tool learns the version from the
+            %   session's database.
+            %
+            %   Without 'Sessions' the documents are v1, built from the session ids
+            %   alone, as before.
+            %
             %   Args:
             %       obj (ndi.setup.NDIMaker.subjectMaker): The instance of this class.
             %       subjectInfo (struct): The structured data for unique subjects returned from `getSubjectInfoFromTable`.
+            %       options.Sessions (cell): the ndi.session objects the subjects belong to.
             %       options.existingSubjectDocs (cell): An optional cell array of `ndi.document` objects
             %           that are already in the database. Providing this list is an optimization that
             %           prevents the function from creating duplicate documents for subjects that already exist.
@@ -214,7 +232,15 @@ classdef subjectMaker < handle
                 obj (1,1) ndi.setup.NDIMaker.subjectMaker
                 subjectInfo (1,1) struct {ndi.setup.NDIMaker.subjectMaker.mustBeValidSubjectInfoForDocCreation(subjectInfo)}
                 options.existingSubjectDocs (1,:) cell = {}
+                options.Sessions (1,:) cell {ndi.validators.mustBeCellArrayOfNdiSessions(options.Sessions)} = {}
             end
+
+            sessionById = containers.Map('KeyType', 'char', 'ValueType', 'any');
+            for k_sess = 1:numel(options.Sessions)
+                sessionById(options.Sessions{k_sess}.id()) = options.Sessions{k_sess};
+            end
+            % one strain entity per distinct strain in this call (v2)
+            strainsWritten = containers.Map('KeyType', 'char', 'ValueType', 'char');
 
             numSubjects = numel(subjectInfo.subjectName);
 
@@ -241,13 +267,24 @@ classdef subjectMaker < handle
                     continue; % Skip to next subject
                 end
 
+                % the session decides the version written (none given: v1)
+                session_for_doc = [];
+                if ~isempty(options.Sessions)
+                    if ~isKey(sessionById, current_session_id_for_doc)
+                        error('ndi:setup:NDIMaker:subjectMaker:SessionNotGiven', ...
+                            'Subject "%s" belongs to session "%s", which is not among the sessions given.', ...
+                            sName, current_session_id_for_doc);
+                    end
+                    session_for_doc = sessionById(current_session_id_for_doc);
+                end
+                writeV2 = ~isempty(session_for_doc) && session_for_doc.writesV2();
+
                 main_subject_doc = [];
                 is_new_main_doc = true;
                 for k = 1:numel(options.existingSubjectDocs)
                     existing_doc = options.existingSubjectDocs{k};
-                    if isa(existing_doc, 'ndi.document') && isfield(existing_doc.document_properties, 'subject') && ...
-                       isfield(existing_doc.document_properties.subject, 'local_identifier') && ...
-                       strcmp(existing_doc.document_properties.subject.local_identifier, sName)
+                    if isa(existing_doc, 'ndi.document') && ...
+                            strcmp(ndi.setup.NDIMaker.subjectMaker.subjectLocalIdentifier(existing_doc), sName)
                         main_subject_doc = existing_doc;
                         is_new_main_doc = false;
                         break;
@@ -255,23 +292,41 @@ classdef subjectMaker < handle
                 end
                 
                 if is_new_main_doc
-                    main_subject_doc = ndi.document('subject', 'subject.local_identifier', sName, ...
-                        'base.session_id', current_session_id_for_doc);
-                    all_docs_for_this_subject{end+1} = main_subject_doc;
+                    if writeV2
+                        % the v2 subject record, as ndi.subject/newdocument writes it
+                        v2 = ndi.setup.V2.entityDocuments('subject', ...
+                            struct('local_identifier', sName, 'name', sName), struct(), ...
+                            'Type', 'organism', 'SessionId', current_session_id_for_doc);
+                        v2 = cellfun(@(x) ndi.document(x), v2, 'UniformOutput', false);
+                        main_subject_doc = v2{1};
+                        all_docs_for_this_subject = [all_docs_for_this_subject, v2];
+                    else
+                        main_subject_doc = ndi.document('subject', 'subject.local_identifier', sName, ...
+                            'base.session_id', current_session_id_for_doc);
+                        all_docs_for_this_subject{end+1} = main_subject_doc;
+                    end
                 end
                 
                 main_subject_doc_id = main_subject_doc.id();
+                aboutSubject = {};
                 if isfield(subjectInfo, 'species') && numel(subjectInfo.species) >= i && isa(subjectInfo.species{i}, 'openminds.controlledterms.Species')
-                    species_docs = ndi.database.fun.openMINDSobj2ndi_document(subjectInfo.species{i}, current_session_id_for_doc, 'subject', main_subject_doc_id);
-                    all_docs_for_this_subject = cat(1, all_docs_for_this_subject(:), species_docs(:));
+                    aboutSubject{end+1} = subjectInfo.species{i};
                 end
                 if isfield(subjectInfo, 'strain') && numel(subjectInfo.strain) >= i && isa(subjectInfo.strain{i}, 'openminds.core.research.Strain')
-                    strain_docs = ndi.database.fun.openMINDSobj2ndi_document(subjectInfo.strain{i}, current_session_id_for_doc, 'subject', main_subject_doc_id);
-                    all_docs_for_this_subject = cat(1, all_docs_for_this_subject(:), strain_docs(:));
+                    aboutSubject{end+1} = subjectInfo.strain{i};
                 end
                 if isfield(subjectInfo, 'biologicalSex') && numel(subjectInfo.biologicalSex) >= i && isa(subjectInfo.biologicalSex{i}, 'openminds.controlledterms.BiologicalSex')
-                    sex_docs = ndi.database.fun.openMINDSobj2ndi_document(subjectInfo.biologicalSex{i}, current_session_id_for_doc, 'subject', main_subject_doc_id);
-                    all_docs_for_this_subject = cat(1, all_docs_for_this_subject(:), sex_docs(:));
+                    aboutSubject{end+1} = subjectInfo.biologicalSex{i};
+                end
+                for j = 1:numel(aboutSubject)
+                    if writeV2
+                        om_docs = ndi.database.fun.openMINDSobj2V2(aboutSubject{j}, session_for_doc, ...
+                            main_subject_doc_id, 'Strains', strainsWritten);
+                    else
+                        om_docs = ndi.database.fun.openMINDSobj2ndi_document(aboutSubject{j}, ...
+                            current_session_id_for_doc, 'subject', main_subject_doc_id);
+                    end
+                    all_docs_for_this_subject = cat(1, all_docs_for_this_subject(:), om_docs(:));
                 end
 
                 output_documents{i} = all_docs_for_this_subject;
@@ -395,6 +450,26 @@ classdef subjectMaker < handle
             end
         end
     end % methods block
+
+    methods (Static)
+        function lid = subjectLocalIdentifier(doc)
+            %SUBJECTLOCALIDENTIFIER The local identifier of a subject document, v1 or v2.
+            %
+            %   LID = ndi.setup.NDIMaker.subjectMaker.subjectLocalIdentifier(DOC)
+            %
+            %   DOC's `subject.local_identifier` (a v1 `subject`) or its
+            %   `entity.local_identifier` (a v2 subject entity, as
+            %   makeSubjectDocuments writes it into a v2 database); '' when it has
+            %   neither.
+            lid = '';
+            p = doc.document_properties;
+            if isfield(p, 'subject') && isstruct(p.subject) && isfield(p.subject, 'local_identifier')
+                lid = char(p.subject.local_identifier);
+            elseif isfield(p, 'entity') && isstruct(p.entity) && isfield(p.entity, 'local_identifier')
+                lid = char(p.entity.local_identifier);
+            end
+        end
+    end % static methods
 
     methods (Static, Access = private)
         % These are internal helper functions for input validation, ensuring that the public methods
