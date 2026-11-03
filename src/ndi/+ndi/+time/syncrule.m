@@ -201,6 +201,172 @@ classdef syncrule < ndi.ido & ndi.documentservice
                 'syncrule.parameters', ndi_syncrule_obj.parameters);
         end % newdocument()
 
+        function [docs, carriedWhy] = newdocumentV2(ndi_syncrule_obj, ndi_session_obj)
+            % NEWDOCUMENTV2 - the V2 record of this rule, for a V2 database
+            %
+            % [DOCS, CARRIEDWHY] = NEWDOCUMENTV2(NDI_SYNCRULE_OBJ, NDI_SESSION_OBJ)
+            %
+            % Returns the rule as DID-matlab's +migrators_j/syncrule.m (with
+            % its second pass, did2.convert.resolveClockAlignment) writes a
+            % v1 `syncrule`, in the session NDI_SESSION_OBJ (whose database
+            % is V2, ndi.session/writesV2):
+            %
+            %   {clock_alignment_configuration, software entity}, as
+            %   ndi.document objects. The configuration's id is the rule's
+            %   id; `software_id` names a `software` entity whose `name` is
+            %   the rule's class; the rule's settings are its method
+            %   parameters ('minimum matching file paths', 'sync file name',
+            %   'minimum embedded file overlap', 'from trigger channel',
+            %   'to trigger channel', and every other setting under its own
+            %   name); `clock` is its epochclocktype; and a rule that names
+            %   two daq systems (filefind, commonTriggersOverlappingEpochs,
+            %   randomPulses) links them as `from_acquisition_system_id`
+            %   (daqsystem1) and `to_acquisition_system_id` (daqsystem2)
+            %   (Jess Haley 2026-10-27 [sync configuration links its rigs],
+            %   [sync rule direction is recorded]). This is the shape
+            %   ndi.vintage.syncruleParameters reads back.
+            %
+            % Where the migration carries a rule whole as v1, so does this,
+            % and CARRIEDWHY says why ('' when the rule is written as V2);
+            % DOCS is then {NEWDOCUMENT(NDI_SYNCRULE_OBJ)}, the v1 document
+            % unchanged:
+            %   - a rule class NDI cannot rebuild from a configuration
+            %     (ndi.vintage.syncruleParameters knows filematch, filefind,
+            %     commonTriggersOverlappingEpochs and randomPulses);
+            %   - a named daq system that is not exactly one acquisition
+            %     system in the session (resolveClockAlignment refuses
+            %     rather than invents);
+            %   - a setting that cannot be written (a number that is not
+            %     finite: [small unread settings] (3));
+            %   - a term did2.build refuses because the term registry does
+            %     not hold it (Jess Haley 2026-10-26 [early migration pieces
+            %     fixed] (3): an unregistered term becomes a carry until the
+            %     registry holds it).
+            %
+            % See also: ndi.time.syncgraph/newdocument,
+            %   ndi.vintage.syncruleParameters
+            arguments
+                ndi_syncrule_obj (1,1) ndi.time.syncrule
+                ndi_session_obj (1,1) ndi.session
+            end
+            carriedWhy = '';
+            cls = class(ndi_syncrule_obj);
+            p = ndi_syncrule_obj.parameters;
+            if ~isstruct(p) || ~isscalar(p)
+                p = struct();
+            end
+            switch cls
+                case 'ndi.time.syncrule.filefind'
+                    nameKeys = {'daqsystem1', 'daqsystem2'};
+                case {'ndi.time.syncrule.commonTriggersOverlappingEpochs', ...
+                        'ndi.time.syncrule.randomPulses'}
+                    nameKeys = {'daqsystem1_name', 'daqsystem2_name'};
+                case 'ndi.time.syncrule.filematch'
+                    nameKeys = {};
+                otherwise
+                    carriedWhy = sprintf(['%s: no V2 configuration is defined for this ' ...
+                        'rule class (ndi.vintage.syncruleParameters could not rebuild it)'], cls);
+                    docs = {ndi_syncrule_obj.newdocument()};
+                    return;
+            end
+            sid = ndi_session_obj.id();
+
+            % the two daq systems, by name, within the session
+            systemIds = {};
+            for k = 1:numel(nameKeys)
+                [systemIds{k}, why] = systemIdByName(ndi_session_obj, ...
+                    textParameter(p, nameKeys{k})); %#ok<AGROW>
+                if isempty(systemIds{k})
+                    carriedWhy = sprintf('%s.%s: %s', cls, nameKeys{k}, why);
+                    docs = {ndi_syncrule_obj.newdocument()};
+                    return;
+                end
+            end
+
+            % the settings, in the order the migrator writes them
+            entries = {};
+            consumed = reshape(nameKeys, 1, []);
+            if isfield(p, 'number_fullpath_matches') && isnumeric(p.number_fullpath_matches) ...
+                    && isscalar(p.number_fullpath_matches) && isfinite(p.number_fullpath_matches)
+                entries{end+1} = {'minimum matching file paths', 'Count', ...
+                    double(p.number_fullpath_matches)};
+                consumed{end+1} = 'number_fullpath_matches';
+            end
+            if ~isempty(textParameter(p, 'syncfilename'))
+                entries{end+1} = {'sync file name', 'Text', textParameter(p, 'syncfilename')};
+                consumed{end+1} = 'syncfilename';
+            end
+            if isfield(p, 'minEmbeddedFileOverlap') && isnumeric(p.minEmbeddedFileOverlap) ...
+                    && isscalar(p.minEmbeddedFileOverlap) && isfinite(p.minEmbeddedFileOverlap)
+                entries{end+1} = {'minimum embedded file overlap', 'Value', ...
+                    double(p.minEmbeddedFileOverlap)};
+                consumed{end+1} = 'minEmbeddedFileOverlap';
+            end
+            channels = {'daqsystem_ch1', 'from trigger channel'; 'daqsystem_ch2', 'to trigger channel'};
+            for k = 1:size(channels, 1)
+                if ~isempty(textParameter(p, channels{k, 1}))
+                    entries{end+1} = {channels{k, 2}, 'Text', textParameter(p, channels{k, 1})}; %#ok<AGROW>
+                    consumed{end+1} = channels{k, 1}; %#ok<AGROW>
+                end
+            end
+            clockName = textParameter(p, 'epochclocktype');
+            if ~isempty(clockName)
+                consumed{end+1} = 'epochclocktype';
+            end
+            % every other setting under its own name ([small unread settings])
+            rest = setdiff(fieldnames(p), consumed, 'stable');
+            for k = 1:numel(rest)
+                v = p.(rest{k});
+                if isempty(v)
+                    continue;
+                elseif (isnumeric(v) || islogical(v)) && isscalar(v)
+                    if ~isfinite(double(v))
+                        carriedWhy = sprintf('%s.%s: a number that is not finite', cls, rest{k});
+                        docs = {ndi_syncrule_obj.newdocument()};
+                        return;
+                    end
+                    entries{end+1} = {strrep(rest{k}, '_', ' '), 'Value', double(v), ...
+                        'SourceValue', shortestText(double(v))}; %#ok<AGROW>
+                elseif ischar(v) && isrow(v)
+                    entries{end+1} = {strrep(rest{k}, '_', ' '), 'Text', v}; %#ok<AGROW>
+                elseif isstring(v) && isscalar(v)
+                    entries{end+1} = {strrep(rest{k}, '_', ' '), 'Text', char(v)}; %#ok<AGROW>
+                else
+                    entries{end+1} = {strrep(rest{k}, '_', ' '), 'Text', char(jsonencode(v))}; %#ok<AGROW>
+                end
+            end
+
+            try
+                sw = ndi.setup.V2.entityDocuments('software', ...
+                    struct('name', cls, 'local_identifier', cls), struct(), 'SessionId', sid);
+                f = struct();
+                if ~isempty(clockName)
+                    f.clock = ndi.v2.vocabTerm('clock', clockName);
+                end
+                if ~isempty(entries)
+                    built = cellfun(@(e) did2.build.parameter( ...
+                        ndi.setup.V2.registeredTerm('', e{1}), e{2:end}), entries, ...
+                        'UniformOutput', false);
+                    f.method = struct('parameters', did2.build.list(built{:}));
+                end
+                edges = struct('software_id', sw{1}.base.id);
+                if ~isempty(systemIds)
+                    edges.from_acquisition_system_id = systemIds{1};
+                    edges.to_acquisition_system_id = systemIds{2};
+                end
+                cfg = did2.build.document('clock_alignment_configuration', f, ...
+                    'Edges', edges, 'Id', ndi_syncrule_obj.id(), 'SessionId', sid);
+            catch ME
+                if ~strcmp(ME.identifier, 'did2:build:unregisteredTerm')
+                    rethrow(ME);
+                end
+                carriedWhy = sprintf('%s: %s', cls, ME.message);
+                docs = {ndi_syncrule_obj.newdocument()};
+                return;
+            end
+            docs = [{ndi.document(cfg)}, cellfun(@(x) ndi.document(x), sw, 'UniformOutput', false)];
+        end % newdocumentV2()
+
         function sq = searchquery(ndi_syncrule_obj)
             % SEARCHQUERY - create a search for this ndi.time.syncrule object
             %
@@ -213,3 +379,51 @@ classdef syncrule < ndi.ido & ndi.documentservice
 
     end % methods
 end % classdef ndi.time.syncrule
+
+function v = textParameter(p, name)
+% TEXTPARAMETER - P.(NAME) as char when it is non-empty text, else ''
+v = '';
+if isfield(p, name)
+    x = p.(name);
+    if ischar(x) && (isrow(x) || isempty(x))
+        v = x;
+    elseif isstring(x) && isscalar(x)
+        v = char(x);
+    end
+end
+end % textParameter()
+
+function [id, why] = systemIdByName(ndi_session_obj, name)
+% SYSTEMIDBYNAME - the id of the one daq system named NAME in the session
+%
+% ID is '' (and WHY says why) when no system, or more than one, has that
+% name: DID-matlab's did2.convert.resolveClockAlignment refuses a missing or
+% an ambiguous name rather than inventing a system or taking the first.
+id = '';
+why = '';
+if isempty(name)
+    why = 'no daq system is named';
+    return;
+end
+docs = ndi_session_obj.database_search(ndi.vintage.isaQuery('daqsystem') & ...
+    ndi.query('base.session_id', 'exact_string', ndi_session_obj.id(), ''));
+hit = cellfun(@(d) strcmp(ndi.vintage.objectName(d), name), docs);
+switch nnz(hit)
+    case 1
+        id = docs{find(hit, 1)}.id();
+    case 0
+        why = sprintf('no daq system named ''%s'' is in the session', name);
+    otherwise
+        why = sprintf('%d daq systems are named ''%s'' in the session', nnz(hit), name);
+end
+end % systemIdByName()
+
+function t = shortestText(x)
+% SHORTESTTEXT - the shortest decimal text that reads back as X
+for n = 1:17
+    t = sprintf('%.*g', n, x);
+    if str2double(t) == x
+        return;
+    end
+end
+end % shortestText()

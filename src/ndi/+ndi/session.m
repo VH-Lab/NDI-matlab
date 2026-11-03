@@ -1057,20 +1057,59 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
             % rule, each carrying that rule's id. A rule whose document is already stored
             % keeps it; its id is still referenced by the rebuilt syncgraph document.
             docsToAdd = newdocs(1);
-            for i=2:numel(newdocs)
-                if ~any(strcmp(newdocs{i}.id(),storedRuleIds))
-                    docsToAdd{end+1} = newdocs{i}; %#ok<AGROW>
+            if ~ndi_session_obj.writesV2()
+                for i=2:numel(newdocs)
+                    if ~any(strcmp(newdocs{i}.id(),storedRuleIds))
+                        docsToAdd{end+1} = newdocs{i}; %#ok<AGROW>
+                    end
+                end
+            else
+                % The V2 set (ndi.time.syncgraph/newdocumentV2) also holds
+                % the `software` entity each record names by `software_id`.
+                % A rule whose record is already stored keeps it, and the
+                % software entity built with the new copy is not added.
+                skip = storedRuleIds;
+                for i=2:numel(newdocs)
+                    if any(strcmp(newdocs{i}.id(),storedRuleIds))
+                        skip = [skip, softwareIdsOf(newdocs(i))]; %#ok<AGROW>
+                    end
+                end
+                for i=2:numel(newdocs)
+                    if ~any(strcmp(newdocs{i}.id(),skip))
+                        docsToAdd{end+1} = newdocs{i}; %#ok<AGROW>
+                    end
                 end
             end
 
             % Delete before adding: removing a stale syncrule document also removes whatever
             % depends on it, which would include the syncgraph document we are about to add.
 
+            % In a V2 database the records going away name `software`
+            % entities (the policy's and each stale rule's); each goes with
+            % them unless another document still names it.
+            goneSoftware = {};
+            if ndi_session_obj.writesV2()
+                gone = staleRuleDocs;
+                if ~isempty(syncgraph_doc)
+                    gone = [{syncgraph_doc}, gone];
+                end
+                goneSoftware = unique(softwareIdsOf(gone), 'stable');
+            end
+
             if ~isempty(syncgraph_doc)
                 ndi_session_obj.database_rm(syncgraph_doc);
             end
             if ~isempty(staleRuleDocs)
                 ndi_session_obj.database_rm(staleRuleDocs);
+            end
+            for i=1:numel(goneSoftware)
+                q = ndi.query('base.id','exact_string',goneSoftware{i},'');
+                users = ndi_session_obj.database_search( ...
+                    ndi.query('','depends_on','software_id',goneSoftware{i}));
+                swDoc = ndi_session_obj.database_search(q);
+                if isempty(users) && ~isempty(swDoc)
+                    ndi_session_obj.database_rm(swDoc);
+                end
             end
 
             ndi_session_obj.database_add(docsToAdd);
@@ -1204,3 +1243,16 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
     end % methods Static
 
 end % classdef
+
+function ids = softwareIdsOf(docs)
+% SOFTWAREIDSOF - the `software_id` each of DOCS (a cell of ndi.document) names
+%
+% A document that names none (every v1 document) contributes nothing.
+ids = {};
+for i = 1:numel(docs)
+    v = docs{i}.dependency_value('software_id', 'ErrorIfNotFound', 0);
+    if ~isempty(v)
+        ids{end+1} = char(v); %#ok<AGROW>
+    end
+end
+end % softwareIdsOf()
