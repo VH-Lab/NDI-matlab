@@ -422,19 +422,16 @@ classdef dir < ndi.session
 
             % Does this directory actually host a dataset? Datasets store
             % 'session_in_a_dataset' (current) or 'dataset_session_info' (legacy)
-            % bookkeeping documents; standalone sessions never do. An empty dataset
-            % has neither yet, so it will be marked 'session' here and corrected to
-            % 'dataset' by the ndi.dataset.dir constructor.
-            is_dataset = false;
-            try
-                d = ndi_session_dir_obj.database_search(ndi.query('','isa','session_in_a_dataset'));
-                if isempty(d)
-                    d = ndi_session_dir_obj.database_search(ndi.query('','isa','dataset_session_info'));
-                end
-                is_dataset = ~isempty(d);
-            catch
-                is_dataset = false;
-            end
+            % bookkeeping documents, or (V2) a session `included_in` a
+            % `dataset` entity; standalone sessions never do. An empty dataset
+            % has none of these yet, so it will be marked 'session' here and
+            % corrected to 'dataset' by the ndi.dataset.dir constructor.
+            % The database is searched WITHOUT this session's id filter
+            % (database_search_with_dataset, not database_search; #1015,
+            % #974): the bookkeeping documents carry the dataset's session id,
+            % which need not be the session this object opened.
+            is_dataset = ndi.session.dir.holdsDatasetRecords( ...
+                @(q) ndi_session_dir_obj.database_search_with_dataset(q));
 
             if is_dataset
                 ndi_session_dir_obj.setObjectTypeMarker('dataset');
@@ -488,6 +485,70 @@ classdef dir < ndi.session
                 end
             end
         end % exists
+
+        function tf = holdsDatasetRecords(search)
+            % HOLDSDATASETRECORDS - does a database hold a dataset's own records?
+            %
+            % TF = ndi.session.dir.holdsDatasetRecords(SEARCH)
+            %
+            % SEARCH is a function handle taking an ndi.query and returning the
+            % matching documents of a database WITHOUT any session id filter
+            % (e.g. @(q) S.database_search_with_dataset(q), or an
+            % ndi.database's search). TF is true when that database holds the
+            % records only a dataset keeps:
+            %
+            %   v1: a 'session_in_a_dataset' or legacy 'dataset_session_info'
+            %       document. Each carries the DATASET's session id
+            %       (ndi.dataset/addSessionInfoToDataset), so a search scoped to
+            %       a member session's id misses it (#1015, #974).
+            %   V2: a `directed_relation` `included_in` (or `part_of`, the
+            %       name a session migrated before the rename carries) whose
+            %       parent is an entity of type dataset: a session or study
+            %       filed under the dataset (did-schema
+            %       did_v2_go_forward_class_audit.md, Jess Haley 2026-10-25
+            %       [session membership records linked or ingested]).
+            %
+            % A search that errors on this database is read as "not found" for
+            % that kind of record only.
+            %
+            % See also: ndi.session.dir/updateObjectTypeMarker, ndi.v2.datasetSessions
+            tf = false;
+            for c = {'session_in_a_dataset', 'dataset_session_info'}
+                try
+                    if ~isempty(search(ndi.query('', 'isa', c{1})))
+                        tf = true;
+                        return;
+                    end
+                catch
+                end
+            end
+            try
+                datasetDocs = search(ndi.v2.isaQuery('dataset'));
+            catch
+                datasetDocs = {};
+            end
+            for k = 1:numel(datasetDocs)
+                p = datasetDocs{k}.document_properties;
+                if ~strcmp(ndi.v2.kindOf(p), 'dataset')
+                    continue;
+                end
+                try
+                    rels = search(ndi.query('', 'isa', 'directed_relation', '') & ...
+                        ndi.query('', 'depends_on', 'parent_id', p.base.id));
+                catch
+                    rels = {};
+                end
+                for r = 1:numel(rels)
+                    rp = rels{r}.document_properties;
+                    if ndi.v2.vocabIs('relation', ...
+                            ndi.v2.blockOf(rp, 'directed_relation', 'relation', ''), ...
+                            {'included_in', 'part_of'})
+                        tf = true;
+                        return;
+                    end
+                end
+            end
+        end % holdsDatasetRecords()
 
         function fname = objecttypemarkerfilename()
             % OBJECTTYPEMARKERFILENAME - filename of the .ndi object-type marker

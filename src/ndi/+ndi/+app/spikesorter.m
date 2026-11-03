@@ -124,7 +124,9 @@ classdef spikesorter < ndi.app & ndi.app.appdoc
                 sorting_parameters_doc = sorting_parameters_doc{1};
             end
 
-            sorting_parameters_struct = ndi_app_spikesorter_obj.check_sorting_parameters(sorting_parameters_doc.document_properties.sorting_parameters);
+            % the settings, from a v1 document or a migrated `method` (#1053)
+            sorting_parameters_struct = ndi_app_spikesorter_obj.check_sorting_parameters( ...
+                ndi_app_spikesorter_obj.sorting_parameters(sorting_parameters_doc));
 
             % Step 1b: do we already have a cluster document? If so, are we re-doing it or just returning it and being done?
 
@@ -153,7 +155,8 @@ classdef spikesorter < ndi.app & ndi.app.appdoc
             if sorting_parameters_struct.interpolation > 1
                 waveforms = permute(waveforms,[3 1 2]);
                 [waveforms, wavesamples] = vlt.neuro.spikesorting.oversamplespikes(waveforms, sorting_parameters_struct.interpolation,wavesamples);
-                waveform_sign = -1*extract_doc.document_properties.spike_extraction_parameters.threshold_sign;
+                extract_params = ndi.app.spikeextractor(ndi_app_spikesorter_obj.session).extraction_parameters(extract_doc);
+                waveform_sign = -1*extract_params.threshold_sign;
                 waveforms = waveform_sign*centerspikes_neg(waveform_sign*waveforms,10);
                 waveforms = permute(waveforms,[2 3 1]);
             end
@@ -345,7 +348,7 @@ classdef spikesorter < ndi.app & ndi.app.appdoc
             if strcmpi(appdoc_type,'sorting_parameters')
                 sorting_parameters = appdoc_struct;
                 % check parameters here
-                fields_needed = {'graphical_mode', 'num_pca_features', 'interpolation','min_clusters','max_clusters','num_start'};
+                fields_needed = ndi.app.spikesorter.sorting_parameter_fields();
                 sizes_needed = {[1 1],[1 1],[1 1],[1 1],[1 1],[1 1]}; % all single numbers, size should be 1x1
                 [b,errormsg] = vlt.data.hasAllFields(sorting_parameters, fields_needed, sizes_needed);
             elseif strcmpi(appdoc_type,'spike_clusters')
@@ -359,6 +362,40 @@ classdef spikesorter < ndi.app & ndi.app.appdoc
             end
         end % isvalid_appdoc_struct()
 
+        function params = sorting_parameters(ndi_app_spikesorter_obj, sorting_parameters_doc)
+            % SORTING_PARAMETERS - the sorting settings held by a parameters document
+            %
+            % PARAMS = SORTING_PARAMETERS(NDI_APP_SPIKESORTER_OBJ, SORTING_PARAMETERS_DOC)
+            %
+            % Returns the sorting_parameters struct of SORTING_PARAMETERS_DOC: a
+            % v1 sorting_parameters document's block, or, for the `method`
+            % document a migrated database holds instead (#1053), the same
+            % fields rebuilt from its `method.parameters`
+            % (ndi.vintage.appParameters).
+            %
+            params = ndi.vintage.appParameters(sorting_parameters_doc, ...
+                'sorting_parameters', ndi.app.spikesorter.sorting_parameter_fields());
+            if isempty(params)
+                error(['Document ' sorting_parameters_doc.id() ' holds no spike sorting parameters.']);
+            end
+        end % sorting_parameters()
+
+        function appdoc_struct = doc2struct(ndi_app_spikesorter_obj, appdoc_type, doc)
+            % DOC2STRUCT - the data structure an application document holds
+            %
+            % APPDOC_STRUCT = DOC2STRUCT(NDI_APP_SPIKESORTER_OBJ, APPDOC_TYPE, DOC)
+            %
+            % For 'sorting_parameters', the settings of a v1 document or of the
+            % `method` it migrates to (SORTING_PARAMETERS); otherwise as
+            % ndi.app.appdoc/doc2struct.
+            %
+            if strcmpi(appdoc_type,'sorting_parameters')
+                appdoc_struct = ndi_app_spikesorter_obj.sorting_parameters(doc);
+            else
+                appdoc_struct = doc2struct@ndi.app.appdoc(ndi_app_spikesorter_obj, appdoc_type, doc);
+            end
+        end % doc2struct()
+
         function doc = find_appdoc(ndi_app_spikesorter_obj, appdoc_type, varargin)
             % FIND_APPDOC - find an ndi_app_appdoc document in the session database
             %
@@ -370,9 +407,14 @@ classdef spikesorter < ndi.app & ndi.app.appdoc
                 case 'sorting_parameters'
                     sorting_parameters_name = varargin{1};
 
-                    sorting_search = ndi.query('base.name','exact_string',sorting_parameters_name,'') & ...
-                        ndi.query('','isa','sorting_parameters', '');
-                    doc = ndi_app_spikesorter_obj.session.database_search(sorting_search);
+                    % v1: base.name + sorting_parameters; a migrated database:
+                    % a `method` named by method.name whose parameters are a
+                    % valid sorting set (#1053)
+                    doc = ndi.vintage.appParameterDocs( ...
+                        @(q) ndi_app_spikesorter_obj.session.database_search(q), ...
+                        sorting_parameters_name, 'sorting_parameters', ...
+                        @(d) ndi_app_spikesorter_obj.sorting_parameters(d), ...
+                        @(p) ndi_app_spikesorter_obj.isvalid_appdoc_struct('sorting_parameters', p));
 
                 case 'spike_clusters'
                     ndi_timeseries_obj = varargin{1};
@@ -562,5 +604,17 @@ classdef spikesorter < ndi.app & ndi.app.appdoc
         end % appdoc_description()
 
     end % methods
+
+    methods (Static)
+        function f = sorting_parameter_fields()
+            % SORTING_PARAMETER_FIELDS - the fields of a sorting_parameters set
+            %
+            % F = ndi.app.spikesorter.sorting_parameter_fields()
+            %
+            % The fields ISVALID_APPDOC_STRUCT requires of a sorting parameters
+            % struct, as a cellstr.
+            f = {'graphical_mode', 'num_pca_features', 'interpolation','min_clusters','max_clusters','num_start'};
+        end % sorting_parameter_fields()
+    end % methods (Static)
 
 end % ndi.app.spikesorter
