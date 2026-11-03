@@ -57,6 +57,27 @@ classdef TestSyncruleParameters < matlab.unittest.TestCase
             testCase.verifyEqual(params.syncfilename, 'sync.txt');
         end
 
+        function testTheSyncFileNameIsReadByItsNode(testCase)
+            % Jess Haley, 2026-11-03 (did-schema G96 batch 2, "Ok"): the sync
+            % file name is EDAM:data_1050 "File name", read by its node; the
+            % label 'sync file name' of a session migrated before still reads
+            fileName = struct('variable', struct('node', 'EDAM:data_1050', ...
+                'name', 'File name'), 'text', 'sync.txt');
+            entries = {param('minimum matching file paths', 'count', 1), fileName};
+            doc = linkedConfigDoc(entries, 'sys_a', 'sys_b');
+            session = mockSession({systemDoc('sys_a', 'intan1'), systemDoc('sys_b', 'vhvis1')});
+            params = ndi.vintage.syncruleParameters(doc, session, ...
+                'ndi.time.syncrule.filefind');
+            testCase.verifyEqual(params.syncfilename, 'sync.txt');
+            % a "File name" with another node is not the sync file
+            other = struct('variable', struct('node', 'EDAM:data_9999', ...
+                'name', 'File name'), 'text', 'other.txt');
+            doc = linkedConfigDoc({param('minimum matching file paths', 'count', 1), other}, ...
+                'sys_a', 'sys_b');
+            testCase.verifyError(@() ndi.vintage.syncruleParameters(doc, session, ...
+                'ndi.time.syncrule.filefind'), 'NDI:vintage:syncruleMissingField');
+        end
+
         function testFromIsDaqsystem1AndToIsDaqsystem2(testCase)
             % the direction is recorded: swapping the edges swaps the names
             entries = {param('minimum matching file paths', 'count', 1), ...

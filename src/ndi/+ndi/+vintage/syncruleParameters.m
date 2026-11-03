@@ -21,7 +21,8 @@ function params = syncruleParameters(ruleDoc, ndi_session_obj, objClass)
 %     `variable` -- `method.parameters` since #88; all forms are read)
 %         epochclocktype           -> clock (an ontology_term; the name half)
 %         number_fullpath_matches  -> minimum_matching_file_paths
-%         syncfilename             -> sync_file_name
+%         syncfilename             -> sync_file_name (EDAM:data_1050
+%                                     "File name" since 2026-11-03, read by node)
 %         minEmbeddedFileOverlap   -> minimum_embedded_file_overlap
 %
 %     LINKED to the two rigs, in one of two shapes (both are read):
@@ -384,13 +385,32 @@ end
 v1Names = struct('minimum_matching_file_paths', 'number_fullpath_matches', ...
     'sync_file_name', 'syncfilename', ...
     'minimum_embedded_file_overlap', 'minEmbeddedFileOverlap');
+% A knob whose variable is a registered term is matched by its NODE: the sync
+% file name is EDAM:data_1050 "File name" (did-schema
+% did_v2_go_forward_class_audit.md, Jess Haley, 2026-11-03, "Ok" to the G96
+% batch 2 term picks: the method, clock alignment by file match, carries
+% "sync"); DID-matlab's syncrule migrator writes that node. Its label alone
+% ("File name") is too general to match on.
+nodes = struct('sync_file_name', 'EDAM:data_1050');
 wanted = {name};
 if isfield(v1Names, name)
     wanted{end+1} = v1Names.(name);
 end
+wantedNode = '';
+if isfield(nodes, name)
+    wantedNode = nodes.(name);
+end
 for k = 1:numel(mp)
     if iscell(mp), c = mp{k}; else, c = mp(k); end
-    if isfield(c, 'variable') && isstruct(c.variable) && isfield(c.variable, 'name') ...
+    if ~isfield(c, 'variable') || ~isstruct(c.variable)
+        continue;
+    end
+    if ~isempty(wantedNode) && isfield(c.variable, 'node') ...
+            && strcmpi(strtrim(char(c.variable.node)), wantedNode)
+        e = c;
+        return;
+    end
+    if isfield(c.variable, 'name') ...
             && any(strcmp(spellingKey(c.variable.name), cellfun(@spellingKey, wanted, ...
                 'UniformOutput', false)))
         e = c;
