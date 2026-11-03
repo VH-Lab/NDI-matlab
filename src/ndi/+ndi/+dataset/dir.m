@@ -43,6 +43,22 @@ classdef dir < ndi.dataset
                 ndi_dataset_dir_obj.session = ndi.session.dir(path_name);
             elseif nargin==2
                 ndi.dataset.dir.mustNotBeSession(path_name);
+                % Mark the folder a dataset BEFORE the session open below,
+                % so that, when the folder's database is V2 and holds no
+                % record yet, ndi.session.dir writes the dataset's own
+                % record (the `dataset` entity, ndi.session.dir.markedDataset)
+                % rather than a session record. The marker is the one this
+                % constructor writes at its end anyway (setObjectTypeMarker);
+                % a v1 database is written exactly as before. Jess Haley
+                % 2026-11-03 [v2 line reads and writes both].
+                if isfolder(path_name)
+                    ndiPath = fullfile(char(path_name), '.ndi');
+                    if ~isfolder(ndiPath)
+                        mkdir(ndiPath);
+                    end
+                    vlt.file.str2text(fullfile(ndiPath, ...
+                        ndi.session.dir.objecttypemarkerfilename()), 'dataset');
+                end
                 ndi_dataset_dir_obj.session = ndi.session.dir(reference, path_name);
             elseif nargin==3 % hidden third option
                 if iscell(docs) && isempty(docs)

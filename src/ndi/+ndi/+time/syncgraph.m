@@ -844,6 +844,16 @@ classdef syncgraph < ndi.ido
             %
             % Creates an ndi.document object DOC that represents the
             %    ndi.time.syncrule object.
+            %
+            % When the syncgraph's session has a V2 database
+            % (ndi.session/writesV2), the set is the V2 record instead (see
+            % NEWDOCUMENTV2). Jess Haley 2026-11-03 [v2 line reads and writes
+            % both] (did-schema did_v2_go_forward_class_audit.md): a v2
+            % database is written as v2, a v1 database as v1.
+            if ~isempty(ndi_syncgraph_obj.session) && ndi_syncgraph_obj.session.writesV2()
+                ndi_document_obj_set = ndi_syncgraph_obj.newdocumentV2();
+                return;
+            end
             ndi_document_obj_set{1} = ndi.document('syncgraph',...
                 'syncgraph.ndi_syncgraph_class',class(ndi_syncgraph_obj),...
                 'base.id', ndi_syncgraph_obj.id(),...
@@ -853,6 +863,55 @@ classdef syncgraph < ndi.ido
                 ndi_document_obj_set{1} = ndi_document_obj_set{1}.add_dependency_value_n('syncrule_id',ndi_syncgraph_obj.rules{i}.id());
             end
         end % newdocument()
+
+        function [docs, carried] = newdocumentV2(ndi_syncgraph_obj)
+            % NEWDOCUMENTV2 - the V2 record of the syncgraph and its rules
+            %
+            % [DOCS, CARRIED] = NEWDOCUMENTV2(NDI_SYNCGRAPH_OBJ)
+            %
+            % Returns, as ndi.document objects, what DID-matlab's
+            % +migrators_j/syncgraph.m (with did2.convert.resolveClockAlignment)
+            % writes for a v1 `syncgraph`: first the `clock_alignment_policy`
+            % whose id is the syncgraph's id, whose `software_id` names a
+            % `software` entity whose `name` is the syncgraph's class, and
+            % whose `clock_alignment_configuration_id` names its rules, in
+            % order, by their ids (TEAM-SIGN-OFF [sync configuration],
+            % Jess Haley 2026-08-08: "syncgraph -> `clock_alignment_policy`
+            % ... both preserve base.id"); then that software entity; then
+            % each rule's own documents (ndi.time.syncrule/newdocumentV2: a
+            % `clock_alignment_configuration` and its software entity, or
+            % the rule's v1 document where the migration would carry it).
+            % CARRIED lists, one row per rule carried as v1, its id and why.
+            %
+            % ndi.time.syncgraph.load_all_syncgraph_docs and ndi.session.dir
+            % read this back (ndi.vintage.edge_n, ndi.vintage.isaQuery).
+            %
+            % See also: ndi.time.syncgraph/newdocument
+            s = ndi_syncgraph_obj.session;
+            sid = s.id();
+            ruleDocs = {};
+            ruleIds = cell(1, numel(ndi_syncgraph_obj.rules));
+            carried = cell(0, 2);
+            for i = 1:numel(ndi_syncgraph_obj.rules)
+                [d, why] = ndi_syncgraph_obj.rules{i}.newdocumentV2(s);
+                ruleDocs = [ruleDocs, reshape(d, 1, [])]; %#ok<AGROW>
+                ruleIds{i} = ndi_syncgraph_obj.rules{i}.id();
+                if ~isempty(why)
+                    carried(end+1, :) = {ruleIds{i}, why}; %#ok<AGROW>
+                end
+            end
+            cls = class(ndi_syncgraph_obj);
+            sw = ndi.setup.V2.entityDocuments('software', ...
+                struct('name', cls, 'local_identifier', cls), struct(), 'SessionId', sid);
+            edges = struct('software_id', sw{1}.base.id);
+            if ~isempty(ruleIds)
+                edges.clock_alignment_configuration_id = ruleIds;
+            end
+            policy = did2.build.document('clock_alignment_policy', struct(), ...
+                'Edges', edges, 'Id', ndi_syncgraph_obj.id(), 'SessionId', sid);
+            docs = [{ndi.document(policy)}, ...
+                cellfun(@(x) ndi.document(x), sw, 'UniformOutput', false), ruleDocs];
+        end % newdocumentV2()
 
         function sq = searchquery(ndi_syncgraph_obj)
             % SEARCHQUERY - create a search for this ndi.time.syncgraph object

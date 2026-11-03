@@ -204,8 +204,27 @@ classdef dir < ndi.session
                     % state is that every NDI writer writes V2 documents".
                     % A v1 database keeps the v1 document below.
                     sid = ndi_session_dir_obj.id();
-                    g = ndi.setup.V2.entityDocuments('session', ...
-                        struct('local_identifier', ndi_session_dir_obj.reference), ...
+                    if ndi.session.dir.markedDataset(ndi_session_dir_obj.ndipathname())
+                        % A dataset folder (ndi.dataset.dir marks it before
+                        % it opens the folder): its own record is the
+                        % `dataset` entity whose id is the session id, and
+                        % no separate session record is written beside it;
+                        % its reference stays in reference.txt and is not
+                        % written into the entity (TEAM-SIGN-OFF [relation
+                        % inheritance], Jess Haley 2026-10-21, did-schema
+                        % did_v2_relation_inheritance_plan.md: "a dataset
+                        % folder's own record is the dataset entity and its
+                        % reference stays in reference.txt"). It is the bare
+                        % dataset entity DID-matlab's migration writes for a
+                        % dataset with no metadata (+migrators_j/private/
+                        % jBareDataset.m): no name, no local_identifier.
+                        recordKind = 'dataset';
+                        recordFields = struct();
+                    else
+                        recordKind = 'session';
+                        recordFields = struct('local_identifier', ndi_session_dir_obj.reference);
+                    end
+                    g = ndi.setup.V2.entityDocuments(recordKind, recordFields, ...
                         struct(), 'SessionId', sid, 'Id', sid);
                     ndi_session_dir_obj.database_add(cellfun(@(x) ndi.document(x), ...
                         g, 'UniformOutput', false));
@@ -444,6 +463,18 @@ classdef dir < ndi.session
     end % methods
 
     methods (Static)
+        function tf = markedDataset(ndiPath)
+            % MARKEDDATASET - does the .ndi folder NDIPATH carry the 'dataset' marker?
+            %
+            % TF = ndi.session.dir.markedDataset(NDIPATH) reads only the
+            % object-type marker file (see OBJECTTYPEMARKERFILENAME), so it
+            % answers for a folder that has no reference.txt yet, which
+            % ndi.session.dir.directorytype does not.
+            markerfile = fullfile(char(ndiPath), ndi.session.dir.objecttypemarkerfilename());
+            tf = isfile(markerfile) && ...
+                strcmpi(strtrim(vlt.file.textfile2char(markerfile)), 'dataset');
+        end % markedDataset()
+
         function exists = exists(path)
             exists = false;
             files = dir(path);
