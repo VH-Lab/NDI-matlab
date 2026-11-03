@@ -211,6 +211,10 @@ classdef TestReadTimeseriesEquivalence < matlab.unittest.TestCase
             testCase.assertNotEmpty(a.data, sprintf('%s/%s v1 read returned no samples', which, name));
             testCase.assertEmpty(b.err, sprintf('%s/%s read on the MIGRATED session raised: %s', ...
                 which, name, b.err));
+            testCase.verifyEqual(b.subject_id, a.subject_id, ...
+                sprintf('%s/%s: the subject differs after migration', which, name));
+            testCase.verifyEqual(b.underlying_name, a.underlying_name, ...
+                sprintf('%s/%s: the underlying element differs after migration', which, name));
             testCase.verifyEqual(b.epochtable, a.epochtable, ...
                 sprintf('%s/%s: the epoch table differs after migration', which, name));
             testCase.verifyEqual(size(b.data), size(a.data), ...
@@ -390,7 +394,7 @@ classdef TestReadTimeseriesEquivalence < matlab.unittest.TestCase
             P = ndi.unittest.migrate.TestReadTimeseriesEquivalence;
             for k = 1:numel(names)
                 r = struct('data', [], 't', [], 'epochtable', [], 'err', '', 'seconds', NaN, ...
-                    'underlying', '');
+                    'underlying', '', 'subject_id', '', 'underlying_name', '');
                 try
                     hit = {};
                     for j = 1:numel(objs)
@@ -405,6 +409,10 @@ classdef TestReadTimeseriesEquivalence < matlab.unittest.TestCase
                     assert(numel(hit) == 1, 'found %d object(s) named %s;%s', numel(hit), names{k}, lookupErrs);
                     o = hit{1};
                     r.underlying = P.underlyingText(o);
+                    r.subject_id = char(o.subject_id);
+                    if ~isempty(o.underlying_element)
+                        r.underlying_name = char(o.underlying_element.name);
+                    end
                     r.epochtable = P.normalizeEpochTable(o.epochtable());
                     tic;
                     [r.data, r.t] = o.readtimeseries(epochId, -Inf, Inf);
