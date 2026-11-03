@@ -30,13 +30,16 @@ classdef TestReadTimeseriesEquivalence < matlab.unittest.TestCase
 %               channel group in the database's file store), then the .rhd
 %               is DELETED, so every read goes through the ingested path.
 %
-%   WHAT IS NOT EQUIVALENT YET. The INGESTED probe cannot be read after
-%   migration, neither its epoch table nor its samples: migration
-%   turns the ingested channel group into sampled_body documents and NDI's
-%   mfdaq reader does not read those yet ([V2 ingest is one sampled body
-%   per channel group], Build pending in NDI-matlab +ndi/+daq/reader.m).
-%   testIngestedProbeSeriesIsNotReadFromTheMigratedBodiesYet pins that, and
-%   fails the day the read works, so it is turned into an equality check.
+%   THE INGESTED EPOCH AFTER MIGRATION. Migration turns the ingested
+%   channel groups into sampled_body documents, and NDI's mfdaq reader
+%   reads them ([V2 ingest is one sampled body per channel group]): the
+%   channel list, sample rate and samples are the same
+%   (testIngestedChannelsAndSamplesAreTheSame). The epoch's clock and
+%   extent are not: no migrated document states them, so the probe's epoch
+%   table and times cannot be read
+%   (testIngestedEpochClockIsNotInTheMigratedDocuments pins that, and
+%   fails the day migration carries the clock; it is then turned into
+%   the probe's equality check).
 %
 %   Migration runs once per session, in TestClassSetup. Each reading is
 %   taken inside try/catch and kept with its error, so one failing read does
@@ -157,41 +160,74 @@ classdef TestReadTimeseriesEquivalence < matlab.unittest.TestCase
             testCase.verifySameReading('Plain', 'unit_demo');
         end
 
-        function testIngestedProbeSeriesIsNotReadFromTheMigratedBodiesYet(testCase)
-            % A CHARACTERIZATION TEST OF A KNOWN GAP, not of the shape
-            % wanted. Migration turns the v1 ingested channel group into
-            % sampled_body documents (Decided by Jess Haley, 2026-11-01
-            % [ingested archives are sampled bodies]; built in
-            % ndi.migrate.internal.ingestedArchiveBodies), but NDI's reader
-            % still finds an ingested epoch only through the v1
-            % `daqreader_epochdata_ingested` document
-            % (ndi.daq.reader/getingesteddocument). Reading the bodies is
-            % [V2 ingest is one sampled body per channel group] (Jess Haley,
-            % 2026-10-29), "Build pending: NDI-matlab (... `+ndi/+daq/reader.m`
-            % reads them)". So the read on the migrated session raises today,
-            % and so does its epoch table (ndi.daq.reader/t0_t1_ingested asks
-            % the same lookup): run 41618262883 of this test, "Found 0
-            % documents for <epoch>, needed exactly 1" at
-            % reader.getingesteddocument, for both.
-            %
-            % WHEN THIS FAILS because the read succeeds, the reader has
-            % landed: replace the body of this method with
-            %     testCase.verifySameReading('Ingested', 'ctx');
-            % and rename it testIngestedProbeSeriesIsTheSame.
+        function testIngestedChannelsAndSamplesAreTheSame(testCase)
+            % The migrated ingested epoch is read from its v2 data bodies
+            % (Decided by Jess Haley, 2026-10-29 [V2 ingest is one sampled
+            % body per channel group]: "a reader finds an epoch's data
+            % through those bodies, not through the v1
+            % `daqreader_mfdaq_epochdata_ingested` document"; migration
+            % writes them, [ingested archives are sampled bodies]). Read
+            % through the acquisition system, before and after migration:
+            % the channel list, the sample rate, and every sample of the
+            % analog, auxiliary and digital groups, each segment found by
+            % the body's time `chunk` ([segment length is the time chunk]).
             r = testCase.Ingested;
             testCase.assertEmpty(r.setupError, ...
                 ['building the INGESTED session raised: ' r.setupError]);
             testCase.assertTrue(logical(r.isIngested), ...
                 'the INGESTED session''s epoch is not on the ingested path');
+            P = ndi.unittest.migrate.TestReadTimeseriesEquivalence;
+            for f = {'channels', 'samplerate', 'ai', 'ax', 'di'}
+                a = r.v1dev.(f{1});
+                b = r.v2dev.(f{1});
+                fprintf('  Ingested / intan1 %s\n    v1: %s\n    v2: %s\n', f{1}, ...
+                    P.describeValue(a), P.describeValue(b));
+                testCase.assertEmpty(a.err, sprintf('v1 ingested %s raised: %s', f{1}, a.err));
+                testCase.assertNotEmpty(a.value, sprintf('v1 ingested %s is empty', f{1}));
+                testCase.verifyEmpty(b.err, sprintf( ...
+                    'the MIGRATED ingested %s raised: %s', f{1}, b.err));
+                testCase.verifyEqual(b.value, a.value, sprintf( ...
+                    'the ingested %s differs after migration', f{1}));
+            end
+        end
+
+        function testIngestedEpochClockIsNotInTheMigratedDocuments(testCase)
+            % A CHARACTERIZATION TEST OF A KNOWN LOSS, not of the shape
+            % wanted. The v1 ingested document holds the epoch's clock and
+            % extent (`daqreader_epochdata_ingested.epochtable`: epochclock
+            % {'dev_local_time'}, t0_t1 [0 2.99995] here). Migration retires
+            % that document (DID-matlab did2.convert.resolveEpochProbemap,
+            % once every file it holds has a new owner) and nothing it
+            % writes states a clock: the recording observation's time
+            % reference is `intervalDuring` the epoch with no clock and no
+            % start, and the epoch entity has neither. Decided by Jess
+            % Haley, 2026-11-01 [clock only on the time reference]: "the
+            % recording observation's time references say when the epoch
+            % starts on each clock" -- which the migrated time reference
+            % does not yet say. So the reader refuses
+            % (NDI:daq:reader:ingestedEpochNoClock) rather than assume a
+            % clock: the probe's epoch table, its times and the time
+            % channel cannot be read on the migrated session, while its
+            % samples can (testIngestedChannelsAndSamplesAreTheSame).
+            %
+            % WHEN THIS FAILS because the read succeeds, migration carries
+            % the clock: replace the body of this method with
+            %     testCase.verifySameReading('Ingested', 'ctx');
+            % and rename it testIngestedProbeSeriesIsTheSame.
+            r = testCase.Ingested;
+            testCase.assertEmpty(r.setupError, ...
+                ['building the INGESTED session raised: ' r.setupError]);
             testCase.assertEmpty(r.v1.ctx.err, ['v1 ingested read: ' r.v1.ctx.err]);
             testCase.assertNotEmpty(r.v1.ctx.data, 'the v1 ingested read returned no samples');
             fprintf('\n  Ingested / ctx, epoch %s\n    v1: %s\n    v2: %s\n', r.epoch_id, ...
                 ndi.unittest.migrate.TestReadTimeseriesEquivalence.describe(r.v1.ctx), ...
                 ndi.unittest.migrate.TestReadTimeseriesEquivalence.describe(r.v2.ctx));
-            testCase.verifySubstring(r.v2.ctx.err, 'Found 0 documents', ...
-                ['the migrated ingested read no longer fails the way it did when ' ...
-                 'this test was written; if it now succeeds, the body reader has ' ...
-                 'landed -- make this test compare the samples (see its comment)']);
+            testCase.verifySubstring(r.v2.ctx.err, 'ingestedEpochNoClock', ...
+                ['the migrated ingested probe read no longer fails for want of the epoch''s ' ...
+                 'clock; if it now succeeds, make this test compare it (see its comment)']);
+            testCase.verifySubstring(r.v2dev.time.err, 'ingestedEpochNoClock', ...
+                ['the migrated ingested time channel read no longer fails for want of the ' ...
+                 'epoch''s clock; compare it with the v1 read (see this test''s comment)']);
         end
 
     end
@@ -306,9 +342,59 @@ classdef TestReadTimeseriesEquivalence < matlab.unittest.TestCase
                 'isIngested', ndi.file.navigator.isingested( ...
                     getepochfiles(dev.filenavigator, et(1).epoch_id)));
             ingested.v1 = P.readAll(S, et(1).epoch_id, {'ctx'});
+            ingested.v1dev = P.readDevice(S, et(1).epoch_id);
             clear S probe dev
             [ingested.result, ingested.migrateError] = P.migrate(root);
-            ingested.v2 = P.readAll(P.reopen(root), ingested.epoch_id, {'ctx'});
+            S2 = P.reopen(root);
+            ingested.v2 = P.readAll(S2, ingested.epoch_id, {'ctx'});
+            ingested.v2dev = P.readDevice(S2, ingested.epoch_id);
+        end
+
+        function R = readDevice(S, epochId)
+            % What the intan1 acquisition system reads for one ingested
+            % epoch: its channel list, the sample rate of ai1, every sample
+            % of the ai, ax and di groups, and the time channel. Each is
+            % kept with its error, if any.
+            P = ndi.unittest.migrate.TestReadTimeseriesEquivalence;
+            dev = {};
+            devErr = 'daqsystem_load found none';
+            try
+                dev = S.daqsystem_load('name', 'intan1');
+                if iscell(dev); dev = dev{1}; end
+            catch ME
+                devErr = P.errorText(ME);
+            end
+            reads = { ...
+                'channels',   @() dev.getchannelsepoch(epochId); ...
+                'samplerate', @() dev.samplerate(epochId, 'ai', 1); ...
+                'ai',         @() dev.readchannels_epochsamples('ai', 1:32, epochId, 1, Inf); ...
+                'ax',         @() dev.readchannels_epochsamples('ax', 1:3, epochId, 1, Inf); ...
+                'di',         @() dev.readchannels_epochsamples('di', 1, epochId, 1, Inf); ...
+                'time',       @() dev.readchannels_epochsamples('time', 1, epochId, 1, Inf)};
+            R = struct();
+            for k = 1:size(reads, 1)
+                r = struct('value', [], 'err', '');
+                if isempty(dev)
+                    r.err = ['no intan1 system: ' devErr];
+                else
+                    try
+                        r.value = reads{k, 2}();
+                    catch ME
+                        r.err = P.errorText(ME);
+                    end
+                end
+                R.(reads{k, 1}) = r;
+            end
+        end
+
+        function s = describeValue(r)
+            if ~isempty(r.err)
+                s = ['ERROR ' r.err];
+            elseif isstruct(r.value)
+                s = sprintf('%d channel(s)', numel(r.value));
+            else
+                s = sprintf('%s %s', class(r.value), mat2str(size(r.value)));
+            end
         end
 
         function s = errorText(ME)
