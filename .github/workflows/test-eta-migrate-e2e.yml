@@ -323,6 +323,9 @@ jobs:
                 ... % where DID-matlab #304 drops the "element type" assertion
                 'ndi.unittest.vintage.TestElementTypeFromKind', ...
                 'ndi.unittest.vintage.TestLightsheetKeys', ...   % axes by node first
+                ... % [V2 ingest is one sampled body per channel group]: which
+                ... % v1 segment file a sample of a v2 body is in
+                'ndi.unittest.vintage.TestIngestedArchive', ...
                 ... % [compression block and empty levels] (Jess Haley,
                 ... % 2026-10-26): `compression` read as the char or the block
                 'ndi.unittest.vintage.TestCompressionOf', ...
