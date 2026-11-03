@@ -54,6 +54,12 @@ on:
       # they changed.
       - 'src/ndi/*ndi/element.m'
       - 'src/ndi/*ndi/*element/timeseries.m'
+      # THE INGESTED READ PATH. ndi.daq.reader and ndi.daq.reader.mfdaq read
+      # a migrated ingested epoch from its v2 data bodies ([V2 ingest is one
+      # sampled body per channel group]); TestReadTimeseriesEquivalence below
+      # is the test that reads them.
+      - 'src/ndi/*ndi/*daq/reader.m'
+      - 'src/ndi/*ndi/*daq/*reader/mfdaq.m'
       # THE SECOND-PASS ASSEMBLERS AND THEIR OWN UNIT TESTS. `+migrate/**`
       # above already covers the sources; this adds the tests, which lived
       # in a directory no workflow on this branch swept -- see the note by
@@ -317,6 +323,9 @@ jobs:
                 ... % where DID-matlab #304 drops the "element type" assertion
                 'ndi.unittest.vintage.TestElementTypeFromKind', ...
                 'ndi.unittest.vintage.TestLightsheetKeys', ...   % axes by node first
+                ... % [V2 ingest is one sampled body per channel group]: which
+                ... % v1 segment file a sample of a v2 body is in
+                'ndi.unittest.vintage.TestIngestedArchive', ...
                 ... % [compression block and empty levels] (Jess Haley,
                 ... % 2026-10-26): `compression` read as the char or the block
                 'ndi.unittest.vintage.TestCompressionOf', ...

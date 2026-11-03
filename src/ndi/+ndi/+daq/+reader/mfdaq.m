@@ -127,14 +127,75 @@ classdef mfdaq < ndi.daq.reader
             % 'time_channel'     | The number of the time channel that contains the time information
             %                    |    for the channel. Can be NaN when not applicable.
             %
-            d = ndi_daqreader_mfdaq_obj.getingesteddocument(epochfiles,S);
-            tname = ndi.database.fun.copydocfile2temp(d,S,'channel_list.bin','');
-            mfdaq_epoch_channel_obj = ndi.file.type.mfdaq_epoch_channel(tname);
-            delete(tname);
-            fullchannelinfo = mfdaq_epoch_channel_obj.channel_information;
+            % The channel list is the v1 document's channel_list.bin or, in a
+            % v2 database, the epoch's v2 data bodies (INGESTEDCHANNELINFORMATION).
+            %
+            fullchannelinfo = ndi_daqreader_mfdaq_obj.ingestedchannelinformation(epochfiles,S);
             to_remove = setdiff(fieldnames(fullchannelinfo),{'name','type','time_channel'});
             channels = rmfield(fullchannelinfo,to_remove);
         end % getchannelsepoch_ingested
+
+        function fullchannelinfo = ingestedchannelinformation(ndi_daqreader_mfdaq_obj, epochfiles, S)
+            % INGESTEDCHANNELINFORMATION - the full channel list of an ingested epoch
+            %
+            % FULLCHANNELINFO = INGESTEDCHANNELINFORMATION(NDI_DAQREADER_MFDAQ_OBJ, EPOCHFILES, S)
+            %
+            % Returns the channel_information of the ndi.file.type.mfdaq_epoch_channel
+            % the ingest wrote for the ingested epoch EPOCHFILES (name, type,
+            % time_channel, sample_rate, offset, scale, number, group, dataclass).
+            %
+            % It is read from the `channel_list.bin` file of the epoch's v1
+            % `daqreader_mfdaq_epochdata_ingested` document or, in a v2 database,
+            % from its v2 data bodies: the `channel_list.bin` body when migration
+            % kept it, otherwise the channel groups' covariates
+            % (ndi.vintage.ingestedArchive; Decided by Jess Haley, 2026-11-01
+            % [ingested archives are sampled bodies]).
+            %
+            A = ndi_daqreader_mfdaq_obj.getingestedarchive(epochfiles,S);
+            if strcmp(A.vintage,'v2')
+                fullchannelinfo = A.channels;
+                return;
+            end
+            tname = ndi.database.fun.copydocfile2temp(A.doc,S,'channel_list.bin','');
+            mfdaq_epoch_channel_obj = ndi.file.type.mfdaq_epoch_channel(tname);
+            delete(tname);
+            fullchannelinfo = mfdaq_epoch_channel_obj.channel_information;
+        end % ingestedchannelinformation
+
+        function t = evenlyspacedtime_ingested(ndi_daqreader_mfdaq_obj, epochfiles, S, fullchannelinfo, group, seg, samples_segment, nsamples)
+            % EVENLYSPACEDTIME_INGESTED - one segment of an evenly spaced ingested time group
+            %
+            % T = EVENLYSPACEDTIME_INGESTED(NDI_DAQREADER_MFDAQ_OBJ, EPOCHFILES, S, ...
+            %    FULLCHANNELINFO, GROUP, SEG, SAMPLES_SEGMENT, NSAMPLES)
+            %
+            % Returns segment SEG (of SAMPLES_SEGMENT samples each, NSAMPLES in
+            % the epoch) of the time channels of group GROUP, one column per
+            % time channel of that group in FULLCHANNELINFO, as the v1 ingest
+            % stored it in `ti_group<GROUP>_seg.nbf_<SEG>`: sample s is
+            % t0 + (s-1)/rate, t0 the epoch's start (T0_T1_INGESTED) and rate
+            % the channel's sample rate.
+            %
+            % Decided by Jess Haley, 2026-11-01 [evenly spaced time is a
+            % covariate]: "when an epoch's time channel is evenly spaced, NDI
+            % V2's ingest stores no body for it"; migration removes such a body
+            % only when every sample is t0 + (k-1)/rate to a millionth of a
+            % sample (ndi.migrate.internal.ingestedArchiveBodies), so this is
+            % the series it removed, to that tolerance.
+            %
+            rows = find(strcmp({fullchannelinfo.type},'time') & [fullchannelinfo.group]==group);
+            if isempty(rows)
+                error(['No time channel in group ' int2str(group) '.']);
+            end
+            t0t1 = ndi_daqreader_mfdaq_obj.t0_t1_ingested(epochfiles, S);
+            t0 = t0t1{1}(1);
+            first = (seg-1)*samples_segment + 1;
+            last = min(seg*samples_segment, nsamples);
+            s = (first:last)';
+            t = zeros(numel(s), numel(rows));
+            for r = 1:numel(rows)
+                t(:,r) = t0 + (s-1)/double(fullchannelinfo(rows(r)).sample_rate);
+            end
+        end % evenlyspacedtime_ingested
 
         function data = readchannels_epochsamples(ndi_daqreader_mfdaq_obj, channeltype, channel, epochfiles, s0, s1)
             %  READCHANNELS_EPOCHSAMPLES - read the data based on specified channels
@@ -173,8 +234,25 @@ classdef mfdaq < ndi.daq.reader
             %  DATA will have one column per channel.
             %
 
+            %  The ingested data are read from the epoch's v1
+            %  `daqreader_mfdaq_epochdata_ingested` document or, in a v2
+            %  database, from its v2 data bodies (GETINGESTEDARCHIVE; Decided
+            %  by Jess Haley, 2026-10-29 [V2 ingest is one sampled body per
+            %  channel group]). A v2 channel group's segment length is its
+            %  body's time `chunk` ([segment length is the time chunk]) and
+            %  its sample count the body's time `n`. An evenly spaced time
+            %  channel has no body of its own ([evenly spaced time is a
+            %  covariate]): its samples are t0 + (s-1)/rate, t0 the epoch's
+            %  start on its clock (T0_T1_INGESTED; [clock only on the time
+            %  reference]).
+            %
+
             mylog = ndi.common.getLogger();
-            d = ndi_daqreader_mfdaq_obj.getingesteddocument(epochfiles,S);
+            A = ndi_daqreader_mfdaq_obj.getingestedarchive(epochfiles,S);
+            isV2 = strcmp(A.vintage,'v2');
+            if ~isV2
+                d = A.doc;
+            end
 
             if ~iscell(channeltype)
                 channeltype = repmat({channeltype},numel(channel),1);
@@ -196,10 +274,53 @@ classdef mfdaq < ndi.daq.reader
 
             sr = sr_unique;
 
-            t0_t1 = ndi_daqreader_mfdaq_obj.t0_t1_ingested(epochfiles,S);
-            abs_s = ndi_daqreader_mfdaq_obj.epochtimes2samples_ingested(channeltype, channel, epochfiles, t0_t1{1}(:), S);
-            absolute_beginning = abs_s(1);
-            absolute_end = abs_s(2);
+            switch(ch_unique{1})
+                case {'analog_in','analog_out','auxiliary_in','auxiliary_out'}
+                    use_ephys = 1;
+                    use_time = 0;
+                case {'digital_in','digital_out'}
+                    use_ephys = 0;
+                    use_time = 0;
+                case {'time'}
+                    use_time = 1;
+                    use_ephys = 0;
+                otherwise
+                    error(['Unknown channel type ' ch_unique{1} '. Use readevents for events, markers, text markers, etc.']);
+            end
+            [mytypes,myabbrev] = ndi.daq.reader.mfdaq.channel_types();
+            ind = find(strcmp(ch_unique{1},mytypes));
+            prefix = myabbrev{ind};
+            if strcmp(ch_unique{1},'time')
+                prefix = 'ti';
+            end
+
+            % identify the groups to which the requested channels belong
+            [dummy,fullchannelinfo] = ndi_daqreader_mfdaq_obj.getchannelsepoch_ingested(epochfiles,S);
+
+            [groups,channel_indexes_in_groups,channel_indexes_in_output] = ...
+                ndi.file.type.mfdaq_epoch_channel.channelgroupdecoding(fullchannelinfo,ch_unique{1},channel);
+
+            % the epoch's extent in samples, and the segment length
+            series1 = [prefix '_group' int2str(groups(1)) '_seg.nbf_#'];
+            if isV2 && isKey(A.bodies, series1) && ~isempty(A.bodies(series1).n)
+                absolute_beginning = 1;
+                absolute_end = A.bodies(series1).n;
+            else
+                t0_t1 = ndi_daqreader_mfdaq_obj.t0_t1_ingested(epochfiles,S);
+                abs_s = ndi_daqreader_mfdaq_obj.epochtimes2samples_ingested(channeltype, channel, epochfiles, t0_t1{1}(:), S);
+                absolute_beginning = abs_s(1);
+                absolute_end = abs_s(2);
+            end
+            if ~isV2
+                switch(ch_unique{1})
+                    case {'digital_in','digital_out'}
+                        samples_segment = d.document_properties.daqreader_mfdaq_epochdata_ingested.parameters.sample_digital_segment;
+                    otherwise
+                        samples_segment = d.document_properties.daqreader_mfdaq_epochdata_ingested.parameters.sample_analog_segment;
+                end
+            else
+                samples_segment = ndi.vintage.ingestedSegmentLength(S, A, series1, absolute_end);
+            end
 
             % A caller who passes s0 > s1 has inverted the endpoints;
             % that is a coding error, not a request. Check before the
@@ -230,38 +351,8 @@ classdef mfdaq < ndi.daq.reader
 
             using_absolute_end = (s1 == absolute_end);
 
-            % we have two issues here:
-            %   1) identify the groups to which the requested channels belong
-            [dummy,fullchannelinfo] = ndi_daqreader_mfdaq_obj.getchannelsepoch_ingested(epochfiles,S);
-
-            [groups,channel_indexes_in_groups,channel_indexes_in_output] = ...
-                ndi.file.type.mfdaq_epoch_channel.channelgroupdecoding(fullchannelinfo,ch_unique{1},channel);
-
-            %   2) identify the segments in which the requested samples belong
+            % identify the segments in which the requested samples belong
             data = NaN(s1-s0+1,numel(channel));
-
-            switch(ch_unique{1})
-                case {'analog_in','analog_out','auxiliary_in','auxiliary_out'}
-                    samples_segment = d.document_properties.daqreader_mfdaq_epochdata_ingested.parameters.sample_analog_segment;
-                    use_ephys = 1;
-                    use_time = 0;
-                case {'digital_in','digital_out'}
-                    samples_segment = d.document_properties.daqreader_mfdaq_epochdata_ingested.parameters.sample_digital_segment;
-                    use_ephys = 0;
-                    use_time = 0;
-                case {'time'}
-                    samples_segment = d.document_properties.daqreader_mfdaq_epochdata_ingested.parameters.sample_analog_segment;
-                    use_time = 1;
-                    use_ephys = 0;
-                otherwise
-                    error(['Unknown channel type ' ch_unique{1} '. Use readevents for events, markers, text markers, etc.']);
-            end
-            [mytypes,myabbrev] = ndi.daq.reader.mfdaq.channel_types();
-            ind = find(strcmp(ch_unique{1},mytypes));
-            prefix = myabbrev{ind};
-            if strcmp(ch_unique{1},'time')
-                prefix = 'ti';
-            end
 
             SEG_start = ceil(s0/samples_segment);
             SEG_stop = ceil(s1/samples_segment);
@@ -287,15 +378,26 @@ classdef mfdaq < ndi.daq.reader
 
                 for g = 1:numel(groups)
                     fname = [prefix '_group' int2str(groups(g)) '_seg.nbf_' int2str(seg)];
-                    [tname,tname_without_extension] = ndi.database.fun.copydocfile2temp(d,S,fname,'.nbf.tgz');
-                    if use_ephys
-                        data_here = ndi.compress.expand_ephys(tname_without_extension);
-                    elseif ~use_time
-                        data_here = ndi.compress.expand_digital(tname_without_extension);
+                    series = [prefix '_group' int2str(groups(g)) '_seg.nbf_#'];
+                    if isV2 && use_time && ~isKey(A.bodies, series)
+                        % an evenly spaced time channel: no body of its own
+                        data_here = ndi_daqreader_mfdaq_obj.evenlyspacedtime_ingested(...
+                            epochfiles, S, fullchannelinfo, groups(g), seg, samples_segment, absolute_end);
                     else
-                        data_here = ndi.compress.expand_time(tname_without_extension);
+                        if isV2
+                            [tname,tname_without_extension] = ndi.vintage.ingestedArchiveFile(S,A,fname,'.nbf.tgz');
+                        else
+                            [tname,tname_without_extension] = ndi.database.fun.copydocfile2temp(d,S,fname,'.nbf.tgz');
+                        end
+                        if use_ephys
+                            data_here = ndi.compress.expand_ephys(tname_without_extension);
+                        elseif ~use_time
+                            data_here = ndi.compress.expand_digital(tname_without_extension);
+                        else
+                            data_here = ndi.compress.expand_time(tname_without_extension);
+                        end
+                        delete(tname);
                     end
-                    delete(tname);
 
                     if using_absolute_end&seg==SEG_stop
                         % we should read from 1 ... s1_ and get at least s1_ samples.
@@ -588,7 +690,7 @@ classdef mfdaq < ndi.daq.reader
             else
                 % if the user doesn't want a derived channel, we need to read it from the file from ingested epochfiles
 
-                d = ndi_daqreader_mfdaq_obj.getingesteddocument(epochfiles,S);
+                A = ndi_daqreader_mfdaq_obj.getingestedarchive(epochfiles,S);
                 % need to fix this so it works with mixed channeltypes
                 % [groups,channel_indexes_in_groups,channel_indexes_in_output] = ...
                 %    ndi.file.type.mfdaq_epoch_channel.channelgroupdecoding(fullchannelinfo,ch_unique{1},channel);
@@ -602,7 +704,11 @@ classdef mfdaq < ndi.daq.reader
                 prefix = 'evmktx';
                 fname = [prefix '_group' int2str(groups(g)) '_seg.nbf_1'];
                 try
-                    [tname,tname_without_extension] = ndi.database.fun.copydocfile2temp(d,S,fname,'.nbf.tgz');
+                    if strcmp(A.vintage,'v2')
+                        [tname,tname_without_extension] = ndi.vintage.ingestedArchiveFile(S,A,fname,'.nbf.tgz');
+                    else
+                        [tname,tname_without_extension] = ndi.database.fun.copydocfile2temp(A.doc,S,fname,'.nbf.tgz');
+                    end
                 catch
                     error(['No event data found for this epoch.']);
                 end
@@ -693,11 +799,7 @@ classdef mfdaq < ndi.daq.reader
             % If CHANNELTYPE is a single string, then it is assumed that
             % that CHANNELTYPE applies to every entry of CHANNEL.
 
-            d = ndi_daqreader_mfdaq_obj.getingesteddocument(epochfiles,S);
-            tname = ndi.database.fun.copydocfile2temp(d,S,'channel_list.bin','');
-            mfdaq_epoch_channel_obj = ndi.file.type.mfdaq_epoch_channel(tname);
-            delete(tname);
-            fullchannelinfo = mfdaq_epoch_channel_obj.channel_information;
+            fullchannelinfo = ndi_daqreader_mfdaq_obj.ingestedchannelinformation(epochfiles,S);
 
             if ~iscell(channeltype)
                 channeltype = repmat({channeltype},numel(channel),1);
