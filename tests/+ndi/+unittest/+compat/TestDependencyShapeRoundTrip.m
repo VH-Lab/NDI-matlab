@@ -88,10 +88,15 @@ classdef TestDependencyShapeRoundTrip < matlab.unittest.TestCase
             changed = got{1}.set_dependency_value('protocol_id', protocolId);
             testCase.verifyEqual(entryKeys(changed), {'name', 'value'}, ...
                 'the setter writes the v1 key into a v1 document');
-            S2.database_rm(changed.id());
+            % DID never re-uses a removed id, so the changed document is
+            % written back as a new document (a new base.id), as NDI's
+            % writers replace a document
+            newId = ndi.ido().id();
+            changed = changed.setproperties('base.id', newId);
+            S2.database_rm(doc.id());
             S2.database_add(changed);
             S3 = ndi.session.dir('ref_v1', testCase.Root);
-            back = S3.database_search(ndi.query('base.id', 'exact_string', doc.id(), ''));
+            back = S3.database_search(ndi.query('base.id', 'exact_string', newId, ''));
             testCase.assertNumElements(back, 1);
             testCase.verifyEqual(entryKeys(back{1}), {'name', 'value'}, ...
                 'write v1: no document_id key reaches the v1 database');
