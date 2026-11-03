@@ -52,59 +52,25 @@ classdef TestReadTimeseriesEquivalence < matlab.unittest.TestCase
 
             P = ndi.unittest.migrate.TestReadTimeseriesEquivalence;
 
-            % ---- PLAIN: probe from the .rhd, a .vhsb element, a neuron -----
-            root = P.buildIntanSession();
+            % Each session is built, read, migrated and read again on its
+            % own; an error in one is kept (setupError) and reported by the
+            % test methods that need it, and does not stop the other.
+            root = tempname;
+            mkdir(root);
             testCase.addTeardown(@() P.removeDir(root));
-            S = ndi.session.dir(root);
-            probe = P.theProbe(S);
-            et = probe.epochtable();
-            assert(~isempty(et), 'the PLAIN probe has no epochs');
-            eid = et(1).epoch_id;
-            ec = et(1).epoch_clock{1};
-            t0t1 = et(1).t0_t1{1};
-            [pd, pt] = probe.readtimeseries(eid, -Inf, Inf);
-
-            % the element's series: channel 1, every 20th sample
-            keep = 1:20:numel(pt);
-            elT = pt(keep); elT = elT(:);
-            elD = double(pd(keep, 1));
-            el = ndi.element.timeseries(S, 'lfp_demo', 1, 'lfp', probe, 0);
-            el.addepoch(eid, ec, t0t1, elT, elD);
-            % the neuron's spike times: 37 fixed times inside the epoch
-            spikes = linspace(t0t1(1) + 0.01, t0t1(2) - 0.01, 37)';
-            nr = ndi.neuron(S, 'unit_demo', 1, 'spikes', probe, 0);
-            nr.addepoch(eid, ec, t0t1, spikes, ones(size(spikes)));
-            S.cache.clear();
-
-            plain = struct('root', root, 'epoch_id', eid, ...
-                'written', struct('element_t', elT, 'element_d', elD, 'spikes', spikes));
-            plain.v1 = P.readAll(S, eid, {'ctx', 'lfp_demo', 'unit_demo'});
-            clear S probe el nr
-            [plain.result, plain.migrateError] = P.migrate(root);
-            plain.v2 = P.readAll(P.reopen(root), eid, {'ctx', 'lfp_demo', 'unit_demo'});
-            testCase.Plain = plain;
-
-            % ---- INGESTED: the probe read only through the ingested path ----
-            root2 = P.buildIntanSession();
+            try
+                testCase.Plain = P.plainSession(root);
+            catch ME
+                testCase.Plain = struct('setupError', P.errorText(ME));
+            end
+            root2 = tempname;
+            mkdir(root2);
             testCase.addTeardown(@() P.removeDir(root2));
-            S2 = ndi.session.dir(root2);
-            [b, msg] = S2.ingest();
-            assert(logical(b), 'ingest failed: %s', msg);
-            delete(fullfile(root2, P.IntanFile));
-            S2.cache.clear();
-            probe2 = P.theProbe(S2);
-            et2 = probe2.epochtable();
-            assert(~isempty(et2), 'the INGESTED probe has no epochs after the .rhd was removed');
-            dev = S2.daqsystem_load('name', 'intan1');
-            if iscell(dev); dev = dev{1}; end
-            ingested = struct('root', root2, 'epoch_id', et2(1).epoch_id, ...
-                'isIngested', ndi.file.navigator.isingested( ...
-                    getepochfiles(dev.filenavigator, et2(1).epoch_id)));
-            ingested.v1 = P.readAll(S2, et2(1).epoch_id, {'ctx'});
-            clear S2 probe2 dev
-            [ingested.result, ingested.migrateError] = P.migrate(root2);
-            ingested.v2 = P.readAll(P.reopen(root2), ingested.epoch_id, {'ctx'});
-            testCase.Ingested = ingested;
+            try
+                testCase.Ingested = P.ingestedSession(root2);
+            catch ME
+                testCase.Ingested = struct('setupError', P.errorText(ME));
+            end
         end
 
     end
@@ -114,6 +80,9 @@ classdef TestReadTimeseriesEquivalence < matlab.unittest.TestCase
         function testBothSessionsMigrateWithNothingQuarantined(testCase)
             for c = {'Plain', 'Ingested'}
                 r = testCase.(c{1});
+                testCase.verifyEmpty(r.setupError, ...
+                    sprintf('%s: building the session raised: %s', c{1}, r.setupError));
+                if ~isempty(r.setupError); continue; end
                 testCase.verifyEmpty(r.migrateError, ...
                     sprintf('%s: ndi.migrate.local raised: %s', c{1}, r.migrateError));
                 if ~isempty(r.result)
@@ -130,6 +99,7 @@ classdef TestReadTimeseriesEquivalence < matlab.unittest.TestCase
             % values addepoch wrote. This read goes through
             % database_openbinarydoc and vhsb_read, the call that raised
             % "Read-only file must be opened with 'rb' permission" in #1018.
+            testCase.assertEmpty(testCase.Plain.setupError, testCase.Plain.setupError);
             v1 = testCase.Plain.v1;
             w = testCase.Plain.written;
             testCase.assertEmpty(v1.lfp_demo.err, ['v1 element read: ' v1.lfp_demo.err]);
@@ -153,6 +123,8 @@ classdef TestReadTimeseriesEquivalence < matlab.unittest.TestCase
         end
 
         function testIngestedProbeSeriesIsTheSame(testCase)
+            testCase.assertEmpty(testCase.Ingested.setupError, ...
+                ['building the INGESTED session raised: ' testCase.Ingested.setupError]);
             testCase.assertTrue(logical(testCase.Ingested.isIngested), ...
                 'the INGESTED session''s epoch is not on the ingested path');
             testCase.verifySameReading('Ingested', 'ctx');
@@ -164,6 +136,8 @@ classdef TestReadTimeseriesEquivalence < matlab.unittest.TestCase
 
         function verifySameReading(testCase, which, name)
             r = testCase.(which);
+            testCase.assertEmpty(r.setupError, ...
+                sprintf('building the %s session raised: %s', which, r.setupError));
             a = r.v1.(name);
             b = r.v2.(name);
             fprintf('\n  %s / %s, epoch %s\n    v1: %s\n    v2: %s\n', which, name, ...
@@ -191,13 +165,76 @@ classdef TestReadTimeseriesEquivalence < matlab.unittest.TestCase
 
     methods (Static)
 
-        function root = buildIntanSession()
-            % The session of ndi.unittest.session.buildSession: the Intan
-            % file, its probe map (n-trode `ctx`), the intan1 daq system and
-            % the subject, written by NDI as a v1 session.
+        function plain = plainSession(root)
+            % PLAIN: the probe read from the .rhd, a .vhsb element and a
+            % neuron; read, migrated in place, reopened and read again.
             P = ndi.unittest.migrate.TestReadTimeseriesEquivalence;
-            root = tempname;
-            mkdir(root);
+            P.buildIntanSession(root);
+            S = ndi.session.dir(root);
+            probe = P.theProbe(S);
+            et = probe.epochtable();
+            assert(~isempty(et), 'the PLAIN probe has no epochs');
+            eid = et(1).epoch_id;
+            ec = et(1).epoch_clock{1};
+            t0t1 = et(1).t0_t1{1};
+            [pd, pt] = probe.readtimeseries(eid, -Inf, Inf);
+
+            % the element's series: channel 1, every 20th sample
+            keep = 1:20:numel(pt);
+            elT = pt(keep); elT = elT(:);
+            elD = double(pd(keep, 1));
+            el = ndi.element.timeseries(S, 'lfp_demo', 1, 'lfp', probe, 0);
+            el.addepoch(eid, ec, t0t1, elT, elD);
+            % the neuron's spike times: 37 fixed times inside the epoch
+            spikes = linspace(t0t1(1) + 0.01, t0t1(2) - 0.01, 37)';
+            nr = ndi.neuron(S, 'unit_demo', 1, 'spikes', probe, 0);
+            nr.addepoch(eid, ec, t0t1, spikes, ones(size(spikes)));
+            S.cache.clear();
+
+            plain = struct('setupError', '', 'root', root, 'epoch_id', eid, ...
+                'written', struct('element_t', elT, 'element_d', elD, 'spikes', spikes));
+            plain.v1 = P.readAll(S, eid, {'ctx', 'lfp_demo', 'unit_demo'});
+            clear S probe el nr
+            [plain.result, plain.migrateError] = P.migrate(root);
+            plain.v2 = P.readAll(P.reopen(root), eid, {'ctx', 'lfp_demo', 'unit_demo'});
+        end
+
+        function ingested = ingestedSession(root)
+            % INGESTED: the probe ingested, the .rhd deleted, so every read
+            % goes through the ingested path; read, migrated, read again.
+            P = ndi.unittest.migrate.TestReadTimeseriesEquivalence;
+            P.buildIntanSession(root);
+            S = ndi.session.dir(root);
+            [b, msg] = S.ingest();
+            assert(logical(b), 'ingest failed: %s', msg);
+            delete(fullfile(root, P.IntanFile));
+            S.cache.clear();
+            probe = P.theProbe(S);
+            et = probe.epochtable();
+            assert(~isempty(et), 'the INGESTED probe has no epochs after the .rhd was removed');
+            dev = S.daqsystem_load('name', 'intan1');
+            if iscell(dev); dev = dev{1}; end
+            ingested = struct('setupError', '', 'root', root, 'epoch_id', et(1).epoch_id, ...
+                'isIngested', ndi.file.navigator.isingested( ...
+                    getepochfiles(dev.filenavigator, et(1).epoch_id)));
+            ingested.v1 = P.readAll(S, et(1).epoch_id, {'ctx'});
+            clear S probe dev
+            [ingested.result, ingested.migrateError] = P.migrate(root);
+            ingested.v2 = P.readAll(P.reopen(root), ingested.epoch_id, {'ctx'});
+        end
+
+        function s = errorText(ME)
+            s = sprintf('%s (%s)', ME.message, ME.identifier);
+            if ~isempty(ME.stack)
+                s = sprintf('%s at %s line %d', s, ME.stack(1).name, ME.stack(1).line);
+            end
+        end
+
+        function buildIntanSession(root)
+            % The session of ndi.unittest.session.buildSession, in ROOT: the
+            % Intan file, its probe map (n-trode `ctx`), the intan1 daq
+            % system and the subject, written by NDI as a v1 session.
+            P = ndi.unittest.migrate.TestReadTimeseriesEquivalence;
             copyfile(fullfile(ndi.common.PathConstants.ExampleDataFolder, ...
                 'exp1_eg_saved', P.IntanFile), root);
             fid = fopen(fullfile(root, 'Intan_160317_125049_short.epochprobemap.ndi'), 'wt');

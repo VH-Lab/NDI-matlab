@@ -190,9 +190,13 @@ jobs:
           # Signal Processing: NDI-compress's ephys compressor (lpc), which
           # TestIngestedArchiveBodies uses to write ingested segments as
           # ndi.daq.reader.mfdaq/ingest_epochfiles does (run-tests.yml has it too)
+          # Communications: int2bit, which the Intan reader calls on digital
+          # channels when TestReadTimeseriesEquivalence ingests the example
+          # .rhd (ndi.daq.reader.mfdaq.intan; run-tests.yml has it too)
           products: |
             Statistics_and_Machine_Learning_Toolbox
             Signal_Processing_Toolbox
+            Communications_Toolbox
 
       - name: Install MatBox
         env:
