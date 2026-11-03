@@ -9,7 +9,7 @@ classdef TestLightsheetMigrated < matlab.unittest.TestCase
 %   level 0 with two materialized chunks (chunk.bin_1, chunk.bin_2, recorded
 %   by location), a reduced max level with one chunk, and a level that held
 %   no bytes (kept as a file-less sampled_body, [compression block and
-%   empty levels], Jess Haley 2026-10-26) -- writes what comes out into a V2 session, reopens it with
+%   empty levels], Jess Haley 2026-10-26) -- writes what comes out into a v2 session, reopens it with
 %   ndi.session.dir, and asks the same readers.
 %
 %   NEEDS DID-matlab's lightsheet migrators (DID-matlab #218, f363d98 and
@@ -32,7 +32,7 @@ classdef TestLightsheetMigrated < matlab.unittest.TestCase
             schemaPath = getenv('DID_SCHEMA_PATH');
             testCase.assumeTrue(~isempty(schemaPath) && ...
                 isfile(ndi.v2.schemaFile(schemaPath, 'entity.json')), ...
-                'DID_SCHEMA_PATH does not hold a V2 schema with `entity` (did-schema #88)');
+                'DID_SCHEMA_PATH does not hold a v2 schema with `entity` (did-schema #88)');
             testCase.assertTrue(~isempty(which('did2.convert.migrators_j.lightsheet_zarr_level')), ...
                 'DID-matlab''s lightsheet migrators are not on the path');
             F = ndi.unittest.vintage.LightsheetFixtures;

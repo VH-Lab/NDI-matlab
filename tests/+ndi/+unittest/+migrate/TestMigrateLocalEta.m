@@ -836,7 +836,7 @@ classdef TestMigrateLocalEta < matlab.unittest.TestCase
             % file] (did-schema V_eta_stimulus_response_model_plan.md): the
             % second pass reads each presentation's onsets and offsets from
             % the v1 presentation_time.bin, and the file stays attached to
-            % the presentation's V2 document as its raw source.
+            % the presentation's v2 document as its raw source.
             %
             % THIS FIXTURE is the current writer's shape: no inline
             % `presentation_time`, a `files` block naming the file, and the

@@ -1,8 +1,8 @@
 function T = termInventory(path, options)
-%TERMINVENTORY Every term a written V2 dataset uses, plain text or ontology.
+%TERMINVENTORY Every term a written v2 dataset uses, plain text or ontology.
 %
 %   T = ndi.setup.conv.haley.termInventory(PATH) reads every document in the
-%   V2 dataset at PATH (the folder holding .ndi; its own database and each
+%   v2 dataset at PATH (the folder holding .ndi; its own database and each
 %   linked session's, ndi.setup.V2.datasetDatabaseFiles) and lists each term it
 %   carries: every {node, name} pair (or {name} alone: did2.build stores a
 %   term with no node without one), wherever it sits (a statement's

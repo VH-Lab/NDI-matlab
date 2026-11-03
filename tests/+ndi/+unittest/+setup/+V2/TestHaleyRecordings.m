@@ -1,5 +1,5 @@
 classdef TestHaleyRecordings < matlab.unittest.TestCase
-%TESTHALEYRECORDINGS Stage 5 of the Haley V2 import (acquisition listing), over a synthetic fixture.
+%TESTHALEYRECORDINGS Stage 5 of the Haley v2 import (acquisition listing), over a synthetic fixture.
 %
 %   Writes a stand-in for the raw data: a tableOfContents.xlsx and
 %   experimentInfo.mat per C. elegans folder, placeholder .mp4 files in one

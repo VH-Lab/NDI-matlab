@@ -7,7 +7,7 @@ function [anchors, report] = presentationEpochAnchors(manipulations, epochInfo)
 %
 %   Decided by Jess Haley, 2026-10-27 [presentation anchored to its epoch]
 %   (did-schema V_eta_go_forward_class_audit.md, option a, no new field): a
-%   v1 `stimulus_presentation`'s V2 `manipulation` anchors its time reference
+%   v1 `stimulus_presentation`'s v2 `manipulation` anchors its time reference
 %   to the entity of the epoch the presentation was in.
 %
 %   The stimulus pass (ndi.migrate.local, resolveStimulusPresentations) runs

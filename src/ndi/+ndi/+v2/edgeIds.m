@@ -2,8 +2,8 @@ function ids = edgeIds(p, name)
 %EDGEIDS The document ids a document's NAME edge points at.
 %
 %   IDS = ndi.v2.edgeIds(P, NAME) returns a cellstr (row), in order: every
-%   depends_on entry called NAME (a V2 edge may repeat its name) or NAME_<n>
-%   (the v1 numbered form). Empty values are left out. A V2 edge holds the
+%   depends_on entry called NAME (a v2 edge may repeat its name) or NAME_<n>
+%   (the v1 numbered form). Empty values are left out. A v2 edge holds the
 %   id in `document_id`, a v1 edge in `value`.
 
 arguments

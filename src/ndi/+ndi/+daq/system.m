@@ -511,12 +511,12 @@ classdef system < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice
                 ndi_document_obj_set{3} = ndi_document_obj_set{3}.add_dependency_value_n('daqmetadatareader_id',...
                     ndi_daqsystem_obj.daqmetadatareader{i}.id());
             end
-            % a component writing into a V2 database returns its V2 record as
+            % a component writing into a v2 database returns its v2 record as
             % a cell array of documents (ndi.file.navigator/newdocument,
             % ndi.daq.reader/newdocument, ndi.daq.metadatareader/newdocument);
             % the set is flat
             if ~isempty(ndi_daqsystem_obj.session) && ndi_daqsystem_obj.session.writesV2()
-                % A V2 database gets the V2 record of the system itself: an
+                % A v2 database gets the v2 record of the system itself: an
                 % `acquisition_system` whose id is the system's id and whose
                 % `name` is its name, with `software_id` naming a `software`
                 % entity whose `name` is the system's class, and `reader_id`,
@@ -542,7 +542,7 @@ classdef system < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice
         end  % newdocument()
 
         function docs = newdocumentV2(ndi_daqsystem_obj)
-            % NEWDOCUMENTV2 - the V2 record of the system itself (see NEWDOCUMENT)
+            % NEWDOCUMENTV2 - the v2 record of the system itself (see NEWDOCUMENT)
             %
             % DOCS = NEWDOCUMENTV2(NDI_DAQSYSTEM_OBJ)
             %
@@ -582,7 +582,7 @@ classdef system < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice
                 'base.session_id', ndi_daqsystem_obj.session.id()});
             % The name in either home: the class's own `acquisition_system.name`
             % (did-schema #73 item 54; [carried v1 validates against NDI
-            % templates], Jess Haley, 2026-10-27) or base.name (v1, and V2
+            % templates], Jess Haley, 2026-10-27) or base.name (v1, and v2
             % documents migrated before).
             sq = sq & ( ndi.query('acquisition_system.name','exact_string',ndi_daqsystem_obj.name,'') | ...
                 ndi.query('base.name','exact_string',ndi_daqsystem_obj.name,'') );

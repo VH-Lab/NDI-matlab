@@ -1,7 +1,7 @@
 function T = v2_object_layer_tryout(datasetPath, options)
-%V2_OBJECT_LAYER_TRYOUT Try the V2 object layer on a real dataset, timing each step.
+%V2_OBJECT_LAYER_TRYOUT Try the v2 object layer on a real dataset, timing each step.
 %
-%   T = v2_object_layer_tryout(DATASETPATH) opens the V2 dataset at
+%   T = v2_object_layer_tryout(DATASETPATH) opens the v2 dataset at
 %   DATASETPATH (the folder holding .ndi, e.g. <data>/haley_V2/dataset) and
 %   asks it the questions the object layer exists for, through ndi.entity,
 %   ndi.statement, ndi.entity and ndi.value, READ THROUGH THE DATASET:

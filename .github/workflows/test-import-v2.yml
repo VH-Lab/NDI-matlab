@@ -2,12 +2,12 @@ name: V2 import (Haley) -- fast
 
 # Stage-by-stage tests of ndi.setup.conv.haley.import_V2 and the generic
 # ndi.setup.V2 makers it uses, and TestGenericDatasetEndToEnd: a small
-# made-up dataset built with the public V2 API only and read back through
-# the object layer (it is in ndi.unittest.setup.V2, so the suite below runs it). They build V2 (V_eta) documents through
+# made-up dataset built with the public v2 API only and read back through
+# the object layer (it is in ndi.unittest.setup.V2, so the suite below runs it). They build v2 (V_eta) documents through
 # DID-matlab's did2.build, so this job needs DID-matlab V2 and a did-schema
 # that carries the classes the import uses.
 #
-# The import and the V2 readers support ONE schema shape: did-schema PR #88
+# The import and the v2 readers support ONE schema shape: did-schema PR #88
 # (one `entity` class, statements by composition, `included_in`, a
 # `session_id` edge, the term registry) built with DID-matlab PR #218's
 # did2.build. Until both merge, this job checks out their review branches;

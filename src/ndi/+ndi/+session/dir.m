@@ -118,7 +118,7 @@ classdef dir < ndi.session
                 % the session's own record: the session (or dataset) entity
                 % whose base.id IS the session id, where session_id is an edge
                 % (did-schema V_eta_relation_inheritance_plan.md, 2026-10-20);
-                % otherwise its `session` documents (v1, and V2 on did-schema
+                % otherwise its `session` documents (v1, and v2 on did-schema
                 % main), scoped to the session id like every search here
                 session_doc = ndi.v2.sessionRecord(ndi_session_dir_obj, ...
                     ndi_session_dir_obj.id());
@@ -195,7 +195,7 @@ classdef dir < ndi.session
                 end
                 % now we have both reference and id from either the files or the database, add it to db
                 if isa(db, 'ndi.database.implementations.database.did2sqlite')
-                    % A V2 (did2) database gets the V2 session record: an
+                    % A v2 (did2) database gets the v2 session record: an
                     % `entity` of type session whose id IS the session id,
                     % as ndi.setup.V2.createSession writes it, not a v1
                     % `session` document stamped did_v1. Decided by Jess
@@ -422,7 +422,7 @@ classdef dir < ndi.session
 
             % Does this directory actually host a dataset? Datasets store
             % 'session_in_a_dataset' (current) or 'dataset_session_info' (legacy)
-            % bookkeeping documents, or (V2) a session `included_in` a
+            % bookkeeping documents, or (v2) a session `included_in` a
             % `dataset` entity; standalone sessions never do. An empty dataset
             % has none of these yet, so it will be marked 'session' here and
             % corrected to 'dataset' by the ndi.dataset.dir constructor.
@@ -501,7 +501,7 @@ classdef dir < ndi.session
             %       document. Each carries the DATASET's session id
             %       (ndi.dataset/addSessionInfoToDataset), so a search scoped to
             %       a member session's id misses it (#1015, #974).
-            %   V2: a `directed_relation` `included_in` (or `part_of`, the
+            %   v2: a `directed_relation` `included_in` (or `part_of`, the
             %       name a session migrated before the rename carries) whose
             %       parent is an entity of type dataset: a session or study
             %       filed under the dataset (did-schema

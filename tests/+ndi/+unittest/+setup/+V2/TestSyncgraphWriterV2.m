@@ -1,9 +1,9 @@
 classdef TestSyncgraphWriterV2 < matlab.unittest.TestCase
-%TESTSYNCGRAPHWRITERV2 the syncgraph writes the V2 clock alignment records into a V2 database.
+%TESTSYNCGRAPHWRITERV2 the syncgraph writes the v2 clock alignment records into a v2 database.
 %
 %   Jess Haley 2026-11-03 [v2 line reads and writes both] (did-schema
 %   did_v2_go_forward_class_audit.md): a v1 database is written as v1, a v2
-%   database as v2. When a rule is added to a session whose database is V2
+%   database as v2. When a rule is added to a session whose database is v2
 %   (did2), the syncgraph's record is a `clock_alignment_policy` whose id is
 %   the syncgraph's id, with `software_id` naming a `software` entity of its
 %   class and `clock_alignment_configuration_id` naming its rules; each rule
@@ -16,7 +16,7 @@ classdef TestSyncgraphWriterV2 < matlab.unittest.TestCase
 %   v1, the rule's v1 document. Each reads back through ndi.session.dir. A v1
 %   database keeps the v1 documents.
 %
-%   Filtered (never passed) when did2.build or a V2 schema with `entity` is
+%   Filtered (never passed) when did2.build or a v2 schema with `entity` is
 %   missing.
 
     properties
@@ -31,7 +31,7 @@ classdef TestSyncgraphWriterV2 < matlab.unittest.TestCase
             testCase.assumeTrue(~isempty(schemaPath) && ...
                 isfile(ndi.v2.schemaFile(schemaPath, 'entity.json')) && ...
                 isfile(ndi.v2.schemaFile(schemaPath, 'clock_alignment_policy.json')), ...
-                ['DID_SCHEMA_PATH does not hold a V2 schema with `entity` and ' ...
+                ['DID_SCHEMA_PATH does not hold a v2 schema with `entity` and ' ...
                  '`clock_alignment_policy`']);
         end
     end
@@ -47,7 +47,7 @@ classdef TestSyncgraphWriterV2 < matlab.unittest.TestCase
     methods (Test)
         function testAV1DatabaseKeepsTheV1Syncgraph(testCase)
             S = ndi.session.dir('ref1', testCase.Dir);
-            testCase.assertFalse(S.writesV2(), 'a new folder was given a V2 database');
+            testCase.assertFalse(S.writesV2(), 'a new folder was given a v2 database');
             r = ndi.time.syncrule.filematch(struct('number_fullpath_matches', 2));
             S = S.syncgraph_addrule(r);
 
@@ -60,7 +60,7 @@ classdef TestSyncgraphWriterV2 < matlab.unittest.TestCase
             testCase.assertNumElements(d, 1);
             testCase.verifyEqual(d{1}.document_properties.document_class.class_name, 'syncrule');
             testCase.verifyEmpty(S.database_search(ndi.query('', 'isa', 'entity', '')), ...
-                'a v1 database got V2 entities');
+                'a v1 database got v2 entities');
 
             S2 = ndi.session.dir(S.getpath());
             testCase.verifyEqual(S2.syncgraph.id(), S.syncgraph.id());
@@ -71,7 +71,7 @@ classdef TestSyncgraphWriterV2 < matlab.unittest.TestCase
         function testAV2DatabaseGetsTheV2Policy(testCase)
             % the term registry armed, as every writer runs it
             S = ndi.setup.V2.createSession(testCase.Dir, 'd1');
-            testCase.assertTrue(S.writesV2(), 'createSession did not make a V2 session');
+            testCase.assertTrue(S.writesV2(), 'createSession did not make a v2 session');
             nStart = numel(testCase.storedBodies(S.getpath()));
             r = ndi.time.syncrule.filematch(struct('number_fullpath_matches', 2));
             S = S.syncgraph_addrule(r);
@@ -81,15 +81,15 @@ classdef TestSyncgraphWriterV2 < matlab.unittest.TestCase
             testCase.assertGreaterThan(numel(stored), nStart, 'syncgraph_addrule stored nothing');
             classes = cellfun(@(s) s.document_class.class_name, stored, 'UniformOutput', false);
             testCase.verifyFalse(any(strcmp(classes, 'syncgraph')), sprintf( ...
-                'a v1 syncgraph document was written into a V2 database (classes: %s)', ...
+                'a v1 syncgraph document was written into a v2 database (classes: %s)', ...
                 strjoin(classes, ', ')));
 
             p = testCase.onlyDoc(stored, S.syncgraph.id(), 'clock_alignment_policy');
-            testCase.verifyTrue(did2.schema.isV2Stamp(p), 'the policy is stamped V2');
+            testCase.verifyTrue(did2.schema.isV2Stamp(p), 'the policy is stamped v2');
             testCase.verifyEqual(testCase.softwareName(stored, p), 'ndi.time.syncgraph');
             testCase.verifyEqual(ndi.v2.edgeIds(p, 'clock_alignment_configuration_id'), {r.id()});
 
-            % The rule: a V2 configuration when the term registry holds the
+            % The rule: a v2 configuration when the term registry holds the
             % term of its setting, otherwise carried as its v1 document
             % ([early migration pieces fixed] (3)).
             label = ndi.setup.V2.registeredTerm('', 'minimum matching file paths');
@@ -116,7 +116,7 @@ classdef TestSyncgraphWriterV2 < matlab.unittest.TestCase
         end
 
         function testV2ConfigurationsReadBack(testCase)
-            % The V2 configuration branch, with the term registry disarmed
+            % The v2 configuration branch, with the term registry disarmed
             % (as the migration runs today) so that it is reached whatever
             % the registry holds.
             prev = did2.schema.cache.strictMode('TermRegistry', false);
@@ -142,7 +142,7 @@ classdef TestSyncgraphWriterV2 < matlab.unittest.TestCase
             stored = testCase.storedBodies(S.getpath());
             classes = cellfun(@(s) s.document_class.class_name, stored, 'UniformOutput', false);
             testCase.verifyFalse(any(ismember(classes, {'syncgraph', 'syncrule'})), sprintf( ...
-                'a v1 sync document was written into a V2 database (classes: %s)', ...
+                'a v1 sync document was written into a v2 database (classes: %s)', ...
                 strjoin(classes, ', ')));
             p = testCase.onlyDoc(stored, S.syncgraph.id(), 'clock_alignment_policy');
             testCase.verifyEqual(ndi.v2.edgeIds(p, 'clock_alignment_configuration_id'), ...

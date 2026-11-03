@@ -6,7 +6,7 @@ function docs = appParameterDocs(search, name, v1Class, readParams, isValid)
 %   either shape (issue #1053):
 %
 %     v1   a V1CLASS document whose `base.name` is NAME (what the app writes);
-%     V2   a `method` document whose `method.name` is NAME: DID-matlab's
+%     v2   a `method` document whose `method.name` is NAME: DID-matlab's
 %          migration folds the v1 settings document into a `method`, keeping
 %          its id and putting the preset name in `method.name` (Jess Haley
 %          2026-10-30 [preset name stays on method], did-schema

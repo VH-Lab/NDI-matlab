@@ -13,7 +13,7 @@ function docs = sessionRecord(database, sessionId)
 %        of signature: session_id is an edge, and the session or dataset entity
 %        it points at has the session id as its own id; a dataset's documents
 %        point at the dataset entity);
-%     2. when there is none, every `session` document (v1, or a V2 `session`
+%     2. when there is none, every `session` document (v1, or a v2 `session`
 %        entity) whose session id is SESSIONID: the only way to find it in a
 %        v1 or migrated database, where the session document has an id of its
 %        own.

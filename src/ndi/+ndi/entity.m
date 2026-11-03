@@ -1,7 +1,7 @@
 classdef entity
-    % ndi.entity - something a V2 dataset names: a subject, a person, an organization, ...
+    % ndi.entity - something a v2 dataset names: a subject, a person, an organization, ...
     %
-    % An ndi.entity is a read-only view of one V2 `entity` document (a subject,
+    % An ndi.entity is a read-only view of one v2 `entity` document (a subject,
     % strain, study, person, organization, product, software, funding,
     % publication, ...), with the session or dataset it was read from. Nothing
     % about it changes after it is made: its statements and relations are
@@ -1887,7 +1887,7 @@ classdef entity
             % LINEAGERELATIONS - (internal) the relations down which an
             % assertion about the parent holds of the child, instance_of
             % aside (a type is walked on its own path): those whose `passes`
-            % is `assertions` in the V2 schema's registry (V_eta tenet T17,
+            % is `assertions` in the v2 schema's registry (V_eta tenet T17,
             % did-schema V_eta_relation_inheritance_plan.md;
             % ndi.v2.relationPasses, read once per schema file). So a
             % relation the registry adds with `passes: assertions` works
@@ -1902,7 +1902,7 @@ classdef entity
         function names = distributiveRelations()
             % DISTRIBUTIVERELATIONS - (internal) the relations down which a
             % statement or relation marked distributive on a group holds of
-            % each member: those whose `passes` is `distributive` in the V2
+            % each member: those whose `passes` is `distributive` in the v2
             % schema's registry (ndi.v2.relationPasses, as lineageRelations).
 
             P = ndi.v2.relationPasses();
@@ -1912,7 +1912,7 @@ classdef entity
         function names = contextRelations()
             % CONTEXTRELATIONS - (internal) the relations along which a
             % container's interactions reach what it held, as context: those
-            % whose `passes` is `context` in the V2 schema's registry
+            % whose `passes` is `context` in the v2 schema's registry
             % (ndi.v2.relationPasses, as lineageRelations; ndi.v2.stays reads
             % the same list).
 

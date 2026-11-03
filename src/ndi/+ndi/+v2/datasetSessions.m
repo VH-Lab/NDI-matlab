@@ -1,8 +1,8 @@
 function [sessions, notes] = datasetSessions(database, datasetSessionId, datasetPath, options)
-%DATASETSESSIONS The sessions of a V2 dataset: ingested and linked.
+%DATASETSESSIONS The sessions of a v2 dataset: ingested and linked.
 %
 %   [SESSIONS, NOTES] = ndi.v2.datasetSessions(DATABASE, DATASETSESSIONID,
-%   DATASETPATH) reads a V2 dataset's own database (DATABASE, an ndi.database
+%   DATASETPATH) reads a v2 dataset's own database (DATABASE, an ndi.database
 %   searched without a session scope) and returns its sessions, one row of a
 %   struct array each:
 %

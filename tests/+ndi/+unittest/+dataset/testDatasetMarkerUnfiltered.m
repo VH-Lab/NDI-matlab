@@ -12,7 +12,7 @@ classdef testDatasetMarkerUnfiltered < matlab.unittest.TestCase
     %
     % Each test puts a dataset folder in that state: no marker (or the wrong
     % 'session' marker the old code wrote), and unique_reference.txt naming a
-    % member session. v1 datasets keep `session_in_a_dataset` documents; V2
+    % member session. v1 datasets keep `session_in_a_dataset` documents; v2
     % datasets file each session under the `dataset` entity with an
     % `included_in` relation (Jess Haley 2026-10-25 [session membership
     % records linked or ingested], did-schema did_v2_go_forward_class_audit.md).
@@ -137,7 +137,7 @@ testCase.assumeTrue(~isempty(which('did2.build.document')), ...
 schemaPath = getenv('DID_SCHEMA_PATH');
 testCase.assumeTrue(~isempty(schemaPath) && ...
     isfile(ndi.v2.schemaFile(schemaPath, 'entity.json')), ...
-    'DID_SCHEMA_PATH does not hold a V2 schema with `entity`');
+    'DID_SCHEMA_PATH does not hold a v2 schema with `entity`');
 end
 
 function f = markerFile(p)

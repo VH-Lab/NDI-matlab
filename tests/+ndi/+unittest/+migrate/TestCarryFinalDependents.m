@@ -42,7 +42,7 @@ classdef TestCarryFinalDependents < matlab.unittest.TestCase
 
         function testConvertedHandedOnDocumentCarriesNothing(testCase)
             % [handed-on documents do not carry dependents]: a presentation
-            % the second pass converted (same id, now V2) is not a final
+            % the second pass converted (same id, now v2) is not a final
             % carry, so the response that names it stays converted.
             pres = v1Body('pres', {});
             resp = v1Body('resp', {'stimulus_presentation_id', idOf('pres')});
@@ -162,7 +162,7 @@ d = did2.document(b);
 end
 
 function d = v2Of(b)
-% the document a source became, same id, V2 stamp, edges as document_id
+% the document a source became, same id, v2 stamp, edges as document_id
 s = b;
 s.document_class.schema_version = did2.schema.v2Stamp();
 if isempty(b.depends_on)

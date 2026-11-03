@@ -26,7 +26,7 @@ function out = sessionDocuments(dataFolder, cfg, outputRoot, throwErrors)
 %   OUT fields: datasetSessionId, documents (the dataset-level documents),
 %   ids (containers.Map, spec key -> id), sessions (table: local_identifier,
 %   name, folder, path, session_id, session_doc_id, study_ids),
-%   unrepresented (spec content V2 has no place for, from datasetMetadata),
+%   unrepresented (spec content v2 has no place for, from datasetMetadata),
 %   report.
 
 arguments
@@ -47,7 +47,7 @@ for k = {'organizations', 'people', 'funding', 'publications', 'web_resources', 
     end
 end
 m = ndi.setup.V2.datasetMetadata(meta, dsid, 'Studies', "include");
-% spec content with no place in V2 is reported, never silently dropped
+% spec content with no place in v2 is reported, never silently dropped
 for k = 1:numel(m.unrepresented)
     u = m.unrepresented(k);
     fprintf('  spec %s %s: `%s` not recorded: %s\n', u.kind, u.key, u.field, u.why);

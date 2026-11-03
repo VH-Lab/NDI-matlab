@@ -81,7 +81,7 @@ classdef document < did.document
 
             % Canonicalize depends_on entry keys to `document_id`. The
             % parent constructor's own i_normalizeDependsOn already does
-            % this on V2 DID, but this call keeps the invariant explicit
+            % this on v2 DID, but this call keeps the invariant explicit
             % at the NDI layer (belt-and-suspenders, idempotent). See #801.
             document_properties = ndi.compat.normalizeDependsOn(document_properties);
 
@@ -119,7 +119,7 @@ classdef document < did.document
             % Sets the document's session id to the value indicated: its
             % document_properties.base.session_id field when it has one (a v1
             % document, and a migrated V_eta document), and otherwise its
-            % `session_id` edge (a V2 document on the shape of did-schema
+            % `session_id` edge (a v2 document on the shape of did-schema
             % V_eta_relation_inheritance_plan.md, where `base` has no
             % session_id field and the edge points at the session or dataset
             % entity, whose base.id is the session id). A V_eta document with
@@ -309,7 +309,7 @@ classdef document < did.document
             sc = cell(1, numel(supers));
             for i=1:numel(supers)
                 if isfield(supers(i), 'class_name') && ~isempty(supers(i).class_name)
-                    % did2-form documents (V2) carry the bare
+                    % did2-form documents (v2) carry the bare
                     % superclass name directly in `.class_name` and have no
                     % `.definition` path to load -- use it as-is (equivalent to
                     % loading the definition and reading its doc_class()).
@@ -344,7 +344,7 @@ classdef document < did.document
             %
             % Returns the unique session id of an ndi.document: its
             % document_properties.base.session_id field when it has one (v1,
-            % and migrated V_eta), otherwise its `session_id` edge (V2 as
+            % and migrated V_eta), otherwise its `session_id` edge (v2 as
             % did2.build writes it, did-schema
             % V_eta_relation_inheritance_plan.md). '' when it has neither.
             %
@@ -506,10 +506,10 @@ classdef document < did.document
             % id from a single depends_on struct entry.
             %
             % The constructor's normalizeDependsOn pass guarantees
-            % entries carry `document_id` (V2 canonical), but
+            % entries carry `document_id` (v2 canonical), but
             % callers occasionally hand us hand-built structs that
             % skip the constructor and still use `value` (earlier
-            % V2 draft) or `id` (V_alpha legacy). This helper
+            % v2 draft) or `id` (V_alpha legacy). This helper
             % accepts all three with precedence
             % document_id > value > id.
             if ~isstruct(entry) || ~isscalar(entry)

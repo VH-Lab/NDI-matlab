@@ -11,7 +11,7 @@ function docs = subjectDocs(ndi_session_obj)
 %   THREE SHAPES, ONE ANSWER:
 %     v1        `subject` documents are the animals; no device is ever a
 %               `subject`. `isa subject` is the answer.
-%     V2        (a subject or entity with a `type`) ndi.query's own
+%     v2        (a subject or entity with a `type`) ndi.query's own
 %               `isa subject` already keeps only ndi.v2.subjectTypes(), so
 %               a probe (device) or a plate (material) is left out there.
 %     migrated  (V_eta before subjects had a type) a v1 `element` became a

@@ -488,7 +488,7 @@ classdef TestMigrateLocalEta20211116 < matlab.unittest.TestCase
                 'ndi.migrate.local reported destination %s and no file is there', ...
                 testCase.Result.destination));
 
-            % The expected epoch ids come from the V1 SOURCE, not from a
+            % The expected epoch ids come from the v1 SOURCE, not from a
             % literal and not from the migrated output -- an assertion built
             % from the migration's own result cannot catch the migration.
             % `testCase.Bodies` holds JSON TEXT, not structs -- see

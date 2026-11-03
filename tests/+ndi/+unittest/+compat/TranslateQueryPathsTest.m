@@ -59,7 +59,7 @@ classdef TranslateQueryPathsTest < matlab.unittest.TestCase
         end
 
         function test_depends_on_value_rewritten(testCase)
-            % The earlier V2-draft key `value` also gets rewritten
+            % The earlier v2-draft key `value` also gets rewritten
             % to the current canonical `document_id`.
             ss = i_ss('depends_on.value', 'exact_string', 'aabb1122ccdd3344_0011223344556677');
             out = ndi.compat.translateQueryPaths(ss);
@@ -67,7 +67,7 @@ classdef TranslateQueryPathsTest < matlab.unittest.TestCase
         end
 
         function test_depends_on_document_id_unchanged(testCase)
-            % Already V2 canonical; identity.
+            % Already v2 canonical; identity.
             ss = i_ss('depends_on.document_id', 'exact_string', 'aabb1122ccdd3344_0011223344556677');
             out = ndi.compat.translateQueryPaths(ss);
             testCase.verifyEqual(out.field, 'depends_on.document_id');

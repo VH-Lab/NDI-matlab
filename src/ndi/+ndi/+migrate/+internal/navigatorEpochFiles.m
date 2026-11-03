@@ -12,7 +12,7 @@ function [navBodies, report] = navigatorEpochFiles(path, bodies)
 %
 %   WHY (Jess Haley, 2026-10-21, did-schema V_eta_recording_observation_plan.md):
 %   migrated recordings link their epoch files as data bodies, matching native
-%   V2: one observation per element per epoch, `data_body` true, an
+%   v2: one observation per element per epoch, `data_body` true, an
 %   `opaque_body` per epoch file by location, shared by the electrodes recorded
 %   in it, with the channel map. The DID batch pass
 %   did2.convert.resolveEpochProbemap builds that from the cached

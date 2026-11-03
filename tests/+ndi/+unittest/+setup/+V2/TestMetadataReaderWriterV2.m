@@ -1,8 +1,8 @@
 classdef TestMetadataReaderWriterV2 < matlab.unittest.TestCase
-%TESTMETADATAREADERWRITERV2 ndi.daq.metadatareader writes the V2 epoch_parameter_reader into a V2 database.
+%TESTMETADATAREADERWRITERV2 ndi.daq.metadatareader writes the v2 epoch_parameter_reader into a v2 database.
 %
 %   When a daq system with a metadata reader is added to a session whose
-%   database is V2 (did2), the metadata reader's record is an
+%   database is v2 (did2), the metadata reader's record is an
 %   `epoch_parameter_reader` whose id is the reader's id (`file_regex` its
 %   tab-separated file parameter), with the `software` entity its
 %   `software_id` names (the shape DID-matlab's
@@ -15,7 +15,7 @@ classdef TestMetadataReaderWriterV2 < matlab.unittest.TestCase
 %   every NDI writer writes V2 documents and a V2 session accepts only V2
 %   documents".
 %
-%   Filtered (never passed) when did2.build or a V2 schema with `entity` is
+%   Filtered (never passed) when did2.build or a v2 schema with `entity` is
 %   missing.
 
     properties
@@ -29,7 +29,7 @@ classdef TestMetadataReaderWriterV2 < matlab.unittest.TestCase
             schemaPath = getenv('DID_SCHEMA_PATH');
             testCase.assumeTrue(~isempty(schemaPath) && ...
                 isfile(ndi.v2.schemaFile(schemaPath, 'entity.json')), ...
-                'DID_SCHEMA_PATH does not hold a V2 schema with `entity` (did-schema #88)');
+                'DID_SCHEMA_PATH does not hold a v2 schema with `entity` (did-schema #88)');
         end
     end
 
@@ -44,7 +44,7 @@ classdef TestMetadataReaderWriterV2 < matlab.unittest.TestCase
     methods (Test)
         function testAV2DatabaseGetsTheEpochParameterReader(testCase)
             S = ndi.setup.V2.createSession(testCase.Dir, 'd1');
-            testCase.assertTrue(S.writesV2(), 'createSession did not make a V2 session');
+            testCase.assertTrue(S.writesV2(), 'createSession did not make a v2 session');
             nav = ndi.file.navigator(S, {'#.rhd', '#.epochprobemap.ndi', 'stims.tsv'}, ...
                 'ndi.epoch.epochprobemap_daqsystem', {'(.*)epochprobemap.ndi'});
             md = ndi.daq.metadatareader('stims.tsv');
@@ -53,14 +53,14 @@ classdef TestMetadataReaderWriterV2 < matlab.unittest.TestCase
 
             % DENOMINATOR FIRST: what the database now holds
             stored = testCase.storedBodies(S.getpath());
-            testCase.assertNotEmpty(stored, 'the V2 database holds nothing');
+            testCase.assertNotEmpty(stored, 'the v2 database holds nothing');
             classes = cellfun(@(s) s.document_class.class_name, stored, 'UniformOutput', false);
             testCase.verifyFalse(any(strcmp(classes, 'daqmetadatareader')), sprintf( ...
-                'a v1 `daqmetadatareader` document was written into a V2 database (classes: %s)', ...
+                'a v1 `daqmetadatareader` document was written into a v2 database (classes: %s)', ...
                 strjoin(classes, ', ')));
 
             r = testCase.onlyDoc(stored, md.id(), 'epoch_parameter_reader');
-            testCase.verifyTrue(did2.schema.isV2Stamp(r), 'stamped V2 (not did_v1)');
+            testCase.verifyTrue(did2.schema.isV2Stamp(r), 'stamped v2 (not did_v1)');
             testCase.verifyEqual(char(r.epoch_parameter_reader.file_regex), 'stims.tsv');
             testCase.verifyEqual(testCase.softwareName(stored, r), 'ndi.daq.metadatareader');
 
@@ -76,7 +76,7 @@ classdef TestMetadataReaderWriterV2 < matlab.unittest.TestCase
 
         function testAV1DatabaseKeepsTheV1MetadataReader(testCase)
             S = ndi.session.dir('ref1', testCase.Dir);
-            testCase.assertFalse(S.writesV2(), 'a new folder was given a V2 database');
+            testCase.assertFalse(S.writesV2(), 'a new folder was given a v2 database');
             d = ndi.daq.metadatareader('stims.tsv').newdocument(S);
             testCase.verifyClass(d, 'ndi.document');
             testCase.verifyEqual(d.document_properties.document_class.class_name, 'daqmetadatareader');

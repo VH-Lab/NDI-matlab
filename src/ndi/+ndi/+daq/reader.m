@@ -266,8 +266,8 @@ classdef reader < ndi.ido & ndi.documentservice
             %
             % Writes for the database of NDI_SESSION_OBJ (a reader holds no
             % session; ndi.daq.system/newdocument passes its own). When that
-            % database is V2 (ndi.session/writesV2), DOC is a cell array of the
-            % V2 record (see NEWDOCUMENTV2); otherwise the v1 document.
+            % database is v2 (ndi.session/writesV2), DOC is a cell array of the
+            % v2 record (see NEWDOCUMENTV2); otherwise the v1 document.
             %
             if nargin>1 && ~isempty(ndi_session_obj) && ndi_session_obj.writesV2()
                 ndi_document_obj = ndi_daqreader_obj.newdocumentV2(ndi_session_obj, '');
@@ -280,7 +280,7 @@ classdef reader < ndi.ido & ndi.documentservice
         end % newdocument()
 
         function docs = newdocumentV2(ndi_daqreader_obj, ndi_session_obj, reader_string)
-            % NEWDOCUMENTV2 - the V2 record of this reader
+            % NEWDOCUMENTV2 - the v2 record of this reader
             %
             % DOCS = NEWDOCUMENTV2(NDI_DAQREADER_OBJ, NDI_SESSION_OBJ, READER_STRING)
             %

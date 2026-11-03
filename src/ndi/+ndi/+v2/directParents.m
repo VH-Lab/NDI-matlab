@@ -1,5 +1,5 @@
 function parents = directParents(className)
-%DIRECTPARENTS The classes CLASSNAME names as its own superclasses (V2 schema).
+%DIRECTPARENTS The classes CLASSNAME names as its own superclasses (v2 schema).
 %
 %   PARENTS = ndi.v2.directParents(CLASSNAME) returns a cellstr; empty when
 %   the schema does not know the class.

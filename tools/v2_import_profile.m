@@ -1,5 +1,5 @@
 function R = v2_import_profile(dataParentDir, options)
-%V2_IMPORT_PROFILE Where the time goes when the Haley V2 import runs one session.
+%V2_IMPORT_PROFILE Where the time goes when the Haley v2 import runs one session.
 %
 %   R = v2_import_profile(DATAPARENTDIR) runs ndi.setup.conv.haley.import_V2
 %   on one session ('Sessions', default concentration_0001), every stage,

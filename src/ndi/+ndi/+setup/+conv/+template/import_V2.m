@@ -1,5 +1,5 @@
 function result = import_V2(dataFolder, options)
-%IMPORT_V2 A starter V2 (V_eta) importer: copy this folder to begin a new one.
+%IMPORT_V2 A starter v2 (V_eta) importer: copy this folder to begin a new one.
 %
 %   RESULT = ndi.setup.conv.template.import_V2(DATAFOLDER) runs the import's
 %   stages over the raw data in DATAFOLDER and returns what each stage built

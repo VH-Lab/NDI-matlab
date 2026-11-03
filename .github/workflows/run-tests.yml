@@ -78,7 +78,7 @@ jobs:
 
       # THE V_eta SCHEMA (2026-10-24, Jess Haley: install it here rather than
       # let the schema-dependent tests skip). Without DID_SCHEMA_PATH the
-      # V_eta migration and V2 import tests filter themselves out by
+      # V_eta migration and v2 import tests filter themselves out by
       # assumption; with it they run in this suite. did-schema `main` is the
       # V2 line's schema, as in test-import-v2.yml.
       - name: Check out did-schema (V_eta schema for the V2 tests)

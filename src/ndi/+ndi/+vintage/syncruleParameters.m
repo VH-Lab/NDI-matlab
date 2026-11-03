@@ -268,7 +268,7 @@ end
 % did not emit `acquisition_system_id` -- resolving name to id needs the
 % migrated-id graph, which a per-document migrator does not have -- and
 % carried the device name on `base.name`
-% (+migrators_j/private/jAcquisitionChannels.m). V2 `base.name` stays until
+% (+migrators_j/private/jAcquisitionChannels.m). v2 `base.name` stays until
 % [base.name kept until retire classes leave] deletes it.
 if isempty(deviceName) && isfield(p, 'base') && isfield(p.base, 'name')
     deviceName = p.base.name;

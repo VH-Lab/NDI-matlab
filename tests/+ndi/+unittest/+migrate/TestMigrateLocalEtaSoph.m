@@ -182,14 +182,14 @@ classdef TestMigrateLocalEtaSoph < matlab.unittest.TestCase
             % flagged any destination document whose class_name was also a
             % v1 source class_name. On the pinned schema (did-schema
             % v_eta-pre73) the calculator leaves REUSE the v1 spellings as
-            % real V2 classes (tuningcurve_calc etc. chain to
+            % real v2 classes (tuningcurve_calc etc. chain to
             % tuning_curve_calculation), so ~69k converted calculator
             % documents read as survivors, as did subject and session. The
             % signal now is each destination document's own superclass chain,
             % which v1_to_v2's ensureClassBlocks rebuilt from the pinned
             % schema: a chain made only of v1 class names means the class is
             % a v1 tombstone and the body is unconverted; a chain with a
-            % V_eta-only ancestor means a real V2 class under a v1 spelling.
+            % V_eta-only ancestor means a real v2 class under a v1 spelling.
             % See finalV1BodyCensus for the full argument and its direction
             % of error.
             src = sourceBodies(testCase);

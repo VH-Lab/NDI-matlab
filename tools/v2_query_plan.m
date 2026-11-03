@@ -1,7 +1,7 @@
 function T = v2_query_plan(datasetPath, options)
 %V2_QUERY_PLAN Why a search through an ndi.dataset is slower than through its session.
 %
-%   T = v2_query_plan(DATASETPATH) takes one worm from a session of the V2
+%   T = v2_query_plan(DATASETPATH) takes one worm from a session of the v2
 %   dataset at DATASETPATH and runs the query its statements() makes (isa
 %   subject_statement AND depends_on subject_id = the worm) three ways:
 %

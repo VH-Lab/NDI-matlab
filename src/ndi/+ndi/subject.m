@@ -85,8 +85,8 @@ classdef subject < ndi.ido & ndi.documentservice
             % NDI_DOCUMENT_OBJ = NEWDOCUMENT(NDI_SUBJECT_OBJ, NDI_SESSION_OBJ)
             %
             % Writes for the database of NDI_SESSION_OBJ. When that database is
-            % V2 (ndi.session/writesV2), NDI_DOCUMENT_OBJ is a cell array holding
-            % the V2 subject record: an `entity` of type organism whose id is the
+            % v2 (ndi.session/writesV2), NDI_DOCUMENT_OBJ is a cell array holding
+            % the v2 subject record: an `entity` of type organism whose id is the
             % subject's id, with `local_identifier` and `name` the local
             % identifier and `notes` the description, in the session -- the shape
             % DID-matlab's +migrators_j/subject.m writes for a v1 `subject`. On a
@@ -94,7 +94,7 @@ classdef subject < ndi.ido & ndi.documentservice
             %
             % Decided by Jess Haley, 2026-10-29 [v1 writes into a V2 session]
             % (did-schema did_v2_go_forward_class_audit.md): "the end state is
-            % that every NDI writer writes V2 documents". The V2 home of v1
+            % that every NDI writer writes V2 documents". The v2 home of v1
             % `subject` is `entity (subject)` (did-schema coverage ledger).
             %
             if nargin>1 && ~isempty(ndi_session_obj) && ndi_session_obj.writesV2()
@@ -174,7 +174,7 @@ classdef subject < ndi.ido & ndi.documentservice
             islocal = ndi.subject.isvalidlocalidentifierstring(subjectstring);
             if islocal
                 if ndi_session_obj.writesV2()
-                    % on a V2 database a subject is an `entity`:
+                    % on a v2 database a subject is an `entity`:
                     % 'subject.local_identifier' also matches its
                     % `entity.local_identifier` (ndi.v2.blockQuery). Only an
                     % entity of a subject type matches -- organism, culture,

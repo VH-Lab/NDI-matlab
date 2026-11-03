@@ -1,5 +1,5 @@
 classdef TestHaleySessions < matlab.unittest.TestCase
-%TESTHALEYSESSIONS Stage 3 of the Haley V2 import, over a synthetic fixture.
+%TESTHALEYSESSIONS Stage 3 of the Haley v2 import, over a synthetic fixture.
 %
 %   Writes a small stand-in for the raw data -- a tableOfContents.xlsx per
 %   C. elegans study folder (column names and value formats copied from the
@@ -8,7 +8,7 @@ classdef TestHaleySessions < matlab.unittest.TestCase
 %   ndi.setup.V2.makeSessions creates openable sessions with the right
 %   name, description and study.
 %
-%   Filtered (never passed) without did2.build or a V2 schema that has
+%   Filtered (never passed) without did2.build or a v2 schema that has
 %   `study` and `session.name` (did-schema PRs #78 and #79).
 %
 %   UNVERIFIED: written without MATLAB; test-import-v2.yml is the first run.
@@ -24,7 +24,7 @@ classdef TestHaleySessions < matlab.unittest.TestCase
                 'did2.build (DID-matlab V2) is not on the path');
             sp = getenv('DID_SCHEMA_PATH');
             testCase.assumeTrue(~isempty(sp) && isfile(ndi.v2.schemaFile(sp, 'entity.json')), ...
-                'DID_SCHEMA_PATH does not hold a V2 schema with `entity` (did-schema #88)');
+                'DID_SCHEMA_PATH does not hold a v2 schema with `entity` (did-schema #88)');
 
             testCase.Root = tempname;
             testCase.addTeardown(@() rmdir(testCase.Root, 's'));

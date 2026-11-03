@@ -1,7 +1,7 @@
 classdef bodies < ndi.file.navigator
     % ndi.file.navigator.bodies - find an acquisition system's epochs through its documents
     %
-    % A navigator for a V2 session whose recordings are described by
+    % A navigator for a v2 session whose recordings are described by
     % documents rather than by files laid out in the session folder. It
     % scans no folder and writes no file: everything it reports is read
     % from the session's database.

@@ -1,5 +1,5 @@
 function report = copyDocuments(sourceDb, targetDb, docs, options)
-%COPYDOCUMENTS Copy V2 documents, and the files they ingested, to another database.
+%COPYDOCUMENTS Copy v2 documents, and the files they ingested, to another database.
 %
 %   REPORT = ndi.v2.copyDocuments(SOURCEDB, TARGETDB, DOCS) adds DOCS (a cell
 %   of document property structs, read from SOURCEDB) to TARGETDB. Both are

@@ -1,5 +1,5 @@
 classdef TestHaleySeeding < matlab.unittest.TestCase
-%TESTHALEYSEEDING Stage 8 part B of the Haley V2 import: the seeding suspensions.
+%TESTHALEYSEEDING Stage 8 part B of the Haley v2 import: the seeding suspensions.
 %
 %   Writes the seeding columns of three C. elegans studies and the E. coli
 %   table (column names as in the real files) and checks
@@ -17,7 +17,7 @@ classdef TestHaleySeeding < matlab.unittest.TestCase
 %                 0 is the diluent itself
 %   Every test needs did2.build (a source unit is a registered term, built
 %   with did2.build.term); the last also builds the entries with
-%   ndi.setup.V2.datasetMetadata, which needs a V2 schema.
+%   ndi.setup.V2.datasetMetadata, which needs a v2 schema.
 %
 %   UNVERIFIED: written without MATLAB; test-import-v2.yml is the first run.
 
@@ -206,7 +206,7 @@ classdef TestHaleySeeding < matlab.unittest.TestCase
                 'did2.build (DID-matlab V2) is not on the path');
             sp = getenv('DID_SCHEMA_PATH');
             testCase.assumeTrue(~isempty(sp) && isfile(ndi.v2.schemaFile(sp, 'entity.json')), ...
-                'DID_SCHEMA_PATH does not hold a V2 schema with `entity` (did-schema #88)');
+                'DID_SCHEMA_PATH does not hold a v2 schema with `entity` (did-schema #88)');
             spec = testCase.Spec;
             f = spec.formulations;
             if isstruct(f), f = num2cell(f); end

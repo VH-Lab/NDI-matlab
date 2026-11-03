@@ -6,7 +6,7 @@ function scope = datasetScope(structs)
 %
 %     Decided by Jess Haley, 2026-10-21: "When a dataset is migrated, shared
 %     entities (strains, software, people, organizations, instruments,
-%     products) move to the dataset level as in native V2 imports (Haley
+%     products) move to the dataset level as in native v2 imports (Haley
 %     import_V2_decisions.md #20): one entity per distinct thing in the
 %     dataset's database, with session documents pointing at it and
 %     merged-away ids remapped so every link still resolves; a lone session
@@ -20,7 +20,7 @@ function scope = datasetScope(structs)
 %   The dataset level is the `dataset` ENTITY: did-schema #88 records a
 %   document's session as a `session_id` edge "to the session or dataset
 %   entity whose base.id IS the session id" (ndi.migrate.internal.
-%   withSessionId), and the native Haley V2 import writes its dataset-level
+%   withSessionId), and the native Haley v2 import writes its dataset-level
 %   documents with that id (import_V2.m: "the dataset entity's id IS the
 %   dataset's session id").
 %

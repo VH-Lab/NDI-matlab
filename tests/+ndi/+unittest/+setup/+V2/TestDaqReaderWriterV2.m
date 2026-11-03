@@ -1,7 +1,7 @@
 classdef TestDaqReaderWriterV2 < matlab.unittest.TestCase
-%TESTDAQREADERWRITERV2 ndi.daq.reader writes the V2 acquisition_reader into a V2 database.
+%TESTDAQREADERWRITERV2 ndi.daq.reader writes the v2 acquisition_reader into a v2 database.
 %
-%   When a daq system is added to a session whose database is V2 (did2),
+%   When a daq system is added to a session whose database is v2 (did2),
 %   its reader's record is an `acquisition_reader` whose id is the reader's
 %   id, with the `software` entity its `software_id` names (the shape
 %   DID-matlab's +migrators_j/daqreader.m and daqreader_ndr.m write for a v1
@@ -14,7 +14,7 @@ classdef TestDaqReaderWriterV2 < matlab.unittest.TestCase
 %   every NDI writer writes V2 documents and a V2 session accepts only V2
 %   documents".
 %
-%   Filtered (never passed) when did2.build or a V2 schema with `entity` is
+%   Filtered (never passed) when did2.build or a v2 schema with `entity` is
 %   missing.
 
     properties
@@ -28,7 +28,7 @@ classdef TestDaqReaderWriterV2 < matlab.unittest.TestCase
             schemaPath = getenv('DID_SCHEMA_PATH');
             testCase.assumeTrue(~isempty(schemaPath) && ...
                 isfile(ndi.v2.schemaFile(schemaPath, 'entity.json')), ...
-                'DID_SCHEMA_PATH does not hold a V2 schema with `entity` (did-schema #88)');
+                'DID_SCHEMA_PATH does not hold a v2 schema with `entity` (did-schema #88)');
         end
     end
 
@@ -43,7 +43,7 @@ classdef TestDaqReaderWriterV2 < matlab.unittest.TestCase
     methods (Test)
         function testAV2DatabaseGetsTheAcquisitionReader(testCase)
             S = ndi.setup.V2.createSession(testCase.Dir, 'd1');
-            testCase.assertTrue(S.writesV2(), 'createSession did not make a V2 session');
+            testCase.assertTrue(S.writesV2(), 'createSession did not make a v2 session');
             nav = ndi.file.navigator(S, {'#.rhd', '#.epochprobemap.ndi'}, ...
                 'ndi.epoch.epochprobemap_daqsystem', {'(.*)epochprobemap.ndi'});
             rdr = ndi.daq.reader.mfdaq.intan();
@@ -56,14 +56,14 @@ classdef TestDaqReaderWriterV2 < matlab.unittest.TestCase
 
             % DENOMINATOR FIRST: what the database now holds
             stored = testCase.storedBodies(S.getpath());
-            testCase.assertNotEmpty(stored, 'the V2 database holds nothing');
+            testCase.assertNotEmpty(stored, 'the v2 database holds nothing');
             classes = cellfun(@(s) s.document_class.class_name, stored, 'UniformOutput', false);
             testCase.verifyFalse(any(ismember(classes, {'daqreader', 'daqreader_ndr'})), ...
                 sprintf(['a v1 `daqreader` or `daqreader_ndr` document was written ' ...
-                'into a V2 database (classes: %s)'], strjoin(classes, ', ')));
+                'into a v2 database (classes: %s)'], strjoin(classes, ', ')));
 
             r = testCase.onlyDoc(stored, rdr.id(), 'acquisition_reader');
-            testCase.verifyTrue(did2.schema.isV2Stamp(r), 'stamped V2 (not did_v1)');
+            testCase.verifyTrue(did2.schema.isV2Stamp(r), 'stamped v2 (not did_v1)');
             testCase.verifyEqual(testCase.softwareName(stored, r), 'ndi.daq.reader.mfdaq.intan');
 
             r2 = testCase.onlyDoc(stored, ndrRdr.id(), 'acquisition_reader');
@@ -86,7 +86,7 @@ classdef TestDaqReaderWriterV2 < matlab.unittest.TestCase
 
         function testAV1DatabaseKeepsTheV1Reader(testCase)
             S = ndi.session.dir('ref1', testCase.Dir);
-            testCase.assertFalse(S.writesV2(), 'a new folder was given a V2 database');
+            testCase.assertFalse(S.writesV2(), 'a new folder was given a v2 database');
             d = ndi.daq.reader.mfdaq.intan().newdocument(S);
             testCase.verifyClass(d, 'ndi.document');
             testCase.verifyEqual(d.document_properties.document_class.class_name, 'daqreader');

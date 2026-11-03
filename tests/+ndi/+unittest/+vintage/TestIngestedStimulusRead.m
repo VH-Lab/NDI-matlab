@@ -14,11 +14,11 @@ classdef TestIngestedStimulusRead < matlab.unittest.TestCase
 %   each its own parameters, compressed by ndi.compress.compress_metadata as
 %   ingest_epochfiles writes them and recorded by location) go through
 %   ndi.migrate.internal.ingestedStimulusBodies, and the bodies it returns are
-%   written into a V2 (did2) session made by ndi.setup.V2.createSession and
+%   written into a v2 (did2) session made by ndi.setup.V2.createSession and
 %   opened with the ordinary ndi.session.dir. The test then asks the reader
 %   for each epoch's parameters.
 %
-%   Filtered (never passed) when did2.build, a V2 schema with `entity` or
+%   Filtered (never passed) when did2.build, a v2 schema with `entity` or
 %   ndi.compress is missing.
 %
 %   UNVERIFIED: written without MATLAB; the first CI run is the first run.
@@ -37,7 +37,7 @@ classdef TestIngestedStimulusRead < matlab.unittest.TestCase
             schemaPath = getenv('DID_SCHEMA_PATH');
             testCase.assumeTrue(~isempty(schemaPath) && ...
                 isfile(ndi.v2.schemaFile(schemaPath, 'entity.json')), ...
-                'DID_SCHEMA_PATH does not hold a V2 schema with `entity` (did-schema #88)');
+                'DID_SCHEMA_PATH does not hold a v2 schema with `entity` (did-schema #88)');
             testCase.assumeTrue(~isempty(which('ndi.compress.compress_metadata')), ...
                 'ndi.compress (NDI-compress) is not on the path');
 

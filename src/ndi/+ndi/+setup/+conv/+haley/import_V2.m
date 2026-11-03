@@ -1,10 +1,10 @@
 function result = import_V2(dataParentDir, options)
-%IMPORT_V2 Import the Haley C. elegans / E. coli foraging dataset as V2 (V_eta).
+%IMPORT_V2 Import the Haley C. elegans / E. coli foraging dataset as v2 (V_eta).
 %
 %   RESULT = ndi.setup.conv.haley.import_V2(DATAPARENTDIR) runs the import's
 %   stages over the raw data in DATAPARENTDIR/haley and returns what each
 %   stage produced. It is being built one stage at a time with the dataset's
-%   owner, and is meant to be the canonical example of a V2 import (and the
+%   owner, and is meant to be the canonical example of a v2 import (and the
 %   basis of a GUI importer): every choice it makes is recorded, with its
 %   reason, in import_V2_decisions.md next to this file.
 %
@@ -67,7 +67,7 @@ function result = import_V2(dataParentDir, options)
 %                          patch at the pick (decision #65;
 %                          needs the E. coli session and the C. elegans
 %                          sessions in the same run)
-%        13 dataset        check & write the dataset: ONE V2 database holding
+%        13 dataset        check & write the dataset: ONE v2 database holding
 %                          the dataset-level documents (stage 2's, the
 %                          studies, stage 12's fits) and every selected
 %                          session, ingested (ndi.setup.V2.createDataset;
@@ -75,7 +75,7 @@ function result = import_V2(dataParentDir, options)
 %
 %   Nothing is written unless 'Write' is true: by default RESULT holds what
 %   each stage WOULD create, for inspection. With 'Write', each selected
-%   session is created under 'OutputRoot' with its V2 database holding the
+%   session is created under 'OutputRoot' with its v2 database holding the
 %   session and, when stages 4 and 5 ran, its subjects, acquisition systems,
 %   epochs and recordings (ndi.setup.conv.haley.sessionDocuments). The
 %   session folder holds only .ndi/: each recording's document records where
@@ -142,7 +142,7 @@ function result = import_V2(dataParentDir, options)
 %   or written: one that already holds an NDI database is an error unless
 %   'Overwrite' is true.
 %
-%   doImport.m, the original V1 import, is unchanged.
+%   doImport.m, the original v1 import, is unchanged.
 %
 %   See also ndi.setup.V2.discover, ndi.setup.V2.datasetMetadata.
 
@@ -237,7 +237,7 @@ if any(options.Stages == "metadata")
         numel(result.metadata.documents), options.Spec);
     disp(result.metadata.census);
     u = result.metadata.unrepresented;
-    fprintf('spec content with NO place in V2 (recorded here, not in the documents): %d\n', numel(u));
+    fprintf('spec content with NO place in v2 (recorded here, not in the documents): %d\n', numel(u));
     for k = 1:numel(u)
         fprintf('  %-12s %-20s %-16s %s\n', u(k).kind, u(k).key, u(k).field, u(k).why);
     end
@@ -446,7 +446,7 @@ writelines(keep, outFile);
 end
 
 function result = writeSessions(result, dataParentDir, options)
-% One V2 session per selected row: its documents first, then its files.
+% One v2 session per selected row: its documents first, then its files.
 % Subjects carry a display name (decision #42).
 arguments
     result (1,1) struct
@@ -471,7 +471,7 @@ if isfield(result, 'subjects') && isfield(result, 'recordings')
     % a run before the write: a bar and a line per session
     buildBar = []; tag = 'build sessions';
     try
-        buildBar = ndi.gui.component.ProgressBarWindow('NDI V2 import', 'GrabMostRecent', true);
+        buildBar = ndi.gui.component.ProgressBarWindow('NDI v2 import', 'GrabMostRecent', true);
         buildBar.setTimeout(hours(12));
         buildBar.addBar('Label', sprintf('Building %d session(s)', n), 'Tag', tag, 'Auto', true);
     catch
@@ -779,7 +779,7 @@ end
 
 function out = writeDataset(result, T, dataParentDir, options, linked)
 % Stage 13 (decision #66): every document of this run checked as one set, and
-% written into ONE V2 database -- or, LINKED (decision #71), the dataset-level
+% written into ONE v2 database -- or, LINKED (decision #71), the dataset-level
 % documents, each session's included_in relations (its "database linking" one among them),
 % with the sessions' own documents written to their folders afterwards (by
 % writeSessions, which also writes them when the dataset stage does not run).

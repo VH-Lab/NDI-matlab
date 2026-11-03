@@ -3,7 +3,7 @@ classdef TestSpikeParametersMigrated < matlab.unittest.TestCase
 %   read their named parameter sets in a migrated session (#1053).
 %
 %   Migration folds a v1 spike_extraction_parameters or sorting_parameters
-%   document into a V2 `method` document (DID-matlab
+%   document into a v2 `method` document (DID-matlab
 %   +migrators_j/private/jMethodParameters.m): same id, the preset name in
 %   `method.name` (Jess Haley 2026-10-30 [preset name stays on method],
 %   did-schema did_v2_go_forward_class_audit.md), no `base.name`, and the
@@ -20,7 +20,7 @@ classdef TestSpikeParametersMigrated < matlab.unittest.TestCase
 %   that does is carried whole as v1 ([small unread settings] (1)) and keeps
 %   its base.name, which the v1 lookup already finds.
 %
-%   Filtered (never passed) when did2.convert or a V2 schema with `entity`
+%   Filtered (never passed) when did2.convert or a v2 schema with `entity`
 %   is missing.
 
     properties
@@ -37,7 +37,7 @@ classdef TestSpikeParametersMigrated < matlab.unittest.TestCase
             schemaPath = getenv('DID_SCHEMA_PATH');
             testCase.assumeTrue(~isempty(schemaPath) && ...
                 isfile(ndi.v2.schemaFile(schemaPath, 'entity.json')), ...
-                'DID_SCHEMA_PATH does not hold a V2 schema with `entity`');
+                'DID_SCHEMA_PATH does not hold a v2 schema with `entity`');
         end
     end
 

@@ -671,7 +671,7 @@ function result = local(path, options)
         %       [Haley logic leaves the generic migration], [dataset-specific
         %       logic leaves the generic migration] and [dataset audit batch 1
         %       and 2] (5) (did-schema V_eta_go_forward_class_audit.md). The
-        %       Haley dataset's V2 shape comes from its V2 re-import; what the
+        %       Haley dataset's v2 shape comes from its v2 re-import; what the
         %       generic stage cannot place is carried as v1.
         %  (7d) GENERIC FILE FOLD (team decision, 2026-08-11): a did_v1
         %       `generic_file` becomes a `term_observation` (base.id
@@ -1131,7 +1131,7 @@ function result = local(path, options)
         end
         tStep = migrateStepMark('removeTransientNavigatorEpochs', tStart, tStep, convertResult);
         % the files that ARE on this computer get their size and MD5, as a
-        % native V2 recording body does; an absent one stays as recorded
+        % native v2 recording body does; an absent one stays as recorded
         %   WHAT THIS STEP READS AND WRITES: [migration reliability practices] (c),
         %   Jess Haley, 2026-10-26; DID-matlab tools/batch_pass_order.py derives the
         %   second pass's order from these and checks it.
@@ -3061,7 +3061,7 @@ function [convertResult, report, presentationAnchors] = resolveStimulusPresentat
 %   presentation_time.bin when the bytes are on this computer
 %   (ndi.migrate.internal.v1AttachedFile: <NDIDIR>/files/<uid>, else the
 %   recorded location), else from the deprecated inline block, else none; the
-%   file stays attached to the V2 document. REPORT.timing counts each source
+%   file stays attached to the v2 document. REPORT.timing counts each source
 %   against the presentations folded.
 %
 %   CONTROL (Jess Haley, 2026-10-22, [control as covariate]): each v1
@@ -3150,7 +3150,7 @@ function [convertResult, report, presentationAnchors] = resolveStimulusPresentat
     % THE CONTROL RECORDS, by presentation. Decided by Jess Haley, 2026-10-22
     % [control as covariate] (did-schema V_eta_stimulus_response_model_plan.md):
     % a v1 control_stimulus_ids becomes the `control condition` covariate of
-    % its presentation's item value and NO V2 document of its own; responses
+    % its presentation's item value and NO v2 document of its own; responses
     % then point at the presentation only (its id is stripped from their
     % input_id below). See ndi.migrate.internal.stimulusPresentationToItem.
     %
