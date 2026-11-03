@@ -1795,7 +1795,7 @@ function [convertResult, bathAnchors, report] = resolveDeferred(convertResult, r
                 unread = ndi.migrate.internal.bathUnreadUnitRows(v1Body);
                 if ~isempty(unread)
                     % [Dab bath units are Dabrowska's]: carried whole as v1
-                    % (carry-155)
+                    % carry-register: carry-155
                     if isfield(v1Body, 'document_class') && isstruct(v1Body.document_class)
                         v1Body.document_class.schema_version = 'did_v1';
                     end
