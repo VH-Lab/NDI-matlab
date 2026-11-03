@@ -1,5 +1,17 @@
 classdef  didsqlite < ndi.database
-    % didsqlite - a database based on sqlite
+    % didsqlite - a v1 database based on sqlite (legacy did), READ-ONLY on the V2 line
+    %
+    % On NDI's V2 line a v1 database is opened read-only (Decided by Jess
+    % Haley, 2026-11-03 [v1 database read-only on the v2 line], did-schema
+    % did_v2_go_forward_class_audit.md): reading works, and every write
+    % (add, remove) is refused with the error 'NDI:database:v1ReadOnly',
+    % whose message names ndi.migrate.local, the way to migrate it. No
+    % database ever holds both v1 and V2 documents written by the V2 line.
+    % A new session gets a V2 database (ndi.database.fun.databasehierarchyinit,
+    % [V2 branch writes V2 only]).
+    %
+    % See also: ndi.database.implementations.database.did2sqlite,
+    %           ndi.database.fun.databasehierarchyinit, ndi.migrate.local
 
     properties
         db        % did.sqlitedb
@@ -21,7 +33,8 @@ classdef  didsqlite < ndi.database
             %
             % See also: did.database, did.implementations.sqlitedb
             ndi_didsqlite_obj = ndi_didsqlite_obj@ndi.database(varargin{:});
-            database_filename = fullfile(ndi_didsqlite_obj.path, 'did-sqlite.sqlite');
+            database_filename = fullfile(ndi_didsqlite_obj.path, ...
+                ndi.database.implementations.database.didsqlite.FILENAME());
             ndi_didsqlite_obj.db = did.implementations.sqlitedb(database_filename);
             if ~isfolder(ndi_didsqlite_obj.file_directory)
                 mkdir(ndi_didsqlite_obj.file_directory);
@@ -50,6 +63,31 @@ classdef  didsqlite < ndi.database
         end % ndi.database.implementations.database.didsqlite()
     end
 
+    methods (Static)
+        function name = FILENAME()
+            % FILENAME - the file a v1 (legacy did) database is stored in, inside a session's .ndi directory
+            %
+            % 'did-sqlite.sqlite'. ndi.database.fun.databasehierarchyinit
+            % finds an existing v1 database by this name.
+            name = 'did-sqlite.sqlite';
+        end % FILENAME()
+
+        function refuseWrite(database_filename, what)
+            % REFUSEWRITE - the error every write to a v1 database raises on the V2 line
+            %
+            % ndi.database.implementations.database.didsqlite.refuseWrite(DATABASE_FILENAME, WHAT)
+            %
+            % Raises 'NDI:database:v1ReadOnly' ([v1 database read-only on
+            % the v2 line], Jess Haley, 2026-11-03).
+            error('NDI:database:v1ReadOnly', ...
+                ['Cannot %s: the database at %s is a v1 database, and NDI on ' ...
+                 'the V2 line opens a v1 database read-only (reading works). ' ...
+                 'Migrate it to V2 with ndi.migrate.local(<session folder>) ' ...
+                 'and open the session again; then it can be written.'], ...
+                what, database_filename);
+        end % refuseWrite()
+    end
+
     methods % public
         function docids = alldocids(ndi_didsqlite_obj)
             % ALLDOCIDS - return all document unique reference numbers for the database
@@ -69,14 +107,13 @@ classdef  didsqlite < ndi.database
             [hCleanup, filename] = ndi_didsqlite_obj.db.open();
         end
 
-        function ndi_didsqlite_obj = do_add(ndi_didsqlite_obj, ndi_document_obj, add_parameters)
-            % A file location marked for ingestion that is not a local path is
-            % retrieved through the same handler do_openbinarydoc uses. DID
-            % downloads nothing itself, so without this an ndic:// location
-            % marked ingest cannot be fetched at add time. Remote ingestion is
-            % rare -- ingest defaults to 0 for 'url' and 'ndicloud' locations.
-            ndi_didsqlite_obj.db.add_docs(ndi_document_obj,'a', ...
-                'customFileHandler', @download_file_from_cloud);
+        function ndi_didsqlite_obj = do_add(ndi_didsqlite_obj, ndi_document_obj, add_parameters) %#ok<INUSD>
+            % A v1 database is read-only on the V2 line ([v1 database
+            % read-only on the v2 line]): nothing is added.
+            ndi.database.implementations.database.didsqlite.refuseWrite( ...
+                fullfile(ndi_didsqlite_obj.path, ...
+                ndi.database.implementations.database.didsqlite.FILENAME()), ...
+                'add a document');
         end % do_add
 
         function [ndi_document_obj] = do_read(ndi_didsqlite_obj, ndi_document_id)
@@ -93,19 +130,20 @@ classdef  didsqlite < ndi.database
             end
         end % do_read
 
-        function ndi_didsqlite_obj = do_remove(ndi_didsqlite_obj, ndi_document_id, options)
-            % did.database/remove_docs defaults to OnMissing='error'. NDI's
-            % removals default to 'ignore' instead: a document someone else
-            % already deleted still satisfies the request that it be gone.
-            % Callers that need to hear about it pass ErrIfNotFound=1 to
-            % ndi.session/database_rm, which maps to 'error' here.
+        function ndi_didsqlite_obj = do_remove(ndi_didsqlite_obj, ndi_document_id, options) %#ok<INUSD>
+            % The OnMissing option of ndi.database/remove is still accepted
+            % (it is passed on every call), and ignored: nothing is removed.
             arguments
                 ndi_didsqlite_obj
                 ndi_document_id
                 options.OnMissing {mustBeMember(options.OnMissing,{'ignore','warn','error'})} = 'ignore'
             end
-            ndi_didsqlite_obj.db.remove_docs(ndi_document_id,'a', ...
-                'OnMissing',options.OnMissing);
+            % A v1 database is read-only on the V2 line ([v1 database
+            % read-only on the v2 line]): nothing is removed.
+            ndi.database.implementations.database.didsqlite.refuseWrite( ...
+                fullfile(ndi_didsqlite_obj.path, ...
+                ndi.database.implementations.database.didsqlite.FILENAME()), ...
+                'remove a document');
         end % do_remove
 
         function [ndi_document_objs] = do_search(ndi_didsqlite_obj, searchoptions, searchparams)
@@ -192,8 +230,7 @@ function download_file_from_cloud(destPath, sourcePath, context)
     % was read. So the member's uid comes from the context; every other
     % call still takes it from sourcePath.
     %
-    % Previously a nested function inside do_openbinarydoc. It is file-local so
-    % that do_add can pass the same handler.
+    % Previously a nested function inside do_openbinarydoc; now file-local.
 
     if nargin < 3
         context = struct();

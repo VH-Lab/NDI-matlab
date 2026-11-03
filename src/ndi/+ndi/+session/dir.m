@@ -193,26 +193,24 @@ classdef dir < ndi.session
                 elseif nargin==1
                     error(['Could not load the REFERENCE field from the database or path ' ndi_session_dir_obj.ndipathname() '.']);
                 end
-                % now we have both reference and id from either the files or the database, add it to db
-                if isa(db, 'ndi.database.implementations.database.did2sqlite')
-                    % A V2 (did2) database gets the V2 session record: an
-                    % `entity` of type session whose id IS the session id,
-                    % as ndi.setup.V2.createSession writes it, not a v1
-                    % `session` document stamped did_v1. Decided by Jess
-                    % Haley, 2026-10-29 [v1 writes into a V2 session]
-                    % (did-schema did_v2_go_forward_class_audit.md): "the end
-                    % state is that every NDI writer writes V2 documents".
-                    % A v1 database keeps the v1 document below.
+                % now we have both reference and id from either the files or
+                % the database, add the session record to the database: the V2
+                % record, an `entity` of type session whose id IS the session
+                % id, as ndi.setup.V2.createSession writes it. Decided by Jess
+                % Haley, 2026-11-03 [V2 branch writes V2 only] (did-schema
+                % did_v2_go_forward_class_audit.md): "We're on the v2 branch.
+                % That should write v2 exclusively and read v1 and v2." A new
+                % session's database is V2 (databasehierarchyinit). An existing
+                % v1 database is read-only ([v1 database read-only on the v2
+                % line]), so a v1 session with no session document is opened
+                % without one rather than refused: reading still works.
+                if ~isa(db, 'ndi.database.implementations.database.didsqlite')
                     sid = ndi_session_dir_obj.id();
                     g = ndi.setup.V2.entityDocuments('session', ...
                         struct('local_identifier', ndi_session_dir_obj.reference), ...
                         struct(), 'SessionId', sid, 'Id', sid);
                     ndi_session_dir_obj.database_add(cellfun(@(x) ndi.document(x), ...
                         g, 'UniformOutput', false));
-                else
-                    g = ndi.document('session','session.reference',ndi_session_dir_obj.reference) + ...
-                        ndi_session_dir_obj.newdocument();
-                    ndi_session_dir_obj.database_add(g);
                 end
             end
 

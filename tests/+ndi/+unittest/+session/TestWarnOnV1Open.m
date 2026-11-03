@@ -6,9 +6,11 @@ classdef TestWarnOnV1Open < matlab.unittest.TestCase
 %   unchanged ([v1 read as stored]). VH-Lab/NDI-matlab#1055.
 %
 %   The warning is 'NDI:V2:v1DocumentsPresent'
-%   (ndi.database.fun.warnIfV1Documents). A session or dataset created by
-%   ndi.session.dir / ndi.dataset.dir is a v1 one (did-sqlite, v1 templates),
-%   so creating one must not warn, and opening it again must, once.
+%   (ndi.database.fun.warnIfV1Documents). Creating a session or dataset
+%   must not warn. On the V2 line a new session or dataset is a V2 one
+%   ([V2 branch writes V2 only], Jess Haley, 2026-11-03), and a v1 database
+%   is read-only ([v1 database read-only on the v2 line]), so the v1 folders
+%   here are written by the fixture ndi.unittest.session.makeV1Session.
 
     properties (Constant)
         Id = 'NDI:V2:v1DocumentsPresent'
@@ -34,10 +36,12 @@ classdef TestWarnOnV1Open < matlab.unittest.TestCase
         end
 
         function testReopeningAV1SessionWarnsOnceWithTheCount(testCase)
+            ndi.unittest.session.makeV1Session(testCase.Root, 'ref_v1', ...
+                {ndi.document('subject', 'subject.local_identifier', 'mouse@lab', ...
+                'subject.description', '')});
+            warnState = warning('off', testCase.Id);
             S = ndi.session.dir('ref_v1', testCase.Root);
-            doc = ndi.document('subject', 'subject.local_identifier', 'mouse@lab', ...
-                'subject.description', '') + S.newdocument();
-            S.database_add(doc);
+            warning(warnState);
             % every document of a did-sqlite (v1) database is a v1 document
             n = numel(S.database_search(ndi.query('', 'isa', 'base')));
             testCase.assertGreaterThanOrEqual(n, 2, 'the session document and the subject');
@@ -54,10 +58,10 @@ classdef TestWarnOnV1Open < matlab.unittest.TestCase
         end
 
         function testTheV1DocumentsAreStillReadAsStored(testCase)
-            S = ndi.session.dir('ref_read', testCase.Root);
-            doc = ndi.document('subject', 'subject.local_identifier', 'mouse@lab', ...
-                'subject.description', '') + S.newdocument();
-            S.database_add(doc);
+            [~, docs] = ndi.unittest.session.makeV1Session(testCase.Root, 'ref_read', ...
+                {ndi.document('subject', 'subject.local_identifier', 'mouse@lab', ...
+                'subject.description', '')});
+            doc = docs{2};
             warnState = warning('off', testCase.Id);
             testCase.addTeardown(@() warning(warnState));
             S2 = ndi.session.dir('ref_read', testCase.Root);
@@ -70,8 +74,14 @@ classdef TestWarnOnV1Open < matlab.unittest.TestCase
         end
 
         function testADatasetWarnsOnceNotOncePerSessionOpen(testCase)
-            testCase.verifyNoV1Warning(@() ndi.dataset.dir('ds_v1', testCase.Root), ...
+            newRoot = tempname;
+            mkdir(newRoot);
+            testCase.addTeardown(@() rmdir(newRoot, 's'));
+            testCase.verifyNoV1Warning(@() ndi.dataset.dir('ds_new', newRoot), ...
                 'creating a dataset does not warn (its session opens are silenced)');
+
+            ndi.unittest.session.makeV1Session(testCase.Root, 'ds_v1', {}, ...
+                'ObjectType', 'dataset');
 
             % ndi.dataset.dir opens its folder as a session two or three
             % times on the way; the dataset still warns once
@@ -87,7 +97,8 @@ classdef TestWarnOnV1Open < matlab.unittest.TestCase
             % ndi.dataset.dir switches the warning off for its inner session
             % opens and restores it; a caller's 'off' must survive that, and
             % its 'on' too
-            ndi.dataset.dir('ds_off', testCase.Root);
+            ndi.unittest.session.makeV1Session(testCase.Root, 'ds_off', {}, ...
+                'ObjectType', 'dataset');
             warnState = warning('off', testCase.Id);
             testCase.addTeardown(@() warning(warnState));
             ndi.dataset.dir(testCase.Root);

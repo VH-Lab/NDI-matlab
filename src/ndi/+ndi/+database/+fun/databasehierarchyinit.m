@@ -13,60 +13,60 @@ function databasehierarchy = databasehierarchyinit()
     %     after the first iteration, so entry 1 is the only entry that can
     %     ever create one.)
     %
-    % So ORDER CARRIES TWO DIFFERENT MEANINGS: search precedence, and which
-    % backend a brand-new session gets. `didsqlite` is entry 1 because it
-    % is the backend NDI creates today, and that is deliberately unchanged
-    % here -- adding a way to OPEN a migrated database must not silently
-    % change what a NEW session is written with.
+    % So ORDER CARRIES TWO MEANINGS: search precedence, and which backend a
+    % brand-new session gets.
     %
-    % TWO FACTS ABOUT THIS FUNCTION THAT ARE EASY TO MIS-READ
-    % -------------------------------------------------------
-    % (1) It used to ASSIGN `databasehierarchy` TWICE, with the second
-    %     assignment overwriting the first rather than appending to it. The
-    %     `matlabdumbjsondb2` entry was therefore DEAD -- it could never be
-    %     reached, whatever was on disk. It is left out rather than
-    %     resurrected: bringing it back would change which backend opens an
-    %     existing session, which is a separate decision from this one.
+    % ON THE V2 LINE (Decided by Jess Haley, 2026-11-03 [V2 branch writes V2
+    % only] and [v1 database read-only on the v2 line], did-schema
+    % did_v2_go_forward_class_audit.md: "We're on the v2 branch. That should
+    % write v2 exclusively and read v1 and v2."):
     %
-    % (2) `didsqlite`'s `extension` is 'ndi.dumbjsondb.json' and its
-    %     filename arguments are ignored -- the class hard-codes
-    %     `did-sqlite.sqlite` in its own constructor. So for a normal
-    %     session the search loop matches NOTHING and the database is
-    %     opened by the CREATION branch, which then finds the existing
-    %     file. The extension matching has been vestigial for that backend.
-    %     `did2sqlite` does not work this way: it opens the file it is
-    %     handed, which is what makes a migrated database findable.
+    %   1. did2sqlite, did_v2.sqlite -- opens a V2 database, and is the entry
+    %      that CREATES the database of a new session: a new session gets a
+    %      V2 (did2) database.
+    %   2. did2sqlite, V_eta.sqlite -- the same store under the file name it
+    %      had before 2026-11-01 ([V2 database file renamed]); opened, never
+    %      created.
+    %   3. didsqlite, did-sqlite.sqlite -- an existing v1 database. It is
+    %      opened READ-ONLY: reading works, and any write is refused with an
+    %      error naming ndi.migrate.local (see
+    %      ndi.database.implementations.database.didsqlite). It comes after
+    %      the V2 entries because a session migrated in place keeps its
+    %      did-sqlite.sqlite beside the did_v2.sqlite ndi.migrate.local
+    %      writes, and the migrated database is the one to open.
+    %
+    % `didsqlite` hard-codes `did-sqlite.sqlite` in its own constructor, so
+    % entry 3's extension IS that file name: the search finds an existing v1
+    % database by the file that holds it, and nothing creates one.
     %
     % See also: ndi.database.fun.opendatabase,
     %           ndi.database.implementations.database.didsqlite,
     %           ndi.database.implementations.database.did2sqlite
 
-    % Entry 1 -- the LEGACY did backend, branch-versioned. Creates new
-    % databases (see the note above about the creation loop).
+    % Entry 1 -- the did2 document store. Opens did_v2.sqlite and creates
+    % it for a new session.
     databasehierarchy = struct( ...
-        'extension',    'ndi.dumbjsondb.json', ...
-        'code',         'db=ndi.database.implementations.database.didsqlite(''FILEPATH'', ''SESSION_REFERENCE'', ''load'',''FILENAME'');',  ...
-        'newcode',      'db=ndi.database.implementations.database.didsqlite(''FILEPATH'', ''SESSION_REFERENCE'', ''new'',''FILEPATHndi.dumbjsondb.json'');' ...
+        'extension',    ndi.database.implementations.database.did2sqlite.DEFAULTFILENAME(), ...
+        'code',         'db=ndi.database.implementations.database.did2sqlite(''FILEPATH'', ''SESSION_REFERENCE'', ''load'',''FILENAME'');',  ...
+        'newcode',      ['db=ndi.database.implementations.database.did2sqlite(''FILEPATH'', ''SESSION_REFERENCE'', ''new'',''FILEPATH' ...
+                         ndi.database.implementations.database.did2sqlite.DEFAULTFILENAME() ''');'] ...
         );
 
-    % Entry 2 -- the did2 document store, which is what `ndi.migrate.local`
-    % writes. `newcode` is EMPTY on purpose: this entry exists to OPEN a
-    % migrated database, not to decide that new sessions become did2. That
-    % is a product decision nobody has made, and an empty newcode makes the
-    % absence explicit rather than leaving it to loop mechanics.
+    % Entry 2 -- the same did2 store under the file name it had before
+    % 2026-11-01 ([V2 database file renamed], Decided by Jess Haley,
+    % 2026-11-01): NDI still opens an existing V_eta.sqlite. After entry 1,
+    % so a folder holding did_v2.sqlite opens that one.
     databasehierarchy(2) = struct( ...
-        'extension',    ndi.database.implementations.database.did2sqlite.DEFAULTFILENAME(), ...
+        'extension',    ndi.database.implementations.database.did2sqlite.LEGACYFILENAME(), ...
         'code',         'db=ndi.database.implementations.database.did2sqlite(''FILEPATH'', ''SESSION_REFERENCE'', ''load'',''FILENAME'');',  ...
         'newcode',      '' ...
         );
 
-    % Entry 3 -- the same did2 store under the file name it had before
-    % 2026-11-01 ([V2 database file renamed], Decided by Jess Haley,
-    % 2026-11-01, did-schema did_v2_go_forward_class_audit.md): NDI still
-    % opens an existing V_eta.sqlite. After entry 2, so a folder holding
-    % did_v2.sqlite opens that one.
+    % Entry 3 -- an existing v1 (legacy did, branch-versioned) database,
+    % opened read-only ([v1 database read-only on the v2 line]). Never
+    % created on the V2 line.
     databasehierarchy(3) = struct( ...
-        'extension',    ndi.database.implementations.database.did2sqlite.LEGACYFILENAME(), ...
-        'code',         'db=ndi.database.implementations.database.did2sqlite(''FILEPATH'', ''SESSION_REFERENCE'', ''load'',''FILENAME'');',  ...
+        'extension',    ndi.database.implementations.database.didsqlite.FILENAME(), ...
+        'code',         'db=ndi.database.implementations.database.didsqlite(''FILEPATH'', ''SESSION_REFERENCE'', ''load'',''FILENAME'');',  ...
         'newcode',      '' ...
         );
