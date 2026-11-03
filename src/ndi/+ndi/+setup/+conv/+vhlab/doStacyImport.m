@@ -54,7 +54,7 @@ function doStacyImport(S, options)
 
     % Make documents, providing the existing ones to avoid duplicates
     subDocStruct = subM.makeSubjectDocuments(subjectInfo, ...
-        'existingSubjectDocs', existingSubjectDocs);
+        'existingSubjectDocs', existingSubjectDocs, 'Sessions', {S});
     
     % Add any newly created documents to the session
     subM.addSubjectsToSessions({S}, subDocStruct.documents);

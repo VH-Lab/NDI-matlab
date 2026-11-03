@@ -61,7 +61,7 @@ function dnew = add_stimulus_approach(S, filename)
                 'preferredOntologyIdentifier',ont_id,...
                 'description',item.Description);
             dnew = cat(1,dnew,ndi.database.fun.openMINDSobj2ndi_document(new_approach,...
-                session_id, 'stimulus',probe_id,'epochid.epochid', tab(i).Epoch));
+                S, 'stimulus',probe_id,'epochid.epochid', tab(i).Epoch));
         end
 
     end

@@ -76,6 +76,10 @@ on:
       - 'tests/+ndi/+unittest/ReconstructSeriesIngestLocationsTest.m'
       - 'src/ndi/+ndi/+migrate/+internal/withSessionId.m'
       - 'tests/+ndi/+unittest/+migrate/TestMigrateSessionId.m'
+      - 'src/ndi/+ndi/+setup/+NDIMaker/subjectMaker.m'
+      - 'src/ndi/+ndi/+database/+fun/openMINDSobj2ndi_document.m'
+      - 'src/ndi/+ndi/+database/+fun/openMINDSobj2V2.m'
+      - 'src/ndi/+ndi/+fun/+doc/+subject/makeSpeciesStrainSex.m'
       - '.github/workflows/test-import-v2.yml'
   pull_request:
     branches: [main, V2]
@@ -134,6 +138,10 @@ on:
       - 'tests/+ndi/+unittest/ReconstructSeriesIngestLocationsTest.m'
       - 'src/ndi/+ndi/+migrate/+internal/withSessionId.m'
       - 'tests/+ndi/+unittest/+migrate/TestMigrateSessionId.m'
+      - 'src/ndi/+ndi/+setup/+NDIMaker/subjectMaker.m'
+      - 'src/ndi/+ndi/+database/+fun/openMINDSobj2ndi_document.m'
+      - 'src/ndi/+ndi/+database/+fun/openMINDSobj2V2.m'
+      - 'src/ndi/+ndi/+fun/+doc/+subject/makeSpeciesStrainSex.m'
       - '.github/workflows/test-import-v2.yml'
   workflow_dispatch:
 
