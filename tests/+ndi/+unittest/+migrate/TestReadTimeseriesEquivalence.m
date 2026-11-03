@@ -20,7 +20,12 @@ classdef TestReadTimeseriesEquivalence < matlab.unittest.TestCase
 %                   epoch, written by addepoch as epoch_binary_data.vhsb
 %                   and read by vhsb_read through database_openbinarydoc,
 %                 - an ndi.neuron `unit_demo` with one epoch of spike times
-%                   (also a .vhsb).
+%                   (also a .vhsb) and a neuron_extracellular labelling it
+%                   a single unit.
+%               Migration CARRIES `lfp_demo` and its epoch as v1 (carry-063)
+%               and MIGRATES `unit_demo` (a `cell` entity; its epoch a
+%               spike-train observation owning the .vhsb as a data body),
+%               so both read paths are compared.
 %     INGESTED  the same probe, ingested with ndi.session/ingest (an mfdaq
 %               channel group in the database's file store), then the .rhd
 %               is DELETED, so every read goes through the ingested path.
@@ -116,6 +121,28 @@ classdef TestReadTimeseriesEquivalence < matlab.unittest.TestCase
             testCase.assertEmpty(v1.unit_demo.err, ['v1 neuron read: ' v1.unit_demo.err]);
             testCase.verifyEqual(v1.unit_demo.t(:), w.spikes, 'AbsTol', 1e-9);
             testCase.verifyEqual(v1.unit_demo.data(:), ones(size(w.spikes)));
+        end
+
+        function testTheUnitIsMigratedAndTheLfpElementCarried(testCase)
+            % Which read path each element takes after migration: the
+            % labelled unit is migrated, the `lfp` element carried as v1.
+            % Without this, a change that carried the unit too would leave
+            % every comparison here green while the dissolved read went
+            % untested.
+            r = testCase.Plain;
+            testCase.assertEmpty(r.setupError, r.setupError);
+            testCase.assertNotEmpty(r.result, ['no migration result: ' r.migrateError]);
+            carried = {};
+            for i = 1:numel(r.result.migrationReport)
+                c = r.result.migrationReport(i).carried_as_v1;
+                for k = 1:numel(c)
+                    carried{end+1} = char(c(k).document_id); %#ok<AGROW>
+                end
+            end
+            testCase.verifyFalse(any(strcmp(r.ids.unit_demo, carried)), ...
+                'the labelled unit was carried as v1, so the migrated epoch read is not tested');
+            testCase.verifyTrue(any(strcmp(r.ids.lfp_demo, carried)), ...
+                'the lfp element was not carried as v1 (carry-063); update this test''s description');
         end
 
         function testProbeSeriesFromTheRawFileIsTheSame(testCase)
@@ -226,10 +253,30 @@ classdef TestReadTimeseriesEquivalence < matlab.unittest.TestCase
             spikes = linspace(t0t1(1) + 0.01, t0t1(2) - 0.01, 37)';
             nr = ndi.neuron(S, 'unit_demo', 1, 'spikes', probe, 0);
             nr.addepoch(eid, ec, t0t1, spikes, ones(size(spikes)));
+            % its sorting run's record, labelled a single unit, as NDI's
+            % spike sorters write it: a labelled unit is MIGRATED (a `cell`
+            % entity, its epoch a spike-train observation owning the .vhsb
+            % as a data body), where an unlabelled one is carried whole as
+            % v1 (carry-062), so this is what puts the dissolved epoch on
+            % the read path. The `lfp` element stays carried (carry-063: no
+            % derived timeseries type is on the element type list), which
+            % keeps the carried read on the path too.
+            waveform = [0; -1; -3; -1; 0];
+            ne = S.newdocument('neuron_extracellular', ...
+                'neuron_extracellular.number_of_samples_per_channel', numel(waveform), ...
+                'neuron_extracellular.number_of_channels', 1, ...
+                'neuron_extracellular.mean_waveform', waveform, ...
+                'neuron_extracellular.waveform_sample_times', (-2:2)' / 30000, ...
+                'neuron_extracellular.cluster_index', 1, ...
+                'neuron_extracellular.quality_number', 1, ...
+                'neuron_extracellular.quality_label', 'single');
+            ne = ne.set_dependency_value('element_id', nr.id());
+            S.database_add(ne);
             S.cache.clear();
 
             plain = struct('setupError', '', 'root', root, 'epoch_id', eid, ...
-                'written', struct('element_t', elT, 'element_d', elD, 'spikes', spikes));
+                'written', struct('element_t', elT, 'element_d', elD, 'spikes', spikes), ...
+                'ids', struct('lfp_demo', el.id(), 'unit_demo', nr.id()));
             plain.v1 = P.readAll(S, eid, {'ctx', 'lfp_demo', 'unit_demo'});
             clear S probe el nr
             [plain.result, plain.migrateError] = P.migrate(root);
