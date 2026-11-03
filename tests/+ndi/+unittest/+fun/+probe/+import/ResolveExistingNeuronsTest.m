@@ -11,6 +11,8 @@ classdef ResolveExistingNeuronsTest < matlab.unittest.TestCase
         sessionDir
         S
         probe
+        probeId
+        subjectId
         currentKc
         staleKc
         currentNeuron
@@ -25,6 +27,19 @@ classdef ResolveExistingNeuronsTest < matlab.unittest.TestCase
             testCase.addTeardown(@() rmdir(testCase.sessionDir, 's'));
             testCase.S = ndi.session.dir('resolveexisting', testCase.sessionDir);
             testCase.probe = ndi.unittest.fun.probe.MockNamedProbe('ctx', 1);
+
+            % a subject and a probe element, so every document's dependencies are filled
+            subject = ndi.subject('subject1@test', 'test subject');
+            subdoc = subject.newdocument();
+            testCase.S.database_add(subdoc);
+            testCase.subjectId = subdoc.id();
+            pdoc = ndi.document('element', 'base.session_id', testCase.S.id(), ...
+                'element.ndi_element_class', 'ndi.probe.timeseries.mfdaq', ...
+                'element.name', 'ctx', 'element.reference', 1, ...
+                'element.type', 'n-trode', 'element.direct', 1);
+            pdoc = pdoc.set_dependency_value('subject_id', testCase.subjectId);
+            testCase.S.database_add(pdoc);
+            testCase.probeId = pdoc.id();
 
             testCase.currentKc = testCase.addClusterDoc();
             testCase.staleKc = testCase.addClusterDoc();
@@ -87,6 +102,7 @@ classdef ResolveExistingNeuronsTest < matlab.unittest.TestCase
             kc = ndi.document('kilosort_clusters', 'base.session_id', testCase.S.id(), ...
                 'kilosort_clusters.kilosort_directory', 'kilosort/ctx_-_1', ...
                 'kilosort_clusters.curated_output_MD5_checksum', did.ido.unique_id());
+            kc = kc.set_dependency_value('element_id', testCase.probeId);
             testCase.S.database_add(kc);
         end
 
@@ -97,12 +113,18 @@ classdef ResolveExistingNeuronsTest < matlab.unittest.TestCase
                 'element.reference', reference, ...
                 'element.type', 'spikes', ...
                 'element.direct', 0);
+            edoc = edoc.set_dependency_value('underlying_element_id', testCase.probeId);
+            edoc = edoc.set_dependency_value('subject_id', testCase.subjectId);
             testCase.S.database_add(edoc);
             if ~isempty(kc)
                 ne = struct('number_of_samples_per_channel', 1, 'number_of_channels', 1, ...
                     'mean_waveform', 0, 'waveform_sample_times', 0, 'cluster_index', 5, ...
                     'quality_number', 1, 'quality_label', 'good');
-                nd = ndi.document('neuron_extracellular', 'neuron_extracellular', ne, ...
+                app_struct = struct('name','test pipeline','version','1.0', ...
+                    'url','','os', computer,'os_version','', ...
+                    'interpreter','MATLAB','interpreter_version','9');
+                nd = ndi.document('neuron_extracellular', 'app', app_struct, ...
+                    'neuron_extracellular', ne, ...
                     'base.session_id', testCase.S.id());
                 nd = nd.set_dependency_value('element_id', edoc.id());
                 nd = nd.set_dependency_value('spike_clusters_id', kc.id());
