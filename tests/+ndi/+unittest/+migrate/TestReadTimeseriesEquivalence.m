@@ -34,12 +34,10 @@ classdef TestReadTimeseriesEquivalence < matlab.unittest.TestCase
 %   channel groups into sampled_body documents, and NDI's mfdaq reader
 %   reads them ([V2 ingest is one sampled body per channel group]): the
 %   channel list, sample rate and samples are the same
-%   (testIngestedChannelsAndSamplesAreTheSame). The epoch's clock and
-%   extent are not: no migrated document states them, so the probe's epoch
-%   table and times cannot be read
-%   (testIngestedEpochClockIsNotInTheMigratedDocuments pins that, and
-%   fails the day migration carries the clock; it is then turned into
-%   the probe's equality check).
+%   (testIngestedChannelsAndSamplesAreTheSame). The epoch's clocks and
+%   t0_t1 are on the recording observation's time references ([clock only
+%   on the time reference]), so the probe's epoch table, samples and times
+%   and the time channel are the same too (testIngestedProbeSeriesIsTheSame).
 %
 %   Migration runs once per session, in TestClassSetup. Each reading is
 %   taken inside try/catch and kept with its error, so one failing read does
@@ -191,50 +189,59 @@ classdef TestReadTimeseriesEquivalence < matlab.unittest.TestCase
             end
         end
 
-        function testIngestedEpochClockIsNotInTheMigratedDocuments(testCase)
-            % A CHARACTERIZATION TEST OF A KNOWN LOSS, not of the shape
-            % wanted. The v1 ingested document holds the epoch's clock and
-            % extent (`daqreader_epochdata_ingested.epochtable`: epochclock
+        function testIngestedProbeSeriesIsTheSame(testCase)
+            % The v1 ingested document holds the epoch's clock and extent
+            % (`daqreader_epochdata_ingested.epochtable`: epochclock
             % {'dev_local_time'}, t0_t1 [0 2.99995] here). Migration retires
-            % that document (DID-matlab did2.convert.resolveEpochProbemap,
-            % once every file it holds has a new owner) and nothing it
-            % writes states a clock: the recording observation's time
-            % reference is `intervalDuring` the epoch with no clock and no
-            % start, and the epoch entity has neither. Decided by Jess
-            % Haley, 2026-11-01 [clock only on the time reference]: "the
-            % recording observation's time references say when the epoch
-            % starts on each clock" -- which the migrated time reference
-            % does not yet say. So the reader refuses
-            % (NDI:daq:reader:ingestedEpochNoClock) rather than assume a
-            % clock: the probe's epoch table, its times and the time
-            % channel cannot be read on the migrated session, while its
-            % samples can (testIngestedChannelsAndSamplesAreTheSame).
+            % that document (DID-matlab did2.convert.resolveEpochProbemap)
+            % and, before it does, writes them on the recording
+            % observation's time references: one relative_time_reference
+            % onto the epoch per clock, {clock, start, duration} (Decided by
+            % Jess Haley, 2026-11-01 [clock only on the time reference]:
+            % "the recording observation's time references say when the
+            % epoch starts on each clock"). So the probe's epoch table
+            % (its clocks and t0_t1), its samples and its times, and the
+            % acquisition system's time channel, read the same before and
+            % after migration.
             %
-            % WHEN THIS FAILS because the read succeeds, migration carries
-            % the clock: replace the body of this method with
-            %     testCase.verifySameReading('Ingested', 'ctx');
-            % and rename it testIngestedProbeSeriesIsTheSame.
+            % THE TIMES TO THE DECIDED TOLERANCE, NOT TO THE BIT. The v1
+            % ingest stores the time channel as samples (`ti_group1`).
+            % Migration removes that body because the series is evenly
+            % spaced, and only when every sample is t0 + (k-1)/rate to
+            % max(1e-9 s, a millionth of a sample)
+            % (ndi.migrate.internal.ingestedArchiveBodies). After that, the
+            % time is the covariate origin plus spacing (Decided by Jess Haley,
+            % 2026-11-01 [evenly spaced time is a covariate]). The reader
+            % computes t0 + (s-1)/rate, which differs from v1's stored doubles
+            % by a few units in the last place (e.g. 5e-19 s at 0.0009 s, on
+            % run 41675185510). The epoch table and the samples are compared
+            % exactly; the times are compared to the tolerance migration
+            % itself checked.
             r = testCase.Ingested;
-            testCase.assertEmpty(r.setupError, ...
-                ['building the INGESTED session raised: ' r.setupError]);
-            testCase.assertEmpty(r.v1.ctx.err, ['v1 ingested read: ' r.v1.ctx.err]);
-            testCase.assertNotEmpty(r.v1.ctx.data, 'the v1 ingested read returned no samples');
-            fprintf('\n  Ingested / ctx, epoch %s\n    v1: %s\n    v2: %s\n', r.epoch_id, ...
-                ndi.unittest.migrate.TestReadTimeseriesEquivalence.describe(r.v1.ctx), ...
-                ndi.unittest.migrate.TestReadTimeseriesEquivalence.describe(r.v2.ctx));
-            testCase.verifySubstring(r.v2.ctx.err, 'ingestedEpochNoClock', ...
-                ['the migrated ingested probe read no longer fails for want of the epoch''s ' ...
-                 'clock; if it now succeeds, make this test compare it (see its comment)']);
-            testCase.verifySubstring(r.v2dev.time.err, 'ingestedEpochNoClock', ...
-                ['the migrated ingested time channel read no longer fails for want of the ' ...
-                 'epoch''s clock; compare it with the v1 read (see this test''s comment)']);
+            testCase.assertEmpty(r.v1dev.samplerate.err, ...
+                ['v1 ingested sample rate raised: ' r.v1dev.samplerate.err]);
+            timeTol = max(1e-9, 1e-6 / double(r.v1dev.samplerate.value));
+            testCase.verifySameReading('Ingested', 'ctx', timeTol);
+            a = r.v1dev.time;
+            b = r.v2dev.time;
+            fprintf('  Ingested / intan1 time\n    v1: %s\n    v2: %s\n', ...
+                ndi.unittest.migrate.TestReadTimeseriesEquivalence.describeValue(a), ...
+                ndi.unittest.migrate.TestReadTimeseriesEquivalence.describeValue(b));
+            testCase.assertEmpty(a.err, ['v1 ingested time channel raised: ' a.err]);
+            testCase.assertNotEmpty(a.value, 'the v1 ingested time channel is empty');
+            testCase.verifyEmpty(b.err, ['the MIGRATED ingested time channel raised: ' b.err]);
+            testCase.verifyEqual(b.value, a.value, 'AbsTol', timeTol, ...
+                'the ingested time channel differs after migration');
         end
 
     end
 
     methods (Access = private)
 
-        function verifySameReading(testCase, which, name)
+        function verifySameReading(testCase, which, name, timeTol)
+            % TIMETOL (default 0: equal to the bit) is the absolute
+            % tolerance, in seconds, of the times comparison only.
+            if nargin < 4; timeTol = 0; end
             r = testCase.(which);
             testCase.assertEmpty(r.setupError, ...
                 sprintf('building the %s session raised: %s', which, r.setupError));
@@ -257,8 +264,14 @@ classdef TestReadTimeseriesEquivalence < matlab.unittest.TestCase
                 sprintf('%s/%s: sample array size differs after migration', which, name));
             testCase.verifyEqual(b.data, a.data, ...
                 sprintf('%s/%s: samples differ after migration', which, name));
-            testCase.verifyEqual(b.t, a.t, ...
-                sprintf('%s/%s: times differ after migration', which, name));
+            if timeTol == 0
+                testCase.verifyEqual(b.t, a.t, ...
+                    sprintf('%s/%s: times differ after migration', which, name));
+            else
+                testCase.verifyEqual(b.t, a.t, 'AbsTol', timeTol, ...
+                    sprintf('%s/%s: times differ after migration (tolerance %g s)', ...
+                    which, name, timeTol));
+            end
         end
 
     end
