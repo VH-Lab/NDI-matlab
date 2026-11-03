@@ -1,4 +1,4 @@
-function assertSafeCurlArgs(url, localPath)
+function assertSafeCurlArgs(url, localPath, options)
 % ASSERTSAFECURLARGS - validate a URL and local path before curl interpolation
 %
 %   ndi.cloud.api.implementation.files.assertSafeCurlArgs(URL, LOCALPATH)
@@ -28,10 +28,23 @@ function assertSafeCurlArgs(url, localPath)
 %
 %   Callers that cannot guarantee a shell-safe transfer should instead route
 %   the request through the native websave / matlab.net.http path.
+%
+%   PLATFORM. On Windows, system() runs the command through cmd.exe, not sh.
+%   There backslash is the path separator (every tempname() path contains
+%   it), and ` and $ have no special meaning; inside double quotes the
+%   characters that matter are " (ends the quoted argument) and % (expands
+%   environment variables). So on Windows the LOCAL PATH is checked against
+%   " and % instead of the sh set. Refusing backslash there rejected every
+%   Windows download and upload outright. The URL check is the same on all
+%   platforms (a percent-encoded pre-signed URL never contains a backslash).
+%
+%   ndi.cloud.api.implementation.files.assertSafeCurlArgs(..., 'isWindows', TF)
+%   overrides the platform (default ispc()); intended for tests.
 
     arguments
         url (1,1) string
         localPath (1,1) string
+        options.isWindows (1,1) logical = ispc()
     end
 
     urlChar  = char(url);
@@ -60,16 +73,25 @@ function assertSafeCurlArgs(url, localPath)
     % the curl command, so spaces there are legitimate (e.g. "/Users/My Name")
     % and are allowed; only the quote-breaking and control characters are
     % refused for the path.
-    assertNoShellMetacharacters(urlChar, 'URL', 'NDI:CloudApi:UnsafeCurlURL', true);
+    shForbidden = ['"' '`' '$' '\'];
+    assertNoShellMetacharacters(urlChar, 'URL', 'NDI:CloudApi:UnsafeCurlURL', ...
+        true, shForbidden);
+    if options.isWindows
+        % cmd.exe: " ends the quoted argument and % expands variables;
+        % backslash is the path separator and must be allowed.
+        pathForbidden = ['"' '%'];
+    else
+        pathForbidden = shForbidden;
+    end
     assertNoShellMetacharacters(pathChar, 'local file path', ...
-        'NDI:CloudApi:UnsafeCurlPath', false);
+        'NDI:CloudApi:UnsafeCurlPath', false, pathForbidden);
 end
 
-function assertNoShellMetacharacters(value, label, errorId, rejectWhitespace)
-    % Characters that can escape a double-quoted sh argument (double quotes in
-    % sh do not neutralise command substitution, so ` and $ remain dangerous,
-    % \ can escape the closing quote, and " terminates it outright).
-    forbidden = ['"' '`' '$' '\'];
+function assertNoShellMetacharacters(value, label, errorId, rejectWhitespace, forbidden)
+    % FORBIDDEN lists the characters that can escape a double-quoted argument
+    % for the shell in use. For sh: double quotes do not neutralise command
+    % substitution, so ` and $ remain dangerous, \ can escape the closing
+    % quote, and " terminates it outright. For cmd.exe see the header.
     idx = find(ismember(value, forbidden), 1);
     if ~isempty(idx)
         error(errorId, ...
