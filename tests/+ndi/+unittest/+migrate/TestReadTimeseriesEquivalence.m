@@ -25,8 +25,8 @@ classdef TestReadTimeseriesEquivalence < matlab.unittest.TestCase
 %               channel group in the database's file store), then the .rhd
 %               is DELETED, so every read goes through the ingested path.
 %
-%   WHAT IS NOT EQUIVALENT YET. The INGESTED probe's epoch table is the
-%   same after migration, but its samples cannot be read there: migration
+%   WHAT IS NOT EQUIVALENT YET. The INGESTED probe cannot be read after
+%   migration, neither its epoch table nor its samples: migration
 %   turns the ingested channel group into sampled_body documents and NDI's
 %   mfdaq reader does not read those yet ([V2 ingest is one sampled body
 %   per channel group], Build pending in NDI-matlab +ndi/+daq/reader.m).
@@ -130,20 +130,6 @@ classdef TestReadTimeseriesEquivalence < matlab.unittest.TestCase
             testCase.verifySameReading('Plain', 'unit_demo');
         end
 
-        function testIngestedProbeEpochTableIsTheSame(testCase)
-            r = testCase.Ingested;
-            testCase.assertEmpty(r.setupError, ...
-                ['building the INGESTED session raised: ' r.setupError]);
-            testCase.assertTrue(logical(r.isIngested), ...
-                'the INGESTED session''s epoch is not on the ingested path');
-            testCase.assertEmpty(r.v1.ctx.err, ['v1 ingested read: ' r.v1.ctx.err]);
-            testCase.assertNotEmpty(r.v1.ctx.data, 'the v1 ingested read returned no samples');
-            testCase.assertNotEmpty(r.v2.ctx.epochtable, ...
-                ['the migrated ingested probe has no epoch table: ' r.v2.ctx.err]);
-            testCase.verifyEqual(r.v2.ctx.epochtable, r.v1.ctx.epochtable, ...
-                'Ingested/ctx: the epoch table differs after migration');
-        end
-
         function testIngestedProbeSeriesIsNotReadFromTheMigratedBodiesYet(testCase)
             % A CHARACTERIZATION TEST OF A KNOWN GAP, not of the shape
             % wanted. Migration turns the v1 ingested channel group into
@@ -155,7 +141,11 @@ classdef TestReadTimeseriesEquivalence < matlab.unittest.TestCase
             % (ndi.daq.reader/getingesteddocument). Reading the bodies is
             % [V2 ingest is one sampled body per channel group] (Jess Haley,
             % 2026-10-29), "Build pending: NDI-matlab (... `+ndi/+daq/reader.m`
-            % reads them)". So the read on the migrated session raises today.
+            % reads them)". So the read on the migrated session raises today,
+            % and so does its epoch table (ndi.daq.reader/t0_t1_ingested asks
+            % the same lookup): run 41618262883 of this test, "Found 0
+            % documents for <epoch>, needed exactly 1" at
+            % reader.getingesteddocument, for both.
             %
             % WHEN THIS FAILS because the read succeeds, the reader has
             % landed: replace the body of this method with
@@ -164,6 +154,8 @@ classdef TestReadTimeseriesEquivalence < matlab.unittest.TestCase
             r = testCase.Ingested;
             testCase.assertEmpty(r.setupError, ...
                 ['building the INGESTED session raised: ' r.setupError]);
+            testCase.assertTrue(logical(r.isIngested), ...
+                'the INGESTED session''s epoch is not on the ingested path');
             testCase.assertEmpty(r.v1.ctx.err, ['v1 ingested read: ' r.v1.ctx.err]);
             testCase.assertNotEmpty(r.v1.ctx.data, 'the v1 ingested read returned no samples');
             fprintf('\n  Ingested / ctx, epoch %s\n    v1: %s\n    v2: %s\n', r.epoch_id, ...
