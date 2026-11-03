@@ -200,7 +200,15 @@ classdef dir < ndi.dataset
             %   'dataset' - allowed (this is a dataset).
             %   'none'    - allowed (not yet an NDI directory; a new dataset can be
             %               created here).
-            %   'session' - rejected.
+            %   'session' - re-checked, then rejected if it still reads 'session'.
+            %               A marker written before #1015 was fixed may be wrong:
+            %               ndi.session.dir/updateObjectTypeMarker searched for the
+            %               dataset bookkeeping documents only among the documents
+            %               of whichever session the folder opened as, and so
+            %               marked downloaded datasets 'session'. The directory is
+            %               opened once as an ndi.session.dir, whose
+            %               updateObjectTypeMarker now searches the whole database
+            %               and corrects such a marker to 'dataset'.
             %   'unknown' - a legacy NDI directory whose type was never recorded.
             %               Because a marked session is caught but an *unmarked* one
             %               would slip through and be mislabeled, an 'unknown'
@@ -234,6 +242,17 @@ classdef dir < ndi.dataset
                     t = ndi.session.dir.directorytype(path);
                 catch
                     t = 'unknown';
+                end
+            elseif strcmp(t,'session')
+                % Re-check a 'session' marker (#1015, #974): opening the
+                % directory re-runs updateObjectTypeMarker, which corrects a
+                % dataset wrongly marked 'session'. If it cannot be opened, the
+                % recorded 'session' stands.
+                try
+                    ndi.session.dir(path);
+                    t = ndi.session.dir.directorytype(path);
+                catch
+                    t = 'session';
                 end
             end
             if strcmp(t,'session')
