@@ -1,18 +1,19 @@
 # Using V2
 
-A short guide for a scientist with a V2 (V_eta) dataset: how to open it, find
-things in it, read what is stated about them, and write one. The design and its
-reasons are in [V2_Object_Layer.md](V2_Object_Layer.md). The examples follow the
-Haley C. elegans dataset and its unit tests (`TestObjectLayer`, `TestHaleyWrite`).
+A short guide for a scientist with a v2 (`did_v2`) dataset: how to open it,
+find things in it, read what is stated about them, and write one. The design and
+its reasons are in [V2_Object_Layer.md](V2_Object_Layer.md). The examples follow
+the Haley C. elegans dataset and its unit tests (`TestObjectLayer`,
+`TestHaleyWrite`).
 
-V2 needs DID-matlab's V2 line on the path and `DID_SCHEMA_PATH` set to a folder of
-V_eta schema files (did-schema `schemas/V_eta/stable`, `draft` and `deprecated`,
-copied into one folder). **It requires did-schema #88 and DID-matlab #218** (one
-`entity` class, statements by composition, `included_in`, a `session_id` edge,
-the term registry): NDI writes that shape only, and NDI-matlab #1021 merges after
-both. Until they merge, take did-schema and DID-matlab from their branch
-`claude/ecstatic-pascal-md91fw`. `ndi.setup.V2.preflight` says so when the schema
-on `DID_SCHEMA_PATH` is older.
+To turn a v1 dataset or session into a v2 one, to check the result, and to see
+what your own code has to change, read
+[Migrating_to_v2.md](../Migrating_to_v2.md).
+
+v2 needs NDI-matlab and DID-matlab on their `V2` branch, on the MATLAB path, and
+`DID_SCHEMA_PATH` set to `schemas/did_v2` in a checkout of did-schema `main`
+(then `did2.schema.cache.resetSingleton()`). `ndi.setup.V2.preflight` says what
+is missing when the schema on `DID_SCHEMA_PATH` is not found or is too old.
 
 ## 1. Open a dataset or a session
 
@@ -94,8 +95,7 @@ a{1}.value().canonical()   % a term's name, e.g. "N2"; a logical, a number
 ndi.summary(a)             % one row per statement
 ```
 
-A statement's method is one block, `interaction.method: {term, parameters}`
-(did-schema #88): `method()` is its `term` and `method_parameters()` its
+A statement's method is one block, `interaction.method: {term, parameters}`: `method()` is its `term` and `method_parameters()` its
 `parameters`. A shared, named method is instead a standalone `method` document
 the statement points at by `method_id` (never both); `method()` and
 `method_parameters()` read that document the same way. Searching by `'method'`
@@ -300,8 +300,8 @@ r = ndi.setup.conv.haley.import_V2(dataParentDir, ...
 ## 7. Adding terms for a new dataset
 
 Every variable, method, unit, condition, parameter, dimension and covariate a V2 import writes
-must be in DID-schema's term registry (`schemas/V_eta_term_registry.json`;
-tenet T19, `V_eta_term_registry_plan.md`). A new dataset usually needs a few
+must be in DID-schema's term registry (`schemas/registry/did_v2_term_registry.json`;
+tenet T19, `docs/plans/did_v2_term_registry_plan.md`). A new dataset usually needs a few
 terms the registry lacks. The steps, in order:
 
 **1. List the unregistered terms.** `ndi.setup.V2.checkTerms` runs a
@@ -349,7 +349,7 @@ code for those (the Haley import found two that way).
   and why the near misses do not fit, for example `"No ontology term found
   (OLS, 2026-10-21): ..."`. Copy the existing blocks there as the pattern.
 
-If the prefix is new (no entry in `schemas/V_eta/stable/CURIE_lookups_meta.json`),
+If the prefix is new (no entry in `schemas/registry/CURIE_lookups_meta.json`),
 add it before the term. It goes in that file in DID-schema (an entry with its
 `spelling`, URI base and pattern), and in ndi-ontology-matlab (a lookup class
 and an `ontology_list.json` entry) when NDI needs to look its terms up.
@@ -378,22 +378,24 @@ spelling. It writes nothing: paste the printed rows at the end of `terms`.
 
 **4. Gate.** In DID-schema, run
 `EMPTY_ONTOLOGY=../empty-ontology python3 tools/gates.py`. Its `validate_v_eta`
-step copies the registry into `schemas/V_eta/stable/term_registry_meta.json`
-(the JSON under `schemas/V_eta` is the source; there is no build step).
+step copies the registry into `schemas/generated/term_registry_meta.json`
+(the JSON under `schemas/did_v2` and `schemas/registry` is the source; there is
+no build step).
 `check_term_registry` must pass, and its R7 line must say the EMPTY terms
 were compared, not `NOT CHECKED`. CI has no empty-ontology checkout, so R7
-is checked only on your machine. Copy the `stable`, `draft` and
-`deprecated` folders to your `DID_SCHEMA_PATH`. Then re-run step 1, which
+is checked only on your machine. Point `DID_SCHEMA_PATH` at that checkout's
+`schemas/did_v2` (and call `did2.schema.cache.resetSingleton()`). Then re-run
+step 1, which
 should now list nothing, with the registry error back on.
 
 **Which repository and PR gets what:**
 
-| repository | what | PR (until merged) |
-|---|---|---|
-| Waltham-Data-Science/empty-ontology | new EMPTY classes in `src/ontology/empty-edit.owl` | #22, branch `claude/ome-zarr-format` |
-| did-schema | the rows in `schemas/V_eta_term_registry.json`, the regenerated `term_registry_meta.json`, and any new prefix in `schemas/V_eta/stable/CURIE_lookups_meta.json` | #88, branch `claude/ecstatic-pascal-md91fw` |
-| ndi-ontology-matlab | a lookup class for a new prefix, only if one is needed | #11 |
-| NDI-matlab | the import, writing terms through `ndi.setup.V2.registeredTerm`, and a test like `TestTermRegistry` that runs it with collection on | #1021 |
+| repository | what |
+|---|---|
+| Waltham-Data-Science/empty-ontology | new EMPTY classes in `src/ontology/empty-edit.owl` |
+| did-schema | the rows in `schemas/registry/did_v2_term_registry.json`, the regenerated `schemas/generated/term_registry_meta.json`, and any new prefix in `schemas/registry/CURIE_lookups_meta.json` |
+| ndi-ontology-matlab | a lookup class for a new prefix, only if one is needed |
+| NDI-matlab | the import, writing terms through `ndi.setup.V2.registeredTerm`, and a test like `TestTermRegistry` that runs it with collection on |
 
 DID-matlab needs no change. It reads the registry from `DID_SCHEMA_PATH`.
 Merge empty-ontology first (the ids are fixed there), then did-schema, then
@@ -488,7 +490,9 @@ the template and point it at your own fixture. The Haley import,
   `ndi.entity`.
 - `ndi.session.dir` on an empty folder creates a v1 session, and
   `ndi.document(...)` and `S.newdocument(...)` build v1 documents from NDI's
-  templates. Make V2 with `ndi.setup.V2` and `did2.build`.
+  templates. Make v2 with `ndi.setup.V2` and `did2.build`. (A brand-new
+  database is to become v2, but that is not in effect yet; see
+  [Migrating_to_v2.md](../Migrating_to_v2.md), section 2.)
 - v1's `session_in_a_dataset` is not used: a V2 session is in a dataset through
   an `included_in` relation.
 - Acquisition objects (DAQ systems, probes, elements, the syncgraph) are v1's.
