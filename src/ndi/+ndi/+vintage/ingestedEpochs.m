@@ -45,6 +45,17 @@ function E = ingestedEpochs(ndi_session_obj, docs, probemapClass)
 %                Rows are kept once each, in statement order. A manifest whose
 %                statements give no row reads as probemap [].
 %
+%                ONLY THE MANIFEST'S OWN SYSTEM. One epoch is one recording,
+%                shared by every acquisition system that wrote files for it
+%                (Decided by Jess Haley, 2026-10-26 [device clocks on one
+%                epoch]: B's vhspike2 and vhvis_spike2 share "t00001"), so
+%                the epoch's statements are those of all its systems. A v1
+%                navigator's epoch held only its own system's rows, so a row
+%                is kept only when its system's `epoch_file_pattern_id` is the
+%                manifest's (a row whose system states none is kept). Without
+%                this, B's vhvis_spike2 epochs read vhspike2's tet1 row too
+%                (VH-Lab/NDI-matlab#785 corpus equivalence: 1,242 epochs).
+%
 %   Lookups (element fields, systems, subjects) are cached across DOCS, so a
 %   navigator reading a session's ingested epochs reads each element once.
 %
@@ -84,7 +95,11 @@ for k = 1:numel(docs)
     if ~isempty(epochDoc)
         epochId = localIdentifier(epochDoc.document_properties);
     end
-    [pm, cache] = probemapOf(ndi_session_obj, epochDocId, probemapClass, cache);
+    patternId = docs{k}.dependency_value('epoch_file_pattern_id', 'ErrorIfNotFound', 0);
+    if isempty(patternId)
+        patternId = docs{k}.dependency_value('filenavigator_id', 'ErrorIfNotFound', 0);
+    end
+    [pm, cache] = probemapOf(ndi_session_obj, epochDocId, probemapClass, cache, patternId);
     E(end+1) = struct('epoch_id', epochId, 'files', {files}, 'probemap', {pm}, ...
         'vintage', 'V_eta'); %#ok<AGROW>
 end
@@ -92,7 +107,7 @@ end
 
 % ===================== the probe map, put back together ===================
 
-function [pm, cache] = probemapOf(S, epochDocId, probemapClass, cache)
+function [pm, cache] = probemapOf(S, epochDocId, probemapClass, cache, patternId)
 pm = [];
 if isempty(epochDocId)
     return;
@@ -113,6 +128,10 @@ for i = 1:numel(statements)
     elId = st.dependency_value('instrument_id', 'ErrorIfNotFound', 0);
     if (isempty(acId) && isempty(sysId)) || isempty(elId)
         continue;   % not a probe-map row: no rig or no probe
+    end
+    [own, cache] = isOwnSystem(S, sysId, acId, patternId, cache);
+    if ~own
+        continue;   % another acquisition system's row of this recording
     end
     [el, cache] = elementOf(S, elId, cache);
     if isempty(el)
@@ -142,6 +161,30 @@ for i = 1:numel(statements)
         pm(end+1) = row; %#ok<AGROW>
     end
 end
+end
+
+function [tf, cache] = isOwnSystem(S, sysId, acId, patternId, cache)
+% Is the row's acquisition system the one whose epoch file pattern is
+% PATTERNID? True when either is not stated.
+tf = true;
+if isempty(patternId)
+    return;
+end
+if isempty(sysId) && ~isempty(acId)
+    [ac, cache] = docById(S, acId, cache);
+    if ~isempty(ac)
+        sysId = ac.dependency_value('acquisition_system_id', 'ErrorIfNotFound', 0);
+    end
+end
+[sys, cache] = docById(S, sysId, cache);
+if isempty(sys)
+    return;
+end
+p = sys.dependency_value('epoch_file_pattern_id', 'ErrorIfNotFound', 0);
+if isempty(p)
+    p = sys.dependency_value('filenavigator_id', 'ErrorIfNotFound', 0);
+end
+tf = isempty(p) || strcmp(p, patternId);
 end
 
 function [s, cache] = deviceString(S, acId, cache)

@@ -27,13 +27,20 @@ function R = corpusObjectEquivalence(v1Bodies, migratedNdiDir, label)
 %                    `subject.description`, after migration `notes`)
 %     subject fact   every v1 document that depends on a subject
 %                    (`subject_id`): after migration, the document with the
-%                    same id still points at that subject
+%                    same id, or a document pointing at both it and the
+%                    subject (a relation), still ties it to that subject
 %     element        getelements: id, name, reference, type, class,
 %                    subject, underlying element (id and name), direct
 %     probe          getprobes, keyed by name | reference | type: id,
 %                    subject, class
 %     probe epoch    each probe's epoch table, by epoch id: number, clocks,
-%                    t0_t1, probe map rows, underlying epoch ids
+%                    t0_t1, probe map, underlying epoch ids. The probe map
+%                    is compared as what it wires: per probe (name,
+%                    reference, type, subject), its channels in row order.
+%                    [probe in several rows is one wiring] (Jess Haley,
+%                    2026-11-03) merges a probe's rows into one
+%                    (`vhvis_spike2:mk1-3;e1-3;md1`); such epochs are
+%                    counted, not reported as differences
 %     daq system     daqsystem_load, by name: class
 %     daq epoch      each acquisition system's epoch table, as above
 %     element epoch  each non-probe element's epoch table, as above
@@ -46,6 +53,8 @@ function R = corpusObjectEquivalence(v1Bodies, migratedNdiDir, label)
 %   has no v1 subject object to compare with. They are counted by type and
 %   by what their id was in v1 (an element, another v1 class, or a new id),
 %   not compared.
+%
+%   read_error counts every object read that raised, on either side.
 %
 %   Every category reports its denominator first: how many were compared,
 %   how many were the same, how many differed, and how many were found on
@@ -142,7 +151,7 @@ end
 R.seconds.sessions = toc(t);
 
 % ---- subject facts (document level, every session) -----------------------
-R.cats.subject_fact = compareFacts(R.cats.subject_fact, v1Structs, v1Subjects, v2ById);
+R.cats.subject_fact = compareFacts(R.cats.subject_fact, v1Structs, v1Subjects, v2ById, v2Structs);
 
 % ---- apparatus and equipment: counted, not compared ----------------------
 R.apparatus = countApparatus(v2Structs, v1Subjects, v1Elements, v1ById);
@@ -160,12 +169,13 @@ end
 % =========================================================================
 
 function names = categoryNames()
-names = {'subject', 'subject_fact', 'element', 'probe', 'probe_epoch', ...
+names = {'read_error', 'subject', 'subject_fact', 'element', 'probe', 'probe_epoch', ...
     'daq_system', 'daq_epoch', 'element_epoch', 'write_round_trip'};
 end
 
 function C = newCat()
 C = struct('compared', 0, 'same', 0, 'differ', 0, 'only_v1', 0, 'only_v2', 0, ...
+    'merged_probemap_rows', 0, ...
     'kinds', {{}}, 'kindCounts', [], 'examples', {{}});
 end
 
@@ -458,11 +468,11 @@ end
 
 function cats = compareSnapshots(cats, a, b, sid)
 for k = 1:numel(a.errors)
-    cats.subject = tally(cats.subject, 'differ', 'error (v1 read)', ...
+    cats.read_error = tally(cats.read_error, 'only_v1', 'a v1 read raised', ...
         sprintf('session %s: %s', sid, a.errors{k}));
 end
 for k = 1:numel(b.errors)
-    cats.subject = tally(cats.subject, 'differ', 'error (migrated read)', ...
+    cats.read_error = tally(cats.read_error, 'only_v2', 'a read of the migrated session raised', ...
         sprintf('session %s: %s', sid, b.errors{k}));
 end
 
@@ -561,7 +571,15 @@ for i = 1:numel(ea)
     if ~isequal(a.epoch_session_id, b.epoch_session_id); bad{end+1} = 'epoch_session_id'; end %#ok<AGROW>
     if ~isequal(a.epoch_clock, b.epoch_clock); bad{end+1} = 'epoch_clock'; end %#ok<AGROW>
     if ~sameT0T1(a.t0_t1, b.t0_t1); bad{end+1} = 't0_t1'; end %#ok<AGROW>
-    if ~isequal(a.epochprobemap, b.epochprobemap); bad{end+1} = 'epochprobemap'; end %#ok<AGROW>
+    if ~isequal(probemapWiring(a.epochprobemap), probemapWiring(b.epochprobemap))
+        bad{end+1} = 'epochprobemap'; %#ok<AGROW>
+    elseif ~isequal(a.epochprobemap, b.epochprobemap)
+        % the same probes on the same channels, written in fewer rows:
+        % [probe in several rows is one wiring] (Jess Haley, 2026-11-03)
+        % merges a probe's rows into one (`...:mk1-3;e1-3;md1`). Counted,
+        % not a difference.
+        C.merged_probemap_rows = C.merged_probemap_rows + 1;
+    end
     if ~isequal(sort(a.underlying_epoch_ids), sort(b.underlying_epoch_ids))
         bad{end+1} = 'underlying_epoch_ids'; %#ok<AGROW>
     end
@@ -576,6 +594,68 @@ for j = 1:numel(eb)
     if ~any(strcmp(ida, idb{j}))
         C = tally(C, 'only_v2', 'epoch with no v1 counterpart', ...
             sprintf('%s: epoch %s', where, idb{j}));
+    end
+end
+end
+
+function W = probemapWiring(pm)
+% A probe map as what it wires: per probe (name, reference, type, subject),
+% the ordered list of `system:channel` its rows name, rows taken in order.
+% Two maps that wire the same probes to the same channels in the same order
+% give the same W, however the rows are split.
+keys = {};
+chans = {};
+for k = 1:numel(pm)
+    r = pm{k};
+    if ~isfield(r, 'name')
+        key = jsonencode(r);
+        list = {};
+    else
+        key = sprintf('%s|%g|%s|%s', r.name, r.reference, r.type, r.subjectstring);
+        list = expandDeviceString(r.devicestring);
+    end
+    i = find(strcmp(keys, key), 1);
+    if isempty(i)
+        keys{end+1} = key; %#ok<AGROW>
+        chans{end+1} = list; %#ok<AGROW>
+    else
+        chans{i} = [chans{i}, list];
+    end
+end
+[keys, o] = sort(keys);
+W = struct('probe', keys, 'channels', chans(o));
+end
+
+function list = expandDeviceString(ds)
+% 'sys:mk1-3;e1,4;md1' -> {'sys:mk1','sys:mk2','sys:mk3','sys:e1','sys:e4','sys:md1'}
+list = {};
+ds = char(ds);
+c = find(ds == ':', 1);
+if isempty(c)
+    list = {ds};
+    return;
+end
+sys = ds(1:c-1);
+for seg = strsplit(ds(c+1:end), ';')
+    t = regexp(strtrim(seg{1}), '^([A-Za-z_]+)(.*)$', 'tokens', 'once');
+    if isempty(t)
+        if ~isempty(strtrim(seg{1})); list{end+1} = [sys ':' strtrim(seg{1})]; end %#ok<AGROW>
+        continue;
+    end
+    nums = [];
+    for part = strsplit(t{2}, ',')
+        ab = sscanf(part{1}, '%d-%d');
+        if numel(ab) == 2
+            nums = [nums, ab(1):ab(2)]; %#ok<AGROW>
+        elseif numel(ab) == 1
+            nums(end+1) = ab; %#ok<AGROW>
+        end
+    end
+    if isempty(nums)
+        list{end+1} = [sys ':' t{1}]; %#ok<AGROW>
+    end
+    for n = nums
+        list{end+1} = sprintf('%s:%s%d', sys, t{1}, n); %#ok<AGROW>
     end
 end
 end
@@ -612,7 +692,22 @@ end
 % subject facts, apparatus, write round trip
 % =========================================================================
 
-function C = compareFacts(C, v1Structs, v1Subjects, v2ById)
+function C = compareFacts(C, v1Structs, v1Subjects, v2ById, v2Structs)
+% A v1 document that depends on a subject (`subject_id`) is a fact about it.
+% After migration the fact holds when the document with the same id points
+% at that subject, or a document that points at both (a relation, e.g. a
+% probe's subject: an element's subject became a relation) does.
+refsTo = containers.Map('KeyType', 'char', 'ValueType', 'any');
+for k = 1:numel(v2Structs)
+    e = unique(depValues(v2Structs{k}, ''));
+    for m = 1:numel(e)
+        if isKey(refsTo, e{m})
+            refsTo(e{m}) = [refsTo(e{m}), k];
+        else
+            refsTo(e{m}) = k;
+        end
+    end
+end
 for k = 1:numel(v1Structs)
     b = v1Structs{k};
     subj = intersect(depValues(b, 'subject_id'), v1Subjects);
@@ -625,10 +720,16 @@ for k = 1:numel(v1Structs)
         continue;
     end
     after = v2ById(id);
-    if all(ismember(subj, depValues(after, '')))
+    held = ismember(subj, depValues(after, ''));
+    if ~all(held) && isKey(refsTo, id)
+        for r = refsTo(id)
+            held = held | ismember(subj, depValues(v2Structs{r}, ''));
+        end
+    end
+    if all(held)
         C = tally(C, 'same', '', '');
     else
-        C = tally(C, 'differ', sprintf('%s: no longer points at its subject', cn), ...
+        C = tally(C, 'differ', sprintf('%s: nothing ties it to its subject', cn), ...
             sprintf('%s %s: v1 subject %s; migrated %s edges %s', cn, id, ...
             strjoin(subj, ','), className(after), strjoin(depValues(after, ''), ',')));
     end
@@ -717,14 +818,24 @@ try
         C = tally(C, 'differ', 'v2 assertion not read back', ...
             sprintf('found %d document(s) with id %s', numel(got), v2doc.id()));
     else
-        % every block but `base` (which the database may stamp) the same
+        % The class and every value block the same, and every edge written
+        % read back with its value. The read pads a V_eta body's class
+        % blocks and declared edges (ndi.database.internal.
+        % applyReadNormalization), so `base`, `document_class` and
+        % `depends_on` are compared by what was written, not whole.
         w = v2doc.document_properties;
         g = got{1}.document_properties;
         bad = {};
-        for f = reshape(setdiff(fieldnames(w), {'base'}), 1, [])
+        for f = reshape(setdiff(fieldnames(w), {'base', 'document_class', 'depends_on'}), 1, [])
             if ~isfield(g, f{1}) || ~isequaln(g.(f{1}), w.(f{1}))
                 bad{end+1} = f{1}; %#ok<AGROW>
             end
+        end
+        if ~strcmp(className(g), className(w))
+            bad{end+1} = 'document_class.class_name';
+        end
+        if ~all(ismember(depValues(w, ''), depValues(g, '')))
+            bad{end+1} = 'depends_on';
         end
         if isempty(bad)
             C = tally(C, 'same', '', '');
@@ -773,6 +884,13 @@ for c = categoryNames()
     C = R.cats.(c{1});
     fprintf('    %-17s %9d %9d %9d %9d %9d\n', c{1}, C.compared, C.same, C.differ, ...
         C.only_v1, C.only_v2);
+end
+for c = {'probe_epoch', 'daq_epoch', 'element_epoch'}
+    if R.cats.(c{1}).merged_probemap_rows > 0
+        fprintf(['      %s: %d epoch(s) wire the same probes to the same channels in ' ...
+            'fewer probe-map rows ([probe in several rows is one wiring]); not a difference\n'], ...
+            c{1}, R.cats.(c{1}).merged_probemap_rows);
+    end
 end
 for c = categoryNames()
     C = R.cats.(c{1});
