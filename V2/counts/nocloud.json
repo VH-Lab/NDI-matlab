@@ -1,8 +1,8 @@
 {
   "part": "nocloud",
-  "sha": "b54565e69bf609fbf4fba26aa0a86e9a58131c4a",
-  "commit_time": 1793690139,
-  "tests": 2795,
+  "sha": "f172ff3413a4193cdd44d48b73b8c9528e60c445",
+  "commit_time": 1793689728,
+  "tests": 2781,
   "failed": 0,
   "skipped": 85
 }
