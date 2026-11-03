@@ -11,11 +11,14 @@ classdef MockSession < handle
         end
         function d = daqsystem_load(obj, varargin)
             % varargin: 'name', name
+            % like the real session, 'name' is a regular expression
             name = varargin{2};
-            if isfield(obj.DAQs, name)
-                d = {obj.DAQs.(name)};
-            else
-                d = {};
+            d = {};
+            fn = fieldnames(obj.DAQs);
+            for i=1:numel(fn)
+                if ~isempty(regexp(fn{i}, name, 'once'))
+                    d{end+1} = obj.DAQs.(fn{i}); %#ok<AGROW>
+                end
             end
         end
         function docs = database_search(obj, query)
