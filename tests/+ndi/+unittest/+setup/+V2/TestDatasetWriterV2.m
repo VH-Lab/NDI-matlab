@@ -45,8 +45,8 @@ classdef TestDatasetWriterV2 < matlab.unittest.TestCase
             dsPath = fullfile(testCase.Dir, 'ds');
             mkdir(dsPath);
             D = ndi.dataset.dir('ds1', dsPath);
-            testCase.assertFalse(isa(D.session.database, ...
-                'ndi.database.implementations.database.did2sqlite'), ...
+            testCase.assertFalse(isfile(fullfile(dsPath, '.ndi', ...
+                ndi.database.implementations.database.did2sqlite.DEFAULTFILENAME())), ...
                 'a new folder was given a V2 database; this test is about a v1 one');
             d = D.database_search(ndi.query('', 'isa', 'session'));
             testCase.verifyNumElements(d, 1, 'a v1 dataset holds one v1 session document');
@@ -67,8 +67,8 @@ classdef TestDatasetWriterV2 < matlab.unittest.TestCase
             dbFile = testCase.emptyV2Database(dsPath);
 
             D = ndi.dataset.dir('ds1', dsPath);
-            testCase.assertTrue(isa(D.session.database, ...
-                'ndi.database.implementations.database.did2sqlite'), 'the dataset is not V2');
+            testCase.assertFalse(isfile(fullfile(dsPath, '.ndi', 'did-sqlite.sqlite')), ...
+                'the dataset was given a v1 database beside the V2 one');
             testCase.verifyEqual(D.reference(), 'ds1');
 
             % DENOMINATOR FIRST: what the database now holds
