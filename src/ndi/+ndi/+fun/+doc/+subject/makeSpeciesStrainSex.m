@@ -27,6 +27,12 @@ function [ndiDocArray, openMindsObj] = makeSpeciesStrainSex(ndiSession, subjectI
 %   'AddToSession' (logical) - If true, the created documents are added to the
 %                              session's database. Defaults to false.
 %
+% The documents are written for the session's database: on a v2 database
+% (ndi.session/writesV2) they are v2 term assertions about the subject and,
+% for a strain, a strain entity the subject is `instance_of`
+% (ndi.database.fun.openMINDSobj2V2); on a v1 database they are v1
+% `openminds_subject` documents.
+%
 % Outputs:
 %   ndiDocArray (cell array) - A cell array of the newly created ndi.document objects.
 %   openMindsObj (cell array)- A cell array of the openMINDS objects that were created.
@@ -108,8 +114,13 @@ function [ndiDocArray, openMindsObj] = makeSpeciesStrainSex(ndiSession, subjectI
     % 4. Convert all created openMINDS objects to NDI documents
     if ~isempty(openMindsObj)
         try
+            % given the session, the documents are written for its database:
+            % v2 term assertions (and a strain entity) on a v2 database, v1
+            % `openminds_subject` documents on a v1 one (Decided by Jess Haley,
+            % 2026-11-03 [writers are given the session], [v2 line reads and
+            % writes both], did-schema did_v2_go_forward_class_audit.md)
             ndiDocArray = ndi.database.fun.openMINDSobj2ndi_document(openMindsObj, ...
-                ndiSession.id(), 'subject', subjectID);
+                ndiSession, 'subject', subjectID);
             
             % Add the new documents to the session database if requested
             if options.AddToSession
