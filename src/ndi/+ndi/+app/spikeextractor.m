@@ -35,20 +35,96 @@ classdef spikeextractor < ndi.app & ndi.app.appdoc
             % FILTERSTRUCT = MAKEFILTERSTRUCT(NDI_APP_SPIKEEXTRACTOR_OBJ, EXTRACTION_DOC, SAMPLE_RATE)
             %
             % Given an EXTRACTION_DOC of parameters and a sampling rate SAMPLE_RATE, make a filter
-            % structure for passing to FILTERDATA.
+            % structure for passing to FILTERDATA. EXTRACTION_DOC may be a v1
+            % spike_extraction_parameters document or the `method` document it
+            % migrates to (see EXTRACTION_PARAMETERS).
             %
-            switch(extraction_doc.document_properties.spike_extraction_parameters.filter_type)
+            params = ndi_app_spikeextractor_obj.extraction_parameters(extraction_doc);
+            switch(params.filter_type)
                 case 'cheby1high'
-                    [b,a] = cheby1(extraction_doc.document_properties.spike_extraction_parameters.filter_order, ...
-                        extraction_doc.document_properties.spike_extraction_parameters.filter_ripple, ...
-                        extraction_doc.document_properties.spike_extraction_parameters.filter_high/(0.5*sample_rate),'high');
+                    [b,a] = cheby1(params.filter_order, ...
+                        params.filter_ripple, ...
+                        params.filter_high/(0.5*sample_rate),'high');
                     filterstruct = struct('b',b,'a',a);
                 case 'none'
                     filterstruct = [];
                 otherwise
-                    error(['Unknown filter type: ' extraction_doc.document_properties.spike_extraction_parameters.filter_type]);
+                    error(['Unknown filter type: ' params.filter_type]);
             end
         end % makefilterstruct()
+
+        function params = extraction_parameters(ndi_app_spikeextractor_obj, extraction_doc)
+            % EXTRACTION_PARAMETERS - the extraction settings held by a parameters document
+            %
+            % PARAMS = EXTRACTION_PARAMETERS(NDI_APP_SPIKEEXTRACTOR_OBJ, EXTRACTION_DOC)
+            %
+            % Returns the spike_extraction_parameters struct of EXTRACTION_DOC:
+            % a v1 spike_extraction_parameters document's block, or, for the
+            % `method` document a migrated database holds instead (#1053), the
+            % same fields rebuilt from its `method.parameters`
+            % (ndi.vintage.appParameters).
+            %
+            % The migration (DID-matlab +migrators_j/private/
+            % jSpikeExtractionSettings.m) names four settings by what they
+            % mean, and this reverses it:
+            %   'refractory period'             -> refractory_time
+            %   'waveform window start'         -> spike_start_time
+            %   'waveform window duration'      -> spike_end_time, as start +
+            %                                      duration (v1 stored the end)
+            %   'standard-deviation threshold'  -> threshold_method
+            %   / 'absolute voltage threshold'     'standard_deviation' /
+            %                                      'absolute', and
+            %                                      threshold_parameter
+            %
+            aliases = {'refractory period', 'refractory_time'; ...
+                'waveform window start', 'spike_start_time'; ...
+                'waveform window duration', 'waveform_window_duration'; ...
+                'standard-deviation threshold', 'standard_deviation_threshold'; ...
+                'absolute voltage threshold', 'absolute_voltage_threshold'};
+            params = ndi.vintage.appParameters(extraction_doc, ...
+                'spike_extraction_parameters', ...
+                ndi.app.spikeextractor.extraction_parameter_fields(), ...
+                'Aliases', aliases);
+            if isempty(params)
+                error(['Document ' extraction_doc.id() ' holds no spike extraction parameters.']);
+            end
+            if isfield(params, 'waveform_window_duration')
+                if ~isfield(params, 'spike_end_time') && isfield(params, 'spike_start_time')
+                    % 15 significant digits: the end v1 wrote, without the
+                    % rounding noise of the subtraction and the sum
+                    params.spike_end_time = str2double(sprintf('%.15g', ...
+                        params.spike_start_time + params.waveform_window_duration));
+                end
+                params = rmfield(params, 'waveform_window_duration');
+            end
+            thresholds = {'standard_deviation_threshold', 'standard_deviation'; ...
+                'absolute_voltage_threshold', 'absolute'};
+            for t = 1:size(thresholds, 1)
+                if isfield(params, thresholds{t, 1})
+                    if ~isfield(params, 'threshold_parameter')
+                        params.threshold_method = thresholds{t, 2};
+                        params.threshold_parameter = params.(thresholds{t, 1});
+                    end
+                    params = rmfield(params, thresholds{t, 1});
+                end
+            end
+        end % extraction_parameters()
+
+        function appdoc_struct = doc2struct(ndi_app_spikeextractor_obj, appdoc_type, doc)
+            % DOC2STRUCT - the data structure an application document holds
+            %
+            % APPDOC_STRUCT = DOC2STRUCT(NDI_APP_SPIKEEXTRACTOR_OBJ, APPDOC_TYPE, DOC)
+            %
+            % For 'extraction_parameters', the settings of a v1 document or of
+            % the `method` it migrates to (EXTRACTION_PARAMETERS); otherwise as
+            % ndi.app.appdoc/doc2struct.
+            %
+            if strcmpi(appdoc_type,'extraction_parameters')
+                appdoc_struct = ndi_app_spikeextractor_obj.extraction_parameters(doc);
+            else
+                appdoc_struct = doc2struct@ndi.app.appdoc(ndi_app_spikeextractor_obj, appdoc_type, doc);
+            end
+        end % doc2struct()
 
         function data_out = filter(ndi_app_spikeextractor_obj, data_in, filterstruct)
             % FILTER - filter data based on a filter structure
@@ -96,6 +172,8 @@ classdef spikeextractor < ndi.app & ndi.app.appdoc
             else
                 extraction_doc = extraction_doc{1};
             end
+            % the settings, from a v1 document or a migrated `method` (#1053)
+            params = ndi_app_spikeextractor_obj.extraction_parameters(extraction_doc);
 
             if nargin<5
                 redo = 0;
@@ -137,10 +215,10 @@ classdef spikeextractor < ndi.app & ndi.app.appdoc
                 endReached = 0; % Variable to know if end of file reached
 
                 % convert from parameter file units of time to samples here
-                center_range_samples = ceil(extraction_doc.document_properties.spike_extraction_parameters.center_range_time * sample_rate);
-                refractory_samples = round(extraction_doc.document_properties.spike_extraction_parameters.refractory_time * sample_rate);
-                spike_sample_start = floor(extraction_doc.document_properties.spike_extraction_parameters.spike_start_time * sample_rate);
-                spike_sample_end = ceil(extraction_doc.document_properties.spike_extraction_parameters.spike_end_time * sample_rate);
+                center_range_samples = ceil(params.center_range_time * sample_rate);
+                refractory_samples = round(params.refractory_time * sample_rate);
+                spike_sample_start = floor(params.spike_start_time * sample_rate);
+                spike_sample_end = ceil(params.spike_end_time * sample_rate);
                 spike_sample_selection = spike_sample_start:spike_sample_end;
 
                 filterstruct = ndi_app_spikeextractor_obj.makefilterstruct(extraction_doc, sample_rate);
@@ -183,7 +261,7 @@ classdef spikeextractor < ndi.app & ndi.app.appdoc
 
                 % now read the file in chunks
                 while (~endReached)
-                    read_end_sample = ceil(read_start_sample + extraction_doc.document_properties.spike_extraction_parameters.read_time * sample_rate); % end sample for chunk to read
+                    read_end_sample = ceil(read_start_sample + params.read_time * sample_rate); % end sample for chunk to read
                     if read_end_sample > end_sample
                         read_end_sample = end_sample;
                     end
@@ -208,18 +286,18 @@ classdef spikeextractor < ndi.app & ndi.app.appdoc
                     % For number of channels
                     for channel=1:size(data_example,2) %channel
                         locs_here = [];
-                        switch extraction_doc.document_properties.spike_extraction_parameters.threshold_method
+                        switch params.threshold_method
                             case 'standard_deviation'
                                 % Calculate stdev for channel
                                 stddev = std(data(:,channel));
                                 % Dot discriminator to find thresholds CHECK complex matlab c code running here, potential source of bugs in demo
                                 locs_here = vlt.signal.dotdisc(double(data(:,channel)), ...
-                                    [extraction_doc.document_properties.spike_extraction_parameters.threshold_parameter*stddev ...
-                                    extraction_doc.document_properties.spike_extraction_parameters.threshold_sign  0]);
+                                    [params.threshold_parameter*stddev ...
+                                    params.threshold_sign  0]);
                             case 'absolute'
                                 locs_here = vlt.signal.dotdisc(double(data(:,channel)), ...
-                                    [extraction_doc.document_properties.spike_extraction_parameters.threshold_parameter ...
-                                    extraction_doc.document_properties.spike_extraction_parameters.threshold_sign  0]);
+                                    [params.threshold_parameter ...
+                                    params.threshold_sign  0]);
                             otherwise
                                 error('unknown threshold method');
                         end
@@ -245,8 +323,8 @@ classdef spikeextractor < ndi.app & ndi.app.appdoc
 
                     % Center spikes; if threshold is low-to-high, flip sign (assume positive-spikes)
                     [waveforms,sampleshifts] = vlt.neuro.spikesorting.centerspikes_neg( ...
-                        (-1*extraction_doc.document_properties.spike_extraction_parameters.threshold_sign)*waveforms,center_range_samples);
-                    waveforms = waveforms * (-1*extraction_doc.document_properties.spike_extraction_parameters.threshold_sign);
+                        (-1*params.threshold_sign)*waveforms,center_range_samples);
+                    waveforms = waveforms * (-1*params.threshold_sign);
 
                     % Permute waveforms for vlt.file.custom_file_formats.addvhlspikewaveformfile to Nsamples X Nchannels X Nspikes
                     waveforms = permute(waveforms, [2 3 1]);
@@ -258,8 +336,8 @@ classdef spikeextractor < ndi.app & ndi.app.appdoc
                     center_time_in_samples = spike_sample_selection(round(numel(spike_sample_selection)/2));
                     fwrite(spiketimes_binarydoc,ndi_timeseries_obj.samples2times(epoch{n},read_start_sample-1+locs(:)-sampleshifts(:)+center_time_in_samples),'float32');
                     read_start_sample = round(read_start_sample + ...
-                        extraction_doc.document_properties.spike_extraction_parameters.read_time * sample_rate - ...
-                        extraction_doc.document_properties.spike_extraction_parameters.overlap * sample_rate);
+                        params.read_time * sample_rate - ...
+                        params.overlap * sample_rate);
                 end % while ~endReached
 
                 fclose(spiketimes_binarydoc);
@@ -336,10 +414,7 @@ classdef spikeextractor < ndi.app & ndi.app.appdoc
             if strcmpi(appdoc_type,'extraction_parameters') | strcmpi(appdoc_type,'extraction_parameters_modification')
                 extraction_params = appdoc_struct;
                 % check parameters here
-                fields_needed = {'center_range_time','overlap','read_time','refractory_time',...
-                    'spike_start_time','spike_end_time',...
-                    'do_filter', 'filter_type','filter_low','filter_high','filter_order','filter_ripple',...
-                    'threshold_method','threshold_parameter','threshold_sign'};
+                fields_needed = ndi.app.spikeextractor.extraction_parameter_fields();
                 sizes_needed = {[1 1], [1 1], [1 1], [1 1],...
                     [1 1],[1 1],...
                     [1 1],[1 -1],[1 1],[1 1],[1 1],[1 1],...
@@ -369,9 +444,14 @@ classdef spikeextractor < ndi.app & ndi.app.appdoc
                     end
                     extraction_parameters_name = varargin{1};
 
-                    extract_searchq = ndi.query('base.name','exact_string',extraction_parameters_name,'') & ...
-                        ndi.query('','isa','spike_extraction_parameters','');
-                    doc = ndi_app_spikeextractor_obj.session.database_search(extract_searchq);
+                    % v1: base.name + spike_extraction_parameters; a migrated
+                    % database: a `method` named by method.name whose
+                    % parameters are a valid extraction set (#1053)
+                    doc = ndi.vintage.appParameterDocs( ...
+                        @(q) ndi_app_spikeextractor_obj.session.database_search(q), ...
+                        extraction_parameters_name, 'spike_extraction_parameters', ...
+                        @(d) ndi_app_spikeextractor_obj.extraction_parameters(d), ...
+                        @(p) ndi_app_spikeextractor_obj.isvalid_appdoc_struct('extraction_parameters', p));
 
                 case {'extraction_parameters_modification', 'spikewaves','spiketimes'}
                     ndi_timeseries_obj = varargin{1};
@@ -668,5 +748,20 @@ classdef spikeextractor < ndi.app & ndi.app.appdoc
         end % appdoc_description()
 
     end % methods
+
+    methods (Static)
+        function f = extraction_parameter_fields()
+            % EXTRACTION_PARAMETER_FIELDS - the fields of a spike_extraction_parameters set
+            %
+            % F = ndi.app.spikeextractor.extraction_parameter_fields()
+            %
+            % The fields ISVALID_APPDOC_STRUCT requires of an extraction
+            % parameters struct, as a cellstr.
+            f = {'center_range_time','overlap','read_time','refractory_time',...
+                'spike_start_time','spike_end_time',...
+                'do_filter', 'filter_type','filter_low','filter_high','filter_order','filter_ripple',...
+                'threshold_method','threshold_parameter','threshold_sign'};
+        end % extraction_parameter_fields()
+    end % methods (Static)
 
 end % ndi.app.spikeextractor
