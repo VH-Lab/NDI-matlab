@@ -389,7 +389,8 @@ classdef TestReadTimeseriesEquivalence < matlab.unittest.TestCase
             end
             P = ndi.unittest.migrate.TestReadTimeseriesEquivalence;
             for k = 1:numel(names)
-                r = struct('data', [], 't', [], 'epochtable', [], 'err', '', 'seconds', NaN);
+                r = struct('data', [], 't', [], 'epochtable', [], 'err', '', 'seconds', NaN, ...
+                    'underlying', '');
                 try
                     hit = {};
                     for j = 1:numel(objs)
@@ -403,6 +404,7 @@ classdef TestReadTimeseriesEquivalence < matlab.unittest.TestCase
                     hit = hit(u);
                     assert(numel(hit) == 1, 'found %d object(s) named %s;%s', numel(hit), names{k}, lookupErrs);
                     o = hit{1};
+                    r.underlying = P.underlyingText(o);
                     r.epochtable = P.normalizeEpochTable(o.epochtable());
                     tic;
                     [r.data, r.t] = o.readtimeseries(epochId, -Inf, Inf);
@@ -446,13 +448,30 @@ classdef TestReadTimeseriesEquivalence < matlab.unittest.TestCase
             end
         end
 
+        function s = underlyingText(o)
+            % what the object stands on, for the log: its class, its
+            % underlying element and how many epochs that one has
+            s = sprintf('%s direct=%d', class(o), logical(o.direct));
+            u = o.underlying_element;
+            if isempty(u)
+                s = [s ', no underlying element'];
+                return;
+            end
+            try
+                n = numel(u.epochtable());
+                s = sprintf('%s, on %s "%s" (%d epoch(s))', s, class(u), u.name, n);
+            catch ME
+                s = sprintf('%s, on %s "%s" (epochtable raised: %s)', s, class(u), u.name, ME.message);
+            end
+        end
+
         function s = describe(r)
             if ~isempty(r.err)
                 s = ['ERROR ' r.err];
                 return;
             end
-            s = sprintf('%s samples, %d time(s), %d epoch(s), %.2f s', ...
-                mat2str(size(r.data)), numel(r.t), numel(r.epochtable), r.seconds);
+            s = sprintf('%s samples, %d time(s), %d epoch(s), %.2f s; %s', ...
+                mat2str(size(r.data)), numel(r.t), numel(r.epochtable), r.seconds, r.underlying);
         end
 
         function removeDir(d)
