@@ -158,6 +158,14 @@ classdef element < ndi.ido & ndi.epoch.epochset & ndi.documentservice & matlab.m
                     % v1's `subject_id` on the element became a
                     % directed_relation pointing at the animal.
                     subject_id = ef.subject_id;
+                    % A migrated sorted unit is written with no subject: it
+                    % follows from its probe (Decided by Jess Haley,
+                    % 2026-10-27 [unit direct and subject rebuild from the
+                    % probe]), as the v1 constructor above copies the
+                    % underlying element's subject_id.
+                    if isempty(subject_id) && ~isempty(element_underlying_element)
+                        subject_id = element_underlying_element.subject_id;
+                    end
                 else
                     subject_id = element_doc.dependency_value('subject_id');
                 end

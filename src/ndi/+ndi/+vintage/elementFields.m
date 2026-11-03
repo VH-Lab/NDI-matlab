@@ -237,6 +237,9 @@ function target = relationTarget(ndi_session_obj, childId, relationName)
 %           rel.directed_relation = struct('relation', jOntologyTerm('', relationName));
 %           rel.depends_on = [struct('name','child', ...), struct('name','parent', ...)]
 %
+%   On did-schema #88 the edges are `child_id` and `parent_id`
+%   (did2.build.directedRelation); both spellings are read.
+%
 %   The name test runs IN THE QUERY, so a session with many relations does
 %   not pull them all into MATLAB to filter.
 target = '';
@@ -248,5 +251,13 @@ docs = ndi_session_obj.database_search(q);
 if isempty(docs)
     return;
 end
-target = docs{1}.dependency_value('parent', 'ErrorIfNotFound', 0);
+% the parent edge by the same two names as the child edge above: did-schema
+% #88 `parent_id` first, then the earlier `parent`. Reading `parent` alone
+% returned '' for every #88 relation, so a migrated sorted unit had no
+% underlying element and no epoch beneath its own (VH-Lab/NDI-matlab#785,
+% ndi.unittest.migrate.TestReadTimeseriesEquivalence).
+target = docs{1}.dependency_value('parent_id', 'ErrorIfNotFound', 0);
+if isempty(target)
+    target = docs{1}.dependency_value('parent', 'ErrorIfNotFound', 0);
+end
 end

@@ -190,9 +190,13 @@ jobs:
           # Signal Processing: NDI-compress's ephys compressor (lpc), which
           # TestIngestedArchiveBodies uses to write ingested segments as
           # ndi.daq.reader.mfdaq/ingest_epochfiles does (run-tests.yml has it too)
+          # Communications: int2bit, which the Intan reader calls on digital
+          # channels when TestReadTimeseriesEquivalence ingests the example
+          # .rhd (ndi.daq.reader.mfdaq.intan; run-tests.yml has it too)
           products: |
             Statistics_and_Machine_Learning_Toolbox
             Signal_Processing_Toolbox
+            Communications_Toolbox
 
       - name: Install MatBox
         env:
@@ -377,6 +381,11 @@ jobs:
                 'ndi.unittest.migrate.TestIngestedStimulusBodies', ...
                 'ndi.unittest.migrate.TestV1AttachedFile', ...
                 'ndi.unittest.migrate.TestV1FileReader', ...
-                'ndi.unittest.migrate.TestDimensionTermCensus'});
+                'ndi.unittest.migrate.TestDimensionTermCensus', ...
+                ... % VH-Lab/NDI-matlab#785 and #1018: readtimeseries on a v1
+                ... % session and on the same session after ndi.migrate.local
+                ... % (a probe from the .rhd, an ingested probe, a .vhsb element
+                ... % and a neuron) give the same samples, times and epoch tables
+                'ndi.unittest.migrate.TestReadTimeseriesEquivalence'});
             disp(results);
             assertSuccess(results);
