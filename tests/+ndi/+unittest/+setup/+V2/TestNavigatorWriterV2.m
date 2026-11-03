@@ -6,7 +6,9 @@ classdef TestNavigatorWriterV2 < matlab.unittest.TestCase
 %   navigator's id, with the `software` entity its `software_id` names (the
 %   shape DID-matlab's +migrators_j/filenavigator.m writes for a v1
 %   `filenavigator`), not a v1 `filenavigator` document stamped did_v1. The
-%   daq system loads again from it. A v1 database keeps the v1 document.
+%   daq system loads again from it. A new session folder gets a V2
+%   database and a v1 database is read-only ([V2 branch writes V2 only],
+%   [v1 database read-only on the v2 line], Jess Haley, 2026-11-03).
 %
 %   Decided by Jess Haley, 2026-10-29 [v1 writes into a V2 session]
 %   (did-schema did_v2_go_forward_class_audit.md): "the end state is that
@@ -92,14 +94,18 @@ classdef TestNavigatorWriterV2 < matlab.unittest.TestCase
                 'ndi.epoch.epochprobemap_daqsystem');
         end
 
-        function testAV1DatabaseKeepsTheV1Navigator(testCase)
+        function testANewSessionFolderGetsTheEpochFilePattern(testCase)
+            % Decided by Jess Haley, 2026-11-03 [V2 branch writes V2 only]: a
+            % new session folder gets a V2 database, and the writer writes V2.
             S = ndi.session.dir('ref1', testCase.Dir);
-            testCase.assertFalse(S.writesV2(), 'a new folder was given a V2 database');
+            testCase.assertTrue(S.writesV2(), 'a new folder was not given a V2 database');
             nav = ndi.file.navigator(S, {'#.rhd', '#.epochprobemap.ndi'}, ...
                 'ndi.epoch.epochprobemap_daqsystem', {'(.*)epochprobemap.ndi'});
             d = nav.newdocument();
-            testCase.verifyClass(d, 'ndi.document');
-            testCase.verifyEqual(d.document_properties.document_class.class_name, 'filenavigator');
+            testCase.assertClass(d, 'cell');
+            testCase.verifyEqual(d{1}.document_properties.document_class.class_name, ...
+                'epoch_file_pattern');
+            testCase.verifyEqual(d{1}.id(), nav.id());
         end
     end
 

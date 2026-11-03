@@ -6,8 +6,9 @@ classdef TestDaqReaderWriterV2 < matlab.unittest.TestCase
 %   id, with the `software` entity its `software_id` names (the shape
 %   DID-matlab's +migrators_j/daqreader.m and daqreader_ndr.m write for a v1
 %   `daqreader` / `daqreader_ndr`), not a v1 document stamped did_v1. The
-%   daq system loads again with that reader. A v1 database keeps the v1
-%   document.
+%   daq system loads again with that reader. A new session folder gets a V2
+%   database and a v1 database is read-only ([V2 branch writes V2 only],
+%   [v1 database read-only on the v2 line], Jess Haley, 2026-11-03).
 %
 %   Decided by Jess Haley, 2026-10-29 [v1 writes into a V2 session]
 %   (did-schema did_v2_go_forward_class_audit.md): "the end state is that
@@ -84,15 +85,24 @@ classdef TestDaqReaderWriterV2 < matlab.unittest.TestCase
             testCase.verifyEqual(d2.daqreader.ndr_reader_string, ndrRdr.ndr_reader_string);
         end
 
-        function testAV1DatabaseKeepsTheV1Reader(testCase)
+        function testANewSessionFolderGetsTheAcquisitionReader(testCase)
+            % Decided by Jess Haley, 2026-11-03 [V2 branch writes V2 only]: a
+            % new session folder gets a V2 database, and the writer writes V2.
             S = ndi.session.dir('ref1', testCase.Dir);
-            testCase.assertFalse(S.writesV2(), 'a new folder was given a V2 database');
-            d = ndi.daq.reader.mfdaq.intan().newdocument(S);
-            testCase.verifyClass(d, 'ndi.document');
-            testCase.verifyEqual(d.document_properties.document_class.class_name, 'daqreader');
+            testCase.assertTrue(S.writesV2(), 'a new folder was not given a V2 database');
+            r = ndi.daq.reader.mfdaq.intan();
+            d = r.newdocument(S);
+            testCase.assertClass(d, 'cell');
+            testCase.verifyEqual(d{1}.document_properties.document_class.class_name, ...
+                'acquisition_reader');
+            testCase.verifyEqual(d{1}.id(), r.id());
             d = ndi.daq.reader.mfdaq.ndr('RHD').newdocument(S);
-            testCase.verifyClass(d, 'ndi.document');
-            testCase.verifyEqual(d.document_properties.document_class.class_name, 'daqreader_ndr');
+            testCase.assertClass(d, 'cell');
+            testCase.verifyEqual(d{1}.document_properties.document_class.class_name, ...
+                'acquisition_reader');
+            % a reader holds no session, so it is required: there is no
+            % session-less (v1) record any more
+            testCase.verifyError(@() r.newdocument(), ?MException);
         end
     end
 

@@ -257,26 +257,22 @@ classdef reader < ndi.ido & ndi.documentservice
         function ndi_document_obj = newdocument(ndi_daqreader_obj, ndi_session_obj)
             % NEWDOCUMENT - create a new ndi.document for an ndi.daq.reader object
             %
-            % DOC = NEWDOCUMENT(NDI_DAQREADER_OBJ)
-            %
-            % Creates an ndi.document object DOC that represents the
-            %    ndi.daq.reader object.
-            %
             % DOC = NEWDOCUMENT(NDI_DAQREADER_OBJ, NDI_SESSION_OBJ)
             %
-            % Writes for the database of NDI_SESSION_OBJ (a reader holds no
-            % session; ndi.daq.system/newdocument passes its own). When that
-            % database is V2 (ndi.session/writesV2), DOC is a cell array of the
-            % V2 record (see NEWDOCUMENTV2); otherwise the v1 document.
+            % Returns, as a cell array of ndi.document objects, the V2 record
+            % of the reader in NDI_SESSION_OBJ (see NEWDOCUMENTV2). A reader
+            % holds no session, so the session is required;
+            % ndi.daq.system/newdocument passes its own. Decided by Jess Haley, 2026-11-03
+            % [V2 branch writes V2 only] (did-schema
+            % did_v2_go_forward_class_audit.md): on the V2 line every writer
+            % writes V2 only; a v1 database is read-only ([v1 database
+            % read-only on the v2 line]).
             %
-            if nargin>1 && ~isempty(ndi_session_obj) && ndi_session_obj.writesV2()
-                ndi_document_obj = ndi_daqreader_obj.newdocumentV2(ndi_session_obj, '');
-                return;
+            arguments
+                ndi_daqreader_obj
+                ndi_session_obj (1,1) ndi.session
             end
-            ndi_document_obj = ndi.document('daqreader',...
-                'daqreader.ndi_daqreader_class',class(ndi_daqreader_obj),...
-                'base.id', ndi_daqreader_obj.id(),...
-                'base.session_id',ndi.session.empty_id());
+            ndi_document_obj = ndi_daqreader_obj.newdocumentV2(ndi_session_obj, '');
         end % newdocument()
 
         function docs = newdocumentV2(ndi_daqreader_obj, ndi_session_obj, reader_string)

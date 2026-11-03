@@ -7,7 +7,9 @@ classdef TestSubjectWriterV2 < matlab.unittest.TestCase
 %   v1 `subject`), not a v1 `subject` document stamped did_v1. So does
 %   ndi.subject.does_subjectstring_match_session_document, which ndi.element
 %   calls to make a subject it is given by name, and it finds that record
-%   again. A v1 database keeps the v1 document.
+%   again. A new session folder gets a V2
+%   database and a v1 database is read-only ([V2 branch writes V2 only],
+%   [v1 database read-only on the v2 line], Jess Haley, 2026-11-03).
 %
 %   Decided by Jess Haley, 2026-10-29 [v1 writes into a V2 session]
 %   (did-schema did_v2_go_forward_class_audit.md): "the end state is that
@@ -82,22 +84,20 @@ classdef TestSubjectWriterV2 < matlab.unittest.TestCase
                 'finding the subject again wrote another document');
         end
 
-        function testAV1DatabaseKeepsTheV1SubjectDocument(testCase)
-            % a new folder gets a v1 database (databasehierarchyinit entry 1)
+        function testANewSessionFolderGetsTheV2Subject(testCase)
+            % Decided by Jess Haley, 2026-11-03 [V2 branch writes V2 only]: a
+            % new session folder gets a V2 database, and the writer writes V2.
             S = ndi.session.dir('ref1', testCase.Dir);
-            testCase.verifyFalse(S.writesV2(), 'a new folder was given a V2 database');
+            testCase.verifyTrue(S.writesV2(), 'a new folder was not given a V2 database');
             sub = ndi.subject('mouse23@nosuchlab.org', 'a test mouse');
             d = sub.newdocument(S);
-            testCase.verifyClass(d, 'ndi.document');
-            testCase.verifyEqual(d.document_properties.document_class.class_name, 'subject');
+            testCase.assertClass(d, 'cell');
+            testCase.verifyEqual(d{1}.document_properties.document_class.class_name, 'entity');
             S.database_add(d);
             [b, sid] = ndi.subject.does_subjectstring_match_session_document(S, ...
                 'mouse23@nosuchlab.org', 0);
             testCase.verifyTrue(logical(b));
             testCase.verifyEqual(sid, sub.id());
-            % with no session, newdocument is the v1 document, as before
-            d0 = sub.newdocument();
-            testCase.verifyEqual(d0.document_properties.document_class.class_name, 'subject');
         end
     end
 

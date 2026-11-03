@@ -5,7 +5,9 @@ classdef TestSessionWriterV2 < matlab.unittest.TestCase
 %   record, it writes one. Into a V2 (did2) database it now writes the V2
 %   record (an `entity` of type session whose id is the session id, as
 %   ndi.setup.V2.createSession writes it), not a v1 `session` document
-%   stamped did_v1. A v1 database keeps the v1 document.
+%   stamped did_v1. A new session folder gets a V2
+%   database and a v1 database is read-only ([V2 branch writes V2 only],
+%   [v1 database read-only on the v2 line], Jess Haley, 2026-11-03).
 %
 %   Decided by Jess Haley, 2026-10-29 [v1 writes into a V2 session]
 %   (did-schema did_v2_go_forward_class_audit.md): "the end state is that
@@ -82,12 +84,33 @@ classdef TestSessionWriterV2 < matlab.unittest.TestCase
                 'reopening wrote another session record');
         end
 
-        function testAV1DatabaseKeepsTheV1SessionDocument(testCase)
-            % a new folder gets a v1 database (databasehierarchyinit entry 1)
+        function testANewSessionFolderGetsTheV2SessionRecord(testCase)
+            % Decided by Jess Haley, 2026-11-03 [V2 branch writes V2 only]: a
+            % new session folder gets a V2 database and the V2 session record
             S = ndi.session.dir('ref1', testCase.Dir);
-            testCase.assertFalse(isfile(fullfile(testCase.Dir, '.ndi', ...
-                ndi.database.implementations.database.did2sqlite.DEFAULTFILENAME())), ...
-                'a new folder was given a V2 database; this test is about a v1 one');
+            dbFile = fullfile(testCase.Dir, '.ndi', ...
+                ndi.database.implementations.database.did2sqlite.DEFAULTFILENAME());
+            testCase.assertTrue(isfile(dbFile), 'a new folder was not given a V2 database');
+            testCase.verifyFalse(isfile(fullfile(testCase.Dir, '.ndi', 'did-sqlite.sqlite')), ...
+                'a new folder was given a v1 database');
+            stored = testCase.storedBodies(dbFile);
+            classes = cellfun(@(s) s.document_class.class_name, stored, 'UniformOutput', false);
+            testCase.verifyFalse(any(strcmp(classes, 'session')), sprintf( ...
+                'a v1 `session` document was written (classes: %s)', strjoin(classes, ', ')));
+            isSessionEntity = cellfun(@(s) strcmp(s.document_class.class_name, 'entity') ...
+                && strcmp(s.base.id, S.id()), stored);
+            testCase.verifyEqual(nnz(isSessionEntity), 1);
+        end
+
+        function testAV1SessionOpensReadOnlyWithItsV1SessionDocument(testCase)
+            % [v1 database read-only on the v2 line] (Jess Haley, 2026-11-03):
+            % a v1 session opens, and its v1 session document is read as stored
+            sid = ndi.unittest.session.makeV1Session(testCase.Dir, 'ref1');
+            w = warning('off', 'NDI:V2:v1DocumentsPresent');
+            testCase.addTeardown(@() warning(w));
+            S = ndi.session.dir(testCase.Dir);
+            testCase.verifyEqual(S.id(), sid);
+            testCase.verifyEqual(S.reference, 'ref1');
             d = S.database_search(ndi.query('', 'isa', 'session'));
             testCase.verifyNumElements(d, 1, 'a v1 database holds one v1 session document');
             testCase.verifyEqual(d{1}.document_properties.document_class.class_name, 'session');

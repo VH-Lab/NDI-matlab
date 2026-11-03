@@ -492,53 +492,35 @@ classdef system < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice
             %
             % NDI_DOCUMENT_OBJ_SET = NEWDOCUMENT(NDI_DAQSYSTEM_OBJ)
             %
-            % Creates a set of documents that describe an ndi.daq.system.
+            % Creates the set of V2 documents that describe an ndi.daq.system,
+            % in the system's session, as one flat cell array: the records of
+            % its navigator (ndi.file.navigator/newdocument), its reader
+            % (ndi.daq.reader/newdocument) and its metadata readers
+            % (ndi.daq.metadatareader/newdocument), and the record of the
+            % system itself (NEWDOCUMENTV2): an `acquisition_system` whose id
+            % is the system's id and whose `name` is its name, with
+            % `software_id` naming a `software` entity whose `name` is the
+            % system's class, and `reader_id`, `epoch_file_pattern_id` and
+            % `epoch_parameter_reader_id` naming its components by their ids --
+            % the shape DID-matlab's +migrators_j/daqsystem.m writes for a v1
+            % `daqsystem`, and the one this constructor, ndi.vintage.objectClass
+            % and daqsystem_load already read. Decided by Jess Haley,
+            % 2026-11-03 [V2 branch writes V2 only] (did-schema
+            % did_v2_go_forward_class_audit.md): on the V2 line every writer
+            % writes V2 only; a v1 database is read-only ([v1 database
+            % read-only on the v2 line]).
 
-            ndi_document_obj_set{1} = ndi_daqsystem_obj.filenavigator.newdocument();
-            ndi_document_obj_set{2} = ndi_daqsystem_obj.daqreader.newdocument(ndi_daqsystem_obj.session);
-            ndi_document_obj_set{3} = ndi.document('daqsystem',...
-                'daqsystem.ndi_daqsystem_class', class(ndi_daqsystem_obj),...
-                'base.id', ndi_daqsystem_obj.id(),...
-                'base.name', ndi_daqsystem_obj.name,...
-                'base.session_id', ndi_daqsystem_obj.session.id());
-            ndi_document_obj_set{3} = ndi_document_obj_set{3}.set_dependency_value( ...
-                'filenavigator_id', ndi_daqsystem_obj.filenavigator.id());
-            ndi_document_obj_set{3} = ndi_document_obj_set{3}.set_dependency_value( ...
-                'daqreader_id', ndi_daqsystem_obj.daqreader.id());
+            parts = {ndi_daqsystem_obj.filenavigator.newdocument(), ...
+                ndi_daqsystem_obj.daqreader.newdocument(ndi_daqsystem_obj.session)};
             for i=1:numel(ndi_daqsystem_obj.daqmetadatareader)
-                ndi_document_obj_set{end+1} = ndi_daqsystem_obj.daqmetadatareader{i}.newdocument( ...
-                    ndi_daqsystem_obj.session);
-                ndi_document_obj_set{3} = ndi_document_obj_set{3}.add_dependency_value_n('daqmetadatareader_id',...
-                    ndi_daqsystem_obj.daqmetadatareader{i}.id());
+                parts{end+1} = ndi_daqsystem_obj.daqmetadatareader{i}.newdocument( ...
+                    ndi_daqsystem_obj.session); %#ok<AGROW>
             end
-            % a component writing into a V2 database returns its V2 record as
-            % a cell array of documents (ndi.file.navigator/newdocument,
-            % ndi.daq.reader/newdocument, ndi.daq.metadatareader/newdocument);
-            % the set is flat
-            if ~isempty(ndi_daqsystem_obj.session) && ndi_daqsystem_obj.session.writesV2()
-                % A V2 database gets the V2 record of the system itself: an
-                % `acquisition_system` whose id is the system's id and whose
-                % `name` is its name, with `software_id` naming a `software`
-                % entity whose `name` is the system's class, and `reader_id`,
-                % `epoch_file_pattern_id` and `epoch_parameter_reader_id`
-                % naming its components by their ids -- the shape DID-matlab's
-                % +migrators_j/daqsystem.m writes for a v1 `daqsystem`, and the
-                % one this constructor, ndi.vintage.objectClass and
-                % daqsystem_load already read. Decided by Jess Haley,
-                % 2026-10-29 [v1 writes into a V2 session] (did-schema
-                % did_v2_go_forward_class_audit.md): "the end state is that
-                % every NDI writer writes V2 documents".
-                ndi_document_obj_set{3} = ndi_daqsystem_obj.newdocumentV2();
+            parts{end+1} = ndi_daqsystem_obj.newdocumentV2();
+            ndi_document_obj_set = {};
+            for i=1:numel(parts)
+                ndi_document_obj_set = [ndi_document_obj_set, reshape(parts{i}, 1, [])]; %#ok<AGROW>
             end
-            flat = {};
-            for i=1:numel(ndi_document_obj_set)
-                if iscell(ndi_document_obj_set{i})
-                    flat = [flat, reshape(ndi_document_obj_set{i}, 1, [])]; %#ok<AGROW>
-                else
-                    flat{end+1} = ndi_document_obj_set{i}; %#ok<AGROW>
-                end
-            end
-            ndi_document_obj_set = flat;
         end  % newdocument()
 
         function docs = newdocumentV2(ndi_daqsystem_obj)

@@ -9,7 +9,9 @@ classdef TestDaqSystemWriterV2 < matlab.unittest.TestCase
 %   DID-matlab's +migrators_j/daqsystem.m writes for a v1 `daqsystem`), not
 %   a v1 `daqsystem` document stamped did_v1. With the navigator, reader
 %   and metadata reader moved before it, the whole set is V2, and the daq
-%   system loads again from it. A v1 database keeps the v1 documents.
+%   system loads again from it. A new session folder gets a V2
+%   database and a v1 database is read-only ([V2 branch writes V2 only],
+%   [v1 database read-only on the v2 line], Jess Haley, 2026-11-03).
 %
 %   Decided by Jess Haley, 2026-10-29 [v1 writes into a V2 session]
 %   (did-schema did_v2_go_forward_class_audit.md): "the end state is that
@@ -92,16 +94,44 @@ classdef TestDaqSystemWriterV2 < matlab.unittest.TestCase
             testCase.verifyError(@() S2.daqsystem_add(dev), ?MException);
         end
 
-        function testAV1DatabaseKeepsTheV1DaqSystem(testCase)
+        function testANewSessionFolderGetsTheAcquisitionSystem(testCase)
+            % Decided by Jess Haley, 2026-11-03 [V2 branch writes V2 only]: a
+            % new session folder gets a V2 database, and the writer writes V2.
             S = ndi.session.dir('ref1', testCase.Dir);
-            testCase.assertFalse(S.writesV2(), 'a new folder was given a V2 database');
+            testCase.assertTrue(S.writesV2(), 'a new folder was not given a V2 database');
             nav = ndi.file.navigator(S, {'#.rhd', '#.epochprobemap.ndi'}, ...
                 'ndi.epoch.epochprobemap_daqsystem', {'(.*)epochprobemap.ndi'});
             dev = ndi.daq.system.mfdaq('intan1', nav, ndi.daq.reader.mfdaq.intan());
             S.daqsystem_add(dev);
-            d = S.database_search(ndi.query('base.id', 'exact_string', dev.id(), ''));
-            testCase.assertNumElements(d, 1);
-            testCase.verifyEqual(d{1}.document_properties.document_class.class_name, 'daqsystem');
+            stored = testCase.storedBodies(S.getpath());
+            testCase.assertNotEmpty(stored, 'the V2 database holds nothing');
+            for k = 1:numel(stored)
+                testCase.verifyTrue(did2.schema.isV2Stamp(stored{k}), sprintf( ...
+                    'a %s document of a new session is not V2', ...
+                    stored{k}.document_class.class_name));
+            end
+            testCase.onlyDoc(stored, dev.id(), 'acquisition_system');
+        end
+
+        function testAV1DatabaseRefusesTheDaqSystem(testCase)
+            % [v1 database read-only on the v2 line] (Jess Haley,
+            % 2026-11-03): adding a daq system to a v1 session is refused
+            % with an error naming ndi.migrate.local, and nothing is written
+            ndi.unittest.session.makeV1Session(testCase.Dir, 'ref1');
+            w = warning('off', 'NDI:V2:v1DocumentsPresent');
+            testCase.addTeardown(@() warning(w));
+            S = ndi.session.dir('ref1', testCase.Dir);
+            testCase.assertFalse(S.writesV2());
+            n0 = numel(S.database_search(ndi.query('', 'isa', 'base')));
+            nav = ndi.file.navigator(S, {'#.rhd', '#.epochprobemap.ndi'}, ...
+                'ndi.epoch.epochprobemap_daqsystem', {'(.*)epochprobemap.ndi'});
+            dev = ndi.daq.system.mfdaq('intan1', nav, ndi.daq.reader.mfdaq.intan());
+            testCase.verifyError(@() S.daqsystem_add(dev), 'NDI:database:v1ReadOnly');
+            testCase.verifyNumElements(S.database_search(ndi.query('', 'isa', 'base')), n0, ...
+                'a refused daq system wrote into the v1 database');
+            testCase.verifyFalse(isfile(fullfile(testCase.Dir, '.ndi', ...
+                ndi.database.implementations.database.did2sqlite.DEFAULTFILENAME())), ...
+                'a V2 database was made beside the v1 one');
         end
     end
 

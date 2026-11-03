@@ -8,7 +8,9 @@ classdef TestMetadataReaderWriterV2 < matlab.unittest.TestCase
 %   `software_id` names (the shape DID-matlab's
 %   +migrators_j/daqmetadatareader.m writes for a v1 `daqmetadatareader`),
 %   not a v1 document stamped did_v1. The daq system loads again with it.
-%   A v1 database keeps the v1 document.
+%   A new session folder gets a V2
+%   database and a v1 database is read-only ([V2 branch writes V2 only],
+%   [v1 database read-only on the v2 line], Jess Haley, 2026-11-03).
 %
 %   Decided by Jess Haley, 2026-10-29 [v1 writes into a V2 session]
 %   (did-schema did_v2_go_forward_class_audit.md): "the end state is that
@@ -74,12 +76,18 @@ classdef TestMetadataReaderWriterV2 < matlab.unittest.TestCase
             testCase.verifyEqual(d.daqmetadatareader{1}.tab_separated_file_parameter, 'stims.tsv');
         end
 
-        function testAV1DatabaseKeepsTheV1MetadataReader(testCase)
+        function testANewSessionFolderGetsTheEpochParameterReader(testCase)
+            % Decided by Jess Haley, 2026-11-03 [V2 branch writes V2 only]: a
+            % new session folder gets a V2 database, and the writer writes V2.
             S = ndi.session.dir('ref1', testCase.Dir);
-            testCase.assertFalse(S.writesV2(), 'a new folder was given a V2 database');
-            d = ndi.daq.metadatareader('stims.tsv').newdocument(S);
-            testCase.verifyClass(d, 'ndi.document');
-            testCase.verifyEqual(d.document_properties.document_class.class_name, 'daqmetadatareader');
+            testCase.assertTrue(S.writesV2(), 'a new folder was not given a V2 database');
+            md = ndi.daq.metadatareader('stims.tsv');
+            d = md.newdocument(S);
+            testCase.assertClass(d, 'cell');
+            testCase.verifyEqual(d{1}.document_properties.document_class.class_name, ...
+                'epoch_parameter_reader');
+            testCase.verifyEqual(d{1}.id(), md.id());
+            testCase.verifyError(@() md.newdocument(), ?MException);
         end
     end
 

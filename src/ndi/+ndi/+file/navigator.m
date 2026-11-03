@@ -772,42 +772,20 @@ classdef navigator < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice & 
             %
             % Creates an ndi.document of type 'filenavigator'
             %
-            % When the navigator's session has a V2 database
-            % (ndi.session/writesV2), NDI_DOCUMENT_OBJ is instead a cell array
-            % of the V2 record: an `epoch_file_pattern` whose id is the
+            % NDI_DOCUMENT_OBJ is a cell array of the V2 record: an
+            % `epoch_file_pattern` whose id is the
             % navigator's id (`file_pattern` and `epoch_map_pattern` the
             % file-match lists, `epoch_map_format` the epoch probe map
             % class), and the `software` entity its `software_id` names, whose
             % `name` is the navigator's class -- the shape DID-matlab's
             % +migrators_j/filenavigator.m writes for a v1 `filenavigator`,
-            % and the one this constructor already reads. Decided by Jess
-            % Haley, 2026-10-29 [v1 writes into a V2 session] (did-schema
-            % did_v2_go_forward_class_audit.md): "the end state is that every
-            % NDI writer writes V2 documents".
+            % and the one this constructor already reads. Decided by Jess Haley, 2026-11-03
+            % [V2 branch writes V2 only] (did-schema
+            % did_v2_go_forward_class_audit.md): on the V2 line every writer
+            % writes V2 only; a v1 database is read-only ([v1 database
+            % read-only on the v2 line]).
             %
-            if ~isempty(ndi_filenavigator_obj.session) && ndi_filenavigator_obj.session.writesV2()
-                ndi_document_obj = ndi_filenavigator_obj.newdocumentV2();
-                return;
-            end
-            filenavigator_structure.ndi_filenavigator_class = class(ndi_filenavigator_obj);
-            if ~isempty(ndi_filenavigator_obj.fileparameters)
-                filenavigator_structure.fileparameters = cell2str(ndi_filenavigator_obj.fileparameters.filematch); % convert to a string
-            else
-                filenavigator_structure.fileparameters = '';
-            end
-            filenavigator_structure.epochprobemap_class = ndi_filenavigator_obj.epochprobemap_class;
-            if ~isempty(ndi_filenavigator_obj.epochprobemap_fileparameters)
-                % convert to string
-                filenavigator_structure.epochprobemap_fileparameters = ...
-                    cell2str(ndi_filenavigator_obj.epochprobemap_fileparameters.filematch);
-            else
-                filenavigator_structure.epochprobemap_fileparameters = '';
-            end
-
-            ndi_document_obj = ndi.document('filenavigator',...
-                'filenavigator',filenavigator_structure,...
-                'base.id', ndi_filenavigator_obj.id(),...
-                'base.session_id', ndi_filenavigator_obj.session.id());
+            ndi_document_obj = ndi_filenavigator_obj.newdocumentV2();
         end % newdocument()
 
         function docs = newdocumentV2(ndi_filenavigator_obj)

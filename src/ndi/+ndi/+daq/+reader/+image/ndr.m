@@ -450,38 +450,26 @@ classdef ndr < ndi.daq.reader.image
         function ndi_document_obj = newdocument(ndi_daqreader_obj, ndi_session_obj)
             % NEWDOCUMENT - create an ndi.document describing this reader
             %
-            %   NDI_DOCUMENT_OBJ = NEWDOCUMENT(OBJ)
+            %   NDI_DOCUMENT_OBJ = NEWDOCUMENT(OBJ, NDI_SESSION_OBJ)
             %
-            %   Creates an ndi.document that captures enough state to
-            %   reconstruct this object from the database. It reuses the generic
-            %   'daqreader_ndr' document type (shared with
-            %   ndi.daq.reader.mfdaq.ndr), recording the NDR reader string and
-            %   the concrete NDI reader class name. The two-argument constructor
-            %   form ndr(SESSION, DOCUMENT) rebuilds the object from such a
-            %   document.
-            %
-            %   Inputs:
-            %     OBJ - an ndi.daq.reader.image.ndr object.
-            %
-            %   Outputs:
-            %     NDI_DOCUMENT_OBJ - an ndi.document of type 'daqreader_ndr'.
+            %   The two-argument constructor form ndr(SESSION, DOCUMENT)
+            %   rebuilds the object from the record.
             %
             %   See also: ndi.document, ndi.daq.reader.image.ndr/ndr
-            % With NDI_SESSION_OBJ whose database is V2 (ndi.session/writesV2),
-            % the V2 record instead: an `acquisition_reader` whose
-            % `reader_string` is the NDR reader string, and its `software`
-            % entity (ndi.daq.reader/newdocumentV2).
-            if nargin>1 && ~isempty(ndi_session_obj) && ndi_session_obj.writesV2()
-                ndi_document_obj = ndi_daqreader_obj.newdocumentV2(ndi_session_obj, ...
-                    ndi_daqreader_obj.ndr_reader_string);
-                return;
+            % The V2 record of the reader in NDI_SESSION_OBJ (required): an
+            % `acquisition_reader` whose `reader_string` is the NDR reader
+            % string, and its `software` entity (ndi.daq.reader/newdocumentV2).
+            % Decided by Jess Haley, 2026-11-03
+            % [V2 branch writes V2 only] (did-schema
+            % did_v2_go_forward_class_audit.md): on the V2 line every writer
+            % writes V2 only; a v1 database is read-only ([v1 database
+            % read-only on the v2 line]).
+            arguments
+                ndi_daqreader_obj
+                ndi_session_obj (1,1) ndi.session
             end
-            ndi_document_obj = ndi.document('daqreader_ndr',...
-                'daqreader.ndi_daqreader_class',class(ndi_daqreader_obj),...
-                'daqreader_ndr.ndr_reader_string', ndi_daqreader_obj.ndr_reader_string,...
-                'daqreader_ndr.ndi_daqreader_ndr_class',class(ndi_daqreader_obj),...
-                'base.id', ndi_daqreader_obj.id(),...
-                'base.session_id',ndi.session.empty_id());
+            ndi_document_obj = ndi_daqreader_obj.newdocumentV2(ndi_session_obj, ...
+                ndi_daqreader_obj.ndr_reader_string);
         end % newdocument()
 
     end % methods
