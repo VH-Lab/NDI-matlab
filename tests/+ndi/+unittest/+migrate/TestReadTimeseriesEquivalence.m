@@ -1,0 +1,334 @@
+classdef TestReadTimeseriesEquivalence < matlab.unittest.TestCase
+%TESTREADTIMESERIESEQUIVALENCE The same time series before and after ndi.migrate.local.
+%
+%   Object-level equivalence for the migration path (VH-Lab/NDI-matlab#785,
+%   as rescoped by Jess Haley on 2026-10-21; VH-Lab/NDI-matlab#1018): open a
+%   v1 session, read time series through the NDI object API, migrate the
+%   SAME session in place with ndi.migrate.local, reopen it with
+%   ndi.session.dir, and read again. Samples, times and epoch tables must be
+%   the same.
+%
+%   THE FIXTURE HAS REAL BINARY DATA. The corpus zips are document-only, so
+%   the TestMigrateLocalEta* corpus tests cannot call readtimeseries. This
+%   test builds two small sessions from code, from the Intan file NDI ships
+%   (ndi_common/example_sessions/exp1_eg_saved/Intan_160317_125049_short.rhd,
+%   the file ndi.unittest.session.buildSession uses):
+%
+%     PLAIN     not ingested; the .rhd stays on disk. It holds
+%                 - the n-trode probe `ctx` (read from the .rhd),
+%                 - a derived ndi.element.timeseries `lfp_demo` with one
+%                   epoch, written by addepoch as epoch_binary_data.vhsb
+%                   and read by vhsb_read through database_openbinarydoc,
+%                 - an ndi.neuron `unit_demo` with one epoch of spike times
+%                   (also a .vhsb).
+%     INGESTED  the same probe, ingested with ndi.session/ingest (an mfdaq
+%               channel group in the database's file store), then the .rhd
+%               is DELETED, so every read goes through the ingested path.
+%
+%   Migration runs once per session, in TestClassSetup. Each reading is
+%   taken inside try/catch and kept with its error, so one failing read does
+%   not hide the others and each test method reports its own.
+%
+%   Filtered (never passed) when mksqlite, DID-matlab's did2 converter, a V2
+%   schema set with `entity`, or NDI-compress is missing.
+%   test-eta-migrate-e2e.yml runs it with all four.
+
+    properties
+        Plain      % struct: root, v1 and v2 readings, migration result
+        Ingested   % same for the ingested session
+    end
+
+    methods (TestClassSetup)
+
+        function buildReadMigrateRead(testCase)
+            testCase.assumeFalse(isempty(which('mksqlite')), 'mksqlite is not on the path');
+            testCase.assumeFalse(isempty(which('did2.convert.v1_to_v2')), ...
+                'did2.convert.v1_to_v2 (DID-matlab V2) is not on the path');
+            testCase.assumeTrue(~isempty(which('did2.schema.cache')) && ...
+                did2.schema.cache.shared().hasClass('entity'), ...
+                'no V2 schema set (did-schema #88, `entity`) where did2.schema.cache looks');
+            testCase.assumeFalse(isempty(which('ndi.compress.compress_ephys')), ...
+                'NDI-compress is not on the path (ingest needs it)');
+
+            P = ndi.unittest.migrate.TestReadTimeseriesEquivalence;
+
+            % ---- PLAIN: probe from the .rhd, a .vhsb element, a neuron -----
+            root = P.buildIntanSession();
+            testCase.addTeardown(@() P.removeDir(root));
+            S = ndi.session.dir(root);
+            probe = P.theProbe(S);
+            et = probe.epochtable();
+            assert(~isempty(et), 'the PLAIN probe has no epochs');
+            eid = et(1).epoch_id;
+            ec = et(1).epoch_clock{1};
+            t0t1 = et(1).t0_t1{1};
+            [pd, pt] = probe.readtimeseries(eid, -Inf, Inf);
+
+            % the element's series: channel 1, every 20th sample
+            keep = 1:20:numel(pt);
+            elT = pt(keep); elT = elT(:);
+            elD = double(pd(keep, 1));
+            el = ndi.element.timeseries(S, 'lfp_demo', 1, 'lfp', probe, 0);
+            el.addepoch(eid, ec, t0t1, elT, elD);
+            % the neuron's spike times: 37 fixed times inside the epoch
+            spikes = linspace(t0t1(1) + 0.01, t0t1(2) - 0.01, 37)';
+            nr = ndi.neuron(S, 'unit_demo', 1, 'spikes', probe, 0);
+            nr.addepoch(eid, ec, t0t1, spikes, ones(size(spikes)));
+            S.cache.clear();
+
+            plain = struct('root', root, 'epoch_id', eid, ...
+                'written', struct('element_t', elT, 'element_d', elD, 'spikes', spikes));
+            plain.v1 = P.readAll(S, eid, {'ctx', 'lfp_demo', 'unit_demo'});
+            clear S probe el nr
+            [plain.result, plain.migrateError] = P.migrate(root);
+            plain.v2 = P.readAll(P.reopen(root), eid, {'ctx', 'lfp_demo', 'unit_demo'});
+            testCase.Plain = plain;
+
+            % ---- INGESTED: the probe read only through the ingested path ----
+            root2 = P.buildIntanSession();
+            testCase.addTeardown(@() P.removeDir(root2));
+            S2 = ndi.session.dir(root2);
+            [b, msg] = S2.ingest();
+            assert(logical(b), 'ingest failed: %s', msg);
+            delete(fullfile(root2, P.IntanFile));
+            S2.cache.clear();
+            probe2 = P.theProbe(S2);
+            et2 = probe2.epochtable();
+            assert(~isempty(et2), 'the INGESTED probe has no epochs after the .rhd was removed');
+            dev = S2.daqsystem_load('name', 'intan1');
+            if iscell(dev); dev = dev{1}; end
+            ingested = struct('root', root2, 'epoch_id', et2(1).epoch_id, ...
+                'isIngested', ndi.file.navigator.isingested( ...
+                    getepochfiles(dev.filenavigator, et2(1).epoch_id)));
+            ingested.v1 = P.readAll(S2, et2(1).epoch_id, {'ctx'});
+            clear S2 probe2 dev
+            [ingested.result, ingested.migrateError] = P.migrate(root2);
+            ingested.v2 = P.readAll(P.reopen(root2), ingested.epoch_id, {'ctx'});
+            testCase.Ingested = ingested;
+        end
+
+    end
+
+    methods (Test)
+
+        function testBothSessionsMigrateWithNothingQuarantined(testCase)
+            for c = {'Plain', 'Ingested'}
+                r = testCase.(c{1});
+                testCase.verifyEmpty(r.migrateError, ...
+                    sprintf('%s: ndi.migrate.local raised: %s', c{1}, r.migrateError));
+                if ~isempty(r.result)
+                    testCase.verifyEmpty(r.result.quarantine, ...
+                        sprintf('%s: %d document(s) quarantined', c{1}, numel(r.result.quarantine)));
+                    testCase.verifyTrue(isfile(r.result.destination), ...
+                        sprintf('%s: no migrated database at %s', c{1}, r.result.destination));
+                end
+            end
+        end
+
+        function testTheV1ReadsReturnWhatWasWritten(testCase)
+            % The baseline is real: the v1 element and neuron give back the
+            % values addepoch wrote. This read goes through
+            % database_openbinarydoc and vhsb_read, the call that raised
+            % "Read-only file must be opened with 'rb' permission" in #1018.
+            v1 = testCase.Plain.v1;
+            w = testCase.Plain.written;
+            testCase.assertEmpty(v1.lfp_demo.err, ['v1 element read: ' v1.lfp_demo.err]);
+            testCase.verifyEqual(v1.lfp_demo.data, w.element_d);
+            testCase.verifyEqual(v1.lfp_demo.t(:), w.element_t, 'AbsTol', 1e-9);
+            testCase.assertEmpty(v1.unit_demo.err, ['v1 neuron read: ' v1.unit_demo.err]);
+            testCase.verifyEqual(v1.unit_demo.t(:), w.spikes, 'AbsTol', 1e-9);
+            testCase.verifyEqual(v1.unit_demo.data(:), ones(size(w.spikes)));
+        end
+
+        function testProbeSeriesFromTheRawFileIsTheSame(testCase)
+            testCase.verifySameReading('Plain', 'ctx');
+        end
+
+        function testElementVhsbSeriesIsTheSame(testCase)
+            testCase.verifySameReading('Plain', 'lfp_demo');
+        end
+
+        function testNeuronSpikeTimesAreTheSame(testCase)
+            testCase.verifySameReading('Plain', 'unit_demo');
+        end
+
+        function testIngestedProbeSeriesIsTheSame(testCase)
+            testCase.assertTrue(logical(testCase.Ingested.isIngested), ...
+                'the INGESTED session''s epoch is not on the ingested path');
+            testCase.verifySameReading('Ingested', 'ctx');
+        end
+
+    end
+
+    methods (Access = private)
+
+        function verifySameReading(testCase, which, name)
+            r = testCase.(which);
+            a = r.v1.(name);
+            b = r.v2.(name);
+            fprintf('\n  %s / %s, epoch %s\n    v1: %s\n    v2: %s\n', which, name, ...
+                r.epoch_id, ndi.unittest.migrate.TestReadTimeseriesEquivalence.describe(a), ...
+                ndi.unittest.migrate.TestReadTimeseriesEquivalence.describe(b));
+            testCase.assertEmpty(a.err, sprintf('%s/%s v1 read raised: %s', which, name, a.err));
+            testCase.assertNotEmpty(a.data, sprintf('%s/%s v1 read returned no samples', which, name));
+            testCase.assertEmpty(b.err, sprintf('%s/%s read on the MIGRATED session raised: %s', ...
+                which, name, b.err));
+            testCase.verifyEqual(b.epochtable, a.epochtable, ...
+                sprintf('%s/%s: the epoch table differs after migration', which, name));
+            testCase.verifyEqual(size(b.data), size(a.data), ...
+                sprintf('%s/%s: sample array size differs after migration', which, name));
+            testCase.verifyEqual(b.data, a.data, ...
+                sprintf('%s/%s: samples differ after migration', which, name));
+            testCase.verifyEqual(b.t, a.t, ...
+                sprintf('%s/%s: times differ after migration', which, name));
+        end
+
+    end
+
+    properties (Constant)
+        IntanFile = 'Intan_160317_125049_short.rhd'
+    end
+
+    methods (Static)
+
+        function root = buildIntanSession()
+            % The session of ndi.unittest.session.buildSession: the Intan
+            % file, its probe map (n-trode `ctx`), the intan1 daq system and
+            % the subject, written by NDI as a v1 session.
+            P = ndi.unittest.migrate.TestReadTimeseriesEquivalence;
+            root = tempname;
+            mkdir(root);
+            copyfile(fullfile(ndi.common.PathConstants.ExampleDataFolder, ...
+                'exp1_eg_saved', P.IntanFile), root);
+            fid = fopen(fullfile(root, 'Intan_160317_125049_short.epochprobemap.ndi'), 'wt');
+            fprintf(fid, 'name\treference\ttype\tdevicestring\tsubjectstring\n');
+            fprintf(fid, 'ctx\t1\tn-trode\tintan1:ai1\tanteater27@nosuchlab.org\n');
+            fclose(fid);
+            S = ndi.session.dir('exp1', root);
+            dt = ndi.file.navigator(S, {'#.rhd', '#.epochprobemap.ndi'}, ...
+                'ndi.epoch.epochprobemap_daqsystem', {'(.*)epochprobemap.ndi'});
+            S.daqsystem_add(ndi.daq.system.mfdaq('intan1', dt, ndi.daq.reader.mfdaq.intan()));
+            subject = ndi.subject('anteater27@nosuchlab.org', '');
+            S.database_add(subject.newdocument());
+            S.cache.clear();
+        end
+
+        function probe = theProbe(S)
+            probes = S.getprobes('type', 'n-trode');
+            assert(numel(probes) == 1, 'expected one n-trode probe, found %d', numel(probes));
+            probe = probes{1};
+        end
+
+        function S = reopen(root)
+            S = ndi.session.dir(root);
+            db = ndi.database.fun.opendatabase(fullfile(root, '.ndi'), S.id());
+            assert(isa(db, 'ndi.database.implementations.database.did2sqlite'), ...
+                'the reopened session is not on the migrated database (it opened a %s)', class(db));
+        end
+
+        function [result, err] = migrate(root)
+            result = [];
+            err = '';
+            try
+                result = ndi.migrate.local(root, 'Validate', true, 'Backup', false);
+                fprintf('\n  MIGRATED %s: %d source document(s), %d quarantined\n', root, ...
+                    result.summary.total, numel(result.quarantine));
+            catch ME
+                err = sprintf('%s (%s)', ME.message, ME.identifier);
+            end
+        end
+
+        function R = readAll(S, epochId, names)
+            % One reading per named object (probe or element): samples,
+            % times, normalized epoch table, the error if any, and the time
+            % the read took (#1018 reported a hang before any data).
+            R = struct();
+            objs = {};
+            lookupErrs = '';
+            for getter = {@() S.getprobes(), @() S.getelements()}
+                try
+                    got = getter{1}();
+                catch ME
+                    got = {};
+                    lookupErrs = [lookupErrs ' ' ME.message]; %#ok<AGROW>
+                end
+                if isempty(got); got = {}; elseif ~iscell(got); got = {got}; end
+                objs = [objs, reshape(got, 1, [])]; %#ok<AGROW>
+            end
+            P = ndi.unittest.migrate.TestReadTimeseriesEquivalence;
+            for k = 1:numel(names)
+                r = struct('data', [], 't', [], 'epochtable', [], 'err', '', 'seconds', NaN);
+                try
+                    hit = {};
+                    for j = 1:numel(objs)
+                        if strcmp(objs{j}.name, names{k})
+                            hit{end+1} = objs{j}; %#ok<AGROW>
+                        end
+                    end
+                    % a probe is returned by getprobes and getelements alike
+                    ids = cellfun(@(o) o.id(), hit, 'UniformOutput', false);
+                    [~, u] = unique(ids, 'stable');
+                    hit = hit(u);
+                    assert(numel(hit) == 1, 'found %d object(s) named %s;%s', numel(hit), names{k}, lookupErrs);
+                    o = hit{1};
+                    r.epochtable = P.normalizeEpochTable(o.epochtable());
+                    tic;
+                    [r.data, r.t] = o.readtimeseries(epochId, -Inf, Inf);
+                    r.seconds = toc;
+                catch ME
+                    r.err = sprintf('%s (%s)', ME.message, ME.identifier);
+                end
+                R.(names{k}) = r;
+            end
+        end
+
+        function n = normalizeEpochTable(et)
+            % The epoch table as plain data: ids, numbers, session, clock
+            % names, extents, probe-map rows and underlying epoch ids.
+            n = struct('epoch_number', {}, 'epoch_id', {}, 'epoch_session_id', {}, ...
+                'epoch_clock', {}, 't0_t1', {}, 'epochprobemap', {}, 'underlying_epoch_ids', {});
+            for i = 1:numel(et)
+                e = et(i);
+                n(i).epoch_number = e.epoch_number;
+                n(i).epoch_id = char(e.epoch_id);
+                n(i).epoch_session_id = char(e.epoch_session_id);
+                n(i).epoch_clock = cellfun(@(c) c.ndi_clocktype2char(), e.epoch_clock, ...
+                    'UniformOutput', false);
+                n(i).t0_t1 = cellfun(@(x) double(x(:)'), e.t0_t1, 'UniformOutput', false);
+                pm = {};
+                m = e.epochprobemap;
+                for k = 1:numel(m)
+                    if iscell(m); p = m{k}; else; p = m(k); end
+                    pm{end+1} = struct('name', char(p.name), 'reference', double(p.reference), ...
+                        'type', char(p.type), 'devicestring', char(p.devicestring), ...
+                        'subjectstring', char(p.subjectstring)); %#ok<AGROW>
+                end
+                n(i).epochprobemap = pm;
+                ue = {};
+                if isfield(e, 'underlying_epochs')
+                    for k = 1:numel(e.underlying_epochs)
+                        ue{end+1} = char(e.underlying_epochs(k).epoch_id); %#ok<AGROW>
+                    end
+                end
+                n(i).underlying_epoch_ids = ue;
+            end
+        end
+
+        function s = describe(r)
+            if ~isempty(r.err)
+                s = ['ERROR ' r.err];
+                return;
+            end
+            s = sprintf('%s samples, %d time(s), %d epoch(s), %.2f s', ...
+                mat2str(size(r.data)), numel(r.t), numel(r.epochtable), r.seconds);
+        end
+
+        function removeDir(d)
+            try
+                if isfolder(d); rmdir(d, 's'); end
+            catch
+            end
+        end
+
+    end
+end
