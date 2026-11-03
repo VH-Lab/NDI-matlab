@@ -79,8 +79,12 @@ classdef TestDependencyShapeRoundTrip < matlab.unittest.TestCase
             testCase.verifyEqual(entryKeys(got{1}), {'name', 'value'});
             testCase.verifyEqual(got{1}.dependency_value('subject_id'), subj.id());
 
-            % set a dependency and write it back
-            protocolId = ndi.ido.unique_id();
+            % set a dependency and write it back; the database checks that
+            % the target is stored, so point it at a stored document
+            target = ndi.document('subject', 'subject.local_identifier', 'protocol@lab', ...
+                'subject.description', '') + S2.newdocument();
+            S2.database_add(target);
+            protocolId = target.id();
             changed = got{1}.set_dependency_value('protocol_id', protocolId);
             testCase.verifyEqual(entryKeys(changed), {'name', 'value'}, ...
                 'the setter writes the v1 key into a v1 document');
