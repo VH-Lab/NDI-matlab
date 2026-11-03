@@ -90,7 +90,15 @@ function createTestResultBadge(results, projectRootDir)
     % into nditools.testBadgeColorMessage so it can be unit-tested.
     [color, message] = nditools.testBadgeColorMessage(...
         numTests, numPassedTests, numFailedTests);
-    matbox.utility.createBadgeSvg("tests", message, color, projectRootDir)
+    % The badge is cosmetic: never let a failure to draw it (e.g. pybadges
+    % failing to import on a new Python) fail the test run. Test results
+    % alone decide pass/fail.
+    try
+        matbox.utility.createBadgeSvg("tests", message, color, projectRootDir)
+    catch ME
+        warning('NDI:test:badgeCreationFailed', ...
+            'Could not create the tests badge (%s): %s', ME.identifier, ME.message);
+    end
 end
 
 function displayTestResultSummary(testResults)
