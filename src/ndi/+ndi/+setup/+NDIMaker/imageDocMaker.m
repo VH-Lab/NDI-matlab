@@ -90,8 +90,12 @@ classdef imageDocMaker < handle
             
             % If an ontologyTableRow_id is provided, add it to the query to find a unique document
             if ~isempty(options.ontologyTableRow_id)
-                query = query & ndi.query('depends_on.name', 'exact_string', 'ontologyTableRow_id') & ...
-                    ndi.query('depends_on.document_id', 'exact_string', options.ontologyTableRow_id);
+                % The depends_on operation tests the name and the target of
+                % the same entry, under either key spelling (v1 `value`, v2
+                % `document_id`), and SQL matches it; a `.field` path on
+                % depends_on is not stored in the SQL fields table.
+                query = query & ndi.query('', 'depends_on', 'ontologyTableRow_id', ...
+                    options.ontologyTableRow_id);
             else
                 warning('imageDocMaker:NoDepenencies','Each image should be linked to another document such as an ontologyTableRow.');
             end

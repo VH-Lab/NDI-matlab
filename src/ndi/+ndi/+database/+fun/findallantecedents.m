@@ -29,7 +29,9 @@ function [d] = findallantecedents(E, visited, varargin)
 
     for i=1:numel(varargin)
         [depNames,depStruct] = dependency(varargin{i});
-        ids = {depStruct.value};
+        % either key: v1 `value` (or `id`), v2 `document_id`
+        ids = arrayfun(@(e) ndi.document.i_readDependencyTarget(e), depStruct(:)', ...
+            'UniformOutput', false);
         if numel(ids)>0
             q_v = ndi.query('base.id','exact_string',ids{1});
             for j=2:numel(ids)

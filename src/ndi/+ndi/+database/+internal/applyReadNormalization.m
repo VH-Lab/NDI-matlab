@@ -19,10 +19,11 @@ function ndiDocumentObj = applyReadNormalization(rawDoc)
 %   in the shape it was written in -- the shape NDI's v1 readers
 %   (ndi.vintage, ndi.app, stimulus and probe helpers) read.
 %
-%   What ndi.document's own constructor does to EVERY body is unchanged
-%   and separate from this function: ndi.compat.normalizeDependsOn
-%   (depends_on keys `id` / `value` -> `document_id`, as did.document's
-%   constructor also does). The ndi.compat field aliases for
+%   ndi.document's constructor converts nothing either: depends_on keeps
+%   the key it was stored with, v1 `value` (or `id`) or v2 `document_id`
+%   (did-schema [v2 line reads and writes both]; DID-matlab #389).
+%   ndi.compat.normalizeDependsOn is an explicit conversion only. The
+%   ndi.compat field aliases for
 %   probe_location and treatment (augmentRead / reconcileWrite) are removed
 %   (Decided by Jess Haley, 2026-10-23 [compat write layer removed]).
 %

@@ -692,8 +692,9 @@ classdef element < ndi.ido & ndi.epoch.epochset & ndi.documentservice & matlab.m
                 ndi_document_obj = set_dependency_value(ndi_document_obj,'underlying_element_id',underlying_id);
                 ndi_document_obj = set_dependency_value(ndi_document_obj,'subject_id',ndi_element_obj.subject_id);
                 for i=1:numel(ndi_element_obj.dependencies)
+                    % either key: v1 `value` (or `id`), v2 `document_id`
                     ndi_document_obj = ndi_document_obj.set_dependency_value(ndi_element_obj.dependencies(i).name,...
-                        ndi_element_obj.dependencies(i).value,'ErrorIfNotFound',0);
+                        ndi.document.i_readDependencyTarget(ndi_element_obj.dependencies(i)),'ErrorIfNotFound',0);
                 end
                 ndi_element_obj.session.database_add(ndi_document_obj);
             end

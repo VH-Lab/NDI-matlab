@@ -1,9 +1,10 @@
 classdef NormalizeDependsOnTest < matlab.unittest.TestCase
 %NORMALIZEDEPENDSONTEST Unit tests for ndi.compat.normalizeDependsOn.
 %
-%   Covers the constructor-time normalisation that canonicalises
-%   depends_on entry keys to v2 `document_id`, accepting v1
-%   `id` and the earlier v2-draft `value` as synonyms.
+%   Covers the explicit conversion that canonicalises depends_on entry
+%   keys to v2 `document_id`, accepting v1 `value` and the older `id` as
+%   synonyms, and that the ndi.document constructor does NOT apply it (a
+%   document keeps the shape it was read in).
 
     methods (Test)
 
@@ -120,19 +121,24 @@ classdef NormalizeDependsOnTest < matlab.unittest.TestCase
                 'aabb1122ccdd3344_8899aabbccddeeff');
         end
 
-        function test_ndi_document_constructor_normalises(testCase)
-            % Acceptance: ndi.document constructor invokes
-            % normalizeDependsOn so the body's depends_on uses
-            % document_id by the time anyone reads it.
+        function test_ndi_document_constructor_keeps_the_shape(testCase)
+            % Inverted 2026-11-03: the ndi.document constructor no longer
+            % calls normalizeDependsOn. A document keeps the dependency
+            % shape it was read in (did-schema [v2 line reads and writes
+            % both], after VH-Lab/DID-matlab#204; DID-matlab #389), so a v1
+            % `id` / `value` entry is not renamed to `document_id`.
+            % normalizeDependsOn is an explicit conversion only.
             body = i_body();
             body.depends_on = struct( ...
                 'name', {'parent'}, ...
                 'id',   {'aabb1122ccdd3344_0011223344556677'});
             doc = ndi.document(body);
-            testCase.verifyTrue(isfield( ...
-                doc.document_properties.depends_on, 'document_id'));
             testCase.verifyFalse(isfield( ...
+                doc.document_properties.depends_on, 'document_id'));
+            testCase.verifyTrue(isfield( ...
                 doc.document_properties.depends_on, 'id'));
+            testCase.verifyEqual(doc.dependency_value('parent'), ...
+                'aabb1122ccdd3344_0011223344556677');
         end
     end
 end

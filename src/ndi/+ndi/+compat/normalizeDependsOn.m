@@ -3,25 +3,24 @@ function body = normalizeDependsOn(body)
 %
 %   BODY = ndi.compat.normalizeDependsOn(BODY) walks the body's
 %   `depends_on` struct array (if present) and ensures every entry
-%   uses the v2 canonical key `document_id`. did_v1 bodies
-%   carry the dependency target under `id`; an earlier v2
-%   draft used `value`. This helper accepts either of those (with
-%   precedence `document_id > value > id` when more than one is
-%   populated on the same entry) and produces a depends_on whose
-%   struct schema is exactly `{name, document_id}`.
+%   uses the v2 key `document_id`. v1 bodies carry the dependency
+%   target under `value` (NDI's v1 templates) or the older `id`. This
+%   helper accepts either of those (with precedence
+%   `document_id > value > id` when more than one is populated on the
+%   same entry) and produces a depends_on whose struct schema is
+%   exactly `{name, document_id}`.
 %
-%   Called from the ndi.document constructor so the invariant
-%   "after construction, depends_on uses document_id" holds for
-%   every code path that reaches into document_properties. Helpers
-%   on ndi.document (set_dependency_value, dependency_value,
-%   add_dependency_value_n, remove_dependency_value_n, dependency)
-%   rely on that invariant.
-%
-%   depends_on entry-key compatibility is handled in code (here, plus
-%   ndi.compat.translateQueryPaths on the query side) rather than
-%   by mirroring legacy keys onto the body, which would extend the
-%   struct-array schema and create the heterogeneousStrucAssignment
-%   fragility class. See #801.
+%   An EXPLICIT conversion. The ndi.document constructor no longer calls
+%   it: a document keeps the dependency shape it was read in, v1 `value`
+%   or v2 `document_id` (did-schema did_v2_go_forward_class_audit.md [v2
+%   line reads and writes both], Jess Haley, 2026-11-03, after
+%   VH-Lab/DID-matlab#204; DID-matlab #389 made did.document do the
+%   same). did.document's setters write the key the entries already
+%   carry, its readers accept every key, and
+%   ndi.compat.translateQueryPaths makes a query on one key spelling
+%   test all three. Converting is a caller's deliberate step, as
+%   ndi.calculator does for a parameter specification it concatenates
+%   with `document_id` entries.
 %
 %   Inputs:
 %     BODY  1x1 struct  - A document body, typically
@@ -30,7 +29,8 @@ function body = normalizeDependsOn(body)
 %   Outputs:
 %     BODY  1x1 struct  - Same body with depends_on normalised.
 %
-%   See also: ndi.document, ndi.compat.translateQueryPaths.
+%   See also: ndi.document, ndi.compat.translateQueryPaths,
+%             did.document.i_normalizeDependsOn.
 
     arguments
         body (1,1) struct
