@@ -5,6 +5,15 @@ classdef  didsqlite < ndi.database
         db        % did.sqlitedb
     end
 
+    properties (Constant)
+        % BRANCH - the one DID branch every read and write here uses (#316).
+        % It is 'a' because every existing NDI database holds its documents
+        % on a branch named 'a'; changing it would leave those databases
+        % unreadable (the constructor refuses a database without it), so
+        % existing databases are not renamed.
+        branch = 'a'
+    end
+
     methods
 
         function ndi_didsqlite_obj = didsqlite(varargin)
@@ -29,23 +38,23 @@ classdef  didsqlite < ndi.database
             bid = ndi_didsqlite_obj.db.all_branch_ids();
             if isempty(bid)
                 % No branches at all, so there is no current branch either,
-                % and 'a' is necessarily a root. The parent argument is
-                % omitted deliberately: since DID-matlab #164 an omitted or
-                % empty parent means "the current branch", not "no parent",
-                % so this guard is what makes 'a' a root rather than some
-                % other branch's child. Do not widen it to a plain
-                % ~ismember check.
-                ndi_didsqlite_obj.db.add_branch('a');
-            elseif ~ismember('a', bid)
+                % and the branch is necessarily a root. The parent argument
+                % is omitted deliberately: since DID-matlab #164 an omitted
+                % or empty parent means "the current branch", not "no
+                % parent", so this guard is what makes the branch a root
+                % rather than some other branch's child. Do not widen it to
+                % a plain ~ismember check.
+                ndi_didsqlite_obj.db.add_branch(ndi_didsqlite_obj.branch);
+            elseif ~ismember(ndi_didsqlite_obj.branch, bid)
                 % The database exists and has branches, but not the one every
-                % other method here hardcodes. Creating it now would attach it
+                % other method here uses (BRANCH). Creating it now would attach it
                 % to whatever the current branch happens to be, so say what is
                 % wrong instead of leaving DID to raise
                 % DID:Database:InvalidBranch on the next read.
                 error('NDI:Database:MissingBranch', ...
-                    ['The DID database at %s has branches %s but not ''a'', ' ...
+                    ['The DID database at %s has branches %s but not ''%s'', ' ...
                      'which ndi.database.implementations.database.didsqlite requires.'], ...
-                    database_filename, strjoin(bid, ', '));
+                    database_filename, strjoin(bid, ', '), ndi_didsqlite_obj.branch);
             end
         end % ndi.database.implementations.database.didsqlite()
     end
@@ -59,7 +68,7 @@ classdef  didsqlite < ndi.database
             % Return all document unique reference strings as a cell array of strings. If there
             % are no documents, empty is returned.
             %
-            docids = ndi_didsqlite_obj.db.get_doc_ids('a');
+            docids = ndi_didsqlite_obj.db.get_doc_ids(ndi_didsqlite_obj.branch);
         end % alldocids()
     end
 
@@ -75,7 +84,7 @@ classdef  didsqlite < ndi.database
             % downloads nothing itself, so without this an ndic:// location
             % marked ingest cannot be fetched at add time. Remote ingestion is
             % rare -- ingest defaults to 0 for 'url' and 'ndicloud' locations.
-            ndi_didsqlite_obj.db.add_docs(ndi_document_obj,'a', ...
+            ndi_didsqlite_obj.db.add_docs(ndi_document_obj,ndi_didsqlite_obj.branch, ...
                 'customFileHandler', @download_file_from_cloud);
         end % do_add
 
@@ -104,7 +113,7 @@ classdef  didsqlite < ndi.database
                 ndi_document_id
                 options.OnMissing {mustBeMember(options.OnMissing,{'ignore','warn','error'})} = 'ignore'
             end
-            ndi_didsqlite_obj.db.remove_docs(ndi_document_id,'a', ...
+            ndi_didsqlite_obj.db.remove_docs(ndi_document_id,ndi_didsqlite_obj.branch, ...
                 'OnMissing',options.OnMissing);
         end % do_remove
 
@@ -115,7 +124,7 @@ classdef  didsqlite < ndi.database
 
             ndi_document_objs = {};
             searchparams = v1SubjectSearch(searchparams);
-            [doc_ids] = ndi_didsqlite_obj.db.search(searchparams,'a');
+            [doc_ids] = ndi_didsqlite_obj.db.search(searchparams,ndi_didsqlite_obj.branch);
             ndi_document_objs = {};
             for i=1:numel(doc_ids)
                 ndi_document_objs{i} = ndi_didsqlite_obj.do_read(doc_ids{i});
