@@ -32,6 +32,8 @@ function documents = downloadDocumentCollection(datasetId, documentIds, options)
 %                   The maximum number of document IDs to request in a single
 %                   bulk download operation. Defaults to the preference
 %                   Cloud.Download.Max_Document_Batch_Count (see ndi.preferences).
+%                   Values above the server's per-request limit (5000) are
+%                   reduced to that limit; a larger request is refused.
 %
 %    options.AllDocumentsMode - (1,1) logical, optional
 %                   When true and no documentIds are supplied, the server's
@@ -81,13 +83,20 @@ function documents = downloadDocumentCollection(datasetId, documentIds, options)
             end
         end
 
+        % The server refuses more than maxServerChunk ids per request: they
+        % travel in one SNS message, which is capped at 256 KiB. A chunk size
+        % saved in preferences before the default was lowered (10000) would
+        % otherwise fail every download of a large dataset.
+        maxServerChunk = 5000;
+        chunkSize = max(1, min(floor(options.ChunkSize), maxServerChunk));
+
         % Split the documentIds into chunks for processing
         numDocs = numel(documentIds);
-        numChunks = ceil(numDocs / options.ChunkSize);
+        numChunks = ceil(numDocs / chunkSize);
         documentChunks = cell(1, numChunks);
         for i = 1:numChunks
-            startIndex = (i-1) * options.ChunkSize + 1;
-            endIndex = min(i * options.ChunkSize, numDocs);
+            startIndex = (i-1) * chunkSize + 1;
+            endIndex = min(i * chunkSize, numDocs);
             documentChunks{i} = documentIds(startIndex:endIndex);
         end
     end
