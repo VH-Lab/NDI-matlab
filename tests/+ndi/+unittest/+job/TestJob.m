@@ -73,7 +73,7 @@ classdef TestJob < matlab.unittest.TestCase
 
         function testARunningJobIsNotRunTwice(testCase)
             job = ndi.test.helper.ScriptedJob.create(2);
-            job.pretendRunningIn(feature('getpid'));
+            job.pretendRunningIn(ndi.job.Job.processId());
             other = ndi.job.Job.load(job.id);
             % Saved as running in this process: alive, so refused elsewhere.
             testCase.verifyEqual(other.effectiveState(), 'running');

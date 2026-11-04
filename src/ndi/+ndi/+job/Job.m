@@ -110,7 +110,7 @@ classdef Job < handle
             obj.state = 'running';
             obj.runtime = 'matlab';
             obj.host = ndi.job.Job.hostName();
-            obj.pid = feature('getpid');
+            obj.pid = ndi.job.Job.processId();
             obj.lastError = '';
             obj.message = 'Starting...';
             obj.beats = 0;
@@ -215,7 +215,7 @@ classdef Job < handle
                 % Another computer's process cannot be checked from here.
                 return
             end
-            if obj.pid ~= feature('getpid') && ~ndi.job.Job.processAlive(obj.pid)
+            if obj.pid ~= ndi.job.Job.processId() && ~ndi.job.Job.processAlive(obj.pid)
                 s = 'interrupted';
             end
         end
@@ -385,6 +385,19 @@ classdef Job < handle
             cls = '';
             if isKey(m, char(kind))
                 cls = m(char(kind));
+            end
+        end
+
+        function pid = processId()
+        % PROCESSID - this MATLAB's process id
+        %
+        %   matlabProcessID where this release has it; feature('getpid'),
+        %   the older and still-shipping accessor, otherwise (as
+        %   ndi.cloud.download.internal.signedUrlDiskCache does).
+            try
+                pid = double(matlabProcessID());
+            catch
+                pid = double(feature('getpid'));
             end
         end
 
