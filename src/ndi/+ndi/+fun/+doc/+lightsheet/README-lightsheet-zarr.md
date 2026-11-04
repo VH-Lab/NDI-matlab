@@ -129,6 +129,17 @@ shells out.
    shown; SmartSPIM uses `fromSPIM`, OME-Zarr `fromOMEZarr`.
 4. **Label** (defaults to the folder name) and, for SmartSPIM, an optional
    **voxel size** when the acquisition's metadata does not give one.
+5. **Compression**: the Blosc-Zstd level of the stored chunks, 1-9. It
+   defaults to 8 for the cloud and 5 for this session. Level 9 is
+   allowed but warned about: c-blosc maps Blosc level L to Zstd level
+   2L-1, except that 9 is Zstd's maximum (22), which is many times slower
+   and needs far more memory per worker for a percent or two smaller
+   files.
+6. **Reductions** (SmartSPIM only): mean and max, mean only, or max only.
+   An OME-Zarr store brings its own ladders.
+7. **Workers**: parallel workers compressing chunks. It starts at the
+   size of an open parallel pool, otherwise min(8, cores); more than 1
+   opens a pool of that size.
 
 The box at the bottom lists what is still missing, and **Add** stays
 disabled until nothing is. Chunks are always stored in NDI, locally too:

@@ -341,12 +341,61 @@ classdef LightsheetManager < ndi.gui.app.sessionApp
         %   voxelSizeUm      - [z y x] micrometers for a SmartSPIM folder
         %                      whose metadata does not give it; [] = read
         %                      it from the acquisition
+        %   clevel           - Blosc-Zstd compression level of the stored
+        %                      chunks, 1-9 (see defaultClevel)
+        %   reductions       - the ladders a SmartSPIM image is built with:
+        %                      any of 'mean', 'max'. An OME-Zarr store
+        %                      brings its own.
+        %   numWorkers       - parallel workers compressing chunks: N > 1
+        %                      opens (or resizes) a pool of N, 1 is one at
+        %                      a time, -1 uses whatever pool is open
             choices = struct('destination', 'local', ...
                 'datasetId', '', 'datasetName', '', ...
                 'sessionId', '', 'sessionReference', '', ...
                 'subjectID', '', 'subjectName', '', ...
                 'sourcePath', '', 'sourceKind', '', ...
-                'label', '', 'voxelSizeUm', []);
+                'label', '', 'voxelSizeUm', [], ...
+                'clevel', ndi.gui.app.LightsheetManager.defaultClevel('local'), ...
+                'reductions', {{'mean', 'max'}}, ...
+                'numWorkers', -1);
+        end
+
+        function c = defaultClevel(destination)
+        % DEFAULTCLEVEL - the compression level offered for a destination
+        %
+        %   8 for the cloud, where the chunks are kept for a long time and
+        %   a smaller file is worth a slower build; 5 (the ingest
+        %   functions' own default) for this session. Not 9: c-blosc maps
+        %   Blosc level L to Zstd level 2L-1, except that 9 means Zstd's
+        %   maximum, 22, which is many times slower and needs far more
+        %   memory per worker for a percent or two more.
+            if strcmp(destination, 'cloud')
+                c = 8;
+            else
+                c = 5;
+            end
+        end
+
+        function n = defaultWorkers()
+        % DEFAULTWORKERS - the number of workers the Add dialog starts with
+        %
+        %   The size of a parallel pool that is already open, else
+        %   min(8, cores). 1 without the Parallel Computing Toolbox.
+        %   Never opens a pool itself.
+            n = 1;
+            if isempty(ver('parallel'))
+                return
+            end
+            try
+                p = gcp('nocreate');
+                if ~isempty(p)
+                    n = p.NumWorkers;
+                    return
+                end
+                n = min(8, feature('numcores'));
+            catch
+                n = 1;
+            end
         end
 
         function [kind, description] = sourceKind(folder)
@@ -464,6 +513,30 @@ classdef LightsheetManager < ndi.gui.app.sessionApp
                     'the store records its own.'];
             end
 
+            cl = F('clevel', 5);
+            if ~isscalar(cl) || ~isnumeric(cl) || cl ~= round(cl) || cl < 1 || cl > 9
+                E{end+1} = 'Compression must be a whole number from 1 to 9.';
+            elseif cl == 9
+                W{end+1} = ['Compression 9 is Zstd''s slowest setting: many ' ...
+                    'times slower than 8, with much more memory per worker, ' ...
+                    'for files only a percent or two smaller.'];
+            end
+
+            red = cellstr(F('reductions', {'mean', 'max'}));
+            if strcmp(plan.ingest, 'fromSPIM')
+                if isempty(red) || ~all(ismember(red, {'mean', 'max'}))
+                    E{end+1} = 'Reductions must be mean, max, or both.';
+                end
+            elseif strcmp(plan.ingest, 'fromOMEZarr') && ~isempty(setxor(red, {'mean', 'max'}))
+                W{end+1} = ['Reductions are ignored for an OME-Zarr store: it ' ...
+                    'brings the ladders it was made with.'];
+            end
+
+            nw = F('numWorkers', -1);
+            if ~isscalar(nw) || ~isnumeric(nw) || nw ~= round(nw) || (nw < 1 && nw ~= -1)
+                E{end+1} = 'Workers must be a whole number, 1 or more.';
+            end
+
             if toCloud
                 W{end+1} = ['Every image chunk is built on this computer and ' ...
                     'uploaded. A large volume takes hours, and needs free ' ...
@@ -491,6 +564,18 @@ classdef LightsheetManager < ndi.gui.app.sessionApp
             end
             msg = sprintf(['Add the image\n  %s\nas "%s", of subject %s, ' ...
                 'to %s?'], c.sourcePath, label, c.subjectName, plan.where);
+            how = sprintf('Compression %d', ndi.gui.app.LightsheetManager.field(c, 'clevel', 5));
+            if strcmp(plan.ingest, 'fromSPIM')
+                how = sprintf('%s, %s ladder(s)', how, strjoin(cellstr( ...
+                    ndi.gui.app.LightsheetManager.field(c, 'reductions', {'mean', 'max'})), ' and '));
+            end
+            nw = ndi.gui.app.LightsheetManager.field(c, 'numWorkers', -1);
+            if nw > 1
+                how = sprintf('%s, %d parallel workers', how, nw);
+            elseif nw == 1
+                how = sprintf('%s, one worker', how);
+            end
+            msg = sprintf('%s\n%s.', msg, how);
             if ~isempty(plan.warnings)
                 msg = sprintf('%s\n\n%s', msg, ...
                     ndi.gui.app.LightsheetManager.bullets(plan.warnings));
@@ -596,8 +681,9 @@ classdef LightsheetManager < ndi.gui.app.sessionApp
         %
         %   Optional Name-Value Arguments:
         %     Api        - cloud calls for the writer (tests pass a fake)
-        %     ingestArgs - extra name/value pairs for fromSPIM/fromOMEZarr
-        %                  (e.g. {'numWorkers', 8})
+        %     ingestArgs - extra name/value pairs for fromSPIM/fromOMEZarr,
+        %                  after (so overriding) the ones from CHOICES,
+        %                  e.g. {'asyncPrefetch', false}
             arguments
                 session
                 choices (1,1) struct
@@ -614,12 +700,14 @@ classdef LightsheetManager < ndi.gui.app.sessionApp
                 target = ndi.cloud.upload.SessionWriter(choices.datasetId, ...
                     choices.sessionId, 'Api', options.Api);
             end
-            args = {'subjectID', choices.subjectID};
+            args = {'subjectID', choices.subjectID, ...
+                'clevel', choices.clevel, 'numWorkers', choices.numWorkers};
             if ~isempty(choices.label)
                 args = [args {'label', choices.label}];
             end
             switch plan.ingest
                 case 'fromSPIM'
+                    args = [args {'reductions', cellstr(choices.reductions)}];
                     if ~isempty(choices.voxelSizeUm)
                         args = [args {'voxelSizeUm', double(choices.voxelSizeUm(:).')}];
                     end
@@ -1010,12 +1098,13 @@ classdef LightsheetManager < ndi.gui.app.sessionApp
             sessions = struct('session_id', {}, 'session_reference', {});
             subjects = struct('id', {}, 'local_identifier', {});
             autoLabel = '';      % the label we filled in, replaced on a new folder
+            clevelTouched = false;  % the user chose a compression; keep it
 
             c = ndi.gui.cloudColors();
             d = uifigure('Name', 'Add a lightsheet image', ...
-                'Position', [140 140 700 520], 'Color', c.offWhite);
-            gl = uigridlayout(d, [12 3]);
-            gl.RowHeight = {28, 36, 24, 24, 24, 24, 24, 22, 24, 24, '1x', 30};
+                'Position', [140 100 700 610], 'Color', c.offWhite);
+            gl = uigridlayout(d, [15 3]);
+            gl.RowHeight = {28, 36, 24, 24, 24, 24, 24, 22, 24, 24, 24, 24, 24, '1x', 30};
             gl.ColumnWidth = {130, '1x', 130};
             gl.BackgroundColor = c.offWhite;
 
@@ -1080,11 +1169,45 @@ classdef LightsheetManager < ndi.gui.app.sessionApp
                 'Placeholder', 'z y x; empty reads it from the acquisition');
             place(voxEd, 10, [2 3]);
 
+            % -- how ---------------------------------------------------
+            row(11, 'Compression');
+            clevelDd = uidropdown(gl, 'Items', { ...
+                '1  (fastest, largest files)', '2', '3', '4', ...
+                '5  (default for this session)', '6', '7', ...
+                '8  (recommended for the cloud)', ...
+                '9  (smallest, very slow, much more memory)'}, ...
+                'ItemsData', num2cell(1:9), ...
+                'Value', choices.clevel);
+            clevelDd.Tooltip = ['Blosc-Zstd level of the stored chunks. They ' ...
+                'are kept as built, so a higher level saves storage for ' ...
+                'good at the cost of a slower build. Opening them is about ' ...
+                'equally fast at every level.'];
+            place(clevelDd, 11, [2 3]);
+
+            row(12, 'Reductions');
+            reductionDd = uidropdown(gl, 'Items', ...
+                {'mean and max', 'mean only', 'max only'}, ...
+                'ItemsData', {'mean,max', 'mean', 'max'}, 'Value', 'mean,max', ...
+                'Enable', 'off');
+            reductionDd.Tooltip = ['The downsampled ladders built from a ' ...
+                'SmartSPIM image. Each one adds about a third to the chunks ' ...
+                'of the full-resolution level. An OME-Zarr store brings its own.'];
+            place(reductionDd, 12, [2 3]);
+
+            row(13, 'Workers');
+            workersSp = uispinner(gl, 'Limits', [1 256], 'Step', 1, ...
+                'RoundFractionalValues', 'on', ...
+                'Value', ndi.gui.app.LightsheetManager.defaultWorkers());
+            workersSp.Tooltip = ['Parallel workers compressing chunks. More ' ...
+                'than 1 opens a parallel pool of that size. Each worker can ' ...
+                'need about 3 GB of memory while the coarser levels are built.'];
+            place(workersSp, 13, [2 3]);
+
             msgArea = uitextarea(gl, 'Editable', 'off', 'Value', '');
-            place(msgArea, 11, [1 3]);
+            place(msgArea, 14, [1 3]);
 
             bg = uigridlayout(gl, [1 3]);
-            bg.Layout.Row = 12; bg.Layout.Column = [1 3];
+            bg.Layout.Row = 15; bg.Layout.Column = [1 3];
             bg.ColumnWidth = {'1x', 110, 110};
             bg.Padding = [0 0 0 0];
             bg.BackgroundColor = c.offWhite;
@@ -1104,6 +1227,9 @@ classdef LightsheetManager < ndi.gui.app.sessionApp
             browseBtn.ButtonPushedFcn = @(~,~) onBrowse();
             labelEd.ValueChangedFcn   = @(~,~) refresh();
             voxEd.ValueChangedFcn     = @(~,~) refresh();
+            clevelDd.ValueChangedFcn  = @(~,~) onClevel();
+            reductionDd.ValueChangedFcn = @(~,~) refresh();
+            workersSp.ValueChangedFcn = @(~,~) refresh();
             cancelBtn.ButtonPushedFcn = @(~,~) delete(d);
             addBtn.ButtonPushedFcn    = @(~,~) onGo();
 
@@ -1146,7 +1272,12 @@ classdef LightsheetManager < ndi.gui.app.sessionApp
                 if ~isempty(strtrim(voxEd.Value)) && isempty(choices.voxelSizeUm)
                     choices.voxelSizeUm = NaN;   % typed but unreadable: addPlan says so
                 end
-                voxEd.Enable = onOff(strcmp(choices.sourceKind, 'smartspim'));
+                choices.clevel = clevelDd.Value;
+                choices.reductions = strsplit(reductionDd.Value, ',');
+                choices.numWorkers = workersSp.Value;
+                isSpim = strcmp(choices.sourceKind, 'smartspim');
+                voxEd.Enable = onOff(isSpim);
+                reductionDd.Enable = onOff(isSpim);
                 plan = ndi.gui.app.LightsheetManager.addPlan(choices);
                 if isempty(plan.errors)
                     msgArea.Value = [{'Ready to add.'}; plan.warnings];
@@ -1158,8 +1289,16 @@ classdef LightsheetManager < ndi.gui.app.sessionApp
             end
 
             % -- where ------------------------------------------------------
+            function onClevel()
+                clevelTouched = true;
+                refresh();
+            end
+
             function onDestination()
                 toCloud = strcmp(destDd.Value, 'cloud');
+                if ~clevelTouched
+                    clevelDd.Value = ndi.gui.app.LightsheetManager.defaultClevel(destDd.Value);
+                end
                 datasetDd.Enable = onOff(toCloud);
                 sessionDd.Enable = onOff(toCloud);
                 if toCloud && isempty(datasets)

@@ -179,6 +179,59 @@ classdef TestLightsheetManager < matlab.unittest.TestCase
             testCase.verifyEmpty(ndi.gui.app.LightsheetManager.addPlan(c).errors);
         end
 
+        function testCompressionDefaultsAndLimits(testCase)
+            LM = 'ndi.gui.app.LightsheetManager';
+            testCase.verifyEqual(feval([LM '.defaultClevel'], 'cloud'), 8);
+            testCase.verifyEqual(feval([LM '.defaultClevel'], 'local'), 5);
+            c = testCase.completeChoices('smartspim');
+            for bad = {0, 10, 2.5}
+                c.clevel = bad{1};
+                testCase.verifyNotEmpty(feval([LM '.addPlan'], c).errors, ...
+                    sprintf('clevel %g must be refused', bad{1}));
+            end
+            c.clevel = 9;
+            plan = feval([LM '.addPlan'], c);
+            testCase.verifyEmpty(plan.errors);
+            testCase.verifyTrue(any(contains(plan.warnings, 'slowest')), ...
+                'level 9 is allowed but warned about');
+            c.clevel = 8;
+            testCase.verifySubstring(feval([LM '.addMessage'], feval([LM '.addPlan'], c)), ...
+                'Compression 8');
+        end
+
+        function testReductionsApplyToSmartSPIMOnly(testCase)
+            LM = 'ndi.gui.app.LightsheetManager';
+            c = testCase.completeChoices('smartspim');
+            c.reductions = {};
+            testCase.verifyNotEmpty(feval([LM '.addPlan'], c).errors);
+            c.reductions = {'median'};
+            testCase.verifyNotEmpty(feval([LM '.addPlan'], c).errors);
+            c.reductions = {'mean'};
+            testCase.verifyEmpty(feval([LM '.addPlan'], c).errors);
+            testCase.verifySubstring(feval([LM '.addMessage'], feval([LM '.addPlan'], c)), ...
+                'mean ladder');
+            c.sourceKind = 'omezarr';
+            plan = feval([LM '.addPlan'], c);
+            testCase.verifyEmpty(plan.errors);
+            testCase.verifyTrue(any(contains(plan.warnings, 'brings the ladders')), ...
+                'an OME-Zarr store keeps its own ladders, and the user is told');
+        end
+
+        function testWorkers(testCase)
+            LM = 'ndi.gui.app.LightsheetManager';
+            testCase.verifyGreaterThanOrEqual(feval([LM '.defaultWorkers']), 1);
+            c = testCase.completeChoices('smartspim');
+            c.numWorkers = 0;
+            testCase.verifyNotEmpty(feval([LM '.addPlan'], c).errors);
+            c.numWorkers = 12;
+            plan = feval([LM '.addPlan'], c);
+            testCase.verifyEmpty(plan.errors);
+            testCase.verifySubstring(feval([LM '.addMessage'], plan), '12 parallel workers');
+            c.numWorkers = -1;
+            testCase.verifyEmpty(feval([LM '.addPlan'], c).errors, ...
+                '-1, use whatever pool is open, is the scripted default');
+        end
+
         function testSubjectProblems(testCase)
             P = @ndi.gui.app.LightsheetManager.subjectProblems;
             testCase.verifyNotEmpty(P('  ', {}));
