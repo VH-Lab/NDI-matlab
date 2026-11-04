@@ -7,12 +7,17 @@ classdef ScriptedJob < ndi.job.Job
 %   a previous run reached, then returns ('succeed') or raises
 %   'scripted:boom' ('fail').
 
+    properties (Constant)
+        Kind = 'test.scripted'
+    end
+
     methods (Static)
         function job = create(beats, outcome)
             arguments
                 beats (1,1) double = 5
                 outcome (1,:) char = 'succeed'
             end
+            ndi.job.Job.register('test.scripted', 'ndi.test.helper.ScriptedJob');
             job = ndi.test.helper.ScriptedJob();
             job.initialize(sprintf('scripted %s', outcome), ...
                 struct('beats', beats, 'outcome', outcome));
@@ -20,9 +25,25 @@ classdef ScriptedJob < ndi.job.Job
     end
 
     methods
+        function pretendFrom(obj, kind, runtime, formatVersion)
+        % Rewrite the saved job as one another language (or a newer
+        % version) made, for the ForeignJob paths.
+            obj.save();
+            f = fullfile(obj.folder(), 'job.json');
+            s = jsondecode(fileread(f));
+            s.kind = kind;
+            s.runtime = runtime;
+            s.formatVersion = formatVersion;
+            fid = fopen(f, 'w');
+            fwrite(fid, jsonencode(s), 'char');
+            fclose(fid);
+        end
+
         function pretendRunningIn(obj, pid)
-        % Leave the job saved as running in process PID, as a crash would.
+        % Leave the job saved as running in process PID on this computer,
+        % as a crash would.
             obj.state = 'running';
+            obj.host = ndi.job.Job.hostName();
             obj.pid = pid;
             obj.save();
         end

@@ -186,6 +186,14 @@ Adding to an NDI Cloud session from the dialog runs as a job
   `addDocument` only after checking it did not arrive, and slice reads
   likewise, unless the slice's folder is reachable and the file is not.
 
+The job record is shared with NDI-python: `job.json` is defined by
+`ndi_common/job_schema/job.schema.json` (format version 1). Its `kind` is a
+language-neutral name (`lightsheetToCloud`) that each language maps to its
+own class (`ndi.job.Job.register` in MATLAB); `runtime` says which language
+last ran it; times are UTC; `host` and `pid` say where it runs. A job whose
+kind is unknown here, or whose format is newer, is listed as an
+`ndi.job.ForeignJob` but not run.
+
 A job runs in the MATLAB that started it, which stays busy meanwhile; the
 job lets the window redraw at each heartbeat, which is when Pause takes.
 Running jobs in a separate background MATLAB is a planned next step.

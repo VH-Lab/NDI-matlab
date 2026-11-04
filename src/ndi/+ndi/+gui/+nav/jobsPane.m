@@ -73,7 +73,7 @@ classdef jobsPane < ndi.gui.nav.pane
             for k = 1:numel(jobs)
                 j = jobs{k};
                 rows(k, :) = {j.title, j.effectiveState(), ...
-                    sprintf('%.0f%%', 100 * j.progress), strrep(j.updated, 'T', ' ')};
+                    sprintf('%.0f%%', 100 * j.progress), ndi.job.Job.localTime(j.updated)};
             end
         end
     end

@@ -27,6 +27,15 @@ classdef Job < handle
 %   heartbeat (BEAT, which WORK calls regularly -- for a pyramid, after
 %   every super-block) and stops there with 'NDI:job:paused'.
 %
+%   THE FORMAT IS SHARED WITH NDI-PYTHON. job.json is defined by
+%   ndi_common/job_schema/job.schema.json (formatVersion 1) and nothing
+%   in it is MATLAB's: KIND is a language-neutral name ('lightsheetToCloud'),
+%   mapped to a class by each language's registry (ndi.job.Job.register),
+%   RUNTIME says which language last ran the job, times are UTC
+%   ('2026-11-04T14:08:55Z'), and HOST + PID say where it runs. A job
+%   whose kind this MATLAB does not know, or whose formatVersion is newer
+%   than it reads, loads as an ndi.job.ForeignJob: listed, but not run.
+%
 %   Example:
 %       job = ndi.job.LightsheetToCloud.create(choices);
 %       job.run();                 % until done, paused or failed
@@ -35,9 +44,19 @@ classdef Job < handle
 %
 %   See also: ndi.job.LightsheetToCloud, ndi.gui.nav.jobsPane
 
+    properties (Constant)
+        FormatVersion = 1       % the job.json format this code writes and reads
+    end
+
+    properties (Abstract, Constant)
+        Kind                    % the language-neutral kind name a subclass runs
+    end
+
     properties (SetAccess = protected)
+        formatVersion double = 1
         id char = ''
-        kind char = ''          % the subclass's class name
+        kind char = ''          % language-neutral (see Kind and register)
+        runtime char = 'matlab' % the language that last ran (or made) it
         title char = ''
         created char = ''
         state char = 'queued'
@@ -46,7 +65,8 @@ classdef Job < handle
         lastError char = ''     % the report of the error that failed it
         updated char = ''       % the last time anything was saved
         heartbeat char = ''     % the last sign of life while running
-        pid double = 0          % the MATLAB process running it, 0 if none
+        host char = ''          % the computer it last ran on
+        pid double = 0          % the process running it there, 0 if none
         spec struct = struct()  % what to do (JSON-safe, subclass-defined)
         checkpoint struct = struct()  % what is done so far
     end
@@ -88,6 +108,8 @@ classdef Job < handle
             end
             obj.clearPause();
             obj.state = 'running';
+            obj.runtime = 'matlab';
+            obj.host = ndi.job.Job.hostName();
             obj.pid = feature('getpid');
             obj.lastError = '';
             obj.message = 'Starting...';
@@ -183,11 +205,17 @@ classdef Job < handle
         function s = effectiveState(obj)
         % EFFECTIVESTATE - the state, with a vanished runner shown as 'interrupted'
         %
-        %   A job saved as running whose MATLAB process no longer exists
-        %   (it crashed, or was quit or killed) is 'interrupted'.
+        %   A job saved as running on this computer whose process no
+        %   longer exists (it crashed, or was quit or killed) is
+        %   'interrupted'. One running on another computer is taken at its
+        %   word.
             s = obj.state;
-            if strcmp(s, 'running') && obj.pid ~= feature('getpid') && ...
-                    ~ndi.job.Job.processAlive(obj.pid)
+            if ~strcmp(s, 'running'), return; end
+            if ~strcmp(obj.host, ndi.job.Job.hostName())
+                % Another computer's process cannot be checked from here.
+                return
+            end
+            if obj.pid ~= feature('getpid') && ~ndi.job.Job.processAlive(obj.pid)
                 s = 'interrupted';
             end
         end
@@ -202,6 +230,7 @@ classdef Job < handle
             f = obj.folder();
             if ~isfolder(f), mkdir(f); end
             obj.updated = ndi.job.Job.now();
+            obj.formatVersion = ndi.job.Job.FormatVersion;
             s = struct();
             for name = ndi.job.Job.savedFields()
                 s.(name{1}) = obj.(name{1});
@@ -222,7 +251,8 @@ classdef Job < handle
         function initialize(obj, title, spec)
         % For a subclass's CREATE: name the job, keep SPEC, write it out.
             obj.id = char(did.ido.unique_id());
-            obj.kind = class(obj);
+            obj.kind = obj.Kind;
+            obj.runtime = 'matlab';
             obj.title = char(title);
             obj.created = ndi.job.Job.now();
             obj.spec = spec;
@@ -299,7 +329,18 @@ classdef Job < handle
                 error('NDI:job:notFound', 'There is no job at %s.', f);
             end
             s = jsondecode(fileread(file));
-            job = feval(s.kind);
+            cls = '';
+            if isfield(s, 'kind')
+                cls = ndi.job.Job.classForKind(s.kind);
+            end
+            newer = isfield(s, 'formatVersion') && s.formatVersion > ndi.job.Job.FormatVersion;
+            if isempty(cls) || newer
+                % Listed, never run here: another language's kind, or a
+                % format this MATLAB is too old to read.
+                job = ndi.job.ForeignJob();
+            else
+                job = feval(cls);
+            end
             for name = ndi.job.Job.savedFields()
                 if isfield(s, name{1})
                     v = s.(name{1});
@@ -328,6 +369,25 @@ classdef Job < handle
             end
         end
 
+        function register(kind, className)
+        % REGISTER - name the class that runs jobs of KIND in this MATLAB
+        %
+        %   ndi.job.Job.register('lightsheetToCloud', 'ndi.job.LightsheetToCloud')
+        %   The kinds NDI ships are registered already; a package of your
+        %   own registers its kinds before listing or running jobs.
+            m = ndi.job.Job.registry();
+            m(char(kind)) = char(className); %#ok<NASGU> handle: updates the registry
+        end
+
+        function cls = classForKind(kind)
+        % CLASSFORKIND - the class registered for KIND, or '' if none
+            m = ndi.job.Job.registry();
+            cls = '';
+            if isKey(m, char(kind))
+                cls = m(char(kind));
+            end
+        end
+
         function tf = processAlive(pid)
         % PROCESSALIVE - is there a process with this id on this computer?
             tf = false;
@@ -341,14 +401,56 @@ classdef Job < handle
         end
 
         function t = now()
-            t = char(datetime('now', 'Format', 'yyyy-MM-dd''T''HH:mm:ss'));
+        % NOW - the current time as job.json stores it: UTC, ISO 8601, 'Z'
+            t = char(datetime('now', 'TimeZone', 'UTC', ...
+                'Format', 'yyyy-MM-dd''T''HH:mm:ss''Z'''));
+        end
+
+        function t = localTime(utc)
+        % LOCALTIME - a stored UTC time for display, in this computer's time zone
+            t = '';
+            if isempty(utc), return; end
+            try
+                d = datetime(utc, 'InputFormat', 'yyyy-MM-dd''T''HH:mm:ss''Z''', ...
+                    'TimeZone', 'UTC');
+                d.TimeZone = 'local';
+                d.Format = 'yyyy-MM-dd HH:mm:ss';
+                t = char(d);
+            catch
+                t = char(utc);
+            end
+        end
+
+        function h = hostName()
+            h = '';
+            try
+                h = char(java.net.InetAddress.getLocalHost().getHostName());
+            catch
+            end
+            if isempty(h)
+                h = getenv('HOSTNAME');
+                if isempty(h), h = getenv('COMPUTERNAME'); end
+            end
         end
     end
 
     methods (Static, Access = private)
         function f = savedFields()
-            f = {'id', 'kind', 'title', 'created', 'state', 'progress', 'message', ...
-                'lastError', 'updated', 'heartbeat', 'pid', 'spec', 'checkpoint'};
+        % The job.json fields, in the order written (see job.schema.json).
+            f = {'formatVersion', 'id', 'kind', 'runtime', 'title', 'created', ...
+                'updated', 'state', 'progress', 'message', 'lastError', ...
+                'heartbeat', 'host', 'pid', 'spec', 'checkpoint'};
+        end
+
+        function m = registry()
+        % The kind -> class map, one per MATLAB session (a handle, so
+        % REGISTER's additions stay).
+            persistent kinds
+            if isempty(kinds)
+                kinds = containers.Map('KeyType', 'char', 'ValueType', 'char');
+                kinds('lightsheetToCloud') = 'ndi.job.LightsheetToCloud';
+            end
+            m = kinds;
         end
     end
 end

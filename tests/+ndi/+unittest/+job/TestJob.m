@@ -97,6 +97,57 @@ classdef TestJob < matlab.unittest.TestCase
             testCase.verifyEmpty(ndi.job.Job.list());
         end
 
+        % -- the shared format ------------------------------------------
+
+        function testJobJsonFollowsTheSchema(testCase)
+            job = ndi.test.helper.ScriptedJob.create(2);
+            job.run();
+            s = jsondecode(fileread(fullfile(job.folder(), 'job.json')));
+            schema = jsondecode(fileread(fullfile(ndi.common.PathConstants.CommonFolder, ...
+                'job_schema', 'job.schema.json')));
+            for k = 1:numel(schema.required)
+                testCase.verifyTrue(isfield(s, schema.required{k}), ...
+                    sprintf('job.json lacks the required field %s', schema.required{k}));
+            end
+            testCase.verifyEqual(s.formatVersion, 1);
+            testCase.verifyEqual(s.kind, 'test.scripted', 'a neutral kind, not a class name');
+            testCase.verifyEqual(s.runtime, 'matlab');
+            testCase.verifyNotEmpty(s.host);
+            utc = '^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$';
+            for f = {'created', 'updated', 'heartbeat'}
+                testCase.verifyNotEmpty(regexp(s.(f{1}), utc, 'once'), ...
+                    sprintf('%s is UTC with a Z: %s', f{1}, s.(f{1})));
+            end
+            testCase.verifyTrue(any(strcmp(s.state, schema.properties.state.enum)));
+        end
+
+        function testAnotherLanguagesJobIsListedButNotRun(testCase)
+            job = ndi.test.helper.ScriptedJob.create(2);
+            job.pretendFrom('somePythonOnlyKind', 'python', 1);
+            jobs = ndi.job.Job.list();
+            testCase.verifyClass(jobs{1}, 'ndi.job.ForeignJob');
+            testCase.verifyEqual(jobs{1}.kind, 'somePythonOnlyKind');
+            testCase.verifyEqual(jobs{1}.runtime, 'python');
+            testCase.verifyFalse(jobs{1}.canResume());
+            testCase.verifyError(@() jobs{1}.run(), 'NDI:job:foreign');
+            rows = ndi.gui.nav.jobsPane.rowsFor(jobs);
+            testCase.verifyEqual(rows{1, 1}, 'scripted succeed', 'still listed');
+        end
+
+        function testANewerFormatIsNotRun(testCase)
+            job = ndi.test.helper.ScriptedJob.create(2);
+            job.pretendFrom('test.scripted', 'matlab', 2);
+            again = ndi.job.Job.load(job.id);
+            testCase.verifyClass(again, 'ndi.job.ForeignJob', ...
+                'a format newer than this code reads is not run');
+        end
+
+        function testTimesAreShownInLocalTime(testCase)
+            t = ndi.job.Job.localTime('2026-01-01T00:00:00Z');
+            testCase.verifyNotEmpty(regexp(t, '^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$', 'once'));
+            testCase.verifyEqual(ndi.job.Job.localTime(''), '');
+        end
+
         function testRowsForThePane(testCase)
             job = ndi.test.helper.ScriptedJob.create(4);
             job.PauseAfterBeats = 2;

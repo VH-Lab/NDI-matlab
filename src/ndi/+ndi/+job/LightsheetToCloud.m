@@ -26,6 +26,10 @@ classdef LightsheetToCloud < ndi.job.Job
 %   See also: ndi.job.Job, ndi.gui.app.LightsheetManager,
 %             ndi.cloud.upload.SessionWriter
 
+    properties (Constant)
+        Kind = 'lightsheetToCloud'
+    end
+
     properties (Transient)
         % Test hook: extra name/value pairs for fromSPIM/fromOMEZarr
         % (small chunks and reads, so a test can pause partway through a
