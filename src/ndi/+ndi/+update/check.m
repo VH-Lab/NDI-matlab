@@ -25,7 +25,8 @@ function result = check(options)
 %   too, against the latest commit on NDI-python's main branch; see
 %   ndi.update.checkPython. Its result is in the Python field and adds a
 %   line to Message, but does not set UpdateAvailable, which is about
-%   NDI-matlab.
+%   NDI-matlab. If NDI-python is not installed, or its install is
+%   incomplete, Python.NeedsInstall is true (see ndi.update.checkPython).
 %
 %   Checking a git install runs 'git fetch', which updates only the
 %   remote-tracking branches; your files and checked-out branch are not
@@ -137,7 +138,8 @@ function result = check(options)
         'BothInstalled', info.BothInstalled, ...
         'RepoRoot', info.RepoRoot, ...
         'Python', struct('Installed', false, 'Kind', "none", 'Status', "notChecked", ...
-            'UpdateAvailable', false, 'CanInstall', false, 'Message', "", ...
+            'UpdateAvailable', false, 'NeedsInstall', false, ...
+            'MissingCommands', strings(1, 0), 'CanInstall', false, 'Message', "", ...
             'CurrentVersion', "", 'LatestVersion', "", 'CommitsBehind', NaN));
 
     switch type

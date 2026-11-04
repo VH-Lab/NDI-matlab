@@ -8,6 +8,18 @@ function py = checkPython(options)
 %   commit on the main branch of NDI-python on GitHub. NDI-python has no
 %   releases; every install follows main.
 %
+%   It also notices when NDI-python is missing or only partly installed,
+%   so that ndi.update.install (and the navigator's Update window) can
+%   offer to install it:
+%     - if the 'ndi' command is not found, NeedsInstall is true and
+%       Status is "notInstalled";
+%     - if NDI-python was installed by the NDI installer but one of the
+%       commands it installs into ~/.ndi/bin (ndi, napariViewGEF,
+%       napariViewLightsheet) is missing, for example because an earlier
+%       install stopped part-way, NeedsInstall is true and Status is
+%       "incomplete". GitHub is not asked in that case: running the
+%       installer again both repairs and updates it.
+%
 %   How the installed commit is found:
 %     1. ~/.ndi/install.json, if the NDI-python installer wrote one with a
 %        'commit' field.
@@ -28,11 +40,17 @@ function py = checkPython(options)
 %       InstalledAt     - install time (UTC, ISO 8601) if that is all that is
 %                         known, otherwise ""
 %       CommitsBehind   - commits on main that the install does not have
-%       Status          - "notInstalled", "upToDate", "updateAvailable",
-%                         or "unknown"
+%       Status          - "notInstalled", "incomplete", "upToDate",
+%                         "updateAvailable", or "unknown"
 %       UpdateAvailable - true if main has changes the install lacks
-%       CanInstall      - true if ndi.update.install can update it (Kind is
-%                         "installer"; it then runs ndi.python.install)
+%       NeedsInstall    - true if NDI-python is not installed, or is an
+%                         incomplete NDI installer install, so that running
+%                         its installer (ndi.python.install) is needed
+%       MissingCommands - the installer's commands that are missing (all
+%                         of them if NDI-python is not installed)
+%       CanInstall      - true if ndi.update.install can install or update
+%                         it (Kind is "installer" or "none"; it then runs
+%                         ndi.python.install)
 %       Message         - one-paragraph human-readable summary
 %
 %   PY = ndi.update.checkPython(Name, Value) accepts:
@@ -60,6 +78,9 @@ function py = checkPython(options)
         options.GitHubApi (1,1) function_handle = @githubApi
     end
 
+    % The commands NDI-python's installer puts in ~/.ndi/bin.
+    commands = ["ndi", "napariViewGEF", "napariViewLightsheet"];
+
     py = struct( ...
         'Installed', false, ...
         'Kind', "none", ...
@@ -70,18 +91,38 @@ function py = checkPython(options)
         'CommitsBehind', NaN, ...
         'Status', "notInstalled", ...
         'UpdateAvailable', false, ...
-        'CanInstall', false, ...
-        'Message', "NDI-python is not installed.");
+        'NeedsInstall', true, ...
+        'MissingCommands', commands, ...
+        'CanInstall', true, ...
+        'Message', "NDI-python is not installed. Run " + ...
+            "ndi.update.install(Packages=""NDI-python"") or ndi.python.install() " + ...
+            "to install it.");
 
     try
         [py, home] = findInstall(py, options);
         if ~py.Installed
             return
         end
+        py.NeedsInstall = false;
+        py.MissingCommands = strings(1, 0);
+        if py.Kind == "installer"
+            py.MissingCommands = missingCommands(home, commands);
+            if ~isempty(py.MissingCommands)
+                py.NeedsInstall = true;
+                py.Status = "incomplete";
+                py.Message = "NDI-python is not fully installed: " + ...
+                    strjoin(py.MissingCommands, ", ") + " missing from " + ...
+                    fullfile(home, "bin") + ". Run ndi.update.install() " + ...
+                    "to install it again.";
+                return
+            end
+        end
         py = compareWithMain(py, home, options);
     catch ME
         py.Status = "unknown";
         py.UpdateAvailable = false;
+        py.NeedsInstall = false;
+        py.CanInstall = py.Kind == "installer";
         py.Message = "Could not check NDI-python for updates: " + ME.message;
     end
 end
@@ -112,6 +153,19 @@ function [py, home] = findInstall(py, options)
         py.Kind = "other";
     end
     py.CanInstall = py.Kind == "installer";
+end
+
+function missing = missingCommands(home, commands)
+    missing = strings(1, 0);
+    for c = commands
+        f = fullfile(home, "bin", c);
+        if ispc
+            f = f + ".exe";
+        end
+        if ~isfile(f)
+            missing(end+1) = c; %#ok<AGROW>
+        end
+    end
 end
 
 function py = compareWithMain(py, home, options)

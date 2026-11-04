@@ -27,6 +27,26 @@ classdef TestCheckPython < matlab.unittest.TestCase
             testCase.verifyFalse(py.Installed);
             testCase.verifyEqual(py.Status, "notInstalled");
             testCase.verifyFalse(py.UpdateAvailable);
+            % Not installed: it can be installed with its installer.
+            testCase.verifyTrue(py.NeedsInstall);
+            testCase.verifyTrue(py.CanInstall);
+            testCase.verifyEqual(py.MissingCommands, ...
+                ["ndi", "napariViewGEF", "napariViewLightsheet"]);
+        end
+
+        function testIncompleteInstall(testCase)
+            % The installer stopped part-way: 'ndi' is there but a viewer
+            % is not. It needs installing again; GitHub is not asked.
+            testCase.makeCommand(["ndi", "napariViewGEF"]);
+            py = ndi.update.checkPython(NdiHome = testCase.Home, ...
+                GitHubApi = @(~, ~) error('test:noNetwork', 'should not be called'));
+            testCase.verifyTrue(py.Installed);
+            testCase.verifyEqual(py.Kind, "installer");
+            testCase.verifyEqual(py.Status, "incomplete");
+            testCase.verifyTrue(py.NeedsInstall);
+            testCase.verifyTrue(py.CanInstall);
+            testCase.verifyEqual(py.MissingCommands, "napariViewLightsheet");
+            testCase.verifySubstring(py.Message, "napariViewLightsheet");
         end
 
         function testReceiptBehindMain(testCase)
@@ -40,6 +60,8 @@ classdef TestCheckPython < matlab.unittest.TestCase
             testCase.verifyTrue(py.CanInstall);
             testCase.verifyEqual(py.Status, "updateAvailable");
             testCase.verifyTrue(py.UpdateAvailable);
+            testCase.verifyFalse(py.NeedsInstall);
+            testCase.verifyEmpty(py.MissingCommands);
             testCase.verifyEqual(py.CommitsBehind, 3);
             testCase.verifyEqual(py.CurrentVersion, "aaaaaaa");
             testCase.verifyEqual(py.LatestVersion, "bbbbbbb");
@@ -97,12 +119,18 @@ classdef TestCheckPython < matlab.unittest.TestCase
     end
 
     methods (Access = private)
-        function makeCommand(testCase)
-            name = "ndi";
-            if ispc
-                name = name + ".exe";
+        function makeCommand(testCase, names)
+            % Fake the commands NAMES (default: all that the installer
+            % puts in ~/.ndi/bin).
+            if nargin < 2
+                names = ["ndi", "napariViewGEF", "napariViewLightsheet"];
             end
-            testCase.writeFile(fullfile(testCase.Home, "bin", name), "");
+            for name = names
+                if ispc
+                    name = name + ".exe"; %#ok<FXSET>
+                end
+                testCase.writeFile(fullfile(testCase.Home, "bin", name), "");
+            end
         end
 
         function writeFile(~, f, text)
