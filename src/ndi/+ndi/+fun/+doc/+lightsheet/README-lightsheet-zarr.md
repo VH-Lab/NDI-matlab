@@ -164,6 +164,32 @@ c.sourceKind = ndi.gui.app.LightsheetManager.sourceKind(c.sourcePath);
 ndi.gui.app.LightsheetManager.runAdd(S, c);
 ```
 
+### Jobs: pause, resume, restart
+
+Adding to an NDI Cloud session from the dialog runs as a job
+(`ndi.job.LightsheetToCloud`, a subclass of `ndi.job.Job`), kept in
+`~/.ndi/jobs/<id>/`, and listed in the navigator's **Jobs** pane with
+**Pause**, **Resume**, **Restart** and **Remove**.
+
+- **Pause** takes effect after the current super-block: its chunks are
+  sent, the job's place is saved, and it stops.
+- **Resume** works after a pause, a failure, Ctrl+C, quitting MATLAB or a
+  crash. The job saved every document it uploaded (with its chunk uids),
+  so it adopts the pyramid and the levels already declared, asks the
+  cloud which chunks it has, and builds only the rest. The level kept for
+  the next one to be reduced from is in the job's folder, so it survives
+  a restart; if it is gone, those chunks are downloaded.
+- **Restart** starts over with a new pyramid; the earlier partial one stays
+  in the dataset, labelled "(uploading)".
+- **Short outages are ridden out without stopping**: cloud calls are
+  retried for up to 30 minutes (`SessionWriter` `RetrySeconds`), an
+  `addDocument` only after checking it did not arrive, and slice reads
+  likewise, unless the slice's folder is reachable and the file is not.
+
+A job runs in the MATLAB that started it, which stays busy meanwhile; the
+job lets the window redraw at each heartbeat, which is when Pause takes.
+Running jobs in a separate background MATLAB is a planned next step.
+
 ### Viewer logs
 
 Both `View` and `ndi.fun.doc.lightsheet.view` launch the viewer through

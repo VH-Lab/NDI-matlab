@@ -141,6 +141,9 @@ function [pyramidDoc, levelDocs, info] = fromOMEZarr(session, zarrPath, options)
         % disables. Intended for diagnosing memory growth. See
         % makePyramid for details.
         options.debugLog (1,:) char = ''
+        % Resume an interrupted streamed build; see makePyramid's resume
+        % option. Pass the earlier run's sourceFileID with it.
+        options.resume = []
     end
 
     if isempty(strtrim(options.subjectID))
@@ -234,7 +237,8 @@ function [pyramidDoc, levelDocs, info] = fromOMEZarr(session, zarrPath, options)
         'numWorkers', options.numWorkers, ...
         'prefetchBytes', options.prefetchBytes, ...
         'asyncPrefetch', options.asyncPrefetch, ...
-        'debugLog', options.debugLog);
+        'debugLog', options.debugLog, ...
+        'resume', options.resume);
 
     info = struct( ...
         'zarrPath', char(zarrPath), ...

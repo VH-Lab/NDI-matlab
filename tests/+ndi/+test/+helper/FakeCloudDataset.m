@@ -26,6 +26,11 @@ classdef FakeCloudDataset < handle
         CorruptAlways = {}
         RecordCrc (1,1) logical = true
         FailAdd (1,1) logical = false
+        % Transient faults, for the retry paths: the next FailLookups calls
+        % to lookupFiles fail; with LoseAddReply the next addDocument
+        % stores the document but reports failure, as a lost reply would.
+        FailLookups (1,1) double = 0
+        LoseAddReply (1,1) logical = false
         singleUploads = 0
         batchUploads = 0
         addedJson = {}
@@ -97,6 +102,11 @@ classdef FakeCloudDataset < handle
             obj.docs{end+1} = jsondecode(char(json));
             ok = true;
             answer = struct('id', 'fake');
+            if obj.LoseAddReply
+                obj.LoseAddReply = false;
+                ok = false;
+                answer = struct('message', 'connection reset (fake)');
+            end
         end
 
         function [ok, answer] = updateDocument(obj, ~, ndiId, json)
@@ -140,6 +150,12 @@ classdef FakeCloudDataset < handle
         end
 
         function [ok, answer] = lookupFiles(obj, ~, uids)
+            if obj.FailLookups > 0
+                obj.FailLookups = obj.FailLookups - 1;
+                ok = false;
+                answer = struct('message', 'network unreachable (fake)');
+                return
+            end
             uids = cellstr(uids);
             rows = struct('uid', {}, 'uploaded', {}, 'size', {}, 'crc32', {});
             missing = strings(1, 0);

@@ -1475,24 +1475,56 @@ classdef LightsheetManager < ndi.gui.app.sessionApp
                 if ~strcmp(ok, 'Add'), return; end
                 final = choices;
                 delete(d);
+                if strcmp(final.destination, 'cloud')
+                    obj.runCloudJob(final, plan);
+                    return
+                end
                 obj.setStatus(sprintf(['Adding %s to %s; progress is in the ' ...
                     'Command Window...'], final.sourcePath, plan.where));
                 drawnow;
                 try
-                    [~, ~, info] = ndi.gui.app.LightsheetManager.runAdd(obj.session, final);
+                    ndi.gui.app.LightsheetManager.runAdd(obj.session, final);
                 catch ME
                     obj.setStatus('Add failed; see the message.');
                     uialert(obj.fig, ME.message, 'Add failed');
                     return
                 end
-                if strcmp(final.destination, 'cloud')
+                obj.setStatus('Image added.');
+                obj.reload();
+            end
+        end
+
+        function runCloudJob(obj, choices, plan)
+        % RUNCLOUDJOB - add to the cloud as a job (ndi.job.LightsheetToCloud)
+        %
+        %   A job, so the hours it takes can be paused, and a run stopped
+        %   by a lost connection, a crash or quitting MATLAB can be resumed
+        %   from the navigator's Jobs pane rather than started over.
+            try
+                job = ndi.job.LightsheetToCloud.create(choices);
+            catch ME
+                uialert(obj.fig, ME.message, 'Could not start');
+                return
+            end
+            obj.setStatus(sprintf(['Adding to %s as a job; pause or resume it ' ...
+                'from the navigator''s Jobs pane...'], plan.where));
+            drawnow;
+            job.run();
+            switch job.state
+                case 'done'
+                    r = job.checkpoint.report;
                     obj.setStatus(sprintf(['Added %d document(s) and %d file(s) ' ...
-                        '(%.1f MB) to %s.'], info.cloud.documents, info.cloud.files, ...
-                        info.cloud.bytes / 1e6, plan.where));
-                else
-                    obj.setStatus('Image added.');
-                    obj.reload();
-                end
+                        '(%.1f MB) to %s.'], r.documents, r.files, r.bytes / 1e6, plan.where));
+                case 'paused'
+                    obj.setStatus(sprintf(['Paused at %.0f%%. Resume it from the ' ...
+                        'navigator''s Jobs pane.'], 100 * job.progress));
+                otherwise
+                    obj.setStatus(sprintf(['Stopped at %.0f%%: %s Resume it from ' ...
+                        'the navigator''s Jobs pane once the cause is fixed.'], ...
+                        100 * job.progress, job.message));
+                    if isvalid(obj.fig)
+                        uialert(obj.fig, job.message, 'Add to NDI Cloud stopped');
+                    end
             end
         end
 

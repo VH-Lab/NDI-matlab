@@ -159,6 +159,16 @@ function [pyramidDoc, levelDocs, sharedLevel0] = makePyramid(session, pyramids, 
         options.levelSources = []
         % Comma-separated channel names written to the pyramid document.
         options.channelNames (1,:) char = ''
+        % RESUMING an interrupted streamed build: a struct with fields
+        %   pyramidDoc - the pyramid document the earlier run uploaded
+        %   levelDocs  - cell of the level documents it declared (as
+        %                declared, with their series member uids)
+        % The pyramid is adopted rather than created; a level already
+        % declared is adopted and only its chunks the cloud does not have
+        % are built; a level not declared yet is built as usual. Needs a
+        % streaming target (see STREAMING below). Empty (default): a new
+        % pyramid.
+        options.resume = []
     end
 
     if isempty(options.levelSources)
@@ -221,6 +231,11 @@ function [pyramidDoc, levelDocs, sharedLevel0] = makePyramid(session, pyramids, 
     % last chunk is in; the target replaces it with the real label at
     % commit.
     streaming = options.materializeChunks && ismethod(session, 'streamMembers');
+    resuming = ~isempty(options.resume);
+    if resuming && ~streaming
+        error('NDI:lightsheet:makePyramid:resumeNeedsStreaming', ...
+            'Only a streamed build (to a target such as ndi.cloud.upload.SessionWriter) can resume.');
+    end
     docLabel = label;
     if streaming
         docLabel = [char(label) ' (uploading)'];
@@ -251,7 +266,13 @@ function [pyramidDoc, levelDocs, sharedLevel0] = makePyramid(session, pyramids, 
         pyramidDoc = pyramidDoc.set_dependency_value('source_file_id', options.sourceFileID);
     end
 
-    session.database_add(pyramidDoc);
+    if resuming
+        % The pyramid the earlier run put in the cloud, not a new one.
+        pyramidDoc = options.resume.pyramidDoc;
+        session.adopt(pyramidDoc);
+    else
+        session.database_add(pyramidDoc);
+    end
 
     % PROGRESS ACCOUNTING. Chunk-count planning happens up front so
     % progressFcn can report overall fraction, not per-level fraction:
@@ -348,7 +369,11 @@ function [pyramidDoc, levelDocs, sharedLevel0] = makePyramid(session, pyramids, 
         stream = [];
         if streaming
             stream = struct('session', session, ...
-                'retain', isKey(readers, p) && readers(p) > 0);
+                'retain', isKey(readers, p) && readers(p) > 0, ...
+                'existing', []);
+            if resuming
+                stream.existing = resumedLevel(options.resume, idx - 1, reductionFn);
+            end
         end
         [levelDocs{idx}, doneChunks] = makeOneLevel(session, pyramidDoc, ...
             entry, level, idx - 1, reductionFn, options, ...
@@ -371,6 +396,18 @@ function [pyramidDoc, levelDocs, sharedLevel0] = makePyramid(session, pyramids, 
     end
     reportProgress(options.progressFcn, max(doneChunks, totalChunks), ...
         max(totalChunks, 1), 'Done.');
+end
+
+function d = resumedLevel(resume, levelIndex, reductionFn)
+% The level document an earlier run declared for this level, or [].
+    d = [];
+    for k = 1:numel(resume.levelDocs)
+        lp = resume.levelDocs{k}.document_properties.lightsheetZarrLevel;
+        if double(lp.level) == levelIndex && strcmp(char(lp.reduction_function), reductionFn)
+            d = resume.levelDocs{k};
+            return
+        end
+    end
 end
 
 function from = reducedFrom(levelSources, p)
@@ -424,17 +461,35 @@ function [levelDoc, doneChunks] = makeOneLevel(session, pyramidDoc, pyramidEntry
 
     tmpRoot = '';
     if ~isempty(stream)
-        % Declare the level before building it: every chunk gets its uid
-        % now, in the manifest, from the path it will be written to (the
-        % names padEncodeAndWrite uses). The target uploads the level
-        % document and manifest, then takes each chunk as it is written.
         tmpRoot = tempname;
         mkdir(tmpRoot);
         nChunks = prod(chunkGrid);
-        planned = arrayfun(@(i) fullfile(tmpRoot, sprintf('chunk_%d.bin', i)), ...
-            1:nChunks, 'UniformOutput', false);
-        levelDoc = levelDoc.addFileSeries('chunk.bin', planned, 'indices', 1:nChunks);
-        session.declare(levelDoc);
+        if ~isempty(stream.existing)
+            % Resuming: the level is already in the cloud with every
+            % chunk's uid. Build only the chunks it does not have yet.
+            levelDoc = stream.existing;
+            session.adopt(levelDoc);
+            stream.only = session.missingMembers(levelDoc, 'chunk.bin');
+            if isempty(stream.only)
+                doneChunks = doneChunks + nChunks;
+                cleanupTmp(tmpRoot);
+                return
+            end
+            fprintf('[makePyramid] Resuming: %d of %d chunks still to send.\n', ...
+                numel(stream.only), nChunks);
+            doneChunks = doneChunks + nChunks - numel(stream.only);
+        else
+            % Declare the level before building it: every chunk gets its
+            % uid now, in the manifest, from the path it will be written
+            % to (the names padEncodeAndWrite uses). The target uploads the
+            % level document and manifest, then takes each chunk as it is
+            % written.
+            planned = arrayfun(@(i) fullfile(tmpRoot, sprintf('chunk_%d.bin', i)), ...
+                1:nChunks, 'UniformOutput', false);
+            levelDoc = levelDoc.addFileSeries('chunk.bin', planned, 'indices', 1:nChunks);
+            session.declare(levelDoc);
+            stream.only = [];
+        end
         stream.levelDoc = levelDoc;
         stream.tmpRoot = tmpRoot;
     end
@@ -567,6 +622,25 @@ function [levelDoc, tmpRoot, doneChunks] = attachChunkFiles(levelDoc, source, le
         i = i + numel(idxs);
     end
     superBlocks = superBlocks(1:nSuperBlocks);
+    % Resuming a streamed level: keep only the chunks still to send, in
+    % the same super-blocks (same reads), and drop blocks left empty.
+    if ~isempty(stream) && ~isempty(stream.only)
+        keepBlock = false(1, nSuperBlocks);
+        for b = 1:nSuperBlocks
+            sb = superBlocks{b};
+            keep = ismember(sb.idxs, stream.only);
+            if ~any(keep), continue; end
+            sb.idxs = sb.idxs(keep);
+            sb.loRows = sb.loRows(keep, :);
+            sb.hiRows = sb.hiRows(keep, :);
+            sb.loBBox = min(sb.loRows, [], 1);
+            sb.hiBBox = max(sb.hiRows, [], 1);
+            superBlocks{b} = sb;
+            keepBlock(b) = true;
+        end
+        superBlocks = superBlocks(keepBlock);
+        nSuperBlocks = numel(superBlocks);
+    end
 
     % ASYNC PIPELINE. If a parpool is available and asyncPrefetch is
     % on, the next super-block's read runs concurrently on a pool
@@ -953,12 +1027,37 @@ function out = readSmartSpimRegion(source, lo, hi)
     cols = [lo(5) hi(5)];
     for c = lo(2):hi(2)
         for z = lo(3):hi(3)
-            tile = imread(source.slicePaths{c}{z}, 'PixelRegion', {rows, cols});
+            tile = readSliceRetrying(source.slicePaths{c}{z}, rows, cols);
             if ~isa(tile, source.dtype)
                 tile = cast(tile, source.dtype);
             end
             out(1, c - lo(2) + 1, z - lo(3) + 1, :, :) = ...
                 reshape(tile, [1 1 1 size(tile, 1) size(tile, 2)]);
+        end
+    end
+end
+
+function tile = readSliceRetrying(path, rows, cols)
+% IMREAD of one slice window, retried for up to 30 minutes with waits
+% growing from 2 s to 60 s: slices often live on a file server, and one
+% that drops out for a few minutes should cost minutes, not the run.
+    t0 = tic;
+    wait = 2;
+    while true
+        try
+            tile = imread(path, 'PixelRegion', {rows, cols});
+            return
+        catch ME
+            % Its folder is reachable but the file is not there: that is
+            % a missing slice, not an outage, and waiting will not help.
+            gone = isfolder(fileparts(path)) && ~isfile(path);
+            if gone || toc(t0) + wait > 1800
+                rethrow(ME);
+            end
+            fprintf('[makePyramid] Could not read %s (%s); trying again in %d s.\n', ...
+                path, ME.message, wait);
+            pause(wait);
+            wait = min(60, 2 * wait);
         end
     end
 end
@@ -1260,8 +1359,10 @@ function reportProgress(fcn, done, total, text)
 %
 %   Fraction is done/total, clamped into [0,1]. Total==0 (no chunks
 %   materialized) reports 0 rather than dividing, so the caller's bar
-%   still gets its label refreshed. Any exception is swallowed: a bar
-%   that stopped drawing must not stop an ingest.
+%   still gets its label refreshed. Any exception is swallowed -- a bar
+%   that stopped drawing must not stop an ingest -- except
+%   'NDI:job:paused', which is how a job (ndi.job.Job) asks the build to
+%   stop at the end of a super-block so it can be resumed.
     if isempty(fcn), return; end
     frac = 0;
     if total > 0
@@ -1269,7 +1370,10 @@ function reportProgress(fcn, done, total, text)
     end
     try
         fcn(frac, char(text));
-    catch
+    catch ME
+        if strcmp(ME.identifier, 'NDI:job:paused')
+            rethrow(ME);
+        end
     end
 end
 

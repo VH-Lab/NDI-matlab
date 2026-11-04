@@ -257,6 +257,64 @@ classdef SessionWriterMockTest < matlab.unittest.TestCase
             testCase.verifyEqual(stored{1}.base.name, 'first');
         end
 
+        % -- riding out failures ------------------------------------------
+
+        function testAFailingLookupIsRetried(testCase)
+            W = ndi.cloud.upload.SessionWriter(testCase.cloud.DatasetId, ...
+                testCase.sessionId, 'Api', testCase.cloud.api(), ...
+                'Verbose', false, 'RetrySeconds', 30);
+            [d, bytes] = testCase.seriesDoc(W, testCase.subjectId, 2);
+            testCase.cloud.FailLookups = 2;
+            W.database_add(d);   % would error without the retries
+            locs = d.document_properties.files.series_info(1).ingest_locations;
+            testCase.verifyEqual(testCase.cloud.fileBytes(locs(1).uid), bytes{locs(1).index});
+            testCase.verifyEqual(testCase.cloud.FailLookups, 0);
+        end
+
+        function testALostAddReplyMakesNoDuplicate(testCase)
+            W = ndi.cloud.upload.SessionWriter(testCase.cloud.DatasetId, ...
+                testCase.sessionId, 'Api', testCase.cloud.api(), ...
+                'Verbose', false, 'RetrySeconds', 30);
+            d = W.newdocument('base', 'base.name', 'once');
+            testCase.cloud.LoseAddReply = true;
+            W.declare(d);
+            found = testCase.cloud.findDocuments('', ndi.query('base.id', 'exact_string', d.id()));
+            testCase.verifyNumElements(found, 1, ...
+                'the retry asks whether the document arrived before sending it again');
+        end
+
+        function testAdoptAndMissingMembersForAResume(testCase)
+            W = testCase.writer();
+            [d, ~] = testCase.seriesDoc(W, testCase.subjectId, 3);
+            W.declare(d);
+            locs = d.document_properties.files.series_info(1).ingest_locations;
+            W.streamMembers(d, 'chunk.bin', locs(2).index, {locs(2).location});
+            W.streamMembers(d, 'chunk.bin', [], {});
+            % A new writer, as after a restart: the document is adopted, not re-sent.
+            W2 = testCase.writer();
+            W2.adopt(d);
+            missing = W2.missingMembers(d, 'chunk.bin');
+            testCase.verifyEqual(sort(missing), sort([locs([1 3]).index]));
+            W2.streamMembers(d, 'chunk.bin', [locs([1 3]).index], {locs([1 3]).location});
+            W2.commit();
+            testCase.verifyNumElements(testCase.cloud.docsOfClass('lightsheetZarrLevel'), 1, ...
+                'adopting does not upload the document again');
+        end
+
+        function testOnUploadSeesEachDocument(testCase)
+            seen = {};
+            function record(doc)
+                seen{end+1} = doc.id();
+            end
+            W = testCase.writer('OnUpload', @record);
+            a = W.newdocument('base');
+            b = W.newdocument('base');
+            W.database_add(a);
+            W.declare(b);
+            testCase.verifyEqual(seen, {a.id(), b.id()}, ...
+                'held documents go up before a declared one, and each is reported');
+        end
+
         function testTheSessionLabelsNameReferenceAndId(testCase)
             s = struct('session_id', {'id1', 'id2'}, 'session_reference', {'a', 'b'});
             testCase.verifyEqual(ndi.gui.app.LightsheetManager.sessionLabels(s), ...
@@ -266,9 +324,10 @@ classdef SessionWriterMockTest < matlab.unittest.TestCase
 
     methods
         function W = writer(testCase, varargin)
+            % No retries: these tests inject failures and want them at once.
             W = ndi.cloud.upload.SessionWriter(testCase.cloud.DatasetId, ...
                 testCase.sessionId, 'Api', testCase.cloud.api(), ...
-                'Verbose', false, varargin{:});
+                'Verbose', false, 'RetrySeconds', 0, varargin{:});
         end
 
         function [d, bytes] = seriesDoc(testCase, W, subjectId, n)

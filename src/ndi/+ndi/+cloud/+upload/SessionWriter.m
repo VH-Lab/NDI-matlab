@@ -67,7 +67,18 @@ classdef SessionWriter < handle
 %   CacheDir        - where local copies are kept. Default: a new folder
 %                     in tempdir.
 %   KeepLocalCopies - keep CACHEDIR after COMMIT (and on delete).
-%                     Default false.
+%                     Default false. A resumable job keeps it, so a level
+%                     retained for the next one survives a restart.
+%   RetrySeconds    - how long a failing cloud call (lost connection,
+%                     server hiccup) is retried, with waits growing from
+%                     2 s to 60 s, before it is an error. Default 1800 (30
+%                     minutes). 0 retries nothing. An addDocument is never
+%                     retried blindly: the dataset is asked first whether
+%                     the document arrived.
+%   OnUpload        - function handle called with each document once it is
+%                     in the cloud (from DECLARE or COMMIT), with its series
+%                     member paths still in it. ndi.job.LightsheetToCloud
+%                     records them so an interrupted run can resume.
 %   Api             - the cloud calls to use; see DEFAULTAPI. Tests pass
 %                     a fake (ndi.test.helper.FakeCloudDataset).
 %
@@ -118,6 +129,7 @@ classdef SessionWriter < handle
         % local copies kept for a later level to read (docid -> cellstr
         % of paths); and documents to replace in the cloud at COMMIT.
         outstanding = {}
+        onUpload = []
         declaredUids
         retainedPaths
         replaceAtCommit = {}
@@ -133,13 +145,17 @@ classdef SessionWriter < handle
                 options.UploadTimeout double {mustBeScalarOrEmpty, mustBePositive} = []
                 options.CacheDir (1,:) char = ''
                 options.KeepLocalCopies (1,1) logical = false
+                options.RetrySeconds (1,1) double {mustBeNonnegative} = 1800
+                options.OnUpload = []
                 options.Api = []
             end
             api = options.Api;
             if isempty(api)
                 api = ndi.cloud.upload.SessionWriter.defaultApi();
             end
+            api = addRetries(api, options.RetrySeconds);
             obj.api = api;
+            obj.onUpload = options.OnUpload;
             obj.cloudDatasetId = cloudDatasetId;
             obj.verbose = options.Verbose;
             obj.bulkThreshold = options.BulkThreshold;
@@ -363,24 +379,49 @@ classdef SessionWriter < handle
             if ~isempty(entries)
                 obj.verifyBatch(obj.stageAndSend(doc, entries, true));
             end
-            promised = {};
-            si = [];
-            if isfield(doc.document_properties, 'files') && ...
-                    isfield(doc.document_properties.files, 'series_info')
-                si = doc.document_properties.files.series_info;
-            end
-            for s = 1:numel(si)
-                locs = si(s).ingest_locations;
-                for k = 1:numel(locs)
-                    uid = char(locs(k).uid);
-                    obj.fileUids(sprintf('%s|%s_%d', doc.id(), char(si(s).name), ...
-                        locs(k).index)) = uid;
-                    promised{end+1} = uid; %#ok<AGROW>
-                end
-            end
-            obj.declaredUids(doc.id()) = promised;
+            obj.registerSeries(doc);
             obj.addNow(doc, 1, 1);
             obj.knownIds(doc.id()) = true;
+        end
+
+        function adopt(obj, doc)
+        % ADOPT - take on a document an earlier run already put in the cloud
+        %
+        %   For resuming: DOC (as it was declared or added, series member
+        %   uids included) is treated as uploaded -- a dependency other
+        %   documents may name, and, if it has a series, a DECLAREd
+        %   document whose members STREAMMEMBERS may send and COMMIT will
+        %   check. Nothing is uploaded.
+            doc = obj.ownSession(doc);
+            obj.registerSeries(doc);
+            obj.knownIds(doc.id()) = true;
+        end
+
+        function idx = missingMembers(obj, doc, seriesName)
+        % MISSINGMEMBERS - the members of a declared series the cloud does not have yet
+        %
+        %   IDX = MISSINGMEMBERS(W, DOC, SERIESNAME) returns the one-based
+        %   member indices whose uid the dataset does not report as
+        %   uploaded. A resumed run builds only these.
+            idx = [];
+            si = seriesInfoOf(doc);
+            k = find(strcmp({si.name}, seriesName), 1);
+            if isempty(k), return; end
+            locs = si(k).ingest_locations;
+            if isempty(locs), return; end
+            uids = arrayfun(@(L) char(L.uid), locs, 'UniformOutput', false);
+            [ok, answer] = obj.api.lookupFiles(obj.cloudDatasetId, uids);
+            if ~ok
+                error('NDI:cloud:SessionWriter:lookupFailed', ...
+                    'Could not look up files in cloud dataset %s: %s', ...
+                    obj.cloudDatasetId, describe(answer));
+            end
+            rows = answer.files;
+            have = {};
+            if ~isempty(rows)
+                have = cellfun(@char, {rows([rows.uploaded]).uid}, 'UniformOutput', false);
+            end
+            idx = [locs(~ismember(uids, have)).index];
         end
 
         function streamMembers(obj, doc, seriesName, indices, paths, retain)
@@ -481,6 +522,22 @@ classdef SessionWriter < handle
             end
         end
 
+        function registerSeries(obj, doc)
+        % Record a document's series member uids as promised (DECLARE, ADOPT).
+            promised = {};
+            si = seriesInfoOf(doc);
+            for s = 1:numel(si)
+                locs = si(s).ingest_locations;
+                for k = 1:numel(locs)
+                    uid = char(locs(k).uid);
+                    obj.fileUids(sprintf('%s|%s_%d', doc.id(), char(si(s).name), ...
+                        locs(k).index)) = uid;
+                    promised{end+1} = uid; %#ok<AGROW>
+                end
+            end
+            obj.declaredUids(doc.id()) = promised;
+        end
+
         function addNow(obj, doc, k, n)
         % Upload one document's JSON (series member paths stripped).
             props = did.document.stripSeriesIngestLocations(doc.document_properties);
@@ -495,6 +552,9 @@ classdef SessionWriter < handle
             end
             obj.report.documents = obj.report.documents + 1;
             obj.report.documentIds{end+1} = doc.id();
+            if ~isempty(obj.onUpload)
+                obj.onUpload(doc);
+            end
         end
 
         function flushPending(obj)
@@ -898,6 +958,109 @@ function [ok, msg] = uploadBatch(cloudDatasetId, paths, bytes)
         manifest, sum(bytes) / 1e3, char(cloudDatasetId), ...
         'Verbose', false, 'DebugLog', false);
     ok = logical(ok);
+end
+
+function si = seriesInfoOf(doc)
+    si = struct('name', {}, 'ingest_locations', {});
+    p = doc.document_properties;
+    if isfield(p, 'files') && isstruct(p.files) && isfield(p.files, 'series_info') ...
+            && ~isempty(p.files.series_info)
+        si = p.files.series_info;
+    end
+end
+
+function api = addRetries(api, seconds)
+% Wrap each cloud call so a failure is retried for up to SECONDS. A long
+% upload meets a dropped connection or a server hiccup sooner or later;
+% this rides one out instead of failing hours of work. waitForFileUpload
+% is left alone: it already waits, and its timeout is an answer.
+    if seconds <= 0, return; end
+    raw = api;
+    for name = {'uploadSingleFile', 'uploadFileBatch', 'lookupFiles', ...
+            'downloadFile', 'updateDocument'}
+        n = name{1};
+        if isfield(raw, n)
+            api.(n) = @(varargin) retryPair(raw.(n), varargin, seconds, n);
+        end
+    end
+    api.findDocuments = @(d, q) retryOne(raw.findDocuments, {d, q}, seconds);
+    api.addDocument = @(d, json) retryAdd(raw, d, json, seconds);
+end
+
+function [ok, answer] = retryPair(fn, args, seconds, name)
+    t0 = tic;
+    wait = 2;
+    while true
+        try
+            [ok, answer] = fn(args{:});
+        catch ME
+            ok = false;
+            answer = struct('message', ME.message);
+        end
+        if ok || toc(t0) + wait > seconds
+            return
+        end
+        fprintf('[SessionWriter] %s failed (%s); trying again in %d s.\n', ...
+            name, describe(answer), wait);
+        pause(wait);
+        wait = min(60, 2 * wait);
+    end
+end
+
+function out = retryOne(fn, args, seconds)
+    t0 = tic;
+    wait = 2;
+    while true
+        try
+            out = fn(args{:});
+            return
+        catch ME
+            if toc(t0) + wait > seconds
+                rethrow(ME);
+            end
+            fprintf('[SessionWriter] a cloud search failed (%s); trying again in %d s.\n', ...
+                ME.message, wait);
+        end
+        pause(wait);
+        wait = min(60, 2 * wait);
+    end
+end
+
+function [ok, answer] = retryAdd(raw, d, json, seconds)
+% addDocument, retried -- but only after asking whether the last try
+% arrived anyway, so a lost reply never becomes a duplicate document.
+    t0 = tic;
+    wait = 2;
+    id = '';
+    try
+        id = char(jsondecode(char(json)).base.id);
+    catch
+    end
+    while true
+        try
+            [ok, answer] = raw.addDocument(d, json);
+        catch ME
+            ok = false;
+            answer = struct('message', ME.message);
+        end
+        if ok || toc(t0) + wait > seconds
+            return
+        end
+        fprintf('[SessionWriter] addDocument failed (%s); trying again in %d s.\n', ...
+            describe(answer), wait);
+        pause(wait);
+        wait = min(60, 2 * wait);
+        if ~isempty(id)
+            try
+                if ~isempty(raw.findDocuments(d, ndi.query('base.id', 'exact_string', id)))
+                    ok = true;
+                    answer = struct('message', 'already there');
+                    return
+                end
+            catch
+            end
+        end
+    end
 end
 
 function [ok, answer] = updateByNdiId(cloudDatasetId, ndiId, json)

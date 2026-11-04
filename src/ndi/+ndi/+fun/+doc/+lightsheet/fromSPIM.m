@@ -105,6 +105,9 @@ function [pyramidDoc, levelDocs, info] = fromSPIM(session, rootDir, options)
         options.prefetchBytes (1,1) double {mustBePositive} = 512 * 2^20
         options.asyncPrefetch (1,1) logical = true
         options.debugLog (1,:) char = ''
+        % Resume an interrupted streamed build; see makePyramid's resume
+        % option. Pass the earlier run's sourceFileID with it.
+        options.resume = []
     end
 
     if isempty(strtrim(options.subjectID))
@@ -245,7 +248,8 @@ function [pyramidDoc, levelDocs, info] = fromSPIM(session, rootDir, options)
         'numWorkers', options.numWorkers, ...
         'prefetchBytes', options.prefetchBytes, ...
         'asyncPrefetch', options.asyncPrefetch, ...
-        'debugLog', options.debugLog);
+        'debugLog', options.debugLog, ...
+        'resume', options.resume);
 
     info = struct( ...
         'rootDir', char(rootDir), ...
