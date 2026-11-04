@@ -60,6 +60,11 @@ function probe(S, probe, options)
 % | checkElement (true)      | Verify that the parameter file's ndiElementName /   |
 % |                          |   ndiElementReference match PROBE.                  |
 % | force (0)                | Re-import even if the checksum is unchanged.        |
+% | ExistingNeurons ('ask')  | Neurons from an earlier import that are not         |
+% |                          |   linked to this probe's cluster document would     |
+% |                          |   be duplicated: 'ask' whether to remove them,      |
+% |                          |   'remove' them, or 'error'. See                    |
+% |                          |   ndi.fun.probe.import.resolveExistingNeurons.      |
 % | dryRun (false)           | Report what would be imported without changing the  |
 % |                          |   database.                                         |
 % | progressbar (false)      | Show an ndi.gui.component.ProgressBarWindow.        |
@@ -85,6 +90,7 @@ function probe(S, probe, options)
         options.qualityValues (1,:) double = [1 4]
         options.checkElement (1,1) logical = true
         options.force (1,1) double = 0
+        options.ExistingNeurons (1,:) char {mustBeMember(options.ExistingNeurons,{'ask','remove','error'})} = 'ask'
         options.dryRun (1,1) logical = false
         options.progressbar (1,1) logical = false
         options.verbose (1,1) double = 1
@@ -143,6 +149,13 @@ function probe(S, probe, options)
     qExisting = ndi.query('','isa','jrclust_clusters','') & ...
         ndi.query('','depends_on','element_id', probe.id());
     oldDocs = S.database_search(qExisting);
+
+    % Neurons from an earlier import that the cluster-document lookup above cannot see
+    % (e.g. the probe's id changed, or an earlier import stopped part-way) would
+    % otherwise be duplicated by this import; find them and ask what to do.
+    ndi.fun.probe.import.resolveExistingNeurons(S, probe, oldDocs, ...
+        'ExistingNeurons', options.ExistingNeurons, 'dryRun', dryRun, ...
+        'verbose', logical(report), 'importer', 'ndi.fun.probe.import.jrclust.probe');
 
     if ~isempty(oldDocs),
         if numel(oldDocs)==1 && ~options.force,

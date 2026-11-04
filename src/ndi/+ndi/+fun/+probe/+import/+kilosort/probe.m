@@ -7,7 +7,8 @@ function probe(S, probe, options)
 % is part of the ndi.session S. For each curated cluster that passes the quality
 % filter, this function creates:
 %
-%   1) an ndi.neuron element named [PROBE.name '_' N], where N is the cluster id,
+%   1) an ndi.neuron element named [PROBE.name '_' PROBE.reference '_' N], where N
+%      is the cluster id,
 %      with spike times added as epochs (mapped back from the concatenated Kilosort
 %      sample stream into each NDI epoch's local time), and
 %   2) an 'neuron_extracellular' ndi.document holding the mean waveform, sample
@@ -169,6 +170,11 @@ function probe(S, probe, options)
 % |                          |   user is prompted. NOT n_channels_dat (the count   |
 % |                          |   of the sorted file, usually 384 vs raw 385).      |
 % | force (0)                | Re-import even if the checksum is unchanged.        |
+% | ExistingNeurons ('ask')  | Neurons from an earlier import that are not         |
+% |                          |   linked to this probe's cluster document would     |
+% |                          |   be duplicated: 'ask' whether to remove them,      |
+% |                          |   'remove' them, or 'error'. See                    |
+% |                          |   ndi.fun.probe.import.resolveExistingNeurons.      |
 % | dryRun (false)           | If true, report what would be imported (neurons,    |
 % |                          |   spike counts, documents that would be removed)    |
 % |                          |   without making any changes to the database.       |
@@ -212,6 +218,7 @@ function probe(S, probe, options)
         options.ProbeType (1,:) char = ''
         options.RawNumChannels (1,1) double = NaN
         options.force (1,1) double = 0
+        options.ExistingNeurons (1,:) char {mustBeMember(options.ExistingNeurons,{'ask','remove','error'})} = 'ask'
         options.dryRun (1,1) logical = false
         options.progressbar (1,1) logical = false
         options.verbose (1,1) double = 1
@@ -257,6 +264,13 @@ function probe(S, probe, options)
     q_existing = ndi.query('','isa','kilosort_clusters','') & ...
         ndi.query('','depends_on','element_id',probe.id());
     olddocs = S.database_search(q_existing);
+
+    % Neurons from an earlier import that the cluster-document lookup above cannot see
+    % (e.g. the probe's id changed, or an earlier import stopped part-way) would
+    % otherwise be duplicated by this import; find them and ask what to do.
+    ndi.fun.probe.import.resolveExistingNeurons(S, probe, olddocs, ...
+        'ExistingNeurons', options.ExistingNeurons, 'dryRun', dryRun, ...
+        'verbose', logical(report), 'importer', 'ndi.fun.probe.import.kilosort.probe');
 
     if ~isempty(olddocs),
         if numel(olddocs)==1 && ~options.force,
