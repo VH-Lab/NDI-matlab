@@ -38,9 +38,13 @@ function result = install(options)
 %   you are asked (Confirm) or AllowModified decides, as above.
 %
 %   If NDI-python was installed with ndi.python.install (or the NDI
-%   installer) and is behind its main branch, it is updated afterwards by
-%   running ndi.python.install again, after asking (Confirm). This happens
-%   even if NDI-matlab itself is up to date. See ndi.update.checkPython.
+%   installer) and is behind its main branch, or that install is
+%   incomplete (one of its commands is missing from ~/.ndi/bin), it is
+%   updated afterwards by running ndi.python.install again, after asking
+%   (Confirm). This happens even if NDI-matlab itself is up to date. If
+%   NDI-python is not installed at all, it is installed the same way, but
+%   only when "NDI-python" is named in Packages (as the navigator's
+%   Update window does when it is ticked). See ndi.update.checkPython.
 %
 %   RESULT is the structure returned by ndi.update.check before updating.
 %
@@ -105,7 +109,7 @@ function result = install(options)
     end
     updateCalcs = options.IncludeCalculators && any(sel.Calcs);
     updatePython = options.IncludePython && sel.Python && ...
-        result.Python.UpdateAvailable && result.Python.CanInstall;
+        result.Python.CanInstall && pythonNeedsWork(result.Python, sel);
     if ~updateMatlab && ~updateCalcs && ~updatePython
         return
     end
@@ -136,18 +140,42 @@ function result = install(options)
     end
 end
 
+function tf = pythonNeedsWork(py, sel)
+    % True if NDI-python is behind main, or is missing or incomplete. A
+    % first install happens only when NDI-python was named in Packages:
+    % it is optional, so a plain ndi.update.install() does not add it.
+    needsInstall = isfield(py, 'NeedsInstall') && py.NeedsInstall;
+    if py.Installed
+        tf = py.UpdateAvailable || needsInstall;
+    else
+        tf = needsInstall && ~sel.All;
+    end
+end
+
 function installPython(py, options)
-    if options.Confirm
+    needsInstall = isfield(py, 'NeedsInstall') && py.NeedsInstall;
+    if ~py.Installed
+        action = "installation";
+        prompt = "Install NDI-python into " + ndi.python.ndiHome() + ...
+            " by running its installer? Y/N [Y]: ";
+    elseif needsInstall
+        action = "installation";
+        prompt = "NDI-python is not fully installed (missing: " + ...
+            strjoin(py.MissingCommands, ", ") + "). Install it again by " + ...
+            "running its installer? Y/N [Y]: ";
+    else
+        action = "update";
         prompt = "Update NDI-python (" + py.CurrentVersion + " -> " + ...
             py.LatestVersion + ") by running its installer again? Y/N [Y]: ";
-        if ~confirmed(prompt)
-            disp('NDI-python update cancelled.');
-            return
-        end
     end
-    % AddToPath=false: an update leaves the user's shell profile as it is.
+    if options.Confirm && ~confirmed(prompt)
+        disp("NDI-python " + action + " cancelled.");
+        return
+    end
+    % AddToPath=false: leave the user's shell profile as it is. MATLAB
+    % finds the commands in ~/.ndi/bin without it.
     ndi.python.install(AddToPath = false);
-    disp('NDI-python update finished.');
+    disp("NDI-python " + action + " finished.");
 end
 
 function modsAgreed = installGit(result, options, sel)
