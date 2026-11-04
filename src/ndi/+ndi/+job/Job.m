@@ -65,6 +65,8 @@ classdef Job < handle
         lastError char = ''     % the report of the error that failed it
         updated char = ''       % the last time anything was saved
         heartbeat char = ''     % the last sign of life while running
+        runStarted char = ''    % when the current (or last) run began
+        runStartProgress double = 0  % progress when it began (for the estimate)
         host char = ''          % the computer it last ran on
         pid double = 0          % the process running it there, 0 if none
         spec struct = struct()  % what to do (JSON-safe, subclass-defined)
@@ -113,6 +115,8 @@ classdef Job < handle
             obj.pid = ndi.job.Job.processId();
             obj.lastError = '';
             obj.message = 'Starting...';
+            obj.runStarted = ndi.job.Job.now();
+            obj.runStartProgress = obj.progress;
             obj.beats = 0;
             obj.save();
             obj.refreshPane(true);
@@ -218,6 +222,29 @@ classdef Job < handle
             if obj.pid ~= ndi.job.Job.processId() && ~ndi.job.Job.processAlive(obj.pid)
                 s = 'interrupted';
             end
+        end
+
+        function s = remainingSeconds(obj)
+        % REMAININGSECONDS - an estimate of the seconds a running job has left
+        %
+        %   From this run's pace: the progress made since it began, over
+        %   the time to its latest heartbeat, carried on to 1, less the
+        %   time since that heartbeat. NaN when the job is not running, or
+        %   has run too briefly (under 30 s) or made no progress yet.
+            s = NaN;
+            if ~strcmp(obj.effectiveState(), 'running') || ...
+                    isempty(obj.runStarted) || isempty(obj.heartbeat)
+                return
+            end
+            t0 = ndi.job.Job.fromUtc(obj.runStarted);
+            t1 = ndi.job.Job.fromUtc(obj.heartbeat);
+            elapsed = seconds(t1 - t0);
+            done = obj.progress - obj.runStartProgress;
+            if isnat(t0) || isnat(t1) || elapsed < 30 || done <= 0
+                return
+            end
+            sinceBeat = seconds(datetime('now', 'TimeZone', 'UTC') - t1);
+            s = max(0, elapsed * (1 - obj.progress) / done - max(0, sinceBeat));
         end
 
         function tf = canResume(obj)
@@ -424,14 +451,23 @@ classdef Job < handle
         % LOCALTIME - a stored UTC time for display, in this computer's time zone
             t = '';
             if isempty(utc), return; end
-            try
-                d = datetime(utc, 'InputFormat', 'yyyy-MM-dd''T''HH:mm:ss''Z''', ...
-                    'TimeZone', 'UTC');
-                d.TimeZone = 'local';
-                d.Format = 'yyyy-MM-dd HH:mm:ss';
-                t = char(d);
-            catch
+            d = ndi.job.Job.fromUtc(utc);
+            if isnat(d)
                 t = char(utc);
+                return
+            end
+            d.TimeZone = 'local';
+            d.Format = 'yyyy-MM-dd HH:mm:ss';
+            t = char(d);
+        end
+
+        function d = fromUtc(utc)
+        % FROMUTC - a stored UTC time as a datetime (NaT if unreadable)
+            try
+                d = datetime(char(utc), 'InputFormat', 'yyyy-MM-dd''T''HH:mm:ss''Z''', ...
+                    'TimeZone', 'UTC');
+            catch
+                d = NaT('TimeZone', 'UTC');
             end
         end
 
@@ -453,7 +489,8 @@ classdef Job < handle
         % The job.json fields, in the order written (see job.schema.json).
             f = {'formatVersion', 'id', 'kind', 'runtime', 'title', 'created', ...
                 'updated', 'state', 'progress', 'message', 'lastError', ...
-                'heartbeat', 'host', 'pid', 'spec', 'checkpoint'};
+                'heartbeat', 'runStarted', 'runStartProgress', 'host', 'pid', ...
+                'spec', 'checkpoint'};
         end
 
         function m = registry()

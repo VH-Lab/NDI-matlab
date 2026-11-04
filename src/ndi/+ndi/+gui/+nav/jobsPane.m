@@ -9,6 +9,10 @@ classdef jobsPane < ndi.gui.nav.pane
 %       Restart  - forget its progress and run it from the beginning
 %       Remove   - delete its record from this computer
 %
+%   Columns: the job's name (the start of it; hover for the rest), its
+%   state, how much is done, an estimate of the time left while it runs
+%   (from this run's pace so far), and when it last updated.
+%
 %   A job runs in this MATLAB, so while one runs, MATLAB is busy; the job
 %   lets the window redraw at every heartbeat, which is when Pause and the
 %   progress column respond. The list is refreshed by the jobs themselves
@@ -68,13 +72,52 @@ classdef jobsPane < ndi.gui.nav.pane
 
     methods (Static)
         function rows = rowsFor(jobs)
-        % ROWSFOR - the table rows for JOBS: title, state, progress, last update
-            rows = cell(numel(jobs), 4);
+        % ROWSFOR - the table rows for JOBS: title, state, progress, time
+        % left (an estimate, while running) and when it last updated
+            rows = cell(numel(jobs), 5);
             for k = 1:numel(jobs)
                 j = jobs{k};
                 rows(k, :) = {j.title, j.effectiveState(), ...
-                    sprintf('%.0f%%', 100 * j.progress), ndi.job.Job.localTime(j.updated)};
+                    sprintf('%.0f%%', 100 * j.progress), ...
+                    ndi.gui.nav.jobsPane.durationText(j.remainingSeconds()), ...
+                    ndi.gui.nav.jobsPane.shortTime(j.updated)};
             end
+        end
+
+        function t = durationText(s)
+        % DURATIONTEXT - seconds as '3h 05m', '12m', '<1m'; '' if NaN
+            if isempty(s) || isnan(s)
+                t = '';
+            elseif s < 60
+                t = '<1m';
+            elseif s < 3600
+                t = sprintf('%dm', round(s / 60));
+            elseif s < 86400
+                m = round(s / 60);
+                t = sprintf('%dh %02dm', floor(m / 60), mod(m, 60));
+            else
+                h = round(s / 3600);
+                t = sprintf('%dd %dh', floor(h / 24), mod(h, 24));
+            end
+        end
+
+        function t = shortTime(utc)
+        % SHORTTIME - a stored UTC time, local: 'HH:mm:ss' today, else 'MMM d HH:mm'
+            t = '';
+            if isempty(utc), return; end
+            d = ndi.job.Job.fromUtc(utc);
+            if isnat(d)
+                t = char(utc);
+                return
+            end
+            d.TimeZone = 'local';
+            if isequal(dateshift(d, 'start', 'day'), ...
+                    dateshift(datetime('now', 'TimeZone', 'local'), 'start', 'day'))
+                d.Format = 'HH:mm:ss';
+            else
+                d.Format = 'MMM d HH:mm';
+            end
+            t = char(d);
         end
     end
 
@@ -84,8 +127,8 @@ classdef jobsPane < ndi.gui.nav.pane
             container.ColumnWidth = {'1x'};
             container.Padding = [4 4 4 4];
             obj.Table = uitable(container, ...
-                'ColumnName', {'Job', 'State', 'Done', 'Updated'}, ...
-                'ColumnWidth', {'auto', 75, 45, 120}, ...
+                'ColumnName', {'Job', 'State', 'Done', 'Left', 'Updated'}, ...
+                'ColumnWidth', {80, 70, 50, 60, 'auto'}, ...
                 'RowName', {}, ...
                 'SelectionType', 'row', 'Multiselect', 'off', ...
                 'SelectionChangedFcn', @(~,~) obj.updateButtons());

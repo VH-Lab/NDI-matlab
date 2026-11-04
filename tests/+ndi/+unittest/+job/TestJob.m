@@ -153,7 +153,54 @@ classdef TestJob < matlab.unittest.TestCase
             job.PauseAfterBeats = 2;
             job.run();
             rows = ndi.gui.nav.jobsPane.rowsFor(ndi.job.Job.list());
-            testCase.verifyEqual(rows(1, 1:3), {'scripted succeed', 'paused', '50%'});
+            testCase.verifyEqual(rows(1, 1:4), {'scripted succeed', 'paused', '50%', ''}, ...
+                'no time left is shown for a job that is not running');
+            testCase.verifyNotEmpty(regexp(rows{1, 5}, '^\d{2}:\d{2}:\d{2}$', 'once'), ...
+                'updated today: the time of day');
+        end
+
+        % -- time left ---------------------------------------------------
+
+        function testARunRecordsWhenItBegan(testCase)
+            job = ndi.test.helper.ScriptedJob.create(10);
+            job.PauseAfterBeats = 4;
+            job.run();
+            again = ndi.job.Job.load(job.id);
+            testCase.verifyNotEmpty(again.runStarted);
+            testCase.verifyEqual(again.runStartProgress, 0);
+            again.run();
+            testCase.verifyEqual(again.runStartProgress, 0.4, 'AbsTol', 1e-12, ...
+                'a resumed run is paced from where it resumed');
+        end
+
+        function testTimeLeftFollowsThisRunsPace(testCase)
+            job = ndi.test.helper.ScriptedJob.create(2);
+            % A quarter of the way in 100 s: three quarters, about 300 s, to go.
+            job.pretendPace(0, 0.25, 100);
+            testCase.verifyEqual(job.remainingSeconds(), 300, 'AbsTol', 5);
+            % Resumed at 0.5; 0.1 more in 60 s: 0.4 to go, about 240 s.
+            job.pretendPace(0.5, 0.6, 60);
+            testCase.verifyEqual(job.remainingSeconds(), 240, 'AbsTol', 5);
+            rows = ndi.gui.nav.jobsPane.rowsFor({job});
+            testCase.verifyEqual(rows{1, 4}, '4m');
+        end
+
+        function testNoTimeLeftWithoutAPace(testCase)
+            job = ndi.test.helper.ScriptedJob.create(2);
+            testCase.verifyTrue(isnan(job.remainingSeconds()), 'queued');
+            job.pretendPace(0.2, 0.2, 300);
+            testCase.verifyTrue(isnan(job.remainingSeconds()), 'no progress yet');
+            job.pretendPace(0, 0.1, 10);
+            testCase.verifyTrue(isnan(job.remainingSeconds()), 'too soon to say');
+        end
+
+        function testDurationText(testCase)
+            f = @ndi.gui.nav.jobsPane.durationText;
+            testCase.verifyEqual(f(NaN), '');
+            testCase.verifyEqual(f(20), '<1m');
+            testCase.verifyEqual(f(12 * 60), '12m');
+            testCase.verifyEqual(f(3 * 3600 + 5 * 60), '3h 05m');
+            testCase.verifyEqual(f(2 * 86400 + 3 * 3600), '2d 3h');
         end
 
         function testTheNavigatorShowsJobs(testCase)

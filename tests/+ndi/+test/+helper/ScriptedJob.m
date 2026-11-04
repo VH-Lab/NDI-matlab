@@ -39,6 +39,20 @@ classdef ScriptedJob < ndi.job.Job
             fclose(fid);
         end
 
+        function pretendPace(obj, startProgress, progress, startedSecondsAgo)
+        % Leave the job running in this MATLAB, having gone from
+        % STARTPROGRESS to PROGRESS since a run began STARTEDSECONDSAGO,
+        % with a heartbeat just now.
+            obj.pretendRunningIn(ndi.job.Job.processId());
+            fmt = 'yyyy-MM-dd''T''HH:mm:ss''Z''';
+            utcNow = datetime('now', 'TimeZone', 'UTC', 'Format', fmt);
+            obj.runStarted = char(utcNow - seconds(startedSecondsAgo));
+            obj.runStartProgress = startProgress;
+            obj.progress = progress;
+            obj.heartbeat = char(utcNow);
+            obj.save();
+        end
+
         function pretendRunningIn(obj, pid)
         % Leave the job saved as running in process PID on this computer,
         % as a crash would.
