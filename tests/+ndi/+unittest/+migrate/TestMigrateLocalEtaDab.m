@@ -296,9 +296,13 @@ classdef TestMigrateLocalEtaDab < matlab.unittest.TestCase
             % reopening. Every category prints its denominator first
             % (ndi.unittest.migrate.corpusObjectEquivalence). Apparatus and
             % equipment entities have no v1 subject object to compare with,
-            % so they are counted, not compared.
+            % so they are counted, not compared. Probe epoch tables: 12 of
+            % Dab's 762 probes, evenly spaced (all 762 did not finish in
+            % 180 minutes, run 41721521588); every acquisition-system epoch
+            % table, probe maps included, is still read whole.
             R = ndi.unittest.migrate.corpusObjectEquivalence(testCase.Bodies, ...
-                fileparts(testCase.Result.destination), 'Dab');
+                fileparts(testCase.Result.destination), 'Dab', ...
+                'MaxProbeEpochTables', 12);
             ndi.unittest.migrate.verifyObjectEquivalence(testCase, R);
         end
 

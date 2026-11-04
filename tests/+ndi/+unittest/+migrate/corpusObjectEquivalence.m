@@ -1,4 +1,4 @@
-function R = corpusObjectEquivalence(v1Bodies, migratedNdiDir, label)
+function R = corpusObjectEquivalence(v1Bodies, migratedNdiDir, label, options)
 %CORPUSOBJECTEQUIVALENCE The same NDI objects before and after ndi.migrate.local, corpus-wide.
 %
 %   R = ndi.unittest.migrate.corpusObjectEquivalence(V1BODIES, MIGRATEDNDIDIR, LABEL)
@@ -56,6 +56,16 @@ function R = corpusObjectEquivalence(v1Bodies, migratedNdiDir, label)
 %
 %   read_error counts every object read that raised, on either side.
 %
+%   R = ...(..., 'MaxProbeEpochTables', N) reads the epoch tables of at most
+%   N probes per session (evenly spaced over the v1 probes sorted by key; the
+%   same probes after migration); every probe is still compared as an
+%   object, and every acquisition system's epoch table, probe map included,
+%   is still read whole. NDI builds each probe's table from its system's
+%   epochs, so the cost is probes times epochs: Dab's one session holds 762
+%   probes over 1,604 ingested epochs and did not finish in the workflow's
+%   180 minutes reading them all (run 41721521588). The report says how many
+%   probe tables were read of how many probes; the rest are not measured.
+%
 %   Every category reports its denominator first: how many were compared,
 %   how many were the same, how many differed, and how many were found on
 %   one side only. Every read is taken inside try/catch; an error is a
@@ -70,11 +80,13 @@ arguments
     v1Bodies cell
     migratedNdiDir {mustBeTextScalar}
     label {mustBeTextScalar} = 'corpus'
+    options.MaxProbeEpochTables (1,1) double = Inf
 end
 
 label = char(label);
 migratedNdiDir = char(migratedNdiDir);
 R = struct('label', label, 'sessions', struct(), 'v1db', struct(), ...
+    'probeTables', struct('read', 0, 'probes', 0, 'cap', options.MaxProbeEpochTables), ...
     'apparatus', struct(), 'cats', struct(), 'seconds', struct());
 for c = categoryNames()
     R.cats.(c{1}) = newCat();
@@ -139,8 +151,10 @@ for i = 1:numel(both)
     end
     R.sessions.compared = R.sessions.compared + 1;
     ts = tic;
-    a = snapshot(S1);
-    b = snapshot(S2);
+    a = snapshot(S1, options.MaxProbeEpochTables, {}, false);
+    b = snapshot(S2, Inf, a.probeEpochKeys, true);
+    R.probeTables.read = R.probeTables.read + numel(a.probeEpochKeys);
+    R.probeTables.probes = R.probeTables.probes + numel(a.probes);
     clear S1 S2
     R.cats = compareSnapshots(R.cats, a, b, sid);
     fprintf('    session %s (%s): %d/%d subject(s), %d/%d element(s), %d/%d probe(s), %d/%d daq system(s), %.1f s\n', ...
@@ -317,9 +331,10 @@ end
 % one session's objects, as plain data
 % =========================================================================
 
-function s = snapshot(S)
+function s = snapshot(S, cap, onlyKeys, restrict)
+% CAP: the most probe epoch tables to read; RESTRICT: read only ONLYKEYS'
 s = struct('reference', '', 'subjects', {{}}, 'elements', {{}}, 'probes', {{}}, ...
-    'daq', {{}}, 'errors', {{}});
+    'daq', {{}}, 'errors', {{}}, 'probeEpochKeys', {{}});
 try
     s.reference = char(S.reference);
 catch ME
@@ -368,16 +383,33 @@ end
 % probes, and their epoch tables
 try
     prs = uniqueById(asCell(S.getprobes()));
+    keys = cell(1, numel(prs));
+    for k = 1:numel(prs)
+        e = elementFacts(prs{k});
+        keys{k} = sprintf('%s | %s | %s', e.name, num2str(e.reference), e.type);
+    end
+    if restrict
+        toRead = onlyKeys;
+    elseif numel(keys) > cap
+        sk = sort(keys);
+        toRead = sk(unique(round(linspace(1, numel(sk), cap))));
+    else
+        toRead = keys;
+    end
     for k = 1:numel(prs)
         o = prs{k};
         e = elementFacts(o);
-        e.key = sprintf('%s | %s | %s', e.name, num2str(e.reference), e.type);
+        e.key = keys{k};
         e.epochs = [];
         e.epochError = '';
-        try
-            e.epochs = normalizeEpochTable(o.epochtable());
-        catch ME
-            e.epochError = errorText(ME);
+        e.epochRead = any(strcmp(toRead, e.key));
+        if e.epochRead
+            try
+                e.epochs = normalizeEpochTable(o.epochtable());
+            catch ME
+                e.epochError = errorText(ME);
+            end
+            s.probeEpochKeys{end+1} = e.key; %#ok<AGROW>
         end
         s.probes{end+1} = e; %#ok<AGROW>
     end
@@ -543,6 +575,10 @@ kb = cellfun(@(x) x.key, B, 'UniformOutput', false);
 for i = 1:numel(A)
     j = find(strcmp(kb, A{i}.key), 1);
     if isempty(j); continue; end
+    if (isfield(A{i}, 'epochRead') && ~A{i}.epochRead) || ...
+            (isfield(B{j}, 'epochRead') && ~B{j}.epochRead)
+        continue;   % not read (MaxProbeEpochTables): not measured
+    end
     if ~isempty(A{i}.epochError) || ~isempty(B{j}.epochError)
         C = tally(C, 'differ', [what ' epochtable error'], sprintf( ...
             'session %s: %s %s: v1 %s | migrated %s', sid, what, A{i}.key, ...
@@ -885,6 +921,8 @@ for c = categoryNames()
     fprintf('    %-17s %9d %9d %9d %9d %9d\n', c{1}, C.compared, C.same, C.differ, ...
         C.only_v1, C.only_v2);
 end
+fprintf('    probe epoch tables read: %d of %d probe(s) (cap per session %g); the rest NOT MEASURED\n', ...
+    R.probeTables.read, R.probeTables.probes, R.probeTables.cap);
 for c = {'probe_epoch', 'daq_epoch', 'element_epoch'}
     if R.cats.(c{1}).merged_probemap_rows > 0
         fprintf(['      %s: %d epoch(s) wire the same probes to the same channels in ' ...
