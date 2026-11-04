@@ -115,7 +115,9 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
             if ~isa(dev,'ndi.daq.system')
                 error(['dev is not a ndi.daq.system']);
             end
-            daqsys = ndi_session_obj.daqsystem_load('name',dev.name);
+            % anchor the name: 'name' is a regular expression, and an unanchored
+            % one would also match other daqsystems whose names contain dev.name
+            daqsys = ndi_session_obj.daqsystem_load('name',['^' regexptranslate('escape',dev.name) '$']);
             if ~isempty(daqsys)
                 if ~iscell(daqsys)
                     daqsys = {daqsys};
@@ -158,6 +160,12 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
             % One can also search for 'name' as a parameter; this will be automatically changed to search
             % for database documents with fields 'base.name' equal to the corresponding value.
             %
+            % A 'name' that matches every name, such as '(.*)' or '.*', is dropped from the
+            % search rather than sent to the database as a regular expression: every
+            % daqsystem has a name, so the result is the same, and a regular expression
+            % search is slow on large databases. DAQSYSTEM_LOAD(NDI_SESSION_OBJ,'name','(.*)')
+            % is therefore the same search as DAQSYSTEM_LOAD(NDI_SESSION_OBJ).
+            %
             % If more than one object is requested, then DEV will be a cell list of matching objects.
             % Otherwise, the object will be a single element. If there are no matches, empty ([]) is returned.
             %
@@ -166,11 +174,19 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
             q2 = ndi.query('base.session_id','exact_string',ndi_session_obj.id(),'');
             q = q1 & q2;
             if numel(varargin)>0
+                keep = true(1,numel(varargin));
                 for i=1:2:numel(varargin)
                     if strcmpi(varargin{i},'name')
                         varargin{i} = 'base.name'; % case matters here
                     end
+                    if strcmp(varargin{i},'base.name') && i<numel(varargin) && ...
+                            ndi.session.isMatchAllRegexp(varargin{i+1})
+                        keep([i i+1]) = false; % matches every name; skip the slow regexp
+                    end
                 end
+                varargin = varargin(keep);
+            end
+            if numel(varargin)>0
                 q = q & ndi.query(varargin);
             end
             dev_doc = ndi_session_obj.database_search(q);
@@ -514,35 +530,94 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
             ndi_session_obj.syncgraph = update_syncgraph_in_db(ndi_session_obj);
         end % syncgraph_rmrule
 
-        function [b,errmsg] = ingest(ndi_session_obj)
+        function [b,errmsg] = ingest(ndi_session_obj, options)
             % INGEST - ingest the raw data and synchronization information into the database
             %
-            % [B,ERRMSG] = INGEST(NDI_SESSION_OBJ)
+            % [B,ERRMSG] = INGEST(NDI_SESSION_OBJ, ...)
             %
             % Ingest all raw data and synchronization information into the database.
             %
-            d_syncgraph = ndi_session_obj.syncgraph.ingest();
-            errmsg = '';
+            % The reading and compression of each epoch's raw data runs on a parallel
+            % pool when NDI's parallel preferences allow it (Parallel.OpenPoolIfNone,
+            % Parallel.UseDefaultNumberOfWorkers, Parallel.NumberOfWorkers; see
+            % ndi.fun.parallelWorkers). With the default preferences a pool that is
+            % already open is used, and otherwise the epochs run serially; NDI does
+            % not open a pool on its own. All database writes stay serial. Progress is
+            % shown with ndi.gui.component.ProgressBarWindow: one bar for the session
+            % and one for each ndi.daq.system as it is ingested. In headless sessions
+            % (e.g., -batch) the progress window is silent automatically.
+            %
+            % This function takes name/value pairs that modify its behavior:
+            % |---------------------------|-----------------------------------------------|
+            % | Parameter (default)       | Description                                   |
+            % |---------------------------|-----------------------------------------------|
+            % | ShowProgress (true)       | Show ingestion progress bars.                 |
+            % | ProgressBar ([])          | An existing                                   |
+            % |                           |   ndi.gui.component.ProgressBarWindow to use. |
+            % |                           |   Empty opens/reuses one titled 'NDI Ingest'. |
+            % | ProgressBarTag ('')       | Tag for the session-level bar. Empty makes a  |
+            % |                           |   new unique id.                              |
+            % |---------------------------|-----------------------------------------------|
+            %
+            % Example:
+            %    [b,errmsg] = S.ingest();
+            %    parpool(4); [b,errmsg] = S.ingest();  % epochs on the open pool
+            %
+            % See also: ndi.daq.system/ingest, ndi.fun.parallelWorkers
+            arguments
+                ndi_session_obj
+                options.ShowProgress (1,1) logical = true
+                options.ProgressBar = []
+                options.ProgressBarTag (1,:) char = ''
+            end
 
             daqs = ndi_session_obj.daqsystem_load('name','(.*)');
-            if ~iscell(daqs)
+            if isempty(daqs)
+                daqs = {};
+            elseif ~iscell(daqs)
                 daqs = {daqs};
             end
-            daq_d = {};
+
+            progressBar = [];
+            barTag = '';
+            if options.ShowProgress
+                [progressBar, barTag] = ndi.daq.system.addIngestProgressBar(options.ProgressBar, ...
+                    ['Ingesting session ' char(ndi_session_obj.reference)], ...
+                    'Tag', options.ProgressBarTag, 'Auto', false);
+            end
+            % steps: the syncgraph, each daq system, and the final syncgraph add
+            numSteps = numel(daqs) + 2;
+
+            d_syncgraph = ndi_session_obj.syncgraph.ingest();
+            ndi.daq.system.updateIngestProgressBar(progressBar, barTag, 1/numSteps);
+            errmsg = '';
+
+            daq_d = cell(1,numel(daqs));
             b = 1;
             for i=1:numel(daqs)
-                [b_here,daq_d{i}] = daqs{i}.ingest();
+                try
+                    [b_here,daq_d{i}] = daqs{i}.ingest('ShowProgress', options.ShowProgress, ...
+                        'ProgressBar', progressBar);
+                catch ME
+                    ndi.daq.system.removeIngestProgressBar(progressBar, barTag);
+                    rethrow(ME);
+                end
                 b = b & b_here;
                 if ~b
                     errmsg = ['Error in daq ' daqs{i}.name];
                 end
+                ndi.daq.system.updateIngestProgressBar(progressBar, barTag, (1+i)/numSteps);
             end
             if b==0 % things didn't go well, bail
-                for i=1:numel(daqs)
-                    ndi_session_obj.database_rm(daq_d{i});
+                for i=1:numel(daq_d)
+                    if ~isempty(daq_d{i})
+                        ndi_session_obj.database_rm(daq_d{i});
+                    end
                 end
+                ndi.daq.system.removeIngestProgressBar(progressBar, barTag);
             else % add the syncgraph documents and we are done
                 ndi_session_obj.database_add(d_syncgraph);
+                ndi.daq.system.updateIngestProgressBar(progressBar, barTag, 1);
             end
         end % ingest()
 
@@ -660,7 +735,7 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
             end
 
             if trydaqsystem
-                obj_here = ndi_session_obj.daqsystem_load('name',obj_name);
+                obj_here = ndi_session_obj.daqsystem_load('name',['^' regexptranslate('escape',obj_name) '$']);
                 if ~isempty(obj_here)
                     if strcmp(class(obj_here),obj_classname)
                         % it is our match
@@ -1022,6 +1097,31 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
             end
 
         end % all_docs_in_session
+
+        function b = isMatchAllRegexp(value)
+            % ISMATCHALLREGEXP - does a regular expression match every string?
+            %
+            % B = ndi.session.isMatchAllRegexp(VALUE)
+            %
+            % Returns true if VALUE is one of the regular expressions commonly used
+            % to mean "any value": '(.*)', '.*', optionally anchored with '^' and/or
+            % '$'. Returns false for anything else, including non-text values.
+            % Used by DAQSYSTEM_LOAD to drop a 'name' search that would match every
+            % daqsystem.
+            %
+            b = false;
+            if ~(ischar(value) || (isstring(value) && isscalar(value)))
+                return;
+            end
+            v = char(value);
+            if startsWith(v,'^')
+                v = v(2:end);
+            end
+            if endsWith(v,'$')
+                v = v(1:end-1);
+            end
+            b = any(strcmp(v, {'(.*)', '.*'}));
+        end % isMatchAllRegexp
 
     end % methods Static
 

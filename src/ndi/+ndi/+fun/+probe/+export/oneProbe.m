@@ -21,10 +21,11 @@ function status = oneProbe(S, probe, options)
 %
 % This is the single-probe building block behind the Electrode Data Export GUI; it
 % complements ndi.fun.probe.export.all_binary, which exports every n-trode probe at
-% once with a fixed multiplier.
+% once.
 %
 % The int16 encode multiplier defaults to ndi.fun.probe.export.autoMultiplier(PROBE)
-% (1 for integer-class data, 1/0.195 for floating-point uV data). Pass 'multiplier'
+% (1 for raw integer counts, whether stored as an integer class or as whole-number
+% doubles; 1/0.195 for floating-point uV data). Pass 'multiplier'
 % to override (e.g. (512*500)/0.6 for SpikeGLX volts).
 %
 % Name/value pairs:

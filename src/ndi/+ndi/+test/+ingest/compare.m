@@ -1,47 +1,138 @@
-function b = compare(dirname1, dirname2)
-    % COMPARE - compare sessions that are obtaining data from ingested or non-ingested sources
-    %
-    % B = COMPARE(DIRNAME1, DIRNAME2)
-    %
-    % Compare data from ndi sessions (from VH Lab) where one dataset
-    %  (DIRNAME1) is not ingested and the other (DIRNAME2) is.
-    %
-    % If DIRNAME1 and DIRNAME2 are not provided, then
-    %   DIRNAME1 = '/Users/vanhoosr/test/2019-11-19' and
-    %   DIRNAME2 = '/Users/vanhoosr/test/3019-11-19'
-    %
-    %
+function [b, report] = compare(rawSession, ingestedSession, options)
+% COMPARE - compare a raw session with an ingested copy of it, channel by channel
+%
+% [B, REPORT] = ndi.test.ingest.compare(RAWSESSION, INGESTEDSESSION, ...)
+%
+% Compares the data of RAWSESSION, a session that has NOT been ingested, with
+% INGESTEDSESSION, a copy of it that HAS been ingested (e.g., copy the session
+% folder and call S.ingest() on the copy). Each may be an ndi.session object or
+% the path of a session folder. Reads from the ingested copy come only from its
+% ingested documents, so a match shows that ingestion stored the data
+% faithfully.
+%
+% Every multifunction DAQ system (ndi.daq.system.mfdaq) of RAWSESSION is matched
+% by name to one in INGESTEDSESSION and compared with
+% ndi.test.ingest.mfdaq_compare: every epoch, its channel list, and the data of
+% every channel type. A DAQ system missing from INGESTEDSESSION is reported.
+%
+% B is true if everything compared equal. REPORT is the structure array
+% described in ndi.test.ingest.mfdaq_compare, with the entries for all DAQ
+% systems (check 'daqsystem' marks a DAQ system that could not be compared).
+% Nothing stops or prompts on a mismatch.
+%
+% This function takes name/value pairs that modify its behavior:
+% |---------------------------|-----------------------------------------------|
+% | Parameter (default)       | Description                                   |
+% |---------------------------|-----------------------------------------------|
+% | Mode ('full')             | 'full' compares every sample; 'spot' compares |
+% |                           |   one random window per channel type per      |
+% |                           |   epoch. See ndi.test.ingest.mfdaq_compare.   |
+% | ChunkSeconds (60)         | Length of each read in 'full' mode.           |
+% | SpotSeconds (300)         | Length of the window in 'spot' mode.          |
+% | RelativeTolerance (1e-12) | Largest relative difference allowed between   |
+% |                           |   raw and ingested samples (rounding of       |
+% |                           |   scaled channels). See mfdaq_compare.        |
+% | TimeTolerance (1e-6)      | Largest difference allowed for time channels. |
+% | DaqSystemNames ({})       | Compare only these DAQ systems (default: all).|
+% | Verbose (true)            | Print progress and each failed check.         |
+% | ShowProgress (true)       | Show a progress bar per DAQ system            |
+% |                           |   (ndi.gui.component.ProgressBarWindow).      |
+% |---------------------------|-----------------------------------------------|
+%
+% Example:
+%   [b, report] = ndi.test.ingest.compare(Sraw, Singested);
+%   report(~[report.ok])   % the checks that failed
+%
+% See also: ndi.test.ingest.mfdaq_compare, ndi.session/ingest
 
-    if nargin<1
-        dirname1 = '/Users/vanhoosr/test/3019-11-19';
+arguments
+    rawSession
+    ingestedSession
+    options.Mode (1,:) char {mustBeMember(options.Mode,{'full','spot'})} = 'full'
+    options.ChunkSeconds (1,1) double {mustBePositive} = 60
+    options.SpotSeconds (1,1) double {mustBePositive} = 300
+    options.RelativeTolerance (1,1) double {mustBeNonnegative} = 1e-12
+    options.TimeTolerance (1,1) double {mustBeNonnegative} = 1e-6
+    options.DaqSystemNames {mustBeText} = {}
+    options.Verbose (1,1) logical = true
+    options.ShowProgress (1,1) logical = true
+end
+
+S1 = openSession(rawSession);
+S2 = openSession(ingestedSession);
+
+daqs1 = asCell(S1.daqsystem_load('name','(.*)'));
+daqs2 = asCell(S2.daqsystem_load('name','(.*)'));
+names2 = cellfun(@(d) char(d.name), daqs2, 'UniformOutput', false);
+wanted = cellstr(options.DaqSystemNames);
+
+progressBar = [];
+if options.ShowProgress
+    try
+        progressBar = ndi.gui.component.ProgressBarWindow('NDI Ingest Compare','Overwrite',false);
+    catch ME
+        warning('NDI:test:ingest:compare:progressFailed', ...
+            'Could not open a progress window: %s', ME.message);
     end
+end
 
-    if nargin<2
-        dirname2 = '/Users/vanhoosr/test/2019-11-19';
+report = struct('daqsystem',{},'epoch_id',{},'check',{},'ok',{},'message',{},...
+    't0_t1',{},'samples',{},'maxAbsDiff',{});
+
+for i=1:numel(daqs1)
+    name = char(daqs1{i}.name);
+    if ~isempty(wanted) && ~any(strcmp(name, wanted))
+        continue;
     end
-
-    dirname = {dirname1 dirname2};
-
-    ts = vlt.data.emptystruct('S','ds_list');
-
-    for i=1:numel(dirname)
-        ts_here = [];
-        ts_here.S = ndi.session.dir(dirname{i});
-        ts_here.ds_list = ts_here.S.daqsystem_load('name','(.*)');
-        if ~iscell(ts_here.ds_list) % if only 1 will not be a cell
-            ts_here.ds_list = {ts_here.ds_list};
+    if ~isa(daqs1{i}, 'ndi.daq.system.mfdaq')
+        if options.Verbose
+            fprintf('Skipping %s: not an ndi.daq.system.mfdaq.\n', name);
         end
-        ts(i) = ts_here;
+        continue;
     end
-
-    % assume same daq systems
-
-    for i=1:numel(ts(1).ds_list)
-        daq1 = ts(1).ds_list{i};
-        daq2 = ts(2).ds_list{i};
-        [b,errmsg] = ndi.test.ingest.mfdaq_compare(daq1,daq2);
-        if any(~b)
-            errmsg(:),
-            error(['Daqs ' daq1.name ' and ' daq2.name ' do not match.']);
+    j = find(strcmp(name, names2), 1);
+    if isempty(j)
+        report(end+1) = struct('daqsystem',name,'epoch_id','','check','daqsystem','ok',false,...
+            'message','DAQ system is missing from the ingested session.','t0_t1',[],...
+            'samples',0,'maxAbsDiff',NaN); %#ok<AGROW> one entry per missing DAQ system
+        if options.Verbose
+            fprintf('MISMATCH %s: DAQ system is missing from the ingested session.\n', name);
         end
+        continue;
     end
+    [~, ~, reportHere] = ndi.test.ingest.mfdaq_compare(daqs1{i}, daqs2{j}, ...
+        'Mode', options.Mode, 'ChunkSeconds', options.ChunkSeconds, ...
+        'SpotSeconds', options.SpotSeconds, 'TimeTolerance', options.TimeTolerance, ...
+        'RelativeTolerance', options.RelativeTolerance, ...
+        'Verbose', options.Verbose, 'ProgressBar', progressBar);
+    report = cat(2, report, reportHere);
+end
+
+b = all([report.ok]);
+if options.Verbose
+    fprintf('%d checks, %d failed.\n', numel(report), nnz(~[report.ok]));
+end
+
+end % compare()
+
+function S = openSession(s)
+% OPENSESSION - an ndi.session, or a session opened from a folder path
+    if isa(s, 'ndi.session')
+        S = s;
+    elseif ischar(s) || (isstring(s) && isscalar(s))
+        S = ndi.session.dir(char(s));
+    else
+        error('NDI:test:ingest:compare:badSession', ...
+            'Each session must be an ndi.session or the path of a session folder.');
+    end
+end
+
+function c = asCell(x)
+    if isempty(x)
+        c = {};
+    elseif iscell(x)
+        c = x;
+    else
+        c = {x};
+    end
+end

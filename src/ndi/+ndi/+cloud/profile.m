@@ -729,7 +729,10 @@ classdef profile < matlab.mixin.CustomDisplay & handle
         %   NDI_CLOUD_USERNAME    (= profile.Email), and
         %   NDI_CLOUD_PASSWORD    (= getPassword(uid)),
         %   then marks the resolved profile as the current profile
-        %   (in memory only — does not change DefaultUID).
+        %   (in memory only — does not change DefaultUID). The next call
+        %   that needs a token logs in as that profile's user;
+        %   ndi.cloud.authenticate prefers these env credentials over a
+        %   MATLAB Vault entry for a different email.
             arguments
                 key (1,:) char
             end

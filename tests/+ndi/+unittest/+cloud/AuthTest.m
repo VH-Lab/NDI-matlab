@@ -84,6 +84,29 @@ classdef AuthTest < matlab.unittest.TestCase
             narrative(end+1) = "Logout call successful.";
         end
 
+        function testAuthenticateAfterLogoutUsesTheEnvironmentUser(testCase)
+            % After a logout, authenticate() must log in as the user in
+            % NDI_CLOUD_USERNAME / NDI_CLOUD_PASSWORD. It used to try the
+            % MATLAB Vault first and log in as whoever the Vault held, so
+            % setting these variables -- by hand or with
+            % ndi.cloud.profile.switchProfile -- did not switch account on
+            % any machine with Vault credentials for someone else. On a CI
+            % runner, with no Vault, this is the path every cloud test takes.
+            username = getenv("NDI_CLOUD_USERNAME");
+            testCase.assumeNotEmpty(username, 'NDI_CLOUD_USERNAME is not set.');
+            testCase.assumeNotEmpty(getenv("NDI_CLOUD_PASSWORD"), 'NDI_CLOUD_PASSWORD is not set.');
+
+            warning('off', 'NDI:Cloud:LogoutAPIError');
+            cleanup = onCleanup(@() warning('on', 'NDI:Cloud:LogoutAPIError')); %#ok<NASGU>
+            ndi.cloud.logout();
+
+            token = ndi.cloud.authenticate('InteractionEnabled', 'off');
+            testCase.assertNotEmpty(token, 'authenticate() did not log in.');
+            claims = ndi.cloud.internal.decodeJwt(token);
+            testCase.verifyEqual(lower(string(claims.email)), lower(string(username)), ...
+                'authenticate() logged in as someone other than NDI_CLOUD_USERNAME.');
+        end
+
         function testHighLevelLogout(testCase)
             % This test verifies the behavior of ndi.cloud.logout
 

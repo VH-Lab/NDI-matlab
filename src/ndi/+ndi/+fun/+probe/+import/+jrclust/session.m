@@ -20,6 +20,9 @@ function session(S, options)
 % | qualityValues ([1 4])    | quality_number assigned to each label (parallel).   |
 % | checkElement (true)      | Verify the parameter file matches each probe.       |
 % | force (0)                | Re-import even if the checksum is unchanged.        |
+% | ExistingNeurons ('ask')  | Passed to the probe importer: what to do with       |
+% |                          |   neurons from an earlier import ('ask',            |
+% |                          |   'remove' or 'error').                             |
 % | dryRun (false)           | Report what would be imported without changing the  |
 % |                          |   database.                                         |
 % | verbose (1)              | 0/1 Should we be verbose?                           |
@@ -41,6 +44,7 @@ function session(S, options)
         options.qualityValues (1,:) double = [1 4]
         options.checkElement (1,1) logical = true
         options.force (1,1) double = 0
+        options.ExistingNeurons (1,:) char {mustBeMember(options.ExistingNeurons,{'ask','remove','error'})} = 'ask'
         options.dryRun (1,1) logical = false
         options.verbose (1,1) double = 1
     end
@@ -72,6 +76,7 @@ function session(S, options)
             'qualityValues', options.qualityValues, ...
             'checkElement', options.checkElement, ...
             'force', options.force, ...
+            'ExistingNeurons', options.ExistingNeurons, ...
             'dryRun', options.dryRun, ...
             'verbose', options.verbose);
     end;

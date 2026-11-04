@@ -75,6 +75,13 @@ function b = ndi_install(directory, dependencies)
             t = webread(dependencies_filepath);
             dependencies = splitlines(t);
             dependencies = dependencies(~cellfun('isempty',dependencies));
+            % requirements.txt lists what NDI-matlab needs, not NDI-matlab
+            % itself, so add it: it is installed (or updated) like the rest.
+            ndiRepository = 'https://github.com/VH-lab/NDI-matlab';
+            listed = regexprep(strtrim(dependencies), '(\.git)?/?$', '');
+            if ~any(strcmpi(listed, ndiRepository))
+                dependencies = [{ndiRepository}; dependencies(:)];
+            end
         else
             error('Dependencies must be 1, 2 or 3');
         end
@@ -125,7 +132,7 @@ function b = ndi_install(directory, dependencies)
             addonUUID = extractAfter(dependencies{i}, 'fex://');
             installFexPackage(addonUUID, directory)
         else
-            git_embedded_install([directory filesep libparts{end}],dependencies{i});
+            git_embedded_install(local_folder_embedded(directory, libparts{end}),dependencies{i});
         end
     end
 
@@ -170,6 +177,23 @@ function b = git_embedded_assert
     pull = strfind(lower(result), 'pull');
 
     b = (status==0 | status==1) & ~isempty(result) & ~isempty(clone) & ~isempty(branch) & ~isempty(pull);
+
+function d = local_folder_embedded(directory, name)
+    % LOCAL_FOLDER_EMBEDDED - folder in DIRECTORY that holds repository NAME
+    %
+    % D = LOCAL_FOLDER_EMBEDDED(DIRECTORY, NAME) returns [DIRECTORY filesep NAME],
+    % or, if that does not exist but a folder whose name differs only in case
+    % does (for example 'ndi-matlab' for 'NDI-matlab'), that folder, so an
+    % existing clone is updated rather than cloned a second time.
+
+    d = [directory filesep name];
+    if ~exist(d,'dir') && exist(directory,'dir')
+        listing = dir(directory);
+        match = listing([listing.isdir] & strcmpi({listing.name}, name));
+        if ~isempty(match)
+            d = [directory filesep match(1).name];
+        end
+    end
 
 function b = git_embedded_install(dirname, repository)
     % GIT_INSTALL - install a git repository

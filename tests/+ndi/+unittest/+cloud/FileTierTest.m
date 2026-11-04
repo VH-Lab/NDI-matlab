@@ -97,12 +97,23 @@ classdef FileTierTest < matlab.unittest.TestCase
             testCase.assertEqual(numel(testCase.FileUIDs), testCase.NumFiles, ...
                 "Dataset did not report the expected number of uploaded files.");
 
+            % waitForAllBulkUploads covers the bulk FILE upload only; the
+            % bulk document upload has no job, so wait for the server to
+            % list every document uploadDataset sent before looking one up.
+            numLocalDocs = numel(testCase.LocalDataset.database_search(ndi.query('','isa','base')));
+            [b_n, n_ans, n_resp, n_url] = ndi.cloud.api.documents.waitForDocumentCount(...
+                testCase.DatasetID, numLocalDocs, 'timeout', 120);
+            testCase.assertTrue(b_n, "Cloud dataset did not list all " + numLocalDocs + ...
+                " uploaded documents. " + ndi.unittest.cloud.APIMessage(...
+                "Waiting for document ingestion.", b_n, n_ans, n_resp, n_url));
+
             [b_docs, docs_list] = ndi.cloud.api.documents.listDatasetDocumentsAll(...
                 testCase.DatasetID, 'checkForUpdates', true);
             testCase.assertTrue(b_docs, "listDatasetDocumentsAll failed.");
             cloudId1 = testCase.findCloudDocID(docs_list, 'file_tier_doc_1');
             testCase.assertFalse(ismissing(cloudId1), ...
-                "Could not find cloud id for local doc file_tier_doc_1.");
+                "Could not find cloud id for local doc file_tier_doc_1 among the " + ...
+                numel(docs_list) + " documents listed (" + numLocalDocs + " uploaded).");
             testCase.CloudDocumentID = cloudId1;
         end
     end

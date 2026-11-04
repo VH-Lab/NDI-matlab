@@ -33,4 +33,10 @@ function S = vhlab(ref, dirname, force)
     % reader recovers event times directly from NI-DAQ digital input 1 of
     % the same SpikeGLX recording, so its mk1/mk2 events are already in the
     % NI-DAQ device-local time and no cross-clock mapping rule is needed.
+    %
+    % vhneuropixelsGLX_nidq reads the NI-DAQ stream (.nidq.bin) of the same
+    % run so probes on NI-DAQ digital lines (e.g., an optogenetic fiber on
+    % XD4 = di5) can be described in epochprobemap.txt. It shares the
+    % .nidq.meta and epochprobemap.txt files with vhneuropixelsGLX, so the
+    % default filematch rule also groups its epochs with the GLX epochs.
 end

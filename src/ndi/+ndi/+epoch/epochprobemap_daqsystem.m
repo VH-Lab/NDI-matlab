@@ -55,6 +55,7 @@ classdef epochprobemap_daqsystem < ndi.epoch.epochprobemap
                     ndi_struct = ndi.epoch.epochprobemap_daqsystem.decode(name_);
                 elseif isfile(name_)
                     ndi_struct= table2struct(readtable(name_,'Delimiter','\t','FileType','text'));
+                    ndi_struct = ndi.epoch.epochprobemap_daqsystem.dropEmptyExtraColumns(ndi_struct);
                 end
                 if isempty(ndi_struct)
                     ndi_struct = vlt.data.emptystruct('name','reference','type','devicestring','subjectstring');
@@ -214,5 +215,44 @@ classdef epochprobemap_daqsystem < ndi.epoch.epochprobemap
                 end
             end
         end
+
+        function ndi_struct = dropEmptyExtraColumns(ndi_struct)
+            % DROPEMPTYEXTRACOLUMNS - remove empty columns that READTABLE invents
+            %
+            % NDI_STRUCT = ndi.epoch.epochprobemap_daqsystem.dropEmptyExtraColumns(NDI_STRUCT)
+            %
+            % A trailing tab on the lines of an epochprobemap file makes READTABLE
+            % add an unnamed column ('Var6', ...). Such a field is removed when it
+            % is not one of the expected fields and holds no value in any entry
+            % (empty or NaN). Any other unexpected field is left in place, so it
+            % is still reported as an error.
+            %
+            if isempty(ndi_struct) || ~isstruct(ndi_struct)
+                return;
+            end
+            fn = fieldnames(ndi_struct);
+            for f=1:numel(fn)
+                if isempty(regexp(fn{f},'^Var\d+$','once'))
+                    continue;
+                end
+                isblank = true;
+                for k=1:numel(ndi_struct)
+                    v = ndi_struct(k).(fn{f});
+                    if iscell(v) && isscalar(v)
+                        v = v{1};
+                    end
+                    blank_here = isempty(v) || ...
+                        (isnumeric(v) && all(isnan(v(:)))) || ...
+                        ((ischar(v) || isstring(v)) && all(strlength(strtrim(string(v)))==0));
+                    if ~blank_here
+                        isblank = false;
+                        break;
+                    end
+                end
+                if isblank
+                    ndi_struct = rmfield(ndi_struct, fn{f});
+                end
+            end
+        end % dropEmptyExtraColumns()
     end % methods(Static)
 end

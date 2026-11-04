@@ -44,6 +44,9 @@ function session(S, options)
 % | RecalculateMeanWaveformT0| Window start relative to each spike (s, -0.005)     |
 % | RecalculateMeanWaveformT1| Window end relative to each spike (s, +0.005)       |
 % | force (0)                | Re-import even if the checksum is unchanged          |
+% | ExistingNeurons ('ask')  | Passed to the probe importer: what to do with        |
+% |                          |   neurons from an earlier import ('ask',             |
+% |                          |   'remove' or 'error').                              |
 % | dryRun (false)           | Report what would be imported without changing the  |
 % |                          |   database                                          |
 % | verbose (1)              | 0/1 Should we be verbose?                           |
@@ -70,6 +73,7 @@ function session(S, options)
         options.RecalculateMeanWaveformMaxSpikes (1,1) double = 1000
         options.binary_file (1,:) char = ''
         options.force (1,1) double = 0
+        options.ExistingNeurons (1,:) char {mustBeMember(options.ExistingNeurons,{'ask','remove','error'})} = 'ask'
         options.dryRun (1,1) logical = false
         options.verbose (1,1) double = 1
     end
@@ -109,6 +113,7 @@ function session(S, options)
             'RecalculateMeanWaveformMaxSpikes', options.RecalculateMeanWaveformMaxSpikes, ...
             'binary_file', options.binary_file, ...
             'force', options.force, ...
+            'ExistingNeurons', options.ExistingNeurons, ...
             'dryRun', options.dryRun, ...
             'verbose', options.verbose);
     end;

@@ -54,6 +54,23 @@ classdef datasetsPane_test < matlab.unittest.TestCase
             testCase.verifyEqual(string({entries.Kind}), ["app","app"]);
         end
 
+        %% "Assign to workspace..." name validation
+
+        function testWorkspaceNameErrorAcceptsValidNames(testCase)
+            for name = ["D", "S", "my_dataset2"]
+                testCase.verifyEmpty( ...
+                    ndi.gui.nav.datasetsPane.workspaceNameError(char(name)));
+            end
+        end
+
+        function testWorkspaceNameErrorRejectsBadNames(testCase)
+            f = @ndi.gui.nav.datasetsPane.workspaceNameError;
+            testCase.verifySubstring(f(''), 'required');
+            testCase.verifySubstring(f('2D'), 'not a valid MATLAB variable name');
+            testCase.verifySubstring(f('my dataset'), 'not a valid MATLAB variable name');
+            testCase.verifySubstring(f('for'), 'not a valid MATLAB variable name');
+        end
+
         %% Cloud context-menu status/result message helpers
 
         function testCloudCheckMessageRemotePluralisation(testCase)

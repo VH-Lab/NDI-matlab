@@ -3,6 +3,7 @@ classdef MockSession < handle
         reference = 'mock_session_reference'
         path = ''
         probeElementString = 'mock_probe'
+        probes = {} % if non-empty, returned by getprobes() instead of a MockProbe
     end
     methods
         function obj = MockSession(probeElementString)
@@ -19,6 +20,10 @@ classdef MockSession < handle
         end
         function probes = getprobes(obj, varargin)
             % Returns a list of mock probes
+            if ~isempty(obj.probes)
+                probes = obj.probes;
+                return;
+            end
             probes = {ndi.unittest.fun.probe.MockProbe(obj.probeElementString)};
         end
     end
