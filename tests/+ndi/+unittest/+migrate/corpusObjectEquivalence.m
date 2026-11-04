@@ -333,6 +333,8 @@ end
 
 function s = snapshot(S, cap, onlyKeys, restrict)
 % CAP: the most probe epoch tables to read; RESTRICT: read only ONLYKEYS'
+t0 = tic;
+mark = @(what) fprintf('      [%s] %s: %.1f s\n', class(S), what, toc(t0));
 s = struct('reference', '', 'subjects', {{}}, 'elements', {{}}, 'probes', {{}}, ...
     'daq', {{}}, 'errors', {{}}, 'probeEpochKeys', {{}});
 try
@@ -358,6 +360,7 @@ catch ME
     s.errors{end+1} = ['getsubjects: ' errorText(ME)];
 end
 
+mark(sprintf('%d subject(s)', numel(s.subjects)));
 % elements (probes included: a probe is an element), and their epochs
 try
     els = uniqueById(asCell(S.getelements()));
@@ -380,6 +383,7 @@ catch ME
     s.errors{end+1} = ['getelements: ' errorText(ME)];
 end
 
+mark(sprintf('%d element(s) and their epoch tables', numel(s.elements)));
 % probes, and their epoch tables
 try
     prs = uniqueById(asCell(S.getprobes()));
@@ -417,6 +421,7 @@ catch ME
     s.errors{end+1} = ['getprobes: ' errorText(ME)];
 end
 
+mark(sprintf('%d probe(s), %d epoch table(s)', numel(s.probes), numel(s.probeEpochKeys)));
 % acquisition systems, and their epoch tables
 try
     devs = asCell(S.daqsystem_load('name', '(.*)'));
@@ -434,6 +439,7 @@ try
 catch ME
     s.errors{end+1} = ['daqsystem_load: ' errorText(ME)];
 end
+mark(sprintf('%d acquisition system(s) and their epoch tables', numel(s.daq)));
 end
 
 function e = elementFacts(o)

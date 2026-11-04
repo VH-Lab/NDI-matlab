@@ -60,7 +60,11 @@ jobs:
     runs-on: ubuntu-latest
     # Generous headroom. Dab is ~1/4 of Soph by document count and migrates fast
     # on the DID side; the ceiling is set well above the expected wall clock.
-    timeout-minutes: 180
+    # 330 (GitHub's limit is 360): the corpus-wide object equivalence
+    # (testTheSameObjectsBeforeAndAfterMigration, #785) opens Dab's 762-probe
+    # session before and after migration, and did not finish inside 180
+    # minutes (runs 41721521588, 41746990741).
+    timeout-minutes: 330
     env:
       # did-schema #88 merged into main and DID-matlab #218 into V2
       # (2026-10-23): validate against them. A workflow_dispatch input still
