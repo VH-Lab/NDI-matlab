@@ -766,6 +766,64 @@ classdef TestGEFManager < matlab.unittest.TestCase
             testCase.verifyTrue(contains(msg, 'polygons drawn'));
         end
 
+        % =============================================================
+        % subjectChoices: the listdlg feed for the ingest dialog
+        % =============================================================
+
+        function testSubjectChoicesListsEverySubjectInTheSession(testCase)
+            % One subject is created in the setup, so the picker has
+            % one row to show. The shape is listdlg-ready: .label and
+            % .id are present on every entry.
+            c = ndi.gui.app.GEFManager.subjectChoices(testCase.session);
+            testCase.verifyNumElements(c, 1);
+            testCase.verifyTrue(isfield(c, 'label'));
+            testCase.verifyTrue(isfield(c, 'id'));
+            testCase.verifyEqual(c(1).label, 'ingest@vhlab');
+            testCase.verifyEqual(c(1).id, testCase.subjectID);
+        end
+
+        function testSubjectChoicesFallsBackWhenLocalIdentifierIsEmpty(testCase)
+            % A listdlg of blank rows reads as a corrupt session rather
+            % than one of several unnamed subjects, so the label gets a
+            % readable fallback.
+            sub = ndi.document('subject', ...
+                'subject.local_identifier', '', ...
+                'base.session_id', testCase.session.id());
+            testCase.session.database_add(sub);
+            c = ndi.gui.app.GEFManager.subjectChoices(testCase.session);
+            testCase.verifyNumElements(c, 2);
+            fallback = c(strcmp({c.id}, sub.id()));
+            testCase.verifyNotEmpty(fallback.label);
+            testCase.verifyTrue(contains(fallback.label, 'no local_identifier'));
+        end
+
+        function testSubjectChoicesIsEmptyWhenNoSubjectsExist(testCase)
+            % An empty session still returns a listdlg-shaped struct
+            % array, so the caller's isempty check works without
+            % special-casing.
+            d = fullfile(tempname, 'empty');
+            mkdir(d);
+            testCase.addTeardown(@() rmdir(fileparts(d), 's'));
+            S = ndi.session.dir('empty', d);
+            c = ndi.gui.app.GEFManager.subjectChoices(S);
+            testCase.verifyTrue(isstruct(c));
+            testCase.verifyEmpty(c);
+        end
+
+        % =============================================================
+        % driveDialog: the adapter between the ingest callback and the
+        % uiprogressdlg properties the GUI displays
+        % =============================================================
+
+        function testDriveDialogIgnoresAnInvalidHandle(testCase)
+            % The user may close the dialog mid-ingest; the next
+            % progress tick should not throw.
+            testCase.verifyWarningFree(@() ...
+                ndi.gui.app.GEFManager.driveDialog([], 0.5, 'hi'));
+            testCase.verifyWarningFree(@() ...
+                ndi.gui.app.GEFManager.driveDialog(gobjects(0), 0.5, 'hi'));
+        end
+
         function testRunIngestRefusesAPlanThatDidNotValidate(testCase)
             % The last guard: nothing should reach the read with a plan the
             % pure layer already rejected.

@@ -1358,6 +1358,90 @@ classdef GEFManager < ndi.gui.app.sessionApp
             v = m(char(key));
         end
 
+        function choices = subjectChoices(session)
+        % SUBJECTCHOICES - subject documents in the session, as (label,id)
+        %
+        %   CHOICES = ndi.gui.app.GEFManager.SUBJECTCHOICES(SESSION)
+        %
+        %   Shape built for listdlg: a struct array with .label (what the
+        %   user sees) and .id (the document id the plan ends up carrying).
+        %   Empty when the session has no subject documents, so the caller
+        %   can say so with its own error rather than a MATLAB index one.
+        %
+        %   The label is the subject's local_identifier when it has one;
+        %   otherwise the document id, truncated to keep the listdlg a
+        %   reasonable width. An empty local_identifier never becomes the
+        %   label, because a listdlg of blank rows reads as a corrupt
+        %   session rather than one of several unnamed subjects.
+            arguments
+                session (1,1)
+            end
+            choices = struct('label',{},'id',{});
+            docs = session.database_search(ndi.query('','isa','subject'));
+            for i = 1:numel(docs)
+                p = docs{i}.document_properties;
+                idStr = docs{i}.id();
+                nm = '';
+                if isfield(p,'subject')
+                    nm = ndi.gui.app.GEFManager.field( ...
+                        p.subject,'local_identifier','');
+                end
+                if isempty(nm)
+                    lbl = sprintf('(no local_identifier) %s', ...
+                        ndi.gui.app.GEFManager.shortID(idStr));
+                else
+                    lbl = char(nm);
+                end
+                choices(end+1).label = lbl; %#ok<AGROW>
+                choices(end).id = idStr;
+            end
+        end
+
+        function driveDialog(d, frac, txt)
+        % DRIVEDIALOG - update a uiprogressdlg with (fraction, text)
+        %
+        %   ndi.gui.app.GEFManager.DRIVEDIALOG(D, FRAC, TXT)
+        %
+        %   The adapter between the plain-handle progress contract the
+        %   ingest wrappers use (fraction in [0 1], text message) and
+        %   MATLAB's uiprogressdlg properties. Lives here rather than as
+        %   an anonymous handle at the call site so the clamp and the
+        %   validity check are stated once.
+        %
+        %   D may already be invalid: the user closed the dialog, or the
+        %   caller's onCleanup fired. Silently ignore it in that case
+        %   rather than let a drawing error interrupt a read that has
+        %   already finished in the model.
+            if isempty(d) || ~isvalid(d)
+                return;
+            end
+            if ~isfinite(frac), frac = 0; end
+            d.Value = max(0, min(1, double(frac)));
+            if nargin >= 3 && ~isempty(txt)
+                d.Message = char(txt);
+            end
+            drawnow limitrate;
+        end
+
+        function s = shortID(idStr)
+        % SHORTID - the first segment of an NDI document id
+        %
+        %   DID ids are long; a subject picker shows ~40 chars at most
+        %   before the list widget starts eliding, which looks like a
+        %   corruption. Trimming to the first dash-separated chunk keeps
+        %   the label readable without losing the fallback's purpose: a
+        %   user still sees enough of the id to tell two unnamed subjects
+        %   apart.
+            s = char(idStr);
+            k = find(s == '-', 1, 'first');
+            if ~isempty(k)
+                s = s(1:k-1);
+            end
+            if numel(s) > 12
+                s = s(1:12);
+            end
+        end
+
     end
 
     % =====================================================================
