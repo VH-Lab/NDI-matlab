@@ -148,7 +148,7 @@ Downloads a collection of documents from a cloud dataset using the bulk download
 
 **Optional name-value inputs:**
 - `Timeout` (double) — Timeout in seconds for the download operation. Default: `20`.
-- `ChunkSize` (double) — Maximum number of document IDs per bulk download request. Default: the preference `Cloud.Download.Max_Document_Batch_Count` (10000 unless changed; see `ndi.preferences`).
+- `ChunkSize` (double) — Maximum number of document IDs per bulk download request. Default: the preference `Cloud.Download.Max_Document_Batch_Count` (2000 unless changed; see `ndi.preferences`). Values above the server's per-request limit of 5000 are reduced to 5000.
 
 **Outputs:**
 - `documents` — A cell array of `ndi.document` objects.
