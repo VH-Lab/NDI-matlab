@@ -13,8 +13,8 @@ function [rows, summary] = packageStatus(result)
 %
 %   NDI-python is listed if it is installed, and also if it is not (or its
 %   install is incomplete), so that it can be installed: see
-%   ndi.update.checkPython's NeedsInstall. A missing NDI-python is an
-%   Optional row (see below); an incomplete install is a normal one.
+%   ndi.update.checkPython's NeedsInstall. Either way it starts ticked; a
+%   missing NDI-python is also marked Optional (see below).
 %
 %   ROWS is a structure array with fields:
 %       Name        - package name
@@ -40,11 +40,12 @@ function [rows, summary] = packageStatus(result)
 %       Selectable  - true if the package can be ticked for updating
 %                     (WillUpdate and not Blocked)
 %       Optional    - true for a package that is not installed and need
-%                     not be (NDI-python): it can be ticked to install it,
-%                     but does not count as an available update
+%                     not be (NDI-python). It starts ticked, so it is
+%                     installed unless unticked, and the summary message
+%                     says so instead of counting it as an update
 %       Selected    - whether it starts ticked: Selectable packages are,
 %                     except those where updating touches your own work
-%                     (TouchesChanges) and Optional ones
+%                     (TouchesChanges)
 %
 %   WillUpdate, TouchesChanges and the notes describe what happens to a
 %   package if it is ticked: ndi.update.install(Packages=...) updates only
@@ -52,8 +53,8 @@ function [rows, summary] = packageStatus(result)
 %
 %   SUMMARY is a structure with fields:
 %       CanUpdate     - true if any row is Selectable
-%       AnyUpdate     - true if any row that is not Optional has
-%                       WillUpdate
+%       AnyUpdate     - true if any row has WillUpdate (including an
+%                       Optional package that can be installed)
 %       Blocked       - true if any row is blocked
 %       HasUserChanges - true if any row has TouchesChanges
 %       Message       - one-sentence summary for the dialog
@@ -105,34 +106,38 @@ function [rows, summary] = packageStatus(result)
     for i = 1:numel(rows)
         rows(i).Selectable = rows(i).WillUpdate && ~rows(i).Blocked;
         % Leave out, at first, packages where you have work of your own.
-        % Nor is anything installed that you did not ask for.
-        rows(i).Selected = rows(i).Selectable && ~rows(i).TouchesChanges && ...
-            ~rows(i).Optional;
+        % A missing NDI-python starts ticked: most people want it, and
+        % those least sure of their setup most of all.
+        rows(i).Selected = rows(i).Selectable && ~rows(i).TouchesChanges;
     end
 
     optional = [rows.Optional];
-    summary.AnyUpdate = any([rows.WillUpdate] & ~optional);
+    summary.AnyUpdate = any([rows.WillUpdate]);
     summary.Blocked = any([rows.Blocked]);
     summary.CanUpdate = any([rows.Selectable]);
     summary.HasUserChanges = any([rows.TouchesChanges]);
+    canAdd = [rows([rows.Selectable] & optional).Name];
+    anyRealUpdate = any([rows.WillUpdate] & ~optional);
     n = nnz([rows.Selectable] & ~optional);
-    if summary.AnyUpdate && n == 0
+    if anyRealUpdate && n == 0
         summary.Message = "Updates are available, but none can be installed " + ...
             "yet: see the packages marked with an error.";
-    elseif summary.AnyUpdate
+    elseif anyRealUpdate
         summary.Message = n + " package(s) can be updated. Tick the ones " + ...
             "to update.";
         if summary.Blocked
             summary.Message = summary.Message + " Packages marked with an " + ...
                 "error cannot be updated yet.";
         end
+    elseif ~isempty(canAdd)
+        summary.Message = "Everything else is up to date.";
     else
         summary.Message = "Everything is up to date.";
     end
-    canAdd = [rows([rows.Selectable] & optional).Name];
     if ~isempty(canAdd)
         summary.Message = summary.Message + " " + strjoin(canAdd, ", ") + ...
-            " is not installed; tick it to install it.";
+            " is not installed; it is ticked to be installed (untick it " + ...
+            "to skip).";
     end
 end
 
@@ -258,9 +263,9 @@ function r = pythonRow(py)
         else
             r.Status = "Not installed";
             r.Optional = true;
-            r = addNote(r, "info", "Tick to install it with its installer " + ...
+            r = addNote(r, "info", "Will be installed with its installer " + ...
                 "(into " + ndi.python.ndiHome() + "). Needed for the napari " + ...
-                "viewers and other NDI-python tools.");
+                "viewers and other NDI-python tools. Untick to skip.");
         end
         if ~py.CanInstall
             r.WillUpdate = false;

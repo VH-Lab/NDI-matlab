@@ -128,8 +128,8 @@ classdef TestPackageStatus < matlab.unittest.TestCase
         end
 
         function testPythonNotInstalledCanBeInstalled(testCase)
-            % NDI-python missing: listed, unticked, and tickable; it is not
-            % counted as an update.
+            % NDI-python missing: listed and ticked, so it is installed
+            % unless unticked.
             r = ndi.unittest.update.TestPackageStatus.toolboxResult();
             r.UpdateAvailable = false;
             r.Status = "upToDate";
@@ -145,9 +145,10 @@ classdef TestPackageStatus < matlab.unittest.TestCase
             testCase.verifyTrue(py.WillUpdate);
             testCase.verifyTrue(py.Optional);
             testCase.verifyTrue(py.Selectable);
-            testCase.verifyFalse(py.Selected);
-            testCase.verifyFalse(summary.AnyUpdate);
+            testCase.verifyTrue(py.Selected);
+            testCase.verifyTrue(summary.AnyUpdate);
             testCase.verifyTrue(summary.CanUpdate);
+            testCase.verifySubstring(summary.Message, "Everything else is up to date.");
             testCase.verifySubstring(summary.Message, "NDI-python is not installed");
         end
 
