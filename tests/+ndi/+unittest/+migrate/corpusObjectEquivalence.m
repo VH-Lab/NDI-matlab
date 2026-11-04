@@ -151,8 +151,8 @@ for i = 1:numel(both)
     end
     R.sessions.compared = R.sessions.compared + 1;
     ts = tic;
-    a = snapshot(S1, options.MaxProbeEpochTables, {}, false);
-    b = snapshot(S2, Inf, a.probeEpochKeys, true);
+    a = snapshot(S1, options.MaxProbeEpochTables, {}, false, {});
+    b = snapshot(S2, Inf, a.probeEpochKeys, true, a.elementEpochKeys);
     R.probeTables.read = R.probeTables.read + numel(a.probeEpochKeys);
     R.probeTables.probes = R.probeTables.probes + numel(a.probes);
     clear S1 S2
@@ -331,12 +331,12 @@ end
 % one session's objects, as plain data
 % =========================================================================
 
-function s = snapshot(S, cap, onlyKeys, restrict)
+function s = snapshot(S, cap, onlyKeys, restrict, onlyElementKeys)
 % CAP: the most probe epoch tables to read; RESTRICT: read only ONLYKEYS'
 t0 = tic;
 mark = @(what) fprintf('      [%s] %s: %.1f s\n', class(S), what, toc(t0));
 s = struct('reference', '', 'subjects', {{}}, 'elements', {{}}, 'probes', {{}}, ...
-    'daq', {{}}, 'errors', {{}}, 'probeEpochKeys', {{}});
+    'daq', {{}}, 'errors', {{}}, 'probeEpochKeys', {{}}, 'elementEpochKeys', {{}});
 try
     s.reference = char(S.reference);
 catch ME
@@ -364,13 +364,22 @@ mark(sprintf('%d subject(s)', numel(s.subjects)));
 % elements (probes included: a probe is an element), and their epochs
 try
     els = uniqueById(asCell(S.getelements()));
+    mark(sprintf('getelements: %d element(s)', numel(els)));
     for k = 1:numel(els)
         o = els{k};
         e = elementFacts(o);
         e.key = e.id;
         e.epochs = [];
         e.epochError = '';
-        if ~isa(o, 'ndi.probe')
+        % a non-probe element's epoch table (a probe's is read below); after
+        % migration, the elements whose table was read before migration
+        if restrict
+            e.epochRead = any(strcmp(onlyElementKeys, e.key));
+        else
+            e.epochRead = ~isa(o, 'ndi.probe');
+        end
+        if e.epochRead
+            s.elementEpochKeys{end+1} = e.key; %#ok<AGROW>
             try
                 e.epochs = normalizeEpochTable(o.epochtable());
             catch ME
@@ -378,6 +387,9 @@ try
             end
         end
         s.elements{end+1} = e; %#ok<AGROW>
+        if mod(k, 100) == 0
+            mark(sprintf('%d of %d element(s) read', k, numel(els)));
+        end
     end
 catch ME
     s.errors{end+1} = ['getelements: ' errorText(ME)];
@@ -525,17 +537,11 @@ cats.daq_system = comparePairs(cats.daq_system, a.daq, b.daq, {'class'}, sid, 'd
 
 cats.probe_epoch = compareEpochsOf(cats.probe_epoch, a.probes, b.probes, sid, 'probe');
 cats.daq_epoch = compareEpochsOf(cats.daq_epoch, a.daq, b.daq, sid, 'daq system');
-ea = a.elements(cellfun(@(e) ~strcmp(e.class, 'ndi.probe') && ~isProbeClass(e.class), a.elements));
-eb = b.elements(cellfun(@(e) ~strcmp(e.class, 'ndi.probe') && ~isProbeClass(e.class), b.elements));
+% the non-probe elements whose table was read before migration, and the
+% same elements after (snapshot reads them by key, whatever their class)
+ea = a.elements(cellfun(@(e) e.epochRead, a.elements));
+eb = b.elements;
 cats.element_epoch = compareEpochsOf(cats.element_epoch, ea, eb, sid, 'element');
-end
-
-function tf = isProbeClass(c)
-tf = false;
-try
-    tf = any(strcmp('ndi.probe', superclasses(c)));
-catch
-end
 end
 
 function C = comparePairs(C, A, B, fields, sid, what)
