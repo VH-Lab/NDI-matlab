@@ -438,7 +438,7 @@ function [levelDoc, doneChunks] = makeOneLevel(session, pyramidDoc, pyramidEntry
         stream.levelDoc = levelDoc;
         stream.tmpRoot = tmpRoot;
     end
-    tmpCleaner = onCleanup(@() cleanupTmp(tmpRoot)); %#ok<NASGU>
+    tmpCleaner = onCleanup(@() cleanupTmp(tmpRoot));
     if options.materializeChunks
         levelLabel = sprintf('Level %d (%s)', levelIndex, reductionFn);
         [levelDoc, tmpRoot, doneChunks] = attachChunkFiles(levelDoc, ...
@@ -448,7 +448,7 @@ function [levelDoc, doneChunks] = makeOneLevel(session, pyramidDoc, pyramidEntry
             options.numWorkers, options.prefetchBytes, options.asyncPrefetch, ...
             options.debugLog, stream);
         if isempty(stream)
-            tmpCleaner = onCleanup(@() cleanupTmp(tmpRoot)); %#ok<NASGU>
+            tmpCleaner = onCleanup(@() cleanupTmp(tmpRoot));
         end
     end
 
