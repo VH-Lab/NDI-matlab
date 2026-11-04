@@ -8,7 +8,8 @@ function checkOnStartup()
 %   Update.CheckIntervalDays days have passed since the last check
 %   (Update.MATLAB.LastCheckTime; NDI-python keeps its own time), runs
 %   ndi.update.check quietly and prints one line if an update is
-%   available. It never errors: a failed check (for example, no network) is
+%   available (or the NDI-python install is incomplete). It never
+%   errors: a failed check (for example, no network) is
 %   silently ignored until the next interval.
 %
 %   The check is skipped when the environment variable CI is set, so
@@ -42,7 +43,11 @@ function checkOnStartup()
         ndi.preferences.set('Update.MATLAB.LastCheckTime', string(nowTime));
 
         r = ndi.update.check(Verbose = false, Timeout = 5);
-        if r.UpdateAvailable || r.CalculatorUpdateAvailable || r.Python.UpdateAvailable
+        % An NDI-python install that stopped part-way is reported like an
+        % update; NDI-python that is not installed at all is not.
+        pyRepair = r.Python.Installed && r.Python.NeedsInstall;
+        if r.UpdateAvailable || r.CalculatorUpdateAvailable || ...
+                r.Python.UpdateAvailable || pyRepair
             if usejava('desktop')
                 cmd = '<a href="matlab:ndi.update.install">ndi.update.install()</a>';
             else
