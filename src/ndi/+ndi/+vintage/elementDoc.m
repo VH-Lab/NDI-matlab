@@ -95,15 +95,34 @@ elseif ~isempty(hits)
 end
 
 % ---- V_eta: assertion-first, then match the same four fields ----------
-subjects = ndi.vintage.elementSubjectDocs(E);
 wantClass = class(ndi_element_obj);
+
+% THE OBJECT'S OWN ID FIRST. An element built from its document (every
+% element getelements and getprobes return) carries that document's id as
+% its identifier, and the migrator keeps the v1 element id on the entity.
+% Fetch that one document and accept it when it is this element by the
+% same test as the scan below. Only when it is not does the scan run: the
+% scan rebuilds every element of the session (ndi.vintage.elementFields),
+% so calling id() on each of a session's N elements cost N^2 rebuilds. On
+% Dab's migrated session (606 elements) one id() took minutes and the
+% corpus equivalence check did not finish in five hours
+% (VH-Lab/NDI-matlab#785, run 41761142755).
+if ~isempty(ndi_element_obj.identifier)
+    byId = E.database_search(ndi.query('base.id', 'exact_string', ...
+        char(ndi_element_obj.identifier), ''));
+    if isscalar(byId) && ndi.vintage.isEtaElement(byId{1}, E) && ...
+            isThisElement(ndi.vintage.elementFields(byId{1}, E), ndi_element_obj, wantClass)
+        doc = byId{1};
+        vintage = 'V_eta';
+        return;
+    end
+end
+
+subjects = ndi.vintage.elementSubjectDocs(E);
 matches = {};
 for i = 1:numel(subjects)
     f = ndi.vintage.elementFields(subjects{i}, E);
-    if ~strcmp(f.name, ndi_element_obj.name); continue; end
-    if ~strcmp(f.type, ndi_element_obj.type); continue; end
-    if ~strcmp(f.ndi_element_class, wantClass); continue; end
-    if ~sameReference(f.reference, ndi_element_obj.reference); continue; end
+    if ~isThisElement(f, ndi_element_obj, wantClass); continue; end
     matches{end+1} = subjects{i}; %#ok<AGROW>
 end
 
@@ -126,6 +145,13 @@ end
 end
 
 % ===================== helpers =========================================
+
+function tf = isThisElement(f, ndi_element_obj, wantClass)
+% do the rebuilt element fields F describe NDI_ELEMENT_OBJ?
+tf = strcmp(f.name, ndi_element_obj.name) && strcmp(f.type, ndi_element_obj.type) && ...
+    strcmp(f.ndi_element_class, wantClass) && ...
+    sameReference(f.reference, ndi_element_obj.reference);
+end
 
 function tf = sameReference(a, b)
 %SAMEREFERENCE v1 compared `element.reference` with `exact_number`.
