@@ -75,6 +75,32 @@ jobs:
       - name: Install MatBox
         uses: ehennestad/matbox-actions/install-matbox@8fe220fbaec9e119ec5081eb917c8e016e275f1e # v1
 
+      # MatBox draws the "code issues" and "tests" SVG badges with the Python
+      # package pybadges, which does `import imghdr`. Python 3.13 removed
+      # imghdr from the standard library, so on ubuntu-26.04 (Python 3.14)
+      # badge creation fails. Install the PyPI backport (standard-imghdr),
+      # plus pybadges itself, into the exact interpreter MATLAB uses (pyenv),
+      # before the first badge is made. The environment marker makes the
+      # backport a no-op on Python < 3.13. PIP_BREAK_SYSTEM_PACKAGES lets pip
+      # install into the runner's PEP 668 "externally managed" system Python
+      # (pip falls back to a user install when site-packages is read-only).
+      - name: Make pybadges work on Python >= 3.13 (install standard-imghdr)
+        uses: matlab-actions/run-command@37b454c384483087929a3d652be474ba585a9659 # v2
+        with:
+          command: |
+            pe = pyenv;
+            disp(pe)
+            assert(pe.Version ~= "", "No Python configured for MATLAB (pyenv).");
+            setenv("PIP_BREAK_SYSTEM_PACKAGES", "1");
+            cmd = sprintf('"%s" -m pip install --disable-pip-version-check pybadges "standard-imghdr; python_version >= ''3.13''"', pe.Executable);
+            disp(cmd)
+            [status, out] = system(cmd);
+            disp(out)
+            assert(status == 0, "pip install of pybadges/standard-imghdr failed.");
+            [status, out] = system(sprintf('"%s" -c "import imghdr, pybadges; print(''imghdr + pybadges import OK'')"', pe.Executable));
+            disp(out)
+            assert(status == 0, "imghdr/pybadges still not importable.");
+
       - name: Check code and upload report
         uses: ehennestad/matbox-actions/check-code@8fe220fbaec9e119ec5081eb917c8e016e275f1e # v1
         with:

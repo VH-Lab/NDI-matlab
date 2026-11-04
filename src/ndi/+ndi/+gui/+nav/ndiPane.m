@@ -93,7 +93,9 @@ classdef ndiPane < ndi.gui.nav.pane
             %   dialog and lists every package in ndi.gui.nav.updateDialog:
             %   NDI-matlab (git clone or toolbox), its dependencies, the
             %   NDIcalc calculator repositories and NDI-python, each with
-            %   its status, notes and a tick box. If the user presses Update,
+            %   its status, notes and a tick box (NDI-python is listed even
+            %   if it is not installed, so it can be installed from here).
+            %   If the user presses Update,
             %   runs ndi.update.install for the ticked packages only, without
             %   its command-window prompts (the dialog has already shown what
             %   updating will do).
@@ -130,7 +132,15 @@ classdef ndiPane < ndi.gui.nav.pane
                 return;
             end
             if isvalid(busy), close(busy); end
-            done = sprintf('Updated: %s.', strjoin([updated.Name], ', '));
+            added = ismember([updated.Status], ["Not installed", "Incomplete install"]);
+            parts = {};
+            if any(~added)
+                parts{end+1} = sprintf('Updated: %s.', strjoin([updated(~added).Name], ', '));
+            end
+            if any(added)
+                parts{end+1} = sprintf('Installed: %s.', strjoin([updated(added).Name], ', '));
+            end
+            done = strjoin(parts, ' ');
             if any(ismember([updated.Kind], ["ndi", "toolbox", "dependency", "calculator"]))
                 done = sprintf(['%s\n\nRestart MATLAB to make sure the new ' ...
                     'versions are used.'], done);

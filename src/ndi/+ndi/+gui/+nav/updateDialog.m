@@ -17,7 +17,9 @@ classdef updateDialog < handle
 %   Only ticked packages are updated, so you can leave alone a package you
 %   are working on. Packages that need updating start ticked, except those
 %   where updating touches your own work (edits, local commits); packages
-%   that are up to date or blocked cannot be ticked. The Update button
+%   that are up to date or blocked cannot be ticked. NDI-python is listed
+%   even when it is not installed or its install is incomplete, and
+%   starts ticked so that it is installed unless you untick it. The Update button
 %   names how many packages are ticked and is greyed out when none are;
 %   it reads "Update anyway" when a ticked package has your changes, and
 %   Cancel is then the default.

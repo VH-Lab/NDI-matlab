@@ -127,6 +127,50 @@ classdef TestPackageStatus < matlab.unittest.TestCase
             testCase.verifyFalse(summary.AnyUpdate);
         end
 
+        function testPythonNotInstalledCanBeInstalled(testCase)
+            % NDI-python missing: listed and ticked, so it is installed
+            % unless unticked.
+            r = ndi.unittest.update.TestPackageStatus.toolboxResult();
+            r.UpdateAvailable = false;
+            r.Status = "upToDate";
+            r.Python = struct('Installed', false, 'Kind', "none", 'Status', "notInstalled", ...
+                'UpdateAvailable', false, 'NeedsInstall', true, ...
+                'MissingCommands', ["ndi", "napariViewGEF", "napariViewLightsheet"], ...
+                'CanInstall', true, 'Message', "", ...
+                'CurrentVersion', "", 'LatestVersion', "", 'CommitsBehind', NaN);
+            [rows, summary] = ndi.update.packageStatus(r);
+            py = rows(end);
+            testCase.verifyEqual(py.Name, "NDI-python");
+            testCase.verifyEqual(py.Status, "Not installed");
+            testCase.verifyTrue(py.WillUpdate);
+            testCase.verifyTrue(py.Optional);
+            testCase.verifyTrue(py.Selectable);
+            testCase.verifyTrue(py.Selected);
+            testCase.verifyTrue(summary.AnyUpdate);
+            testCase.verifyTrue(summary.CanUpdate);
+            testCase.verifySubstring(summary.Message, "Everything else is up to date.");
+            testCase.verifySubstring(summary.Message, "NDI-python is not installed");
+        end
+
+        function testPythonIncompleteIsReinstalled(testCase)
+            r = ndi.unittest.update.TestPackageStatus.toolboxResult();
+            r.UpdateAvailable = false;
+            r.Status = "upToDate";
+            r.Python = struct('Installed', true, 'Kind', "installer", 'Status', "incomplete", ...
+                'UpdateAvailable', false, 'NeedsInstall', true, ...
+                'MissingCommands', "napariViewGEF", ...
+                'CanInstall', true, 'Message', "", ...
+                'CurrentVersion', "", 'LatestVersion', "", 'CommitsBehind', NaN);
+            [rows, summary] = ndi.update.packageStatus(r);
+            py = rows(end);
+            testCase.verifyEqual(py.Status, "Incomplete install");
+            testCase.verifyTrue(py.WillUpdate);
+            testCase.verifyFalse(py.Optional);
+            testCase.verifyTrue(py.Selected);
+            testCase.verifyTrue(summary.AnyUpdate);
+            testCase.verifySubstring(py.Notes(1), "napariViewGEF");
+        end
+
         function testDialogTable(testCase)
             r = ndi.unittest.update.TestPackageStatus.gitResult();
             r.Calculators(1).Status = "behind";

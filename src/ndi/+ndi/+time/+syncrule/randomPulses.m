@@ -122,14 +122,14 @@ classdef randomPulses < ndi.time.syncrule
                 daqsystem_a = daqsystem1;
                 % We need daqsystem2. Get session from daqsystem1.
                 session = daqsystem_a.session;
-                daqsystem_b = session.daqsystem_load('name', p.daqsystem2_name);
+                daqsystem_b = session.daqsystem_load('name', ['^' regexptranslate('escape', p.daqsystem2_name) '$']);
                 epochnode_1 = epochnode_a;
                 epochnode_2 = epochnode_b;
             else
                 % A is 2, B is 1
                 daqsystem_b = daqsystem1;
                 session = daqsystem_b.session;
-                daqsystem_a = session.daqsystem_load('name', p.daqsystem1_name);
+                daqsystem_a = session.daqsystem_load('name', ['^' regexptranslate('escape', p.daqsystem1_name) '$']);
                 epochnode_1 = epochnode_b;
                 epochnode_2 = epochnode_a;
             end

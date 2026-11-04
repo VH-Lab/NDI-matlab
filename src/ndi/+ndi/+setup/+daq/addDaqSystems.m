@@ -21,7 +21,9 @@ function S = addDaqSystems(S, labName, force)
     deviceNames = ndi.setup.daq.system.listDaqSystemNames(labName);
 
     for i = 1:numel(deviceNames)
-        device = S.daqsystem_load('name', deviceNames{i});
+        % 'name' is a regular expression; anchor it so that, e.g.,
+        % 'vhneuropixelsGLX' does not also match 'vhneuropixelsGLX_nidq'
+        device = S.daqsystem_load('name', ['^' regexptranslate('escape', deviceNames{i}) '$']);
 
         % Remove an existing DAQ system if "force" is true
         if force && ~isempty(device)

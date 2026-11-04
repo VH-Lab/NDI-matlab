@@ -7,9 +7,14 @@ function [rows, summary] = packageStatus(result)
 %   ndi.update.install would look at, in the order an update dialog lists
 %   them:
 %     - git installs: NDI-matlab, each dependency in requirements.txt, each
-%       NDIcalc-*-matlab calculator repository, and NDI-python if installed
+%       NDIcalc-*-matlab calculator repository, and NDI-python
 %     - toolbox installs: the NDI-matlab toolbox, the calculator
-%       repositories, and NDI-python if installed
+%       repositories, and NDI-python
+%
+%   NDI-python is listed if it is installed, and also if it is not (or its
+%   install is incomplete), so that it can be installed: see
+%   ndi.update.checkPython's NeedsInstall. Either way it starts ticked; a
+%   missing NDI-python is also marked Optional (see below).
 %
 %   ROWS is a structure array with fields:
 %       Name        - package name
@@ -34,6 +39,10 @@ function [rows, summary] = packageStatus(result)
 %                     marked "changed:" or "in the way:"
 %       Selectable  - true if the package can be ticked for updating
 %                     (WillUpdate and not Blocked)
+%       Optional    - true for a package that is not installed and need
+%                     not be (NDI-python). It starts ticked, so it is
+%                     installed unless unticked, and the summary message
+%                     says so instead of counting it as an update
 %       Selected    - whether it starts ticked: Selectable packages are,
 %                     except those where updating touches your own work
 %                     (TouchesChanges)
@@ -44,7 +53,8 @@ function [rows, summary] = packageStatus(result)
 %
 %   SUMMARY is a structure with fields:
 %       CanUpdate     - true if any row is Selectable
-%       AnyUpdate     - true if any row has WillUpdate
+%       AnyUpdate     - true if any row has WillUpdate (including an
+%                       Optional package that can be installed)
 %       Blocked       - true if any row is blocked
 %       HasUserChanges - true if any row has TouchesChanges
 %       Message       - one-sentence summary for the dialog
@@ -84,7 +94,8 @@ function [rows, summary] = packageStatus(result)
         rows(end+1) = r; %#ok<AGROW>
     end
 
-    if isfield(result, 'Python') && result.Python.Installed
+    if isfield(result, 'Python') && (result.Python.Installed || ...
+            (isfield(result.Python, 'NeedsInstall') && result.Python.NeedsInstall))
         rows(end+1) = pythonRow(result.Python);
     end
 
@@ -95,26 +106,38 @@ function [rows, summary] = packageStatus(result)
     for i = 1:numel(rows)
         rows(i).Selectable = rows(i).WillUpdate && ~rows(i).Blocked;
         % Leave out, at first, packages where you have work of your own.
+        % A missing NDI-python starts ticked: most people want it, and
+        % those least sure of their setup most of all.
         rows(i).Selected = rows(i).Selectable && ~rows(i).TouchesChanges;
     end
 
+    optional = [rows.Optional];
     summary.AnyUpdate = any([rows.WillUpdate]);
     summary.Blocked = any([rows.Blocked]);
     summary.CanUpdate = any([rows.Selectable]);
     summary.HasUserChanges = any([rows.TouchesChanges]);
-    n = nnz([rows.Selectable]);
-    if summary.AnyUpdate && n == 0
+    canAdd = [rows([rows.Selectable] & optional).Name];
+    anyRealUpdate = any([rows.WillUpdate] & ~optional);
+    n = nnz([rows.Selectable] & ~optional);
+    if anyRealUpdate && n == 0
         summary.Message = "Updates are available, but none can be installed " + ...
             "yet: see the packages marked with an error.";
-    elseif summary.AnyUpdate
+    elseif anyRealUpdate
         summary.Message = n + " package(s) can be updated. Tick the ones " + ...
             "to update.";
         if summary.Blocked
             summary.Message = summary.Message + " Packages marked with an " + ...
                 "error cannot be updated yet.";
         end
+    elseif ~isempty(canAdd)
+        summary.Message = "Everything else is up to date.";
     else
         summary.Message = "Everything is up to date.";
+    end
+    if ~isempty(canAdd)
+        summary.Message = summary.Message + " " + strjoin(canAdd, ", ") + ...
+            " is not installed; it is ticked to be installed (untick it " + ...
+            "to skip).";
     end
 end
 
@@ -229,7 +252,26 @@ function r = pythonRow(py)
     r = newRow("NDI-python", "python", "");
     r.Installed = py.CurrentVersion;
     r.Latest = py.LatestVersion;
-    r.WillUpdate = py.UpdateAvailable && py.CanInstall;
+    needsInstall = isfield(py, 'NeedsInstall') && py.NeedsInstall;
+    r.WillUpdate = (py.UpdateAvailable || needsInstall) && py.CanInstall;
+    if needsInstall
+        if py.Installed
+            r.Status = "Incomplete install";
+            r = addNote(r, "warning", "Not fully installed (missing " + ...
+                strjoin(py.MissingCommands, ", ") + "); it will be " + ...
+                "installed again.");
+        else
+            r.Status = "Not installed";
+            r.Optional = true;
+            r = addNote(r, "info", "Will be installed with its installer " + ...
+                "(into " + ndi.python.ndiHome() + "). Needed for the napari " + ...
+                "viewers and other NDI-python tools. Untick to skip.");
+        end
+        if ~py.CanInstall
+            r.WillUpdate = false;
+        end
+        return
+    end
     switch py.Status
         case "updateAvailable"
             if isfinite(py.CommitsBehind) && py.CommitsBehind > 0
@@ -330,5 +372,5 @@ function r = newRow(name, kind, folder)
         'Notes', strings(1, 0), 'NoteLevels', strings(1, 0), 'NoteLevel', "", ...
         'Details', "", ...
         'Blocked', false, 'TouchesChanges', false, 'Files', strings(0, 1), ...
-        'Selectable', false, 'Selected', false);
+        'Selectable', false, 'Selected', false, 'Optional', false);
 end
