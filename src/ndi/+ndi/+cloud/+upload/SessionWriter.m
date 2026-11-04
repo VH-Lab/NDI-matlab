@@ -39,13 +39,22 @@ classdef SessionWriter < handle
 %   way leaves no document in the cloud pointing at files that are not
 %   there.
 %
+%   STREAMING A FILE SERIES. A document whose series is built over
+%   hours (a lightsheet pyramid level) is not added with DATABASE_ADD but
+%   DECLAREd: it is uploaded at once with every member's uid already in
+%   its manifest, so nothing in the cloud is ever unreferenced, and the
+%   members are then sent in batches as they are made (STREAMMEMBERS).
+%   Each batch is checked against the cloud while the next is built, and
+%   its local copies are deleted once it checks out -- unless a later
+%   step reads them back (RETAIN), in which case RELEASEMEMBERS deletes
+%   them when that step is done. COMMIT checks that every declared member
+%   arrived. ndi.fun.doc.lightsheet.makePyramid streams this way.
+%
 %   LOCAL COPIES. Each file is moved (or copied, when its document says
-%   not to delete the original) into CACHEDIR before it is sent, and kept
-%   there until COMMIT, so a builder can read back what it wrote earlier
-%   (fromSPIM builds each coarser level from the one before) without a
-%   download. Plan for as much free disk as the files take; a local
-%   session would keep them for good. A file no longer cached is
-%   downloaded on demand.
+%   not to delete the original) into CACHEDIR before it is sent. Files of
+%   a DATABASE_ADD document stay there until COMMIT, so a builder can
+%   read back what it wrote; streamed members stay only as long as
+%   described above. A file no longer cached is downloaded on demand.
 %
 %   Optional Name-Value Arguments:
 %   Verbose         - print progress lines. Default true.
@@ -65,6 +74,9 @@ classdef SessionWriter < handle
 %   Methods (the part of ndi.session that document builders use):
 %     id, newdocument, database_add, database_openbinarydoc,
 %     database_closebinarydoc
+%   streaming:
+%     declare(DOC), streamMembers(DOC, SERIES, INDICES, PATHS, RETAIN),
+%     releaseMembers(DOC), replaceOnCommit(DOC)
 %   and:
 %     requireSubject(ID)  - error unless ID is a subject in this session
 %     requireDocument(ID) - error unless ID is in the dataset or was added here
@@ -98,8 +110,17 @@ classdef SessionWriter < handle
         % ids added through this writer, and ids confirmed in the cloud.
         knownIds
         cloudIds
-        % 'docid|filename' -> uid, for every file sent.
+        % 'docid|filename' -> uid, for every file sent or declared.
         fileUids
+        % STREAMING (see declare / streamMembers). Batches sent but not
+        % yet checked against the cloud, oldest first; the series member
+        % uids each declared document promises (docid -> cellstr); the
+        % local copies kept for a later level to read (docid -> cellstr
+        % of paths); and documents to replace in the cloud at COMMIT.
+        outstanding = {}
+        declaredUids
+        retainedPaths
+        replaceAtCommit = {}
     end
 
     methods
@@ -127,6 +148,8 @@ classdef SessionWriter < handle
             obj.knownIds = containers.Map('KeyType', 'char', 'ValueType', 'logical');
             obj.cloudIds = containers.Map('KeyType', 'char', 'ValueType', 'logical');
             obj.fileUids = containers.Map('KeyType', 'char', 'ValueType', 'char');
+            obj.declaredUids = containers.Map('KeyType', 'char', 'ValueType', 'any');
+            obj.retainedPaths = containers.Map('KeyType', 'char', 'ValueType', 'any');
 
             sessions = ndi.cloud.upload.SessionWriter.listSessions( ...
                 cloudDatasetId, 'Api', api);
@@ -272,36 +295,35 @@ classdef SessionWriter < handle
         end
 
         function r = commit(obj)
-        % COMMIT - upload the documents held by DATABASE_ADD, in the order added
+        % COMMIT - finish: check what is outstanding, then upload the held documents
         %
-        %   Their files are already in the cloud and checked. Each
-        %   document goes as the JSON a local session would store (series
-        %   member paths stripped), which is what uploadDataset sends.
+        %   Batches still being checked are checked; the documents held
+        %   by DATABASE_ADD are uploaded in the order added, as the JSON a
+        %   local session would store (series member paths stripped),
+        %   which is what uploadDataset sends. Every series member a
+        %   DECLAREd document promises must then be in the cloud, or this
+        %   is an error naming how many are missing. Last, documents
+        %   handed to REPLACEATCOMMIT replace their earlier versions.
             if obj.committed
                 r = obj.report;
                 return
             end
-            n = numel(obj.pendingDocs);
-            obj.say('Adding %d document(s) to session %s of cloud dataset %s ...', ...
-                n, obj.sessionReference, obj.cloudDatasetId);
-            for k = 1:n
-                doc = obj.pendingDocs{k};
+            obj.verifyOutstanding();
+            obj.flushPending();
+            obj.checkDeclaredMembers();
+            for k = 1:numel(obj.replaceAtCommit)
+                doc = obj.replaceAtCommit{k};
                 props = did.document.stripSeriesIngestLocations(doc.document_properties);
-                [ok, answer] = obj.api.addDocument(obj.cloudDatasetId, ...
+                [ok, answer] = obj.api.updateDocument(obj.cloudDatasetId, doc.id(), ...
                     did.datastructures.jsonencodenan(props));
                 if ~ok
-                    error('NDI:cloud:SessionWriter:addDocumentFailed', ...
-                        ['Could not add document %s (%s) to cloud dataset ' ...
-                         '%s: %s. %d of %d documents were added before it; ' ...
-                         'their files and the rest of the files are in ' ...
-                         'the cloud.'], doc.id(), ...
-                        doc.document_properties.document_class.class_name, ...
-                        obj.cloudDatasetId, describe(answer), k - 1, n);
+                    error('NDI:cloud:SessionWriter:updateFailed', ...
+                        ['Every file is in cloud dataset %s, but document %s ' ...
+                         'could not be updated to its final version: %s'], ...
+                        obj.cloudDatasetId, doc.id(), describe(answer));
                 end
-                obj.report.documents = obj.report.documents + 1;
-                obj.report.documentIds{end+1} = doc.id();
             end
-            obj.pendingDocs = {};
+            obj.replaceAtCommit = {};
             obj.committed = true;
             obj.say('Done: %d document(s), %d file(s), %.1f MB.', ...
                 obj.report.documents, obj.report.files, obj.report.bytes / 1e6);
@@ -310,10 +332,145 @@ classdef SessionWriter < handle
             end
             r = obj.report;
         end
+
+        % -------------------------------------------------------------
+        % STREAMING. A document whose file series is built over hours is
+        % DECLAREd first -- uploaded at once, with every member's uid
+        % already in its manifest -- and its members are then sent in
+        % batches as they are made (STREAMMEMBERS), each batch checked
+        % against the cloud's CRC-32 and its local copies deleted unless
+        % a later step still reads them (RELEASEMEMBERS frees those).
+        % Nothing in the cloud is ever unreferenced, and the disk holds
+        % only what is in flight plus what is retained.
+        % -------------------------------------------------------------
+
+        function declare(obj, doc)
+        % DECLARE - upload a document now, before its series members exist
+        %
+        %   DOC's ordinary files (a series' manifest among them) are sent
+        %   and checked first, then DOC itself. Documents still held by
+        %   DATABASE_ADD go up before it, in order, since DOC may depend
+        %   on them. Its series members are recorded as promised; send
+        %   them with STREAMMEMBERS. COMMIT checks that all arrived.
+            if obj.committed
+                error('NDI:cloud:SessionWriter:alreadyCommitted', ...
+                    'This writer has already committed; make a new one.');
+            end
+            doc = obj.ownSession(doc);
+            obj.checkDependencies(doc);
+            obj.flushPending();
+            entries = ndi.cloud.upload.SessionWriter.filesOf(doc, false);
+            if ~isempty(entries)
+                obj.verifyBatch(obj.stageAndSend(doc, entries, true));
+            end
+            promised = {};
+            si = [];
+            if isfield(doc.document_properties, 'files') && ...
+                    isfield(doc.document_properties.files, 'series_info')
+                si = doc.document_properties.files.series_info;
+            end
+            for s = 1:numel(si)
+                locs = si(s).ingest_locations;
+                for k = 1:numel(locs)
+                    uid = char(locs(k).uid);
+                    obj.fileUids(sprintf('%s|%s_%d', doc.id(), char(si(s).name), ...
+                        locs(k).index)) = uid;
+                    promised{end+1} = uid; %#ok<AGROW>
+                end
+            end
+            obj.declaredUids(doc.id()) = promised;
+            obj.addNow(doc, 1, 1);
+            obj.knownIds(doc.id()) = true;
+        end
+
+        function streamMembers(obj, doc, seriesName, indices, paths, retain)
+        % STREAMMEMBERS - send some members of a DECLAREd document's series
+        %
+        %   STREAMMEMBERS(W, DOC, SERIESNAME, INDICES, PATHS, RETAIN)
+        %
+        %   PATHS{i} holds member INDICES(i) (one-based) of SERIESNAME; it
+        %   is moved into the cache and sent under the uid DOC's manifest
+        %   gave that member. The batch is checked against the cloud at
+        %   the NEXT call (or at RELEASEMEMBERS / COMMIT), so the server
+        %   records one batch while the next is being built. Once checked,
+        %   the local copies are deleted, unless RETAIN, in which case
+        %   they stay readable through DATABASE_OPENBINARYDOC until
+        %   RELEASEMEMBERS.
+            arguments
+                obj
+                doc
+                seriesName (1,:) char
+                indices double
+                paths cell
+                retain (1,1) logical = false
+            end
+            n = numel(indices);
+            if n == 0
+                % Nothing new: just check what is outstanding.
+                obj.verifyOutstanding();
+                return
+            end
+            entries = struct('name', cell(1, n), 'uid', cell(1, n), ...
+                'path', cell(1, n), 'deleteOriginal', cell(1, n));
+            for i = 1:n
+                name = sprintf('%s_%d', seriesName, indices(i));
+                key = [doc.id() '|' name];
+                if ~isKey(obj.fileUids, key)
+                    error('NDI:cloud:SessionWriter:notDeclared', ...
+                        ['Member %s of document %s was not declared. DECLARE ' ...
+                         'the document, with its whole series, first.'], name, doc.id());
+                end
+                entries(i) = struct('name', name, 'uid', obj.fileUids(key), ...
+                    'path', char(paths{i}), 'deleteOriginal', true);
+            end
+            obj.outstanding{end+1} = obj.stageAndSend(doc, entries, retain);
+            while numel(obj.outstanding) > 1
+                batch = obj.outstanding{1};
+                obj.outstanding(1) = [];
+                obj.verifyBatch(batch);
+            end
+        end
+
+        function releaseMembers(obj, doc)
+        % RELEASEMEMBERS - delete the local copies STREAMMEMBERS kept for DOC
+            obj.verifyOutstanding();
+            id = doc.id();
+            if ~isKey(obj.retainedPaths, id), return; end
+            kept = obj.retainedPaths(id);
+            for i = 1:numel(kept)
+                if isfile(kept{i}), delete(kept{i}); end
+            end
+            remove(obj.retainedPaths, id);
+        end
+
+        function replaceOnCommit(obj, doc)
+        % REPLACEONCOMMIT - at COMMIT, replace the cloud copy of DOC with this version
+        %
+        %   For a document uploaded early that should change once the
+        %   work is done -- a pyramid labelled "(uploading)" until every
+        %   chunk is in.
+            obj.replaceAtCommit{end+1} = doc;
+        end
     end
 
     methods (Access = private)
         function addOne(obj, doc)
+            doc = obj.ownSession(doc);
+            obj.checkDependencies(doc);
+
+            entries = ndi.cloud.upload.SessionWriter.filesOf(doc, true);
+            if ~isempty(entries)
+                % Kept locally until COMMIT: a builder may read them back.
+                obj.verifyBatch(obj.stageAndSend(doc, entries, true));
+            end
+
+            obj.pendingDocs{end+1} = doc;
+            obj.knownIds(doc.id()) = true;
+        end
+
+        function doc = ownSession(obj, doc)
+        % As ndi.session/database_add: no session id gets this one,
+        % another session's is refused.
             sid = char(doc.document_properties.base.session_id);
             if isempty(sid) || strcmp(sid, ndi.session.empty_id())
                 doc = doc.set_session_id(obj.sessionId);
@@ -322,16 +479,69 @@ classdef SessionWriter < handle
                     'Document %s belongs to session %s, not to %s.', ...
                     doc.id(), sid, obj.sessionId);
             end
+        end
 
-            obj.checkDependencies(doc);
-
-            entries = ndi.cloud.upload.SessionWriter.filesOf(doc);
-            if ~isempty(entries)
-                obj.sendFiles(doc, entries);
+        function addNow(obj, doc, k, n)
+        % Upload one document's JSON (series member paths stripped).
+            props = did.document.stripSeriesIngestLocations(doc.document_properties);
+            [ok, answer] = obj.api.addDocument(obj.cloudDatasetId, ...
+                did.datastructures.jsonencodenan(props));
+            if ~ok
+                error('NDI:cloud:SessionWriter:addDocumentFailed', ...
+                    ['Could not add document %s (%s) to cloud dataset ' ...
+                     '%s: %s. %d of %d documents were added before it.'], ...
+                    doc.id(), doc.document_properties.document_class.class_name, ...
+                    obj.cloudDatasetId, describe(answer), k - 1, n);
             end
+            obj.report.documents = obj.report.documents + 1;
+            obj.report.documentIds{end+1} = doc.id();
+        end
 
-            obj.pendingDocs{end+1} = doc;
-            obj.knownIds(doc.id()) = true;
+        function flushPending(obj)
+        % Upload the documents DATABASE_ADD held, in order.
+            n = numel(obj.pendingDocs);
+            if n == 0, return; end
+            obj.say('Adding %d document(s) to session %s of cloud dataset %s ...', ...
+                n, obj.sessionReference, obj.cloudDatasetId);
+            for k = 1:n
+                obj.addNow(obj.pendingDocs{k}, k, n);
+            end
+            obj.pendingDocs = {};
+        end
+
+        function verifyOutstanding(obj)
+            while ~isempty(obj.outstanding)
+                batch = obj.outstanding{1};
+                obj.outstanding(1) = [];
+                obj.verifyBatch(batch);
+            end
+        end
+
+        function checkDeclaredMembers(obj)
+        % Every member a declared document promises must be in the cloud.
+            ids = keys(obj.declaredUids);
+            for k = 1:numel(ids)
+                uids = obj.declaredUids(ids{k});
+                if isempty(uids), continue; end
+                [ok, answer] = obj.api.lookupFiles(obj.cloudDatasetId, uids);
+                if ~ok
+                    error('NDI:cloud:SessionWriter:lookupFailed', ...
+                        'Could not look up files in cloud dataset %s: %s', ...
+                        obj.cloudDatasetId, describe(answer));
+                end
+                rows = answer.files;
+                have = {};
+                if ~isempty(rows)
+                    have = cellfun(@char, {rows([rows.uploaded]).uid}, 'UniformOutput', false);
+                end
+                nMissing = numel(setdiff(uids, have));
+                if nMissing > 0
+                    error('NDI:cloud:SessionWriter:membersMissing', ...
+                        ['%d of the %d series members document %s declares are ' ...
+                         'not in cloud dataset %s.'], nMissing, numel(uids), ...
+                        ids{k}, obj.cloudDatasetId);
+                end
+            end
         end
 
         function checkDependencies(obj, doc)
@@ -353,7 +563,11 @@ classdef SessionWriter < handle
             end
         end
 
-        function sendFiles(obj, doc, entries)
+        function batch = stageAndSend(obj, doc, entries, retain)
+        % STAGEANDSEND - move ENTRIES into the cache under their uids and send them
+        %
+        %   Zip batches for many files, one CRC-32-signed upload each for
+        %   few. Returns what VERIFYBATCH needs; nothing is checked here.
             n = numel(entries);
             paths = cell(1, n);
             bytes = zeros(1, n);
@@ -373,7 +587,7 @@ classdef SessionWriter < handle
                 [ok, msg] = obj.api.uploadFileBatch(obj.cloudDatasetId, paths, bytes);
                 if ~ok
                     % Not fatal yet: whatever did not arrive is sent
-                    % again one by one below.
+                    % again one by one when the batch is checked.
                     obj.say('A zip batch failed (%s); checking what arrived.', char(msg));
                 end
             else
@@ -384,7 +598,21 @@ classdef SessionWriter < handle
                     end
                 end
             end
+            batch = struct('docId', doc.id(), 'label', label, ...
+                'names', {{entries.name}}, 'uids', {uids}, 'paths', {paths}, ...
+                'bytes', bytes, 'crcs', {crcs}, 'retain', retain);
+        end
 
+        function verifyBatch(obj, batch)
+        % VERIFYBATCH - check a sent batch against the cloud, resend what is wrong
+        %
+        %   A file that is missing or whose CRC-32 (or size) differs is
+        %   sent again on its own; one still wrong after that is an error.
+        %   Then the batch's local copies are deleted unless it is
+        %   retained.
+            uids = batch.uids; paths = batch.paths;
+            bytes = batch.bytes; crcs = batch.crcs;
+            n = numel(uids);
             timeout = obj.uploadTimeout;
             if isempty(timeout)
                 timeout = max(120, 30 + 0.05 * n + sum(bytes) / 5e6);
@@ -408,17 +636,29 @@ classdef SessionWriter < handle
                     error('NDI:cloud:SessionWriter:uploadNotVerified', ...
                         ['%d file(s) of %s could not be verified in cloud ' ...
                          'dataset %s after sending them twice (first: %s, ' ...
-                         'local %s). No documents have been added.'], ...
-                        nnz(stillBad), label, obj.cloudDatasetId, ...
+                         'local %s).'], ...
+                        nnz(stillBad), batch.label, obj.cloudDatasetId, ...
                         uids{first}, paths{first});
                 end
             end
 
             for i = 1:n
-                obj.fileUids([doc.id() '|' entries(i).name]) = uids{i};
+                obj.fileUids([batch.docId '|' batch.names{i}]) = uids{i};
             end
             obj.report.files = obj.report.files + n;
             obj.report.bytes = obj.report.bytes + sum(bytes);
+
+            if batch.retain
+                kept = {};
+                if isKey(obj.retainedPaths, batch.docId)
+                    kept = obj.retainedPaths(batch.docId);
+                end
+                obj.retainedPaths(batch.docId) = [kept paths];
+            else
+                for i = 1:n
+                    if isfile(paths{i}), delete(paths{i}); end
+                end
+            end
         end
 
         function bad = unverified(obj, uids, bytes, crcs, timeout)
@@ -550,6 +790,7 @@ classdef SessionWriter < handle
         %     waitForFileUpload(datasetId, uids, timeout) -> [ok, answer]
         %     lookupFiles(datasetId, uids)         -> [ok, answer]
         %     downloadFile(datasetId, uid, path)   -> [ok, msg]
+        %     updateDocument(datasetId, ndiId, json) -> [ok, answer]
             api = struct( ...
                 'findDocuments', @findCloudDocuments, ...
                 'addDocument', @(d, json) ndi.cloud.api.documents.addDocument(d, json), ...
@@ -559,13 +800,15 @@ classdef SessionWriter < handle
                 'waitForFileUpload', @(d, uids, t) ndi.cloud.api.files.waitForFileUpload( ...
                     d, string(uids), 'timeout', t), ...
                 'lookupFiles', @(d, uids) ndi.cloud.api.files.lookupFiles(d, string(uids)), ...
-                'downloadFile', @downloadOne);
+                'downloadFile', @downloadOne, ...
+                'updateDocument', @updateByNdiId);
         end
     end
 
     methods (Static, Access = private)
-        function entries = filesOf(doc)
-        % FILESOF - the files and series members a document carries for ingestion
+        function entries = filesOf(doc, includeMembers)
+        % FILESOF - the files (and, if INCLUDEMEMBERS, series members) a
+        % document carries for ingestion
         %
         %   Collected into cells and made a struct array once: a pyramid
         %   level has tens of thousands of members.
@@ -583,7 +826,7 @@ classdef SessionWriter < handle
                         dels  = [dels  arrayfun(@(x) logical(x.delete_original), L(take), 'UniformOutput', false)]; %#ok<AGROW>
                     end
                 end
-                if isfield(props.files, 'series_info')
+                if includeMembers && isfield(props.files, 'series_info')
                     si = props.files.series_info;
                     for s = 1:numel(si)
                         L = [];
@@ -655,6 +898,20 @@ function [ok, msg] = uploadBatch(cloudDatasetId, paths, bytes)
         manifest, sum(bytes) / 1e3, char(cloudDatasetId), ...
         'Verbose', false, 'DebugLog', false);
     ok = logical(ok);
+end
+
+function [ok, answer] = updateByNdiId(cloudDatasetId, ndiId, json)
+% Replace the document whose base.id is NDIID; the API wants the cloud's id.
+    [ok, hits] = ndi.cloud.api.documents.ndiqueryAll(string(cloudDatasetId), ...
+        ndi.query('base.id', 'exact_string', char(ndiId)));
+    if ~ok || isempty(hits)
+        ok = false;
+        answer = struct('message', sprintf('document %s not found', char(ndiId)));
+        return
+    end
+    if iscell(hits), hits = [hits{:}]; end
+    [ok, answer] = ndi.cloud.api.documents.updateDocument(string(cloudDatasetId), ...
+        string(hits(1).id), string(json));
 end
 
 function [ok, msg] = downloadOne(cloudDatasetId, uid, destPath)

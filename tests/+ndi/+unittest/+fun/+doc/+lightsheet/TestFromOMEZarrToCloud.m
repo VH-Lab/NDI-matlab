@@ -47,6 +47,8 @@ classdef TestFromOMEZarrToCloud < matlab.unittest.TestCase
             pyr = testCase.cloud.docsOfClass('lightsheetZarrPyramid');
             testCase.verifyNumElements(pyr, 1);
             testCase.verifyEqual(pyr{1}.base.id, P.id());
+            testCase.verifyFalse(contains(pyr{1}.lightsheetZarrPyramid.label, 'uploading'), ...
+                'the "(uploading)" label is replaced once every chunk is in');
             levels = testCase.cloud.docsOfClass('lightsheetZarrLevel');
             testCase.verifyNumElements(levels, numel(L));
             for k = 1:numel(levels)

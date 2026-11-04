@@ -97,19 +97,25 @@ W = ndi.cloud.upload.SessionWriter(datasetId, sessionId);
   chunk is built.
 - **Chunks are always materialized.** The cloud cannot read a store on
   local disk.
-- **Files are sent first and checked; the documents go up last.** Each
-  level's chunk files and series manifest are uploaded as soon as the
-  level is built, under the uids DID assigned them. For a document with
-  many files they go in zip batches, otherwise one at a time with a
-  signed CRC-32. Each file is then compared against the CRC-32 NDI Cloud
-  records (`lookupFiles`; size when no checksum was recorded). A file
-  that is missing or different is uploaded again on its own; if it is
-  still wrong, that is an error. Documents are added only by
-  `SessionWriter/commit`, after every file has passed, so a failed run
-  leaves no document in the cloud pointing at missing files.
-- **Disk.** The writer keeps a local copy of what it sent until the
-  commit, so `fromSPIM` can reduce each level from the one before it.
-  This takes as much space as a local ingest would.
+- **Streamed, declared first.** Before a level is built, it is declared:
+  every chunk gets its uid, and the level document and its manifest
+  (which lists those uids) are uploaded at once, after the pyramid
+  document. The pyramid's label carries " (uploading)" until the end.
+  Chunks are then uploaded as each super-block is written, in batches,
+  each checked against the CRC-32 NDI Cloud records (`lookupFiles`; size
+  when no checksum was recorded) while the next is built. A missing or
+  different file is sent again on its own; still wrong is an error.
+  Nothing in the cloud is ever unreferenced, so the orphan cleanup has
+  nothing to remove; a stopped run leaves a pyramid labelled
+  "(uploading)" with some chunks missing.
+- **Disk.** A chunk is deleted locally once the cloud has it, unless a
+  later level is reduced from its level; that level is deleted once the
+  later level is built. For SmartSPIM, level 1 of each ladder is reduced
+  straight from the slices (one more read of them per ladder), so level
+  0 is never kept. Peak disk is roughly one level 1 plus one level 2.
+- **Commit.** At the end every declared chunk is looked up once more, the
+  remaining documents are added, and the pyramid's label is updated to
+  drop " (uploading)".
 
 ## GUI
 

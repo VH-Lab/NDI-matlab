@@ -172,6 +172,91 @@ classdef SessionWriterMockTest < matlab.unittest.TestCase
                 'NDI:cloud:SessionWriter:noSuchFile');
         end
 
+        % -- streaming a series ------------------------------------------
+
+        function testADeclaredDocumentGoesUpBeforeItsMembers(testCase)
+            W = testCase.writer();
+            [d, bytes] = testCase.seriesDoc(W, testCase.subjectId, 3);
+            W.declare(d);
+            testCase.verifyTrue(testCase.cloud.hasDocument(d.id()), ...
+                'a declared document is in the cloud at once');
+            manifestUid = d.document_properties.files.file_info(1).locations(1).uid;
+            testCase.verifyTrue(testCase.cloud.hasFile(manifestUid), ...
+                'its manifest is uploaded with it');
+            locs = d.document_properties.files.series_info(1).ingest_locations;
+            testCase.verifyFalse(testCase.cloud.hasFile(locs(1).uid), ...
+                'members are not sent by declare');
+
+            W.streamMembers(d, 'chunk.bin', [locs(1:2).index], {locs(1:2).location});
+            W.streamMembers(d, 'chunk.bin', locs(3).index, {locs(3).location});
+            r = W.commit();
+            for i = 1:numel(locs)
+                testCase.verifyEqual(testCase.cloud.fileBytes(locs(i).uid), ...
+                    bytes{locs(i).index});
+            end
+            testCase.verifyEqual(r.documents, 1);
+        end
+
+        function testStreamedCopiesAreDeletedOnceChecked(testCase)
+            W = testCase.writer('KeepLocalCopies', true);
+            testCase.addTeardown(@() rmdirIfThere(W.cacheDir));
+            [d, ~] = testCase.seriesDoc(W, testCase.subjectId, 2);
+            W.declare(d);
+            locs = d.document_properties.files.series_info(1).ingest_locations;
+            W.streamMembers(d, 'chunk.bin', locs(1).index, {locs(1).location});
+            W.streamMembers(d, 'chunk.bin', locs(2).index, {locs(2).location});
+            testCase.verifyFalse(isfile(fullfile(W.cacheDir, locs(1).uid)), ...
+                'a checked batch leaves the disk');
+            testCase.verifyTrue(isfile(fullfile(W.cacheDir, locs(2).uid)), ...
+                'the newest batch waits to be checked while the next is built');
+            W.commit();
+            testCase.verifyFalse(isfile(fullfile(W.cacheDir, locs(2).uid)));
+        end
+
+        function testRetainedMembersStayUntilReleased(testCase)
+            W = testCase.writer('KeepLocalCopies', true);
+            testCase.addTeardown(@() rmdirIfThere(W.cacheDir));
+            [d, bytes] = testCase.seriesDoc(W, testCase.subjectId, 2);
+            W.declare(d);
+            locs = d.document_properties.files.series_info(1).ingest_locations;
+            W.streamMembers(d, 'chunk.bin', [locs.index], {locs.location}, true);
+            W.streamMembers(d, 'chunk.bin', [], {}, true);   % checks the batch
+            f = W.database_openbinarydoc(d, 'chunk.bin_1');
+            testCase.verifyTrue(isfile(f.fullpathfilename), 'retained for a later level');
+            testCase.verifyEqual(readBytes(f.fullpathfilename), bytes{1});
+            W.releaseMembers(d);
+            testCase.verifyFalse(isfile(fullfile(W.cacheDir, locs(1).uid)), ...
+                'released once that level is built');
+        end
+
+        function testCommitRefusesAMissingDeclaredMember(testCase)
+            W = testCase.writer();
+            [d, ~] = testCase.seriesDoc(W, testCase.subjectId, 3);
+            W.declare(d);
+            locs = d.document_properties.files.series_info(1).ingest_locations;
+            W.streamMembers(d, 'chunk.bin', locs(1).index, {locs(1).location});
+            testCase.verifyError(@() W.commit(), 'NDI:cloud:SessionWriter:membersMissing');
+        end
+
+        function testAnUndeclaredMemberIsRefused(testCase)
+            W = testCase.writer();
+            [d, ~] = testCase.seriesDoc(W, testCase.subjectId, 1);
+            testCase.verifyError(@() W.streamMembers(d, 'chunk.bin', 1, {'x'}), ...
+                'NDI:cloud:SessionWriter:notDeclared');
+        end
+
+        function testReplaceOnCommit(testCase)
+            W = testCase.writer();
+            d = W.newdocument('base', 'base.name', 'first (uploading)');
+            W.declare(d);
+            W.replaceOnCommit(d.setproperties('base.name', 'first'));
+            stored = testCase.cloud.findDocuments('', ndi.query('base.id', 'exact_string', d.id()));
+            testCase.verifyEqual(stored{1}.base.name, 'first (uploading)');
+            W.commit();
+            stored = testCase.cloud.findDocuments('', ndi.query('base.id', 'exact_string', d.id()));
+            testCase.verifyEqual(stored{1}.base.name, 'first');
+        end
+
         function testTheSessionLabelsNameReferenceAndId(testCase)
             s = struct('session_id', {'id1', 'id2'}, 'session_reference', {'a', 'b'});
             testCase.verifyEqual(ndi.gui.app.LightsheetManager.sessionLabels(s), ...

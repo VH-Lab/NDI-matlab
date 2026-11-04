@@ -70,7 +70,8 @@ classdef FakeCloudDataset < handle
                 'uploadFileBatch', @(d, paths, bytes) obj.uploadFileBatch(d, paths, bytes), ...
                 'waitForFileUpload', @(d, uids, t) obj.waitForFileUpload(d, uids, t), ...
                 'lookupFiles', @(d, uids) obj.lookupFiles(d, uids), ...
-                'downloadFile', @(d, uid, p) obj.downloadFile(d, uid, p));
+                'downloadFile', @(d, uid, p) obj.downloadFile(d, uid, p), ...
+                'updateDocument', @(d, ndiId, json) obj.updateDocument(d, ndiId, json));
         end
 
         function out = findDocuments(obj, ~, q)
@@ -96,6 +97,23 @@ classdef FakeCloudDataset < handle
             obj.docs{end+1} = jsondecode(char(json));
             ok = true;
             answer = struct('id', 'fake');
+        end
+
+        function [ok, answer] = updateDocument(obj, ~, ndiId, json)
+            ok = false;
+            answer = struct('message', 'no such document in the fake');
+            for i = 1:numel(obj.docs)
+                if strcmp(obj.docs{i}.base.id, ndiId)
+                    obj.docs{i} = jsondecode(char(json));
+                    ok = true;
+                    answer = struct('id', 'fake');
+                    return
+                end
+            end
+        end
+
+        function tf = hasDocument(obj, ndiId)
+            tf = any(cellfun(@(d) strcmp(d.base.id, ndiId), obj.docs));
         end
 
         function [ok, msg] = uploadSingleFile(obj, ~, uid, p)

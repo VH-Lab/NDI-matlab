@@ -55,8 +55,12 @@ function [pyramidDoc, levelDocs, info] = fromSPIM(session, rootDir, options)
 %   ndi.cloud.upload.SessionWriter instead of an ndi.session, to add the
 %   documents to a session of an NDI Cloud dataset directly; see
 %   ndi.fun.doc.lightsheet.fromOMEZarr. The subject must already be in
-%   that session. Each coarser level is reduced from the local copy of
-%   the level before it, which the writer keeps until the end.
+%   that session. Chunks are uploaded as they are written and deleted
+%   locally once the cloud has them, so level 1 of each ladder is reduced
+%   straight from the slices (a second read of them per ladder) and each
+%   coarser level from the level before it, kept only until its
+%   successor exists. Peak disk use is roughly one level 1 plus one
+%   level 2, not the whole pyramid.
 %
 %   INFO returns a struct with fields:
 %     rootDir       - ROOTDIR
@@ -177,8 +181,19 @@ function [pyramidDoc, levelDocs, info] = fromSPIM(session, rootDir, options)
         for k = 1:nSteps
             levelPath = sprintf('%s/%d', red, k);
             levels(1 + k) = levelEntry(levelPath, steps(k).shape, steps(k).scale, dtype);
-            levelSources(levelPath) = struct('kind', 'reduce', 'fromPath', prevPath, ...
-                'factor', steps(k).factor, 'reduction', red);
+            if toCloud && k == 1
+                % Streamed to the cloud, level 0 does not stay on this
+                % disk, so level 1 is reduced from the slices themselves;
+                % each coarser level is then reduced from the one before,
+                % which is kept only until its successor is built.
+                levelSources(levelPath) = struct('kind', 'reduceSmartspim', ...
+                    'slicePaths', {slicePaths}, 'sourceDtype', dtype, ...
+                    'fromShape', shape0, 'factor', steps(k).factor, ...
+                    'reduction', red);
+            else
+                levelSources(levelPath) = struct('kind', 'reduce', 'fromPath', prevPath, ...
+                    'factor', steps(k).factor, 'reduction', red);
+            end
             levelInfo(1 + (r - 1) * nSteps + k) = struct('path', levelPath, ...
                 'reduction', red, 'shape', steps(k).shape, ...
                 'voxelSize', steps(k).scale, 'factor', steps(k).factor);
