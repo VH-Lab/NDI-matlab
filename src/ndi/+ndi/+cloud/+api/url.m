@@ -146,6 +146,7 @@ function url = url(endpointName, options)
         endpointMap("admin_remove_organization_member") = "/admin/organizations/{organizationId}/members/{userId}";
         endpointMap("admin_list_users")               = "/admin/users";
         endpointMap("admin_get_user")                 = "/admin/users/{userId}";
+        endpointMap("admin_reassign_dataset_organization") = "/admin/datasets/{datasetId}/organization";
     end
 
     endpointPath = endpointMap(endpointName);
