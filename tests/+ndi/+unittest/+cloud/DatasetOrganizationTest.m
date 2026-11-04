@@ -64,7 +64,13 @@ classdef DatasetOrganizationTest < matlab.unittest.TestCase
                 b, me, resp, url);
             testCase.assertTrue(b, msg);
             testCase.IsAdmin = isfield(me, 'isAdmin') && logical(me.isAdmin);
-            testCase.HomeOrganizationID = string(ndi.unittest.cloud.testOrganizationID());
+            % Tests that need a dataset skip (see assumeHomeOrganization)
+            % when the account has no organization that allows upload.
+            try
+                testCase.HomeOrganizationID = string(ndi.unittest.cloud.testOrganizationID());
+            catch
+                testCase.HomeOrganizationID = "";
+            end
         end
 
         function checkEndpointDeployed(testCase)
@@ -113,8 +119,15 @@ classdef DatasetOrganizationTest < matlab.unittest.TestCase
                 "(or with NDI_CLOUD_ALLOW_ADMIN_WRITE_TESTS=true). Skipping.");
         end
 
+        function assumeHomeOrganization(testCase)
+            testCase.assumeGreaterThan(strlength(testCase.HomeOrganizationID), 0, ...
+                "The test account does not belong to any organization that allows " + ...
+                "dataset upload. Skipping test that needs one.");
+        end
+
         function datasetID = createTemporaryDataset(testCase, narrative)
             % Create a dataset in the home organization and schedule its deletion.
+            testCase.assumeHomeOrganization();
             uniqueName = testCase.DatasetNamePrefix + string(did.ido.unique_id());
             [b, datasetID, resp, url] = ndi.cloud.api.datasets.createDataset( ...
                 struct("name", uniqueName), 'organizationID', char(testCase.HomeOrganizationID));
@@ -236,6 +249,7 @@ classdef DatasetOrganizationTest < matlab.unittest.TestCase
         % Admin: the server's input checks. None of these changes anything.
         function testServerInputChecks(testCase)
             testCase.assumeAdmin();
+            testCase.assumeHomeOrganization();
             narrative = testCase.Narrative;
 
             narrative(end+1) = "Calling the endpoint with a malformed dataset id; expecting 400.";
@@ -280,6 +294,7 @@ classdef DatasetOrganizationTest < matlab.unittest.TestCase
         % back again.
         function testReassignRoundTrip(testCase)
             testCase.assumeWriteAllowed();
+            testCase.assumeHomeOrganization();
             narrative = testCase.Narrative;
             scratchID = testCase.scratchOrganization();
             homeID = testCase.HomeOrganizationID;
