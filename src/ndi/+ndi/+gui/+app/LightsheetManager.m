@@ -367,6 +367,18 @@ classdef LightsheetManager < ndi.gui.app.sessionApp
                 description = sprintf('There is no folder at %s.', folder);
                 return
             end
+            % Name a missing reader rather than failing on it: an NDR-matlab
+            % older than these functions is the usual cause, and the fix
+            % is to update NDR, not to choose another folder.
+            needed = {'ndr.format.smartspim.hasAllChannels', 'ndr.format.omezarr.isOMEZarr'};
+            missing = needed(cellfun(@(f) isempty(which(f)), needed));
+            if ~isempty(missing)
+                description = sprintf(['NDR-matlab on the MATLAB path is too ' ...
+                    'old to read lightsheet images: it has no %s. Update ' ...
+                    'NDR-matlab (git pull in its folder, or ndi_install), then ' ...
+                    'run rehash or restart MATLAB.'], strjoin(missing, ' or '));
+                return
+            end
             try
                 if ndr.format.smartspim.hasAllChannels(folder)
                     kind = 'smartspim';
