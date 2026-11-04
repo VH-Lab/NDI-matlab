@@ -339,7 +339,8 @@ classdef Job < handle
                 % format this MATLAB is too old to read.
                 job = ndi.job.ForeignJob();
             else
-                job = feval(cls);
+                makeJob = str2func(cls);
+                job = makeJob();
             end
             for name = ndi.job.Job.savedFields()
                 if isfield(s, name{1})
@@ -391,13 +392,13 @@ classdef Job < handle
         function pid = processId()
         % PROCESSID - this MATLAB's process id
         %
-        %   matlabProcessID where this release has it; feature('getpid'),
-        %   the older and still-shipping accessor, otherwise (as
-        %   ndi.cloud.download.internal.signedUrlDiskCache does).
+        %   matlabProcessID where this release has it; otherwise the JVM's
+        %   "PID@HOST" runtime name, as makePyramid's memory logging reads it.
             try
                 pid = double(matlabProcessID());
             catch
-                pid = double(feature('getpid'));
+                name = char(java.lang.management.ManagementFactory.getRuntimeMXBean().getName());
+                pid = str2double(strtok(name, '@'));
             end
         end
 
