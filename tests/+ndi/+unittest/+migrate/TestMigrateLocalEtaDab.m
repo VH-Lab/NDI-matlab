@@ -302,7 +302,7 @@ classdef TestMigrateLocalEtaDab < matlab.unittest.TestCase
             % table, probe maps included, is still read whole.
             R = ndi.unittest.migrate.corpusObjectEquivalence(testCase.Bodies, ...
                 fileparts(testCase.Result.destination), 'Dab', ...
-                'MaxProbeEpochTables', 12);
+                'MaxProbeEpochTables', 12, 'Diagnose', true);
             ndi.unittest.migrate.verifyObjectEquivalence(testCase, R);
         end
 

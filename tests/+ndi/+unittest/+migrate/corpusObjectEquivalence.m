@@ -81,6 +81,7 @@ arguments
     migratedNdiDir {mustBeTextScalar}
     label {mustBeTextScalar} = 'corpus'
     options.MaxProbeEpochTables (1,1) double = Inf
+    options.Diagnose (1,1) logical = false
 end
 
 label = char(label);
@@ -152,6 +153,9 @@ for i = 1:numel(both)
     R.sessions.compared = R.sessions.compared + 1;
     ts = tic;
     a = snapshot(S1, options.MaxProbeEpochTables, {}, false, {});
+    if options.Diagnose
+        diagnoseIngested(S2);
+    end
     b = snapshot(S2, Inf, a.probeEpochKeys, true, a.elementEpochKeys);
     R.probeTables.read = R.probeTables.read + numel(a.probeEpochKeys);
     R.probeTables.probes = R.probeTables.probes + numel(a.probes);
@@ -452,6 +456,53 @@ catch ME
     s.errors{end+1} = ['daqsystem_load: ' errorText(ME)];
 end
 mark(sprintf('%d acquisition system(s) and their epoch tables', numel(s.daq)));
+end
+
+function diagnoseIngested(S)
+% REPORT-ONLY timing of a migrated session's ingested-epoch reads, on a
+% sample of 20 epochs per acquisition system, with the profiler's top
+% functions, so a slow epoch table can be traced to its cause. It decides
+% nothing and asserts nothing.
+try
+    t = tic;
+    devs = asCell(S.daqsystem_load('name', '(.*)'));
+    fprintf('      [diagnose] daqsystem_load: %d system(s), %.1f s\n', numel(devs), toc(t));
+    for d = 1:numel(devs)
+        dev = devs{d};
+        nav = dev.filenavigator;
+        t = tic;
+        docs = S.database_search(ndi.vintage.ingestedQuery(nav.id(), S.id()));
+        fprintf('      [diagnose] %s: %d ingested epoch document(s) found in %.1f s\n', ...
+            dev.name, numel(docs), toc(t));
+        sample = docs(1:min(20, numel(docs)));
+        if isempty(sample); continue; end
+        profile('clear');
+        profile('on');
+        t = tic;
+        E = ndi.vintage.ingestedEpochs(S, sample, nav.epochprobemap_class);
+        tE = toc(t);
+        t = tic;
+        for k = 1:numel(E)
+            ndi.vintage.ingestedArchive(S, dev.daqreader.id(), E(k).epoch_id, 'Channels', false);
+        end
+        tA = toc(t);
+        profile('off');
+        info = profile('info');
+        n = numel(sample);
+        fprintf(['      [diagnose] %s: ingestedEpochs %.2f s/epoch, ingestedArchive (clock) ' ...
+            '%.2f s/epoch; times %d epochs: %.0f s and %.0f s (each epoch table reads the ' ...
+            'clock twice: epochclock and t0_t1)\n'], dev.name, tE / n, tA / n, numel(docs), ...
+            tE / n * numel(docs), tA / n * numel(docs));
+        ft = info.FunctionTable;
+        [~, o] = sort([ft.TotalTime], 'descend');
+        for k = 1:min(30, numel(o))
+            f = ft(o(k));
+            fprintf('        %8.2f s %8d call(s)  %s\n', f.TotalTime, f.NumCalls, f.FunctionName);
+        end
+    end
+catch ME
+    fprintf('      [diagnose] raised: %s\n', errorText(ME));
+end
 end
 
 function e = elementFacts(o)
