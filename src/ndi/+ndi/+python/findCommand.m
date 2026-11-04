@@ -8,7 +8,7 @@ function commandPath = findCommand(name, options)
 %     a) the explicit per-command preference, if it is set and the file
 %        exists:
 %          napariViewGEF        - GUI.GEFManager.ViewerLauncher
-%          napariViewLightsheet - GUI.LightsheetZarrManager.ViewerLauncher
+%          napariViewLightsheet - GUI.LightsheetManager.ViewerLauncher
 %        (the legacy default /usr/local/bin/<NAME> is not treated as an
 %        explicit choice; it is still found at step e)
 %     b) the folder(s) in the environment variable NDI_PYTHON_BIN
@@ -111,7 +111,7 @@ function p = preferredPath(name)
         case 'napariViewGEF'
             prefPath = 'GUI.GEFManager.ViewerLauncher';
         case 'napariViewLightsheet'
-            prefPath = 'GUI.LightsheetZarrManager.ViewerLauncher';
+            prefPath = 'GUI.LightsheetManager.ViewerLauncher';
         otherwise
             return
     end

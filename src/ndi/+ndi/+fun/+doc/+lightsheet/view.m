@@ -50,7 +50,7 @@ function view(session, pyramidID, options)
 %
 %   See also: ndi.fun.doc.lightsheet.viewCommand,
 %             ndi.fun.doc.lightsheet.launchViewer,
-%             ndi.gui.app.LightsheetZarrManager
+%             ndi.gui.app.LightsheetManager
 
     arguments
         session (1,1)

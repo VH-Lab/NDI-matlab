@@ -1,5 +1,5 @@
 classdef TestViewCommand < matlab.unittest.TestCase
-    % TestViewCommand - the pure command builder ndi.gui.app.LightsheetZarrManager
+    % TestViewCommand - the pure command builder ndi.gui.app.LightsheetManager
     % calls to hand a pyramid to the napari viewer.
     %
     % viewCommand does not launch anything or touch the filesystem, so a

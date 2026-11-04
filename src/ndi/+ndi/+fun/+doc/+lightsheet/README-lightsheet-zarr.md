@@ -113,14 +113,39 @@ W = ndi.cloud.upload.SessionWriter(datasetId, sessionId);
 
 ## GUI
 
-`ndi.gui.app.LightsheetZarrManager(session)` mirrors `GEFManager`:
-lists pyramids in a session, and drives Add / View / Delete. `View`
-builds the napari command from `viewCommand` and shells out. `Add...`
-asks whether the pyramid goes to this session or to an NDI Cloud
-session. For the cloud, it then asks for the dataset, one of its
-sessions, and a subject of that session, and runs `fromOMEZarr` through
-a `SessionWriter`. The table lists the local session only, so a pyramid
-added to the cloud does not appear in it.
+`ndi.gui.app.LightsheetManager(session)` (Apps menu: **Lightsheet Manager**)
+mirrors `GEFManager`: it lists the pyramids in a session and drives Add /
+View / Delete. `View` builds the napari command from `viewCommand` and
+shells out.
+
+`Add...` opens one dialog, filled in top to bottom:
+
+1. **Add to**: this session, or a session in an NDI Cloud dataset (then
+   pick the dataset and one of its sessions).
+2. **Subject**: one of that session's subjects, or **New subject...**,
+   which adds one (local identifier and description) to that session.
+3. **Image folder**: a SmartSPIM acquisition folder (the one holding the
+   stitched `All_Channels`) or an OME-Zarr store. The type is detected and
+   shown; SmartSPIM uses `fromSPIM`, OME-Zarr `fromOMEZarr`.
+4. **Label** (defaults to the folder name) and, for SmartSPIM, an optional
+   **voxel size** when the acquisition's metadata does not give one.
+
+The box at the bottom lists what is still missing, and **Add** stays
+disabled until nothing is. Chunks are always stored in NDI, locally too:
+the viewer reads only stored chunks. A pyramid added to the cloud goes
+through `ndi.cloud.upload.SessionWriter` and is not listed in the table,
+which shows the local session. The dialog's decisions are static
+functions (`addChoices`, `sourceKind`, `addPlan`, `addMessage`,
+`subjectProblems`) and its work is `addSubject` and `runAdd`, so the same
+add can be scripted:
+
+```matlab
+c = ndi.gui.app.LightsheetManager.addChoices();
+c.subjectID = subjectId;
+c.sourcePath = '/data/ferret42_SmartSPIM';
+c.sourceKind = ndi.gui.app.LightsheetManager.sourceKind(c.sourcePath);
+ndi.gui.app.LightsheetManager.runAdd(S, c);
+```
 
 ### Viewer logs
 

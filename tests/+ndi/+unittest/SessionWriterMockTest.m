@@ -174,7 +174,7 @@ classdef SessionWriterMockTest < matlab.unittest.TestCase
 
         function testTheSessionLabelsNameReferenceAndId(testCase)
             s = struct('session_id', {'id1', 'id2'}, 'session_reference', {'a', 'b'});
-            testCase.verifyEqual(ndi.gui.app.LightsheetZarrManager.sessionLabels(s), ...
+            testCase.verifyEqual(ndi.gui.app.LightsheetManager.sessionLabels(s), ...
                 {'a  (id1)', 'b  (id2)'});
         end
     end

@@ -35,7 +35,7 @@ function [status, logFile, fullCmd] = launchViewer(cmd, options)
 %   See also: ndi.fun.doc.lightsheet.view, ndi.fun.doc.lightsheet.viewCommand,
 %             ndi.fun.doc.lightsheet.viewerLogFile,
 %             ndi.fun.doc.lightsheet.viewerShellCommand,
-%             ndi.gui.app.LightsheetZarrManager
+%             ndi.gui.app.LightsheetManager
 
     arguments
         cmd (1,:) char
