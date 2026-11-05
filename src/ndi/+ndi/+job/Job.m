@@ -145,7 +145,7 @@ classdef Job < handle
             catch ME
                 if strcmp(ME.identifier, 'NDI:job:paused')
                     obj.state = 'paused';
-                    obj.message = sprintf('Paused at %.0f%%.', 100 * obj.progress);
+                    obj.message = ['Paused at ' ndi.job.Job.percentText(obj.progress) '.'];
                     obj.clearPause();
                 else
                     obj.state = 'failed';
@@ -328,7 +328,7 @@ classdef Job < handle
             % Reached only if RUN did not finish normally (Ctrl+C).
             if isvalid(obj) && strcmp(obj.state, 'running')
                 obj.state = 'interrupted';
-                obj.message = sprintf('Interrupted at %.0f%%.', 100 * obj.progress);
+                obj.message = ['Interrupted at ' ndi.job.Job.percentText(obj.progress) '.'];
                 obj.pid = 0;
                 try
                     obj.save();
@@ -355,6 +355,14 @@ classdef Job < handle
     end
 
     methods (Static)
+        function t = percentText(fraction)
+        % PERCENTTEXT - FRACTION (0 to 1) as a whole percent, rounded down
+        %
+        %   '99%' at 0.999: '100%' is shown only when the work is all done.
+            p = floor(100 * max(0, min(1, double(fraction))) + 1e-9);
+            t = sprintf('%d%%', p);
+        end
+
         function r = root()
         % ROOT - the folder jobs are kept in
         %

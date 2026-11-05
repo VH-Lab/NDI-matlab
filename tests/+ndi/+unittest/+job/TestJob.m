@@ -157,6 +157,15 @@ classdef TestJob < matlab.unittest.TestCase
             testCase.verifyEqual(ndi.job.Job.localTime(''), '');
         end
 
+        function testOneHundredPercentMeansDone(testCase)
+            pct = @ndi.job.Job.percentText;
+            testCase.verifyEqual(pct(0.999), '99%', 'nearly done is not 100%');
+            testCase.verifyEqual(pct(0.995), '99%');
+            testCase.verifyEqual(pct(1), '100%');
+            testCase.verifyEqual(pct(0.29), '29%', 'no float slip below a whole percent');
+            testCase.verifyEqual(pct(0), '0%');
+        end
+
         function testRowsForThePane(testCase)
             job = ndi.test.helper.ScriptedJob.create(4);
             job.PauseAfterBeats = 2;
