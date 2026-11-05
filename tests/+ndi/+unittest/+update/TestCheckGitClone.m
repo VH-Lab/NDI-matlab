@@ -300,6 +300,7 @@ classdef TestCheckGitClone < matlab.unittest.TestCase
             % installer step.
             testCase.pushUpstream("NDI-matlab", "ndi_install.m", ...
                 "function ndi_install(varargin)" + newline + "end", Append = false);
+            testCase.git(testCase.Ndi, "pull -q");
             testCase.pushUpstream("NDI-matlab", "README.md", "new upstream line");
             oldPath = path;
             testCase.addTeardown(@() path(oldPath));
