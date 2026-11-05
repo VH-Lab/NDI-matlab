@@ -55,7 +55,8 @@ mean and max pyramids is still one parent.
 - `voxel_size_level0` — per-axis voxel size at level 0.
 - `voxel_size_units` — the unit that `voxel_size_level0` and each
   child's `voxel_size` are expressed in.
-- `translation_level0` — per-axis translation at level 0.
+- `translation_level0` — per-axis translation at level 0: the corner of
+  voxel 0 (see `lightsheetZarrLevel`'s `translation`).
 - `dtype` — the array dtype string as written in NGFF `.zarray` (e.g.
   `<u2`). Every level shares it.
 - `pipeline_version` — identifier of the pipeline that produced this

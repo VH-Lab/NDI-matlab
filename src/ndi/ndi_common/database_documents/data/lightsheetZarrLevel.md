@@ -66,7 +66,14 @@ raw bytes twice.
   (`cname`, `clevel`, `shuffle`, ...). Empty JSON `{}` for `raw`.
 - `voxel_size` — per-axis voxel size at this level.
 - `voxel_size_units` — the unit that `voxel_size` is expressed in.
-- `translation` — per-axis translation at this level.
+- `translation` — per-axis translation at this level: where the
+  **corner** of voxel 0 sits, in the parent's units, so voxel `i` spans
+  `translation + i*voxel_size` to `translation + (i+1)*voxel_size`. A
+  block-reduced level then has the same translation as the level it was
+  reduced from (SmartSPIM builds: 0 at every level). This is not NGFF's
+  convention, which places voxel 0's centre: `fromOMEZarr` subtracts half
+  a voxel from a store's translations, and an export to OME-Zarr adds it
+  back.
 
 ## Depends on
 
