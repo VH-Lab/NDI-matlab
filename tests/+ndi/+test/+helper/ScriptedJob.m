@@ -5,7 +5,8 @@ classdef ScriptedJob < ndi.job.Job
 %
 %   WORK beats BEATS times (progress k/BEATS), resuming from the last beat
 %   a previous run reached, then returns ('succeed') or raises
-%   'scripted:boom' ('fail').
+%   'scripted:boom' ('fail'). It records in checkpoint.keptAwake whether
+%   ndi.util.KeepAwake was holding the computer awake for it.
 
     properties (Constant)
         Kind = 'test.scripted'
@@ -65,6 +66,11 @@ classdef ScriptedJob < ndi.job.Job
 
     methods (Access = protected)
         function work(obj)
+            % What a test can check afterwards: was the computer being
+            % kept awake for this job while it ran?
+            obj.setCheckpoint('keptAwake', ...
+                ndi.util.KeepAwake.instance().isHeldBy(['job:' obj.id]) && ...
+                ndi.util.KeepAwake.instance().isOn());
             first = 1;
             if isfield(obj.checkpoint, 'reached')
                 first = obj.checkpoint.reached + 1;

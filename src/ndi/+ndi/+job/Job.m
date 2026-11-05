@@ -42,7 +42,13 @@ classdef Job < handle
 %       jobs = ndi.job.Job.list(); % every job on this computer
 %       jobs{1}.run();             % resume
 %
-%   See also: ndi.job.LightsheetToCloud, ndi.gui.nav.jobsPane
+%   STAYING AWAKE. While a job runs, the computer is kept from sleeping
+%   (ndi.util.KeepAwake), and let sleep again when it stops, however it
+%   stops. The preference Jobs.KeepComputerAwake (default true) turns
+%   this off.
+%
+%   See also: ndi.job.LightsheetToCloud, ndi.gui.nav.jobsPane,
+%             ndi.util.KeepAwake
 
     properties (Constant)
         FormatVersion = 1       % the job.json format this code writes and reads
@@ -122,6 +128,15 @@ classdef Job < handle
             obj.refreshPane(true);
             % Ctrl+C runs no catch block, but it does run this.
             guard = onCleanup(@() obj.stoppedWithoutCatch());
+            % Keep the computer from sleeping until the job stops, however
+            % it stops (the cleanup runs on Ctrl+C too).
+            awakeKey = ['job:' obj.id];
+            awake = ndi.job.Job.keepAwakeWanted();
+            if awake
+                ndi.util.KeepAwake.instance().hold(awakeKey, ...
+                    sprintf('job "%s" is running', obj.title));
+            end
+            awakeGuard = onCleanup(@() ndi.job.Job.letSleep(awakeKey, awake));
             try
                 obj.work();
                 obj.state = 'done';
@@ -140,7 +155,7 @@ classdef Job < handle
             end
             obj.pid = 0;
             obj.save();
-            clear guard
+            clear guard awakeGuard
             obj.refreshPane(true);
         end
 
@@ -485,6 +500,23 @@ classdef Job < handle
     end
 
     methods (Static, Access = private)
+        function tf = keepAwakeWanted()
+            try
+                tf = logical(ndi.preferences.get('Jobs.KeepComputerAwake'));
+            catch
+                tf = true;
+            end
+        end
+
+        function letSleep(key, held)
+            if held
+                try
+                    ndi.util.KeepAwake.instance().release(key);
+                catch
+                end
+            end
+        end
+
         function f = savedFields()
         % The job.json fields, in the order written (see job.schema.json).
             f = {'formatVersion', 'id', 'kind', 'runtime', 'title', 'created', ...

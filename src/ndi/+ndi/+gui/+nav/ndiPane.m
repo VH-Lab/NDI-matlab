@@ -2,14 +2,24 @@ classdef ndiPane < ndi.gui.nav.pane
 %NDI.GUI.NAV.NDIPANE The top, uncollapsible "NDI" pane.
 %
 %   A single-row pane with a 12-point bold "NDI" label on the left and, on
-%   the right, a broom button that clears NDI's in-memory caches, an
-%   "Update" button that checks for a newer NDI-matlab and offers to install
+%   the right, a broom button that clears NDI's in-memory caches, a
+%   coffee-cup button that keeps the computer awake (ndi.util.KeepAwake:
+%   an empty cup when it may sleep, a steaming one while it is kept awake,
+%   by this button or by a running job), an "Update" button that checks for a newer NDI-matlab and offers to install
 %   it, and a "Prefs" button that opens the preferences editor. This is
 %   always the first pane in ndi.gui.navigator and cannot be collapsed.
 %
 %   See also: ndi.gui.navigator, ndi.gui.nav.pane, ndi.gui.preferencesEditor,
 %   ndi.fun.clearAllCaches, ndi.update.check, ndi.update.install,
-%   ndi.gui.nav.updateDialog
+%   ndi.gui.nav.updateDialog, ndi.util.KeepAwake
+
+    properties (SetAccess = private)
+        CupButton       % the keep-awake toggle
+    end
+
+    properties (Access = private)
+        AwakeListener
+    end
 
     methods
         function obj = ndiPane(navigator)
@@ -21,13 +31,14 @@ classdef ndiPane < ndi.gui.nav.pane
 
     methods (Access = protected)
         function buildHeaderRight(obj, parent)
-            % Three buttons share the right header column: a compact broom
-            % that clears the in-memory caches, then the wider "Update" and
+            % Four buttons share the right header column: a compact broom
+            % that clears the in-memory caches, a compact coffee cup that
+            % keeps the computer awake, then the wider "Update" and
             % "Prefs" buttons.
-            grid = uigridlayout(parent, [1 3]);
+            grid = uigridlayout(parent, [1 4]);
             grid.Layout.Row     = 1;
             grid.Layout.Column  = 3;
-            grid.ColumnWidth    = {28, 60, 60};
+            grid.ColumnWidth    = {28, 28, 60, 60};
             grid.RowHeight      = {'1x'};
             grid.Padding        = [0 0 0 0];
             grid.ColumnSpacing  = 4;
@@ -53,7 +64,7 @@ classdef ndiPane < ndi.gui.nav.pane
                 'Tooltip',         'Open the NDI preferences editor', ...
                 'ButtonPushedFcn', @(~,~) obj.Navigator.openPreferences());
             prefs.Layout.Row    = 1;
-            prefs.Layout.Column = 3;
+            prefs.Layout.Column = 4;
             obj.accentButton(prefs);
 
             update = uibutton(grid, ...
@@ -61,13 +72,47 @@ classdef ndiPane < ndi.gui.nav.pane
                 'Tooltip',         'Check for a newer version of NDI-matlab, its calculators and NDI-python', ...
                 'ButtonPushedFcn', @(~,~) obj.checkForUpdates());
             update.Layout.Row    = 1;
-            update.Layout.Column = 2;
+            update.Layout.Column = 3;
             obj.accentButton(update);
+
+            obj.CupButton = uibutton(grid, ...
+                'Text',            '', ...
+                'IconAlignment',   'center', ...
+                'ButtonPushedFcn', @(~,~) obj.toggleAwake());
+            obj.CupButton.Layout.Row    = 1;
+            obj.CupButton.Layout.Column = 2;
+            obj.accentButton(obj.CupButton);
+            obj.AwakeListener = listener(ndi.util.KeepAwake.instance(), ...
+                'Changed', @(~,~) obj.showAwake());
+            obj.showAwake();
         end
 
         function w = rightWidth(~)
-            % broom (28) + spacing (4) + Update (60) + spacing (4) + Prefs (60)
-            w = 156;
+            % broom (28) + cup (28) + Update (60) + Prefs (60) + 3 spacings (4)
+            w = 188;
+        end
+    end
+
+    methods
+        function toggleAwake(obj)
+            %TOGGLEAWAKE Coffee-cup button callback: the manual keep-awake hold.
+            ndi.util.KeepAwake.instance().toggleManual();
+        end
+
+        function showAwake(obj)
+            %SHOWAWAKE Draw the cup as ndi.util.KeepAwake stands now.
+            b = obj.CupButton;
+            if isempty(b) || ~isvalid(b)
+                return;
+            end
+            k = ndi.util.KeepAwake.instance();
+            if k.isOn()
+                name = 'coffee_hot_icon.svg';
+            else
+                name = 'coffee_cold_icon.svg';
+            end
+            b.Icon = fullfile(ndi.common.PathConstants.RootFolder, '+ndi', '+gui', name);
+            b.Tooltip = k.describe();
         end
     end
 

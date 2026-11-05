@@ -26,6 +26,7 @@ classdef TestLightsheetToCloudJob < matlab.unittest.TestCase
             import matlab.unittest.fixtures.EnvironmentVariableFixture
             jobs = testCase.applyFixture(TemporaryFolderFixture);
             testCase.applyFixture(EnvironmentVariableFixture('NDI_JOBS_DIR', jobs.Folder));
+            ndi.test.helper.FakeLauncher.install(testCase);   % nothing really stays awake
             parent = testCase.applyFixture(TemporaryFolderFixture).Folder;
             testCase.zarrPath = ndi.test.lightsheet.makeBlobFixture(parent, ...
                 'Shape', [32 32 32], 'NumChannels', 1, 'NumLevels', 2, ...

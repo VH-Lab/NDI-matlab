@@ -6,12 +6,21 @@ classdef TestJob < matlab.unittest.TestCase
     %
     % Authored without a local MATLAB runtime; needs MATLAB to validate/run.
 
+    properties
+        launcher    % ndi.test.helper.FakeLauncher: nothing really stays awake
+    end
+
     methods (TestMethodSetup)
         function privateJobsFolder(testCase)
             import matlab.unittest.fixtures.TemporaryFolderFixture
             import matlab.unittest.fixtures.EnvironmentVariableFixture
             f = testCase.applyFixture(TemporaryFolderFixture);
             testCase.applyFixture(EnvironmentVariableFixture('NDI_JOBS_DIR', f.Folder));
+            testCase.launcher = ndi.test.helper.FakeLauncher.install(testCase);
+            % As the user has it, put back afterwards.
+            was = ndi.preferences.get('Jobs.KeepComputerAwake');
+            testCase.addTeardown(@() ndi.preferences.set('Jobs.KeepComputerAwake', was));
+            ndi.preferences.set('Jobs.KeepComputerAwake', true);
         end
     end
 
@@ -157,6 +166,64 @@ classdef TestJob < matlab.unittest.TestCase
                 'no time left is shown for a job that is not running');
             testCase.verifyNotEmpty(regexp(rows{1, 5}, '^\d{2}:\d{2}:\d{2}$', 'once'), ...
                 'updated today: the time of day');
+        end
+
+        % -- staying awake ------------------------------------------------
+
+        function testARunKeepsTheComputerAwakeUntilItStops(testCase)
+            job = ndi.test.helper.ScriptedJob.create(3);
+            job.run();
+            testCase.verifyTrue(job.checkpoint.keptAwake, 'awake while it ran');
+            testCase.verifyFalse(ndi.util.KeepAwake.instance().isOn(), ...
+                'allowed to sleep once it finished');
+            testCase.verifyEqual(testCase.launcher.running(), 0);
+        end
+
+        function testAPausedOrFailedRunLetsItSleep(testCase)
+            job = ndi.test.helper.ScriptedJob.create(4);
+            job.PauseAfterBeats = 2;
+            job.run();
+            testCase.verifyEqual(job.state, 'paused');
+            testCase.verifyFalse(ndi.util.KeepAwake.instance().isOn(), 'paused');
+            bad = ndi.test.helper.ScriptedJob.create(1, 'fail');
+            bad.run();
+            testCase.verifyEqual(bad.state, 'failed');
+            testCase.verifyFalse(ndi.util.KeepAwake.instance().isOn(), 'failed');
+        end
+
+        function testTheManualHoldOutlastsAJob(testCase)
+            k = ndi.util.KeepAwake.instance();
+            k.toggleManual();
+            ndi.test.helper.ScriptedJob.create(1).run();
+            testCase.verifyTrue(k.isOn(), 'the cup was turned on by hand: still on');
+            k.toggleManual();
+            testCase.verifyFalse(k.isOn());
+        end
+
+        function testThePreferenceTurnsItOff(testCase)
+            ndi.preferences.set('Jobs.KeepComputerAwake', false);
+            job = ndi.test.helper.ScriptedJob.create(1);
+            job.run();
+            testCase.verifyFalse(job.checkpoint.keptAwake);
+            testCase.verifyEmpty(testCase.launcher.processes, 'no helper was started');
+        end
+
+        function testTheNavigatorsCoffeeCup(testCase)
+            nav = ndi.gui.navigator('Visible', 'off');
+            testCase.addTeardown(@() delete(nav.Figure));
+            pane = [];
+            for i = 1:numel(nav.Panes)
+                if isa(nav.Panes{i}, 'ndi.gui.nav.ndiPane'), pane = nav.Panes{i}; end
+            end
+            testCase.assertNotEmpty(pane);
+            cup = pane.CupButton;
+            testCase.verifySubstring(char(cup.Icon), 'coffee_cold_icon.svg');
+            pane.toggleAwake();
+            testCase.verifySubstring(char(cup.Icon), 'coffee_hot_icon.svg', ...
+                'a steaming cup while the computer is kept awake');
+            testCase.verifySubstring(cup.Tooltip, 'Keeping this computer awake');
+            pane.toggleAwake();
+            testCase.verifySubstring(char(cup.Icon), 'coffee_cold_icon.svg');
         end
 
         % -- time left ---------------------------------------------------

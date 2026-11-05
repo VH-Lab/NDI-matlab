@@ -22,13 +22,13 @@ classdef CurlSender < handle
 %   Each transfer is retried by curl on a transient error, and abandoned
 %   if it stalls (under 1 kB/s for 2 minutes), so a send always ends.
 %
-%   curl is started with java.lang.ProcessBuilder, so the same code runs
-%   on Linux, macOS and Windows without a shell: no quoting, and the
-%   process can be asked whether it is still running. Needs curl 7.68 or
-%   newer (--parallel, and --parallel-immediate: without it curl waits to
-%   multiplex on one HTTP/2 connection, which storage serving HTTP/1.1
-%   turns into one file at a time); SUPPORTED says whether this computer
-%   has it.
+%   curl is started with ndi.util.startProcess (java.lang.ProcessBuilder),
+%   so the same code runs on Linux, macOS and Windows without a shell:
+%   no quoting, and the process can be asked whether it is still running.
+%   Needs curl 7.68 or newer (--parallel, and --parallel-immediate:
+%   without it curl waits to multiplex on one HTTP/2 connection, which
+%   storage serving HTTP/1.1 turns into one file at a time); SUPPORTED
+%   says whether this computer has it.
 %
 %   Deleting S stops a send still running and removes its files.
 %
@@ -69,9 +69,9 @@ classdef CurlSender < handle
 
             blocks = cell(1, n);
             for i = 1:n
-                % No shell is involved (see LAUNCH), so only the config
-                % file's own quoting matters: CONFIGBLOCK escapes \ and ",
-                % and a control character (a newline) is refused.
+                % No shell is involved (see ndi.util.startProcess), so only
+                % the config file's own quoting matters: CONFIGBLOCK escapes
+                % \ and ", and a control character (a newline) is refused.
                 if ~startsWith(char(urls{i}), 'https://') || any(char(urls{i}) < 32)
                     error('NDI:cloud:CurlSender:badUrl', ...
                         'Upload URL %d is not a plain https URL.', i);
@@ -93,7 +93,7 @@ classdef CurlSender < handle
             fwrite(fid, strjoin(blocks, sprintf('next\n')), 'char');
             fclose(fid);
 
-            obj.process = ndi.cloud.upload.CurlSender.launch( ...
+            obj.process = ndi.util.startProcess( ...
                 {'curl', '--parallel', '--parallel-immediate', ...
                  '--parallel-max', sprintf('%d', options.Parallel), ...
                  '--config', obj.cfgFile}, obj.logFile, obj.errFile);
@@ -184,7 +184,7 @@ classdef CurlSender < handle
                 answer = false;
                 try
                     out = [tempname '.txt'];
-                    p = ndi.cloud.upload.CurlSender.launch({'curl', '--version'}, out, out);
+                    p = ndi.util.startProcess({'curl', '--version'}, out, out);
                     if p.waitFor(20, java.util.concurrent.TimeUnit.SECONDS) && p.exitValue() == 0
                         v = ndi.cloud.upload.CurlSender.parseVersion(fileread(out));
                         answer = v(1) > 7 || (v(1) == 7 && v(2) >= 68);
@@ -230,37 +230,6 @@ classdef CurlSender < handle
                 'speed-limit = 1024', 'speed-time = 120', ...
                 ['write-out = "' uid ' %{http_code}\n"']}];
             s = sprintf('%s\n', lines{:});
-        end
-    end
-
-    methods (Static, Access = private)
-        function p = launch(args, outFile, errFile)
-        % Start ARGS as a process with stdout to OUTFILE and stderr to
-        % ERRFILE (the same file is fine), returning the java Process.
-            jargs = javaArray('java.lang.String', numel(args));
-            for k = 1:numel(args)
-                jargs(k) = java.lang.String(args{k});
-            end
-            pb = java.lang.ProcessBuilder(jargs);
-            if ~ispc
-                % As ndi.common.systemCurlEnvPrefix: the OS curl must load
-                % the OS libraries, not MATLAB's.
-                env = pb.environment();
-                orig = getenv('MW_ORIG_LD_LIBRARY_PATH');
-                if isempty(orig)
-                    env.remove('LD_LIBRARY_PATH');
-                else
-                    env.put('LD_LIBRARY_PATH', orig);
-                end
-            end
-            if strcmp(outFile, errFile)
-                pb.redirectErrorStream(true);
-                pb.redirectOutput(java.io.File(outFile));
-            else
-                pb.redirectOutput(java.io.File(outFile));
-                pb.redirectError(java.io.File(errFile));
-            end
-            p = pb.start();
         end
     end
 end
