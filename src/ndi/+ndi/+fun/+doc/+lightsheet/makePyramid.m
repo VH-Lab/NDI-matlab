@@ -550,7 +550,7 @@ function [levelDoc, doneChunks, twinDoc] = makeOneLevel(session, pyramidDoc, pyr
         else
             twin.stream = tStream;
             twin.levelDoc = tDoc;
-            twinCleaner = onCleanup(@() cleanupTmp(tTmp)); %#ok<NASGU> lives to the end
+            twinCleaner = onCleanup(@() cleanupTmp(tTmp));
         end
     end
     tmpCleaner = onCleanup(@() cleanupTmp(tmpRoot));
@@ -567,7 +567,7 @@ function [levelDoc, doneChunks, twinDoc] = makeOneLevel(session, pyramidDoc, pyr
             options.debugLog, stream, options.profiler, twin, options.readWorkers, ...
             options.splitReadsWithoutPool);
         if isempty(stream)
-            tmpCleaner = onCleanup(@() cleanupTmp(tmpRoot)); %#ok<NASGU> replaces the one above
+            tmpCleaner = onCleanup(@() cleanupTmp(tmpRoot));
         end
         if ~isempty(twin)
             twinDoc = twin.levelDoc;
