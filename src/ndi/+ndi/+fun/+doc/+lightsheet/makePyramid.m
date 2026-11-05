@@ -174,6 +174,12 @@ function [pyramidDoc, levelDocs, sharedLevel0] = makePyramid(session, pyramids, 
         % when there is no pool, so the split-and-join is exercised where
         % no parallel pool can be had.
         options.splitReadsWithoutPool (1,1) logical = false
+        % FOLDING (streaming SmartSPIM builds). Levels block-reduced
+        % straight from the slices (level 1 of each ladder) are built
+        % during level 0, from its own reads of the slices, so the slices
+        % are read once in all (see buildFolded). False builds them
+        % afterwards, both ladders together from one more read.
+        options.foldLevel1 (1,1) logical = true
         options.profileEverySeconds (1,1) double {mustBePositive} = 600
         % Per-level-path byte sources; see "WHERE THE BYTES COME FROM"
         % above. Empty (default) reads every level from sourceZarrPath.
@@ -336,6 +342,14 @@ function [pyramidDoc, levelDocs, sharedLevel0] = makePyramid(session, pyramids, 
         end
     end
 
+    % Folded levels (built during level 0) cost no read of their own.
+    if streaming && options.foldLevel1 && options.materializeChunks
+        for fk = foldCandidates(false(1, numel(pathOrder)))
+            totalChunks = totalChunks - prod(levelGrids{fk}) * ...
+                (chunkWeight(options.levelSources(pathOrder{fk})) - 1);
+        end
+    end
+
     % Announce the run configuration. Users have hit "the parfor did
     % nothing" because MATLAB had cached the old .m file, or because
     % no parpool was open at call time. A single up-front print says
@@ -406,10 +420,37 @@ function [pyramidDoc, levelDocs, sharedLevel0] = makePyramid(session, pyramids, 
                 stream.existing = resumedLevel(options.resume, idx - 1, reductionFn);
             end
         end
-        % A TWIN: a later level reduced from the same slices with the same
-        % chunk grid, by another reduction (the max ladder's level 1
-        % beside the mean ladder's). Built with this one, it costs no read
-        % of the slices of its own.
+        % FOLDED levels: built during this level, from its reads (level 0
+        % from the slices, with level 1 of each ladder).
+        fold = [];
+        qs = [];
+        if streaming && options.foldLevel1 && ~isempty(source) && strcmp(source.kind, 'smartspim')
+            qs = foldCandidates(built);
+        end
+        for fq = qs
+            [fEntry, fLevel, fReduction] = levelMeta(pathOrder{fq});
+            fStream = struct('session', session, ...
+                'retain', isKey(readers, pathOrder{fq}) && readers(pathOrder{fq}) > 0, ...
+                'existing', []);
+            if resuming
+                fStream.existing = resumedLevel(options.resume, fq - 1, fReduction);
+            end
+            fSource = resolveLevelSource(session, pathOrder{fq}, fEntry, fLevel, options, docByPath);
+            fSource.folded = true;
+            one = struct('entry', fEntry, 'level', fLevel, 'levelIndex', fq - 1, ...
+                'reductionFn', fReduction, 'source', fSource, 'stream', fStream, ...
+                'chunks', levelChunks{fq}, 'grid', levelGrids{fq}, ...
+                'shape', double(fLevel.shape(:).'), 'q', fq);
+            if isempty(fold), fold = one; else, fold(end+1) = one; end
+            fprintf(['[makePyramid] Level %d/%d (%s, %s) is built during this ' ...
+                'level, from the same reads of the slices.\n'], fq, numel(pathOrder), ...
+                char(fEntry.name), fReduction);
+        end
+
+        % A TWIN (when not folded): a later level reduced from the same
+        % slices with the same chunk grid, by another reduction (the max
+        % ladder's level 1 beside the mean ladder's). Built with this one,
+        % it costs no read of the slices of its own.
         twin = [];
         q = 0;
         if streaming && ~isempty(source) && strcmp(source.kind, 'reduceSmartspim')
@@ -432,11 +473,19 @@ function [pyramidDoc, levelDocs, sharedLevel0] = makePyramid(session, pyramids, 
                 'from the same reads of the slices.\n'], q, numel(pathOrder), ...
                 char(tEntry.name), tReduction);
         end
-        [levelDocs{idx}, doneChunks, twinDoc] = makeOneLevel(session, pyramidDoc, ...
+        [levelDocs{idx}, doneChunks, twinDoc, foldDocs] = makeOneLevel(session, pyramidDoc, ...
             entry, level, idx - 1, reductionFn, options, ...
             levelChunks{idx}, levelGrids{idx}, ...
-            doneChunks, totalChunks, source, stream, twin);
+            doneChunks, totalChunks, source, stream, twin, fold);
         docByPath(p) = levelDocs{idx};
+        for fk = 1:numel(foldDocs)
+            if ~isempty(foldDocs{fk})
+                fq = fold(fk).q;
+                levelDocs{fq} = foldDocs{fk};
+                docByPath(pathOrder{fq}) = foldDocs{fk};
+                built(fq) = true;
+            end
+        end
         if ~isempty(twinDoc)
             levelDocs{q} = twinDoc;
             docByPath(pathOrder{q}) = twinDoc;
@@ -470,6 +519,43 @@ function [pyramidDoc, levelDocs, sharedLevel0] = makePyramid(session, pyramids, 
             reductionFn = 'none';
         else
             reductionFn = lmReds{1};
+        end
+    end
+
+    function qs = foldCandidates(done)
+    % The levels that can be built during level 0 (pathOrder{1}, read from
+    % the slices): later, not DONE, block-reduced straight from the same
+    % slices of level 0's shape, all with one factor and one chunk shape,
+    % and with a read region (planFoldCells) of at most 8 GB.
+        qs = [];
+        if ~isa(options.levelSources, 'containers.Map') || ...
+                ~isKey(options.levelSources, pathOrder{1}), return; end
+        fcZero = options.levelSources(pathOrder{1});
+        if ~strcmp(fcZero.kind, 'smartspim'), return; end
+        fcRep = representative(pathOrder{1});
+        fcShape = double(pyramids(fcRep.entryIdx).levels(fcRep.levelIdx).shape(:).');
+        fcFactor = [];
+        fcChunks = [];
+        for fcK = 2:numel(pathOrder)
+            if done(fcK) || ~isKey(options.levelSources, pathOrder{fcK}), continue; end
+            fcSrc = options.levelSources(pathOrder{fcK});
+            if ~strcmp(fcSrc.kind, 'reduceSmartspim') || ...
+                    ~isequal(fcSrc.slicePaths, fcZero.slicePaths) || ...
+                    ~isequal(double(fcSrc.fromShape(:).'), fcShape)
+                continue
+            end
+            fcF = double(fcSrc.factor(:).');
+            if isempty(fcFactor)
+                fcFactor = fcF;
+                fcChunks = levelChunks{fcK};
+                fcL = arrayfun(@(a) lcm(levelChunks{1}(a), fcChunks(a) * fcF(a)), 1:numel(fcF));
+                if prod(min(fcL, fcShape)) * elementSizeBytes(char(fcZero.dtype)) > 8 * 2^30
+                    return      % too big a region to hold: build them afterwards
+                end
+            elseif ~isequal(fcF, fcFactor) || ~isequal(levelChunks{fcK}, fcChunks)
+                continue
+            end
+            qs(end+1) = fcK; %#ok<AGROW>
         end
     end
 
@@ -520,7 +606,7 @@ function from = reducedFrom(levelSources, p)
     end
 end
 
-function [levelDoc, doneChunks, twinDoc] = makeOneLevel(session, pyramidDoc, pyramidEntry, level, levelIndex, reductionFn, options, chunks, chunkGrid, doneChunks, totalChunks, source, stream, twin)
+function [levelDoc, doneChunks, twinDoc, foldDocs] = makeOneLevel(session, pyramidDoc, pyramidEntry, level, levelIndex, reductionFn, options, chunks, chunkGrid, doneChunks, totalChunks, source, stream, twin, fold)
 % MAKEONELEVEL - declare (or adopt) one level, and build its chunks
 %
 %   TWIN, when not empty, is another level built from the SAME reads: a
@@ -533,12 +619,36 @@ function [levelDoc, doneChunks, twinDoc] = makeOneLevel(session, pyramidDoc, pyr
 %   (it had nothing left to send, or this level had nothing left, in
 %   which case the caller builds the twin on its own).
     if nargin < 14, twin = []; end
+    if nargin < 15, fold = []; end
     twinDoc = [];
+    foldDocs = cell(1, numel(fold));
     [levelDoc, stream, doneChunks, complete, tmpRoot] = prepareLevel(session, ...
         pyramidDoc, pyramidEntry, level, levelIndex, reductionFn, options, ...
         chunks, chunkGrid, doneChunks, source, stream);
     if complete
-        return
+        return      % the folded levels, if any, are built on their own later
+    end
+    % FOLDED levels (built from this level's reads): declare or adopt
+    % each; one with nothing left to send is simply recorded.
+    keepFold = true(1, numel(fold));
+    foldCleaners = cell(1, numel(fold));
+    for k = 1:numel(fold)
+        [fDoc, fStream, doneChunks, fComplete, fTmp] = prepareLevel(session, ...
+            pyramidDoc, fold(k).entry, fold(k).level, fold(k).levelIndex, ...
+            fold(k).reductionFn, options, fold(k).chunks, fold(k).grid, ...
+            doneChunks, fold(k).source, fold(k).stream);
+        foldDocs{k} = fDoc;
+        if fComplete
+            keepFold(k) = false;
+        else
+            fold(k).stream = fStream;
+            foldCleaners{k} = onCleanup(@() cleanupTmp(fTmp));
+        end
+    end
+    fold = fold(keepFold);
+    foldAt = find(keepFold);
+    if ~isempty(fold)
+        twin = [];      % the folded levels include any twin
     end
     if ~isempty(twin)
         [tDoc, tStream, doneChunks, tComplete, tTmp] = prepareLevel(session, ...
@@ -559,13 +669,20 @@ function [levelDoc, doneChunks, twinDoc] = makeOneLevel(session, pyramidDoc, pyr
         if ~isempty(twin)
             levelLabel = sprintf('Level %d (%s+%s)', levelIndex, reductionFn, twin.reductionFn);
         end
+        if ~isempty(fold)
+            levelLabel = sprintf('Level %d (%s) + level %d (%s)', levelIndex, reductionFn, ...
+                fold(1).levelIndex, strjoin({fold.reductionFn}, ', '));
+        end
         [levelDoc, tmpRoot, doneChunks] = attachChunkFiles(levelDoc, ...
             source, level, chunks, chunkGrid, ...
             options.codec, options.clevel, ...
             options.progressFcn, doneChunks, totalChunks, levelLabel, ...
             options.numWorkers, options.prefetchBytes, options.asyncPrefetch, ...
             options.debugLog, stream, options.profiler, twin, options.readWorkers, ...
-            options.splitReadsWithoutPool);
+            options.splitReadsWithoutPool, fold);
+        for k = 1:numel(fold)
+            foldDocs{foldAt(k)} = fold(k).stream.levelDoc;
+        end
         if isempty(stream)
             tmpCleaner = onCleanup(@() cleanupTmp(tmpRoot));
         end
@@ -656,7 +773,7 @@ function [levelDoc, stream, doneChunks, complete, tmpRoot] = prepareLevel(sessio
     end
 end
 
-function [levelDoc, tmpRoot, doneChunks] = attachChunkFiles(levelDoc, source, level, chunks, chunkGrid, codec, clevel, progressFcn, doneChunks, totalChunks, levelLabel, numWorkers, prefetchBytes, asyncPrefetch, debugLog, stream, profiler, twin, readWorkers, splitWithoutPool)
+function [levelDoc, tmpRoot, doneChunks] = attachChunkFiles(levelDoc, source, level, chunks, chunkGrid, codec, clevel, progressFcn, doneChunks, totalChunks, levelLabel, numWorkers, prefetchBytes, asyncPrefetch, debugLog, stream, profiler, twin, readWorkers, splitWithoutPool, fold)
 % Read the source zarr level as a whole array, then re-tile into the
 % level document's chunk shape and attach each chunk as chunk.bin_<idx>
 % (1-based, C-order over chunkGrid). Files are ingested into DID, which
@@ -744,6 +861,17 @@ function [levelDoc, tmpRoot, doneChunks] = attachChunkFiles(levelDoc, source, le
     % (within one plane, so the box stays tight) up to the budget; a row
     % bigger than twice the budget is split into equal parts. See
     % planSuperBlocks.
+    if nargin >= 21 && ~isempty(fold)
+        % Level 0 with the levels folded into it: regions planned for all
+        % of them (see buildFolded). Up to 4x the usual read budget, since
+        % one read now serves several levels.
+        doneChunks = buildFolded(source, shape, chunks, chunkGrid, typesize, ...
+            stream, fold, codec, clevel, poolSize, readWorkers, asyncPrefetch, ...
+            4 * prefetchBytes, progressFcn, doneChunks, totalChunks, levelLabel, ...
+            profiler, debugLog, splitWithoutPool, tmpRoot);
+        profiler.endLevel(levelLabel);
+        return
+    end
     superBlocks = planSuperBlocks(linearOrder, chunks, chunkGrid, shape, ...
         prefetchChunkCount);
     nSuperBlocks = numel(superBlocks);
@@ -976,12 +1104,13 @@ function [tempPaths, chunkIdxs, t] = encodeBlock(bigTile, sb, sel, chunks, shape
     end
 end
 
-function rd = startRead(pool, src, lo, hi, nParts)
+function rd = startRead(pool, src, lo, hi, nParts, align)
 % STARTREAD - read region [lo, hi] as up to NPARTS slabs along z (axis 3:
 % t,c,z,y,x), each on its own pool worker; FINISHREAD puts them together.
 % With POOL empty the slabs are read here, one after another (a test of
 % the split and join where no pool can be had).
-    [plo, phi] = splitAlongZ(lo, hi, nParts);
+    if nargin < 6, align = 1; end
+    [plo, phi] = splitAlongZ(lo, hi, nParts, align);
     rd = cell(1, numel(plo));
     for k = 1:numel(plo)
         if isempty(pool)
@@ -1012,15 +1141,20 @@ function tiles = finishRead(rd)
     end
 end
 
-function [plo, phi] = splitAlongZ(lo, hi, nParts)
-% Region [lo, hi] as up to nParts contiguous, nonempty slabs along axis 3.
+function [plo, phi] = splitAlongZ(lo, hi, nParts, align)
+% Region [lo, hi] as up to nParts contiguous, nonempty slabs along axis 3,
+% each starting ALIGN voxels apart from lo (a reduction's block size, so a
+% slab can be reduced on its own and give the same voxels).
+    if nargin < 4, align = 1; end
     if numel(lo) < 3 || nParts <= 1
         plo = {lo};
         phi = {hi};
         return
     end
-    n = min(nParts, hi(3) - lo(3) + 1);
-    edges = round(linspace(lo(3) - 1, hi(3), n + 1));
+    len = hi(3) - lo(3) + 1;
+    nBlocks = ceil(len / align);
+    n = min(nParts, nBlocks);
+    edges = lo(3) - 1 + min(round(linspace(0, nBlocks, n + 1)) * align, len);
     plo = cell(1, n);
     phi = cell(1, n);
     for k = 1:n
@@ -1036,6 +1170,8 @@ function tiles = readTiles(src, lo, hi)
 % for a pair of levels reduced from the same slices, one per level.
     if strcmp(src.kind, 'reduceSmartspimPair')
         tiles = readSmartSpimPairRegion(src, lo, hi);
+    elseif strcmp(src.kind, 'smartspimFold')
+        tiles = readSmartSpimFoldRegion(src, lo, hi);
     else
         tiles = {readSuperBlockRegion(src, lo, hi)};
     end
@@ -1054,6 +1190,206 @@ function out = readSmartSpimPairRegion(source, lo, hi)
     out = cell(1, numel(source.reductions));
     for k = 1:numel(source.reductions)
         out{k} = ndi.fun.doc.lightsheet.reduceBlocks(src, f, ...
+            source.reductions{k}, source.dtypes{k});
+    end
+end
+
+function doneChunks = buildFolded(source, shape, chunks, chunkGrid, typesize, stream, fold, codec, clevel, poolSize, readWorkers, asyncPrefetch, budgetBytes, progressFcn, doneChunks, totalChunks, levelLabel, profiler, debugLog, splitWithoutPool, tmpRoot)
+% BUILDFOLDED - level 0 and the levels FOLD lists, from ONE read of the slices
+%
+%   FOLD is a struct array of levels block-reduced straight from the same
+%   SmartSPIM slices (level 1 of the mean and max ladders): fields
+%   source (reduceSmartspim), chunks, grid, shape and stream. Each read
+%   is a region of level 0 that holds whole level-0 chunks AND whole
+%   chunks of every folded level (see planFoldCells); its level-0 chunks
+%   are cut from it as usual, and it is block-reduced to each folded
+%   level exactly as readSmartSpimReducedRegion would reduce the same
+%   voxels (ndi.fun.doc.lightsheet.reduceBlocks), so every byte is what a
+%   separate pass would make. On resume a region is read if any level
+%   still lacks a chunk in it, and each level is sent only what it lacks.
+    nFold = numel(fold);
+    f = double(fold(1).source.factor(:).');
+    cells = planFoldCells(shape, chunks, fold(1).chunks, fold(1).shape, f, ...
+        budgetBytes, typesize);
+
+    % Which chunks of each cell each level still needs.
+    keep = false(1, numel(cells));
+    for b = 1:numel(cells)
+        c = cells{b};
+        c.mine = true(size(c.idxs));
+        if ~isempty(stream.only), c.mine = ismember(c.idxs, stream.only); end
+        c.sel = cell(1, nFold);
+        any1 = false;
+        for k = 1:nFold
+            c.sel{k} = true(size(c.L1.idxs));
+            if ~isempty(fold(k).stream.only)
+                c.sel{k} = ismember(c.L1.idxs, fold(k).stream.only);
+            end
+            any1 = any1 || any(c.sel{k});
+        end
+        keep(b) = any(c.mine) || any1;
+        cells{b} = c;
+    end
+    cells = cells(keep);
+    nCells = numel(cells);
+    fprintf(['[makePyramid] %d read(s) of the slices, each giving level 0 and ' ...
+        '%d reduced level(s).\n'], nCells, nFold);
+
+    readSource = struct('kind', 'smartspimFold', ...
+        'slicePaths', {source.slicePaths}, 'dtype', source.dtype, 'factor', f, ...
+        'reductions', {arrayfun(@(x) x.source.reduction, fold, 'UniformOutput', false)}, ...
+        'dtypes', {arrayfun(@(x) x.source.dtype, fold, 'UniformOutput', false)});
+    nReaders = max(1, min(poolSize, readWorkers));
+    useAsync = asyncPrefetch && poolSize > 1 && nCells > 1;
+    if useAsync
+        pool = gcp();
+        nextRead = startRead(pool, readSource, cells{1}.loBBox, cells{1}.hiBBox, ...
+            nReaders, f(3));
+    end
+    for s = 1:nCells
+        cb = cells{s};
+        tBlock = tic;
+        tStep = tic;
+        if useAsync
+            tiles = finishRead(nextRead);
+            if s < nCells
+                nextRead = startRead(pool, readSource, cells{s+1}.loBBox, ...
+                    cells{s+1}.hiBBox, nReaders, f(3));
+            end
+        elseif splitWithoutPool
+            tiles = finishRead(startRead([], readSource, cb.loBBox, cb.hiBBox, readWorkers, f(3)));
+        else
+            tiles = readTiles(readSource, cb.loBBox, cb.hiBBox);
+        end
+        tReadWait = toc(tStep);
+
+        [p0, i0, tm] = encodeBlock(tiles{1}, cb, cb.mine, chunks, shape, ...
+            codec, clevel, typesize, tmpRoot, poolSize);
+        pk = cell(1, nFold);
+        ik = cell(1, nFold);
+        sb1 = struct('idxs', cb.L1.idxs, 'loRows', cb.L1.loRows, ...
+            'hiRows', cb.L1.hiRows, 'loBBox', cb.L1.loBBox, 'hiBBox', cb.L1.hiBBox);
+        for k = 1:nFold
+            [pk{k}, ik{k}, tk] = encodeBlock(tiles{1 + k}, sb1, cb.sel{k}, ...
+                fold(k).chunks, fold(k).shape, codec, clevel, ...
+                elementSizeBytes(fold(k).source.dtype), fold(k).stream.tmpRoot, poolSize);
+            tm.assemble = tm.assemble + tk.assemble;
+            tm.compress = tm.compress + tk.compress;
+            tm.workerBusy = tm.workerBusy + tk.workerBusy;
+            tm.mbOut = tm.mbOut + tk.mbOut;
+        end
+        clear tiles;
+
+        tStep = tic;
+        before = sessionTiming(stream);
+        if ~isempty(i0)
+            stream.session.streamMembers(stream.levelDoc, 'chunk.bin', i0, p0, stream.retain);
+        end
+        for k = 1:nFold
+            if ~isempty(ik{k})
+                fold(k).stream.session.streamMembers(fold(k).stream.levelDoc, ...
+                    'chunk.bin', ik{k}, pk{k}, fold(k).stream.retain);
+            end
+        end
+        tUpload = toc(tStep);
+        after = sessionTiming(stream);
+        nDone = numel(i0) + sum(cellfun(@numel, ik));
+        doneChunks = doneChunks + nDone;    % folded chunks cost no read of their own
+        tStep = tic;
+        reportProgress(progressFcn, doneChunks, totalChunks, ...
+            sprintf('%s: read %d/%d of the slices', levelLabel, s, nCells));
+        tProgress = toc(tStep);
+        bboxMB = prod(double(cb.hiBBox - cb.loBBox + 1)) * typesize / 2^20;
+        profiler.add(struct('level', levelLabel, 'superblock', s, ...
+            'nSuperBlocks', nCells, 'chunks', nDone, ...
+            'workers', max(1, min(poolSize, numel(i0))), ...
+            'mbRead', bboxMB, ...
+            'mbChunks', numel(i0) * prod(chunks) * typesize / 2^20, 'mbOut', tm.mbOut, ...
+            'readWait', tReadWait, 'assemble', tm.assemble, 'compress', tm.compress, ...
+            'workerBusy', tm.workerBusy, 'upload', tUpload, ...
+            'urls', after.urls - before.urls, 'stage', after.stage - before.stage, ...
+            'send', after.send - before.send, 'verify', after.verify - before.verify, ...
+            'progress', tProgress, 'total', toc(tBlock)));
+        appendDebugLog(debugLog, levelLabel, s, nCells, doneChunks, totalChunks, ...
+            NaN, NaN, bboxMB);
+    end
+end
+
+function cells = planFoldCells(shape0, c0, c1, shape1, f, budgetBytes, typesize)
+% PLANFOLDCELLS - regions of level 0 that hold whole chunks of level 0
+% (chunk shape C0) and of a level reduced from it by F (chunk shape C1)
+%
+%   Along each axis a cell is L = lcm(C0, C1.*F) voxels of level 0, so it
+%   starts on a level-0 chunk boundary and on a reduced-level chunk
+%   boundary; whole cells are grouped along x (the last axis) up to
+%   BUDGETBYTES (at least one), since a slice is read in full-width
+%   strips. Each cell lists its level-0 chunks (idxs, loRows, hiRows,
+%   loBBox, hiBBox, linear C-order ids as allChunkIndices numbers them)
+%   and, in L1, the reduced level's chunks in that level's coordinates.
+%   Cells are in C order (x groups fastest).
+    nd = numel(shape0);
+    shape0 = double(shape0(:).'); shape1 = double(shape1(:).');
+    c0 = double(c0(:).'); c1 = double(c1(:).'); f = double(f(:).');
+    L = arrayfun(@(a) lcm(c0(a), c1(a) * f(a)), 1:nd);
+    nCell = ceil(shape0 ./ L);
+    cellBytes = prod(min(L, shape0)) * typesize;
+    gx = max(1, min(nCell(nd), floor(budgetBytes / max(cellBytes, 1))));
+    nCell(nd) = ceil(nCell(nd) / gx);
+    span = ones(1, nd);
+    span(nd) = gx;
+    grid0 = ceil(shape0 ./ c0);
+    grid1 = ceil(shape1 ./ c1);
+    total = prod(nCell);
+    cells = cell(1, total);
+    sub = cell(1, nd);
+    for t = 1:total
+        % C order: last axis fastest.
+        [sub{nd:-1:1}] = ind2sub(fliplr(nCell), t);
+        cc = [sub{:}];
+        lo0 = (cc - 1) .* L .* span + 1;
+        hi0 = min(lo0 + L .* span - 1, shape0);
+        L0 = chunksIn(lo0, hi0, c0, grid0, shape0);
+        lo1 = (lo0 - 1) ./ f + 1;
+        hi1 = min(ceil(hi0 ./ f), shape1);
+        L1 = chunksIn(lo1, hi1, c1, grid1, shape1);
+        cells{t} = struct('idxs', L0.idxs, 'loRows', L0.loRows, 'hiRows', L0.hiRows, ...
+            'loBBox', lo0, 'hiBBox', hi0, 'L1', L1);
+    end
+end
+
+function S = chunksIn(lo, hi, c, grid, shape)
+% The chunks (shape C, grid GRID) of region [LO, HI], which starts on a
+% chunk boundary: linear C-order ids, ascending, and each one's extent.
+    nd = numel(lo);
+    cLo = (lo - 1) ./ c + 1;
+    cHi = ceil(hi ./ c);
+    ranges = arrayfun(@(a) cLo(a):cHi(a), 1:nd, 'UniformOutput', false);
+    g = cell(1, nd);
+    [g{:}] = ndgrid(ranges{:});
+    coords = cell2mat(cellfun(@(x) x(:), g, 'UniformOutput', false));
+    strides = ones(1, nd);
+    for a = nd-1:-1:1
+        strides(a) = strides(a + 1) * grid(a + 1);
+    end
+    ids = (coords - 1) * strides(:) + 1;
+    [ids, order] = sort(ids(:).');
+    coords = coords(order, :);
+    loRows = (coords - 1) .* c + 1;
+    hiRows = min(loRows + c - 1, shape);
+    S = struct('idxs', ids, 'loRows', loRows, 'hiRows', hiRows, ...
+        'loBBox', lo, 'hiBBox', hi);
+end
+
+function out = readSmartSpimFoldRegion(source, lo, hi)
+% READSMARTSPIMFOLDREGION - region [lo, hi] of level 0 from the slices,
+% and the same voxels block-reduced by each of source.reductions: {raw,
+% reduced 1, reduced 2, ...}. [lo, hi] starts on a block boundary.
+    raw = readSmartSpimRegion(struct('slicePaths', {source.slicePaths}, ...
+        'dtype', source.dtype), lo, hi);
+    out = cell(1, 1 + numel(source.reductions));
+    out{1} = raw;
+    for k = 1:numel(source.reductions)
+        out{1 + k} = ndi.fun.doc.lightsheet.reduceBlocks(raw, source.factor, ...
             source.reductions{k}, source.dtypes{k});
     end
 end
@@ -1298,7 +1634,8 @@ function w = chunkWeight(source)
 % other chunk is one: a level-0 chunk reads itself, and a chunk reduced
 % from the level before reads that level's local copy, which is quick.
     w = 1;
-    if isstruct(source) && isfield(source, 'kind') && strcmp(source.kind, 'reduceSmartspim')
+    if isstruct(source) && isfield(source, 'kind') && strcmp(source.kind, 'reduceSmartspim') ...
+            && ~(isfield(source, 'folded') && source.folded)
         w = prod(double(source.factor));
     end
 end

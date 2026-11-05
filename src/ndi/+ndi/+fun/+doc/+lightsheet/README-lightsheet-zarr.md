@@ -115,10 +115,14 @@ W = ndi.cloud.upload.SessionWriter(datasetId, sessionId);
 - **Reading the slices.** Each batch of slices is read by several pool
   workers at once, each a slab along z (`readWorkers`, default 8): over a
   network every slice file costs a round trip, so reading them one at a
-  time left the link mostly idle. The max ladder's level 1 is built
-  together with the mean ladder's, from the same reads (each region of
-  the slices is reduced both ways), so the slices are read twice in all
-  (level 0, then both level 1s) rather than three times.
+  time left the link mostly idle. Level 1 of both ladders is built
+  during level 0, from the same reads: each read is a region holding
+  whole level-0 chunks and whole level-1 chunks, cut into level 0's
+  chunks and block-reduced to each ladder's level 1, so the slices are
+  read once in all. (When that cannot be done -- resuming a job whose
+  level 0 is finished, say -- both level 1s are built afterwards from one
+  more read.) Both level 1s then stay on this disk until level 2 of their
+  ladder is made from them.
 - **Disk.** A chunk is deleted locally once the cloud has it, unless a
   later level is reduced from its level; that level is deleted once the
   later level is built. For SmartSPIM, level 1 of each ladder is reduced

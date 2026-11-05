@@ -40,17 +40,27 @@ classdef TestFromSPIMToCloud < matlab.unittest.TestCase
     methods (Test)
 
         function testEveryChunkMatchesALocalIngest(testCase)
-            testCase.streamAndCompare({});
+            % Level 1 of both ladders folded into level 0: one read of the slices.
+            testCase.streamAndCompare({}, ...
+                'is built during this level, from the same reads of the slices');
         end
 
         function testSlicesReadInSlabsGiveTheSameBytes(testCase)
-            % The parallel read's split along z and join, without a pool.
-            testCase.streamAndCompare({'readWorkers', 3, 'splitReadsWithoutPool', true});
+            % The parallel read's split along z (on reduction-block
+            % boundaries) and join, without a pool.
+            testCase.streamAndCompare({'readWorkers', 3, 'splitReadsWithoutPool', true}, ...
+                'is built during this level, from the same reads of the slices');
+        end
+
+        function testUnfoldedTheLadderLevelOnesAreBuiltTogether(testCase)
+            % Without folding: both ladders' level 1 from one more read.
+            testCase.streamAndCompare({'foldLevel1', false}, ...
+                'is built with it, from the same reads of the slices');
         end
     end
 
     methods
-        function streamAndCompare(testCase, extra)
+        function streamAndCompare(testCase, extra, expectedMessage)
             args = {'voxelSizeUm', [1 1 1], 'minLevelSize', 8, ...
                 'chunks', [1 1 2 32 8], 'progressFcn', [], 'numWorkers', 0};
 
@@ -59,8 +69,7 @@ classdef TestFromSPIMToCloud < matlab.unittest.TestCase
             P = []; L = {}; info = []; %#ok<NASGU> set by evalc below
             out = evalc(['[P, L, info] = ndi.fun.doc.lightsheet.fromSPIM(W, testCase.root, ' ...
                 '''subjectID'', testCase.subjectId, args{:}, extra{:});']);
-            testCase.verifySubstring(out, 'is built with it, from the same reads of the slices', ...
-                'the max ladder''s level 1 is built from the mean ladder''s reads');
+            testCase.verifySubstring(out, expectedMessage);
             testCase.verifyEqual(info.cloud.documents, 2 + numel(L));
             testCase.assertGreaterThan(numel(L), 2, ...
                 'the fixture must give a ladder with a level 1 and below');

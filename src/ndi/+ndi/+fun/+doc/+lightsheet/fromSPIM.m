@@ -110,6 +110,9 @@ function [pyramidDoc, levelDocs, info] = fromSPIM(session, rootDir, options)
         % Pool workers reading one batch of slices at once (makePyramid).
         options.readWorkers (1,1) double {mustBeInteger, mustBePositive} = 8
         options.splitReadsWithoutPool (1,1) logical = false
+        % Build level 1 of each ladder during level 0, from the same reads
+        % of the slices (makePyramid foldLevel1). Streaming builds only.
+        options.foldLevel1 (1,1) logical = true
         % Resume an interrupted streamed build; see makePyramid's resume
         % option. Pass the earlier run's sourceFileID with it.
         options.resume = []
@@ -257,6 +260,7 @@ function [pyramidDoc, levelDocs, info] = fromSPIM(session, rootDir, options)
         'profileLog', options.profileLog, ...
         'readWorkers', options.readWorkers, ...
         'splitReadsWithoutPool', options.splitReadsWithoutPool, ...
+        'foldLevel1', options.foldLevel1, ...
         'resume', options.resume);
 
     info = struct( ...
