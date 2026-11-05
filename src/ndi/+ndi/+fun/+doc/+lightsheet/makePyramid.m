@@ -441,7 +441,7 @@ function [pyramidDoc, levelDocs, sharedLevel0] = makePyramid(session, pyramids, 
                 'reductionFn', fReduction, 'source', fSource, 'stream', fStream, ...
                 'chunks', levelChunks{fq}, 'grid', levelGrids{fq}, ...
                 'shape', double(fLevel.shape(:).'), 'q', fq);
-            if isempty(fold), fold = one; else, fold(end+1) = one; end
+            if isempty(fold), fold = one; else, fold(end+1) = one; end %#ok<AGROW> a level or two
             fprintf(['[makePyramid] Level %d/%d (%s, %s) is built during this ' ...
                 'level, from the same reads of the slices.\n'], fq, numel(pathOrder), ...
                 char(fEntry.name), fReduction);
@@ -1194,7 +1194,7 @@ function out = readSmartSpimPairRegion(source, lo, hi)
     end
 end
 
-function doneChunks = buildFolded(source, shape, chunks, chunkGrid, typesize, stream, fold, codec, clevel, poolSize, readWorkers, asyncPrefetch, budgetBytes, progressFcn, doneChunks, totalChunks, levelLabel, profiler, debugLog, splitWithoutPool, tmpRoot)
+function doneChunks = buildFolded(source, shape, chunks, ~, typesize, stream, fold, codec, clevel, poolSize, readWorkers, asyncPrefetch, budgetBytes, progressFcn, doneChunks, totalChunks, levelLabel, profiler, debugLog, splitWithoutPool, tmpRoot)
 % BUILDFOLDED - level 0 and the levels FOLD lists, from ONE read of the slices
 %
 %   FOLD is a struct array of levels block-reduced straight from the same
