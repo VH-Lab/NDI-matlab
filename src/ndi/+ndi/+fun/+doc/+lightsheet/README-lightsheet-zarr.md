@@ -112,6 +112,13 @@ W = ndi.cloud.upload.SessionWriter(datasetId, sessionId);
   Nothing in the cloud is ever unreferenced, so the orphan cleanup has
   nothing to remove; a stopped run leaves a pyramid labelled
   "(uploading)" with some chunks missing.
+- **Reading the slices.** Each batch of slices is read by several pool
+  workers at once, each a slab along z (`readWorkers`, default 8): over a
+  network every slice file costs a round trip, so reading them one at a
+  time left the link mostly idle. The max ladder's level 1 is built
+  together with the mean ladder's, from the same reads (each region of
+  the slices is reduced both ways), so the slices are read twice in all
+  (level 0, then both level 1s) rather than three times.
 - **Disk.** A chunk is deleted locally once the cloud has it, unless a
   later level is reduced from its level; that level is deleted once the
   later level is built. For SmartSPIM, level 1 of each ladder is reduced

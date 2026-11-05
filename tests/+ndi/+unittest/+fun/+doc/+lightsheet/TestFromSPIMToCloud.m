@@ -40,13 +40,27 @@ classdef TestFromSPIMToCloud < matlab.unittest.TestCase
     methods (Test)
 
         function testEveryChunkMatchesALocalIngest(testCase)
+            testCase.streamAndCompare({});
+        end
+
+        function testSlicesReadInSlabsGiveTheSameBytes(testCase)
+            % The parallel read's split along z and join, without a pool.
+            testCase.streamAndCompare({'readWorkers', 3, 'splitReadsWithoutPool', true});
+        end
+    end
+
+    methods
+        function streamAndCompare(testCase, extra)
             args = {'voxelSizeUm', [1 1 1], 'minLevelSize', 8, ...
                 'chunks', [1 1 2 32 8], 'progressFcn', [], 'numWorkers', 0};
 
             W = ndi.cloud.upload.SessionWriter(testCase.cloud.DatasetId, ...
                 testCase.sessionId, 'Api', testCase.cloud.api(), 'Verbose', false);
-            [P, L, info] = ndi.fun.doc.lightsheet.fromSPIM(W, testCase.root, ...
-                'subjectID', testCase.subjectId, args{:});
+            P = []; L = {}; info = []; %#ok<NASGU> set by evalc below
+            out = evalc(['[P, L, info] = ndi.fun.doc.lightsheet.fromSPIM(W, testCase.root, ' ...
+                '''subjectID'', testCase.subjectId, args{:}, extra{:});']);
+            testCase.verifySubstring(out, 'is built with it, from the same reads of the slices', ...
+                'the max ladder''s level 1 is built from the mean ladder''s reads');
             testCase.verifyEqual(info.cloud.documents, 2 + numel(L));
             testCase.assertGreaterThan(numel(L), 2, ...
                 'the fixture must give a ladder with a level 1 and below');
