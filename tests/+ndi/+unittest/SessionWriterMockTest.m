@@ -257,6 +257,51 @@ classdef SessionWriterMockTest < matlab.unittest.TestCase
             testCase.verifyEqual(stored{1}.base.name, 'first');
         end
 
+        % -- sending in the background -------------------------------------
+
+        function testASmallBatchIsSentInTheBackground(testCase)
+            testCase.cloud.DeferSends = true;
+            W = testCase.writer();
+            [d, bytes] = testCase.seriesDoc(W, testCase.subjectId, 2);
+            W.declare(d);
+            locs = d.document_properties.files.series_info(1).ingest_locations;
+            before = testCase.cloud.backgroundSends;
+            W.streamMembers(d, 'chunk.bin', locs(1).index, {locs(1).location});
+            testCase.verifyEqual(testCase.cloud.backgroundSends, before + 1);
+            testCase.verifyFalse(testCase.cloud.hasFile(locs(1).uid), ...
+                'streamMembers returns while the batch is still going up');
+            W.streamMembers(d, 'chunk.bin', locs(2).index, {locs(2).location});
+            testCase.verifyEqual(testCase.cloud.fileBytes(locs(1).uid), bytes{locs(1).index}, ...
+                'the batch is waited for when it is checked, at the next call');
+            r = W.commit();
+            testCase.verifyEqual(testCase.cloud.fileBytes(locs(2).uid), bytes{locs(2).index});
+            testCase.verifyEqual(testCase.cloud.singleUploads, 0, 'nothing sent one by one');
+            testCase.verifyEqual(r.resent, 0);
+        end
+
+        function testAFailedBackgroundSendIsSentOneByOne(testCase)
+            testCase.cloud.FailSends = true;
+            W = testCase.writer();
+            [d, bytes] = testCase.seriesDoc(W, testCase.subjectId, 3);
+            W.database_add(d);
+            locs = d.document_properties.files.series_info(1).ingest_locations;
+            for i = 1:numel(locs)
+                testCase.verifyEqual(testCase.cloud.fileBytes(locs(i).uid), bytes{locs(i).index});
+            end
+            testCase.verifyEqual(testCase.cloud.singleUploads, 4, ...
+                'the three members and the manifest, each sent again on its own');
+            r = W.commit();
+            testCase.verifyEqual(r.resent, 4);
+        end
+
+        function testOneParallelUploadSendsOneByOne(testCase)
+            W = testCase.writer('ParallelUploads', 1);
+            [d, ~] = testCase.seriesDoc(W, testCase.subjectId, 3);
+            W.database_add(d);
+            testCase.verifyEqual(testCase.cloud.backgroundSends, 0);
+            testCase.verifyEqual(testCase.cloud.singleUploads, 4);
+        end
+
         % -- riding out failures ------------------------------------------
 
         function testAFailingLookupIsRetried(testCase)

@@ -56,8 +56,17 @@ classdef SessionWriter < handle
 %   read back what it wrote; streamed members stay only as long as
 %   described above. A file no longer cached is downloaded on demand.
 %
+%   SENDING IN THE BACKGROUND. A batch of files too small for a zip
+%   batch is sent by one curl process in the background
+%   (ndi.cloud.upload.CurlSender), PARALLELUPLOADS files at a time, while
+%   MATLAB goes on building the next batch; it is waited for when it is
+%   checked. Where curl is too old for that (before 7.68), or
+%   PARALLELUPLOADS is 1, files are sent one by one, as before.
+%
 %   Optional Name-Value Arguments:
 %   Verbose         - print progress lines. Default true.
+%   ParallelUploads - files a batch sends at once, in the background.
+%                     Default 4. 1 sends them one by one, and waits.
 %   BulkThreshold   - a document with at least this many files is sent in
 %                     zip batches (ndi.cloud.upload.zipForUpload) rather
 %                     than one signed upload per file. Default 20.
@@ -115,6 +124,7 @@ classdef SessionWriter < handle
         verbose (1,1) logical = true
         bulkThreshold (1,1) double = 20
         uploadTimeout double = []
+        parallelUploads (1,1) double = 4
         keepLocalCopies (1,1) logical = false
         % Documents sent in DATABASE_ADD, waiting for COMMIT, in order.
         pendingDocs = {}
@@ -143,6 +153,7 @@ classdef SessionWriter < handle
                 options.Verbose (1,1) logical = true
                 options.BulkThreshold (1,1) double {mustBePositive} = 20
                 options.UploadTimeout double {mustBeScalarOrEmpty, mustBePositive} = []
+                options.ParallelUploads (1,1) double {mustBeInteger, mustBePositive} = 4
                 options.CacheDir (1,:) char = ''
                 options.KeepLocalCopies (1,1) logical = false
                 options.RetrySeconds (1,1) double {mustBeNonnegative} = 1800
@@ -160,6 +171,7 @@ classdef SessionWriter < handle
             obj.verbose = options.Verbose;
             obj.bulkThreshold = options.BulkThreshold;
             obj.uploadTimeout = options.UploadTimeout;
+            obj.parallelUploads = options.ParallelUploads;
             obj.keepLocalCopies = options.KeepLocalCopies;
             obj.knownIds = containers.Map('KeyType', 'char', 'ValueType', 'logical');
             obj.cloudIds = containers.Map('KeyType', 'char', 'ValueType', 'logical');
@@ -197,6 +209,11 @@ classdef SessionWriter < handle
         end
 
         function delete(obj)
+            % A send still running reads files about to be deleted: stop it.
+            for k = 1:numel(obj.outstanding)
+                stopSender(obj.outstanding{k});
+            end
+            obj.outstanding = {};
             if ~obj.keepLocalCopies && ~isempty(obj.cacheDir) && isfolder(obj.cacheDir)
                 try
                     rmdir(obj.cacheDir, 's');
@@ -641,9 +658,9 @@ classdef SessionWriter < handle
             uids = {entries.uid};
             label = sprintf('%s %s', ...
                 doc.document_properties.document_class.class_name, doc.id());
-            obj.say('Sending %d file(s), %.1f MB, for %s ...', n, sum(bytes) / 1e6, label);
-
+            sender = [];
             if n >= obj.bulkThreshold
+                obj.say('Sending %d file(s), %.1f MB, for %s ...', n, sum(bytes) / 1e6, label);
                 [ok, msg] = obj.api.uploadFileBatch(obj.cloudDatasetId, paths, bytes);
                 if ~ok
                     % Not fatal yet: whatever did not arrive is sent
@@ -651,16 +668,55 @@ classdef SessionWriter < handle
                     obj.say('A zip batch failed (%s); checking what arrived.', char(msg));
                 end
             else
-                for i = 1:n
-                    [ok, msg] = obj.api.uploadSingleFile(obj.cloudDatasetId, uids{i}, paths{i});
-                    if ~ok
-                        obj.say('Sending %s failed (%s); will retry.', uids{i}, char(msg));
+                sender = obj.startBackgroundSend(uids, paths, crcs);
+                if isempty(sender)
+                    obj.say('Sending %d file(s), %.1f MB, for %s ...', n, sum(bytes) / 1e6, label);
+                    for i = 1:n
+                        [ok, msg] = obj.api.uploadSingleFile(obj.cloudDatasetId, uids{i}, paths{i});
+                        if ~ok
+                            obj.say('Sending %s failed (%s); will retry.', uids{i}, char(msg));
+                        end
                     end
+                else
+                    obj.say('Sending %d file(s), %.1f MB, for %s (%d at a time, in the background) ...', ...
+                        n, sum(bytes) / 1e6, label, obj.parallelUploads);
                 end
             end
             batch = struct('docId', doc.id(), 'label', label, ...
                 'names', {{entries.name}}, 'uids', {uids}, 'paths', {paths}, ...
                 'bytes', bytes, 'crcs', {crcs}, 'retain', retain);
+            batch.sender = sender;
+        end
+
+        function sender = startBackgroundSend(obj, uids, paths, crcs)
+        % STARTBACKGROUNDSEND - start a background send of a batch, or []
+        %
+        %   [] when the API cannot (no curl new enough, a fake without it,
+        %   ParallelUploads 1) or a signed upload URL could not be had; the
+        %   caller then sends the files one by one.
+            sender = [];
+            if obj.parallelUploads < 2 || ~isfield(obj.api, 'startSend') || ...
+                    ~isfield(obj.api, 'uploadURL')
+                return
+            end
+            n = numel(uids);
+            urls = cell(1, n);
+            for i = 1:n
+                [ok, url] = obj.api.uploadURL(obj.cloudDatasetId, uids{i}, crcs{i});
+                if ~ok
+                    obj.say('Could not get an upload URL for %s (%s); sending one by one.', ...
+                        uids{i}, describe(url));
+                    return
+                end
+                urls{i} = char(url);
+            end
+            try
+                sender = obj.api.startSend(urls, paths, crcs, uids, ...
+                    fullfile(obj.cacheDir, 'sending'), obj.parallelUploads);
+            catch ME
+                obj.say('Could not start a background send (%s); sending one by one.', ME.message);
+                sender = [];
+            end
         end
 
         function verifyBatch(obj, batch)
@@ -676,6 +732,16 @@ classdef SessionWriter < handle
             timeout = obj.uploadTimeout;
             if isempty(timeout)
                 timeout = max(120, 30 + 0.05 * n + sum(bytes) / 5e6);
+            end
+            if isfield(batch, 'sender') && ~isempty(batch.sender)
+                % Sent in the background: let it finish first. curl ends a
+                % stalled transfer itself; this cap (100 kB/s) is a backstop.
+                [ok, msg] = batch.sender.wait(max(600, sum(bytes) / 1e5));
+                stopSender(batch);
+                if ~ok
+                    obj.say('The background send of %s reported a problem (%s); checking what arrived.', ...
+                        batch.label, char(msg));
+                end
             end
             bad = obj.unverified(uids, bytes, crcs, timeout);
 
@@ -847,6 +913,10 @@ classdef SessionWriter < handle
         %     addDocument(datasetId, json)         -> [ok, answer]
         %     uploadSingleFile(datasetId, uid, path)  -> [ok, msg]  (CRC-32 signed)
         %     uploadFileBatch(datasetId, paths, bytes) -> [ok, msg] (zip batches)
+        %     uploadURL(datasetId, uid, crc)       -> [ok, url]  (signed for CRC)
+        %     startSend(urls, paths, crcs, uids, folder, n) -> a sender with
+        %         [ok, msg] = wait(timeout), or [] if this computer cannot
+        %         (see ndi.cloud.upload.CurlSender); optional
         %     waitForFileUpload(datasetId, uids, timeout) -> [ok, answer]
         %     lookupFiles(datasetId, uids)         -> [ok, answer]
         %     downloadFile(datasetId, uid, path)   -> [ok, msg]
@@ -857,6 +927,8 @@ classdef SessionWriter < handle
                 'uploadSingleFile', @(d, uid, p) ndi.cloud.uploadSingleFile(d, uid, p, ...
                     'checksum', true, 'waitForUpload', false), ...
                 'uploadFileBatch', @uploadBatch, ...
+                'uploadURL', @uploadURL, ...
+                'startSend', @startCurlSend, ...
                 'waitForFileUpload', @(d, uids, t) ndi.cloud.api.files.waitForFileUpload( ...
                     d, string(uids), 'timeout', t), ...
                 'lookupFiles', @(d, uids) ndi.cloud.api.files.lookupFiles(d, string(uids)), ...
@@ -960,6 +1032,26 @@ function [ok, msg] = uploadBatch(cloudDatasetId, paths, bytes)
     ok = logical(ok);
 end
 
+function [ok, url] = uploadURL(cloudDatasetId, uid, crc)
+    [ok, url] = ndi.cloud.api.files.getFileUploadURL(cloudDatasetId, uid, ...
+        'checksumCRC32', string(crc));
+end
+
+function sender = startCurlSend(urls, paths, crcs, uids, folder, n)
+    sender = [];
+    if ndi.cloud.upload.CurlSender.supported()
+        sender = ndi.cloud.upload.CurlSender(urls, paths, crcs, uids, folder, 'Parallel', n);
+    end
+end
+
+function stopSender(batch)
+% Stop and forget a batch's background send, if it has one.
+    if isstruct(batch) && isfield(batch, 'sender') && ~isempty(batch.sender) ...
+            && isobject(batch.sender) && isvalid(batch.sender)
+        delete(batch.sender);
+    end
+end
+
 function si = seriesInfoOf(doc)
     si = struct('name', {}, 'ingest_locations', {});
     p = doc.document_properties;
@@ -976,7 +1068,7 @@ function api = addRetries(api, seconds)
 % is left alone: it already waits, and its timeout is an answer.
     if seconds <= 0, return; end
     raw = api;
-    for name = {'uploadSingleFile', 'uploadFileBatch', 'lookupFiles', ...
+    for name = {'uploadSingleFile', 'uploadFileBatch', 'uploadURL', 'lookupFiles', ...
             'downloadFile', 'updateDocument'}
         n = name{1};
         if isfield(raw, n)

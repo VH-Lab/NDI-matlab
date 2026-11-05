@@ -17,6 +17,10 @@ classdef FakeCloudDataset < handle
 %     CorruptAlways - uids whose every upload stores the wrong bytes
 %     RecordCrc     - false: report crc32 '' (compare size instead)
 %     FailAdd       - true: addDocument fails
+%     DeferSends    - true: a background send (startSend) stores its files
+%                     only when it is waited for, as a slow upload would
+%     FailSends     - true: a background send stores nothing and reports
+%                     failure, so the writer must send the files itself
 
     properties
         DatasetId = 'aaaaaaaaaaaaaaaaaaaaaaaa'
@@ -31,8 +35,12 @@ classdef FakeCloudDataset < handle
         % stores the document but reports failure, as a lost reply would.
         FailLookups (1,1) double = 0
         LoseAddReply (1,1) logical = false
+        DeferSends (1,1) logical = false
+        FailSends (1,1) logical = false
         singleUploads = 0
         batchUploads = 0
+        backgroundSends = 0    % startSend calls
+        backgroundFiles = 0    % files those sends stored
         addedJson = {}
     end
 
@@ -73,6 +81,9 @@ classdef FakeCloudDataset < handle
                 'addDocument', @(d, json) obj.addDocument(d, json), ...
                 'uploadSingleFile', @(d, uid, p) obj.uploadSingleFile(d, uid, p), ...
                 'uploadFileBatch', @(d, paths, bytes) obj.uploadFileBatch(d, paths, bytes), ...
+                'uploadURL', @(d, uid, crc) obj.uploadURL(d, uid, crc), ...
+                'startSend', @(urls, paths, crcs, uids, folder, n) ...
+                    obj.startSend(urls, paths, crcs, uids, folder, n), ...
                 'waitForFileUpload', @(d, uids, t) obj.waitForFileUpload(d, uids, t), ...
                 'lookupFiles', @(d, uids) obj.lookupFiles(d, uids), ...
                 'downloadFile', @(d, uid, p) obj.downloadFile(d, uid, p), ...
@@ -141,6 +152,39 @@ classdef FakeCloudDataset < handle
             end
             ok = true;
             msg = '';
+        end
+
+        function [ok, url] = uploadURL(~, ~, uid, ~)
+            ok = true;
+            url = ['https://fake.invalid/upload/' char(uid)];
+        end
+
+        function sender = startSend(obj, ~, paths, ~, uids, ~, ~)
+        % A background send: a struct whose WAIT reports how it went.
+            obj.backgroundSends = obj.backgroundSends + 1;
+            if obj.FailSends
+                sender = struct('wait', @(varargin) obj.sendResult(false));
+            elseif obj.DeferSends
+                sender = struct('wait', @(varargin) obj.finishSend(uids, paths));
+            else
+                obj.finishSend(uids, paths);
+                sender = struct('wait', @(varargin) obj.sendResult(true));
+            end
+        end
+
+        function [ok, msg] = finishSend(obj, uids, paths)
+            for i = 1:numel(uids)
+                if isfile(paths{i})
+                    obj.store(char(uids{i}), char(paths{i}));
+                    obj.backgroundFiles = obj.backgroundFiles + 1;
+                end
+            end
+            [ok, msg] = obj.sendResult(true);
+        end
+
+        function [ok, msg] = sendResult(~, ok)
+            msg = '';
+            if ~ok, msg = 'curl exited with status 7 (fake)'; end
         end
 
         function [ok, answer] = waitForFileUpload(~, ~, ~, ~)

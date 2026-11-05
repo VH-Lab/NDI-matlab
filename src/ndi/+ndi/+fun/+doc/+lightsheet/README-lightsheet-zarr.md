@@ -101,8 +101,12 @@ W = ndi.cloud.upload.SessionWriter(datasetId, sessionId);
   every chunk gets its uid, and the level document and its manifest
   (which lists those uids) are uploaded at once, after the pyramid
   document. The pyramid's label carries " (uploading)" until the end.
-  Chunks are then uploaded as each super-block is written, in batches,
-  each checked against the CRC-32 NDI Cloud records (`lookupFiles`; size
+  Chunks are then uploaded as each super-block is written, in batches.
+  A batch goes up in the background: one curl process
+  (`ndi.cloud.upload.CurlSender`, curl 7.68+) sends 4 files at a time
+  while MATLAB compresses the next super-block (`ParallelUploads` on
+  `SessionWriter`; with an older curl the files go one by one). Each
+  batch is checked against the CRC-32 NDI Cloud records (`lookupFiles`; size
   when no checksum was recorded) while the next is built. A missing or
   different file is sent again on its own; still wrong is an error.
   Nothing in the cloud is ever unreferenced, so the orphan cleanup has
