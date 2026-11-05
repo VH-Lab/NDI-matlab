@@ -54,7 +54,9 @@ raw bytes twice.
 - `chunk_order` — the order in which the chunk grid is flattened to
   the 1-based file series. `"C"` for C-order (last axis fastest);
   `"F"` for Fortran-order.
-- `dtype` — the Zarr dtype string (e.g. `<u2`, `<f4`).
+- `dtype` — the Zarr dtype string (e.g. `<u2`, `<f4`). Pyramids built
+  from SmartSPIM slices before this was enforced say `uint16`; readers
+  should accept either (`ndi.fun.doc.lightsheet.dtypeName`).
 - `fill_value` — fill value for chunks that were elided.
 - `byte_order` — byte order of the on-disk chunk bytes.
 - `codec` — Zarr codec name (`raw`, `blosc`, `zstd`). `raw` means the

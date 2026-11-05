@@ -152,6 +152,11 @@ classdef LightsheetManager < ndi.gui.app.sessionApp
                 shp = ndi.gui.app.LightsheetManager.field(p,'shape_level0',[]);
                 rows(k).shapeLevel0 = shp;
                 rows(k).dtype = ndi.gui.app.LightsheetManager.field(p,'dtype','');
+                try
+                    % One spelling for every pyramid ('<u2'), whatever wrote it.
+                    rows(k).dtype = ndi.fun.doc.lightsheet.dtypeName(rows(k).dtype, 'zarr');
+                catch
+                end
             end
         end
 

@@ -281,7 +281,7 @@ function [pyramidDoc, levelDocs, sharedLevel0] = makePyramid(session, pyramids, 
             'voxel_size_level0', ensureRow(firstLevel.scale), ...
             'voxel_size_units', 'micrometer', ...
             'translation_level0', ensureRow(firstLevel.translation), ...
-            'dtype', char(firstLevel.dtype), ...
+            'dtype', ndi.fun.doc.lightsheet.dtypeName(firstLevel.dtype, 'zarr'), ...
             'pipeline_version', options.pipelineVersion, ...
             'byte_order', 'little'));
 
@@ -718,7 +718,7 @@ function [levelDoc, stream, doneChunks, complete, tmpRoot] = prepareLevel(sessio
         'n_chunks_stored', nChunksStored, ...
         'chunk_index_origin', 1, ...
         'chunk_order', 'C', ...
-        'dtype', char(level.dtype), ...
+        'dtype', ndi.fun.doc.lightsheet.dtypeName(level.dtype, 'zarr'), ...
         'fill_value', 0, ...
         'byte_order', 'little', ...
         'codec', options.codec, ...
@@ -1590,10 +1590,12 @@ function source = resolveLevelSource(session, p, entry, level, options, docByPat
                 'pyramidName', char(entry.name), 'kInEntry', kInEntry);
         case 'smartspim'
             % Self-contained already (slice paths + dtype).
+            source.dtype  = ndi.fun.doc.lightsheet.dtypeName(source.dtype, 'matlab');
         case 'reduceSmartspim'
             % Block-reduced straight from the SmartSPIM slices rather than
             % from a stored level: self-contained, like 'smartspim'.
-            source.dtype  = char(level.dtype);
+            source.dtype  = ndi.fun.doc.lightsheet.dtypeName(level.dtype, 'matlab');
+            source.sourceDtype = ndi.fun.doc.lightsheet.dtypeName(source.sourceDtype, 'matlab');
             source.factor = double(source.factor(:).');
             source.fromShape = double(source.fromShape(:).');
         case 'reduce'
@@ -1617,9 +1619,9 @@ function source = resolveLevelSource(session, p, entry, level, options, docByPat
             source.fromChunks = double(fp.chunks(:).');
             source.fromGrid   = double(fp.chunk_grid(:).');
             source.fromCodec  = char(fp.codec);
-            source.fromDtype  = char(fp.dtype);
+            source.fromDtype  = ndi.fun.doc.lightsheet.dtypeName(fp.dtype, 'matlab');
             source.chunkPaths = paths;
-            source.dtype      = char(level.dtype);
+            source.dtype      = ndi.fun.doc.lightsheet.dtypeName(level.dtype, 'matlab');
             source.factor     = double(source.factor(:).');
         otherwise
             error('NDI:lightsheet:makePyramid:unknownSourceKind', ...
@@ -1965,7 +1967,12 @@ function s = codecParamsJSON(options)
     end
 end
 
-function b = elementSizeBytes(className)
+function b = elementSizeBytes(dtype)
+    try
+        className = ndi.fun.doc.lightsheet.dtypeName(dtype, 'matlab');
+    catch
+        className = '';
+    end
     switch className
         case {'uint8','int8','logical'}
             b = 1;

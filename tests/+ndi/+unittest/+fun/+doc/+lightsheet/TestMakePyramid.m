@@ -197,7 +197,7 @@ classdef TestMakePyramid < matlab.unittest.TestCase
             testCase.verifyEqual(p.axes_order, 'zyx');
             testCase.verifyEqual(reshape(p.shape_level0, 1, []), [128 512 512]);
             testCase.verifyEqual(reshape(p.voxel_size_level0, 1, []), [1 1 1]);
-            testCase.verifyEqual(char(p.dtype), 'uint16');
+            testCase.verifyEqual(char(p.dtype), '<u2', 'written as the Zarr dtype string');
             testCase.verifyEqual(char(p.pipeline_version), 'unit-test-1');
             testCase.verifyEqual(char(p.label), 'my volume');
         end
