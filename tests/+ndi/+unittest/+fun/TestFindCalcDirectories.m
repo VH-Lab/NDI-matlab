@@ -39,7 +39,7 @@ classdef TestFindCalcDirectories < matlab.unittest.TestCase
             % A path entry inside the calculator gives the calculator's root,
             % listed once however many of its folders are on the path.
             calc = testCase.makeCalc("NDIcalc-subtest-matlab");
-            sub = fullfile(calc, "+ndi", "+calc");
+            sub = fullfile(calc, "code");
             mkdir(sub);
             testCase.applyFixture(matlab.unittest.fixtures.PathFixture(char(calc)));
             testCase.applyFixture(matlab.unittest.fixtures.PathFixture(char(sub)));
