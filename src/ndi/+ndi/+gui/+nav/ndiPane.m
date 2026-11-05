@@ -94,7 +94,7 @@ classdef ndiPane < ndi.gui.nav.pane
     end
 
     methods
-        function toggleAwake(obj)
+        function toggleAwake(~)
             %TOGGLEAWAKE Coffee-cup button callback: the manual keep-awake hold.
             ndi.util.KeepAwake.instance().toggleManual();
         end
