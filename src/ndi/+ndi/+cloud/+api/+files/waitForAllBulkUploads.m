@@ -24,6 +24,14 @@ function [b, answer, apiResponse, apiURL] = waitForAllBulkUploads(cloudDatasetID
 %                          If false, return b=true as soon as the active
 %                          set drains, regardless of failure history.
 %                          Default true.
+%       'staleAfter'      (double) - Age in seconds beyond which an active
+%                          job is treated as abandoned and ignored. The
+%                          server creates a 'queued' job whenever a bulk
+%                          upload URL is requested; if the zip upload then
+%                          fails or never happens, that job can stay
+%                          active indefinitely. Age is measured from
+%                          startedAt for 'extracting' jobs and createdAt
+%                          otherwise. Default 3600 (1 hour).
 %
 %   Outputs:
 %       b            - True iff no active jobs remain AND, when
@@ -35,6 +43,8 @@ function [b, answer, apiResponse, apiURL] = waitForAllBulkUploads(cloudDatasetID
 %                                 .elapsed=<seconds>.
 %                      On timeout: .state='timeout', .elapsed=<seconds>,
 %                                  .jobs=<jobs still active>.
+%                      When a poll succeeded, .staleJobs lists the active
+%                      jobs that were ignored as abandoned.
 %       apiResponse  - The ResponseMessage from the last poll.
 %       apiURL       - The URL of the last poll.
 %
@@ -50,6 +60,7 @@ function [b, answer, apiResponse, apiURL] = waitForAllBulkUploads(cloudDatasetID
         options.maxInterval (1,1) double {mustBePositive} = 30
         options.backoffFactor (1,1) double {mustBePositive} = 2
         options.requireAllComplete (1,1) logical = true
+        options.staleAfter (1,1) double {mustBePositive} = 3600
     end
 
     api_call = ndi.cloud.api.implementation.files.WaitForAllBulkUploads(...
@@ -58,7 +69,8 @@ function [b, answer, apiResponse, apiURL] = waitForAllBulkUploads(cloudDatasetID
         'initialInterval', options.initialInterval, ...
         'maxInterval', options.maxInterval, ...
         'backoffFactor', options.backoffFactor, ...
-        'requireAllComplete', options.requireAllComplete);
+        'requireAllComplete', options.requireAllComplete, ...
+        'staleAfter', options.staleAfter);
 
     [b, answer, apiResponse, apiURL] = api_call.execute();
 end
