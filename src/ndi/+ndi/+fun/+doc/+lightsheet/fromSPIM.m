@@ -105,6 +105,8 @@ function [pyramidDoc, levelDocs, info] = fromSPIM(session, rootDir, options)
         options.prefetchBytes (1,1) double {mustBePositive} = 512 * 2^20
         options.asyncPrefetch (1,1) logical = true
         options.debugLog (1,:) char = ''
+        % Per-super-block timings, as CSV (see ndi.fun.doc.lightsheet.BuildProfile).
+        options.profileLog (1,:) char = ''
         % Resume an interrupted streamed build; see makePyramid's resume
         % option. Pass the earlier run's sourceFileID with it.
         options.resume = []
@@ -249,6 +251,7 @@ function [pyramidDoc, levelDocs, info] = fromSPIM(session, rootDir, options)
         'prefetchBytes', options.prefetchBytes, ...
         'asyncPrefetch', options.asyncPrefetch, ...
         'debugLog', options.debugLog, ...
+        'profileLog', options.profileLog, ...
         'resume', options.resume);
 
     info = struct( ...

@@ -154,6 +154,17 @@ function [pyramidDoc, levelDocs, sharedLevel0] = makePyramid(session, pyramids, 
         % without affecting the hot path -- one line per super-block is
         % negligible on a multi-hour ingest.
         options.debugLog (1,:) char = ''
+        % PROFILING (ndi.fun.doc.lightsheet.BuildProfile). Every
+        % super-block is timed -- waiting for its read, assembling its
+        % chunks, compressing them (and how busy the workers were),
+        % handing them to the session (for a cloud target: signed URLs,
+        % staging and CRC-32, waiting for the upload, checking with the
+        % cloud), the progress callback -- and a summary of where the
+        % time went is printed every profileEverySeconds and at the end
+        % of each level. profileLog, if given, gets one CSV row per
+        % super-block (appended, so a resumed build adds to it).
+        options.profileLog (1,:) char = ''
+        options.profileEverySeconds (1,1) double {mustBePositive} = 600
         % Per-level-path byte sources; see "WHERE THE BYTES COME FROM"
         % above. Empty (default) reads every level from sourceZarrPath.
         options.levelSources = []
@@ -319,6 +330,8 @@ function [pyramidDoc, levelDocs, sharedLevel0] = makePyramid(session, pyramids, 
             options.prefetchBytes / 2^20, asyncStr, ...
             totalChunks, numel(pathOrder), options.codec);
     end
+    options.profiler = ndi.fun.doc.lightsheet.BuildProfile( ...
+        options.profileLog, options.profileEverySeconds);
 
     % Assign each unique path a 0-based level index in the ORDER it
     % first appears (finest first, since listPyramids is finest-first).
@@ -394,6 +407,7 @@ function [pyramidDoc, levelDocs, sharedLevel0] = makePyramid(session, pyramids, 
         pyramidDoc = pyramidDoc.setproperties('lightsheetZarrPyramid.label', label);
         session.replaceOnCommit(pyramidDoc);
     end
+    options.profiler.finish();
     reportProgress(options.progressFcn, max(doneChunks, totalChunks), ...
         max(totalChunks, 1), 'Done.');
 end
@@ -501,7 +515,7 @@ function [levelDoc, doneChunks] = makeOneLevel(session, pyramidDoc, pyramidEntry
             options.codec, options.clevel, ...
             options.progressFcn, doneChunks, totalChunks, levelLabel, ...
             options.numWorkers, options.prefetchBytes, options.asyncPrefetch, ...
-            options.debugLog, stream);
+            options.debugLog, stream, options.profiler);
         if isempty(stream)
             tmpCleaner = onCleanup(@() cleanupTmp(tmpRoot));
         end
@@ -512,7 +526,7 @@ function [levelDoc, doneChunks] = makeOneLevel(session, pyramidDoc, pyramidEntry
     end
 end
 
-function [levelDoc, tmpRoot, doneChunks] = attachChunkFiles(levelDoc, source, level, chunks, chunkGrid, codec, clevel, progressFcn, doneChunks, totalChunks, levelLabel, numWorkers, prefetchBytes, asyncPrefetch, debugLog, stream)
+function [levelDoc, tmpRoot, doneChunks] = attachChunkFiles(levelDoc, source, level, chunks, chunkGrid, codec, clevel, progressFcn, doneChunks, totalChunks, levelLabel, numWorkers, prefetchBytes, asyncPrefetch, debugLog, stream, profiler)
 % Read the source zarr level as a whole array, then re-tile into the
 % level document's chunk shape and attach each chunk as chunk.bin_<idx>
 % (1-based, C-order over chunkGrid). Files are ingested into DID, which
@@ -581,7 +595,8 @@ function [levelDoc, tmpRoot, doneChunks] = attachChunkFiles(levelDoc, source, le
     % (and holds them as single while reducing, 2x a uint16), so its
     % read buffer is that much bigger than the output region. Shrink
     % the budget to match, so peak memory stays near prefetchBytes.
-    prefetchBytes = double(prefetchBytes) / readAmplification(source, typesize);
+    amplification = readAmplification(source, typesize);
+    prefetchBytes = double(prefetchBytes) / amplification;
     prefetchChunkCount = max(poolSize, ...
         floor(double(prefetchBytes) / max(chunkBytes, 1)));
     prefetchChunkCount = min(prefetchChunkCount, nChunks);
@@ -657,8 +672,10 @@ function [levelDoc, tmpRoot, doneChunks] = attachChunkFiles(levelDoc, source, le
     for s = 1:nSuperBlocks
         sb = superBlocks{s};
         bs = numel(sb.idxs);
+        tBlock = tic;
 
         % ---- READ current super-block, DISPATCH the next -----------
+        tStep = tic;
         if useAsync
             bigTile = fetchOutputs(nextFut);
             if s < nSuperBlocks
@@ -669,6 +686,8 @@ function [levelDoc, tmpRoot, doneChunks] = attachChunkFiles(levelDoc, source, le
         else
             bigTile = readSuperBlockRegion(source, sb.loBBox, sb.hiBBox);
         end
+        tReadWait = toc(tStep);
+        tStep = tic;
 
         % ---- STAGE bigTile INTO A PARFOR-SLICEABLE ND-ARRAY -------
         % An earlier version handed the parfor a cell array `srcs`
@@ -720,22 +739,35 @@ function [levelDoc, tmpRoot, doneChunks] = attachChunkFiles(levelDoc, source, le
         % typecast to bytes, Blosc encode, and write the tempfile.
         chunkShape1 = chunks(:).';
         tempPaths = cell(1, bs);
+        chunkSecs = zeros(1, bs);     % each chunk's time on its worker
+        tAssemble = toc(tStep);
+        tStep = tic;
         if poolSize > 1 && bs > 1
             parfor j = 1:bs
+                c0 = tic;
                 col = bigChunksFlat(:, j);
                 tile = reshape(col, chunkShape1);
                 tempPaths{j} = padEncodeAndWrite(tile, chunks, ...
                     codec, clevel, typesize, tmpRoot, chunkIdxs(j));
+                chunkSecs(j) = toc(c0);
             end
         else
             for j = 1:bs
+                c0 = tic;
                 col = bigChunksFlat(:, j);
                 tile = reshape(col, chunkShape1);
                 tempPaths{j} = padEncodeAndWrite(tile, chunks, ...
                     codec, clevel, typesize, tmpRoot, chunkIdxs(j));
+                chunkSecs(j) = toc(c0);
             end
         end
+        tCompress = toc(tStep);
         clear bigChunksFlat;
+        mbOut = 0;
+        for j = 1:bs
+            d = dir(tempPaths{j});
+            if ~isempty(d), mbOut = mbOut + d.bytes / 2^20; end
+        end
 
         % ---- SERIAL ADD_FILE + BATCHED PROGRESS ------------------
         % In-memory metadata registration; still ordered by chunk
@@ -759,18 +791,34 @@ function [levelDoc, tmpRoot, doneChunks] = attachChunkFiles(levelDoc, source, le
         for j = 1:bs
             seriesLocations{chunkIdxs(j)} = tempPaths{j};
         end
+        tStep = tic;
+        before = sessionTiming(stream);
         if ~isempty(stream)
             % Off this disk as soon as the target has them.
             stream.session.streamMembers(stream.levelDoc, 'chunk.bin', ...
                 chunkIdxs, tempPaths, stream.retain);
         end
+        tUpload = toc(tStep);
+        after = sessionTiming(stream);
         postAddDocSize = preAddDocSize;
         doneChunks = doneChunks + bs;
+        tStep = tic;
         reportProgress(progressFcn, doneChunks, totalChunks, ...
             sprintf('%s: super-block %d/%d, chunk %d/%d', ...
                 levelLabel, s, nSuperBlocks, ...
                 chunkIdxs(end), nChunks));
+        tProgress = toc(tStep);
         bboxMB = prod(double(sb.hiBBox - sb.loBBox + 1)) * typesize / 2^20;
+        profiler.add(struct('level', levelLabel, 'superblock', s, ...
+            'nSuperBlocks', nSuperBlocks, 'chunks', bs, ...
+            'workers', max(1, min(poolSize, bs)), ...
+            'mbRead', bboxMB * amplification, ...
+            'mbChunks', bs * prod(chunks) * typesize / 2^20, 'mbOut', mbOut, ...
+            'readWait', tReadWait, 'assemble', tAssemble, 'compress', tCompress, ...
+            'workerBusy', sum(chunkSecs), 'upload', tUpload, ...
+            'urls', after.urls - before.urls, 'stage', after.stage - before.stage, ...
+            'send', after.send - before.send, 'verify', after.verify - before.verify, ...
+            'progress', tProgress, 'total', toc(tBlock)));
         appendDebugLog(debugLog, levelLabel, s, nSuperBlocks, doneChunks, ...
             totalChunks, preAddDocSize, postAddDocSize, bboxMB);
     end
@@ -789,6 +837,16 @@ function [levelDoc, tmpRoot, doneChunks] = attachChunkFiles(levelDoc, source, le
     if isempty(stream)
         levelDoc = levelDoc.addFileSeries('chunk.bin', seriesLocations, ...
             'indices', 1:nChunks);
+    end
+    profiler.endLevel(levelLabel);
+end
+
+function t = sessionTiming(stream)
+% The cloud writer's running time totals (ndi.cloud.upload.SessionWriter
+% timing), or zeros for a target that keeps none.
+    t = struct('urls', 0, 'stage', 0, 'send', 0, 'verify', 0);
+    if ~isempty(stream) && isprop(stream.session, 'timing')
+        t = stream.session.timing;
     end
 end
 

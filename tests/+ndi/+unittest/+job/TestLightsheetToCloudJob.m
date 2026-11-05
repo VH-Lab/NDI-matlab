@@ -117,6 +117,11 @@ classdef TestLightsheetToCloudJob < matlab.unittest.TestCase
             testCase.verifyGreaterThan(nCompared, 60);
             testCase.verifyFalse(isfolder(fullfile(again.folder(), 'cache')), ...
                 'a finished job clears its cache');
+            T = readtable(fullfile(again.folder(), 'profile.csv'));
+            testCase.verifyGreaterThan(height(T), 6, ...
+                'both runs appended a row per batch (the paused one aside)');
+            testCase.verifyLessThanOrEqual(sum(T.chunks), nCompared);
+            testCase.verifyTrue(all(T.total >= T.compress), 'times are parts of a whole');
         end
     end
 end

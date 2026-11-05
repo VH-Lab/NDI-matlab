@@ -141,6 +141,8 @@ function [pyramidDoc, levelDocs, info] = fromOMEZarr(session, zarrPath, options)
         % disables. Intended for diagnosing memory growth. See
         % makePyramid for details.
         options.debugLog (1,:) char = ''
+        % Per-super-block timings, as CSV (see ndi.fun.doc.lightsheet.BuildProfile).
+        options.profileLog (1,:) char = ''
         % Resume an interrupted streamed build; see makePyramid's resume
         % option. Pass the earlier run's sourceFileID with it.
         options.resume = []
@@ -238,6 +240,7 @@ function [pyramidDoc, levelDocs, info] = fromOMEZarr(session, zarrPath, options)
         'prefetchBytes', options.prefetchBytes, ...
         'asyncPrefetch', options.asyncPrefetch, ...
         'debugLog', options.debugLog, ...
+        'profileLog', options.profileLog, ...
         'resume', options.resume);
 
     info = struct( ...

@@ -19,6 +19,11 @@ classdef LightsheetToCloud < ndi.job.Job
 %   level a coarser level is reduced from) is in the job's folder too, so
 %   it survives a restart; if it is gone, those chunks are downloaded.
 %
+%   PROFILE. Every super-block's timings go to profile.csv in the job's
+%   folder (appended across runs), and a summary of where the time goes
+%   is printed every 10 minutes and after each level (see
+%   ndi.fun.doc.lightsheet.BuildProfile).
+%
 %   RESTART starts over with a new pyramid. The one the earlier run left in
 %   the cloud stays there, labelled "(uploading)"; delete it from the
 %   dataset if it is not wanted.
@@ -71,7 +76,8 @@ classdef LightsheetToCloud < ndi.job.Job
                 'Api', obj.Api);
 
             args = {'subjectID', c.subjectID, 'clevel', c.clevel, ...
-                'numWorkers', c.numWorkers, 'progressFcn', @(f, t) obj.beat(f, t)};
+                'numWorkers', c.numWorkers, 'progressFcn', @(f, t) obj.beat(f, t), ...
+                'profileLog', fullfile(obj.folder(), 'profile.csv')};
             if ~isempty(c.label)
                 args = [args {'label', c.label}];
             end

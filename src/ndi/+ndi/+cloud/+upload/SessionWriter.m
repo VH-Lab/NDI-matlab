@@ -117,6 +117,11 @@ classdef SessionWriter < handle
         report = struct('documents', 0, 'files', 0, 'bytes', 0, ...
             'resent', 0, 'documentIds', {{}})
         committed (1,1) logical = false
+        % Seconds spent, so far, getting signed upload URLs, staging files
+        % (move + CRC-32), sending them or waiting for a background send,
+        % and checking them with the cloud. A profiler (see
+        % ndi.fun.doc.lightsheet.BuildProfile) reads the change per batch.
+        timing = struct('urls', 0, 'stage', 0, 'send', 0, 'verify', 0)
     end
 
     properties (Access = private)
@@ -649,19 +654,23 @@ classdef SessionWriter < handle
             paths = cell(1, n);
             bytes = zeros(1, n);
             crcs = cell(1, n);
+            t0 = tic;
             for i = 1:n
                 paths{i} = obj.stage(entries(i));
                 d = dir(paths{i});
                 bytes(i) = d.bytes;
                 crcs{i} = ndi.fun.file.crc32(paths{i});
             end
+            obj.timing.stage = obj.timing.stage + toc(t0);
             uids = {entries.uid};
             label = sprintf('%s %s', ...
                 doc.document_properties.document_class.class_name, doc.id());
             sender = [];
             if n >= obj.bulkThreshold
                 obj.say('Sending %d file(s), %.1f MB, for %s ...', n, sum(bytes) / 1e6, label);
+                t0 = tic;
                 [ok, msg] = obj.api.uploadFileBatch(obj.cloudDatasetId, paths, bytes);
+                obj.timing.send = obj.timing.send + toc(t0);
                 if ~ok
                     % Not fatal yet: whatever did not arrive is sent
                     % again one by one when the batch is checked.
@@ -671,12 +680,14 @@ classdef SessionWriter < handle
                 sender = obj.startBackgroundSend(uids, paths, crcs);
                 if isempty(sender)
                     obj.say('Sending %d file(s), %.1f MB, for %s ...', n, sum(bytes) / 1e6, label);
+                    t0 = tic;
                     for i = 1:n
                         [ok, msg] = obj.api.uploadSingleFile(obj.cloudDatasetId, uids{i}, paths{i});
                         if ~ok
                             obj.say('Sending %s failed (%s); will retry.', uids{i}, char(msg));
                         end
                     end
+                    obj.timing.send = obj.timing.send + toc(t0);
                 else
                     obj.say('Sending %d file(s), %.1f MB, for %s (%d at a time, in the background) ...', ...
                         n, sum(bytes) / 1e6, label, obj.parallelUploads);
@@ -701,6 +712,8 @@ classdef SessionWriter < handle
             end
             n = numel(uids);
             urls = cell(1, n);
+            t0 = tic;
+            stopwatch = onCleanup(@() obj.addTime('urls', toc(t0)));
             for i = 1:n
                 [ok, url] = obj.api.uploadURL(obj.cloudDatasetId, uids{i}, crcs{i});
                 if ~ok
@@ -710,6 +723,7 @@ classdef SessionWriter < handle
                 end
                 urls{i} = char(url);
             end
+            clear stopwatch
             try
                 sender = obj.api.startSend(urls, paths, crcs, uids, ...
                     fullfile(obj.cacheDir, 'sending'), obj.parallelUploads);
@@ -736,13 +750,17 @@ classdef SessionWriter < handle
             if isfield(batch, 'sender') && ~isempty(batch.sender)
                 % Sent in the background: let it finish first. curl ends a
                 % stalled transfer itself; this cap (100 kB/s) is a backstop.
+                t0 = tic;
                 [ok, msg] = batch.sender.wait(max(600, sum(bytes) / 1e5));
+                obj.timing.send = obj.timing.send + toc(t0);
                 stopSender(batch);
                 if ~ok
                     obj.say('The background send of %s reported a problem (%s); checking what arrived.', ...
                         batch.label, char(msg));
                 end
             end
+            t0 = tic;
+            stopwatch = onCleanup(@() obj.addTime('verify', toc(t0)));
             bad = obj.unverified(uids, bytes, crcs, timeout);
 
             if any(bad)
@@ -784,6 +802,12 @@ classdef SessionWriter < handle
                 for i = 1:n
                     if isfile(paths{i}), delete(paths{i}); end
                 end
+            end
+        end
+
+        function addTime(obj, what, seconds)
+            if isvalid(obj)
+                obj.timing.(what) = obj.timing.(what) + seconds;
             end
         end
 
