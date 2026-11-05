@@ -76,7 +76,8 @@ classdef SessionWriter < handle
 %   ZipBatches      - send each batch as one zip (see AS ONE ZIP). Default:
 %                     the preference Cloud.Upload.Send_Batches_As_Zip.
 %   ParallelUploads - files a batch sends at once, in the background.
-%                     Default 4. 1 sends them one by one, and waits.
+%                     Default: the preference Cloud.Upload.Parallel_Uploads
+%                     (4). 1 sends them one by one, and waits.
 %   BulkThreshold   - a document with at least this many files is sent in
 %                     zip batches (ndi.cloud.upload.zipForUpload) rather
 %                     than one signed upload per file. Default 20.
@@ -170,7 +171,7 @@ classdef SessionWriter < handle
                 options.Verbose (1,1) logical = true
                 options.BulkThreshold (1,1) double {mustBePositive} = 20
                 options.UploadTimeout double {mustBeScalarOrEmpty, mustBePositive} = []
-                options.ParallelUploads (1,1) double {mustBeInteger, mustBePositive} = 4
+                options.ParallelUploads double {mustBeScalarOrEmpty, mustBeInteger, mustBePositive} = []
                 options.ZipBatches = []
                 options.CacheDir (1,:) char = ''
                 options.KeepLocalCopies (1,1) logical = false
@@ -189,7 +190,19 @@ classdef SessionWriter < handle
             obj.verbose = options.Verbose;
             obj.bulkThreshold = options.BulkThreshold;
             obj.uploadTimeout = options.UploadTimeout;
-            obj.parallelUploads = options.ParallelUploads;
+            if isempty(options.ParallelUploads)
+                try
+                    obj.parallelUploads = ndi.preferences.get('Cloud.Upload.Parallel_Uploads');
+                catch
+                    obj.parallelUploads = 4;
+                end
+                if ~(isscalar(obj.parallelUploads) && obj.parallelUploads >= 1)
+                    obj.parallelUploads = 4;
+                end
+                obj.parallelUploads = round(double(obj.parallelUploads));
+            else
+                obj.parallelUploads = options.ParallelUploads;
+            end
             if isempty(options.ZipBatches)
                 try
                     obj.zipBatches = logical(ndi.preferences.get('Cloud.Upload.Send_Batches_As_Zip'));

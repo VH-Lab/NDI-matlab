@@ -302,6 +302,19 @@ classdef SessionWriterMockTest < matlab.unittest.TestCase
             testCase.verifyEqual(testCase.cloud.singleUploads, 4);
         end
 
+        function testParallelUploadsComesFromThePreference(testCase)
+            name = 'Cloud.Upload.Parallel_Uploads';
+            was = ndi.preferences.get(name);
+            testCase.addTeardown(@() ndi.preferences.set(name, was));
+            ndi.preferences.set(name, 1);
+            W = testCase.writer();
+            [d, ~] = testCase.seriesDoc(W, testCase.subjectId, 3);
+            W.database_add(d);
+            testCase.verifyEqual(testCase.cloud.backgroundSends, 0, ...
+                'the preference''s 1 means one by one');
+            testCase.verifyEqual(testCase.cloud.singleUploads, 4);
+        end
+
         function testTheBatchsUploadURLsComeAtOnce(testCase)
             W = testCase.writer();
             [d, ~] = testCase.seriesDoc(W, testCase.subjectId, 3);
