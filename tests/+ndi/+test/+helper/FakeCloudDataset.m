@@ -41,6 +41,8 @@ classdef FakeCloudDataset < handle
         batchUploads = 0
         backgroundSends = 0    % startSend calls
         backgroundFiles = 0    % files those sends stored
+        zipSends = 0           % startZipSend calls (one zip each)
+        urlBatches = 0         % uploadURLs calls (many URLs each)
         addedJson = {}
     end
 
@@ -84,6 +86,8 @@ classdef FakeCloudDataset < handle
                 'uploadURL', @(d, uid, crc) obj.uploadURL(d, uid, crc), ...
                 'startSend', @(urls, paths, crcs, uids, folder, n) ...
                     obj.startSend(urls, paths, crcs, uids, folder, n), ...
+                'uploadURLs', @(d, uids, crcs, folder, n) obj.uploadURLs(d, uids, crcs, folder, n), ...
+                'startZipSend', @(d, uids, paths, folder) obj.startZipSend(d, uids, paths, folder), ...
                 'waitForFileUpload', @(d, uids, t) obj.waitForFileUpload(d, uids, t), ...
                 'lookupFiles', @(d, uids) obj.lookupFiles(d, uids), ...
                 'downloadFile', @(d, uid, p) obj.downloadFile(d, uid, p), ...
@@ -157,6 +161,23 @@ classdef FakeCloudDataset < handle
         function [ok, url] = uploadURL(~, ~, uid, ~)
             ok = true;
             url = ['https://fake.invalid/upload/' char(uid)];
+        end
+
+        function [ok, urls, msg] = uploadURLs(obj, d, uids, crcs, ~, ~)
+            obj.urlBatches = obj.urlBatches + 1;
+            urls = cell(1, numel(uids));
+            for i = 1:numel(uids)
+                [~, urls{i}] = obj.uploadURL(d, uids{i}, crcs{i});
+            end
+            ok = true;
+            msg = '';
+        end
+
+        function sender = startZipSend(obj, ~, uids, paths, ~)
+        % As startSend (DeferSends and FailSends apply), but one zip.
+            obj.zipSends = obj.zipSends + 1;
+            sender = obj.startSend({}, paths, {}, uids, '', 1);
+            obj.backgroundSends = obj.backgroundSends - 1;
         end
 
         function sender = startSend(obj, ~, paths, ~, uids, ~, ~)

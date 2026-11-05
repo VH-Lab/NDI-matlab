@@ -177,6 +177,52 @@ classdef LightsheetSessionWriterTest < matlab.unittest.TestCase
             end
             testCase.verifyGreaterThan(nCompared, 8);
         end
+
+        function testTheBlobCanGoUpInZips(testCase)
+            % The same, with each batch sent as one zip through the bulk
+            % upload (ZipBatches): every chunk must still arrive, with the
+            % bytes of a local ingest.
+            import matlab.unittest.fixtures.TemporaryFolderFixture
+            W = ndi.cloud.upload.SessionWriter(char(testCase.DatasetID), testCase.SessionId, ...
+                'ZipBatches', true);
+            [~, L, info] = ndi.fun.doc.lightsheet.fromOMEZarr(W, testCase.ZarrPath, ...
+                'subjectID', testCase.SubjectId, 'progressFcn', [], ...
+                'numWorkers', 0, 'codec', 'blosc-zstd', 'chunks', [8 8 8], 'label', 'zipped');
+            testCase.verifyEqual(info.cloud.resent, 0, 'nothing had to be sent again');
+
+            refRoot = testCase.applyFixture(TemporaryFolderFixture).Folder;
+            R = ndi.session.dir('reference', refRoot);
+            rsub = ndi.document('subject', 'base.session_id', R.id(), ...
+                'subject.local_identifier', 'blob@vhlab');
+            R.database_add(rsub);
+            [~, Lref] = ndi.fun.doc.lightsheet.fromOMEZarr(R, testCase.ZarrPath, ...
+                'subjectID', rsub.id(), 'progressFcn', [], 'numWorkers', 0, ...
+                'codec', 'blosc-zstd', 'chunks', [8 8 8], 'materializeChunks', true);
+            nChecked = 0;
+            for k = 1:numel(L)
+                ref = matchingLevel(L{k}, Lref);
+                members = L{k}.document_properties.files.series_info(1).ingest_locations;
+                [ok, answer] = ndi.cloud.api.files.lookupFiles( ...
+                    testCase.DatasetID, string({members.uid}));
+                testCase.assertTrue(ok, 'lookupFiles failed');
+                testCase.verifyEmpty(answer.missing, 'every zipped chunk must be in the cloud');
+                for m = 1:numel(members)
+                    row = answer.files(strcmp({answer.files.uid}, members(m).uid));
+                    testCase.assertNumElements(row, 1);
+                    f = R.database_openbinarydoc(ref, sprintf('chunk.bin_%d', members(m).index));
+                    expected = dir(f.fullpathfilename);
+                    expectedCrc = ndi.fun.file.crc32(f.fullpathfilename);
+                    R.database_closebinarydoc(f);
+                    if isempty(row.crc32)
+                        testCase.verifyEqual(double(row.size), expected.bytes);
+                    else
+                        testCase.verifyEqual(char(row.crc32), expectedCrc);
+                    end
+                    nChecked = nChecked + 1;
+                end
+            end
+            testCase.verifyGreaterThan(nChecked, 8);
+        end
     end
 end
 

@@ -252,6 +252,14 @@ classdef TestJob < matlab.unittest.TestCase
             testCase.verifyEqual(rows{1, 4}, '4m');
         end
 
+        function testProgressThatGoesBackRestartsThePace(testCase)
+            job = ndi.test.helper.ScriptedJob.create(2);
+            job.pretendPace(0.5, 0.6, 600);
+            job.beat(0.3);     % counted differently from here on
+            testCase.verifyEqual(job.runStartProgress, 0.3);
+            testCase.verifyTrue(isnan(job.remainingSeconds()), 'a new pace, too soon to say');
+        end
+
         function testNoTimeLeftWithoutAPace(testCase)
             job = ndi.test.helper.ScriptedJob.create(2);
             testCase.verifyTrue(isnan(job.remainingSeconds()), 'queued');

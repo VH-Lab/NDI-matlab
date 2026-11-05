@@ -167,7 +167,14 @@ classdef Job < handle
         %   the job holds MATLAB), and stops the job with 'NDI:job:paused'
         %   if a pause was requested. Pass it as a progress callback.
             if nargin < 3, text = ''; end
-            obj.progress = max(0, min(1, double(fraction)));
+            fraction = max(0, min(1, double(fraction)));
+            if fraction < obj.runStartProgress
+                % Progress went back (the work counts differently than
+                % the run that saved it): pace this run from here.
+                obj.runStarted = ndi.job.Job.now();
+                obj.runStartProgress = fraction;
+            end
+            obj.progress = fraction;
             if ~isempty(text), obj.message = char(text); end
             obj.heartbeat = ndi.job.Job.now();
             obj.beats = obj.beats + 1;

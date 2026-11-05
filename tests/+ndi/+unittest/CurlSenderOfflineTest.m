@@ -31,6 +31,20 @@ classdef CurlSenderOfflineTest < matlab.unittest.TestCase
             testCase.verifyFalse(contains(s, 'x-amz-checksum-crc32'));
         end
 
+        function testTheUploadURLRequestsCarryTheTokenInTheConfig(testCase)
+            cfg = ndi.cloud.upload.signedUploadURLs_config( ...
+                {'https://api.example/v1/datasets/o/d/files/u1?checksumCRC32=NhCmhg%3D%3D', ...
+                 'https://api.example/v1/datasets/o/d/files/u2'}, ...
+                'aaa.bbb.ccc', {'/tmp/x 1.json', 'C:\out\x2.json'});
+            testCase.verifyEqual(numel(strfind(cfg, 'Authorization: Bearer aaa.bbb.ccc')), 2);
+            testCase.verifyEqual(numel(regexp(cfg, '^next$', 'lineanchors')), 1);
+            testCase.verifySubstring(cfg, 'output = "/tmp/x 1.json"');
+            testCase.verifySubstring(cfg, 'output = "C:\\out\\x2.json"');
+            testCase.verifyError(@() ndi.cloud.upload.signedUploadURLs_config( ...
+                {'https://h/x'}, sprintf('tok\nurl = "https://evil"'), {'/tmp/o'}), ...
+                'NDI:cloud:signedUploadURLs:controlCharacter');
+        end
+
         function testTheVersionIsRead(testCase)
             v = @ndi.cloud.upload.CurlSender.parseVersion;
             testCase.verifyEqual(v('curl 8.7.1 (x86_64-apple-darwin23.0) libcurl/8.7.1'), [8 7]);

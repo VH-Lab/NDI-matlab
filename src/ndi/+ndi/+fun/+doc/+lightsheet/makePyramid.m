@@ -290,9 +290,17 @@ function [pyramidDoc, levelDocs, sharedLevel0] = makePyramid(session, pyramids, 
     % a viewer wants "3 of 24000 chunks done", not a bar that resets at
     % every level. chooseTileShape is cheap (metadata only), so running
     % it twice -- once here, once inside makeOneLevel -- costs nothing.
+    %
+    % The fraction is of WORK, not of chunks: a chunk reduced straight
+    % from the SmartSPIM slices reads prod(factor) source chunks' worth
+    % of them, so it counts that many times (see chunkWeight). Counting
+    % chunks alone made a build look nearly done once level 0 was, with
+    % the slowest part -- each ladder's pass over the slices -- still to
+    % come.
     levelChunks = cell(numel(pathOrder), 1);
     levelGrids  = cell(numel(pathOrder), 1);
-    totalChunks = 0;
+    totalChunks = 0;       % work units (see chunkWeight)
+    nChunksAll = 0;        % chunks, for the announcement
     for idx = 1:numel(pathOrder)
         p = pathOrder{idx};
         rep = representative(p);
@@ -309,7 +317,12 @@ function [pyramidDoc, levelDocs, sharedLevel0] = makePyramid(session, pyramids, 
         levelChunks{idx} = chunks_i;
         levelGrids{idx}  = ceil(level.shape ./ chunks_i);
         if options.materializeChunks
-            totalChunks = totalChunks + prod(levelGrids{idx});
+            w = 1;
+            if isa(options.levelSources, 'containers.Map') && isKey(options.levelSources, p)
+                w = chunkWeight(options.levelSources(p));
+            end
+            totalChunks = totalChunks + prod(levelGrids{idx}) * w;
+            nChunksAll = nChunksAll + prod(levelGrids{idx});
         end
     end
 
@@ -328,7 +341,7 @@ function [pyramidDoc, levelDocs, sharedLevel0] = makePyramid(session, pyramids, 
             'Total chunks: %d across %d level path(s). Codec: %s.\n'], ...
             effWorkers, workerSource, ...
             options.prefetchBytes / 2^20, asyncStr, ...
-            totalChunks, numel(pathOrder), options.codec);
+            nChunksAll, numel(pathOrder), options.codec);
     end
     options.profiler = ndi.fun.doc.lightsheet.BuildProfile( ...
         options.profileLog, options.profileEverySeconds);
@@ -485,13 +498,13 @@ function [levelDoc, doneChunks] = makeOneLevel(session, pyramidDoc, pyramidEntry
             session.adopt(levelDoc);
             stream.only = session.missingMembers(levelDoc, 'chunk.bin');
             if isempty(stream.only)
-                doneChunks = doneChunks + nChunks;
+                doneChunks = doneChunks + nChunks * chunkWeight(source);
                 cleanupTmp(tmpRoot);
                 return
             end
             fprintf('[makePyramid] Resuming: %d of %d chunks still to send.\n', ...
                 numel(stream.only), nChunks);
-            doneChunks = doneChunks + nChunks - numel(stream.only);
+            doneChunks = doneChunks + (nChunks - numel(stream.only)) * chunkWeight(source);
         else
             % Declare the level before building it: every chunk gets its
             % uid now, in the manifest, from the path it will be written
@@ -605,38 +618,18 @@ function [levelDoc, tmpRoot, doneChunks] = attachChunkFiles(levelDoc, source, le
     % + union bbox) so the async pipeline can dispatch the next read
     % while the current one is still compressing.
     %
-    % Packing rule: chunks are consumed from linearOrder in order, but
-    % a super-block is CLOSED early when adding the next chunk would
-    % blow up the union bounding box past bboxByteCap. Without this
-    % cap, a super-block that spans a wrap in the linear chunk order
-    % (e.g. the last chunks of one row plus the first of the next)
-    % has a bbox that spans the full range on the fastest-varying
-    % axis. When two wraps land inside the same super-block, the
-    % bbox covers a large fraction of the level, and
-    % readSuperBlockRegion allocates that whole region uncompressed:
-    % a 40k-chunk lightsheet ingest can jump from ~7 GB to >100 GB
-    % on a single ill-placed super-block, which we observed. Capping
-    % the bbox volume keeps peak read allocation bounded to
-    % ~prefetchBytes regardless of chunk-grid geometry.
-    bboxByteCap = max(double(prefetchBytes) * 4, chunkBytes * poolSize * 2);
-    % Preallocate to the worst-case super-block count (one chunk per
-    % super-block) so Code Analyzer sees a static-size cell rather
-    % than end+1 growth. Trim at the end. The `nChunks` slot count is
-    % ~156k pointers = ~1.2 MB, negligible.
-    superBlocks = cell(nChunks, 1);
-    nSuperBlocks = 0;
-    i = 1;
-    while i <= nChunks
-        [idxs, lo, hi] = growSuperBlock(linearOrder, i, ...
-            min(prefetchChunkCount, nChunks - i + 1), ...
-            chunks, chunkGrid, shape, typesize, bboxByteCap);
-        nSuperBlocks = nSuperBlocks + 1;
-        superBlocks{nSuperBlocks} = struct('idxs', idxs, ...
-            'loRows', lo, 'hiRows', hi, ...
-            'loBBox', min(lo, [], 1), 'hiBBox', max(hi, [], 1));
-        i = i + numel(idxs);
-    end
-    superBlocks = superBlocks(1:nSuperBlocks);
+    % ROWS, NOT RUNS. A super-block is made of whole rows of chunks along
+    % the fastest axis (x), never part of one: a SmartSPIM slice is read
+    % in strips that span its whole width, so a super-block holding half
+    % a row would read those strips, and the next super-block would read
+    % them again; one that wrapped from the end of one row to the start
+    % of the next had a bounding box of two whole rows. Rows are stacked
+    % (within one plane, so the box stays tight) up to the budget; a row
+    % bigger than twice the budget is split into equal parts. See
+    % planSuperBlocks.
+    superBlocks = planSuperBlocks(linearOrder, chunks, chunkGrid, shape, ...
+        prefetchChunkCount);
+    nSuperBlocks = numel(superBlocks);
     % Resuming a streamed level: keep only the chunks still to send, in
     % the same super-blocks (same reads), and drop blocks left empty.
     if ~isempty(stream) && ~isempty(stream.only)
@@ -801,7 +794,7 @@ function [levelDoc, tmpRoot, doneChunks] = attachChunkFiles(levelDoc, source, le
         tUpload = toc(tStep);
         after = sessionTiming(stream);
         postAddDocSize = preAddDocSize;
-        doneChunks = doneChunks + bs;
+        doneChunks = doneChunks + bs * chunkWeight(source);
         tStep = tic;
         reportProgress(progressFcn, doneChunks, totalChunks, ...
             sprintf('%s: super-block %d/%d, chunk %d/%d', ...
@@ -926,49 +919,60 @@ function n = poolFutureCount()
     end
 end
 
-function [idxs, lo, hi] = growSuperBlock(linearOrder, i0, budgetChunks, chunks, chunkGrid, shape, typesize, bboxByteCap)
-% GROWSUPERBLOCK - pack chunks starting at index i0 into one super-block,
-% closing early when the union bbox would exceed bboxByteCap.
+function blocks = planSuperBlocks(linearOrder, chunks, chunkGrid, shape, budgetChunks)
+% PLANSUPERBLOCKS - group a level's chunks into super-blocks of whole rows
 %
-%   Adds chunks one at a time from linearOrder(i0:end); recomputes the
-%   union bbox after each. Stops when either budgetChunks chunks have
-%   been packed, or the NEXT chunk would push the union bbox's
-%   uncompressed byte cost above bboxByteCap. Guarantees at least one
-%   chunk in the super-block (the first is always accepted regardless
-%   of bbox cost, because a single chunk cannot cost more than
-%   chunkBytes).
-    idxs  = zeros(1, budgetChunks);
-    lo    = zeros(budgetChunks, numel(shape));
-    hi    = zeros(budgetChunks, numel(shape));
-    curLo = inf(1, numel(shape));
-    curHi = -inf(1, numel(shape));
-    n = 0;
-    for k = 0:budgetChunks-1
-        c = linearOrder(i0 + k, :);
-        pieceLo = zeros(1, numel(shape));
-        pieceHi = zeros(1, numel(shape));
-        for a = 1:numel(chunkGrid)
-            pieceLo(a) = (c(a) - 1) * chunks(a) + 1;
-            pieceHi(a) = min(pieceLo(a) + chunks(a) - 1, shape(a));
+%   LINEARORDER is allChunkIndices(chunkGrid): C-order, last axis (x)
+%   fastest, so each run of chunkGrid(end) entries is one row along x,
+%   and each run of chunkGrid(end-1) rows is one plane. A super-block is
+%   up to floor(budgetChunks / rowLength) whole consecutive rows of one
+%   plane (at least one row) -- its bounding box is then exactly its
+%   chunks -- or, when a row is longer than twice budgetChunks, an equal
+%   part of a row. Every chunk is in exactly one super-block, in linear
+%   order.
+    nChunks = size(linearOrder, 1);
+    nd = numel(chunkGrid);
+    nx = chunkGrid(nd);
+    if nd >= 2
+        ny = chunkGrid(nd - 1);
+    else
+        ny = 1;
+    end
+    groups = {};
+    if nx <= 2 * budgetChunks
+        rowsPerBlock = max(1, floor(budgetChunks / nx));
+        nRows = nChunks / nx;
+        r = 1;
+        while r <= nRows
+            planeEnd = ceil(r / ny) * ny;           % last row of r's plane
+            last = min([r + rowsPerBlock - 1, planeEnd, nRows]);
+            groups{end+1} = ((r - 1) * nx + 1):(last * nx); %#ok<AGROW>
+            r = last + 1;
         end
-        newLo = min(curLo, pieceLo);
-        newHi = max(curHi, pieceHi);
-        if n > 0
-            newBoxBytes = prod(double(newHi - newLo + 1)) * typesize;
-            if newBoxBytes > bboxByteCap
-                break;
+    else
+        k = ceil(nx / budgetChunks);
+        edges = round(linspace(0, nx, k + 1));
+        for r = 1:(nChunks / nx)
+            for seg = 1:k
+                groups{end+1} = (r - 1) * nx + ((edges(seg) + 1):edges(seg + 1)); %#ok<AGROW>
             end
         end
-        n = n + 1;
-        idxs(n) = i0 + k;            % 1-based linear chunk id
-        lo(n, :) = pieceLo;
-        hi(n, :) = pieceHi;
-        curLo = newLo;
-        curHi = newHi;
     end
-    idxs = idxs(1:n);
-    lo   = lo(1:n, :);
-    hi   = hi(1:n, :);
+    blocks = cell(1, numel(groups));
+    for g = 1:numel(groups)
+        idxs = groups{g};
+        lo = zeros(numel(idxs), numel(shape));
+        hi = zeros(numel(idxs), numel(shape));
+        for j = 1:numel(idxs)
+            c = linearOrder(idxs(j), :);
+            for a = 1:nd
+                lo(j, a) = (c(a) - 1) * chunks(a) + 1;
+                hi(j, a) = min(lo(j, a) + chunks(a) - 1, shape(a));
+            end
+        end
+        blocks{g} = struct('idxs', idxs, 'loRows', lo, 'hiRows', hi, ...
+            'loBBox', min(lo, [], 1), 'hiBBox', max(hi, [], 1));
+    end
 end
 
 function bigTile = readSuperBlockRegion(source, loBBox, hiBBox)
@@ -1060,6 +1064,18 @@ function source = resolveLevelSource(session, p, entry, level, options, docByPat
         otherwise
             error('NDI:lightsheet:makePyramid:unknownSourceKind', ...
                 'Unknown level source kind ''%s'' for level %s.', source.kind, p);
+    end
+end
+
+function w = chunkWeight(source)
+% How much work one output chunk of a level read from SOURCE is, in
+% level-0 chunks. A chunk reduced straight from the SmartSPIM slices
+% reads prod(factor) chunks' worth of slices, so it is that many. Any
+% other chunk is one: a level-0 chunk reads itself, and a chunk reduced
+% from the level before reads that level's local copy, which is quick.
+    w = 1;
+    if isstruct(source) && isfield(source, 'kind') && strcmp(source.kind, 'reduceSmartspim')
+        w = prod(double(source.factor));
     end
 end
 

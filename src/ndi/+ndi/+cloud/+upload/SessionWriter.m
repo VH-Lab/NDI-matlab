@@ -63,8 +63,18 @@ classdef SessionWriter < handle
 %   checked. Where curl is too old for that (before 7.68), or
 %   PARALLELUPLOADS is 1, files are sent one by one, as before.
 %
+%   AS ONE ZIP (an option). With ZipBatches, a batch of two or more files
+%   goes up instead as one uncompressed zip through NDI Cloud's bulk
+%   upload, in the background: one signed URL and one PUT per batch; the
+%   server unpacks it, and the batch is checked as usual. Off by default
+%   (preference Cloud.Upload.Send_Batches_As_Zip): each batch becomes a
+%   job on the server, and how that keeps up over a long build is being
+%   measured.
+%
 %   Optional Name-Value Arguments:
 %   Verbose         - print progress lines. Default true.
+%   ZipBatches      - send each batch as one zip (see AS ONE ZIP). Default:
+%                     the preference Cloud.Upload.Send_Batches_As_Zip.
 %   ParallelUploads - files a batch sends at once, in the background.
 %                     Default 4. 1 sends them one by one, and waits.
 %   BulkThreshold   - a document with at least this many files is sent in
@@ -130,6 +140,7 @@ classdef SessionWriter < handle
         bulkThreshold (1,1) double = 20
         uploadTimeout double = []
         parallelUploads (1,1) double = 4
+        zipBatches (1,1) logical = false
         keepLocalCopies (1,1) logical = false
         % Documents sent in DATABASE_ADD, waiting for COMMIT, in order.
         pendingDocs = {}
@@ -144,6 +155,7 @@ classdef SessionWriter < handle
         % local copies kept for a later level to read (docid -> cellstr
         % of paths); and documents to replace in the cloud at COMMIT.
         outstanding = {}
+        warnedUrls (1,1) logical = false
         onUpload = []
         declaredUids
         retainedPaths
@@ -159,6 +171,7 @@ classdef SessionWriter < handle
                 options.BulkThreshold (1,1) double {mustBePositive} = 20
                 options.UploadTimeout double {mustBeScalarOrEmpty, mustBePositive} = []
                 options.ParallelUploads (1,1) double {mustBeInteger, mustBePositive} = 4
+                options.ZipBatches = []
                 options.CacheDir (1,:) char = ''
                 options.KeepLocalCopies (1,1) logical = false
                 options.RetrySeconds (1,1) double {mustBeNonnegative} = 1800
@@ -177,6 +190,15 @@ classdef SessionWriter < handle
             obj.bulkThreshold = options.BulkThreshold;
             obj.uploadTimeout = options.UploadTimeout;
             obj.parallelUploads = options.ParallelUploads;
+            if isempty(options.ZipBatches)
+                try
+                    obj.zipBatches = logical(ndi.preferences.get('Cloud.Upload.Send_Batches_As_Zip'));
+                catch
+                    obj.zipBatches = false;
+                end
+            else
+                obj.zipBatches = logical(options.ZipBatches);
+            end
             obj.keepLocalCopies = options.KeepLocalCopies;
             obj.knownIds = containers.Map('KeyType', 'char', 'ValueType', 'logical');
             obj.cloudIds = containers.Map('KeyType', 'char', 'ValueType', 'logical');
@@ -677,9 +699,29 @@ classdef SessionWriter < handle
                     obj.say('A zip batch failed (%s); checking what arrived.', char(msg));
                 end
             else
-                sender = obj.startBackgroundSend(uids, paths, crcs);
+                % One zip in the background, else the files in the
+                % background, else the files one by one, waiting.
+                how = '';
+                if obj.zipBatches && n >= 2 && isfield(obj.api, 'startZipSend')
+                    t0 = tic;
+                    try
+                        sender = obj.api.startZipSend(obj.cloudDatasetId, uids, paths, ...
+                            fullfile(obj.cacheDir, 'sending'));
+                    catch ME
+                        obj.say('Could not send the batch as a zip (%s); sending its files.', ME.message);
+                        sender = [];
+                    end
+                    obj.timing.stage = obj.timing.stage + toc(t0);
+                    if ~isempty(sender), how = ' (as one zip, in the background)'; end
+                end
                 if isempty(sender)
-                    obj.say('Sending %d file(s), %.1f MB, for %s ...', n, sum(bytes) / 1e6, label);
+                    sender = obj.startBackgroundSend(uids, paths, crcs);
+                    if ~isempty(sender)
+                        how = sprintf(' (%d at a time, in the background)', obj.parallelUploads);
+                    end
+                end
+                obj.say('Sending %d file(s), %.1f MB, for %s%s ...', n, sum(bytes) / 1e6, label, how);
+                if isempty(sender)
                     t0 = tic;
                     for i = 1:n
                         [ok, msg] = obj.api.uploadSingleFile(obj.cloudDatasetId, uids{i}, paths{i});
@@ -688,9 +730,6 @@ classdef SessionWriter < handle
                         end
                     end
                     obj.timing.send = obj.timing.send + toc(t0);
-                else
-                    obj.say('Sending %d file(s), %.1f MB, for %s (%d at a time, in the background) ...', ...
-                        n, sum(bytes) / 1e6, label, obj.parallelUploads);
                 end
             end
             batch = struct('docId', doc.id(), 'label', label, ...
@@ -714,14 +753,34 @@ classdef SessionWriter < handle
             urls = cell(1, n);
             t0 = tic;
             stopwatch = onCleanup(@() obj.addTime('urls', toc(t0)));
-            for i = 1:n
-                [ok, url] = obj.api.uploadURL(obj.cloudDatasetId, uids{i}, crcs{i});
-                if ~ok
-                    obj.say('Could not get an upload URL for %s (%s); sending one by one.', ...
-                        uids{i}, describe(url));
-                    return
+            got = false;
+            if isfield(obj.api, 'uploadURLs')
+                % All at once (ndi.cloud.upload.signedUploadURLs).
+                try
+                    [got, many, why] = obj.api.uploadURLs(obj.cloudDatasetId, uids, crcs, ...
+                        fullfile(obj.cacheDir, 'sending'), 8);
+                catch ME
+                    got = false;
+                    why = ME.message;
                 end
-                urls{i} = char(url);
+                if got
+                    urls = cellfun(@char, many, 'UniformOutput', false);
+                elseif ~obj.warnedUrls
+                    obj.say('Asking for upload URLs all at once did not work (%s); asking one at a time.', ...
+                        char(why));
+                    obj.warnedUrls = true;
+                end
+            end
+            if ~got
+                for i = 1:n
+                    [ok, url] = obj.api.uploadURL(obj.cloudDatasetId, uids{i}, crcs{i});
+                    if ~ok
+                        obj.say('Could not get an upload URL for %s (%s); sending one by one.', ...
+                            uids{i}, describe(url));
+                        return
+                    end
+                    urls{i} = char(url);
+                end
             end
             clear stopwatch
             try
@@ -866,6 +925,24 @@ classdef SessionWriter < handle
     end
 
     methods (Static)
+        function writeStoredZip(zipPath, paths, names)
+        % WRITESTOREDZIP - a zip of PATHS as NAMES, without compressing them
+        %
+        %   The chunks are compressed already; deflating them again would
+        %   cost seconds of CPU per batch for nothing (MATLAB's zip always
+        %   deflates). Entries are written at compression level 0.
+            out = java.io.BufferedOutputStream(java.io.FileOutputStream(zipPath), 2^20);
+            zos = java.util.zip.ZipOutputStream(out);
+            closer = onCleanup(@() zos.close());
+            zos.setLevel(0);
+            for i = 1:numel(paths)
+                zos.putNextEntry(java.util.zip.ZipEntry(char(names{i})));
+                java.nio.file.Files.copy(java.io.File(char(paths{i})).toPath(), zos);
+                zos.closeEntry();
+            end
+            clear closer
+        end
+
         function sessions = listSessions(cloudDatasetId, options)
         % LISTSESSIONS - the sessions in a cloud dataset
         %
@@ -938,9 +1015,13 @@ classdef SessionWriter < handle
         %     uploadSingleFile(datasetId, uid, path)  -> [ok, msg]  (CRC-32 signed)
         %     uploadFileBatch(datasetId, paths, bytes) -> [ok, msg] (zip batches)
         %     uploadURL(datasetId, uid, crc)       -> [ok, url]  (signed for CRC)
+        %     uploadURLs(datasetId, uids, crcs, folder, n) -> [ok, urls, msg]
+        %         (many at once; optional, uploadURL is the fallback)
         %     startSend(urls, paths, crcs, uids, folder, n) -> a sender with
         %         [ok, msg] = wait(timeout), or [] if this computer cannot
         %         (see ndi.cloud.upload.CurlSender); optional
+        %     startZipSend(datasetId, uids, paths, folder) -> a sender, for
+        %         one zip of the files through the bulk upload; optional
         %     waitForFileUpload(datasetId, uids, timeout) -> [ok, answer]
         %     lookupFiles(datasetId, uids)         -> [ok, answer]
         %     downloadFile(datasetId, uid, path)   -> [ok, msg]
@@ -952,7 +1033,10 @@ classdef SessionWriter < handle
                     'checksum', true, 'waitForUpload', false), ...
                 'uploadFileBatch', @uploadBatch, ...
                 'uploadURL', @uploadURL, ...
+                'uploadURLs', @(d, uids, crcs, folder, n) ndi.cloud.upload.signedUploadURLs( ...
+                    d, uids, crcs, folder, 'Parallel', n), ...
                 'startSend', @startCurlSend, ...
+                'startZipSend', @startZipSend, ...
                 'waitForFileUpload', @(d, uids, t) ndi.cloud.api.files.waitForFileUpload( ...
                     d, string(uids), 'timeout', t), ...
                 'lookupFiles', @(d, uids) ndi.cloud.api.files.lookupFiles(d, string(uids)), ...
@@ -1066,6 +1150,26 @@ function sender = startCurlSend(urls, paths, crcs, uids, folder, n)
     if ndi.cloud.upload.CurlSender.supported()
         sender = ndi.cloud.upload.CurlSender(urls, paths, crcs, uids, folder, 'Parallel', n);
     end
+end
+
+function sender = startZipSend(cloudDatasetId, uids, paths, folder)
+% One uncompressed zip of PATHS (entries named by their uids, as the
+% server files them), PUT to a bulk-upload URL by a background curl.
+% [] where curl cannot (the caller then sends the files themselves).
+    sender = [];
+    if ~ndi.cloud.upload.CurlSender.supported()
+        return
+    end
+    if ~isfolder(folder), mkdir(folder); end
+    zipPath = fullfile(folder, ['batch-' char(did.ido.unique_id()) '.zip']);
+    ndi.cloud.upload.SessionWriter.writeStoredZip(zipPath, paths, uids);
+    [ok, info] = ndi.cloud.api.files.getFileCollectionUploadURL(cloudDatasetId);
+    if ~ok
+        if isfile(zipPath), delete(zipPath); end
+        error('NDI:cloud:SessionWriter:noBulkURL', 'No bulk upload URL: %s', describe(info));
+    end
+    sender = ndi.cloud.upload.CurlSender({char(info.url)}, {zipPath}, {''}, ...
+        {'zip'}, folder, 'Parallel', 1, 'DeleteAfter', {zipPath});
 end
 
 function stopSender(batch)

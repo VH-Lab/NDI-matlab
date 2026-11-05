@@ -30,7 +30,8 @@ classdef CurlSender < handle
 %   storage serving HTTP/1.1 turns into one file at a time); SUPPORTED
 %   says whether this computer has it.
 %
-%   Deleting S stops a send still running and removes its files.
+%   Deleting S stops a send still running and removes its files, and the
+%   files named in the option DeleteAfter (a zip made for the send).
 %
 %   See also: ndi.cloud.upload.SessionWriter, ndi.cloud.api.files.putFiles
 
@@ -39,6 +40,7 @@ classdef CurlSender < handle
         cfgFile char = ''
         logFile char = ''
         errFile char = ''
+        deleteAfter = {}
     end
 
     properties (Access = private)
@@ -54,7 +56,9 @@ classdef CurlSender < handle
                 uids cell
                 folder (1,:) char
                 options.Parallel (1,1) double {mustBeInteger, mustBePositive} = 4
+                options.DeleteAfter cell = {}
             end
+            obj.deleteAfter = options.DeleteAfter;
             n = numel(paths);
             if numel(urls) ~= n || numel(crcs) ~= n || numel(uids) ~= n
                 error('NDI:cloud:CurlSender:sizes', ...
@@ -153,7 +157,7 @@ classdef CurlSender < handle
                 obj.stop();
             catch
             end
-            for f = {obj.cfgFile, obj.logFile, obj.errFile}
+            for f = [{obj.cfgFile, obj.logFile, obj.errFile}, obj.deleteAfter(:).']
                 if ~isempty(f{1}) && isfile(f{1})
                     delete(f{1});
                 end

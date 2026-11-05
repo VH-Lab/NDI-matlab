@@ -302,6 +302,49 @@ classdef SessionWriterMockTest < matlab.unittest.TestCase
             testCase.verifyEqual(testCase.cloud.singleUploads, 4);
         end
 
+        function testTheBatchsUploadURLsComeAtOnce(testCase)
+            W = testCase.writer();
+            [d, ~] = testCase.seriesDoc(W, testCase.subjectId, 3);
+            W.database_add(d);
+            testCase.verifyEqual(testCase.cloud.urlBatches, 1, 'one request for all four');
+            testCase.verifyGreaterThanOrEqual(W.timing.urls, 0);
+        end
+
+        function testABatchCanGoAsOneZip(testCase)
+            testCase.cloud.DeferSends = true;
+            W = testCase.writer('ZipBatches', true);
+            [d, bytes] = testCase.seriesDoc(W, testCase.subjectId, 2);
+            W.declare(d);
+            locs = d.document_properties.files.series_info(1).ingest_locations;
+            zipsBefore = testCase.cloud.zipSends;
+            W.streamMembers(d, 'chunk.bin', [locs.index], {locs.location});
+            testCase.verifyEqual(testCase.cloud.zipSends, zipsBefore + 1, 'the two chunks, one zip');
+            testCase.verifyFalse(testCase.cloud.hasFile(locs(1).uid), 'still going up');
+            W.commit();
+            for i = 1:numel(locs)
+                testCase.verifyEqual(testCase.cloud.fileBytes(locs(i).uid), bytes{locs(i).index});
+            end
+            testCase.verifyEqual(testCase.cloud.singleUploads, 0);
+        end
+
+        function testAStoredZipHoldsTheFilesUnderTheirNames(testCase)
+            folder = testCase.applyFixture(matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
+            a = fullfile(folder, 'a.bin'); b = fullfile(folder, 'b.bin');
+            fid = fopen(a, 'w'); fwrite(fid, zeros(1, 10000, 'uint8')); fclose(fid);
+            fid = fopen(b, 'w'); fwrite(fid, uint8(200:-1:1)); fclose(fid);
+            z = fullfile(folder, 'batch.zip');
+            ndi.cloud.upload.SessionWriter.writeStoredZip(z, {a, b}, {'uid_a', 'uid_b'});
+            out = fullfile(folder, 'out');
+            names = unzip(z, out);
+            testCase.verifyEqual(sort(cellfun(@(p) char(p(numel(out)+2:end)), names, ...
+                'UniformOutput', false)), {'uid_a', 'uid_b'});
+            testCase.verifyEqual(readBytes(fullfile(out, 'uid_a')), zeros(10000, 1, 'uint8'));
+            testCase.verifyEqual(readBytes(fullfile(out, 'uid_b')), uint8(200:-1:1)');
+            d = dir(z);
+            testCase.verifyGreaterThan(d.bytes, 10200, ...
+                'stored, not deflated (10000 zeros would deflate to almost nothing)');
+        end
+
         % -- riding out failures ------------------------------------------
 
         function testAFailingLookupIsRetried(testCase)
@@ -372,7 +415,7 @@ classdef SessionWriterMockTest < matlab.unittest.TestCase
             % No retries: these tests inject failures and want them at once.
             W = ndi.cloud.upload.SessionWriter(testCase.cloud.DatasetId, ...
                 testCase.sessionId, 'Api', testCase.cloud.api(), ...
-                'Verbose', false, 'RetrySeconds', 0, varargin{:});
+                'Verbose', false, 'RetrySeconds', 0, 'ZipBatches', false, varargin{:});
         end
 
         function [d, bytes] = seriesDoc(testCase, W, subjectId, n)
