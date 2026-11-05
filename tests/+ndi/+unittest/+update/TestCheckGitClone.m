@@ -250,6 +250,17 @@ classdef TestCheckGitClone < matlab.unittest.TestCase
             testCase.verifyFalse(r.CalculatorUpdateAvailable);
         end
 
+        function testCalculatorInRequirementsIsListedOnce(testCase)
+            % NDIcalc-vis-matlab is in requirements.txt: it is checked as a
+            % dependency and not listed again under Calculators.
+            req = fullfile(testCase.Seeds, "NDI-matlab", "requirements.txt");
+            txt = string(fileread(req)) + newline + testCase.remoteUrl(testCase.CalcName);
+            testCase.pushUpstream("NDI-matlab", "requirements.txt", txt, Append = false);
+            r = testCase.check();
+            testCase.verifyEqual(testCase.depStatus(r, testCase.CalcName), "upToDate");
+            testCase.verifyEmpty(r.Calculators);
+        end
+
         function testDependencyVersionsAreReported(testCase)
             testCase.pushUpstream("depA", "README.md", "dependency change");
             r = testCase.check();
@@ -289,7 +300,6 @@ classdef TestCheckGitClone < matlab.unittest.TestCase
             % installer step.
             testCase.pushUpstream("NDI-matlab", "ndi_install.m", ...
                 "function ndi_install(varargin)" + newline + "end", Append = false);
-            testCase.git(testCase.Ndi, "pull -q");
             testCase.pushUpstream("NDI-matlab", "README.md", "new upstream line");
             oldPath = path;
             testCase.addTeardown(@() path(oldPath));
