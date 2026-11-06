@@ -449,6 +449,25 @@ classdef LightsheetManager < ndi.gui.app.sessionApp
                     'Reading lightsheet images needs NDR-matlab.'], ME.message);
                 return
             end
+            if isfolder(fullfile(folder, 'All_Channels'))
+                % It looks like a SmartSPIM acquisition, but NDR would not
+                % take its All_Channels: say why (no slices it recognizes,
+                % a channel missing, a listing that repeats files...).
+                why = '';
+                try
+                    ndr.format.smartspim.readAllChannelsInfo(folder, 'ReadHeader', false);
+                catch ME
+                    why = ME.message;
+                end
+                description = ['This SmartSPIM acquisition''s All_Channels ' ...
+                    'folder cannot be read'];
+                if isempty(why)
+                    description = [description '.'];
+                else
+                    description = sprintf('%s: %s', description, why);
+                end
+                return
+            end
             description = ['Not a SmartSPIM acquisition or an OME-Zarr ' ...
                 'store. Choose the acquisition folder that holds ' ...
                 'All_Channels (run SmartSPIM AutoStitch first if it has ' ...
