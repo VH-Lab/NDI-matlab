@@ -176,18 +176,6 @@ for k = 1:numel(uTarget)
     end
 end
 end
-for k = 1:numel(docOrder)
-    d = docOrder{k};
-    targets = instr(d);
-    e = '';
-    if isKey(ent, d); e = ent(d); end
-    for t = 1:numel(targets)
-        if isKey(m, targets{t}) && ~m(targets{t}).found
-            m(targets{t}) = struct('found', true, 'entity', e);
-        end
-    end
-end
-end
 
 function docs = lightAssertions(S, q)
 % the term assertions Q matches, in the database's order: light ndi.documents
