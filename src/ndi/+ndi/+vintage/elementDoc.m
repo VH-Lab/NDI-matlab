@@ -139,6 +139,16 @@ end
 subjects = ndi.vintage.elementSubjectDocs(E);
 matches = {};
 for i = 1:numel(subjects)
+    % The name and reference are read from the entity document itself, as
+    % ndi.vintage.elementFields reads them; only an entity whose name and
+    % reference match has its other fields rebuilt (five searches). Every
+    % entity used to be rebuilt: 4,814 rebuilds for six probes' id() in one
+    % Dab getprobes (run 42248853676). Jess Haley, 2026-11-06: "Speed can't
+    % be slower than v1."
+    [nm, rf] = localNameReference(subjects{i});
+    if ~strcmp(nm, ndi_element_obj.name) || ~sameReference(rf, ndi_element_obj.reference)
+        continue;
+    end
     f = ndi.vintage.elementFields(subjects{i}, E);
     if ~isThisElement(f, ndi_element_obj, wantClass); continue; end
     matches{end+1} = subjects{i}; %#ok<AGROW>
@@ -190,4 +200,23 @@ if isnumeric(a) && isnumeric(b)
     return;
 end
 tf = strcmp(char(string(a)), char(string(b)));
+end
+
+function [name, reference] = localNameReference(doc)
+% the element name and reference, from the entity block alone (as
+% ndi.vintage.elementFields reads them)
+props = doc.document_properties;
+localId = '';
+entityName = '';
+for blk = {'entity', 'subject'}
+    if isfield(props, blk{1}) && isstruct(props.(blk{1})) ...
+            && isfield(props.(blk{1}), 'local_identifier')
+        localId = props.(blk{1}).local_identifier;
+        if isfield(props.(blk{1}), 'name')
+            entityName = props.(blk{1}).name;
+        end
+        break;
+    end
+end
+[name, reference] = ndi.vintage.elementNameReferenceApart(entityName, localId);
 end
