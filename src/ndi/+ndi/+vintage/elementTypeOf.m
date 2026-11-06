@@ -17,6 +17,14 @@ function [elementType, how] = elementTypeOf(assertions, entityType)
 %     2. else the device-kind assertion (variable NCIT:C178920 "Equipment
 %        Type"): the one v1 type that kind rebuilds
 %        (ndi.vintage.elementTypeOfKind). HOW = 'device kind'.
+%        A kind several v1 types share, with no "element type" assertion,
+%        is a probe that never recorded, whose mode was not migrated
+%        ([clamp mode of unrecorded probe dropped], Jess Haley,
+%        2026-11-03): it reads the general v1 type of that kind,
+%        ndi.vintage.elementGeneralTypeOfKind ('patch' for a patch
+%        electrode, 'sharp' for a sharp electrode; Decided by Jess Haley,
+%        2026-11-06, "Read back patch"). HOW = 'general type'. A microscope
+%        has no general registered v1 type and reads '' (step 4).
 %     3. else, when ENTITYTYPE is `cell` or `group` (read by node,
 %        ndi.v2.vocabHandle): 'spikes'. HOW = 'entity type'. A sorted unit
 %        is the one element that becomes a cell or a group with no "element
@@ -29,8 +37,8 @@ function [elementType, how] = elementTypeOf(assertions, entityType)
 %        it, and the three are equivalent spellings. 'spikes' is the
 %        spelling NDI's own writers use (ndi.element.spikesForProbe,
 %        ndi.app.spikesorter) and the one ndi.neuron readers query.
-%     4. else ''. HOW = ''. A shared kind with no "element type" assertion
-%        reads '' here, as an element with no assertion read before.
+%     4. else ''. HOW = ''. A microscope (a shared kind with no general
+%        type) with no "element type" assertion reads '' here.
 %
 %   Decided by Jess Haley, did-schema V_eta_go_forward_class_audit.md,
 %   [element type is a device kind term] and [element types batch 1] ..
@@ -52,6 +60,7 @@ if ~iscell(assertions)
 end
 typeLabel = ndi.vintage.elementLabel('type');
 kindType = '';
+generalType = '';
 for k = 1:numel(assertions)
     p = propsOf(assertions{k});
     if isempty(p)
@@ -66,11 +75,19 @@ for k = 1:numel(assertions)
     end
     if isempty(kindType) && ndi.vintage.isEquipmentTypeVariable(v)
         kindType = ndi.vintage.elementTypeOfKind(val.node);
+        if isempty(kindType) && isempty(generalType)
+            generalType = ndi.vintage.elementGeneralTypeOfKind(val.node);
+        end
     end
 end
 if ~isempty(kindType)
     elementType = kindType;
     how = 'device kind';
+    return;
+end
+if ~isempty(generalType)
+    elementType = generalType;
+    how = 'general type';
     return;
 end
 if isUnitEntityType(entityType)
