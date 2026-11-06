@@ -437,6 +437,39 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
             ndi_document_obj = ndi_session_obj.database.search(searchparameters&inSession);
         end % database_search();
 
+        function edges = database_search_edges(ndi_session_obj, searchparameters, names)
+            % DATABASE_SEARCH_EDGES - the named edges of the documents a search matches
+            %
+            % EDGES = DATABASE_SEARCH_EDGES(NDI_SESSION_OBJ, SEARCHPARAMETERS, NAMES)
+            %
+            % For the documents DATABASE_SEARCH(SEARCHPARAMETERS) would return,
+            % in its order, their depends_on entries whose name is in NAMES
+            % (a cellstr), as a struct array with fields doc_id, name and
+            % document_id, read without decoding the documents
+            % (did2.database.sqlitedb/searchEdges). EDGES is [] (not an empty
+            % struct) when the session's database cannot answer this way (a
+            % v1 database, or a DID-matlab without searchEdges); the caller
+            % then searches the documents as before.
+            %
+            % For readers that need only ids (ndi.vintage.prefetchElementFields;
+            % Jess Haley, 2026-11-06: "Speed can't be slower than v1").
+            arguments
+                ndi_session_obj (1,1) ndi.session
+                searchparameters {mustBeA(searchparameters,{'ndi.query','did.query'})}
+                names
+            end
+            edges = [];
+            db = ndi_session_obj.database;
+            if ~isa(db, 'ndi.database.implementations.database.did2sqlite') ...
+                    || ~ismethod(db.db, 'searchEdges')
+                return;
+            end
+            inSession = ndi.query('base.session_id','exact_string',ndi_session_obj.id());
+            q2 = ndi.database.implementations.database.did2sqlite.toDid2Query( ...
+                searchparameters & inSession);
+            edges = db.db.searchEdges(q2, names);
+        end % database_search_edges()
+
         function ndi_document_obj = database_search_with_dataset(ndi_session_obj, searchparameters)
             % DATABASE_SEARCH_WITH_DATASET - search this session's database, dataset documents included
             %
