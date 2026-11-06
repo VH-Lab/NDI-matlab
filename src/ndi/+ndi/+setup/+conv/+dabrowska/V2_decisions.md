@@ -12,6 +12,10 @@ existing `doImport.m` is left unchanged. The migration itself is
 Entries marked **DECIDED** were made by the dataset owner (Jess Haley) in
 conversation; **OPEN** entries are questions still to answer.
 
+## The draft dataset map (2026-11-02)
+
+`V2_map.json` beside this file is a DRAFT of the Dab dataset map ([Claude drafts the Dab map], did-schema `docs/plans/did_v2_go_forward_class_audit.md`). Each row cites the decision it rests on; every column the decided lines and the data do not settle is listed under `open` with a question id (DQ1..DQ22) in did-schema `docs/V2_PLAN.md`, "Dab map questions (later)". No code reads the file yet: the map step of [dataset map location] is not built, and `sliceTetanus` still runs in the generic second pass. Its format and file name are Proposed (not decided).
+
 ## Decisions
 
 | # | Date | Decision | Status |
