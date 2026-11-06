@@ -8,9 +8,12 @@ classdef TestElementTypeFromKind < matlab.unittest.TestCase
 %   Decided by Jess Haley). The reader:
 %     - only a device-kind assertion -> the one v1 type of that kind;
 %     - both assertions -> the "element type" assertion wins;
-%     - a shared kind (patch / sharp electrode, microscope) with no
-%       "element type" assertion -> '', as an element with no assertion
-%       read before.
+%     - a shared kind with no "element type" assertion (a probe that never
+%       recorded, [clamp mode of unrecorded probe dropped], Jess Haley,
+%       2026-11-03) -> the general v1 type: 'patch' for a patch electrode,
+%       'sharp' for a sharp electrode (Decided by Jess Haley, 2026-11-06,
+%       "Read back patch"); '' for a microscope, which has no general
+%       registered v1 type.
 %
 %   See also ndi.vintage.elementTypeOf, ndi.vintage.elementTypeOfKind.
 
@@ -56,11 +59,65 @@ classdef TestElementTypeFromKind < matlab.unittest.TestCase
             testCase.verifyEqual(t, 'patch-Vm');
         end
 
-        function testASharedKindAloneReadsEmpty(testCase)
-            for node = {'EMPTY:0000411', 'EMPTY:0000412', 'OBI:0400169'}
-                [t, how] = ndi.vintage.elementTypeOf({kindAssertion('el_3', node{1})});
-                testCase.verifyEqual(t, '', node{1});
-                testCase.verifyEqual(how, '', node{1});
+        function testAnUnrecordedPatchOrSharpReadsItsGeneralType(testCase)
+            % a migrated device that never recorded: its device kind, no
+            % "element type" assertion, no recording observation
+            rows = {
+                'EMPTY:0000411', 'patch'
+                'empty:0000411', 'patch'     % prefix case aside
+                'EMPTY:0000412', 'sharp'};
+            testCase.log(sprintf('DENOMINATOR: %d shared kind(s) with a general type', size(rows, 1)));
+            for k = 1:size(rows, 1)
+                [t, how] = ndi.vintage.elementTypeOf({kindAssertion('el_3', rows{k, 1})});
+                testCase.verifyEqual(t, rows{k, 2}, rows{k, 1});
+                testCase.verifyEqual(how, 'general type', rows{k, 1});
+            end
+            % a sorted-unit entity type does not override the device kind
+            t = ndi.vintage.elementTypeOf({kindAssertion('el_3', 'EMPTY:0000411')}, ...
+                struct('node', 'CL:0000000', 'name', 'cell'));
+            testCase.verifyEqual(t, 'patch');
+        end
+
+        function testAnUnrecordedMicroscopeReadsEmpty(testCase)
+            % no general registered v1 imaging type
+            [t, how] = ndi.vintage.elementTypeOf({kindAssertion('el_3', 'OBI:0400169')});
+            testCase.verifyEqual(t, '');
+            testCase.verifyEqual(how, '');
+        end
+
+        function testTheGeneralTypesAreRegisteredV1ProbeTypes(testCase)
+            % each general word is in NDI's v1 probe type list, and is a
+            % type of the kind it stands for
+            reg = jsondecode(fileread(fullfile(ndi.common.PathConstants.CommonFolder, ...
+                'probe', 'probetype2object.json')));
+            registered = {reg.type};
+            nodes = {'EMPTY:0000411', 'EMPTY:0000412', 'OBI:0400169'};
+            testCase.log(sprintf('DENOMINATOR: %d registered v1 probe type(s), %d shared kind(s)', ...
+                numel(registered), numel(nodes)));
+            testCase.assertNotEmpty(registered);
+            for k = 1:numel(nodes)
+                g = ndi.vintage.elementGeneralTypeOfKind(nodes{k});
+                if isempty(g)
+                    continue;
+                end
+                testCase.verifyTrue(any(strcmp(g, registered)), g);
+            end
+            testCase.verifyEqual(ndi.vintage.elementGeneralTypeOfKind('OBI:0400169'), '');
+            testCase.verifyEqual(ndi.vintage.elementGeneralTypeOfKind(''), '');
+            testCase.verifyEqual(ndi.vintage.elementGeneralTypeOfKind('wikidata:Q1952355'), '');
+            % no registered imaging type is general: each names its mode
+            imaging = registered(endsWith(registered, 'imaging'));
+            testCase.verifyNotEmpty(imaging);
+            testCase.verifyFalse(any(strcmp(imaging, 'imaging')));
+        end
+
+        function testTheGeneralTypesAgreeWithDidMatlab(testCase)
+            testCase.assumeNotEmpty(which('did2.convert.elementGeneralTypeOfKind'), ...
+                'did2.convert.elementGeneralTypeOfKind is not on the path');
+            nodes = {'EMPTY:0000411', 'EMPTY:0000412', 'OBI:0400169', 'wikidata:Q1952355'};
+            for k = 1:numel(nodes)
+                testCase.verifyEqual(ndi.vintage.elementGeneralTypeOfKind(nodes{k}), ...
+                    did2.convert.elementGeneralTypeOfKind(nodes{k}), nodes{k});
             end
         end
 

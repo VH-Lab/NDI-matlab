@@ -29,6 +29,18 @@ classdef TestMigrateLocalEtaDab < matlab.unittest.TestCase
 %   the DID-matlab side (test-corpus.yml); what THIS workflow uniquely adds is
 %   the NDI second passes + object-layer read-back on Dab's real documents.
 %
+%   GENERIC STAGE + DABROWSKA MAP (Decided by Jess Haley, 2026-10-25
+%   [sliceTetanus to Dab map]; 2026-10-26 [dataset map edits V2]; did-schema
+%   did_v2_go_forward_class_audit.md). The slices and tetanus runs are no
+%   longer made by ndi.migrate.local's second pass: the generic stage leaves
+%   the baths and recordings on the animal and carries the 635 approach
+%   documents as v1, and the Dabrowska map (ndi.setup.conv.dabrowska.applyMap)
+%   makes them afterwards, on a COPY of the migrated session (MappedRoot).
+%   The object equivalence and the other generic checks read the generic
+%   output (SessionRoot); the slice / tetanus checks read the mapped copy and
+%   pin the census the second-pass step printed before the move (run
+%   42163755800), so generic stage + map reproduces that output.
+%
 %   HARD ASSERTS, because Dab's DID side already proves them clean: the corpus
 %   size (14,644 kept of 27,561 read, 12,917 excluded -- all three measured
 %   from the zip), 0 quarantine, 0 orphans, 0 fragments, and every
@@ -55,6 +67,8 @@ classdef TestMigrateLocalEtaDab < matlab.unittest.TestCase
         CorpusDir
         Result
         Bodies
+        MappedRoot      % a copy of SessionRoot with the Dabrowska map applied
+        MapReport       % ndi.setup.conv.dabrowska.applyMap's report
         ReadCount       % documents in the zip, before the B filter
         ExcludedCount   % documents the B filter dropped
     end
@@ -105,6 +119,15 @@ classdef TestMigrateLocalEtaDab < matlab.unittest.TestCase
             testCase.Result = ndi.migrate.local(testCase.SessionRoot, ...
                 'Validate', true, 'TargetVersion', 'did_v2', 'Backup', false);
             fprintf('  [Dab timing] ndi.migrate.local: %.1f s\n', toc(t));
+
+            % THE DABROWSKA MAP, on a copy, so the generic output stays what
+            % the generic checks (and the object equivalence) read.
+            t = tic;
+            testCase.MappedRoot = tempname();
+            copyfile(testCase.SessionRoot, testCase.MappedRoot);
+            testCase.MapReport = ndi.setup.conv.dabrowska.applyMap( ...
+                testCase.MappedRoot, testCase.Bodies);
+            fprintf('  [Dab timing] copy + ndi.setup.conv.dabrowska.applyMap: %.1f s\n', toc(t));
         end
 
     end
@@ -114,6 +137,9 @@ classdef TestMigrateLocalEtaDab < matlab.unittest.TestCase
             try
                 if ~isempty(testCase.SessionRoot) && isfolder(testCase.SessionRoot)
                     rmdir(testCase.SessionRoot, 's');
+                end
+                if ~isempty(testCase.MappedRoot) && isfolder(testCase.MappedRoot)
+                    rmdir(testCase.MappedRoot, 's');
                 end
             catch
             end
@@ -361,6 +387,95 @@ classdef TestMigrateLocalEtaDab < matlab.unittest.TestCase
             end
         end
 
+        function testTheGenericStageLeavesTheSlicesToTheMap(testCase)
+            % [sliceTetanus to Dab map] (Jess Haley, 2026-10-25): the generic
+            % stage makes no slice and no tetanus run, and carries the 635
+            % before/after approach documents whole as v1 (carry-165).
+            verifyFalse(testCase, isfield(testCase.Result.secondPass, 'sliceTetanus'), ...
+                'ndi.migrate.local still reports a slice / tetanus step');
+            dst = destinationBodies(testCase.Result.destination);
+            tet = 0; slices = 0; approachV1 = 0; approachOther = 0;
+            for k = 1:numel(dst)
+                b = dst{k};
+                cn = b.document_class.class_name;
+                if strcmp(cn, 'manipulation') && isfield(b, 'statement') ...
+                        && isfield(b.statement, 'variable') && isfield(b.statement.variable, 'node') ...
+                        && strcmp(b.statement.variable.node, 'EMPTY:0000358')
+                    tet = tet + 1;
+                elseif strcmp(cn, 'entity') && isfield(b, 'entity') && isfield(b.entity, 'type') ...
+                        && ndi.v2.vocabIs('entity_type', b.entity.type, 'tissue') ...
+                        && startsWith(ndi.v2.notesOf(b.entity), 'brain slice')
+                    slices = slices + 1;
+                elseif strcmp(cn, 'openminds_stimulus')
+                    if strcmp(char(b.document_class.schema_version), 'did_v1')
+                        approachV1 = approachV1 + 1;
+                    else
+                        approachOther = approachOther + 1;
+                    end
+                end
+            end
+            fprintf(['\n  GENERIC STAGE (Dab), before the map: %d document(s); tetanus ' ...
+                'manipulations %d, slices %d; openminds_stimulus as v1 %d, other %d\n'], ...
+                numel(dst), tet, slices, approachV1, approachOther);
+            verifyGreaterThan(testCase, numel(dst), 0, 'the generic destination read zero documents');
+            verifyEqual(testCase, [tet slices approachV1 approachOther], [0 0 635 0]);
+        end
+
+        function testTheMapReproducesTheSecondPassStep(testCase)
+            % The census the second-pass step printed on the Dab corpus before
+            % the move (run 42163755800, NDI-matlab c94cc5ed1, "SLICE /
+            % TETANUS (Dabrowska)"), field by field: generic stage + map must
+            % reproduce it ([sliceTetanus to Dab map]). The migrated-document
+            % denominator is printed, not pinned: the map reads the finished
+            % database, the step read the batch part-way through the pass.
+            r = testCase.MapReport;
+            assertNotEmpty(testCase, r, 'the Dabrowska map did not run');
+            verifyGreaterThan(testCase, r.migrated_documents_read, 0, ...
+                'the map read zero migrated documents');
+            before = struct( ...
+                'v1_documents_read', 14644, 'epoch_index_entries', 1605, ...
+                'stimulators', 202, 'slice_bath_stimulators', 202, ...
+                'stimulators_not_a_slice_bath', 0, 'stimulators_animal_mismatch', 0, ...
+                'slices', 203, 'new_animals', 1, 'epochs_on_a_nested_date', 11, ...
+                'new_animal_strain_assertions_copied', 0, ...
+                'epoch_statements_examined', 5209, 'epoch_statements_matched', 5183, ...
+                'epoch_statements_unmatched', 26, ...
+                'unanchored_statements_examined', 400, 'unanchored_statements_matched', 398, ...
+                'unanchored_statements_ambiguous', 2, ...
+                'element_relations_examined', 202, 'element_relations_matched', 201, ...
+                'element_relations_ambiguous', 1, ...
+                'approach_labels', 635, 'runs_examined', 56, ...
+                'tetanus_manipulations', 56, 'tetanus_on_new_animal', 1, ...
+                'tetanus_with_target_region', 55, 'tetanus_without_target_region', 1, ...
+                'tetanus_with_parameters', 9, 'tetanus_without_parameters', 47, ...
+                'labels_rebuilt', 635, 'labels_not_rebuilt', 0, 'approach_labels_removed', 635, ...
+                'treatment_manipulations_found', 0, ...
+                'documents_minted', 519, 'minted_folded', 519, 'minted_quarantined', 0, ...
+                'documents_reattributed', 5782, 'documents_removed', 635, ...
+                'removals_withheld_still_referenced', 0, ...
+                'reattributions_applied', 5782, 'removals_applied', 635, ...
+                'replacements_refused_have_files', 0);
+            byClass = struct('formulation_manipulation', 433, 'term_observation', 398, ...
+                'term_manipulation', 1592, 'voltage_observation', 1579, ...
+                'current_observation', 1579);
+            f = fieldnames(before);
+            for k = 1:numel(f)
+                verifyEqual(testCase, r.(f{k}), before.(f{k}), sprintf( ...
+                    '%s: the map gives %g, the second-pass step gave %g', ...
+                    f{k}, r.(f{k}), before.(f{k})));
+            end
+            got = r.reattributed_by_class;
+            cls = union(fieldnames(got), fieldnames(byClass));
+            for k = 1:numel(cls)
+                a = 0; if isfield(got, cls{k}); a = got.(cls{k}); end
+                e = 0; if isfield(byClass, cls{k}); e = byClass.(cls{k}); end
+                verifyEqual(testCase, a, e, sprintf('re-attributed %s', cls{k}));
+            end
+            verifyEqual(testCase, r.database_documents_after, ...
+                r.database_documents_before + r.minted_folded - r.removals_applied, ...
+                'the mapped database does not hold before + minted - removed documents');
+        end
+
         function testSlicesAndTetanusRunsRebuildEveryApproachLabel(testCase)
             % DECIDED BY JESS HALEY 2026-10-21 (dabrowska/V2_decisions.md):
             % each brain slice is an entity `part_of` its animal; one
@@ -375,8 +490,8 @@ classdef TestMigrateLocalEtaDab < matlab.unittest.TestCase
             % THE LOSSLESS CHECK IS DONE HERE FROM THE DATABASE, not from the
             % pass's report: every v1 label is rebuilt from the windows the
             % database holds and the v1 epoch times.
-            r = testCase.Result.secondPass.sliceTetanus;
-            assertNotEmpty(testCase, r, 'the slice / tetanus pass did not run');
+            r = testCase.MapReport;
+            assertNotEmpty(testCase, r, 'the Dabrowska map did not run');
             fprintf(['\n  SLICE / TETANUS REPORT\n    tetanus %d, slices %d, new animals %d, ' ...
                 'labels rebuilt %d/%d, approach docs removed %d, minted quarantined %d\n'], ...
                 r.tetanus_manipulations, r.slices, r.new_animals, r.labels_rebuilt, ...
@@ -392,7 +507,10 @@ classdef TestMigrateLocalEtaDab < matlab.unittest.TestCase
                 'expected a target region on every run but the Nov 28 one (no treatment record)');
             verifyEqual(testCase, r.labels_not_rebuilt, 0, 'the pass itself could not rebuild a label');
 
-            migrated = destinationBodies(testCase.Result.destination);
+            % the MAPPED copy (generic stage + Dabrowska map)
+            migrated = destinationBodies( ...
+                ndi.database.implementations.database.did2sqlite.FILEIN( ...
+                fullfile(testCase.MappedRoot, '.ndi')));
             byId = containers.Map('KeyType', 'char', 'ValueType', 'any');
             for k = 1:numel(migrated)
                 byId(migrated{k}.base.id) = migrated{k};
