@@ -45,7 +45,13 @@ concurrency:
 jobs:
   run_tests:
     name: Run tests (MATLAB ${{ inputs.matlab_release || 'latest' }})
-    runs-on: ubuntu-latest
+    # ubuntu-24.04, not ubuntu-latest: ubuntu-latest moved to 26.04 on
+    # 2026-11-03, where blosc-matlab v0.2.0's blosc_mex.mexa64 does not load
+    # ("cannot enable executable stack as shared object requires") and
+    # setup-matlab reports R2026b unsupported; TestFromSPIM errored on V2
+    # 0fe201526 for that reason alone. Move off the pin once blosc_mex is
+    # rebuilt without an executable stack.
+    runs-on: ubuntu-24.04
     # matbox dependency resolution calls the GitHub API; authenticate so the
     # requests aren't unauthenticated-rate-limited (which surfaced as webread
     # timeouts when several jobs install in parallel).
