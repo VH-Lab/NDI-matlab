@@ -39,6 +39,16 @@ on:
         required: false
         default: ''
         type: string
+      tests:
+        description: 'run only these test methods (comma-separated names; empty = all)'
+        required: false
+        default: ''
+        type: string
+      profile:
+        description: 'profile the v2 read phases (NDI_PROFILE_READS, report-only)'
+        required: false
+        default: false
+        type: boolean
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -57,6 +67,8 @@ jobs:
       # (2026-10-23): validate against them. A workflow_dispatch input still
       # overrides the DID-matlab ref.
       DID_MATLAB_REQUESTED: ${{ inputs.ref }}
+      NDI_TEST_PROCEDURES: ${{ inputs.tests }}
+      NDI_PROFILE_READS: ${{ inputs.profile && '1' || '' }}
       NDI_BRANCH: ${{ github.head_ref || github.ref_name }}
       DID_SCHEMA_REQUESTED: ''
     steps:
@@ -225,6 +237,14 @@ jobs:
             % fold / refusal split, parameter census, survivor set and
             % read-back counts are report-only. SKIPS (never fails) when the
             % corpus download is impossible.
-            results = runtests('ndi.unittest.migrate.TestMigrateLocalEtaB');
+            % 'tests' input (workflow_dispatch): only the named methods
+            procs = strtrim(split(string(getenv("NDI_TEST_PROCEDURES")), ","));
+            procs = procs(procs ~= "");
+            if isempty(procs)
+                results = runtests('ndi.unittest.migrate.TestMigrateLocalEtaB');
+            else
+                disp("ONLY these test methods: " + strjoin(procs, ", "));
+                results = runtests('ndi.unittest.migrate.TestMigrateLocalEtaB', 'ProcedureName', cellstr(procs));
+            end
             disp(results);
             assertSuccess(results);
