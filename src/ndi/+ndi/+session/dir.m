@@ -209,17 +209,24 @@ classdef dir < ndi.session
                         % it opens the folder): its own record is the
                         % `dataset` entity whose id is the session id, and
                         % no separate session record is written beside it;
-                        % its reference stays in reference.txt and is not
-                        % written into the entity (TEAM-SIGN-OFF [relation
-                        % inheritance], Jess Haley 2026-10-21, did-schema
-                        % did_v2_relation_inheritance_plan.md: "a dataset
-                        % folder's own record is the dataset entity and its
-                        % reference stays in reference.txt"). It is the bare
-                        % dataset entity DID-matlab's migration writes for a
-                        % dataset with no metadata (+migrators_j/private/
-                        % jBareDataset.m): no name, no local_identifier.
+                        % its reference stays in reference.txt (TEAM-SIGN-OFF
+                        % [relation inheritance], Jess Haley 2026-10-21,
+                        % did-schema did_v2_relation_inheritance_plan.md: "a
+                        % dataset folder's own record is the dataset entity
+                        % and its reference stays in reference.txt"), and the
+                        % entity also carries that reference as its
+                        % local_identifier, as a migrated dataset's record
+                        % carries its old reference (did-schema
+                        % did_v2_entity_composition_plan.md [dataset session
+                        % reference]). Decided by Jess Haley, 2026-11-06
+                        % [new dataset named by its reference] (did-schema
+                        % did_v2_go_forward_class_audit.md): "Yes", to
+                        % "Should a new dataset's record get its reference as
+                        % `local_identifier`, matching migrated datasets?".
+                        % Reading the folder's reference still prefers
+                        % reference.txt (above, and ndi.dataset.dir).
                         recordKind = 'dataset';
-                        recordFields = struct();
+                        recordFields = struct('local_identifier', ndi_session_dir_obj.reference);
                     else
                         recordKind = 'session';
                         recordFields = struct('local_identifier', ndi_session_dir_obj.reference);

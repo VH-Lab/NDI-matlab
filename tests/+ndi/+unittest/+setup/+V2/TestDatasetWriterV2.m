@@ -8,11 +8,13 @@ classdef TestDatasetWriterV2 < matlab.unittest.TestCase
 %   is the `dataset` entity whose id is the dataset's (session) id, with no
 %   separate session record beside it, and the reference stays in
 %   .ndi/reference.txt (TEAM-SIGN-OFF [relation inheritance], Jess Haley
-%   2026-10-21, did-schema did_v2_relation_inheritance_plan.md). It is the
-%   bare dataset entity DID-matlab's migration writes for a dataset with no
-%   metadata (+migrators_j/private/jBareDataset.m). The dataset opens again
-%   from it, and a v2 session can be added to it. A v1 database keeps the v1
-%   `session` document.
+%   2026-10-21, did-schema did_v2_relation_inheritance_plan.md). The entity
+%   also carries the reference as its `local_identifier`, as a migrated
+%   dataset's record carries its old reference (Decided by Jess Haley,
+%   2026-11-06 [new dataset named by its reference], did-schema
+%   did_v2_go_forward_class_audit.md). The dataset opens again from it, and a
+%   v2 session can be added to it. A v1 database keeps the v1 `session`
+%   document.
 %
 %   Filtered (never passed) when did2.build or a v2 schema with `entity` is
 %   missing.
@@ -83,9 +85,10 @@ classdef TestDatasetWriterV2 < matlab.unittest.TestCase
             testCase.verifyEqual(e.base.id, D.id(), 'the dataset entity''s id is the dataset id');
             testCase.verifyEqual(ndi.v2.edgeIds(e, 'session_id'), {D.id()});
             testCase.verifyTrue(did2.schema.isV2Stamp(e), 'the dataset entity is stamped v2');
-            testCase.verifyFalse(isfield(e.entity, 'local_identifier') && ...
-                ~isempty(e.entity.local_identifier), ...
-                'the folder''s reference was written into the dataset entity');
+            testCase.verifyTrue(isfield(e.entity, 'local_identifier'), ...
+                'the dataset entity has no local_identifier');
+            testCase.verifyEqual(char(e.entity.local_identifier), 'ds1', ...
+                'the dataset entity''s local_identifier is not the dataset''s reference');
             try
                 did2.document(e).validate();
                 ok = true;
@@ -116,6 +119,37 @@ classdef TestDatasetWriterV2 < matlab.unittest.TestCase
             testCase.verifyTrue(any(strcmp(refs, 's1')));
             testCase.verifyFalse(any(strcmp(ids, D.id())), ...
                 'the dataset''s own record is listed as a session');
+        end
+
+        function testANewDatasetRecordCarriesItsReference(testCase)
+            % Decided by Jess Haley, 2026-11-06 [new dataset named by its
+            % reference] (did-schema did_v2_go_forward_class_audit.md): a
+            % brand-new dataset's record carries its reference as
+            % local_identifier, as a migrated dataset's does; reference.txt
+            % keeps the folder's reference as well.
+            dsPath = fullfile(testCase.Dir, 'newds');
+            dbFile = testCase.emptyV2Database(dsPath);
+            ref = 'my_new_dataset_2026';
+            D = ndi.dataset.dir(ref, dsPath);
+
+            stored = testCase.storedBodies(dbFile);
+            testCase.assertNumElements(stored, 1, 'expected the dataset''s one record');
+            e = stored{1};
+            testCase.assertEqual(ndi.v2.kindOf(e), 'dataset');
+            testCase.verifyEqual(e.base.id, D.id());
+            testCase.assertTrue(isfield(e.entity, 'local_identifier'), ...
+                'the new dataset''s record has no local_identifier');
+            testCase.verifyEqual(char(e.entity.local_identifier), ref, ...
+                'the new dataset''s record does not carry its reference as local_identifier');
+            testCase.verifyEqual(strtrim(fileread(fullfile(dsPath, '.ndi', 'reference.txt'))), ref, ...
+                'reference.txt no longer holds the dataset''s reference');
+
+            % reopened, the record and the reference are unchanged
+            D2 = ndi.dataset.dir(dsPath);
+            testCase.verifyEqual(D2.reference(), ref);
+            stored2 = testCase.storedBodies(dbFile);
+            testCase.verifyNumElements(stored2, 1, 'reopening the dataset wrote another record');
+            testCase.verifyEqual(char(stored2{1}.entity.local_identifier), ref);
         end
     end
 
