@@ -107,16 +107,27 @@ classdef SessionWriterMockTest < matlab.unittest.TestCase
                 'member paths are stripped, as a local session stores them');
         end
 
-        function testManyFilesGoInZipBatches(testCase)
-            W = testCase.writer('BulkThreshold', 2);
+        function testManyFilesGoInZipBatchesWithoutABackgroundSend(testCase)
+            W = testCase.writer('BulkThreshold', 2, 'ParallelUploads', 1);
             [d, ~] = testCase.seriesDoc(W, testCase.subjectId, 5);
             W.database_add(d);
             testCase.verifyEqual(testCase.cloud.batchUploads, 1);
             testCase.verifyEqual(testCase.cloud.singleUploads, 0);
         end
 
-        function testAWrongUploadIsSentAgain(testCase)
+        function testManyFilesStillGoInTheBackground(testCase)
+            % However many files a batch has, curl in the background beats
+            % a zip batch the build has to wait for.
             W = testCase.writer('BulkThreshold', 2);
+            [d, ~] = testCase.seriesDoc(W, testCase.subjectId, 5);
+            W.database_add(d);
+            testCase.verifyEqual(testCase.cloud.backgroundSends, 1);
+            testCase.verifyEqual(testCase.cloud.batchUploads, 0);
+            testCase.verifyEqual(testCase.cloud.singleUploads, 0);
+        end
+
+        function testAWrongUploadIsSentAgain(testCase)
+            W = testCase.writer('BulkThreshold', 2, 'ParallelUploads', 1);
             [d, bytes] = testCase.seriesDoc(W, testCase.subjectId, 3);
             bad = d.document_properties.files.series_info(1).ingest_locations(2);
             testCase.cloud.CorruptOnce = {bad.uid};

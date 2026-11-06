@@ -78,9 +78,10 @@ classdef SessionWriter < handle
 %   ParallelUploads - files a batch sends at once, in the background.
 %                     Default: the preference Cloud.Upload.Parallel_Uploads
 %                     (4). 1 sends them one by one, and waits.
-%   BulkThreshold   - a document with at least this many files is sent in
-%                     zip batches (ndi.cloud.upload.zipForUpload) rather
-%                     than one signed upload per file. Default 20.
+%   BulkThreshold   - without a background send (ParallelUploads 1, or no
+%                     curl 7.68+), a batch of at least this many files is
+%                     sent in zip batches (ndi.cloud.upload.zipForUpload),
+%                     waiting, rather than one by one. Default 20.
 %   UploadTimeout   - seconds to wait for NDI Cloud to record one
 %                     document's files. Empty (default) scales with the
 %                     number and size of the files.
@@ -696,8 +697,9 @@ classdef SessionWriter < handle
         function batch = stageAndSend(obj, doc, entries, retain)
         % STAGEANDSEND - move ENTRIES into the cache under their uids and send them
         %
-        %   Zip batches for many files, one CRC-32-signed upload each for
-        %   few. Returns what VERIFYBATCH needs; nothing is checked here.
+        %   In the background (curl, each file CRC-32-signed) when it can;
+        %   otherwise zip batches for many files, or one by one. Returns
+        %   what VERIFYBATCH needs; nothing is checked here.
             n = numel(entries);
             paths = cell(1, n);
             bytes = zeros(1, n);
@@ -714,8 +716,33 @@ classdef SessionWriter < handle
             label = sprintf('%s %s', ...
                 doc.document_properties.document_class.class_name, doc.id());
             sender = [];
-            if n >= obj.bulkThreshold
-                obj.say('Sending %d file(s), %.1f MB, for %s ...', n, sum(bytes) / 1e6, label);
+            % One zip in the background, else the files in the background
+            % (curl, CRC-signed), however many there are. Only when
+            % neither can be had: many files in a zip batch, waiting for
+            % it (BULKTHRESHOLD), else the files one by one, waiting.
+            how = '';
+            if obj.zipBatches && n >= 2 && isfield(obj.api, 'startZipSend')
+                t0 = tic;
+                try
+                    sender = obj.api.startZipSend(obj.cloudDatasetId, uids, paths, ...
+                        fullfile(obj.cacheDir, 'sending'));
+                catch ME
+                    obj.say('Could not send the batch as a zip (%s); sending its files.', ME.message);
+                    sender = [];
+                end
+                obj.timing.stage = obj.timing.stage + toc(t0);
+                if ~isempty(sender), how = ' (as one zip, in the background)'; end
+            end
+            if isempty(sender)
+                sender = obj.startBackgroundSend(uids, paths, crcs);
+                if ~isempty(sender)
+                    how = sprintf(' (%d at a time, in the background)', obj.parallelUploads);
+                end
+            end
+            if ~isempty(sender)
+                obj.say('Sending %d file(s), %.1f MB, for %s%s ...', n, sum(bytes) / 1e6, label, how);
+            elseif n >= obj.bulkThreshold
+                obj.say('Sending %d file(s), %.1f MB, for %s (in zip batches) ...', n, sum(bytes) / 1e6, label);
                 t0 = tic;
                 [ok, msg] = obj.api.uploadFileBatch(obj.cloudDatasetId, paths, bytes);
                 obj.timing.send = obj.timing.send + toc(t0);
@@ -725,38 +752,15 @@ classdef SessionWriter < handle
                     obj.say('A zip batch failed (%s); checking what arrived.', char(msg));
                 end
             else
-                % One zip in the background, else the files in the
-                % background, else the files one by one, waiting.
-                how = '';
-                if obj.zipBatches && n >= 2 && isfield(obj.api, 'startZipSend')
-                    t0 = tic;
-                    try
-                        sender = obj.api.startZipSend(obj.cloudDatasetId, uids, paths, ...
-                            fullfile(obj.cacheDir, 'sending'));
-                    catch ME
-                        obj.say('Could not send the batch as a zip (%s); sending its files.', ME.message);
-                        sender = [];
-                    end
-                    obj.timing.stage = obj.timing.stage + toc(t0);
-                    if ~isempty(sender), how = ' (as one zip, in the background)'; end
-                end
-                if isempty(sender)
-                    sender = obj.startBackgroundSend(uids, paths, crcs);
-                    if ~isempty(sender)
-                        how = sprintf(' (%d at a time, in the background)', obj.parallelUploads);
+                obj.say('Sending %d file(s), %.1f MB, for %s ...', n, sum(bytes) / 1e6, label);
+                t0 = tic;
+                for i = 1:n
+                    [ok, msg] = obj.api.uploadSingleFile(obj.cloudDatasetId, uids{i}, paths{i});
+                    if ~ok
+                        obj.say('Sending %s failed (%s); will retry.', uids{i}, char(msg));
                     end
                 end
-                obj.say('Sending %d file(s), %.1f MB, for %s%s ...', n, sum(bytes) / 1e6, label, how);
-                if isempty(sender)
-                    t0 = tic;
-                    for i = 1:n
-                        [ok, msg] = obj.api.uploadSingleFile(obj.cloudDatasetId, uids{i}, paths{i});
-                        if ~ok
-                            obj.say('Sending %s failed (%s); will retry.', uids{i}, char(msg));
-                        end
-                    end
-                    obj.timing.send = obj.timing.send + toc(t0);
-                end
+                obj.timing.send = obj.timing.send + toc(t0);
             end
             batch = struct('docId', doc.id(), 'label', label, ...
                 'names', {{entries.name}}, 'uids', {uids}, 'paths', {paths}, ...
