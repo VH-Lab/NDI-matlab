@@ -40,7 +40,7 @@ arguments
     label {mustBeTextScalar} = 'corpus'
     options.MaxProbeEpochTables (1,1) double = 12
     options.Profile (1,1) logical = false
-    options.ProfileTop (1,1) double = 30
+    options.ProfileTop (1,1) double = 45
 end
 
 label = char(label);
@@ -242,15 +242,26 @@ for k = 1:numel(ft)
 end
 calls = [ft.NumCalls];
 names = {ft.FunctionName};
+% the test framework's frames are left out of the TOTAL list
+frame = contains(names, {'TestRunner', 'runtests', 'Plugin', 'command_', ...
+    'Handler', 'TestRunStrategy', 'readPhaseTimings', 'TestMigrateLocalEta'});
 fprintf('      [profile v2 %s] top %d by TOTAL time (s, calls):\n', phase, topN);
 [~, o] = sort(total, 'descend');
+o = o(~frame(o));
 for k = 1:min(topN, numel(o))
     fprintf('        %9.2f %8d  %s\n', total(o(k)), calls(o(k)), names{o(k)});
 end
-fprintf('      [profile v2 %s] top %d by SELF time (s, calls):\n', phase, topN);
+fprintf('      [profile v2 %s] top %d by SELF time (s, calls), with their callers:\n', phase, topN);
 [~, o] = sort(self, 'descend');
 for k = 1:min(topN, numel(o))
     fprintf('        %9.2f %8d  %s\n', self(o(k)), calls(o(k)), names{o(k)});
+    par = ft(o(k)).Parents;
+    if k <= 12 && ~isempty(par)
+        [~, po] = sort([par.NumCalls], 'descend');
+        for j = 1:min(4, numel(po))
+            fprintf('                  <- %8d  %s\n', par(po(j)).NumCalls, names{par(po(j)).Index});
+        end
+    end
 end
 end
 

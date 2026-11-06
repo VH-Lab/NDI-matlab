@@ -82,6 +82,24 @@ vintage = '';
 
 E = ndi_element_obj.session;
 
+% ---- built from a migrated element: read it back by id ----------------
+% Its fields are what the object was built from, so rebuilding them
+% (ndi.vintage.elementFields, five searches) to check them, after a full-
+% table search for a v1 element block no migrated element has, only cost
+% time: 7 searches per id() call, 172 s for Dab's 606 elements against 5 s
+% in v1 (run 42241497254). Jess Haley, 2026-11-06: "Speed can't be slower
+% than v1." If the document is gone, the searches below run as before.
+if isprop(ndi_element_obj, 'etaDocumentId') && ~isempty(ndi_element_obj.etaDocumentId) ...
+        && strcmp(char(ndi_element_obj.etaDocumentId), char(ndi_element_obj.identifier))
+    byId = E.database_search(ndi.query('base.id', 'exact_string', ...
+        char(ndi_element_obj.identifier), ''));
+    if isscalar(byId)
+        doc = byId{1};
+        vintage = 'V_eta';
+        return;
+    end
+end
+
 % ---- v1: the original query, unchanged --------------------------------
 hits = E.database_search(ndi_element_obj.searchquery());
 if numel(hits) > 1
