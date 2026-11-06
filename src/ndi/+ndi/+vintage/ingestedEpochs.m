@@ -59,17 +59,44 @@ function E = ingestedEpochs(ndi_session_obj, docs, probemapClass)
 %   Lookups (element fields, systems, subjects) are cached across DOCS, so a
 %   navigator reading a session's ingested epochs reads each element once.
 %
+%   E = ndi.vintage.ingestedEpochs(..., 'Batch', TF). READ ONCE, JOINED IN
+%   MEMORY (Jess Haley, 2026-11-06: "Yes, build the speed fix now"). With
+%   Batch true (the default on a v2 database), the documents every migrated
+%   epoch of DOCS needs are read before the first epoch is put together, a
+%   kind at a time: the epoch entities by id; the relative_time_references
+%   onto them (one search, ndi.vintage.edgeIn); the statements timed by those
+%   (one search); the systems, acquisition channels, probes and subjects the
+%   statements name, by id (200 to a search); and the wiring relations timed
+%   by the statements' anchors (one search). Each epoch then takes its own
+%   from those lists, in the order its own searches would have returned them
+%   (each list is in database order, and a filter keeps the order), so E is
+%   the same. Before it, every epoch cost about 13 searches: Dab's
+%   1,604-epoch session read its acquisition system's epoch table in 0.86 s
+%   per epoch (VH-Lab/NDI-matlab#785, run 41876678241). Batch false reads
+%   each epoch with its own searches, as before; the unit test
+%   ndi.unittest.vintage.TestIngestedReadsBatched checks the two agree.
+%   Element fields (ndi.vintage.elementFields) are still read per element,
+%   once per call.
+%
 %   See also ndi.vintage.ingestedQuery, ndi.file.navigator/selectfilegroups.
 
 arguments
     ndi_session_obj
     docs cell
     probemapClass (1,:) char
+    options.Batch (1,1) logical = ndi.daq.reader.isv2database(ndi_session_obj)
 end
 
 E = struct('epoch_id', {}, 'files', {}, 'probemap', {}, 'vintage', {});
+% statements: epoch entity id -> the statements timed onto it, read ahead
+% (Batch); relations: the wiring relations read ahead, [] when not read
 cache = struct('doc', containers.Map('KeyType', 'char', 'ValueType', 'any'), ...
-    'element', containers.Map('KeyType', 'char', 'ValueType', 'any'));
+    'element', containers.Map('KeyType', 'char', 'ValueType', 'any'), ...
+    'statements', containers.Map('KeyType', 'char', 'ValueType', 'any'), ...
+    'relations', []);
+if options.Batch
+    cache = readAhead(ndi_session_obj, docs, cache);
+end
 for k = 1:numel(docs)
     p = docs{k}.document_properties;
     if isfield(p, 'epochfiles_ingested')
@@ -112,14 +139,16 @@ pm = [];
 if isempty(epochDocId)
     return;
 end
-anchors = S.database_search(ndi.query('', 'isa', 'relative_time_reference', '') & ...
-    ndi.query('', 'depends_on', 'referent_id', epochDocId));
-if isempty(anchors)
-    return;
+if isKey(cache.statements, epochDocId)
+    statements = cache.statements(epochDocId);   % read ahead (readAhead)
+else
+    anchors = S.database_search(anchorQuery(epochDocId));
+    if isempty(anchors)
+        return;
+    end
+    statements = S.database_search(statementQuery(cellfun(@(a) a.id(), anchors, ...
+        'UniformOutput', false)));
 end
-q = ndi.v2.anyOf(cellfun(@(a) ndi.query('', 'depends_on', 'time_reference_id', a.id()), ...
-    anchors, 'UniformOutput', false));
-statements = S.database_search(ndi.v2.isaQuery('statement') & q);
 seen = {};
 for i = 1:numel(statements)
     st = statements{i};
@@ -274,6 +303,116 @@ if ~isempty(r)
     d = r{1};
 end
 cache.doc(id) = d;
+end
+
+% ===================== the per-epoch searches, and read ahead ===============
+
+function q = anchorQuery(epochDocIds)
+% the relative_time_references onto the epoch entity (or any of a list)
+if ischar(epochDocIds)
+    q = ndi.query('', 'isa', 'relative_time_reference', '') & ...
+        ndi.query('', 'depends_on', 'referent_id', epochDocIds);
+else
+    q = ndi.query('', 'isa', 'relative_time_reference', '') & ...
+        ndi.vintage.edgeIn('referent_id', epochDocIds);
+end
+end
+
+function q = statementQuery(anchorIds, asList)
+% the statements timed by any of the anchors
+if nargin > 1 && asList
+    q = ndi.v2.isaQuery('statement') & ndi.vintage.edgeIn('time_reference_id', anchorIds);
+else
+    q = ndi.v2.isaQuery('statement') & ndi.v2.anyOf(cellfun(@(a) ...
+        ndi.query('', 'depends_on', 'time_reference_id', a), anchorIds, 'UniformOutput', false));
+end
+end
+
+function cache = readAhead(S, docs, cache)
+% Every document the migrated epochs of DOCS need, a kind at a time; each
+% epoch's statements filed under its entity id (see 'Batch' above).
+epochDocIds = {};
+for k = 1:numel(docs)
+    p = docs{k}.document_properties;
+    if isfield(p, 'epochfiles_ingested') || ~isfield(p, 'ingestion_manifest')
+        continue;
+    end
+    epochDocIds{end+1} = docs{k}.dependency_value('epoch_id', 'ErrorIfNotFound', 0); %#ok<AGROW>
+end
+epochDocIds = unique(epochDocIds(~cellfun(@isempty, epochDocIds)), 'stable');
+if isempty(epochDocIds)
+    return;
+end
+cache = remember(cache, ndi.vintage.docsById(S, epochDocIds));
+% the anchors onto each epoch, then the statements each anchor times. Each
+% epoch's statements are kept by their position in the one answer, so they
+% stay in the order its own search would have returned them.
+anchors = S.database_search(anchorQuery(epochDocIds));
+epochsOfAnchor = containers.Map('KeyType', 'char', 'ValueType', 'any');
+for a = 1:numel(anchors)
+    onto = ndi.vintage.edgeTargets(anchors{a}, 'referent_id');
+    epochsOfAnchor(char(anchors{a}.id())) = onto(ismember(onto, epochDocIds));
+end
+statements = {};
+if epochsOfAnchor.Count > 0
+    statements = S.database_search(statementQuery(epochsOfAnchor.keys, true));
+end
+rowsOf = containers.Map(epochDocIds, repmat({[]}, 1, numel(epochDocIds)));
+for i = 1:numel(statements)
+    for t = ndi.vintage.edgeTargets(statements{i}, 'time_reference_id')
+        if ~isKey(epochsOfAnchor, t{1}), continue; end
+        for e = epochsOfAnchor(t{1})
+            rowsOf(e{1}) = [rowsOf(e{1}), i];
+        end
+    end
+end
+for e = 1:numel(epochDocIds)
+    cache.statements(epochDocIds{e}) = statements(unique(rowsOf(epochDocIds{e})));
+end
+% the documents the statements name, by id: systems, channels, probes, subjects
+ids = {};
+for i = 1:numel(statements)
+    st = statements{i};
+    for name = {'acquisition_channels_id', 'acquisition_system_id', 'instrument_id', ...
+            'entity_id', 'subject_id'}
+        ids{end+1} = st.dependency_value(name{1}, 'ErrorIfNotFound', 0); %#ok<AGROW>
+    end
+end
+ids = ids(cellfun(@(x) ischar(x) && ~isempty(x), ids));
+cache = remember(cache, ndi.vintage.docsById(S, ids));
+sysIds = {};   % the systems an acquisition_channels document names
+for i = 1:numel(ids)
+    d = cache.doc(ids{i});
+    if ~isempty(d)
+        sysIds{end+1} = d.dependency_value('acquisition_system_id', 'ErrorIfNotFound', 0); %#ok<AGROW>
+    end
+end
+sysIds = sysIds(cellfun(@(x) ischar(x) && ~isempty(x), sysIds));
+cache = remember(cache, ndi.vintage.docsById(S, sysIds));
+% the wiring relations timed by the statements' anchors, filed by (probe,
+% system) for ndi.vintage.wiredDeviceString, in database order
+wiringAnchors = {};
+for i = 1:numel(statements)
+    wiringAnchors = [wiringAnchors, ndi.v2.edgeIds(statements{i}.document_properties, ...
+        'time_reference_id')]; %#ok<AGROW>
+end
+wiringAnchors = unique(wiringAnchors, 'stable');
+rels = {};
+if ~isempty(wiringAnchors)
+    rels = S.database_search(ndi.query('', 'isa', 'directed_relation', '') & ...
+        ndi.vintage.edgeIn('time_reference_id', wiringAnchors));
+end
+cache.relations = ndi.vintage.wiringIndex(rels);
+end
+
+function cache = remember(cache, found)
+% file each document read by id (or [] for an id with none) in the cache
+keys = found.keys;
+for k = 1:numel(keys)
+    if ~isKey(cache.doc, keys{k})
+        cache.doc(keys{k}) = found(keys{k});
+    end
+end
 end
 
 function lid = localIdentifier(p)

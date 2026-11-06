@@ -256,10 +256,22 @@ classdef navigator < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice & 
                 % 2026-10-22 [ingested epochs found]). A v1 document is asked
                 % for its epoch_id in the query; a migrated manifest keeps the
                 % id on its epoch entity, so it is matched after the search.
+                manifests = ndi.query('','isa','ingestion_manifest');
+                if ndi.daq.reader.isv2database(ndi_filenavigator_obj.session)
+                    % only the manifests whose epoch entity is this one
+                    % (did2 resolves the edge's target query): every
+                    % manifest of the navigator, rebuilt to read its id,
+                    % made each call cost a whole epoch table (the
+                    % migrated epoch-read speed fix, Jess Haley 2026-11-06).
+                    % The ids are still matched below, so the answer is the
+                    % one the whole list gave.
+                    manifests = manifests & ndi.query('','depends_on','epoch_id', ...
+                        ndi.query('entity.local_identifier','exact_string',epochid,''));
+                end
                 epoch_query = ndi.vintage.ingestedQuery(ndi_filenavigator_obj.id(), ...
                     ndi_filenavigator_obj.session.id()) & ...
                     (ndi.query('epochfiles_ingested.epoch_id','exact_string',epochid) | ...
-                     ndi.query('','isa','ingestion_manifest'));
+                     manifests);
                 d = ndi_filenavigator_obj.session.database_search(epoch_query);
                 if ~isempty(d)
                     e = ndi.vintage.ingestedEpochs(ndi_filenavigator_obj.session, d, ...

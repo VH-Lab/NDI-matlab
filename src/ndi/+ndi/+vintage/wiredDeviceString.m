@@ -7,6 +7,10 @@ function [s, cache] = wiredDeviceString(S, st, sysId, elId, cache)
 %   its acquisition system SYSID and its probe ELID; CACHE is a struct whose
 %   `doc` is a containers.Map of documents already read by id (as
 %   ndi.vintage.ingestedEpochs keeps it; pass struct('doc', containers.Map())).
+%   When CACHE also has a struct `relations` (ndi.vintage.wiringIndex of the
+%   directed relations timed by the session's epoch anchors, read ahead by
+%   ndi.vintage.ingestedEpochs 'Batch'), the wiring relation is taken from it
+%   instead of a search.
 %   Decided by Jess Haley, 2026-11-01, did-schema
 %   did_v2_go_forward_class_audit.md [probe wiring is a relation], [wiring
 %   relation term].
@@ -26,12 +30,25 @@ anchors = ndi.v2.edgeIds(st.document_properties, 'time_reference_id');
 if isempty(anchors)
     return;
 end
-q = ndi.query('', 'isa', 'directed_relation', '') & ...
-    ndi.query('', 'depends_on', 'child_id', elId) & ...
-    ndi.query('', 'depends_on', 'parent_id', sysId) & ...
-    ndi.v2.anyOf(cellfun(@(a) ndi.query('', 'depends_on', 'time_reference_id', a), ...
-        anchors, 'UniformOutput', false));
-rels = S.database_search(q);
+if isfield(cache, 'relations') && isstruct(cache.relations)
+    % read ahead (ndi.vintage.ingestedEpochs, 'Batch'; ndi.vintage.wiringIndex):
+    % the relations of this probe and system timed by any of the anchors, in
+    % database order -- what the search below finds, in the same order
+    rels = {};
+    key = [char(elId) char(0) char(sysId)];
+    if isKey(cache.relations.byPair, key)
+        at = cache.relations.byPair(key);
+        at = at(cellfun(@(t) any(ismember(t, anchors)), cache.relations.anchors(at)));
+        rels = cache.relations.docs(at);
+    end
+else
+    q = ndi.query('', 'isa', 'directed_relation', '') & ...
+        ndi.query('', 'depends_on', 'child_id', elId) & ...
+        ndi.query('', 'depends_on', 'parent_id', sysId) & ...
+        ndi.v2.anyOf(cellfun(@(a) ndi.query('', 'depends_on', 'time_reference_id', a), ...
+            anchors, 'UniformOutput', false));
+    rels = S.database_search(q);
+end
 groups = {};
 for r = 1:numel(rels)
     p = rels{r}.document_properties;
