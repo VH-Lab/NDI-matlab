@@ -522,10 +522,23 @@ classdef SessionWriter < handle
                     'path', char(paths{i}), 'deleteOriginal', true);
             end
             obj.outstanding{end+1} = obj.stageAndSend(doc, entries, retain);
-            while numel(obj.outstanding) > 1
-                batch = obj.outstanding{1};
-                obj.outstanding(1) = [];
-                obj.verifyBatch(batch);
+            % Check this document's earlier batch, which has had the time
+            % since its call to go up. Other documents' batches wait for
+            % their own next call: a build that streams several documents
+            % in turn (level 0 and both level 1s, folded) would otherwise
+            % wait for each batch it had only just started, and send them
+            % one at a time while nothing else ran. A backstop keeps the
+            % number in flight bounded.
+            id = doc.id();
+            k = 1;
+            while k < numel(obj.outstanding)
+                if strcmp(obj.outstanding{k}.docId, id) || numel(obj.outstanding) > 8
+                    batch = obj.outstanding{k};
+                    obj.outstanding(k) = [];
+                    obj.verifyBatch(batch);
+                else
+                    k = k + 1;
+                end
             end
         end
 

@@ -279,6 +279,35 @@ classdef SessionWriterMockTest < matlab.unittest.TestCase
             testCase.verifyEqual(r.resent, 0);
         end
 
+        function testDocumentsStreamedInTurnDoNotWaitForEachOther(testCase)
+            % Level 0 and the level 1s, folded: each document's batch is
+            % checked at that document's next call, not at the next call.
+            testCase.cloud.DeferSends = true;
+            W = testCase.writer();
+            [a, ~] = testCase.seriesDoc(W, testCase.subjectId, 2);
+            [b, ~] = testCase.seriesDoc(W, testCase.subjectId, 2);
+            W.declare(a);
+            W.declare(b);
+            la = a.document_properties.files.series_info(1).ingest_locations;
+            lb = b.document_properties.files.series_info(1).ingest_locations;
+            W.streamMembers(a, 'chunk.bin', la(1).index, {la(1).location});
+            W.streamMembers(b, 'chunk.bin', lb(1).index, {lb(1).location});
+            testCase.verifyFalse(testCase.cloud.hasFile(la(1).uid), ...
+                'A''s batch keeps going up while B''s is started');
+            W.streamMembers(a, 'chunk.bin', la(2).index, {la(2).location});
+            testCase.verifyTrue(testCase.cloud.hasFile(la(1).uid), ...
+                'A''s batch is checked at A''s next call');
+            testCase.verifyFalse(testCase.cloud.hasFile(lb(1).uid));
+            W.streamMembers(b, 'chunk.bin', lb(2).index, {lb(2).location});
+            r = W.commit();
+            testCase.verifyEqual(r.documents, 2);
+            for L = {la, lb}
+                for i = 1:2
+                    testCase.verifyTrue(testCase.cloud.hasFile(L{1}(i).uid));
+                end
+            end
+        end
+
         function testAFailedBackgroundSendIsSentOneByOne(testCase)
             testCase.cloud.FailSends = true;
             W = testCase.writer();
