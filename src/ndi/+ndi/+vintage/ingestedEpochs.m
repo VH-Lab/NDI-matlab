@@ -350,7 +350,9 @@ cache = remember(cache, ndi.vintage.docsById(S, epochDocIds));
 % the anchors onto each epoch, then the statements each anchor times. Each
 % epoch's statements are kept by their position in the one answer, so they
 % stay in the order its own search would have returned them.
-anchors = S.database_search(anchorQuery(epochDocIds));
+% read once per epoch-table build, shared with ndi.vintage.ingestedArchives
+% (ndi.vintage.epochReads); the statements as light documents (edges only)
+anchors = ndi.vintage.epochReads('anchors', S, epochDocIds);
 epochsOfAnchor = containers.Map('KeyType', 'char', 'ValueType', 'any');
 for a = 1:numel(anchors)
     onto = ndi.vintage.edgeTargets(anchors{a}, 'referent_id');
@@ -358,7 +360,7 @@ for a = 1:numel(anchors)
 end
 statements = {};
 if epochsOfAnchor.Count > 0
-    statements = S.database_search(statementQuery(epochsOfAnchor.keys, true));
+    statements = ndi.vintage.epochReads('statements', S, epochsOfAnchor.keys);
 end
 rowsOf = containers.Map(epochDocIds, repmat({[]}, 1, numel(epochDocIds)));
 for i = 1:numel(statements)

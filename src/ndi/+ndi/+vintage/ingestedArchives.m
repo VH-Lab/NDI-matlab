@@ -76,8 +76,9 @@ if lidsOf.Count == 0
 end
 
 % ---- the anchors onto them, filed by epoch ------------------------------
-anchors = S.database_search(ndi.query('', 'isa', 'relative_time_reference', '') & ...
-    ndi.vintage.edgeIn('referent_id', lidsOf.keys));
+% read once per epoch-table build, shared with ndi.vintage.ingestedEpochs
+% (ndi.vintage.epochReads)
+anchors = ndi.vintage.epochReads('anchors', S, lidsOf.keys);
 anchorRows = containers.Map(epochIds, repmat({[]}, 1, numel(epochIds)));
 lidsOfAnchor = containers.Map('KeyType', 'char', 'ValueType', 'any');
 for a = 1:numel(anchors)
@@ -98,10 +99,14 @@ systems = S.database_search(ndi.query('', 'isa', 'acquisition_system', '') & ...
 if isempty(systems) || isempty(anchors)
     return;
 end
-statements = S.database_search(ndi.v2.isaQuery('statement') & ...
-    ndi.vintage.edgeIn('time_reference_id', lidsOfAnchor.keys) & ...
-    ndi.v2.anyOf(cellfun(@(d) ndi.query('', 'depends_on', 'acquisition_system_id', d.id()), ...
-        systems, 'UniformOutput', false)));
+% every statement timed by these anchors (shared, light: edges only), kept
+% when it names one of this reader's systems -- the `depends_on
+% acquisition_system_id` test the search made, made in memory on the edges
+allStatements = ndi.vintage.epochReads('statements', S, lidsOfAnchor.keys);
+sysIds = cellfun(@(d) char(d.id()), systems, 'UniformOutput', false);
+keepSt = cellfun(@(st) any(ismember(ndi.vintage.edgeTargets(st, 'acquisition_system_id'), sysIds)), ...
+    allStatements);
+statements = allStatements(keepSt);
 statementRows = containers.Map(epochIds, repmat({[]}, 1, numel(epochIds)));
 lidsOfStatement = containers.Map('KeyType', 'char', 'ValueType', 'any');
 for i = 1:numel(statements)
