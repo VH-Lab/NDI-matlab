@@ -65,9 +65,10 @@ function [kept, minted, changed, report] = pathSPromotion(structs, options)
 %   probe_location document beside `UBERON:0002436 primary visual cortex`.
 %
 %   MODE (default 'all') selects which statements are moved. ndi.migrate.local
-%   runs 'sites' early (before sliceTetanus, which reads the parts it makes)
-%   and 'located' late (after resolveEpochProbemap has made the recording
-%   observations and sliceTetanus has moved slice statements onto slices):
+%   runs 'sites' early and 'located' late (after resolveEpochProbemap has made
+%   the recording observations). The Dabrowska slices are made after the
+%   migration, by the Dabrowska dataset map (ndi.setup.conv.dabrowska.applyMap,
+%   [sliceTetanus to Dab map]); a slice already in the batch is still read:
 %
 %     'sites'    A pass-1 site term observation (variable `anatomical
 %                location`) about a subject and CO-ANCHORED with a manipulation
@@ -127,7 +128,7 @@ function [kept, minted, changed, report] = pathSPromotion(structs, options)
 %
 %   See also: ndi.migrate.local, did2.convert.migrators_j.treatment,
 %   did2.convert.migrators_j.probe_location, ndi.migrate.internal.etaShape,
-%   ndi.migrate.internal.sliceTetanus.
+%   ndi.setup.conv.dabrowska.sliceTetanus.
 
 arguments
     structs

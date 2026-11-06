@@ -54,7 +54,7 @@ function [bathBody, timeRefBody, extraBodies, anchorInfo] = stimulusBathToBath(v
 %   entity and moves the bath onto; a GENERIC bath location (node
 %   NCIm:C0179246, or a name 'bath') gets none, so the bath stays on the
 %   subject -- every Dabrowska bath, and Marder's 'bath', which is what
-%   sliceTetanus matches. The test is the one did2.convert.migrators_j's
+%   the Dabrowska map's sliceTetanus matches. The test is the one did2.convert.migrators_j's
 %   jTreatmentRoute uses. A bath with NO anchor (no epoch, or a no_time clock)
 %   has nothing to co-anchor on and gets no site observation: it stays on the
 %   subject (a gap, not a decision).

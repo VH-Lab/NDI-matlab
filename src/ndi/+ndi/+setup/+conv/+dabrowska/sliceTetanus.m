@@ -20,7 +20,10 @@ function [plan, report] = sliceTetanus(v1Bodies, structs, epochIndex)
 %   REPORT carries every count, each with its denominator.
 %
 %   PURE: reads structs, returns structs. No converter, no schema, no database.
-%   ndi.migrate.local's resolveSliceTetanus does the fold.
+%   ndi.setup.conv.dabrowska.applyMap does the fold, on the migrated database
+%   (the Dabrowska dataset map; [sliceTetanus to Dab map], Jess Haley,
+%   2026-10-25, did-schema did_v2_go_forward_class_audit.md). It ran in
+%   ndi.migrate.local's second pass before that move.
 %
 %   ---------------------------------------------------------------------
 %   DECIDED BY JESS HALEY, 2026-10-21 (NDI-matlab

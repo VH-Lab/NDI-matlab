@@ -4,9 +4,11 @@ The record of the choices made for the Dabrowska dataset (corpus `Dab`) on its
 way to V2 (V_eta), kept beside the importer the way
 `../+haley/import_V2_decisions.md` is kept beside the Haley importer. The
 existing `doImport.m` is left unchanged. The migration itself is
-`ndi.migrate.local`; the code that carries these decisions is the second pass
-`ndi.migrate.internal.sliceTetanus` (called from `local.m`,
-`resolveSliceTetanus`), tested by `TestSliceTetanus` (real Dab documents) and
+`ndi.migrate.local`; the code that carries these decisions is the Dabrowska
+dataset map, `ndi.setup.conv.dabrowska.applyMap` (planner
+`ndi.setup.conv.dabrowska.sliceTetanus`), applied to the migrated V2 database
+after the generic migration (moved out of `local.m`'s second pass by
+[sliceTetanus to Dab map], Jess Haley, 2026-10-25), tested by `TestSliceTetanus` (real Dab documents) and
 `TestMigrateLocalEtaDab` (Dabrowska's documents in the Dab corpus zip; the zip also carries corpus B, which `TestMigrateLocalEtaB` reads).
 
 Entries marked **DECIDED** were made by the dataset owner (Jess Haley) in
@@ -28,7 +30,7 @@ conversation; **OPEN** entries are questions still to answer.
 
 ## Judgment calls made while building (conservative, recorded per the 2026-10-21 rule)
 
-- **The slice has no entity type on the pinned schema, and is minted anyway.** (Superseded, note 2026-10-23: the migration now writes did-schema #88's shape, and a slice is an `entity` of type `tissue`, a9fb6c7, #8. What follows is the call as made under the pre-#73 pin.) pre73 has no `type` on any entity, so a slice is typed exactly as every other entity on that schema is (not at all). It uses only shapes the schema has (`subject`, `part_of`), the same ones Path-S parts use; nothing is invented. Its description says "brain slice ... (tissue)". If this should instead have waited for the type, the pass is self-contained (`resolveSliceTetanus` in `local.m`) and can be switched off without touching anything else.
+- **The slice has no entity type on the pinned schema, and is minted anyway.** (Superseded, note 2026-10-23: the migration now writes did-schema #88's shape, and a slice is an `entity` of type `tissue`, a9fb6c7, #8. What follows is the call as made under the pre-#73 pin.) pre73 has no `type` on any entity, so a slice is typed exactly as every other entity on that schema is (not at all). It uses only shapes the schema has (`subject`, `part_of`), the same ones Path-S parts use; nothing is invented. Its description says "brain slice ... (tissue)". If this should instead have waited for the type, the pass is self-contained (since 2026-11-06 `applyMap` in this folder; before, `resolveSliceTetanus` in `local.m`) and can be switched off without touching anything else.
 - **Matching is by the importer's naming, cross-checked by the epochs.** A stimulator is a slice's bath only if it is named `bath_<postfix>` and its animal's identifier ends in the postfix without the slice letter (202 of 215; the 13 others are `vhvis_spike2`). An epoch-anchored statement moves only if its subject is that animal and its instrument is the slice's bath or a probe with the slice's postfix; anything else is counted unmatched and left alone.
 - **A statement not tied to an epoch moves only if its probe belongs to exactly one slice.** Otherwise it is counted ambiguous and left on the animal.
 - **The before/after documents are removed only for a run whose every label rebuilt**, and nothing is removed while any minted document failed to validate; no removed document is still referenced (checked in the pass, `removals withheld` 0).
