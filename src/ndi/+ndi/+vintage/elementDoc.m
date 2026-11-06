@@ -136,7 +136,10 @@ if ~isempty(ndi_element_obj.identifier)
     end
 end
 
-subjects = ndi.vintage.elementSubjectDocs(E);
+% Only the entities with an element-class assertion naming this object's
+% class can match (isThisElement compares the class); the others are not
+% read. The order is the assertions' order, as elementSubjectDocs gives it.
+subjects = classCandidates(E, wantClass);
 matches = {};
 for i = 1:numel(subjects)
     % The name and reference are read from the entity document itself, as
@@ -219,4 +222,34 @@ for blk = {'entity', 'subject'}
     end
 end
 [name, reference] = ndi.vintage.elementNameReferenceApart(entityName, localId);
+end
+
+function docs = classCandidates(E, wantClass)
+% the migrated element entities with an `ndi element class` assertion whose
+% value is WANTCLASS, in the assertions' (database) order; each candidate's
+% first class assertion is checked again by elementFields
+docs = {};
+q = ndi.v2.statementQuery('assertion', 'term') & ...
+    ndi.v2.fieldQuery('statement.variable.name', 'exact_string', ...
+        ndi.vintage.elementLabel('class')) & ...
+    ndi.query('term.value.name', 'exact_string', wantClass, '');
+assertions = E.database_search(q);
+ids = {};
+for i = 1:numel(assertions)
+    sid = ndi.v2.edgeIds(ndi.v2.props(assertions{i}), 'entity_id');
+    if isempty(sid), continue; end
+    if ~any(strcmp(sid{1}, ids))
+        ids{end+1} = sid{1}; %#ok<AGROW>
+    end
+end
+if isempty(ids)
+    return;
+end
+byId = ndi.vintage.docsById(E, ids);
+for i = 1:numel(ids)
+    d = byId(ids{i});
+    if ~isempty(d)
+        docs{end+1} = d; %#ok<AGROW>
+    end
+end
 end
