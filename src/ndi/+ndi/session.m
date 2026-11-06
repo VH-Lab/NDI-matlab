@@ -470,6 +470,35 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
             edges = db.db.searchEdges(q2, names);
         end % database_search_edges()
 
+        function rows = database_search_values(ndi_session_obj, searchparameters, paths)
+            % DATABASE_SEARCH_VALUES - text values of the documents a search matches
+            %
+            % ROWS = DATABASE_SEARCH_VALUES(NDI_SESSION_OBJ, SEARCHPARAMETERS, PATHS)
+            %
+            % For the documents DATABASE_SEARCH(SEARCHPARAMETERS) would return,
+            % in its order, a struct array with fields doc_id and values (the
+            % text at each dot-path in PATHS, '' where none), read without
+            % decoding the documents where the database can
+            % (did2.database.sqlitedb/searchValues). ROWS is [] when the
+            % session's database cannot answer this way; the caller then
+            % searches the documents as before.
+            arguments
+                ndi_session_obj (1,1) ndi.session
+                searchparameters {mustBeA(searchparameters,{'ndi.query','did.query'})}
+                paths
+            end
+            rows = [];
+            db = ndi_session_obj.database;
+            if ~isa(db, 'ndi.database.implementations.database.did2sqlite') ...
+                    || ~ismethod(db.db, 'searchValues')
+                return;
+            end
+            inSession = ndi.query('base.session_id','exact_string',ndi_session_obj.id());
+            q2 = ndi.database.implementations.database.did2sqlite.toDid2Query( ...
+                searchparameters & inSession);
+            rows = db.db.searchValues(q2, paths);
+        end % database_search_values()
+
         function ndi_document_obj = database_search_with_dataset(ndi_session_obj, searchparameters)
             % DATABASE_SEARCH_WITH_DATASET - search this session's database, dataset documents included
             %

@@ -61,13 +61,18 @@ classLabel = ndi.vintage.elementLabel('class');
 kindVar = ndi.vintage.equipmentTypeVariable();
 about = ndi.vintage.edgeIn('entity_id', ids) | ndi.vintage.edgeIn('subject_id', ids);
 
-classDocs = S.database_search(ndi.v2.statementQuery('assertion', 'term') & ...
-    ndi.v2.fieldQuery('statement.variable.name', 'exact_string', classLabel) & about);
-typeDocs = S.database_search(ndi.v2.statementQuery('assertion', 'term') & ...
+classQuery = ndi.v2.statementQuery('assertion', 'term') & ...
+    ndi.v2.fieldQuery('statement.variable.name', 'exact_string', classLabel) & about;
+typeQuery = ndi.v2.statementQuery('assertion', 'term') & ...
     (ndi.v2.fieldQuery('statement.variable.name', 'exact_string', ...
         ndi.vintage.elementLabel('type')) | ...
      ndi.v2.fieldQuery('statement.variable.node', 'exact_string', kindVar.node) | ...
-     ndi.v2.fieldQuery('statement.variable.name', 'exact_string', kindVar.name)) & about);
+     ndi.v2.fieldQuery('statement.variable.name', 'exact_string', kindVar.name)) & about;
+% The assertions are read for four short texts and their entity edge: as
+% light documents built from the database's text and edge indexes where it
+% can (no document decoded), else the documents themselves, as before.
+classDocs = lightAssertions(S, classQuery);
+typeDocs = lightAssertions(S, typeQuery);
 children = ndi.vintage.edgeIn('child_id', ids) | ndi.vintage.edgeIn('child', ids);
 derivedDocs = S.database_search(ndi.query('', 'isa', 'directed_relation', '') & ...
     ndi.v2.vocabQuery('directed_relation.relation', 'relation', 'derived_from') & children);
@@ -173,5 +178,51 @@ for k = 1:numel(docOrder)
             m(targets{t}) = struct('found', true, 'entity', e);
         end
     end
+end
+end
+
+function docs = lightAssertions(S, q)
+% the term assertions Q matches, in the database's order: light ndi.documents
+% holding statement.variable.{node,name}, term.value.{node,name} and their
+% entity_id / subject_id edges (all elementFields, isEtaElement and
+% objectClass read of them), or the full documents where the database
+% cannot answer from its indexes
+paths = {'statement.variable.node', 'statement.variable.name', ...
+    'term.value.node', 'term.value.name'};
+vals = [];
+edges = [];
+if ismethod(S, 'database_search_values') && ismethod(S, 'database_search_edges')
+    vals = S.database_search_values(q, paths);
+    if isstruct(vals)
+        edges = S.database_search_edges(q, {'entity_id', 'subject_id'});
+    end
+end
+if ~isstruct(vals) || ~isstruct(edges)
+    docs = S.database_search(q);
+    return;
+end
+byDoc = containers.Map('KeyType', 'char', 'ValueType', 'any');
+for k = 1:numel(edges)
+    d = edges(k).doc_id;
+    e = struct('name', edges(k).name, 'value', edges(k).document_id);
+    if isKey(byDoc, d)
+        byDoc(d) = [byDoc(d), e];
+    else
+        byDoc(d) = e;
+    end
+end
+docs = cell(1, numel(vals));
+for k = 1:numel(vals)
+    v = vals(k).values;
+    dep = struct('name', {}, 'value', {});
+    if isKey(byDoc, vals(k).doc_id)
+        dep = byDoc(vals(k).doc_id);
+    end
+    p = struct('base', struct('id', vals(k).doc_id), ...
+        'document_class', struct('class_name', 'assertion'), ...
+        'statement', struct('variable', struct('node', v{1}, 'name', v{2})), ...
+        'term', struct('value', struct('node', v{3}, 'name', v{4})), ...
+        'depends_on', dep);
+    docs{k} = ndi.document(p);
 end
 end
