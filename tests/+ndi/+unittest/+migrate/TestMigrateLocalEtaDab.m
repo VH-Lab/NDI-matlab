@@ -300,9 +300,27 @@ classdef TestMigrateLocalEtaDab < matlab.unittest.TestCase
             % Dab's 762 probes, evenly spaced (all 762 did not finish in
             % 180 minutes, run 41721521588); every acquisition-system epoch
             % table, probe maps included, is still read whole.
+            %
+            % SKIPPED (INCOMPLETE, NOT PASSED) until the migrated
+            % epoch-read speed fix lands (Jess Haley, 2026-11-06, answering
+            % the #785 report: "merge #1173 now with B as the proven corpus"
+            % and skip the Dab equivalence with a printed reason). On Dab's
+            % migrated session one acquisition system's epoch table is
+            % rebuilt from about 13 database searches per ingested epoch
+            % (0.86 s + 2 x 0.34 s per epoch over 1,604 epochs, run
+            % 41876678241), and getprobes did not return in 4.5 hours (run
+            % 41823644325); the v1 side takes 48 s. The skip is an
+            % assumption failure, so the runner reports this test
+            % Incomplete; test-eta-migrate-dab.yml prints it as skipped and
+            % fails on any other incomplete or failed test. To re-enable,
+            % delete the two lines below.
+            reason = ['Dab object equivalence SKIPPED until the migrated epoch-read speed ' ...
+                'fix lands (Jess Haley, 2026-11-06; evidence: ' ...
+                'https://github.com/VH-Lab/NDI-matlab/issues/785#issuecomment-6638579516)'];
+            testCase.assumeFail(reason);
             R = ndi.unittest.migrate.corpusObjectEquivalence(testCase.Bodies, ...
                 fileparts(testCase.Result.destination), 'Dab', ...
-                'MaxProbeEpochTables', 12, 'Diagnose', true);
+                'MaxProbeEpochTables', 12);
             ndi.unittest.migrate.verifyObjectEquivalence(testCase, R);
         end
 
