@@ -40,6 +40,9 @@ classdef FakeCloudDataset < handle
         DeferSends (1,1) logical = false
         FailSends (1,1) logical = false
         FailFirstSends (1,1) double = 0
+        % The next RecordLate calls to lookupFiles report every file as
+        % not uploaded yet, as NDI Cloud does while it catches up.
+        RecordLate (1,1) double = 0
         singleUploads = 0
         waitedFor = {}         % the uids each waitForFileUpload was asked about
         batchUploads = 0
@@ -248,6 +251,12 @@ classdef FakeCloudDataset < handle
                 end
                 rows(end+1, 1) = struct('uid', uids{i}, 'uploaded', true, ...
                     'size', d.bytes, 'crc32', crc); %#ok<AGROW>
+            end
+            if obj.RecordLate > 0
+                obj.RecordLate = obj.RecordLate - 1;
+                for i = 1:numel(rows)
+                    rows(i).uploaded = false;
+                end
             end
             ok = true;
             answer = struct('files', rows, 'missing', missing);

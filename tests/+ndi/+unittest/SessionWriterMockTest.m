@@ -334,6 +334,37 @@ classdef SessionWriterMockTest < matlab.unittest.TestCase
             testCase.verifyEqual(r.resent, 4);
         end
 
+        function testAFileTheCloudRecordsLateIsCheckedLater(testCase)
+            % Sent fine, but not recorded yet when its batch is checked:
+            % the build is not held up, nothing is sent twice, and it is
+            % settled at a later check.
+            W = testCase.writer();
+            [d, bytes] = testCase.seriesDoc(W, testCase.subjectId, 2);
+            W.declare(d);
+            locs = d.document_properties.files.series_info(1).ingest_locations;
+            W.streamMembers(d, 'chunk.bin', locs(1).index, {locs(1).location});
+            testCase.cloud.RecordLate = 1;
+            W.streamMembers(d, 'chunk.bin', locs(2).index, {locs(2).location});
+            r = W.commit();
+            testCase.verifyEqual(testCase.cloud.singleUploads, 0, 'not sent again');
+            testCase.verifyEqual(r.resent, 0);
+            for i = 1:2
+                testCase.verifyEqual(testCase.cloud.fileBytes(locs(i).uid), bytes{locs(i).index});
+            end
+        end
+
+        function testAFileNeverRecordedIsSentAgainByCommit(testCase)
+            W = testCase.writer();
+            [d, ~] = testCase.seriesDoc(W, testCase.subjectId, 1);
+            W.declare(d);
+            locs = d.document_properties.files.series_info(1).ingest_locations;
+            W.streamMembers(d, 'chunk.bin', locs(1).index, {locs(1).location});
+            testCase.cloud.RecordLate = 2;   % the quick look, and the wait at commit
+            r = W.commit();
+            testCase.verifyEqual(testCase.cloud.singleUploads, 1, 'sent again once');
+            testCase.verifyEqual(r.resent, 1);
+        end
+
         function testFilesCurlDidNotSendAreResentAtOnce(testCase)
             % curl names the files it could not send: those are sent again
             % straight away, without waiting out the cloud check for them.

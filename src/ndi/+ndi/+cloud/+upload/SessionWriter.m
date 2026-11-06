@@ -82,6 +82,12 @@ classdef SessionWriter < handle
 %                     curl 7.68+), a batch of at least this many files is
 %                     sent in zip batches (ndi.cloud.upload.zipForUpload),
 %                     waiting, rather than one by one. Default 20.
+%   RecordWait      - seconds a streamed batch's check waits for NDI Cloud
+%                     to record its files (default 15). Files it has not
+%                     recorded by then are checked again at later batches
+%                     and settled before COMMIT, so a slow record does not
+%                     hold the build; any still missing after UploadTimeout
+%                     are sent again.
 %   UploadTimeout   - seconds to wait for NDI Cloud to record one
 %                     document's files. Empty (default) scales with the
 %                     number and size of the files.
@@ -157,6 +163,13 @@ classdef SessionWriter < handle
         % local copies kept for a later level to read (docid -> cellstr
         % of paths); and documents to replace in the cloud at COMMIT.
         outstanding = {}
+        % Files sent but not yet recorded by NDI Cloud when their batch
+        % was checked (see RecordWait): rechecked at each later batch,
+        % sent again if still missing after the upload timeout, and all
+        % settled before COMMIT. Their local copies wait with them.
+        lagging = struct('uid', {}, 'path', {}, 'bytes', {}, 'crc', {}, ...
+            'retain', {}, 'since', {}, 'timeout', {}, 'label', {})
+        recordWait (1,1) double = 15
         warnedUrls (1,1) logical = false
         onUpload = []
         declaredUids
@@ -177,6 +190,7 @@ classdef SessionWriter < handle
                 options.CacheDir (1,:) char = ''
                 options.KeepLocalCopies (1,1) logical = false
                 options.RetrySeconds (1,1) double {mustBeNonnegative} = 1800
+                options.RecordWait (1,1) double {mustBePositive} = 15
                 options.OnUpload = []
                 options.Api = []
             end
@@ -191,6 +205,7 @@ classdef SessionWriter < handle
             obj.verbose = options.Verbose;
             obj.bulkThreshold = options.BulkThreshold;
             obj.uploadTimeout = options.UploadTimeout;
+            obj.recordWait = options.RecordWait;
             if isempty(options.ParallelUploads)
                 try
                     obj.parallelUploads = ndi.preferences.get('Cloud.Upload.Parallel_Uploads');
@@ -646,6 +661,58 @@ classdef SessionWriter < handle
                 obj.outstanding(1) = [];
                 obj.verifyBatch(batch);
             end
+            obj.checkLagging(true);
+        end
+
+        function checkLagging(obj, force)
+        % CHECKLAGGING - settle files the cloud had not recorded yet
+        %
+        %   Those now recorded with the right CRC-32 are done (their local
+        %   copies deleted unless retained). One with the wrong bytes, or
+        %   still missing after its upload timeout -- or, with FORCE,
+        %   still missing after waiting out that timeout -- is sent again
+        %   and must then check out.
+            if isempty(obj.lagging), return; end
+            L = obj.lagging;
+            uids = {L.uid};
+            wait = 0;
+            if force
+                left = arrayfun(@(x) x.timeout - toc(x.since), L);
+                wait = max(1, max(left));
+            end
+            [bad, late] = obj.unverified(uids, [L.bytes], {L.crc}, wait);
+            expired = arrayfun(@(x) toc(x.since) >= x.timeout, L);
+            redo = bad & (~late | expired | force);
+            if any(redo)
+                obj.say('%d file(s) not recorded correctly by the cloud in time; sending them again.', ...
+                    nnz(redo));
+                for i = find(redo)
+                    [ok, msg] = obj.api.uploadSingleFile(obj.cloudDatasetId, uids{i}, L(i).path);
+                    if ~ok
+                        obj.say('Sending %s again failed (%s).', uids{i}, char(msg));
+                    end
+                end
+                obj.report.resent = obj.report.resent + nnz(redo);
+                stillBad = obj.unverified(uids(redo), [L(redo).bytes], {L(redo).crc}, ...
+                    max([L(redo).timeout]));
+                if any(stillBad)
+                    r = find(redo);
+                    first = r(find(stillBad, 1));
+                    error('NDI:cloud:SessionWriter:uploadNotVerified', ...
+                        ['%d file(s) of %s could not be verified in cloud ' ...
+                         'dataset %s after sending them twice (first: %s, ' ...
+                         'local %s).'], ...
+                        nnz(stillBad), L(first).label, obj.cloudDatasetId, ...
+                        uids{first}, L(first).path);
+                end
+            end
+            settled = ~bad | redo;
+            for i = find(settled)
+                if ~L(i).retain && isfile(L(i).path)
+                    delete(L(i).path);
+                end
+            end
+            obj.lagging = L(~settled);
         end
 
         function checkDeclaredMembers(obj)
@@ -869,7 +936,24 @@ classdef SessionWriter < handle
                 end
             end
             obj.report.resent = obj.report.resent + nnz(failedNow);
-            bad = obj.unverified(uids, bytes, crcs, timeout);
+            obj.checkLagging(false);
+            % A file curl sent is in storage, CRC-checked by S3; NDI Cloud
+            % records it a moment later, now and then minutes later. Wait
+            % RECORDWAIT for that, not the whole timeout: what is still
+            % unrecorded is checked again at later batches (CHECKLAGGING)
+            % while the build goes on, and settled before COMMIT.
+            quick = min(timeout, obj.recordWait);
+            [bad, late] = obj.unverified(uids, bytes, crcs, quick);
+            deferred = false(1, n);
+            if quick < timeout && any(late)
+                deferred = late;
+                for i = find(late)
+                    obj.lagging(end+1) = struct('uid', uids{i}, 'path', paths{i}, ...
+                        'bytes', bytes(i), 'crc', crcs{i}, 'retain', batch.retain, ...
+                        'since', tic, 'timeout', timeout, 'label', batch.label);
+                end
+                bad = bad & ~late;
+            end
 
             if any(bad)
                 obj.say('%d of %d file(s) missing or different in the cloud; sending them again.', ...
@@ -907,7 +991,7 @@ classdef SessionWriter < handle
                 end
                 obj.retainedPaths(batch.docId) = [kept paths];
             else
-                for i = 1:n
+                for i = find(~deferred)
                     if isfile(paths{i}), delete(paths{i}); end
                 end
             end
@@ -919,9 +1003,15 @@ classdef SessionWriter < handle
             end
         end
 
-        function bad = unverified(obj, uids, bytes, crcs, timeout)
+        function [bad, late] = unverified(obj, uids, bytes, crcs, timeout)
         % UNVERIFIED - true for each uid the cloud lacks or holds different bytes for
-            obj.api.waitForFileUpload(obj.cloudDatasetId, uids, timeout);
+        %
+        %   LATE: of those, the ones the cloud has not recorded as uploaded
+        %   at all (rather than recorded with other bytes). TIMEOUT 0 asks
+        %   once, without waiting.
+            if timeout > 0
+                obj.api.waitForFileUpload(obj.cloudDatasetId, uids, timeout);
+            end
             [ok, answer] = obj.api.lookupFiles(obj.cloudDatasetId, uids);
             if ~ok
                 error('NDI:cloud:SessionWriter:lookupFailed', ...
@@ -931,11 +1021,13 @@ classdef SessionWriter < handle
             rows = answer.files;
             rowUids = cellfun(@char, {rows.uid}, 'UniformOutput', false);
             bad = true(1, numel(uids));
+            late = true(1, numel(uids));
             for i = 1:numel(uids)
                 j = find(strcmp(rowUids, uids{i}), 1);
                 if isempty(j) || ~rows(j).uploaded
                     continue
                 end
+                late(i) = false;
                 cloudCrc = char(rows(j).crc32);
                 if isempty(cloudCrc)
                     bad(i) = double(rows(j).size) ~= bytes(i);
