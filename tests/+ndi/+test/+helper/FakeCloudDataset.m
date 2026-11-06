@@ -21,6 +21,8 @@ classdef FakeCloudDataset < handle
 %                     only when it is waited for, as a slow upload would
 %     FailSends     - true: a background send stores nothing and reports
 %                     failure, so the writer must send the files itself
+%     FailFirstSends - N: a background send does not store its first N
+%                     files, and reports them failed (as curl names them)
 
     properties
         DatasetId = 'aaaaaaaaaaaaaaaaaaaaaaaa'
@@ -37,7 +39,9 @@ classdef FakeCloudDataset < handle
         LoseAddReply (1,1) logical = false
         DeferSends (1,1) logical = false
         FailSends (1,1) logical = false
+        FailFirstSends (1,1) double = 0
         singleUploads = 0
+        waitedFor = {}         % the uids each waitForFileUpload was asked about
         batchUploads = 0
         backgroundSends = 0    % startSend calls
         backgroundFiles = 0    % files those sends stored
@@ -184,7 +188,11 @@ classdef FakeCloudDataset < handle
         % A background send: a struct whose WAIT reports how it went.
             obj.backgroundSends = obj.backgroundSends + 1;
             if obj.FailSends
-                sender = struct('wait', @(varargin) obj.sendResult(false));
+                sender = struct('wait', @(varargin) obj.sendResult(false, uids));
+            elseif obj.FailFirstSends > 0
+                k = min(obj.FailFirstSends, numel(uids));
+                obj.finishSend(uids(k+1:end), paths(k+1:end));
+                sender = struct('wait', @(varargin) obj.sendResult(false, uids(1:k)));
             elseif obj.DeferSends
                 sender = struct('wait', @(varargin) obj.finishSend(uids, paths));
             else
@@ -193,23 +201,26 @@ classdef FakeCloudDataset < handle
             end
         end
 
-        function [ok, msg] = finishSend(obj, uids, paths)
+        function [ok, msg, failed] = finishSend(obj, uids, paths)
             for i = 1:numel(uids)
                 if isfile(paths{i})
                     obj.store(char(uids{i}), char(paths{i}));
                     obj.backgroundFiles = obj.backgroundFiles + 1;
                 end
             end
-            [ok, msg] = obj.sendResult(true);
+            [ok, msg, failed] = obj.sendResult(true);
         end
 
-        function [ok, msg] = sendResult(~, ok)
+        function [ok, msg, failed] = sendResult(~, ok, failed)
+            % FAILED: the uids the send names as not sent.
             msg = '';
+            if nargin < 3, failed = {}; end
             if ~ok, msg = 'curl exited with status 7 (fake)'; end
         end
 
-        function [ok, answer] = waitForFileUpload(~, ~, ~, ~)
+        function [ok, answer] = waitForFileUpload(obj, ~, uids, ~)
             % Uploads here are recorded at once; lookupFiles tells the rest.
+            obj.waitedFor{end+1} = cellstr(uids);
             ok = true;
             answer = struct('state', 'complete');
         end

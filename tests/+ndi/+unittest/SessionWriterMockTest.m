@@ -294,6 +294,21 @@ classdef SessionWriterMockTest < matlab.unittest.TestCase
             testCase.verifyEqual(r.resent, 4);
         end
 
+        function testFilesCurlDidNotSendAreResentAtOnce(testCase)
+            % curl names the files it could not send: those are sent again
+            % straight away, without waiting out the cloud check for them.
+            testCase.cloud.FailFirstSends = 1;
+            W = testCase.writer();
+            [d, bytes] = testCase.seriesDoc(W, testCase.subjectId, 3);
+            W.database_add(d);
+            locs = d.document_properties.files.series_info(1).ingest_locations;
+            for i = 1:numel(locs)
+                testCase.verifyEqual(testCase.cloud.fileBytes(locs(i).uid), bytes{locs(i).index});
+            end
+            testCase.verifyEqual(testCase.cloud.singleUploads, 1, 'only the one curl named');
+            testCase.verifyEqual(W.commit().resent, 1);
+        end
+
         function testOneParallelUploadSendsOneByOne(testCase)
             W = testCase.writer('ParallelUploads', 1);
             [d, ~] = testCase.seriesDoc(W, testCase.subjectId, 3);

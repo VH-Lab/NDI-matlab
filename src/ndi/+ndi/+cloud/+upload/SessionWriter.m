@@ -819,20 +819,39 @@ classdef SessionWriter < handle
             if isempty(timeout)
                 timeout = max(120, 30 + 0.05 * n + sum(bytes) / 5e6);
             end
+            failedNow = false(1, n);
             if isfield(batch, 'sender') && ~isempty(batch.sender)
                 % Sent in the background: let it finish first. curl ends a
                 % stalled transfer itself; this cap (100 kB/s) is a backstop.
                 t0 = tic;
-                [ok, msg] = batch.sender.wait(max(600, sum(bytes) / 1e5));
+                [ok, msg, failed] = batch.sender.wait(max(600, sum(bytes) / 1e5));
                 obj.timing.send = obj.timing.send + toc(t0);
                 stopSender(batch);
                 if ~ok
-                    obj.say('The background send of %s reported a problem (%s); checking what arrived.', ...
-                        batch.label, char(msg));
+                    % The files curl says it did not send will not turn up:
+                    % send them again now, rather than wait out the cloud
+                    % check for them (UPLOADTIMEOUT, two minutes or more).
+                    % A failed zip (uid 'zip') means all of them.
+                    failed = cellfun(@char, cellstr(failed), 'UniformOutput', false);
+                    if any(strcmp(failed, 'zip'))
+                        failedNow(:) = true;
+                    else
+                        failedNow = ismember(uids, failed);
+                    end
+                    obj.say(['The background send of %s reported a problem (%s); ' ...
+                        'sending %d file(s) again, checking the rest.'], ...
+                        batch.label, char(msg), nnz(failedNow));
                 end
             end
             t0 = tic;
             stopwatch = onCleanup(@() obj.addTime('verify', toc(t0)));
+            for i = find(failedNow)
+                [okOne, msgOne] = obj.api.uploadSingleFile(obj.cloudDatasetId, uids{i}, paths{i});
+                if ~okOne
+                    obj.say('Sending %s again failed (%s).', uids{i}, char(msgOne));
+                end
+            end
+            obj.report.resent = obj.report.resent + nnz(failedNow);
             bad = obj.unverified(uids, bytes, crcs, timeout);
 
             if any(bad)
@@ -1031,7 +1050,8 @@ classdef SessionWriter < handle
         %     uploadURLs(datasetId, uids, crcs, folder, n) -> [ok, urls, msg]
         %         (many at once; optional, uploadURL is the fallback)
         %     startSend(urls, paths, crcs, uids, folder, n) -> a sender with
-        %         [ok, msg] = wait(timeout), or [] if this computer cannot
+        %         [ok, msg, failed] = wait(timeout) (FAILED: the uids it
+        %         could not send), or [] if this computer cannot
         %         (see ndi.cloud.upload.CurlSender); optional
         %     startZipSend(datasetId, uids, paths, folder) -> a sender, for
         %         one zip of the files through the bulk upload; optional
