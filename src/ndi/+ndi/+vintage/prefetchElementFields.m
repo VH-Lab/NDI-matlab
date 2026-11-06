@@ -187,8 +187,10 @@ function docs = lightAssertions(S, q)
 % entity_id / subject_id edges (all elementFields, isEtaElement and
 % objectClass read of them), or the full documents where the database
 % cannot answer from its indexes
+% term.value is declared an array: its [*] paths give the FIRST element's
+% text, which is the term.value(1) elementTypeOf and classValueOf read
 paths = {'statement.variable.node', 'statement.variable.name', ...
-    'term.value.node', 'term.value.name'};
+    'term.value[*].node', 'term.value[*].name'};
 vals = [];
 edges = [];
 if ismethod(S, 'database_search_values') && ismethod(S, 'database_search_edges')
