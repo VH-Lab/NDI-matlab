@@ -60,7 +60,7 @@ classdef reader < ndi.ido & ndi.documentservice
 
         end % getingesteddocument();
 
-        function A = getingestedarchive(ndi_daqreader_obj, epochfiles, S)
+        function A = getingestedarchive(ndi_daqreader_obj, epochfiles, S, varargin)
             % GETINGESTEDARCHIVE - the ingested data of an epoch, from a v1 document or v2 bodies
             %
             % A = GETINGESTEDARCHIVE(NDI_DAQREADER_OBJ, EPOCHFILES, S)
@@ -84,6 +84,11 @@ classdef reader < ndi.ido & ndi.documentservice
             % A v1 database with no such document raises the error
             % GETINGESTEDDOCUMENT raises.
             %
+            % A = GETINGESTEDARCHIVE(..., 'Channels', false) passes the
+            % option to ndi.vintage.ingestedArchive: a v2 epoch's channel
+            % list is not read (the epoch table needs only its clock and
+            % extent, which are documents).
+            %
             % See also: ndi.vintage.ingestedArchive, GETINGESTEDDOCUMENT
             %
             epochid = ndi.file.navigator.ingestedfiles_epochid(epochfiles);
@@ -96,7 +101,7 @@ classdef reader < ndi.ido & ndi.documentservice
                 return;
             end
             if isempty(d) && ndi.daq.reader.isv2database(S)
-                A = ndi.vintage.ingestedArchive(S, ndi_daqreader_obj.id(), epochid);
+                A = ndi.vintage.ingestedArchive(S, ndi_daqreader_obj.id(), epochid, varargin{:});
                 return;
             end
             assert(numel(d)==1,['Found ' int2str(numel(d)) ' documents for ' epochid ', needed exactly 1.']);
@@ -189,7 +194,7 @@ classdef reader < ndi.ido & ndi.documentservice
             % See also: ndi.time.clocktype
             %
             ec = {};
-            A = ndi_daqreader_obj.getingestedarchive(epochfiles,S);
+            A = ndi_daqreader_obj.getingestedarchive(epochfiles, S, 'Channels', false);
             if strcmp(A.vintage,'v2')
                 if isempty(A.epochclock)
                     error('NDI:daq:reader:ingestedEpochNoClock', '%s', A.clock_problem);
@@ -232,7 +237,7 @@ classdef reader < ndi.ido & ndi.documentservice
             %
             % See also: ndi.time.clocktype, EPOCHCLOCK
             %
-            A = ndi_daqreader_obj.getingestedarchive(epochfiles, S);
+            A = ndi_daqreader_obj.getingestedarchive(epochfiles, S, 'Channels', false);
             if strcmp(A.vintage,'v2')
                 if isempty(A.t0_t1)
                     error('NDI:daq:reader:ingestedEpochNoClock', '%s', A.clock_problem);

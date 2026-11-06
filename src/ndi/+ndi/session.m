@@ -823,11 +823,18 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
             etaProbes = ndi.vintage.elementSubjectDocs(ndi_session_obj, 'probe');
             existing_probes = [existing_probes(:); etaProbes(:)];
             existing_subjects = ndi_session_obj.database_search(ndi.query('','isa','subject'));
-            subjectlist.a = 0;
+            % A v2 subject is an `entity` with no `subject` block, and a v2
+            % probe an `entity` whose name, reference, type and subject are
+            % rebuilt by ndi.vintage.elementFields; both vintages are read
+            % (VH-Lab/NDI-matlab#785: every migrated B session's getprobes
+            % raised 'Unrecognized field name "subject"').
+            subjectlist = containers.Map('KeyType','char','ValueType','any');
             for i=1:numel(existing_subjects)
-                subjectlist = setfield(subjectlist,['a' existing_subjects{i}.document_properties.base.id],...
-                    [existing_subjects{i}.document_properties.subject.local_identifier]);
+                p = ndi.v2.props(existing_subjects{i});
+                subjectlist(char(p.base.id)) = char(ndi.v2.blockOf(p,'subject','local_identifier',''));
             end
+            existing_fields = cellfun(@(d) probeFields(d, ndi_session_obj), existing_probes, ...
+                'UniformOutput', false);
             existing_probe_objects = {};
             for i=1:numel(existing_probes)
                 existing_probe_objects{end+1} = ndi.database.fun.ndi_document2ndi_object(existing_probes{i},ndi_session_obj);
@@ -836,10 +843,15 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
             match_probestruct_in_existing = [];
             for i=1:numel(probestruct)
                 for j=1:numel(existing_probes)
-                    if strcmp(probestruct(i).subject_id,getfield(subjectlist,['a' existing_probes{j}.dependency_value('subject_id')])) & ...
-                            strcmp(probestruct(i).name,existing_probes{j}.document_properties.element.name) & ...
-                            (probestruct(i).reference==existing_probes{j}.document_properties.element.reference) & ...
-                            strcmp(probestruct(i).type,existing_probes{j}.document_properties.element.type)
+                    f = existing_fields{j};
+                    subjectLabel = '';
+                    if isKey(subjectlist, f.subject_id)
+                        subjectLabel = subjectlist(f.subject_id);
+                    end
+                    if strcmp(probestruct(i).subject_id,subjectLabel) && ...
+                            strcmp(probestruct(i).name,f.name) && ...
+                            isequal(probestruct(i).reference,f.reference) && ...
+                            strcmp(probestruct(i).type,f.type)
                         match_probestruct_in_existing(end+1,[1 2]) = [i j];
                     end
                 end
@@ -1243,6 +1255,23 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
     end % methods Static
 
 end % classdef
+
+function f = probeFields(doc, S)
+% PROBEFIELDS - name, reference, type and subject_id of a probe document
+%
+% A v1 `element` holds them in its block and its `subject_id` edge; a v2
+% probe entity has them rebuilt by ndi.vintage.elementFields.
+p = doc.document_properties;
+if isfield(p, 'element') && isstruct(p.element)
+    f = struct('name', char(p.element.name), 'reference', p.element.reference, ...
+        'type', char(p.element.type), ...
+        'subject_id', char(doc.dependency_value('subject_id', 'ErrorIfNotFound', 0)));
+else
+    e = ndi.vintage.elementFields(doc, S);
+    f = struct('name', char(e.name), 'reference', e.reference, 'type', char(e.type), ...
+        'subject_id', char(e.subject_id));
+end
+end % probeFields()
 
 function ids = softwareIdsOf(docs)
 % SOFTWAREIDSOF - the `software_id` each of DOCS (a cell of ndi.document) names

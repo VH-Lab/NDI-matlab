@@ -1,4 +1,4 @@
-function A = ingestedArchive(S, readerId, epochId)
+function A = ingestedArchive(S, readerId, epochId, options)
 %INGESTEDARCHIVE An ingested mfdaq epoch's data, read from its v2 data bodies.
 %
 %   A = ndi.vintage.ingestedArchive(SESSION, READERID, EPOCHID) finds, in a
@@ -71,6 +71,15 @@ function A = ingestedArchive(S, readerId, epochId)
 %   and CLOCK_PROBLEM says so; the reader then refuses to report a clock
 %   rather than assume one.
 %
+%   A = ndi.vintage.ingestedArchive(..., 'Channels', false) leaves
+%   CHANNELS empty and reads no data body file: the epoch's clock and
+%   extent are documents, so the epoch table (EPOCHCLOCK_INGESTED,
+%   T0_T1_INGESTED) is read without the epoch's data, as v1 read it from
+%   the `daqreader_epochdata_ingested` document alone. Without it, every
+%   epoch table of a migrated session opened every epoch's channel list,
+%   and failed where the data were not on the computer (the B corpus,
+%   VH-Lab/NDI-matlab#785 corpus equivalence).
+%
 %   See also ndi.daq.reader/getingestedarchive, ndi.daq.reader.mfdaq,
 %            ndi.migrate.internal.ingestedArchiveBodies,
 %            ndi.vintage.ingestedEpochs.
@@ -79,6 +88,7 @@ arguments
     S
     readerId (1,:) char
     epochId (1,:) char
+    options.Channels (1,1) logical = true
 end
 
 A = struct('vintage', 'v2', 'epoch_id', epochId, ...
@@ -137,7 +147,9 @@ if A.bodies.Count == 0
 end
 
 % ---- the channel list --------------------------------------------------
-if isKey(A.bodies, 'channel_list.bin')
+if ~options.Channels
+    % the clock and extent only (see 'Channels' above)
+elseif isKey(A.bodies, 'channel_list.bin')
     tname = [ndi.file.temp_name() '.bin'];
     writeMember(S, A.bodies('channel_list.bin').doc, 'body_data_0', tname);
     c = onCleanup(@() deleteIfThere(tname));

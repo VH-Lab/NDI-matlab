@@ -39,6 +39,8 @@ on:
     paths:
       - '.github/workflows/test-eta-migrate-dab.yml'
       - 'tests/*ndi/*unittest/*migrate/TestMigrateLocalEtaDab.m'
+      - 'tests/*ndi/*unittest/*migrate/corpusObjectEquivalence.m'
+      - 'tests/*ndi/*unittest/*migrate/verifyObjectEquivalence.m'
   workflow_dispatch:
     inputs:
       ref:
@@ -236,4 +238,20 @@ jobs:
             % (never fails) when the corpus download is impossible.
             results = runtests('ndi.unittest.migrate.TestMigrateLocalEtaDab');
             disp(results);
-            assertSuccess(results);
+            % ONE KNOWN SKIP, REPORTED AS SKIPPED, NOT AS PASSED. The corpus
+            % object equivalence (#785) is skipped by an assumption until the
+            % migrated epoch-read speed fix lands (Jess Haley, 2026-11-06);
+            % the runner marks it Incomplete. assertSuccess fails on any
+            % Incomplete test, so that one test is set aside BY NAME and
+            % printed with a warning annotation; every other test must pass,
+            % and any other filtered or incomplete test still fails the run.
+            knownSkip = "ndi.unittest.migrate.TestMigrateLocalEtaDab/testTheSameObjectsBeforeAndAfterMigration";
+            isKnownSkip = (string({results.Name}) == knownSkip) & [results.Incomplete] & ~[results.Failed];
+            fprintf("VERDICT: %d test(s), %d passed, %d failed, %d incomplete (%d of them the known skip)\n", ...
+                numel(results), nnz([results.Passed]), nnz([results.Failed]), ...
+                nnz([results.Incomplete]), nnz(isKnownSkip));
+            if any(isKnownSkip)
+                disp("::warning::SKIPPED, NOT PASSED: " + knownSkip + ...
+                    " (corpus object equivalence, #785; skipped until the migrated epoch-read speed fix lands)");
+            end
+            assertSuccess(results(~isKnownSkip));
