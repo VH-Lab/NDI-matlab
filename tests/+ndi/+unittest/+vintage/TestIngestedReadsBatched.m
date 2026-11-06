@@ -206,6 +206,12 @@ classdef TestIngestedReadsBatched < matlab.unittest.TestCase
             S.cache.clear();
             [b, msg] = S.ingest();
             assert(logical(b), 'ingest failed: %s', msg);
+            % the probes' element documents: without a probe entity to wire,
+            % migration carries the ingested epoch whole as v1
+            % (resolveEpochProbemap rows_unwirable), and nothing migrated
+            % would be read
+            probes = S.getprobes();
+            assert(numel(probes) == 2, 'expected the probes ctx and ctx2, found %d', numel(probes));
             for k = 1:numel(P.Epochs)
                 delete(fullfile(root, [P.Epochs{k} '.rhd']));
             end

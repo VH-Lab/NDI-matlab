@@ -1,4 +1,4 @@
-function E = ingestedEpochs(ndi_session_obj, docs, probemapClass)
+function E = ingestedEpochs(ndi_session_obj, docs, probemapClass, options)
 %INGESTEDEPOCHS Each ingested epoch's id, files and probe map, read from either vintage.
 %
 %   E = ndi.vintage.ingestedEpochs(SESSION, DOCS, PROBEMAPCLASS). DOCS are
