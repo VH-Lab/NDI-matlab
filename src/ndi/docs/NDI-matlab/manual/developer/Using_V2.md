@@ -1,4 +1,4 @@
-# Using V2
+# Using v2
 
 A short guide for a scientist with a v2 (`did_v2`) dataset: how to open it,
 find things in it, read what is stated about them, and write one. The design and
@@ -175,7 +175,7 @@ the answer on disk (`NDI_SYNONYM_CACHE`); offline they return `''` or `{}`.
 Searches use synonyms by default, so `{'species', 'C. elegans'}` finds
 `NCBITaxon:6239`.
 
-DID-schema's term registry lists every term a V2 dataset may hold. A search
+DID-schema's term registry lists every term a v2 dataset may hold. A search
 for a variable or method that no statement has is widened by the registered
 terms that go by it (`ndi.v2.synonymNodes('meter')` finds `metre`). With a
 DID-matlab that checks the registry, `did2.build` refuses a term the registry
@@ -184,7 +184,7 @@ registry's spelling of a term.
 
 ## 6. Write
 
-V2 documents are built with DID-matlab's `did2.build` and written with
+v2 documents are built with DID-matlab's `did2.build` and written with
 `ndi.setup.V2`. Every document carries the session id it is stored with.
 
 ```matlab
@@ -207,12 +207,12 @@ S = ndi.setup.V2.createSession(folder, 'day 1', 'SessionId', sid, ...
   `did2.build.term(node, name)` a term; `did2.build.directedRelation(child,
   parent, relation, 'SessionId', sid)` a relation.
 - `ndi.setup.V2.createSession(path, reference, ...)` makes a session folder
-  with a V2 database; `ndi.setup.V2.writeDataset` writes a dataset whose
+  with a v2 database; `ndi.setup.V2.writeDataset` writes a dataset whose
   sessions are linked, each in its own folder (section 8);
   `ndi.setup.V2.createDataset(path, reference,
   datasetSessionId, datasetDocs, sessionDocs)` writes a whole dataset (every
   session ingested) and opens it; `ndi.setup.V2.writeDocuments(dbFile, docs)`
-  adds documents to an existing V2 database
+  adds documents to an existing v2 database
   (`.ndi/did_v2.sqlite` in the folder; a database written before 2026-11-01 is `.ndi/V_eta.sqlite` and still opens).
 
 - `ndi.setup.V2.attachFile(doc, name, path)` says where the bytes of a
@@ -299,7 +299,7 @@ r = ndi.setup.conv.haley.import_V2(dataParentDir, ...
 
 ## 7. Adding terms for a new dataset
 
-Every variable, method, unit, condition, parameter, dimension and covariate a V2 import writes
+Every variable, method, unit, condition, parameter, dimension and covariate a v2 import writes
 must be in DID-schema's term registry (`schemas/registry/did_v2_term_registry.json`;
 tenet T19, `docs/plans/did_v2_term_registry_plan.md`). A new dataset usually needs a few
 terms the registry lacks. The steps, in order:
@@ -486,17 +486,17 @@ the template and point it at your own fixture. The Haley import,
 
 ## 9. What is v1 only
 
-- `ndi.subject` is v1's class, with its `@` rule. Read a V2 subject as an
+- `ndi.subject` is v1's class, with its `@` rule. Read a v2 subject as an
   `ndi.entity`.
 - `ndi.session.dir` on an empty folder creates a v1 session, and
   `ndi.document(...)` and `S.newdocument(...)` build v1 documents from NDI's
   templates. Make v2 with `ndi.setup.V2` and `did2.build`. (A brand-new
   database is to become v2, but that is not in effect yet; see
   [Migrating_to_v2.md](../Migrating_to_v2.md), section 2.)
-- v1's `session_in_a_dataset` is not used: a V2 session is in a dataset through
+- v1's `session_in_a_dataset` is not used: a v2 session is in a dataset through
   an `included_in` relation.
 - Acquisition objects (DAQ systems, probes, elements, the syncgraph) are v1's.
-  A migrated V2 session rebuilds them through `ndi.vintage`; they are not part
-  of the V2 object layer.
+  A migrated v2 session rebuilds them through `ndi.vintage`; they are not part
+  of the v2 object layer.
 - Not built: `ndi.strain` and `ndi.study` (a strain or a study is a plain
   `ndi.entity`), `subject.location(t)`, and the relation filter `'depth'`.
