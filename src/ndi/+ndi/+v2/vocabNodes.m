@@ -261,10 +261,30 @@ end
 
 function f = schemaFileFor(kind, schemaPath)
 %SCHEMAFILEFOR The schema file KIND's terms are read from ('' without a schema).
+%   Remembered per (kind, schema path) while the file is there: a name that
+%   is not in the schema (acquisition_channels.json, retired) is looked for
+%   by walking the schema tree, and asking again on every call walked it
+%   9,476 times in one Dab getprobes, 46 s (run 42243795572).
+persistent memo
+if isempty(memo)
+    memo = containers.Map('KeyType', 'char', 'ValueType', 'char');
+end
 f = '';
 if isempty(schemaPath)
     return;
 end
+memoKey = [kind '|' char(schemaPath)];
+if isKey(memo, memoKey) && isfile(memo(memoKey))
+    f = memo(memoKey);
+    return;
+end
+f = lookUpSchemaFile(kind, schemaPath);
+if isfile(f)
+    memo(memoKey) = f;
+end
+end
+
+function f = lookUpSchemaFile(kind, schemaPath)
 switch kind
     case 'channel_type'
         f = ndi.v2.schemaFile(char(schemaPath), 'acquisition_channels.json');   % any layout
