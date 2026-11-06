@@ -33,7 +33,11 @@ function f = elementFields(subjectDoc, ndi_session_obj)
 %                          assertion (`Equipment Type`) read back through
 %                          ndi.vintage.elementTypeOfKind. The `element
 %                          type` assertion wins when both are there
-%                          (ndi.vintage.elementTypeOf). A sorted unit,
+%                          (ndi.vintage.elementTypeOf). A patch or sharp
+%                          electrode that never recorded (its kind and no
+%                          `element type` assertion) reads the general
+%                          'patch' or 'sharp' (Jess Haley, 2026-11-06,
+%                          "Read back patch"). A sorted unit,
 %                          which has neither ([cell spellings are one
 %                          meaning], [cell spellings amended]), reads
 %                          'spikes' from its own `entity.type` (`cell` or
