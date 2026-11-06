@@ -1,4 +1,4 @@
-function f = elementFields(subjectDoc, ndi_session_obj)
+function f = elementFields(subjectDoc, ndi_session_obj, pieces)
 %ELEMENTFIELDS Rebuild a v1 `element` block from its V_eta satellites.
 %
 %   F = ndi.vintage.elementFields(SUBJECTDOC, NDI_SESSION_OBJ) returns a
@@ -103,6 +103,27 @@ function f = elementFields(subjectDoc, ndi_session_obj)
 props = subjectDoc.document_properties;
 docId = props.base.id;
 
+% ONE CALL'S CACHE (ndi.vintage.elementFieldsScope): inside a getelements /
+% getprobes / epoch-table read, the fields read once (batched by
+% ndi.vintage.prefetchElementFields) answer every later question about the
+% same element. PIECES, when given, are the five searches' answers for this
+% element, read for many elements at once by prefetchElementFields; the
+% fields are built from them exactly as from the searches below.
+scopeKey = '';
+if ~isempty(ndi_session_obj) && ndi.vintage.elementFieldsScope('isopen')
+    scopeKey = ['f|' char(ndi_session_obj.id()) '|' char(docId)];
+    if nargin < 3
+        [cached, hit] = ndi.vintage.elementFieldsScope('get', scopeKey);
+        if hit
+            f = cached;
+            return;
+        end
+    end
+end
+if nargin < 3
+    pieces = [];
+end
+
 f = struct('name', '', 'reference', [], 'type', '', 'direct', false, ...
     'ndi_element_class', '', 'underlying_element_id', '', 'subject_id', '');
 
@@ -129,21 +150,37 @@ end
 [f.name, f.reference] = ndi.vintage.elementNameReferenceApart(entityName, localId);
 
 % --- the two kind assertions -------------------------------------------
-f.type = elementTypeValue(ndi_session_obj, docId, entityType);
-f.ndi_element_class = assertionValue(ndi_session_obj, docId, ...
-    ndi.vintage.elementLabel('class'));
+if isempty(pieces)
+    f.type = elementTypeValue(ndi_session_obj, docId, entityType);
+    f.ndi_element_class = assertionValue(ndi_session_obj, docId, ...
+        ndi.vintage.elementLabel('class'));
+else
+    f.type = ndi.vintage.elementTypeOf(pieces.typeDocs, entityType);
+    f.ndi_element_class = classValueOf(pieces.classDocs);
+end
 
 % --- the lineage relations ---------------------------------------------
-f.underlying_element_id = relationTarget(ndi_session_obj, docId, 'derived_from');
+if isempty(pieces)
+    f.underlying_element_id = relationTarget(ndi_session_obj, docId, 'derived_from');
+else
+    f.underlying_element_id = parentOf(pieces.derivedDocs);
+end
 
 % TWO PLACES, IN THIS ORDER, and the second is the one that was missing.
 % The typed observation is asked about FIRST because it is the STRONGER
 % signal: jRecordingObservation only runs on a direct element, so its
 % existence settles `direct` outright, whereas an `observes` relation is
 % what survives when no observation was assembled.
-[specimen, viaObservation] = specimenViaInstrument(ndi_session_obj, docId);
-if isempty(specimen)
-    specimen = relationTarget(ndi_session_obj, docId, 'observes');
+if isempty(pieces)
+    [specimen, viaObservation] = specimenViaInstrument(ndi_session_obj, docId);
+    if isempty(specimen)
+        specimen = relationTarget(ndi_session_obj, docId, 'observes');
+    end
+else
+    [specimen, viaObservation] = specimenOf(pieces.observationDocs);
+    if isempty(specimen)
+        specimen = parentOf(pieces.observesDocs);
+    end
 end
 f.subject_id = specimen;
 
@@ -152,6 +189,46 @@ f.subject_id = specimen;
 % which made every recording probe -- the case #30 exists for -- report
 % `direct = 0` with no specimen.
 f.direct = viaObservation || ~isempty(specimen);
+if ~isempty(scopeKey)
+    ndi.vintage.elementFieldsScope('put', scopeKey, f);
+end
+end
+
+function v = classValueOf(docs)
+% the first class assertion's term.value.name, as assertionValue reads it
+v = '';
+if isempty(docs)
+    return;
+end
+p = docs{1}.document_properties;
+if isfield(p, 'term') && isstruct(p.term) && isfield(p.term, 'value') ...
+        && isfield(p.term.value, 'name')
+    v = p.term.value.name;
+end
+end
+
+function target = parentOf(docs)
+% the first relation's parent, as relationTarget reads it
+target = '';
+if isempty(docs)
+    return;
+end
+target = docs{1}.dependency_value('parent_id', 'ErrorIfNotFound', 0);
+if isempty(target)
+    target = docs{1}.dependency_value('parent', 'ErrorIfNotFound', 0);
+end
+end
+
+function [specimen, found] = specimenOf(docs)
+% the first observation's entity, as specimenViaInstrument reads it
+specimen = '';
+found = false;
+if isempty(docs)
+    return;
+end
+found = true;
+specimen = ndi.v2.edgeIds(ndi.v2.props(docs{1}), 'entity_id');
+if isempty(specimen), specimen = ''; else, specimen = specimen{1}; end
 end
 
 % ===================== helpers =============================================

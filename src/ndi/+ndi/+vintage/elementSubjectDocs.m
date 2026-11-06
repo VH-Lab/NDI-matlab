@@ -56,15 +56,18 @@ docs = cell(0, 1);
 
 [ids, label] = ndi.vintage.elementSubjectIds(ndi_session_obj, classFilter);
 
+% The subjects are read 200 ids to a search (ndi.vintage.docsById), not one
+% search per element (Jess Haley, 2026-11-06: "Speed can't be slower than
+% v1"); the order is still the assertions' order.
+byId = ndi.vintage.docsById(ndi_session_obj, ids);
 for i = 1:numel(ids)
-    hit = ndi_session_obj.database_search( ...
-        ndi.query('base.id', 'exact_string', ids{i}, ''));
-    if numel(hit) ~= 1
+    hit = byId(ids{i});
+    if isempty(hit)
         error('NDI:vintage:elementSubjectNotFound', ...
             ['a "%s" assertion names subject %s and %d document(s) match; ' ...
              'the migrator preserves the element id onto the subject, so ' ...
-             'this edge should always resolve'], label, ids{i}, numel(hit));
+             'this edge should always resolve'], label, ids{i}, 0);
     end
-    docs{end+1, 1} = hit{1}; %#ok<AGROW>
+    docs{end+1, 1} = hit; %#ok<AGROW>
 end
 end
