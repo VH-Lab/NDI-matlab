@@ -167,8 +167,10 @@ function [pyramidDoc, levelDocs, sharedLevel0] = makePyramid(session, pyramids, 
         % How many pool workers read one super-block of SmartSPIM slices
         % at once, each a slab along z. Slices are read one file at a
         % time, and over a network each file costs a round trip, so
-        % several readers at once keep the network busy. Capped by the
-        % pool size.
+        % several readers at once keep the network busy. With numWorkers
+        % above 1 and asyncPrefetch, the pool gets this many workers more
+        % than numWorkers, so reading the next region never takes workers
+        % from compressing this one.
         options.readWorkers (1,1) double {mustBeInteger, mustBePositive} = 8
         % Test hook: read slices in readWorkers slabs one after another
         % when there is no pool, so the split-and-join is exercised where
@@ -831,7 +833,26 @@ function [levelDoc, tmpRoot, doneChunks] = attachChunkFiles(levelDoc, source, le
     % did.document.addFileSeries call after the super-block loop exits.
     % poolSize == 1 is the original serial path with no toolbox
     % dependency.
-    poolSize = resolveParallelPool(numWorkers);
+    %
+    % READERS OF THEIR OWN. The next region's slices are read on pool
+    % workers while this one compresses (ASYNC PIPELINE below), and a read
+    % over the network holds its worker for most of a batch while using
+    % little CPU. In a pool of numWorkers, those readers left the
+    % compression a few workers (CPU 70% idle, workers busy 60% of the
+    % compress time), so a pool reading slices in parallel gets
+    % readWorkers more workers, and the compression is held to numWorkers
+    % of them (encodeBlock's parfor).
+    wanted = numWorkers;
+    if numWorkers > 1 && asyncPrefetch && readWorkers > 1 && ...
+            any(strcmp(source.kind, {'smartspim', 'reduceSmartspim'}))
+        wanted = numWorkers + readWorkers;
+    end
+    poolSize = resolveParallelPool(wanted);
+    if wanted > numWorkers && poolSize > 1
+        poolSize = min(poolSize, numWorkers);
+        fprintf(['[makePyramid] Pool of %d workers: %d compress, %d read the ' ...
+            'next region''s slices meanwhile.\n'], wanted, poolSize, readWorkers);
+    end
 
     % How many target chunks fit inside the prefetch budget, sized
     % by uncompressed chunk bytes. Never smaller than the parfor
@@ -1078,7 +1099,8 @@ function [tempPaths, chunkIdxs, t] = encodeBlock(bigTile, sb, sel, chunks, shape
     t.assemble = toc(t0);
     t0 = tic;
     if poolSize > 1 && bs > 1
-        parfor j = 1:bs
+        % At most POOLSIZE workers, so the pool's readers stay free to read.
+        parfor (j = 1:bs, poolSize)
             c0 = tic;
             col = bigChunksFlat(:, j);
             tile = reshape(col, chunkShape1);
@@ -1892,7 +1914,7 @@ function [n, src] = describeParallelPool(numWorkers)
         end
         return;
     end
-    if isempty(p) || p.NumWorkers ~= numWorkers
+    if isempty(p) || p.NumWorkers < numWorkers
         n = numWorkers; src = 'will open a new parpool';
     else
         n = numWorkers; src = 'from existing parpool';
@@ -1937,7 +1959,9 @@ function n = resolveParallelPool(numWorkers)
             end
             return;
         end
-        if isempty(p) || p.NumWorkers ~= numWorkers
+        % A pool at least as big is kept (a level that reads slices opens a
+        % bigger one; see READERS OF THEIR OWN), so levels do not restart it.
+        if isempty(p) || p.NumWorkers < numWorkers
             if ~isempty(p)
                 delete(p);
             end

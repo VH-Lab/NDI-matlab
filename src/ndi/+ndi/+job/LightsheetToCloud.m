@@ -24,6 +24,10 @@ classdef LightsheetToCloud < ndi.job.Job
 %   is printed every 10 minutes and after each level (see
 %   ndi.fun.doc.lightsheet.BuildProfile).
 %
+%   WORKERS. spec.numWorkers pool workers compress; a SmartSPIM build
+%   adds spec.readWorkers (optional; default 8) that read the next
+%   region's slices meanwhile. Edit them in job.json while it is paused.
+%
 %   RESTART starts over with a new pyramid. The one the earlier run left in
 %   the cloud stays there, labelled "(uploading)"; delete it from the
 %   dataset if it is not wanted.
@@ -80,6 +84,12 @@ classdef LightsheetToCloud < ndi.job.Job
                 'profileLog', fullfile(obj.folder(), 'profile.csv')};
             if ~isempty(c.label)
                 args = [args {'label', c.label}];
+            end
+            if isfield(c, 'readWorkers') && ~isempty(c.readWorkers) && ...
+                    any(strcmp(c.sourceKind, 'smartspim'))
+                % Optional (edit job.json): how many pool workers read the
+                % slices alongside the numWorkers that compress.
+                args = [args {'readWorkers', double(c.readWorkers)}];
             end
             args = [args obj.ExtraIngestArgs];
             [resume, sourceFileID] = obj.resumeFromSaved();
