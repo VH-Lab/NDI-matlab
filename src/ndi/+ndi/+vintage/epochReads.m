@@ -42,36 +42,12 @@ switch what
         q = ndi.v2.isaQuery('statement') & ndi.vintage.edgeIn('time_reference_id', ids);
         names = {'time_reference_id', 'acquisition_channels_id', 'acquisition_system_id', ...
             'instrument_id', 'entity_id', 'subject_id'};
-        edges = [];
-        if ismethod(S, 'database_search_edges')
-            edges = S.database_search_edges(q, names);
-        end
-        if isstruct(edges)
-            out = lightDocs(edges);
-        else
+        out = ndi.vintage.edgeDocs(S, q, names, 'statement');
+        if ~iscell(out)
             out = S.database_search(q);
         end
     otherwise
         error('NDI:vintage:epochReads:badKind', 'Unknown read "%s".', what);
 end
 ndi.vintage.elementFieldsScope('put', key, out);
-end
-
-function docs = lightDocs(edges)
-% one light ndi.document per document, in the edges' (database) order; every
-% statement the query matches has a time_reference_id, so none is missing
-docs = {};
-if isempty(edges)
-    return;
-end
-ids = {edges.doc_id};
-[order, ~, which] = unique(ids, 'stable');
-docs = cell(1, numel(order));
-for d = 1:numel(order)
-    rows = edges(which == d);
-    p = struct('base', struct('id', order{d}), ...
-        'document_class', struct('class_name', 'statement'), ...
-        'depends_on', struct('name', {rows.name}, 'value', {rows.document_id}));
-    docs{d} = ndi.document(p);
-end
 end

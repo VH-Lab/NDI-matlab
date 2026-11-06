@@ -74,10 +74,14 @@ typeQuery = ndi.v2.statementQuery('assertion', 'term') & ...
 classDocs = lightAssertions(S, classQuery);
 typeDocs = lightAssertions(S, typeQuery);
 children = ndi.vintage.edgeIn('child_id', ids) | ndi.vintage.edgeIn('child', ids);
-derivedDocs = S.database_search(ndi.query('', 'isa', 'directed_relation', '') & ...
-    ndi.v2.vocabQuery('directed_relation.relation', 'relation', 'derived_from') & children);
-observesDocs = S.database_search(ndi.query('', 'isa', 'directed_relation', '') & ...
-    ndi.v2.vocabQuery('directed_relation.relation', 'relation', 'observes') & children);
+% the relations are read for their child and parent edges only
+relEdges = {'child_id', 'child', 'parent_id', 'parent'};
+derivedDocs = edgesOrDocs(S, ndi.query('', 'isa', 'directed_relation', '') & ...
+    ndi.v2.vocabQuery('directed_relation.relation', 'relation', 'derived_from') & children, ...
+    relEdges);
+observesDocs = edgesOrDocs(S, ndi.query('', 'isa', 'directed_relation', '') & ...
+    ndi.v2.vocabQuery('directed_relation.relation', 'relation', 'observes') & children, ...
+    relEdges);
 % The observations are only asked which entity the FIRST one made with each
 % element is about: read as edges where the database can (no document
 % decoded; on Dab about 3,900 observations for 606 elements), else as
@@ -147,26 +151,30 @@ end
 function m = firstObservationOf(edges, ids)
 % for each id: whether an observation names it as its instrument, and the
 % first `entity_id` of the FIRST such observation (in the database's order,
-% as the search returns them), as ndi.vintage.elementFields reads it
+% as the search returns them), as ndi.vintage.elementFields reads it.
+% Vectorised: the edges come ordered by document, then by entry.
 m = containers.Map(ids, repmat({struct('found', false, 'entity', '')}, 1, numel(ids)));
-% the edges of each document, in order
-docOrder = {};
-instr = containers.Map('KeyType', 'char', 'ValueType', 'any');
-ent = containers.Map('KeyType', 'char', 'ValueType', 'char');
-for k = 1:numel(edges)
-    d = edges(k).doc_id;
-    if ~isKey(instr, d)
-        instr(d) = {};
-        docOrder{end+1} = d; %#ok<AGROW>
+if isempty(edges)
+    return;
+end
+names = {edges.name};
+docIds = {edges.doc_id};
+targets = {edges.document_id};
+[~, ~, docIdx] = unique(docIds, 'stable');
+docIdx = reshape(docIdx, 1, []);
+% each document's first entity_id
+firstEnt = repmat({''}, 1, max(docIdx));
+isE = find(strcmp(names, 'entity_id'));
+[uDoc, ia] = unique(docIdx(isE));   % ia: each document's first entity row
+firstEnt(uDoc) = targets(isE(ia));
+% each instrument's first document (rows are in document order)
+isI = find(strcmp(names, 'instrument_id'));
+[uTarget, ib] = unique(targets(isI), 'stable');
+for k = 1:numel(uTarget)
+    if isKey(m, uTarget{k})
+        m(uTarget{k}) = struct('found', true, 'entity', firstEnt{docIdx(isI(ib(k)))});
     end
-    switch edges(k).name
-        case 'instrument_id'
-            instr(d) = [instr(d), {edges(k).document_id}];
-        case 'entity_id'
-            if ~isKey(ent, d)
-                ent(d) = edges(k).document_id;
-            end
-    end
+end
 end
 for k = 1:numel(docOrder)
     d = docOrder{k};
@@ -226,5 +234,13 @@ for k = 1:numel(vals)
         'term', struct('value', struct('node', v{3}, 'name', v{4})), ...
         'depends_on', dep);
     docs{k} = ndi.document(p);
+end
+end
+
+function docs = edgesOrDocs(S, q, names)
+% light documents of the named edges (ndi.vintage.edgeDocs), else the documents
+docs = ndi.vintage.edgeDocs(S, q, names, 'directed_relation');
+if ~iscell(docs)
+    docs = S.database_search(q);
 end
 end
