@@ -848,6 +848,11 @@ function [levelDoc, tmpRoot, doneChunks] = attachChunkFiles(levelDoc, source, le
         wanted = numWorkers + readWorkers;
     end
     poolSize = resolveParallelPool(wanted);
+    if wanted > numWorkers && poolSize <= 1
+        % The bigger pool could not be had: share numWorkers, as before.
+        wanted = numWorkers;
+        poolSize = resolveParallelPool(numWorkers);
+    end
     if wanted > numWorkers && poolSize > 1
         poolSize = min(poolSize, numWorkers);
         fprintf(['[makePyramid] Pool of %d workers: %d compress, %d read the ' ...
@@ -1965,7 +1970,15 @@ function n = resolveParallelPool(numWorkers)
             if ~isempty(p)
                 delete(p);
             end
-            parpool('local', numWorkers);
+            % The local cluster allows as many workers as the computer has
+            % cores unless told otherwise. More can run (the slice readers
+            % mostly wait on the network), so raise this session's limit
+            % rather than fail; the saved profile is not changed.
+            c = parcluster('local');
+            if c.NumWorkers < numWorkers
+                c.NumWorkers = numWorkers;
+            end
+            parpool(c, numWorkers);
         end
         n = numWorkers;
     catch ME
