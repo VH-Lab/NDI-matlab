@@ -346,7 +346,9 @@ epochDocIds = unique(epochDocIds(~cellfun(@isempty, epochDocIds)), 'stable');
 if isempty(epochDocIds)
     return;
 end
-cache = remember(cache, ndi.vintage.docsById(S, epochDocIds));
+% the epoch entities are read only for their local identifier (localIdentifier)
+cache = remember(cache, ndi.vintage.docsById(S, epochDocIds, ...
+    'LightPaths', {'entity.local_identifier'}));
 % the anchors onto each epoch, then the statements each anchor times. Each
 % epoch's statements are kept by their position in the one answer, so they
 % stay in the order its own search would have returned them.
