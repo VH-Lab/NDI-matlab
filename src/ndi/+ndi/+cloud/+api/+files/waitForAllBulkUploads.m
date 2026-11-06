@@ -19,32 +19,38 @@ function [b, answer, apiResponse, apiURL] = waitForAllBulkUploads(cloudDatasetID
 %       'initialInterval' (double) - First sleep between polls (s). Default 1.
 %       'maxInterval'     (double) - Cap on the per-poll sleep (s). Default 30.
 %       'backoffFactor'   (double) - Multiplier applied after each poll. Default 2.
-%       'requireAllComplete' (logical) - If true, return b=false when any
-%                          job on the dataset ended in state='failed'.
-%                          If false, return b=true as soon as the active
-%                          set drains, regardless of failure history.
+%       'requireAllComplete' (logical) - If true, return b=false when a
+%                          job on the dataset failed recently: its
+%                          completedAt is no more than staleAfter seconds
+%                          before this call began, or later. Older
+%                          failures are history and are ignored. If false,
+%                          return b=true as soon as the active set drains.
 %                          Default true.
-%       'staleAfter'      (double) - Age in seconds beyond which an active
-%                          job is treated as abandoned and ignored. The
-%                          server creates a 'queued' job whenever a bulk
-%                          upload URL is requested; if the zip upload then
-%                          fails or never happens, that job can stay
-%                          active indefinitely. Age is measured from
-%                          startedAt for 'extracting' jobs and createdAt
-%                          otherwise. Default 3600 (1 hour).
+%       'staleAfter'      (double) - Seconds after which a 'queued' job is
+%                          treated as abandoned and ignored. The server
+%                          creates a 'queued' job whenever a bulk upload
+%                          URL is requested, and it stays 'queued' until
+%                          the zip arrives; if the upload fails or never
+%                          happens, it would otherwise count as active.
+%                          Measured from createdAt. 'extracting' jobs are
+%                          always waited for, because large extractions
+%                          can legitimately take hours; the server fails
+%                          extractions that stop making progress. Also
+%                          sets the window for recent failures (see
+%                          requireAllComplete). Default 3600 (1 hour).
 %
 %   Outputs:
-%       b            - True iff no active jobs remain AND, when
-%                      requireAllComplete=true, no jobs ended in 'failed'
-%                      before the timeout.
+%       b            - True iff no active jobs remain before the timeout
+%                      AND, when requireAllComplete=true, no job failed
+%                      recently.
 %       answer       - Struct describing the final state. On success:
 %                        .state='complete', .jobs=[], .elapsed=<seconds>.
-%                      On failed: .state='failed', .jobs=<failed jobs>,
+%                      On failed: .state='failed', .jobs=<recent failed jobs>,
 %                                 .elapsed=<seconds>.
 %                      On timeout: .state='timeout', .elapsed=<seconds>,
 %                                  .jobs=<jobs still active>.
-%                      When a poll succeeded, .staleJobs lists the active
-%                      jobs that were ignored as abandoned.
+%                      When a poll succeeded, .staleJobs lists the
+%                      'queued' jobs that were ignored as abandoned.
 %       apiResponse  - The ResponseMessage from the last poll.
 %       apiURL       - The URL of the last poll.
 %

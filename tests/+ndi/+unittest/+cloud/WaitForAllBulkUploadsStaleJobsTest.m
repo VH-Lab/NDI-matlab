@@ -1,13 +1,16 @@
 classdef WaitForAllBulkUploadsStaleJobsTest < matlab.unittest.TestCase
-    % WAITFORALLBULKUPLOADSSTALEJOBSTEST - offline tests for stale-job handling
-    % in ndi.cloud.api.implementation.files.WaitForAllBulkUploads.
+    % WAITFORALLBULKUPLOADSSTALEJOBSTEST - offline tests for the job
+    % filtering in ndi.cloud.api.implementation.files.WaitForAllBulkUploads.
     %
     % The server creates a 'queued' BulkUploadJob as soon as a client asks
     % for a bulk upload URL. If the zip upload then fails or never happens,
-    % the job can stay active forever, and waitForAllBulkUploads used to
-    % spend its full 300 s timeout on every call for that dataset. These
-    % tests exercise the helpers that set such abandoned jobs aside. They
-    % build job structs locally, so they need no network or credentials.
+    % the job stays 'queued', and waitForAllBulkUploads used to spend its
+    % full 300 s timeout on every call for that dataset. Separately,
+    % state='failed' returned every failure the dataset ever had, so
+    % requireAllComplete reported failure forever after one bad upload.
+    % These tests exercise the helpers that set abandoned 'queued' jobs
+    % aside and keep only recent failures. They build job structs locally,
+    % so they need no network or credentials.
     %
     % Authored without a local MATLAB runtime; needs MATLAB to validate/run.
 
@@ -40,8 +43,8 @@ classdef WaitForAllBulkUploadsStaleJobsTest < matlab.unittest.TestCase
         function testOldQueuedJobIsStale(testCase)
             nowUtc = datetime(2026, 11, 5, 12, 0, 0, 'TimeZone', 'UTC');
             jobs = [ ...
-                ndi.unittest.cloud.WaitForAllBulkUploadsStaleJobsTest.job("old", "queued", "2026-11-04T12:00:00.000Z", []), ...
-                ndi.unittest.cloud.WaitForAllBulkUploadsStaleJobsTest.job("new", "queued", "2026-11-05T11:55:00.000Z", [])];
+                ndi.unittest.cloud.WaitForAllBulkUploadsStaleJobsTest.job("old", "queued", "2026-11-04T12:00:00.000Z"), ...
+                ndi.unittest.cloud.WaitForAllBulkUploadsStaleJobsTest.job("new", "queued", "2026-11-05T11:55:00.000Z")];
             [live, stale] = ndi.cloud.api.implementation.files.WaitForAllBulkUploads.partitionStaleJobs(jobs, 3600, nowUtc);
             testCase.verifyTrue(isstruct(live));
             testCase.verifyEqual(numel(live), 1);
@@ -50,25 +53,21 @@ classdef WaitForAllBulkUploadsStaleJobsTest < matlab.unittest.TestCase
             testCase.verifyEqual(string(stale(1).jobId), "old");
         end
 
-        function testExtractingJobUsesStartedAt(testCase)
-            % Created long ago, but extraction started recently: still live.
+        function testExtractingJobIsNeverStale(testCase)
+            % A big extraction can run for hours; only the server can tell
+            % slow from dead, so the client always waits for it.
             nowUtc = datetime(2026, 11, 5, 12, 0, 0, 'TimeZone', 'UTC');
             jobs = ndi.unittest.cloud.WaitForAllBulkUploadsStaleJobsTest.job( ...
-                "x", "extracting", "2026-11-05T09:00:00Z", "2026-11-05T11:50:00Z");
+                "x", "extracting", "2026-11-04T09:00:00Z");
+            jobs.startedAt = '2026-11-04T09:01:00Z';
             [live, stale] = ndi.cloud.api.implementation.files.WaitForAllBulkUploads.partitionStaleJobs(jobs, 3600, nowUtc);
             testCase.verifyEqual(numel(live), 1);
             testCase.verifyEmpty(stale);
-
-            % Extraction started long ago and never finished: stale.
-            jobs.startedAt = '2026-11-05T09:30:00Z';
-            [live, stale] = ndi.cloud.api.implementation.files.WaitForAllBulkUploads.partitionStaleJobs(jobs, 3600, nowUtc);
-            testCase.verifyEmpty(live);
-            testCase.verifyEqual(numel(stale), 1);
         end
 
         function testUnparseableTimestampIsKeptLive(testCase)
             nowUtc = datetime(2026, 11, 5, 12, 0, 0, 'TimeZone', 'UTC');
-            jobs = ndi.unittest.cloud.WaitForAllBulkUploadsStaleJobsTest.job("q", "queued", "garbage", []);
+            jobs = ndi.unittest.cloud.WaitForAllBulkUploadsStaleJobsTest.job("q", "queued", "garbage");
             [live, stale] = ndi.cloud.api.implementation.files.WaitForAllBulkUploads.partitionStaleJobs(jobs, 3600, nowUtc);
             testCase.verifyEqual(numel(live), 1);
             testCase.verifyEmpty(stale);
@@ -92,17 +91,43 @@ classdef WaitForAllBulkUploadsStaleJobsTest < matlab.unittest.TestCase
             [live, stale] = ndi.cloud.api.implementation.files.WaitForAllBulkUploads.partitionStaleJobs([], 3600, nowUtc);
             testCase.verifyEmpty(live);
             testCase.verifyEmpty(stale);
+            recent = ndi.cloud.api.implementation.files.WaitForAllBulkUploads.jobsCompletedSince([], nowUtc);
+            testCase.verifyEmpty(recent);
+        end
+
+        function testOnlyRecentFailuresCount(testCase)
+            since = datetime(2026, 11, 5, 11, 0, 0, 'TimeZone', 'UTC');
+            old = ndi.unittest.cloud.WaitForAllBulkUploadsStaleJobsTest.job("old", "failed", "2026-10-01T00:00:00Z");
+            old.completedAt = '2026-10-01T00:05:00Z';
+            recentJob = ndi.unittest.cloud.WaitForAllBulkUploadsStaleJobsTest.job("recent", "failed", "2026-11-05T09:00:00Z");
+            % Created before the cutoff but failed after it: counts.
+            recentJob.completedAt = '2026-11-05T11:30:00Z';
+            recent = ndi.cloud.api.implementation.files.WaitForAllBulkUploads.jobsCompletedSince([old, recentJob], since);
+            testCase.verifyEqual(numel(recent), 1);
+            testCase.verifyEqual(string(recent(1).jobId), "recent");
+        end
+
+        function testFailureWithoutCompletedAtFallsBackToCreatedAt(testCase)
+            since = datetime(2026, 11, 5, 11, 0, 0, 'TimeZone', 'UTC');
+            old = ndi.unittest.cloud.WaitForAllBulkUploadsStaleJobsTest.job("old", "failed", "2026-10-01T00:00:00Z");
+            recent = ndi.cloud.api.implementation.files.WaitForAllBulkUploads.jobsCompletedSince(old, since);
+            testCase.verifyEmpty(recent);
+        end
+
+        function testFailureWithNoUsableTimeIsKept(testCase)
+            % Err toward reporting a failure when the server response is odd.
+            since = datetime(2026, 11, 5, 11, 0, 0, 'TimeZone', 'UTC');
+            odd = ndi.unittest.cloud.WaitForAllBulkUploadsStaleJobsTest.job("odd", "failed", "garbage");
+            recent = ndi.cloud.api.implementation.files.WaitForAllBulkUploads.jobsCompletedSince(odd, since);
+            testCase.verifyEqual(numel(recent), 1);
         end
 
     end
 
     methods (Static)
-        function s = job(jobId, state, createdAt, startedAt)
+        function s = job(jobId, state, createdAt)
             s = struct('jobId', char(jobId), 'state', char(state), ...
-                'createdAt', char(createdAt), 'startedAt', startedAt);
-            if isstring(startedAt)
-                s.startedAt = char(startedAt);
-            end
+                'createdAt', char(createdAt), 'startedAt', [], 'completedAt', []);
         end
     end
 end
