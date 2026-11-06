@@ -1,5 +1,5 @@
 classdef TestSliceTetanus < matlab.unittest.TestCase
-%TESTSLICETETANUS ndi.migrate.internal.sliceTetanus on REAL Dab documents.
+%TESTSLICETETANUS ndi.setup.conv.dabrowska.sliceTetanus on REAL Dab documents.
 %
 %   The v1 side is verbatim Dab corpus documents (dab_slice_tetanus_v1.json,
 %   224 documents read out of Dab.zip): two animals, three bath stimulators,
@@ -42,7 +42,7 @@ classdef TestSliceTetanus < matlab.unittest.TestCase
             if isstruct(raw); raw = num2cell(raw); end
             testCase.V1 = raw(:)';
             [testCase.Migrated, testCase.EpochIndex] = simulateMigrated(testCase.V1, false);
-            [testCase.Plan, testCase.Report] = ndi.migrate.internal.sliceTetanus( ...
+            [testCase.Plan, testCase.Report] = ndi.setup.conv.dabrowska.sliceTetanus( ...
                 testCase.V1, testCase.Migrated, testCase.EpochIndex);
         end
     end
@@ -230,7 +230,7 @@ classdef TestSliceTetanus < matlab.unittest.TestCase
             % strain_id, subject_id, time_reference_1, relative_reference,
             % child / parent) is read the same way: every count matches
             [mig, idx] = simulateMigrated(testCase.V1, true);
-            [plan, r] = ndi.migrate.internal.sliceTetanus(testCase.V1, mig, idx);
+            [plan, r] = ndi.setup.conv.dabrowska.sliceTetanus(testCase.V1, mig, idx);
             r0 = testCase.Report;
             for f = {'slices', 'new_animals', 'new_animal_strain_assertions_copied', ...
                     'epoch_statements_examined', 'epoch_statements_matched', ...
@@ -249,8 +249,15 @@ classdef TestSliceTetanus < matlab.unittest.TestCase
             % the generic 'bath' (NCIm:C0179246), so they target the whole
             % slice/prep and sliceTetanus matches exactly as before. Every
             % patch probe is located in BNST (Dab's 404 probe_location
-            % documents all say UBERON:0001880), as ndi.migrate.local runs it:
-            % Path S 'sites' -> sliceTetanus -> Path S 'located'.
+            % documents all say UBERON:0001880), composed as Path S 'sites'
+            % -> sliceTetanus -> Path S 'located'. Since [sliceTetanus to Dab
+            % map] (Jess Haley, 2026-10-25) the pipeline runs both Path S modes
+            % in the generic stage and the slices after it, in the Dabrowska
+            % map (ndi.setup.conv.dabrowska.applyMap). On the Dab corpus
+            % 'located' moves no statement in either order (run 42163755800:
+            % "statements with a located instrument 0"; the probe locations
+            % are attributed to the animal, never an instrument). This test
+            % keeps the composition above as the planner property it checks.
             mig = testCase.Migrated;
             probes = {};
             for k = 1:numel(mig)
@@ -269,7 +276,7 @@ classdef TestSliceTetanus < matlab.unittest.TestCase
             verifyEmpty(testCase, m1);
             verifyEqual(testCase, r1.site_observations_not_co_anchored, numel(probes));
 
-            [plan, r] = ndi.migrate.internal.sliceTetanus(testCase.V1, k1, testCase.EpochIndex);
+            [plan, r] = ndi.setup.conv.dabrowska.sliceTetanus(testCase.V1, k1, testCase.EpochIndex);
             r0 = testCase.Report;
             for f = {'slices', 'new_animals', 'epoch_statements_examined', ...
                     'epoch_statements_matched', 'epoch_statements_unmatched', ...
@@ -361,7 +368,7 @@ b = {b, r};
 end
 
 function out = applyPlan(M, plan)
-% what ndi.migrate.local's resolveSliceTetanus does with a plan that folded
+% what ndi.setup.conv.dabrowska.applyMap does with a plan that folded
 removed = containers.Map('KeyType', 'char', 'ValueType', 'logical');
 for k = 1:numel(plan.removed); removed(plan.removed{k}) = true; end
 replaced = containers.Map('KeyType', 'char', 'ValueType', 'any');

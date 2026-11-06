@@ -401,7 +401,6 @@ function result = local(path, options)
     ontologyRowReport = [];
     ontologyLabelReport = [];
     stimulusSequenceReport = [];
-    sliceTetanusReport = [];
     regionSitesReport = [];
     regionLocatedReport = [];
     epochSeriesBodiesReport = [];
@@ -1232,38 +1231,15 @@ function result = local(path, options)
                  'state without this step.'], ME.message);
         end
         tStep = migrateStepMark('describeIngestedArchiveBodies', tStart, tStep, convertResult);
-        %   WHAT THIS STEP READS AND WRITES: [migration reliability practices] (c),
-        %   Jess Haley, 2026-10-26; DID-matlab tools/batch_pass_order.py derives the
-        %   second pass's order from these and checks it.
-        %   BATCH-PASS-READS: observation(recording per epoch),
-        %       manipulation(stimulator per epoch), manipulation(bath),
-        %       manipulation(treatment), entity(element), entity(tissue at an
-        %       anatomical site), result.epoch_mint
-        %   BATCH-PASS-ADDS: entity(slice), entity(slice animal),
-        %       assertion(strain), directed_relation(part_of),
-        %       manipulation(optogenetic tetanus), relative_reference(tetanus)
-        %   BATCH-PASS-CHANGES: observation(recording per epoch),
-        %       manipulation(stimulator per epoch), manipulation(bath),
-        %       manipulation(treatment), entity(tissue at an anatomical site)
-        %   BATCH-PASS-REMOVES: NONE -- the treatment manipulations and part
-        %       entities it supersedes are pruned (CHANGES)
-        try
-            % AFTER the epochprobemap fold (it re-attributes that pass's
-            % per-epoch statements) and after epochMint (its epoch index is
-            % the tetanus window's referent). Dabrowska slices: decided by
-            % Jess Haley 2026-10-21; see ndi.migrate.internal.sliceTetanus.
-            [convertResult, sliceTetanusReport] = resolveSliceTetanus( ...
-                convertResult, bodies, epochMintReport, options);
-        catch ME
-            stepErrors(end+1) = struct('step', 'sliceTetanusFailed', 'message', ME.message); %#ok<AGROW>
-            warning('NDI:migrate:sliceTetanusFailed', ...
-                ['Second-pass slice / tetanus fold failed (%s); leaving the ' ...
-                 'bath and recording statements on the animal, the per-animal ' ...
-                 'tetanus treatment and the before/after approach documents ' ...
-                 'as they were, which is the state without this pass.'], ...
-                ME.message);
-        end
-        tStep = migrateStepMark('resolveSliceTetanus', tStart, tStep, convertResult);
+        % NO SLICE / TETANUS STEP HERE. Decided by Jess Haley, 2026-10-25
+        % [sliceTetanus to Dab map] and 2026-10-26 [dataset-specific logic
+        % leaves the generic migration] / [dataset map edits V2] (did-schema
+        % did_v2_go_forward_class_audit.md): the Dabrowska slices and tetanus
+        % runs are made by the Dabrowska dataset map, after this function has
+        % written the V2 database (ndi.setup.conv.dabrowska.applyMap). The
+        % generic stage leaves the bath and recording statements on the animal
+        % and carries the before/after approach documents (openminds_stimulus)
+        % whole as v1 (DID-matlab pass 1, carry-165).
         %   WHAT THIS STEP READS AND WRITES: [migration reliability practices] (c),
         %   Jess Haley, 2026-10-26; DID-matlab tools/batch_pass_order.py derives the
         %   second pass's order from these and checks it.
@@ -1278,9 +1254,7 @@ function result = local(path, options)
             % entity (Jess Haley, 2026-10-21; see
             % ndi.migrate.internal.pathSPromotion). AFTER the epochprobemap
             % fold (it makes the recording observations whose probe is
-            % located) and AFTER sliceTetanus (it matches slice statements by
-            % the animal they are about, and a statement it moved onto a slice
-            % is not moved again). Finds the parts the 'sites' pass made, so
+            % located). Finds the parts the 'sites' pass made, so
             % an injection into a region and a recording from it share one.
             [convertResult, regionLocatedReport] = ...
                 resolvePathS(convertResult, options, 'located');
@@ -1678,7 +1652,6 @@ function result = local(path, options)
         'softwareDedupAfterPassOne', softwareDedupEarlyReport, ...
         'softwareDedup',       softwareDedupReport, ...
         'dimensionTerms',      dimensionTermReport, ...
-        'sliceTetanus',        sliceTetanusReport, ...
         'regionPartsSites',    regionSitesReport, ...
         'regionPartsLocated',  regionLocatedReport, ...
         'epochSeriesBodies',   epochSeriesBodiesReport, ...
@@ -2257,155 +2230,6 @@ function report = countOntologyRows(convertResult, bodies)
         structs{k} = docs{k}.toStruct();
     end
     report = ndi.migrate.internal.ontologyRowsCarried(decodeBodies(bodies), structs);
-end
-
-function [convertResult, report] = resolveSliceTetanus(convertResult, bodies, ...
-    epochMintReport, options)
-%RESOLVESLICETETANUS V_eta second pass: Dabrowska brain slices as entities,
-%   one optogenetic-tetanus manipulation per recording run on a relative
-%   window, the before/after approach labels dropped once they rebuild from
-%   it, and a recording day filed under the wrong animal given its own.
-%
-%   ndi.migrate.internal.sliceTetanus plans (pure struct logic). This function
-%   folds the MINTED bodies through did2.convert.v1_to_v2 (validated; a
-%   quarantine there is a real one and is kept, visible), then applies the
-%   edge moves and removals only where every document they point at survived.
-%   The moved documents keep their base.id, so nothing pointing at them breaks.
-    report = [];
-    if ~strcmp(options.TargetVersion, 'did_v2')
-        return;
-    end
-    docs = convertResult.migrated;
-    if isempty(docs)
-        return;
-    end
-    epochIndex = struct('session_id', {}, 'local_identifier', {}, ...
-                        'epoch_document_id', {});
-    if isstruct(epochMintReport) && isfield(epochMintReport, 'epoch_index')
-        epochIndex = epochMintReport.epoch_index;
-    end
-    structs = cell(1, numel(docs));
-    for k = 1:numel(docs)
-        structs{k} = docs{k}.toStruct();
-    end
-    [plan, report] = ndi.migrate.internal.sliceTetanus( ...
-        decodeBodies(bodies), structs, epochIndex);
-    report.minted_folded = 0;
-    report.minted_quarantined = 0;
-    report.folded = false;
-    if ~report.changed
-        printSliceTetanus(report);
-        return;
-    end
-
-    minted = containers.Map('KeyType', 'char', 'ValueType', 'logical');
-    if ~isempty(plan.minted)
-        sub = did2.convert.v1_to_v2(plan.minted, ...
-            'Validate',      options.Validate, ...
-            'SchemaCache',   options.SchemaCache, ...
-            'TargetVersion', options.TargetVersion, ...
-            'Verbose',       false);
-        report.minted_folded = numel(sub.migrated);
-        report.minted_quarantined = numel(sub.quarantine);
-        convertResult.quarantine = [convertResult.quarantine, sub.quarantine];
-        for k = 1:numel(sub.migrated)
-            minted(sub.migrated{k}.get('base.id')) = true;
-        end
-        convertResult.migrated = [convertResult.migrated, sub.migrated];
-    end
-
-    % Apply a move only when its new target was minted; drop a document only
-    % when nothing minted failed (a failed mint keeps what it would replace).
-    replacedById = containers.Map('KeyType', 'char', 'ValueType', 'any');
-    for k = 1:numel(plan.replaced)
-        s = plan.replaced{k};
-        if movedTargetMinted(s, minted)
-            replacedById(s.base.id) = s;
-        end
-    end
-    removed = containers.Map('KeyType', 'char', 'ValueType', 'logical');
-    if report.minted_quarantined == 0
-        for k = 1:numel(plan.removed)
-            removed(plan.removed{k}) = true;
-        end
-    end
-    out = {};
-    for k = 1:numel(convertResult.migrated)
-        d = convertResult.migrated{k};
-        id = d.get('base.id');
-        if isKey(removed, id)
-            continue;
-        end
-        if isKey(replacedById, id)
-            d = did2.document(replacedById(id));
-        end
-        out{end+1} = d; %#ok<AGROW>
-    end
-    report.reattributions_applied = double(replacedById.Count);
-    report.removals_applied = double(removed.Count);
-    convertResult.migrated = out;
-    convertResult.summary = recountSummary(convertResult);
-    report.folded = true;
-    printSliceTetanus(report);
-end
-
-function tf = movedTargetMinted(s, minted)
-% The moved edge -- `entity_id` on a statement, `parent_id` on a relation
-% (did-schema #88; `subject_id` / `parent` before) -- always names a minted
-% slice; the move stands only if that slice was folded.
-    edges = {'entity_id', 'subject_id'};
-    if strcmp(s.document_class.class_name, 'directed_relation')
-        edges = {'parent_id', 'parent'};
-    end
-    tf = false;
-    for k = 1:numel(s.depends_on)
-        if any(strcmp(s.depends_on(k).name, edges))
-            v = '';
-            if isfield(s.depends_on(k), 'value'); v = s.depends_on(k).value;
-            elseif isfield(s.depends_on(k), 'document_id'); v = s.depends_on(k).document_id; end
-            tf = ischar(v) && isKey(minted, v);
-            return;
-        end
-    end
-end
-
-function printSliceTetanus(r)
-%PRINTSLICETETANUS The pass's own census, denominators first, in the log.
-    if isempty(r); return; end
-    fprintf(['SLICE / TETANUS (Dabrowska)\n' ...
-        '  DENOMINATOR: %d v1 document(s), %d migrated document(s), %d epoch index entr(ies)\n' ...
-        '  stimulators %d: slice baths %d, not a slice bath %d, animal mismatch %d\n' ...
-        '  slices minted %d; new animals %d (epochs on a nested date %d); strain assertions copied %d\n' ...
-        '  epoch-anchored statements examined %d: matched %d, unmatched %d\n' ...
-        '  unanchored statements examined %d: matched %d, ambiguous %d\n' ...
-        '  element observes-relations examined %d: matched %d, ambiguous %d\n' ...
-        '  approach labels %d; runs examined %d; refused: not a clean switch %d, no epoch doc %d, no gap %d\n' ...
-        '  tetanus manipulations %d (on a new animal %d): with target region %d, without %d; ' ...
-        'with parameters %d, without %d\n' ...
-        '  labels rebuilt %d/%d (not rebuilt %d); approach documents removed %d\n' ...
-        '  treatment manipulations found %d: superseded %d, kept (no run) %d; part-subjects superseded %d\n' ...
-        '  minted %d (folded %d, quarantined %d); re-attributed %d; removed %d; removals withheld %d\n'], ...
-        r.v1_documents_read, r.migrated_documents_read, r.epoch_index_entries, ...
-        r.stimulators, r.slice_bath_stimulators, r.stimulators_not_a_slice_bath, ...
-        r.stimulators_animal_mismatch, r.slices, r.new_animals, ...
-        r.epochs_on_a_nested_date, r.new_animal_strain_assertions_copied, ...
-        r.epoch_statements_examined, r.epoch_statements_matched, r.epoch_statements_unmatched, ...
-        r.unanchored_statements_examined, r.unanchored_statements_matched, ...
-        r.unanchored_statements_ambiguous, r.element_relations_examined, ...
-        r.element_relations_matched, r.element_relations_ambiguous, ...
-        r.approach_labels, r.runs_examined, r.runs_refused_not_a_clean_switch, ...
-        r.runs_refused_no_epoch_document, r.runs_refused_no_gap, ...
-        r.tetanus_manipulations, r.tetanus_on_new_animal, r.tetanus_with_target_region, ...
-        r.tetanus_without_target_region, r.tetanus_with_parameters, r.tetanus_without_parameters, ...
-        r.labels_rebuilt, r.approach_labels, r.labels_not_rebuilt, r.approach_labels_removed, ...
-        r.treatment_manipulations_found, r.treatment_manipulations_superseded, ...
-        r.treatment_manipulations_kept_no_run, r.treatment_part_subjects_superseded, ...
-        r.documents_minted, r.minted_folded, r.minted_quarantined, ...
-        r.documents_reattributed, r.documents_removed, r.removals_withheld_still_referenced);
-    cls = fieldnames(r.reattributed_by_class);
-    for k = 1:numel(cls)
-        fprintf('    re-attributed %-28s %d\n', cls{k}, r.reattributed_by_class.(cls{k}));
-    end
 end
 
 function [convertResult, report] = resolveRecordingAttribution(convertResult, options)
