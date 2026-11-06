@@ -12,6 +12,12 @@ classdef ScriptedJob < ndi.job.Job
         Kind = 'test.scripted'
     end
 
+    properties (Transient)
+        % Resuming, count from 0 again and then jump to what was done,
+        % as makePyramid does.
+        RecountOnResume = false
+    end
+
     methods (Static)
         function job = create(beats, outcome)
             arguments
@@ -76,6 +82,13 @@ classdef ScriptedJob < ndi.job.Job
                 first = obj.checkpoint.reached + 1;
             end
             n = obj.spec.beats;
+            if obj.RecountOnResume && first > 1
+                % As makePyramid does on a resume: from 0, then a jump to
+                % what is already done.
+                obj.beat(0, 'recounting');
+                obj.setCheckpoint('shownWhileRecounting', obj.progress);
+                obj.beat((first - 1) / n, 'found what was done');
+            end
             for k = first:n
                 obj.setCheckpoint('reached', k);
                 obj.beat(k / n, sprintf('step %d of %d', k, n));

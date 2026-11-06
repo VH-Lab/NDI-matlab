@@ -89,6 +89,8 @@ classdef Job < handle
     properties (Access = private, Transient)
         lastSaved = []
         beats = 0
+        catchingUp = false   % a resumed run not yet back where it was
+        runBegan = []        % tic when this run began
         lastPaneRefresh = []
     end
 
@@ -123,6 +125,8 @@ classdef Job < handle
             obj.message = 'Starting...';
             obj.runStarted = ndi.job.Job.now();
             obj.runStartProgress = obj.progress;
+            obj.catchingUp = obj.progress > 0;
+            obj.runBegan = tic;
             obj.beats = 0;
             obj.save();
             obj.refreshPane(true);
@@ -168,9 +172,26 @@ classdef Job < handle
         %   if a pause was requested. Pass it as a progress callback.
             if nargin < 3, text = ''; end
             fraction = max(0, min(1, double(fraction)));
-            if fraction < obj.runStartProgress
+            if fraction >= obj.runStartProgress
+                if obj.catchingUp && fraction == obj.runStartProgress
+                    % Still where it resumed ("asking the cloud what it
+                    % already has..."): the pace starts from here.
+                    obj.runStarted = ndi.job.Job.now();
+                else
+                    obj.catchingUp = false;
+                end
+            elseif obj.catchingUp && toc(obj.runBegan) < 1800
+                % A resumed run recounting what is already done (work
+                % often counts from 0 again, then jumps to where it was as
+                % it finds its earlier results): keep showing where it
+                % was, and start the pace from when it is back there, so
+                % the jump is not taken for speed.
+                obj.runStarted = ndi.job.Job.now();
+                fraction = obj.runStartProgress;
+            else
                 % Progress went back (the work counts differently than
                 % the run that saved it): pace this run from here.
+                obj.catchingUp = false;
                 obj.runStarted = ndi.job.Job.now();
                 obj.runStartProgress = fraction;
             end

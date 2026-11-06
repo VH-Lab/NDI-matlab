@@ -261,6 +261,20 @@ classdef TestJob < matlab.unittest.TestCase
             testCase.verifyEqual(rows{1, 4}, '4m');
         end
 
+        function testAResumeThatRecountsKeepsItsPlace(testCase)
+            job = ndi.test.helper.ScriptedJob.create(10);
+            job.PauseAfterBeats = 4;
+            job.run();
+            again = ndi.job.Job.load(job.id);
+            again.RecountOnResume = true;
+            again.run();
+            testCase.verifyEqual(again.state, 'done');
+            testCase.verifyEqual(again.checkpoint.shownWhileRecounting, 0.4, 'AbsTol', 1e-12, ...
+                'not 0% while the work recounts what it had done');
+            testCase.verifyEqual(again.runStartProgress, 0.4, 'AbsTol', 1e-12, ...
+                'the jump back to 40% is not taken for progress');
+        end
+
         function testProgressThatGoesBackRestartsThePace(testCase)
             job = ndi.test.helper.ScriptedJob.create(2);
             job.pretendPace(0.5, 0.6, 600);
