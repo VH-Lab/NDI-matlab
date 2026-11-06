@@ -205,7 +205,8 @@ classdef TestOntologyLabelSubjects < matlab.unittest.TestCase
             % [ontologyLabel row split] (Jess Haley, 2026-10-27, did-schema
             % V_eta_go_forward_class_audit.md): a field outside NDI's
             % `ontologyLabel` template, or an edge other than `document_id`,
-            % is carried under carry-100 (malformed), not carry-095. The
+            % is carried under carry-100 (malformed), not under the
+            % ontologyLabel template-field row (retired 2026-11-06). The
             % template (ontologyLabel.json at the locked NDI-matlab main) has
             % one field, `ontologyNode`, and one edge, `document_id`. Both
             % the stray field and the stray edge.

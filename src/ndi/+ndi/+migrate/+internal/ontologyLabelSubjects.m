@@ -314,18 +314,22 @@ for i = 1:numel(labelIdx)
     % field or edge is left as it is (carried as v1 at the end of
     % ndi.migrate.local), counted here.
     %
-    % ITS ROW IS carry-100, NOT carry-095. [ontologyLabel row split] (Jess
-    % Haley, 2026-10-27, did-schema V_eta_go_forward_class_audit.md): "a
-    % field outside NDI's `ontologyLabel` template, or an edge other than
-    % `document_id`, is carried under carry-100 (malformed); carry-095 keeps
-    % only template fields with no home". The template at the locked NDI-matlab
+    % ITS ROW IS carry-100, NOT THE ontologyLabel TEMPLATE-FIELD ROW.
+    % [ontologyLabel row split] (Jess Haley, 2026-10-27, did-schema
+    % V_eta_go_forward_class_audit.md): a field outside NDI's `ontologyLabel`
+    % template, or an edge other than `document_id`, is carried under
+    % carry-100 (malformed); the ontologyLabel template-field row kept only
+    % template fields with no home. That row was retired by Jess Haley's
+    % decision of 2026-11-06 retiring the image-label and ontologyLabel carry
+    % rows (did-schema did_v2_go_forward_class_audit.md; its tag names the two
+    % row ids). The template at the locked NDI-matlab
     % main (ontologyLabel.json + base.json) has ONE label field, `ontologyNode`,
     % and ONE edge, `document_id`, and the
     % observation writes both. So everything labelHasUnplaced finds -- another
     % label field, or another edge (the `session_id` edge the migration adds
     % is not one) -- is outside the template, and no template field of a
-    % label is left without a home here: carry-095 has no site in this pass,
-    % as it has none in DID-matlab's +migrators_j/ontology_label.m.
+    % label is left without a home here: that retired row never had a site
+    % in this pass, as it had none in DID-matlab's +migrators_j/ontology_label.m.
     if labelHasUnplaced(b)
         % carry-register: carry-100
         report.unresolved_unplaced_fields = ...
