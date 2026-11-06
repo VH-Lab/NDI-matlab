@@ -1,4 +1,4 @@
-function m = docsById(S, ids)
+function m = docsById(S, ids, options)
 %DOCSBYID The session's documents with the ids IDS, read in a few searches.
 %
 %   M = ndi.vintage.docsById(SESSION, IDS) is a containers.Map from each id
