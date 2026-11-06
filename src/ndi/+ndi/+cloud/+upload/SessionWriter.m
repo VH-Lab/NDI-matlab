@@ -175,6 +175,11 @@ classdef SessionWriter < handle
         declaredUids
         retainedPaths
         replaceAtCommit = {}
+        % Cached files this writer wrote or downloaded itself (uid ->
+        % true), and documents whose older cached files have been checked
+        % against the cloud (docid -> true); see CHECKCACHEDCOPIES.
+        fresh
+        checkedDocs
     end
 
     methods
@@ -234,6 +239,8 @@ classdef SessionWriter < handle
             obj.fileUids = containers.Map('KeyType', 'char', 'ValueType', 'char');
             obj.declaredUids = containers.Map('KeyType', 'char', 'ValueType', 'any');
             obj.retainedPaths = containers.Map('KeyType', 'char', 'ValueType', 'any');
+            obj.fresh = containers.Map('KeyType', 'char', 'ValueType', 'logical');
+            obj.checkedDocs = containers.Map('KeyType', 'char', 'ValueType', 'logical');
 
             sessions = ndi.cloud.upload.SessionWriter.listSessions( ...
                 cloudDatasetId, 'Api', api);
@@ -368,6 +375,10 @@ classdef SessionWriter < handle
             end
             uid = obj.fileUids(key);
             p = fullfile(obj.cacheDir, uid);
+            if isfile(p) && ~isKey(obj.fresh, uid) && ~isKey(obj.checkedDocs, docId)
+                % Left by an earlier run (a resumed job): check it first.
+                obj.checkCachedCopies(docId);
+            end
             if ~isfile(p)
                 [ok, msg] = obj.api.downloadFile(obj.cloudDatasetId, uid, p);
                 if ~ok || ~isfile(p)
@@ -375,6 +386,7 @@ classdef SessionWriter < handle
                         'Could not download %s (%s) from the cloud: %s', ...
                         char(filename), uid, char(msg));
                 end
+                obj.fresh(uid) = true;
             end
             f = struct('fullpathfilename', p);
         end
@@ -1037,10 +1049,70 @@ classdef SessionWriter < handle
             end
         end
 
+        function checkCachedCopies(obj, docId)
+        % CHECKCACHEDCOPIES - the cached files of DOCID an earlier run left, against the cloud
+        %
+        %   A cached file this writer did not write is from an earlier run
+        %   of a resumed job. A power cut can leave such a file present but
+        %   short (macOS may not have written its bytes yet), and a coarser
+        %   level built from it would be wrong without a word. So, once per
+        %   document, each one's size is compared with the size NDI Cloud
+        %   recorded for that uid (one lookup for many files); a file that
+        %   differs, or that the cloud does not have, is deleted, and is
+        %   downloaded when it is read.
+            obj.checkedDocs(docId) = true;
+            ks = keys(obj.fileUids);
+            ks = ks(startsWith(ks, [docId '|']));
+            uids = {};
+            sizes = [];
+            for i = 1:numel(ks)
+                u = obj.fileUids(ks{i});
+                pu = fullfile(obj.cacheDir, u);
+                if ~isKey(obj.fresh, u) && isfile(pu)
+                    d = dir(pu);
+                    uids{end+1} = u; %#ok<AGROW>
+                    sizes(end+1) = d.bytes; %#ok<AGROW>
+                end
+            end
+            nBad = 0;
+            for s = 1:1000:numel(uids)
+                part = s:min(s + 999, numel(uids));
+                [ok, answer] = obj.api.lookupFiles(obj.cloudDatasetId, uids(part));
+                rows = [];
+                if ok && isstruct(answer) && isfield(answer, 'files')
+                    rows = answer.files;
+                end
+                rowUids = {};
+                if ~isempty(rows)
+                    rowUids = cellfun(@char, {rows.uid}, 'UniformOutput', false);
+                end
+                for i = part
+                    j = find(strcmp(rowUids, uids{i}), 1);
+                    good = ~isempty(j) && rows(j).uploaded && ...
+                        double(rows(j).size) == sizes(i);
+                    if good
+                        obj.fresh(uids{i}) = true;
+                    else
+                        % Unknown to the cloud, a lookup that failed, or
+                        % the wrong size: fetch it again when it is read.
+                        delete(fullfile(obj.cacheDir, uids{i}));
+                        nBad = nBad + 1;
+                    end
+                end
+            end
+            if nBad > 0
+                obj.say(['%d cached file(s) of %s from an earlier run did not match ' ...
+                    'the cloud; they will be downloaded when read.'], nBad, docId);
+            end
+        end
+
         function p = stage(obj, entry)
         % STAGE - put one file into the cache under its uid
+        %
+        %   A file already cached under the uid stays only if there is no
+        %   new one to take its place (one an earlier run left is replaced).
             p = fullfile(obj.cacheDir, entry.uid);
-            if isfile(p)
+            if isfile(p) && (strcmp(entry.path, p) || ~isfile(entry.path))
                 return
             end
             if ~isfile(entry.path)
@@ -1056,6 +1128,7 @@ classdef SessionWriter < handle
                 error('NDI:cloud:SessionWriter:stageFailed', ...
                     'Could not copy %s to %s: %s', entry.path, p, msg);
             end
+            obj.fresh(entry.uid) = true;
         end
 
         function say(obj, varargin)

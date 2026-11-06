@@ -488,6 +488,30 @@ classdef SessionWriterMockTest < matlab.unittest.TestCase
                 'adopting does not upload the document again');
         end
 
+        function testACachedCopyAPowerCutShortenedIsFetchedAgain(testCase)
+            % A resumed job reads a retained level from the cache an
+            % earlier run left. One file there was cut short (power cut):
+            % it does not match the cloud's size, so it is downloaded.
+            W = testCase.writer('KeepLocalCopies', true);
+            testCase.addTeardown(@() rmdirIfThere(W.cacheDir));
+            [d, bytes] = testCase.seriesDoc(W, testCase.subjectId, 2);
+            W.declare(d);
+            locs = d.document_properties.files.series_info(1).ingest_locations;
+            W.streamMembers(d, 'chunk.bin', [locs.index], {locs.location}, true);
+            W.commit();
+            short = fullfile(W.cacheDir, locs(1).uid);
+            fid = fopen(short, 'w');
+            fwrite(fid, uint8(1:3));
+            fclose(fid);
+
+            W2 = testCase.writer('CacheDir', W.cacheDir, 'KeepLocalCopies', true);
+            W2.adopt(d);
+            for i = 1:2
+                f = W2.database_openbinarydoc(d, sprintf('chunk.bin_%d', locs(i).index));
+                testCase.verifyEqual(readBytes(f.fullpathfilename), bytes{locs(i).index});
+            end
+        end
+
         function testOnUploadSeesEachDocument(testCase)
             seen = {};
             function record(doc)
