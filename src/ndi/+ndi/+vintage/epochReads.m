@@ -2,9 +2,11 @@ function out = epochReads(what, S, ids)
 %EPOCHREADS The anchors and statements of a set of migrated epochs, read once per epoch-table build.
 %
 %   ANCHORS = ndi.vintage.epochReads('anchors', SESSION, EPOCHENTITYIDS)
-%   is SESSION.database_search of the `relative_time_reference` documents
-%   whose `referent_id` names any of EPOCHENTITYIDS (a cellstr of epoch
-%   entity ids), in the database's order.
+%   is the `relative_time_reference` documents whose `referent_id` names any
+%   of EPOCHENTITYIDS (a cellstr of epoch entity ids), in the database's
+%   order, as LIGHT documents holding their referent_id edges and the
+%   value's clock and start / duration / end seconds (ndi.vintage.lightDocs),
+%   where the database can; else the full documents.
 %
 %   STATEMENTS = ndi.vintage.epochReads('statements', SESSION, ANCHORIDS)
 %   is the statements whose `time_reference_id` names any of ANCHORIDS, in
@@ -36,8 +38,17 @@ if hit
 end
 switch what
     case 'anchors'
-        out = S.database_search(ndi.query('', 'isa', 'relative_time_reference', '') & ...
-            ndi.vintage.edgeIn('referent_id', ids));
+        % light: the clock and the start / duration / end seconds archiveOf
+        % reads, and the referent edges the probe-map read files them by
+        q = ndi.query('', 'isa', 'relative_time_reference', '') & ...
+            ndi.vintage.edgeIn('referent_id', ids);
+        v = 'relative_time_reference.value.';
+        out = ndi.vintage.lightDocs(S, q, {[v 'clock.node'], [v 'clock.name'], ...
+            [v 'start.seconds'], [v 'duration.seconds'], [v 'end.seconds']}, ...
+            {'referent_id'}, 'relative_time_reference');
+        if ~iscell(out)
+            out = S.database_search(q);
+        end
     case 'statements'
         q = ndi.v2.isaQuery('statement') & ndi.vintage.edgeIn('time_reference_id', ids);
         names = {'time_reference_id', 'acquisition_channels_id', 'acquisition_system_id', ...
