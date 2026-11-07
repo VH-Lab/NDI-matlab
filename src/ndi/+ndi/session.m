@@ -474,6 +474,30 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
             end
         end % database_read_id()
 
+        function tf = database_has_id(ndi_session_obj, id)
+            % DATABASE_HAS_ID - is there a document of this session with an id?
+            %
+            % TF = DATABASE_HAS_ID(NDI_SESSION_OBJ, ID)
+            %
+            % True when DATABASE_READ_ID(NDI_SESSION_OBJ, ID) would return a
+            % document. On a v2 database it is answered from the documents
+            % table and its indexes without decoding the document
+            % (database_search_values with no paths); elsewhere by
+            % DATABASE_READ_ID. For ndi.element/id (Jess Haley, 2026-11-06:
+            % "Speed can't be slower than v1").
+            arguments
+                ndi_session_obj (1,1) ndi.session
+                id
+            end
+            rows = ndi_session_obj.database_search_values( ...
+                ndi.query('base.id', 'exact_string', char(id), ''), {});
+            if isstruct(rows)
+                tf = ~isempty(rows);
+                return;
+            end
+            tf = ~isempty(ndi_session_obj.database_read_id(id));
+        end % database_has_id()
+
         function edges = database_search_edges(ndi_session_obj, searchparameters, names)
             % DATABASE_SEARCH_EDGES - the named edges of the documents a search matches
             %
@@ -539,6 +563,37 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
             % VARARGIN: searchValues' name/value options ('AllElements')
             rows = db.db.searchValues(q2, paths, varargin{:});
         end % database_search_values()
+
+        function rows = database_search_json(ndi_session_obj, searchparameters, paths)
+            % DATABASE_SEARCH_JSON - parts of the documents a search matches, decoded but not rebuilt
+            %
+            % ROWS = DATABASE_SEARCH_JSON(NDI_SESSION_OBJ, SEARCHPARAMETERS, PATHS)
+            %
+            % For the documents DATABASE_SEARCH(SEARCHPARAMETERS) would return,
+            % in its order, a struct array with fields doc_id and values: a
+            % cell of the value at each dot-path in PATHS as jsondecode reads
+            % it from the stored document, without rebuilding the document
+            % (did2.database.sqlitedb/searchJson; its shapes are jsondecode's).
+            % ROWS is [] (not an empty struct) when the session's database
+            % cannot answer this way; the caller then searches as before. For
+            % readers that accept either shape (ndi.vintage.wiredDeviceString;
+            % Jess Haley, 2026-11-06: "Speed can't be slower than v1").
+            arguments
+                ndi_session_obj (1,1) ndi.session
+                searchparameters {mustBeA(searchparameters,{'ndi.query','did.query'})}
+                paths
+            end
+            rows = [];
+            db = ndi_session_obj.database;
+            if ~isa(db, 'ndi.database.implementations.database.did2sqlite') ...
+                    || ~ismethod(db.db, 'searchJson')
+                return;
+            end
+            inSession = ndi.query('base.session_id','exact_string',ndi_session_obj.id());
+            q2 = ndi.database.implementations.database.did2sqlite.toDid2Query( ...
+                searchparameters & inSession);
+            rows = db.db.searchJson(q2, paths);
+        end % database_search_json()
 
         function ndi_document_obj = database_search_with_dataset(ndi_session_obj, searchparameters)
             % DATABASE_SEARCH_WITH_DATASET - search this session's database, dataset documents included

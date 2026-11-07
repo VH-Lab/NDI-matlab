@@ -438,27 +438,19 @@ end
 % prefetchElementFields) read nothing of an entity but these fields and its
 % id (Jess Haley, 2026-11-06: "Speed can't be slower than v1"); a document of
 % another class is read whole (ndi.vintage.docsById 'LightClass').
-rigIds = {};
-entityIds = {};
-for i = 1:numel(statements)
-    st = statements{i};
-    for name = {'acquisition_channels_id', 'acquisition_system_id'}
-        rigIds{end+1} = st.dependency_value(name{1}, 'ErrorIfNotFound', 0); %#ok<AGROW>
-    end
-    for name = {'instrument_id', 'entity_id', 'subject_id'}
-        entityIds{end+1} = st.dependency_value(name{1}, 'ErrorIfNotFound', 0); %#ok<AGROW>
-    end
-end
-rigIds = rigIds(cellfun(@(x) ischar(x) && ~isempty(x), rigIds));
-entityIds = entityIds(cellfun(@(x) ischar(x) && ~isempty(x), entityIds));
+ed = statementEdges(statements);
+rigIds = [ed.ac, ed.sys];
+entityIds = [ed.el, ed.entity, ed.subject];
+rigIds = rigIds(~cellfun(@isempty, rigIds));
+entityIds = entityIds(~cellfun(@isempty, entityIds));
 cache = remember(cache, ndi.vintage.docsById(S, rigIds));
 cache = remember(cache, ndi.vintage.docsById(S, entityIds, 'LightPaths', ...
     {'entity.local_identifier', 'entity.name', 'entity.type.node', 'entity.type.name'}));
-ids = [rigIds, entityIds];
+ids = unique([rigIds, entityIds], 'stable');
 instruments = {};
 for i = 1:numel(statements)
-    el = statements{i}.dependency_value('instrument_id', 'ErrorIfNotFound', 0);
-    if ischar(el) && ~isempty(el) && isKey(cache.doc, el) && ~isempty(cache.doc(el))
+    el = ed.el{i};
+    if ~isempty(el) && isKey(cache.doc, el) && ~isempty(cache.doc(el))
         instruments{end+1} = cache.doc(el); %#ok<AGROW>
     end
 end
@@ -474,18 +466,49 @@ sysIds = sysIds(cellfun(@(x) ischar(x) && ~isempty(x), sysIds));
 cache = remember(cache, ndi.vintage.docsById(S, sysIds));
 % the wiring relations timed by the statements' anchors, filed by (probe,
 % system) for ndi.vintage.wiredDeviceString, in database order
-wiringAnchors = {};
+wiringAnchors = cell(1, numel(statements));
 for i = 1:numel(statements)
-    wiringAnchors = [wiringAnchors, ndi.v2.edgeIds(statements{i}.document_properties, ...
-        'time_reference_id')]; %#ok<AGROW>
+    wiringAnchors{i} = ndi.v2.edgeIds(statements{i}.document_properties, 'time_reference_id');
 end
-wiringAnchors = unique(wiringAnchors, 'stable');
+wiringAnchors = unique([{}, wiringAnchors{:}], 'stable');
 rels = {};
 if ~isempty(wiringAnchors)
-    rels = S.database_search(ndi.query('', 'isa', 'directed_relation', '') & ...
+    rels = wiringRelations(S, ndi.query('', 'isa', 'directed_relation', '') & ...
         ndi.vintage.edgeIn('time_reference_id', wiringAnchors));
 end
 cache.relations = ndi.vintage.wiringIndex(rels);
+end
+
+function rels = wiringRelations(S, q)
+% The wiring relations Q finds, in its order, holding what their readers use
+% (ndi.vintage.wiringIndex: the depends_on edges; wiredDeviceString: the
+% directed_relation's relation term and conditions), decoded from the stored
+% documents without rebuilding them (ndi.session/database_search_json). Each
+% reader reads only leaf values and takes a struct array or a cell, so
+% jsondecode's shapes read as the rebuilt ones do. The rebuild was most of a
+% document's read (NDI-matlab run 42334220421). Read whole where the
+% database cannot answer this way.
+rows = [];
+if ismethod(S, 'database_search_json')
+    rows = S.database_search_json(q, {'document_class.class_name', 'depends_on', ...
+        'directed_relation.relation', 'directed_relation.conditions'});
+end
+if ~isstruct(rows)
+    rels = S.database_search(q);
+    return;
+end
+rels = cell(1, numel(rows));
+for k = 1:numel(rows)
+    v = rows(k).values;
+    dep = v{2};
+    if isempty(dep); dep = struct('name', {}, 'value', {}); end
+    dr = struct();
+    if ~isempty(v{3}); dr.relation = v{3}; end
+    dr.conditions = v{4};
+    rels{k} = ndi.document(struct('base', struct('id', rows(k).doc_id), ...
+        'document_class', struct('class_name', char(v{1})), ...
+        'depends_on', {dep}, 'directed_relation', dr));
+end
 end
 
 function cache = remember(cache, found)
