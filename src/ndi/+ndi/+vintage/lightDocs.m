@@ -48,14 +48,61 @@ if ~isempty(edgeNames)
         if isKey(edgesOf, d); edgesOf(d) = [edgesOf(d), e]; else; edgesOf(d) = e; end
     end
 end
+% the paths split once: plain paths, and [*] paths grouped by their array
+plain = find(~contains(paths, '[*]'));
+plainParts = cellfun(@(x) strsplit(x, '.'), paths(plain), 'UniformOutput', false);
+arr = find(contains(paths, '[*]'));
+parentOf = cell(1, numel(arr));
+subParts = cell(1, numel(arr));
+for t = 1:numel(arr)
+    star = strfind(paths{arr(t)}, '[*]');
+    parentOf{t} = paths{arr(t)}(1:star(1) - 1);
+    subParts{t} = strsplit(paths{arr(t)}(star(1) + 4:end), '.');
+end
+[parents, ~, groupOf] = unique(parentOf, 'stable');
+parentParts = cellfun(@(x) strsplit(x, '.'), parents, 'UniformOutput', false);
 docs = cell(1, numel(rows));
 for k = 1:numel(rows)
-    cn = rows(k).values{1};
+    vals = rows(k).values;
+    cn = vals{1};
     if isempty(cn); cn = className; end
     p = struct('base', struct('id', rows(k).doc_id), ...
         'document_class', struct('class_name', cn));
-    for j = 1:numel(paths)
-        p = place(p, paths{j}, rows(k).values{j + 1}, options.AllElements);
+    for t = 1:numel(plain)
+        v = vals{plain(t) + 1};
+        if ~isempty(v)
+            p = setNested(p, plainParts{t}, v);
+        end
+    end
+    for g = 1:numel(parents)
+        members = find(groupOf == g);
+        lists = cell(1, numel(members));
+        n = 0;
+        for t = 1:numel(members)
+            v = vals{arr(members(t)) + 1};
+            if ~options.AllElements; v = {v}; end
+            lists{t} = v;
+            n = max(n, numel(v));
+        end
+        if n == 0; continue; end
+        % one element per index, every element with the same top fields
+        tops = unique(cellfun(@(x) x{1}, subParts(members), 'UniformOutput', false), 'stable');
+        template = cell2struct(cell(numel(tops), 1), tops, 1);
+        els = repmat(template, 1, n);
+        any_ = false(1, n);
+        for i = 1:n
+            el = template;
+            for t = 1:numel(members)
+                if i <= numel(lists{t}) && ~isempty(lists{t}{i})
+                    el = setNested(el, subParts{members(t)}, lists{t}{i});
+                    any_(i) = true;
+                end
+            end
+            els(i) = el;
+        end
+        last = find(any_, 1, 'last');
+        if isempty(last); continue; end
+        p = setNested(p, parentParts{g}, els(1:last));
     end
     if isKey(edgesOf, rows(k).doc_id)
         p.depends_on = edgesOf(rows(k).doc_id);
@@ -66,63 +113,16 @@ for k = 1:numel(rows)
 end
 end
 
-function p = place(p, path, v, allElements)
-% put value V at PATH in struct P; a missing value ('' or []) is left out
-star = strfind(path, '[*]');
-if isempty(star)
-    if isempty(v); return; end
-    parts = strsplit(path, '.');
-    p = setfield(p, parts{:}, v); %#ok<SFLD>
+function s = setNested(s, parts, v)
+% s.(parts{1}).(parts{2})... = v, creating structs on the way
+if isscalar(parts)
+    s.(parts{1}) = v;
     return;
 end
-parent = strsplit(path(1:star(1) - 1), '.');
-sub = strsplit(path(star(1) + 4:end), '.');
-if ~allElements
-    v = {v};
+if isfield(s, parts{1}) && isstruct(s.(parts{1})) && isscalar(s.(parts{1}))
+    sub = s.(parts{1});
+else
+    sub = struct();
 end
-arr = [];
-try
-    arr = getfield(p, parent{:}); %#ok<GFLD>
-catch
-end
-for i = 1:numel(v)
-    if isempty(v{i}); continue; end
-    if isempty(arr)
-        el = struct();
-    elseif numel(arr) >= i
-        el = arr(i);
-    else
-        el = struct();
-    end
-    el = setfield(el, sub{:}, v{i}); %#ok<SFLD>
-    if isempty(arr)
-        arr = el;
-        arr(i) = el;
-        if i > 1; arr(1:i-1) = repmat(emptyLike(el), 1, i - 1); end
-    else
-        [arr, el] = sameFields(arr, el);
-        arr(i) = el;
-    end
-end
-if ~isempty(arr)
-    p = setfield(p, parent{:}, arr); %#ok<SFLD>
-end
-end
-
-function e = emptyLike(s)
-e = s;
-f = fieldnames(s);
-for k = 1:numel(f); e.(f{k}) = []; end
-end
-
-function [a, b] = sameFields(a, b)
-% give struct array A and struct B the same fields (missing ones empty)
-fa = fieldnames(a); fb = fieldnames(b);
-for k = 1:numel(fb)
-    if ~isfield(a, fb{k}); [a.(fb{k})] = deal([]); end
-end
-for k = 1:numel(fa)
-    if ~isfield(b, fa{k}); b.(fa{k}) = []; end
-end
-b = orderfields(b, a);
+s.(parts{1}) = setNested(sub, parts(2:end), v);
 end

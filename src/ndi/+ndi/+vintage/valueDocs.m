@@ -12,22 +12,7 @@ function docs = valueDocs(S, q, paths, className)
 %   For readers that use nothing of a document but those fields and its id.
 %   Jess Haley, 2026-11-06: "Speed can't be slower than v1."
 
-docs = [];
-if ~ismethod(S, 'database_search_values')
-    return;
-end
-rows = S.database_search_values(q, paths);
-if ~isstruct(rows)
-    return;
-end
-docs = cell(1, numel(rows));
-for k = 1:numel(rows)
-    p = struct('base', struct('id', rows(k).doc_id), ...
-        'document_class', struct('class_name', className));
-    for j = 1:numel(paths)
-        parts = strsplit(paths{j}, '.');
-        p = setfield(p, parts{:}, rows(k).values{j}); %#ok<SFLD>
-    end
-    docs{k} = ndi.document(p);
-end
+% the same reader as ndi.vintage.lightDocs, with no edges (its class name is
+% the stored one, CLASSNAME only where the database gives none)
+docs = ndi.vintage.lightDocs(S, q, paths, {}, className);
 end
