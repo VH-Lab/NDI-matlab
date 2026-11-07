@@ -236,6 +236,49 @@ function docs = classCandidates(E, wantClass, ndi_element_obj)
 % value is WANTCLASS, in the assertions' (database) order; each candidate's
 % first class assertion is checked again by elementFields
 docs = {};
+% The candidates of WANTCLASS and their names and references are the same
+% for every element asked about in one call (ndi.vintage.elementFieldsScope,
+% open in getprobes and getelements), so they are read once per call: a
+% getprobes that adds probes asks once per new probe (NDI-matlab run
+% 42340066168).
+key = '';
+T = [];
+if ndi.vintage.elementFieldsScope('isopen')
+    key = ['cc|' char(E.id()) '|' wantClass];
+    [T, hit] = ndi.vintage.elementFieldsScope('get', key);
+    if ~hit; T = []; end
+end
+if isempty(T)
+    T = candidateTable(E, wantClass);
+    if ~isempty(key)
+        ndi.vintage.elementFieldsScope('put', key, T);
+    end
+end
+ids = T.ids;
+if isempty(ids)
+    return;
+end
+keep = true(1, numel(ids));
+for j = find(T.known)
+    keep(j) = strcmp(T.names{j}, ndi_element_obj.name) && sameReference(T.refs{j}, ndi_element_obj.reference);
+end
+ids = ids(keep);
+if isempty(ids)
+    return;
+end
+byId = ndi.vintage.docsById(E, ids);
+for i = 1:numel(ids)
+    d = byId(ids{i});
+    if ~isempty(d)
+        docs{end+1} = d; %#ok<AGROW>
+    end
+end
+end
+
+function T = candidateTable(E, wantClass)
+% the ids of the migrated element entities whose class assertion is
+% WANTCLASS, in order, and (where the text index answers) each one's name
+% and reference (KNOWN)
 q = ndi.v2.statementQuery('assertion', 'term') & ...
     ndi.v2.fieldQuery('statement.variable.name', 'exact_string', ...
         ndi.vintage.elementLabel('class'));
@@ -292,11 +335,14 @@ else
     end
 end
 if isempty(ids)
+    T = struct('ids', {{}}, 'known', false(1, 0), 'names', {{}}, 'refs', {{}});
     return;
 end
 % the candidates' name and local identifier from the text index, so only
 % one whose name and reference could match is read whole
-keep = true(1, numel(ids));
+known = false(1, numel(ids));
+names = repmat({''}, 1, numel(ids));
+refs = cell(1, numel(ids));
 for c = 1:200:numel(ids)
     part = c:min(c + 199, numel(ids));
     light = ndi.vintage.valueDocs(E, ndi.v2.anyOf(cellfun(@(i) ndi.query('base.id', ...
@@ -307,19 +353,10 @@ for c = 1:200:numel(ids)
     for j = part
         hit = find(strcmp(seen, ids{j}), 1);
         if isempty(hit); continue; end   % not found here: read whole below
-        [nm, rf] = localNameReference(light{hit});
-        keep(j) = strcmp(nm, ndi_element_obj.name) && sameReference(rf, ndi_element_obj.reference);
+        [names{j}, refs{j}] = localNameReference(light{hit});
+        known(j) = true;
     end
 end
-ids = ids(keep);
-if isempty(ids)
-    return;
+T = struct('ids', {ids}, 'known', known, 'names', {names}, 'refs', {refs});
 end
-byId = ndi.vintage.docsById(E, ids);
-for i = 1:numel(ids)
-    d = byId(ids{i});
-    if ~isempty(d)
-        docs{end+1} = d; %#ok<AGROW>
-    end
-end
-end
+
