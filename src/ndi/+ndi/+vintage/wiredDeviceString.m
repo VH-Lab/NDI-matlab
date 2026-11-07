@@ -36,7 +36,21 @@ if isfield(cache, 'relations') && isstruct(cache.relations)
     % database order -- what the search below finds, in the same order
     rels = {};
     key = [char(elId) char(0) char(sysId)];
-    if isKey(cache.relations.byPair, key)
+    if isfield(cache.relations, 'firstWiring')
+        % the first wiring relation of the pair timed by any of the anchors
+        % (ndi.vintage.wiringIndex): the only relation the loop below uses,
+        % since it skips every relation that is not a wiring one
+        first = Inf;
+        for a = 1:numel(anchors)
+            k3 = [key char(0) anchors{a}];
+            if isKey(cache.relations.firstWiring, k3)
+                first = min(first, cache.relations.firstWiring(k3));
+            end
+        end
+        if isfinite(first)
+            rels = cache.relations.docs(first);
+        end
+    elseif isKey(cache.relations.byPair, key)
         at = cache.relations.byPair(key);
         at = at(cellfun(@(t) any(ismember(t, anchors)), cache.relations.anchors(at)));
         rels = cache.relations.docs(at);
