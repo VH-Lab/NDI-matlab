@@ -404,7 +404,7 @@ if isempty(epochDocIds)
 end
 % the epoch entities are read only for their local identifier (localIdentifier)
 cache = remember(cache, ndi.vintage.docsById(S, epochDocIds, ...
-    'LightPaths', {'entity.local_identifier'}));
+    'LightPaths', {'entity.local_identifier'}, 'RawBlocks', {'base', 'entity'}));
 % the anchors onto each epoch, then the statements each anchor times. Each
 % epoch's statements are kept by their position in the one answer, so they
 % stay in the order its own search would have returned them.
@@ -445,7 +445,8 @@ rigIds = rigIds(~cellfun(@isempty, rigIds));
 entityIds = entityIds(~cellfun(@isempty, entityIds));
 cache = remember(cache, ndi.vintage.docsById(S, rigIds));
 cache = remember(cache, ndi.vintage.docsById(S, entityIds, 'LightPaths', ...
-    {'entity.local_identifier', 'entity.name', 'entity.type.node', 'entity.type.name'}));
+    {'entity.local_identifier', 'entity.name', 'entity.type.node', 'entity.type.name'}, ...
+    'RawBlocks', {'base', 'entity'}));
 ids = unique([rigIds, entityIds], 'stable');
 instruments = {};
 for i = 1:numel(statements)

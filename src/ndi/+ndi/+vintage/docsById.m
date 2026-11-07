@@ -117,8 +117,8 @@ if ~isfield(p, 'base') || ~isstruct(p.base)
     d = [];
     return;
 end
-if isfield(p, 'depends_on') && isempty(p.depends_on)
-    p.depends_on = struct('name', {}, 'value', {});
+if ~isfield(p, 'depends_on') || isempty(p.depends_on)
+    p.depends_on = struct('name', {}, 'value', {});   % none read, or none held
 end
 d = ndi.document(p);
 end
