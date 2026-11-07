@@ -21,6 +21,7 @@ function [s, cache] = wiredDeviceString(S, st, sysId, elId, cache, anchors)
 % channel type (variable the type's term, matrix its numbers). No relation:
 % the system's name alone (the row named no channels).
 s = '';
+memoKey = '';
 [sys, cache] = docById(S, sysId, cache);
 if isempty(sys)
     return;
@@ -58,6 +59,14 @@ if isfield(cache, 'relations') && isstruct(cache.relations)
             if isKey(cache.relations.firstWiring, k3)
                 first = min(first, cache.relations.firstWiring(k3));
             end
+        end
+        % the string depends only on the system and that relation: kept
+        % per call by both (the same wiring answers every row naming it)
+        memoKey = sprintf('ds|%s|%d', char(sysId), first);
+        if isfield(cache, 'wiringGroups') && isa(cache.wiringGroups, 'containers.Map') ...
+                && isKey(cache.wiringGroups, memoKey)
+            s = cache.wiringGroups(memoKey);
+            return;
         end
         if isfinite(first)
             rels = cache.relations.docs(first);
@@ -111,6 +120,9 @@ for r = 1:numel(rels)
 end
 if ~isempty(groups)
     s = [s ':' strjoin(groups, ';')];
+end
+if ~isempty(memoKey) && isfield(cache, 'wiringGroups') && isa(cache.wiringGroups, 'containers.Map')
+    cache.wiringGroups(memoKey) = s;
 end
 end
 
