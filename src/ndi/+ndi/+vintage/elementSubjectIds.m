@@ -29,7 +29,11 @@ if ~isempty(classFilter)
     q = q & ndi.query('term.value.name', 'contains_string', classFilter, '');
 end
 
-assertions = ndi_session_obj.database_search(q);
+% read for their entity edge only (ndi.vintage.edgeDocs), else the documents
+assertions = ndi.vintage.edgeDocs(ndi_session_obj, q, {'entity_id', 'subject_id'}, 'assertion');
+if ~iscell(assertions)
+    assertions = ndi_session_obj.database_search(q);
+end
 
 % Collect the subject ids, keeping FIRST-SEEN order. `unique` would sort,
 % and the caller's order would then depend on how ids happen to compare

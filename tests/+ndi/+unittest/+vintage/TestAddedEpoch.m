@@ -286,7 +286,7 @@ classdef TestAddedEpoch < matlab.unittest.TestCase
             % etaDocumentId, set only then) reads that entity back by id
             % (Jess Haley, 2026-11-06: "Speed can't be slower than v1").
             iV1 = strfind(src, 'ndi_element_obj.searchquery()');
-            iEta = strfind(src, 'classCandidates(E, wantClass)');
+            iEta = strfind(src, 'classCandidates(E, wantClass, ndi_element_obj)');
             testCase.verifyNotEmpty(iV1, ...
                 'elementDoc no longer runs the v1 searchquery at all');
             testCase.verifyNotEmpty(iEta, ...

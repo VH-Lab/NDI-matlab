@@ -50,9 +50,15 @@ lidsOf = containers.Map('KeyType', 'char', 'ValueType', 'any');
 entityIdsOf = containers.Map(epochIds, repmat({{}}, 1, numel(epochIds)));
 for c = 1:200:numel(epochIds)
     part = epochIds(c:min(c + 199, numel(epochIds)));
-    found = S.database_search(ndi.query('', 'isa', 'entity', '') & ...
+    q = ndi.query('', 'isa', 'entity', '') & ...
         ndi.v2.anyOf(cellfun(@(i) ndi.query('entity.local_identifier', 'exact_string', i, ''), ...
-            part, 'UniformOutput', false)) & inSession);
+            part, 'UniformOutput', false)) & inSession;
+    % read only for their id and local identifier: light documents from the
+    % database's text index where it can (ndi.vintage.valueDocs)
+    found = ndi.vintage.valueDocs(S, q, {'entity.local_identifier'}, 'entity');
+    if ~iscell(found)
+        found = S.database_search(q);
+    end
     for k = 1:numel(found)
         p = found{k}.document_properties;
         if ~isfield(p, 'entity') || ~isfield(p.entity, 'local_identifier'), continue; end
@@ -76,8 +82,9 @@ if lidsOf.Count == 0
 end
 
 % ---- the anchors onto them, filed by epoch ------------------------------
-anchors = S.database_search(ndi.query('', 'isa', 'relative_time_reference', '') & ...
-    ndi.vintage.edgeIn('referent_id', lidsOf.keys));
+% read once per epoch-table build, shared with ndi.vintage.ingestedEpochs
+% (ndi.vintage.epochReads)
+anchors = ndi.vintage.epochReads('anchors', S, lidsOf.keys);
 anchorRows = containers.Map(epochIds, repmat({[]}, 1, numel(epochIds)));
 lidsOfAnchor = containers.Map('KeyType', 'char', 'ValueType', 'any');
 for a = 1:numel(anchors)
@@ -98,10 +105,14 @@ systems = S.database_search(ndi.query('', 'isa', 'acquisition_system', '') & ...
 if isempty(systems) || isempty(anchors)
     return;
 end
-statements = S.database_search(ndi.v2.isaQuery('statement') & ...
-    ndi.vintage.edgeIn('time_reference_id', lidsOfAnchor.keys) & ...
-    ndi.v2.anyOf(cellfun(@(d) ndi.query('', 'depends_on', 'acquisition_system_id', d.id()), ...
-        systems, 'UniformOutput', false)));
+% every statement timed by these anchors (shared, light: edges only), kept
+% when it names one of this reader's systems -- the `depends_on
+% acquisition_system_id` test the search made, made in memory on the edges
+allStatements = ndi.vintage.epochReads('statements', S, lidsOfAnchor.keys);
+sysIds = cellfun(@(d) char(d.id()), systems, 'UniformOutput', false);
+keepSt = cellfun(@(st) any(ismember(ndi.vintage.edgeTargets(st, 'acquisition_system_id'), sysIds)), ...
+    allStatements);
+statements = allStatements(keepSt);
 statementRows = containers.Map(epochIds, repmat({[]}, 1, numel(epochIds)));
 lidsOfStatement = containers.Map('KeyType', 'char', 'ValueType', 'any');
 for i = 1:numel(statements)
@@ -125,8 +136,19 @@ if isempty(statements)
 end
 
 % ---- the bodies they own -----------------------------------------------
-bodies = S.database_search(ndi.query('', 'isa', 'data_body', '') & ...
-    ndi.vintage.edgeIn('owner_id', lidsOfStatement.keys));
+% light where the database can (ndi.vintage.lightDocs): the class, filename
+% and time dimension archiveOf reads, and the owner edges they are filed by.
+% Only the clocks and t0_t1 are read from what this returns
+% (ndi.daq.reader/ingested2epochs_t0t1_epochclock); a light body records no
+% files, so its member count reads 0.
+bq = ndi.query('', 'isa', 'data_body', '') & ndi.vintage.edgeIn('owner_id', lidsOfStatement.keys);
+bodies = ndi.vintage.lightDocs(S, bq, {'data_body.filename', ...
+    'data.dimensions[*].term.node', 'data.dimensions[*].term.name', ...
+    'data.dimensions[*].n', 'data.dimensions[*].chunk'}, {'owner_id'}, 'data_body', ...
+    'AllElements', true);
+if ~iscell(bodies)
+    bodies = S.database_search(bq);
+end
 bodyRows = containers.Map(epochIds, repmat({[]}, 1, numel(epochIds)));
 for b = 1:numel(bodies)
     mine = {};

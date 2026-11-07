@@ -315,6 +315,10 @@ classdef system < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice
             %
             % Returns the epoch table for NDI_DAQSYSTEM_OBJ
             %
+            % ONE CALL'S CACHE (ndi.vintage.elementFieldsScope): the
+            % navigator's probe maps and the reader's clocks read the same
+            % migrated anchors and statements once (ndi.vintage.epochReads)
+            scope = ndi.vintage.elementFieldsScope('open'); %#ok<NASGU>
             et = ndi_daqsystem_obj.filenavigator.epochtable;
             % The ingested epochs whose clock an mfdaq or image system reads
             % from its reader (EPOCHCLOCK_INGESTED, T0_T1_INGESTED): on a v2

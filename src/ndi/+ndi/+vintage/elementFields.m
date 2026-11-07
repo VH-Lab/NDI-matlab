@@ -177,7 +177,13 @@ if isempty(pieces)
         specimen = relationTarget(ndi_session_obj, docId, 'observes');
     end
 else
-    [specimen, viaObservation] = specimenOf(pieces.observationDocs);
+    if isfield(pieces, 'observationSpecimen')
+        % read as edges (ndi.vintage.prefetchElementFields)
+        specimen = pieces.observationSpecimen.entity;
+        viaObservation = pieces.observationSpecimen.found;
+    else
+        [specimen, viaObservation] = specimenOf(pieces.observationDocs);
+    end
     if isempty(specimen)
         specimen = parentOf(pieces.observesDocs);
     end

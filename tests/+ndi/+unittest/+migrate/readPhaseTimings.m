@@ -251,6 +251,21 @@ o = o(~frame(o));
 for k = 1:min(topN, numel(o))
     fprintf('        %9.2f %8d  %s\n', total(o(k)), calls(o(k)), names{o(k)});
 end
+% the children of the 20 largest functions (by TOTAL), each child of 0.05 s
+% or more: where each one's time goes
+fprintf('      [profile v2 %s] children of the 20 largest functions (s, calls):\n', phase);
+[~, o] = sort(total, 'descend');
+o = o(~frame(o));
+for k = 1:min(20, numel(o))
+    ch = ft(o(k)).Children;
+    if isempty(ch); continue; end
+    [~, co] = sort([ch.TotalTime], 'descend');
+    fprintf('        %9.2f  %s\n', total(o(k)), names{o(k)});
+    for j = co
+        if ch(j).TotalTime < 0.05; break; end
+        fprintf('                  -> %7.2f %8d  %s\n', ch(j).TotalTime, ch(j).NumCalls, names{ch(j).Index});
+    end
+end
 fprintf('      [profile v2 %s] top %d by SELF time (s, calls), with their callers:\n', phase, topN);
 [~, o] = sort(self, 'descend');
 for k = 1:min(topN, numel(o))

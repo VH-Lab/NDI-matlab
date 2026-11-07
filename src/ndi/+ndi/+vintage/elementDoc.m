@@ -91,8 +91,15 @@ E = ndi_element_obj.session;
 % than v1." If the document is gone, the searches below run as before.
 if isprop(ndi_element_obj, 'etaDocumentId') && ~isempty(ndi_element_obj.etaDocumentId) ...
         && strcmp(char(ndi_element_obj.etaDocumentId), char(ndi_element_obj.identifier))
-    byId = E.database_search(ndi.query('base.id', 'exact_string', ...
-        char(ndi_element_obj.identifier), ''));
+    % read by the documents table's key where the session can, with no
+    % query to compile (ndi.session/database_read_id)
+    if ismethod(E, 'database_read_id')
+        byId = E.database_read_id(char(ndi_element_obj.identifier));
+        if ~isempty(byId); byId = {byId}; else; byId = {}; end
+    else
+        byId = E.database_search(ndi.query('base.id', 'exact_string', ...
+            char(ndi_element_obj.identifier), ''));
+    end
     if isscalar(byId)
         doc = byId{1};
         vintage = 'V_eta';
@@ -126,8 +133,15 @@ wantClass = class(ndi_element_obj);
 % corpus equivalence check did not finish in five hours
 % (VH-Lab/NDI-matlab#785, run 41761142755).
 if ~isempty(ndi_element_obj.identifier)
-    byId = E.database_search(ndi.query('base.id', 'exact_string', ...
-        char(ndi_element_obj.identifier), ''));
+    % by the documents table's key where the session can (the answer the
+    % base.id search gives, ndi.session/database_read_id), else by search
+    if ismethod(E, 'database_read_id')
+        byId = E.database_read_id(char(ndi_element_obj.identifier));
+        if ~isempty(byId); byId = {byId}; else; byId = {}; end
+    else
+        byId = E.database_search(ndi.query('base.id', 'exact_string', ...
+            char(ndi_element_obj.identifier), ''));
+    end
     if isscalar(byId) && ndi.vintage.isEtaElement(byId{1}, E) && ...
             isThisElement(ndi.vintage.elementFields(byId{1}, E), ndi_element_obj, wantClass)
         doc = byId{1};
@@ -139,7 +153,7 @@ end
 % Only the entities with an element-class assertion naming this object's
 % class can match (isThisElement compares the class); the others are not
 % read. The order is the assertions' order, as elementSubjectDocs gives it.
-subjects = classCandidates(E, wantClass);
+subjects = classCandidates(E, wantClass, ndi_element_obj);
 matches = {};
 for i = 1:numel(subjects)
     % The name and reference are read from the entity document itself, as
@@ -224,24 +238,38 @@ end
 [name, reference] = ndi.vintage.elementNameReferenceApart(entityName, localId);
 end
 
-function docs = classCandidates(E, wantClass)
+function docs = classCandidates(E, wantClass, ndi_element_obj)
 % the migrated element entities with an `ndi element class` assertion whose
 % value is WANTCLASS, in the assertions' (database) order; each candidate's
 % first class assertion is checked again by elementFields
 docs = {};
-q = ndi.v2.statementQuery('assertion', 'term') & ...
-    ndi.v2.fieldQuery('statement.variable.name', 'exact_string', ...
-        ndi.vintage.elementLabel('class')) & ...
-    ndi.query('term.value.name', 'exact_string', wantClass, '');
-assertions = E.database_search(q);
-ids = {};
-for i = 1:numel(assertions)
-    sid = ndi.v2.edgeIds(ndi.v2.props(assertions{i}), 'entity_id');
-    if isempty(sid), continue; end
-    if ~any(strcmp(sid{1}, ids))
-        ids{end+1} = sid{1}; %#ok<AGROW>
+% The candidates of WANTCLASS and their names and references are the same
+% for every element asked about in one call (ndi.vintage.elementFieldsScope,
+% open in getprobes and getelements), so they are read once per call: a
+% getprobes that adds probes asks once per new probe (NDI-matlab run
+% 42340066168).
+key = '';
+T = [];
+if ndi.vintage.elementFieldsScope('isopen')
+    key = ['cc|' char(E.id()) '|' wantClass];
+    [T, hit] = ndi.vintage.elementFieldsScope('get', key);
+    if ~hit; T = []; end
+end
+if isempty(T)
+    T = candidateTable(E, wantClass);
+    if ~isempty(key)
+        ndi.vintage.elementFieldsScope('put', key, T);
     end
 end
+ids = T.ids;
+if isempty(ids)
+    return;
+end
+keep = true(1, numel(ids));
+for j = find(T.known)
+    keep(j) = strcmp(T.names{j}, ndi_element_obj.name) && sameReference(T.refs{j}, ndi_element_obj.reference);
+end
+ids = ids(keep);
 if isempty(ids)
     return;
 end
@@ -253,3 +281,89 @@ for i = 1:numel(ids)
     end
 end
 end
+
+function T = candidateTable(E, wantClass)
+% the ids of the migrated element entities whose class assertion is
+% WANTCLASS, in order, and (where the text index answers) each one's name
+% and reference (KNOWN)
+q = ndi.v2.statementQuery('assertion', 'term') & ...
+    ndi.v2.fieldQuery('statement.variable.name', 'exact_string', ...
+        ndi.vintage.elementLabel('class'));
+% From the indexes where the database can (no document decoded): each class
+% assertion's term and entity edge, and each candidate entity's name and
+% local identifier; only an entity whose name and reference could match is
+% read whole. Else the documents, as before.
+vals = [];
+edges = [];
+if ismethod(E, 'database_search_values') && ismethod(E, 'database_search_edges')
+    vals = E.database_search_values(q, {'term.value[*].name'});
+    if isstruct(vals)
+        edges = E.database_search_edges(q, {'entity_id', 'subject_id'});
+    end
+end
+ids = {};
+if isstruct(vals) && isstruct(edges)
+    want = containers.Map('KeyType', 'char', 'ValueType', 'logical');
+    for k = 1:numel(vals)
+        if strcmp(vals(k).values{1}, wantClass)
+            want(vals(k).doc_id) = true;
+        end
+    end
+    % each assertion's entity: its first entity_id, else its first subject_id
+    % (as ndi.v2.edgeIds reads it)
+    firstE = containers.Map('KeyType', 'char', 'ValueType', 'char');
+    firstS = containers.Map('KeyType', 'char', 'ValueType', 'char');
+    for k = 1:numel(edges)
+        d = edges(k).doc_id;
+        if strcmp(edges(k).name, 'entity_id') && ~isKey(firstE, d)
+            firstE(d) = edges(k).document_id;
+        elseif strcmp(edges(k).name, 'subject_id') && ~isKey(firstS, d)
+            firstS(d) = edges(k).document_id;
+        end
+    end
+    for k = 1:numel(vals)
+        d = vals(k).doc_id;
+        if ~isKey(want, d); continue; end
+        e = '';
+        if isKey(firstE, d); e = firstE(d); elseif isKey(firstS, d); e = firstS(d); end
+        if ~isempty(e) && ~any(strcmp(e, ids))
+            ids{end+1} = e; %#ok<AGROW>
+        end
+    end
+else
+    assertions = E.database_search(q & ...
+        ndi.query('term.value.name', 'exact_string', wantClass, ''));
+    for i = 1:numel(assertions)
+        sid = ndi.v2.edgeIds(ndi.v2.props(assertions{i}), 'entity_id');
+        if isempty(sid), continue; end
+        if ~any(strcmp(sid{1}, ids))
+            ids{end+1} = sid{1}; %#ok<AGROW>
+        end
+    end
+end
+if isempty(ids)
+    T = struct('ids', {{}}, 'known', false(1, 0), 'names', {{}}, 'refs', {{}});
+    return;
+end
+% the candidates' name and local identifier from the text index, so only
+% one whose name and reference could match is read whole
+known = false(1, numel(ids));
+names = repmat({''}, 1, numel(ids));
+refs = cell(1, numel(ids));
+for c = 1:200:numel(ids)
+    part = c:min(c + 199, numel(ids));
+    light = ndi.vintage.valueDocs(E, ndi.v2.anyOf(cellfun(@(i) ndi.query('base.id', ...
+        'exact_string', i, ''), ids(part), 'UniformOutput', false)), ...
+        {'entity.name', 'entity.local_identifier'}, 'entity');
+    if ~iscell(light); break; end
+    seen = cellfun(@(d) char(d.id()), light, 'UniformOutput', false);
+    for j = part
+        hit = find(strcmp(seen, ids{j}), 1);
+        if isempty(hit); continue; end   % not found here: read whole below
+        [names{j}, refs{j}] = localNameReference(light{hit});
+        known(j) = true;
+    end
+end
+T = struct('ids', {ids}, 'known', known, 'names', {names}, 'refs', {refs});
+end
+
