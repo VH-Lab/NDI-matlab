@@ -1,4 +1,4 @@
-function [s, cache] = wiredDeviceString(S, st, sysId, elId, cache)
+function [s, cache] = wiredDeviceString(S, st, sysId, elId, cache, anchors)
 %WIREDDEVICESTRING A migrated probe-map row's v1 devicestring, read from the
 %   statement's system and its probe's wiring relation.
 %
@@ -34,7 +34,11 @@ else
         cache.wiringGroups(['name|' char(sysId)]) = s;
     end
 end
-anchors = ndi.v2.edgeIds(st.document_properties, 'time_reference_id');
+if nargin < 6
+    % the statement's anchors (a caller that has read them passes them:
+    % ndi.vintage.ingestedEpochs, from one pass over each statement's edges)
+    anchors = ndi.v2.edgeIds(st.document_properties, 'time_reference_id');
+end
 if isempty(anchors)
     return;
 end

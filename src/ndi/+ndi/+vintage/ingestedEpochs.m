@@ -186,7 +186,8 @@ for i = 1:numel(statements)
     if ~isempty(acId)
         [devicestring, cache] = deviceString(S, acId, cache);
     else
-        [devicestring, cache] = ndi.vintage.wiredDeviceString(S, statements{i}, sysId, elId, cache);
+        [devicestring, cache] = ndi.vintage.wiredDeviceString(S, statements{i}, sysId, elId, ...
+            cache, ed.anchors{i});
     end
     key = strjoin({el.name, num2str(el.reference), el.type, devicestring, subjectString}, char(0));
     if any(strcmp(seen, key))
@@ -215,12 +216,16 @@ ed = struct();
 for f = 1:numel(fields)
     ed.(fields{f}) = repmat({''}, 1, n);
 end
+% and its anchors, as ndi.v2.edgeIds(..., 'time_reference_id') reads them:
+% every non-empty time_reference_id or time_reference_id_<digits> target
+ed.anchors = repmat({{}}, 1, n);
 for i = 1:n
     p = statements{i}.document_properties;
     if ~isfield(p, 'depends_on') || isempty(p.depends_on)
         continue;
     end
     dep = p.depends_on;
+    ed.anchors{i} = ndi.v2.edgeIds(p, 'time_reference_id');
     have = lower({dep.name});
     for f = 1:numel(names)
         m = find(strcmp(have, names{f}), 1);
