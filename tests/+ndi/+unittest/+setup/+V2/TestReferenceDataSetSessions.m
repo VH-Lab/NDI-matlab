@@ -13,25 +13,28 @@ classdef TestReferenceDataSetSessions < matlab.unittest.TestCase
 %   ndi.migrate.internal.datasetScope are ndi.unittest.migrate.
 %   TestReferenceDataSet.
 %
-%   Each test writes a small dataset with ndi.setup.V2.createDataset (as
-%   TestGenericDatasetEndToEnd): a session "day1", an organism stored with
-%   it, a Data Set "GRCm39" stored with it as DID-matlab +migrators_j/
-%   gene_list.m mints one, and the organism `derived_from` that Data Set;
-%   with or without the dataset entity the session is `included_in`.
+%   Each test writes a small did2 database with ndi.setup.V2.writeDocuments
+%   and calls ndi.v2.datasetSessions on it: a session "day1", an organism
+%   stored with it, a Data Set "GRCm39" stored with it as DID-matlab
+%   +migrators_j/gene_list.m mints one, and the organism `derived_from` that
+%   Data Set; with or without the dataset entity the session is
+%   `included_in`. Not through ndi.setup.V2.createDataset and
+%   ndi.dataset.dir: when they work out the dataset's id they too take every
+%   Data Set entity as the dataset, and open a dataset holding a reference
+%   Data Set with the wrong id (first CI run of this test, 2026-11-07).
 %
-%   Needs DID-matlab V2 and did-schema #88 on DID_SCHEMA_PATH.
-%
-%   UNVERIFIED: written without MATLAB; test-import-v2.yml is the first run.
+%   Needs DID-matlab V2 and did-schema #88 on DID_SCHEMA_PATH. Run by
+%   run-tests.yml (the whole suite).
 
     methods (Test)
         function testDatasetSessionsListsTheSessionOfTheRealDataset(testCase)
             needV2(testCase);
-            [dsDocs, sessDocs, id] = writableFixture(true);
-            ds = writeDataset(testCase, id, dsDocs, sessDocs);
-            [refs, ids] = ds.session_list();
-            testCase.verifyEqual(refs, {'day1'});
-            testCase.verifyEqual(ids, {id.session});
-            notes = ds.session_notes();
+            [docs, id] = writableFixture(true);
+            [db, folder] = writeDatabase(testCase, docs);
+            [sessions, notes] = ndi.v2.datasetSessions(db, id.dataset, folder, ...
+                'OpenLinked', false);
+            testCase.verifyEqual({sessions.entity_id}, {id.session});
+            testCase.verifyEqual({sessions.reference}, {'day1'});
             testCase.verifyTrue(startsWith(notes{1}, 'DENOMINATOR:'), notes{1});
             testCase.verifyTrue(contains(notes{1}, '1 ingested and 0 linked'), notes{1});
             testCase.verifyTrue(any(contains(notes, 'reference Data Set') & ...
@@ -45,14 +48,16 @@ classdef TestReferenceDataSetSessions < matlab.unittest.TestCase
             % listed. Taking the reference Data Set as the dataset would leave
             % the session out as "not included_in the dataset".
             needV2(testCase);
-            [dsDocs, sessDocs, id] = writableFixture(false);
-            ds = writeDataset(testCase, id, dsDocs, sessDocs);
-            [refs, ids] = ds.session_list();
-            testCase.verifyEqual(refs, {'day1'});
-            testCase.verifyEqual(ids, {id.session});
-            notes = ds.session_notes();
+            [docs, id] = writableFixture(false);
+            [db, folder] = writeDatabase(testCase, docs);
+            [sessions, notes] = ndi.v2.datasetSessions(db, id.dataset, folder, ...
+                'OpenLinked', false);
+            testCase.verifyEqual({sessions.entity_id}, {id.session});
+            testCase.verifyEqual({sessions.reference}, {'day1'});
             testCase.verifyTrue(any(contains(notes, 'no dataset document')), ...
                 strjoin(notes, newline));
+            testCase.verifyTrue(any(contains(notes, 'reference Data Set') & ...
+                contains(notes, id.reference)), strjoin(notes, newline));
             testCase.verifyFalse(any(contains(notes, 'not included_in the dataset')), ...
                 strjoin(notes, newline));
         end
@@ -76,9 +81,10 @@ if ~isempty(which('did2.schema.termIndex'))
 end
 end
 
-function [dsDocs, sessDocs, id] = writableFixture(withDataset)
+function [docs, id] = writableFixture(withDataset)
 % WITHDATASET: the dataset entity and the session's included_in it; without,
-% the dataset's database records the dataset as a session (createDataset)
+% the database holds no dataset entity (an import whose metadata stage did
+% not run)
 id.dataset = ndi.ido.unique_id();
 id.session = ndi.ido.unique_id();
 D = {'SessionId', id.dataset};
@@ -103,14 +109,20 @@ child = child(1);
 id.child = child{1}.base.id;
 derived = did2.build.directedRelation(id.child, id.reference, ...
     ndi.v2.vocabTerm('relation', 'derived_from'), S{:});
-sessDocs = [sessDocs, {ref}, child, {derived}];
+docs = [dsDocs, sessDocs, {ref}, child, {derived}];
 end
 
-function ds = writeDataset(testCase, id, dsDocs, sessDocs)
-root = tempname;
-mkdir(root);
-testCase.addTeardown(@() rmdir(root, 's'));
-ndi.setup.V2.createDataset(fullfile(root, 'dataset'), 'reference data set', id.dataset, ...
-    dsDocs, {sessDocs}, 'Progress', false);
-ds = ndi.dataset.dir(fullfile(root, 'dataset'));
+function [db, folder] = writeDatabase(testCase, docs)
+% DOCS written to a did2 database in a fresh folder, opened unscoped as
+% ndi.dataset does for ndi.v2.datasetSessions. Not through
+% ndi.setup.V2.createDataset / ndi.dataset.dir: those also take every Data
+% Set entity as the dataset when they work out the dataset's id.
+folder = tempname;
+ndiDir = fullfile(folder, '.ndi');
+mkdir(ndiDir);
+testCase.addTeardown(@() rmdir(folder, 's'));
+file = fullfile(ndiDir, ndi.database.implementations.database.did2sqlite.DEFAULTFILENAME());
+ndi.setup.V2.writeDocuments(file, docs, 'Progress', false);
+db = ndi.database.implementations.database.did2sqlite(ndiDir, 'reference data set', ...
+    'load', file);
 end

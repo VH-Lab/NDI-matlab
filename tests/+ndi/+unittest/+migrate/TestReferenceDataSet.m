@@ -19,7 +19,7 @@ classdef TestReferenceDataSet < matlab.unittest.TestCase
 %     - ndi.v2.datasetSessions (which `dataset` document a dataset's sessions
 %       are filed under): ndi.unittest.setup.V2.TestReferenceDataSetSessions,
 %       which writes a dataset and so needs DID-matlab V2 and a did-schema
-%       set (test-import-v2.yml runs it).
+%       set (run-tests.yml runs it).
 %
 %   The fixture, the shapes DID-matlab +migrators_j/gene_list.m and
 %   migrationRecord read: a dataset entity (its id is the dataset's session
@@ -28,8 +28,6 @@ classdef TestReferenceDataSet < matlab.unittest.TestCase
 %   `derived_from` that Data Set.
 %
 %   Pure struct logic: no database, schema or DID-matlab needed.
-%
-%   UNVERIFIED: written without MATLAB; CI is the first run.
 %
 %   Run with:  runtests('ndi.unittest.migrate.TestReferenceDataSet')
 
