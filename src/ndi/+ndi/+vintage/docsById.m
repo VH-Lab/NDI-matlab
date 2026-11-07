@@ -15,6 +15,7 @@ arguments
     ids
     options.LightPaths = {}     % read light documents of these paths (valueDocs)
     options.LightClass = 'entity'   % ... for documents of this class only
+    options.RawBlocks = {}      % read these top-level blocks as stored, not rebuilt (database_search_json)
 end
 
 m = containers.Map('KeyType', 'char', 'ValueType', 'any');
@@ -25,7 +26,14 @@ for c = 1:200:numel(ids)
     q = ndi.v2.anyOf(cellfun(@(i) ndi.query('base.id', 'exact_string', i, ''), ...
         part, 'UniformOutput', false));
     found = [];
-    if ~isempty(options.LightPaths)
+    if ~isempty(options.RawBlocks)
+        % 'RawBlocks': documents of LightClass made of these top-level
+        % blocks as jsondecode reads them from the stored document, not
+        % rebuilt (ndi.session/database_search_json); for a reader that
+        % reads leaf values and accepts either shape. Any other is read
+        % whole.
+        found = rawDocs(S, q, cellstr(options.RawBlocks), options.LightClass, part);
+    elseif ~isempty(options.LightPaths)
         % 'LightPaths': light documents holding only base.id and these text
         % fields, from the database's text index (ndi.vintage.valueDocs), for
         % a reader that needs nothing else; the documents where it cannot
@@ -58,5 +66,43 @@ for k = 1:numel(ids)
     if ~isKey(m, ids{k})
         m(ids{k}) = [];
     end
+end
+end
+
+function found = rawDocs(S, q, blocks, className, part)
+found = [];
+if ~ismethod(S, 'database_search_json')
+    return;
+end
+rows = S.database_search_json(q, [{'document_class'}, blocks]);
+if ~isstruct(rows)
+    return;
+end
+found = {};
+for k = 1:numel(rows)
+    v = rows(k).values;
+    dc = v{1};
+    if ~(isstruct(dc) && isfield(dc, 'class_name') && strcmp(char(dc.class_name), className))
+        continue;
+    end
+    p = struct('document_class', dc);
+    for b = 1:numel(blocks)
+        if ~isempty(v{b + 1}) || strcmp(blocks{b}, 'depends_on')
+            p.(blocks{b}) = v{b + 1};
+        end
+    end
+    if ~isfield(p, 'base') || ~isstruct(p.base)
+        continue;
+    end
+    if isempty(p.depends_on)
+        p.depends_on = struct('name', {}, 'value', {});
+    end
+    found{end+1, 1} = ndi.document(p); %#ok<AGROW>
+end
+got = cellfun(@(d) char(d.document_properties.base.id), found, 'UniformOutput', false);
+rest = part(~ismember(part, got));
+if ~isempty(rest)
+    found = [found; reshape(S.database_search(ndi.v2.anyOf(cellfun(@(i) ...
+        ndi.query('base.id', 'exact_string', i, ''), rest, 'UniformOutput', false))), [], 1)];
 end
 end
