@@ -410,7 +410,24 @@ cache = remember(cache, ndi.vintage.docsById(S, epochDocIds, ...
 % stay in the order its own search would have returned them.
 % read once per epoch-table build, shared with ndi.vintage.ingestedArchives
 % (ndi.vintage.epochReads); the statements as light documents (edges only)
-anchors = ndi.vintage.epochReads('anchors', S, epochDocIds);
+% The anchors are asked for onto every entity with the local identifier of
+% one of these epochs: the set ndi.vintage.ingestedArchives asks for next in
+% ndi.daq.system/buildepochtable, so the two share one read
+% (ndi.vintage.epochReads; two reads of each kind in run 42346955349). Only
+% the anchors onto EPOCHDOCIDS are used below.
+readIds = epochDocIds;
+lids = {};
+for e = 1:numel(epochDocIds)
+    if isKey(cache.doc, epochDocIds{e}) && ~isempty(cache.doc(epochDocIds{e}))
+        lids{end+1} = localIdentifier(cache.doc(epochDocIds{e}).document_properties); %#ok<AGROW>
+    end
+end
+same = ndi.vintage.entitiesByLocalId(S, lids(~cellfun(@isempty, lids)));
+if iscell(same)
+    readIds = unique([epochDocIds, cellfun(@(d) char(d.id()), reshape(same, 1, []), ...
+        'UniformOutput', false)], 'stable');
+end
+anchors = ndi.vintage.epochReads('anchors', S, readIds);
 epochsOfAnchor = containers.Map('KeyType', 'char', 'ValueType', 'any');
 for a = 1:numel(anchors)
     onto = ndi.vintage.edgeTargets(anchors{a}, 'referent_id');

@@ -55,15 +55,12 @@ entityIdsOf = containers.Map(epochIds, repmat({{}}, 1, numel(epochIds)));
 % (database) order, as an `or` of the local identifiers 200 at a time (1.48 s
 % of 9 searches in run 42342493540, profiled); where the index cannot
 % answer, light documents of that `or`, else the documents
-allEntities = ndi.vintage.valueDocs(S, ndi.query('', 'isa', 'entity', '') & inSession, ...
-    {'entity.local_identifier'}, 'entity');
-if iscell(allEntities)
-    allLids = cellfun(@(d) localId(d), allEntities, 'UniformOutput', false);
-end
+allEntities = ndi.vintage.entitiesByLocalId(S, epochIds);
 for c = 1:200:numel(epochIds)
     part = epochIds(c:min(c + 199, numel(epochIds)));
     if iscell(allEntities)
-        found = allEntities(ismember(allLids, part));
+        found = allEntities(ismember(cellfun(@(d) localId(d), allEntities, ...
+            'UniformOutput', false), part));
     else
         q = ndi.query('', 'isa', 'entity', '') & ...
             ndi.v2.anyOf(cellfun(@(i) ndi.query('entity.local_identifier', 'exact_string', i, ''), ...
