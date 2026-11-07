@@ -1,4 +1,4 @@
-function M = ingestedArchives(S, readerId, epochIds)
+function M = ingestedArchives(S, readerId, epochIds, options)
 %INGESTEDARCHIVES Many ingested epochs' clocks and extents, read in a few searches.
 %
 %   M = ndi.vintage.ingestedArchives(SESSION, READERID, EPOCHIDS) is a
