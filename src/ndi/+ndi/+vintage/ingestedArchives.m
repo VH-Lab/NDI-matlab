@@ -50,9 +50,15 @@ lidsOf = containers.Map('KeyType', 'char', 'ValueType', 'any');
 entityIdsOf = containers.Map(epochIds, repmat({{}}, 1, numel(epochIds)));
 for c = 1:200:numel(epochIds)
     part = epochIds(c:min(c + 199, numel(epochIds)));
-    found = S.database_search(ndi.query('', 'isa', 'entity', '') & ...
+    q = ndi.query('', 'isa', 'entity', '') & ...
         ndi.v2.anyOf(cellfun(@(i) ndi.query('entity.local_identifier', 'exact_string', i, ''), ...
-            part, 'UniformOutput', false)) & inSession);
+            part, 'UniformOutput', false)) & inSession;
+    % read only for their id and local identifier: light documents from the
+    % database's text index where it can (ndi.vintage.valueDocs)
+    found = ndi.vintage.valueDocs(S, q, {'entity.local_identifier'}, 'entity');
+    if ~iscell(found)
+        found = S.database_search(q);
+    end
     for k = 1:numel(found)
         p = found{k}.document_properties;
         if ~isfield(p, 'entity') || ~isfield(p.entity, 'local_identifier'), continue; end
