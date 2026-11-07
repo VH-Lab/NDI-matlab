@@ -489,6 +489,15 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
                 ndi_session_obj (1,1) ndi.session
                 id
             end
+            db = ndi_session_obj.database;
+            if isa(db, 'ndi.database.implementations.database.did2sqlite') ...
+                    && ismethod(db.db, 'sessionOfId')
+                % by key: the document's existence and the session
+                % database_read_id would check (did2.schema.cache.sessionIdOf)
+                [found, sid] = db.db.sessionOfId(char(id));
+                tf = found && strcmp(char(sid), char(ndi_session_obj.id()));
+                return;
+            end
             rows = ndi_session_obj.database_search_values( ...
                 ndi.query('base.id', 'exact_string', char(id), ''), {});
             if isstruct(rows)
@@ -594,6 +603,35 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
                 searchparameters & inSession);
             rows = db.db.searchJson(q2, paths);
         end % database_search_json()
+
+        function rows = database_read_json_ids(ndi_session_obj, ids, paths)
+            % DATABASE_READ_JSON_IDS - this session's documents by id, parts decoded but not rebuilt
+            %
+            % ROWS = DATABASE_READ_JSON_IDS(NDI_SESSION_OBJ, IDS, PATHS)
+            %
+            % For each id in IDS (each once, in order) whose document is in
+            % this session (the documents.session_id column, as a
+            % `base.session_id` search reads it), a row with fields doc_id,
+            % session_id and values: the value at each dot-path in PATHS as
+            % jsondecode reads it, not rebuilt (did2.database.sqlitedb/
+            % jsonById). Read by key, with no query to compile. ROWS is []
+            % when the session's database cannot answer this way.
+            arguments
+                ndi_session_obj (1,1) ndi.session
+                ids
+                paths
+            end
+            rows = [];
+            db = ndi_session_obj.database;
+            if ~isa(db, 'ndi.database.implementations.database.did2sqlite') ...
+                    || ~ismethod(db.db, 'jsonById')
+                return;
+            end
+            rows = db.db.jsonById(ids, paths);
+            if ~isempty(rows)
+                rows = rows(strcmp({rows.session_id}, char(ndi_session_obj.id())));
+            end
+        end % database_read_json_ids()
 
         function ndi_document_obj = database_search_with_dataset(ndi_session_obj, searchparameters)
             % DATABASE_SEARCH_WITH_DATASET - search this session's database, dataset documents included
