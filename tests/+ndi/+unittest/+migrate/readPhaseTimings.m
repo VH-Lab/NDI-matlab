@@ -81,11 +81,12 @@ for i = 1:numel(sids)
     rec = struct('id', sid, 'reference', '', 'v1', zeroPhases(PH), 'v2', zeroPhases(PH), ...
         'counts', struct(), 'errors', {{}});
     S1 = openAt(v1Root, sid);
-    [rec.v1, c1, e1, keys] = timePhases(S1, PH, options.MaxProbeEpochTables, {}, false, 0);
+    [rec.v1, c1, e1, keys] = timePhases(S1, PH, options.MaxProbeEpochTables, {}, ...
+        profileLabel(options.Profile, 'v1'), options.ProfileTop);
     clear S1
     S2 = openAt(v2Root, sid);
     rec.reference = char(S2.reference);
-    [rec.v2, c2, e2] = timePhases(S2, PH, Inf, keys, options.Profile, options.ProfileTop);
+    [rec.v2, c2, e2] = timePhases(S2, PH, Inf, keys, profileLabel(options.Profile, 'v2'), options.ProfileTop);
     clear S2
     rec.counts = struct('v1', c1, 'v2', c2);
     rec.errors = [strcat('v1: ', e1), strcat('v2: ', e2)];
@@ -222,9 +223,12 @@ end
 end
 
 function endPhase(doProfile, phase, topN)
-if ~doProfile
+% DOPROFILE is the side's label ('v1', 'v2') when profiling, else ''
+if isempty(doProfile) || isequal(doProfile, false)
     return;
 end
+side = 'v2';
+if ischar(doProfile); side = doProfile; end
 profile('off');
 info = profile('info');
 profile('clear');
@@ -245,7 +249,7 @@ names = {ft.FunctionName};
 % the test framework's frames are left out of the TOTAL list
 frame = contains(names, {'TestRunner', 'runtests', 'Plugin', 'command_', ...
     'Handler', 'TestRunStrategy', 'readPhaseTimings', 'TestMigrateLocalEta'});
-fprintf('      [profile v2 %s] top %d by TOTAL time (s, calls):\n', phase, topN);
+fprintf('      [profile %s %s] top %d by TOTAL time (s, calls):\n', side, phase, topN);
 [~, o] = sort(total, 'descend');
 o = o(~frame(o));
 for k = 1:min(topN, numel(o))
@@ -253,7 +257,7 @@ for k = 1:min(topN, numel(o))
 end
 % the children of the 20 largest functions (by TOTAL), each child of 0.05 s
 % or more: where each one's time goes
-fprintf('      [profile v2 %s] children of the 20 largest functions (s, calls):\n', phase);
+fprintf('      [profile %s %s] children of the 20 largest functions (s, calls):\n', side, phase);
 [~, o] = sort(total, 'descend');
 o = o(~frame(o));
 for k = 1:min(20, numel(o))
@@ -266,7 +270,7 @@ for k = 1:min(20, numel(o))
         fprintf('                  -> %7.2f %8d  %s\n', ch(j).TotalTime, ch(j).NumCalls, names{ch(j).Index});
     end
 end
-fprintf('      [profile v2 %s] top %d by SELF time (s, calls), with their callers:\n', phase, topN);
+fprintf('      [profile %s %s] top %d by SELF time (s, calls), with their callers:\n', side, phase, topN);
 [~, o] = sort(self, 'descend');
 for k = 1:min(topN, numel(o))
     fprintf('        %9.2f %8d  %s\n', self(o(k)), calls(o(k)), names{o(k)});
@@ -357,4 +361,11 @@ try
     if isfolder(d); rmdir(d, 's'); end
 catch
 end
+end
+
+function label = profileLabel(doProfile, side)
+% the side's label when profiling (both sides are profiled, so their
+% breakdowns can be compared), else ''
+label = '';
+if doProfile; label = side; end
 end
