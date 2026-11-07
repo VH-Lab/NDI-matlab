@@ -133,8 +133,15 @@ wantClass = class(ndi_element_obj);
 % corpus equivalence check did not finish in five hours
 % (VH-Lab/NDI-matlab#785, run 41761142755).
 if ~isempty(ndi_element_obj.identifier)
-    byId = E.database_search(ndi.query('base.id', 'exact_string', ...
-        char(ndi_element_obj.identifier), ''));
+    % by the documents table's key where the session can (the answer the
+    % base.id search gives, ndi.session/database_read_id), else by search
+    if ismethod(E, 'database_read_id')
+        byId = E.database_read_id(char(ndi_element_obj.identifier));
+        if ~isempty(byId); byId = {byId}; else; byId = {}; end
+    else
+        byId = E.database_search(ndi.query('base.id', 'exact_string', ...
+            char(ndi_element_obj.identifier), ''));
+    end
     if isscalar(byId) && ndi.vintage.isEtaElement(byId{1}, E) && ...
             isThisElement(ndi.vintage.elementFields(byId{1}, E), ndi_element_obj, wantClass)
         doc = byId{1};
