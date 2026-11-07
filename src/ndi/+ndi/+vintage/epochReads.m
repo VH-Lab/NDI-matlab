@@ -58,13 +58,49 @@ for k = 1:numel(sets)
         return;
     end
 end
-if ~isempty(sets) && ~isempty(getenv('NDI_PROFILE_READS'))
-    % diagnostics for the profiled corpus runs: why an earlier read did not answer
-    for k = 1:numel(sets)
-        fprintf('      [epochReads %s] miss: %d id(s) asked, %d read earlier, %d of the asked not among them\n', ...
-            what, numel(ids), numel(sets{k}.ids), nnz(~ismember(ids, sets{k}.ids)));
+% MOSTLY a superset: read only the ids it lacks, and answer with its
+% documents onto IDS followed by those -- when no document is in both. Then
+% every document belongs to one part, so each epoch's documents (all onto
+% it) come from one read, in that read's database order, which is all the
+% callers use (each files the answer by epoch). ingestedEpochs reads the
+% epochs that have a manifest and ingestedArchives every epoch of the
+% table: 1,579 and 1,604 of Dab's (run 42354072404). When a document is
+% in both, IDS is read whole.
+out = [];
+for k = 1:numel(sets)
+    missing = ids(~ismember(ids, sets{k}.ids));
+    if numel(missing) > numel(ids) / 2
+        continue;
     end
+    keep = unique(sets{k}.docOf(ismember(sets{k}.target, ids)));
+    old = reshape(sets{k}.out(keep), [], 1);
+    more = reshape(readKind(what, S, missing), [], 1);
+    oldIds = cellfun(@(d) char(d.id()), old, 'UniformOutput', false);
+    moreIds = cellfun(@(d) char(d.id()), more, 'UniformOutput', false);
+    if ~any(ismember(moreIds, oldIds))
+        out = reshape([old; more], 1, []);
+    end
+    break;
 end
+if ~iscell(out)
+    out = readKind(what, S, ids);
+end
+ndi.vintage.elementFieldsScope('put', key, out);
+if ndi.vintage.elementFieldsScope('isopen')
+    targets = cellfun(@(d) reshape(ndi.vintage.edgeTargets(d, edgeName), 1, []), out, ...
+        'UniformOutput', false);
+    docOf = zeros(1, 0);
+    if ~isempty(out)
+        docOf = repelem(1:numel(out), cellfun(@numel, targets));
+    end
+    sets{end+1} = struct('ids', {ids}, 'out', {out}, 'docOf', docOf, ...
+        'target', {[{}, targets{:}]});
+    ndi.vintage.elementFieldsScope('put', listKey, sets);
+end
+end
+
+function out = readKind(what, S, ids)
+% one read of WHAT for IDS
 switch what
     case 'anchors'
         % light: the clock and the start / duration / end seconds archiveOf
@@ -88,17 +124,5 @@ switch what
         end
     otherwise
         error('NDI:vintage:epochReads:badKind', 'Unknown read "%s".', what);
-end
-ndi.vintage.elementFieldsScope('put', key, out);
-if ndi.vintage.elementFieldsScope('isopen')
-    targets = cellfun(@(d) reshape(ndi.vintage.edgeTargets(d, edgeName), 1, []), out, ...
-        'UniformOutput', false);
-    docOf = zeros(1, 0);
-    if ~isempty(out)
-        docOf = repelem(1:numel(out), cellfun(@numel, targets));
-    end
-    sets{end+1} = struct('ids', {ids}, 'out', {out}, 'docOf', docOf, ...
-        'target', {[{}, targets{:}]});
-    ndi.vintage.elementFieldsScope('put', listKey, sets);
 end
 end
