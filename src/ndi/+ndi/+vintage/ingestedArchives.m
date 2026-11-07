@@ -35,6 +35,7 @@ arguments
     S
     readerId (1,:) char
     epochIds
+    options.ClocksOnly (1,1) logical = false
 end
 
 M = containers.Map('KeyType', 'char', 'ValueType', 'any');
@@ -48,14 +49,27 @@ inSession = ndi.query('base.session_id', 'exact_string', S.id(), '');
 % ---- the epochs: entity id -> the epoch ids (local identifiers) it is ----
 lidsOf = containers.Map('KeyType', 'char', 'ValueType', 'any');
 entityIdsOf = containers.Map(epochIds, repmat({{}}, 1, numel(epochIds)));
+% read only for their id and local identifier: every entity of the session
+% from the database's text index, in one search with no `or` to compile,
+% filtered here by local identifier -- the same documents, in the same
+% (database) order, as an `or` of the local identifiers 200 at a time (1.48 s
+% of 9 searches in run 42342493540, profiled); where the index cannot
+% answer, light documents of that `or`, else the documents
+allEntities = ndi.vintage.valueDocs(S, ndi.query('', 'isa', 'entity', '') & inSession, ...
+    {'entity.local_identifier'}, 'entity');
+if iscell(allEntities)
+    allLids = cellfun(@(d) localId(d), allEntities, 'UniformOutput', false);
+end
 for c = 1:200:numel(epochIds)
     part = epochIds(c:min(c + 199, numel(epochIds)));
-    q = ndi.query('', 'isa', 'entity', '') & ...
-        ndi.v2.anyOf(cellfun(@(i) ndi.query('entity.local_identifier', 'exact_string', i, ''), ...
-            part, 'UniformOutput', false)) & inSession;
-    % read only for their id and local identifier: light documents from the
-    % database's text index where it can (ndi.vintage.valueDocs)
-    found = ndi.vintage.valueDocs(S, q, {'entity.local_identifier'}, 'entity');
+    if iscell(allEntities)
+        found = allEntities(ismember(allLids, part));
+    else
+        q = ndi.query('', 'isa', 'entity', '') & ...
+            ndi.v2.anyOf(cellfun(@(i) ndi.query('entity.local_identifier', 'exact_string', i, ''), ...
+                part, 'UniformOutput', false)) & inSession;
+        found = ndi.vintage.valueDocs(S, q, {'entity.local_identifier'}, 'entity');
+    end
     if ~iscell(found)
         found = S.database_search(q);
     end
@@ -142,10 +156,20 @@ end
 % (ndi.daq.reader/ingested2epochs_t0t1_epochclock); a light body records no
 % files, so its member count reads 0.
 bq = ndi.query('', 'isa', 'data_body', '') & ndi.vintage.edgeIn('owner_id', lidsOfStatement.keys);
-bodies = ndi.vintage.lightDocs(S, bq, {'data_body.filename', ...
-    'data.dimensions[*].term.node', 'data.dimensions[*].term.name', ...
-    'data.dimensions[*].n', 'data.dimensions[*].chunk'}, {'owner_id'}, 'data_body', ...
-    'AllElements', true);
+if options.ClocksOnly
+    % 'ClocksOnly' (ndi.daq.reader/ingested2epochs_t0t1_epochclock reads
+    % each archive's epochclock and t0_t1 and nothing else): the bodies are
+    % read for their filename and owner only, which decide whether an epoch
+    % has an archive body; their n, chunk and members are left empty. The
+    % dimension terms are no sidecar path (one `[*]` level, then a block), so
+    % asking for them decoded every body: 6,416 in run 42342493540.
+    bodies = ndi.vintage.lightDocs(S, bq, {'data_body.filename'}, {'owner_id'}, 'data_body');
+else
+    bodies = ndi.vintage.lightDocs(S, bq, {'data_body.filename', ...
+        'data.dimensions[*].term.node', 'data.dimensions[*].term.name', ...
+        'data.dimensions[*].n', 'data.dimensions[*].chunk'}, {'owner_id'}, 'data_body', ...
+        'AllElements', true);
+end
 if ~iscell(bodies)
     bodies = S.database_search(bq);
 end
@@ -173,5 +197,15 @@ for e = 1:numel(epochIds)
     catch
         % ingestedArchive raises the same error; the caller asks it
     end
+end
+end
+
+function lid = localId(d)
+% an entity's local identifier as char, '' when it has none
+lid = '';
+p = d.document_properties;
+if isfield(p, 'entity') && isstruct(p.entity) && isfield(p.entity, 'local_identifier')
+    v = p.entity.local_identifier;
+    if ischar(v) || (isstring(v) && isscalar(v)); lid = char(v); end
 end
 end

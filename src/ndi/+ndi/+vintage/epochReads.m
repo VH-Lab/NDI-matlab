@@ -36,6 +36,26 @@ key = [what '|' char(S.id()) '|' strjoin(ids, ',')];
 if hit
     return;
 end
+% A read of a SUPERSET of IDS in this call answers too: its documents whose
+% edge (referent_id for anchors, time_reference_id for statements) names one
+% of IDS, in its (database) order -- the documents, in the order, a search
+% for IDS returns, since that search is the same filter on the same table.
+% ndi.vintage.ingestedArchives and ndi.vintage.ingestedEpochs ask for
+% different sets of one acquisition system's epochs (run 42342493540: two
+% reads of each kind, 2.2 s each, profiled).
+edgeName = 'referent_id';
+if strcmp(what, 'statements'); edgeName = 'time_reference_id'; end
+listKey = ['sets|' what '|' char(S.id())];
+[sets, hasSets] = ndi.vintage.elementFieldsScope('get', listKey);
+if ~hasSets; sets = {}; end
+for k = 1:numel(sets)
+    if all(ismember(ids, sets{k}.ids))
+        keep = cellfun(@(d) any(ismember(ndi.vintage.edgeTargets(d, edgeName), ids)), sets{k}.out);
+        out = sets{k}.out(keep);
+        ndi.vintage.elementFieldsScope('put', key, out);
+        return;
+    end
+end
 switch what
     case 'anchors'
         % light: the clock and the start / duration / end seconds archiveOf
@@ -61,4 +81,8 @@ switch what
         error('NDI:vintage:epochReads:badKind', 'Unknown read "%s".', what);
 end
 ndi.vintage.elementFieldsScope('put', key, out);
+if ndi.vintage.elementFieldsScope('isopen')
+    sets{end+1} = struct('ids', {ids}, 'out', {out});
+    ndi.vintage.elementFieldsScope('put', listKey, sets);
+end
 end
