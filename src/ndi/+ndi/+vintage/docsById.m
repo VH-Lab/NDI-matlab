@@ -13,8 +13,8 @@ function m = docsById(S, ids, options)
 arguments
     S
     ids
-    options.LightPaths = {}     % read light documents of these text paths (valueDocs)
-    options.LightClass = 'entity'
+    options.LightPaths = {}     % read light documents of these paths (valueDocs)
+    options.LightClass = 'entity'   % ... for documents of this class only
 end
 
 m = containers.Map('KeyType', 'char', 'ValueType', 'any');
@@ -30,6 +30,19 @@ for c = 1:200:numel(ids)
         % fields, from the database's text index (ndi.vintage.valueDocs), for
         % a reader that needs nothing else; the documents where it cannot
         found = ndi.vintage.valueDocs(S, q, cellstr(options.LightPaths), options.LightClass);
+        if iscell(found)
+            % only a document OF LightClass is answered light (its reader
+            % reads that class's fields); any other is read whole
+            isLight = cellfun(@(d) strcmp(char(d.document_properties.document_class.class_name), ...
+                options.LightClass), found);
+            found = found(isLight);
+            got = cellfun(@(d) char(d.document_properties.base.id), found, 'UniformOutput', false);
+            rest = part(~ismember(part, got));
+            if ~isempty(rest)
+                found = [found(:); reshape(S.database_search(ndi.v2.anyOf(cellfun(@(i) ...
+                    ndi.query('base.id', 'exact_string', i, ''), rest, 'UniformOutput', false))), [], 1)];
+            end
+        end
     end
     if ~iscell(found)
         found = S.database_search(q);

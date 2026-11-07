@@ -378,16 +378,28 @@ for e = 1:numel(epochDocIds)
     cache.statements(epochDocIds{e}) = statements(unique(rowsOf(epochDocIds{e})));
 end
 % the documents the statements name, by id: systems, channels, probes, subjects
-ids = {};
+% The probes and subjects are read light when they are entities: their
+% readers (localIdentifier; ndi.vintage.elementFields and
+% prefetchElementFields) read nothing of an entity but these fields and its
+% id (Jess Haley, 2026-11-06: "Speed can't be slower than v1"); a document of
+% another class is read whole (ndi.vintage.docsById 'LightClass').
+rigIds = {};
+entityIds = {};
 for i = 1:numel(statements)
     st = statements{i};
-    for name = {'acquisition_channels_id', 'acquisition_system_id', 'instrument_id', ...
-            'entity_id', 'subject_id'}
-        ids{end+1} = st.dependency_value(name{1}, 'ErrorIfNotFound', 0); %#ok<AGROW>
+    for name = {'acquisition_channels_id', 'acquisition_system_id'}
+        rigIds{end+1} = st.dependency_value(name{1}, 'ErrorIfNotFound', 0); %#ok<AGROW>
+    end
+    for name = {'instrument_id', 'entity_id', 'subject_id'}
+        entityIds{end+1} = st.dependency_value(name{1}, 'ErrorIfNotFound', 0); %#ok<AGROW>
     end
 end
-ids = ids(cellfun(@(x) ischar(x) && ~isempty(x), ids));
-cache = remember(cache, ndi.vintage.docsById(S, ids));
+rigIds = rigIds(cellfun(@(x) ischar(x) && ~isempty(x), rigIds));
+entityIds = entityIds(cellfun(@(x) ischar(x) && ~isempty(x), entityIds));
+cache = remember(cache, ndi.vintage.docsById(S, rigIds));
+cache = remember(cache, ndi.vintage.docsById(S, entityIds, 'LightPaths', ...
+    {'entity.local_identifier', 'entity.name', 'entity.type.node', 'entity.type.name'}));
+ids = [rigIds, entityIds];
 instruments = {};
 for i = 1:numel(statements)
     el = statements{i}.dependency_value('instrument_id', 'ErrorIfNotFound', 0);
