@@ -437,7 +437,7 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
             ndi_document_obj = ndi_session_obj.database.search(searchparameters&inSession);
         end % database_search();
 
-        function doc = database_read_id(ndi_session_obj, id)
+        function doc = database_read_id(ndi_session_obj, id, options)
             % DATABASE_READ_ID - the session's document with an id, read by its key
             %
             % DOC = DATABASE_READ_ID(NDI_SESSION_OBJ, ID)
@@ -450,20 +450,31 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
             % document of another session is []. For element lookups by id
             % (ndi.vintage.elementDoc; Jess Haley, 2026-11-06: "Speed can't
             % be slower than v1").
+            %
+            % DOC = DATABASE_READ_ID(..., 'AnySession', true) is the document
+            % with that id in this session's database whatever its session:
+            % the answer the session database's own search
+            % (ndi_session_obj.database.search, no session restriction) gives,
+            % as DATABASE_SEARCH_WITH_DATASET reads it first. On another
+            % database it is [] (the caller then searches).
             arguments
                 ndi_session_obj (1,1) ndi.session
                 id
+                options.AnySession (1,1) logical = false
             end
             doc = [];
             id = char(id);
             db = ndi_session_obj.database;
+            if options.AnySession && ~isa(db, 'ndi.database.implementations.database.did2sqlite')
+                return;
+            end
             if isa(db, 'ndi.database.implementations.database.did2sqlite')
                 try
                     d = db.db.get(id);
                 catch
                     return;   % no document with that id
                 end
-                if strcmp(char(did2.schema.cache.sessionIdOf(d.toStruct())), char(ndi_session_obj.id()))
+                if options.AnySession || strcmp(char(did2.schema.cache.sessionIdOf(d.toStruct())), char(ndi_session_obj.id()))
                     doc = ndi.database.internal.applyReadNormalization(d);
                 end
                 return;
