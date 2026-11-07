@@ -22,7 +22,13 @@ function b = ndi_install(directory, dependencies)
     %
     % B = NDI_INSTALL(PATHNAME, DEPENDENCIES)
     %
-    % If PATHNAME is blank, then the default pathway of [USERPATH filesep 'tools'] is used.
+    % If PATHNAME is blank, then the default pathway of [USERPATH filesep 'tools'] is used,
+    % unless NDI-matlab is already installed with NDI_INSTALL: then the folder that holds
+    % it is used, so an existing installation is updated where it is.
+    %
+    % To move an existing installation to another folder, use
+    % ndi.update.moveToolsFolder, or the "Tools folder..." button in the NDI
+    % preferences editor.
 
     b = git_embedded_assert;
 
@@ -39,6 +45,18 @@ function b = ndi_install(directory, dependencies)
 
     if isempty(directory)
         need_to_set_directory = 1;
+    end
+
+    % If NDI-matlab is already installed with ndi_install, update it where it
+    % is rather than installing a second copy in the default folder: the
+    % tools may have been installed elsewhere, or moved with
+    % ndi.update.moveToolsFolder.
+    existingInit = which('ndi_Init');
+    if need_to_set_directory && ~isempty(existingInit) && ...
+            exist(fullfile(fileparts(existingInit), '.git'), 'file')
+        directory = fileparts(fileparts(existingInit));
+        need_to_set_directory = 0;
+        disp(['NDI-matlab is already installed in ' directory '; updating it there.']);
     end
 
     if need_to_set_directory
