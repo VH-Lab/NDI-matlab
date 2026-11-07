@@ -259,6 +259,21 @@ classdef TestLightsheetManager < matlab.unittest.TestCase
             testCase.verifySubstring(why, 'no folder');
         end
 
+        function testSourceKindSaysWhyAllChannelsWontDo(testCase)
+            % An acquisition whose All_Channels NDR will not take: the
+            % dialog passes on NDR's reason, not "not a SmartSPIM".
+            testCase.assumeNotEmpty(which('ndr.format.smartspim.hasAllChannels'), ...
+                'NDR-matlab without SmartSPIM All_Channels support.');
+            parent = tempname;
+            mkdir(fullfile(parent, 'All_Channels'));
+            mkdir(fullfile(parent, 'Ex_561_Em_561F_Ch2'));
+            testCase.addTeardown(@() rmdir(parent, 's'));
+            [kind, why] = ndi.gui.app.LightsheetManager.sourceKind(parent);
+            testCase.verifyEqual(kind, '');
+            testCase.verifySubstring(why, 'All_Channels folder cannot be read');
+            testCase.verifySubstring(why, 'slices', 'NDR''s own reason (no slices found)');
+        end
+
         % -- what Add does ----------------------------------------------
 
         function testAddSubjectToThisSession(testCase)

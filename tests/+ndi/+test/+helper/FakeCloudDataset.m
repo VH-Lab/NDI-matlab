@@ -17,6 +17,12 @@ classdef FakeCloudDataset < handle
 %     CorruptAlways - uids whose every upload stores the wrong bytes
 %     RecordCrc     - false: report crc32 '' (compare size instead)
 %     FailAdd       - true: addDocument fails
+%     DeferSends    - true: a background send (startSend) stores its files
+%                     only when it is waited for, as a slow upload would
+%     FailSends     - true: a background send stores nothing and reports
+%                     failure, so the writer must send the files itself
+%     FailFirstSends - N: a background send does not store its first N
+%                     files, and reports them failed (as curl names them)
 
     properties
         DatasetId = 'aaaaaaaaaaaaaaaaaaaaaaaa'
@@ -26,8 +32,24 @@ classdef FakeCloudDataset < handle
         CorruptAlways = {}
         RecordCrc (1,1) logical = true
         FailAdd (1,1) logical = false
+        % Transient faults, for the retry paths: the next FailLookups calls
+        % to lookupFiles fail; with LoseAddReply the next addDocument
+        % stores the document but reports failure, as a lost reply would.
+        FailLookups (1,1) double = 0
+        LoseAddReply (1,1) logical = false
+        DeferSends (1,1) logical = false
+        FailSends (1,1) logical = false
+        FailFirstSends (1,1) double = 0
+        % The next RecordLate calls to lookupFiles report every file as
+        % not uploaded yet, as NDI Cloud does while it catches up.
+        RecordLate (1,1) double = 0
         singleUploads = 0
+        waitedFor = {}         % the uids each waitForFileUpload was asked about
         batchUploads = 0
+        backgroundSends = 0    % startSend calls
+        backgroundFiles = 0    % files those sends stored
+        zipSends = 0           % startZipSend calls (one zip each)
+        urlBatches = 0         % uploadURLs calls (many URLs each)
         addedJson = {}
     end
 
@@ -68,6 +90,11 @@ classdef FakeCloudDataset < handle
                 'addDocument', @(d, json) obj.addDocument(d, json), ...
                 'uploadSingleFile', @(d, uid, p) obj.uploadSingleFile(d, uid, p), ...
                 'uploadFileBatch', @(d, paths, bytes) obj.uploadFileBatch(d, paths, bytes), ...
+                'uploadURL', @(d, uid, crc) obj.uploadURL(d, uid, crc), ...
+                'startSend', @(urls, paths, crcs, uids, folder, n) ...
+                    obj.startSend(urls, paths, crcs, uids, folder, n), ...
+                'uploadURLs', @(d, uids, crcs, folder, n) obj.uploadURLs(d, uids, crcs, folder, n), ...
+                'startZipSend', @(d, uids, paths, folder) obj.startZipSend(d, uids, paths, folder), ...
                 'waitForFileUpload', @(d, uids, t) obj.waitForFileUpload(d, uids, t), ...
                 'lookupFiles', @(d, uids) obj.lookupFiles(d, uids), ...
                 'downloadFile', @(d, uid, p) obj.downloadFile(d, uid, p), ...
@@ -97,6 +124,11 @@ classdef FakeCloudDataset < handle
             obj.docs{end+1} = jsondecode(char(json));
             ok = true;
             answer = struct('id', 'fake');
+            if obj.LoseAddReply
+                obj.LoseAddReply = false;
+                ok = false;
+                answer = struct('message', 'connection reset (fake)');
+            end
         end
 
         function [ok, answer] = updateDocument(obj, ~, ndiId, json)
@@ -133,13 +165,76 @@ classdef FakeCloudDataset < handle
             msg = '';
         end
 
-        function [ok, answer] = waitForFileUpload(~, ~, ~, ~)
+        function [ok, url] = uploadURL(~, ~, uid, ~)
+            ok = true;
+            url = ['https://fake.invalid/upload/' char(uid)];
+        end
+
+        function [ok, urls, msg] = uploadURLs(obj, d, uids, crcs, ~, ~)
+            obj.urlBatches = obj.urlBatches + 1;
+            urls = cell(1, numel(uids));
+            for i = 1:numel(uids)
+                [~, urls{i}] = obj.uploadURL(d, uids{i}, crcs{i});
+            end
+            ok = true;
+            msg = '';
+        end
+
+        function sender = startZipSend(obj, ~, uids, paths, ~)
+        % As startSend (DeferSends and FailSends apply), but one zip.
+            obj.zipSends = obj.zipSends + 1;
+            sender = obj.startSend({}, paths, {}, uids, '', 1);
+            obj.backgroundSends = obj.backgroundSends - 1;
+        end
+
+        function sender = startSend(obj, ~, paths, ~, uids, ~, ~)
+        % A background send: a struct whose WAIT reports how it went.
+            obj.backgroundSends = obj.backgroundSends + 1;
+            if obj.FailSends
+                sender = struct('wait', @(varargin) obj.sendResult(false, uids));
+            elseif obj.FailFirstSends > 0
+                k = min(obj.FailFirstSends, numel(uids));
+                obj.finishSend(uids(k+1:end), paths(k+1:end));
+                sender = struct('wait', @(varargin) obj.sendResult(false, uids(1:k)));
+            elseif obj.DeferSends
+                sender = struct('wait', @(varargin) obj.finishSend(uids, paths));
+            else
+                obj.finishSend(uids, paths);
+                sender = struct('wait', @(varargin) obj.sendResult(true));
+            end
+        end
+
+        function [ok, msg, failed] = finishSend(obj, uids, paths)
+            for i = 1:numel(uids)
+                if isfile(paths{i})
+                    obj.store(char(uids{i}), char(paths{i}));
+                    obj.backgroundFiles = obj.backgroundFiles + 1;
+                end
+            end
+            [ok, msg, failed] = obj.sendResult(true);
+        end
+
+        function [ok, msg, failed] = sendResult(~, ok, failed)
+            % FAILED: the uids the send names as not sent.
+            msg = '';
+            if nargin < 3, failed = {}; end
+            if ~ok, msg = 'curl exited with status 7 (fake)'; end
+        end
+
+        function [ok, answer] = waitForFileUpload(obj, ~, uids, ~)
             % Uploads here are recorded at once; lookupFiles tells the rest.
+            obj.waitedFor{end+1} = cellstr(uids);
             ok = true;
             answer = struct('state', 'complete');
         end
 
         function [ok, answer] = lookupFiles(obj, ~, uids)
+            if obj.FailLookups > 0
+                obj.FailLookups = obj.FailLookups - 1;
+                ok = false;
+                answer = struct('message', 'network unreachable (fake)');
+                return
+            end
             uids = cellstr(uids);
             rows = struct('uid', {}, 'uploaded', {}, 'size', {}, 'crc32', {});
             missing = strings(1, 0);
@@ -156,6 +251,12 @@ classdef FakeCloudDataset < handle
                 end
                 rows(end+1, 1) = struct('uid', uids{i}, 'uploaded', true, ...
                     'size', d.bytes, 'crc32', crc); %#ok<AGROW>
+            end
+            if obj.RecordLate > 0
+                obj.RecordLate = obj.RecordLate - 1;
+                for i = 1:numel(rows)
+                    rows(i).uploaded = false;
+                end
             end
             ok = true;
             answer = struct('files', rows, 'missing', missing);

@@ -107,16 +107,27 @@ classdef SessionWriterMockTest < matlab.unittest.TestCase
                 'member paths are stripped, as a local session stores them');
         end
 
-        function testManyFilesGoInZipBatches(testCase)
-            W = testCase.writer('BulkThreshold', 2);
+        function testManyFilesGoInZipBatchesWithoutABackgroundSend(testCase)
+            W = testCase.writer('BulkThreshold', 2, 'ParallelUploads', 1);
             [d, ~] = testCase.seriesDoc(W, testCase.subjectId, 5);
             W.database_add(d);
             testCase.verifyEqual(testCase.cloud.batchUploads, 1);
             testCase.verifyEqual(testCase.cloud.singleUploads, 0);
         end
 
-        function testAWrongUploadIsSentAgain(testCase)
+        function testManyFilesStillGoInTheBackground(testCase)
+            % However many files a batch has, curl in the background beats
+            % a zip batch the build has to wait for.
             W = testCase.writer('BulkThreshold', 2);
+            [d, ~] = testCase.seriesDoc(W, testCase.subjectId, 5);
+            W.database_add(d);
+            testCase.verifyEqual(testCase.cloud.backgroundSends, 1);
+            testCase.verifyEqual(testCase.cloud.batchUploads, 0);
+            testCase.verifyEqual(testCase.cloud.singleUploads, 0);
+        end
+
+        function testAWrongUploadIsSentAgain(testCase)
+            W = testCase.writer('BulkThreshold', 2, 'ParallelUploads', 1);
             [d, bytes] = testCase.seriesDoc(W, testCase.subjectId, 3);
             bad = d.document_properties.files.series_info(1).ingest_locations(2);
             testCase.cloud.CorruptOnce = {bad.uid};
@@ -257,6 +268,264 @@ classdef SessionWriterMockTest < matlab.unittest.TestCase
             testCase.verifyEqual(stored{1}.base.name, 'first');
         end
 
+        % -- sending in the background -------------------------------------
+
+        function testASmallBatchIsSentInTheBackground(testCase)
+            testCase.cloud.DeferSends = true;
+            W = testCase.writer();
+            [d, bytes] = testCase.seriesDoc(W, testCase.subjectId, 2);
+            W.declare(d);
+            locs = d.document_properties.files.series_info(1).ingest_locations;
+            before = testCase.cloud.backgroundSends;
+            W.streamMembers(d, 'chunk.bin', locs(1).index, {locs(1).location});
+            testCase.verifyEqual(testCase.cloud.backgroundSends, before + 1);
+            testCase.verifyFalse(testCase.cloud.hasFile(locs(1).uid), ...
+                'streamMembers returns while the batch is still going up');
+            W.streamMembers(d, 'chunk.bin', locs(2).index, {locs(2).location});
+            testCase.verifyEqual(testCase.cloud.fileBytes(locs(1).uid), bytes{locs(1).index}, ...
+                'the batch is waited for when it is checked, at the next call');
+            r = W.commit();
+            testCase.verifyEqual(testCase.cloud.fileBytes(locs(2).uid), bytes{locs(2).index});
+            testCase.verifyEqual(testCase.cloud.singleUploads, 0, 'nothing sent one by one');
+            testCase.verifyEqual(r.resent, 0);
+        end
+
+        function testDocumentsStreamedInTurnDoNotWaitForEachOther(testCase)
+            % Level 0 and the level 1s, folded: each document's batch is
+            % checked at that document's next call, not at the next call.
+            testCase.cloud.DeferSends = true;
+            W = testCase.writer();
+            [a, ~] = testCase.seriesDoc(W, testCase.subjectId, 2);
+            [b, ~] = testCase.seriesDoc(W, testCase.subjectId, 2);
+            W.declare(a);
+            W.declare(b);
+            la = a.document_properties.files.series_info(1).ingest_locations;
+            lb = b.document_properties.files.series_info(1).ingest_locations;
+            W.streamMembers(a, 'chunk.bin', la(1).index, {la(1).location});
+            W.streamMembers(b, 'chunk.bin', lb(1).index, {lb(1).location});
+            testCase.verifyFalse(testCase.cloud.hasFile(la(1).uid), ...
+                'A''s batch keeps going up while B''s is started');
+            W.streamMembers(a, 'chunk.bin', la(2).index, {la(2).location});
+            testCase.verifyTrue(testCase.cloud.hasFile(la(1).uid), ...
+                'A''s batch is checked at A''s next call');
+            testCase.verifyFalse(testCase.cloud.hasFile(lb(1).uid));
+            W.streamMembers(b, 'chunk.bin', lb(2).index, {lb(2).location});
+            r = W.commit();
+            testCase.verifyEqual(r.documents, 2);
+            for L = {la, lb}
+                for i = 1:2
+                    testCase.verifyTrue(testCase.cloud.hasFile(L{1}(i).uid));
+                end
+            end
+        end
+
+        function testAFailedBackgroundSendIsSentOneByOne(testCase)
+            testCase.cloud.FailSends = true;
+            W = testCase.writer();
+            [d, bytes] = testCase.seriesDoc(W, testCase.subjectId, 3);
+            W.database_add(d);
+            locs = d.document_properties.files.series_info(1).ingest_locations;
+            for i = 1:numel(locs)
+                testCase.verifyEqual(testCase.cloud.fileBytes(locs(i).uid), bytes{locs(i).index});
+            end
+            testCase.verifyEqual(testCase.cloud.singleUploads, 4, ...
+                'the three members and the manifest, each sent again on its own');
+            r = W.commit();
+            testCase.verifyEqual(r.resent, 4);
+        end
+
+        function testAFileTheCloudRecordsLateIsCheckedLater(testCase)
+            % Sent fine, but not recorded yet when its batch is checked:
+            % the build is not held up, nothing is sent twice, and it is
+            % settled at a later check.
+            W = testCase.writer();
+            [d, bytes] = testCase.seriesDoc(W, testCase.subjectId, 2);
+            W.declare(d);
+            locs = d.document_properties.files.series_info(1).ingest_locations;
+            W.streamMembers(d, 'chunk.bin', locs(1).index, {locs(1).location});
+            testCase.cloud.RecordLate = 1;
+            W.streamMembers(d, 'chunk.bin', locs(2).index, {locs(2).location});
+            r = W.commit();
+            testCase.verifyEqual(testCase.cloud.singleUploads, 0, 'not sent again');
+            testCase.verifyEqual(r.resent, 0);
+            for i = 1:2
+                testCase.verifyEqual(testCase.cloud.fileBytes(locs(i).uid), bytes{locs(i).index});
+            end
+        end
+
+        function testAFileNeverRecordedIsSentAgainByCommit(testCase)
+            W = testCase.writer();
+            [d, ~] = testCase.seriesDoc(W, testCase.subjectId, 1);
+            W.declare(d);
+            locs = d.document_properties.files.series_info(1).ingest_locations;
+            W.streamMembers(d, 'chunk.bin', locs(1).index, {locs(1).location});
+            testCase.cloud.RecordLate = 2;   % the quick look, and the wait at commit
+            r = W.commit();
+            testCase.verifyEqual(testCase.cloud.singleUploads, 1, 'sent again once');
+            testCase.verifyEqual(r.resent, 1);
+        end
+
+        function testFilesCurlDidNotSendAreResentAtOnce(testCase)
+            % curl names the files it could not send: those are sent again
+            % straight away, without waiting out the cloud check for them.
+            testCase.cloud.FailFirstSends = 1;
+            W = testCase.writer();
+            [d, bytes] = testCase.seriesDoc(W, testCase.subjectId, 3);
+            W.database_add(d);
+            locs = d.document_properties.files.series_info(1).ingest_locations;
+            for i = 1:numel(locs)
+                testCase.verifyEqual(testCase.cloud.fileBytes(locs(i).uid), bytes{locs(i).index});
+            end
+            testCase.verifyEqual(testCase.cloud.singleUploads, 1, 'only the one curl named');
+            testCase.verifyEqual(W.commit().resent, 1);
+        end
+
+        function testOneParallelUploadSendsOneByOne(testCase)
+            W = testCase.writer('ParallelUploads', 1);
+            [d, ~] = testCase.seriesDoc(W, testCase.subjectId, 3);
+            W.database_add(d);
+            testCase.verifyEqual(testCase.cloud.backgroundSends, 0);
+            testCase.verifyEqual(testCase.cloud.singleUploads, 4);
+        end
+
+        function testParallelUploadsComesFromThePreference(testCase)
+            name = 'Cloud.Upload.Parallel_Uploads';
+            was = ndi.preferences.get(name);
+            testCase.addTeardown(@() ndi.preferences.set(name, was));
+            ndi.preferences.set(name, 1);
+            W = testCase.writer();
+            [d, ~] = testCase.seriesDoc(W, testCase.subjectId, 3);
+            W.database_add(d);
+            testCase.verifyEqual(testCase.cloud.backgroundSends, 0, ...
+                'the preference''s 1 means one by one');
+            testCase.verifyEqual(testCase.cloud.singleUploads, 4);
+        end
+
+        function testTheBatchsUploadURLsComeAtOnce(testCase)
+            W = testCase.writer();
+            [d, ~] = testCase.seriesDoc(W, testCase.subjectId, 3);
+            W.database_add(d);
+            testCase.verifyEqual(testCase.cloud.urlBatches, 1, 'one request for all four');
+            testCase.verifyGreaterThanOrEqual(W.timing.urls, 0);
+        end
+
+        function testABatchCanGoAsOneZip(testCase)
+            testCase.cloud.DeferSends = true;
+            W = testCase.writer('ZipBatches', true);
+            [d, bytes] = testCase.seriesDoc(W, testCase.subjectId, 2);
+            W.declare(d);
+            locs = d.document_properties.files.series_info(1).ingest_locations;
+            zipsBefore = testCase.cloud.zipSends;
+            W.streamMembers(d, 'chunk.bin', [locs.index], {locs.location});
+            testCase.verifyEqual(testCase.cloud.zipSends, zipsBefore + 1, 'the two chunks, one zip');
+            testCase.verifyFalse(testCase.cloud.hasFile(locs(1).uid), 'still going up');
+            W.commit();
+            for i = 1:numel(locs)
+                testCase.verifyEqual(testCase.cloud.fileBytes(locs(i).uid), bytes{locs(i).index});
+            end
+            testCase.verifyEqual(testCase.cloud.singleUploads, 0);
+        end
+
+        function testAStoredZipHoldsTheFilesUnderTheirNames(testCase)
+            folder = testCase.applyFixture(matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
+            a = fullfile(folder, 'a.bin'); b = fullfile(folder, 'b.bin');
+            fid = fopen(a, 'w'); fwrite(fid, zeros(1, 10000, 'uint8')); fclose(fid);
+            fid = fopen(b, 'w'); fwrite(fid, uint8(200:-1:1)); fclose(fid);
+            z = fullfile(folder, 'batch.zip');
+            ndi.cloud.upload.SessionWriter.writeStoredZip(z, {a, b}, {'uid_a', 'uid_b'});
+            out = fullfile(folder, 'out');
+            names = unzip(z, out);
+            testCase.verifyEqual(sort(cellfun(@(p) char(p(numel(out)+2:end)), names, ...
+                'UniformOutput', false)), {'uid_a', 'uid_b'});
+            testCase.verifyEqual(readBytes(fullfile(out, 'uid_a')), zeros(10000, 1, 'uint8'));
+            testCase.verifyEqual(readBytes(fullfile(out, 'uid_b')), uint8(200:-1:1)');
+            d = dir(z);
+            testCase.verifyGreaterThan(d.bytes, 10200, ...
+                'stored, not deflated (10000 zeros would deflate to almost nothing)');
+        end
+
+        % -- riding out failures ------------------------------------------
+
+        function testAFailingLookupIsRetried(testCase)
+            W = ndi.cloud.upload.SessionWriter(testCase.cloud.DatasetId, ...
+                testCase.sessionId, 'Api', testCase.cloud.api(), ...
+                'Verbose', false, 'RetrySeconds', 30);
+            [d, bytes] = testCase.seriesDoc(W, testCase.subjectId, 2);
+            testCase.cloud.FailLookups = 2;
+            W.database_add(d);   % would error without the retries
+            locs = d.document_properties.files.series_info(1).ingest_locations;
+            testCase.verifyEqual(testCase.cloud.fileBytes(locs(1).uid), bytes{locs(1).index});
+            testCase.verifyEqual(testCase.cloud.FailLookups, 0);
+        end
+
+        function testALostAddReplyMakesNoDuplicate(testCase)
+            W = ndi.cloud.upload.SessionWriter(testCase.cloud.DatasetId, ...
+                testCase.sessionId, 'Api', testCase.cloud.api(), ...
+                'Verbose', false, 'RetrySeconds', 30);
+            d = W.newdocument('base', 'base.name', 'once');
+            testCase.cloud.LoseAddReply = true;
+            W.declare(d);
+            found = testCase.cloud.findDocuments('', ndi.query('base.id', 'exact_string', d.id()));
+            testCase.verifyNumElements(found, 1, ...
+                'the retry asks whether the document arrived before sending it again');
+        end
+
+        function testAdoptAndMissingMembersForAResume(testCase)
+            W = testCase.writer();
+            [d, ~] = testCase.seriesDoc(W, testCase.subjectId, 3);
+            W.declare(d);
+            locs = d.document_properties.files.series_info(1).ingest_locations;
+            W.streamMembers(d, 'chunk.bin', locs(2).index, {locs(2).location});
+            W.streamMembers(d, 'chunk.bin', [], {});
+            % A new writer, as after a restart: the document is adopted, not re-sent.
+            W2 = testCase.writer();
+            W2.adopt(d);
+            missing = W2.missingMembers(d, 'chunk.bin');
+            testCase.verifyEqual(sort(missing), sort([locs([1 3]).index]));
+            W2.streamMembers(d, 'chunk.bin', [locs([1 3]).index], {locs([1 3]).location});
+            W2.commit();
+            testCase.verifyNumElements(testCase.cloud.docsOfClass('lightsheetZarrLevel'), 1, ...
+                'adopting does not upload the document again');
+        end
+
+        function testACachedCopyAPowerCutShortenedIsFetchedAgain(testCase)
+            % A resumed job reads a retained level from the cache an
+            % earlier run left. One file there was cut short (power cut):
+            % it does not match the cloud's size, so it is downloaded.
+            W = testCase.writer('KeepLocalCopies', true);
+            testCase.addTeardown(@() rmdirIfThere(W.cacheDir));
+            [d, bytes] = testCase.seriesDoc(W, testCase.subjectId, 2);
+            W.declare(d);
+            locs = d.document_properties.files.series_info(1).ingest_locations;
+            W.streamMembers(d, 'chunk.bin', [locs.index], {locs.location}, true);
+            W.commit();
+            short = fullfile(W.cacheDir, locs(1).uid);
+            fid = fopen(short, 'w');
+            fwrite(fid, uint8(1:3));
+            fclose(fid);
+
+            W2 = testCase.writer('CacheDir', W.cacheDir, 'KeepLocalCopies', true);
+            W2.adopt(d);
+            for i = 1:2
+                f = W2.database_openbinarydoc(d, sprintf('chunk.bin_%d', locs(i).index));
+                testCase.verifyEqual(readBytes(f.fullpathfilename), bytes{locs(i).index});
+            end
+        end
+
+        function testOnUploadSeesEachDocument(testCase)
+            seen = {};
+            function record(doc)
+                seen{end+1} = doc.id();
+            end
+            W = testCase.writer('OnUpload', @record);
+            a = W.newdocument('base');
+            b = W.newdocument('base');
+            W.database_add(a);
+            W.declare(b);
+            testCase.verifyEqual(seen, {a.id(), b.id()}, ...
+                'held documents go up before a declared one, and each is reported');
+        end
+
         function testTheSessionLabelsNameReferenceAndId(testCase)
             s = struct('session_id', {'id1', 'id2'}, 'session_reference', {'a', 'b'});
             testCase.verifyEqual(ndi.gui.app.LightsheetManager.sessionLabels(s), ...
@@ -266,9 +535,10 @@ classdef SessionWriterMockTest < matlab.unittest.TestCase
 
     methods
         function W = writer(testCase, varargin)
+            % No retries: these tests inject failures and want them at once.
             W = ndi.cloud.upload.SessionWriter(testCase.cloud.DatasetId, ...
                 testCase.sessionId, 'Api', testCase.cloud.api(), ...
-                'Verbose', false, varargin{:});
+                'Verbose', false, 'RetrySeconds', 0, 'ZipBatches', false, varargin{:});
         end
 
         function [d, bytes] = seriesDoc(testCase, W, subjectId, n)

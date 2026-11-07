@@ -48,6 +48,22 @@ classdef TestFromOMEZarr < matlab.unittest.TestCase
             testCase.verifyEqual(sort(info.reductions(:).'), {'max','mean'});
         end
 
+        function testTranslationsAreVoxelCorners(testCase)
+            % The store gives no translation: voxel 0's centre at 0. The
+            % documents record its corner, half a voxel back in z, y, x.
+            [pdoc, lds] = ndi.fun.doc.lightsheet.fromOMEZarr( ...
+                testCase.session, testCase.fixtureDir, ...
+                'subjectID', testCase.subjectID);
+            p = pdoc.document_properties.lightsheetZarrPyramid;
+            testCase.verifyEqual(reshape(double(p.translation_level0), 1, []), [0 -2 -2 -2]);
+            for i = 1:numel(lds)
+                L = lds{i}.document_properties.lightsheetZarrLevel;
+                scale = reshape(double(L.voxel_size), 1, []);
+                testCase.verifyEqual(reshape(double(L.translation), 1, []), ...
+                    [0, -scale(2:4) / 2], sprintf('level %d', L.level));
+            end
+        end
+
         function testMissingSubjectIDIsRefused(testCase)
             testCase.verifyError(@() ndi.fun.doc.lightsheet.fromOMEZarr( ...
                 testCase.session, testCase.fixtureDir), ...

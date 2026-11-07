@@ -152,6 +152,11 @@ classdef LightsheetManager < ndi.gui.app.sessionApp
                 shp = ndi.gui.app.LightsheetManager.field(p,'shape_level0',[]);
                 rows(k).shapeLevel0 = shp;
                 rows(k).dtype = ndi.gui.app.LightsheetManager.field(p,'dtype','');
+                try
+                    % One spelling for every pyramid ('<u2'), whatever wrote it.
+                    rows(k).dtype = ndi.fun.doc.lightsheet.dtypeName(rows(k).dtype, 'zarr');
+                catch
+                end
             end
         end
 
@@ -442,6 +447,25 @@ classdef LightsheetManager < ndi.gui.app.sessionApp
             catch ME
                 description = sprintf(['Could not read the folder (%s). ' ...
                     'Reading lightsheet images needs NDR-matlab.'], ME.message);
+                return
+            end
+            if isfolder(fullfile(folder, 'All_Channels'))
+                % It looks like a SmartSPIM acquisition, but NDR would not
+                % take its All_Channels: say why (no slices it recognizes,
+                % a channel missing, a listing that repeats files...).
+                why = '';
+                try
+                    ndr.format.smartspim.readAllChannelsInfo(folder, 'ReadHeader', false);
+                catch ME
+                    why = ME.message;
+                end
+                description = ['This SmartSPIM acquisition''s All_Channels ' ...
+                    'folder cannot be read'];
+                if isempty(why)
+                    description = [description '.'];
+                else
+                    description = sprintf('%s: %s', description, why);
+                end
                 return
             end
             description = ['Not a SmartSPIM acquisition or an OME-Zarr ' ...
@@ -1475,24 +1499,56 @@ classdef LightsheetManager < ndi.gui.app.sessionApp
                 if ~strcmp(ok, 'Add'), return; end
                 final = choices;
                 delete(d);
+                if strcmp(final.destination, 'cloud')
+                    obj.runCloudJob(final, plan);
+                    return
+                end
                 obj.setStatus(sprintf(['Adding %s to %s; progress is in the ' ...
                     'Command Window...'], final.sourcePath, plan.where));
                 drawnow;
                 try
-                    [~, ~, info] = ndi.gui.app.LightsheetManager.runAdd(obj.session, final);
+                    ndi.gui.app.LightsheetManager.runAdd(obj.session, final);
                 catch ME
                     obj.setStatus('Add failed; see the message.');
                     uialert(obj.fig, ME.message, 'Add failed');
                     return
                 end
-                if strcmp(final.destination, 'cloud')
+                obj.setStatus('Image added.');
+                obj.reload();
+            end
+        end
+
+        function runCloudJob(obj, choices, plan)
+        % RUNCLOUDJOB - add to the cloud as a job (ndi.job.LightsheetToCloud)
+        %
+        %   A job, so the hours it takes can be paused, and a run stopped
+        %   by a lost connection, a crash or quitting MATLAB can be resumed
+        %   from the navigator's Jobs pane rather than started over.
+            try
+                job = ndi.job.LightsheetToCloud.create(choices);
+            catch ME
+                uialert(obj.fig, ME.message, 'Could not start');
+                return
+            end
+            obj.setStatus(sprintf(['Adding to %s as a job; pause or resume it ' ...
+                'from the navigator''s Jobs pane...'], plan.where));
+            drawnow;
+            job.run();
+            switch job.state
+                case 'done'
+                    r = job.checkpoint.report;
                     obj.setStatus(sprintf(['Added %d document(s) and %d file(s) ' ...
-                        '(%.1f MB) to %s.'], info.cloud.documents, info.cloud.files, ...
-                        info.cloud.bytes / 1e6, plan.where));
-                else
-                    obj.setStatus('Image added.');
-                    obj.reload();
-                end
+                        '(%.1f MB) to %s.'], r.documents, r.files, r.bytes / 1e6, plan.where));
+                case 'paused'
+                    obj.setStatus(sprintf(['Paused at %s. Resume it from the ' ...
+                        'navigator''s Jobs pane.'], ndi.job.Job.percentText(job.progress)));
+                otherwise
+                    obj.setStatus(sprintf(['Stopped at %s: %s Resume it from ' ...
+                        'the navigator''s Jobs pane once the cause is fixed.'], ...
+                        ndi.job.Job.percentText(job.progress), job.message));
+                    if isvalid(obj.fig)
+                        uialert(obj.fig, job.message, 'Add to NDI Cloud stopped');
+                    end
             end
         end
 

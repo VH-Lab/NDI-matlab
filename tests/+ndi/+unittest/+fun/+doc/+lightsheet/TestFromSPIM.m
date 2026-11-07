@@ -52,7 +52,8 @@ classdef TestFromSPIM < matlab.unittest.TestCase
             shape = double(p.shape(:).');
             chunks = double(p.chunks(:).');
             grid = double(p.chunk_grid(:).');
-            vol = zeros(shape, p.dtype);
+            cls = ndi.fun.doc.lightsheet.dtypeName(p.dtype, 'matlab');
+            vol = zeros(shape, cls);
             nd = numel(shape);
             for i = 1:prod(grid)
                 rem = i - 1;
@@ -70,7 +71,7 @@ classdef TestFromSPIM < matlab.unittest.TestCase
                 if strcmp(p.codec, 'blosc-zstd')
                     raw = ndr.format.blosc.decode(raw);
                 end
-                tile = permute(reshape(typecast(raw(:), p.dtype), fliplr(chunks)), nd:-1:1);
+                tile = permute(reshape(typecast(raw(:), cls), fliplr(chunks)), nd:-1:1);
                 lo = (c - 1) .* chunks + 1;
                 hi = min(c .* chunks, shape);
                 dst = arrayfun(@(a) lo(a):hi(a), 1:nd, 'UniformOutput', false);
@@ -98,7 +99,7 @@ classdef TestFromSPIM < matlab.unittest.TestCase
             testCase.verifyEqual(double(p.shape_level0(:).'), [1 2 4 106 13]);
             testCase.verifyEqual(p.n_channels, 2);
             testCase.verifyEqual(p.channel_names, 'Ex_561_Em_561F_Ch2,Ex_640_Em_640F_Ch3');
-            testCase.verifyEqual(p.dtype, 'uint16');
+            testCase.verifyEqual(p.dtype, '<u2', 'the Zarr dtype string, as the schema says');
         end
 
         function testLevelZeroIsTheAllChannelsData(testCase)

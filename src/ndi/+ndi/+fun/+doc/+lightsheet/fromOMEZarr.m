@@ -72,6 +72,8 @@ function [pyramidDoc, levelDocs, info] = fromOMEZarr(session, zarrPath, options)
 %   INFO returns a struct with fields:
 %     zarrPath          - absolute path resolved
 %     pyramids          - the raw output of ndr.format.omezarr.listPyramids
+%                         (translations as the store gives them, voxel
+%                         centres; the documents record voxel corners)
 %     reductions        - cellstr, unique reductions present in the ladder
 %     sourceFileID      - id of the fileReference document used
 %     sharedLevel0      - logical, true if level 0 was shared across
@@ -141,6 +143,11 @@ function [pyramidDoc, levelDocs, info] = fromOMEZarr(session, zarrPath, options)
         % disables. Intended for diagnosing memory growth. See
         % makePyramid for details.
         options.debugLog (1,:) char = ''
+        % Per-super-block timings, as CSV (see ndi.fun.doc.lightsheet.BuildProfile).
+        options.profileLog (1,:) char = ''
+        % Resume an interrupted streamed build; see makePyramid's resume
+        % option. Pass the earlier run's sourceFileID with it.
+        options.resume = []
     end
 
     if isempty(strtrim(options.subjectID))
@@ -182,6 +189,10 @@ function [pyramidDoc, levelDocs, info] = fromOMEZarr(session, zarrPath, options)
         end
     end
     pyramids = pyramids(keep);
+    storePyramids = pyramids;
+    % NGFF places a voxel by its centre; NDI's level documents place it
+    % by its corner (see lightsheetZarrLevel), like SmartSPIM builds.
+    pyramids = centresToCorners(pyramids);
 
     n = numel(pyramids);
     perEntryReduction = cell(n, 1);
@@ -234,16 +245,47 @@ function [pyramidDoc, levelDocs, info] = fromOMEZarr(session, zarrPath, options)
         'numWorkers', options.numWorkers, ...
         'prefetchBytes', options.prefetchBytes, ...
         'asyncPrefetch', options.asyncPrefetch, ...
-        'debugLog', options.debugLog);
+        'debugLog', options.debugLog, ...
+        'profileLog', options.profileLog, ...
+        'resume', options.resume);
 
     info = struct( ...
         'zarrPath', char(zarrPath), ...
-        'pyramids', pyramids, ...
+        'pyramids', storePyramids, ...
         'reductions', {unique(perEntryReduction)}, ...
         'sourceFileID', sourceFileID, ...
         'sharedLevel0', sharedLevel0);
     if toCloud
         info.cloud = session.commit();
+    end
+end
+
+function pyramids = centresToCorners(pyramids)
+% CENTRESTOCORNERS - each level's translation, from voxel centre to corner
+%
+%   An NGFF translation is where voxel 0's centre is; a lightsheetZarrLevel
+%   translation is where its corner is, half a voxel (of that level) back
+%   along each spatial axis. Other axes (t, c) are left alone.
+    for i = 1:numel(pyramids)
+        ax = pyramids(i).axes;
+        spatial = false(1, numel(ax));
+        for a = 1:numel(ax)
+            t = '';
+            if isfield(ax, 'type') && ~isempty(ax(a).type), t = char(ax(a).type); end
+            spatial(a) = strcmp(t, 'space') || ...
+                (isempty(t) && any(strcmpi(char(ax(a).name), {'x', 'y', 'z'})));
+        end
+        for k = 1:numel(pyramids(i).levels)
+            L = pyramids(i).levels(k);
+            scale = reshape(double(L.scale), 1, []);
+            tr = reshape(double(L.translation), 1, []);
+            if isempty(tr), tr = zeros(1, numel(scale)); end
+            if numel(scale) ~= numel(spatial) || numel(tr) ~= numel(spatial)
+                continue   % malformed level: leave it as the store says
+            end
+            tr(spatial) = tr(spatial) - scale(spatial) / 2;
+            pyramids(i).levels(k).translation = tr;
+        end
     end
 end
 

@@ -101,13 +101,31 @@ W = ndi.cloud.upload.SessionWriter(datasetId, sessionId);
   every chunk gets its uid, and the level document and its manifest
   (which lists those uids) are uploaded at once, after the pyramid
   document. The pyramid's label carries " (uploading)" until the end.
-  Chunks are then uploaded as each super-block is written, in batches,
-  each checked against the CRC-32 NDI Cloud records (`lookupFiles`; size
+  Chunks are then uploaded as each super-block is written, in batches.
+  A batch goes up in the background: one curl process
+  (`ndi.cloud.upload.CurlSender`, curl 7.68+) sends 4 files at a time
+  while MATLAB compresses the next super-block (`ParallelUploads` on
+  `SessionWriter`; with an older curl the files go one by one). Each
+  batch is checked against the CRC-32 NDI Cloud records (`lookupFiles`; size
   when no checksum was recorded) while the next is built. A missing or
   different file is sent again on its own; still wrong is an error.
   Nothing in the cloud is ever unreferenced, so the orphan cleanup has
   nothing to remove; a stopped run leaves a pyramid labelled
   "(uploading)" with some chunks missing.
+- **Reading the slices.** Each batch of slices is read by several pool
+  workers at once, each a slab along z (`readWorkers`, default 8): over a
+  network every slice file costs a round trip, so reading them one at a
+  time left the link mostly idle. The readers are workers of their own,
+  added to the `numWorkers` that compress: a read over the network holds
+  its worker for much of a batch while using little CPU, and in a shared
+  pool it left the compression only a few workers. Level 1 of both ladders is built
+  during level 0, from the same reads: each read is a region holding
+  whole level-0 chunks and whole level-1 chunks, cut into level 0's
+  chunks and block-reduced to each ladder's level 1, so the slices are
+  read once in all. (When that cannot be done -- resuming a job whose
+  level 0 is finished, say -- both level 1s are built afterwards from one
+  more read.) Both level 1s then stay on this disk until level 2 of their
+  ladder is made from them.
 - **Disk.** A chunk is deleted locally once the cloud has it, unless a
   later level is reduced from its level; that level is deleted once the
   later level is built. For SmartSPIM, level 1 of each ladder is reduced
@@ -163,6 +181,40 @@ c.sourcePath = '/data/ferret42_SmartSPIM';
 c.sourceKind = ndi.gui.app.LightsheetManager.sourceKind(c.sourcePath);
 ndi.gui.app.LightsheetManager.runAdd(S, c);
 ```
+
+### Jobs: pause, resume, restart
+
+Adding to an NDI Cloud session from the dialog runs as a job
+(`ndi.job.LightsheetToCloud`, a subclass of `ndi.job.Job`), kept in
+`~/.ndi/jobs/<id>/`, and listed in the navigator's **Jobs** pane with
+**Pause**, **Resume**, **Restart** and **Remove**.
+
+- **Pause** takes effect after the current super-block: its chunks are
+  sent, the job's place is saved, and it stops.
+- **Resume** works after a pause, a failure, Ctrl+C, quitting MATLAB or a
+  crash. The job saved every document it uploaded (with its chunk uids),
+  so it adopts the pyramid and the levels already declared, asks the
+  cloud which chunks it has, and builds only the rest. The level kept for
+  the next one to be reduced from is in the job's folder, so it survives
+  a restart; if it is gone, those chunks are downloaded.
+- **Restart** starts over with a new pyramid; the earlier partial one stays
+  in the dataset, labelled "(uploading)".
+- **Short outages are ridden out without stopping**: cloud calls are
+  retried for up to 30 minutes (`SessionWriter` `RetrySeconds`), an
+  `addDocument` only after checking it did not arrive, and slice reads
+  likewise, unless the slice's folder is reachable and the file is not.
+
+The job record is shared with NDI-python: `job.json` is defined by
+`ndi_common/job_schema/job.schema.json` (format version 1). Its `kind` is a
+language-neutral name (`lightsheetToCloud`) that each language maps to its
+own class (`ndi.job.Job.register` in MATLAB); `runtime` says which language
+last ran it; times are UTC; `host` and `pid` say where it runs. A job whose
+kind is unknown here, or whose format is newer, is listed as an
+`ndi.job.ForeignJob` but not run.
+
+A job runs in the MATLAB that started it, which stays busy meanwhile; the
+job lets the window redraw at each heartbeat, which is when Pause takes.
+Running jobs in a separate background MATLAB is a planned next step.
 
 ### Viewer logs
 
