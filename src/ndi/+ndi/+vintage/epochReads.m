@@ -50,7 +50,9 @@ listKey = ['sets|' what '|' char(S.id())];
 if ~hasSets; sets = {}; end
 for k = 1:numel(sets)
     if all(ismember(ids, sets{k}.ids))
-        keep = cellfun(@(d) any(ismember(ndi.vintage.edgeTargets(d, edgeName), ids)), sets{k}.out);
+        % each document's edge targets were listed once, flat, when it was
+        % read (sets{k}.docOf, .target)
+        keep = unique(sets{k}.docOf(ismember(sets{k}.target, ids)));
         out = sets{k}.out(keep);
         ndi.vintage.elementFieldsScope('put', key, out);
         return;
@@ -82,7 +84,11 @@ switch what
 end
 ndi.vintage.elementFieldsScope('put', key, out);
 if ndi.vintage.elementFieldsScope('isopen')
-    sets{end+1} = struct('ids', {ids}, 'out', {out});
+    targets = cellfun(@(d) reshape(ndi.vintage.edgeTargets(d, edgeName), 1, []), out, ...
+        'UniformOutput', false);
+    docOf = repelem(1:numel(out), cellfun(@numel, targets));
+    sets{end+1} = struct('ids', {ids}, 'out', {out}, 'docOf', docOf, ...
+        'target', {[{}, targets{:}]});
     ndi.vintage.elementFieldsScope('put', listKey, sets);
 end
 end

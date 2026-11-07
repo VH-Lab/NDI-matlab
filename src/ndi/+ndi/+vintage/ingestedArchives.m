@@ -247,8 +247,9 @@ end
 % each anchor's id and clock extent; each statement's id and anchors
 aIds = cellfun(@(d) char(d.id()), anchors, 'UniformOutput', false);
 aOk = false(1, numel(anchors)); aClk = cell(1, numel(anchors)); aT = cell(1, numel(anchors));
+handles = containers.Map('KeyType', 'char', 'ValueType', 'char');
 for a = 1:numel(anchors)
-    [aOk(a), aClk{a}, t0, t1] = anchorClockExtent(anchors{a}.document_properties);
+    [aOk(a), aClk{a}, t0, t1] = anchorClockExtent(anchors{a}.document_properties, handles);
     aT{a} = [t0 t1];
 end
 sIds = cellfun(@(d) char(d.id()), statements, 'UniformOutput', false);
