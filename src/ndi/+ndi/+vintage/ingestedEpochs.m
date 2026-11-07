@@ -94,7 +94,9 @@ cache = struct('doc', containers.Map('KeyType', 'char', 'ValueType', 'any'), ...
     'element', containers.Map('KeyType', 'char', 'ValueType', 'any'), ...
     'statements', containers.Map('KeyType', 'char', 'ValueType', 'any'), ...
     'relations', [], ...
-    'wiringGroups', containers.Map('KeyType', 'char', 'ValueType', 'any'));
+    'wiringGroups', containers.Map('KeyType', 'char', 'ValueType', 'any'), ...
+    'own', containers.Map('KeyType', 'char', 'ValueType', 'logical'), ...
+    'subjectString', containers.Map('KeyType', 'char', 'ValueType', 'char'));
 if options.Batch
     % the instruments' fields are read for all of them at once and kept for
     % this call (ndi.vintage.prefetchElementFields)
@@ -154,15 +156,23 @@ else
         'UniformOutput', false)));
 end
 seen = {};
+% every statement's edges, read once from its depends_on list (what
+% dependency_value answers: the first entry of each name, case-insensitive)
+ed = statementEdges(statements);
 for i = 1:numel(statements)
-    st = statements{i};
-    acId = st.dependency_value('acquisition_channels_id', 'ErrorIfNotFound', 0);
-    sysId = st.dependency_value('acquisition_system_id', 'ErrorIfNotFound', 0);
-    elId = st.dependency_value('instrument_id', 'ErrorIfNotFound', 0);
+    acId = ed.ac{i};
+    sysId = ed.sys{i};
+    elId = ed.el{i};
     if (isempty(acId) && isempty(sysId)) || isempty(elId)
         continue;   % not a probe-map row: no rig or no probe
     end
-    [own, cache] = isOwnSystem(S, sysId, acId, patternId, cache);
+    ownKey = [char(sysId) char(0) char(acId) char(0) char(patternId)];
+    if isKey(cache.own, ownKey)
+        own = cache.own(ownKey);
+    else
+        [own, cache] = isOwnSystem(S, sysId, acId, patternId, cache);
+        cache.own(ownKey) = own;
+    end
     if ~own
         continue;   % another acquisition system's row of this recording
     end
@@ -170,17 +180,13 @@ for i = 1:numel(statements)
     if isempty(el)
         continue;
     end
-    subjectString = '';
-    sId = st.dependency_value('entity_id', 'ErrorIfNotFound', 0);
-    if isempty(sId), sId = st.dependency_value('subject_id', 'ErrorIfNotFound', 0); end
-    [sDoc, cache] = docById(S, sId, cache);
-    if ~isempty(sDoc)
-        subjectString = localIdentifier(sDoc.document_properties);
-    end
+    sId = ed.entity{i};
+    if isempty(sId), sId = ed.subject{i}; end
+    [subjectString, cache] = subjectStringOf(S, sId, cache);
     if ~isempty(acId)
         [devicestring, cache] = deviceString(S, acId, cache);
     else
-        [devicestring, cache] = ndi.vintage.wiredDeviceString(S, st, sysId, elId, cache);
+        [devicestring, cache] = ndi.vintage.wiredDeviceString(S, statements{i}, sysId, elId, cache);
     end
     key = strjoin({el.name, num2str(el.reference), el.type, devicestring, subjectString}, char(0));
     if any(strcmp(seen, key))
@@ -194,6 +200,55 @@ for i = 1:numel(statements)
         pm(end+1) = row; %#ok<AGROW>
     end
 end
+end
+
+function ed = statementEdges(statements)
+% Each statement's probe-map edges, as dependency_value('...',
+% 'ErrorIfNotFound', 0) reads them (the first entry of the name, compared
+% case-insensitively; its value or document_id), from one pass over each
+% depends_on list rather than five method calls per statement.
+names = {'acquisition_channels_id', 'acquisition_system_id', 'instrument_id', ...
+    'entity_id', 'subject_id'};
+fields = {'ac', 'sys', 'el', 'entity', 'subject'};
+n = numel(statements);
+ed = struct();
+for f = 1:numel(fields)
+    ed.(fields{f}) = repmat({''}, 1, n);
+end
+for i = 1:n
+    p = statements{i}.document_properties;
+    if ~isfield(p, 'depends_on') || isempty(p.depends_on)
+        continue;
+    end
+    dep = p.depends_on;
+    have = lower({dep.name});
+    for f = 1:numel(names)
+        m = find(strcmp(have, names{f}), 1);
+        if ~isempty(m)
+            v = did.document.i_readDependencyTarget(dep(m));
+            if ~isempty(v)
+                ed.(fields{f}){i} = char(v);
+            end
+        end
+    end
+end
+end
+
+function [s, cache] = subjectStringOf(S, sId, cache)
+% the local identifier of the statement's subject (cached per id)
+s = '';
+if isempty(sId)
+    return;
+end
+if isKey(cache.subjectString, sId)
+    s = cache.subjectString(sId);
+    return;
+end
+[sDoc, cache] = docById(S, sId, cache);
+if ~isempty(sDoc)
+    s = localIdentifier(sDoc.document_properties);
+end
+cache.subjectString(sId) = s;
 end
 
 function [tf, cache] = isOwnSystem(S, sysId, acId, patternId, cache)
