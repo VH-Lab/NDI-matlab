@@ -73,19 +73,38 @@ derivedDocs = S.database_search(ndi.query('', 'isa', 'directed_relation', '') & 
     ndi.v2.vocabQuery('directed_relation.relation', 'relation', 'derived_from') & children);
 observesDocs = S.database_search(ndi.query('', 'isa', 'directed_relation', '') & ...
     ndi.v2.vocabQuery('directed_relation.relation', 'relation', 'observes') & children);
-observationDocs = S.database_search(ndi.v2.isaQuery('observation') & ...
-    ndi.vintage.edgeIn('instrument_id', ids));
+% The observations are only asked which entity the FIRST one made with each
+% element is about: read as edges where the database can (no document
+% decoded; on Dab about 3,900 observations for 606 elements), else as
+% documents, as before.
+obsQuery = ndi.v2.isaQuery('observation') & ndi.vintage.edgeIn('instrument_id', ids);
+obsEdges = [];
+if ismethod(S, 'database_search_edges')
+    obsEdges = S.database_search_edges(obsQuery, {'instrument_id', 'entity_id'});
+end
+observationDocs = {};
+if ~isstruct(obsEdges)
+    observationDocs = S.database_search(obsQuery);
+end
 
 byClass = groupBy(classDocs, {'entity_id', 'subject_id'}, ids);
 byType = groupBy(typeDocs, {'entity_id', 'subject_id'}, ids);
 byDerived = groupBy(derivedDocs, {'child_id', 'child'}, ids);
 byObserves = groupBy(observesDocs, {'child_id', 'child'}, ids);
-byObservation = groupBy(observationDocs, {'instrument_id'}, ids);
+if isstruct(obsEdges)
+    firstObs = firstObservationOf(obsEdges, ids);
+else
+    byObservation = groupBy(observationDocs, {'instrument_id'}, ids);
+end
 
 for k = 1:numel(ids)
     pieces = struct('classDocs', {byClass(ids{k})}, 'typeDocs', {byType(ids{k})}, ...
-        'derivedDocs', {byDerived(ids{k})}, 'observesDocs', {byObserves(ids{k})}, ...
-        'observationDocs', {byObservation(ids{k})});
+        'derivedDocs', {byDerived(ids{k})}, 'observesDocs', {byObserves(ids{k})});
+    if isstruct(obsEdges)
+        pieces.observationSpecimen = firstObs(ids{k});   % struct(found, entity)
+    else
+        pieces.observationDocs = byObservation(ids{k});
+    end
     ndi.vintage.elementFields(keep{k}, S, pieces);   % builds and caches the fields
     cls = byClass(ids{k});
     v = '';
@@ -115,6 +134,43 @@ for i = 1:numel(found)
     for t = 1:numel(targets)
         if isKey(m, targets{t})
             m(targets{t}) = [m(targets{t}), found(i)];
+        end
+    end
+end
+end
+
+function m = firstObservationOf(edges, ids)
+% for each id: whether an observation names it as its instrument, and the
+% first `entity_id` of the FIRST such observation (in the database's order,
+% as the search returns them), as ndi.vintage.elementFields reads it
+m = containers.Map(ids, repmat({struct('found', false, 'entity', '')}, 1, numel(ids)));
+% the edges of each document, in order
+docOrder = {};
+instr = containers.Map('KeyType', 'char', 'ValueType', 'any');
+ent = containers.Map('KeyType', 'char', 'ValueType', 'char');
+for k = 1:numel(edges)
+    d = edges(k).doc_id;
+    if ~isKey(instr, d)
+        instr(d) = {};
+        docOrder{end+1} = d; %#ok<AGROW>
+    end
+    switch edges(k).name
+        case 'instrument_id'
+            instr(d) = [instr(d), {edges(k).document_id}];
+        case 'entity_id'
+            if ~isKey(ent, d)
+                ent(d) = edges(k).document_id;
+            end
+    end
+end
+for k = 1:numel(docOrder)
+    d = docOrder{k};
+    targets = instr(d);
+    e = '';
+    if isKey(ent, d); e = ent(d); end
+    for t = 1:numel(targets)
+        if isKey(m, targets{t}) && ~m(targets{t}).found
+            m(targets{t}) = struct('found', true, 'entity', e);
         end
     end
 end
