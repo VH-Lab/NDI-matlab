@@ -68,7 +68,8 @@ function result = check(options)
 %                         Url (the requirements.txt line; "" for
 %                         calculators)
 %       Calculators     - structure array, one entry per NDIcalc-*-matlab
-%                         repository found, with the fields of
+%                         repository found that is not already among
+%                         Dependencies, with the fields of
 %                         Dependencies (Status "upToDate", "behind",
 %                         "notGit", or "unknown")
 %       CalculatorUpdateAvailable - true if a calculator repository is
@@ -317,6 +318,11 @@ function result = checkCalculators(result, info, options)
     end
     folders = findCalculators(installDir, ...
         SearchPath = strlength(options.RepoRoot) == 0);
+    % A calculator listed in requirements.txt (NDIcalc-vis-matlab) is
+    % already checked as a dependency; do not list it twice.
+    if ~isempty(result.Dependencies)
+        folders = folders(~ismember(folders, [result.Dependencies.Path]));
+    end
 
     calcs = emptyRepos();
     mods = emptyModifications();

@@ -74,11 +74,147 @@ axis is at most `minLevelSize` (512) voxels. Chunking, encoding,
 parallel compression and installation are `makePyramid`'s, through its
 `levelSources` option.
 
+## Straight to a cloud session: `ndi.cloud.upload.SessionWriter`
+
+Both builders accept an `ndi.cloud.upload.SessionWriter` in place of a
+session. The documents then go directly to one session of an NDI Cloud
+dataset, without a local session or `uploadDataset` step:
+
+```matlab
+sessions = ndi.cloud.upload.SessionWriter.listSessions(datasetId);
+subjects = ndi.cloud.upload.SessionWriter.listSubjects(datasetId, sessionId);
+W = ndi.cloud.upload.SessionWriter(datasetId, sessionId);
+[P, L, info] = ndi.fun.doc.lightsheet.fromOMEZarr(W, zarrPath, ...
+    'subjectID', subjectId, 'codec', 'blosc-zstd');
+```
+
+- **A session, never just the dataset.** `sessionId` must be one of the
+  dataset's sessions (its `session_in_a_dataset` records). Every document
+  gets it as `base.session_id`, so the pyramid is in that session when
+  the dataset is downloaded.
+- **The subject must already be there, in that session.** The builders
+  check this (and `elementID` / `sourceFileID`, if given) before any
+  chunk is built.
+- **Chunks are always materialized.** The cloud cannot read a store on
+  local disk.
+- **Streamed, declared first.** Before a level is built, it is declared:
+  every chunk gets its uid, and the level document and its manifest
+  (which lists those uids) are uploaded at once, after the pyramid
+  document. The pyramid's label carries " (uploading)" until the end.
+  Chunks are then uploaded as each super-block is written, in batches.
+  A batch goes up in the background: one curl process
+  (`ndi.cloud.upload.CurlSender`, curl 7.68+) sends 4 files at a time
+  while MATLAB compresses the next super-block (`ParallelUploads` on
+  `SessionWriter`; with an older curl the files go one by one). Each
+  batch is checked against the CRC-32 NDI Cloud records (`lookupFiles`; size
+  when no checksum was recorded) while the next is built. A missing or
+  different file is sent again on its own; still wrong is an error.
+  Nothing in the cloud is ever unreferenced, so the orphan cleanup has
+  nothing to remove; a stopped run leaves a pyramid labelled
+  "(uploading)" with some chunks missing.
+- **Reading the slices.** Each batch of slices is read by several pool
+  workers at once, each a slab along z (`readWorkers`, default 8): over a
+  network every slice file costs a round trip, so reading them one at a
+  time left the link mostly idle. The readers are workers of their own,
+  added to the `numWorkers` that compress: a read over the network holds
+  its worker for much of a batch while using little CPU, and in a shared
+  pool it left the compression only a few workers. Level 1 of both ladders is built
+  during level 0, from the same reads: each read is a region holding
+  whole level-0 chunks and whole level-1 chunks, cut into level 0's
+  chunks and block-reduced to each ladder's level 1, so the slices are
+  read once in all. (When that cannot be done -- resuming a job whose
+  level 0 is finished, say -- both level 1s are built afterwards from one
+  more read.) Both level 1s then stay on this disk until level 2 of their
+  ladder is made from them.
+- **Disk.** A chunk is deleted locally once the cloud has it, unless a
+  later level is reduced from its level; that level is deleted once the
+  later level is built. For SmartSPIM, level 1 of each ladder is reduced
+  straight from the slices (one more read of them per ladder), so level
+  0 is never kept. Peak disk is roughly one level 1 plus one level 2.
+- **Commit.** At the end every declared chunk is looked up once more, the
+  remaining documents are added, and the pyramid's label is updated to
+  drop " (uploading)".
+
 ## GUI
 
-`ndi.gui.app.LightsheetZarrManager(session)` mirrors `GEFManager`:
-lists pyramids in a session, and drives Add / View / Delete. `View`
-builds the napari command from `viewCommand` and shells out.
+`ndi.gui.app.LightsheetManager(session)` (Apps menu: **Lightsheet Manager**)
+mirrors `GEFManager`: it lists the pyramids in a session and drives Add /
+View / Delete. `View` builds the napari command from `viewCommand` and
+shells out.
+
+`Add...` opens one dialog, filled in top to bottom:
+
+1. **Add to**: this session, or a session in an NDI Cloud dataset (then
+   pick the dataset and one of its sessions).
+2. **Subject**: one of that session's subjects, or **New subject...**,
+   which adds one (local identifier and description) to that session.
+3. **Image folder**: a SmartSPIM acquisition folder (the one holding the
+   stitched `All_Channels`) or an OME-Zarr store. The type is detected and
+   shown; SmartSPIM uses `fromSPIM`, OME-Zarr `fromOMEZarr`.
+4. **Label** (defaults to the folder name) and, for SmartSPIM, an optional
+   **voxel size** when the acquisition's metadata does not give one.
+5. **Compression**: the Blosc-Zstd level of the stored chunks, 1-9. It
+   defaults to 8 for the cloud and 5 for this session. Level 9 is
+   allowed but warned about: c-blosc maps Blosc level L to Zstd level
+   2L-1, except that 9 is Zstd's maximum (22), which is many times slower
+   and needs far more memory per worker for a percent or two smaller
+   files.
+6. **Reductions** (SmartSPIM only): mean and max, mean only, or max only.
+   An OME-Zarr store brings its own ladders.
+7. **Workers**: parallel workers compressing chunks. It starts at the
+   size of an open parallel pool, otherwise min(8, cores); more than 1
+   opens a pool of that size.
+
+The box at the bottom lists what is still missing, and **Add** stays
+disabled until nothing is. Chunks are always stored in NDI, locally too:
+the viewer reads only stored chunks. A pyramid added to the cloud goes
+through `ndi.cloud.upload.SessionWriter` and is not listed in the table,
+which shows the local session. The dialog's decisions are static
+functions (`addChoices`, `sourceKind`, `addPlan`, `addMessage`,
+`subjectProblems`) and its work is `addSubject` and `runAdd`, so the same
+add can be scripted:
+
+```matlab
+c = ndi.gui.app.LightsheetManager.addChoices();
+c.subjectID = subjectId;
+c.sourcePath = '/data/ferret42_SmartSPIM';
+c.sourceKind = ndi.gui.app.LightsheetManager.sourceKind(c.sourcePath);
+ndi.gui.app.LightsheetManager.runAdd(S, c);
+```
+
+### Jobs: pause, resume, restart
+
+Adding to an NDI Cloud session from the dialog runs as a job
+(`ndi.job.LightsheetToCloud`, a subclass of `ndi.job.Job`), kept in
+`~/.ndi/jobs/<id>/`, and listed in the navigator's **Jobs** pane with
+**Pause**, **Resume**, **Restart** and **Remove**.
+
+- **Pause** takes effect after the current super-block: its chunks are
+  sent, the job's place is saved, and it stops.
+- **Resume** works after a pause, a failure, Ctrl+C, quitting MATLAB or a
+  crash. The job saved every document it uploaded (with its chunk uids),
+  so it adopts the pyramid and the levels already declared, asks the
+  cloud which chunks it has, and builds only the rest. The level kept for
+  the next one to be reduced from is in the job's folder, so it survives
+  a restart; if it is gone, those chunks are downloaded.
+- **Restart** starts over with a new pyramid; the earlier partial one stays
+  in the dataset, labelled "(uploading)".
+- **Short outages are ridden out without stopping**: cloud calls are
+  retried for up to 30 minutes (`SessionWriter` `RetrySeconds`), an
+  `addDocument` only after checking it did not arrive, and slice reads
+  likewise, unless the slice's folder is reachable and the file is not.
+
+The job record is shared with NDI-python: `job.json` is defined by
+`ndi_common/job_schema/job.schema.json` (format version 1). Its `kind` is a
+language-neutral name (`lightsheetToCloud`) that each language maps to its
+own class (`ndi.job.Job.register` in MATLAB); `runtime` says which language
+last ran it; times are UTC; `host` and `pid` say where it runs. A job whose
+kind is unknown here, or whose format is newer, is listed as an
+`ndi.job.ForeignJob` but not run.
+
+A job runs in the MATLAB that started it, which stays busy meanwhile; the
+job lets the window redraw at each heartbeat, which is when Pause takes.
+Running jobs in a separate background MATLAB is a planned next step.
 
 ### Viewer logs
 

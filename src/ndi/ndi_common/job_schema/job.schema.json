@@ -1,0 +1,51 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/VH-Lab/NDI-matlab/src/ndi/ndi_common/job_schema/job.schema.json",
+  "title": "NDI job record (job.json)",
+  "description": "One long task, kept as <jobs root>/<id>/job.json, where <jobs root> is $NDI_JOBS_DIR or ~/.ndi/jobs. Shared by NDI-matlab (ndi.job.Job) and NDI-python. A reader that does not know a job's kind, or reads an older formatVersion than the file's, lists the job but must not run it. Other files in the job's folder: pause.request (present = a pause is requested; the runner removes it when it pauses or starts), and whatever the kind keeps there (for lightsheetToCloud: documents/<docid>.json, every document uploaded with its series member uids, and cache/).",
+  "type": "object",
+  "required": ["formatVersion", "id", "kind", "runtime", "title", "created", "updated",
+               "state", "progress", "message", "lastError", "heartbeat", "host", "pid",
+               "spec", "checkpoint"],
+  "properties": {
+    "formatVersion": {"const": 1, "description": "Version of this format."},
+    "id": {"type": "string", "minLength": 1, "description": "Unique id; also the job's folder name."},
+    "kind": {"type": "string", "minLength": 1,
+             "description": "Language-neutral kind name, mapped to an implementation by each language's registry (e.g. 'lightsheetToCloud')."},
+    "runtime": {"enum": ["matlab", "python"], "description": "The language that made or last ran the job."},
+    "title": {"type": "string", "description": "Human-readable name."},
+    "created": {"$ref": "#/$defs/utc"},
+    "updated": {"$ref": "#/$defs/utc", "description": "Last time the record was written."},
+    "state": {"enum": ["queued", "running", "paused", "interrupted", "failed", "done"],
+              "description": "A job saved as 'running' whose process (host + pid) no longer exists is shown as 'interrupted'."},
+    "progress": {"type": "number", "minimum": 0, "maximum": 1},
+    "message": {"type": "string", "description": "The latest word from the work."},
+    "lastError": {"type": "string", "description": "Report of the error that failed the job; empty otherwise."},
+    "heartbeat": {"anyOf": [{"$ref": "#/$defs/utc"}, {"const": ""}],
+                  "description": "Last sign of life while running; empty before the first."},
+    "runStarted": {"anyOf": [{"$ref": "#/$defs/utc"}, {"const": ""}],
+                   "description": "Optional. When the current (or last) run began; with runStartProgress, the pace a time-remaining estimate is made from."},
+    "runStartProgress": {"type": "number", "minimum": 0, "maximum": 1,
+                         "description": "Optional. progress when that run began."},
+    "host": {"type": "string", "description": "Computer the job last ran on; a pid is only meaningful there."},
+    "pid": {"type": "integer", "minimum": 0, "description": "Process running the job on host; 0 when none."},
+    "spec": {"type": "object", "description": "What to do; defined by the kind, JSON-only values."},
+    "checkpoint": {"type": "object", "description": "What is done so far; defined by the kind."}
+  },
+  "$defs": {
+    "utc": {"type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$",
+            "description": "UTC, ISO 8601, to the second, with Z."}
+  },
+  "examples": [{
+    "formatVersion": 1, "id": "41269785_c0d7", "kind": "lightsheetToCloud", "runtime": "matlab",
+    "title": "ferret42 to session exp1 of the NDI Cloud dataset Ferret atlas",
+    "created": "2026-11-04T14:08:55Z", "updated": "2026-11-04T16:41:02Z",
+    "state": "paused", "progress": 0.42, "message": "Paused at 42%.", "lastError": "",
+    "heartbeat": "2026-11-04T16:41:02Z",
+    "runStarted": "2026-11-04T15:02:10Z", "runStartProgress": 0.18, "host": "kip", "pid": 0,
+    "spec": {"destination": "cloud", "datasetId": "...", "sessionId": "...", "subjectID": "...",
+             "sourcePath": "/data/ferret42", "sourceKind": "smartspim", "label": "ferret42",
+             "voxelSizeUm": [], "clevel": 8, "reductions": ["mean", "max"], "numWorkers": 12},
+    "checkpoint": {}
+  }]
+}

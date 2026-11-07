@@ -10,25 +10,56 @@
 
     `ndi_install`
 
+## Choosing where the tools are installed
+
+By default, `ndi_install` puts NDI-matlab and the tools it depends on in a folder called `tools` inside your MATLAB `userpath` (for example, `~/Documents/MATLAB/tools` on a Mac, or `Documents\MATLAB\tools` on Windows). To install them somewhere else, give `ndi_install` the full path of the folder you want:
+
+    ndi_install('/Users/myname/code/ndi-tools')        % Mac / Linux
+    ndi_install('C:\code\ndi-tools')                   % Windows
+
+A few things to know:
+
+* Type the full path. Shortcuts such as `~` are not expanded, so write `/Users/myname/...` rather than `~/...`.
+* The folder is created if it does not exist.
+* `ndi_install` still adds one line to the `startup.m` file in your `userpath`, so that MATLAB finds the tools when it starts. This line points to the folder you chose. Only that one small file stays in your `userpath`. To move the `userpath` itself, see `help userpath`.
+* Updates (`ndi.update.install()`, the navigator's **Update** button, or running `ndi_install` again with no path) use the folder NDI-matlab is already in, so they keep using the folder you chose.
+
+### Moving an existing installation
+
+If NDI is already installed and you want the tools somewhere else:
+
+1. Type `ndi` to open the NDI navigator and click **Prefs**.
+2. Click **Tools folder...** at the bottom left. It shows where the tools are now.
+3. Click **Choose new folder...** and pick where they should go. If you pick an empty folder, the tools go straight into it. Otherwise they go into a new `tools` folder inside it.
+4. Click **Move**, then restart MATLAB.
+
+This copies the tools to the new folder and checks the copy. Then it points `startup.m` at the new folder (the old `startup.m` is kept as `startup.m.bak`) and deletes the old folder. If something goes wrong before `startup.m` is changed, nothing is changed. On Windows, MATLAB may still have some files in the old folder open. If so, you are told to delete the old folder yourself after restarting MATLAB.
+
+From the command line, the same thing is:
+
+    ndi.update.toolsFolder()                                % where the tools are now
+    ndi.update.moveToolsFolder('/Users/myname/code/ndi-tools')
+
 ## Checking for updates and updating
 
-NDI-matlab can check for a newer version and update itself, whichever way you installed it:
+### The easy way: the NDI navigator
+
+Type `ndi` in the MATLAB command window to open the NDI navigator, and click **Update** at the top of the window. You will see a list of NDI-matlab and the packages it uses, with the version you have, the latest version, and a tick box. Packages that need updating are ticked for you; click **Update** to update them. Select a row to read any notes about it, for example that MATLAB must be restarted afterwards, or that the package has changes of your own (see below).
+
+### From the command line
 
     ndi.update.check()      % report whether an update is available
-    ndi.update.install()    % update, after asking for confirmation
+    ndi.update.install()    % update everything, after asking for confirmation
+    ndi.update.install(Packages=["DID-matlab"])   % update only the named packages
 
-* **Installed with `ndi_install` (git):** your copy is compared with the latest commit on the `main` branch on GitHub, and the dependency repositories `ndi_install` placed next to NDI-matlab are compared with their own upstream branches. Updating pulls the latest `main` of NDI-matlab and then runs `ndi_install` again, which pulls the dependencies. Your NDI-matlab clone must be on the `main` branch. If you have changed code in NDI-matlab or one of those repositories (edited tracked files, or made local commits), the updater lists the changes and asks whether to update anyway, with No as the default. If you go ahead, edited files are stashed for the update and put back afterwards (if they no longer apply cleanly, `git stash list` in that folder still has them), and local commits are merged with the update. Untracked files of your own (scripts, notes, data) are left alone and need no answer, unless one sits where the update adds a file of the same name: git will not overwrite it, so the updater stops before starting and asks you to move it.
-* **Installed as a toolbox (Add-On Explorer or `.mltbx`):** your installed version is compared with the latest [GitHub release](https://github.com/VH-Lab/NDI-matlab/releases). Updating downloads that release's `.mltbx` and installs it over the current one, so any files you changed or added inside the installed toolbox folder are lost; restart MATLAB afterwards. You can also update from the Add-On Manager.
+### What gets updated
 
-Calculator repositories (`NDIcalc-*-matlab`, such as NDIcalc-vis-matlab) are checked too, with either kind of install, if they are git clones next to NDI-matlab or on the MATLAB path: each is compared with the upstream of its checked-out branch and, if it is behind, updated with `git pull` in the same way (edited files stashed and put back, untracked files left alone).
+* **If you installed with `ndi_install`:** NDI-matlab and its dependencies are updated from GitHub with `git pull`. NDI-matlab must be on the `main` branch. If you have edited files in any of them, you are asked first; your edits are set aside during the update and put back afterwards. Files of your own that git does not track are left alone.
+* **If you installed the toolbox (Add-On Explorer or `.mltbx`):** the latest [release](https://github.com/VH-Lab/NDI-matlab/releases) is installed over your copy, so changes you made inside the toolbox folder are lost. Restart MATLAB afterwards.
 
-If NDI-python is installed (for the napari viewers, see `ndi.python.install`), it is checked too, against the latest commit on its `main` branch, and `ndi.update.install()` and the navigator's **Update** button offer to update it by running its installer again.
+Calculator packages (`NDIcalc-*-matlab`) and NDI-python, if you have them, are checked and updated too.
 
-The navigator's **Update** button shows all of this in one window: a table with a row for each package (NDI-matlab or the NDI-matlab toolbox, each dependency, each calculator repository, and NDI-python), a tick box, its installed and latest version, its status, and an icon for any notes: blue *info* (for example, restart MATLAB afterwards, or a package that is not updated here), amber *warning* (updating touches your work: edited files will be stashed and put back, local commits merged, or the toolbox folder overwritten), and red *error* (the update cannot start until you act, for example by moving an untracked file that is in the way). Select a row to see its notes and the files they are about. **Update** updates only the ticked packages, so you can leave alone one you are working on. Packages that need updating start ticked, except those where updating would touch your own edits or local commits; up-to-date and blocked packages cannot be ticked, and a blocked package does not stop the others from updating.
-
-From the command line, `ndi.update.install(Packages=["DID-matlab", "NDIcalc-vis-matlab"])` does the same: it updates only the named packages (names as in `ndi.update.check`'s `Dependencies` and `Calculators`, plus `"NDI-matlab"` and `"NDI-python"`), and only changes in those packages need your consent. Updating only dependencies does not require NDI-matlab to be on `main`.
-
-NDI also checks once a day when it starts and prints one line if an update is available. To turn this off:
+NDI checks for updates once a day when it starts and prints a line if one is available. To turn this off:
 
     ndi.preferences.set('Update.CheckOnStartup', false)
 

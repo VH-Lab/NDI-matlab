@@ -52,13 +52,34 @@ function [pyramidDoc, levelDocs, info] = fromOMEZarr(session, zarrPath, options)
 %                Empty (default) means auto-size from the budget.
 %                Forwarded to makePyramid.
 %
+%   STRAIGHT TO THE CLOUD. SESSION may be an
+%   ndi.cloud.upload.SessionWriter instead of an ndi.session: the
+%   documents are then added to that session of an NDI Cloud dataset,
+%   with no local session or dataset involved. The subject (and the
+%   element and source file, if given) must already be in the cloud,
+%   the subject in that same session; this is checked before any work
+%   is done. Chunks are always materialized for a cloud target (the
+%   cloud cannot read the store on this disk), and each level's chunk
+%   files are sent as soon as the level is built and checked against
+%   the CRC-32 NDI Cloud records. The documents are added only once
+%   every file is in (SessionWriter/commit), so a failed run leaves no
+%   documents behind.
+%
+%     W = ndi.cloud.upload.SessionWriter(cloudDatasetId, sessionId);
+%     [P, L, info] = ndi.fun.doc.lightsheet.fromOMEZarr(W, zarrPath, ...
+%         'subjectID', subjectId, 'codec', 'blosc-zstd');
+%
 %   INFO returns a struct with fields:
 %     zarrPath          - absolute path resolved
 %     pyramids          - the raw output of ndr.format.omezarr.listPyramids
+%                         (translations as the store gives them, voxel
+%                         centres; the documents record voxel corners)
 %     reductions        - cellstr, unique reductions present in the ladder
 %     sourceFileID      - id of the fileReference document used
 %     sharedLevel0      - logical, true if level 0 was shared across
 %                         reductions and deduped
+%     cloud             - (cloud target only) what was sent: the report
+%                         SessionWriter/commit returns
 %
 %   Example:
 %     S = ndi.session.dir('mysession','/path/to/session');
@@ -67,6 +88,7 @@ function [pyramidDoc, levelDocs, info] = fromOMEZarr(session, zarrPath, options)
 %         'subjectID', subj.id());
 %
 %   See also: ndi.fun.doc.lightsheet.makePyramid,
+%             ndi.cloud.upload.SessionWriter,
 %             ndi.fun.doc.lightsheet.chooseLevel,
 %             ndi.fun.doc.lightsheet.viewCommand,
 %             ndr.format.omezarr.listPyramids,
@@ -121,6 +143,11 @@ function [pyramidDoc, levelDocs, info] = fromOMEZarr(session, zarrPath, options)
         % disables. Intended for diagnosing memory growth. See
         % makePyramid for details.
         options.debugLog (1,:) char = ''
+        % Per-super-block timings, as CSV (see ndi.fun.doc.lightsheet.BuildProfile).
+        options.profileLog (1,:) char = ''
+        % Resume an interrupted streamed build; see makePyramid's resume
+        % option. Pass the earlier run's sourceFileID with it.
+        options.resume = []
     end
 
     if isempty(strtrim(options.subjectID))
@@ -128,6 +155,8 @@ function [pyramidDoc, levelDocs, info] = fromOMEZarr(session, zarrPath, options)
             ['A lightsheetZarrPyramid depends_on a subject; pass ' ...
              '''subjectID''.']);
     end
+
+    toCloud = isa(session, 'ndi.cloud.upload.SessionWriter');
 
     if ~isfolder(zarrPath)
         error('NDI:lightsheet:fromOMEZarr:noSuchStore', ...
@@ -160,11 +189,28 @@ function [pyramidDoc, levelDocs, info] = fromOMEZarr(session, zarrPath, options)
         end
     end
     pyramids = pyramids(keep);
+    storePyramids = pyramids;
+    % NGFF places a voxel by its centre; NDI's level documents place it
+    % by its corner (see lightsheetZarrLevel), like SmartSPIM builds.
+    pyramids = centresToCorners(pyramids);
 
     n = numel(pyramids);
     perEntryReduction = cell(n, 1);
     for i = 1:n
         perEntryReduction{i} = pickReduction(pyramids(i), options.reductionMap);
+    end
+
+    if toCloud
+        % Refuse now, not after hours of chunking: the subject must be in
+        % the target session, anything else named must be in the dataset.
+        session.requireSubject(options.subjectID);
+        if ~isempty(options.elementID)
+            session.requireDocument(options.elementID);
+        end
+        if ~isempty(options.sourceFileID)
+            session.requireDocument(options.sourceFileID);
+        end
+        options.materializeChunks = true;
     end
 
     sourceFileID = options.sourceFileID;
@@ -199,14 +245,48 @@ function [pyramidDoc, levelDocs, info] = fromOMEZarr(session, zarrPath, options)
         'numWorkers', options.numWorkers, ...
         'prefetchBytes', options.prefetchBytes, ...
         'asyncPrefetch', options.asyncPrefetch, ...
-        'debugLog', options.debugLog);
+        'debugLog', options.debugLog, ...
+        'profileLog', options.profileLog, ...
+        'resume', options.resume);
 
     info = struct( ...
         'zarrPath', char(zarrPath), ...
-        'pyramids', pyramids, ...
+        'pyramids', storePyramids, ...
         'reductions', {unique(perEntryReduction)}, ...
         'sourceFileID', sourceFileID, ...
         'sharedLevel0', sharedLevel0);
+    if toCloud
+        info.cloud = session.commit();
+    end
+end
+
+function pyramids = centresToCorners(pyramids)
+% CENTRESTOCORNERS - each level's translation, from voxel centre to corner
+%
+%   An NGFF translation is where voxel 0's centre is; a lightsheetZarrLevel
+%   translation is where its corner is, half a voxel (of that level) back
+%   along each spatial axis. Other axes (t, c) are left alone.
+    for i = 1:numel(pyramids)
+        ax = pyramids(i).axes;
+        spatial = false(1, numel(ax));
+        for a = 1:numel(ax)
+            t = '';
+            if isfield(ax, 'type') && ~isempty(ax(a).type), t = char(ax(a).type); end
+            spatial(a) = strcmp(t, 'space') || ...
+                (isempty(t) && any(strcmpi(char(ax(a).name), {'x', 'y', 'z'})));
+        end
+        for k = 1:numel(pyramids(i).levels)
+            L = pyramids(i).levels(k);
+            scale = reshape(double(L.scale), 1, []);
+            tr = reshape(double(L.translation), 1, []);
+            if isempty(tr), tr = zeros(1, numel(scale)); end
+            if numel(scale) ~= numel(spatial) || numel(tr) ~= numel(spatial)
+                continue   % malformed level: leave it as the store says
+            end
+            tr(spatial) = tr(spatial) - scale(spatial) / 2;
+            pyramids(i).levels(k).translation = tr;
+        end
+    end
 end
 
 function r = pickReduction(pyramid, reductionMap)

@@ -1,0 +1,8 @@
+<svg width="100" height="100" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+  <!-- An empty cup: the computer may sleep (ndi.util.KeepAwake off) -->
+  <path d="M20 42 H68 V66 a16 16 0 0 1 -16 16 H36 a16 16 0 0 1 -16 -16 Z"
+        fill="none" stroke="#082051" stroke-width="7" stroke-linejoin="round"/>
+  <path d="M68 48 h6 a10 10 0 0 1 0 20 h-6"
+        fill="none" stroke="#082051" stroke-width="7" stroke-linecap="round"/>
+  <line x1="14" y1="90" x2="80" y2="90" stroke="#082051" stroke-width="6" stroke-linecap="round"/>
+</svg>

@@ -45,11 +45,11 @@ function [session, pyramidDoc, info] = ingestBlobFixture(options)
 %
 %   Example:
 %     [S, P] = ndi.test.lightsheet.ingestBlobFixture();
-%     ndi.gui.app.LightsheetZarrManager(S);
+%     ndi.gui.app.LightsheetManager(S);
 %
 %   See also: ndi.test.lightsheet.makeBlobFixture,
 %             ndi.fun.doc.lightsheet.fromOMEZarr,
-%             ndi.gui.app.LightsheetZarrManager
+%             ndi.gui.app.LightsheetManager
 
     arguments
         options.sessionDir char = ''

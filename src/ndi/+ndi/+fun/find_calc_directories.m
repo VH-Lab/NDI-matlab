@@ -3,18 +3,21 @@ function d = find_calc_directories()
 %
 %   D = ndi.fun.find_calc_directories()
 %
-%   This function scans the MATLAB path for installed NDI calculator toolboxes
-%   that follow the naming convention 'NDIcalc-*-matlab'.
+%   This function finds installed NDI calculator toolboxes that follow the
+%   naming convention 'NDIcalc-*-matlab'. It looks in two places:
 %
-%   It determines the search path by navigating three directories up from the
-%   main NDI toolbox location ('ndi.toolboxdir'). This is necessary because the
-%   toolboxes are typically installed as sibling directories.
+%     1. Next to NDI-matlab, three directories up from 'ndi.toolboxdir'
+%        (where ndi_install clones them, as listed in requirements.txt).
+%     2. On the MATLAB path: any NDIcalc-*-matlab folder that a path entry
+%        is in (for example, installed by ndi_setup / MatBox into a separate
+%        add-ons folder).
+%
+%   Each folder is listed once.
 %
 %   Returns:
 %     D (cell array): A cell array of strings, where each string is the full
 %                     path to a found calculator directory. If no matching
-%                     directories are found, or if the base path does not exist,
-%                     it returns an empty cell array.
+%                     directories are found, it returns an empty cell array.
 %
 %   Example:
 %     calc_dirs = ndi.fun.find_calc_directories();
@@ -28,28 +31,25 @@ function d = find_calc_directories()
         % This is more robust than assuming a fixed relative path.
         base_path = fileparts(fileparts(fileparts(ndi.toolboxdir)));
 
-        if ~isfolder(base_path)
-            warning('The base tool path could not be found: %s', base_path);
-            return;
+        if isfolder(base_path)
+            % Define the search pattern for calculator directories
+            dir_structs = dir(fullfile(base_path, 'NDIcalc*-matlab'));
+            % Filter for actual directories (excluding files)
+            dir_structs = dir_structs([dir_structs.isdir]);
+            d = cellfun(@(x) fullfile(base_path, x), {dir_structs.name}', ...
+                'UniformOutput', false);
         end
 
-        % Define the search pattern for calculator directories
-        search_pattern = fullfile(base_path, 'NDIcalc*-matlab');
-        
-        % Find all items matching the pattern
-        dir_structs = dir(search_pattern);
+        % Also the root of each NDIcalc-*-matlab folder that a path entry is in
+        entries = strsplit(path, pathsep);
+        roots = regexp(entries, '^.*?[\\/]NDIcalc[^\\/]*-matlab(?=$|[\\/])', ...
+            'match', 'once');
+        roots = roots(~cellfun('isempty', roots));
+        d = [d(:); roots(:)];
 
-        % Filter for actual directories (excluding files)
-        dir_structs = dir_structs([dir_structs.isdir]);
-        
-        if isempty(dir_structs)
-            % This is a normal case, no warning is needed.
-            return;
-        end
-
-        % Extract the names and build the full paths using fullfile for robustness
-        dir_names = {dir_structs.name}';
-        d = cellfun(@(x) fullfile(base_path, x), dir_names, 'UniformOutput', false);
+        d = unique(d, 'stable');
+        d = d(cellfun(@isfolder, d));
+        d = reshape(d, [], 1);
 
     catch ME
         % Catch any unexpected errors during the process

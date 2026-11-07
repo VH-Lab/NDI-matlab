@@ -54,7 +54,9 @@ raw bytes twice.
 - `chunk_order` — the order in which the chunk grid is flattened to
   the 1-based file series. `"C"` for C-order (last axis fastest);
   `"F"` for Fortran-order.
-- `dtype` — the Zarr dtype string (e.g. `<u2`, `<f4`).
+- `dtype` — the Zarr dtype string (e.g. `<u2`, `<f4`). Pyramids built
+  from SmartSPIM slices before this was enforced say `uint16`; readers
+  should accept either (`ndi.fun.doc.lightsheet.dtypeName`).
 - `fill_value` — fill value for chunks that were elided.
 - `byte_order` — byte order of the on-disk chunk bytes.
 - `codec` — Zarr codec name (`raw`, `blosc`, `zstd`). `raw` means the
@@ -64,7 +66,14 @@ raw bytes twice.
   (`cname`, `clevel`, `shuffle`, ...). Empty JSON `{}` for `raw`.
 - `voxel_size` — per-axis voxel size at this level.
 - `voxel_size_units` — the unit that `voxel_size` is expressed in.
-- `translation` — per-axis translation at this level.
+- `translation` — per-axis translation at this level: where the
+  **corner** of voxel 0 sits, in the parent's units, so voxel `i` spans
+  `translation + i*voxel_size` to `translation + (i+1)*voxel_size`. A
+  block-reduced level then has the same translation as the level it was
+  reduced from (SmartSPIM builds: 0 at every level). This is not NGFF's
+  convention, which places voxel 0's centre: `fromOMEZarr` subtracts half
+  a voxel from a store's translations, and an export to OME-Zarr adds it
+  back.
 
 ## Depends on
 

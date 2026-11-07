@@ -33,7 +33,7 @@ function cmd = viewCommand(launcher, sessionPath, pyramidID, options)
 %                        pick based on the window size (levelTable is
 %                        cheap; picking is not expensive).
 %
-%   See also: ndi.gui.app.LightsheetZarrManager,
+%   See also: ndi.gui.app.LightsheetManager,
 %             ndi.fun.doc.lightsheet.chooseLevel
 
     arguments

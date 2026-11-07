@@ -3,8 +3,9 @@ function [b, answer, apiResponse, apiURL] = listActiveBulkUploads(cloudDatasetID
 %
 %   [B, ANSWER, APIRESPONSE, APIURL] = ndi.cloud.api.files.listActiveBulkUploads(CLOUDDATASETID)
 %   [B, ANSWER, APIRESPONSE, APIURL] = ndi.cloud.api.files.listActiveBulkUploads(CLOUDDATASETID, 'state', STATE)
+%   [...] = ndi.cloud.api.files.listActiveBulkUploads(CLOUDDATASETID, 'state', STATE, 'since', SINCE)
 %
-%   Calls GET /v1/datasets/{id}/bulk-uploads[?state=...] and returns the
+%   Calls GET /v1/datasets/{id}/bulk-uploads[?state=...&since=...] and returns the
 %   set of bulk upload jobs the server is tracking for this dataset.
 %
 %   Inputs:
@@ -15,6 +16,12 @@ function [b, answer, apiResponse, apiURL] = listActiveBulkUploads(cloudDatasetID
 %                          'active' (default, = queued + extracting),
 %                          'all' (includes recent history),
 %                          'queued', 'extracting', 'complete', 'failed'.
+%       'since' (datetime) - Only return terminal ('complete'/'failed')
+%                          jobs whose completedAt is at or after this
+%                          time; active jobs are always returned. A
+%                          datetime without a time zone is taken as UTC.
+%                          Default: no limit. Servers that predate this
+%                          filter ignore it.
 %
 %   Outputs:
 %       b            - True if the call succeeded, false otherwise.
@@ -31,11 +38,13 @@ function [b, answer, apiResponse, apiURL] = listActiveBulkUploads(cloudDatasetID
         cloudDatasetID (1,1) string
         options.state (1,1) string {mustBeMember(options.state, ...
             ["active","all","queued","extracting","complete","failed"])} = "active"
+        options.since datetime {mustBeScalarOrEmpty} = datetime.empty
     end
 
     api_call = ndi.cloud.api.implementation.files.ListActiveBulkUploads(...
         'cloudDatasetID', cloudDatasetID, ...
-        'state', options.state);
+        'state', options.state, ...
+        'since', options.since);
 
     [b, answer, apiResponse, apiURL] = api_call.execute();
 end

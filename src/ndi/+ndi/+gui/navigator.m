@@ -23,6 +23,8 @@ classdef navigator < handle
 %                    showing / selecting the active cloud account.
 %       Datasets   - collapsible and resizable; a "Paths" button and a
 %                    scrollable tree of datasets and their sessions.
+%       Jobs       - collapsible; long tasks (ndi.job.Job) with Pause /
+%                    Resume / Restart / Remove. Opens when a job exists.
 %       Progress   - collapsible; hosts progress bars and hugs the bottom.
 %
 %   Layout model ("content-driven height, elastic filler panes"):
@@ -122,6 +124,21 @@ classdef navigator < handle
             p = ndi.gui.nav.progressPane.empty;
             for i = 1:numel(obj.Panes)
                 if isa(obj.Panes{i}, 'ndi.gui.nav.progressPane')
+                    p = obj.Panes{i};
+                    return;
+                end
+            end
+        end
+
+        function p = jobsPaneHandle(obj)
+            %JOBSPANEHANDLE Return the navigator's Jobs pane.
+            %
+            %   P = JOBSPANEHANDLE(OBJ) returns the ndi.gui.nav.jobsPane in
+            %   this navigator's pane stack, or an empty ndi.gui.nav.jobsPane
+            %   array if none is present. Jobs call its refresh as they run.
+            p = ndi.gui.nav.jobsPane.empty;
+            for i = 1:numel(obj.Panes)
+                if isa(obj.Panes{i}, 'ndi.gui.nav.jobsPane')
                     p = obj.Panes{i};
                     return;
                 end
@@ -252,6 +269,7 @@ classdef navigator < handle
                 ndi.gui.nav.ndiPane(obj), ...
                 ndi.gui.nav.cloudPane(obj), ...
                 ndi.gui.nav.datasetsPane(obj), ...
+                ndi.gui.nav.jobsPane(obj), ...
                 ndi.gui.nav.progressPane(obj) };
 
             n = numel(obj.Panes);
