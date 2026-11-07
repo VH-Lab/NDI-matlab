@@ -25,7 +25,15 @@ s = '';
 if isempty(sys)
     return;
 end
-s = char(ndi.vintage.objectName(sys));
+if isfield(cache, 'wiringGroups') && isa(cache.wiringGroups, 'containers.Map') ...
+        && isKey(cache.wiringGroups, ['name|' char(sysId)])
+    s = cache.wiringGroups(['name|' char(sysId)]);   % the system's name, kept per call
+else
+    s = char(ndi.vintage.objectName(sys));
+    if isfield(cache, 'wiringGroups') && isa(cache.wiringGroups, 'containers.Map')
+        cache.wiringGroups(['name|' char(sysId)]) = s;
+    end
+end
 anchors = ndi.v2.edgeIds(st.document_properties, 'time_reference_id');
 if isempty(anchors)
     return;
