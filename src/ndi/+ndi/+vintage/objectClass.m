@@ -109,10 +109,29 @@ end
 % dataset level]; ndi.migrate.internal.softwareDedup), so its session_id is the
 % dataset's, not this session's. Look in the session first, then without the
 % session restriction (ndi.session/database_search_with_dataset).
+% Both are read by the documents table's key where the session can
+% (ndi.session/database_read_id: the answers of the two searches, with no
+% query to compile -- each acquisition system's reader and navigator objects
+% ask this; NDI-matlab run 42355599591), else by the searches.
 q = ndi.query('base.id', 'exact_string', swId, '');
-swDocs = ndi_session_obj.database_search(q);
-if isempty(swDocs) && isa(ndi_session_obj, 'ndi.session')
-    swDocs = ndi_session_obj.database_search_with_dataset(q);
+swDocs = [];
+if isa(ndi_session_obj, 'ndi.session')
+    d = ndi_session_obj.database_read_id(swId);
+    if isempty(d)
+        % in the session's database under any session: the first part of
+        % database_search_with_dataset, whose dataset part adds no document
+        % with an id it already holds
+        d = ndi_session_obj.database_read_id(swId, 'AnySession', true);
+    end
+    if ~isempty(d)
+        swDocs = {d};
+    end
+end
+if ~iscell(swDocs)
+    swDocs = ndi_session_obj.database_search(q);
+    if isempty(swDocs) && isa(ndi_session_obj, 'ndi.session')
+        swDocs = ndi_session_obj.database_search_with_dataset(q);
+    end
 end
 if numel(swDocs) ~= 1
     error('NDI:vintage:softwareNotFound', ...

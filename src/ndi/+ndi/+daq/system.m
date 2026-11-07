@@ -42,12 +42,12 @@ classdef system < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice
                 % translating. ndi.vintage.edge is a no-op on a v1 document.
                 daqreader_id = ndi.vintage.edge(daqsystem_doc,'daqreader_id');
                 filenavigator_id = ndi.vintage.edge(daqsystem_doc,'filenavigator_id');
-                docs = session.database_search(ndi.query('base.id','exact_string',daqreader_id,''));
+                docs = ndi.daq.system.byId(session, daqreader_id);
                 if numel(docs)~=1
                     error(['Could not find daqreader document with id ' daqreader_id '.']);
                 end
                 daqreader_doc = docs{1};
-                docs = session.database_search(ndi.query('base.id','exact_string',filenavigator_id,''));
+                docs = ndi.daq.system.byId(session, filenavigator_id);
                 if numel(docs)~=1
                     error(['Could not find file navivgator document with id ' filenavigator_id'.']);
                 end
@@ -57,7 +57,7 @@ classdef system < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice
                 metadatadocs = {};
                 thedaqmetadatareader = {};
                 for i=1:numel(D)
-                    metadatadocs{i} = session.database_search(ndi.query('base.id','exact_string',D{i},''));
+                    metadatadocs{i} = ndi.daq.system.byId(session, D{i});
                     if numel(metadatadocs{i})~=1
                         error(['Could not find daqmetadatareader document with id ' D{i} '.']);
                     end
@@ -621,4 +621,21 @@ classdef system < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice
         end % searchquery()
 
     end % methods
+    methods (Static, Hidden)
+        function docs = byId(session, id)
+            % BYID - the session's documents with base.id ID, as the search
+            % ndi.query('base.id','exact_string',ID,'') returns them: read by
+            % the documents table's key where the session can
+            % (ndi.session/database_read_id, the same answer, with no query to
+            % compile; Jess Haley, 2026-11-06: "Speed can't be slower than
+            % v1"), else by that search
+            if ismethod(session, 'database_read_id') && (ischar(id) || (isstring(id) && isscalar(id)))
+                d = session.database_read_id(char(id));
+                if isempty(d); docs = {}; else; docs = {d}; end
+            else
+                docs = session.database_search(ndi.query('base.id','exact_string',id,''));
+            end
+        end
+    end
+
 end % ndi.daq.system classdef
