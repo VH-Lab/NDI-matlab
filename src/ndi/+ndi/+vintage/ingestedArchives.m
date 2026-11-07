@@ -154,6 +154,15 @@ end
 % files, so its member count reads 0.
 bq = ndi.query('', 'isa', 'data_body', '') & ndi.vintage.edgeIn('owner_id', lidsOfStatement.keys);
 if options.ClocksOnly
+    % set-wise, from the index rows (no body, statement or archive struct
+    % built per epoch): see clocksOnly below
+    C = clocksOnly(S, bq, epochIds, entityIdsOf, anchors, anchorRows, statements, statementRows);
+    if isa(C, 'containers.Map')
+        M = C;
+        return;
+    end
+end
+if options.ClocksOnly
     % 'ClocksOnly' (ndi.daq.reader/ingested2epochs_t0t1_epochclock reads
     % each archive's epochclock and t0_t1 and nothing else): the bodies are
     % read for their filename and owner only, which decide whether an epoch
@@ -204,5 +213,75 @@ p = d.document_properties;
 if isfield(p, 'entity') && isstruct(p.entity) && isfield(p.entity, 'local_identifier')
     v = p.entity.local_identifier;
     if ischar(v) || (isstring(v) && isscalar(v)); lid = char(v); end
+end
+end
+
+function M = clocksOnly(S, bq, epochIds, entityIdsOf, anchors, anchorRows, statements, statementRows)
+% ingestedArchives 'ClocksOnly', set-wise: each epoch's epochclock, t0_t1
+% and clock_problem as private/archiveOf gives them, and no other part
+% ('bodies' is an empty map). The bodies are read as index rows -- each
+% one's filename and owner (ndi.session/database_search_values and
+% database_search_edges) -- and an epoch is left out, as archiveOf's error
+% leaves it out, when none of its recordings owns an archive series body.
+% Each anchor's clock and extent are read once, not once per epoch. M is []
+% when the database cannot answer from its index; the caller then reads the
+% bodies as documents.
+M = [];
+if ~ismethod(S, 'database_search_values') || ~ismethod(S, 'database_search_edges')
+    return;
+end
+rows = S.database_search_values(bq, {'data_body.filename'});
+if ~isstruct(rows); return; end
+edges = S.database_search_edges(bq, {'owner_id'});
+if ~isstruct(edges); return; end
+M = containers.Map('KeyType', 'char', 'ValueType', 'any');
+% the statements owning an archive series body (archiveOf's seriesKind)
+fns = cellfun(@(v) char(v{1}), {rows.values}, 'UniformOutput', false);
+isSeries = strcmp(fns, 'channel_list.bin') | ~cellfun(@isempty, ...
+    regexp(fns, '^(ai|ao|ax|di|do|ti|evmktx)_group\d+_seg\.nbf_#$', 'once'));
+seriesDocs = {rows(isSeries).doc_id};
+seriesOwners = {};
+if ~isempty(edges)
+    seriesOwners = unique({edges(ismember({edges.doc_id}, seriesDocs)).document_id});
+end
+% each anchor's id and clock extent; each statement's id and anchors
+aIds = cellfun(@(d) char(d.id()), anchors, 'UniformOutput', false);
+aOk = false(1, numel(anchors)); aClk = cell(1, numel(anchors)); aT = cell(1, numel(anchors));
+for a = 1:numel(anchors)
+    [aOk(a), aClk{a}, t0, t1] = anchorClockExtent(anchors{a}.document_properties);
+    aT{a} = [t0 t1];
+end
+sIds = cellfun(@(d) char(d.id()), statements, 'UniformOutput', false);
+sUsed = cellfun(@(d) ndi.v2.edgeIds(d.document_properties, 'time_reference_id'), statements, ...
+    'UniformOutput', false);
+for e = 1:numel(epochIds)
+    lid = epochIds{e};
+    si = unique(statementRows(lid));
+    if isempty(entityIdsOf(lid)) || isempty(si)
+        continue;   % ingestedArchive raises ingestedNoEpoch / ingestedNoRecording
+    end
+    if ~any(ismember(sIds(si), seriesOwners))
+        continue;   % archiveOf raises ingestedNoBodies
+    end
+    ai = unique(anchorRows(lid));
+    used = [{}, sUsed{si}];
+    isUsed = ismember(aIds(ai), used);
+    A = struct('vintage', 'v2', 'epoch_id', lid, ...
+        'bodies', containers.Map('KeyType', 'char', 'ValueType', 'any'), ...
+        'channels', [], 'epochclock', {{}}, 't0_t1', {{}}, 'clock_problem', '');
+    for a = [ai(isUsed), ai(~isUsed)]
+        if aOk(a) && ~any(strcmp(A.epochclock, aClk{a}))
+            A.epochclock{end+1} = aClk{a};
+            A.t0_t1{end+1} = aT{a};
+        end
+    end
+    if isempty(A.epochclock)
+        A.clock_problem = sprintf(['The migrated epoch %s states no clock: none of its %d time ' ...
+            'reference(s) (relative_time_reference onto the epoch entity) names a clock and a start, ' ...
+            'so its epoch clock and t0_t1 cannot be read (did-schema [clock only on the time ' ...
+            'reference]: "the recording observation''s time references say when the epoch starts ' ...
+            'on each clock").'], lid, numel(ai));
+    end
+    M(lid) = A;
 end
 end
