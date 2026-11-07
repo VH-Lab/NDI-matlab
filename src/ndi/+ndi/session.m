@@ -437,6 +437,43 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
             ndi_document_obj = ndi_session_obj.database.search(searchparameters&inSession);
         end % database_search();
 
+        function doc = database_read_id(ndi_session_obj, id)
+            % DATABASE_READ_ID - the session's document with an id, read by its key
+            %
+            % DOC = DATABASE_READ_ID(NDI_SESSION_OBJ, ID)
+            %
+            % The ndi.document with base.id ID in this session, or [] when
+            % there is none: the answer DATABASE_SEARCH(ndi.query('base.id',
+            % 'exact_string', ID, '')) gives, read on a v2 database by the
+            % documents table's key (did2.database.sqlitedb/get) with no query
+            % to compile, translate or recheck; elsewhere by that search. A
+            % document of another session is []. For element lookups by id
+            % (ndi.vintage.elementDoc; Jess Haley, 2026-11-06: "Speed can't
+            % be slower than v1").
+            arguments
+                ndi_session_obj (1,1) ndi.session
+                id
+            end
+            doc = [];
+            id = char(id);
+            db = ndi_session_obj.database;
+            if isa(db, 'ndi.database.implementations.database.did2sqlite')
+                try
+                    d = db.db.get(id);
+                catch
+                    return;   % no document with that id
+                end
+                if strcmp(char(did2.schema.cache.sessionIdOf(d.toStruct())), char(ndi_session_obj.id()))
+                    doc = ndi.database.internal.applyReadNormalization(d);
+                end
+                return;
+            end
+            hits = ndi_session_obj.database_search(ndi.query('base.id', 'exact_string', id, ''));
+            if isscalar(hits)
+                doc = hits{1};
+            end
+        end % database_read_id()
+
         function edges = database_search_edges(ndi_session_obj, searchparameters, names)
             % DATABASE_SEARCH_EDGES - the named edges of the documents a search matches
             %
@@ -470,7 +507,7 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
             edges = db.db.searchEdges(q2, names);
         end % database_search_edges()
 
-        function rows = database_search_values(ndi_session_obj, searchparameters, paths)
+        function rows = database_search_values(ndi_session_obj, searchparameters, paths, varargin)
             % DATABASE_SEARCH_VALUES - text values of the documents a search matches
             %
             % ROWS = DATABASE_SEARCH_VALUES(NDI_SESSION_OBJ, SEARCHPARAMETERS, PATHS)
@@ -487,6 +524,9 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
                 searchparameters {mustBeA(searchparameters,{'ndi.query','did.query'})}
                 paths
             end
+            arguments (Repeating)
+                varargin
+            end
             rows = [];
             db = ndi_session_obj.database;
             if ~isa(db, 'ndi.database.implementations.database.did2sqlite') ...
@@ -496,7 +536,8 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
             inSession = ndi.query('base.session_id','exact_string',ndi_session_obj.id());
             q2 = ndi.database.implementations.database.did2sqlite.toDid2Query( ...
                 searchparameters & inSession);
-            rows = db.db.searchValues(q2, paths);
+            % VARARGIN: searchValues' name/value options ('AllElements')
+            rows = db.db.searchValues(q2, paths, varargin{:});
         end % database_search_values()
 
         function ndi_document_obj = database_search_with_dataset(ndi_session_obj, searchparameters)

@@ -136,8 +136,19 @@ if isempty(statements)
 end
 
 % ---- the bodies they own -----------------------------------------------
-bodies = S.database_search(ndi.query('', 'isa', 'data_body', '') & ...
-    ndi.vintage.edgeIn('owner_id', lidsOfStatement.keys));
+% light where the database can (ndi.vintage.lightDocs): the class, filename
+% and time dimension archiveOf reads, and the owner edges they are filed by.
+% Only the clocks and t0_t1 are read from what this returns
+% (ndi.daq.reader/ingested2epochs_t0t1_epochclock); a light body records no
+% files, so its member count reads 0.
+bq = ndi.query('', 'isa', 'data_body', '') & ndi.vintage.edgeIn('owner_id', lidsOfStatement.keys);
+bodies = ndi.vintage.lightDocs(S, bq, {'data_body.filename', ...
+    'data.dimensions[*].term.node', 'data.dimensions[*].term.name', ...
+    'data.dimensions[*].n', 'data.dimensions[*].chunk'}, {'owner_id'}, 'data_body', ...
+    'AllElements', true);
+if ~iscell(bodies)
+    bodies = S.database_search(bq);
+end
 bodyRows = containers.Map(epochIds, repmat({[]}, 1, numel(epochIds)));
 for b = 1:numel(bodies)
     mine = {};

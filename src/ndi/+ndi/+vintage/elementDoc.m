@@ -91,8 +91,15 @@ E = ndi_element_obj.session;
 % than v1." If the document is gone, the searches below run as before.
 if isprop(ndi_element_obj, 'etaDocumentId') && ~isempty(ndi_element_obj.etaDocumentId) ...
         && strcmp(char(ndi_element_obj.etaDocumentId), char(ndi_element_obj.identifier))
-    byId = E.database_search(ndi.query('base.id', 'exact_string', ...
-        char(ndi_element_obj.identifier), ''));
+    % read by the documents table's key where the session can, with no
+    % query to compile (ndi.session/database_read_id)
+    if ismethod(E, 'database_read_id')
+        byId = E.database_read_id(char(ndi_element_obj.identifier));
+        if ~isempty(byId); byId = {byId}; else; byId = {}; end
+    else
+        byId = E.database_search(ndi.query('base.id', 'exact_string', ...
+            char(ndi_element_obj.identifier), ''));
+    end
     if isscalar(byId)
         doc = byId{1};
         vintage = 'V_eta';

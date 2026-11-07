@@ -59,6 +59,16 @@ for r = 1:numel(rels)
         continue;
     end
     if ~isfield(dr, 'conditions') || isempty(dr.conditions), break; end
+    % A relation's channel groups are worked out once per call and kept
+    % (cache.wiringGroups, a handle map): the same wiring relation answers
+    % every probe-map row that names it (Jess Haley, 2026-11-06: "Speed
+    % can't be slower than v1").
+    relId = char(p.base.id);
+    memo = isfield(cache, 'wiringGroups') && isa(cache.wiringGroups, 'containers.Map');
+    if memo && isKey(cache.wiringGroups, relId)
+        groups = cache.wiringGroups(relId);
+        break;
+    end
     cs = dr.conditions;
     if isstruct(cs), cs = num2cell(cs); end
     for g = 1:numel(cs)
@@ -67,6 +77,9 @@ for r = 1:numel(rels)
         nums = [];
         if isfield(c, 'matrix'), nums = double(c.matrix(:)'); end
         groups{end+1} = [char(ndi.vintage.channelPrefix(c.variable)) ranges(nums)]; %#ok<AGROW>
+    end
+    if memo
+        cache.wiringGroups(relId) = groups;
     end
     break;   % one wiring per probe, rig and epoch
 end
