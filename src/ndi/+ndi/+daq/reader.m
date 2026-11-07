@@ -107,7 +107,7 @@ classdef reader < ndi.ido & ndi.documentservice
             assert(numel(d)==1,['Found ' int2str(numel(d)) ' documents for ' epochid ', needed exactly 1.']);
         end % getingestedarchive()
 
-        function m = ingested2epochs_t0t1_epochclock(ndi_daqreader_mfdaq_obj, S)
+        function m = ingested2epochs_t0t1_epochclock(ndi_daqreader_mfdaq_obj, S, v2EpochIds)
            % INGESTED2EPOCHS_T0T1_EPOCHCLOCK - make a map of all ingested epochs to t0t1 and epochclock
            %
            % M = ingested2epochs_epochprobemaps_t0t1_epochclock(NDI_DAQREADER_OBJ, S)
@@ -116,10 +116,21 @@ classdef reader < ndi.ido & ndi.documentservice
            %   M.t0t1 maps epochid to t0t1
            %   M.epochclock maps epochid to epochclock
            %
-           % It reads the v1 `daqreader_epochdata_ingested` documents only. An
-           % epoch whose ingested data are v2 bodies is not in the maps, so
-           % ndi.daq.system/buildepochtable asks the system for it
-           % (EPOCHCLOCK_INGESTED, T0_T1_INGESTED, through GETINGESTEDARCHIVE).
+           % They hold the v1 `daqreader_epochdata_ingested` documents only.
+           %
+           % M = ingested2epochs_t0t1_epochclock(NDI_DAQREADER_OBJ, S, V2EPOCHIDS)
+           % also fills
+           %   M.v2t0t1      epochid -> T0_T1_INGESTED of that epoch
+           %   M.v2epochclock epochid -> EPOCHCLOCK_INGESTED of that epoch
+           % for each id in V2EPOCHIDS (a cellstr of ingested epoch ids) that
+           % has no v1 document here and whose ingested data are v2 bodies
+           % (GETINGESTEDARCHIVE), read for all of them at once by
+           % ndi.vintage.ingestedArchives: the same values, without the
+           % six searches per epoch and per call. An epoch those calls
+           % would refuse (no clock, no recording) is left out, and
+           % ndi.daq.system/buildepochtable asks the system for it, which
+           % raises the error. Without V2EPOCHIDS (or on a v1 database)
+           % both maps are empty.
 
             q = ndi.query('','isa','daqreader_epochdata_ingested') & ...
                 ndi.query('','depends_on','daqreader_id', ndi_daqreader_mfdaq_obj.id());
@@ -160,6 +171,27 @@ classdef reader < ndi.ido & ndi.documentservice
            else
                m.t0t1 = containers.Map;
                m.epochclock = containers.Map;
+           end
+
+           % the v2 ingested epochs, read at once (see above)
+           m.v2t0t1 = containers.Map('KeyType','char','ValueType','any');
+           m.v2epochclock = containers.Map('KeyType','char','ValueType','any');
+           if nargin > 2 && ~isempty(v2EpochIds) && ndi.daq.reader.isv2database(S)
+               v2EpochIds = setdiff(cellstr(v2EpochIds), m.t0t1.keys, 'stable');
+               A = ndi.vintage.ingestedArchives(S, ndi_daqreader_mfdaq_obj.id(), v2EpochIds);
+               ids = A.keys;
+               for i=1:numel(ids)
+                   a = A(ids{i});
+                   if isempty(a.epochclock) || isempty(a.t0_t1)
+                       continue; % EPOCHCLOCK_INGESTED raises ingestedEpochNoClock
+                   end
+                   ec_here = {};
+                   for j=1:numel(a.epochclock)
+                       ec_here{j} = ndi.time.clocktype(a.epochclock{j});
+                   end
+                   m.v2epochclock(ids{i}) = ec_here;
+                   m.v2t0t1(ids{i}) = a.t0_t1;
+               end
            end
 
         end

@@ -66,6 +66,15 @@ function R = corpusObjectEquivalence(v1Bodies, migratedNdiDir, label, options)
 %   180 minutes reading them all (run 41721521588). The report says how many
 %   probe tables were read of how many probes; the rest are not measured.
 %
+%   R = ...(..., 'CountSearches', true) also prints, REPORT-ONLY, for each
+%   migrated session's acquisition systems with ingested epochs, how many
+%   database searches and how many seconds their ingested epochs' ids,
+%   probe maps, clocks and t0_t1 take: one epoch at a time (on a sample of
+%   20 epochs, ndi.vintage.ingestedEpochs 'Batch' false, and
+%   ndi.vintage.ingestedArchive twice per epoch, as the epoch table asked
+%   it before) and batched (all epochs: ingestedEpochs 'Batch' true and
+%   ndi.vintage.ingestedArchives), per epoch. It decides nothing.
+%
 %   Every category reports its denominator first: how many were compared,
 %   how many were the same, how many differed, and how many were found on
 %   one side only. Every read is taken inside try/catch; an error is a
@@ -81,6 +90,7 @@ arguments
     migratedNdiDir {mustBeTextScalar}
     label {mustBeTextScalar} = 'corpus'
     options.MaxProbeEpochTables (1,1) double = Inf
+    options.CountSearches (1,1) logical = false
 end
 
 label = char(label);
@@ -153,6 +163,9 @@ for i = 1:numel(both)
     ts = tic;
     a = snapshot(S1, options.MaxProbeEpochTables, {}, false, {});
     b = snapshot(S2, Inf, a.probeEpochKeys, true, a.elementEpochKeys);
+    if options.CountSearches
+        countIngestedSearches(S2);
+    end
     R.probeTables.read = R.probeTables.read + numel(a.probeEpochKeys);
     R.probeTables.probes = R.probeTables.probes + numel(a.probes);
     clear S1 S2
@@ -452,6 +465,74 @@ catch ME
     s.errors{end+1} = ['daqsystem_load: ' errorText(ME)];
 end
 mark(sprintf('%d acquisition system(s) and their epoch tables', numel(s.daq)));
+end
+
+function countIngestedSearches(S)
+% REPORT-ONLY: the database searches and seconds a migrated session's
+% ingested epochs take, one epoch at a time and batched (see 'CountSearches').
+try
+    devs = asCell(S.daqsystem_load('name', '(.*)'));
+    for d = 1:numel(devs)
+        dev = devs{d};
+        nav = dev.filenavigator;
+        docs = S.database_search(ndi.vintage.ingestedQuery(nav.id(), S.id()));
+        if isempty(docs); continue; end
+        cls = nav.epochprobemap_class;
+        E = ndi.vintage.ingestedEpochs(S, docs, cls);
+        v2 = strcmp({E.vintage}, 'V_eta');
+        if ~any(v2); continue; end
+        ids = {E(v2).epoch_id};
+        rid = dev.daqreader.id();
+        n = min(20, numel(docs));
+        sample = docs(1:n);
+        sampleIds = {E(1:n).epoch_id};
+        one = @() readOneAtATime(S, sample, cls, rid, sampleIds);
+        batched = @() readBatched(S, docs, cls, rid, ids);
+        t = tic; one(); tOne = toc(t);
+        t = tic; batched(); tAll = toc(t);
+        nOne = searchesIn(one);
+        nAll = searchesIn(batched);
+        fprintf(['      [searches] %s: %d ingested epoch(s), %d migrated. One epoch at a time ' ...
+            '(sample of %d): %.1f search(es) and %.3f s per epoch. Batched (all %d): %d ' ...
+            'search(es), %.2f per epoch, %.1f s (%.4f s per epoch)\n'], dev.name, numel(docs), ...
+            nnz(v2), n, nOne / n, tOne / n, numel(docs), nAll, nAll / numel(docs), tAll, ...
+            tAll / numel(docs));
+    end
+catch ME
+    fprintf('      [searches] raised: %s\n', errorText(ME));
+end
+end
+
+function readOneAtATime(S, docs, cls, rid, ids)
+% as the epoch tables read them before the batched reads: the navigator's
+% probe maps per epoch, each epoch's clock read twice (epochclock, t0_t1)
+ndi.vintage.ingestedEpochs(S, docs, cls, 'Batch', false);
+for k = 1:numel(ids)
+    for twice = 1:2
+        try
+            ndi.vintage.ingestedArchive(S, rid, ids{k}, 'Channels', false);
+        catch
+        end
+    end
+end
+end
+
+function readBatched(S, docs, cls, rid, ids)
+ndi.vintage.ingestedEpochs(S, docs, cls, 'Batch', true);
+ndi.vintage.ingestedArchives(S, rid, ids);
+end
+
+function n = searchesIn(f)
+% the ndi.session/database_search calls F makes, counted by the profiler
+profile('clear');
+profile('on');
+f();
+profile('off');
+info = profile('info');
+names = {info.FunctionTable.FunctionName};
+hit = endsWith(names, 'database_search') & contains(names, 'session');
+n = sum([info.FunctionTable(hit).NumCalls]);
+profile('clear');
 end
 
 function e = elementFacts(o)

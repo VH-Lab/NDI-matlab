@@ -316,20 +316,44 @@ classdef system < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice
             % Returns the epoch table for NDI_DAQSYSTEM_OBJ
             %
             et = ndi_daqsystem_obj.filenavigator.epochtable;
-            m = ndi_daqsystem_obj.daqreader.ingested2epochs_t0t1_epochclock(ndi_daqsystem_obj.session);
+            % The ingested epochs whose clock an mfdaq or image system reads
+            % from its reader (EPOCHCLOCK_INGESTED, T0_T1_INGESTED): on a v2
+            % database the reader reads all of them at once (Jess Haley,
+            % 2026-11-06, the migrated epoch-read speed fix), the same values
+            % as one epoch at a time
+            v2ids = {};
+            isIngested = false(1, numel(et));
+            if isa(ndi_daqsystem_obj, 'ndi.daq.system.mfdaq') || isa(ndi_daqsystem_obj, 'ndi.daq.system.image')
+                for i=1:numel(et)
+                    files = et(i).underlying_epochs(1).underlying;
+                    isIngested(i) = ndi.file.navigator.isingested(files);
+                    if isIngested(i)
+                        v2ids{end+1} = ndi.file.navigator.ingestedfiles_epochid(files); %#ok<AGROW>
+                    end
+                end
+            end
+            m = ndi_daqsystem_obj.daqreader.ingested2epochs_t0t1_epochclock(ndi_daqsystem_obj.session, v2ids);
             currentProgBar = ndi.gui.component.ProgressBarWindow('Setting up daq.system','GrabMostRecent',true);
             ProgBarUuid = did.ido.unique_id();
             currentProgBar.addBar('Label','Loading epochprobemaps','Tag',ProgBarUuid,'Auto',true); % Add a bar that will autoclose
             for i=1:numel(et)
                 % need slight adjustment from filenavigator epochtable
                 et(i).epochprobemap = getepochprobemap(ndi_daqsystem_obj,et(i).epoch_number,et(i).epochprobemap);
+                v2id = '';
+                if isIngested(i)
+                    v2id = ndi.file.navigator.ingestedfiles_epochid(et(i).underlying_epochs(1).underlying);
+                end
                 if m.epochclock.isKey(et(i).epoch_id)
                    et(i).epoch_clock = m.epochclock(et(i).epoch_id);
+                elseif ~isempty(v2id) && m.v2epochclock.isKey(v2id)
+                   et(i).epoch_clock = m.v2epochclock(v2id);
                 else
                    et(i).epoch_clock = epochclock(ndi_daqsystem_obj, et(i).epoch_number);
                 end
                 if m.t0t1.isKey(et(i).epoch_id)
                     et(i).t0_t1 = m.t0t1(et(i).epoch_id);
+                elseif ~isempty(v2id) && m.v2t0t1.isKey(v2id)
+                    et(i).t0_t1 = m.v2t0t1(v2id);
                 else
                     et(i).t0_t1 = t0_t1(ndi_daqsystem_obj, et(i).epoch_number);
                 end

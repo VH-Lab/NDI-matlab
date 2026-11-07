@@ -240,7 +240,7 @@ classdef TestMigrateLocalEtaB < matlab.unittest.TestCase
             % equipment entities have no v1 subject object to compare with,
             % so they are counted, not compared.
             R = ndi.unittest.migrate.corpusObjectEquivalence(testCase.Bodies, ...
-                fileparts(testCase.Result.destination), 'B');
+                fileparts(testCase.Result.destination), 'B', 'CountSearches', true);
             ndi.unittest.migrate.verifyObjectEquivalence(testCase, R);
         end
 
