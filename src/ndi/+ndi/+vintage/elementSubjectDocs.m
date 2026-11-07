@@ -59,7 +59,11 @@ docs = cell(0, 1);
 % The subjects are read 200 ids to a search (ndi.vintage.docsById), not one
 % search per element (Jess Haley, 2026-11-06: "Speed can't be slower than
 % v1"); the order is still the assertions' order.
-byId = ndi.vintage.docsById(ndi_session_obj, ids);
+% The entities are read as stored, not rebuilt (docsById 'RawBlocks'): the
+% element constructor and its readers read leaf fields and the depends_on
+% list only (NDI-matlab run 42325912635: 606 entities decoded in getelements).
+byId = ndi.vintage.docsById(ndi_session_obj, ids, ...
+    'RawBlocks', {'base', 'depends_on', 'entity'}, 'LightClass', 'entity');
 for i = 1:numel(ids)
     hit = byId(ids{i});
     if isempty(hit)

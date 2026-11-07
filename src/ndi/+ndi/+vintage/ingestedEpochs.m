@@ -94,7 +94,9 @@ cache = struct('doc', containers.Map('KeyType', 'char', 'ValueType', 'any'), ...
     'element', containers.Map('KeyType', 'char', 'ValueType', 'any'), ...
     'statements', containers.Map('KeyType', 'char', 'ValueType', 'any'), ...
     'relations', [], ...
-    'wiringGroups', containers.Map('KeyType', 'char', 'ValueType', 'any'));
+    'wiringGroups', containers.Map('KeyType', 'char', 'ValueType', 'any'), ...
+    'own', containers.Map('KeyType', 'char', 'ValueType', 'logical'), ...
+    'subjectString', containers.Map('KeyType', 'char', 'ValueType', 'char'));
 if options.Batch
     % the instruments' fields are read for all of them at once and kept for
     % this call (ndi.vintage.prefetchElementFields)
@@ -154,15 +156,23 @@ else
         'UniformOutput', false)));
 end
 seen = {};
+% every statement's edges, read once from its depends_on list (what
+% dependency_value answers: the first entry of each name, case-insensitive)
+ed = statementEdges(statements);
 for i = 1:numel(statements)
-    st = statements{i};
-    acId = st.dependency_value('acquisition_channels_id', 'ErrorIfNotFound', 0);
-    sysId = st.dependency_value('acquisition_system_id', 'ErrorIfNotFound', 0);
-    elId = st.dependency_value('instrument_id', 'ErrorIfNotFound', 0);
+    acId = ed.ac{i};
+    sysId = ed.sys{i};
+    elId = ed.el{i};
     if (isempty(acId) && isempty(sysId)) || isempty(elId)
         continue;   % not a probe-map row: no rig or no probe
     end
-    [own, cache] = isOwnSystem(S, sysId, acId, patternId, cache);
+    ownKey = [char(sysId) char(0) char(acId) char(0) char(patternId)];
+    if isKey(cache.own, ownKey)
+        own = cache.own(ownKey);
+    else
+        [own, cache] = isOwnSystem(S, sysId, acId, patternId, cache);
+        cache.own(ownKey) = own;
+    end
     if ~own
         continue;   % another acquisition system's row of this recording
     end
@@ -170,17 +180,13 @@ for i = 1:numel(statements)
     if isempty(el)
         continue;
     end
-    subjectString = '';
-    sId = st.dependency_value('entity_id', 'ErrorIfNotFound', 0);
-    if isempty(sId), sId = st.dependency_value('subject_id', 'ErrorIfNotFound', 0); end
-    [sDoc, cache] = docById(S, sId, cache);
-    if ~isempty(sDoc)
-        subjectString = localIdentifier(sDoc.document_properties);
-    end
+    sId = ed.entity{i};
+    if isempty(sId), sId = ed.subject{i}; end
+    [subjectString, cache] = subjectStringOf(S, sId, cache);
     if ~isempty(acId)
         [devicestring, cache] = deviceString(S, acId, cache);
     else
-        [devicestring, cache] = ndi.vintage.wiredDeviceString(S, st, sysId, elId, cache);
+        [devicestring, cache] = ndi.vintage.wiredDeviceString(S, statements{i}, sysId, elId, cache);
     end
     key = strjoin({el.name, num2str(el.reference), el.type, devicestring, subjectString}, char(0));
     if any(strcmp(seen, key))
@@ -194,6 +200,55 @@ for i = 1:numel(statements)
         pm(end+1) = row; %#ok<AGROW>
     end
 end
+end
+
+function ed = statementEdges(statements)
+% Each statement's probe-map edges, as dependency_value('...',
+% 'ErrorIfNotFound', 0) reads them (the first entry of the name, compared
+% case-insensitively; its value or document_id), from one pass over each
+% depends_on list rather than five method calls per statement.
+names = {'acquisition_channels_id', 'acquisition_system_id', 'instrument_id', ...
+    'entity_id', 'subject_id'};
+fields = {'ac', 'sys', 'el', 'entity', 'subject'};
+n = numel(statements);
+ed = struct();
+for f = 1:numel(fields)
+    ed.(fields{f}) = repmat({''}, 1, n);
+end
+for i = 1:n
+    p = statements{i}.document_properties;
+    if ~isfield(p, 'depends_on') || isempty(p.depends_on)
+        continue;
+    end
+    dep = p.depends_on;
+    have = lower({dep.name});
+    for f = 1:numel(names)
+        m = find(strcmp(have, names{f}), 1);
+        if ~isempty(m)
+            v = did.document.i_readDependencyTarget(dep(m));
+            if ~isempty(v)
+                ed.(fields{f}){i} = char(v);
+            end
+        end
+    end
+end
+end
+
+function [s, cache] = subjectStringOf(S, sId, cache)
+% the local identifier of the statement's subject (cached per id)
+s = '';
+if isempty(sId)
+    return;
+end
+if isKey(cache.subjectString, sId)
+    s = cache.subjectString(sId);
+    return;
+end
+[sDoc, cache] = docById(S, sId, cache);
+if ~isempty(sDoc)
+    s = localIdentifier(sDoc.document_properties);
+end
+cache.subjectString(sId) = s;
 end
 
 function [tf, cache] = isOwnSystem(S, sysId, acId, patternId, cache)
@@ -349,7 +404,7 @@ if isempty(epochDocIds)
 end
 % the epoch entities are read only for their local identifier (localIdentifier)
 cache = remember(cache, ndi.vintage.docsById(S, epochDocIds, ...
-    'LightPaths', {'entity.local_identifier'}));
+    'LightPaths', {'entity.local_identifier'}, 'RawBlocks', {'base', 'entity'}));
 % the anchors onto each epoch, then the statements each anchor times. Each
 % epoch's statements are kept by their position in the one answer, so they
 % stay in the order its own search would have returned them.
@@ -378,20 +433,25 @@ for e = 1:numel(epochDocIds)
     cache.statements(epochDocIds{e}) = statements(unique(rowsOf(epochDocIds{e})));
 end
 % the documents the statements name, by id: systems, channels, probes, subjects
-ids = {};
-for i = 1:numel(statements)
-    st = statements{i};
-    for name = {'acquisition_channels_id', 'acquisition_system_id', 'instrument_id', ...
-            'entity_id', 'subject_id'}
-        ids{end+1} = st.dependency_value(name{1}, 'ErrorIfNotFound', 0); %#ok<AGROW>
-    end
-end
-ids = ids(cellfun(@(x) ischar(x) && ~isempty(x), ids));
-cache = remember(cache, ndi.vintage.docsById(S, ids));
+% The probes and subjects are read light when they are entities: their
+% readers (localIdentifier; ndi.vintage.elementFields and
+% prefetchElementFields) read nothing of an entity but these fields and its
+% id (Jess Haley, 2026-11-06: "Speed can't be slower than v1"); a document of
+% another class is read whole (ndi.vintage.docsById 'LightClass').
+ed = statementEdges(statements);
+rigIds = [ed.ac, ed.sys];
+entityIds = [ed.el, ed.entity, ed.subject];
+rigIds = rigIds(~cellfun(@isempty, rigIds));
+entityIds = entityIds(~cellfun(@isempty, entityIds));
+cache = remember(cache, ndi.vintage.docsById(S, rigIds));
+cache = remember(cache, ndi.vintage.docsById(S, entityIds, 'LightPaths', ...
+    {'entity.local_identifier', 'entity.name', 'entity.type.node', 'entity.type.name'}, ...
+    'RawBlocks', {'base', 'entity'}));
+ids = unique([rigIds, entityIds], 'stable');
 instruments = {};
 for i = 1:numel(statements)
-    el = statements{i}.dependency_value('instrument_id', 'ErrorIfNotFound', 0);
-    if ischar(el) && ~isempty(el) && isKey(cache.doc, el) && ~isempty(cache.doc(el))
+    el = ed.el{i};
+    if ~isempty(el) && isKey(cache.doc, el) && ~isempty(cache.doc(el))
         instruments{end+1} = cache.doc(el); %#ok<AGROW>
     end
 end
@@ -407,18 +467,49 @@ sysIds = sysIds(cellfun(@(x) ischar(x) && ~isempty(x), sysIds));
 cache = remember(cache, ndi.vintage.docsById(S, sysIds));
 % the wiring relations timed by the statements' anchors, filed by (probe,
 % system) for ndi.vintage.wiredDeviceString, in database order
-wiringAnchors = {};
+wiringAnchors = cell(1, numel(statements));
 for i = 1:numel(statements)
-    wiringAnchors = [wiringAnchors, ndi.v2.edgeIds(statements{i}.document_properties, ...
-        'time_reference_id')]; %#ok<AGROW>
+    wiringAnchors{i} = ndi.v2.edgeIds(statements{i}.document_properties, 'time_reference_id');
 end
-wiringAnchors = unique(wiringAnchors, 'stable');
+wiringAnchors = unique([{}, wiringAnchors{:}], 'stable');
 rels = {};
 if ~isempty(wiringAnchors)
-    rels = S.database_search(ndi.query('', 'isa', 'directed_relation', '') & ...
+    rels = wiringRelations(S, ndi.query('', 'isa', 'directed_relation', '') & ...
         ndi.vintage.edgeIn('time_reference_id', wiringAnchors));
 end
 cache.relations = ndi.vintage.wiringIndex(rels);
+end
+
+function rels = wiringRelations(S, q)
+% The wiring relations Q finds, in its order, holding what their readers use
+% (ndi.vintage.wiringIndex: the depends_on edges; wiredDeviceString: the
+% directed_relation's relation term and conditions), decoded from the stored
+% documents without rebuilding them (ndi.session/database_search_json). Each
+% reader reads only leaf values and takes a struct array or a cell, so
+% jsondecode's shapes read as the rebuilt ones do. The rebuild was most of a
+% document's read (NDI-matlab run 42334220421). Read whole where the
+% database cannot answer this way.
+rows = [];
+if ismethod(S, 'database_search_json')
+    rows = S.database_search_json(q, {'document_class.class_name', 'depends_on', ...
+        'directed_relation.relation', 'directed_relation.conditions'});
+end
+if ~isstruct(rows)
+    rels = S.database_search(q);
+    return;
+end
+rels = cell(1, numel(rows));
+for k = 1:numel(rows)
+    v = rows(k).values;
+    dep = v{2};
+    if isempty(dep); dep = struct('name', {}, 'value', {}); end
+    dr = struct();
+    if ~isempty(v{3}); dr.relation = v{3}; end
+    dr.conditions = v{4};
+    rels{k} = ndi.document(struct('base', struct('id', rows(k).doc_id), ...
+        'document_class', struct('class_name', char(v{1})), ...
+        'depends_on', {dep}, 'directed_relation', dr));
+end
 end
 
 function cache = remember(cache, found)

@@ -623,6 +623,21 @@ classdef element < ndi.ido & ndi.epoch.epochset & ndi.documentservice & matlab.m
             % Returns the document unique reference for NDI_ELEMENT_OBJ. If there is no associated
             % document for the element, then an error is returned.
             element_id = [];
+            % An element built from a migrated document (etaDocumentId) is
+            % answered by that document's id whenever it is still in the
+            % session: load_element_doc would read it by that id
+            % (ndi.vintage.elementDoc's first route) and return its id. The
+            % check reads the documents table's key only, without decoding
+            % the document (ndi.session/database_has_id; NDI-matlab run
+            % 42334220421: 612 probe ids decoded 612 documents). When it is
+            % gone, the lookup below runs as before.
+            if ~isempty(ndi_element_obj.etaDocumentId) ...
+                    && strcmp(char(ndi_element_obj.etaDocumentId), char(ndi_element_obj.identifier)) ...
+                    && ismethod(ndi_element_obj.session, 'database_has_id') ...
+                    && ndi_element_obj.session.database_has_id(ndi_element_obj.identifier)
+                element_id = ndi_element_obj.identifier;
+                return;
+            end
             element_doc = ndi_element_obj.load_element_doc();
             if isempty(element_doc)
                 error('no element document.');
