@@ -52,6 +52,23 @@ function [pyramidDoc, levelDocs, info] = fromOMEZarr(session, zarrPath, options)
 %                Empty (default) means auto-size from the budget.
 %                Forwarded to makePyramid.
 %
+%   STRAIGHT TO THE CLOUD. SESSION may be an
+%   ndi.cloud.upload.SessionWriter instead of an ndi.session: the
+%   documents are then added to that session of an NDI Cloud dataset,
+%   with no local session or dataset involved. The subject (and the
+%   element and source file, if given) must already be in the cloud,
+%   the subject in that same session; this is checked before any work
+%   is done. Chunks are always materialized for a cloud target (the
+%   cloud cannot read the store on this disk), and each level's chunk
+%   files are sent as soon as the level is built and checked against
+%   the CRC-32 NDI Cloud records. The documents are added only once
+%   every file is in (SessionWriter/commit), so a failed run leaves no
+%   documents behind.
+%
+%     W = ndi.cloud.upload.SessionWriter(cloudDatasetId, sessionId);
+%     [P, L, info] = ndi.fun.doc.lightsheet.fromOMEZarr(W, zarrPath, ...
+%         'subjectID', subjectId, 'codec', 'blosc-zstd');
+%
 %   INFO returns a struct with fields:
 %     zarrPath          - absolute path resolved
 %     pyramids          - the raw output of ndr.format.omezarr.listPyramids
@@ -59,6 +76,8 @@ function [pyramidDoc, levelDocs, info] = fromOMEZarr(session, zarrPath, options)
 %     sourceFileID      - id of the fileReference document used
 %     sharedLevel0      - logical, true if level 0 was shared across
 %                         reductions and deduped
+%     cloud             - (cloud target only) what was sent: the report
+%                         SessionWriter/commit returns
 %
 %   Example:
 %     S = ndi.session.dir('mysession','/path/to/session');
@@ -67,6 +86,7 @@ function [pyramidDoc, levelDocs, info] = fromOMEZarr(session, zarrPath, options)
 %         'subjectID', subj.id());
 %
 %   See also: ndi.fun.doc.lightsheet.makePyramid,
+%             ndi.cloud.upload.SessionWriter,
 %             ndi.fun.doc.lightsheet.chooseLevel,
 %             ndi.fun.doc.lightsheet.viewCommand,
 %             ndr.format.omezarr.listPyramids,
@@ -129,6 +149,8 @@ function [pyramidDoc, levelDocs, info] = fromOMEZarr(session, zarrPath, options)
              '''subjectID''.']);
     end
 
+    toCloud = isa(session, 'ndi.cloud.upload.SessionWriter');
+
     if ~isfolder(zarrPath)
         error('NDI:lightsheet:fromOMEZarr:noSuchStore', ...
             'OME-Zarr store not found at %s.', zarrPath);
@@ -165,6 +187,19 @@ function [pyramidDoc, levelDocs, info] = fromOMEZarr(session, zarrPath, options)
     perEntryReduction = cell(n, 1);
     for i = 1:n
         perEntryReduction{i} = pickReduction(pyramids(i), options.reductionMap);
+    end
+
+    if toCloud
+        % Refuse now, not after hours of chunking: the subject must be in
+        % the target session, anything else named must be in the dataset.
+        session.requireSubject(options.subjectID);
+        if ~isempty(options.elementID)
+            session.requireDocument(options.elementID);
+        end
+        if ~isempty(options.sourceFileID)
+            session.requireDocument(options.sourceFileID);
+        end
+        options.materializeChunks = true;
     end
 
     sourceFileID = options.sourceFileID;
@@ -207,6 +242,9 @@ function [pyramidDoc, levelDocs, info] = fromOMEZarr(session, zarrPath, options)
         'reductions', {unique(perEntryReduction)}, ...
         'sourceFileID', sourceFileID, ...
         'sharedLevel0', sharedLevel0);
+    if toCloud
+        info.cloud = session.commit();
+    end
 end
 
 function r = pickReduction(pyramid, reductionMap)

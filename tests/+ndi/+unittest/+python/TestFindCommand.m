@@ -16,7 +16,7 @@ classdef TestFindCommand < matlab.unittest.TestCase
 
     properties (Constant)
         PrefPaths = {'GUI.GEFManager.ViewerLauncher', ...
-            'GUI.LightsheetZarrManager.ViewerLauncher'}
+            'GUI.LightsheetManager.ViewerLauncher'}
     end
 
     methods (TestMethodSetup)
@@ -124,7 +124,7 @@ classdef TestFindCommand < matlab.unittest.TestCase
 
         function testLightsheetHasItsOwnPreference(testCase)
             chosen = testCase.touch(testCase.folder('mine'), 'myLightsheet');
-            ndi.preferences.set('GUI.LightsheetZarrManager.ViewerLauncher', string(chosen));
+            ndi.preferences.set('GUI.LightsheetManager.ViewerLauncher', string(chosen));
             testCase.verifyEqual(ndi.python.findCommand('napariViewLightsheet'), chosen);
         end
 

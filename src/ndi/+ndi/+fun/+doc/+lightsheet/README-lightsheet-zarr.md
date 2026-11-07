@@ -74,11 +74,95 @@ axis is at most `minLevelSize` (512) voxels. Chunking, encoding,
 parallel compression and installation are `makePyramid`'s, through its
 `levelSources` option.
 
+## Straight to a cloud session: `ndi.cloud.upload.SessionWriter`
+
+Both builders accept an `ndi.cloud.upload.SessionWriter` in place of a
+session. The documents then go directly to one session of an NDI Cloud
+dataset, without a local session or `uploadDataset` step:
+
+```matlab
+sessions = ndi.cloud.upload.SessionWriter.listSessions(datasetId);
+subjects = ndi.cloud.upload.SessionWriter.listSubjects(datasetId, sessionId);
+W = ndi.cloud.upload.SessionWriter(datasetId, sessionId);
+[P, L, info] = ndi.fun.doc.lightsheet.fromOMEZarr(W, zarrPath, ...
+    'subjectID', subjectId, 'codec', 'blosc-zstd');
+```
+
+- **A session, never just the dataset.** `sessionId` must be one of the
+  dataset's sessions (its `session_in_a_dataset` records). Every document
+  gets it as `base.session_id`, so the pyramid is in that session when
+  the dataset is downloaded.
+- **The subject must already be there, in that session.** The builders
+  check this (and `elementID` / `sourceFileID`, if given) before any
+  chunk is built.
+- **Chunks are always materialized.** The cloud cannot read a store on
+  local disk.
+- **Streamed, declared first.** Before a level is built, it is declared:
+  every chunk gets its uid, and the level document and its manifest
+  (which lists those uids) are uploaded at once, after the pyramid
+  document. The pyramid's label carries " (uploading)" until the end.
+  Chunks are then uploaded as each super-block is written, in batches,
+  each checked against the CRC-32 NDI Cloud records (`lookupFiles`; size
+  when no checksum was recorded) while the next is built. A missing or
+  different file is sent again on its own; still wrong is an error.
+  Nothing in the cloud is ever unreferenced, so the orphan cleanup has
+  nothing to remove; a stopped run leaves a pyramid labelled
+  "(uploading)" with some chunks missing.
+- **Disk.** A chunk is deleted locally once the cloud has it, unless a
+  later level is reduced from its level; that level is deleted once the
+  later level is built. For SmartSPIM, level 1 of each ladder is reduced
+  straight from the slices (one more read of them per ladder), so level
+  0 is never kept. Peak disk is roughly one level 1 plus one level 2.
+- **Commit.** At the end every declared chunk is looked up once more, the
+  remaining documents are added, and the pyramid's label is updated to
+  drop " (uploading)".
+
 ## GUI
 
-`ndi.gui.app.LightsheetZarrManager(session)` mirrors `GEFManager`:
-lists pyramids in a session, and drives Add / View / Delete. `View`
-builds the napari command from `viewCommand` and shells out.
+`ndi.gui.app.LightsheetManager(session)` (Apps menu: **Lightsheet Manager**)
+mirrors `GEFManager`: it lists the pyramids in a session and drives Add /
+View / Delete. `View` builds the napari command from `viewCommand` and
+shells out.
+
+`Add...` opens one dialog, filled in top to bottom:
+
+1. **Add to**: this session, or a session in an NDI Cloud dataset (then
+   pick the dataset and one of its sessions).
+2. **Subject**: one of that session's subjects, or **New subject...**,
+   which adds one (local identifier and description) to that session.
+3. **Image folder**: a SmartSPIM acquisition folder (the one holding the
+   stitched `All_Channels`) or an OME-Zarr store. The type is detected and
+   shown; SmartSPIM uses `fromSPIM`, OME-Zarr `fromOMEZarr`.
+4. **Label** (defaults to the folder name) and, for SmartSPIM, an optional
+   **voxel size** when the acquisition's metadata does not give one.
+5. **Compression**: the Blosc-Zstd level of the stored chunks, 1-9. It
+   defaults to 8 for the cloud and 5 for this session. Level 9 is
+   allowed but warned about: c-blosc maps Blosc level L to Zstd level
+   2L-1, except that 9 is Zstd's maximum (22), which is many times slower
+   and needs far more memory per worker for a percent or two smaller
+   files.
+6. **Reductions** (SmartSPIM only): mean and max, mean only, or max only.
+   An OME-Zarr store brings its own ladders.
+7. **Workers**: parallel workers compressing chunks. It starts at the
+   size of an open parallel pool, otherwise min(8, cores); more than 1
+   opens a pool of that size.
+
+The box at the bottom lists what is still missing, and **Add** stays
+disabled until nothing is. Chunks are always stored in NDI, locally too:
+the viewer reads only stored chunks. A pyramid added to the cloud goes
+through `ndi.cloud.upload.SessionWriter` and is not listed in the table,
+which shows the local session. The dialog's decisions are static
+functions (`addChoices`, `sourceKind`, `addPlan`, `addMessage`,
+`subjectProblems`) and its work is `addSubject` and `runAdd`, so the same
+add can be scripted:
+
+```matlab
+c = ndi.gui.app.LightsheetManager.addChoices();
+c.subjectID = subjectId;
+c.sourcePath = '/data/ferret42_SmartSPIM';
+c.sourceKind = ndi.gui.app.LightsheetManager.sourceKind(c.sourcePath);
+ndi.gui.app.LightsheetManager.runAdd(S, c);
+```
 
 ### Viewer logs
 

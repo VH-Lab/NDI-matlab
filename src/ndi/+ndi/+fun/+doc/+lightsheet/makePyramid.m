@@ -79,6 +79,12 @@ function [pyramidDoc, levelDocs, sharedLevel0] = makePyramid(session, pyramids, 
 %                                         block-reduce the level at PATH
 %                                         (written earlier in this call)
 %                                         by per-axis factor F
+%         struct('kind','reduceSmartspim', 'slicePaths', ..., 'sourceDtype',
+%                CLASS, 'fromShape', SHAPE, 'factor', F, 'reduction', R)
+%                                         block-reduce the SmartSPIM slices
+%                                         themselves (full resolution, of
+%                                         shape SHAPE) by F, for a level
+%                                         whose finer level is not kept
 %                    A path not in the map falls back to 'omezarr'.
 %
 %   See also: ndi.fun.doc.lightsheet.fromOMEZarr,
@@ -206,9 +212,23 @@ function [pyramidDoc, levelDocs, sharedLevel0] = makePyramid(session, pyramids, 
         label = firstEntry.name;
     end
 
+    % STREAMING (a target such as ndi.cloud.upload.SessionWriter that
+    % has streamMembers): each level is declared -- uploaded with every
+    % chunk's uid in its manifest -- before its chunks exist, and the
+    % chunks are sent as each super-block is written, so the disk holds
+    % only what is in flight plus the one level a later level is reduced
+    % from. The pyramid goes up first, labelled "(uploading)" until the
+    % last chunk is in; the target replaces it with the real label at
+    % commit.
+    streaming = options.materializeChunks && ismethod(session, 'streamMembers');
+    docLabel = label;
+    if streaming
+        docLabel = [char(label) ' (uploading)'];
+    end
+
     pyramidDoc = session.newdocument('lightsheetZarrPyramid', ...
         'lightsheetZarrPyramid', struct( ...
-            'label', label, ...
+            'label', docLabel, ...
             'pyramid_name', char(firstEntry.name), ...
             'pyramid_type', char(firstEntry.type), ...
             'axes_order', axesOrder, ...
@@ -285,6 +305,16 @@ function [pyramidDoc, levelDocs, sharedLevel0] = makePyramid(session, pyramids, 
     docByPath = containers.Map();
     sharedLevel0 = false;
     doneChunks = 0;
+    % How many later levels are reduced from each level. A streamed
+    % level is kept locally only while that count is above zero.
+    readers = containers.Map('KeyType', 'char', 'ValueType', 'double');
+    for idx = 1:numel(pathOrder)
+        from = reducedFrom(options.levelSources, pathOrder{idx});
+        if ~isempty(from)
+            if ~isKey(readers, from), readers(from) = 0; end
+            readers(from) = readers(from) + 1;
+        end
+    end
     for idx = 1:numel(pathOrder)
         p = pathOrder{idx};
         rep = representative(p);
@@ -315,17 +345,47 @@ function [pyramidDoc, levelDocs, sharedLevel0] = makePyramid(session, pyramids, 
             source = resolveLevelSource(session, p, entry, level, ...
                 options, docByPath);
         end
+        stream = [];
+        if streaming
+            stream = struct('session', session, ...
+                'retain', isKey(readers, p) && readers(p) > 0);
+        end
         [levelDocs{idx}, doneChunks] = makeOneLevel(session, pyramidDoc, ...
             entry, level, idx - 1, reductionFn, options, ...
             levelChunks{idx}, levelGrids{idx}, ...
-            doneChunks, totalChunks, source);
+            doneChunks, totalChunks, source, stream);
         docByPath(p) = levelDocs{idx};
+        % The level this one was reduced from may now be finished with.
+        from = reducedFrom(options.levelSources, p);
+        if streaming && ~isempty(from)
+            readers(from) = readers(from) - 1;
+            if readers(from) == 0
+                session.releaseMembers(docByPath(from));
+            end
+        end
+    end
+    if streaming
+        % The label without "(uploading)", in place once every chunk is in.
+        pyramidDoc = pyramidDoc.setproperties('lightsheetZarrPyramid.label', label);
+        session.replaceOnCommit(pyramidDoc);
     end
     reportProgress(options.progressFcn, max(doneChunks, totalChunks), ...
         max(totalChunks, 1), 'Done.');
 end
 
-function [levelDoc, doneChunks] = makeOneLevel(session, pyramidDoc, pyramidEntry, level, levelIndex, reductionFn, options, chunks, chunkGrid, doneChunks, totalChunks, source)
+function from = reducedFrom(levelSources, p)
+% The level path P is block-reduced from, or '' when it is read from
+% elsewhere (a store, or slices).
+    from = '';
+    if isKey(levelSources, p)
+        src = levelSources(p);
+        if strcmp(src.kind, 'reduce')
+            from = char(src.fromPath);
+        end
+    end
+end
+
+function [levelDoc, doneChunks] = makeOneLevel(session, pyramidDoc, pyramidEntry, level, levelIndex, reductionFn, options, chunks, chunkGrid, doneChunks, totalChunks, source, stream)
 
     if options.materializeChunks
         nChunksStored = prod(chunkGrid);
@@ -363,6 +423,22 @@ function [levelDoc, doneChunks] = makeOneLevel(session, pyramidDoc, pyramidEntry
     end
 
     tmpRoot = '';
+    if ~isempty(stream)
+        % Declare the level before building it: every chunk gets its uid
+        % now, in the manifest, from the path it will be written to (the
+        % names padEncodeAndWrite uses). The target uploads the level
+        % document and manifest, then takes each chunk as it is written.
+        tmpRoot = tempname;
+        mkdir(tmpRoot);
+        nChunks = prod(chunkGrid);
+        planned = arrayfun(@(i) fullfile(tmpRoot, sprintf('chunk_%d.bin', i)), ...
+            1:nChunks, 'UniformOutput', false);
+        levelDoc = levelDoc.addFileSeries('chunk.bin', planned, 'indices', 1:nChunks);
+        session.declare(levelDoc);
+        stream.levelDoc = levelDoc;
+        stream.tmpRoot = tmpRoot;
+    end
+    tmpCleaner = onCleanup(@() cleanupTmp(tmpRoot));
     if options.materializeChunks
         levelLabel = sprintf('Level %d (%s)', levelIndex, reductionFn);
         [levelDoc, tmpRoot, doneChunks] = attachChunkFiles(levelDoc, ...
@@ -370,14 +446,18 @@ function [levelDoc, doneChunks] = makeOneLevel(session, pyramidDoc, pyramidEntry
             options.codec, options.clevel, ...
             options.progressFcn, doneChunks, totalChunks, levelLabel, ...
             options.numWorkers, options.prefetchBytes, options.asyncPrefetch, ...
-            options.debugLog);
+            options.debugLog, stream);
+        if isempty(stream)
+            tmpCleaner = onCleanup(@() cleanupTmp(tmpRoot));
+        end
     end
-    tmpCleaner = onCleanup(@() cleanupTmp(tmpRoot));
 
-    session.database_add(levelDoc);
+    if isempty(stream)
+        session.database_add(levelDoc);
+    end
 end
 
-function [levelDoc, tmpRoot, doneChunks] = attachChunkFiles(levelDoc, source, level, chunks, chunkGrid, codec, clevel, progressFcn, doneChunks, totalChunks, levelLabel, numWorkers, prefetchBytes, asyncPrefetch, debugLog)
+function [levelDoc, tmpRoot, doneChunks] = attachChunkFiles(levelDoc, source, level, chunks, chunkGrid, codec, clevel, progressFcn, doneChunks, totalChunks, levelLabel, numWorkers, prefetchBytes, asyncPrefetch, debugLog, stream)
 % Read the source zarr level as a whole array, then re-tile into the
 % level document's chunk shape and attach each chunk as chunk.bin_<idx>
 % (1-based, C-order over chunkGrid). Files are ingested into DID, which
@@ -399,9 +479,14 @@ function [levelDoc, tmpRoot, doneChunks] = attachChunkFiles(levelDoc, source, le
         shape(end+1:numel(chunks)) = 1;
     end
 
-    % 1-based linear index goes into the chunk.bin_# filename.
-    tmpRoot = tempname;
-    mkdir(tmpRoot);
+    % 1-based linear index goes into the chunk.bin_# filename. A
+    % streamed level was declared with paths in a folder made for it.
+    if isempty(stream)
+        tmpRoot = tempname;
+        mkdir(tmpRoot);
+    else
+        tmpRoot = stream.tmpRoot;
+    end
     % No onCleanup here: tmpRoot is returned so the CALLER can register
     % the cleanup AFTER session.database_add has ingested the files. If
     % we cleaned up on return, database_add would find the paths already
@@ -600,6 +685,11 @@ function [levelDoc, tmpRoot, doneChunks] = attachChunkFiles(levelDoc, source, le
         for j = 1:bs
             seriesLocations{chunkIdxs(j)} = tempPaths{j};
         end
+        if ~isempty(stream)
+            % Off this disk as soon as the target has them.
+            stream.session.streamMembers(stream.levelDoc, 'chunk.bin', ...
+                chunkIdxs, tempPaths, stream.retain);
+        end
         postAddDocSize = preAddDocSize;
         doneChunks = doneChunks + bs;
         reportProgress(progressFcn, doneChunks, totalChunks, ...
@@ -622,8 +712,10 @@ function [levelDoc, tmpRoot, doneChunks] = attachChunkFiles(levelDoc, source, le
     % automatically. See did.document.seriesNames docstring for the
     % contract. The schema declares "chunk.bin" in both file_list and
     % file_series.
-    levelDoc = levelDoc.addFileSeries('chunk.bin', seriesLocations, ...
-        'indices', 1:nChunks);
+    if isempty(stream)
+        levelDoc = levelDoc.addFileSeries('chunk.bin', seriesLocations, ...
+            'indices', 1:nChunks);
+    end
 end
 
 function bytes = levelDocPropertyBytes(levelDoc)
@@ -763,6 +855,8 @@ function bigTile = readSuperBlockRegion(source, loBBox, hiBBox)
             bigTile = readSmartSpimRegion(source, loBBox, hiBBox);
         case 'reduce'
             bigTile = readReducedRegion(source, loBBox, hiBBox);
+        case 'reduceSmartspim'
+            bigTile = readSmartSpimReducedRegion(source, loBBox, hiBBox);
         otherwise
             error('NDI:lightsheet:makePyramid:unknownSourceKind', ...
                 'Unknown level source kind ''%s''.', source.kind);
@@ -800,6 +894,12 @@ function source = resolveLevelSource(session, p, entry, level, options, docByPat
                 'pyramidName', char(entry.name), 'kInEntry', kInEntry);
         case 'smartspim'
             % Self-contained already (slice paths + dtype).
+        case 'reduceSmartspim'
+            % Block-reduced straight from the SmartSPIM slices rather than
+            % from a stored level: self-contained, like 'smartspim'.
+            source.dtype  = char(level.dtype);
+            source.factor = double(source.factor(:).');
+            source.fromShape = double(source.fromShape(:).');
         case 'reduce'
             if ~isKey(docByPath, source.fromPath)
                 error('NDI:lightsheet:makePyramid:reduceOrder', ...
@@ -834,7 +934,7 @@ end
 function a = readAmplification(source, typesize)
 % How many bytes the reader holds per output byte (see attachChunkFiles).
     a = 1;
-    if strcmp(source.kind, 'reduce')
+    if any(strcmp(source.kind, {'reduce', 'reduceSmartspim'}))
         a = prod(source.factor);
         if strcmp(source.reduction, 'mean')
             a = a * max(1, 4 / typesize);   % reduced in single precision
@@ -861,6 +961,19 @@ function out = readSmartSpimRegion(source, lo, hi)
                 reshape(tile, [1 1 1 size(tile, 1) size(tile, 2)]);
         end
     end
+end
+
+function out = readSmartSpimReducedRegion(source, lo, hi)
+% READSMARTSPIMREDUCEDREGION - region [lo, hi] of a level block-reduced
+% directly from the SmartSPIM slices (see readReducedRegion for the
+% block arithmetic). Used when the level it would otherwise be reduced
+% from is not kept on this disk.
+    f = source.factor;
+    srcLo = (lo - 1) .* f + 1;
+    srcHi = min(hi .* f, source.fromShape);
+    src = readSmartSpimRegion(struct('slicePaths', {source.slicePaths}, ...
+        'dtype', source.sourceDtype), srcLo, srcHi);
+    out = ndi.fun.doc.lightsheet.reduceBlocks(src, f, source.reduction, source.dtype);
 end
 
 function out = readReducedRegion(source, lo, hi)
