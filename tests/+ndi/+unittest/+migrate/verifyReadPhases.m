@@ -17,14 +17,15 @@ function verifyReadPhases(testCase, T, options)
 %   The denominator is asserted first: at least one session read, and no
 %   phase that raised (a phase that raised has no time to compare).
 %
-%   'Enforce', false prints the verdict without failing (report-only).
+%   'Enforce', false prints the verdict without failing (report-only). The
+%   B and Dab tests enforce it (the default).
 
 arguments
     testCase
     T struct
     options.RelativeMargin (1,1) double = 0.10
     options.AbsoluteMargin (1,1) double = 1.0
-    options.Enforce (1,1) logical = false
+    options.Enforce (1,1) logical = true
 end
 
 nErr = 0;
