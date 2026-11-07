@@ -428,6 +428,86 @@ classdef bulkUploadsJobInfoTest < matlab.unittest.TestCase
             testCase.Narrative = narrative;
         end
 
+        function testWaitForAllBulkUploadsIgnoresAbandonedQueuedJob(testCase)
+            % Requesting a bulk upload URL creates a 'queued' job that only
+            % moves on when the zip arrives. If the upload never happens,
+            % the job stays 'queued'. waitForAllBulkUploads must treat a
+            % queued job older than staleAfter as abandoned and return
+            % promptly instead of spending its whole timeout.
+            testCase.Narrative = "Begin testWaitForAllBulkUploadsIgnoresAbandonedQueuedJob";
+            narrative = testCase.Narrative;
+
+            narrative(end+1) = "STEP 1: Provisioning a bulk upload URL (creates a queued job) and never uploading to it.";
+            [info, ~] = testCase.createBulkJob(narrative);
+            narrative(end+1) = "Job created with jobId=" + info.jobId + ".";
+
+            % The job's age is the server's createdAt compared with this
+            % machine's clock, so leave a margin for clock skew.
+            staleAfter = 5;
+            waitBeforeCheck = staleAfter + 10;
+            narrative(end+1) = "STEP 2: Pausing " + waitBeforeCheck + "s so the job is older than staleAfter=" + staleAfter + "s.";
+            pause(waitBeforeCheck);
+
+            narrative(end+1) = "STEP 3: Calling waitForAllBulkUploads with staleAfter=" + staleAfter + ", timeout=60.";
+            t0 = tic;
+            [b, ans_wait, resp, url] = ndi.cloud.api.files.waitForAllBulkUploads(testCase.DatasetID, ...
+                'timeout', 60, 'initialInterval', 0.5, 'maxInterval', 2, 'staleAfter', staleAfter);
+            elapsed = toc(t0);
+            narrative(end+1) = "Wait returned after " + elapsed + "s. Last URL polled: " + string(url);
+            msg = ndi.unittest.cloud.APIMessage(narrative, b, ans_wait, resp, url);
+
+            narrative(end+1) = "Testing: returns b=true (the only active job is abandoned).";
+            testCase.verifyTrue(b, "waitForAllBulkUploads did not ignore an abandoned queued job. " + msg);
+
+            narrative(end+1) = "Testing: returns quickly (<15s), not after the 60s timeout.";
+            testCase.verifyLessThan(elapsed, 15, ...
+                "waitForAllBulkUploads waited on an abandoned queued job. " + msg);
+
+            narrative(end+1) = "Testing: the abandoned job is reported in answer.staleJobs.";
+            staleIds = strings(0, 1);
+            if isstruct(ans_wait) && isfield(ans_wait, 'staleJobs') && ~isempty(ans_wait.staleJobs)
+                sj = ans_wait.staleJobs;
+                if iscell(sj)
+                    staleIds = string(cellfun(@(j) j.jobId, sj, 'UniformOutput', false));
+                else
+                    staleIds = string({sj.jobId});
+                end
+            end
+            testCase.verifyTrue(any(staleIds == string(info.jobId)), ...
+                "Abandoned job " + info.jobId + " missing from answer.staleJobs. " + msg);
+
+            testCase.Narrative = narrative;
+        end
+
+        function testListActiveBulkUploadsAcceptsSince(testCase)
+            % The listing accepts an optional `since` that limits terminal
+            % jobs to those completed at or after it. A fresh dataset has
+            % no failures either way; this checks the parameter is sent
+            % and accepted (servers that predate it ignore it).
+            testCase.Narrative = "Begin testListActiveBulkUploadsAcceptsSince";
+            narrative = testCase.Narrative;
+
+            since = datetime('now', 'TimeZone', 'UTC') - hours(1);
+            narrative(end+1) = "Calling listActiveBulkUploads(state='failed', since=" + string(since) + ").";
+            [b, ans_list, resp, url] = ndi.cloud.api.files.listActiveBulkUploads(testCase.DatasetID, ...
+                'state', 'failed', 'since', since);
+            narrative(end+1) = "Attempted to call API with URL " + string(url);
+            msg = ndi.unittest.cloud.APIMessage(narrative, b, ans_list, resp, url);
+            testCase.verifyTrue(b, "listActiveBulkUploads with since failed. " + msg);
+
+            narrative(end+1) = "Testing: the URL carries the since parameter.";
+            testCase.verifyTrue(contains(string(url), "since="), "since was not sent. " + msg);
+
+            narrative(end+1) = "Testing: response has an empty 'jobs' array.";
+            testCase.verifyTrue(isstruct(ans_list) && isfield(ans_list, 'jobs'), ...
+                "Response missing 'jobs' field. " + msg);
+            if isstruct(ans_list) && isfield(ans_list, 'jobs')
+                testCase.verifyEmpty(ans_list.jobs, "Fresh dataset reported failed jobs. " + msg);
+            end
+
+            testCase.Narrative = narrative;
+        end
+
         function testWaitForAllBulkUploadsDrivesActiveJobToComplete(testCase)
             % End-to-end happy path: provision a job, PUT a real zip,
             % waitForAllBulkUploads must drive the active set to empty
@@ -478,10 +558,12 @@ classdef bulkUploadsJobInfoTest < matlab.unittest.TestCase
         end
 
         function testWaitForAllBulkUploadsTimesOutWhenJobNeverProgresses(testCase)
-            % A queued job that never receives a zip stays active forever.
-            % Pointing waitForAllBulkUploads at such a dataset must respect
-            % the timeout and return b=false within roughly the deadline,
-            % NOT loop forever.
+            % A queued job that has not yet received its zip is active.
+            % While it is younger than staleAfter (default 1 hour),
+            % waitForAllBulkUploads must wait for it, respect the timeout,
+            % and return b=false within roughly the deadline, NOT loop
+            % forever. (Older queued jobs are ignored as abandoned; see
+            % testWaitForAllBulkUploadsIgnoresAbandonedQueuedJob.)
             testCase.Narrative = "Begin testWaitForAllBulkUploadsTimesOutWhenJobNeverProgresses";
             narrative = testCase.Narrative;
 
