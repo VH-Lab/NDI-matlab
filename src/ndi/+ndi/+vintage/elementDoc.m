@@ -82,6 +82,24 @@ vintage = '';
 
 E = ndi_element_obj.session;
 
+% ---- built from a migrated element: read it back by id ----------------
+% Its fields are what the object was built from, so rebuilding them
+% (ndi.vintage.elementFields, five searches) to check them, after a full-
+% table search for a v1 element block no migrated element has, only cost
+% time: 7 searches per id() call, 172 s for Dab's 606 elements against 5 s
+% in v1 (run 42241497254). Jess Haley, 2026-11-06: "Speed can't be slower
+% than v1." If the document is gone, the searches below run as before.
+if isprop(ndi_element_obj, 'etaDocumentId') && ~isempty(ndi_element_obj.etaDocumentId) ...
+        && strcmp(char(ndi_element_obj.etaDocumentId), char(ndi_element_obj.identifier))
+    byId = E.database_search(ndi.query('base.id', 'exact_string', ...
+        char(ndi_element_obj.identifier), ''));
+    if isscalar(byId)
+        doc = byId{1};
+        vintage = 'V_eta';
+        return;
+    end
+end
+
 % ---- v1: the original query, unchanged --------------------------------
 hits = E.database_search(ndi_element_obj.searchquery());
 if numel(hits) > 1
@@ -118,9 +136,22 @@ if ~isempty(ndi_element_obj.identifier)
     end
 end
 
-subjects = ndi.vintage.elementSubjectDocs(E);
+% Only the entities with an element-class assertion naming this object's
+% class can match (isThisElement compares the class); the others are not
+% read. The order is the assertions' order, as elementSubjectDocs gives it.
+subjects = classCandidates(E, wantClass);
 matches = {};
 for i = 1:numel(subjects)
+    % The name and reference are read from the entity document itself, as
+    % ndi.vintage.elementFields reads them; only an entity whose name and
+    % reference match has its other fields rebuilt (five searches). Every
+    % entity used to be rebuilt: 4,814 rebuilds for six probes' id() in one
+    % Dab getprobes (run 42248853676). Jess Haley, 2026-11-06: "Speed can't
+    % be slower than v1."
+    [nm, rf] = localNameReference(subjects{i});
+    if ~strcmp(nm, ndi_element_obj.name) || ~sameReference(rf, ndi_element_obj.reference)
+        continue;
+    end
     f = ndi.vintage.elementFields(subjects{i}, E);
     if ~isThisElement(f, ndi_element_obj, wantClass); continue; end
     matches{end+1} = subjects{i}; %#ok<AGROW>
@@ -172,4 +203,53 @@ if isnumeric(a) && isnumeric(b)
     return;
 end
 tf = strcmp(char(string(a)), char(string(b)));
+end
+
+function [name, reference] = localNameReference(doc)
+% the element name and reference, from the entity block alone (as
+% ndi.vintage.elementFields reads them)
+props = doc.document_properties;
+localId = '';
+entityName = '';
+for blk = {'entity', 'subject'}
+    if isfield(props, blk{1}) && isstruct(props.(blk{1})) ...
+            && isfield(props.(blk{1}), 'local_identifier')
+        localId = props.(blk{1}).local_identifier;
+        if isfield(props.(blk{1}), 'name')
+            entityName = props.(blk{1}).name;
+        end
+        break;
+    end
+end
+[name, reference] = ndi.vintage.elementNameReferenceApart(entityName, localId);
+end
+
+function docs = classCandidates(E, wantClass)
+% the migrated element entities with an `ndi element class` assertion whose
+% value is WANTCLASS, in the assertions' (database) order; each candidate's
+% first class assertion is checked again by elementFields
+docs = {};
+q = ndi.v2.statementQuery('assertion', 'term') & ...
+    ndi.v2.fieldQuery('statement.variable.name', 'exact_string', ...
+        ndi.vintage.elementLabel('class')) & ...
+    ndi.query('term.value.name', 'exact_string', wantClass, '');
+assertions = E.database_search(q);
+ids = {};
+for i = 1:numel(assertions)
+    sid = ndi.v2.edgeIds(ndi.v2.props(assertions{i}), 'entity_id');
+    if isempty(sid), continue; end
+    if ~any(strcmp(sid{1}, ids))
+        ids{end+1} = sid{1}; %#ok<AGROW>
+    end
+end
+if isempty(ids)
+    return;
+end
+byId = ndi.vintage.docsById(E, ids);
+for i = 1:numel(ids)
+    d = byId(ids{i});
+    if ~isempty(d)
+        docs{end+1} = d; %#ok<AGROW>
+    end
+end
 end

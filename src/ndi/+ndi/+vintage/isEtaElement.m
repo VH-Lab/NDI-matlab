@@ -21,6 +21,13 @@ p = doc.document_properties;
 if ~(isfield(p, 'document_class') && strcmp(p.document_class.class_name, 'entity'))
     return;
 end
+% the call's cache (ndi.vintage.prefetchElementFields), when it holds them
+[c, hit] = ndi.vintage.elementFieldsScope('get', ...
+    ['c|' char(ndi_session_obj.id()) '|' char(p.base.id)]);
+if hit
+    tf = c.count > 0;
+    return;
+end
 q = ndi.v2.statementQuery('assertion', 'term') & ...
     ndi.v2.fieldQuery('statement.variable.name', 'exact_string', ...
         ndi.vintage.elementLabel('class')) & ...

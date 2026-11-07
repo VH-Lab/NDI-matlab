@@ -68,12 +68,18 @@ persistent cache
 if isempty(cache)
     cache = containers.Map('KeyType', 'char', 'ValueType', 'any');
 end
-[rows, key] = schemaRows(kind, schemaPath);
-key = [kind '|' key];
+% The cache key names the file read (its path, date and size); the file is
+% parsed only when that key is not cached. Parsing it on every call (to then
+% find the key cached) read and decoded binding_registry_meta.json once per
+% vocabulary question: 14,380 times in one Dab getprobes, about 120 s of
+% its 540 s (run 42241497254). Jess Haley, 2026-11-06: "Speed can't be
+% slower than v1."
+key = [kind '|' schemaKey(kind, schemaPath)];
 if isKey(cache, key)
     V = cache(key);
     return;
 end
+rows = schemaRows(kind, schemaPath);
 [handles, nodes, aliases] = table(kind);
 V = struct('handles', {handles}, 'nodes', {nodes}, ...
     'nodeHandle', containers.Map('KeyType', 'char', 'ValueType', 'char'), ...
@@ -241,21 +247,46 @@ nodes = reshape(T(:, 2), 1, []);
 end
 
 % -----------------------------------------------------------------------------
-function [rows, key] = schemaRows(kind, schemaPath)
-%SCHEMAROWS {node, name} per term the schema copy binds for KIND, and a cache
-%   key naming the file read (its path, date and size).
-rows = cell(0, 2);
+function key = schemaKey(kind, schemaPath)
+%SCHEMAKEY The cache key of KIND's schema file: its path, date and size
+%   ('none' when there is no file). Only the file's directory entry is read.
 key = 'none';
+f = schemaFileFor(kind, schemaPath);
+if isempty(f) || ~isfile(f)
+    return;
+end
+info = dir(f);
+key = sprintf('%s|%.12g|%d', f, info.datenum, info.bytes);
+end
+
+function f = schemaFileFor(kind, schemaPath)
+%SCHEMAFILEFOR The schema file KIND's terms are read from ('' without a schema).
+%   Remembered per (kind, schema path) while the file is there: a name that
+%   is not in the schema (acquisition_channels.json, retired) is looked for
+%   by walking the schema tree, and asking again on every call walked it
+%   9,476 times in one Dab getprobes, 46 s (run 42243795572).
+persistent memo
+if isempty(memo)
+    memo = containers.Map('KeyType', 'char', 'ValueType', 'char');
+end
+f = '';
 if isempty(schemaPath)
     return;
 end
+memoKey = [kind '|' char(schemaPath)];
+if isKey(memo, memoKey) && isfile(memo(memoKey))
+    f = memo(memoKey);
+    return;
+end
+f = lookUpSchemaFile(kind, schemaPath);
+if isfile(f)
+    memo(memoKey) = f;
+end
+end
+
+function f = lookUpSchemaFile(kind, schemaPath)
 switch kind
     case 'channel_type'
-        % acquisition_channels.channels.type's binding while the class exists;
-        % once did-schema retires it ([probe wiring is a relation], Jess Haley
-        % 2026-11-01: a probe's channels are the conditions of its wiring
-        % relation, each variable a channel-type term), the term registry's
-        % rows for the channel-type nodes
         f = ndi.v2.schemaFile(char(schemaPath), 'acquisition_channels.json');   % any layout
         if ~isfile(f)
             f = ndi.v2.schemaFile(char(schemaPath), 'term_registry_meta.json');
@@ -265,11 +296,23 @@ switch kind
     otherwise
         f = ndi.v2.schemaFile(char(schemaPath), 'binding_registry_meta.json');   % by name, any layout
 end
+end
+
+function rows = schemaRows(kind, schemaPath)
+%SCHEMAROWS {node, name} per term the schema copy binds for KIND.
+rows = cell(0, 2);
+if isempty(schemaPath)
+    return;
+end
+% channel_type: acquisition_channels.channels.type's binding while the class
+% exists; once did-schema retires it ([probe wiring is a relation], Jess
+% Haley 2026-11-01: a probe's channels are the conditions of its wiring
+% relation, each variable a channel-type term), the term registry's rows for
+% the channel-type nodes
+f = schemaFileFor(kind, schemaPath);
 if ~isfile(f)
     return;
 end
-info = dir(f);
-key = sprintf('%s|%.12g|%d', f, info.datenum, info.bytes);
 try
     s = jsondecode(fileread(f));
     switch kind

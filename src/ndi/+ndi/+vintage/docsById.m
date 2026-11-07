@@ -23,7 +23,7 @@ for c = 1:200:numel(ids)
     found = S.database_search(ndi.v2.anyOf(cellfun(@(i) ndi.query('base.id', 'exact_string', i, ''), ...
         part, 'UniformOutput', false)));
     for k = 1:numel(found)
-        id = char(found{k}.id());
+        id = char(ndi.v2.props(found{k}).base.id);   % an ndi.document or a struct
         if ~isKey(m, id)
             m(id) = found{k};
         end

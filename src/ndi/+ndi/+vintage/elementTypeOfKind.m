@@ -32,7 +32,14 @@ arguments
     forceMirror (1,1) logical = false
 end
 
-if ~forceMirror && ~isempty(which('did2.convert.elementTypeOfKind'))
+% `which` is asked once per MATLAB session: asked on every call it was this
+% function's whole cost, about 6 ms a call (4.7 s over 808 calls in one Dab
+% getprobes, run 42243795572)
+persistent haveDid2
+if isempty(haveDid2)
+    haveDid2 = ~isempty(which('did2.convert.elementTypeOfKind'));
+end
+if ~forceMirror && haveDid2
     elementType = did2.convert.elementTypeOfKind(kindNode);
     source = 'did2';
     return;

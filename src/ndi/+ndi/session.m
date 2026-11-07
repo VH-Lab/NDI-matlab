@@ -800,6 +800,15 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
             % has a value of VALUE2, etc. Properties of probes are 'name', 'reference', and 'type', and 'subject_id'.
             %
             %
+            % ONE CALL'S CACHE of the migrated elements' fields
+            % (ndi.vintage.elementFieldsScope): the probes' fields are read
+            % in a few searches for all of them (prefetchElementFields) and
+            % every later question in this call -- their probe-map rows,
+            % their classes, their constructors -- is answered from it
+            % (Jess Haley, 2026-11-06: "Speed can't be slower than v1").
+            scope = ndi.vintage.elementFieldsScope('open'); %#ok<NASGU>
+            etaProbes = ndi.vintage.elementSubjectDocs(ndi_session_obj, 'probe');
+            ndi.vintage.prefetchElementFields(ndi_session_obj, etaProbes);
             probestruct = [];
             devs = ndi_session_obj.daqsystem_load('name','(.*)');
             if ~isempty(devs)
@@ -820,7 +829,6 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
             % vintages at once (a migration carries some v1 elements
             % unchanged), and a row stacked under a column does not
             % concatenate (MATLAB:catenate:dimensionMismatch).
-            etaProbes = ndi.vintage.elementSubjectDocs(ndi_session_obj, 'probe');
             existing_probes = [existing_probes(:); etaProbes(:)];
             existing_subjects = ndi_session_obj.database_search(ndi.query('','isa','subject'));
             % A v2 subject is an `entity` with no `subject` block, and a v2
@@ -941,7 +949,12 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
             % migrated elements both present, a column of v1 hits under a
             % row of migrated ones raised MATLAB:catenate:dimensionMismatch
             % (the B corpus end-to-end, 2026-10-27).
+            % ONE CALL'S CACHE (ndi.vintage.elementFieldsScope): every
+            % migrated element's fields are read in a few searches for all
+            % of them, and the constructors below answer from them.
+            scope = ndi.vintage.elementFieldsScope('open'); %#ok<NASGU>
             etaDocs = ndi.vintage.elementSubjectDocs(ndi_session_obj);
+            ndi.vintage.prefetchElementFields(ndi_session_obj, etaDocs);
             doc = [doc(:); etaDocs(:)];
 
             elements = {};

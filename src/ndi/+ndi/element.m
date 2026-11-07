@@ -12,6 +12,14 @@ classdef element < ndi.ido & ndi.epoch.epochset & ndi.documentservice & matlab.m
         dependencies % a structure of name/value pairs of document dependencies (with exception of underlying_element and subject_id)
     end % properties
 
+    properties (GetAccess=public, SetAccess=protected, Hidden)
+        % the id of the migrated (V_eta) element entity this object was
+        % built from ('' otherwise); ndi.vintage.elementDoc reads that
+        % document back by id instead of rebuilding every element's fields
+        % to find it (Jess Haley, 2026-11-06: "Speed can't be slower than v1")
+        etaDocumentId = ''
+    end
+
     methods
         function [ndi_element_obj,element_doc] = element(varargin)
             % NDI.ELEMENT - creator for ndi.element
@@ -34,6 +42,7 @@ classdef element < ndi.ido & ndi.epoch.epochset & ndi.documentservice & matlab.m
             end
 
             needs_newdocument_call = 1;
+            builtFromEtaDoc = '';
 
             if numel(varargin)>=6
                 % first type
@@ -176,6 +185,9 @@ classdef element < ndi.ido & ndi.epoch.epochset & ndi.documentservice & matlab.m
                 dependencies = dependencies(ia);
                 set_identifier = 1;
                 identifier_value = element_doc.id();
+                if isEtaElement
+                    builtFromEtaDoc = identifier_value;
+                end
             elseif numel(varargin)==0
                 element_session='';
                 element_name = '';
@@ -198,6 +210,7 @@ classdef element < ndi.ido & ndi.epoch.epochset & ndi.documentservice & matlab.m
             ndi_element_obj.underlying_element = element_underlying_element;
             ndi_element_obj.direct = direct;
             ndi_element_obj.subject_id = subject_id;
+            ndi_element_obj.etaDocumentId = builtFromEtaDoc;
             ndi_element_obj.dependencies = dependencies;
             if needs_newdocument_call % do we need to create the document and add it to the database?
                 % or, do we already have it?

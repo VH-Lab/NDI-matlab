@@ -95,6 +95,9 @@ cache = struct('doc', containers.Map('KeyType', 'char', 'ValueType', 'any'), ...
     'statements', containers.Map('KeyType', 'char', 'ValueType', 'any'), ...
     'relations', []);
 if options.Batch
+    % the instruments' fields are read for all of them at once and kept for
+    % this call (ndi.vintage.prefetchElementFields)
+    scope = ndi.vintage.elementFieldsScope('open'); %#ok<NASGU>
     cache = readAhead(ndi_session_obj, docs, cache);
 end
 for k = 1:numel(docs)
@@ -380,6 +383,14 @@ for i = 1:numel(statements)
 end
 ids = ids(cellfun(@(x) ischar(x) && ~isempty(x), ids));
 cache = remember(cache, ndi.vintage.docsById(S, ids));
+instruments = {};
+for i = 1:numel(statements)
+    el = statements{i}.dependency_value('instrument_id', 'ErrorIfNotFound', 0);
+    if ischar(el) && ~isempty(el) && isKey(cache.doc, el) && ~isempty(cache.doc(el))
+        instruments{end+1} = cache.doc(el); %#ok<AGROW>
+    end
+end
+ndi.vintage.prefetchElementFields(S, instruments);
 sysIds = {};   % the systems an acquisition_channels document names
 for i = 1:numel(ids)
     d = cache.doc(ids{i});

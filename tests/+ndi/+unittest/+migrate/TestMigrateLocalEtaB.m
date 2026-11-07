@@ -226,6 +226,21 @@ classdef TestMigrateLocalEtaB < matlab.unittest.TestCase
                 numel(devs), numel(els));
         end
 
+        function testReadPhasesAreNoSlowerThanV1(testCase)
+            % Jess Haley, 2026-11-06: "Speed can't be slower than v1. We
+            % need to match or beat." Every session of B is read in five
+            % phases (subjects, getelements, the elements' facts and epoch
+            % tables, getprobes with probe epoch tables, the acquisition
+            % systems' epoch tables), before migration and after, each side
+            % in a freshly opened session doing the same work
+            % (ndi.unittest.migrate.readPhaseTimings). NDI_PROFILE_READS=1
+            % profiles the v2 phases (report-only).
+            T = ndi.unittest.migrate.readPhaseTimings(testCase.Bodies, ...
+                fileparts(testCase.Result.destination), 'B', ...
+                'Profile', ndi.unittest.migrate.envTrue('NDI_PROFILE_READS'));
+            ndi.unittest.migrate.verifyReadPhases(testCase, T);
+        end
+
         function testTheSameObjectsBeforeAndAfterMigration(testCase)
             % Object-level equivalence over the whole corpus
             % (VH-Lab/NDI-matlab#785; Jess Haley, 2026-11-03, queued it):

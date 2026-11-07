@@ -281,14 +281,24 @@ classdef TestAddedEpoch < matlab.unittest.TestCase
             % already called twice per element.
             src = ndi.unittest.vintage.TestAddedEpoch.sourceOf( ...
                 fullfile('src', 'ndi', '+ndi', '+vintage', 'elementDoc.m'));
+            % The one thing allowed before it reads nothing on a v1 session:
+            % an element BUILT FROM a migrated entity (its hidden
+            % etaDocumentId, set only then) reads that entity back by id
+            % (Jess Haley, 2026-11-06: "Speed can't be slower than v1").
             iV1 = strfind(src, 'ndi_element_obj.searchquery()');
-            iEta = strfind(src, 'ndi.vintage.elementSubjectDocs(E)');
+            iEta = strfind(src, 'classCandidates(E, wantClass)');
             testCase.verifyNotEmpty(iV1, ...
                 'elementDoc no longer runs the v1 searchquery at all');
             testCase.verifyNotEmpty(iEta, ...
                 'elementDoc no longer has a V_eta fallback');
             testCase.verifyLessThan(iV1(1), iEta(1), ...
                 'the V_eta fallback now runs before the v1 query');
+            iFast = strfind(src, '~isempty(ndi_element_obj.etaDocumentId)');
+            testCase.verifyNotEmpty(iFast, ...
+                'the by-id read before the v1 query is no longer guarded by etaDocumentId');
+            if ~isempty(iFast)
+                testCase.verifyLessThan(iFast(1), iV1(1));
+            end
         end
 
     end

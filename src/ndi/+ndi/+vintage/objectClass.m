@@ -139,6 +139,17 @@ function v = assertionValue(ndi_document_obj, ndi_session_obj, label)
 %   `term.value.name`, with `subject_id` pointing back at the subject
 %   (DID-matlab +migrators_j/element.m, kindAssertion).
 docId = ndi_document_obj.document_properties.base.id;
+% the call's cache (ndi.vintage.prefetchElementFields) holds the element
+% class assertions it read; exactly one is the answer, anything else is
+% asked again below so the same error is raised
+if strcmp(label, ndi.vintage.elementLabel('class'))
+    [c, hit] = ndi.vintage.elementFieldsScope('get', ...
+        ['c|' char(ndi_session_obj.id()) '|' char(docId)]);
+    if hit && c.count == 1 && ~isempty(c.value)
+        v = c.value;
+        return;
+    end
+end
 q = ndi.v2.statementQuery('assertion', 'term') & ...
     ndi.v2.fieldQuery('statement.variable.name', 'exact_string', label) & ...
     ndi.v2.entityQuery(docId);
