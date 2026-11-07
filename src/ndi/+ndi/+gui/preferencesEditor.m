@@ -31,7 +31,8 @@ function fig = preferencesEditor(options)
 %             'double','single' -> uieditfield (numeric)
 %             'logical'         -> uicheckbox
 %             everything else   -> uieditfield (text)
-%       * Bottom row: Revert | Apply | Save buttons.
+%       * Bottom row: a Tools folder... button on the left, and
+%         Revert | Apply | Save buttons on the right.
 %
 %   Buttons:
 %       Revert - discard pending edits; widgets are repopulated from
@@ -40,6 +41,13 @@ function fig = preferencesEditor(options)
 %                (which persists each change to the JSON file). The
 %                editor stays open.
 %       Save   - same as Apply, then close the window.
+%       Tools folder...
+%              - shows where NDI-matlab and the tools ndi_install
+%                installed are kept (ndi.update.toolsFolder), and
+%                offers to move them to a folder you choose
+%                (ndi.update.moveToolsFolder). This is not a
+%                preference: it acts at once, after asking, and is
+%                not affected by Revert, Apply or Save.
 %
 %   Pending edits live only in the editor (in fig.UserData.pending)
 %   until Apply or Save is pressed; nothing reaches the singleton or
@@ -108,15 +116,20 @@ function fig = preferencesEditor(options)
         'BackgroundColor', c.white, ...
         'Scrollable',      'on');                                   %#ok<NASGU>
 
-    buttonRow = uigridlayout(rootGrid, [1 4]);
-    buttonRow.ColumnWidth     = {'1x', 90, 90, 90};
+    buttonRow = uigridlayout(rootGrid, [1 5]);
+    buttonRow.ColumnWidth     = {120, '1x', 90, 90, 90};
     buttonRow.RowHeight       = {'1x'};
     buttonRow.Padding         = [0 0 0 0];
     buttonRow.ColumnSpacing   = 6;
     buttonRow.BackgroundColor = c.offWhite;
 
-    uilabel(buttonRow, 'Text', '');   % left spacer
+    toolsBtn = uibutton(buttonRow, 'Text', 'Tools folder...', ...
+        'Tag',             'ndiPrefToolsFolderButton', ...
+        'Tooltip',         'See where the NDI tools are installed, and move them to another folder', ...
+        'ButtonPushedFcn', @onToolsFolder);
+    uilabel(buttonRow, 'Text', '');   % spacer
     btns = [ ...
+        toolsBtn, ...
         uibutton(buttonRow, 'Text', 'Revert', 'ButtonPushedFcn', @onRevert), ...
         uibutton(buttonRow, 'Text', 'Apply',  'ButtonPushedFcn', @onApply), ...
         uibutton(buttonRow, 'Text', 'Save',   'ButtonPushedFcn', @onSave)];
@@ -409,6 +422,102 @@ function onSave(src, evt)
     onApply(src, evt);
     if isvalid(fig)
         delete(fig);
+    end
+end
+
+
+function onToolsFolder(src, ~)
+%ONTOOLSFOLDER Tools folder... button callback: show, and offer to move, the tools folder.
+%
+%   Shows the folder that holds NDI-matlab and the tools ndi_install
+%   installed next to it. If the user chooses a new folder and confirms,
+%   calls ndi.update.moveToolsFolder with Confirm=false (this callback
+%   has already asked), showing a progress dialog while it copies.
+%   A toolbox install (Add-On Explorer) has no tools folder; the user
+%   is told so.
+    fig = ancestor(src, 'figure');
+    try
+        current = ndi.update.toolsFolder();
+    catch ME
+        uialert(fig, ME.message, 'Tools folder');
+        return
+    end
+    if strlength(current) == 0
+        uialert(fig, ['NDI-matlab is installed as a toolbox (from the Add-On ' ...
+            'Explorer), so MATLAB decides where it is kept. Only an installation ' ...
+            'made with ndi_install has a tools folder that can be moved.'], ...
+            'Tools folder', 'Icon', 'info');
+        return
+    end
+
+    choice = uiconfirm(fig, sprintf(['NDI-matlab and the tools it uses are in\n\n' ...
+        '%s\n\nTo move them, choose the folder to put them in.'], current), ...
+        'Tools folder', ...
+        'Options',       {'Choose new folder...', 'Cancel'}, ...
+        'DefaultOption', 1, ...
+        'CancelOption',  2, ...
+        'Icon',          'info');
+    if ~strcmp(choice, 'Choose new folder...')
+        return
+    end
+
+    picked = uigetdir(char(fileparts(current)), 'Choose where to put the NDI tools');
+    figure(fig);   % uigetdir can leave the editor behind other windows
+    if isequal(picked, 0)
+        return
+    end
+    target = toolsFolderTarget(string(picked), current);
+
+    choice = uiconfirm(fig, sprintf(['The NDI tools will be moved\n\n' ...
+        'from  %s\nto    %s\n\n' ...
+        'This copies the folder, checks the copy, points startup.m at the ' ...
+        'new folder, and deletes the old folder. It can take a few minutes. ' ...
+        'Restart MATLAB afterwards.'], current, target), ...
+        'Move the tools folder', ...
+        'Options',       {'Move', 'Cancel'}, ...
+        'DefaultOption', 2, ...
+        'CancelOption',  2, ...
+        'Icon',          'warning');
+    if ~strcmp(choice, 'Move')
+        return
+    end
+
+    dlg = uiprogressdlg(fig, ...
+        'Title',         'Moving the tools folder', ...
+        'Message',       sprintf('Copying the NDI tools to %s...', target), ...
+        'Indeterminate', 'on');
+    try
+        r = ndi.update.moveToolsFolder(target, 'Confirm', false);
+    catch ME
+        close(dlg);
+        uialert(fig, ME.message, 'Could not move the tools folder');
+        return
+    end
+    close(dlg);
+
+    msg = sprintf('The NDI tools are now in\n\n%s\n\nPlease restart MATLAB.', r.To);
+    if ~r.OldDeleted
+        msg = sprintf(['%s\n\nThe old folder %s could not be deleted ' ...
+            'completely. Delete it yourself after restarting MATLAB.'], msg, r.From);
+    end
+    uialert(fig, msg, 'Tools folder moved', 'Icon', 'success');
+end
+
+
+function target = toolsFolderTarget(picked, current)
+%TOOLSFOLDERTARGET The folder the tools go into, given the folder the user picked.
+%
+%   TARGET = TOOLSFOLDERTARGET(PICKED, CURRENT) is PICKED itself if it
+%   is empty (the user made a folder for the tools), and otherwise a
+%   folder inside PICKED with the same name as the CURRENT tools folder
+%   (usually 'tools'), so the tools are not mixed in with what is
+%   already there.
+    d = dir(picked);
+    if all(ismember({d.name}, {'.', '..'}))
+        target = picked;
+    else
+        [~, name] = fileparts(current);
+        target = string(fullfile(picked, name));
     end
 end
 
