@@ -1,0 +1,26 @@
+{
+	"document_class": {
+		"definition":           "$NDIDOCUMENTPATH\/data\/spatialGeneExpressionROI.json",
+		"validation":           "$NDISCHEMAPATH\/data\/spatialGeneExpressionROI_schema.json",
+		"class_name":           "spatialGeneExpressionROI",
+		"property_list_name":   "spatialGeneExpressionROI",
+		"class_version":        1,
+		"superclasses": [
+			{ "definition":     "$NDIDOCUMENTPATH\/base.json" }
+		]
+	},
+	"depends_on": [
+		{ "name": "spatialGeneExpressionPyramid_id", "value": "" },
+		{ "name": "source_file_id",                  "value": "" }
+	],
+	"spatialGeneExpressionROI": {
+		"label": "",
+		"n_vertices": 0,
+		"vertices_x": [],
+		"vertices_y": [],
+		"coord_space": "gef_base_pixel",
+		"coord_units": "pixel",
+		"n_records_in": 0,
+		"roi_format_version": 1
+	}
+}
