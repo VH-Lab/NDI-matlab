@@ -118,11 +118,30 @@ switch what
         q = ndi.v2.isaQuery('statement') & ndi.vintage.edgeIn('time_reference_id', ids);
         names = {'time_reference_id', 'acquisition_channels_id', 'acquisition_system_id', ...
             'instrument_id', 'entity_id', 'subject_id'};
+        if takesAllNames(S)
+            % every edge, so a numbered time_reference_id_<n> (which
+            % ndi.v2.edgeIds reads as an anchor too) is in the light
+            % statement as in the document (DID-matlab searchEdges '*')
+            names = '*';
+        end
         out = ndi.vintage.edgeDocs(S, q, names, 'statement');
         if ~iscell(out)
             out = S.database_search(q);
         end
     otherwise
         error('NDI:vintage:epochReads:badKind', 'Unknown read "%s".', what);
+end
+end
+
+function tf = takesAllNames(S)
+% does SESSION's database answer searchEdges(Q, '*') with every edge?
+tf = false;
+try
+    db = S.database;
+    tf = isa(db, 'ndi.database.implementations.database.did2sqlite') ...
+        && ismethod(db.db, 'searchEdgesTakesAllNames') ...
+        && did2.database.sqlitedb.searchEdgesTakesAllNames();
+catch
+    tf = false;
 end
 end
