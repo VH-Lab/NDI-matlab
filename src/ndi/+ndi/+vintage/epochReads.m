@@ -86,7 +86,10 @@ ndi.vintage.elementFieldsScope('put', key, out);
 if ndi.vintage.elementFieldsScope('isopen')
     targets = cellfun(@(d) reshape(ndi.vintage.edgeTargets(d, edgeName), 1, []), out, ...
         'UniformOutput', false);
-    docOf = repelem(1:numel(out), cellfun(@numel, targets));
+    docOf = zeros(1, 0);
+    if ~isempty(out)
+        docOf = repelem(1:numel(out), cellfun(@numel, targets));
+    end
     sets{end+1} = struct('ids', {ids}, 'out', {out}, 'docOf', docOf, ...
         'target', {[{}, targets{:}]});
     ndi.vintage.elementFieldsScope('put', listKey, sets);
