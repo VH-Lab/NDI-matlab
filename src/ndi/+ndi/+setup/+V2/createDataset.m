@@ -21,7 +21,11 @@ function [dataset, report] = createDataset(path, reference, datasetSessionId, da
 %   metadata gives it (or none): REFERENCE is the FOLDER's and is written only
 %   to .ndi/reference.txt, where ndi.session.dir and ndi.dataset.dir read it
 %   for a dataset record (Haley decision #115). A `dataset` entity with another id is an error
-%   (ndi:setup:V2:datasetId). With no `dataset` entity, the dataset's own
+%   (ndi:setup:V2:datasetId), except a REFERENCE Data Set: one something is
+%   derived from, that no document is stored with and nothing is included
+%   in, such as a gene list's annotation or assembly (Jess Haley 2026-11-07
+%   [gene-list history entities]; ndi.v2.referenceDatasets), which is written
+%   like any other document. With no `dataset` entity, the dataset's own
 %   `session` document is written with DATASETSESSIONID as its id.
 %
 %   Files: a body recorded with `ingest` 1 is copied into PATH/.ndi/files; one
@@ -100,9 +104,18 @@ for k = 1:numel(datasetDocs)
 end
 own = {};
 recordAt = [];
+% a reference Data Set (a gene list's annotation or assembly, Jess Haley
+% 2026-11-07 [gene-list history entities]) is not the dataset's record: the
+% rule (ndi.v2.referenceDatasets) reads every document written here
+allDocs = reshape(datasetDocs, 1, []);
+for k = 1:numel(sessionDocs)
+    allDocs = [allDocs, reshape(sessionDocs{k}, 1, [])]; %#ok<AGROW>
+end
+reference = ndi.v2.referenceDatasets([allDocs, reshape(options.External, 1, [])]);
 % the dataset entity is the dataset's own record: its id is the session id
 for k = 1:numel(datasetDocs)
     if ~strcmp(ndi.v2.kindOf(datasetDocs{k}), 'dataset'), continue; end
+    if ismember(datasetDocs{k}.base.id, reference), continue; end
     if ~strcmp(datasetDocs{k}.base.id, datasetSessionId)
         error('ndi:setup:V2:datasetId', ['The dataset document has id %s; its id must be ' ...
             'the dataset''s session id, %s (ndi.setup.V2.datasetMetadata builds it so by ' ...

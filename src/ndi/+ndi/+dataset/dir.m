@@ -98,9 +98,11 @@ classdef dir < ndi.dataset
                     % document (a class v1 never had). Read unscoped: the
                     % folder's unique_reference.txt names whichever session was
                     % opened last, not necessarily the dataset.
-                    datasetDocs = ndi_dataset_dir_obj.session.database.search(ndi.v2.isaQuery('dataset'));
-                    datasetDocs = datasetDocs(cellfun(@(d) strcmp(ndi.v2.kindOf(d.document_properties), ...
-                        'dataset'), datasetDocs));   % an entity of type dataset since 2026-10-08
+                    % an entity of type dataset since 2026-10-08; a reference
+                    % Data Set (a gene list's annotation or assembly, Jess
+                    % Haley 2026-11-07 [gene-list history entities]) is not
+                    % the dataset (ndi.v2.datasetDocuments)
+                    datasetDocs = ndi.v2.datasetDocuments(ndi_dataset_dir_obj.session.database);
                     if isscalar(datasetDocs)
                         correctSessionId = datasetDocs{1}.session_id();
                     else

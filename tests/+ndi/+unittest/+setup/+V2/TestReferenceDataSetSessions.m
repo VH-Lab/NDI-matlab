@@ -1,5 +1,5 @@
 classdef TestReferenceDataSetSessions < matlab.unittest.TestCase
-%TESTREFERENCEDATASETSESSIONS ndi.v2.datasetSessions does not take a reference Data Set as the dataset.
+%TESTREFERENCEDATASETSESSIONS A reference Data Set is not the dataset a v2 dataset is read from.
 %
 %   Since DID-matlab #420 (180bc8cc) a migrated v1 geneList brings minimal
 %   `entity` documents of type Data Set (NCIT:C47824), its genome annotation
@@ -18,10 +18,11 @@ classdef TestReferenceDataSetSessions < matlab.unittest.TestCase
 %   stored with it, a Data Set "GRCm39" stored with it as DID-matlab
 %   +migrators_j/gene_list.m mints one, and the organism `derived_from` that
 %   Data Set; with or without the dataset entity the session is
-%   `included_in`. Not through ndi.setup.V2.createDataset and
-%   ndi.dataset.dir: when they work out the dataset's id they too take every
-%   Data Set entity as the dataset, and open a dataset holding a reference
-%   Data Set with the wrong id (first CI run of this test, 2026-11-07).
+%   `included_in`. testADatasetHoldingAReferenceOpensWithItsOwnId writes the
+%   dataset with ndi.setup.V2.createDataset and opens it with
+%   ndi.dataset.dir: before they used ndi.v2.datasetDocuments, both took
+%   every Data Set entity as the dataset, and a dataset holding a reference
+%   opened with its session's id (first CI run of this test, 2026-11-07).
 %
 %   Needs DID-matlab V2 and did-schema #88 on DID_SCHEMA_PATH. Run by
 %   run-tests.yml (the whole suite).
@@ -60,6 +61,60 @@ classdef TestReferenceDataSetSessions < matlab.unittest.TestCase
                 contains(notes, id.reference)), strjoin(notes, newline));
             testCase.verifyFalse(any(contains(notes, 'not included_in the dataset')), ...
                 strjoin(notes, newline));
+        end
+
+        function testADatasetHoldingAReferenceOpensWithItsOwnId(testCase)
+            % ndi.setup.V2.createDataset accepts a reference Data Set among
+            % the dataset-level documents; ndi.dataset.dir opens the dataset
+            % with the real dataset's id, lists its session, and files a
+            % newly linked session under the real dataset entity
+            % (ndi.dataset.v2DatasetDocId), not under a reference
+            needV2(testCase);
+            [docs, id] = writableFixture(true);
+            % a second reference, stored with the dataset: an organism at the
+            % dataset level derived from it
+            D = {'SessionId', id.dataset};
+            ref2 = did2.build.document('entity', struct('type', ...
+                ndi.setup.V2.registeredTerm('NCIT:C47824'), 'name', 'Xenium panel v1'), D{:});
+            id.reference2 = ref2.base.id;
+            worm2 = ndi.setup.V2.entityDocuments('subject', struct('local_identifier', 'worm2', ...
+                'type', did2.build.term('', 'organism')), struct(), D{:});
+            worm2 = worm2(1);
+            derived2 = did2.build.directedRelation(worm2{1}.base.id, id.reference2, ...
+                ndi.v2.vocabTerm('relation', 'derived_from'), D{:});
+            atDataset = cellfun(@(d) strcmp(ndi.v2.sessionIdOf(d), id.dataset), docs);
+            dsDocs = [docs(atDataset), {ref2}, worm2, {derived2}];
+            sessDocs = docs(~atDataset);
+
+            root = tempname;
+            mkdir(root);
+            testCase.addTeardown(@() rmdir(root, 's'));
+            dsPath = fullfile(root, 'dataset');
+            ndi.setup.V2.createDataset(dsPath, 'reference data set', id.dataset, ...
+                dsDocs, {sessDocs}, 'Progress', false);
+
+            ds = ndi.dataset.dir(dsPath);
+            testCase.verifyEqual(ds.id(), id.dataset, ...
+                'the dataset opens with the real dataset''s id, not a reference''s session');
+            [refs, ids] = ds.session_list();
+            testCase.verifyEqual(refs, {'day1'});
+            testCase.verifyEqual(ids, {id.session});
+            notes = ds.session_notes();
+            testCase.verifyTrue(any(contains(notes, 'reference Data Set') & ...
+                contains(notes, id.reference2)), strjoin(notes, newline));
+
+            % a linked session is filed under the real dataset entity
+            folder = fullfile(root, 'extra');
+            mkdir(folder);
+            S2 = ndi.setup.V2.createSession(folder, 'extra');
+            ds.add_linked_session(S2);
+            rels = ds.database_search(ndi.query('', 'isa', 'directed_relation', '') & ...
+                ndi.query('', 'depends_on', 'child_id', S2.id()));
+            parents = cellfun(@(r) ndi.v2.edgeIds(r.document_properties, 'parent_id'), ...
+                rels, 'UniformOutput', false);
+            parents = [parents{:}];
+            testCase.verifyTrue(ismember(id.dataset, parents), strjoin(parents, ', '));
+            testCase.verifyFalse(any(ismember({id.reference, id.reference2}, parents)));
         end
     end
 end
@@ -114,9 +169,7 @@ end
 
 function [db, folder] = writeDatabase(testCase, docs)
 % DOCS written to a did2 database in a fresh folder, opened unscoped as
-% ndi.dataset does for ndi.v2.datasetSessions. Not through
-% ndi.setup.V2.createDataset / ndi.dataset.dir: those also take every Data
-% Set entity as the dataset when they work out the dataset's id.
+% ndi.dataset does for ndi.v2.datasetSessions
 folder = tempname;
 ndiDir = fullfile(folder, '.ndi');
 mkdir(ndiDir);

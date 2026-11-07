@@ -27,7 +27,8 @@ function ids = referenceDatasets(docs)
 %   The rule reads only DOCS: a caller that holds part of a database passes
 %   the documents that can anchor a candidate (see ndi.v2.datasetSessions).
 %
-%   See also ndi.migrate.internal.datasetScope, ndi.v2.datasetSessions.
+%   See also ndi.v2.datasetDocuments, ndi.migrate.internal.datasetScope,
+%   ndi.v2.datasetSessions, ndi.setup.V2.createDataset.
 
 arguments
     docs cell

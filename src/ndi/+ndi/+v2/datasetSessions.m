@@ -54,7 +54,8 @@ function [sessions, notes] = datasetSessions(database, datasetSessionId, dataset
 %   genome annotation or assembly (Decided by Jess Haley, 2026-11-07,
 %   did-schema did_v2_go_forward_class_audit.md [gene-list history
 %   entities]). The rule is ndi.v2.referenceDatasets, the one DID-matlab's
-%   did2.convert.migrationRecord applies (#420); NOTES lists each one skipped.
+%   did2.convert.migrationRecord applies (#420), read from DATABASE by
+%   ndi.v2.datasetDocuments; NOTES lists each one skipped.
 %
 %   Options:
 %     'OpenLinked'   default true. false lists linked sessions without opening
@@ -76,10 +77,7 @@ notes = {};
 
 % --- membership: filed under the dataset, directly or through a study ---
 member = 'included_in';
-datasetDocs = database.search(ndi.v2.isaQuery('dataset'));
-datasetDocs = datasetDocs(cellfun(@(d) strcmp(ndi.v2.kindOf(d.document_properties), ...
-    'dataset'), datasetDocs));
-[datasetDocs, reference] = withoutReferences(database, datasetDocs);
+[datasetDocs, reference] = ndi.v2.datasetDocuments(database);
 knowMembership = ~isempty(datasetDocs);
 % filed under the dataset at any depth: studies, studies within studies
 % (Haley #144), and the sessions of any of them (Jess Haley 2026-10-23
@@ -188,41 +186,6 @@ end
 end
 
 % -----------------------------------------------------------------------------
-function [kept, reference] = withoutReferences(database, datasetDocs)
-% DATASETDOCS without the reference Data Sets (ndi.v2.referenceDatasets);
-% REFERENCE their ids. The rule reads the documents that can make a dataset
-% document a reference or anchor it: the dataset documents, the relations
-% whose parent each one is, and, for a candidate, the documents stored with it
-% (base.session_id, which a did2 database answers from the field or the edge).
-arguments
-    database
-    datasetDocs cell
-end
-kept = datasetDocs;
-reference = {};
-if isempty(datasetDocs)
-    return;
-end
-ids = cellfun(@(d) char(d.id()), datasetDocs, 'UniformOutput', false);
-propsOf = @(c) reshape(cellfun(@(d) d.document_properties, c, 'UniformOutput', false), 1, []);
-evidence = propsOf(datasetDocs);
-for k = 1:numel(ids)
-    rels = database.search(ndi.query('', 'isa', 'directed_relation', '') & ...
-        ndi.query('', 'depends_on', 'parent_id', ids{k}));
-    evidence = [evidence, propsOf(rels)]; %#ok<AGROW>
-end
-candidates = ndi.v2.referenceDatasets(evidence);
-if isempty(candidates)
-    return;
-end
-for k = 1:numel(candidates)
-    stored = database.search(ndi.query('base.session_id', 'exact_string', candidates{k}, ''));
-    evidence = [evidence, propsOf(stored)]; %#ok<AGROW>
-end
-reference = ndi.v2.referenceDatasets(evidence);
-kept = datasetDocs(~ismember(ids, reference));
-end
-
 function [children, used] = memberChildren(database, parentId, member)
 % the ids of the documents filed under PARENTID by the relation MEMBER
 % (`included_in`), read from relations in DATABASE; USED the relations
