@@ -145,7 +145,16 @@ pm = [];
 if isempty(epochDocId)
     return;
 end
-if isKey(cache.statements, epochDocId)
+first = [];
+if isfield(cache, 'stIdx') && isKey(cache.stIdx, epochDocId)
+    % read ahead (readAhead): this epoch's statements are positions in the
+    % call's one list, whose edges and first wiring relations were read in
+    % one pass over all of them
+    idx = cache.stIdx(epochDocId);
+    statements = cache.allStatements(idx);
+    ed = subsetEdges(cache.ed, idx);
+    first = cache.first(idx);
+elseif isKey(cache.statements, epochDocId)
     statements = cache.statements(epochDocId);   % read ahead (readAhead)
 else
     anchors = S.database_search(anchorQuery(epochDocId));
@@ -158,7 +167,9 @@ end
 seen = {};
 % every statement's edges, read once from its depends_on list (what
 % dependency_value answers: the first entry of each name, case-insensitive)
-ed = statementEdges(statements);
+if isempty(first)
+    ed = statementEdges(statements);
+end
 for i = 1:numel(statements)
     acId = ed.ac{i};
     sysId = ed.sys{i};
@@ -186,8 +197,13 @@ for i = 1:numel(statements)
     if ~isempty(acId)
         [devicestring, cache] = deviceString(S, acId, cache);
     else
-        [devicestring, cache] = ndi.vintage.wiredDeviceString(S, statements{i}, sysId, elId, ...
-            cache, ed.anchors{i});
+        if isempty(first)
+            [devicestring, cache] = ndi.vintage.wiredDeviceString(S, statements{i}, sysId, elId, ...
+                cache, ed.anchors{i});
+        else
+            [devicestring, cache] = ndi.vintage.wiredDeviceString(S, statements{i}, sysId, elId, ...
+                cache, ed.anchors{i}, first(i));
+        end
     end
     key = strjoin({el.name, num2str(el.reference), el.type, devicestring, subjectString}, char(0));
     if any(strcmp(seen, key))
@@ -200,6 +216,14 @@ for i = 1:numel(statements)
     else
         pm(end+1) = row; %#ok<AGROW>
     end
+end
+end
+
+function e = subsetEdges(ed, idx)
+% statementEdges' answer for the statements at positions IDX
+e = struct();
+for f = fieldnames(ed)'
+    e.(f{1}) = ed.(f{1})(idx);
 end
 end
 
@@ -451,9 +475,11 @@ for i = 1:numel(statements)
         end
     end
 end
+cache.stIdx = containers.Map('KeyType', 'char', 'ValueType', 'any');
 for e = 1:numel(epochDocIds)
-    cache.statements(epochDocIds{e}) = statements(unique(rowsOf(epochDocIds{e})));
+    cache.stIdx(epochDocIds{e}) = unique(rowsOf(epochDocIds{e}));
 end
+cache.allStatements = statements;
 % the documents the statements name, by id: systems, channels, probes, subjects
 % The probes and subjects are read light when they are entities: their
 % readers (localIdentifier; ndi.vintage.elementFields and
@@ -489,17 +515,43 @@ sysIds = sysIds(cellfun(@(x) ischar(x) && ~isempty(x), sysIds));
 cache = remember(cache, ndi.vintage.docsById(S, sysIds));
 % the wiring relations timed by the statements' anchors, filed by (probe,
 % system) for ndi.vintage.wiredDeviceString, in database order
-wiringAnchors = cell(1, numel(statements));
-for i = 1:numel(statements)
-    wiringAnchors{i} = ndi.v2.edgeIds(statements{i}.document_properties, 'time_reference_id');
-end
-wiringAnchors = unique([{}, wiringAnchors{:}], 'stable');
+wiringAnchors = unique([{}, ed.anchors{:}], 'stable');   % ndi.v2.edgeIds, read by statementEdges
 rels = {};
 if ~isempty(wiringAnchors)
     rels = wiringRelations(S, ndi.query('', 'isa', 'directed_relation', '') & ...
         ndi.vintage.edgeIn('time_reference_id', wiringAnchors));
 end
 cache.relations = ndi.vintage.wiringIndex(rels);
+cache.ed = ed;
+cache.first = firstWirings(ed, cache.relations);
+end
+
+function first = firstWirings(ed, W)
+% For every statement, the position in W.docs of the first wiring relation
+% of its probe and system timed by any of its anchors (Inf for none): what
+% ndi.vintage.wiredDeviceString looks up per row in W.firstWiring, here in
+% one ismember over every (statement, anchor) key
+n = numel(ed.el);
+first = inf(1, n);
+if n == 0 || W.firstWiring.Count == 0
+    return;
+end
+counts = cellfun(@numel, ed.anchors);
+owner = repelem(1:n, counts);
+anchors = [{}, ed.anchors{:}];
+if isempty(anchors)
+    return;
+end
+keys = cellfun(@(e, s, a) [e char(0) s char(0) a], ed.el(owner), ed.sys(owner), anchors, ...
+    'UniformOutput', false);
+wk = W.firstWiring.keys;
+wv = cell2mat(W.firstWiring.values);
+[tf, loc] = ismember(keys, wk);
+if any(tf)
+    [u, ~, g] = unique(owner(tf));
+    v = wv(loc(tf));
+    first(u) = reshape(accumarray(g(:), v(:), [], @min), 1, []);
+end
 end
 
 function rels = wiringRelations(S, q)

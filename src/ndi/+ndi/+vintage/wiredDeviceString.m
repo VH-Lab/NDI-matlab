@@ -1,4 +1,4 @@
-function [s, cache] = wiredDeviceString(S, st, sysId, elId, cache, anchors)
+function [s, cache] = wiredDeviceString(S, st, sysId, elId, cache, anchors, first)
 %WIREDDEVICESTRING A migrated probe-map row's v1 devicestring, read from the
 %   statement's system and its probe's wiring relation.
 %
@@ -53,11 +53,15 @@ if isfield(cache, 'relations') && isstruct(cache.relations)
         % the first wiring relation of the pair timed by any of the anchors
         % (ndi.vintage.wiringIndex): the only relation the loop below uses,
         % since it skips every relation that is not a wiring one
-        first = Inf;
-        for a = 1:numel(anchors)
-            k3 = [key char(0) anchors{a}];
-            if isKey(cache.relations.firstWiring, k3)
-                first = min(first, cache.relations.firstWiring(k3));
+        if nargin < 7
+            % (a caller that looked it up for many rows at once passes it:
+            % ndi.vintage.ingestedEpochs' read-ahead)
+            first = Inf;
+            for a = 1:numel(anchors)
+                k3 = [key char(0) anchors{a}];
+                if isKey(cache.relations.firstWiring, k3)
+                    first = min(first, cache.relations.firstWiring(k3));
+                end
             end
         end
         % the string depends only on the system and that relation: kept
