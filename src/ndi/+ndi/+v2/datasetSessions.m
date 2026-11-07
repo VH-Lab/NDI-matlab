@@ -48,6 +48,15 @@ function [sessions, notes] = datasetSessions(database, datasetSessionId, dataset
 %   did not run), membership cannot be read, so every session is listed and
 %   NOTES says so.
 %
+%   A REFERENCE dataset is not a `dataset` document here: a Data Set entity
+%   something was derived from (`derived_from`), that no document names as
+%   its session and nothing is `included_in`, such as a migrated gene list's
+%   genome annotation or assembly (Decided by Jess Haley, 2026-11-07,
+%   did-schema did_v2_go_forward_class_audit.md [gene-list history
+%   entities]). The rule is ndi.v2.referenceDatasets, the one DID-matlab's
+%   did2.convert.migrationRecord applies (#420), read from DATABASE by
+%   ndi.v2.datasetDocuments; NOTES lists each one skipped.
+%
 %   Options:
 %     'OpenLinked'   default true. false lists linked sessions without opening
 %                    them (session_id and reference are then '' and
@@ -68,9 +77,7 @@ notes = {};
 
 % --- membership: filed under the dataset, directly or through a study ---
 member = 'included_in';
-datasetDocs = database.search(ndi.v2.isaQuery('dataset'));
-datasetDocs = datasetDocs(cellfun(@(d) strcmp(ndi.v2.kindOf(d.document_properties), ...
-    'dataset'), datasetDocs));
+[datasetDocs, reference] = ndi.v2.datasetDocuments(database);
 knowMembership = ~isempty(datasetDocs);
 % filed under the dataset at any depth: studies, studies within studies
 % (Haley #144), and the sessions of any of them (Jess Haley 2026-10-23
@@ -163,6 +170,11 @@ notes{end+1} = sprintf(['DENOMINATOR: %d session document(s) and %d linking rela
 if ~knowMembership
     notes{end+1} = sprintf(['no dataset document: membership (%s) cannot be read, so every ' ...
         'session is listed'], member);
+end
+if ~isempty(reference)
+    notes{end+1} = sprintf(['%d reference Data Set(s) (derived from; no document is ' ...
+        'stored with them and nothing is %s them) not taken as the dataset: %s'], ...
+        numel(reference), member, strjoin(reference, ', '));
 end
 if ~isempty(left)
     notes{end+1} = sprintf('%d session document(s) not %s the dataset, not listed: %s', ...
