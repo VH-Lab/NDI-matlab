@@ -111,11 +111,11 @@ allDocs = reshape(datasetDocs, 1, []);
 for k = 1:numel(sessionDocs)
     allDocs = [allDocs, reshape(sessionDocs{k}, 1, [])]; %#ok<AGROW>
 end
-reference = ndi.v2.referenceDatasets([allDocs, reshape(options.External, 1, [])]);
+referenceIds = ndi.v2.referenceDatasets([allDocs, reshape(options.External, 1, [])]);
 % the dataset entity is the dataset's own record: its id is the session id
 for k = 1:numel(datasetDocs)
     if ~strcmp(ndi.v2.kindOf(datasetDocs{k}), 'dataset'), continue; end
-    if ismember(datasetDocs{k}.base.id, reference), continue; end
+    if ismember(datasetDocs{k}.base.id, referenceIds), continue; end
     if ~strcmp(datasetDocs{k}.base.id, datasetSessionId)
         error('ndi:setup:V2:datasetId', ['The dataset document has id %s; its id must be ' ...
             'the dataset''s session id, %s (ndi.setup.V2.datasetMetadata builds it so by ' ...
