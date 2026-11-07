@@ -58,6 +58,13 @@ for k = 1:numel(sets)
         return;
     end
 end
+if ~isempty(sets) && ~isempty(getenv('NDI_PROFILE_READS'))
+    % diagnostics for the profiled corpus runs: why an earlier read did not answer
+    for k = 1:numel(sets)
+        fprintf('      [epochReads %s] miss: %d id(s) asked, %d read earlier, %d of the asked not among them\n', ...
+            what, numel(ids), numel(sets{k}.ids), nnz(~ismember(ids, sets{k}.ids)));
+    end
+end
 switch what
     case 'anchors'
         % light: the clock and the start / duration / end seconds archiveOf
