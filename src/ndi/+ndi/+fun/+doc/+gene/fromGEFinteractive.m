@@ -15,9 +15,12 @@ function [pyrDocs, tileDocsCell, geneListDoc, sourceDoc, info] = ...
 %   WORKFLOW. The function reads the .gef, bins the records to a low-res
 %   density image (summed counts across all genes), opens a figure, and
 %   asks for one polygon per animal with drawpolygon. After the last
-%   polygon the user picks a subject for each from the session's subject
-%   list. The N pyramids are then built in one pass sharing a geneList
-%   and a sourceFile.
+%   polygon the user picks a subject for each polygon: an existing one
+%   from the session's subject list, or a new one typed into an inputdlg
+%   -- the new subject is created in the session on the fly, so a
+%   session that starts empty does not have to be set up ahead of time.
+%   The N pyramids are then built in one pass sharing a geneList and a
+%   sourceFile.
 %
 %   HOW LONG THE PICKING SITS. The read is the slow phase (minutes on a
 %   ferret hemisphere) and happens BEFORE any UI appears, so a scientist
@@ -198,21 +201,25 @@ end
 % ------------------------------------------------------------------------
 
 function subjects = localPickSubjects(session, n)
-% LOCALPICKSUBJECTS - prompt once per polygon from the session's subjects
+% LOCALPICKSUBJECTS - prompt once per polygon, letting the user pick an
+% existing subject or create a new one on the fly
+%
+%   Each polygon gets its own picker. The list shows every subject already
+%   in the session plus a "+ Create new subject..." entry at the top; that
+%   entry opens an inputdlg for a local_identifier and creates the subject
+%   in the session before using its id. A session with no subjects is not
+%   an error -- creation is the first option in the list.
 subjectDocs = session.database_search(ndi.query('', 'isa', 'subject'));
-if isempty(subjectDocs)
-    error('NDI:gene:fromGEFinteractive:noSubjects', ...
-        ['The session has no subject documents. Add subjects before ' ...
-         'splitting a GEF by ROI; the import tags each pyramid with ' ...
-         'the matching subject.']);
-end
 labels = cell(size(subjectDocs));
 for i = 1:numel(subjectDocs)
     labels{i} = subjectDocs{i}.document_properties.subject.local_identifier;
 end
+createOption = '+ Create new subject...';
 subjects = cell(1, n);
-for k = 1:n
-    [idx, ok] = listdlg('ListString', labels, ...
+k = 1;
+while k <= n
+    listItems = [{createOption}; labels(:)];
+    [idx, ok] = listdlg('ListString', listItems, ...
         'SelectionMode', 'single', ...
         'Name', 'Pick subject', ...
         'PromptString', sprintf('Subject for polygon %d of %d:', k, n), ...
@@ -221,7 +228,37 @@ for k = 1:n
         error('NDI:gene:fromGEFinteractive:cancelled', ...
             'User cancelled at the subject picker for polygon %d.', k);
     end
-    subjects{k} = subjectDocs{idx}.id();
+    if idx == 1
+        % Create-new path. Cancelling the inputdlg sends the user back
+        % to the picker for this polygon (same k), so a wrong click on
+        % the first entry does not abandon the whole ingest.
+        nameAnswer = inputdlg( ...
+            {'Local identifier for the new subject:'}, ...
+            sprintf('New subject (polygon %d of %d)', k, n), ...
+            1, {''});
+        if isempty(nameAnswer) || isempty(strtrim(nameAnswer{1}))
+            continue;
+        end
+        localID = strtrim(nameAnswer{1});
+        % A typo of an existing identifier reuses it rather than
+        % duplicating the subject.
+        existingIdx = find(strcmp(labels, localID), 1);
+        if ~isempty(existingIdx)
+            subjects{k} = subjectDocs{existingIdx}.id();
+        else
+            newSub = ndi.document('subject', ...
+                'subject.local_identifier', localID, ...
+                'base.session_id', session.id());
+            session.database_add(newSub);
+            subjectDocs{end+1} = newSub; %#ok<AGROW>
+            labels{end+1} = localID; %#ok<AGROW>
+            subjects{k} = newSub.id();
+        end
+    else
+        % Offset by one because index 1 is the create-new entry.
+        subjects{k} = subjectDocs{idx - 1}.id();
+    end
+    k = k + 1;
 end
 end
 
