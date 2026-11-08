@@ -40,22 +40,22 @@
 			"type": "matrix",
 			"default_value": [],
 			"parameters": [
-				3,
-				null
+				NaN,
+				1
 			],
 			"queryable": 0,
-			"documentation": "Polygon x coordinates in COORD_SPACE, same length as vertices_y and equal to n_vertices. These are the values ndi.fun.doc.gene.fromGEFbyROI passed to inpolygon to decide which records entered the pyramid this ROI depends on."
+			"documentation": "Polygon x coordinates in COORD_SPACE as a column vector (Mx1) whose length equals n_vertices. The minimum-of-three constraint is on n_vertices and enforced in makeROI; a simple polygon with fewer vertices is not a polygon. These are the values ndi.fun.doc.gene.fromGEFbyROI passed to inpolygon to decide which records entered the pyramid this ROI depends on."
 		},
 		{
 			"name": "vertices_y",
 			"type": "matrix",
 			"default_value": [],
 			"parameters": [
-				3,
-				null
+				NaN,
+				1
 			],
 			"queryable": 0,
-			"documentation": "Polygon y coordinates in COORD_SPACE, same length as vertices_x and equal to n_vertices."
+			"documentation": "Polygon y coordinates in COORD_SPACE as a column vector (Mx1), same length as vertices_x."
 		},
 		{
 			"name": "coord_space",
