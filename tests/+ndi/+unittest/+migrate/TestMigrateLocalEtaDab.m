@@ -310,6 +310,58 @@ classdef TestMigrateLocalEtaDab < matlab.unittest.TestCase
                 numel(devs), numel(els));
         end
 
+        function testCensusByClass(testCase)
+            % THROWAWAY (never merged): the migrated Dab database by v2
+            % class, and what each ingested epoch became, for Jess.
+            file = testCase.Result.destination;
+            dbid = mksqlite(0, 'open', file);
+            c = onCleanup(@() mksqlite(dbid, 'close'));
+            q = @(sql) mksqlite(dbid, sql);
+            t = q('SELECT COUNT(*) AS n FROM documents');
+            fprintf('\n  CENSUS (Dab, migrated database %s)\n', file);
+            fprintf('    DENOMINATOR: %d document(s)\n', t.n);
+            r = q(['SELECT classname AS c, COUNT(*) AS n, ' ...
+                'SUM(json_extract(body, ''$.document_class.schema_version'') = ''did_v1'') AS v1 ' ...
+                'FROM documents GROUP BY classname ORDER BY n DESC']);
+            fprintf('    by class (%d classes; v1 = carried as did_v1):\n', numel(r));
+            for k = 1:numel(r)
+                fprintf('      %7d  %-40s v1 %d\n', r(k).n, r(k).c, double(r(k).v1));
+            end
+            % what the ingested epochs became
+            sqlE = ['SELECT DISTINCT d.document_id AS id FROM depends_on d JOIN documents m ON m.id = d.doc_id ' ...
+                'WHERE m.classname = ''ingestion_manifest'' AND d.name = ''epoch_id'''];
+            sqlA = ['SELECT DISTINCT a.doc_id AS id FROM depends_on a JOIN documents ad ON ad.id = a.doc_id ' ...
+                'WHERE ad.classname = ''relative_time_reference'' AND a.name = ''referent_id'' ' ...
+                'AND a.document_id IN (' sqlE ')'];
+            sqlS = ['SELECT DISTINCT s.doc_id AS id FROM depends_on s WHERE s.name = ''time_reference_id'' ' ...
+                'AND s.document_id IN (' sqlA ')'];
+            m = q('SELECT COUNT(*) AS n FROM documents WHERE classname = ''ingestion_manifest''');
+            e = q(['SELECT COUNT(*) AS n FROM (' sqlE ')']);
+            a = q(['SELECT COUNT(*) AS n FROM (' sqlA ')']);
+            fprintf('    ingestion_manifest documents: %d; epoch entities they name: %d; anchors (relative_time_reference) onto them: %d\n', ...
+                m.n, e.n, a.n);
+            r = q(['SELECT d.classname AS c, COUNT(*) AS n FROM documents d WHERE d.id IN (' sqlS ') ' ...
+                'GROUP BY d.classname ORDER BY n DESC']);
+            fprintf('    documents timed by those anchors (time_reference_id), by class:\n');
+            for k = 1:numel(r); fprintf('      %7d  %s\n', r(k).n, r(k).c); end
+            r = q(['SELECT d.classname AS c, COUNT(*) AS n FROM documents d JOIN depends_on o ON o.doc_id = d.id ' ...
+                'WHERE o.name = ''owner_id'' AND o.document_id IN (' sqlS ') GROUP BY d.classname ORDER BY n DESC']);
+            fprintf('    data bodies owned by those documents (owner_id), by class:\n');
+            for k = 1:numel(r); fprintf('      %7d  %s\n', r(k).n, r(k).c); end
+            % per epoch: anchors and timed documents
+            r = q(['SELECT x.e AS e, COUNT(DISTINCT x.a) AS na, COUNT(DISTINCT s.doc_id) AS ns FROM ' ...
+                '(SELECT a.document_id AS e, a.doc_id AS a FROM depends_on a JOIN documents ad ON ad.id = a.doc_id ' ...
+                'WHERE ad.classname = ''relative_time_reference'' AND a.name = ''referent_id'' ' ...
+                'AND a.document_id IN (' sqlE ')) x LEFT JOIN depends_on s ON s.name = ''time_reference_id'' ' ...
+                'AND s.document_id = x.a GROUP BY x.e']);
+            if ~isempty(r)
+                na = double([r.na]); ns = double([r.ns]);
+                fprintf('    per epoch (%d epochs): anchors min %d / median %g / max %d; timed documents min %d / median %g / max %d\n', ...
+                    numel(r), min(na), median(na), max(na), min(ns), median(ns), max(ns));
+            end
+            clear c;
+        end
+
         function testReadPhasesAreNoSlowerThanV1(testCase)
             % Jess Haley, 2026-11-06: "Speed can't be slower than v1. We
             % need to match or beat." Every session of Dab is read in five
