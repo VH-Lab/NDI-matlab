@@ -6,7 +6,7 @@
 	"depends_on": [
 		{
 			"name": "spatialGeneExpressionPyramid_id",
-			"mustbenotempty": 1
+			"mustbenotempty": 0
 		},
 		{
 			"name": "source_file_id",

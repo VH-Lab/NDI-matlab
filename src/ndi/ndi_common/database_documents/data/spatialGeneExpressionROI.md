@@ -66,7 +66,7 @@ the pyramid.
 
 | name | required | description |
 |---|---|---|
-| `spatialGeneExpressionPyramid_id` | yes | the pyramid built from the records inside this polygon |
+| `spatialGeneExpressionPyramid_id` | no | the pyramid built from the records inside this polygon; left unset when the polygon contained no records so the drawn geometry is still on record for a polygon that turned out empty |
 | `source_file_id` | no | the shared `.gef` the pyramid came from |
 
 ## See also
