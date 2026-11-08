@@ -383,13 +383,13 @@ classdef TestMigrateLocalEtaDab < matlab.unittest.TestCase
             fprintf('    distinct full anchor keys %d; distinct clocks %d\n', af.full_, af.clocks);
             cl = q(['SELECT json_extract(body, ''$.relative_time_reference.value.clock'') AS clk, COUNT(*) AS n FROM documents ' ...
                 'WHERE id IN (SELECT anchor FROM (' sqlAE ')) GROUP BY clk ORDER BY n DESC']);
-            for k = 1:numel(cl); fprintf('      clock %s: %d anchor(s)\n', char(string(cl(k).clk)), cl(k).n); end
+            for k = 1:numel(cl); v = cl(k).clk; if ~ischar(v); v = '(none)'; end; fprintf('      clock %s: %d anchor(s)\n', v, cl(k).n); end
             combos = q(['SELECT combo, COUNT(*) AS n FROM (SELECT ae.epoch, group_concat(c, '','') AS combo FROM ' ...
                 '(SELECT ae.epoch AS epoch, json_extract(d.body, ''$.relative_time_reference.value.clock.name'') AS c ' ...
                 'FROM (' sqlAE ') ae JOIN documents d ON d.id = ae.anchor ORDER BY ae.epoch, c) ae GROUP BY ae.epoch) ' ...
                 'GROUP BY combo ORDER BY n DESC']);
             fprintf('    clock-name sets per epoch (%d distinct):\n', numel(combos));
-            for k = 1:numel(combos); fprintf('      %d epoch(s): %s\n', combos(k).n, char(combos(k).combo)); end
+            for k = 1:numel(combos); v = combos(k).combo; if ~ischar(v); v = '(none)'; end; fprintf('      %d epoch(s): %s\n', combos(k).n, v); end
             clear c;
         end
 
