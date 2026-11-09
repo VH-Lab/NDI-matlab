@@ -368,6 +368,13 @@ classdef GEFManager < ndi.gui.app.sessionApp
             choices.segmentationMethod = '';
             choices.obsColumns = {};
             choices.labelSelections = struct('name',{},'isUnsupervised',{});
+            % Split-by-ROI mode: when a single chip's section captured
+            % tissue from more than one animal, the ingest produces one
+            % pyramid per subject by asking the user to draw a polygon
+            % per animal. Default off keeps the existing one-subject
+            % flow unchanged.
+            choices.splitByROI = false;
+            choices.nSubjects = 1;
 
             if isempty(cellbinMeta), return; end
             choices.importCells = true;
@@ -409,12 +416,28 @@ classdef GEFManager < ndi.gui.app.sessionApp
 
             E = {}; W = {};
 
+            splitByROI = ndi.gui.app.GEFManager.field(choices,'splitByROI',false);
+            nSubjects  = ndi.gui.app.GEFManager.field(choices,'nSubjects',1);
+
             % -- what cannot proceed ------------------------------------
-            if ~isfield(choices,'subjectID') || isempty(choices.subjectID)
-                E{end+1} = ['A subject is required. The pyramid document ' ...
-                    'declares subject_id mustbenotempty, because a section ' ...
-                    'is measured from an animal; the .gef records a chip, ' ...
-                    'not a subject, so it cannot be filled in for you.'];
+            if splitByROI
+                % Subject is picked per polygon at draw time, so a
+                % session-level subjectID is not required here. The
+                % count must be at least 2; a 1-subject chip belongs on
+                % the single-subject path.
+                if ~isfinite(nSubjects) || nSubjects < 2 || nSubjects ~= floor(nSubjects)
+                    E{end+1} = ['Split by ROI needs at least two ' ...
+                        'subjects. Turn Split by ROI off for a ' ...
+                        'single-subject section, or raise the ' ...
+                        'subject count.'];
+                end
+            else
+                if ~isfield(choices,'subjectID') || isempty(choices.subjectID)
+                    E{end+1} = ['A subject is required. The pyramid document ' ...
+                        'declares subject_id mustbenotempty, because a section ' ...
+                        'is measured from an animal; the .gef records a chip, ' ...
+                        'not a subject, so it cannot be filled in for you.'];
+                end
             end
             if isempty(geneID)
                 E{end+1} = ['The GEF probe found no genes, so there is no ' ...
@@ -437,6 +460,17 @@ classdef GEFManager < ndi.gui.app.sessionApp
             haveCellbin = ~isempty(cellbinMeta);
             sel = ndi.gui.app.GEFManager.field(choices,'labelSelections', ...
                 struct('name',{},'isUnsupervised',{}));
+            if splitByROI && haveCellbin
+                % Cells depend on one pyramid each, so a per-animal
+                % cellbin split is a separate operation. Refuse rather
+                % than guess an assignment, since the file does not say
+                % which cells belong to which animal.
+                E{end+1} = ['Split by ROI with a cellbin file is not ' ...
+                    'supported: cells depend on one pyramid each, so a ' ...
+                    'per-animal cellbin split is a separate operation. ' ...
+                    'Import the pyramids now and cells per animal ' ...
+                    'later.'];
+            end
             if wantCells && ~haveCellbin
                 E{end+1} = 'Cells were selected but no cellbin file was given.';
             end
@@ -513,14 +547,31 @@ classdef GEFManager < ndi.gui.app.sessionApp
                 struct('genomeAssembly', choices.genomeAssembly, ...
                        'annotationSource', choices.annotationSource, ...
                        'label', choices.label));
-            plan.steps = ndi.gui.app.GEFManager.addStep(plan.steps, ...
-                'pyramid', sprintf('pyramid, %d level(s), %s tiles', ...
-                    numel(bs), ndi.gui.app.GEFManager.gridText(choices.grid)), ...
-                struct('binSizes', bs, 'grid', choices.grid, ...
-                       'subjectID', choices.subjectID, ...
-                       'basePixelSize', choices.basePixelSize, ...
-                       'label', choices.label, 'assay', choices.assay, ...
-                       'chipSerial', choices.chipSerial));
+            if splitByROI
+                % The pyramid step becomes one-per-animal and the
+                % subject is picked at draw time, so the subjectID
+                % field is not in these args.
+                plan.steps = ndi.gui.app.GEFManager.addStep(plan.steps, ...
+                    'pyramidByROI', ...
+                    sprintf(['%d pyramids by ROI, %d level(s) each, ' ...
+                        '%s tiles (polygons drawn after the read)'], ...
+                        nSubjects, numel(bs), ...
+                        ndi.gui.app.GEFManager.gridText(choices.grid)), ...
+                    struct('nSubjects', nSubjects, ...
+                           'binSizes', bs, 'grid', choices.grid, ...
+                           'basePixelSize', choices.basePixelSize, ...
+                           'label', choices.label, 'assay', choices.assay, ...
+                           'chipSerial', choices.chipSerial));
+            else
+                plan.steps = ndi.gui.app.GEFManager.addStep(plan.steps, ...
+                    'pyramid', sprintf('pyramid, %d level(s), %s tiles', ...
+                        numel(bs), ndi.gui.app.GEFManager.gridText(choices.grid)), ...
+                    struct('binSizes', bs, 'grid', choices.grid, ...
+                           'subjectID', choices.subjectID, ...
+                           'basePixelSize', choices.basePixelSize, ...
+                           'label', choices.label, 'assay', choices.assay, ...
+                           'chipSerial', choices.chipSerial));
+            end
             if wantCells
                 n = ndi.gui.app.GEFManager.field(cellbinMeta,'nCells',NaN);
                 plan.steps = ndi.gui.app.GEFManager.addStep(plan.steps, ...
@@ -603,27 +654,43 @@ classdef GEFManager < ndi.gui.app.sessionApp
             end
 
             result = struct('geneListDoc',[],'pyrDoc',[],'tileDocs',{{}}, ...
-                'cellsDoc',[],'labelDocs',{{}},'notes',{{}});
+                'cellsDoc',[],'labelDocs',{{}},'notes',{{}}, ...
+                'pyrDocs',{{}},'tileDocsCell',{{}},'roiDocs',{{}});
             n = numel(plan.steps);
 
             % -- the GEF, read once, into its documents ------------------
-            % ndi.fun.doc.gene.fromGEF owns this path: one read, then the
-            % gene list and the pyramid built from it. This class used to
-            % run that sequence itself, which left two copies of the
-            % read-once discipline free to drift apart. The app now differs
-            % from a script only in passing a progress callback.
+            % ndi.fun.doc.gene.fromGEF owns the single-subject path: one
+            % read, then the gene list and the pyramid built from it.
+            % This class used to run that sequence itself, which left
+            % two copies of the read-once discipline free to drift
+            % apart. The app now differs from a script only in passing
+            % a progress callback.
             %
-            % recordSource is FALSE, which keeps this a refactor rather
-            % than a change of behaviour. fromGEF would otherwise also
-            % create a generic_file describing the .gef and checksum it --
-            % a second full read of a ~9.4 GB file, and a document that
-            % ingestMessage never told the user about. That screen names
-            % every document that will be created, so adding one silently
-            % would make it wrong. Recording provenance from the GUI is
-            % worth doing; it needs a plan step and a line on the
-            % confirmation screen, not a quiet default.
+            % In split-by-ROI mode fromGEFinteractive owns the same
+            % path: one read, one shared gene list, then one pyramid
+            % per polygon with its subject picked at draw time. Both
+            % wrappers share buildROIpyramids as their inner loop, so a
+            % script's three polygons and the dialog's three drawn
+            % polygons produce the same result.
+            %
+            % recordSource is FALSE on both paths, which keeps this a
+            % refactor rather than a change of behaviour. fromGEF would
+            % otherwise also create a generic_file describing the .gef
+            % and checksum it -- a second full read of a ~9.4 GB file,
+            % and a document that ingestMessage never told the user
+            % about. That screen names every document that will be
+            % created, so adding one silently would make it wrong.
+            % Recording provenance from the GUI is worth doing; it
+            % needs a plan step and a line on the confirmation screen,
+            % not a quiet default.
             glArgs = ndi.gui.app.GEFManager.stepArgs(plan, 'geneList');
-            pyArgs = ndi.gui.app.GEFManager.stepArgs(plan, 'pyramid');
+            byROIArgs = ndi.gui.app.GEFManager.stepArgs(plan, 'pyramidByROI');
+            splitByROI = ~isempty(fieldnames(byROIArgs));
+            if splitByROI
+                pyArgs = byROIArgs;
+            else
+                pyArgs = ndi.gui.app.GEFManager.stepArgs(plan, 'pyramid');
+            end
             % Spelled out rather than pulled through a local handle: the
             % obvious short name for one would be 'get', which shadows the
             % graphics built-in inside a class that draws.
@@ -633,21 +700,39 @@ classdef GEFManager < ndi.gui.app.sessionApp
             lbl        = ndi.gui.app.GEFManager.field(pyArgs, 'label', '');
             binSizes   = ndi.gui.app.GEFManager.field(pyArgs, 'binSizes', [1 2 4 8 16 32]);
             gridN      = ndi.gui.app.GEFManager.field(pyArgs, 'grid', []);
-            subjectID  = ndi.gui.app.GEFManager.field(pyArgs, 'subjectID', '');
             pixelSize  = ndi.gui.app.GEFManager.field(pyArgs, 'basePixelSize', [NaN NaN]);
             assay      = ndi.gui.app.GEFManager.field(pyArgs, 'assay', 'Stereo-seq');
             chipSerial = ndi.gui.app.GEFManager.field(pyArgs, 'chipSerial', '');
-            [result.pyrDoc, result.tileDocs, result.geneListDoc, gefInfo] = ...
-                ndi.fun.doc.gene.fromGEF(session, gefPath, ...
-                    'maxGenes', maxGenes, ...
-                    'genomeAssembly', assembly, ...
-                    'annotationSource', annotation, ...
-                    'label', lbl, 'binSizes', binSizes, 'grid', gridN, ...
-                    'subjectID', subjectID, 'basePixelSize', pixelSize, ...
-                    'assay', assay, 'chipSerial', chipSerial, ...
-                    'recordSource', false, ...
-                    'progressFcn', ndi.gui.app.GEFManager.gefProgress( ...
-                        progressFcn, n));
+            if splitByROI
+                nSubs = ndi.gui.app.GEFManager.field(pyArgs, 'nSubjects', 2);
+                [result.pyrDocs, result.tileDocsCell, result.geneListDoc, ...
+                    ~, gefInfo] = ...
+                    ndi.fun.doc.gene.fromGEFinteractive(session, gefPath, ...
+                        'nSubjects', nSubs, ...
+                        'maxGenes', maxGenes, ...
+                        'genomeAssembly', assembly, ...
+                        'annotationSource', annotation, ...
+                        'label', lbl, 'binSizes', binSizes, 'grid', gridN, ...
+                        'basePixelSize', pixelSize, ...
+                        'assay', assay, 'chipSerial', chipSerial, ...
+                        'recordSource', false, ...
+                        'progressFcn', ndi.gui.app.GEFManager.gefProgress( ...
+                            progressFcn, n));
+                result.roiDocs = gefInfo.roiDocs;
+            else
+                subjectID  = ndi.gui.app.GEFManager.field(pyArgs, 'subjectID', '');
+                [result.pyrDoc, result.tileDocs, result.geneListDoc, gefInfo] = ...
+                    ndi.fun.doc.gene.fromGEF(session, gefPath, ...
+                        'maxGenes', maxGenes, ...
+                        'genomeAssembly', assembly, ...
+                        'annotationSource', annotation, ...
+                        'label', lbl, 'binSizes', binSizes, 'grid', gridN, ...
+                        'subjectID', subjectID, 'basePixelSize', pixelSize, ...
+                        'assay', assay, 'chipSerial', chipSerial, ...
+                        'recordSource', false, ...
+                        'progressFcn', ndi.gui.app.GEFManager.gefProgress( ...
+                            progressFcn, n));
+            end
             result.notes = gefInfo.notes;
 
             % Only 'cells' still does work here. The other three kinds are
@@ -666,7 +751,7 @@ classdef GEFManager < ndi.gui.app.sessionApp
                             progressFcn, i-1, n, step.description);
                         result = ndi.gui.app.GEFManager.runCellsStep( ...
                             session, cellbinPath, step, plan, result);
-                    case {'geneList','pyramid','labels'}
+                    case {'geneList','pyramid','pyramidByROI','labels'}
                         % Already created; see above. Not ticked either,
                         % because the bar has passed these already and
                         % moving it backwards would read as a stall.
@@ -1273,6 +1358,90 @@ classdef GEFManager < ndi.gui.app.sessionApp
             v = m(char(key));
         end
 
+        function choices = subjectChoices(session)
+        % SUBJECTCHOICES - subject documents in the session, as (label,id)
+        %
+        %   CHOICES = ndi.gui.app.GEFManager.SUBJECTCHOICES(SESSION)
+        %
+        %   Shape built for listdlg: a struct array with .label (what the
+        %   user sees) and .id (the document id the plan ends up carrying).
+        %   Empty when the session has no subject documents, so the caller
+        %   can say so with its own error rather than a MATLAB index one.
+        %
+        %   The label is the subject's local_identifier when it has one;
+        %   otherwise the document id, truncated to keep the listdlg a
+        %   reasonable width. An empty local_identifier never becomes the
+        %   label, because a listdlg of blank rows reads as a corrupt
+        %   session rather than one of several unnamed subjects.
+            arguments
+                session (1,1)
+            end
+            choices = struct('label',{},'id',{});
+            docs = session.database_search(ndi.query('','isa','subject'));
+            for i = 1:numel(docs)
+                p = docs{i}.document_properties;
+                idStr = docs{i}.id();
+                nm = '';
+                if isfield(p,'subject')
+                    nm = ndi.gui.app.GEFManager.field( ...
+                        p.subject,'local_identifier','');
+                end
+                if isempty(nm)
+                    lbl = sprintf('(no local_identifier) %s', ...
+                        ndi.gui.app.GEFManager.shortID(idStr));
+                else
+                    lbl = char(nm);
+                end
+                choices(end+1).label = lbl; %#ok<AGROW>
+                choices(end).id = idStr;
+            end
+        end
+
+        function driveDialog(d, frac, txt)
+        % DRIVEDIALOG - update a uiprogressdlg with (fraction, text)
+        %
+        %   ndi.gui.app.GEFManager.DRIVEDIALOG(D, FRAC, TXT)
+        %
+        %   The adapter between the plain-handle progress contract the
+        %   ingest wrappers use (fraction in [0 1], text message) and
+        %   MATLAB's uiprogressdlg properties. Lives here rather than as
+        %   an anonymous handle at the call site so the clamp and the
+        %   validity check are stated once.
+        %
+        %   D may already be invalid: the user closed the dialog, or the
+        %   caller's onCleanup fired. Silently ignore it in that case
+        %   rather than let a drawing error interrupt a read that has
+        %   already finished in the model.
+            if isempty(d) || ~isvalid(d)
+                return;
+            end
+            if ~isfinite(frac), frac = 0; end
+            d.Value = max(0, min(1, double(frac)));
+            if nargin >= 3 && ~isempty(txt)
+                d.Message = char(txt);
+            end
+            drawnow limitrate;
+        end
+
+        function s = shortID(idStr)
+        % SHORTID - the first segment of an NDI document id
+        %
+        %   DID ids are long; a subject picker shows ~40 chars at most
+        %   before the list widget starts eliding, which looks like a
+        %   corruption. Trimming to the first dash-separated chunk keeps
+        %   the label readable without losing the fallback's purpose: a
+        %   user still sees enough of the id to tell two unnamed subjects
+        %   apart.
+            s = char(idStr);
+            k = find(s == '-', 1, 'first');
+            if ~isempty(k)
+                s = s(1:k-1);
+            end
+            if numel(s) > 12
+                s = s(1:12);
+            end
+        end
+
     end
 
     % =====================================================================
@@ -1819,7 +1988,11 @@ classdef GEFManager < ndi.gui.app.sessionApp
         function choices = askChoices(obj, gefMeta, geneID, cbMeta)
         % The confirmation screen. Shows what was READ, what was INFERRED
         % and the evidence behind each inference, and asks for the one
-        % thing the files cannot supply: the subject.
+        % thing the files cannot supply: the subject (or, for a chip
+        % that captured tissue from more than one animal, the subject
+        % count -- the per-animal picking then happens during the run,
+        % when the records are loaded and a polygon can be drawn over
+        % them).
             choices = [];
             defaults = ndi.gui.app.GEFManager.ingestChoices(gefMeta, cbMeta);
 
@@ -1834,6 +2007,46 @@ classdef GEFManager < ndi.gui.app.sessionApp
                 end
             end
             uialert(obj.fig, text, 'What these files contain', 'Icon','info');
+
+            % How many animals is this section from? One is the normal
+            % case and keeps the existing single-subject flow; more
+            % than one switches to split-by-ROI, which asks the user to
+            % draw one polygon per animal and pick a subject per
+            % polygon INSIDE fromGEFinteractive -- after the read -- so
+            % the picker here is skipped for that path.
+            countAnswer = inputdlg( ...
+                {'How many subjects (animals) does this section contain?'}, ...
+                'Subject count', 1, {'1'});
+            if isempty(countAnswer), return; end
+            nSubs = str2double(countAnswer{1});
+            if ~isfinite(nSubs) || nSubs < 1 || nSubs ~= floor(nSubs)
+                uialert(obj.fig, ...
+                    'Need a positive integer. Enter 1 for a single-subject section.', ...
+                    'Bad subject count');
+                return;
+            end
+
+            if nSubs > 1
+                % Split-by-ROI mode. A cellbin file here is a refusal
+                % -- cells depend on one pyramid each -- so stop before
+                % the ingest finds that out.
+                if ~isempty(cbMeta)
+                    uialert(obj.fig, ...
+                        ['Split by ROI with a cellbin file is not ' ...
+                         'supported in this version: cells depend on ' ...
+                         'one pyramid each, so a per-animal cellbin ' ...
+                         'split is a separate operation. Import the ' ...
+                         'pyramids now and add cells per animal ' ...
+                         'later.'], ...
+                        'Cellbin not split');
+                    return;
+                end
+                defaults.splitByROI = true;
+                defaults.nSubjects = nSubs;
+                defaults.subjectID = '';
+                choices = defaults;
+                return;
+            end
 
             subj = ndi.gui.app.GEFManager.subjectChoices(obj.session);
             if isempty(subj)

@@ -1,0 +1,103 @@
+{
+	"classname": "spatialGeneExpressionROI",
+	"superclasses": [
+		"base"
+	],
+	"depends_on": [
+		{
+			"name": "spatialGeneExpressionPyramid_id",
+			"mustbenotempty": 0
+		},
+		{
+			"name": "source_file_id",
+			"mustbenotempty": 0
+		}
+	],
+	"spatialGeneExpressionROI": [
+		{
+			"name": "label",
+			"type": "string",
+			"default_value": "",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "A human-readable label for this ROI (e.g. 'animal 2 / left hemisphere')."
+		},
+		{
+			"name": "n_vertices",
+			"type": "integer",
+			"default_value": 0,
+			"parameters": [
+				3,
+				1000000,
+				0,
+				0
+			],
+			"queryable": 1,
+			"documentation": "Number of polygon vertices. A simple polygon needs at least three; a closed-ring last-equals-first vertex is not required."
+		},
+		{
+			"name": "vertices_x",
+			"type": "matrix",
+			"default_value": [],
+			"parameters": [
+				NaN,
+				1
+			],
+			"queryable": 0,
+			"documentation": "Polygon x coordinates in COORD_SPACE as a column vector (Mx1) whose length equals n_vertices. The minimum-of-three constraint is on n_vertices and enforced in makeROI; a simple polygon with fewer vertices is not a polygon. These are the values ndi.fun.doc.gene.fromGEFbyROI passed to inpolygon to decide which records entered the pyramid this ROI depends on."
+		},
+		{
+			"name": "vertices_y",
+			"type": "matrix",
+			"default_value": [],
+			"parameters": [
+				NaN,
+				1
+			],
+			"queryable": 0,
+			"documentation": "Polygon y coordinates in COORD_SPACE as a column vector (Mx1), same length as vertices_x."
+		},
+		{
+			"name": "coord_space",
+			"type": "string",
+			"default_value": "gef_base_pixel",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "The coordinate system vertices_x and vertices_y live in. For a Stereo-seq .gef the default 'gef_base_pixel' is the same integer pixel grid ndr.format.stereoseq.readGEF returns in X,Y. Named rather than left implicit so a future ROI drawn on an image aligned to the pyramid (not the raw GEF) can be stored under a different space without rewriting the pyramid."
+		},
+		{
+			"name": "coord_units",
+			"type": "string",
+			"default_value": "pixel",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "The units of vertices_x and vertices_y. 'pixel' when the coordinates are in base pixels of the referenced pyramid; a physical unit (e.g. 'micrometer') is also allowed and requires COORD_SPACE to name a physical space."
+		},
+		{
+			"name": "n_records_in",
+			"type": "integer",
+			"default_value": 0,
+			"parameters": [
+				0,
+				10000000000,
+				0,
+				0
+			],
+			"queryable": 1,
+			"documentation": "Number of source records (spots) that fell inside this polygon when the pyramid was built. Zero is allowed and means the polygon was empty; the pyramid dependency may then be a dangling id, which is why that dependency is permitted."
+		},
+		{
+			"name": "roi_format_version",
+			"type": "integer",
+			"default_value": 1,
+			"parameters": [
+				1,
+				1000,
+				0,
+				0
+			],
+			"queryable": 1,
+			"documentation": "Version of the ROI representation. 1 is a simple closed polygon stored as parallel vertices_x and vertices_y vectors; future versions may add multi-polygon shapes or holes."
+		}
+	]
+}

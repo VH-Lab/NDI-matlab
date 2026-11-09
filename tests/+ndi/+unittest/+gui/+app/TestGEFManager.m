@@ -685,6 +685,145 @@ classdef TestGEFManager < matlab.unittest.TestCase
             testCase.verifyFalse(contains(msg, 'This creates'));
         end
 
+        % =============================================================
+        % Split by ROI: one chip, N subjects, one pyramid per polygon
+        % =============================================================
+
+        function testChoicesDefaultsToASingleSubject(testCase)
+            % Split by ROI is opt-in: the existing single-subject flow
+            % stays the default so a caller that does not know about
+            % the new mode is unaffected.
+            c = ndi.gui.app.GEFManager.ingestChoices( ...
+                testCase.fakeGefMeta(), []);
+            testCase.verifyFalse(c.splitByROI);
+            testCase.verifyEqual(c.nSubjects, 1);
+        end
+
+        function testPlanSplitByROIEmitsAPyramidByROIStep(testCase)
+            % Under split mode the one 'pyramid' step is replaced by
+            % one 'pyramidByROI' step that names the subject count.
+            % Per-subject pyramids are built inside the run.
+            c = testCase.baseChoices();
+            c.splitByROI = true;
+            c.nSubjects = 3;
+            c.subjectID = '';
+            plan = ndi.gui.app.GEFManager.ingestPlan( ...
+                testCase.fakeGefMeta(), {'E1','E2'}, [], c);
+            testCase.verifyEmpty(plan.errors);
+            testCase.verifyEqual({plan.steps.kind}, ...
+                {'geneList','pyramidByROI'});
+            args = ndi.gui.app.GEFManager.stepArgs(plan, 'pyramidByROI');
+            testCase.verifyEqual(args.nSubjects, 3);
+        end
+
+        function testPlanSplitByROIDoesNotRequireASubjectID(testCase)
+            % The subject is picked per polygon at draw time, so the
+            % session-level subjectID check that would normally refuse
+            % an empty one does not apply under split mode.
+            c = testCase.baseChoices();
+            c.splitByROI = true;
+            c.nSubjects = 2;
+            c.subjectID = '';
+            plan = ndi.gui.app.GEFManager.ingestPlan( ...
+                testCase.fakeGefMeta(), {'E1'}, [], c);
+            testCase.verifyEmpty(plan.errors);
+        end
+
+        function testPlanSplitByROIRefusesASingleSubject(testCase)
+            % One subject belongs on the single-subject path, not the
+            % split path; saying "split into 1" is a confused request.
+            c = testCase.baseChoices();
+            c.splitByROI = true;
+            c.nSubjects = 1;
+            c.subjectID = '';
+            plan = ndi.gui.app.GEFManager.ingestPlan( ...
+                testCase.fakeGefMeta(), {'E1'}, [], c);
+            testCase.verifyTrue(any(contains(plan.errors, 'Split by ROI')));
+        end
+
+        function testPlanSplitByROIRefusesACellbin(testCase)
+            % Cells depend on one pyramid each; a per-animal cellbin
+            % split is a separate operation. Refuse rather than guess.
+            c = testCase.baseChoices();
+            c.splitByROI = true;
+            c.nSubjects = 2;
+            c.subjectID = '';
+            c.importCells = true;
+            plan = ndi.gui.app.GEFManager.ingestPlan( ...
+                testCase.fakeGefMeta(), {'E1'}, testCase.fakeCellbinMeta(), c);
+            testCase.verifyTrue(any(contains(plan.errors, 'cellbin')));
+        end
+
+        function testIngestMessageNamesTheROIStep(testCase)
+            c = testCase.baseChoices();
+            c.splitByROI = true;
+            c.nSubjects = 3;
+            c.subjectID = '';
+            plan = ndi.gui.app.GEFManager.ingestPlan( ...
+                testCase.fakeGefMeta(), {'E1'}, [], c);
+            msg = ndi.gui.app.GEFManager.ingestMessage(plan);
+            testCase.verifyTrue(contains(msg, 'pyramids by ROI'));
+            testCase.verifyTrue(contains(msg, 'polygons drawn'));
+        end
+
+        % =============================================================
+        % subjectChoices: the listdlg feed for the ingest dialog
+        % =============================================================
+
+        function testSubjectChoicesListsEverySubjectInTheSession(testCase)
+            % One subject is created in the setup, so the picker has
+            % one row to show. The shape is listdlg-ready: .label and
+            % .id are present on every entry.
+            c = ndi.gui.app.GEFManager.subjectChoices(testCase.session);
+            testCase.verifyNumElements(c, 1);
+            testCase.verifyTrue(isfield(c, 'label'));
+            testCase.verifyTrue(isfield(c, 'id'));
+            testCase.verifyEqual(c(1).label, 'ingest@vhlab');
+            testCase.verifyEqual(c(1).id, testCase.subjectID);
+        end
+
+        function testSubjectChoicesFallsBackWhenLocalIdentifierIsEmpty(testCase)
+            % A listdlg of blank rows reads as a corrupt session rather
+            % than one of several unnamed subjects, so the label gets a
+            % readable fallback.
+            sub = ndi.document('subject', ...
+                'subject.local_identifier', '', ...
+                'base.session_id', testCase.session.id());
+            testCase.session.database_add(sub);
+            c = ndi.gui.app.GEFManager.subjectChoices(testCase.session);
+            testCase.verifyNumElements(c, 2);
+            fallback = c(strcmp({c.id}, sub.id()));
+            testCase.verifyNotEmpty(fallback.label);
+            testCase.verifyTrue(contains(fallback.label, 'no local_identifier'));
+        end
+
+        function testSubjectChoicesIsEmptyWhenNoSubjectsExist(testCase)
+            % An empty session still returns a listdlg-shaped struct
+            % array, so the caller's isempty check works without
+            % special-casing.
+            d = fullfile(tempname, 'empty');
+            mkdir(d);
+            testCase.addTeardown(@() rmdir(fileparts(d), 's'));
+            S = ndi.session.dir('empty', d);
+            c = ndi.gui.app.GEFManager.subjectChoices(S);
+            testCase.verifyTrue(isstruct(c));
+            testCase.verifyEmpty(c);
+        end
+
+        % =============================================================
+        % driveDialog: the adapter between the ingest callback and the
+        % uiprogressdlg properties the GUI displays
+        % =============================================================
+
+        function testDriveDialogIgnoresAnInvalidHandle(testCase)
+            % The user may close the dialog mid-ingest; the next
+            % progress tick should not throw.
+            testCase.verifyWarningFree(@() ...
+                ndi.gui.app.GEFManager.driveDialog([], 0.5, 'hi'));
+            testCase.verifyWarningFree(@() ...
+                ndi.gui.app.GEFManager.driveDialog(gobjects(0), 0.5, 'hi'));
+        end
+
         function testRunIngestRefusesAPlanThatDidNotValidate(testCase)
             % The last guard: nothing should reach the read with a plan the
             % pure layer already rejected.
