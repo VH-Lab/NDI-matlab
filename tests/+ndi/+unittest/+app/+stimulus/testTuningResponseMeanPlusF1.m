@@ -78,9 +78,12 @@ classdef testTuningResponseMeanPlusF1 < ndi.unittest.session.buildSession
             % End to end: with a temporal frequency, stimulus_responses writes mean, F1, F2, and mean+F1,
             % and the mean+F1 values combine the mean and F1 documents of the same run
             S = testCase.Session;
-            paramStruct = struct('angle', 0, 'contrast', 1, 'tFrequency', 4);
-            X = [0; 90; 180; 270];
-            R = [10; 20; 30; 40];
+            % the NaN row is a blank, so that control responses (and the control-subtracted
+            % curves f0_f1_responses reads) are defined; 'angle' is left out of the base
+            % parameters so the blank has none and stays out of the angle tuning curve
+            paramStruct = struct('contrast', 1, 'tFrequency', 4);
+            X = [0; 90; 180; 270; NaN];
+            R = [10; 20; 30; 40; 2];
             docs = ndi.mock.fun.stimulus_response(S, paramStruct, {'angle'}, X, R, 0, 3, 'RandomSeed', 1);
 
             stimulator = S.getelements('base.id', docs{2}.id());
