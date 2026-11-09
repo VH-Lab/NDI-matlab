@@ -34,7 +34,11 @@ end
 dbs = dir(fullfile(root, '.ndi', '*.sqlite'));
 sids = {};
 for k = 1:numel(dbs)
-    db = did2.database.sqlitedb(fullfile(dbs(k).folder, dbs(k).name));
+    try
+        db = did2.database.sqlitedb(fullfile(dbs(k).folder, dbs(k).name));
+    catch
+        continue;   % the v1 database beside it
+    end
     docs = db.search(did2.query('', 'isa', 'acquisition_system'));
     for i = 1:numel(docs)
         sids{end+1} = char(did2.schema.cache.sessionIdOf(docs{i}.toStruct())); %#ok<AGROW>

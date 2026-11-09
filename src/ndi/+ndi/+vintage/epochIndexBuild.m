@@ -32,8 +32,8 @@ try
             continue;   % not a v2 database
         end
         c = onCleanup(@() db.close());
-        if ~ismethod(db, 'derivedRowsAvailable')
-            continue;
+        if ~any(strcmp(methods('did2.database.sqlitedb'), 'derivedRowsAvailable'))
+            continue;   % a DID-matlab without the derived-row store (a static method: methods() sees it)
         end
         db.derivedClear('ndi.epochs.navigator');
         db.derivedClear('ndi.epochs.reader');
