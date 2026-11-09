@@ -1587,12 +1587,12 @@ function result = local(path, options)
     % documents just written, so it ships in the database (Jess Haley,
     % 2026-11-09: "Build the derived index", [3 yes];
     % ndi.vintage.epochIndexBuild). A read with no current row computes it.
-    epochIndexReport = struct('sessions', 0, 'systems', 0, 'epochs', 0, 'rows', NaN, 'built', false);
+    epochIndexReport = struct('sessions', 0, 'systems', 0, 'epochs', 0, 'elements', 0, 'rows', NaN, 'built', false);
     if wroteDst
         epochIndexReport = ndi.vintage.epochIndexBuild(path);
         fprintf(['[migrate step]   epoch-table index: %d session(s), %d acquisition system(s), ' ...
-            '%d epoch(s), %g row(s)\n'], epochIndexReport.sessions, epochIndexReport.systems, ...
-            epochIndexReport.epochs, epochIndexReport.rows);
+            '%d epoch(s), %d element(s), %g row(s)\n'], epochIndexReport.sessions, epochIndexReport.systems, ...
+            epochIndexReport.epochs, epochIndexReport.elements, epochIndexReport.rows);
     end
     migrateStepMark('epoch-table index', tStart, tStep, convertResult);
 

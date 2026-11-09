@@ -59,6 +59,24 @@ for i = 1:numel(sids)
         R.mismatches{end+1} = sprintf('session %s: no derived-row store (DID-matlab too old?)', sids{i});
         continue;
     end
+    % the migrated elements' rows (Jess Haley, 2026-11-09: "Add elements to
+    % the derived index"): as stored, and after removing and re-adding each
+    % kind of document an element's fields are read from
+    R = compareElements(R, S, 'as stored');
+    et = pickElementTargets(S, raw);
+    en = fieldnames(et);
+    for t = 1:numel(en)
+        id = et.(en{t});
+        if isempty(id)
+            R.checks{end+1} = sprintf('elements: no %s to change (not measured)', en{t});
+            continue;
+        end
+        d = raw.get(id);
+        raw.remove(id);
+        R = compareElements(R, S, sprintf('after removing the %s %s', en{t}, id));
+        raw.add({d}, 'Validate', false);
+        R = compareElements(R, S, sprintf('after re-adding the %s %s', en{t}, id));
+    end
     devs = S.daqsystem_load('name', '(.*)');
     if ~iscell(devs); devs = {devs}; end
     for k = 1:numel(devs)
@@ -204,6 +222,85 @@ for k = 1:numel(d)
     if strcmp(d{k}.name, name)
         if isfield(d{k}, 'document_id'); v = char(d{k}.document_id); else; v = char(d{k}.value); end
         return;
+    end
+end
+end
+
+function R = compareElements(R, S, when)
+% every migrated element's fields and class entry, from the index (read
+% twice) and computed fresh (ndi.vintage.prefetchElementFields)
+[fresh, e0] = attempt(@() elementEntries(S, false));
+for pass = 1:2
+    [viaIndex, e1] = attempt(@() elementEntries(S, true));
+    n = 0; if isempty(e0); n = numel(fresh.ids); end
+    R = record(R, isequal(fresh, viaIndex) && isequal(e0, e1), ...
+        sprintf('elements %s, read %d (%d elements%s)', when, pass, n, errNote(e0)));
+end
+end
+
+function E = elementEntries(S, useIndex)
+scope = ndi.vintage.elementFieldsScope('open'); %#ok<NASGU>
+docs = ndi.vintage.elementSubjectDocs(S);
+ndi.vintage.prefetchElementFields(S, docs, useIndex);
+sid = char(S.id());
+E = struct('ids', {{}}, 'f', {{}}, 'c', {{}});
+for k = 1:numel(docs)
+    id = char(docs{k}.document_properties.base.id);
+    [f, hf] = ndi.vintage.elementFieldsScope('get', ['f|' sid '|' id]);
+    [c, hc] = ndi.vintage.elementFieldsScope('get', ['c|' sid '|' id]);
+    if ~hf; f = 'not read'; end
+    if ~hc; c = 'not read'; end
+    E.ids{end+1} = id; E.f{end+1} = f; E.c{end+1} = c;
+end
+end
+
+function T = pickElementTargets(S, db)
+% one document of every kind an element's fields are read from: the
+% element entity, its class and type assertions, a derived_from and an
+% observes relation with it as child, an observation by it, its subject
+T = struct('element', '', 'class_assertion', '', 'type_assertion', '', ...
+    'derived_relation', '', 'observes_relation', '', 'observation', '', 'subject', '');
+docs = ndi.vintage.elementSubjectDocs(S);
+for k = 1:numel(docs)
+    id = char(docs{k}.document_properties.base.id);
+    as = db.search(did2.query('', 'isa', 'assertion') & did2.query('', 'depends_on', 'entity_id', id));
+    rel = db.search(did2.query('', 'isa', 'directed_relation') & did2.query('', 'depends_on', 'child_id', id));
+    obs = db.searchIds(did2.query('', 'isa', 'observation') & did2.query('', 'depends_on', 'instrument_id', id));
+    if isempty(T.element)
+        T.element = id;
+    end
+    for a = 1:numel(as)
+        s = as{a}.toStruct();
+        nm = '';
+        if isfield(s, 'statement') && isfield(s.statement, 'variable') && isfield(s.statement.variable, 'name')
+            nm = char(s.statement.variable.name);
+        end
+        if strcmp(nm, ndi.vintage.elementLabel('class')) && isempty(T.class_assertion)
+            T.class_assertion = char(s.base.id);
+        elseif ~strcmp(nm, ndi.vintage.elementLabel('class')) && isempty(T.type_assertion)
+            T.type_assertion = char(s.base.id);
+        end
+    end
+    for r = 1:numel(rel)
+        s = rel{r}.toStruct();
+        n = '';
+        if isfield(s, 'directed_relation') && isfield(s.directed_relation, 'relation') ...
+                && isfield(s.directed_relation.relation, 'name')
+            n = char(s.directed_relation.relation.name);
+        end
+        if contains(lower(n), 'derived') && isempty(T.derived_relation)
+            T.derived_relation = char(s.base.id);
+        elseif contains(lower(n), 'observ') && isempty(T.observes_relation)
+            T.observes_relation = char(s.base.id);
+        end
+    end
+    if ~isempty(obs) && isempty(T.observation)
+        T.observation = obs{1};
+        o = db.get(obs{1}).toStruct();
+        T.subject = edge(o, 'entity_id');
+    end
+    if all(cellfun(@(f) ~isempty(T.(f)), fieldnames(T)))
+        break;
     end
 end
 end
