@@ -42,8 +42,19 @@ switch action
         [ns, scope, keys] = varargin{1:3};
         m = containers.Map('KeyType', 'char', 'ValueType', 'any');
         rows = S.database_derived('getMany', ns, scope, keys, VERSION);
-        for k = 1:numel(rows)
-            m(rows(k).key) = jsondecode(rows(k).value);
+        if ~isempty(rows)
+            % one jsondecode for all the rows (one per row cost ~0.5 ms each:
+            % 1,604 reader rows on Dab): an array of the row objects, which
+            % decodes to a struct array when they share their fields (each
+            % element decoded from its own object) and to a cell otherwise
+            dec = jsondecode(['[' strjoin({rows.value}, ',') ']']);
+            for k = 1:numel(rows)
+                if iscell(dec)
+                    m(rows(k).key) = dec{k};
+                else
+                    m(rows(k).key) = dec(k);
+                end
+            end
         end
         varargout{1} = m;
     case 'put'
