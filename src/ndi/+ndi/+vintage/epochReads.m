@@ -137,10 +137,7 @@ function tf = takesAllNames(S)
 % does SESSION's database answer searchEdges(Q, '*') with every edge?
 tf = false;
 try
-    db = S.database;
-    tf = isa(db, 'ndi.database.implementations.database.did2sqlite') ...
-        && ismethod(db.db, 'searchEdgesTakesAllNames') ...
-        && did2.database.sqlitedb.searchEdgesTakesAllNames();
+    tf = ismethod(S, 'database_derived') && S.database_derived('takesAllEdges');
 catch
     tf = false;
 end

@@ -584,6 +584,46 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
             rows = db.db.searchValues(q2, paths, varargin{:});
         end % database_search_values()
 
+        function varargout = database_derived(ndi_session_obj, action, varargin)
+            % DATABASE_DERIVED - the database's derived-row store (DID-matlab did2.database.sqlitedb)
+            %
+            % TF = DATABASE_DERIVED(S, 'available'): the session's database
+            %   keeps derived rows (a v2 database, and a DID-matlab whose
+            %   sqlitedb has derivedRowsAvailable -- a static method, so
+            %   methods() is asked, not ismethod).
+            % TF = DATABASE_DERIVED(S, 'takesAllEdges'): its searchEdges
+            %   takes '*' (sqlitedb.searchEdgesTakesAllNames).
+            % ROWS = DATABASE_DERIVED(S, 'getMany', NS, SCOPE, KEYS, VERSION)
+            % DATABASE_DERIVED(S, 'putMany', NS, SCOPE, KEYS, VALUES, VERSION, DEPS)
+            % DATABASE_DERIVED(S, 'clear', NS)
+            % N = DATABASE_DERIVED(S, 'count', NS)
+            %   forward to sqlitedb's derivedGetMany / derivedPutMany /
+            %   derivedClear / derivedCount. For ndi.vintage.epochIndex
+            %   (Jess Haley, 2026-11-09: "Build the derived index"), the only
+            %   writer of these rows.
+            db = ndi_session_obj.database;
+            isV2 = isa(db, 'ndi.database.implementations.database.did2sqlite') ...
+                && isa(db.db, 'did2.database.sqlitedb');
+            switch action
+                case 'available'
+                    varargout{1} = isV2 && any(strcmp(methods('did2.database.sqlitedb'), 'derivedRowsAvailable')) ...
+                        && did2.database.sqlitedb.derivedRowsAvailable();
+                case 'takesAllEdges'
+                    varargout{1} = isV2 && any(strcmp(methods('did2.database.sqlitedb'), 'searchEdgesTakesAllNames')) ...
+                        && did2.database.sqlitedb.searchEdgesTakesAllNames();
+                case 'getMany'
+                    varargout{1} = db.db.derivedGetMany(varargin{:});
+                case 'putMany'
+                    db.db.derivedPutMany(varargin{:});
+                case 'clear'
+                    db.db.derivedClear(varargin{:});
+                case 'count'
+                    varargout{1} = db.db.derivedCount(varargin{:});
+                otherwise
+                    error('NDI:session:database_derived:badAction', 'Unknown action "%s".', action);
+            end
+        end % database_derived()
+
         function rows = database_search_json(ndi_session_obj, searchparameters, paths)
             % DATABASE_SEARCH_JSON - parts of the documents a search matches, decoded but not rebuilt
             %

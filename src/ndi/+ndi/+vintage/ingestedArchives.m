@@ -1,4 +1,4 @@
-function M = ingestedArchives(S, readerId, epochIds, options)
+function [M, D] = ingestedArchives(S, readerId, epochIds, options)
 %INGESTEDARCHIVES Many ingested epochs' clocks and extents, read in a few searches.
 %
 %   M = ndi.vintage.ingestedArchives(SESSION, READERID, EPOCHIDS) is a
@@ -36,9 +36,11 @@ arguments
     readerId (1,:) char
     epochIds
     options.ClocksOnly (1,1) logical = false
+    options.UseIndex (1,1) logical = true
 end
 
 M = containers.Map('KeyType', 'char', 'ValueType', 'any');
+D = containers.Map('KeyType', 'char', 'ValueType', 'any');   % 'ClocksOnly': each epoch's read ids (the index's deps)
 epochIds = unique(reshape(cellstr(epochIds), 1, []), 'stable');
 epochIds = epochIds(~cellfun(@isempty, epochIds));
 if isempty(epochIds)
@@ -87,6 +89,10 @@ for c = 1:200:numel(epochIds)
             lidsOf(id) = {lid};
         end
     end
+end
+if options.ClocksOnly && options.UseIndex && ndi.vintage.epochIndex('available', S)
+    M = fromIndexOrRead(S, readerId, epochIds, entityIdsOf);
+    return;
 end
 if lidsOf.Count == 0
     return;
@@ -156,7 +162,7 @@ bq = ndi.query('', 'isa', 'data_body', '') & ndi.vintage.edgeIn('owner_id', lids
 if options.ClocksOnly
     % set-wise, from the index rows (no body, statement or archive struct
     % built per epoch): see clocksOnly below
-    C = clocksOnly(S, bq, epochIds, entityIdsOf, anchors, anchorRows, statements, statementRows);
+    [C, D] = clocksOnly(S, bq, epochIds, entityIdsOf, anchors, anchorRows, statements, statementRows);
     if isa(C, 'containers.Map')
         M = C;
         return;
@@ -216,7 +222,8 @@ if isfield(p, 'entity') && isstruct(p.entity) && isfield(p.entity, 'local_identi
 end
 end
 
-function M = clocksOnly(S, bq, epochIds, entityIdsOf, anchors, anchorRows, statements, statementRows)
+function [M, D] = clocksOnly(S, bq, epochIds, entityIdsOf, anchors, anchorRows, statements, statementRows)
+D = containers.Map('KeyType', 'char', 'ValueType', 'any');
 % ingestedArchives 'ClocksOnly', set-wise: each epoch's epochclock, t0_t1
 % and clock_problem as private/archiveOf gives them, and no other part
 % ('bodies' is an empty map). The bodies are read as index rows -- each
@@ -258,6 +265,10 @@ sUsed = cellfun(@(d) ndi.v2.edgeIds(d.document_properties, 'time_reference_id'),
 for e = 1:numel(epochIds)
     lid = epochIds{e};
     si = unique(statementRows(lid));
+    % what this epoch's answer is read from (the derived index's deps): its
+    % entities, the anchors onto them and the statements they time
+    D(lid) = [reshape(entityIdsOf(lid), 1, []), reshape(aIds(unique(anchorRows(lid))), 1, []), ...
+        reshape(sIds(si), 1, [])];
     if isempty(entityIdsOf(lid)) || isempty(si)
         continue;   % ingestedArchive raises ingestedNoEpoch / ingestedNoRecording
     end
@@ -284,5 +295,88 @@ for e = 1:numel(epochIds)
             'on each clock").'], lid, numel(ai));
     end
     M(lid) = A;
+end
+end
+
+function M = fromIndexOrRead(S, readerId, epochIds, entityIdsOf)
+% 'ClocksOnly' through the derived index (ndi.vintage.epochIndex; Jess
+% Haley, 2026-11-09: "Build the derived index"). An epoch's row holds its
+% answer (present or left out, and the clocks) and the ids of its entities;
+% it is used when those are the entities that have its local identifier
+% now (read just above, so a new entity with that identifier is seen), and
+% the row is current (every other document it was read from is recorded
+% with it). The other epochs are read as before and their rows stored.
+M = containers.Map('KeyType', 'char', 'ValueType', 'any');
+got = ndi.vintage.epochIndex('get', S, 'ndi.epochs.reader', readerId, epochIds);
+missing = {};
+for e = 1:numel(epochIds)
+    lid = epochIds{e};
+    ents = sort(reshape(cellstr(entityIdsOf(lid)), 1, []));
+    if isKey(got, lid)
+        v = got(lid);
+        if isequal(sort(reshape(asCellstr(v.entities), 1, [])), ents)
+            if v.present
+                M(lid) = archiveFromIndex(lid, v);
+            end
+            continue;
+        end
+    end
+    missing{end+1} = lid; %#ok<AGROW>
+end
+if isempty(missing)
+    return;
+end
+[M2, D2] = ndi.vintage.ingestedArchives(S, readerId, missing, 'ClocksOnly', true, 'UseIndex', false);
+values = cell(1, numel(missing));
+deps = cell(1, numel(missing));
+for e = 1:numel(missing)
+    lid = missing{e};
+    ents = sort(reshape(cellstr(entityIdsOf(lid)), 1, []));
+    d = [{readerId}, ents];
+    if isKey(D2, lid); d = [d, D2(lid)]; end %#ok<AGROW>
+    deps{e} = d;
+    if isKey(M2, lid)
+        A = M2(lid);
+        M(lid) = A;
+        values{e} = archiveToIndex(ents, true, A);
+    else
+        values{e} = archiveToIndex(ents, false, []);
+    end
+end
+ndi.vintage.epochIndex('put', S, 'ndi.epochs.reader', readerId, missing, values, deps);
+end
+
+function v = archiveToIndex(ents, present, A)
+% an epoch's row: its entities, whether it has an answer, and the answer's
+% clocks, t0 / t1 written with 17 significant digits (exact round trip)
+v = struct('entities', {ents}, 'present', present, 'epochclock', {{}}, ...
+    't0', {{}}, 't1', {{}}, 'clock_problem', '');
+if ~present; return; end
+v.epochclock = A.epochclock;
+v.t0 = cellfun(@(t) sprintf('%.17g', t(1)), A.t0_t1, 'UniformOutput', false);
+v.t1 = cellfun(@(t) sprintf('%.17g', t(2)), A.t0_t1, 'UniformOutput', false);
+v.clock_problem = A.clock_problem;
+end
+
+function A = archiveFromIndex(lid, v)
+% the struct clocksOnly makes, from an epoch's row
+A = struct('vintage', 'v2', 'epoch_id', lid, ...
+    'bodies', containers.Map('KeyType', 'char', 'ValueType', 'any'), ...
+    'channels', [], 'epochclock', {{}}, 't0_t1', {{}}, 'clock_problem', char(v.clock_problem));
+clk = asCellstr(v.epochclock); t0 = asCellstr(v.t0); t1 = asCellstr(v.t1);
+for i = 1:numel(clk)
+    A.epochclock{end+1} = clk{i};
+    A.t0_t1{end+1} = [str2double(t0{i}) str2double(t1{i})];
+end
+end
+
+function c = asCellstr(x)
+% a decoded JSON list of strings as a row cellstr
+if isempty(x)
+    c = {};
+elseif ischar(x)
+    c = {x};
+else
+    c = reshape(cellstr(x), 1, []);
 end
 end

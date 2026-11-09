@@ -310,6 +310,19 @@ classdef TestMigrateLocalEtaDab < matlab.unittest.TestCase
                 numel(devs), numel(els));
         end
 
+        function testEpochIndexMatchesItsSource(testCase)
+            % The derived epoch-table index (ndi.vintage.epochIndex; Jess
+            % Haley, 2026-11-09: "Build the derived index", [2 a]) answers
+            % what a fresh computation from the documents answers, for
+            % every acquisition system, as built by the migration and after
+            % removing and re-adding a document of every kind its rows are
+            % read from (ndi.unittest.migrate.epochIndexEquivalence).
+            R = ndi.unittest.migrate.epochIndexEquivalence( ...
+                fileparts(testCase.Result.destination), 'Dab');
+            testCase.verifyNotEmpty(R.checks, 'no comparison was made');
+            testCase.verifyEmpty(R.mismatches, strjoin(R.mismatches, newline));
+        end
+
         function testReadPhasesAreNoSlowerThanV1(testCase)
             % Jess Haley, 2026-11-06: "Speed can't be slower than v1. We
             % need to match or beat." Every session of Dab is read in five
