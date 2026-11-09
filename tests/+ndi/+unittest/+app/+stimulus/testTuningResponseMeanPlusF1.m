@@ -114,6 +114,24 @@ classdef testTuningResponseMeanPlusF1 < ndi.unittest.session.buildSession
                 testCase.verifyEqual(abs(mean(pResp(trials),'omitnan')), expected, 'AbsTol', 1e-8);
             end
 
+            % tuning curves: the mean+F1 curve is the sum of the mean and F1 curves, and
+            % f0_f1_responses on it reports the F0 and F1 of its mean and F1 partners
+            tcArgs = {'independent_parameter', {'angle'}, 'independent_label', {'angle'}};
+            tcMean = app.tuning_curve(meanDoc, tcArgs{:});
+            tcF1 = app.tuning_curve(f1Doc, tcArgs{:});
+            tcMpf = app.tuning_curve(mpfDoc, tcArgs{:});
+            rMean = tcMean.document_properties.stimulus_tuningcurve.response_mean;
+            rF1 = tcF1.document_properties.stimulus_tuningcurve.response_mean;
+            rMpf = tcMpf.document_properties.stimulus_tuningcurve.response_mean;
+            testCase.verifyEqual(rMpf(:), rMean(:) + rF1(:), 'AbsTol', 1e-8);
+
+            [f0, f1] = ndi.fun.stimulus.f0_f1_responses(S, tcMpf, 2);
+            [f0Expected, f1Expected] = ndi.fun.stimulus.f0_f1_responses(S, tcMean, 2);
+            testCase.verifyEqual(f0, f0Expected, 'AbsTol', 1e-10);
+            testCase.verifyEqual(f1, f1Expected, 'AbsTol', 1e-10);
+            testCase.verifyFalse(isnan(f0));
+            testCase.verifyFalse(isnan(f1));
+
             % recomputing replaces rather than duplicates
             app.stimulus_responses(stimulator{1}, spikes{1}, 0, 0);
             testCase.findResponseDocs(S, spikes{1}, 'mean+F1');
