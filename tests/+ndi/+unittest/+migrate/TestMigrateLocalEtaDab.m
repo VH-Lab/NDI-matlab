@@ -469,6 +469,13 @@ classdef TestMigrateLocalEtaDab < matlab.unittest.TestCase
             clear c;
         end
 
+        function testStimCensus(testCase)
+            % THROWAWAY (never merged): stimulus presentations before and after
+            % migration, Stimulator manipulations, ingested stimulus bodies.
+            ndi.unittest.migrate.stimCensus(testCase.Result.destination, 'Dab', ...
+                testCase.Bodies, readCorpusBodies(testCase.CorpusDir));
+        end
+
         function testEpochSets(testCase)
             % THROWAWAY (never merged): how many distinct sets of epochs the
             % repeated wiring and Stimulator facts are timed to (Jess Haley,
