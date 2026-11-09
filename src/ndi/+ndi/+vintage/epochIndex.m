@@ -33,12 +33,7 @@ switch action
             return;
         end
         try
-            db = S.database;
-            % a STATIC method: ismethod does not see it, methods() does
-            tf = isa(db, 'ndi.database.implementations.database.did2sqlite') ...
-                && isa(db.db, 'did2.database.sqlitedb') ...
-                && any(strcmp(methods('did2.database.sqlitedb'), 'derivedRowsAvailable')) ...
-                && did2.database.sqlitedb.derivedRowsAvailable();
+            tf = ismethod(S, 'database_derived') && S.database_derived('available');
         catch
             tf = false;
         end
@@ -46,7 +41,7 @@ switch action
     case 'get'
         [ns, scope, keys] = varargin{1:3};
         m = containers.Map('KeyType', 'char', 'ValueType', 'any');
-        rows = S.database.db.derivedGetMany(ns, scope, keys, VERSION);
+        rows = S.database_derived('getMany', ns, scope, keys, VERSION);
         for k = 1:numel(rows)
             m(rows(k).key) = jsondecode(rows(k).value);
         end
@@ -57,10 +52,10 @@ switch action
             return;
         end
         texts = cellfun(@(v) jsonencode(v), values, 'UniformOutput', false);
-        S.database.db.derivedPutMany(ns, scope, keys, texts, VERSION, deps);
+        S.database_derived('putMany', ns, scope, keys, texts, VERSION, deps);
     case 'clear'
-        S.database.db.derivedClear('ndi.epochs.navigator');
-        S.database.db.derivedClear('ndi.epochs.reader');
+        S.database_derived('clear', 'ndi.epochs.navigator');
+        S.database_derived('clear', 'ndi.epochs.reader');
     otherwise
         error('NDI:vintage:epochIndex:badAction', 'Unknown action "%s".', action);
 end

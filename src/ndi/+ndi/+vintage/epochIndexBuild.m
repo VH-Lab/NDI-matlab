@@ -65,8 +65,8 @@ for i = 1:numel(sids)
     S0 = S;
 end
 if ~isempty(S0)
-    report.rows = S0.database.db.derivedCount('ndi.epochs.navigator') + ...
-        S0.database.db.derivedCount('ndi.epochs.reader');
+    report.rows = S0.database_derived('count', 'ndi.epochs.navigator') + ...
+        S0.database_derived('count', 'ndi.epochs.reader');
 end
 report.built = true;
 end

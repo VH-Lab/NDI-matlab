@@ -33,6 +33,7 @@ for f = {'unique_reference.txt', 'reference.txt', '.migrate.lock'}
 end
 dbs = dir(fullfile(root, '.ndi', '*.sqlite'));
 sids = {};
+v2file = '';
 for k = 1:numel(dbs)
     try
         db = did2.database.sqlitedb(fullfile(dbs(k).folder, dbs(k).name));
@@ -43,8 +44,13 @@ for k = 1:numel(dbs)
     for i = 1:numel(docs)
         sids{end+1} = char(did2.schema.cache.sessionIdOf(docs{i}.toStruct())); %#ok<AGROW>
     end
+    v2file = fullfile(dbs(k).folder, dbs(k).name);
     db.close();
 end
+% the changes are made through a connection of the test's own to the same
+% file (the session's database is not reachable from outside the session)
+raw = did2.database.sqlitedb(v2file);
+cleanRaw = onCleanup(@() raw.close());
 sids = unique(sids(~cellfun(@isempty, sids)), 'stable');
 fprintf('\n  EPOCH INDEX EQUIVALENCE (%s): %d session(s) with an acquisition system\n', label, numel(sids));
 for i = 1:numel(sids)
@@ -60,7 +66,7 @@ for i = 1:numel(sids)
         sys = struct('id', char(dev.id()), 'nav', char(dev.filenavigator.id()), ...
             'cls', char(dev.filenavigator.epochprobemap_class), 'reader', char(dev.daqreader.id()));
         R = compareOnce(R, S, sys, 'as stored');
-        targets = pickTargets(S, sys);
+        targets = pickTargets(S, sys, raw);
         names = fieldnames(targets);
         for t = 1:numel(names)
             id = targets.(names{t});
@@ -68,7 +74,7 @@ for i = 1:numel(sids)
                 R.checks{end+1} = sprintf('%s: no %s to change (not measured)', sys.id, names{t});
                 continue;
             end
-            db = S.database.db;
+            db = raw;
             d = db.get(id);
             db.remove(id);
             R = compareOnce(R, S, sys, sprintf('after removing the %s %s', names{t}, id));
@@ -124,9 +130,8 @@ for i = 1:numel(k)
 end
 end
 
-function T = pickTargets(S, sys)
+function T = pickTargets(S, sys, db)
 % one document of every kind the rows are read from, for this system
-db = S.database.db;
 T = struct('manifest', '', 'epoch', '', 'anchor', '', 'statement', '', 'wiring', '', ...
     'body', '', 'probe', '', 'subject', '', 'assertion', '', 'system', sys.id, ...
     'reader', sys.reader, 'pattern', sys.nav);
