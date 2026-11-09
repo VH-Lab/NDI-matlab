@@ -1,4 +1,4 @@
-function n = prefetchElementFields(S, docs)
+function n = prefetchElementFields(S, docs, useIndex)
 %PREFETCHELEMENTFIELDS Read many migrated elements' fields in five searches.
 %
 %   N = ndi.vintage.prefetchElementFields(SESSION, DOCS) reads, for every
@@ -53,6 +53,28 @@ for k = 1:numel(docs)
     ids{end+1} = id; %#ok<AGROW>
     keep{end+1} = d; %#ok<AGROW>
 end
+% THE DERIVED INDEX (ndi.vintage.epochIndex, namespace 'ndi.elements';
+% Jess Haley, 2026-11-09: "Add elements to the derived index"): an element
+% whose row is current is answered from it -- the fields elementFields
+% computes and the class entry isEtaElement / objectClass read -- and the
+% others are computed below and their rows stored. USEINDEX false
+% computes every one.
+if nargin < 3
+    useIndex = true;
+end
+useIndex = useIndex && ~isempty(ids) && ndi.vintage.epochIndex('available', S);
+if useIndex
+    got = ndi.vintage.epochIndex('get', S, 'ndi.elements', sid, ids);
+    hit = ismember(ids, got.keys);
+    for k = find(hit)
+        v = got(ids{k});
+        ndi.vintage.elementFieldsScope('put', ['f|' sid '|' ids{k}], fieldsFromIndex(v.f));
+        ndi.vintage.elementFieldsScope('put', ['c|' sid '|' ids{k}], ...
+            struct('count', double(v.c.count), 'value', char(v.c.value)));
+    end
+    ids = ids(~hit);
+    keep = keep(~hit);
+end
 if isempty(ids)
     return;
 end
@@ -106,6 +128,8 @@ else
     byObservation = groupBy(observationDocs, {'instrument_id'}, ids);
 end
 
+rowValues = cell(1, numel(ids));
+rowDeps = cell(1, numel(ids));
 for k = 1:numel(ids)
     pieces = struct('classDocs', {byClass(ids{k})}, 'typeDocs', {byType(ids{k})}, ...
         'derivedDocs', {byDerived(ids{k})}, 'observesDocs', {byObserves(ids{k})});
@@ -114,7 +138,7 @@ for k = 1:numel(ids)
     else
         pieces.observationDocs = byObservation(ids{k});
     end
-    ndi.vintage.elementFields(keep{k}, S, pieces);   % builds and caches the fields
+    f = ndi.vintage.elementFields(keep{k}, S, pieces);   % builds and caches the fields
     cls = byClass(ids{k});
     v = '';
     if ~isempty(cls)
@@ -126,8 +150,50 @@ for k = 1:numel(ids)
     end
     ndi.vintage.elementFieldsScope('put', ['c|' sid '|' ids{k}], ...
         struct('count', numel(cls), 'value', v));
+    if useIndex
+        rowValues{k} = struct('f', fieldsToIndex(f), 'c', struct('count', numel(cls), 'value', char(v))); %#ok<AGROW>
+        % read from: the element entity, and every document of the five
+        % reads about it (each points at it, so adding or removing one
+        % drops the row, [2 a])
+        read = [byClass(ids{k}), byType(ids{k}), byDerived(ids{k}), byObserves(ids{k})];
+        rowDeps{k} = [{ids{k}}, cellfun(@(d) char(d.id()), read, 'UniformOutput', false)]; %#ok<AGROW>
+    end
+end
+if useIndex && ~isempty(ids)
+    ndi.vintage.epochIndex('put', S, 'ndi.elements', sid, ids, rowValues, rowDeps);
 end
 n = numel(ids);
+end
+
+function v = fieldsToIndex(f)
+% elementFields' struct, with its reference kept exactly ([], a number to 17
+% significant digits, or text)
+r = f.reference;
+if isempty(r)
+    ref = struct('kind', 'empty', 'v', '');
+elseif isnumeric(r) && isscalar(r)
+    ref = struct('kind', 'num', 'v', sprintf('%.17g', double(r)));
+else
+    ref = struct('kind', 'text', 'v', char(r));
+end
+v = struct('name', char(f.name), 'reference', ref, 'type', char(f.type), ...
+    'direct', logical(f.direct), 'ndi_element_class', char(f.ndi_element_class), ...
+    'underlying_element_id', char(f.underlying_element_id), 'subject_id', char(f.subject_id));
+end
+
+function f = fieldsFromIndex(v)
+% the struct elementFields builds, from a row
+switch char(v.reference.kind)
+    case 'empty'
+        r = [];
+    case 'num'
+        r = str2double(char(v.reference.v));
+    otherwise
+        r = char(v.reference.v);
+end
+f = struct('name', char(v.name), 'reference', r, 'type', char(v.type), 'direct', logical(v.direct), ...
+    'ndi_element_class', char(v.ndi_element_class), ...
+    'underlying_element_id', char(v.underlying_element_id), 'subject_id', char(v.subject_id));
 end
 
 function m = groupBy(found, edgeNames, ids)

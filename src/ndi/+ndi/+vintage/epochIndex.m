@@ -56,6 +56,7 @@ switch action
     case 'clear'
         S.database_derived('clear', 'ndi.epochs.navigator');
         S.database_derived('clear', 'ndi.epochs.reader');
+        S.database_derived('clear', 'ndi.elements');
     otherwise
         error('NDI:vintage:epochIndex:badAction', 'Unknown action "%s".', action);
 end

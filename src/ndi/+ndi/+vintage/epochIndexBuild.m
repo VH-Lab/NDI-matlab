@@ -20,7 +20,7 @@ function report = epochIndexBuild(root)
 %
 %   See also ndi.vintage.epochIndex.
 
-report = struct('sessions', 0, 'systems', 0, 'epochs', 0, 'rows', NaN, 'built', false);
+report = struct('sessions', 0, 'systems', 0, 'epochs', 0, 'elements', 0, 'rows', NaN, 'built', false);
 ndiDir = fullfile(char(root), '.ndi');
 S0 = [];
 sids = {};
@@ -39,6 +39,7 @@ try
         end
         db.derivedClear('ndi.epochs.navigator');
         db.derivedClear('ndi.epochs.reader');
+        db.derivedClear('ndi.elements');
         docs = db.search(did2.query('', 'isa', 'acquisition_system'));
         for i = 1:numel(docs)
             sids{end+1} = char(did2.schema.cache.sessionIdOf(docs{i}.toStruct())); %#ok<AGROW>
@@ -90,11 +91,16 @@ for i = 1:numel(sids)
         report.systems = report.systems + 1;
         report.epochs = report.epochs + numel(E);
     end
+    % the migrated elements' rows (ndi.vintage.prefetchElementFields, as
+    % getelements reads them; Jess Haley, 2026-11-09: "Add elements to the
+    % derived index")
+    els = S.getelements();
+    report.elements = report.elements + numel(els);
     S0 = S;
 end
 if ~isempty(S0)
     report.rows = S0.database_derived('count', 'ndi.epochs.navigator') + ...
-        S0.database_derived('count', 'ndi.epochs.reader');
+        S0.database_derived('count', 'ndi.epochs.reader') + S0.database_derived('count', 'ndi.elements');
 end
 report.built = true;
 end
