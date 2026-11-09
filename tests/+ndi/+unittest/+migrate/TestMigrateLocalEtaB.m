@@ -226,6 +226,12 @@ classdef TestMigrateLocalEtaB < matlab.unittest.TestCase
                 numel(devs), numel(els));
         end
 
+        function testEpochRepeats(testCase)
+            % THROWAWAY (never merged): which epoch-tied documents record the
+            % same fact again in several epochs (Jess Haley, 2026-11-09).
+            ndi.unittest.migrate.epochRepeatCensus(testCase.Result.destination, 'B');
+        end
+
         function testReadPhasesAreNoSlowerThanV1(testCase)
             % Jess Haley, 2026-11-06: "Speed can't be slower than v1. We
             % need to match or beat." Every session of B is read in five
