@@ -437,7 +437,7 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
             ndi_document_obj = ndi_session_obj.database.search(searchparameters&inSession);
         end % database_search();
 
-        function doc = database_read_id(ndi_session_obj, id)
+        function doc = database_read_id(ndi_session_obj, id, options)
             % DATABASE_READ_ID - the session's document with an id, read by its key
             %
             % DOC = DATABASE_READ_ID(NDI_SESSION_OBJ, ID)
@@ -450,20 +450,31 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
             % document of another session is []. For element lookups by id
             % (ndi.vintage.elementDoc; Jess Haley, 2026-11-06: "Speed can't
             % be slower than v1").
+            %
+            % DOC = DATABASE_READ_ID(..., 'AnySession', true) is the document
+            % with that id in this session's database whatever its session:
+            % the answer the session database's own search
+            % (ndi_session_obj.database.search, no session restriction) gives,
+            % as DATABASE_SEARCH_WITH_DATASET reads it first. On another
+            % database it is [] (the caller then searches).
             arguments
                 ndi_session_obj (1,1) ndi.session
                 id
+                options.AnySession (1,1) logical = false
             end
             doc = [];
             id = char(id);
             db = ndi_session_obj.database;
+            if options.AnySession && ~isa(db, 'ndi.database.implementations.database.did2sqlite')
+                return;
+            end
             if isa(db, 'ndi.database.implementations.database.did2sqlite')
                 try
                     d = db.db.get(id);
                 catch
                     return;   % no document with that id
                 end
-                if strcmp(char(did2.schema.cache.sessionIdOf(d.toStruct())), char(ndi_session_obj.id()))
+                if options.AnySession || strcmp(char(did2.schema.cache.sessionIdOf(d.toStruct())), char(ndi_session_obj.id()))
                     doc = ndi.database.internal.applyReadNormalization(d);
                 end
                 return;
@@ -572,6 +583,46 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
             % VARARGIN: searchValues' name/value options ('AllElements')
             rows = db.db.searchValues(q2, paths, varargin{:});
         end % database_search_values()
+
+        function varargout = database_derived(ndi_session_obj, action, varargin)
+            % DATABASE_DERIVED - the database's derived-row store (DID-matlab did2.database.sqlitedb)
+            %
+            % TF = DATABASE_DERIVED(S, 'available'): the session's database
+            %   keeps derived rows (a v2 database, and a DID-matlab whose
+            %   sqlitedb has derivedRowsAvailable -- a static method, so
+            %   methods() is asked, not ismethod).
+            % TF = DATABASE_DERIVED(S, 'takesAllEdges'): its searchEdges
+            %   takes '*' (sqlitedb.searchEdgesTakesAllNames).
+            % ROWS = DATABASE_DERIVED(S, 'getMany', NS, SCOPE, KEYS, VERSION)
+            % DATABASE_DERIVED(S, 'putMany', NS, SCOPE, KEYS, VALUES, VERSION, DEPS)
+            % DATABASE_DERIVED(S, 'clear', NS)
+            % N = DATABASE_DERIVED(S, 'count', NS)
+            %   forward to sqlitedb's derivedGetMany / derivedPutMany /
+            %   derivedClear / derivedCount. For ndi.vintage.epochIndex
+            %   (Jess Haley, 2026-11-09: "Build the derived index"), the only
+            %   writer of these rows.
+            db = ndi_session_obj.database;
+            isV2 = isa(db, 'ndi.database.implementations.database.did2sqlite') ...
+                && isa(db.db, 'did2.database.sqlitedb');
+            switch action
+                case 'available'
+                    varargout{1} = isV2 && any(strcmp(methods('did2.database.sqlitedb'), 'derivedRowsAvailable')) ...
+                        && did2.database.sqlitedb.derivedRowsAvailable();
+                case 'takesAllEdges'
+                    varargout{1} = isV2 && any(strcmp(methods('did2.database.sqlitedb'), 'searchEdgesTakesAllNames')) ...
+                        && did2.database.sqlitedb.searchEdgesTakesAllNames();
+                case 'getMany'
+                    varargout{1} = db.db.derivedGetMany(varargin{:});
+                case 'putMany'
+                    db.db.derivedPutMany(varargin{:});
+                case 'clear'
+                    db.db.derivedClear(varargin{:});
+                case 'count'
+                    varargout{1} = db.db.derivedCount(varargin{:});
+                otherwise
+                    error('NDI:session:database_derived:badAction', 'Unknown action "%s".', action);
+            end
+        end % database_derived()
 
         function rows = database_search_json(ndi_session_obj, searchparameters, paths)
             % DATABASE_SEARCH_JSON - parts of the documents a search matches, decoded but not rebuilt

@@ -1710,10 +1710,12 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
 
         function id = v2DatasetDocId(ndi_dataset_obj)
             % V2DATASETDOCID - the id of the dataset's one `dataset` entity
-            %   document, or '' when it holds none or more than one
+            %   document, or '' when it holds none or more than one. A
+            %   reference Data Set (a gene list's annotation or assembly,
+            %   Jess Haley 2026-11-07 [gene-list history entities]) is not
+            %   counted (ndi.v2.datasetDocuments).
             id = '';
-            d = ndi_dataset_obj.session.database.search(ndi.v2.isaQuery('dataset'));
-            d = d(cellfun(@(x) strcmp(ndi.v2.kindOf(x.document_properties), 'dataset'), d));
+            d = ndi.v2.datasetDocuments(ndi_dataset_obj.session.database);
             if isscalar(d)
                 id = d{1}.id();
             end
@@ -1822,8 +1824,7 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
             datasetDocId = ndi_dataset_obj.v2DatasetDocId();
             if ~explicit
                 if isempty(datasetDocId)
-                    d = ndi_dataset_obj.session.database.search(ndi.v2.isaQuery('dataset'));
-                    d = d(cellfun(@(x) strcmp(ndi.v2.kindOf(x.document_properties), 'dataset'), d));
+                    d = ndi.v2.datasetDocuments(ndi_dataset_obj.session.database);   % without reference Data Sets
                     error('ndi:dataset:noDatasetDocument', ['The dataset holds %d dataset ' ...
                         'document(s), so ''PartOf'' must name the study the session is %s.'], ...
                         numel(d), member);

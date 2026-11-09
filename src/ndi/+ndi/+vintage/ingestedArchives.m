@@ -1,4 +1,4 @@
-function M = ingestedArchives(S, readerId, epochIds)
+function [M, D] = ingestedArchives(S, readerId, epochIds, options)
 %INGESTEDARCHIVES Many ingested epochs' clocks and extents, read in a few searches.
 %
 %   M = ndi.vintage.ingestedArchives(SESSION, READERID, EPOCHIDS) is a
@@ -35,9 +35,12 @@ arguments
     S
     readerId (1,:) char
     epochIds
+    options.ClocksOnly (1,1) logical = false
+    options.UseIndex (1,1) logical = true
 end
 
 M = containers.Map('KeyType', 'char', 'ValueType', 'any');
+D = containers.Map('KeyType', 'char', 'ValueType', 'any');   % 'ClocksOnly': each epoch's read ids (the index's deps)
 epochIds = unique(reshape(cellstr(epochIds), 1, []), 'stable');
 epochIds = epochIds(~cellfun(@isempty, epochIds));
 if isempty(epochIds)
@@ -48,14 +51,24 @@ inSession = ndi.query('base.session_id', 'exact_string', S.id(), '');
 % ---- the epochs: entity id -> the epoch ids (local identifiers) it is ----
 lidsOf = containers.Map('KeyType', 'char', 'ValueType', 'any');
 entityIdsOf = containers.Map(epochIds, repmat({{}}, 1, numel(epochIds)));
+% read only for their id and local identifier: every entity of the session
+% from the database's text index, in one search with no `or` to compile,
+% filtered here by local identifier -- the same documents, in the same
+% (database) order, as an `or` of the local identifiers 200 at a time (1.48 s
+% of 9 searches in run 42342493540, profiled); where the index cannot
+% answer, light documents of that `or`, else the documents
+allEntities = ndi.vintage.entitiesByLocalId(S, epochIds);
 for c = 1:200:numel(epochIds)
     part = epochIds(c:min(c + 199, numel(epochIds)));
-    q = ndi.query('', 'isa', 'entity', '') & ...
-        ndi.v2.anyOf(cellfun(@(i) ndi.query('entity.local_identifier', 'exact_string', i, ''), ...
-            part, 'UniformOutput', false)) & inSession;
-    % read only for their id and local identifier: light documents from the
-    % database's text index where it can (ndi.vintage.valueDocs)
-    found = ndi.vintage.valueDocs(S, q, {'entity.local_identifier'}, 'entity');
+    if iscell(allEntities)
+        found = allEntities(ismember(cellfun(@(d) localId(d), allEntities, ...
+            'UniformOutput', false), part));
+    else
+        q = ndi.query('', 'isa', 'entity', '') & ...
+            ndi.v2.anyOf(cellfun(@(i) ndi.query('entity.local_identifier', 'exact_string', i, ''), ...
+                part, 'UniformOutput', false)) & inSession;
+        found = ndi.vintage.valueDocs(S, q, {'entity.local_identifier'}, 'entity');
+    end
     if ~iscell(found)
         found = S.database_search(q);
     end
@@ -76,6 +89,10 @@ for c = 1:200:numel(epochIds)
             lidsOf(id) = {lid};
         end
     end
+end
+if options.ClocksOnly && options.UseIndex && ndi.vintage.epochIndex('available', S)
+    M = fromIndexOrRead(S, readerId, epochIds, entityIdsOf);
+    return;
 end
 if lidsOf.Count == 0
     return;
@@ -142,10 +159,29 @@ end
 % (ndi.daq.reader/ingested2epochs_t0t1_epochclock); a light body records no
 % files, so its member count reads 0.
 bq = ndi.query('', 'isa', 'data_body', '') & ndi.vintage.edgeIn('owner_id', lidsOfStatement.keys);
-bodies = ndi.vintage.lightDocs(S, bq, {'data_body.filename', ...
-    'data.dimensions[*].term.node', 'data.dimensions[*].term.name', ...
-    'data.dimensions[*].n', 'data.dimensions[*].chunk'}, {'owner_id'}, 'data_body', ...
-    'AllElements', true);
+if options.ClocksOnly
+    % set-wise, from the index rows (no body, statement or archive struct
+    % built per epoch): see clocksOnly below
+    [C, D] = clocksOnly(S, bq, epochIds, entityIdsOf, anchors, anchorRows, statements, statementRows);
+    if isa(C, 'containers.Map')
+        M = C;
+        return;
+    end
+end
+if options.ClocksOnly
+    % 'ClocksOnly' (ndi.daq.reader/ingested2epochs_t0t1_epochclock reads
+    % each archive's epochclock and t0_t1 and nothing else): the bodies are
+    % read for their filename and owner only, which decide whether an epoch
+    % has an archive body; their n, chunk and members are left empty. The
+    % dimension terms are no sidecar path (one `[*]` level, then a block), so
+    % asking for them decoded every body: 6,416 in run 42342493540.
+    bodies = ndi.vintage.lightDocs(S, bq, {'data_body.filename'}, {'owner_id'}, 'data_body');
+else
+    bodies = ndi.vintage.lightDocs(S, bq, {'data_body.filename', ...
+        'data.dimensions[*].term.node', 'data.dimensions[*].term.name', ...
+        'data.dimensions[*].n', 'data.dimensions[*].chunk'}, {'owner_id'}, 'data_body', ...
+        'AllElements', true);
+end
 if ~iscell(bodies)
     bodies = S.database_search(bq);
 end
@@ -173,5 +209,174 @@ for e = 1:numel(epochIds)
     catch
         % ingestedArchive raises the same error; the caller asks it
     end
+end
+end
+
+function lid = localId(d)
+% an entity's local identifier as char, '' when it has none
+lid = '';
+p = d.document_properties;
+if isfield(p, 'entity') && isstruct(p.entity) && isfield(p.entity, 'local_identifier')
+    v = p.entity.local_identifier;
+    if ischar(v) || (isstring(v) && isscalar(v)); lid = char(v); end
+end
+end
+
+function [M, D] = clocksOnly(S, bq, epochIds, entityIdsOf, anchors, anchorRows, statements, statementRows)
+D = containers.Map('KeyType', 'char', 'ValueType', 'any');
+% ingestedArchives 'ClocksOnly', set-wise: each epoch's epochclock, t0_t1
+% and clock_problem as private/archiveOf gives them, and no other part
+% ('bodies' is an empty map). The bodies are read as index rows -- each
+% one's filename and owner (ndi.session/database_search_values and
+% database_search_edges) -- and an epoch is left out, as archiveOf's error
+% leaves it out, when none of its recordings owns an archive series body.
+% Each anchor's clock and extent are read once, not once per epoch. M is []
+% when the database cannot answer from its index; the caller then reads the
+% bodies as documents.
+M = [];
+if ~ismethod(S, 'database_search_values') || ~ismethod(S, 'database_search_edges')
+    return;
+end
+rows = S.database_search_values(bq, {'data_body.filename'});
+if ~isstruct(rows); return; end
+edges = S.database_search_edges(bq, {'owner_id'});
+if ~isstruct(edges); return; end
+M = containers.Map('KeyType', 'char', 'ValueType', 'any');
+% the statements owning an archive series body (archiveOf's seriesKind)
+fns = cellfun(@(v) char(v{1}), {rows.values}, 'UniformOutput', false);
+isSeries = strcmp(fns, 'channel_list.bin') | ~cellfun(@isempty, ...
+    regexp(fns, '^(ai|ao|ax|di|do|ti|evmktx)_group\d+_seg\.nbf_#$', 'once'));
+seriesDocs = {rows(isSeries).doc_id};
+seriesOwners = {};
+if ~isempty(edges)
+    seriesOwners = unique({edges(ismember({edges.doc_id}, seriesDocs)).document_id});
+end
+% each anchor's id and clock extent; each statement's id and anchors
+aIds = cellfun(@(d) char(d.id()), anchors, 'UniformOutput', false);
+aOk = false(1, numel(anchors)); aClk = cell(1, numel(anchors)); aT = cell(1, numel(anchors));
+handles = containers.Map('KeyType', 'char', 'ValueType', 'char');
+for a = 1:numel(anchors)
+    [aOk(a), aClk{a}, t0, t1] = anchorClockExtent(anchors{a}.document_properties, handles);
+    aT{a} = [t0 t1];
+end
+sIds = cellfun(@(d) char(d.id()), statements, 'UniformOutput', false);
+sUsed = cellfun(@(d) ndi.v2.edgeIds(d.document_properties, 'time_reference_id'), statements, ...
+    'UniformOutput', false);
+for e = 1:numel(epochIds)
+    lid = epochIds{e};
+    si = unique(statementRows(lid));
+    % what this epoch's answer is read from (the derived index's deps): its
+    % entities, the anchors onto them and the statements they time
+    D(lid) = [reshape(entityIdsOf(lid), 1, []), reshape(aIds(unique(anchorRows(lid))), 1, []), ...
+        reshape(sIds(si), 1, [])];
+    if isempty(entityIdsOf(lid)) || isempty(si)
+        continue;   % ingestedArchive raises ingestedNoEpoch / ingestedNoRecording
+    end
+    if ~any(ismember(sIds(si), seriesOwners))
+        continue;   % archiveOf raises ingestedNoBodies
+    end
+    ai = unique(anchorRows(lid));
+    used = [{}, sUsed{si}];
+    isUsed = ismember(aIds(ai), used);
+    A = struct('vintage', 'v2', 'epoch_id', lid, ...
+        'bodies', containers.Map('KeyType', 'char', 'ValueType', 'any'), ...
+        'channels', [], 'epochclock', {{}}, 't0_t1', {{}}, 'clock_problem', '');
+    for a = [ai(isUsed), ai(~isUsed)]
+        if aOk(a) && ~any(strcmp(A.epochclock, aClk{a}))
+            A.epochclock{end+1} = aClk{a};
+            A.t0_t1{end+1} = aT{a};
+        end
+    end
+    if isempty(A.epochclock)
+        A.clock_problem = sprintf(['The migrated epoch %s states no clock: none of its %d time ' ...
+            'reference(s) (relative_time_reference onto the epoch entity) names a clock and a start, ' ...
+            'so its epoch clock and t0_t1 cannot be read (did-schema [clock only on the time ' ...
+            'reference]: "the recording observation''s time references say when the epoch starts ' ...
+            'on each clock").'], lid, numel(ai));
+    end
+    M(lid) = A;
+end
+end
+
+function M = fromIndexOrRead(S, readerId, epochIds, entityIdsOf)
+% 'ClocksOnly' through the derived index (ndi.vintage.epochIndex; Jess
+% Haley, 2026-11-09: "Build the derived index"). An epoch's row holds its
+% answer (present or left out, and the clocks) and the ids of its entities;
+% it is used when those are the entities that have its local identifier
+% now (read just above, so a new entity with that identifier is seen), and
+% the row is current (every other document it was read from is recorded
+% with it). The other epochs are read as before and their rows stored.
+M = containers.Map('KeyType', 'char', 'ValueType', 'any');
+got = ndi.vintage.epochIndex('get', S, 'ndi.epochs.reader', readerId, epochIds);
+missing = {};
+for e = 1:numel(epochIds)
+    lid = epochIds{e};
+    ents = sort(reshape(cellstr(entityIdsOf(lid)), 1, []));
+    if isKey(got, lid)
+        v = got(lid);
+        if isequal(sort(reshape(asCellstr(v.entities), 1, [])), ents)
+            if v.present
+                M(lid) = archiveFromIndex(lid, v);
+            end
+            continue;
+        end
+    end
+    missing{end+1} = lid; %#ok<AGROW>
+end
+if isempty(missing)
+    return;
+end
+[M2, D2] = ndi.vintage.ingestedArchives(S, readerId, missing, 'ClocksOnly', true, 'UseIndex', false);
+values = cell(1, numel(missing));
+deps = cell(1, numel(missing));
+for e = 1:numel(missing)
+    lid = missing{e};
+    ents = sort(reshape(cellstr(entityIdsOf(lid)), 1, []));
+    d = [{readerId}, ents];
+    if isKey(D2, lid); d = [d, D2(lid)]; end %#ok<AGROW>
+    deps{e} = d;
+    if isKey(M2, lid)
+        A = M2(lid);
+        M(lid) = A;
+        values{e} = archiveToIndex(ents, true, A);
+    else
+        values{e} = archiveToIndex(ents, false, []);
+    end
+end
+ndi.vintage.epochIndex('put', S, 'ndi.epochs.reader', readerId, missing, values, deps);
+end
+
+function v = archiveToIndex(ents, present, A)
+% an epoch's row: its entities, whether it has an answer, and the answer's
+% clocks, t0 / t1 written with 17 significant digits (exact round trip)
+v = struct('entities', {ents}, 'present', present, 'epochclock', {{}}, ...
+    't0', {{}}, 't1', {{}}, 'clock_problem', '');
+if ~present; return; end
+v.epochclock = A.epochclock;
+v.t0 = cellfun(@(t) sprintf('%.17g', t(1)), A.t0_t1, 'UniformOutput', false);
+v.t1 = cellfun(@(t) sprintf('%.17g', t(2)), A.t0_t1, 'UniformOutput', false);
+v.clock_problem = A.clock_problem;
+end
+
+function A = archiveFromIndex(lid, v)
+% the struct clocksOnly makes, from an epoch's row
+A = struct('vintage', 'v2', 'epoch_id', lid, ...
+    'bodies', containers.Map('KeyType', 'char', 'ValueType', 'any'), ...
+    'channels', [], 'epochclock', {{}}, 't0_t1', {{}}, 'clock_problem', char(v.clock_problem));
+clk = asCellstr(v.epochclock); t0 = asCellstr(v.t0); t1 = asCellstr(v.t1);
+for i = 1:numel(clk)
+    A.epochclock{end+1} = clk{i};
+    A.t0_t1{end+1} = [str2double(t0{i}) str2double(t1{i})];
+end
+end
+
+function c = asCellstr(x)
+% a decoded JSON list of strings as a row cellstr
+if isempty(x)
+    c = {};
+elseif ischar(x)
+    c = {x};
+else
+    c = reshape(cellstr(x), 1, []);
 end
 end

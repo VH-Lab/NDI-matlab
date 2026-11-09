@@ -21,8 +21,15 @@ for k = 1:numel(dep)
     e = dep{k};
     if ~isfield(e, 'name'), continue; end
     n = char(e.name);
-    if ~(strcmp(n, name) || ~isempty(regexp(n, ['^' regexptranslate('escape', name) '_\d+$'], 'once')))
-        continue;
+    % NAME, or NAME_<digits> (as regexp '^NAME_\d+$' matches), tested
+    % without a regular expression: this runs once per edge of every
+    % statement an epoch table reads (15,310 calls, 0.95 s self in
+    % NDI-matlab run 42342493540, profiled)
+    if ~strcmp(n, name)
+        k = numel(name) + 1;
+        if numel(n) <= k || ~strncmp(n, [name '_'], k) || any(n(k+1:end) < '0' | n(k+1:end) > '9')
+            continue;
+        end
     end
     v = '';
     if isfield(e, 'document_id'), v = e.document_id; elseif isfield(e, 'value'), v = e.value; end

@@ -1,4 +1,4 @@
-function [s, cache] = wiredDeviceString(S, st, sysId, elId, cache)
+function [s, cache] = wiredDeviceString(S, st, sysId, elId, cache, anchors, first)
 %WIREDDEVICESTRING A migrated probe-map row's v1 devicestring, read from the
 %   statement's system and its probe's wiring relation.
 %
@@ -21,12 +21,25 @@ function [s, cache] = wiredDeviceString(S, st, sysId, elId, cache)
 % channel type (variable the type's term, matrix its numbers). No relation:
 % the system's name alone (the row named no channels).
 s = '';
+memoKey = '';
 [sys, cache] = docById(S, sysId, cache);
 if isempty(sys)
     return;
 end
-s = char(ndi.vintage.objectName(sys));
-anchors = ndi.v2.edgeIds(st.document_properties, 'time_reference_id');
+if isfield(cache, 'wiringGroups') && isa(cache.wiringGroups, 'containers.Map') ...
+        && isKey(cache.wiringGroups, ['name|' char(sysId)])
+    s = cache.wiringGroups(['name|' char(sysId)]);   % the system's name, kept per call
+else
+    s = char(ndi.vintage.objectName(sys));
+    if isfield(cache, 'wiringGroups') && isa(cache.wiringGroups, 'containers.Map')
+        cache.wiringGroups(['name|' char(sysId)]) = s;
+    end
+end
+if nargin < 6
+    % the statement's anchors (a caller that has read them passes them:
+    % ndi.vintage.ingestedEpochs, from one pass over each statement's edges)
+    anchors = ndi.v2.edgeIds(st.document_properties, 'time_reference_id');
+end
 if isempty(anchors)
     return;
 end
@@ -36,7 +49,33 @@ if isfield(cache, 'relations') && isstruct(cache.relations)
     % database order -- what the search below finds, in the same order
     rels = {};
     key = [char(elId) char(0) char(sysId)];
-    if isKey(cache.relations.byPair, key)
+    if isfield(cache.relations, 'firstWiring')
+        % the first wiring relation of the pair timed by any of the anchors
+        % (ndi.vintage.wiringIndex): the only relation the loop below uses,
+        % since it skips every relation that is not a wiring one
+        if nargin < 7
+            % (a caller that looked it up for many rows at once passes it:
+            % ndi.vintage.ingestedEpochs' read-ahead)
+            first = Inf;
+            for a = 1:numel(anchors)
+                k3 = [key char(0) anchors{a}];
+                if isKey(cache.relations.firstWiring, k3)
+                    first = min(first, cache.relations.firstWiring(k3));
+                end
+            end
+        end
+        % the string depends only on the system and that relation: kept
+        % per call by both (the same wiring answers every row naming it)
+        memoKey = sprintf('ds|%s|%d', char(sysId), first);
+        if isfield(cache, 'wiringGroups') && isa(cache.wiringGroups, 'containers.Map') ...
+                && isKey(cache.wiringGroups, memoKey)
+            s = cache.wiringGroups(memoKey);
+            return;
+        end
+        if isfinite(first)
+            rels = cache.relations.docs(first);
+        end
+    elseif isKey(cache.relations.byPair, key)
         at = cache.relations.byPair(key);
         at = at(cellfun(@(t) any(ismember(t, anchors)), cache.relations.anchors(at)));
         rels = cache.relations.docs(at);
@@ -85,6 +124,9 @@ for r = 1:numel(rels)
 end
 if ~isempty(groups)
     s = [s ':' strjoin(groups, ';')];
+end
+if ~isempty(memoKey) && isfield(cache, 'wiringGroups') && isa(cache.wiringGroups, 'containers.Map')
+    cache.wiringGroups(memoKey) = s;
 end
 end
 

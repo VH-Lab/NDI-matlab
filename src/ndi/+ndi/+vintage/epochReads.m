@@ -36,6 +36,71 @@ key = [what '|' char(S.id()) '|' strjoin(ids, ',')];
 if hit
     return;
 end
+% A read of a SUPERSET of IDS in this call answers too: its documents whose
+% edge (referent_id for anchors, time_reference_id for statements) names one
+% of IDS, in its (database) order -- the documents, in the order, a search
+% for IDS returns, since that search is the same filter on the same table.
+% ndi.vintage.ingestedArchives and ndi.vintage.ingestedEpochs ask for
+% different sets of one acquisition system's epochs (run 42342493540: two
+% reads of each kind, 2.2 s each, profiled).
+edgeName = 'referent_id';
+if strcmp(what, 'statements'); edgeName = 'time_reference_id'; end
+listKey = ['sets|' what '|' char(S.id())];
+[sets, hasSets] = ndi.vintage.elementFieldsScope('get', listKey);
+if ~hasSets; sets = {}; end
+for k = 1:numel(sets)
+    if all(ismember(ids, sets{k}.ids))
+        % each document's edge targets were listed once, flat, when it was
+        % read (sets{k}.docOf, .target)
+        keep = unique(sets{k}.docOf(ismember(sets{k}.target, ids)));
+        out = sets{k}.out(keep);
+        ndi.vintage.elementFieldsScope('put', key, out);
+        return;
+    end
+end
+% MOSTLY a superset: read only the ids it lacks, and answer with its
+% documents onto IDS followed by those -- when no document is in both. Then
+% every document belongs to one part, so each epoch's documents (all onto
+% it) come from one read, in that read's database order, which is all the
+% callers use (each files the answer by epoch). ingestedEpochs reads the
+% epochs that have a manifest and ingestedArchives every epoch of the
+% table: 1,579 and 1,604 of Dab's (run 42354072404). When a document is
+% in both, IDS is read whole.
+out = [];
+for k = 1:numel(sets)
+    missing = ids(~ismember(ids, sets{k}.ids));
+    if numel(missing) > numel(ids) / 2
+        continue;
+    end
+    keep = unique(sets{k}.docOf(ismember(sets{k}.target, ids)));
+    old = reshape(sets{k}.out(keep), [], 1);
+    more = reshape(readKind(what, S, missing), [], 1);
+    oldIds = cellfun(@(d) char(d.id()), old, 'UniformOutput', false);
+    moreIds = cellfun(@(d) char(d.id()), more, 'UniformOutput', false);
+    if ~any(ismember(moreIds, oldIds))
+        out = reshape([old; more], 1, []);
+    end
+    break;
+end
+if ~iscell(out)
+    out = readKind(what, S, ids);
+end
+ndi.vintage.elementFieldsScope('put', key, out);
+if ndi.vintage.elementFieldsScope('isopen')
+    targets = cellfun(@(d) reshape(ndi.vintage.edgeTargets(d, edgeName), 1, []), out, ...
+        'UniformOutput', false);
+    docOf = zeros(1, 0);
+    if ~isempty(out)
+        docOf = repelem(1:numel(out), cellfun(@numel, targets));
+    end
+    sets{end+1} = struct('ids', {ids}, 'out', {out}, 'docOf', docOf, ...
+        'target', {[{}, targets{:}]});
+    ndi.vintage.elementFieldsScope('put', listKey, sets);
+end
+end
+
+function out = readKind(what, S, ids)
+% one read of WHAT for IDS
 switch what
     case 'anchors'
         % light: the clock and the start / duration / end seconds archiveOf
@@ -53,6 +118,12 @@ switch what
         q = ndi.v2.isaQuery('statement') & ndi.vintage.edgeIn('time_reference_id', ids);
         names = {'time_reference_id', 'acquisition_channels_id', 'acquisition_system_id', ...
             'instrument_id', 'entity_id', 'subject_id'};
+        if takesAllNames(S)
+            % every edge, so a numbered time_reference_id_<n> (which
+            % ndi.v2.edgeIds reads as an anchor too) is in the light
+            % statement as in the document (DID-matlab searchEdges '*')
+            names = '*';
+        end
         out = ndi.vintage.edgeDocs(S, q, names, 'statement');
         if ~iscell(out)
             out = S.database_search(q);
@@ -60,5 +131,14 @@ switch what
     otherwise
         error('NDI:vintage:epochReads:badKind', 'Unknown read "%s".', what);
 end
-ndi.vintage.elementFieldsScope('put', key, out);
+end
+
+function tf = takesAllNames(S)
+% does SESSION's database answer searchEdges(Q, '*') with every edge?
+tf = false;
+try
+    tf = ismethod(S, 'database_derived') && S.database_derived('takesAllEdges');
+catch
+    tf = false;
+end
 end

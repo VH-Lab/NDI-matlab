@@ -24,8 +24,18 @@ function scope = datasetScope(structs)
 %   documents with that id (import_V2.m: "the dataset entity's id IS the
 %   dataset's session id").
 %
+%   A REFERENCE dataset is not the dataset: a Data Set entity something in
+%   the batch was derived from, that no document names as its session and
+%   nothing is included in, such as a gene list's genome annotation or
+%   assembly (Decided by Jess Haley, 2026-11-07, did-schema
+%   did_v2_go_forward_class_audit.md [gene-list history entities]). The rule
+%   is ndi.v2.referenceDatasets, the one DID-matlab's
+%   did2.convert.migrationRecord applies (#420).
+%
 %   SCOPE fields:
-%     dataset_entities   number of distinct `dataset` entity ids seen
+%     dataset_entities   number of distinct `dataset` entity ids seen, not
+%                        counting reference datasets
+%     reference_datasets number of distinct reference dataset ids skipped
 %     is_dataset         true when exactly ONE distinct dataset entity is seen
 %     dataset_id         that entity's base.id ('' otherwise)
 %     reason             'dataset' | 'no dataset entity' |
@@ -33,9 +43,11 @@ function scope = datasetScope(structs)
 %   Two or more distinct dataset ids is not resolved by guessing: the batch is
 %   treated as session-scoped and the reason says why.
 %
-%   See also ndi.migrate.internal.remapIds, ndi.migrate.internal.withSessionId.
+%   See also ndi.migrate.internal.remapIds, ndi.migrate.internal.withSessionId,
+%   ndi.v2.referenceDatasets.
 
 S = ndi.migrate.internal.etaShape;
+reference = ndi.v2.referenceDatasets(structs);
 ids = {};
 for i = 1:numel(structs)
     s = structs{i};
@@ -50,12 +62,12 @@ for i = 1:numel(structs)
     if isfield(s, 'base') && isstruct(s.base) && isfield(s.base, 'id')
         id = char(s.base.id);
     end
-    if ~isempty(id) && ~any(strcmp(ids, id))
+    if ~isempty(id) && ~any(strcmp(ids, id)) && ~any(strcmp(reference, id))
         ids{end+1} = id; %#ok<AGROW>
     end
 end
-scope = struct('dataset_entities', numel(ids), 'is_dataset', false, ...
-    'dataset_id', '', 'reason', 'no dataset entity');
+scope = struct('dataset_entities', numel(ids), 'reference_datasets', numel(reference), ...
+    'is_dataset', false, 'dataset_id', '', 'reason', 'no dataset entity');
 if numel(ids) == 1
     scope.is_dataset = true;
     scope.dataset_id = ids{1};

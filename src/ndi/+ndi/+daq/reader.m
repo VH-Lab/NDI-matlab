@@ -178,7 +178,8 @@ classdef reader < ndi.ido & ndi.documentservice
            m.v2epochclock = containers.Map('KeyType','char','ValueType','any');
            if nargin > 2 && ~isempty(v2EpochIds) && ndi.daq.reader.isv2database(S)
                v2EpochIds = setdiff(cellstr(v2EpochIds), m.t0t1.keys, 'stable');
-               A = ndi.vintage.ingestedArchives(S, ndi_daqreader_mfdaq_obj.id(), v2EpochIds);
+               A = ndi.vintage.ingestedArchives(S, ndi_daqreader_mfdaq_obj.id(), v2EpochIds, ...
+                   'ClocksOnly', true);   % only the clocks and t0_t1 are read below
                ids = A.keys;
                for i=1:numel(ids)
                    a = A(ids{i});

@@ -1581,12 +1581,26 @@ function result = local(path, options)
     tStep = migrateStepMark('write destination', tStart, tStep, convertResult);
 
     refReport = did2.validate.references(convertResult.migrated);
-    migrateStepMark('validate references', tStart, tStep, convertResult);
+    tStep = migrateStepMark('validate references', tStart, tStep, convertResult);
+
+    % THE LAST STEP: the derived epoch-table index, computed from the
+    % documents just written, so it ships in the database (Jess Haley,
+    % 2026-11-09: "Build the derived index", [3 yes];
+    % ndi.vintage.epochIndexBuild). A read with no current row computes it.
+    epochIndexReport = struct('sessions', 0, 'systems', 0, 'epochs', 0, 'elements', 0, 'rows', NaN, 'built', false);
+    if wroteDst
+        epochIndexReport = ndi.vintage.epochIndexBuild(path);
+        fprintf(['[migrate step]   epoch-table index: %d session(s), %d acquisition system(s), ' ...
+            '%d epoch(s), %d element(s), %g row(s)\n'], epochIndexReport.sessions, epochIndexReport.systems, ...
+            epochIndexReport.epochs, epochIndexReport.elements, epochIndexReport.rows);
+    end
+    migrateStepMark('epoch-table index', tStart, tStep, convertResult);
 
     result = struct();
     result.path = path;
     result.source = srcInfo;
     result.destination = dstPath;
+    result.epochIndex = epochIndexReport;
     result.alreadyMigrated = alreadyMigrated;
     result.dryRun = options.DryRun;
     result.wroteDestination = wroteDst;
@@ -2593,6 +2607,8 @@ function [convertResult, report] = resolveDatasetEntitiesPass(convertResult, opt
     report.dataset_entities_before    = before.dataset_entities;
     report.distinct_dataset_ids       = before.distinct_dataset_ids;
     report.dataset_entities_after     = after.dataset_entities;
+    report.reference_datasets_before  = before.reference_datasets;
+    report.reference_datasets_after   = after.reference_datasets;
     report.membership_edges_before    = before.membership_edges;
     report.membership_edges_after     = after.membership_edges;
     report.duplicate_datasets_dropped = ...
@@ -2613,8 +2629,17 @@ function c = datasetLayerCensus(docs)
 %   did2.convert.migrators_j.private.jEntityRelation stamps on it
 %   (jEntityRelation.m:3,22) so this pass can find it. Matching on the class
 %   alone would count every entity-layer edge in the batch.
+%
+%   A REFERENCE dataset is not counted as a `dataset` entity but on its own
+%   (`reference_datasets`): a Data Set entity something in DOCS was derived
+%   from, that no document names as its session and nothing is included in,
+%   such as a gene list's genome annotation or assembly (Decided by Jess
+%   Haley, 2026-11-07, did-schema did_v2_go_forward_class_audit.md
+%   [gene-list history entities]). The rule is ndi.v2.referenceDatasets, the
+%   one DID-matlab's did2.convert.migrationRecord applies (#420).
     c = struct('documents', numel(docs), 'dataset_entities', 0, ...
-        'distinct_dataset_ids', 0, 'membership_edges', 0);
+        'distinct_dataset_ids', 0, 'membership_edges', 0, 'reference_datasets', 0);
+    reference = ndi.v2.referenceDatasets(docs);
     % did-schema #88: a dataset is an `entity` of type `dataset`, and a
     % session's membership is an `included_in` relation; the pre-#88 class
     % name and base.name sentinel are read too -- the same two tests
@@ -2645,7 +2670,9 @@ function c = datasetLayerCensus(docs)
                 isMembership = ~isempty(r) && ndi.v2.vocabIs('relation', r, 'included_in');   % by node (L1)
             end
         end
-        if isDataset
+        if isDataset && any(strcmp(safeDocGet(docs{k}, 'base.id'), reference))
+            c.reference_datasets = c.reference_datasets + 1;
+        elseif isDataset
             c.dataset_entities = c.dataset_entities + 1;
             id = safeDocGet(docs{k}, 'base.id');
             if ~isempty(id) && ~any(strcmp(id, seenIds))

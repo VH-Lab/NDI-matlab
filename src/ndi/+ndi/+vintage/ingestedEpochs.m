@@ -85,6 +85,7 @@ arguments
     docs cell
     probemapClass (1,:) char
     options.Batch (1,1) logical = ndi.daq.reader.isv2database(ndi_session_obj)
+    options.UseIndex (1,1) logical = true
 end
 
 E = struct('epoch_id', {}, 'files', {}, 'probemap', {}, 'vintage', {});
@@ -97,11 +98,26 @@ cache = struct('doc', containers.Map('KeyType', 'char', 'ValueType', 'any'), ...
     'wiringGroups', containers.Map('KeyType', 'char', 'ValueType', 'any'), ...
     'own', containers.Map('KeyType', 'char', 'ValueType', 'logical'), ...
     'subjectString', containers.Map('KeyType', 'char', 'ValueType', 'char'));
+% THE DERIVED INDEX (ndi.vintage.epochIndex; Jess Haley, 2026-11-09:
+% "Build the derived index"): each migrated manifest's entry (epoch id,
+% files, probe-map rows) as computed below, kept with the ids it was read
+% from; a manifest whose row is current is answered from it, the others are
+% computed (and their rows stored). 'UseIndex', false computes every entry.
+useIndex = options.Batch && options.UseIndex && ndi.vintage.epochIndex('available', ndi_session_obj);
+indexed = containers.Map('KeyType', 'char', 'ValueType', 'any');
+toCompute = docs;
+if useIndex
+    mids = manifestIds(docs);
+    indexed = ndi.vintage.epochIndex('get', ndi_session_obj, 'ndi.epochs.navigator', ...
+        probemapClass, mids(~cellfun(@isempty, mids)));
+    toCompute = docs(~ismember(mids, indexed.keys));
+end
+newKeys = {}; newValues = {}; newDeps = {};
 if options.Batch
     % the instruments' fields are read for all of them at once and kept for
     % this call (ndi.vintage.prefetchElementFields)
     scope = ndi.vintage.elementFieldsScope('open'); %#ok<NASGU>
-    cache = readAhead(ndi_session_obj, docs, cache);
+    cache = readAhead(ndi_session_obj, toCompute, cache);
 end
 for k = 1:numel(docs)
     p = docs{k}.document_properties;
@@ -122,6 +138,11 @@ for k = 1:numel(docs)
     if isfield(p.ingestion_manifest, 'files')
         files = asCellstr(p.ingestion_manifest.files);
     end
+    mid = char(p.base.id);
+    if isKey(indexed, mid)
+        E(end+1) = fromIndex(indexed(mid), files, probemapClass); %#ok<AGROW>
+        continue;
+    end
     epochDocId = docs{k}.dependency_value('epoch_id', 'ErrorIfNotFound', 0);
     [epochDoc, cache] = docById(ndi_session_obj, epochDocId, cache);
     epochId = '';
@@ -132,20 +153,105 @@ for k = 1:numel(docs)
     if isempty(patternId)
         patternId = docs{k}.dependency_value('filenavigator_id', 'ErrorIfNotFound', 0);
     end
-    [pm, cache] = probemapOf(ndi_session_obj, epochDocId, probemapClass, cache, patternId);
+    [pm, cache, rowsUsed] = probemapOf(ndi_session_obj, epochDocId, probemapClass, cache, patternId);
     E(end+1) = struct('epoch_id', epochId, 'files', {files}, 'probemap', {pm}, ...
         'vintage', 'V_eta'); %#ok<AGROW>
+    if useIndex
+        newKeys{end+1} = mid; %#ok<AGROW>
+        newValues{end+1} = toIndex(epochId, pm, rowsUsed); %#ok<AGROW>
+        newDeps{end+1} = depsOf(cache, mid, epochDocId, patternId); %#ok<AGROW>
+    end
 end
+if useIndex && ~isempty(newKeys)
+    ndi.vintage.epochIndex('put', ndi_session_obj, 'ndi.epochs.navigator', probemapClass, ...
+        newKeys, newValues, newDeps);
+end
+end
+
+function ids = manifestIds(docs)
+% each document's id when it is a migrated ingestion_manifest, else ''
+ids = repmat({''}, 1, numel(docs));
+for k = 1:numel(docs)
+    p = docs{k}.document_properties;
+    if isfield(p, 'ingestion_manifest') && ~isfield(p, 'epochfiles_ingested')
+        ids{k} = char(p.base.id);
+    end
+end
+end
+
+function v = toIndex(epochId, pm, rows)
+% a manifest's index entry: its epoch id and the probe-map rows, as
+% probemapOf made them (the files are the manifest's own, read each time)
+v = struct('epoch_id', epochId, 'has_pm', ~isempty(pm), ...
+    'n', {rows.n}, 'r', rows.r, 't', {rows.t}, 'd', {rows.d}, 's', {rows.s});
+end
+
+function e = fromIndex(v, files, probemapClass)
+% the E element an index entry stands for: the probe map made by the same
+% constructor calls, in the same order, as probemapOf made it
+pm = [];
+if v.has_pm
+    n = asCellstr(v.n); t = asCellstr(v.t); d = asCellstr(v.d); s = asCellstr(v.s);
+    r = double(v.r);
+    for i = 1:numel(n)
+        row = feval(probemapClass, n{i}, r(i), t{i}, d{i}, s{i});
+        if isempty(pm); pm = row; else; pm(end+1) = row; end %#ok<AGROW>
+    end
+end
+e = struct('epoch_id', char(v.epoch_id), 'files', {files}, 'probemap', {pm}, 'vintage', 'V_eta');
+end
+
+function ids = depsOf(cache, mid, epochDocId, patternId)
+% the ids a manifest's entry was read from: the manifest, its epoch entity
+% and pattern, the anchors onto the epoch, the statements they time and
+% every document those name (rig, probe, subject, the acquisition
+% channels' system), and the wiring relations used. A document added or
+% removed that points at one of these drops the entry (assertions about a
+% probe, a new statement or wiring timed by an anchor, a new body).
+ids = {mid, char(epochDocId), char(patternId)};
+if isfield(cache, 'anchorsOf') && isKey(cache.anchorsOf, epochDocId)
+    ids = [ids, cache.anchorsOf(epochDocId)];
+end
+if isfield(cache, 'stIdx') && isKey(cache.stIdx, epochDocId)
+    idx = cache.stIdx(epochDocId);
+    st = cache.allStatements(idx);
+    ids = [ids, cellfun(@(d) char(d.id()), st, 'UniformOutput', false)];
+    for f = {'ac', 'sys', 'el', 'entity', 'subject'}
+        ids = [ids, cache.ed.(f{1})(idx)]; %#ok<AGROW>
+    end
+    ids = [ids, cache.ed.anchors{idx}];
+    for a = cache.ed.ac(idx)
+        if ~isempty(a{1}) && isKey(cache.doc, a{1}) && ~isempty(cache.doc(a{1}))
+            ids{end+1} = char(cache.doc(a{1}).dependency_value('acquisition_system_id', ...
+                'ErrorIfNotFound', 0)); %#ok<AGROW>
+        end
+    end
+    first = cache.first(idx);
+    for w = first(isfinite(first))
+        ids{end+1} = char(cache.relations.docs{w}.id()); %#ok<AGROW>
+    end
+end
+ids = unique(ids(~cellfun(@isempty, ids)));
 end
 
 % ===================== the probe map, put back together ===================
 
-function [pm, cache] = probemapOf(S, epochDocId, probemapClass, cache, patternId)
+function [pm, cache, rows] = probemapOf(S, epochDocId, probemapClass, cache, patternId)
 pm = [];
+rows = struct('n', {{}}, 'r', [], 't', {{}}, 'd', {{}}, 's', {{}});   % the rows made, for the index
 if isempty(epochDocId)
     return;
 end
-if isKey(cache.statements, epochDocId)
+first = [];
+if isfield(cache, 'stIdx') && isKey(cache.stIdx, epochDocId)
+    % read ahead (readAhead): this epoch's statements are positions in the
+    % call's one list, whose edges and first wiring relations were read in
+    % one pass over all of them
+    idx = cache.stIdx(epochDocId);
+    statements = cache.allStatements(idx);
+    ed = subsetEdges(cache.ed, idx);
+    first = cache.first(idx);
+elseif isKey(cache.statements, epochDocId)
     statements = cache.statements(epochDocId);   % read ahead (readAhead)
 else
     anchors = S.database_search(anchorQuery(epochDocId));
@@ -158,7 +264,9 @@ end
 seen = {};
 % every statement's edges, read once from its depends_on list (what
 % dependency_value answers: the first entry of each name, case-insensitive)
-ed = statementEdges(statements);
+if isempty(first)
+    ed = statementEdges(statements);
+end
 for i = 1:numel(statements)
     acId = ed.ac{i};
     sysId = ed.sys{i};
@@ -186,7 +294,13 @@ for i = 1:numel(statements)
     if ~isempty(acId)
         [devicestring, cache] = deviceString(S, acId, cache);
     else
-        [devicestring, cache] = ndi.vintage.wiredDeviceString(S, statements{i}, sysId, elId, cache);
+        if isempty(first)
+            [devicestring, cache] = ndi.vintage.wiredDeviceString(S, statements{i}, sysId, elId, ...
+                cache, ed.anchors{i});
+        else
+            [devicestring, cache] = ndi.vintage.wiredDeviceString(S, statements{i}, sysId, elId, ...
+                cache, ed.anchors{i}, first(i));
+        end
     end
     key = strjoin({el.name, num2str(el.reference), el.type, devicestring, subjectString}, char(0));
     if any(strcmp(seen, key))
@@ -194,11 +308,21 @@ for i = 1:numel(statements)
     end
     seen{end+1} = key; %#ok<AGROW>
     row = feval(probemapClass, el.name, el.reference, el.type, devicestring, subjectString);
+    rows.n{end+1} = el.name; rows.r(end+1) = double(el.reference); rows.t{end+1} = el.type;
+    rows.d{end+1} = devicestring; rows.s{end+1} = subjectString;
     if isempty(pm)
         pm = row;
     else
         pm(end+1) = row; %#ok<AGROW>
     end
+end
+end
+
+function e = subsetEdges(ed, idx)
+% statementEdges' answer for the statements at positions IDX
+e = struct();
+for f = fieldnames(ed)'
+    e.(f{1}) = ed.(f{1})(idx);
 end
 end
 
@@ -215,12 +339,16 @@ ed = struct();
 for f = 1:numel(fields)
     ed.(fields{f}) = repmat({''}, 1, n);
 end
+% and its anchors, as ndi.v2.edgeIds(..., 'time_reference_id') reads them:
+% every non-empty time_reference_id or time_reference_id_<digits> target
+ed.anchors = repmat({{}}, 1, n);
 for i = 1:n
     p = statements{i}.document_properties;
     if ~isfield(p, 'depends_on') || isempty(p.depends_on)
         continue;
     end
     dep = p.depends_on;
+    ed.anchors{i} = ndi.v2.edgeIds(p, 'time_reference_id');
     have = lower({dep.name});
     for f = 1:numel(names)
         m = find(strcmp(have, names{f}), 1);
@@ -410,11 +538,37 @@ cache = remember(cache, ndi.vintage.docsById(S, epochDocIds, ...
 % stay in the order its own search would have returned them.
 % read once per epoch-table build, shared with ndi.vintage.ingestedArchives
 % (ndi.vintage.epochReads); the statements as light documents (edges only)
-anchors = ndi.vintage.epochReads('anchors', S, epochDocIds);
+% The anchors are asked for onto every entity with the local identifier of
+% one of these epochs: the set ndi.vintage.ingestedArchives asks for next in
+% ndi.daq.system/buildepochtable, so the two share one read
+% (ndi.vintage.epochReads; two reads of each kind in run 42346955349). Only
+% the anchors onto EPOCHDOCIDS are used below.
+readIds = epochDocIds;
+lids = {};
+for e = 1:numel(epochDocIds)
+    if isKey(cache.doc, epochDocIds{e}) && ~isempty(cache.doc(epochDocIds{e}))
+        lids{end+1} = localIdentifier(cache.doc(epochDocIds{e}).document_properties); %#ok<AGROW>
+    end
+end
+same = ndi.vintage.entitiesByLocalId(S, lids(~cellfun(@isempty, lids)));
+if iscell(same)
+    readIds = unique([epochDocIds, cellfun(@(d) char(d.id()), reshape(same, 1, []), ...
+        'UniformOutput', false)], 'stable');
+end
+anchors = ndi.vintage.epochReads('anchors', S, readIds);
 epochsOfAnchor = containers.Map('KeyType', 'char', 'ValueType', 'any');
+cache.anchorsOf = containers.Map('KeyType', 'char', 'ValueType', 'any');   % epoch -> its anchors' ids (the index's deps)
 for a = 1:numel(anchors)
     onto = ndi.vintage.edgeTargets(anchors{a}, 'referent_id');
-    epochsOfAnchor(char(anchors{a}.id())) = onto(ismember(onto, epochDocIds));
+    mine = onto(ismember(onto, epochDocIds));
+    epochsOfAnchor(char(anchors{a}.id())) = mine;
+    for e = mine
+        if isKey(cache.anchorsOf, e{1})
+            cache.anchorsOf(e{1}) = [cache.anchorsOf(e{1}), {char(anchors{a}.id())}];
+        else
+            cache.anchorsOf(e{1}) = {char(anchors{a}.id())};
+        end
+    end
 end
 statements = {};
 if epochsOfAnchor.Count > 0
@@ -429,9 +583,11 @@ for i = 1:numel(statements)
         end
     end
 end
+cache.stIdx = containers.Map('KeyType', 'char', 'ValueType', 'any');
 for e = 1:numel(epochDocIds)
-    cache.statements(epochDocIds{e}) = statements(unique(rowsOf(epochDocIds{e})));
+    cache.stIdx(epochDocIds{e}) = unique(rowsOf(epochDocIds{e}));
 end
+cache.allStatements = statements;
 % the documents the statements name, by id: systems, channels, probes, subjects
 % The probes and subjects are read light when they are entities: their
 % readers (localIdentifier; ndi.vintage.elementFields and
@@ -467,17 +623,43 @@ sysIds = sysIds(cellfun(@(x) ischar(x) && ~isempty(x), sysIds));
 cache = remember(cache, ndi.vintage.docsById(S, sysIds));
 % the wiring relations timed by the statements' anchors, filed by (probe,
 % system) for ndi.vintage.wiredDeviceString, in database order
-wiringAnchors = cell(1, numel(statements));
-for i = 1:numel(statements)
-    wiringAnchors{i} = ndi.v2.edgeIds(statements{i}.document_properties, 'time_reference_id');
-end
-wiringAnchors = unique([{}, wiringAnchors{:}], 'stable');
+wiringAnchors = unique([{}, ed.anchors{:}], 'stable');   % ndi.v2.edgeIds, read by statementEdges
 rels = {};
 if ~isempty(wiringAnchors)
     rels = wiringRelations(S, ndi.query('', 'isa', 'directed_relation', '') & ...
         ndi.vintage.edgeIn('time_reference_id', wiringAnchors));
 end
 cache.relations = ndi.vintage.wiringIndex(rels);
+cache.ed = ed;
+cache.first = firstWirings(ed, cache.relations);
+end
+
+function first = firstWirings(ed, W)
+% For every statement, the position in W.docs of the first wiring relation
+% of its probe and system timed by any of its anchors (Inf for none): what
+% ndi.vintage.wiredDeviceString looks up per row in W.firstWiring, here in
+% one ismember over every (statement, anchor) key
+n = numel(ed.el);
+first = inf(1, n);
+if n == 0 || W.firstWiring.Count == 0
+    return;
+end
+counts = cellfun(@numel, ed.anchors);
+owner = repelem(1:n, counts);
+anchors = [{}, ed.anchors{:}];
+if isempty(anchors)
+    return;
+end
+keys = cellfun(@(e, s, a) [e char(0) s char(0) a], ed.el(owner), ed.sys(owner), anchors, ...
+    'UniformOutput', false);
+wk = W.firstWiring.keys;
+wv = cell2mat(W.firstWiring.values);
+[tf, loc] = ismember(keys, wk);
+if any(tf)
+    [u, ~, g] = unique(owner(tf));
+    v = wv(loc(tf));
+    first(u) = reshape(accumarray(g(:), v(:), [], @min), 1, []);
+end
 end
 
 function rels = wiringRelations(S, q)
