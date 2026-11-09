@@ -37,7 +37,13 @@ function f = elementFields(subjectDoc, ndi_session_obj, pieces)
 %                          electrode that never recorded (its kind and no
 %                          `element type` assertion) reads the general
 %                          'patch' or 'sharp' (Jess Haley, 2026-11-06,
-%                          "Read back patch"). A sorted unit,
+%                          "Read back patch"). A shared kind with no
+%                          `element type` assertion reads kind plus the
+%                          recording or imaging mode on the element's
+%                          recording observations (`method.term`,
+%                          [recording mode terms]), searched only for
+%                          such an element (ndi.vintage.elementTypeOf's
+%                          NEEDSMODE). A sorted unit,
 %                          which has neither ([cell spellings are one
 %                          meaning], [cell spellings amended]), reads
 %                          'spikes' from its own `entity.type` (`cell` or
@@ -155,7 +161,11 @@ if isempty(pieces)
     f.ndi_element_class = assertionValue(ndi_session_obj, docId, ...
         ndi.vintage.elementLabel('class'));
 else
-    f.type = ndi.vintage.elementTypeOf(pieces.typeDocs, entityType);
+    [f.type, ~, needsMode] = ndi.vintage.elementTypeOf(pieces.typeDocs, entityType);
+    if needsMode && ~isempty(ndi_session_obj)
+        f.type = ndi.vintage.elementTypeOf(pieces.typeDocs, entityType, ...
+            recordingModes(ndi_session_obj, docId));
+    end
     f.ndi_element_class = classValueOf(pieces.classDocs);
 end
 
@@ -278,7 +288,33 @@ q = ndi.v2.statementQuery('assertion', 'term') & ...
      ndi.v2.fieldQuery('statement.variable.name', 'exact_string', kindVar.name)) & ...
     ndi.v2.entityQuery(docId);
 docs = ndi_session_obj.database_search(q);
-v = ndi.vintage.elementTypeOf(docs, entityType);
+[v, ~, needsMode] = ndi.vintage.elementTypeOf(docs, entityType);
+if needsMode
+    v = ndi.vintage.elementTypeOf(docs, entityType, ...
+        recordingModes(ndi_session_obj, docId));
+end
+end
+
+function modes = recordingModes(ndi_session_obj, elementId)
+%RECORDINGMODES The method terms of the observations this element made.
+%   The recording or imaging mode of a patch, sharp or imaging element is
+%   the `method.term` of its recording observations (`instrument_id` the
+%   element): DID-matlab resolveEpochProbemap, recordingModeMethod
+%   ([element type is a device kind term], [recording mode terms], Decided
+%   by Jess Haley, did-schema did_v2_go_forward_class_audit.md). Each
+%   observation's method is read inline or through its `method_id`
+%   (ndi.v2.methodOf). ndi.vintage.elementTypeOf keeps only the terms that
+%   are a mode of the element's kind. {} when the element made none.
+modes = {};
+q = ndi.v2.isaQuery('observation') & ...
+    ndi.query('', 'depends_on', 'instrument_id', elementId);
+docs = ndi_session_obj.database_search(q);
+for k = 1:numel(docs)
+    m = ndi.v2.methodOf(ndi_session_obj, ndi.v2.props(docs{k}), 'interaction');
+    if isstruct(m.term) && ~isempty(m.term)
+        modes{end+1} = m.term; %#ok<AGROW>
+    end
+end
 end
 
 function [specimen, found] = specimenViaInstrument(ndi_session_obj, elementId)

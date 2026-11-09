@@ -14,8 +14,13 @@ classdef TestElementTypeFromKind < matlab.unittest.TestCase
 %       'sharp' for a sharp electrode (Decided by Jess Haley, 2026-11-06,
 %       "Read back patch"); '' for a microscope, which has no general
 %       registered v1 type.
+%     - a shared kind with no "element type" assertion and one recording
+%       or imaging mode on the element's recording observations -> the v1
+%       type of that kind and mode ([recording mode terms], Jess Haley,
+%       2026-11-01: "`ndi.vintage.elementTypeOf` reads kind plus mode").
 %
-%   See also ndi.vintage.elementTypeOf, ndi.vintage.elementTypeOfKind.
+%   See also ndi.vintage.elementTypeOf, ndi.vintage.elementTypeOfKind,
+%   ndi.vintage.elementTypeOfKindAndMode.
 
     methods (Test)
 
@@ -193,6 +198,144 @@ classdef TestElementTypeFromKind < matlab.unittest.TestCase
             end
         end
 
+        % ---- [recording mode terms] (Jess Haley, 2026-11-01): kind plus mode
+
+        function testKindAndModeTable(testCase)
+            % each registered type of a shared kind, from its kind and mode
+            rows = {
+                'EMPTY:0000411', 'OBI:0002185',   'patch-Vm'
+                'EMPTY:0000411', 'OBI:0002182',   'patch-I'
+                'EMPTY:0000411', 'OBI:0002179',   'patch-attached'
+                'EMPTY:0000412', 'OBI:0002185',   'sharp-Vm'
+                'EMPTY:0000412', 'OBI:0002182',   'sharp-Im'
+                'OBI:0400169',   'OBI:0002437',   'wide-field-imaging'
+                'OBI:0400169',   'FBbi:00000254', 'two-photon-imaging'
+                'OBI:0400169',   'NCIT:C16856',   'one-photon-imaging'
+                'OBI:0400169',   'EMPTY:0000300', 'brightfield-imaging'};
+            testCase.log(sprintf('DENOMINATOR: %d (kind, mode) pair(s)', size(rows, 1)));
+            for k = 1:size(rows, 1)
+                testCase.verifyEqual(ndi.vintage.elementTypeOfKindAndMode( ...
+                    rows{k, 1}, rows{k, 2}), rows{k, 3}, rows{k, 3});
+            end
+            % prefix case aside, as elementTypeOfKind compares
+            testCase.verifyEqual(ndi.vintage.elementTypeOfKindAndMode( ...
+                'empty:0000411', 'obi:0002185'), 'patch-Vm');
+            % a mode of another kind, no mode, no kind: nothing
+            testCase.verifyEqual(ndi.vintage.elementTypeOfKindAndMode( ...
+                'EMPTY:0000411', 'OBI:0002437'), '');
+            testCase.verifyEqual(ndi.vintage.elementTypeOfKindAndMode('EMPTY:0000411', ''), '');
+            testCase.verifyEqual(ndi.vintage.elementTypeOfKindAndMode('', 'OBI:0002185'), '');
+            % a kind with one type is not read here (elementTypeOfKind reads it)
+            testCase.verifyEqual(ndi.vintage.elementTypeOfKindAndMode( ...
+                'wikidata:Q1952355', 'OBI:0002185'), '');
+        end
+
+        function testKindAndModeTypesAreRegisteredProbeTypes(testCase)
+            % every type the table reads back is a type NDI can build
+            % (probetype2object.json), and has the kind DID-matlab gives it
+            f = fullfile(ndi.toolboxdir, 'ndi_common', 'probe', 'probetype2object.json');
+            j = jsondecode(fileread(f));
+            registered = {j.type};
+            pairs = {
+                'EMPTY:0000411', {'OBI:0002185', 'OBI:0002182', 'OBI:0002179'}
+                'EMPTY:0000412', {'OBI:0002185', 'OBI:0002182'}
+                'OBI:0400169',   {'OBI:0002437', 'FBbi:00000254', 'NCIT:C16856', 'EMPTY:0000300'}};
+            n = 0;
+            for k = 1:size(pairs, 1)
+                for m = 1:numel(pairs{k, 2})
+                    t = ndi.vintage.elementTypeOfKindAndMode(pairs{k, 1}, pairs{k, 2}{m});
+                    n = n + 1;
+                    testCase.verifyTrue(any(strcmp(registered, t)), ...
+                        sprintf('%s + %s -> "%s", not in probetype2object.json', ...
+                        pairs{k, 1}, pairs{k, 2}{m}, t));
+                    if ~isempty(which('did2.convert.elementDeviceKind'))
+                        kind = did2.convert.elementDeviceKind(t);
+                        testCase.verifyEqual(kind.node, pairs{k, 1}, t);
+                    end
+                end
+            end
+            testCase.log(sprintf('DENOMINATOR: %d (kind, mode) pair(s) checked', n));
+        end
+
+        function testSharedKindReadsItsMode(testCase)
+            cc = struct('node', 'OBI:0002185', 'name', 'current clamp assay');
+            vc = struct('node', 'OBI:0002182', 'name', 'voltage clamp assay');
+            patch = kindAssertion('el_m', 'EMPTY:0000411');
+            [t, how, needsMode] = ndi.vintage.elementTypeOf({patch}, '', {cc});
+            testCase.verifyEqual(t, 'patch-Vm');
+            testCase.verifyEqual(how, 'device kind and mode');
+            testCase.verifyTrue(needsMode);
+            % one mode on every epoch's observation: still that type
+            testCase.verifyEqual(ndi.vintage.elementTypeOf({patch}, '', {vc, vc, vc}), 'patch-I');
+            % a node alone is a mode too
+            testCase.verifyEqual(ndi.vintage.elementTypeOf( ...
+                {kindAssertion('el_m', 'EMPTY:0000412')}, '', {'OBI:0002182'}), 'sharp-Im');
+            % a microscope, which has no general type, reads its imaging mode
+            [t, how] = ndi.vintage.elementTypeOf({kindAssertion('el_m', 'OBI:0400169')}, '', ...
+                {struct('node', 'FBbi:00000254', 'name', 'two-photon laser scanning microscopy')});
+            testCase.verifyEqual(t, 'two-photon-imaging');
+            testCase.verifyEqual(how, 'device kind and mode');
+            % a method that is no mode of the kind is ignored
+            testCase.verifyEqual(ndi.vintage.elementTypeOf({patch}, '', ...
+                {struct('node', 'OBI:0002437', 'name', 'widefield microscopy assay'), cc}), 'patch-Vm');
+        end
+
+        function testTheElementTypeAssertionStillWins(testCase)
+            % while DID-matlab writes "element type", it is read first
+            cc = struct('node', 'OBI:0002185', 'name', 'current clamp assay');
+            [t, how, needsMode] = ndi.vintage.elementTypeOf( ...
+                {typeAssertion('el_w', 'patch-I'), kindAssertion('el_w', 'EMPTY:0000411')}, '', {cc});
+            testCase.verifyEqual(t, 'patch-I');
+            testCase.verifyEqual(how, 'element type');
+            testCase.verifyFalse(needsMode);
+        end
+
+        function testNoSingleModeReadsAsBefore(testCase)
+            cc = struct('node', 'OBI:0002185', 'name', 'current clamp assay');
+            vc = struct('node', 'OBI:0002182', 'name', 'voltage clamp assay');
+            patch = kindAssertion('el_n', 'EMPTY:0000411');
+            % two different modes rebuild no single v1 word: the general type
+            [t, how] = ndi.vintage.elementTypeOf({patch}, '', {cc, vc});
+            testCase.verifyEqual(t, 'patch');
+            testCase.verifyEqual(how, 'general type');
+            % no recording ([clamp mode of unrecorded probe dropped])
+            [t, how, needsMode] = ndi.vintage.elementTypeOf({patch}, '', {});
+            testCase.verifyEqual(t, 'patch');
+            testCase.verifyEqual(how, 'general type');
+            testCase.verifyTrue(needsMode);
+            % a microscope with no single mode reads '' as before
+            testCase.verifyEqual(ndi.vintage.elementTypeOf( ...
+                {kindAssertion('el_n', 'OBI:0400169')}, '', {}), '');
+            % a kind with one type needs no mode
+            [t, ~, needsMode] = ndi.vintage.elementTypeOf({kindAssertion('el_n', 'NCIT:C88166')});
+            testCase.verifyEqual(t, 'accelerometer');
+            testCase.verifyFalse(needsMode);
+        end
+
+        function testElementFieldsReadsTheModeOfItsObservations(testCase)
+            % the 1 -> N read: an element whose type the assertions do not
+            % settle reads the mode on the observations it made
+            testCase.assumeTrue(~isempty(getenv('DID_SCHEMA_PATH')), ...
+                'DID_SCHEMA_PATH is not set (ndi.v2.vocabQuery reads it)');
+            elementId = 'el_fields_mode';
+            kind = kindAssertion(elementId, 'EMPTY:0000412');
+            obs = struct('base', struct('id', 'obs_1'), ...
+                'document_class', struct('class_name', 'observation'), ...
+                'interaction', struct('method', struct('term', ...
+                    struct('node', 'OBI:0002182', 'name', 'voltage clamp assay'), ...
+                    'parameters', [])), ...
+                'depends_on', struct('name', {'entity_id', 'instrument_id'}, ...
+                    'document_id', {'specimen_1', elementId}));
+            S = ndi.unittest.vintage.FakeSearchSession(@(q) modeAnswer(q, obs, kind));
+            doc.document_properties = struct( ...
+                'base', struct('id', elementId), ...
+                'document_class', struct('class_name', 'entity'), ...
+                'entity', struct('local_identifier', 'sharp1 | 1', 'name', 'sharp1'));
+            f = ndi.vintage.elementFields(doc, S);
+            testCase.verifyEqual(f.type, 'sharp-Im');
+            testCase.verifyEqual(f.subject_id, 'specimen_1');
+        end
+
         function testTheMirrorTable(testCase)
             % the mirror on its own, whatever is on the path
             testCase.verifyEqual(ndi.vintage.elementTypeOfKind('wikidata:Q1952355', true), 'n-trode');
@@ -203,6 +346,38 @@ classdef TestElementTypeFromKind < matlab.unittest.TestCase
             testCase.verifyEqual(ndi.vintage.elementTypeOfKind('SNOMEDCT:36645008', true), 'stimulator');
         end
     end
+end
+
+function d = modeAnswer(q, obs, kind)
+% a session answering by the values a query carries: the observations the
+% element made, its device-kind assertion, and nothing else
+vals = queryValues(q.searchstructure);
+if any(strcmp(vals, 'instrument_id'))
+    d = {obs};
+elseif any(strcmp(vals, 'NCIT:C178920')) || any(strcmp(vals, 'Equipment Type'))
+    d = {kind};
+else
+    d = {};
+end
+end
+
+function vals = queryValues(ss)
+% every text value a query carries, nested queries included (as
+% ndi.unittest.vintage.TestElementDocsBothVintages reads them)
+vals = {};
+for k = 1:numel(ss)
+    for f = {'param1', 'param2'}
+        v = ss(k).(f{1});
+        if ischar(v) || (isstring(v) && isscalar(v))
+            vals{end+1} = char(v); %#ok<AGROW>
+        elseif iscell(v)
+            vals = [vals, cellfun(@char, v(cellfun(@(x) ischar(x) || isstring(x), v)), ...
+                'UniformOutput', false)]; %#ok<AGROW>
+        elseif isstruct(v) && isfield(v, 'param1')
+            vals = [vals, queryValues(v)]; %#ok<AGROW>
+        end
+    end
+end
 end
 
 function a = typeAssertion(entityId, type)
