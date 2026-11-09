@@ -4,10 +4,12 @@ function report = epochIndexBuild(root)
 %   REPORT = ndi.vintage.epochIndexBuild(ROOT) drops every row of the
 %   epoch-table index (ndi.vintage.epochIndex) in the v2 database under
 %   ROOT/.ndi and computes it again from the documents: for each session
-%   holding an acquisition system, each system's epoch table is built once
-%   in a freshly opened session (ndi.session.dir with that session id, which
-%   reads and adds no session record), and the navigator and reader store
-%   the rows they compute. Dropping and rebuilding gives the same rows: they
+%   holding an acquisition system, in a freshly opened session
+%   (ndi.session.dir with that session id, which reads and adds no session
+%   record), each system's navigator reads its ingested epochs and, for an
+%   mfdaq or image system, its reader their clocks (what
+%   ndi.daq.system/buildepochtable reads of them, without opening any
+%   epoch on disk), and they store the rows they compute. Dropping and rebuilding gives the same rows: they
 %   are computed only from the documents. REPORT says what was done,
 %   denominator first (sessions, systems, epochs, rows).
 %
@@ -57,10 +59,29 @@ for i = 1:numel(sids)
     devs = S.daqsystem_load('name', '(.*)');
     if ~iscell(devs); devs = {devs}; end
     for k = 1:numel(devs)
-        if isempty(devs{k}); continue; end
-        et = devs{k}.epochtable();
+        dev = devs{k};
+        if isempty(dev); continue; end
+        % exactly what the index holds, computed as the epoch-table build
+        % computes it -- the navigator's ingested epochs and, for an mfdaq
+        % or image system, its reader's clocks -- and nothing else: no
+        % epoch on disk is opened (a full epoch table reads raw files, such
+        % as videos)
+        nav = dev.filenavigator;
+        cls = nav.epochprobemap_class;
+        docs = S.database_search(ndi.vintage.ingestedQuery(nav.id(), S.id()));
+        E = ndi.vintage.ingestedEpochs(S, docs, cls);
+        if isa(dev, 'ndi.daq.system.mfdaq') || isa(dev, 'ndi.daq.system.image')
+            ids = {};
+            if ~isempty(E)
+                ids = {E(strcmp({E.vintage}, 'V_eta')).epoch_id};
+                ids = ids(~cellfun(@isempty, ids));
+            end
+            if ~isempty(ids)
+                ndi.vintage.ingestedArchives(S, dev.daqreader.id(), ids, 'ClocksOnly', true);
+            end
+        end
         report.systems = report.systems + 1;
-        report.epochs = report.epochs + numel(et);
+        report.epochs = report.epochs + numel(E);
     end
     S0 = S;
 end
