@@ -51,6 +51,13 @@ catch err
 end
 sids = unique(sids(~cellfun(@isempty, sids)), 'stable');
 report.sessions = numel(sids);
+% Opening a session folder writes .ndi/reference.txt, unique_reference.txt,
+% the object-type marker and a session-table entry (ndi.session.dir). The
+% index is built from the documents and must leave the folder as it was:
+% every small file of .ndi (not the databases) and the session table are
+% put back afterwards, even on an error (TestHaleyWrite/testDataset found
+% the dataset's reference.txt rewritten, run 42589451455).
+restore = onCleanup(snapshotFolder(ndiDir, sids)); %#ok<NASGU>
 for i = 1:numel(sids)
     S = ndi.session.dir('epoch index', char(root), sids{i});
     if ~ndi.vintage.epochIndex('available', S)
@@ -90,4 +97,50 @@ if ~isempty(S0)
         S0.database_derived('count', 'ndi.epochs.reader');
 end
 report.built = true;
+end
+
+function f = snapshotFolder(ndiDir, sids)
+% a function that puts back the small files of NDIDIR and the session-table
+% entries of SIDS as they are now
+listing = dir(ndiDir);
+keep = struct('name', {}, 'bytes', {});
+for k = 1:numel(listing)
+    if listing(k).isdir || endsWith(listing(k).name, {'.sqlite', '.sqlite-journal', '.sqlite-wal', '.sqlite-shm'})
+        continue;
+    end
+    fid = fopen(fullfile(ndiDir, listing(k).name), 'r');
+    b = fread(fid, Inf, '*uint8');
+    fclose(fid);
+    keep(end+1) = struct('name', listing(k).name, 'bytes', b); %#ok<AGROW>
+end
+st = ndi.session.sessiontable();
+t0 = st.getsessiontable();
+f = @() putBack(ndiDir, keep, sids, t0);
+end
+
+function putBack(ndiDir, keep, sids, t0)
+listing = dir(ndiDir);
+for k = 1:numel(listing)
+    n = listing(k).name;
+    if listing(k).isdir || endsWith(n, {'.sqlite', '.sqlite-journal', '.sqlite-wal', '.sqlite-shm'})
+        continue;
+    end
+    if ~any(strcmp({keep.name}, n))
+        delete(fullfile(ndiDir, n));   % written by the opening
+    end
+end
+for k = 1:numel(keep)
+    fid = fopen(fullfile(ndiDir, keep(k).name), 'w');
+    fwrite(fid, keep(k).bytes, 'uint8');
+    fclose(fid);
+end
+st = ndi.session.sessiontable();
+for i = 1:numel(sids)
+    was = find(strcmp({t0.session_id}, sids{i}), 1);
+    if isempty(was)
+        st.removetableentry(sids{i});
+    else
+        st.addtableentry(sids{i}, t0(was).path);
+    end
+end
 end
