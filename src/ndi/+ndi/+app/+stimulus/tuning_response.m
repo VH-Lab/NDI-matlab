@@ -240,16 +240,17 @@ classdef tuning_response < ndi.app
                 'prestimulus_normalization',prestimulus_normalization,...
                 'isspike',isspike,'spiketrain_dt',spiketrain_dt);
             numericParamNames = fieldnames(numericParams);
-            emptyParamNames = {};
+            isEmptyParam = false(1,numel(numericParamNames));
             for j=1:numel(numericParamNames)
                 value = numericParams.(numericParamNames{j});
                 if isempty(value)
-                    emptyParamNames{end+1} = numericParamNames{j};
+                    isEmptyParam(j) = true;
                 else
                     q_matchtot = q_matchtot & ndi.query(['stimulus_response_scalar_parameters_basic.' numericParamNames{j}],...
                         'exact_number',value,'');
                 end
             end
+            emptyParamNames = numericParamNames(isEmptyParam);
             q_matchtot = q_e & q_doc & q_matchtot;
 
             % load the data, get the stimulus times
