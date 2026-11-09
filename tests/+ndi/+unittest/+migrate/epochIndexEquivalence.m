@@ -90,21 +90,43 @@ end
 end
 
 function R = compareOnce(R, S, sys, when)
+% Each side's answer, or the error it raises: a change can leave the
+% documents in a state the reader refuses (a removed system leaves a probe
+% map row without a devicestring), and then the index must refuse it too.
 docs = S.database_search(ndi.vintage.ingestedQuery(sys.nav, S.id()));
-fresh = ndi.vintage.ingestedEpochs(S, docs, sys.cls, 'UseIndex', false);
+[fresh, freshErr] = attempt(@() ndi.vintage.ingestedEpochs(S, docs, sys.cls, 'UseIndex', false));
 for pass = 1:2
-    viaIndex = ndi.vintage.ingestedEpochs(S, docs, sys.cls);
-    R = record(R, isequal(fresh, viaIndex), sprintf('%s navigator %s, read %d (%d epochs)', ...
-        sys.id, when, pass, numel(fresh)));
+    [viaIndex, err] = attempt(@() ndi.vintage.ingestedEpochs(S, docs, sys.cls));
+    R = record(R, isequal(fresh, viaIndex) && isequal(freshErr, err), ...
+        sprintf('%s navigator %s, read %d (%d epochs%s)', sys.id, when, pass, numel(fresh), errNote(freshErr)));
 end
-ids = {fresh(strcmp({fresh.vintage}, 'V_eta')).epoch_id};
-ids = ids(~cellfun(@isempty, ids));
-A0 = ndi.vintage.ingestedArchives(S, sys.reader, ids, 'ClocksOnly', true, 'UseIndex', false);
+ids = {};
+if isempty(freshErr)
+    ids = {fresh(strcmp({fresh.vintage}, 'V_eta')).epoch_id};
+    ids = ids(~cellfun(@isempty, ids));
+end
+[A0, e0] = attempt(@() ndi.vintage.ingestedArchives(S, sys.reader, ids, 'ClocksOnly', true, 'UseIndex', false));
 for pass = 1:2
-    A1 = ndi.vintage.ingestedArchives(S, sys.reader, ids, 'ClocksOnly', true);
-    R = record(R, sameClocks(A0, A1), sprintf('%s reader %s, read %d (%d epochs)', ...
-        sys.id, when, pass, A0.Count));
+    [A1, e1] = attempt(@() ndi.vintage.ingestedArchives(S, sys.reader, ids, 'ClocksOnly', true));
+    ok = isequal(e0, e1) && (~isempty(e0) || sameClocks(A0, A1));
+    n = 0; if isempty(e0); n = A0.Count; end
+    R = record(R, ok, sprintf('%s reader %s, read %d (%d epochs%s)', sys.id, when, pass, n, errNote(e0)));
 end
+end
+
+function [v, err] = attempt(f)
+% F's answer, or '' ; or [] and the error's identifier and message
+v = []; err = '';
+try
+    v = f();
+catch ME
+    err = [ME.identifier ': ' ME.message];
+end
+end
+
+function t = errNote(err)
+t = '';
+if ~isempty(err); t = sprintf('; both sides must raise: %s', err); end
 end
 
 function R = record(R, ok, what)
