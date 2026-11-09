@@ -469,6 +469,13 @@ classdef TestMigrateLocalEtaDab < matlab.unittest.TestCase
             clear c;
         end
 
+        function testEpochSets(testCase)
+            % THROWAWAY (never merged): how many distinct sets of epochs the
+            % repeated wiring and Stimulator facts are timed to (Jess Haley,
+            % 2026-11-09, "Count the epoch groups").
+            ndi.unittest.migrate.epochSetCensus(testCase.Result.destination, 'Dab');
+        end
+
         function testEpochRepeats(testCase)
             % THROWAWAY (never merged): which epoch-tied documents record the
             % same fact again in several epochs (Jess Haley, 2026-11-09).
