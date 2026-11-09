@@ -14,7 +14,7 @@ function d = openMINDSobj2ndi_document(openmindsObj, session_id, dependency_type
     %   d = ndi.database.fun.openMINDSobj2ndi_document(p, session_id);
     %
     % Example 2:
-    %   s = openminds.controlledterms.Species('name','Mustela putorius furo','preferredOntologyIdentifier','NCBI:txid9669');
+    %   s = openminds.controlledterms.Species('name','Mustela putorius furo','preferredOntologyIdentifier','NCBITaxon:9669');
     %   session_id = S.id(); % get the id of an ndi.session S
     %   subject_docs = S.database_search(ndi.query('','isa','subject'));
     %   d = ndi.database.fun.openMINDSobj2ndi_document(s, session_id, 'subject', subject_docs{1}.id());
