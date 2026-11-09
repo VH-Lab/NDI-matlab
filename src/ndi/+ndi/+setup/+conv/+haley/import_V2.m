@@ -733,6 +733,22 @@ if linked
 end
 result.sessions = removevars(T, 'documents');
 result.written = built;
+% the last step: the derived epoch-table index of every folder written, from
+% its documents (ndi.vintage.epochIndexBuild; Jess Haley, 2026-11-09, [3 yes])
+folders = {};
+if any(options.Stages == "dataset")
+    folders{end+1} = datasetPath(dataParentDir, options);
+end
+if options.SessionFolders
+    folders = [folders, reshape(cellstr(T.path), 1, [])];
+end
+result.epochIndex = cell(1, numel(folders));
+for k = 1:numel(folders)
+    r = ndi.vintage.epochIndexBuild(folders{k});
+    result.epochIndex{k} = r;
+    fprintf('epoch-table index of %s: %d session(s), %d system(s), %d epoch(s), %g row(s)\n', ...
+        folders{k}, r.sessions, r.systems, r.epochs, r.rows);
+end
 end
 
 function path = datasetPath(dataParentDir, options)

@@ -1581,12 +1581,26 @@ function result = local(path, options)
     tStep = migrateStepMark('write destination', tStart, tStep, convertResult);
 
     refReport = did2.validate.references(convertResult.migrated);
-    migrateStepMark('validate references', tStart, tStep, convertResult);
+    tStep = migrateStepMark('validate references', tStart, tStep, convertResult);
+
+    % THE LAST STEP: the derived epoch-table index, computed from the
+    % documents just written, so it ships in the database (Jess Haley,
+    % 2026-11-09: "Build the derived index", [3 yes];
+    % ndi.vintage.epochIndexBuild). A read with no current row computes it.
+    epochIndexReport = struct('sessions', 0, 'systems', 0, 'epochs', 0, 'rows', NaN, 'built', false);
+    if wroteDst
+        epochIndexReport = ndi.vintage.epochIndexBuild(path);
+        fprintf(['[migrate step]   epoch-table index: %d session(s), %d acquisition system(s), ' ...
+            '%d epoch(s), %g row(s)\n'], epochIndexReport.sessions, epochIndexReport.systems, ...
+            epochIndexReport.epochs, epochIndexReport.rows);
+    end
+    migrateStepMark('epoch-table index', tStart, tStep, convertResult);
 
     result = struct();
     result.path = path;
     result.source = srcInfo;
     result.destination = dstPath;
+    result.epochIndex = epochIndexReport;
     result.alreadyMigrated = alreadyMigrated;
     result.dryRun = options.DryRun;
     result.wroteDestination = wroteDst;
