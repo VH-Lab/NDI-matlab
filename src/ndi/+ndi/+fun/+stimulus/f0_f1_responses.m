@@ -11,6 +11,10 @@ function [f0,f1,f0_tuningcurve_doc,f1_tuningcurve_doc] = f0_f1_responses(S, doc,
     % If STIMULUS_INDEX is not given, then the overall maximum response rate (either mean or F1)
     % is examined and that location is taken as the STIMULUS_INDEX.
     %
+    % DOC may also be (or depend on) a tuning curve of response_type 'mean+F1'. In that case,
+    % the F0 and F1 responses are those of the 'mean' and 'F1' tuning curves of the same
+    % stimulus responses, and F0_TUNINGCURVE_DOC and F1_TUNINGCURVE_DOC are those documents.
+    %
 
     f0 = NaN;
     f1 = NaN;
@@ -51,8 +55,13 @@ function [f0,f1,f0_tuningcurve_doc,f1_tuningcurve_doc] = f0_f1_responses(S, doc,
             f1_tuning_curve = tc_doc;
             target_response_type = 'mean';
 
+        case 'mean+f1'
+            % a mean+F1 tuning curve is the sum of its mean and F1 partners; find the
+            % mean partner below and report the F0 and F1 of that pair
+            target_response_type = 'mean';
+
         otherwise
-            error(['Unknown response type (expected mean or F1): ' rt]);
+            error(['Unknown response type (expected mean, F1, or mean+F1): ' rt]);
     end
 
     % how to find tuning curve for f1?
@@ -101,11 +110,15 @@ function [f0,f1,f0_tuningcurve_doc,f1_tuningcurve_doc] = f0_f1_responses(S, doc,
     elseif numel(matches)>1
         error(['Too many ' target_response_type ' found (' int2str(numel(matches))   ').']);
     else
-        switch (rt)
+        switch lower(rt)
             case 'mean'
                 f1_tuning_curve = tc_candidates{matches};
-            case 'F1'
+            case 'f1'
                 f0_tuning_curve = tc_candidates{matches};
+            case 'mean+f1'
+                [f0,f1,f0_tuningcurve_doc,f1_tuningcurve_doc] = ndi.fun.stimulus.f0_f1_responses(S, ...
+                    tc_candidates{matches}, response_index);
+                return;
         end
     end
 

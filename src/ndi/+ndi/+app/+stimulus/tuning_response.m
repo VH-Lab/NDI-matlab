@@ -40,7 +40,7 @@ classdef tuning_response < ndi.app
             % NDI_TIMESERIES_OBJ are removed. The default for RESET is 0 (if it is not provided).
             %
             % If the input argument DO_MEAN_ONLY is given and is 1, then the function only computes the mean responses.
-            % No F1 or F2 responses will be calculated.
+            % No F1, F2, or mean+F1 responses will be calculated.
             %
             %
             % Note that this function DOES add the new documents RDOCS to the database.
@@ -149,6 +149,20 @@ classdef tuning_response < ndi.app
             % fundamental stimulus frequency are calculated. Note that this function may generate multiple documents (for mean responses,
             % F1, F2).
             %
+            % Whenever both the mean (freq_response 0) and F1 (freq_response 1) are computed, a fourth document with
+            % response_type 'mean+F1' is also written. Each of its trial values is
+            %
+            %     mean_i * exp(sqrt(-1)*theta) + F1_i
+            %
+            % where theta is the phase of the vector-averaged F1 over all trials of the same stimulus id. The averaged
+            % 'mean+F1' response to a stimulus therefore has magnitude mean(mean_i) + abs(mean(F1_i)), the sum of the
+            % 'mean' and 'F1' tuning curve values, while F1 is still averaged with its phase. Control responses get the
+            % same treatment, with theta taken from the control F1 values. For stimuli that have no fundamental
+            % frequency, 'mean+F1' equals 'mean'. See ndi.app.stimulus.tuning_response.meanPlusF1.
+            %
+            % The 'mean+F1' document depends on the same stimulus_response_scalar_parameters_basic document as the
+            % 'F1' document (freq_response 1); the two are told apart by stimulus_response_scalar.response_type.
+            %
             % Note that we recommend making a new app subclass if one wants to write additional classes of analysis procedures.
             %
             % This function also takes name/value pairs that alter the behavior:
@@ -215,20 +229,28 @@ classdef tuning_response < ndi.app
             q_r_stimcontroldoc = ndi.query('','depends_on','stimulus_control_id',control_doc.id());
             q_e = ndi.query(E.searchquery());
 
-            q_match{1} = ndi.query('stimulus_response_scalar_parameters_basic.temporalfreqfunc',...
+            % An 'exact_number' query with an empty value never matches, so parameters that are
+            % empty (the default for prestimulus_time and prestimulus_normalization) are left out
+            % of the query and checked on the search results instead (see emptyParamNames below).
+            % Otherwise an existing parameter document is never found, and recomputing adds
+            % duplicate responses instead of replacing them.
+            q_matchtot = ndi.query('stimulus_response_scalar_parameters_basic.temporalfreqfunc',...
                 'exact_string',temporalfreqfunc,'');
-            q_match{2} = ndi.query('stimulus_response_scalar_parameters_basic.prestimulus_time',...
-                'exact_number',prestimulus_time,'');
-            q_match{3} = ndi.query('stimulus_response_scalar_parameters_basic.prestimulus_normalization',...
-                'exact_number',prestimulus_normalization,'');
-            q_match{4} = ndi.query('stimulus_response_scalar_parameters_basic.isspike',...
-                'exact_number',isspike,'');
-            q_match{5} = ndi.query('stimulus_response_scalar_parameters_basic.spiketrain_dt',...
-                'exact_number',spiketrain_dt,'');
-            q_matchtot = q_match{1};
-            for j=2:numel(q_match)
-                q_matchtot = q_matchtot & q_match{j};
+            numericParams = struct('prestimulus_time',prestimulus_time,...
+                'prestimulus_normalization',prestimulus_normalization,...
+                'isspike',isspike,'spiketrain_dt',spiketrain_dt);
+            numericParamNames = fieldnames(numericParams);
+            isEmptyParam = false(1,numel(numericParamNames));
+            for j=1:numel(numericParamNames)
+                value = numericParams.(numericParamNames{j});
+                if isempty(value)
+                    isEmptyParam(j) = true;
+                else
+                    q_matchtot = q_matchtot & ndi.query(['stimulus_response_scalar_parameters_basic.' numericParamNames{j}],...
+                        'exact_number',value,'');
+                end
             end
+            emptyParamNames = numericParamNames(isEmptyParam);
             q_matchtot = q_e & q_doc & q_matchtot;
 
             % load the data, get the stimulus times
@@ -271,6 +293,18 @@ classdef tuning_response < ndi.app
 
                 param_doc = E.database_search(q_matchtot&q_matchhere);
 
+                % keep only documents whose empty-valued parameters are also empty
+                keep = true(1,numel(param_doc));
+                for j=1:numel(param_doc)
+                    p_here = param_doc{j}.document_properties.stimulus_response_scalar_parameters_basic;
+                    for k=1:numel(emptyParamNames)
+                        if isfield(p_here,emptyParamNames{k}) && ~isempty(p_here.(emptyParamNames{k}))
+                            keep(j) = false;
+                        end
+                    end
+                end
+                param_doc = param_doc(keep);
+
                 if isempty(param_doc)
                     % make one
                     stimulus_response_scalar_parameters_basic = vlt.data.var2struct('temporalfreqfunc','freq_response',...
@@ -283,10 +317,12 @@ classdef tuning_response < ndi.app
                     param_doc = {param_doc};
                 end
 
-                % look for existing response docs
+                % look for existing response docs; restrict by response_type because the 'mean+F1'
+                % document shares the F1 parameter document
 
                 rdoc = E.database_search(q_e&q_rdoc&q_r_stimdoc&q_r_stimcontroldoc&...
-                    ndi.query('','depends_on','stimulus_response_scalar_parameters_id',param_doc{1}.id()));
+                    ndi.query('','depends_on','stimulus_response_scalar_parameters_id',param_doc{1}.id()) & ...
+                    ndi.query('stimulus_response_scalar.response_type','exact_string',response_type,''));
 
                 E.database_rm(rdoc);
 
@@ -327,6 +363,60 @@ classdef tuning_response < ndi.app
                     'stimulus_response', stimulus_response_struct)+E.newdocument();
                 response_doc{end} = response_doc{end}.set_dependency_value('stimulus_response_scalar_parameters_id', ...
                     param_doc{1}.id());
+                response_doc{end} = response_doc{end}.set_dependency_value('element_id', ndi_timeseries_obj.id());
+                response_doc{end} = response_doc{end}.set_dependency_value('stimulus_presentation_id', stim_doc.id());
+                response_doc{end} = response_doc{end}.set_dependency_value('stimulus_control_id', control_doc.id());
+                response_doc{end} = response_doc{end}.set_dependency_value('stimulator_id', ndi_stim_obj.id());
+
+                E.database_add(response_doc{end});
+
+                % keep what is needed to build the 'mean+F1' response below
+                if freq_response==0
+                    meanResponse = response;
+                elseif freq_response==1
+                    f1Response = response;
+                    f1ParamDoc = param_doc{1};
+                end
+            end
+
+            % mean+F1: written whenever both the mean and F1 were computed in this call
+
+            if any(freq_response_commands==0) && any(freq_response_commands==1)
+                responseType = 'mean+F1';
+
+                rdoc = E.database_search(q_e&q_rdoc&q_r_stimdoc&q_r_stimcontroldoc&...
+                    ndi.query('','depends_on','stimulus_response_scalar_parameters_id',f1ParamDoc.id()) & ...
+                    ndi.query('stimulus_response_scalar.response_type','exact_string',responseType,''));
+                E.database_rm(rdoc);
+
+                stimIds = vlt.data.rowvec(ts_stim_onsetoffsetid(:,3));
+                % stimuli without a fundamental frequency have no F1; vlt falls back to the
+                % first stimulus's frequency for out-of-range ids, so do the same here
+                stimIdsForFreq = stimIds;
+                stimIdsForFreq(stimIdsForFreq<1 | stimIdsForFreq>numel(freq_mult)) = 1;
+                hasF1 = freq_mult(stimIdsForFreq) ~= 0;
+
+                [combinedResponse, combinedControlResponse] = ndi.app.stimulus.tuning_response.meanPlusF1(stimIds, ...
+                    vlt.data.rowvec([meanResponse.response]), vlt.data.rowvec([f1Response.response]), ...
+                    vlt.data.rowvec([meanResponse.control_response]), vlt.data.rowvec([f1Response.control_response]), ...
+                    hasF1);
+
+                response_structure = struct('stimid',stimIds,...
+                    'response_real', real(combinedResponse), ...
+                    'response_imaginary', imag(combinedResponse), ...
+                    'control_response_real', real(combinedControlResponse), ...
+                    'control_response_imaginary', imag(combinedControlResponse));
+
+                stimulus_response_scalar_struct = struct('response_type', responseType, 'responses',response_structure);
+
+                stimulus_response_struct = struct( 'stimulator_epochid', stim_doc.document_properties.epochid.epochid, ...
+                    'element_epochid', ts_epoch_timeref.epoch);
+
+                response_doc{end+1} = ndi.document('stimulus_response_scalar',...
+                    'stimulus_response_scalar',stimulus_response_scalar_struct,...
+                    'stimulus_response', stimulus_response_struct)+E.newdocument();
+                response_doc{end} = response_doc{end}.set_dependency_value('stimulus_response_scalar_parameters_id', ...
+                    f1ParamDoc.id());
                 response_doc{end} = response_doc{end}.set_dependency_value('element_id', ndi_timeseries_obj.id());
                 response_doc{end} = response_doc{end}.set_dependency_value('stimulus_presentation_id', stim_doc.id());
                 response_doc{end} = response_doc{end}.set_dependency_value('stimulus_control_id', control_doc.id());
@@ -1058,6 +1148,76 @@ classdef tuning_response < ndi.app
             ratio = modulatedresponse/meanresponse;
 
         end % modualated_or_mean
+
+        function [combinedResponse, combinedControlResponse] = meanPlusF1(stimIds, meanResponse, f1Response, meanControlResponse, f1ControlResponse, hasF1)
+            % MEANPLUSF1 - combine per-trial mean (F0) and F1 responses into 'mean+F1' responses
+            %
+            % [COMBINEDRESPONSE, COMBINEDCONTROLRESPONSE] = ndi.app.stimulus.tuning_response.meanPlusF1(STIMIDS, ...
+            %     MEANRESPONSE, F1RESPONSE, MEANCONTROLRESPONSE, F1CONTROLRESPONSE, [HASF1])
+            %
+            % Given the stimulus id of each trial (STIMIDS), the per-trial mean responses (MEANRESPONSE, real),
+            % the per-trial F1 responses (F1RESPONSE, complex), and the corresponding control responses, returns
+            % the per-trial 'mean+F1' responses:
+            %
+            %     COMBINEDRESPONSE(i) = MEANRESPONSE(i) * exp(sqrt(-1)*THETA(s)) + F1RESPONSE(i)
+            %
+            % where s = STIMIDS(i) and THETA(s) is the phase of the mean of F1RESPONSE over all trials with
+            % stimulus id s (NaN values are omitted). The mean response is rotated onto the phase of the
+            % vector-averaged F1 response, so that
+            %
+            %     abs(mean(COMBINEDRESPONSE(STIMIDS==s))) == mean(MEANRESPONSE(STIMIDS==s)) + abs(mean(F1RESPONSE(STIMIDS==s)))
+            %
+            % That is, the 'mean+F1' tuning curve value is the sum of the 'mean' and 'F1' tuning curve values,
+            % while the F1 component is still averaged with its phase (it is not inflated by noise as an average
+            % of per-trial magnitudes would be). The identity holds when the mean responses are non-negative,
+            % as firing rates are.
+            %
+            % COMBINEDCONTROLRESPONSE is computed in the same way from MEANCONTROLRESPONSE and F1CONTROLRESPONSE,
+            % with its own phase per stimulus id taken from F1CONTROLRESPONSE.
+            %
+            % HASF1 is an optional logical vector, one entry per trial, that is false for trials of stimuli that have
+            % no fundamental frequency. For those trials the F1 contribution is set to 0, so the 'mean+F1' response
+            % equals the mean response. By default, all trials have an F1.
+            %
+            % All inputs are vectors with one entry per trial. Outputs are row vectors.
+            %
+            % Example:
+            %    stimIds = [1 1 2 2];
+            %    [r, c] = ndi.app.stimulus.tuning_response.meanPlusF1(stimIds, [10 10 5 5], ...
+            %        [10i 10i 2 2], [1 1 1 1], [0 0 0 0]);
+            %    abs(mean(r(1:2)))  % 20 = 10 + abs(10i)
+            %
+            arguments
+                stimIds (1,:) double
+                meanResponse (1,:) double
+                f1Response (1,:) double
+                meanControlResponse (1,:) double
+                f1ControlResponse (1,:) double
+                hasF1 (1,:) logical = true(size(stimIds))
+            end
+
+            n = numel(stimIds);
+            if numel(meanResponse)~=n || numel(f1Response)~=n || numel(meanControlResponse)~=n || ...
+                    numel(f1ControlResponse)~=n || numel(hasF1)~=n
+                error('NDI:tuning_response:meanPlusF1:sizeMismatch', ...
+                    'All inputs to meanPlusF1 must have one entry per trial (%d).', n);
+            end
+
+            f1Response(~hasF1) = 0;
+            f1ControlResponse(~hasF1) = 0;
+
+            combinedResponse = complex(NaN(1,n), NaN(1,n));
+            combinedControlResponse = complex(NaN(1,n), NaN(1,n));
+
+            uniqueStimIds = unique(stimIds);
+            for k = 1:numel(uniqueStimIds)
+                trials = stimIds==uniqueStimIds(k);
+                theta = angle(mean(f1Response(trials),'omitnan'));
+                combinedResponse(trials) = meanResponse(trials).*exp(1i*theta) + f1Response(trials);
+                thetaControl = angle(mean(f1ControlResponse(trials),'omitnan'));
+                combinedControlResponse(trials) = meanControlResponse(trials).*exp(1i*thetaControl) + f1ControlResponse(trials);
+            end
+        end % meanPlusF1()
 
     end % static methods
 
