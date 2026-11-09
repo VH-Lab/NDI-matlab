@@ -229,19 +229,26 @@ classdef tuning_response < ndi.app
             q_r_stimcontroldoc = ndi.query('','depends_on','stimulus_control_id',control_doc.id());
             q_e = ndi.query(E.searchquery());
 
-            q_match{1} = ndi.query('stimulus_response_scalar_parameters_basic.temporalfreqfunc',...
+            % An 'exact_number' query with an empty value never matches, so parameters that are
+            % empty (the default for prestimulus_time and prestimulus_normalization) are left out
+            % of the query and checked on the search results instead (see emptyParamNames below).
+            % Otherwise an existing parameter document is never found, and recomputing adds
+            % duplicate responses instead of replacing them.
+            q_matchtot = ndi.query('stimulus_response_scalar_parameters_basic.temporalfreqfunc',...
                 'exact_string',temporalfreqfunc,'');
-            q_match{2} = ndi.query('stimulus_response_scalar_parameters_basic.prestimulus_time',...
-                'exact_number',prestimulus_time,'');
-            q_match{3} = ndi.query('stimulus_response_scalar_parameters_basic.prestimulus_normalization',...
-                'exact_number',prestimulus_normalization,'');
-            q_match{4} = ndi.query('stimulus_response_scalar_parameters_basic.isspike',...
-                'exact_number',isspike,'');
-            q_match{5} = ndi.query('stimulus_response_scalar_parameters_basic.spiketrain_dt',...
-                'exact_number',spiketrain_dt,'');
-            q_matchtot = q_match{1};
-            for j=2:numel(q_match)
-                q_matchtot = q_matchtot & q_match{j};
+            numericParams = struct('prestimulus_time',prestimulus_time,...
+                'prestimulus_normalization',prestimulus_normalization,...
+                'isspike',isspike,'spiketrain_dt',spiketrain_dt);
+            numericParamNames = fieldnames(numericParams);
+            emptyParamNames = {};
+            for j=1:numel(numericParamNames)
+                value = numericParams.(numericParamNames{j});
+                if isempty(value)
+                    emptyParamNames{end+1} = numericParamNames{j};
+                else
+                    q_matchtot = q_matchtot & ndi.query(['stimulus_response_scalar_parameters_basic.' numericParamNames{j}],...
+                        'exact_number',value,'');
+                end
             end
             q_matchtot = q_e & q_doc & q_matchtot;
 
@@ -284,6 +291,18 @@ classdef tuning_response < ndi.app
                     'exact_number',freq_response,'');
 
                 param_doc = E.database_search(q_matchtot&q_matchhere);
+
+                % keep only documents whose empty-valued parameters are also empty
+                keep = true(1,numel(param_doc));
+                for j=1:numel(param_doc)
+                    p_here = param_doc{j}.document_properties.stimulus_response_scalar_parameters_basic;
+                    for k=1:numel(emptyParamNames)
+                        if isfield(p_here,emptyParamNames{k}) && ~isempty(p_here.(emptyParamNames{k}))
+                            keep(j) = false;
+                        end
+                    end
+                end
+                param_doc = param_doc(keep);
 
                 if isempty(param_doc)
                     % make one
