@@ -94,7 +94,12 @@ for i = 1:numel(sids)
     a = readAll(S);
     b = before{i};
     R = record(R, isequal(a.stimulators, b.stimulators), sprintf( ...
-        'session %s: getprobes stimulator (%d probe(s))', sids{i}, numel(b.stimulators)));
+        'session %s: getprobes stimulator (%d probe(s) before, %d after)', sids{i}, ...
+        numel(b.stimulators), numel(a.stimulators)));
+    if ~isequal(a.stimulators, b.stimulators)
+        showDiff('stimulator', cellfun(@probeText, b.stimulators, 'UniformOutput', false), ...
+            cellfun(@probeText, a.stimulators, 'UniformOutput', false));
+    end
     for s = 1:numel(b.systems)
         bs = b.systems(s);
         as = a.systems(strcmp({a.systems.id}, bs.id));
@@ -105,6 +110,9 @@ for i = 1:numel(sids)
         R = record(R, isequal(as.epochs, bs.epochs) && isequal(as.err, bs.err), sprintf( ...
             'session %s system %s: navigator (%d epochs, %d rows%s)', sids{i}, bs.name, ...
             numel(bs.epochs), nRows(bs.epochs), errNote(bs.err)));
+        if ~isequal(as.epochs, bs.epochs)
+            showDiff('row', epochTexts(bs.epochs), epochTexts(as.epochs));
+        end
         R = record(R, isequal(as.indexed, as.epochs), sprintf( ...
             'session %s system %s: navigator through the derived index after', sids{i}, bs.name));
         R = record(R, isequal(as.clocks, bs.clocks) && isequal(as.clockErr, bs.clockErr), sprintf( ...
@@ -181,6 +189,30 @@ end
 if ~isempty(e)
     [~, o] = sort(cellfun(@(x) x{1}, e, 'UniformOutput', false));
     e = e(o);
+end
+end
+
+function showDiff(what, before, after)
+% up to five entries only before and five only after
+onlyB = setdiff(before, after);
+onlyA = setdiff(after, before);
+fprintf('      %s entries only before: %d, only after: %d\n', what, numel(onlyB), numel(onlyA));
+for k = 1:min(5, numel(onlyB)); fprintf('        before only: %s\n', onlyB{k}); end
+for k = 1:min(5, numel(onlyA)); fprintf('        after only:  %s\n', onlyA{k}); end
+end
+
+function t = probeText(p)
+t = sprintf('%s|%g|%d epochs: %s', p{1}, p{2}, numel(p{3}), strjoin(p{3}(1:min(3, end)), ','));
+end
+
+function t = epochTexts(e)
+% one text per (epoch, row)
+t = {};
+for k = 1:numel(e)
+    for r = 1:numel(e{k}{2})
+        t{end+1} = [e{k}{1} ' :: ' e{k}{2}{r}]; %#ok<AGROW>
+    end
+    if isempty(e{k}{2}); t{end+1} = [e{k}{1} ' :: (no rows)']; end %#ok<AGROW>
 end
 end
 

@@ -334,6 +334,9 @@ classdef TestMigrateLocalEtaDab < matlab.unittest.TestCase
             % reader's v2 clocks and the stimulators getprobes finds, with
             % their epoch tables, are the same
             % (ndi.unittest.migrate.stimulatorRowsWithoutManipulation).
+            G = ndi.unittest.migrate.stimulatorRowsWithoutManipulation( ...
+                fileparts(testCase.Result.destination), 'Dab (generic)');
+            testCase.verifyEmpty(G.mismatches, strjoin(G.mismatches, newline));
             R = ndi.unittest.migrate.stimulatorRowsWithoutManipulation( ...
                 fullfile(testCase.MappedRoot, '.ndi'), 'Dab (mapped)');
             testCase.verifyGreaterThan(R.removed, 0, 'no Stimulator manipulation was removed (nothing measured)');
