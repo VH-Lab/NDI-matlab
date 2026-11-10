@@ -917,6 +917,9 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             circ = about('score_calculation', 'circularity');
             testCase.verifyEqual(circ{1}.statement.variable.node, 'EMPTY:0000288');
             testCase.verifyEqual(circ{1}.score.value(1).score, 0.9, 'AbsTol', 1e-12);
+            % no scale, 0-1 ([four term fields bound], Jess Haley 2026-11-10)
+            testCase.verifyTrue(noScale(circ{1}.score.value(1)), 'circularity has no scale');
+            testCase.verifyEqual([circ{1}.score.value(1).scale_min, circ{1}.score.value(1).scale_max], [0 1]);
 
             % its arena mask: a label calculation of the plate from the video,
             % run by the analysis package in MATLAB on macOS
@@ -985,13 +988,17 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             testCase.verifyEqual(edgeAll(lawn{1}, 'input_id'), {video.base.id});
 
             % the registration fit: the overlap, from both the video and the lawn clip
-            sc = docs(strcmp(classes, 'score_calculation'));
+            % a fraction ([four term fields bound], Jess Haley 2026-11-10)
+            sc = docs(strcmp(classes, 'fraction_calculation'));
             sc = sc(cellfun(@(d) strcmp(edge(d, 'entity_id'), idOf('concentration_assayPlate0012')), sc));
             testCase.verifyNumElements(sc, 1);
             testCase.verifyEqual(sc{1}.statement.variable.node, 'NCIT:C54669', 'overlap');
             testCase.verifyEqual(sc{1}.interaction.method.term.node, 'NCIT:C80145', 'image registration');
-            testCase.verifyEqual(sc{1}.score.value.scale.node, 'NCIT:C49159', 'a proportion (#116)');
-            testCase.verifyEqual(sc{1}.score.value.score, 0.98, 'AbsTol', 1e-12);
+            testCase.verifyFalse(isfield(sc{1}.fraction.value, 'scale'), 'a fraction has no scale');
+            testCase.verifyEqual(sc{1}.fraction.value.fraction, 0.98, 'AbsTol', 1e-12);
+            testCase.verifyEmpty(docs(strcmp(classes, 'score_calculation') & cellfun(@(d) ...
+                strcmp(edge(d, 'entity_id'), idOf('concentration_assayPlate0012')), docs)), ...
+                'the overlap is no longer a score');
             testCase.verifyNumElements(edgeAll(sc{1}, 'input_id'), 2);
 
             near = docs(strcmp(classes, 'item_calculation'));
@@ -1355,13 +1362,15 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
 
             % exploitPosterior and sensePosterior: two statements, one per model
             % (labelEncounters), the state a condition
-            pr = named('score_calculation', 'concentration_worm0121', 'posterior probability');
+            % fractions ([four term fields bound], Jess Haley 2026-11-10)
+            testCase.verifyEmpty(named('score_calculation', 'concentration_worm0121', 'posterior probability'));
+            pr = named('fraction_calculation', 'concentration_worm0121', 'posterior probability');
             testCase.verifyNumElements(pr, 2);
             state = cellfun(@(d) conditionTerm(d, 'behavioral state'), pr, 'UniformOutput', false);
             ex = pr{strcmp(state, 'exploitation')};
             se = pr{strcmp(state, 'sensing')};
-            testCase.verifyEqual(numbers(ex.score.value, 'score'), [0.9 0.2], 'AbsTol', 1e-12);
-            testCase.verifyEqual(numbers(se.score.value, 'score'), [0.8 0.6], 'AbsTol', 1e-12);
+            testCase.verifyEqual(numbers(ex.fraction.value, 'fraction'), [0.9 0.2], 'AbsTol', 1e-12);
+            testCase.verifyEqual(numbers(se.fraction.value, 'fraction'), [0.8 0.6], 'AbsTol', 1e-12);
             testCase.verifyEqual(ex.interaction.method.term.node, 'EMPTY:0000316', 'Gaussian mixture model clustering');
             testCase.verifyEqual(se.interaction.method.term.node, 'EMPTY:0000317', 'quadratic discriminant analysis');
             % timeSlowDown is not kept: no figure uses it
@@ -1474,6 +1483,8 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             circ = sc(strcmp(names, 'circularity'));
             testCase.verifyNumElements(circ, 13);
             testCase.verifyEqual(circ{1}.statement.variable.node, 'EMPTY:0000288');
+            testCase.verifyTrue(all(cellfun(@(d) noScale(d.score.value(1)), circ)), ...
+                'circularity has no scale ([four term fields bound])');
 
             % the profile curves: patch 1 (top-left) is row 2 of image 2
             curves = ic(cellfun(@(d) strcmp(methodOf(d), 'Arithmetic Mean') ...
@@ -2036,6 +2047,12 @@ end
 c = conditionsOf(doc);
 c = c(cellfun(@(e) isfield(e, 'quantity') && ~isempty(e.quantity), c));
 v = cellfun(@(e) e.quantity.value, c);
+end
+
+function tf = noScale(cell)
+% a score cell with no `scale`: absent, or a blank term
+tf = ~isfield(cell, 'scale') || isempty(cell.scale) || ...
+    (isstruct(cell.scale) && all(cellfun(@(f) isempty(cell.scale.(f)), fieldnames(cell.scale))));
 end
 
 function v = numbers(x, field)

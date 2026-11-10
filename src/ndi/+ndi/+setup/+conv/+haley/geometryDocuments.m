@@ -27,10 +27,10 @@ function out = geometryDocuments(dataParentDir, session, R, subjectIds, options)
 %                         is nearest each pixel, as a 0-based index into the
 %                         plate's patch subjects (item_id, in lawnCenters
 %                         order, decision #38)
-%     score calculation   `lawnRegistration` (variable `overlap`, method image
+%     fraction calculation `lawnRegistration` (variable `overlap`, method image
 %                         registration): the fraction of the arena that
 %                         overlaps once the lawn clip is registered onto the
-%                         video (0-1, scale `fraction`); its inputs are both
+%                         video (a `fraction`, 0-1, no scale); its inputs are both
 %                         recordings
 %   And per patch (the plate's patch subjects, in lawnCenters order, #38), each
 %   about the PATCH, its input the recording:
@@ -231,12 +231,14 @@ for k = 1:height(R)
     lawnEpoch = epochOf(pre, cellOrChar(d, 'lawnFileName'));
     if ~isnan(fit) && ~isempty(lawnEpoch) && any(strcmp(lawnClips.epoch, lawnEpoch)) ...
             && isKey(options.RecordingStatements, lawnEpoch)
-        v = did2.build.valueCell('score', fit, 'Fields', struct( ...
-            'scale', haleyTerm('proportion'), 'scale_min', 0, 'scale_max', 1));
+        % the overlap is a `fraction`, not a `score` on a `proportion` scale:
+        % [four term fields bound] (Decided by Jess Haley, 2026-11-10, did-schema
+        % did_v2_go_forward_class_audit.md)
+        v = did2.build.valueCell('fraction', fit);
         st = did2.build.statement('calculation', subjectIds(plate), ...
             haleyTerm('overlap'), v, 'Method', haleyTerm('image registration'), ...
             'SessionId', sid, 'TimeReferenceIds', timeIds, ...
-            'InputIds', {videoId, options.RecordingStatements(lawnEpoch)}, env{:}, 'ValueKind', 'score');
+            'InputIds', {videoId, options.RecordingStatements(lawnEpoch)}, env{:}, 'ValueKind', 'fraction');
         docs{end+1} = st; %#ok<AGROW>
         out.counts.registration = out.counts.registration + 1;
     end
@@ -275,8 +277,9 @@ out.documents = docs;
                 out.counts.patch_radius = out.counts.patch_radius + 1;
             end
             if numel(circ) == n && isfinite(circ(j))
+                % a score with no scale, 0-1 ([four term fields bound])
                 v = did2.build.valueCell('score', double(circ(j)), 'Fields', struct( ...
-                    'scale', haleyTerm('circularity'), 'scale_min', 0, 'scale_max', 1));
+                    'scale_min', 0, 'scale_max', 1));
                 docs{end+1} = did2.build.statement('calculation', pIds{j}, ...
                     haleyTerm('circularity'), v, calc{:}, 'ValueKind', 'score'); %#ok<AGROW>
                 out.counts.patch_circularity = out.counts.patch_circularity + 1;
