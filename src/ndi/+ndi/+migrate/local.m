@@ -282,7 +282,8 @@ function result = local(path, options)
     % gene_list_mapping's mapping.tsv, Jess Haley 2026-11-01 [key covariate
     % index], [mapping rows counted, indices 0-based]) reads it from this
     % session's file store, where v1 ingested it (did2.convert.v1Files). Pass
-    % 1 only: no later pass reads a v1 file.
+    % 1, and did2.convert.epochMint's re-run of the spikewaves pass 1
+    % deferred (it is handed the same reader below).
     passOneArgs = [v2args, {'V1FileReader', ndi.migrate.internal.v1FileReader(ndiDir)}];
     % Migrated recordings link their epoch files as data bodies (Jess Haley,
     % 2026-10-21, did-schema V_eta_recording_observation_plan.md): one
@@ -973,11 +974,15 @@ function result = local(path, options)
         end
         tStep = migrateStepMark('resolveSubjectStrainAssembly', tStart, tStep, convertResult);
         try
+            % the spikewaves pass 1 deferred are re-run here, and they read
+            % their two files (Jess Haley, 2026-11-10 [spike waveforms built
+            % now], D3/D4), so the pass gets this session's v1 file reader
             [convertResult, epochMintReport] = did2.convert.epochMint( ...
                 convertResult, ...
                 'Validate',      options.Validate, ...
                 'SchemaCache',   options.SchemaCache, ...
-                'TargetVersion', options.TargetVersion);
+                'TargetVersion', options.TargetVersion, ...
+                'V1FileReader',  ndi.migrate.internal.v1FileReader(ndiDir));
         catch ME
             stepErrors(end+1) = struct('step', 'epochMintFailed', 'message', ME.message); %#ok<AGROW>
             warning('NDI:migrate:epochMintFailed', ...
