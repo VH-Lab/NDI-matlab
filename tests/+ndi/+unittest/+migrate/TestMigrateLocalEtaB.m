@@ -239,6 +239,25 @@ classdef TestMigrateLocalEtaB < matlab.unittest.TestCase
             testCase.verifyEmpty(R.mismatches, strjoin(R.mismatches, newline));
         end
 
+        function testTheStimulatorsReadTheSameWithoutTheirManipulations(testCase)
+            % Decided by Jess Haley, 2026-11-09, did-schema
+            % did_v2_standing_wiring_plan.md [stimulator manipulation
+            % dropped], [probe map rows compared as a set]: B's vhvis_spike2
+            % rows are all stimulator rows (1,242 epochfiles_ingested), so
+            % its epochs are read without a per-epoch Stimulator
+            % manipulation from the wiring relation and the element. On a
+            % copy with every one removed, every system's ingested probe
+            % maps (as sets), its reader's v2 clocks and the stimulators
+            % getprobes finds, with their epoch tables, are the same
+            % (ndi.unittest.migrate.stimulatorRowsWithoutManipulation).
+            R = ndi.unittest.migrate.stimulatorRowsWithoutManipulation( ...
+                fileparts(testCase.Result.destination), 'B');
+            testCase.verifyGreaterThan(R.removed, 0, 'no Stimulator manipulation was removed (nothing measured)');
+            testCase.verifyGreaterThan(R.stimulators, 0, 'getprobes found no stimulator (nothing measured)');
+            testCase.verifyNotEmpty(R.checks, 'no comparison was made');
+            testCase.verifyEmpty(R.mismatches, strjoin(R.mismatches, newline));
+        end
+
         function testReadPhasesAreNoSlowerThanV1(testCase)
             % Jess Haley, 2026-11-06: "Speed can't be slower than v1. We
             % need to match or beat." Every session of B is read in five

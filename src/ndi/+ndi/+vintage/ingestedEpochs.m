@@ -45,6 +45,32 @@ function E = ingestedEpochs(ndi_session_obj, docs, probemapClass, options)
 %                Rows are kept once each, in statement order. A manifest whose
 %                statements give no row reads as probemap [].
 %
+%                A ROW WITH NO STATEMENT: A STIMULATOR FROM ITS WIRING.
+%                Decided by Jess Haley, 2026-11-09, did-schema
+%                did_v2_standing_wiring_plan.md [stimulator manipulation
+%                dropped] and [probe map rows compared as a set]: the
+%                body-less per-epoch Stimulator manipulation is no longer
+%                written, and a stimulator's row is rebuilt from its wiring
+%                relation (rig, channels) and the element (name, reference,
+%                type, and its subject through its `observes` relation, else
+%                `derived_from`). So every wiring relation (`connected to`,
+%                RO:0002170) timed by an anchor onto the epoch, whose parent
+%                is the manifest's own system and whose child (the probe) is
+%                the instrument of none of the rows' statements, is a row
+%                too, after the statements' rows (NDI finds a probe's rows
+%                by name, reference and type, ndi.probe/epochprobemapmatch,
+%                so no row's position matters): name, reference and type
+%                from the element (ndi.vintage.elementFields), devicestring
+%                from the system and the relation (ndi.vintage.wiredDeviceString),
+%                subjectstring the local_identifier of the element's
+%                subject_id (its `observes` parent), else of its
+%                `derived_from` parent. Data migrated while the manipulation
+%                was still written reads as before: the manipulation names
+%                the stimulator, so its wiring adds no second row. A
+%                stimulator row with NO channels has no wiring relation
+%                (DID-matlab resolveEpochProbemap mints none), so it is read
+%                only from its manipulation, as before.
+%
 %                ONLY THE MANIFEST'S OWN SYSTEM. One epoch is one recording,
 %                shared by every acquisition system that wrote files for it
 %                (Decided by Jess Haley, 2026-10-26 [device clocks on one
@@ -70,7 +96,11 @@ function E = ingestedEpochs(ndi_session_obj, docs, probemapClass, options)
 %   by the statements' anchors (one search). Each epoch then takes its own
 %   from those lists, in the order its own searches would have returned them
 %   (each list is in database order, and a filter keeps the order), so E is
-%   the same. Before it, every epoch cost about 13 searches: Dab's
+%   the same. The wiring relations are those timed by any anchor onto the
+%   epochs (a superset of the statements' anchors: an epoch whose only rows
+%   are a stimulator's has wiring and no statement), and the probes, systems
+%   and subjects they name are read with the statements'. Before the batch
+%   read, every epoch cost about 13 searches: Dab's
 %   1,604-epoch session read its acquisition system's epoch table in 0.86 s
 %   per epoch (VH-Lab/NDI-matlab#785, run 41876678241). Batch false reads
 %   each epoch with its own searches, as before; the unit test
@@ -153,13 +183,14 @@ for k = 1:numel(docs)
     if isempty(patternId)
         patternId = docs{k}.dependency_value('filenavigator_id', 'ErrorIfNotFound', 0);
     end
-    [pm, cache, rowsUsed] = probemapOf(ndi_session_obj, epochDocId, probemapClass, cache, patternId);
+    [pm, cache, rowsUsed, wiringDeps] = probemapOf(ndi_session_obj, epochDocId, probemapClass, ...
+        cache, patternId);
     E(end+1) = struct('epoch_id', epochId, 'files', {files}, 'probemap', {pm}, ...
         'vintage', 'V_eta'); %#ok<AGROW>
     if useIndex
         newKeys{end+1} = mid; %#ok<AGROW>
         newValues{end+1} = toIndex(epochId, pm, rowsUsed); %#ok<AGROW>
-        newDeps{end+1} = depsOf(cache, mid, epochDocId, patternId); %#ok<AGROW>
+        newDeps{end+1} = unique([depsOf(cache, mid, epochDocId, patternId), wiringDeps]); %#ok<AGROW>
     end
 end
 if useIndex && ~isempty(newKeys)
@@ -236,13 +267,15 @@ end
 
 % ===================== the probe map, put back together ===================
 
-function [pm, cache, rows] = probemapOf(S, epochDocId, probemapClass, cache, patternId)
+function [pm, cache, rows, wiringDeps] = probemapOf(S, epochDocId, probemapClass, cache, patternId)
 pm = [];
 rows = struct('n', {{}}, 'r', [], 't', {{}}, 'd', {{}}, 's', {{}});   % the rows made, for the index
+wiringDeps = {};   % the ids the rows from wiring alone were read from (the index's deps)
 if isempty(epochDocId)
     return;
 end
 first = [];
+anchors = [];   % the anchors onto the epoch, when searched here
 if isfield(cache, 'stIdx') && isKey(cache.stIdx, epochDocId)
     % read ahead (readAhead): this epoch's statements are positions in the
     % call's one list, whose edges and first wiring relations were read in
@@ -262,6 +295,7 @@ else
         'UniformOutput', false)));
 end
 seen = {};
+named = {};   % the instruments of this system's statements (A ROW WITH NO STATEMENT)
 % every statement's edges, read once from its depends_on list (what
 % dependency_value answers: the first entry of each name, case-insensitive)
 if isempty(first)
@@ -284,6 +318,7 @@ for i = 1:numel(statements)
     if ~own
         continue;   % another acquisition system's row of this recording
     end
+    named{end+1} = elId; %#ok<AGROW>
     [el, cache] = elementOf(S, elId, cache);
     if isempty(el)
         continue;
@@ -315,6 +350,96 @@ for i = 1:numel(statements)
     else
         pm(end+1) = row; %#ok<AGROW>
     end
+end
+% A ROW WITH NO STATEMENT (see the header): the epoch's wiring relations
+% whose probe none of this system's statements names
+[wirings, cache] = epochWirings(S, epochDocId, cache, anchors);
+for w = 1:numel(wirings)
+    rel = wirings{w};
+    if ~isWiringRelation(rel)
+        continue;
+    end
+    elId = firstTarget(rel, 'child_id');
+    sysId = firstTarget(rel, 'parent_id');
+    if isempty(elId) || isempty(sysId) || any(strcmp(named, elId))
+        continue;
+    end
+    ownKey = [char(sysId) char(0) char(0) char(patternId)];
+    if isKey(cache.own, ownKey)
+        own = cache.own(ownKey);
+    else
+        [own, cache] = isOwnSystem(S, sysId, '', patternId, cache);
+        cache.own(ownKey) = own;
+    end
+    if ~own
+        continue;   % another acquisition system's wiring of this recording
+    end
+    [el, cache] = elementOf(S, elId, cache);
+    if isempty(el)
+        continue;
+    end
+    [subjectString, cache] = subjectStringOf(S, el.subject_id, cache);
+    [devicestring, cache] = ndi.vintage.wiredDeviceString(S, [], sysId, elId, cache, ...
+        ndi.vintage.edgeTargets(rel, 'time_reference_id'));
+    wiringDeps = [wiringDeps, {char(rel.id()), elId, sysId, el.subject_id}]; %#ok<AGROW>
+    key = strjoin({el.name, num2str(el.reference), el.type, devicestring, subjectString}, char(0));
+    if any(strcmp(seen, key))
+        continue;
+    end
+    seen{end+1} = key; %#ok<AGROW>
+    named{end+1} = elId; %#ok<AGROW>
+    row = feval(probemapClass, el.name, el.reference, el.type, devicestring, subjectString);
+    rows.n{end+1} = el.name; rows.r(end+1) = double(el.reference); rows.t{end+1} = el.type;
+    rows.d{end+1} = devicestring; rows.s{end+1} = subjectString;
+    if isempty(pm)
+        pm = row;
+    else
+        pm(end+1) = row; %#ok<AGROW>
+    end
+end
+wiringDeps = wiringDeps(~cellfun(@isempty, wiringDeps));
+end
+
+function [rels, cache] = epochWirings(S, epochDocId, cache, anchors)
+% The directed relations timed by any anchor onto the epoch, in database
+% order: from the read ahead (readAhead, cache.wiringOf), else searched.
+% ANCHORS are the anchors onto the epoch when the caller searched them ([]
+% when it did not).
+rels = {};
+if isfield(cache, 'wiringOf')
+    if isKey(cache.wiringOf, epochDocId)
+        rels = cache.relations.docs(cache.wiringOf(epochDocId));
+    end
+    return;
+end
+if isempty(anchors)
+    anchors = S.database_search(anchorQuery(epochDocId));
+end
+if isempty(anchors)
+    return;
+end
+rels = S.database_search(ndi.query('', 'isa', 'directed_relation', '') & ...
+    ndi.v2.anyOf(cellfun(@(a) ndi.query('', 'depends_on', 'time_reference_id', a.id()), ...
+        anchors, 'UniformOutput', false)));
+end
+
+function tf = isWiringRelation(d)
+% a directed_relation `connected to` (RO:0002170), as
+% ndi.vintage.wiringIndex and ndi.vintage.wiredDeviceString read it
+tf = false;
+p = d.document_properties;
+if ~isfield(p, 'directed_relation'); return; end
+dr = p.directed_relation;
+tf = isfield(dr, 'relation') && isstruct(dr.relation) && isfield(dr.relation, 'node') ...
+    && strcmpi(char(dr.relation.node), 'RO:0002170');
+end
+
+function id = firstTarget(d, name)
+% the first target of D's edges named NAME ('' when none)
+t = ndi.vintage.edgeTargets(d, name);
+id = '';
+if ~isempty(t)
+    id = char(t{1});
 end
 end
 
@@ -459,7 +584,10 @@ t = strjoin(parts, ',');
 end
 
 function [el, cache] = elementOf(S, id, cache)
-% name, reference and type of the element entity ID (cached)
+% name, reference and type of the element entity ID (cached), and its
+% subject: the entity it `observes` (elementFields' subject_id), else the
+% one it is `derived_from` (A ROW WITH NO STATEMENT; DID-matlab's round trip
+% reads the same, +roundtrip/private/manifestProbemap elementSubjectId)
 el = [];
 if isKey(cache.element, id)
     el = cache.element(id);
@@ -469,7 +597,12 @@ end
 if ~isempty(d)
     f = ndi.vintage.elementFields(d, S);
     if ~isempty(f.name)
-        el = struct('name', char(f.name), 'reference', f.reference, 'type', char(f.type));
+        subjectId = char(f.subject_id);
+        if isempty(subjectId)
+            subjectId = char(f.underlying_element_id);
+        end
+        el = struct('name', char(f.name), 'reference', f.reference, 'type', char(f.type), ...
+            'subject_id', subjectId);
         if isempty(el.reference), el.reference = 0; end
     end
 end
@@ -595,8 +728,41 @@ cache.allStatements = statements;
 % id (Jess Haley, 2026-11-06: "Speed can't be slower than v1"); a document of
 % another class is read whole (ndi.vintage.docsById 'LightClass').
 ed = statementEdges(statements);
-rigIds = [ed.ac, ed.sys];
-entityIds = [ed.el, ed.entity, ed.subject];
+% the wiring relations timed by any anchor onto these epochs (the
+% statements' anchors and every other one: an epoch whose only rows are a
+% stimulator's has its wiring and no statement, A ROW WITH NO STATEMENT),
+% filed by (probe, system) for ndi.vintage.wiredDeviceString and by epoch
+% for probemapOf, in database order
+ontoEpochs = cache.anchorsOf.values;
+wiringAnchors = unique([{}, ed.anchors{:}, ontoEpochs{:}], 'stable');
+rels = {};
+if ~isempty(wiringAnchors)
+    rels = wiringRelations(S, ndi.query('', 'isa', 'directed_relation', '') & ...
+        ndi.vintage.edgeIn('time_reference_id', wiringAnchors));
+end
+cache.relations = ndi.vintage.wiringIndex(rels);
+cache.wiringOf = containers.Map('KeyType', 'char', 'ValueType', 'any');
+wiredProbes = {};
+wiredSystems = {};
+for r = 1:numel(rels)
+    mine = {};
+    for t = cache.relations.anchors{r}
+        if isKey(epochsOfAnchor, t{1}), mine = [mine, epochsOfAnchor(t{1})]; end %#ok<AGROW>
+    end
+    for e = unique(mine, 'stable')
+        if isKey(cache.wiringOf, e{1})
+            cache.wiringOf(e{1}) = [cache.wiringOf(e{1}), r];
+        else
+            cache.wiringOf(e{1}) = r;
+        end
+    end
+    if ~isempty(mine)
+        wiredProbes = [wiredProbes, ndi.vintage.edgeTargets(rels{r}, 'child_id')]; %#ok<AGROW>
+        wiredSystems = [wiredSystems, ndi.vintage.edgeTargets(rels{r}, 'parent_id')]; %#ok<AGROW>
+    end
+end
+rigIds = [ed.ac, ed.sys, wiredSystems];
+entityIds = [ed.el, ed.entity, ed.subject, wiredProbes];
 rigIds = rigIds(~cellfun(@isempty, rigIds));
 entityIds = entityIds(~cellfun(@isempty, entityIds));
 cache = remember(cache, ndi.vintage.docsById(S, rigIds));
@@ -611,7 +777,31 @@ for i = 1:numel(statements)
         instruments{end+1} = cache.doc(el); %#ok<AGROW>
     end
 end
+for i = 1:numel(wiredProbes)
+    el = wiredProbes{i};
+    if ~isempty(el) && isKey(cache.doc, el) && ~isempty(cache.doc(el))
+        instruments{end+1} = cache.doc(el); %#ok<AGROW>
+    end
+end
 ndi.vintage.prefetchElementFields(S, instruments);
+% the wired probes' subjects (elementOf reads them for a row from its wiring
+% alone), read light as the statements' subjects are
+probeSubjects = {};
+for i = 1:numel(wiredProbes)
+    el = wiredProbes{i};
+    if isempty(el) || ~isKey(cache.doc, el) || isempty(cache.doc(el)) || isKey(cache.element, el)
+        continue;
+    end
+    [elf, cache] = elementOf(S, el, cache);
+    if ~isempty(elf) && ~isempty(elf.subject_id) && ~isKey(cache.doc, elf.subject_id)
+        probeSubjects{end+1} = elf.subject_id; %#ok<AGROW>
+    end
+end
+if ~isempty(probeSubjects)
+    cache = remember(cache, ndi.vintage.docsById(S, probeSubjects, 'LightPaths', ...
+        {'entity.local_identifier', 'entity.name', 'entity.type.node', 'entity.type.name'}, ...
+        'RawBlocks', {'base', 'entity'}));
+end
 sysIds = {};   % the systems an acquisition_channels document names
 for i = 1:numel(ids)
     d = cache.doc(ids{i});
@@ -621,15 +811,6 @@ for i = 1:numel(ids)
 end
 sysIds = sysIds(cellfun(@(x) ischar(x) && ~isempty(x), sysIds));
 cache = remember(cache, ndi.vintage.docsById(S, sysIds));
-% the wiring relations timed by the statements' anchors, filed by (probe,
-% system) for ndi.vintage.wiredDeviceString, in database order
-wiringAnchors = unique([{}, ed.anchors{:}], 'stable');   % ndi.v2.edgeIds, read by statementEdges
-rels = {};
-if ~isempty(wiringAnchors)
-    rels = wiringRelations(S, ndi.query('', 'isa', 'directed_relation', '') & ...
-        ndi.vintage.edgeIn('time_reference_id', wiringAnchors));
-end
-cache.relations = ndi.vintage.wiringIndex(rels);
 cache.ed = ed;
 cache.first = firstWirings(ed, cache.relations);
 end
