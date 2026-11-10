@@ -35,16 +35,16 @@ if ~isfield(p, 'base') || ~isfield(p.base, 'id')
     return;
 end
 id = char(p.base.id);
-t = ndi.vintage.elementEntityType(p);
-if ~any(strcmp(t, {'device', 'cell', 'group'}))
-    return;
-end
-
 if ndi.vintage.elementFieldsScope('isopen')
+    % the session-wide answer already checked each element's entity type
     L = ndi.vintage.linkedElements(S);
     if isKey(L.kind, id)
         kind = L.kind(id);
     end
+    return;
+end
+t = ndi.vintage.elementEntityType(p);
+if ~any(strcmp(t, {'device', 'cell', 'group'}))
     return;
 end
 
