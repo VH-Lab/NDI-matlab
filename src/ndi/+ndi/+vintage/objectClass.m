@@ -29,12 +29,35 @@ className = props.document_class.class_name;
 
 [entry, vintage] = ndi.vintage.entryFor(ndi_document_obj);
 
-% did-schema #88 (T1): a migrated element is an `entity` (type device, ...)
-% rather than a `subject`, so the class map does not name it. Its MATLAB
-% class is where it always was on #73: the `ndi element class` assertion
-% about it, read through the element row's object_assertion.
+% did-schema #88 (T1): a v2 element is an `entity` (type device, cell or
+% Group) rather than a `subject`, so the class map does not name it. Its
+% MATLAB class is REBUILT from what it is (Decided by Jess Haley, 2026-10-27
+% [ndi element class not kept], 2026-11-10 [element recognised by its
+% links] and [ensemble has members], did-schema
+% docs/plans/did_v2_go_forward_class_audit.md): its link kind
+% (ndi.vintage.elementLinkKind) and its type give the class
+% (ndi.vintage.elementClassOfKind: probetype2object.json for a probe,
+% 'ndi.neuron' for a sorted unit, 'ndi.element.ensemble' for an ensemble),
+% as ndi.vintage.elementFields rebuilds it. The `ndi element class`
+% assertion about it (the element row's object_assertion) is the fallback,
+% read where the class cannot be rebuilt; when both are there the rebuilt
+% class wins (Proposed, not decided).
 if isempty(entry) && strcmp(className, 'entity')
     elementEntry = ndi.vintage.entryFor('element');
+    if ~isempty(ndi_session_obj) && ~isempty(ndi.vintage.elementLinkKind( ...
+            ndi_document_obj, ndi_session_obj))
+        f = ndi.vintage.elementFields(ndi_document_obj, ndi_session_obj);
+        if ~isempty(f.ndi_element_class)
+            objClass = char(f.ndi_element_class);
+            return;
+        end
+        error('NDI:vintage:elementClassNotRebuilt', ...
+            ['entity %s is an element by its links, but its class cannot be ' ...
+             'rebuilt from its entity type and device kind (type "%s"), and ' ...
+             'no "ndi element class" assertion is about it. Bring it to the ' ...
+             'team ([ndi element class not kept]).'], ...
+            char(props.base.id), char(f.type));
+    end
     if ~isempty(elementEntry) && ~isempty(elementEntry.object_assertion)
         objClass = assertionValue(ndi_document_obj, ndi_session_obj, ...
             elementEntry.object_assertion);

@@ -282,6 +282,20 @@ for i = 1:numel(ids)
 end
 end
 
+function tf = kindCanBe(kind, wantClass)
+% can an element of link KIND rebuild to WANTCLASS (ndi.vintage.elementClassOfKind)?
+switch kind
+    case 'probe'
+        tf = startsWith(wantClass, 'ndi.probe.');
+    case 'unit'
+        tf = strcmp(wantClass, 'ndi.neuron');
+    case 'ensemble'
+        tf = strcmp(wantClass, 'ndi.element.ensemble');
+    otherwise
+        tf = false;
+end
+end
+
 function T = candidateTable(E, wantClass)
 % the ids of the migrated element entities whose class assertion is
 % WANTCLASS, in order, and (where the text index answers) each one's name
@@ -339,6 +353,16 @@ else
         if ~any(strcmp(sid{1}, ids))
             ids{end+1} = sid{1}; %#ok<AGROW>
         end
+    end
+end
+% the elements recognised by their links whose rebuilt class can be
+% WANTCLASS ([element recognised by its links], [ensemble has members];
+% ndi.vintage.linkedElements), after the assertion ones; each is checked by
+% elementFields like the others
+L = ndi.vintage.linkedElements(E);
+for k = 1:numel(L.ids)
+    if ~any(strcmp(L.ids{k}, ids)) && kindCanBe(L.kind(L.ids{k}), wantClass)
+        ids{end+1} = L.ids{k}; %#ok<AGROW>
     end
 end
 if isempty(ids)
