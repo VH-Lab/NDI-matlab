@@ -38,10 +38,9 @@ className = props.document_class.class_name;
 % (ndi.vintage.elementLinkKind) and its type give the class
 % (ndi.vintage.elementClassOfKind: probetype2object.json for a probe,
 % 'ndi.neuron' for a sorted unit, 'ndi.element.ensemble' for an ensemble),
-% as ndi.vintage.elementFields rebuilds it. The `ndi element class`
-% assertion about it (the element row's object_assertion) is the fallback,
-% read where the class cannot be rebuilt; when both are there the rebuilt
-% class wins (Proposed, not decided).
+% as ndi.vintage.elementFields rebuilds it, where no `ndi element class`
+% assertion is about it. While that assertion is written it wins
+% (Decided by Jess Haley, 2026-11-10 [assertion wins while written]).
 if isempty(entry) && strcmp(className, 'entity')
     elementEntry = ndi.vintage.entryFor('element');
     if ~isempty(ndi_session_obj) && ~isempty(ndi.vintage.elementLinkKind( ...

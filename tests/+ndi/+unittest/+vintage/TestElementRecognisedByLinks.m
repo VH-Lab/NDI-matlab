@@ -104,6 +104,33 @@ classdef TestElementRecognisedByLinks < matlab.unittest.TestCase
             testCase.verifyEqual(ndi.vintage.elementSubjectIds(S, 'probe'), {'probe_u'});
         end
 
+        function testTheAssertionWinsWhileWritten(testCase)
+            % Decided by Jess Haley, 2026-11-10 [assertion wins while
+            % written]: while the "ndi element class" assertion is present
+            % it wins over the class rebuilt from the links (DID-matlab's
+            % round trip runs before NDI's second pass writes member_of)
+            S = unitSession({classAssertion('ens_g', 'ndi.neuron'), ...
+                classAssertion('mua_g', 'ndi.element.ensemble'), ...
+                classAssertion('probe_u', 'ndi.element.timeseries')});
+            f = ndi.vintage.elementFields(ndi.document(groupEntity('ens_g')), S);
+            testCase.verifyEqual(f.ndi_element_class, 'ndi.neuron', ...
+                'the assertion, not the members');
+            f = ndi.vintage.elementFields(ndi.document(groupEntity('mua_g')), S);
+            testCase.verifyEqual(f.ndi_element_class, 'ndi.element.ensemble', ...
+                'the assertion, although no member_of is written yet');
+            % absent: the links (unit_c has no assertion here)
+            f = ndi.vintage.elementFields(ndi.document(cellEntity('unit_c')), S);
+            testCase.verifyEqual(f.ndi_element_class, 'ndi.neuron');
+            % a filtered list goes by the assertion too: probe_u's says it
+            % is no probe
+            testCase.verifyEmpty(ndi.vintage.elementSubjectIds(S, 'probe'));
+            testCase.verifyEqual(ndi.vintage.elementSubjectIds(S, 'neuron'), ...
+                {'ens_g', 'unit_c'}, 'the assertion''s class first, then the links');
+            scope = ndi.vintage.elementFieldsScope('open'); %#ok<NASGU>
+            testCase.verifyEqual(ndi.vintage.objectClass(ndi.document(groupEntity('ens_g')), S), ...
+                'ndi.neuron');
+        end
+
         function testTheProbeClassComesFromTheProbeTypeTable(testCase)
             testCase.verifyEqual(ndi.vintage.elementClassOfKind('probe', 'n-trode'), ...
                 'ndi.probe.timeseries.mfdaq');
@@ -135,7 +162,8 @@ end
 
 % ===================== the documents =======================================
 
-function S = unitSession()
+function S = unitSession(extra)
+if nargin < 1; extra = {}; end
 % a probe (recorded), a single unit (cell), an ensemble (Group with two
 % member neurons) and a multi-unit (Group, no members), all derived_from it
 docs = {device('probe_u'), observation('obs_u', 'specimen_1', 'probe_u'), ...
@@ -144,7 +172,7 @@ docs = {device('probe_u'), observation('obs_u', 'specimen_1', 'probe_u'), ...
     relation('d2', 'ens_g', 'probe_u', 'prov:wasDerivedFrom', 'derived from'), ...
     relation('d3', 'mua_g', 'probe_u', 'prov:wasDerivedFrom', 'derived from'), ...
     relation('m1', 'neuron_m1', 'ens_g', 'RO:0002350', 'member of'), ...
-    relation('m2', 'unit_c', 'ens_g', 'RO:0002350', 'member of')};
+    relation('m2', 'unit_c', 'ens_g', 'RO:0002350', 'member of'), extra{:}};
 S = session(docs);
 end
 
@@ -163,8 +191,21 @@ docs = cellfun(@(x) x.document_properties, held, 'UniformOutput', false);
 ids = cellfun(@(x) x.base.id, docs, 'UniformOutput', false);
 named = vals(ismember(vals, ids));
 d = {};
-if any(ismember(vals, {'assertion', 'ndi element class', 'element type', 'Equipment Type'}))
-    return;   % no assertion of any kind is stored
+if any(strcmp(vals, 'ndi element class'))
+    % the class assertions held (about the named entity, when one is named)
+    pick = cellfun(@(x) strcmp(x.document_class.class_name, 'assertion'), docs);
+    if ~isempty(named)
+        pick = pick & cellfun(@(x) any(ismember({x.depends_on.value}, named)), docs);
+    end
+    part = containsParam(q.searchstructure);   % term.value.name contains_string
+    if ~isempty(part)
+        pick = pick & cellfun(@(x) isfield(x, 'term') && contains(x.term.value.name, part), docs);
+    end
+    d = held(pick);
+    return;
+end
+if any(ismember(vals, {'assertion', 'element type', 'Equipment Type'}))
+    return;   % no other assertion is stored
 end
 relNodes = {'RO:0002170', 'RO:0001000', 'prov:wasDerivedFrom', 'RO:0002350'};
 if any(strcmp(vals, 'observation')) && any(strcmp(vals, 'instrument_id')) || ...
@@ -183,6 +224,24 @@ if ~isempty(named)
     pick = pick & cellfun(@(x) any(ismember({x.depends_on.value}, named)), docs);
 end
 d = held(pick);
+end
+
+function v = containsParam(ss)
+% the text of a contains_string search term, nested queries included
+v = '';
+for k = 1:numel(ss)
+    if strcmp(ss(k).operation, 'contains_string')
+        v = char(ss(k).param1);
+        return;
+    end
+    for f = {'param1', 'param2'}
+        x = ss(k).(f{1});
+        if isstruct(x) && isfield(x, 'operation')
+            v = containsParam(x);
+            if ~isempty(v); return; end
+        end
+    end
+end
 end
 
 function vals = queryValues(ss)
@@ -235,6 +294,13 @@ if ~isempty(instrument)
     deps(end+1) = struct('name', 'instrument_id', 'value', instrument);
 end
 p = base(id, 'observation', deps);
+end
+
+function p = classAssertion(entityId, cls)
+% the "ndi element class" term assertion DID-matlab's migrator writes
+p = base(['a_' entityId], 'assertion', struct('name', 'entity_id', 'value', entityId));
+p.statement = struct('variable', struct('node', '', 'name', 'ndi element class'));
+p.term = struct('value', struct('node', '', 'name', cls));
 end
 
 function p = relation(id, child, parent, node, name)

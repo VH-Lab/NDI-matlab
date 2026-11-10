@@ -22,11 +22,12 @@ function [ids, label] = elementSubjectIds(ndi_session_obj, classFilter)
 %   members is an ensemble) -- follow the assertion ones, in the order their
 %   links were found. The assertion is kept as a fallback where present, so
 %   every element migrated before DID-matlab stops writing it is still found
-%   in the same order. With CLASSFILTER, a linked element is kept when the
-%   class rebuilt from its kind contains it ('ndi.probe...' for a probe,
-%   'ndi.neuron' for a unit, 'ndi.element.ensemble' for an ensemble), and
-%   an element whose rebuilt kind does not match is dropped even when its
-%   assertion does (the rebuilt class wins: Proposed, not decided).
+%   in the same order. With CLASSFILTER, an element with the assertion is
+%   kept by its assertion's class (the assertion wins while it is written:
+%   Decided by Jess Haley, 2026-11-10 [assertion wins while written]), and a linked element with none is
+%   kept when the class rebuilt from its kind contains it ('ndi.probe...'
+%   for a probe, 'ndi.neuron' for a unit, 'ndi.element.ensemble' for an
+%   ensemble).
 %
 %   See also: ndi.vintage.elementSubjectDocs, ndi.vintage.subjectDocs,
 %             ndi.vintage.linkedElements.
@@ -36,8 +37,34 @@ arguments
     classFilter (1,:) char = ''
 end
 
-ids = {};
+ids = assertedIds(ndi_session_obj, classFilter);
+label = ndi.vintage.elementLabel('class');
 
+% the elements recognised by their links ([element recognised by its links])
+L = ndi.vintage.linkedElements(ndi_session_obj);
+% the entities any class assertion is about, whatever its class: while the
+% assertion is written it decides ([assertion wins while written]), so a
+% filtered list does not take them back by their links
+asserted = ids;
+if ~isempty(classFilter) && ~all(ismember(L.ids, ids))
+    asserted = assertedIds(ndi_session_obj, '');
+end
+for k = 1:numel(L.ids)
+    id = L.ids{k};
+    if any(strcmp(id, asserted))
+        continue;
+    end
+    if ~isempty(classFilter) && ~contains(classStem(L.kind(id)), classFilter)
+        continue;
+    end
+    ids{end+1} = id; %#ok<AGROW>
+end
+end
+
+function ids = assertedIds(ndi_session_obj, classFilter)
+% the entities an `ndi element class` assertion is about (optionally one
+% whose value contains CLASSFILTER), in first-seen order
+ids = {};
 label = ndi.vintage.elementLabel('class');
 q = ndi.v2.statementQuery('assertion', 'term') & ...
     ndi.v2.fieldQuery('statement.variable.name', 'exact_string', label);
@@ -63,26 +90,6 @@ for i = 1:numel(assertions)
     ids{end+1} = sid; %#ok<AGROW>
 end
 
-% the elements recognised by their links ([element recognised by its links])
-L = ndi.vintage.linkedElements(ndi_session_obj);
-if ~isempty(classFilter)
-    known = isKey(L.kind, ids);
-    keep = true(1, numel(ids));
-    for k = find(known)
-        keep(k) = contains(classStem(L.kind(ids{k})), classFilter);
-    end
-    ids = ids(keep);
-end
-for k = 1:numel(L.ids)
-    id = L.ids{k};
-    if any(strcmp(id, ids))
-        continue;
-    end
-    if ~isempty(classFilter) && ~contains(classStem(L.kind(id)), classFilter)
-        continue;
-    end
-    ids{end+1} = id; %#ok<AGROW>
-end
 end
 
 function s = classStem(kind)
