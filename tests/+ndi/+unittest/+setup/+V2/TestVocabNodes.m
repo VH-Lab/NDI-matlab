@@ -112,8 +112,11 @@ classdef TestVocabNodes < matlab.unittest.TestCase
             t = ndi.v2.vocabTerm('channel_type', 'ai', p);
             testCase.verifyEqual(t, struct('node', 'EMPTY:0000370', 'name', 'analog input channel'));
             % node-less: the name the schema stores
+            % node-less in the schema: the decided node ([culture renamed
+            % cell culture], Jess Haley 2026-11-10) with the name the
+            % schema stores
             t = ndi.v2.vocabTerm('entity_type', 'culture', p);
-            testCase.verifyEqual(t, struct('node', '', 'name', 'culture'));
+            testCase.verifyEqual(t, struct('node', 'OBI:0001876', 'name', 'culture'));
             % [derived from general], [derived from label]: the schema's
             % new node and PROV-O's label "wasDerivedFrom" are written, and
             % both nodes read as derived_from
@@ -121,6 +124,31 @@ classdef TestVocabNodes < matlab.unittest.TestCase
             testCase.verifyEqual(t, struct('node', 'prov:wasDerivedFrom', 'name', 'wasDerivedFrom'));
             testCase.verifyTrue(ndi.v2.vocabIs('relation', ...
                 struct('node', 'RO:0001000', 'name', 'derived_from'), 'derived_from', p));
+        end
+
+        function testCultureByNodeBeforeAndAfterTheRename(testCase)
+            % [culture renamed cell culture] (Decided by Jess Haley,
+            % 2026-11-10): read by node, else by either name; written with
+            % the node and the schema's own name
+            p = flippedSchema(testCase);
+            for t = {struct('node', 'OBI:0001876', 'name', 'cell culture'), ...
+                    struct('node', 'OBI:0001876', 'name', 'culture'), ...
+                    struct('node', '', 'name', 'culture'), ...
+                    struct('node', '', 'name', 'cell culture')}
+                testCase.verifyEqual(ndi.v2.vocabHandle('entity_type', t{1}, p), 'culture');
+                testCase.verifyTrue(ndi.v2.vocabIs('entity_type', t{1}, ndi.v2.subjectTypes(), p));
+            end
+            renamed = fullfile(testCase.Dir, 'renamed');
+            mkdir(renamed);
+            reg = struct('entity_type_bindings', {{struct('type', 'cell culture', 'node', 'OBI:0001876')}});
+            fid = fopen(fullfile(renamed, 'binding_registry_meta.json'), 'w');
+            fprintf(fid, '%s', jsonencode(reg));
+            fclose(fid);
+            testCase.verifyEqual(ndi.v2.vocabTerm('entity_type', 'culture', renamed), ...
+                struct('node', 'OBI:0001876', 'name', 'cell culture'));
+            testCase.verifyEqual(ndi.v2.vocabHandle('entity_type', ...
+                struct('node', 'OBI:0001876', 'name', 'cell culture'), renamed), 'culture');
+            testCase.verifyEqual(ndi.v2.entityTypesFor('subject', renamed), {'culture'});
         end
 
         function testReadersGiveTheHandleInEveryVintage(testCase)
