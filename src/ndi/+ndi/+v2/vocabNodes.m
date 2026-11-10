@@ -175,7 +175,9 @@ switch kind
             % [probe wiring is a relation], [wiring relation term] (Jess Haley
             % 2026-11-01): a probe wired to its acquisition system's channels
             'connected_to',       {'RO:0002170'}
-            'temporally_aligned_with', {}
+            % [culture and alignment nodes] (Decided by Jess Haley,
+            % 2026-11-10): the clock_alignment relation's new EMPTY term
+            'temporally_aligned_with', {'EMPTY:0000440'}
             % retired, read only: v1 lineage the migrator wrote before #30
             % retired it (ndi.vintage.elementFields)
             'observes',           {}
