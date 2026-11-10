@@ -108,6 +108,19 @@ if isprop(ndi_element_obj, 'etaDocumentId') && ~isempty(ndi_element_obj.etaDocum
 end
 
 % ---- v1: the original query, unchanged --------------------------------
+% INSIDE getprobes, the probes it already read answer a probe built from an
+% epoch probe map, with no search: the v1 documents and v2 entities of the
+% session's probes, their fields from the call's cache (the derived index,
+% ndi.vintage.prefetchElementFields), held by ndi.session/getprobes
+% (Decided by Jess Haley, 2026-11-10 [probes from the index keep v1's duplicates]: v2 getprobes
+% answers from the derived index and still rebuilds the epoch-probe-map
+% duplicates v1 returns, without the v1 `element` searches). A probe not
+% among them is looked up as before.
+[doc, vintage, hit] = probeTableLookup(E, ndi_element_obj);
+if hit
+    return;
+end
+
 hits = E.database_search(ndi_element_obj.searchquery());
 if numel(hits) > 1
     error('NDI:vintage:tooManyElementDocs', ...
@@ -181,6 +194,37 @@ end
 end
 
 % ===================== helpers =========================================
+
+function [doc, vintage, hit] = probeTableLookup(E, ndi_element_obj)
+% the one probe in the table getprobes holds for this call (key
+% 'pt|<session id>') that is NDI_ELEMENT_OBJ: same name, reference, type and
+% class. HIT is false with no table, or no single match.
+doc = [];
+vintage = '';
+hit = false;
+if ~ndi.vintage.elementFieldsScope('isopen')
+    return;
+end
+try
+    key = ['pt|' char(E.id())];
+catch
+    return;
+end
+[T, has] = ndi.vintage.elementFieldsScope('get', key);
+if ~has || isempty(T)
+    return;
+end
+wantClass = class(ndi_element_obj);
+match = find(arrayfun(@(t) strcmp(t.name, ndi_element_obj.name) && ...
+    strcmp(t.type, ndi_element_obj.type) && strcmp(t.ndi_element_class, wantClass) && ...
+    sameReference(t.reference, ndi_element_obj.reference), T));
+if ~isscalar(match)
+    return;
+end
+doc = T(match).doc;
+vintage = T(match).vintage;
+hit = true;
+end
 
 function matches = matchingOf(subjects, E, ndi_element_obj, wantClass)
 % the candidates that are this element

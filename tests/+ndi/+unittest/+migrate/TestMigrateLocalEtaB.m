@@ -252,6 +252,17 @@ classdef TestMigrateLocalEtaB < matlab.unittest.TestCase
                 fileparts(testCase.Result.destination), 'B', ...
                 'Profile', ndi.unittest.migrate.envTrue('NDI_PROFILE_READS'));
             ndi.unittest.migrate.verifyReadPhases(testCase, T);
+            % the same objects on both sides, the probe map's duplicates
+            % of existing probes included (Decided by Jess Haley,
+            % 2026-11-10 [probes from the index keep v1's duplicates])
+            for i = 1:numel(T.sessions)
+                c = T.sessions(i).counts;
+                if isempty(fieldnames(c)); continue; end
+                testCase.verifyEqual(c.v2.elements, c.v1.elements, ...
+                    sprintf('session %s: getelements count', T.sessions(i).id));
+                testCase.verifyEqual(c.v2.probes, c.v1.probes, ...
+                    sprintf('session %s: getprobes count', T.sessions(i).id));
+            end
         end
 
         function testTheSameObjectsBeforeAndAfterMigration(testCase)
