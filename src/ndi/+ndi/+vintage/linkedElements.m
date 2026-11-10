@@ -60,8 +60,13 @@ L = struct('ids', {{}}, ...
     'evidence', containers.Map('KeyType', 'char', 'ValueType', 'any'));
 
 % ---- probe candidates: instruments of observations, children of wiring --
+% (rows grouped by target in one pass: a session has thousands of
+% observations and hundreds of elements)
 obs = edgeRows(S, ndi.v2.isaQuery('observation'), {'instrument_id'});
 wiring = edgeRows(S, elementRelationQuery('connected_to'), {'child_id', 'child'});
+byTarget = containers.Map('KeyType', 'char', 'ValueType', 'any');
+byTarget = groupDocs(byTarget, obs);
+byTarget = groupDocs(byTarget, wiring);
 candidates = unique([{obs.document_id}, {wiring.document_id}], 'stable');
 candidates = candidates(~cellfun(@isempty, candidates));
 types = entityTypes(S, candidates);
@@ -73,19 +78,29 @@ for k = 1:numel(candidates)
     end
     probes{end+1} = id; %#ok<AGROW>
     L.kind(id) = 'probe';
-    L.evidence(id) = unique([{obs(strcmp({obs.document_id}, id)).doc_id}, ...
-        {wiring(strcmp({wiring.document_id}, id)).doc_id}], 'stable');
+    L.evidence(id) = unique(byTarget(id), 'stable');
 end
 
 % ---- units: cell / Group children of derived_from onto a probe ----------
 units = {};
 if ~isempty(probes)
+    isProbe = containers.Map(probes, num2cell(true(1, numel(probes))));
     derived = edgeRows(S, elementRelationQuery('derived_from'), ...
         {'child_id', 'child', 'parent_id', 'parent'});
     [childOf, parentOf, relIds] = relationEnds(derived);
-    onProbe = ismember(parentOf, probes) & ~cellfun(@isempty, childOf);
+    onProbe = cellfun(@(p) ~isempty(p) && isKey(isProbe, p), parentOf) ...
+        & ~cellfun(@isempty, childOf);
     childIds = unique(childOf(onProbe), 'stable');
     childTypes = entityTypes(S, childIds);
+    ev = containers.Map('KeyType', 'char', 'ValueType', 'any');
+    for r = find(onProbe)
+        c = childOf{r};
+        if isKey(ev, c)
+            ev(c) = [ev(c), relIds(r), parentOf(r)];
+        else
+            ev(c) = [relIds(r), parentOf(r)];
+        end
+    end
     for k = 1:numel(childIds)
         id = childIds{k};
         if ~any(strcmp(childTypes(id), {'cell', 'group'}))
@@ -93,19 +108,18 @@ if ~isempty(probes)
         end
         units{end+1} = id; %#ok<AGROW>
         L.kind(id) = 'unit';
-        mine = onProbe & strcmp(childOf, id);
-        L.evidence(id) = unique([relIds(mine), parentOf(mine)], 'stable');
+        L.evidence(id) = unique(ev(id), 'stable');
     end
     % ---- ensembles: Group units with members ----------------------------
     groups = units(cellfun(@(u) strcmp(childTypes(u), 'group'), units));
     if ~isempty(groups)
         members = edgeRows(S, elementRelationQuery('member_of'), {'parent_id', 'parent'});
+        into = groupDocs(containers.Map('KeyType', 'char', 'ValueType', 'any'), members);
         for k = 1:numel(groups)
-            hit = strcmp({members.document_id}, groups{k});
-            if any(hit)
+            if isKey(into, groups{k})
                 L.kind(groups{k}) = 'ensemble';
                 L.evidence(groups{k}) = unique([L.evidence(groups{k}), ...
-                    {members(hit).doc_id}], 'stable');
+                    into(groups{k})], 'stable');
             end
         end
     end
@@ -121,24 +135,39 @@ end
 
 function [childOf, parentOf, relIds] = relationEnds(rows)
 % each relation's first child and first parent (child_id / parent_id, else
-% the earlier child / parent), in the order the relations came
+% the earlier child / parent), in the order the relations came; one pass
 relIds = unique({rows.doc_id}, 'stable');
 childOf = repmat({''}, 1, numel(relIds));
 parentOf = repmat({''}, 1, numel(relIds));
-for k = 1:numel(relIds)
-    mine = rows(strcmp({rows.doc_id}, relIds{k}));
-    childOf{k} = firstOf(mine, {'child_id', 'child'});
-    parentOf{k} = firstOf(mine, {'parent_id', 'parent'});
+if isempty(relIds)
+    return;
+end
+pos = containers.Map(relIds, num2cell(1:numel(relIds)));
+rank = containers.Map({'child_id', 'child', 'parent_id', 'parent'}, {1, 2, 1, 2});
+cRank = inf(1, numel(relIds));
+pRank = inf(1, numel(relIds));
+for k = 1:numel(rows)
+    i = pos(rows(k).doc_id);
+    n = rows(k).name;
+    if ~isKey(rank, n) || isempty(rows(k).document_id); continue; end
+    r = rank(n);
+    if startsWith(n, 'child')
+        if r < cRank(i); childOf{i} = rows(k).document_id; cRank(i) = r; end
+    elseif r < pRank(i)
+        parentOf{i} = rows(k).document_id; pRank(i) = r;
+    end
 end
 end
 
-function v = firstOf(rows, names)
-v = '';
-for n = 1:numel(names)
-    hit = find(strcmp({rows.name}, names{n}), 1);
-    if ~isempty(hit)
-        v = rows(hit).document_id;
-        return;
+function m = groupDocs(m, rows)
+% target id -> the ids of the documents whose edge names it, in row order
+for k = 1:numel(rows)
+    t = rows(k).document_id;
+    if isempty(t); continue; end
+    if isKey(m, t)
+        m(t) = [m(t), {rows(k).doc_id}];
+    else
+        m(t) = {rows(k).doc_id};
     end
 end
 end
