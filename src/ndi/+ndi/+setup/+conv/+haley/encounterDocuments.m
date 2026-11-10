@@ -71,12 +71,13 @@ function out = encounterDocuments(dataParentDir, session, R, subjectIds, options
 %                       SIGNED value -distanceOffMax (the source stores
 %                       abs(min(distanceLawnEdge)) between encounters, lines
 %                       309-310); mm -> m
-%     score calculation  `posterior probability`, keyed by encounter, one per
+%     fraction calculation  `posterior probability`, keyed by encounter, one per
 %                       state: condition `behavioral state` = `exploitation`
 %                       (exploitPosterior, method `Gaussian mixture model
 %                       clustering`) and = `sensing` (sensePosterior, method
-%                       `quadratic discriminant analysis`); scale `probability`,
-%                       0-1. timeSlowDown is not kept: no figure uses it
+%                       `quadratic discriminant analysis`); a `fraction`
+%                       (0-1, no scale: [four term fields bound], Jess Haley
+%                       2026-11-10). timeSlowDown is not kept: no figure uses it
 %     term calculation  `encounter type`, method EDAM Classification
 %                       (operation_2990): `patch exploitation encounter`
 %                       (source exploit), `patch sampling encounter` (sample),
@@ -377,7 +378,7 @@ for g = 1:max(G)
             'Method', haleyTerm(posteriors{j, 3}), ...
             'Conditions', did2.build.list(did2.build.condition(haleyTerm('behavioral state'), ...
                 'Term', haleyTerm(posteriors{j, 2}))), ...
-            keyed{:}, per{:}, 'ValueKind', 'score'); %#ok<AGROW>
+            keyed{:}, per{:}, 'ValueKind', 'fraction'); %#ok<AGROW>
     end
 
     % the encounter type, from thresholds on the posteriors
@@ -451,11 +452,13 @@ v = did2.build.valueCell('length', x(:)' * 1e-3, 'SourceValue', x(:)', 'SourceUn
 end
 
 function v = prob(x)
+% a posterior probability is a `fraction` (a part of the whole, 0-1), not a
+% `score` on a `probability` scale: [four term fields bound] (Decided by
+% Jess Haley, 2026-11-10, did-schema did_v2_go_forward_class_audit.md)
 arguments
     x
 end
-v = did2.build.valueCell('score', x(:)', 'Fields', struct( ...
-    'scale', haleyTerm('probability'), 'scale_min', 0, 'scale_max', 1));
+v = did2.build.valueCell('fraction', x(:)');
 end
 
 function e = epochOf(pre, name)
