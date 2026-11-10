@@ -66,6 +66,12 @@ useIndex = useIndex && ~isempty(ids) && ndi.vintage.epochIndex('available', S);
 if useIndex
     got = ndi.vintage.epochIndex('get', S, 'ndi.elements', sid, ids);
     hit = ismember(ids, got.keys);
+    % a row written before the class was rebuilt from the links (no `lv`,
+    % [element recognised by its links]) is computed again
+    for k = find(hit)
+        v = got(ids{k});
+        hit(k) = isfield(v, 'lv') && isequal(double(v.lv), ROW_VERSION);
+    end
     for k = find(hit)
         v = got(ids{k});
         ndi.vintage.elementFieldsScope('put', ['f|' sid '|' ids{k}], fieldsFromIndex(v.f));
@@ -79,6 +85,9 @@ if isempty(ids)
     return;
 end
 
+% the elements by their links, session-wide, once per call (elementFields
+% reads each one's kind from it)
+L = ndi.vintage.linkedElements(S);
 classLabel = ndi.vintage.elementLabel('class');
 kindVar = ndi.vintage.equipmentTypeVariable();
 about = ndi.vintage.edgeIn('entity_id', ids) | ndi.vintage.edgeIn('subject_id', ids);
@@ -151,18 +160,33 @@ for k = 1:numel(ids)
     ndi.vintage.elementFieldsScope('put', ['c|' sid '|' ids{k}], ...
         struct('count', numel(cls), 'value', v));
     if useIndex
-        rowValues{k} = struct('f', fieldsToIndex(f), 'c', struct('count', numel(cls), 'value', char(v))); %#ok<AGROW>
+        rowValues{k} = struct('f', fieldsToIndex(f), 'c', struct('count', numel(cls), 'value', char(v)), ...
+            'lv', ROW_VERSION); %#ok<AGROW>
         % read from: the element entity, and every document of the five
         % reads about it (each points at it, so adding or removing one
-        % drops the row, [2 a])
+        % drops the row, [2 a]), and the documents that make it an element
+        % by its links (its recording observations, wiring, derived_from
+        % and member_of relations, and a unit's probe:
+        % ndi.vintage.linkedElements), so a link added or removed drops it
         read = [byClass(ids{k}), byType(ids{k}), byDerived(ids{k}), byObserves(ids{k})];
-        rowDeps{k} = [{ids{k}}, cellfun(@(d) char(d.id()), read, 'UniformOutput', false)]; %#ok<AGROW>
+        linkDeps = {};
+        if isKey(L.evidence, ids{k})
+            linkDeps = reshape(L.evidence(ids{k}), 1, []);
+        end
+        rowDeps{k} = unique([{ids{k}}, cellfun(@(d) char(d.id()), read, 'UniformOutput', false), ...
+            linkDeps], 'stable'); %#ok<AGROW>
     end
 end
 if useIndex && ~isempty(ids)
     ndi.vintage.epochIndex('put', S, 'ndi.elements', sid, ids, rowValues, rowDeps);
 end
 n = numel(ids);
+end
+
+function v = ROW_VERSION()
+% the version of an `ndi.elements` row: 2 since the class and a Group's type
+% are rebuilt from the links ([element recognised by its links])
+v = 2;
 end
 
 function v = fieldsToIndex(f)
