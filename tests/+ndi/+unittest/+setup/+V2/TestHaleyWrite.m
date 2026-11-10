@@ -1435,7 +1435,8 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             center = ic(cellfun(@(d) strcmp(conditionTerm(d, 'Location'), 'bacterial patch center'), ic));
             testCase.verifyTrue(all(cellfun(@(d) strcmp(methodOf(d), 'Arithmetic Mean'), center)));
             testCase.verifyNumElements(center, numel(border));
-            amp = @(local) cellfun(@(d) d.intensity.value.arbitrary_units, border(cellfun(@(d) ...
+            slot = intensitySlot();
+            amp = @(local) cellfun(@(d) d.intensity.value.(slot), border(cellfun(@(d) ...
                 strcmp(edge(d, 'entity_id'), idOf(local)), border)));
             testCase.verifyEqual(amp('ecoli_plate0001_patch0001'), 102, 'row 2 is the top-left patch');
             testCase.verifyEqual(amp('ecoli_plate0001_patch0002'), 101, 'row 1 is the bottom-left patch');
@@ -1572,7 +1573,8 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
                 && strcmp(d.statement.variable.name, 'Fluorescence Intensity'), docs));
             e12 = about(idOf('concentration_assayPlate0012_patch0001'));
             testCase.verifyNumElements(e12, 1);
-            testCase.verifyEqual(numbers(e12{1}.intensity.value, 'arbitrary_units'), ...
+            slot = intensitySlot();
+            testCase.verifyEqual(numbers(e12{1}.intensity.value, slot), ...
                 94 / 300 + [74 80] / 3000, 'AbsTol', 1e-12);
             testCase.verifyEqual(methodOf(e12{1}), 'prediction from a fitted model');
             % [encounter axis] (Decided by Jess Haley, 2026-10-22): one
@@ -1611,7 +1613,7 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
                 testCase.verifyNumElements(est, c.acclimation_patches);
                 testCase.verifyGreaterThan(numel(est), 0);
                 for j = 1:numel(est)
-                    testCase.verifyEqual(est{j}.intensity.value.arbitrary_units, ...
+                    testCase.verifyEqual(est{j}.intensity.value.(slot), ...
                         55.7 - 0.0068 * 3060, 'AbsTol', 1e-9);
                 end
             end
@@ -2053,6 +2055,23 @@ function tf = noScale(cell)
 % a score cell with no `scale`: absent, or a blank term
 tf = ~isfield(cell, 'scale') || isempty(cell.scale) || ...
     (isstruct(cell.scale) && all(cellfun(@(f) isempty(cell.scale.(f)), fieldnames(cell.scale))));
+end
+
+function name = intensitySlot()
+% the canonical slot of an `intensity` value cell, read from the loaded
+% schema: the first field `intensity.value` declares, which is the one
+% did2.build.valueCell('intensity', ...) fills when no 'Canonical' is given.
+% [intensity slot named for the quantity] (Decided by Jess Haley,
+% 2026-11-10, did-schema did_v2_go_forward_class_audit.md) renames it from
+% `arbitrary_units` to `intensity`; the writers take the name from the
+% schema, so the test does too and holds on either side of that rename.
+s = did2.schema.cache.shared().getClass('intensity');
+f = s.fields;
+if isstruct(f); f = num2cell(f); end
+v = f{cellfun(@(d) strcmp(char(d.name), 'value'), f)};
+sub = v.fields;
+if isstruct(sub); sub = num2cell(sub); end
+name = char(sub{1}.name);
 end
 
 function v = numbers(x, field)
