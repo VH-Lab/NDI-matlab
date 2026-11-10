@@ -47,6 +47,32 @@ classdef TestV1FileReader < matlab.unittest.TestCase
             testCase.verifyEqual(reader(body, 'mapping.tsv'), sprintf('x\n'));
         end
 
+        function testBytesModeKeepsEveryByte(testCase)
+            % [spike waveforms built now] D4: binary files (float32 data) are
+            % read as raw bytes, every value 0..255 kept
+            raw = uint8([0:255, 255:-1:0, 128 129 0 255]);
+            fid = fopen(fullfile(testCase.NdiDir, 'files', 'uid_bin'), 'w');
+            fwrite(fid, raw, 'uint8');
+            fclose(fid);
+            body = mappingBody('/gone/tmp/mapping.tsv', 'uid_bin');
+            reader = ndi.migrate.internal.v1FileReader(testCase.NdiDir);
+            got = reader(body, 'mapping.tsv', 'bytes');
+            testCase.verifyClass(got, 'uint8');
+            testCase.verifyEqual(got, raw);
+            testCase.verifyError(@() reader(body, 'mapping.tsv', 'other'), ...
+                'NDI:migrate:v1FileReaderMode');
+        end
+
+        function testBytesModeOfAnEmptyFileIsAnEmptyRow(testCase)
+            fid = fopen(fullfile(testCase.NdiDir, 'files', 'uid_empty'), 'w');
+            fclose(fid);
+            body = mappingBody('/gone/tmp/mapping.tsv', 'uid_empty');
+            reader = ndi.migrate.internal.v1FileReader(testCase.NdiDir);
+            got = reader(body, 'mapping.tsv', 'bytes');
+            testCase.verifyClass(got, 'uint8');
+            testCase.verifyEqual(size(got), [1 0]);
+        end
+
         function testAFileFoundNowhereIsAnErrorNotAnEmptyFile(testCase)
             reader = ndi.migrate.internal.v1FileReader(testCase.NdiDir);
             body = mappingBody('/gone/tmp/mapping.tsv', 'uid_absent');

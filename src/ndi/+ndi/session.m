@@ -1054,8 +1054,13 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
             % their classes, their constructors -- is answered from it
             % (Jess Haley, 2026-11-06: "Speed can't be slower than v1").
             scope = ndi.vintage.elementFieldsScope('open'); %#ok<NASGU>
+            % the v2 probes: by their links (a device with a recording
+            % observation or a wiring relation; Decided by Jess Haley,
+            % 2026-11-10 [element recognised by its links]), and by an
+            % `ndi element class` assertion where one is present
             etaProbes = ndi.vintage.elementSubjectDocs(ndi_session_obj, 'probe');
             ndi.vintage.prefetchElementFields(ndi_session_obj, etaProbes);
+            etaProbes = ndi.vintage.rebuildableElements(ndi_session_obj, etaProbes);
             probestruct = [];
             devs = ndi_session_obj.daqsystem_load('name','(.*)');
             if ~isempty(devs)
@@ -1067,10 +1072,11 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
             probestruct = vlt.data.equnique(probestruct);
 
             % BOTH VINTAGES. v1 keeps the class name in a field on the
-            % element document; a migrated one keeps it in an inbound
-            % `ndi element class` assertion, which is where the
-            % contains_string 'probe' test now runs (in the database, not
-            % over everything in MATLAB).
+            % element document; a v2 one is an entity whose class is
+            % rebuilt from its links, type and device kind
+            % (ndi.vintage.elementSubjectIds, ndi.vintage.elementFields),
+            % with an inbound `ndi element class` assertion as the
+            % fallback where present.
             existing_probes = ndi_session_obj.database_search(ndi.query('element.ndi_element_class','contains_string','probe'));
             % Both sides are made columns: a session can hold both
             % vintages at once (a migration carries some v1 elements
@@ -1178,8 +1184,10 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
             end
             doc = ndi_session_obj.database_search(q_E&q_t);
 
-            % BOTH VINTAGES. A migrated element is a `subject` carrying an
-            % inbound `ndi element class` assertion, so `isa element`
+            % BOTH VINTAGES. A v2 element is an entity recognised by its
+            % links (Decided by Jess Haley, 2026-11-10 [element recognised
+            % by its links]; an inbound `ndi element class` assertion is
+            % the fallback where present), so `isa element`
             % cannot find it -- and bridging onto `isa subject` would hand
             % back every animal in the session as an element. The two-step
             % lookup is in ndi.vintage.elementSubjectDocs; see there for
@@ -1202,6 +1210,7 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
             scope = ndi.vintage.elementFieldsScope('open'); %#ok<NASGU>
             etaDocs = ndi.vintage.elementSubjectDocs(ndi_session_obj);
             ndi.vintage.prefetchElementFields(ndi_session_obj, etaDocs);
+            etaDocs = ndi.vintage.rebuildableElements(ndi_session_obj, etaDocs);
             doc = [doc(:); etaDocs(:)];
 
             elements = {};
