@@ -59,7 +59,12 @@ classdef TestElementLabelMatchesMigrator < matlab.unittest.TestCase
             % sufficient, so it is asserted rather than assumed.
             src = ndi.unittest.vintage.TestElementLabelMatchesMigrator.migratorSource(testCase);
             label = ndi.vintage.elementLabel('class');
-            n = numel(strfind(src, ['''' label '''']));
+            % code lines only: a comment quoting a decision ("the 'ndi
+            % element class' assertion is not written", DID-matlab #442)
+            % writes nothing
+            lines = splitlines(src);
+            code = lines(~startsWith(strtrim(lines), '%'));
+            n = sum(cellfun(@(l) numel(strfind(l, ['''' label ''''])), code));
             testCase.verifyEqual(n, 1, sprintf( ...
                 ['"%s" is written at %d site(s) in the element migrator; ' ...
                  'this test assumes exactly 1. More than one means a ' ...
