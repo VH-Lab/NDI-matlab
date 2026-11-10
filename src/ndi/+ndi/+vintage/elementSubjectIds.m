@@ -37,21 +37,16 @@ arguments
     classFilter (1,:) char = ''
 end
 
-ids = assertedIds(ndi_session_obj, classFilter);
+ids = ndi.vintage.elementAssertionIds(ndi_session_obj, classFilter);
 label = ndi.vintage.elementLabel('class');
 
 % the elements recognised by their links ([element recognised by its links])
 L = ndi.vintage.linkedElements(ndi_session_obj);
-% the entities any class assertion is about, whatever its class: while the
-% assertion is written it decides ([assertion wins while written]), so a
-% filtered list does not take them back by their links
-asserted = ids;
-if ~isempty(classFilter) && ~all(ismember(L.ids, ids))
-    asserted = assertedIds(ndi_session_obj, '');
-end
+% (only entities no class assertion is about: while it is written the
+% assertion decides, [assertion wins while written])
 for k = 1:numel(L.ids)
     id = L.ids{k};
-    if any(strcmp(id, asserted))
+    if any(strcmp(id, ids))
         continue;
     end
     if ~isempty(classFilter) && ~contains(classStem(L.kind(id)), classFilter)
@@ -59,37 +54,6 @@ for k = 1:numel(L.ids)
     end
     ids{end+1} = id; %#ok<AGROW>
 end
-end
-
-function ids = assertedIds(ndi_session_obj, classFilter)
-% the entities an `ndi element class` assertion is about (optionally one
-% whose value contains CLASSFILTER), in first-seen order
-ids = {};
-label = ndi.vintage.elementLabel('class');
-q = ndi.v2.statementQuery('assertion', 'term') & ...
-    ndi.v2.fieldQuery('statement.variable.name', 'exact_string', label);
-if ~isempty(classFilter)
-    q = q & ndi.query('term.value.name', 'contains_string', classFilter, '');
-end
-
-% read for their entity edge only (ndi.vintage.edgeDocs), else the documents
-assertions = ndi.vintage.edgeDocs(ndi_session_obj, q, {'entity_id', 'subject_id'}, 'assertion');
-if ~iscell(assertions)
-    assertions = ndi_session_obj.database_search(q);
-end
-
-% Collect the subject ids, keeping FIRST-SEEN order. `unique` would sort,
-% and the caller's order would then depend on how ids happen to compare
-% rather than on anything meaningful.
-for i = 1:numel(assertions)
-    sid = ndi.v2.edgeIds(ndi.v2.props(assertions{i}), 'entity_id');
-    if isempty(sid), sid = ''; else, sid = sid{1}; end
-    if isempty(sid) || any(strcmp(sid, ids))
-        continue;
-    end
-    ids{end+1} = sid; %#ok<AGROW>
-end
-
 end
 
 function s = classStem(kind)

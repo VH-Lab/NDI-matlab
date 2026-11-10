@@ -215,6 +215,11 @@ elseif any(strcmp(vals, 'directed_relation'))
     want = vals(ismember(vals, relNodes));
     pick = cellfun(@(x) strcmp(x.document_class.class_name, 'directed_relation') && ...
         any(strcmp(x.directed_relation.relation.node, want)), docs);
+elseif any(strcmp(vals, 'entity')) && any(strcmp(vals, 'COB:0001300'))
+    % the device, cell and Group entities (ndi.vintage.linkedElements)
+    d = held(cellfun(@(x) strcmp(x.document_class.class_name, 'entity') && ...
+        any(strcmp(x.entity.type.node, {'COB:0001300', 'CL:0000000', 'NCIT:C43359'})), docs));
+    return;
 else
     d = held(ismember(ids, named));
     return;

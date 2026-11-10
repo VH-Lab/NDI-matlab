@@ -16,7 +16,10 @@ function kind = elementLinkKind(doc, S)
 %     ''          anything else, a device with neither link included
 %
 %   Inside a call's scope (ndi.vintage.elementFieldsScope) the answer is the
-%   session-wide one, ndi.vintage.linkedElements, read once per call.
+%   session-wide one, ndi.vintage.linkedElements, read once per call; that
+%   one asks only about entities no "ndi element class" assertion is about
+%   (the assertion decides while it is written, [assertion wins while
+%   written]), so it is '' for those.
 %   Outside one, DOC's own links are searched (a few searches, each limited
 %   to DOC by its edges).
 %
