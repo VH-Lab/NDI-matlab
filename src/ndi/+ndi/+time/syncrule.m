@@ -216,14 +216,21 @@ classdef syncrule < ndi.ido & ndi.documentservice
             %   id; `software_id` names a `software` entity whose `name` is
             %   the rule's class; the rule's settings are its method
             %   parameters ('minimum matching file paths', 'sync file name',
-            %   'minimum embedded file overlap', 'from trigger channel',
-            %   'to trigger channel', and every other setting under its own
+            %   'minimum embedded file overlap', the input and output
+            %   trigger channels, and every other setting under its own
             %   name); `clock` is its epochclocktype; and a rule that names
             %   two daq systems (filefind, commonTriggersOverlappingEpochs,
-            %   randomPulses) links them as `from_acquisition_system_id`
-            %   (daqsystem1) and `to_acquisition_system_id` (daqsystem2)
-            %   (Jess Haley 2026-10-27 [sync configuration links its rigs],
-            %   [sync rule direction is recorded]). This is the shape
+            %   randomPulses) links them as its input (daqsystem1) and
+            %   output (daqsystem2) (Jess Haley 2026-10-27 [sync
+            %   configuration links its rigs], [sync rule direction is
+            %   recorded]). The edge and label names are the ones the loaded
+            %   schema declares (ndi.vintage.syncConfigurationNames):
+            %   `input_id` / `output_id` and 'input / output trigger
+            %   channel' once did-schema renames them (Decided by Jess
+            %   Haley, 2026-11-10 [sync configuration edges are input and
+            %   output]), `from_acquisition_system_id` /
+            %   `to_acquisition_system_id` and 'from / to trigger channel'
+            %   until then. This is the shape
             %   ndi.vintage.syncruleParameters reads back.
             %
             % Where the migration carries a rule whole as v1, so does this,
@@ -302,7 +309,8 @@ classdef syncrule < ndi.ido & ndi.documentservice
                     double(p.minEmbeddedFileOverlap)};
                 consumed{end+1} = 'minEmbeddedFileOverlap';
             end
-            channels = {'daqsystem_ch1', 'from trigger channel'; 'daqsystem_ch2', 'to trigger channel'};
+            names = ndi.vintage.syncConfigurationNames();
+            channels = {'daqsystem_ch1', names.inputChannel; 'daqsystem_ch2', names.outputChannel};
             for k = 1:size(channels, 1)
                 if ~isempty(textParameter(p, channels{k, 1}))
                     entries{end+1} = {channels{k, 2}, 'Text', textParameter(p, channels{k, 1})}; %#ok<AGROW>
@@ -351,8 +359,8 @@ classdef syncrule < ndi.ido & ndi.documentservice
                 end
                 edges = struct('software_id', sw{1}.base.id);
                 if ~isempty(systemIds)
-                    edges.from_acquisition_system_id = systemIds{1};
-                    edges.to_acquisition_system_id = systemIds{2};
+                    edges.(names.inputEdge) = systemIds{1};
+                    edges.(names.outputEdge) = systemIds{2};
                 end
                 cfg = did2.build.document('clock_alignment_configuration', f, ...
                     'Edges', edges, 'Id', ndi_syncrule_obj.id(), 'SessionId', sid);
