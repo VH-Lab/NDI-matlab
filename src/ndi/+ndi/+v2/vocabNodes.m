@@ -195,7 +195,12 @@ switch kind
         % 152157d (K0, L3)
         T = {
             'organism',     {'COB:0000022'}
-            'culture',      {}
+            % [culture renamed cell culture] (Decided by Jess Haley,
+            % 2026-11-10, did-schema did_v2_go_forward_class_audit.md): OBI
+            % "cell culture"; did-schema renames the row after NDI and
+            % DID-matlab compare it by node. The node, the handle `culture`
+            % and the name "cell culture" (an alias below) all read as it
+            'culture',      {'OBI:0001876'}
             'tissue',       {'UBERON:0000479'}
             'cell',         {'CL:0000000'}
             'group',        {'NCIT:C43359'}
@@ -215,6 +220,9 @@ switch kind
             'epoch',        {'EMPTY:0000383'}
             % retired (did-schema #88), read only
             'web_resource', {}
+            };
+        aliases = {
+            'cell culture', 'culture'   % [culture renamed cell culture]
             };
     case 'clock'
         % [clock terms get nodes] (Jess Haley, 2026-10-26); the handles are
