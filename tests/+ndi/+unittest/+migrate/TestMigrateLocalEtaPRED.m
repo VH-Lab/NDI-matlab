@@ -589,35 +589,57 @@ classdef TestMigrateLocalEtaPRED < matlab.unittest.TestCase
             assertTrue(testCase, isa(s.syncgraph.rules{1}, 'ndi.time.syncrule'), ...
                 'the reconstructed rule is not an ndi.time.syncrule');
 
-            % ---- THE ELEMENTS, WHICH IN PRED ARE PROBES --------------
+            % ---- THE ELEMENTS: ONE OF PRED'S TWO PROBES ---------------
             % Read from the corpus zip: PRED's 2 element documents are
             % `ndi.probe.timeseries.mfdaq` (name electrode16, type n-trode)
             % and `ndi.probe.timeseries.stimulator` (name rayostim, type
-            % stimulator). Both are `direct` with an empty
-            % underlying_element_id, so they are hardware attached to the
-            % one animal, not derived signals.
+            % stimulator, id 41269628e2a05b26_40cd9fd316374422). Both are
+            % `direct` with an empty underlying_element_id, so they are
+            % hardware attached to the one animal, not derived signals.
             %
-            % After migration they are `subject` documents -- as is the
-            % animal -- so this is the case `isa` cannot decide. The lookup
-            % goes through the inbound `ndi element class` assertion.
+            % After migration both are entities of type `device`, as the
+            % animal is an entity too, so `isa` cannot tell them apart. No
+            % "ndi element class" assertion is written for them ([ndi
+            % element class not kept]); an entity is an element by its
+            % links (ndi.vintage.linkedElements, Decided by Jess Haley,
+            % 2026-11-10 [element recognised by its links]): a device with
+            % a recording observation (`instrument_id`) or a `connected to`
+            % (RO:0002170) wiring relation. electrode16 has one; rayostim
+            % has no recording and no wiring (it has no epochs: the corpus
+            % zip has no epoch files, NDI-matlab #785), so it is NOT an
+            % element. Decided by Jess Haley, 2026-11-11 [unlinked device
+            % is not an element] (did-schema
+            % docs/plans/did_v2_go_forward_class_audit.md): it keeps its
+            % device entity (type, subject link) and only getelements stops
+            % listing it -- a known difference from v1, where a probe with
+            % no epochs is still an element.
             els = s.getelements();
-            assertEqual(testCase, numel(els), 2, sprintf( ...
-                ['getelements returned %d; PRED holds 2 elements. Zero is ' ...
-                 'the pre-ndi.vintage symptom; THREE would mean the ' ...
-                 'lookup reached `isa subject` and swept in the animal.'], ...
+            assertEqual(testCase, numel(els), 1, sprintf( ...
+                ['getelements returned %d; PRED holds 1 element by its links ' ...
+                 '(electrode16; rayostim has no recording and no wiring, ' ...
+                 '[unlinked device is not an element]). Zero is the ' ...
+                 'pre-ndi.vintage symptom; two would mean rayostim is ' ...
+                 'listed without a link; three would mean the lookup ' ...
+                 'reached `isa subject` and swept in the animal.'], ...
                 numel(els)));
 
-            names = sort(cellfun(@(x) string(x.name), els(:)'));
-            assertEqual(testCase, names, ["electrode16", "rayostim"], ...
-                'the two elements are not the two PRED probes');
+            names = cellfun(@(x) string(x.name), els(:)');
+            assertEqual(testCase, names, "electrode16", ...
+                'the one element is not PRED''s recorded probe');
 
-            % The MATLAB class is recovered from the assertion, so this is
-            % what proves the object-class hop worked rather than some
-            % default being constructed.
-            classes = sort(cellfun(@(x) string(class(x)), els(:)'));
-            assertEqual(testCase, classes, ...
-                ["ndi.probe.timeseries.mfdaq", "ndi.probe.timeseries.stimulator"], ...
-                'the elements did not rebuild as their recorded probe classes');
+            % The MATLAB class is rebuilt from what the element is (its
+            % type's probetype2object.json class), so this is what proves
+            % the object-class hop worked rather than some default being
+            % constructed.
+            classes = cellfun(@(x) string(class(x)), els(:)');
+            assertEqual(testCase, classes, "ndi.probe.timeseries.mfdaq", ...
+                'the element did not rebuild as its recorded probe class');
+
+            % rayostim keeps its v2 device entity under its v1 id.
+            ray = s.database_search(ndi.query('base.id', 'exact_string', ...
+                '41269628e2a05b26_40cd9fd316374422', ''));
+            verifyNumElements(testCase, ray, 1, ...
+                'rayostim''s device entity is not in the migrated session');
 
             % ---- getsubjects: THE ANIMAL, NOT THE PROBES ------------------
             % did-schema #88: the two probes are entities of type DEVICE, so
@@ -628,8 +650,10 @@ classdef TestMigrateLocalEtaPRED < matlab.unittest.TestCase
             % 2026-10-21), the animal and not the probes.
             subIds = cellfun(@(d) char(d.id()), subs, 'UniformOutput', false);
             elIds = ndi.vintage.elementSubjectIds(s);
-            assertEqual(testCase, numel(elIds), 2, ...
-                'PRED holds 2 elements, each with an `ndi element class` assertion');
+            assertEqual(testCase, numel(elIds), 1, ...
+                ['PRED holds 1 element by its links (electrode16; rayostim ' ...
+                 'is a device with no recording and no wiring, [unlinked ' ...
+                 'device is not an element])']);
             verifyFalse(testCase, any(ismember(elIds, subIds)), ...
                 'an element (a device entity) came back from `isa subject`');
             gs = s.getsubjects();
