@@ -1096,6 +1096,21 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
             end
             existing_fields = cellfun(@(d) probeFields(d, ndi_session_obj), existing_probes, ...
                 'UniformOutput', false);
+            % THE PROBES ALREADY READ ANSWER THE PROBES BUILT BELOW. A probe
+            % map row that is one of them (the duplicates v1 also returns:
+            % 612 probes for 606 elements on Dab) finds its document here,
+            % in ndi.vintage.elementDoc, with no search and no write
+            % (Decided by Jess Haley, 2026-11-10 [probes from the index
+            % keep v1's duplicates]).
+            if ~isempty(existing_probes)
+                probeTable = struct('doc', existing_probes(:)', ...
+                    'vintage', cellfun(@(f) f.vintage, existing_fields(:)', 'UniformOutput', false), ...
+                    'name', cellfun(@(f) f.name, existing_fields(:)', 'UniformOutput', false), ...
+                    'reference', cellfun(@(f) f.reference, existing_fields(:)', 'UniformOutput', false), ...
+                    'type', cellfun(@(f) f.type, existing_fields(:)', 'UniformOutput', false), ...
+                    'ndi_element_class', cellfun(@(f) f.ndi_element_class, existing_fields(:)', 'UniformOutput', false));
+                ndi.vintage.elementFieldsScope('put', ['pt|' char(ndi_session_obj.id())], probeTable);
+            end
             existing_probe_objects = {};
             for i=1:numel(existing_probes)
                 existing_probe_objects{end+1} = ndi.database.fun.ndi_document2ndi_object(existing_probes{i},ndi_session_obj);
@@ -1534,11 +1549,13 @@ p = doc.document_properties;
 if isfield(p, 'element') && isstruct(p.element)
     f = struct('name', char(p.element.name), 'reference', p.element.reference, ...
         'type', char(p.element.type), ...
-        'subject_id', char(doc.dependency_value('subject_id', 'ErrorIfNotFound', 0)));
+        'subject_id', char(doc.dependency_value('subject_id', 'ErrorIfNotFound', 0)), ...
+        'ndi_element_class', char(p.element.ndi_element_class), 'vintage', 'v1');
 else
     e = ndi.vintage.elementFields(doc, S);
     f = struct('name', char(e.name), 'reference', e.reference, 'type', char(e.type), ...
-        'subject_id', char(e.subject_id));
+        'subject_id', char(e.subject_id), 'ndi_element_class', char(e.ndi_element_class), ...
+        'vintage', 'V_eta');
 end
 end % probeFields()
 
