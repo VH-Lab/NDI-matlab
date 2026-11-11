@@ -93,7 +93,7 @@ jobs:
       # and DID-matlab #218 into V2 (2026-10-23).
       DID_MATLAB_REQUESTED: ${{ inputs.ref }}
       NDI_BRANCH: ${{ github.head_ref || github.ref_name }}
-      DID_SCHEMA_REQUESTED: ${{ inputs.schema_ref }}
+      DID_SCHEMA_REQUESTED: '375b07052a687f4276e374a9b032fb3c95355e67'  # TEMPORARY: did-schema #320 head
     steps:
       - name: Check out NDI-matlab
         uses: actions/checkout@v4

@@ -91,7 +91,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: Waltham-Data-Science/did-schema
-          ref: main
+          ref: 375b07052a687f4276e374a9b032fb3c95355e67  # TEMPORARY: did-schema #320 head
           path: did-schema
 
       - name: Assemble the V_eta schema set
