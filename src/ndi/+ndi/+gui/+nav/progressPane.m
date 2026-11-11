@@ -66,9 +66,10 @@ classdef progressPane < ndi.gui.nav.pane
             %ADOPTBARGRID Prepare and return the grid docked bars render into.
             %
             %   G = ADOPTBARGRID(OBJ) clears any idle placeholder, creates a
-            %   fresh uigridlayout in the pane body with the same column
-            %   layout the standalone ProgressBarWindow uses (bar / percent /
-            %   close-button), and returns it. The docked app adopts G as its
+            %   fresh uigridlayout in the pane body with the same columns as
+            %   the standalone ProgressBarWindow (bar / percent / close-button,
+            %   but with fixed pixel widths for the percent and button
+            %   columns), and returns it. The docked app adopts G as its
             %   ProgressGrid.
             obj.clearBody();
 
@@ -76,8 +77,12 @@ classdef progressPane < ndi.gui.nav.pane
             obj.BodyContainer.ColumnWidth  = {'1x'};
             obj.BodyContainer.Scrollable   = 'on';
 
+            % The pane is much narrower than the standalone window, so the
+            % percent and button/icon columns get fixed pixel widths; with the
+            % standalone proportional widths they shrink until "100%" and
+            % the icon beside it are cut off.
             obj.BarGrid = uigridlayout(obj.BodyContainer, ...
-                'ColumnWidth', {'17.5x', '1.5x', '1x'}, ...
+                'ColumnWidth', {'1x', 48, 24}, ...
                 'RowHeight',   {}, ...
                 'RowSpacing',  0);
             obj.BarGrid.Layout.Row    = 1;

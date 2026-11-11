@@ -323,7 +323,10 @@ classdef system < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice
                 else
                     et(i).t0_t1 = t0_t1(ndi_daqsystem_obj, et(i).epoch_number);
                 end
-                if mod(i,10)==0 % only update every tenth so we don't slow it down
+                % only update every tenth so we don't slow it down; skip the
+                % last epoch, since the bar auto-closes at 1 and the final
+                % update after the loop would then not find it
+                if mod(i,10)==0 && i<numel(et)
                     currentProgBar.updateBar(ProgBarUuid,i/numel(et)); % Update the bar's progress
                 end
             end
