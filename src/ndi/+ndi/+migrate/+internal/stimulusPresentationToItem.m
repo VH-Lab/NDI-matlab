@@ -1004,8 +1004,8 @@ function why = controlUnplaced(rec, nTrials, positionsAreTrials, standalone)
 %   yes", did-schema V_eta_go_forward_class_audit.md): "a field outside NDI's
 %   template is carried under carry-100 (malformed); `app` fields beyond
 %   name/version/url/os/interpreter go to the `software` entity, as
-%   [presentation app is software]; carry-089 keeps only template fields with
-%   no home". NDI's template here is what its writer writes
+%   [presentation app is software]; [the row then numbered carry 089] keeps
+%   only template fields with no home". NDI's template here is what its writer writes
 %   (+ndi/+app/+stimulus/tuning_response.m control_stimulus at the locked
 %   main: control_stimulus_ids.json's block {control_stimulus_ids,
 %   control_stimulus_id_method} plus ndi.app's newdocument `app` block {name,
@@ -1020,7 +1020,9 @@ function why = controlUnplaced(rec, nTrials, positionsAreTrials, standalone)
 %   beyond the five, os_version and interpreter_version, already go to the
 %   software entities (the OS and interpreter, each with its version:
 %   controlCalculation). Every template field now has a home, so no site
-%   here cites carry-089.
+%   here cites that row (formerly carry 089, retired 2026-11-10 by Jess Haley
+%   [closing issues 2026-11-10]: G34 built by NDI-matlab #1093, no code needs
+%   it).
 why = '';
 if standalone
     % carry-register: carry-090
