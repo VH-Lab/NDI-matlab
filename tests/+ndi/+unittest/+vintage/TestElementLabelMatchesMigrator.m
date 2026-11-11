@@ -86,7 +86,36 @@ classdef TestElementLabelMatchesMigrator < matlab.unittest.TestCase
                     ['DID-matlab''s element migrator is not on the path, ' ...
                      'so the two labels cannot be compared here.']);
             end
-            src = fileread(p);
+            src = ndi.unittest.vintage.TestElementLabelMatchesMigrator.codeOnly(fileread(p));
+        end
+
+        function code = codeOnly(src)
+            % Only code writes a label. A comment that quotes the phrase
+            % (DID-matlab #442 quotes 'ndi element class' in the header of
+            % element.m, citing [ndi element class not kept]) is not a
+            % site, and counting it made the one-site check read two.
+            % Whole-line comments and %{ ... %} blocks are dropped; a
+            % trailing comment after code is kept, because finding where
+            % it starts needs MATLAB's string rules and dropping too much
+            % would hide a real site.
+            lines = regexp(src, '\r?\n', 'split');
+            keep = true(size(lines));
+            inBlock = false;
+            for i = 1:numel(lines)
+                t = strtrim(lines{i});
+                if inBlock
+                    keep(i) = false;
+                    if strcmp(t, '%}')
+                        inBlock = false;
+                    end
+                elseif strcmp(t, '%{')
+                    keep(i) = false;
+                    inBlock = true;
+                elseif startsWith(t, '%')
+                    keep(i) = false;
+                end
+            end
+            code = strjoin(lines(keep), newline);
         end
 
     end
