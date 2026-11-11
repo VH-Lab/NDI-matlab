@@ -31,12 +31,17 @@ function params = syncruleParameters(ruleDoc, ndi_session_obj, objClass)
 %       [sync rule direction is recorded]): role-named edges straight to
 %       the two `acquisition_system` documents, the trigger channels as
 %       method parameters
-%         daqsystem1_name / daqsystem1 <- from_acquisition_system_id's
+%         daqsystem1_name / daqsystem1 <- input_id's (earlier
+%                                         from_acquisition_system_id's)
 %                                         acquisition_system `name`
-%         daqsystem2_name / daqsystem2 <- to_acquisition_system_id's
+%         daqsystem2_name / daqsystem2 <- output_id's (earlier
+%                                         to_acquisition_system_id's)
 %         daqsystem_ch1, daqsystem_ch2 <- the method parameters labelled
-%                                         'from trigger channel' / 'to
-%                                         trigger channel' (Jess Haley
+%                                         'input trigger channel' / 'output
+%                                         trigger channel' (earlier 'from /
+%                                         to trigger channel'; Jess Haley
+%                                         2026-11-10 [sync configuration
+%                                         edges are input and output]; Jess Haley
 %                                         2026-10-30 [trigger channels
 %                                         named by their link]), or, in a
 %                                         session migrated before DID-matlab
@@ -109,13 +114,18 @@ end
 % through its `acquisition_channels` documents: a numbered pair
 % (`acquisition_channels_1`/`_2`) or one repeated name
 % (`acquisition_channels_id` twice, did-schema T15), 1 and 2 being positions.
-fromId = ruleDoc.dependency_value('from_acquisition_system_id', 'ErrorIfNotFound', 0);
-toId   = ruleDoc.dependency_value('to_acquisition_system_id', 'ErrorIfNotFound', 0);
+% Decided by Jess Haley, 2026-11-10 [sync configuration edges are input and
+% output]: the pair is renamed `input_id` (v1 daqsystem1) / `output_id` (v1
+% daqsystem2); both spellings are read, the new one first
+% (ndi.vintage.syncConfigurationNames).
+names = ndi.vintage.syncConfigurationNames('read');
+[fromId, fromEdge] = firstEdge(ruleDoc, names.inputEdges);
+[toId, toEdge]     = firstEdge(ruleDoc, names.outputEdges);
 if ~isempty(fromId) || ~isempty(toId)
-    name1 = systemName(fromId, 'from_acquisition_system_id', ndi_session_obj);
-    name2 = systemName(toId, 'to_acquisition_system_id', ndi_session_obj);
-    ch1 = triggerChannel(cfg, 1);
-    ch2 = triggerChannel(cfg, 2);
+    name1 = systemName(fromId, fromEdge, ndi_session_obj);
+    name2 = systemName(toId, toEdge, ndi_session_obj);
+    ch1 = triggerChannel(cfg, names.inputChannels);
+    ch2 = triggerChannel(cfg, names.outputChannels);
 else
     channelIds = ndi.vintage.edge_n(ruleDoc, 'acquisition_channels', ...
         'ErrorIfNotFound', 0);
@@ -193,22 +203,36 @@ end
 name = ndi.vintage.objectName(docs{1});
 end
 
-function v = triggerChannel(cfg, n)
-%TRIGGERCHANNEL The n-th trigger channel string ('' if the configuration has none).
+function [id, edgeName] = firstEdge(ruleDoc, edgeNames)
+%FIRSTEDGE The id of the first edge in EDGENAMES the document holds ('' if none).
+id = '';
+edgeName = edgeNames{1};
+for k = 1:numel(edgeNames)
+    id = ruleDoc.dependency_value(edgeNames{k}, 'ErrorIfNotFound', 0);
+    if ~isempty(id)
+        edgeName = edgeNames{k};
+        return;
+    end
+end
+end
+
+function v = triggerChannel(cfg, labels)
+%TRIGGERCHANNEL A trigger channel string ('' if the configuration has none).
 %   The two trigger channels are method parameters named by the link they
-%   belong to: 'from trigger channel' goes with from_acquisition_system_id
-%   (v1 daqsystem_ch1), 'to trigger channel' with to_acquisition_system_id
-%   (v1 daqsystem_ch2) (did-schema V_eta_go_forward_class_audit.md, Jess
-%   Haley 2026-10-30 [trigger channels named by their link]). A session
-%   migrated before DID-matlab wrote those labels holds them under the v1
-%   names, which jParameterList writes as 'daqsystem ch1' / 'daqsystem ch2';
-%   those are read too, so a session migrated either way opens. The new
-%   label wins when both are present.
-names = {{'from trigger channel', 'daqsystem_ch1'}, ...
-         {'to trigger channel',   'daqsystem_ch2'}};
+%   belong to: the input trigger channel goes with the input edge (v1
+%   daqsystem_ch1), the output trigger channel with the output edge (v1
+%   daqsystem_ch2) (did-schema did_v2_go_forward_class_audit.md, Jess Haley
+%   2026-10-30 [trigger channels named by their link]; renamed from
+%   'from / to trigger channel' by Decided by Jess Haley, 2026-11-10 [sync
+%   configuration edges are input and output]). LABELS lists every spelling,
+%   newest first (ndi.vintage.syncConfigurationNames): 'input trigger
+%   channel', then 'from trigger channel', then the v1 name a session
+%   migrated before DID-matlab wrote those labels holds, which jParameterList
+%   writes as 'daqsystem ch1'. A session migrated any of these ways opens,
+%   and the newest label wins when several are present.
 v = '';
-for k = 1:numel(names{n})
-    v = charField(cfg, names{n}{k});
+for k = 1:numel(labels)
+    v = charField(cfg, labels{k});
     if ~isempty(v)
         return;
     end
