@@ -180,7 +180,6 @@ classdef ProgressBarWindow < matlab.apps.AppBase
 
                     % If not overwriting, use guidata from current figure
                     else
-                        disp(['Using existing progress bar window: ', title]);
                         appExisting = guidata(openFigs(ind));
 
                         % Check guidata is a ProgressBarWindow
