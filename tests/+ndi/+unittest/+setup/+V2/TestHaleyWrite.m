@@ -917,6 +917,9 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             circ = about('score_calculation', 'circularity');
             testCase.verifyEqual(circ{1}.statement.variable.node, 'EMPTY:0000288');
             testCase.verifyEqual(circ{1}.score.value(1).score, 0.9, 'AbsTol', 1e-12);
+            % no scale, 0-1 ([four term fields bound], Jess Haley 2026-11-10)
+            testCase.verifyTrue(noScale(circ{1}.score.value(1)), 'circularity has no scale');
+            testCase.verifyEqual([circ{1}.score.value(1).scale_min, circ{1}.score.value(1).scale_max], [0 1]);
 
             % its arena mask: a label calculation of the plate from the video,
             % run by the analysis package in MATLAB on macOS
@@ -985,13 +988,17 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             testCase.verifyEqual(edgeAll(lawn{1}, 'input_id'), {video.base.id});
 
             % the registration fit: the overlap, from both the video and the lawn clip
-            sc = docs(strcmp(classes, 'score_calculation'));
+            % a fraction ([four term fields bound], Jess Haley 2026-11-10)
+            sc = docs(strcmp(classes, 'fraction_calculation'));
             sc = sc(cellfun(@(d) strcmp(edge(d, 'entity_id'), idOf('concentration_assayPlate0012')), sc));
             testCase.verifyNumElements(sc, 1);
             testCase.verifyEqual(sc{1}.statement.variable.node, 'NCIT:C54669', 'overlap');
             testCase.verifyEqual(sc{1}.interaction.method.term.node, 'NCIT:C80145', 'image registration');
-            testCase.verifyEqual(sc{1}.score.value.scale.node, 'NCIT:C49159', 'a proportion (#116)');
-            testCase.verifyEqual(sc{1}.score.value.score, 0.98, 'AbsTol', 1e-12);
+            testCase.verifyFalse(isfield(sc{1}.fraction.value, 'scale'), 'a fraction has no scale');
+            testCase.verifyEqual(sc{1}.fraction.value.fraction, 0.98, 'AbsTol', 1e-12);
+            testCase.verifyEmpty(docs(strcmp(classes, 'score_calculation') & cellfun(@(d) ...
+                strcmp(edge(d, 'entity_id'), idOf('concentration_assayPlate0012')), docs)), ...
+                'the overlap is no longer a score');
             testCase.verifyNumElements(edgeAll(sc{1}, 'input_id'), 2);
 
             near = docs(strcmp(classes, 'item_calculation'));
@@ -1355,13 +1362,15 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
 
             % exploitPosterior and sensePosterior: two statements, one per model
             % (labelEncounters), the state a condition
-            pr = named('score_calculation', 'concentration_worm0121', 'posterior probability');
+            % fractions ([four term fields bound], Jess Haley 2026-11-10)
+            testCase.verifyEmpty(named('score_calculation', 'concentration_worm0121', 'posterior probability'));
+            pr = named('fraction_calculation', 'concentration_worm0121', 'posterior probability');
             testCase.verifyNumElements(pr, 2);
             state = cellfun(@(d) conditionTerm(d, 'behavioral state'), pr, 'UniformOutput', false);
             ex = pr{strcmp(state, 'exploitation')};
             se = pr{strcmp(state, 'sensing')};
-            testCase.verifyEqual(numbers(ex.score.value, 'score'), [0.9 0.2], 'AbsTol', 1e-12);
-            testCase.verifyEqual(numbers(se.score.value, 'score'), [0.8 0.6], 'AbsTol', 1e-12);
+            testCase.verifyEqual(numbers(ex.fraction.value, 'fraction'), [0.9 0.2], 'AbsTol', 1e-12);
+            testCase.verifyEqual(numbers(se.fraction.value, 'fraction'), [0.8 0.6], 'AbsTol', 1e-12);
             testCase.verifyEqual(ex.interaction.method.term.node, 'EMPTY:0000316', 'Gaussian mixture model clustering');
             testCase.verifyEqual(se.interaction.method.term.node, 'EMPTY:0000317', 'quadratic discriminant analysis');
             % timeSlowDown is not kept: no figure uses it
@@ -1426,7 +1435,8 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             center = ic(cellfun(@(d) strcmp(conditionTerm(d, 'Location'), 'bacterial patch center'), ic));
             testCase.verifyTrue(all(cellfun(@(d) strcmp(methodOf(d), 'Arithmetic Mean'), center)));
             testCase.verifyNumElements(center, numel(border));
-            amp = @(local) cellfun(@(d) d.intensity.value.arbitrary_units, border(cellfun(@(d) ...
+            slot = intensitySlot();
+            amp = @(local) cellfun(@(d) d.intensity.value.(slot), border(cellfun(@(d) ...
                 strcmp(edge(d, 'entity_id'), idOf(local)), border)));
             testCase.verifyEqual(amp('ecoli_plate0001_patch0001'), 102, 'row 2 is the top-left patch');
             testCase.verifyEqual(amp('ecoli_plate0001_patch0002'), 101, 'row 1 is the bottom-left patch');
@@ -1474,6 +1484,8 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             circ = sc(strcmp(names, 'circularity'));
             testCase.verifyNumElements(circ, 13);
             testCase.verifyEqual(circ{1}.statement.variable.node, 'EMPTY:0000288');
+            testCase.verifyTrue(all(cellfun(@(d) noScale(d.score.value(1)), circ)), ...
+                'circularity has no scale ([four term fields bound])');
 
             % the profile curves: patch 1 (top-left) is row 2 of image 2
             curves = ic(cellfun(@(d) strcmp(methodOf(d), 'Arithmetic Mean') ...
@@ -1561,7 +1573,8 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
                 && strcmp(d.statement.variable.name, 'Fluorescence Intensity'), docs));
             e12 = about(idOf('concentration_assayPlate0012_patch0001'));
             testCase.verifyNumElements(e12, 1);
-            testCase.verifyEqual(numbers(e12{1}.intensity.value, 'arbitrary_units'), ...
+            slot = intensitySlot();
+            testCase.verifyEqual(numbers(e12{1}.intensity.value, slot), ...
                 94 / 300 + [74 80] / 3000, 'AbsTol', 1e-12);
             testCase.verifyEqual(methodOf(e12{1}), 'prediction from a fitted model');
             % [encounter axis] (Decided by Jess Haley, 2026-10-22): one
@@ -1600,7 +1613,7 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
                 testCase.verifyNumElements(est, c.acclimation_patches);
                 testCase.verifyGreaterThan(numel(est), 0);
                 for j = 1:numel(est)
-                    testCase.verifyEqual(est{j}.intensity.value.arbitrary_units, ...
+                    testCase.verifyEqual(est{j}.intensity.value.(slot), ...
                         55.7 - 0.0068 * 3060, 'AbsTol', 1e-9);
                 end
             end
@@ -2036,6 +2049,29 @@ end
 c = conditionsOf(doc);
 c = c(cellfun(@(e) isfield(e, 'quantity') && ~isempty(e.quantity), c));
 v = cellfun(@(e) e.quantity.value, c);
+end
+
+function tf = noScale(cell)
+% a score cell with no `scale`: absent, or a blank term
+tf = ~isfield(cell, 'scale') || isempty(cell.scale) || ...
+    (isstruct(cell.scale) && all(cellfun(@(f) isempty(cell.scale.(f)), fieldnames(cell.scale))));
+end
+
+function name = intensitySlot()
+% the canonical slot of an `intensity` value cell, read from the loaded
+% schema: the first field `intensity.value` declares, which is the one
+% did2.build.valueCell('intensity', ...) fills when no 'Canonical' is given.
+% [intensity slot named for the quantity] (Decided by Jess Haley,
+% 2026-11-10, did-schema did_v2_go_forward_class_audit.md) renames it from
+% `arbitrary_units` to `intensity`; the writers take the name from the
+% schema, so the test does too and holds on either side of that rename.
+s = did2.schema.cache.shared().getClass('intensity');
+f = s.fields;
+if isstruct(f); f = num2cell(f); end
+v = f{cellfun(@(d) strcmp(char(d.name), 'value'), f)};
+sub = v.fields;
+if isstruct(sub); sub = num2cell(sub); end
+name = char(sub{1}.name);
 end
 
 function v = numbers(x, field)
