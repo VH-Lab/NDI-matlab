@@ -50,8 +50,7 @@
 			"dot_direction_significance":				1,
 			"half_low":						0,
 			"half_high":						0,
-			"fwhh":							0,
-			"bandwidth":						0
+			"fwhh":							0
 		},
 		"fit": {
 			"double_gaussian_parameters":				[0],
