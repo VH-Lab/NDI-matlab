@@ -327,18 +327,23 @@ classdef TestMigrateLocalEtaDab < matlab.unittest.TestCase
             % Decided by Jess Haley, 2026-11-09, did-schema
             % did_v2_standing_wiring_plan.md [stimulator manipulation
             % dropped], [probe map rows compared as a set]: on a copy of the
-            % MAPPED output (the Dabrowska map re-attributes the stimulator's
-            % statements and its `observes` relation to the slice,
-            % sliceTetanus) with every per-epoch Stimulator manipulation
-            % removed, every system's ingested probe maps (as sets), its
-            % reader's v2 clocks and the stimulators getprobes finds, with
-            % their epoch tables, are the same
+            % GENERIC migrated output with every per-epoch Stimulator
+            % manipulation removed, every system's ingested probe maps (as
+            % sets), its reader's v2 clocks and the stimulators getprobes
+            % finds, with their epoch tables, are the same
             % (ndi.unittest.migrate.stimulatorRowsWithoutManipulation).
-            G = ndi.unittest.migrate.stimulatorRowsWithoutManipulation( ...
-                fileparts(testCase.Result.destination), 'Dab (generic)');
-            testCase.verifyEmpty(G.mismatches, strjoin(G.mismatches, newline));
+            %
+            % The generic output only, not the Dabrowska map's (MappedRoot):
+            % did-schema docs/plans/did_v2_go_forward_class_audit.md [Dab gets
+            % a v2 import] (Jess Haley, 2026-11-12): Dab gets a per-dataset v2
+            % import instead of the map on migrated output, the map is not
+            % extended, and the nested-day "another animal" re-attribution
+            % moves to that import. On the mapped output the one bath with two
+            % slices (bath_221202_BNSTI_SCN_a, 11 nested-date epochs; the map's
+            % "element observes-relations ... ambiguous 1") had its per-epoch
+            % slice only on the manipulation (run 42743091429).
             R = ndi.unittest.migrate.stimulatorRowsWithoutManipulation( ...
-                fullfile(testCase.MappedRoot, '.ndi'), 'Dab (mapped)');
+                fileparts(testCase.Result.destination), 'Dab (generic)');
             testCase.verifyGreaterThan(R.removed, 0, 'no Stimulator manipulation was removed (nothing measured)');
             testCase.verifyGreaterThan(R.stimulators, 0, 'getprobes found no stimulator (nothing measured)');
             testCase.verifyNotEmpty(R.checks, 'no comparison was made');
