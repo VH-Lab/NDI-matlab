@@ -297,6 +297,7 @@ extra = {};
 ids = {};
 entries = {};
 props = struct();
+gaps = struct('field', {}, 'reason', {});
 for i = 1:numel(mixture)
     chem = mixture(i).chemical;
     if isempty(chem.node) && isempty(chem.name)
@@ -311,6 +312,27 @@ for i = 1:numel(mixture)
     if any(strcmpi(chem.name, {'osm', 'osmolarity'})) && isfinite(a.source_value)
         props.osmolarity = struct('source_value', a.source_value, ...
             'source_unit', a.source_unit, 'approximate', false);
+        if isempty(a.source_unit.node) && isempty(a.source_unit.name)
+            % no unit stated: none written (as an ingredient's concentration)
+            props.osmolarity = rmfield(props.osmolarity, 'source_unit');
+        end
+        % [bath concentration prefixes convert to molar] (Jess Haley,
+        % 2026-11-12), as DID-matlab resolveDeferredBaths reads it (PR #456):
+        % a unit that is osmolar with a known SI prefix gets the canonical
+        % `osmolar` (osmoles per litre, arithmetic only); any other unit (a
+        % bare "mOsm" says neither per litre nor per kg; "mOsm/kg" is
+        % osmolality) or none is a gap in the run's migration report
+        [osm, osmOk] = ndi.migrate.internal.bathPrefixedValue( ...
+            a.source_value, a.source_unit.name, 'osmolar');
+        if osmOk
+            props.osmolarity.osmolar = osm;
+        else
+            gaps(end+1) = struct('field', 'formulation.value.osmolarity.osmolar', ...
+                'reason', sprintf(['the source states the osmolarity %s in the ' ...
+                'unit "%s", which is not osmoles per litre with a known prefix, ' ...
+                'so no canonical value is computed'], ...
+                num2str(a.source_value, 17), strtrim(char(a.source_unit.name)))); %#ok<AGROW>
+        end
         continue;
     end
     c = struct();
@@ -327,8 +349,23 @@ for i = 1:numel(mixture)
         if ~isempty(a.source_unit.node) || ~isempty(a.source_unit.name)
             conc.source_unit = a.source_unit;
         end
-        if strcmpi(a.source_unit.name, 'Molar')
-            conc.molar = a.source_value;
+        % the canonical slot: a molar unit with a known SI prefix, the number
+        % converted to molar ([bath concentration prefixes convert to molar],
+        % Jess Haley, 2026-11-12). A unit that cannot be read so carries the
+        % bath before it gets here (ndi.migrate.local's resolveDeferred,
+        % bathUnreadUnitRows); a number with no unit has no canonical and is
+        % a gap ([canonical absent only as needs info]), as DID-matlab
+        % resolveDeferredBaths writes both (PR #456)
+        [m, ok] = ndi.migrate.internal.bathPrefixedValue( ...
+            a.source_value, a.source_unit.name, 'molar');
+        if ok
+            conc.molar = m;
+        elseif isempty(strtrim(char(a.source_unit.name)))
+            gaps(end+1) = struct('field', sprintf( ...
+                'formulation.value.ingredients(%d).concentration.canonical', ...
+                numel(entries) + 1), 'reason', sprintf(['the source states the ' ...
+                'number %s with no unit, so no canonical value is computed'], ...
+                num2str(a.source_value, 17))); %#ok<AGROW>
         end
         e.concentration = conc;
     end
@@ -350,6 +387,13 @@ fv.ingredients = rowsToStructArray(entries);
 f.formulation = struct('value', fv);
 f = ndi.migrate.internal.withSessionId(f, sessionId);
 extra{end+1} = f;
+% the gaps go in the run's migration report under the formulation's id
+% ([gap accepted when the report lists it]), as did2.build.document's 'Gaps'
+% option lists them for DID-matlab's assembler
+for k = 1:numel(gaps)
+    did2.convert.migrationReport('gap', f.base.id, 'formulation', ...
+        gaps(k).field, gaps(k).reason);
+end
 
 % A bath is NOT a dose: "A bath is a manipulation whose value is the
 % formulation (pointed at through `value_id`), not a dose; a dose always has an
