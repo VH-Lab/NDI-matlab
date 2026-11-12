@@ -3,7 +3,8 @@ classdef datasetsPane < ndi.gui.nav.pane
 %
 %   The Datasets pane can be collapsed to its header row via the header
 %   disclosure triangle. Its header also carries, right-justified, a "+"
-%   button and a "Refresh" button.
+%   button and a refresh button (the refresh symbol, as on the Jobs and
+%   NDI Cloud panes).
 %
 %   The "+" button opens an add-dataset menu (a uicontextmenu popped
 %   beneath the button) with:
@@ -265,13 +266,12 @@ classdef datasetsPane < ndi.gui.nav.pane
         end
 
         function buildHeaderRight(obj, parent)
-            % Two controls sit on the right: [+] | Refresh. The "+" opens the
-            % add-dataset menu; it is a compact fixed-width square and Refresh
-            % takes the remaining width.
+            % Two compact squares sit on the right: [+] | refresh symbol. The
+            % "+" opens the add-dataset menu; the other rebuilds the tree.
             group = uigridlayout(parent, [1 2]);
             group.Layout.Row      = 1;
             group.Layout.Column   = 3;
-            group.ColumnWidth     = {26, '1x'};
+            group.ColumnWidth     = {26, 26};
             group.RowHeight       = {'1x'};
             group.Padding         = [0 0 0 0];
             group.ColumnSpacing   = 4;
@@ -286,17 +286,14 @@ classdef datasetsPane < ndi.gui.nav.pane
             plus.Layout.Column = 1;
             obj.accentButton(plus);
 
-            refresh = uibutton(group, ...
-                'Text',            'Refresh', ...
-                'Tooltip',         'Rebuild the list of datasets and sessions', ...
-                'ButtonPushedFcn', @(~,~) obj.refresh());
+            refresh = obj.refreshButton(group, ...
+                'Rebuild the list of datasets and sessions', @(~,~) obj.refresh());
             refresh.Layout.Row    = 1;
             refresh.Layout.Column = 2;
-            obj.accentButton(refresh);
         end
 
         function w = rightWidth(~)
-            w = 108;
+            w = 56;   % 26 (+) + 4 + 26 (refresh)
         end
     end
 

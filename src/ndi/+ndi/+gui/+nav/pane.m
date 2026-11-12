@@ -248,6 +248,21 @@ classdef pane < handle
             %BUILDHEADERRIGHT Add the right-hand header control. Default none.
         end
 
+        function btn = refreshButton(obj, parent, tooltip, callback)
+            %REFRESHBUTTON A compact header button showing the refresh symbol.
+            %   BTN = REFRESHBUTTON(OBJ, PARENT, TOOLTIP, CALLBACK) makes an
+            %   icon-only uibutton (reload_icon.svg) in the header accent, so
+            %   every pane's refresh looks the same. TOOLTIP says what it
+            %   refreshes; the caller places it (Layout.Row/Column).
+            btn = uibutton(parent, ...
+                'Text',            '', ...
+                'Icon',            ndi.gui.nav.pane.reloadIconFile(), ...
+                'IconAlignment',   'center', ...
+                'Tooltip',         tooltip, ...
+                'ButtonPushedFcn', callback);
+            obj.accentButton(btn);
+        end
+
         function accentButton(~, btn)
             %ACCENTBUTTON Style a header uibutton in the NDI Cloud accent.
             %   ACCENTBUTTON(OBJ, BTN) gives BTN a light-blue fill with bold
@@ -270,6 +285,17 @@ classdef pane < handle
             %RIGHTWIDTH Pixel width of the right header column. Default 0.
             w = 0;
         end
+    end
+
+    methods (Static)
+        function p = reloadIconFile()
+            %RELOADICONFILE Absolute path to the refresh symbol (SVG).
+            p = fullfile(ndi.common.PathConstants.RootFolder, ...
+                '+ndi', '+gui', 'reload_icon.svg');
+        end
+    end
+
+    methods (Access = protected)
 
         function g = disclosureGlyph(obj)
             %DISCLOSUREGLYPH Triangle for the current engaged state.
