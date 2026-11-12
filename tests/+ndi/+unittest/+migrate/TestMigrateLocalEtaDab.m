@@ -323,6 +323,33 @@ classdef TestMigrateLocalEtaDab < matlab.unittest.TestCase
             testCase.verifyEmpty(R.mismatches, strjoin(R.mismatches, newline));
         end
 
+        function testTheStimulatorsReadTheSameWithoutTheirManipulations(testCase)
+            % Decided by Jess Haley, 2026-11-09, did-schema
+            % did_v2_standing_wiring_plan.md [stimulator manipulation
+            % dropped], [probe map rows compared as a set]: on a copy of the
+            % GENERIC migrated output with every per-epoch Stimulator
+            % manipulation removed, every system's ingested probe maps (as
+            % sets), its reader's v2 clocks and the stimulators getprobes
+            % finds, with their epoch tables, are the same
+            % (ndi.unittest.migrate.stimulatorRowsWithoutManipulation).
+            %
+            % The generic output only, not the Dabrowska map's (MappedRoot):
+            % did-schema docs/plans/did_v2_go_forward_class_audit.md [Dab gets
+            % a v2 import] (Jess Haley, 2026-11-12): Dab gets a per-dataset v2
+            % import instead of the map on migrated output, the map is not
+            % extended, and the nested-day "another animal" re-attribution
+            % moves to that import. On the mapped output the one bath with two
+            % slices (bath_221202_BNSTI_SCN_a, 11 nested-date epochs; the map's
+            % "element observes-relations ... ambiguous 1") had its per-epoch
+            % slice only on the manipulation (run 42743091429).
+            R = ndi.unittest.migrate.stimulatorRowsWithoutManipulation( ...
+                fileparts(testCase.Result.destination), 'Dab (generic)');
+            testCase.verifyGreaterThan(R.removed, 0, 'no Stimulator manipulation was removed (nothing measured)');
+            testCase.verifyGreaterThan(R.stimulators, 0, 'getprobes found no stimulator (nothing measured)');
+            testCase.verifyNotEmpty(R.checks, 'no comparison was made');
+            testCase.verifyEmpty(R.mismatches, strjoin(R.mismatches, newline));
+        end
+
         function testReadPhasesAreNoSlowerThanV1(testCase)
             % Jess Haley, 2026-11-06: "Speed can't be slower than v1. We
             % need to match or beat." Every session of Dab is read in five
