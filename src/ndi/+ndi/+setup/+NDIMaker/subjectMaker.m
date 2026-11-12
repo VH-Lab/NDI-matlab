@@ -405,7 +405,7 @@ classdef subjectMaker < handle
             %   matched (ndi.v2.blockQuery), and removing it also removes the
             %   documents that depend on it (its term assertions and its `instance_of`
             %   relation), as removing a v1 `subject` removes its `openminds_subject`
-            %   documents. Decided by Jess Haley, 2026-11-03 [writers are given the
+            %   documents. Jess Haley's decisions of 2026-11-03 [writers are given the
             %   session] and [v2 line reads and writes both] (did-schema
             %   did_v2_go_forward_class_audit.md); the subject types are [subject match
             %   takes the subject types] (2026-11-03).

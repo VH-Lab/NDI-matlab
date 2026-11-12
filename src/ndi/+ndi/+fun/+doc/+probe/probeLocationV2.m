@@ -18,7 +18,7 @@ function docs = probeLocationV2(S, probeId, ontologyName, name)
 %   did2.build refuses a location term the term registry does not hold
 %   (tenet T19).
 %
-%   Decided by Jess Haley, 2026-11-03 [writers are given the session] and
+%   Jess Haley's decisions of 2026-11-03 [writers are given the session] and
 %   [v2 line reads and writes both] (did-schema
 %   did_v2_go_forward_class_audit.md): a tool learns the version from the
 %   session's database.
