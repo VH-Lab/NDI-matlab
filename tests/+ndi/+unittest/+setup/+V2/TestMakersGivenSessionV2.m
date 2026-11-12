@@ -9,7 +9,11 @@ classdef TestMakersGivenSessionV2 < matlab.unittest.TestCase
 %   it, and its strain is a strain entity (written once per distinct strain)
 %   the subject is `instance_of` -- the shape the migration gives the v1
 %   `subject` and `openminds_subject` documents. Objects about a stimulus stay
-%   v1 on either database (no decided v2 target).
+%   v1 on either database (no decided v2 target). subjectMaker/deleteSubjectDocs
+%   finds and removes a v2 subject entity; ndi.fun.doc.probe.probeLocationV2
+%   (what probeLocations4probes writes into a v2 database) is an `observation`
+%   with value kind `term` about the probe, as the migration gives a v1
+%   `probe_location`.
 %
 %   Decided by Jess Haley, 2026-11-03 [writers are given the session] and
 %   [v2 line reads and writes both] (did-schema
@@ -142,6 +146,57 @@ classdef TestMakersGivenSessionV2 < matlab.unittest.TestCase
             % given only the session's id, the documents are v1, as before
             d3 = ndi.database.fun.openMINDSobj2ndi_document(sp, S2.id(), 'subject', subjectId);
             testCase.verifyEqual(d3{1}.document_properties.document_class.class_name, 'openminds_subject');
+        end
+
+        function testDeleteSubjectDocsOnAV2Database(testCase)
+            % subjectMaker.deleteSubjectDocs finds a v2 subject entity by its
+            % local identifier and removes it with what depends on it
+            S = testCase.v2Session();
+            names = {'worm1@nosuchlab.org', 'worm2@nosuchlab.org'};
+            maker = ndi.setup.NDIMaker.subjectMaker();
+            out = maker.makeSubjectDocuments(testCase.subjectInfo(S, names), 'Sessions', {S});
+            testCase.assertTrue(all(maker.addSubjectsToSessions({S}, out.documents)));
+            gone = out.documents{1}{1}.id();
+            kept = out.documents{2}{1}.id();
+            % DENOMINATOR FIRST: what the session held about the subject to delete
+            dependents = S.database_search(ndi.query('', 'depends_on', 'entity_id', gone));
+            testCase.assertNotEmpty(dependents, 'the subject to delete has no assertions to remove with it');
+
+            report = maker.deleteSubjectDocs({S}, names(1));
+            testCase.assertNumElements(report, 1);
+            testCase.verifyEqual(report.docs_found_ids, {gone});
+            testCase.verifyEqual(report.docs_deleted_ids, {gone});
+            testCase.verifyEmpty(S.database_search(ndi.query('base.id', 'exact_string', gone, '')), ...
+                'the subject entity was not removed');
+            testCase.verifyEmpty(S.database_search(ndi.query('', 'depends_on', 'entity_id', gone)), ...
+                'an assertion about the removed subject was left behind');
+            [b, sid] = ndi.subject.does_subjectstring_match_session_document(S, names{2}, 0);
+            testCase.verifyTrue(logical(b), 'the other subject was removed too');
+            testCase.verifyEqual(sid, kept);
+            testCase.verifyNotEmpty(S.database_search(ndi.query('', 'depends_on', 'entity_id', kept)), ...
+                'the other subject''s assertions were removed');
+        end
+
+        function testProbeLocationOnAV2DatabaseIsAnObservation(testCase)
+            % ndi.fun.doc.probe.probeLocationV2: the v2 record
+            % probeLocations4probes writes into a v2 database
+            S = testCase.v2Session();
+            probeId = ndi.ido.unique_id();
+            docs = ndi.fun.doc.probe.probeLocationV2(S, probeId, 'UBERON:0002436', 'primary visual cortex');
+            props = cellfun(@(d) d.document_properties, docs, 'UniformOutput', false);
+            classes = cellfun(@(p) p.document_class.class_name, props, 'UniformOutput', false);
+            % DENOMINATOR FIRST: what was written
+            testCase.assertNumElements(docs, 2, sprintf('documents written: %s', strjoin(classes, ', ')));
+            testCase.verifyTrue(all(cellfun(@(p) did2.schema.isV2Stamp(p), props)), ...
+                sprintf('a document is not v2 (classes: %s)', strjoin(classes, ', ')));
+            testCase.verifyEqual(classes, {'observation', 'relative_time_reference'});
+            obs = props{1};
+            testCase.verifyEqual(ndi.v2.edgeIds(obs, 'entity_id'), {probeId});
+            testCase.verifyEqual(ndi.v2.edgeIds(obs, 'time_reference_id'), {props{2}.base.id});
+            testCase.verifyEqual(char(obs.statement.variable.node), 'NCIT:C13717');
+            testCase.verifyTrue(testCase.hasTerm({obs}, 'UBERON:0002436'), 'the location is not the value');
+            testCase.verifyEqual(char(ndi.v2.sessionIdOf(obs)), S.id());
+            testCase.verifyEqual(char(ndi.v2.sessionIdOf(props{2})), S.id());
         end
 
         function testAStimulusObjectStaysV1OnAV2Database(testCase)
