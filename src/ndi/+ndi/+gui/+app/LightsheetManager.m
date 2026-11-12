@@ -153,6 +153,78 @@ classdef LightsheetManager < ndi.gui.app.sessionApp
     % =====================================================================
     methods (Static)
 
+        function rows = sortRows(rows, column, descending)
+        % SORTROWS - order pyramid rows by one of the table's columns
+        %
+        %   ROWS = sortRows(ROWS, COLUMN, DESCENDING) returns ROWS ordered
+        %   by COLUMN, one of ColumnNames ('Label', 'Subject', 'Reduction',
+        %   'Levels', 'Shape (level 0)', 'dtype'). Text columns sort
+        %   case-insensitively; Levels sorts numerically; Shape sorts by
+        %   the number of voxels in level 0. Ties keep their previous order
+        %   (the sort is stable), so sorting by Subject and then by Label
+        %   groups by label with subjects in order inside each group. An
+        %   empty COLUMN leaves ROWS as they are.
+            arguments
+                rows
+                column char
+                descending (1,1) logical = false
+            end
+            if isempty(rows) || isempty(column)
+                return;
+            end
+            n = numel(rows);
+            switch column
+                case 'Label',           key = {rows.label};
+                case 'Subject',         key = {rows.subject};
+                case 'Reduction',       key = {rows.reduction};
+                case 'dtype',           key = {rows.dtype};
+                case 'Levels'
+                    key = zeros(1, n);
+                    for i = 1:n
+                        if ~isempty(rows(i).nLevels), key(i) = double(rows(i).nLevels); end
+                    end
+                case 'Shape (level 0)'
+                    key = zeros(1, n);
+                    for i = 1:n
+                        if ~isempty(rows(i).shapeLevel0)
+                            key(i) = prod(double(rows(i).shapeLevel0));
+                        end
+                    end
+                otherwise
+                    error('NDI:LightsheetManager:BadSortColumn', ...
+                        'Unknown column "%s". Use one of: %s.', column, ...
+                        strjoin(ndi.gui.app.LightsheetManager.ColumnNames, ', '));
+            end
+            if iscell(key)
+                key = lower(cellfun(@(v) char(string(v)), key, 'UniformOutput', false));
+                % Rank the distinct values, then sort the ranks: numeric
+                % sort is stable, so ties keep their previous order in
+                % either direction.
+                [~, ~, g] = unique(key);
+                if descending
+                    [~, order] = sort(-g(:)');
+                else
+                    [~, order] = sort(g(:)');
+                end
+            else
+                if descending
+                    [~, order] = sort(key, 'descend');
+                else
+                    [~, order] = sort(key, 'ascend');
+                end
+            end
+            rows = rows(order);
+        end
+
+        function t = sortDirText(descending)
+        % SORTDIRTEXT - label of the ascending/descending toggle button
+            if descending
+                t = 'Descending';
+            else
+                t = 'Ascending';
+            end
+        end
+
         function rows = pyramidRows(session)
         % PYRAMIDROWS - one row per lightsheetZarrPyramid, with subject names
         %
@@ -813,78 +885,6 @@ classdef LightsheetManager < ndi.gui.app.sessionApp
             v = dflt;
             if isempty(key) || ~isKey(m, char(key)), return; end
             v = m(char(key));
-        end
-
-        function rows = sortRows(rows, column, descending)
-        % SORTROWS - order pyramid rows by one of the table's columns
-        %
-        %   ROWS = sortRows(ROWS, COLUMN, DESCENDING) returns ROWS ordered
-        %   by COLUMN, one of ColumnNames ('Label', 'Subject', 'Reduction',
-        %   'Levels', 'Shape (level 0)', 'dtype'). Text columns sort
-        %   case-insensitively; Levels sorts numerically; Shape sorts by
-        %   the number of voxels in level 0. Ties keep their previous order
-        %   (the sort is stable), so sorting by Subject and then by Label
-        %   groups by label with subjects in order inside each group. An
-        %   empty COLUMN leaves ROWS as they are.
-            arguments
-                rows
-                column char
-                descending (1,1) logical = false
-            end
-            if isempty(rows) || isempty(column)
-                return;
-            end
-            n = numel(rows);
-            switch column
-                case 'Label',           key = {rows.label};
-                case 'Subject',         key = {rows.subject};
-                case 'Reduction',       key = {rows.reduction};
-                case 'dtype',           key = {rows.dtype};
-                case 'Levels'
-                    key = zeros(1, n);
-                    for i = 1:n
-                        if ~isempty(rows(i).nLevels), key(i) = double(rows(i).nLevels); end
-                    end
-                case 'Shape (level 0)'
-                    key = zeros(1, n);
-                    for i = 1:n
-                        if ~isempty(rows(i).shapeLevel0)
-                            key(i) = prod(double(rows(i).shapeLevel0));
-                        end
-                    end
-                otherwise
-                    error('NDI:LightsheetManager:BadSortColumn', ...
-                        'Unknown column "%s". Use one of: %s.', column, ...
-                        strjoin(ndi.gui.app.LightsheetManager.ColumnNames, ', '));
-            end
-            if iscell(key)
-                key = lower(cellfun(@(v) char(string(v)), key, 'UniformOutput', false));
-                % Rank the distinct values, then sort the ranks: numeric
-                % sort is stable, so ties keep their previous order in
-                % either direction.
-                [~, ~, g] = unique(key);
-                if descending
-                    [~, order] = sort(-g(:)');
-                else
-                    [~, order] = sort(g(:)');
-                end
-            else
-                if descending
-                    [~, order] = sort(key, 'descend');
-                else
-                    [~, order] = sort(key, 'ascend');
-                end
-            end
-            rows = rows(order);
-        end
-
-        function t = sortDirText(descending)
-        % SORTDIRTEXT - label of the ascending/descending toggle button
-            if descending
-                t = 'Descending';
-            else
-                t = 'Ascending';
-            end
         end
 
         function c = rowsToCell(rows)

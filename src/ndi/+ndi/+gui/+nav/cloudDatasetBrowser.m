@@ -123,7 +123,7 @@ classdef cloudDatasetBrowser < handle
             obj.SortColumn = char(column);
             obj.SortDescending = logical(descending);
             obj.setEntries(obj.Entries);
-            obj.SortDirButton.Text = ndi.gui.app.LightsheetManager.sortDirText(descending);
+            obj.SortDirButton.Text = ndi.gui.nav.cloudDatasetBrowser.sortDirText(descending);
         end
 
         function select(obj, idx)
@@ -178,6 +178,13 @@ classdef cloudDatasetBrowser < handle
 
         function redraw(obj)
             obj.Table.Data = ndi.gui.nav.cloudDatasetBrowser.entriesToCell(obj.Entries);
+            % Resetting Data can drop the highlight; put the current row back.
+            if ~isempty(obj.SelectedIndex) && obj.SelectedIndex <= numel(obj.Entries)
+                try
+                    obj.Table.Selection = [obj.SelectedIndex 1];   % cell selection: [row col]
+                catch
+                end
+            end
         end
 
         function setStatus(obj, msg)
@@ -267,7 +274,7 @@ classdef cloudDatasetBrowser < handle
             uidropdown(sg, 'Items', obj.ColumnNames, 'Value', obj.SortColumn, ...
                 'ValueChangedFcn', @(dd,~) obj.setSort(dd.Value, obj.SortDescending));
             obj.SortDirButton = uibutton(sg, ...
-                'Text', ndi.gui.app.LightsheetManager.sortDirText(obj.SortDescending), ...
+                'Text', ndi.gui.nav.cloudDatasetBrowser.sortDirText(obj.SortDescending), ...
                 'BackgroundColor', c.lightBlue, 'FontColor', c.darkBlue, ...
                 'ButtonPushedFcn', @(~,~) obj.setSort(obj.SortColumn, ~obj.SortDescending));
 
@@ -389,16 +396,14 @@ classdef cloudDatasetBrowser < handle
                 'ButtonPushedFcn', @(~,~) onDeletePressed());
             deleteBtn.Layout.Row = 8; deleteBtn.Layout.Column = 2;
 
-            update = @(~,~) set(deleteBtn, 'Enable', ndi.gui.nav.cloudInfoDialog.enableFor( ...
-                ndi.gui.nav.cloudDatasetBrowser.deleteAllowed(entry.name, typed.Value, ...
-                    understand.Value, isGroup, groupBox.Value)));
+            % Anonymous functions capture values when created, so the
+            % checkboxes call a nested function that reads typedText live.
+            update = @(~,~) refreshEnable();
             understand.ValueChangedFcn = update;
             groupBox.ValueChangedFcn = update;
-            typed.ValueChangingFcn = @(~, evt) set(deleteBtn, 'Enable', ...
-                ndi.gui.nav.cloudInfoDialog.enableFor( ...
-                    ndi.gui.nav.cloudDatasetBrowser.deleteAllowed(entry.name, evt.Value, ...
-                        understand.Value, isGroup, groupBox.Value)));
-            typed.ValueChangedFcn = update;
+            typedText = '';
+            typed.ValueChangingFcn = @(~, evt) onTyping(evt.Value);
+            typed.ValueChangedFcn = @(src, ~) onTyping(src.Value);
             f.CloseRequestFcn = @(~,~) uiresume(f);
             try
                 focus(cancelBtn);   % R2022a+; Cancel is the safe default
@@ -408,14 +413,27 @@ classdef cloudDatasetBrowser < handle
             pressed = false;
             uiwait(f);
             if isvalid(f)
+                % typedText is the latest keystroke value, which the edit
+                % field may not have committed to typed.Value yet.
                 ok = pressed && ndi.gui.nav.cloudDatasetBrowser.deleteAllowed( ...
-                    entry.name, typed.Value, understand.Value, isGroup, groupBox.Value);
+                    entry.name, typedText, understand.Value, isGroup, groupBox.Value);
                 delete(f);
             end
 
             function onDeletePressed()
                 pressed = true;
                 uiresume(f);
+            end
+
+            function onTyping(value)
+                typedText = char(value);
+                refreshEnable();
+            end
+
+            function refreshEnable()
+                set(deleteBtn, 'Enable', ndi.gui.nav.cloudInfoDialog.enableFor( ...
+                    ndi.gui.nav.cloudDatasetBrowser.deleteAllowed(entry.name, typedText, ...
+                        understand.Value, isGroup, groupBox.Value)));
             end
         end
 
@@ -584,6 +602,15 @@ classdef cloudDatasetBrowser < handle
                 t = [s(1:10) ' ' s(12:16) ' UTC'];
             else
                 t = s;
+            end
+        end
+
+        function t = sortDirText(descending)
+            %SORTDIRTEXT Label of the ascending/descending toggle button.
+            if descending
+                t = 'Descending';
+            else
+                t = 'Ascending';
             end
         end
 
