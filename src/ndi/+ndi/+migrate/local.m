@@ -1783,7 +1783,11 @@ function [convertResult, bathAnchors, report] = resolveDeferred(convertResult, r
 %   ([canonical absent only as needs info]); the Dabrowska dataset map states
 %   their meaning. The rule [bath ph and osmolarity are formulation fields] is
 %   unchanged for a row NAMED osm / osmolarity in a unit the stage reads
-%   (stimulusBathToBath). REPORT, denominators first: deferred_seen (the
+%   (stimulusBathToBath). Since Jess Haley, 2026-11-12 [bath concentration
+%   prefixes convert to molar] an ingredient row in a unit that is not molar
+%   with a known SI prefix (mg/ml, a word) is a spelling that cannot be parsed
+%   and carries the bath the same way (bathUnreadUnitRows, as DID-matlab
+%   resolveDeferredBaths does, PR #456). REPORT, denominators first: deferred_seen (the
 %   deferrals this step read), baths_carried_unread_unit, and carry_rows
 %   {id, row, dependency} (secondPassCarryRows reads them).
     bathAnchors = [];
@@ -1834,7 +1838,8 @@ function [convertResult, bathAnchors, report] = resolveDeferred(convertResult, r
         end
     end
     fprintf(['[migrate step]   deferred baths carried as v1, a row in osm / ' ...
-        'saturation (carry-155): %d of %d deferral(s) read\n'], ...
+        'saturation or a concentration unit not read as molar (carry-155): ' ...
+        '%d of %d deferral(s) read\n'], ...
         report.baths_carried_unread_unit, report.deferred_seen);
     if isempty(assembled)
         convertResult.quarantine = q(keep);

@@ -80,7 +80,10 @@ classdef TestBathAssembly < matlab.unittest.TestCase
             testCase.verifyNumElements(f.formulation.value.ingredients, 1);
             conc = f.formulation.value.ingredients(1).concentration;
             testCase.verifyEqual(conc.source_value, 5);
-            testCase.verifyEqual(conc.source_unit.name, 'mg/ml');
+            testCase.verifyEqual(conc.source_unit.name, 'mM');
+            % [bath concentration prefixes convert to molar] (Jess Haley,
+            % 2026-11-12): the canonical in molar
+            testCase.verifyEqual(conc.molar, 0.005);
 
             % the anchor: valid on #88, during the session, epoch handed over
             testCase.verifyEqual(timeRef.document_class.class_name, ...
@@ -231,7 +234,7 @@ classdef TestBathAssembly < matlab.unittest.TestCase
                 'needs DID-matlab and a V_eta schema set (DID_SCHEMA_PATH)');
             v1 = stimulusBathDoc('stim_1', 't00001');
             v1.stimulus_bath.mixture_table = sprintf(['ontologyName,name,value,ontologyUnit,unitName\n' ...
-                'chebi:6904,muscimol,5,,mg/ml\n' ...
+                'chebi:6904,muscimol,5,,mM\n' ...
                 'chebi:26710,sodium chloride,,,\n']);
             r  = mockResolver('animal_1', 'dev_local_time');
             [~, ~, extra] = ndi.migrate.internal.stimulusBathToBath(v1, r, 'did_v2');
@@ -246,6 +249,174 @@ classdef TestBathAssembly < matlab.unittest.TestCase
             res = did2.convert.v1_to_v2({f}, 'TargetVersion', 'did_v2', 'Verbose', false);
             testCase.verifyEmpty(res.quarantine, 'the formulation was quarantined');
             testCase.verifyNumElements(res.migrated, 1);
+        end
+
+        % ---- [bath concentration prefixes convert to molar] --------------
+        % Jess Haley, 2026-11-12 (did-schema did_v2_go_forward_class_audit.md):
+        % "A bath concentration in a molar unit with a known SI prefix gets its
+        % canonical value in M; a spelling that cannot be parsed is carried for
+        % mapping." The same rules as DID-matlab resolveDeferredBaths
+        % (VH-Lab/DID-matlab PR #456): an osmolarity in osmoles per litre with
+        % a known prefix gets `osmolar`; any other osmolarity unit, and an
+        % ingredient number with no unit, are gaps in the run's report.
+
+        function testPrefixedValueReadsMolarAndOsmolarSpellings(testCase)
+            pv = @ndi.migrate.internal.bathPrefixedValue;
+            cases = { ...
+                5,    'mM',          'molar',   0.005; ...
+                0.1225, 'Molar',     'molar',   0.1225; ...
+                2,    'M',           'molar',   2; ...
+                10,   'uM',          'molar',   1e-5; ...
+                10,   [char(181) 'M'], 'molar', 1e-5; ...
+                3,    'nM',          'molar',   3e-9; ...
+                1,    'mmol/L',      'molar',   1e-3; ...
+                1,    'millimolar',  'molar',   1e-3; ...
+                290,  'mOsm/L',      'osmolar', 0.29; ...
+                290,  'mOsM',        'osmolar', 0.29; ...
+                0.3,  'Osm/L',       'osmolar', 0.3};
+            for k = 1:size(cases, 1)
+                [v, ok] = pv(cases{k, 1}, cases{k, 2}, cases{k, 3});
+                testCase.verifyTrue(ok, cases{k, 2});
+                testCase.verifyEqual(v, cases{k, 4}, cases{k, 2});
+            end
+            % not read: a symbol in the wrong case, a mass unit, an amount of
+            % osmoles with no volume, osmolality, no unit, a unit read as the
+            % other base
+            for u = {'MM', 'mg/ml', '%', 'mOsm', 'osm', 'mOsm/kg', '', 'mOsm/L'}
+                base = 'molar';
+                if strcmp(u{1}, 'mOsm') || strcmp(u{1}, 'osm') || strcmp(u{1}, 'mOsm/kg')
+                    base = 'osmolar';
+                end
+                [v, ok] = pv(1, u{1}, base);
+                testCase.verifyFalse(ok, [u{1} ' as ' base]);
+                testCase.verifyEmpty(v);
+            end
+            [~, ok] = pv(1, 'mM', 'osmolar');
+            testCase.verifyFalse(ok, 'mM is not osmolar');
+        end
+
+        function testAnUnparsableConcentrationUnitCarriesTheBath(testCase)
+            % bathUnreadUnitRows names the rows ndi.migrate.local's
+            % resolveDeferred carries a bath for (carry-155): an ingredient in
+            % a unit not read as molar; a molar-prefixed row, a pH row, an
+            % osmolarity row and a row with no unit are not named
+            hdr = sprintf('ontologyName,name,value,ontologyUnit,unitName\n');
+            b = struct('stimulus_bath', struct('mixture_table', [hdr ...
+                sprintf('chebi:6904,muscimol,5,,mg/ml\n') ...
+                sprintf('NCIm:C0037494,"sodium chloride",125,,mM\n') ...
+                sprintf('NCIm:C4048290,"pH",7.4,OM:Acidity,pH\n') ...
+                sprintf('NCIm:C0439186,"osmolarity",290,,mOsm\n') ...
+                sprintf('CHEBI:2,"glucose",10,,\n')]));
+            testCase.verifyEqual(ndi.migrate.internal.bathUnreadUnitRows(b), ...
+                {'muscimol: 5 mg/ml'});
+            % osm / saturation rows first, then the unparsed ones
+            b.stimulus_bath.mixture_table = [hdr ...
+                sprintf('chebi:6904,muscimol,5,,mg/ml\n') ...
+                sprintf('NCIm:CL1445492,"carbogen",1,NCIm:C0522534,saturation\n')];
+            testCase.verifyEqual(ndi.migrate.internal.bathUnreadUnitRows(b), ...
+                {'carbogen: 1 saturation', 'muscimol: 5 mg/ml'});
+            % every molar spelling is read: nothing carried
+            b.stimulus_bath.mixture_table = [hdr ...
+                sprintf('NCIm:C0037494,"sodium chloride",0.1225,OM:MolarVolumeUnit,Molar\n') ...
+                sprintf('CHEBI:1,"TTX",1,,uM\n')];
+            testCase.verifyEmpty(ndi.migrate.internal.bathUnreadUnitRows(b));
+        end
+
+        function testPrefixedUnitsGetTheirCanonicals(testCase)
+            % mM, uM and Molar ingredients get `molar`; an osmolarity in
+            % mOsm/L gets `osmolar`; nothing is a gap
+            did2.convert.migrationReport('begin');
+            cleanup = onCleanup(@() did2.convert.migrationReport('end')); %#ok<NASGU>
+            f = formulationOf(testCase, sprintf(['ontologyName,name,value,ontologyUnit,unitName\n' ...
+                'NCIm:C0037494,"sodium chloride",125,,mM\n' ...
+                'CHEBI:1,"TTX",1,,uM\n' ...
+                'NCIm:C0032825,"potassium chloride",0.0035,OM:MolarVolumeUnit,Molar\n' ...
+                'NCIm:C0439186,"osmolarity",290,,mOsm/L\n']));
+            ing = f.formulation.value.ingredients;
+            testCase.verifyNumElements(ing, 3);
+            testCase.verifyEqual(ing(1).concentration.molar, 0.125);
+            testCase.verifyEqual(ing(1).concentration.source_value, 125);
+            testCase.verifyEqual(ing(1).concentration.source_unit.name, 'mM');
+            testCase.verifyEqual(ing(2).concentration.molar, 1e-6);
+            testCase.verifyEqual(ing(3).concentration.molar, 0.0035);
+            osm = f.formulation.value.osmolarity;
+            testCase.verifyEqual(osm.osmolar, 0.29);
+            testCase.verifyEqual(osm.source_value, 290);
+            testCase.verifyEqual(osm.source_unit.name, 'mOsm/L');
+            testCase.verifyEmpty(did2.convert.migrationReport('gaps', f.base.id));
+        end
+
+        function testAnUnreadOsmolarityAndAUnitlessNumberAreGaps(testCase)
+            % a bare mOsm states neither per litre nor per kg: no `osmolar`,
+            % a gap; an ingredient number with no unit: no canonical, a gap
+            % (the gap names '<cell>.canonical', as jDoseBodies does)
+            did2.convert.migrationReport('begin');
+            cleanup = onCleanup(@() did2.convert.migrationReport('end')); %#ok<NASGU>
+            f = formulationOf(testCase, sprintf(['ontologyName,name,value,ontologyUnit,unitName\n' ...
+                'NCIm:C0037494,"sodium chloride",125,,mM\n' ...
+                'CHEBI:2,"glucose",10,,\n' ...
+                'NCIm:C0439186,"osmolarity",290,,mOsm\n']));
+            ing = f.formulation.value.ingredients;
+            testCase.verifyEqual(ing(1).concentration.molar, 0.125);
+            c2 = ing(2).concentration;
+            testCase.verifyEqual(c2.source_value, 10);
+            testCase.verifyFalse(isfield(c2, 'source_unit') && ~isempty(c2.source_unit), ...
+                'no unit stated, none written');
+            testCase.verifyFalse(isfield(c2, 'molar') && ~isempty(c2.molar));
+            osm = f.formulation.value.osmolarity;
+            testCase.verifyFalse(isfield(osm, 'osmolar'));
+            testCase.verifyEqual(osm.source_unit.name, 'mOsm');
+            gaps = did2.convert.migrationReport('gaps', f.base.id);
+            testCase.verifyEqual(sort({gaps.field}), sort({ ...
+                'formulation.value.ingredients(2).concentration.canonical', ...
+                'formulation.value.osmolarity.osmolar'}));
+        end
+
+        function testAnOsmolarityWithNoUnitWritesNoUnit(testCase)
+            did2.convert.migrationReport('begin');
+            cleanup = onCleanup(@() did2.convert.migrationReport('end')); %#ok<NASGU>
+            f = formulationOf(testCase, sprintf(['ontologyName,name,value,ontologyUnit,unitName\n' ...
+                'NCIm:C0037494,"sodium chloride",125,,mM\n' ...
+                'NCIm:C0439186,"osm",0.29,,\n']));
+            osm = f.formulation.value.osmolarity;
+            testCase.verifyFalse(isfield(osm, 'source_unit'));
+            testCase.verifyFalse(isfield(osm, 'osmolar'));
+            gaps = did2.convert.migrationReport('gaps', f.base.id);
+            testCase.verifyEqual({gaps.field}, {'formulation.value.osmolarity.osmolar'});
+        end
+
+        function testCanonicalsAndGapsPassTheValidator(testCase)
+            % folded as ndi.migrate.local folds it, under the run's report: a
+            % prefixed canonical, an osmolar canonical, and the listed gaps
+            % all validate (under DID-matlab V2's validator and under PR
+            % #456's, which refuses a several-canonical cell with a number,
+            % no canonical and no gap)
+            testCase.assumeTrue(~isempty(which('did2.convert.v1_to_v2')) ...
+                && ~isempty(getenv('DID_SCHEMA_PATH')), ...
+                'needs DID-matlab and a V_eta schema set (DID_SCHEMA_PATH)');
+            did2.convert.migrationReport('begin');
+            cleanup = onCleanup(@() did2.convert.migrationReport('end')); %#ok<NASGU>
+            tables = { ...
+                sprintf(['ontologyName,name,value,ontologyUnit,unitName\n' ...
+                    'NCIm:C0037494,"sodium chloride",125,,mM\n' ...
+                    'CHEBI:1,"TTX",1,,uM\n' ...
+                    'NCIm:C0439186,"osmolarity",290,,mOsm/L\n']), ...
+                sprintf(['ontologyName,name,value,ontologyUnit,unitName\n' ...
+                    'NCIm:C0037494,"sodium chloride",125,,mM\n' ...
+                    'CHEBI:2,"glucose",10,,\n' ...
+                    'NCIm:C0439186,"osmolarity",290,,mOsm\n'])};
+            for k = 1:numel(tables)
+                f = formulationOf(testCase, tables{k});
+                res = did2.convert.v1_to_v2({f}, 'TargetVersion', 'did_v2', 'Verbose', false);
+                reasons = '';
+                if ~isempty(res.quarantine)
+                    reasons = strjoin(cellfun(@char, {res.quarantine.reason}, ...
+                        'UniformOutput', false), ' | ');
+                end
+                testCase.verifyEmpty(res.quarantine, sprintf( ...
+                    'table %d: the formulation was quarantined: %s', k, reasons));
+                testCase.verifyNumElements(res.migrated, 1);
+            end
         end
 
         function testTheGuardIsVetaOnlyAndOlderTargetsAreUntouched(testCase)
@@ -288,7 +459,18 @@ v1.base = struct('id', 'bath_1', 'session_id', 'sess_09', ...
 v1.epochid = struct('epochid', epochId);
 v1.stimulus_bath = struct( ...
     'location', struct('ontologyNode', 'uberon:0001017', 'name', 'CNS'), ...
-    'mixture_table', 'chebi:6904,muscimol,5,,mg/ml');
+    'mixture_table', 'chebi:6904,muscimol,5,,mM');
+end
+
+function f = formulationOf(testCase, mixtureTable)
+% the formulation stimulusBathToBath assembles for a bath of MIXTURETABLE
+v1 = stimulusBathDoc('stim_1', 't00001');
+v1.stimulus_bath.mixture_table = mixtureTable;
+r  = mockResolver('animal_1', 'dev_local_time');
+[~, ~, extra] = ndi.migrate.internal.stimulusBathToBath(v1, r, 'did_v2');
+classes = cellfun(@(b) b.document_class.class_name, extra, 'UniformOutput', false);
+testCase.assertEqual(sum(strcmp(classes, 'formulation')), 1);
+f = extra{strcmp(classes, 'formulation')};
 end
 
 function out = siteOf(bodies)
