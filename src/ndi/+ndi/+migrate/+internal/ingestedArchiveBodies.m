@@ -72,22 +72,36 @@ function [structs, report, removed] = ingestedArchiveBodies(structs, ndiDir, v1B
 %                            n = the time samples, chunk = the v1 segment
 %                            length (sample_analog_segment, as the v1 ingest
 %                            cuts time segments); format, compression,
-%                            filename, files unchanged
+%                            filename unchanged; files unchanged when the
+%                            epoch starts at 0, else NEW files (below)
 %       each channel group   as above, but its time covariate is `key` 0 and
 %                            its `key_id` the time value
 %
-%     Converted only when (otherwise the archive is LEFT as pass 1 wrote it):
-%       - the archive has ONE time group holding ONE time channel, and every
-%         channel group has as many samples as it (every group keys to it);
-%         else `unconvertible`, with the reason;
-%       - the epoch starts at 0 on its clock (the v1 archive's t0_t1(1) is
-%         0), counted `uneven_time_not_from_zero` otherwise. [clock only on
-%         the time reference] (Jess Haley, 2026-11-01): a body's time axis
-%         counts "the epoch-relative sample times when not evenly spaced";
-%         the v1 time segments hold times on the epoch's clock (sample k is
-%         t0 + ... there), so they are the epoch-relative times, unchanged,
-%         only when t0 is 0. Rewriting the bytes as t - t0 is not decided
-%         (this step writes no file).
+%     Converted only when the archive has ONE time group holding ONE time
+%     channel, and every channel group has as many samples as it (every
+%     group keys to it); else `unconvertible`, with the reason, and the
+%     archive is LEFT as pass 1 wrote it.
+%
+%     The time value's samples are seconds from the epoch's start. [clock
+%     only on the time reference] (Jess Haley, 2026-11-01): a body's time
+%     axis counts "the epoch-relative sample times when not evenly spaced";
+%     the v1 time segments hold times on the epoch's clock (sample k is
+%     t0 + ... there, t0 the v1 archive's t0_t1(1)). When t0 is 0 they are
+%     the epoch-relative times and the body keeps pass 1's files. When it
+%     is not (counted `uneven_time_rebased`), [uneven time rewritten from
+%     the epoch start] (Jess Haley, 2026-11-12): the time group's samples
+%     are rewritten as t - t0 into NEW files, one per v1 segment, each
+%     compressed as the v1 ingest compressed it (ndi.compress.compress_time,
+%     ndi.daq.reader.mfdaq/ingest_epochfiles) and written into the store,
+%     <NDIDIR>/files/<new uid>, as members body_data_0..N-1 of the time
+%     value's sampled_body; every channel group keys to it as above. The
+%     v1 files stay where they are (a migration deletes no file). The v1
+%     epoch start stays on the recording observation's time references,
+%     where pass 1 wrote it, so reading sample k through the time reference
+%     (ndi.daq.reader.mfdaq adds its start) gives the v1 clock time back.
+%     REPORT.written_files lists, per converted archive (parallel to
+%     changed_groups), the store paths of the files written for it, so a
+%     caller that reverts the group can delete them.
 %
 %     `channel_list.bin` is REMOVED only when every one of its rows is
 %     carried by a converted body: a row of a converted channel group, named
@@ -117,7 +131,8 @@ function [structs, report, removed] = ingestedArchiveBodies(structs, ndiDir, v1B
 %
 %   REPORT.changed_groups lists, per archive converted, the ids of every
 %   body replaced or removed for it; the caller re-validates each group and
-%   reverts a group that does not come back clean.
+%   reverts a group that does not come back clean. Apart from the rebased
+%   time files above, this step writes no file.
 %
 %   See also did2.convert.resolveEpochProbemap,
 %            ndi.migrate.internal.epochSeriesBodies,
@@ -145,10 +160,11 @@ report = struct( ...
     'v1_archive_not_found',       0, ...
     'time_not_evenly_spaced',     0, ...
     'uneven_time_converted',      0, ...
-    'uneven_time_not_from_zero',  0, ...
+    'uneven_time_rebased',        0, ...
     'unconvertible',              0, ...
     'first_unconvertible_reason', '', ...
     'changed_groups',             {{}}, ...
+    'written_files',              {{}}, ...
     'changed_ids',                {{}}, ...
     'added_ids',                  {{}});
 removed = {};
@@ -212,9 +228,9 @@ for a = 1:numel(groupKeys)
     end
 
     try
-        [made, gone, why, added, uneven] = convertArchive(structs, idx, kinds, clIdx, ci, arch, storeDir);
+        [made, gone, why, added, uneven, written] = convertArchive(structs, idx, kinds, clIdx, ci, arch, storeDir);
     catch err
-        made = {}; gone = {}; added = {}; uneven = false;
+        made = {}; gone = {}; added = {}; uneven = false; written = {};
         why = sprintf('%s: %s', err.identifier, err.message);
     end
     if uneven
@@ -222,9 +238,6 @@ for a = 1:numel(groupKeys)
     end
     if strcmp(why, 'bytes_not_here')
         report.bytes_not_here = report.bytes_not_here + 1;
-        continue;
-    elseif strcmp(why, 'uneven_time_not_from_zero')
-        report.uneven_time_not_from_zero = report.uneven_time_not_from_zero + 1;
         continue;
     elseif ~isempty(why)
         report.unconvertible = report.unconvertible + 1;
@@ -246,6 +259,9 @@ for a = 1:numel(groupKeys)
     end
     if uneven
         report.uneven_time_converted = report.uneven_time_converted + 1;
+        if ~isempty(written)
+            report.uneven_time_rebased = report.uneven_time_rebased + 1;
+        end
     end
     for g = 1:numel(gone)
         ids{end+1} = gone{g}; %#ok<AGROW>
@@ -262,21 +278,26 @@ for a = 1:numel(groupKeys)
     report.archives_converted = report.archives_converted + 1;
     report.group_bodies_described = report.group_bodies_described + numel(made) - numel(added);
     report.changed_groups{end+1} = ids;
+    report.written_files{end+1} = written;
     report.changed_ids = [report.changed_ids, ids];
 end
 end
 
 % =====================================================================
 
-function [made, gone, why, added, uneven] = convertArchive(structs, idx, kinds, clIdx, ci, arch, storeDir)
+function [made, gone, why, added, uneven, written] = convertArchive(structs, idx, kinds, clIdx, ci, arch, storeDir)
 %CONVERTARCHIVE The sampled bodies of one archive, or why it is left. ADDED
 %   are the documents made for it (the `time` value of an unevenly spaced
 %   time channel); UNEVEN is true when its time channel is not evenly spaced.
+%   WRITTEN are the store paths of the files written for it (the rebased
+%   time segments when the epoch does not start at 0); written last, only
+%   once every check has passed.
 made = {};
 gone = {};
 why = '';
 added = {};
 uneven = false;
+written = {};
 [types, abbrev] = ndi.daq.reader.mfdaq.channel_types();
 ciType = cellfun(@char, {ci.type}, 'UniformOutput', false);
 ciGroup = double([ci.group]);
@@ -332,13 +353,10 @@ for j = timeJ(:)'
             'written for one time channel only'], bodyFilename(b), numel(timeJ), numel(rows));
         return;
     end
-    if t0 ~= 0
-        why = 'uneven_time_not_from_zero';
-        return;
-    end
     seg = paramOf(params, 'sample_analog_segment');
     if ~isfinite(seg); seg = size(tsegs{1}, 1); end
-    keyed = struct('k', idx(j), 'n', size(t, 1), 'seg', seg, 'id', did.ido.unique_id());
+    keyed = struct('k', idx(j), 'n', size(t, 1), 'seg', seg, 'id', did.ido.unique_id(), ...
+        't0', t0, 'tsegs', {tsegs});
 end
 
 for j = 1:numel(idx)
@@ -408,7 +426,8 @@ for j = 1:numel(idx)
 end
 if isempty(made); why = 'no channel group to convert'; return; end
 if ~isempty(keyed)
-    [value, tbody] = keyedTime(structs{keyed.k}, keyed.id, keyed.n, keyed.seg);
+    [value, tbody, written] = keyedTime(structs{keyed.k}, keyed.id, keyed.n, keyed.seg, ...
+        keyed.t0, keyed.tsegs, storeDir);
     added{end+1} = value;
     made{end+1} = struct('k', keyed.k, 'body', tbody);
 end
@@ -417,10 +436,14 @@ if all(carriedRows)
 end
 end
 
-function [value, body] = keyedTime(tb, valueId, n, seg)
+function [value, body, written] = keyedTime(tb, valueId, n, seg, t0, tsegs, storeDir)
 % [uneven time is a keyed time value]: the standalone `time` value
 % (data_body true; no time reference) and the time group's body as its
-% sampled_body, one time dimension, id, files, format and compression kept
+% sampled_body, one time dimension, id, format and compression kept. Its
+% files are pass 1's when the epoch starts at 0 (T0); otherwise ([uneven time
+% rewritten from the epoch start]) each v1 segment TSEGS{m} is rewritten as
+% TSEGS{m} - T0 into a new store file, WRITTEN its paths
+written = {};
 restore = ndi.migrate.internal.termRegistryOff(); %#ok<NASGU>
 sid = char(did2.schema.cache.sessionIdOf(tb));
 ts = '';
@@ -435,7 +458,8 @@ args = {'Id', baseId(tb), 'SessionId', sid, 'Validate', false, ...
     'Fields', struct('filename', bodyFilename(tb)), ...
     'Notes', sprintf(['%s The NDI second pass read it as the body of the recording''s ' ...
         'time value (%d unevenly spaced sample(s), seconds from the epoch''s start); ' ...
-        'each channel group''s time is a key to it.'], strtrim(ndi.v2.notesOf(db)), n), ...
+        'each channel group''s time is a key to it.%s'], strtrim(ndi.v2.notesOf(db)), n, ...
+        rebasedNote(t0)), ...
     tsArg{:}};
 if isfield(db, 'format') && isstruct(db.format) && isfield(db.format, 'node') ...
         && ~isempty(db.format.node)
@@ -447,6 +471,49 @@ end
 body = did2.build.sampledBody(baseId(value), ...
     did2.build.dimension(timeTerm, n, 'Chunk', seg), args{:});
 body.files = tb.files;
+if t0 ~= 0
+    [body.files, written] = rebasedTimeFiles(tb.files, tsegs, t0, storeDir);
+end
+end
+
+function s = rebasedNote(t0)
+s = '';
+if t0 ~= 0
+    s = sprintf([' Its v1 times were on the epoch''s clock, from t0 = %.17g s; they were ' ...
+        'rewritten as t - t0 into new files (the epoch''s start is on the recording''s ' ...
+        'time references).'], t0);
+end
+end
+
+function [files, written] = rebasedTimeFiles(files, tsegs, t0, storeDir)
+% [uneven time rewritten from the epoch start]: v1 segment m (member
+% body_data_<m-1>), rewritten as t - t0, compressed as the v1 ingest
+% compressed it (ndi.compress.compress_time), into the store under a new uid
+infos = files.file_info;
+if isstruct(infos); infos = num2cell(infos); end
+names = cellfun(@(f) char(f.name), infos, 'UniformOutput', false);
+written = {};
+out = cell(1, numel(tsegs));
+try
+    for m = 1:numel(tsegs)
+        i = find(strcmp(names, sprintf('body_data_%d', m - 1)), 1);
+        fi = infos{i};
+        uid = char(did.ido.unique_id());
+        dest = fullfile(storeDir, uid);
+        stem = ndi.file.temp_name();
+        ndi.compress.compress_time(double(tsegs{m}) - t0, stem);
+        movefile([stem '.nbf.tgz'], dest);
+        written{end+1} = dest; %#ok<AGROW>
+        loc = struct('delete_original', 0, 'uid', uid, 'location', dest, ...
+            'parameters', '', 'location_type', 'file', 'ingest', 1);
+        fi.locations = loc;
+        out{m} = fi;
+    end
+catch err
+    cellfun(@deleteIfThere, written);
+    rethrow(err);
+end
+files.file_info = [out{:}];
 end
 
 function body = sampledFromOpaque(b, rows, ci, type, types, abbrev, sr, n, seg, timeId)

@@ -4,7 +4,8 @@ classdef TestIngestedArchiveBodies < matlab.unittest.TestCase
 %   as an opaque_body of its segment files) into one sampled_body whose
 %   channel list is covariates (Decided by Jess Haley, 2026-11-01 [ingested
 %   archives are sampled bodies], [evenly spaced time is a covariate], [clock
-%   only on the time reference], [uneven time is a keyed time value]). The segments and channel_list.bin are
+%   only on the time reference], [uneven time is a keyed time value]; and
+%   Jess Haley, 2026-11-12, [uneven time rewritten from the epoch start]). The segments and channel_list.bin are
 %   written by NDI's own writers (ndi.compress, ndi.file.type.
 %   mfdaq_epoch_channel), as ndi.daq.reader.mfdaq/ingest_epochfiles does.
 
@@ -111,6 +112,12 @@ classdef TestIngestedArchiveBodies < matlab.unittest.TestCase
             testCase.verifyEqual(double(tb.data.dimensions(1).n), 160);
             testCase.verifyEqual(double(tb.data.dimensions(1).chunk), 100);
             testCase.verifyEqual(numel(tb.files.file_info), 2, 'the members are unchanged');
+            % the epoch starts at 0: pass 1's files, no file written
+            testCase.verifyEqual(rep.uneven_time_rebased, 0);
+            testCase.verifyEqual(rep.written_files, {{}});
+            testCase.verifyEqual(memberUids(tb), {'u_ti_1', 'u_ti_2'});
+            testCase.verifyEqual(numel(dir(fullfile(testCase.Dir, 'files'))) - 2, 5, ...
+                'no file added to the store');
             % the channel group: its time is a key to the time value
             b = out{2};
             testCase.verifyEqual(b.document_class.class_name, 'sampled_body');
@@ -128,18 +135,61 @@ classdef TestIngestedArchiveBodies < matlab.unittest.TestCase
             testCase.verifyEqual(numel(res.migrated), numel(out));
         end
 
-        function testUnevenTimeNotFromZeroLeavesTheArchive(testCase)
+        function testUnevenTimeNotFromZeroIsRewrittenFromTheStart(testCase)
             % [clock only on the time reference]: the body's times are
-            % seconds from the epoch's start; v1's are on the epoch's clock,
-            % the same numbers only when the epoch starts at 0
-            [structs, v1] = testCase.archive(true, false, 5);
+            % seconds from the epoch's start; v1's are on the epoch's clock.
+            % [uneven time rewritten from the epoch start] (Jess Haley,
+            % 2026-11-12): an epoch starting at t0 = 5 converts, its times
+            % rewritten as t - t0 into new files; the epoch's start stays on
+            % the recording's time references
+            [structs, v1, tv1] = testCase.archive(true, false, 5);
             [out, rep, removed] = ndi.migrate.internal.ingestedArchiveBodies( ...
                 structs, testCase.Dir, v1);
             testCase.verifyEqual(rep.time_not_evenly_spaced, 1);
-            testCase.verifyEqual(rep.uneven_time_not_from_zero, 1);
-            testCase.verifyEqual(rep.archives_converted, 0);
+            testCase.verifyEqual(rep.uneven_time_converted, 1);
+            testCase.verifyEqual(rep.uneven_time_rebased, 1);
+            testCase.verifyEqual(rep.archives_converted, 1, rep.first_unconvertible_reason);
+            testCase.verifyEqual(rep.unconvertible, 0);
+            testCase.verifyEqual(rep.archives_seen, 1, 'the denominator is kept');
+            testCase.verifyEqual(rep.documents_inspected, numel(structs));
             testCase.verifyEmpty(removed);
-            testCase.verifyEqual(out, structs, 'nothing changed');
+            testCase.verifyEqual(numel(out), numel(structs) + 1, 'one document added');
+            value = out{end};
+            testCase.verifyEqual(value.document_class.class_name, 'time');
+            % the time body: owned by the value, NEW member files in the store
+            tb = out{cellfun(@(x) strcmp(x.base.id, 'body_ti'), out)};
+            testCase.verifyEqual(tb.document_class.class_name, 'sampled_body');
+            testCase.verifyEqual(edgeOf(tb, 'owner_id'), {value.base.id});
+            testCase.verifyEqual(double(tb.data.dimensions(1).n), 160);
+            testCase.verifyEqual(double(tb.data.dimensions(1).chunk), 100);
+            uids = memberUids(tb);
+            testCase.verifyEqual(numel(uids), 2);
+            testCase.verifyFalse(any(ismember(uids, {'u_ti_1', 'u_ti_2'})), 'new files');
+            testCase.verifyEqual(numel(rep.written_files), 1);
+            testCase.verifyEqual(sort(rep.written_files{1}), ...
+                sort(fullfile(testCase.Dir, 'files', uids)));
+            testCase.verifyTrue(isfile(fullfile(testCase.Dir, 'files', 'u_ti_1')) && ...
+                isfile(fullfile(testCase.Dir, 'files', 'u_ti_2')), 'the v1 files are kept');
+            stored = [readTime(fullfile(testCase.Dir, 'files', uids{1})); ...
+                readTime(fullfile(testCase.Dir, 'files', uids{2}))];
+            testCase.verifyEqual(size(stored), [100 + 60, 1], 'one v1 segment per file');
+            testCase.verifyEqual(stored, tv1 - 5, 'AbsTol', 1e-9, 'stored = v1 times - t0');
+            testCase.verifyEqual(stored(1), 0, 'AbsTol', 1e-12, 'from the epoch''s start');
+            % read on the epoch's clock as ndi.daq.reader.mfdaq does: the
+            % stored seconds plus the start the time reference states (pass
+            % 1 writes the v1 t0_t1(1) there, unchanged by this step)
+            t0ref = v1{1}.daqreader_epochdata_ingested.epochtable.t0_t1(1);
+            testCase.verifyEqual(t0ref + stored, tv1, 'AbsTol', 1e-9, 'the v1 clock times');
+            % the channel group keys to the value, as when t0 is 0
+            b = out{2};
+            testCase.verifyEqual(edgeOf(b, 'key_id'), {value.base.id});
+            covs = b.data.covariates;
+            vars = arrayfun(@(c) char(c.variable.name), covs, 'UniformOutput', false);
+            testCase.verifyEqual(double(covs(strcmp(vars, 'time')).key), 0);
+            % the converted set validates against the real schema
+            res = did2.convert.v1_to_v2(out, 'Validate', true, 'TargetVersion', 'did_v2');
+            testCase.verifyEmpty(res.quarantine);
+            testCase.verifyEqual(numel(res.migrated), numel(out));
         end
 
         function testBytesNotHereLeaveTheArchive(testCase)
@@ -154,11 +204,12 @@ classdef TestIngestedArchiveBodies < matlab.unittest.TestCase
     end
 
     methods
-        function [s, v1] = archive(testCase, withTime, evenTime, t0)
+        function [s, v1, t] = archive(testCase, withTime, evenTime, t0)
             % an epoch of 160 samples at 10 kHz, 3 analog inputs in
             % segments of 100 (NDI's ephys compressor fits a predictor, so
             % a segment needs more samples than its order), and
-            % (WITHTIME) the time channel t1; the epoch starts at T0 (0)
+            % (WITHTIME) the time channel t1, its v1 times T; the epoch
+            % starts at T0 (0)
             if nargin < 4; t0 = 0; end
             sr = 10000;
             ch = struct('name', {'ai1', 'ai2', 'ai3'}, 'type', 'analog_in', ...
@@ -181,6 +232,7 @@ classdef TestIngestedArchiveBodies < matlab.unittest.TestCase
                 movefile([stem '.nbf.tgz'], fullfile(files, sprintf('u_ai_%d', k)));
             end
             uids = {'u_cl', 'u_ai_1', 'u_ai_2'};
+            t = [];
             obs = owner();
             s = {obs, ...
                 body('body_ai', 'ai_group1_seg.nbf_#', {'u_ai_1', 'u_ai_2'}), ...
@@ -224,6 +276,20 @@ for k = 1:numel(deps)
         ids{end+1} = v; %#ok<AGROW>
     end
 end
+end
+
+function uids = memberUids(b)
+fi = b.files.file_info;
+if isstruct(fi); fi = num2cell(fi); end
+uids = cellfun(@(f) char(f.locations(1).uid), fi, 'UniformOutput', false);
+end
+
+function t = readTime(path)
+% NDI's own expander, as the reader reads a time segment
+stem = tempname();
+copyfile(path, [stem '.nbf.tgz']);
+c = onCleanup(@() delete([stem '.nbf.tgz']));
+t = ndi.compress.expand_time(stem);
 end
 
 function obs = owner()
