@@ -229,7 +229,15 @@ function [ids, nBody] = stimulatorManipulations(S)
 % left (nBody)
 ids = {};
 nBody = 0;
-stims = ndi.vintage.elementSubjectDocs(S, 'stimulator');
+% the migrated stimulator elements: the probes (ndi.vintage.elementSubjectDocs
+% 'probe') whose element type is stimulator (ndi.vintage.elementFields). Not
+% elementSubjectDocs(S, 'stimulator'): that matched the "ndi element class"
+% assertion's class name, which DID-matlab no longer writes ([ndi element
+% class not kept], [element recognised by its links], Jess Haley, 2026-11-10,
+% did-schema did_v2_go_forward_class_audit.md); a probe's rebuilt class stem
+% is ndi.probe. and does not name its type.
+stims = ndi.vintage.elementSubjectDocs(S, 'probe');
+stims = stims(cellfun(@(d) strcmp(char(ndi.vintage.elementFields(d, S).type), 'stimulator'), stims));
 if isempty(stims); return; end
 stimIds = cellfun(@(d) char(d.id()), stims, 'UniformOutput', false);
 found = S.database_search(ndi.v2.isaQuery('manipulation') & ...

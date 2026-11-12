@@ -228,7 +228,15 @@ classdef TestStimulatorRowFromWiring < matlab.unittest.TestCase
         end
 
         function id = stimulatorId(S)
-            docs = ndi.vintage.elementSubjectDocs(S, 'stimulator');
+            % the migrated stimulator elements: the probes (ndi.vintage.elementSubjectDocs
+            % 'probe') whose element type is stimulator (ndi.vintage.elementFields). Not
+            % elementSubjectDocs(S, 'stimulator'): that matched the "ndi element class"
+            % assertion's class name, which DID-matlab no longer writes ([ndi element
+            % class not kept], [element recognised by its links], Jess Haley, 2026-11-10,
+            % did-schema did_v2_go_forward_class_audit.md); a probe's rebuilt class stem
+            % is ndi.probe. and does not name its type.
+            docs = ndi.vintage.elementSubjectDocs(S, 'probe');
+            docs = docs(cellfun(@(d) strcmp(char(ndi.vintage.elementFields(d, S).type), 'stimulator'), docs));
             assert(numel(docs) == 1, 'expected one migrated stimulator element, found %d', numel(docs));
             id = char(docs{1}.id());
         end
