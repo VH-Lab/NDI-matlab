@@ -47,8 +47,10 @@ used = {};
 for k = 1:numel(statements)
     used = [used, ndi.v2.edgeIds(statements{k}.document_properties, 'time_reference_id')]; %#ok<AGROW>
 end
-order = [find(ismember(anchorIds, used)), find(~ismember(anchorIds, used))];
-for k = order(:)'
+% the recordings' anchors in the order they name them (v1's clock order),
+% then the rest (private/anchorOrder)
+order = anchorOrder(anchorIds, used);
+for k = order
     [ok, clk, t0, t1] = anchorClockExtent(anchors{k}.document_properties);
     if ok && ~any(strcmp(A.epochclock, clk))
         A.epochclock{end+1} = clk;
