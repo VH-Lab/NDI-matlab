@@ -23,6 +23,17 @@ function probe_location_docs = probeLocations4probes(S, probes, ontology_lookup_
     %
     %   Returns a cell array of the newly created ndi.document objects.
     %
+    %   The documents are written for the session's database: on a v2 database
+    %   (ndi.session/writesV2) each probe's location is the v2 record
+    %   ndi.fun.doc.probe.probeLocationV2 builds (an `observation` with value
+    %   kind `term` about the probe, variable Anatomic Site, and its session
+    %   time reference), the shape DID-matlab's +migrators_j/probe_location.m
+    %   gives a v1 `probe_location`; on a v1 database it is the v1
+    %   `probe_location` document. Jess Haley's decisions of 2026-11-03 [writers
+    %   are given the session] and [v2 line reads and writes both] (did-schema
+    %   did_v2_go_forward_class_audit.md): a tool learns the version from the
+    %   session's database.
+    %
     %   Example:
     %     % Assuming S is an ndi.session.dir object and myprobes is a cell array of probes
     %     locations = {'UBERON:0002436', 'UBERON:0000411'}; % V1, visual cortex
@@ -58,6 +69,13 @@ function probe_location_docs = probeLocations4probes(S, probes, ontology_lookup_
         catch ME
             warning(['Could not look up ontology term ''' lookup_string '''. Skipping probe ' current_probe.probestring() '. Error: ' ME.message]);
             continue; % Skip to the next probe
+        end
+
+        % on a v2 database, the v2 record of the location (see above)
+        if S.writesV2()
+            probe_location_docs = [probe_location_docs, ...
+                ndi.fun.doc.probe.probeLocationV2(S, current_probe.id(), ontologyName, name)]; %#ok<AGROW>
+            continue;
         end
 
         % Step 2: Create a new probe_location document
