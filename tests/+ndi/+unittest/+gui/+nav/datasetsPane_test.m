@@ -71,27 +71,27 @@ classdef datasetsPane_test < matlab.unittest.TestCase
             testCase.verifySubstring(f('for'), 'not a valid MATLAB variable name');
         end
 
-        %% Cloud context-menu status/result message helpers
+        %% "Remove from list" filtering
 
-        function testCloudCheckMessageRemotePluralisation(testCase)
-            f = @(n) ndi.gui.nav.datasetsPane.cloudCheckMessage('remote', n);
-            testCase.verifySubstring(f(0), 'no new documents on the cloud');
-            testCase.verifySubstring(f(1), 'There is 1 document on the cloud');
-            testCase.verifySubstring(f(3), 'There are 3 documents on the cloud');
+        function testWithoutIdsDropsHiddenOnly(testCase)
+            % Stand-ins with an id() method (a struct field holding a
+            % function handle answers o.id() the same way).
+            a = struct('id', @() 'aaa');
+            b = struct('id', @() 'bbb');
+            noId = struct('name', 'x');
+            out = ndi.gui.nav.datasetsPane.withoutIds({a, b, noId}, {'bbb'});
+            testCase.verifyNumElements(out, 2);
+            testCase.verifyEqual(out{1}.id(), 'aaa');
+            testCase.verifyEqual(out{2}, noId);
         end
 
-        function testCloudCheckMessageLocalPluralisation(testCase)
-            f = @(n) ndi.gui.nav.datasetsPane.cloudCheckMessage('local', n);
-            testCase.verifySubstring(f(0), 'no new local documents');
-            testCase.verifySubstring(f(1), 'There is 1 local document');
-            testCase.verifySubstring(f(2), 'There are 2 local documents');
+        function testWithoutIdsNoHiddenKeepsAll(testCase)
+            a = struct('id', @() 'aaa');
+            out = ndi.gui.nav.datasetsPane.withoutIds({a}, {});
+            testCase.verifyNumElements(out, 1);
         end
 
-        function testCloudCheckMessageRejectsBadSide(testCase)
-            testCase.verifyError( ...
-                @() ndi.gui.nav.datasetsPane.cloudCheckMessage('sideways', 1), ...
-                'NDI:datasetsPane:BadSide');
-        end
+        %% Cloud sync result message
 
         function testSyncResultMessageNoChanges(testCase)
             % A report with all-empty count fields reports "no changes".

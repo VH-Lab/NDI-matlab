@@ -11,7 +11,7 @@ classdef cloudPane < ndi.gui.nav.pane
 %       * a "C" button (hover text "Check NDI Cloud status of all datasets")
 %         that checks, for every dataset in the Datasets pane, whether it is
 %         linked to NDI Cloud and badges each one accordingly - the bulk
-%         equivalent of the per-dataset "Check Cloud status" menu command, so
+%         equivalent of the per-dataset "Cloud info..." menu command, so
 %         the user does not have to check them one by one. The "C" matches the
 %         light-blue cloud badge drawn on datasets that are in the cloud.
 %       * a "Profile" button that opens the NDI Cloud profile editor
@@ -84,7 +84,7 @@ classdef cloudPane < ndi.gui.nav.pane
             %   checkAllCloudStatus (each dataset's isInCloud is queried, its
             %   badge updated, and its state cached), under a progress dialog,
             %   then reports a one-line summary. This is the bulk equivalent of
-            %   the per-dataset "Check Cloud status" command.
+            %   the per-dataset "Cloud info..." command.
             fig = obj.Navigator.Figure;
             title = 'Check NDI Cloud status';
             dp = obj.Navigator.datasetsPaneHandle();

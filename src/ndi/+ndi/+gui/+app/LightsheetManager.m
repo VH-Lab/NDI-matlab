@@ -36,6 +36,13 @@ classdef LightsheetManager < ndi.gui.app.sessionApp
 %   goes through ndi.cloud.upload.SessionWriter and is not listed here:
 %   the table shows this session.
 %
+%   SORTING IS THE MODEL'S, NOT THE TABLE'S. The "Sort by" control above
+%   the table orders the rows by any column (Label, Subject, Reduction,
+%   Levels, Shape, dtype), ascending or descending. The rows themselves are
+%   reordered (sortRows), not just their display, so a selected row always
+%   names the pyramid it shows and View/Delete act on the right image. The
+%   choice is kept across Reload.
+%
 %   DELETING IS A CASCADE. Levels depend on the pyramid, so removing a
 %   pyramid orphans everything beneath it. deletionPlan enumerates that
 %   first and the confirmation names the counts, because "delete 1
@@ -61,6 +68,11 @@ classdef LightsheetManager < ndi.gui.app.sessionApp
         % other usual places. Overridden by the preference
         % GUI.LightsheetManager.ViewerLauncher.
         DefaultViewerLauncher = ""
+
+        % The table's columns, in order. sortRows and the Sort by control
+        % use these names.
+        ColumnNames = {'Label','Subject','Reduction','Levels', ...
+            'Shape (level 0)','dtype'}
     end
 
     properties (Access = private)
@@ -69,6 +81,10 @@ classdef LightsheetManager < ndi.gui.app.sessionApp
         table
         statusLabel
         rows = struct([])
+        sortColumn = 'Label'      % one of ColumnNames, or '' for database order
+        sortDescending = false
+        sortDropdown
+        sortDirButton
         % The View and Add dialogs, kept so a second click RAISES the
         % open one rather than stacking another. Both are non-modal, so
         % without this a button would build one dialog per press.
@@ -93,7 +109,9 @@ classdef LightsheetManager < ndi.gui.app.sessionApp
         end
 
         function reload(obj)
-            obj.rows = ndi.gui.app.LightsheetManager.pyramidRows(obj.session);
+            obj.rows = ndi.gui.app.LightsheetManager.sortRows( ...
+                ndi.gui.app.LightsheetManager.pyramidRows(obj.session), ...
+                obj.sortColumn, obj.sortDescending);
             if ~isempty(obj.fig) && isvalid(obj.fig)
                 obj.table.Data = ndi.gui.app.LightsheetManager.rowsToCell(obj.rows);
                 obj.setStatus(sprintf('%d pyramid(s).', numel(obj.rows)));
@@ -103,6 +121,29 @@ classdef LightsheetManager < ndi.gui.app.sessionApp
         function refresh(obj)
         % REFRESH - backward-compatible alias for reload
             obj.reload();
+        end
+
+        function setSort(obj, column, descending)
+        % SETSORT - order the table by COLUMN (a ColumnNames entry)
+        %
+        %   obj.setSort(COLUMN, DESCENDING) reorders the rows already loaded
+        %   (no database query) and redraws the table. The selection is
+        %   cleared, because row numbers now name different pyramids.
+            arguments
+                obj
+                column char
+                descending (1,1) logical = false
+            end
+            obj.sortColumn = column;
+            obj.sortDescending = descending;
+            obj.rows = ndi.gui.app.LightsheetManager.sortRows( ...
+                obj.rows, column, descending);
+            if ~isempty(obj.fig) && isvalid(obj.fig)
+                obj.table.Data = ndi.gui.app.LightsheetManager.rowsToCell(obj.rows);
+                obj.table.Selection = [];
+                obj.sortDirButton.Text = ...
+                    ndi.gui.app.LightsheetManager.sortDirText(descending);
+            end
         end
     end
 
@@ -774,6 +815,78 @@ classdef LightsheetManager < ndi.gui.app.sessionApp
             v = m(char(key));
         end
 
+        function rows = sortRows(rows, column, descending)
+        % SORTROWS - order pyramid rows by one of the table's columns
+        %
+        %   ROWS = sortRows(ROWS, COLUMN, DESCENDING) returns ROWS ordered
+        %   by COLUMN, one of ColumnNames ('Label', 'Subject', 'Reduction',
+        %   'Levels', 'Shape (level 0)', 'dtype'). Text columns sort
+        %   case-insensitively; Levels sorts numerically; Shape sorts by
+        %   the number of voxels in level 0. Ties keep their previous order
+        %   (the sort is stable), so sorting by Subject and then by Label
+        %   groups by label with subjects in order inside each group. An
+        %   empty COLUMN leaves ROWS as they are.
+            arguments
+                rows
+                column char
+                descending (1,1) logical = false
+            end
+            if isempty(rows) || isempty(column)
+                return;
+            end
+            n = numel(rows);
+            switch column
+                case 'Label',           key = {rows.label};
+                case 'Subject',         key = {rows.subject};
+                case 'Reduction',       key = {rows.reduction};
+                case 'dtype',           key = {rows.dtype};
+                case 'Levels'
+                    key = zeros(1, n);
+                    for i = 1:n
+                        if ~isempty(rows(i).nLevels), key(i) = double(rows(i).nLevels); end
+                    end
+                case 'Shape (level 0)'
+                    key = zeros(1, n);
+                    for i = 1:n
+                        if ~isempty(rows(i).shapeLevel0)
+                            key(i) = prod(double(rows(i).shapeLevel0));
+                        end
+                    end
+                otherwise
+                    error('NDI:LightsheetManager:BadSortColumn', ...
+                        'Unknown column "%s". Use one of: %s.', column, ...
+                        strjoin(ndi.gui.app.LightsheetManager.ColumnNames, ', '));
+            end
+            if iscell(key)
+                key = lower(cellfun(@(v) char(string(v)), key, 'UniformOutput', false));
+                % Rank the distinct values, then sort the ranks: numeric
+                % sort is stable, so ties keep their previous order in
+                % either direction.
+                [~, ~, g] = unique(key);
+                if descending
+                    [~, order] = sort(-g(:)');
+                else
+                    [~, order] = sort(g(:)');
+                end
+            else
+                if descending
+                    [~, order] = sort(key, 'descend');
+                else
+                    [~, order] = sort(key, 'ascend');
+                end
+            end
+            rows = rows(order);
+        end
+
+        function t = sortDirText(descending)
+        % SORTDIRTEXT - label of the ascending/descending toggle button
+            if descending
+                t = 'Descending';
+            else
+                t = 'Ascending';
+            end
+        end
+
         function c = rowsToCell(rows)
             c = cell(numel(rows), 6);
             for i = 1:numel(rows)
@@ -803,8 +916,8 @@ classdef LightsheetManager < ndi.gui.app.sessionApp
             % would report its result to a status bar that no longer
             % exists.
             obj.fig.CloseRequestFcn = @(~,~) obj.onClose();
-            g = uigridlayout(obj.fig,[4 5]);
-            g.RowHeight = {28, '1x', 30, 22};
+            g = uigridlayout(obj.fig,[5 5]);
+            g.RowHeight = {28, 26, '1x', 30, 22};
             g.ColumnWidth = {'1x', 90, 90, 90, 90};
             g.BackgroundColor = c.offWhite;
 
@@ -818,26 +931,45 @@ classdef LightsheetManager < ndi.gui.app.sessionApp
                 'FontColor', c.white, 'FontWeight','bold', 'FontSize',14, ...
                 'VerticalAlignment','center');
 
+            % Sort by: any column, either direction. The rows are reordered
+            % in the model (sortRows), so Selection always names the
+            % pyramid it shows.
+            sg = uigridlayout(g,[1 4]);
+            sg.Layout.Row = 2; sg.Layout.Column = [1 5];
+            sg.ColumnWidth = {'fit', 160, 100, '1x'};
+            sg.Padding = [0 0 0 0];
+            sg.BackgroundColor = c.offWhite;
+            uilabel(sg,'Text','Sort by:','FontColor', c.darkBlue);
+            obj.sortDropdown = uidropdown(sg, ...
+                'Items', ndi.gui.app.LightsheetManager.ColumnNames, ...
+                'Value', obj.sortColumn, ...
+                'ValueChangedFcn', @(dd,~) obj.setSort(dd.Value, obj.sortDescending));
+            obj.sortDirButton = uibutton(sg, ...
+                'Text', ndi.gui.app.LightsheetManager.sortDirText(obj.sortDescending), ...
+                'Tooltip', 'Switch between ascending and descending order', ...
+                'ButtonPushedFcn', @(~,~) obj.setSort(obj.sortColumn, ~obj.sortDescending));
+            ndi.gui.app.LightsheetManager.accent(obj.sortDirButton, c);
+
             obj.table = uitable(g, 'ColumnName', ...
-                {'Label','Subject','Reduction','Levels','Shape (level 0)','dtype'});
-            obj.table.Layout.Row = 2; obj.table.Layout.Column = [1 5];
+                ndi.gui.app.LightsheetManager.ColumnNames);
+            obj.table.Layout.Row = 3; obj.table.Layout.Column = [1 5];
             ndi.gui.app.LightsheetManager.paper(obj.table, c);
 
             b = uibutton(g,'Text','Reload','ButtonPushedFcn',@(~,~) obj.reload());
-            b.Layout.Row = 3; b.Layout.Column = 2;
+            b.Layout.Row = 4; b.Layout.Column = 2;
             ndi.gui.app.LightsheetManager.accent(b, c);
             b = uibutton(g,'Text','View...','ButtonPushedFcn',@(~,~) obj.onView());
-            b.Layout.Row = 3; b.Layout.Column = 3;
+            b.Layout.Row = 4; b.Layout.Column = 3;
             ndi.gui.app.LightsheetManager.accent(b, c);
             b = uibutton(g,'Text','Add...','ButtonPushedFcn',@(~,~) obj.onAdd());
-            b.Layout.Row = 3; b.Layout.Column = 4;
+            b.Layout.Row = 4; b.Layout.Column = 4;
             ndi.gui.app.LightsheetManager.accent(b, c);
             b = uibutton(g,'Text','Delete','ButtonPushedFcn',@(~,~) obj.onDelete());
-            b.Layout.Row = 3; b.Layout.Column = 5;
+            b.Layout.Row = 4; b.Layout.Column = 5;
             ndi.gui.app.LightsheetManager.accent(b, c);
 
             obj.statusLabel = uilabel(g,'Text','','FontColor', c.darkBlue);
-            obj.statusLabel.Layout.Row = 4; obj.statusLabel.Layout.Column = [1 5];
+            obj.statusLabel.Layout.Row = 5; obj.statusLabel.Layout.Column = [1 5];
         end
 
         function setStatus(obj, msg)

@@ -129,6 +129,47 @@ classdef TestLightsheetManager < matlab.unittest.TestCase
 
         % -- the Add dialog's decisions ---------------------------------
 
+        function testSortRowsByEachColumn(testCase)
+            rows = testCase.sortFixture();
+            S = @(col, desc) {ndi.gui.app.LightsheetManager.sortRows(rows, col, desc).label};
+            testCase.verifyEqual(S('Label', false), {'alpha','Beta','gamma'});
+            testCase.verifyEqual(S('Label', true),  {'gamma','Beta','alpha'});
+            testCase.verifyEqual(S('Subject', false), {'gamma','alpha','Beta'});
+            testCase.verifyEqual(S('Levels', false), {'gamma','alpha','Beta'});
+            testCase.verifyEqual(S('Levels', true),  {'Beta','alpha','gamma'});
+            % Shape sorts by voxel count, not by the text of the shape.
+            testCase.verifyEqual(S('Shape (level 0)', false), {'Beta','gamma','alpha'});
+            testCase.verifyEqual(S('dtype', false), {'Beta','alpha','gamma'});
+        end
+
+        function testSortRowsIsStableForTies(testCase)
+            rows = testCase.sortFixture();
+            % Beta and alpha share a reduction ('mean'); their original
+            % order (Beta, then alpha) must survive in both directions.
+            out = ndi.gui.app.LightsheetManager.sortRows(rows, 'Reduction', false);
+            testCase.verifyEqual({out.label}, {'gamma','Beta','alpha'});
+            out = ndi.gui.app.LightsheetManager.sortRows(rows, 'Reduction', true);
+            testCase.verifyEqual({out.label}, {'Beta','alpha','gamma'});
+        end
+
+        function testSortRowsEdgeCases(testCase)
+            empty = struct('label', {}, 'subject', {});
+            testCase.verifyEmpty(ndi.gui.app.LightsheetManager.sortRows(empty, 'Label', false));
+            rows = testCase.sortFixture();
+            testCase.verifyEqual(ndi.gui.app.LightsheetManager.sortRows(rows, '', false), rows);
+            testCase.verifyError(@() ndi.gui.app.LightsheetManager.sortRows(rows, 'Nope', false), ...
+                'NDI:LightsheetManager:BadSortColumn');
+        end
+
+        function testEveryColumnIsSortable(testCase)
+            rows = testCase.sortFixture();
+            cols = ndi.gui.app.LightsheetManager.ColumnNames;
+            for i = 1:numel(cols)
+                out = ndi.gui.app.LightsheetManager.sortRows(rows, cols{i}, false);
+                testCase.verifyNumElements(out, numel(rows));
+            end
+        end
+
         function testAddPlanListsEverythingMissingAtOnce(testCase)
             c = ndi.gui.app.LightsheetManager.addChoices();
             plan = ndi.gui.app.LightsheetManager.addPlan(c);
@@ -375,6 +416,19 @@ classdef TestLightsheetManager < matlab.unittest.TestCase
             c.subjectName = 'lightsheet@vhlab';
             c.sourcePath = fullfile(tempdir, 'acq42');
             c.sourceKind = kind;
+        end
+    end
+
+    methods (Access = private)
+        function rows = sortFixture(~)
+            % Three hand-made rows covering text, number and shape keys.
+            rows = struct( ...
+                'label',       {'Beta', 'alpha', 'gamma'}, ...
+                'subject',     {'mouse3', 'mouse2', 'mouse1'}, ...
+                'reduction',   {'mean', 'mean', 'max'}, ...
+                'nLevels',     {7, 5, 3}, ...
+                'shapeLevel0', {[1 2 3], [100 100 100], [10 10 10]}, ...
+                'dtype',       {'int16', 'uint16', 'uint8'});
         end
     end
 end
