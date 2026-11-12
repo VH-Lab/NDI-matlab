@@ -202,9 +202,9 @@ classdef LightsheetManager < ndi.gui.app.sessionApp
                 % either direction.
                 [~, ~, g] = unique(key);
                 if descending
-                    [~, order] = sort(-g(:)');
+                    [~, order] = sort(-g);
                 else
-                    [~, order] = sort(g(:)');
+                    [~, order] = sort(g);
                 end
             else
                 if descending
