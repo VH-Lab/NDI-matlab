@@ -244,7 +244,10 @@ classdef mfdaq < ndi.daq.reader
             %  channel has no body of its own ([evenly spaced time is a
             %  covariate]): its samples are t0 + (s-1)/rate, t0 the epoch's
             %  start on its clock (T0_T1_INGESTED; [clock only on the time
-            %  reference]).
+            %  reference]). One that is not evenly spaced is the sampled
+            %  body of the `time` value the channel groups key to ([uneven
+            %  time is a keyed time value]): its samples are seconds from
+            %  the epoch's start, so t0 is added.
             %
 
             mylog = ndi.common.getLogger();
@@ -395,6 +398,16 @@ classdef mfdaq < ndi.daq.reader
                             data_here = ndi.compress.expand_digital(tname_without_extension);
                         else
                             data_here = ndi.compress.expand_time(tname_without_extension);
+                            if isV2 && strcmp(A.bodies(series).kind, 'sampled_body')
+                                % an unevenly spaced time channel, the body
+                                % of the time value the groups key to
+                                % ([uneven time is a keyed time value]):
+                                % seconds from the epoch's start ([clock
+                                % only on the time reference]), read on
+                                % the epoch's clock as v1 did
+                                t0t1 = ndi_daqreader_mfdaq_obj.t0_t1_ingested(epochfiles, S);
+                                data_here = t0t1{1}(1) + data_here;
+                            end
                         end
                         delete(tname);
                     end

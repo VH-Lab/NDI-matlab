@@ -12,6 +12,9 @@ function [structs, report, removed] = ingestedArchiveBodies(structs, ndiDir, v1B
 %   segment lengths and epoch start). It returns STRUCTS with every channel
 %   group it could read REPLACED, id preserved, and REMOVED, the ids of the
 %   bodies whose content is now carried elsewhere (the caller drops them).
+%   A document made here (the `time` value of an unevenly spaced time
+%   channel, below) is APPENDED to STRUCTS; its id is in its archive's
+%   REPORT.changed_groups and in REPORT.added_ids.
 %
 %   Decided by Jess Haley, 2026-11-01 [ingested archives are sampled bodies]
 %   (did-schema did_v2_go_forward_class_audit.md): "a v1 ingested channel
@@ -50,11 +53,41 @@ function [structs, report, removed] = ingestedArchiveBodies(structs, ndiDir, v1B
 %     The time group `ti_group<g>_seg.nbf_#`: when every time sample is
 %     t0 + (k-1)/rate (to a millionth of a sample), it adds nothing the
 %     groups' time covariate does not say ([evenly spaced time is a
-%     covariate]: "stores no body for it") and its body is REMOVED. When it is
-%     not evenly spaced the whole archive is LEFT as pass 1 wrote it, counted
-%     `time_not_evenly_spaced`: the decided shape (a sampled_body of its own,
-%     owned by a time observation, the groups' time a `key` to it) needs a
-%     time observation whose entity and variable are not decided.
+%     covariate]: "stores no body for it") and its body is REMOVED.
+%
+%     When it is not evenly spaced (counted `time_not_evenly_spaced`):
+%     Decided by Jess Haley, 2026-11-03 [uneven time is a keyed time value]
+%     (did-schema did_v2_go_forward_class_audit.md): "the timestamps are one
+%     standalone `time` value document (`data_body: true`) whose
+%     `sampled_body` (one `time` dimension, seconds) holds them; every
+%     channel-group body of that recording lists it in `key_id` and its time
+%     covariate (along the time dimension) is `key` to it, so sample k's time
+%     is position k of that value; no time observation is minted". So:
+%
+%       a new `time` value   data_body true, no inline value, no time
+%                            reference (the decision's accepted limitation),
+%                            APPENDED to STRUCTS
+%       opaque_body `ti_group<g>_seg.nbf_#`  ->  sampled_body owned by that
+%                            value, id preserved: dimension 0 time (om:Time),
+%                            n = the time samples, chunk = the v1 segment
+%                            length (sample_analog_segment, as the v1 ingest
+%                            cuts time segments); format, compression,
+%                            filename, files unchanged
+%       each channel group   as above, but its time covariate is `key` 0 and
+%                            its `key_id` the time value
+%
+%     Converted only when (otherwise the archive is LEFT as pass 1 wrote it):
+%       - the archive has ONE time group holding ONE time channel, and every
+%         channel group has as many samples as it (every group keys to it);
+%         else `unconvertible`, with the reason;
+%       - the epoch starts at 0 on its clock (the v1 archive's t0_t1(1) is
+%         0), counted `uneven_time_not_from_zero` otherwise. [clock only on
+%         the time reference] (Jess Haley, 2026-11-01): a body's time axis
+%         counts "the epoch-relative sample times when not evenly spaced";
+%         the v1 time segments hold times on the epoch's clock (sample k is
+%         t0 + ... there), so they are the epoch-relative times, unchanged,
+%         only when t0 is 0. Rewriting the bytes as t - t0 is not decided
+%         (this step writes no file).
 %
 %     `channel_list.bin` is REMOVED only when every one of its rows is
 %     carried by a converted body: a row of a converted channel group, named
@@ -68,8 +101,12 @@ function [structs, report, removed] = ingestedArchiveBodies(structs, ndiDir, v1B
 %
 %   NOT HERE YET. The `compression` block ([ingested compression settings]:
 %   NDI's compressor as the term, the stored integer format and bit size as
-%   parameters) waits on did-schema declaring `data_body.compression` as a
-%   {term, parameters} block; until then the body keeps pass 1's
+%   parameters). did-schema now declares `data_body.compression` as a
+%   {term, parameters} block, but the compressor terms and the two parameter
+%   variables are not registered (did-schema docs/V2_PLAN.md G92, parked
+%   2026-11-03), and neither the v1 channel list nor the v1 archive document
+%   states the stored integer format or bit size: only NDI-compress's own
+%   header in each segment does. Until then the body keeps pass 1's
 %   `compression`. The data file names stay as pass 1 wrote them.
 %
 %   WHERE THE BYTES ARE, as ndi.migrate.internal.epochSeriesBodies looks:
@@ -107,10 +144,13 @@ report = struct( ...
     'channel_list_unreadable',    0, ...
     'v1_archive_not_found',       0, ...
     'time_not_evenly_spaced',     0, ...
+    'uneven_time_converted',      0, ...
+    'uneven_time_not_from_zero',  0, ...
     'unconvertible',              0, ...
     'first_unconvertible_reason', '', ...
     'changed_groups',             {{}}, ...
-    'changed_ids',                {{}});
+    'changed_ids',                {{}}, ...
+    'added_ids',                  {{}});
 removed = {};
 storeDir = fullfile(ndiDir, 'files');
 
@@ -172,16 +212,19 @@ for a = 1:numel(groupKeys)
     end
 
     try
-        [made, gone, why] = convertArchive(structs, idx, kinds, clIdx, ci, arch, storeDir);
+        [made, gone, why, added, uneven] = convertArchive(structs, idx, kinds, clIdx, ci, arch, storeDir);
     catch err
-        made = {}; gone = {};
+        made = {}; gone = {}; added = {}; uneven = false;
         why = sprintf('%s: %s', err.identifier, err.message);
+    end
+    if uneven
+        report.time_not_evenly_spaced = report.time_not_evenly_spaced + 1;
     end
     if strcmp(why, 'bytes_not_here')
         report.bytes_not_here = report.bytes_not_here + 1;
         continue;
-    elseif strcmp(why, 'time_not_evenly_spaced')
-        report.time_not_evenly_spaced = report.time_not_evenly_spaced + 1;
+    elseif strcmp(why, 'uneven_time_not_from_zero')
+        report.uneven_time_not_from_zero = report.uneven_time_not_from_zero + 1;
         continue;
     elseif ~isempty(why)
         report.unconvertible = report.unconvertible + 1;
@@ -196,6 +239,14 @@ for a = 1:numel(groupKeys)
         structs{made{m}.k} = made{m}.body;
         ids{end+1} = baseId(made{m}.body); %#ok<AGROW>
     end
+    for m = 1:numel(added)
+        structs{end+1} = added{m}; %#ok<AGROW>
+        ids{end+1} = baseId(added{m}); %#ok<AGROW>
+        report.added_ids{end+1} = baseId(added{m});
+    end
+    if uneven
+        report.uneven_time_converted = report.uneven_time_converted + 1;
+    end
     for g = 1:numel(gone)
         ids{end+1} = gone{g}; %#ok<AGROW>
         removed{end+1} = gone{g}; %#ok<AGROW>
@@ -209,7 +260,7 @@ for a = 1:numel(groupKeys)
         report.channel_list_kept = report.channel_list_kept + 1;
     end
     report.archives_converted = report.archives_converted + 1;
-    report.group_bodies_described = report.group_bodies_described + numel(made);
+    report.group_bodies_described = report.group_bodies_described + numel(made) - numel(added);
     report.changed_groups{end+1} = ids;
     report.changed_ids = [report.changed_ids, ids];
 end
@@ -217,11 +268,15 @@ end
 
 % =====================================================================
 
-function [made, gone, why] = convertArchive(structs, idx, kinds, clIdx, ci, arch, storeDir)
-%CONVERTARCHIVE The sampled bodies of one archive, or why it is left.
+function [made, gone, why, added, uneven] = convertArchive(structs, idx, kinds, clIdx, ci, arch, storeDir)
+%CONVERTARCHIVE The sampled bodies of one archive, or why it is left. ADDED
+%   are the documents made for it (the `time` value of an unevenly spaced
+%   time channel); UNEVEN is true when its time channel is not evenly spaced.
 made = {};
 gone = {};
 why = '';
+added = {};
+uneven = false;
 [types, abbrev] = ndi.daq.reader.mfdaq.channel_types();
 ciType = cellfun(@char, {ci.type}, 'UniformOutput', false);
 ciGroup = double([ci.group]);
@@ -233,9 +288,11 @@ end
 t0 = epochStart(arch);
 carriedRows = false(1, numel(ci));
 
-% the time groups first: each must be evenly spaced from the epoch's start
-for j = 1:numel(idx)
-    if ~strcmp(kinds{j}, 'time'); continue; end
+% the time groups first: each evenly spaced from the epoch's start is
+% removed; one that is not becomes the body of a keyed `time` value
+timeJ = find(strcmp(kinds, 'time'));
+keyed = [];   % the uneven time group: struct k, n, seg, id
+for j = timeJ(:)'
     b = structs{idx(j)};
     [~, g] = prefixAndGroup(bodyFilename(b));
     rows = find(strcmp(ciType, 'time') & ciGroup == g);
@@ -243,25 +300,45 @@ for j = 1:numel(idx)
     paths = memberPaths(b, storeDir);
     if isempty(paths); why = 'bytes_not_here'; return; end
     if ~isfinite(t0); why = 'the v1 archive names no epoch start (t0_t1)'; return; end
-    t = [];
+    tsegs = cell(1, numel(paths));
     for m = 1:numel(paths)
-        t = [t; expandSegment(paths{m}, 'time')]; %#ok<AGROW>
+        tsegs{m} = expandSegment(paths{m}, 'time');
     end
+    t = vertcat(tsegs{:});
     if size(t, 2) ~= numel(rows)
         why = sprintf('%s holds %d column(s), the channel list %d', ...
             bodyFilename(b), size(t, 2), numel(rows));
         return;
     end
+    even = true;
     for r = 1:numel(rows)
         sr = double(ci(rows(r)).sample_rate);
-        if ~(isfinite(sr) && sr > 0); why = 'time_not_evenly_spaced'; return; end
+        if ~(isfinite(sr) && sr > 0); even = false; break; end
         ideal = t0 + (0:size(t, 1)-1)' / sr;
         if any(abs(double(t(:, r)) - ideal) > max(1e-9, 1e-6 / sr))
-            why = 'time_not_evenly_spaced';
-            return;
+            even = false;
+            break;
         end
     end
-    gone{end+1} = baseId(b); %#ok<AGROW>
+    if even
+        gone{end+1} = baseId(b); %#ok<AGROW>
+        continue;
+    end
+    % [uneven time is a keyed time value]
+    uneven = true;
+    if ~isscalar(timeJ) || ~isscalar(rows)
+        why = sprintf(['the time channel of %s is not evenly spaced, and the archive has ' ...
+            '%d time group(s) and %d time channel(s) in it: one keyed time value is ' ...
+            'written for one time channel only'], bodyFilename(b), numel(timeJ), numel(rows));
+        return;
+    end
+    if t0 ~= 0
+        why = 'uneven_time_not_from_zero';
+        return;
+    end
+    seg = paramOf(params, 'sample_analog_segment');
+    if ~isfinite(seg); seg = size(tsegs{1}, 1); end
+    keyed = struct('k', idx(j), 'n', size(t, 1), 'seg', seg, 'id', did.ido.unique_id());
 end
 
 for j = 1:numel(idx)
@@ -310,8 +387,15 @@ for j = 1:numel(idx)
         return;
     end
     n = (numel(paths) - 1) * seg + size(last, 1);
+    if ~isempty(keyed) && n ~= keyed.n
+        why = sprintf(['%s holds %d sample(s), the uneven time channel %d: every ' ...
+            'channel group keys its time to the one time value'], fn, n, keyed.n);
+        return;
+    end
 
-    body = sampledFromOpaque(b, rows, ci, type, types, abbrev, sr, n, seg);
+    timeId = '';
+    if ~isempty(keyed); timeId = keyed.id; end
+    body = sampledFromOpaque(b, rows, ci, type, types, abbrev, sr, n, seg, timeId);
     made{end+1} = struct('k', k, 'body', body); %#ok<AGROW>
     % a row is carried when everything in it is on the body or derived
     for r = rows(:)'
@@ -323,12 +407,49 @@ for j = 1:numel(idx)
     end
 end
 if isempty(made); why = 'no channel group to convert'; return; end
+if ~isempty(keyed)
+    [value, tbody] = keyedTime(structs{keyed.k}, keyed.id, keyed.n, keyed.seg);
+    added{end+1} = value;
+    made{end+1} = struct('k', keyed.k, 'body', tbody);
+end
 if all(carriedRows)
     gone{end+1} = baseId(structs{clIdx});
 end
 end
 
-function body = sampledFromOpaque(b, rows, ci, type, types, abbrev, sr, n, seg)
+function [value, body] = keyedTime(tb, valueId, n, seg)
+% [uneven time is a keyed time value]: the standalone `time` value
+% (data_body true; no time reference) and the time group's body as its
+% sampled_body, one time dimension, id, files, format and compression kept
+restore = ndi.migrate.internal.termRegistryOff(); %#ok<NASGU>
+sid = char(did2.schema.cache.sessionIdOf(tb));
+ts = '';
+if isfield(tb.base, 'creation_timestamp'); ts = char(tb.base.creation_timestamp); end
+tsArg = {};
+if ~isempty(ts); tsArg = {'CreationTimestamp', ts}; end
+value = did2.build.document('time', struct('data_body', true), ...
+    'Id', valueId, 'SessionId', sid, 'Validate', false, tsArg{:});
+db = tb.data_body;
+timeTerm = struct('node', 'om:Time', 'name', 'time');
+args = {'Id', baseId(tb), 'SessionId', sid, 'Validate', false, ...
+    'Fields', struct('filename', bodyFilename(tb)), ...
+    'Notes', sprintf(['%s The NDI second pass read it as the body of the recording''s ' ...
+        'time value (%d unevenly spaced sample(s), seconds from the epoch''s start); ' ...
+        'each channel group''s time is a key to it.'], strtrim(ndi.v2.notesOf(db)), n), ...
+    tsArg{:}};
+if isfield(db, 'format') && isstruct(db.format) && isfield(db.format, 'node') ...
+        && ~isempty(db.format.node)
+    args = [args, {'Format', db.format}];
+end
+if isfield(db, 'compression') && ~isempty(db.compression)
+    args = [args, {'Compression', db.compression}];
+end
+body = did2.build.sampledBody(baseId(value), ...
+    did2.build.dimension(timeTerm, n, 'Chunk', seg), args{:});
+body.files = tb.files;
+end
+
+function body = sampledFromOpaque(b, rows, ci, type, types, abbrev, sr, n, seg, timeId)
 % the channel number variable is a label no registry row carries yet, as the
 % other second-pass builders' labels (ndi.migrate.internal.termRegistryOff)
 restore = ndi.migrate.internal.termRegistryOff(); %#ok<NASGU>
@@ -339,9 +460,18 @@ channelTerm = struct('node', 'NCIT:C44170', 'name', 'Channel');
 dims = did2.build.list( ...
     did2.build.dimension(timeTerm, n, 'Chunk', seg), ...
     did2.build.dimension(channelTerm, numel(rows)));
+if isempty(timeId)
+    % [evenly spaced time is a covariate]
+    timeCov = did2.build.covariate(timeTerm, 0, 'Origin', 0, 'Spacing', 1 / sr, ...
+        'Unit', struct('node', 'om:second-Time', 'name', 'second'));
+    keyArgs = {};
+else
+    % [uneven time is a keyed time value]: position k of the time value
+    timeCov = did2.build.covariate(timeTerm, 0, 'Key', 0);
+    keyArgs = {'KeyIds', {timeId}};
+end
 covs = did2.build.list( ...
-    did2.build.covariate(timeTerm, 0, 'Origin', 0, 'Spacing', 1 / sr, ...
-        'Unit', struct('node', 'om:second-Time', 'name', 'second')), ...
+    timeCov, ...
     did2.build.covariate(CHANNEL_NUMBER(), 1, 'Count', double([ci(rows).number])), ...
     did2.build.covariate(OFFSET(), 1, 'Value', double([ci(rows).offset])), ...
     did2.build.covariate(SCALE(), 1, 'Value', double([ci(rows).scale])));
@@ -351,7 +481,7 @@ db = b.data_body;
 sid = char(did2.schema.cache.sessionIdOf(b));
 ts = '';
 if isfield(b.base, 'creation_timestamp'); ts = char(b.base.creation_timestamp); end
-args = {'Covariates', covs, 'Conditions', conds, 'DatumOrder', 'F', ...
+args = {'Covariates', covs, 'Conditions', conds, 'DatumOrder', 'F', keyArgs{:}, ...
     'Id', baseId(b), 'SessionId', sid, 'Validate', false, ...
     'Fields', struct('filename', bodyFilename(b)), ...
     'Notes', sprintf(['%s The NDI second pass read it as one sampled body ' ...
