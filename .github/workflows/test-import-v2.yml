@@ -80,6 +80,9 @@ on:
       - 'src/ndi/+ndi/+database/+fun/openMINDSobj2ndi_document.m'
       - 'src/ndi/+ndi/+database/+fun/openMINDSobj2V2.m'
       - 'src/ndi/+ndi/+fun/+doc/+subject/makeSpeciesStrainSex.m'
+      - 'src/ndi/+ndi/+fun/+doc/+gene/makeGeneList.m'
+      - 'src/ndi/+ndi/+fun/+doc/+gene/geneListV2.m'
+      - 'src/ndi/+ndi/+fun/+doc/+gene/makePyramid.m'
       - '.github/workflows/test-import-v2.yml'
   pull_request:
     branches: [main, V2]
@@ -142,6 +145,9 @@ on:
       - 'src/ndi/+ndi/+database/+fun/openMINDSobj2ndi_document.m'
       - 'src/ndi/+ndi/+database/+fun/openMINDSobj2V2.m'
       - 'src/ndi/+ndi/+fun/+doc/+subject/makeSpeciesStrainSex.m'
+      - 'src/ndi/+ndi/+fun/+doc/+gene/makeGeneList.m'
+      - 'src/ndi/+ndi/+fun/+doc/+gene/geneListV2.m'
+      - 'src/ndi/+ndi/+fun/+doc/+gene/makePyramid.m'
       - '.github/workflows/test-import-v2.yml'
   workflow_dispatch:
 

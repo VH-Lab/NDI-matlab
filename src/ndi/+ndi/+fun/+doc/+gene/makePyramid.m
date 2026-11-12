@@ -21,7 +21,10 @@ function [pyrDoc, tileDocs] = makePyramid(session, x, y, geneIndex, count, geneL
 %   before calling costs 32 bytes a record where 14 would do -- 14 GB on
 %   a 7.7e8-record section, held from the first level to the last. This
 %   function converts per level, into temporaries it can release.
-%   GENELISTDOC - the geneList ndi.document these indices refer to
+%   GENELISTDOC - the geneList ndi.document these indices refer to: a v1
+%                 geneList, or the v2 `term` ndi.fun.doc.gene.makeGeneList
+%                 writes into a v2 database (its gene count is read from its
+%                 body's Gene dimension)
 %
 %   Optional Name-Value Arguments:
 %   binSizes ([1 2 4 8 16 32]) - level bin sizes in base pixels, finest
@@ -157,7 +160,7 @@ if isempty(options.subjectID)
          'subject_id mustbenotempty.']);
 end
 
-nGenes = geneListDoc.document_properties.geneList.n_genes;
+nGenes = localGeneCount(session, geneListDoc);
 if max(geneIndex) >= nGenes
     error('NDI:gene:makePyramid:geneIndexOutOfRange', ...
         ['Largest gene index is %d but the geneList has %d genes. ' ...
@@ -575,3 +578,32 @@ cl = onCleanup(@() fclose(fid));
 fprintf(fid, 'gene_index\ttotal_counts\tn_records\n');
 fprintf(fid, '%d\t%d\t%d\n', [(0:nGenes-1); tot(:)'; npx(:)']);
 end % localWriteGeneTotals
+
+% ------------------------------------------------------------------------
+
+function n = localGeneCount(session, geneListDoc)
+% The number of genes in the gene list: a v1 geneList's n_genes, or, for the
+% v2 `term` makeGeneList writes into a v2 database (ndi.fun.doc.gene.geneListV2),
+% the length of the Gene dimension of the opaque_body that holds its genes.tsv.
+p = geneListDoc.document_properties;
+if isfield(p, 'geneList')
+    n = p.geneList.n_genes;
+    return;
+end
+bodies = session.database_search(ndi.query('', 'depends_on', 'owner_id', geneListDoc.id()));
+for k = 1:numel(bodies)
+    q = bodies{k}.document_properties;
+    if isfield(q, 'data') && isstruct(q.data) && isfield(q.data, 'dimensions') ...
+            && ~isempty(q.data.dimensions)
+        d = q.data.dimensions;
+        if iscell(d)
+            d = d{1};
+        end
+        n = double(d(1).n);
+        return;
+    end
+end
+error('NDI:gene:makePyramid:noGeneCount', ...
+    ['The gene list %s is neither a v1 geneList nor a v2 gene list term with ' ...
+     'a body that states its number of genes.'], geneListDoc.id());
+end % localGeneCount
