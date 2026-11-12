@@ -1,4 +1,4 @@
-function [doc, tsvPath] = makeGeneList(session, geneID, geneName, options)
+function [doc, tsvPath, docs] = makeGeneList(session, geneID, geneName, options)
 % MAKEGENELIST - create a geneList document from an ordered gene dictionary
 %
 %   [DOC, TSVPATH] = ndi.fun.doc.gene.MAKEGENELIST(SESSION, GENEID, GENENAME)
@@ -27,7 +27,22 @@ function [doc, tsvPath] = makeGeneList(session, geneID, geneName, options)
 %
 %   Outputs:
 %   DOC     - the geneList ndi.document, already added to the database
+%             (in a v2 database, the `term` document described below)
 %   TSVPATH - where genes.tsv was written before ingestion
+%   DOCS    - every document written, as a cell array ({DOC} in a v1
+%             database)
+%
+%   The documents are written for the session's database. In a v1
+%   database it is the v1 `geneList` document. In a v2 database
+%   (ndi.session/writesV2) it is the v2 record ndi.fun.doc.gene.geneListV2
+%   builds: a standalone `term` (DOC, whose id the other gene documents
+%   name) whose `opaque_body` holds genes.tsv, the namespaces as conditions
+%   on that body, and the annotation source and genome assembly as Data Set
+%   entities the term is derived from -- the shape DID-matlab's
+%   +migrators_j/gene_list.m gives the v1 `geneList` for the same input.
+%   did-schema did_v2_go_forward_class_audit.md [writers are given the
+%   session] and [v2 line reads and writes both] (2026-11-03): a tool learns
+%   the version from the session's database.
 %
 %   n_genes, gene_name_completeness and n_duplicate_gene_names are computed
 %   here rather than supplied. The last matters: symbols are NOT unique in
@@ -98,7 +113,21 @@ s = struct('label', options.label, ...
     'gene_name_completeness', completeness, ...
     'n_duplicate_gene_names', nDup);
 
+if ismethod(session, 'writesV2') && session.writesV2()
+    % a v2 database: the v2 record of the gene list (see above)
+    docs = ndi.fun.doc.gene.geneListV2(session, tsvPath, n, ...
+        'label', options.label, ...
+        'geneIdNamespace', options.geneIdNamespace, ...
+        'geneSymbolNamespace', options.geneSymbolNamespace, ...
+        'annotationSource', options.annotationSource, ...
+        'genomeAssembly', options.genomeAssembly);
+    session.database_add(docs);
+    doc = docs{1};
+    return;
+end
+
 doc = ndi.document('geneList', 'geneList', s) + session.newdocument();
 doc = storeDoc(session, doc, {'genes.tsv'}, {tsvPath});
+docs = {doc};
 
 end % makeGeneList

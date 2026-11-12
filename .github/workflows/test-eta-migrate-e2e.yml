@@ -330,6 +330,10 @@ jobs:
                 ... % 2026-11-06): ingested epochs read in a few searches
                 ... % give what one epoch at a time gives
                 'ndi.unittest.vintage.TestIngestedReadsBatched', ...
+                ... % [stimulator manipulation dropped] (Jess Haley,
+                ... % 2026-11-09): a stimulator's probe-map row from its
+                ... % wiring and element, without the manipulation
+                'ndi.unittest.vintage.TestStimulatorRowFromWiring', ...
                 ... % [compression block and empty levels] (Jess Haley,
                 ... % 2026-10-26): `compression` read as the char or the block
                 'ndi.unittest.vintage.TestCompressionOf', ...

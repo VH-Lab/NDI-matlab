@@ -4,7 +4,7 @@ classdef TestIngestedArchiveBodies < matlab.unittest.TestCase
 %   as an opaque_body of its segment files) into one sampled_body whose
 %   channel list is covariates (Decided by Jess Haley, 2026-11-01 [ingested
 %   archives are sampled bodies], [evenly spaced time is a covariate], [clock
-%   only on the time reference]). The segments and channel_list.bin are
+%   only on the time reference], [uneven time is a keyed time value]). The segments and channel_list.bin are
 %   written by NDI's own writers (ndi.compress, ndi.file.type.
 %   mfdaq_epoch_channel), as ndi.daq.reader.mfdaq/ingest_epochfiles does.
 
@@ -81,11 +81,62 @@ classdef TestIngestedArchiveBodies < matlab.unittest.TestCase
             testCase.verifyEqual(rep.channel_list_removed, 1);
         end
 
-        function testUnevenTimeLeavesTheArchive(testCase)
+        function testUnevenTimeBecomesAKeyedTimeValue(testCase)
+            % Decided by Jess Haley, 2026-11-03 [uneven time is a keyed time
+            % value]: one standalone `time` value (data_body true) whose
+            % sampled_body holds the timestamps; each channel group's time
+            % covariate is `key` to it
             [structs, v1] = testCase.archive(true, false);
             [out, rep, removed] = ndi.migrate.internal.ingestedArchiveBodies( ...
                 structs, testCase.Dir, v1);
             testCase.verifyEqual(rep.time_not_evenly_spaced, 1);
+            testCase.verifyEqual(rep.uneven_time_converted, 1);
+            testCase.verifyEqual(rep.archives_converted, 1, rep.first_unconvertible_reason);
+            testCase.verifyEqual(rep.group_bodies_described, 1);
+            testCase.verifyEmpty(removed, 'the time body is kept, as the time value''s body');
+            testCase.verifyEqual(rep.channel_list_kept, 1);
+            testCase.verifyEqual(numel(out), numel(structs) + 1, 'one document added');
+            testCase.verifyEqual(numel(rep.added_ids), 1);
+            value = out{end};
+            testCase.verifyEqual(value.base.id, rep.added_ids{1});
+            testCase.verifyEqual(value.document_class.class_name, 'time');
+            testCase.verifyTrue(logical(value.value.data_body));
+            testCase.verifyTrue(ismember(value.base.id, rep.changed_groups{1}));
+            % the time body: the time value's sampled_body, one time dimension
+            tb = out{cellfun(@(x) strcmp(x.base.id, 'body_ti'), out)};
+            testCase.verifyEqual(tb.document_class.class_name, 'sampled_body');
+            testCase.verifyEqual(edgeOf(tb, 'owner_id'), {value.base.id});
+            testCase.verifyEqual(numel(tb.data.dimensions), 1);
+            testCase.verifyEqual(char(tb.data.dimensions(1).term.node), 'om:Time');
+            testCase.verifyEqual(double(tb.data.dimensions(1).n), 160);
+            testCase.verifyEqual(double(tb.data.dimensions(1).chunk), 100);
+            testCase.verifyEqual(numel(tb.files.file_info), 2, 'the members are unchanged');
+            % the channel group: its time is a key to the time value
+            b = out{2};
+            testCase.verifyEqual(b.document_class.class_name, 'sampled_body');
+            testCase.verifyEqual(edgeOf(b, 'key_id'), {value.base.id});
+            covs = b.data.covariates;
+            vars = arrayfun(@(c) char(c.variable.name), covs, 'UniformOutput', false);
+            t = covs(strcmp(vars, 'time'));
+            testCase.verifyEqual(double(t.key), 0);
+            testCase.verifyEqual(double(t.along), 0);
+            testCase.verifyTrue(~isfield(t, 'origin') || isempty(t.origin));
+            testCase.verifyEqual(double(b.data.dimensions(1).n), 160);
+            % the converted set validates against the real schema
+            res = did2.convert.v1_to_v2(out, 'Validate', true, 'TargetVersion', 'did_v2');
+            testCase.verifyEmpty(res.quarantine);
+            testCase.verifyEqual(numel(res.migrated), numel(out));
+        end
+
+        function testUnevenTimeNotFromZeroLeavesTheArchive(testCase)
+            % [clock only on the time reference]: the body's times are
+            % seconds from the epoch's start; v1's are on the epoch's clock,
+            % the same numbers only when the epoch starts at 0
+            [structs, v1] = testCase.archive(true, false, 5);
+            [out, rep, removed] = ndi.migrate.internal.ingestedArchiveBodies( ...
+                structs, testCase.Dir, v1);
+            testCase.verifyEqual(rep.time_not_evenly_spaced, 1);
+            testCase.verifyEqual(rep.uneven_time_not_from_zero, 1);
             testCase.verifyEqual(rep.archives_converted, 0);
             testCase.verifyEmpty(removed);
             testCase.verifyEqual(out, structs, 'nothing changed');
@@ -103,11 +154,12 @@ classdef TestIngestedArchiveBodies < matlab.unittest.TestCase
     end
 
     methods
-        function [s, v1] = archive(testCase, withTime, evenTime)
+        function [s, v1] = archive(testCase, withTime, evenTime, t0)
             % an epoch of 160 samples at 10 kHz, 3 analog inputs in
             % segments of 100 (NDI's ephys compressor fits a predictor, so
             % a segment needs more samples than its order), and
-            % (WITHTIME) the time channel t1
+            % (WITHTIME) the time channel t1; the epoch starts at T0 (0)
+            if nargin < 4; t0 = 0; end
             sr = 10000;
             ch = struct('name', {'ai1', 'ai2', 'ai3'}, 'type', 'analog_in', ...
                 'time_channel', NaN, 'sample_rate', sr, 'offset', -2, 'scale', 0.195);
@@ -134,7 +186,7 @@ classdef TestIngestedArchiveBodies < matlab.unittest.TestCase
                 body('body_ai', 'ai_group1_seg.nbf_#', {'u_ai_1', 'u_ai_2'}), ...
                 body('body_cl', 'channel_list.bin', {'u_cl'})};
             if withTime
-                t = (0:159)' / sr;
+                t = t0 + (0:159)' / sr;
                 if ~evenTime; t(50) = t(50) + 0.3 / sr; end
                 tsegs = {t(1:100), t(101:160)};
                 for k = 1:2
@@ -154,10 +206,24 @@ classdef TestIngestedArchiveBodies < matlab.unittest.TestCase
                 'daqreader_mfdaq_epochdata_ingested', struct('parameters', ...
                     struct('sample_analog_segment', 100, 'sample_digital_segment', 1000)), ...
                 'daqreader_epochdata_ingested', struct('epochtable', ...
-                    struct('epochclock', {{'dev_local_time'}}, 't0_t1', [0; 159/sr])), ...
+                    struct('epochclock', {{'dev_local_time'}}, 't0_t1', [t0; t0 + 159/sr])), ...
                 'files', struct('file_list', {{'channel_list.bin'}}, 'file_info', fi))};
         end
     end
+end
+
+function ids = edgeOf(b, name)
+ids = {};
+deps = b.depends_on;
+if isstruct(deps); deps = num2cell(deps); end
+for k = 1:numel(deps)
+    if strcmp(char(deps{k}.name), name)
+        v = '';
+        if isfield(deps{k}, 'document_id'); v = char(deps{k}.document_id); end
+        if isempty(v) && isfield(deps{k}, 'value'); v = char(deps{k}.value); end
+        ids{end+1} = v; %#ok<AGROW>
+    end
+end
 end
 
 function obs = owner()

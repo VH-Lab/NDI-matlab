@@ -9,7 +9,15 @@ classdef TestMakersGivenSessionV2 < matlab.unittest.TestCase
 %   it, and its strain is a strain entity (written once per distinct strain)
 %   the subject is `instance_of` -- the shape the migration gives the v1
 %   `subject` and `openminds_subject` documents. Objects about a stimulus stay
-%   v1 on either database (no decided v2 target).
+%   v1 on either database (no decided v2 target). subjectMaker/deleteSubjectDocs
+%   finds and removes a v2 subject entity; ndi.fun.doc.probe.probeLocationV2
+%   (what probeLocations4probes writes into a v2 database) is an `observation`
+%   with value kind `term` about the probe, as the migration gives a v1
+%   `probe_location`. ndi.fun.doc.gene.makeGeneList writes into a v2 database
+%   what DID-matlab's +migrators_j/gene_list.m gives the v1 `geneList` it
+%   writes into a v1 database for the same input (a `term`, its `opaque_body`
+%   holding genes.tsv, and the history entities and relations), and
+%   ndi.fun.doc.gene.makePyramid reads that gene list's gene count.
 %
 %   Decided by Jess Haley, 2026-11-03 [writers are given the session] and
 %   [v2 line reads and writes both] (did-schema
@@ -144,6 +152,148 @@ classdef TestMakersGivenSessionV2 < matlab.unittest.TestCase
             testCase.verifyEqual(d3{1}.document_properties.document_class.class_name, 'openminds_subject');
         end
 
+        function testDeleteSubjectDocsOnAV2Database(testCase)
+            % subjectMaker.deleteSubjectDocs finds a v2 subject entity by its
+            % local identifier and removes it with what depends on it
+            S = testCase.v2Session();
+            names = {'worm1@nosuchlab.org', 'worm2@nosuchlab.org'};
+            maker = ndi.setup.NDIMaker.subjectMaker();
+            out = maker.makeSubjectDocuments(testCase.subjectInfo(S, names), 'Sessions', {S});
+            testCase.assertTrue(all(maker.addSubjectsToSessions({S}, out.documents)));
+            gone = out.documents{1}{1}.id();
+            kept = out.documents{2}{1}.id();
+            % DENOMINATOR FIRST: what the session held about the subject to delete
+            dependents = S.database_search(ndi.query('', 'depends_on', 'entity_id', gone));
+            testCase.assertNotEmpty(dependents, 'the subject to delete has no assertions to remove with it');
+
+            report = maker.deleteSubjectDocs({S}, names(1));
+            testCase.assertNumElements(report, 1);
+            testCase.verifyEqual(report.docs_found_ids, {gone});
+            testCase.verifyEqual(report.docs_deleted_ids, {gone});
+            testCase.verifyEmpty(S.database_search(ndi.query('base.id', 'exact_string', gone, '')), ...
+                'the subject entity was not removed');
+            testCase.verifyEmpty(S.database_search(ndi.query('', 'depends_on', 'entity_id', gone)), ...
+                'an assertion about the removed subject was left behind');
+            [b, sid] = ndi.subject.does_subjectstring_match_session_document(S, names{2}, 0);
+            testCase.verifyTrue(logical(b), 'the other subject was removed too');
+            testCase.verifyEqual(sid, kept);
+            testCase.verifyNotEmpty(S.database_search(ndi.query('', 'depends_on', 'entity_id', kept)), ...
+                'the other subject''s assertions were removed');
+        end
+
+        function testProbeLocationOnAV2DatabaseIsAnObservation(testCase)
+            % ndi.fun.doc.probe.probeLocationV2: the v2 record
+            % probeLocations4probes writes into a v2 database
+            S = testCase.v2Session();
+            probeId = ndi.ido.unique_id();
+            docs = ndi.fun.doc.probe.probeLocationV2(S, probeId, 'UBERON:0002436', 'primary visual cortex');
+            props = cellfun(@(d) d.document_properties, docs, 'UniformOutput', false);
+            classes = cellfun(@(p) p.document_class.class_name, props, 'UniformOutput', false);
+            % DENOMINATOR FIRST: what was written
+            testCase.assertNumElements(docs, 2, sprintf('documents written: %s', strjoin(classes, ', ')));
+            testCase.verifyTrue(all(cellfun(@(p) did2.schema.isV2Stamp(p), props)), ...
+                sprintf('a document is not v2 (classes: %s)', strjoin(classes, ', ')));
+            testCase.verifyEqual(classes, {'observation', 'relative_time_reference'});
+            obs = props{1};
+            testCase.verifyEqual(ndi.v2.edgeIds(obs, 'entity_id'), {probeId});
+            testCase.verifyEqual(ndi.v2.edgeIds(obs, 'time_reference_id'), {props{2}.base.id});
+            testCase.verifyEqual(char(obs.statement.variable.node), 'NCIT:C13717');
+            testCase.verifyTrue(testCase.hasTerm({obs}, 'UBERON:0002436'), 'the location is not the value');
+            testCase.verifyEqual(char(ndi.v2.sessionIdOf(obs)), S.id());
+            testCase.verifyEqual(char(ndi.v2.sessionIdOf(props{2})), S.id());
+        end
+
+        function testGeneListOnAV2DatabaseIsATermWithItsFile(testCase)
+            % ndi.fun.doc.gene.makeGeneList on a v2 database: a `term`, its
+            % `opaque_body` holding genes.tsv, and the annotation source and
+            % genome assembly as Data Set entities it is derived from
+            S = testCase.v2Session();
+            [ids, names, args] = testCase.geneListInput();
+            [d, ~, docs] = ndi.fun.doc.gene.makeGeneList(S, ids, names, args{:});
+            props = cellfun(@(x) x.document_properties, docs, 'UniformOutput', false);
+            classes = cellfun(@(p) p.document_class.class_name, props, 'UniformOutput', false);
+            % DENOMINATOR FIRST: what was written
+            testCase.assertNumElements(docs, 6, sprintf('documents written: %s', strjoin(classes, ', ')));
+            testCase.verifyTrue(all(cellfun(@(p) did2.schema.isV2Stamp(p), props)), ...
+                sprintf('a document is not v2 (classes: %s)', strjoin(classes, ', ')));
+            testCase.verifyEqual(classes, {'term', 'opaque_body', 'entity', ...
+                'directed_relation', 'entity', 'directed_relation'});
+            termId = d.id();
+            testCase.verifyEqual(props{1}.base.id, termId, 'DOC is not the term');
+            for k = 1:numel(props)
+                testCase.verifyEqual(char(ndi.v2.sessionIdOf(props{k})), S.id());
+            end
+
+            % the body holds genes.tsv for the term, read back from the database
+            body = jsondecode(jsonencode(props{2}));
+            testCase.verifyEqual(ndi.v2.edgeIds(body, 'owner_id'), {termId});
+            testCase.verifyEqual(char(body.data_body.format.node), 'EDAM:format_3475');
+            testCase.verifyEqual(double(body.data.dimensions(1).n), numel(ids));
+            testCase.verifyEqual(char(body.data.dimensions(1).term.node), 'NCIT:C16612');
+            testCase.verifyEqual(char(body.data_body.notes), 'test genes');
+            f = S.database_openbinarydoc(body.base.id, 'genes.tsv');
+            text = fileread(f.fullpathfilename);
+            S.database_closebinarydoc(f);
+            testCase.verifyEqual(strtrim(text), sprintf(['gene_index\tgene_id\tgene_name\n' ...
+                '0\tENSX0001\tHOXA\n1\tENSX0002\t\n2\tENSX0003\tHOXA']));
+
+            % the history: term -> annotation -> assembly
+            testCase.verifyEqual(char(props{3}.entity.name), 'test.gtf (modified)');
+            testCase.verifyEqual(char(props{5}.entity.name), 'testAsm');
+            testCase.verifyEqual(ndi.v2.edgeIds(props{4}, 'child_id'), {termId});
+            testCase.verifyEqual(ndi.v2.edgeIds(props{4}, 'parent_id'), {props{3}.base.id});
+            testCase.verifyEqual(ndi.v2.edgeIds(props{6}, 'child_id'), {props{3}.base.id});
+            testCase.verifyEqual(ndi.v2.edgeIds(props{6}, 'parent_id'), {props{5}.base.id});
+
+            % all of it is in the database
+            for k = 1:numel(props)
+                testCase.verifyNumElements(S.database_search(ndi.query('base.id', ...
+                    'exact_string', props{k}.base.id, '')), 1, ...
+                    sprintf('the %s was not written', classes{k}));
+            end
+        end
+
+        function testGeneListOnAV2DatabaseIsWhatTheMigrationWrites(testCase)
+            % the same input, written into a v1 database and migrated by
+            % DID-matlab's +migrators_j/gene_list.m, gives the same documents
+            % as makeGeneList writes into a v2 database (ids, the session,
+            % timestamps and file locations aside)
+            testCase.assumeTrue(~isempty(which('did2.convert.migrators_j.gene_list')), ...
+                'DID-matlab''s gene_list migrator is not on the path');
+            [ids, names, args] = testCase.geneListInput();
+            S2 = testCase.v2Session();
+            [~, ~, docs] = ndi.fun.doc.gene.makeGeneList(S2, ids, names, args{:});
+            native = cellfun(@(x) x.document_properties, docs, 'UniformOutput', false);
+
+            S1 = testCase.v1Session();
+            d1 = ndi.fun.doc.gene.makeGeneList(S1, ids, names, args{:});
+            v1 = S1.database_search(ndi.query('base.id', 'exact_string', d1.id(), ''));
+            testCase.assertNumElements(v1, 1);
+            migrated = did2.convert.migrators_j.gene_list(v1{1}.document_properties);
+            % DENOMINATOR FIRST: what each side holds
+            testCase.assertNumElements(migrated, numel(native), sprintf( ...
+                'the migrator gives %d documents, the v2 writer %d', numel(migrated), numel(native)));
+            testCase.verifyEqual(testCase.canonical(native), testCase.canonical(migrated));
+            testCase.verifyEqual(testCase.fileNames(native{2}), testCase.fileNames(migrated{2}), ...
+                'the body does not name its file as the migrated body does');
+        end
+
+        function testPyramidReadsTheV2GeneListCount(testCase)
+            % ndi.fun.doc.gene.makePyramid takes the gene count of a v2 gene
+            % list from its body: index 3 is out of range for 3 genes
+            S = testCase.v2Session();
+            gl = ndi.fun.doc.gene.makeGeneList(S, {'E1', 'E2', 'E3'}, {'a', 'b', 'c'});
+            msg = '';
+            try
+                ndi.fun.doc.gene.makePyramid(S, [10; 11], [20; 21], [0; 3], [1; 1], gl, ...
+                    'binSizes', 1, 'grid', 2, 'subjectID', ndi.ido.unique_id());
+            catch err
+                testCase.verifyEqual(err.identifier, 'NDI:gene:makePyramid:geneIndexOutOfRange', err.message);
+                msg = err.message;
+            end
+            testCase.verifySubstring(msg, 'the geneList has 3 genes');
+        end
+
         function testAStimulusObjectStaysV1OnAV2Database(testCase)
             % no decided v2 target for `openminds_stimulus`: it stays v1
             S = testCase.v2Session();
@@ -200,6 +350,56 @@ classdef TestMakersGivenSessionV2 < matlab.unittest.TestCase
     end
 
     methods (Static)
+        function [ids, names, args] = geneListInput()
+            % a gene list with every optional fact given, a repeated symbol
+            % and a blank one
+            ids = {'ENSX0001', 'ENSX0002', 'ENSX0003'};
+            names = {'HOXA', '', 'HOXA'};
+            args = {'label', 'test genes', 'genomeAssembly', 'testAsm', ...
+                'annotationSource', 'test.gtf (modified)', ...
+                'geneIdNamespace', 'Ensembl', 'geneSymbolNamespace', 'HGNC'};
+        end
+
+        function c = canonical(props)
+            % PROPS (a cell of document structs) with what two writes of the
+            % same input do not share taken out: `base` (ids, timestamps),
+            % `files` (where the bytes are), and every edge's id, written as
+            % the position of the document it names in PROPS, or 'outside'
+            % (the session)
+            ids = cellfun(@(p) char(p.base.id), props, 'UniformOutput', false);
+            c = cell(size(props));
+            for k = 1:numel(props)
+                p = jsondecode(jsonencode(props{k}));
+                p = rmfield(p, intersect(fieldnames(p), {'base', 'files'}));
+                if isfield(p, 'depends_on') && ~isempty(p.depends_on)
+                    dep = p.depends_on;
+                    if isstruct(dep), dep = num2cell(dep); end
+                    for j = 1:numel(dep)
+                        for f = {'document_id', 'value'}
+                            if isfield(dep{j}, f{1})
+                                at = find(strcmp(ids, char(dep{j}.(f{1}))), 1);
+                                if isempty(at)
+                                    dep{j}.(f{1}) = 'outside';
+                                else
+                                    dep{j}.(f{1}) = sprintf('#%d', at);
+                                end
+                            end
+                        end
+                    end
+                    p.depends_on = dep;
+                end
+                c{k} = p;
+            end
+        end
+
+        function names = fileNames(p)
+            names = {};
+            if isfield(p, 'files') && isfield(p.files, 'file_list')
+                names = sort(cellstr(p.files.file_list));
+            end
+            names = names(:)';
+        end
+
         function tf = isEntity(p, type)
             tf = strcmp(p.document_class.class_name, 'entity') && ...
                 ndi.v2.vocabIs('entity_type', p.entity.type, type);

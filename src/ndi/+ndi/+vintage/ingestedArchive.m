@@ -31,6 +31,14 @@ function A = ingestedArchive(S, readerId, epochId, options)
 %                       number of samples; its covariates hold the channel
 %                       list (channel number, offset, scale, and the sample
 %                       rate as the time covariate's spacing)
+%                       An unevenly spaced time channel's body
+%                       (`ti_group<g>_seg.nbf_#`) is owned by the standalone
+%                       `time` value the channel groups' time covariate is a
+%                       `key` to (their `key_id`; Decided by Jess Haley,
+%                       2026-11-03 [uneven time is a keyed time value]): it is
+%                       found through that edge, and its samples are seconds
+%                       from the epoch's start ([clock only on the time
+%                       reference])
 %     an opaque_body    the v1 series as pass 1 carried it: member
 %                       body_data_<k> is v1 segment k+1. Its segment length
 %                       is the length of its first member when it has more
@@ -128,6 +136,19 @@ end
 bodies = S.database_search(ndi.query('', 'isa', 'data_body', '') & ...
     ndi.v2.anyOf(cellfun(@(d) ndi.query('', 'depends_on', 'owner_id', d.id()), ...
         statements, 'UniformOutput', false)));
+
+% ---- the bodies of the values they key to (an uneven time channel) -----
+keyIds = {};
+for k = 1:numel(bodies)
+    keyIds = [keyIds, ndi.v2.edgeIds(bodies{k}.document_properties, 'key_id')]; %#ok<AGROW>
+end
+keyIds = unique(keyIds(~cellfun(@isempty, keyIds)));
+if ~isempty(keyIds)
+    keyed = S.database_search(ndi.query('', 'isa', 'data_body', '') & ...
+        ndi.v2.anyOf(cellfun(@(i) ndi.query('', 'depends_on', 'owner_id', i), ...
+            keyIds, 'UniformOutput', false)));
+    bodies = [reshape(bodies, 1, []), reshape(keyed, 1, [])];
+end
 
 A = archiveOf(S, epochId, anchors, statements, bodies, options.Channels);
 end
