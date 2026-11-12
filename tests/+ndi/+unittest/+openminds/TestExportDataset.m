@@ -161,7 +161,8 @@ classdef TestExportDataset < matlab.unittest.TestCase
             isDv = strcmp({m.type}, 'DatasetVersion');
             % deferred in the crosswalk: no v2 source, so reported missing
             testCase.verifyTrue(any(isDv & strcmp({m.property}, 'versionSpecification')));
-            testCase.verifyEmpty(dv.versionSpecification);
+            % an unset openMINDS string reads as "" (never filled in)
+            testCase.verifyEqual(strlength(dv.versionSpecification), 0);
             % present in the dataset, so not missing
             for p = {'fullName', 'shortName', 'description', 'releaseDate', ...
                     'versionIdentifier', 'digitalIdentifier', 'contribution', 'isVersionOf'}
