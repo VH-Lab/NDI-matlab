@@ -48,7 +48,27 @@ function f = elementFields(subjectDoc, ndi_session_obj, pieces)
 %                          meaning], [cell spellings amended]), reads
 %                          'spikes' from its own `entity.type` (`cell` or
 %                          `group`).
-%     ndi_element_class -> a `term_assertion` labelled `ndi element class`
+%     ndi_element_class -> the `term_assertion` labelled `ndi element class`
+%                          WHILE IT IS WRITTEN; where it is absent, REBUILT
+%                          from what the element is, by its links
+%                          (ndi.vintage.elementLinkKind) and its type
+%                          (ndi.vintage.elementClassOfKind): a probe takes
+%                          the class probetype2object.json names for its
+%                          type, a sorted unit 'ndi.neuron', an ensemble
+%                          'ndi.element.ensemble' (Decided by Jess Haley,
+%                          2026-10-27 [ndi element class not kept],
+%                          2026-11-10 [element recognised by its links],
+%                          [ensemble has members] and [assertion wins while
+%                          written]: DID-matlab's round trip runs before
+%                          NDI's second pass writes `member_of`, so the links
+%                          alone would misread an ensemble while the
+%                          assertion is still written)
+%     type (a Group)    -> for a sorted unit of type `Group` with no class
+%                          assertion, rebuilt from its members ([ensemble
+%                          has members]): 'ensemble' when `member_of`
+%                          relations point into it, else 'spikes' (one
+%                          multi-unit). With the assertion, read as before
+%                          (its `element type` assertion)
 %     underlying_element_id -> a `directed_relation` `derived_from`
 %     subject_id (the specimen) -> a `directed_relation` `observes`,
 %                          OR -- and this is the case that was missing --
@@ -167,6 +187,25 @@ else
             recordingModes(ndi_session_obj, docId));
     end
     f.ndi_element_class = classValueOf(pieces.classDocs);
+end
+
+% --- where no class assertion is written: the class and a Group's type,
+% rebuilt from the links ----------------------------------------------------
+% [element recognised by its links], [ensemble has members], [ndi element
+% class not kept]; Decided by Jess Haley, 2026-11-10 [assertion wins while written]: while the assertion is
+% present it wins, and the links are not read. Inside a scope the link kind
+% is the session-wide answer, read once (ndi.vintage.linkedElements).
+if isempty(f.ndi_element_class)
+    linkKind = ndi.vintage.elementLinkKind(props, ndi_session_obj);
+    if any(strcmp(linkKind, {'unit', 'ensemble'})) ...
+            && strcmp(ndi.vintage.elementEntityType(props), 'group')
+        if strcmp(linkKind, 'ensemble')
+            f.type = 'ensemble';
+        else
+            f.type = 'spikes';
+        end
+    end
+    f.ndi_element_class = ndi.vintage.elementClassOfKind(linkKind, f.type);
 end
 
 % --- the lineage relations ---------------------------------------------

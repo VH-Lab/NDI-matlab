@@ -445,6 +445,8 @@ classdef etaShape
                     tf = any(strcmp(ndi.migrate.internal.etaShape.entityType(s), types));
                 end
             elseif strcmp(c, 'subject')
+                % NDI's handles (entityType reads by node: `culture` is
+                % OBI:0001876, stored `culture` or "cell culture")
                 physical = {'organism', 'culture', 'tissue', 'cell', 'group', ...
                     'device', 'material'};
                 tf = isempty(types) || any(ismember(types, physical));

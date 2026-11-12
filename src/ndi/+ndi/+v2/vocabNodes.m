@@ -175,7 +175,10 @@ switch kind
             % [probe wiring is a relation], [wiring relation term] (Jess Haley
             % 2026-11-01): a probe wired to its acquisition system's channels
             'connected_to',       {'RO:0002170'}
-            'temporally_aligned_with', {}
+            % [culture and alignment nodes] (Jess Haley 2026-11-10; empty-ontology
+            % 86628b10): the clock_alignment relation's node. Documents written
+            % before carry no node and still match by name (alias below)
+            'temporally_aligned_with', {'EMPTY:0000440'}
             % retired, read only: v1 lineage the migrator wrote before #30
             % retired it (ndi.vintage.elementFields)
             'observes',           {}
@@ -192,7 +195,12 @@ switch kind
         % 152157d (K0, L3)
         T = {
             'organism',     {'COB:0000022'}
-            'culture',      {}
+            % [culture renamed cell culture] (Decided by Jess Haley,
+            % 2026-11-10, did-schema did_v2_go_forward_class_audit.md): OBI
+            % "cell culture"; did-schema renames the row after NDI and
+            % DID-matlab compare it by node. The node, the handle `culture`
+            % and the name "cell culture" (an alias below) all read as it
+            'culture',      {'OBI:0001876'}
             'tissue',       {'UBERON:0000479'}
             'cell',         {'CL:0000000'}
             'group',        {'NCIT:C43359'}
@@ -212,6 +220,9 @@ switch kind
             'epoch',        {'EMPTY:0000383'}
             % retired (did-schema #88), read only
             'web_resource', {}
+            };
+        aliases = {
+            'cell culture', 'culture'   % [culture renamed cell culture]
             };
     case 'clock'
         % [clock terms get nodes] (Jess Haley, 2026-10-26); the handles are

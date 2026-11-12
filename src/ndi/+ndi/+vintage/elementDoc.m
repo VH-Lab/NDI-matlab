@@ -108,6 +108,19 @@ if isprop(ndi_element_obj, 'etaDocumentId') && ~isempty(ndi_element_obj.etaDocum
 end
 
 % ---- v1: the original query, unchanged --------------------------------
+% INSIDE getprobes, the probes it already read answer a probe built from an
+% epoch probe map, with no search: the v1 documents and v2 entities of the
+% session's probes, their fields from the call's cache (the derived index,
+% ndi.vintage.prefetchElementFields), held by ndi.session/getprobes
+% (Decided by Jess Haley, 2026-11-10 [probes from the index keep v1's duplicates]: v2 getprobes
+% answers from the derived index and still rebuilds the epoch-probe-map
+% duplicates v1 returns, without the v1 `element` searches). A probe not
+% among them is looked up as before.
+[doc, vintage, hit] = probeTableLookup(E, ndi_element_obj);
+if hit
+    return;
+end
+
 hits = E.database_search(ndi_element_obj.searchquery());
 if numel(hits) > 1
     error('NDI:vintage:tooManyElementDocs', ...
@@ -154,23 +167,14 @@ end
 % class can match (isThisElement compares the class); the others are not
 % read. The order is the assertions' order, as elementSubjectDocs gives it.
 subjects = classCandidates(E, wantClass, ndi_element_obj);
-matches = {};
-for i = 1:numel(subjects)
-    % The name and reference are read from the entity document itself, as
-    % ndi.vintage.elementFields reads them; only an entity whose name and
-    % reference match has its other fields rebuilt (five searches). Every
-    % entity used to be rebuilt: 4,814 rebuilds for six probes' id() in one
-    % Dab getprobes (run 42248853676). Jess Haley, 2026-11-06: "Speed can't
-    % be slower than v1."
-    [nm, rf] = localNameReference(subjects{i});
-    if ~strcmp(nm, ndi_element_obj.name) || ~sameReference(rf, ndi_element_obj.reference)
-        continue;
-    end
-    f = ndi.vintage.elementFields(subjects{i}, E);
-    if ~isThisElement(f, ndi_element_obj, wantClass); continue; end
-    matches{end+1} = subjects{i}; %#ok<AGROW>
+matches = matchingOf(subjects, E, ndi_element_obj, wantClass);
+if isempty(matches)
+    % none with an assertion: an element recognised by its links alone
+    % ([element recognised by its links]), found by its name
+    seen = cellfun(@(d) char(d.id()), subjects, 'UniformOutput', false);
+    matches = matchingOf(nameCandidates(E, ndi_element_obj.name, seen), E, ...
+        ndi_element_obj, wantClass);
 end
-
 if numel(matches) > 1
     % RAISED, NOT RESOLVED BY PICKING THE FIRST. The v1 path errors on a
     % duplicate and this path must too, or a migrated session would
@@ -190,6 +194,58 @@ end
 end
 
 % ===================== helpers =========================================
+
+function [doc, vintage, hit] = probeTableLookup(E, ndi_element_obj)
+% the one probe in the table getprobes holds for this call (key
+% 'pt|<session id>') that is NDI_ELEMENT_OBJ: same name, reference, type and
+% class. HIT is false with no table, or no single match.
+doc = [];
+vintage = '';
+hit = false;
+if ~ndi.vintage.elementFieldsScope('isopen')
+    return;
+end
+try
+    key = ['pt|' char(E.id())];
+catch
+    return;
+end
+[T, has] = ndi.vintage.elementFieldsScope('get', key);
+if ~has || isempty(T)
+    return;
+end
+wantClass = class(ndi_element_obj);
+match = find(arrayfun(@(t) strcmp(t.name, ndi_element_obj.name) && ...
+    strcmp(t.type, ndi_element_obj.type) && strcmp(t.ndi_element_class, wantClass) && ...
+    sameReference(t.reference, ndi_element_obj.reference), T));
+if ~isscalar(match)
+    return;
+end
+doc = T(match).doc;
+vintage = T(match).vintage;
+hit = true;
+end
+
+function matches = matchingOf(subjects, E, ndi_element_obj, wantClass)
+% the candidates that are this element
+matches = {};
+for i = 1:numel(subjects)
+    % The name and reference are read from the entity document itself, as
+    % ndi.vintage.elementFields reads them; only an entity whose name and
+    % reference match has its other fields rebuilt (five searches). Every
+    % entity used to be rebuilt: 4,814 rebuilds for six probes' id() in one
+    % Dab getprobes (run 42248853676). Jess Haley, 2026-11-06: "Speed can't
+    % be slower than v1."
+    [nm, rf] = localNameReference(subjects{i});
+    if ~strcmp(nm, ndi_element_obj.name) || ~sameReference(rf, ndi_element_obj.reference)
+        continue;
+    end
+    f = ndi.vintage.elementFields(subjects{i}, E);
+    if ~isThisElement(f, ndi_element_obj, wantClass); continue; end
+    matches{end+1} = subjects{i}; %#ok<AGROW>
+end
+end
+
 
 function tf = isThisElement(f, ndi_element_obj, wantClass)
 % do the rebuilt element fields F describe NDI_ELEMENT_OBJ?
@@ -278,6 +334,25 @@ for i = 1:numel(ids)
     d = byId(ids{i});
     if ~isempty(d)
         docs{end+1} = d; %#ok<AGROW>
+    end
+end
+end
+
+function docs = nameCandidates(E, name, known)
+% the entities named NAME (`entity.name`) that are not among KNOWN: an
+% element recognised by its links with no `ndi element class` assertion
+% ([element recognised by its links], Jess Haley 2026-11-10) is found by its
+% name, one search, and checked by elementFields like the others (its class
+% rebuilt from its links)
+docs = {};
+if isempty(name)
+    return;
+end
+found = E.database_search(ndi.query('', 'isa', 'entity', '') & ...
+    ndi.query('entity.name', 'exact_string', char(name), ''));
+for k = 1:numel(found)
+    if ~any(strcmp(char(found{k}.id()), known))
+        docs{end+1} = found{k}; %#ok<AGROW>
     end
 end
 end
