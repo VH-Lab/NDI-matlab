@@ -78,7 +78,7 @@ classdef database
             Update = 1;
             Validate = 1;
             vlt.data.assign(varargin{:});
-            add_parameters = vlt.data.var2struct('Update','Validate');
+            add_parameters = struct('Update', Update, 'Validate', Validate);
             ndi_database_obj = do_add(ndi_database_obj, ndi_document_obj, add_parameters);
         end % add()
 
