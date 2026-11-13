@@ -35,7 +35,10 @@ classdef dir < ndi.dataset
                 datasetSessionId = ndi.cloud.sync.internal.datasetSessionIdFromDocs(docs);
                 ndi_dataset_dir_obj.session = ndi.session.dir(reference, path_name, datasetSessionId);
                 mystruct = struct(ndi_dataset_dir_obj.session); % don't do this but we need to here
-                mystruct.database.add(docs);
+                % These documents come from an existing dataset (e.g., one
+                % downloaded from NDI Cloud) and were validated when they were
+                % first added, so skip the slow per-document schema validation.
+                mystruct.database.add(docs, 'Validate', false);
                 clear resetWarningCleanupObj
                 ndi_dataset_dir_obj.session = ndi.session.dir(reference, path_name);
             end

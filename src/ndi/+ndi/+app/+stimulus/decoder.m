@@ -101,6 +101,9 @@ classdef decoder < ndi.app
                 [data,t,timeref] = ndi_element_stim.readtimeseriesepoch(epochsremaining{j},-Inf,Inf);
                 % stimulus
                 mystim = vlt.data.emptystruct('parameters');
+                if isstruct(data.parameters) % ingested metadata may be a struct array
+                    data.parameters = num2cell(data.parameters);
+                end
                 for k=1:numel(data.parameters)
                     mystim(k) = struct('parameters',data.parameters{k});
                 end

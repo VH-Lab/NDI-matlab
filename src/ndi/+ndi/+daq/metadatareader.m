@@ -105,6 +105,13 @@ classdef metadatareader < ndi.ido & ndi.documentservice
                 parameters = ndi.compress.expand_metadata(tname_without_ext);
                 delete(tname);
             end
+            % The expanded metadata can come back as a struct array (e.g., when all
+            % stimuli share the same fields, JSON decoding collapses the cell array
+            % into a struct array). Return a cell array of structures, matching
+            % READMETADATA for non-ingested data.
+            if isstruct(parameters)
+                parameters = reshape(num2cell(parameters),1,[]);
+            end
         end % readmetadata_ingested()
 
         function parameters = readmetadatafromfile(ndi_daqmetadatareader_obj, file)

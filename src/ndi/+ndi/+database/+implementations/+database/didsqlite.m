@@ -76,17 +76,27 @@ classdef  didsqlite < ndi.database
             % marked ingest cannot be fetched at add time. Remote ingestion is
             % rare -- ingest defaults to 0 for 'url' and 'ndicloud' locations.
             %
+            % add_parameters.Validate (default true) controls DID's schema
+            % validation, which can be skipped for documents already known to
+            % be valid (e.g., downloaded from NDI Cloud).
+            doValidate = true;
+            if isstruct(add_parameters) && isfield(add_parameters,'Validate')
+                doValidate = logical(add_parameters.Validate);
+            end
+            %
             % DID retires the id of a document removed from every branch and
             % refuses it ever after. A caller restoring that same document --
             % the cloud sync re-downloading one deleted locally (#1238) --
             % sets RestoreDeletedId, which DID honours with OnDeletedId.
             % Passed only when set, so the default call is unchanged.
             extraArgs = {};
-            if isfield(add_parameters,'RestoreDeletedId') && add_parameters.RestoreDeletedId
+            if isstruct(add_parameters) && isfield(add_parameters,'RestoreDeletedId') ...
+                    && add_parameters.RestoreDeletedId
                 extraArgs = {'OnDeletedId','restore'};
             end
             ndi_didsqlite_obj.db.add_docs(ndi_document_obj,'a', ...
-                'customFileHandler', @download_file_from_cloud, extraArgs{:});
+                'customFileHandler', @download_file_from_cloud, ...
+                'Validate', doValidate, extraArgs{:});
         end % do_add
 
         function [ndi_document_obj] = do_read(ndi_didsqlite_obj, ndi_document_id)
