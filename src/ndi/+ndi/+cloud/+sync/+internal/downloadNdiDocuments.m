@@ -151,7 +151,12 @@ function downloadedNdiDocuments = downloadNdiDocuments(cloudDatasetId, cloudDocu
             fprintf('Adding %d processed documents to the local dataset...\n', ...
                 numel(newNdiDocuments));
         end
-        ndiDataset.database_add(newNdiDocuments);
+        % RestoreDeletedId: a document fetched from the cloud is the same
+        % document the remote holds, so if it was once here and deleted
+        % locally, bringing it back is a restore, not a re-use of its id.
+        % Without this DID refuses it (DID:SQLITEDB:DELETED_DOC) and a
+        % mirror after a local delete fails (#1238).
+        ndiDataset.database_add(newNdiDocuments, 'RestoreDeletedId', true);
         if syncOptions.Verbose
             fprintf('Documents added to the dataset.\n');
         end

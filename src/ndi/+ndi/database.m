@@ -68,11 +68,18 @@ classdef database
             % -------------------------------------------------------------------------
             % 'Update'  (1)            | If document exists, update it. If 0, an error is
             %                          |   generated if a document with the same ID exists
+            % 'RestoreDeletedId' (0)   | If 1, a document whose ID was previously removed
+            %                          |   from the database is restored rather than
+            %                          |   refused. Use only when the document is the same
+            %                          |   document coming back (e.g., re-downloaded from
+            %                          |   the cloud; issue #1238). Implementations that
+            %                          |   never retire IDs ignore it.
             %
             % See also: vlt.data.namevaluepair
             Update = 1;
+            RestoreDeletedId = 0;
             vlt.data.assign(varargin{:});
-            add_parameters = vlt.data.var2struct('Update');
+            add_parameters = vlt.data.var2struct('Update','RestoreDeletedId');
             ndi_database_obj = do_add(ndi_database_obj, ndi_document_obj, add_parameters);
         end % add()
 

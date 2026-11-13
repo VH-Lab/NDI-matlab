@@ -643,10 +643,10 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
 
         % database methods
 
-        function ndi_dataset_obj = database_add(ndi_dataset_obj, document)
+        function ndi_dataset_obj = database_add(ndi_dataset_obj, document, options)
             %DATABASE_ADD - Add an ndi.document to an ndi.dataset object
             %
-            % NDI_DATASET_OBJ = DATABASE_ADD(NDI_DATASET_OBJ, NDI_DOCUMENT_OBJ)
+            % NDI_DATASET_OBJ = DATABASE_ADD(NDI_DATASET_OBJ, NDI_DOCUMENT_OBJ, ...)
             %
             % Adds the ndi.document NDI_DOCUMENT_OBJ to the ndi.dataset NDI_DATASET_OBJ.
             % NDI_DOCUMENT_OBJ can also be a cell array of ndi.document objects, which will
@@ -659,7 +659,19 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
             %
             % The database can be queried by calling NDI_DATASET_OBJ/SEARCH
             %
+            % This function also takes parameters as name/value pairs that modify its behavior:
+            % Parameter (default)        | Description
+            % --------------------------------------------------------------------------------
+            % RestoreDeletedId (false)   | Allow a document whose ID was previously deleted
+            %                            |   to be added again. Use only when restoring that
+            %                            |   same document, e.g. from the cloud (issue #1238).
+            %
             % See also: ndi.dataset/database_search(), ndi.dataset/database_rm()
+            arguments
+                ndi_dataset_obj (1,1) ndi.dataset
+                document
+                options.RestoreDeletedId (1,1) logical = false
+            end
             if ~iscell(document)
                 document = {document};
             end
@@ -684,7 +696,8 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
             % now add them in turn
             for i=1:numel(usession_ids)
                 indexes = find( strcmp(usession_ids{i},ndi_session_ids_here) | strcmp(ndi.session.empty_id(),ndi_session_ids_here));
-                s{i}.database_add(document(indexes));
+                s{i}.database_add(document(indexes), ...
+                    'RestoreDeletedId', options.RestoreDeletedId);
                 mksqlite('close'); % TODO: update ndi.session with a close database files method                
             end
         end % database_add
