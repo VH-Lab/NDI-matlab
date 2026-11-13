@@ -330,6 +330,10 @@ jobs:
                 ... % 2026-11-06): ingested epochs read in a few searches
                 ... % give what one epoch at a time gives
                 'ndi.unittest.vintage.TestIngestedReadsBatched', ...
+                ... % a migrated epoch's clocks in the order its recordings
+                ... % name them, not the database's (corpusObjectEquivalence
+                ... % on Dab, run 43197684863)
+                'ndi.unittest.vintage.TestEpochClockOrder', ...
                 ... % [stimulator manipulation dropped] (Jess Haley,
                 ... % 2026-11-09): a stimulator's probe-map row from its
                 ... % wiring and element, without the manipulation

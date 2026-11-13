@@ -1209,8 +1209,8 @@ function result = local(path, options)
                 '%d archive(s) seen, %d converted (%d of %d channel-group bodies ' ...
                 'now sampled bodies; %d evenly spaced time bodies and %d ' ...
                 'channel_list.bin removed, %d channel_list.bin kept); time not ' ...
-                'evenly spaced %d (%d now a keyed time value, %d left: the epoch ' ...
-                'does not start at 0); left: bytes not here %d, v1 archive not found %d, ' ...
+                'evenly spaced %d (%d now a keyed time value, %d of them rewritten from ' ...
+                'the epoch''s start); left: bytes not here %d, v1 archive not found %d, ' ...
                 'channel list missing %d / unreadable %d, unconvertible %d, ' ...
                 'reverted %d; event bodies left as they are %d\n'], ...
                 ingestedArchiveReport.documents_inspected, ...
@@ -1223,7 +1223,7 @@ function result = local(path, options)
                 ingestedArchiveReport.channel_list_kept, ...
                 ingestedArchiveReport.time_not_evenly_spaced, ...
                 ingestedArchiveReport.uneven_time_converted, ...
-                ingestedArchiveReport.uneven_time_not_from_zero, ...
+                ingestedArchiveReport.uneven_time_rebased, ...
                 ingestedArchiveReport.bytes_not_here, ...
                 ingestedArchiveReport.v1_archive_not_found, ...
                 ingestedArchiveReport.channel_list_missing, ...
@@ -1783,7 +1783,11 @@ function [convertResult, bathAnchors, report] = resolveDeferred(convertResult, r
 %   ([canonical absent only as needs info]); the Dabrowska dataset map states
 %   their meaning. The rule [bath ph and osmolarity are formulation fields] is
 %   unchanged for a row NAMED osm / osmolarity in a unit the stage reads
-%   (stimulusBathToBath). REPORT, denominators first: deferred_seen (the
+%   (stimulusBathToBath). Since Jess Haley, 2026-11-12 [bath concentration
+%   prefixes convert to molar] an ingredient row in a unit that is not molar
+%   with a known SI prefix (mg/ml, a word) is a spelling that cannot be parsed
+%   and carries the bath the same way (bathUnreadUnitRows, as DID-matlab
+%   resolveDeferredBaths does, PR #456). REPORT, denominators first: deferred_seen (the
 %   deferrals this step read), baths_carried_unread_unit, and carry_rows
 %   {id, row, dependency} (secondPassCarryRows reads them).
     bathAnchors = [];
@@ -1834,7 +1838,8 @@ function [convertResult, bathAnchors, report] = resolveDeferred(convertResult, r
         end
     end
     fprintf(['[migrate step]   deferred baths carried as v1, a row in osm / ' ...
-        'saturation (carry-155): %d of %d deferral(s) read\n'], ...
+        'saturation or a concentration unit not read as molar (carry-155): ' ...
+        '%d of %d deferral(s) read\n'], ...
         report.baths_carried_unread_unit, report.deferred_seen);
     if isempty(assembled)
         convertResult.quarantine = q(keep);
@@ -3498,7 +3503,9 @@ function [convertResult, rep] = describeIngestedArchiveBodies(convertResult, ndi
 %   which is now covariates) are dropped only when that group comes back
 %   clean, and the documents it made (the `time` value of an unevenly spaced
 %   time channel, [uneven time is a keyed time value]) are added only then.
-%   A group that does not is REVERTED (left as pass 1 wrote it) and counted.
+%   A group that does not is REVERTED (left as pass 1 wrote it) and counted,
+%   and the files written for it (an uneven time channel rewritten from the
+%   epoch's start, [uneven time rewritten from the epoch start]) are deleted.
     docs = convertResult.migrated;
     structs = cell(1, numel(docs));
     for k = 1:numel(docs)
@@ -3543,13 +3550,23 @@ function [convertResult, rep] = describeIngestedArchiveBodies(convertResult, ndi
                 end
             else
                 rep.reverted = rep.reverted + 1;
+                deleteWritten(rep.written_files{g});
             end
         catch
             rep.reverted = rep.reverted + 1;
+            deleteWritten(rep.written_files{g});
         end
     end
     convertResult.migrated = [reshape(docs(~drop), 1, []), added];
     convertResult.summary = recountSummary(convertResult);
+end
+
+function deleteWritten(paths)
+% the store files ndi.migrate.internal.ingestedArchiveBodies wrote for a
+% group that is reverted: nothing refers to them
+for k = 1:numel(paths)
+    if isfile(paths{k}); delete(paths{k}); end
+end
 end
 
 function [convertResult, rep] = fillLocatedFileFacts(convertResult, options)
