@@ -634,10 +634,20 @@ end
 % Haley, 2026-10-26): the entity's id from the key, the rest in a
 % did2.convert.mintId context keyed on it, closed at the end of the group (and
 % on any error, by MINTRESTORE).
+%
+% THE REPRESENTATIVE. A group's strain entity, its assertions and its pedigree
+% edges take their datestamp (and the fields the key does not hold, such as
+% synonyms) from ONE member, the representative. It is chosen by content: the
+% member whose v1 datestamp is the earliest, equal instants broken by the
+% Strain document's id (ndi.migrate.internal.earliestByContent has the rule).
+% Not the member read first: database order is not data (NDI-matlab #1235), so
+% the same dataset written in another order must give the same values.
 groupDocId = cell(1, nGroups);
 groupRep   = zeros(1, nGroups);
 for g = 1:nGroups
-    groupRep(g)   = find([cand.group] == g, 1);
+    members = find([cand.group] == g);
+    groupRep(g) = members(ndi.migrate.internal.earliestByContent( ...
+        {cand(members).datestamp}, {cand(members).source_id}));
     groupDocId{g} = did2.convert.mintId('strain', ...
         [groupKeys{g} '|subjectStrainAssembly']);
 end
@@ -659,14 +669,21 @@ for g = 1:nGroups
     if ~isempty(rep.description); ef.notes = rep.description; end   % v1 description -> entity.notes
     gid = rep.identifiers;
     % [openMINDS subject leftovers]: every lab-made member's openMINDS id, as
-    % `openminds:<id>`, in candidate order, once each. Every member's, not the
-    % representative's alone, so no row's id is lost when the rows collapse.
+    % `openminds:<id>`, once each, after the representative's identifiers.
+    % Every member's, not the representative's alone, so no row's id is lost
+    % when the rows collapse. SORTED in character order of the CURIE, not in
+    % the order the members were read (NDI-matlab #1235: database order is not
+    % data), so the list is the same however the database was written.
+    omCuries = {};
     for c = find([cand.group] == g)
         omId = cand(c).openminds_id;
         if isempty(omId); continue; end
-        curie = ['openminds:' omId];
-        if ~any(strcmp(gid, curie))
-            gid{end+1} = curie; %#ok<AGROW>
+        omCuries{end+1} = ['openminds:' omId]; %#ok<AGROW>
+    end
+    omCuries = unique(omCuries);   % sorted, once each
+    for u = 1:numel(omCuries)
+        if ~any(strcmp(gid, omCuries{u}))
+            gid{end+1} = omCuries{u}; %#ok<AGROW>
             report.openminds_ids_on_strains = report.openminds_ids_on_strains + 1;
         end
     end
@@ -927,10 +944,26 @@ for u = 1:numel(uniqGroups)
     % from `subjectInfo.species`, independently of any strain), so the
     % surviving document is the one whose provenance does not depend on this
     % pass having read a strain correctly.
-    survivor = members(find(~fromStrain, 1));
-    if isempty(survivor)
-        survivor = members(1);
+    %
+    % WHICH of them survives is chosen by content, not by read order
+    % (NDI-matlab #1235: database order is not data): among the eligible
+    % assertions (those that are not a strain fragment, or all of them when
+    % every one is), the one whose creation_timestamp is the earliest, equal
+    % instants broken by the smaller id (ndi.migrate.internal.earliestByContent).
+    % The survivor keeps its v1 id; the others are dropped exactly as before.
+    eligible = members(~fromStrain);
+    if isempty(eligible)
+        eligible = members;
     end
+    eligibleStamps = cell(1, numel(eligible));
+    eligibleIds = cell(1, numel(eligible));
+    for m = 1:numel(eligible)
+        eligibleStamps{m} = baseField(kept{eligible(m)}, 'creation_timestamp', ...
+            baseField(kept{eligible(m)}, 'datestamp', ''));
+        eligibleIds{m} = baseField(kept{eligible(m)}, 'id', '');
+    end
+    survivor = eligible(ndi.migrate.internal.earliestByContent( ...
+        eligibleStamps, eligibleIds));
     for m = 1:numel(members)
         if members(m) == survivor
             continue;
