@@ -68,11 +68,17 @@ classdef database
             % -------------------------------------------------------------------------
             % 'Update'  (1)            | If document exists, update it. If 0, an error is
             %                          |   generated if a document with the same ID exists
+            % 'Validate' (1)           | If 1, documents are checked against their schemas
+            %                          |   before being added. Set to 0 to skip this (slow)
+            %                          |   step for documents already known to be valid,
+            %                          |   such as those downloaded from NDI Cloud. Backends
+            %                          |   that do not validate ignore this parameter.
             %
             % See also: vlt.data.namevaluepair
             Update = 1;
+            Validate = 1;
             vlt.data.assign(varargin{:});
-            add_parameters = vlt.data.var2struct('Update');
+            add_parameters = vlt.data.var2struct('Update','Validate');
             ndi_database_obj = do_add(ndi_database_obj, ndi_document_obj, add_parameters);
         end % add()
 
