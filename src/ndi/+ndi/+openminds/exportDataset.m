@@ -37,6 +37,20 @@ function [dataset, datasetVersion, report] = exportDataset(documents, options)
 %       dataset's `subjectOf` document (publication, protocol or software),
 %       written with that document's global_identifier; with none, the
 %       export reports documentation missing.
+%     [author roles read from author edges] (2026-11-12): CRediT roles are
+%       read from `has_author` relations as well as `contributor` ones; the
+%       data is unchanged.
+%     [dataset DOI on the version] (2026-11-12): the dataset entity's DOI
+%       is exported on the DatasetVersion only, not on the Dataset.
+%     [first documentation exported] (2026-11-12): with several
+%       `documentation` candidates, the first in a fixed order is exported
+%       and the others are notExported rows. The order: edges with a
+%       `directed_relation.order` first, by that order; then by the
+%       document's id (character order). It is fixed by the documents
+%       themselves, not by the order DOCUMENTS are passed in, and a DID id
+%       (did.ido.unique_id) begins with its creation time, so with no
+%       `order` (subjectOf is an unordered relation) the earliest-made
+%       document is the one exported.
 %
 %   THE MAPPING IS THE CROSSWALK. Every property is read through did-schema's
 %   did_v2_openminds_crosswalk.json (ndi.openminds.crosswalk): its
@@ -152,11 +166,8 @@ shared = intersect(fieldnames(rows), properties(dataset), 'stable');
 for k = 1:numel(shared)
     prop = shared{k};
     if strcmp(prop, 'digitalIdentifier')
-        if hasValue(datasetVersion.digitalIdentifier)
-            note(ctx, 'Dataset', prop, dsId, ['the dataset''s DOI is written on the ' ...
-                'DatasetVersion; whether the version-independent Dataset carries it too ' ...
-                'is not decided']);
-        end
+        % [dataset DOI on the version]: the DOI is the DatasetVersion's
+        % only; the Dataset (all versions) holds no concept DOI
         continue;
     end
     v = datasetVersion.(prop);
@@ -721,10 +732,12 @@ function exportContributions(ctx, dv, dsId, row)
 %   contribution edge the crosswalk's row names, as its `contribution_types`
 %   says: an edge with one openMINDS type (author: authoring; maintainer:
 %   custodianship) is one Contribution listing its parties in edge order;
-%   a `contributor` edge is one Contribution per CRediT role on it, typed
-%   from `contribution_types.roles`. A role marked `export: false` is
-%   reported, not exported ([unmapped roles not exported]; the
-%   corresponding author, G108(3)).
+%   each CRediT role on a `contributor` edge, or on an `author` edge
+%   ([author roles read from author edges]), is one Contribution of its
+%   party, typed from `contribution_types.roles`, after the edge's typed
+%   Contribution. A role marked `export: false` is reported, not exported
+%   ([unmapped roles not exported]; the corresponding author, G108(3)). A
+%   role on any other edge (a maintainer) is reported, not read.
 arguments
     ctx (1,1) struct
     dv
@@ -757,17 +770,21 @@ for e = reshape(cellstr(row.ndi_target), 1, [])
         % one typed Contribution listing every party of this edge, in order
         parties = {};
         partyIds = {};
+        hasParty = false(1, numel(rels));
         for j = 1:numel(rels)
             o = actorOf(ctx, rels(j).parent, 'contribution');
             if ~isempty(o)
                 parties{end+1} = o; %#ok<AGROW>
                 partyIds{end+1} = rels(j).parent; %#ok<AGROW>
+                hasParty(j) = true;
             end
-            for r = rolesOf(rels(j).roles)
-                note(ctx, 'DatasetVersion', 'contribution', ...
-                    sprintf('%s on %s', ndi.v2.termName(r{1}), describeRelation(ctx, rels(j))), ...
-                    sprintf(['a CRediT role on a `%s` edge: the crosswalk maps roles on ' ...
-                    '`contributor` edges only'], edge));
+            if ~readsRoles(edge)
+                for r = rolesOf(rels(j).roles)
+                    note(ctx, 'DatasetVersion', 'contribution', ...
+                        sprintf('%s on %s', ndi.v2.termName(r{1}), describeRelation(ctx, rels(j))), ...
+                        sprintf(['a CRediT role on a `%s` edge: roles are read from ' ...
+                        '`author` and `contributor` edges only'], edge));
+                end
             end
         end
         if ~isempty(parties)
@@ -776,45 +793,84 @@ for e = reshape(cellstr(row.ndi_target), 1, [])
                 contributions{end+1} = c; %#ok<AGROW>
             end
         end
+        if readsRoles(edge)
+            % [author roles read from author edges]: then each role on the
+            % author edges, in edge order (an edge whose party is not
+            % exported is already a notExported row)
+            for j = find(hasParty)
+                contributions = [contributions, roleContributions(ctx, rels(j), edge, ...
+                    roleRows, dsId, false)]; %#ok<AGROW>
+            end
+        end
         continue;
     end
     % a contributor edge: one Contribution per CRediT role
     for j = 1:numel(rels)
-        roles = rolesOf(rels(j).roles);
-        if isempty(roles)
-            note(ctx, 'DatasetVersion', 'contribution', describeRelation(ctx, rels(j)), ...
-                sprintf('a `%s` edge with no CRediT role: no contribution type to export it as', edge));
-            continue;
-        end
-        o = actorOf(ctx, rels(j).parent, 'contribution');
-        if isempty(o)
-            continue;
-        end
-        for r = roles
-            rr = roleRow(roleRows, r{1});
-            roleName = ndi.v2.termName(r{1});
-            if isempty(rr)
-                note(ctx, 'DatasetVersion', 'contribution', ...
-                    sprintf('%s on %s', roleName, describeRelation(ctx, rels(j))), ...
-                    'the role is not in the crosswalk''s contribution_types.roles');
-                continue;
-            end
-            if ~isfield(rr, 'export') || ~rr.export || ~isfield(rr, 'openminds')
-                note(ctx, 'DatasetVersion', 'contribution', ...
-                    sprintf('%s on %s', roleName, describeRelation(ctx, rels(j))), ...
-                    sprintf(['CRediT role "%s" is not exported: the crosswalk marks it ' ...
-                    '`export: false` (match: %s)'], roleName, char(string(rr.match))));
-                continue;
-            end
-            c = contribution(ctx, {o}, {rels(j).parent}, char(rr.openminds.name), edge, dsId);
-            if ~isempty(c)
-                contributions{end+1} = c; %#ok<AGROW>
-            end
-        end
+        contributions = [contributions, roleContributions(ctx, rels(j), edge, ...
+            roleRows, dsId, true)]; %#ok<AGROW>
     end
 end
 if ~isempty(contributions)
     assign(ctx, dv, 'DatasetVersion', 'contribution', [contributions{:}], dsId);
+end
+end
+
+function tf = readsRoles(edge)
+%READSROLES True for the contribution edges whose CRediT roles export:
+%   `contributor`, and `author` ([author roles read from author edges]).
+arguments
+    edge (1,:) char
+end
+tf = any(strcmp(edge, {'author', 'contributor'}));
+end
+
+function contributions = roleContributions(ctx, rel, edge, roleRows, dsId, rolesOnly)
+%ROLECONTRIBUTIONS One Contribution of REL's party per CRediT role on REL,
+%   typed from the crosswalk's `contribution_types.roles`; a role with no
+%   row, or marked `export: false`, is a notExported row. ROLESONLY: the
+%   edge exports through its roles alone (a `contributor` edge), so an edge
+%   with no role is reported too.
+arguments
+    ctx (1,1) struct
+    rel (1,1) struct
+    edge (1,:) char
+    roleRows cell
+    dsId (1,:) char
+    rolesOnly (1,1) logical
+end
+contributions = {};
+roles = rolesOf(rel.roles);
+if isempty(roles)
+    if rolesOnly
+        note(ctx, 'DatasetVersion', 'contribution', describeRelation(ctx, rel), ...
+            sprintf('a `%s` edge with no CRediT role: no contribution type to export it as', edge));
+    end
+    return;
+end
+o = actorOf(ctx, rel.parent, 'contribution');
+if isempty(o)
+    return;
+end
+for r = roles
+    rr = roleRow(roleRows, r{1});
+    roleName = ndi.v2.termName(r{1});
+    if isempty(rr)
+        note(ctx, 'DatasetVersion', 'contribution', ...
+            sprintf('%s on %s', roleName, describeRelation(ctx, rel)), ...
+            'the role is not in the crosswalk''s contribution_types.roles');
+        continue;
+    end
+    if ~isfield(rr, 'export') || ~rr.export || ~isfield(rr, 'openminds')
+        note(ctx, 'DatasetVersion', 'contribution', ...
+            sprintf('%s on %s', roleName, describeRelation(ctx, rel)), ...
+            sprintf(['CRediT role "%s" is not exported: the crosswalk marks it ' ...
+            '`export: false` (match: %s)'], roleName, char(string(rr.match))));
+        continue;
+    end
+    c = contribution(ctx, {o}, {rel.parent}, char(rr.openminds.name), edge, dsId);
+    if ~isempty(c)
+        contributions{end+1} = c; %#ok<AGROW>
+    end
 end
 end
 
@@ -992,8 +1048,11 @@ function exportDocumentation(ctx, dv, dsId, row)
 %EXPORTDOCUMENTATION openMINDS `documentation` ([documentation from
 %   subjectOf]): the dataset's `subjectOf` document, written with that
 %   document's global identifier (a DOI, an ISBN, or a URL as a
-%   WebResource). openMINDS takes one; more than one is reported. With
-%   none, `documentation` is in REPORT.missing.
+%   WebResource). openMINDS takes one: with several candidates the first
+%   in a fixed order is exported and each other one is a notExported row
+%   ([first documentation exported]; the order: edge `order` first, then
+%   the document's id, see the help above). With none, `documentation` is
+%   in REPORT.missing.
 arguments
     ctx (1,1) struct
     dv
@@ -1031,19 +1090,37 @@ for j = 1:numel(rels)
             'not decided'], numel(objs), strjoin(texts, ', ')));
         continue;
     end
-    found{end+1} = struct('id', rels(j).parent, 'obj', objs{1}, 'text', texts{1}); %#ok<AGROW>
+    found{end+1} = struct('id', rels(j).parent, 'obj', objs{1}, 'text', texts{1}, ...
+        'order', rels(j).order); %#ok<AGROW>
 end
 if isempty(found)
     return;
 end
-if numel(found) > 1
-    for j = 1:numel(found)
-        note(ctx, 'DatasetVersion', 'documentation', found{j}.text, sprintf(['%d `subjectOf` ' ...
-            'documents: openMINDS documentation takes one, and which is not decided'], numel(found)));
-    end
-    return;
+found = firstDocumentationOrder(found);
+for j = 2:numel(found)
+    note(ctx, 'DatasetVersion', 'documentation', sprintf('%s (%s)', found{j}.text, found{j}.id), ...
+        sprintf(['%d `subjectOf` documents and openMINDS documentation takes one: %s (%s) ' ...
+        'is exported, the first by edge `order`, then by document id ' ...
+        '([first documentation exported])'], numel(found), found{1}.text, found{1}.id));
 end
 assign(ctx, dv, 'DatasetVersion', 'documentation', found{1}.obj, dsId);
+end
+
+function found = firstDocumentationOrder(found)
+%FIRSTDOCUMENTATIONORDER The documentation candidates in the fixed order
+%   [first documentation exported] exports the first of: those whose edge
+%   has a `directed_relation.order` first, by that order; then by the
+%   document's id. Neither depends on the order the documents were given in.
+arguments
+    found cell
+end
+ids = cellfun(@(f) f.id, found, 'UniformOutput', false);
+[~, byId] = sort(ids);
+found = found(byId);
+o = cellfun(@(f) f.order, found);
+o(o < 0) = Inf;
+[~, byOrder] = sort(o);   % stable: equal orders keep the id order
+found = found(byOrder);
 end
 
 function [objs, texts, whys] = documentIdentifiers(p)

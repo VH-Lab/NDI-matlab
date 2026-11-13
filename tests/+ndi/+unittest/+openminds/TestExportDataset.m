@@ -9,8 +9,9 @@ classdef TestExportDataset < matlab.unittest.TestCase
 %               copyrightYear date assertion (2024)
 %     people    Ada Lovelace (ORCID, affiliated with the organization),
 %               Grace Hopper, Alan Turing
-%     relations author Ada (order 0) and Grace (order 1, with a CRediT role
-%               on the author edge); contributor Alan with roles data
+%     relations author Ada (order 0) and Grace (order 1, with CRediT roles
+%               writing - original draft and conceptualization on the
+%               author edge, as the Haley import writes them); contributor Alan with roles data
 %               curation, visualization and corresponding author;
 %               maintainer Grace; copyrightHolder the organization;
 %               subjectOf a publication with a DOI; hosted_by the
@@ -20,9 +21,13 @@ classdef TestExportDataset < matlab.unittest.TestCase
 %   docs/plans/did_v2_go_forward_class_audit.md: [one dataset exports as
 %   Dataset and version], [unmapped roles not exported], [custodian exports
 %   as custodianship], [copyright year is a date assertion], [documentation
-%   from subjectOf], and [openMINDS export answers] (the corresponding
+%   from subjectOf], [openMINDS export answers] (the corresponding
 %   author is not exported; a person's affiliations are those listed within
-%   the dataset; DatasetVersion's fields from the dataset's assertions).
+%   the dataset; DatasetVersion's fields from the dataset's assertions),
+%   [author roles read from author edges] (here and on the Haley import's
+%   own dataset metadata, ndi.setup.V2.datasetMetadata over
+%   import_V2_spec.json), [dataset DOI on the version] and [first
+%   documentation exported].
 %
 %   Needs DID-matlab's did2.build, a v2 schema with the openMINDS crosswalk
 %   on DID_SCHEMA_PATH, and openMINDS_MATLAB (`latest`) on the path;
@@ -77,18 +82,24 @@ classdef TestExportDataset < matlab.unittest.TestCase
         function testContributionsThroughTheCrosswalk(testCase)
             [ds, dv, report] = ndi.openminds.exportDataset(testCase.Docs);
             types = {report.contributions.type};
-            % author: one ordered authoring contribution; contributor: one
-            % per mapped CRediT role; maintainer: custodianship
-            testCase.verifyEqual(types, {'authoring', 'curation', 'custodianship'});
+            % author: one ordered authoring contribution, then one per
+            % mapped CRediT role on the author edges ([author roles read
+            % from author edges]); contributor: one per mapped CRediT role;
+            % maintainer: custodianship
+            testCase.verifyEqual(types, {'authoring', 'scientificWriting', 'curation', 'custodianship'});
             author = report.contributions(strcmp(types, 'authoring'));
             testCase.verifyEqual(author.contributors, {testCase.Id.ada, testCase.Id.grace});
+            writing = report.contributions(strcmp(types, 'scientificWriting'));
+            testCase.verifyEqual(writing.contributors, {testCase.Id.grace});
+            testCase.verifyEqual(writing.edge, 'author');
             custodian = report.contributions(strcmp(types, 'custodianship'));
             testCase.verifyEqual(custodian.contributors, {testCase.Id.grace});
             c = dv.contribution;
-            testCase.verifyNumElements(c, 3);
+            testCase.verifyNumElements(c, 4);
             names = arrayfun(@(x) string(x.type.name), c);
-            testCase.verifyEqual(names, ["authoring", "curation", "custodianship"]);
-            testCase.verifyNumElements(ds.contribution, 3);
+            testCase.verifyEqual(names, ["authoring", "scientificWriting", "curation", "custodianship"]);
+            testCase.verifyEqual(c(2).contributor.familyName, "Hopper");
+            testCase.verifyNumElements(ds.contribution, 4);
         end
 
         function testUnmappedRolesReportedNotExported(testCase)
@@ -101,8 +112,137 @@ classdef TestExportDataset < matlab.unittest.TestCase
             testCase.verifyTrue(any(startsWith(items, 'visualization')), strjoin(items, ' | '));
             testCase.verifyTrue(any(startsWith(items, 'corresponding author')), strjoin(items, ' | '));
             testCase.verifyFalse(any(startsWith(items, 'data curation')), strjoin(items, ' | '));
-            % a role on an author edge is reported, not dropped
-            testCase.verifyTrue(any(startsWith(items, 'writing - original draft')), strjoin(items, ' | '));
+            % a mapped role on an author edge is exported ([author roles
+            % read from author edges]), an unmapped one reported
+            testCase.verifyFalse(any(startsWith(items, 'writing - original draft')), strjoin(items, ' | '));
+            concept = onContribution(startsWith(items, 'conceptualization'));
+            testCase.verifyNumElements(concept, 1, strjoin(items, ' | '));
+            testCase.verifyTrue(contains(concept.why, 'export: false'), concept.why);
+            testCase.verifyTrue(contains(concept.item, testCase.Id.grace), concept.item);
+        end
+
+        function testHaleyAuthorRolesExport(testCase)
+            % the Haley import's own dataset metadata: the CRediT roles are
+            % on its `has_author` edges ([author roles read from author edges])
+            specFile = fullfile(fileparts(which('ndi.setup.conv.haley.import_V2')), ...
+                'import_V2_spec.json');
+            testCase.assumeTrue(isfile(specFile), 'the Haley import spec is not on the path');
+            spec = jsondecode(fileread(specFile));
+            result = ndi.setup.V2.datasetMetadata(spec, did.ido.unique_id());
+            docs = result.documents;
+            authors = spec.dataset.authors;
+            if isstruct(authors)
+                authors = num2cell(authors);
+            end
+            testCase.assumeGreaterThan(numel(authors), 0, 'the Haley spec lists no authors');
+            dsId = result.ids('#dataset');
+            % the shape: one has_author edge per author, carrying its roles
+            nRoleEdges = 0;
+            for k = 1:numel(docs)
+                p = ndi.v2.props(docs{k});
+                if ~isfield(p, 'directed_relation') || ...
+                        ~ndi.v2.vocabIs('relation', p.directed_relation.relation, 'has_author')
+                    continue;
+                end
+                testCase.verifyEqual(ndi.v2.edgeIds(p, 'child_id'), {dsId});
+                if isfield(p.directed_relation, 'roles') && ~isempty(p.directed_relation.roles)
+                    nRoleEdges = nRoleEdges + 1;
+                end
+            end
+            testCase.assumeGreaterThan(nRoleEdges, 0, 'the Haley import puts no roles on has_author');
+
+            [~, dv, report] = ndi.openminds.exportDataset(docs);
+            testCase.verifyEqual(report.datasetId, dsId);
+            cw = ndi.openminds.crosswalk();
+            roleRows = cw.contribution_types.roles;
+            if isstruct(roleRows)
+                roleRows = num2cell(roleRows);
+            end
+            c = report.contributions;
+            n = report.notExported;
+            expected = 1;   % the authoring contribution
+            for k = 1:numel(authors)
+                pid = result.ids(authors{k}.person);
+                for r = reshape(cellstr(authors{k}.roles), 1, [])
+                    rr = roleRows(cellfun(@(x) strcmpi(x.role.name, r{1}), roleRows));
+                    testCase.assertNumElements(rr, 1, r{1});
+                    rr = rr{1};
+                    if isfield(rr, 'export') && rr.export
+                        expected = expected + 1;
+                        hit = strcmp({c.type}, char(rr.openminds.name)) & strcmp({c.edge}, 'author') ...
+                            & cellfun(@(x) isequal(x, {pid}), {c.contributors});
+                        testCase.verifyEqual(nnz(hit), 1, sprintf('%s of %s', r{1}, authors{k}.person));
+                    else
+                        hit = strcmp({n.property}, 'contribution') & startsWith({n.item}, r{1}) ...
+                            & contains({n.item}, pid);
+                        testCase.verifyEqual(nnz(hit), 1, sprintf('%s of %s reported', r{1}, authors{k}.person));
+                    end
+                end
+            end
+            onAuthor = strcmp({c.edge}, 'author');
+            testCase.verifyEqual(nnz(onAuthor), expected);
+            authoring = c(strcmp({c.type}, 'authoring'));
+            testCase.verifyEqual(authoring.contributors, ...
+                cellfun(@(a) result.ids(a.person), authors(:)', 'UniformOutput', false));
+            testCase.verifyGreaterThanOrEqual(numel(dv.contribution), expected);
+            % no role on an author edge is left unread
+            testCase.verifyFalse(any(contains({n.why}, 'roles are read from')));
+        end
+
+        function testDatasetDoiOnTheVersionOnly(testCase)
+            [ds, dv, report] = ndi.openminds.exportDataset(testCase.Docs);
+            testCase.verifyClass(dv.digitalIdentifier, 'openminds.core.digitalidentifier.DOI');
+            testCase.verifyEmpty(ds.digitalIdentifier);
+            n = report.notExported;
+            testCase.verifyFalse(any(strcmp({n.type}, 'Dataset') & strcmp({n.property}, 'digitalIdentifier')), ...
+                'the DOI is not a value left out: it is the version''s');
+        end
+
+        function testFirstDocumentationExported(testCase)
+            [base, id] = buildDataset(false, false);
+            pubs = {};
+            pubIds = cell(1, 2);
+            for k = 1:2
+                p = ndi.setup.V2.entityDocuments('publication', struct('name', ...
+                    sprintf('Paper %d', k), 'global_identifier', struct('scheme', 'doi', ...
+                    'value', sprintf('10.5555/paper.%d', 10 + k))), struct(), 'SessionId', id.session);
+                pubIds{k} = p{1}.base.id;
+                pubs = [pubs, p]; %#ok<AGROW>
+            end
+            rel = @(parent, varargin) did2.build.directedRelation(id.dataset, parent, ...
+                ndi.v2.vocabTerm('relation', 'documented_by'), 'SessionId', id.session, varargin{:});
+            edges = {rel(pubIds{1}), rel(pubIds{2})};
+            sorted = sort(pubIds);
+            first = find(strcmp(pubIds, sorted{1}));
+            other = 3 - first;
+            % no `order`: the first by document id, whatever order the
+            % documents are given in
+            for flip = [false, true]
+                e = edges;
+                if flip, e = fliplr(e); end
+                docs = [base, pubs, e];
+                if flip, docs = fliplr(docs); end
+                [~, dv, report] = ndi.openminds.exportDataset(docs);
+                testCase.verifyEqual(dv.documentation.identifier, ...
+                    "https://doi.org/" + sprintf('10.5555/paper.%d', 10 + first));
+                n = report.notExported;
+                onDoc = n(strcmp({n.property}, 'documentation'));
+                testCase.verifyNumElements(onDoc, 1);
+                testCase.verifyTrue(contains(onDoc.item, pubIds{other}), onDoc.item);
+                testCase.verifyTrue(contains(onDoc.why, pubIds{first}), onDoc.why);
+                m = report.missing;
+                testCase.verifyFalse(any(strcmp({m.type}, 'DatasetVersion') & ...
+                    strcmp({m.property}, 'documentation')));
+            end
+            % an edge `order` comes first
+            docs = [base, pubs, {rel(pubIds{first}), rel(pubIds{other}, 'Order', 0)}];
+            [~, dv, report] = ndi.openminds.exportDataset(docs);
+            testCase.verifyEqual(dv.documentation.identifier, ...
+                "https://doi.org/" + sprintf('10.5555/paper.%d', 10 + other));
+            n = report.notExported;
+            onDoc = n(strcmp({n.property}, 'documentation'));
+            testCase.verifyNumElements(onDoc, 1);
+            testCase.verifyTrue(contains(onDoc.item, pubIds{first}), onDoc.item);
         end
 
         function testCopyrightYearFromDateAssertion(testCase)
@@ -200,6 +340,7 @@ arguments
     withExtras (1,1) logical
 end
 sid = did.ido.unique_id();
+id.session = sid;
 common = {'SessionId', sid};
 rel = @(child, parent, handle, varargin) did2.build.directedRelation(child, parent, ...
     ndi.v2.vocabTerm('relation', handle), common{:}, varargin{:});
@@ -227,7 +368,7 @@ id.org = org{1}.base.id;
 docs = [ds, ada, grace, alan, org];
 docs{end+1} = rel(id.dataset, id.ada, 'has_author', 'Order', 0);
 docs{end+1} = rel(id.dataset, id.grace, 'has_author', 'Order', 1, ...
-    'Fields', struct('roles', did2.build.label({'writing - original draft'})));
+    'Fields', struct('roles', did2.build.label({'writing - original draft', 'conceptualization'})));
 docs{end+1} = rel(id.dataset, id.alan, 'contributed_by', 'Fields', struct('roles', ...
     did2.build.label({'data curation', 'visualization', 'corresponding author'})));
 docs{end+1} = rel(id.dataset, id.grace, 'has_custodian');
