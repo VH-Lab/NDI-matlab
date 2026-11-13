@@ -90,7 +90,20 @@ classdef TestSubjectStrainAssembly < matlab.unittest.TestCase
             % document read first. So the rat read FIRST is given the LATER
             % datestamp: a pass that took the first one read gives the two
             % orders different values, and the earliest is checked by name.
+            %
+            % Two more choices among several documents, also by content:
+            % - WHICH duplicate species assertion survives: rat1 is given a
+            %   second subject-level species assertion, written LAST and
+            %   stamped EARLIEST, so the earliest (ties by id) is not the one
+            %   read first in either order; the kept set must be the same;
+            % - the ORDER of the members' `openminds:` ids on a strain's
+            %   global_identifier: sorted, so the reversed input lists them
+            %   the same way.
             [v1, mig] = twoRatsSameGenotype();
+            extra = assertionDoc('rat1_species_extra', 'sess_A', 'rat1', ...
+                'species', 'NCBITaxon:10116', 'Rattus norvegicus');
+            extra.base.creation_timestamp = '2024-05-01T00:00:00.000Z';
+            mig{end+1} = extra;
             early = '2024-06-01T12:00:00.000Z';
             late  = '2024-06-02T09:30:00.000Z';
             for k = 1:numel(v1)
@@ -100,9 +113,9 @@ classdef TestSubjectStrainAssembly < matlab.unittest.TestCase
                     v1{k}.base.datestamp = early;
                 end
             end
-            [~, a] = ndi.migrate.internal.subjectStrainAssembly(v1, mig);
-            [~, b] = ndi.migrate.internal.subjectStrainAssembly(v1, mig);
-            [~, r] = ndi.migrate.internal.subjectStrainAssembly( ...
+            [keptA, a, repA] = ndi.migrate.internal.subjectStrainAssembly(v1, mig);
+            [keptB, b] = ndi.migrate.internal.subjectStrainAssembly(v1, mig);
+            [keptR, r] = ndi.migrate.internal.subjectStrainAssembly( ...
                 v1(end:-1:1), mig(end:-1:1));
             ids = ndi.unittest.migrate.mintedIdSet(a);
             new = setdiff(ids, [ndi.unittest.migrate.mintedIdSet(v1), ...
@@ -124,6 +137,31 @@ classdef TestSubjectStrainAssembly < matlab.unittest.TestCase
                      'the Strain documents it was assembled from'], ...
                     char(strains{k}.base.id)));
             end
+            % the species survivor: denominators, then the same kept set
+            testCase.verifyEqual(repA.species_duplicate_groups, 2, ...
+                'the fixture no longer has two duplicate species groups');
+            keptIds = ndi.unittest.migrate.mintedIdSet(keptA);
+            testCase.verifyEqual(ndi.unittest.migrate.mintedIdSet(keptB), keptIds);
+            testCase.verifyEqual(ndi.unittest.migrate.mintedIdSet(keptR), keptIds, ...
+                ['the reversed input kept another set of documents: the ' ...
+                 'surviving species assertion was the one read first']);
+            testCase.verifyTrue(anyId(keptA, 'rat1_species_extra'), ...
+                'the earliest-stamped species assertion did not survive');
+            testCase.verifyFalse(anyId(keptA, 'rat1_species'), ...
+                'a later-stamped duplicate species assertion survived');
+            testCase.verifyTrue(anyId(keptA, 'rat2_species'));
+            % the openminds ids: two of them, in the same (sorted) order
+            creA = strainNamed(a, 'OTR-IRES-Cre');
+            creR = strainNamed(r, 'OTR-IRES-Cre');
+            omA = creA.entity.global_identifier(startsWith( ...
+                creA.entity.global_identifier, 'openminds:'));
+            testCase.verifyNumElements(omA, 2, ...
+                'the fixture no longer puts two openminds ids on one strain');
+            testCase.verifyEqual(creR.entity.global_identifier, ...
+                creA.entity.global_identifier, ...
+                ['the reversed input ordered the strain''s global_identifier ' ...
+                 'differently: the openminds ids followed read order']);
+            testCase.verifyEqual(omA, sort(omA), 'the openminds ids are not sorted');
             testCase.verifyEqual(did2.convert.mintId('-depth'), 0, ...
                 'the pass left a mintId context open');
         end
@@ -690,7 +728,8 @@ classdef TestSubjectStrainAssembly < matlab.unittest.TestCase
             % strain's `openminds_id` goes on the strain entity's
             % `global_identifier` as `openminds:<id>`". OTR-IRES-Cre has no
             % ontology node; the writer gave each row's Strain its own id, and
-            % both survive the collapse into one entity, in row order.
+            % both survive the collapse into one entity, sorted (not in the
+            % order the rows were read: NDI-matlab #1235).
             [~, minted, report] = runOn(@twoRatsSameGenotype);
             cre = strainNamed(minted, 'OTR-IRES-Cre');
             testCase.verifyEqual(cre.entity.global_identifier, { ...
