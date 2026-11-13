@@ -260,18 +260,32 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
 
         % ndi.database / ndi.document methods
 
-        function ndi_session_obj = database_add(ndi_session_obj, document)
+        function ndi_session_obj = database_add(ndi_session_obj, document, options)
             %DATABASE_ADD - Add an ndi.document to an ndi.session object
             %
-            % NDI_SESSION_OBJ = DATABASE_ADD(NDI_SESSION_OBJ, NDI_DOCUMENT_OBJ)
+            % NDI_SESSION_OBJ = DATABASE_ADD(NDI_SESSION_OBJ, NDI_DOCUMENT_OBJ, ...)
             %
             % Adds the ndi.document NDI_DOCUMENT_OBJ to the ndi.session NDI_SESSION_OBJ.
             % NDI_DOCUMENT_OBJ can also be a cell array of ndi.document objects, which will all be added
             % in turn.
             %
+            % This function also takes parameters as name/value pairs that modify its behavior:
+            % Parameter (default)        | Description
+            % --------------------------------------------------------------------------------
+            % RestoreDeletedId (false)   | Allow a document whose ID was previously deleted
+            %                            |   from this session to be added again. Use only
+            %                            |   when restoring that same document, e.g. from the
+            %                            |   cloud (issue #1238).
+            %
             % The database can be queried by calling NDI_SESSION_OBJ/SEARCH
             %
             % See also: DATABASE_RM, ndi.session, ndi.database, ndi.session/SEARCH
+
+            arguments
+                ndi_session_obj (1,1) ndi.session
+                document
+                options.RestoreDeletedId (1,1) logical = false
+            end
 
             if ~iscell(document)
                 document = {document};
@@ -290,7 +304,8 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
             for j=1:numel(Ji)
                 document{Ji(j)}=document{Ji(j)}.set_session_id(current_session_id);
             end
-            ndi_session_obj.database.add(document);
+            ndi_session_obj.database.add(document, ...
+                'RestoreDeletedId', options.RestoreDeletedId);
         end % database_add()
 
         function ndi_session_obj = database_rm(ndi_session_obj, doc_unique_id, options)

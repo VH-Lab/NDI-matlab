@@ -83,9 +83,20 @@ classdef  didsqlite < ndi.database
             if isstruct(add_parameters) && isfield(add_parameters,'Validate')
                 doValidate = logical(add_parameters.Validate);
             end
+            %
+            % DID retires the id of a document removed from every branch and
+            % refuses it ever after. A caller restoring that same document --
+            % the cloud sync re-downloading one deleted locally (#1238) --
+            % sets RestoreDeletedId, which DID honours with OnDeletedId.
+            % Passed only when set, so the default call is unchanged.
+            extraArgs = {};
+            if isstruct(add_parameters) && isfield(add_parameters,'RestoreDeletedId') ...
+                    && add_parameters.RestoreDeletedId
+                extraArgs = {'OnDeletedId','restore'};
+            end
             ndi_didsqlite_obj.db.add_docs(ndi_document_obj,'a', ...
                 'customFileHandler', @download_file_from_cloud, ...
-                'Validate', doValidate);
+                'Validate', doValidate, extraArgs{:});
         end % do_add
 
         function [ndi_document_obj] = do_read(ndi_didsqlite_obj, ndi_document_id)

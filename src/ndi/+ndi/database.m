@@ -73,12 +73,20 @@ classdef database
             %                          |   step for documents already known to be valid,
             %                          |   such as those downloaded from NDI Cloud. Backends
             %                          |   that do not validate ignore this parameter.
+            % 'RestoreDeletedId' (0)   | If 1, a document whose ID was previously removed
+            %                          |   from the database is restored rather than
+            %                          |   refused. Use only when the document is the same
+            %                          |   document coming back (e.g., re-downloaded from
+            %                          |   the cloud; issue #1238). Implementations that
+            %                          |   never retire IDs ignore it.
             %
             % See also: vlt.data.namevaluepair
             Update = 1;
             Validate = 1;
+            RestoreDeletedId = 0;
             vlt.data.assign(varargin{:});
-            add_parameters = struct('Update', Update, 'Validate', Validate);
+            add_parameters = struct('Update', Update, 'Validate', Validate, ...
+                'RestoreDeletedId', RestoreDeletedId);
             ndi_database_obj = do_add(ndi_database_obj, ndi_document_obj, add_parameters);
         end % add()
 

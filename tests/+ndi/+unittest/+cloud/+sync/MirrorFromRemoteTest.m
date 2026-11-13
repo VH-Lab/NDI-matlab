@@ -69,5 +69,40 @@ classdef MirrorFromRemoteTest < ndi.unittest.cloud.sync.BaseSyncTest
             testCase.Narrative = narrative;
         end
 
+        function testMirrorRestoresLocallyDeletedDocument(testCase)
+            % Issue #1238: a document deleted locally but still on the remote
+            % must come back on MirrorFromRemote. DID retires the id of a
+            % deleted document, so without RestoreDeletedId the download
+            % fails with DID:SQLITEDB:DELETED_DOC.
+
+            narrative = "Begin MirrorFromRemoteTest: testMirrorRestoresLocallyDeletedDocument";
+
+            narrative(end+1) = "SETUP: Adding 'restore_doc' locally and to the remote, then deleting it locally.";
+            doc = ndi.document('base', 'base.name', 'restore_doc', ...
+                'base.session_id', testCase.localDataset.id());
+            testCase.localDataset.database_add(doc);
+            ndi.cloud.api.documents.addDocument(testCase.cloudDatasetId, ...
+                jsonencodenan(doc.document_properties));
+            testCase.localDataset.database_rm(doc.id());
+
+            narrative(end+1) = "Preparing to call ndi.cloud.sync.mirrorFromRemote.";
+            [success, msg, report] = ndi.cloud.sync.mirrorFromRemote(testCase.localDataset);
+            narrative(end+1) = "Called ndi.cloud.sync.mirrorFromRemote.";
+
+            api_msg = ndi.unittest.cloud.APIMessage(narrative, success, msg, [], "ndi.cloud.sync.mirrorFromRemote");
+            testCase.verifyTrue(success, api_msg);
+            testCase.verifyEmpty(msg, api_msg);
+
+            narrative(end+1) = "Testing: Verifying the deleted document was downloaded again.";
+            api_msg = ndi.unittest.cloud.APIMessage(narrative, success, report, [], "ndi.cloud.sync.mirrorFromRemote");
+            testCase.verifyTrue(any(strcmp(report.downloaded_document_ids, doc.id())), ...
+                "The locally deleted document should be downloaded. " + api_msg);
+
+            local_docs = testCase.localDataset.database_search( ...
+                ndi.query('base.id','exact_string',doc.id()));
+            testCase.verifyNumElements(local_docs, 1, ...
+                "The locally deleted document should be restored. Narrative: " + join(narrative, newline));
+        end
+
     end
 end
