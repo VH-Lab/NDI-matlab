@@ -86,6 +86,12 @@ classdef datasetsPane < ndi.gui.nav.pane
 %                                     then refreshes the node's badge.
 %                   Ingestion Status  computes the session's ingestion state
 %                                     and shows it as a node badge.
+%                   Tables            the session summary tables of
+%                                     ndi.fun.docTable, each opened in an
+%                                     ndi.gui.nav.sessionTable window (with
+%                                     "Assign to workspace..." and "Export
+%                                     CSV..."): Elements..., Epochs...,
+%                                     Probes..., Subjects..., Treatments...
 %
 %   Right-clicking a dataset node opens a context menu. Its first items are
 %       Assign to workspace...  prompts for a variable name (default "D")
@@ -481,7 +487,7 @@ classdef datasetsPane < ndi.gui.nav.pane
 
             % "Session" groups actions and information about the session
             % itself. Its items are alphabetical: Clear Cache, DAQ Systems...,
-            % Info..., Ingest, Ingestion Status.
+            % Info..., Ingest, Ingestion Status, Tables.
             uimenu(cm, 'Text', 'Assign to workspace...', ...
                 'MenuSelectedFcn', @(~,~) obj.assignSessionToWorkspace(node));
 
@@ -496,6 +502,16 @@ classdef datasetsPane < ndi.gui.nav.pane
                 'MenuSelectedFcn', @(~,~) obj.ingestSessionNode(node));
             uimenu(sessionRoot, 'Text', 'Ingestion Status', ...
                 'MenuSelectedFcn', @(~,~) obj.updateSessionStatus(node));
+            % "Tables" exposes the session summary tables of
+            % ndi.fun.docTable (Elements..., Epochs..., Probes...,
+            % Subjects..., Treatments...); see ndi.gui.nav.sessionTable.
+            tablesRoot = uimenu(sessionRoot, 'Text', 'Tables');
+            kinds = ndi.gui.nav.sessionTable.tableKinds();
+            for k = 1:numel(kinds)
+                kind = kinds(k).Kind;
+                uimenu(tablesRoot, 'Text', kinds(k).Label, ...
+                    'MenuSelectedFcn', @(~,~) obj.showSessionTable(node, kind));
+            end
 
             node.ContextMenu       = cm;
             obj.NodeMenus{end + 1} = cm;
@@ -914,6 +930,35 @@ classdef datasetsPane < ndi.gui.nav.pane
                 ndi.gui.nav.daqSystemBrowser(s);
             catch ME
                 uialert(obj.Navigator.Figure, ME.message, 'DAQ Systems');
+            end
+        end
+
+        function showSessionTable(obj, node, kind)
+            %SHOWSESSIONTABLE Build and show one summary table of NODE's session.
+            %   KIND is a kind from ndi.gui.nav.sessionTable.tableKinds
+            %   ('element', 'epoch', 'probe', 'subject' or 'treatment').
+            %   Building the table can take a while, so an indeterminate
+            %   progress dialog is shown meanwhile.
+            info = ndi.gui.nav.sessionTable.kindInfo(kind);
+            if isempty(node) || ~isvalid(node)
+                return;
+            end
+            s = obj.resolveSession(node.NodeData);
+            if isempty(s)
+                uialert(obj.Navigator.Figure, ...
+                    'Could not open the session for this node.', info.Title);
+                return;
+            end
+            dlg = uiprogressdlg(obj.Navigator.Figure, ...
+                'Title', info.Title, ...
+                'Message', ['Building the ' lower(info.Title) '...'], ...
+                'Indeterminate', 'on');
+            cleanup = onCleanup(@() delete(dlg));
+            try
+                ndi.gui.nav.sessionTable(s, kind);
+            catch ME
+                delete(cleanup);
+                uialert(obj.Navigator.Figure, ME.message, info.Title);
             end
         end
 
