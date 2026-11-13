@@ -1822,8 +1822,12 @@ function [convertResult, bathAnchors, report] = resolveDeferred(convertResult, r
                     continue;
                 end
             end
-            [bodies, anchorInfo] = assembleDeferred(q(k).class_name, v1Body, ...
-                resolver, options.TargetVersion);
+            % the documents assembled for this deferral take ids derived from
+            % it ([migration reliability practices] (b), Jess Haley,
+            % 2026-10-26; ndi.migrate.internal.withMintSource)
+            [bodies, anchorInfo] = ndi.migrate.internal.withMintSource( ...
+                'resolveDeferred', v1Body, @() assembleDeferred(q(k).class_name, ...
+                v1Body, resolver, options.TargetVersion));
             assembled = [assembled, bodies]; %#ok<AGROW>
             if ~isempty(anchorInfo)
                 if isempty(bathAnchors)
@@ -3059,11 +3063,16 @@ function [convertResult, report, presentationAnchors] = resolveStimulusPresentat
             [ptFile, ptStatus] = ndi.migrate.internal.v1AttachedFile(b, ...
                 'presentation_time.bin', ndiDir);
         end
+        % the methods, software and control calculations minted for this
+        % presentation take ids derived from it ([migration reliability
+        % practices] (b), Jess Haley, 2026-10-26;
+        % ndi.migrate.internal.withMintSource)
         [manip, methods, rep, software, controlCalcs] = ...
-            ndi.migrate.internal.stimulusPresentationToItem( ...
+            ndi.migrate.internal.withMintSource('resolveStimulusPresentations', b, ...
+            @() ndi.migrate.internal.stimulusPresentationToItem( ...
             b, resolver, sequence, 'CohortIdFor', cohortIdFor, ...
             'ControlRecords', controls, 'PresentationTimeFile', ptFile, ...
-            'PresentationTimeFileStatus', ptStatus);
+            'PresentationTimeFileStatus', ptStatus));
         epochClock = '';
         if ~isempty(manip) && ~rep.standalone && ~isempty(rep.epoch_id)
             % [epoch-less presentations carry] (Jess Haley, 2026-10-27): the
@@ -3434,7 +3443,10 @@ function id = cohortIdOf(cohortIds, sessionId)
 %   containers.Map is a handle, so the caller's map holds every id issued.
     sessionId = char(sessionId);
     if ~isKey(cohortIds, sessionId)
-        cohortIds(sessionId) = did.ido.unique_id(); %#ok<NASGU>
+        % derived from the session ([migration reliability practices] (b),
+        % Jess Haley, 2026-10-26), so the cohort has the same id whichever
+        % presentation asks for it first
+        cohortIds(sessionId) = did2.convert.mintId('session cohort', sessionId); %#ok<NASGU>
     end
     id = cohortIds(sessionId);
 end

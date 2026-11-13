@@ -355,7 +355,11 @@ for j = timeJ(:)'
     end
     seg = paramOf(params, 'sample_analog_segment');
     if ~isfinite(seg); seg = size(tsegs{1}, 1); end
-    keyed = struct('k', idx(j), 'n', size(t, 1), 'seg', seg, 'id', did.ido.unique_id(), ...
+    % the keyed time value's id is derived from the time body it is minted
+    % for, not random ([migration reliability practices] (b), Jess Haley,
+    % 2026-10-26)
+    keyed = struct('k', idx(j), 'n', size(t, 1), 'seg', seg, ...
+        'id', did2.convert.mintId('keyed time value', baseId(b)), ...
         't0', t0, 'tsegs', {tsegs});
 end
 
@@ -472,7 +476,7 @@ body = did2.build.sampledBody(baseId(value), ...
     did2.build.dimension(timeTerm, n, 'Chunk', seg), args{:});
 body.files = tb.files;
 if t0 ~= 0
-    [body.files, written] = rebasedTimeFiles(tb.files, tsegs, t0, storeDir);
+    [body.files, written] = rebasedTimeFiles(tb.files, tsegs, t0, storeDir, baseId(tb));
 end
 end
 
@@ -485,7 +489,7 @@ if t0 ~= 0
 end
 end
 
-function [files, written] = rebasedTimeFiles(files, tsegs, t0, storeDir)
+function [files, written] = rebasedTimeFiles(files, tsegs, t0, storeDir, sourceId)
 % [uneven time rewritten from the epoch start]: v1 segment m (member
 % body_data_<m-1>), rewritten as t - t0, compressed as the v1 ingest
 % compressed it (ndi.compress.compress_time), into the store under a new uid
@@ -498,7 +502,10 @@ try
     for m = 1:numel(tsegs)
         i = find(strcmp(names, sprintf('body_data_%d', m - 1)), 1);
         fi = infos{i};
-        uid = char(did.ido.unique_id());
+        % the rewritten file's uid is derived from the time body and the
+        % segment, not random ([migration reliability practices] (b))
+        uid = char(did2.convert.mintId(sprintf('rebased time file|%d', m), ...
+            sourceId));
         dest = fullfile(storeDir, uid);
         stem = ndi.file.temp_name();
         ndi.compress.compress_time(double(tsegs{m}) - t0, stem);

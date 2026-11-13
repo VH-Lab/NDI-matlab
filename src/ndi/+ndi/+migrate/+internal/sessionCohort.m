@@ -42,7 +42,12 @@ cohort = did2.build.document('entity', struct( ...
     'Id', cohortId, common{:});
 docs = {cohort};
 for k = 1:numel(memberIds)
+    % each edge's id is derived from its member and the cohort, not random and
+    % not from its position in MEMBERIDS (the order the presentations were
+    % read in): [migration reliability practices] (b), Jess Haley, 2026-10-26
     docs{end+1} = did2.build.directedRelation(char(memberIds{k}), cohortId, ...
-        ndi.v2.vocabTerm('relation', 'member_of'), common{:}); %#ok<AGROW>
+        ndi.v2.vocabTerm('relation', 'member_of'), common{:}, ...
+        'Id', did2.convert.mintId(['session cohort member_of|' cohortId], ...
+        char(memberIds{k}))); %#ok<AGROW>
 end
 end

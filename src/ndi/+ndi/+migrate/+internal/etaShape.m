@@ -338,11 +338,16 @@ classdef etaShape
         end
 
         function b = baseBlock(id, datestamp)
-            %BASEBLOCK The base block: a fresh id unless ID is given, and the
+            %BASEBLOCK The base block: a new id unless ID is given, and the
             %   creation_timestamp (the time the migration ran when none:
             %   did2.convert.migrationTime, [no invented values]).
+            %   The new id is did2.convert.mintId's: inside the context a
+            %   second-pass step opens for its source
+            %   (ndi.migrate.internal.withMintSource) it is derived from that
+            %   source ([migration reliability practices] (b), Jess Haley,
+            %   2026-10-26); with no context open it is random, as before.
             if isempty(id)
-                id = did.ido.unique_id();
+                id = did2.convert.mintId('etaShape');
             end
             if isempty(datestamp)
                 datestamp = did2.convert.migrationTime();

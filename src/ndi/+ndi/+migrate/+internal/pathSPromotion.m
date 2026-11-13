@@ -871,7 +871,12 @@ if isKey(idx.parts, key)
     partId = idx.parts(key);
     return;
 end
-p = mintPart(parentId, areaTerm, sideTerm, source);
+% the part, its assertions and its part_of edge take ids derived from the
+% part's identity (parent, region, side), not random and not from the
+% statement that first asked for it ([migration reliability practices] (b),
+% Jess Haley, 2026-10-26; ndi.migrate.internal.withMintSource)
+p = ndi.migrate.internal.withMintSource('pathSPromotion', key, ...
+    @() mintPart(parentId, areaTerm, sideTerm, source));
 partId = p.entity.base.id;
 idx.parts(key) = partId;
 idx.byId(partId) = p.entity;
@@ -930,7 +935,7 @@ partName = safeName(siteTerm);
 if ~isempty(sideTerm)
     partName = [partName '_' safeName(sideTerm)];
 end
-partId = did.ido.unique_id();
+partId = did2.convert.mintId('tissue part');   % in the part's context (findOrMintPart)
 
 % local_identifier is REQUIRED on a tissue entity. Compose parent+part; trim
 % any degenerate leading/trailing underscores (an empty parentId would leave
