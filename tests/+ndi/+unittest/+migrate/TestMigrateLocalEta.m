@@ -184,6 +184,96 @@ classdef TestMigrateLocalEta < matlab.unittest.TestCase
 
     methods (Test)
 
+        function testTwoRunsOnTheSameInputMintTheSameIds(testCase)
+            % [migration reliability practices] (b) (Jess Haley, 2026-10-26,
+            % did-schema did_v2_go_forward_class_audit.md): "a document the
+            % migration mints gets an id derived from its v1 source id and its
+            % role, so two runs on the same input are identical and can be
+            % diffed". ONE v1 session, migrated twice through ndi.migrate.local
+            % into two session folders, must give the same set of ids.
+            %
+            % The fixture drives the second-pass steps that mint documents:
+            % the bath assembler (resolveDeferred: a manipulation, its
+            % formulation and chemical, its time anchor, a site observation),
+            % the site promotion (pathSPromotion: a tissue part, its
+            % assertion and part_of edge), and the stimulus pass
+            % (resolveStimulusPresentations: one method per distinct grating,
+            % the manipulation, and -- two animals responded -- the session
+            % cohort and its member_of edges). The denominators below check
+            % that each of them minted something, so equal sets are not
+            % equal because nothing was minted.
+            %
+            % Nothing is excluded: every id, preserved or minted, is compared.
+            subjA   = 'aabb1122ccdd3344_5500000000000060';
+            subjB   = 'aabb1122ccdd3344_5500000000000061';
+            recA    = 'aabb1122ccdd3344_5500000000000062';
+            recB    = 'aabb1122ccdd3344_5500000000000063';
+            stimEl  = 'aabb1122ccdd3344_5500000000000064';
+            presId  = 'aabb1122ccdd3344_5500000000000065';
+            % a second organism (makeSubject names every subject 'animalA';
+            % the local identifier is what tells two organisms apart)
+            subjectB = makeSubject(subjB);
+            subjectB.subject.local_identifier = 'animalB';
+            bodies = { ...
+                jsonencode(makeSessionDoc(session())), ...
+                jsonencode(makeSubject(subjA)), ...
+                jsonencode(subjectB), ...
+                jsonencode(makeRecordingElement(recA, subjA)), ...
+                jsonencode(makeRecordingElement(recB, subjB)), ...
+                jsonencode(makeStimulatorElement(stimEl, subjA)), ...
+                jsonencode(makeElementEpoch(stimEl, 't00001', 'dev_local_time')), ...
+                jsonencode(makeStimulusBath(stimEl, 't00001')), ...
+                jsonencode(makeStimulusResponse('aabb1122ccdd3344_5500000000000066', ...
+                    presId, recA)), ...
+                jsonencode(makeStimulusResponse('aabb1122ccdd3344_5500000000000067', ...
+                    presId, recB)), ...
+                jsonencode(makeGratingPresentation(presId, stimEl))};
+
+            first = runMigrate(testCase, bodies);
+            verifyEqual(testCase, did2.convert.mintId('-depth'), 0, ...
+                'the first run left a did2.convert.mintId context open');
+            secondRoot = tempname();
+            mkdir(fullfile(secondRoot, '.ndi'));
+            cleanup = onCleanup(@() rmdirQuietly(secondRoot)); %#ok<NASGU>
+            buildV1Sqlite(fullfile(secondRoot, '.ndi', 'did-sqlite.sqlite'), bodies);
+            second = ndi.migrate.local(secondRoot, ...
+                'Validate', true, 'TargetVersion', 'did_v2', 'Backup', false);
+            verifyEqual(testCase, did2.convert.mintId('-depth'), 0, ...
+                'the second run left a did2.convert.mintId context open');
+
+            [ids1, cls1] = idsAndClasses(first.destination);
+            [ids2, cls2] = idsAndClasses(second.destination);
+            fprintf('  [two runs] run 1: %d document(s); run 2: %d document(s)\n', ...
+                numel(ids1), numel(ids2));
+
+            % --- DENOMINATORS FIRST: what was compared, and that it was minted
+            verifyGreaterThan(testCase, numel(ids1), numel(bodies), ...
+                ['the migration minted no document beyond its inputs, so equal ' ...
+                 'id sets would prove nothing. ' resultDiag(first)]);
+            for want = {'method', 'formulation', 'chemical', 'directed_relation'}
+                verifyTrue(testCase, any(strcmp(cls1, want{1})), sprintf( ...
+                    ['run 1 holds no `%s`: the step that mints it did not run on ' ...
+                     'this fixture. %s'], want{1}, resultDiag(first)));
+            end
+            verifyNotEmpty(testCase, fieldOrEmpty(first.secondPass, 'stimulusSequence'), ...
+                resultDiag(first));
+
+            % --- THE CHECK: the same ids, and each the same class ----------
+            only1 = setdiff(ids1, ids2);
+            only2 = setdiff(ids2, ids1);
+            verifyEmpty(testCase, only1, sprintf( ...
+                '%d id(s) only in run 1 (random, not derived): %s', ...
+                numel(only1), classList(only1, ids1, cls1)));
+            verifyEmpty(testCase, only2, sprintf( ...
+                '%d id(s) only in run 2 (random, not derived): %s', ...
+                numel(only2), classList(only2, ids2, cls2)));
+            [common, i1, i2] = intersect(ids1, ids2);
+            sameClass = strcmp(cls1(i1), cls2(i2));
+            verifyTrue(testCase, all(sameClass), sprintf( ...
+                'id(s) naming a different class in the two runs: %s', ...
+                strjoin(common(~sameClass), ', ')));
+        end
+
         function testStimulusBathResolvesToDose(testCase)
             % did-schema #88 (VH-Lab/did-schema#88): the bath is a `manipulation`
             % whose value kind is `formulation`, about the specimen by
@@ -1346,5 +1436,44 @@ function v = charField(s, name)
 v = '';
 if isstruct(s) && isfield(s, name) && (ischar(s.(name)) || isstring(s.(name)))
     v = char(s.(name));
+end
+end
+
+function [ids, classes] = idsAndClasses(dstPath)
+%IDSANDCLASSES Every base.id in the destination (sorted) and each one's class.
+db = did2.database.sqlitedb(dstPath);
+cleanup = onCleanup(@() db.close()); %#ok<NASGU>
+allIds = db.allIds();
+ids = cell(1, numel(allIds));
+classes = cell(1, numel(allIds));
+for k = 1:numel(allIds)
+    st = db.get(allIds{k}).toStruct();
+    ids{k} = char(st.base.id);
+    classes{k} = char(st.document_class.class_name);
+end
+[ids, o] = sort(ids);
+classes = classes(o);
+end
+
+function s = classList(which, ids, classes)
+% "<id> (<class>), ..." for the ids in WHICH
+parts = cell(1, numel(which));
+for k = 1:numel(which)
+    parts{k} = sprintf('%s (%s)', which{k}, classes{find(strcmp(ids, which{k}), 1)});
+end
+s = strjoin(parts, ', ');
+end
+
+function v = fieldOrEmpty(s, name)
+v = [];
+if isstruct(s) && isfield(s, name)
+    v = s.(name);
+end
+end
+
+function rmdirQuietly(d)
+try
+    if isfolder(d); rmdir(d, 's'); end
+catch
 end
 end
