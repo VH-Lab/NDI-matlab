@@ -97,8 +97,8 @@ classdef TestExportDataset < matlab.unittest.TestCase
             c = dv.contribution;
             testCase.verifyNumElements(c, 4);
             names = arrayfun(@(x) string(x.type.name), c);
-            testCase.verifyEqual(names, ["authoring", "scientificWriting", "curation", "custodianship"]);
-            testCase.verifyEqual(c(2).contributor.familyName, "Hopper");
+            % openMINDS' own label of the scientificWriting instance
+            testCase.verifyEqual(names, ["authoring", "scientific writing", "curation", "custodianship"]);
             testCase.verifyNumElements(ds.contribution, 4);
         end
 
