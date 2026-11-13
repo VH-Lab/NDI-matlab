@@ -55,9 +55,76 @@ classdef sessionTable < handle
             obj.Table   = ndi.gui.nav.sessionTable.computeTable(session, obj.Kind);
             obj.build(options.Visible);
         end
+
+        function name = assignToWorkspace(obj, name)
+            %ASSIGNTOWORKSPACE Put the table in a base workspace variable.
+            %   NAME = ASSIGNTOWORKSPACE(OBJ) asks for a variable name
+            %   (default e.g. 'subjectTable'); ASSIGNTOWORKSPACE(OBJ, NAME)
+            %   uses NAME without asking. Returns the name assigned, or ''
+            %   when nothing was (cancelled, invalid name or error).
+            info = ndi.gui.nav.sessionTable.kindInfo(obj.Kind);
+            title = 'Assign to workspace';
+            if nargin < 2
+                answer = inputdlg('Workspace variable name:', title, [1 40], ...
+                    {info.VariableName});
+                if isempty(answer)
+                    name = '';
+                    return;
+                end
+                name = answer{1};
+            end
+            name = strtrim(char(name));
+            msg = ndi.gui.nav.datasetsPane.workspaceNameError(name);
+            if ~isempty(msg)
+                obj.alert(msg, title);
+                name = '';
+                return;
+            end
+            try
+                assignin('base', name, obj.Table);
+            catch ME
+                obj.alert(ME.message, title);
+                name = '';
+            end
+        end
+
+        function filename = exportCsv(obj, filename)
+            %EXPORTCSV Write the table (as displayed text) to a CSV file.
+            %   FILENAME = EXPORTCSV(OBJ) asks for the file;
+            %   EXPORTCSV(OBJ, FILENAME) writes FILENAME without asking.
+            %   Returns the file written, or '' when nothing was.
+            info = ndi.gui.nav.sessionTable.kindInfo(obj.Kind);
+            if nargin < 2
+                [f, p] = uiputfile('*.csv', 'Export CSV', [info.VariableName '.csv']);
+                if isequal(f, 0)
+                    filename = '';
+                    return;
+                end
+                filename = fullfile(p, f);
+            end
+            filename = char(filename);
+            try
+                [names, data] = ndi.gui.nav.sessionTable.tableCells(obj.Table);
+                writetable(cell2table(data, 'VariableNames', ...
+                    matlab.lang.makeUniqueStrings(names)), filename);
+            catch ME
+                obj.alert(ME.message, 'Export CSV');
+                filename = '';
+            end
+        end
     end
 
     methods (Access = private)
+        function alert(obj, msg, title)
+            %ALERT Report MSG in the window, or as a warning when hidden.
+            if ~isempty(obj.Figure) && isvalid(obj.Figure) ...
+                    && strcmp(char(obj.Figure.Visible), 'on')
+                uialert(obj.Figure, msg, title);
+            else
+                warning('ndi:gui:nav:sessionTable:actionFailed', '%s: %s', title, msg);
+            end
+        end
+
         function build(obj, visible)
             %BUILD Construct the window and fill the table.
             c = ndi.gui.cloudColors();
@@ -100,44 +167,6 @@ classdef sessionTable < handle
             t.BackgroundColor = c.white;
             t.ForegroundColor = c.darkBlue;
             obj.UITable = t;
-        end
-
-        function assignToWorkspace(obj)
-            %ASSIGNTOWORKSPACE Put the table in a base workspace variable.
-            info = ndi.gui.nav.sessionTable.kindInfo(obj.Kind);
-            title = 'Assign to workspace';
-            answer = inputdlg('Workspace variable name:', title, [1 40], ...
-                {info.VariableName});
-            if isempty(answer)
-                return;
-            end
-            name = strtrim(answer{1});
-            msg = ndi.gui.nav.datasetsPane.workspaceNameError(name);
-            if ~isempty(msg)
-                uialert(obj.Figure, msg, title);
-                return;
-            end
-            try
-                assignin('base', name, obj.Table);
-            catch ME
-                uialert(obj.Figure, ME.message, title);
-            end
-        end
-
-        function exportCsv(obj)
-            %EXPORTCSV Write the table to a CSV file chosen by the user.
-            info = ndi.gui.nav.sessionTable.kindInfo(obj.Kind);
-            [f, p] = uiputfile('*.csv', 'Export CSV', [info.VariableName '.csv']);
-            if isequal(f, 0)
-                return;
-            end
-            try
-                [names, data] = ndi.gui.nav.sessionTable.tableCells(obj.Table);
-                writetable(cell2table(data, 'VariableNames', ...
-                    matlab.lang.makeUniqueStrings(names)), fullfile(p, f));
-            catch ME
-                uialert(obj.Figure, ME.message, 'Export CSV');
-            end
         end
     end
 
