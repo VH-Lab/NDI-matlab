@@ -25,6 +25,7 @@ classdef testDecoderIngestedParameters < ndi.unittest.session.buildSession
             testCase.assertNumElements(raw, 2);
 
             d = mdr.ingest_epochfiles({tsvfile}, 'epoch_1');
+            d = d.set_session_id(S.id()); % as ndi.daq.system/ingest does
             S.database_add(mdr.newdocument());
             S.database_add(d);
 
