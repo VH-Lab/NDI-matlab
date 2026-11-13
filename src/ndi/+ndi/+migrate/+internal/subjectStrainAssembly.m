@@ -634,10 +634,20 @@ end
 % Haley, 2026-10-26): the entity's id from the key, the rest in a
 % did2.convert.mintId context keyed on it, closed at the end of the group (and
 % on any error, by MINTRESTORE).
+%
+% THE REPRESENTATIVE. A group's strain entity, its assertions and its pedigree
+% edges take their datestamp (and the fields the key does not hold, such as
+% synonyms) from ONE member, the representative. It is chosen by content: the
+% member whose v1 datestamp is the earliest, equal instants broken by the
+% Strain document's id (ndi.migrate.internal.earliestByContent has the rule).
+% Not the member read first: database order is not data (NDI-matlab #1235), so
+% the same dataset written in another order must give the same values.
 groupDocId = cell(1, nGroups);
 groupRep   = zeros(1, nGroups);
 for g = 1:nGroups
-    groupRep(g)   = find([cand.group] == g, 1);
+    members = find([cand.group] == g);
+    groupRep(g) = members(ndi.migrate.internal.earliestByContent( ...
+        {cand(members).datestamp}, {cand(members).source_id}));
     groupDocId{g} = did2.convert.mintId('strain', ...
         [groupKeys{g} '|subjectStrainAssembly']);
 end

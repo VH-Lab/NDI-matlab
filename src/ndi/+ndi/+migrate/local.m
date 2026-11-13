@@ -3011,7 +3011,10 @@ function [convertResult, report, presentationAnchors] = resolveStimulusPresentat
     % accumulated over every distributive presentation in it.
     cohortIds = containers.Map('KeyType', 'char', 'ValueType', 'char');
     cohortMembers = containers.Map('KeyType', 'char', 'ValueType', 'any');
-    cohortStamp = containers.Map('KeyType', 'char', 'ValueType', 'char');
+    % each cohort's contributors: the timestamps and ids of the distributive
+    % presentations that made it, so its creation timestamp is chosen from
+    % them by content once all are read (ndi.migrate.internal.earliestByContent)
+    cohortStamp = containers.Map('KeyType', 'char', 'ValueType', 'any');
     cohortIdFor = @(sid) cohortIdOf(cohortIds, sid);
 
     usedShared = containers.Map('KeyType', 'char', 'ValueType', 'logical');
@@ -3196,10 +3199,17 @@ function [convertResult, report, presentationAnchors] = resolveStimulusPresentat
             members = {};
             if isKey(cohortMembers, sid)
                 members = cohortMembers(sid);
+                contributors = cohortStamp(sid);
             else
                 members = resolver.subjectsRecordedInSession(sid);
-                cohortStamp(sid) = char(b.base.datestamp);
+                contributors = struct('stamps', {{}}, 'ids', {{}});
             end
+            % every distributive presentation of the session contributes; the
+            % cohort's timestamp is chosen among them below, not taken from
+            % the first one read (NDI-matlab #1235)
+            contributors.stamps{end+1} = char(b.base.datestamp);
+            contributors.ids{end+1} = char(presId);
+            cohortStamp(sid) = contributors;
             for a = 1:numel(rep.animals)
                 if ~any(strcmp(members, rep.animals{a}))
                     members{end+1} = rep.animals{a}; %#ok<AGROW>
@@ -3272,12 +3282,20 @@ function [convertResult, report, presentationAnchors] = resolveStimulusPresentat
             report.shared_methods_minted = report.shared_methods_minted + 1;
         end
     end
-    % the session cohorts, once each
+    % the session cohorts, once each. A cohort's creation timestamp (on the
+    % cohort and its member_of edges) is the EARLIEST datestamp among the
+    % distributive presentations that made it, equal instants broken by the
+    % presentation's id: chosen by content, so it does not depend on which
+    % presentation the database returned first (NDI-matlab #1235: database
+    % order is not data; ndi.migrate.internal.earliestByContent has the rule).
     sids = cohortIds.keys();
     for c = 1:numel(sids)
         members = cohortMembers(sids{c});
+        contributors = cohortStamp(sids{c});
+        pick = ndi.migrate.internal.earliestByContent( ...
+            contributors.stamps, contributors.ids);
         docs = ndi.migrate.internal.sessionCohort(cohortIds(sids{c}), sids{c}, ...
-            members, cohortStamp(sids{c}));
+            members, contributors.stamps{pick});
         minted = [minted, docs]; %#ok<AGROW>
         report.cohorts_minted = report.cohorts_minted + 1;
         report.cohort_members = report.cohort_members + numel(members);

@@ -82,7 +82,24 @@ classdef TestSubjectStrainAssembly < matlab.unittest.TestCase
             % (NDI-matlab #1235: database order is not data), so the input is
             % also run reversed. NEW is the ids the pass minted (not one of
             % its input ids): it must be non-empty, or this proves nothing.
+            %
+            % VALUES as well as ids: each strain group's documents take their
+            % datestamp from the group's representative, chosen by content
+            % (the earliest v1 datestamp, ties by id;
+            % ndi.migrate.internal.earliestByContent), never from the Strain
+            % document read first. So the rat read FIRST is given the LATER
+            % datestamp: a pass that took the first one read gives the two
+            % orders different values, and the earliest is checked by name.
             [v1, mig] = twoRatsSameGenotype();
+            early = '2024-06-01T12:00:00.000Z';
+            late  = '2024-06-02T09:30:00.000Z';
+            for k = 1:numel(v1)
+                if startsWith(v1{k}.base.id, 'rat1_')
+                    v1{k}.base.datestamp = late;
+                else
+                    v1{k}.base.datestamp = early;
+                end
+            end
             [~, a] = ndi.migrate.internal.subjectStrainAssembly(v1, mig);
             [~, b] = ndi.migrate.internal.subjectStrainAssembly(v1, mig);
             [~, r] = ndi.migrate.internal.subjectStrainAssembly( ...
@@ -93,6 +110,20 @@ classdef TestSubjectStrainAssembly < matlab.unittest.TestCase
             testCase.verifyNotEmpty(new, 'the pass minted no new id');
             testCase.verifyEqual(ndi.unittest.migrate.mintedIdSet(b), ids);
             testCase.verifyEqual(ndi.unittest.migrate.mintedIdSet(r), ids);
+            stamps = ndi.unittest.migrate.mintedIdStamps(a);
+            testCase.verifyEqual(ndi.unittest.migrate.mintedIdStamps(b), stamps, ...
+                'two runs on the same input gave a minted document another timestamp');
+            testCase.verifyEqual(ndi.unittest.migrate.mintedIdStamps(r), stamps, ...
+                ['the reversed input gave a minted document another timestamp: ' ...
+                 'a value was taken from the document read first']);
+            strains = strainEntities(a);
+            testCase.verifyNotEmpty(strains, 'the pass minted no strain entity');
+            for k = 1:numel(strains)
+                testCase.verifyEqual(char(strains{k}.base.creation_timestamp), early, ...
+                    sprintf(['strain entity %s: not the earliest datestamp of ' ...
+                     'the Strain documents it was assembled from'], ...
+                    char(strains{k}.base.id)));
+            end
             testCase.verifyEqual(did2.convert.mintId('-depth'), 0, ...
                 'the pass left a mintId context open');
         end
