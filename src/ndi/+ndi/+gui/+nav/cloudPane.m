@@ -11,7 +11,7 @@ classdef cloudPane < ndi.gui.nav.pane
 %       * a "C" button (hover text "Check NDI Cloud status of all datasets")
 %         that checks, for every dataset in the Datasets pane, whether it is
 %         linked to NDI Cloud and badges each one accordingly - the bulk
-%         equivalent of the per-dataset "Check Cloud status" menu command, so
+%         equivalent of the per-dataset "Cloud info..." menu command, so
 %         the user does not have to check them one by one. The "C" matches the
 %         light-blue cloud badge drawn on datasets that are in the cloud.
 %       * a "Profile" button that opens the NDI Cloud profile editor
@@ -43,15 +43,10 @@ classdef cloudPane < ndi.gui.nav.pane
             group.ColumnSpacing   = 4;
             group.BackgroundColor = ndi.gui.cloudColors().darkBlue;
 
-            reload = uibutton(group, ...
-                'Text',            '', ...
-                'Icon',            ndi.gui.nav.cloudPane.reloadIconFile(), ...
-                'IconAlignment',   'center', ...
-                'Tooltip',         'Refresh NDI Cloud login (logout)', ...
-                'ButtonPushedFcn', @(~,~) obj.refreshLogin());
+            reload = obj.refreshButton(group, 'Refresh NDI Cloud login (logout)', ...
+                @(~,~) obj.refreshLogin());
             reload.Layout.Row    = 1;
             reload.Layout.Column = 1;
-            obj.accentButton(reload);
 
             checkAll = uibutton(group, ...
                 'Text',            'C', ...
@@ -84,7 +79,7 @@ classdef cloudPane < ndi.gui.nav.pane
             %   checkAllCloudStatus (each dataset's isInCloud is queried, its
             %   badge updated, and its state cached), under a progress dialog,
             %   then reports a one-line summary. This is the bulk equivalent of
-            %   the per-dataset "Check Cloud status" command.
+            %   the per-dataset "Cloud info..." command.
             fig = obj.Navigator.Figure;
             title = 'Check NDI Cloud status';
             dp = obj.Navigator.datasetsPaneHandle();
@@ -122,14 +117,6 @@ classdef cloudPane < ndi.gui.nav.pane
                      'profile.'], ...
                     'NDI Cloud', 'Icon', 'success');
             end
-        end
-    end
-
-    methods (Static, Access = private)
-        function p = reloadIconFile()
-            %RELOADICONFILE Absolute path to the reload button icon (SVG).
-            p = fullfile(ndi.common.PathConstants.RootFolder, ...
-                '+ndi', '+gui', 'reload_icon.svg');
         end
     end
 end

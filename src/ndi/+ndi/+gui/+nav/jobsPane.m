@@ -15,8 +15,11 @@ classdef jobsPane < ndi.gui.nav.pane
 %
 %   A job runs in this MATLAB, so while one runs, MATLAB is busy; the job
 %   lets the window redraw at every heartbeat, which is when Pause and the
-%   progress column respond. The list is refreshed by the jobs themselves
-%   and on every navigator refresh.
+%   progress column respond. The list is refreshed by the jobs this MATLAB
+%   runs and on every navigator refresh. A job run by ANOTHER process (a
+%   second MATLAB, or Python) does not tell this window, so the header's
+%   refresh button re-reads every job's record from disk (ndi.job.Job.list)
+%   to show where it has got to.
 %
 %   See also: ndi.job.Job, ndi.gui.navigator
 
@@ -122,6 +125,20 @@ classdef jobsPane < ndi.gui.nav.pane
     end
 
     methods (Access = protected)
+        function buildHeaderRight(obj, parent)
+            % One compact refresh button: re-read the jobs from disk, so
+            % jobs run by other processes show their current state.
+            b = obj.refreshButton(parent, ...
+                'Re-read the jobs (shows progress of jobs run by other processes)', ...
+                @(~,~) obj.refresh());
+            b.Layout.Row    = 1;
+            b.Layout.Column = 3;
+        end
+
+        function w = rightWidth(~)
+            w = 26;
+        end
+
         function buildBody(obj, container)
             container.RowHeight = {'1x', 26};
             container.ColumnWidth = {'1x'};

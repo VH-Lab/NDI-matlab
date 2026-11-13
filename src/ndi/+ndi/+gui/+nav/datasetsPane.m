@@ -3,7 +3,8 @@ classdef datasetsPane < ndi.gui.nav.pane
 %
 %   The Datasets pane can be collapsed to its header row via the header
 %   disclosure triangle. Its header also carries, right-justified, a "+"
-%   button and a "Refresh" button.
+%   button and a refresh button (the refresh symbol, as on the Jobs and
+%   NDI Cloud panes).
 %
 %   The "+" button opens an add-dataset menu (a uicontextmenu popped
 %   beneath the button) with:
@@ -17,6 +18,11 @@ classdef datasetsPane < ndi.gui.nav.pane
 %       Open Private Cloud dataset... authenticates, lists the user's own
 %                                     NDI Cloud datasets, and downloads the
 %                                     chosen dataset's documents to a folder.
+%       Browse my Cloud datasets...   opens ndi.gui.nav.cloudDatasetBrowser,
+%                                     which lists the user's NDI Cloud
+%                                     datasets with their document and file
+%                                     counts and dates, and can open or
+%                                     (after abundant warnings) delete one.
 %   Added datasets are held for the session and merged into the tree, so
 %   they survive a Refresh.
 %
@@ -81,39 +87,38 @@ classdef datasetsPane < ndi.gui.nav.pane
 %                   Ingestion Status  computes the session's ingestion state
 %                                     and shows it as a node badge.
 %
-%   Right-clicking a dataset node opens a context menu. Its first item,
-%   "Assign to workspace...", prompts for a variable name (default "D") and
-%   assigns the ndi.dataset to it in the base workspace. The other actions
-%   are grouped by topic. The one topic at present is "Cloud", which gathers the
-%   NDI Cloud synchronisation actions for that dataset:
-%       Check Cloud status      reports whether the dataset is in NDI Cloud
-%                               in an ndi.gui.nav.cloudStatusDialog, which
-%                               shows the cloud dataset id with a Copy
-%                               button (greyed out when not in the cloud).
+%   Right-clicking a dataset node opens a context menu. Its first items are
+%       Assign to workspace...  prompts for a variable name (default "D")
+%                               and assigns the ndi.dataset to it in the
+%                               base workspace.
+%       Remove from list        removes the dataset from this list only. It
+%                               does NOT delete the dataset or any file; the
+%                               dataset stays hidden (even if a workspace
+%                               variable holds it) until it is added again
+%                               with "+".
+%   The other actions are grouped by topic. The one topic at present is
+%   "Cloud", which gathers the NDI Cloud actions for that dataset:
+%       Cloud info...           checks whether the dataset is linked to NDI
+%                               Cloud, badges the node, and shows an
+%                               ndi.gui.nav.cloudInfoDialog with the dataset
+%                               name, its local path and the cloud dataset
+%                               id, each with a Copy button.
 %       Upload to Cloud         creates (on first upload) and uploads the
 %                               dataset's documents and files to NDI Cloud.
-%       Check Cloud for New     reports how many cloud documents are not yet
-%                               present locally (read-only status; no changes).
-%       Check Local for New     reports how many local documents are not yet
-%                               on the cloud (read-only status; no changes).
-%       Download New from Cloud adds remote-only documents to the local dataset.
-%       Upload New to Cloud     adds local-only documents to the cloud dataset.
-%       Two Way Sync            additive sync in both directions (no deletions).
-%       Mirror from Cloud       makes the local dataset match the cloud,
-%                               DELETING local-only documents; because this is
-%                               destructive the user must confirm a warning.
-%       Mirror to Cloud         makes the cloud dataset match the local one,
-%                               DELETING remote-only documents; because this is
-%                               destructive the user must confirm a warning.
-%   The check and sync actions are backed by ndi.cloud (uploadDataset,
-%   sync.documentDifference, sync.downloadNew, sync.uploadNew, sync.twoWaySync,
-%   sync.mirrorFromRemote, sync.mirrorToRemote).
+%       Cloud comparison...     opens ndi.gui.nav.cloudComparison, which
+%                               compares this local copy's documents with the
+%                               cloud's and offers every sync operation
+%                               (download/upload new, two-way sync, mirror
+%                               from/to cloud) as a button.
+%   Syncing is deliberately only available from the comparison window, so
+%   the user always sees the state of both sides before changing either.
+%   The ndi.cloud.sync functions remain available from the command line.
 %
 %   The Cloud items are enabled or greyed out to match the dataset's cached
-%   cloud-link state: once the status is known, "Upload to Cloud" is available
-%   only for a dataset that is not yet in the cloud, and every other Cloud
-%   action (which requires an existing link) is available only for a dataset
-%   that already is. Until the status has been checked, all items are enabled.
+%   cloud-link state: once the status is known, "Upload to Cloud" is
+%   available only for a dataset that is not yet in the cloud, and "Cloud
+%   comparison..." (which requires an existing link) only for a dataset that
+%   already is. Until the status has been checked, all items are enabled.
 %
 %   Ingestion status is shown as a small icon badge on the session node
 %   (see ndi.gui.nav.statusIcon): a green "i" for ingested, amber for a
@@ -125,7 +130,7 @@ classdef datasetsPane < ndi.gui.nav.pane
 %   Cloud status is shown as a badge on the dataset node: a light-blue "C"
 %   when the dataset is linked to NDI Cloud, and no badge when it is not
 %   (or has not been checked). Like session ingestion status, it is computed
-%   only on demand - by the "Check Cloud status" Cloud menu command, or
+%   only on demand - by the "Cloud info..." Cloud menu command, or
 %   implicitly after a successful "Upload to Cloud" - never during a tree
 %   build, so listing datasets stays fast. ndi.dataset.isInCloud is a local,
 %   network-free check, but even so it is not run for every dataset on every
@@ -145,6 +150,9 @@ classdef datasetsPane < ndi.gui.nav.pane
         NodeMenus = {}                   % per-session-node uicontextmenu handles
         AddMenu                          % "+" add-dataset uicontextmenu (lazy)
         UserDatasets = {}                % datasets the user added via "+"
+        HiddenDatasetIds = {}            % ids of datasets the user removed from
+                                         %   the list ("Remove from list")
+        BrowserWindow = []               % the open cloudDatasetBrowser, if any
         UserSessions = {}                % sessions the user created/opened via
                                          %   the "Unaffiliated sessions" menu
         WsVarIndex                       % containers.Map: object id (char) ->
@@ -182,8 +190,8 @@ classdef datasetsPane < ndi.gui.nav.pane
             %   REPORT = CHECKALLCLOUDSTATUS(OBJ) determines, for each dataset
             %   node in the tree, whether the dataset is linked to NDI Cloud
             %   (ndi.dataset.isInCloud), then caches the result on the node and
-            %   updates its badge - the same effect as running "Check Cloud
-            %   status" on every dataset in turn. It is the bulk action behind
+            %   updates its badge - the same effect as running "Cloud
+            %   info..." on every dataset in turn (without the dialogs). It is the bulk action behind
             %   the NDI Cloud pane's "C" button.
             %
             %   REPORT = CHECKALLCLOUDSTATUS(OBJ, PROGRESSDLG) additionally
@@ -258,13 +266,12 @@ classdef datasetsPane < ndi.gui.nav.pane
         end
 
         function buildHeaderRight(obj, parent)
-            % Two controls sit on the right: [+] | Refresh. The "+" opens the
-            % add-dataset menu; it is a compact fixed-width square and Refresh
-            % takes the remaining width.
+            % Two compact squares sit on the right: [+] | refresh symbol. The
+            % "+" opens the add-dataset menu; the other rebuilds the tree.
             group = uigridlayout(parent, [1 2]);
             group.Layout.Row      = 1;
             group.Layout.Column   = 3;
-            group.ColumnWidth     = {26, '1x'};
+            group.ColumnWidth     = {26, 26};
             group.RowHeight       = {'1x'};
             group.Padding         = [0 0 0 0];
             group.ColumnSpacing   = 4;
@@ -279,17 +286,14 @@ classdef datasetsPane < ndi.gui.nav.pane
             plus.Layout.Column = 1;
             obj.accentButton(plus);
 
-            refresh = uibutton(group, ...
-                'Text',            'Refresh', ...
-                'Tooltip',         'Rebuild the list of datasets and sessions', ...
-                'ButtonPushedFcn', @(~,~) obj.refresh());
+            refresh = obj.refreshButton(group, ...
+                'Rebuild the list of datasets and sessions', @(~,~) obj.refresh());
             refresh.Layout.Row    = 1;
             refresh.Layout.Column = 2;
-            obj.accentButton(refresh);
         end
 
         function w = rightWidth(~)
-            w = 108;
+            w = 56;   % 26 (+) + 4 + 26 (refresh)
         end
     end
 
@@ -332,6 +336,8 @@ classdef datasetsPane < ndi.gui.nav.pane
             % and also assigned to a workspace variable), so list each id once.
             datasets = obj.uniqueById([obj.UserDatasets, obj.searchPathDatasets(), ...
                 obj.scanWorkspace('ndi.dataset')]);
+            % Datasets the user removed from the list stay hidden.
+            datasets = ndi.gui.nav.datasetsPane.withoutIds(datasets, obj.HiddenDatasetIds);
             for i = 1:numel(datasets)
                 ds       = datasets{i};
                 % Store the dataset handle on the node so a bulk action (see
@@ -524,79 +530,57 @@ classdef datasetsPane < ndi.gui.nav.pane
         function attachDatasetMenu(obj, node, ds)
             %ATTACHDATASETMENU Context menu for a top-level dataset node.
             %   "Assign to workspace..." puts DS in a base workspace variable
-            %   (see assignToWorkspace). The rest of the menu is organised by
-            %   topic; currently the only topic is "Cloud", which groups the NDI Cloud synchronisation actions for
-            %   the dataset DS. Each item captures DS directly, so the action
+            %   (see assignToWorkspace); "Remove from list" hides it from the
+            %   tree without touching the dataset (see removeDatasetFromList).
+            %   The rest of the menu is organised by topic; currently the only
+            %   topic is "Cloud". Each item captures DS directly, so the action
             %   does not depend on the tree selection (a right-click does not
             %   reliably commit a selection before the menu opens). The menu is
             %   registered in NodeMenus so it is deleted on the next tree build
             %   alongside the per-session menus.
             %
             %   The Cloud items, in order:
-            %       Check Cloud status       - determine whether the dataset is
-            %                                  linked to NDI Cloud and badge the
-            %                                  node accordingly (the only item
-            %                                  that queries the dataset database).
-            %       Upload to Cloud          - create/refresh the remote dataset
-            %                                  and upload all documents and files.
-            %       Check Cloud for New      - report how many cloud documents are
-            %                                  not present locally (no changes).
-            %       Check Local for New      - report how many local documents are
-            %                                  not present on the cloud (no changes).
-            %       Download New from Cloud  - add remote-only documents locally.
-            %       Upload New to Cloud      - add local-only documents remotely.
-            %       Two Way Sync             - additive sync in both directions.
-            %       Mirror from Cloud        - make local match remote, DELETING
-            %                                  local-only documents (destructive).
-            %       Mirror to Cloud          - make remote match local, DELETING
-            %                                  remote-only documents (destructive).
+            %       Cloud info...        - determine whether the dataset is
+            %                              linked to NDI Cloud, badge the node,
+            %                              and show name, local path and cloud id.
+            %       Upload to Cloud      - create/refresh the remote dataset
+            %                              and upload all documents and files.
+            %       Cloud comparison...  - compare local and cloud documents and
+            %                              sync from there (the only place the
+            %                              navigator offers syncing).
             %
-            %   Cloud status is computed only on demand (via "Check Cloud
-            %   status", or implicitly after a successful "Upload to Cloud"),
-            %   never during a tree build, so listing datasets stays fast. The
+            %   Cloud status is computed only on demand (via "Cloud info...",
+            %   or implicitly after a successful "Upload to Cloud"), never
+            %   during a tree build, so listing datasets stays fast. The
             %   enable/disable state below reads the last-known status cached on
             %   the node; it does not query the database on menu open.
             cm    = uicontextmenu(obj.Navigator.Figure);
             uimenu(cm, 'Text', 'Assign to workspace...', ...
                 'MenuSelectedFcn', @(~,~) obj.assignToWorkspace(ds, 'D', node));
-            cloud = uimenu(cm, 'Text', 'Cloud');
+            uimenu(cm, 'Text', 'Remove from list', ...
+                'MenuSelectedFcn', @(~,~) obj.removeDatasetFromList(ds));
+            cloud = uimenu(cm, 'Text', 'Cloud', 'Separator', 'on');
 
-            % "Check Cloud status" is the only item that queries the dataset; it
+            % "Cloud info..." is the item that queries the dataset's link; it
             % records the result on the node so the rest of the menu can gray
             % out the inapplicable actions without re-querying.
-            uimenu(cloud, 'Text', 'Check Cloud status', ...
-                'MenuSelectedFcn', @(~,~) obj.cloudCheckStatus(ds, node));
+            uimenu(cloud, 'Text', 'Cloud info...', ...
+                'MenuSelectedFcn', @(~,~) obj.cloudInfo(ds, node));
 
             % "Upload to Cloud" applies only before the dataset is linked to
-            % NDI Cloud; every other cloud action requires an existing link.
+            % NDI Cloud; the comparison requires an existing link.
             uploadItem = uimenu(cloud, 'Text', 'Upload to Cloud', 'Separator', 'on', ...
                 'MenuSelectedFcn', @(~,~) obj.cloudUploadDataset(ds, node));
-
-            checkRemote = uimenu(cloud, 'Text', 'Check Cloud for New', 'Separator', 'on', ...
-                'MenuSelectedFcn', @(~,~) obj.cloudCheckForNew(ds, 'remote'));
-            checkLocal = uimenu(cloud, 'Text', 'Check Local for New', ...
-                'MenuSelectedFcn', @(~,~) obj.cloudCheckForNew(ds, 'local'));
-
-            downloadItem = uimenu(cloud, 'Text', 'Download New from Cloud', 'Separator', 'on', ...
-                'MenuSelectedFcn', @(~,~) obj.cloudSync(ds, 'downloadNew', 'Download New from Cloud'));
-            uploadNewItem = uimenu(cloud, 'Text', 'Upload New to Cloud', ...
-                'MenuSelectedFcn', @(~,~) obj.cloudSync(ds, 'uploadNew', 'Upload New to Cloud'));
-            twoWayItem = uimenu(cloud, 'Text', 'Two Way Sync', ...
-                'MenuSelectedFcn', @(~,~) obj.cloudSync(ds, 'twoWaySync', 'Two Way Sync'));
-
-            mirrorFromItem = uimenu(cloud, 'Text', 'Mirror from Cloud', 'Separator', 'on', ...
-                'MenuSelectedFcn', @(~,~) obj.cloudMirror(ds, 'fromRemote'));
-            mirrorToItem = uimenu(cloud, 'Text', 'Mirror to Cloud', ...
-                'MenuSelectedFcn', @(~,~) obj.cloudMirror(ds, 'toRemote'));
+            compareItem = uimenu(cloud, 'Text', 'Cloud comparison...', ...
+                'MenuSelectedFcn', @(~,~) obj.cloudCompare(ds));
 
             % The actions that require an existing cloud link.
-            linkedItems = [checkRemote, checkLocal, downloadItem, uploadNewItem, ...
-                twoWayItem, mirrorFromItem, mirrorToItem];
+            linkedItems = compareItem;
 
             % Gray out the inapplicable items each time the menu opens, from the
-            % status last recorded on the node ('unknown' until "Check Cloud
-            % status" or an upload runs). This reads a cached field only - it
-            % never queries the dataset database - so opening the menu is fast.
+            % status last recorded on the node ('unknown' until "Cloud info..."
+            % or an upload runs). This reads a cached field only - it never
+            % queries the dataset database - so opening the menu is fast.
             cm.ContextMenuOpeningFcn = @(~,~) ...
                 obj.updateDatasetMenuEnable(node, uploadItem, linkedItems);
 
@@ -604,12 +588,36 @@ classdef datasetsPane < ndi.gui.nav.pane
             obj.NodeMenus{end + 1} = cm;
         end
 
+        function removeDatasetFromList(obj, ds)
+            %REMOVEDATASETFROMLIST Hide DS from the tree; nothing is deleted.
+            %   The dataset is dropped from the user-added list and its id is
+            %   remembered, so it stays hidden even if a base workspace variable
+            %   or the search path would otherwise list it again. Adding it back
+            %   with "+" (Open dataset...) un-hides it. The dataset on disk, and
+            %   any cloud copy, are not touched.
+            id = obj.objId(ds);
+            p  = obj.datasetPath(ds);
+            keep = true(1, numel(obj.UserDatasets));
+            for i = 1:numel(obj.UserDatasets)
+                other = obj.UserDatasets{i};
+                if (~isempty(id) && strcmp(obj.objId(other), id)) || ...
+                        (~isempty(p) && strcmp(obj.datasetPath(other), p))
+                    keep(i) = false;
+                end
+            end
+            obj.UserDatasets = obj.UserDatasets(keep);
+            if ~isempty(id) && ~any(strcmp(obj.HiddenDatasetIds, id))
+                obj.HiddenDatasetIds{end + 1} = id;
+            end
+            obj.refresh();
+        end
+
         function updateDatasetMenuEnable(~, node, uploadItem, linkedItems)
             %UPDATEDATASETMENUENABLE Enable the applicable cloud actions.
-            %   Reads the cloud state cached on NODE (set by "Check Cloud
-            %   status" or a successful upload) and enables items accordingly:
+            %   Reads the cloud state cached on NODE (set by "Cloud info..."
+            %   or a successful upload) and enables items accordingly:
             %   when the dataset is in the cloud, "Upload to Cloud" (UPLOADITEM)
-            %   is greyed out and the LINKEDITEMS (check, sync, mirror) are
+            %   is greyed out and the LINKEDITEMS (Cloud comparison...) are
             %   enabled; when it is not, the reverse. Until the status has been
             %   checked ('unknown'), everything is enabled so the user is never
             %   blocked from acting or from checking. This performs no database
@@ -645,19 +653,18 @@ classdef datasetsPane < ndi.gui.nav.pane
 
         %% Cloud context-menu actions
 
-        function cloudCheckStatus(obj, ds, node)
-            %CLOUDCHECKSTATUS Determine and show whether DS is in NDI Cloud.
-            %   This is the "Check Cloud status" command. It is the only cloud
-            %   action that queries the dataset (ds.isInCloud, a local,
-            %   network-free check for the 'dataset_remote' document); the
-            %   result is cached on the node (badging it and enabling the right
-            %   menu items) and reported to the user in an
-            %   ndi.gui.nav.cloudStatusDialog, which shows the NDI Cloud dataset
-            %   id and a button to copy it to the clipboard. Because it is on
-            %   demand, the cost is paid only when the user asks, not on every
-            %   refresh.
+        function cloudInfo(obj, ds, node)
+            %CLOUDINFO Determine and show DS's NDI Cloud link, name and path.
+            %   This is the "Cloud info..." command. It queries the dataset
+            %   (ds.isInCloud, a local, network-free check for the
+            %   'dataset_remote' document); the result is cached on the node
+            %   (badging it and enabling the right menu items) and reported in
+            %   an ndi.gui.nav.cloudInfoDialog, which shows the dataset name,
+            %   the local path of this copy and the NDI Cloud dataset id, each
+            %   with a Copy button. Because it is on demand, the cost is paid
+            %   only when the user asks, not on every refresh.
             fig = obj.Navigator.Figure;
-            title = 'Check Cloud Status';
+            title = 'Cloud Info';
             dlg = uiprogressdlg(fig, 'Title', title, ...
                 'Message', 'Checking NDI Cloud status...', 'Indeterminate', 'on');
             try
@@ -673,9 +680,22 @@ classdef datasetsPane < ndi.gui.nav.pane
             else
                 obj.setDatasetCloudState(node, 'notincloud');
             end
-            % The result window shows the cloud dataset id with a Copy button
-            % (greyed out when the dataset is not in the cloud).
-            ndi.gui.nav.cloudStatusDialog(inCloud, cloudDatasetId, 'Parent', fig);
+            ndi.gui.nav.cloudInfoDialog(inCloud, cloudDatasetId, ...
+                'DatasetName', obj.datasetLabel(ds), ...
+                'LocalPath',   obj.datasetPath(ds), ...
+                'Parent',      fig);
+        end
+
+        function cloudCompare(obj, ds)
+            %CLOUDCOMPARE Open the Cloud comparison window for DS.
+            %   The window opens at once and computes the comparison itself;
+            %   all syncing happens from there (ndi.gui.nav.cloudComparison).
+            fig = obj.Navigator.Figure;
+            try
+                ndi.gui.nav.cloudComparison(ds, 'Parent', fig);
+            catch ME
+                uialert(fig, ME.message, 'Cloud Comparison');
+            end
         end
 
         function cloudUploadDataset(obj, ds, node)
@@ -704,111 +724,6 @@ classdef datasetsPane < ndi.gui.nav.pane
                     'Icon', 'success');
             else
                 uialert(fig, ['Upload did not complete: ' char(message)], title);
-            end
-        end
-
-        function cloudCheckForNew(obj, ds, side)
-            %CLOUDCHECKFORNEW Report how many documents are new on one side.
-            %   SIDE is 'remote' (count cloud documents missing locally) or
-            %   'local' (count local documents missing on the cloud). This only
-            %   reads document ids; it never changes either dataset.
-            fig = obj.Navigator.Figure;
-            if strcmp(side, 'remote')
-                title = 'Check Cloud for New';
-            else
-                title = 'Check Local for New';
-            end
-            dlg = uiprogressdlg(fig, 'Title', title, ...
-                'Message', 'Comparing local and cloud documents...', 'Indeterminate', 'on');
-            try
-                report = ndi.cloud.sync.documentDifference(ds);
-            catch ME
-                delete(dlg);
-                uialert(fig, ME.message, title);
-                return;
-            end
-            delete(dlg);
-            if strcmp(side, 'remote')
-                count = report.num_remote_only;
-            else
-                count = report.num_local_only;
-            end
-            uialert(fig, ...
-                ndi.gui.nav.datasetsPane.cloudCheckMessage(side, count), ...
-                title, 'Icon', 'info');
-        end
-
-        function cloudSync(obj, ds, mode, title)
-            %CLOUDSYNC Run an additive sync MODE and report what changed.
-            %   MODE is 'downloadNew', 'uploadNew' or 'twoWaySync'. None of
-            %   these delete documents, so no confirmation is required. TITLE
-            %   is the dialog title shown to the user.
-            fig = obj.Navigator.Figure;
-            dlg = uiprogressdlg(fig, 'Title', title, ...
-                'Message', 'Synchronizing with NDI Cloud...', 'Indeterminate', 'on');
-            try
-                [success, errorMessage, report] = ...
-                    feval(['ndi.cloud.sync.' mode], ds, 'Verbose', false);
-            catch ME
-                delete(dlg);
-                uialert(fig, ME.message, title);
-                return;
-            end
-            delete(dlg);
-            if success
-                uialert(fig, ndi.gui.nav.datasetsPane.syncResultMessage(report), ...
-                    title, 'Icon', 'success');
-            else
-                uialert(fig, ['Sync did not complete: ' char(errorMessage)], title);
-            end
-        end
-
-        function cloudMirror(obj, ds, direction)
-            %CLOUDMIRROR Mirror one dataset onto the other after confirmation.
-            %   DIRECTION is 'fromRemote' (make the local dataset match the
-            %   cloud, deleting local-only documents) or 'toRemote' (make the
-            %   cloud match the local dataset, deleting remote-only documents).
-            %   Both delete documents, so the user must confirm a warning first.
-            fig = obj.Navigator.Figure;
-            if strcmp(direction, 'fromRemote')
-                title  = 'Mirror from Cloud';
-                mode   = 'mirrorFromRemote';
-                prompt = ['Mirror from Cloud will make this local dataset an ' ...
-                    'exact copy of the cloud dataset. Any local documents that ' ...
-                    'are not on the cloud will be permanently DELETED from the ' ...
-                    'local dataset. This cannot be undone. Are you sure?'];
-            else
-                title  = 'Mirror to Cloud';
-                mode   = 'mirrorToRemote';
-                prompt = ['Mirror to Cloud will make the cloud dataset an exact ' ...
-                    'copy of this local dataset. Any cloud documents that are ' ...
-                    'not present locally will be permanently DELETED from the ' ...
-                    'cloud dataset. This cannot be undone. Are you sure?'];
-            end
-
-            sel = uiconfirm(fig, prompt, title, ...
-                'Options', {'Continue', 'Cancel'}, ...
-                'DefaultOption', 2, 'CancelOption', 2, 'Icon', 'warning');
-            if ~strcmp(sel, 'Continue')
-                return;
-            end
-
-            dlg = uiprogressdlg(fig, 'Title', title, ...
-                'Message', 'Mirroring with NDI Cloud...', 'Indeterminate', 'on');
-            try
-                [success, errorMessage, report] = ...
-                    feval(['ndi.cloud.sync.' mode], ds, 'Verbose', false);
-            catch ME
-                delete(dlg);
-                uialert(fig, ME.message, title);
-                return;
-            end
-            delete(dlg);
-            if success
-                uialert(fig, ndi.gui.nav.datasetsPane.syncResultMessage(report), ...
-                    title, 'Icon', 'success');
-            else
-                uialert(fig, ['Mirror did not complete: ' char(errorMessage)], title);
             end
         end
 
@@ -1154,6 +1069,23 @@ classdef datasetsPane < ndi.gui.nav.pane
                 'MenuSelectedFcn', @(~,~) obj.openCloudDataset(true));
             uimenu(cm, 'Text', 'Open Private Cloud dataset...', ...
                 'MenuSelectedFcn', @(~,~) obj.openCloudDataset(false));
+            uimenu(cm, 'Text', 'Browse my Cloud datasets...', ...
+                'MenuSelectedFcn', @(~,~) obj.browseCloudDatasets());
+        end
+
+        function browseCloudDatasets(obj)
+            %BROWSECLOUDDATASETS Open (or raise) the cloud dataset browser.
+            %   Its Open button downloads the chosen dataset into a folder and
+            %   adds it to this list (openCloudDatasetById).
+            if ~isempty(obj.BrowserWindow) && isvalid(obj.BrowserWindow) && ...
+                    isvalid(obj.BrowserWindow.Figure)
+                figure(obj.BrowserWindow.Figure);
+                return;
+            end
+            obj.BrowserWindow = ndi.gui.nav.cloudDatasetBrowser( ...
+                'Parent', obj.Navigator.Figure, ...
+                'OpenFcn', @(id, name) obj.openCloudDatasetById(id, ...
+                    ['Open Cloud dataset: ' char(name)]));
         end
 
         function newBlankDataset(obj)
@@ -1235,15 +1167,20 @@ classdef datasetsPane < ndi.gui.nav.pane
             if ~ok
                 return;   % cancelled
             end
-            cloudId = ids{sel};
+            obj.openCloudDatasetById(ids{sel}, titleStr);
+        end
 
-            % 3. Choose a local folder to download into.
+        function openCloudDatasetById(obj, cloudId, titleStr)
+            %OPENCLOUDDATASETBYID Download CLOUDID's documents and add it.
+            %   Asks for a local folder, downloads the dataset's documents (not
+            %   its binary files; SyncFiles=false) and adds it to the list.
+            %   Shared by "Open ... Cloud dataset..." and the cloud dataset
+            %   browser's Open button.
+            fig = obj.Navigator.Figure;
             folder = uigetdir('', 'Choose a folder to download the dataset into');
             if isequal(folder, 0)
                 return;   % cancelled
             end
-
-            % 4. Download documents only (SyncFiles=false) under a progress dialog.
             dlg = uiprogressdlg(fig, 'Title', titleStr, ...
                 'Message', 'Downloading dataset documents...', 'Indeterminate', 'on');
             try
@@ -1263,11 +1200,14 @@ classdef datasetsPane < ndi.gui.nav.pane
             if isempty(ds)
                 return;
             end
+            % Adding a dataset again un-hides it if it was removed earlier.
+            obj.HiddenDatasetIds(strcmp(obj.HiddenDatasetIds, obj.objId(ds))) = [];
             newPath = obj.datasetPath(ds);
             for i = 1:numel(obj.UserDatasets)
                 if ~isempty(newPath) && ...
                         strcmp(obj.datasetPath(obj.UserDatasets{i}), newPath)
-                    return;   % already in the list
+                    obj.refresh();   % already in the list (maybe just un-hidden)
+                    return;
                 end
             end
             obj.UserDatasets{end+1} = ds;
@@ -1536,7 +1476,7 @@ classdef datasetsPane < ndi.gui.nav.pane
             %
             %   Maps a dataset's cached cloud STATE to the 'on'/'off' Enable
             %   values for the two groups of Cloud menu items:
-            %       'incloud'    -> upload off, linked (check/sync/mirror) on
+            %       'incloud'    -> upload off, linked (Cloud comparison) on
             %       'notincloud' -> upload on,  linked off
             %       anything else ('unknown', unset) -> both on, so the user is
             %                       never blocked before checking the status
@@ -1586,47 +1526,23 @@ classdef datasetsPane < ndi.gui.nav.pane
             end
         end
 
-        function msg = cloudCheckMessage(side, count)
-            %CLOUDCHECKMESSAGE Status text for a "Check ... for New" command.
+        function out = withoutIds(objs, hiddenIds)
+            %WITHOUTIDS Drop the objects whose id is in HIDDENIDS.
             %
-            %   MSG = ndi.gui.nav.datasetsPane.cloudCheckMessage(SIDE, COUNT)
+            %   OUT = ndi.gui.nav.datasetsPane.withoutIds(OBJS, HIDDENIDS)
             %
-            %   SIDE is 'remote' (COUNT cloud documents are missing locally) or
-            %   'local' (COUNT local documents are missing on the cloud). MSG is
-            %   a human-readable char sentence, pluralised for COUNT.
-            arguments
-                side (1,:) char
-                count (1,1) double
+            %   OBJS is a cell array of sessions/datasets and HIDDENIDS a cell
+            %   array of ids (char). Objects with no id are always kept.
+            if isempty(hiddenIds)
+                out = objs;
+                return;
             end
-            switch side
-                case 'remote'
-                    switch count
-                        case 0
-                            msg = ['There are no new documents on the cloud. ' ...
-                                'Your local dataset already has every cloud document.'];
-                        case 1
-                            msg = ['There is 1 document on the cloud that is not ' ...
-                                'in your local dataset.'];
-                        otherwise
-                            msg = sprintf(['There are %d documents on the cloud ' ...
-                                'that are not in your local dataset.'], count);
-                    end
-                case 'local'
-                    switch count
-                        case 0
-                            msg = ['There are no new local documents. Every local ' ...
-                                'document is already on the cloud.'];
-                        case 1
-                            msg = ['There is 1 local document that is not on the ' ...
-                                'cloud.'];
-                        otherwise
-                            msg = sprintf(['There are %d local documents that are ' ...
-                                'not on the cloud.'], count);
-                    end
-                otherwise
-                    error('NDI:datasetsPane:BadSide', ...
-                        'SIDE must be ''remote'' or ''local''.');
+            keep = true(1, numel(objs));
+            for i = 1:numel(objs)
+                id = ndi.gui.nav.datasetsPane.objId(objs{i});
+                keep(i) = isempty(id) || ~any(strcmp(hiddenIds, id));
             end
+            out = objs(keep);
         end
 
         function msg = syncResultMessage(report)
