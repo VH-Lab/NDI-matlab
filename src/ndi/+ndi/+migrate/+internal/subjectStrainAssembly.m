@@ -628,15 +628,26 @@ end
 % `derived_from` relation to the SURVIVOR of each parent's group, in the order
 % `fields.backgroundStrain` gives. A parent this pass could not assemble
 % produces NO relation (REPORT.background_unresolved).
+% Each strain group's entity, assertions and pedigree edges take ids derived
+% from the group's key (its scope and content), not random and not from the
+% Strain document read first ([migration reliability practices] (b), Jess
+% Haley, 2026-10-26): the entity's id from the key, the rest in a
+% did2.convert.mintId context keyed on it, closed at the end of the group (and
+% on any error, by MINTRESTORE).
 groupDocId = cell(1, nGroups);
 groupRep   = zeros(1, nGroups);
 for g = 1:nGroups
     groupRep(g)   = find([cand.group] == g, 1);
-    groupDocId{g} = did.ido.unique_id();
+    groupDocId{g} = did2.convert.mintId('strain', ...
+        [groupKeys{g} '|subjectStrainAssembly']);
 end
 
+mintDepth = did2.convert.mintId('-depth');
+mintRestore = onCleanup(@() did2.convert.mintId('-popto', mintDepth)); %#ok<NASGU>
 groupParents = cell(1, nGroups);
 for g = 1:nGroups
+    did2.convert.mintId('-popto', mintDepth);
+    did2.convert.mintId('-push', [groupKeys{g} '|subjectStrainAssembly']);
     rep = cand(groupRep(g));
     home = rep.session_id;
     if scope.is_dataset
@@ -680,6 +691,7 @@ for g = 1:nGroups
         end
     end
 end
+did2.convert.mintId('-popto', mintDepth);
 
 % An ancestor of another candidate is still asserted OF THE SUBJECT, because
 % the writer sets `subject_id` on every document of the flattened graph.

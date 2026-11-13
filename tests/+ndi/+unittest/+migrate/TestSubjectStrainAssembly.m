@@ -73,6 +73,30 @@ classdef TestSubjectStrainAssembly < matlab.unittest.TestCase
 
     methods (Test)
 
+        function testTheSameInputMintsTheSameIds(testCase)
+            % [migration reliability practices] (b) (Jess Haley, 2026-10-26,
+            % did-schema did_v2_go_forward_class_audit.md): a document the
+            % migration mints gets an id derived from its source, "so two runs
+            % on the same input are identical and can be diffed". The ids must
+            % not depend on the order the documents are read in either
+            % (NDI-matlab #1235: database order is not data), so the input is
+            % also run reversed. NEW is the ids the pass minted (not one of
+            % its input ids): it must be non-empty, or this proves nothing.
+            [v1, mig] = twoRatsSameGenotype();
+            [~, a] = ndi.migrate.internal.subjectStrainAssembly(v1, mig);
+            [~, b] = ndi.migrate.internal.subjectStrainAssembly(v1, mig);
+            [~, r] = ndi.migrate.internal.subjectStrainAssembly( ...
+                v1(end:-1:1), mig(end:-1:1));
+            ids = ndi.unittest.migrate.mintedIdSet(a);
+            new = setdiff(ids, [ndi.unittest.migrate.mintedIdSet(v1), ...
+                ndi.unittest.migrate.mintedIdSet(mig)]);
+            testCase.verifyNotEmpty(new, 'the pass minted no new id');
+            testCase.verifyEqual(ndi.unittest.migrate.mintedIdSet(b), ids);
+            testCase.verifyEqual(ndi.unittest.migrate.mintedIdSet(r), ids);
+            testCase.verifyEqual(did2.convert.mintId('-depth'), 0, ...
+                'the pass left a mintId context open');
+        end
+
         % ---------------- minting and dedup ----------------------------
 
         function testOneStrainEntityPerDistinctStrain(testCase)

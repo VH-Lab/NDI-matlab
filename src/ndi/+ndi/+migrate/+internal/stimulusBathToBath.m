@@ -183,7 +183,12 @@ stimulatorId = dependencyValue(v1Body, 'stimulus_element_id');
 epochId      = epochIdOf(v1Body);
 sessionId    = ndi.v2.sessionIdOf(v1Body);
 datestamp    = baseField(v1Body, 'datestamp', '');
-bathId       = baseField(v1Body, 'id', did.ido.unique_id());
+bathId       = baseField(v1Body, 'id', '');
+if isempty(bathId)
+    % a bath stating no id: derived from its body, not random
+    % ([migration reliability practices] (b), Jess Haley, 2026-10-26)
+    bathId = did2.convert.mintId('stimulus bath', did2.convert.mintKey(v1Body));
+end
 
 % --- resolve the session/element context (the reason this is NDI-layer) -----
 subjectId  = resolver.subjectOfElement(stimulatorId);
@@ -220,7 +225,7 @@ if did2.convert.isV2Set(targetVersion)   % 'did_v2' ([V_eta not kept as an alias
 end
 
 % --- the older targets (no V_eta) -----------------------------------------
-timeRefId = did.ido.unique_id();
+timeRefId = did2.convert.mintId('stimulus bath time reference', bathId);
 timeRefBody = struct();
 timeRefBody.document_class = struct( ...
     'class_name', 'epoch_bounded_reference', 'class_version', '1.0.0', ...

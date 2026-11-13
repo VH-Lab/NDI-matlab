@@ -550,8 +550,12 @@ for i = 1:numel(structs)
             seenEdge(mKey) = true;
             % `order` counts from 0 (T14; did-schema directed_relation.order,
             % [author order from 0]); v1's neuron_id_N column is 1-based
+            % its id derived from the edge it is (MKEY: ensemble, neuron,
+            % column, epoch), not random ([migration reliability practices]
+            % (b), Jess Haley, 2026-10-26)
             minted{end+1} = relationBody(neuronId, groupId, MEMBER_OF, ...
-                column - 1, epochKey, sessionId, ds, 'migrated_ensemble_member'); %#ok<AGROW>
+                column - 1, epochKey, sessionId, ds, 'migrated_ensemble_member', ...
+                did2.convert.mintId('ensemble member_of', mKey)); %#ok<AGROW>
             report.member_of_minted = report.member_of_minted + 1;
             if ~isempty(epochKey)
                 report.epoch_scoped_edges = report.epoch_scoped_edges + 1;
@@ -621,14 +625,14 @@ end
 % ===================== builders ========================================
 
 function body = relationBody(childId, parentId, relTerm, order, epochDocId, ...
-        sessionId, ds, ~)
+        sessionId, ds, ~, id)
 %RELATIONBODY One `directed_relation` (did-schema #88: `child_id` /
 %   `parent_id`, no base.name). Emits only NON-EMPTY edges: `epoch_id` is
 %   written only when OPTIONS.EpochDocumentIdFor supplied a real id (item 2 of
 %   the header); the slot is declared and OPTIONAL on directed_relation, so an
 %   unscoped edge cannot quarantine under #37 RequiredDependencies.
 body = ndi.migrate.internal.etaShape.relation(childId, parentId, relTerm, ...
-    'Order', order, 'EpochId', epochDocId, ...
+    'Id', id, 'Order', order, 'EpochId', epochDocId, ...
     'SessionId', sessionId, 'Datestamp', ds);
 end
 

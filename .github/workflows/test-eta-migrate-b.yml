@@ -61,7 +61,10 @@ jobs:
     runs-on: ubuntu-latest
     # Generous headroom. B migrated inside the Dab e2e, whose whole test step
     # took ~2h10m over B plus Dabrowska; B alone is set well above its share.
-    timeout-minutes: 180
+    # 270 since testTwoRunsOnTheSameInputMintTheSameIds migrates B a second
+    # time ([migration reliability practices] (b)): one migration took 2,912 s
+    # in run 43197684657, and whole runs took 1h34m to 2h13m before it.
+    timeout-minutes: 270
     env:
       # did-schema #88 merged into main and DID-matlab #218 into V2
       # (2026-10-23): validate against them. A workflow_dispatch input still

@@ -355,13 +355,24 @@ if ~any(assembled)
 end
 
 % --- pass 2: mint the strain entities, their assertions and pedigree --------
+% Each strain's assertions and pedigree edges take ids derived from the
+% Strain document they are minted for, not random ([migration reliability
+% practices] (b), Jess Haley, 2026-10-26): a did2.convert.mintId context
+% keyed on it, as ndi.migrate.internal.withMintSource opens, closed at the end
+% of the strain (and on any error, by MINTRESTORE).
 S = ndi.migrate.internal.etaShape;
+mintDepth = did2.convert.mintId('-depth');
+mintRestore = onCleanup(@() did2.convert.mintId('-popto', mintDepth)); %#ok<NASGU>
 for k = 1:numel(strainIdx)
     i = strainIdx(k);
     if ~assembled(i)
         continue;
     end
     s = structs{i};
+    strainKey = idOf{i};
+    if isempty(strainKey); strainKey = did2.convert.mintKey(s); end
+    did2.convert.mintId('-popto', mintDepth);
+    did2.convert.mintId('-push', [char(strainKey) '|strainAssembly']);
     f = openmindsFields(s);
     sid = ndi.v2.sessionIdOf(s);
     ds  = baseField(s, 'datestamp', '');
@@ -411,6 +422,7 @@ for k = 1:numel(strainIdx)
         end
     end
 end
+did2.convert.mintId('-popto', mintDepth);
 
 % --- pass 3: consume the sources -------------------------------------------
 % A fragment goes only when EVERY document that references it is a strain this
