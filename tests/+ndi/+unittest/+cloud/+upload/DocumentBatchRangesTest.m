@@ -37,7 +37,7 @@ classdef DocumentBatchRangesTest < matlab.unittest.TestCase
         end
 
         function testWhicheverCapComesFirst(testCase)
-            ranges = ndi.cloud.upload.internal.documentBatchRanges([10 10 10 90 10], 3, 100);
+            ranges = ndi.cloud.upload.internal.documentBatchRanges([10 10 10 95 10], 3, 100);
             testCase.verifyEqual(ranges, {[1 2 3], 4, 5});
         end
 
