@@ -716,17 +716,32 @@ classdef mfdaq < ndi.daq.reader
                 groups = 1; g = 1;
                 prefix = 'evmktx';
                 fname = [prefix '_group' int2str(groups(g)) '_seg.nbf_1'];
-                try
-                    if strcmp(A.vintage,'v2')
-                        [tname,tname_without_extension] = ndi.vintage.ingestedArchiveFile(S,A,fname,'.nbf.tgz');
-                    else
-                        [tname,tname_without_extension] = ndi.database.fun.copydocfile2temp(A.doc,S,fname,'.nbf.tgz');
+                if strcmp(A.vintage,'v2') && ~isKey(A.bodies,[prefix '_group' int2str(groups(g)) '_seg.nbf_#']) ...
+                        && isfield(A,'events') && ~isempty(A.events)
+                    % the events file unpacked into one observation per
+                    % channel (Decided by Jess Haley, 2026-11-17 [event
+                    % channels are time-valued observations], [unpacked
+                    % events file is removed]): their times are seconds
+                    % from the epoch's start, so the start the epoch's
+                    % time reference states is added back
+                    [channeltype_out,channel_out,T,D] = ndi.vintage.ingestedEventsRead(S,A);
+                    t0t1 = ndi_daqreader_mfdaq_obj.t0_t1_ingested(epochfiles, S);
+                    for k=1:numel(T)
+                        T{k} = T{k} + t0t1{1}(1);
                     end
-                catch
-                    error(['No event data found for this epoch.']);
+                else
+                    try
+                        if strcmp(A.vintage,'v2')
+                            [tname,tname_without_extension] = ndi.vintage.ingestedArchiveFile(S,A,fname,'.nbf.tgz');
+                        else
+                            [tname,tname_without_extension] = ndi.database.fun.copydocfile2temp(A.doc,S,fname,'.nbf.tgz');
+                        end
+                    catch
+                        error(['No event data found for this epoch.']);
+                    end
+                    [channeltype_out,channel_out,T,D] = ndi.compress.expand_eventmarktext(tname_without_extension);
+                    delete(tname);
                 end
-                [channeltype_out,channel_out,T,D] = ndi.compress.expand_eventmarktext(tname_without_extension);
-                delete(tname);
 
                 order = [];
                 for i=1:numel(channel)
