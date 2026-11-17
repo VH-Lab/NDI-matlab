@@ -42,8 +42,10 @@ function [structs, report, removed] = ingestedArchiveBodies(structs, ndiDir, v1B
 %                         the epoch's start: [clock only on the time
 %                         reference], no clock on the body)
 %                         channel number along 1: count (v1 `number`)
-%                         offset along 1: quantity (v1 `offset`)
-%                         scale along 1: quantity (v1 `scale`)
+%                         offset along 1: quantity (v1 `offset`), no unit
+%                         scale along 1: quantity (v1 `scale`), in volts
+%                                     per count where the reader defines
+%                                     its output unit (below)
 %             conditions  Channel (NCIT:C44170) = the group's channel type
 %                         term ([channel types]; ndi.vintage.channelTypes)
 %             datum_order 'F' (time fastest, as NDI's compressors take a
@@ -113,6 +115,32 @@ function [structs, report, removed] = ingestedArchiveBodies(structs, ndiDir, v1B
 %
 %     `evmktx_group<g>_seg.nbf_#` (events) stays the opaque_body it is.
 %
+%   THE SCALE'S UNIT. Decided by Jess Haley, 2026-11-17 [scale carries the
+%   reader's unit] (did-schema did_v2_go_forward_class_audit.md): "the
+%   per-channel offset covariate (AFO:AFQ_0000202) has no unit (it is in raw
+%   counts); the per-channel scale covariate (NCIT:C70774) has the canonical
+%   unit (volt for a voltage output) with the reader's output unit as
+%   `source_unit` (e.g. microvolt for the Intan amplifier) where NDI's reader
+%   for that system defines it; where it does not, the scale has no unit and
+%   the run's report lists the gap." NDI reads value = (raw + offset) *
+%   scale (ndi.daq.reader.mfdaq/underlying_datatype), so the scale is in the
+%   reader's output unit per count. The reader is the v1 archive's
+%   `daqreader_id` document among V1BODIES (`daqreader.ndi_daqreader_class`;
+%   for ndi.daq.reader.mfdaq.ndr, `daqreader_ndr.ndr_reader_string`). Where
+%   READERUNIT below names the output unit, the scale is written
+%       quantity.value         the v1 scale converted to volts per count
+%       quantity.source_value  the v1 scale, verbatim
+%       unit                   om:volt
+%       source_unit            the reader's output unit (om:microvolt ...)
+%   and counted `scale_with_unit`; elsewhere the scale is written as before
+%   (the v1 scale, no unit), counted `scale_without_unit`, and the body's
+%   field `data.covariates(4).unit` is listed in REPORT.scale_gaps (parallel
+%   to changed_groups: a struct array {document_id, class, field, reason}
+%   per converted archive). The caller lists each gap of a group it keeps in
+%   the run's migration report (did2.convert.migrationReport('gap', ...)),
+%   so a reverted group lists none. A reader of the body that needs NDI's
+%   own scale (ndi.vintage) reads `source_value` when it is there.
+%
 %   NOT HERE YET. The `compression` block ([ingested compression settings]:
 %   NDI's compressor as the term, the stored integer format and bit size as
 %   parameters). did-schema now declares `data_body.compression` as a
@@ -163,6 +191,9 @@ report = struct( ...
     'uneven_time_rebased',        0, ...
     'unconvertible',              0, ...
     'first_unconvertible_reason', '', ...
+    'scale_with_unit',            0, ...
+    'scale_without_unit',         0, ...
+    'scale_gaps',                 {{}}, ...
     'changed_groups',             {{}}, ...
     'written_files',              {{}}, ...
     'changed_ids',                {{}}, ...
@@ -191,6 +222,7 @@ end
 if isempty(groupKeys); return; end
 
 archives = [];   % decoded lazily: only when some archive has its bytes here
+readers = [];    % the v1 daqreader documents, decoded with the archives
 
 for a = 1:numel(groupKeys)
     idx = groupMembers{a};
@@ -220,6 +252,7 @@ for a = 1:numel(groupKeys)
 
     if isempty(archives)
         archives = v1ArchivesByUid(v1Bodies);
+        readers = v1ReadersById(v1Bodies);
     end
     arch = archiveOf(structs(idx), archives);
     if isempty(arch)
@@ -228,7 +261,8 @@ for a = 1:numel(groupKeys)
     end
 
     try
-        [made, gone, why, added, uneven, written] = convertArchive(structs, idx, kinds, clIdx, ci, arch, storeDir);
+        [made, gone, why, added, uneven, written] = convertArchive(structs, idx, kinds, clIdx, ci, arch, ...
+            readerOf(arch, readers), storeDir);
     catch err
         made = {}; gone = {}; added = {}; uneven = false; written = {};
         why = sprintf('%s: %s', err.identifier, err.message);
@@ -248,10 +282,21 @@ for a = 1:numel(groupKeys)
     end
 
     ids = {};
+    gaps = struct('document_id', {}, 'class', {}, 'field', {}, 'reason', {});
     for m = 1:numel(made)
         structs{made{m}.k} = made{m}.body;
         ids{end+1} = baseId(made{m}.body); %#ok<AGROW>
+        if ~isfield(made{m}, 'scaleGap'); continue; end   % the time value's body
+        if isempty(made{m}.scaleGap)
+            report.scale_with_unit = report.scale_with_unit + 1;
+        else
+            report.scale_without_unit = report.scale_without_unit + 1;
+            gaps(end+1) = struct('document_id', baseId(made{m}.body), ...
+                'class', 'sampled_body', 'field', made{m}.scaleField, ...
+                'reason', made{m}.scaleGap); %#ok<AGROW>
+        end
     end
+    report.scale_gaps{end+1} = gaps;
     for m = 1:numel(added)
         structs{end+1} = added{m}; %#ok<AGROW>
         ids{end+1} = baseId(added{m}); %#ok<AGROW>
@@ -285,13 +330,16 @@ end
 
 % =====================================================================
 
-function [made, gone, why, added, uneven, written] = convertArchive(structs, idx, kinds, clIdx, ci, arch, storeDir)
+function [made, gone, why, added, uneven, written] = convertArchive(structs, idx, kinds, clIdx, ci, arch, reader, storeDir)
 %CONVERTARCHIVE The sampled bodies of one archive, or why it is left. ADDED
 %   are the documents made for it (the `time` value of an unevenly spaced
 %   time channel); UNEVEN is true when its time channel is not evenly spaced.
 %   WRITTEN are the store paths of the files written for it (the rebased
 %   time segments when the epoch does not start at 0); written last, only
-%   once every check has passed.
+%   once every check has passed. READER is the archive's v1 daqreader
+%   (readerOf); each channel group's entry of MADE says, in `scaleGap`, why
+%   its scale has no unit ('' when it has one) and, in `scaleField`, the
+%   field that gap names.
 made = {};
 gone = {};
 why = '';
@@ -417,8 +465,10 @@ for j = 1:numel(idx)
 
     timeId = '';
     if ~isempty(keyed); timeId = keyed.id; end
-    body = sampledFromOpaque(b, rows, ci, type, types, abbrev, sr, n, seg, timeId);
-    made{end+1} = struct('k', k, 'body', body); %#ok<AGROW>
+    [body, scaleGap, scaleField] = sampledFromOpaque(b, rows, ci, type, types, abbrev, sr, n, seg, ...
+        timeId, reader);
+    made{end+1} = struct('k', k, 'body', body, 'scaleGap', scaleGap, ...
+        'scaleField', scaleField); %#ok<AGROW>
     % a row is carried when everything in it is on the body or derived
     for r = rows(:)'
         ab = abbrev{strcmp(types, type)};
@@ -523,7 +573,7 @@ end
 files.file_info = [out{:}];
 end
 
-function body = sampledFromOpaque(b, rows, ci, type, types, abbrev, sr, n, seg, timeId)
+function [body, scaleGap, scaleField] = sampledFromOpaque(b, rows, ci, type, types, abbrev, sr, n, seg, timeId, reader)
 % the channel number variable is a label no registry row carries yet, as the
 % other second-pass builders' labels (ndi.migrate.internal.termRegistryOff)
 restore = ndi.migrate.internal.termRegistryOff(); %#ok<NASGU>
@@ -544,11 +594,24 @@ else
     timeCov = did2.build.covariate(timeTerm, 0, 'Key', 0);
     keyArgs = {'KeyIds', {timeId}};
 end
+% [scale carries the reader's unit]: the offset is in raw counts, no unit;
+% the scale is in volts per count where the reader defines its output unit
+scale = double([ci(rows).scale]);
+[perVolt, sourceUnit, scaleGap] = readerUnit(reader, type);
+if isempty(scaleGap)
+    scaleCov = did2.build.covariate(SCALE(), 1, 'Value', scale * perVolt, ...
+        'SourceValue', scale, 'Unit', VOLT(), 'SourceUnit', sourceUnit);
+else
+    scaleCov = did2.build.covariate(SCALE(), 1, 'Value', scale);
+end
 covs = did2.build.list( ...
     timeCov, ...
     did2.build.covariate(CHANNEL_NUMBER(), 1, 'Count', double([ci(rows).number])), ...
     did2.build.covariate(OFFSET(), 1, 'Value', double([ci(rows).offset])), ...
-    did2.build.covariate(SCALE(), 1, 'Value', double([ci(rows).scale])));
+    scaleCov);
+% the field a gap names: the scale is the 4th covariate (1-based, as a gap's
+% path counts a struct-array field)
+scaleField = 'data.covariates(4).unit';
 conds = did2.build.condition(channelTerm, 'Term', struct('node', node, 'name', label));
 
 db = b.data_body;
@@ -595,6 +658,82 @@ function t = SCALE()
 % (Intan analog: 0.195, microvolts per count). NCIT "Unit Conversion
 % Factor": "An operator used to convert units from one scale to another."
 t = struct('node', 'NCIT:C70774', 'name', 'Unit Conversion Factor');
+end
+
+function t = VOLT()
+% the canonical unit of a voltage output (did-schema term registry om:volt)
+t = struct('node', 'om:volt', 'name', 'volt');
+end
+
+% ---- the reader's output unit ([scale carries the reader's unit]) ----
+
+function [perVolt, sourceUnit, why] = readerUnit(reader, type)
+%READERUNIT What one unit of the reader's output for channel type TYPE is in
+%   volts (PERVOLT), and that output unit as a term (SOURCEUNIT), where NDI's
+%   reader for the system defines it; otherwise WHY says why not (PERVOLT
+%   NaN, SOURCEUNIT empty). Only a unit with positive evidence in the
+%   reader's code is listed here:
+%
+%   Intan RHD (ndi.daq.reader.mfdaq.intan; ndi.daq.reader.mfdaq.ndr with an
+%   NDR reader string of ndr.reader.intan_rhd: intan, RHD, intanRHD)
+%     analog_in     microvolt. Both readers' underlying_datatype give
+%                   [32768 0.195] (NDI +daq/+reader/+mfdaq/intan.m; NDR
+%                   +ndr/+reader/intan_rhd.m), the Intan amplifier's
+%                   resolution, and NDR's Intan file reader scales the
+%                   amplifier block by 0.195 with shift 32768
+%                   (+ndr/+format/+intan/Intan_RHD2000_blockinfo.m); Intan's
+%                   own reader says "amplifier_data = 0.195 *
+%                   (amplifier_data - 32768); % units = microvolts"
+%                   (+ndr/+format/+intan/+manufacturer/read_Intan_RHD2000_file.m).
+%     auxiliary_in  volt. underlying_datatype [0 3.74e-05]; "aux_input_data =
+%                   37.4e-6 * aux_input_data; % units = volts" (the same
+%                   file); blockinfo 'aux' scale 37.4e-6.
+%   Blackrock (ndi.daq.reader.mfdaq.blackrock)
+%     analog_in     microvolt. Its readchannels_epochsamples reads with
+%                   openNSx(..., 'uV', ...) and it keeps the base class's
+%                   [0 1] polynomial, so one count is one microvolt.
+%
+%   Every other reader and channel type (digital channels, CED Spike2 whose
+%   unit is per channel in the file, the other NDR readers, NDI's base
+%   reader) has no unit defined by the reader: a gap.
+perVolt = NaN;
+sourceUnit = struct('node', '', 'name', '');
+why = '';
+if isempty(reader)
+    why = ['the v1 archive''s daqreader document (its daqreader_id) is not among ' ...
+        'this session''s v1 documents, so the reader that defines the unit of the ' ...
+        'v1 channel_list.bin scale is not known'];
+    return;
+end
+cls = reader.class;
+family = '';
+if any(strcmp(cls, {'ndi.daq.reader.mfdaq.intan', 'ndi_daqreader_mfdaq_intan'}))
+    family = 'intan';
+elseif any(strcmp(cls, {'ndi.daq.reader.mfdaq.blackrock', 'ndi_daqreader_mfdaq_blackrock'}))
+    family = 'blackrock';
+elseif strcmp(cls, 'ndi.daq.reader.mfdaq.ndr') ...
+        && any(strcmpi(reader.ndr_reader_string, {'intan', 'RHD', 'intanRHD'}))
+    family = 'intan';
+end
+microvolt = struct('node', 'om:microvolt', 'name', 'microvolt');
+volt = struct('node', 'om:volt', 'name', 'volt');
+switch [family '|' type]
+    case 'intan|analog_in'
+        perVolt = 1e-6; sourceUnit = microvolt;
+    case 'intan|auxiliary_in'
+        perVolt = 1; sourceUnit = volt;
+    case 'blackrock|analog_in'
+        perVolt = 1e-6; sourceUnit = microvolt;
+    otherwise
+        name = cls;
+        if strcmp(cls, 'ndi.daq.reader.mfdaq.ndr')
+            name = sprintf('%s (NDR reader "%s")', cls, reader.ndr_reader_string);
+        end
+        if isempty(name); name = '(no class named)'; end
+        why = sprintf(['NDI''s reader %s does not define the unit of its %s output, so ' ...
+            'the per-channel scale (v1 channel_list.bin `scale`) is written with no ' ...
+            'unit ([scale carries the reader''s unit])'], name, type);
+end
 end
 
 function [node, label] = channelTypeTerm(ab)
@@ -727,6 +866,46 @@ for k = 1:numel(v1Bodies)
             end
         end
     end
+end
+end
+
+function m = v1ReadersById(v1Bodies)
+% v1 daqreader document id -> struct {class, ndr_reader_string}: what
+% [scale carries the reader's unit] reads to find the reader's output unit
+m = containers.Map('KeyType', 'char', 'ValueType', 'any');
+for k = 1:numel(v1Bodies)
+    b = v1Bodies{k};
+    if ischar(b) || (isstring(b) && isscalar(b))
+        if ~contains(b, 'ndi_daqreader_class'); continue; end
+        try
+            b = jsondecode(char(b));
+        catch
+            continue;
+        end
+    end
+    if ~isstruct(b) || ~isscalar(b) || ~isfield(b, 'daqreader') ...
+            || ~isstruct(b.daqreader) || ~isfield(b.daqreader, 'ndi_daqreader_class')
+        continue;
+    end
+    id = baseId(b);
+    if isempty(id); continue; end
+    r = struct('class', strtrim(char(b.daqreader.ndi_daqreader_class)), ...
+        'ndr_reader_string', '');
+    if isfield(b, 'daqreader_ndr') && isstruct(b.daqreader_ndr) ...
+            && isfield(b.daqreader_ndr, 'ndr_reader_string')
+        r.ndr_reader_string = strtrim(char(b.daqreader_ndr.ndr_reader_string));
+    end
+    m(id) = r;
+end
+end
+
+function r = readerOf(arch, readers)
+% the v1 daqreader of the archive (its `daqreader_id`), or [] when it is not
+% among the v1 documents
+r = [];
+ids = edgeValues(arch, 'daqreader_id');
+if isscalar(ids) && isKey(readers, ids{1})
+    r = readers(ids{1});
 end
 end
 
