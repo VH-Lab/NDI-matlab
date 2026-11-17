@@ -345,6 +345,7 @@ for i = 1:numel(mixture)
     c.depends_on = S.noEdges();
     c.base = S.baseBlock('', datestamp);
     c.chemical = struct('value', struct('substance', chem));
+    c = S.classBlocks(c);
     c = ndi.migrate.internal.withSessionId(c, sessionId);
     extra{end+1} = c; %#ok<AGROW>
     ids{end+1} = c.base.id; %#ok<AGROW>
@@ -390,6 +391,7 @@ f.base = S.baseBlock('', datestamp);
 % the bath's `value_id` names nothing (e2e run 39668356516).
 fv.ingredients = rowsToStructArray(entries);
 f.formulation = struct('value', fv);
+f = S.classBlocks(f);
 f = ndi.migrate.internal.withSessionId(f, sessionId);
 extra{end+1} = f;
 % the gaps go in the run's migration report under the formulation's id

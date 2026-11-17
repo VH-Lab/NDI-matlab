@@ -22,13 +22,13 @@ classdef etaShape
 %
 %   This class is pure struct assembly: no schema cache, no converter, no
 %   database. Every minted body is tagged schema_version 'did_v2' and is
-%   folded back through did2.convert.v1_to_v2 by its caller, where
-%   ensureClassBlocks rewrites the superclass list from the loaded schema
-%   (reading the value kind at the position this class writes it) and
-%   validation runs. The superclass lists below are therefore the #88 chains
-%   written out in the order the validator reads them -- the direction's own
-%   ancestors, nearest first, then the kind and its ancestors -- so that the
-%   kind sits at index numel(own)+1 (did2.schema.cache/documentValueKind).
+%   folded back through did2.convert.v1_to_v2 by its caller, where it is
+%   validated as written: nothing pads its blocks or rewrites its superclass
+%   list ([early migration pieces fixed] (2)), so each writer writes every
+%   block its header names (classBlocks). The superclass lists below are the
+%   #88 chains written out in the order the validator reads them -- the
+%   direction's own ancestors, nearest first, then the kind and its
+%   ancestors -- so that the kind sits at index numel(own)+1 (did2.schema.cache/documentValueKind).
 %
 %   The READERS accept both the #88 spelling and the pre-#88 one, so an
 %   assembler reads pass-1 output from either DID-matlab line; the WRITERS
@@ -132,6 +132,7 @@ classdef etaShape
                 end
             end
             body.entity = ent;
+            body = ndi.migrate.internal.etaShape.classBlocks(body);
             body = ndi.migrate.internal.withSessionId(body, opts.SessionId);
         end
 
@@ -193,6 +194,7 @@ classdef etaShape
             if ~isempty(kind) && ~isempty(value)
                 body.(kind) = struct('value', value);
             end
+            body = ndi.migrate.internal.etaShape.classBlocks(body);
             body = ndi.migrate.internal.withSessionId(body, opts.SessionId);
         end
 
@@ -237,6 +239,7 @@ classdef etaShape
             if ~isempty(opts.Method)
                 body.relation = struct('method', struct('term', S.asTerm(opts.Method)));
             end
+            body = ndi.migrate.internal.etaShape.classBlocks(body);
             body = ndi.migrate.internal.withSessionId(body, opts.SessionId);
         end
 
@@ -253,6 +256,7 @@ classdef etaShape
             body = S.addEdge(body, 'referent_id', referentId);
             body.base = S.baseBlock(opts.Id, opts.Datestamp);
             body.relative_time_reference = struct('value', value);
+            body = ndi.migrate.internal.etaShape.classBlocks(body);
             body = ndi.migrate.internal.withSessionId(body, opts.SessionId);
         end
 
@@ -330,6 +334,31 @@ classdef etaShape
                 if isfield(v, 'name'); t.name = char(v.name); end
             else
                 t = struct('node', '', 'name', char(v));
+            end
+        end
+
+        function body = classBlocks(body)
+            %CLASSBLOCKS Write a property block for every class BODY's header
+            %   names: its class and each class in its superclass list (the
+            %   direction's chain, then the value kind's), an empty struct
+            %   where the writer put no field in it. Every V_eta class in a
+            %   chain this class writes hosts a block, so a body is complete as
+            %   built ([early migration pieces fixed] (2), Jess Haley,
+            %   2026-10-26, did-schema did_v2_go_forward_class_audit.md:
+            %   "`ensureClassBlocks` padding goes: the builder produces a
+            %   complete document"). It reads only the header the writer
+            %   wrote, never a schema, and never removes a block.
+            dc = body.document_class;
+            names = {char(dc.class_name)};
+            if isfield(dc, 'superclasses')
+                for k = 1:numel(dc.superclasses)
+                    names{end+1} = char(dc.superclasses(k).class_name); %#ok<AGROW>
+                end
+            end
+            for k = 1:numel(names)
+                if ~isfield(body, names{k})
+                    body.(names{k}) = struct();
+                end
             end
         end
 
