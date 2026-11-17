@@ -114,6 +114,13 @@ classdef TestMigrateLocalEta20211116 < matlab.unittest.TestCase
             testCase.assertTrue(isstruct(r) && isfield(r, 'several_animal_presentations'), ...
                 'the stimulusSequence report carries no several-animal counter');
             ndi.unittest.migrate.printStimulusFoldReport(r, '20211116');
+            % SCRATCH (claude/stimlink-measure, not for merge)
+            try
+                ndi.unittest.migrate.presentationStimulatorLinkCheck( ...
+                    fileparts(testCase.Result.destination), '20211116');
+            catch ME
+                fprintf('\n  PRESENTATION STIMULATOR LINK CHECK FAILED: %s\n', ME.message);
+            end
         end
 
         function testControlRecordsFoldIntoACovariateOrAreCounted(testCase)
