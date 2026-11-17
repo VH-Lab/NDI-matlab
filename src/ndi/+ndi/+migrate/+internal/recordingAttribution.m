@@ -238,7 +238,7 @@ for k = 1:numel(candidates)
         end
     end
     % Tag so did2.convert.v1_to_v2 SHORT-CIRCUITS (isAlreadyTarget) to
-    % ensureClassBlocks + validate instead of trying to migrate an already
+    % validate instead of trying to migrate an already
     % migrated body -- the footing ontologyLabelSubjects and pathSPromotion use.
     % the v2 stamp (Jess Haley, 2026-10-25 [document stamps]: 'did_v2')
     out.document_class.schema_version = did2.schema.v2Stamp();

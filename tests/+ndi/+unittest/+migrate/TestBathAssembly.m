@@ -15,6 +15,30 @@ classdef TestBathAssembly < matlab.unittest.TestCase
 
     methods (Test)
 
+        function testEveryDocumentIsCompleteAsBuilt(testCase)
+            % [early migration pieces fixed] (2) (Jess Haley, 2026-10-26):
+            % "`ensureClassBlocks` padding goes: the builder produces a
+            % complete document". Nothing after the bath assembler adds a
+            % block, so every document it writes carries a block for its class
+            % and for each class its superclass list names.
+            v1 = stimulusBathDoc('stim_1', 't00001');
+            r  = mockResolver('animal_1', 'dev_local_time');
+            [dose, timeRef, extra] = ...
+                ndi.migrate.internal.stimulusBathToBath(v1, r, 'did_v2');
+            docs = [{dose, timeRef}, extra];
+            testCase.verifyGreaterThan(numel(extra), 0, 'the denominator');
+            for k = 1:numel(docs)
+                d = docs{k};
+                if isempty(d); continue; end
+                dc = d.document_class;
+                names = [{dc.class_name}, {dc.superclasses.class_name}];
+                for j = 1:numel(names)
+                    testCase.verifyTrue(isfield(d, names{j}) && isstruct(d.(names{j})), ...
+                        sprintf('%s lacks the "%s" block', dc.class_name, names{j}));
+                end
+            end
+        end
+
         function testOsmAndSaturationRowsAreNotRead(testCase)
             % [Dab bath units are Dabrowska's] (Decided by Jess Haley,
             % 2026-11-03): a row stated in "osm" or "saturation" is not read by
@@ -68,8 +92,10 @@ classdef TestBathAssembly < matlab.unittest.TestCase
             c = extra{strcmp(classes, 'chemical')};
             testCase.verifyEqual(depValue(dose, 'value_id'), f.base.id);
             testCase.verifyEmpty(depValue(dose, 'formulation_id'));
-            % its own value stays empty: the formulation document holds it
-            testCase.verifyFalse(isfield(dose, 'formulation'));
+            % its own value stays empty: the formulation document holds it.
+            % The kind's block is there, empty, because the document is
+            % complete as built ([early migration pieces fixed] (2))
+            testCase.verifyEqual(dose.formulation, struct());
             testCase.verifyFalse(isfield(dose, 'dose'));
             testCase.verifyEqual(depValue(f, 'ingredient_id'), c.base.id);
             testCase.verifyEqual(c.chemical.value.substance.name, 'muscimol');

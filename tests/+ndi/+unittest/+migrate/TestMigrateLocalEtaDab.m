@@ -927,6 +927,16 @@ for i = 1:min(5,n)
     s = sprintf('%s\n    %s: %s', s, result.quarantine(i).class_name, ...
         result.quarantine(i).reason);
 end
+% every quarantine, by class and reason, largest first (denominator: n)
+keys = arrayfun(@(q) sprintf('%s: %s', q.class_name, q.reason), ...
+    result.quarantine, 'UniformOutput', false);
+[u, ~, ix] = unique(keys);
+c = accumarray(ix(:), 1);
+[c, order] = sort(c, 'descend');
+s = sprintf('%s\n  by class and reason (%d quarantined, %d distinct):', s, n, numel(u));
+for i = 1:min(40, numel(u))
+    s = sprintf('%s\n    %6d  %s', s, c(i), u{order(i)});
+end
 end
 
 function s = resultDiag(result)
