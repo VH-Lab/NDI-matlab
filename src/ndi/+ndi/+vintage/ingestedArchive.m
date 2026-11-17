@@ -57,10 +57,30 @@ function A = ingestedArchive(S, readerId, epochId, options)
 %     channels      the v1 channel list (ndi.file.type.mfdaq_epoch_channel
 %                   channel_information): read from the `channel_list.bin`
 %                   body when there is one; otherwise rebuilt from the
-%                   sampled bodies' covariates (each row named by its v1
-%                   prefix and number, time_channel NaN: the second pass
-%                   removes channel_list.bin only when every row is of that
-%                   kind)
+%                   sampled bodies' covariates and the event channels
+%                   (ndi.vintage.ingestedChannelList: each row named by its
+%                   v1 prefix and number, its time channel the body's "time
+%                   channel" covariate, NaN without one; the second pass
+%                   removes channel_list.bin only when that rebuilds it
+%                   exactly)
+%
+%   THE OWNERS. A body is found through any statement of the epoch on the
+%   reader's system, whatever its class: the recording observation, or, by
+%   Jess Haley's decision of 2026-11-17 [non-specimen channel groups get
+%   their own owner], the `logical` observation owning a digital group, the
+%   voltage observation owning an auxiliary group, or the manipulation or
+%   observation owning an analog output group (DID-matlab pass 1 writes
+%   them), as long as it is timed by a relative_time_reference onto the
+%   epoch and names the system by `acquisition_system_id`.
+%     events        the epoch's unpacked event, marker and text channels
+%                   (ndi.vintage.ingestedEventChannels): each its own
+%                   observation on the reader's system, timed by the epoch,
+%                   its channel type and number a condition (Decided by Jess
+%                   Haley, 2026-11-17 [event channels are time-valued
+%                   observations], [channel list rows get v2 homes]); read
+%                   by ndi.daq.reader.mfdaq when the epoch has no `evmktx`
+%                   body ([unpacked events file is removed]). Empty with
+%                   'Channels' false
 %     epochclock    cellstr, the ndi.time.clocktype strings of the clocks on
 %                   which the epoch's extent is stated
 %     t0_t1         cell, [t0 t1] on each of those clocks

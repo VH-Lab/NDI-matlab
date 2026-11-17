@@ -10,10 +10,17 @@ function A = archiveOf(S, epochId, anchors, statements, bodies, readChannels)
 %   at a time; ndi.vintage.ingestedArchives reads every epoch's at once and
 %   joins them in memory. Both put the archive together here, so they agree.
 %   Raises NDI:daq:reader:ingestedNoBodies when no body is an archive series.
+%
+%   With READCHANNELS, A.events lists the epoch's unpacked event, marker and
+%   text channels (ndi.vintage.ingestedEventChannels; [event channels are
+%   time-valued observations], Jess Haley, 2026-11-17), and A.channels is the
+%   `channel_list.bin` body's list when there is one, else the list rebuilt
+%   from the channel groups' covariates and those channels
+%   (ndi.vintage.ingestedChannelList).
 
 A = struct('vintage', 'v2', 'epoch_id', epochId, ...
     'bodies', containers.Map('KeyType', 'char', 'ValueType', 'any'), ...
-    'channels', [], 'epochclock', {{}}, 't0_t1', {{}}, 'clock_problem', '');
+    'channels', [], 'events', [], 'epochclock', {{}}, 't0_t1', {{}}, 'clock_problem', '');
 anchorIds = cellfun(@(d) d.id(), anchors, 'UniformOutput', false);
 for k = 1:numel(bodies)
     p = bodies{k}.document_properties;
@@ -30,7 +37,10 @@ if A.bodies.Count == 0
         'The v2 recordings of epoch %s own no ingested data body.', epochId);
 end
 
-% ---- the channel list --------------------------------------------------
+% ---- the event channels and the channel list ---------------------------
+if readChannels
+    A.events = ndi.vintage.ingestedEventChannels(statements, bodies);
+end
 if ~readChannels
     % the clock and extent only (see 'Channels' above)
 elseif isKey(A.bodies, 'channel_list.bin')
@@ -39,8 +49,17 @@ elseif isKey(A.bodies, 'channel_list.bin')
     c = onCleanup(@() deleteIfThere(tname));
     A.channels = ndi.file.type.mfdaq_epoch_channel(tname).channel_information;
 else
-    A.channels = channelsFromCovariates(A.bodies);
+    groups = {};
+    names = A.bodies.keys;
+    for k = 1:numel(names)
+        b = A.bodies(names{k});
+        if strcmp(b.kind, 'sampled_body')
+            groups{end+1} = b.doc.document_properties; %#ok<AGROW>
+        end
+    end
+    A.channels = ndi.vintage.ingestedChannelList(groups, A.events);
 end
+
 
 % ---- the epoch's clock(s) and extent -----------------------------------
 used = {};
@@ -118,76 +137,6 @@ if ~isstruct(s) || ~isfield(s, field) || ~isstruct(s.(field)); return; end
 t = s.(field);
 if isfield(t, 'node') && strcmp(char(t.node), 'om:Time'); tf = true; return; end
 tf = isfield(t, 'name') && strcmpi(char(t.name), 'time');
-end
-
-function ci = channelsFromCovariates(bodies)
-% the v1 channel list rows a converted channel group carries
-% (ndi.migrate.internal.ingestedArchiveBodies: channel number, offset and
-% scale along the channel dimension, the sample rate as the time spacing,
-% the channel type as the body's condition)
-ci = struct('name', {}, 'type', {}, 'time_channel', {}, 'sample_rate', {}, ...
-    'offset', {}, 'scale', {}, 'number', {}, 'group', {}, 'dataclass', {});
-[types, abbrev] = ndi.daq.reader.mfdaq.channel_types();
-names = bodies.keys;
-for k = 1:numel(names)
-    b = bodies(names{k});
-    if ~strcmp(b.kind, 'sampled_body'); continue; end
-    tok = regexp(names{k}, '^([a-z]+)_group(\d+)_seg', 'tokens', 'once');
-    if isempty(tok) || any(strcmp(tok{1}, {'ti', 'evmktx'})); continue; end
-    p = b.doc.document_properties;
-    ab = channelPrefixOf(p, tok{1});
-    type = types{find(strcmp(abbrev, ab), 1)};
-    covs = asCell(p.data.covariates);
-    nums = []; off = []; sc = []; sr = NaN;
-    for c = 1:numel(covs)
-        cv = covs{c};
-        v = cv.variable;
-        nm = ''; node = '';
-        if isfield(v, 'name'); nm = char(v.name); end
-        if isfield(v, 'node'); node = char(v.node); end
-        if isTimeTerm(cv, 'variable') && isfield(cv, 'spacing') && isstruct(cv.spacing) ...
-                && isfield(cv.spacing, 'value')
-            sr = 1 / double(cv.spacing.value);
-        elseif strcmp(nm, 'channel number')
-            nums = double(cv.count(:)');
-        elseif strcmp(node, 'AFO:AFQ_0000202')
-            off = double(cv.quantity.value(:)');
-        elseif strcmp(node, 'NCIT:C70774')
-            % [scale carries the reader's unit] (Jess Haley, 2026-11-17):
-            % where the reader defines its output unit, `value` is in volts
-            % per count and `source_value` is the v1 scale in the reader's
-            % output unit, which is what NDI's reader multiplies by
-            if isfield(cv.quantity, 'source_value') && ~isempty(cv.quantity.source_value)
-                sc = double(cv.quantity.source_value(:)');
-            else
-                sc = double(cv.quantity.value(:)');
-            end
-        end
-    end
-    if any(strcmp(ab, {'di', 'do'})); dc = 'digital'; else; dc = 'ephys'; end
-    for r = 1:numel(nums)
-        ci(end+1) = struct('name', sprintf('%s%d', ab, nums(r)), 'type', type, ...
-            'time_channel', NaN, 'sample_rate', sr, 'offset', off(r), 'scale', sc(r), ...
-            'number', nums(r), 'group', str2double(tok{2}), 'dataclass', dc); %#ok<AGROW>
-    end
-end
-end
-
-function ab = channelPrefixOf(p, filePrefix)
-% the channel type the body's condition names (by node: [channel types]);
-% the file's prefix when it names none
-ab = filePrefix;
-if ~isfield(p, 'data_body') || ~isfield(p.data_body, 'conditions'); return; end
-cs = asCell(p.data_body.conditions);
-for c = 1:numel(cs)
-    if isfield(cs{c}, 'term') && ~isempty(cs{c}.term)
-        got = char(ndi.vintage.channelPrefix(cs{c}.term));
-        if any(strcmp(got, {'ai', 'ao', 'ax', 'di', 'do'}))
-            ab = got;
-            return;
-        end
-    end
-end
 end
 
 function writeMember(S, doc, member, target)
