@@ -457,6 +457,7 @@ for k = 1:numel(v1)
             r = body('directed_relation', uid(), s, ...
                 [struct('name', CHILD, 'value', part), struct('name', PARENT, 'value', animal)]);
             r.directed_relation = struct('relation', struct('node', 'BFO:0000050', 'name', 'part_of'));
+            if ~pre88; r = asMigrated(r); end
             M{end+1} = r; %#ok<AGROW>
         case 'element'
             if pre88
@@ -481,7 +482,7 @@ for k = 1:numel(v1)
                         [struct('name', CHILD, 'value', v1dep(b, 'subject_id')), ...
                          struct('name', PARENT, 'value', 'strainentity')]);
                     r.directed_relation = struct('relation', struct('node', '', 'name', 'instance_of'));
-                    M{end+1} = r; %#ok<AGROW>
+                    M{end+1} = asMigrated(r); %#ok<AGROW>
                 end
             end
     end
@@ -539,6 +540,16 @@ b.document_class = struct('class_name', cls, 'class_version', '1.0.0', ...
     'superclasses', struct('class_name', {}, 'class_version', {}), 'schema_version', 'did_v2');
 b.depends_on = deps;
 b.base = struct('id', id, 'session_id', s, 'name', '', 'creation_timestamp', 'x');
+end
+
+function r = asMigrated(r)
+%ASMIGRATED A #88 relation as the generic stage writes it: its superclass list
+%   and every block its header names. sliceTetanus copies an animal's
+%   instance_of relation onto a new animal, and nothing after it pads the copy
+%   ([early migration pieces fixed] (2), Jess Haley, 2026-10-26: "the builder
+%   produces a complete document"), so the simulated pass-1 output is complete.
+r.document_class = ndi.migrate.internal.etaShape.docClass(r.document_class.class_name);
+r = ndi.migrate.internal.etaShape.classBlocks(r);
 end
 
 function v = v1dep(b, name)

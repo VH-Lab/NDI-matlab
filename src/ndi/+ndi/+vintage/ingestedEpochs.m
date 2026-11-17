@@ -364,6 +364,15 @@ for w = 1:numel(wirings)
     if isempty(elId) || isempty(sysId) || any(strcmp(named, elId))
         continue;
     end
+    % the index's deps are recorded before any skip: a row left out because
+    % its probe (or its system) is missing must be dropped when that
+    % document comes back, and a document re-added drops only the entries
+    % that record it or a document it points at (did2 sqlitedb
+    % derivedInvalidate). Recorded only once the row was built, an entry
+    % read while the probe was removed kept answering without its row after
+    % the probe was re-added (Dab, once DID-matlab #466 stopped writing the
+    % Stimulator manipulation that named the probe in every epoch).
+    wiringDeps = [wiringDeps, {char(rel.id()), elId, sysId}]; %#ok<AGROW>
     ownKey = [char(sysId) char(0) char(0) char(patternId)];
     if isKey(cache.own, ownKey)
         own = cache.own(ownKey);
@@ -381,7 +390,7 @@ for w = 1:numel(wirings)
     [subjectString, cache] = subjectStringOf(S, el.subject_id, cache);
     [devicestring, cache] = ndi.vintage.wiredDeviceString(S, [], sysId, elId, cache, ...
         ndi.vintage.edgeTargets(rel, 'time_reference_id'));
-    wiringDeps = [wiringDeps, {char(rel.id()), elId, sysId, el.subject_id}]; %#ok<AGROW>
+    wiringDeps = [wiringDeps, {el.subject_id}]; %#ok<AGROW>
     key = strjoin({el.name, num2str(el.reference), el.type, devicestring, subjectString}, char(0));
     if any(strcmp(seen, key))
         continue;
