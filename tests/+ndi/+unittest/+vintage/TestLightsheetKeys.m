@@ -61,6 +61,22 @@ classdef TestLightsheetKeys < matlab.unittest.TestCase
             testCase.verifyEqual(f.voxel_size(5), 0.5, 'AbsTol', 1e-12, ...
                 'the covariate whose variable has the dimension''s node');
         end
+
+        function testTheNewNumericShapeReadsTheSame(testCase)
+            % did-schema did_v2_numeric_shape_plan.md ([one shape for
+            % measured numbers], Jess Haley, 2026-11-17): origin and
+            % spacing are plain numbers beside source_origin and
+            % source_spacing, not {value, source_value} blocks
+            [d, c] = ndi.unittest.vintage.TestLightsheetKeys.axesWith( ...
+                {struct('node', 'om:Time', 'name', 'time'), struct('node', '', 'name', 'channel'), ...
+                 struct('node', 'NCIT:C44479', 'name', 'Z-Coordinate'), ...
+                 struct('node', 'NCIT:C44478', 'name', 'Y-Coordinate'), ...
+                 struct('node', 'NCIT:C44477', 'name', 'X-Coordinate')});
+            c = cellfun(@flatRegular, c, 'UniformOutput', false);
+            testCase.verifyFalse(isstruct(c{3}.spacing), 'the fixture is in the new shape');
+            ndi.unittest.vintage.TestLightsheetKeys.verifyKeys(testCase, ...
+                ndi.vintage.lightsheetKeys(d, c));
+        end
     end
 
     methods (Static)
@@ -101,4 +117,20 @@ classdef TestLightsheetKeys < matlab.unittest.TestCase
             testCase.verifyEqual(f.channel_names, 'GCaMP6s,tdTomato');
         end
     end
+end
+
+function c = flatRegular(c)
+% an axis covariate in the new numeric shape: origin and spacing as plain
+% numbers, the source's own as source_origin / source_spacing
+for n = {'origin', 'spacing'}
+    name = n{1};
+    if isfield(c, name) && isstruct(c.(name))
+        b = c.(name);
+        c = rmfield(c, name);
+        c.(name) = b.value;
+        if isfield(b, 'source_value')
+            c.(['source_' name]) = b.source_value;
+        end
+    end
+end
 end

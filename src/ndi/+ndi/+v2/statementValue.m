@@ -64,6 +64,13 @@ end
 if islogical(raw) && isscalar(raw)
     k = 'logical'; v = raw; return;
 end
+if strcmp(c, 'logical') && isstruct(raw) && isfield(raw, 'logical') && ...
+        (islogical(raw.logical) || isnumeric(raw.logical)) && isscalar(raw.logical)
+    % the new numeric shape: logical's value is the block {logical}, as
+    % voltage's is {volts, ...} (did-schema did_v2_numeric_shape_plan.md
+    % section 3, [one shape for measured numbers], Jess Haley, 2026-11-17)
+    k = 'logical'; v = logical(raw.logical); return;
+end
 if isnumeric(raw) && isscalar(raw)
     k = 'number'; v = double(raw); u = ndi.value.canonicalField(c); return;
 end

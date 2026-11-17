@@ -62,6 +62,30 @@ classdef TestIngestedV2Shapes < matlab.unittest.TestCase
             testCase.verifyTrue(isequaln(got2, want), describe(got2, want));
         end
 
+        function testTheNewNumericShapeReadsTheSame(testCase)
+            % did-schema did_v2_numeric_shape_plan.md ([one shape for
+            % measured numbers], Jess Haley, 2026-11-17): the group bodies
+            % written by DID-matlab's builders in the new numeric shape (the
+            % time axis's spacing a plain number, the offset, scale and time
+            % channel flat `numeric`) rebuild the same channel list
+            testCase.assumeTrue(~isempty(which('did2.build.numericShape')), ...
+                'no DID-matlab builders that write the new numeric shape');
+            ai = v1Rows('ai', 'analog_in', 1:2, [1 1], 20000, 32768, 0.195);
+            ax = v1Rows('ax', 'auxiliary_in', 1:3, [2 2 NaN], 5000, 0, 3.74e-05);
+            want = ndi.file.type.mfdaq_epoch_channel([ai, ax]).channel_information;
+            prev = did2.build.numericShape('new');
+            testCase.addTeardown(@() did2.build.numericShape(prev));
+            bodies = {groupBody('ai', 1, ai, true), groupBody('ax', 1, ax, true)};
+            txt = jsonencode(bodies{1});
+            testCase.verifyTrue(contains(txt, '"numeric"') && ~contains(txt, '"quantity"'), ...
+                'the fixture is in the new numeric shape');
+            got = ndi.vintage.ingestedChannelList(bodies);
+            testCase.verifyTrue(isequaln(got, want), describe(got, want));
+            back = cellfun(@(b) jsondecode(jsonencode(b)), bodies, 'UniformOutput', false);
+            got2 = ndi.vintage.ingestedChannelList(back);
+            testCase.verifyTrue(isequaln(got2, want), describe(got2, want));
+        end
+
         function testEventAndMarkerRowsComeFromTheirObservations(testCase)
             ai = v1Rows('ai', 'analog_in', 1:2, [1 1], 20000, 0, 1);
             ev = struct('name', {'e1', 'mk2', 'mk1'}, 'type', {'event', 'marker', 'marker'}, ...

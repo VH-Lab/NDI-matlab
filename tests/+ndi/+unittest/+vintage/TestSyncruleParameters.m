@@ -115,6 +115,35 @@ classdef TestSyncruleParameters < matlab.unittest.TestCase
             testCase.verifyEqual(params.errorOnFailure, false);
         end
 
+        function testNumericParametersReadInBothNumericShapes(testCase)
+            % did-schema did_v2_numeric_shape_plan.md ([one shape for
+            % measured numbers], [numeric shape details] (1), Jess Haley,
+            % 2026-11-17): a method parameter's number is
+            % quantity {value, source_value} (old) or flat `numeric` beside
+            % `source_numeric`, the source's own number (new). Both rebuild
+            % the same v1 parameters.
+            session = mockSession({systemDoc('sys_a', 'intan1'), systemDoc('sys_b', 'vhvis1')});
+            got = cell(1, 2);
+            shapes = {'quantity', 'numeric'};
+            for k = 1:2
+                entries = {param('daqsystem ch1', 'text', 'dep1'), ...
+                    param('daqsystem ch2', 'text', 'mk1'), ...
+                    param('minimum embedded file overlap', shapes{k}, 2), ...
+                    param('errorOnFailure', shapes{k}, 0)};
+                doc = linkedConfigDoc(entries, 'sys_a', 'sys_b', 'dev_local_time');
+                got{k} = ndi.vintage.syncruleParameters(doc, session, ...
+                    'ndi.time.syncrule.commonTriggersOverlappingEpochs');
+                testCase.verifyEqual(got{k}.minEmbeddedFileOverlap, 2, shapes{k});
+                testCase.verifyEqual(got{k}.errorOnFailure, false, shapes{k});
+            end
+            testCase.verifyEqual(got{2}, got{1}, 'both shapes rebuild the same parameters');
+            % a count read by requireNumber, in the new shape
+            doc = linkedConfigDoc({param('minimum matching file paths', 'numeric', 3), ...
+                param('sync file name', 'text', 'sync.txt')}, 'sys_a', 'sys_b');
+            params = ndi.vintage.syncruleParameters(doc, session, 'ndi.time.syncrule.filefind');
+            testCase.verifyEqual(params.number_fullpath_matches, 3);
+        end
+
         function testTheClockIsReadByNodeInEitherShape(testCase)
             % Decided by Jess Haley, 2026-10-26 [clock terms get nodes]: the
             % clock is written with its node, and its stored name becomes
@@ -329,6 +358,10 @@ e = struct('variable', struct('name', label));
 switch kind
     case 'quantity'
         e.quantity = struct('value', value, 'source_value', num2str(value));
+    case 'numeric'
+        % the new numeric shape: flat, the source's number a number
+        e.numeric = value;
+        e.source_numeric = value;
     otherwise
         e.(kind) = value;
 end
