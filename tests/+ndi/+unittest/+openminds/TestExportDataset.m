@@ -26,8 +26,8 @@ classdef TestExportDataset < matlab.unittest.TestCase
 %   the dataset; DatasetVersion's fields from the dataset's assertions),
 %   [author roles read from author edges] (here and on the Haley import's
 %   own dataset metadata, ndi.setup.V2.datasetMetadata over
-%   import_V2_spec.json), [dataset DOI on the version] and [first
-%   documentation exported].
+%   import_V2_spec.json), [dataset DOI on the version], [first
+%   documentation exported] and [documentation identifier prefers a DOI].
 %
 %   Needs DID-matlab's did2.build, a v2 schema with the openMINDS crosswalk
 %   on DID_SCHEMA_PATH, and openMINDS_MATLAB (`latest`) on the path;
@@ -245,6 +245,39 @@ classdef TestExportDataset < matlab.unittest.TestCase
             testCase.verifyTrue(contains(onDoc.item, pubIds{first}), onDoc.item);
         end
 
+        function testDocumentationIdentifierPrefersDoi(testCase)
+            % [documentation identifier prefers a DOI]: a document with
+            % several identifiers exports its DOI, otherwise its first URL;
+            % every other identifier it carries is reported not exported
+            [base, id] = buildDataset(false, false);
+            url1 = 'https://example.org/paper/one';
+            url2 = 'https://example.org/paper/two';
+            % a DOI after two URLs and a PubMed id: the DOI
+            [dv, onDoc] = exportWithIdentifiers(testCase, base, id, struct( ...
+                'scheme', {'url', 'pubmed', 'url', 'doi'}, ...
+                'value', {url1, '12345678', url2, '10.5555/paper.3'}));
+            testCase.verifyClass(dv.documentation, 'openminds.core.digitalidentifier.DOI');
+            testCase.verifyEqual(dv.documentation.identifier, "https://doi.org/10.5555/paper.3");
+            testCase.verifyNumElements(onDoc, 3);
+            testCase.verifyTrue(any(contains({onDoc.item}, url1)));
+            testCase.verifyTrue(any(contains({onDoc.item}, url2)));
+            testCase.verifyTrue(any(contains({onDoc.item}, '12345678')));
+            testCase.verifyTrue(all(contains({onDoc.why}, 'prefers a DOI')));
+            % no DOI: the first URL
+            [dv, onDoc] = exportWithIdentifiers(testCase, base, id, struct( ...
+                'scheme', {'pubmed', 'url', 'url'}, 'value', {'12345678', url1, url2}));
+            testCase.verifyClass(dv.documentation, 'openminds.core.miscellaneous.WebResource');
+            testCase.verifyEqual(string(dv.documentation.IRI), string(url1));
+            testCase.verifyNumElements(onDoc, 2);
+            testCase.verifyTrue(any(contains({onDoc.item}, url2)));
+            testCase.verifyTrue(any(contains({onDoc.item}, '12345678')));
+            % one identifier: that one, nothing reported
+            [dv, onDoc] = exportWithIdentifiers(testCase, base, id, ...
+                struct('scheme', 'url', 'value', url2));
+            testCase.verifyEqual(string(dv.documentation.IRI), string(url2));
+            testCase.verifyEmpty(onDoc);
+        end
+
         function testCopyrightYearFromDateAssertion(testCase)
             [~, dv, report] = ndi.openminds.exportDataset(testCase.Docs);
             cr = dv.copyright;
@@ -331,6 +364,21 @@ classdef TestExportDataset < matlab.unittest.TestCase
                 'ndi:openminds:exportDataset:noDataset');
         end
     end
+end
+
+function [dv, onDoc] = exportWithIdentifiers(testCase, base, id, identifiers)
+% export BASE with one `documented_by` publication carrying IDENTIFIERS; the
+% DatasetVersion and the report's notExported rows on `documentation`
+p = ndi.setup.V2.entityDocuments('publication', struct('name', 'A paper', ...
+    'global_identifier', identifiers), struct(), 'SessionId', id.session);
+e = did2.build.directedRelation(id.dataset, p{1}.base.id, ...
+    ndi.v2.vocabTerm('relation', 'documented_by'), 'SessionId', id.session);
+[~, dv, report] = ndi.openminds.exportDataset([base, p, {e}]);
+n = report.notExported;
+onDoc = n(strcmp({n.property}, 'documentation'));
+m = report.missing;
+testCase.verifyFalse(any(strcmp({m.type}, 'DatasetVersion') & ...
+    strcmp({m.property}, 'documentation')), 'documentation is exported');
 end
 
 function [docs, id] = buildDataset(withDocumentation, withExtras)

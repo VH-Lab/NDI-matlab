@@ -51,6 +51,12 @@ function [dataset, datasetVersion, report] = exportDataset(documents, options)
 %       (did.ido.unique_id) begins with its creation time, so with no
 %       `order` (subjectOf is an unordered relation) the earliest-made
 %       document is the one exported.
+%     [documentation identifier prefers a DOI] (2026-11-17): when the
+%       documentation document carries several identifiers, its first DOI
+%       is exported, otherwise its first URL, and each other identifier it
+%       carries is a notExported row. Several that openMINDS can take with
+%       neither a DOI nor a URL (two ISBNs) are not covered by the decision:
+%       that document is a notExported row, as before.
 %
 %   THE MAPPING IS THE CROSSWALK. Every property is read through did-schema's
 %   did_v2_openminds_crosswalk.json (ndi.openminds.crosswalk): its
@@ -1075,7 +1081,7 @@ for j = 1:numel(rels)
             strjoin(endpoint, ', ')));
         continue;
     end
-    [objs, texts, whys] = documentIdentifiers(p);
+    [objs, texts, whys, schemes, allTexts] = documentIdentifiers(p);
     if isempty(objs)
         why = 'the document has no DOI, ISBN or URL global_identifier';
         if ~isempty(whys)
@@ -1084,13 +1090,24 @@ for j = 1:numel(rels)
         note(ctx, 'DatasetVersion', 'documentation', rels(j).parent, why);
         continue;
     end
-    if numel(objs) > 1
+    pick = preferredIdentifier(schemes);
+    if isempty(pick)
         note(ctx, 'DatasetVersion', 'documentation', rels(j).parent, sprintf(['the document ' ...
-            'has %d identifiers openMINDS can take (%s); which one documents the dataset is ' ...
-            'not decided'], numel(objs), strjoin(texts, ', ')));
+            'has %d identifiers openMINDS can take (%s) and none is a DOI or a URL; which one ' ...
+            'documents the dataset is not decided ([documentation identifier prefers a DOI] ' ...
+            'covers a DOI, else the first URL)'], numel(objs), strjoin(texts, ', ')));
         continue;
     end
-    found{end+1} = struct('id', rels(j).parent, 'obj', objs{1}, 'text', texts{1}, ...
+    % [documentation identifier prefers a DOI]: every other identifier the
+    % document carries is listed as not exported
+    others = allTexts(~strcmp(allTexts, texts{pick}));
+    for k = 1:numel(others)
+        note(ctx, 'DatasetVersion', 'documentation', sprintf('%s (%s)', others{k}, rels(j).parent), ...
+            sprintf(['the document carries %d identifiers and openMINDS documentation takes ' ...
+            'one: %s is exported, a DOI if there is one, otherwise the first URL ' ...
+            '([documentation identifier prefers a DOI])'], numel(allTexts), texts{pick}));
+    end
+    found{end+1} = struct('id', rels(j).parent, 'obj', objs{pick}, 'text', texts{pick}, ...
         'order', rels(j).order); %#ok<AGROW>
 end
 if isempty(found)
@@ -1123,14 +1140,19 @@ o(o < 0) = Inf;
 found = found(byOrder);
 end
 
-function [objs, texts, whys] = documentIdentifiers(p)
-% a document entity's identifiers that openMINDS documentation takes
+function [objs, texts, whys, schemes, allTexts] = documentIdentifiers(p)
+% a document entity's identifiers that openMINDS documentation takes (OBJS,
+% their TEXTS and SCHEMES, in the entity's order), the reasons others could
+% not be built (WHYS), and every global identifier the entity carries
+% (ALLTEXTS)
 arguments
     p (1,1) struct
 end
 [scheme, local, text] = identifiers(p);
+allTexts = text;
 objs = {};
 texts = {};
+schemes = {};
 whys = {};
 for k = 1:numel(scheme)
     if ~any(strcmp(scheme{k}, {'doi', 'isbn', 'IRI'}))
@@ -1143,6 +1165,25 @@ for k = 1:numel(scheme)
     end
     objs{end+1} = o; %#ok<AGROW>
     texts{end+1} = text{k}; %#ok<AGROW>
+    schemes{end+1} = scheme{k}; %#ok<AGROW>
+end
+end
+
+function pick = preferredIdentifier(schemes)
+%PREFERREDIDENTIFIER Which of a document's takeable identifiers documents
+%   the dataset ([documentation identifier prefers a DOI]): the first DOI;
+%   with none, the first URL. One identifier is that one, whatever its
+%   scheme. Several with neither a DOI nor a URL: [] (not decided).
+arguments
+    schemes cell
+end
+if numel(schemes) == 1
+    pick = 1;
+    return;
+end
+pick = find(strcmp(schemes, 'doi'), 1);
+if isempty(pick)
+    pick = find(strcmp(schemes, 'IRI'), 1);
 end
 end
 
