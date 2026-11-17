@@ -167,6 +167,36 @@ classdef TestStimulatorRowFromWiring < matlab.unittest.TestCase
             testCase.verifyNotEmpty(dev.epochtable(), 'the system has no epochs');
         end
 
+        function testTheIndexFollowsTheStimulatorRemovedAndReAdded(testCase)
+            % the derived epoch-table index (ndi.vintage.epochIndex) against a
+            % fresh read, after removing and re-adding the stimulator element
+            % (ndi.unittest.migrate.epochIndexEquivalence on one probe). Its
+            % rows come from the wiring alone, so an entry read while it is
+            % missing must record it, or the re-added stimulator is never seen
+            % by the index (Dab, TestMigrateLocalEtaDab/testEpochIndexMatchesItsSource,
+            % run 44066834018).
+            testCase.ready(testCase.Session);
+            P = ndi.unittest.vintage.TestStimulatorRowFromWiring;
+            dst = fullfile(testCase.Root, 'index_probe');
+            S = P.copyEdited(fullfile(testCase.Root, 'migrated'), dst, ...
+                char(testCase.Session.id()), @(S) {}, @(S) {});
+            testCase.assumeTrue(ndi.vintage.epochIndex('available', S), ...
+                'no derived-row store (DID-matlab too old?)');
+            stimId = P.stimulatorId(S);
+            raw = did2.database.sqlitedb(P.v2File(dst));
+            cleanRaw = onCleanup(@() raw.close()); %#ok<NASGU>
+            nStim = testCase.indexAgreesWithFresh(S, 'as stored');
+            testCase.verifyEqual(nStim, numel(testCase.Epochs), 'as stored: one stimulator row per epoch');
+            d = raw.get(stimId);
+            raw.remove(stimId);
+            nStim = testCase.indexAgreesWithFresh(S, 'after removing the stimulator');
+            testCase.verifyEqual(nStim, 0, 'after removing the stimulator: its rows are still read');
+            raw.add({d}, 'Validate', false);
+            nStim = testCase.indexAgreesWithFresh(S, 'after re-adding the stimulator');
+            testCase.verifyEqual(nStim, numel(testCase.Epochs), ...
+                'after re-adding the stimulator: one stimulator row per epoch');
+        end
+
         function testWithoutTheWiringTheManipulationStillGivesTheRow(testCase)
             % a stimulator row with no channels has no wiring relation: its
             % row is read from the manipulation, with the system's name as
@@ -195,6 +225,26 @@ classdef TestStimulatorRowFromWiring < matlab.unittest.TestCase
             docs = S.database_search(ndi.vintage.ingestedQuery(nav.id(), S.id()));
             testCase.assertNumElements(docs, numel(testCase.Epochs), ...
                 'the migrated session does not hold one ingestion manifest per epoch');
+        end
+
+        function nStim = indexAgreesWithFresh(testCase, S, when)
+            % the index read twice (the second answers from the stored rows)
+            % against a fresh read; the fresh read's stimulator rows
+            [~, docs, cls] = testCase.navigatorDocs(S);
+            fresh = ndi.vintage.ingestedEpochs(S, docs, cls, 'UseIndex', false);
+            for pass = 1:2
+                viaIndex = ndi.vintage.ingestedEpochs(S, docs, cls);
+                % isequal, as ndi.unittest.migrate.epochIndexEquivalence compares
+                testCase.verifyTrue(isequal(viaIndex, fresh), sprintf( ...
+                    '%s, read %d: the index and a fresh read differ', when, pass));
+            end
+            nStim = 0;
+            for k = 1:numel(fresh)
+                rows = ndi.unittest.vintage.TestIngestedReadsBatched.rowsOf(fresh(k).probemap);
+                if ~isempty(rows)
+                    nStim = nStim + sum(strcmp({rows.type}, 'stimulator'));
+                end
+            end
         end
 
         function R = allRows(testCase, S)
@@ -339,21 +389,7 @@ classdef TestStimulatorRowFromWiring < matlab.unittest.TestCase
             S = ndi.session.dir('stimulator rows copy', dstRoot, sid);
             ids = pick(S);
             newDocs = make(S);
-            v2file = '';
-            dbs = dir(fullfile(dstRoot, '.ndi', '*.sqlite'));
-            for k = 1:numel(dbs)
-                try
-                    db = did2.database.sqlitedb(fullfile(dbs(k).folder, dbs(k).name));
-                catch
-                    continue;   % the v1 database beside it
-                end
-                if ~isempty(db.search(did2.query('', 'isa', 'acquisition_system')))
-                    v2file = fullfile(dbs(k).folder, dbs(k).name);
-                end
-                db.close();
-            end
-            assert(~isempty(v2file), 'no v2 database in the copy');
-            raw = did2.database.sqlitedb(v2file);
+            raw = did2.database.sqlitedb(ndi.unittest.vintage.TestStimulatorRowFromWiring.v2File(dstRoot));
             for k = 1:numel(ids)
                 raw.remove(ids{k});
             end
@@ -365,6 +401,24 @@ classdef TestStimulatorRowFromWiring < matlab.unittest.TestCase
             clear S
             S = ndi.session.dir('stimulator rows copy', dstRoot, sid);
             S.cache.clear();
+        end
+
+        function v2file = v2File(root)
+            % the v2 database file of the session at ROOT
+            v2file = '';
+            dbs = dir(fullfile(root, '.ndi', '*.sqlite'));
+            for k = 1:numel(dbs)
+                try
+                    db = did2.database.sqlitedb(fullfile(dbs(k).folder, dbs(k).name));
+                catch
+                    continue;   % the v1 database beside it
+                end
+                if ~isempty(db.search(did2.query('', 'isa', 'acquisition_system')))
+                    v2file = fullfile(dbs(k).folder, dbs(k).name);
+                end
+                db.close();
+            end
+            assert(~isempty(v2file), 'no v2 database under %s', root);
         end
 
         function removeDir(d)
