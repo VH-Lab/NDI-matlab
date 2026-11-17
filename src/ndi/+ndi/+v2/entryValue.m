@@ -143,9 +143,13 @@ end
 end
 
 function t = shortestText(x)
-% the shortest decimal text that reads back as X (as ndi.time.syncrule
-% writes a number's source text)
+% the shortest decimal text that reads back as X, a whole number written
+% out in full (500, not 5e+02)
 t = sprintf('%.17g', x);
+if isfinite(x) && x == round(x) && abs(x) < 1e15
+    t = sprintf('%d', x);
+    return;
+end
 for n = 1:17
     c = sprintf('%.*g', n, x);
     if str2double(c) == x
