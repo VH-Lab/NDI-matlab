@@ -1770,7 +1770,7 @@ function [convertResult, bathAnchors, report] = resolveDeferred(convertResult, r
 %   hand via RESOLVER -- we re-assemble each such document, then fold the
 %   assembled bodies back through v1_to_v2 at the same TargetVersion. Because
 %   the assembled bodies are tagged schema_version == TargetVersion, v1_to_v2
-%   short-circuits them (isAlreadyTarget) to ensureClassBlocks + validate; it
+%   short-circuits them (isAlreadyTarget) to validate; it
 %   does not re-migrate. Successfully assembled+validated docs move from
 %   quarantine into migrated; anything that cannot be assembled or fails
 %   validation stays quarantined with a reason.
@@ -1977,7 +1977,7 @@ function [convertResult, report] = resolvePathS(convertResult, options, mode)
     end
     % fold the minted part entity / kind assertion / part_of bodies through
     % v1_to_v2: they are tagged schema_version 'did_v2', so the converter
-    % short-circuits them (isAlreadyTarget) to ensureClassBlocks + validate
+    % short-circuits them (isAlreadyTarget) to validate
     % rather than re-migrating -- the same footing the deferred-resolution pass
     % uses.
     sub = struct('migrated', {{}}, 'quarantine', struct([]));
@@ -2164,7 +2164,7 @@ function [convertResult, report] = resolveEnsembleMembership(convertResult, ...
     end
     convertResult.migrated = keptDocs;
     % The minted relations are tagged schema_version 'did_v2', so v1_to_v2
-    % short-circuits them (isAlreadyTarget) to ensureClassBlocks + validate --
+    % short-circuits them (isAlreadyTarget) to validate --
     % the same footing the deferred-resolution and Path-S passes use.
     sub = did2.convert.v1_to_v2(minted, ...
         'Validate', options.Validate, ...
@@ -2383,7 +2383,7 @@ function [convertResult, report] = resolveOntologyLabelSubjects(convertResult, o
 %   body per resolvable label. This function does the FOLD, one label at a time,
 %   through did2.convert.v1_to_v2 at TargetVersion V_eta -- where the body is
 %   tagged schema_version 'did_v2' and is therefore short-circuited
-%   (isAlreadyTarget) to ensureClassBlocks + validate, the same footing Path-S
+%   (isAlreadyTarget) to validate, the same footing Path-S
 %   and ensembleMembership use for minted bodies.
 %
 %   THE LABEL'S id IS PRESERVED, so the replacement supersedes the passthrough
@@ -2533,7 +2533,7 @@ function [convertResult, report] = resolveSubjectStrainAssembly(convertResult, b
 %   that need the converter: rewrap the survivors (whose edges changed) and
 %   fold the minted `strain` bodies through did2.convert.v1_to_v2 at
 %   TargetVersion V_eta, where they are tagged schema_version 'did_v2' and are
-%   therefore short-circuited (isAlreadyTarget) to ensureClassBlocks +
+%   therefore short-circuited (isAlreadyTarget) to
 %   validate, the same footing Path-S, ensembleMembership and (4) use.
 %
 %   REPORT is [] when the pass did not run (no documents, or no bodies to read
@@ -3371,7 +3371,7 @@ function [convertResult, report, presentationAnchors] = resolveStimulusPresentat
 
     % fold the minted documents through v1_to_v2: they are tagged
     % schema_version == TargetVersion, so the converter short-circuits them
-    % (isAlreadyTarget) to ensureClassBlocks + validate.
+    % (isAlreadyTarget) to validate.
     sub = did2.convert.v1_to_v2(minted, ...
         'Validate', options.Validate, ...
         'SchemaCache', options.SchemaCache, ...
