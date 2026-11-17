@@ -77,7 +77,17 @@ classdef TestIngestedArchiveBodies < matlab.unittest.TestCase
             testCase.verifyEqual(double(off.quantity.value(:))', [-2 -2 -2]);
             testCase.verifyFalse(isfield(off, 'unit') && ~isempty(off.unit), 'the offset has no unit');
             testCase.verifyEqual(char(b.data_body.conditions(1).term.node), 'EMPTY:0000370');
+            % [time channel is a per-channel covariate]: always written,
+            % unitless, NaN carried
+            tc = covOf(b, 'EMPTY:0000374');
+            testCase.assertNotEmpty(tc, 'no time-channel covariate');
+            testCase.verifyTrue(all(isnan(double(tc.quantity.value(:)))), 'the v1 time_channel NaN');
+            testCase.verifyFalse(isfield(tc, 'unit') && ~isempty(tc.unit), 'unitless');
+            testCase.verifyEqual(rep.time_channel_covariates, 1);
             testCase.verifyEqual(numel(b.files.file_info), 2, 'the members are unchanged');
+            testCase.verifyEqual(rep.members_seen, 4, 'the ai and ti members');
+            testCase.verifyEqual(rep.members_schema_named, 4, 'pass 1 names them body_data_<k>');
+            testCase.verifyEqual(rep.members_renamed, 0);
             % the evenly spaced time group is the covariate now; the
             % channel list keeps its time-channel row, so it stays
             testCase.verifyEqual(removed, {'body_ti'});
@@ -95,6 +105,117 @@ classdef TestIngestedArchiveBodies < matlab.unittest.TestCase
             testCase.verifyEqual(rep.archives_converted, 1, rep.first_unconvertible_reason);
             testCase.verifyEqual(removed, {'body_cl'});
             testCase.verifyEqual(rep.channel_list_removed, 1);
+            testCase.verifyEqual(rep.channel_list_rebuilt_exactly, 1);
+        end
+
+        function testATimeChannelLinkIsCarriedAndTheListRebuilt(testCase)
+            % [time channel is a per-channel covariate]: NaN and dangling
+            % values carried exactly; the list is rebuilt with them
+            o = struct('timeChannel', [1 2 NaN]);
+            [structs, v1] = testCase.archive(false, true, 0, o);
+            [out, rep, removed] = ndi.migrate.internal.ingestedArchiveBodies( ...
+                structs, testCase.Dir, v1);
+            testCase.verifyEqual(rep.archives_converted, 1, rep.first_unconvertible_reason);
+            tc = covOf(out{2}, 'EMPTY:0000374');
+            testCase.verifyTrue(isequaln(double(tc.quantity.value(:))', [1 2 NaN]));
+            testCase.verifyEqual(removed, {'body_cl'}, rep.first_channel_list_kept_reason);
+            res = did2.convert.v1_to_v2(out(2), 'Validate', true, 'TargetVersion', 'did_v2');
+            testCase.verifyEmpty(res.quarantine);
+        end
+
+        function testRenamesMembersNamedByNdi(testCase)
+            % [migrated body members renamed]: a member named
+            % `ai_group1_seg.nbf_<n>` becomes body_data_<n-1>
+            [structs, v1] = testCase.archive(false, true);
+            structs{2}.files.file_info(1).name = 'ai_group1_seg.nbf_1';
+            structs{2}.files.file_info(2).name = 'ai_group1_seg.nbf_2';
+            [out, rep] = ndi.migrate.internal.ingestedArchiveBodies(structs, testCase.Dir, v1);
+            testCase.verifyEqual(rep.archives_converted, 1, rep.first_unconvertible_reason);
+            testCase.verifyEqual({out{2}.files.file_info.name}, {'body_data_0', 'body_data_1'});
+            testCase.verifyEqual(memberUids(out{2}), {'u_ai_1', 'u_ai_2'}, 'the bytes are the same');
+            testCase.verifyEqual(rep.members_renamed, 2);
+        end
+
+        function testDigitalScaleIsUnitlessAndNoGap(testCase)
+            % [digital scale is unitless]: "the scale of a `di` or `do` group
+            % has no unit and is not a gap"
+            o = struct('reader', struct('class', 'ndi.daq.reader.mfdaq.intan', 'ndr', ''), ...
+                'prefix', 'di', 'scale', 1);
+            [structs, v1] = testCase.archive(false, true, 0, o);
+            [out, rep] = ndi.migrate.internal.ingestedArchiveBodies(structs, testCase.Dir, v1);
+            testCase.verifyEqual(rep.archives_converted, 1, rep.first_unconvertible_reason);
+            b = out{2};
+            testCase.verifyEqual(char(b.data_body.conditions(1).term.node), 'EMPTY:0000372');
+            sc = scaleOf(b);
+            testCase.verifyFalse(isfield(sc, 'unit') && ~isempty(sc.unit), 'no unit');
+            testCase.verifyEqual(rep.scale_unitless_digital, 1);
+            testCase.verifyEqual(rep.scale_without_unit, 0, 'not a gap');
+            testCase.verifyEmpty(rep.scale_gaps{1}, 'no gap listed');
+            res = did2.convert.v1_to_v2(out, 'Validate', true, 'TargetVersion', 'did_v2');
+            testCase.verifyEmpty(res.quarantine);
+        end
+
+        function testEventsFileIsUnpackedIntoObservations(testCase)
+            % [event channels are time-valued observations], [event channel
+            % observes its wired device], [unpacked event bodies are
+            % uncompressed], [unpacked events file is removed]
+            o = struct('events', true, 'wired', true);
+            [structs, v1, ~, ev] = testCase.archive(false, true, 2, o);
+            [out, rep, removed] = ndi.migrate.internal.ingestedArchiveBodies( ...
+                structs, testCase.Dir, v1);
+            testCase.verifyEqual(rep.archives_converted, 1, rep.first_unconvertible_reason);
+            testCase.verifyEqual(rep.event_archives_seen, 1);
+            testCase.verifyEqual(rep.event_archives_unpacked, 1, rep.first_event_kept_reason);
+            testCase.verifyEqual(rep.event_channels_seen, 2);
+            testCase.verifyEqual(rep.event_channels_unpacked, 2);
+            testCase.verifyEqual(rep.event_bodies_removed, 1);
+            testCase.verifyEqual(rep.event_bodies_left, 0);
+            testCase.verifyTrue(ismember('body_ev', removed), 'the evmktx body is removed');
+            testCase.verifyTrue(ismember('body_cl', removed), rep.first_channel_list_kept_reason);
+            added = out(numel(structs) + 1:end);
+            testCase.verifyEqual(numel(added), 6, 'event: observation + body; marker: time value + body, observation + body');
+            cls = cellfun(@(d) d.document_class.class_name, added, 'UniformOutput', false);
+            E = ndi.vintage.ingestedEventChannels(added, added);
+            testCase.assertEqual({E.type}, {'event', 'marker'}, strjoin(cls, ', '));
+            testCase.verifyEqual([E.number], [1 2]);
+            obsE = added{strcmp(cellfun(@(d) d.base.id, added, 'UniformOutput', false), E(1).statement_id)};
+            testCase.verifyEqual(edgeOf(obsE, 'entity_id'), {'stim_1'}, 'the wired device');
+            testCase.verifyEqual(edgeOf(obsE, 'acquisition_system_id'), {'sys_1'});
+            testCase.verifyEqual(edgeOf(obsE, 'time_reference_id'), {'tr_1'});
+            testCase.verifyEqual(char(obsE.statement.variable.node), 'NCIT:C25499');
+            obsM = added{strcmp(cellfun(@(d) d.base.id, added, 'UniformOutput', false), E(2).statement_id)};
+            testCase.verifyEqual(char(obsM.statement.variable.node), 'NCIT:C25162');
+            % the bodies: little-endian float64, seconds from the epoch start
+            testCase.verifyEqual(floatsOf(testCase.Dir, E(1).times), ev.T{1}(:) - 2);
+            testCase.verifyEqual(floatsOf(testCase.Dir, E(2).times), ev.T{2}(:) - 2);
+            testCase.verifyEqual(floatsOf(testCase.Dir, E(2).values), ev.D{2}(:));
+            testCase.verifyFalse(isfield(E(1).times.data_body, 'compression') && ...
+                ~isempty(E(1).times.data_body.compression), 'no compression block');
+            testCase.verifyEqual(char(E(1).times.data_body.format.node), 'EDAM:format_2333');
+            % the channel list the readers rebuild is the v1 one
+            groups = out(cellfun(@(d) strcmp(d.base.id, 'body_ai'), out));
+            ci = ndi.vintage.ingestedChannelList(groups, E);
+            testCase.verifyEqual({ci.name}, {'ai1', 'ai2', 'ai3', 'e1', 'mk2'});
+            keep = ~cellfun(@(s) any(strcmp(s.base.id, removed)), out);
+            res = did2.convert.v1_to_v2(out(keep), 'Validate', true, 'TargetVersion', 'did_v2');
+            testCase.verifyEmpty(res.quarantine);
+        end
+
+        function testUnwiredEventsAreLeftPacked(testCase)
+            % no `connected to` relation wires the channels: their entity is
+            % not known, so the file stays as it is, counted
+            o = struct('events', true, 'wired', false);
+            [structs, v1] = testCase.archive(false, true, 0, o);
+            [out, rep, removed] = ndi.migrate.internal.ingestedArchiveBodies( ...
+                structs, testCase.Dir, v1);
+            testCase.verifyEqual(rep.archives_converted, 1, rep.first_unconvertible_reason);
+            testCase.verifyEqual(rep.event_archives_kept, 1);
+            testCase.verifyEqual(rep.event_kept_unwired, 1, rep.first_event_kept_reason);
+            testCase.verifyEqual(rep.event_bodies_left, 1);
+            testCase.verifyFalse(ismember('body_ev', removed));
+            testCase.verifyFalse(ismember('body_cl', removed), ...
+                'the event rows have no other home, so channel_list.bin stays');
+            testCase.verifyEqual(numel(out), numel(structs), 'nothing added');
         end
 
         function testUnevenTimeBecomesAKeyedTimeValue(testCase)
@@ -302,24 +423,40 @@ classdef TestIngestedArchiveBodies < matlab.unittest.TestCase
     end
 
     methods
-        function [s, v1, t] = archive(testCase, withTime, evenTime, t0, o)
+        function [s, v1, t, ev] = archive(testCase, withTime, evenTime, t0, o)
             % an epoch of 160 samples at 10 kHz, 3 analog inputs in
             % segments of 100 (NDI's ephys compressor fits a predictor, so
             % a segment needs more samples than its order), and
             % (WITHTIME) the time channel t1, its v1 times T; the epoch
             % starts at T0 (0). O (optional): O.reader {class, ndr}, the v1
             % daqreader the archive depends on (none by default); O.prefix
-            % 'ai' (default) or 'ax' (auxiliary inputs); O.scale (0.195)
+            % 'ai' (default), 'ax' (auxiliary inputs) or 'di' (digital
+            % inputs); O.scale (0.195); O.timeChannel, the three channels'
+            % v1 time_channel (NaN); O.events, an events file with event
+            % channel e1 and marker channel mk2 (EV: its T and D), O.wired a
+            % `connected to` relation wiring them to the device stim_1
             if nargin < 4; t0 = 0; end
             if nargin < 5; o = struct(); end
             if ~isfield(o, 'prefix'); o.prefix = 'ai'; end
             if ~isfield(o, 'scale'); o.scale = 0.195; end
             if ~isfield(o, 'reader'); o.reader = []; end
-            types = struct('ai', 'analog_in', 'ax', 'auxiliary_in');
+            if ~isfield(o, 'timeChannel'); o.timeChannel = NaN(1, 3); end
+            if ~isfield(o, 'events'); o.events = false; end
+            if ~isfield(o, 'wired'); o.wired = false; end
+            ev = [];
+            types = struct('ai', 'analog_in', 'ax', 'auxiliary_in', 'di', 'digital_in');
             sr = 10000;
             ch = struct('name', cellfun(@(n) sprintf('%s%d', o.prefix, n), {1, 2, 3}, ...
                 'UniformOutput', false), 'type', types.(o.prefix), ...
-                'time_channel', NaN, 'sample_rate', sr, 'offset', -2, 'scale', o.scale);
+                'time_channel', num2cell(o.timeChannel), 'sample_rate', sr, 'offset', -2, ...
+                'scale', o.scale);
+            if strcmp(o.prefix, 'di'); [ch.offset] = deal(0); end
+            if o.events
+                ch(end+1) = struct('name', 'e1', 'type', 'event', 'time_channel', NaN, ...
+                    'sample_rate', NaN, 'offset', 0, 'scale', 1);
+                ch(end+1) = struct('name', 'mk2', 'type', 'marker', 'time_channel', NaN, ...
+                    'sample_rate', NaN, 'offset', 0, 'scale', 1);
+            end
             if withTime
                 ch(end+1) = struct('name', 't1', 'type', 'time', 'time_channel', NaN, ...
                     'sample_rate', sr, 'offset', 0, 'scale', 1);
@@ -332,9 +469,13 @@ classdef TestIngestedArchiveBodies < matlab.unittest.TestCase
             segs = {data(1:100, :), data(101:160, :)};
             for k = 1:2
                 stem = tempname();
-                ndi.compress.compress_ephys(double(segs{k}), 16, stem, ...
-                    'data_format', ndi.compress.datatypestring('int16'), ...
-                    'data_is_unsigned', false);
+                if strcmp(o.prefix, 'di')
+                    ndi.compress.compress_digital(double(segs{k} > 0), stem);
+                else
+                    ndi.compress.compress_ephys(double(segs{k}), 16, stem, ...
+                        'data_format', ndi.compress.datatypestring('int16'), ...
+                        'data_is_unsigned', false);
+                end
                 movefile([stem '.nbf.tgz'], fullfile(files, sprintf('u_ai_%d', k)));
             end
             uids = {'u_cl', 'u_ai_1', 'u_ai_2'};
@@ -343,6 +484,20 @@ classdef TestIngestedArchiveBodies < matlab.unittest.TestCase
             s = {obs, ...
                 body('body_ai', [o.prefix '_group1_seg.nbf_#'], {'u_ai_1', 'u_ai_2'}), ...
                 body('body_cl', 'channel_list.bin', {'u_cl'})};
+            if o.events
+                % as ndi.daq.reader.mfdaq/ingest_epochfiles writes the file:
+                % times on the epoch's clock (from T0)
+                ev = struct('T', {{t0 + [0.001; 0.0052; 0.0101], t0 + [0.002; 0.009]}}, ...
+                    'D', {{ones(3, 1), [7; 2]}});
+                stem = tempname();
+                ndi.compress.compress_eventmarktext({'event', 'marker'}, [1 2], ev.T, ev.D, stem);
+                movefile([stem '.nbf.tgz'], fullfile(files, 'u_ev'));
+                s{end+1} = body('body_ev', 'evmktx_group1_seg.nbf_#', {'u_ev'});
+                uids{end+1} = 'u_ev';
+                if o.wired
+                    s{end+1} = wiring();
+                end
+            end
             if withTime
                 t = t0 + (0:159)' / sr;
                 if ~evenTime; t(50) = t(50) + 0.3 / sr; end
@@ -362,7 +517,7 @@ classdef TestIngestedArchiveBodies < matlab.unittest.TestCase
             v1 = {struct('base', struct('id', 'arch_1'), ...
                 'document_class', struct('class_name', 'daqreader_mfdaq_epochdata_ingested'), ...
                 'daqreader_mfdaq_epochdata_ingested', struct('parameters', ...
-                    struct('sample_analog_segment', 100, 'sample_digital_segment', 1000)), ...
+                    struct('sample_analog_segment', 100, 'sample_digital_segment', 100)), ...
                 'daqreader_epochdata_ingested', struct('epochtable', ...
                     struct('epochclock', {{'dev_local_time'}}, 't0_t1', [t0; t0 + 159/sr])), ...
                 'files', struct('file_list', {{'channel_list.bin'}}, 'file_info', fi))};
@@ -434,7 +589,30 @@ c = onCleanup(@() did2.schema.cache.strictMode('TermRegistry', prev));
 obs = did2.build.statement('observation', 'el_1', ...
     struct('node', 'GO:0001508', 'name', 'action potential'), [], ...
     'DataBody', true, 'TimeReferenceIds', {'tr_1'}, 'Id', 'obs_1', ...
+    'AcquisitionSystemId', 'sys_1', ...
     'SessionId', 'sess_1', 'Validate', false, 'ValueKind', 'time');
+end
+
+function rel = wiring()
+% the stimulator stim_1 `connected to` the system sys_1 on e1 and mk2, as
+% did2.convert.resolveEpochProbemap mkWiring writes it
+prev = did2.schema.cache.strictMode('TermRegistry', false);
+c = onCleanup(@() did2.schema.cache.strictMode('TermRegistry', prev));
+rel = did2.build.directedRelation('stim_1', 'sys_1', ...
+    struct('node', 'RO:0002170', 'name', 'connected to'), ...
+    'TimeReferenceIds', {'tr_1'}, ...
+    'Fields', struct('conditions', {did2.build.list( ...
+        did2.build.condition(struct('node', 'EMPTY:0000376', 'name', 'event channel'), 'Matrix', 1), ...
+        did2.build.condition(struct('node', 'EMPTY:0000377', 'name', 'marker channel'), 'Matrix', 2))}), ...
+    'Id', 'rel_1', 'SessionId', 'sess_1', 'Validate', false);
+end
+
+function x = floatsOf(dir, b)
+% an unpacked body's member body_data_0, read as little-endian float64
+fi = b.files.file_info;
+fid = fopen(fullfile(dir, 'files', char(fi(1).locations(1).uid)), 'r', 'ieee-le');
+x = fread(fid, Inf, 'float64');
+fclose(fid);
 end
 
 function b = body(id, filename, uids)

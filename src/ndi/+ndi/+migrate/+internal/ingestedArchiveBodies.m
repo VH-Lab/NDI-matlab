@@ -105,15 +105,46 @@ function [structs, report, removed] = ingestedArchiveBodies(structs, ndiDir, v1B
 %     changed_groups), the store paths of the files written for it, so a
 %     caller that reverts the group can delete them.
 %
-%     `channel_list.bin` is REMOVED only when every one of its rows is
-%     carried by a converted body: a row of a converted channel group, named
-%     by its v1 abbreviation and number (`ai3`), with no time channel. A row
-%     of another kind (a time channel, an event, marker or text channel) or a
-%     time-channel link has no home on a sampled body yet, so the file is
-%     KEPT as the opaque_body pass 1 wrote, and nothing is lost (counted
-%     `channel_list_kept`).
+%     Each converted group also carries a channel's time channel: Decided
+%     by Jess Haley, 2026-11-17 [time channel is a per-channel covariate]:
+%     "a covariate along the channel dimension of the channel group's body,
+%     variable "time channel" (EMPTY:0000374), one unitless number per
+%     channel, NaN and dangling values carried exactly" (the 5th covariate;
+%     counted `time_channel_covariates`).
 %
-%     `evmktx_group<g>_seg.nbf_#` (events) stays the opaque_body it is.
+%     `channel_list.bin` is REMOVED only when the readers' own rebuild
+%     (ndi.vintage.ingestedChannelList, from the converted bodies as JSON
+%     gives them back and the unpacked event channels) is the file's list
+%     row for row ([channel list rows get v2 homes], Jess Haley, 2026-11-17:
+%     "The file is removed only when the round trip rebuilds it exactly;
+%     otherwise it is kept and counted"): counted `channel_list_rebuilt_exactly`,
+%     else `channel_list_kept` with `first_channel_list_kept_reason`. A time
+%     channel's own row and a non-standard channel name have no v2 home yet
+%     (open questions), so a list holding one is kept.
+%
+%     `evmktx_group<g>_seg.nbf_#` (events): UNPACKED, one observation per
+%     channel, and its body REMOVED, when every check of unpackEvents (below)
+%     passes; else it stays the opaque_body it is, counted by reason
+%     (`event_archives_seen`, `event_archives_unpacked`,
+%     `event_archives_kept`, `event_kept_<reason>`, `event_channels_seen`,
+%     `event_channels_unpacked`, `event_bodies_removed`,
+%     `event_bodies_left`). Decided by Jess Haley, 2026-11-17 [event
+%     channels are time-valued observations], [event channel variable
+%     terms], [event channel observes its wired device], [unpacked event
+%     bodies are uncompressed], [unpacked events file is removed].
+%
+%     MEMBER NAMES. Decided by Jess Haley, 2026-11-17 [migrated body members
+%     renamed]: a converted group's members named `<type>_group<g>_seg.nbf_<n>`
+%     are renamed `body_data_<n-1>`. Pass 1 already writes the schema's
+%     names, so this counts them (`members_seen`, `members_renamed`,
+%     `members_schema_named`, `members_not_renamed`).
+%
+%     OWNERS. The bodies keep the owners pass 1 gave them: by [non-specimen
+%     channel groups get their own owner] (Jess Haley, 2026-11-17) a digital
+%     group's `logical` observation, an auxiliary group's voltage
+%     observation and an analog output group's manipulation or observation
+%     are DID-matlab's (did2.convert.resolveEpochProbemap); NDI's readers
+%     find a body through any of them (ndi.vintage.ingestedArchive).
 %
 %   THE SCALE'S UNIT. Decided by Jess Haley, 2026-11-17 [scale carries the
 %   reader's unit] (did-schema did_v2_go_forward_class_audit.md): "the
@@ -122,7 +153,9 @@ function [structs, report, removed] = ingestedArchiveBodies(structs, ndiDir, v1B
 %   unit (volt for a voltage output) with the reader's output unit as
 %   `source_unit` (e.g. microvolt for the Intan amplifier) where NDI's reader
 %   for that system defines it; where it does not, the scale has no unit and
-%   the run's report lists the gap." NDI reads value = (raw + offset) *
+%   the run's report lists the gap." Amended by [digital scale is unitless]
+%   (Jess Haley, 2026-11-17): "the scale of a `di` or `do` group has no unit
+%   and is not a gap" (counted `scale_unitless_digital`). NDI reads value = (raw + offset) *
 %   scale (ndi.daq.reader.mfdaq/underlying_datatype), so the scale is in the
 %   reader's output unit per count. The reader is the v1 archive's
 %   `daqreader_id` document among V1BODIES (`daqreader.ndi_daqreader_class`;
@@ -193,6 +226,27 @@ report = struct( ...
     'first_unconvertible_reason', '', ...
     'scale_with_unit',            0, ...
     'scale_without_unit',         0, ...
+    'scale_unitless_digital',     0, ...
+    'time_channel_covariates',    0, ...
+    'members_seen',               0, ...
+    'members_renamed',            0, ...
+    'members_schema_named',       0, ...
+    'members_not_renamed',        0, ...
+    'channel_list_rebuilt_exactly', 0, ...
+    'first_channel_list_kept_reason', '', ...
+    'event_archives_seen',        0, ...
+    'event_archives_unpacked',    0, ...
+    'event_archives_kept',        0, ...
+    'event_kept_text_channel',    0, ...
+    'event_kept_marker_columns',  0, ...
+    'event_kept_unwired',         0, ...
+    'event_kept_empty_channel',   0, ...
+    'event_kept_not_exact',       0, ...
+    'event_kept_other',           0, ...
+    'first_event_kept_reason',    '', ...
+    'event_channels_seen',        0, ...
+    'event_channels_unpacked',    0, ...
+    'event_bodies_removed',       0, ...
     'scale_gaps',                 {{}}, ...
     'changed_groups',             {{}}, ...
     'written_files',              {{}}, ...
@@ -261,10 +315,10 @@ for a = 1:numel(groupKeys)
     end
 
     try
-        [made, gone, why, added, uneven, written] = convertArchive(structs, idx, kinds, clIdx, ci, arch, ...
+        [made, gone, why, added, uneven, written, info] = convertArchive(structs, idx, kinds, clIdx, ci, arch, ...
             readerOf(arch, readers), storeDir);
     catch err
-        made = {}; gone = {}; added = {}; uneven = false; written = {};
+        made = {}; gone = {}; added = {}; uneven = false; written = {}; info = [];
         why = sprintf('%s: %s', err.identifier, err.message);
     end
     if uneven
@@ -287,7 +341,10 @@ for a = 1:numel(groupKeys)
         structs{made{m}.k} = made{m}.body;
         ids{end+1} = baseId(made{m}.body); %#ok<AGROW>
         if ~isfield(made{m}, 'scaleGap'); continue; end   % the time value's body
-        if isempty(made{m}.scaleGap)
+        if made{m}.scaleUnitless
+            % [digital scale is unitless]: no unit and not a gap
+            report.scale_unitless_digital = report.scale_unitless_digital + 1;
+        elseif isempty(made{m}.scaleGap)
             report.scale_with_unit = report.scale_with_unit + 1;
         else
             report.scale_without_unit = report.scale_without_unit + 1;
@@ -313,12 +370,41 @@ for a = 1:numel(groupKeys)
         removed{end+1} = gone{g}; %#ok<AGROW>
         if strcmp(gone{g}, baseId(structs{clIdx}))
             report.channel_list_removed = report.channel_list_removed + 1;
+        elseif any(strcmp(gone{g}, info.eventBodyIds))
+            report.event_bodies_removed = report.event_bodies_removed + 1;
         else
             report.time_bodies_removed = report.time_bodies_removed + 1;
         end
     end
     if ~any(strcmp(gone, baseId(structs{clIdx})))
         report.channel_list_kept = report.channel_list_kept + 1;
+        if isempty(report.first_channel_list_kept_reason)
+            report.first_channel_list_kept_reason = info.channelListWhy;
+        end
+    else
+        report.channel_list_rebuilt_exactly = report.channel_list_rebuilt_exactly + 1;
+    end
+    report.time_channel_covariates = report.time_channel_covariates + info.timeChannelCovariates;
+    report.members_seen = report.members_seen + info.members(1);
+    report.members_renamed = report.members_renamed + info.members(2);
+    report.members_schema_named = report.members_schema_named + info.members(3);
+    report.members_not_renamed = report.members_not_renamed + info.members(4);
+    ev = info.events;
+    if ev.present
+        report.event_archives_seen = report.event_archives_seen + 1;
+        report.event_channels_seen = report.event_channels_seen + ev.channels;
+        if ev.unpacked
+            report.event_archives_unpacked = report.event_archives_unpacked + 1;
+            report.event_channels_unpacked = report.event_channels_unpacked + ev.channels;
+            report.event_bodies_left = report.event_bodies_left - 1;
+        else
+            report.event_archives_kept = report.event_archives_kept + 1;
+            f = ['event_kept_' ev.kind];
+            report.(f) = report.(f) + 1;
+            if isempty(report.first_event_kept_reason)
+                report.first_event_kept_reason = ev.why;
+            end
+        end
     end
     report.archives_converted = report.archives_converted + 1;
     report.group_bodies_described = report.group_bodies_described + numel(made) - numel(added);
@@ -330,7 +416,7 @@ end
 
 % =====================================================================
 
-function [made, gone, why, added, uneven, written] = convertArchive(structs, idx, kinds, clIdx, ci, arch, reader, storeDir)
+function [made, gone, why, added, uneven, written, info] = convertArchive(structs, idx, kinds, clIdx, ci, arch, reader, storeDir)
 %CONVERTARCHIVE The sampled bodies of one archive, or why it is left. ADDED
 %   are the documents made for it (the `time` value of an unevenly spaced
 %   time channel); UNEVEN is true when its time channel is not evenly spaced.
@@ -339,13 +425,28 @@ function [made, gone, why, added, uneven, written] = convertArchive(structs, idx
 %   once every check has passed. READER is the archive's v1 daqreader
 %   (readerOf); each channel group's entry of MADE says, in `scaleGap`, why
 %   its scale has no unit ('' when it has one) and, in `scaleField`, the
-%   field that gap names.
+%   field that gap names; `scaleUnitless` is true for a digital group, whose
+%   scale has no unit and is no gap ([digital scale is unitless]). INFO says
+%   what else was done: eventBodyIds (the `evmktx` bodies removed),
+%   channelListWhy (why channel_list.bin is kept, '' when removed),
+%   timeChannelCovariates, members ([seen renamed schema-named not-renamed])
+%   and events (unpackEvents).
 made = {};
 gone = {};
 why = '';
 added = {};
 uneven = false;
 written = {};
+info = struct('eventBodyIds', {{}}, 'channelListWhy', '', 'timeChannelCovariates', 0, ...
+    'members', [0 0 0 0], 'events', struct('present', false, 'unpacked', false, ...
+    'channels', 0, 'kind', '', 'why', ''));
+% [migrated body members renamed]: the members of the channel and time
+% groups, by the schema's names, before anything reads them
+for j = 1:numel(idx)
+    if ~any(strcmp(kinds{j}, {'group', 'time'})); continue; end
+    [structs{idx(j)}, counts] = renameMembers(structs{idx(j)});
+    info.members = info.members + counts;
+end
 [types, abbrev] = ndi.daq.reader.mfdaq.channel_types();
 ciType = cellfun(@char, {ci.type}, 'UniformOutput', false);
 ciGroup = double([ci.group]);
@@ -355,7 +456,6 @@ if isfield(arch, 'daqreader_mfdaq_epochdata_ingested') ...
     params = arch.daqreader_mfdaq_epochdata_ingested.parameters;
 end
 t0 = epochStart(arch);
-carriedRows = false(1, numel(ci));
 
 % the time groups first: each evenly spaced from the epoch's start is
 % removed; one that is not becomes the body of a keyed `time` value
@@ -468,25 +568,114 @@ for j = 1:numel(idx)
     [body, scaleGap, scaleField] = sampledFromOpaque(b, rows, ci, type, types, abbrev, sr, n, seg, ...
         timeId, reader);
     made{end+1} = struct('k', k, 'body', body, 'scaleGap', scaleGap, ...
-        'scaleField', scaleField); %#ok<AGROW>
-    % a row is carried when everything in it is on the body or derived
-    for r = rows(:)'
-        ab = abbrev{strcmp(types, type)};
-        nm = char(ci(r).name);
-        tc = double(ci(r).time_channel);
-        carriedRows(r) = strcmp(nm, sprintf('%s%d', ab, double(ci(r).number))) ...
-            && (isempty(tc) || all(isnan(tc)));
-    end
+        'scaleField', scaleField, 'scaleUnitless', strcmp(dataclass, 'digital')); %#ok<AGROW>
+    info.timeChannelCovariates = info.timeChannelCovariates + 1;
 end
 if isempty(made); why = 'no channel group to convert'; return; end
+groupBodies = cellfun(@(m) m.body, made, 'UniformOutput', false);
+
+% [event channels are time-valued observations]: the events file, unpacked
+% when every check passes; else left as it is (counted)
+[ev, evDocs, evWritten, evRows] = unpackEvents(structs, idx, kinds, ci, t0, storeDir);
+info.events = ev;
+
 if ~isempty(keyed)
-    [value, tbody, written] = keyedTime(structs{keyed.k}, keyed.id, keyed.n, keyed.seg, ...
-        keyed.t0, keyed.tsegs, storeDir);
+    try
+        [value, tbody, written] = keyedTime(structs{keyed.k}, keyed.id, keyed.n, keyed.seg, ...
+            keyed.t0, keyed.tsegs, storeDir);
+    catch err
+        cellfun(@deleteIfThere, evWritten);
+        rethrow(err);
+    end
     added{end+1} = value;
     made{end+1} = struct('k', keyed.k, 'body', tbody);
 end
-if all(carriedRows)
+if ev.unpacked
+    added = [added, evDocs];
+    written = [written, evWritten];
+    info.eventBodyIds = {baseId(structs{idx(strcmp(kinds, 'event'))})};
+    gone{end+1} = info.eventBodyIds{1};
+end
+
+% [channel list rows get v2 homes]: "The file is removed only when the round
+% trip rebuilds it exactly; otherwise it is kept and counted." The rebuild is
+% the readers' own (ndi.vintage.ingestedChannelList), from the bodies as the
+% database gives them back (JSON)
+rebuilt = ndi.vintage.ingestedChannelList(cellfun(@(b) jsondecode(jsonencode(b)), ...
+    groupBodies, 'UniformOutput', false), evRows);
+info.channelListWhy = channelListDifference(rebuilt, ci);
+if isempty(info.channelListWhy)
     gone{end+1} = baseId(structs{clIdx});
+end
+end
+
+function why = channelListDifference(rebuilt, ci)
+% '' when REBUILT is the v1 channel list CI, row for row; else the first
+% difference
+why = '';
+f = {'name', 'type', 'time_channel', 'sample_rate', 'offset', 'scale', 'number', ...
+    'group', 'dataclass'};
+if numel(rebuilt) ~= numel(ci)
+    why = sprintf(['the v2 documents rebuild %d channel_list.bin row(s) of %d (a time ' ...
+        'channel''s own row, a text channel, a channel name that is not its prefix and ' ...
+        'number, and an events file left packed have no v2 home yet)'], numel(rebuilt), numel(ci));
+    return;
+end
+for r = 1:numel(ci)
+    for i = 1:numel(f)
+        a = rebuilt(r).(f{i});
+        b = ci(r).(f{i});
+        if ischar(a) || ischar(b) || isstring(b)
+            same = strcmp(char(a), char(b));
+        else
+            same = isequaln(double(a), double(b));
+        end
+        if ~same
+            why = sprintf('channel_list.bin row %d (%s): its %s is not rebuilt exactly', ...
+                r, char(ci(r).name), f{i});
+            return;
+        end
+    end
+end
+end
+
+function [b, counts] = renameMembers(b)
+% [migrated body members renamed] (Jess Haley, 2026-11-17): "NDI's second
+% pass renames a converted channel group's file members from
+% `<type>_group<g>_seg.nbf_<n>` to `body_data_0`, `body_data_1`, ... in
+% segment order; the bytes and the store are unchanged; a name that does not
+% fit NDI's pattern is not renamed, and the run counts it." Pass 1
+% (did2.convert.resolveEpochProbemap archiveBodies) already names them so;
+% COUNTS is [seen renamed already-schema-named not-renamed]
+counts = [0 0 0 0];
+if ~isfield(b, 'files') || ~isstruct(b.files) || ~isfield(b.files, 'file_info')
+    return;
+end
+fi = b.files.file_info;
+wasStruct = isstruct(fi);
+if wasStruct; fi = num2cell(fi); end
+stem = regexprep(bodyFilename(b), '#$', '');
+for m = 1:numel(fi)
+    if ~isstruct(fi{m}) || ~isfield(fi{m}, 'name'); continue; end
+    counts(1) = counts(1) + 1;
+    nm = char(fi{m}.name);
+    if ~isempty(regexp(nm, '^body_data_\d+$', 'once'))
+        counts(3) = counts(3) + 1;
+        continue;
+    end
+    tok = regexp(nm, ['^' regexptranslate('escape', stem) '(\d+)$'], 'tokens', 'once');
+    if isempty(tok) || str2double(tok{1}) < 1
+        counts(4) = counts(4) + 1;
+        continue;
+    end
+    fi{m}.name = sprintf('body_data_%d', str2double(tok{1}) - 1);
+    counts(2) = counts(2) + 1;
+end
+if wasStruct; fi = [fi{:}]; end
+b.files.file_info = fi;
+if counts(2) > 0 && isfield(b.files, 'file_list')
+    names = cellfun(@(x) char(x.name), num2cell(b.files.file_info), 'UniformOutput', false);
+    b.files.file_list = names;
 end
 end
 
@@ -598,17 +787,33 @@ end
 % the scale is in volts per count where the reader defines its output unit
 scale = double([ci(rows).scale]);
 [perVolt, sourceUnit, scaleGap] = readerUnit(reader, type);
-if isempty(scaleGap)
+if any(strcmp(type, {'digital_in', 'digital_out'}))
+    % [digital scale is unitless] (Jess Haley, 2026-11-17): "the scale of a
+    % `di` or `do` group has no unit and is not a gap"
+    scaleGap = '';
+    scaleCov = did2.build.covariate(SCALE(), 1, 'Value', scale);
+elseif isempty(scaleGap)
     scaleCov = did2.build.covariate(SCALE(), 1, 'Value', scale * perVolt, ...
         'SourceValue', scale, 'Unit', VOLT(), 'SourceUnit', sourceUnit);
 else
     scaleCov = did2.build.covariate(SCALE(), 1, 'Value', scale);
 end
+% [time channel is a per-channel covariate] (Jess Haley, 2026-11-17): "a
+% covariate along the channel dimension of the channel group's body, variable
+% "time channel" (EMPTY:0000374), one unitless number per channel, NaN and
+% dangling values carried exactly; it is always written for a converted
+% group"
+tc = NaN(1, numel(rows));
+for r = 1:numel(rows)
+    v = double(ci(rows(r)).time_channel);
+    if isscalar(v); tc(r) = v; end
+end
 covs = did2.build.list( ...
     timeCov, ...
     did2.build.covariate(CHANNEL_NUMBER(), 1, 'Count', double([ci(rows).number])), ...
     did2.build.covariate(OFFSET(), 1, 'Value', double([ci(rows).offset])), ...
-    scaleCov);
+    scaleCov, ...
+    did2.build.covariate(TIME_CHANNEL(), 1, 'Value', tc));
 % the field a gap names: the scale is the 4th covariate (1-based, as a gap's
 % path counts a struct-array field)
 scaleField = 'data.covariates(4).unit';
@@ -637,6 +842,327 @@ body = did2.build.sampledBody(edgeValues(b, 'owner_id'), dims, args{:});
 body.files = b.files;
 end
 
+% ---- the events file ([event channels are time-valued observations]) ----
+
+function [ev, docs, written, rows] = unpackEvents(structs, idx, kinds, ci, t0, storeDir)
+%UNPACKEVENTS The archive's `evmktx_group<g>_seg.nbf_#` file, unpacked into one
+%   observation per channel. Decided by Jess Haley, 2026-11-17 (did-schema
+%   did_v2_go_forward_class_audit.md):
+%
+%   [event channels are time-valued observations]: "one observation per
+%     channel, instrument the acquisition system, the epoch's time reference:
+%     an event channel is a `time` value (the event times, seconds from the
+%     epoch start, in a `sampled_body`); a marker channel is a `label` value
+%     (one code per event ...) keyed to a `time` value of the event times
+%     ...; the channel's name is kept in the observation's notes".
+%   [event channel variable terms], amended by [event channel observes its
+%     wired device]: the variable of an event channel is NCIT:C25499
+%     "Event", of a marker channel NCIT:C25162 "Code"; `entity_id` "the
+%     device entity wired to that channel by its `connected to` relation".
+%   [unpacked event bodies are uncompressed]: "event times and numeric codes
+%     as little-endian 64-bit floats, format EDAM "binary", with no
+%     compression block".
+%   [channel list rows get v2 homes]: each records "its channel type and
+%     number as a condition (e.g. "marker channel", EMPTY:0000377, count 1)".
+%   [unpacked events file is removed]: its opaque_body is removed; "An
+%     archive whose file the round trip cannot rebuild exactly is not
+%     unpacked: it stays as today's opaque body, and the run counts it."
+%
+%   Written here as:
+%     an event channel   observation (value kind time), variable Event,
+%                        data_type float64, data_body true; its
+%                        sampled_body: one time dimension (om:Time, as the
+%                        keyed time value of [uneven time is a keyed time
+%                        value]), n = the events, member body_data_0 = the
+%                        times - t0
+%     a marker channel   observation (value kind label), variable Code,
+%                        data_type float64, data_body true; its sampled_body:
+%                        one time dimension whose time covariate is key 0 to
+%                        a standalone `time` value (data_body true, float64)
+%                        whose sampled_body holds the times - t0; member
+%                        body_data_0 = the codes
+%   each with entity_id the wired device, `acquisition_system_id` the
+%   system the archive's recordings name ("instrument the acquisition
+%   system": an acquisition system is not an `entity`, which `instrument_id`
+%   requires, so the system is named where an interaction names its rig),
+%   time_reference_id the recordings' anchors, the channel's type and number
+%   as a condition, and its v1 name in the notes. New files go into the store
+%   (<NDIDIR>/files/<uid>), their uids derived from the events body.
+%
+%   LEFT PACKED (EV.unpacked false, EV.kind and EV.why say why; the archive's
+%   channel groups still convert), when:
+%     text_channel     a text channel: the format of a text body is not
+%                      decided (the decision names float64 for times and
+%                      numeric codes only)
+%     marker_columns   a marker whose events carry several numbers: the
+%                      second dimension ([several marker numbers are a second
+%                      dimension]) has no decided term
+%     unwired          a channel no `connected to` relation of the epoch
+%                      wires, or that several wire: the decision's fallback
+%                      entity, the acquisition system, is not an `entity`
+%     empty_channel    a channel with no event
+%     not_exact        the channels read back (ndi.vintage.ingestedEventData,
+%                      the reader's rule) or NDI's own round trip
+%                      (ndi.compress.compress_eventmarktext, then
+%                      expand_eventmarktext) differ from the file
+%     other            no single file, bytes not here, no epoch start, no
+%                      single acquisition system, a channel not in the
+%                      channel list
+%   ROWS are the {type, number} of the unpacked channels, for the channel-list
+%   rebuild (ndi.vintage.ingestedChannelList); DOCS the documents made;
+%   WRITTEN the store files written (only once every check has passed).
+ev = struct('present', false, 'unpacked', false, 'channels', 0, 'kind', '', 'why', '');
+docs = {};
+written = {};
+rows = struct('type', {}, 'number', {});
+j = find(strcmp(kinds, 'event'));
+if isempty(j); return; end
+ev.present = true;
+if ~isscalar(j)
+    ev = left(ev, 'other', sprintf('%d events files in one archive', numel(j)));
+    return;
+end
+b = structs{idx(j)};
+paths = memberPaths(b, storeDir);
+if ~isscalar(paths)
+    ev = left(ev, 'other', 'the events file''s bytes are not here (or it has several members)');
+    return;
+end
+stem = ndi.file.temp_name();
+copyfile(paths{1}, [stem '.nbf.tgz']);
+c1 = onCleanup(@() deleteIfThere([stem '.nbf.tgz']));
+[ct, cn, T, D] = ndi.compress.expand_eventmarktext(stem);
+ct = cellstr(ct);
+ev.channels = numel(ct);
+if ~isfinite(t0)
+    ev = left(ev, 'other', 'the v1 archive names no epoch start (t0_t1)');
+    return;
+end
+if any(strcmp(ct, 'text'))
+    ev = left(ev, 'text_channel', ['a text channel: the format of an unpacked text body ' ...
+        'is not decided']);
+    return;
+end
+% the recordings that own the file: their system and anchors
+owners = edgeValues(b, 'owner_id');
+sysIds = {}; anchors = {};
+for k = 1:numel(structs)
+    if ~any(strcmp(baseId(structs{k}), owners)); continue; end
+    sysIds = [sysIds, edgeValues(structs{k}, 'acquisition_system_id')]; %#ok<AGROW>
+    anchors = [anchors, edgeValues(structs{k}, 'time_reference_id')]; %#ok<AGROW>
+end
+sysIds = unique(sysIds);
+anchors = unique(anchors, 'stable');
+if ~isscalar(sysIds) || isempty(anchors)
+    ev = left(ev, 'other', sprintf(['the recordings owning the events file name %d ' ...
+        'acquisition system(s) and %d time reference(s)'], numel(sysIds), numel(anchors)));
+    return;
+end
+[types, abbrev] = ndi.daq.reader.mfdaq.channel_types();
+ciType = cellfun(@char, {ci.type}, 'UniformOutput', false);
+plan = struct('type', {}, 'number', {}, 'name', {}, 'entity', {}, 'times', {}, 'codes', {});
+for i = 1:numel(ct)
+    type = ct{i};
+    num = double(cn(i));
+    r = find(strcmp(ciType, type) & double([ci.number]) == num, 1);
+    if isempty(r) || ~any(strcmp(type, {'event', 'marker'}))
+        ev = left(ev, 'other', sprintf('channel %s %d is not in the channel list', type, num));
+        return;
+    end
+    Ti = T{i}; Di = D{i};
+    if ~isa(Ti, 'double') || ~isa(Di, 'double') || isempty(Ti)
+        if isempty(Ti)
+            ev = left(ev, 'empty_channel', sprintf('%s channel %d has no event', type, num));
+        else
+            ev = left(ev, 'not_exact', sprintf(['%s channel %d: its times or data are not ' ...
+                'double (%s, %s)'], type, num, class(Ti), class(Di)));
+        end
+        return;
+    end
+    if strcmp(type, 'marker') && size(Di, 2) > 1
+        ev = left(ev, 'marker_columns', sprintf(['marker channel %d carries %d numbers per ' ...
+            'event: the second dimension has no decided term'], num, size(Di, 2)));
+        return;
+    end
+    stored = Ti(:) - t0;
+    codes = [];
+    if strcmp(type, 'marker'); codes = Di(:); end
+    [Tr, Dr] = ndi.vintage.ingestedEventData(type, stored, codes);
+    if ~isequal(Tr + t0, Ti(:)) || ~isequal(Dr, Di(:))
+        ev = left(ev, 'not_exact', sprintf(['%s channel %d does not read back exactly ' ...
+            '(times from the epoch start %.17g, or its data)'], type, num, t0));
+        return;
+    end
+    [entity, n] = wiredDevice(structs, sysIds{1}, anchors, type, num);
+    if n ~= 1
+        ev = left(ev, 'unwired', sprintf(['%s channel %d is wired to %d device(s) by a ' ...
+            '`connected to` relation of the epoch: its entity is not known (the decision''s ' ...
+            'fallback, the acquisition system, is not an entity)'], type, num, n));
+        return;
+    end
+    plan(end+1) = struct('type', type, 'number', num, 'name', char(ci(r).name), ...
+        'entity', entity, 'times', stored, 'codes', codes); %#ok<AGROW>
+end
+% NDI's own round trip: the file rebuilt from the unpacked values, expanded
+try
+    Tb = cell(1, numel(plan)); Db = cell(1, numel(plan));
+    for i = 1:numel(plan)
+        [Tb{i}, Db{i}] = ndi.vintage.ingestedEventData(plan(i).type, plan(i).times, plan(i).codes);
+        Tb{i} = Tb{i} + t0;
+    end
+    stem2 = ndi.file.temp_name();
+    ndi.compress.compress_eventmarktext({plan.type}, [plan.number], Tb, Db, stem2);
+    c2 = onCleanup(@() deleteIfThere([stem2 '.nbf.tgz']));
+    [ct2, cn2, T2, D2] = ndi.compress.expand_eventmarktext(stem2);
+    same = isequal(cellstr(ct2), ct) && isequal(double(cn2(:)), double(cn(:))) ...
+        && isequal(T2(:), T(:)) && isequal(D2(:), D(:));
+catch err
+    same = false;
+    ev = left(ev, 'not_exact', sprintf('NDI''s round trip of the events file failed: %s', err.message));
+    return;
+end
+if ~same
+    ev = left(ev, 'not_exact', 'NDI''s round trip of the events file does not give it back');
+    return;
+end
+[docs, written] = eventDocuments(b, plan, sysIds{1}, anchors, storeDir, types, abbrev);
+ev.unpacked = true;
+rows = struct('type', {plan.type}, 'number', {plan.number});
+end
+
+function ev = left(ev, kind, why)
+ev.unpacked = false;
+ev.kind = kind;
+ev.why = why;
+end
+
+function [entity, n] = wiredDevice(structs, sysId, anchors, type, num)
+% the child of the `connected to` (RO:0002170) relations to SYSID, timed by
+% one of ANCHORS, whose condition of TYPE's channel-type term lists NUM
+% (did2.convert.resolveEpochProbemap mkWiring); N how many devices
+node = struct('event', 'EMPTY:0000376', 'marker', 'EMPTY:0000377');
+want = node.(type);
+found = {};
+for k = 1:numel(structs)
+    s = structs{k};
+    if ~strcmp(className(s), 'directed_relation') || ~isfield(s, 'directed_relation'); continue; end
+    dr = s.directed_relation;
+    if ~isfield(dr, 'relation') || ~isstruct(dr.relation) || ~isfield(dr.relation, 'node') ...
+            || ~strcmpi(char(dr.relation.node), 'RO:0002170')
+        continue;
+    end
+    if ~any(strcmp(edgeValues(s, 'parent_id'), sysId)) ...
+            || ~any(ismember(edgeValues(s, 'time_reference_id'), anchors))
+        continue;
+    end
+    if ~isfield(dr, 'conditions') || isempty(dr.conditions); continue; end
+    cs = dr.conditions;
+    if isstruct(cs); cs = num2cell(cs); end
+    for c = 1:numel(cs)
+        cc = cs{c};
+        if ~isstruct(cc) || ~isfield(cc, 'variable') || ~isstruct(cc.variable) ...
+                || ~isfield(cc.variable, 'node') || ~strcmp(char(cc.variable.node), want)
+            continue;
+        end
+        if isfield(cc, 'matrix') && any(double(cc.matrix(:)) == num)
+            found = [found, edgeValues(s, 'child_id')]; %#ok<AGROW>
+        end
+    end
+end
+found = unique(found);
+n = numel(found);
+entity = '';
+if n == 1; entity = found{1}; end
+end
+
+function [docs, written] = eventDocuments(b, plan, sysId, anchors, storeDir, types, abbrev)
+% the observations, time values and bodies of the unpacked channels, and
+% their files (written last; deleted again if anything fails)
+restore = ndi.migrate.internal.termRegistryOff(); %#ok<NASGU>
+docs = {};
+written = {};
+srcId = baseId(b);
+sid = char(did2.schema.cache.sessionIdOf(b));
+tsArg = {};
+if isfield(b.base, 'creation_timestamp') && ~isempty(b.base.creation_timestamp)
+    tsArg = {'CreationTimestamp', char(b.base.creation_timestamp)};
+end
+timeTerm = struct('node', 'om:Time', 'name', 'time');
+binary = struct('node', 'EDAM:format_2333', 'name', 'Binary format');
+chanTerm = struct('event', struct('node', 'EMPTY:0000376', 'name', 'event channel'), ...
+    'marker', struct('node', 'EMPTY:0000377', 'name', 'marker channel'));
+variable = struct('event', struct('node', 'NCIT:C25499', 'name', 'Event'), ...
+    'marker', struct('node', 'NCIT:C25162', 'name', 'Code'));
+try
+    for i = 1:numel(plan)
+        p = plan(i);
+        key = sprintf('%s|%s|%d', srcId, p.type, p.number);
+        obsId = did2.convert.mintId('unpacked event channel', key);
+        n = numel(p.times);
+        note = sprintf(['The %s channel %s of the ingested events file %s (v1 name %s), ' ...
+            'unpacked by the NDI second pass: %d event(s), times in seconds from the ' ...
+            'epoch''s start.'], p.type, sprintf('%s%d', abbrev{strcmp(types, p.type)}, p.number), ...
+            bodyFilename(b), p.name, n);
+        common = {'DataBody', true, 'DatumType', 'float64', 'TimeReferenceIds', anchors, ...
+            'AcquisitionSystemId', sysId, ...
+            'Conditions', did2.build.condition(chanTerm.(p.type), 'Count', p.number), ...
+            'Notes', note, 'Id', obsId, 'SessionId', sid, 'Validate', false, tsArg{:}};
+        if strcmp(p.type, 'event')
+            obs = did2.build.statement('observation', p.entity, variable.event, [], ...
+                'ValueKind', 'time', common{:});
+            [fi, w] = writeFloats(p.times, storeDir, ['times|' key]);
+            written{end+1} = w; %#ok<AGROW>
+            body = did2.build.sampledBody(obsId, did2.build.dimension(timeTerm, n), ...
+                'ByteOrder', 'little', 'Format', binary, ...
+                'Id', did2.convert.mintId('unpacked event channel body', key), ...
+                'SessionId', sid, 'Validate', false, tsArg{:});
+            body.files = struct('file_list', {{'body_data_0'}}, 'file_info', fi);
+            docs = [docs, {obs, body}]; %#ok<AGROW>
+        else
+            tvId = did2.convert.mintId('unpacked event times value', key);
+            tv = did2.build.document('time', struct('data_body', true, 'data_type', 'float64'), ...
+                'Id', tvId, 'SessionId', sid, 'Validate', false, tsArg{:});
+            [fi, w] = writeFloats(p.times, storeDir, ['times|' key]);
+            written{end+1} = w; %#ok<AGROW>
+            tbody = did2.build.sampledBody(tvId, did2.build.dimension(timeTerm, n), ...
+                'ByteOrder', 'little', 'Format', binary, ...
+                'Id', did2.convert.mintId('unpacked event times body', key), ...
+                'SessionId', sid, 'Validate', false, tsArg{:});
+            tbody.files = struct('file_list', {{'body_data_0'}}, 'file_info', fi);
+            obs = did2.build.statement('observation', p.entity, variable.marker, [], ...
+                'ValueKind', 'label', common{:});
+            [fi, w] = writeFloats(p.codes, storeDir, ['codes|' key]);
+            written{end+1} = w; %#ok<AGROW>
+            body = did2.build.sampledBody(obsId, did2.build.dimension(timeTerm, n), ...
+                'Covariates', did2.build.covariate(timeTerm, 0, 'Key', 0), 'KeyIds', {tvId}, ...
+                'ByteOrder', 'little', 'Format', binary, ...
+                'Id', did2.convert.mintId('unpacked event channel body', key), ...
+                'SessionId', sid, 'Validate', false, tsArg{:});
+            body.files = struct('file_list', {{'body_data_0'}}, 'file_info', fi);
+            docs = [docs, {tv, tbody, obs, body}]; %#ok<AGROW>
+        end
+    end
+catch err
+    cellfun(@deleteIfThere, written);
+    rethrow(err);
+end
+end
+
+function [fi, dest] = writeFloats(x, storeDir, key)
+% [unpacked event bodies are uncompressed]: little-endian float64, one
+% member, into the store under a uid derived from KEY
+uid = char(did2.convert.mintId('unpacked event file', key));
+dest = fullfile(storeDir, uid);
+fid = fopen(dest, 'w', 'ieee-le');
+if fid < 0
+    error('NDI:migrate:ingestedArchiveBodies:write', 'Cannot write %s.', dest);
+end
+fwrite(fid, double(x(:)), 'float64');
+fclose(fid);
+fi = struct('name', 'body_data_0', 'locations', struct('delete_original', 0, 'uid', uid, ...
+    'location', dest, 'parameters', '', 'location_type', 'file', 'ingest', 1));
+end
+
 % ---- terms ----------------------------------------------------------
 
 function t = CHANNEL_NUMBER()
@@ -658,6 +1184,12 @@ function t = SCALE()
 % (Intan analog: 0.195, microvolts per count). NCIT "Unit Conversion
 % Factor": "An operator used to convert units from one scale to another."
 t = struct('node', 'NCIT:C70774', 'name', 'Unit Conversion Factor');
+end
+
+function t = TIME_CHANNEL()
+% did-schema term registry EMPTY:0000374 "time channel" ([channel types]),
+% the variable of [time channel is a per-channel covariate]
+t = struct('node', 'EMPTY:0000374', 'name', 'time channel');
 end
 
 function t = VOLT()
@@ -693,9 +1225,11 @@ function [perVolt, sourceUnit, why] = readerUnit(reader, type)
 %                   openNSx(..., 'uV', ...) and it keeps the base class's
 %                   [0 1] polynomial, so one count is one microvolt.
 %
-%   Every other reader and channel type (digital channels, CED Spike2 whose
-%   unit is per channel in the file, the other NDR readers, NDI's base
-%   reader) has no unit defined by the reader: a gap.
+%   Every other reader and channel type (CED Spike2 whose unit is per
+%   channel in the file, the other NDR readers, NDI's base reader) has no
+%   unit defined by the reader: a gap. Digital channels (`di`, `do`) record a
+%   logic level: the caller writes their scale with no unit and lists no gap
+%   ([digital scale is unitless], Jess Haley, 2026-11-17).
 perVolt = NaN;
 sourceUnit = struct('node', '', 'name', '');
 why = '';
