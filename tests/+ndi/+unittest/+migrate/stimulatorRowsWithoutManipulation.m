@@ -30,6 +30,15 @@ function R = stimulatorRowsWithoutManipulation(migratedNdiDir, label)
 %   R.mismatches the ones that differ; R.removed the number of manipulations
 %   removed, R.withBody the number left because they own a body.
 
+% SCRATCH (claude/stimlink-measure, not for merge): the presentation link check
+try
+    ndi.unittest.migrate.presentationStimulatorLinkCheck(migratedNdiDir, label);
+catch ME
+    fprintf('\n  PRESENTATION STIMULATOR LINK CHECK FAILED: %s\n', ME.message);
+    for q = 1:numel(ME.stack)
+        fprintf('    at %s line %d\n', ME.stack(q).name, ME.stack(q).line);
+    end
+end
 R = struct('label', label, 'checks', {{}}, 'mismatches', {{}}, 'removed', 0, ...
     'withBody', 0, 'stimulators', 0);
 root = tempname();
