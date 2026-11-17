@@ -5,7 +5,8 @@ classdef TestIngestedArchiveBodies < matlab.unittest.TestCase
 %   channel list is covariates (Decided by Jess Haley, 2026-11-01 [ingested
 %   archives are sampled bodies], [evenly spaced time is a covariate], [clock
 %   only on the time reference], [uneven time is a keyed time value]; and
-%   Jess Haley, 2026-11-12, [uneven time rewritten from the epoch start]). The segments and channel_list.bin are
+%   Jess Haley, 2026-11-12, [uneven time rewritten from the epoch start];
+%   Jess Haley, 2026-11-17, [scale carries the reader's unit]). The segments and channel_list.bin are
 %   written by NDI's own writers (ndi.compress, ndi.file.type.
 %   mfdaq_epoch_channel), as ndi.daq.reader.mfdaq/ingest_epochfiles does.
 
@@ -59,8 +60,22 @@ classdef TestIngestedArchiveBodies < matlab.unittest.TestCase
             testCase.verifyEqual(double(ch.count(:))', [1 2 3]);
             sc = covs(strcmp(vars, 'Unit Conversion Factor'));
             testCase.verifyEqual(double(sc.quantity.value(:))', [0.195 0.195 0.195]);
+            % this archive names no v1 daqreader: the scale has no unit, and
+            % the gap is listed ([scale carries the reader's unit])
+            testCase.verifyFalse(isfield(sc, 'unit') && ~isempty(sc.unit));
+            testCase.verifyEqual(rep.scale_with_unit, 0);
+            testCase.verifyEqual(rep.scale_without_unit, 1);
+            testCase.verifyEqual(numel(rep.scale_gaps), 1, 'one entry per converted archive');
+            g = rep.scale_gaps{1};
+            testCase.verifyEqual(numel(g), 1);
+            testCase.verifyEqual(g.document_id, 'body_ai');
+            testCase.verifyEqual(g.field, 'data.covariates(4).unit');
+            testCase.verifyTrue(contains(g.reason, 'daqreader'), g.reason);
+            testCase.verifyEqual(char(covs(4).variable.node), 'NCIT:C70774', ...
+                'the field the gap names is the scale');
             off = covs(strcmp(vars, 'signal offset configuration'));
             testCase.verifyEqual(double(off.quantity.value(:))', [-2 -2 -2]);
+            testCase.verifyFalse(isfield(off, 'unit') && ~isempty(off.unit), 'the offset has no unit');
             testCase.verifyEqual(char(b.data_body.conditions(1).term.node), 'EMPTY:0000370');
             testCase.verifyEqual(numel(b.files.file_info), 2, 'the members are unchanged');
             % the evenly spaced time group is the covariate now; the
@@ -192,6 +207,89 @@ classdef TestIngestedArchiveBodies < matlab.unittest.TestCase
             testCase.verifyEqual(numel(res.migrated), numel(out));
         end
 
+        function testIntanAmplifierScaleIsInVoltsFromMicrovolts(testCase)
+            % Decided by Jess Haley, 2026-11-17 [scale carries the reader's
+            % unit]: "the per-channel scale covariate (NCIT:C70774) has the
+            % canonical unit (volt for a voltage output) with the reader's
+            % output unit as `source_unit` (e.g. microvolt for the Intan
+            % amplifier)"; the offset has no unit
+            o = struct('reader', struct('class', 'ndi.daq.reader.mfdaq.intan', 'ndr', ''));
+            [structs, v1] = testCase.archive(true, true, 0, o);
+            [out, rep] = ndi.migrate.internal.ingestedArchiveBodies(structs, testCase.Dir, v1);
+            testCase.verifyEqual(rep.archives_converted, 1, rep.first_unconvertible_reason);
+            sc = scaleOf(out{2});
+            testCase.verifyEqual(double(sc.quantity.value(:))', 0.195e-6 * [1 1 1], 'AbsTol', 1e-18);
+            testCase.verifyEqual(double(sc.quantity.source_value(:))', [0.195 0.195 0.195], ...
+                'the v1 scale, verbatim');
+            testCase.verifyEqual(char(sc.unit.node), 'om:volt');
+            testCase.verifyEqual(char(sc.source_unit.node), 'om:microvolt');
+            off = covOf(out{2}, 'AFO:AFQ_0000202');
+            testCase.verifyFalse(isfield(off, 'unit') && ~isempty(off.unit), 'the offset has no unit');
+            testCase.verifyEqual(rep.scale_with_unit, 1);
+            testCase.verifyEqual(rep.scale_without_unit, 0);
+            testCase.verifyEmpty(rep.scale_gaps{1});
+            res = did2.convert.v1_to_v2(out, 'Validate', true, 'TargetVersion', 'did_v2');
+            testCase.verifyEmpty(res.quarantine);
+        end
+
+        function testNdrIntanReaderIsTheIntanUnit(testCase)
+            % ndi.daq.reader.mfdaq.ndr with an NDR reader string of
+            % ndr.reader.intan_rhd ("intan", "RHD", "intanRHD", any case)
+            o = struct('reader', struct('class', 'ndi.daq.reader.mfdaq.ndr', 'ndr', 'rhd'));
+            [structs, v1] = testCase.archive(true, true, 0, o);
+            [out, rep] = ndi.migrate.internal.ingestedArchiveBodies(structs, testCase.Dir, v1);
+            testCase.verifyEqual(rep.archives_converted, 1, rep.first_unconvertible_reason);
+            sc = scaleOf(out{2});
+            testCase.verifyEqual(char(sc.source_unit.node), 'om:microvolt');
+            testCase.verifyEqual(rep.scale_with_unit, 1);
+        end
+
+        function testIntanAuxiliaryScaleIsInVolts(testCase)
+            % Intan auxiliary inputs: "aux_input_data = 37.4e-6 *
+            % aux_input_data; % units = volts"
+            o = struct('reader', struct('class', 'ndi.daq.reader.mfdaq.intan', 'ndr', ''), ...
+                'prefix', 'ax', 'scale', 3.74e-05);
+            [structs, v1] = testCase.archive(true, true, 0, o);
+            [out, rep] = ndi.migrate.internal.ingestedArchiveBodies(structs, testCase.Dir, v1);
+            testCase.verifyEqual(rep.archives_converted, 1, rep.first_unconvertible_reason);
+            b = out{2};
+            testCase.verifyEqual(char(b.data_body.conditions(1).term.node), 'EMPTY:0000375');
+            sc = scaleOf(b);
+            testCase.verifyEqual(double(sc.quantity.value(:))', 3.74e-05 * [1 1 1], 'AbsTol', 1e-18);
+            testCase.verifyEqual(double(sc.quantity.source_value(:))', 3.74e-05 * [1 1 1]);
+            testCase.verifyEqual(char(sc.unit.node), 'om:volt');
+            testCase.verifyEqual(char(sc.source_unit.node), 'om:volt');
+            res = did2.convert.v1_to_v2(out, 'Validate', true, 'TargetVersion', 'did_v2');
+            testCase.verifyEmpty(res.quarantine);
+        end
+
+        function testAReaderThatDefinesNoUnitIsAGap(testCase)
+            % CED Spike2: the unit is per channel in the file, not the
+            % reader's: no unit, and the gap names the reader
+            o = struct('reader', struct('class', 'ndi.daq.reader.mfdaq.cedspike2', 'ndr', ''));
+            [structs, v1] = testCase.archive(true, true, 0, o);
+            [out, rep] = ndi.migrate.internal.ingestedArchiveBodies(structs, testCase.Dir, v1);
+            testCase.verifyEqual(rep.archives_converted, 1, rep.first_unconvertible_reason);
+            sc = scaleOf(out{2});
+            testCase.verifyEqual(double(sc.quantity.value(:))', [0.195 0.195 0.195]);
+            testCase.verifyFalse(isfield(sc, 'unit') && ~isempty(sc.unit));
+            testCase.verifyFalse(isfield(sc.quantity, 'source_value') && ...
+                ~isempty(sc.quantity.source_value));
+            testCase.verifyEqual(rep.scale_with_unit, 0);
+            testCase.verifyEqual(rep.scale_without_unit, 1);
+            g = rep.scale_gaps{1};
+            testCase.verifyEqual(g.field, 'data.covariates(4).unit');
+            testCase.verifyTrue(contains(g.reason, 'ndi.daq.reader.mfdaq.cedspike2'), g.reason);
+            % the gap is one did2.convert.migrationReport accepts
+            did2.convert.migrationReport('begin');
+            testCase.addTeardown(@() did2.convert.migrationReport('end'));
+            did2.convert.migrationReport('gap', g.document_id, g.class, g.field, g.reason);
+            listed = did2.convert.migrationReport('gaps', 'body_ai');
+            testCase.verifyEqual({listed.field}, {'data.covariates(4).unit'});
+            res = did2.convert.v1_to_v2(out, 'Validate', true, 'TargetVersion', 'did_v2');
+            testCase.verifyEmpty(res.quarantine);
+        end
+
         function testBytesNotHereLeaveTheArchive(testCase)
             [structs, v1] = testCase.archive(true, true);
             delete(fullfile(testCase.Dir, 'files', '*'));
@@ -204,16 +302,24 @@ classdef TestIngestedArchiveBodies < matlab.unittest.TestCase
     end
 
     methods
-        function [s, v1, t] = archive(testCase, withTime, evenTime, t0)
+        function [s, v1, t] = archive(testCase, withTime, evenTime, t0, o)
             % an epoch of 160 samples at 10 kHz, 3 analog inputs in
             % segments of 100 (NDI's ephys compressor fits a predictor, so
             % a segment needs more samples than its order), and
             % (WITHTIME) the time channel t1, its v1 times T; the epoch
-            % starts at T0 (0)
+            % starts at T0 (0). O (optional): O.reader {class, ndr}, the v1
+            % daqreader the archive depends on (none by default); O.prefix
+            % 'ai' (default) or 'ax' (auxiliary inputs); O.scale (0.195)
             if nargin < 4; t0 = 0; end
+            if nargin < 5; o = struct(); end
+            if ~isfield(o, 'prefix'); o.prefix = 'ai'; end
+            if ~isfield(o, 'scale'); o.scale = 0.195; end
+            if ~isfield(o, 'reader'); o.reader = []; end
+            types = struct('ai', 'analog_in', 'ax', 'auxiliary_in');
             sr = 10000;
-            ch = struct('name', {'ai1', 'ai2', 'ai3'}, 'type', 'analog_in', ...
-                'time_channel', NaN, 'sample_rate', sr, 'offset', -2, 'scale', 0.195);
+            ch = struct('name', cellfun(@(n) sprintf('%s%d', o.prefix, n), {1, 2, 3}, ...
+                'UniformOutput', false), 'type', types.(o.prefix), ...
+                'time_channel', NaN, 'sample_rate', sr, 'offset', -2, 'scale', o.scale);
             if withTime
                 ch(end+1) = struct('name', 't1', 'type', 'time', 'time_channel', NaN, ...
                     'sample_rate', sr, 'offset', 0, 'scale', 1);
@@ -235,7 +341,7 @@ classdef TestIngestedArchiveBodies < matlab.unittest.TestCase
             t = [];
             obs = owner();
             s = {obs, ...
-                body('body_ai', 'ai_group1_seg.nbf_#', {'u_ai_1', 'u_ai_2'}), ...
+                body('body_ai', [o.prefix '_group1_seg.nbf_#'], {'u_ai_1', 'u_ai_2'}), ...
                 body('body_cl', 'channel_list.bin', {'u_cl'})};
             if withTime
                 t = t0 + (0:159)' / sr;
@@ -260,6 +366,22 @@ classdef TestIngestedArchiveBodies < matlab.unittest.TestCase
                 'daqreader_epochdata_ingested', struct('epochtable', ...
                     struct('epochclock', {{'dev_local_time'}}, 't0_t1', [t0; t0 + 159/sr])), ...
                 'files', struct('file_list', {{'channel_list.bin'}}, 'file_info', fi))};
+            if ~isempty(o.reader)
+                % the v1 daqreader document the archive's daqreader_id names
+                % (ndi.daq.reader/newdocument; daqreader_ndr adds the NDR
+                % reader string)
+                rd = struct('base', struct('id', 'reader_1'), ...
+                    'document_class', struct('class_name', 'daqreader'), ...
+                    'daqreader', struct('ndi_daqreader_class', o.reader.class));
+                if ~isempty(o.reader.ndr)
+                    rd.document_class.class_name = 'daqreader_ndr';
+                    rd.daqreader_ndr = struct('ndr_reader_string', o.reader.ndr, ...
+                        'ndi_daqreader_ndr_class', 'ndi.daq.reader.mfdaq.ndr');
+                end
+                v1{1}.depends_on = struct('name', 'daqreader_id', 'value', 'reader_1');
+                % as JSON text, as did2.convert.readers hand the bodies over
+                v1{end+1} = jsonencode(rd);
+            end
         end
     end
 end
@@ -276,6 +398,20 @@ for k = 1:numel(deps)
         ids{end+1} = v; %#ok<AGROW>
     end
 end
+end
+
+function c = covOf(b, node)
+covs = b.data.covariates;
+if isstruct(covs); covs = num2cell(covs); end
+c = [];
+for k = 1:numel(covs)
+    v = covs{k}.variable;
+    if isfield(v, 'node') && strcmp(char(v.node), node); c = covs{k}; return; end
+end
+end
+
+function c = scaleOf(b)
+c = covOf(b, 'NCIT:C70774');
 end
 
 function uids = memberUids(b)

@@ -153,7 +153,15 @@ for k = 1:numel(names)
         elseif strcmp(node, 'AFO:AFQ_0000202')
             off = double(cv.quantity.value(:)');
         elseif strcmp(node, 'NCIT:C70774')
-            sc = double(cv.quantity.value(:)');
+            % [scale carries the reader's unit] (Jess Haley, 2026-11-17):
+            % where the reader defines its output unit, `value` is in volts
+            % per count and `source_value` is the v1 scale in the reader's
+            % output unit, which is what NDI's reader multiplies by
+            if isfield(cv.quantity, 'source_value') && ~isempty(cv.quantity.source_value)
+                sc = double(cv.quantity.source_value(:)');
+            else
+                sc = double(cv.quantity.value(:)');
+            end
         end
     end
     if any(strcmp(ab, {'di', 'do'})); dc = 'digital'; else; dc = 'ephys'; end
