@@ -14,13 +14,18 @@ classdef TestStimulatorRowFromWiring < matlab.unittest.TestCase
 %   THE FIXTURE is a real migrated session: three epochs of the Intan file
 %   NDI ships, each with a probe map holding an n-trode `ctx` (intan1:ai1)
 %   and a stimulator `stim` (intan1:di1), ingested, the .rhd files deleted,
-%   migrated with ndi.migrate.local. The migration writes the Stimulator
-%   manipulation, so the tests read that session as it is (old data: the row
-%   from the manipulation), then a copy of it with every Stimulator
-%   manipulation removed (the shape DID-matlab writes once it stops calling
-%   mkManipulation), and a copy with the stimulator's wiring removed and the
+%   migrated with ndi.migrate.local. Since DID-matlab #466 (1048e449, the
+%   build of [stimulator manipulation dropped]) the migration writes no
+%   Stimulator manipulation for a stimulator row its wiring relation and
+%   element hold, so the tests read that session as it is (the decided
+%   shape: the row from the wiring), then a copy of it with a Stimulator
+%   manipulation added per epoch exactly as DID-matlab wrote it before #466
+%   (resolveEpochProbemap mkManipulation: old data, which must read the
+%   same), and a copy of that with the stimulator's wiring removed and the
 %   manipulation kept (a stimulator row with no channels has no wiring
-%   relation: it stays on the manipulation path).
+%   relation, so DID-matlab still writes its manipulation,
+%   stimulator_manipulations_kept_no_wiring: it stays on the manipulation
+%   path).
 %
 %   Filtered (never passed) when mksqlite, DID-matlab's did2 converter, a v2
 %   schema set with `entity`, or NDI-compress is missing.
@@ -30,8 +35,8 @@ classdef TestStimulatorRowFromWiring < matlab.unittest.TestCase
         Root
         Session
         SetupError = ''
-        Removed = struct('manipulations', {{}}, 'wirings', {{}})
-        NoManipulation
+        Edited = struct('written', {{}}, 'wired', {{}}, 'added', {{}}, 'wirings', {{}})
+        WithManipulation
         NoWiring
     end
 
@@ -61,15 +66,21 @@ classdef TestStimulatorRowFromWiring < matlab.unittest.TestCase
                 testCase.Session = P.build(migrated);
                 sid = char(testCase.Session.id());
                 stimId = P.stimulatorId(testCase.Session);
-                % copy 1: every Stimulator manipulation removed
-                [S1, ids1] = P.copyWithout(migrated, fullfile(root, 'no_manipulation'), sid, ...
-                    @(S) P.manipulationIds(S, stimId));
-                % copy 2: the stimulator's wiring removed, its manipulations kept
-                [S2, ids2] = P.copyWithout(migrated, fullfile(root, 'no_wiring'), sid, ...
-                    @(S) P.wiringIds(S, stimId));
-                testCase.NoManipulation = S1;
+                written = P.manipulationIds(testCase.Session, stimId);
+                wired = P.wiringIds(testCase.Session, stimId);
+                % copy 1: old data, a Stimulator manipulation per wiring
+                % relation of the stimulator, as DID-matlab wrote it before #466
+                withManip = fullfile(root, 'with_manipulation');
+                [S1, ~, added] = P.copyEdited(migrated, withManip, sid, ...
+                    @(S) {}, @(S) P.oldManipulations(S, stimId));
+                % copy 2: copy 1 with the stimulator's wiring removed, its
+                % manipulations kept
+                [S2, ids2] = P.copyEdited(withManip, fullfile(root, 'no_wiring'), sid, ...
+                    @(S) P.wiringIds(S, stimId), @(S) {});
+                testCase.WithManipulation = S1;
                 testCase.NoWiring = S2;
-                testCase.Removed = struct('manipulations', {ids1}, 'wirings', {ids2});
+                testCase.Edited = struct('written', {written}, 'wired', {wired}, 'added', {added}, ...
+                    'wirings', {ids2});
             catch ME
                 testCase.SetupError = sprintf('%s (%s)', ME.message, ME.identifier);
             end
@@ -77,23 +88,42 @@ classdef TestStimulatorRowFromWiring < matlab.unittest.TestCase
     end
 
     methods (Test)
-        function testWithTheManipulationTheRowIsReadAsBefore(testCase)
-            % old data: the manipulation names the stimulator, so its row is
-            % read from it and its wiring adds no second row
-            S = testCase.ready(testCase.Session);
-            rows = testCase.stimulatorRows(S);
+        function testTheMigrationWritesNoStimulatorManipulation(testCase)
+            % [stimulator manipulation dropped] (DID-matlab #466): the wired
+            % stimulator's row writes no manipulation, and its wiring
+            % relation is kept, one per epoch
+            testCase.ready(testCase.Session);
+            testCase.verifyEmpty(testCase.Edited.written, ...
+                'the migration wrote a Stimulator manipulation for a row its wiring and element hold');
+            testCase.verifyNumElements(testCase.Edited.wired, numel(testCase.Epochs), ...
+                'the migration did not keep one stimulator wiring relation per epoch');
+        end
+
+        function testWithoutTheManipulationTheRowIsRebuiltFromTheWiring(testCase)
+            % the decided shape: no statement names the stimulator, so its
+            % row is rebuilt from its wiring relation and its element
+            rows = testCase.stimulatorRows(testCase.ready(testCase.Session));
             testCase.verifyEqual(numel(rows), numel(testCase.Epochs), ...
-                'one stimulator row per epoch, read from the manipulation');
+                'one stimulator row per epoch, rebuilt from the wiring');
             testCase.verifyEqual(unique({rows.devicestring}), {'intan1:di1'});
             testCase.verifyEqual(unique({rows.subjectstring}), {testCase.SubjectString});
         end
 
-        function testWithoutTheManipulationTheRowIsRebuiltFromTheWiring(testCase)
-            testCase.assertNotEmpty(testCase.Removed.manipulations, ...
-                'the migration wrote no Stimulator manipulation to remove (nothing measured)');
-            fprintf('  removed %d Stimulator manipulation(s)\n', numel(testCase.Removed.manipulations));
-            before = testCase.allRows(testCase.ready(testCase.Session));
-            after = testCase.allRows(testCase.ready(testCase.NoManipulation));
+        function testWithTheManipulationTheRowIsReadAsBefore(testCase)
+            % old data: the manipulation names the stimulator, so its row is
+            % read from it and its wiring adds no second row; the probe map
+            % is the one the decided shape reads
+            testCase.assertNumElements(testCase.Edited.added, numel(testCase.Epochs), ...
+                'no old-data Stimulator manipulation was added (nothing measured)');
+            fprintf('  added %d Stimulator manipulation(s)\n', numel(testCase.Edited.added));
+            old = testCase.ready(testCase.WithManipulation);
+            rows = testCase.stimulatorRows(old);
+            testCase.verifyEqual(numel(rows), numel(testCase.Epochs), ...
+                'one stimulator row per epoch, read from the manipulation');
+            testCase.verifyEqual(unique({rows.devicestring}), {'intan1:di1'});
+            testCase.verifyEqual(unique({rows.subjectstring}), {testCase.SubjectString});
+            before = testCase.allRows(old);
+            after = testCase.allRows(testCase.ready(testCase.Session));
             testCase.assertNumElements(after, numel(before));
             for k = 1:numel(before)
                 testCase.verifyEqual(after(k).epoch_id, before(k).epoch_id);
@@ -105,9 +135,7 @@ classdef TestStimulatorRowFromWiring < matlab.unittest.TestCase
         end
 
         function testGetprobesFindsTheStimulatorWithoutTheManipulation(testCase)
-            testCase.assertNotEmpty(testCase.Removed.manipulations, ...
-                'the migration wrote no Stimulator manipulation to remove (nothing measured)');
-            S = testCase.ready(testCase.NoManipulation);
+            S = testCase.ready(testCase.Session);
             probes = S.getprobes('type', 'stimulator');
             testCase.assertNumElements(probes, 1, 'getprobes did not find the stimulator');
             testCase.verifyEqual(char(probes{1}.name), 'stim');
@@ -120,7 +148,7 @@ classdef TestStimulatorRowFromWiring < matlab.unittest.TestCase
         end
 
         function testBatchedAndOneAtATimeAgreeWithoutTheManipulation(testCase)
-            S = testCase.ready(testCase.NoManipulation);
+            S = testCase.ready(testCase.Session);
             [dev, docs, cls] = testCase.navigatorDocs(S);
             P = ndi.unittest.vintage.TestIngestedReadsBatched;
             one = ndi.vintage.ingestedEpochs(S, docs, cls, 'Batch', false);
@@ -143,7 +171,7 @@ classdef TestStimulatorRowFromWiring < matlab.unittest.TestCase
             % a stimulator row with no channels has no wiring relation: its
             % row is read from the manipulation, with the system's name as
             % its devicestring
-            testCase.assertNotEmpty(testCase.Removed.wirings, ...
+            testCase.assertNotEmpty(testCase.Edited.wirings, ...
                 'the migration wrote no stimulator wiring to remove (nothing measured)');
             rows = testCase.stimulatorRows(testCase.ready(testCase.NoWiring));
             testCase.verifyEqual(numel(rows), numel(testCase.Epochs));
@@ -258,6 +286,37 @@ classdef TestStimulatorRowFromWiring < matlab.unittest.TestCase
             ids = cellfun(@(d) char(d.id()), found(keep), 'UniformOutput', false);
         end
 
+        function docs = oldManipulations(S, stimId)
+            % old data: per wiring relation of the stimulator, the Stimulator
+            % manipulation DID-matlab's resolveEpochProbemap wrote before #466
+            % (mkManipulation, the same call): the stimulator type as variable
+            % and term value, about the element's subject, the stimulator as
+            % instrument, the rig as acquisition system, timed by the
+            % wiring's epoch anchor
+            P = ndi.unittest.vintage.TestStimulatorRowFromWiring;
+            els = ndi.vintage.elementSubjectDocs(S, 'probe');
+            els = els(cellfun(@(d) strcmp(char(d.id()), stimId), els));
+            assert(numel(els) == 1, 'expected the stimulator element %s, found %d', stimId, numel(els));
+            subjectId = char(ndi.vintage.elementFields(els{1}, S).subject_id);
+            assert(~isempty(subjectId), 'the stimulator element has no subject');
+            found = S.database_search(ndi.query('', 'isa', 'directed_relation', '') & ...
+                ndi.query('', 'depends_on', 'child_id', stimId));
+            found = found(cellfun(@(d) P.isWiring(d), found));
+            typeTerm = did2.convert.registeredTerm('', 'stimulator');
+            docs = cell(1, numel(found));
+            for k = 1:numel(found)
+                anchor = ndi.vintage.edgeTargets(found{k}, 'time_reference_id');
+                rig = ndi.vintage.edgeTargets(found{k}, 'parent_id');
+                assert(isscalar(anchor) && isscalar(rig), ...
+                    'wiring %s does not name one anchor and one rig', char(found{k}.id()));
+                m = did2.build.statement('manipulation', subjectId, typeTerm, typeTerm, ...
+                    'TimeReferenceIds', anchor, 'InstrumentId', stimId, ...
+                    'AcquisitionSystemId', char(rig{1}), 'SessionId', char(S.id()), ...
+                    'Validate', false, 'ValueKind', 'term');
+                docs{k} = did2.document(m);
+            end
+        end
+
         function tf = isWiring(d)
             % a directed_relation `connected to` (RO:0002170)
             tf = false;
@@ -267,9 +326,10 @@ classdef TestStimulatorRowFromWiring < matlab.unittest.TestCase
             tf = isstruct(r) && isfield(r, 'node') && strcmpi(char(r.node), 'RO:0002170');
         end
 
-        function [S, ids] = copyWithout(srcRoot, dstRoot, sid, pick)
+        function [S, ids, added] = copyEdited(srcRoot, dstRoot, sid, pick, make)
             % a copy of the migrated session's .ndi under DSTROOT with the
-            % documents PICK(session) names removed, reopened
+            % documents PICK(session) names removed and the did2.documents
+            % MAKE(session) returns added, reopened
             mkdir(dstRoot);
             copyfile(fullfile(srcRoot, '.ndi'), fullfile(dstRoot, '.ndi'));
             for f = {'unique_reference.txt', 'reference.txt', '.migrate.lock'}
@@ -278,6 +338,7 @@ classdef TestStimulatorRowFromWiring < matlab.unittest.TestCase
             end
             S = ndi.session.dir('stimulator rows copy', dstRoot, sid);
             ids = pick(S);
+            newDocs = make(S);
             v2file = '';
             dbs = dir(fullfile(dstRoot, '.ndi', '*.sqlite'));
             for k = 1:numel(dbs)
@@ -296,6 +357,10 @@ classdef TestStimulatorRowFromWiring < matlab.unittest.TestCase
             for k = 1:numel(ids)
                 raw.remove(ids{k});
             end
+            if ~isempty(newDocs)
+                raw.add(newDocs);
+            end
+            added = cellfun(@(d) char(d.get('base.id')), newDocs, 'UniformOutput', false);
             raw.close();
             clear S
             S = ndi.session.dir('stimulator rows copy', dstRoot, sid);
