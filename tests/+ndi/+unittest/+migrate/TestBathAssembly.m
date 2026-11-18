@@ -105,7 +105,7 @@ classdef TestBathAssembly < matlab.unittest.TestCase
             testCase.verifyClass(f.formulation.value.ingredients, 'struct');
             testCase.verifyNumElements(f.formulation.value.ingredients, 1);
             conc = f.formulation.value.ingredients(1).concentration;
-            testCase.verifyEqual(conc.source_value, 5);
+            testCase.verifyEqual(conc.source_numeric, 5);
             testCase.verifyEqual(conc.source_unit.name, 'mM');
             % [bath concentration prefixes convert to molar] (Jess Haley,
             % 2026-11-12): the canonical in molar
@@ -268,7 +268,7 @@ classdef TestBathAssembly < matlab.unittest.TestCase
                 'UniformOutput', false);
             f = extra{strcmp(classes, 'formulation')};
             testCase.verifyNumElements(f.formulation.value.ingredients, 2);
-            testCase.verifyEqual(f.formulation.value.ingredients(1).concentration.source_value, 5);
+            testCase.verifyEqual(f.formulation.value.ingredients(1).concentration.source_numeric, 5);
             testCase.verifyEqual(numel(depValues(f, 'ingredient_id')), 2);
             % folded as ndi.migrate.local folds it: nothing may quarantine
             % (the old shape quarantined with did2:validation:valueNowhere)
@@ -361,13 +361,13 @@ classdef TestBathAssembly < matlab.unittest.TestCase
             ing = f.formulation.value.ingredients;
             testCase.verifyNumElements(ing, 3);
             testCase.verifyEqual(ing(1).concentration.molar, 0.125);
-            testCase.verifyEqual(ing(1).concentration.source_value, 125);
+            testCase.verifyEqual(ing(1).concentration.source_numeric, 125);
             testCase.verifyEqual(ing(1).concentration.source_unit.name, 'mM');
             testCase.verifyEqual(ing(2).concentration.molar, 1e-6);
             testCase.verifyEqual(ing(3).concentration.molar, 0.0035);
             osm = f.formulation.value.osmolarity;
             testCase.verifyEqual(osm.osmolar, 0.29);
-            testCase.verifyEqual(osm.source_value, 290);
+            testCase.verifyEqual(osm.source_numeric, 290);
             testCase.verifyEqual(osm.source_unit.name, 'mOsm/L');
             testCase.verifyEmpty(did2.convert.migrationReport('gaps', f.base.id));
         end
@@ -385,7 +385,7 @@ classdef TestBathAssembly < matlab.unittest.TestCase
             ing = f.formulation.value.ingredients;
             testCase.verifyEqual(ing(1).concentration.molar, 0.125);
             c2 = ing(2).concentration;
-            testCase.verifyEqual(c2.source_value, 10);
+            testCase.verifyEqual(c2.source_numeric, 10);
             testCase.verifyFalse(isfield(c2, 'source_unit') && ~isempty(c2.source_unit), ...
                 'no unit stated, none written');
             testCase.verifyFalse(isfield(c2, 'molar') && ~isempty(c2.molar));

@@ -54,12 +54,12 @@ classdef TestIngestedArchiveBodies < matlab.unittest.TestCase
             covs = b.data.covariates;
             vars = arrayfun(@(c) char(c.variable.name), covs, 'UniformOutput', false);
             t = covs(strcmp(vars, 'time'));
-            testCase.verifyEqual(double(t.origin.value), 0);
-            testCase.verifyEqual(double(t.spacing.value), 1/10000, 'AbsTol', 1e-15);
+            testCase.verifyEqual(double(t.origin), 0);
+            testCase.verifyEqual(double(t.spacing), 1/10000, 'AbsTol', 1e-15);
             ch = covs(strcmp(vars, 'channel number'));
             testCase.verifyEqual(double(ch.count(:))', [1 2 3]);
             sc = covs(strcmp(vars, 'Unit Conversion Factor'));
-            testCase.verifyEqual(double(sc.quantity.value(:))', [0.195 0.195 0.195]);
+            testCase.verifyEqual(double(sc.numeric(:))', [0.195 0.195 0.195]);
             % this archive names no v1 daqreader: the scale has no unit, and
             % the gap is listed ([scale carries the reader's unit])
             testCase.verifyFalse(isfield(sc, 'unit') && ~isempty(sc.unit));
@@ -74,14 +74,14 @@ classdef TestIngestedArchiveBodies < matlab.unittest.TestCase
             testCase.verifyEqual(char(covs(4).variable.node), 'NCIT:C70774', ...
                 'the field the gap names is the scale');
             off = covs(strcmp(vars, 'signal offset configuration'));
-            testCase.verifyEqual(double(off.quantity.value(:))', [-2 -2 -2]);
+            testCase.verifyEqual(double(off.numeric(:))', [-2 -2 -2]);
             testCase.verifyFalse(isfield(off, 'unit') && ~isempty(off.unit), 'the offset has no unit');
             testCase.verifyEqual(char(b.data_body.conditions(1).term.node), 'EMPTY:0000370');
             % [time channel is a per-channel covariate]: always written,
             % unitless, NaN carried
             tc = covOf(b, 'EMPTY:0000374');
             testCase.assertNotEmpty(tc, 'no time-channel covariate');
-            testCase.verifyTrue(all(isnan(double(tc.quantity.value(:)))), 'the v1 time_channel NaN');
+            testCase.verifyTrue(all(isnan(double(tc.numeric(:)))), 'the v1 time_channel NaN');
             testCase.verifyFalse(isfield(tc, 'unit') && ~isempty(tc.unit), 'unitless');
             testCase.verifyEqual(rep.time_channel_covariates, 1);
             testCase.verifyEqual(numel(b.files.file_info), 2, 'the members are unchanged');
@@ -117,7 +117,7 @@ classdef TestIngestedArchiveBodies < matlab.unittest.TestCase
                 structs, testCase.Dir, v1);
             testCase.verifyEqual(rep.archives_converted, 1, rep.first_unconvertible_reason);
             tc = covOf(out{2}, 'EMPTY:0000374');
-            testCase.verifyTrue(isequaln(double(tc.quantity.value(:))', [1 2 NaN]));
+            testCase.verifyTrue(isequaln(double(tc.numeric(:))', [1 2 NaN]));
             testCase.verifyEqual(removed, {'body_cl'}, rep.first_channel_list_kept_reason);
             res = did2.convert.v1_to_v2(out(2), 'Validate', true, 'TargetVersion', 'did_v2');
             testCase.verifyEmpty(res.quarantine);
@@ -339,8 +339,8 @@ classdef TestIngestedArchiveBodies < matlab.unittest.TestCase
             [out, rep] = ndi.migrate.internal.ingestedArchiveBodies(structs, testCase.Dir, v1);
             testCase.verifyEqual(rep.archives_converted, 1, rep.first_unconvertible_reason);
             sc = scaleOf(out{2});
-            testCase.verifyEqual(double(sc.quantity.value(:))', 0.195e-6 * [1 1 1], 'AbsTol', 1e-18);
-            testCase.verifyEqual(double(sc.quantity.source_value(:))', [0.195 0.195 0.195], ...
+            testCase.verifyEqual(double(sc.numeric(:))', 0.195e-6 * [1 1 1], 'AbsTol', 1e-18);
+            testCase.verifyEqual(double(sc.source_numeric(:))', [0.195 0.195 0.195], ...
                 'the v1 scale, verbatim');
             testCase.verifyEqual(char(sc.unit.node), 'om:volt');
             testCase.verifyEqual(char(sc.source_unit.node), 'om:microvolt');
@@ -376,8 +376,8 @@ classdef TestIngestedArchiveBodies < matlab.unittest.TestCase
             b = out{2};
             testCase.verifyEqual(char(b.data_body.conditions(1).term.node), 'EMPTY:0000375');
             sc = scaleOf(b);
-            testCase.verifyEqual(double(sc.quantity.value(:))', 3.74e-05 * [1 1 1], 'AbsTol', 1e-18);
-            testCase.verifyEqual(double(sc.quantity.source_value(:))', 3.74e-05 * [1 1 1]);
+            testCase.verifyEqual(double(sc.numeric(:))', 3.74e-05 * [1 1 1], 'AbsTol', 1e-18);
+            testCase.verifyEqual(double(sc.source_numeric(:))', 3.74e-05 * [1 1 1]);
             testCase.verifyEqual(char(sc.unit.node), 'om:volt');
             testCase.verifyEqual(char(sc.source_unit.node), 'om:volt');
             res = did2.convert.v1_to_v2(out, 'Validate', true, 'TargetVersion', 'did_v2');
@@ -392,10 +392,10 @@ classdef TestIngestedArchiveBodies < matlab.unittest.TestCase
             [out, rep] = ndi.migrate.internal.ingestedArchiveBodies(structs, testCase.Dir, v1);
             testCase.verifyEqual(rep.archives_converted, 1, rep.first_unconvertible_reason);
             sc = scaleOf(out{2});
-            testCase.verifyEqual(double(sc.quantity.value(:))', [0.195 0.195 0.195]);
+            testCase.verifyEqual(double(sc.numeric(:))', [0.195 0.195 0.195]);
             testCase.verifyFalse(isfield(sc, 'unit') && ~isempty(sc.unit));
-            testCase.verifyFalse(isfield(sc.quantity, 'source_value') && ...
-                ~isempty(sc.quantity.source_value));
+            testCase.verifyFalse(isfield(sc, 'source_numeric') && ...
+                ~isempty(sc.source_numeric));
             testCase.verifyEqual(rep.scale_with_unit, 0);
             testCase.verifyEqual(rep.scale_without_unit, 1);
             g = rep.scale_gaps{1};

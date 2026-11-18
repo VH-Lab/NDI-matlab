@@ -313,14 +313,14 @@ end
 
 function v = methodParam(doc, variable)
 %METHODPARAM The value of a `method` document's parameter VARIABLE: the
-%   quantity's value, or the term's name; [] when absent.
+%   number (numeric), or the term's name; [] when absent.
 v = [];
 p = doc.method.parameters;
 if isstruct(p); p = num2cell(p); end
 for k = 1:numel(p)
     e = p{k};
     if strcmp(e.variable.name, variable)
-        if isfield(e, 'quantity') && ~isempty(e.quantity); v = e.quantity.value;
+        if isfield(e, 'numeric') \&\& ~isempty(e.numeric); v = e.numeric;
         elseif isfield(e, 'term') && ~isempty(e.term); v = e.term.name; end
         return;
     end
