@@ -16,6 +16,9 @@ classdef TestIngestedV2Shapes < matlab.unittest.TestCase
 %         value whose body holds the times
 %     [unpacked event bodies are uncompressed]  little-endian float64
 %     [ingested body members use the schema's names]  body_data_0, ...
+%     [channel name is an identifier]  a channel's v1 name is the text
+%         covariate of its group's body, variable NCIT:C25364 "Identifier",
+%         one value per channel; `<prefix><number>` when the body has none
 %
 %   The channel list a reader rebuilds without `channel_list.bin` must be the
 %   list NDI's ingest wrote (ndi.file.type.mfdaq_epoch_channel), row for row:
@@ -60,6 +63,27 @@ classdef TestIngestedV2Shapes < matlab.unittest.TestCase
             back = cellfun(@(b) jsondecode(jsonencode(b)), bodies, 'UniformOutput', false);
             got2 = ndi.vintage.ingestedChannelList(back);
             testCase.verifyTrue(isequaln(got2, want), describe(got2, want));
+        end
+
+        function testTheNameCovariateIsRead(testCase)
+            % [channel name is an identifier] (Jess Haley, 2026-11-17): the
+            % names NDI's writer kept (it reads each number from the name)
+            % come back from the Identifier covariate, by node; an empty
+            % entry is the standard name
+            ai = v1Rows('ai', 'analog_in', 1:3, [1 1 1], 20000, 32768, 0.195);
+            [ai.name] = deal('A-001', 'A-002', 'ai3');
+            want = ndi.file.type.mfdaq_epoch_channel(ai).channel_information;
+            b = groupBody('ai', 1, ai, true, {'A-001', 'A-002', ''});
+            got = ndi.vintage.ingestedChannelList({b});
+            testCase.verifyTrue(isequaln(got, want), describe(got, want));
+            back = ndi.vintage.ingestedChannelList({jsondecode(jsonencode(b))});
+            testCase.verifyTrue(isequaln(back, want), describe(back, want));
+            % a text covariate with another variable is not a name (a check
+            % that cannot fail proves nothing)
+            b2 = groupBody('ai', 1, ai, true, {'A-001', 'A-002', ''}, ...
+                struct('node', 'NCIT:C42614', 'name', 'Name'));
+            got2 = ndi.vintage.ingestedChannelList({b2});
+            testCase.verifyEqual({got2.name}, {'ai1', 'ai2', 'ai3'});
         end
 
         function testEventAndMarkerRowsComeFromTheirObservations(testCase)
@@ -110,15 +134,21 @@ for k = 1:numel(nums)
 end
 end
 
-function b = groupBody(prefix, g, ch, withTimeChannel)
+function b = groupBody(prefix, g, ch, withTimeChannel, names, nameVariable)
 % a channel group's sampled_body as ndi.migrate.internal.ingestedArchiveBodies
-% writes it
+% writes it; NAMES (optional), the name covariate's entries ([channel name is
+% an identifier]), under NAMEVARIABLE (NCIT:C25364 "Identifier")
+if nargin < 5; names = {}; end
+if nargin < 6; nameVariable = struct('node', 'NCIT:C25364', 'name', 'Identifier'); end
 prev = did2.schema.cache.strictMode('TermRegistry', false);
 c = onCleanup(@() did2.schema.cache.strictMode('TermRegistry', prev));
 nodes = struct('ai', 'EMPTY:0000370', 'ax', 'EMPTY:0000375', 'di', 'EMPTY:0000372');
 timeTerm = struct('node', 'om:Time', 'name', 'time');
 channelTerm = struct('node', 'NCIT:C44170', 'name', 'Channel');
-nums = arrayfun(@(r) sscanf(r.name, [prefix '%d']), ch);
+nums = NaN(1, numel(ch));
+for k = 1:numel(ch)
+    [~, nums(k)] = ndi.fun.channelname2prefixnumber(ch(k).name);
+end
 covs = {did2.build.covariate(timeTerm, 0, 'Origin', 0, 'Spacing', 1 / ch(1).sample_rate, ...
         'Unit', struct('node', 'om:second-Time', 'name', 'second')), ...
     did2.build.covariate(struct('node', '', 'name', 'channel number'), 1, 'Count', nums), ...
@@ -129,6 +159,9 @@ covs = {did2.build.covariate(timeTerm, 0, 'Origin', 0, 'Spacing', 1 / ch(1).samp
 if withTimeChannel
     covs{end+1} = did2.build.covariate(struct('node', 'EMPTY:0000374', 'name', 'time channel'), ...
         1, 'Value', [ch.time_channel]);
+end
+if ~isempty(names)
+    covs{end+1} = did2.build.covariate(nameVariable, 1, 'Text', names);
 end
 b = did2.build.sampledBody({'obs_1'}, did2.build.list( ...
         did2.build.dimension(timeTerm, 100), did2.build.dimension(channelTerm, numel(ch))), ...
