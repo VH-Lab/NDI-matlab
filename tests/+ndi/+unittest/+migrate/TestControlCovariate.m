@@ -311,7 +311,7 @@ for k = 1:numel(p)
     if ~strcmp(p{k}.variable.name, variable); continue; end
     e = p{k};
     if isfield(e, 'text') && ~isempty(e.text); v = e.text;
-    elseif isfield(e, 'numeric') \&\& ~isempty(e.numeric); v = e.numeric;
+    elseif isfield(e, 'numeric') && ~isempty(e.numeric); v = e.numeric;
     elseif isfield(e, 'count') && ~isempty(e.count); v = e.count; end
     return;
 end

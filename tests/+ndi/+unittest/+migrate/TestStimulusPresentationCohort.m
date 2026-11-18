@@ -320,7 +320,7 @@ if isstruct(p); p = num2cell(p); end
 for k = 1:numel(p)
     e = p{k};
     if strcmp(e.variable.name, variable)
-        if isfield(e, 'numeric') \&\& ~isempty(e.numeric); v = e.numeric;
+        if isfield(e, 'numeric') && ~isempty(e.numeric); v = e.numeric;
         elseif isfield(e, 'term') && ~isempty(e.term); v = e.term.name; end
         return;
     end
