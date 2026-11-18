@@ -112,15 +112,31 @@ function [structs, report, removed] = ingestedArchiveBodies(structs, ndiDir, v1B
 %     channel, NaN and dangling values carried exactly" (the 5th covariate;
 %     counted `time_channel_covariates`).
 %
+%     A converted group whose v1 channel names are not all the standard
+%     `<prefix><number>` (the name NDI's readers give a channel) also
+%     carries its names: Decided by Jess Haley, 2026-11-17 [channel name is
+%     an identifier]: "a channel's v1 name is a covariate along the channel
+%     dimension of its channel group's body, variable NCIT:C25364
+%     "Identifier", one text value per channel" (the 6th covariate, every
+%     channel's v1 name; written only where a name differs from the
+%     standard form, as [channel list rows get v2 homes] says). Counted:
+%     `channel_names_seen` (the rows of the converted groups),
+%     `channel_names_nonstandard`, `channel_name_covariates` (groups given
+%     the covariate) and `channel_names_written` (names in them).
+%
 %     `channel_list.bin` is REMOVED only when the readers' own rebuild
 %     (ndi.vintage.ingestedChannelList, from the converted bodies as JSON
 %     gives them back and the unpacked event channels) is the file's list
 %     row for row ([channel list rows get v2 homes], Jess Haley, 2026-11-17:
 %     "The file is removed only when the round trip rebuilds it exactly;
 %     otherwise it is kept and counted"): counted `channel_list_rebuilt_exactly`,
-%     else `channel_list_kept` with `first_channel_list_kept_reason`. A time
-%     channel's own row and a non-standard channel name have no v2 home yet
-%     (open questions), so a list holding one is kept.
+%     else `channel_list_kept` with `first_channel_list_kept_reason`. The
+%     event and marker rows' sample rate, offset, scale and time channel are
+%     rebuilt as NDI's defaults (Jess Haley, 2026-11-18 [event row defaults
+%     are notation]: "a channel list whose event or marker rows differ from
+%     the defaults ... is kept whole as v1"). A time channel's own row and a
+%     non-standard event, marker or text channel name have no v2 home yet,
+%     so a list holding one is kept.
 %
 %     `evmktx_group<g>_seg.nbf_#` (events): UNPACKED, one observation per
 %     channel, and its body REMOVED, when every check of unpackEvents (below)
@@ -228,6 +244,10 @@ report = struct( ...
     'scale_without_unit',         0, ...
     'scale_unitless_digital',     0, ...
     'time_channel_covariates',    0, ...
+    'channel_names_seen',         0, ...
+    'channel_names_nonstandard',  0, ...
+    'channel_name_covariates',    0, ...
+    'channel_names_written',      0, ...
     'members_seen',               0, ...
     'members_renamed',            0, ...
     'members_schema_named',       0, ...
@@ -385,6 +405,10 @@ for a = 1:numel(groupKeys)
         report.channel_list_rebuilt_exactly = report.channel_list_rebuilt_exactly + 1;
     end
     report.time_channel_covariates = report.time_channel_covariates + info.timeChannelCovariates;
+    report.channel_names_seen = report.channel_names_seen + info.names(1);
+    report.channel_names_nonstandard = report.channel_names_nonstandard + info.names(2);
+    report.channel_name_covariates = report.channel_name_covariates + info.names(3);
+    report.channel_names_written = report.channel_names_written + info.names(4);
     report.members_seen = report.members_seen + info.members(1);
     report.members_renamed = report.members_renamed + info.members(2);
     report.members_schema_named = report.members_schema_named + info.members(3);
@@ -429,8 +453,9 @@ function [made, gone, why, added, uneven, written, info] = convertArchive(struct
 %   scale has no unit and is no gap ([digital scale is unitless]). INFO says
 %   what else was done: eventBodyIds (the `evmktx` bodies removed),
 %   channelListWhy (why channel_list.bin is kept, '' when removed),
-%   timeChannelCovariates, members ([seen renamed schema-named not-renamed])
-%   and events (unpackEvents).
+%   timeChannelCovariates, members ([seen renamed schema-named not-renamed]),
+%   names ([seen non-standard covariates written], [channel name is an
+%   identifier]) and events (unpackEvents).
 made = {};
 gone = {};
 why = '';
@@ -438,7 +463,7 @@ added = {};
 uneven = false;
 written = {};
 info = struct('eventBodyIds', {{}}, 'channelListWhy', '', 'timeChannelCovariates', 0, ...
-    'members', [0 0 0 0], 'events', struct('present', false, 'unpacked', false, ...
+    'members', [0 0 0 0], 'names', [0 0 0 0], 'events', struct('present', false, 'unpacked', false, ...
     'channels', 0, 'kind', '', 'why', ''));
 % [migrated body members renamed]: the members of the channel and time
 % groups, by the schema's names, before anything reads them
@@ -565,8 +590,9 @@ for j = 1:numel(idx)
 
     timeId = '';
     if ~isempty(keyed); timeId = keyed.id; end
-    [body, scaleGap, scaleField] = sampledFromOpaque(b, rows, ci, type, types, abbrev, sr, n, seg, ...
-        timeId, reader);
+    [body, scaleGap, scaleField, nameCounts] = sampledFromOpaque(b, rows, ci, type, types, abbrev, ...
+        sr, n, seg, timeId, reader);
+    info.names = info.names + nameCounts;
     made{end+1} = struct('k', k, 'body', body, 'scaleGap', scaleGap, ...
         'scaleField', scaleField, 'scaleUnitless', strcmp(dataclass, 'digital')); %#ok<AGROW>
     info.timeChannelCovariates = info.timeChannelCovariates + 1;
@@ -617,8 +643,8 @@ f = {'name', 'type', 'time_channel', 'sample_rate', 'offset', 'scale', 'number',
     'group', 'dataclass'};
 if numel(rebuilt) ~= numel(ci)
     why = sprintf(['the v2 documents rebuild %d channel_list.bin row(s) of %d (a time ' ...
-        'channel''s own row, a text channel, a channel name that is not its prefix and ' ...
-        'number, and an events file left packed have no v2 home yet)'], numel(rebuilt), numel(ci));
+        'channel''s own row, a text channel and an events file left packed have no v2 ' ...
+        'home yet)'], numel(rebuilt), numel(ci));
     return;
 end
 for r = 1:numel(ci)
@@ -762,7 +788,7 @@ end
 files.file_info = [out{:}];
 end
 
-function [body, scaleGap, scaleField] = sampledFromOpaque(b, rows, ci, type, types, abbrev, sr, n, seg, timeId, reader)
+function [body, scaleGap, scaleField, nameCounts] = sampledFromOpaque(b, rows, ci, type, types, abbrev, sr, n, seg, timeId, reader)
 % the channel number variable is a label no registry row carries yet, as the
 % other second-pass builders' labels (ndi.migrate.internal.termRegistryOff)
 restore = ndi.migrate.internal.termRegistryOff(); %#ok<NASGU>
@@ -808,12 +834,30 @@ for r = 1:numel(rows)
     v = double(ci(rows(r)).time_channel);
     if isscalar(v); tc(r) = v; end
 end
-covs = did2.build.list( ...
-    timeCov, ...
+covList = {timeCov, ...
     did2.build.covariate(CHANNEL_NUMBER(), 1, 'Count', double([ci(rows).number])), ...
     did2.build.covariate(OFFSET(), 1, 'Value', double([ci(rows).offset])), ...
     scaleCov, ...
-    did2.build.covariate(TIME_CHANNEL(), 1, 'Value', tc));
+    did2.build.covariate(TIME_CHANNEL(), 1, 'Value', tc)};
+% [channel name is an identifier] (Jess Haley, 2026-11-17): "a channel's v1
+% name is a covariate along the channel dimension of its channel group's
+% body, variable NCIT:C25364 "Identifier", one text value per channel";
+% written only on a group where some v1 name is not the standard
+% `<prefix><number>` ([channel list rows get v2 homes]: "written only where
+% a name differs from the standard type-and-number form"). NAMECOUNTS is
+% [seen non-standard covariates written]
+names = cell(1, numel(rows));
+standard = false(1, numel(rows));
+for r = 1:numel(rows)
+    names{r} = char(ci(rows(r)).name);
+    standard(r) = strcmp(names{r}, sprintf('%s%d', ab, double(ci(rows(r)).number)));
+end
+nameCounts = [numel(rows), sum(~standard), 0, 0];
+if ~all(standard)
+    covList{end+1} = did2.build.covariate(IDENTIFIER(), 1, 'Text', names);
+    nameCounts(3:4) = [1, numel(rows)];
+end
+covs = did2.build.list(covList{:});
 % the field a gap names: the scale is the 4th covariate (1-based, as a gap's
 % path counts a struct-array field)
 scaleField = 'data.covariates(4).unit';
@@ -1184,6 +1228,12 @@ function t = SCALE()
 % (Intan analog: 0.195, microvolts per count). NCIT "Unit Conversion
 % Factor": "An operator used to convert units from one scale to another."
 t = struct('node', 'NCIT:C70774', 'name', 'Unit Conversion Factor');
+end
+
+function t = IDENTIFIER()
+% did-schema term registry NCIT:C25364 "Identifier", the variable of
+% [channel name is an identifier]
+t = struct('node', 'NCIT:C25364', 'name', 'Identifier');
 end
 
 function t = TIME_CHANNEL()

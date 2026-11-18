@@ -18,7 +18,13 @@ function ci = ingestedChannelList(groups, events)
 %             their observations). [] or omitted when there are none.
 %
 %   Each channel group's channel is one row:
-%     name          its v1 prefix and number (`ai3`)
+%     name          the body's name covariate entry when it has one and the
+%                   entry is not empty ([channel name is an identifier],
+%                   Jess Haley, 2026-11-17: "a channel's v1 name is a
+%                   covariate along the channel dimension of its channel
+%                   group's body, variable NCIT:C25364 "Identifier", one
+%                   text value per channel"; found by node), else its v1
+%                   prefix and number (`ai3`), the name NDI's readers give
 %     type          the group's channel type (the body's condition, by node)
 %     time_channel  the body's per-channel "time channel" covariate
 %                   (EMPTY:0000374) when it has one ([time channel is a
@@ -40,17 +46,24 @@ function ci = ingestedChannelList(groups, events)
 %   number (`mk2`), time_channel and sample_rate NaN, offset 0, scale 1,
 %   group 1 + floor(number / 100000) and dataclass 'eventmarktext', what
 %   NDI's ingest writes for those channels (ndi.file.type.mfdaq_epoch_channel
-%   /create_properties; ndi.daq.reader.mfdaq/underlying_datatype gives [0 1]).
+%   /create_properties; ndi.daq.reader.mfdaq/ingest_epochfiles asks no event
+%   channel for a sample rate, and underlying_datatype gives [0 1]). Decided
+%   by Jess Haley, 2026-11-18 [event row defaults are notation]: those
+%   fields, "when they are NDI's defaults, are notation ... not stored,
+%   rebuilt by the round trip; a channel list whose event or marker rows
+%   differ from the defaults (CED Spike2 sets an event's time channel to its
+%   own number) is kept whole as v1, as today".
 %
 %   The rows are in the order ndi.file.type.mfdaq_epoch_channel/
 %   create_properties writes them: the sampled types in alphabetical order of
 %   their type name, each by number; then every event, marker and text row,
 %   by number (event before marker before text at an equal number).
 %
-%   Not rebuilt, so not here: a time channel's own row, and a channel name
-%   that is not its prefix and number. Their v2 homes are not built
-%   (did-schema [channel list rows get v2 homes]: the time channel's own row
-%   and the name covariate's term are open), so
+%   Not rebuilt, so not here: a time channel's own row, and the name of an
+%   event, marker or text channel that is not its prefix and number (its
+%   name is in its observation's notes; the name covariate lives on a channel
+%   group's body). They have no v2 home (did-schema [channel list rows get
+%   v2 homes]: the time channel's own row is open), so
 %   ndi.migrate.internal.ingestedArchiveBodies removes `channel_list.bin` only
 %   when this function rebuilds it exactly, and keeps it otherwise.
 %
@@ -80,7 +93,7 @@ for k = 1:numel(groups)
     ab = channelPrefixOf(p, tok{1});
     type = types{find(strcmp(abbrev, ab), 1)};
     covs = asCell(p.data.covariates);
-    nums = []; off = []; sc = []; tc = []; sr = NaN;
+    nums = []; off = []; sc = []; tc = []; names = {}; sr = NaN;
     for c = 1:numel(covs)
         cv = covs{c};
         if ~isstruct(cv) || ~isfield(cv, 'variable'); continue; end
@@ -108,6 +121,9 @@ for k = 1:numel(groups)
         elseif strcmp(node, 'EMPTY:0000374')
             % [time channel is a per-channel covariate]
             tc = numbersOf(cv, 'value');
+        elseif strcmp(node, 'NCIT:C25364') && isfield(cv, 'text')
+            % [channel name is an identifier]
+            names = textsOf(cv.text);
         end
     end
     n = numel(nums);
@@ -118,8 +134,13 @@ for k = 1:numel(groups)
         continue;   % not a channel group the second pass wrote
     end
     if any(strcmp(ab, {'di', 'do'})); dc = 'digital'; else; dc = 'ephys'; end
+    if numel(names) ~= n
+        names = repmat({''}, 1, n);
+    end
     for r = 1:n
-        ci(end+1) = struct('name', sprintf('%s%d', ab, nums(r)), 'type', type, ...
+        nm = names{r};
+        if isempty(nm); nm = sprintf('%s%d', ab, nums(r)); end
+        ci(end+1) = struct('name', nm, 'type', type, ...
             'time_channel', tc(r), 'sample_rate', sr, 'offset', off(r), 'scale', sc(r), ...
             'number', nums(r), 'group', str2double(tok{2}), 'dataclass', dc); %#ok<AGROW>
     end
@@ -178,6 +199,28 @@ elseif ischar(x) || isstring(x)
     x = str2double(cellstr(x));
 end
 x = double(x(:)');
+end
+
+function c = textsOf(x)
+% a text covariate's entries, as a row cellstr (a JSON array of one string
+% read back as a char is one entry)
+if ischar(x)
+    c = {x};
+elseif isstring(x)
+    c = cellstr(x);
+elseif iscell(x)
+    c = cell(1, numel(x));
+    for i = 1:numel(x)
+        if ischar(x{i}) || (isstring(x{i}) && isscalar(x{i}))
+            c{i} = char(x{i});
+        else
+            c{i} = '';
+        end
+    end
+else
+    c = {};
+end
+c = reshape(c, 1, []);
 end
 
 function tf = isTimeTerm(t)
