@@ -289,13 +289,21 @@ classdef TestMigrateLocalEtaB < matlab.unittest.TestCase
             % dropped], [probe map rows compared as a set]: B's vhvis_spike2
             % rows are all stimulator rows (1,242 epochfiles_ingested), so
             % its epochs are read without a per-epoch Stimulator
-            % manipulation from the wiring relation and the element. On a
-            % copy with every one removed, every system's ingested probe
-            % maps (as sets), its reader's v2 clocks and the stimulators
-            % getprobes finds, with their epoch tables, are the same
+            % manipulation from the wiring relation and the element. Since
+            % DID-matlab #466 (1048e449) the migration writes none for B
+            % (every row is wired, about its element's subject, of its
+            % element's type), so old data is built on a copy: one
+            % Stimulator manipulation per wiring relation and epoch, as
+            % before #466. With them and with every one removed, every
+            % system's ingested probe maps (as sets), its reader's v2
+            % clocks and the stimulators getprobes finds, with their epoch
+            % tables, are the same, and the same as the decided shape's
             % (ndi.unittest.migrate.stimulatorRowsWithoutManipulation).
             R = ndi.unittest.migrate.stimulatorRowsWithoutManipulation( ...
                 fileparts(testCase.Result.destination), 'B');
+            testCase.verifyEqual(R.written, 0, ...
+                'the migration wrote a Stimulator manipulation for B (every B stimulator row is wired)');
+            testCase.verifyGreaterThan(R.added, 0, 'no old-data Stimulator manipulation was added (nothing measured)');
             testCase.verifyGreaterThan(R.removed, 0, 'no Stimulator manipulation was removed (nothing measured)');
             testCase.verifyGreaterThan(R.stimulators, 0, 'getprobes found no stimulator (nothing measured)');
             testCase.verifyNotEmpty(R.checks, 'no comparison was made');

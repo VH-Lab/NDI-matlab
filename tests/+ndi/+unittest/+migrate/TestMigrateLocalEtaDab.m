@@ -327,10 +327,14 @@ classdef TestMigrateLocalEtaDab < matlab.unittest.TestCase
             % Decided by Jess Haley, 2026-11-09, did-schema
             % did_v2_standing_wiring_plan.md [stimulator manipulation
             % dropped], [probe map rows compared as a set]: on a copy of the
-            % GENERIC migrated output with every per-epoch Stimulator
-            % manipulation removed, every system's ingested probe maps (as
-            % sets), its reader's v2 clocks and the stimulators getprobes
-            % finds, with their epoch tables, are the same
+            % GENERIC migrated output, with old data added (one Stimulator
+            % manipulation per wiring relation and epoch that has none, as
+            % DID-matlab wrote before #466; the migration still writes the
+            % 12 bath rows naming another subject) and then with every
+            % per-epoch Stimulator manipulation removed, every system's
+            % ingested probe maps (as sets), its reader's v2 clocks and the
+            % stimulators getprobes finds, with their epoch tables, are the
+            % same, and the same as the decided shape's
             % (ndi.unittest.migrate.stimulatorRowsWithoutManipulation).
             %
             % The generic output only, not the Dabrowska map's (MappedRoot):
@@ -344,6 +348,7 @@ classdef TestMigrateLocalEtaDab < matlab.unittest.TestCase
             % slice only on the manipulation (run 42743091429).
             R = ndi.unittest.migrate.stimulatorRowsWithoutManipulation( ...
                 fileparts(testCase.Result.destination), 'Dab (generic)');
+            testCase.verifyGreaterThan(R.added, 0, 'no old-data Stimulator manipulation was added (nothing measured)');
             testCase.verifyGreaterThan(R.removed, 0, 'no Stimulator manipulation was removed (nothing measured)');
             testCase.verifyGreaterThan(R.stimulators, 0, 'getprobes found no stimulator (nothing measured)');
             testCase.verifyNotEmpty(R.checks, 'no comparison was made');
