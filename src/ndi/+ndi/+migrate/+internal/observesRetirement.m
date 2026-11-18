@@ -107,7 +107,7 @@ for k = 1:numel(structs)
     end
     entitiesOf(instrument) = names;
 end
-report.presentation_instruments = entitiesOf.Count;
+report.presentation_instruments = double(entitiesOf.Count);   % Count is uint64
 
 % ---- the `observes` relations, and each child's parents -------------------
 rels = struct('id', {}, 'child', {}, 'parent', {});
