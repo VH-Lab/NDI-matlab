@@ -116,6 +116,21 @@ classdef TestMigrateLocalEta20211116 < matlab.unittest.TestCase
             ndi.unittest.migrate.printStimulusFoldReport(r, '20211116');
         end
 
+        function testObservesRetiresOnThePresentations(testCase)
+            % Decided by Jess Haley, 2026-11-17 [observes retires in the
+            % second pass] (did-schema did_v2_go_forward_class_audit.md): a
+            % stimulator's `observes` relation retires where a converted
+            % stimulus presentation names the same device and animal.
+            % 20211116's 11 presentations each name the stimulator as
+            % instrument and the stimulator's subject as entity (run
+            % 44018713804).
+            r = ndi.unittest.migrate.verifyObservesRetirement(testCase, testCase.Result, '20211116');
+            testCase.verifyGreaterThan(r.presentation_manipulations, 0, ...
+                '20211116 converted no stimulus presentation (nothing measured)');
+            testCase.verifyGreaterThan(r.observes_retired, 0, ...
+                '20211116 retired no `observes` relation on its presentations');
+        end
+
         function testControlRecordsFoldIntoACovariateOrAreCounted(testCase)
             % Decided by Jess Haley, 2026-10-22 [control as covariate]: a v1
             % control_stimulus_ids about a folded presentation is read into

@@ -393,6 +393,7 @@ function result = local(path, options)
     recordingAttributionReport = [];
     sessionAnchorReport = [];
     epochProbemapReport = [];
+    observesRetirementReport = [];   % [observes retires in the second pass]
     responseParametersReport = [];
     genericFileFoldReport = [];
     validIntervalReport = [];
@@ -1109,6 +1110,39 @@ function result = local(path, options)
                  'which is the state without this pass.'], ME.message);
         end
         tStep = migrateStepMark('resolveEpochProbemap', tStart, tStep, convertResult);
+        % [observes retires in the second pass] (Decided by Jess Haley,
+        % 2026-11-17, did-schema did_v2_go_forward_class_audit.md), building
+        % [stimulator link lives in the presentations]: now that the stimulus
+        % presentations are manipulations (resolveStimulusPresentations), a
+        % device's loose `observes` relation retires where a presentation
+        % names that device as instrument and the same animal as entity.
+        % DID's first pass keeps it. ORDER: after every step that reads
+        % `observes` (resolveRecordingAttribution; did2.convert.resolveEpochProbemap
+        % retires it on an observation and reads it for a stimulator row).
+        %   WHAT THIS STEP READS AND WRITES: [migration reliability practices] (c),
+        %   Jess Haley, 2026-10-26; DID-matlab tools/batch_pass_order.py derives the
+        %   second pass's order from these and checks it.
+        %   The `observes` relations it selects are a stimulator's (the
+        %   instrument of a presentation): did2.convert.resolveEpochProbemap
+        %   removes only those an observation states again (a recording
+        %   probe's), so the two qualifiers name disjoint documents. The
+        %   other `observes` relations are read only to be counted.
+        %   BATCH-PASS-READS: directed_relation(stimulator observes),
+        %       manipulation(stimulus presentation)
+        %   BATCH-PASS-ADDS: NONE -- it only removes
+        %   BATCH-PASS-CHANGES: NONE -- it only removes
+        %   BATCH-PASS-REMOVES: directed_relation(stimulator observes)
+        try
+            [convertResult, observesRetirementReport] = ...
+                resolveObservesRetirement(convertResult, options);
+        catch ME
+            stepErrors(end+1) = struct('step', 'observesRetirementFailed', 'message', ME.message); %#ok<AGROW>
+            warning('NDI:migrate:observesRetirementFailed', ...
+                ['Second-pass `observes` retirement failed (%s); leaving every ' ...
+                 '`observes` relation as pass 1 and resolveEpochProbemap left it.'], ...
+                ME.message);
+        end
+        tStep = migrateStepMark('resolveObservesRetirement', tStart, tStep, convertResult);
         % UNCONDITIONALLY, whether or not the pass above ran: the transient
         % navigator epochs are not v1 documents (nor ingestion manifests) and
         % must never be written.
@@ -1694,6 +1728,7 @@ function result = local(path, options)
         'recordingAttribution', recordingAttributionReport, ...
         'sessionAnchorFold',   sessionAnchorReport, ...
         'epochProbemapFold',   epochProbemapReport, ...
+        'observesRetirement',  observesRetirementReport, ...
         'navigatorEpochFiles', navigatorEpochReport, ...
         'responseParametersFold', responseParametersReport, ...
         'genericFileFold',     genericFileFoldReport, ...
@@ -2393,6 +2428,53 @@ function [convertResult, report] = resolveRecordingAttribution(convertResult, op
     convertResult.summary = recountSummary(convertResult);
     report.folded = true;
     report.changed = true;
+end
+
+function [convertResult, report] = resolveObservesRetirement(convertResult, options)
+%RESOLVEOBSERVESRETIREMENT V_eta second pass: retire a device's loose `observes`
+%   relation where a converted stimulus presentation names the same device as
+%   instrument and the same animal as entity.
+%
+%   Decided by Jess Haley, 2026-11-17 [observes retires in the second pass]
+%   (did-schema did_v2_go_forward_class_audit.md), building [stimulator link
+%   lives in the presentations]. ndi.migrate.internal.observesRetirement
+%   decides (pure struct logic); this removes the relations it names and
+%   prints every count, the denominators first. NDI's reader reads the
+%   subject back from the presentations (ndi.vintage.elementFields, the
+%   third place it looks).
+    report = [];
+    if ~strcmp(options.TargetVersion, 'did_v2')
+        return;     % a presentation manipulation is a V_eta shape
+    end
+    docs = convertResult.migrated;
+    structs = cell(1, numel(docs));
+    for k = 1:numel(docs)
+        structs{k} = docs{k}.toStruct();
+    end
+    [retireIds, report] = ndi.migrate.internal.observesRetirement(structs);
+    clear structs;
+    report.removed = 0;
+    fprintf(['OBSERVES RETIREMENT ([observes retires in the second pass])\n' ...
+        '  DENOMINATOR: %d migrated document(s); %d `observes` relation(s); ' ...
+        '%d stimulus presentation manipulation(s) naming %d instrument(s)\n' ...
+        '  retired %d; kept %d: no presentation by the device %d, presentations ' ...
+        'name another entity %d, presentations name several entities %d, ' ...
+        'the device observes several parents %d, incomplete relation %d\n'], ...
+        report.documents_inspected, report.observes_seen, ...
+        report.presentation_manipulations, report.presentation_instruments, ...
+        report.observes_retired, report.observes_kept, report.kept_no_presentation, ...
+        report.kept_other_entity, report.kept_several_entities, ...
+        report.kept_several_observes, report.kept_incomplete);
+    if isempty(retireIds)
+        return;
+    end
+    keep = true(1, numel(docs));
+    for k = 1:numel(docs)
+        keep(k) = ~any(strcmp(char(docs{k}.get('base.id')), retireIds));
+    end
+    report.removed = sum(~keep);
+    convertResult.migrated = docs(keep);
+    convertResult.summary = recountSummary(convertResult);
 end
 
 function [convertResult, report] = resolveOntologyLabelSubjects(convertResult, options)

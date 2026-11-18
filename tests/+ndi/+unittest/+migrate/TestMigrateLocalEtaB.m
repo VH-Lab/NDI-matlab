@@ -294,12 +294,36 @@ classdef TestMigrateLocalEtaB < matlab.unittest.TestCase
             % maps (as sets), its reader's v2 clocks and the stimulators
             % getprobes finds, with their epoch tables, are the same
             % (ndi.unittest.migrate.stimulatorRowsWithoutManipulation).
+            %
+            % Since DID-matlab #466 (1048e449, the build of [stimulator
+            % manipulation dropped]) the migration writes none for B: every
+            % B stimulator row is held by its wiring relation and element
+            % (run 44064282226: "0 Stimulator manipulation(s) to remove").
+            % So B's migrated output IS the decided shape, and this checks
+            % that it is (none written), and that the reads compare equal.
             R = ndi.unittest.migrate.stimulatorRowsWithoutManipulation( ...
                 fileparts(testCase.Result.destination), 'B');
-            testCase.verifyGreaterThan(R.removed, 0, 'no Stimulator manipulation was removed (nothing measured)');
+            testCase.verifyEqual(R.removed, 0, ['the migration wrote a Stimulator ' ...
+                'manipulation for a row its wiring and element hold ([stimulator manipulation dropped])']);
             testCase.verifyGreaterThan(R.stimulators, 0, 'getprobes found no stimulator (nothing measured)');
             testCase.verifyNotEmpty(R.checks, 'no comparison was made');
             testCase.verifyEmpty(R.mismatches, strjoin(R.mismatches, newline));
+        end
+
+        function testObservesRetiresOnThePresentations(testCase)
+            % Decided by Jess Haley, 2026-11-17 [observes retires in the
+            % second pass] (did-schema did_v2_go_forward_class_audit.md): a
+            % stimulator's `observes` relation retires where a converted
+            % stimulus presentation names the same device and animal. B's
+            % 1242 presentations each name the stimulator as instrument and
+            % the stimulator's subject as entity (run 44018629551), so B
+            % retires some; the elements and probes reading the same subject
+            % afterwards is testTheSameObjectsBeforeAndAfterMigration's.
+            r = ndi.unittest.migrate.verifyObservesRetirement(testCase, testCase.Result, 'B');
+            testCase.verifyGreaterThan(r.presentation_manipulations, 0, ...
+                'B converted no stimulus presentation (nothing measured)');
+            testCase.verifyGreaterThan(r.observes_retired, 0, ...
+                'B retired no `observes` relation on its presentations');
         end
 
         function testReadPhasesAreNoSlowerThanV1(testCase)
