@@ -617,6 +617,12 @@ classdef TestMigrateLocalEta20211116 < matlab.unittest.TestCase
             % EITHER a spike-train observation owning a body OR carried whole
             % under that rule, and every surviving acquisition_epoch is one of
             % the carried ones.
+            % UPDATED 2026-11-18. Decided by Jess Haley, 2026-10-25 [retired
+            % classes leave V2] (1): DID-matlab's pass 1 hands a v1
+            % element_epoch on unchanged instead of renaming it to the retired
+            % acquisition_epoch, so a kept slice is the v1 element_epoch
+            % (stored as its v1 source). Both classes are counted as
+            % surviving slices; each must still be one epochMint carried.
             migrated = destinationBodies(testCase.Result.destination);
             srcIds = {};
             for k = 1:numel(testCase.Bodies)
@@ -631,7 +637,8 @@ classdef TestMigrateLocalEta20211116 < matlab.unittest.TestCase
             if isstruct(mint) && isfield(mint, 'epoch_extent_carried_source_ids')
                 carriedIds = cellstr(mint.epoch_extent_carried_source_ids);
             end
-            left = findAllByClass(migrated, 'acquisition_epoch');
+            left = [findAllByClass(migrated, 'acquisition_epoch'), ...
+                findAllByClass(migrated, 'element_epoch')];
             leftIds = cellfun(@(d) char(d.base.id), left, 'UniformOutput', false);
             byId = containers.Map('KeyType', 'char', 'ValueType', 'any');
             owned = containers.Map('KeyType', 'char', 'ValueType', 'logical');
@@ -664,7 +671,7 @@ classdef TestMigrateLocalEta20211116 < matlab.unittest.TestCase
             fprintf(['\n  EPOCH DISSOLUTION\n    DENOMINATOR: %d v1 element_epoch ' ...
                 'document(s)\n    spike-train observations: %d (owning a body: %d)\n' ...
                 '    carried whole by [device clocks on one epoch] (no one system): %d\n' ...
-                '    acquisition_epoch in the destination: %d\n'], numel(srcIds), ...
+                '    acquisition_epoch or element_epoch in the destination: %d\n'], numel(srcIds), ...
                 asTrain, withBody, carried, numel(left));
             assertNotEmpty(testCase, srcIds, 'no element_epoch in the source: measured nothing');
             verifyEmpty(testCase, neither, sprintf(['%d element_epoch(s) are neither a ' ...
@@ -673,9 +680,7 @@ classdef TestMigrateLocalEta20211116 < matlab.unittest.TestCase
             verifyEqual(testCase, withBody, asTrain, ...
                 'every spike-train observation must own its body');
             verifyEmpty(testCase, setdiff(leftIds, carriedIds), ...
-                'an acquisition_epoch survived that epochMint did not list as carried');
-            verifyEmpty(testCase, findAllByClass(migrated, 'element_epoch'), ...
-                'element_epoch documents survived migration under the v1 name');
+                'an element_epoch slice survived that epochMint did not list as carried');
         end
 
         function testNoHartleyPresentationIsRefusedForItsGeneratorKeys(testCase)
