@@ -1248,7 +1248,10 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             % EMPTY:0000368 replaced EMPTY:0000140 "encounter onset time"
             % (Decided by Jess Haley, 2026-10-22 [onset and offset terms])
             testCase.verifyEqual(list{1}.statement.variable.node, 'EMPTY:0000368');
-            testCase.verifyEqual([list{1}.time.value.seconds], [1 3] / fr, 'AbsTol', 1e-9, ...
+            % a series is one value cell whose canonical field is an array
+            % ([one shape for measured numbers], plan section 8, answer 4)
+            testCase.verifyNumElements(list{1}.time.value, 1, 'one value cell for the series');
+            testCase.verifyEqual(list{1}.time.value.seconds(:)', [1 3] / fr, 'AbsTol', 1e-9, ...
                 'rows 2 and 4 of a one-video track: frames 2 and 4');
             testCase.verifyEqual(methodOf(list{1}), 'encounter detection');
             % the onsets count from the START of the list's time reference,
