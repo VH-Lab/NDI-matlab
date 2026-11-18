@@ -4,12 +4,18 @@ classdef cloudDatasetBrowser < handle
 %   NDI.GUI.NAV.CLOUDDATASETBROWSER() opens a window listing every NDI Cloud
 %   dataset in every organization the signed-in user belongs to
 %   (ndi.cloud.api.datasets.listDatasets). For each dataset it shows:
-%       Name, Organization, Documents, Files, Created, Last changed
+%       Name, Organization, Documents, Files, Created, Last changed, Published
 %   "Created" is when the dataset was created on NDI Cloud, which is when
 %   its first documents were added; "Last changed" is the dataset's last
 %   update time on NDI Cloud. Selecting a row shows the dataset's details,
 %   including its cloud dataset id with a Copy button; counts or dates the
 %   list did not include are fetched then with ndi.cloud.api.datasets.getDataset.
+%
+%   "Published" is Yes when the dataset is published on NDI Cloud (its
+%   isPublished flag) and No otherwise. The "Include published" and
+%   "Include unpublished" boxes show or hide those datasets; both are ticked
+%   at first. The status line says how many datasets are shown out of how
+%   many there are.
 %
 %   The "Sort by" control orders the list by any column, either direction.
 %   Refresh reloads the list from NDI Cloud.
@@ -49,11 +55,14 @@ classdef cloudDatasetBrowser < handle
 
     properties (Constant)
         ColumnNames = {'Name', 'Organization', 'Documents', 'Files', ...
-            'Created', 'Last changed'}
+            'Created', 'Last changed', 'Published'}
     end
 
     properties (SetAccess = protected)
-        Entries = struct([])            % listed datasets, in table order
+        Entries = struct([])            % shown datasets, in table order
+        AllEntries = struct([])         % every listed dataset, before filtering
+        IncludePublished (1,1) logical = true
+        IncludeUnpublished (1,1) logical = true
         Organizations = struct('id', {}, 'name', {}, 'canUploadDataset', {})
         SelectedIndex = []              % row of Entries that is selected
         SortColumn char = 'Name'
@@ -68,6 +77,8 @@ classdef cloudDatasetBrowser < handle
         DeleteButton
         StatusLabel
         SortDirButton
+        PublishedCheckbox
+        UnpublishedCheckbox
     end
 
     methods
@@ -80,6 +91,7 @@ classdef cloudDatasetBrowser < handle
             end
             obj.OpenFcn = options.OpenFcn;
             obj.Entries = ndi.gui.nav.cloudDatasetBrowser.emptyEntries();
+            obj.AllEntries = obj.Entries;
             obj.build(options.Parent, options.Visible);
             if options.Load
                 obj.refresh();
@@ -107,13 +119,19 @@ classdef cloudDatasetBrowser < handle
                 return;
             end
             obj.setEntries(ndi.gui.nav.cloudDatasetBrowser.entriesFromList(answer));
-            obj.setStatus(sprintf('%d dataset(s).', numel(obj.Entries)));
+            obj.setStatus(ndi.gui.nav.cloudDatasetBrowser.countStatusText( ...
+                numel(obj.Entries), numel(obj.AllEntries)));
         end
 
         function setEntries(obj, entries)
-            %SETENTRIES Show ENTRIES (sorted by the current sort choice).
+            %SETENTRIES Show ENTRIES, filtered and sorted by the current choices.
+            %   ENTRIES is every listed dataset; the published/unpublished
+            %   choices decide which of them are shown.
+            obj.AllEntries = entries;
+            shown = ndi.gui.nav.cloudDatasetBrowser.filterEntries( ...
+                entries, obj.IncludePublished, obj.IncludeUnpublished);
             obj.Entries = ndi.gui.nav.cloudDatasetBrowser.sortEntries( ...
-                entries, obj.SortColumn, obj.SortDescending);
+                shown, obj.SortColumn, obj.SortDescending);
             obj.redraw();
             obj.select([]);
         end
@@ -122,8 +140,19 @@ classdef cloudDatasetBrowser < handle
             %SETSORT Order the list by COLUMN (a ColumnNames entry).
             obj.SortColumn = char(column);
             obj.SortDescending = logical(descending);
-            obj.setEntries(obj.Entries);
+            obj.setEntries(obj.AllEntries);
             obj.SortDirButton.Text = ndi.gui.nav.cloudDatasetBrowser.sortDirText(descending);
+        end
+
+        function setFilter(obj, includePublished, includeUnpublished)
+            %SETFILTER Choose whether published and unpublished datasets are shown.
+            obj.IncludePublished = logical(includePublished);
+            obj.IncludeUnpublished = logical(includeUnpublished);
+            obj.PublishedCheckbox.Value = obj.IncludePublished;
+            obj.UnpublishedCheckbox.Value = obj.IncludeUnpublished;
+            obj.setEntries(obj.AllEntries);
+            obj.setStatus(ndi.gui.nav.cloudDatasetBrowser.countStatusText( ...
+                numel(obj.Entries), numel(obj.AllEntries)));
         end
 
         function select(obj, idx)
@@ -164,6 +193,10 @@ classdef cloudDatasetBrowser < handle
                 obj.Entries(idx) = ndi.gui.nav.cloudDatasetBrowser.mergeEntry(e, full);
             end
             obj.Entries(idx).detailed = true;
+            k = find(strcmp({obj.AllEntries.id}, e.id), 1);
+            if ~isempty(k)
+                obj.AllEntries(k) = obj.Entries(idx);
+            end
             obj.redraw();
         end
 
@@ -265,9 +298,9 @@ classdef cloudDatasetBrowser < handle
             uilabel(hb, 'Text', 'My NDI Cloud datasets', 'FontColor', c.white, ...
                 'FontWeight', 'bold', 'FontSize', 14);
 
-            sg = uigridlayout(g, [1 4]);
+            sg = uigridlayout(g, [1 6]);
             sg.Layout.Row = 2;
-            sg.ColumnWidth = {'fit', 160, 100, '1x'};
+            sg.ColumnWidth = {'fit', 160, 100, 'fit', 'fit', '1x'};
             sg.Padding = [0 0 0 0];
             sg.BackgroundColor = c.offWhite;
             uilabel(sg, 'Text', 'Sort by:', 'FontColor', c.darkBlue);
@@ -277,6 +310,16 @@ classdef cloudDatasetBrowser < handle
                 'Text', ndi.gui.nav.cloudDatasetBrowser.sortDirText(obj.SortDescending), ...
                 'BackgroundColor', c.lightBlue, 'FontColor', c.darkBlue, ...
                 'ButtonPushedFcn', @(~,~) obj.setSort(obj.SortColumn, ~obj.SortDescending));
+            obj.PublishedCheckbox = uicheckbox(sg, 'Text', 'Include published', ...
+                'Value', obj.IncludePublished, 'FontColor', c.darkBlue, ...
+                'Tag', 'ndiBrowserIncludePublished', ...
+                'Tooltip', 'Show datasets that are published on NDI Cloud', ...
+                'ValueChangedFcn', @(cb,~) obj.setFilter(cb.Value, obj.IncludeUnpublished));
+            obj.UnpublishedCheckbox = uicheckbox(sg, 'Text', 'Include unpublished', ...
+                'Value', obj.IncludeUnpublished, 'FontColor', c.darkBlue, ...
+                'Tag', 'ndiBrowserIncludeUnpublished', ...
+                'Tooltip', 'Show datasets that are not published on NDI Cloud', ...
+                'ValueChangedFcn', @(cb,~) obj.setFilter(obj.IncludePublished, cb.Value));
 
             obj.Table = uitable(g, 'ColumnName', obj.ColumnNames, ...
                 'Data', cell(0, numel(obj.ColumnNames)), ...
@@ -477,7 +520,7 @@ classdef cloudDatasetBrowser < handle
         function e = emptyEntries()
             e = struct('id', {}, 'name', {}, 'organizationId', {}, ...
                 'organizationName', {}, 'documentCount', {}, 'fileCount', {}, ...
-                'createdAt', {}, 'updatedAt', {}, 'detailed', {});
+                'createdAt', {}, 'updatedAt', {}, 'isPublished', {}, 'detailed', {});
         end
 
         function entries = entriesFromList(answer)
@@ -506,6 +549,7 @@ classdef cloudDatasetBrowser < handle
             e.fileCount = ndi.gui.nav.cloudDatasetBrowser.toCount(F({'fileCount', 'numberOfFiles'}));
             e.createdAt = char(string(F({'createdAt', 'created'})));
             e.updatedAt = char(string(F({'updatedAt', 'lastModified', 'modifiedAt'})));
+            e.isPublished = ndi.gui.nav.cloudDatasetBrowser.toFlag(F({'isPublished', 'published'}));
             e.detailed = ~isnan(e.documentCount) && ~isnan(e.fileCount) && ...
                 ~isempty(e.createdAt) && ~isempty(e.updatedAt);
         end
@@ -524,6 +568,28 @@ classdef cloudDatasetBrowser < handle
                     e.(fn{i}) = full.(fn{i});
                 end
             end
+            % An absent flag reads as false, so a true from either wins.
+            e.isPublished = e.isPublished || full.isPublished;
+        end
+
+        function entries = filterEntries(entries, includePublished, includeUnpublished)
+            %FILTERENTRIES Keep the published and/or unpublished entries.
+            %   A dataset without an isPublished flag counts as unpublished.
+            if isempty(entries)
+                return;
+            end
+            pub = [entries.isPublished];
+            keep = (pub & logical(includePublished)) | (~pub & logical(includeUnpublished));
+            entries = entries(keep);
+        end
+
+        function t = countStatusText(nShown, nAll)
+            %COUNTSTATUSTEXT Status line: how many datasets are shown of how many.
+            if nShown == nAll
+                t = sprintf('%d dataset(s).', nAll);
+            else
+                t = sprintf('%d of %d dataset(s) shown.', nShown, nAll);
+            end
         end
 
         function entries = sortEntries(entries, column, descending)
@@ -540,6 +606,7 @@ classdef cloudDatasetBrowser < handle
                 case 'Last changed',  key = {entries.updatedAt};
                 case 'Documents',     key = [entries.documentCount];
                 case 'Files',         key = [entries.fileCount];
+                case 'Published',     key = double([entries.isPublished]);
                 otherwise
                     error('NDI:cloudDatasetBrowser:BadSortColumn', ...
                         'Unknown column "%s".', char(column));
@@ -563,7 +630,7 @@ classdef cloudDatasetBrowser < handle
 
         function c = entriesToCell(entries)
             %ENTRIESTOCELL Table data, one row per entry.
-            c = cell(numel(entries), 6);
+            c = cell(numel(entries), 7);
             for i = 1:numel(entries)
                 e = entries(i);
                 c{i,1} = e.name;
@@ -572,6 +639,7 @@ classdef cloudDatasetBrowser < handle
                 c{i,4} = ndi.gui.nav.cloudDatasetBrowser.countText(e.fileCount);
                 c{i,5} = ndi.gui.nav.cloudDatasetBrowser.dateText(e.createdAt);
                 c{i,6} = ndi.gui.nav.cloudDatasetBrowser.dateText(e.updatedAt);
+                c{i,7} = ndi.gui.nav.cloudDatasetBrowser.yesNoText(e.isPublished);
             end
         end
 
@@ -590,7 +658,8 @@ classdef cloudDatasetBrowser < handle
                 sprintf('Created:       %s', ndi.gui.nav.cloudDatasetBrowser.dateText(e.createdAt)), ...
                 sprintf('Last changed:  %s', ndi.gui.nav.cloudDatasetBrowser.dateText(e.updatedAt)), ...
                 sprintf('Documents:     %s', ndi.gui.nav.cloudDatasetBrowser.countText(e.documentCount)), ...
-                sprintf('Files:         %s', ndi.gui.nav.cloudDatasetBrowser.countText(e.fileCount))};
+                sprintf('Files:         %s', ndi.gui.nav.cloudDatasetBrowser.countText(e.fileCount)), ...
+                sprintf('Published:     %s', ndi.gui.nav.cloudDatasetBrowser.yesNoText(e.isPublished))};
         end
 
         function t = dateText(s)
@@ -611,6 +680,14 @@ classdef cloudDatasetBrowser < handle
                 t = 'Descending';
             else
                 t = 'Ascending';
+            end
+        end
+
+        function t = yesNoText(tf)
+            if tf
+                t = 'Yes';
+            else
+                t = 'No';
             end
         end
 
@@ -645,6 +722,18 @@ classdef cloudDatasetBrowser < handle
                     v = d.(names{i});
                     return;
                 end
+            end
+        end
+
+        function tf = toFlag(v)
+            %TOFLAG A true/false record field; absent or unreadable is false.
+            tf = false;
+            if islogical(v) && isscalar(v)
+                tf = v;
+            elseif isnumeric(v) && isscalar(v) && ~isnan(v)
+                tf = v ~= 0;
+            elseif (ischar(v) || isstring(v)) && ~isempty(v)
+                tf = any(strcmpi(strtrim(char(v)), {'true', '1', 'yes'}));
             end
         end
 

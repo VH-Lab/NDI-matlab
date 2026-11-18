@@ -94,9 +94,60 @@ classdef cloudDatasetBrowser_test < matlab.unittest.TestCase
             e = ndi.gui.nav.cloudDatasetBrowser.entriesFromList({ ...
                 struct('id', 'd1', 'name', 'b'), struct('id', 'd2', 'name', 'a')});
             b.setEntries(e);
-            testCase.verifySize(b.Table.Data, [2 6]);
+            testCase.verifySize(b.Table.Data, [2 7]);
             testCase.verifyEqual(b.Table.Data{1, 1}, 'a');   % sorted by Name
+            testCase.verifyEqual(b.Table.Data{1, 7}, 'No');
             testCase.verifyEqual(char(b.DeleteButton.Enable), 'off');
+        end
+
+        function testIsPublishedIsRead(testCase)
+            F = @ndi.gui.nav.cloudDatasetBrowser.entryFromStruct;
+            testCase.verifyTrue(F(struct('id', 'd', 'isPublished', true)).isPublished);
+            testCase.verifyFalse(F(struct('id', 'd', 'isPublished', false)).isPublished);
+            testCase.verifyTrue(F(struct('id', 'd', 'isPublished', 'true')).isPublished);
+            testCase.verifyFalse(F(struct('id', 'd')).isPublished);   % absent -> unpublished
+            m = ndi.gui.nav.cloudDatasetBrowser.mergeEntry(F(struct('id', 'd')), ...
+                F(struct('id', 'd', 'isPublished', true)));
+            testCase.verifyTrue(m.isPublished);
+            lines = strjoin(ndi.gui.nav.cloudDatasetBrowser.detailsText( ...
+                F(struct('id', 'd', 'isPublished', true)), false), newline);
+            testCase.verifySubstring(lines, 'Published:     Yes');
+        end
+
+        function testFilterEntries(testCase)
+            e = ndi.gui.nav.cloudDatasetBrowser.entriesFromList({ ...
+                struct('id', 'p', 'name', 'pub', 'isPublished', true), ...
+                struct('id', 'u', 'name', 'unpub', 'isPublished', false), ...
+                struct('id', 'x', 'name', 'unknown')});
+            F = @(p, u) {ndi.gui.nav.cloudDatasetBrowser.filterEntries(e, p, u).id};
+            testCase.verifyEqual(F(true, true), {'p', 'u', 'x'});
+            testCase.verifyEqual(F(true, false), {'p'});
+            testCase.verifyEqual(F(false, true), {'u', 'x'});
+            testCase.verifyEmpty(ndi.gui.nav.cloudDatasetBrowser.filterEntries(e, false, false));
+            S = @(d) {ndi.gui.nav.cloudDatasetBrowser.sortEntries(e, 'Published', d).id};
+            testCase.verifyEqual(S(false), {'u', 'x', 'p'});
+            testCase.verifyEqual(S(true), {'p', 'u', 'x'});
+            T = @ndi.gui.nav.cloudDatasetBrowser.countStatusText;
+            testCase.verifyEqual(T(3, 3), '3 dataset(s).');
+            testCase.verifyEqual(T(1, 3), '1 of 3 dataset(s) shown.');
+        end
+
+        function testWindowFilterHidesAndShows(testCase)
+            b = ndi.gui.nav.cloudDatasetBrowser('Visible', 'off', 'Load', false);
+            testCase.addTeardown(@() delete(b.Figure));
+            b.setEntries(ndi.gui.nav.cloudDatasetBrowser.entriesFromList({ ...
+                struct('id', 'p', 'name', 'a', 'isPublished', true), ...
+                struct('id', 'u', 'name', 'b', 'isPublished', false)}));
+            testCase.verifyTrue(b.PublishedCheckbox.Value);
+            testCase.verifyTrue(b.UnpublishedCheckbox.Value);
+            b.setFilter(false, true);
+            testCase.verifyEqual({b.Entries.id}, {'u'});
+            testCase.verifyFalse(b.PublishedCheckbox.Value);
+            testCase.verifySubstring(b.StatusLabel.Text, '1 of 2');
+            b.setSort('Name', true);                       % sorting keeps the filter
+            testCase.verifyEqual({b.Entries.id}, {'u'});
+            b.setFilter(true, true);
+            testCase.verifyEqual({b.Entries.id}, {'u', 'p'});   % Name descending: b, a
         end
     end
 end
