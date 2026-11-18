@@ -106,6 +106,67 @@ classdef TestIngestedArchiveBodies < matlab.unittest.TestCase
             testCase.verifyEqual(removed, {'body_cl'});
             testCase.verifyEqual(rep.channel_list_removed, 1);
             testCase.verifyEqual(rep.channel_list_rebuilt_exactly, 1);
+            % [channel name is an identifier]: standard names `ai<n>` are
+            % not written
+            testCase.verifyEqual(rep.channel_names_seen, 3, 'the denominator');
+            testCase.verifyEqual(rep.channel_names_nonstandard, 0);
+            testCase.verifyEqual(rep.channel_name_covariates, 0);
+            testCase.verifyEqual(rep.channel_names_written, 0);
+        end
+
+        function testNonStandardChannelNamesAreAnIdentifierCovariate(testCase)
+            % [channel name is an identifier] (Jess Haley, 2026-11-17): "a
+            % channel's v1 name is a covariate along the channel dimension
+            % of its channel group's body, variable NCIT:C25364
+            % "Identifier", one text value per channel", written where a v1
+            % name is not the standard `<prefix><number>`. The v1 list is
+            % written by NDI's own writer (ndi.file.type.mfdaq_epoch_channel,
+            % which keeps the reader's name and reads the number from it);
+            % with the names carried it rebuilds exactly and is removed
+            o = struct('names', {{'A-001', 'A-002', 'ai3'}});
+            [structs, v1] = testCase.archive(false, true, 0, o);
+            [out, rep, removed] = ndi.migrate.internal.ingestedArchiveBodies( ...
+                structs, testCase.Dir, v1);
+            testCase.verifyEqual(rep.archives_converted, 1, rep.first_unconvertible_reason);
+            nm = covOf(out{2}, 'NCIT:C25364');
+            testCase.assertNotEmpty(nm, 'no name covariate');
+            testCase.verifyEqual(char(nm.variable.name), 'Identifier');
+            testCase.verifyEqual(double(nm.along), 1, 'along the channel dimension');
+            testCase.verifyEqual(cellstr(nm.text(:))', {'A-001', 'A-002', 'ai3'}, ...
+                'one text value per channel, every channel''s v1 name');
+            testCase.verifyEqual(char(out{2}.data.covariates(4).variable.node), 'NCIT:C70774', ...
+                'the scale is still the 4th covariate (the gap''s field)');
+            testCase.verifyEqual(rep.channel_names_seen, 3, 'the denominator');
+            testCase.verifyEqual(rep.channel_names_nonstandard, 2);
+            testCase.verifyEqual(rep.channel_name_covariates, 1);
+            testCase.verifyEqual(rep.channel_names_written, 3);
+            % the readers rebuild the v1 list exactly, so it is removed
+            testCase.verifyEqual(removed, {'body_cl'}, rep.first_channel_list_kept_reason);
+            testCase.verifyEqual(rep.channel_list_rebuilt_exactly, 1);
+            want = ndi.file.type.mfdaq_epoch_channel( ...
+                fullfile(testCase.Dir, 'files', 'u_cl')).channel_information;
+            got = ndi.vintage.ingestedChannelList({jsondecode(jsonencode(out{2}))});
+            testCase.verifyTrue(isequaln(got(:), want(:)), 'the readers'' rebuild is the v1 list');
+            keep = ~cellfun(@(s) any(strcmp(s.base.id, removed)), out);
+            res = did2.convert.v1_to_v2(out(keep), 'Validate', true, 'TargetVersion', 'did_v2');
+            testCase.verifyEmpty(res.quarantine);
+        end
+
+        function testANonStandardEventNameKeepsTheList(testCase)
+            % the name covariate lives on a channel group's body: an event
+            % channel's non-standard name has no v2 home, so a list holding
+            % one does not rebuild exactly and is kept (a check that cannot
+            % fail proves nothing)
+            o = struct('events', true, 'wired', true, 'eventName', 'Stim-1');
+            [structs, v1] = testCase.archive(false, true, 0, o);
+            [~, rep, removed] = ndi.migrate.internal.ingestedArchiveBodies( ...
+                structs, testCase.Dir, v1);
+            testCase.verifyEqual(rep.archives_converted, 1, rep.first_unconvertible_reason);
+            testCase.verifyEqual(rep.event_archives_unpacked, 1, rep.first_event_kept_reason);
+            testCase.verifyFalse(ismember('body_cl', removed));
+            testCase.verifyEqual(rep.channel_list_kept, 1);
+            testCase.verifyTrue(contains(rep.first_channel_list_kept_reason, 'name'), ...
+                rep.first_channel_list_kept_reason);
         end
 
         function testATimeChannelLinkIsCarriedAndTheListRebuilt(testCase)
@@ -434,7 +495,9 @@ classdef TestIngestedArchiveBodies < matlab.unittest.TestCase
             % inputs); O.scale (0.195); O.timeChannel, the three channels'
             % v1 time_channel (NaN); O.events, an events file with event
             % channel e1 and marker channel mk2 (EV: its T and D), O.wired a
-            % `connected to` relation wiring them to the device stim_1
+            % `connected to` relation wiring them to the device stim_1;
+            % O.names, the three channels' v1 names (`<prefix><n>`);
+            % O.eventName, the event channel's v1 name ('e1')
             if nargin < 4; t0 = 0; end
             if nargin < 5; o = struct(); end
             if ~isfield(o, 'prefix'); o.prefix = 'ai'; end
@@ -443,16 +506,19 @@ classdef TestIngestedArchiveBodies < matlab.unittest.TestCase
             if ~isfield(o, 'timeChannel'); o.timeChannel = NaN(1, 3); end
             if ~isfield(o, 'events'); o.events = false; end
             if ~isfield(o, 'wired'); o.wired = false; end
+            if ~isfield(o, 'names')
+                o.names = arrayfun(@(n) sprintf('%s%d', o.prefix, n), 1:3, 'UniformOutput', false);
+            end
+            if ~isfield(o, 'eventName'); o.eventName = 'e1'; end
             ev = [];
             types = struct('ai', 'analog_in', 'ax', 'auxiliary_in', 'di', 'digital_in');
             sr = 10000;
-            ch = struct('name', cellfun(@(n) sprintf('%s%d', o.prefix, n), {1, 2, 3}, ...
-                'UniformOutput', false), 'type', types.(o.prefix), ...
+            ch = struct('name', o.names, 'type', types.(o.prefix), ...
                 'time_channel', num2cell(o.timeChannel), 'sample_rate', sr, 'offset', -2, ...
                 'scale', o.scale);
             if strcmp(o.prefix, 'di'); [ch.offset] = deal(0); end
             if o.events
-                ch(end+1) = struct('name', 'e1', 'type', 'event', 'time_channel', NaN, ...
+                ch(end+1) = struct('name', o.eventName, 'type', 'event', 'time_channel', NaN, ...
                     'sample_rate', NaN, 'offset', 0, 'scale', 1);
                 ch(end+1) = struct('name', 'mk2', 'type', 'marker', 'time_channel', NaN, ...
                     'sample_rate', NaN, 'offset', 0, 'scale', 1);
