@@ -14,6 +14,11 @@ function [zipFilePath, idManifest] = zip_documents_for_upload(documentList, clou
     %       argument specifying the folder where the zip file will be created. 
     %       Defaults to the system's temporary folder as defined by 
     %       ndi.common.PathConstants.TempFolder.
+    %   options.DocumentJson (1,:) cell - Optional. The already-encoded JSON
+    %       (char) of each document's document_properties, one per entry of
+    %       documentList, as made by did.datastructures.jsonencodenan. When
+    %       given, the documents are not encoded again; the file holds the
+    %       same JSON array either way. Default {} (encode here).
     %
     % Returns:
     %   zipFilePath (string) - The full path to the generated .zip file.
@@ -36,11 +41,21 @@ function [zipFilePath, idManifest] = zip_documents_for_upload(documentList, clou
         documentList (1,:) cell
         cloudDatasetId (1,:) char
         options.TargetFolder (1,1) string {mustBeFolder} = ndi.common.PathConstants.TempFolder
+        options.DocumentJson (1,:) cell = {}
     end
 
-    % Convert documents to a JSON string
-    document_properties_array = cellfun(@(x) x.document_properties, documentList, 'UniformOutput', false);
-    jsonStr = did.datastructures.jsonencodenan( document_properties_array );
+    % Convert documents to a JSON string (a JSON array of objects; the
+    % server's bulk ingester requires the top level to be an array)
+    if isempty(options.DocumentJson)
+        document_properties_array = cellfun(@(x) x.document_properties, documentList, 'UniformOutput', false);
+        jsonStr = did.datastructures.jsonencodenan( document_properties_array );
+    else
+        assert(numel(options.DocumentJson) == numel(documentList), ...
+            'NDI:Cloud:Upload:DocumentJsonMismatch', ...
+            'DocumentJson has %d entries but documentList has %d.', ...
+            numel(options.DocumentJson), numel(documentList));
+        jsonStr = ['[' strjoin(cellfun(@char, options.DocumentJson, 'UniformOutput', false), ',') ']'];
+    end
     idManifest = cellfun(@(x) x.id(),documentList,'UniformOutput',false);
     
     % Open the file for writing

@@ -7,7 +7,8 @@ function [b, report] = uploadDocumentCollection(datasetId, documentList, options
 %
 %   By default, it uses a bulk upload process. It creates ZIP archives from the
 %   document list, retrieves bulk upload URLs, and uploads the ZIP files to the cloud.
-%   This process can be broken into chunks using the 'maxDocumentChunk' option.
+%   Each ZIP holds at most 'maxDocumentChunk' documents and at most
+%   'maxDocumentBytes' bytes of document JSON, whichever limit is reached first.
 %
 %   If the environment variable 'NDI_CLOUD_UPLOAD_NO_ZIP' is set to 'true',
 %   the documents are uploaded one at a time via a slower serial process.
@@ -24,6 +25,15 @@ function [b, report] = uploadDocumentCollection(datasetId, documentList, options
 %                    archive for batch uploads. Defaults to the preference
 %                    Cloud.Upload.Max_Document_Batch_Count (see ndi.preferences).
 %
+%   options.maxDocumentBytes - (1,1) double
+%                    The maximum size, in bytes of encoded JSON, of the
+%                    documents in a single ZIP archive for batch uploads. A
+%                    single document larger than this is sent in a ZIP of its
+%                    own. Defaults to the preference
+%                    Cloud.Upload.Max_Document_Batch_Size (50 MB). The server
+%                    ingests each ZIP in a Lambda with limited scratch disk, so
+%                    one very large JSON file can fail to ingest at all.
+%
 %   options.onlyUploadMissing - (1,1) logical
 %                    If true (default), documents whose ids the dataset
 %                    already lists are skipped.
@@ -35,11 +45,18 @@ function [b, report] = uploadDocumentCollection(datasetId, documentList, options
 %                    once each zip is stored, before the server has ingested
 %                    it, so without this a listing made straight afterwards
 %                    can miss documents. Serial uploads are not affected.
+%                    If the server lists NONE of the stored documents when
+%                    the wait ends, the server-side ingestion is treated as
+%                    failed: every stored batch is marked 'failure', B is
+%                    false, and a NDI:Cloud:Upload:IngestionFailed warning is
+%                    issued. (Running the upload again with onlyUploadMissing
+%                    sends only what the server still lacks.)
 %
 %   options.ingestionTimeout - (1,1) double
 %                    Seconds to wait for ingestion. Default 300. On a timeout
 %                    the function warns (NDI:Cloud:Upload:IngestionTimeout)
-%                    and still returns B according to the upload itself.
+%                    and still returns B according to the upload itself,
+%                    unless no document at all was ingested (see above).
 %
 % OUTPUTS:
 %   b              - (1,1) logical
@@ -59,7 +76,9 @@ function [b, report] = uploadDocumentCollection(datasetId, documentList, options
 %                    'ingestion': Present when a batch upload waited for
 %                                 ingestion; the ANSWER struct of
 %                                 ndi.cloud.api.documents.waitForDocumentCount
-%                                 (state, count, expectedCount, elapsed).
+%                                 (state, count, expectedCount, elapsed),
+%                                 plus countBefore. state is 'failed' when
+%                                 the server ingested none of the documents.
 %
 % EXAMPLE:
 %   % Upload a collection of documents in chunks of 100
@@ -75,6 +94,7 @@ function [b, report] = uploadDocumentCollection(datasetId, documentList, options
         datasetId (1,1) string
         documentList (1,:) cell
         options.maxDocumentChunk (1,1) double {mustBePositive} = ndi.preferences.get('Cloud.Upload.Max_Document_Batch_Count')
+        options.maxDocumentBytes (1,1) double {mustBePositive} = ndi.preferences.get('Cloud.Upload.Max_Document_Batch_Size')
         options.onlyUploadMissing (1,1) logical = true
         options.waitForIngestion (1,1) logical = true
         options.ingestionTimeout (1,1) double {mustBePositive} = 300
@@ -179,12 +199,27 @@ function [b, report] = uploadDocumentCollection(datasetId, documentList, options
         end
 
         docCount = numel(documentList);
-        for i = 1:options.maxDocumentChunk:docCount
-            startIndex = i;
-            endIndex = min(i + options.maxDocumentChunk - 1, docCount);
+
+        % Encode each document once, both to size the batches and to
+        % write the zips. Batches end at maxDocumentChunk documents or
+        % maxDocumentBytes of JSON, whichever comes first. (Character
+        % count is used as the byte size; it is exact for ASCII JSON.)
+        documentJson = cellfun(@(x) did.datastructures.jsonencodenan(x.document_properties), ...
+            documentList, 'UniformOutput', false);
+        documentSizes = cellfun(@numel, documentJson);
+        batchRanges = ndi.cloud.upload.internal.documentBatchRanges(...
+            documentSizes, options.maxDocumentChunk, options.maxDocumentBytes);
+        if numel(batchRanges) > 1
+            fprintf('Sending %d documents (%.1f MB of JSON) in %d batches.\n', ...
+                docCount, sum(documentSizes)/1e6, numel(batchRanges));
+        end
+
+        for k = 1:numel(batchRanges)
+            batchIndexes = batchRanges{k};
+            endIndex = batchIndexes(end);
             
             % Pass the chunk of ndi.document objects directly
-            chunkDocs = documentList(startIndex:endIndex);
+            chunkDocs = documentList(batchIndexes);
             
             zipFilePath = ''; % Initialize to ensure it's in scope for cleanup
             idManifest = {};
@@ -192,7 +227,8 @@ function [b, report] = uploadDocumentCollection(datasetId, documentList, options
             try
                 % Create zip file for the current chunk
                 [zipFilePath, idManifest] = ...
-                    ndi.cloud.upload.internal.zip_documents_for_upload(chunkDocs, datasetId);
+                    ndi.cloud.upload.internal.zip_documents_for_upload(chunkDocs, datasetId, ...
+                    'DocumentJson', documentJson(batchIndexes));
                 
                 % Get upload URL and perform upload
                 [success, uploadUrl] = ndi.cloud.api.documents.getBulkUploadURL(datasetId);
@@ -209,8 +245,11 @@ function [b, report] = uploadDocumentCollection(datasetId, documentList, options
                 report.status{end+1} = 'success';
                 delete(zipFilePath); % Clean up the file
                 
-            catch
+            catch ME
                 % The upload failed
+                warning('NDI:Cloud:Upload:BatchUploadFailed', ...
+                    'Upload of document batch %d of %d failed: %s', ...
+                    k, numel(batchRanges), ME.message);
                 if isempty(idManifest) % if zipping failed before manifest was created
                     idManifest = cellfun(@(x) x.id(), chunkDocs, 'UniformOutput', false);
                 end
@@ -225,9 +264,6 @@ function [b, report] = uploadDocumentCollection(datasetId, documentList, options
         end
     end
     
-    % Determine overall success from the report
-    b = ~any(strcmp(report.status, 'failure'));
-
     % Close progress bar window upon completion
     delete(app);
 
@@ -249,7 +285,26 @@ function [b, report] = uploadDocumentCollection(datasetId, documentList, options
                 report.ingestion = struct('state', 'error', 'count', NaN, ...
                     'expectedCount', expectedCount, 'elapsed', NaN, 'message', ME.message);
             end
-            if ~ingested
+            report.ingestion.countBefore = countBefore;
+            if ~ingested && isfinite(report.ingestion.count) && report.ingestion.count <= countBefore
+                % The server stored the zips but listed none of their
+                % documents by the deadline: its ingestion failed (or has
+                % not started at all). Report the upload as failed so
+                % callers (e.g. sync) do not record these documents as
+                % present; uploading again sends only what is missing.
+                report.ingestion.state = 'failed';
+                storedBatches = strcmp(report.status, 'success');
+                report.status(storedBatches) = {'failure'};
+                warning('NDI:Cloud:Upload:IngestionFailed', ...
+                    ['Dataset %s still lists %g documents %.0f s after %d documents were ' ...
+                    'uploaded in %d batch(es): the server ingested none of them. The ' ...
+                    'server-side ingestion failed or is badly delayed; the upload is ' ...
+                    'reported as failed. Run the upload again later (only missing ' ...
+                    'documents are sent), and if it fails again ask an NDI Cloud ' ...
+                    'administrator to check the bulk document upload logs.'], ...
+                    datasetId, report.ingestion.count, report.ingestion.elapsed, ...
+                    numStored, nnz(storedBatches));
+            elseif ~ingested
                 warning('NDI:Cloud:Upload:IngestionTimeout', ...
                     ['Dataset %s lists %g of the %d documents expected after this upload ' ...
                     '(state: %s). The upload succeeded; the server may still be ' ...
@@ -258,4 +313,7 @@ function [b, report] = uploadDocumentCollection(datasetId, documentList, options
             end
         end
     end
+
+    % Determine overall success from the report
+    b = ~any(strcmp(report.status, 'failure'));
 end
