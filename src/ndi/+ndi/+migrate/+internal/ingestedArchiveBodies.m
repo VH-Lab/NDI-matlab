@@ -1155,7 +1155,15 @@ end
 stem = ndi.file.temp_name();
 copyfile(paths{1}, [stem '.nbf.tgz']);
 c1 = onCleanup(@() deleteIfThere([stem '.nbf.tgz']));
-[ct, cn, T, D] = ndi.compress.expand_eventmarktext(stem);
+try
+    [ct, cn, T, D] = ndi.compress.expand_eventmarktext(stem);
+catch err
+    % e.g. a non-ASCII text entry: NDI-compress writes it as UTF-8 but reads
+    % it back byte by byte, so NDI cannot read the file either
+    ev = left(ev, 'other', ['NDI''s expander cannot read the events file (' ...
+        err.message ')']);
+    return;
+end
 ct = cellstr(ct);
 ev.channels = numel(ct);
 ev.textChannels = sum(strcmp(ct, 'text'));

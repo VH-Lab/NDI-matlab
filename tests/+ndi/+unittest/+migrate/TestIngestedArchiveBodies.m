@@ -171,9 +171,13 @@ classdef TestIngestedArchiveBodies < matlab.unittest.TestCase
                 rep.first_channel_list_kept_reason);
         end
 
-        function testATimeChannelLinkIsCarriedAndTheListRebuilt(testCase)
+        function testATimeChannelLinkIsCarriedAndTheListKept(testCase)
             % [time channel is a per-channel covariate]: NaN and dangling
             % values carried exactly; the list is rebuilt with them
+            % ([time channel row is notation], Jess Haley, 2026-11-19): the
+            % groups name t1 and t2 and the v1 list holds neither, so the
+            % rebuild (which writes their rows) does not match and the list
+            % is kept
             o = struct('timeChannel', [1 2 NaN]);
             [structs, v1] = testCase.archive(false, true, 0, o);
             [out, rep, removed] = ndi.migrate.internal.ingestedArchiveBodies( ...
@@ -181,7 +185,9 @@ classdef TestIngestedArchiveBodies < matlab.unittest.TestCase
             testCase.verifyEqual(rep.archives_converted, 1, rep.first_unconvertible_reason);
             tc = covOf(out{2}, 'EMPTY:0000374');
             testCase.verifyTrue(isequaln(double(tc.numeric(:))', [1 2 NaN]));
-            testCase.verifyEqual(removed, {'body_cl'}, rep.first_channel_list_kept_reason);
+            testCase.verifyEmpty(removed, 'the list is kept');
+            testCase.verifyEqual(rep.channel_list_kept, 1);
+            testCase.verifySubstring(rep.first_channel_list_kept_reason, 't1, t2');
             res = did2.convert.v1_to_v2(out(2), 'Validate', true, 'TargetVersion', 'did_v2');
             testCase.verifyEmpty(res.quarantine);
         end
@@ -680,7 +686,7 @@ classdef TestIngestedArchiveBodies < matlab.unittest.TestCase
             want = unicode2native(jsonencode(ev.D{3}), 'UTF-8');
             testCase.verifyEqual(bytes, uint8(want(:)'), 'the JSON array, UTF-8');
             testCase.verifyEqual(jsondecode(native2unicode(bytes, 'UTF-8')), ...
-                {'start'; ['stop ' char(252)]; ''});
+                {'start'; 'stop now'; ''});
             % read back as NDI's expander gives the channel
             entries = ndi.vintage.ingestedTextEntries('decode', bytes);
             [T, D] = ndi.vintage.ingestedEventData('text', floatsOf(testCase.Dir, E(3).times), entries);
@@ -693,6 +699,27 @@ classdef TestIngestedArchiveBodies < matlab.unittest.TestCase
             keep = ~cellfun(@(s) any(strcmp(s.base.id, removed)), out);
             res = did2.convert.v1_to_v2(out(keep), 'Validate', true, 'TargetVersion', 'did_v2');
             testCase.verifyEmpty(res.quarantine);
+        end
+
+        function testAnEventsFileNdiCannotReadStaysPacked(testCase)
+            % NDI-compress writes a non-ASCII text entry as UTF-8 bytes but
+            % reads it back byte by byte, so its own expander cannot read
+            % the file: the events file is left as v1, counted, never an
+            % error
+            o = struct('events', true, 'wired', true, 'text', true, ...
+                'entries', {{'start', ['stop ' char(252)], ''}});
+            [structs, v1, ~, ev] = testCase.archive(false, true, 0, o);
+            testCase.assumeTrue(isfield(ev, 'unreadable'), ...
+                'NDI-compress reads this file back: nothing to test');
+            [out, rep, removed] = ndi.migrate.internal.ingestedArchiveBodies( ...
+                structs, testCase.Dir, v1);
+            testCase.verifyEqual(rep.archives_converted, 1, rep.first_unconvertible_reason);
+            testCase.verifyEqual(rep.event_archives_kept, 1);
+            testCase.verifyEqual(rep.event_kept_other, 1, rep.first_event_kept_reason);
+            testCase.verifySubstring(rep.first_event_kept_reason, 'expander');
+            testCase.verifyFalse(ismember('body_ev', removed));
+            testCase.verifyFalse(ismember('body_cl', removed));
+            testCase.verifyEqual(numel(out), numel(structs));
         end
 
         function testAnUnwiredTextChannelLeavesTheFilePacked(testCase)
@@ -825,7 +852,7 @@ classdef TestIngestedArchiveBodies < matlab.unittest.TestCase
             end
             if ~isfield(o, 'eventName'); o.eventName = 'e1'; end
             if ~isfield(o, 'text'); o.text = false; end
-            if ~isfield(o, 'entries'); o.entries = {'start', ['stop ' char(252)], ''}; end
+            if ~isfield(o, 'entries'); o.entries = {'start', 'stop now', ''}; end
             if ~isfield(o, 'wireText'); o.wireText = true; end
             if ~isfield(o, 'timeRowTimeChannel'); o.timeRowTimeChannel = NaN; end
             if ~isfield(o, 'timeRowOffset'); o.timeRowOffset = 0; end
@@ -893,7 +920,13 @@ classdef TestIngestedArchiveBodies < matlab.unittest.TestCase
                     % what NDI's own expander reads back from the file
                     stem2 = tempname();
                     copyfile(fullfile(files, 'u_ev'), [stem2 '.nbf.tgz']);
-                    [~, ~, ev.T, ev.D] = ndi.compress.expand_eventmarktext(stem2);
+                    try
+                        [~, ~, ev.T, ev.D] = ndi.compress.expand_eventmarktext(stem2);
+                    catch
+                        % NDI-compress writes a non-ASCII character as
+                        % UTF-8 but reads it back byte by byte
+                        ev.unreadable = true;
+                    end
                     delete([stem2 '.nbf.tgz']);
                 end
                 s{end+1} = body('body_ev', 'evmktx_group1_seg.nbf_#', {'u_ev'});
