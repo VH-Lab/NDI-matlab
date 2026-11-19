@@ -249,6 +249,10 @@ function result = local(path, options)
     % lack a required field only when it lists the gap. A database already
     % migrated is re-checked against the report its migration record holds.
     did2.convert.migrationReport('begin');
+    % while this call runs, NDI's readers may read the carried fields from
+    % the run's report before the record is written; after it returns, only
+    % from the stored record (ndi.vintage.carriedSubjects 'running')
+    carriedRunGuard = ndi.vintage.carriedSubjects('running'); %#ok<NASGU>
     if alreadyMigrated
         [bodies, srcInfo] = readBodiesFromTarget(dstPath);
     else

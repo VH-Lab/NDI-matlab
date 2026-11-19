@@ -38,7 +38,17 @@ function [subjectId, found, carried, sources] = carriedSubjects(S, elementId)
 %
 %   WHILE A MIGRATION RUNS (the record is not written yet), the run's own
 %   report is read (did2.convert.carriedElementSubject) for an element the
-%   stored records do not list.
+%   stored records do not list, and only then: inside an ndi.migrate.local
+%   call, which marks itself with
+%       GUARD = ndi.vintage.carriedSubjects('running')
+%   (an onCleanup; the mark is a count, so a call inside another keeps the
+%   outer one's). ndi.migrate.local leaves DID's run report held after it
+%   returns (did2.convert.migrationReport 'begin', never 'end', so a caller
+%   can still validate what it migrated), so 'active' alone would read the
+%   last run's carried fields for every session opened afterwards in the
+%   same MATLAB session, its stored record removed or not
+%   (TestStimulatorRowFromWiring/testNothingCarriedAndNothingAddedLosesTheSubject,
+%   e2e run 44524117766).
 %
 %   CACHED. Each report file's carried fields are read once per MATLAB
 %   session, keyed by the file's path, size and time (a record is written
@@ -56,6 +66,7 @@ function [subjectId, found, carried, sources] = carriedSubjects(S, elementId)
 
 persistent byRecord   % report file key -> containers.Map element id -> subject id
 persistent hasRunApi  % did2.convert.carriedElementSubject is on the path
+persistent running    % ndi.migrate.local calls in progress
 if isempty(byRecord)
     byRecord = containers.Map('KeyType', 'char', 'ValueType', 'any');
 end
@@ -63,8 +74,20 @@ subjectId = '';
 found = false;
 carried = containers.Map('KeyType', 'char', 'ValueType', 'char');
 sources = {};
+if isempty(running)
+    running = 0;
+end
 if ischar(S) && strcmp(S, 'clear')
     byRecord = containers.Map('KeyType', 'char', 'ValueType', 'any');
+    return;
+end
+if ischar(S) && strcmp(S, 'running')
+    running = running + 1;
+    subjectId = onCleanup(@() ndi.vintage.carriedSubjects('-stopped'));
+    return;
+end
+if ischar(S) && strcmp(S, '-stopped')
+    running = max(0, running - 1);
     return;
 end
 if nargin < 2
@@ -128,7 +151,7 @@ end
 if isempty(hasRunApi)
     hasRunApi = ~isempty(which('did2.convert.carriedElementSubject'));
 end
-if hasRunApi && did2.convert.migrationReport('active')
+if running > 0 && hasRunApi && did2.convert.migrationReport('active')
     [subjectId, found] = did2.convert.carriedElementSubject(elementId);
 end
 end
