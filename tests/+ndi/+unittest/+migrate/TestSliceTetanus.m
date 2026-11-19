@@ -200,6 +200,34 @@ classdef TestSliceTetanus < matlab.unittest.TestCase
             verifyNumElements(testCase, sub.migrated, numel(bodies));
         end
 
+        function testNoMintedBodyCarriesBaseName(testCase)
+            % V2 `base` has no `name` ([v1 name goes to the class's own name
+            % field], [base.name kept until retire classes leave], Jess Haley,
+            % did-schema did_v2_go_forward_class_audit.md). The simulated
+            % pass-1 bodies carry an empty base.name (body() below), so the
+            % copied instance_of relations are the case this catches.
+            bodies = testCase.Plan.minted;
+            verifyNotEmpty(testCase, bodies);
+            withName = {};
+            for k = 1:numel(bodies)
+                b = bodies{k};
+                if isfield(b, 'base') && isfield(b.base, 'name')
+                    withName{end+1} = char(b.document_class.class_name); %#ok<AGROW>
+                end
+            end
+            verifyEmpty(testCase, withName, sprintf( ...
+                '%d of %d minted bodies carry base.name: %s', numel(withName), ...
+                numel(bodies), strjoin(withName, ', ')));
+            % the pre-#88 spelling mints the same way
+            [mig, idx] = simulateMigrated(testCase.V1, true);
+            plan = ndi.setup.conv.dabrowska.sliceTetanus(testCase.V1, mig, idx);
+            n = 0;
+            for k = 1:numel(plan.minted)
+                n = n + (isfield(plan.minted{k}, 'base') && isfield(plan.minted{k}.base, 'name'));
+            end
+            verifyEqual(testCase, n, 0, 'pre-#88 spelling: no minted body carries base.name');
+        end
+
         function testEveryLabelRebuildsAndIsDropped(testCase)
             r = testCase.Report;
             verifyEqual(testCase, [r.labels_rebuilt r.labels_not_rebuilt], [49 0]);
