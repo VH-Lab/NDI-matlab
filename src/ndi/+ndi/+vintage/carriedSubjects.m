@@ -55,6 +55,7 @@ function [subjectId, found, carried, sources] = carriedSubjects(S, elementId)
 %   did2.convert.carriedElementSubject, did2.convert.migrationRecord.
 
 persistent byRecord   % report file key -> containers.Map element id -> subject id
+persistent hasRunApi  % did2.convert.carriedElementSubject is on the path
 if isempty(byRecord)
     byRecord = containers.Map('KeyType', 'char', 'ValueType', 'any');
 end
@@ -124,8 +125,10 @@ if isKey(carried, elementId)
     return;
 end
 % a migration in progress: its own report, before the record is written
-if ~isempty(which('did2.convert.carriedElementSubject')) ...
-        && did2.convert.migrationReport('active')
+if isempty(hasRunApi)
+    hasRunApi = ~isempty(which('did2.convert.carriedElementSubject'));
+end
+if hasRunApi && did2.convert.migrationReport('active')
     [subjectId, found] = did2.convert.carriedElementSubject(elementId);
 end
 end
