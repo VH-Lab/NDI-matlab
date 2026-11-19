@@ -121,3 +121,18 @@ fi
 mkdir -p "$DEST"
 cut -f2 "$LIST" | while IFS= read -r f; do cp "$f" "$DEST/"; done
 echo "copied $((nclass + nreg)) file(s) into $DEST"
+# SCRATCH PROBE (not for merge): V2 base.name deleted, as did-schema will, to
+# list the NDI tests that still build or read it
+if [ -f "$DEST/base.json" ]; then
+    python3 - "$DEST/base.json" <<'PY'
+import json, sys
+p = sys.argv[1]
+with open(p) as fh:
+    base = json.load(fh)
+n = len(base.get("fields", []))
+base["fields"] = [f for f in base.get("fields", []) if f.get("name") != "name"]
+with open(p, "w") as fh:
+    json.dump(base, fh, indent=4)
+print("SCRATCH PROBE: base.name removed from %s (%d -> %d fields)" % (p, n, len(base["fields"])))
+PY
+fi
