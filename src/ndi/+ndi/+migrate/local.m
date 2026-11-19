@@ -12,12 +12,6 @@ function result = local(path, options)
 %   for the duration of the run, so concurrent migrations of the same
 %   dataset fail fast instead of corrupting each other.
 %
-%   STATUS of the 2026-08-10 edit (V_eta second-pass step (7),
-%   did2.convert.resolveSessionAnchors): WRITTEN WITHOUT MATLAB and NOT
-%   EXECUTED. The pass itself has never been run anywhere. It is wired in its
-%   OWN try/catch like every sibling, so a failure leaves the time references
-%   in pass-1 form and the rest of the migration proceeds.
-%
 %   STATUS of the SECOND 2026-08-10 edit (V_eta second-pass step (4b),
 %   did2.convert.resolveDatasetEntities): WRITTEN WITHOUT MATLAB AND NOT
 %   EXECUTED -- there is no MATLAB in the container this was written in, so
@@ -391,7 +385,6 @@ function result = local(path, options)
     epochMintReport = [];
     epochAnchorReport = [];
     recordingAttributionReport = [];
-    sessionAnchorReport = [];
     epochProbemapReport = [];
     observesRetirementReport = [];   % [observes retires in the second pass]
     responseParametersReport = [];
@@ -507,9 +500,8 @@ function result = local(path, options)
         %       LINKED member session (documents in a separate database, not
         %       this batch) leaves the edge's child dangling. Keep the richest
         %       entity per id, drop the dangling edges. Lives DID-side
-        %       (did2.convert.resolveDatasetEntities) beside epochMint and
-        %       resolveSessionAnchors, so the corpus discovery harness runs the
-        %       same code this does.
+        %       (did2.convert.resolveDatasetEntities) beside epochMint, so the
+        %       corpus discovery harness runs the same code this does.
         %
         %       WHY IT IS ONLY BEING WIRED NOW, stated plainly: it was NEVER
         %       wired here. All three DID-side call sites have run it since it
@@ -558,9 +550,9 @@ function result = local(path, options)
         %       sampled_body, data_body, term,
         %       term_observation, subject_observation, strain,
         %       directed_relation, entity, epoch, relative_reference), and
-        %       (5)/(7) index `session` documents by an exact class-name match
-        %       (epochMint.m:282, resolveSessionAnchors.m:206) so a duplicate
-        %       `dataset` entity cannot pollute either index whichever way round
+        %       (5) indexes `session` documents by an exact class-name match
+        %       (epochMint.m:282) so a duplicate
+        %       `dataset` entity cannot pollute that index whichever way round
         %       they run. Dropping a duplicate cannot dangle an inbound edge
         %       either, because the duplicates SHARE the surviving id.
         %       See ndi.migrate.internal -- deliberately NOT there: the pass is
@@ -664,8 +656,8 @@ function result = local(path, options)
         %       parameters documents stay put and the pass instead MEASURES
         %       what the verify-before-delete gate needs
         %       (`parameters_documents_unreferenced_after`). Lives DID-side
-        %       (did2.convert.resolveResponseParameters) beside epochMint,
-        %       resolveSessionAnchors and resolveDatasetEntities, so the corpus
+        %       (did2.convert.resolveResponseParameters) beside epochMint
+        %       and resolveDatasetEntities, so the corpus
         %       discovery harness runs the same code this does.
         %   (7c) LAWN / PLATE SUBJECTS and (7c2) IMAGED-ENTITY SUBJECTS are
         %       GONE from the generic stage: Decided by Jess Haley, 2026-10-26
@@ -751,26 +743,6 @@ function result = local(path, options)
         %       so it also sees any software minted by a body the deferral pass
         %       re-folded through v1_to_v2.
         %       See ndi.migrate.internal.softwareDedup.
-        %   (7) SESSION ANCHOR FOLD (#65): `session_relative_reference`
-        %       (107,308 documents) + `session_bounded_reference` (20,411)
-        %       become `relative_reference` with base.id PRESERVED, anchored to
-        %       the SESSION DOCUMENT. Pass 1 cannot do it: a migrator holds
-        %       `base.session_id`, while the REQUIRED `relative_to` edge needs
-        %       the session document's `base.id` -- two independently minted
-        %       strings (+ndi/document.m:57-58 vs +ndi/session.m:215), so the
-        %       mapping is a corpus-wide index. Lives DID-side
-        %       (did2.convert.resolveSessionAnchors) beside epochMint, so the
-        %       corpus discovery harness runs the same code this does.
-        %
-        %       ORDER: immediately after (5), matching runCorpusDiscovery,
-        %       testCorpusPRED and testFixtureCorpus exactly. Stated plainly --
-        %       NO DEPENDENCY FORCES IT. Both (5) and (7) index `session`
-        %       documents by (base.session_id -> base.id); neither writes what
-        %       the other reads; and no sub-pass in this block removes a
-        %       `session` document, so (7)'s new edge cannot be orphaned by a
-        %       later step whatever the order (softwareDedup removes only
-        %       duplicate `software` entities). The order is pinned so the DID
-        %       corpus gate and this production path cannot silently diverge.
         % Each step is independent; a failure leaves the affected documents in
         % their pass-1 form.
         %
@@ -1068,30 +1040,14 @@ function result = local(path, options)
         end
         tStep = migrateStepMark('resolveRecordingAttribution', tStart, tStep, convertResult);
         try
-            [convertResult, sessionAnchorReport] = ...
-                did2.convert.resolveSessionAnchors( ...
-                convertResult, ...
-                'Validate',      options.Validate, ...
-                'SchemaCache',   options.SchemaCache, ...
-                'TargetVersion', options.TargetVersion);
-        catch ME
-            stepErrors(end+1) = struct('step', 'sessionAnchorFoldFailed', 'message', ME.message); %#ok<AGROW>
-            warning('NDI:migrate:sessionAnchorFoldFailed', ...
-                ['Second-pass session anchor fold failed (%s); leaving the ' ...
-                 'time references as pass-1 session_relative_reference / ' ...
-                 'session_bounded_reference documents.'], ME.message);
-        end
-        tStep = migrateStepMark('resolveSessionAnchors', tStart, tStep, convertResult);
-        try
             % THE SAME FUNCTION the three DID-side call sites run, in the same
-            % order (after epochMint + resolveSessionAnchors) so the two
+            % order (after epochMint) so the two
             % pipelines stay one. #66 increment 1: decompose each ingested
             % epoch's `epochprobemap` into epoch-scoped `<modality>_observation`
             % documents (one per probe row, anchored to the minted `epoch`),
             % retiring #30's coarse session-scoped observation for a probe when
             % exactly one names it. ORDER: after epochMint (the anchor is an
-            % `epoch` DOCUMENT minted there) and after resolveSessionAnchors (so
-            % the #30 observations it retires have their anchors already folded).
+            % `epoch` DOCUMENT minted there).
             % IT ADDS AND NEVER REMOVES SOURCES: `epochfiles_ingested` keeps its
             % probemap (increment 3 renames it), so a failure here leaves the
             % dataset exactly as this pass found it.
@@ -1795,7 +1751,6 @@ function result = local(path, options)
         'epochMint',           epochMintReport, ...
         'epochAnchorFold',     epochAnchorReport, ...
         'recordingAttribution', recordingAttributionReport, ...
-        'sessionAnchorFold',   sessionAnchorReport, ...
         'epochProbemapFold',   epochProbemapReport, ...
         'observesRetirement',  observesRetirementReport, ...
         'navigatorEpochFiles', navigatorEpochReport, ...
