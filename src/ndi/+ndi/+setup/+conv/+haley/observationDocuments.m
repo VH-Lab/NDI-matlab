@@ -88,7 +88,7 @@ for k = 1:numel(plates)
     out.windowStarts(plate) = wallClock(P.local_start(1), tz);
     if ~isnan(temp)
         v = did2.build.composite('temperature', 'value', struct('celsius', temp, ...
-            'source_value', temp, 'source_unit', ndi.setup.V2.sourceUnit('C')));
+            did2.build.sourceNumericField(), temp, 'source_unit', ndi.setup.V2.sourceUnit('C')));
         statement('temperature', plate, cfg.temperature.variable, v, timeId, 'temperature');
     end
     if ~isnan(humidity)

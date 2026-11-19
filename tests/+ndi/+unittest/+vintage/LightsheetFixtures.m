@@ -4,8 +4,8 @@ classdef LightsheetFixtures
 %   The V_eta builders here are shaped as DID-matlab's lightsheet migration
 %   emits them (+migrators_j/lightsheet_zarr_pyramid.m,
 %   lightsheet_zarr_level.m, private/jLightsheetKeys.m (through
-%   did2.build.key: a regular axis's origin and spacing are {value,
-%   source_value} pairs) and the store-record
+%   did2.build.key: a regular axis's origin and spacing are plain numbers
+%   beside source_origin / source_spacing, the new numeric shape) and the store-record
 %   half of +did2/+convert/foldGenericFiles.m, DID-matlab
 %   claude/ecstatic-pascal-md91fw at f363d98), AFTER the batch pass:
 %
@@ -160,7 +160,7 @@ classdef LightsheetFixtures
             end
             t = struct('variable', struct('name', 'time'), ...
                 'unit', struct('node', 'UO:0000010', 'name', 'second'), 'along', 0, ...
-                'origin', struct('value', 0), 'spacing', struct('value', 1));
+                'origin', 0, 'spacing', 1);
             ch = struct('variable', struct('name', 'channel'), 'along', 1, ...
                 'term', struct('node', '', 'name', {'GCaMP6s', 'tdTomato'}));
             space = cell(1, 3);
@@ -169,8 +169,8 @@ classdef LightsheetFixtures
                 space{a} = struct('variable', struct('name', names{2 + a}), ...
                     'unit', struct('node', 'UO:0000008', 'name', 'meter'), ...
                     'source_unit', 'micrometer', 'along', 1 + a, ...
-                    'origin', struct('value', origin(a) * 1e-6, 'source_value', origin(a)), ...
-                    'spacing', struct('value', vox(a) * 1e-6, 'source_value', vox(a)));
+                    'origin', origin(a) * 1e-6, 'source_origin', origin(a), ...
+                    'spacing', vox(a) * 1e-6, 'source_spacing', vox(a));
             end
             c = [{t, ch}, space];
         end

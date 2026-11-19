@@ -86,7 +86,7 @@ classdef TestHaleySeeding < matlab.unittest.TestCase
             testCase.verifyEqual(g.ingredient, 'OP50');
             testCase.verifyFalse(isfield(g.concentration, 'particles_per_liter'), ...
                 'the measured CFU is an observation of the solution, not its plan (decision #129)');
-            testCase.verifyEqual(g.concentration.source_value, 10, 'the plan: target OD600 10');
+            testCase.verifyEqual(g.concentration.source_numeric, 10, 'the plan: target OD600 10');
             testCase.verifyEqual(g.concentration.source_unit, ndi.setup.V2.sourceUnit('OD600'));
             testCase.verifyEqual(g.concentration.optical_density, 10, 'the optical_density canonical (OD600 by its source unit)');
             st = testCase.solution('suspension_op50_20230217');
@@ -97,7 +97,7 @@ classdef TestHaleySeeding < matlab.unittest.TestCase
             testCase.verifyNumElements(d.ingredients, 1);
             testCase.verifyEqual(d.ingredients{1}.ingredient, 'suspension_op50_20230217');
             testCase.verifyEqual(d.ingredients{1}.concentration.liters_per_liter, 0.5, 'AbsTol', 1e-12);
-            testCase.verifyEqual(d.ingredients{1}.concentration.source_value, 5);
+            testCase.verifyEqual(d.ingredients{1}.concentration.source_numeric, 5);
             % the OD600 0 patches that day are each study's own diluent alone
             % (decision #94): Mini's LB, Matching's S-Complete
             I = testCase.S.index;
@@ -111,7 +111,7 @@ classdef TestHaleySeeding < matlab.unittest.TestCase
             a = testCase.entry('suspension_op50_20230327_a');      % Matching
             testCase.verifyFalse(isfield(a.ingredients{1}.concentration, 'particles_per_liter'), ...
                 'the S-Complete seeding of 2023-03-27 measured no CFU (correction)');
-            testCase.verifyEqual(a.ingredients{1}.concentration.source_value, 10, 'the plan');
+            testCase.verifyEqual(a.ingredients{1}.concentration.source_numeric, 10, 'the plan');
             testCase.verifyEqual(testCase.solution('suspension_op50_20230327_a').od, 9.9375, 'measured');
             testCase.verifyEqual(a.ingredients{2}.ingredient, 's_complete');
             % the applied correction travels with the solution (decision #111)
@@ -155,7 +155,7 @@ classdef TestHaleySeeding < matlab.unittest.TestCase
             testCase.verifyTrue(isnan(sx.od) && isnan(sx.cfu), 'nothing was measured');
             testCase.verifyEmpty(sx.note);
             testCase.verifyEqual(x.ingredients{1}.ingredient, 'OP50');
-            testCase.verifyEqual(x.ingredients{1}.concentration.source_value, 1);
+            testCase.verifyEqual(x.ingredients{1}.concentration.source_numeric, 1);
             testCase.verifyEqual(x.ingredients{1}.concentration.source_unit, ndi.setup.V2.sourceUnit('OD600'));
             testCase.verifyEqual(x.ingredients{1}.concentration.optical_density, 1, 'the nominal OD600');
             testCase.verifyFalse(isfield(x.ingredients{1}.concentration, 'particles_per_liter'), ...
@@ -279,7 +279,7 @@ classdef TestHaleySeeding < matlab.unittest.TestCase
             c = ndi.v2.blockOf(cd{1}, 'concentration', 'value');
             if iscell(c), c = c{1}; end
             testCase.verifyEqual(c(1).source_unit, ndi.setup.V2.sourceUnit('CFU/mL'));
-            testCase.verifyEqual(c(1).particles_per_liter, 1000 * c(1).source_value, 'RelTol', 1e-12, ...
+            testCase.verifyEqual(c(1).particles_per_liter, 1000 * c(1).source_numeric, 'RelTol', 1e-12, ...
                 'per mL -> per L');
             od = ob(strcmp(node, 'MCO:0000059'));
             testCase.verifyEqual(nodeOf(ndi.v2.blockOf(od{1}, 'interaction', 'method').term), ...

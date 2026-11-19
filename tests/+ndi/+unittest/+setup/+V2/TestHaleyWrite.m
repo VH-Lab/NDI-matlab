@@ -434,7 +434,7 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             testCase.verifyNumElements(d, 1);
             testCase.verifyEqual(d{1}.statement.variable.node, 'PATO:0001334');
             testCase.verifyEqual(d{1}.length.value(1).meters, 1.5e-3, 'AbsTol', 1e-12);
-            testCase.verifyEqual(d{1}.length.value(1).source_value, 1.5, 'AbsTol', 1e-12);
+            testCase.verifyEqual(d{1}.length.value(1).source_numeric, 1.5, 'AbsTol', 1e-12);
             testCase.verifyEqual(d{1}.length.value(1).source_unit, ndi.setup.V2.sourceUnit('mm'));
             c = entries(d{1}.statement.conditions);
             c = [c{:}];
@@ -559,14 +559,14 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
                 'the dilution is made to the formulation the patch''s seeding dose names');
             plan = md{cellfun(@(d) strcmp(d.base.id, ids('suspension_op50_20220202')), md)};
             g = entries(ndi.v2.blockOf(plan, 'formulation', 'value').ingredients);
-            testCase.verifyEqual(g{1}.concentration.source_value, 10, 'the plan: target OD600 10');
+            testCase.verifyEqual(g{1}.concentration.source_numeric, 10, 'the plan: target OD600 10');
             testCase.verifyEqual(g{1}.concentration.optical_density, 10);
             ob = aboutMd(stockId, 'concentration_observation');
             ob = ob(cellfun(@(d) strcmp(d.statement.variable.node, 'MCO:0000059'), ob));
             testCase.verifyNumElements(ob, 1, 'the stock''s OD600Real');
             testCase.verifyEqual(ob{1}.statement.variable.node, 'MCO:0000059');
             testCase.verifyEqual(numbers(ndi.v2.blockOf(ob{1}, 'concentration', 'value'), ...
-                'source_value'), 10.2, 'AbsTol', 1e-12, 'measured, not the plan');
+                'source_numeric'), 10.2, 'AbsTol', 1e-12, 'measured, not the plan');
             testCase.verifyEqual(edge(ob{1}, 'instrument_id'), ids('spectrophotometer_1'));
             testCase.verifyEqual(ob{1}.interaction.method.term.node, 'NCIT:C85776', ...
                 'Optical Density Measurement (decision #129)');
@@ -582,7 +582,7 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             testCase.verifyEqual(cfu{1}.interaction.method.term.node, 'NCIT:C130166');
             cv = entries(ndi.v2.blockOf(cfu{1}, 'concentration', 'value'));
             testCase.verifyEqual(cv{1}.particles_per_liter, 500 * 2e10, 'RelTol', 1e-12);
-            testCase.verifyEqual(cv{1}.source_value, 500 * 2e7, 'RelTol', 1e-12);
+            testCase.verifyEqual(cv{1}.source_numeric, 500 * 2e7, 'RelTol', 1e-12);
             testCase.verifyEqual(cv{1}.source_unit, ndi.setup.V2.sourceUnit('CFU/mL'));
             testCase.verifyEmpty(edge(cfu{1}, 'instrument_id'), 'counted on a plate');
             testCase.verifyEqual(edge(cfu{1}, 'time_reference_id'), edge(ob{1}, 'time_reference_id'), ...
@@ -1248,7 +1248,10 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             % EMPTY:0000368 replaced EMPTY:0000140 "encounter onset time"
             % (Decided by Jess Haley, 2026-10-22 [onset and offset terms])
             testCase.verifyEqual(list{1}.statement.variable.node, 'EMPTY:0000368');
-            testCase.verifyEqual([list{1}.time.value.seconds], [1 3] / fr, 'AbsTol', 1e-9, ...
+            % a series is one value cell whose canonical field is an array
+            % ([one shape for measured numbers], plan section 8, answer 4)
+            testCase.verifyNumElements(list{1}.time.value, 1, 'one value cell for the series');
+            testCase.verifyEqual(list{1}.time.value.seconds(:)', [1 3] / fr, 'AbsTol', 1e-9, ...
                 'rows 2 and 4 of a one-video track: frames 2 and 4');
             testCase.verifyEqual(methodOf(list{1}), 'encounter detection');
             % the onsets count from the START of the list's time reference,
@@ -1337,7 +1340,7 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             off = cv(cellfun(@(c) strcmp(c.variable.name, 'offset time'), cv));
             testCase.verifyNumElements(off, 1);
             testCase.verifyEqual(double(off{1}.along), 0);
-            testCase.verifyNumElements(off{1}.quantity.value, numel(ec{1}.item.value.item));
+            testCase.verifyNumElements(off{1}.numeric, numel(ec{1}.item.value.item));
             np = named('item_calculation', 'concentration_worm0121', 'nearest bacterial patch');
             testCase.verifyNotEmpty(np);
             testCase.verifyTrue(all(ismember(cellfun(@(d) d.base.id, np, 'UniformOutput', false), ...
@@ -1543,7 +1546,7 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             gc = conditionsOf(lin);
             gc = gc(cellfun(@(e) strcmp(e.variable.node, 'EMPTY:0000351'), gc));
             testCase.verifyNumElements(gc, 1, 'target bacteria growth duration after seeding');
-            testCase.verifyEqual(gc{1}.quantity.value, 0);
+            testCase.verifyEqual(gc{1}.numeric, 0);
             testCase.verifyFalse(isfield(gc{1}, 'approximate') && ~isempty(gc{1}.approximate) ...
                 && logical(gc{1}.approximate), 'exact');
             testCase.verifyFalse(isfield(lin.interaction.method, 'parameters') ...
@@ -1588,7 +1591,7 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             testCase.verifyNumElements(on12, 1);
             testCase.verifyEqual(on12{1}.variable.node, 'EMPTY:0000368');
             testCase.verifyEqual(double(on12{1}.along), 0, 'along the encounter');
-            testCase.verifyEqual(on12{1}.quantity.value(:)', [1 3] / 2.9991, 'AbsTol', 1e-9, ...
+            testCase.verifyEqual(on12{1}.numeric(:)', [1 3] / 2.9991, 'AbsTol', 1e-9, ...
                 'at worm 121''s two encounter onsets');
             testCase.verifyTrue(ismember(lin.base.id, edgeAll(e12{1}, 'input_id')), ...
                 'from the OD600 1 fit');
@@ -1626,7 +1629,7 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             r12 = rdOf(idOf('concentration_assayPlate0012_patch0001'));
             testCase.verifyNumElements(r12, 1);
             testCase.verifyEqual(r12{1}.statement.variable.node, 'EMPTY:0000322');
-            testCase.verifyEqual(numbers(r12{1}.concentration.value, 'source_value'), ...
+            testCase.verifyEqual(numbers(r12{1}.concentration.value, 'source_numeric'), ...
                 10 * (94 / 300 + [74 80] / 3000) / 2.5, 'AbsTol', 1e-12);
             testCase.verifyEqual(unique(cellfun(@(e) ndi.v2.termName(e.source_unit), ...
                 entries(r12{1}.concentration.value), 'UniformOutput', false)), ...
@@ -1648,7 +1651,7 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             if ~isempty(acc)
                 ra = rdOf(idOf(acc{1}));
                 testCase.verifyNumElements(ra, 1);
-                testCase.verifyEqual(numbers(ra{1}.concentration.value, 'source_value'), ...
+                testCase.verifyEqual(numbers(ra{1}.concentration.value, 'source_numeric'), ...
                     10 * (55.7 - 0.0068 * 3060) / 2.5, 'AbsTol', 1e-9, 'at the pick, not floored');
             end
         end
@@ -2047,8 +2050,8 @@ arguments
     doc (1,1) struct
 end
 c = conditionsOf(doc);
-c = c(cellfun(@(e) isfield(e, 'quantity') && ~isempty(e.quantity), c));
-v = cellfun(@(e) e.quantity.value, c);
+c = c(cellfun(@(e) isfield(e, 'numeric') && ~isempty(e.numeric), c));
+v = cellfun(@(e) e.numeric, c);
 end
 
 function tf = noScale(cell)
@@ -2075,17 +2078,28 @@ name = char(sub{1}.name);
 end
 
 function v = numbers(x, field)
-% one number per value entry of a decoded value list; NaN where the entry
-% holds none (a NaN is stored as null)
+% the numbers of a decoded value, in order: a series is one value cell whose
+% FIELD is an array ([one shape for measured numbers], plan section 8,
+% answer 4); NaN where a reading holds none (a NaN is stored as null)
 arguments
     x
     field {mustBeText}
 end
 c = entries(x);
-v = NaN(1, numel(c));
+v = [];
 for k = 1:numel(c)
-    if isfield(c{k}, field) && isnumeric(c{k}.(field)) && ~isempty(c{k}.(field))
-        v(k) = c{k}.(field);
+    if ~isfield(c{k}, field) || isempty(c{k}.(field))
+        v = [v, NaN]; %#ok<AGROW>
+        continue;
     end
+    f = c{k}.(field);
+    if iscell(f)
+        f = cellfun(@(n) nanIfEmpty(n), f);
+    end
+    v = [v, reshape(double(f), 1, [])]; %#ok<AGROW>
 end
+end
+
+function n = nanIfEmpty(n)
+if isempty(n) || ~isnumeric(n), n = NaN; end
 end

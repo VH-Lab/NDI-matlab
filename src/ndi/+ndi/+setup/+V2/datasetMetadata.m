@@ -271,7 +271,9 @@ if ~strcmp(options.Studies, 'only')
         if isfield(c, 'ph')
             % a pH has no source unit: it is on its own scale, the canonical
             % `ph` (Jess Haley, 2026-10-21), so source_unit is left blank
-            v.ph = struct('ph', c.ph, 'source_value', c.ph);
+            % [one shape for measured numbers]: the source's number is
+            % `source_numeric` (did2.build.sourceNumericField)
+            v.ph = struct('ph', c.ph, did2.build.sourceNumericField(), c.ph);
         end
         edges = struct();
         if ~isempty(ids)

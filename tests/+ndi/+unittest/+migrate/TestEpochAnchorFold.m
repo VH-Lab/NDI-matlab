@@ -365,6 +365,7 @@ classdef TestEpochAnchorFold < matlab.unittest.TestCase
             tol = plan(1).body.time_reference.clock_tolerance;
             testCase.verifyFalse(isfield(tol, 'source_unit'));
             testCase.verifyFalse(isfield(tol, 'source_value'));
+            testCase.verifyFalse(isfield(tol, 'source_numeric'));
         end
 
         function testAnEmptyClockFoldsWithoutOneAndIsCounted(testCase)
