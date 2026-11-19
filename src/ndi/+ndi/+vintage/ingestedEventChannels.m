@@ -87,11 +87,15 @@ for c = 1:numel(cs)
         continue;
     end
     n = [];
+    old = ndi.v2.oldNumericForm(cc);
+    if ~isempty(old)
+        % the old numeric shape is not read (did-schema
+        % did_v2_numeric_shape_plan.md section 9 step 4, [no migrated
+        % database is kept], Jess Haley, 2026-11-19)
+        ndi.v2.refuseOldNumericShape('An event channel''s number', old);
+    end
     if isfield(cc, 'count') && ~isempty(cc.count)
         n = double(cc.count);
-    elseif isfield(cc, 'quantity') && isstruct(cc.quantity) ...
-            && isfield(cc.quantity, 'value') && ~isempty(cc.quantity.value)
-        n = double(cc.quantity.value);
     elseif isfield(cc, 'numeric') && ~isempty(cc.numeric)
         n = double(cc.numeric);
     end

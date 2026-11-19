@@ -23,7 +23,10 @@ classdef TestProbeWiring < matlab.unittest.TestCase
 %   Every test runs on the session written in each numeric shape (did-schema
 %   did_v2_numeric_shape_plan.md, [one shape for measured numbers], Jess
 %   Haley, 2026-11-17): the wiring's channel numbers as `matrix` (old) or as
-%   flat `numeric` (new), as did2.build.condition writes them.
+%   flat `numeric` (new), as did2.build.condition writes them. The old shape
+%   is refused when the wiring is read, 'ndi:v2:oldNumericShapeReMigrate'
+%   ([no migrated database is kept], Jess Haley, 2026-11-19); what does not
+%   read the wiring reads the same in both.
 
     properties (ClassSetupParameter)
         NumericShape = struct('old', 'old', 'new', 'new')
@@ -33,6 +36,7 @@ classdef TestProbeWiring < matlab.unittest.TestCase
         Dir
         Session
         Ids
+        Shape
     end
 
     methods (TestClassSetup)
@@ -85,6 +89,7 @@ classdef TestProbeWiring < matlab.unittest.TestCase
                 'SessionId', sid, 'Documents', {sys, anchor, obs, wire}, 'Validate', false);
             testCase.Ids = struct('system', sys.base.id, 'observation', obs.base.id, ...
                 'probe', probeId, 'session', sid);
+            testCase.Shape = NumericShape;
         end
     end
 
@@ -93,9 +98,14 @@ classdef TestProbeWiring < matlab.unittest.TestCase
             S = testCase.Session;
             st = S.database_search(ndi.query('base.id', 'exact_string', testCase.Ids.observation, ''));
             testCase.assertNumElements(st, 1, 'the recording observation was written');
-            s = ndi.vintage.wiredDeviceString(S, st{1}, testCase.Ids.system, ...
+            read = @() ndi.vintage.wiredDeviceString(S, st{1}, testCase.Ids.system, ...
                 testCase.Ids.probe, struct('doc', containers.Map()));
-            testCase.verifyEqual(s, 'intan1:ai11-14;di1');
+            if strcmp(testCase.Shape, 'old')
+                testCase.verifyError(read, 'ndi:v2:oldNumericShapeReMigrate', ...
+                    'a wiring in the old numeric shape is refused');
+                return;
+            end
+            testCase.verifyEqual(read(), 'intan1:ai11-14;di1');
         end
 
         function testAProbeWithNoRelationGivesTheSystemNameAlone(testCase)

@@ -31,11 +31,20 @@ function [codec, settings] = compressionOf(value)
 %   the same variable names. Keep the table below in step with DID-matlab
 %   src/did/+did2/+build/private/compressionTable.m.
 %
+%   A setting in the OLD numeric shape (`quantity`, `matrix`) is not read:
+%   it is an error, 'ndi:v2:oldNumericShapeReMigrate'
+%   (ndi.v2.refuseOldNumericShape), checked here before either reading, and
+%   the database is migrated again from v1 (did-schema
+%   did_v2_numeric_shape_plan.md section 9 step 4, [no migrated database is
+%   kept], Jess Haley, 2026-11-19).
+%
 %   See also ndi.v2.readBody, ndi.vintage.lightsheetLevel.
 
 arguments
     value = []
 end
+
+refuseOldSettings(value);
 
 if ~isempty(which('did2.build.compressionCodec'))
     [codec, settings] = did2.build.compressionCodec(value);
@@ -45,8 +54,31 @@ end
 [codec, settings] = localReading(value);
 end
 
+function refuseOldSettings(value)
+% a setting in the old numeric shape is refused, whichever reading follows
+if ~isstruct(value) || ~isscalar(value) || ~isfield(value, 'parameters')
+    return;
+end
+params = value.parameters;
+if isstruct(params), params = num2cell(reshape(params, 1, [])); end
+if ~iscell(params), return; end
+for k = 1:numel(params)
+    form = ndi.v2.oldNumericForm(params{k});
+    if ~isempty(form)
+        name = '';
+        e = params{k};
+        if isfield(e, 'variable') && isstruct(e.variable) && isfield(e.variable, 'name')
+            name = char(e.variable.name);
+        elseif isfield(e, 'variable')
+            name = char(string(e.variable));
+        end
+        ndi.v2.refuseOldNumericShape(sprintf('Compression setting "%s"', name), form);
+    end
+end
+end
+
 function settings = numericSettings(value, settings)
-% A setting in the new numeric shape (flat `numeric`, did-schema
+% A setting in the numeric shape (flat `numeric`, did-schema
 % did_v2_numeric_shape_plan.md [one shape for measured numbers], Jess Haley,
 % 2026-11-17) that did2.build.compressionCodec left empty is read here: at
 % DID-matlab V2 7b5e6540 (and #473 2be178af) its valueOf reads
@@ -167,11 +199,8 @@ elseif isfield(e, 'logical') && ~isempty(e.logical)
     v = logical(e.logical);
 elseif isfield(e, 'count') && ~isempty(e.count)
     v = double(e.count);
-elseif isfield(e, 'quantity') && isstruct(e.quantity) && isfield(e.quantity, 'value') ...
-        && ~isempty(e.quantity.value)
-    v = double(e.quantity.value);
 elseif isfield(e, 'numeric') && ~isempty(e.numeric) && (isnumeric(e.numeric) || islogical(e.numeric))
-    % the new numeric shape (did-schema did_v2_numeric_shape_plan.md [one
+    % the numeric shape (did-schema did_v2_numeric_shape_plan.md [one
     % shape for measured numbers], Jess Haley, 2026-11-17): flat `numeric`
     v = double(e.numeric);
 elseif isfield(e, 'term') && isstruct(e.term) && isfield(e.term, 'name')

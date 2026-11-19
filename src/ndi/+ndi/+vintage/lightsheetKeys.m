@@ -38,7 +38,7 @@ function f = lightsheetKeys(dimensions, covariates)
 %
 %   SOURCE UNITS, NOT CANONICAL ONES. The migrator converts a space or time
 %   axis to V_eta's canonical unit (meter, second) and keeps what the source
-%   said in spacing.source_value / origin.source_value / source_unit. v1 readers and their
+%   said in source_spacing / source_origin / source_unit. v1 readers and their
 %   callers (chooseLevel's target voxel size, the napari viewer) work in the
 %   source's micrometres, so the source values are read where they exist and
 %   the canonical ones only where the source's were already canonical.
@@ -50,9 +50,19 @@ function f = lightsheetKeys(dimensions, covariates)
 %   states. A space/time axis the source gave no scale is written by the
 %   migrator with origin 0, spacing 1 and NO unit (its indices 0..n-1; Jess
 %   2026-10-15), so it reads as voxel size 1, translation 0 and unit '' from
-%   the covariate itself. An axis whose positions are stored (a `quantity`
+%   the covariate itself. An axis whose positions are stored (a `numeric`
 %   0..n-1), or that has no covariate at all (a bare dimension), reads as 1
 %   and 0 by the convention above, the same.
+%
+%   THE NUMERIC SHAPE. origin and spacing are plain numbers beside
+%   source_origin and source_spacing (did-schema
+%   did_v2_numeric_shape_plan.md, [one shape for measured numbers], Jess
+%   Haley, 2026-11-17). An axis covariate in the OLD numeric shape (origin
+%   and spacing as {value, source_value} blocks, or a `quantity`) is not
+%   read: it is an error, 'ndi:v2:oldNumericShapeReMigrate'
+%   (ndi.v2.refuseOldNumericShape), and the database is migrated again from
+%   v1 (section 9 step 4, [no migrated database is kept], Jess Haley,
+%   2026-11-19).
 %
 %   See also: ndi.vintage.lightsheetLevel, ndi.vintage.lightsheetPyramid.
 
@@ -78,9 +88,13 @@ for k = 1:n
     if ~isempty(c), chunks(k) = double(c(1)); end
 
     cov = covariateAlong(covs, k - 1, dimTerm);
-    % did2.build.covariate writes a regular axis as origin = {value,
-    % source_value} and spacing = {value, source_value}: the canonical
-    % number and, when the unit was converted, the source's own.
+    old = ndi.v2.oldNumericForm(cov);
+    if ~isempty(old)
+        ndi.v2.refuseOldNumericShape('A lightsheet axis covariate', old);
+    end
+    % did2.build.covariate writes a regular axis as plain origin and
+    % spacing numbers, with source_origin and source_spacing the source's
+    % own when the unit was converted.
     unit = unitSpelling(get(cov, 'source_unit'));
     [spacing, sourceSpacing] = pairOf(get(cov, 'spacing'), get(cov, 'source_spacing'));
     [origin, sourceOrigin] = pairOf(get(cov, 'origin'), get(cov, 'source_origin'));
@@ -202,20 +216,15 @@ end
 end
 
 function [v, source] = pairOf(p, flatSource)
-% A covariate's origin or spacing: the {value, source_value} pair
-% did2.build.covariate writes, or a bare number with the source in a sibling field (flatSource).
+% A covariate's origin or spacing: a plain number, with the source's in a
+% sibling field (flatSource)
 arguments
     p
     flatSource
 end
 v = [];
 source = flatSource;
-if isstruct(p)
-    if isfield(p, 'value'), v = p(1).value; end
-    if isfield(p, 'source_value') && ~isempty(p(1).source_value)
-        source = p(1).source_value;
-    end
-elseif isnumeric(p)
+if isnumeric(p)
     v = p;
 end
 end

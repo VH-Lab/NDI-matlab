@@ -62,12 +62,13 @@ classdef TestLightsheetKeys < matlab.unittest.TestCase
                 'the covariate whose variable has the dimension''s node');
         end
 
-        function testTheOldNumericShapeReadsTheSame(testCase)
+        function testTheOldNumericShapeIsRefused(testCase)
             % did-schema did_v2_numeric_shape_plan.md ([one shape for
             % measured numbers], Jess Haley, 2026-11-17): the writers write
             % origin and spacing as plain numbers beside source_origin and
             % source_spacing (axesWith); data written before holds
-            % {value, source_value} blocks, and reads the same
+            % {value, source_value} blocks, which are refused ([no migrated
+            % database is kept], Jess Haley, 2026-11-19)
             [d, c] = ndi.unittest.vintage.TestLightsheetKeys.axesWith( ...
                 {struct('node', 'om:Time', 'name', 'time'), struct('node', '', 'name', 'channel'), ...
                  struct('node', 'NCIT:C44479', 'name', 'Z-Coordinate'), ...
@@ -76,8 +77,8 @@ classdef TestLightsheetKeys < matlab.unittest.TestCase
             testCase.verifyFalse(isstruct(c{3}.spacing), 'the fixture is in the new shape');
             c = cellfun(@blockRegular, c, 'UniformOutput', false);
             testCase.verifyTrue(isstruct(c{3}.spacing), 'the fixture is in the old shape');
-            ndi.unittest.vintage.TestLightsheetKeys.verifyKeys(testCase, ...
-                ndi.vintage.lightsheetKeys(d, c));
+            testCase.verifyError(@() ndi.vintage.lightsheetKeys(d, c), ...
+                'ndi:v2:oldNumericShapeReMigrate');
         end
     end
 

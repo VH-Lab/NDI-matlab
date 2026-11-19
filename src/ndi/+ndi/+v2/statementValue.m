@@ -12,6 +12,13 @@ function [k, v, t, u] = statementValue(p)
 %   number (its canonical field, e.g. 'liters', 'celsius'). Nothing is read
 %   but P: a value in a data body is 'none' without opening the body.
 %
+%   A value in the OLD numeric shape (logical's bare true/false, a numeric
+%   cell's `source_value`, a series stored one cell per reading) is not read:
+%   it is an error, 'ndi:v2:oldNumericShapeReMigrate' (ndi.value.refuseOldShape),
+%   and the database is migrated again from v1 (did-schema
+%   did_v2_numeric_shape_plan.md section 9 step 4, [no migrated database is
+%   kept], Jess Haley, 2026-11-19).
+%
 %   See also ndi.v2.searchStatements, ndi.statement/summary.
 
 arguments
@@ -43,6 +50,7 @@ for i = 1:numel(chain)
 end
 if isempty(c), return; end
 raw = ndi.v2.blockOf(p, c, 'value', []);
+ndi.value.refuseOldShape(c, raw);
 if iscell(raw)
     if numel(raw) ~= 1, return; end
     raw = raw{1};
@@ -61,14 +69,11 @@ end
 if ischar(raw) || isstring(raw)
     k = 'text'; v = char(raw); return;
 end
-if islogical(raw) && isscalar(raw)
-    k = 'logical'; v = raw; return;
-end
 if strcmp(c, 'logical') && isstruct(raw) && isfield(raw, 'logical') && ...
         (islogical(raw.logical) || isnumeric(raw.logical)) && isscalar(raw.logical)
-    % the new numeric shape: logical's value is the block {logical}, as
-    % voltage's is {volts, ...} (did-schema did_v2_numeric_shape_plan.md
-    % section 3, [one shape for measured numbers], Jess Haley, 2026-11-17)
+    % logical's value is the block {logical}, as voltage's is {volts, ...}
+    % (did-schema did_v2_numeric_shape_plan.md section 3, [one shape for
+    % measured numbers], Jess Haley, 2026-11-17)
     k = 'logical'; v = logical(raw.logical); return;
 end
 if isnumeric(raw) && isscalar(raw)

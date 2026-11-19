@@ -18,14 +18,26 @@ classdef value
     %                  fit, ...); double(v) is the same for numbers
     %   terms        - a term-valued value's terms, as ndi.term objects
     %   unit         - the canonical unit's field name, e.g. 'meters'
-    %   source       - table: source_value, source_unit (as the lab wrote it; on a
-    %                  schema where source_unit is a term, the term's name)
+    %   source       - table: source_value, source_unit (as the lab wrote it,
+    %                  the cell's source_numeric; on a schema where
+    %                  source_unit is a term, the term's name)
     %   tolerance    - [minus plus] per value, in the canonical unit
     %   approximate  - true per value that is approximate
     %   axes         - table of the value's dimensions (what each axis is)
     %   covariates   - table of the value's covariates (what is known along
     %                  the dimensions: onset times, a control flag, ...)
     %   files        - for a value kept as files (a video, an image): paths
+    %
+    % The numeric shape is did-schema did_v2_numeric_shape_plan.md ([one
+    % shape for measured numbers], Jess Haley, 2026-11-17): a series is ONE
+    % cell whose canonical field and `source_numeric` are arrays, and
+    % logical's value is the block {logical}. A value in the OLD numeric
+    % shape (a numeric cell's `source_value`, a series stored one cell per
+    % reading, logical's bare true/false) is not read: constructing an
+    % ndi.value of one is an error, 'ndi:v2:oldNumericShapeReMigrate'
+    % (ndi.value.refuseOldShape), and the database is migrated again from v1
+    % (section 9 step 4, [no migrated database is kept], Jess Haley,
+    % 2026-11-19).
     %
     % See also ndi.statement.
 
@@ -64,6 +76,9 @@ classdef value
             obj.covariate_list = options.Covariates;
             obj.datum_type = options.DatumType;
             obj.canonical_field = ndi.value.canonicalField(className, raw);
+            if isempty(options.Data) && isempty(options.Files)
+                ndi.value.refuseOldShape(className, raw);
+            end
         end
 
         function v = canonical(obj)
@@ -84,14 +99,14 @@ classdef value
                 if ~any(arrayfun(@(x) numberCount(x.(obj.canonical_field)) > 1, r))
                     v = arrayfun(@(x) double(firstOr(x.(obj.canonical_field), NaN)), r);
                 else
-                    % the new numeric shape: a series is ONE cell whose
-                    % canonical field is an array (did-schema
-                    % did_v2_numeric_shape_plan.md section 8 answer 4)
+                    % a series is ONE cell whose canonical field is an array
+                    % (did-schema did_v2_numeric_shape_plan.md section 8
+                    % answer 4)
                     v = seriesOf(r, obj.canonical_field);
                 end
             elseif isstruct(r) && isscalar(r) && isequal(fieldnames(r), {'logical'})
-                % the new numeric shape: logical's value is the block
-                % {logical} (did-schema did_v2_numeric_shape_plan.md section 3)
+                % logical's value is the block {logical} (did-schema
+                % did_v2_numeric_shape_plan.md section 3)
                 v = logical(r.logical);
             elseif isstruct(r) && (isfield(r, 'name') || isfield(r, 'node')) && ...
                     all(ismember(fieldnames(r), {'node', 'name'}))
@@ -135,11 +150,10 @@ classdef value
         function T = source(obj)
             % SOURCE - table: source_value, source_unit, per inline value
             %
-            % The source's number is the cell's `source_value` (old numeric
-            % shape) or `source_numeric` (new: did-schema
+            % The source's number is the cell's `source_numeric` (did-schema
             % did_v2_numeric_shape_plan.md, [one shape for measured
-            % numbers], Jess Haley, 2026-11-17). A new-shape series is one
-            % cell holding every reading: one row per reading, each with the
+            % numbers], Jess Haley, 2026-11-17). A series is one cell
+            % holding every reading: one row per reading, each with the
             % cell's source_unit.
             [r, ok] = obj.cells();
             [n, series] = obj.readings(r, ok);
@@ -149,7 +163,7 @@ classdef value
                     if ~ok, break; end
                     if isfield(r, 'source_numeric') && ~isempty(r(i).source_numeric)
                         source_value(i) = sourceNumbers(r(i).source_numeric, 1);
-                    elseif isfield(r, 'source_value'), source_value(i) = double(firstOr(r(i).source_value, NaN)); end
+                    end
                     if isfield(r, 'source_unit'), source_unit(i) = string(ndi.v2.termName(r(i).source_unit)); end
                 end
                 T = table(source_value, source_unit);
@@ -160,8 +174,6 @@ classdef value
                 sv = [];
                 if isfield(r, 'source_numeric') && ~isempty(r(i).source_numeric)
                     sv = r(i).source_numeric;
-                elseif isfield(r, 'source_value') && ~isempty(r(i).source_value)
-                    sv = r(i).source_value;
                 end
                 source_value = [source_value; sourceNumbers(sv, n(i))]; %#ok<AGROW>
                 u = "";
@@ -174,8 +186,8 @@ classdef value
         function t = tolerance(obj)
             % TOLERANCE - [minus plus] per inline value (NaN when none), canonical unit
             %
-            % A new-shape series (one cell, every reading) states one
-            % tolerance for the series: it is given on each reading's row.
+            % A series (one cell, every reading) states one tolerance for
+            % the series: it is given on each reading's row.
             [r, ok] = obj.cells();
             [n, series] = obj.readings(r, ok);
             if ~series, n = ones(1, numel(r)); end
@@ -194,8 +206,8 @@ classdef value
         function a = approximate(obj)
             % APPROXIMATE - true per inline value marked approximate
             %
-            % A new-shape series states one `approximate` for the series:
-            % it is given on each reading.
+            % A series states one `approximate` for the series: it is given
+            % on each reading.
             [r, ok] = obj.cells();
             [n, series] = obj.readings(r, ok);
             if ~series, n = ones(1, numel(r)); end
@@ -231,9 +243,8 @@ classdef value
     methods (Access = private)
         function [n, series] = readings(obj, r, ok)
             % N(i): how many readings cell i holds. SERIES: some cell holds
-            % more than one (the new numeric shape's series, one cell whose
-            % canonical field or source_numeric is an array); in the old
-            % shape every cell holds one, and SERIES is false.
+            % more than one (a series, one cell whose canonical field or
+            % source_numeric is an array).
             n = ones(1, numel(r));
             series = false;
             if ~ok, n = zeros(1, 0); return; end
@@ -260,12 +271,53 @@ classdef value
     end
 
     methods (Static)
+        function refuseOldShape(className, raw)
+            % REFUSEOLDSHAPE - error when RAW is a value in the old numeric shape
+            %
+            % ndi.value.refuseOldShape(CLASSNAME, RAW) throws
+            % 'ndi:v2:oldNumericShapeReMigrate'
+            % (ndi.v2.refuseOldNumericShape) when RAW, a CLASSNAME value as
+            % stored, is in the old numeric shape: logical's bare true/false,
+            % or, for a numeric value class (one whose value declares
+            % `source_numeric`: voltage, mass, time, concentration, ...), a
+            % cell with a `source_value` or a series stored as more than one
+            % cell (did-schema did_v2_numeric_shape_plan.md, section 9 step
+            % 4, [no migrated database is kept], Jess Haley, 2026-11-19).
+            % Other classes (count, date, a term, a text, a dose) keep their
+            % cells as they are and are not checked beyond logical's form.
+            arguments
+                className (1,:) char
+                raw = []
+            end
+            if isempty(raw) || isempty(className), return; end
+            what = sprintf('A %s value', className);
+            if strcmp(className, 'logical') && (islogical(raw) || isnumeric(raw))
+                ndi.v2.refuseOldNumericShape(what, 'a bare logical');
+            end
+            if ~declaresSourceNumeric(className), return; end
+            r = raw;
+            if iscell(r)
+                if ~all(cellfun(@isstruct, r)), return; end
+                if numel(r) > 1
+                    ndi.v2.refuseOldNumericShape(what, 'a series stored one cell per reading');
+                end
+                try r = [r{:}]; catch, return; end
+            end
+            if ~isstruct(r), return; end
+            if numel(r) > 1
+                ndi.v2.refuseOldNumericShape(what, 'a series stored one cell per reading');
+            end
+            if isfield(r, 'source_value') && any(arrayfun(@(x) ~isempty(x.source_value), r))
+                ndi.v2.refuseOldNumericShape(what, 'source_value');
+            end
+        end
+
         function f = canonicalField(className, raw)
             % CANONICALFIELD - the numeric field of CLASSNAME's value cell, e.g. 'meters'
             %
             % Read from the v2 schema: the first numeric sub-field of the
-            % class's `value` that is not source_value (source_numeric in the
-            % new numeric shape), scale_min or scale_max.
+            % class's `value` that is not source_value, source_numeric,
+            % scale_min or scale_max.
             % A class with several canonical slots (concentration: molar,
             % grams_per_liter, ..., particles_per_liter, optical_density) gives the
             % first one that the stored cells RAW fill, when RAW is given and
@@ -369,6 +421,28 @@ if (isnumeric(e) || islogical(e)) && ~isempty(e)
     y = double(e(1));
 elseif ischar(e) || isstring(e)
     y = str2double(string(e));
+end
+end
+
+function tf = declaresSourceNumeric(className)
+% CLASSNAME's value declares `source_numeric`: a numeric value class of
+% did-schema did_v2_numeric_shape_plan.md section 2 (false when the schema
+% cannot be read)
+tf = false;
+try
+    s = did2.schema.cache.shared().getClass(className);
+catch
+    return;
+end
+if ~isfield(s, 'fields'), return; end
+fs = asCell(s.fields);
+for k = 1:numel(fs)
+    if isfield(fs{k}, 'name') && strcmp(fs{k}.name, 'value') && isfield(fs{k}, 'fields') ...
+            && ~isempty(fs{k}.fields)
+        sub = asCell(fs{k}.fields);
+        tf = any(cellfun(@(d) isfield(d, 'name') && strcmp(char(d.name), 'source_numeric'), sub));
+        return;
+    end
 end
 end
 

@@ -40,28 +40,27 @@ classdef TestCompressionOf < matlab.unittest.TestCase
             testCase.verifyEmpty(fieldnames(s));
         end
 
-        function testANumericSettingIsReadInBothShapes(testCase)
+        function testANumericSettingIsReadAndTheOldShapeIsRefused(testCase)
             % did-schema did_v2_numeric_shape_plan.md ([one shape for
             % measured numbers], Jess Haley, 2026-11-17): a compression
-            % parameter's number is `quantity.value` (old) or flat
-            % `numeric` (new); both read as the same setting
-            [c1, s1] = ndi.v2.compressionOf(numericBlock('old'));
+            % parameter's number is flat `numeric`; the old
+            % `quantity.value` is refused ([no migrated database is kept],
+            % Jess Haley, 2026-11-19)
             [c2, s2] = ndi.v2.compressionOf(numericBlock('new'));
-            testCase.verifyEqual(c1, 'blosc-zstd');
             testCase.verifyEqual(c2, 'blosc-zstd');
-            testCase.verifyEqual(s1.clevel, 5, 'old shape');
             testCase.verifyEqual(s2.clevel, 5, 'new shape');
             testCase.verifyEqual(s2.blocksize, 0, 'new shape');
-            testCase.verifyEqual(jsonencode(s2), jsonencode(s1));
+            testCase.verifyError(@() ndi.v2.compressionOf(numericBlock('old')), ...
+                'ndi:v2:oldNumericShapeReMigrate', 'old shape');
         end
 
-        function testLocalReadingOfANumericSettingInBothShapes(testCase)
+        function testLocalReadingOfANumericSettingAndTheOldShapeIsRefused(testCase)
             withoutDid2(testCase);
-            [~, s1] = ndi.v2.compressionOf(numericBlock('old'));
             [~, s2] = ndi.v2.compressionOf(numericBlock('new'));
-            testCase.verifyEqual(s1.clevel, 5, 'old shape');
             testCase.verifyEqual(s2.clevel, 5, 'new shape');
-            testCase.verifyEqual(jsonencode(s2), jsonencode(s1));
+            testCase.verifyEqual(s2.blocksize, 0, 'new shape');
+            testCase.verifyError(@() ndi.v2.compressionOf(numericBlock('old')), ...
+                'ndi:v2:oldNumericShapeReMigrate', 'old shape');
         end
 
         function testAnUnknownCodecTermIsReadByItsName(testCase)
@@ -155,7 +154,7 @@ end
 
 function b = numericBlock(shape)
 % Blosc with its level and block size as numbers, in SHAPE ('old': the
-% quantity wrapper; 'new': flat numeric)
+% quantity wrapper, refused by the readers; 'new': flat numeric)
 num = @(x) struct('quantity', struct('value', x));
 if strcmp(shape, 'new'), num = @(x) struct('numeric', x); end
 lvl = num(5); lvl.variable = struct('node', 'EMPTY:0000427', 'name', 'compression level');

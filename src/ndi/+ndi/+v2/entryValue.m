@@ -9,24 +9,29 @@ function [value, sourceValue, kind] = entryValue(entry)
 %   name, the quantity's number in the entry's `unit`, the count, the text, the
 %   logical (Jess Haley 2026-10-22 [logical entries]) or the numeric array
 %   ([] when none).
-%   SOURCEVALUE is the quantity's `source_value`, the number as the source
-%   wrote it (text), and "" for every other form.
+%   SOURCEVALUE is what the source wrote (`source_numeric`) as text, and ""
+%   for every other form.
 %
 %   The form is the one that holds something: a stored entry can carry the
 %   other forms' blanks. Entries written before data_body AMENDMENT 3
-%   (2026-10-19) are read too: a condition's `term.value`, `count.value` and
-%   `quantity.value(1).{value, source_value}`, and a parameter's `value`.
+%   (2026-10-19) keep their non-numeric forms readable: a condition's
+%   `term.value` and `count.value`.
 %
-%   THE NEW NUMERIC SHAPE. Entries in the flat shape of did-schema
+%   THE NUMERIC SHAPE. Numbers are read in the flat shape of did-schema
 %   did_v2_numeric_shape_plan.md ([one shape for measured numbers], Jess
-%   Haley, 2026-11-17) are read too, beside the old one: `numeric` (the
-%   canonical number(s)) and `source_numeric` (what the source wrote, a
-%   number or text: [numeric shape details] (1)) replace `quantity.value`,
-%   `quantity.source_value` and `matrix`. KIND keeps the old names, so a
-%   caller reads both shapes the same: a single number, or numbers with a
-%   `source_numeric`, is 'quantity' (VALUE its first number, SOURCEVALUE the
-%   source's text, or its number as the shortest text that reads back as
-%   it); an array with no `source_numeric` is 'matrix' (VALUE the array).
+%   Haley, 2026-11-17): `numeric` (the canonical number(s)) and
+%   `source_numeric` (what the source wrote, a number or text: [numeric
+%   shape details] (1)). KIND keeps its names: a single number, or numbers
+%   with a `source_numeric`, is 'quantity' (VALUE its first number,
+%   SOURCEVALUE the source's text, or its number as the shortest text that
+%   reads back as it); an array with no `source_numeric` is 'matrix' (VALUE
+%   the array).
+%
+%   An entry in the OLD numeric shape (`quantity`, `matrix`, or a bare
+%   `value`) is not read: it is an error, 'ndi:v2:oldNumericShapeReMigrate'
+%   (ndi.v2.refuseOldNumericShape), and the database is migrated again from
+%   v1 (section 9 step 4, [no migrated database is kept], Jess Haley,
+%   2026-11-19).
 
 arguments
     entry
@@ -35,6 +40,10 @@ end
 value = []; sourceValue = ""; kind = '';
 if ~isstruct(entry) || isempty(entry), return; end
 entry = entry(1);
+form = ndi.v2.oldNumericForm(entry);
+if ~isempty(form)
+    ndi.v2.refuseOldNumericShape(sprintf('Entry "%s"', variableName(entry)), form);
+end
 
 t = fieldOf(entry, 'term');
 if isstruct(t) && isfield(t, 'value') && ~isfield(t, 'node'), t = t(1).value; end
@@ -44,21 +53,7 @@ if ~isempty(ndi.v2.termName(t))
     return;
 end
 
-q = fieldOf(entry, 'quantity');
-if isempty(q), q = fieldOf(entry, 'value'); end            % a parameter, before 2026-10-19
-if isstruct(q) && isfield(q, 'value') && isstruct(q(1).value)
-    q = q(1).value;                                         % a condition, before 2026-10-19
-end
-v = fieldOf(q, 'value');
-if (isnumeric(v) || islogical(v)) && ~isempty(v)
-    kind = 'quantity';
-    value = double(v(1));
-    sv = fieldOf(q, 'source_value');
-    if ~isempty(sv), sourceValue = string(sv); end
-    return;
-end
-
-% the new numeric shape: flat `numeric` beside `source_numeric`
+% `numeric` beside `source_numeric`
 nm = fieldOf(entry, 'numeric');
 if iscell(nm), nm = cellNumbers(nm); end
 if (isnumeric(nm) || islogical(nm)) && ~isempty(nm)
@@ -81,17 +76,6 @@ if ~isempty(x)
     return;
 end
 
-m = fieldOf(entry, 'matrix');
-if (isnumeric(m) || islogical(m) || iscell(m)) && ~isempty(m)
-    kind = 'matrix';
-    if iscell(m)
-        try m = cell2mat(cellfun(@(r) reshape(double(cell2mat(r)), 1, []), m(:), ...
-                'UniformOutput', false)); catch, end
-    end
-    value = double(m);
-    return;
-end
-
 % `logical` (did-schema #88, Jess Haley 2026-10-22 [logical entries]). Its
 % blank is false and `count`'s blank is 0, so an entry carrying both blanks
 % is told apart by which one holds something: a stored `true`, or an entry
@@ -110,6 +94,12 @@ if ~isempty(c)
     kind = 'count';
     value = double(c(1));
 end
+end
+
+function n = variableName(entry)
+n = '';
+v = fieldOf(entry, 'variable');
+if isstruct(v) && isfield(v, 'name'), n = char(v(1).name); elseif ischar(v) || isstring(v), n = char(v); end
 end
 
 function v = fieldOf(s, name)
