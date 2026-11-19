@@ -50,7 +50,7 @@ classdef TestV1ElementQuery < matlab.unittest.TestCase
             searches = {ndi.query('element.name', 'exact_string', 'p1', ''), ...
                 ndi.query('element.ndi_element_class', 'contains_string', 'probe', ''), ...
                 ndi.query('element.name', 'exact_string', 'p1', '') & ...
-                    ndi.query('element.reference', 'exact_number', 1, ''), ...
+                    ndi.query('element.reference', 'exact_number', 2, ''), ...
                 ndi.query('element.name', 'exact_string', 'none', '')};
             expected = {{'p1'}, {'p2', 'p1', 'p3'}, {'p1'}, {}};
             for k = 1:numel(searches)
@@ -60,6 +60,7 @@ classdef TestV1ElementQuery < matlab.unittest.TestCase
                 testCase.verifyEqual(started, expected{k}, sprintf('search %d', k));
             end
             % on the v2 database the class is ANDed on
+            testCase.assertTrue(S.writesV2());
             q = ndi.vintage.v1ElementQuery(S, searches{1});
             testCase.verifyNotEqual(q.searchstructure, searches{1}.searchstructure);
         end
