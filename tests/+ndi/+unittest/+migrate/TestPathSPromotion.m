@@ -85,6 +85,69 @@ classdef TestPathSPromotion < matlab.unittest.TestCase
                 'the pass left a mintId context open');
         end
 
+        function testAPartTakesTheIdsDidMatlabComputes(testCase)
+            % [region part ids computed] (3) (Jess Haley, 2026-11-19, did-schema
+            % did_v2_go_forward_class_audit.md): the part, its kind assertion,
+            % its laterality assertion and its part_of relation take the ids
+            % did2.convert.regionPartIds computes from (parent, region, side),
+            % the ids DID-matlab's pass 1 gives the same part
+            % (VH-Lab/DID-matlab #488)
+            structs = treatmentWithSite('anch_1', 'animal_1', ...
+                'uberon:0002436', 'primary visual cortex');
+            [~, minted] = ndi.migrate.internal.pathSPromotion(structs);
+            ids = did2.convert.regionPartIds('animal_1', ...
+                term('uberon:0002436', 'primary visual cortex'), []);
+            part = firstOfClass(minted, 'entity');
+            testCase.verifyEqual(part.base.id, ids.part);
+            testCase.verifyEqual(part.entity.local_identifier, ids.local_identifier);
+            testCase.verifyEqual(firstOfClass(minted, 'assertion').base.id, ids.kind);
+            testCase.verifyEqual(firstOfClass(minted, 'directed_relation').base.id, ids.relation);
+            % with a side, the sided ids, laterality included
+            structs = [{organism('animal_1'), device('probe_1')}, ...
+                probeWithSite('anch_p', 'probe_1', 'UBERON:0002436', 'primary visual cortex'), ...
+                probeWithSite('anch_q', 'probe_1', 'UBERON:0002812', 'left cerebral hemisphere'), ...
+                recording('rec_1', 'animal_1', 'probe_1', 'anch_r')];
+            [~, minted] = ndi.migrate.internal.pathSPromotion(structs, 'Mode', 'located');
+            ids = did2.convert.regionPartIds('animal_1', ...
+                term('UBERON:0002436', ''), term('UBERON:0002812', ''));
+            part = firstOfClass(minted, 'entity');
+            testCase.verifyEqual(part.base.id, ids.part);
+            a = assertionsAbout(minted, ids.part);
+            got = sort(cellfun(@(x) x.base.id, a, 'UniformOutput', false));
+            testCase.verifyEqual(got, sort({ids.kind, ids.laterality}));
+            testCase.verifyEqual(firstOfClass(minted, 'directed_relation').base.id, ids.relation);
+            testCase.verifyEqual(did2.convert.mintId('-depth'), 0, ...
+                'the pass left a mintId context open');
+        end
+
+        function testAPartPassOneWroteIsFoundNotMinted(testCase)
+            % DID-matlab's pass 1 writes a treatment's region part in its final
+            % shape with the computed ids ([site scaffolding not a loss] (2));
+            % a recording from a probe in that region on that animal moves onto
+            % it, and no second part is minted
+            ids = did2.convert.regionPartIds('animal_1', ...
+                term('UBERON:0001880', 'bed nucleus of stria terminalis'), []);
+            part = tissue(ids.part);
+            part.entity.local_identifier = ids.local_identifier;
+            kind = struct();
+            kind.document_class = dc('assertion', {'statement', 'base', 'term', 'value', 'data'});
+            kind.depends_on = dep('entity_id', ids.part);
+            kind.base = base(ids.kind);
+            kind.statement = struct('variable', term('UBERON:0000061', 'anatomical structure'));
+            kind.term = struct('value', term('UBERON:0001880', 'bed nucleus of stria terminalis'));
+            rel = partOf(ids.part, 'animal_1');
+            rel.base = base(ids.relation);
+            structs = [{organism('animal_1'), device('probe_1'), part, kind, rel}, ...
+                probeWithSite('anch_p', 'probe_1', 'UBERON:0001880', 'BNST'), ...
+                recording('rec_1', 'animal_1', 'probe_1', 'anch_r')];
+            [kept, minted, ~, report] = ...
+                ndi.migrate.internal.pathSPromotion(structs, 'Mode', 'located');
+            testCase.verifyEqual(report.parts_found_existing, 1);
+            testCase.verifyEqual(report.parts_minted, 0);
+            testCase.verifyEqual(countClass(minted, 'entity'), 0);
+            testCase.verifyEqual(depValue(byId(kept, 'rec_1'), 'entity_id'), ids.part);
+        end
+
         function testAttributedSitePromoted(testCase)
             structs = treatmentWithSite('anch_1', 'animal_1', ...
                 'uberon:0002436', 'primary visual cortex');
