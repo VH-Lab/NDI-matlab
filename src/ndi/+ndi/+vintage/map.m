@@ -266,6 +266,9 @@ e(k).v1_class     = 'element';
 e(k).eta_class    = 'subject';
 e(k).object_field = 'ndi_element_class';
 e(k).object_edge  = '';
+% (the old name; ndi.vintage.objectClass matches the node EMPTY:0000401
+% "software class" first, ndi.vintage.elementClassQuery, [variable terms
+% batch 1], Decided by Jess Haley, 2026-11-19)
 e(k).object_assertion = 'ndi element class';   % ndi.vintage.elementLabel('class')
 e(k).isa_bridges  = false;
 e(k).edges        = cell(0,2);
