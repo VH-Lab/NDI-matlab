@@ -97,6 +97,22 @@ classdef TestElementRecognisedByLinks < matlab.unittest.TestCase
             testCase.verifyEqual(ndi.vintage.elementLinkKind(groupEntity('ens_g'), S), 'ensemble');
         end
 
+        function testTheEvidenceKeepsItsOrder(testCase)
+            % each probe's evidence (the derived index's dependencies) is its
+            % recording observations in the database's order, then its wiring
+            % relations, whatever other device's rows come between them
+            S = session({device('probe_e'), device('probe_f'), ...
+                observation('obs_a', 'specimen_1', 'probe_e'), ...
+                observation('obs_c', 'specimen_1', 'probe_f'), ...
+                observation('obs_b', 'specimen_1', 'probe_e'), ...
+                relation('rel_w', 'probe_e', 'sys_1', 'RO:0002170', 'connected to')});
+            scope = ndi.vintage.elementFieldsScope('open'); %#ok<NASGU>
+            L = ndi.vintage.linkedElements(S);
+            testCase.verifyEqual(sort(L.ids), {'probe_e', 'probe_f'});
+            testCase.verifyEqual(L.evidence('probe_e'), {'obs_a', 'obs_b', 'rel_w'});
+            testCase.verifyEqual(L.evidence('probe_f'), {'obs_c'});
+        end
+
         function testElementSubjectIdsFindsTheLinkedElements(testCase)
             S = unitSession();
             testCase.verifyEqual(sort(ndi.vintage.elementSubjectIds(S)), ...

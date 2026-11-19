@@ -308,7 +308,7 @@ function [plan, report] = epochAnchorFold(migratedStructs, epochIndex, bathAncho
 %                      nothing" are different readings of the same struct.
 %
 %   See also: ndi.migrate.local, ndi.migrate.internal.stimulusBathToBath,
-%   did2.convert.epochMint, did2.convert.resolveSessionAnchors.
+%   did2.convert.epochMint.
 
 arguments
     migratedStructs cell
