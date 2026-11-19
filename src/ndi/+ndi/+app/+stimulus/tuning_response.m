@@ -68,15 +68,17 @@ classdef tuning_response < ndi.app
             doc_resp = E.database_search(sq_resp&sq_e&sq_stimelement2&sq_nditimeseries);
 
             if reset
-                doc_p = {};
+                % delete the stimulus response parameters documents too, but
+                % only those that nothing else uses once the responses are
+                % gone: a parameters document is shared by every response
+                % computed with the same settings (NDI-matlab #1237), and
+                % database_rm would also remove its other dependents
+                parameter_ids = cell(1,numel(doc_resp));
                 for i=1:numel(doc_resp)
-                    % delete stimulus response parameters documents too
-                    stim_response_scalar_p = doc_resp{i}.dependency_value('stimulus_response_scalar_parameters_id');
-                    doc_here = E.database_search(ndi.query('base.id','exact_string',stim_response_scalar_p,''));
-                    doc_p = cat(2,doc_p,doc_here);
+                    parameter_ids{i} = doc_resp{i}.dependency_value('stimulus_response_scalar_parameters_id');
                 end
                 E.database_rm(doc_resp);
-                E.database_rm(doc_p);
+                ndi.app.stimulus.tuning_response.remove_unused_parameter_docs(E, parameter_ids);
             end
 
             ndi_ts_epochs = {};
@@ -215,21 +217,28 @@ classdef tuning_response < ndi.app
             q_r_stimcontroldoc = ndi.query('','depends_on','stimulus_control_id',control_doc.id());
             q_e = ndi.query(E.searchquery());
 
-            q_match{1} = ndi.query('stimulus_response_scalar_parameters_basic.temporalfreqfunc',...
+            % The database search narrows the candidates; the settings are
+            % then compared exactly in MATLAB (matching_parameter_docs). An
+            % empty setting is left out of the search because the SQL
+            % 'exact_number' search deliberately matches nothing for an empty
+            % value (did.database query_struct_to_sql_str), so with the
+            % default empty prestimulus settings no existing document was ever
+            % found and every call added a new one (NDI-matlab #1237).
+            q_matchtot = q_e & q_doc & ...
+                ndi.query('stimulus_response_scalar_parameters_basic.temporalfreqfunc',...
                 'exact_string',temporalfreqfunc,'');
-            q_match{2} = ndi.query('stimulus_response_scalar_parameters_basic.prestimulus_time',...
-                'exact_number',prestimulus_time,'');
-            q_match{3} = ndi.query('stimulus_response_scalar_parameters_basic.prestimulus_normalization',...
-                'exact_number',prestimulus_normalization,'');
-            q_match{4} = ndi.query('stimulus_response_scalar_parameters_basic.isspike',...
-                'exact_number',isspike,'');
-            q_match{5} = ndi.query('stimulus_response_scalar_parameters_basic.spiketrain_dt',...
-                'exact_number',spiketrain_dt,'');
-            q_matchtot = q_match{1};
-            for j=2:numel(q_match)
-                q_matchtot = q_matchtot & q_match{j};
+            numeric_settings = struct('prestimulus_time',prestimulus_time,...
+                'prestimulus_normalization',prestimulus_normalization,...
+                'isspike',isspike,'spiketrain_dt',spiketrain_dt);
+            numeric_names = fieldnames(numeric_settings);
+            for j=1:numel(numeric_names)
+                value_here = numeric_settings.(numeric_names{j});
+                if ~isempty(value_here)
+                    q_matchtot = q_matchtot & ...
+                        ndi.query(['stimulus_response_scalar_parameters_basic.' numeric_names{j}],...
+                        'exact_number',value_here,'');
+                end
             end
-            q_matchtot = q_e & q_doc & q_matchtot;
 
             % load the data, get the stimulus times
 
@@ -269,13 +278,15 @@ classdef tuning_response < ndi.app
                 q_matchhere = ndi.query('stimulus_response_scalar_parameters_basic.freq_response',...
                     'exact_number',freq_response,'');
 
-                param_doc = E.database_search(q_matchtot&q_matchhere);
+                stimulus_response_scalar_parameters_basic = vlt.data.var2struct('temporalfreqfunc','freq_response',...
+                    'prestimulus_time','prestimulus_normalization',...
+                    'isspike','spiketrain_dt');
+
+                param_doc = ndi.app.stimulus.tuning_response.matching_parameter_docs(...
+                    E.database_search(q_matchtot&q_matchhere), stimulus_response_scalar_parameters_basic);
 
                 if isempty(param_doc)
                     % make one
-                    stimulus_response_scalar_parameters_basic = vlt.data.var2struct('temporalfreqfunc','freq_response',...
-                        'prestimulus_time','prestimulus_normalization',...
-                        'isspike','spiketrain_dt');
                     param_doc = ndi.document('stimulus_response_scalar_parameters_basic',...
                         'stimulus_response_scalar_parameters_basic', stimulus_response_scalar_parameters_basic') + ...
                         E.newdocument();
@@ -1058,6 +1069,93 @@ classdef tuning_response < ndi.app
             ratio = modulatedresponse/meanresponse;
 
         end % modualated_or_mean
+
+        function docs = matching_parameter_docs(candidate_docs, parameters)
+            % MATCHING_PARAMETER_DOCS - the parameters documents whose settings equal PARAMETERS
+            %
+            % DOCS = ndi.app.stimulus.tuning_response.matching_parameter_docs(CANDIDATE_DOCS, PARAMETERS)
+            %
+            % Returns the documents in the cell array CANDIDATE_DOCS (of class
+            % 'stimulus_response_scalar_parameters_basic') whose
+            % stimulus_response_scalar_parameters_basic fields equal the
+            % structure PARAMETERS field by field: the same text for
+            % temporalfreqfunc, and the same size and values for every other
+            % field, so an empty setting matches an empty setting
+            % (did.datastructures.eqlen). The order of CANDIDATE_DOCS is kept.
+            %
+            % compute_stimulus_response_scalar uses it to reuse an existing
+            % parameters document (NDI-matlab #1237).
+            %
+            docs = {};
+            names = fieldnames(parameters);
+            for i=1:numel(candidate_docs)
+                props = candidate_docs{i}.document_properties;
+                if ~isfield(props,'stimulus_response_scalar_parameters_basic')
+                    continue;
+                end
+                stored = props.stimulus_response_scalar_parameters_basic;
+                same = true;
+                for j=1:numel(names)
+                    if ~isfield(stored,names{j})
+                        same = false;
+                        break;
+                    end
+                    a = stored.(names{j});
+                    b = parameters.(names{j});
+                    if ischar(b) || isstring(b)
+                        same = (ischar(a) || isstring(a)) && strcmp(char(a),char(b));
+                    else
+                        same = isnumeric(a) || islogical(a);
+                        same = same && did.datastructures.eqlen(double(a),double(b));
+                    end
+                    if ~same
+                        break;
+                    end
+                end
+                if same
+                    docs{end+1} = candidate_docs{i}; %#ok<AGROW>
+                end
+            end
+        end % matching_parameter_docs()
+
+        function removed_ids = remove_unused_parameter_docs(session, parameter_ids)
+            % REMOVE_UNUSED_PARAMETER_DOCS - remove parameters documents that nothing depends on
+            %
+            % REMOVED_IDS = ndi.app.stimulus.tuning_response.remove_unused_parameter_docs(SESSION, PARAMETER_IDS)
+            %
+            % For each document id in PARAMETER_IDS (a char id or a cell array of
+            % ids) that names a 'stimulus_response_scalar_parameters_basic'
+            % document in SESSION, removes that document if no document in
+            % SESSION depends on it. A parameters document that is still used
+            % is kept. REMOVED_IDS is a cell array of the ids removed.
+            %
+            % A parameters document depends on nothing, so removing the
+            % responses that use it leaves it behind. Callers that remove
+            % responses (stimulus_responses with RESET, and
+            % ndi.app.stimulus.decoder/parse_stimuli with RESET, which removes
+            % the responses with their stimulus_presentation documents) call
+            % this afterwards so that it is not orphaned (NDI-matlab #1237).
+            %
+            removed_ids = {};
+            if ischar(parameter_ids) || isstring(parameter_ids)
+                parameter_ids = cellstr(parameter_ids);
+            end
+            parameter_ids = parameter_ids(~cellfun(@isempty,parameter_ids));
+            parameter_ids = unique(parameter_ids);
+            q_param = ndi.query('','isa','stimulus_response_scalar_parameters_basic','');
+            for i=1:numel(parameter_ids)
+                users = session.database_search(ndi.query('','depends_on','*',parameter_ids{i}));
+                if ~isempty(users)
+                    continue;
+                end
+                param_doc = session.database_search(q_param & ...
+                    ndi.query('base.id','exact_string',parameter_ids{i},''));
+                if ~isempty(param_doc)
+                    session.database_rm(param_doc);
+                    removed_ids{end+1} = parameter_ids{i}; %#ok<AGROW>
+                end
+            end
+        end % remove_unused_parameter_docs()
 
     end % static methods
 
