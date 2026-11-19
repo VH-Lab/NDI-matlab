@@ -7,7 +7,7 @@ https://github.com/VH-lab/DID-matlab@V2
 https://github.com/VH-lab/NDR-matlab
 https://github.com/ehennestad/Catalog
 https://github.com/a-ma72/mksqlite
-https://github.com/Waltham-Data-Science/NDI-compress-matlabp
+https://github.com/Waltham-Data-Science/NDI-compress-matlabp@V2
 https://github.com/Waltham-Data-Science/ndi-ontology-matlab
 https://github.com/VH-Lab/pyraview
 https://github.com/bastibe/Violinplot-Matlab
