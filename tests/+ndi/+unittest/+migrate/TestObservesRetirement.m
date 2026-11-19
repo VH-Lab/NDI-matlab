@@ -206,15 +206,41 @@ classdef TestObservesRetirement < matlab.unittest.TestCase
         function testARecordingProbeWithAnObservationKeepsTheRelation(testCase)
             % a probe that records: DID-matlab's resolveEpochProbemap retires
             % its `observes` where an observation names the same subject;
-            % this pass keeps it either way
+            % where one is left, this pass keeps it
             P = ndi.unittest.migrate.TestObservesRetirement;
             [ids, r, carries] = ndi.migrate.internal.observesRetirement({ ...
                 P.element('probe'), P.observes('obs1', 'probe', 'animal'), ...
-                P.recording('o1', 'other', 'probe')});
+                P.recording('o1', 'animal', 'probe')});
             testCase.verifyEmpty(ids);
             testCase.verifyEmpty(carries);
             testCase.verifyEqual(r.observations_with_instrument, 1);
             testCase.verifyEqual(r.kept_observation, 1);
+        end
+
+        function testAnObservationOfAnotherEntityRetiresWithTheSubjectCarried(testCase)
+            % [recording probe subject carried the same way] (Jess Haley,
+            % 2026-11-19, did-schema did_v2_standing_wiring_plan.md) names
+            % 20211116's n-trode as a probe with no recording observation; it
+            % makes only its sorted units' spike trains (entity the unit,
+            % instrument the probe: DID-matlab resolveEpochProbemap SPIKE
+            % TRAINS). An observation made with the probe about another
+            % entity is not its recording observation, so the relation
+            % retires and the subject is carried. Before this, the test
+            % above used such an observation and expected the relation kept,
+            % which kept 20211116's n-trode (e2e run 44489262007)
+            P = ndi.unittest.migrate.TestObservesRetirement;
+            [ids, r, carries] = ndi.migrate.internal.observesRetirement({ ...
+                P.element('probe'), P.observes('obs1', 'probe', 'animal'), ...
+                P.recording('o1', 'unit1', 'probe'), P.recording('o2', 'unit2', 'probe')});
+            testCase.verifyEqual(ids, {'obs1'});
+            testCase.verifyEqual(r.observations_with_instrument, 2);
+            testCase.verifyEqual(r.kept_observation, 0);
+            testCase.verifyEqual(r.retired_carried, 1);
+            testCase.verifyEqual(r.carried_other_entity, 1);
+            testCase.verifyEqual(r.carried_no_statement, 0);
+            testCase.assertNumElements(carries, 1);
+            testCase.verifyEqual(carries.element_id, 'probe');
+            testCase.verifyEqual(carries.subject_id, 'animal');
         end
 
         function testAnObservationAttributedThroughObservesIsNotTheProbes(testCase)

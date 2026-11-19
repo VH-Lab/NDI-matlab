@@ -81,11 +81,22 @@ function [retireIds, report, carries] = observesRetirement(structs, options)
 %                              decision retires `observes` on it in NDI's pass
 %     kept_observation         an observation (other than those
 %                              'AttributedViaObserves' names) has C as its
-%                              instrument: C is a
-%                              recording probe that has recording
-%                              observations, which DID-matlab's
-%                              resolveEpochProbemap retires `observes` on
-%                              where they name P; this pass does not
+%                              instrument and P as its entity: C is a
+%                              recording probe whose recording observations
+%                              name the v1 subject, which DID-matlab's
+%                              resolveEpochProbemap retires `observes` on;
+%                              this pass does not. An observation made with
+%                              C about ANOTHER entity does not keep it: a
+%                              sorted unit's spike train (resolveEpochProbemap
+%                              SPIKE TRAINS: entity the unit, instrument the
+%                              probe it was sorted from) is not the probe's
+%                              recording observation. This is the case the
+%                              decision names: 20211116's n-trode, in a
+%                              session never ingested, makes 252 spike-train
+%                              observations of its 21 units and no recording
+%                              observation (e2e run 44489262007 kept it here
+%                              before this rule named P, so 20211116 carried
+%                              nothing)
 %     kept_child_not_converted C is not a converted entity of the batch (the
 %                              carried field is collected only for a v2
 %                              document)
@@ -95,8 +106,9 @@ function [retireIds, report, carries] = observesRetirement(structs, options)
 %                              manipulation by C names P, and no observation
 %                              is made with C. CARRIES gets {C, P, reason}.
 %                              Split, for the report, by what C did:
-%                              carried_other_entity (C's manipulations name
-%                              only other entities: a cohort, another animal)
+%                              carried_other_entity (C's manipulations or
+%                              observations name only other entities: a
+%                              cohort, another animal, a sorted unit)
 %                              and carried_no_statement (no statement names C
 %                              as its instrument: a stimulator that presented
 %                              nothing, or a recording probe of a session
@@ -164,7 +176,7 @@ S = ndi.migrate.internal.etaShape;
 presentationsOf = containers.Map('KeyType', 'char', 'ValueType', 'any');
 bathsOf = containers.Map('KeyType', 'char', 'ValueType', 'any');
 otherOf = containers.Map('KeyType', 'char', 'ValueType', 'any');
-observed = containers.Map('KeyType', 'char', 'ValueType', 'logical');
+observedOf = containers.Map('KeyType', 'char', 'ValueType', 'any');
 entityIds = containers.Map('KeyType', 'char', 'ValueType', 'logical');
 for k = 1:numel(structs)
     s = structs{k};
@@ -185,7 +197,9 @@ for k = 1:numel(structs)
                 report.observations_attributed_via_observes = ...
                     report.observations_attributed_via_observes + 1;
             else
-                observed(instrument) = true;
+                % what it is about: it keeps the relation only when it names
+                % the relation's parent (below)
+                observedOf = addEntity(observedOf, instrument, S.aboutId(s));
             end
         end
         continue;
@@ -261,7 +275,8 @@ for k = 1:numel(rels)
         report.kept_other_manipulation = report.kept_other_manipulation + 1;
         continue;
     end
-    if isKey(observed, r.child)
+    observations = entitiesOf(observedOf, r.child);
+    if any(strcmp(observations, r.parent))
         report.kept_observation = report.kept_observation + 1;
         continue;
     end
@@ -275,7 +290,7 @@ for k = 1:numel(rels)
     end
     retireIds{end+1} = r.id; %#ok<AGROW>
     report.retired_carried = report.retired_carried + 1;
-    if isempty(naming) && isempty(other)
+    if isempty(naming) && isempty(other) && isempty(observations)
         report.carried_no_statement = report.carried_no_statement + 1;
         why = ['no statement names the element as its instrument (no stimulus ' ...
             'presentation, bath manipulation, Stimulator manipulation or recording ' ...
@@ -284,10 +299,11 @@ for k = 1:numel(rels)
             'same way])'];
     else
         report.carried_other_entity = report.carried_other_entity + 1;
-        why = ['the stimulus presentations, bath manipulations and Stimulator ' ...
-            'manipulations made with the element name only other entities, so its ' ...
-            '`observes` relation retires ([stimulator subject carried as needing ' ...
-            'information])'];
+        why = ['the stimulus presentations, bath manipulations, Stimulator ' ...
+            'manipulations and observations made with the element name only other ' ...
+            'entities, so its `observes` relation retires ([stimulator subject ' ...
+            'carried as needing information], [recording probe subject carried the ' ...
+            'same way])'];
     end
     carries(end+1) = struct('element_id', r.child, 'subject_id', r.parent, ...
         'reason', why); %#ok<AGROW>

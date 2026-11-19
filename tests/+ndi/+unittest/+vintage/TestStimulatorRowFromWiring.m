@@ -595,9 +595,15 @@ classdef TestStimulatorRowFromWiring < matlab.unittest.TestCase
             % per wiring relation of the stimulator, a bath manipulation as
             % ndi.migrate.internal.stimulusBathToBath writes it (value kind
             % `formulation`, the stimulator's subject as entity, the
-            % stimulator as instrument, timed by the wiring's epoch anchor);
-            % its value_id edge to a formulation is not what the reader reads,
-            % so it is left out and the document added unvalidated
+            % stimulator as instrument, timed by the wiring's epoch anchor).
+            % Its value is the formulation it names through `value_id`; the
+            % formulation is not what the reader reads, so the edge names an
+            % id no document holds and the document is added unvalidated.
+            % The edge is still written: did2.build's value rule
+            % (value_inline_or_body) runs whatever 'Validate' says and
+            % refuses a bath with no inline value, no data body and no
+            % `value_id` (the fixture raised did2:build:ruleViolated on
+            % 7b99b6c0, run 44489262007)
             P = ndi.unittest.vintage.TestStimulatorRowFromWiring;
             subjectId = char(ndi.vintage.elementFields(P.elementDoc(S, stimId), S).subject_id);
             assert(~isempty(subjectId), 'the stimulator element has no subject');
@@ -610,6 +616,7 @@ classdef TestStimulatorRowFromWiring < matlab.unittest.TestCase
                 anchor = ndi.vintage.edgeTargets(found{k}, 'time_reference_id');
                 m = did2.build.statement('manipulation', subjectId, 'bath solution', [], ...
                     'ValueKind', 'formulation', 'TimeReferenceIds', anchor, ...
+                    'ValueId', char(ndi.ido.unique_id()), ...
                     'InstrumentId', stimId, 'SessionId', char(S.id()), 'Validate', false);
                 docs{k} = did2.document(m);
             end
