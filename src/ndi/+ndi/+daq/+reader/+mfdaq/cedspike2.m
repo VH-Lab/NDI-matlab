@@ -36,7 +36,16 @@ classdef cedspike2 < ndi.daq.reader.mfdaq
             % 'name'             | The name of the channel (e.g., 'ai1')
             % 'type'             | The type of data stored in the channel
             %                    |    (e.g., 'analogin', 'digitalin', 'image', 'timestamp')
-            % 'time_channel'     | The channel number that has the time information for that channel
+            % 'time_channel'     | The channel number that has the time information for that channel,
+            %                    |    or NaN when the channel has no time channel
+            %
+            % Each analog input n is listed with its own time channel t<n>
+            % and names it. Event, marker and text channels are timestamped
+            % (READEVENTS_EPOCHSAMPLES_NATIVE returns their times), no time
+            % channel is listed for them, and their time_channel is NaN, as
+            % NDI's other readers list such channels. It was the channel's
+            % own number, naming a t<n> this list never holds
+            % (VH-Lab/NDI-matlab#1249).
             %
 
             channels = vlt.data.emptystruct('name','type','time_channel');
@@ -59,7 +68,10 @@ classdef cedspike2 < ndi.daq.reader.mfdaq
             for k=1:length(header.channelinfo)
                 newchannel.type = ndi_daqreader_mfdaq_cedspike2_obj.cedspike2headertype2mfdaqchanneltype(header.channelinfo(k).kind);
                 newchannel.name = [ ndi.daq.system.mfdaq.mfdaq_prefix(newchannel.type) int2str(header.channelinfo(k).number) ];
-                newchannel.time_channel = header.channelinfo(k).number;
+                newchannel.time_channel = NaN;
+                if strcmp(newchannel.type,'analog_in')
+                    newchannel.time_channel = header.channelinfo(k).number;
+                end
                 channels(end+1) = newchannel;
 
                 if strcmp(newchannel.type,'analog_in') % add the time channel
