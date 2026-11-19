@@ -8,8 +8,11 @@ function verifyReadPhases(testCase, T, options)
 %       v2 seconds <= v1 seconds * (1 + RelativeMargin) + AbsoluteMargin
 %
 %   Jess Haley, 2026-11-06: "Speed can't be slower than v1. We need to
-%   match or beat." The margin is noise only (Proposed (not decided)):
-%   RelativeMargin 0.10 and AbsoluteMargin 1.0 s. A phase is measured on one
+%   match or beat." The margin is noise only: RelativeMargin 0.10 and
+%   AbsoluteMargin 1.0 s (Decided by Jess Haley, 2026-11-06 [read speed
+%   margin], did-schema did_v2_go_forward_class_audit.md: "Margin is fine,
+%   but if there is anything else we can do to improve speed, do it";
+%   VH-Lab/NDI-matlab#1266). A phase is measured on one
 %   shared runner, v1 then v2, so the same phase can move a few percent
 %   between the two reads for reasons that are not the code; one second
 %   covers the phases that take well under a second on both sides.

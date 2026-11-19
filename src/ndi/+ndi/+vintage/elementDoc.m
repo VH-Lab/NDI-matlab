@@ -121,7 +121,9 @@ if hit
     return;
 end
 
-hits = E.database_search(ndi_element_obj.searchquery());
+% (on a v2 database started from the `element` class, the same documents:
+% ndi.vintage.v1ElementQuery)
+hits = E.database_search(ndi.vintage.v1ElementQuery(E, ndi_element_obj.searchquery()));
 if numel(hits) > 1
     error('NDI:vintage:tooManyElementDocs', ...
         ['More than one v1 document matches the ELEMENT definition ' ...
@@ -372,7 +374,9 @@ vals = [];
 edges = [];
 if ismethod(E, 'database_search_values') && ismethod(E, 'database_search_edges')
     vals = E.database_search_values(q, {'term.value[*].name'});
-    if isstruct(vals)
+    if isstruct(vals) && isempty(vals)
+        edges = vals;   % no assertion: no edge to read (the same search)
+    elseif isstruct(vals)
         edges = E.database_search_edges(q, {'entity_id', 'subject_id'});
     end
 end
