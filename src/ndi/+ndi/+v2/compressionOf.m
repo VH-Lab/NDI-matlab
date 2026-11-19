@@ -39,9 +39,51 @@ end
 
 if ~isempty(which('did2.build.compressionCodec'))
     [codec, settings] = did2.build.compressionCodec(value);
+    settings = numericSettings(value, settings);
     return;
 end
 [codec, settings] = localReading(value);
+end
+
+function settings = numericSettings(value, settings)
+% A setting in the new numeric shape (flat `numeric`, did-schema
+% did_v2_numeric_shape_plan.md [one shape for measured numbers], Jess Haley,
+% 2026-11-17) that did2.build.compressionCodec left empty is read here: at
+% DID-matlab V2 7b5e6540 (and #473 2be178af) its valueOf reads
+% `quantity.value` but not `numeric`.
+if ~isstruct(value) || ~isscalar(value) || ~isfield(value, 'parameters') || ~isstruct(settings)
+    return;
+end
+params = value.parameters;
+if isstruct(params), params = num2cell(reshape(params, 1, [])); end
+if ~iscell(params), return; end
+for k = 1:numel(params)
+    e = params{k};
+    if ~isstruct(e) || ~isfield(e, 'variable') || ~isfield(e, 'numeric') || isempty(e.numeric)
+        continue;
+    end
+    key = settingKey(e.variable);
+    if ~isfield(settings, key) || isempty(settings.(key))
+        settings.(key) = entryValue(e);
+    end
+end
+end
+
+function key = settingKey(label)
+% the key a setting is stored under. {key, variable name}: DID-matlab
+% +build/private/compressionTable.m, settings. The names are the approved
+% labels ([compression term definitions approved], Jess Haley, 2026-11-01:
+% EMPTY:0000430, 0000427, 0000429, 0000428); the last two rows are the names
+% written before, read only
+keyTable = {'cname', 'inner compressor'; 'clevel', 'compression level'; ...
+    'shuffle', 'shuffle filter'; 'blocksize', 'compression block size'; ...
+    'shuffle', 'shuffle'; 'blocksize', 'block size'};
+if isstruct(label), label = label.name; end
+label = strtrim(char(label));
+key = label;
+hit = find(strcmp(squash(keyTable(:, 2)), squashOne(label)), 1);
+if ~isempty(hit), key = keyTable{hit, 1}; end
+key = matlab.lang.makeValidName(key);
 end
 
 % ===================== the local reading (DID-matlab without it) ===========
@@ -74,25 +116,14 @@ if isstruct(term) && isfield(term, 'name') && ~isempty(term.name), name = strtri
 node = '';
 if isstruct(term) && isfield(term, 'node') && ~isempty(term.node), node = strtrim(char(term.node)); end
 
-% {key, variable name}: DID-matlab +build/private/compressionTable.m, settings.
-% The names are the approved labels ([compression term definitions approved],
-% Jess Haley, 2026-11-01: EMPTY:0000430, 0000427, 0000429, 0000428); the last
-% two rows are the names written before, read only
-keyTable = {'cname', 'inner compressor'; 'clevel', 'compression level'; ...
-    'shuffle', 'shuffle filter'; 'blocksize', 'compression block size'; ...
-    'shuffle', 'shuffle'; 'blocksize', 'block size'};
+% settings by their keys (settingKey: DID-matlab
+% +build/private/compressionTable.m, settings)
 if isstruct(params), params = num2cell(reshape(params, 1, [])); end
 if ~iscell(params), params = {}; end
 for k = 1:numel(params)
     e = params{k};
     if ~isstruct(e) || ~isfield(e, 'variable'), continue; end
-    label = e.variable;
-    if isstruct(label), label = label.name; end
-    label = strtrim(char(label));
-    key = label;
-    hit = find(strcmp(squash(keyTable(:, 2)), squashOne(label)), 1);
-    if ~isempty(hit), key = keyTable{hit, 1}; end
-    settings.(matlab.lang.makeValidName(key)) = entryValue(e);
+    settings.(settingKey(e.variable)) = entryValue(e);
 end
 
 % {spelling, term name, inner compressor}: the same file, codecs
@@ -139,6 +170,10 @@ elseif isfield(e, 'count') && ~isempty(e.count)
 elseif isfield(e, 'quantity') && isstruct(e.quantity) && isfield(e.quantity, 'value') ...
         && ~isempty(e.quantity.value)
     v = double(e.quantity.value);
+elseif isfield(e, 'numeric') && ~isempty(e.numeric) && (isnumeric(e.numeric) || islogical(e.numeric))
+    % the new numeric shape (did-schema did_v2_numeric_shape_plan.md [one
+    % shape for measured numbers], Jess Haley, 2026-11-17): flat `numeric`
+    v = double(e.numeric);
 elseif isfield(e, 'term') && isstruct(e.term) && isfield(e.term, 'name')
     v = char(e.term.name);
     % an inner compressor written as a term: the table's spelling

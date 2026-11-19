@@ -114,7 +114,14 @@ for r = 1:numel(rels)
         c = cs{g};
         if ~isstruct(c) || ~isfield(c, 'variable'), continue; end
         nums = [];
-        if isfield(c, 'matrix'), nums = double(c.matrix(:)'); end
+        if isfield(c, 'matrix') && ~isempty(c.matrix)
+            nums = double(c.matrix(:)');
+        elseif isfield(c, 'numeric') && ~isempty(c.numeric)
+            % the new numeric shape: `numeric` replaces `matrix` (did-schema
+            % did_v2_numeric_shape_plan.md, [one shape for measured
+            % numbers], Jess Haley, 2026-11-17)
+            nums = double(c.numeric(:)');
+        end
         groups{end+1} = [char(ndi.vintage.channelPrefix(c.variable)) ranges(nums)]; %#ok<AGROW>
     end
     if memo

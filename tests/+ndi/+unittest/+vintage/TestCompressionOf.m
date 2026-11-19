@@ -40,6 +40,30 @@ classdef TestCompressionOf < matlab.unittest.TestCase
             testCase.verifyEmpty(fieldnames(s));
         end
 
+        function testANumericSettingIsReadInBothShapes(testCase)
+            % did-schema did_v2_numeric_shape_plan.md ([one shape for
+            % measured numbers], Jess Haley, 2026-11-17): a compression
+            % parameter's number is `quantity.value` (old) or flat
+            % `numeric` (new); both read as the same setting
+            [c1, s1] = ndi.v2.compressionOf(numericBlock('old'));
+            [c2, s2] = ndi.v2.compressionOf(numericBlock('new'));
+            testCase.verifyEqual(c1, 'blosc-zstd');
+            testCase.verifyEqual(c2, 'blosc-zstd');
+            testCase.verifyEqual(s1.clevel, 5, 'old shape');
+            testCase.verifyEqual(s2.clevel, 5, 'new shape');
+            testCase.verifyEqual(s2.blocksize, 0, 'new shape');
+            testCase.verifyEqual(jsonencode(s2), jsonencode(s1));
+        end
+
+        function testLocalReadingOfANumericSettingInBothShapes(testCase)
+            withoutDid2(testCase);
+            [~, s1] = ndi.v2.compressionOf(numericBlock('old'));
+            [~, s2] = ndi.v2.compressionOf(numericBlock('new'));
+            testCase.verifyEqual(s1.clevel, 5, 'old shape');
+            testCase.verifyEqual(s2.clevel, 5, 'new shape');
+            testCase.verifyEqual(jsonencode(s2), jsonencode(s1));
+        end
+
         function testAnUnknownCodecTermIsReadByItsName(testCase)
             c = ndi.v2.compressionOf(struct('term', struct('node', '', 'name', 'bzip2')));
             testCase.verifyEqual(c, 'bzip2');
@@ -127,6 +151,18 @@ b = struct('term', struct('node', 'EMPTY:0000426', 'name', 'Blosc'), 'parameters
     struct('variable', struct('node', 'EMPTY:0000427', 'name', 'compression level'), 'count', 5), ...
     struct('variable', struct('node', 'EMPTY:0000429', 'name', 'shuffle filter'), 'count', 1), ...
     struct('variable', struct('node', 'EMPTY:0000428', 'name', 'compression block size'), 'count', 0)}});
+end
+
+function b = numericBlock(shape)
+% Blosc with its level and block size as numbers, in SHAPE ('old': the
+% quantity wrapper; 'new': flat numeric)
+num = @(x) struct('quantity', struct('value', x));
+if strcmp(shape, 'new'), num = @(x) struct('numeric', x); end
+lvl = num(5); lvl.variable = struct('node', 'EMPTY:0000427', 'name', 'compression level');
+blk = num(0); blk.variable = struct('node', 'EMPTY:0000428', 'name', 'compression block size');
+b = struct('term', struct('node', 'EMPTY:0000426', 'name', 'Blosc'), 'parameters', {{ ...
+    struct('variable', struct('node', 'EMPTY:0000430', 'name', 'inner compressor'), 'text', 'zstd'), ...
+    lvl, blk}});
 end
 
 function b = bloscBlock()

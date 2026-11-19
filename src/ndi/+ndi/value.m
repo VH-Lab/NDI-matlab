@@ -81,7 +81,18 @@ classdef value
                 try r = [r{:}]; catch, end
             end
             if isstruct(r) && ~isempty(obj.canonical_field) && isfield(r, obj.canonical_field)
-                v = arrayfun(@(x) double(firstOr(x.(obj.canonical_field), NaN)), r);
+                if ~any(arrayfun(@(x) numberCount(x.(obj.canonical_field)) > 1, r))
+                    v = arrayfun(@(x) double(firstOr(x.(obj.canonical_field), NaN)), r);
+                else
+                    % the new numeric shape: a series is ONE cell whose
+                    % canonical field is an array (did-schema
+                    % did_v2_numeric_shape_plan.md section 8 answer 4)
+                    v = seriesOf(r, obj.canonical_field);
+                end
+            elseif isstruct(r) && isscalar(r) && isequal(fieldnames(r), {'logical'})
+                % the new numeric shape: logical's value is the block
+                % {logical} (did-schema did_v2_numeric_shape_plan.md section 3)
+                v = logical(r.logical);
             elseif isstruct(r) && (isfield(r, 'name') || isfield(r, 'node')) && ...
                     all(ismember(fieldnames(r), {'node', 'name'}))
                 v = strings(size(r));
@@ -123,35 +134,78 @@ classdef value
 
         function T = source(obj)
             % SOURCE - table: source_value, source_unit, per inline value
+            %
+            % The source's number is the cell's `source_value` (old numeric
+            % shape) or `source_numeric` (new: did-schema
+            % did_v2_numeric_shape_plan.md, [one shape for measured
+            % numbers], Jess Haley, 2026-11-17). A new-shape series is one
+            % cell holding every reading: one row per reading, each with the
+            % cell's source_unit.
             [r, ok] = obj.cells();
-            source_value = nan(numel(r), 1); source_unit = strings(numel(r), 1);
+            [n, series] = obj.readings(r, ok);
+            if ~series
+                source_value = nan(numel(r), 1); source_unit = strings(numel(r), 1);
+                for i = 1:numel(r)
+                    if ~ok, break; end
+                    if isfield(r, 'source_numeric') && ~isempty(r(i).source_numeric)
+                        source_value(i) = sourceNumbers(r(i).source_numeric, 1);
+                    elseif isfield(r, 'source_value'), source_value(i) = double(firstOr(r(i).source_value, NaN)); end
+                    if isfield(r, 'source_unit'), source_unit(i) = string(ndi.v2.termName(r(i).source_unit)); end
+                end
+                T = table(source_value, source_unit);
+                return;
+            end
+            source_value = nan(0, 1); source_unit = strings(0, 1);
             for i = 1:numel(r)
-                if ~ok, break; end
-                if isfield(r, 'source_value'), source_value(i) = double(firstOr(r(i).source_value, NaN)); end
-                if isfield(r, 'source_unit'), source_unit(i) = string(ndi.v2.termName(r(i).source_unit)); end
+                sv = [];
+                if isfield(r, 'source_numeric') && ~isempty(r(i).source_numeric)
+                    sv = r(i).source_numeric;
+                elseif isfield(r, 'source_value') && ~isempty(r(i).source_value)
+                    sv = r(i).source_value;
+                end
+                source_value = [source_value; sourceNumbers(sv, n(i))]; %#ok<AGROW>
+                u = "";
+                if isfield(r, 'source_unit'), u = string(ndi.v2.termName(r(i).source_unit)); end
+                source_unit = [source_unit; repmat(u, n(i), 1)]; %#ok<AGROW>
             end
             T = table(source_value, source_unit);
         end
 
         function t = tolerance(obj)
             % TOLERANCE - [minus plus] per inline value (NaN when none), canonical unit
+            %
+            % A new-shape series (one cell, every reading) states one
+            % tolerance for the series: it is given on each reading's row.
             [r, ok] = obj.cells();
-            t = nan(numel(r), 2);
+            [n, series] = obj.readings(r, ok);
+            if ~series, n = ones(1, numel(r)); end
+            t = nan(sum(n), 2);
+            row = 0;
             for i = 1:numel(r)
+                rows = row + (1:n(i));
+                row = row + n(i);
                 if ~ok || ~isfield(r, 'tolerance') || isempty(r(i).tolerance), continue; end
                 tl = r(i).tolerance;
-                if isfield(tl, 'minus'), t(i, 1) = double(firstOr(tl.minus, NaN)); end
-                if isfield(tl, 'plus'), t(i, 2) = double(firstOr(tl.plus, NaN)); end
+                if isfield(tl, 'minus'), t(rows, 1) = double(firstOr(tl.minus, NaN)); end
+                if isfield(tl, 'plus'), t(rows, 2) = double(firstOr(tl.plus, NaN)); end
             end
         end
 
         function a = approximate(obj)
             % APPROXIMATE - true per inline value marked approximate
+            %
+            % A new-shape series states one `approximate` for the series:
+            % it is given on each reading.
             [r, ok] = obj.cells();
-            a = false(numel(r), 1);
+            [n, series] = obj.readings(r, ok);
+            if ~series, n = ones(1, numel(r)); end
+            a = false(sum(n), 1);
+            row = 0;
             for i = 1:numel(r)
+                rows = row + (1:n(i));
+                row = row + n(i);
                 if ok && isfield(r, 'approximate') && ~isempty(r(i).approximate)
-                    a(i) = logical(r(i).approximate);
+                    a(rows) = logical(r(i).approximate);
                 end
             end
         end
@@ -175,6 +229,26 @@ classdef value
     end
 
     methods (Access = private)
+        function [n, series] = readings(obj, r, ok)
+            % N(i): how many readings cell i holds. SERIES: some cell holds
+            % more than one (the new numeric shape's series, one cell whose
+            % canonical field or source_numeric is an array); in the old
+            % shape every cell holds one, and SERIES is false.
+            n = ones(1, numel(r));
+            series = false;
+            if ~ok, n = zeros(1, 0); return; end
+            f = obj.canonical_field;
+            for i = 1:numel(r)
+                k = 1;
+                if ~isempty(f) && isfield(r, f), k = max(k, numberCount(r(i).(f))); end
+                if isfield(r, 'source_numeric')
+                    k = max(k, numberCount(r(i).source_numeric));
+                end
+                n(i) = k;
+            end
+            series = any(n > 1);
+        end
+
         function [r, ok] = cells(obj)
             r = obj.raw;
             if iscell(r) && ~isempty(r) && all(cellfun(@isstruct, r))
@@ -190,7 +264,8 @@ classdef value
             % CANONICALFIELD - the numeric field of CLASSNAME's value cell, e.g. 'meters'
             %
             % Read from the v2 schema: the first numeric sub-field of the
-            % class's `value` that is not source_value, scale_min or scale_max.
+            % class's `value` that is not source_value (source_numeric in the
+            % new numeric shape), scale_min or scale_max.
             % A class with several canonical slots (concentration: molar,
             % grams_per_liter, ..., particles_per_liter, optical_density) gives the
             % first one that the stored cells RAW fill, when RAW is given and
@@ -221,7 +296,7 @@ classdef value
             sub = asCell(v.fields);
             for k = 1:numel(sub)
                 if isfield(sub{k}, 'type') && any(strcmp(sub{k}.type, {'double', 'integer', 'matrix'})) && ...
-                        ~any(strcmp(sub{k}.name, {'source_value', 'scale_min', 'scale_max'}))
+                        ~any(strcmp(sub{k}.name, {'source_value', 'source_numeric', 'scale_min', 'scale_max'}))
                     name = char(sub{k}.name);
                     if isempty(f), f = name; end
                     if ~isstruct(raw) || isempty(raw), return; end
@@ -241,6 +316,60 @@ arguments
     default
 end
 if isempty(x), v = default; else, v = x(1); end
+end
+
+function n = numberCount(x)
+% how many numbers X holds (a numeric or logical array, or a cell of them as
+% JSON gives an array with a null back); 1 for anything else
+n = 1;
+if isnumeric(x) || islogical(x) || iscell(x)
+    n = max(1, numel(x));
+end
+end
+
+function v = seriesOf(r, f)
+% every cell's readings of canonical field F, in order (an empty field is
+% one NaN, a JSON null in an array NaN). One cell (the new shape's series)
+% keeps the stored array's orientation, as one cell per reading keeps the
+% cell array's; several are joined as a column.
+parts = cell(1, numel(r));
+for i = 1:numel(r)
+    x = r(i).(f);
+    if iscell(x), x = cellfun(@(e) double(firstOr(e, NaN)), x); end
+    if isempty(x), x = NaN; end
+    parts{i} = double(x);
+end
+if isscalar(parts)
+    v = parts{1};
+else
+    v = cell2mat(cellfun(@(x) reshape(x, [], 1), parts(:), 'UniformOutput', false));
+end
+end
+
+function x = sourceNumbers(sv, n)
+% N source numbers as a column: numbers as they are, text read as a number
+% (NaN when it is not one), NaN-padded to N
+if iscell(sv)
+    x = cellfun(@(e) oneNumber(e), sv);
+elseif ischar(sv) || isstring(sv)
+    x = str2double(string(sv));
+elseif isnumeric(sv) || islogical(sv)
+    x = double(sv);
+else
+    x = [];
+end
+x = reshape(x, [], 1);
+if numel(x) < n, x(end+1:n, 1) = NaN; end
+if numel(x) > n, x = x(1:n); end
+end
+
+function y = oneNumber(e)
+y = NaN;
+if (isnumeric(e) || islogical(e)) && ~isempty(e)
+    y = double(e(1));
+elseif ischar(e) || isstring(e)
+    y = str2double(string(e));
+end
 end
 
 function c = asCell(x)

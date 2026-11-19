@@ -1108,7 +1108,11 @@ for k = 1:numel(structs)
                 || ~isfield(cc.variable, 'node') || ~strcmp(char(cc.variable.node), want)
             continue;
         end
-        if isfield(cc, 'matrix') && any(double(cc.matrix(:)) == num)
+        % the channel numbers: `matrix` (old numeric shape) or `numeric`
+        % (new: did-schema did_v2_numeric_shape_plan.md, [one shape for
+        % measured numbers], Jess Haley, 2026-11-17)
+        if (isfield(cc, 'matrix') && any(double(cc.matrix(:)) == num)) ...
+                || (isfield(cc, 'numeric') && isnumeric(cc.numeric) && any(double(cc.numeric(:)) == num))
             found = [found, edgeValues(s, 'child_id')]; %#ok<AGROW>
         end
     end
