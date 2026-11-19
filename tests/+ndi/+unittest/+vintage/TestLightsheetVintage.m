@@ -191,7 +191,7 @@ classdef TestLightsheetVintage < matlab.unittest.TestCase
             % Jess 2026-10-15: the migrator writes a space/time axis the
             % source gave no scale as regular, origin 0, spacing 1, no unit
             % (DID-matlab jLightsheetKeys). It reads as v1's 1 and 0, with no
-            % unit; an axis with stored positions (`quantity`), or with no
+            % unit; an axis with stored positions (`numeric`), or with no
             % covariate at all (a bare dimension), reads the same.
             names = {'time', 'channel', 'z', 'y', 'x'};
             n = [1 2 400 2048 2048];
@@ -200,10 +200,10 @@ classdef TestLightsheetVintage < matlab.unittest.TestCase
                 dims{a} = struct('term', struct('name', names{a}), 'n', n(a));
             end
             regular = @(name, along) struct('variable', struct('name', name), ...
-                'along', along, 'origin', struct('value', 0), 'spacing', struct('value', 1));
+                'along', along, 'origin', 0, 'spacing', 1);
             k = {regular('time', 0), ...
                 struct('variable', struct('name', 'channel'), 'along', 1, ...
-                    'quantity', struct('value', [0 1], 'source_value', [0 1])), ...
+                    'numeric', [0 1], 'source_numeric', [0 1]), ...
                 regular('z', 2), regular('y', 3), regular('x', 4)};
             f = ndi.vintage.lightsheetKeys(dims, k);
             testCase.verifyEqual(f.axes_order, 'tczyx');
@@ -216,7 +216,7 @@ classdef TestLightsheetVintage < matlab.unittest.TestCase
             old = k;
             for a = [1 3 4 5]
                 old{a} = struct('variable', k{a}.variable, 'along', a - 1, ...
-                    'quantity', struct('value', 0:(n(a) - 1), 'source_value', 0:(n(a) - 1)));
+                    'numeric', 0:(n(a) - 1), 'source_numeric', 0:(n(a) - 1));
             end
             g = ndi.vintage.lightsheetKeys(dims, old);
             testCase.verifyEqual(g.voxel_size, f.voxel_size);

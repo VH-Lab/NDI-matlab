@@ -1006,7 +1006,7 @@ if isstruct(p); p = num2cell(p); end
 for k = 1:numel(p)
     e = p{k};
     if strcmp(e.variable.name, variable)
-        if isfield(e, 'quantity') && ~isempty(e.quantity); v = e.quantity.value; end
+        if isfield(e, 'numeric') && ~isempty(e.numeric); v = e.numeric; end
         if isfield(e, 'unit') && isstruct(e.unit) && ~isempty(e.unit); u = e.unit.name; end
         return;
     end

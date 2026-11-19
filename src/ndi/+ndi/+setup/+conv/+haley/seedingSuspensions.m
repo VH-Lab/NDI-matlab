@@ -269,7 +269,7 @@ for s = 1:numel(sol)
     solutions(end+1) = solution(x.key, x, 'stock', 10, '', x.od, x.cfu, x.note); %#ok<AGROW>
     for n = x.nominal(x.nominal > 0 & x.nominal ~= 10)
         ing = {struct('ingredient', x.key, 'concentration', struct('liters_per_liter', n / 10, ...
-            'source_value', n, 'source_unit', ndi.setup.V2.sourceUnit('OD600')))};
+            did2.build.sourceNumericField(), n, 'source_unit', ndi.setup.V2.sourceUnit('OD600')))};
         if ~isempty(x.diluent)
             ing{end+1} = struct('ingredient', x.diluent); %#ok<AGROW>
         end
@@ -376,7 +376,7 @@ arguments
     n (1,1) double
 end
 c = struct('optical_density', n);
-c.source_value = n;
+c.(did2.build.sourceNumericField()) = n;
 c.source_unit = ndi.setup.V2.sourceUnit('OD600');
 end
 

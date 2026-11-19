@@ -299,7 +299,7 @@ out.documents = docs;
         docs{end+1} = d;
         refId = d.base.id;
         v = did2.build.composite('temperature', 'value', struct('celsius', celsius, ...
-            'source_value', celsius, 'source_unit', ndi.setup.V2.sourceUnit('C'), 'approximate', true));
+            did2.build.sourceNumericField(), celsius, 'source_unit', ndi.setup.V2.sourceUnit('C'), 'approximate', true));
         statement('manipulation', 'temperature', subject, haleyTerm(cfg.temperature.variable), v, refId, ...
             struct('Notes', note, 'Method', method), 'temperature');
     end
@@ -337,7 +337,7 @@ out.documents = docs;
         else
             scale = struct('uL', 1e-6, 'mL', 1e-3);
             v = did2.build.composite('dose', 'value', struct('volume', ...
-                struct('liters', amount * scale.(unit), 'source_value', amount, ...
+                struct('liters', amount * scale.(unit), did2.build.sourceNumericField(), amount, ...
                 'source_unit', ndi.setup.V2.sourceUnit(unit))));
         end
         x = struct('Method', method, 'Notes', notes, 'Edges', struct());

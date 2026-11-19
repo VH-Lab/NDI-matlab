@@ -155,8 +155,12 @@ classdef TestSliceTetanus < matlab.unittest.TestCase
                         'method.parameters is an entry list on did-schema #88');
                     verifyEqual(testCase, {p(1).variable.name, p(2).variable.name}, ...
                         {'frequency', 'duration'});
-                    verifyEqual(testCase, [p(1).quantity.value p(2).quantity.value], [10 20]);
-                    verifyEqual(testCase, {p(1).quantity.source_value, p(2).quantity.source_value}, ...
+                    % [one shape for measured numbers]: flat `numeric`, and
+                    % `source_numeric` keeps the folder name's text
+                    % ([numeric shape details] (1))
+                    verifyFalse(testCase, isfield(p, 'quantity'), 'no quantity wrapper');
+                    verifyEqual(testCase, [p(1).numeric p(2).numeric], [10 20]);
+                    verifyEqual(testCase, {p(1).source_numeric, p(2).source_numeric}, ...
                         {'10', '20'});
                     verifyEqual(testCase, p(1).unit.node, 'om:hertz');
                     verifyEqual(testCase, p(2).unit.node, 'om:second-Time');

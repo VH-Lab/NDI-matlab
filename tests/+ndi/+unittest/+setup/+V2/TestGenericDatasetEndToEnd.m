@@ -205,7 +205,7 @@ classdef TestGenericDatasetEndToEnd < matlab.unittest.TestCase
             c = ndi.v2.blockOf(o.document_properties(), 'data', 'covariates');
             testCase.verifyEqual(c(1).source_unit.node, 'om:millisecond-Time', ...
                 'the time covariate''s source unit is a registered term');
-            testCase.verifyEqual(c(1).spacing.source_value, 500);
+            testCase.verifyEqual(c(1).source_spacing, 500);
 
             tm = o.time();
             testCase.assertNumElements(tm, 1);
