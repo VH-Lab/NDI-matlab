@@ -94,14 +94,14 @@ jobs:
           ref: main
           path: did-schema
 
-      - name: Assemble the V_eta schema set
+      - name: Assemble the did_v2 schema set (did-schema main, final classes only)
         run: |
           mkdir -p "${GITHUB_WORKSPACE}/eta-schemas"
-          # Every layout: the tiers, the flat did_v2/, and the family folders of
-          # [schema folders by family] (Jess Haley, 2026-10-30) with registries
-          # in schemas/registry/ and schemas/generated/; did_v2/ or V_eta/
-          # ([schema set renamed did_v2]). See the script's header. Its own test
-          # (both layouts built in a temp dir) runs first.
+          # did-schema main's layout, final classes only (see the script's header):
+          # no stable/ draft/ deprecated/ tiers ([retired classes leave V2] step 2;
+          # a tier folder fails the step) and no retire class from retiring/ ([one
+          # folder, final classes only]: no document is passed through under one).
+          # Its own test (a tree built in a temp dir) runs first.
           bash .github/scripts/test_assemble_did_schema_set.sh
           bash .github/scripts/assemble_did_schema_set.sh did-schema "${GITHUB_WORKSPACE}/eta-schemas"
           echo "DENOMINATOR: $(ls "${GITHUB_WORKSPACE}/eta-schemas" | wc -l) schema file(s) from did-schema@$(git -C did-schema rev-parse --short HEAD)"

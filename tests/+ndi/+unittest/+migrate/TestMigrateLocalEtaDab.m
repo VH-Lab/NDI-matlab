@@ -355,6 +355,20 @@ classdef TestMigrateLocalEtaDab < matlab.unittest.TestCase
             testCase.verifyEmpty(R.mismatches, strjoin(R.mismatches, newline));
         end
 
+        function testObservesRetirementIsCounted(testCase)
+            % Decided by Jess Haley, 2026-11-17 [observes retires in the
+            % second pass] (did-schema did_v2_go_forward_class_audit.md): a
+            % stimulator's `observes` relation retires where a converted
+            % stimulus presentation names the same device and animal. The
+            % record of [stimulator link lives in the presentations] states
+            % that Dab holds no presentations, so none retires here and the
+            % Dabrowska map (ndi.setup.conv.dabrowska.sliceTetanus), which
+            % reads them, still finds them.
+            r = ndi.unittest.migrate.verifyObservesRetirement(testCase, testCase.Result, 'Dab');
+            testCase.verifyTrue(r.presentation_manipulations > 0 || r.observes_retired == 0, ...
+                'Dab retired an `observes` relation with no presentation');
+        end
+
         function testReadPhasesAreNoSlowerThanV1(testCase)
             % Jess Haley, 2026-11-06: "Speed can't be slower than v1. We
             % need to match or beat." Every session of Dab is read in five

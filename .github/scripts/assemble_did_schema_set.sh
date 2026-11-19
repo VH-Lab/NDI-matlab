@@ -3,27 +3,32 @@
 #
 #   bash .github/scripts/assemble_did_schema_set.sh <did-schema checkout> <destination dir>
 #
-# Reads EVERY layout did-schema has had or is moving to, so nothing breaks while
-# it moves:
+# Reads did-schema main's layout, and only that one (Decided by Jess Haley,
+# 2026-10-30 [schema folders by family] and 2026-10-29 [one folder, final
+# classes only], did-schema did_v2_go_forward_class_audit.md): schemas/did_v2/
+# holds class files only, core classes at the top and family subfolders
+# (value/, calculation/, data_body/, time_reference/, relation/, acquisition/),
+# plus retiring/ for the retire classes not yet deleted; the registries are in
+# schemas/registry/ and the tool-written files in schemas/generated/.
 #
-#   tiered          schemas/did_v2/{stable,draft,deprecated}/*.json, the
-#                   registries (*_meta.json, ndi_reserved_keys.json) in stable/
-#   flat            schemas/did_v2/*.json ([one folder, final classes only],
-#                   Jess Haley, 2026-10-29)
-#   by family       Decided by Jess Haley, 2026-10-30 [schema folders by family]
-#                   (did-schema V_eta_go_forward_class_audit.md): schemas/did_v2/
-#                   holds class files only, in family subfolders (core at the
-#                   top; value/, calculation/, data_body/, time_reference/,
-#                   retiring/); the registries move to schemas/registry/ and the
-#                   tool-written files to schemas/generated/. Exact folders are
-#                   not final, so nothing below names them.
+# NO TIERS. There is no stable/, draft/ or deprecated/ tier any more, and the
+# workflows stop copying deprecated/*.json ([retired classes leave V2] step 2,
+# Jess Haley, 2026-10-25). A tier folder directly under schemas/did_v2/ FAILS
+# the step: a checkout that has one is not did-schema main.
+#
+# FINAL CLASSES ONLY. The retire classes in schemas/did_v2/retiring/ are NOT
+# copied ([one folder, final classes only]: "stop passing documents through
+# under retire classes"; [retired classes leave V2]: "retired v1 types are not
+# V2 classes, and a did_v1 document is not read against the V2 set"). Their
+# count is printed. Measured safe before this was made the default: NDI-matlab
+# PR for VH-Lab/NDI-matlab#1268 (its body lists the runs).
 #
 # What is copied, FLAT, into <destination dir>:
 #
 #   class files     every *.json under schemas/did_v2/ (else schemas/V_eta/,
 #                   [schema set renamed did_v2] step 1) at any depth, except in
-#                   folders named registry or generated, hidden folders, and
-#                   names that are not classes: *_meta.json,
+#                   folders named registry, generated or retiring, hidden
+#                   folders, and names that are not classes: *_meta.json,
 #                   ndi_reserved_keys.json, index.json, topics.json, did_v2_*,
 #                   V_eta_* (DID-matlab's did2.schema.cache.isClassFileName).
 #   registries      every *_meta.json and ndi_reserved_keys.json anywhere under
@@ -31,8 +36,9 @@
 #
 # Fails when one file name occurs twice (class names are unique across the
 # tree, and a registry is read by its name: which copy wins would otherwise
-# depend on copy order), and when no class file is found. Prints the
-# denominator first: class files per folder, registries.
+# depend on copy order), when a tier folder is found, and when no class file
+# is found. Prints the denominator first: class files per folder, registries,
+# retire class files not copied.
 
 set -euo pipefail
 
@@ -52,6 +58,15 @@ if [ ! -d "$SET" ]; then
 fi
 echo "SCHEMA SET: $SET"
 
+tiers=""
+for t in stable draft deprecated; do
+    if [ -d "$SET/$t" ]; then tiers="$tiers $t/"; fi
+done
+if [ -n "$tiers" ]; then
+    echo "::error::tier folder(s)$tiers under $SET: did-schema has no stable/ draft/ deprecated/ tiers ([one folder, final classes only]; [retired classes leave V2] step 2), so this is not did-schema main's layout" >&2
+    exit 1
+fi
+
 is_class() {
     case "$1" in
         *_meta.json|ndi_reserved_keys.json|index.json|topics.json|did_v2_*|V_eta_*) return 1 ;;
@@ -63,11 +78,16 @@ is_class() {
 LIST="$(mktemp)"
 trap 'rm -f "$LIST"' EXIT
 
-# class files: any depth, registry/ generated/ and hidden folders pruned
+# class files: any depth, registry/ generated/ retiring/ and hidden folders pruned
 while IFS= read -r f; do
     if is_class "$(basename "$f")"; then printf 'class\t%s\n' "$f" >> "$LIST"; fi
-done < <(find "$SET" -mindepth 1 -type d \( -name registry -o -name generated -o -name '.*' \) -prune \
+done < <(find "$SET" -mindepth 1 -type d \( -name registry -o -name generated -o -name retiring -o -name '.*' \) -prune \
               -o -type f -name '*.json' -print | LC_ALL=C sort)
+# the retire classes, counted and not copied
+nretire=0
+if [ -d "$SET/retiring" ]; then
+    nretire=$(find "$SET/retiring" -type f -name '*.json' | wc -l | tr -d ' ')
+fi
 
 # registries: by name anywhere under schemas/, plus everything in registry/
 while IFS= read -r f; do
@@ -81,6 +101,7 @@ done < <( { find "$SCHEMAS" -mindepth 1 -type d -name '.*' -prune \
 nclass=$(awk -F'\t' '$1 == "class"' "$LIST" | wc -l | tr -d ' ')
 nreg=$(awk -F'\t' '$1 == "registry"' "$LIST" | wc -l | tr -d ' ')
 echo "DENOMINATOR: $nclass class file(s), $nreg registry file(s), from did-schema@$(git -C "$REPO" rev-parse --short HEAD 2>/dev/null || echo unknown)"
+echo "NOT COPIED: $nretire retire class file(s) in ${SET#"$SCHEMAS/"}/retiring/ ([one folder, final classes only])"
 awk -F'\t' '$1 == "class"' "$LIST" | cut -f2 | while IFS= read -r f; do dirname "$f"; done \
     | LC_ALL=C sort | uniq -c | sed "s|$SCHEMAS/||; s|^|  class files in |"
 

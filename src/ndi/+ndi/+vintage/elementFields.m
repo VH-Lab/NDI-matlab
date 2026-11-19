@@ -73,8 +73,13 @@ function f = elementFields(subjectDoc, ndi_session_obj, pieces)
 %     subject_id (the specimen) -> a `directed_relation` `observes`,
 %                          OR -- and this is the case that was missing --
 %                          the `subject_id` of the typed observation that
-%                          names this element as its `instrument_id`.
-%     direct            -> NOT STORED ANYWHERE. Recovered from which
+%                          names this element as its `instrument_id`,
+%                          OR, for a stimulator whose `observes` NDI's
+%                          second pass retired ([observes retires in the
+%                          second pass], Jess Haley, 2026-11-17), the
+%                          entity of its stimulus presentation
+%                          manipulations (value kind `item`).
+%     direct           -> NOT STORED ANYWHERE. Recovered from which
 %                          lineage the migrator emitted.
 %
 %   THE `observes` RELATION IS NOT ALWAYS THERE, AND THIS FUNCTION USED TO
@@ -215,15 +220,27 @@ else
     f.underlying_element_id = parentOf(pieces.derivedDocs);
 end
 
-% TWO PLACES, IN THIS ORDER, and the second is the one that was missing.
+% THREE PLACES, IN THIS ORDER, and the second is the one that was missing.
 % The typed observation is asked about FIRST because it is the STRONGER
 % signal: jRecordingObservation only runs on a direct element, so its
 % existence settles `direct` outright, whereas an `observes` relation is
-% what survives when no observation was assembled.
+% what survives when no observation was assembled. THIRD, a stimulator's
+% stimulus presentations: Decided by Jess Haley, 2026-11-17 [observes
+% retires in the second pass] (did-schema did_v2_go_forward_class_audit.md):
+% NDI's second pass retires a stimulator's `observes` relation where a
+% presentation manipulation (value kind `item`) names the stimulator as its
+% instrument and the same animal as its entity, and only where every one of
+% its presentations names that animal (ndi.migrate.internal.observesRetirement),
+% so the first presentation's entity is the v1 element's subject. Asked only
+% when the first two find nothing, so an element that still has its
+% `observes` relation reads exactly as before.
 if isempty(pieces)
     [specimen, viaObservation] = specimenViaInstrument(ndi_session_obj, docId);
     if isempty(specimen)
         specimen = relationTarget(ndi_session_obj, docId, 'observes');
+    end
+    if isempty(specimen) && ~viaObservation && ~isempty(ndi_session_obj)
+        specimen = specimenViaPresentation(ndi_session_obj, docId);
     end
 else
     if isfield(pieces, 'observationSpecimen')
@@ -235,6 +252,14 @@ else
     end
     if isempty(specimen)
         specimen = parentOf(pieces.observesDocs);
+    end
+    if isempty(specimen) && ~viaObservation
+        if isfield(pieces, 'presentationSpecimen')
+            % read as edges (ndi.vintage.prefetchElementFields)
+            specimen = pieces.presentationSpecimen.entity;
+        elseif isfield(pieces, 'presentationDocs')
+            specimen = specimenOf(pieces.presentationDocs);
+        end
     end
 end
 f.subject_id = specimen;
@@ -387,6 +412,26 @@ end
 found = true;
 specimen = ndi.v2.edgeIds(ndi.v2.props(docs{1}), 'entity_id');
 if isempty(specimen), specimen = ''; else, specimen = specimen{1}; end
+end
+
+function specimen = specimenViaPresentation(ndi_session_obj, elementId)
+%SPECIMENVIAPRESENTATION The animal a stimulator's stimulus presentations name.
+%   A converted stimulus presentation is a `manipulation` with value kind
+%   `item`: instrument_id the stimulator (v1 `stimulus_element_id`),
+%   entity_id the animal (ndi.migrate.internal.stimulusPresentationToItem).
+%   Where NDI's second pass retired the stimulator's `observes` relation
+%   ([observes retires in the second pass]), every presentation by it names
+%   the same animal, so the first one's entity is the subject. Other
+%   manipulations by the stimulator (a bath's, a per-epoch Stimulator
+%   manipulation) are not asked. '' when none.
+specimen = '';
+q = ndi.v2.statementQuery('manipulation', 'item') & ...
+    ndi.query('', 'depends_on', 'instrument_id', elementId);
+docs = ndi_session_obj.database_search(q);
+if isempty(docs)
+    return;
+end
+specimen = specimenOf(docs);
 end
 
 function target = relationTarget(ndi_session_obj, childId, relationName)
