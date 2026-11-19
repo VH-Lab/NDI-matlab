@@ -360,7 +360,9 @@ for w = 1:numel(wirings)
         continue;
     end
     elId = firstTarget(rel, 'child_id');
-    sysId = firstTarget(rel, 'parent_id');
+    % the parent: the rig's device entity or (migrated before) its
+    % acquisition_system; the row is read through the system
+    [sysId, cache] = wiringSystemOf(S, firstTarget(rel, 'parent_id'), cache);
     if isempty(elId) || isempty(sysId) || any(strcmp(named, elId))
         continue;
     end
@@ -430,6 +432,47 @@ end
 rels = S.database_search(ndi.query('', 'isa', 'directed_relation', '') & ...
     ndi.v2.anyOf(cellfun(@(a) ndi.query('', 'depends_on', 'time_reference_id', a.id()), ...
         anchors, 'UniformOutput', false)));
+end
+
+function [sysId, cache] = wiringSystemOf(S, parentId, cache)
+% the acquisition system a wiring relation's parent PARENTID is: the system
+% naming it by `device_id` when it is the rig's device entity ([acquisition
+% system is a device entity], Jess Haley 2026-11-19), else PARENTID itself (a
+% session migrated before wires the probe to the system). From the read
+% ahead (cache.systemOf, ndi.vintage.rigSystems) when there is one, else
+% one search per parent, kept in the cache.
+sysId = parentId;
+if isempty(parentId)
+    return;
+end
+if ~isfield(cache, 'systemOf') || ~isa(cache.systemOf, 'containers.Map')
+    cache.systemOf = containers.Map('KeyType', 'char', 'ValueType', 'char');
+end
+if isKey(cache.systemOf, parentId)
+    sysId = cache.systemOf(parentId);
+    return;
+end
+if ~isfield(cache, 'systemOfAsked') || ~isa(cache.systemOfAsked, 'containers.Map')
+    cache.systemOfAsked = containers.Map('KeyType', 'char', 'ValueType', 'logical');
+end
+if isKey(cache.systemOfAsked, parentId)
+    return;   % asked before: not a device a system names
+end
+cache.systemOfAsked(parentId) = true;
+found = ndi.vintage.rigSystems(S, {parentId});
+if isKey(found, parentId)
+    sysId = found(parentId);
+    cache.systemOf(parentId) = sysId;
+end
+end
+
+function ids = systemsOf(parents, systemOf)
+% each parent id, the rig's device mapped to its acquisition system
+ids = parents;
+if ~isa(systemOf, 'containers.Map'); return; end
+for k = 1:numel(ids)
+    if isKey(systemOf, ids{k}); ids{k} = systemOf(ids{k}); end
+end
 end
 
 function tf = isWiringRelation(d)
@@ -749,7 +792,23 @@ if ~isempty(wiringAnchors)
     rels = wiringRelations(S, ndi.query('', 'isa', 'directed_relation', '') & ...
         ndi.vintage.edgeIn('time_reference_id', wiringAnchors));
 end
-cache.relations = ndi.vintage.wiringIndex(rels);
+% a wiring's parent is the rig's device entity (Jess Haley 2026-11-19
+% [acquisition system is a device entity], did-schema
+% docs/plans/did_v2_standing_wiring_plan.md) or, migrated before, the
+% acquisition_system: the relations are filed under the system either way
+% (one search for the systems naming the devices, ndi.vintage.rigSystems)
+parentIds = {};
+for r = 1:numel(rels)
+    if isWiringRelation(rels{r})
+        parentIds = [parentIds, ndi.vintage.edgeTargets(rels{r}, 'parent_id')]; %#ok<AGROW>
+    end
+end
+cache.systemOf = ndi.vintage.rigSystems(S, parentIds);
+cache.systemOfAsked = containers.Map('KeyType', 'char', 'ValueType', 'logical');
+for p = unique(parentIds(~cellfun(@isempty, parentIds)))
+    cache.systemOfAsked(p{1}) = true;   % answered by the one search above
+end
+cache.relations = ndi.vintage.wiringIndex(rels, cache.systemOf);
 cache.wiringOf = containers.Map('KeyType', 'char', 'ValueType', 'any');
 wiredProbes = {};
 wiredSystems = {};
@@ -767,7 +826,8 @@ for r = 1:numel(rels)
     end
     if ~isempty(mine)
         wiredProbes = [wiredProbes, ndi.vintage.edgeTargets(rels{r}, 'child_id')]; %#ok<AGROW>
-        wiredSystems = [wiredSystems, ndi.vintage.edgeTargets(rels{r}, 'parent_id')]; %#ok<AGROW>
+        wiredSystems = [wiredSystems, systemsOf(ndi.vintage.edgeTargets(rels{r}, 'parent_id'), ...
+            cache.systemOf)]; %#ok<AGROW>
     end
 end
 rigIds = [ed.ac, ed.sys, wiredSystems];
