@@ -7,7 +7,8 @@ function n = prefetchElementFields(S, docs, useIndex)
 %   ndi.vintage.elementFields reads for one element with five searches --
 %   its type and class assertions, its `derived_from` relation, the first
 %   observation made with it, its `observes` relation, and (for an element no
-%   observation names) the first stimulus presentation made with it -- with
+%   observation names) the subject the migration report carried for it and
+%   the first stimulus presentation or bath made with it -- with
 %   ONE search per
 %   kind for all of them (the edge lists go through ndi.vintage.edgeIn, one
 %   SQL `IN`). Each element's fields are then built from its share of the
@@ -140,12 +141,14 @@ else
 end
 
 % A stimulator whose `observes` relation NDI's second pass retired ([observes
-% retires in the second pass], Jess Haley, 2026-11-17) is read from its
-% stimulus presentations (manipulations of value kind `item` naming it as
-% instrument): asked, in one search, only for the elements no observation
-% names, and used by elementFields only when neither an observation nor an
-% `observes` relation gives the specimen. A presentation points at the
-% element, so adding or removing one drops the element's derived row.
+% retires in the second pass], Jess Haley, 2026-11-17; [bath manipulation
+% retires observes], 2026-11-19) is read from its stimulus presentations and
+% baths (manipulations of value kind `item` or `formulation` naming it as
+% instrument, ndi.vintage.subjectNamingManipulations): asked, in one search,
+% only for the elements no observation names, and used by elementFields only
+% when neither an observation, an `observes` relation nor a carried subject
+% gives the specimen. A presentation points at the element, so adding or
+% removing one drops the element's derived row.
 if isstruct(obsEdges)
     noObservation = ids(cellfun(@(i) ~firstObs(i).found, ids));
 else
@@ -154,7 +157,7 @@ end
 presEdges = [];
 presentationDocs = {};
 if ~isempty(noObservation)
-    presQuery = ndi.v2.statementQuery('manipulation', 'item') & ...
+    presQuery = ndi.vintage.subjectNamingManipulations() & ...
         ndi.vintage.edgeIn('instrument_id', noObservation);
     if ismethod(S, 'database_search_edges')
         presEdges = S.database_search_edges(presQuery, {'instrument_id', 'entity_id'});
@@ -167,6 +170,18 @@ if isstruct(presEdges)
     firstPres = firstObservationOf(presEdges, ids);
 else
     byPresentation = groupBy(presentationDocs, {'instrument_id'}, ids);
+end
+
+% The subject NDI's second pass carried in the migration report for an
+% element whose `observes` it retired because no statement names that
+% subject ([one-field carry in the migration report], Jess Haley,
+% 2026-11-19, did-schema did_v2_standing_wiring_plan.md): read once for the
+% session (ndi.vintage.carriedSubjects), used by elementFields only when
+% neither an observation nor an `observes` relation gives the specimen.
+carried = containers.Map('KeyType', 'char', 'ValueType', 'char');
+carriedFrom = {};
+if ~isempty(noObservation)
+    [~, ~, carried, carriedFrom] = ndi.vintage.carriedSubjects(S);
 end
 
 rowValues = cell(1, numel(ids));
@@ -183,6 +198,11 @@ for k = 1:numel(ids)
         pieces.presentationSpecimen = firstPres(ids{k});   % struct(found, entity)
     else
         pieces.presentationDocs = byPresentation(ids{k});
+    end
+    if isKey(carried, ids{k})
+        pieces.carriedSpecimen = struct('found', true, 'entity', carried(ids{k}));
+    else
+        pieces.carriedSpecimen = struct('found', false, 'entity', '');
     end
     f = ndi.vintage.elementFields(keep{k}, S, pieces);   % builds and caches the fields
     cls = byClass(ids{k});
@@ -210,8 +230,14 @@ for k = 1:numel(ids)
         if isKey(L.evidence, ids{k})
             linkDeps = reshape(L.evidence(ids{k}), 1, []);
         end
+        % an element read from a carried field also depends on the
+        % migration record and report body it was read from
+        carriedDeps = {};
+        if isKey(carried, ids{k})
+            carriedDeps = reshape(carriedFrom, 1, []);
+        end
         rowDeps{k} = unique([{ids{k}}, cellfun(@(d) char(d.id()), read, 'UniformOutput', false), ...
-            linkDeps], 'stable'); %#ok<AGROW>
+            linkDeps, carriedDeps], 'stable'); %#ok<AGROW>
     end
 end
 if useIndex && ~isempty(ids)
@@ -222,8 +248,11 @@ end
 
 function v = ROW_VERSION()
 % the version of an `ndi.elements` row: 2 since the class and a Group's type
-% are rebuilt from the links ([element recognised by its links])
-v = 2;
+% are rebuilt from the links ([element recognised by its links]); 3 since the
+% subject is also read from the migration report's carried fields and from
+% bath manipulations ([one-field carry in the migration report], [bath
+% manipulation retires observes])
+v = 3;
 end
 
 function v = fieldsToIndex(f)

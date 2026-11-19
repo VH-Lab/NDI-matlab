@@ -31,12 +31,24 @@ classdef TestStimulatorRowFromWiring < matlab.unittest.TestCase
 %   2026-11-17, did-schema did_v2_go_forward_class_audit.md): NDI's second
 %   pass retires a stimulator's `observes` relation where a stimulus
 %   presentation manipulation names it as instrument and the same animal as
-%   entity. This fixture's stimulator presents nothing, so its `observes`
-%   is kept (and checked). Two more copies read the retired shape: the
-%   `observes` relation removed and one presentation manipulation (value
-%   kind `item`) per wiring relation added, as the second pass leaves a
-%   stimulator that presented stimuli; and the `observes` relation removed
-%   with nothing added, which shows the reads below depend on it.
+%   entity; [bath manipulation retires observes] (2026-11-19): a bath
+%   manipulation retires it by the same rule.
+%   [stimulator subject carried as needing information], [one-field carry
+%   in the migration report] (Decided by Jess Haley, 2026-11-19, did-schema
+%   did_v2_standing_wiring_plan.md; carry register row carry-172): a
+%   stimulator whose v1 subject no presentation, bath manipulation or
+%   Stimulator manipulation names gets no `observes`; its subject is held in
+%   the migration report's carried fields. This fixture's stimulator
+%   presents nothing, so the migration retires its `observes` and carries
+%   its subject (checked), and every read below reads it from there. More
+%   copies read the other shapes: the migration record removed (so nothing
+%   is carried) and one presentation manipulation (value kind `item`) per
+%   wiring relation added, as the second pass leaves a stimulator that
+%   presented stimuli; the same with one bath manipulation (value kind
+%   `formulation`) per wiring relation instead; `observes` removed with
+%   nothing added (the stored shape: the carried subject reads the same);
+%   and the migration record removed with nothing added, the control that
+%   shows the reads depend on the carried entry.
 %
 %   Filtered (never passed) when mksqlite, DID-matlab's did2 converter, a v2
 %   schema set with `entity`, or NDI-compress is missing.
@@ -51,6 +63,9 @@ classdef TestStimulatorRowFromWiring < matlab.unittest.TestCase
         NoWiring
         Retired
         RetiredNothing
+        Bathed
+        NothingCarried
+        MigrationResult
     end
 
     properties (Constant)
@@ -76,7 +91,7 @@ classdef TestStimulatorRowFromWiring < matlab.unittest.TestCase
             try
                 migrated = fullfile(root, 'migrated');
                 mkdir(migrated);
-                testCase.Session = P.build(migrated);
+                [testCase.Session, testCase.MigrationResult] = P.build(migrated);
                 sid = char(testCase.Session.id());
                 stimId = P.stimulatorId(testCase.Session);
                 written = P.manipulationIds(testCase.Session, stimId);
@@ -90,16 +105,26 @@ classdef TestStimulatorRowFromWiring < matlab.unittest.TestCase
                 % manipulations kept
                 [S2, ids2] = P.copyEdited(withManip, fullfile(root, 'no_wiring'), sid, ...
                     @(S) P.wiringIds(S, stimId), @(S) {});
-                % copy 3: the `observes` relation retired on presentations;
-                % copy 4: retired with no presentation (the reads' control)
+                % copy 3: the `observes` relation retired on presentations
+                % (nothing carried: the migration record removed); copy 4:
+                % retired with no presentation (as stored: the carried
+                % subject); copy 5: retired on baths (nothing carried);
+                % copy 6: nothing carried and nothing added (the control)
+                gone = @(S) [reshape(P.observesIds(S, stimId), 1, []), P.migrationRecordIds(S)];
                 S3 = P.copyEdited(migrated, fullfile(root, 'retired'), sid, ...
-                    @(S) P.observesIds(S, stimId), @(S) P.presentations(S, stimId), false);
+                    gone, @(S) P.presentations(S, stimId), false);
                 S4 = P.copyEdited(migrated, fullfile(root, 'retired_nothing'), sid, ...
                     @(S) P.observesIds(S, stimId), @(S) {});
+                S5 = P.copyEdited(migrated, fullfile(root, 'bathed'), sid, ...
+                    gone, @(S) P.baths(S, stimId), false);
+                S6 = P.copyEdited(migrated, fullfile(root, 'nothing_carried'), sid, ...
+                    gone, @(S) {});
                 testCase.WithManipulation = S1;
                 testCase.NoWiring = S2;
                 testCase.Retired = S3;
                 testCase.RetiredNothing = S4;
+                testCase.Bathed = S5;
+                testCase.NothingCarried = S6;
                 testCase.Edited = struct('written', {written}, 'wired', {wired}, 'added', {added}, ...
                     'wirings', {ids2});
             catch ME
@@ -218,61 +243,90 @@ classdef TestStimulatorRowFromWiring < matlab.unittest.TestCase
                 'after re-adding the stimulator: one stimulator row per epoch');
         end
 
-        function testAStimulatorThatPresentedNothingKeepsObserves(testCase)
-            % [observes retires in the second pass]: no presentation names
-            % the stimulator, so the second pass keeps its `observes`
+        function testAStimulatorThatPresentedNothingCarriesItsSubject(testCase)
+            % [stimulator subject carried as needing information], [one-field
+            % carry in the migration report]: no presentation, bath or
+            % Stimulator manipulation names the stimulator's subject, so the
+            % second pass retires its `observes` and holds the subject in the
+            % migration report's carried fields. Before those decisions
+            % (Jess Haley, 2026-11-19) this test stated the `observes` was
+            % kept.
             S = testCase.ready(testCase.Session);
             P = ndi.unittest.vintage.TestStimulatorRowFromWiring;
-            testCase.verifyNumElements(P.observesIds(S, P.stimulatorId(S)), 1, ...
-                'the migration did not keep the stimulator''s one `observes` relation');
+            stimId = P.stimulatorId(S);
+            testCase.verifyEmpty(P.observesIds(S, stimId), ...
+                'the migration kept the stimulator''s `observes` relation');
+            r = testCase.MigrationResult.secondPass.observesRetirement;
+            testCase.assertTrue(isstruct(r) && isfield(r, 'carried_element_ids'), ...
+                'the migration ran no `observes` retirement');
+            fprintf(['  observes retirement: %d `observes` relation(s); retired %d ' ...
+                '(presentation %d, bath %d, carried %d); kept %d (observations %d)\n'], ...
+                r.observes_seen, r.observes_retired, r.retired_by_presentation, ...
+                r.retired_by_bath, r.retired_carried, r.observes_kept, r.kept_observation);
+            testCase.verifyEqual(r.carried_element_ids, {stimId}, ...
+                'the stimulator is not the one element carried');
+            testCase.verifyEqual(r.carried_recorded, 1);
+            [subjectId, found] = ndi.vintage.carriedSubjects(S, stimId);
+            testCase.verifyTrue(found, 'the stored migration report carries no subject for the stimulator');
+            % the fixture's one subject (build: ndi.subject(SubjectString)),
+            % the v1 stimulator element's subject_id
+            subjects = S.getsubjects();
+            testCase.assertNumElements(subjects, 1, 'the migrated session does not hold its one subject');
+            testCase.verifyEqual(subjectId, char(subjects{1}.id()), ...
+                'the carried subject is not the stimulator''s v1 subject');
+            f = ndi.vintage.elementFields(P.elementDoc(S, stimId), S);
+            testCase.verifyEqual(char(f.subject_id), subjectId);
+            testCase.verifyTrue(logical(f.direct), 'the stimulator reads direct false');
+            % the migration report holds it ([one-field carry in the
+            % migration report]: counts.carried_fields)
+            mr = testCase.MigrationResult.migrationReport;
+            testCase.assertTrue(isstruct(mr) && isfield(mr, 'counts'), 'no migration report');
+            testCase.verifyEqual(sum(arrayfun(@(x) double(x.counts.carried_fields), mr)), 1, ...
+                'the migration report does not hold one carried field');
         end
 
         function testRetiredObservesIsReadFromThePresentations(testCase)
-            % the retired shape: the stimulator's subject, `direct`, probe
-            % map rows and getprobes read as with its `observes` relation,
-            % one at a time and batched (ndi.vintage.prefetchElementFields)
-            S0 = testCase.ready(testCase.Session);
-            S = testCase.ready(testCase.Retired);
-            P = ndi.unittest.vintage.TestStimulatorRowFromWiring;
-            stimId = P.stimulatorId(S0);
-            testCase.assertEmpty(P.observesIds(S, stimId), 'the copy still holds `observes`');
-            testCase.assertNumElements(P.presentationIds(S, stimId), numel(testCase.Epochs), ...
-                'the copy holds no presentation per epoch (nothing measured)');
-            fprintf('  retired 1 `observes`; added %d presentation manipulation(s)\n', ...
-                numel(P.presentationIds(S, stimId)));
-            el = P.elementDoc(S0, stimId);
-            want = ndi.vintage.elementFields(el, S0);
-            testCase.assertNotEmpty(want.subject_id, 'the stimulator has no subject as migrated');
-            got = ndi.vintage.elementFields(P.elementDoc(S, stimId), S);
-            testCase.verifyEqual(got, want, 'one at a time: the stimulator reads differently');
-            scope = ndi.vintage.elementFieldsScope('open'); %#ok<NASGU>
-            ndi.vintage.prefetchElementFields(S, {P.elementDoc(S, stimId)}, false);
-            batched = ndi.vintage.elementFields(P.elementDoc(S, stimId), S);
-            clear scope
-            testCase.verifyEqual(batched, want, 'batched: the stimulator reads differently');
-            before = testCase.allRows(S0);
-            after = testCase.allRows(S);
-            testCase.assertNumElements(after, numel(before));
-            for k = 1:numel(before)
-                testCase.verifyEqual(sortRows(after(k).rows), sortRows(before(k).rows), ...
-                    sprintf('epoch %s: the probe map differs with `observes` retired', ...
-                    before(k).epoch_id));
-            end
-            probes = S.getprobes('type', 'stimulator');
-            testCase.assertNumElements(probes, 1, 'getprobes did not find the stimulator');
-            testCase.verifyEqual(char(probes{1}.subject_id), char(want.subject_id));
+            % the retired shape with nothing carried: the stimulator's
+            % subject, `direct`, probe map rows and getprobes read as
+            % migrated, one at a time and batched
+            % (ndi.vintage.prefetchElementFields), from its presentations
+            testCase.verifyReadsAsMigrated(testCase.Retired, 'presentations', ...
+                @(S, stimId) ndi.unittest.vintage.TestStimulatorRowFromWiring.presentationIds(S, stimId));
         end
 
-        function testRetiredWithNoPresentationLosesTheSubject(testCase)
-            % the control: without its `observes` relation and with no
-            % presentation, nothing names the stimulator's subject, so the
-            % test above measures the presentations
+        function testRetiredObservesIsReadFromTheBaths(testCase)
+            % [bath manipulation retires observes]: the same, from bath
+            % manipulations (value kind `formulation`)
+            testCase.verifyReadsAsMigrated(testCase.Bathed, 'baths', ...
+                @(S, stimId) ndi.unittest.vintage.TestStimulatorRowFromWiring.bathIds(S, stimId));
+        end
+
+        function testRetiredWithNoPresentationReadsTheCarriedSubject(testCase)
+            % `observes` removed and nothing added: the carried entry
+            % ([one-field carry in the migration report]) reads the same
+            % subject, `direct`, probe map rows and getprobes. Before that
+            % decision this control lost the subject.
+            testCase.verifyReadsAsMigrated(testCase.RetiredNothing, 'the carried field', ...
+                @(S, stimId) {});
             S = testCase.ready(testCase.RetiredNothing);
             P = ndi.unittest.vintage.TestStimulatorRowFromWiring;
+            [~, found] = ndi.vintage.carriedSubjects(S, P.stimulatorId(testCase.ready(testCase.Session)));
+            testCase.verifyTrue(found, 'the copy holds no carried subject (nothing measured)');
+        end
+
+        function testNothingCarriedAndNothingAddedLosesTheSubject(testCase)
+            % the control: without its `observes` relation, the carried
+            % entry, a presentation or a bath, nothing names the stimulator's
+            % subject, so the tests above measure those
+            S = testCase.ready(testCase.NothingCarried);
+            P = ndi.unittest.vintage.TestStimulatorRowFromWiring;
             stimId = P.stimulatorId(testCase.ready(testCase.Session));
+            testCase.assertEmpty(P.migrationRecordIds(S), 'the copy still holds the migration record');
+            [~, found] = ndi.vintage.carriedSubjects(S, stimId);
+            testCase.verifyFalse(found, 'a carried subject was read with no migration record');
             f = ndi.vintage.elementFields(P.elementDoc(S, stimId), S);
             testCase.verifyEmpty(f.subject_id, ...
-                'the subject was read from something other than `observes` or a presentation');
+                'the subject was read from something other than `observes`, the carried field, a presentation or a bath');
         end
 
         function testWithoutTheWiringTheManipulationStillGivesTheRow(testCase)
@@ -288,6 +342,44 @@ classdef TestStimulatorRowFromWiring < matlab.unittest.TestCase
     end
 
     methods (Access = private)
+        function verifyReadsAsMigrated(testCase, copy, what, statementIds)
+            % the stimulator in COPY reads as in the migrated session: its
+            % fields one at a time and batched, every epoch's probe map, and
+            % getprobes. STATEMENTIDS(S, stimId) are the statements it is read
+            % from (asserted one per epoch when not empty)
+            S0 = testCase.ready(testCase.Session);
+            S = testCase.ready(copy);
+            P = ndi.unittest.vintage.TestStimulatorRowFromWiring;
+            stimId = P.stimulatorId(S0);
+            testCase.assertEmpty(P.observesIds(S, stimId), 'the copy still holds `observes`');
+            st = statementIds(S, stimId);
+            if ~isempty(st) || ~strcmp(what, 'the carried field')
+                testCase.assertNumElements(st, numel(testCase.Epochs), ...
+                    sprintf('the copy holds no %s per epoch (nothing measured)', what));
+            end
+            fprintf('  read from %s: %d statement(s)\n', what, numel(st));
+            el = P.elementDoc(S0, stimId);
+            want = ndi.vintage.elementFields(el, S0);
+            testCase.assertNotEmpty(want.subject_id, 'the stimulator has no subject as migrated');
+            got = ndi.vintage.elementFields(P.elementDoc(S, stimId), S);
+            testCase.verifyEqual(got, want, sprintf('one at a time: the stimulator reads differently from %s', what));
+            scope = ndi.vintage.elementFieldsScope('open'); %#ok<NASGU>
+            ndi.vintage.prefetchElementFields(S, {P.elementDoc(S, stimId)}, false);
+            batched = ndi.vintage.elementFields(P.elementDoc(S, stimId), S);
+            clear scope
+            testCase.verifyEqual(batched, want, sprintf('batched: the stimulator reads differently from %s', what));
+            before = testCase.allRows(S0);
+            after = testCase.allRows(S);
+            testCase.assertNumElements(after, numel(before));
+            for k = 1:numel(before)
+                testCase.verifyEqual(sortRows(after(k).rows), sortRows(before(k).rows), ...
+                    sprintf('epoch %s: the probe map differs read from %s', before(k).epoch_id, what));
+            end
+            probes = S.getprobes('type', 'stimulator');
+            testCase.assertNumElements(probes, 1, 'getprobes did not find the stimulator');
+            testCase.verifyEqual(char(probes{1}.subject_id), char(want.subject_id));
+        end
+
         function S = ready(testCase, S)
             testCase.assertEmpty(testCase.SetupError, ...
                 ['building, ingesting, migrating or copying the fixture raised: ' testCase.SetupError]);
@@ -348,7 +440,7 @@ classdef TestStimulatorRowFromWiring < matlab.unittest.TestCase
     end
 
     methods (Static)
-        function S = build(root)
+        function [S, result] = build(root)
             P = ndi.unittest.vintage.TestStimulatorRowFromWiring;
             src = fullfile(ndi.common.PathConstants.ExampleDataFolder, 'exp1_eg_saved', ...
                 'Intan_160317_125049_short.rhd');
@@ -495,6 +587,59 @@ classdef TestStimulatorRowFromWiring < matlab.unittest.TestCase
                     'InstrumentId', stimId, 'SessionId', char(S.id()), 'Validate', false);
                 docs{k} = did2.document(m);
             end
+        end
+
+        function ids = bathIds(S, stimId)
+            % the bath manipulations (value kind `formulation`) by the stimulator
+            found = S.database_search(ndi.v2.statementQuery('manipulation', 'formulation') & ...
+                ndi.query('', 'depends_on', 'instrument_id', stimId));
+            ids = cellfun(@(d) char(d.id()), found, 'UniformOutput', false);
+        end
+
+        function docs = baths(S, stimId)
+            % per wiring relation of the stimulator, a bath manipulation as
+            % ndi.migrate.internal.stimulusBathToBath writes it (value kind
+            % `formulation`, the stimulator's subject as entity, the
+            % stimulator as instrument, timed by the wiring's epoch anchor).
+            % Its value is the formulation it names through `value_id`; the
+            % formulation is not what the reader reads, so the edge names an
+            % id no document holds and the document is added unvalidated.
+            % The edge is still written: did2.build's value rule
+            % (value_inline_or_body) runs whatever 'Validate' says and
+            % refuses a bath with no inline value, no data body and no
+            % `value_id` (the fixture raised did2:build:ruleViolated on
+            % 7b99b6c0, run 44489262007)
+            P = ndi.unittest.vintage.TestStimulatorRowFromWiring;
+            subjectId = char(ndi.vintage.elementFields(P.elementDoc(S, stimId), S).subject_id);
+            assert(~isempty(subjectId), 'the stimulator element has no subject');
+            found = S.database_search(ndi.query('', 'isa', 'directed_relation', '') & ...
+                ndi.query('', 'depends_on', 'child_id', stimId));
+            found = found(cellfun(@(d) P.isWiring(d), found));
+            restore = ndi.migrate.internal.termRegistryOff(); %#ok<NASGU>
+            docs = cell(1, numel(found));
+            for k = 1:numel(found)
+                anchor = ndi.vintage.edgeTargets(found{k}, 'time_reference_id');
+                m = did2.build.statement('manipulation', subjectId, 'bath solution', [], ...
+                    'ValueKind', 'formulation', 'TimeReferenceIds', anchor, ...
+                    'ValueId', char(ndi.ido.unique_id()), ...
+                    'InstrumentId', stimId, 'SessionId', char(S.id()), 'Validate', false);
+                docs{k} = did2.document(m);
+            end
+        end
+
+        function ids = migrationRecordIds(S)
+            % the migration record (`migration`) and its report body
+            % (`opaque_body` naming it as owner_id): removing them removes
+            % the carried fields ([one-field carry in the migration report])
+            % (the bodies first: each depends on its record)
+            recs = S.database_search(ndi.query('', 'isa', 'migration', ''));
+            ids = {};
+            for k = 1:numel(recs)
+                b = S.database_search(ndi.query('', 'isa', 'opaque_body', '') & ...
+                    ndi.query('', 'depends_on', 'owner_id', char(recs{k}.id())));
+                ids = [ids, reshape(cellfun(@(d) char(d.id()), b, 'UniformOutput', false), 1, [])]; %#ok<AGROW>
+            end
+            ids = [ids, reshape(cellfun(@(d) char(d.id()), recs, 'UniformOutput', false), 1, [])];
         end
 
         function tf = isWiring(d)
