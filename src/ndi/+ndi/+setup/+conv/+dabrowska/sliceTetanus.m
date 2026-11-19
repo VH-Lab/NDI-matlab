@@ -292,6 +292,15 @@ for i = 1:numel(aks)
         end
         cp = structs{k};
         cp.base.id = did.ido.unique_id();
+        % the copy is a new V2 document, and V2 `base` has no `name`: a v1
+        % name goes to the class's own name field, and a relation or a
+        % statement has none ([v1 name goes to the class's own name field],
+        % [base.name kept until retire classes leave], Jess Haley,
+        % did-schema did_v2_go_forward_class_audit.md). A pass-1 body that
+        % still carries an (empty) base.name does not pass it on.
+        if isfield(cp.base, 'name')
+            cp.base = rmfield(cp.base, 'name');
+        end
         if isStrainRelation
             if isempty(depValue(cp, 'child_id'))
                 cp = setDep(cp, 'child', newId);
