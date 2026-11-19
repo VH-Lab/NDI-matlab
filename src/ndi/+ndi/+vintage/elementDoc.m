@@ -361,9 +361,9 @@ function T = candidateTable(E, wantClass)
 % the ids of the migrated element entities whose class assertion is
 % WANTCLASS, in order, and (where the text index answers) each one's name
 % and reference (KNOWN)
-q = ndi.v2.statementQuery('assertion', 'term') & ...
-    ndi.v2.fieldQuery('statement.variable.name', 'exact_string', ...
-        ndi.vintage.elementLabel('class'));
+% (the class variable by node EMPTY:0000401, or by the old name:
+% ndi.vintage.elementClassQuery, [variable terms batch 1])
+q = ndi.v2.statementQuery('assertion', 'term') & ndi.vintage.elementClassQuery();
 % From the indexes where the database can (no document decoded): each class
 % assertion's term and entity edge, and each candidate entity's name and
 % local identifier; only an entity whose name and reference could match is
