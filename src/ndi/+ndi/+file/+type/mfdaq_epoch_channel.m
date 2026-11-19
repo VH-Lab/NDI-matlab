@@ -86,7 +86,7 @@ classdef mfdaq_epoch_channel
             auxiliary_in_dataclass = 'ephys';
             auxiliary_out_dataclass = 'ephys';
             digital_in_dataclass = 'digital';
-            digital_in_dataclass = 'digital';
+            digital_out_dataclass = 'digital';
             eventmarktext_dataclass = 'eventmarktext';
             time_dataclass = 'time';
 

@@ -1,18 +1,22 @@
 function [kept, minted, report] = ensembleMembership(structs, options)
 %ENSEMBLEMEMBERSHIP V_eta second pass: turn each did_v1 `ensemble` MAP document
 %   into graph-native membership -- `member_of` edges from every constituent
-%   neuron-subject to the ensemble group-subject -- and record the combined
-%   marked-point-process binary as an explicitly DERIVED cache (`derived_from`
-%   edges to those same neurons).
+%   neuron-subject to the ensemble group-subject. The combined
+%   marked-point-process binary is NOT kept as a cache: NDI rebuilds it on
+%   read from the per-neuron trains (item 3 below).
 %
-%   SIGNED MODEL (DID-schema `V_eta_ensemble_plan.md`, TEAM-SIGN-OFF jess
-%   2026-08-06): per-neuron spike times are the PRIMARY archival data; the
-%   ensemble is a GROUP SUBJECT with its id preserved and NO data body of its
-%   own; members are EPOCH-SCOPED `member_of` edges carrying their epoch and
-%   column order; the combined (times, ids) array is kept as an explicitly
-%   DERIVED, REBUILDABLE CACHE (`derived_from` the neurons, T10); the per-epoch
-%   MAP document dissolves; and a verify-before-delete (0 stranded per-neuron
-%   trains) gates dropping the combined bytes.
+%   THE MODEL (did-schema `did_v2_ensemble_plan.md`): TEAM-SIGN-OFF [ensemble]
+%   (jess, 2026-08-06) -- per-neuron spike times are the PRIMARY
+%   archival data; the ensemble is a GROUP SUBJECT with its id preserved and NO
+%   data body of its own; members are EPOCH-SCOPED `member_of` edges carrying
+%   their epoch and column order; the per-epoch MAP document dissolves; and a
+%   verify-before-delete (every member's per-neuron train present) gates
+%   dropping the combined bytes. Its cache clause is REPLACED by "Decided by
+%   Jess Haley, 2026-10-22 [no ensemble cache]": "the combined (times,
+%   neuron-id) array is not kept as a cache; NDI rebuilds it on read from the
+%   per-neuron trains, so no data body carries an `is_cache` marker". So this
+%   pass mints no `derived_from` edge and no cache document
+%   (ndi.element.ensemble/readtimeseries rebuilds the array).
 %
 %   STRUCTS is a cell of document body structs (from did2.document.toStruct),
 %   i.e. the pass-1 output -- the same contract
@@ -83,44 +87,36 @@ function [kept, minted, report] = ensembleMembership(structs, options)
 %   WHAT IS MINTED
 %   ---------------------------------------------------------------------
 %   Per (map document, neuron_id_i), deduplicated on
-%   (parent, child, order, epoch):
+%   (parent, child, order, epoch), ONE edge:
 %
 %     member_of    directed_relation   child_id  = the neuron-subject
 %                                      parent_id = the ensemble group-subject
 %                                      relation {RO:0002350, member_of}
-%                                      order = i (the column index;
-%                                      `sequence` until did-schema T20)
+%                                      order = i - 1 (the column index,
+%                                      counted from 0; `sequence` until
+%                                      did-schema T20)
+%                                      epoch_id  = the map's epoch, when it
+%                                      resolves (item 2)
 %
-%     derived_from directed_relation   child_id  = the cache carrier (the migrated
-%                                               `acquisition_epoch` that holds
-%                                               the combined .vhsb binary --
-%                                               the map's `element_epoch_id`)
-%                                      parent_id = the neuron-subject
-%                                      relation {RO:0001000, derived_from}
+%   Nothing else is minted. In particular there is NO `derived_from` edge and
+%   NO `sampled_body` cache document for the combined binary ([no ensemble
+%   cache], item 3); REPORT.derived_from_minted stays 0, kept so a reader of
+%   older reports finds the field. (Until 2026-10-22 this block described a
+%   `derived_from` edge from each neuron to the `acquisition_epoch` carrying
+%   the combined .vhsb binary, to move later onto a `sampled_body` cache
+%   document; that design was replaced by the decision.) When a map dissolves,
+%   the `acquisition_epoch` holding its combined bytes (the map's
+%   `element_epoch_id`) leaves KEPT with it, counted in
+%   REPORT.combined_bytes_dropped / REPORT.dropped_carrier_ids; the
+%   REPORT.cache_carriers_* counters still say how many such carriers the
+%   batch names and how many resolved.
 %
-%   The `derived_from` set IS the verify-before-delete manifest: for a given
-%   cache carrier its parents name exactly the per-neuron trains that must
-%   exist before those bytes may be dropped.
-%
-%   ONE DECLARATIVE MISMATCH, STATED RATHER THAN HIDDEN: `directed_relation`
-%   declares `child_id` and `parent_id` as `must_refer_to_document_class:
-%   "entity,statement,value"` (did-schema #88), and the cache carrier
-%   (`acquisition_epoch`, superclasses base + epochid) is none of those. It validates -- must_refer is existence-only, never
-%   type-checked -- and the registry row for `derived_from` constrains neither
-%   end (`child_types: []`, `parent_types: []`). It is recorded here because
-%   the right long-term child is the `sampled_body` cache document of item 3,
-%   which does not exist yet; when it does, this edge moves to it.
-%
-%   The relation terms are taken from the built registry, not invented:
-%       schemas/V_eta/stable/binding_registry_meta.json  relation_bindings
+%   The relation term is taken from the built registry, not invented
+%   (ndi.v2.vocabTerm('relation', 'member_of')):
+%       binding_registry_meta.json  relation_bindings
 %         { "relation": {"node":"RO:0002350","name":"member_of"},
 %           "class":"directed_relation", "child_role":"the member",
-%           "parent_role":"the group", "child_types":["subject"],
-%           "parent_types":["subject"], "timed":false, "ordered":false }
-%         { "relation": {"node":"RO:0001000","name":"derived_from"},
-%           "class":"directed_relation", "child_role":"the derivative",
-%           "parent_role":"the source", "child_types":[], "parent_types":[],
-%           "timed":true, "ordered":false }
+%           "parent_role":"the group", ... }   (item 5 for timed / ordered)
 %
 %   ---------------------------------------------------------------------
 %   WHAT THIS DOES NOT DO, AND WHY -- read before "finishing" it
@@ -550,8 +546,12 @@ for i = 1:numel(structs)
             seenEdge(mKey) = true;
             % `order` counts from 0 (T14; did-schema directed_relation.order,
             % [author order from 0]); v1's neuron_id_N column is 1-based
+            % its id derived from the edge it is (MKEY: ensemble, neuron,
+            % column, epoch), not random ([migration reliability practices]
+            % (b), Jess Haley, 2026-10-26)
             minted{end+1} = relationBody(neuronId, groupId, MEMBER_OF, ...
-                column - 1, epochKey, sessionId, ds, 'migrated_ensemble_member'); %#ok<AGROW>
+                column - 1, epochKey, sessionId, ds, 'migrated_ensemble_member', ...
+                did2.convert.mintId('ensemble member_of', mKey)); %#ok<AGROW>
             report.member_of_minted = report.member_of_minted + 1;
             if ~isempty(epochKey)
                 report.epoch_scoped_edges = report.epoch_scoped_edges + 1;
@@ -621,14 +621,14 @@ end
 % ===================== builders ========================================
 
 function body = relationBody(childId, parentId, relTerm, order, epochDocId, ...
-        sessionId, ds, ~)
+        sessionId, ds, ~, id)
 %RELATIONBODY One `directed_relation` (did-schema #88: `child_id` /
 %   `parent_id`, no base.name). Emits only NON-EMPTY edges: `epoch_id` is
 %   written only when OPTIONS.EpochDocumentIdFor supplied a real id (item 2 of
 %   the header); the slot is declared and OPTIONAL on directed_relation, so an
 %   unscoped edge cannot quarantine under #37 RequiredDependencies.
 body = ndi.migrate.internal.etaShape.relation(childId, parentId, relTerm, ...
-    'Order', order, 'EpochId', epochDocId, ...
+    'Id', id, 'Order', order, 'EpochId', epochDocId, ...
     'SessionId', sessionId, 'Datestamp', ds);
 end
 

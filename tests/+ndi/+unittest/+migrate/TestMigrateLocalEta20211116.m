@@ -116,6 +116,21 @@ classdef TestMigrateLocalEta20211116 < matlab.unittest.TestCase
             ndi.unittest.migrate.printStimulusFoldReport(r, '20211116');
         end
 
+        function testObservesRetiresOnThePresentations(testCase)
+            % Decided by Jess Haley, 2026-11-17 [observes retires in the
+            % second pass] (did-schema did_v2_go_forward_class_audit.md): a
+            % stimulator's `observes` relation retires where a converted
+            % stimulus presentation names the same device and animal.
+            % 20211116's 11 presentations each name the stimulator as
+            % instrument and the stimulator's subject as entity (run
+            % 44018713804).
+            r = ndi.unittest.migrate.verifyObservesRetirement(testCase, testCase.Result, '20211116');
+            testCase.verifyGreaterThan(r.presentation_manipulations, 0, ...
+                '20211116 converted no stimulus presentation (nothing measured)');
+            testCase.verifyGreaterThan(r.observes_retired, 0, ...
+                '20211116 retired no `observes` relation on its presentations');
+        end
+
         function testControlRecordsFoldIntoACovariateOrAreCounted(testCase)
             % Decided by Jess Haley, 2026-10-22 [control as covariate]: a v1
             % control_stimulus_ids about a folded presentation is read into
@@ -313,6 +328,12 @@ classdef TestMigrateLocalEta20211116 < matlab.unittest.TestCase
                      'built in the NDI stimulus fold, so the document passes through pass 1 ' ...
                      'under its v1 tombstone for that pass to consume (DID-matlab ' ...
                      '+migrators_j/control_stimulus_ids.m)']; ...
+                'element_epoch', ...
+                    ['handed on as v1 by pass 1 ([retired classes leave V2], Jess Haley ' ...
+                     '2026-10-25, step (1); DID-matlab #481): it is no longer renamed to ' ...
+                     'the retired acquisition_epoch; did2.convert.epochMint and ' ...
+                     'resolveEpochProbemap dissolve it into its spike-train observation ' ...
+                     '(testTheEpochFamilyDissolvesIntoPerEpochTrains)']; ...
                 'treatment', ...
                     ['carried whole as v1 by [one correct reading] and [dataset audit ' ...
                      'batch 1 and 2] (4) (Jess Haley, 2026-10-26): the two treatments ' ...
@@ -617,6 +638,12 @@ classdef TestMigrateLocalEta20211116 < matlab.unittest.TestCase
             % EITHER a spike-train observation owning a body OR carried whole
             % under that rule, and every surviving acquisition_epoch is one of
             % the carried ones.
+            % UPDATED 2026-11-18. Decided by Jess Haley, 2026-10-25 [retired
+            % classes leave V2] (1): DID-matlab's pass 1 hands a v1
+            % element_epoch on unchanged instead of renaming it to the retired
+            % acquisition_epoch, so a kept slice is the v1 element_epoch
+            % (stored as its v1 source). Both classes are counted as
+            % surviving slices; each must still be one epochMint carried.
             migrated = destinationBodies(testCase.Result.destination);
             srcIds = {};
             for k = 1:numel(testCase.Bodies)
@@ -631,7 +658,8 @@ classdef TestMigrateLocalEta20211116 < matlab.unittest.TestCase
             if isstruct(mint) && isfield(mint, 'epoch_extent_carried_source_ids')
                 carriedIds = cellstr(mint.epoch_extent_carried_source_ids);
             end
-            left = findAllByClass(migrated, 'acquisition_epoch');
+            left = [findAllByClass(migrated, 'acquisition_epoch'), ...
+                findAllByClass(migrated, 'element_epoch')];
             leftIds = cellfun(@(d) char(d.base.id), left, 'UniformOutput', false);
             byId = containers.Map('KeyType', 'char', 'ValueType', 'any');
             owned = containers.Map('KeyType', 'char', 'ValueType', 'logical');
@@ -664,7 +692,7 @@ classdef TestMigrateLocalEta20211116 < matlab.unittest.TestCase
             fprintf(['\n  EPOCH DISSOLUTION\n    DENOMINATOR: %d v1 element_epoch ' ...
                 'document(s)\n    spike-train observations: %d (owning a body: %d)\n' ...
                 '    carried whole by [device clocks on one epoch] (no one system): %d\n' ...
-                '    acquisition_epoch in the destination: %d\n'], numel(srcIds), ...
+                '    acquisition_epoch or element_epoch in the destination: %d\n'], numel(srcIds), ...
                 asTrain, withBody, carried, numel(left));
             assertNotEmpty(testCase, srcIds, 'no element_epoch in the source: measured nothing');
             verifyEmpty(testCase, neither, sprintf(['%d element_epoch(s) are neither a ' ...
@@ -673,9 +701,7 @@ classdef TestMigrateLocalEta20211116 < matlab.unittest.TestCase
             verifyEqual(testCase, withBody, asTrain, ...
                 'every spike-train observation must own its body');
             verifyEmpty(testCase, setdiff(leftIds, carriedIds), ...
-                'an acquisition_epoch survived that epochMint did not list as carried');
-            verifyEmpty(testCase, findAllByClass(migrated, 'element_epoch'), ...
-                'element_epoch documents survived migration under the v1 name');
+                'an element_epoch slice survived that epochMint did not list as carried');
         end
 
         function testNoHartleyPresentationIsRefusedForItsGeneratorKeys(testCase)
@@ -995,7 +1021,7 @@ if isstruct(p); p = num2cell(p); end
 for k = 1:numel(p)
     e = p{k};
     if strcmp(e.variable.name, variable)
-        if isfield(e, 'quantity') && ~isempty(e.quantity); v = e.quantity.value; end
+        if isfield(e, 'numeric') && ~isempty(e.numeric); v = e.numeric; end
         if isfield(e, 'unit') && isstruct(e.unit) && ~isempty(e.unit); u = e.unit.name; end
         return;
     end

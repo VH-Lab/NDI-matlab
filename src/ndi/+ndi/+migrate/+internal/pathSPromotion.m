@@ -747,8 +747,10 @@ end
 % ===================== the part index ==================================
 
 function idx = indexBatch(structs)
-%INDEXBATCH id -> body, child -> part_of parent, and (parent|region[|side])
-%   -> part for every part already in the batch: a tissue entity `part_of`
+%INDEXBATCH id -> body, child -> part_of parent, the v1 elements (by their
+%   links, [element recognised by its links], and by their kind assertions
+%   where present), and (parent|region[|side]) -> part for every part
+%   already in the batch: a tissue entity `part_of`
 %   an entity AND carrying an `anatomical structure` kind assertion (a slice
 %   has none, so a slice is never taken for a region part), keyed by its
 %   `Laterality` assertion too when it has one.
@@ -759,10 +761,33 @@ idx.parentOf = containers.Map('KeyType', 'char', 'ValueType', 'char');
 idx.kindOf = containers.Map('KeyType', 'char', 'ValueType', 'char');
 idx.elements = containers.Map('KeyType', 'char', 'ValueType', 'logical');
 sideOf = containers.Map('KeyType', 'char', 'ValueType', 'char');
+% the links that make an entity an element (Decided by Jess Haley,
+% 2026-11-10 [element recognised by its links], did-schema
+% did_v2_go_forward_class_audit.md): a recording observation's instrument,
+% a wiring relation's child, and each derived_from child's parents
+probeLinked = containers.Map('KeyType', 'char', 'ValueType', 'logical');
+derivedFrom = containers.Map('KeyType', 'char', 'ValueType', 'any');
 for k = 1:numel(structs)
     s = structs{k};
     id = baseField(s, 'id', '');
     if ~isempty(id); idx.byId(id) = s; end
+    if strcmp(S.direction(s), 'observation')
+        ins = S.edge(s, 'instrument_id');
+        if ~isempty(ins); probeLinked(ins) = true; end
+    end
+    if strcmp(S.className(s), 'directed_relation') && any(strcmp(S.relationName(s), ...
+            {'connected_to', 'derived_from'}))
+        [ch, pa] = S.relationEnds(s);
+        if ~isempty(ch) && ~isempty(pa)
+            if strcmp(S.relationName(s), 'connected_to')
+                probeLinked(ch) = true;
+            elseif isKey(derivedFrom, ch)
+                derivedFrom(ch) = [derivedFrom(ch), {pa}];
+            else
+                derivedFrom(ch) = {pa};
+            end
+        end
+    end
     if strcmp(S.className(s), 'directed_relation') && strcmp(S.relationName(s), 'part_of')
         [ch, pa] = S.relationEnds(s);
         if ~isempty(ch) && ~isempty(pa); idx.parentOf(ch) = pa; end
@@ -790,6 +815,27 @@ for k = 1:numel(structs)
         elseif strcmp(v, LATERALITY_VARIABLE().name)
             sideOf(a) = k2;
         end
+    end
+end
+% by the links: a device with a recording observation or a wiring relation
+% is a probe; a cell or Group derived_from such a probe is a sorted unit. A
+% device with neither is not an element. (The assertions above stay the
+% fallback where present.)
+isProbe = @(id) isKey(probeLinked, id) && isKey(idx.byId, id) && ...
+    S.isEntity(idx.byId(id), {'device'}) && strcmp(S.className(idx.byId(id)), 'entity');
+cand = probeLinked.keys;
+for i = 1:numel(cand)
+    if isProbe(cand{i}); idx.elements(cand{i}) = true; end
+end
+kids = derivedFrom.keys;
+for i = 1:numel(kids)
+    c = kids{i};
+    if ~isKey(idx.byId, c) || ~strcmp(S.className(idx.byId(c)), 'entity') ...
+            || ~any(strcmp(S.entityType(idx.byId(c)), {'cell', 'group'}))
+        continue;
+    end
+    if any(cellfun(isProbe, derivedFrom(c)))
+        idx.elements(c) = true;
     end
 end
 ps = idx.kindOf.keys;
@@ -825,7 +871,12 @@ if isKey(idx.parts, key)
     partId = idx.parts(key);
     return;
 end
-p = mintPart(parentId, areaTerm, sideTerm, source);
+% the part, its assertions and its part_of edge take ids derived from the
+% part's identity (parent, region, side), not random and not from the
+% statement that first asked for it ([migration reliability practices] (b),
+% Jess Haley, 2026-10-26; ndi.migrate.internal.withMintSource)
+p = ndi.migrate.internal.withMintSource('pathSPromotion', key, ...
+    @() mintPart(parentId, areaTerm, sideTerm, source));
 partId = p.entity.base.id;
 idx.parts(key) = partId;
 idx.byId(partId) = p.entity;
@@ -884,7 +935,7 @@ partName = safeName(siteTerm);
 if ~isempty(sideTerm)
     partName = [partName '_' safeName(sideTerm)];
 end
-partId = did.ido.unique_id();
+partId = did2.convert.mintId('tissue part');   % in the part's context (findOrMintPart)
 
 % local_identifier is REQUIRED on a tissue entity. Compose parent+part; trim
 % any degenerate leading/trailing underscores (an empty parentId would leave

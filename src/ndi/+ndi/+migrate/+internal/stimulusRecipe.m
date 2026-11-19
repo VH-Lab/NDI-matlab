@@ -237,7 +237,8 @@ for i = 1:numel(names)
         % as decided 2026-10-22): T14's canonical angle unit is the degree;
         % the v1 radians are the source
         e = entry(variable, DEGREE, 'quantity', double(v) * 180 / pi);
-        e.source_value = sprintf('%.17g', double(v));
+        % [numeric shape details] (1): the source's number as a number
+        e.source_value = double(v);
         e.source_unit = RADIAN;
         entries(end+1) = e; %#ok<AGROW>
         continue;

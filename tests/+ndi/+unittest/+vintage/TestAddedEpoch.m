@@ -299,6 +299,20 @@ classdef TestAddedEpoch < matlab.unittest.TestCase
             if ~isempty(iFast)
                 testCase.verifyLessThan(iFast(1), iV1(1));
             end
+            % ...and, inside getprobes only, the probes getprobes already
+            % read with the same v1 query (and the v2 entities), held in
+            % the call's scope: a probe map's duplicate of an existing
+            % probe is answered from them with no search (Decided by Jess
+            % Haley, 2026-11-10 [probes from the index keep v1's
+            % duplicates]). Outside a scope it reads nothing.
+            iTable = strfind(src, 'probeTableLookup(E, ndi_element_obj)');
+            testCase.verifyNotEmpty(iTable);
+            if ~isempty(iTable)
+                testCase.verifyLessThan(iTable(1), iV1(1));
+                testCase.verifySubstring(src, ...
+                    'if ~ndi.vintage.elementFieldsScope(''isopen'')', ...
+                    'the probe table must read nothing outside a call''s scope');
+            end
         end
 
     end

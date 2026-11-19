@@ -58,9 +58,13 @@ for k = 1:numel(handle)
     if ~isempty(stored)
         node{k} = V.storedNode(h);
         name{k} = stored;
-        if isempty(node{k}) && strcmp(kind, 'clock') && ~isempty(V.nodes{i})
-            % [clock terms get nodes]: the decided node, while the schema's
-            % row is still empty
+        if isempty(node{k}) && any(strcmp(kind, {'clock', 'entity_type'})) ...
+                && ~isempty(V.nodes{i})
+            % [clock terms get nodes], and for an entity type [culture
+            % renamed cell culture] (Jess Haley, 2026-11-10): the decided
+            % node, while the schema's row is still empty, with the name the
+            % schema's row stores (`culture` today, "cell culture" after the
+            % rename)
             node{k} = V.nodes{i}{1};
         end
     else

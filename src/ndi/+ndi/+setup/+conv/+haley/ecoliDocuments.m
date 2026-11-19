@@ -408,8 +408,10 @@ for k = 1:height(R)
             out.counts.patch_values = out.counts.patch_values + 1;
         end
         if ismember('circularity', r.Properties.VariableNames) && ~isnan(r.circularity)
+            % a score with no scale, 0-1 ([four term fields bound], Decided
+            % by Jess Haley, 2026-11-10, did-schema did_v2_go_forward_class_audit.md)
             v = did2.build.valueCell('score', r.circularity, 'Fields', struct( ...
-                'scale', haleyTerm('circularity'), 'scale_min', 0, 'scale_max', 1));
+                'scale_min', 0, 'scale_max', 1));
             docs{end+1} = did2.build.statement('calculation', patch, ...
                 haleyTerm('circularity'), v, in{:}, calc{:}, match{:}, 'ValueKind', 'score'); %#ok<AGROW>
             out.counts.patch_values = out.counts.patch_values + 1;

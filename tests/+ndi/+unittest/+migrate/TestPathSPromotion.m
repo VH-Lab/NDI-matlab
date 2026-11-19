@@ -62,6 +62,29 @@ classdef TestPathSPromotion < matlab.unittest.TestCase
 
     methods (Test)
 
+        function testTheSameInputMintsTheSameIds(testCase)
+            % [migration reliability practices] (b) (Jess Haley, 2026-10-26,
+            % did-schema did_v2_go_forward_class_audit.md): a document the
+            % migration mints gets an id derived from its source, "so two runs
+            % on the same input are identical and can be diffed". The ids must
+            % not depend on the order the documents are read in either
+            % (NDI-matlab #1235: database order is not data), so the input is
+            % also run reversed. NEW is the ids the pass minted (not one of
+            % its input ids): it must be non-empty, or this proves nothing.
+            structs = treatmentWithSite('anch_1', 'animal_1', ...
+                'uberon:0002436', 'primary visual cortex');
+            [~, a] = ndi.migrate.internal.pathSPromotion(structs);
+            [~, b] = ndi.migrate.internal.pathSPromotion(structs);
+            [~, r] = ndi.migrate.internal.pathSPromotion(structs(end:-1:1));
+            ids = ndi.unittest.migrate.mintedIdSet(a);
+            new = setdiff(ids, ndi.unittest.migrate.mintedIdSet(structs));
+            testCase.verifyNotEmpty(new, 'the pass minted no new id');
+            testCase.verifyEqual(ndi.unittest.migrate.mintedIdSet(b), ids);
+            testCase.verifyEqual(ndi.unittest.migrate.mintedIdSet(r), ids);
+            testCase.verifyEqual(did2.convert.mintId('-depth'), 0, ...
+                'the pass left a mintId context open');
+        end
+
         function testAttributedSitePromoted(testCase)
             structs = treatmentWithSite('anch_1', 'animal_1', ...
                 'uberon:0002436', 'primary visual cortex');

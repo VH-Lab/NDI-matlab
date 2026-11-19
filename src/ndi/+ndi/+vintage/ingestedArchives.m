@@ -277,11 +277,13 @@ for e = 1:numel(epochIds)
     end
     ai = unique(anchorRows(lid));
     used = [{}, sUsed{si}];
-    isUsed = ismember(aIds(ai), used);
     A = struct('vintage', 'v2', 'epoch_id', lid, ...
         'bodies', containers.Map('KeyType', 'char', 'ValueType', 'any'), ...
         'channels', [], 'epochclock', {{}}, 't0_t1', {{}}, 'clock_problem', '');
-    for a = [ai(isUsed), ai(~isUsed)]
+    % the recordings' anchors in the order they name them (v1's clock
+    % order), then the rest, as private/archiveOf reads them
+    % (private/anchorOrder)
+    for a = ai(anchorOrder(aIds(ai), used))
         if aOk(a) && ~any(strcmp(A.epochclock, aClk{a}))
             A.epochclock{end+1} = aClk{a};
             A.t0_t1{end+1} = aT{a};

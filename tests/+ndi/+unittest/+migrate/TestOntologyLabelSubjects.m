@@ -40,6 +40,26 @@ classdef TestOntologyLabelSubjects < matlab.unittest.TestCase
 
     methods (Test)
 
+        function testTheSameInputMintsTheSameIds(tc)
+            % [migration reliability practices] (b) (Jess Haley, 2026-10-26,
+            % did-schema did_v2_go_forward_class_audit.md): a document the
+            % migration mints gets an id derived from its source, "so two runs
+            % on the same input are identical and can be diffed". The ids must
+            % not depend on the order the documents are read in either
+            % (NDI-matlab #1235: database order is not data), so the input is
+            % also run reversed. NEW is the ids the pass minted (not one of
+            % its input ids): it must be non-empty, or this proves nothing.
+            batch = { ...
+                imageObservation('img_1', 'sess1', 'subj_group_9', 'anchor_1'), ...
+                labelBody('lab_1', 'sess1', 'img_1', 'EMPTY:0000131') };
+            ids = planIds(ndi.migrate.internal.ontologyLabelSubjects(batch));
+            new = setdiff(ids, ndi.unittest.migrate.mintedIdSet(batch));
+            tc.verifyNotEmpty(new, 'the pass minted no new id');
+            tc.verifyEqual(planIds(ndi.migrate.internal.ontologyLabelSubjects(batch)), ids);
+            tc.verifyEqual(planIds(ndi.migrate.internal.ontologyLabelSubjects( ...
+                batch(end:-1:1))), ids);
+        end
+
         function testDenominatorIsStatedEvenWithNothingToDo(tc)
             % Rule 5. And "did not run" (the caller's []) must stay
             % distinguishable from "ran and found nothing".
@@ -435,4 +455,15 @@ if isfield(b.base, 'session_id')
 else
     sid = depValue(b, 'session_id');
 end
+end
+
+function ids = planIds(plan)
+% the ids of every body a plan holds: each label's observation and its
+% related documents
+docs = {};
+for k = 1:numel(plan)
+    docs{end+1} = plan(k).body; %#ok<AGROW>
+    docs = [docs, plan(k).related]; %#ok<AGROW>
+end
+ids = ndi.unittest.migrate.mintedIdSet(docs);
 end

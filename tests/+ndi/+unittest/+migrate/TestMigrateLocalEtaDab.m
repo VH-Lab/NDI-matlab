@@ -323,6 +323,52 @@ classdef TestMigrateLocalEtaDab < matlab.unittest.TestCase
             testCase.verifyEmpty(R.mismatches, strjoin(R.mismatches, newline));
         end
 
+        function testTheStimulatorsReadTheSameWithoutTheirManipulations(testCase)
+            % Decided by Jess Haley, 2026-11-09, did-schema
+            % did_v2_standing_wiring_plan.md [stimulator manipulation
+            % dropped], [probe map rows compared as a set]: on a copy of the
+            % GENERIC migrated output, with old data added (one Stimulator
+            % manipulation per wiring relation and epoch that has none, as
+            % DID-matlab wrote before #466; the migration still writes the
+            % 12 bath rows naming another subject) and then with every
+            % per-epoch Stimulator manipulation removed, every system's
+            % ingested probe maps (as sets), its reader's v2 clocks and the
+            % stimulators getprobes finds, with their epoch tables, are the
+            % same, and the same as the decided shape's
+            % (ndi.unittest.migrate.stimulatorRowsWithoutManipulation).
+            %
+            % The generic output only, not the Dabrowska map's (MappedRoot):
+            % did-schema docs/plans/did_v2_go_forward_class_audit.md [Dab gets
+            % a v2 import] (Jess Haley, 2026-11-12): Dab gets a per-dataset v2
+            % import instead of the map on migrated output, the map is not
+            % extended, and the nested-day "another animal" re-attribution
+            % moves to that import. On the mapped output the one bath with two
+            % slices (bath_221202_BNSTI_SCN_a, 11 nested-date epochs; the map's
+            % "element observes-relations ... ambiguous 1") had its per-epoch
+            % slice only on the manipulation (run 42743091429).
+            R = ndi.unittest.migrate.stimulatorRowsWithoutManipulation( ...
+                fileparts(testCase.Result.destination), 'Dab (generic)');
+            testCase.verifyGreaterThan(R.added, 0, 'no old-data Stimulator manipulation was added (nothing measured)');
+            testCase.verifyGreaterThan(R.removed, 0, 'no Stimulator manipulation was removed (nothing measured)');
+            testCase.verifyGreaterThan(R.stimulators, 0, 'getprobes found no stimulator (nothing measured)');
+            testCase.verifyNotEmpty(R.checks, 'no comparison was made');
+            testCase.verifyEmpty(R.mismatches, strjoin(R.mismatches, newline));
+        end
+
+        function testObservesRetirementIsCounted(testCase)
+            % Decided by Jess Haley, 2026-11-17 [observes retires in the
+            % second pass] (did-schema did_v2_go_forward_class_audit.md): a
+            % stimulator's `observes` relation retires where a converted
+            % stimulus presentation names the same device and animal. The
+            % record of [stimulator link lives in the presentations] states
+            % that Dab holds no presentations, so none retires here and the
+            % Dabrowska map (ndi.setup.conv.dabrowska.sliceTetanus), which
+            % reads them, still finds them.
+            r = ndi.unittest.migrate.verifyObservesRetirement(testCase, testCase.Result, 'Dab');
+            testCase.verifyTrue(r.presentation_manipulations > 0 || r.observes_retired == 0, ...
+                'Dab retired an `observes` relation with no presentation');
+        end
+
         function testReadPhasesAreNoSlowerThanV1(testCase)
             % Jess Haley, 2026-11-06: "Speed can't be slower than v1. We
             % need to match or beat." Every session of Dab is read in five
@@ -336,6 +382,32 @@ classdef TestMigrateLocalEtaDab < matlab.unittest.TestCase
                 fileparts(testCase.Result.destination), 'Dab', ...
                 'Profile', ndi.unittest.migrate.envTrue('NDI_PROFILE_READS'));
             ndi.unittest.migrate.verifyReadPhases(testCase, T);
+            % the same objects on both sides, the probe map's duplicates
+            % of existing probes included (Decided by Jess Haley,
+            % 2026-11-10 [probes from the index keep v1's duplicates])
+            for i = 1:numel(T.sessions)
+                c = T.sessions(i).counts;
+                if isempty(fieldnames(c)); continue; end
+                testCase.verifyEqual(c.v2.elements, c.v1.elements, ...
+                    sprintf('session %s: getelements count', T.sessions(i).id));
+                testCase.verifyEqual(c.v2.probes, c.v1.probes, ...
+                    sprintf('session %s: getprobes count', T.sessions(i).id));
+            end
+        end
+
+        function testArchiveSegmentLengthsAfterTheSecondPass(testCase)
+            % [archive segment lengths measured after the second pass] (Jess
+            % Haley, 2026-11-12): each v1 ingested archive's
+            % sample_analog_segment / sample_digital_segment, which DID's
+            % whole-batch round trip defers to here, rebuilt from the final
+            % v2 bodies' time chunks and compared with v1. The corpus zip
+            % carries no binary files (NDI-matlab #785), so the archives stay
+            % pass 1's opaque bodies and the report reads NOT MEASURED, by
+            % reason; the denominator and the partition are asserted, and any
+            % value measured must equal v1
+            % (ndi.unittest.migrate.verifyArchiveSegmentLengths).
+            ndi.unittest.migrate.verifyArchiveSegmentLengths(testCase, ...
+                testCase.Result, testCase.Bodies, 'Dab');
         end
 
         function testTheSameObjectsBeforeAndAfterMigration(testCase)
@@ -456,6 +528,20 @@ classdef TestMigrateLocalEtaDab < matlab.unittest.TestCase
             % reproduce it ([sliceTetanus to Dab map]). The migrated-document
             % denominator is printed, not pinned: the map reads the finished
             % database, the step read the batch part-way through the pass.
+            %
+            % MOVED BY 1592 for [stimulator manipulation dropped] (Jess Haley,
+            % 2026-11-09, did-schema did_v2_standing_wiring_plan.md; built by
+            % DID-matlab #466, 1048e449): the generic stage no longer writes
+            % the per-epoch Stimulator manipulation (a term_manipulation) for
+            % a stimulator row its wiring and element hold. Dab had 1604 (the
+            % 1604 removed by testTheStimulatorsReadTheSameWithoutTheirManipulations
+            % in run 44033836518, before #466); 12 are still written (bath
+            % rows naming another subject; 12 removed in run 44066834018).
+            % The step re-attributed 1592 of them, none of the 12, so the
+            % epoch statements examined and matched, the documents
+            % re-attributed and the term_manipulation re-attributions each
+            % drop by 1592 (run 44066834018: 3617, 3591, 4190, 0); every
+            % other field is the step's.
             r = testCase.MapReport;
             assertNotEmpty(testCase, r, 'the Dabrowska map did not run');
             verifyGreaterThan(testCase, r.migrated_documents_read, 0, ...
@@ -466,7 +552,7 @@ classdef TestMigrateLocalEtaDab < matlab.unittest.TestCase
                 'stimulators_not_a_slice_bath', 0, 'stimulators_animal_mismatch', 0, ...
                 'slices', 203, 'new_animals', 1, 'epochs_on_a_nested_date', 11, ...
                 'new_animal_strain_assertions_copied', 0, ...
-                'epoch_statements_examined', 5209, 'epoch_statements_matched', 5183, ...
+                'epoch_statements_examined', 5209 - 1592, 'epoch_statements_matched', 5183 - 1592, ...
                 'epoch_statements_unmatched', 26, ...
                 'unanchored_statements_examined', 400, 'unanchored_statements_matched', 398, ...
                 'unanchored_statements_ambiguous', 2, ...
@@ -479,12 +565,13 @@ classdef TestMigrateLocalEtaDab < matlab.unittest.TestCase
                 'labels_rebuilt', 635, 'labels_not_rebuilt', 0, 'approach_labels_removed', 635, ...
                 'treatment_manipulations_found', 0, ...
                 'documents_minted', 519, 'minted_folded', 519, 'minted_quarantined', 0, ...
-                'documents_reattributed', 5782, 'documents_removed', 635, ...
+                'documents_reattributed', 5782 - 1592, 'documents_removed', 635, ...
                 'removals_withheld_still_referenced', 0, ...
-                'reattributions_applied', 5782, 'removals_applied', 635, ...
+                'reattributions_applied', 5782 - 1592, 'removals_applied', 635, ...
                 'replacements_refused_have_files', 0);
+            % term_manipulation: 1592 before #466, none now (see above)
             byClass = struct('formulation_manipulation', 433, 'term_observation', 398, ...
-                'term_manipulation', 1592, 'voltage_observation', 1579, ...
+                'voltage_observation', 1579, ...
                 'current_observation', 1579);
             f = fieldnames(before);
             for k = 1:numel(f)
@@ -888,6 +975,16 @@ s = sprintf('%d document(s) quarantined; first %d:', n, min(5,n));
 for i = 1:min(5,n)
     s = sprintf('%s\n    %s: %s', s, result.quarantine(i).class_name, ...
         result.quarantine(i).reason);
+end
+% every quarantine, by class and reason, largest first (denominator: n)
+keys = arrayfun(@(q) sprintf('%s: %s', q.class_name, q.reason), ...
+    result.quarantine, 'UniformOutput', false);
+[u, ~, ix] = unique(keys);
+c = accumarray(ix(:), 1);
+[c, order] = sort(c, 'descend');
+s = sprintf('%s\n  by class and reason (%d quarantined, %d distinct):', s, n, numel(u));
+for i = 1:min(40, numel(u))
+    s = sprintf('%s\n    %6d  %s', s, c(i), u{order(i)});
 end
 end
 

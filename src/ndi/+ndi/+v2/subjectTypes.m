@@ -10,5 +10,8 @@ function t = subjectTypes()
 %
 %   See also ndi.query, ndi.v2.entityTypesFor.
 
+% NDI's handles, compared through ndi.v2.vocabHandle / vocabQuery by node
+% first: `culture` is OBI:0001876, stored `culture` or "cell culture"
+% ([culture renamed cell culture], Jess Haley, 2026-11-10)
 t = {'organism', 'culture', 'tissue', 'cell', 'group'};
 end

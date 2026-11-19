@@ -155,8 +155,12 @@ classdef TestSliceTetanus < matlab.unittest.TestCase
                         'method.parameters is an entry list on did-schema #88');
                     verifyEqual(testCase, {p(1).variable.name, p(2).variable.name}, ...
                         {'frequency', 'duration'});
-                    verifyEqual(testCase, [p(1).quantity.value p(2).quantity.value], [10 20]);
-                    verifyEqual(testCase, {p(1).quantity.source_value, p(2).quantity.source_value}, ...
+                    % [one shape for measured numbers]: flat `numeric`, and
+                    % `source_numeric` keeps the folder name's text
+                    % ([numeric shape details] (1))
+                    verifyFalse(testCase, isfield(p, 'quantity'), 'no quantity wrapper');
+                    verifyEqual(testCase, [p(1).numeric p(2).numeric], [10 20]);
+                    verifyEqual(testCase, {p(1).source_numeric, p(2).source_numeric}, ...
                         {'10', '20'});
                     verifyEqual(testCase, p(1).unit.node, 'om:hertz');
                     verifyEqual(testCase, p(2).unit.node, 'om:second-Time');
@@ -194,6 +198,34 @@ classdef TestSliceTetanus < matlab.unittest.TestCase
             end
             verifyEmpty(testCase, sub.quarantine, ['minted bodies quarantined:' msg]);
             verifyNumElements(testCase, sub.migrated, numel(bodies));
+        end
+
+        function testNoMintedBodyCarriesBaseName(testCase)
+            % V2 `base` has no `name` ([v1 name goes to the class's own name
+            % field], [base.name kept until retire classes leave], Jess Haley,
+            % did-schema did_v2_go_forward_class_audit.md). The simulated
+            % pass-1 bodies carry an empty base.name (body() below), so the
+            % copied instance_of relations are the case this catches.
+            bodies = testCase.Plan.minted;
+            verifyNotEmpty(testCase, bodies);
+            withName = {};
+            for k = 1:numel(bodies)
+                b = bodies{k};
+                if isfield(b, 'base') && isfield(b.base, 'name')
+                    withName{end+1} = char(b.document_class.class_name); %#ok<AGROW>
+                end
+            end
+            verifyEmpty(testCase, withName, sprintf( ...
+                '%d of %d minted bodies carry base.name: %s', numel(withName), ...
+                numel(bodies), strjoin(withName, ', ')));
+            % the pre-#88 spelling mints the same way
+            [mig, idx] = simulateMigrated(testCase.V1, true);
+            plan = ndi.setup.conv.dabrowska.sliceTetanus(testCase.V1, mig, idx);
+            n = 0;
+            for k = 1:numel(plan.minted)
+                n = n + (isfield(plan.minted{k}, 'base') && isfield(plan.minted{k}.base, 'name'));
+            end
+            verifyEqual(testCase, n, 0, 'pre-#88 spelling: no minted body carries base.name');
         end
 
         function testEveryLabelRebuildsAndIsDropped(testCase)
@@ -457,6 +489,7 @@ for k = 1:numel(v1)
             r = body('directed_relation', uid(), s, ...
                 [struct('name', CHILD, 'value', part), struct('name', PARENT, 'value', animal)]);
             r.directed_relation = struct('relation', struct('node', 'BFO:0000050', 'name', 'part_of'));
+            if ~pre88; r = asMigrated(r); end
             M{end+1} = r; %#ok<AGROW>
         case 'element'
             if pre88
@@ -481,7 +514,7 @@ for k = 1:numel(v1)
                         [struct('name', CHILD, 'value', v1dep(b, 'subject_id')), ...
                          struct('name', PARENT, 'value', 'strainentity')]);
                     r.directed_relation = struct('relation', struct('node', '', 'name', 'instance_of'));
-                    M{end+1} = r; %#ok<AGROW>
+                    M{end+1} = asMigrated(r); %#ok<AGROW>
                 end
             end
     end
@@ -539,6 +572,16 @@ b.document_class = struct('class_name', cls, 'class_version', '1.0.0', ...
     'superclasses', struct('class_name', {}, 'class_version', {}), 'schema_version', 'did_v2');
 b.depends_on = deps;
 b.base = struct('id', id, 'session_id', s, 'name', '', 'creation_timestamp', 'x');
+end
+
+function r = asMigrated(r)
+%ASMIGRATED A #88 relation as the generic stage writes it: its superclass list
+%   and every block its header names. sliceTetanus copies an animal's
+%   instance_of relation onto a new animal, and nothing after it pads the copy
+%   ([early migration pieces fixed] (2), Jess Haley, 2026-10-26: "the builder
+%   produces a complete document"), so the simulated pass-1 output is complete.
+r.document_class = ndi.migrate.internal.etaShape.docClass(r.document_class.class_name);
+r = ndi.migrate.internal.etaShape.classBlocks(r);
 end
 
 function v = v1dep(b, name)

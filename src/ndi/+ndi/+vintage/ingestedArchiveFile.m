@@ -15,6 +15,13 @@ function [tname, tname_without_extension] = ingestedArchiveFile(S, A, filename, 
 %   (TNAME_WITHOUT_EXTENSION followed by EXTENSION), as copydocfile2temp
 %   writes it, so NDI's expanders read it unchanged.
 %
+%   MEMBER NAMES. The schema's names (`body_data_0`, `body_data_1`, ... in
+%   segment order) are read first: did-schema [ingested body members use the
+%   schema's names] and [migrated body members renamed] (Jess Haley,
+%   2026-11-17); pass 1 already writes them. A body whose member is still
+%   named by NDI's own file name (FILENAME itself, `ai_group1_seg.nbf_3`) is
+%   read under that name, so both shapes read the same.
+%
 %   Raises NDI:daq:reader:ingestedFileNotFound when the archive has no such
 %   series or member.
 %
@@ -46,13 +53,35 @@ tname = [tname_without_extension extension];
 try
     f = S.database_openbinarydoc(b.doc, member);
 catch ME
-    error('NDI:daq:reader:ingestedFileNotFound', ...
-        'Epoch %s: the data body for %s has no member %s (%s).', ...
-        A.epoch_id, series, member, ME.message);
+    if ~any(strcmp(memberNamesOf(b.doc), filename))
+        error('NDI:daq:reader:ingestedFileNotFound', ...
+            'Epoch %s: the data body for %s has no member %s (%s).', ...
+            A.epoch_id, series, member, ME.message);
+    end
+    % the member still carries NDI's own name
+    f = S.database_openbinarydoc(b.doc, filename);
 end
 data = f.fread(Inf, 'uint8');
 S.database_closebinarydoc(f);
 fid = fopen(tname, 'wb', 'ieee-le');
 fwrite(fid, data, 'uint8');
 fclose(fid);
+end
+
+function names = memberNamesOf(doc)
+% the member names the body's files.file_info records
+names = {};
+try
+    p = doc.document_properties;
+catch
+    return;
+end
+if ~isfield(p, 'files') || ~isstruct(p.files) || ~isfield(p.files, 'file_info')
+    return;
+end
+fi = p.files.file_info;
+if isstruct(fi); fi = num2cell(fi); end
+for k = 1:numel(fi)
+    if isstruct(fi{k}) && isfield(fi{k}, 'name'); names{end+1} = char(fi{k}.name); end %#ok<AGROW>
+end
 end

@@ -399,6 +399,17 @@ classdef subjectMaker < handle
             %   one or more sessions and removes any `subject` documents that match the provided
             %   list of `local_identifier` strings.
             %
+            %   In a session whose database is v2 (ndi.session/writesV2), a subject is
+            %   an `entity` of a subject type (ndi.v2.subjectTypes), as
+            %   makeSubjectDocuments writes it there; its `entity.local_identifier` is
+            %   matched (ndi.v2.blockQuery), and removing it also removes the
+            %   documents that depend on it (its term assertions and its `instance_of`
+            %   relation), as removing a v1 `subject` removes its `openminds_subject`
+            %   documents. Jess Haley's decisions of 2026-11-03 [writers are given the
+            %   session] and [v2 line reads and writes both] (did-schema
+            %   did_v2_go_forward_class_audit.md); the subject types are [subject match
+            %   takes the subject types] (2026-11-03).
+            %
             %   Args:
             %       obj (ndi.setup.NDIMaker.subjectMaker): The instance of this class.
             %       sessionCellArray (cell): A cell array of `ndi.session.dir` objects to search.
@@ -431,7 +442,15 @@ classdef subjectMaker < handle
                 type_query = ndi.query('','isa','subject');
                 
                 if numel(localIdentifiersToDelete) > 0
-                    id_queries = cellfun(@(id) ndi.query('subject.local_identifier', 'exact_string', id), localIdentifiersToDelete, 'UniformOutput', false);
+                    if currentSession.writesV2()
+                        % a v2 subject: an entity of a subject type, matched
+                        % by its `entity.local_identifier` (see above)
+                        id_queries = cellfun(@(id) ndi.v2.blockQuery('subject.local_identifier', 'exact_string', id), localIdentifiersToDelete, 'UniformOutput', false);
+                        type_query = type_query & ...
+                            ndi.v2.vocabQuery('entity.type', 'entity_type', ndi.v2.subjectTypes());
+                    else
+                        id_queries = cellfun(@(id) ndi.query('subject.local_identifier', 'exact_string', id), localIdentifiersToDelete, 'UniformOutput', false);
+                    end
                     combined_local_id_query = id_queries{1};
                     for q_idx = 2:numel(id_queries)
                         combined_local_id_query = combined_local_id_query | id_queries{q_idx};

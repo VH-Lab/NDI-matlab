@@ -812,6 +812,9 @@ switch kind
     case 'cohort'
         t = 'group';
     case 'patch'
+        % NDI's handle: written by ndi.v2.vocabTerm as {OBI:0001876, the
+        % name the loaded schema's entity_type binding stores} ([culture
+        % renamed cell culture], Jess Haley, 2026-11-10)
         if isempty(bacteria), t = 'material'; else, t = 'culture'; end
     otherwise
         t = 'material';

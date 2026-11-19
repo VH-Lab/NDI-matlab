@@ -230,7 +230,10 @@ classdef TestEpochAnchorFold < matlab.unittest.TestCase
             b = plan(1).body;
             testCase.verifyFalse(isfield(b, 'epoch_bounded_reference'));
             testCase.verifyFalse(isfield(b, 'epochid'));
-            testCase.verifyFalse(isfield(b, 'time_reference'));
+            % the root block stays, written empty (the document is complete
+            % as built, [early migration pieces fixed] (2)); the deprecated
+            % flag in it does not
+            testCase.verifyEqual(b.time_reference, struct());
         end
 
         function testRelationIsDuringAsAnOwlTimeTerm(testCase)
@@ -362,6 +365,7 @@ classdef TestEpochAnchorFold < matlab.unittest.TestCase
             tol = plan(1).body.time_reference.clock_tolerance;
             testCase.verifyFalse(isfield(tol, 'source_unit'));
             testCase.verifyFalse(isfield(tol, 'source_value'));
+            testCase.verifyFalse(isfield(tol, 'source_numeric'));
         end
 
         function testAnEmptyClockFoldsWithoutOneAndIsCounted(testCase)
@@ -384,7 +388,10 @@ classdef TestEpochAnchorFold < matlab.unittest.TestCase
         function testAnExactClockWritesNoToleranceBlockAtAll(testCase)
             [docs, idx] = oneFoldableAnchor();
             [plan, ~] = ndi.migrate.internal.epochAnchorFold(docs, idx);
-            testCase.verifyFalse(isfield(plan(1).body, 'time_reference'));
+            % no tolerance: the root block is written empty, with no
+            % clock_tolerance in it ([early migration pieces fixed] (2): the
+            % builder produces a complete document)
+            testCase.verifyEqual(plan(1).body.time_reference, struct());
         end
 
         % ---------------- the refusals ------------------------------------

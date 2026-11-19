@@ -93,6 +93,50 @@ classdef TestMigrateLocalEtaB < matlab.unittest.TestCase
 
     methods (Test)
 
+        function testTwoRunsOnTheSameInputMintTheSameIds(testCase)
+            % [migration reliability practices] (b) (Jess Haley, 2026-10-26,
+            % did-schema did_v2_go_forward_class_audit.md): "a document the
+            % migration mints gets an id derived from its v1 source id and its
+            % role, so two runs on the same input are identical and can be
+            % diffed". B migrated a SECOND time, from the same v1 bodies into a
+            % second session folder, must hold the same set of ids as the
+            % first run (TestClassSetup), each naming the same class.
+            %
+            % Nothing is excluded. The count of ids found in only one run is
+            % printed first, by class, whatever the verdict ("[B two runs]").
+            secondRoot = tempname();
+            mkdir(fullfile(secondRoot, '.ndi'));
+            cleanup = onCleanup(@() rmdirQuietly(secondRoot)); %#ok<NASGU>
+            buildV1Sqlite(fullfile(secondRoot, '.ndi', 'did-sqlite.sqlite'), ...
+                testCase.Bodies);
+            t = tic;
+            second = ndi.migrate.local(secondRoot, ...
+                'Validate', true, 'TargetVersion', 'did_v2', 'Backup', false);
+            fprintf('  [B timing] second ndi.migrate.local: %.1f s\n', toc(t));
+
+            [ids1, cls1] = idsAndClasses(testCase.Result.destination);
+            [ids2, cls2] = idsAndClasses(second.destination);
+            only1 = setdiff(ids1, ids2);
+            only2 = setdiff(ids2, ids1);
+            [common, i1, i2] = intersect(ids1, ids2);
+            sameClass = strcmp(cls1(i1), cls2(i2));
+            fprintf(['  [B two runs] DENOMINATOR: run 1 %d id(s), run 2 %d id(s); ' ...
+                '%d in both; %d only in run 1, %d only in run 2; %d in both ' ...
+                'naming a different class\n'], numel(ids1), numel(ids2), ...
+                numel(common), numel(only1), numel(only2), sum(~sameClass));
+            printByClass('only in run 1', only1, ids1, cls1);
+            printByClass('only in run 2', only2, ids2, cls2);
+
+            verifyGreaterThan(testCase, numel(ids1), 0, ...
+                'the first run''s destination holds no document');
+            verifyEmpty(testCase, only1, sprintf( ...
+                '%d id(s) only in run 1: not derived from their source', numel(only1)));
+            verifyEmpty(testCase, only2, sprintf( ...
+                '%d id(s) only in run 2: not derived from their source', numel(only2)));
+            verifyTrue(testCase, all(sameClass), sprintf( ...
+                '%d id(s) name a different class in the two runs', sum(~sameClass)));
+        end
+
         function testTheWholeCorpusMigratesWithNothingQuarantinedOrDangling(testCase)
             % DENOMINATOR FIRST: a pass over zero documents quarantines zero.
             verifyEqual(testCase, numel(testCase.Bodies), 12917, sprintf( ...
@@ -239,6 +283,49 @@ classdef TestMigrateLocalEtaB < matlab.unittest.TestCase
             testCase.verifyEmpty(R.mismatches, strjoin(R.mismatches, newline));
         end
 
+        function testTheStimulatorsReadTheSameWithoutTheirManipulations(testCase)
+            % Decided by Jess Haley, 2026-11-09, did-schema
+            % did_v2_standing_wiring_plan.md [stimulator manipulation
+            % dropped], [probe map rows compared as a set]: B's vhvis_spike2
+            % rows are all stimulator rows (1,242 epochfiles_ingested), so
+            % its epochs are read without a per-epoch Stimulator
+            % manipulation from the wiring relation and the element. Since
+            % DID-matlab #466 (1048e449) the migration writes none for B
+            % (every row is wired, about its element's subject, of its
+            % element's type), so old data is built on a copy: one
+            % Stimulator manipulation per wiring relation and epoch, as
+            % before #466. With them and with every one removed, every
+            % system's ingested probe maps (as sets), its reader's v2
+            % clocks and the stimulators getprobes finds, with their epoch
+            % tables, are the same, and the same as the decided shape's
+            % (ndi.unittest.migrate.stimulatorRowsWithoutManipulation).
+            R = ndi.unittest.migrate.stimulatorRowsWithoutManipulation( ...
+                fileparts(testCase.Result.destination), 'B');
+            testCase.verifyEqual(R.written, 0, ...
+                'the migration wrote a Stimulator manipulation for B (every B stimulator row is wired)');
+            testCase.verifyGreaterThan(R.added, 0, 'no old-data Stimulator manipulation was added (nothing measured)');
+            testCase.verifyGreaterThan(R.removed, 0, 'no Stimulator manipulation was removed (nothing measured)');
+            testCase.verifyGreaterThan(R.stimulators, 0, 'getprobes found no stimulator (nothing measured)');
+            testCase.verifyNotEmpty(R.checks, 'no comparison was made');
+            testCase.verifyEmpty(R.mismatches, strjoin(R.mismatches, newline));
+        end
+
+        function testObservesRetiresOnThePresentations(testCase)
+            % Decided by Jess Haley, 2026-11-17 [observes retires in the
+            % second pass] (did-schema did_v2_go_forward_class_audit.md): a
+            % stimulator's `observes` relation retires where a converted
+            % stimulus presentation names the same device and animal. B's
+            % 1242 presentations each name the stimulator as instrument and
+            % the stimulator's subject as entity (run 44018629551), so B
+            % retires some; the elements and probes reading the same subject
+            % afterwards is testTheSameObjectsBeforeAndAfterMigration's.
+            r = ndi.unittest.migrate.verifyObservesRetirement(testCase, testCase.Result, 'B');
+            testCase.verifyGreaterThan(r.presentation_manipulations, 0, ...
+                'B converted no stimulus presentation (nothing measured)');
+            testCase.verifyGreaterThan(r.observes_retired, 0, ...
+                'B retired no `observes` relation on its presentations');
+        end
+
         function testReadPhasesAreNoSlowerThanV1(testCase)
             % Jess Haley, 2026-11-06: "Speed can't be slower than v1. We
             % need to match or beat." Every session of B is read in five
@@ -252,6 +339,32 @@ classdef TestMigrateLocalEtaB < matlab.unittest.TestCase
                 fileparts(testCase.Result.destination), 'B', ...
                 'Profile', ndi.unittest.migrate.envTrue('NDI_PROFILE_READS'));
             ndi.unittest.migrate.verifyReadPhases(testCase, T);
+            % the same objects on both sides, the probe map's duplicates
+            % of existing probes included (Decided by Jess Haley,
+            % 2026-11-10 [probes from the index keep v1's duplicates])
+            for i = 1:numel(T.sessions)
+                c = T.sessions(i).counts;
+                if isempty(fieldnames(c)); continue; end
+                testCase.verifyEqual(c.v2.elements, c.v1.elements, ...
+                    sprintf('session %s: getelements count', T.sessions(i).id));
+                testCase.verifyEqual(c.v2.probes, c.v1.probes, ...
+                    sprintf('session %s: getprobes count', T.sessions(i).id));
+            end
+        end
+
+        function testArchiveSegmentLengthsAfterTheSecondPass(testCase)
+            % [archive segment lengths measured after the second pass] (Jess
+            % Haley, 2026-11-12): each v1 ingested archive's
+            % sample_analog_segment / sample_digital_segment, which DID's
+            % whole-batch round trip defers to here, rebuilt from the final
+            % v2 bodies' time chunks and compared with v1. The corpus zip
+            % carries no binary files (NDI-matlab #785), so the archives stay
+            % pass 1's opaque bodies and the report reads NOT MEASURED, by
+            % reason; the denominator and the partition are asserted, and any
+            % value measured must equal v1
+            % (ndi.unittest.migrate.verifyArchiveSegmentLengths).
+            ndi.unittest.migrate.verifyArchiveSegmentLengths(testCase, ...
+                testCase.Result, testCase.Bodies, 'B');
         end
 
         function testTheSameObjectsBeforeAndAfterMigration(testCase)
@@ -615,10 +728,59 @@ for i = 1:min(5,n)
     s = sprintf('%s\n    %s: %s', s, result.quarantine(i).class_name, ...
         result.quarantine(i).reason);
 end
+% every quarantine, by class and reason, largest first (denominator: n)
+keys = arrayfun(@(q) sprintf('%s: %s', q.class_name, q.reason), ...
+    result.quarantine, 'UniformOutput', false);
+[u, ~, ix] = unique(keys);
+c = accumarray(ix(:), 1);
+[c, order] = sort(c, 'descend');
+s = sprintf('%s\n  by class and reason (%d quarantined, %d distinct):', s, n, numel(u));
+for i = 1:min(40, numel(u))
+    s = sprintf('%s\n    %6d  %s', s, c(i), u{order(i)});
+end
 end
 
 function s = resultDiag(result)
 s = sprintf('[migrated %d, quarantined %d, edges %d] %s', ...
     result.summary.total, numel(result.quarantine), ...
     result.references.edges_examined, quarantineDiag(result));
+end
+
+function [ids, classes] = idsAndClasses(dstPath)
+%IDSANDCLASSES Every base.id in the destination (sorted) and each one's class.
+db = did2.database.sqlitedb(dstPath);
+cleanup = onCleanup(@() db.close()); %#ok<NASGU>
+allIds = db.allIds();
+ids = cell(1, numel(allIds));
+classes = cell(1, numel(allIds));
+for k = 1:numel(allIds)
+    st = db.get(allIds{k}).toStruct();
+    ids{k} = char(st.base.id);
+    classes{k} = char(st.document_class.class_name);
+end
+[ids, o] = sort(ids);
+classes = classes(o);
+end
+
+function printByClass(label, which, ids, classes)
+% the ids in WHICH counted by class, and the first few of each
+if isempty(which)
+    fprintf('  [B two runs] %s: none\n', label);
+    return;
+end
+[~, loc] = ismember(which, ids);
+c = classes(loc);
+[u, ~, g] = unique(c);
+for k = 1:numel(u)
+    hit = which(g == k);
+    fprintf('  [B two runs] %s: %d %s (e.g. %s)\n', label, numel(hit), u{k}, ...
+        strjoin(hit(1:min(3, numel(hit))), ', '));
+end
+end
+
+function rmdirQuietly(d)
+try
+    if isfolder(d); rmdir(d, 's'); end
+catch
+end
 end

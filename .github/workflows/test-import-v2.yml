@@ -80,6 +80,9 @@ on:
       - 'src/ndi/+ndi/+database/+fun/openMINDSobj2ndi_document.m'
       - 'src/ndi/+ndi/+database/+fun/openMINDSobj2V2.m'
       - 'src/ndi/+ndi/+fun/+doc/+subject/makeSpeciesStrainSex.m'
+      - 'src/ndi/+ndi/+fun/+doc/+gene/makeGeneList.m'
+      - 'src/ndi/+ndi/+fun/+doc/+gene/geneListV2.m'
+      - 'src/ndi/+ndi/+fun/+doc/+gene/makePyramid.m'
       - '.github/workflows/test-import-v2.yml'
   pull_request:
     branches: [main, V2]
@@ -142,6 +145,9 @@ on:
       - 'src/ndi/+ndi/+database/+fun/openMINDSobj2ndi_document.m'
       - 'src/ndi/+ndi/+database/+fun/openMINDSobj2V2.m'
       - 'src/ndi/+ndi/+fun/+doc/+subject/makeSpeciesStrainSex.m'
+      - 'src/ndi/+ndi/+fun/+doc/+gene/makeGeneList.m'
+      - 'src/ndi/+ndi/+fun/+doc/+gene/geneListV2.m'
+      - 'src/ndi/+ndi/+fun/+doc/+gene/makePyramid.m'
       - '.github/workflows/test-import-v2.yml'
   workflow_dispatch:
 
@@ -215,13 +221,13 @@ jobs:
           ref: ${{ env.DID_SCHEMA_SHA }}
           path: did-schema
 
-      - name: Assemble the V2 schema set
+      - name: Assemble the did_v2 schema set (did-schema main, final classes only)
         run: |
           mkdir -p "${GITHUB_WORKSPACE}/eta-schemas"
-          # Both layouts: the tiers (stable/, draft/, deprecated/ if present) and
-          # the flat schemas/did_v2/*.json of [one folder, final classes only]
-          # (Jess Haley, 2026-10-29); did_v2/ or V_eta/ ([schema set renamed
-          # did_v2]). See the script's header.
+          # did-schema main's layout, final classes only (see the script's header):
+          # no stable/ draft/ deprecated/ tiers ([retired classes leave V2] step 2;
+          # a tier folder fails the step) and no retire class from retiring/ ([one
+          # folder, final classes only]: no document is passed through under one).
           bash .github/scripts/assemble_did_schema_set.sh did-schema "${GITHUB_WORKSPACE}/eta-schemas"
           echo "DENOMINATOR: $(ls "${GITHUB_WORKSPACE}/eta-schemas" | wc -l) schema file(s) from did-schema@$(git -C did-schema rev-parse --short HEAD)"
           echo "DID_SCHEMA_PATH=${GITHUB_WORKSPACE}/eta-schemas" >> "$GITHUB_ENV"

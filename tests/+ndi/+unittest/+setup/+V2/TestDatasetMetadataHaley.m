@@ -345,6 +345,42 @@ classdef TestDatasetMetadataHaley < matlab.unittest.TestCase
                 'Creative Commons Attribution 4.0 International', 'the registry''s label');
         end
 
+        function testCopyrightYearIsADateAssertion(testCase)
+            % Jess Haley, 2026-11-07, did-schema did_v2_go_forward_class_audit.md
+            % [copyright year is a date assertion]: a dataset's copyright year
+            % is a date assertion about the dataset entity, variable
+            % schema:copyrightYear (registered "copyrightYear"), not text. The
+            % Haley spec states none, so this adds one to a copy of it.
+            spec = testCase.Spec;
+            testCase.assumeFalse(isfield(spec.dataset, 'copyright_year'), ...
+                'the Haley spec now states a copyright year; read it instead');
+            spec.dataset.copyright_year = 2025;   % a JSON number, as a spec writes it
+            r = ndi.setup.V2.datasetMetadata(spec, did.ido.unique_id());
+            docs = r.documents;
+            st = docs(cellfun(@(d) isfield(d, 'statement'), docs));
+            nodes = cellfun(@(d) d.statement.variable.node, st, 'UniformOutput', false);
+            cy = st(strcmp(nodes, 'schema:copyrightYear'));
+            testCase.verifyNumElements(cy, 1, 'one copyright year statement');
+            testCase.verifyEqual(cy{1}.statement.variable.name, 'copyrightYear', ...
+                'the registry''s name for schema:copyrightYear');
+            testCase.verifyTrue(isfield(cy{1}, 'date') && ~isfield(cy{1}, 'text'), ...
+                'the copyright year is a date assertion, not text');
+            dv = cy{1}.date.value;
+            if iscell(dv), dv = [dv{:}]; end
+            testCase.verifyNumElements(dv, 1);
+            testCase.verifyEqual(char(dv.instant), '2025');
+            testCase.verifyEqual(char(dv.precision), 'year');
+            % it is about the dataset entity
+            ds = docs(cellfun(@(d) isfield(d, 'entity') && ...
+                ndi.v2.vocabIs('entity_type', d.entity.type, 'dataset'), docs));
+            testCase.verifyNumElements(ds, 1);
+            testCase.verifyEqual(ndi.v2.edgeIds(cy{1}, 'entity_id'), {ds{1}.base.id});
+            % no text assertion named "copyright year" is left beside it
+            texts = st(cellfun(@(d) isfield(d, 'text'), st));
+            names = cellfun(@(d) lower(d.statement.variable.name), texts, 'UniformOutput', false);
+            testCase.verifyFalse(any(ismember(names, {'copyright year', 'copyrightyear'})));
+        end
+
         function testUnrepresentedContentIsReportedNotDropped(testCase)
             u = testCase.Result.unrepresented;
             % An instrument's `name` and a formulation's `type` are built;

@@ -184,6 +184,174 @@ classdef TestMigrateLocalEta < matlab.unittest.TestCase
 
     methods (Test)
 
+        function testTwoRunsOnTheSameInputMintTheSameIds(testCase)
+            % [migration reliability practices] (b) (Jess Haley, 2026-10-26,
+            % did-schema did_v2_go_forward_class_audit.md): "a document the
+            % migration mints gets an id derived from its v1 source id and its
+            % role, so two runs on the same input are identical and can be
+            % diffed". ONE v1 session, migrated twice through ndi.migrate.local
+            % into two session folders, must give the same set of ids.
+            %
+            % The fixture drives the second-pass steps that mint documents:
+            % the bath assembler (resolveDeferred: a manipulation, its
+            % formulation and chemical, its time anchor, a site observation),
+            % the site promotion (pathSPromotion: a tissue part, its
+            % assertion and part_of edge), and the stimulus pass
+            % (resolveStimulusPresentations: one method per distinct grating,
+            % the manipulation, and -- two animals responded -- the session
+            % cohort and its member_of edges). The denominators below check
+            % that each of them minted something, so equal sets are not
+            % equal because nothing was minted.
+            %
+            % Nothing is excluded: every id, preserved or minted, is compared.
+            %
+            % THE READ ORDER. A third run reads the same documents written in
+            % the REVERSE order (NDI-matlab #1235: database order is not data)
+            % and must give the same ids, and the same VALUES where a value is
+            % chosen among several documents: the session cohort is made by
+            % TWO distributive presentations with different datestamps, and
+            % its creation timestamp (on the cohort and on its member_of
+            % edges) is the earliest of them, ties by id
+            % (ndi.migrate.internal.earliestByContent), whichever is read
+            % first. The presentation written first carries the LATER stamp,
+            % so a pass that took the first one read fails the named check.
+            subjA   = 'aabb1122ccdd3344_5500000000000060';
+            subjB   = 'aabb1122ccdd3344_5500000000000061';
+            recA    = 'aabb1122ccdd3344_5500000000000062';
+            recB    = 'aabb1122ccdd3344_5500000000000063';
+            stimEl  = 'aabb1122ccdd3344_5500000000000064';
+            presId  = 'aabb1122ccdd3344_5500000000000065';
+            % a second organism (makeSubject names every subject 'animalA';
+            % the local identifier is what tells two organisms apart)
+            subjectB = makeSubject(subjB);
+            subjectB.subject.local_identifier = 'animalB';
+            % the second presentation, on its own epoch, which both animals
+            % also responded to; written after the first, stamped before it
+            presId2 = 'aabb1122ccdd3344_5500000000000068';
+            epoch2 = makeElementEpoch(stimEl, 't00002', 'dev_local_time');
+            epoch2.base.id = 'aabb1122ccdd3344_5500000000000069';
+            pres1 = makeGratingPresentation(presId, stimEl);
+            pres2 = makeGratingPresentation(presId2, stimEl);
+            pres2.epochid.epochid = 't00002';
+            lateStamp  = '2024-06-03T10:00:00.000Z';
+            earlyStamp = '2024-05-31T08:00:00.000Z';
+            pres1.base.datestamp = lateStamp;
+            pres2.base.datestamp = earlyStamp;
+            bodies = { ...
+                jsonencode(makeSessionDoc(session())), ...
+                jsonencode(makeSubject(subjA)), ...
+                jsonencode(subjectB), ...
+                jsonencode(makeRecordingElement(recA, subjA)), ...
+                jsonencode(makeRecordingElement(recB, subjB)), ...
+                jsonencode(makeStimulatorElement(stimEl, subjA)), ...
+                jsonencode(makeElementEpoch(stimEl, 't00001', 'dev_local_time')), ...
+                jsonencode(makeStimulusBath(stimEl, 't00001')), ...
+                jsonencode(makeStimulusResponse('aabb1122ccdd3344_5500000000000066', ...
+                    presId, recA)), ...
+                jsonencode(makeStimulusResponse('aabb1122ccdd3344_5500000000000067', ...
+                    presId, recB)), ...
+                jsonencode(pres1), ...
+                jsonencode(epoch2), ...
+                jsonencode(makeStimulusResponse('aabb1122ccdd3344_550000000000006a', ...
+                    presId2, recA)), ...
+                jsonencode(makeStimulusResponse('aabb1122ccdd3344_550000000000006b', ...
+                    presId2, recB)), ...
+                jsonencode(pres2)};
+
+            first = runMigrate(testCase, bodies);
+            verifyEqual(testCase, did2.convert.mintId('-depth'), 0, ...
+                'the first run left a did2.convert.mintId context open');
+            secondRoot = tempname();
+            mkdir(fullfile(secondRoot, '.ndi'));
+            cleanup = onCleanup(@() rmdirQuietly(secondRoot)); %#ok<NASGU>
+            buildV1Sqlite(fullfile(secondRoot, '.ndi', 'did-sqlite.sqlite'), bodies);
+            second = ndi.migrate.local(secondRoot, ...
+                'Validate', true, 'TargetVersion', 'did_v2', 'Backup', false);
+            verifyEqual(testCase, did2.convert.mintId('-depth'), 0, ...
+                'the second run left a did2.convert.mintId context open');
+            thirdRoot = tempname();
+            mkdir(fullfile(thirdRoot, '.ndi'));
+            cleanup3 = onCleanup(@() rmdirQuietly(thirdRoot)); %#ok<NASGU>
+            buildV1Sqlite(fullfile(thirdRoot, '.ndi', 'did-sqlite.sqlite'), ...
+                bodies(end:-1:1));
+            third = ndi.migrate.local(thirdRoot, ...
+                'Validate', true, 'TargetVersion', 'did_v2', 'Backup', false);
+            verifyEqual(testCase, did2.convert.mintId('-depth'), 0, ...
+                'the reversed run left a did2.convert.mintId context open');
+
+            [ids1, cls1] = idsAndClasses(first.destination);
+            [ids2, cls2] = idsAndClasses(second.destination);
+            [ids3, cls3] = idsAndClasses(third.destination);
+            fprintf(['  [two runs] run 1: %d document(s); run 2: %d document(s); ' ...
+                'reversed: %d document(s)\n'], numel(ids1), numel(ids2), numel(ids3));
+
+            % --- DENOMINATORS FIRST: what was compared, and that it was minted
+            verifyGreaterThan(testCase, numel(ids1), numel(bodies), ...
+                ['the migration minted no document beyond its inputs, so equal ' ...
+                 'id sets would prove nothing. ' resultDiag(first)]);
+            for want = {'method', 'formulation', 'chemical', 'directed_relation'}
+                verifyTrue(testCase, any(strcmp(cls1, want{1})), sprintf( ...
+                    ['run 1 holds no `%s`: the step that mints it did not run on ' ...
+                     'this fixture. %s'], want{1}, resultDiag(first)));
+            end
+            verifyNotEmpty(testCase, fieldOrEmpty(first.secondPass, 'stimulusSequence'), ...
+                resultDiag(first));
+
+            % --- THE CHECK: the same ids, and each the same class ----------
+            only1 = setdiff(ids1, ids2);
+            only2 = setdiff(ids2, ids1);
+            verifyEmpty(testCase, only1, sprintf( ...
+                '%d id(s) only in run 1 (random, not derived): %s', ...
+                numel(only1), classList(only1, ids1, cls1)));
+            verifyEmpty(testCase, only2, sprintf( ...
+                '%d id(s) only in run 2 (random, not derived): %s', ...
+                numel(only2), classList(only2, ids2, cls2)));
+            [common, i1, i2] = intersect(ids1, ids2);
+            sameClass = strcmp(cls1(i1), cls2(i2));
+            verifyTrue(testCase, all(sameClass), sprintf( ...
+                'id(s) naming a different class in the two runs: %s', ...
+                strjoin(common(~sameClass), ', ')));
+
+            % --- THE READ ORDER: the reversed run, ids and values -----------
+            only1 = setdiff(ids1, ids3);
+            only3 = setdiff(ids3, ids1);
+            verifyEmpty(testCase, only1, sprintf( ...
+                '%d id(s) only in the forward run (read order chose them): %s', ...
+                numel(only1), classList(only1, ids1, cls1)));
+            verifyEmpty(testCase, only3, sprintf( ...
+                '%d id(s) only in the reversed run (read order chose them): %s', ...
+                numel(only3), classList(only3, ids3, cls3)));
+            [common, i1, i3] = intersect(ids1, ids3);
+            sameClass = strcmp(cls1(i1), cls3(i3));
+            verifyTrue(testCase, all(sameClass), sprintf( ...
+                'id(s) naming a different class in the two read orders: %s', ...
+                strjoin(common(~sameClass), ', ')));
+            % denominator: both presentations went into ONE cohort
+            verifyEqual(testCase, first.secondPass.stimulusSequence.cohorts_minted, 1, ...
+                resultDiag(first));
+            verifyEqual(testCase, ...
+                first.secondPass.stimulusSequence.distributive_manipulations, 2, ...
+                ['both presentations must be distributive, or the cohort has one ' ...
+                 'contributor and its value is not chosen. ' resultDiag(first)]);
+            rows1 = cohortRows(first.destination);
+            rows2 = cohortRows(second.destination);
+            rows3 = cohortRows(third.destination);
+            fprintf('  [read order] cohort documents: %d (forward), %d (reversed)\n', ...
+                numel(rows1), numel(rows3));
+            verifyGreaterThanOrEqual(testCase, numel(rows1), 3, ...
+                'the cohort and its two member_of edges were not found');
+            verifyEqual(testCase, rows2, rows1, ...
+                'two runs on the same input gave the cohort different timestamps');
+            verifyEqual(testCase, rows3, rows1, ...
+                ['the reversed input gave the cohort a different timestamp: it was ' ...
+                 'taken from the presentation read first']);
+            for k = 1:numel(rows1)
+                verifyTrue(testCase, endsWith(rows1{k}, [' ' earlyStamp]), sprintf( ...
+                    ['%s: the cohort''s timestamp is not the earliest of its ' ...
+                     'presentations (%s)'], rows1{k}, earlyStamp));
+            end
+        end
+
         function testStimulusBathResolvesToDose(testCase)
             % did-schema #88 (VH-Lab/did-schema#88): the bath is a `manipulation`
             % whose value kind is `formulation`, about the specimen by
@@ -668,8 +836,8 @@ classdef TestMigrateLocalEta < matlab.unittest.TestCase
             names = cellfun(@(c) char(c.variable.name), covs, 'UniformOutput', false);
             on = covs{strcmp(names, 'onset time')};
             off = covs{strcmp(names, 'offset time')};
-            verifyEqual(testCase, on.quantity.value(:)', [0 5]);
-            verifyEqual(testCase, off.quantity.value(:)', [4 9]);
+            verifyEqual(testCase, on.numeric(:)', [0 5]);
+            verifyEqual(testCase, off.numeric(:)', [4 9]);
             tr = depValue(manip, 'time_reference_id');
             verifyNotEmpty(testCase, tr, ...
                 ['the manipulation carries no time reference: the pass mints ' ...
@@ -887,9 +1055,9 @@ classdef TestMigrateLocalEta < matlab.unittest.TestCase
             names = cellfun(@(c) char(c.variable.name), covs, 'UniformOutput', false);
             on = covs{strcmp(names, 'onset time')};
             off = covs{strcmp(names, 'offset time')};
-            verifyEqual(testCase, on.quantity.value(:)', [1 7]);
+            verifyEqual(testCase, on.numeric(:)', [1 7]);
             verifyEqual(testCase, char(on.variable.node), 'EMPTY:0000368');
-            verifyEqual(testCase, off.quantity.value(:)', [3 9]);
+            verifyEqual(testCase, off.numeric(:)', [3 9]);
             verifyEqual(testCase, char(off.variable.node), 'EMPTY:0000369');
             dims = ndi.v2.entries(manip.data.dimensions);
             verifyEqual(testCase, char(dims{1}.term.node), 'OBI:0000807');
@@ -1010,7 +1178,7 @@ body.base = struct('id', 'aabb1122ccdd3344_5500000000000004', ...
 body.epochid = struct('epochid', epochId);
 body.stimulus_bath = struct( ...
     'location', struct('ontologyNode', 'uberon:0001017', 'name', 'CNS'), ...
-    'mixture_table', 'chebi:6904,muscimol,5,,mg/ml');
+    'mixture_table', 'chebi:6904,muscimol,5,,mM');
 end
 
 % ===================== v1 body builders (presentation) ====================
@@ -1346,5 +1514,69 @@ function v = charField(s, name)
 v = '';
 if isstruct(s) && isfield(s, name) && (ischar(s.(name)) || isstring(s.(name)))
     v = char(s.(name));
+end
+end
+
+function [ids, classes] = idsAndClasses(dstPath)
+%IDSANDCLASSES Every base.id in the destination (sorted) and each one's class.
+db = did2.database.sqlitedb(dstPath);
+cleanup = onCleanup(@() db.close()); %#ok<NASGU>
+allIds = db.allIds();
+ids = cell(1, numel(allIds));
+classes = cell(1, numel(allIds));
+for k = 1:numel(allIds)
+    st = db.get(allIds{k}).toStruct();
+    ids{k} = char(st.base.id);
+    classes{k} = char(st.document_class.class_name);
+end
+[ids, o] = sort(ids);
+classes = classes(o);
+end
+
+function rows = cohortRows(dstPath)
+%COHORTROWS '<id> <creation_timestamp>' for the session cohort entity and each
+%   member_of edge into it, sorted: the documents whose timestamp the cohort's
+%   contributors choose.
+rows = {};
+cohortIds = {};
+ents = findAllByClass(dstPath, 'entity');
+for k = 1:numel(ents)
+    e = ents{k};
+    if isfield(e, 'entity') && isfield(e.entity, 'local_identifier') ...
+            && startsWith(char(e.entity.local_identifier), 'session cohort ')
+        cohortIds{end+1} = char(e.base.id); %#ok<AGROW>
+        rows{end+1} = [char(e.base.id) ' ' char(e.base.creation_timestamp)]; %#ok<AGROW>
+    end
+end
+rels = findAllByClass(dstPath, 'directed_relation');
+for k = 1:numel(rels)
+    r = rels{k};
+    if any(strcmp(char(depValue(r, 'parent_id')), cohortIds))
+        rows{end+1} = [char(r.base.id) ' ' char(r.base.creation_timestamp)]; %#ok<AGROW>
+    end
+end
+rows = sort(rows);
+end
+
+function s = classList(which, ids, classes)
+% "<id> (<class>), ..." for the ids in WHICH
+parts = cell(1, numel(which));
+for k = 1:numel(which)
+    parts{k} = sprintf('%s (%s)', which{k}, classes{find(strcmp(ids, which{k}), 1)});
+end
+s = strjoin(parts, ', ');
+end
+
+function v = fieldOrEmpty(s, name)
+v = [];
+if isstruct(s) && isfield(s, name)
+    v = s.(name);
+end
+end
+
+function rmdirQuietly(d)
+try
+    if isfolder(d); rmdir(d, 's'); end
+catch
 end
 end

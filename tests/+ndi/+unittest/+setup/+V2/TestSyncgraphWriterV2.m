@@ -151,11 +151,14 @@ classdef TestSyncgraphWriterV2 < matlab.unittest.TestCase
                 c = testCase.onlyDoc(stored, rules{k}.id(), 'clock_alignment_configuration');
                 testCase.verifyEqual(testCase.softwareName(stored, c), class(rules{k}));
             end
+            % the edge names the loaded schema declares ([sync configuration
+            % edges are input and output], Jess Haley 2026-11-10)
+            names = ndi.vintage.syncConfigurationNames();
             ff = testCase.onlyDoc(stored, rules{2}.id(), 'clock_alignment_configuration');
-            testCase.verifyEqual(ndi.v2.edgeIds(ff, 'from_acquisition_system_id'), {sys1.id()});
-            testCase.verifyEqual(ndi.v2.edgeIds(ff, 'to_acquisition_system_id'), {sys2.id()});
+            testCase.verifyEqual(ndi.v2.edgeIds(ff, names.inputEdge), {sys1.id()});
+            testCase.verifyEqual(ndi.v2.edgeIds(ff, names.outputEdge), {sys2.id()});
             fm = testCase.onlyDoc(stored, rules{1}.id(), 'clock_alignment_configuration');
-            testCase.verifyEmpty(ndi.v2.edgeIds(fm, 'from_acquisition_system_id'), ...
+            testCase.verifyEmpty(ndi.v2.edgeIds(fm, names.inputEdge), ...
                 'a filematch rule names no daq system');
             testCase.verifyStoredV2Validate(stored);
             testCase.verifyNoOrphanSoftware(stored);

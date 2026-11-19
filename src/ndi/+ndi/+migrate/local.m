@@ -282,7 +282,8 @@ function result = local(path, options)
     % gene_list_mapping's mapping.tsv, Jess Haley 2026-11-01 [key covariate
     % index], [mapping rows counted, indices 0-based]) reads it from this
     % session's file store, where v1 ingested it (did2.convert.v1Files). Pass
-    % 1 only: no later pass reads a v1 file.
+    % 1, and did2.convert.epochMint's re-run of the spikewaves pass 1
+    % deferred (it is handed the same reader below).
     passOneArgs = [v2args, {'V1FileReader', ndi.migrate.internal.v1FileReader(ndiDir)}];
     % Migrated recordings link their epoch files as data bodies (Jess Haley,
     % 2026-10-21, did-schema V_eta_recording_observation_plan.md): one
@@ -392,6 +393,7 @@ function result = local(path, options)
     recordingAttributionReport = [];
     sessionAnchorReport = [];
     epochProbemapReport = [];
+    observesRetirementReport = [];   % [observes retires in the second pass]
     responseParametersReport = [];
     genericFileFoldReport = [];
     validIntervalReport = [];
@@ -973,11 +975,15 @@ function result = local(path, options)
         end
         tStep = migrateStepMark('resolveSubjectStrainAssembly', tStart, tStep, convertResult);
         try
+            % the spikewaves pass 1 deferred are re-run here, and they read
+            % their two files (Jess Haley, 2026-11-10 [spike waveforms built
+            % now], D3/D4), so the pass gets this session's v1 file reader
             [convertResult, epochMintReport] = did2.convert.epochMint( ...
                 convertResult, ...
                 'Validate',      options.Validate, ...
                 'SchemaCache',   options.SchemaCache, ...
-                'TargetVersion', options.TargetVersion);
+                'TargetVersion', options.TargetVersion, ...
+                'V1FileReader',  ndi.migrate.internal.v1FileReader(ndiDir));
         catch ME
             stepErrors(end+1) = struct('step', 'epochMintFailed', 'message', ME.message); %#ok<AGROW>
             warning('NDI:migrate:epochMintFailed', ...
@@ -1104,6 +1110,39 @@ function result = local(path, options)
                  'which is the state without this pass.'], ME.message);
         end
         tStep = migrateStepMark('resolveEpochProbemap', tStart, tStep, convertResult);
+        % [observes retires in the second pass] (Decided by Jess Haley,
+        % 2026-11-17, did-schema did_v2_go_forward_class_audit.md), building
+        % [stimulator link lives in the presentations]: now that the stimulus
+        % presentations are manipulations (resolveStimulusPresentations), a
+        % device's loose `observes` relation retires where a presentation
+        % names that device as instrument and the same animal as entity.
+        % DID's first pass keeps it. ORDER: after every step that reads
+        % `observes` (resolveRecordingAttribution; did2.convert.resolveEpochProbemap
+        % retires it on an observation and reads it for a stimulator row).
+        %   WHAT THIS STEP READS AND WRITES: [migration reliability practices] (c),
+        %   Jess Haley, 2026-10-26; DID-matlab tools/batch_pass_order.py derives the
+        %   second pass's order from these and checks it.
+        %   The `observes` relations it selects are a stimulator's (the
+        %   instrument of a presentation): did2.convert.resolveEpochProbemap
+        %   removes only those an observation states again (a recording
+        %   probe's), so the two qualifiers name disjoint documents. The
+        %   other `observes` relations are read only to be counted.
+        %   BATCH-PASS-READS: directed_relation(stimulator observes),
+        %       manipulation(stimulus presentation)
+        %   BATCH-PASS-ADDS: NONE -- it only removes
+        %   BATCH-PASS-CHANGES: NONE -- it only removes
+        %   BATCH-PASS-REMOVES: directed_relation(stimulator observes)
+        try
+            [convertResult, observesRetirementReport] = ...
+                resolveObservesRetirement(convertResult, options);
+        catch ME
+            stepErrors(end+1) = struct('step', 'observesRetirementFailed', 'message', ME.message); %#ok<AGROW>
+            warning('NDI:migrate:observesRetirementFailed', ...
+                ['Second-pass `observes` retirement failed (%s); leaving every ' ...
+                 '`observes` relation as pass 1 and resolveEpochProbemap left it.'], ...
+                ME.message);
+        end
+        tStep = migrateStepMark('resolveObservesRetirement', tStart, tStep, convertResult);
         % UNCONDITIONALLY, whether or not the pass above ran: the transient
         % navigator epochs are not v1 documents (nor ingestion manifests) and
         % must never be written.
@@ -1183,8 +1222,11 @@ function result = local(path, options)
         %   WHAT THIS STEP READS AND WRITES: [migration reliability practices] (c),
         %   Jess Haley, 2026-10-26; DID-matlab tools/batch_pass_order.py derives the
         %   second pass's order from these and checks it.
-        %   BATCH-PASS-READS: opaque_body(ingested archive)
-        %   BATCH-PASS-ADDS: sampled_body(ingested archive)
+        %   BATCH-PASS-READS: opaque_body(ingested archive),
+        %       observation(recording per epoch), directed_relation(wiring)
+        %   BATCH-PASS-ADDS: sampled_body(ingested archive),
+        %       observation(unpacked event channel), time(unpacked event times),
+        %       sampled_body(unpacked event channel)
         %   BATCH-PASS-CHANGES: NONE -- each described body replaces its
         %       opaque_body
         %   BATCH-PASS-REMOVES: opaque_body(ingested archive)
@@ -1203,10 +1245,13 @@ function result = local(path, options)
             fprintf(['[migrate step]   ingested archives: %d document(s) inspected; ' ...
                 '%d archive(s) seen, %d converted (%d of %d channel-group bodies ' ...
                 'now sampled bodies; %d evenly spaced time bodies and %d ' ...
-                'channel_list.bin removed, %d channel_list.bin kept); left: bytes ' ...
-                'not here %d, time not evenly spaced %d, v1 archive not found %d, ' ...
+                'channel_list.bin removed, %d channel_list.bin kept); time not ' ...
+                'evenly spaced %d (%d now a keyed time value, %d of them rewritten from ' ...
+                'the epoch''s start); left: bytes not here %d, v1 archive not found %d, ' ...
                 'channel list missing %d / unreadable %d, unconvertible %d, ' ...
-                'reverted %d; event bodies left as they are %d\n'], ...
+                'reverted %d; event bodies left as they are %d; scale with the ' ...
+                'reader''s unit %d, without (no unit defined by the reader) %d, of %d ' ...
+                'channel-group bodies built; %d scale gap(s) listed in the report\n'], ...
                 ingestedArchiveReport.documents_inspected, ...
                 ingestedArchiveReport.archives_seen, ...
                 ingestedArchiveReport.archives_converted, ...
@@ -1215,14 +1260,59 @@ function result = local(path, options)
                 ingestedArchiveReport.time_bodies_removed, ...
                 ingestedArchiveReport.channel_list_removed, ...
                 ingestedArchiveReport.channel_list_kept, ...
-                ingestedArchiveReport.bytes_not_here, ...
                 ingestedArchiveReport.time_not_evenly_spaced, ...
+                ingestedArchiveReport.uneven_time_converted, ...
+                ingestedArchiveReport.uneven_time_rebased, ...
+                ingestedArchiveReport.bytes_not_here, ...
                 ingestedArchiveReport.v1_archive_not_found, ...
                 ingestedArchiveReport.channel_list_missing, ...
                 ingestedArchiveReport.channel_list_unreadable, ...
                 ingestedArchiveReport.unconvertible, ...
                 ingestedArchiveReport.reverted, ...
-                ingestedArchiveReport.event_bodies_left);
+                ingestedArchiveReport.event_bodies_left, ...
+                ingestedArchiveReport.scale_with_unit, ...
+                ingestedArchiveReport.scale_without_unit, ...
+                ingestedArchiveReport.scale_with_unit + ingestedArchiveReport.scale_without_unit, ...
+                ingestedArchiveReport.scale_gaps_listed);
+            % the 2026-11-17 decisions (Jess Haley): each count with what it
+            % is out of
+            r = ingestedArchiveReport;
+            fprintf(['[migrate step]   ingested archives (2026-11-17): time-channel covariate ' ...
+                'on %d of %d channel-group bodies built; digital scale unitless %d; members %d ' ...
+                'seen (%d renamed, %d already body_data_<k>, %d not renamed); channel_list.bin ' ...
+                'rebuilt exactly and removed %d of %d converted archive(s) (first kept: %s); ' ...
+                'events files: %d seen, %d unpacked (%d of %d channel(s); %d body removed), ' ...
+                '%d left (text channel %d, marker with several numbers %d, unwired %d, empty ' ...
+                'channel %d, not exact %d, other %d; first: %s)\n'], ...
+                r.time_channel_covariates, r.scale_with_unit + r.scale_without_unit + ...
+                r.scale_unitless_digital, r.scale_unitless_digital, r.members_seen, ...
+                r.members_renamed, r.members_schema_named, r.members_not_renamed, ...
+                r.channel_list_rebuilt_exactly, r.archives_converted, ...
+                r.first_channel_list_kept_reason, r.event_archives_seen, ...
+                r.event_archives_unpacked, r.event_channels_unpacked, r.event_channels_seen, ...
+                r.event_bodies_removed, r.event_archives_kept, r.event_kept_text_channel, ...
+                r.event_kept_marker_columns, r.event_kept_unwired, r.event_kept_empty_channel, ...
+                r.event_kept_not_exact, r.event_kept_other, r.first_event_kept_reason);
+            % [channel name is an identifier] (Jess Haley, 2026-11-17)
+            fprintf(['[migrate step]   ingested archives (channel names): %d channel(s) ' ...
+                'of converted groups seen, %d with a v1 name that is not <prefix><number>; ' ...
+                'name covariate (NCIT:C25364) on %d group(s), %d name(s) written\n'], ...
+                r.channel_names_seen, r.channel_names_nonstandard, ...
+                r.channel_name_covariates, r.channel_names_written);
+            % the 2026-11-19 decisions (Jess Haley): [uneven time groups and
+            % mismatches], [time channel row is notation], [text channel
+            % entries are a JSON array]; each count with what it is out of
+            fprintf(['[migrate step]   ingested archives (2026-11-19): of %d archive(s) ' ...
+                'seen, %d with time not evenly spaced: %d converted (%d keyed time value(s)), ' ...
+                'kept as v1 for a time channel whose sample count differs from its data %d, ' ...
+                'for a channel group no time channel pairs with %d (first: %s); time rows: %d ' ...
+                'in the v1 lists of %d converted archive(s), %d rebuilt exactly, %d list(s) ' ...
+                'kept for a time row; text channels: %d seen, %d unpacked\n'], ...
+                r.archives_seen, r.time_not_evenly_spaced, r.uneven_time_converted, ...
+                r.uneven_time_values, r.uneven_time_mismatch_kept, ...
+                r.uneven_time_unpaired_kept, r.first_uneven_time_kept_reason, ...
+                r.time_rows_seen, r.archives_converted, r.time_rows_rebuilt, ...
+                r.channel_list_kept_time_row, r.text_channels_seen, r.text_channels_unpacked);
         catch ME
             stepErrors(end+1) = struct('step', 'ingestedArchiveBodiesFailed', 'message', ME.message); %#ok<AGROW>
             warning('NDI:migrate:ingestedArchiveBodiesFailed', ...
@@ -1497,6 +1587,46 @@ function result = local(path, options)
     end
     tStep = migrateStepMark('settleIngestedFiles', tStart, tStep, convertResult);
 
+    % --- the ingested archives' segment lengths, after the second pass -----
+    % Decided by Jess Haley, 2026-11-12 [archive segment lengths measured after
+    % the second pass] (did-schema did_v2_go_forward_class_audit.md): "Lossless
+    % for these two fields is measured after NDI's second pass". DID-matlab's
+    % whole-batch round trip defers each v1 archive's sample_analog_segment and
+    % sample_digital_segment to here; this rebuilds them from the final v2
+    % bodies' time chunks and compares with the v1 values. Report only: it
+    % changes nothing. An archive whose bodies were not converted (a
+    % document-only corpus has no bytes) is NOT MEASURED, counted by reason.
+    segmentLengthReport = [];   % [] = not measured (the step did not run)
+    if ~alreadyMigrated && iscell(convertResult.migrated)
+        try
+            segmentLengthReport = ndi.migrate.internal.archiveSegmentLengths( ...
+                convertResult.migrated, bodies, ndiDir);
+            r = segmentLengthReport;
+            fprintf(['[migrate step]   ingested archive segment lengths (after the second ' ...
+                'pass): %d v1 archive(s) inspected, %d v2 body(ies) read; %s: %d archive(s) ' ...
+                'measured, %d not measured (bytes absent %d, not converted %d, no v2 ' ...
+                'body %d); sample_analog_segment %d compared of %d stated (%d equal, %d ' ...
+                'differ, %d no v2 home); sample_digital_segment %d compared of %d stated ' ...
+                '(%d equal, %d differ, %d no v2 home, %d the no-digital default)\n'], ...
+                r.archives_inspected, r.bodies_inspected, r.state, r.archives_measured, ...
+                r.archives_not_measured, r.not_measured_bytes_absent, ...
+                r.not_measured_not_converted, r.not_measured_no_v2_body, ...
+                r.analog.compared, r.analog.v1_stated, r.analog.equal, r.analog.differ, ...
+                r.analog.no_v2_home, r.digital.compared, r.digital.v1_stated, ...
+                r.digital.equal, r.digital.differ, r.digital.no_v2_home, ...
+                r.digital.no_digital_default);
+            for i = 1:numel(r.differences)
+                fprintf('[migrate step]     segment length differs: %s %s: %s\n', ...
+                    r.differences(i).archive_id, r.differences(i).field, r.differences(i).why);
+            end
+        catch ME
+            stepErrors(end+1) = struct('step', 'archiveSegmentLengthsFailed', 'message', ME.message); %#ok<AGROW>
+            warning('NDI:migrate:archiveSegmentLengthsFailed', ...
+                'Comparing the ingested archives'' segment lengths failed (%s); not measured.', ...
+                ME.message);
+        end
+    end
+
     % --- the migration record: one per run, written by NDI ----------------
     % [migration record writer] (Jess Haley, 2026-11-01): "by NDI-matlab for an
     % NDI migration, from the reports of all its DID-matlab calls". One
@@ -1658,6 +1788,7 @@ function result = local(path, options)
         'recordingAttribution', recordingAttributionReport, ...
         'sessionAnchorFold',   sessionAnchorReport, ...
         'epochProbemapFold',   epochProbemapReport, ...
+        'observesRetirement',  observesRetirementReport, ...
         'navigatorEpochFiles', navigatorEpochReport, ...
         'responseParametersFold', responseParametersReport, ...
         'genericFileFold',     genericFileFoldReport, ...
@@ -1670,6 +1801,9 @@ function result = local(path, options)
         'regionPartsLocated',  regionLocatedReport, ...
         'epochSeriesBodies',   epochSeriesBodiesReport, ...
         'ingestedArchiveBodies', ingestedArchiveReport);
+    % [archive segment lengths measured after the second pass] (Jess Haley,
+    % 2026-11-12); [] when the comparison did not run
+    result.secondPass.archiveSegmentLengths = segmentLengthReport;
 
     if options.Verbose
         printSummary(result);
@@ -1756,7 +1890,7 @@ function [convertResult, bathAnchors, report] = resolveDeferred(convertResult, r
 %   hand via RESOLVER -- we re-assemble each such document, then fold the
 %   assembled bodies back through v1_to_v2 at the same TargetVersion. Because
 %   the assembled bodies are tagged schema_version == TargetVersion, v1_to_v2
-%   short-circuits them (isAlreadyTarget) to ensureClassBlocks + validate; it
+%   short-circuits them (isAlreadyTarget) to validate; it
 %   does not re-migrate. Successfully assembled+validated docs move from
 %   quarantine into migrated; anything that cannot be assembled or fails
 %   validation stays quarantined with a reason.
@@ -1775,7 +1909,11 @@ function [convertResult, bathAnchors, report] = resolveDeferred(convertResult, r
 %   ([canonical absent only as needs info]); the Dabrowska dataset map states
 %   their meaning. The rule [bath ph and osmolarity are formulation fields] is
 %   unchanged for a row NAMED osm / osmolarity in a unit the stage reads
-%   (stimulusBathToBath). REPORT, denominators first: deferred_seen (the
+%   (stimulusBathToBath). Since Jess Haley, 2026-11-12 [bath concentration
+%   prefixes convert to molar] an ingredient row in a unit that is not molar
+%   with a known SI prefix (mg/ml, a word) is a spelling that cannot be parsed
+%   and carries the bath the same way (bathUnreadUnitRows, as DID-matlab
+%   resolveDeferredBaths does, PR #456). REPORT, denominators first: deferred_seen (the
 %   deferrals this step read), baths_carried_unread_unit, and carry_rows
 %   {id, row, dependency} (secondPassCarryRows reads them).
     bathAnchors = [];
@@ -1810,8 +1948,12 @@ function [convertResult, bathAnchors, report] = resolveDeferred(convertResult, r
                     continue;
                 end
             end
-            [bodies, anchorInfo] = assembleDeferred(q(k).class_name, v1Body, ...
-                resolver, options.TargetVersion);
+            % the documents assembled for this deferral take ids derived from
+            % it ([migration reliability practices] (b), Jess Haley,
+            % 2026-10-26; ndi.migrate.internal.withMintSource)
+            [bodies, anchorInfo] = ndi.migrate.internal.withMintSource( ...
+                'resolveDeferred', v1Body, @() assembleDeferred(q(k).class_name, ...
+                v1Body, resolver, options.TargetVersion));
             assembled = [assembled, bodies]; %#ok<AGROW>
             if ~isempty(anchorInfo)
                 if isempty(bathAnchors)
@@ -1826,7 +1968,8 @@ function [convertResult, bathAnchors, report] = resolveDeferred(convertResult, r
         end
     end
     fprintf(['[migrate step]   deferred baths carried as v1, a row in osm / ' ...
-        'saturation (carry-155): %d of %d deferral(s) read\n'], ...
+        'saturation or a concentration unit not read as molar (carry-155): ' ...
+        '%d of %d deferral(s) read\n'], ...
         report.baths_carried_unread_unit, report.deferred_seen);
     if isempty(assembled)
         convertResult.quarantine = q(keep);
@@ -1954,7 +2097,7 @@ function [convertResult, report] = resolvePathS(convertResult, options, mode)
     end
     % fold the minted part entity / kind assertion / part_of bodies through
     % v1_to_v2: they are tagged schema_version 'did_v2', so the converter
-    % short-circuits them (isAlreadyTarget) to ensureClassBlocks + validate
+    % short-circuits them (isAlreadyTarget) to validate
     % rather than re-migrating -- the same footing the deferred-resolution pass
     % uses.
     sub = struct('migrated', {{}}, 'quarantine', struct([]));
@@ -2141,7 +2284,7 @@ function [convertResult, report] = resolveEnsembleMembership(convertResult, ...
     end
     convertResult.migrated = keptDocs;
     % The minted relations are tagged schema_version 'did_v2', so v1_to_v2
-    % short-circuits them (isAlreadyTarget) to ensureClassBlocks + validate --
+    % short-circuits them (isAlreadyTarget) to validate --
     % the same footing the deferred-resolution and Path-S passes use.
     sub = did2.convert.v1_to_v2(minted, ...
         'Validate', options.Validate, ...
@@ -2350,6 +2493,53 @@ function [convertResult, report] = resolveRecordingAttribution(convertResult, op
     report.changed = true;
 end
 
+function [convertResult, report] = resolveObservesRetirement(convertResult, options)
+%RESOLVEOBSERVESRETIREMENT V_eta second pass: retire a device's loose `observes`
+%   relation where a converted stimulus presentation names the same device as
+%   instrument and the same animal as entity.
+%
+%   Decided by Jess Haley, 2026-11-17 [observes retires in the second pass]
+%   (did-schema did_v2_go_forward_class_audit.md), building [stimulator link
+%   lives in the presentations]. ndi.migrate.internal.observesRetirement
+%   decides (pure struct logic); this removes the relations it names and
+%   prints every count, the denominators first. NDI's reader reads the
+%   subject back from the presentations (ndi.vintage.elementFields, the
+%   third place it looks).
+    report = [];
+    if ~strcmp(options.TargetVersion, 'did_v2')
+        return;     % a presentation manipulation is a V_eta shape
+    end
+    docs = convertResult.migrated;
+    structs = cell(1, numel(docs));
+    for k = 1:numel(docs)
+        structs{k} = docs{k}.toStruct();
+    end
+    [retireIds, report] = ndi.migrate.internal.observesRetirement(structs);
+    clear structs;
+    report.removed = 0;
+    fprintf(['OBSERVES RETIREMENT ([observes retires in the second pass])\n' ...
+        '  DENOMINATOR: %d migrated document(s); %d `observes` relation(s); ' ...
+        '%d stimulus presentation manipulation(s) naming %d instrument(s)\n' ...
+        '  retired %d; kept %d: no presentation by the device %d, presentations ' ...
+        'name another entity %d, presentations name several entities %d, ' ...
+        'the device observes several parents %d, incomplete relation %d\n'], ...
+        report.documents_inspected, report.observes_seen, ...
+        report.presentation_manipulations, report.presentation_instruments, ...
+        report.observes_retired, report.observes_kept, report.kept_no_presentation, ...
+        report.kept_other_entity, report.kept_several_entities, ...
+        report.kept_several_observes, report.kept_incomplete);
+    if isempty(retireIds)
+        return;
+    end
+    keep = true(1, numel(docs));
+    for k = 1:numel(docs)
+        keep(k) = ~any(strcmp(char(docs{k}.get('base.id')), retireIds));
+    end
+    report.removed = sum(~keep);
+    convertResult.migrated = docs(keep);
+    convertResult.summary = recountSummary(convertResult);
+end
+
 function [convertResult, report] = resolveOntologyLabelSubjects(convertResult, options)
 %RESOLVEONTOLOGYLABELSUBJECTS V_eta second pass: give each passed-through
 %   `ontology_label` the subject it is about, as a `term_observation` whose
@@ -2360,7 +2550,7 @@ function [convertResult, report] = resolveOntologyLabelSubjects(convertResult, o
 %   body per resolvable label. This function does the FOLD, one label at a time,
 %   through did2.convert.v1_to_v2 at TargetVersion V_eta -- where the body is
 %   tagged schema_version 'did_v2' and is therefore short-circuited
-%   (isAlreadyTarget) to ensureClassBlocks + validate, the same footing Path-S
+%   (isAlreadyTarget) to validate, the same footing Path-S
 %   and ensembleMembership use for minted bodies.
 %
 %   THE LABEL'S id IS PRESERVED, so the replacement supersedes the passthrough
@@ -2510,7 +2700,7 @@ function [convertResult, report] = resolveSubjectStrainAssembly(convertResult, b
 %   that need the converter: rewrap the survivors (whose edges changed) and
 %   fold the minted `strain` bodies through did2.convert.v1_to_v2 at
 %   TargetVersion V_eta, where they are tagged schema_version 'did_v2' and are
-%   therefore short-circuited (isAlreadyTarget) to ensureClassBlocks +
+%   therefore short-circuited (isAlreadyTarget) to
 %   validate, the same footing Path-S, ensembleMembership and (4) use.
 %
 %   REPORT is [] when the pass did not run (no documents, or no bodies to read
@@ -2994,7 +3184,10 @@ function [convertResult, report, presentationAnchors] = resolveStimulusPresentat
     % accumulated over every distributive presentation in it.
     cohortIds = containers.Map('KeyType', 'char', 'ValueType', 'char');
     cohortMembers = containers.Map('KeyType', 'char', 'ValueType', 'any');
-    cohortStamp = containers.Map('KeyType', 'char', 'ValueType', 'char');
+    % each cohort's contributors: the timestamps and ids of the distributive
+    % presentations that made it, so its creation timestamp is chosen from
+    % them by content once all are read (ndi.migrate.internal.earliestByContent)
+    cohortStamp = containers.Map('KeyType', 'char', 'ValueType', 'any');
     cohortIdFor = @(sid) cohortIdOf(cohortIds, sid);
 
     usedShared = containers.Map('KeyType', 'char', 'ValueType', 'logical');
@@ -3046,11 +3239,16 @@ function [convertResult, report, presentationAnchors] = resolveStimulusPresentat
             [ptFile, ptStatus] = ndi.migrate.internal.v1AttachedFile(b, ...
                 'presentation_time.bin', ndiDir);
         end
+        % the methods, software and control calculations minted for this
+        % presentation take ids derived from it ([migration reliability
+        % practices] (b), Jess Haley, 2026-10-26;
+        % ndi.migrate.internal.withMintSource)
         [manip, methods, rep, software, controlCalcs] = ...
-            ndi.migrate.internal.stimulusPresentationToItem( ...
+            ndi.migrate.internal.withMintSource('resolveStimulusPresentations', b, ...
+            @() ndi.migrate.internal.stimulusPresentationToItem( ...
             b, resolver, sequence, 'CohortIdFor', cohortIdFor, ...
             'ControlRecords', controls, 'PresentationTimeFile', ptFile, ...
-            'PresentationTimeFileStatus', ptStatus);
+            'PresentationTimeFileStatus', ptStatus));
         epochClock = '';
         if ~isempty(manip) && ~rep.standalone && ~isempty(rep.epoch_id)
             % [epoch-less presentations carry] (Jess Haley, 2026-10-27): the
@@ -3174,10 +3372,17 @@ function [convertResult, report, presentationAnchors] = resolveStimulusPresentat
             members = {};
             if isKey(cohortMembers, sid)
                 members = cohortMembers(sid);
+                contributors = cohortStamp(sid);
             else
                 members = resolver.subjectsRecordedInSession(sid);
-                cohortStamp(sid) = char(b.base.datestamp);
+                contributors = struct('stamps', {{}}, 'ids', {{}});
             end
+            % every distributive presentation of the session contributes; the
+            % cohort's timestamp is chosen among them below, not taken from
+            % the first one read (NDI-matlab #1235)
+            contributors.stamps{end+1} = char(b.base.datestamp);
+            contributors.ids{end+1} = char(presId);
+            cohortStamp(sid) = contributors;
             for a = 1:numel(rep.animals)
                 if ~any(strcmp(members, rep.animals{a}))
                     members{end+1} = rep.animals{a}; %#ok<AGROW>
@@ -3250,12 +3455,20 @@ function [convertResult, report, presentationAnchors] = resolveStimulusPresentat
             report.shared_methods_minted = report.shared_methods_minted + 1;
         end
     end
-    % the session cohorts, once each
+    % the session cohorts, once each. A cohort's creation timestamp (on the
+    % cohort and its member_of edges) is the EARLIEST datestamp among the
+    % distributive presentations that made it, equal instants broken by the
+    % presentation's id: chosen by content, so it does not depend on which
+    % presentation the database returned first (NDI-matlab #1235: database
+    % order is not data; ndi.migrate.internal.earliestByContent has the rule).
     sids = cohortIds.keys();
     for c = 1:numel(sids)
         members = cohortMembers(sids{c});
+        contributors = cohortStamp(sids{c});
+        pick = ndi.migrate.internal.earliestByContent( ...
+            contributors.stamps, contributors.ids);
         docs = ndi.migrate.internal.sessionCohort(cohortIds(sids{c}), sids{c}, ...
-            members, cohortStamp(sids{c}));
+            members, contributors.stamps{pick});
         minted = [minted, docs]; %#ok<AGROW>
         report.cohorts_minted = report.cohorts_minted + 1;
         report.cohort_members = report.cohort_members + numel(members);
@@ -3325,7 +3538,7 @@ function [convertResult, report, presentationAnchors] = resolveStimulusPresentat
 
     % fold the minted documents through v1_to_v2: they are tagged
     % schema_version == TargetVersion, so the converter short-circuits them
-    % (isAlreadyTarget) to ensureClassBlocks + validate.
+    % (isAlreadyTarget) to validate.
     sub = did2.convert.v1_to_v2(minted, ...
         'Validate', options.Validate, ...
         'SchemaCache', options.SchemaCache, ...
@@ -3421,7 +3634,10 @@ function id = cohortIdOf(cohortIds, sessionId)
 %   containers.Map is a handle, so the caller's map holds every id issued.
     sessionId = char(sessionId);
     if ~isKey(cohortIds, sessionId)
-        cohortIds(sessionId) = did.ido.unique_id(); %#ok<NASGU>
+        % derived from the session ([migration reliability practices] (b),
+        % Jess Haley, 2026-10-26), so the cohort has the same id whichever
+        % presentation asks for it first
+        cohortIds(sessionId) = did2.convert.mintId('session cohort', sessionId); %#ok<NASGU>
     end
     id = cohortIds(sessionId);
 end
@@ -3488,8 +3704,11 @@ function [convertResult, rep] = describeIngestedArchiveBodies(convertResult, ndi
 %   re-validated TOGETHER through did2.convert.v1_to_v2; the bodies it
 %   removed (an evenly spaced time group, a channel_list.bin every row of
 %   which is now covariates) are dropped only when that group comes back
-%   clean. A group that does not is REVERTED (left as pass 1 wrote it) and
-%   counted.
+%   clean, and the documents it made (the `time` value of an unevenly spaced
+%   time channel, [uneven time is a keyed time value]) are added only then.
+%   A group that does not is REVERTED (left as pass 1 wrote it) and counted,
+%   and the files written for it (an uneven time channel rewritten from the
+%   epoch's start, [uneven time rewritten from the epoch start]) are deleted.
     docs = convertResult.migrated;
     structs = cell(1, numel(docs));
     for k = 1:numel(docs)
@@ -3498,6 +3717,7 @@ function [convertResult, rep] = describeIngestedArchiveBodies(convertResult, ndi
     [structs, rep, removed] = ndi.migrate.internal.ingestedArchiveBodies( ...
         structs, ndiDir, v1Bodies);
     rep.reverted = 0;
+    rep.scale_gaps_listed = 0;
     if isempty(rep.changed_groups)
         return;
     end
@@ -3506,6 +3726,8 @@ function [convertResult, rep] = describeIngestedArchiveBodies(convertResult, ndi
         idxById(char(structs{k}.base.id)) = k;
     end
     drop = false(1, numel(docs));
+    nDocs = numel(docs);
+    added = {};
     for g = 1:numel(rep.changed_groups)
         ids = rep.changed_groups{g};
         gone = ids(ismember(ids, removed));
@@ -3520,20 +3742,44 @@ function [convertResult, rep] = describeIngestedArchiveBodies(convertResult, ndi
                 'TargetVersion', options.TargetVersion, 'Verbose', false);
             if isempty(sub.quarantine) && numel(sub.migrated) == numel(kept)
                 for j = 1:numel(sub.migrated)
-                    docs{idxById(char(sub.migrated{j}.get('base.id')))} = sub.migrated{j};
+                    k = idxById(char(sub.migrated{j}.get('base.id')));
+                    if k > nDocs
+                        added{end+1} = sub.migrated{j}; %#ok<AGROW>
+                    else
+                        docs{k} = sub.migrated{j};
+                    end
                 end
                 for j = 1:numel(gone)
                     drop(idxById(gone{j})) = true;
                 end
+                % [scale carries the reader's unit] (Jess Haley, 2026-11-17):
+                % a scale whose reader defines no unit is a gap in the run's
+                % report; listed only for a group that is kept
+                gaps = rep.scale_gaps{g};
+                for j = 1:numel(gaps)
+                    did2.convert.migrationReport('gap', gaps(j).document_id, ...
+                        gaps(j).class, gaps(j).field, gaps(j).reason);
+                    rep.scale_gaps_listed = rep.scale_gaps_listed + 1;
+                end
             else
                 rep.reverted = rep.reverted + 1;
+                deleteWritten(rep.written_files{g});
             end
         catch
             rep.reverted = rep.reverted + 1;
+            deleteWritten(rep.written_files{g});
         end
     end
-    convertResult.migrated = docs(~drop);
+    convertResult.migrated = [reshape(docs(~drop), 1, []), added];
     convertResult.summary = recountSummary(convertResult);
+end
+
+function deleteWritten(paths)
+% the store files ndi.migrate.internal.ingestedArchiveBodies wrote for a
+% group that is reverted: nothing refers to them
+for k = 1:numel(paths)
+    if isfile(paths{k}); delete(paths{k}); end
+end
 end
 
 function [convertResult, rep] = fillLocatedFileFacts(convertResult, options)

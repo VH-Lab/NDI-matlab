@@ -147,21 +147,18 @@ function [bathBody, timeRefBody, extraBodies, anchorInfo] = stimulusBathToBath(v
 %     resolver      - struct of session-aware lookups (from ndi.migrate.local):
 %                       .subjectOfElement(elementId)            -> subject_id
 %                       .epochClockOfElement(elementId, epochId)-> clocktype
-%     targetVersion - 'V_zeta' (default, Brainstorm I) or 'V_epsilon'
-%                     (Brainstorm E). Selects the wire shape: under V_zeta the
-%                     bath is a `subject_interaction`, so the assembled body
-%                     also carries the spine block (method / variable /
-%                     target_structure) and the manipulation `notes` block, and
-%                     `variable` is set to the primary mixture chemical (the
-%                     queryable "what"). Under V_epsilon the older block layout
-%                     (no spine block) is emitted.
+%     targetVersion - 'did_v2' (the default and the only target; see
+%                     did2.convert.isV2Set). Any other name is an error
+%                     (ndi:migrate:unsupportedTarget). The V_zeta / V_epsilon
+%                     `bath` shapes were deleted with did-schema #88 (did-schema
+%                     OPEN_WORK #128; VH-Lab/NDI-matlab#1183), as DID-matlab's
+%                     resolveDeferredBaths deleted its own.
 %
 %   Outputs:
-%     bathBody     - the manipulation document body (schema_version =
-%                    targetVersion): a `bath` under V_zeta/V_epsilon, or a
-%                    `manipulation` valued by its `formulation` under V_eta.
-%     timeRefBody  - the epoch_bounded_reference document the manipulation
-%                    depends_on, or [] when V_eta declines to anchor (see
+%     bathBody     - the manipulation document body: a `manipulation` valued
+%                    by its `formulation`.
+%     timeRefBody  - the relative_time_reference document the manipulation
+%                    depends_on, or [] when it declines to anchor (see
 %                    NO TIMES => NO REFERENCE below). A caller must drop an
 %                    empty body rather than pass it on; ndi.migrate.local's
 %                    assembleDeferred does.
@@ -176,24 +173,29 @@ function [bathBody, timeRefBody, extraBodies, anchorInfo] = stimulusBathToBath(v
 arguments
     v1Body   (1,1) struct
     resolver (1,1) struct
-    targetVersion (1,:) char = 'V_zeta'
+    targetVersion (1,:) char = 'did_v2'
 end
 
 stimulatorId = dependencyValue(v1Body, 'stimulus_element_id');
 epochId      = epochIdOf(v1Body);
 sessionId    = ndi.v2.sessionIdOf(v1Body);
 datestamp    = baseField(v1Body, 'datestamp', '');
-bathId       = baseField(v1Body, 'id', did.ido.unique_id());
+bathId       = baseField(v1Body, 'id', '');
+if isempty(bathId)
+    % a bath stating no id: derived from its body, not random
+    % ([migration reliability practices] (b), Jess Haley, 2026-10-26)
+    bathId = did2.convert.mintId('stimulus bath', did2.convert.mintKey(v1Body));
+end
 
 % --- resolve the session/element context (the reason this is NDI-layer) -----
 subjectId  = resolver.subjectOfElement(stimulatorId);
 epochClock = resolver.epochClockOfElement(stimulatorId, epochId);
 
-% --- time reference: epoch_bounded_reference on the stimulator's epoch ------
-% Under V_eta this is the PASS-1 PLACEHOLDER described in the header; under the
-% older targets it is the final shape and nothing here changes for them.
+% --- time reference (vetaBath, below) --------------------------------------
+% A `relative_time_reference` "during the session", which epochAnchorFold
+% re-points at the stimulator's epoch (the header's "READ THIS FIRST" block).
 %
-% NO TIMES => NO REFERENCE (V_eta only). The signed plan's rule: a reference
+% NO TIMES => NO REFERENCE. The signed plan's rule: a reference
 % that cannot name a time is a hollow document -- it validates, it is counted,
 % and it says nothing, which is precisely what did2.validate.silentLoss and the
 % FRAGMENT detector exist to catch. Two cases here, and both are real:
@@ -213,59 +215,14 @@ epochClock = resolver.epochClockOfElement(stimulatorId, epochId);
 extraBodies = {};
 anchorInfo  = [];
 
-if did2.convert.isV2Set(targetVersion)   % 'did_v2' ([V_eta not kept as an alias])
-    [bathBody, timeRefBody, extraBodies, anchorInfo] = vetaBath(v1Body, ...
-        stimulatorId, epochId, sessionId, datestamp, bathId, subjectId, epochClock);
-    return;
+if ~did2.convert.isV2Set(targetVersion)   % 'did_v2' ([V_eta not kept as an alias])
+    error('ndi:migrate:unsupportedTarget', ...
+        ['stimulusBathToBath assembles did_v2 only; TargetVersion "%s" has ' ...
+         'no bath model (the earlier schema sets were deleted, did-schema #88).'], ...
+        targetVersion);
 end
-
-% --- the older targets (no V_eta) -----------------------------------------
-timeRefId = did.ido.unique_id();
-timeRefBody = struct();
-timeRefBody.document_class = struct( ...
-    'class_name', 'epoch_bounded_reference', 'class_version', '1.0.0', ...
-    'superclasses', [ ...
-        struct('class_name', 'time_reference', 'class_version', '1.0.0'), ...
-        struct('class_name', 'epochid',        'class_version', '1.0.0')], ...
-    'schema_version', targetVersion);
-timeRefBody.depends_on = struct('name', 'element_id', 'value', stimulatorId);
-timeRefBody.base = struct('id', timeRefId, 'session_id', sessionId, ...
-    'name', 'migrated_stimulator_epoch_anchor', 'creation_timestamp', datestamp);
-timeRefBody.time_reference = struct('is_approximate', false);
-timeRefBody.epochid = struct('epochid', epochId);
-timeRefBody.epoch_bounded_reference = struct('epoch_clock', epochClock);
-
-mixture = parseMixture(v1Body);
-
-bathBody = struct();
-bathBody.document_class = struct( ...
-    'class_name', 'bath', 'class_version', '1.0.0', ...
-    'superclasses', struct('class_name', 'pharmacological_manipulation', ...
-        'class_version', '1.0.0'), ...
-    'schema_version', targetVersion);
-bathBody.depends_on = [ ...
-    struct('name', 'subject_id',       'value', subjectId), ...
-    struct('name', 'time_reference_1', 'value', timeRefId)];
-bathBody.base = struct('id', bathId, 'session_id', sessionId, ...
-    'name', 'migrated_bath', 'creation_timestamp', datestamp);
-
-if strcmp(targetVersion, 'V_zeta')
-    % Brainstorm I: a bath is a subject_interaction. Identity is OFF the class
-    % on the spine -- the primary chemical is the `variable`; the verb (method)
-    % and locus (target_structure) are left blank/empty (the bath location
-    % lives in the bath block); `notes` prose on the manipulation base.
-    bathBody.subject_interaction = struct( ...
-        'method', struct('node', '', 'name', ''), ...
-        'variable', primaryChemical(mixture), ...
-        'target_structure', {struct('node', {}, 'name', {})});
-    bathBody.manipulation = struct('notes', '');
-end
-
-% mixture is declared on pharmacological_manipulation -> its block.
-bathBody.pharmacological_manipulation = struct();
-bathBody.pharmacological_manipulation.mixture = mixture;
-% location/kind are declared on bath -> the bath block.
-bathBody.bath = struct('kind', 'drug', 'location', locationTerm(v1Body));
+[bathBody, timeRefBody, extraBodies, anchorInfo] = vetaBath(v1Body, ...
+    stimulatorId, epochId, sessionId, datestamp, bathId, subjectId, epochClock);
 end
 
 function [dose, anchor, extra, anchorInfo] = vetaBath(v1Body, stimulatorId, ...
@@ -297,6 +254,7 @@ extra = {};
 ids = {};
 entries = {};
 props = struct();
+gaps = struct('field', {}, 'reason', {});
 for i = 1:numel(mixture)
     chem = mixture(i).chemical;
     if isempty(chem.node) && isempty(chem.name)
@@ -304,13 +262,34 @@ for i = 1:numel(mixture)
     end
     a = mixture(i).amount;
     if strcmpi(chem.name, 'pH') && isfinite(a.source_value)
-        props.ph = struct('ph', a.source_value, 'source_value', a.source_value, ...
+        props.ph = struct('ph', a.source_value, did2.build.sourceNumericField(), a.source_value, ...
             'source_unit', a.source_unit, 'approximate', false);
         continue;
     end
     if any(strcmpi(chem.name, {'osm', 'osmolarity'})) && isfinite(a.source_value)
-        props.osmolarity = struct('source_value', a.source_value, ...
+        props.osmolarity = struct(did2.build.sourceNumericField(), a.source_value, ...
             'source_unit', a.source_unit, 'approximate', false);
+        if isempty(a.source_unit.node) && isempty(a.source_unit.name)
+            % no unit stated: none written (as an ingredient's concentration)
+            props.osmolarity = rmfield(props.osmolarity, 'source_unit');
+        end
+        % [bath concentration prefixes convert to molar] (Jess Haley,
+        % 2026-11-12), as DID-matlab resolveDeferredBaths reads it (PR #456):
+        % a unit that is osmolar with a known SI prefix gets the canonical
+        % `osmolar` (osmoles per litre, arithmetic only); any other unit (a
+        % bare "mOsm" says neither per litre nor per kg; "mOsm/kg" is
+        % osmolality) or none is a gap in the run's migration report
+        [osm, osmOk] = ndi.migrate.internal.bathPrefixedValue( ...
+            a.source_value, a.source_unit.name, 'osmolar');
+        if osmOk
+            props.osmolarity.osmolar = osm;
+        else
+            gaps(end+1) = struct('field', 'formulation.value.osmolarity.osmolar', ...
+                'reason', sprintf(['the source states the osmolarity %s in the ' ...
+                'unit "%s", which is not osmoles per litre with a known prefix, ' ...
+                'so no canonical value is computed'], ...
+                num2str(a.source_value, 17), strtrim(char(a.source_unit.name)))); %#ok<AGROW>
+        end
         continue;
     end
     c = struct();
@@ -318,17 +297,33 @@ for i = 1:numel(mixture)
     c.depends_on = S.noEdges();
     c.base = S.baseBlock('', datestamp);
     c.chemical = struct('value', struct('substance', chem));
+    c = S.classBlocks(c);
     c = ndi.migrate.internal.withSessionId(c, sessionId);
     extra{end+1} = c; %#ok<AGROW>
     ids{end+1} = c.base.id; %#ok<AGROW>
     e = struct();
     if isfinite(a.source_value)
-        conc = struct('source_value', a.source_value, 'approximate', false);
+        conc = struct(did2.build.sourceNumericField(), a.source_value, 'approximate', false);
         if ~isempty(a.source_unit.node) || ~isempty(a.source_unit.name)
             conc.source_unit = a.source_unit;
         end
-        if strcmpi(a.source_unit.name, 'Molar')
-            conc.molar = a.source_value;
+        % the canonical slot: a molar unit with a known SI prefix, the number
+        % converted to molar ([bath concentration prefixes convert to molar],
+        % Jess Haley, 2026-11-12). A unit that cannot be read so carries the
+        % bath before it gets here (ndi.migrate.local's resolveDeferred,
+        % bathUnreadUnitRows); a number with no unit has no canonical and is
+        % a gap ([canonical absent only as needs info]), as DID-matlab
+        % resolveDeferredBaths writes both (PR #456)
+        [m, ok] = ndi.migrate.internal.bathPrefixedValue( ...
+            a.source_value, a.source_unit.name, 'molar');
+        if ok
+            conc.molar = m;
+        elseif isempty(strtrim(char(a.source_unit.name)))
+            gaps(end+1) = struct('field', sprintf( ...
+                'formulation.value.ingredients(%d).concentration.canonical', ...
+                numel(entries) + 1), 'reason', sprintf(['the source states the ' ...
+                'number %s with no unit, so no canonical value is computed'], ...
+                num2str(a.source_value, 17))); %#ok<AGROW>
         end
         e.concentration = conc;
     end
@@ -348,8 +343,16 @@ f.base = S.baseBlock('', datestamp);
 % the bath's `value_id` names nothing (e2e run 39668356516).
 fv.ingredients = rowsToStructArray(entries);
 f.formulation = struct('value', fv);
+f = S.classBlocks(f);
 f = ndi.migrate.internal.withSessionId(f, sessionId);
 extra{end+1} = f;
+% the gaps go in the run's migration report under the formulation's id
+% ([gap accepted when the report lists it]), as did2.build.document's 'Gaps'
+% option lists them for DID-matlab's assembler
+for k = 1:numel(gaps)
+    did2.convert.migrationReport('gap', f.base.id, 'formulation', ...
+        gaps(k).field, gaps(k).reason);
+end
 
 % A bath is NOT a dose: "A bath is a manipulation whose value is the
 % formulation (pointed at through `value_id`), not a dose; a dose always has an
@@ -468,15 +471,6 @@ function variable = bathSolutionVariable()
 variable = struct('node', 'EMPTY:0000409', 'name', 'bath solution');
 end
 
-function variable = primaryChemical(mixture)
-%PRIMARYCHEMICAL The spine identity is the first (primary) mixture chemical;
-%   blank if the mixture parsed to nothing.
-variable = struct('node', '', 'name', '');
-if ~isempty(mixture) && isfield(mixture, 'chemical')
-    variable = mixture(1).chemical;
-end
-end
-
 % ===================== helpers =============================================
 
 function v = dependencyValue(body, name)
@@ -516,40 +510,6 @@ if isfield(body, 'stimulus_bath') && isstruct(body.stimulus_bath) ...
     if isfield(loc, 'node');             term.node = loc.node;
     elseif isfield(loc, 'ontologyNode'); term.node = loc.ontologyNode; end
     if isfield(loc, 'name');             term.name = loc.name; end
-end
-end
-
-function mixture = parseMixture(body)
-%PARSEMIXTURE Build the array-of-records mixture from the legacy fields.
-%   Mirrors the per-chemical record shape pharmacological_manipulation.mixture
-%   wants: { chemical: ontology_term, amount: concentration }. Handles the
-%   CSV mixture_table form; the V_gamma solution_name/concentration form is a
-%   TODO extension. pharmacological_manipulation.mixture is mustBeNonEmpty,
-%   so this always returns >= 1 record -- a blank one when nothing parses,
-%   which is the curator's signal rather than a validation failure.
-mixture = struct('chemical', {}, 'amount', {});
-if isfield(body, 'stimulus_bath') && isstruct(body.stimulus_bath) ...
-        && isfield(body.stimulus_bath, 'mixture_table')
-    raw = body.stimulus_bath.mixture_table;
-    if ischar(raw) || (isstring(raw) && isscalar(raw))
-        lines = strsplit(char(raw), newline);
-        for i = 1:numel(lines)
-            cols = strsplit(strtrim(lines{i}), ',', 'CollapseDelimiters', false);
-            if numel(cols) < 5 || isempty(strtrim(cols{1}))
-                continue;   % header / blank / malformed row
-            end
-            chemical = struct('node', strtrim(cols{1}), 'name', strtrim(cols{2}));
-            amount = struct('source_value', str2double(cols{3}), ...
-                'source_unit', strtrim(cols{5}), 'approximate', false);
-            mixture(end+1) = struct('chemical', chemical, 'amount', amount); %#ok<AGROW>
-        end
-    end
-end
-if isempty(mixture)
-    mixture(1) = struct( ...
-        'chemical', struct('node', '', 'name', ''), ...
-        'amount', struct('source_value', 0.0, 'source_unit', '', ...
-            'approximate', false));
 end
 end
 

@@ -19,6 +19,15 @@ classdef TestProbeWiring < matlab.unittest.TestCase
 %
 %   Filtered (never passed) when did2.build or a v2 schema with a term
 %   registry is missing.
+%
+%   Every test runs on the session written in each numeric shape (did-schema
+%   did_v2_numeric_shape_plan.md, [one shape for measured numbers], Jess
+%   Haley, 2026-11-17): the wiring's channel numbers as `matrix` (old) or as
+%   flat `numeric` (new), as did2.build.condition writes them.
+
+    properties (ClassSetupParameter)
+        NumericShape = struct('old', 'old', 'new', 'new')
+    end
 
     properties
         Dir
@@ -27,9 +36,13 @@ classdef TestProbeWiring < matlab.unittest.TestCase
     end
 
     methods (TestClassSetup)
-        function writeSession(testCase)
+        function writeSession(testCase, NumericShape)
             testCase.assumeTrue(~isempty(which('did2.build.directedRelation')), ...
                 'did2.build (DID-matlab V2) is not on the path');
+            if strcmp(NumericShape, 'new')
+                testCase.assumeTrue(~isempty(which('did2.build.numericShape')), ...
+                    'no DID-matlab builders that write the new numeric shape');
+            end
             schemaPath = getenv('DID_SCHEMA_PATH');
             testCase.assumeTrue(~isempty(schemaPath) && ...
                 isfile(ndi.v2.schemaFile(schemaPath, 'term_registry_meta.json')), ...
@@ -52,9 +65,16 @@ classdef TestProbeWiring < matlab.unittest.TestCase
                 'DataBody', true, 'InstrumentId', probeId, ...
                 'AcquisitionSystemId', sys.base.id, ...
                 'TimeReferenceIds', {anchor.base.id}, S{:}, 'ValueKind', 'velocity');
+            shapeArgs = {};
+            if ~isempty(which('did2.build.numericShape'))
+                shapeArgs = {'Shape', NumericShape};
+            end
             conds = did2.build.list( ...
-                did2.build.condition(T('EMPTY:0000370'), 'Matrix', [11 12 13 14]), ...
-                did2.build.condition(T('EMPTY:0000372'), 'Matrix', 1));
+                did2.build.condition(T('EMPTY:0000370'), 'Matrix', [11 12 13 14], shapeArgs{:}), ...
+                did2.build.condition(T('EMPTY:0000372'), 'Matrix', 1, shapeArgs{:}));
+            txt = jsonencode(conds);
+            testCase.assertTrue(contains(txt, ['"' ifNew(NumericShape, 'numeric', 'matrix') '"']), ...
+                sprintf('the wiring is written in the %s numeric shape', NumericShape));
             wire = did2.build.directedRelation(probeId, sys.base.id, ...
                 T('RO:0002170'), 'TimeReferenceIds', {anchor.base.id}, ...
                 'Fields', struct('conditions', {conds}), S{:});
@@ -104,4 +124,8 @@ classdef TestProbeWiring < matlab.unittest.TestCase
                 'the one recording, found once, by acquisition_system_id');
         end
     end
+end
+
+function x = ifNew(shape, a, b)
+if strcmp(shape, 'new'), x = a; else, x = b; end
 end

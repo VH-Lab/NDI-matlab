@@ -266,8 +266,12 @@ for p = 1:numel(presIds)
         else
             g = numel(gratingBodies) + 1;
             seen(key) = g;
-            gratingBodies{g} = ndi.migrate.internal.stimulusMethod( ...
-                recipe, sessionId, datestamp); %#ok<AGROW>
+            % its id derived from the (session, recipe) it is minted for, not
+            % random and not from the presentation that first lists it
+            % ([migration reliability practices] (b), Jess Haley, 2026-10-26)
+            gratingBodies{g} = ndi.migrate.internal.withMintSource( ...
+                'hartleyBasisGratings', key, ...
+                @() ndi.migrate.internal.stimulusMethod(recipe, sessionId, datestamp)); %#ok<AGROW>
             ids{g} = gratingBodies{g}.base.id;  %#ok<AGROW>
         end
         if isKey(localIndex, g)

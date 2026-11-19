@@ -215,6 +215,16 @@ classdef element < ndi.ido & ndi.epoch.epochset & ndi.documentservice & matlab.m
             if needs_newdocument_call % do we need to create the document and add it to the database?
                 % or, do we already have it?
                 element_doc = ndi_element_obj.newdocument();
+                % A v2 element entity found for it: this object IS that
+                % element, so it answers id() by that document's id with no
+                % lookup, as one built from the document does (Decided by
+                % Jess Haley, 2026-11-10 [probes from the index keep v1's
+                % duplicates]: the probe map's duplicates of existing probes)
+                if ~isempty(element_doc) && isa(element_doc, 'ndi.document') ...
+                        && strcmp(char(element_doc.document_properties.document_class.class_name), 'entity')
+                    ndi_element_obj.identifier = element_doc.id();
+                    ndi_element_obj.etaDocumentId = element_doc.id();
+                end
             end
         end % ndi.element()
 

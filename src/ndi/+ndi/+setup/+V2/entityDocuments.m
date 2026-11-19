@@ -14,7 +14,8 @@ function docs = entityDocuments(className, fields, edges, options)
 %     2. one assertion per other field (a term, text or date assertion whose
 %        `variable` is the field's name with spaces, with its ontology node
 %        where one is decided: species NCIT:C45293, accessibility
-%        NCIT:C175887, a strain's genotype NCIT:C16631 as text);
+%        NCIT:C175887, a strain's genotype NCIT:C16631 as text, a dataset's
+%        copyright year schema:copyrightYear as a date of precision year);
 %     3. one relation per other edge: vendor_id -> sold_by, background_strain_id
 %        -> derived_from, product_id -> distributed_as.
 %   A field or edge with no home there is an error (ndi:setup:V2:noHome), never
@@ -92,9 +93,12 @@ identity = {'type', 'name', 'local_identifier', 'notes', 'global_identifier'};
 terms = {'species', 'genetic_strain_type', 'phenotype', 'breeding_type', 'disease_model', ...
     'license', 'accessibility', 'ethics_jurisdiction', 'experimental_approach', ...
     'factors'};
-dates = {'release_date', 'publication_date'};
+% a dataset's copyright year is a date assertion, variable schema:copyrightYear
+% (Jess Haley, 2026-11-07, did-schema did_v2_go_forward_class_audit.md
+% [copyright year is a date assertion]); it was a text assertion before
+dates = {'release_date', 'publication_date', 'copyright_year'};
 texts = {'short_name', 'version', 'version_innovation', 'how_to_cite', 'support_channel', ...
-    'copyright_year', 'given_name', 'family_name', 'alternate_name', 'email', ...
+    'given_name', 'family_name', 'alternate_name', 'email', ...
     'catalog_number', 'lot_number', 'laboratory_code', 'synonym', 'authors', 'genotype', ...
     'keyword'};
 % the variables with a decided ontology node (the Haley import's term pass,
@@ -106,7 +110,7 @@ variableNodes = struct('species', 'NCIT:C45293', 'accessibility', 'NCIT:C175887'
     'factors', 'OBI:0000750', 'short_name', 'NCIT:C42610', 'version', 'IAO:0000129', ...
     'authors', 'IAO:0000321', 'publication_date', 'EMPTY:0000345', ...
     'release_date', 'EMPTY:0000346', 'genetic_strain_type', 'EMPTY:0000347', ...
-    'genotype', 'NCIT:C16631', ...
+    'genotype', 'NCIT:C16631', 'copyright_year', 'schema:copyrightYear', ...
     'ethics_jurisdiction', 'EMPTY:0000359', 'experimental_approach', 'EMPTY:0000356');
 % (ethics_jurisdiction and experimental_approach are explicit so they do not
 % depend on a name lookup -- Jess Haley, 2026-10-21. ethics_jurisdiction
@@ -138,7 +142,8 @@ for k = 1:numel(names)
     if any(strcmp(f, terms))
         docs{end+1} = did2.build.statement('assertion', eid, variable, asTerms(v), common{:}, 'ValueKind', 'term'); %#ok<AGROW>
     elseif any(strcmp(f, dates))
-        d = cellstr(v);
+        % (a year may be given as a number: 2025 is the date '2025', precision year)
+        d = cellstr(string(v));
         docs{end+1} = did2.build.statement('assertion', eid, variable, ...
             did2.build.valueCell('date', d, 'Fields', struct('precision', precisionOf(d{1}))), ...
             common{:}, 'ValueKind', 'date'); %#ok<AGROW>

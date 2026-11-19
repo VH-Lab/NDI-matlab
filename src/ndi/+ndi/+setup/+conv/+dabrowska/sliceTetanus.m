@@ -292,6 +292,15 @@ for i = 1:numel(aks)
         end
         cp = structs{k};
         cp.base.id = did.ido.unique_id();
+        % the copy is a new V2 document, and V2 `base` has no `name`: a v1
+        % name goes to the class's own name field, and a relation or a
+        % statement has none ([v1 name goes to the class's own name field],
+        % [base.name kept until retire classes leave], Jess Haley,
+        % did-schema did_v2_go_forward_class_audit.md). A pass-1 body that
+        % still carries an (empty) base.name does not pass it on.
+        if isfield(cp.base, 'name')
+            cp.base = rmfield(cp.base, 'name');
+        end
         if isStrainRelation
             if isempty(depValue(cp, 'child_id'))
                 cp = setDep(cp, 'child', newId);
@@ -774,6 +783,12 @@ params = struct( ...
     'source_unit', {HZ, SEC}, ...
     'quantity', {struct('value', str2double(tok{1}), 'source_value', tok{1}), ...
                  struct('value', str2double(tok{2}), 'source_value', tok{2})});
+% [one shape for measured numbers] (did-schema did_v2_numeric_shape_plan.md,
+% Jess Haley, 2026-11-17): each item flat, `numeric` and `source_numeric`
+% (did2.build.numericItem). The source is the folder name's text, so
+% `source_numeric` keeps it as text ([numeric shape details] (1): text where
+% the source wrote text).
+params = did2.build.numericItem(params);
 end
 
 function [t, ok] = clockTimes(et, clockName)

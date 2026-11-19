@@ -571,6 +571,13 @@ if toleranceSeconds > 0
     % Back onto the ROOT, carrying only what the source actually stated.
     b.time_reference = struct('clock_tolerance', ...
         struct('seconds', toleranceSeconds));
+else
+    % no tolerance stated: the root block is written empty, so the document
+    % is complete as built ([early migration pieces fixed] (2), Jess Haley,
+    % 2026-10-26: "the builder produces a complete document"; before,
+    % DID-matlab's ensureClassBlocks added it), as DID-matlab
+    % resolveValidIntervals writes it
+    b.time_reference = struct();
 end
 
 % ---- CARRY THE EXTENT, IF THE HANDLE STATED ONE -------------------------
@@ -625,6 +632,8 @@ end
 if toleranceSeconds > 0
     b.time_reference = struct('clock_tolerance', ...
         struct('seconds', toleranceSeconds));
+else
+    b.time_reference = struct();   % complete as built (see above)
 end
 b.relative_time_reference = struct('value', value);
 b.document_class.schema_version = did2.schema.v2Stamp();   % the v2 stamp (Jess Haley, 2026-10-25 [document stamps]: 'did_v2')

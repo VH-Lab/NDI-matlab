@@ -9,6 +9,7 @@ classdef FakeSearchSession
 
     properties
         Respond
+        SessionId = 'fake_session'
     end
 
     methods
@@ -21,6 +22,11 @@ classdef FakeSearchSession
 
         function d = database_search(obj, query)
             d = obj.Respond(query);
+        end
+
+        function i = id(obj)
+            % the session id the readers key their call cache by
+            i = obj.SessionId;
         end
     end
 end

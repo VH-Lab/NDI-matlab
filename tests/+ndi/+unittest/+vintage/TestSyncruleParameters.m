@@ -17,6 +17,9 @@ classdef TestSyncruleParameters < matlab.unittest.TestCase
 %   `to_acquisition_system_id` (v1 daqsystem2) with the trigger channels as
 %   method parameters; the earlier one reaches each rig through an
 %   `acquisition_channels` document. Both rebuild the same v1 parameters.
+%   Decided by Jess Haley, 2026-11-10 [sync configuration edges are input
+%   and output]: the pair is renamed `input_id` / `output_id` and the labels
+%   'input / output trigger channel'; every spelling is read.
 
     methods (Test)
 
@@ -97,8 +100,8 @@ classdef TestSyncruleParameters < matlab.unittest.TestCase
             % link] holds these labels and must still open
             entries = {param('daqsystem ch1', 'text', 'dep1'), ...
                 param('daqsystem ch2', 'text', 'mk1'), ...
-                param('minimum embedded file overlap', 'quantity', 2), ...
-                param('errorOnFailure', 'quantity', 0)};
+                param('minimum embedded file overlap', 'numeric', 2), ...
+                param('errorOnFailure', 'numeric', 0)};
             doc = linkedConfigDoc(entries, 'sys_a', 'sys_b', 'dev_local_time');
             session = mockSession({systemDoc('sys_a', 'intan1'), systemDoc('sys_b', 'vhvis1')});
             params = ndi.vintage.syncruleParameters(doc, session, ...
@@ -112,6 +115,35 @@ classdef TestSyncruleParameters < matlab.unittest.TestCase
             testCase.verifyEqual(params.errorOnFailure, false);
         end
 
+        function testNumericParametersReadInBothNumericShapes(testCase)
+            % did-schema did_v2_numeric_shape_plan.md ([one shape for
+            % measured numbers], [numeric shape details] (1), Jess Haley,
+            % 2026-11-17): a method parameter's number is
+            % quantity {value, source_value} (old) or flat `numeric` beside
+            % `source_numeric`, the source's own number (new). Both rebuild
+            % the same v1 parameters.
+            session = mockSession({systemDoc('sys_a', 'intan1'), systemDoc('sys_b', 'vhvis1')});
+            got = cell(1, 2);
+            shapes = {'quantity', 'numeric'};
+            for k = 1:2
+                entries = {param('daqsystem ch1', 'text', 'dep1'), ...
+                    param('daqsystem ch2', 'text', 'mk1'), ...
+                    param('minimum embedded file overlap', shapes{k}, 2), ...
+                    param('errorOnFailure', shapes{k}, 0)};
+                doc = linkedConfigDoc(entries, 'sys_a', 'sys_b', 'dev_local_time');
+                got{k} = ndi.vintage.syncruleParameters(doc, session, ...
+                    'ndi.time.syncrule.commonTriggersOverlappingEpochs');
+                testCase.verifyEqual(got{k}.minEmbeddedFileOverlap, 2, shapes{k});
+                testCase.verifyEqual(got{k}.errorOnFailure, false, shapes{k});
+            end
+            testCase.verifyEqual(got{2}, got{1}, 'both shapes rebuild the same parameters');
+            % a count read by requireNumber, in the new shape
+            doc = linkedConfigDoc({param('minimum matching file paths', 'numeric', 3), ...
+                param('sync file name', 'text', 'sync.txt')}, 'sys_a', 'sys_b');
+            params = ndi.vintage.syncruleParameters(doc, session, 'ndi.time.syncrule.filefind');
+            testCase.verifyEqual(params.number_fullpath_matches, 3);
+        end
+
         function testTheClockIsReadByNodeInEitherShape(testCase)
             % Decided by Jess Haley, 2026-10-26 [clock terms get nodes]: the
             % clock is written with its node, and its stored name becomes
@@ -119,8 +151,8 @@ classdef TestSyncruleParameters < matlab.unittest.TestCase
             % as the same ndi.time.clocktype string.
             entries = {param('daqsystem ch1', 'text', 'dep1'), ...
                 param('daqsystem ch2', 'text', 'mk1'), ...
-                param('minimum embedded file overlap', 'quantity', 2), ...
-                param('errorOnFailure', 'quantity', 0)};
+                param('minimum embedded file overlap', 'numeric', 2), ...
+                param('errorOnFailure', 'numeric', 0)};
             session = mockSession({systemDoc('sys_a', 'intan1'), systemDoc('sys_b', 'vhvis1')});
             shapes = {struct('node', 'EMPTY:0000403', 'name', 'dev_local_time'), ...
                 struct('node', 'EMPTY:0000403', 'name', 'device local time'), ...
@@ -140,7 +172,7 @@ classdef TestSyncruleParameters < matlab.unittest.TestCase
             % the labels match the from / to edges
             entries = {param('from trigger channel', 'text', 'dep1'), ...
                 param('to trigger channel', 'text', 'mk1'), ...
-                param('minimum embedded file overlap', 'quantity', 2)};
+                param('minimum embedded file overlap', 'numeric', 2)};
             doc = linkedConfigDoc(entries, 'sys_a', 'sys_b', 'dev_local_time');
             session = mockSession({systemDoc('sys_a', 'intan1'), systemDoc('sys_b', 'vhvis1')});
             params = ndi.vintage.syncruleParameters(doc, session, ...
@@ -149,6 +181,73 @@ classdef TestSyncruleParameters < matlab.unittest.TestCase
             testCase.verifyEqual(params.daqsystem2_name, 'vhvis1');
             testCase.verifyEqual(params.daqsystem_ch1, 'dep1');
             testCase.verifyEqual(params.daqsystem_ch2, 'mk1');
+        end
+
+        function testInputOutputEdgesAndLabelsAreRead(testCase)
+            % Decided by Jess Haley, 2026-11-10 [sync configuration edges
+            % are input and output]: `input_id` is v1 daqsystem1 (the rig
+            % whose clock is mapped), `output_id` v1 daqsystem2; the
+            % trigger channels are 'input / output trigger channel'
+            entries = {param('input trigger channel', 'text', 'dep1'), ...
+                param('output trigger channel', 'text', 'mk1'), ...
+                param('minimum embedded file overlap', 'numeric', 2)};
+            doc = configWithEdges(entries, {'input_id', 'sys_a'; 'output_id', 'sys_b'}, ...
+                'dev_local_time');
+            session = mockSession({systemDoc('sys_a', 'intan1'), systemDoc('sys_b', 'vhvis1')});
+            params = ndi.vintage.syncruleParameters(doc, session, ...
+                'ndi.time.syncrule.commonTriggersOverlappingEpochs');
+            testCase.verifyEqual(params.daqsystem1_name, 'intan1');
+            testCase.verifyEqual(params.daqsystem2_name, 'vhvis1');
+            testCase.verifyEqual(params.daqsystem_ch1, 'dep1');
+            testCase.verifyEqual(params.daqsystem_ch2, 'mk1');
+        end
+
+        function testInputOutputEdgesReadForFilefind(testCase)
+            entries = {param('minimum matching file paths', 'count', 1), ...
+                param('sync file name', 'text', 'sync.txt')};
+            doc = configWithEdges(entries, {'input_id', 'sys_a'; 'output_id', 'sys_b'}, '');
+            session = mockSession({systemDoc('sys_a', 'intan1'), systemDoc('sys_b', 'vhvis1')});
+            params = ndi.vintage.syncruleParameters(doc, session, ...
+                'ndi.time.syncrule.filefind');
+            testCase.verifyEqual(params.daqsystem1, 'intan1', 'input is daqsystem1');
+            testCase.verifyEqual(params.daqsystem2, 'vhvis1', 'output is daqsystem2');
+        end
+
+        function testTheInputLabelWinsOverTheFromLabel(testCase)
+            entries = {param('from trigger channel', 'text', 'old1'), ...
+                param('input trigger channel', 'text', 'dep1'), ...
+                param('to trigger channel', 'text', 'old2'), ...
+                param('output trigger channel', 'text', 'mk1')};
+            doc = configWithEdges(entries, {'input_id', 'sys_a'; 'output_id', 'sys_b'}, ...
+                'dev_local_time');
+            session = mockSession({systemDoc('sys_a', 'intan1'), systemDoc('sys_b', 'vhvis1')});
+            params = ndi.vintage.syncruleParameters(doc, session, ...
+                'ndi.time.syncrule.randomPulses');
+            testCase.verifyEqual(params.daqsystem_ch1, 'dep1');
+            testCase.verifyEqual(params.daqsystem_ch2, 'mk1');
+        end
+
+        function testWriterNamesFollowTheSchema(testCase)
+            % the writer's names are the ones the schema declares: the old
+            % pair while the class declares it, the new pair once it does
+            old = fakeCache({'software_id', 'from_acquisition_system_id', 'to_acquisition_system_id'});
+            n = ndi.vintage.syncConfigurationNames('write', old);
+            testCase.verifyEqual({n.inputEdge, n.outputEdge}, ...
+                {'from_acquisition_system_id', 'to_acquisition_system_id'});
+            renamed = fakeCache({'software_id', 'input_id', 'output_id'});
+            n = ndi.vintage.syncConfigurationNames('write', renamed);
+            testCase.verifyEqual({n.inputEdge, n.outputEdge}, {'input_id', 'output_id'});
+            % the loaded schema's own answer is one of the two pairs, and
+            % it is a pair the class declares
+            n = ndi.vintage.syncConfigurationNames();
+            s = did2.schema.cache.shared().getClass('clock_alignment_configuration');
+            d = s.depends_on;
+            if isstruct(d); d = num2cell(d); end
+            declared = cellfun(@(x) char(x.name), d, 'UniformOutput', false);
+            testCase.verifyTrue(all(ismember({n.inputEdge, n.outputEdge}, declared)), ...
+                'the writer names edges the loaded schema declares');
+            testCase.verifyTrue(ismember(n.inputChannel, ...
+                {'input trigger channel', 'from trigger channel'}));
         end
 
         function testTriggerChannelLabelsAreSpellingTolerant(testCase)
@@ -259,6 +358,10 @@ e = struct('variable', struct('name', label));
 switch kind
     case 'quantity'
         e.quantity = struct('value', value, 'source_value', num2str(value));
+    case 'numeric'
+        % the new numeric shape: flat, the source's number a number
+        e.numeric = value;
+        e.source_numeric = value;
     otherwise
         e.(kind) = value;
 end
@@ -287,6 +390,13 @@ if ~isstruct(clk); clk = struct('node', '', 'name', clockName); end
 p.clock_alignment_configuration = struct('clock', clk, ...
     'method', struct('parameters', {entries}));
 doc = ndi.document(p);
+end
+
+function c = fakeCache(edgeNames)
+% stands in for did2.schema.cache: getClass returns a class whose
+% depends_on names EDGENAMES
+s = struct('depends_on', struct('name', edgeNames));
+c = struct('getClass', @(~) s);
 end
 
 function doc = systemDoc(id, name)
