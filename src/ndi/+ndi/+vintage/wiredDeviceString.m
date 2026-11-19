@@ -17,7 +17,10 @@ function [s, cache] = wiredDeviceString(S, st, sysId, elId, cache, anchors, firs
 %
 % 'vhspike2:ai11-14;di1' from the statement's system and its probe's wiring
 % relation: directed_relation `connected to` (RO:0002170), child the probe,
-% parent the system, timed by the statement's anchor, one condition per
+% parent the system's device entity (its `device_id`; [acquisition system is
+% a device entity], Jess Haley 2026-11-19) or, migrated before, the system
+% itself (the read-ahead files both under the system, ndi.vintage.wiringIndex
+% with ndi.vintage.rigSystems), timed by the statement's anchor, one condition per
 % channel type (variable the type's term, matrix its numbers). No relation:
 % the system's name alone (the row named no channels).
 s = '';
@@ -81,9 +84,15 @@ if isfield(cache, 'relations') && isstruct(cache.relations)
         rels = cache.relations.docs(at);
     end
 else
+    % the parent is the rig's device entity (the system's `device_id`, Jess
+    % Haley 2026-11-19 [acquisition system is a device entity], did-schema
+    % docs/plans/did_v2_standing_wiring_plan.md) or, in a session migrated
+    % before, the system itself: both are asked for
+    parents = [{char(sysId)}, ndi.vintage.edgeTargets(sys, 'device_id')];
     q = ndi.query('', 'isa', 'directed_relation', '') & ...
         ndi.query('', 'depends_on', 'child_id', elId) & ...
-        ndi.query('', 'depends_on', 'parent_id', sysId) & ...
+        ndi.v2.anyOf(cellfun(@(p) ndi.query('', 'depends_on', 'parent_id', p), ...
+            parents, 'UniformOutput', false)) & ...
         ndi.v2.anyOf(cellfun(@(a) ndi.query('', 'depends_on', 'time_reference_id', a), ...
             anchors, 'UniformOutput', false));
     rels = S.database_search(q);

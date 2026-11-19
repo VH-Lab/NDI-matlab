@@ -19,16 +19,19 @@ function R = verifyArchiveSegmentLengths(testCase, result, v1Bodies, label, opti
 %       daqreader_mfdaq_epochdata_ingested documents in V1BODIES, counted
 %       here by decoding each (not by the step's own filter)
 %     the partition: measured + not measured (by reason) = inspected, and
-%       per field compared = equal + differ, v1_stated = compared + no_v2_home
+%       per field compared = equal + differ, v1_stated = compared +
+%       no_v2_home + no_digital_default
 %     no measured value differs from its v1 value
 %   CHECKED with 'RequireMeasured', true (a fixture whose bytes are here):
 %     every archive is measured, and at least one value of each field the
 %     bodies hold is compared
 %   REPORTED, never asserted: the not-measured archives by reason (a corpus
 %   zip carries no binary files, NDI-matlab #785, so a corpus run reads "not
-%   measured"), and `no_v2_home`, a stated v1 value no converted body holds
-%   (an archive with no digital channel still states a
-%   sample_digital_segment); what that means is the team's question.
+%   measured"); `no_digital_default`, the sample_digital_segment of an
+%   archive with no digital series, at the v1 ingest's fixed default 1e7
+%   (notation: Decided by Jess Haley, 2026-11-19 [archive with no digital
+%   channel]); and `no_v2_home`, any other stated v1 value no converted body
+%   holds; what that means is the team's question.
 
 arguments
     testCase
@@ -57,8 +60,9 @@ fprintf(['\n  INGESTED ARCHIVE SEGMENT LENGTHS AFTER THE SECOND PASS (%s)\n' ...
 for w = {'analog', 'digital'}
     c = R.(w{1});
     fprintf(['    %s: %d stated in v1 (measured archives); %d compared: %d equal, %d ' ...
-        'differ; %d with no v2 home; %d rebuilt with no v1 value\n'], c.field, ...
-        c.v1_stated, c.compared, c.equal, c.differ, c.no_v2_home, c.v2_without_v1);
+        'differ; %d the no-digital default (notation); %d with no v2 home; %d rebuilt ' ...
+        'with no v1 value\n'], c.field, c.v1_stated, c.compared, c.equal, c.differ, ...
+        c.no_digital_default, c.no_v2_home, c.v2_without_v1);
 end
 for i = 1:numel(R.differences)
     d = R.differences(i);
@@ -77,8 +81,9 @@ for w = {'analog', 'digital'}
     c = R.(w{1});
     testCase.verifyEqual(c.equal + c.differ, c.compared, ...
         sprintf('%s: %s compared is not equal + differ', label, c.field));
-    testCase.verifyEqual(c.compared + c.no_v2_home, c.v1_stated, ...
-        sprintf('%s: %s stated is not compared + no v2 home', label, c.field));
+    testCase.verifyEqual(c.compared + c.no_v2_home + c.no_digital_default, c.v1_stated, ...
+        sprintf('%s: %s stated is not compared + no v2 home + the no-digital default', ...
+        label, c.field));
     testCase.verifyEqual(c.differ, 0, sprintf( ...
         '%s: %d %s value(s) rebuilt from the v2 bodies differ from v1 (first: %s)', ...
         label, c.differ, c.field, firstWhy(R, c.field)));
