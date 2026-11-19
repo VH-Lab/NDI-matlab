@@ -63,16 +63,41 @@ function report = archiveSegmentLengths(docs, v1Bodies, ndiDir)
 %       compared             of those, the ones the bodies rebuild a value
 %                            for (a body of that kind is there)
 %       equal, differ        of the compared
-%       no_v2_home           v1_stated - compared: the v1 value is stated but
-%                            the archive has no converted body of that kind
-%                            (the v1 ingest writes both values for every
-%                            archive, so an archive with no digital channel
-%                            has a sample_digital_segment no body holds)
+%       no_digital_default   (digital only; always 0 for analog) the archive
+%                            has no digital series at all (no di or do body,
+%                            converted or not, and no di_/do_ segment file
+%                            in the v1 archive's file_info) and its v1
+%                            sample_digital_segment is the v1 ingest's fixed
+%                            default, V1_DIGITAL_SEGMENT_DEFAULT (1e7):
+%                            notation, rebuilt by the round trip, not a loss
+%                            (see NO DIGITAL CHANNEL below)
+%       no_v2_home           v1_stated - compared - no_digital_default: the
+%                            v1 value is stated but the archive has no
+%                            converted body of that kind, and it is not the
+%                            no-digital default
 %       v2_without_v1        rebuilt where the v1 document states none
 %     differences            struct array {archive_id, field, v1, v2, why},
 %                            the first DIFFERENCE_CAP (20) differ entries in
 %                            archive order (the counts are exact)
 %     unreadable_documents   documents that could not be read as a struct
+%
+%   NO DIGITAL CHANNEL. Decided by Jess Haley, 2026-11-19 [archive with no
+%   digital channel] (did-schema did_v2_standing_wiring_plan.md): the
+%   sample_digital_segment of an archive with no digital channel "is
+%   notation, rebuilt by the round trip, if the v1 ingest writer always
+%   writes the same default when an archive has no digital channel". It
+%   does. The v1 writer, ndi.daq.reader.mfdaq/ingest_epochfiles_plan on NDI
+%   `origin/main` (145f651ad, src/ndi/+ndi/+daq/+reader/mfdaq.m:848 and
+%   :851), sets
+%       sample_digital_segment = 1e7; % 10M
+%       daqreader_mfdaq_epochdata_ingested.parameters.sample_digital_segment = sample_digital_segment;
+%   before it looks at the channels, so every archive states 1e7 whether
+%   or not it has a digital group, and every version of that writer since
+%   ingestion was added (3fb23748b, 2024-01-06) writes the same 1e7. (The
+%   template, daqreader_mfdaq_epochdata_ingested.json, says 1000000; the
+%   writer wins.) A different value on an archive with no digital series
+%   is not what the writer wrote, so it stays `no_v2_home`; so does 1e7
+%   on an archive that has a digital series no converted body holds.
 %
 %   See also ndi.migrate.internal.ingestedArchiveBodies,
 %            ndi.vintage.ingestedSegmentLength, ndi.migrate.local.
@@ -84,6 +109,9 @@ arguments
 end
 
 DIFFERENCE_CAP = 20;
+% the v1 ingest's sample_digital_segment, written for every archive
+% (NO DIGITAL CHANNEL above)
+V1_DIGITAL_SEGMENT_DEFAULT = 1e7;
 fields = struct('analog', 'sample_analog_segment', 'digital', 'sample_digital_segment');
 report = struct( ...
     'archives_inspected',          0, ...
@@ -111,6 +139,7 @@ end
 nA = numel(archives);
 sampled = cell(1, nA);    % per archive: struct array {kind, chunk, has_chunk, filename}
 opaque = zeros(1, nA);    % per archive: opaque bodies naming its files
+opaqueKinds = repmat({{}}, 1, nA);  % per archive: the kinds ('analog', 'digital', '') of those
 for k = 1:numel(docs)
     d = docs{k};
     try
@@ -124,11 +153,12 @@ for k = 1:numel(docs)
     report.bodies_inspected = report.bodies_inspected + 1;
     a = archiveOfBody(d, uidToArchive);
     if a == 0; continue; end
+    fn = bodyFilename(d);
     if strcmp(cls, 'opaque_body')
         opaque(a) = opaque(a) + 1;
+        opaqueKinds{a}{end+1} = kindOf(fn);
         continue;
     end
-    fn = bodyFilename(d);
     kind = kindOf(fn);
     [chunk, has] = timeChunk(d);
     sampled{a} = [sampled{a}, struct('kind', kind, 'chunk', chunk, ...
@@ -158,7 +188,16 @@ for a = 1:nA
         c = report.(w);
         if isfinite(v1); c.v1_stated = c.v1_stated + 1; end
         if isempty(bodies)
-            if isfinite(v1); c.no_v2_home = c.no_v2_home + 1; end
+            if isfinite(v1)
+                if strcmp(w, 'digital') && v1 == V1_DIGITAL_SEGMENT_DEFAULT ...
+                        && ~any(strcmp(opaqueKinds{a}, 'digital')) ...
+                        && ~v1HasDigitalSegment(arch)
+                    % no digital series, and the writer's default: notation
+                    c.no_digital_default = c.no_digital_default + 1;
+                else
+                    c.no_v2_home = c.no_v2_home + 1;
+                end
+            end
             report.(w) = c;
             continue;
         end
@@ -195,7 +234,7 @@ end
 function c = fieldCounts(f)
 c = struct('field', ['daqreader_mfdaq_epochdata_ingested.parameters.' f], ...
     'v1_stated', 0, 'compared', 0, 'equal', 0, 'differ', 0, ...
-    'no_v2_home', 0, 'v2_without_v1', 0);
+    'no_digital_default', 0, 'no_v2_home', 0, 'v2_without_v1', 0);
 end
 
 function [v, why] = rebuilt(bodies)
@@ -271,6 +310,24 @@ for k = 1:numel(v1Bodies)
     archives{end+1} = b; %#ok<AGROW>
     for u = fileUids(b)
         uidToArchive(u{1}) = numel(archives);
+    end
+end
+end
+
+function tf = v1HasDigitalSegment(arch)
+% the v1 archive names a digital segment file (di_group<g>_seg.nbf_<s> or
+% do_...), as ndi.daq.reader.mfdaq/ingest_epochfiles_plan names them
+tf = false;
+if ~isfield(arch, 'files') || ~isstruct(arch.files) || ~isfield(arch.files, 'file_info')
+    return;
+end
+infos = arch.files.file_info;
+if isstruct(infos); infos = num2cell(infos); end
+for i = 1:numel(infos)
+    if isstruct(infos{i}) && isfield(infos{i}, 'name') && ~isempty(regexp(char(infos{i}.name), ...
+            '^(di|do)_group\d+_seg\.nbf_\d+$', 'once'))
+        tf = true;
+        return;
     end
 end
 end
