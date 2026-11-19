@@ -21,6 +21,14 @@ function [v, form] = covariateValues(covariate, dimensions)
 %   Each is shaped by the extents of the `along` dimensions when its element
 %   count fits them (a vector along one dimension is a column).
 %
+%   Both numeric shapes are read (did-schema did_v2_numeric_shape_plan.md,
+%   [one shape for measured numbers], Jess Haley, 2026-11-17): the old
+%   `quantity.value`, `matrix` and `origin`/`spacing` blocks {value,
+%   source_value}, and the new flat `numeric` and plain `origin`/`spacing`
+%   numbers. FORM keeps the old names: a `numeric` with one number per
+%   position of its `along` dimensions (or with a `source_numeric`) is
+%   'quantity', any other `numeric` array is 'matrix' (the stored array).
+%
 %   See also ndi.v2.axesTable, ndi.v2.covariatesTable.
 
 arguments
@@ -49,6 +57,17 @@ if has(c, 'origin') || has(c, 'spacing')
 elseif has(c, 'quantity')
     form = "quantity";
     v = double(pick(c, 'quantity', []));
+elseif has(c, 'numeric')
+    % the new numeric shape (flat `numeric`, no wrapper)
+    x = c.numeric;
+    if iscell(x), x = cellNumbers(x); end
+    v = double(x);
+    if has(c, 'source_numeric') || fitsAlong(v, along, dims)
+        form = "quantity";
+    else
+        form = "matrix";
+        return;
+    end
 elseif has(c, 'count')
     form = "count";
     v = double(c.count);
@@ -98,12 +117,47 @@ else
 end
 end
 
+function tf = fitsAlong(v, along, dims)
+% one number per position of the `along` dimensions
+sz = [];
+for a = along
+    if numel(dims) > a
+        sz(end+1) = double(fieldOr(dims{a + 1}, 'n', NaN)); %#ok<AGROW>
+    end
+end
+tf = isempty(along) || (~isempty(sz) && ~any(isnan(sz)) && prod(sz) == numel(v));
+end
+
+function x = cellNumbers(c)
+% a numeric array read back from JSON as a cell (a null in it): NaN there
+x = c;
+try
+    x = cell2mat(cellfun(@(r) reshape(rowNumbers(r), 1, []), c(:), 'UniformOutput', false));
+catch
+end
+end
+
+function r = rowNumbers(r)
+if iscell(r)
+    r = cellfun(@(e) nanIfEmpty(e), r);
+else
+    r = nanIfEmpty(r);
+end
+end
+
+function e = nanIfEmpty(e)
+if isempty(e), e = NaN; end
+e = double(e);
+end
+
 function tf = has(s, name)
 tf = isfield(s, name) && ~isempty(s.(name));
 end
 
 function x = pick(s, name, default)
-% a {value, source_value} pair's canonical value, or a bare number
+% a {value, source_value} pair's canonical value (old numeric shape), or a
+% bare number (new numeric shape: `origin` and `spacing` are plain numbers
+% beside `source_origin` and `source_spacing`)
 x = default;
 if ~isfield(s, name) || isempty(s.(name)), return; end
 p = s.(name);

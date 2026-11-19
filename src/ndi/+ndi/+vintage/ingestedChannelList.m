@@ -101,9 +101,10 @@ for k = 1:numel(groups)
         nm = ''; node = '';
         if isstruct(v) && isfield(v, 'name'); nm = char(v.name); end
         if isstruct(v) && isfield(v, 'node'); node = char(v.node); end
-        if isTimeTerm(v) && isfield(cv, 'spacing') && isstruct(cv.spacing) ...
-                && isfield(cv.spacing, 'value')
-            sr = 1 / double(cv.spacing.value);
+        if isTimeTerm(v) && isfield(cv, 'spacing') && ~isempty(regularNumber(cv.spacing))
+            % spacing: the old {value, source_value} block, or the new
+            % numeric shape's plain number ([one shape for measured numbers])
+            sr = 1 / regularNumber(cv.spacing);
             % the spacing is stored as 1/rate: an integer rate comes back
             % as that integer, not one bit off it
             if abs(sr - round(sr)) <= 1e-9 * abs(sr); sr = round(sr); end
@@ -199,6 +200,17 @@ elseif ischar(x) || isstring(x)
     x = str2double(cellstr(x));
 end
 x = double(x(:)');
+end
+
+function x = regularNumber(p)
+% a covariate's origin or spacing: the old block's canonical `value`, or the
+% new numeric shape's plain number; [] when neither
+x = [];
+if isstruct(p) && ~isempty(p) && isfield(p, 'value') && ~isempty(p(1).value)
+    x = double(p(1).value(1));
+elseif (isnumeric(p) || islogical(p)) && ~isempty(p)
+    x = double(p(1));
+end
 end
 
 function c = textsOf(x)
