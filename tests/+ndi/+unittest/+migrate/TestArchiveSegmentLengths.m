@@ -53,7 +53,8 @@ classdef TestArchiveSegmentLengths < matlab.unittest.TestCase
             testCase.verifyEqual([r.analog.v1_stated r.analog.compared r.analog.equal ...
                 r.analog.differ r.analog.no_v2_home], [1 1 1 0 0], 'sample_analog_segment');
             testCase.verifyEqual([r.digital.v1_stated r.digital.compared r.digital.equal ...
-                r.digital.differ r.digital.no_v2_home], [1 1 1 0 0], 'sample_digital_segment');
+                r.digital.differ r.digital.no_v2_home r.digital.no_digital_default], ...
+                [1 1 1 0 0 0], 'sample_digital_segment');
             testCase.verifyEmpty(r.differences);
             % the v1 bodies as JSON text, as did2.convert.readers hand them over
             r2 = ndi.migrate.internal.archiveSegmentLengths(out, ...
@@ -91,14 +92,69 @@ classdef TestArchiveSegmentLengths < matlab.unittest.TestCase
 
         function testNoDigitalGroupIsAStatedValueWithNoV2Home(testCase)
             % the v1 ingest states both lengths for every archive; with no
-            % digital channel, no body holds sample_digital_segment (reported,
-            % not compared)
+            % digital channel, no body holds sample_digital_segment. The
+            % fixture's 120 is not the writer's default (1e7), so it is not
+            % notation: reported as no v2 home, not compared
             [structs, v1] = testCase.archive(false);
             out = testCase.secondPass(structs, v1);
             r = ndi.migrate.internal.archiveSegmentLengths(out, v1, testCase.Dir);
             testCase.verifyEqual([r.analog.compared r.analog.equal], [1 1]);
-            testCase.verifyEqual([r.digital.v1_stated r.digital.compared r.digital.no_v2_home], ...
-                [1 0 1]);
+            testCase.verifyEqual([r.digital.v1_stated r.digital.compared ...
+                r.digital.no_digital_default r.digital.no_v2_home], [1 0 0 1]);
+        end
+
+        function testNoDigitalGroupAtTheWriterDefaultIsNotation(testCase)
+            % Decided by Jess Haley, 2026-11-19 [archive with no digital
+            % channel]: the v1 writer (ndi.daq.reader.mfdaq/
+            % ingest_epochfiles_plan, NDI origin/main mfdaq.m:848) writes
+            % sample_digital_segment = 1e7 for every archive; on an archive
+            % with no digital series that value is notation
+            [structs, v1] = testCase.archive(false);
+            out = testCase.secondPass(structs, v1);
+            v1{1}.daqreader_mfdaq_epochdata_ingested.parameters.sample_digital_segment = 1e7;
+            r = ndi.migrate.internal.archiveSegmentLengths(out, v1, testCase.Dir);
+            testCase.verifyEqual(r.archives_measured, 1);
+            testCase.verifyEqual([r.analog.compared r.analog.equal r.analog.no_digital_default], ...
+                [1 1 0], 'the analog length is compared as before, and is never the digital default');
+            testCase.verifyEqual([r.digital.v1_stated r.digital.compared r.digital.equal ...
+                r.digital.differ r.digital.no_digital_default r.digital.no_v2_home], ...
+                [1 0 0 0 1 0]);
+            testCase.verifyEmpty(r.differences);
+            % the same as JSON text
+            r2 = ndi.migrate.internal.archiveSegmentLengths(out, ...
+                cellfun(@jsonencode, v1, 'UniformOutput', false), testCase.Dir);
+            testCase.verifyEqual(r2, r);
+        end
+
+        function testTheDefaultWithAnUnconvertedDigitalSeriesHasNoV2Home(testCase)
+            % the archive HAS a digital series, still pass 1's opaque body:
+            % 1e7 there is a value no converted body holds, not notation
+            [structs, v1] = testCase.archive(true);
+            out = testCase.secondPass(structs, v1);
+            k = find(cellfun(@(b) strcmp(b.base.id, 'body_di'), out));
+            j = find(cellfun(@(b) strcmp(b.base.id, 'body_di'), structs));
+            testCase.assertNumElements(k, 1);
+            testCase.assertNumElements(j, 1);
+            out{k} = structs{j};
+            v1{1}.daqreader_mfdaq_epochdata_ingested.parameters.sample_digital_segment = 1e7;
+            r = ndi.migrate.internal.archiveSegmentLengths(out, v1, testCase.Dir);
+            testCase.verifyEqual([r.analog.compared r.analog.equal], [1 1]);
+            testCase.verifyEqual([r.digital.v1_stated r.digital.compared ...
+                r.digital.no_digital_default r.digital.no_v2_home], [1 0 0 1]);
+        end
+
+        function testTheDefaultWithADigitalSegmentFileInV1HasNoV2Home(testCase)
+            % the v1 archive names a digital segment file no body holds:
+            % its 1e7 is not notation either
+            [structs, v1] = testCase.archive(false);
+            out = testCase.secondPass(structs, v1);
+            v1{1}.daqreader_mfdaq_epochdata_ingested.parameters.sample_digital_segment = 1e7;
+            loc = v1{1}.files.file_info(1).locations;
+            loc.uid = 'u_di_gone';
+            v1{1}.files.file_info(end+1) = struct('name', 'di_group1_seg.nbf_1', 'locations', loc);
+            r = ndi.migrate.internal.archiveSegmentLengths(out, v1, testCase.Dir);
+            testCase.verifyEqual([r.digital.v1_stated r.digital.compared ...
+                r.digital.no_digital_default r.digital.no_v2_home], [1 0 0 1]);
         end
 
         function testBytesAbsentIsNotMeasured(testCase)

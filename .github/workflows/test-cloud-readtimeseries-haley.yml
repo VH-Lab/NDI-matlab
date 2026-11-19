@@ -1,0 +1,260 @@
+name: readtimeseries timed on NDI Cloud (Haley, v1 and migrated)
+
+# Decided by Jess Haley, 2026-11-19 [readtimeseries timed with NDI Cloud]
+# (did-schema did_v2_standing_wiring_plan.md), for VH-Lab/NDI-matlab#1018:
+# "an on-demand NDI-matlab workflow, never on push, signs in to NDI Cloud with
+# a repository secret, fetches the Haley session's binaries and times
+# `readtimeseries` on v1 and on migrated v2, comparing the samples; until a
+# team member adds the secret it reports not measured and exits cleanly."
+#
+# The corpus zips (JH.zip included) carry no binary files and the Haley files
+# are at ndic:// paths, so no corpus job can read these series. This job runs
+# ndi.unittest.migrate.cloudReadtimeseriesTiming: it downloads the dataset's
+# documents and the binaries of a fixed set of element epochs, reads each
+# with readtimeseries on the v1 database, migrates with ndi.migrate.local,
+# reads again, and compares samples and times. The report prints its
+# denominators first and is uploaded as the artifact `readtimeseries-report`.
+#
+# THE SECRET. Two repository secrets, set by a team member:
+#   NDI_CLOUD_HALEY_USERNAME   an NDI Cloud account that can read the dataset
+#   NDI_CLOUD_HALEY_PASSWORD   its password
+# They are handed to MATLAB as NDI_CLOUD_USERNAME / NDI_CLOUD_PASSWORD, the
+# variables ndi.cloud.authenticate reads (the pattern of test-cloud-api.yml).
+# They are not NDI_CLOUD_USERNAME / NDI_CLOUD_PASSWORD themselves because those
+# hold the cloud API tests' test account. With either secret missing the job
+# prints "NOT MEASURED: no NDI Cloud secret" and succeeds without installing
+# anything: not measured is a third state, never a pass and never a failure.
+# With the secret, a pair whose samples or times differ, a read that raises,
+# or a setup that fails makes the job fail.
+#
+# On demand only: workflow_dispatch, never push or pull_request.
+
+on:
+  workflow_dispatch:
+    inputs:
+      dataset_id:
+        description: 'NDI Cloud dataset id (default: the Haley dataset of #1018)'
+        required: false
+        default: '682e7772cdf3f24938176fac'
+        type: string
+      max_elements:
+        description: 'number of elements read (the fixed set; see cloudReadtimeseriesTiming)'
+        required: false
+        default: '4'
+        type: string
+      epochs_per_element:
+        description: 'epochs read per element'
+        required: false
+        default: '1'
+        type: string
+      element_ids:
+        description: 'comma-separated element document ids to read instead of the fixed set'
+        required: false
+        default: ''
+        type: string
+      ref:
+        description: 'DID-matlab ref (default: the same-name branch, else V2)'
+        required: false
+        default: ''
+        type: string
+      schema_ref:
+        description: 'did-schema ref (default: the same-name branch, else main)'
+        required: false
+        default: ''
+        type: string
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.sha }}-${{ inputs.dataset_id }}
+  cancel-in-progress: false
+
+jobs:
+  readtimeseries_cloud:
+    name: readtimeseries on NDI Cloud, v1 and migrated
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    env:
+      DID_MATLAB_REQUESTED: ${{ inputs.ref }}
+      NDI_BRANCH: ${{ github.head_ref || github.ref_name }}
+      DID_SCHEMA_REQUESTED: ${{ inputs.schema_ref }}
+    steps:
+      - name: Is the NDI Cloud secret set?
+        id: secret
+        env:
+          HALEY_USERNAME: ${{ secrets.NDI_CLOUD_HALEY_USERNAME }}
+          HALEY_PASSWORD: ${{ secrets.NDI_CLOUD_HALEY_PASSWORD }}
+        run: |
+          if [ -n "${HALEY_USERNAME}" ] && [ -n "${HALEY_PASSWORD}" ]; then
+            echo "present=true" >> "$GITHUB_OUTPUT"
+            echo "The NDI Cloud secret is set (NDI_CLOUD_HALEY_USERNAME, NDI_CLOUD_HALEY_PASSWORD); measuring."
+          else
+            echo "present=false" >> "$GITHUB_OUTPUT"
+            echo "NOT MEASURED: no NDI Cloud secret"
+            echo "(repository secrets NDI_CLOUD_HALEY_USERNAME and NDI_CLOUD_HALEY_PASSWORD are not both set)"
+            {
+              echo "### readtimeseries on NDI Cloud"
+              echo ""
+              echo "NOT MEASURED: no NDI Cloud secret (NDI_CLOUD_HALEY_USERNAME / NDI_CLOUD_HALEY_PASSWORD)."
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Check out NDI-matlab
+        if: steps.secret.outputs.present == 'true'
+        uses: actions/checkout@v4
+
+      - name: Resolve cross-repo refs (print them; fail if one is missing)
+        if: steps.secret.outputs.present == 'true'
+        # As test-eta-migrate-e2e.yml: a requested ref that does not exist
+        # stops the run; no fallback to another ref.
+        run: |
+          set -euo pipefail
+          resolve() {  # <owner/repo> <ref> <env var for the sha>
+            local sha
+            sha=$(git ls-remote "https://github.com/$1.git" "refs/heads/$2" "refs/tags/$2^{}" "refs/tags/$2" | head -1 | cut -f1)
+            if [ -z "$sha" ] && [[ "$2" =~ ^[0-9a-f]{40}$ ]]; then sha="$2"; fi
+            if [ -z "$sha" ]; then
+              echo "::error::$1 has no branch, tag or commit '$2'. Refusing to fall back to any other ref."
+              exit 1
+            fi
+            echo "RESOLVED: $1 @ $2 = $sha"
+            echo "$3=$sha" >> "$GITHUB_ENV"
+          }
+          DID_SCHEMA_REF="${DID_SCHEMA_REQUESTED:-}"
+          if [ -z "$DID_SCHEMA_REF" ] && [ -n "${NDI_BRANCH:-}" ] && [ "$NDI_BRANCH" != "main" ] \
+             && [ -n "$(git ls-remote https://github.com/Waltham-Data-Science/did-schema.git "refs/heads/$NDI_BRANCH")" ]; then
+            DID_SCHEMA_REF="$NDI_BRANCH"
+          fi
+          DID_SCHEMA_REF="${DID_SCHEMA_REF:-main}"
+          echo "PICKED: did-schema ref $DID_SCHEMA_REF"
+          echo "DID_SCHEMA_REF=$DID_SCHEMA_REF" >> "$GITHUB_ENV"
+          resolve Waltham-Data-Science/did-schema "$DID_SCHEMA_REF" DID_SCHEMA_SHA
+          DID_MATLAB_REF="${DID_MATLAB_REQUESTED:-}"
+          if [ -z "$DID_MATLAB_REF" ] && [ -n "${NDI_BRANCH:-}" ] && [ "$NDI_BRANCH" != "main" ] \
+             && [ -n "$(git ls-remote https://github.com/VH-Lab/DID-matlab.git "refs/heads/$NDI_BRANCH")" ]; then
+            DID_MATLAB_REF="$NDI_BRANCH"
+          fi
+          DID_MATLAB_REF="${DID_MATLAB_REF:-V2}"
+          echo "PICKED: DID-matlab ref $DID_MATLAB_REF"
+          echo "DID_MATLAB_REF=$DID_MATLAB_REF" >> "$GITHUB_ENV"
+          resolve VH-Lab/DID-matlab "$DID_MATLAB_REF" DID_MATLAB_SHA
+
+      - name: Check out did-schema
+        if: steps.secret.outputs.present == 'true'
+        uses: actions/checkout@v4
+        with:
+          repository: Waltham-Data-Science/did-schema
+          ref: ${{ env.DID_SCHEMA_SHA }}
+          path: did-schema
+
+      - name: Check out DID-matlab
+        if: steps.secret.outputs.present == 'true'
+        uses: actions/checkout@v4
+        with:
+          repository: VH-Lab/DID-matlab
+          ref: ${{ env.DID_MATLAB_SHA }}
+          path: did-matlab
+
+      - name: Assemble the did_v2 schema set
+        if: steps.secret.outputs.present == 'true'
+        run: |
+          mkdir -p "${GITHUB_WORKSPACE}/eta-schemas"
+          bash .github/scripts/assemble_did_schema_set.sh did-schema "${GITHUB_WORKSPACE}/eta-schemas"
+          echo "DID_SCHEMA_PATH=${GITHUB_WORKSPACE}/eta-schemas" >> "$GITHUB_ENV"
+
+      - name: Free disk space for the download
+        if: steps.secret.outputs.present == 'true'
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL || true
+          df -h "${GITHUB_WORKSPACE}"
+
+      - name: Set up MATLAB
+        if: steps.secret.outputs.present == 'true'
+        uses: matlab-actions/setup-matlab@v2
+        with:
+          # pinned as in test-eta-migrate-e2e.yml (MatBox and R2026b)
+          release: R2026a
+          cache: true
+          products: |
+            Statistics_and_Machine_Learning_Toolbox
+            Signal_Processing_Toolbox
+            Communications_Toolbox
+
+      - name: Install MatBox
+        if: steps.secret.outputs.present == 'true'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        uses: ehennestad/matbox-actions/install-matbox@v1
+
+      - name: Point requirements at the resolved DID-matlab
+        if: steps.secret.outputs.present == 'true'
+        run: |
+          set -eux
+          python3 - <<'PY'
+          import os, pathlib
+          ref = os.environ["DID_MATLAB_REF"]
+          for rel in ("requirements.txt", "tests/requirements.txt"):
+              p = pathlib.Path(rel)
+              if not p.exists():
+                  continue
+              out = []
+              for line in p.read_text().splitlines():
+                  if "DID-matlab" in line:
+                      out.append(line.split("@", 1)[0] + "@" + ref)
+                  else:
+                      out.append(line)
+              p.write_text("\n".join(out) + "\n")
+          PY
+
+      - name: Install repo dependencies
+        if: steps.secret.outputs.present == 'true'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        uses: matlab-actions/run-command@v2
+        with:
+          command: |
+            addpath(genpath("src"));
+            addpath(genpath("tools"));
+            matbox.installRequirements(nditools.projectdir());
+            matbox.installRequirements(fullfile(pwd, "tests"));
+
+      - name: Time readtimeseries, v1 and migrated
+        if: steps.secret.outputs.present == 'true'
+        env:
+          # the variables ndi.cloud.authenticate reads; never echoed
+          NDI_CLOUD_USERNAME: ${{ secrets.NDI_CLOUD_HALEY_USERNAME }}
+          NDI_CLOUD_PASSWORD: ${{ secrets.NDI_CLOUD_HALEY_PASSWORD }}
+          CLOUD_API_ENVIRONMENT: prod
+          DATASET_ID: ${{ inputs.dataset_id }}
+          MAX_ELEMENTS: ${{ inputs.max_elements }}
+          EPOCHS_PER_ELEMENT: ${{ inputs.epochs_per_element }}
+          ELEMENT_IDS: ${{ inputs.element_ids }}
+        uses: matlab-actions/run-command@v2
+        with:
+          command: |
+            addpath(genpath("src"));
+            addpath(genpath("tests"));
+            addpath(genpath(fullfile(pwd, "did-matlab", "src")));
+            didWhere = string(which("did2.convert.v1_to_v2"));
+            disp("DID-matlab " + string(getenv("DID_MATLAB_REF")) + " @ " + string(getenv("DID_MATLAB_SHA")) + " from " + didWhere);
+            assert(startsWith(didWhere, string(fullfile(pwd, "did-matlab"))), "did2 does not resolve to the checked-out DID-matlab: " + didWhere);
+            ids = strtrim(strsplit(getenv("ELEMENT_IDS"), ","));
+            ids = ids(~cellfun(@isempty, ids));
+            R = ndi.unittest.migrate.cloudReadtimeseriesTiming( ...
+                'DatasetId', getenv("DATASET_ID"), ...
+                'WorkDir', fullfile(getenv("RUNNER_TEMP"), "ndi-cloud"), ...
+                'MaxElements', str2double(getenv("MAX_ELEMENTS")), ...
+                'EpochsPerElement', str2double(getenv("EPOCHS_PER_ELEMENT")), ...
+                'ElementIds', ids, ...
+                'ReportFile', fullfile(pwd, "readtimeseries-report.json"));
+            assert(strcmp(R.state, "measured"), "not measured: " + string(R.reason));
+            assert(R.pairs_same == R.pairs_selected, sprintf( ...
+                "%d of %d pair(s) are not the same after migration (%d differ, %d v1 error(s), %d v2 error(s))", ...
+                R.pairs_selected - R.pairs_same, R.pairs_selected, R.pairs_differ, ...
+                R.pairs_v1_error, R.pairs_v2_error));
+
+      - name: Upload the report
+        if: always() && steps.secret.outputs.present == 'true'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: readtimeseries-report
+          path: readtimeseries-report.json
+          if-no-files-found: warn
