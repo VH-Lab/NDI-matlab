@@ -445,27 +445,30 @@ classdef TestBathAssembly < matlab.unittest.TestCase
             end
         end
 
-        function testTheGuardIsVetaOnlyAndOlderTargetsAreUntouched(testCase)
-            % The retirement is a V_eta decision. V_zeta/V_epsilon keep the
-            % behaviour they are green with, no_time clock included.
-            v1 = stimulusBathDoc('stim_1', 't00001');
-            r  = mockResolver('animal_1', 'no_time');
-            [bath, timeRef] = ...
-                ndi.migrate.internal.stimulusBathToBath(v1, r, 'V_zeta');
-            testCase.verifyNotEmpty(timeRef);
-            testCase.verifyEqual(timeRef.document_class.class_name, ...
-                'epoch_bounded_reference');
-            testCase.verifyEqual(depValue(bath, 'time_reference_1'), ...
-                timeRef.base.id);
-        end
-
-        function testZetaStillEmitsBath(testCase)
-            % the older target is unchanged: a `bath` (pharmacological_manipulation)
+        function testDidV2IsTheOnlyTarget(testCase)
+            % VH-Lab/NDI-matlab#1183 (did-schema OPEN_WORK #128): the V_zeta /
+            % V_epsilon `bath` shapes are gone. An earlier schema-set name is
+            % refused, never assembled in an old shape.
             v1 = stimulusBathDoc('stim_1', 't00001');
             r  = mockResolver('animal_1', 'dev_local_time');
-            bath = ndi.migrate.internal.stimulusBathToBath(v1, r, 'V_zeta');
-            testCase.verifyEqual(bath.document_class.class_name, 'bath');
-            testCase.verifyTrue(isfield(bath, 'pharmacological_manipulation'));
+            for target = {'V_zeta', 'V_epsilon', 'V_eta'}
+                testCase.verifyError(@() ...
+                    ndi.migrate.internal.stimulusBathToBath(v1, r, target{1}), ...
+                    'ndi:migrate:unsupportedTarget', target{1});
+            end
+        end
+
+        function testTheDefaultTargetIsDidV2(testCase)
+            % called without a target, the assembler builds the did_v2 shape:
+            % a manipulation valued by its formulation, never a `bath`
+            v1 = stimulusBathDoc('stim_1', 't00001');
+            r  = mockResolver('animal_1', 'dev_local_time');
+            byDefault = ndi.migrate.internal.stimulusBathToBath(v1, r);
+            explicit  = ndi.migrate.internal.stimulusBathToBath(v1, r, 'did_v2');
+            testCase.verifyEqual(byDefault.document_class.class_name, ...
+                explicit.document_class.class_name);
+            testCase.verifyNotEqual(byDefault.document_class.class_name, 'bath');
+            testCase.verifyEqual(byDefault.base.id, explicit.base.id);
         end
 
     end
