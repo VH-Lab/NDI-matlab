@@ -4,7 +4,7 @@ function q = v1ElementQuery(S, q)
 %   Q = ndi.vintage.v1ElementQuery(SESSION, Q) returns Q, a search on the
 %   fields of the v1 `element` block (ndi.element/searchquery, getprobes'
 %   `element.ndi_element_class`), with `isa element` ANDed on when SESSION's
-%   database is a v2 one (did2sqlite); elsewhere Q unchanged.
+%   database is a v2 one (ndi.session/writesV2); elsewhere Q unchanged.
 %
 %   The same documents: of NDI's document templates only `element` declares
 %   an `element` block (src/ndi/ndi_common/database_documents: element.json
@@ -23,8 +23,13 @@ function q = v1ElementQuery(S, q)
 %
 %   See also ndi.vintage.elementDoc, ndi.session/getprobes.
 
+% (the session's database is not readable from outside ndi.session, so its
+% kind is asked of the session, as ndi.daq.reader does)
+isV2 = false;
 try
-    isV2 = isa(S.database, 'ndi.database.implementations.database.did2sqlite');
+    if ismethod(S, 'writesV2')
+        isV2 = logical(S.writesV2());
+    end
 catch
     isV2 = false;
 end
