@@ -271,6 +271,27 @@ classdef TestIngestedArchiveBodies < matlab.unittest.TestCase
             testCase.verifyEmpty(res.quarantine);
         end
 
+        function testEventsWiredToTheRigsDeviceAreUnpacked(testCase)
+            % [acquisition system is a device entity] (Jess Haley,
+            % 2026-11-19, did-schema docs/plans/did_v2_standing_wiring_plan.md):
+            % DID-matlab's migration wires a probe to the rig's device
+            % entity, which the acquisition_system names by `device_id`. The
+            % events are unpacked as when the wiring names the system.
+            o = struct('events', true, 'wired', true, 'wiredToDevice', true);
+            [structs, v1] = testCase.archive(false, true, 2, o);
+            [out, rep] = ndi.migrate.internal.ingestedArchiveBodies(structs, testCase.Dir, v1);
+            testCase.verifyEqual(rep.event_channels_seen, 2, 'denominator');
+            testCase.verifyEqual(rep.event_archives_unpacked, 1, rep.first_event_kept_reason);
+            testCase.verifyEqual(rep.event_channels_unpacked, 2);
+            testCase.verifyEqual(rep.event_kept_unwired, 0);
+            added = out(numel(structs) + 1:end);
+            E = ndi.vintage.ingestedEventChannels(added, added);
+            testCase.assertEqual(numel(E), 2);
+            obsE = added{strcmp(cellfun(@(d) d.base.id, added, 'UniformOutput', false), E(1).statement_id)};
+            testCase.verifyEqual(edgeOf(obsE, 'entity_id'), {'stim_1'}, 'the wired probe');
+            testCase.verifyEqual(edgeOf(obsE, 'acquisition_system_id'), {'sys_1'});
+        end
+
         function testUnwiredEventsAreLeftPacked(testCase)
             % no `connected to` relation wires the channels: their entity is
             % not known, so the file stays as it is, counted
@@ -1234,7 +1255,13 @@ classdef TestIngestedArchiveBodies < matlab.unittest.TestCase
                 end
                 s{end+1} = body('body_ev', 'evmktx_group1_seg.nbf_#', {'u_ev'});
                 uids{end+1} = 'u_ev';
-                if o.wired
+                if o.wired && isfield(o, 'wiredToDevice') && o.wiredToDevice
+                    % [acquisition system is a device entity] (Jess Haley
+                    % 2026-11-19): the wiring names the rig's device dev_1,
+                    % which the system sys_1 names by `device_id`
+                    s{end+1} = rigSystem('sys_1', 'dev_1');
+                    s{end+1} = wiring(o.text && o.wireText, 'dev_1');
+                elseif o.wired
                     s{end+1} = wiring(o.text && o.wireText);
                 end
             end
@@ -1333,10 +1360,14 @@ obs = did2.build.statement('observation', 'el_1', ...
     'SessionId', 'sess_1', 'Validate', false, 'ValueKind', 'time');
 end
 
-function rel = wiring(withText)
+function rel = wiring(withText, parent)
 % the stimulator stim_1 `connected to` the system sys_1 on e1 and mk2 (and,
-% WITHTEXT, tx3), as did2.convert.resolveEpochProbemap mkWiring writes it
+% WITHTEXT, tx3), as did2.convert.resolveEpochProbemap mkWiring writes it;
+% PARENT (default sys_1) is what the relation names as the rig: the system,
+% as migrated before, or the rig's device entity ([acquisition system is a
+% device entity], Jess Haley 2026-11-19)
 if nargin < 1; withText = false; end
+if nargin < 2; parent = 'sys_1'; end
 prev = did2.schema.cache.strictMode('TermRegistry', false);
 c = onCleanup(@() did2.schema.cache.strictMode('TermRegistry', prev));
 conds = {did2.build.condition(struct('node', 'EMPTY:0000376', 'name', 'event channel'), 'Matrix', 1), ...
@@ -1344,11 +1375,19 @@ conds = {did2.build.condition(struct('node', 'EMPTY:0000376', 'name', 'event cha
 if withText
     conds{end+1} = did2.build.condition(struct('node', 'EMPTY:0000410', 'name', 'text channel'), 'Matrix', 3);
 end
-rel = did2.build.directedRelation('stim_1', 'sys_1', ...
+rel = did2.build.directedRelation('stim_1', parent, ...
     struct('node', 'RO:0002170', 'name', 'connected to'), ...
     'TimeReferenceIds', {'tr_1'}, ...
     'Fields', struct('conditions', {did2.build.list(conds{:})}), ...
     'Id', 'rel_1', 'SessionId', 'sess_1', 'Validate', false);
+end
+
+function sys = rigSystem(id, deviceId)
+% the acquisition_system ID naming its rig's device entity DEVICEID by
+% `device_id`, as did2.convert.migrators_j.daqsystem writes it
+sys = did2.build.document('acquisition_system', struct('name', 'rig_1'), ...
+    'Edges', struct('reader_id', 'reader_1', 'epoch_file_pattern_id', 'nav_1', ...
+    'device_id', deviceId), 'Id', id, 'SessionId', 'sess_1', 'Validate', false);
 end
 
 function x = bytesOf(dir, b)
