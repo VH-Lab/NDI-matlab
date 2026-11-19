@@ -1083,9 +1083,20 @@ end
 function [entity, n] = wiredDevice(structs, sysId, anchors, type, num)
 % the child of the `connected to` (RO:0002170) relations to SYSID, timed by
 % one of ANCHORS, whose condition of TYPE's channel-type term lists NUM
-% (did2.convert.resolveEpochProbemap mkWiring); N how many devices
+% (did2.convert.resolveEpochProbemap mkWiring); N how many devices. The
+% relation's parent is the rig's device entity, the system's `device_id`
+% (Jess Haley 2026-11-19 [acquisition system is a device entity], did-schema
+% docs/plans/did_v2_standing_wiring_plan.md), or, in a batch migrated before,
+% SYSID itself: both are read.
 node = struct('event', 'EMPTY:0000376', 'marker', 'EMPTY:0000377');
 want = node.(type);
+parents = {sysId};
+for k = 1:numel(structs)
+    if strcmp(className(structs{k}), 'acquisition_system') && strcmp(baseId(structs{k}), sysId)
+        parents = [parents, edgeValues(structs{k}, 'device_id')]; %#ok<AGROW>
+        break;
+    end
+end
 found = {};
 for k = 1:numel(structs)
     s = structs{k};
@@ -1095,7 +1106,7 @@ for k = 1:numel(structs)
             || ~strcmpi(char(dr.relation.node), 'RO:0002170')
         continue;
     end
-    if ~any(strcmp(edgeValues(s, 'parent_id'), sysId)) ...
+    if ~any(ismember(edgeValues(s, 'parent_id'), parents)) ...
             || ~any(ismember(edgeValues(s, 'time_reference_id'), anchors))
         continue;
     end
