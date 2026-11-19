@@ -19,6 +19,14 @@ classdef TestIngestedV2Shapes < matlab.unittest.TestCase
 %     [channel name is an identifier]  a channel's v1 name is the text
 %         covariate of its group's body, variable NCIT:C25364 "Identifier",
 %         one value per channel; `<prefix><number>` when the body has none
+%   and Jess Haley's decisions of 2026-11-19 (did-schema
+%   did_v2_standing_wiring_plan.md):
+%     [time channel row is notation]  a time channel's own row is rebuilt
+%         from the groups that name it (`t<n>`, time_channel n, the groups'
+%         sample rate, offset 0, scale 1), so the v1 lists here hold the
+%         time row NDI's Intan reader writes (`t1`, intan.m getchannelsepoch)
+%     [text channel entries are a JSON array]  a text channel's entries are
+%         read back as NDI-compress's expander gives them
 %
 %   The channel list a reader rebuilds without `channel_list.bin` must be the
 %   list NDI's ingest wrote (ndi.file.type.mfdaq_epoch_channel), row for row:
@@ -54,11 +62,19 @@ classdef TestIngestedV2Shapes < matlab.unittest.TestCase
             ai = v1Rows('ai', 'analog_in', 1:2, [1 1], 20000, 32768, 0.195);
             ax = v1Rows('ax', 'auxiliary_in', 1:3, [2 2 NaN], 5000, 0, 3.74e-05);
             di = v1Rows('di', 'digital_in', 1:2, [1 1], 20000, 0, 1);
-            want = ndi.file.type.mfdaq_epoch_channel([ai, ax, di]).channel_information;
+            t1 = v1Rows('t', 'time', 1, 1, 20000, 0, 1);
+            v1list = ndi.file.type.mfdaq_epoch_channel([ai, ax, di, t1]).channel_information;
+            % [time channel row is notation]: t1 from the groups that name
+            % it (ai, di at 20 kHz), and t2, which the auxiliary inputs name
+            % but the ingest never writes: no group is all t2, so no rate
+            t2 = v1Rows('t', 'time', 2, 2, NaN, 0, 1);
+            want = ndi.file.type.mfdaq_epoch_channel([ai, ax, di, t1, t2]).channel_information;
             bodies = {groupBody('di', 1, di, true), groupBody('ai', 1, ai, true), ...
                 groupBody('ax', 1, ax, true)};
             got = ndi.vintage.ingestedChannelList(bodies);
             testCase.verifyTrue(isequaln(got, want), describe(got, want));
+            testCase.verifyNotEqual(numel(got), numel(v1list), ...
+                'the dangling t2 is rebuilt: such a v1 list does not compare exactly, so the second pass keeps it');
             % as the database gives the documents back (JSON: NaN is null)
             back = cellfun(@(b) jsondecode(jsonencode(b)), bodies, 'UniformOutput', false);
             got2 = ndi.vintage.ingestedChannelList(back);
@@ -75,7 +91,8 @@ classdef TestIngestedV2Shapes < matlab.unittest.TestCase
                 'no DID-matlab builders that write the new numeric shape');
             ai = v1Rows('ai', 'analog_in', 1:2, [1 1], 20000, 32768, 0.195);
             ax = v1Rows('ax', 'auxiliary_in', 1:3, [2 2 NaN], 5000, 0, 3.74e-05);
-            want = ndi.file.type.mfdaq_epoch_channel([ai, ax]).channel_information;
+            t = [v1Rows('t', 'time', 1, 1, 20000, 0, 1), v1Rows('t', 'time', 2, 2, NaN, 0, 1)];
+            want = ndi.file.type.mfdaq_epoch_channel([ai, ax, t]).channel_information;
             prev = did2.build.numericShape('new');
             testCase.addTeardown(@() did2.build.numericShape(prev));
             bodies = {groupBody('ai', 1, ai, true), groupBody('ax', 1, ax, true)};
@@ -113,7 +130,8 @@ classdef TestIngestedV2Shapes < matlab.unittest.TestCase
             % entry is the standard name
             ai = v1Rows('ai', 'analog_in', 1:3, [1 1 1], 20000, 32768, 0.195);
             [ai.name] = deal('A-001', 'A-002', 'ai3');
-            want = ndi.file.type.mfdaq_epoch_channel(ai).channel_information;
+            t1 = v1Rows('t', 'time', 1, 1, 20000, 0, 1);
+            want = ndi.file.type.mfdaq_epoch_channel([ai, t1]).channel_information;
             b = groupBody('ai', 1, ai, true, {'A-001', 'A-002', ''});
             got = ndi.vintage.ingestedChannelList({b});
             testCase.verifyTrue(isequaln(got, want), describe(got, want));
@@ -124,14 +142,15 @@ classdef TestIngestedV2Shapes < matlab.unittest.TestCase
             b2 = groupBody('ai', 1, ai, true, {'A-001', 'A-002', ''}, ...
                 struct('node', 'NCIT:C42614', 'name', 'Name'));
             got2 = ndi.vintage.ingestedChannelList({b2});
-            testCase.verifyEqual({got2.name}, {'ai1', 'ai2', 'ai3'});
+            testCase.verifyEqual({got2.name}, {'ai1', 'ai2', 'ai3', 't1'});
         end
 
         function testEventAndMarkerRowsComeFromTheirObservations(testCase)
             ai = v1Rows('ai', 'analog_in', 1:2, [1 1], 20000, 0, 1);
             ev = struct('name', {'e1', 'mk2', 'mk1'}, 'type', {'event', 'marker', 'marker'}, ...
                 'time_channel', NaN, 'sample_rate', NaN, 'offset', 0, 'scale', 1);
-            want = ndi.file.type.mfdaq_epoch_channel([ai, ev]).channel_information;
+            t1 = v1Rows('t', 'time', 1, 1, 20000, 0, 1);
+            want = ndi.file.type.mfdaq_epoch_channel([ai, t1, ev]).channel_information;
             [st, bodies] = eventDocs();
             E = ndi.vintage.ingestedEventChannels(st, bodies);
             testCase.verifyEqual({E.type}, {'event', 'marker', 'marker'});
@@ -156,7 +175,18 @@ classdef TestIngestedV2Shapes < matlab.unittest.TestCase
             [T, D] = ndi.vintage.ingestedEventData('marker', [0.1; 0.5], [7 2]);
             testCase.verifyEqual(T, [0.1; 0.5]);
             testCase.verifyEqual(D, [7; 2]);
-            testCase.verifyError(@() ndi.vintage.ingestedEventData('text', 1, []), ...
+            % [text channel entries are a JSON array] (Jess Haley,
+            % 2026-11-19): a text channel's entries, a 1xN cell of character
+            % rows as ndi.compress.vector2eventmarktext builds them
+            [T, D] = ndi.vintage.ingestedEventData('text', [0.1; 0.5], {'go'; ''});
+            testCase.verifyEqual(T, [0.1; 0.5]);
+            testCase.verifyEqual(D, {'go', char(zeros(1, 0))});
+            bytes = ndi.vintage.ingestedTextEntries('encode', {'go', ['caf' char(233)], ''});
+            testCase.verifyEqual(char(bytes), ['["go","caf' char([195 169]) '",""]'], ...
+                'one UTF-8 JSON array of strings');
+            testCase.verifyEqual(ndi.vintage.ingestedTextEntries('decode', bytes), ...
+                {'go', ['caf' char(233)], char(zeros(1, 0))});
+            testCase.verifyError(@() ndi.vintage.ingestedEventData('time', 1, []), ...
                 'NDI:daq:reader:ingestedEventType');
         end
 

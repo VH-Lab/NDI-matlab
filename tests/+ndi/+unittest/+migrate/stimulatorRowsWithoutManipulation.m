@@ -300,7 +300,8 @@ end
 
 function docs = oldManipulations(S, stims, existing)
 % old data: per stimulator wiring relation (a `connected to`, RO:0002170,
-% directed_relation from the rig, parent_id, to the stimulator, child_id)
+% directed_relation from the rig -- its device, or the acquisition_system
+% migrated before -- parent_id, to the stimulator, child_id)
 % and per epoch it is timed by (time_reference_id), the Stimulator
 % manipulation DID-matlab's resolveEpochProbemap wrote before #466
 % (mkManipulation, the same did2.build.statement call): the stimulator's
@@ -333,6 +334,11 @@ for s = 1:numel(stims)
         rig = ndi.vintage.edgeTargets(found{w}, 'parent_id');
         anchors = ndi.vintage.edgeTargets(found{w}, 'time_reference_id');
         if ~isscalar(rig); continue; end
+        % the wiring names the rig's device entity since [acquisition system
+        % is a device entity] (Jess Haley 2026-11-19); the old manipulation
+        % named the acquisition_system that points at it by `device_id`
+        sysOf = ndi.vintage.rigSystems(S, rig);
+        if isKey(sysOf, rig{1}); rig = {sysOf(rig{1})}; end
         for a = 1:numel(anchors)
             key = [stimId '|' char(anchors{a})];
             if ismember(key, have); continue; end

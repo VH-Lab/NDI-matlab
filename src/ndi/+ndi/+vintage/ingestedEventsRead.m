@@ -1,5 +1,5 @@
 function [channeltype, channel, T, D] = ingestedEventsRead(S, A)
-%INGESTEDEVENTSREAD Every unpacked event and marker channel of a migrated ingested epoch, read.
+%INGESTEDEVENTSREAD Every unpacked event, marker and text channel of a migrated ingested epoch, read.
 %
 %   [CHANNELTYPE, CHANNEL, T, D] = ndi.vintage.ingestedEventsRead(SESSION, A)
 %   reads the channels of A.events (ndi.vintage.ingestedArchive; found by
@@ -14,7 +14,9 @@ function [channeltype, channel, T, D] = ingestedEventsRead(S, A)
 %   times and numeric codes as little-endian 64-bit floats, format EDAM
 %   "binary", with no compression block"): member body_data_0, its values in
 %   the order of the body's dimensions (`data.datum_order` 'F', the first
-%   dimension fastest, when it has two).
+%   dimension fastest, when it has two). A text channel's entries are one
+%   UTF-8 JSON array of strings ([text channel entries are a JSON array],
+%   Jess Haley, 2026-11-19), read by ndi.vintage.ingestedTextEntries.
 %
 %   Raises NDI:daq:reader:ingestedFileNotFound when a channel's body is
 %   missing.
@@ -34,7 +36,9 @@ for k = 1:numel(E)
     end
     times = readNumbers(S, E(k).times);
     codes = [];
-    if ~strcmp(E(k).type, 'event')
+    if strcmp(E(k).type, 'text')
+        codes = ndi.vintage.ingestedTextEntries('decode', readBytes(S, E(k).values));
+    elseif ~strcmp(E(k).type, 'event')
         codes = readNumbers(S, E(k).values);
     end
     channeltype{k} = E(k).type;
@@ -43,11 +47,16 @@ for k = 1:numel(E)
 end
 end
 
-function x = readNumbers(S, doc)
+function bytes = readBytes(S, doc)
 f = S.database_openbinarydoc(doc, 'body_data_0');
 bytes = f.fread(Inf, 'uint8');
 S.database_closebinarydoc(f);
-x = typecast(uint8(bytes(:)'), 'double');
+bytes = uint8(bytes(:)');
+end
+
+function x = readNumbers(S, doc)
+bytes = readBytes(S, doc);
+x = typecast(bytes, 'double');
 [~, ~, endian] = computer();
 if endian == 'B'; x = swapbytes(x); end
 x = x(:);

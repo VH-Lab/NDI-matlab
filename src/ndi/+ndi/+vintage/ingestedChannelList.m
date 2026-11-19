@@ -42,6 +42,28 @@ function ci = ingestedChannelList(groups, events)
 %     number        the channel-number covariate
 %     group         the file's group
 %     dataclass     'digital' for di/do, else 'ephys'
+%   Each time channel a channel group names is one row ([time channel row is
+%   notation], Jess Haley, 2026-11-19: "a time channel's own
+%   `channel_list.bin` row is rebuilt from its time group: number the time
+%   group's, sample rate the group's, offset 0, scale 1, name the standard
+%   prefix and number"): for each whole number T >= 0 in some group's "time
+%   channel" covariate,
+%     name          `t<T>` (the prefix NDI's readers give a time channel,
+%                   ndi.daq.reader.mfdaq.channel_types)
+%     type          'time'
+%     time_channel  T: the decision does not name it; every NDI reader that
+%                   writes a time row points it at itself (intan.m `t1`
+%                   time_channel 1; cedspike2.m `t<n>` time_channel n)
+%     sample_rate   the sample rate of the channel groups whose every channel
+%                   names T, when they agree on one; NaN otherwise (an
+%                   unevenly spaced group's time is keyed, so it has none)
+%     offset 0, scale 1 (ndi.daq.reader.mfdaq/underlying_datatype gives a
+%                   time channel the polynomial [0 1])
+%     number        T
+%     group         1 + floor(T / 100000), dataclass 'time' (create_properties)
+%   A time channel a group names that the v1 list does not hold (Intan's
+%   auxiliary inputs name t2, VH-Lab/NDI-matlab#1249) is rebuilt too, so such
+%   a list does not compare exactly and the second pass keeps it.
 %   Each event, marker or text channel is one row: name its v1 prefix and
 %   number (`mk2`), time_channel and sample_rate NaN, offset 0, scale 1,
 %   group 1 + floor(number / 100000) and dataclass 'eventmarktext', what
@@ -59,13 +81,12 @@ function ci = ingestedChannelList(groups, events)
 %   their type name, each by number; then every event, marker and text row,
 %   by number (event before marker before text at an equal number).
 %
-%   Not rebuilt, so not here: a time channel's own row, and the name of an
-%   event, marker or text channel that is not its prefix and number (its
-%   name is in its observation's notes; the name covariate lives on a channel
-%   group's body). They have no v2 home (did-schema [channel list rows get
-%   v2 homes]: the time channel's own row is open), so
-%   ndi.migrate.internal.ingestedArchiveBodies removes `channel_list.bin` only
-%   when this function rebuilds it exactly, and keeps it otherwise.
+%   Not rebuilt, so not here: the name of an event, marker or text channel
+%   that is not its prefix and number (its name is in its observation's
+%   notes; the name covariate lives on a channel group's body), and a time
+%   row no channel group names. ndi.migrate.internal.ingestedArchiveBodies
+%   removes `channel_list.bin` only when this function rebuilds it exactly,
+%   and keeps it otherwise.
 %
 %   See also ndi.vintage.ingestedArchive, ndi.migrate.internal.ingestedArchiveBodies,
 %            ndi.file.type.mfdaq_epoch_channel.
@@ -78,6 +99,8 @@ end
 ci = struct('name', {}, 'type', {}, 'time_channel', {}, 'sample_rate', {}, ...
     'offset', {}, 'scale', {}, 'number', {}, 'group', {}, 'dataclass', {});
 [types, abbrev] = ndi.daq.reader.mfdaq.channel_types();
+groupTc = {};    % each converted group's time channels
+groupSr = [];    % and its sample rate
 for k = 1:numel(groups)
     p = groups{k};
     if ~isstruct(p) || ~isfield(p, 'data_body') || ~isstruct(p.data_body) ...
@@ -141,6 +164,8 @@ for k = 1:numel(groups)
     if numel(names) ~= n
         names = repmat({''}, 1, n);
     end
+    groupTc{end+1} = tc; %#ok<AGROW>
+    groupSr(end+1) = sr; %#ok<AGROW>
     for r = 1:n
         nm = names{r};
         if isempty(nm); nm = sprintf('%s%d', ab, nums(r)); end
@@ -148,6 +173,24 @@ for k = 1:numel(groups)
             'time_channel', tc(r), 'sample_rate', sr, 'offset', off(r), 'scale', sc(r), ...
             'number', nums(r), 'group', str2double(tok{2}), 'dataclass', dc); %#ok<AGROW>
     end
+end
+% [time channel row is notation]: one row per time channel the groups name
+tAll = unique(cat(2, groupTc{:}, zeros(1, 0)));
+tAll = tAll(isfinite(tAll) & tAll >= 0 & tAll == round(tAll));
+tab = abbrev{strcmp(types, 'time')};
+for t = tAll
+    rates = [];
+    for g = 1:numel(groupTc)
+        if ~isempty(groupTc{g}) && all(groupTc{g} == t) && isfinite(groupSr(g))
+            rates(end+1) = groupSr(g); %#ok<AGROW>
+        end
+    end
+    rates = unique(rates);
+    sr = NaN;
+    if isscalar(rates); sr = rates; end
+    ci(end+1) = struct('name', sprintf('%s%d', tab, t), 'type', 'time', ...
+        'time_channel', t, 'sample_rate', sr, 'offset', 0, 'scale', 1, ...
+        'number', t, 'group', 1 + floor(t / 100000), 'dataclass', 'time'); %#ok<AGROW>
 end
 % the sampled types alphabetically by type name, each by number (a stable
 % sort: by number, then by type)

@@ -1,4 +1,4 @@
-function W = wiringIndex(rels)
+function W = wiringIndex(rels, systemOf)
 %WIRINGINDEX Directed relations read ahead, filed by (child, parent) for ndi.vintage.wiredDeviceString.
 %
 %   W = ndi.vintage.wiringIndex(RELS). RELS is a cell of directed_relation
@@ -9,6 +9,16 @@ function W = wiringIndex(rels)
 %     byPair   containers.Map, [child char(0) parent] -> the positions in
 %              DOCS of the relations with that child and parent, ascending
 %
+%   W = ndi.vintage.wiringIndex(RELS, SYSTEMOF) also files each relation
+%   under the acquisition system SYSTEMOF maps its parent to
+%   (ndi.vintage.rigSystems: a rig's device entity -> the acquisition_system
+%   naming it by `device_id`). Since Jess Haley's [acquisition system is a
+%   device entity] (2026-11-19, did-schema
+%   docs/plans/did_v2_standing_wiring_plan.md) DID-matlab's migration wires a
+%   probe to the rig's device; a session migrated before wires it to the
+%   acquisition_system. Filed under the system either way, the readers that
+%   look a wiring up by (probe, system) read both shapes.
+%
 %   ndi.vintage.wiredDeviceString takes, for a probe, a system and the
 %   statement's anchors, the relations of that pair timed by any of the
 %   anchors, in DOCS order: what its own search
@@ -18,7 +28,9 @@ function W = wiringIndex(rels)
 
 arguments
     rels cell
+    systemOf = []
 end
+mapped = isa(systemOf, 'containers.Map') && systemOf.Count > 0;
 
 W = struct('docs', {rels}, 'anchors', {cell(1, numel(rels))}, ...
     'byPair', containers.Map('KeyType', 'char', 'ValueType', 'any'), ...
@@ -33,6 +45,14 @@ for r = 1:numel(rels)
     W.anchors{r} = ndi.vintage.edgeTargets(rels{r}, 'time_reference_id');
     children = unique(ndi.vintage.edgeTargets(rels{r}, 'child_id'));
     parents = unique(ndi.vintage.edgeTargets(rels{r}, 'parent_id'));
+    if mapped
+        % the rig's device -> its acquisition system, beside the parent itself
+        bySystem = {};
+        for p = 1:numel(parents)
+            if isKey(systemOf, parents{p}); bySystem{end+1} = systemOf(parents{p}); end %#ok<AGROW>
+        end
+        parents = unique([parents, bySystem]);
+    end
     wiring = isWiring(rels{r});
     for c = 1:numel(children)
         for p = 1:numel(parents)
