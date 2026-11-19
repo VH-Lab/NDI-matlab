@@ -234,6 +234,26 @@ classdef TestReadTimeseriesEquivalence < matlab.unittest.TestCase
                 'the ingested time channel differs after migration');
         end
 
+        function testIngestedSegmentLengthsAreTheV1Ones(testCase)
+            % Decided by Jess Haley, 2026-11-12 [archive segment lengths
+            % measured after the second pass]: the v1 ingested archive's
+            % sample_analog_segment and sample_digital_segment (which
+            % DID-matlab's whole-batch round trip defers to NDI's second
+            % pass) are rebuilt from the converted bodies' time chunks
+            % ([segment length is the time chunk]) and compared with the v1
+            % values. Here the archive is written by NDI's own ingest
+            % (ndi.session/ingest, ndi.daq.reader.mfdaq/ingest_epochfiles)
+            % and its bytes are in the store, so every archive must be
+            % measured and none may differ
+            % (ndi.unittest.migrate.verifyArchiveSegmentLengths).
+            r = testCase.Ingested;
+            testCase.assertEmpty(r.setupError, ['building the session raised: ' r.setupError]);
+            testCase.assertEmpty(r.migrateError, ['ndi.migrate.local raised: ' r.migrateError]);
+            testCase.assertNotEmpty(r.v1Archives, 'the ingest wrote no v1 archive');
+            ndi.unittest.migrate.verifyArchiveSegmentLengths(testCase, r.result, ...
+                r.v1Archives, 'Ingested', 'RequireMeasured', true);
+        end
+
     end
 
     methods (Access = private)
@@ -356,7 +376,12 @@ classdef TestReadTimeseriesEquivalence < matlab.unittest.TestCase
                     getepochfiles(dev.filenavigator, et(1).epoch_id)));
             ingested.v1 = P.readAll(S, et(1).epoch_id, {'ctx'});
             ingested.v1dev = P.readDevice(S, et(1).epoch_id);
-            clear S probe dev
+            % the v1 ingested archives, for the segment-length comparison
+            % (testIngestedSegmentLengthsAreTheV1Ones)
+            arch = S.database_search(ndi.query('', 'isa', 'daqreader_mfdaq_epochdata_ingested', ''));
+            ingested.v1Archives = cellfun(@(d) d.document_properties, arch, ...
+                'UniformOutput', false);
+            clear S probe dev arch
             [ingested.result, ingested.migrateError] = P.migrate(root);
             S2 = P.reopen(root);
             ingested.v2 = P.readAll(S2, ingested.epoch_id, {'ctx'});
