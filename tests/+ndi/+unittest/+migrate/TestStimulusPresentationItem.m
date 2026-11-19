@@ -821,6 +821,37 @@ classdef TestStimulusPresentationItem < matlab.unittest.TestCase
             testCase.verifyEmpty(report.reason);
         end
 
+        function testTheStimulatorRouteManipulationRetiresObserves(testCase)
+            % [observes retires in the second pass] (Jess Haley, 2026-11-17):
+            % the manipulation this function writes names the stimulator as
+            % instrument and its animal as entity, so the stimulator's
+            % pass-1 `observes` relation (DID-matlab element.m lineageRelation)
+            % retires on it; a cohort manipulation of the same stimulator
+            % would keep it (ndi.unittest.migrate.TestObservesRetirement)
+            pres = presentationBody('pres_stim', [1 2], ...
+                { gratingStim(0, 0.04, 0.5), gratingStim(45, 0.04, 0.5) });
+            stimId = stimulatorIdOf(pres);
+            bodies = { pres, stimulatorElement(stimId, ...
+                'animal_stim', pres.base.session_id), docBody('subject', 'animal_stim') };
+            r = ndi.migrate.internal.bodyResolver(bodies);
+            m = ndi.migrate.internal.stimulusPresentationToItem(pres, r, [], 'LeaveUnplaced', false);
+            testCase.assertNotEmpty(m);
+            testCase.verifyEqual(depValue(m, 'instrument_id'), stimId);
+            rel = ndi.migrate.internal.etaShape.relation(stimId, 'animal_stim', ...
+                struct('node', '', 'name', 'observes'), 'Id', 'observes_1', ...
+                'SessionId', pres.base.session_id);
+            [ids, rep] = ndi.migrate.internal.observesRetirement({m, rel});
+            testCase.verifyEqual(ids, {'observes_1'});
+            testCase.verifyEqual(rep.presentation_manipulations, 1);
+            testCase.verifyEqual(rep.observes_retired, 1);
+            other = ndi.migrate.internal.etaShape.relation(stimId, 'animal_other', ...
+                struct('node', '', 'name', 'observes'), 'Id', 'observes_2', ...
+                'SessionId', pres.base.session_id);
+            [ids, rep] = ndi.migrate.internal.observesRetirement({m, other});
+            testCase.verifyEmpty(ids, 'an `observes` of another animal was retired');
+            testCase.verifyEqual(rep.kept_other_entity, 1);
+        end
+
         function testTheEpochRouteIsStillPreferredWhenItFindsAnElement(testCase)
             pres = presentationBody('pres_epoch', 1, { gratingStim(0, 0.04, 0.5) });
             sid = pres.base.session_id;
