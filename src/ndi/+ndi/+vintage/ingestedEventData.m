@@ -41,8 +41,10 @@ switch type
     case 'event'
         D = ones(numel(T), 1);
     case 'marker'
+        % one row per event: a single event with K codes (1xK) keeps its
+        % row (VH-Lab/NDI-matlab#1276, ndi.daq.reader.mfdaq.eventdatarows)
         D = double(codes);
-        if isvector(D); D = D(:); end
+        if isvector(D) && ~(size(D, 2) > 1 && size(D, 1) == numel(T)); D = D(:); end
     case 'text'
         if isempty(codes); codes = {}; end
         D = cellfun(@(e) reshape(char(e), 1, []), reshape(codes, 1, []), 'UniformOutput', false);
