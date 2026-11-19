@@ -27,6 +27,17 @@ classdef TestStimulatorRowFromWiring < matlab.unittest.TestCase
 %   stimulator_manipulations_kept_no_wiring: it stays on the manipulation
 %   path).
 %
+%   [observes retires in the second pass] (Decided by Jess Haley,
+%   2026-11-17, did-schema did_v2_go_forward_class_audit.md): NDI's second
+%   pass retires a stimulator's `observes` relation where a stimulus
+%   presentation manipulation names it as instrument and the same animal as
+%   entity. This fixture's stimulator presents nothing, so its `observes`
+%   is kept (and checked). Two more copies read the retired shape: the
+%   `observes` relation removed and one presentation manipulation (value
+%   kind `item`) per wiring relation added, as the second pass leaves a
+%   stimulator that presented stimuli; and the `observes` relation removed
+%   with nothing added, which shows the reads below depend on it.
+%
 %   Filtered (never passed) when mksqlite, DID-matlab's did2 converter, a v2
 %   schema set with `entity`, or NDI-compress is missing.
 %   test-eta-migrate-e2e.yml runs it with all four.
@@ -38,6 +49,8 @@ classdef TestStimulatorRowFromWiring < matlab.unittest.TestCase
         Edited = struct('written', {{}}, 'wired', {{}}, 'added', {{}}, 'wirings', {{}})
         WithManipulation
         NoWiring
+        Retired
+        RetiredNothing
     end
 
     properties (Constant)
@@ -77,8 +90,16 @@ classdef TestStimulatorRowFromWiring < matlab.unittest.TestCase
                 % manipulations kept
                 [S2, ids2] = P.copyEdited(withManip, fullfile(root, 'no_wiring'), sid, ...
                     @(S) P.wiringIds(S, stimId), @(S) {});
+                % copy 3: the `observes` relation retired on presentations;
+                % copy 4: retired with no presentation (the reads' control)
+                S3 = P.copyEdited(migrated, fullfile(root, 'retired'), sid, ...
+                    @(S) P.observesIds(S, stimId), @(S) P.presentations(S, stimId), false);
+                S4 = P.copyEdited(migrated, fullfile(root, 'retired_nothing'), sid, ...
+                    @(S) P.observesIds(S, stimId), @(S) {});
                 testCase.WithManipulation = S1;
                 testCase.NoWiring = S2;
+                testCase.Retired = S3;
+                testCase.RetiredNothing = S4;
                 testCase.Edited = struct('written', {written}, 'wired', {wired}, 'added', {added}, ...
                     'wirings', {ids2});
             catch ME
@@ -195,6 +216,63 @@ classdef TestStimulatorRowFromWiring < matlab.unittest.TestCase
             nStim = testCase.indexAgreesWithFresh(S, 'after re-adding the stimulator');
             testCase.verifyEqual(nStim, numel(testCase.Epochs), ...
                 'after re-adding the stimulator: one stimulator row per epoch');
+        end
+
+        function testAStimulatorThatPresentedNothingKeepsObserves(testCase)
+            % [observes retires in the second pass]: no presentation names
+            % the stimulator, so the second pass keeps its `observes`
+            S = testCase.ready(testCase.Session);
+            P = ndi.unittest.vintage.TestStimulatorRowFromWiring;
+            testCase.verifyNumElements(P.observesIds(S, P.stimulatorId(S)), 1, ...
+                'the migration did not keep the stimulator''s one `observes` relation');
+        end
+
+        function testRetiredObservesIsReadFromThePresentations(testCase)
+            % the retired shape: the stimulator's subject, `direct`, probe
+            % map rows and getprobes read as with its `observes` relation,
+            % one at a time and batched (ndi.vintage.prefetchElementFields)
+            S0 = testCase.ready(testCase.Session);
+            S = testCase.ready(testCase.Retired);
+            P = ndi.unittest.vintage.TestStimulatorRowFromWiring;
+            stimId = P.stimulatorId(S0);
+            testCase.assertEmpty(P.observesIds(S, stimId), 'the copy still holds `observes`');
+            testCase.assertNumElements(P.presentationIds(S, stimId), numel(testCase.Epochs), ...
+                'the copy holds no presentation per epoch (nothing measured)');
+            fprintf('  retired 1 `observes`; added %d presentation manipulation(s)\n', ...
+                numel(P.presentationIds(S, stimId)));
+            el = P.elementDoc(S0, stimId);
+            want = ndi.vintage.elementFields(el, S0);
+            testCase.assertNotEmpty(want.subject_id, 'the stimulator has no subject as migrated');
+            got = ndi.vintage.elementFields(P.elementDoc(S, stimId), S);
+            testCase.verifyEqual(got, want, 'one at a time: the stimulator reads differently');
+            scope = ndi.vintage.elementFieldsScope('open'); %#ok<NASGU>
+            ndi.vintage.prefetchElementFields(S, {P.elementDoc(S, stimId)}, false);
+            batched = ndi.vintage.elementFields(P.elementDoc(S, stimId), S);
+            clear scope
+            testCase.verifyEqual(batched, want, 'batched: the stimulator reads differently');
+            before = testCase.allRows(S0);
+            after = testCase.allRows(S);
+            testCase.assertNumElements(after, numel(before));
+            for k = 1:numel(before)
+                testCase.verifyEqual(sortRows(after(k).rows), sortRows(before(k).rows), ...
+                    sprintf('epoch %s: the probe map differs with `observes` retired', ...
+                    before(k).epoch_id));
+            end
+            probes = S.getprobes('type', 'stimulator');
+            testCase.assertNumElements(probes, 1, 'getprobes did not find the stimulator');
+            testCase.verifyEqual(char(probes{1}.subject_id), char(want.subject_id));
+        end
+
+        function testRetiredWithNoPresentationLosesTheSubject(testCase)
+            % the control: without its `observes` relation and with no
+            % presentation, nothing names the stimulator's subject, so the
+            % test above measures the presentations
+            S = testCase.ready(testCase.RetiredNothing);
+            P = ndi.unittest.vintage.TestStimulatorRowFromWiring;
+            stimId = P.stimulatorId(testCase.ready(testCase.Session));
+            f = ndi.vintage.elementFields(P.elementDoc(S, stimId), S);
+            testCase.verifyEmpty(f.subject_id, ...
+                'the subject was read from something other than `observes` or a presentation');
         end
 
         function testWithoutTheWiringTheManipulationStillGivesTheRow(testCase)
@@ -372,6 +450,53 @@ classdef TestStimulatorRowFromWiring < matlab.unittest.TestCase
             end
         end
 
+        function ids = observesIds(S, stimId)
+            % the stimulator's `observes` relations
+            found = S.database_search(ndi.query('', 'isa', 'directed_relation', '') & ...
+                ndi.v2.vocabQuery('directed_relation.relation', 'relation', 'observes') & ...
+                ndi.query('', 'depends_on', 'child_id', stimId));
+            ids = cellfun(@(d) char(d.id()), found, 'UniformOutput', false);
+        end
+
+        function ids = presentationIds(S, stimId)
+            % the stimulus presentation manipulations (value kind `item`) by the stimulator
+            found = S.database_search(ndi.v2.statementQuery('manipulation', 'item') & ...
+                ndi.query('', 'depends_on', 'instrument_id', stimId));
+            ids = cellfun(@(d) char(d.id()), found, 'UniformOutput', false);
+        end
+
+        function d = elementDoc(S, id)
+            found = S.database_search(ndi.query('base.id', 'exact_string', id, ''));
+            assert(numel(found) == 1, 'expected the element %s, found %d', id, numel(found));
+            d = found{1};
+        end
+
+        function docs = presentations(S, stimId)
+            % per wiring relation of the stimulator, a stimulus presentation
+            % manipulation as ndi.migrate.internal.stimulusPresentationToItem
+            % writes it (itemManipulation, the same did2.build.statement call):
+            % the stimulator's subject as entity, the stimulator as instrument,
+            % a two-stimulus playlist, timed by the wiring's epoch anchor. Built
+            % with validation off and added so: the item_id edges to its
+            % stimulus methods are not part of what the reader reads
+            P = ndi.unittest.vintage.TestStimulatorRowFromWiring;
+            subjectId = char(ndi.vintage.elementFields(P.elementDoc(S, stimId), S).subject_id);
+            assert(~isempty(subjectId), 'the stimulator element has no subject');
+            found = S.database_search(ndi.query('', 'isa', 'directed_relation', '') & ...
+                ndi.query('', 'depends_on', 'child_id', stimId));
+            found = found(cellfun(@(d) P.isWiring(d), found));
+            restore = ndi.migrate.internal.termRegistryOff(); %#ok<NASGU>
+            docs = cell(1, numel(found));
+            for k = 1:numel(found)
+                anchor = ndi.vintage.edgeTargets(found{k}, 'time_reference_id');
+                m = did2.build.statement('manipulation', subjectId, 'visual stimulus', ...
+                    struct('item', [0 1 0]), 'ValueKind', 'item', ...
+                    'Method', 'visual stimulation', 'TimeReferenceIds', anchor, ...
+                    'InstrumentId', stimId, 'SessionId', char(S.id()), 'Validate', false);
+                docs{k} = did2.document(m);
+            end
+        end
+
         function tf = isWiring(d)
             % a directed_relation `connected to` (RO:0002170)
             tf = false;
@@ -381,10 +506,14 @@ classdef TestStimulatorRowFromWiring < matlab.unittest.TestCase
             tf = isstruct(r) && isfield(r, 'node') && strcmpi(char(r.node), 'RO:0002170');
         end
 
-        function [S, ids, added] = copyEdited(srcRoot, dstRoot, sid, pick, make)
+        function [S, ids, added] = copyEdited(srcRoot, dstRoot, sid, pick, make, validate)
             % a copy of the migrated session's .ndi under DSTROOT with the
             % documents PICK(session) names removed and the did2.documents
-            % MAKE(session) returns added, reopened
+            % MAKE(session) returns added (validated unless VALIDATE is
+            % false), reopened
+            if nargin < 6
+                validate = true;
+            end
             mkdir(dstRoot);
             copyfile(fullfile(srcRoot, '.ndi'), fullfile(dstRoot, '.ndi'));
             for f = {'unique_reference.txt', 'reference.txt', '.migrate.lock'}
@@ -398,8 +527,10 @@ classdef TestStimulatorRowFromWiring < matlab.unittest.TestCase
             for k = 1:numel(ids)
                 raw.remove(ids{k});
             end
-            if ~isempty(newDocs)
+            if ~isempty(newDocs) && validate
                 raw.add(newDocs);
+            elseif ~isempty(newDocs)
+                raw.add(newDocs, 'Validate', false);
             end
             added = cellfun(@(d) char(d.get('base.id')), newDocs, 'UniformOutput', false);
             raw.close();
