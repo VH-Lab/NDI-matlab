@@ -848,8 +848,17 @@ classdef TestIngestedArchiveBodies < matlab.unittest.TestCase
                 'ti_group1_seg.nbf_3'), 'NDI:daq:reader:ingestedFileNotFound');
 
             % THE ROUND TRIP (DID-matlab): the v1 group file's segments and
-            % names rebuilt from the split values, compared with the v1 file
-            % as NDI's own expander reads it
+            % names rebuilt from the split values, compared with what NDI's
+            % ingest wrote into the v1 file (the two columns given to
+            % ndi.compress.compress_time). Not with ndi.compress.expand_time
+            % of the v1 file: NDI-compress's expand_time adds the residuals
+            % compress_time stores as prediction - sample, so it does not
+            % give back an unevenly spaced sample (it gives 2 * prediction -
+            % sample; measured here in run 44583490586, row 50 of t1: 5.00487
+            % read for 5.00493 written). Reading a new file of the split
+            % values with it twice-reflects back to the written times, as
+            % the rebased single-channel path does
+            % (testUnevenTimeNotFromZeroIsRewrittenFromTheStart)
             if isempty(which('did2.convert.roundtrip.ingestedArchiveFiles'))
                 return;
             end
@@ -872,8 +881,7 @@ classdef TestIngestedArchiveBodies < matlab.unittest.TestCase
                 'ai_group1_seg.nbf_2', 'ax_group1_seg.nbf_1', 'ax_group1_seg.nbf_2', ...
                 'ti_group1_seg.nbf_1', 'ti_group1_seg.nbf_2'}}, ...
                 'time_segments', struct('name', {'ti_group1_seg.nbf_1', 'ti_group1_seg.nbf_2'}, ...
-                    'data', {readTime(fullfile(testCase.Dir, 'files', 'u_ti_1')), ...
-                    readTime(fullfile(testCase.Dir, 'files', 'u_ti_2'))}));
+                    'data', {tv1(1:100, :), tv1(101:160, :)}));
             C = did2.convert.roundtrip.compareIngestedArchiveFiles(R, orig, 'TimeTolerance', 1e-9);
             testCase.verifyEqual(C.files_compared, 3, 'the denominator');
             testCase.verifyTrue(C.exact, strjoin(arrayfun(@(f) [f.name ': ' ...
