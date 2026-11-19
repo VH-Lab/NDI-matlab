@@ -13,8 +13,9 @@ function [structs, report, removed] = ingestedArchiveBodies(structs, ndiDir, v1B
 %   group it could read REPLACED, id preserved, and REMOVED, the ids of the
 %   bodies whose content is now carried elsewhere (the caller drops them).
 %   A document made here (the `time` value of an unevenly spaced time
-%   channel, below) is APPENDED to STRUCTS; its id is in its archive's
-%   REPORT.changed_groups and in REPORT.added_ids.
+%   group, an unpacked event, marker or text channel's documents, below) is
+%   APPENDED to STRUCTS; its id is in its archive's REPORT.changed_groups and
+%   in REPORT.added_ids.
 %
 %   Decided by Jess Haley, 2026-11-01 [ingested archives are sampled bodies]
 %   (did-schema did_v2_go_forward_class_audit.md): "a v1 ingested channel
@@ -79,10 +80,30 @@ function [structs, report, removed] = ingestedArchiveBodies(structs, ndiDir, v1B
 %       each channel group   as above, but its time covariate is `key` 0 and
 %                            its `key_id` the time value
 %
-%     Converted only when the archive has ONE time group holding ONE time
-%     channel, and every channel group has as many samples as it (every
-%     group keys to it); else `unconvertible`, with the reason, and the
-%     archive is LEFT as pass 1 wrote it.
+%     SEVERAL TIME GROUPS. Decided by Jess Haley, 2026-11-19 [uneven time
+%     groups and mismatches] (did-schema did_v2_standing_wiring_plan.md):
+%     "(1) an ingested archive with several uneven time groups is
+%     converted, one `time` value per time group, each channel group keyed
+%     to the time group it uses, as the channel list pairs them; (2) a time
+%     channel whose sample count differs from the data it times is
+%     malformed: the archive is kept as v1, counted ... and reported". So
+%     each uneven time group `ti_group<g>` (one time channel) gets its own
+%     time value (counted `uneven_time_values`), and a channel group keys
+%     to the time value of the time channel its rows' v1 time_channel names
+%     (all the same); one that names an evenly spaced time group's channel
+%     keeps its evenly spaced time covariate. A channel group whose rows name
+%     no time channel of the archive (NaN, several, or one with no row) keys
+%     to the archive's time channel when it has exactly one (the
+%     single-group path, NDI-matlab #1226); otherwise the archive is LEFT as
+%     pass 1 wrote it, counted `uneven_time_unpaired_kept`. A channel group
+%     whose sample count is not its time channel's is malformed: the archive
+%     is LEFT, counted `uneven_time_mismatch_kept`. Each archive left for
+%     its uneven time is listed in REPORT.uneven_time_kept {kind
+%     ('mismatch' | 'unpaired'), archive_id (the v1 archive), group_body_id,
+%     time_body_id, reason} (first reason: `first_uneven_time_kept_reason`),
+%     and is also `unconvertible`. A time group of several time channels
+%     that is not evenly spaced is `unconvertible` (no decision says which
+%     channel a group keys to).
 %
 %     The time value's samples are seconds from the epoch's start. [clock
 %     only on the time reference] (Jess Haley, 2026-11-01): a body's time
@@ -134,20 +155,30 @@ function [structs, report, removed] = ingestedArchiveBodies(structs, ndiDir, v1B
 %     event and marker rows' sample rate, offset, scale and time channel are
 %     rebuilt as NDI's defaults (Jess Haley, 2026-11-18 [event row defaults
 %     are notation]: "a channel list whose event or marker rows differ from
-%     the defaults ... is kept whole as v1"). A time channel's own row and a
-%     non-standard event, marker or text channel name have no v2 home yet,
-%     so a list holding one is kept.
+%     the defaults ... is kept whole as v1"). A time channel's own row is
+%     rebuilt from the groups it times (Jess Haley, 2026-11-19 [time channel
+%     row is notation]: "number the time group's, sample rate the group's,
+%     offset 0, scale 1, name the standard prefix and number; the file is
+%     removed only when the rebuild matches exactly, else it is kept whole as
+%     v1 and counted"; ndi.vintage.ingestedChannelList says how), counted
+%     `time_rows_seen` (the v1 time rows of converted archives),
+%     `time_rows_rebuilt` (of them, rebuilt exactly) and
+%     `channel_list_kept_time_row` (lists kept where a time row is not
+%     rebuilt exactly). A non-standard event, marker or text channel name
+%     has no v2 home yet, so a list holding one is kept.
 %
 %     `evmktx_group<g>_seg.nbf_#` (events): UNPACKED, one observation per
-%     channel, and its body REMOVED, when every check of unpackEvents (below)
-%     passes; else it stays the opaque_body it is, counted by reason
-%     (`event_archives_seen`, `event_archives_unpacked`,
+%     event, marker or text channel, and its body REMOVED, when every check
+%     of unpackEvents (below) passes; else it stays the opaque_body it is,
+%     counted by reason (`event_archives_seen`, `event_archives_unpacked`,
 %     `event_archives_kept`, `event_kept_<reason>`, `event_channels_seen`,
-%     `event_channels_unpacked`, `event_bodies_removed`,
+%     `event_channels_unpacked`, `text_channels_seen`,
+%     `text_channels_unpacked`, `event_bodies_removed`,
 %     `event_bodies_left`). Decided by Jess Haley, 2026-11-17 [event
 %     channels are time-valued observations], [event channel variable
 %     terms], [event channel observes its wired device], [unpacked event
-%     bodies are uncompressed], [unpacked events file is removed].
+%     bodies are uncompressed], [unpacked events file is removed]; and
+%     2026-11-19 [text channel entries are a JSON array].
 %
 %     MEMBER NAMES. Decided by Jess Haley, 2026-11-17 [migrated body members
 %     renamed]: a converted group's members named `<type>_group<g>_seg.nbf_<n>`
@@ -238,6 +269,10 @@ report = struct( ...
     'time_not_evenly_spaced',     0, ...
     'uneven_time_converted',      0, ...
     'uneven_time_rebased',        0, ...
+    'uneven_time_values',         0, ...
+    'uneven_time_mismatch_kept',  0, ...
+    'uneven_time_unpaired_kept',  0, ...
+    'first_uneven_time_kept_reason', '', ...
     'unconvertible',              0, ...
     'first_unconvertible_reason', '', ...
     'scale_with_unit',            0, ...
@@ -254,6 +289,9 @@ report = struct( ...
     'members_not_renamed',        0, ...
     'channel_list_rebuilt_exactly', 0, ...
     'first_channel_list_kept_reason', '', ...
+    'time_rows_seen',             0, ...
+    'time_rows_rebuilt',          0, ...
+    'channel_list_kept_time_row', 0, ...
     'event_archives_seen',        0, ...
     'event_archives_unpacked',    0, ...
     'event_archives_kept',        0, ...
@@ -266,7 +304,10 @@ report = struct( ...
     'first_event_kept_reason',    '', ...
     'event_channels_seen',        0, ...
     'event_channels_unpacked',    0, ...
+    'text_channels_seen',         0, ...
+    'text_channels_unpacked',     0, ...
     'event_bodies_removed',       0, ...
+    'uneven_time_kept',           {{}}, ...
     'scale_gaps',                 {{}}, ...
     'changed_groups',             {{}}, ...
     'written_files',              {{}}, ...
@@ -352,6 +393,19 @@ for a = 1:numel(groupKeys)
         if isempty(report.first_unconvertible_reason)
             report.first_unconvertible_reason = why;
         end
+        % [uneven time groups and mismatches] (Jess Haley, 2026-11-19): a
+        % time channel whose sample count differs from the data it times is
+        % malformed: the archive is kept as v1, counted and reported
+        if isstruct(info) && isfield(info, 'timeKept') && ~isempty(info.timeKept)
+            f = ['uneven_time_' info.timeKept '_kept'];
+            report.(f) = report.(f) + 1;
+            if isempty(report.first_uneven_time_kept_reason)
+                report.first_uneven_time_kept_reason = why;
+            end
+            report.uneven_time_kept{end+1} = struct('kind', info.timeKept, ...
+                'archive_id', baseId(arch), 'group_body_id', info.timeKeptBody, ...
+                'time_body_id', info.timeKeptTimeBody, 'reason', why);
+        end
         continue;
     end
 
@@ -381,7 +435,8 @@ for a = 1:numel(groupKeys)
     end
     if uneven
         report.uneven_time_converted = report.uneven_time_converted + 1;
-        if ~isempty(written)
+        report.uneven_time_values = report.uneven_time_values + info.timeValues;
+        if info.rebased
             report.uneven_time_rebased = report.uneven_time_rebased + 1;
         end
     end
@@ -404,6 +459,12 @@ for a = 1:numel(groupKeys)
     else
         report.channel_list_rebuilt_exactly = report.channel_list_rebuilt_exactly + 1;
     end
+    % [time channel row is notation] (Jess Haley, 2026-11-19)
+    report.time_rows_seen = report.time_rows_seen + info.timeRows(1);
+    report.time_rows_rebuilt = report.time_rows_rebuilt + info.timeRows(2);
+    if info.timeRowKept
+        report.channel_list_kept_time_row = report.channel_list_kept_time_row + 1;
+    end
     report.time_channel_covariates = report.time_channel_covariates + info.timeChannelCovariates;
     report.channel_names_seen = report.channel_names_seen + info.names(1);
     report.channel_names_nonstandard = report.channel_names_nonstandard + info.names(2);
@@ -417,9 +478,11 @@ for a = 1:numel(groupKeys)
     if ev.present
         report.event_archives_seen = report.event_archives_seen + 1;
         report.event_channels_seen = report.event_channels_seen + ev.channels;
+        report.text_channels_seen = report.text_channels_seen + ev.textChannels;
         if ev.unpacked
             report.event_archives_unpacked = report.event_archives_unpacked + 1;
             report.event_channels_unpacked = report.event_channels_unpacked + ev.channels;
+            report.text_channels_unpacked = report.text_channels_unpacked + ev.textChannels;
             report.event_bodies_left = report.event_bodies_left - 1;
         else
             report.event_archives_kept = report.event_archives_kept + 1;
@@ -442,20 +505,27 @@ end
 
 function [made, gone, why, added, uneven, written, info] = convertArchive(structs, idx, kinds, clIdx, ci, arch, reader, storeDir)
 %CONVERTARCHIVE The sampled bodies of one archive, or why it is left. ADDED
-%   are the documents made for it (the `time` value of an unevenly spaced
-%   time channel); UNEVEN is true when its time channel is not evenly spaced.
+%   are the documents made for it (the `time` value of each unevenly spaced
+%   time group); UNEVEN is true when a time group is not evenly spaced.
 %   WRITTEN are the store paths of the files written for it (the rebased
-%   time segments when the epoch does not start at 0); written last, only
-%   once every check has passed. READER is the archive's v1 daqreader
-%   (readerOf); each channel group's entry of MADE says, in `scaleGap`, why
-%   its scale has no unit ('' when it has one) and, in `scaleField`, the
-%   field that gap names; `scaleUnitless` is true for a digital group, whose
-%   scale has no unit and is no gap ([digital scale is unitless]). INFO says
-%   what else was done: eventBodyIds (the `evmktx` bodies removed),
-%   channelListWhy (why channel_list.bin is kept, '' when removed),
-%   timeChannelCovariates, members ([seen renamed schema-named not-renamed]),
-%   names ([seen non-standard covariates written], [channel name is an
-%   identifier]) and events (unpackEvents).
+%   time segments when the epoch does not start at 0, the unpacked event
+%   channels' files); written last, only once every check has passed.
+%   READER is the archive's v1 daqreader (readerOf); each channel group's
+%   entry of MADE says, in `scaleGap`, why its scale has no unit ('' when it
+%   has one) and, in `scaleField`, the field that gap names; `scaleUnitless`
+%   is true for a digital group, whose scale has no unit and is no gap
+%   ([digital scale is unitless]). INFO says what else was done:
+%   eventBodyIds (the `evmktx` bodies removed), channelListWhy (why
+%   channel_list.bin is kept, '' when removed), timeChannelCovariates,
+%   members ([seen renamed schema-named not-renamed]), names ([seen
+%   non-standard covariates written], [channel name is an identifier]),
+%   events (unpackEvents), timeValues (keyed time values written), rebased
+%   (some were rewritten from the epoch's start), timeRows ([v1 time rows,
+%   of them rebuilt exactly]) and timeRowKept (channel_list.bin kept because
+%   a time row is not rebuilt exactly); when the archive is left because of
+%   its uneven time ([uneven time groups and mismatches]), timeKept is
+%   'mismatch' or 'unpaired' and timeKeptBody / timeKeptTimeBody name the
+%   channel group and the time body.
 made = {};
 gone = {};
 why = '';
@@ -464,7 +534,9 @@ uneven = false;
 written = {};
 info = struct('eventBodyIds', {{}}, 'channelListWhy', '', 'timeChannelCovariates', 0, ...
     'members', [0 0 0 0], 'names', [0 0 0 0], 'events', struct('present', false, 'unpacked', false, ...
-    'channels', 0, 'kind', '', 'why', ''));
+    'channels', 0, 'textChannels', 0, 'kind', '', 'why', ''), 'timeValues', 0, 'rebased', false, ...
+    'timeRows', [0 0], 'timeRowKept', false, 'timeKept', '', 'timeKeptBody', '', ...
+    'timeKeptTimeBody', '');
 % [migrated body members renamed]: the members of the channel and time
 % groups, by the schema's names, before anything reads them
 for j = 1:numel(idx)
@@ -483,9 +555,12 @@ end
 t0 = epochStart(arch);
 
 % the time groups first: each evenly spaced from the epoch's start is
-% removed; one that is not becomes the body of a keyed `time` value
+% removed; each that is not becomes the body of its own keyed `time` value
+% ([uneven time groups and mismatches], Jess Haley, 2026-11-19: "one `time`
+% value per time group")
 timeJ = find(strcmp(kinds, 'time'));
-keyed = [];   % the uneven time group: struct k, n, seg, id
+keyed = struct('k', {}, 'number', {}, 'n', {}, 'seg', {}, 'id', {}, 'tsegs', {});
+evenNumbers = [];   % the time channels of the evenly spaced (removed) groups
 for j = timeJ(:)'
     b = structs{idx(j)};
     [~, g] = prefixAndGroup(bodyFilename(b));
@@ -516,14 +591,15 @@ for j = timeJ(:)'
     end
     if even
         gone{end+1} = baseId(b); %#ok<AGROW>
+        evenNumbers = [evenNumbers, double([ci(rows).number])]; %#ok<AGROW>
         continue;
     end
     % [uneven time is a keyed time value]
     uneven = true;
-    if ~isscalar(timeJ) || ~isscalar(rows)
-        why = sprintf(['the time channel of %s is not evenly spaced, and the archive has ' ...
-            '%d time group(s) and %d time channel(s) in it: one keyed time value is ' ...
-            'written for one time channel only'], bodyFilename(b), numel(timeJ), numel(rows));
+    if ~isscalar(rows)
+        why = sprintf(['the time channels of %s are not evenly spaced, and the group holds ' ...
+            '%d time channels: a keyed time value is written for a time group of one time ' ...
+            'channel only'], bodyFilename(b), numel(rows));
         return;
     end
     seg = paramOf(params, 'sample_analog_segment');
@@ -531,10 +607,12 @@ for j = timeJ(:)'
     % the keyed time value's id is derived from the time body it is minted
     % for, not random ([migration reliability practices] (b), Jess Haley,
     % 2026-10-26)
-    keyed = struct('k', idx(j), 'n', size(t, 1), 'seg', seg, ...
+    keyed(end+1) = struct('k', idx(j), 'number', double(ci(rows).number), ...
+        'n', size(t, 1), 'seg', seg, ...
         'id', did2.convert.mintId('keyed time value', baseId(b)), ...
-        't0', t0, 'tsegs', {tsegs});
+        'tsegs', {tsegs}); %#ok<AGROW>
 end
+nTimeRows = sum(strcmp(ciType, 'time'));
 
 for j = 1:numel(idx)
     if ~strcmp(kinds{j}, 'group'); continue; end
@@ -582,14 +660,35 @@ for j = 1:numel(idx)
         return;
     end
     n = (numel(paths) - 1) * seg + size(last, 1);
-    if ~isempty(keyed) && n ~= keyed.n
-        why = sprintf(['%s holds %d sample(s), the uneven time channel %d: every ' ...
-            'channel group keys its time to the one time value'], fn, n, keyed.n);
-        return;
-    end
 
     timeId = '';
-    if ~isempty(keyed); timeId = keyed.id; end
+    if ~isempty(keyed)
+        % [uneven time groups and mismatches] (Jess Haley, 2026-11-19): "each
+        % channel group keyed to the time group it uses, as the channel list
+        % pairs them"
+        [kk, pairWhy] = pairedTime(ci, rows, keyed, evenNumbers, nTimeRows);
+        if ~isempty(pairWhy)
+            why = sprintf('%s: %s', fn, pairWhy);
+            info.timeKept = 'unpaired';
+            info.timeKeptBody = baseId(b);
+            return;
+        end
+        if kk > 0
+            if n ~= keyed(kk).n
+                % "a time channel whose sample count differs from the data it
+                % times is malformed: the archive is kept as v1, counted"
+                why = sprintf(['%s holds %d sample(s), its time channel t%d (%s) %d: a time ' ...
+                    'channel whose sample count differs from the data it times is malformed, ' ...
+                    'so the archive is kept as v1'], fn, n, keyed(kk).number, ...
+                    bodyFilename(structs{keyed(kk).k}), keyed(kk).n);
+                info.timeKept = 'mismatch';
+                info.timeKeptBody = baseId(b);
+                info.timeKeptTimeBody = baseId(structs{keyed(kk).k});
+                return;
+            end
+            timeId = keyed(kk).id;
+        end
+    end
     [body, scaleGap, scaleField, nameCounts] = sampledFromOpaque(b, rows, ci, type, types, abbrev, ...
         sr, n, seg, timeId, reader);
     info.names = info.names + nameCounts;
@@ -605,17 +704,20 @@ groupBodies = cellfun(@(m) m.body, made, 'UniformOutput', false);
 [ev, evDocs, evWritten, evRows] = unpackEvents(structs, idx, kinds, ci, t0, storeDir);
 info.events = ev;
 
-if ~isempty(keyed)
+for q = 1:numel(keyed)
     try
-        [value, tbody, written] = keyedTime(structs{keyed.k}, keyed.id, keyed.n, keyed.seg, ...
-            keyed.t0, keyed.tsegs, storeDir);
+        [value, tbody, w] = keyedTime(structs{keyed(q).k}, keyed(q).id, keyed(q).n, ...
+            keyed(q).seg, t0, keyed(q).tsegs, storeDir);
     catch err
-        cellfun(@deleteIfThere, evWritten);
+        cellfun(@deleteIfThere, [written, evWritten]);
         rethrow(err);
     end
-    added{end+1} = value;
-    made{end+1} = struct('k', keyed.k, 'body', tbody);
+    written = [written, w]; %#ok<AGROW>
+    added{end+1} = value; %#ok<AGROW>
+    made{end+1} = struct('k', keyed(q).k, 'body', tbody); %#ok<AGROW>
 end
+info.timeValues = numel(keyed);
+info.rebased = ~isempty(written);
 if ev.unpacked
     added = [added, evDocs];
     written = [written, evWritten];
@@ -626,13 +728,67 @@ end
 % [channel list rows get v2 homes]: "The file is removed only when the round
 % trip rebuilds it exactly; otherwise it is kept and counted." The rebuild is
 % the readers' own (ndi.vintage.ingestedChannelList), from the bodies as the
-% database gives them back (JSON)
+% database gives them back (JSON); it rebuilds a time channel's own row from
+% the groups it times ([time channel row is notation], Jess Haley, 2026-11-19)
 rebuilt = ndi.vintage.ingestedChannelList(cellfun(@(b) jsondecode(jsonencode(b)), ...
     groupBodies, 'UniformOutput', false), evRows);
 info.channelListWhy = channelListDifference(rebuilt, ci);
+[info.timeRows, info.timeRowKept] = timeRowsCompared(rebuilt, ci, info.channelListWhy);
 if isempty(info.channelListWhy)
     gone{end+1} = baseId(structs{clIdx});
 end
+end
+
+function [kk, why] = pairedTime(ci, rows, keyed, evenNumbers, nTimeRows)
+% The keyed time value a channel group's ROWS key to: KK its index in KEYED,
+% 0 when their time channel's group is evenly spaced (the group's own time
+% covariate), or WHY it cannot be paired. The channel list pairs them: every
+% row's v1 time_channel names one time channel. When it names none of the
+% archive's (NaN, several, or one with no row) and the archive has exactly
+% one time channel, the group keys to that one, as the single-group path
+% did (NDI-matlab #1226).
+kk = 0;
+why = '';
+tc = NaN(1, numel(rows));
+for r = 1:numel(rows)
+    v = double(ci(rows(r)).time_channel);
+    if isscalar(v); tc(r) = v; end
+end
+u = unique(tc(isfinite(tc)));
+if all(isfinite(tc)) && isscalar(u)
+    i = find([keyed.number] == u, 1);
+    if ~isempty(i); kk = i; return; end
+    if any(evenNumbers == u); return; end
+end
+if nTimeRows == 1 && isscalar(keyed)
+    kk = 1;
+    return;
+end
+shown = strjoin(arrayfun(@(x) sprintf('%g', x), unique(tc), 'UniformOutput', false), ', ');
+why = sprintf(['its channels name time channel(s) %s, not one time channel of the archive ' ...
+    '(%d time channel(s), %d of them not evenly spaced): the channel list does not pair it ' ...
+    'with a time group'], shown, nTimeRows, numel(keyed));
+end
+
+function [counts, kept] = timeRowsCompared(rebuilt, ci, listWhy)
+% COUNTS [v1 time rows, of them rebuilt exactly]; KEPT true when the list is
+% kept and a time row is why (a v1 time row not rebuilt exactly, or a time
+% row rebuilt that the v1 list does not hold)
+isT = strcmp(cellfun(@char, {ci.type}, 'UniformOutput', false), 'time');
+rT = false(1, numel(rebuilt));
+if ~isempty(rebuilt)
+    rT = strcmp(cellfun(@char, {rebuilt.type}, 'UniformOutput', false), 'time');
+end
+v1 = ci(isT);
+rb = rebuilt(rT);
+same = 0;
+for r = 1:numel(v1)
+    for q = 1:numel(rb)
+        if isempty(channelListDifference(rb(q), v1(r))); same = same + 1; break; end
+    end
+end
+counts = [numel(v1), same];
+kept = ~isempty(listWhy) && (same < numel(v1) || numel(rb) ~= numel(v1));
 end
 
 function why = channelListDifference(rebuilt, ci)
@@ -642,9 +798,12 @@ why = '';
 f = {'name', 'type', 'time_channel', 'sample_rate', 'offset', 'scale', 'number', ...
     'group', 'dataclass'};
 if numel(rebuilt) ~= numel(ci)
-    why = sprintf(['the v2 documents rebuild %d channel_list.bin row(s) of %d (a time ' ...
-        'channel''s own row, a text channel and an events file left packed have no v2 ' ...
-        'home yet)'], numel(rebuilt), numel(ci));
+    a = cellfun(@char, {rebuilt.name}, 'UniformOutput', false);
+    b = cellfun(@char, {ci.name}, 'UniformOutput', false);
+    why = sprintf(['the v2 documents rebuild %d channel_list.bin row(s) of %d (not rebuilt: ' ...
+        '%s; rebuilt but not in the list: %s; a non-standard event, marker or text name, an ' ...
+        'events file left packed, or a time channel a group names that the list does not ' ...
+        'hold)'], numel(rebuilt), numel(ci), listOrNone(setdiff(b, a)), listOrNone(setdiff(a, b)));
     return;
 end
 for r = 1:numel(ci)
@@ -663,6 +822,10 @@ for r = 1:numel(ci)
         end
     end
 end
+end
+
+function s = listOrNone(c)
+if isempty(c); s = 'none'; else; s = strjoin(c, ', '); end
 end
 
 function [b, counts] = renameMembers(b)
@@ -906,6 +1069,12 @@ function [ev, docs, written, rows] = unpackEvents(structs, idx, kinds, ci, t0, s
 %   [unpacked event bodies are uncompressed]: "event times and numeric codes
 %     as little-endian 64-bit floats, format EDAM "binary", with no
 %     compression block".
+%   [text channel entries are a JSON array] (Jess Haley, 2026-11-19): "an
+%     unpacked text channel's times are an uncompressed array of 64-bit
+%     floats, as for events ...; its entries are one uncompressed UTF-8 JSON
+%     array of strings in the same order, format EDAM format_3464 "JSON"";
+%     its variable is NCIT:C44272 "Annotation" ([event channel variable
+%     terms]).
 %   [channel list rows get v2 homes]: each records "its channel type and
 %     number as a condition (e.g. "marker channel", EMPTY:0000377, count 1)".
 %   [unpacked events file is removed]: its opaque_body is removed; "An
@@ -925,6 +1094,14 @@ function [ev, docs, written, rows] = unpackEvents(structs, idx, kinds, ci, t0, s
 %                        a standalone `time` value (data_body true, float64)
 %                        whose sampled_body holds the times - t0; member
 %                        body_data_0 = the codes
+%     a text channel     observation (value kind text), variable Annotation,
+%                        data_type utf8, data_body true; its sampled_body:
+%                        one time dimension whose time covariate is key 0 to
+%                        a standalone `time` value (as a marker's), format
+%                        EDAM:format_3464 "JSON", no byte order (single-byte)
+%                        and no compression; member body_data_0 = the
+%                        entries, one UTF-8 JSON array of strings in event
+%                        order (ndi.vintage.ingestedEventData reads it back)
 %   each with entity_id the wired device, `acquisition_system_id` the
 %   system the archive's recordings name ("instrument the acquisition
 %   system": an acquisition system is not an `entity`, which `instrument_id`
@@ -935,15 +1112,17 @@ function [ev, docs, written, rows] = unpackEvents(structs, idx, kinds, ci, t0, s
 %
 %   LEFT PACKED (EV.unpacked false, EV.kind and EV.why say why; the archive's
 %   channel groups still convert), when:
-%     text_channel     a text channel: the format of a text body is not
-%                      decided (the decision names float64 for times and
-%                      numeric codes only)
+%     text_channel     not used since [text channel entries are a JSON
+%                      array] (2026-11-19): text channels are unpacked; a
+%                      text channel whose entries do not come back exactly
+%                      from their JSON array is `not_exact`
 %     marker_columns   a marker whose events carry several numbers: the
 %                      second dimension ([several marker numbers are a second
 %                      dimension]) has no decided term
-%     unwired          a channel no `connected to` relation of the epoch
-%                      wires, or that several wire: the decision's fallback
-%                      entity, the acquisition system, is not an `entity`
+%     unwired          a channel (event, marker or text) no `connected to`
+%                      relation of the epoch wires, or that several wire: the
+%                      decision's fallback entity, the acquisition system, is
+%                      not an `entity`
 %     empty_channel    a channel with no event
 %     not_exact        the channels read back (ndi.vintage.ingestedEventData,
 %                      the reader's rule) or NDI's own round trip
@@ -955,7 +1134,8 @@ function [ev, docs, written, rows] = unpackEvents(structs, idx, kinds, ci, t0, s
 %   ROWS are the {type, number} of the unpacked channels, for the channel-list
 %   rebuild (ndi.vintage.ingestedChannelList); DOCS the documents made;
 %   WRITTEN the store files written (only once every check has passed).
-ev = struct('present', false, 'unpacked', false, 'channels', 0, 'kind', '', 'why', '');
+ev = struct('present', false, 'unpacked', false, 'channels', 0, 'textChannels', 0, ...
+    'kind', '', 'why', '');
 docs = {};
 written = {};
 rows = struct('type', {}, 'number', {});
@@ -978,13 +1158,9 @@ c1 = onCleanup(@() deleteIfThere([stem '.nbf.tgz']));
 [ct, cn, T, D] = ndi.compress.expand_eventmarktext(stem);
 ct = cellstr(ct);
 ev.channels = numel(ct);
+ev.textChannels = sum(strcmp(ct, 'text'));
 if ~isfinite(t0)
     ev = left(ev, 'other', 'the v1 archive names no epoch start (t0_t1)');
-    return;
-end
-if any(strcmp(ct, 'text'))
-    ev = left(ev, 'text_channel', ['a text channel: the format of an unpacked text body ' ...
-        'is not decided']);
     return;
 end
 % the recordings that own the file: their system and anchors
@@ -1004,22 +1180,30 @@ if ~isscalar(sysIds) || isempty(anchors)
 end
 [types, abbrev] = ndi.daq.reader.mfdaq.channel_types();
 ciType = cellfun(@char, {ci.type}, 'UniformOutput', false);
-plan = struct('type', {}, 'number', {}, 'name', {}, 'entity', {}, 'times', {}, 'codes', {});
+plan = struct('type', {}, 'number', {}, 'name', {}, 'entity', {}, 'times', {}, 'codes', {}, ...
+    'json', {});
 for i = 1:numel(ct)
     type = ct{i};
     num = double(cn(i));
     r = find(strcmp(ciType, type) & double([ci.number]) == num, 1);
-    if isempty(r) || ~any(strcmp(type, {'event', 'marker'}))
+    if isempty(r) || ~any(strcmp(type, {'event', 'marker', 'text'}))
         ev = left(ev, 'other', sprintf('channel %s %d is not in the channel list', type, num));
         return;
     end
     Ti = T{i}; Di = D{i};
-    if ~isa(Ti, 'double') || ~isa(Di, 'double') || isempty(Ti)
+    if strcmp(type, 'text')
+        % NDI-compress's expander gives a text channel's entries as a cell
+        % of character rows (ndi.compress.vector2eventmarktext)
+        dataOk = iscell(Di) && all(cellfun(@(x) ischar(x) && (isrow(x) || isempty(x)), Di));
+    else
+        dataOk = isa(Di, 'double');
+    end
+    if ~isa(Ti, 'double') || ~dataOk || isempty(Ti)
         if isempty(Ti)
             ev = left(ev, 'empty_channel', sprintf('%s channel %d has no event', type, num));
         else
             ev = left(ev, 'not_exact', sprintf(['%s channel %d: its times or data are not ' ...
-                'double (%s, %s)'], type, num, class(Ti), class(Di)));
+                'what NDI''s expander gives (%s, %s)'], type, num, class(Ti), class(Di)));
         end
         return;
     end
@@ -1030,9 +1214,32 @@ for i = 1:numel(ct)
     end
     stored = Ti(:) - t0;
     codes = [];
+    json = uint8([]);
     if strcmp(type, 'marker'); codes = Di(:); end
+    if strcmp(type, 'text')
+        if numel(Di) ~= numel(Ti)
+            ev = left(ev, 'not_exact', sprintf('text channel %d has %d time(s) and %d entr(ies)', ...
+                num, numel(Ti), numel(Di)));
+            return;
+        end
+        % [text channel entries are a JSON array]: the entries as they will
+        % be stored, and as the reader decodes them
+        try
+            json = ndi.vintage.ingestedTextEntries('encode', Di);
+            codes = ndi.vintage.ingestedTextEntries('decode', json);
+        catch err
+            ev = left(ev, 'not_exact', sprintf(['text channel %d: its entries are not one ' ...
+                'UTF-8 JSON array of strings (%s)'], num, err.message));
+            return;
+        end
+    end
     [Tr, Dr] = ndi.vintage.ingestedEventData(type, stored, codes);
-    if ~isequal(Tr + t0, Ti(:)) || ~isequal(Dr, Di(:))
+    if strcmp(type, 'text')
+        sameData = isequal(Dr, Di);
+    else
+        sameData = isequal(Dr, Di(:));
+    end
+    if ~isequal(Tr + t0, Ti(:)) || ~sameData
         ev = left(ev, 'not_exact', sprintf(['%s channel %d does not read back exactly ' ...
             '(times from the epoch start %.17g, or its data)'], type, num, t0));
         return;
@@ -1045,7 +1252,7 @@ for i = 1:numel(ct)
         return;
     end
     plan(end+1) = struct('type', type, 'number', num, 'name', char(ci(r).name), ...
-        'entity', entity, 'times', stored, 'codes', codes); %#ok<AGROW>
+        'entity', entity, 'times', stored, 'codes', {codes}, 'json', json); %#ok<AGROW>
 end
 % NDI's own round trip: the file rebuilt from the unpacked values, expanded
 try
@@ -1084,7 +1291,7 @@ function [entity, n] = wiredDevice(structs, sysId, anchors, type, num)
 % the child of the `connected to` (RO:0002170) relations to SYSID, timed by
 % one of ANCHORS, whose condition of TYPE's channel-type term lists NUM
 % (did2.convert.resolveEpochProbemap mkWiring); N how many devices
-node = struct('event', 'EMPTY:0000376', 'marker', 'EMPTY:0000377');
+node = struct('event', 'EMPTY:0000376', 'marker', 'EMPTY:0000377', 'text', 'EMPTY:0000410');
 want = node.(type);
 found = {};
 for k = 1:numel(structs)
@@ -1137,10 +1344,15 @@ if isfield(b.base, 'creation_timestamp') && ~isempty(b.base.creation_timestamp)
 end
 timeTerm = struct('node', 'om:Time', 'name', 'time');
 binary = struct('node', 'EDAM:format_2333', 'name', 'Binary format');
+% [text channel entries are a JSON array]: did-schema term registry
+% EDAM:format_3464 "JSON"
+jsonFormat = struct('node', 'EDAM:format_3464', 'name', 'JSON');
 chanTerm = struct('event', struct('node', 'EMPTY:0000376', 'name', 'event channel'), ...
-    'marker', struct('node', 'EMPTY:0000377', 'name', 'marker channel'));
+    'marker', struct('node', 'EMPTY:0000377', 'name', 'marker channel'), ...
+    'text', struct('node', 'EMPTY:0000410', 'name', 'text channel'));
 variable = struct('event', struct('node', 'NCIT:C25499', 'name', 'Event'), ...
-    'marker', struct('node', 'NCIT:C25162', 'name', 'Code'));
+    'marker', struct('node', 'NCIT:C25162', 'name', 'Code'), ...
+    'text', struct('node', 'NCIT:C44272', 'name', 'Annotation'));
 try
     for i = 1:numel(plan)
         p = plan(i);
@@ -1151,7 +1363,9 @@ try
             'unpacked by the NDI second pass: %d event(s), times in seconds from the ' ...
             'epoch''s start.'], p.type, sprintf('%s%d', abbrev{strcmp(types, p.type)}, p.number), ...
             bodyFilename(b), p.name, n);
-        common = {'DataBody', true, 'DatumType', 'float64', 'TimeReferenceIds', anchors, ...
+        datumType = 'float64';
+        if strcmp(p.type, 'text'); datumType = 'utf8'; end
+        common = {'DataBody', true, 'DatumType', datumType, 'TimeReferenceIds', anchors, ...
             'AcquisitionSystemId', sysId, ...
             'Conditions', did2.build.condition(chanTerm.(p.type), 'Count', p.number), ...
             'Notes', note, 'Id', obsId, 'SessionId', sid, 'Validate', false, tsArg{:}};
@@ -1177,13 +1391,22 @@ try
                 'Id', did2.convert.mintId('unpacked event times body', key), ...
                 'SessionId', sid, 'Validate', false, tsArg{:});
             tbody.files = struct('file_list', {{'body_data_0'}}, 'file_info', fi);
-            obs = did2.build.statement('observation', p.entity, variable.marker, [], ...
-                'ValueKind', 'label', common{:});
-            [fi, w] = writeFloats(p.codes, storeDir, ['codes|' key]);
+            if strcmp(p.type, 'marker')
+                obs = did2.build.statement('observation', p.entity, variable.marker, [], ...
+                    'ValueKind', 'label', common{:});
+                [fi, w] = writeFloats(p.codes, storeDir, ['codes|' key]);
+                fmt = {'ByteOrder', 'little', 'Format', binary};
+            else
+                % a text channel's entries: one UTF-8 JSON array of strings
+                obs = did2.build.statement('observation', p.entity, variable.text, [], ...
+                    'ValueKind', 'text', common{:});
+                [fi, w] = writeBytes(p.json, storeDir, ['entries|' key]);
+                fmt = {'Format', jsonFormat};
+            end
             written{end+1} = w; %#ok<AGROW>
             body = did2.build.sampledBody(obsId, did2.build.dimension(timeTerm, n), ...
                 'Covariates', did2.build.covariate(timeTerm, 0, 'Key', 0), 'KeyIds', {tvId}, ...
-                'ByteOrder', 'little', 'Format', binary, ...
+                fmt{:}, ...
                 'Id', did2.convert.mintId('unpacked event channel body', key), ...
                 'SessionId', sid, 'Validate', false, tsArg{:});
             body.files = struct('file_list', {{'body_data_0'}}, 'file_info', fi);
@@ -1199,13 +1422,23 @@ end
 function [fi, dest] = writeFloats(x, storeDir, key)
 % [unpacked event bodies are uncompressed]: little-endian float64, one
 % member, into the store under a uid derived from KEY
+[fi, dest] = writeMember(@(fid) fwrite(fid, double(x(:)), 'float64'), storeDir, key);
+end
+
+function [fi, dest] = writeBytes(bytes, storeDir, key)
+% [text channel entries are a JSON array]: the bytes as given (UTF-8), one
+% member, uncompressed
+[fi, dest] = writeMember(@(fid) fwrite(fid, uint8(bytes(:)), 'uint8'), storeDir, key);
+end
+
+function [fi, dest] = writeMember(writeFcn, storeDir, key)
 uid = char(did2.convert.mintId('unpacked event file', key));
 dest = fullfile(storeDir, uid);
 fid = fopen(dest, 'w', 'ieee-le');
 if fid < 0
     error('NDI:migrate:ingestedArchiveBodies:write', 'Cannot write %s.', dest);
 end
-fwrite(fid, double(x(:)), 'float64');
+writeFcn(fid);
 fclose(fid);
 fi = struct('name', 'body_data_0', 'locations', struct('delete_original', 0, 'uid', uid, ...
     'location', dest, 'parameters', '', 'location_type', 'file', 'ingest', 1));
