@@ -396,6 +396,7 @@ function result = local(path, options)
     ontologyRowReport = [];
     ontologyLabelReport = [];
     stimulusSequenceReport = [];
+    regionPartReport = [];
     regionSitesReport = [];
     regionLocatedReport = [];
     epochSeriesBodiesReport = [];
@@ -435,6 +436,17 @@ function result = local(path, options)
         %       inherit (doImport.m:789,811,827 set `document_id` only); those
         %       are COUNTED and left passing through, pending a team call.
         %       See ndi.migrate.internal.ontologyLabelSubjects.
+        %   (1b) REGION PARTS: did2.convert.resolveRegionParts, the same
+        %       function the DID-side call sites run, after the deferrals (a
+        %       bath writes its site's part or side) and before (2). DID-matlab's
+        %       pass 1 writes a body site's region part in its final shape with
+        %       ids computed from (subject, region, side); this merges the
+        %       copies several source documents write to the earliest source's
+        %       and attaches a side another document gives ([duplicate parts
+        %       merged in DID], [part re-keyed when its side arrives], [region
+        %       part ids computed], Jess Haley, 2026-11-17 / 2026-11-19,
+        %       did-schema did_v2_go_forward_class_audit.md; VH-Lab/DID-matlab
+        %       #488).
         %   (2) PATH-S: an attributed anatomical locus is promoted to a
         %       part-subject. Run AFTER the deferrals so a manipulation the
         %       deferral emits can be a Path-S retarget candidate. A part it
@@ -782,6 +794,23 @@ function result = local(path, options)
                  'failed (%s); leaving them quarantined.'], ME.message);
         end
         tStep = migrateStepMark('resolveDeferred', tStart, tStep, convertResult);
+        % (1b) the region parts: one copy per computed id, a side given later
+        % attached (did2.convert.resolveRegionParts declares what it reads and
+        % writes; DID-matlab tools/batch_pass_order.py reads it there)
+        try
+            [convertResult, regionPartReport] = ...
+                did2.convert.resolveRegionParts( ...
+                convertResult, ...
+                'Validate',      options.Validate, ...
+                'SchemaCache',   options.SchemaCache, ...
+                'TargetVersion', options.TargetVersion);
+        catch ME
+            stepErrors(end+1) = struct('step', 'regionPartsFailed', 'message', ME.message); %#ok<AGROW>
+            warning('NDI:migrate:regionPartsFailed', ...
+                ['Second-pass region part merge failed (%s); leaving the ' ...
+                 'region parts as pass 1 wrote them.'], ME.message);
+        end
+        tStep = migrateStepMark('resolveRegionParts', tStart, tStep, convertResult);
         % [table rows carried as v1] (Jess Haley, 2026-10-30): every row is
         % carried by pass 1; this step counts them and changes nothing.
         %   WHAT THIS STEP READS AND WRITES: [migration reliability practices] (c),
@@ -1754,6 +1783,7 @@ function result = local(path, options)
         'softwareDedupAfterPassOne', softwareDedupEarlyReport, ...
         'softwareDedup',       softwareDedupReport, ...
         'dimensionTerms',      dimensionTermReport, ...
+        'regionParts',         regionPartReport, ...
         'regionPartsSites',    regionSitesReport, ...
         'regionPartsLocated',  regionLocatedReport, ...
         'epochSeriesBodies',   epochSeriesBodiesReport, ...
