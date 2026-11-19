@@ -179,7 +179,10 @@ for k = 1:numel(systems)
     if isKey(options.InstrumentIds, instrumentFor(sys))
         sysEdges.device_id = options.InstrumentIds(instrumentFor(sys));
     end
-    asys = did2.build.document('acquisition_system', struct('name', sys), 'SessionId', sid, ...
+    % the class the loaded schema holds ([acquisition configuration renamed],
+    % Jess Haley, 2026-11-19: `acquisition_configuration` once did-schema
+    % renames `acquisition_system`)
+    asys = did2.build.document(ndi.vintage.acquisitionConfigurationClass(), struct('name', sys), 'SessionId', sid, ...
         'Edges', sysEdges);
     systemIds(sys) = asys.base.id;
     docs = [docs, {pat, asys}]; %#ok<AGROW>
