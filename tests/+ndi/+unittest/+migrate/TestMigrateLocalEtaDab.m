@@ -361,12 +361,28 @@ classdef TestMigrateLocalEtaDab < matlab.unittest.TestCase
             % stimulator's `observes` relation retires where a converted
             % stimulus presentation names the same device and animal. The
             % record of [stimulator link lives in the presentations] states
-            % that Dab holds no presentations, so none retires here and the
-            % Dabrowska map (ndi.setup.conv.dabrowska.sliceTetanus), which
-            % reads them, still finds them.
+            % that Dab holds no presentations, so none retires on one.
+            % Decided by Jess Haley, 2026-11-19 [bath manipulation retires
+            % observes] (same document): a bath manipulation naming the
+            % stimulator as instrument and its subject as entity retires it
+            % by the same rule; Dab writes bath manipulations
+            % (stimulusBathToBath), so Dab's bath stimulators retire on them.
+            % Before that decision this test stated that nothing retires
+            % without a presentation. The stimulators reading their subject
+            % back from the baths is testTheSameObjectsBeforeAndAfterMigration's.
             r = ndi.unittest.migrate.verifyObservesRetirement(testCase, testCase.Result, 'Dab');
-            testCase.verifyTrue(r.presentation_manipulations > 0 || r.observes_retired == 0, ...
-                'Dab retired an `observes` relation with no presentation');
+            testCase.verifyEqual(r.retired_by_presentation, 0, ...
+                'Dab retired an `observes` relation on a presentation it does not hold');
+            testCase.verifyGreaterThan(r.bath_manipulations, 0, ...
+                'Dab converted no bath manipulation (nothing measured)');
+            testCase.verifyGreaterThan(r.retired_by_bath, 0, ...
+                'Dab retired no `observes` relation on its bath manipulations');
+            % [one-field carry in the migration report]: an element whose
+            % `observes` retires because no statement names its v1 subject
+            % reads that subject back from the carried fields (0 included)
+            n = ndi.unittest.migrate.verifyCarriedSubjects(testCase, testCase.Result, ...
+                testCase.Bodies, 'Dab');
+            testCase.verifyEqual(n, r.retired_carried, 'not every carried element was checked');
         end
 
         function testReadPhasesAreNoSlowerThanV1(testCase)

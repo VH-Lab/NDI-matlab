@@ -324,6 +324,23 @@ classdef TestMigrateLocalEtaB < matlab.unittest.TestCase
                 'B converted no stimulus presentation (nothing measured)');
             testCase.verifyGreaterThan(r.observes_retired, 0, ...
                 'B retired no `observes` relation on its presentations');
+            testCase.verifyGreaterThan(r.retired_by_presentation, 0, ...
+                'B retired no `observes` relation on its presentations');
+        end
+
+        function testACarriedSubjectReadsBackAsV1(testCase)
+            % Decided by Jess Haley, 2026-11-19 [stimulator subject carried
+            % as needing information], [one-field carry in the migration
+            % report], [recording probe subject carried the same way]
+            % (did-schema did_v2_standing_wiring_plan.md; carry register row
+            % carry-172): an element whose `observes` retires because no
+            % statement names its v1 subject reads that subject back from
+            % the migration report's carried fields. B's count is printed
+            % (0 included); each one carried is read back.
+            r = ndi.unittest.migrate.verifyObservesRetirement(testCase, testCase.Result, 'B');
+            n = ndi.unittest.migrate.verifyCarriedSubjects(testCase, testCase.Result, ...
+                testCase.Bodies, 'B');
+            testCase.verifyEqual(n, r.retired_carried, 'not every carried element was checked');
         end
 
         function testReadPhasesAreNoSlowerThanV1(testCase)
