@@ -411,6 +411,21 @@ classdef TestMigrateLocalEtaDab < matlab.unittest.TestCase
             end
         end
 
+        function testArchiveSegmentLengthsAfterTheSecondPass(testCase)
+            % [archive segment lengths measured after the second pass] (Jess
+            % Haley, 2026-11-12): each v1 ingested archive's
+            % sample_analog_segment / sample_digital_segment, which DID's
+            % whole-batch round trip defers to here, rebuilt from the final
+            % v2 bodies' time chunks and compared with v1. The corpus zip
+            % carries no binary files (NDI-matlab #785), so the archives stay
+            % pass 1's opaque bodies and the report reads NOT MEASURED, by
+            % reason; the denominator and the partition are asserted, and any
+            % value measured must equal v1
+            % (ndi.unittest.migrate.verifyArchiveSegmentLengths).
+            ndi.unittest.migrate.verifyArchiveSegmentLengths(testCase, ...
+                testCase.Result, testCase.Bodies, 'Dab');
+        end
+
         function testTheSameObjectsBeforeAndAfterMigration(testCase)
             % Object-level equivalence over the whole corpus
             % (VH-Lab/NDI-matlab#785; Jess Haley, 2026-11-03, queued it):
