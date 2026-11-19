@@ -247,7 +247,7 @@ classdef TestStimulusPresentationItem < matlab.unittest.TestCase
             seed = paramEntry(own, 'Random Seed');
             testCase.verifyNotEmpty(seed, 'randState is the registered Random Seed');
             testCase.verifyEqual(seed.variable.node, 'NCIT:C64220');
-            testCase.verifyEqual(seed.matrix(:)', ...
+            testCase.verifyEqual(seed.numeric(:)', ...
                 [0.8301061479240671 0.6704957765200832 0.08449867537860833]);
         end
 
@@ -477,11 +477,11 @@ classdef TestStimulusPresentationItem < matlab.unittest.TestCase
             testCase.verifyEqual(double(d{1}.n), 3);
             on = covariateOf(m, 'onset time');
             testCase.verifyEqual(double(on.along(:)'), 0);
-            testCase.verifyEqual(on.quantity.value(:)', [0 5 10]);
+            testCase.verifyEqual(on.numeric(:)', [0 5 10]);
             testCase.verifyEqual(termName(on.unit), 'second');
             off = covariateOf(m, 'offset time');
             testCase.verifyEqual(double(off.along(:)'), 0);
-            testCase.verifyEqual(off.quantity.value(:)', [4 9 14]);
+            testCase.verifyEqual(off.numeric(:)', [4 9 14]);
             testCase.verifyFalse(isfield(m.item.value, 'offset'), ...
                 'item.value.offset is gone (AMENDMENT 6)');
         end
@@ -505,11 +505,11 @@ classdef TestStimulusPresentationItem < matlab.unittest.TestCase
             on = covariateOf(m, 'onset time');
             testCase.verifyEqual(char(on.variable.node), 'EMPTY:0000368');
             testCase.verifyEqual(double(on.along(:)'), 0);
-            testCase.verifyEqual(on.quantity.value(:)', [10.5 12.5 14.5]);
+            testCase.verifyEqual(on.numeric(:)', [10.5 12.5 14.5]);
             testCase.verifyEqual(termName(on.unit), 'second');
             off = covariateOf(m, 'offset time');
             testCase.verifyEqual(char(off.variable.node), 'EMPTY:0000369');
-            testCase.verifyEqual(off.quantity.value(:)', [11.5 13.5 15.5]);
+            testCase.verifyEqual(off.numeric(:)', [11.5 13.5 15.5]);
             % the raw source stays attached
             testCase.verifyTrue(isfield(m, 'files'), 'the files block was dropped');
             testCase.verifyEqual(m.files, pres.files);
@@ -524,7 +524,7 @@ classdef TestStimulusPresentationItem < matlab.unittest.TestCase
             [m, ~, report] = emit(testCase, pres, [], 'PresentationTimeFile', f);
             testCase.verifyEqual(report.timing_source, 'presentation_time.bin');
             on = covariateOf(m, 'onset time');
-            testCase.verifyEqual(on.quantity.value(:)', [100 200]);
+            testCase.verifyEqual(on.numeric(:)', [100 200]);
         end
 
         function testAFileOfTheWrongLengthFallsBackToInline(testCase)
@@ -537,7 +537,7 @@ classdef TestStimulusPresentationItem < matlab.unittest.TestCase
             testCase.verifyEqual(report.timing_file, '2 entr(ies) for 3 trial(s)');
             testCase.verifyEqual(report.timing_source, 'inline (deprecated writer form)');
             on = covariateOf(m, 'onset time');
-            testCase.verifyEqual(on.quantity.value(:)', [0 5 10]);
+            testCase.verifyEqual(on.numeric(:)', [0 5 10]);
         end
 
         function testAFileThatIsNotHereGivesNoTimesButStaysAttached(testCase)
@@ -564,7 +564,7 @@ classdef TestStimulusPresentationItem < matlab.unittest.TestCase
             f = writePresentationTimeFile(testCase, [1 2], [1.5 NaN]);
             [m, ~, report] = emit(testCase, pres, [], 'PresentationTimeFile', f);
             testCase.verifyEqual(report.timing_source, 'presentation_time.bin');
-            testCase.verifyEqual(covariateOf(m, 'onset time').quantity.value(:)', [1 2]);
+            testCase.verifyEqual(covariateOf(m, 'onset time').numeric(:)', [1 2]);
             testCase.verifyEmpty(covariateOf(m, 'offset time'));
         end
 
@@ -588,7 +588,7 @@ classdef TestStimulusPresentationItem < matlab.unittest.TestCase
             [m, ~, report] = emit(testCase, pres, seq, 'PresentationTimeFile', f);
             testCase.verifyEqual(report.timing_file, 'not used: the dimension is frames');
             testCase.verifyEqual(report.timing_source, 'frameTimes (hartley_calc)');
-            testCase.verifyEqual(covariateOf(m, 'onset time').quantity.value(:)', ...
+            testCase.verifyEqual(covariateOf(m, 'onset time').numeric(:)', ...
                 [0 0.1 0.2], 'AbsTol', 1e-12);
             testCase.verifyEqual(m.files, pres.files, 'the file stays attached');
         end
@@ -727,7 +727,7 @@ classdef TestStimulusPresentationItem < matlab.unittest.TestCase
             testCase.verifyEqual(methodParam(d, 'bit depth'), 8);
             seed = paramEntry(d, 'Random Seed');
             testCase.verifyEqual(seed.variable.node, 'NCIT:C64220');
-            testCase.verifyEqual(size(seed.matrix), [3 1], 'randState is a column');
+            testCase.verifyEqual(size(seed.numeric), [3 1], 'randState is a column');
             testCase.verifyEqual(paramEntry(d, 'colour palette').unit.node, 'NCIT:C75765');
             testCase.verifyEqual(paramEntry(d, 'frame rate').unit.node, 'om:hertz');
             testCase.verifyNotEmpty(paramEntry(d, 'background duration before stimulus'));
@@ -1098,9 +1098,9 @@ classdef TestStimulusPresentationItem < matlab.unittest.TestCase
             testCase.verifyNumElements(d, 1);
             testCase.verifyEqual(double(d{1}.n), 5, 'one presentation per frame');
             on = covariateOf(m, 'onset time');
-            testCase.verifyEqual(on.quantity.value(:)', [0 0.1 0.2 0.3 0.4], 'AbsTol', 1e-12);
+            testCase.verifyEqual(on.numeric(:)', [0 0.1 0.2 0.3 0.4], 'AbsTol', 1e-12);
             off = covariateOf(m, 'offset time');
-            testCase.verifyEqual(off.quantity.value(:)', [0.1 0.2 0.3 0.4 0.5], 'AbsTol', 1e-12);
+            testCase.verifyEqual(off.numeric(:)', [0.1 0.2 0.3 0.4 0.5], 'AbsTol', 1e-12);
             testCase.verifyFalse(isfield(m.item.value, 'offset'));
             testCase.verifyEqual(report.trials_with_timing, 5);
         end
@@ -1363,13 +1363,12 @@ end
 
 function v = methodParam(doc, variable)
 %METHODPARAM The value of a `method` document's parameter VARIABLE: the
-%   quantity's value, the matrix, the count, the term's name or the text;
+%   numeric, the count, the term's name or the text;
 %   [] when absent.
 v = [];
 e = paramEntry(doc, variable);
 if isempty(e); return; end
-if isfield(e, 'quantity') && ~isempty(e.quantity); v = e.quantity.value;
-elseif isfield(e, 'matrix') && ~isempty(e.matrix); v = e.matrix;
+if isfield(e, 'numeric') && ~isempty(e.numeric); v = e.numeric;
 elseif isfield(e, 'count') && ~isempty(e.count); v = e.count;
 elseif isfield(e, 'term') && ~isempty(e.term) && ~isempty(e.term.name); v = e.term.name;
 elseif isfield(e, 'text') && ~isempty(e.text); v = e.text; end

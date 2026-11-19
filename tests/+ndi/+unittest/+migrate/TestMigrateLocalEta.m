@@ -836,8 +836,8 @@ classdef TestMigrateLocalEta < matlab.unittest.TestCase
             names = cellfun(@(c) char(c.variable.name), covs, 'UniformOutput', false);
             on = covs{strcmp(names, 'onset time')};
             off = covs{strcmp(names, 'offset time')};
-            verifyEqual(testCase, on.quantity.value(:)', [0 5]);
-            verifyEqual(testCase, off.quantity.value(:)', [4 9]);
+            verifyEqual(testCase, on.numeric(:)', [0 5]);
+            verifyEqual(testCase, off.numeric(:)', [4 9]);
             tr = depValue(manip, 'time_reference_id');
             verifyNotEmpty(testCase, tr, ...
                 ['the manipulation carries no time reference: the pass mints ' ...
@@ -1055,9 +1055,9 @@ classdef TestMigrateLocalEta < matlab.unittest.TestCase
             names = cellfun(@(c) char(c.variable.name), covs, 'UniformOutput', false);
             on = covs{strcmp(names, 'onset time')};
             off = covs{strcmp(names, 'offset time')};
-            verifyEqual(testCase, on.quantity.value(:)', [1 7]);
+            verifyEqual(testCase, on.numeric(:)', [1 7]);
             verifyEqual(testCase, char(on.variable.node), 'EMPTY:0000368');
-            verifyEqual(testCase, off.quantity.value(:)', [3 9]);
+            verifyEqual(testCase, off.numeric(:)', [3 9]);
             verifyEqual(testCase, char(off.variable.node), 'EMPTY:0000369');
             dims = ndi.v2.entries(manip.data.dimensions);
             verifyEqual(testCase, char(dims{1}.term.node), 'OBI:0000807');

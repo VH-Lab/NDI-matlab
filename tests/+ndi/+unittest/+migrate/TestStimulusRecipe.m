@@ -186,7 +186,9 @@ classdef TestStimulusRecipe < matlab.unittest.TestCase
             r = ndi.migrate.internal.stimulusRecipe(p, 'periodicstim_bars');
             sp = entryOf(r, 'spatial phase');
             testCase.verifyEqual(sp.value, 90, 'AbsTol', 1e-12);
-            testCase.verifyEqual(str2double(sp.source_value), pi / 2, 'AbsTol', 1e-15);
+            % [numeric shape details] (1): the v1 number is passed as a number
+            testCase.verifyClass(sp.source_value, 'double');
+            testCase.verifyEqual(sp.source_value, pi / 2, 'AbsTol', 1e-15);
             testCase.verifyEqual(sp.source_unit.node, 'om:radian');
             % and the method document carries it (did2.build: needs the schema)
             testCase.assumeTrue(~isempty(which('did2.schema.cache')) && ...
@@ -197,7 +199,8 @@ classdef TestStimulusRecipe < matlab.unittest.TestCase
             if iscell(prm); prm = [prm{:}]; end
             k = find(arrayfun(@(e) strcmp(e.variable.name, 'spatial phase'), prm), 1);
             testCase.verifyNotEmpty(k);
-            testCase.verifyEqual(prm(k).quantity.value, 90, 'AbsTol', 1e-12);
+            testCase.verifyEqual(prm(k).numeric, 90, 'AbsTol', 1e-12);
+            testCase.verifyEqual(prm(k).source_numeric, pi / 2, 'AbsTol', 1e-15);
             testCase.verifyEqual(prm(k).source_unit.node, 'om:radian');
         end
 

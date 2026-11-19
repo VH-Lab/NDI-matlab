@@ -774,6 +774,12 @@ params = struct( ...
     'source_unit', {HZ, SEC}, ...
     'quantity', {struct('value', str2double(tok{1}), 'source_value', tok{1}), ...
                  struct('value', str2double(tok{2}), 'source_value', tok{2})});
+% [one shape for measured numbers] (did-schema did_v2_numeric_shape_plan.md,
+% Jess Haley, 2026-11-17): each item flat, `numeric` and `source_numeric`
+% (did2.build.numericItem). The source is the folder name's text, so
+% `source_numeric` keeps it as text ([numeric shape details] (1): text where
+% the source wrote text).
+params = did2.build.numericItem(params);
 end
 
 function [t, ok] = clockTimes(et, clockName)

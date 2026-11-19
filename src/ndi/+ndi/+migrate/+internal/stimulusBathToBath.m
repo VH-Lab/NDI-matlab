@@ -310,12 +310,12 @@ for i = 1:numel(mixture)
     end
     a = mixture(i).amount;
     if strcmpi(chem.name, 'pH') && isfinite(a.source_value)
-        props.ph = struct('ph', a.source_value, 'source_value', a.source_value, ...
+        props.ph = struct('ph', a.source_value, did2.build.sourceNumericField(), a.source_value, ...
             'source_unit', a.source_unit, 'approximate', false);
         continue;
     end
     if any(strcmpi(chem.name, {'osm', 'osmolarity'})) && isfinite(a.source_value)
-        props.osmolarity = struct('source_value', a.source_value, ...
+        props.osmolarity = struct(did2.build.sourceNumericField(), a.source_value, ...
             'source_unit', a.source_unit, 'approximate', false);
         if isempty(a.source_unit.node) && isempty(a.source_unit.name)
             % no unit stated: none written (as an ingredient's concentration)
@@ -351,7 +351,7 @@ for i = 1:numel(mixture)
     ids{end+1} = c.base.id; %#ok<AGROW>
     e = struct();
     if isfinite(a.source_value)
-        conc = struct('source_value', a.source_value, 'approximate', false);
+        conc = struct(did2.build.sourceNumericField(), a.source_value, 'approximate', false);
         if ~isempty(a.source_unit.node) || ~isempty(a.source_unit.name)
             conc.source_unit = a.source_unit;
         end
