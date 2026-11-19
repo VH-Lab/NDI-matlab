@@ -51,7 +51,7 @@ classdef reader < ndi.ido & ndi.documentservice
             % S is the ndi.session for the dataset.
             %
             epochid = ndi.file.navigator.ingestedfiles_epochid(epochfiles);
-            q = ndi.query('','isa','daqreader_epochdata_ingested') & ...
+            q = ndi.daq.reader.ingestedArchiveQuery() & ...
                 ndi.query('','depends_on','daqreader_id', ndi_daqreader_mfdaq_obj.id()) & ...
                 ndi.query('epochid.epochid','exact_string',epochid);
             d = S.database_search(q);
@@ -92,7 +92,7 @@ classdef reader < ndi.ido & ndi.documentservice
             % See also: ndi.vintage.ingestedArchive, GETINGESTEDDOCUMENT
             %
             epochid = ndi.file.navigator.ingestedfiles_epochid(epochfiles);
-            q = ndi.query('','isa','daqreader_epochdata_ingested') & ...
+            q = ndi.daq.reader.ingestedArchiveQuery() & ...
                 ndi.query('','depends_on','daqreader_id', ndi_daqreader_obj.id()) & ...
                 ndi.query('epochid.epochid','exact_string',epochid);
             d = S.database_search(q);
@@ -132,7 +132,7 @@ classdef reader < ndi.ido & ndi.documentservice
            % raises the error. Without V2EPOCHIDS (or on a v1 database)
            % both maps are empty.
 
-            q = ndi.query('','isa','daqreader_epochdata_ingested') & ...
+            q = ndi.daq.reader.ingestedArchiveQuery() & ...
                 ndi.query('','depends_on','daqreader_id', ndi_daqreader_mfdaq_obj.id());
 
            d_ingested = S.database_search(q);
@@ -424,6 +424,28 @@ classdef reader < ndi.ido & ndi.documentservice
     end % methods
 
     methods (Static)
+        function q = ingestedArchiveQuery()
+            % INGESTEDARCHIVEQUERY - the query for an ingested epoch's archive document, either vintage
+            %
+            % Q = ndi.daq.reader.ingestedArchiveQuery()
+            %
+            % Matches a `daqreader_epochdata_ingested` document and its two
+            % subclasses BY NAME. A v1 database answers `isa` from the
+            % template chain, but a v2 database indexes `isa` from each
+            % superclass's `class_name`, and a v1 document carried into it
+            % names its superclasses only by `definition`: there,
+            % `isa daqreader_epochdata_ingested` does not find a v1
+            % `daqreader_mfdaq_epochdata_ingested`. Since DID-matlab #480
+            % (did-schema did_v2_go_forward_class_audit.md [retired classes
+            % leave V2], Jess Haley, 2026-10-25, step (1)) the migration
+            % hands the mfdaq archive on as v1 instead of renaming it to the
+            % retired `daqreader_epochdata_ingested`, so an archive the
+            % migration keeps is that v1 document.
+            q = ndi.query('','isa','daqreader_epochdata_ingested','') | ...
+                ndi.query('','isa','daqreader_mfdaq_epochdata_ingested','') | ...
+                ndi.query('','isa','daqreader_image_epochdata_ingested','');
+        end
+
         function tf = isv2database(S)
             % ISV2DATABASE - is the database of session or dataset S a v2 (did2) database?
             %
