@@ -83,7 +83,7 @@ classdef decoder < ndi.app
                 % delete only the existing documents belonging to the target epochs
                 rmmask = ismember(existing_epoch_ids, target_epochs);
                 if any(rmmask)
-                    E.database_rm(existing_doc_stim(rmmask));
+                    ndi_app_stimulus_decoder_obj.remove_presentations(existing_doc_stim(rmmask));
                 end
                 existing_doc_stim = existing_doc_stim(~rmmask);
                 existing_epoch_ids = existing_epoch_ids(~rmmask);
@@ -160,6 +160,41 @@ classdef decoder < ndi.app
                 fobj.fclose();
             end
         end % load_presentation_time
+
+        function remove_presentations(ndi_app_stimulus_decoder_obj, stimulus_presentation_docs)
+            % REMOVE_PRESENTATIONS - remove stimulus_presentation documents and what only they used
+            %
+            % REMOVE_PRESENTATIONS(NDI_APP_STIMULUS_DECODER_OBJ, STIMULUS_PRESENTATION_DOCS)
+            %
+            % Removes the 'stimulus_presentation' documents in the cell array
+            % STIMULUS_PRESENTATION_DOCS from the session. The session also
+            % removes their dependents, which include the
+            % 'stimulus_response_scalar' documents computed from them. Those
+            % responses use 'stimulus_response_scalar_parameters_basic'
+            % documents that depend on nothing, so they would be left behind;
+            % each one that nothing uses any more is removed too
+            % (ndi.app.stimulus.tuning_response.remove_unused_parameter_docs,
+            % NDI-matlab #1237).
+            %
+            % PARSE_STIMULI calls this when RESET is 1.
+            %
+            if isempty(stimulus_presentation_docs)
+                return;
+            end
+            E = ndi_app_stimulus_decoder_obj.session;
+            q_resp = ndi.query('','isa','stimulus_response_scalar','');
+            parameter_ids = {};
+            for i=1:numel(stimulus_presentation_docs)
+                resp = E.database_search(q_resp & ndi.query('','depends_on',...
+                    'stimulus_presentation_id',stimulus_presentation_docs{i}.id()));
+                for j=1:numel(resp)
+                    parameter_ids{end+1} = resp{j}.dependency_value(...
+                        'stimulus_response_scalar_parameters_id','ErrorIfNotFound',0); %#ok<AGROW>
+                end
+            end
+            E.database_rm(stimulus_presentation_docs);
+            ndi.app.stimulus.tuning_response.remove_unused_parameter_docs(E, parameter_ids);
+        end % remove_presentations()
     end % methods
 
 end % ndi.app.stimulus.decoder
