@@ -8,7 +8,8 @@ classdef TestIngestedArchiveBodies < matlab.unittest.TestCase
 %   Jess Haley, 2026-11-12, [uneven time rewritten from the epoch start];
 %   Jess Haley, 2026-11-17, [scale carries the reader's unit]; Jess Haley,
 %   2026-11-19, [uneven time groups and mismatches], [time channel row is
-%   notation], [text channel entries are a JSON array]). The segments and channel_list.bin are
+%   notation], [text channel entries are a JSON array], [time group with
+%   several time channels split]). The segments and channel_list.bin are
 %   written by NDI's own writers (ndi.compress, ndi.file.type.
 %   mfdaq_epoch_channel), as ndi.daq.reader.mfdaq/ingest_epochfiles does.
 
@@ -737,6 +738,230 @@ classdef TestIngestedArchiveBodies < matlab.unittest.TestCase
             testCase.verifyFalse(ismember('body_cl', removed));
         end
 
+        function testATimeGroupOfSeveralTimeChannelsIsSplit(testCase)
+            % Decided by Jess Haley, 2026-11-19 [time group with several time
+            % channels split]: "when an ingested archive's one uneven time
+            % group file holds several time channels, each time channel
+            % becomes its own keyed `time` value, and each channel group keys
+            % to the time value of the time channel its rows' v1
+            % `time_channel` names". One v1 file ti_group1 holds t1 and t2
+            % (NDI's ingest writes both time channels of group 1 into it,
+            % ndi.compress.compress_time of the two columns); the epoch
+            % starts at 5, so the stored times are t - 5
+            [structs, v1, tv1] = testCase.splitTimeGroup(struct('t0', 5));
+            nFiles = numel(dir(fullfile(testCase.Dir, 'files'))) - 2;
+            [out, rep, removed] = ndi.migrate.internal.ingestedArchiveBodies( ...
+                structs, testCase.Dir, v1);
+            testCase.verifyEqual(rep.archives_seen, 1, 'the denominator');
+            testCase.verifyEqual(rep.archives_converted, 1, rep.first_unconvertible_reason);
+            testCase.verifyEqual(rep.unconvertible, 0);
+            testCase.verifyEqual(rep.time_not_evenly_spaced, 1);
+            testCase.verifyEqual(rep.uneven_time_converted, 1);
+            testCase.verifyEqual(rep.uneven_time_groups_split, 1);
+            testCase.verifyEqual(rep.uneven_time_channels_split, 2);
+            testCase.verifyEqual(rep.uneven_time_values, 2, 'one time value per time channel');
+            testCase.verifyEqual(rep.uneven_time_split_ambiguous_kept, 0);
+            testCase.verifyEqual(rep.uneven_time_rebased, 1);
+            testCase.verifyEqual(rep.group_bodies_described, 2, 'the ai and ax groups');
+            testCase.verifyEmpty(removed, 'no body removed, and the list stays');
+            testCase.verifyEqual(rep.channel_list_kept, 1, ...
+                'uneven groups'' rates have no v2 home, so the list stays');
+            testCase.verifyEqual(numel(out), numel(structs) + 3, ...
+                'two time values and the second channel''s body added');
+            testCase.verifyEqual(numel(rep.added_ids), 3);
+            ids = cellfun(@(x) x.base.id, out, 'UniformOutput', false);
+            % the time bodies: one per time channel, each naming it
+            isTi = cellfun(@(x) strcmp(x.document_class.class_name, 'sampled_body') && ...
+                strcmp(char(x.data_body.filename), 'ti_group1_seg.nbf_#'), out);
+            testCase.assertEqual(nnz(isTi), 2);
+            tbs = out(isTi);
+            tcs = cellfun(@timeChannelOf, tbs);
+            testCase.verifyEqual(sort(tcs), [1 2]);
+            tb1 = tbs{tcs == 1};
+            tb2 = tbs{tcs == 2};
+            testCase.verifyEqual(tb1.base.id, 'body_ti', 'the first channel keeps the id');
+            testCase.verifyNotEqual(tb2.base.id, 'body_ti');
+            testCase.verifyTrue(ismember(tb2.base.id, rep.added_ids));
+            vA = edgeOf(tb1, 'owner_id');
+            vB = edgeOf(tb2, 'owner_id');
+            testCase.verifyNotEqual(vA, vB, 'each time channel its own value');
+            for v = [vA, vB]
+                val = out{strcmp(ids, v{1})};
+                testCase.verifyEqual(val.document_class.class_name, 'time');
+                testCase.verifyTrue(logical(val.value.data_body));
+            end
+            for tb = {tb1, tb2}
+                testCase.verifyEqual(numel(tb{1}.data.dimensions), 1);
+                testCase.verifyEqual(double(tb{1}.data.dimensions(1).n), 160);
+                testCase.verifyEqual(double(tb{1}.data.dimensions(1).chunk), 100);
+            end
+            % new files, one per v1 segment, each one column, t - t0
+            testCase.verifyEqual(numel(rep.written_files{1}), 4);
+            testCase.verifyEqual(numel(dir(fullfile(testCase.Dir, 'files'))) - 2, nFiles + 4);
+            testCase.verifyTrue(isfile(fullfile(testCase.Dir, 'files', 'u_ti_1')), 'v1 files kept');
+            u1 = memberUids(tb1); u2 = memberUids(tb2);
+            testCase.verifyFalse(any(ismember([u1, u2], {'u_ti_1', 'u_ti_2'})), 'new files');
+            s1 = [readTime(fullfile(testCase.Dir, 'files', u1{1})); ...
+                readTime(fullfile(testCase.Dir, 'files', u1{2}))];
+            s2 = [readTime(fullfile(testCase.Dir, 'files', u2{1})); ...
+                readTime(fullfile(testCase.Dir, 'files', u2{2}))];
+            testCase.verifyEqual(size(s1), [160 1]);
+            testCase.verifyEqual(s1, tv1(:, 1) - 5, 'AbsTol', 1e-9, 't1 = column 1 - t0');
+            testCase.verifyEqual(s2, tv1(:, 2) - 5, 'AbsTol', 1e-9, 't2 = column 2 - t0');
+            % each channel group keyed to the time value its rows name
+            ai = out{strcmp(ids, 'body_ai')};
+            ax = out{strcmp(ids, 'body_ax')};
+            testCase.verifyEqual(edgeOf(ai, 'key_id'), vA, 'ai1-3 name t1');
+            testCase.verifyEqual(edgeOf(ax, 'key_id'), vB, 'ax1-2 name t2');
+            % the time rows the readers rebuild: t1 and t2, both group 1
+            rebuilt = ndi.vintage.ingestedChannelList({jsondecode(jsonencode(ai)), ...
+                jsondecode(jsonencode(ax))});
+            tr = rebuilt(strcmp({rebuilt.type}, 'time'));
+            testCase.verifyEqual({tr.name}, {'t1', 't2'});
+            testCase.verifyEqual([tr.group], [1 1]);
+            testCase.verifyEqual([tr.time_channel], [1 2]);
+            % the converted set validates against the real schema
+            res = did2.convert.v1_to_v2(out, 'Validate', true, 'TargetVersion', 'did_v2');
+            testCase.verifyEmpty(res.quarantine);
+            testCase.verifyEqual(numel(res.migrated), numel(out));
+
+            % THE READERS. The split bodies are one series (in either order),
+            % and segment 2 of the v1 file is rebuilt from them, one column
+            % per time channel, seconds from the epoch's start (the reader
+            % adds the start, ndi.daq.reader.mfdaq)
+            wrap = @(b) struct('document_properties', jsondecode(jsonencode(b)));
+            M = ndi.vintage.ingestedArchiveSeries({wrap(tb2), wrap(ai), wrap(tb1), wrap(ax)});
+            e = M('ti_group1_seg.nbf_#');
+            testCase.verifyEqual(e.kind, 'split_time');
+            testCase.verifyEqual(e.numbers, [1 2]);
+            testCase.verifyEqual(e.chunk, 100);
+            testCase.verifyEqual(e.n, 160);
+            A = struct('epoch_id', 'e1', 'bodies', M);
+            S = fakeBinarySession(testCase.Dir);
+            seg2 = ndi.vintage.ingestedSplitTime(S, A, 'ti_group1_seg.nbf_2');
+            testCase.verifyEqual(seg2, tv1(101:160, :) - 5, 'AbsTol', 1e-9);
+            seg1 = ndi.vintage.ingestedSplitTime(S, A, 'ti_group1_seg.nbf_1');
+            testCase.verifyEqual(5 + seg1, tv1(1:100, :), 'AbsTol', 1e-9, 'the v1 clock times');
+            testCase.verifyError(@() ndi.vintage.ingestedArchiveFile(S, A, ...
+                'ti_group1_seg.nbf_1', '.nbf.tgz'), 'NDI:daq:reader:ingestedSplitTime');
+            testCase.verifyError(@() ndi.vintage.ingestedSplitTime(S, A, ...
+                'ti_group1_seg.nbf_3'), 'NDI:daq:reader:ingestedFileNotFound');
+
+            % THE ROUND TRIP (DID-matlab): the v1 group file's segments and
+            % names rebuilt from the split values, compared with the v1 file
+            % as NDI's own expander reads it
+            if isempty(which('did2.convert.roundtrip.ingestedArchiveFiles'))
+                return;
+            end
+            ref = struct('document_class', struct('class_name', 'relative_time_reference'), ...
+                'base', struct('id', 'tr_1', 'session_id', 'sess_1'), ...
+                'relative_time_reference', struct('value', struct('clock', 'dev_local_time', ...
+                    'start', struct('seconds', 5), 'duration', struct('seconds', 159/10000)))), ...
+                'depends_on', struct('name', {}, 'value', {}));
+            batch = [out, {ref}];
+            cl = out{strcmp(ids, 'body_cl')};
+            R = did2.convert.roundtrip.ingestedArchiveFiles({ai, ax, cl}, batch, ...
+                'ReadBody', @(b) timeBodyValues(testCase.Dir, b));
+            testCase.assertNumElements(R.split_time, 1);
+            st = R.split_time;
+            testCase.verifyEqual(st.state, 'rebuilt', st.why);
+            testCase.verifyEqual(st.name, 'ti_group1_seg.nbf_#');
+            testCase.verifyEqual(st.channels, [1 2]);
+            testCase.verifyEqual(st.segments, {'ti_group1_seg.nbf_1', 'ti_group1_seg.nbf_2'});
+            orig = struct('member_names', {{'channel_list.bin', 'ai_group1_seg.nbf_1', ...
+                'ai_group1_seg.nbf_2', 'ax_group1_seg.nbf_1', 'ax_group1_seg.nbf_2', ...
+                'ti_group1_seg.nbf_1', 'ti_group1_seg.nbf_2'}}, ...
+                'time_segments', struct('name', {'ti_group1_seg.nbf_1', 'ti_group1_seg.nbf_2'}, ...
+                    'data', {readTime(fullfile(testCase.Dir, 'files', 'u_ti_1')), ...
+                    readTime(fullfile(testCase.Dir, 'files', 'u_ti_2'))}));
+            C = did2.convert.roundtrip.compareIngestedArchiveFiles(R, orig, 'TimeTolerance', 1e-9);
+            testCase.verifyEqual(C.files_compared, 3, 'the denominator');
+            testCase.verifyTrue(C.exact, strjoin(arrayfun(@(f) [f.name ': ' ...
+                strjoin(f.differences, '; ') ' ' f.why], C.files, 'UniformOutput', false), ' || '));
+        end
+
+        function testAChannelGroupNamingTwoSplitTimeValuesKeepsTheArchive(testCase)
+            % [time group with several time channels split]: "a channel group
+            % whose rows name time channels in two different time values
+            % can't be keyed to one, so that archive is kept as v1 and
+            % counted, as a sample-count mismatch is"
+            [structs, v1] = testCase.splitTimeGroup(struct('axTimeChannel', [1 2]));
+            nFiles = numel(dir(fullfile(testCase.Dir, 'files'))) - 2;
+            [out, rep, removed] = ndi.migrate.internal.ingestedArchiveBodies( ...
+                structs, testCase.Dir, v1);
+            testCase.verifyEqual(rep.archives_seen, 1, 'the denominator');
+            testCase.verifyEqual(rep.archives_converted, 0);
+            testCase.verifyEqual(rep.uneven_time_split_ambiguous_kept, 1, ...
+                rep.first_unconvertible_reason);
+            testCase.verifyEqual(rep.uneven_time_mismatch_kept, 0);
+            testCase.verifyEqual(rep.uneven_time_unpaired_kept, 0);
+            testCase.verifyEqual(rep.unconvertible, 1);
+            testCase.verifyEqual(rep.uneven_time_groups_split, 0, 'counted for converted archives');
+            testCase.verifyEmpty(removed);
+            testCase.verifyEqual(out, structs, 'kept as pass 1 wrote it');
+            testCase.verifyEqual(numel(dir(fullfile(testCase.Dir, 'files'))) - 2, nFiles, ...
+                'no file written');
+            testCase.assertNumElements(rep.uneven_time_kept, 1);
+            k = rep.uneven_time_kept{1};
+            testCase.verifyEqual(k.kind, 'split_ambiguous');
+            testCase.verifyEqual(k.archive_id, 'arch_1');
+            testCase.verifyEqual(k.group_body_id, 'body_ax');
+            testCase.verifyEqual(k.time_body_id, 'body_ti');
+            testCase.verifySubstring(k.reason, 'kept as v1');
+            testCase.verifyEqual(rep.first_uneven_time_kept_reason, k.reason);
+        end
+
+        function testASplitTimeChannelOfAnotherLengthKeepsTheArchive(testCase)
+            % [uneven time groups and mismatches] (2) holds for a split
+            % channel: the auxiliary group's 150 samples are not t2's 160
+            [structs, v1] = testCase.splitTimeGroup(struct('axN', 150));
+            [out, rep] = ndi.migrate.internal.ingestedArchiveBodies(structs, testCase.Dir, v1);
+            testCase.verifyEqual(rep.archives_converted, 0);
+            testCase.verifyEqual(rep.uneven_time_mismatch_kept, 1, rep.first_unconvertible_reason);
+            testCase.verifyEqual(rep.uneven_time_split_ambiguous_kept, 0);
+            testCase.assertNumElements(rep.uneven_time_kept, 1);
+            testCase.verifyEqual(rep.uneven_time_kept{1}.time_body_id, 'body_ti');
+            testCase.verifyEqual(out, structs);
+        end
+
+        function testASplitTimeChannelNoGroupNamesLeavesTheArchive(testCase)
+            % both groups name t1: t2's time value would be keyed by nothing,
+            % and the readers find a time value only through the groups'
+            % key_id, so the archive is left (no decision covers it), counted
+            [structs, v1] = testCase.splitTimeGroup(struct('axTimeChannel', [1 1]));
+            nFiles = numel(dir(fullfile(testCase.Dir, 'files'))) - 2;
+            [out, rep] = ndi.migrate.internal.ingestedArchiveBodies(structs, testCase.Dir, v1);
+            testCase.verifyEqual(rep.archives_converted, 0);
+            testCase.verifyEqual(rep.unconvertible, 1);
+            testCase.verifySubstring(rep.first_unconvertible_reason, 'named by no channel group');
+            testCase.verifyEqual(rep.uneven_time_split_ambiguous_kept, 0);
+            testCase.verifyEmpty(rep.uneven_time_kept);
+            testCase.verifyEqual(out, structs);
+            testCase.verifyEqual(numel(dir(fullfile(testCase.Dir, 'files'))) - 2, nFiles);
+        end
+
+        function testAnEvenlySpacedTimeGroupOfSeveralChannelsIsNotSplit(testCase)
+            % the control: both time channels of the group evenly spaced, so
+            % the group adds nothing the groups' time covariates do not say
+            % ([evenly spaced time is a covariate]): its body is removed and
+            % nothing is split
+            [structs, v1] = testCase.splitTimeGroup(struct('even', true));
+            [out, rep, removed] = ndi.migrate.internal.ingestedArchiveBodies( ...
+                structs, testCase.Dir, v1);
+            testCase.verifyEqual(rep.archives_converted, 1, rep.first_unconvertible_reason);
+            testCase.verifyEqual(rep.time_not_evenly_spaced, 0);
+            testCase.verifyEqual(rep.uneven_time_groups_split, 0);
+            testCase.verifyEqual(rep.uneven_time_channels_split, 0);
+            testCase.verifyEqual(rep.uneven_time_values, 0);
+            testCase.verifyTrue(ismember('body_ti', removed));
+            testCase.verifyEqual(numel(out), numel(structs), 'nothing added');
+            ids = cellfun(@(x) x.base.id, out, 'UniformOutput', false);
+            ax = out{strcmp(ids, 'body_ax')};
+            testCase.verifyEmpty(edgeOf(ax, 'key_id'));
+            t = covOf(ax, 'om:Time');
+            testCase.verifyEqual(double(t.spacing), 1/10000, 'AbsTol', 1e-15);
+        end
+
         function testBytesNotHereLeaveTheArchive(testCase)
             [structs, v1] = testCase.archive(true, true);
             delete(fullfile(testCase.Dir, 'files', '*'));
@@ -818,6 +1043,76 @@ classdef TestIngestedArchiveBodies < matlab.unittest.TestCase
                     struct('sample_analog_segment', 100, 'sample_digital_segment', 100)), ...
                 'daqreader_epochdata_ingested', struct('epochtable', ...
                     struct('epochclock', {{'dev_local_time'}}, 't0_t1', [0; 159/10000])), ...
+                'files', struct('file_list', {{'channel_list.bin'}}, 'file_info', fi))};
+        end
+
+        function [s, v1, t] = splitTimeGroup(testCase, o)
+            % an epoch whose one time group file ti_group1 holds two time
+            % channels, as NDI's ingest writes them (ndi.file.type.
+            % mfdaq_epoch_channel: t1 and t2 are both group 1 + floor(n /
+            % 100000) = 1, so ndi.daq.reader.mfdaq/ingest_epochfiles reads both
+            % and writes one ndi.compress.compress_time file per segment of
+            % 100, the two columns T): 3 analog inputs at 10 kHz (160 samples)
+            % timed by t1, 2 auxiliary inputs at 10 kHz timed by t2. O.t0: the
+            % epoch's start (0); O.axTimeChannel: the auxiliary rows' v1
+            % time_channel ([2 2]); O.axN: the auxiliary samples (160);
+            % O.even: both time channels evenly spaced (false)
+            if ~isfield(o, 't0'); o.t0 = 0; end
+            if ~isfield(o, 'axTimeChannel'); o.axTimeChannel = [2 2]; end
+            if ~isfield(o, 'axN'); o.axN = 160; end
+            if ~isfield(o, 'even'); o.even = false; end
+            files = fullfile(testCase.Dir, 'files');
+            sr = 10000;
+            ch = struct('name', {'ai1', 'ai2', 'ai3', 'ax1', 'ax2', 't1', 't2'}, ...
+                'type', {'analog_in', 'analog_in', 'analog_in', 'auxiliary_in', ...
+                    'auxiliary_in', 'time', 'time'}, ...
+                'time_channel', {1, 1, 1, o.axTimeChannel(1), o.axTimeChannel(2), 1, 2}, ...
+                'sample_rate', sr, ...
+                'offset', {-2, -2, -2, 0, 0, 0, 0}, ...
+                'scale', {0.195, 0.195, 0.195, 3.74e-05, 3.74e-05, 1, 1});
+            ec = ndi.file.type.mfdaq_epoch_channel(ch);
+            [ok, msg] = ec.writeToFile(fullfile(files, 'u_cl'));
+            testCase.assertTrue(logical(ok), msg);
+            ai = int16(round(1000 * sin((1:160)' * [0.05 0.11 0.23])));
+            ax = int16(round(800 * cos((1:o.axN)' * [0.07 0.13])));
+            segs = {ai(1:100, :), ai(101:160, :), ax(1:100, :), ax(101:end, :)};
+            names = {'u_ai_1', 'u_ai_2', 'u_ax_1', 'u_ax_2'};
+            for k = 1:4
+                stem = tempname();
+                ndi.compress.compress_ephys(double(segs{k}), 16, stem, ...
+                    'data_format', ndi.compress.datatypestring('int16'), ...
+                    'data_is_unsigned', false);
+                movefile([stem '.nbf.tgz'], fullfile(files, names{k}));
+            end
+            t = o.t0 + repmat((0:159)' / sr, 1, 2);
+            if ~o.even
+                t(50, 1) = t(50, 1) + 0.3 / sr;
+                t(70, 2) = t(70, 2) + 0.2 / sr;
+            end
+            tsegs = {t(1:100, :), t(101:160, :)};
+            tnames = {'u_ti_1', 'u_ti_2'};
+            for k = 1:2
+                stem = tempname();
+                ndi.compress.compress_time(tsegs{k}, stem);
+                movefile([stem '.nbf.tgz'], fullfile(files, tnames{k}));
+            end
+            s = {owner(), ...
+                body('body_ai', 'ai_group1_seg.nbf_#', {'u_ai_1', 'u_ai_2'}), ...
+                body('body_ax', 'ax_group1_seg.nbf_#', {'u_ax_1', 'u_ax_2'}), ...
+                body('body_cl', 'channel_list.bin', {'u_cl'}), ...
+                body('body_ti', 'ti_group1_seg.nbf_#', tnames)};
+            uids = ['u_cl', names, tnames];
+            locs = cellfun(@(u) struct('delete_original', 0, 'uid', u, ...
+                'location', '/gone', 'parameters', '', 'location_type', 'file', ...
+                'ingest', 1), uids);
+            fi = struct('name', uids, 'locations', num2cell(locs));
+            v1 = {struct('base', struct('id', 'arch_1'), ...
+                'document_class', struct('class_name', 'daqreader_mfdaq_epochdata_ingested'), ...
+                'daqreader_mfdaq_epochdata_ingested', struct('parameters', ...
+                    struct('sample_analog_segment', 100, 'sample_digital_segment', 100)), ...
+                'daqreader_epochdata_ingested', struct('epochtable', ...
+                    struct('epochclock', {{'dev_local_time'}}, ...
+                    't0_t1', [o.t0; o.t0 + 159/sr])), ...
                 'files', struct('file_list', {{'channel_list.bin'}}, 'file_info', fi))};
         end
 
@@ -1080,4 +1375,60 @@ for m = 1:numel(uids)
         'parameters', '', 'location_type', 'file', 'ingest', 1)); %#ok<AGROW>
 end
 b.files.file_info = fi;
+end
+
+function tc = timeChannelOf(b)
+% the time channel a split time body names (condition "time channel",
+% EMPTY:0000374, count); NaN when it names none
+tc = NaN;
+if ~isfield(b.data_body, 'conditions'); return; end
+cs = b.data_body.conditions;
+if isstruct(cs); cs = num2cell(cs); end
+for k = 1:numel(cs)
+    if isfield(cs{k}, 'variable') && strcmp(char(cs{k}.variable.node), 'EMPTY:0000374')
+        tc = double(cs{k}.count);
+        return;
+    end
+end
+end
+
+function S = fakeBinarySession(dir)
+% the two session calls ndi.vintage.ingestedSplitTime makes: a member of a
+% body (wrapped as {document_properties}) opened from the store under DIR
+S = struct('database_openbinarydoc', @(doc, member) openMember(dir, doc, member), ...
+    'database_closebinarydoc', @(f) []);
+end
+
+function f = openMember(dir, doc, member)
+p = memberPath(dir, doc.document_properties, member);
+f = struct('fread', @(varargin) bytesAt(p));
+end
+
+function p = memberPath(dir, b, member)
+fi = b.files.file_info;
+if isstruct(fi); fi = num2cell(fi); end
+for k = 1:numel(fi)
+    if strcmp(char(fi{k}.name), member)
+        p = fullfile(dir, 'files', char(fi{k}.locations(1).uid));
+        return;
+    end
+end
+error('test:noMember', 'no member %s', member);
+end
+
+function x = bytesAt(p)
+fid = fopen(p, 'r');
+x = fread(fid, Inf, 'uint8');
+fclose(fid);
+end
+
+function x = timeBodyValues(dir, b)
+% a time body's values (its members body_data_0.. in order, each expanded
+% by NDI's own expander), as the round trip's ReadBody gives them
+fi = b.files.file_info;
+if isstruct(fi); fi = num2cell(fi); end
+x = [];
+for m = 1:numel(fi)
+    x = [x; readTime(memberPath(dir, b, sprintf('body_data_%d', m - 1)))]; %#ok<AGROW>
+end
 end

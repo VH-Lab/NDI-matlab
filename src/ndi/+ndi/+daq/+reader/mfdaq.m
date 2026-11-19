@@ -386,6 +386,16 @@ classdef mfdaq < ndi.daq.reader
                         % an evenly spaced time channel: no body of its own
                         data_here = ndi_daqreader_mfdaq_obj.evenlyspacedtime_ingested(...
                             epochfiles, S, fullchannelinfo, groups(g), seg, samples_segment, absolute_end);
+                    elseif isV2 && use_time && strcmp(A.bodies(series).kind, 'split_time')
+                        % a time group of several time channels, split one
+                        % time value per time channel ([time group with
+                        % several time channels split], Jess Haley,
+                        % 2026-11-19): the v1 segment rebuilt from their
+                        % bodies, one column each, seconds from the epoch's
+                        % start, read on the epoch's clock as v1 did
+                        data_here = ndi.vintage.ingestedSplitTime(S, A, fname);
+                        t0t1 = ndi_daqreader_mfdaq_obj.t0_t1_ingested(epochfiles, S);
+                        data_here = t0t1{1}(1) + data_here;
                     else
                         if isV2
                             [tname,tname_without_extension] = ndi.vintage.ingestedArchiveFile(S,A,fname,'.nbf.tgz');
