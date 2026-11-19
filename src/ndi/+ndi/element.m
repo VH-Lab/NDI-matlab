@@ -648,6 +648,11 @@ classdef element < ndi.ido & ndi.epoch.epochset & ndi.documentservice & matlab.m
                 element_id = ndi_element_obj.identifier;
                 return;
             end
+            if ~isempty(getenv('DID2_LOG_SQL'))
+                fprintf('[PROBE] id() falls through: %s name %s ref %s type %s identifier %s etaDocumentId %s\n', ...
+                    class(ndi_element_obj), char(ndi_element_obj.name), num2str(ndi_element_obj.reference), ...
+                    char(ndi_element_obj.type), char(ndi_element_obj.identifier), char(ndi_element_obj.etaDocumentId));
+            end
             element_doc = ndi_element_obj.load_element_doc();
             if isempty(element_doc)
                 error('no element document.');

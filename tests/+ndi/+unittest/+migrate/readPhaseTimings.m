@@ -86,7 +86,10 @@ for i = 1:numel(sids)
     clear S1
     S2 = openAt(v2Root, sid);
     rec.reference = char(S2.reference);
+    setenv('DID2_LOG_SQL', '1');
+    fprintf('[PROBE] v2 session %s: SQL log on\n', sid);
     [rec.v2, c2, e2] = timePhases(S2, PH, Inf, keys, profileLabel(options.Profile, 'v2'), options.ProfileTop);
+    setenv('DID2_LOG_SQL', '');
     clear S2
     rec.counts = struct('v1', c1, 'v2', c2);
     rec.errors = [strcat('v1: ', e1), strcat('v2: ', e2)];
@@ -110,6 +113,7 @@ probeKeys = {};
 restrict = ~isempty(onlyKeys) || isinf(cap);
 
 % subjects
+fprintf('[PROBE] phase subjects\n');
 startPhase(doProfile);
 tic0 = tic;
 try
@@ -126,6 +130,7 @@ t.subjects = toc(tic0);
 endPhase(doProfile, 'subjects', topN);
 
 % elements
+fprintf('[PROBE] phase elements\n');
 startPhase(doProfile);
 tic0 = tic;
 els = {};
@@ -139,6 +144,7 @@ t.elements = toc(tic0);
 endPhase(doProfile, 'elements', topN);
 
 % each element's facts, and the epoch table of each non-probe element
+fprintf('[PROBE] phase element_epochs\n');
 startPhase(doProfile);
 tic0 = tic;
 try
@@ -157,6 +163,7 @@ t.element_epochs = toc(tic0);
 endPhase(doProfile, 'element_epochs', topN);
 
 % probes, their facts and some of their epoch tables
+fprintf('[PROBE] phase probes\n');
 startPhase(doProfile);
 tic0 = tic;
 try
@@ -189,6 +196,7 @@ t.probes = toc(tic0);
 endPhase(doProfile, 'probes', topN);
 
 % acquisition systems and their epoch tables
+fprintf('[PROBE] phase systems\n');
 startPhase(doProfile);
 tic0 = tic;
 try
