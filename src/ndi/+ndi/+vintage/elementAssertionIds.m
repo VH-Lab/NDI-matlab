@@ -87,6 +87,12 @@ vals = S.database_search_values(q, {'term.value[*].name'});
 if ~isstruct(vals)
     return;
 end
+if isempty(vals)
+    % no assertion, so no edge: the edge search would read the session again
+    % for nothing (about 0.17 s on migrated Dab, NDI-matlab run 44602160692)
+    A = struct('entity', {cell(1, 0)}, 'class', {cell(1, 0)});
+    return;
+end
 edges = S.database_search_edges(q, {'entity_id'});
 if ~isstruct(edges)
     return;
