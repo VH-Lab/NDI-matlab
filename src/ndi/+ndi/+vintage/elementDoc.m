@@ -121,7 +121,9 @@ if hit
     return;
 end
 
-hits = E.database_search(ndi_element_obj.searchquery());
+% (on a v2 database started from the `element` class, the same documents:
+% ndi.vintage.v1ElementQuery)
+hits = E.database_search(ndi.vintage.v1ElementQuery(E, ndi_element_obj.searchquery()));
 if numel(hits) > 1
     error('NDI:vintage:tooManyElementDocs', ...
         ['More than one v1 document matches the ELEMENT definition ' ...
@@ -361,9 +363,9 @@ function T = candidateTable(E, wantClass)
 % the ids of the migrated element entities whose class assertion is
 % WANTCLASS, in order, and (where the text index answers) each one's name
 % and reference (KNOWN)
-q = ndi.v2.statementQuery('assertion', 'term') & ...
-    ndi.v2.fieldQuery('statement.variable.name', 'exact_string', ...
-        ndi.vintage.elementLabel('class'));
+% (the class variable by node EMPTY:0000401, or by the old name:
+% ndi.vintage.elementClassQuery, [variable terms batch 1])
+q = ndi.v2.statementQuery('assertion', 'term') & ndi.vintage.elementClassQuery();
 % From the indexes where the database can (no document decoded): each class
 % assertion's term and entity edge, and each candidate entity's name and
 % local identifier; only an entity whose name and reference could match is
@@ -372,7 +374,9 @@ vals = [];
 edges = [];
 if ismethod(E, 'database_search_values') && ismethod(E, 'database_search_edges')
     vals = E.database_search_values(q, {'term.value[*].name'});
-    if isstruct(vals)
+    if isstruct(vals) && isempty(vals)
+        edges = vals;   % no assertion: no edge to read (the same search)
+    elseif isstruct(vals)
         edges = E.database_search_edges(q, {'entity_id', 'subject_id'});
     end
 end

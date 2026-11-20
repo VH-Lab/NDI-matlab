@@ -172,14 +172,29 @@ end
 end
 
 function m = groupDocs(m, rows)
-% target id -> the ids of the documents whose edge names it, in row order
-for k = 1:numel(rows)
-    t = rows(k).document_id;
-    if isempty(t); continue; end
-    if isKey(m, t)
-        m(t) = [m(t), {rows(k).doc_id}];
+% target id -> the ids of the documents whose edge names it, in row order;
+% grouped at once and appended to M once per target, not once per row
+% (8,320 rows in one migrated Dab getelements, NDI-matlab run 44602160692)
+if isempty(rows)
+    return;
+end
+targets = {rows.document_id};
+docs = {rows.doc_id};
+keep = ~cellfun(@isempty, targets);
+targets = targets(keep);
+docs = docs(keep);
+if isempty(targets)
+    return;
+end
+[u, ~, j] = unique(targets, 'stable');
+[js, order] = sort(j(:)');   % stable: each target's rows stay in row order
+counts = accumarray(js(:), 1)';
+groups = mat2cell(docs(order), 1, counts);
+for k = 1:numel(u)
+    if isKey(m, u{k})
+        m(u{k}) = [m(u{k}), groups{k}];
     else
-        m(t) = {rows(k).doc_id};
+        m(u{k}) = groups{k};
     end
 end
 end
@@ -195,10 +210,10 @@ wiring = edgeRows(S, elementRelationQuery('connected_to') & ...
     {'child_id', 'child'});
 m = groupDocs(m, obs);
 m = groupDocs(m, wiring);
-for k = reshape(m.keys, 1, [])
-    if ~any(strcmp(k{1}, devices))
-        remove(m, k{1});
-    end
+k = m.keys;
+gone = k(~ismember(k, devices));
+if ~isempty(gone)
+    remove(m, gone);
 end
 end
 
@@ -229,9 +244,19 @@ if ismethod(S, 'database_search_values')
     rows = S.database_search_values(q, {'entity.type.node', 'entity.type.name'});
 end
 if isstruct(rows)
+    % each distinct (node, name) is turned into its handle once: a session's
+    % entities hold a few types (602 rows, NDI-matlab run 44602160692)
+    handleOf = containers.Map('KeyType', 'char', 'ValueType', 'char');
     for k = 1:numel(rows)
-        t = char(ndi.v2.vocabHandle('entity_type', ...
-            struct('node', char(rows(k).values{1}), 'name', char(rows(k).values{2}))));
+        node = char(rows(k).values{1});
+        name = char(rows(k).values{2});
+        hk = [node newline name];
+        if isKey(handleOf, hk)
+            t = handleOf(hk);
+        else
+            t = char(ndi.v2.vocabHandle('entity_type', struct('node', node, 'name', name)));
+            handleOf(hk) = t;
+        end
         if any(strcmp(t, {'device', 'cell', 'group'})) && ~isKey(typeOf, rows(k).doc_id)
             ids{end+1} = char(rows(k).doc_id); %#ok<AGROW>
             typeOf(rows(k).doc_id) = t;
