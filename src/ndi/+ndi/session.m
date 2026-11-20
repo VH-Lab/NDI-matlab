@@ -1079,7 +1079,10 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
             % (ndi.vintage.elementSubjectIds, ndi.vintage.elementFields),
             % with an inbound `ndi element class` assertion as the
             % fallback where present.
-            existing_probes = ndi_session_obj.database_search(ndi.query('element.ndi_element_class','contains_string','probe'));
+            % (on a v2 database started from the `element` class, the same
+            % documents: ndi.vintage.v1ElementQuery)
+            existing_probes = ndi_session_obj.database_search(ndi.vintage.v1ElementQuery( ...
+                ndi_session_obj, ndi.query('element.ndi_element_class','contains_string','probe')));
             % Both sides are made columns: a session can hold both
             % vintages at once (a migration carries some v1 elements
             % unchanged), and a row stacked under a column does not

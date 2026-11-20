@@ -271,13 +271,15 @@ for k = 1:numel(docs)
     end
     for a = 1:numel(as)
         s = as{a}.toStruct();
-        nm = '';
-        if isfield(s, 'statement') && isfield(s.statement, 'variable') && isfield(s.statement.variable, 'name')
-            nm = char(s.statement.variable.name);
+        % the class variable by node EMPTY:0000401 or by its old name
+        % (ndi.vintage.isElementClassVariable, [variable terms batch 1])
+        isClass = false;
+        if isfield(s, 'statement') && isfield(s.statement, 'variable')
+            isClass = ndi.vintage.isElementClassVariable(s.statement.variable);
         end
-        if strcmp(nm, ndi.vintage.elementLabel('class')) && isempty(T.class_assertion)
+        if isClass && isempty(T.class_assertion)
             T.class_assertion = char(s.base.id);
-        elseif ~strcmp(nm, ndi.vintage.elementLabel('class')) && isempty(T.type_assertion)
+        elseif ~isClass && isempty(T.type_assertion)
             T.type_assertion = char(s.base.id);
         end
     end

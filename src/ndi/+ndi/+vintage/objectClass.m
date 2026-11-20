@@ -191,8 +191,16 @@ if strcmp(label, ndi.vintage.elementLabel('class'))
         return;
     end
 end
-q = ndi.v2.statementQuery('assertion', 'term') & ...
-    ndi.v2.fieldQuery('statement.variable.name', 'exact_string', label) & ...
+% the element class variable is found by its node EMPTY:0000401 "software
+% class" first, or by the old name the map row holds ('ndi element class',
+% which migrated databases hold): ndi.vintage.elementClassQuery, Decided by
+% Jess Haley, 2026-11-19 [variable terms batch 1]
+if strcmp(label, ndi.vintage.elementLabel('class'))
+    variableQuery = ndi.vintage.elementClassQuery();
+else
+    variableQuery = ndi.v2.fieldQuery('statement.variable.name', 'exact_string', label);
+end
+q = ndi.v2.statementQuery('assertion', 'term') & variableQuery & ...
     ndi.v2.entityQuery(docId);
 docs = ndi_session_obj.database_search(q);
 if numel(docs) ~= 1

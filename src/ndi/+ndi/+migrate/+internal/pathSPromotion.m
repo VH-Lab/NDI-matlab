@@ -801,9 +801,11 @@ for k = 1:numel(structs)
         % kind that rebuilds exactly one v1 type (ndi.vintage.elementTypeOfKind);
         % or its `ndi element class` assertion, which every migrated element
         % has, and which is all a sorted unit keeps once DID-matlab drops its
-        % `element type` assertion ([cell spellings are one meaning])
+        % `element type` assertion ([cell spellings are one meaning]); the
+        % class variable by node EMPTY:0000401 or by its old name
+        % (ndi.vintage.isElementClassVariable, [variable terms batch 1])
         if ~isempty(a) && (strcmp(v, 'element type') || ...
-                strcmp(v, ndi.vintage.elementLabel('class')) || ...
+                ndi.vintage.isElementClassVariable(S.variable(s)) || ...
                 (ndi.vintage.isEquipmentTypeVariable(S.variable(s)) && ...
                  ~isempty(ndi.vintage.elementTypeOfKind(S.termValue(s).node))))
             idx.elements(a) = true;
