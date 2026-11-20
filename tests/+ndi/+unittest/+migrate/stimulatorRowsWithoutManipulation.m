@@ -63,7 +63,7 @@ for k = 1:numel(dbs)
     catch
         continue;   % the v1 database beside it
     end
-    docs = db.search(did2.query('', 'isa', 'acquisition_system'));
+    docs = db.search(did2.query('', 'isa', 'acquisition_configuration') | did2.query('', 'isa', 'acquisition_system'));
     for i = 1:numel(docs)
         sids{end+1} = char(did2.schema.cache.sessionIdOf(docs{i}.toStruct())); %#ok<AGROW>
     end

@@ -67,8 +67,11 @@ classdef TestDaqSystemWriterV2 < matlab.unittest.TestCase
                 '%d of %d stored documents are not stamped v2 (classes: %s)', ...
                 nnz(~stamps), numel(stamps), strjoin(classes(~stamps), ', ')));
 
-            a = testCase.onlyDoc(stored, dev.id(), 'acquisition_system');
-            testCase.verifyEqual(char(a.acquisition_system.name), 'intan1');
+            % the class the loaded schema holds ([acquisition configuration
+            % renamed], Jess Haley, 2026-11-19)
+            cls = ndi.vintage.acquisitionConfigurationClass();
+            a = testCase.onlyDoc(stored, dev.id(), cls);
+            testCase.verifyEqual(char(a.(cls).name), 'intan1');
             testCase.verifyEqual(testCase.softwareName(stored, a), 'ndi.daq.system.mfdaq');
             ad = ndi.document(a);
             testCase.verifyEqual(ad.dependency_value('reader_id'), rdr.id());
