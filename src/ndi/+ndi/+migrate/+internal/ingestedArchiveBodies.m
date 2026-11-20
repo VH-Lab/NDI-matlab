@@ -180,6 +180,15 @@ function [structs, report, removed] = ingestedArchiveBodies(structs, ndiDir, v1B
 %     bodies are uncompressed], [unpacked events file is removed]; and
 %     2026-11-19 [text channel entries are a JSON array].
 %
+%     AN ARCHIVE WITH NO CHANNEL OR TIME GROUP (a stimulus system's
+%     `channel_list.bin` and `evmktx_group1_seg.nbf_#`, read by
+%     ndi.setup.daq.reader.mfdaq.stimulus.vhlabvisspike2) is left as pass 1
+%     wrote it, counted `archives_no_channel_group`; of them,
+%     `stimulus_logs_left` are stimulus logs moved to the epoch's
+%     presentation or fallback observation ([stimulus log owned by its
+%     presentation], Jess Haley, 2026-11-19), which NDI's readers read where
+%     they are (ndi.vintage.ingestedStimulusLogBodies).
+%
 %     MEMBER NAMES. Decided by Jess Haley, 2026-11-17 [migrated body members
 %     renamed]: a converted group's members named `<type>_group<g>_seg.nbf_<n>`
 %     are renamed `body_data_<n-1>`. Pass 1 already writes the schema's
@@ -255,6 +264,8 @@ end
 report = struct( ...
     'documents_inspected',        numel(structs), ...
     'archives_seen',              0, ...
+    'archives_no_channel_group',  0, ...
+    'stimulus_logs_left',         0, ...
     'archives_converted',         0, ...
     'group_bodies_seen',          0, ...
     'group_bodies_described',     0, ...
@@ -343,7 +354,19 @@ for a = 1:numel(groupKeys)
     idx = groupMembers{a};
     kinds = cellfun(@(k) seriesKind(bodyFilename(structs{k})), num2cell(idx), ...
         'UniformOutput', false);
-    if ~any(ismember(kinds, {'group', 'time'})); continue; end
+    if ~any(ismember(kinds, {'group', 'time'}))
+        % no channel or time group: nothing here becomes a sampled_body.
+        % A stimulus system's archive (channel_list.bin and an evmktx file,
+        % [stimulus log owned by its presentation], Jess Haley, 2026-11-19)
+        % stays the opaque bodies pass 1 wrote, owned by the epoch's
+        % presentation or the fallback observation; NDI's readers read it
+        % there (ndi.vintage.ingestedStimulusLogBodies). Counted.
+        report.archives_no_channel_group = report.archives_no_channel_group + 1;
+        if any(cellfun(@(k) isStimulusLog(structs{k}), num2cell(idx)))
+            report.stimulus_logs_left = report.stimulus_logs_left + 1;
+        end
+        continue;
+    end
     report.archives_seen = report.archives_seen + 1;
     report.group_bodies_seen = report.group_bodies_seen + sum(strcmp(kinds, 'group'));
     report.event_bodies_left = report.event_bodies_left + sum(strcmp(kinds, 'event'));
@@ -1810,6 +1833,14 @@ tok = regexp(note, 'recording of epoch (.*?): v1 attached', 'tokens', 'once');
 ep = '';
 if ~isempty(tok); ep = tok{1}; end
 key = strjoin([{sid, ep}, owners], '|');
+end
+
+function tf = isStimulusLog(b)
+% a body whose notes open as ndi.vintage.ingestedStimulusLogKey writes them
+tf = false;
+if isfield(b, 'data_body') && isstruct(b.data_body)
+    tf = startsWith(char(ndi.v2.notesOf(b.data_body)), 'The stimulus log of epoch ');
+end
 end
 
 function fn = bodyFilename(b)

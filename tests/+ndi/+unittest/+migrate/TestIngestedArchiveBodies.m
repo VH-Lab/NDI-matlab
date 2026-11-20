@@ -767,6 +767,34 @@ classdef TestIngestedArchiveBodies < matlab.unittest.TestCase
             testCase.verifyEmpty(removed);
             testCase.verifyEqual(out, structs, 'nothing changed');
         end
+
+        function testAStimulusLogIsLeftAndCounted(testCase)
+            % [stimulus log owned by its presentation] (Jess Haley,
+            % 2026-11-19): a stimulus system's archive (channel_list.bin and
+            % an evmktx file, no channel or time group) moved to its
+            % presentation stays the opaque bodies pass 1 wrote, counted
+            key = ndi.vintage.ingestedStimulusLogKey('e1', 'reader_stim');
+            cl = body('body_cl', 'channel_list.bin', {'u_cl'});
+            ev = body('body_ev', 'evmktx_group1_seg.nbf_#', {'u_ev'});
+            cl.data_body.notes = [key ' ' cl.data_body.notes];
+            ev.data_body.notes = [key ' ' ev.data_body.notes];
+            structs = {owner(), cl, ev};
+            [out, rep, removed] = ndi.migrate.internal.ingestedArchiveBodies( ...
+                structs, testCase.Dir, {});
+            testCase.verifyEqual(rep.documents_inspected, 3, 'the denominator');
+            testCase.verifyEqual(rep.archives_no_channel_group, 1);
+            testCase.verifyEqual(rep.stimulus_logs_left, 1);
+            testCase.verifyEqual(rep.archives_seen, 0, 'not an archive this step converts');
+            testCase.verifyEmpty(removed);
+            testCase.verifyEqual(out, structs, 'nothing changed');
+            % an archive of the same files that is not a moved log is counted
+            % without it
+            [~, rep2] = ndi.migrate.internal.ingestedArchiveBodies( ...
+                {owner(), body('body_cl', 'channel_list.bin', {'u_cl'}), ...
+                body('body_ev', 'evmktx_group1_seg.nbf_#', {'u_ev'})}, testCase.Dir, {});
+            testCase.verifyEqual(rep2.archives_no_channel_group, 1);
+            testCase.verifyEqual(rep2.stimulus_logs_left, 0);
+        end
     end
 
     methods
