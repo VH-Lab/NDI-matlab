@@ -128,10 +128,12 @@ classdef bodies < ndi.file.navigator
                 pattern = obj.fileparameters.filematch{1};
             end
             missing = {};
-            systems = S.database_search(ndi.query('', 'isa', 'acquisition_system', '') & ...
+            systems = S.database_search(ndi.vintage.acquisitionConfigurationQuery() & ...
                 ndi.query('', 'depends_on', 'epoch_file_pattern_id', obj.id()) & inSession);
             for a = 1:numel(systems)
-                sysName = systems{a}.document_properties.acquisition_system.name;
+                % the class's own name field, under either class name
+                % ([acquisition configuration renamed]; ndi.vintage.objectName)
+                sysName = ndi.vintage.objectName(systems{a});
                 found = ndi.vintage.systemStatements(S, systems{a}.id(), inSession);
                 for c = 1:numel(found)
                     statements = found{c};
