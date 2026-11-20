@@ -593,7 +593,10 @@ classdef system < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice
             if ~isempty(ndi_daqsystem_obj.name)
                 f.name = ndi_daqsystem_obj.name;
             end
-            a = did2.build.document('acquisition_system', f, 'Edges', edges, ...
+            % the class the loaded schema holds: `acquisition_configuration`
+            % once did-schema renames `acquisition_system` ([acquisition
+            % configuration renamed], Jess Haley, 2026-11-19)
+            a = did2.build.document(ndi.vintage.acquisitionConfigurationClass(), f, 'Edges', edges, ...
                 'Id', ndi_daqsystem_obj.id(), 'SessionId', sid);
             docs = [{ndi.document(a)}, ...
                 cellfun(@(x) ndi.document(x), sw, 'UniformOutput', false)];
