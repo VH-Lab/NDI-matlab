@@ -395,6 +395,21 @@ classdef TestMigrateLocalEtaDab < matlab.unittest.TestCase
             end
         end
 
+        function testStrainsAfterTheSecondPass(testCase)
+            % [openMINDS minted ids are an accepted loss], [lab-made strain
+            % ids are an accepted loss too] and [strain fields checked after
+            % the second pass] (Jess Haley, 2026-11-19, did-schema
+            % did_v2_go_forward_class_audit.md): one strain entity per strain
+            % name per session, one instance_of per subject, no openminds:
+            % id on a strain, and every v1 Strain's species, genetic strain
+            % type, background strain, description and child edges carried
+            % by the strain entity the second pass rebuilt
+            % (ndi.unittest.migrate.verifyStrainsAfterSecondPass).
+            ndi.unittest.migrate.verifyStrainsAfterSecondPass(testCase, ...
+                testCase.Result, testCase.Bodies, ...
+                destinationBodies(testCase.Result.destination), 'Dab');
+        end
+
         function testArchiveSegmentLengthsAfterTheSecondPass(testCase)
             % [archive segment lengths measured after the second pass] (Jess
             % Haley, 2026-11-12): each v1 ingested archive's
