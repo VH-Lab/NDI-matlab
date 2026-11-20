@@ -38,7 +38,7 @@ ids = ids(~cellfun(@isempty, ids));
 if isempty(ids)
     return;
 end
-systems = S.database_search(ndi.query('', 'isa', 'acquisition_system', '') & ...
+systems = S.database_search(ndi.vintage.acquisitionConfigurationQuery() & ...
     ndi.vintage.edgeIn('device_id', ids));
 count = containers.Map('KeyType', 'char', 'ValueType', 'double');
 for k = 1:numel(systems)

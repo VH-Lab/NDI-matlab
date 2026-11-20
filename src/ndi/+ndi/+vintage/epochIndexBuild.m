@@ -40,7 +40,13 @@ try
         db.derivedClear('ndi.epochs.navigator');
         db.derivedClear('ndi.epochs.reader');
         db.derivedClear('ndi.elements');
-        docs = db.search(did2.query('', 'isa', 'acquisition_system'));
+        % either class name ([acquisition configuration renamed])
+        names = ndi.vintage.acquisitionConfigurationNames();
+        q = did2.query('', 'isa', names{1});
+        for n = 2:numel(names)
+            q = q | did2.query('', 'isa', names{n});
+        end
+        docs = db.search(q);
         for i = 1:numel(docs)
             sids{end+1} = char(did2.schema.cache.sessionIdOf(docs{i}.toStruct())); %#ok<AGROW>
         end
