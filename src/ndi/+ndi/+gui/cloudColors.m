@@ -19,6 +19,9 @@ function c = cloudColors()
 %                   session that is linked-but-not-ingested).
 %       neutralGrey - status-badge grey (a "not yet / absent" state, e.g. an
 %                   on-disk session that has not been ingested).
+%       alertRed  - status red (something is not working or needs setting
+%                   up, e.g. the navigator's NDI Cloud login indicator when
+%                   no login is configured).
 %
 %   The three status colours are the shared palette for navigator node
 %   badges (see ndi.gui.nav.statusIcon): the badge letter names the check
@@ -39,5 +42,6 @@ function c = cloudColors()
         'offWhite',  [0.9922 0.9686 0.9804], ...   % figure background tint
         'okGreen',   [0.1804 0.6196 0.2784], ...   % #2E9E47 status: good/complete
         'warnAmber', [0.9020 0.6235 0.1294], ...   % #E69F21 status: partial/attention
-        'neutralGrey', [0.5490 0.5804 0.6196]);    % #8C949E status: not yet / absent
+        'neutralGrey', [0.5490 0.5804 0.6196], ... % #8C949E status: not yet / absent
+        'alertRed',  [0.8000 0.1500 0.1500]);      % #CC2626 status: not working / needs setup
 end
