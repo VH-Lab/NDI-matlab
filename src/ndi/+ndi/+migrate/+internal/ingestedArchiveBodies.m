@@ -1307,7 +1307,8 @@ node = struct('event', 'EMPTY:0000376', 'marker', 'EMPTY:0000377', 'text', 'EMPT
 want = node.(type);
 parents = {sysId};
 for k = 1:numel(structs)
-    if strcmp(className(structs{k}), 'acquisition_system') && strcmp(baseId(structs{k}), sysId)
+    if any(strcmp(className(structs{k}), ndi.vintage.acquisitionConfigurationNames())) ...
+            && strcmp(baseId(structs{k}), sysId)
         parents = [parents, edgeValues(structs{k}, 'device_id')]; %#ok<AGROW>
         break;
     end
