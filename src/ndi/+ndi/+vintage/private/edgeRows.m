@@ -15,9 +15,12 @@ if ismethod(S, 'database_search_edges')
     edges = S.database_search_edges(q, names);
 end
 if isstruct(edges)
-    for k = 1:numel(edges)
-        rows(end+1) = struct('doc_id', char(edges(k).doc_id), ...
-            'name', char(edges(k).name), 'document_id', char(edges(k).document_id)); %#ok<AGROW>
+    % the same rows, built at once rather than grown one by one (8,320 rows
+    % for one migrated Dab getelements; NDI-matlab run 44602160692)
+    if ~isempty(edges)
+        rows = struct('doc_id', cellfun(@char, {edges.doc_id}, 'UniformOutput', false), ...
+            'name', cellfun(@char, {edges.name}, 'UniformOutput', false), ...
+            'document_id', cellfun(@char, {edges.document_id}, 'UniformOutput', false));
     end
     return;
 end
