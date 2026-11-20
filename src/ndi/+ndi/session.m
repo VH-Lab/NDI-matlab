@@ -107,7 +107,8 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
             % against NDI templates], Jess Haley, 2026-10-27) or base.name
             % (v1, and v2 documents migrated before).
             sq1 = ndi.vintage.isaQuery('daqsystem') & ...
-                ( ndi.query('acquisition_system.name','exact_string',dev.name,'') | ...
+                ( ndi.query('acquisition_configuration.name','exact_string',dev.name,'') | ...
+                  ndi.query('acquisition_system.name','exact_string',dev.name,'') | ...
                   ndi.query('base.name','exact_string',dev.name,'') );
             search_result1 = ndi_session_obj.database_search(sq1);
             if (numel(search_result) == 0) & (numel(search_result1) == 0)
@@ -211,6 +212,7 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
                         % value is a regular expression, as ndi.query's
                         % name/value form made it: getprobes asks for '(.*)'.
                         q = q & ( ndi.query('base.name','regexp',varargin{i+1},'') | ...
+                            ndi.query('acquisition_configuration.name','regexp',varargin{i+1},'') | ...
                             ndi.query('acquisition_system.name','regexp',varargin{i+1},'') );
                     else
                         rest(end+1:end+2) = varargin(i:i+1);
@@ -1077,7 +1079,10 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
             % (ndi.vintage.elementSubjectIds, ndi.vintage.elementFields),
             % with an inbound `ndi element class` assertion as the
             % fallback where present.
-            existing_probes = ndi_session_obj.database_search(ndi.query('element.ndi_element_class','contains_string','probe'));
+            % (on a v2 database started from the `element` class, the same
+            % documents: ndi.vintage.v1ElementQuery)
+            existing_probes = ndi_session_obj.database_search(ndi.vintage.v1ElementQuery( ...
+                ndi_session_obj, ndi.query('element.ndi_element_class','contains_string','probe')));
             % Both sides are made columns: a session can hold both
             % vintages at once (a migration carries some v1 elements
             % unchanged), and a row stacked under a column does not

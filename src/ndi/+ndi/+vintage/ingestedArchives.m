@@ -117,7 +117,7 @@ for a = 1:numel(anchors)
 end
 
 % ---- this reader's systems and their recordings of those epochs ---------
-systems = S.database_search(ndi.query('', 'isa', 'acquisition_system', '') & ...
+systems = S.database_search(ndi.vintage.acquisitionConfigurationQuery() & ...
     ndi.query('', 'depends_on', 'reader_id', readerId) & inSession);
 if isempty(systems) || isempty(anchors)
     return;
