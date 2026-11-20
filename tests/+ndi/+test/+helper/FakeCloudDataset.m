@@ -270,6 +270,25 @@ classdef FakeCloudDataset < handle
             tf = isfile(fullfile(obj.fileDir, char(uid)));
         end
 
+        function dropFile(obj, uid)
+            % Lose a stored file, as a dropped upload batch did in prod:
+            % lookupFiles no longer reports it.
+            p = fullfile(obj.fileDir, char(uid));
+            if isfile(p), delete(p); end
+        end
+
+        function doc = storedDocument(obj, ndiId)
+            % The document as stored (series ingest_locations stripped),
+            % as a download from NDI Cloud returns it.
+            doc = [];
+            for k = 1:numel(obj.docs)
+                if strcmp(obj.docs{k}.base.id, ndiId)
+                    doc = ndi.document(obj.docs{k});
+                    return
+                end
+            end
+        end
+
         function b = fileBytes(obj, uid)
             fid = fopen(fullfile(obj.fileDir, char(uid)), 'r');
             b = fread(fid, Inf, '*uint8');

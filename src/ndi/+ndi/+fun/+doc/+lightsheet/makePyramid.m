@@ -408,6 +408,33 @@ function [pyramidDoc, levelDocs, sharedLevel0] = makePyramid(session, pyramids, 
         reportProgress(options.progressFcn, doneChunks, totalChunks, ...
             sprintf('Level %d/%d (%s, %s): starting', ...
                 idx, numel(pathOrder), char(entry.name), reductionFn));
+        % RESUMING a level reduced from another stored level: when the
+        % level the earlier run declared already has every chunk, adopt
+        % it and move on BEFORE resolving its source. Resolving a
+        % 'reduce' source opens every chunk of the level it is reduced
+        % from -- through the writer, which can only serve files this run
+        % sent or adopted -- to build nothing. (Such a level has no folded
+        % or twin levels, which only slice-read levels carry.)
+        fromLevel = reducedFrom(options.levelSources, p);
+        if resuming && streaming && ~isempty(fromLevel)
+            existingLevel = resumedLevel(options.resume, idx - 1, reductionFn);
+            if ~isempty(existingLevel)
+                session.adopt(existingLevel);
+                if isempty(session.missingMembers(existingLevel, 'chunk.bin'))
+                    fprintf('[makePyramid] Level %d/%d (%s, %s): every chunk is already in the cloud; skipped.\n', ...
+                        idx, numel(pathOrder), char(entry.name), reductionFn);
+                    levelDocs{idx} = existingLevel;
+                    docByPath(p) = existingLevel;
+                    built(idx) = true;
+                    doneChunks = doneChunks + prod(levelGrids{idx});
+                    readers(fromLevel) = readers(fromLevel) - 1;
+                    if readers(fromLevel) == 0
+                        session.releaseMembers(docByPath(fromLevel));
+                    end
+                    continue
+                end
+            end
+        end
         source = [];
         if options.materializeChunks
             source = resolveLevelSource(session, p, entry, level, ...

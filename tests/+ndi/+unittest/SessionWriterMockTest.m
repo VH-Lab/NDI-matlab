@@ -488,6 +488,56 @@ classdef SessionWriterMockTest < matlab.unittest.TestCase
                 'adopting does not upload the document again');
         end
 
+        function testAdoptingADocumentReadBackFromTheCloudFindsItsMissingMembers(testCase)
+            % A resume usually adopts documents downloaded from the cloud,
+            % whose series ingest_locations DID stripped before storing.
+            % Their member uids must be rebuilt from the manifest: without
+            % them every member looked present, and a resume rebuilt
+            % nothing (a prod pyramid kept 327 lost chunks this way).
+            W = testCase.writer();
+            [d, bytes] = testCase.seriesDoc(W, testCase.subjectId, 3);
+            W.declare(d);
+            locs = d.document_properties.files.series_info(1).ingest_locations;
+            W.streamMembers(d, 'chunk.bin', locs(2).index, {locs(2).location});
+            W.streamMembers(d, 'chunk.bin', [], {});
+
+            stored = testCase.cloud.storedDocument(d.id());
+            storedSeries = stored.document_properties.files.series_info(1);
+            testCase.assertTrue(~isfield(storedSeries, 'ingest_locations') || ...
+                isempty(storedSeries.ingest_locations), ...
+                'the stored document carries no member uids');
+            W2 = testCase.writer();
+            W2.adopt(stored);
+            missing = W2.missingMembers(stored, 'chunk.bin');
+            testCase.verifyEqual(sort(missing), sort([locs([1 3]).index]));
+            W2.streamMembers(stored, 'chunk.bin', [locs([1 3]).index], {locs([1 3]).location});
+            W2.commit();
+            for i = 1:3
+                testCase.verifyEqual(testCase.cloud.fileBytes(locs(i).uid), bytes{locs(i).index});
+            end
+            testCase.verifyNumElements(testCase.cloud.docsOfClass('lightsheetZarrLevel'), 1, ...
+                'adopting does not upload the document again');
+        end
+
+        function testAMemberOfAnAdoptedStoredDocumentCanBeOpened(testCase)
+            % A later level reads an adopted level's chunks through
+            % DATABASE_OPENBINARYDOC; for a document read back from the
+            % cloud that needs the rebuilt member uids too.
+            W = testCase.writer();
+            [d, bytes] = testCase.seriesDoc(W, testCase.subjectId, 2);
+            W.declare(d);
+            locs = d.document_properties.files.series_info(1).ingest_locations;
+            W.streamMembers(d, 'chunk.bin', [locs.index], {locs.location});
+            W.commit();
+
+            stored = testCase.cloud.storedDocument(d.id());
+            W2 = testCase.writer();
+            W2.adopt(stored);
+            testCase.verifyEmpty(W2.missingMembers(stored, 'chunk.bin'));
+            f = W2.database_openbinarydoc(stored, sprintf('chunk.bin_%d', locs(2).index));
+            testCase.verifyEqual(readBytes(f.fullpathfilename), bytes{locs(2).index});
+        end
+
         function testACachedCopyAPowerCutShortenedIsFetchedAgain(testCase)
             % A resumed job reads a retained level from the cache an
             % earlier run left. One file there was cut short (power cut):
