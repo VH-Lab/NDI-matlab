@@ -320,7 +320,9 @@ vals = [];
 edges = [];
 if ismethod(S, 'database_search_values') && ismethod(S, 'database_search_edges')
     vals = S.database_search_values(q, paths);
-    if isstruct(vals)
+    if isstruct(vals) && isempty(vals)
+        edges = struct('doc_id', {}, 'name', {}, 'document_id', {});   % none to read
+    elseif isstruct(vals)
         edges = S.database_search_edges(q, {'entity_id', 'subject_id'});
     end
 end
