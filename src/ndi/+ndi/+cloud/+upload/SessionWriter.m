@@ -172,6 +172,9 @@ classdef SessionWriter < handle
         recordWait (1,1) double = 15
         warnedUrls (1,1) logical = false
         onUpload = []
+        % docid -> series_info with member uids rebuilt from the manifests,
+        % for adopted documents read back from the cloud (see SERIESWITHUIDS).
+        adoptedSeries
         declaredUids
         retainedPaths
         replaceAtCommit = {}
@@ -238,6 +241,7 @@ classdef SessionWriter < handle
             obj.cloudIds = containers.Map('KeyType', 'char', 'ValueType', 'logical');
             obj.fileUids = containers.Map('KeyType', 'char', 'ValueType', 'char');
             obj.declaredUids = containers.Map('KeyType', 'char', 'ValueType', 'any');
+            obj.adoptedSeries = containers.Map('KeyType', 'char', 'ValueType', 'any');
             obj.retainedPaths = containers.Map('KeyType', 'char', 'ValueType', 'any');
             obj.fresh = containers.Map('KeyType', 'char', 'ValueType', 'logical');
             obj.checkedDocs = containers.Map('KeyType', 'char', 'ValueType', 'logical');
@@ -472,11 +476,14 @@ classdef SessionWriter < handle
         function adopt(obj, doc)
         % ADOPT - take on a document an earlier run already put in the cloud
         %
-        %   For resuming: DOC (as it was declared or added, series member
-        %   uids included) is treated as uploaded -- a dependency other
+        %   For resuming: DOC is treated as uploaded -- a dependency other
         %   documents may name, and, if it has a series, a DECLAREd
-        %   document whose members STREAMMEMBERS may send and COMMIT will
-        %   check. Nothing is uploaded.
+        %   document whose members STREAMMEMBERS may send, COMMIT will
+        %   check and DATABASE_OPENBINARYDOC can download. Nothing is
+        %   uploaded. DOC may be the document as the earlier run declared
+        %   it, or as read back from the cloud: a stored document has its
+        %   series' ingest_locations stripped, so its member uids are
+        %   rebuilt from each series' manifest (see SERIESWITHUIDS).
             doc = obj.ownSession(doc);
             obj.registerSeries(doc);
             obj.knownIds(doc.id()) = true;
@@ -489,9 +496,9 @@ classdef SessionWriter < handle
         %   member indices whose uid the dataset does not report as
         %   uploaded. A resumed run builds only these.
             idx = [];
-            si = seriesInfoOf(doc);
+            si = obj.seriesWithUids(doc);
             k = find(strcmp({si.name}, seriesName), 1);
-            if isempty(k), return; end
+            if isempty(k) || ~isfield(si, 'ingest_locations'), return; end
             locs = si(k).ingest_locations;
             if isempty(locs), return; end
             uids = arrayfun(@(L) char(L.uid), locs, 'UniformOutput', false);
@@ -623,7 +630,8 @@ classdef SessionWriter < handle
         function registerSeries(obj, doc)
         % Record a document's series member uids as promised (DECLARE, ADOPT).
             promised = {};
-            si = seriesInfoOf(doc);
+            si = obj.seriesWithUids(doc);
+            if ~isfield(si, 'ingest_locations'), si = struct('name', {}); end
             for s = 1:numel(si)
                 locs = si(s).ingest_locations;
                 for k = 1:numel(locs)
@@ -634,6 +642,64 @@ classdef SessionWriter < handle
                 end
             end
             obj.declaredUids(doc.id()) = promised;
+        end
+
+        function si = seriesWithUids(obj, doc)
+        % DOC's series_info with every present member's uid. A document as
+        % declared carries them in ingest_locations; a document read back
+        % from the cloud does not (DID strips ingest_locations before
+        % storing), so for each series that has members but no uids the
+        % manifest is downloaded into the cache and read, as a dataset
+        % download does (ndi.cloud.sync.internal.reconstructSeriesIngestLocations).
+        % Without this a resumed run saw no member uids, so MISSINGMEMBERS
+        % reported every member present and nothing missing was rebuilt.
+        % Errors rather than guess when a manifest cannot be read.
+            si = seriesInfoOf(doc);
+            if isempty(si), return; end
+            id = doc.id();
+            if isKey(obj.adoptedSeries, id)
+                si = obj.adoptedSeries(id);
+                return
+            end
+            needs = false(1, numel(si));
+            for s = 1:numel(si)
+                nPresent = 0;
+                if isfield(si(s), 'n_present') && ~isempty(si(s).n_present)
+                    nPresent = double(si(s).n_present);
+                end
+                needs(s) = nPresent > 0 && (~isfield(si(s), 'ingest_locations') ...
+                    || isempty(si(s).ingest_locations));
+            end
+            if ~any(needs), return; end
+            fi = doc.document_properties.files.file_info;
+            for s = find(needs)
+                manifestUid = manifestUidOf(fi, si(s).name);
+                if isempty(manifestUid)
+                    error('NDI:cloud:SessionWriter:noManifest', ...
+                        ['Series %s of document %s has %d member(s) but no manifest ' ...
+                         'in its file_info, so which members exist cannot be known.'], ...
+                        char(si(s).name), id, double(si(s).n_present));
+                end
+                p = fullfile(obj.cacheDir, manifestUid);
+                if ~isfile(p)
+                    [ok, msg] = obj.api.downloadFile(obj.cloudDatasetId, manifestUid, p);
+                    if ~ok || ~isfile(p)
+                        error('NDI:cloud:SessionWriter:downloadFailed', ...
+                            'Could not download the manifest %s of series %s of document %s: %s', ...
+                            manifestUid, char(si(s).name), id, char(msg));
+                    end
+                end
+            end
+            si = ndi.cloud.sync.internal.reconstructSeriesIngestLocations( ...
+                si, fi, obj.cacheDir, obj.cloudDatasetId);
+            for s = find(needs)
+                if ~isfield(si(s), 'ingest_locations') || isempty(si(s).ingest_locations)
+                    error('NDI:cloud:SessionWriter:manifestUnreadable', ...
+                        'The manifest of series %s of document %s could not be read.', ...
+                        char(si(s).name), id);
+                end
+            end
+            obj.adoptedSeries(id) = si;
         end
 
         function addNow(obj, doc, k, n)
@@ -1392,6 +1458,19 @@ function stopSender(batch)
     if isstruct(batch) && isfield(batch, 'sender') && ~isempty(batch.sender) ...
             && isobject(batch.sender) && isvalid(batch.sender)
         delete(batch.sender);
+    end
+end
+
+function uid = manifestUidOf(fileInfo, seriesName)
+% The uid of series SERIESNAME's manifest: the file_info entry of that name.
+    uid = '';
+    if iscell(fileInfo), fileInfo = [fileInfo{:}]; end
+    for m = 1:numel(fileInfo)
+        if ~strcmp(char(fileInfo(m).name), char(seriesName)), continue; end
+        locs = fileInfo(m).locations;
+        if iscell(locs), locs = [locs{:}]; end
+        if ~isempty(locs), uid = char(locs(1).uid); end
+        return
     end
 end
 

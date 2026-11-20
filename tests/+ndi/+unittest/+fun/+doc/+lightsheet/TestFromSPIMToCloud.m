@@ -52,6 +52,56 @@ classdef TestFromSPIMToCloud < matlab.unittest.TestCase
                 'is built during this level, from the same reads of the slices');
         end
 
+        function testAResumeFromTheCloudRebuildsOnlyLostChunks(testCase)
+            % As in prod: a streamed build loses some level-0 chunks (a
+            % dropped upload batch), and is resumed from the documents as
+            % they are downloaded from the cloud (member uids stripped).
+            % Exactly the lost chunks come back, byte for byte; no new
+            % level documents appear; and the levels reduced from stored
+            % levels, all complete, are skipped without reading their
+            % source.
+            args = {'voxelSizeUm', [1 1 1], 'minLevelSize', 8, ...
+                'chunks', [1 1 2 32 8], 'progressFcn', [], 'numWorkers', 0};
+            W = ndi.cloud.upload.SessionWriter(testCase.cloud.DatasetId, ...
+                testCase.sessionId, 'Api', testCase.cloud.api(), 'Verbose', false);
+            P = []; L = {}; %#ok<NASGU> set by evalc below
+            evalc(['[P, L] = ndi.fun.doc.lightsheet.fromSPIM(W, testCase.root, ' ...
+                '''subjectID'', testCase.subjectId, args{:});']);
+            testCase.assertGreaterThan(numel(L), 3, ...
+                'the fixture must give levels reduced from stored levels');
+            nLevels = numel(testCase.cloud.docsOfClass('lightsheetZarrLevel'));
+
+            isZero = cellfun(@(x) x.document_properties.lightsheetZarrLevel.level == 0, L);
+            members = L{isZero}.document_properties.files.series_info(1).ingest_locations;
+            testCase.assertGreaterThan(numel(members), 3);
+            lost = members([1 2 end]);
+            kept = cell(1, numel(lost));
+            for i = 1:numel(lost)
+                kept{i} = testCase.cloud.fileBytes(lost(i).uid);
+                testCase.cloud.dropFile(lost(i).uid);
+            end
+
+            pyramid = testCase.cloud.storedDocument(P.id());
+            levelDocs = cellfun(@(x) testCase.cloud.storedDocument(x.id()), L, ...
+                'UniformOutput', false);
+            resume = struct('pyramidDoc', pyramid, 'levelDocs', {levelDocs});
+            W2 = ndi.cloud.upload.SessionWriter(testCase.cloud.DatasetId, ...
+                testCase.sessionId, 'Api', testCase.cloud.api(), 'Verbose', false);
+            out = evalc(['ndi.fun.doc.lightsheet.fromSPIM(W2, testCase.root, ' ...
+                '''subjectID'', testCase.subjectId, args{:}, ''resume'', resume);']);
+
+            nChunks0 = prod(double(L{isZero}.document_properties.lightsheetZarrLevel.chunk_grid));
+            testCase.verifySubstring(out, sprintf('Resuming: %d of %d chunks still to send', ...
+                numel(lost), nChunks0));
+            testCase.verifySubstring(out, 'every chunk is already in the cloud; skipped');
+            testCase.verifyNumElements(testCase.cloud.docsOfClass('lightsheetZarrLevel'), nLevels, ...
+                'a resume adopts the existing levels and declares none');
+            for i = 1:numel(lost)
+                testCase.verifyEqual(testCase.cloud.fileBytes(lost(i).uid), kept{i}, ...
+                    sprintf('lost chunk %d', lost(i).index));
+            end
+        end
+
         function testUnfoldedTheLadderLevelOnesAreBuiltTogether(testCase)
             % Without folding: both ladders' level 1 from one more read.
             testCase.streamAndCompare({'foldLevel1', false}, ...
