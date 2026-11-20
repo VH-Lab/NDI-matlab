@@ -136,7 +136,7 @@ anchors = S.database_search(ndi.query('', 'isa', 'relative_time_reference', '') 
 anchorIds = cellfun(@(d) d.id(), anchors, 'UniformOutput', false);
 
 % ---- this reader's systems and their recordings of the epoch ---------
-systems = S.database_search(ndi.query('', 'isa', 'acquisition_system', '') & ...
+systems = S.database_search(ndi.vintage.acquisitionConfigurationQuery() & ...
     ndi.query('', 'depends_on', 'reader_id', readerId) & inSession);
 statements = {};
 if ~isempty(anchors) && ~isempty(systems)
