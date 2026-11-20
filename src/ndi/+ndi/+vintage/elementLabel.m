@@ -30,15 +30,19 @@ function label = elementLabel(which)
 %   one level up. `ndi.unittest.vintage.TestElementLabelMatchesMigrator`
 %   opens the migrator and asserts both phrases still match.
 %
-%   IT IS FREE TEXT, ON PURPOSE FOR NOW. The tidy form is a bound
-%   ontology term rather than a phrase, and `subject_statement.variable`
-%   is already bound in FORM (`node_form: curie`) but not in VOCABULARY --
-%   which is did-schema's open T8 item, blocked on a term list that lives
-%   in a repository outside this work. The migrator emits the term with an
-%   EMPTY node for that reason and says so. The test above buys the safety
-%   without waiting for the vocabulary.
+%   THE CLASS VARIABLE IS NOW A NODE. Decided by Jess Haley, 2026-11-19
+%   [variable terms batch 1] (did-schema
+%   docs/plans/did_v2_go_forward_class_audit.md): the v1 'ndi element
+%   class' variable becomes the registered node EMPTY:0000401 "software
+%   class" (ndi.vintage.elementClassVariable). The readers match the node
+%   first and still accept this phrase, which databases migrated before the
+%   decision hold (ndi.vintage.isElementClassVariable,
+%   ndi.vintage.elementClassQuery). 'class' here returns that OLD phrase.
+%   The test above accepts the migrator writing either the node lookup or
+%   the phrase, and fails when it writes neither.
 %
-%   See also: ndi.vintage.elementSubjectDocs, ndi.vintage.map.
+%   See also: ndi.vintage.elementSubjectDocs, ndi.vintage.map,
+%             ndi.vintage.elementClassVariable, ndi.vintage.elementClassQuery.
 
 arguments
     which (1,:) char {mustBeMember(which, {'class', 'type'})}

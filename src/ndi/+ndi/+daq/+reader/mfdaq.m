@@ -766,9 +766,12 @@ classdef mfdaq < ndi.daq.reader
                 data = D(order);
 
                 for i=1:numel(timestamps)
+                    % one row per event: a marker whose events carry K codes
+                    % keeps all K columns (VH-Lab/NDI-matlab#1276; did-schema
+                    % [multi-code markers keep every code])
+                    data{i} = ndi.daq.reader.mfdaq.eventdatarows(data{i}, numel(timestamps{i}));
                     included = find(timestamps{i} >=t0 & timestamps{i} <= t1);
                     timestamps{i} = timestamps{i}(included,:);
-                    data{i} = data{i}(:); % make sure we are column
                     data{i} = data{i}(included,:);
                 end
 
@@ -1266,6 +1269,30 @@ classdef mfdaq < ndi.daq.reader
             abbrev = {'ai'      , 'ao',        'ax',          'di',        'do',         'e',    'mk',  'tx',  't'   };
 
         end % channelTypes
+
+        function data = eventdatarows(data, nevents)
+            % EVENTDATAROWS - an event channel's data as one row per event
+            %
+            % DATA = EVENTDATAROWS(DATA, NEVENTS)
+            %
+            % Given the DATA of one event, marker or text channel with
+            % NEVENTS timestamps, returns it with one row per event:
+            %
+            %   - an NEVENTS x K array with K > 1 (a marker whose events carry
+            %     K codes, e.g. NDR's ced_smr marker channel, N x 4 uint8) is
+            %     returned unchanged, every code kept;
+            %   - anything else is made a column, DATA(:), as before.
+            %
+            % A channel with one code per event is read exactly as before.
+            % VH-Lab/NDI-matlab#1276; did-schema [multi-code markers keep
+            % every code] (did_v2_standing_wiring_plan.md) and [several
+            % marker numbers are a second dimension]
+            % (did_v2_go_forward_class_audit.md).
+            %
+            if ~(ismatrix(data) && size(data,2) > 1 && size(data,1) == nevents)
+                data = data(:); % make sure we are column
+            end
+        end % eventdatarows
 
         function [stdchanneltypes] = standardize_channel_types(channeltypes)
             % STANDARDIZE_CHANNEL_TYPES - return standard channel type names
