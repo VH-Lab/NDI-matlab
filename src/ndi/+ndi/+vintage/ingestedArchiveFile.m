@@ -48,6 +48,14 @@ if ~isKey(A.bodies, series)
         A.epoch_id, filename, series);
 end
 b = A.bodies(series);
+if strcmp(b.kind, 'split_time')
+    % [time group with several time channels split] (Jess Haley,
+    % 2026-11-19): the v1 file is one column per time value's body, so no one
+    % member is the file: ndi.vintage.ingestedSplitTime rebuilds its content
+    error('NDI:daq:reader:ingestedSplitTime', ...
+        ['Epoch %s: the time group %s is split, one time value per time channel; ' ...
+        'read %s with ndi.vintage.ingestedSplitTime.'], A.epoch_id, series, filename);
+end
 tname_without_extension = ndi.file.temp_name();
 tname = [tname_without_extension extension];
 try
