@@ -8,10 +8,13 @@ function [data, t] = splitSeriesRead(session, bodyDoc, owner, t0, t1)
 %   whose time lies in [T0, T1]: DATA is [frames x (the other dimensions,
 %   flattened)], T the frame times from the owner's `time` covariate
 %   (origin + k * spacing). OWNER is the statement (ndi.document or props).
-%   The time covariate is read in both numeric shapes (did-schema
+%   The time covariate's origin and spacing are plain numbers (did-schema
 %   did_v2_numeric_shape_plan.md, [one shape for measured numbers], Jess
-%   Haley, 2026-11-17): origin and spacing as {value, source_value} blocks
-%   (old), or as plain numbers (new).
+%   Haley, 2026-11-17). A time covariate in the OLD numeric shape (origin
+%   and spacing as {value, source_value} blocks) is not read: it is an
+%   error, 'ndi:v2:oldNumericShapeReMigrate' (ndi.v2.refuseOldNumericShape),
+%   and the database is migrated again from v1 (section 9 step 4, [no
+%   migrated database is kept], Jess Haley, 2026-11-19).
 %
 %   See also ndi.migrate.internal.epochSeriesBodies,
 %            ndi.element.timeseries/readtimeseries.
@@ -44,6 +47,10 @@ for i = 1:numel(covs)
     c = covs(i);
     if isfield(c, 'variable') && strcmp(char(c.variable.node), 'om:Time') ...
             && isfield(c, 'origin') && ~isempty(c.origin)
+        old = ndi.v2.oldNumericForm(c);
+        if ~isempty(old)
+            ndi.v2.refuseOldNumericShape('The time covariate of a split series', old);
+        end
         t = regularNumber(c.origin) + (0:sz(1)-1)' * regularNumber(c.spacing);
     end
 end
@@ -53,11 +60,6 @@ t = t(keep);
 end
 
 function x = regularNumber(p)
-% a covariate's origin or spacing: the canonical `value` of the old
-% {value, source_value} block, or the plain number of the new shape
-if isstruct(p)
-    x = double(p(1).value);
-else
-    x = double(p(1));
-end
+% a covariate's origin or spacing: a plain number
+x = double(p(1));
 end

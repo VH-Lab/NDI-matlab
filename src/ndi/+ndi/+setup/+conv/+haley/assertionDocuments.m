@@ -208,8 +208,12 @@ end
     end
 
     function out = logical1(out, id, variable, counter, notes)
-        % a false logical assertion: the plate is NOT what VARIABLE names
-        out = assert1(out, id, 'logical', variable, false, struct(), struct(), ...
+        % a false logical assertion: the plate is NOT what VARIABLE names. Its
+        % value is the block {logical: false} (did-schema
+        % did_v2_numeric_shape_plan.md section 3, [one shape for measured
+        % numbers]); a bare false is the old shape, which the readers refuse
+        % ([no migrated database is kept], Jess Haley, 2026-11-19)
+        out = assert1(out, id, 'logical', variable, struct('logical', false), struct(), struct(), ...
             counter, notes);
     end
 

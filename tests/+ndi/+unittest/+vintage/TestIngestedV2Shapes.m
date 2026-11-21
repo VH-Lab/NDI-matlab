@@ -106,6 +106,23 @@ classdef TestIngestedV2Shapes < matlab.unittest.TestCase
             testCase.verifyTrue(isequaln(got2, want), describe(got2, want));
         end
 
+        function testTheOldNumericShapeIsRefused(testCase)
+            % the same group bodies written in the old numeric shape (the
+            % spacing a {value, source_value} block, the offset and scale a
+            % `quantity`) are not read ([no migrated database is kept], Jess
+            % Haley, 2026-11-19): the database is migrated again from v1
+            testCase.assumeTrue(~isempty(which('did2.build.numericShape')), ...
+                'no DID-matlab builders that write both numeric shapes');
+            ai = v1Rows('ai', 'analog_in', 1:2, [1 1], 20000, 32768, 0.195);
+            prev = did2.build.numericShape('old');
+            testCase.addTeardown(@() did2.build.numericShape(prev));
+            bodies = {groupBody('ai', 1, ai, true)};
+            testCase.verifyTrue(contains(jsonencode(bodies{1}), '"quantity"'), ...
+                'the fixture is in the old numeric shape');
+            testCase.verifyError(@() ndi.vintage.ingestedChannelList(bodies), ...
+                'ndi:v2:oldNumericShapeReMigrate');
+        end
+
         function testTheNameCovariateIsRead(testCase)
             % [channel name is an identifier] (Jess Haley, 2026-11-17): the
             % names NDI's writer kept (it reads each number from the name)

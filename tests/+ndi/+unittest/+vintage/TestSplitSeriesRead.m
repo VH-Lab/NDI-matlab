@@ -1,11 +1,12 @@
 classdef TestSplitSeriesRead < matlab.unittest.TestCase
-%TESTSPLITSERIESREAD ndi.vintage.splitSeriesRead reads the time axis in both numeric shapes.
+%TESTSPLITSERIESREAD ndi.vintage.splitSeriesRead reads the time axis in the new numeric shape only.
 %
 %   The owner's `time` covariate gives the frame times, origin + k * spacing.
 %   did-schema did_v2_numeric_shape_plan.md ([one shape for measured
-%   numbers], Jess Haley, 2026-11-17): origin and spacing are
-%   {value, source_value} blocks (old) or plain numbers beside
-%   source_origin / source_spacing (new). Both read the same rows and times.
+%   numbers], Jess Haley, 2026-11-17): origin and spacing are plain numbers
+%   beside source_origin / source_spacing. The old {value, source_value}
+%   blocks are refused, 'ndi:v2:oldNumericShapeReMigrate' ([no migrated
+%   database is kept], Jess Haley, 2026-11-19).
 %   The body is a gzip'd little-endian float64 array, read through a stand-in
 %   for the session's binary-document calls: no session or database.
 
@@ -22,7 +23,7 @@ classdef TestSplitSeriesRead < matlab.unittest.TestCase
     end
 
     methods (Test)
-        function testBothShapesReadTheSameRows(testCase)
+        function testTheNewShapeReadsAndTheOldIsRefused(testCase)
             a = reshape(1:10, 5, 2);   % 5 frames x 2 channels
             [session, body] = gzBody(testCase.Dir, a);
             timeTerm = struct('node', 'om:Time', 'name', 'time');
@@ -31,12 +32,11 @@ classdef TestSplitSeriesRead < matlab.unittest.TestCase
                 'spacing', struct('value', 0.5, 'source_value', 500));
             new = struct('variable', timeTerm, 'along', 0, 'origin', 1, 'spacing', 0.5, ...
                 'source_origin', 1000, 'source_spacing', 500);
-            [d1, t1] = ndi.vintage.splitSeriesRead(session, body, owner(old), 1.5, 2.5);
             [d2, t2] = ndi.vintage.splitSeriesRead(session, body, owner(new), 1.5, 2.5);
-            testCase.verifyEqual(t1, [1.5; 2; 2.5], 'old shape');
-            testCase.verifyEqual(d1, a(2:4, :), 'old shape');
-            testCase.verifyEqual(t2, t1, 'new shape');
-            testCase.verifyEqual(d2, d1, 'new shape');
+            testCase.verifyEqual(t2, [1.5; 2; 2.5], 'new shape');
+            testCase.verifyEqual(d2, a(2:4, :), 'new shape');
+            testCase.verifyError(@() ndi.vintage.splitSeriesRead(session, body, owner(old), 1.5, 2.5), ...
+                'ndi:v2:oldNumericShapeReMigrate', 'old shape');
         end
     end
 end
