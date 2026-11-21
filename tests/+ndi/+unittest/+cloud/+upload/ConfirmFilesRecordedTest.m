@@ -88,6 +88,38 @@ classdef ConfirmFilesRecordedTest < matlab.unittest.TestCase
             testCase.verifySubstring(report.resendErrors{1}, '/p/c');
         end
 
+        function testManyUnrecordedFilesAreResentAsZipBatches(testCase)
+            % One at a time is far too slow at scale (10,165 files did not
+            % finish in 40 minutes); past SingleFileLimit they go as zips.
+            S = ndi.test.helper.FakeRecordingServer();
+            S.Schedule = {"a"};
+            [ok, report] = testCase.confirm(S, 'SingleFileLimit', 1);
+            testCase.verifyTrue(ok);
+            testCase.verifyEqual(S.batchResends, {["b" "c"]});
+            testCase.verifyEqual(report.resent, ["b" "c"]);
+        end
+
+        function testAFailedZipResendIsReportedButStillWaitedFor(testCase)
+            % A failed batch may have sent some files: what did arrive counts.
+            S = ndi.test.helper.FakeRecordingServer();
+            S.FailBatchResend = true;
+            S.NeverRecord = "c";
+            [ok, report] = testCase.confirm(S, 'SingleFileLimit', 0);
+            testCase.verifyFalse(ok);
+            testCase.verifyEqual(report.pending, "c");
+            testCase.verifySubstring(report.resendErrors{1}, 'batch refused by the fake');
+        end
+
+        function testResentFilesAreWaitedForWhileRecordsArrive(testCase)
+            % After resending, a server still recording is waited for too.
+            S = ndi.test.helper.FakeRecordingServer();
+            S.NeverRecord = ["b" "c"];
+            S.Schedule = {"a", strings(1, 0), "b", "c"};
+            [ok, ~] = testCase.confirm(S, 'StallTimeout', 7, 'ResendTimeout', 3);
+            testCase.verifyTrue(ok);
+            testCase.verifyEqual(S.waitTimeouts, [7 7 3 3]);
+        end
+
         function testDuplicateUidsAreCheckedOnce(testCase)
             S = ndi.test.helper.FakeRecordingServer();
             S.Schedule = {"a"};
@@ -121,7 +153,8 @@ classdef ConfirmFilesRecordedTest < matlab.unittest.TestCase
             [ok, report] = ndi.cloud.upload.internal.confirmFilesRecorded("d", ...
                 testCase.Uids, testCase.Paths, 'Verbose', false, ...
                 'WaitFcn', @(ids, t) S.wait(ids, t), ...
-                'ResendFcn', @(id, p) S.resend(id, p), varargin{:});
+                'ResendFcn', @(id, p) S.resend(id, p), ...
+                'ResendBatchFcn', @(ids, ps) S.resendBatch(ids, ps), varargin{:});
         end
     end
 end

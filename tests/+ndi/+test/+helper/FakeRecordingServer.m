@@ -14,6 +14,8 @@ classdef FakeRecordingServer < handle
         NeverRecord = strings(1, 0)
         RefuseResend = strings(1, 0)
         ThrowOnResend = strings(1, 0)  % as uploadSingleFile does for a missing local file
+        FailBatchResend = false        % a zip batch resend reports failure (after sending)
+        batchResends = {}              % the uids of each zip batch resend
         recorded                 % containers.Map uid -> true
         waitCalls = 0
         waitTimeouts = []
@@ -56,6 +58,16 @@ classdef FakeRecordingServer < handle
             end
             b = true;
             msg = '';
+        end
+
+        function [b, msg] = resendBatch(obj, ids, ~)
+            ids = reshape(string(ids), 1, []);
+            obj.batchResends{end+1} = ids;
+            obj.resent = [obj.resent ids];
+            obj.record(ids(~ismember(ids, obj.NeverRecord)));
+            b = ~obj.FailBatchResend;
+            msg = '';
+            if ~b, msg = 'batch refused by the fake'; end
         end
 
         function record(obj, ids)
