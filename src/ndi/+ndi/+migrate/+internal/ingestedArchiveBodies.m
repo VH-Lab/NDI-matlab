@@ -101,9 +101,49 @@ function [structs, report, removed] = ingestedArchiveBodies(structs, ndiDir, v1B
 %     its uneven time is listed in REPORT.uneven_time_kept {kind
 %     ('mismatch' | 'unpaired'), archive_id (the v1 archive), group_body_id,
 %     time_body_id, reason} (first reason: `first_uneven_time_kept_reason`),
-%     and is also `unconvertible`. A time group of several time channels
-%     that is not evenly spaced is `unconvertible` (no decision says which
-%     channel a group keys to).
+%     and is also `unconvertible`.
+%
+%     A TIME GROUP OF SEVERAL TIME CHANNELS. Decided by Jess Haley,
+%     2026-11-19 [time group with several time channels split] (did-schema
+%     did_v2_standing_wiring_plan.md): "when an ingested archive's one uneven
+%     time group file holds several time channels, each time channel becomes
+%     its own keyed `time` value, and each channel group keys to the time
+%     value of the time channel its rows' v1 `time_channel` names; a channel
+%     group whose rows name time channels in two different time values can't
+%     be keyed to one, so that archive is kept as v1 and counted, as a
+%     sample-count mismatch is". So a time group `ti_group<g>` whose C time
+%     channels are not all evenly spaced (counted `uneven_time_groups_split`)
+%     becomes C time values (counted `uneven_time_channels_split`, and in
+%     `uneven_time_values`), one per time channel, in the channel list's
+%     order (the column order of the v1 file):
+%       each time value      as above (data_body true, no time reference)
+%       its sampled_body     dimension 0 time (om:Time), n and chunk as
+%                            above; condition "time channel" (EMPTY:0000374,
+%                            [channel types]) = the time channel's number
+%                            (count), so the v1 file's column is named; its
+%                            files NEW, one per v1 segment: that column of
+%                            the segment (as t - t0, [uneven time rewritten
+%                            from the epoch start]), compressed as the v1
+%                            ingest compresses time (ndi.compress.
+%                            compress_time); format, compression and
+%                            filename (`ti_group<g>_seg.nbf_#`, the v1 series
+%                            it came from) as the time group's. The first
+%                            channel's body keeps the time group body's id;
+%                            the others' ids are derived from it.
+%     A channel group whose rows name time channels of two different time
+%     values of a split group (or one of them and another time channel)
+%     leaves the archive as pass 1 wrote it, counted
+%     `uneven_time_split_ambiguous_kept` and listed in REPORT.uneven_time_kept
+%     (kind 'split_ambiguous'), and is `unconvertible`. A split time channel
+%     no channel group names would be a time value nothing keys to, which no
+%     reader finds (ndi.vintage.ingestedArchive finds a time value through
+%     the groups' key_id): that archive is left too, `unconvertible` (no
+%     decision covers it). A group whose time channels are not listed in
+%     increasing number (NDI's writer lists them so, and its readers take the
+%     file's columns in that order) is `unconvertible`. The readers rebuild
+%     the v1 group file's segment from the split values (ndi.vintage.
+%     ingestedSplitTime), and DID-matlab's round trip rebuilds the v1 group
+%     file from them (did2.convert.roundtrip.ingestedArchiveFiles).
 %
 %     The time value's samples are seconds from the epoch's start. [clock
 %     only on the time reference] (Jess Haley, 2026-11-01): a body's time
@@ -272,6 +312,9 @@ report = struct( ...
     'uneven_time_values',         0, ...
     'uneven_time_mismatch_kept',  0, ...
     'uneven_time_unpaired_kept',  0, ...
+    'uneven_time_groups_split',   0, ...
+    'uneven_time_channels_split', 0, ...
+    'uneven_time_split_ambiguous_kept', 0, ...
     'first_uneven_time_kept_reason', '', ...
     'unconvertible',              0, ...
     'first_unconvertible_reason', '', ...
@@ -412,7 +455,14 @@ for a = 1:numel(groupKeys)
     ids = {};
     gaps = struct('document_id', {}, 'class', {}, 'field', {}, 'reason', {});
     for m = 1:numel(made)
-        structs{made{m}.k} = made{m}.body;
+        if made{m}.k > 0
+            structs{made{m}.k} = made{m}.body;
+        else
+            % a split time channel's body beyond the first ([time group with
+            % several time channels split]): a new document, appended
+            structs{end+1} = made{m}.body; %#ok<AGROW>
+            report.added_ids{end+1} = baseId(made{m}.body);
+        end
         ids{end+1} = baseId(made{m}.body); %#ok<AGROW>
         if ~isfield(made{m}, 'scaleGap'); continue; end   % the time value's body
         if made{m}.scaleUnitless
@@ -439,6 +489,9 @@ for a = 1:numel(groupKeys)
         if info.rebased
             report.uneven_time_rebased = report.uneven_time_rebased + 1;
         end
+        % [time group with several time channels split]
+        report.uneven_time_groups_split = report.uneven_time_groups_split + info.split(1);
+        report.uneven_time_channels_split = report.uneven_time_channels_split + info.split(2);
     end
     for g = 1:numel(gone)
         ids{end+1} = gone{g}; %#ok<AGROW>
@@ -523,9 +576,12 @@ function [made, gone, why, added, uneven, written, info] = convertArchive(struct
 %   (some were rewritten from the epoch's start), timeRows ([v1 time rows,
 %   of them rebuilt exactly]) and timeRowKept (channel_list.bin kept because
 %   a time row is not rebuilt exactly); when the archive is left because of
-%   its uneven time ([uneven time groups and mismatches]), timeKept is
-%   'mismatch' or 'unpaired' and timeKeptBody / timeKeptTimeBody name the
-%   channel group and the time body.
+%   its uneven time ([uneven time groups and mismatches], [time group with
+%   several time channels split]), timeKept is 'mismatch', 'unpaired' or
+%   'split_ambiguous' and timeKeptBody / timeKeptTimeBody name the channel
+%   group and the time body. split is [time groups split, time values made
+%   by splitting them]. An entry of MADE whose k is 0 is a new body (a split
+%   time channel's beyond the first), appended by the caller.
 made = {};
 gone = {};
 why = '';
@@ -536,7 +592,7 @@ info = struct('eventBodyIds', {{}}, 'channelListWhy', '', 'timeChannelCovariates
     'members', [0 0 0 0], 'names', [0 0 0 0], 'events', struct('present', false, 'unpacked', false, ...
     'channels', 0, 'textChannels', 0, 'kind', '', 'why', ''), 'timeValues', 0, 'rebased', false, ...
     'timeRows', [0 0], 'timeRowKept', false, 'timeKept', '', 'timeKeptBody', '', ...
-    'timeKeptTimeBody', '');
+    'timeKeptTimeBody', '', 'split', [0 0]);
 % [migrated body members renamed]: the members of the channel and time
 % groups, by the schema's names, before anything reads them
 for j = 1:numel(idx)
@@ -559,7 +615,12 @@ t0 = epochStart(arch);
 % ([uneven time groups and mismatches], Jess Haley, 2026-11-19: "one `time`
 % value per time group")
 timeJ = find(strcmp(kinds, 'time'));
-keyed = struct('k', {}, 'number', {}, 'n', {}, 'seg', {}, 'id', {}, 'tsegs', {});
+% each keyed time value: K the index (in STRUCTS) its body replaces, 0 for a
+% new body; SOURCE the index of the time group body it is made from; SPLIT
+% true for one time channel of a split group (COLUMN of COLUMNS, BODYID its
+% body's id)
+keyed = struct('k', {}, 'number', {}, 'n', {}, 'seg', {}, 'id', {}, 'tsegs', {}, ...
+    'split', {}, 'column', {}, 'columns', {}, 'bodyId', {}, 'source', {});
 evenNumbers = [];   % the time channels of the evenly spaced (removed) groups
 for j = timeJ(:)'
     b = structs{idx(j)};
@@ -596,23 +657,53 @@ for j = timeJ(:)'
     end
     % [uneven time is a keyed time value]
     uneven = true;
-    if ~isscalar(rows)
-        why = sprintf(['the time channels of %s are not evenly spaced, and the group holds ' ...
-            '%d time channels: a keyed time value is written for a time group of one time ' ...
-            'channel only'], bodyFilename(b), numel(rows));
-        return;
-    end
     seg = paramOf(params, 'sample_analog_segment');
     if ~isfinite(seg); seg = size(tsegs{1}, 1); end
-    % the keyed time value's id is derived from the time body it is minted
-    % for, not random ([migration reliability practices] (b), Jess Haley,
-    % 2026-10-26)
-    keyed(end+1) = struct('k', idx(j), 'number', double(ci(rows).number), ...
-        'n', size(t, 1), 'seg', seg, ...
-        'id', did2.convert.mintId('keyed time value', baseId(b)), ...
-        'tsegs', {tsegs}); %#ok<AGROW>
+    if isscalar(rows)
+        % the keyed time value's id is derived from the time body it is
+        % minted for, not random ([migration reliability practices] (b), Jess
+        % Haley, 2026-10-26)
+        keyed(end+1) = struct('k', idx(j), 'number', double(ci(rows).number), ...
+            'n', size(t, 1), 'seg', seg, ...
+            'id', did2.convert.mintId('keyed time value', baseId(b)), ...
+            'tsegs', {tsegs}, 'split', false, 'column', 1, 'columns', 1, ...
+            'bodyId', baseId(b), 'source', idx(j)); %#ok<AGROW>
+        continue;
+    end
+    % [time group with several time channels split] (Jess Haley, 2026-11-19):
+    % "each time channel becomes its own keyed `time` value". Column r of the
+    % v1 file is the channel list's r-th time row of the group; NDI's readers
+    % take the columns in the list's order (ndi.file.type.mfdaq_epoch_channel
+    % /channelgroupdecoding), and NDI's writer lists them by number
+    % (create_properties), so the split values are read back by number
+    nums = double([ci(rows).number]);
+    if any(diff(nums) <= 0)
+        why = sprintf(['the time channels of %s (%s) are not listed in increasing number, ' ...
+            'the order NDI''s writer lists them and its readers take the file''s columns in'], ...
+            bodyFilename(b), strjoin(arrayfun(@(x) sprintf('t%d', x), nums, ...
+            'UniformOutput', false), ', '));
+        return;
+    end
+    for r = 1:numel(rows)
+        if r == 1
+            k = idx(j);
+            bodyId = baseId(b);
+        else
+            k = 0;
+            bodyId = did2.convert.mintId(sprintf('split time body|time channel %d', nums(r)), ...
+                baseId(b));
+        end
+        keyed(end+1) = struct('k', k, 'number', nums(r), 'n', size(t, 1), 'seg', seg, ...
+            'id', did2.convert.mintId(sprintf('keyed time value|time channel %d', nums(r)), ...
+                baseId(b)), ...
+            'tsegs', {cellfun(@(x) x(:, r), tsegs, 'UniformOutput', false)}, ...
+            'split', true, 'column', r, 'columns', numel(rows), 'bodyId', bodyId, ...
+            'source', idx(j)); %#ok<AGROW>
+    end
+    info.split = info.split + [1 numel(rows)];
 end
 nTimeRows = sum(strcmp(ciType, 'time'));
+used = false(1, numel(keyed));   % the keyed values some channel group keys to
 
 for j = 1:numel(idx)
     if ~strcmp(kinds{j}, 'group'); continue; end
@@ -666,11 +757,15 @@ for j = 1:numel(idx)
         % [uneven time groups and mismatches] (Jess Haley, 2026-11-19): "each
         % channel group keyed to the time group it uses, as the channel list
         % pairs them"
-        [kk, pairWhy] = pairedTime(ci, rows, keyed, evenNumbers, nTimeRows);
+        [kk, pairWhy, pairKind] = pairedTime(ci, rows, keyed, evenNumbers, nTimeRows);
         if ~isempty(pairWhy)
             why = sprintf('%s: %s', fn, pairWhy);
-            info.timeKept = 'unpaired';
+            info.timeKept = pairKind;
             info.timeKeptBody = baseId(b);
+            if kk > 0
+                % 'split_ambiguous': the split time group it names
+                info.timeKeptTimeBody = baseId(structs{keyed(kk).source});
+            end
             return;
         end
         if kk > 0
@@ -680,13 +775,14 @@ for j = 1:numel(idx)
                 why = sprintf(['%s holds %d sample(s), its time channel t%d (%s) %d: a time ' ...
                     'channel whose sample count differs from the data it times is malformed, ' ...
                     'so the archive is kept as v1'], fn, n, keyed(kk).number, ...
-                    bodyFilename(structs{keyed(kk).k}), keyed(kk).n);
+                    bodyFilename(structs{keyed(kk).source}), keyed(kk).n);
                 info.timeKept = 'mismatch';
                 info.timeKeptBody = baseId(b);
-                info.timeKeptTimeBody = baseId(structs{keyed(kk).k});
+                info.timeKeptTimeBody = baseId(structs{keyed(kk).source});
                 return;
             end
             timeId = keyed(kk).id;
+            used(kk) = true;
         end
     end
     [body, scaleGap, scaleField, nameCounts] = sampledFromOpaque(b, rows, ci, type, types, abbrev, ...
@@ -697,6 +793,17 @@ for j = 1:numel(idx)
     info.timeChannelCovariates = info.timeChannelCovariates + 1;
 end
 if isempty(made); why = 'no channel group to convert'; return; end
+% [time group with several time channels split]: a split time channel no
+% channel group names would be a time value nothing keys to, and the readers
+% find a time value only through the groups' key_id (ndi.vintage.
+% ingestedArchive); no decision covers it, so the archive is left
+for q = find([keyed.split] & ~used)
+    why = sprintf(['time channel t%d of %s (a time group of %d time channels, split one ' ...
+        'time value per time channel) is named by no channel group: its time value would be ' ...
+        'keyed by nothing, so no reader would find it'], keyed(q).number, ...
+        bodyFilename(structs{keyed(q).source}), keyed(q).columns);
+    return;
+end
 groupBodies = cellfun(@(m) m.body, made, 'UniformOutput', false);
 
 % [event channels are time-valued observations]: the events file, unpacked
@@ -706,8 +813,7 @@ info.events = ev;
 
 for q = 1:numel(keyed)
     try
-        [value, tbody, w] = keyedTime(structs{keyed(q).k}, keyed(q).id, keyed(q).n, ...
-            keyed(q).seg, t0, keyed(q).tsegs, storeDir);
+        [value, tbody, w] = keyedTime(structs{keyed(q).source}, keyed(q), t0, storeDir);
     catch err
         cellfun(@deleteIfThere, [written, evWritten]);
         rethrow(err);
@@ -717,7 +823,7 @@ for q = 1:numel(keyed)
     made{end+1} = struct('k', keyed(q).k, 'body', tbody); %#ok<AGROW>
 end
 info.timeValues = numel(keyed);
-info.rebased = ~isempty(written);
+info.rebased = t0 ~= 0 && ~isempty(keyed);
 if ev.unpacked
     added = [added, evDocs];
     written = [written, evWritten];
@@ -739,16 +845,23 @@ if isempty(info.channelListWhy)
 end
 end
 
-function [kk, why] = pairedTime(ci, rows, keyed, evenNumbers, nTimeRows)
+function [kk, why, kind] = pairedTime(ci, rows, keyed, evenNumbers, nTimeRows)
 % The keyed time value a channel group's ROWS key to: KK its index in KEYED,
 % 0 when their time channel's group is evenly spaced (the group's own time
-% covariate), or WHY it cannot be paired. The channel list pairs them: every
-% row's v1 time_channel names one time channel. When it names none of the
-% archive's (NaN, several, or one with no row) and the archive has exactly
-% one time channel, the group keys to that one, as the single-group path
-% did (NDI-matlab #1226).
+% covariate), or WHY it cannot be paired and KIND, the report's name for it.
+% The channel list pairs them: every row's v1 time_channel names one time
+% channel. Rows that name several time channels, one of them a channel of a
+% split time group, name two time values ([time group with several time
+% channels split], Jess Haley, 2026-11-19: "a channel group whose rows name
+% time channels in two different time values can't be keyed to one, so that
+% archive is kept as v1 and counted"): KIND 'split_ambiguous', KK the first
+% split value they name. When they name none of the archive's (NaN, several,
+% or one with no row) and the archive has exactly one time channel, the group
+% keys to that one, as the single-group path did (NDI-matlab #1226);
+% otherwise KIND 'unpaired'.
 kk = 0;
 why = '';
+kind = '';
 tc = NaN(1, numel(rows));
 for r = 1:numel(rows)
     v = double(ci(rows(r)).time_channel);
@@ -760,11 +873,23 @@ if all(isfinite(tc)) && isscalar(u)
     if ~isempty(i); kk = i; return; end
     if any(evenNumbers == u); return; end
 end
+shown = strjoin(arrayfun(@(x) sprintf('%g', x), unique(tc), 'UniformOutput', false), ', ');
+isSplit = [keyed.split];
+splitNamed = find(isSplit & ismember([keyed.number], u), 1);
+if numel(u) > 1 && ~isempty(splitNamed)
+    kk = splitNamed;
+    kind = 'split_ambiguous';
+    why = sprintf(['its channels name time channels %s, of %d different time values (t%d is ' ...
+        'one channel of a time group of several, split one time value per time channel): a ' ...
+        'channel group keys to one time value, so the archive is kept as v1'], shown, ...
+        numel(u), keyed(splitNamed).number);
+    return;
+end
 if nTimeRows == 1 && isscalar(keyed)
     kk = 1;
     return;
 end
-shown = strjoin(arrayfun(@(x) sprintf('%g', x), unique(tc), 'UniformOutput', false), ', ');
+kind = 'unpaired';
 why = sprintf(['its channels name time channel(s) %s, not one time channel of the archive ' ...
     '(%d time channel(s), %d of them not evenly spaced): the channel list does not pair it ' ...
     'with a time group'], shown, nTimeRows, numel(keyed));
@@ -868,13 +993,17 @@ if counts(2) > 0 && isfield(b.files, 'file_list')
 end
 end
 
-function [value, body, written] = keyedTime(tb, valueId, n, seg, t0, tsegs, storeDir)
-% [uneven time is a keyed time value]: the standalone `time` value
-% (data_body true; no time reference) and the time group's body as its
-% sampled_body, one time dimension, id, format and compression kept. Its
-% files are pass 1's when the epoch starts at 0 (T0); otherwise ([uneven time
-% rewritten from the epoch start]) each v1 segment TSEGS{m} is rewritten as
-% TSEGS{m} - T0 into a new store file, WRITTEN its paths
+function [value, body, written] = keyedTime(tb, kq, t0, storeDir)
+% [uneven time is a keyed time value]: the standalone `time` value KQ.id
+% (data_body true; no time reference) and the time group's body TB as its
+% sampled_body (id KQ.bodyId), one time dimension of KQ.n samples, chunk
+% KQ.seg, format and compression kept. Its files are pass 1's when the epoch
+% starts at 0 (T0); otherwise ([uneven time rewritten from the epoch start])
+% each v1 segment KQ.tsegs{m} is rewritten as KQ.tsegs{m} - T0 into a new
+% store file, WRITTEN its paths. KQ.split ([time group with several time
+% channels split]): KQ.tsegs holds one column of the v1 group's segments,
+% always written into new files, and the body names its time channel
+% (condition "time channel", EMPTY:0000374, count KQ.number)
 written = {};
 restore = ndi.migrate.internal.termRegistryOff(); %#ok<NASGU>
 sid = char(did2.schema.cache.sessionIdOf(tb));
@@ -883,16 +1012,28 @@ if isfield(tb.base, 'creation_timestamp'); ts = char(tb.base.creation_timestamp)
 tsArg = {};
 if ~isempty(ts); tsArg = {'CreationTimestamp', ts}; end
 value = did2.build.document('time', struct('data_body', true), ...
-    'Id', valueId, 'SessionId', sid, 'Validate', false, tsArg{:});
+    'Id', kq.id, 'SessionId', sid, 'Validate', false, tsArg{:});
 db = tb.data_body;
 timeTerm = struct('node', 'om:Time', 'name', 'time');
-args = {'Id', baseId(tb), 'SessionId', sid, 'Validate', false, ...
+splitNote = '';
+if kq.split
+    splitNote = sprintf([' It is time channel t%d, column %d of the %d time channels the v1 ' ...
+        'file holds, split into its own time value; its files hold that column.'], ...
+        kq.number, kq.column, kq.columns);
+end
+args = {'Id', kq.bodyId, 'SessionId', sid, 'Validate', false, ...
     'Fields', struct('filename', bodyFilename(tb)), ...
     'Notes', sprintf(['%s The NDI second pass read it as the body of the recording''s ' ...
         'time value (%d unevenly spaced sample(s), seconds from the epoch''s start); ' ...
-        'each channel group''s time is a key to it.%s'], strtrim(ndi.v2.notesOf(db)), n, ...
-        rebasedNote(t0)), ...
+        'each channel group''s time is a key to it.%s%s'], strtrim(ndi.v2.notesOf(db)), kq.n, ...
+        splitNote, rebasedNote(t0)), ...
     tsArg{:}};
+if kq.split
+    % [time group with several time channels split]: the v1 file's column is
+    % named by its time channel, as an unpacked channel names its type and
+    % number ([channel list rows get v2 homes])
+    args = [args, {'Conditions', did2.build.condition(TIME_CHANNEL(), 'Count', kq.number)}];
+end
 if isfield(db, 'format') && isstruct(db.format) && isfield(db.format, 'node') ...
         && ~isempty(db.format.node)
     args = [args, {'Format', db.format}];
@@ -901,10 +1042,10 @@ if isfield(db, 'compression') && ~isempty(db.compression)
     args = [args, {'Compression', db.compression}];
 end
 body = did2.build.sampledBody(baseId(value), ...
-    did2.build.dimension(timeTerm, n, 'Chunk', seg), args{:});
+    did2.build.dimension(timeTerm, kq.n, 'Chunk', kq.seg), args{:});
 body.files = tb.files;
-if t0 ~= 0
-    [body.files, written] = rebasedTimeFiles(tb.files, tsegs, t0, storeDir, baseId(tb));
+if t0 ~= 0 || kq.split
+    [body.files, written] = rebasedTimeFiles(tb.files, kq.tsegs, t0, storeDir, kq.bodyId);
 end
 end
 

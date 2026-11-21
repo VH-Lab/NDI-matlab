@@ -61,6 +61,12 @@ function ci = ingestedChannelList(groups, events)
 %                   time channel the polynomial [0 1])
 %     number        T
 %     group         1 + floor(T / 100000), dataclass 'time' (create_properties)
+%   A time group of several time channels split one time value per time
+%   channel (Jess Haley, 2026-11-19 [time group with several time channels
+%   split]) gives one row per time channel its groups name, each in the
+%   group the writer's rule gives it (t1 and t2 both group 1), as the v1 list
+%   holds them; the split time values' bodies are not channel groups and add
+%   no row.
 %   A time channel a group names that the v1 list does not hold (Intan's
 %   auxiliary inputs name t2, VH-Lab/NDI-matlab#1249) is rebuilt too, so such
 %   a list does not compare exactly and the second pass keeps it.

@@ -38,7 +38,13 @@ function A = ingestedArchive(S, readerId, epochId, options)
 %                       2026-11-03 [uneven time is a keyed time value]): it is
 %                       found through that edge, and its samples are seconds
 %                       from the epoch's start ([clock only on the time
-%                       reference])
+%                       reference]). A time group of several time channels
+%                       is split, one time value per time channel (Decided
+%                       by Jess Haley, 2026-11-19 [time group with several
+%                       time channels split]): its bodies, each naming its
+%                       time channel, are one series of kind 'split_time'
+%                       (ndi.vintage.ingestedArchiveSeries), read by
+%                       ndi.vintage.ingestedSplitTime
 %     an opaque_body    the v1 series as pass 1 carried it: member
 %                       body_data_<k> is v1 segment k+1. Its segment length
 %                       is the length of its first member when it has more
@@ -50,10 +56,13 @@ function A = ingestedArchive(S, readerId, epochId, options)
 %     epoch_id      EPOCHID
 %     bodies        containers.Map, series name -> struct with fields
 %                     doc     the body (ndi.document)
-%                     kind    'sampled_body' or 'opaque_body'
+%                     kind    'sampled_body', 'opaque_body' or 'split_time'
 %                     n       samples along time ([] when not stated)
 %                     chunk   samples per member ([] when not stated)
 %                     members the number of body_data_<k> members
+%                     docs    the bodies, in column order (one, unless
+%                             kind is 'split_time')
+%                     numbers the time channel of each of docs ('split_time')
 %     channels      the v1 channel list (ndi.file.type.mfdaq_epoch_channel
 %                   channel_information): read from the `channel_list.bin`
 %                   body when there is one; otherwise rebuilt from the
