@@ -1592,6 +1592,44 @@ function result = local(path, options)
         end
     end
 
+    % --- the openMINDS Strains' fields, after the second pass ---------------
+    % Decided by Jess Haley, 2026-11-19 [strain fields checked after the
+    % second pass] (did-schema did_v2_go_forward_class_audit.md): DID-matlab's
+    % Strain round-trip inverse defers a Strain's `openminds_<n>` child edges
+    % and its geneticStrainType, species, backgroundStrain and description to
+    % the second pass, "and NDI's end-to-end round trip checks them after the
+    % second pass". This compares each v1 Strain with the strain entity the
+    % second pass rebuilt. Report only: it changes nothing.
+    strainFieldsReport = [];   % [] = not measured (the step did not run)
+    if ~alreadyMigrated && iscell(convertResult.migrated)
+        try
+            strainFieldsReport = ndi.migrate.internal.strainFieldsAfterSecondPass( ...
+                convertResult.migrated, bodies);
+            r = strainFieldsReport;
+            fprintf(['[migrate step]   openMINDS strain fields (after the second pass): ' ...
+                '%d v1 Strain(s) inspected, %d document(s) read, %d strain entit(ies); %s: ' ...
+                'mapped %d by id, %d by instance_of, %d by name; not mapped %d (no entity ' ...
+                '%d, ambiguous %d); differences: name %d, description %d, species %d, ' ...
+                'genetic strain type %d, background strain %d, child edges to no field %d\n'], ...
+                r.v1_strains_inspected, r.documents_inspected, r.strain_entities_seen, ...
+                r.state, r.mapped_by_id, r.mapped_by_instance_of, r.mapped_by_name, ...
+                r.not_mapped_no_entity + r.not_mapped_ambiguous, r.not_mapped_no_entity, ...
+                r.not_mapped_ambiguous, r.name.differ, r.description.differ, ...
+                r.species.differ, r.genetic_strain_type.differ, ...
+                r.background_strain.differ, r.child_edges.to_no_field);
+            for i = 1:numel(r.differences)
+                fprintf('[migrate step]     strain field differs: %s %s: %s (v1 "%s", v2 "%s")\n', ...
+                    r.differences(i).v1_id, r.differences(i).field, r.differences(i).why, ...
+                    r.differences(i).v1, r.differences(i).v2);
+            end
+        catch ME
+            stepErrors(end+1) = struct('step', 'strainFieldsAfterSecondPassFailed', 'message', ME.message); %#ok<AGROW>
+            warning('NDI:migrate:strainFieldsAfterSecondPassFailed', ...
+                'Comparing the openMINDS Strains'' fields failed (%s); not measured.', ...
+                ME.message);
+        end
+    end
+
     % --- the migration record: one per run, written by NDI ----------------
     % [migration record writer] (Jess Haley, 2026-11-01): "by NDI-matlab for an
     % NDI migration, from the reports of all its DID-matlab calls". One
@@ -1768,6 +1806,9 @@ function result = local(path, options)
     % [archive segment lengths measured after the second pass] (Jess Haley,
     % 2026-11-12); [] when the comparison did not run
     result.secondPass.archiveSegmentLengths = segmentLengthReport;
+    % [strain fields checked after the second pass] (Jess Haley, 2026-11-19);
+    % [] when the comparison did not run
+    result.secondPass.strainFields = strainFieldsReport;
 
     if options.Verbose
         printSummary(result);

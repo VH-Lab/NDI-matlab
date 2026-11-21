@@ -776,6 +776,106 @@ classdef TestSubjectStrainAssembly < matlab.unittest.TestCase
             testCase.verifyEqual(report.openminds_ids_not_kept, 0);
         end
 
+        % ------- [strain fields checked after the second pass] -----------
+        % Decided by Jess Haley, 2026-11-19 (did-schema
+        % did_v2_go_forward_class_audit.md): DID defers a Strain's
+        % openminds_<n> child edges, geneticStrainType, species,
+        % backgroundStrain and description to the second pass, and NDI
+        % checks them after it (ndi.migrate.internal.strainFieldsAfterSecondPass).
+
+        function testStrainFieldsAfterTheSecondPassMatchV1(testCase)
+            [v1, mig] = twoRatsSameGenotype();
+            v1 = describeStrain(v1, 'rat1_strain', 'a Cre line');
+            v1 = describeStrain(v1, 'rat2_strain', 'a Cre line');
+            [kept, minted] = ndi.migrate.internal.subjectStrainAssembly(v1, mig);
+            R = ndi.migrate.internal.strainFieldsAfterSecondPass([kept, minted], v1);
+            % denominators: 4 Strains (2 rows x OTR-IRES-Cre + SD)
+            testCase.verifyEqual(R.v1_strains_inspected, 4);
+            testCase.verifyEqual(R.mapped_by_instance_of, 2, ...
+                'the subjects'' own strains are not found through their instance_of');
+            testCase.verifyEqual(R.mapped_by_name, 2, ...
+                'the ancestor SD strains are not found by name in their session');
+            testCase.verifyEqual(R.not_mapped_no_entity + R.not_mapped_ambiguous, 0);
+            testCase.verifyEqual(R.state, 'measured');
+            testCase.verifyEqual(R.name.compared, 4);
+            testCase.verifyEqual(R.description.compared, 2);
+            testCase.verifyEqual(R.description.v1_absent, 2);
+            testCase.verifyEqual(R.species.compared, 4);
+            testCase.verifyEqual(R.genetic_strain_type.compared, 4);
+            testCase.verifyEqual(R.background_strain.compared, 2);
+            testCase.verifyEqual(R.background_strain.v1_absent, 2);
+            % child edges: SD has 2 (species, gst), OTR-IRES-Cre 3 (+ SD)
+            testCase.verifyEqual(R.child_edges.total, 10);
+            testCase.verifyEqual(R.child_edges.to_compared_field, 10);
+            for f = {'name', 'description', 'species', 'genetic_strain_type', 'background_strain'}
+                testCase.verifyEqual(R.(f{1}).differ, 0, f{1});
+                testCase.verifyEqual(R.(f{1}).v2_only, 0, f{1});
+            end
+            testCase.verifyEmpty(R.differences);
+        end
+
+        function testStrainFieldCheckFindsALostDescription(testCase)
+            [v1, mig] = twoRatsSameGenotype();
+            v1 = describeStrain(v1, 'rat1_strain', 'a Cre line');
+            v1 = describeStrain(v1, 'rat2_strain', 'a Cre line');
+            [kept, minted] = ndi.migrate.internal.subjectStrainAssembly(v1, mig);
+            for k = 1:numel(minted)
+                if isfield(minted{k}, 'entity') && isfield(minted{k}.entity, 'notes')
+                    minted{k}.entity = rmfield(minted{k}.entity, 'notes');
+                end
+            end
+            R = ndi.migrate.internal.strainFieldsAfterSecondPass([kept, minted], v1);
+            testCase.verifyEqual(R.description.compared, 2);
+            testCase.verifyEqual(R.description.differ, 2, ...
+                'a description the strain entity lost was not found');
+            testCase.verifyTrue(any(strcmp({R.differences.field}, 'description')));
+        end
+
+        function testStrainFieldCheckFindsAWrongSpecies(testCase)
+            [v1, mig] = twoRatsSameGenotype();
+            [kept, minted] = ndi.migrate.internal.subjectStrainAssembly(v1, mig);
+            cre = strainNamed(minted, 'OTR-IRES-Cre');
+            S = ndi.migrate.internal.etaShape;
+            n = 0;
+            for k = 1:numel(minted)
+                m = minted{k};
+                if ~S.isStatement(m, 'assertion', 'term'); continue; end
+                v = S.variable(m);
+                if strcmp(S.aboutId(m), cre.base.id) && strcmpi(v.node, 'NCIT:C45293')
+                    minted{k}.term.value(1).node = 'NCBITaxon:10090';
+                    n = n + 1;
+                end
+            end
+            testCase.assertEqual(n, 1, 'the fixture''s strain has no single species assertion');
+            R = ndi.migrate.internal.strainFieldsAfterSecondPass([kept, minted], v1);
+            testCase.verifyEqual(R.species.compared, 4);
+            testCase.verifyEqual(R.species.differ, 2, ...
+                'a species the strain entity does not carry was not found');
+        end
+
+        function testStrainFieldCheckFindsALostBackground(testCase)
+            [v1, mig] = twoRatsSameGenotype();
+            [kept, minted] = ndi.migrate.internal.subjectStrainAssembly(v1, mig);
+            S = ndi.migrate.internal.etaShape;
+            keep = ~cellfun(@(m) strcmp(S.relationName(m), 'derived_from'), minted);
+            testCase.assertLessThan(nnz(keep), numel(minted), 'the fixture has no derived_from');
+            R = ndi.migrate.internal.strainFieldsAfterSecondPass([kept, minted(keep)], v1);
+            testCase.verifyEqual(R.background_strain.compared, 2);
+            testCase.verifyEqual(R.background_strain.differ, 2);
+        end
+
+        function testStrainFieldCheckCountsAStrainWithNoEntity(testCase)
+            % a Strain with no name is not assembled ([strainWithNoName]):
+            % nothing carries its deferred fields, and the check says so
+            [v1, mig] = strainWithNoName();
+            [kept, minted] = ndi.migrate.internal.subjectStrainAssembly(v1, mig);
+            R = ndi.migrate.internal.strainFieldsAfterSecondPass([kept, minted], v1);
+            testCase.verifyEqual(R.v1_strains_inspected, 1);
+            testCase.verifyEqual(R.not_mapped_no_entity, 1);
+            testCase.verifyEqual(R.state, 'not measured');
+            testCase.verifyNumElements(R.differences, 1);
+        end
+
         % ---------------- denominators ------------------------------------
 
         function testReportStatesItsDenominatorsFirst(testCase)
@@ -1349,6 +1449,17 @@ for k = 1:numel(strains)
     testCase.verifyFalse(any(startsWith(g, 'openminds:', 'IgnoreCase', true)), ...
         sprintf('strain entity %s carries an openminds id', char(strains{k}.base.id)));
 end
+end
+
+function v1 = describeStrain(v1, id, text)
+%DESCRIBESTRAIN Give the did_v1 Strain ID the openMINDS `description` TEXT.
+for k = 1:numel(v1)
+    if strcmp(v1{k}.base.id, id)
+        v1{k}.openminds.fields.description = text;
+        return;
+    end
+end
+error('fixture has no document %s', id);
 end
 
 function v1 = clearOpenmindsIds(v1)
