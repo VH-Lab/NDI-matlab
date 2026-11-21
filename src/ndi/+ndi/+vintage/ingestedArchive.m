@@ -95,6 +95,22 @@ function A = ingestedArchive(S, readerId, epochId, options)
 %     t0_t1         cell, [t0 t1] on each of those clocks
 %     clock_problem '' or, when no clock is stated, why
 %
+%   THE STIMULUS LOG. Decided by Jess Haley, 2026-11-19 [stimulus log owned
+%   by its presentation] (did-schema docs/plans/did_v2_standing_wiring_plan.md):
+%   a stimulus system's archive files (`evmktx_group1_seg.nbf_1` and
+%   `channel_list.bin`, read by ndi.setup.daq.reader.mfdaq.stimulus.vhlabvisspike2)
+%   are a data body of the epoch's stimulus-presentation manipulation, or,
+%   where the epoch has no presentation, of an observation of the stimulus
+%   rig's device. A presentation names no acquisition system, so those
+%   bodies are found by what they say (ndi.vintage.ingestedStimulusLogBodies:
+%   their notes name the epoch and the reader), whatever owns them, as well
+%   as through the statements above. An epoch with such a body and no
+%   recording on the reader's systems is read from the body alone; its clocks
+%   are then the time references onto the epoch that no other system's
+%   statement names (private/otherSystemsAnchorIds). A session that kept the
+%   v1 archive is read from the archive (ndi.daq.reader/getingestedarchive),
+%   as before.
+%
 %   THE EPOCH'S CLOCK AND EXTENT. Decided by Jess Haley, 2026-11-01 [clock
 %   only on the time reference]: "an ingested or migrated data body names no
 %   clock: its time axis counts seconds from the start of the epoch ..., and
@@ -155,16 +171,29 @@ if ~isempty(anchors) && ~isempty(systems)
         ndi.v2.anyOf(cellfun(@(d) ndi.query('', 'depends_on', 'acquisition_system_id', d.id()), ...
             systems, 'UniformOutput', false)));
 end
-if isempty(statements)
+% ---- the epoch's stimulus log, wherever it is owned ------------------
+% [stimulus log owned by its presentation] (Jess Haley, 2026-11-19): a
+% stimulus system's archive files are bodies of the epoch's presentation,
+% which names no acquisition system, or of the fallback observation, which
+% does; each body names its epoch and reader (ndi.vintage.ingestedStimulusLogKey)
+logs = ndi.vintage.ingestedStimulusLogBodies(S, readerId, {epochId});
+logBodies = {};
+if isKey(logs, epochId)
+    logBodies = logs(epochId);
+end
+if isempty(statements) && isempty(logBodies)
     error('NDI:daq:reader:ingestedNoRecording', ...
         'No v2 recording of epoch %s names an acquisition system read by reader %s.', ...
         epochId, readerId);
 end
 
 % ---- the bodies they own ---------------------------------------------
-bodies = S.database_search(ndi.query('', 'isa', 'data_body', '') & ...
-    ndi.v2.anyOf(cellfun(@(d) ndi.query('', 'depends_on', 'owner_id', d.id()), ...
-        statements, 'UniformOutput', false)));
+bodies = {};
+if ~isempty(statements)
+    bodies = S.database_search(ndi.query('', 'isa', 'data_body', '') & ...
+        ndi.v2.anyOf(cellfun(@(d) ndi.query('', 'depends_on', 'owner_id', d.id()), ...
+            statements, 'UniformOutput', false)));
+end
 
 % ---- the bodies of the values they key to (an uneven time channel) -----
 keyIds = {};
@@ -177,6 +206,21 @@ if ~isempty(keyIds)
         ndi.v2.anyOf(cellfun(@(i) ndi.query('', 'depends_on', 'owner_id', i), ...
             keyIds, 'UniformOutput', false)));
     bodies = [reshape(bodies, 1, []), reshape(keyed, 1, [])];
+end
+
+% the stimulus log's bodies last: a body met twice (the fallback
+% observation names the system too) is read once (private/archiveOf)
+bodies = [reshape(bodies, 1, []), reshape(logBodies, 1, [])];
+if isempty(statements) && ~isempty(anchors)
+    % no recording of this reader's systems names its clock references, so
+    % the references another system's statements name are left out: they
+    % state that system's clocks (private/otherSystemsAnchorIds)
+    timed = S.database_search(ndi.v2.isaQuery('statement') & ...
+        ndi.v2.anyOf(cellfun(@(i) ndi.query('', 'depends_on', 'time_reference_id', i), ...
+            anchorIds, 'UniformOutput', false)));
+    sysIds = cellfun(@(d) char(d.id()), systems, 'UniformOutput', false);
+    others = otherSystemsAnchorIds(timed, sysIds);
+    anchors = anchors(~ismember(anchorIds, others));
 end
 
 A = archiveOf(S, epochId, anchors, statements, bodies, options.Channels);
