@@ -123,10 +123,15 @@ for r = 1:numel(rels)
         c = cs{g};
         if ~isstruct(c) || ~isfield(c, 'variable'), continue; end
         nums = [];
-        if isfield(c, 'matrix') && ~isempty(c.matrix)
-            nums = double(c.matrix(:)');
-        elseif isfield(c, 'numeric') && ~isempty(c.numeric)
-            % the new numeric shape: `numeric` replaces `matrix` (did-schema
+        old = ndi.v2.oldNumericForm(c);
+        if ~isempty(old)
+            % the old numeric shape is not read (did-schema
+            % did_v2_numeric_shape_plan.md section 9 step 4, [no migrated
+            % database is kept], Jess Haley, 2026-11-19)
+            ndi.v2.refuseOldNumericShape('A wiring relation''s channel group', old);
+        end
+        if isfield(c, 'numeric') && ~isempty(c.numeric)
+            % the channel numbers: `numeric` (did-schema
             % did_v2_numeric_shape_plan.md, [one shape for measured
             % numbers], Jess Haley, 2026-11-17)
             nums = double(c.numeric(:)');

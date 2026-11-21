@@ -54,11 +54,11 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             ex = pick('inclusion in analysis');
             testCase.verifyNumElements(ex, 1);
             testCase.verifyEqual(ex{1}.statement.variable.node, 'EMPTY:0000314');
-            testCase.verifyFalse(logical(ex{1}.logical.value));
+            testCase.verifyFalse(logical(ex{1}.logical.value.logical));
             nf = pick('video recording');
             testCase.verifyNumElements(nf, 1);
             testCase.verifyEqual(nf{1}.statement.variable.node, 'NCIT:C91063');
-            testCase.verifyFalse(logical(nf{1}.logical.value));
+            testCase.verifyFalse(logical(nf{1}.logical.value.logical));
             testCase.verifyEqual(ex{1}.statement.notes, 'no contrast video, so patches are poorly aligned');
             testCase.verifyEqual(nf{1}.statement.notes, 'Prepared but not filmed: no video.');
             testCase.verifyEmpty(pick('reason for inclusion in analysis'));
@@ -418,7 +418,7 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
                 && strcmpi(a.statement.variable.name, variable), la));
             a = aboutL('concentration_assayPlate0013', 'inclusion in analysis');
             testCase.verifyNumElements(a, 1);
-            testCase.verifyFalse(logical(a{1}.logical.value));
+            testCase.verifyFalse(logical(a{1}.logical.value.logical));
             testCase.verifyEmpty(aboutL('concentration_assayPlate0012', 'inclusion in analysis'));
             testCase.verifyEmpty(aboutL('concentration_assayPlate0012', 'video recording'), ...
                 'plate 12 was filmed');
