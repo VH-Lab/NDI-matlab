@@ -96,9 +96,9 @@ classdef TestSubjectStrainAssembly < matlab.unittest.TestCase
             %   second subject-level species assertion, written LAST and
             %   stamped EARLIEST, so the earliest (ties by id) is not the one
             %   read first in either order; the kept set must be the same;
-            % - the ORDER of the members' `openminds:` ids on a strain's
-            %   global_identifier: sorted, so the reversed input lists them
-            %   the same way.
+            % - the strain's global_identifier: the same in both orders, and
+            %   with no `openminds:` id in either ([lab-made strain ids are an
+            %   accepted loss too], Jess Haley, 2026-11-19).
             [v1, mig] = twoRatsSameGenotype();
             extra = assertionDoc('rat1_species_extra', 'sess_A', 'rat1', ...
                 'species', 'NCBITaxon:10116', 'Rattus norvegicus');
@@ -150,18 +150,22 @@ classdef TestSubjectStrainAssembly < matlab.unittest.TestCase
             testCase.verifyFalse(anyId(keptA, 'rat1_species'), ...
                 'a later-stamped duplicate species assertion survived');
             testCase.verifyTrue(anyId(keptA, 'rat2_species'));
-            % the openminds ids: two of them, in the same (sorted) order
+            % the openminds ids: the fixture still holds two lab-made ids on
+            % one strain's members, and neither is written, in either order
+            testCase.verifyEqual(repA.openminds_ids_not_kept, 2, ...
+                'the fixture no longer gives one strain two lab-made openminds ids');
             creA = strainNamed(a, 'OTR-IRES-Cre');
             creR = strainNamed(r, 'OTR-IRES-Cre');
-            omA = creA.entity.global_identifier(startsWith( ...
-                creA.entity.global_identifier, 'openminds:'));
-            testCase.verifyNumElements(omA, 2, ...
-                'the fixture no longer puts two openminds ids on one strain');
-            testCase.verifyEqual(creR.entity.global_identifier, ...
-                creA.entity.global_identifier, ...
-                ['the reversed input ordered the strain''s global_identifier ' ...
-                 'differently: the openminds ids followed read order']);
-            testCase.verifyEqual(omA, sort(omA), 'the openminds ids are not sorted');
+            testCase.verifyEqual(isfield(creR.entity, 'global_identifier'), ...
+                isfield(creA.entity, 'global_identifier'));
+            if isfield(creA.entity, 'global_identifier')
+                testCase.verifyEqual(creR.entity.global_identifier, ...
+                    creA.entity.global_identifier, ...
+                    ['the reversed input ordered the strain''s ' ...
+                     'global_identifier differently']);
+            end
+            verifyNoOpenmindsIds(testCase, a);
+            verifyNoOpenmindsIds(testCase, r);
             testCase.verifyEqual(did2.convert.mintId('-depth'), 0, ...
                 'the pass left a mintId context open');
         end
@@ -719,23 +723,24 @@ classdef TestSubjectStrainAssembly < matlab.unittest.TestCase
             [~, minted, report] = ndi.migrate.internal.subjectStrainAssembly(v1, mig);
             cre = strainNamed(minted, 'OTR-IRES-Cre');
             testCase.verifyFalse(isfield(cre.entity, 'global_identifier'));
-            testCase.verifyEqual(report.openminds_ids_on_strains, 0);
+            testCase.verifyEqual(report.openminds_ids_not_kept, 0);
         end
 
-        function testLabMadeStrainCarriesItsOpenmindsId(testCase)
-            % Decided by Jess Haley, 2026-10-27 [openMINDS subject leftovers]
-            % (did-schema V_eta_go_forward_class_audit.md): "a lab-made
-            % strain's `openminds_id` goes on the strain entity's
-            % `global_identifier` as `openminds:<id>`". OTR-IRES-Cre has no
-            % ontology node; the writer gave each row's Strain its own id, and
-            % both survive the collapse into one entity, sorted (not in the
-            % order the rows were read: NDI-matlab #1235).
+        function testLabMadeStrainIdIsAnAcceptedLoss(testCase)
+            % [lab-made strain ids are an accepted loss too] (Jess Haley,
+            % 2026-11-19, did-schema did_v2_go_forward_class_audit.md,
+            % replacing the last clause of [openMINDS subject leftovers]): no
+            % `openminds:<id>` is written on any strain entity's
+            % `global_identifier`. OTR-IRES-Cre has no ontology node and the
+            % writer gave each row's Strain its own id: both are read and
+            % counted as not kept, and the entity has no identifier at all.
             [~, minted, report] = runOn(@twoRatsSameGenotype);
             cre = strainNamed(minted, 'OTR-IRES-Cre');
-            testCase.verifyEqual(cre.entity.global_identifier, { ...
-                'openminds:https://openminds.om-i.org/instances/rat1_strain', ...
-                'openminds:https://openminds.om-i.org/instances/rat2_strain'});
-            testCase.verifyEqual(report.openminds_ids_on_strains, 2);
+            testCase.verifyFalse(isfield(cre.entity, 'global_identifier'), ...
+                'a lab-made strain entity was given a global_identifier');
+            testCase.verifyEqual(report.openminds_ids_not_kept, 2, ...
+                'the two lab-made openminds ids were not counted as the loss');
+            verifyNoOpenmindsIds(testCase, minted);
         end
 
         function testOpenmindsIdDoesNotSplitTheDedup(testCase)
@@ -768,7 +773,7 @@ classdef TestSubjectStrainAssembly < matlab.unittest.TestCase
             if isfield(cre.entity, 'global_identifier')
                 testCase.verifyFalse(any(startsWith(cre.entity.global_identifier, 'openminds:')));
             end
-            testCase.verifyEqual(report.openminds_ids_on_strains, 0);
+            testCase.verifyEqual(report.openminds_ids_not_kept, 0);
         end
 
         % ---------------- denominators ------------------------------------
@@ -1328,6 +1333,22 @@ for k = 1:numel(v1)
     end
 end
 error('fixture has no document %s', id);
+end
+
+function verifyNoOpenmindsIds(testCase, minted)
+%VERIFYNOOPENMINDSIDS No strain entity in MINTED carries an `openminds:` id
+%   ([openMINDS minted ids are an accepted loss], [lab-made strain ids are an
+%   accepted loss too]). States its denominator: there is at least one strain.
+strains = strainEntities(minted);
+testCase.verifyNotEmpty(strains, 'no strain entity to inspect');
+for k = 1:numel(strains)
+    e = strains{k}.entity;
+    if ~isfield(e, 'global_identifier'); continue; end
+    g = e.global_identifier;
+    if ischar(g); g = {g}; end
+    testCase.verifyFalse(any(startsWith(g, 'openminds:', 'IgnoreCase', true)), ...
+        sprintf('strain entity %s carries an openminds id', char(strains{k}.base.id)));
+end
 end
 
 function v1 = clearOpenmindsIds(v1)
