@@ -124,12 +124,12 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             testCase.verifyEqual(sum(strcmp(how, 'EMPTY:0000300')), 4);
             testCase.verifyEqual(sum(strcmp(how, 'EMPTY:0000348')), 2);
             testCase.verifyEqual(count('opaque_body'), 6);
-            testCase.verifyEqual(count('acquisition_system'), 2, 'camera1 and camera2');
+            testCase.verifyEqual(count(ndi.vintage.acquisitionConfigurationClass()), 2, 'camera1 and camera2');
             testCase.verifyEqual(count('session'), 1);
             % did-schema [required acquisition edges]: every system names its
             % reader and its epoch file pattern; [epoch to system link]: its
             % device is the camera the recordings name as their instrument
-            asys = docs(strcmp(classes, 'acquisition_system'));
+            asys = docs(strcmp(classes, ndi.vintage.acquisitionConfigurationClass()));
             for k = 1:numel(asys)
                 testCase.verifyNotEmpty(edge(asys{k}, 'reader_id'), 'reader_id is required');
                 testCase.verifyNotEmpty(edge(asys{k}, 'epoch_file_pattern_id'), ...
@@ -1177,7 +1177,7 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             classes = cellfun(@(d) d.document_class.class_name, docs, 'UniformOutput', false);
             testCase.verifyEqual(sum(strcmp(classes, 'epoch')), 4, ...
                 'raw images 2, 3, background 9 and brightfield image 1 (decision #97)');
-            testCase.verifyEqual(sum(strcmp(classes, 'acquisition_system')), 1, 'the microscope');
+            testCase.verifyEqual(sum(strcmp(classes, ndi.vintage.acquisitionConfigurationClass())), 1, 'the microscope');
             r = docs(strcmp(classes, 'acquisition_reader'));
             testCase.verifyEqual(r{1}.acquisition_reader.reader_string, 'tiffstack');
             session = ndi.session.dir(result.sessions.path{1});

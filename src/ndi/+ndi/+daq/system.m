@@ -593,7 +593,10 @@ classdef system < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice
             if ~isempty(ndi_daqsystem_obj.name)
                 f.name = ndi_daqsystem_obj.name;
             end
-            a = did2.build.document('acquisition_system', f, 'Edges', edges, ...
+            % the class the loaded schema holds: `acquisition_configuration`
+            % once did-schema renames `acquisition_system` ([acquisition
+            % configuration renamed], Jess Haley, 2026-11-19)
+            a = did2.build.document(ndi.vintage.acquisitionConfigurationClass(), f, 'Edges', edges, ...
                 'Id', ndi_daqsystem_obj.id(), 'SessionId', sid);
             docs = [{ndi.document(a)}, ...
                 cellfun(@(x) ndi.document(x), sw, 'UniformOutput', false)];
@@ -612,7 +615,10 @@ classdef system < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice
             % (did-schema #73 item 54; [carried v1 validates against NDI
             % templates], Jess Haley, 2026-10-27) or base.name (v1, and v2
             % documents migrated before).
-            sq = sq & ( ndi.query('acquisition_system.name','exact_string',ndi_daqsystem_obj.name,'') | ...
+            % Under either class name: `acquisition_configuration` since
+            % [acquisition configuration renamed] (Jess Haley, 2026-11-19).
+            sq = sq & ( ndi.query('acquisition_configuration.name','exact_string',ndi_daqsystem_obj.name,'') | ...
+                ndi.query('acquisition_system.name','exact_string',ndi_daqsystem_obj.name,'') | ...
                 ndi.query('base.name','exact_string',ndi_daqsystem_obj.name,'') );
 
             sq = sq & ndi.query('','depends_on','filenavigator_id',ndi_daqsystem_obj.filenavigator.id()) & ...
