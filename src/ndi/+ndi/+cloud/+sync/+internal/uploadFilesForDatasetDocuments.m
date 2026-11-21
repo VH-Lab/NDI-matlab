@@ -19,6 +19,11 @@ function [success, message] = uploadFilesForDatasetDocuments(cloudDatasetId, ndi
 % | 'FileBatchSizeLimit'  | (double) Maximum size in bytes of each zip batch when |
 % |                       | FileUploadStrategy is 'batch'. Empty (default) uses the |
 % |                       | preference Cloud.Upload.Max_File_Batch_Size. |
+% | 'VerifyUploads'       | (logical) After uploading, confirm NDI Cloud recorded |
+% |                       | every file, and upload again any it did not (default |
+% |                       | true). See ndi.cloud.upload.internal.confirmFilesRecorded. |
+% | 'VerifyStallTimeout'  | (double) Seconds with no newly recorded file before |
+% |                       | the unrecorded ones are uploaded again (default 900). |
 %
 % Outputs:
 % | Name                  | Description                               |
@@ -37,6 +42,8 @@ function [success, message] = uploadFilesForDatasetDocuments(cloudDatasetId, ndi
             {mustBeMember(options.FileUploadStrategy, ["serial", "batch"])} = "batch"
         options.onlyMissing (1,1) logical = true
         options.FileBatchSizeLimit double {mustBeScalarOrEmpty, mustBePositive} = []
+        options.VerifyUploads (1,1) logical = true
+        options.VerifyStallTimeout (1,1) double {mustBePositive} = 900
     end
 
     success = true;
@@ -95,6 +102,7 @@ function [success, message] = uploadFilesForDatasetDocuments(cloudDatasetId, ndi
             app.addBar('Label','Uploading document-associated binary files','tag',uuid,'Auto',true);
             files_uploaded_count = 0;
             sentUids = strings(1, 0);
+            sentPaths = {};
             for i=1:numel(file_manifest)
                 if file_manifest(i).is_uploaded==false
                     % Wait for the server to record the uploads once, below,
@@ -109,23 +117,17 @@ function [success, message] = uploadFilesForDatasetDocuments(cloudDatasetId, ndi
                     else
                         files_uploaded_count = files_uploaded_count + 1;
                         sentUids(end+1) = string(file_manifest(i).uid); %#ok<AGROW>
+                        sentPaths{end+1} = file_manifest(i).file_path; %#ok<AGROW>
                     end
                 end
                 app.updateBar(uuid,i/numel(file_manifest));
             end
-            if ~isempty(sentUids)
-                [wait_success, wait_answer] = ndi.cloud.api.files.waitForFileUpload(cloudDatasetId, sentUids);
-                if ~wait_success
-                    if success
-                        message = sprintf(['%d of %d uploaded files were not recorded by NDI Cloud ' ...
-                            'within %.0f s (first: %s).'], numel(wait_answer.pending), numel(sentUids), ...
-                            wait_answer.elapsed, wait_answer.pending(1));
-                    end
-                    success = false;
-                end
-            end
             if options.Verbose
                 fprintf('Uploaded %d of %d files.\n', files_uploaded_count, numel(file_manifest));
+            end
+            if ~isempty(sentUids)
+                [success, message] = confirmRecorded(cloudDatasetId, sentUids, sentPaths, ...
+                    success, message, options);
             end
         case "batch"
             zipArgs = {};
@@ -139,9 +141,35 @@ function [success, message] = uploadFilesForDatasetDocuments(cloudDatasetId, ndi
                 if options.Verbose
                     fprintf('Batch upload failed: %s\n', batch_message);
                 end
-            elseif options.Verbose
-                fprintf('Uploaded %d files in batch mode.\n', numel(file_manifest));
+            else
+                if options.Verbose
+                    fprintf('Uploaded %d files in batch mode.\n', numel(file_manifest));
+                end
+                % The zips reached S3; the server records their files in a
+                % later step that can fail without the upload hearing of it.
+                [success, message] = confirmRecorded(cloudDatasetId, ...
+                    string({file_manifest.uid}), {file_manifest.file_path}, ...
+                    success, message, options);
             end
+    end
+end
+
+function [success, message] = confirmRecorded(cloudDatasetId, uids, paths, success, message, options)
+    % Confirm NDI Cloud recorded the files sent, uploading again any it did
+    % not; an earlier failure's message is kept.
+    if ~options.VerifyUploads
+        return
+    end
+    if options.Verbose
+        fprintf('Confirming NDI Cloud recorded the %d uploaded file(s) ...\n', numel(uids));
+    end
+    [ok, report] = ndi.cloud.upload.internal.confirmFilesRecorded(cloudDatasetId, uids, paths, ...
+        'StallTimeout', options.VerifyStallTimeout, 'Verbose', options.Verbose);
+    if ~ok
+        if success
+            message = report.message;
+        end
+        success = false;
     end
 end
 
