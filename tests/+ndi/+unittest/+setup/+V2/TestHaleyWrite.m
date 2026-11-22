@@ -161,7 +161,9 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
                 testCase.verifyEqual(ndi.v2.vocabHandle('entity_type', rig.subject.type), 'device');
                 testCase.verifyEqual(char(rig.subject.name), char(asys{k}.(ndi.vintage.acquisitionConfigurationClass()).name));
                 testCase.verifyFalse(isfield(rig.subject, 'local_identifier'), 'the rig device writes name only');
-                testCase.verifyEqual(rig.base.session_id, asys{k}.base.session_id);
+                testCase.verifyEqual(edge(rig, 'session_id'), edge(asys{k}, 'session_id'), ...
+                    'in the system''s session');
+                testCase.verifyNotEmpty(edge(rig, 'session_id'));
                 testCase.verifyEqual(rig.base.id, rigDeviceId(asys{k}.base.id), ...
                     'the id DID-matlab''s migration mints for a rig device');
             end

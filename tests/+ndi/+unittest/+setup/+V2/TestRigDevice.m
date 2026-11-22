@@ -37,7 +37,7 @@ classdef TestRigDevice < matlab.unittest.TestCase
             testCase.verifyEqual(char(d.entity.name), 'intan1');
             testCase.verifyFalse(isfield(d.entity, 'local_identifier') && ...
                 ~isempty(d.entity.local_identifier), 'the rig device writes name only');
-            testCase.verifyEqual(char(d.base.session_id), sid);
+            testCase.verifyEqual(ndi.v2.edgeIds(d, 'session_id'), {sid}, 'in the session given');
         end
 
         function testTheIdIsTheMigrationsId(testCase)
