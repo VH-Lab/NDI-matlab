@@ -1564,9 +1564,10 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             testCase.verifyEqual(lin.model_fit.value.dependent_variable.unit.node, 'EMPTY:0000261');
             co = entries(lin.model_fit.value.coefficients);
             testCase.verifyEqual(co{1}.variable.node, 'STATO:0000656');
-            testCase.verifyEqual(co{1}.value, 1 / 3000, 'AbsTol', 1e-15);
+            testCase.verifyEqual(co{1}.numeric, 1 / 3000, 'AbsTol', 1e-15);
+            testCase.verifyFalse(isfield(co{1}, 'value'), 'a coefficient is written in the new numeric shape');
             testCase.verifyEqual(co{2}.variable.node, 'STATO:0000657');
-            testCase.verifyEqual(co{2}.value, 94 / 300, 'AbsTol', 1e-15);
+            testCase.verifyEqual(co{2}.numeric, 94 / 300, 'AbsTol', 1e-15);
             testCase.verifyEqual(conditionTerms(lin), {'nematode growth medium'});
             % the growth group is the PLANNED one, exact, and is not a bin: no
             % bin width (decision #125)

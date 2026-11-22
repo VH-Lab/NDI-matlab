@@ -725,14 +725,17 @@ if strcmp(q.kind, 'joint')
     eq = 'f = a*OD600 + b*t';
     % the planned OD600 the patches were seeded at (decision #110, T19)
     x = did2.build.list(struct('variable', haleyTerm('target seeding OD600')), t);
-    % each coefficient named by its symbol in the equation
-    co = did2.build.list(struct('variable', coefficient('a'), 'value', q.coef(1)), ...
-        struct('variable', coefficient('b'), 'value', q.coef(2)));
+    % each coefficient named by its symbol in the equation; a coefficient is
+    % a list item, its number `numeric` (did-schema
+    % did_v2_numeric_shape_plan.md [one shape for measured numbers], section
+    % 8 answer 5; `value` was the old shape, removed by did-schema #373)
+    co = did2.build.list(struct('variable', coefficient('a'), 'numeric', q.coef(1)), ...
+        struct('variable', coefficient('b'), 'numeric', q.coef(2)));
 else
     eq = 'f = slope*t + intercept';
     x = did2.build.list(t);
-    co = did2.build.list(struct('variable', haleyTerm('slope'), 'value', q.coef(1)), ...
-        struct('variable', haleyTerm('intercept'), 'value', q.coef(2)));
+    co = did2.build.list(struct('variable', haleyTerm('slope'), 'numeric', q.coef(1)), ...
+        struct('variable', haleyTerm('intercept'), 'numeric', q.coef(2)));
 end
 v = struct('model', haleyTerm('linear regression'), 'equation', eq, ...
     'independent_variables', x, 'dependent_variable', y, 'coefficients', co, ...

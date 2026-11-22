@@ -18,7 +18,9 @@ classdef TestNumericShapeReaders < matlab.unittest.TestCase
 %   same thing written in the old shape is not read as numbers: it is the
 %   error 'ndi:v2:oldNumericShapeReMigrate' (the database is migrated again
 %   from v1). The items are written by hand, as a stored document holds
-%   them, and (where DID-matlab's builders take 'Shape') by did2.build.
+%   them, and (where DID-matlab's builders take 'Shape') by did2.build,
+%   which writes a list item's old shape only while did-schema declares it
+%   (it refuses it once did-schema #373 removes it; both are checked).
 
     methods (Test)
 
@@ -102,12 +104,24 @@ classdef TestNumericShapeReaders < matlab.unittest.TestCase
             c = one(did2.build.condition(t('x'), 'Matrix', [11 12 13], 'Shape', 'new'));
             [v, ~, k] = ndi.v2.entryValue(c);
             testCase.verifyEqual({double(v(:)'), k}, {[11 12 13], 'matrix'});
-            % the same conditions in the old shape are refused
-            c = one(did2.build.condition(t('x'), 'Value', 0.25, 'SourceValue', '250', ...
-                'Shape', 'old'));
-            testCase.verifyError(@() ndi.v2.entryValue(c), OLD, 'old shape: quantity');
-            c = one(did2.build.condition(t('x'), 'Matrix', [11 12 13], 'Shape', 'old'));
-            testCase.verifyError(@() ndi.v2.entryValue(c), OLD, 'old shape: matrix');
+            % the same conditions in the old shape: refused by the reader while
+            % the schema declares the old shape and DID-matlab writes it on
+            % request; once did-schema removes it (numeric shape plan section 9
+            % step 4, Waltham-Data-Science/did-schema #373) the builder refuses
+            % to write it (the reader's refusal of the hand-written old shape is
+            % testEntryValueReadsANumberAndRefusesTheOldShape's)
+            buildOld = {@() one(did2.build.condition(t('x'), 'Value', 0.25, ...
+                'SourceValue', '250', 'Shape', 'old')), ...
+                @() one(did2.build.condition(t('x'), 'Matrix', [11 12 13], 'Shape', 'old'))};
+            what = {'old shape: quantity', 'old shape: matrix'};
+            for k = 1:numel(buildOld)
+                if oldListShapeDeclared()
+                    c = buildOld{k}();
+                    testCase.verifyError(@() ndi.v2.entryValue(c), OLD, what{k});
+                else
+                    testCase.verifyError(buildOld{k}, 'did2:build:unknownField', what{k});
+                end
+            end
         end
 
         % ---------------- ndi.v2.covariateValues -------------------------
@@ -162,12 +176,24 @@ classdef TestNumericShapeReaders < matlab.unittest.TestCase
             c = one(did2.build.covariate(t('x'), 0, 'Value', [4 5 6], 'Shape', 'new'));
             [v, f] = ndi.v2.covariateValues(c, dims);
             testCase.verifyEqual({v, f}, {[4; 5; 6], "quantity"});
-            % the same covariates in the old shape are refused
-            c = one(did2.build.covariate(timeTerm, 0, 'Origin', 0, 'Spacing', 0.25, ...
-                'Unit', second, 'Shape', 'old'));
-            testCase.verifyError(@() ndi.v2.covariateValues(c, dims), OLD, 'old shape: origin');
-            c = one(did2.build.covariate(t('x'), 0, 'Value', [4 5 6], 'Shape', 'old'));
-            testCase.verifyError(@() ndi.v2.covariateValues(c, dims), OLD, 'old shape: quantity');
+            % the same covariates in the old shape: refused by the reader while
+            % the schema declares the old shape; once did-schema removes it
+            % (#373) the builder refuses to write it -- an origin block where a
+            % flat number is declared, a `quantity` that is not declared (the
+            % hand-written old shape is the tests above)
+            buildOld = {@() one(did2.build.covariate(timeTerm, 0, 'Origin', 0, ...
+                'Spacing', 0.25, 'Unit', second, 'Shape', 'old')), ...
+                @() one(did2.build.covariate(t('x'), 0, 'Value', [4 5 6], 'Shape', 'old'))};
+            what = {'old shape: origin', 'old shape: quantity'};
+            refused = {'did2:build:typeMismatch', 'did2:build:unknownField'};
+            for k = 1:numel(buildOld)
+                if oldListShapeDeclared()
+                    c = buildOld{k}();
+                    testCase.verifyError(@() ndi.v2.covariateValues(c, dims), OLD, what{k});
+                else
+                    testCase.verifyError(buildOld{k}, refused{k}, what{k});
+                end
+            end
         end
 
         % ---------------- ndi.v2.statementValue --------------------------
@@ -289,6 +315,37 @@ testCase.assumeTrue(~isempty(which('did2.build.numericShape')) && ...
 % the made-up variables here are no registered terms
 prev = did2.schema.cache.strictMode('TermRegistry', false);
 testCase.addTeardown(@() did2.schema.cache.strictMode('TermRegistry', prev));
+end
+
+function tf = oldListShapeDeclared()
+% does the loaded did-schema still declare the old list-item shape
+% (`quantity` on statement.conditions)? did-schema removes it in numeric shape
+% plan section 9 step 4 (Waltham-Data-Science/did-schema #373)
+tf = false;
+try
+    f = did2.schema.cache.shared().getClass('statement');
+catch
+    return;
+end
+for step = {'conditions', 'quantity'}
+    if ~isfield(f, 'fields') || isempty(f.fields)
+        return;
+    end
+    fs = f.fields;
+    if isstruct(fs); fs = num2cell(reshape(fs, 1, [])); end
+    hit = [];
+    for j = 1:numel(fs)
+        if isstruct(fs{j}) && isfield(fs{j}, 'name') && strcmp(char(fs{j}.name), step{1})
+            hit = fs{j};
+            break;
+        end
+    end
+    if isempty(hit)
+        return;
+    end
+    f = hit;
+end
+tf = true;
 end
 
 function needSchema(testCase)
