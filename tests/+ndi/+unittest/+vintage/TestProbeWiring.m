@@ -23,7 +23,9 @@ classdef TestProbeWiring < matlab.unittest.TestCase
 %   Every test runs on the session written in each numeric shape (did-schema
 %   did_v2_numeric_shape_plan.md, [one shape for measured numbers], Jess
 %   Haley, 2026-11-17): the wiring's channel numbers as `matrix` (old) or as
-%   flat `numeric` (new), as did2.build.condition writes them. The old shape
+%   flat `numeric` (new), the new as did2.build.condition writes them and
+%   the old by hand (the builders write only what did-schema declares, and
+%   did-schema #373 removed the old list shape). The old shape
 %   is refused when the wiring is read, 'ndi:v2:oldNumericShapeReMigrate'
 %   ([no migrated database is kept], Jess Haley, 2026-11-19); what does not
 %   read the wiring reads the same in both.
@@ -77,17 +79,27 @@ classdef TestProbeWiring < matlab.unittest.TestCase
                 'TimeReferenceIds', {anchor.base.id}, S{:}, 'ValueKind', 'velocity');
             shapeArgs = {};
             if ~isempty(which('did2.build.numericShape'))
-                shapeArgs = {'Shape', NumericShape};
+                shapeArgs = {'Shape', 'new'};
             end
             conds = did2.build.list( ...
                 did2.build.condition(T('EMPTY:0000370'), 'Matrix', [11 12 13 14], shapeArgs{:}), ...
                 did2.build.condition(T('EMPTY:0000372'), 'Matrix', 1, shapeArgs{:}));
-            txt = jsonencode(conds);
-            testCase.assertTrue(contains(txt, ['"' ifNew(NumericShape, 'numeric', 'matrix') '"']), ...
-                sprintf('the wiring is written in the %s numeric shape', NumericShape));
             wire = did2.build.directedRelation(probeId, sys.base.id, ...
                 T('RO:0002170'), 'TimeReferenceIds', {anchor.base.id}, ...
                 'Fields', struct('conditions', {conds}), S{:});
+            if strcmp(NumericShape, 'old')
+                % the same wiring with its channel numbers as `matrix`, the
+                % old shape, written by hand: DID-matlab's builders write only
+                % what did-schema declares, and did-schema removed the old
+                % list shape (numeric shape plan section 9 step 4, #373)
+                wire.directed_relation.conditions = { ...
+                    struct('variable', T('EMPTY:0000370'), 'matrix', [11 12 13 14]), ...
+                    struct('variable', T('EMPTY:0000372'), 'matrix', 1)};
+            end
+            txt = jsonencode(wire.directed_relation.conditions);
+            testCase.assertTrue(contains(txt, ['"' ifNew(NumericShape, 'numeric', 'matrix') '"']) ...
+                && ~contains(txt, ['"' ifNew(NumericShape, 'matrix', 'numeric') '"']), ...
+                sprintf('the wiring is written in the %s numeric shape', NumericShape));
 
             sessionDir = fullfile(testCase.Dir, 'session');
             mkdir(sessionDir);

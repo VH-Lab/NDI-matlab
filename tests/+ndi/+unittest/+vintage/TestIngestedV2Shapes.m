@@ -111,14 +111,20 @@ classdef TestIngestedV2Shapes < matlab.unittest.TestCase
             % spacing a {value, source_value} block, the offset and scale a
             % `quantity`) are not read ([no migrated database is kept], Jess
             % Haley, 2026-11-19): the database is migrated again from v1
+            % The old shape is written by hand from the builder's new-shape
+            % body: DID-matlab's builders write only what did-schema
+            % declares, and did-schema removed the old list shape (numeric
+            % shape plan section 9 step 4, did-schema #373), so the refusal is
+            % checked whatever the schema declares.
             testCase.assumeTrue(~isempty(which('did2.build.numericShape')), ...
-                'no DID-matlab builders that write both numeric shapes');
+                'no DID-matlab builders that write the new numeric shape');
             ai = v1Rows('ai', 'analog_in', 1:2, [1 1], 20000, 32768, 0.195);
-            prev = did2.build.numericShape('old');
+            prev = did2.build.numericShape('new');
             testCase.addTeardown(@() did2.build.numericShape(prev));
-            bodies = {groupBody('ai', 1, ai, true)};
-            testCase.verifyTrue(contains(jsonencode(bodies{1}), '"quantity"'), ...
-                'the fixture is in the old numeric shape');
+            bodies = {oldShapeBody(groupBody('ai', 1, ai, true))};
+            txt = jsonencode(bodies{1});
+            testCase.verifyTrue(contains(txt, '"quantity"') && ~contains(txt, '"numeric"') ...
+                && ~contains(txt, '"source_origin"'), 'the fixture is in the old numeric shape');
             testCase.verifyError(@() ndi.vintage.ingestedChannelList(bodies), ...
                 'ndi:v2:oldNumericShapeReMigrate');
         end
@@ -241,6 +247,34 @@ b = did2.build.sampledBody({'obs_1'}, did2.build.list( ...
         struct('node', nodes.(prefix), 'name', prefix)), ...
     'DatumOrder', 'F', 'Fields', struct('filename', sprintf('%s_group%d_seg.nbf_#', prefix, g)), ...
     'Id', sprintf('b_%s%d', prefix, g), 'SessionId', 'sess_1', 'Validate', false);
+end
+
+function b = oldShapeBody(b)
+% the body B (new numeric shape) with its covariates in the OLD shape, by
+% hand: a flat origin/spacing becomes the {value, source_value} block, a
+% `numeric` the `quantity` {value, source_value} wrapper (did-schema
+% did_v2_numeric_shape_plan.md section 4, "Today")
+covs = b.data.covariates;
+if ~iscell(covs); covs = num2cell(covs); end
+for k = 1:numel(covs)
+    e = covs{k};
+    o = struct();
+    for f = reshape(fieldnames(e), 1, [])
+        if ~any(strcmp(f{1}, {'numeric', 'source_numeric', 'tolerance', 'origin', 'spacing', ...
+                'source_origin', 'source_spacing'})) && ~isempty(e.(f{1}))
+            o.(f{1}) = e.(f{1});
+        end
+    end
+    if isfield(e, 'origin') && ~isempty(e.origin)
+        o.origin = struct('value', e.origin, 'source_value', e.origin);
+        o.spacing = struct('value', e.spacing, 'source_value', e.spacing);
+    end
+    if isfield(e, 'numeric') && ~isempty(e.numeric)
+        o.quantity = struct('value', e.numeric, 'source_value', e.numeric);
+    end
+    covs{k} = o;
+end
+b.data.covariates = covs;
 end
 
 function d = statementDoc(id, kind, conds)
