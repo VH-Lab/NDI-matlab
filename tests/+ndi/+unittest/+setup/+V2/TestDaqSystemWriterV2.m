@@ -77,6 +77,7 @@ classdef TestDaqSystemWriterV2 < matlab.unittest.TestCase
             testCase.verifyEqual(ad.dependency_value('reader_id'), rdr.id());
             testCase.verifyEqual(ad.dependency_value('epoch_file_pattern_id'), nav.id());
             testCase.verifyEqual(ndi.vintage.edge_n(ad, 'daqmetadatareader_id', 'ErrorIfNotFound', 0), {md.id()});
+            testCase.verifyRigDevice(stored, ad, 'intan1', dev.id());
 
             % and it loads again, by name and among all systems
             S2 = ndi.session.dir(S.getpath());
@@ -109,6 +110,41 @@ classdef TestDaqSystemWriterV2 < matlab.unittest.TestCase
     end
 
     methods
+        function verifyRigDevice(testCase, stored, ad, rigName, systemId)
+            % did-schema docs/plans/did_v2_standing_wiring_plan.md [device id
+            % required and named by the rig]: the configuration names the
+            % rig's device by `device_id`, an entity of type device whose
+            % `name` is the rig's name and which writes nothing else
+            % ([local identifier required only where looked up]), one per
+            % rig per session, with the id DID-matlab's migration gives it
+            devId = ad.dependency_value('device_id', 'ErrorIfNotFound', 0);
+            testCase.assertNotEmpty(devId, 'the acquisition configuration names no device_id');
+            hit = stored(cellfun(@(s) strcmp(s.base.id, devId), stored));
+            testCase.assertNumElements(hit, 1, 'the device_id names no stored document');
+            d = hit{1};
+            testCase.verifyEqual(d.document_class.class_name, 'entity');
+            testCase.verifyEqual(ndi.v2.vocabHandle('entity_type', d.entity.type), 'device');
+            testCase.verifyEqual(char(d.entity.name), rigName);
+            testCase.verifyFalse(isfield(d.entity, 'local_identifier') && ...
+                ~isempty(d.entity.local_identifier), 'the rig device writes name only');
+            testCase.verifyEqual(ndi.v2.edgeIds(d, 'session_id'), ...
+                ndi.v2.edgeIds(ad.document_properties, 'session_id'), 'in the system''s session');
+            % one device per rig: no other device entity is named rigName
+            isDev = cellfun(@(s) strcmp(s.document_class.class_name, 'entity') && ...
+                strcmp(ndi.v2.vocabHandle('entity_type', s.entity.type), 'device') && ...
+                isfield(s.entity, 'name') && strcmp(char(s.entity.name), rigName), stored);
+            testCase.verifyEqual(nnz(isDev), 1, 'one device per rig per session');
+            % the migration's id: did2.convert.mintId('rig device') in the
+            % context DID-matlab's v1_to_v2 opens for the v1 daqsystem, keyed
+            % on its base.id (the system's id)
+            depth = did2.convert.mintId('-depth');
+            did2.convert.mintId('-push', systemId);
+            migrated = did2.convert.mintId('rig device');
+            did2.convert.mintId('-popto', depth);
+            testCase.verifyEqual(devId, migrated, ...
+                'the device id is the one DID-matlab''s migration mints for this rig');
+        end
+
         function doc = onlyDoc(testCase, stored, id, className)
             hit = cellfun(@(s) strcmp(s.base.id, id), stored);
             testCase.assertEqual(nnz(hit), 1, sprintf( ...

@@ -75,11 +75,20 @@ classdef TestStimulusLogOwner < matlab.unittest.TestCase
             T = @(node) ndi.setup.V2.registeredTerm(node);
             S = {'SessionId', sid, 'Validate', false};
 
+            % the rig's device, as DID-matlab's migration mints it for a v1
+            % daqsystem and NDI's v2 writers write it (did-schema
+            % [device id required and named by the rig]: device_id required)
+            stimSysId = char(ndi.ido.unique_id());
+            stimRig = ndi.setup.V2.rigDevice('vhvis_spike2', stimSysId, sid);
+            intanSysId = char(ndi.ido.unique_id());
+            intanRig = ndi.setup.V2.rigDevice('vhintan', intanSysId, sid);
             stimSys = did2.build.document(ndi.vintage.acquisitionConfigurationClass(), struct('name', 'vhvis_spike2'), ...
-                'Edges', struct('reader_id', readerId, 'epoch_file_pattern_id', 'pattern_stim'), S{:});
+                'Edges', struct('reader_id', readerId, 'epoch_file_pattern_id', 'pattern_stim', ...
+                'device_id', stimRig{1}.base.id), 'Id', stimSysId, S{:});
             intanSys = did2.build.document(ndi.vintage.acquisitionConfigurationClass(), struct('name', 'vhintan'), ...
                 'Edges', struct('reader_id', P.IntanReaderId, ...
-                'epoch_file_pattern_id', 'pattern_intan'), S{:});
+                'epoch_file_pattern_id', 'pattern_intan', 'device_id', intanRig{1}.base.id), ...
+                'Id', intanSysId, S{:});
             epochType = did2.convert.registeredTerm( ...
                 did2.build.vocabulary('entity_type', 'epoch'), 'recording epoch');
 
@@ -92,7 +101,7 @@ classdef TestStimulusLogOwner < matlab.unittest.TestCase
             fwrite(fid, zeros(1, 8), 'double');
             fclose(fid);
 
-            docs = {stimSys, intanSys};
+            docs = {stimSys, intanSys, stimRig{1}, intanRig{1}};
             for e = {'epoch_s1', 'epoch_s10'}
                 lid = e{1};
                 epoch = did2.build.document('entity', ...
