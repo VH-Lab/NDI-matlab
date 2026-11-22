@@ -334,6 +334,11 @@ jobs:
                 ... % name them, not the database's (corpusObjectEquivalence
                 ... % on Dab, run 43197684863)
                 'ndi.unittest.vintage.TestEpochClockOrder', ...
+                ... % [stimulus log owned by its presentation] (Jess Haley,
+                ... % 2026-11-19): a stimulus system's events read from its
+                ... % presentation or fallback observation as from the v1
+                ... % archive, with the stimulus system's own clock
+                'ndi.unittest.vintage.TestStimulusLogOwner', ...
                 ... % [stimulator manipulation dropped] (Jess Haley,
                 ... % 2026-11-09): a stimulator's probe-map row from its
                 ... % wiring and element, without the manipulation
