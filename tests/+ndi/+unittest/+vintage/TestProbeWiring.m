@@ -59,9 +59,15 @@ classdef TestProbeWiring < matlab.unittest.TestCase
             T = @(node) ndi.setup.V2.registeredTerm(node);
             S = {'SessionId', sid, 'Validate', false};
 
+            % the rig's device, as DID-matlab's migration mints it for a v1
+            % daqsystem and NDI's v2 writers write it (did-schema
+            % [device id required and named by the rig]: device_id required)
+            sysId = char(ndi.ido.unique_id());
+            rig = ndi.setup.V2.rigDevice('intan1', sysId, sid);
             sys = did2.build.document(ndi.vintage.acquisitionConfigurationClass(), struct('name', 'intan1'), ...
                 'Edges', struct('reader_id', 'reader_test', ...
-                'epoch_file_pattern_id', 'pattern_test'), S{:});
+                'epoch_file_pattern_id', 'pattern_test', 'device_id', rig{1}.base.id), ...
+                'Id', sysId, S{:});
             anchor = did2.build.relativeTimeReference('epoch_test', ...
                 'Relation', 'intervalDuring', S{:});
             probeId = 'probe_test';
@@ -86,7 +92,7 @@ classdef TestProbeWiring < matlab.unittest.TestCase
             sessionDir = fullfile(testCase.Dir, 'session');
             mkdir(sessionDir);
             testCase.Session = ndi.setup.V2.createSession(sessionDir, 'probe wiring', ...
-                'SessionId', sid, 'Documents', {sys, anchor, obs, wire}, 'Validate', false);
+                'SessionId', sid, 'Documents', {sys, rig{1}, anchor, obs, wire}, 'Validate', false);
             testCase.Ids = struct('system', sys.base.id, 'observation', obs.base.id, ...
                 'probe', probeId, 'session', sid);
             testCase.Shape = NumericShape;
