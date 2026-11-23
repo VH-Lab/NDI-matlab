@@ -4,7 +4,7 @@ function [b, msg] = zipForUpload(D, doc_file_struct, total_size, dataset_id, opt
 %   [B, MSG] = ndi.cloud.upload.zipForUpload(D, DOC_FILE_STRUCT, TOTAL_SIZE, DATASET_ID, 'Verbose', true, 'DebugLog', true)
 %
 % Inputs:
-%  D - The ndi.database object.
+%  D - The ndi.dataset the files belong to (not used; kept for callers).
 %  DOC_FILE_STRUCT - A structure array with file information.
 %  TOTAL_SIZE - The total size of all files to be uploaded (in bytes). (Note: This is no longer used for the progress bar).
 %  DATASET_ID - The dataset ID for the upload.
@@ -16,6 +16,11 @@ function [b, msg] = zipForUpload(D, doc_file_struct, total_size, dataset_id, opt
 %                Defaults to the preference
 %                Cloud.Upload.Max_File_Batch_Size (250 MB unless changed;
 %                see ndi.preferences).
+%  'CountLimit' - The maximum number of files in each zip file batch.
+%                Defaults to the preference
+%                Cloud.Upload.Max_File_Batch_Count (2000 unless changed).
+%                NDI Cloud unpacks and records a batch in one time-limited
+%                step; a zip of ~10,000 small files outran it.
 %  'DebugLog'  - A logical (true/false) to enable logging of zipped files.
 %                Defaults to false.
 %
@@ -30,6 +35,7 @@ arguments
     dataset_id (1,:) char {mustBeTextScalar}
     options.Verbose (1,1) logical = true
     options.SizeLimit (1,1) {mustBeNumeric, mustBePositive} = ndi.preferences.get('Cloud.Upload.Max_File_Batch_Size')
+    options.CountLimit (1,1) {mustBeNumeric, mustBePositive} = ndi.preferences.get('Cloud.Upload.Max_File_Batch_Count')
     options.DebugLog (1,1) logical = true
     options.numberRetries (1,1) {mustBeNumeric, mustBeInteger, mustBeNonnegative} = 3
 end
@@ -40,7 +46,6 @@ files_to_process = doc_file_struct(~[doc_file_struct.is_uploaded]);
 files_left = numel(files_to_process);
 files_uploaded_count = 0;
 processed_bytes = 0;
-base_dir = fullfile(D.path, '.ndi', 'files'); %#ok<NASGU>
 
 if options.Verbose
     fprintf('Beginning upload process. %d files to upload.\n', files_left);
@@ -116,7 +121,7 @@ while cursor <= n_files
     batch_end = cursor;      % inclusive; grown below
     current_batch_size = file_bytes_all(cursor);
     cursor = cursor + 1;
-    while cursor <= n_files
+    while cursor <= n_files && (batch_end - batch_start + 1) < options.CountLimit
         fb = file_bytes_all(cursor);
         if current_batch_size + fb > size_limit
             break;
