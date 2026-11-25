@@ -1,8 +1,8 @@
 classdef TestSessionFolderWiring < matlab.unittest.TestCase
 %TESTSESSIONFOLDERWIRING A migrated session's wiring and epoch ids come from its database, not its folder.
 %
-%   did-schema docs/plans/did_v2_standing_wiring_plan.md, decided by Jess
-%   Haley on 2026-11-19:
+%   Jess Haley's decisions of 2026-11-19, did-schema
+%   docs/plans/did_v2_standing_wiring_plan.md:
 %     [session folder wiring migrated]  migration writes the `connected to`
 %         relations of a non-ingested epoch from the session folder's
 %         `.epochprobemap.ndi` files when the folder is present; the build
