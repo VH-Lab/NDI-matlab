@@ -11,6 +11,9 @@ classdef navigator < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice & 
         % Note: This value will be a containers.Map. This support changes
         % being saved to object even though object is a value-type object
         cached_epochfilenames
+        % containers.Map: a session folder's epoch files (joined) -> what the
+        % migrated database holds for that epoch (see DATABASEEPOCHS)
+        cached_database_epochs
     end
 
     methods
@@ -114,6 +117,10 @@ classdef navigator < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice & 
                 obj.cached_epochfilenames = containers.Map(...
                     'KeyType', 'double', 'ValueType', 'any');
             end
+            if isempty(obj.cached_database_epochs)
+                obj.cached_database_epochs = containers.Map(...
+                    'KeyType', 'char', 'ValueType', 'any');
+            end
         end % filenavigator()
 
         %% functions that used to override HANDLE
@@ -182,6 +189,10 @@ classdef navigator < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice & 
             %                           |   match those of NDI_FILENAVIGATOR_OBJ
 
             [all_epochs,epochprobemaps] = ndi_filenavigator_obj.selectfilegroups();
+            % a migrated session folder's epochs, read from the database in
+            % one pass (DATABASEEPOCHS); EPOCHID and GETEPOCHPROBEMAP below
+            % answer from it
+            ndi_filenavigator_obj.databaseEpochs(all_epochs);
 
             ue = emptystruct('underlying','epoch_id','epoch_session_id','epochprobemap','epoch_clock');
             et = emptystruct('epoch_number','epoch_id','epoch_session_id','epochprobemap',...
@@ -238,9 +249,78 @@ classdef navigator < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice & 
                 e = ndi.vintage.ingestedEpochs(ndi_file_navigator_obj.session, {d}, probemapClass);
                 epochprobemap = e(1).probemap;
             else
+                % a migrated session folder's epoch: the probe map is read
+                % from the database only (DATABASEEPOCHS)
+                D = ndi_file_navigator_obj.databaseEpochs({epochfiles});
+                if D.found
+                    epochprobemap = D.probemap;
+                    return;
+                end
                 epochprobemap = getepochprobemap@ndi.epoch.epochset.param(ndi_file_navigator_obj, N);
             end
         end % getepochprobemap
+
+        function D = databaseEpochs(ndi_filenavigator_obj, epochfiles)
+            % DATABASEEPOCHS - what a migrated session's database holds for epochs found in its folder
+            %
+            % D = DATABASEEPOCHS(NDI_FILENAVIGATOR_OBJ, EPOCHFILES)
+            %
+            % EPOCHFILES is a cell array of the file lists of epochs this
+            % navigator found in the session folder. D is a struct array, one
+            % per list, with fields FOUND, EPOCH_ID, PROBEMAP and EPOCH_DOC_ID
+            % (ndi.vintage.folderEpochs). An ingested epoch is never found here
+            % (it is read from its ingestion document). The answers are kept
+            % for the life of this object, so each epoch is looked up once.
+            %
+            % Jess Haley, 2026-11-19, did-schema
+            % docs/plans/did_v2_standing_wiring_plan.md: [wiring read from
+            % the database only] after migration NDI reads a session's wiring
+            % only from its `connected to` relations, not from the
+            % `*.epochprobemap.ndi` files (an edit to a file after migration is
+            % not seen); [no new hidden epoch-id files] an epoch's id is read
+            % from its `recording epoch` entity's `local_identifier` and no new
+            % `.epochid.ndi` file is written. So for an epoch the database
+            % holds (FOUND), EPOCHID and GETEPOCHPROBEMAP answer from it. An
+            % epoch the migration never saw (not FOUND; on a v1 database,
+            % every epoch) is read from the folder as before: its id and
+            % entity are written by the v2 epoch writer ([ingest writes v2
+            % directly]), which is not built yet.
+            %
+            % See also ndi.vintage.folderEpochs.
+            n = numel(epochfiles);
+            D = struct('found', num2cell(false(1, n)), 'epoch_id', {''}, 'probemap', {[]}, ...
+                'epoch_doc_id', {''});
+            if n == 0 || ~isa(ndi_filenavigator_obj.session, 'ndi.session') || ...
+                    ~ndi.daq.reader.isv2database(ndi_filenavigator_obj.session)
+                return;
+            end
+            cache = ndi_filenavigator_obj.cached_database_epochs;
+            if ~isa(cache, 'containers.Map')
+                cache = containers.Map('KeyType', 'char', 'ValueType', 'any');
+            end
+            keys = cell(1, n);
+            ask = false(1, n);
+            for i = 1:n
+                files = cellstr(epochfiles{i});
+                keys{i} = strjoin(files(:)', char(10));
+                ask(i) = ~ndi.file.navigator.isingested(files) && ~isKey(cache, keys{i});
+            end
+            if any(ask)
+                probemapClass = ndi_filenavigator_obj.epochprobemap_class;
+                ndi.validators.mustBeClassnameOfType(probemapClass, 'ndi.epoch.epochprobemap');
+                got = ndi.vintage.folderEpochs(ndi_filenavigator_obj.session, ...
+                    ndi_filenavigator_obj.id(), epochfiles(ask), probemapClass);
+                idx = find(ask);
+                for k = 1:numel(idx)
+                    cache(keys{idx(k)}) = got(k);
+                end
+            end
+            for i = 1:n
+                if isKey(cache, keys{i})
+                    D(i) = cache(keys{i});
+                end
+            end
+        end % databaseEpochs
 
         function d = getepochingesteddoc(ndi_filenavigator_obj, epochfiles)
             % GETEPOCHINGESTEDDOC - get an ingested epoch document if it exists
@@ -303,6 +383,14 @@ classdef navigator < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice & 
             if ndi.file.navigator.isingested(epochfiles)
                 id = ndi.file.navigator.ingestedfiles_epochid(epochfiles);
             else
+                % a migrated session folder's epoch: its id is its recording
+                % epoch entity's local_identifier, and no hidden file is
+                % written ([no new hidden epoch-id files]; DATABASEEPOCHS)
+                D = ndi_filenavigator_obj.databaseEpochs({epochfiles});
+                if D.found
+                    id = D.epoch_id;
+                    return;
+                end
                 eidfname = epochidfilename(ndi_filenavigator_obj, epoch_number, epochfiles);
                 if isfile(eidfname)
                     id = text2cellstr(eidfname);
@@ -555,6 +643,9 @@ classdef navigator < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice & 
             % Step 3: reconcile epochs on disk and those that are ingested
 
             epoch_id_disk = {};
+            % a migrated session folder's epochs, read from the database in
+            % one pass, so EPOCHID answers each from it (DATABASEEPOCHS)
+            ndi_filenavigator_obj.databaseEpochs(epochfiles_disk);
             for i=1:numel(epochfiles_disk)
                 epoch_id_disk{i} = ndi_filenavigator_obj.epochid(i,epochfiles_disk{i});
             end

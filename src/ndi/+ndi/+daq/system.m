@@ -430,10 +430,22 @@ classdef system < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice
             % If it does have a method by that name, it is called and the output returned. If it does not, then the FILENAVIGATOR
             % parameter's method is called.
             %
+            % A migrated session folder's epoch is read from the database
+            % only, whatever the reader (Jess Haley, 2026-11-19,
+            % did-schema did_v2_standing_wiring_plan.md [wiring read from the
+            % database only]): the navigator holds it (ndi.file.navigator/
+            % databaseEpochs), and its epoch table already carries it.
             m = methods(ndi_daqsystem_obj.daqreader);
             if ~isempty(intersect(m,'getepochprobemap'))
-                ecfname = ndi_daqsystem_obj.epochprobemapfilename(epoch);
                 epochfiles = ndi_daqsystem_obj.filenavigator.getepochfiles(epoch);
+                if ~ndi.file.navigator.isingested(epochfiles)
+                    D = ndi_daqsystem_obj.filenavigator.databaseEpochs({epochfiles});
+                    if D.found
+                        epochprobemap = D.probemap;
+                        return;
+                    end
+                end
+                ecfname = ndi_daqsystem_obj.epochprobemapfilename(epoch);
                 % it is remarkable that this is allowed in Matlab but it is beautiful
                 epochprobemap = ndi_daqsystem_obj.daqreader.getepochprobemap(ecfname,epochfiles);
             else
