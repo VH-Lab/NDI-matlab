@@ -31,7 +31,7 @@ name: V_eta read speed Soph (on-demand)
 # e2e check.
 
 on:
-  # Runs ONLY when its own files change. workflow_dispatch below only becomes
+  # Runs ONLY when its own files change (the two read-speed helpers included). workflow_dispatch below only becomes
   # available once this file reaches the default branch (a GitHub
   # constraint), so the scoped push is what runs it from a feature branch.
   push:
@@ -39,6 +39,8 @@ on:
       - '.github/workflows/test-eta-read-speed-soph.yml'
       - 'tests/*ndi/*unittest/*migrate/TestMigrateLocalEtaSophReadSpeed.m'
       - 'tests/*ndi/*unittest/*migrate/TestMigrateLocalEtaSophReadSpeedTotal.m'
+      - 'tests/*ndi/*unittest/*migrate/readPhaseTimings.m'
+      - 'tests/*ndi/*unittest/*migrate/verifyReadPhases.m'
   workflow_dispatch:
     inputs:
       ref:
