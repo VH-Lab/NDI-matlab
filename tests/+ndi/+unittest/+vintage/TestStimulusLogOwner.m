@@ -7,7 +7,10 @@ classdef TestStimulusLogOwner < matlab.unittest.TestCase
 %   `evmktx_group1_seg.nbf_1` and `channel_list.bin` (read by
 %   ndi.setup.daq.reader.mfdaq.stimulus.vhlabvisspike2), become a data body
 %   of that epoch's stimulus-presentation manipulation; where the epoch has
-%   no presentation, an observation of the stimulus rig's device owns them.
+%   no presentation, a manipulation of the epoch's subject owns them, the
+%   stimulator its instrument and NCIT:C41210 "Stimulus" its variable
+%   (amended 2026-11-25 [stimulus log fallback is a manipulation]; before,
+%   an observation of the stimulus rig's device).
 %   The archive document then goes. NDI reads them first ("siblings first").
 %
 %   THE FIXTURE is one v2 session (ndi.setup.V2.createSession), two epochs
@@ -19,9 +22,10 @@ classdef TestStimulusLogOwner < matlab.unittest.TestCase
 %     epoch_s1   the log's two files are opaque bodies of a presentation
 %                manipulation (no acquisition system named), their notes
 %                opening with ndi.vintage.ingestedStimulusLogKey
-%     epoch_s10  the log is owned by the fallback observation: it names the
-%                stimulus system and its clock reference ([non-specimen
-%                channel groups get their own owner])
+%     epoch_s10  the log is owned by the fallback manipulation of the
+%                epoch's subject, as DID-matlab writes it ([stimulus log
+%                fallback is a manipulation]): it names the stimulus system
+%                and its clock reference
 %   The epoch ids are chosen so one is a prefix of the other.
 %
 %   WHAT "THE SAME EVENTS AS THE V1 ARCHIVE" MEANS HERE. With the v1
@@ -131,12 +135,14 @@ classdef TestStimulusLogOwner < matlab.unittest.TestCase
                         'TimeReferenceIds', {during.base.id}, S{:}, 'ValueKind', 'velocity');
                     ev = testCase.Files.ev1;
                 else
-                    % the fallback observation of the rig's device
-                    owner = did2.build.statement('observation', 'device_test', ...
-                        T('PATO:0000008'), [], 'DataBody', true, ...
-                        'AcquisitionSystemId', stimSys.base.id, 'InstrumentId', stimSys.base.id, ...
+                    % the fallback manipulation of the epoch's subject, the
+                    % stimulator its instrument ([stimulus log fallback is a
+                    % manipulation], Jess Haley, 2026-11-25)
+                    owner = did2.build.statement('manipulation', 'subject_test', ...
+                        T('NCIT:C41210'), [], 'DataBody', true, ...
+                        'AcquisitionSystemId', stimSys.base.id, 'InstrumentId', 'stimulator_test', ...
                         'TimeReferenceIds', {during.base.id, stimClock.base.id}, S{:}, ...
-                        'ValueKind', 'velocity');
+                        'ValueKind', 'time');
                     ev = testCase.Files.ev10;
                 end
                 docs = [docs, {owner, ...

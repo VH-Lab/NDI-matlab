@@ -140,7 +140,17 @@ function [structs, report, removed] = ingestedArchiveBodies(structs, ndiDir, v1B
 %     the groups' key_id): that archive is left too, `unconvertible` (no
 %     decision covers it). A group whose time channels are not listed in
 %     increasing number (NDI's writer lists them so, and its readers take the
-%     file's columns in that order) is `unconvertible`. The readers rebuild
+%     file's columns in that order) is MALFORMED: Decided by Jess Haley,
+%     2026-11-25 [time channels out of order are malformed] (did-schema
+%     did_v2_standing_wiring_plan.md): "it is kept unchanged as v1, and the
+%     migration report names it as malformed with the order found, rather
+%     than migration guessing which column is which clock". The archive is
+%     left as pass 1 wrote it, `unconvertible`, counted
+%     `time_channels_out_of_order_kept` and listed in REPORT.malformed {kind
+%     'time_channels_out_of_order', archive_id (the v1 archive),
+%     time_body_id, order (the time channel numbers in the list's order),
+%     reason (which says "malformed" and gives the order)}; the first reason
+%     is `first_malformed_reason`. The readers rebuild
 %     the v1 group file's segment from the split values (ndi.vintage.
 %     ingestedSplitTime), and DID-matlab's round trip rebuilds the v1 group
 %     file from them (did2.convert.roundtrip.ingestedArchiveFiles).
@@ -225,8 +235,9 @@ function [structs, report, removed] = ingestedArchiveBodies(structs, ndiDir, v1B
 %     ndi.setup.daq.reader.mfdaq.stimulus.vhlabvisspike2) is left as pass 1
 %     wrote it, counted `archives_no_channel_group`; of them,
 %     `stimulus_logs_left` are stimulus logs moved to the epoch's
-%     presentation or fallback observation ([stimulus log owned by its
-%     presentation], Jess Haley, 2026-11-19), which NDI's readers read where
+%     presentation or fallback manipulation of the subject ([stimulus log
+%     owned by its presentation], Jess Haley, 2026-11-19; [stimulus log
+%     fallback is a manipulation], 2026-11-25), which NDI's readers read where
 %     they are (ndi.vintage.ingestedStimulusLogBodies).
 %
 %     MEMBER NAMES. Decided by Jess Haley, 2026-11-17 [migrated body members
@@ -327,6 +338,8 @@ report = struct( ...
     'uneven_time_channels_split', 0, ...
     'uneven_time_split_ambiguous_kept', 0, ...
     'first_uneven_time_kept_reason', '', ...
+    'time_channels_out_of_order_kept', 0, ...
+    'first_malformed_reason',     '', ...
     'unconvertible',              0, ...
     'first_unconvertible_reason', '', ...
     'scale_with_unit',            0, ...
@@ -362,6 +375,7 @@ report = struct( ...
     'text_channels_unpacked',     0, ...
     'event_bodies_removed',       0, ...
     'uneven_time_kept',           {{}}, ...
+    'malformed',                  {{}}, ...
     'scale_gaps',                 {{}}, ...
     'changed_groups',             {{}}, ...
     'written_files',              {{}}, ...
@@ -402,7 +416,7 @@ for a = 1:numel(groupKeys)
         % A stimulus system's archive (channel_list.bin and an evmktx file,
         % [stimulus log owned by its presentation], Jess Haley, 2026-11-19)
         % stays the opaque bodies pass 1 wrote, owned by the epoch's
-        % presentation or the fallback observation; NDI's readers read it
+        % presentation or the fallback manipulation; NDI's readers read it
         % there (ndi.vintage.ingestedStimulusLogBodies). Counted.
         report.archives_no_channel_group = report.archives_no_channel_group + 1;
         if any(cellfun(@(k) isStimulusLog(structs{k}), num2cell(idx)))
@@ -471,6 +485,19 @@ for a = 1:numel(groupKeys)
             report.uneven_time_kept{end+1} = struct('kind', info.timeKept, ...
                 'archive_id', baseId(arch), 'group_body_id', info.timeKeptBody, ...
                 'time_body_id', info.timeKeptTimeBody, 'reason', why);
+        end
+        % [time channels out of order are malformed] (Jess Haley, 2026-11-25):
+        % "kept unchanged as v1, and the migration report names it as
+        % malformed with the order found"
+        if isstruct(info) && isfield(info, 'malformed') && ~isempty(info.malformed)
+            report.time_channels_out_of_order_kept = ...
+                report.time_channels_out_of_order_kept + 1;
+            if isempty(report.first_malformed_reason)
+                report.first_malformed_reason = why;
+            end
+            report.malformed{end+1} = struct('kind', info.malformed.kind, ...
+                'archive_id', baseId(arch), 'time_body_id', info.malformed.time_body_id, ...
+                'order', info.malformed.order, 'reason', why);
         end
         continue;
     end
@@ -615,7 +642,7 @@ info = struct('eventBodyIds', {{}}, 'channelListWhy', '', 'timeChannelCovariates
     'members', [0 0 0 0], 'names', [0 0 0 0], 'events', struct('present', false, 'unpacked', false, ...
     'channels', 0, 'textChannels', 0, 'kind', '', 'why', ''), 'timeValues', 0, 'rebased', false, ...
     'timeRows', [0 0], 'timeRowKept', false, 'timeKept', '', 'timeKeptBody', '', ...
-    'timeKeptTimeBody', '', 'split', [0 0]);
+    'timeKeptTimeBody', '', 'split', [0 0], 'malformed', []);
 % [migrated body members renamed]: the members of the channel and time
 % groups, by the schema's names, before anything reads them
 for j = 1:numel(idx)
@@ -701,10 +728,16 @@ for j = timeJ(:)'
     % (create_properties), so the split values are read back by number
     nums = double([ci(rows).number]);
     if any(diff(nums) <= 0)
-        why = sprintf(['the time channels of %s (%s) are not listed in increasing number, ' ...
-            'the order NDI''s writer lists them and its readers take the file''s columns in'], ...
-            bodyFilename(b), strjoin(arrayfun(@(x) sprintf('t%d', x), nums, ...
-            'UniformOutput', false), ', '));
+        % [time channels out of order are malformed] (Jess Haley, 2026-11-25,
+        % did-schema did_v2_standing_wiring_plan.md): kept unchanged as v1,
+        % and the report names the archive as malformed with the order found
+        order = strjoin(arrayfun(@(x) sprintf('t%d', x), nums, 'UniformOutput', false), ', ');
+        why = sprintf(['malformed: the time channels of %s are listed in the order %s, ' ...
+            'not in increasing number, the order NDI''s writer lists them and its readers ' ...
+            'take the file''s columns in; kept as v1 ([time channels out of order are ' ...
+            'malformed])'], bodyFilename(b), order);
+        info.malformed = struct('kind', 'time_channels_out_of_order', ...
+            'time_body_id', baseId(b), 'order', nums, 'order_text', order);
         return;
     end
     for r = 1:numel(rows)

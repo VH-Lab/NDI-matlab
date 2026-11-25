@@ -969,6 +969,54 @@ classdef TestIngestedArchiveBodies < matlab.unittest.TestCase
             testCase.verifyEqual(numel(dir(fullfile(testCase.Dir, 'files'))) - 2, nFiles);
         end
 
+        function testTimeChannelsOutOfOrderAreMalformed(testCase)
+            % Decided by Jess Haley, 2026-11-25 [time channels out of order
+            % are malformed] (did-schema did_v2_standing_wiring_plan.md): "an
+            % ingested archive whose channel list does not give its time
+            % channels in increasing number (NDI's v1 writer always does, and
+            % its readers take the time file's columns in that order) is
+            % malformed: it is kept unchanged as v1, and the migration report
+            % names it as malformed with the order found"
+            [structs, v1] = testCase.splitTimeGroup(struct('timeOrder', [2 1]));
+            nFiles = numel(dir(fullfile(testCase.Dir, 'files'))) - 2;
+            [out, rep, removed] = ndi.migrate.internal.ingestedArchiveBodies( ...
+                structs, testCase.Dir, v1);
+            testCase.verifyEqual(rep.archives_seen, 1, 'the denominator');
+            testCase.verifyEqual(rep.archives_converted, 0);
+            testCase.verifyEqual(rep.unconvertible, 1);
+            testCase.verifyEqual(rep.time_channels_out_of_order_kept, 1, ...
+                rep.first_unconvertible_reason);
+            testCase.verifyEqual(rep.uneven_time_groups_split, 0);
+            testCase.verifyEmpty(rep.uneven_time_kept, 'counted as a pairing problem');
+            testCase.verifyEmpty(removed);
+            testCase.verifyEqual(out, structs, 'kept as pass 1 wrote it');
+            testCase.verifyEqual(numel(dir(fullfile(testCase.Dir, 'files'))) - 2, nFiles, ...
+                'no file written');
+            testCase.assertNumElements(rep.malformed, 1);
+            m = rep.malformed{1};
+            testCase.verifyEqual(m.kind, 'time_channels_out_of_order');
+            testCase.verifyEqual(m.archive_id, 'arch_1', 'the archive is named');
+            testCase.verifyEqual(m.time_body_id, 'body_ti');
+            testCase.verifyEqual(m.order, [2 1], 'the order found');
+            testCase.verifySubstring(m.reason, 'malformed');
+            testCase.verifySubstring(m.reason, 't2, t1');
+            testCase.verifySubstring(m.reason, 'kept as v1');
+            testCase.verifyEqual(rep.first_malformed_reason, m.reason);
+            testCase.verifyEqual(rep.first_unconvertible_reason, m.reason);
+        end
+
+        function testTimeChannelsInOrderAreNotMalformed(testCase)
+            % the control: the same archive with the list as NDI's writer
+            % gives it is split, and nothing is named malformed
+            [structs, v1] = testCase.splitTimeGroup(struct('timeOrder', [1 2]));
+            [~, rep] = ndi.migrate.internal.ingestedArchiveBodies(structs, testCase.Dir, v1);
+            testCase.verifyEqual(rep.archives_seen, 1, 'the denominator');
+            testCase.verifyEqual(rep.archives_converted, 1, rep.first_unconvertible_reason);
+            testCase.verifyEqual(rep.time_channels_out_of_order_kept, 0);
+            testCase.verifyEmpty(rep.malformed);
+            testCase.verifyEmpty(rep.first_malformed_reason);
+        end
+
         function testAnEvenlySpacedTimeGroupOfSeveralChannelsIsNotSplit(testCase)
             % the control: both time channels of the group evenly spaced, so
             % the group adds nothing the groups' time covariates do not say
@@ -1113,8 +1161,11 @@ classdef TestIngestedArchiveBodies < matlab.unittest.TestCase
             % timed by t1, 2 auxiliary inputs at 10 kHz timed by t2. O.t0: the
             % epoch's start (0); O.axTimeChannel: the auxiliary rows' v1
             % time_channel ([2 2]); O.axN: the auxiliary samples (160);
-            % O.even: both time channels evenly spaced (false)
+            % O.even: both time channels evenly spaced (false);
+            % O.timeOrder: the order the channel list gives t1 and t2 in
+            % ([1 2], as NDI's writer sorts them; [2 1] is no list NDI writes)
             if ~isfield(o, 't0'); o.t0 = 0; end
+            if ~isfield(o, 'timeOrder'); o.timeOrder = [1 2]; end
             if ~isfield(o, 'axTimeChannel'); o.axTimeChannel = [2 2]; end
             if ~isfield(o, 'axN'); o.axN = 160; end
             if ~isfield(o, 'even'); o.even = false; end
@@ -1128,8 +1179,20 @@ classdef TestIngestedArchiveBodies < matlab.unittest.TestCase
                 'offset', {-2, -2, -2, 0, 0, 0, 0}, ...
                 'scale', {0.195, 0.195, 0.195, 3.74e-05, 3.74e-05, 1, 1});
             ec = ndi.file.type.mfdaq_epoch_channel(ch);
-            [ok, msg] = ec.writeToFile(fullfile(files, 'u_cl'));
-            testCase.assertTrue(logical(ok), msg);
+            if isequal(o.timeOrder, [1 2])
+                [ok, msg] = ec.writeToFile(fullfile(files, 'u_cl'));
+                testCase.assertTrue(logical(ok), msg);
+            else
+                % the writer sorts by number (create_properties), so a list
+                % out of order is written row by row, as a malformed source
+                ci = ec.channel_information;
+                tr = find(strcmp({ci.type}, 'time'));
+                ci(tr) = ci(tr(o.timeOrder));
+                vlt.file.saveStructArray(fullfile(files, 'u_cl'), ci);
+                got = ndi.file.type.mfdaq_epoch_channel(fullfile(files, 'u_cl')).channel_information;
+                testCase.assertEqual([got(strcmp({got.type}, 'time')).number], o.timeOrder, ...
+                    'premise: the list gives the time channels in the order asked');
+            end
             ai = int16(round(1000 * sin((1:160)' * [0.05 0.11 0.23])));
             ax = int16(round(800 * cos((1:o.axN)' * [0.07 0.13])));
             segs = {ai(1:100, :), ai(101:160, :), ax(1:100, :), ax(101:end, :)};
