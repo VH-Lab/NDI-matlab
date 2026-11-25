@@ -104,6 +104,15 @@ classdef bodies < ndi.file.navigator
             error('NDI:navigator:bodies:unknownEpoch', 'No recording for epoch %d.', N);
         end
 
+        function D = databaseEpochs(obj, epochfiles)
+            % This navigator reads every epoch from its documents already
+            % (RECORDINGS), so the session-folder lookup of
+            % ndi.file.navigator/databaseEpochs finds nothing for it.
+            n = numel(epochfiles);
+            D = struct('found', num2cell(false(1, n)), 'epoch_id', {''}, ...
+                'probemap', {[]}, 'epoch_doc_id', {''});
+        end
+
         function R = recordings(obj)
             % The system's recordings, read from the database once per object.
             if isKey(obj.found, 'recordings')
