@@ -219,6 +219,31 @@ classdef TestStimulusLogOwner < matlab.unittest.TestCase
             testCase.verifyEqual(got, testCase.bytesOfFile(testCase.Files.ev10));
         end
 
+        function testTheFallbackOwnerIsAManipulationOfTheSubject(testCase)
+            % [stimulus log fallback is a manipulation] (Jess Haley,
+            % 2026-11-25): epoch_s10's log is owned by a manipulation of the
+            % subject, the stimulator its instrument and NCIT:C41210 its
+            % variable, and is found by its key all the same
+            M = ndi.vintage.ingestedStimulusLogBodies(testCase.Session, ...
+                testCase.readerId(), {'epoch_s10'});
+            testCase.assertTrue(isKey(M, 'epoch_s10'), 'the log was not found');
+            bodies = M('epoch_s10');
+            testCase.verifyNumElements(bodies, 2, 'the event file and the channel list');
+            owners = {};
+            for k = 1:numel(bodies)
+                owners = [owners, ndi.v2.edgeIds(ndi.v2.props(bodies{k}), 'owner_id')]; %#ok<AGROW>
+            end
+            owners = unique(owners);
+            testCase.assertNumElements(owners, 1, 'one owner for the log');
+            hit = testCase.Session.database_search(ndi.query('base.id', 'exact_string', owners{1}, ''));
+            testCase.assertNumElements(hit, 1);
+            p = ndi.v2.props(hit{1});
+            testCase.verifyEqual(char(p.document_class.class_name), 'manipulation');
+            testCase.verifyEqual(char(p.statement.variable.node), 'NCIT:C41210');
+            testCase.verifyEqual(ndi.v2.edgeIds(p, 'entity_id'), {'subject_test'});
+            testCase.verifyEqual(ndi.v2.edgeIds(p, 'instrument_id'), {'stimulator_test'});
+        end
+
         function testAnotherReaderReadsNoLog(testCase)
             testCase.verifyError(@() ndi.vintage.ingestedArchive(testCase.Session, ...
                 'reader_nobody', 'epoch_s1'), 'NDI:daq:reader:ingestedNoRecording');
