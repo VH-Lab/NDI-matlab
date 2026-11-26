@@ -302,6 +302,7 @@ classdef TestIngestedArchiveBodies < matlab.unittest.TestCase
             testCase.verifyEqual(rep.archives_converted, 1, rep.first_unconvertible_reason);
             testCase.verifyEqual(rep.event_archives_kept, 1);
             testCase.verifyEqual(rep.event_kept_unwired, 1, rep.first_event_kept_reason);
+            testCase.verifyEqual(rep.event_channels_rig_device, 0, 'no rig device to fall back to');
             testCase.verifyEqual(rep.event_bodies_left, 1);
             testCase.verifyFalse(ismember('body_ev', removed));
             testCase.verifyFalse(ismember('body_cl', removed), ...
@@ -1049,6 +1050,143 @@ classdef TestIngestedArchiveBodies < matlab.unittest.TestCase
             testCase.verifyEqual(out, structs, 'nothing changed');
         end
 
+        function testCompressionBlockIsReadFromTheSegmentHeaders(testCase)
+            % [ingested compression settings], amended by [compression
+            % settings without bit size] (Jess Haley, 2026-11-01 and
+            % 2026-11-19): the scheme's term and one Data Type parameter
+            % from each segment's NDI-compress header, no bit size. The
+            % fixture writes the analog segments as int16 (compress_ephys,
+            % 16 bits, signed) and the uneven time segments with
+            % compress_time; the unpacked event bodies are the control:
+            % uncompressed, so no block ([unpacked event bodies are
+            % uncompressed]), as before
+            o = struct('events', true, 'wired', true);
+            [structs, v1] = testCase.archive(true, false, 0, o);
+            [out, rep, removed] = ndi.migrate.internal.ingestedArchiveBodies( ...
+                structs, testCase.Dir, v1);
+            testCase.verifyEqual(rep.archives_converted, 1, rep.first_unconvertible_reason);
+            testCase.verifyEqual(rep.compression_bodies_seen, 2, ...
+                'the denominator: the channel group and the time value''s body');
+            testCase.verifyEqual(rep.compression_written, 2, rep.first_compression_kept_reason);
+            testCase.verifyEqual(rep.compression_kept, 0);
+            b = out{cellfun(@(x) strcmp(x.base.id, 'body_ai'), out)};
+            [term, params] = compressionOf(b);
+            testCase.verifyEqual(term, {'EMPTY:0000452', 'NDI ephys compression'});
+            testCase.verifyEqual(params, {'NCIT:C42645', 'int16'}, 'one parameter, Data Type');
+            tb = out{cellfun(@(x) strcmp(x.base.id, 'body_ti'), out)};
+            [term, params] = compressionOf(tb);
+            testCase.verifyEqual(term, {'EMPTY:0000455', 'NDI time compression'});
+            testCase.verifyEqual(params, {'NCIT:C42645', 'float64'});
+            % the control: the unpacked event channels' bodies have none
+            added = out(numel(structs) + 1:end);
+            E = ndi.vintage.ingestedEventChannels(added, added);
+            testCase.assertEqual(numel(E), 2, rep.first_event_kept_reason);
+            testCase.verifyFalse(isfield(E(1).times.data_body, 'compression') && ...
+                ~isempty(E(1).times.data_body.compression), 'an event body has no block');
+            keep = ~cellfun(@(x) any(strcmp(x.base.id, removed)), out);
+            res = did2.convert.v1_to_v2(out(keep), 'Validate', true, 'TargetVersion', 'did_v2');
+            testCase.verifyEmpty(res.quarantine);
+        end
+
+        function testDigitalCompressionBlockAndBytesNotHere(testCase)
+            % [compression settings without bit size]: a digital group's
+            % segments (compress_digital: 8 channels per uint8) name the
+            % digital scheme; the control, an archive whose bytes are not
+            % here, is left as before and inspects no header
+            o = struct('prefix', 'di', 'scale', 1);
+            [structs, v1] = testCase.archive(false, true, 0, o);
+            [out, rep] = ndi.migrate.internal.ingestedArchiveBodies(structs, testCase.Dir, v1);
+            testCase.verifyEqual(rep.archives_converted, 1, rep.first_unconvertible_reason);
+            testCase.verifyEqual(rep.compression_bodies_seen, 1, 'the denominator');
+            testCase.verifyEqual(rep.compression_written, 1, rep.first_compression_kept_reason);
+            [term, params] = compressionOf(out{2});
+            testCase.verifyEqual(term, {'EMPTY:0000453', 'NDI digital compression'});
+            testCase.verifyEqual(params, {'NCIT:C42645', 'uint8'});
+            delete(fullfile(testCase.Dir, 'files', 'u_ai_1'));
+            [out2, rep2] = ndi.migrate.internal.ingestedArchiveBodies(structs, testCase.Dir, v1);
+            testCase.verifyEqual(rep2.bytes_not_here, 1);
+            testCase.verifyEqual(rep2.compression_bodies_seen, 0);
+            testCase.verifyEqual(out2, structs, 'nothing changed');
+        end
+
+        function testUnwiredEventsFallBackToTheRigsDevice(testCase)
+            % [event channel observes its wired device] (Jess Haley,
+            % 2026-11-17): "a channel with no wiring relation falls back to
+            % the acquisition system as its entity, counted"; the
+            % acquisition system as an entity is its `device_id` (DID-matlab
+            % #498 mints it). testUnwiredEventsAreLeftPacked is the control:
+            % a system that names no device leaves the file packed, as before
+            o = struct('events', true, 'wired', false, 'rigDevice', true);
+            [structs, v1] = testCase.archive(false, true, 0, o);
+            [out, rep, removed] = ndi.migrate.internal.ingestedArchiveBodies( ...
+                structs, testCase.Dir, v1);
+            testCase.verifyEqual(rep.event_channels_seen, 2, 'the denominator');
+            testCase.verifyEqual(rep.event_archives_unpacked, 1, rep.first_event_kept_reason);
+            testCase.verifyEqual(rep.event_channels_unpacked, 2);
+            testCase.verifyEqual(rep.event_channels_rig_device, 2, 'counted');
+            testCase.verifyEqual(rep.event_kept_unwired, 0);
+            testCase.verifyTrue(ismember('body_ev', removed));
+            added = out(numel(structs) + 1:end);
+            E = ndi.vintage.ingestedEventChannels(added, added);
+            testCase.assertEqual(numel(E), 2);
+            ids = cellfun(@(d) d.base.id, added, 'UniformOutput', false);
+            for k = 1:2
+                obs = added{strcmp(ids, E(k).statement_id)};
+                testCase.verifyEqual(edgeOf(obs, 'entity_id'), {'dev_1'}, 'the rig''s device');
+                testCase.verifyEqual(edgeOf(obs, 'acquisition_system_id'), {'sys_1'});
+            end
+            % the fixture's acquisition system is a stub: validated without it
+            keep = ~cellfun(@(x) any(strcmp(x.base.id, [removed, {'sys_1'}])), out);
+            res = did2.convert.v1_to_v2(out(keep), 'Validate', true, 'TargetVersion', 'did_v2');
+            testCase.verifyEmpty(res.quarantine);
+        end
+
+        function testEventsWiredToSeveralDevicesStayPacked(testCase)
+            % the fallback is for a channel no relation wires; a channel two
+            % devices are wired to has no decided entity: left, counted
+            o = struct('events', true, 'wired', true, 'secondDevice', true);
+            [~, rep, removed] = testCase.convertArchive(false, true, 0, o);
+            testCase.verifyEqual(rep.event_archives_kept, 1);
+            testCase.verifyEqual(rep.event_kept_several_devices, 1, rep.first_event_kept_reason);
+            testCase.verifyEqual(rep.event_kept_unwired, 0);
+            testCase.verifyEqual(rep.event_channels_rig_device, 0);
+            testCase.verifyFalse(ismember('body_ev', removed));
+        end
+
+        function testAGroupWithItsOwnOwnerIsConvertedWithItsArchive(testCase)
+            % [non-specimen channel groups get their own owner] (Jess Haley,
+            % 2026-11-17; DID-matlab #515): a digital group is owned by its
+            % own `logical` observation on the same acquisition system, the
+            % channel list by the recording observation; the archive is the
+            % bodies of one epoch on one system, so it converts as one and
+            % the group keeps its owner
+            o = struct('prefix', 'di', 'scale', 1, 'groupOwner', 'sys_1');
+            [structs, v1] = testCase.archive(false, true, 0, o);
+            [out, rep, removed] = ndi.migrate.internal.ingestedArchiveBodies( ...
+                structs, testCase.Dir, v1);
+            testCase.verifyEqual(rep.documents_inspected, numel(structs), 'the denominator');
+            testCase.verifyEqual(rep.archives_seen, 1, 'one archive, not one per owner');
+            testCase.verifyEqual(rep.channel_list_missing, 0);
+            testCase.verifyEqual(rep.archives_converted, 1, rep.first_unconvertible_reason);
+            b = out{cellfun(@(x) strcmp(x.base.id, 'body_ai'), out)};
+            testCase.verifyEqual(b.document_class.class_name, 'sampled_body');
+            testCase.verifyEqual(edgeOf(b, 'owner_id'), {'own_1'}, 'its own owner, kept');
+            testCase.verifyEqual(rep.channel_list_removed + rep.channel_list_kept, 1, ...
+                'the archive''s one channel list, read with its group');
+            keep = ~cellfun(@(x) any(strcmp(x.base.id, removed)), out);
+            res = did2.convert.v1_to_v2(out(keep), 'Validate', true, 'TargetVersion', 'did_v2');
+            testCase.verifyEmpty(res.quarantine);
+            % the control: an owner that names no acquisition system keys
+            % the body by its owners, as before, so the group is apart from
+            % its channel list
+            o.groupOwner = '';
+            [~, rep2] = testCase.convertArchive(false, true, 0, o);
+            testCase.verifyEqual(rep2.archives_seen, 1);
+            testCase.verifyEqual(rep2.archives_no_channel_group, 1, 'the channel list alone');
+            testCase.verifyEqual(rep2.channel_list_missing, 1);
+            testCase.verifyEqual(rep2.archives_converted, 0);
+        end
+
         function testAStimulusLogIsLeftAndCounted(testCase)
             % [stimulus log owned by its presentation] (Jess Haley,
             % 2026-11-19): a stimulus system's archive (channel_list.bin and
@@ -1313,9 +1451,19 @@ classdef TestIngestedArchiveBodies < matlab.unittest.TestCase
             uids = {'u_cl', 'u_ai_1', 'u_ai_2'};
             t = [];
             obs = owner();
+            groupOwnerId = 'obs_1';
+            if isfield(o, 'groupOwner')
+                % [non-specimen channel groups get their own owner]: the
+                % group's own observation, on the system O.groupOwner ('' :
+                % it names none)
+                groupOwnerId = 'own_1';
+            end
             s = {obs, ...
-                body('body_ai', [o.prefix '_group1_seg.nbf_#'], {'u_ai_1', 'u_ai_2'}), ...
+                body('body_ai', [o.prefix '_group1_seg.nbf_#'], {'u_ai_1', 'u_ai_2'}, groupOwnerId), ...
                 body('body_cl', 'channel_list.bin', {'u_cl'})};
+            if isfield(o, 'groupOwner')
+                s{end+1} = groupOwner('own_1', o.groupOwner);
+            end
             if o.events
                 % as ndi.daq.reader.mfdaq/ingest_epochfiles writes the file:
                 % times on the epoch's clock (from T0)
@@ -1346,6 +1494,15 @@ classdef TestIngestedArchiveBodies < matlab.unittest.TestCase
                 end
                 s{end+1} = body('body_ev', 'evmktx_group1_seg.nbf_#', {'u_ev'});
                 uids{end+1} = 'u_ev';
+                if isfield(o, 'rigDevice') && o.rigDevice
+                    % the system names its rig's device dev_1 (DID-matlab
+                    % #498), and no relation wires the channels
+                    s{end+1} = rigSystem('sys_1', 'dev_1');
+                end
+                if isfield(o, 'secondDevice') && o.secondDevice
+                    % a second device wired to the same channels
+                    s{end+1} = wiring(false, 'sys_1', 'stim_2', 'rel_2');
+                end
                 if o.wired && isfield(o, 'wiredToDevice') && o.wiredToDevice
                     % [acquisition system is a device entity] (Jess Haley
                     % 2026-11-19): the wiring names the rig's device dev_1,
@@ -1451,14 +1608,17 @@ obs = did2.build.statement('observation', 'el_1', ...
     'SessionId', 'sess_1', 'Validate', false, 'ValueKind', 'time');
 end
 
-function rel = wiring(withText, parent)
+function rel = wiring(withText, parent, child, id)
 % the stimulator stim_1 `connected to` the system sys_1 on e1 and mk2 (and,
 % WITHTEXT, tx3), as did2.convert.resolveEpochProbemap mkWiring writes it;
 % PARENT (default sys_1) is what the relation names as the rig: the system,
 % as migrated before, or the rig's device entity ([acquisition system is a
-% device entity], Jess Haley 2026-11-19)
+% device entity], Jess Haley 2026-11-19); CHILD (stim_1) the device wired,
+% ID (rel_1) the relation's id
 if nargin < 1; withText = false; end
 if nargin < 2; parent = 'sys_1'; end
+if nargin < 3; child = 'stim_1'; end
+if nargin < 4; id = 'rel_1'; end
 prev = did2.schema.cache.strictMode('TermRegistry', false);
 c = onCleanup(@() did2.schema.cache.strictMode('TermRegistry', prev));
 conds = {did2.build.condition(struct('node', 'EMPTY:0000376', 'name', 'event channel'), 'Matrix', 1), ...
@@ -1466,11 +1626,42 @@ conds = {did2.build.condition(struct('node', 'EMPTY:0000376', 'name', 'event cha
 if withText
     conds{end+1} = did2.build.condition(struct('node', 'EMPTY:0000410', 'name', 'text channel'), 'Matrix', 3);
 end
-rel = did2.build.directedRelation('stim_1', parent, ...
+rel = did2.build.directedRelation(child, parent, ...
     struct('node', 'RO:0002170', 'name', 'connected to'), ...
     'TimeReferenceIds', {'tr_1'}, ...
     'Fields', struct('conditions', {did2.build.list(conds{:})}), ...
-    'Id', 'rel_1', 'SessionId', 'sess_1', 'Validate', false);
+    'Id', id, 'SessionId', 'sess_1', 'Validate', false);
+end
+
+function obs = groupOwner(id, sysId)
+% a digital group's own `logical` observation, as DID-matlab #515's
+% groupOwner writes it: entity the rig's device, variable the group's
+% channel-type term, the system named by `acquisition_system_id` (none when
+% SYSID is '')
+prev = did2.schema.cache.strictMode('TermRegistry', false);
+c = onCleanup(@() did2.schema.cache.strictMode('TermRegistry', prev));
+sysArg = {};
+if ~isempty(sysId); sysArg = {'AcquisitionSystemId', sysId}; end
+obs = did2.build.statement('observation', 'dev_1', ...
+    struct('node', 'EMPTY:0000372', 'name', 'digital input channel'), [], ...
+    'DataBody', true, 'TimeReferenceIds', {'tr_1'}, 'Id', id, sysArg{:}, ...
+    'SessionId', 'sess_1', 'Validate', false, 'ValueKind', 'logical');
+end
+
+function [term, params] = compressionOf(b)
+% a body's compression block: TERM {node, name}; PARAMS {variable node,
+% text} per parameter, flattened
+term = {};
+params = {};
+if ~isfield(b.data_body, 'compression') || ~isstruct(b.data_body.compression); return; end
+cb = b.data_body.compression;
+term = {char(cb.term.node), char(cb.term.name)};
+if ~isfield(cb, 'parameters'); return; end
+ps = cb.parameters;
+if isstruct(ps); ps = num2cell(ps); end
+for k = 1:numel(ps)
+    params = [params, {char(ps{k}.variable.node), char(ps{k}.text)}]; %#ok<AGROW>
+end
 end
 
 function sys = rigSystem(id, deviceId)
@@ -1498,9 +1689,11 @@ x = fread(fid, Inf, 'float64');
 fclose(fid);
 end
 
-function b = body(id, filename, uids)
-% as did2.convert.resolveEpochProbemap's archiveBodies writes it
-b = did2.build.opaqueBody({'obs_1'}, struct('node', 'EDAM:format_2333', ...
+function b = body(id, filename, uids, ownerId)
+% as did2.convert.resolveEpochProbemap's archiveBodies writes it, owned by
+% OWNERID (obs_1)
+if nargin < 4; ownerId = 'obs_1'; end
+b = did2.build.opaqueBody({ownerId}, struct('node', 'EDAM:format_2333', ...
     'name', 'Binary format'), 'Chunks', numel(uids), ...
     'Fields', struct('filename', filename), ...
     'Notes', sprintf(['The ingested recording of epoch e1: v1 attached ' ...
