@@ -280,12 +280,28 @@ classdef TestNumericShapeReaders < matlab.unittest.TestCase
             testCase.verifyEqual(reshape(v.canonical(), 1, []), [0.001 0.002], 'AbsTol', 1e-15);
             testCase.verifyEqual(reshape(src.source_value, 1, []), [1 2]);
             testCase.verifyEqual(size(v.tolerance(), 1), 2);
-            old = did2.build.valueCell('voltage', [0.001 0.002], 'SourceValue', [1 2], ...
+            % the old shape (one cell per reading, source_value) is built while
+            % the schema declares it; once did-schema removes it from the value
+            % cells (Waltham-Data-Science/did-schema#346) the builder refuses it
+            % and the same cells are written by hand, so the reader's refusal
+            % is checked on either schema
+            buildOld = @() did2.build.valueCell('voltage', [0.001 0.002], 'SourceValue', [1 2], ...
                 'Shape', 'old');
+            if oldValueCellShapeDeclared()
+                old = buildOld();
+            else
+                testCase.verifyError(buildOld, 'did2:build:unknownField', ...
+                    'the old value-cell shape is not declared, so the builder refuses it');
+                old = struct('volts', {0.001; 0.002}, 'source_value', {1; 2});
+            end
             testCase.verifyError(@() ndi.value('voltage', old), OLD, 'old shape');
             lv = did2.build.valueCell('logical', true, 'Shape', 'new');
             lvv = ndi.value('logical', lv);
             testCase.verifyEqual(lvv.canonical(), true);
+            % a logical series is one block whose `logical` is an array
+            ls = did2.build.valueCell('logical', [true false], 'Shape', 'new');
+            testCase.verifyEqual(ls, struct('logical', [true false]));
+            testCase.verifyEqual(ndi.value('logical', ls).canonical(), [true false]);
         end
     end
 end
@@ -328,6 +344,37 @@ catch
     return;
 end
 for step = {'conditions', 'quantity'}
+    if ~isfield(f, 'fields') || isempty(f.fields)
+        return;
+    end
+    fs = f.fields;
+    if isstruct(fs); fs = num2cell(reshape(fs, 1, [])); end
+    hit = [];
+    for j = 1:numel(fs)
+        if isstruct(fs{j}) && isfield(fs{j}, 'name') && strcmp(char(fs{j}.name), step{1})
+            hit = fs{j};
+            break;
+        end
+    end
+    if isempty(hit)
+        return;
+    end
+    f = hit;
+end
+tf = true;
+end
+
+function tf = oldValueCellShapeDeclared()
+% does the loaded did-schema still declare the old value-cell shape
+% (`source_value` on voltage.value)? did-schema removes it in numeric shape
+% plan section 9 step 4 (Waltham-Data-Science/did-schema#346)
+tf = false;
+try
+    f = did2.schema.cache.shared().getClass('voltage');
+catch
+    return;
+end
+for step = {'value', 'source_value'}
     if ~isfield(f, 'fields') || isempty(f.fields)
         return;
     end
