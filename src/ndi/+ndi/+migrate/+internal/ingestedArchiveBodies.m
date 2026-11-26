@@ -312,10 +312,19 @@ function [structs, report, removed] = ingestedArchiveBodies(structs, ndiDir, v1B
 %                               read_ndibinary spells a format ('int16',
 %                               'uint8', 'float64', 'char')
 %   counted `compression_written` of `compression_bodies_seen`. A body whose
-%   members are not here, whose header cannot be read, names an unknown
-%   method or format, or whose members disagree keeps pass 1's
-%   `compression`, counted `compression_kept` (first reason:
-%   `first_compression_kept_reason`). The header's original format may be
+%   members are not here, whose header cannot be read, or names an unknown
+%   method or format keeps pass 1's `compression`, counted
+%   `compression_kept` (first reason: `first_compression_kept_reason`). A
+%   body whose members' headers disagree on the encode method or the
+%   original format is MALFORMED: Decided by Jess Haley, 2026-11-26
+%   [segments disagreeing on format are malformed] (did-schema
+%   did_v2_go_forward_class_audit.md). Its archive is carried as v1 (left as
+%   pass 1 wrote it, the files written for it deleted, `unconvertible`),
+%   counted `compression_segments_disagree_kept` and listed in
+%   REPORT.malformed {kind 'compression_segments_disagree', archive_id (the
+%   v1 archive), body_id, row ('carry-120'), reason (which starts
+%   "[carry-120] malformed" and gives the two headers)}; the first reason is
+%   `first_malformed_reason`. The header's original format may be
 %   written as the characters of 'integer' or 'float' rather than its code
 %   (NDI-compress compress_ephys hands write_ndibinary the char; the
 %   decision: "read from compress_ephys.m and write_ndibinary.m, not
@@ -371,6 +380,7 @@ report = struct( ...
     'uneven_time_split_ambiguous_kept', 0, ...
     'first_uneven_time_kept_reason', '', ...
     'time_channels_out_of_order_kept', 0, ...
+    'compression_segments_disagree_kept', 0, ...
     'first_malformed_reason',     '', ...
     'unconvertible',              0, ...
     'first_unconvertible_reason', '', ...
@@ -542,14 +552,48 @@ for a = 1:numel(groupKeys)
         continue;
     end
 
+    % [ingested compression settings], [compression settings without bit
+    % size]: the block from the members' NDI-compress headers, read before
+    % anything changes. [segments disagreeing on format are malformed]
+    % (Jess Haley, 2026-11-26): a body whose members disagree on the encode
+    % method or format carries its archive as v1, counted and reported
+    compBodies = cell(1, numel(made));
+    compWhys = cell(1, numel(made));
+    disagreeWhy = '';
+    disagreeId = '';
+    for m = 1:numel(made)
+        [compBodies{m}, compWhys{m}, disagree] = withCompression(made{m}.body, storeDir);
+        if disagree
+            % carry-register: carry-120
+            disagreeWhy = sprintf(['[carry-120] malformed: %s; kept as v1 ([segments ' ...
+                'disagreeing on format are malformed])'], compWhys{m});
+            disagreeId = baseId(made{m}.body);
+            break;
+        end
+    end
+    if ~isempty(disagreeWhy)
+        cellfun(@deleteIfThere, written);
+        report.unconvertible = report.unconvertible + 1;
+        if isempty(report.first_unconvertible_reason)
+            report.first_unconvertible_reason = disagreeWhy;
+        end
+        report.compression_segments_disagree_kept = ...
+            report.compression_segments_disagree_kept + 1;
+        if isempty(report.first_malformed_reason)
+            report.first_malformed_reason = disagreeWhy;
+        end
+        report.malformed{end+1} = struct('kind', 'compression_segments_disagree', ...
+            'archive_id', baseId(arch), 'body_id', disagreeId, 'row', 'carry-120', ...
+            'reason', disagreeWhy);
+        continue;
+    end
+
     ids = {};
     gaps = struct('document_id', {}, 'class', {}, 'field', {}, 'reason', {});
     for m = 1:numel(made)
-        % [ingested compression settings], [compression settings without
-        % bit size]: the block from the members' NDI-compress headers
         report.compression_bodies_seen = report.compression_bodies_seen + 1;
-        [compBody, compWhy] = withCompression(made{m}.body, storeDir);
-        made{m}.body = compBody;
+        compWhy = compWhys{m};
+        made{m}.body = compBodies{m};
         if isempty(compWhy)
             report.compression_written = report.compression_written + 1;
         else
@@ -1928,10 +1972,12 @@ end
 
 % ---- the compression block ([ingested compression settings]) ---------
 
-function [body, why] = withCompression(body, storeDir)
+function [body, why, disagree] = withCompression(body, storeDir)
 % BODY with its `compression` block from its members' NDI-compress headers;
-% WHY '' when written, else why BODY keeps the compression it had
+% WHY '' when written, else why BODY keeps the compression it had; DISAGREE
+% true when the members' headers disagree on the encode method or format
 why = '';
+disagree = false;
 paths = memberPaths(body, storeDir);
 if isempty(paths)
     why = sprintf('%s: its members are not here', baseId(body));
@@ -1951,6 +1997,7 @@ for m = 1:numel(paths)
     elseif mm ~= method || ~strcmp(dd, dtype)
         why = sprintf(['%s: its members'' NDI-compress headers disagree (method %d, %s ' ...
             'and method %d, %s)'], baseId(body), method, dtype, mm, dd);
+        disagree = true;
         return;
     end
 end

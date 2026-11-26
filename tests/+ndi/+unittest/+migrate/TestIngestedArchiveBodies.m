@@ -1088,6 +1088,59 @@ classdef TestIngestedArchiveBodies < matlab.unittest.TestCase
             testCase.verifyEmpty(res.quarantine);
         end
 
+        function testSegmentsDisagreeingOnFormatAreMalformed(testCase)
+            % [segments disagreeing on format are malformed] (Jess Haley,
+            % 2026-11-26, did-schema did_v2_go_forward_class_audit.md): a
+            % body whose NDI-compress segments disagree on encode method or
+            % format is malformed: carried as v1, citing carry-120, counted.
+            % Here segment 1 is compress_digital (method 21, uint8) and
+            % segment 2 compress_ephys (method 1, int16)
+            o = struct('firstSegmentDigital', true);
+            [structs, v1] = testCase.archive(false, true, 0, o);
+            nFiles = numel(dir(fullfile(testCase.Dir, 'files'))) - 2;
+            [out, rep, removed] = ndi.migrate.internal.ingestedArchiveBodies( ...
+                structs, testCase.Dir, v1);
+            testCase.verifyEqual(rep.archives_seen, 1, 'the denominator');
+            testCase.verifyEqual(rep.archives_converted, 0);
+            testCase.verifyEqual(rep.unconvertible, 1);
+            testCase.verifyEqual(rep.compression_segments_disagree_kept, 1, ...
+                rep.first_unconvertible_reason);
+            testCase.verifyEqual(rep.compression_kept, 0, 'not pass 1''s block kept');
+            testCase.verifyEqual(rep.compression_written, 0);
+            testCase.verifyEmpty(removed);
+            testCase.verifyEqual(out, structs, 'kept as pass 1 wrote it');
+            testCase.verifyEqual(numel(dir(fullfile(testCase.Dir, 'files'))) - 2, nFiles, ...
+                'no file left written');
+            testCase.assertNumElements(rep.malformed, 1);
+            m = rep.malformed{1};
+            testCase.verifyEqual(m.kind, 'compression_segments_disagree');
+            testCase.verifyEqual(m.archive_id, 'arch_1', 'the archive is named');
+            testCase.verifyEqual(m.body_id, 'body_ai');
+            testCase.verifyEqual(m.row, 'carry-120');
+            testCase.verifyTrue(startsWith(m.reason, '[carry-120] malformed'), m.reason);
+            testCase.verifySubstring(m.reason, 'disagree');
+            testCase.verifySubstring(m.reason, 'kept as v1');
+            testCase.verifyEqual(rep.first_malformed_reason, m.reason);
+            testCase.verifyEqual(rep.first_unconvertible_reason, m.reason);
+        end
+
+        function testSegmentsAgreeingOnFormatGetTheBlock(testCase)
+            % the control: the same archive with both segments from
+            % compress_ephys gets the block, and nothing is malformed
+            [structs, v1] = testCase.archive(false, true, 0);
+            [out, rep] = ndi.migrate.internal.ingestedArchiveBodies(structs, testCase.Dir, v1);
+            testCase.verifyEqual(rep.archives_seen, 1, 'the denominator');
+            testCase.verifyEqual(rep.archives_converted, 1, rep.first_unconvertible_reason);
+            testCase.verifyEqual(rep.compression_bodies_seen, 1);
+            testCase.verifyEqual(rep.compression_written, 1, rep.first_compression_kept_reason);
+            testCase.verifyEqual(rep.compression_segments_disagree_kept, 0);
+            testCase.verifyEmpty(rep.malformed);
+            b = out{cellfun(@(x) strcmp(x.base.id, 'body_ai'), out)};
+            [term, params] = compressionOf(b);
+            testCase.verifyEqual(term, {'EMPTY:0000452', 'NDI ephys compression'});
+            testCase.verifyEqual(params, {'NCIT:C42645', 'int16'});
+        end
+
         function testDigitalCompressionBlockAndBytesNotHere(testCase)
             % [compression settings without bit size]: a digital group's
             % segments (compress_digital: 8 channels per uint8) name the
@@ -1439,7 +1492,9 @@ classdef TestIngestedArchiveBodies < matlab.unittest.TestCase
             % text channel tx3 in the events file too (entries O.entries),
             % wired with the others unless O.wireText is false;
             % O.timeRowTimeChannel and O.timeRowOffset, the v1 time row
-            % t1's time_channel (NaN) and offset (0)
+            % t1's time_channel (NaN) and offset (0); O.firstSegmentDigital,
+            % the first analog segment written by compress_digital instead
+            % (its header disagrees with the second's on method and format)
             if nargin < 4; t0 = 0; end
             if nargin < 5; o = struct(); end
             if ~isfield(o, 'prefix'); o.prefix = 'ai'; end
@@ -1487,7 +1542,8 @@ classdef TestIngestedArchiveBodies < matlab.unittest.TestCase
             segs = {data(1:100, :), data(101:160, :)};
             for k = 1:2
                 stem = tempname();
-                if strcmp(o.prefix, 'di')
+                if strcmp(o.prefix, 'di') || (k == 1 && isfield(o, 'firstSegmentDigital') ...
+                        && o.firstSegmentDigital)
                     ndi.compress.compress_digital(double(segs{k} > 0), stem);
                 else
                     ndi.compress.compress_ephys(double(segs{k}), 16, stem, ...
