@@ -1141,15 +1141,63 @@ classdef TestIngestedArchiveBodies < matlab.unittest.TestCase
             testCase.verifyEmpty(res.quarantine);
         end
 
-        function testEventsWiredToSeveralDevicesStayPacked(testCase)
-            % the fallback is for a channel no relation wires; a channel two
-            % devices are wired to has no decided entity: left, counted
+        function testEventsWiredToSeveralDevicesObserveTheRigsDevice(testCase)
+            % [event channel on several devices observes the rig] (Jess
+            % Haley, 2026-11-26): a channel the `connected to` wiring names
+            % for several devices (stim_1 and stim_2) is an observation of
+            % the rig's device, the system's `device_id`, counted
+            o = struct('events', true, 'wired', true, 'secondDevice', true, 'rigDevice', true);
+            [structs, v1] = testCase.archive(false, true, 0, o);
+            [out, rep, removed] = ndi.migrate.internal.ingestedArchiveBodies( ...
+                structs, testCase.Dir, v1);
+            testCase.verifyEqual(rep.event_channels_seen, 2, 'the denominator');
+            testCase.verifyEqual(rep.event_archives_unpacked, 1, rep.first_event_kept_reason);
+            testCase.verifyEqual(rep.event_channels_unpacked, 2);
+            testCase.verifyEqual(rep.event_channels_rig_device_several, 2, 'counted');
+            testCase.verifyEqual(rep.event_channels_rig_device, 0, 'wired, not the unwired fallback');
+            testCase.verifyEqual(rep.event_kept_several_devices, 0);
+            testCase.verifyTrue(ismember('body_ev', removed));
+            added = out(numel(structs) + 1:end);
+            E = ndi.vintage.ingestedEventChannels(added, added);
+            testCase.assertEqual(numel(E), 2);
+            ids = cellfun(@(d) d.base.id, added, 'UniformOutput', false);
+            for k = 1:2
+                obs = added{strcmp(ids, E(k).statement_id)};
+                testCase.verifyEqual(edgeOf(obs, 'entity_id'), {'dev_1'}, 'the rig''s device');
+                testCase.verifyEqual(edgeOf(obs, 'acquisition_system_id'), {'sys_1'});
+            end
+        end
+
+        function testEventsWiredToOneDeviceObserveThatDevice(testCase)
+            % the control: with the rig's device named, a channel the wiring
+            % names for one device (stim_1) still observes that device
+            o = struct('events', true, 'wired', true, 'rigDevice', true);
+            [structs, v1] = testCase.archive(false, true, 0, o);
+            [out, rep] = ndi.migrate.internal.ingestedArchiveBodies(structs, testCase.Dir, v1);
+            testCase.verifyEqual(rep.event_channels_seen, 2, 'the denominator');
+            testCase.verifyEqual(rep.event_archives_unpacked, 1, rep.first_event_kept_reason);
+            testCase.verifyEqual(rep.event_channels_rig_device_several, 0);
+            testCase.verifyEqual(rep.event_channels_rig_device, 0);
+            added = out(numel(structs) + 1:end);
+            E = ndi.vintage.ingestedEventChannels(added, added);
+            testCase.assertEqual(numel(E), 2);
+            ids = cellfun(@(d) d.base.id, added, 'UniformOutput', false);
+            for k = 1:2
+                obs = added{strcmp(ids, E(k).statement_id)};
+                testCase.verifyEqual(edgeOf(obs, 'entity_id'), {'stim_1'}, 'the wired device');
+            end
+        end
+
+        function testEventsWiredToSeveralDevicesWithNoRigDeviceStayPacked(testCase)
+            % the control: a system that names no device (`device_id`) has
+            % no rig device to fall back to, so the file stays, counted
             o = struct('events', true, 'wired', true, 'secondDevice', true);
             [~, rep, removed] = testCase.convertArchive(false, true, 0, o);
             testCase.verifyEqual(rep.event_archives_kept, 1);
             testCase.verifyEqual(rep.event_kept_several_devices, 1, rep.first_event_kept_reason);
             testCase.verifyEqual(rep.event_kept_unwired, 0);
             testCase.verifyEqual(rep.event_channels_rig_device, 0);
+            testCase.verifyEqual(rep.event_channels_rig_device_several, 0);
             testCase.verifyFalse(ismember('body_ev', removed));
         end
 

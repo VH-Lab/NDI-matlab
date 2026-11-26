@@ -399,6 +399,7 @@ report = struct( ...
     'event_kept_unwired',         0, ...
     'event_kept_several_devices', 0, ...
     'event_channels_rig_device',  0, ...
+    'event_channels_rig_device_several', 0, ...
     'event_kept_empty_channel',   0, ...
     'event_kept_not_exact',       0, ...
     'event_kept_other',           0, ...
@@ -639,6 +640,8 @@ for a = 1:numel(groupKeys)
             report.event_channels_unpacked = report.event_channels_unpacked + ev.channels;
             report.event_channels_rig_device = report.event_channels_rig_device + ...
                 ev.rigDeviceChannels;
+            report.event_channels_rig_device_several = ...
+                report.event_channels_rig_device_several + ev.rigDeviceSeveralChannels;
             report.text_channels_unpacked = report.text_channels_unpacked + ev.textChannels;
             report.event_bodies_left = report.event_bodies_left - 1;
         else
@@ -694,7 +697,7 @@ uneven = false;
 written = {};
 info = struct('eventBodyIds', {{}}, 'channelListWhy', '', 'timeChannelCovariates', 0, ...
     'members', [0 0 0 0], 'names', [0 0 0 0], 'events', struct('present', false, 'unpacked', false, ...
-    'channels', 0, 'textChannels', 0, 'rigDeviceChannels', 0, 'kind', '', 'why', ''), 'timeValues', 0, 'rebased', false, ...
+    'channels', 0, 'textChannels', 0, 'rigDeviceChannels', 0, 'rigDeviceSeveralChannels', 0, 'kind', '', 'why', ''), 'timeValues', 0, 'rebased', false, ...
     'timeRows', [0 0], 'timeRowKept', false, 'timeKept', '', 'timeKeptBody', '', ...
     'timeKeptTimeBody', '', 'split', [0 0], 'malformed', []);
 % [migrated body members renamed]: the members of the channel and time
@@ -1358,7 +1361,11 @@ function [ev, docs, written, rows] = unpackEvents(structs, idx, kinds, ci, t0, s
 %   with no wiring relation falls back to the acquisition system as its
 %   entity, counted"; the acquisition system as an entity is the system's
 %   `device_id`, [acquisition system is a device entity], Jess Haley,
-%   2026-11-19; counted `event_channels_rig_device`), `acquisition_system_id` the
+%   2026-11-19; counted `event_channels_rig_device`), or, for a channel the
+%   `connected to` wiring names for several devices, the rig's device too
+%   ([event channel on several devices observes the rig], Jess Haley,
+%   2026-11-26; counted `event_channels_rig_device_several`),
+%   `acquisition_system_id` the
 %   system the archive's recordings name ("instrument the acquisition
 %   system": an acquisition system is not an `entity`, which `instrument_id`
 %   requires, so the system is named where an interaction names its rig),
@@ -1385,7 +1392,8 @@ function [ev, docs, written, rows] = unpackEvents(structs, idx, kinds, ci, t0, s
 %                      system names no rig device (`device_id`) to fall back
 %                      to (a batch migrated before DID-matlab #498)
 %     several_devices  a channel several `connected to` relations wire to
-%                      different devices: no decision names its entity
+%                      different devices, when the acquisition system names
+%                      no rig device (`device_id`) to fall back to
 %     empty_channel    a channel with no event
 %     not_exact        the channels read back (ndi.vintage.ingestedEventData,
 %                      the reader's rule) or NDI's own round trip
@@ -1398,7 +1406,7 @@ function [ev, docs, written, rows] = unpackEvents(structs, idx, kinds, ci, t0, s
 %   rebuild (ndi.vintage.ingestedChannelList); DOCS the documents made;
 %   WRITTEN the store files written (only once every check has passed).
 ev = struct('present', false, 'unpacked', false, 'channels', 0, 'textChannels', 0, ...
-    'rigDeviceChannels', 0, 'kind', '', 'why', '');
+    'rigDeviceChannels', 0, 'rigDeviceSeveralChannels', 0, 'kind', '', 'why', '');
 docs = {};
 written = {};
 rows = struct('type', {}, 'number', {});
@@ -1530,12 +1538,18 @@ for i = 1:numel(ct)
             '`connected to` relation of the epoch, and its acquisition system %s names ' ...
             'no device (`device_id`) to fall back to'], type, num, sysIds{1}));
         return;
+    elseif n > 1 && ~isempty(rigDevice)
+        % [event channel on several devices observes the rig] (Jess Haley,
+        % 2026-11-26): a channel the `connected to` wiring names for several
+        % devices is an observation of the rig's device, the system's
+        % `device_id`, counted, as [channel group owners details] (c) does
+        % for channel groups
+        entity = rigDevice;
+        ev.rigDeviceSeveralChannels = ev.rigDeviceSeveralChannels + 1;
     elseif n > 1
-        % several wired devices: the decision names the fallback for a
-        % channel no relation wires only
         ev = left(ev, 'several_devices', sprintf(['%s channel %d is wired to %d devices ' ...
-            'by `connected to` relations of the epoch: its entity is not known'], ...
-            type, num, n));
+            'by `connected to` relations of the epoch, and its acquisition system %s ' ...
+            'names no device (`device_id`) to fall back to'], type, num, n, sysIds{1}));
         return;
     end
     plan(end+1) = struct('type', type, 'number', num, 'name', char(ci(r).name), ...
