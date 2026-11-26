@@ -4148,8 +4148,15 @@ function why = epochCarryReason(expectedPairs, sessionId, epochString, clock)
     switch clock
         case ''
             % no element_epoch, epochclocktimes or presentation_time.bin
-            % clock (Jess Haley, 2026-11-26, "Build it that way")
-            why = 'no_clock_record';
+            % clock (Jess Haley, 2026-11-26, "Build it that way"). An epoch
+            % that is not minted at all is named first: it is the reason
+            % that holds whatever the clock.
+            if isempty(sessionId) || ~isKey(expectedPairs, ...
+                    did2.convert.epochIndex.pairKey(sessionId, epochString))
+                why = 'no_epoch_minted';
+            else
+                why = 'no_clock_record';
+            end
             return;
         case {'utc', 'dev_local_time', 'dev_global_time', ...
                 'exp_global_time', 'approx_utc', 'approx_dev_global_time', ...
