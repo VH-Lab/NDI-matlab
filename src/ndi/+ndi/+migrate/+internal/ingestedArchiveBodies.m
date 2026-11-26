@@ -255,7 +255,11 @@ function [structs, report, removed] = ingestedArchiveBodies(structs, ndiDir, v1B
 %     group's `logical` observation, an auxiliary group's voltage
 %     observation and an analog output group's manipulation or observation
 %     are DID-matlab's (did2.convert.resolveEpochProbemap); NDI's readers
-%     find a body through any of them (ndi.vintage.ingestedArchive).
+%     find a body through any of them (ndi.vintage.ingestedArchive). The
+%     bodies of one archive are found by their epoch and the acquisition
+%     system their owners name, not by the owners themselves, so a group
+%     with its own owner is converted with the rest of its archive
+%     (archiveKeyOf).
 %
 %   THE SCALE'S UNIT. Decided by Jess Haley, 2026-11-17 [scale carries the
 %   reader's unit] (did-schema did_v2_go_forward_class_audit.md): "the
@@ -285,15 +289,43 @@ function [structs, report, removed] = ingestedArchiveBodies(structs, ndiDir, v1B
 %   so a reverted group lists none. A reader of the body that needs NDI's
 %   own scale (ndi.vintage) reads `source_value` when it is there.
 %
-%   NOT HERE YET. The `compression` block ([ingested compression settings]:
-%   NDI's compressor as the term, the stored integer format and bit size as
-%   parameters). did-schema now declares `data_body.compression` as a
-%   {term, parameters} block, but the compressor terms and the two parameter
-%   variables are not registered (did-schema docs/V2_PLAN.md G92, parked
-%   2026-11-03), and neither the v1 channel list nor the v1 archive document
-%   states the stored integer format or bit size: only NDI-compress's own
-%   header in each segment does. Until then the body keeps pass 1's
-%   `compression`. The data file names stay as pass 1 wrote them.
+%   THE COMPRESSION BLOCK. Decided by Jess Haley, 2026-11-01 [ingested
+%   compression settings], amended 2026-11-19 [compression settings without
+%   bit size] (did-schema did_v2_go_forward_class_audit.md): "an ingested
+%   body's `compression` block names one EMPTY term per NDI-compress scheme
+%   (under NCIT:C64347 "Data Compression"): ephys (encode method 1), digital
+%   (21), event, marker and text (41), time (61) and metadata (2); its one
+%   parameter is the stored integer format, variable NCIT:C42645 "Data
+%   Type", value the reader's class name (e.g. int16); no bit-size
+%   parameter". Neither the v1 channel list nor the v1 archive document
+%   states them; each segment's NDI-compress header does. So every sampled
+%   body this step makes from NDI-compress segments (a channel group's, a
+%   time value's, the rewritten time files included) reads the header of
+%   each of its members (ndiCompressHeader: the encode method and the
+%   original format, signedness and bits per sample) and, when every member
+%   agrees, gets
+%       compression.term        EMPTY:0000452 NDI ephys compression (1),
+%                               EMPTY:0000453 NDI digital compression (21),
+%                               EMPTY:0000454 NDI event marker text
+%                               compression (41), EMPTY:0000455 NDI time
+%                               compression (61) or EMPTY:0000456 NDI
+%                               metadata compression (2)
+%       compression.parameters  one entry: variable NCIT:C42645 Data Type,
+%                               text the class name the header's original
+%                               format gives, as NDI-compress's
+%                               read_ndibinary spells a format ('int16',
+%                               'uint8', 'float64', 'char')
+%   counted `compression_written` of `compression_bodies_seen`. A body whose
+%   members are not here, whose header cannot be read, names an unknown
+%   method or format, or whose members disagree keeps pass 1's
+%   `compression`, counted `compression_kept` (first reason:
+%   `first_compression_kept_reason`). The header's original format may be
+%   written as the characters of 'integer' or 'float' rather than its code
+%   (NDI-compress compress_ephys hands write_ndibinary the char; the
+%   decision: "read from compress_ephys.m and write_ndibinary.m, not
+%   verified"); both are read. An unpacked event channel's body is not an
+%   NDI-compress file ([unpacked event bodies are uncompressed]) and gets
+%   none. The data file names stay as pass 1 wrote them.
 %
 %   WHERE THE BYTES ARE, as ndi.migrate.internal.epochSeriesBodies looks:
 %   <NDIDIR>/files/<uid>, then the recorded location when it is a local
@@ -369,6 +401,8 @@ report = struct( ...
     'event_kept_text_channel',    0, ...
     'event_kept_marker_columns',  0, ...
     'event_kept_unwired',         0, ...
+    'event_kept_several_devices', 0, ...
+    'event_channels_rig_device',  0, ...
     'event_kept_empty_channel',   0, ...
     'event_kept_not_exact',       0, ...
     'event_kept_other',           0, ...
@@ -378,6 +412,10 @@ report = struct( ...
     'text_channels_seen',         0, ...
     'text_channels_unpacked',     0, ...
     'event_bodies_removed',       0, ...
+    'compression_bodies_seen',    0, ...
+    'compression_written',        0, ...
+    'compression_kept',           0, ...
+    'first_compression_kept_reason', '', ...
     'uneven_time_kept',           {{}}, ...
     'malformed',                  {{}}, ...
     'scale_gaps',                 {{}}, ...
@@ -388,16 +426,17 @@ report = struct( ...
 removed = {};
 storeDir = fullfile(ndiDir, 'files');
 
-% ---- the pass-1 archive bodies, grouped by archive (same owners, session
-% and epoch note) ---------------------------------------------------------
+% ---- the pass-1 archive bodies, grouped by archive (session, epoch note
+% and the acquisition system their owners name; archiveKeyOf) -------------
 groupKeys = {};
 groupMembers = {};
+systemsOf = ownerSystems(structs);
 for k = 1:numel(structs)
     b = structs{k};
     if ~strcmp(className(b), 'opaque_body'); continue; end
     fn = bodyFilename(b);
     if isempty(seriesKind(fn)); continue; end
-    key = archiveKeyOf(b);
+    key = archiveKeyOf(b, systemsOf);
     i = find(strcmp(groupKeys, key), 1);
     if isempty(i)
         groupKeys{end+1} = key; %#ok<AGROW>
@@ -511,6 +550,19 @@ for a = 1:numel(groupKeys)
     ids = {};
     gaps = struct('document_id', {}, 'class', {}, 'field', {}, 'reason', {});
     for m = 1:numel(made)
+        % [ingested compression settings], [compression settings without
+        % bit size]: the block from the members' NDI-compress headers
+        report.compression_bodies_seen = report.compression_bodies_seen + 1;
+        [compBody, compWhy] = withCompression(made{m}.body, storeDir);
+        made{m}.body = compBody;
+        if isempty(compWhy)
+            report.compression_written = report.compression_written + 1;
+        else
+            report.compression_kept = report.compression_kept + 1;
+            if isempty(report.first_compression_kept_reason)
+                report.first_compression_kept_reason = compWhy;
+            end
+        end
         if made{m}.k > 0
             structs{made{m}.k} = made{m}.body;
         else
@@ -591,6 +643,8 @@ for a = 1:numel(groupKeys)
         if ev.unpacked
             report.event_archives_unpacked = report.event_archives_unpacked + 1;
             report.event_channels_unpacked = report.event_channels_unpacked + ev.channels;
+            report.event_channels_rig_device = report.event_channels_rig_device + ...
+                ev.rigDeviceChannels;
             report.text_channels_unpacked = report.text_channels_unpacked + ev.textChannels;
             report.event_bodies_left = report.event_bodies_left - 1;
         else
@@ -646,7 +700,7 @@ uneven = false;
 written = {};
 info = struct('eventBodyIds', {{}}, 'channelListWhy', '', 'timeChannelCovariates', 0, ...
     'members', [0 0 0 0], 'names', [0 0 0 0], 'events', struct('present', false, 'unpacked', false, ...
-    'channels', 0, 'textChannels', 0, 'kind', '', 'why', ''), 'timeValues', 0, 'rebased', false, ...
+    'channels', 0, 'textChannels', 0, 'rigDeviceChannels', 0, 'kind', '', 'why', ''), 'timeValues', 0, 'rebased', false, ...
     'timeRows', [0 0], 'timeRowKept', false, 'timeKept', '', 'timeKeptBody', '', ...
     'timeKeptTimeBody', '', 'split', [0 0], 'malformed', []);
 % [migrated body members renamed]: the members of the channel and time
@@ -1308,7 +1362,12 @@ function [ev, docs, written, rows] = unpackEvents(structs, idx, kinds, ci, t0, s
 %                        and no compression; member body_data_0 = the
 %                        entries, one UTF-8 JSON array of strings in event
 %                        order (ndi.vintage.ingestedEventData reads it back)
-%   each with entity_id the wired device, `acquisition_system_id` the
+%   each with entity_id the wired device or, for a channel no relation wires,
+%   the rig's device ([event channel observes its wired device]: "a channel
+%   with no wiring relation falls back to the acquisition system as its
+%   entity, counted"; the acquisition system as an entity is the system's
+%   `device_id`, [acquisition system is a device entity], Jess Haley,
+%   2026-11-19; counted `event_channels_rig_device`), `acquisition_system_id` the
 %   system the archive's recordings name ("instrument the acquisition
 %   system": an acquisition system is not an `entity`, which `instrument_id`
 %   requires, so the system is named where an interaction names its rig),
@@ -1322,13 +1381,20 @@ function [ev, docs, written, rows] = unpackEvents(structs, idx, kinds, ci, t0, s
 %                      array] (2026-11-19): text channels are unpacked; a
 %                      text channel whose entries do not come back exactly
 %                      from their JSON array is `not_exact`
-%     marker_columns   a marker whose events carry several numbers: the
-%                      second dimension ([several marker numbers are a second
-%                      dimension]) has no decided term
+%     marker_columns   a marker whose events carry several numbers. NDI's
+%                      expander gives one code per event (NDI-compress
+%                      vector2eventmarktext), so a migrated file cannot hold
+%                      several; [marker code position term] (Jess Haley,
+%                      2026-11-19) builds the event x column value
+%                      ([several marker numbers are a second dimension]) in
+%                      the native v2 ingest, not here, so this stays a
+%                      guard
 %     unwired          a channel (event, marker or text) no `connected to`
-%                      relation of the epoch wires, or that several wire: the
-%                      decision's fallback entity, the acquisition system, is
-%                      not an `entity`
+%                      relation of the epoch wires, when the acquisition
+%                      system names no rig device (`device_id`) to fall back
+%                      to (a batch migrated before DID-matlab #498)
+%     several_devices  a channel several `connected to` relations wire to
+%                      different devices: no decision names its entity
 %     empty_channel    a channel with no event
 %     not_exact        the channels read back (ndi.vintage.ingestedEventData,
 %                      the reader's rule) or NDI's own round trip
@@ -1341,7 +1407,7 @@ function [ev, docs, written, rows] = unpackEvents(structs, idx, kinds, ci, t0, s
 %   rebuild (ndi.vintage.ingestedChannelList); DOCS the documents made;
 %   WRITTEN the store files written (only once every check has passed).
 ev = struct('present', false, 'unpacked', false, 'channels', 0, 'textChannels', 0, ...
-    'kind', '', 'why', '');
+    'rigDeviceChannels', 0, 'kind', '', 'why', '');
 docs = {};
 written = {};
 rows = struct('type', {}, 'number', {});
@@ -1423,7 +1489,8 @@ for i = 1:numel(ct)
     end
     if strcmp(type, 'marker') && size(Di, 2) > 1
         ev = left(ev, 'marker_columns', sprintf(['marker channel %d carries %d numbers per ' ...
-            'event: the second dimension has no decided term'], num, size(Di, 2)));
+            'event, which NDI''s expander never gives for a migrated file ([marker code ' ...
+            'position term]: the native v2 ingest builds that value)'], num, size(Di, 2)));
         return;
     end
     stored = Ti(:) - t0;
@@ -1458,11 +1525,26 @@ for i = 1:numel(ct)
             '(times from the epoch start %.17g, or its data)'], type, num, t0));
         return;
     end
-    [entity, n] = wiredDevice(structs, sysIds{1}, anchors, type, num);
-    if n ~= 1
-        ev = left(ev, 'unwired', sprintf(['%s channel %d is wired to %d device(s) by a ' ...
-            '`connected to` relation of the epoch: its entity is not known (the decision''s ' ...
-            'fallback, the acquisition system, is not an entity)'], type, num, n));
+    [entity, n, rigDevice] = wiredDevice(structs, sysIds{1}, anchors, type, num);
+    if n == 0 && ~isempty(rigDevice)
+        % [event channel observes its wired device] (Jess Haley,
+        % 2026-11-17): "a channel with no wiring relation falls back to the
+        % acquisition system as its entity, counted"; the acquisition system
+        % as an entity is the rig's device, the system's `device_id`
+        % ([acquisition system is a device entity], Jess Haley, 2026-11-19)
+        entity = rigDevice;
+        ev.rigDeviceChannels = ev.rigDeviceChannels + 1;
+    elseif n == 0
+        ev = left(ev, 'unwired', sprintf(['%s channel %d is wired to no device by a ' ...
+            '`connected to` relation of the epoch, and its acquisition system %s names ' ...
+            'no device (`device_id`) to fall back to'], type, num, sysIds{1}));
+        return;
+    elseif n > 1
+        % several wired devices: the decision names the fallback for a
+        % channel no relation wires only
+        ev = left(ev, 'several_devices', sprintf(['%s channel %d is wired to %d devices ' ...
+            'by `connected to` relations of the epoch: its entity is not known'], ...
+            type, num, n));
         return;
     end
     plan(end+1) = struct('type', type, 'number', num, 'name', char(ci(r).name), ...
@@ -1501,10 +1583,11 @@ ev.kind = kind;
 ev.why = why;
 end
 
-function [entity, n] = wiredDevice(structs, sysId, anchors, type, num)
+function [entity, n, rigDevice] = wiredDevice(structs, sysId, anchors, type, num)
 % the child of the `connected to` (RO:0002170) relations to SYSID, timed by
 % one of ANCHORS, whose condition of TYPE's channel-type term lists NUM
-% (did2.convert.resolveEpochProbemap mkWiring); N how many devices. The
+% (did2.convert.resolveEpochProbemap mkWiring); N how many devices;
+% RIGDEVICE the system's `device_id` ('' when it names none). The
 % relation's parent is the rig's device entity, the system's `device_id`
 % (Jess Haley 2026-11-19 [acquisition system is a device entity], did-schema
 % docs/plans/did_v2_standing_wiring_plan.md), or, in a batch migrated before,
@@ -1512,10 +1595,13 @@ function [entity, n] = wiredDevice(structs, sysId, anchors, type, num)
 node = struct('event', 'EMPTY:0000376', 'marker', 'EMPTY:0000377', 'text', 'EMPTY:0000410');
 want = node.(type);
 parents = {sysId};
+rigDevice = '';
 for k = 1:numel(structs)
     if any(strcmp(className(structs{k}), ndi.vintage.acquisitionConfigurationNames())) ...
             && strcmp(baseId(structs{k}), sysId)
-        parents = [parents, edgeValues(structs{k}, 'device_id')]; %#ok<AGROW>
+        dev = edgeValues(structs{k}, 'device_id');
+        parents = [parents, dev]; %#ok<AGROW>
+        if isscalar(dev); rigDevice = dev{1}; end
         break;
     end
 end
@@ -1835,6 +1921,140 @@ function deleteIfThere(f)
 if isfile(f); delete(f); end
 end
 
+% ---- the compression block ([ingested compression settings]) ---------
+
+function [body, why] = withCompression(body, storeDir)
+% BODY with its `compression` block from its members' NDI-compress headers;
+% WHY '' when written, else why BODY keeps the compression it had
+why = '';
+paths = memberPaths(body, storeDir);
+if isempty(paths)
+    why = sprintf('%s: its members are not here', baseId(body));
+    return;
+end
+method = NaN;
+dtype = '';
+for m = 1:numel(paths)
+    [mm, dd, w] = ndiCompressHeader(paths{m});
+    if ~isempty(w)
+        why = sprintf('%s member body_data_%d: %s', baseId(body), m - 1, w);
+        return;
+    end
+    if m == 1
+        method = mm;
+        dtype = dd;
+    elseif mm ~= method || ~strcmp(dd, dtype)
+        why = sprintf(['%s: its members'' NDI-compress headers disagree (method %d, %s ' ...
+            'and method %d, %s)'], baseId(body), method, dtype, mm, dd);
+        return;
+    end
+end
+schemes = {1, 'EMPTY:0000452', 'NDI ephys compression'; ...
+    21, 'EMPTY:0000453', 'NDI digital compression'; ...
+    41, 'EMPTY:0000454', 'NDI event marker text compression'; ...
+    61, 'EMPTY:0000455', 'NDI time compression'; ...
+    2,  'EMPTY:0000456', 'NDI metadata compression'};
+r = find(cellfun(@(x) x == method, schemes(:, 1)), 1);
+if isempty(r)
+    why = sprintf('%s: NDI-compress encode method %d has no registered term', baseId(body), method);
+    return;
+end
+block = struct('term', struct('node', schemes{r, 2}, 'name', schemes{r, 3}));
+block.parameters = struct('variable', struct('node', 'NCIT:C42645', 'name', 'Data Type'), ...
+    'text', dtype);
+try
+    body.data_body.compression = did2.build.compression(block);
+catch err
+    why = sprintf('%s: the block is not built (%s: %s)', baseId(body), err.identifier, err.message);
+end
+end
+
+function [method, dtype, why] = ndiCompressHeader(path)
+% the encode method and the stored (original) data type of an NDI-compress
+% segment (a .nbf.tgz holding a .nbh header and a .nbf payload), read from
+% the header's invariant section as NDI-compress's read_ndibinary reads it:
+% 'NDIBINARYHEADER', then uint32 version, encode_method, payload_format,
+% payload_isunsigned, payload_bits_per_sample, payload_rows,
+% payload_columns, original_format, original_isunsigned,
+% original_bits_per_sample. original_format is 1 integer, 2 float, 3 char,
+% or the characters of 'integer' / 'float' (one uint32 each) where the
+% writer was handed the char (compress_ephys); then signedness and bits
+% follow those characters. DTYPE is spelled as read_ndibinary spells a
+% format: [u]int<bits>, float<bits>, char.
+method = NaN;
+dtype = '';
+why = '';
+d = tempname();
+mkdir(d);
+c = onCleanup(@() rmdir(d, 's'));
+tgz = fullfile(d, 'segment.nbf.tgz');
+try
+    copyfile(path, tgz);
+    untar(tgz, d);
+catch err
+    why = sprintf('it is not an NDI-compress file (%s)', err.message);
+    return;
+end
+h = dir(fullfile(d, '*.nbh'));
+if isempty(h); h = dir(fullfile(d, '**', '*.nbh')); end
+if ~isscalar(h)
+    why = sprintf('it holds %d NDI-compress header(s)', numel(h));
+    return;
+end
+fid = fopen(fullfile(h(1).folder, h(1).name), 'r', 'ieee-le');
+if fid < 0
+    why = 'its NDI-compress header cannot be opened';
+    return;
+end
+magic = fread(fid, 15, 'uint8=>char')';
+w = fread(fid, 21, 'uint32');   % the invariant section, bytes 15 to 99
+fclose(fid);
+if ~strcmp(magic, 'NDIBINARYHEADER') || numel(w) < 10
+    why = 'its NDI-compress header does not start NDIBINARYHEADER';
+    return;
+end
+method = w(2);
+f = w(8:end);
+spelled = {'integer', 1; 'float', 2; 'char', 3};
+fmt = NaN;
+for q = 1:size(spelled, 1)
+    word = double(spelled{q, 1});
+    if numel(f) >= numel(word) + 2 && isequal(f(1:numel(word))', word)
+        fmt = spelled{q, 2};
+        f = f(numel(word) + 1:end);
+        break;
+    end
+end
+if isnan(fmt) && any(f(1) == [1 2 3])
+    fmt = f(1);
+    f = f(2:end);
+end
+if isnan(fmt) || numel(f) < 2
+    why = sprintf('its NDI-compress header''s original format (%d) is not one NDI-compress writes', f(1));
+    return;
+end
+isUnsigned = f(1);
+bits = f(2);
+switch fmt
+    case 1
+        if ~any(bits == [8 16 32 64]) || ~any(isUnsigned == [0 1])
+            why = sprintf('its NDI-compress header names an integer of %d bits (unsigned %d)', ...
+                bits, isUnsigned);
+            return;
+        end
+        dtype = sprintf('int%d', bits);
+        if isUnsigned; dtype = ['u' dtype]; end
+    case 2
+        if ~any(bits == [32 64])
+            why = sprintf('its NDI-compress header names a float of %d bits', bits);
+            return;
+        end
+        dtype = sprintf('float%d', bits);
+    case 3
+        dtype = 'char';
+end
+end
+
 function paths = memberPaths(b, storeDir)
 % the local path of every member body_data_0..N-1, in order; {} if any is
 % not here
@@ -2010,9 +2230,17 @@ end
 
 % ---- document fields ------------------------------------------------
 
-function key = archiveKeyOf(b)
-% pass 1 makes one archive's bodies together: the same owners, session and
-% epoch note ("The ingested recording of epoch <e>: ...")
+function key = archiveKeyOf(b, systemsOf)
+% pass 1 makes one archive's bodies together: the same session and epoch
+% note ("The ingested recording of epoch <e>: ...") and owners on the same
+% acquisition system. By [non-specimen channel groups get their own owner]
+% (Jess Haley, 2026-11-17; DID-matlab #515) a digital, auxiliary or analog
+% output group is owned by its own statement, not by the recording
+% observations, and each such owner names the system by
+% `acquisition_system_id`, as the recordings do; so the archive is the
+% bodies whose owners name the same system(s) (SYSTEMSOF, ownerSystems). A
+% body with an owner that names no system (or is not among the documents)
+% is keyed by its owners, as before.
 owners = sort(edgeValues(b, 'owner_id'));
 sid = char(did2.schema.cache.sessionIdOf(b));
 note = '';
@@ -2020,7 +2248,31 @@ if isfield(b, 'data_body'); note = ndi.v2.notesOf(b.data_body); end
 tok = regexp(note, 'recording of epoch (.*?): v1 attached', 'tokens', 'once');
 ep = '';
 if ~isempty(tok); ep = tok{1}; end
-key = strjoin([{sid, ep}, owners], '|');
+systems = {};
+for o = 1:numel(owners)
+    if ~isKey(systemsOf, owners{o}) || isempty(systemsOf(owners{o}))
+        systems = {};
+        break;
+    end
+    systems = [systems, systemsOf(owners{o})]; %#ok<AGROW>
+end
+if isempty(systems)
+    key = strjoin([{sid, ep}, owners], '|');
+else
+    key = strjoin([{sid, ep, 'system'}, unique(systems)], '|');
+end
+end
+
+function m = ownerSystems(structs)
+% document id -> the acquisition systems it names (`acquisition_system_id`),
+% for every document that names one
+m = containers.Map('KeyType', 'char', 'ValueType', 'any');
+for k = 1:numel(structs)
+    v = edgeValues(structs{k}, 'acquisition_system_id');
+    if isempty(v); continue; end
+    id = baseId(structs{k});
+    if ~isempty(id); m(id) = v; end
+end
 end
 
 function tf = isStimulusLog(b)
