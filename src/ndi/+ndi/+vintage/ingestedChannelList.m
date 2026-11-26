@@ -36,9 +36,9 @@ function ci = ingestedChannelList(groups, events)
 %                   when within a part in 1e9 of it); NaN when the time is
 %                   keyed (an uneven time channel)
 %     offset        the offset covariate (AFO:AFQ_0000202)
-%     scale         the scale covariate (NCIT:C70774): its `source_value`
+%     scale         the scale covariate (NCIT:C70774): its `source_numeric`
 %                   (the scale in the reader's own output unit, what NDI's
-%                   reader multiplies by) when it has one, else its `value`
+%                   reader multiplies by) when it has one, else its `numeric`
 %     number        the channel-number covariate
 %     group         the file's group
 %     dataclass     'digital' for di/do, else 'ephys'
@@ -61,6 +61,12 @@ function ci = ingestedChannelList(groups, events)
 %                   time channel the polynomial [0 1])
 %     number        T
 %     group         1 + floor(T / 100000), dataclass 'time' (create_properties)
+%   A time group of several time channels split one time value per time
+%   channel (Jess Haley, 2026-11-19 [time group with several time channels
+%   split]) gives one row per time channel its groups name, each in the
+%   group the writer's rule gives it (t1 and t2 both group 1), as the v1 list
+%   holds them; the split time values' bodies are not channel groups and add
+%   no row.
 %   A time channel a group names that the v1 list does not hold (Intan's
 %   auxiliary inputs name t2, VH-Lab/NDI-matlab#1249) is rebuilt too, so such
 %   a list does not compare exactly and the second pass keeps it.
@@ -120,13 +126,16 @@ for k = 1:numel(groups)
     for c = 1:numel(covs)
         cv = covs{c};
         if ~isstruct(cv) || ~isfield(cv, 'variable'); continue; end
+        old = ndi.v2.oldNumericForm(cv);
+        if ~isempty(old)
+            ndi.v2.refuseOldNumericShape('A channel group''s covariate', old);
+        end
         v = cv.variable;
         nm = ''; node = '';
         if isstruct(v) && isfield(v, 'name'); nm = char(v.name); end
         if isstruct(v) && isfield(v, 'node'); node = char(v.node); end
         if isTimeTerm(v) && isfield(cv, 'spacing') && ~isempty(regularNumber(cv.spacing))
-            % spacing: the old {value, source_value} block, or the new
-            % numeric shape's plain number ([one shape for measured numbers])
+            % spacing: a plain number ([one shape for measured numbers])
             sr = 1 / regularNumber(cv.spacing);
             % the spacing is stored as 1/rate: an integer rate comes back
             % as that integer, not one bit off it
@@ -134,17 +143,17 @@ for k = 1:numel(groups)
         elseif strcmp(nm, 'channel number')
             nums = double(cv.count(:)');
         elseif strcmp(node, 'AFO:AFQ_0000202')
-            off = numbersOf(cv, 'value');
+            off = numbersOf(cv, 'numeric');
         elseif strcmp(node, 'NCIT:C70774')
             % [scale carries the reader's unit] (Jess Haley, 2026-11-17):
             % where the reader defines its output unit, `value` is in volts
-            % per count and `source_value` is the v1 scale in the reader's
+            % per count and `source_numeric` is the v1 scale in the reader's
             % output unit, which is what NDI's reader multiplies by
-            sc = numbersOf(cv, 'source_value');
-            if isempty(sc); sc = numbersOf(cv, 'value'); end
+            sc = numbersOf(cv, 'source_numeric');
+            if isempty(sc); sc = numbersOf(cv, 'numeric'); end
         elseif strcmp(node, 'EMPTY:0000374')
             % [time channel is a per-channel covariate]
-            tc = numbersOf(cv, 'value');
+            tc = numbersOf(cv, 'numeric');
         elseif strcmp(node, 'NCIT:C25364') && isfield(cv, 'text')
             % [channel name is an identifier]
             names = textsOf(cv.text);
@@ -223,16 +232,10 @@ end
 % =====================================================================
 
 function x = numbersOf(cv, field)
-% a covariate's numbers, as a row: quantity.<FIELD> (NaN carried; a JSON
-% null read back as [] is NaN), or the flat `numeric` / `source_numeric` of
-% the new numeric shape
+% a covariate's numbers, as a row: its `numeric` or `source_numeric` (FIELD)
+% (NaN carried; a JSON null read back as [] is NaN)
 x = [];
-if isfield(cv, 'quantity') && isstruct(cv.quantity) && isfield(cv.quantity, field)
-    x = cv.quantity.(field);
-else
-    flat = struct('value', 'numeric', 'source_value', 'source_numeric');
-    if isfield(cv, flat.(field)); x = cv.(flat.(field)); end
-end
+if isfield(cv, field); x = cv.(field); end
 if iscell(x)
     y = NaN(1, numel(x));
     for i = 1:numel(x)
@@ -246,12 +249,9 @@ x = double(x(:)');
 end
 
 function x = regularNumber(p)
-% a covariate's origin or spacing: the old block's canonical `value`, or the
-% new numeric shape's plain number; [] when neither
+% a covariate's origin or spacing: a plain number; [] when none
 x = [];
-if isstruct(p) && ~isempty(p) && isfield(p, 'value') && ~isempty(p(1).value)
-    x = double(p(1).value(1));
-elseif (isnumeric(p) || islogical(p)) && ~isempty(p)
+if (isnumeric(p) || islogical(p)) && ~isempty(p)
     x = double(p(1));
 end
 end

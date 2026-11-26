@@ -235,10 +235,135 @@ classdef TestStimulusRecipe < matlab.unittest.TestCase
             % a key no row names is still an entry, its v1 name a label
             testCase.verifyEqual(entryOf(r, 'mystery').value, 4);
         end
+
+        % ======== NewStim generators with no corpus document (2026-11-25) ====
+        % Decided by Jess Haley, 2026-10-21 [non-grating stimuli as methods]:
+        % every visual non-grating stimulus is one method, its term naming
+        % the kind, every v1 parameter an entry. The parameter sets are the
+        % NewStim writers' own defaults (VH-Lab/vhlab-NewStim-matlab
+        % 0ae6822, each constructor's default_p, read by NDI's
+        % NewStimStims.readmetadatafromfile through getparameters), sent
+        % through jsonencode / jsondecode as NDI's document store does.
+
+        function testCentreSurroundSpotCarriesEveryParameter(testCase)
+            p = centreSurround();
+            r = ndi.migrate.internal.stimulusRecipe(p, 'centersurroundstim');
+            testCase.verifyEqual(r.term, 'centre-surround spot');
+            e = entryOf(r, 'centre position');
+            testCase.verifyEqual(e.value, [100 100]);
+            testCase.verifyEqual(e.unit.node, 'om:pixel');
+            testCase.verifyEqual(entryOf(r, 'centre radius').value, 50);
+            testCase.verifyEqual(entryOf(r, 'centre colour').value, [255 255 255]);
+            testCase.verifyEqual(entryOf(r, 'centre colour').unit.node, 'NCIT:C75765');
+            testCase.verifyEqual(entryOf(r, 'surround colour').value, [0 0 0]);
+            testCase.verifyEqual(entryOf(r, 'stimulus duration').value, 0.5);
+            testCase.verifyEqual(entryOf(r, 'stimulus duration').unit.node, 'om:second-Time');
+            testCase.verifyEqual(entryOf(r, 'centre onset lag').unit.node, 'om:second-Time');
+            testCase.verifyEqual(entryOf(r, 'bit depth').value, 8);
+            % the writer's sentinels (loadstim.m): -1 is "no surround" and
+            % "never"; the number is kept, with no unit and its meaning named
+            e = entryOf(r, 'surround radius (below 0: no surround)');
+            testCase.verifyEqual([e.value, double(isempty(e.unit))], [-1 1]);
+            e = entryOf(r, 'centre offset lag (0 or below: never)');
+            testCase.verifyEqual([e.value, double(isempty(e.unit))], [-1 1]);
+            testCase.verifyNotEmpty(entryOf(r, 'surround offset lag (0 or below: never)'));
+            testCase.verifyEmpty(entryOf(r, 'surround radius'));
+            % 12 fields + bit depth (dispprefs empty: no entry)
+            testCase.verifyEqual(numel(r.parameters), 13);
+            % a real surround and a real offset lag take their units
+            p.surrradius = 80; p.lagoff = 0.25;
+            r = ndi.migrate.internal.stimulusRecipe(p, 'centersurroundstim');
+            testCase.verifyEqual(entryOf(r, 'surround radius').unit.node, 'om:pixel');
+            testCase.verifyEqual(entryOf(r, 'centre offset lag').value, 0.25);
+            testCase.verifyEqual(entryOf(r, 'centre offset lag').unit.node, 'om:second-Time');
+        end
+
+        function testGliderNoiseCarriesEveryParameter(testCase)
+            p = glider();
+            r = ndi.migrate.internal.stimulusRecipe(p, 'glidergridstim');
+            testCase.verifyEqual(r.term, 'glider noise');
+            testCase.verifyEqual(entryOf(r, 'colour 1 (grid value -1)').value, [0 0 0]);
+            testCase.verifyEqual(entryOf(r, 'colour 2 (grid value 1)').value, [255 255 255]);
+            testCase.verifyEqual(entryOf(r, 'glider correlator').form, 'count');
+            testCase.verifyEqual(entryOf(r, 'correlator sign').value, 1);
+            testCase.verifyEqual(entryOf(r, 'correlator version').value, 1);
+            testCase.verifyEqual(entryOf(r, 'grid square size').value, [50 50]);
+            testCase.verifyEqual(entryOf(r, 'stimulus rectangle').value, [0 0 500 100]);
+            testCase.verifyEqual(entryOf(r, 'frame rate').unit.node, 'om:hertz');
+            seed = entryOf(r, 'Random Seed');
+            testCase.verifyEqual(seed.variable.node, 'NCIT:C64220');
+            testCase.verifyEqual(size(seed.value), [35 1], 'rand(''state'') is 35 x 1');
+            % 12 fields + bit depth (dispprefs empty: no entry)
+            testCase.verifyEqual(numel(r.parameters), 13);
+            p.correlator_sign = -1;
+            testCase.verifyEqual(entryOf(ndi.migrate.internal.stimulusRecipe(p, ...
+                'glidergridstim'), 'correlator sign').value, -1);
+        end
+
+        function testPolygonOffsetsFollowItsUnits(testCase)
+            p = polygon();
+            r = ndi.migrate.internal.stimulusRecipe(p, 'polygonstim');
+            testCase.verifyEqual(r.term, 'polygon');
+            testCase.verifyEqual(entryOf(r, 'polygon points').value, [10 5]);
+            testCase.verifyEqual(entryOf(r, 'polygon points').unit.node, 'om:pixel', ...
+                'drawpoly draws points in pixels whatever units says');
+            testCase.verifyEqual(entryOf(r, 'offset').unit, 'degree', 'units 0: degrees');
+            testCase.verifyEqual(entryOf(r, 'orthogonal offset').unit, 'degree');
+            testCase.verifyEqual(entryOf(r, 'viewing distance').unit.node, 'om:centimetre');
+            testCase.verifyEqual(entryOf(r, 'stimulus duration').value, 5);
+            testCase.verifyEqual(entryOf(r, 'foreground colour').value, [255 255 255]);
+            testCase.verifyEqual(entryOf(r, 'polygon shape').form, 'count');
+            % 15 fields + bit depth
+            testCase.verifyEqual(numel(r.parameters), 16);
+            p.units = 1;
+            r = ndi.migrate.internal.stimulusRecipe(p, 'polygonstim');
+            testCase.verifyEqual(entryOf(r, 'offset').unit.node, 'om:pixel', 'units 1: pixels');
+            % a polygon (shape 1): N x 2 points keep their shape
+            p.shape = 1; p.points = [0 0; 10 0; 0 10];
+            r = ndi.migrate.internal.stimulusRecipe(p, 'polygonstim');
+            testCase.verifyEqual(entryOf(r, 'polygon points').value, [0 0; 10 0; 0 10]);
+        end
     end
 end
 
 % ===================== fixtures ===========================================
+
+function p = viaJson(p)
+% NDI stores the parameters as JSON; this is what the second pass reads back
+p = jsondecode(jsonencode(p));
+end
+
+function p = centreSurround()
+% @centersurroundstim/centersurroundstim.m default_p, verbatim
+p = struct('center', [100 100], 'BG', 128*[1 1 1], 'FGc', 255*[1 1 1], ...
+    'FGs', 0*[1 1 1], 'contrast', 1, 'lagon', 0, 'lagoff', -1, ...
+    'surrlagon', 0, 'surrlagoff', -1, 'radius', 50, 'surrradius', -1, ...
+    'stimduration', 0.5);
+p.dispprefs = {};
+p = viaJson(p);
+end
+
+function p = glider()
+% @glidergridstim/glidergridstim.m default_p, verbatim but randState, which
+% the writer fills with rand('state') (35 x 1)
+p = struct('rect', [0 0 500 100], 'angle', 0, 'BG', [128 128 128], ...
+    'FG1', [0 0 0], 'FG2', [255 255 255], 'correlator', 0, ...
+    'correlator_sign', 1, 'pixSize', [50 50], 'N', 100, 'fps', 15, ...
+    'randState', (1:35)' / 36, 'correlator_version', 1);
+p.dispprefs = {};
+p = viaJson(p);
+end
+
+function p = polygon()
+% @polygonstim/polygonstim.m default_p, verbatim
+p = struct('rect', [0 0 100 100], 'shape', 0, 'points', [10 5], ...
+    'distance', 57, 'units', 0, 'orientation', 45, ...
+    'howlong', 5, 'backdrop', [0 0 0], 'background', [0 0 0], ...
+    'foreground', [255 255 255], 'contrast', 1, 'remove', [0 0], ...
+    'offsetxy', [0 0], 'offsettheta', 0, 'smooth', 2);
+p.dispprefs = {};
+p = viaJson(p);
+end
 
 function p = noise()
 p = struct('BG', [128; 128; 128], 'N', 100, 'angle', 0, ...

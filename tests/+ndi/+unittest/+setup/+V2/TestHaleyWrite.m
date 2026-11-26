@@ -54,11 +54,11 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             ex = pick('inclusion in analysis');
             testCase.verifyNumElements(ex, 1);
             testCase.verifyEqual(ex{1}.statement.variable.node, 'EMPTY:0000314');
-            testCase.verifyFalse(logical(ex{1}.logical.value));
+            testCase.verifyFalse(logical(ex{1}.logical.value.logical));
             nf = pick('video recording');
             testCase.verifyNumElements(nf, 1);
             testCase.verifyEqual(nf{1}.statement.variable.node, 'NCIT:C91063');
-            testCase.verifyFalse(logical(nf{1}.logical.value));
+            testCase.verifyFalse(logical(nf{1}.logical.value.logical));
             testCase.verifyEqual(ex{1}.statement.notes, 'no contrast video, so patches are poorly aligned');
             testCase.verifyEqual(nf{1}.statement.notes, 'Prepared but not filmed: no video.');
             testCase.verifyEmpty(pick('reason for inclusion in analysis'));
@@ -112,7 +112,10 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             % (decision #55); three acclimation plates (the fixture's plates
             % were picked at three times), each with its one patch; one food
             % deprivation plate (plate 14's worms)
-            testCase.verifyEqual(count('subject'), 4 + 4 + 8 + 4 + 3 + 3 + 1);
+            % ... and the two cameras' rig devices (no instrument stage here:
+            % did-schema [device id required and named by the rig])
+            testCase.verifyEqual(count('subject'), 4 + 4 + 8 + 4 + 3 + 3 + 1 + 2);
+            testCase.verifyEqual(sum(rigDevices(docs, classes)), 2, 'a rig device per camera');
             % plate 11 twice + 12 + 14 (behaviour) + 2 lawn clips
             testCase.verifyEqual(count('epoch'), 6);
             testCase.verifyEqual(count('intensity_observation'), 6);
@@ -124,12 +127,12 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             testCase.verifyEqual(sum(strcmp(how, 'EMPTY:0000300')), 4);
             testCase.verifyEqual(sum(strcmp(how, 'EMPTY:0000348')), 2);
             testCase.verifyEqual(count('opaque_body'), 6);
-            testCase.verifyEqual(count('acquisition_system'), 2, 'camera1 and camera2');
+            testCase.verifyEqual(count(ndi.vintage.acquisitionConfigurationClass()), 2, 'camera1 and camera2');
             testCase.verifyEqual(count('session'), 1);
             % did-schema [required acquisition edges]: every system names its
             % reader and its epoch file pattern; [epoch to system link]: its
             % device is the camera the recordings name as their instrument
-            asys = docs(strcmp(classes, 'acquisition_system'));
+            asys = docs(strcmp(classes, ndi.vintage.acquisitionConfigurationClass()));
             for k = 1:numel(asys)
                 testCase.verifyNotEmpty(edge(asys{k}, 'reader_id'), 'reader_id is required');
                 testCase.verifyNotEmpty(edge(asys{k}, 'epoch_file_pattern_id'), ...
@@ -138,9 +141,33 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             instruments = unique(cellfun(@(d) edge(d, 'instrument_id'), io, 'UniformOutput', false));
             instruments = instruments(~cellfun(@isempty, instruments));
             devices = cellfun(@(d) edge(d, 'device_id'), asys, 'UniformOutput', false);
-            devices = unique(devices(~cellfun(@isempty, devices)));
-            testCase.verifyEqual(reshape(sort(devices), 1, []), reshape(sort(instruments), 1, []), ...
-                'each system''s device_id is the camera its recordings name as instrument (A1)');
+            % did-schema [device id required and named by the rig]: every
+            % system names its device
+            testCase.verifyFalse(any(cellfun(@isempty, devices)), 'device_id is required');
+            testCase.verifyEmpty(setdiff(instruments, devices), ...
+                'each camera the recordings name as instrument is its system''s device_id (A1)');
+            % a system whose instrument is not known names its own rig device:
+            % an entity of type device, named with the system's name only, in
+            % the session, one per system
+            ids = cellfun(@(d) d.base.id, docs, 'UniformOutput', false);
+            for k = 1:numel(asys)
+                if ismember(devices{k}, instruments)
+                    continue;
+                end
+                hit = docs(strcmp(ids, devices{k}));
+                testCase.assertNumElements(hit, 1, 'the device_id names a document of the session');
+                rig = hit{1};
+                testCase.verifyEqual(rig.document_class.class_name, 'subject', 'a physical entity');
+                testCase.verifyEqual(ndi.v2.vocabHandle('entity_type', rig.subject.type), 'device');
+                testCase.verifyEqual(char(rig.subject.name), char(asys{k}.(ndi.vintage.acquisitionConfigurationClass()).name));
+                testCase.verifyFalse(isfield(rig.subject, 'local_identifier'), 'the rig device writes name only');
+                testCase.verifyEqual(edge(rig, 'session_id'), edge(asys{k}, 'session_id'), ...
+                    'in the system''s session');
+                testCase.verifyNotEmpty(edge(rig, 'session_id'));
+                testCase.verifyEqual(rig.base.id, rigDeviceId(asys{k}.base.id), ...
+                    'the id DID-matlab''s migration mints for a rig device');
+            end
+            testCase.verifyNumElements(unique(devices), numel(devices), 'one device per system');
 
             s = docs{strcmp(classes, 'session')};
             testCase.verifyNotEmpty(s.depends_on, 'the session names its UTC extent');
@@ -185,7 +212,7 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
                 'camera 2: plate 12 and its lawn clip, and plate 14 (camera 2 by its file name)');
             e = et(strcmp({et.epoch_id}, 'concentration_2022-02-04_12-10-51_2'));
             testCase.verifyEqual(e.underlying_epochs.underlying, {raw});
-            subj = docs(strcmp(classes, 'subject'));
+            subj = docs(strcmp(classes, 'subject') & ~rigDevices(docs, classes));
             plate = subj{cellfun(@(d) strcmp(d.subject.local_identifier, ...
                 'concentration_assayPlate0012'), subj)};
             testCase.verifyEqual(e.epochprobemap.name, 'camera2');
@@ -201,7 +228,7 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             docs = testCase.documents(result.sessions.path{1});
             classes = cellfun(@(d) d.document_class.class_name, docs, 'UniformOutput', false);
             byId = containers.Map(cellfun(@(d) d.base.id, docs, 'UniformOutput', false), docs);
-            subj = docs(strcmp(classes, 'subject'));
+            subj = docs(strcmp(classes, 'subject') & ~rigDevices(docs, classes));
             idOf = containers.Map(cellfun(@(d) d.subject.local_identifier, subj, 'UniformOutput', false), ...
                 cellfun(@(d) d.base.id, subj, 'UniformOutput', false));
             rel = docs(strcmp(classes, 'directed_relation'));
@@ -340,7 +367,7 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             result = testCase.write("concentration_0001", ["metadata", "assertions"]);
             docs = testCase.documents(result.sessions.path{1});
             classes = cellfun(@(d) d.document_class.class_name, docs, 'UniformOutput', false);
-            subj = docs(strcmp(classes, 'subject'));
+            subj = docs(strcmp(classes, 'subject') & ~rigDevices(docs, classes));
             idOf = containers.Map(cellfun(@(d) d.subject.local_identifier, subj, 'UniformOutput', false), ...
                 cellfun(@(d) d.base.id, subj, 'UniformOutput', false));
             byLocal = containers.Map(cellfun(@(d) d.subject.local_identifier, subj, 'UniformOutput', false), subj);
@@ -418,7 +445,7 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
                 && strcmpi(a.statement.variable.name, variable), la));
             a = aboutL('concentration_assayPlate0013', 'inclusion in analysis');
             testCase.verifyNumElements(a, 1);
-            testCase.verifyFalse(logical(a{1}.logical.value));
+            testCase.verifyFalse(logical(a{1}.logical.value.logical));
             testCase.verifyEmpty(aboutL('concentration_assayPlate0012', 'inclusion in analysis'));
             testCase.verifyEmpty(aboutL('concentration_assayPlate0012', 'video recording'), ...
                 'plate 12 was filmed');
@@ -486,7 +513,7 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             docs = testCase.documents(result.sessions.path{1});
             classes = cellfun(@(d) d.document_class.class_name, docs, 'UniformOutput', false);
             byId = containers.Map(cellfun(@(d) d.base.id, docs, 'UniformOutput', false), docs);
-            subj = docs(strcmp(classes, 'subject'));
+            subj = docs(strcmp(classes, 'subject') & ~rigDevices(docs, classes));
             idOf = containers.Map(cellfun(@(d) d.subject.local_identifier, subj, 'UniformOutput', false), ...
                 cellfun(@(d) d.base.id, subj, 'UniformOutput', false));
             on = @(set, local) set(cellfun(@(a) strcmp(edge(a, 'entity_id'), idOf(local)), set));
@@ -666,7 +693,7 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
 
             docs = testCase.documents(result.sessions.path{1});
             classes = cellfun(@(d) d.document_class.class_name, docs, 'UniformOutput', false);
-            subj = docs(strcmp(classes, 'subject'));
+            subj = docs(strcmp(classes, 'subject') & ~rigDevices(docs, classes));
             idOf = containers.Map(cellfun(@(d) d.subject.local_identifier, subj, 'UniformOutput', false), ...
                 cellfun(@(d) d.base.id, subj, 'UniformOutput', false));
             on = @(set, local) set(cellfun(@(a) strcmp(edge(a, 'entity_id'), idOf(local)), set));
@@ -811,7 +838,7 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             docs = testCase.documents(result.sessions.path{1});
             classes = cellfun(@(d) d.document_class.class_name, docs, 'UniformOutput', false);
             byId = containers.Map(cellfun(@(d) d.base.id, docs, 'UniformOutput', false), docs);
-            subj = docs(strcmp(classes, 'subject'));
+            subj = docs(strcmp(classes, 'subject') & ~rigDevices(docs, classes));
             idOf = containers.Map(cellfun(@(d) d.subject.local_identifier, subj, 'UniformOutput', false), ...
                 cellfun(@(d) d.base.id, subj, 'UniformOutput', false));
             on = @(set, local) set(cellfun(@(a) strcmp(edge(a, 'entity_id'), idOf(local)), set));
@@ -872,7 +899,7 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             docs = testCase.documents(sessionPath);
             classes = cellfun(@(d) d.document_class.class_name, docs, 'UniformOutput', false);
             byId = containers.Map(cellfun(@(d) d.base.id, docs, 'UniformOutput', false), docs);
-            subj = docs(strcmp(classes, 'subject'));
+            subj = docs(strcmp(classes, 'subject') & ~rigDevices(docs, classes));
             idOf = containers.Map(cellfun(@(d) d.subject.local_identifier, subj, 'UniformOutput', false), ...
                 cellfun(@(d) d.base.id, subj, 'UniformOutput', false));
             ids = result.metadata.ids;
@@ -1021,7 +1048,7 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             sessionPath = result.sessions.path{1};
             docs = testCase.documents(sessionPath);
             classes = cellfun(@(d) d.document_class.class_name, docs, 'UniformOutput', false);
-            subj = docs(strcmp(classes, 'subject'));
+            subj = docs(strcmp(classes, 'subject') & ~rigDevices(docs, classes));
             idOf = containers.Map(cellfun(@(d) d.subject.local_identifier, subj, 'UniformOutput', false), ...
                 cellfun(@(d) d.base.id, subj, 'UniformOutput', false));
             of = @(cls, local) docs(strcmp(classes, cls) & cellfun(@(d) ...
@@ -1094,7 +1121,7 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             docs = testCase.documents(result.sessions.path{1});
             classes = cellfun(@(d) d.document_class.class_name, docs, 'UniformOutput', false);
             byId = containers.Map(cellfun(@(d) d.base.id, docs, 'UniformOutput', false), docs);
-            subj = docs(strcmp(classes, 'subject'));
+            subj = docs(strcmp(classes, 'subject') & ~rigDevices(docs, classes));
             idOf = containers.Map(cellfun(@(d) d.subject.local_identifier, subj, 'UniformOutput', false), ...
                 cellfun(@(d) d.base.id, subj, 'UniformOutput', false));
             tm = docs(strcmp(classes, 'temperature_manipulation') & cellfun(@(d) ...
@@ -1177,7 +1204,7 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             classes = cellfun(@(d) d.document_class.class_name, docs, 'UniformOutput', false);
             testCase.verifyEqual(sum(strcmp(classes, 'epoch')), 4, ...
                 'raw images 2, 3, background 9 and brightfield image 1 (decision #97)');
-            testCase.verifyEqual(sum(strcmp(classes, 'acquisition_system')), 1, 'the microscope');
+            testCase.verifyEqual(sum(strcmp(classes, ndi.vintage.acquisitionConfigurationClass())), 1, 'the microscope');
             r = docs(strcmp(classes, 'acquisition_reader'));
             testCase.verifyEqual(r{1}.acquisition_reader.reader_string, 'tiffstack');
             session = ndi.session.dir(result.sessions.path{1});
@@ -1235,7 +1262,7 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
 
             docs = testCase.documents(result.sessions.path{1});
             classes = cellfun(@(d) d.document_class.class_name, docs, 'UniformOutput', false);
-            subj = docs(strcmp(classes, 'subject'));
+            subj = docs(strcmp(classes, 'subject') & ~rigDevices(docs, classes));
             idOf = containers.Map(cellfun(@(d) d.subject.local_identifier, subj, 'UniformOutput', false), ...
                 cellfun(@(d) d.base.id, subj, 'UniformOutput', false));
             named = @(cls, local, var) docs(strcmp(classes, cls) & cellfun(@(d) ...
@@ -1408,7 +1435,7 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
 
             docs = testCase.documents(result.sessions.path{1});
             classes = cellfun(@(d) d.document_class.class_name, docs, 'UniformOutput', false);
-            subj = docs(strcmp(classes, 'subject'));
+            subj = docs(strcmp(classes, 'subject') & ~rigDevices(docs, classes));
             idOf = containers.Map(cellfun(@(d) d.subject.local_identifier, subj, 'UniformOutput', false), ...
                 cellfun(@(d) d.base.id, subj, 'UniformOutput', false));
             % every intensity is `fluorescence intensity`; borderAmplitude is
@@ -1537,9 +1564,10 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             testCase.verifyEqual(lin.model_fit.value.dependent_variable.unit.node, 'EMPTY:0000261');
             co = entries(lin.model_fit.value.coefficients);
             testCase.verifyEqual(co{1}.variable.node, 'STATO:0000656');
-            testCase.verifyEqual(co{1}.value, 1 / 3000, 'AbsTol', 1e-15);
+            testCase.verifyEqual(co{1}.numeric, 1 / 3000, 'AbsTol', 1e-15);
+            testCase.verifyFalse(isfield(co{1}, 'value'), 'a coefficient is written in the new numeric shape');
             testCase.verifyEqual(co{2}.variable.node, 'STATO:0000657');
-            testCase.verifyEqual(co{2}.value, 94 / 300, 'AbsTol', 1e-15);
+            testCase.verifyEqual(co{2}.numeric, 94 / 300, 'AbsTol', 1e-15);
             testCase.verifyEqual(conditionTerms(lin), {'nematode growth medium'});
             % the growth group is the PLANNED one, exact, and is not a bin: no
             % bin width (decision #125)
@@ -1568,7 +1596,7 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             k = find(strcmp(result.sessions.local_identifier, 'concentration_0001'));
             docs = testCase.documents(result.sessions.path{k});
             classes = cellfun(@(d) d.document_class.class_name, docs, 'UniformOutput', false);
-            subj = docs(strcmp(classes, 'subject'));
+            subj = docs(strcmp(classes, 'subject') & ~rigDevices(docs, classes));
             locals = cellfun(@(d) d.subject.local_identifier, subj, 'UniformOutput', false);
             idOf = containers.Map(locals, cellfun(@(d) d.base.id, subj, 'UniformOutput', false));
             about = @(id) docs(strcmp(classes, 'intensity_calculation') & cellfun(@(d) ...
@@ -1859,6 +1887,31 @@ if strcmp(block, 'entity') && ~strcmp(name, 'entity')
     d = rmfield(d, 'entity');
 end
 d.document_class.class_name = name;
+end
+
+function tf = rigDevices(docs, classes)
+% the rig devices among DOCS (CLASSES their newNames class names): the
+% entities an acquisition configuration names by `device_id` that write no
+% local_identifier (did-schema [device id required and named by the rig]:
+% minted per system when its instrument is not known, `name` only)
+arguments
+    docs cell
+    classes cell
+end
+cls = ndi.vintage.acquisitionConfigurationClass();
+named = cellfun(@(d) edge(d, 'device_id'), docs(strcmp(classes, cls)), 'UniformOutput', false);
+tf = cellfun(@(d, c) strcmp(c, 'subject') && ismember(d.base.id, named) ...
+    && ~isfield(d.subject, 'local_identifier'), docs, classes);
+end
+
+function id = rigDeviceId(configurationId)
+% the id DID-matlab's migration gives the rig device of a v1 daqsystem of id
+% CONFIGURATIONID: did2.convert.mintId('rig device') in the context v1_to_v2
+% opens keyed on that id
+depth = did2.convert.mintId('-depth');
+did2.convert.mintId('-push', configurationId);
+id = did2.convert.mintId('rig device');
+did2.convert.mintId('-popto', depth);
 end
 
 function v = edge(doc, name)

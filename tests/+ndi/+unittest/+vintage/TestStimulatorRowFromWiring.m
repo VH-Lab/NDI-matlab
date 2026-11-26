@@ -694,7 +694,7 @@ classdef TestStimulatorRowFromWiring < matlab.unittest.TestCase
                 catch
                     continue;   % the v1 database beside it
                 end
-                if ~isempty(db.search(did2.query('', 'isa', 'acquisition_system')))
+                if ~isempty(db.search(did2.query('', 'isa', 'acquisition_configuration') | did2.query('', 'isa', 'acquisition_system')))
                     v2file = fullfile(dbs(k).folder, dbs(k).name);
                 end
                 db.close();

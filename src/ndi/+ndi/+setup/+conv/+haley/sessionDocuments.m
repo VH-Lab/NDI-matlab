@@ -26,7 +26,13 @@ function out = sessionDocuments(dataParentDir, session, S, R, options)
 %     acquisition_system      one per system in the session (camera1, camera2,
 %                             microscope; decision #28); device_id the
 %                             dataset-level camera / microscope entity when
-%                             'InstrumentIds' has it (decision #150)
+%                             'InstrumentIds' has it (decision #150), else
+%                             the system's own rig device (below)
+%     entity (device)         the rig device of a system whose instrument
+%                             'InstrumentIds' does not have: one per system,
+%                             `name` the system's name, nothing else
+%                             (ndi.setup.V2.rigDevice; did-schema [device id
+%                             required and named by the rig])
 %   and per recording (R row):
 %     epoch                   local_identifier = R.epoch, which is also NDI's
 %                             epoch id (the navigator reads it from here)
@@ -176,13 +182,27 @@ for k = 1:numel(systems)
     % the recording's instrument, because one device does both)
     sysEdges = struct('software_id', sw.system.base.id, 'reader_id', readers(readerString), ...
         'epoch_file_pattern_id', pat.base.id);
+    asysId = did.ido.unique_id();
+    rig = {};
     if isKey(options.InstrumentIds, instrumentFor(sys))
         sysEdges.device_id = options.InstrumentIds(instrumentFor(sys));
+    else
+        % the instrument is not known (stage 2 did not run or has no entity
+        % for it): the system's own rig device, one per system per session,
+        % named with the system's name in `name` only, with the id
+        % DID-matlab's migration gives a rig device (ndi.setup.V2.rigDevice;
+        % did-schema did_v2_standing_wiring_plan.md [device id required and
+        % named by the rig], [local identifier required only where looked up])
+        rig = ndi.setup.V2.rigDevice(sys, asysId, sid);
+        sysEdges.device_id = rig{1}.base.id;
     end
-    asys = did2.build.document('acquisition_system', struct('name', sys), 'SessionId', sid, ...
-        'Edges', sysEdges);
+    % the class the loaded schema holds ([acquisition configuration renamed],
+    % Jess Haley, 2026-11-19: `acquisition_configuration` once did-schema
+    % renames `acquisition_system`)
+    asys = did2.build.document(ndi.vintage.acquisitionConfigurationClass(), struct('name', sys), 'SessionId', sid, ...
+        'Edges', sysEdges, 'Id', asysId);
     systemIds(sys) = asys.base.id;
-    docs = [docs, {pat, asys}]; %#ok<AGROW>
+    docs = [docs, {pat, asys}, rig]; %#ok<AGROW>
 end
 
 % ---- recordings: epoch, times, statement, body, files -----------------------

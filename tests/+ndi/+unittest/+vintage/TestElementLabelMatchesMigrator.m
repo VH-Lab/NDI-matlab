@@ -27,28 +27,51 @@ classdef TestElementLabelMatchesMigrator < matlab.unittest.TestCase
 %   it is blocked regardless. This buys the safety in the meantime; see
 %   ndi.vintage.elementLabel.
 %
-%   See also: ndi.vintage.elementLabel, ndi.vintage.elementSubjectDocs.
+%   SINCE [variable terms batch 1] (Decided by Jess Haley, 2026-11-19,
+%   did-schema docs/plans/did_v2_go_forward_class_audit.md) the class
+%   variable is the node EMPTY:0000401 "software class", which DID-matlab
+%   writes through did2.convert.registeredTerm. NDI reads the node first and
+%   the old phrase too, so the migrator may write either; the tests fail when
+%   it writes neither, or writes the class variable at more than one site.
+%
+%   See also: ndi.vintage.elementLabel, ndi.vintage.elementSubjectDocs,
+%             ndi.vintage.elementClassVariable.
 
     methods (Test)
 
         function testBothLabelsAppearInTheMigratorThatWritesThem(testCase)
             src = ndi.unittest.vintage.TestElementLabelMatchesMigrator.migratorSource(testCase);
 
-            % DENOMINATOR: the labels this repository will search for.
-            labels = {ndi.vintage.elementLabel('class'), ...
-                      ndi.vintage.elementLabel('type')};
+            % DENOMINATOR: the variables this repository will search for.
+            typeLabel = ndi.vintage.elementLabel('type');
+            classLabel = ndi.vintage.elementLabel('class');
+            classVar = ndi.vintage.elementClassVariable();
             testCase.log(sprintf( ...
-                'DENOMINATOR: %d label(s) declared by ndi.vintage.elementLabel; migrator source is %d char(s)', ...
-                numel(labels), numel(src)));
+                ['DENOMINATOR: 2 variable(s) (the type phrase "%s"; the class ' ...
+                 'variable, node %s or the old phrase "%s"); migrator source is %d char(s)'], ...
+                typeLabel, classVar.node, classLabel, numel(src)));
 
-            for i = 1:numel(labels)
-                testCase.verifySubstring(src, ['''' labels{i} ''''], sprintf( ...
-                    ['NDI searches for the label "%s" and DID-matlab''s ' ...
-                     'element migrator does not write it. Nothing errors ' ...
-                     'when these drift -- getprobes simply returns nothing ' ...
-                     '-- so this test is the only thing that notices.'], ...
-                    labels{i}));
-            end
+            testCase.verifySubstring(src, ['''' typeLabel ''''], sprintf( ...
+                ['NDI searches for the label "%s" and DID-matlab''s ' ...
+                 'element migrator does not write it. Nothing errors ' ...
+                 'when these drift -- getprobes simply returns nothing ' ...
+                 '-- so this test is the only thing that notices.'], ...
+                typeLabel));
+
+            % The class variable: Decided by Jess Haley, 2026-11-19
+            % [variable terms batch 1] (did-schema
+            % docs/plans/did_v2_go_forward_class_audit.md) moves it to the
+            % node EMPTY:0000401 "software class". NDI reads both
+            % (ndi.vintage.elementClassQuery), so the migrator may write
+            % either the node lookup or the old phrase; it must write one.
+            [nNode, nPhrase] = ndi.unittest.vintage.TestElementLabelMatchesMigrator.classSites(src);
+            testCase.verifyGreaterThan(nNode + nPhrase, 0, sprintf( ...
+                ['NDI reads the element class variable by node %s or by the ' ...
+                 'phrase "%s", and DID-matlab''s element migrator writes ' ...
+                 'neither (no did2.convert.registeredTerm with that node, and ' ...
+                 'not the phrase). Nothing errors when these drift -- ' ...
+                 'getprobes simply returns nothing -- so this test is the ' ...
+                 'only thing that notices.'], classVar.node, classLabel));
         end
 
         function testTheLabelIsWrittenInExactlyOnePlace(testCase)
@@ -56,15 +79,38 @@ classdef TestElementLabelMatchesMigrator < matlab.unittest.TestCase
             % without this test failing: the first site would still match
             % while documents from the second carried something else. The
             % single-site property is what makes a substring check
-            % sufficient, so it is asserted rather than assumed.
+            % sufficient, so it is asserted rather than assumed. The node
+            % lookup and the old phrase are counted together: one site
+            % writes the class variable, in one of its two spellings.
             src = ndi.unittest.vintage.TestElementLabelMatchesMigrator.migratorSource(testCase);
-            label = ndi.vintage.elementLabel('class');
-            n = numel(strfind(src, ['''' label '''']));
-            testCase.verifyEqual(n, 1, sprintf( ...
-                ['"%s" is written at %d site(s) in the element migrator; ' ...
-                 'this test assumes exactly 1. More than one means a ' ...
-                 'second spelling could be introduced at a site this ' ...
-                 'check still passes over.'], label, n));
+            [nNode, nPhrase] = ndi.unittest.vintage.TestElementLabelMatchesMigrator.classSites(src);
+            classVar = ndi.vintage.elementClassVariable();
+            testCase.verifyEqual(nNode + nPhrase, 1, sprintf( ...
+                ['the element class variable is written at %d site(s) in the ' ...
+                 'element migrator (%d by node %s, %d as "%s"); this test ' ...
+                 'assumes exactly 1. More than one means a second spelling ' ...
+                 'could be introduced at a site this check still passes over.'], ...
+                nNode + nPhrase, nNode, classVar.node, nPhrase, ...
+                ndi.vintage.elementLabel('class')));
+        end
+
+        function testTheSiteCounterSeesBothSpellings(testCase)
+            % The counter itself, on fixed text, so a regression in it
+            % cannot pass the two tests above by reading zero everywhere.
+            nl = newline;
+            [n, p] = ndi.unittest.vintage.TestElementLabelMatchesMigrator.classSites( ...
+                'x = did2.convert.registeredTerm(''EMPTY:0000401'', ''software class'');');
+            testCase.verifyEqual([n p], [1 0], 'the node lookup');
+            [n, p] = ndi.unittest.vintage.TestElementLabelMatchesMigrator.classSites( ...
+                'a = kindAssertion(preBody, id, ''ndi element class'', c);');
+            testCase.verifyEqual([n p], [0 1], 'the old phrase');
+            [n, p] = ndi.unittest.vintage.TestElementLabelMatchesMigrator.classSites( ...
+                'a = jLabel(''element type'');');
+            testCase.verifyEqual([n p], [0 0], 'neither');
+            [n, p] = ndi.unittest.vintage.TestElementLabelMatchesMigrator.classSites( ...
+                ['% did2.convert.registeredTerm(''EMPTY:0000401'', ''software class'')' nl ...
+                 '% ''ndi element class''' nl 'y = 1;']);
+            testCase.verifyEqual([n p], [0 0], 'a comment is not a site');
         end
 
     end
@@ -87,6 +133,18 @@ classdef TestElementLabelMatchesMigrator < matlab.unittest.TestCase
                      'so the two labels cannot be compared here.']);
             end
             src = ndi.unittest.vintage.TestElementLabelMatchesMigrator.codeOnly(fileread(p));
+        end
+
+        function [nNode, nPhrase] = classSites(src)
+            % The sites in SRC (code only: codeOnly) that write the element
+            % class variable: by node, a did2.convert.registeredTerm call
+            % naming EMPTY:0000401 ([variable terms batch 1]), and as the
+            % old phrase 'ndi element class' in single quotes.
+            code = ndi.unittest.vintage.TestElementLabelMatchesMigrator.codeOnly(src);
+            classVar = ndi.vintage.elementClassVariable();
+            nNode = numel(regexp(code, ['registeredTerm\(\s*[''"]' ...
+                regexptranslate('escape', classVar.node) '[''"]'], 'start'));
+            nPhrase = numel(strfind(code, ['''' ndi.vintage.elementLabel('class') '''']));
         end
 
         function code = codeOnly(src)

@@ -958,6 +958,75 @@ classdef TestStimulusPresentationItem < matlab.unittest.TestCase
             end
         end
 
+        function testNewStimGeneratorsFoldAndRoundTrip(testCase)
+            % carry-084 (did-schema #94): a NewStim kind with no recipe was
+            % refused. [non-grating stimuli as methods] (Jess Haley,
+            % 2026-10-21) covers every visual non-grating stimulus;
+            % centersurroundstim, glidergridstim and polygonstim now have a
+            % recipe. Their parameter sets are the NewStim writers' defaults
+            % through NDI's JSON store (newStimDefault below). ROUND TRIP:
+            % each method document gives back every v1 parameter, value for
+            % value, and nothing else but the bit depth; and validates.
+            stims = {newStimDefault('centersurroundstim'), ...
+                newStimDefault('glidergridstim'), newStimDefault('polygonstim'), blankStim()};
+            pres = presentationBody('pres_gen', [1 2 3 4 3 2 1], stims);
+            [m, methods, report] = emit(testCase, pres);
+            testCase.verifyEmpty(report.reason);
+            testCase.verifyTrue(isItemManipulation(m));
+            testCase.verifyEqual([report.stimulus_kinds.centersurroundstim, ...
+                report.stimulus_kinds.glidergridstim, report.stimulus_kinds.polygonstim, ...
+                report.stimulus_kinds.blank, report.stimulus_kinds.unrecognised, ...
+                report.stimulus_kinds.ambiguous], [1 1 1 1 0 0], ...
+                'the kinds count the stimuli list (4), not the playlist (7 trials)');
+            testCase.verifyEqual(numel(methods), 4);
+            testCase.verifyEqual(m.item.value.item(:)', [0 1 2 3 2 1 0]);
+            terms = cellfun(@(d) d.method.term.name, methods, 'UniformOutput', false);
+            testCase.verifyEqual(terms, {'centre-surround spot', 'glider noise', ...
+                'polygon', 'blank screen'});
+            maps = {centreSurroundVariables(), gliderVariables(), polygonVariables()};
+            for k = 1:3
+                p = stims{k}.parameters;
+                map = maps{k};
+                fn = fieldnames(p);
+                carried = 0;
+                for f = 1:numel(fn)
+                    v = p.(fn{f});
+                    if isempty(v); continue; end
+                    row = find(strcmp(map(:, 1), fn{f}), 1);
+                    testCase.verifyNotEmpty(row, ['no expected variable for ' fn{f}]);
+                    if isempty(row); continue; end
+                    got = methodParam(methods{k}, map{row, 2});
+                    testCase.verifyNotEmpty(got, sprintf('%s: %s not written', terms{k}, fn{f}));
+                    testCase.verifyEqual(double(got(:)), double(v(:)), ...
+                        sprintf('%s: %s does not read back', terms{k}, fn{f}));
+                    carried = carried + 1;
+                end
+                prm = methods{k}.method.parameters;
+                testCase.verifyEqual(numel(prm), carried + 1, ...
+                    sprintf('%s: every v1 parameter and the bit depth, nothing else', terms{k}));
+                testCase.verifyEqual(methodParam(methods{k}, 'bit depth'), 8);
+            end
+            cache = did2.schema.cache.shared();
+            restore = ndi.migrate.internal.termRegistryOff(); %#ok<NASGU>
+            for k = 1:numel(methods)
+                testCase.verifyWarningFree(@() cache.validateDocument(methods{k}), ...
+                    sprintf('the %s method does not validate', terms{k}));
+            end
+        end
+
+        function testANewStimClassWithNoRecipeIsStillRefused(testCase)
+            % NewStim @wavsound (WSparams {filename, background, dispprefs}):
+            % a sound, outside [non-grating stimuli as methods] ("a visual
+            % stimulus"), so it stays carry-084.
+            sound = struct('parameters', struct('filename', 'tone.wav', ...
+                'background', [0 0 0], 'dispprefs', {{}}));
+            pres = presentationBody('pres_wav', 1, {sound});
+            [m, ~, report] = emit(testCase, pres);
+            testCase.verifyEmpty(m);
+            testCase.verifyEqual(report.stimulus_kinds.unrecognised, 1);
+            testCase.verifySubstring(report.reason, '[carry-084]');
+        end
+
         function testElementsThatResolveToNoSubjectGiveAStandaloneItem(testCase)
             % The epoch DOES record an element, it just names no subject.
             % Decided by Jess Haley, 2026-10-26 [unresolved recorded elements
@@ -1336,6 +1405,68 @@ p = struct('BG', [0 0 0], 'N', 160, 'dispprefs', {{}}, 'fps', 100, ...
     'isi', 0.01, 'rect', [0 0 800 600], 'scale', 1);
 p.(labelName) = labelValue;
 s = struct('parameters', p);
+end
+
+function s = newStimDefault(className)
+%NEWSTIMDEFAULT A NewStim class's own default parameter set (its
+%   constructor's default_p, VH-Lab/vhlab-NewStim-matlab 0ae6822), the struct
+%   NDI's NewStimStims.readmetadatafromfile takes from getparameters, sent
+%   through jsonencode / jsondecode as NDI's document store does. No corpus
+%   holds these classes (census of B, Dab, Soph, 20211116 and JH, 2026-11-25).
+switch className
+    case 'centersurroundstim'   % @centersurroundstim/centersurroundstim.m
+        p = struct('center', [100 100], 'BG', 128*[1 1 1], 'FGc', 255*[1 1 1], ...
+            'FGs', 0*[1 1 1], 'contrast', 1, 'lagon', 0, 'lagoff', -1, ...
+            'surrlagon', 0, 'surrlagoff', -1, 'radius', 50, 'surrradius', -1, ...
+            'stimduration', 0.5);
+    case 'glidergridstim'       % @glidergridstim/glidergridstim.m; randState
+                                % is rand('state') there, 35 x 1
+        p = struct('rect', [0 0 500 100], 'angle', 0, 'BG', [128 128 128], ...
+            'FG1', [0 0 0], 'FG2', [255 255 255], 'correlator', 0, ...
+            'correlator_sign', 1, 'pixSize', [50 50], 'N', 100, 'fps', 15, ...
+            'randState', (1:35)' / 36, 'correlator_version', 1);
+    case 'polygonstim'          % @polygonstim/polygonstim.m
+        p = struct('rect', [0 0 100 100], 'shape', 0, 'points', [10 5], ...
+            'distance', 57, 'units', 0, 'orientation', 45, ...
+            'howlong', 5, 'backdrop', [0 0 0], 'background', [0 0 0], ...
+            'foreground', [255 255 255], 'contrast', 1, 'remove', [0 0], ...
+            'offsetxy', [0 0], 'offsettheta', 0, 'smooth', 2);
+end
+p.dispprefs = {};
+s = struct('parameters', jsondecode(jsonencode(p)));
+end
+
+function t = centreSurroundVariables()
+% v1 field -> method variable, for the defaults' values (-1 sentinels)
+t = {'center', 'centre position'; 'BG', 'background colour'; ...
+     'FGc', 'centre colour'; 'FGs', 'surround colour'; 'contrast', 'contrast'; ...
+     'lagon', 'centre onset lag'; ...
+     'lagoff', 'centre offset lag (0 or below: never)'; ...
+     'surrlagon', 'surround onset lag'; ...
+     'surrlagoff', 'surround offset lag (0 or below: never)'; ...
+     'radius', 'centre radius'; ...
+     'surrradius', 'surround radius (below 0: no surround)'; ...
+     'stimduration', 'stimulus duration'};
+end
+
+function t = gliderVariables()
+t = {'rect', 'stimulus rectangle'; 'angle', 'grid rotation'; ...
+     'BG', 'background colour'; 'FG1', 'colour 1 (grid value -1)'; ...
+     'FG2', 'colour 2 (grid value 1)'; 'correlator', 'glider correlator'; ...
+     'correlator_sign', 'correlator sign'; 'pixSize', 'grid square size'; ...
+     'N', 'frame count'; 'fps', 'frame rate'; 'randState', 'Random Seed'; ...
+     'correlator_version', 'correlator version'};
+end
+
+function t = polygonVariables()
+t = {'rect', 'stimulus rectangle'; 'shape', 'polygon shape'; ...
+     'points', 'polygon points'; 'distance', 'viewing distance'; ...
+     'units', 'offset units'; 'orientation', 'orientation'; ...
+     'howlong', 'stimulus duration'; 'backdrop', 'backdrop colour'; ...
+     'background', 'background colour'; 'foreground', 'foreground colour'; ...
+     'contrast', 'contrast'; 'remove', 'removed points'; ...
+     'offsetxy', 'offset'; 'offsettheta', 'orthogonal offset'; ...
+     'smooth', 'smoothing width'};
 end
 
 function t = trialTime(onset, offset)

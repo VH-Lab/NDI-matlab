@@ -108,7 +108,19 @@ function E = ingestedEpochs(ndi_session_obj, docs, probemapClass, options)
 %   Element fields (ndi.vintage.elementFields) are still read per element,
 %   once per call.
 %
-%   See also ndi.vintage.ingestedQuery, ndi.file.navigator/selectfilegroups.
+%   AN EPOCH ENTITY IN DOCS: A SESSION FOLDER'S EPOCH. A migrated epoch that
+%   was never ingested has no manifest: ndi.vintage.folderEpochs finds its
+%   `recording epoch` entity from its files and passes the entity here.
+%   Its epoch_id is the entity's local_identifier, its files are {} (the
+%   navigator found them in the folder), and its probe map is put back
+%   together as a manifest's is, keeping the rows of the system whose epoch
+%   file pattern is 'PatternId' (the navigator's id). Jess Haley,
+%   2026-11-19, did-schema docs/plans/did_v2_standing_wiring_plan.md
+%   [wiring read from the database only], [no new hidden epoch-id files].
+%   Such an entry is not kept in the derived index (it has no manifest).
+%
+%   See also ndi.vintage.ingestedQuery, ndi.file.navigator/selectfilegroups,
+%   ndi.vintage.folderEpochs.
 
 arguments
     ndi_session_obj
@@ -116,6 +128,7 @@ arguments
     probemapClass (1,:) char
     options.Batch (1,1) logical = ndi.daq.reader.isv2database(ndi_session_obj)
     options.UseIndex (1,1) logical = true
+    options.PatternId (1,:) char = ''
 end
 
 E = struct('epoch_id', {}, 'files', {}, 'probemap', {}, 'vintage', {});
@@ -159,6 +172,15 @@ for k = 1:numel(docs)
         end
         E(end+1) = struct('epoch_id', char(blk.epoch_id), 'files', {asCellstr(blk.files)}, ...
             'probemap', {pm}, 'vintage', 'v1'); %#ok<AGROW>
+        continue;
+    end
+    if isEpochEntity(p)
+        % a session folder's epoch (AN EPOCH ENTITY IN DOCS, above)
+        epochDocId = char(p.base.id);
+        [pm, cache] = probemapOf(ndi_session_obj, epochDocId, probemapClass, ...
+            cache, options.PatternId);
+        E(end+1) = struct('epoch_id', localIdentifier(p), 'files', {{}}, ...
+            'probemap', {pm}, 'vintage', 'V_eta'); %#ok<AGROW>
         continue;
     end
     if ~isfield(p, 'ingestion_manifest')
@@ -706,6 +728,10 @@ function cache = readAhead(S, docs, cache)
 epochDocIds = {};
 for k = 1:numel(docs)
     p = docs{k}.document_properties;
+    if isEpochEntity(p)
+        epochDocIds{end+1} = char(p.base.id); %#ok<AGROW>
+        continue;
+    end
     if isfield(p, 'epochfiles_ingested') || ~isfield(p, 'ingestion_manifest')
         continue;
     end
@@ -952,6 +978,22 @@ for k = 1:numel(keys)
         cache.doc(keys{k}) = found(keys{k});
     end
 end
+end
+
+function tf = isEpochEntity(p)
+% an `entity` of type epoch (EMPTY:0000383, "recording epoch"; 'epoch' as
+% older migrations wrote it), as ndi.vintage.folderEpochs passes it
+tf = false;
+if isfield(p, 'ingestion_manifest') || isfield(p, 'epochfiles_ingested') ...
+        || ~isfield(p, 'entity') || ~isstruct(p.entity) || ~isfield(p.entity, 'type') ...
+        || ~isstruct(p.entity.type)
+    return;
+end
+t = p.entity.type;
+name = ''; node = '';
+if isfield(t, 'name'); name = char(t.name); end
+if isfield(t, 'node'); node = char(t.node); end
+tf = strcmp(node, 'EMPTY:0000383') || strcmpi(name, 'epoch') || strcmpi(name, 'recording epoch');
 end
 
 function lid = localIdentifier(p)

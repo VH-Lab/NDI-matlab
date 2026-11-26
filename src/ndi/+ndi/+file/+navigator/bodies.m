@@ -104,6 +104,15 @@ classdef bodies < ndi.file.navigator
             error('NDI:navigator:bodies:unknownEpoch', 'No recording for epoch %d.', N);
         end
 
+        function D = databaseEpochs(obj, epochfiles)
+            % This navigator reads every epoch from its documents already
+            % (RECORDINGS), so the session-folder lookup of
+            % ndi.file.navigator/databaseEpochs finds nothing for it.
+            n = numel(epochfiles);
+            D = struct('found', num2cell(false(1, n)), 'epoch_id', {''}, ...
+                'probemap', {[]}, 'epoch_doc_id', {''});
+        end
+
         function R = recordings(obj)
             % The system's recordings, read from the database once per object.
             if isKey(obj.found, 'recordings')
@@ -128,10 +137,12 @@ classdef bodies < ndi.file.navigator
                 pattern = obj.fileparameters.filematch{1};
             end
             missing = {};
-            systems = S.database_search(ndi.query('', 'isa', 'acquisition_system', '') & ...
+            systems = S.database_search(ndi.vintage.acquisitionConfigurationQuery() & ...
                 ndi.query('', 'depends_on', 'epoch_file_pattern_id', obj.id()) & inSession);
             for a = 1:numel(systems)
-                sysName = systems{a}.document_properties.acquisition_system.name;
+                % the class's own name field, under either class name
+                % ([acquisition configuration renamed]; ndi.vintage.objectName)
+                sysName = ndi.vintage.objectName(systems{a});
                 found = ndi.vintage.systemStatements(S, systems{a}.id(), inSession);
                 for c = 1:numel(found)
                     statements = found{c};

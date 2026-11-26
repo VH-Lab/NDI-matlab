@@ -58,9 +58,15 @@ classdef TestEpochClockOrder < matlab.unittest.TestCase
             S = {'SessionId', sid, 'Validate', false};
             P = ndi.unittest.vintage.TestEpochClockOrder;
 
-            sys = did2.build.document('acquisition_system', struct('name', 'dab1'), ...
+            % the rig's device, as DID-matlab's migration mints it for a v1
+            % daqsystem and NDI's v2 writers write it (did-schema
+            % [device id required and named by the rig]: device_id required)
+            sysId = char(ndi.ido.unique_id());
+            rig = ndi.setup.V2.rigDevice('dab1', sysId, sid);
+            sys = did2.build.document(ndi.vintage.acquisitionConfigurationClass(), struct('name', 'dab1'), ...
                 'Edges', struct('reader_id', P.ReaderId, ...
-                'epoch_file_pattern_id', 'pattern_test'), S{:});
+                'epoch_file_pattern_id', 'pattern_test', 'device_id', rig{1}.base.id), ...
+                'Id', sysId, S{:});
             % the epoch entity as DID-matlab's epochMint writes it
             epochType = did2.convert.registeredTerm( ...
                 did2.build.vocabulary('entity_type', 'epoch'), 'recording epoch');
@@ -69,7 +75,7 @@ classdef TestEpochClockOrder < matlab.unittest.TestCase
             fwrite(fid, zeros(1, 8), 'double');
             fclose(fid);
 
-            docs = {sys};
+            docs = {sys, rig{1}};
             % epoch A: the database holds exp_global_time first; the
             % recording names dev_local_time first
             [a, refsA] = P.epochDocs('epoch_a', epochType, sid, S);

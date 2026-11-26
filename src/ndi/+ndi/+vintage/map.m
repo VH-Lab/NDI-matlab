@@ -121,7 +121,12 @@ e = struct('concept', {}, 'v1_class', {}, 'eta_class', {}, ...
     'isa_bridges', {}, 'edges', {}, 'fields', {});
 k = 0;
 
-% ---- daqsystem -> acquisition_system ---------------------------------
+% ---- daqsystem -> acquisition_configuration --------------------------
+% (`acquisition_system` until Jess Haley's decision of 2026-11-19
+% [acquisition configuration renamed], did-schema
+% docs/plans/did_v2_standing_wiring_plan.md: the class is how a device's
+% recordings are read. Documents written before the rename still carry the
+% old name, so both are listed, current name first.)
 % Edge names from schemas/V_eta/stable/acquisition_system.json (did-schema
 % 152157d; acquisition_system <- base, not entity)
 %   deps = software_id, reader_id (required), epoch_file_pattern_id
@@ -137,7 +142,7 @@ k = 0;
 k = k + 1;
 e(k).concept      = 'daqsystem';
 e(k).v1_class     = 'daqsystem';
-e(k).eta_class    = 'acquisition_system';
+e(k).eta_class    = {'acquisition_configuration', 'acquisition_system'};
 e(k).object_field = 'ndi_daqsystem_class';
 e(k).object_edge  = 'software_id';
 e(k).object_assertion = '';
@@ -261,6 +266,9 @@ e(k).v1_class     = 'element';
 e(k).eta_class    = 'subject';
 e(k).object_field = 'ndi_element_class';
 e(k).object_edge  = '';
+% (the old name; ndi.vintage.objectClass matches the node EMPTY:0000401
+% "software class" first, ndi.vintage.elementClassQuery, [variable terms
+% batch 1], Decided by Jess Haley, 2026-11-19)
 e(k).object_assertion = 'ndi element class';   % ndi.vintage.elementLabel('class')
 e(k).isa_bridges  = false;
 e(k).edges        = cell(0,2);

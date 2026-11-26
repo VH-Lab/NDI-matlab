@@ -400,6 +400,7 @@ function result = local(path, options)
     ontologyRowReport = [];
     ontologyLabelReport = [];
     stimulusSequenceReport = [];
+    regionPartReport = [];
     regionSitesReport = [];
     regionLocatedReport = [];
     epochSeriesBodiesReport = [];
@@ -439,9 +440,23 @@ function result = local(path, options)
         %       inherit (doImport.m:789,811,827 set `document_id` only); those
         %       are COUNTED and left passing through, pending a team call.
         %       See ndi.migrate.internal.ontologyLabelSubjects.
+        %   (1b) REGION PARTS: did2.convert.resolveRegionParts, the same
+        %       function the DID-side call sites run, after the deferrals (a
+        %       bath writes its site's part or side) and before (2). DID-matlab's
+        %       pass 1 writes a body site's region part in its final shape with
+        %       ids computed from (subject, region, side); this merges the
+        %       copies several source documents write to the earliest source's
+        %       ([duplicate parts merged in DID], [region part ids computed],
+        %       Jess Haley, 2026-11-17 / 2026-11-19, did-schema
+        %       did_v2_go_forward_class_audit.md; VH-Lab/DID-matlab #488); a
+        %       side another document gives is attached to no part ([side said
+        %       about its region], 2026-11-25), so it stays the site
+        %       observation (2) reads.
         %   (2) PATH-S: an attributed anatomical locus is promoted to a
         %       part-subject. Run AFTER the deferrals so a manipulation the
-        %       deferral emits can be a Path-S retarget candidate.
+        %       deferral emits can be a Path-S retarget candidate. A part it
+        %       mints takes the ids did2.convert.regionPartIds computes for
+        %       (parent, region, side), the ids pass 1 gives the same part.
         %   (3) ENSEMBLE MEMBERSHIP: each `ensemble` map document becomes
         %       `member_of` edges (neuron-subject -> ensemble group-subject,
         %       EPOCH-SCOPED, carrying column order in `order`) plus
@@ -784,6 +799,24 @@ function result = local(path, options)
                  'failed (%s); leaving them quarantined.'], ME.message);
         end
         tStep = migrateStepMark('resolveDeferred', tStart, tStep, convertResult);
+        % (1b) the region parts: one copy per computed id; a side another
+        % document gives is left where it is ([side said about its region])
+        % (did2.convert.resolveRegionParts declares what it reads and writes;
+        % DID-matlab tools/batch_pass_order.py reads it there)
+        try
+            [convertResult, regionPartReport] = ...
+                did2.convert.resolveRegionParts( ...
+                convertResult, ...
+                'Validate',      options.Validate, ...
+                'SchemaCache',   options.SchemaCache, ...
+                'TargetVersion', options.TargetVersion);
+        catch ME
+            stepErrors(end+1) = struct('step', 'regionPartsFailed', 'message', ME.message); %#ok<AGROW>
+            warning('NDI:migrate:regionPartsFailed', ...
+                ['Second-pass region part merge failed (%s); leaving the ' ...
+                 'region parts as pass 1 wrote them.'], ME.message);
+        end
+        tStep = migrateStepMark('resolveRegionParts', tStart, tStep, convertResult);
         % [table rows carried as v1] (Jess Haley, 2026-10-30): every row is
         % carried by pass 1; this step counts them and changes nothing.
         %   WHAT THIS STEP READS AND WRITES: [migration reliability practices] (c),
@@ -1294,6 +1327,33 @@ function result = local(path, options)
                 r.uneven_time_unpaired_kept, r.first_uneven_time_kept_reason, ...
                 r.time_rows_seen, r.archives_converted, r.time_rows_rebuilt, ...
                 r.channel_list_kept_time_row, r.text_channels_seen, r.text_channels_unpacked);
+            % [time group with several time channels split] (Jess Haley,
+            % 2026-11-19), out of the archives with uneven time
+            fprintf(['[migrate step]   ingested archives (split time groups): of %d archive(s) ' ...
+                'with time not evenly spaced, %d converted; in them %d time group(s) of several ' ...
+                'time channels split into %d time value(s); kept as v1 for a channel group ' ...
+                'naming time channels of two time values %d; unconvertible (all reasons) %d ' ...
+                '(first: %s)\n'], r.time_not_evenly_spaced, r.uneven_time_converted, ...
+                r.uneven_time_groups_split, r.uneven_time_channels_split, ...
+                r.uneven_time_split_ambiguous_kept, r.unconvertible, r.first_unconvertible_reason);
+            % [time channels out of order are malformed] (Jess Haley,
+            % 2026-11-25): each such archive named, with the order found
+            if isfield(r, 'time_channels_out_of_order_kept')
+                fprintf(['[migrate step]   ingested archives (MALFORMED): of %d archive(s) ' ...
+                    'seen, %d kept as v1 whose channel list does not give its time channels ' ...
+                    'in increasing number\n'], r.archives_seen, r.time_channels_out_of_order_kept);
+                for w = 1:numel(r.malformed)
+                    fprintf('[migrate step]     MALFORMED archive %s: %s\n', ...
+                        r.malformed{w}.archive_id, r.malformed{w}.reason);
+                end
+            end
+            % [stimulus log owned by its presentation] (Jess Haley, 2026-11-19)
+            if isfield(r, 'archives_no_channel_group')
+                fprintf(['[migrate step]   ingested archives (stimulus logs): %d archive(s) ' ...
+                    'with no channel or time group left as pass 1 wrote them, %d of them ' ...
+                    'stimulus logs moved to a presentation or fallback manipulation\n'], ...
+                    r.archives_no_channel_group, r.stimulus_logs_left);
+            end
         catch ME
             stepErrors(end+1) = struct('step', 'ingestedArchiveBodiesFailed', 'message', ME.message); %#ok<AGROW>
             warning('NDI:migrate:ingestedArchiveBodiesFailed', ...
@@ -1608,6 +1668,44 @@ function result = local(path, options)
         end
     end
 
+    % --- the openMINDS Strains' fields, after the second pass ---------------
+    % Decided by Jess Haley, 2026-11-19 [strain fields checked after the
+    % second pass] (did-schema did_v2_go_forward_class_audit.md): DID-matlab's
+    % Strain round-trip inverse defers a Strain's `openminds_<n>` child edges
+    % and its geneticStrainType, species, backgroundStrain and description to
+    % the second pass, "and NDI's end-to-end round trip checks them after the
+    % second pass". This compares each v1 Strain with the strain entity the
+    % second pass rebuilt. Report only: it changes nothing.
+    strainFieldsReport = [];   % [] = not measured (the step did not run)
+    if ~alreadyMigrated && iscell(convertResult.migrated)
+        try
+            strainFieldsReport = ndi.migrate.internal.strainFieldsAfterSecondPass( ...
+                convertResult.migrated, bodies);
+            r = strainFieldsReport;
+            fprintf(['[migrate step]   openMINDS strain fields (after the second pass): ' ...
+                '%d v1 Strain(s) inspected, %d document(s) read, %d strain entit(ies); %s: ' ...
+                'mapped %d by id, %d by instance_of, %d by name; not mapped %d (no entity ' ...
+                '%d, ambiguous %d); differences: name %d, description %d, species %d, ' ...
+                'genetic strain type %d, background strain %d, child edges to no field %d\n'], ...
+                r.v1_strains_inspected, r.documents_inspected, r.strain_entities_seen, ...
+                r.state, r.mapped_by_id, r.mapped_by_instance_of, r.mapped_by_name, ...
+                r.not_mapped_no_entity + r.not_mapped_ambiguous, r.not_mapped_no_entity, ...
+                r.not_mapped_ambiguous, r.name.differ, r.description.differ, ...
+                r.species.differ, r.genetic_strain_type.differ, ...
+                r.background_strain.differ, r.child_edges.to_no_field);
+            for i = 1:numel(r.differences)
+                fprintf('[migrate step]     strain field differs: %s %s: %s (v1 "%s", v2 "%s")\n', ...
+                    r.differences(i).v1_id, r.differences(i).field, r.differences(i).why, ...
+                    r.differences(i).v1, r.differences(i).v2);
+            end
+        catch ME
+            stepErrors(end+1) = struct('step', 'strainFieldsAfterSecondPassFailed', 'message', ME.message); %#ok<AGROW>
+            warning('NDI:migrate:strainFieldsAfterSecondPassFailed', ...
+                'Comparing the openMINDS Strains'' fields failed (%s); not measured.', ...
+                ME.message);
+        end
+    end
+
     % --- the migration record: one per run, written by NDI ----------------
     % [migration record writer] (Jess Haley, 2026-11-01): "by NDI-matlab for an
     % NDI migration, from the reports of all its DID-matlab calls". One
@@ -1777,6 +1875,7 @@ function result = local(path, options)
         'softwareDedupAfterPassOne', softwareDedupEarlyReport, ...
         'softwareDedup',       softwareDedupReport, ...
         'dimensionTerms',      dimensionTermReport, ...
+        'regionParts',         regionPartReport, ...
         'regionPartsSites',    regionSitesReport, ...
         'regionPartsLocated',  regionLocatedReport, ...
         'epochSeriesBodies',   epochSeriesBodiesReport, ...
@@ -1784,6 +1883,9 @@ function result = local(path, options)
     % [archive segment lengths measured after the second pass] (Jess Haley,
     % 2026-11-12); [] when the comparison did not run
     result.secondPass.archiveSegmentLengths = segmentLengthReport;
+    % [strain fields checked after the second pass] (Jess Haley, 2026-11-19);
+    % [] when the comparison did not run
+    result.secondPass.strainFields = strainFieldsReport;
 
     if options.Verbose
         printSummary(result);

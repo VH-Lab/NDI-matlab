@@ -5,7 +5,10 @@ function ids = elementAssertionIds(ndi_session_obj, classFilter)
 %   (first-seen order, no repeats) of the entities a term assertion labelled
 %   `ndi element class` (ndi.vintage.elementLabel('class')) is about;
 %   IDS = ndi.vintage.elementAssertionIds(SESSION, CLASSFILTER) only those
-%   whose value contains CLASSFILTER. Read for their entity edge only where
+%   whose value contains CLASSFILTER. The assertion's variable is found by
+%   its node EMPTY:0000401 "software class" first, or by the old name
+%   (ndi.vintage.elementClassQuery; Decided by Jess Haley, 2026-11-19
+%   [variable terms batch 1]). Read for their entity edge only where
 %   the database can (ndi.vintage.edgeDocs). The unfiltered answer is kept
 %   for a call's scope (ndi.vintage.elementFieldsScope).
 %
@@ -46,9 +49,10 @@ if ndi.vintage.elementFieldsScope('isopen')
     end
 end
 ids = {};
-label = ndi.vintage.elementLabel('class');
-q = ndi.v2.statementQuery('assertion', 'term') & ...
-    ndi.v2.fieldQuery('statement.variable.name', 'exact_string', label);
+% the class variable by node, EMPTY:0000401 "software class", or by its old
+% name 'ndi element class' (ndi.vintage.elementClassQuery; [variable terms
+% batch 1], Decided by Jess Haley, 2026-11-19)
+q = ndi.v2.statementQuery('assertion', 'term') & ndi.vintage.elementClassQuery();
 if ~isempty(classFilter)
     q = q & ndi.query('term.value.name', 'contains_string', classFilter, '');
 end
@@ -81,10 +85,15 @@ A = [];
 if ~ismethod(S, 'database_search_values') || ~ismethod(S, 'database_search_edges')
     return;
 end
-q = ndi.v2.statementQuery('assertion', 'term') & ...
-    ndi.v2.fieldQuery('statement.variable.name', 'exact_string', ndi.vintage.elementLabel('class'));
+q = ndi.v2.statementQuery('assertion', 'term') & ndi.vintage.elementClassQuery();
 vals = S.database_search_values(q, {'term.value[*].name'});
 if ~isstruct(vals)
+    return;
+end
+if isempty(vals)
+    % no assertion, so no edge: the edge search would read the session again
+    % for nothing (about 0.17 s on migrated Dab, NDI-matlab run 44602160692)
+    A = struct('entity', {cell(1, 0)}, 'class', {cell(1, 0)});
     return;
 end
 edges = S.database_search_edges(q, {'entity_id'});

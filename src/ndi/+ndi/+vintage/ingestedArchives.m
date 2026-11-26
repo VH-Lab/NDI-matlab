@@ -117,7 +117,7 @@ for a = 1:numel(anchors)
 end
 
 % ---- this reader's systems and their recordings of those epochs ---------
-systems = S.database_search(ndi.query('', 'isa', 'acquisition_system', '') & ...
+systems = S.database_search(ndi.vintage.acquisitionConfigurationQuery() & ...
     ndi.query('', 'depends_on', 'reader_id', readerId) & inSession);
 if isempty(systems) || isempty(anchors)
     return;
@@ -148,7 +148,15 @@ for i = 1:numel(statements)
         statementRows(e{1}) = [statementRows(e{1}), i];
     end
 end
-if isempty(statements)
+% ---- the epochs' stimulus logs, wherever they are owned ------------------
+% [stimulus log owned by its presentation] (Jess Haley, 2026-11-19): read in
+% one search (ndi.vintage.ingestedStimulusLogBodies); an epoch with a log
+% and no recording on this reader's systems takes as its clocks the
+% references onto it that no other system's statement names
+% (private/otherSystemsAnchorIds), as ndi.vintage.ingestedArchive does
+logs = ndi.vintage.ingestedStimulusLogBodies(S, readerId, epochIds);
+others = otherSystemsAnchorIds(allStatements, sysIds);
+if isempty(statements) && logs.Count == 0
     return;
 end
 
@@ -158,17 +166,23 @@ end
 % Only the clocks and t0_t1 are read from what this returns
 % (ndi.daq.reader/ingested2epochs_t0t1_epochclock); a light body records no
 % files, so its member count reads 0.
-bq = ndi.query('', 'isa', 'data_body', '') & ndi.vintage.edgeIn('owner_id', lidsOfStatement.keys);
+bq = [];
+if ~isempty(statements)
+    bq = ndi.query('', 'isa', 'data_body', '') & ndi.vintage.edgeIn('owner_id', lidsOfStatement.keys);
+end
 if options.ClocksOnly
     % set-wise, from the index rows (no body, statement or archive struct
     % built per epoch): see clocksOnly below
-    [C, D] = clocksOnly(S, bq, epochIds, entityIdsOf, anchors, anchorRows, statements, statementRows);
+    [C, D] = clocksOnly(S, bq, epochIds, entityIdsOf, anchors, anchorRows, statements, ...
+        statementRows, logs, others);
     if isa(C, 'containers.Map')
         M = C;
         return;
     end
 end
-if options.ClocksOnly
+if isempty(bq)
+    bodies = {};   % only stimulus logs (above)
+elseif options.ClocksOnly
     % 'ClocksOnly' (ndi.daq.reader/ingested2epochs_t0t1_epochclock reads
     % each archive's epochclock and t0_t1 and nothing else): the bodies are
     % read for their filename and owner only, which decide whether an epoch
@@ -185,6 +199,7 @@ end
 if ~iscell(bodies)
     bodies = S.database_search(bq);
 end
+bodies = reshape(bodies, 1, []);
 bodyRows = containers.Map(epochIds, repmat({[]}, 1, numel(epochIds)));
 for b = 1:numel(bodies)
     mine = {};
@@ -200,12 +215,17 @@ end
 for e = 1:numel(epochIds)
     lid = epochIds{e};
     st = statements(unique(statementRows(lid)));
-    if isempty(entityIdsOf(lid)) || isempty(st)
+    lb = {};
+    if isKey(logs, lid); lb = reshape(logs(lid), 1, []); end
+    if isempty(entityIdsOf(lid)) || (isempty(st) && isempty(lb))
         continue;   % ingestedArchive raises ingestedNoEpoch / ingestedNoRecording
     end
+    an = anchors(unique(anchorRows(lid)));
+    if isempty(st)
+        an = an(~ismember(cellfun(@(d) char(d.id()), an, 'UniformOutput', false), others));
+    end
     try
-        M(lid) = archiveOf(S, lid, anchors(unique(anchorRows(lid))), st, ...
-            bodies(unique(bodyRows(lid))), false);
+        M(lid) = archiveOf(S, lid, an, st, [bodies(unique(bodyRows(lid))), lb], false);
     catch
         % ingestedArchive raises the same error; the caller asks it
     end
@@ -222,7 +242,8 @@ if isfield(p, 'entity') && isstruct(p.entity) && isfield(p.entity, 'local_identi
 end
 end
 
-function [M, D] = clocksOnly(S, bq, epochIds, entityIdsOf, anchors, anchorRows, statements, statementRows)
+function [M, D] = clocksOnly(S, bq, epochIds, entityIdsOf, anchors, anchorRows, statements, ...
+        statementRows, logs, others)
 D = containers.Map('KeyType', 'char', 'ValueType', 'any');
 % ingestedArchives 'ClocksOnly', set-wise: each epoch's epochclock, t0_t1
 % and clock_problem as private/archiveOf gives them, and no other part
@@ -237,20 +258,22 @@ M = [];
 if ~ismethod(S, 'database_search_values') || ~ismethod(S, 'database_search_edges')
     return;
 end
-rows = S.database_search_values(bq, {'data_body.filename'});
-if ~isstruct(rows); return; end
-edges = S.database_search_edges(bq, {'owner_id'});
-if ~isstruct(edges); return; end
-M = containers.Map('KeyType', 'char', 'ValueType', 'any');
-% the statements owning an archive series body (archiveOf's seriesKind)
-fns = cellfun(@(v) char(v{1}), {rows.values}, 'UniformOutput', false);
-isSeries = strcmp(fns, 'channel_list.bin') | ~cellfun(@isempty, ...
-    regexp(fns, '^(ai|ao|ax|di|do|ti|evmktx)_group\d+_seg\.nbf_#$', 'once'));
-seriesDocs = {rows(isSeries).doc_id};
 seriesOwners = {};
-if ~isempty(edges)
-    seriesOwners = unique({edges(ismember({edges.doc_id}, seriesDocs)).document_id});
+if ~isempty(bq)
+    rows = S.database_search_values(bq, {'data_body.filename'});
+    if ~isstruct(rows); return; end
+    edges = S.database_search_edges(bq, {'owner_id'});
+    if ~isstruct(edges); return; end
+    % the statements owning an archive series body (archiveOf's seriesKind)
+    fns = cellfun(@(v) char(v{1}), {rows.values}, 'UniformOutput', false);
+    isSeries = strcmp(fns, 'channel_list.bin') | ~cellfun(@isempty, ...
+        regexp(fns, '^(ai|ao|ax|di|do|ti|evmktx)_group\d+_seg\.nbf_#$', 'once'));
+    seriesDocs = {rows(isSeries).doc_id};
+    if ~isempty(edges)
+        seriesOwners = unique({edges(ismember({edges.doc_id}, seriesDocs)).document_id});
+    end
 end
+M = containers.Map('KeyType', 'char', 'ValueType', 'any');
 % each anchor's id and clock extent; each statement's id and anchors
 aIds = cellfun(@(d) char(d.id()), anchors, 'UniformOutput', false);
 aOk = false(1, numel(anchors)); aClk = cell(1, numel(anchors)); aT = cell(1, numel(anchors));
@@ -265,17 +288,29 @@ sUsed = cellfun(@(d) ndi.v2.edgeIds(d.document_properties, 'time_reference_id'),
 for e = 1:numel(epochIds)
     lid = epochIds{e};
     si = unique(statementRows(lid));
+    % the epoch's stimulus log ([stimulus log owned by its presentation]):
+    % every body found is an archive series (ndi.vintage.ingestedStimulusLogBodies)
+    lbIds = {};
+    if isKey(logs, lid)
+        lbIds = cellfun(@(d) char(d.id()), logs(lid), 'UniformOutput', false);
+    end
     % what this epoch's answer is read from (the derived index's deps): its
-    % entities, the anchors onto them and the statements they time
+    % entities, the anchors onto them, the statements they time and its
+    % stimulus log's bodies
     D(lid) = [reshape(entityIdsOf(lid), 1, []), reshape(aIds(unique(anchorRows(lid))), 1, []), ...
-        reshape(sIds(si), 1, [])];
-    if isempty(entityIdsOf(lid)) || isempty(si)
+        reshape(sIds(si), 1, []), reshape(lbIds, 1, [])];
+    if isempty(entityIdsOf(lid)) || (isempty(si) && isempty(lbIds))
         continue;   % ingestedArchive raises ingestedNoEpoch / ingestedNoRecording
     end
-    if ~any(ismember(sIds(si), seriesOwners))
+    if ~any(ismember(sIds(si), seriesOwners)) && isempty(lbIds)
         continue;   % archiveOf raises ingestedNoBodies
     end
     ai = unique(anchorRows(lid));
+    if isempty(si)
+        % no recording names this reader's clocks: leave out the
+        % references another system's statements name
+        ai = ai(~ismember(aIds(ai), others));
+    end
     used = [{}, sUsed{si}];
     A = struct('vintage', 'v2', 'epoch_id', lid, ...
         'bodies', containers.Map('KeyType', 'char', 'ValueType', 'any'), ...

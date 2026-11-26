@@ -195,7 +195,7 @@ end
 if isempty(pieces)
     f.type = elementTypeValue(ndi_session_obj, docId, entityType);
     f.ndi_element_class = assertionValue(ndi_session_obj, docId, ...
-        ndi.vintage.elementLabel('class'));
+        ndi.vintage.elementClassQuery());
 else
     [f.type, ~, needsMode] = ndi.vintage.elementTypeOf(pieces.typeDocs, entityType);
     if needsMode && ~isempty(ndi_session_obj)
@@ -347,15 +347,16 @@ end
 
 % ===================== helpers =============================================
 
-function v = assertionValue(ndi_session_obj, docId, label)
+function v = assertionValue(ndi_session_obj, docId, variableQuery)
 %ASSERTIONVALUE The value of one kind assertion, or '' when absent.
 %   ABSENCE IS NOT AN ERROR HERE: the migrator writes each assertion only
 %   when the source field was non-empty, so a missing one means the v1
 %   element had nothing to say. Returning '' reproduces exactly what the
-%   v1 read would have produced from an empty field.
+%   v1 read would have produced from an empty field. VARIABLEQUERY picks
+%   the variable (ndi.vintage.elementClassQuery: the node EMPTY:0000401, or
+%   the old name 'ndi element class'; [variable terms batch 1]).
 v = '';
-q = ndi.v2.statementQuery('assertion', 'term') & ...
-    ndi.v2.fieldQuery('statement.variable.name', 'exact_string', label) & ...
+q = ndi.v2.statementQuery('assertion', 'term') & variableQuery & ...
     ndi.v2.entityQuery(docId);
 docs = ndi_session_obj.database_search(q);
 if isempty(docs)

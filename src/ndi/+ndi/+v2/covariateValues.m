@@ -8,12 +8,12 @@ function [v, form] = covariateValues(covariate, dimensions)
 %   value form it carries, and V is:
 %     origin_spacing  origin + spacing * (0:n-1)', n the extent of its one
 %                     dimension (the canonical numbers)
-%     quantity        quantity.value (canonical, in the covariate's unit)
+%     quantity        the `numeric` numbers (canonical, in the covariate's unit)
 %     count           the integers
 %     term            a string array of the terms' names
 %     text            the strings (a string array)
 %     logical         a logical array
-%     matrix          the stored array
+%     matrix          the stored `numeric` array
 %     key             the 0-based position of the `key_id` entry whose value
 %                     gives the positions (resolve it against the document);
 %                     the covariate's `key` (did-schema [covariate key],
@@ -21,13 +21,17 @@ function [v, form] = covariateValues(covariate, dimensions)
 %   Each is shaped by the extents of the `along` dimensions when its element
 %   count fits them (a vector along one dimension is a column).
 %
-%   Both numeric shapes are read (did-schema did_v2_numeric_shape_plan.md,
-%   [one shape for measured numbers], Jess Haley, 2026-11-17): the old
-%   `quantity.value`, `matrix` and `origin`/`spacing` blocks {value,
-%   source_value}, and the new flat `numeric` and plain `origin`/`spacing`
-%   numbers. FORM keeps the old names: a `numeric` with one number per
+%   Numbers are read in the numeric shape of did-schema
+%   did_v2_numeric_shape_plan.md ([one shape for measured numbers], Jess
+%   Haley, 2026-11-17): a flat `numeric` and plain `origin`/`spacing`
+%   numbers. FORM keeps its names: a `numeric` with one number per
 %   position of its `along` dimensions (or with a `source_numeric`) is
 %   'quantity', any other `numeric` array is 'matrix' (the stored array).
+%   A covariate in the OLD numeric shape (`quantity`, `matrix`, or
+%   `origin`/`spacing` blocks {value, source_value}) is not read: it is an
+%   error, 'ndi:v2:oldNumericShapeReMigrate' (ndi.v2.refuseOldNumericShape),
+%   and the database is migrated again from v1 (section 9 step 4, [no
+%   migrated database is kept], Jess Haley, 2026-11-19).
 %
 %   See also ndi.v2.axesTable, ndi.v2.covariatesTable.
 
@@ -41,6 +45,10 @@ if ~isstruct(covariate) || isempty(covariate)
     return;
 end
 c = covariate(1);
+old = ndi.v2.oldNumericForm(c);
+if ~isempty(old)
+    ndi.v2.refuseOldNumericShape(sprintf('Covariate "%s"', variableName(c)), old);
+end
 dims = ndi.v2.entries(dimensions);
 along = [];
 if isfield(c, 'along'), along = double(c.along(:)'); end
@@ -54,11 +62,7 @@ if has(c, 'origin') || has(c, 'spacing')
     end
     if ~isnan(n), v = o + s * (0:n-1)'; end
     return;
-elseif has(c, 'quantity')
-    form = "quantity";
-    v = double(pick(c, 'quantity', []));
 elseif has(c, 'numeric')
-    % the new numeric shape (flat `numeric`, no wrapper)
     x = c.numeric;
     if iscell(x), x = cellNumbers(x); end
     v = double(x);
@@ -84,10 +88,6 @@ elseif isfield(c, 'logical') && ~isempty(c.logical)
     x = c.logical;
     if iscell(x), x = cellfun(@(e) logical(e), x); end
     v = logical(x);
-elseif has(c, 'matrix')
-    form = "matrix";
-    v = c.matrix;
-    return;
 elseif isfield(c, 'key') && ~isempty(c.key) && ~isequal(c.key, -1)
     % did-schema [covariate key] (Jess Haley, 2026-11-01: "Yes, rename
     % document to key")
@@ -155,16 +155,19 @@ tf = isfield(s, name) && ~isempty(s.(name));
 end
 
 function x = pick(s, name, default)
-% a {value, source_value} pair's canonical value (old numeric shape), or a
-% bare number (new numeric shape: `origin` and `spacing` are plain numbers
-% beside `source_origin` and `source_spacing`)
+% a plain origin or spacing number ([one shape for measured numbers]:
+% `origin` and `spacing` are numbers beside `source_origin` and
+% `source_spacing`)
 x = default;
 if ~isfield(s, name) || isempty(s.(name)), return; end
-p = s.(name);
-if isstruct(p)
-    if isfield(p, 'value') && ~isempty(p(1).value), x = p(1).value; end
-else
-    x = p;
+x = s.(name);
+end
+
+function n = variableName(c)
+n = '';
+if isfield(c, 'variable')
+    v = c.variable;
+    if isstruct(v) && isfield(v, 'name'), n = char(v(1).name); elseif ischar(v) || isstring(v), n = char(v); end
 end
 end
 

@@ -40,7 +40,7 @@ for k = 1:numel(dbs)
     catch
         continue;   % the v1 database beside it
     end
-    docs = db.search(did2.query('', 'isa', 'acquisition_system'));
+    docs = db.search(did2.query('', 'isa', 'acquisition_configuration') | did2.query('', 'isa', 'acquisition_system'));
     for i = 1:numel(docs)
         sids{end+1} = char(did2.schema.cache.sessionIdOf(docs{i}.toStruct())); %#ok<AGROW>
     end
@@ -271,13 +271,15 @@ for k = 1:numel(docs)
     end
     for a = 1:numel(as)
         s = as{a}.toStruct();
-        nm = '';
-        if isfield(s, 'statement') && isfield(s.statement, 'variable') && isfield(s.statement.variable, 'name')
-            nm = char(s.statement.variable.name);
+        % the class variable by node EMPTY:0000401 or by its old name
+        % (ndi.vintage.isElementClassVariable, [variable terms batch 1])
+        isClass = false;
+        if isfield(s, 'statement') && isfield(s.statement, 'variable')
+            isClass = ndi.vintage.isElementClassVariable(s.statement.variable);
         end
-        if strcmp(nm, ndi.vintage.elementLabel('class')) && isempty(T.class_assertion)
+        if isClass && isempty(T.class_assertion)
             T.class_assertion = char(s.base.id);
-        elseif ~strcmp(nm, ndi.vintage.elementLabel('class')) && isempty(T.type_assertion)
+        elseif ~isClass && isempty(T.type_assertion)
             T.type_assertion = char(s.base.id);
         end
     end
