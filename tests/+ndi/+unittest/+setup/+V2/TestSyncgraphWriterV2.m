@@ -8,8 +8,10 @@ classdef TestSyncgraphWriterV2 < matlab.unittest.TestCase
 %   the syncgraph's id, with `software_id` naming a `software` entity of its
 %   class and `clock_alignment_configuration_id` naming its rules; each rule
 %   is a `clock_alignment_configuration` (with its software entity, its
-%   settings as method parameters and its two daq systems as
-%   `from_acquisition_system_id` / `to_acquisition_system_id`) -- the shape
+%   settings as method parameters and its two daq systems' device entities
+%   as `from_acquisition_system_id` / `to_acquisition_system_id`, or
+%   `input_id` / `output_id` where the schema names them so; Decided by Jess
+%   Haley, 2026-11-19 [a rig's clock belongs to its device]) -- the shape
 %   DID-matlab's +migrators_j/syncgraph.m and syncrule.m (with
 %   did2.convert.resolveClockAlignment) write for v1 `syncgraph` and
 %   `syncrule` documents -- or, where the migration carries a rule whole as
@@ -155,8 +157,23 @@ classdef TestSyncgraphWriterV2 < matlab.unittest.TestCase
             % edges are input and output], Jess Haley 2026-11-10)
             names = ndi.vintage.syncConfigurationNames();
             ff = testCase.onlyDoc(stored, rules{2}.id(), 'clock_alignment_configuration');
-            testCase.verifyEqual(ndi.v2.edgeIds(ff, names.inputEdge), {sys1.id()});
-            testCase.verifyEqual(ndi.v2.edgeIds(ff, names.outputEdge), {sys2.id()});
+            % each end is the rig's DEVICE entity, the device_id of the daq
+            % system's configuration, not the configuration (Decided by Jess
+            % Haley, 2026-11-19 [a rig's clock belongs to its device],
+            % did-schema docs/plans/did_v2_standing_wiring_plan.md)
+            dev1 = testCase.rigDeviceOf(stored, sys1.id(), 'intan1');
+            dev2 = testCase.rigDeviceOf(stored, sys2.id(), 'intan2');
+            testCase.verifyEqual(ndi.v2.edgeIds(ff, names.inputEdge), {dev1});
+            testCase.verifyEqual(ndi.v2.edgeIds(ff, names.outputEdge), {dev2});
+            % the control: the configuration itself is not an end
+            testCase.verifyNotEqual(dev1, sys1.id());
+            testCase.verifyFalse(any(strcmp(ndi.v2.edgeIds(ff, names.inputEdge), sys1.id())), ...
+                'the input end names the daq system''s configuration, not its device');
+            testCase.verifyFalse(any(strcmp(ndi.v2.edgeIds(ff, names.outputEdge), sys2.id())), ...
+                'the output end names the daq system''s configuration, not its device');
+            ct = testCase.onlyDoc(stored, rules{3}.id(), 'clock_alignment_configuration');
+            testCase.verifyEqual(ndi.v2.edgeIds(ct, names.inputEdge), {dev1});
+            testCase.verifyEqual(ndi.v2.edgeIds(ct, names.outputEdge), {dev2});
             fm = testCase.onlyDoc(stored, rules{1}.id(), 'clock_alignment_configuration');
             testCase.verifyEmpty(ndi.v2.edgeIds(fm, names.inputEdge), ...
                 'a filematch rule names no daq system');
@@ -221,6 +238,20 @@ classdef TestSyncgraphWriterV2 < matlab.unittest.TestCase
                 'ndi.epoch.epochprobemap_daqsystem', {'(.*)epochprobemap.ndi'});
             dev = ndi.daq.system.mfdaq(name, nav, ndi.daq.reader.mfdaq.intan());
             S.daqsystem_add(dev);
+        end
+
+        function id = rigDeviceOf(testCase, stored, sysId, rigName)
+            % the device entity the daq system SYSID's configuration names by
+            % `device_id`: an entity of type device named RIGNAME
+            % (ndi.setup.V2.rigDevice, written by ndi.daq.system/newdocumentV2)
+            sys = testCase.onlyDoc(stored, sysId, '');
+            ids = ndi.v2.edgeIds(sys, 'device_id');
+            testCase.assertNumElements(ids, 1, sprintf( ...
+                'daq system %s names %d devices', sysId, numel(ids)));
+            id = ids{1};
+            dev = testCase.onlyDoc(stored, id, 'entity');
+            testCase.verifyEqual(ndi.v2.kindOf(dev), 'device');
+            testCase.verifyEqual(char(dev.entity.name), rigName);
         end
 
         function verifyStoredV2Validate(testCase, stored)
