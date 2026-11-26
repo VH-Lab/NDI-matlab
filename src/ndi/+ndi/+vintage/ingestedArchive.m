@@ -174,8 +174,10 @@ end
 % ---- the epoch's stimulus log, wherever it is owned ------------------
 % [stimulus log owned by its presentation] (Jess Haley, 2026-11-19): a
 % stimulus system's archive files are bodies of the epoch's presentation,
-% which names no acquisition system, or of the fallback observation, which
-% does; each body names its epoch and reader (ndi.vintage.ingestedStimulusLogKey)
+% which names no acquisition system, or of the fallback manipulation of the
+% epoch's subject ([stimulus log fallback is a manipulation], 2026-11-25),
+% which does; each body names its epoch and reader
+% (ndi.vintage.ingestedStimulusLogKey)
 logs = ndi.vintage.ingestedStimulusLogBodies(S, readerId, {epochId});
 logBodies = {};
 if isKey(logs, epochId)
@@ -209,7 +211,7 @@ if ~isempty(keyIds)
 end
 
 % the stimulus log's bodies last: a body met twice (the fallback
-% observation names the system too) is read once (private/archiveOf)
+% manipulation names the system too) is read once (private/archiveOf)
 bodies = [reshape(bodies, 1, []), reshape(logBodies, 1, [])];
 if isempty(statements) && ~isempty(anchors)
     % no recording of this reader's systems names its clock references, so

@@ -8,9 +8,12 @@ function M = ingestedStimulusLogBodies(S, readerId, epochIds)
 %   log for the reader READERID: the v1 ingested archive files of a stimulus
 %   system (`channel_list.bin`, `evmktx_group<g>_seg.nbf_#`), moved to the
 %   epoch's stimulus-presentation manipulation, or, with no presentation, to
-%   an observation of the stimulus rig's device (Decided by Jess Haley,
-%   2026-11-19 [stimulus log owned by its presentation], did-schema
-%   docs/plans/did_v2_standing_wiring_plan.md). An epoch with none is not a
+%   a manipulation of the epoch's subject, the stimulator its instrument
+%   (Decided by Jess Haley, 2026-11-19 [stimulus log owned by its
+%   presentation], amended 2026-11-25 [stimulus log fallback is a
+%   manipulation], did-schema docs/plans/did_v2_standing_wiring_plan.md;
+%   before the amendment, an observation of the stimulus rig's device). An
+%   epoch with none is not a
 %   key. The bodies of an epoch are in the database's order.
 %
 %   THE LOOKUP. A data body of this session (`isa data_body`: an
@@ -24,7 +27,8 @@ function M = ingestedStimulusLogBodies(S, readerId, epochIds)
 %   notes and checked here, so 't0007' never matches epoch 't00074' and
 %   another reader's log is never taken. The owner is not read: whatever
 %   owns the body (a presentation, which names no acquisition system, or the
-%   fallback observation, which does), the body says whose log it is.
+%   fallback manipulation of the subject, which does), the body says whose
+%   log it is.
 %
 %   For a v2 database. EPOCHIDS empty, or READERID empty: M is empty and no
 %   search is made.

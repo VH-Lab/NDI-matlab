@@ -442,11 +442,12 @@ function result = local(path, options)
         %       pass 1 writes a body site's region part in its final shape with
         %       ids computed from (subject, region, side); this merges the
         %       copies several source documents write to the earliest source's
-        %       and attaches a side another document gives ([duplicate parts
-        %       merged in DID], [part re-keyed when its side arrives], [region
-        %       part ids computed], Jess Haley, 2026-11-17 / 2026-11-19,
-        %       did-schema did_v2_go_forward_class_audit.md; VH-Lab/DID-matlab
-        %       #488).
+        %       ([duplicate parts merged in DID], [region part ids computed],
+        %       Jess Haley, 2026-11-17 / 2026-11-19, did-schema
+        %       did_v2_go_forward_class_audit.md; VH-Lab/DID-matlab #488); a
+        %       side another document gives is attached to no part ([side said
+        %       about its region], 2026-11-25), so it stays the site
+        %       observation (2) reads.
         %   (2) PATH-S: an attributed anatomical locus is promoted to a
         %       part-subject. Run AFTER the deferrals so a manipulation the
         %       deferral emits can be a Path-S retarget candidate. A part it
@@ -794,9 +795,10 @@ function result = local(path, options)
                  'failed (%s); leaving them quarantined.'], ME.message);
         end
         tStep = migrateStepMark('resolveDeferred', tStart, tStep, convertResult);
-        % (1b) the region parts: one copy per computed id, a side given later
-        % attached (did2.convert.resolveRegionParts declares what it reads and
-        % writes; DID-matlab tools/batch_pass_order.py reads it there)
+        % (1b) the region parts: one copy per computed id; a side another
+        % document gives is left where it is ([side said about its region])
+        % (did2.convert.resolveRegionParts declares what it reads and writes;
+        % DID-matlab tools/batch_pass_order.py reads it there)
         try
             [convertResult, regionPartReport] = ...
                 did2.convert.resolveRegionParts( ...
@@ -1309,11 +1311,22 @@ function result = local(path, options)
                 '(first: %s)\n'], r.time_not_evenly_spaced, r.uneven_time_converted, ...
                 r.uneven_time_groups_split, r.uneven_time_channels_split, ...
                 r.uneven_time_split_ambiguous_kept, r.unconvertible, r.first_unconvertible_reason);
+            % [time channels out of order are malformed] (Jess Haley,
+            % 2026-11-25): each such archive named, with the order found
+            if isfield(r, 'time_channels_out_of_order_kept')
+                fprintf(['[migrate step]   ingested archives (MALFORMED): of %d archive(s) ' ...
+                    'seen, %d kept as v1 whose channel list does not give its time channels ' ...
+                    'in increasing number\n'], r.archives_seen, r.time_channels_out_of_order_kept);
+                for w = 1:numel(r.malformed)
+                    fprintf('[migrate step]     MALFORMED archive %s: %s\n', ...
+                        r.malformed{w}.archive_id, r.malformed{w}.reason);
+                end
+            end
             % [stimulus log owned by its presentation] (Jess Haley, 2026-11-19)
             if isfield(r, 'archives_no_channel_group')
                 fprintf(['[migrate step]   ingested archives (stimulus logs): %d archive(s) ' ...
                     'with no channel or time group left as pass 1 wrote them, %d of them ' ...
-                    'stimulus logs moved to a presentation or fallback observation\n'], ...
+                    'stimulus logs moved to a presentation or fallback manipulation\n'], ...
                     r.archives_no_channel_group, r.stimulus_logs_left);
             end
         catch ME
