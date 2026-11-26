@@ -3,7 +3,7 @@ function [plan, report] = recordingAttribution(structs)
 %
 %   [PLAN, REPORT] = RECORDINGATTRIBUTION(STRUCTS) finds migrated
 %   modality observations (did-schema #88: an `observation` with a modality
-%   value kind, about its `entity_id`; before #88 a `<modality>_observation`
+%   value kind -- see ONLY RECORDINGS ARE CANDIDATES below, about its `entity_id`; before #88 a `<modality>_observation`
 %   about its `subject_id` -- both are read, and an edit keeps the spelling
 %   the document already has) that name a PROBE as their subject and no
 %   instrument at all, and plans the signed attribution for each: `subject_id`
@@ -90,6 +90,26 @@ function [plan, report] = recordingAttribution(structs)
 %   populated term would be this pass deciding a vocabulary question it has no
 %   standing to decide.
 %
+%   ---------------------------------------------------------------------
+%   ONLY RECORDINGS ARE CANDIDATES
+%   ---------------------------------------------------------------------
+%   Jess Haley, 2026-11-26 ("Yes": limit recordingAttribution to recording
+%   observations, as its header says; a probe's location observation stays
+%   about the probe). A candidate is an observation with no instrument WHOSE
+%   VALUE KIND IS A RECORDING MODALITY: one of the kinds DID-matlab's
+%   recording-observation emitters write -- the `mixin`s of
+%   +migrators_j/private/jRecordingModality.m and resolveEpochProbemap's
+%   localModality, listed as `kinds` in epochMint's and resolveEpochProbemap's
+%   isRecordingObservation (voltage, current, time, acceleration, temperature,
+%   intensity). TestRecordingAttribution pins the list below against those two
+%   files. Any other observation with no instrument is NOT a recording: a
+%   `probe_location` term observation (+migrators_j/probe_location.m: "The
+%   observation is a fact about the PROBE and stays one") is left about the
+%   probe, and counted in `skipped_not_a_recording`, by value kind. Before
+%   this, every instrument-less observation was a candidate, and Dab's 400
+%   probe locations were rewritten to be about the animal (Dab run
+%   45745085379: "400 observation(s): 0 donor(s), 400 candidate(s)").
+%
 %   STATUS: WRITTEN 2026-08-13 IN A CONTAINER WITH NO MATLAB. NOT EXECUTED HERE.
 %
 %   See also NDI.MIGRATE.INTERNAL.EPOCHANCHORFOLD,
@@ -111,7 +131,11 @@ report = struct( ...
     'documents_inspected',      numel(structs), ...
     'observations',             0, ...
     'donors',                   0, ...   % carry an instrument edge
-    'candidates',               0, ...   % carry none
+    'without_instrument',       0, ...   % carry none: candidates + skipped
+    'candidates',               0, ...   % carry none, of a recording kind
+    'skipped_not_a_recording',  0, ...   % carry none, of another kind
+    'skipped_not_a_recording_by_kind', struct(), ...
+    'recording_value_kinds',    {recordingValueKinds()}, ...
     'attributed',               0, ...
     'variable_carried',         0, ...
     'refused_no_donor',         0, ...
@@ -181,6 +205,16 @@ for k = 1:numel(structs)
             donorSpecimen(instrumentId) = subjectId;
             donorVariable(instrumentId) = getVariable(body);
         end
+        continue;
+    end
+    report.without_instrument = report.without_instrument + 1;
+    kind = ndi.migrate.internal.etaShape.valueKind(body);
+    if ~any(strcmp(kind, report.recording_value_kinds))
+        % not a recording (a probe's location, a term, a text, ...): what it
+        % is about is not this pass's to change
+        report.skipped_not_a_recording = report.skipped_not_a_recording + 1;
+        report.skipped_not_a_recording_by_kind = bumpKind( ...
+            report.skipped_not_a_recording_by_kind, kind);
         continue;
     end
     report.candidates = report.candidates + 1;
@@ -258,6 +292,27 @@ report.changed = ~isempty(plan);
 end
 
 % ===================== helpers =========================================
+
+function kinds = recordingValueKinds()
+%RECORDINGVALUEKINDS The value kinds of a recording observation: DID-matlab's
+%   `kinds` in did2.convert.epochMint and did2.convert.resolveEpochProbemap
+%   (isRecordingObservation), the mixins jRecordingModality / localModality
+%   emit. Pinned against both files by TestRecordingAttribution.
+kinds = {'voltage', 'current', 'time', 'acceleration', 'temperature', 'intensity'};
+end
+
+function byKind = bumpKind(byKind, kind)
+if isempty(kind)
+    f = 'no_value_kind';
+else
+    f = matlab.lang.makeValidName(kind);
+end
+if isfield(byKind, f)
+    byKind.(f) = byKind.(f) + 1;
+else
+    byKind.(f) = 1;
+end
+end
 
 function tf = isObservation(body)
 % the `observation` direction on did-schema #88 (any value kind), or a

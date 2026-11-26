@@ -391,6 +391,12 @@ classdef TestMigrateLocalEtaPRED < matlab.unittest.TestCase
             verifyEqual(testCase, ra.attributed_via_observes, 1, ...
                 'PRED''s one pyraview is attributed through the element''s observes');
             verifyEqual(testCase, ra.refused_no_donor, 0, resultDiag(result));
+            % only recordings are candidates (Jess Haley, 2026-11-26): PRED's
+            % one instrument-less observation is the pyraview voltage
+            % recording (e2e run 45761090488 on V2 f226b90cd: "1
+            % observation(s): 0 donor(s), 1 candidate(s)"), so none is skipped
+            verifyEqual(testCase, ra.candidates, 1, resultDiag(result));
+            verifyEqual(testCase, ra.skipped_not_a_recording, 0, resultDiag(result));
             probe = findById(docs, depValue(obs, 'instrument_id'));
             verifyEqual(testCase, depValue(obs, 'entity_id'), organism.base.id, ...
                 ['pyraview''s observation is not about the specimen. ' ...
