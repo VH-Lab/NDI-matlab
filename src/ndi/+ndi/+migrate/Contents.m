@@ -24,6 +24,9 @@
 %                          edge (did-schema V_eta_relation_inheritance_plan.md).
 %     stimulusBathToBath - stimulus_bath assembler (V_eta: dose_manipulation).
 %     pathSPromotion     - V_eta region parts: a statement about a region targets its part entity.
+%     regionPartBodies   - the four documents of one region part (entity, kind and
+%                          laterality assertions, part_of), as pathSPromotion and
+%                          the Dabrowska map write them.
 %     softwareDedup      - V_eta `software` merge on (session, name, version),
 %                          retargeting inbound edges BY TARGET ID (one of the
 %                          seven edges that must_refer to `software` is called

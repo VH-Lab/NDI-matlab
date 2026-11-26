@@ -2532,6 +2532,20 @@ function [convertResult, report] = resolveRecordingAttribution(convertResult, op
         report.refused_no_donor, report.refused_no_subject, ...
         report.refused_self_reference, report.refused_ambiguous_probe, ...
         report.refused_ambiguous_observes);
+    % only a recording is re-attributed (Jess Haley, 2026-11-26): the
+    % instrument-less observations of another value kind, denominator first
+    kindNames = fieldnames(report.skipped_not_a_recording_by_kind);
+    kindText = '';
+    for q = 1:numel(kindNames)
+        kindText = sprintf('%s%s %d', kindText, kindNames{q}, ...
+            report.skipped_not_a_recording_by_kind.(kindNames{q}));
+        if q < numel(kindNames); kindText = [kindText ', ']; end %#ok<AGROW>
+    end
+    if isempty(kindText); kindText = 'none'; end
+    fprintf(['  no instrument %d: of a recording value kind (%s) %d, ' ...
+        'skipped, not a recording %d (by value kind: %s)\n'], ...
+        report.without_instrument, strjoin(report.recording_value_kinds, ', '), ...
+        report.candidates, report.skipped_not_a_recording, kindText);
     if isempty(plan)
         return;
     end

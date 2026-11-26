@@ -885,9 +885,9 @@ end
 % ndi.migrate.internal.withMintSource), as before.
 if isempty(regionKey(areaTerm))
     p = ndi.migrate.internal.withMintSource('pathSPromotion', key, ...
-        @() mintPart(parentId, areaTerm, sideTerm, source, []));
+        @() ndi.migrate.internal.regionPartBodies(parentId, areaTerm, sideTerm, source, []));
 else
-    p = mintPart(parentId, areaTerm, sideTerm, source, ...
+    p = ndi.migrate.internal.regionPartBodies(parentId, areaTerm, sideTerm, source, ...
         did2.convert.regionPartIds(parentId, areaTerm, sideTerm));
 end
 partId = p.entity.base.id;
@@ -927,63 +927,6 @@ function v = LATERALITY_VARIABLE()
 v = struct('node', 'NCIT:C25185', 'name', 'Laterality');
 end
 
-function parts = mintPart(parentId, siteTerm, sideTerm, source, ids)
-%MINTPART Build the part entity, its anatomical-kind term assertion, its
-%   laterality term assertion (when SIDETERM is given), and the part_of
-%   relation. The part is an `entity` of type `tissue` ("part of an organism:
-%   a slice, a biopsy, a region", binding_registry_meta.json
-%   entity_type_bindings), identity only; the anatomical term is its kind (an
-%   assertion, D9), not a field, and is written as the source wrote it (never
-%   mapped). PARENTID is the subject, or the slice the statement was about.
-%   SOURCE (the statement that called for the part) supplies the session and
-%   datestamp. IDS is did2.convert.regionPartIds(PARENTID, SITETERM, SIDETERM)
-%   (the part's computed ids and local identifier), or [] for a region with no
-%   key, whose ids are minted in the caller's context.
-S = ndi.migrate.internal.etaShape;
-sessionId = ndi.v2.sessionIdOf(source);
-ds = baseField(source, 'creation_timestamp', '');
-if isempty(ds)
-    ds = baseField(source, 'datestamp', '');
-end
-common = {'SessionId', sessionId, 'Datestamp', ds};
-partName = safeName(siteTerm);
-if ~isempty(sideTerm)
-    partName = [partName '_' safeName(sideTerm)];
-end
-if isempty(ids)
-    ids = struct('part', did2.convert.mintId('tissue part'), 'kind', '', ...
-        'laterality', '', 'relation', '', 'local_identifier', '');
-end
-partId = ids.part;
-
-% local_identifier is REQUIRED on a tissue entity. Compose parent+part; trim
-% any degenerate leading/trailing underscores (an empty parentId would leave
-% one), and fall back to the document id if somehow empty -- the same
-% guarantee the DID-side jEnsureLocalId gives. regionPartIds composes it the
-% same way.
-lid = ids.local_identifier;
-if isempty(lid)
-    lid = regexprep([shortId(parentId) '_' partName], '^_+|_+$', '');
-end
-if isempty(lid); lid = partId; end
-ent = S.entity('tissue', struct('local_identifier', lid), 'Id', partId, common{:});
-
-assertion = S.statement('assertion', 'term', partId, ...
-    S.anatomicalStructureVariable(), siteTerm, 'Id', ids.kind, common{:});
-
-laterality = [];
-if ~isempty(sideTerm)
-    laterality = S.statement('assertion', 'term', partId, ...
-        LATERALITY_VARIABLE(), S.asTerm(sideTerm), 'Id', ids.laterality, common{:});
-end
-
-relation = S.relation(partId, parentId, ndi.v2.vocabTerm('relation', 'part_of'), ...
-    'Id', ids.relation, common{:});
-
-parts = struct('entity', ent, 'assertion', assertion, 'relation', relation);
-parts.laterality = laterality;
-end
-
 % ===================== struct accessors ================================
 
 function t = siteValue(s)
@@ -1006,19 +949,4 @@ if isfield(s, 'base') && isstruct(s.base) && isfield(s.base, name) ...
         && ~isempty(s.base.(name))
     v = s.base.(name);
 end
-end
-
-function nm = safeName(t)
-raw = '';
-if isfield(t, 'name') && ~isempty(t.name); raw = char(t.name);
-elseif isfield(t, 'node'); raw = char(t.node); end
-if isempty(raw); raw = 'part'; end
-nm = lower(regexprep(raw, '[^A-Za-z0-9]+', '_'));
-nm = regexprep(nm, '^_+|_+$', '');
-if isempty(nm); nm = 'part'; end
-end
-
-function s = shortId(idStr)
-s = char(idStr);
-if numel(s) > 8; s = s(1:8); end
 end

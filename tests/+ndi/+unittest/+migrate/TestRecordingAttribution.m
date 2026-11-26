@@ -59,6 +59,29 @@ classdef TestRecordingAttribution < matlab.unittest.TestCase
     end
 
     methods (Static)
+        function b = probeLocation(probeId, id)
+            %PROBELOCATION DID-matlab +migrators_j/probe_location.m's shape on
+            %   did-schema #88: an `observation` with value kind `term` about
+            %   the probe (entity_id = probe_id), variable NCIT:C13717
+            %   "Anatomic Site", the atlas term its value, NO instrument.
+            if nargin < 2
+                id = 'loc-1';
+            end
+            sc = {'interaction', 'statement', 'base', 'term', 'value', 'data'};
+            b = struct();
+            b.document_class = struct('class_name', 'observation', ...
+                'class_version', '1.0.0', 'superclasses', ...
+                struct('class_name', sc, 'class_version', '1.0.0'));
+            b.depends_on = [ ...
+                struct('name', 'entity_id',         'value', probeId), ...
+                struct('name', 'time_reference_id', 'value', 'tr-1')];
+            b.base = struct('id', id, 'session_id', 's1');
+            b.statement = struct('variable', ...
+                struct('node', 'NCIT:C13717', 'name', 'Anatomic Site'));
+            b.term = struct('value', ...
+                struct('node', 'UBERON:0001880', 'name', 'bed nucleus of stria terminalis'));
+        end
+
         function b = as88(b)
             %AS88 The same observation in did-schema #88's spelling: the
             %   `observation` direction + the `voltage` kind, `entity_id`,
@@ -81,6 +104,97 @@ classdef TestRecordingAttribution < matlab.unittest.TestCase
     end
 
     methods (Test)
+
+        function aProbeLocationStaysAboutTheProbe(testCase)
+            % Jess Haley, 2026-11-26 ("Yes": limit recordingAttribution to
+            % recording observations; a probe's location observation stays
+            % about the probe). A probe_location term observation has no
+            % instrument, and the probe has both an `observes` relation and
+            % a recording-observation donor naming its specimen: it is still
+            % NOT re-attributed, and it is counted as skipped, by value kind.
+            loc = testCase.probeLocation('probe-1');
+            structs = {loc, observes('probe-1', 'mouse-7'), ...
+                       testCase.as88(testCase.donor('probe-1', 'mouse-7'))};
+            [plan, report] = ndi.migrate.internal.recordingAttribution(structs);
+            testCase.verifyEmpty(plan);
+            testCase.verifyFalse(report.changed);
+            testCase.verifyEqual(report.observations, 2);
+            testCase.verifyEqual(report.donors, 1);
+            testCase.verifyEqual(report.without_instrument, 1);
+            testCase.verifyEqual(report.candidates, 0);
+            testCase.verifyEqual(report.attributed, 0);
+            testCase.verifyEqual(report.skipped_not_a_recording, 1);
+            testCase.verifyEqual(report.skipped_not_a_recording_by_kind, ...
+                struct('term', 1));
+            % the input is untouched: still about the probe, no instrument
+            testCase.verifyEqual(dep(structs{1}, 'entity_id'), 'probe-1');
+            testCase.verifyEmpty(dep(structs{1}, 'instrument_id'));
+        end
+
+        function aRecordingBesideAProbeLocationIsStillAttributed(testCase)
+            % PRED's case with a probe location beside it: the pyraview
+            % recording (value kind voltage) about the probe is attributed to
+            % the specimen through the element's `observes`; the probe's
+            % location is not, and stays about the probe.
+            structs = {testCase.as88(testCase.candidate('probe-1', 'pyr-1')), ...
+                       testCase.probeLocation('probe-1', 'loc-1'), ...
+                       observes('probe-1', 'mouse-7')};
+            [plan, report] = ndi.migrate.internal.recordingAttribution(structs);
+            testCase.verifyEqual(report.observations, 2);
+            testCase.verifyEqual(report.without_instrument, 2);
+            testCase.verifyEqual(report.candidates, 1);
+            testCase.verifyEqual(report.skipped_not_a_recording, 1);
+            testCase.verifyEqual(report.attributed, 1);
+            testCase.verifyEqual(report.attributed_via_observes, 1);
+            testCase.verifyEqual(numel(plan), 1);
+            testCase.verifyEqual(plan(1).source_id, 'pyr-1');
+            testCase.verifyEqual(dep(plan(1).body, 'entity_id'), 'mouse-7');
+            testCase.verifyEqual(dep(plan(1).body, 'instrument_id'), 'probe-1');
+        end
+
+        function everyRecordingKindIsACandidateAndNothingElse(testCase)
+            % each recording value kind, with no instrument, is a candidate;
+            % a kind outside the list (term, text, mass) is skipped
+            kinds = {'voltage', 'current', 'time', 'acceleration', ...
+                     'temperature', 'intensity', 'term', 'text', 'mass'};
+            structs = {observes('probe-1', 'mouse-7')};
+            for k = 1:numel(kinds)
+                b = testCase.as88(testCase.candidate('probe-1', ['c-' kinds{k}]));
+                b.document_class.superclasses(4).class_name = kinds{k};
+                structs{end+1} = b; %#ok<AGROW>
+            end
+            [plan, report] = ndi.migrate.internal.recordingAttribution(structs);
+            testCase.verifyEqual(report.without_instrument, 9);
+            testCase.verifyEqual(report.candidates, 6);
+            testCase.verifyEqual(report.attributed, 6);
+            testCase.verifyEqual(report.skipped_not_a_recording, 3);
+            testCase.verifyEqual(report.skipped_not_a_recording_by_kind, ...
+                struct('term', 1, 'text', 1, 'mass', 1));
+            testCase.verifyEqual(sort({plan.source_id}), ...
+                sort(strcat('c-', kinds(1:6))));
+        end
+
+        function theRecordingKindsAreDIDMatlabs(testCase)
+            % the list is not this file's: it is the `kinds` DID-matlab's
+            % isRecordingObservation reads in did2.convert.epochMint and
+            % did2.convert.resolveEpochProbemap (the mixins jRecordingModality
+            % and localModality emit). Read from their source, so the lists
+            % cannot drift.
+            [~, report] = ndi.migrate.internal.recordingAttribution({});
+            for f = {'did2.convert.epochMint', 'did2.convert.resolveEpochProbemap'}
+                file = which(f{1});
+                testCase.assertNotEmpty(file, [f{1} ' is not on the path']);
+                text = fileread(file);
+                tok = regexp(text, '\nkinds = \{([^}]*)\};', 'tokens');
+                testCase.assertNotEmpty(tok, ['no `kinds = {...};` in ' f{1}]);
+                for t = 1:numel(tok)
+                    theirs = regexp(tok{t}{1}, '''([^'']*)''', 'tokens');
+                    theirs = cellfun(@(c) c{1}, theirs, 'UniformOutput', false);
+                    testCase.verifyEqual(sort(report.recording_value_kinds), ...
+                        sort(theirs), ['the recording value kinds differ from ' f{1}]);
+                end
+            end
+        end
 
         function withoutEpochFilesTheElementsObservesIsTheDonor(testCase)
             % Decided by Jess Haley, 2026-10-21 [preview attribution without
@@ -153,6 +267,9 @@ classdef TestRecordingAttribution < matlab.unittest.TestCase
             testCase.verifyEqual(report.observations, 0);
             testCase.verifyEqual(report.candidates, 0);
             testCase.verifyEqual(report.attributed, 0);
+            testCase.verifyEqual(report.without_instrument, 0);
+            testCase.verifyEqual(report.skipped_not_a_recording, 0);
+            testCase.verifyEqual(report.skipped_not_a_recording_by_kind, struct());
             testCase.verifyFalse(report.changed);
         end
 
