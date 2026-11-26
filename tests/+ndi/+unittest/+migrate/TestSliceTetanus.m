@@ -379,6 +379,164 @@ classdef TestSliceTetanus < matlab.unittest.TestCase
             end
             verifyEqual(testCase, numel(k2), numel(after));
         end
+
+        function testRegionPartsOfTheAnimalMoveUnderTheirSlices(testCase)
+            % Decided by Jess Haley, 2026-11-26 [Dab map re-parents region
+            % parts under slices] (did-schema did_v2_go_forward_class_audit.md,
+            % did-schema #378 (n) (a)): since [recording attribution only for
+            % recordings] a probe's location stays about the probe, so the
+            % generic stage's 'located' step runs BEFORE the map and puts each
+            % recording on a BNST part of the ANIMAL. The map then moves each
+            % such part under the slice it belongs to, with its statements, so
+            % [slice region chain] (animal -> slice -> region) is reached: the
+            % same chain as composing sites -> map -> located (the test above).
+            %
+            % CONTROL: an animal with no slice, recorded by a located probe.
+            % 'located' gives it a part too; the map leaves that part, and
+            % its statement, on the animal and counts both.
+            mig = testCase.Migrated;
+            probes = {};
+            for k = 1:numel(mig)
+                if strcmp(mig{k}.document_class.class_name, 'observation')
+                    probes{end+1} = dep(mig{k}, 'instrument_id'); %#ok<AGROW>
+                end
+            end
+            probes = unique(probes);
+            verifyNotEmpty(testCase, probes);
+            for k = 1:numel(probes)
+                mig = [mig, probeLocation(probes{k}, k)]; %#ok<AGROW>
+            end
+            ctlAnimal = 'ctl_animal_no_slice'; ctlProbe = 'ctl_probe_no_slice';
+            ctlObs = body('observation', 'ctl_recording', 'sess', ...
+                [struct('name', 'entity_id', 'value', ctlAnimal), ...
+                 struct('name', 'instrument_id', 'value', ctlProbe)]);
+            ctlObs.document_class.superclasses = struct('class_name', ...
+                {'interaction', 'statement', 'base', 'voltage', 'value', 'data'}, ...
+                'class_version', '1.0.0');
+            mig = [mig, {entity(ctlAnimal, 'sess', 'organism'), ...
+                entity(ctlProbe, 'sess', 'device'), ctlObs}, ...
+                probeLocation(ctlProbe, numel(probes) + 1)];
+
+            % the generic stage: 'located' onto parts of the animals
+            [k1, m1, ch1, r1] = ndi.migrate.internal.pathSPromotion(mig, 'Mode', 'located');
+            verifyTrue(testCase, ch1);
+            verifyEqual(testCase, r1.observations_retargeted, 98 + 1);
+            verifyEqual(testCase, r1.statements_retargeted_onto_slice_parts, 0, ...
+                'no slice exists before the map');
+            verifyEqual(testCase, r1.parts_minted, 3, ...
+                'one BNST part per animal: the two slice animals and the control');
+            generic = [k1, m1];
+
+            % the map
+            [plan, r] = ndi.setup.conv.dabrowska.sliceTetanus(testCase.V1, generic, ...
+                testCase.EpochIndex);
+            r0 = testCase.Report;
+            % a statement about the animal's part is matched as one about the
+            % animal: the same slices, statements and re-attributions
+            for f = {'slices', 'new_animals', 'epoch_statements_examined', ...
+                    'epoch_statements_matched', 'epoch_statements_unmatched', ...
+                    'tetanus_manipulations', 'labels_rebuilt', 'documents_reattributed'}
+                verifyEqual(testCase, r.(f{1}), r0.(f{1}), f{1});
+            end
+            % the census, denominators first
+            verifyEqual(testCase, r.region_parts_of_an_organism, 3);
+            verifyEqual(testCase, r.region_parts_moved_under_slices, 2);
+            verifyEqual(testCase, r.region_parts_split_over_slices, 2, ...
+                '221122 over slices _a and _b; 221202 over Dec 02 and Nov 28');
+            verifyEqual(testCase, r.region_parts_left_animal_has_no_slice, 1, 'the control');
+            verifyEqual(testCase, [r.region_parts_left_no_statement_on_a_slice, ...
+                r.region_parts_left_some_statements_stay, ...
+                r.region_parts_left_named_by_another_document], [0 0 0]);
+            verifyEqual(testCase, r.region_part_statements, 98 + 1);
+            verifyEqual(testCase, r.region_part_statements_moved, 98);
+            verifyEqual(testCase, r.region_part_statements_left_animal_has_no_slice, 1);
+            verifyEqual(testCase, [r.region_part_statements_left_unmatched, ...
+                r.region_part_statements_left_ambiguous, ...
+                r.region_part_statements_left_not_tied_to_a_slice], [0 0 0]);
+            verifyEqual(testCase, r.slice_region_parts_minted, 4, 'one BNST part per slice');
+            verifyEqual(testCase, r.documents_minted, r0.documents_minted + 3 * 4, ...
+                'each slice part: entity, kind assertion, part_of');
+            verifyEqual(testCase, r.documents_removed, r0.documents_removed + 3 * 2, ...
+                'each moved animal part: entity, kind assertion, part_of');
+            verifyEqual(testCase, r.removals_withheld_still_referenced, 0);
+
+            % the chain: every recording on a slice is about that slice's BNST
+            % part, whose ids are regionPartIds(<slice>, BNST); the slice is
+            % part_of its animal
+            out = applyPlan(generic, plan);
+            byId = containers.Map();
+            parentOf = containers.Map();
+            for k = 1:numel(out)
+                b = out{k};
+                byId(b.base.id) = b;
+                if strcmp(b.document_class.class_name, 'directed_relation') ...
+                        && ndi.v2.vocabIs('relation', b.directed_relation.relation, 'part_of')
+                    parentOf(dep(b, 'child_id')) = dep(b, 'parent_id');
+                end
+            end
+            sliceIds = {};
+            for k = 1:numel(plan.minted)
+                b = plan.minted{k};
+                if strcmp(b.document_class.class_name, 'entity') ...
+                        && startsWith(ndi.v2.notesOf(b.entity), 'brain slice')
+                    sliceIds{end+1} = b.base.id; %#ok<AGROW>
+                end
+            end
+            verifyNumElements(testCase, sliceIds, 4);
+            bnst = struct('node', 'UBERON:0001880', 'name', 'bed nucleus of stria terminalis (BNST)');
+            onSlicePart = 0; usedSlices = {};
+            for k = 1:numel(out)
+                b = out{k};
+                if ~strcmp(b.document_class.class_name, 'observation') ...
+                        || isempty(dep(b, 'instrument_id')) || strcmp(b.base.id, 'ctl_recording')
+                    continue;
+                end
+                part = dep(b, 'entity_id');
+                verifyTrue(testCase, isKey(parentOf, part), b.base.id);
+                if ~isKey(parentOf, part); continue; end
+                sl = parentOf(part);
+                verifyTrue(testCase, any(strcmp(sl, sliceIds)), ...
+                    sprintf('%s is about a part of %s, not of a slice', b.base.id, sl));
+                if ~any(strcmp(sl, sliceIds)); continue; end
+                verifyTrue(testCase, isKey(parentOf, sl) && ...
+                    ndi.migrate.internal.etaShape.isEntity(byId(parentOf(sl)), {'organism'}), ...
+                    'the slice is part_of an animal');
+                ids = did2.convert.regionPartIds(sl, bnst, []);
+                verifyEqual(testCase, part, ids.part, 'the slice part has its computed id');
+                onSlicePart = onSlicePart + 1;
+                usedSlices{end+1} = sl; %#ok<AGROW>
+            end
+            verifyEqual(testCase, onSlicePart, 98);
+            verifyNumElements(testCase, unique(usedSlices), 4);
+            % no part of a slice animal is left on the animal
+            animalParts = 0;
+            ps = parentOf.keys;
+            for k = 1:numel(ps)
+                pa = parentOf(ps{k});
+                if isKey(byId, pa) && ndi.migrate.internal.etaShape.isEntity(byId(pa), {'organism'}) ...
+                        && isKey(byId, ps{k}) && ~any(strcmp(ps{k}, sliceIds))
+                    animalParts = animalParts + 1;
+                    verifyEqual(testCase, pa, ctlAnimal, ...
+                        'only the control animal keeps a region part');
+                end
+            end
+            verifyEqual(testCase, animalParts, 1);
+            % the control: its recording stays on its own animal's part
+            ctl = byId('ctl_recording');
+            verifyEqual(testCase, parentOf(dep(ctl, 'entity_id')), ctlAnimal);
+            % nothing removed is still referenced, and every edge resolves
+            for k = 1:numel(out)
+                b = out{k};
+                for e = 1:numel(b.depends_on)
+                    v = b.depends_on(e).value;
+                    if any(strcmp(b.depends_on(e).name, {'entity_id', 'child_id'})) ...
+                            && ~isempty(v)
+                        verifyTrue(testCase, isKey(byId, v), ...
+                            sprintf('%s names %s, which is not in the output', b.base.id, v));
+                    end
+                end
+            end
+        end
     end
 end
 

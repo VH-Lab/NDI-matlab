@@ -14,7 +14,9 @@ function [plan, report] = sliceTetanus(v1Bodies, structs, epochIndex)
 %   PLAN is a struct:
 %     minted      cell of new V_eta bodies (schema_version 'did_v2'): animals,
 %                 copied strain assertions, slices, part_of relations, tetanus
-%                 manipulations and their relative references
+%                 manipulations and their relative references, and the
+%                 slices' region parts (entity, kind / laterality assertions,
+%                 part_of)
 %     replaced    cell of migrated structs with an edge moved, base.id KEPT
 %     removed     cellstr of migrated base.ids to drop
 %   REPORT carries every count, each with its denominator.
@@ -65,6 +67,16 @@ function [plan, report] = sliceTetanus(v1Bodies, structs, epochIndex)
 %      protocol (every "after" epoch of the run agrees), the manipulation's
 %      `method.parameters` carry frequency and duration as written. Plain
 %      `TLS` records nothing.
+%
+%   7. A REGION PART OF THE ANIMAL MOVES UNDER ITS SLICE (Decided by Jess
+%      Haley, 2026-11-26 [Dab map re-parents region parts under slices],
+%      did-schema did_v2_go_forward_class_audit.md). NDI's 'located' step puts
+%      a located probe's statements on a region part of the animal; each such
+%      statement is matched to a slice as a statement about the animal is
+%      (rule 1), and moves onto the slice's part for the same region and side
+%      (ids did2.convert.regionPartIds(<slice>, region, side)), minted once
+%      per slice. The animal's part is removed when all its statements moved
+%      and nothing else names it; otherwise it stays, counted by reason.
 %
 %   THE SHAPE IS did-schema #88's (V_eta_entity_composition_plan.md, signed
 %   2026-10-08). Open item #8 of the decisions above ("writing `type: tissue`
@@ -233,6 +245,7 @@ report.slices = double(sliceStim.Count);
 report.epochs_on_a_nested_date = cnt('epochs_on_a_nested_date');
 report.nested_dates_not_in_animal_id = cnt('nested_dates_not_in_animal_id');
 report.new_animals = double(newAnimalLid.Count);
+sks0 = sliceStim.keys;
 
 % ======================= migrated indices ==============================
 n = numel(structs);
@@ -261,6 +274,76 @@ for k = 1:numel(epochIndex)
     epochDocOfKey(ek) = char(epochIndex(k).epoch_document_id);
 end
 report.epoch_index_entries = numel(epochIndex);
+
+% ======================= region parts of the animals ===================
+% Decided by Jess Haley, 2026-11-26 [Dab map re-parents region parts under
+% slices] (did-schema did_v2_go_forward_class_audit.md; did-schema #378 (n),
+% option (a)): with [recording attribution only for recordings] a probe's
+% location stays an observation about the probe, so NDI's 'located' step
+% (ndi.migrate.internal.pathSPromotion) moves the probe's statements onto a
+% region part OF THE ANIMAL (`part_of` the organism, one per animal, region
+% and side). The map moves each such part under the slice it belongs to and
+% keeps its statements, so [slice region chain] (animal -> slice -> region)
+% is reached. Until Dab's v2 import replaces the map ([Dab gets a v2 import]).
+%
+% WHICH SLICE. A statement about a region part of the animal is matched to a
+% slice by exactly the rule a statement about the animal is (decision 1 of
+% V2_decisions.md): the slice of the statement's epoch, when its instrument
+% is that slice's bath or one of its probes; not tied to a slice epoch, the
+% one slice its instrument belongs to. The part belongs to the slices its
+% statements are matched to.
+%
+% WHICH PART. A region part's ids are computed from its parent, region and
+% side ([region part ids computed] (3): did2.convert.regionPartIds), and
+% there is one part per parent, region and side ([one part per side]). Under
+% the slice the part is therefore the part regionPartIds(<slice id>, region,
+% side), built as 'located' builds one (ndi.migrate.internal.regionPartBodies),
+% and each statement moves onto the part of its own slice; an animal part
+% whose statements belong to several slices becomes one part per slice. The
+% animal's part (its entity, kind and laterality assertions and `part_of`)
+% is removed only when every one of its statements moved and nothing else
+% names it; otherwise it stays on the animal, counted by reason.
+rpParent = containers.Map();         % region part of an organism -> the organism
+rpRel = containers.Map();            % -> its part_of relation id
+kindOf = containers.Map(); sideOf = containers.Map();
+ownDocs = containers.Map();          % part -> its kind / laterality assertion ids
+for k = 1:n
+    s = structs{k};
+    if ~S.isStatement(s, 'assertion', 'term'); continue; end
+    a = S.aboutId(s);
+    if isempty(a); continue; end
+    v = S.variable(s);
+    if S.isVariable(s, 'anatomical structure')
+        if ~isKey(kindOf, a); kindOf(a) = S.termValue(s); end
+    elseif strcmpi(strtrim(char(v.node)), 'NCIT:C25185') || strcmpi(strtrim(char(v.name)), 'Laterality')
+        if ~isKey(sideOf, a); sideOf(a) = S.termValue(s); end
+    else
+        continue;
+    end
+    if isKey(ownDocs, a); ownDocs(a) = [ownDocs(a) idOf(k)]; else; ownDocs(a) = idOf(k); end
+end
+for k = 1:n
+    if ~strcmp(classOf{k}, 'directed_relation') || ~strcmp(relationName(structs{k}), 'part_of')
+        continue;
+    end
+    [ch, pa] = S.relationEnds(structs{k});
+    if ~isKey(kindOf, ch) || ~isKey(posOf, ch) || ~isKey(posOf, pa) || isKey(rpParent, ch)
+        continue;
+    end
+    if S.isEntity(structs{posOf(ch)}, {'tissue'}) && S.isEntity(structs{posOf(pa)}, {'organism'})
+        rpParent(ch) = pa;
+        rpRel(ch) = idOf{k};
+    end
+end
+report.region_parts_of_an_organism = double(rpParent.Count);
+sliceAnimals = containers.Map();     % the (original) animal of every slice
+for i = 1:numel(sks0)
+    sliceAnimals(elSubj(sliceStim(sks0{i}))) = true;
+end
+rpMoved = containers.Map('KeyType', 'char', 'ValueType', 'double');
+rpLeft = containers.Map('KeyType', 'char', 'ValueType', 'double');
+rpSlices = containers.Map();         % part -> slice keys its statements moved to
+slicePartOf = containers.Map();      % regionPartIds key -> minted part id
 
 % ======================= mint animals, slices ==========================
 mintedAnimalId = containers.Map();   % animal key -> id ('' key = original)
@@ -374,39 +457,85 @@ for k = 1:n
         end
         subj = S.aboutId(s);
         instr = depValue(s, 'instrument_id');
+        % a statement about a region part of an animal ([Dab map re-parents
+        % region parts under slices]): matched as if it were about the animal
+        partAnimal = '';
+        if isKey(rpParent, subj)
+            partAnimal = rpParent(subj);
+            report.region_part_statements = report.region_part_statements + 1;
+            if ~isKey(sliceAnimals, partAnimal)
+                report.region_part_statements_left_animal_has_no_slice = ...
+                    report.region_part_statements_left_animal_has_no_slice + 1;
+            end
+        end
         ek = epochOfStatement(s, relTo, epochKeyOfDoc);
         if ~isempty(ek) && isKey(epochSlice, ek)
             sk = epochSlice(ek);
             st = sliceStim(sk);
-            if ~strcmp(subj, elSubj(st)); continue; end
-            report.epoch_statements_examined = report.epoch_statements_examined + 1;
-            if isempty(instr)
-                report.epoch_statements_unmatched = report.epoch_statements_unmatched + 1;
+            onPart = ~isempty(partAnimal) && strcmp(partAnimal, elSubj(st));
+            if ~strcmp(subj, elSubj(st)) && ~onPart
+                if ~isempty(partAnimal) && isKey(sliceAnimals, partAnimal)
+                    % a part of another slice animal, in this slice's epoch
+                    rpLeft = bump(rpLeft, subj);
+                    report.region_part_statements_left_not_tied_to_a_slice = ...
+                        report.region_part_statements_left_not_tied_to_a_slice + 1;
+                end
                 continue;
             end
-            if strcmp(instr, st) || (isKey(elementSlices, instr) ...
+            report.epoch_statements_examined = report.epoch_statements_examined + 1;
+            if strcmp(instr, st) || (~isempty(instr) && isKey(elementSlices, instr) ...
                     && any(strcmp(elementSlices(instr), sk)))
-                structs{k} = S.setAbout(s, sliceId(sk));
+                target = sliceId(sk);
+                if onPart
+                    [target, plan, slicePartOf, report] = slicePart(sliceId(sk), ...
+                        subj, structs{posOf(subj)}, kindOf, sideOf, plan, slicePartOf, report);
+                    [rpMoved, rpSlices] = partMoved(rpMoved, rpSlices, subj, sk);
+                    report.region_part_statements_moved = report.region_part_statements_moved + 1;
+                end
+                structs{k} = S.setAbout(s, target);
                 replacedPos(end+1) = k; %#ok<AGROW>
                 report.epoch_statements_matched = report.epoch_statements_matched + 1;
                 report = bumpClass(report, 'reattributed_by_class', c);
             else
                 report.epoch_statements_unmatched = report.epoch_statements_unmatched + 1;
+                if onPart
+                    rpLeft = bump(rpLeft, subj);
+                    report.region_part_statements_left_unmatched = ...
+                        report.region_part_statements_left_unmatched + 1;
+                end
             end
         elseif ~isempty(instr) && isKey(elementSlices, instr) ...
-                && strcmp(subj, elSubj(instr))
+                && (strcmp(subj, elSubj(instr)) ...
+                    || (~isempty(partAnimal) && strcmp(partAnimal, elSubj(instr))))
             % not anchored to a slice epoch: unambiguous only if the element
             % belongs to exactly one slice
+            onPart = ~strcmp(subj, elSubj(instr));
             report.unanchored_statements_examined = report.unanchored_statements_examined + 1;
             sl = elementSlices(instr);
             if isscalar(sl)
-                structs{k} = S.setAbout(s, sliceId(sl{1}));
+                target = sliceId(sl{1});
+                if onPart
+                    [target, plan, slicePartOf, report] = slicePart(sliceId(sl{1}), ...
+                        subj, structs{posOf(subj)}, kindOf, sideOf, plan, slicePartOf, report);
+                    [rpMoved, rpSlices] = partMoved(rpMoved, rpSlices, subj, sl{1});
+                    report.region_part_statements_moved = report.region_part_statements_moved + 1;
+                end
+                structs{k} = S.setAbout(s, target);
                 replacedPos(end+1) = k; %#ok<AGROW>
                 report.unanchored_statements_matched = report.unanchored_statements_matched + 1;
                 report = bumpClass(report, 'reattributed_by_class', c);
             else
                 report.unanchored_statements_ambiguous = report.unanchored_statements_ambiguous + 1;
+                if onPart
+                    rpLeft = bump(rpLeft, subj);
+                    report.region_part_statements_left_ambiguous = ...
+                        report.region_part_statements_left_ambiguous + 1;
+                end
             end
+        elseif ~isempty(partAnimal) && isKey(sliceAnimals, partAnimal)
+            rpLeft = bump(rpLeft, subj);
+            report.region_part_statements_left_not_tied_to_a_slice = ...
+                report.region_part_statements_left_not_tied_to_a_slice + 1;
         end
     elseif strcmp(c, 'directed_relation')
         [child, parent] = S.relationEnds(s);
@@ -425,6 +554,55 @@ for k = 1:n
             end
         end
     end
+end
+
+% ======================= the animals' region parts, after the move ======
+% A part all of whose statements moved, and that nothing else names, leaves
+% the animal: its entity, kind / laterality assertions and part_of relation
+% are removed (the statements now sit on the slices' parts). Anything else
+% stays on the animal and is counted by reason.
+namedBy = containers.Map();          % old part -> named by a document not its own
+for k = 1:n
+    vals = allDepValues(structs{k});
+    for v = 1:numel(vals)
+        p = vals{v};
+        if ~isKey(rpParent, p) || strcmp(idOf{k}, rpRel(p)) ...
+                || (isKey(ownDocs, p) && any(strcmp(idOf{k}, ownDocs(p))))
+            continue;
+        end
+        namedBy(p) = true;
+    end
+end
+ps = rpParent.keys;
+for i = 1:numel(ps)
+    p = ps{i};
+    if ~isKey(sliceAnimals, rpParent(p))
+        report.region_parts_left_animal_has_no_slice = ...
+            report.region_parts_left_animal_has_no_slice + 1;
+        continue;
+    end
+    if ~isKey(rpMoved, p)
+        report.region_parts_left_no_statement_on_a_slice = ...
+            report.region_parts_left_no_statement_on_a_slice + 1;
+        continue;
+    end
+    if numel(rpSlices(p)) > 1
+        report.region_parts_split_over_slices = report.region_parts_split_over_slices + 1;
+    end
+    if isKey(rpLeft, p)
+        report.region_parts_left_some_statements_stay = ...
+            report.region_parts_left_some_statements_stay + 1;
+        continue;
+    end
+    if isKey(namedBy, p)
+        report.region_parts_left_named_by_another_document = ...
+            report.region_parts_left_named_by_another_document + 1;
+        continue;
+    end
+    plan.removed{end+1} = p; %#ok<AGROW>
+    plan.removed{end+1} = rpRel(p); %#ok<AGROW>
+    if isKey(ownDocs, p); plan.removed = [plan.removed, ownDocs(p)]; end
+    report.region_parts_moved_under_slices = report.region_parts_moved_under_slices + 1;
 end
 
 % ======================= tetanus runs ==================================
@@ -732,6 +910,18 @@ r = struct( ...
     'element_relations_examined', 0, 'element_relations_matched', 0, ...
     'element_relations_ambiguous', 0, ...
     'reattributed_by_class', struct(), ...
+    'region_parts_of_an_organism', 0, 'region_parts_moved_under_slices', 0, ...
+    'region_parts_split_over_slices', 0, ...
+    'region_parts_left_animal_has_no_slice', 0, ...
+    'region_parts_left_no_statement_on_a_slice', 0, ...
+    'region_parts_left_some_statements_stay', 0, ...
+    'region_parts_left_named_by_another_document', 0, ...
+    'slice_region_parts_minted', 0, ...
+    'region_part_statements', 0, 'region_part_statements_moved', 0, ...
+    'region_part_statements_left_animal_has_no_slice', 0, ...
+    'region_part_statements_left_unmatched', 0, ...
+    'region_part_statements_left_ambiguous', 0, ...
+    'region_part_statements_left_not_tied_to_a_slice', 0, ...
     'approach_labels', 0, 'labels_not_on_a_slice_epoch', 0, ...
     'labels_without_one_epoch_time', 0, 'labels_stimulator_mismatch', 0, ...
     'runs_examined', 0, 'runs_refused_not_a_clean_switch', 0, ...
@@ -749,6 +939,45 @@ r = struct( ...
     'removals_withheld_still_referenced', 0, ...
     'documents_minted', 0, 'documents_reattributed', 0, 'documents_removed', 0, ...
     'changed', false);
+end
+
+function [partId, plan, slicePartOf, r] = slicePart(sliceDocId, oldPart, ...
+    oldBody, kindOf, sideOf, plan, slicePartOf, r)
+%SLICEPART The region part of the slice SLICEDOCID for the region (and side) of the
+%   animal's part OLDPART: found, or minted into PLAN with the ids
+%   did2.convert.regionPartIds computes for (slice, region, side), as
+%   'located' would mint it on a slice ([Dab map re-parents region parts
+%   under slices]; [region part ids computed] (3)). Session and datestamp
+%   are the animal part's.
+area = kindOf(oldPart);
+side = [];
+if isKey(sideOf, oldPart); side = sideOf(oldPart); end
+ids = did2.convert.regionPartIds(sliceDocId, area, side);
+if isKey(slicePartOf, ids.key)
+    partId = slicePartOf(ids.key);
+    return;
+end
+p = ndi.migrate.internal.regionPartBodies(sliceDocId, area, side, oldBody, ids);
+partId = p.entity.base.id;
+slicePartOf(ids.key) = partId;
+bodies = {p.entity, p.assertion};
+if ~isempty(p.laterality); bodies{end+1} = p.laterality; end
+bodies{end+1} = p.relation;
+plan.minted = [plan.minted, bodies];
+r.slice_region_parts_minted = r.slice_region_parts_minted + 1;
+end
+
+function [moved, slicesOf] = partMoved(moved, slicesOf, part, sk)
+moved = bump(moved, part);
+if isKey(slicesOf, part)
+    if ~any(strcmp(slicesOf(part), sk)); slicesOf(part) = [slicesOf(part) {sk}]; end
+else
+    slicesOf(part) = {sk};
+end
+end
+
+function m = bump(m, key)
+if isKey(m, key); m(key) = m(key) + 1; else; m(key) = 1; end
 end
 
 function r = bumpClass(r, field, c)
