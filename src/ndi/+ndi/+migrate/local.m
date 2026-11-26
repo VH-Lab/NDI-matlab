@@ -894,13 +894,15 @@ function result = local(path, options)
         try
             [convertResult, stimulusSequenceReport, presentationAnchors] = ...
                 resolveStimulusPresentations(convertResult, bodies, options, resolver, ndiDir);
-            % audit batch 2 (b), 2026-11-26: the presentations whose
-            % stimulator's epoch has no clock record (still anchored on
-            % 'dev_local_time'; Proposed (not decided))
-            fprintf(['[migrate step]   stimulus presentations: of %d read, %d have no ' ...
-                'clock record for their stimulator''s epoch (anchored on ' ...
-                'dev_local_time, as before)\n'], stimulusSequenceReport.presentations_read, ...
-                stimulusSequenceReport.epoch_clock_no_record);
+            % the presentations' clocks (Jess Haley, 2026-11-26, "Build it
+            % that way"): from a clock record, from presentation_time.bin,
+            % or none (carried, carry-109)
+            fprintf(['[migrate step]   stimulus presentations: of %d read, clock from ' ...
+                'a clock record %d, from presentation_time.bin %d, none (carried as ' ...
+                'v1, carry-109) %d\n'], stimulusSequenceReport.presentations_read, ...
+                stimulusSequenceReport.epoch_clock_from_record, ...
+                stimulusSequenceReport.epoch_clock_from_file, ...
+                stimulusSequenceReport.epoch_clock_none);
         catch ME
             stepErrors(end+1) = struct('step', 'presentationResolveFailed', 'message', ME.message); %#ok<AGROW>
             warning('NDI:migrate:presentationResolveFailed', ...
@@ -3470,19 +3472,32 @@ function [convertResult, report, presentationAnchors] = resolveStimulusPresentat
             [epochClock, clockSource] = resolver.epochClockOfElement( ...
                 ndi.migrate.internal.etaShape.edge(b, 'stimulus_element_id'), ...
                 char(rep.epoch_id));
+            % THE CLOCK, IN THIS ORDER. Decided by Jess Haley, 2026-11-26
+            % ("Build it that way", on VH-Lab/NDI-matlab#1309): the
+            % stimulator's element_epoch / epochclocktimes as before, else
+            % the `clocktype` v1 writes in the presentation's own
+            % presentation_time.bin (+ndi/+app/+stimulus/decoder.m writes
+            % struct('clocktype', timeref.clocktype.ndi_clocktype2char(),
+            % ...)); the presentation stays on that clock, so reaching a
+            % recording's clock still goes through the sync rules, as in v1.
+            % With neither, nothing is assumed (no 'dev_local_time'
+            % default): the presentation is carried as v1 (carry-109,
+            % reason no_clock_record). A file naming several clock types
+            % gives no one clock and is carried the same way.
             if strcmp(clockSource, 'none')
-                % NO CLOCK RECORD: Proposed (not decided). The resolver no
-                % longer assumes 'dev_local_time' ([one-reading quick
-                % answers] Q2, built for baths 2026-11-26, audit batch 2
-                % (b)); Q2 names baths, and for a presentation the reading
-                % is unchanged, kept HERE and counted
-                % (REPORT.epoch_clock_no_record) rather than hidden in the
-                % resolver. Measured 2026-11-26 in the v1 zips: 1,242 of B's
-                % 1,242 and 11 of 20211116's 11 presentations have no
-                % element_epoch or epochclocktimes for their stimulator's
-                % epoch, so carrying them would carry every presentation.
-                epochClock = 'dev_local_time';
-                report.epoch_clock_no_record = report.epoch_clock_no_record + 1;
+                fileClocks = {};
+                if isfield(rep, 'timing_clocktype') && ~isempty(rep.timing_clocktype)
+                    fileClocks = unique(strtrim(strsplit(char(rep.timing_clocktype), ',')));
+                end
+                if isscalar(fileClocks) && ~isempty(fileClocks{1})
+                    epochClock = fileClocks{1};
+                    report.epoch_clock_from_file = report.epoch_clock_from_file + 1;
+                else
+                    epochClock = '';
+                    report.epoch_clock_none = report.epoch_clock_none + 1;
+                end
+            else
+                report.epoch_clock_from_record = report.epoch_clock_from_record + 1;
             end
             why = epochCarryReason(expectedPairs, char(ndi.v2.sessionIdOf(b)), ...
                 char(rep.epoch_id), char(epochClock));
@@ -4099,8 +4114,10 @@ function r = newStimulusSequenceReport()
         'epoch_prediction',           [], ...
         'epoch_carried',              struct('total', 0, ...
             'no_epoch_minted', 0, 'clock_no_time', 0, ...
-            'clock_inherited', 0, 'clock_unknown', 0), ...
-        'epoch_clock_no_record',      0, ...
+            'clock_inherited', 0, 'clock_unknown', 0, 'no_clock_record', 0), ...
+        'epoch_clock_from_record',    0, ...
+        'epoch_clock_from_file',      0, ...
+        'epoch_clock_none',           0, ...
         'control_v1',                 [], ...
         'control_records_read',       0, ...
         'control_records_folded',     0, ...
@@ -4129,7 +4146,12 @@ function why = epochCarryReason(expectedPairs, sessionId, epochString, clock)
 %   The clock rules are ndi.migrate.internal.epochAnchorFold's clockTerm.
     why = '';
     switch clock
-        case {'', 'utc', 'dev_local_time', 'dev_global_time', ...
+        case ''
+            % no element_epoch, epochclocktimes or presentation_time.bin
+            % clock (Jess Haley, 2026-11-26, "Build it that way")
+            why = 'no_clock_record';
+            return;
+        case {'utc', 'dev_local_time', 'dev_global_time', ...
                 'exp_global_time', 'approx_utc', 'approx_dev_global_time', ...
                 'approx_exp_global_time'}
         case 'no_time'

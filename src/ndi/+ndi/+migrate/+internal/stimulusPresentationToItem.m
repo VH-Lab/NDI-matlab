@@ -88,8 +88,10 @@ function [manipBody, methodBodies, report, softwareBodies, controlCalcs] = ...
 %                   (the lightsheet decision, Jess 2026-10-14, option A). The
 %                   epoch anchor the plan prefers needs the clocktype that
 %                   lives in presentation_time.bin; when the file is read, its
-%                   clocktype is reported (REPORT.timing_clocktype) but the
-%                   anchor is still "during the session".
+%                   clocktype is reported (REPORT.timing_clocktype), and
+%                   ndi.migrate.local anchors the presentation on it when no
+%                   clock document gives the stimulator's clock (Jess Haley,
+%                   2026-11-26, "Build it that way").
 %
 %   THE STIMULUS KINDS. Decided by Jess Haley, 2026-10-21 [non-grating
 %   stimuli as methods] (V_eta_method_plan.md): a visual stimulus that is not
@@ -655,6 +657,13 @@ catch ME
     return;
 end
 report.timing_file_entries = numel(pt);
+% the clock(s) the file states, read as soon as the file is read: the
+% second pass anchors the presentation on it when no clock document gives
+% the stimulator's clock (Jess Haley, 2026-11-26, "Build it that way")
+if ~isempty(pt) && isfield(pt, 'clocktype')
+    ct = unique(arrayfun(@(e) char(e.clocktype), pt(:)', 'UniformOutput', false));
+    report.timing_clocktype = strjoin(ct, ', ');
+end
 if numel(pt) ~= nTrials
     report.timing_file = sprintf('%d entr(ies) for %d trial(s)', numel(pt), nTrials);
     return;
@@ -672,8 +681,6 @@ if nTrials == 0 || ~all(isfinite(on))
     return;
 end
 report.timing_file = 'read';
-ct = unique(arrayfun(@(e) char(e.clocktype), pt(:)', 'UniformOutput', false));
-report.timing_clocktype = strjoin(ct, ', ');
 onsets = on;
 if all(isfinite(off))
     offsets = off;
