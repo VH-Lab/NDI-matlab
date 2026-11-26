@@ -53,7 +53,8 @@
 %                          distinct stimulus (stimulusRecipe + stimulusMethod;
 %                          every recognised NewStim kind -- grating, blank,
 %                          uniform field / bars, dense noise, sparse noise,
-%                          shape movie -- per [non-grating stimuli as methods],
+%                          shape movie, centre-surround spot, glider noise,
+%                          polygon -- per [non-grating stimuli as methods],
 %                          Jess Haley 2026-10-21)
 %                          + ONE `manipulation` (value kind `item`) carrying the v1
 %                          presentation id and a 0-based playlist into them.
