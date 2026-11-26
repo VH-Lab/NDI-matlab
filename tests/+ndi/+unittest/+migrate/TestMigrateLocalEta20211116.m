@@ -131,6 +131,23 @@ classdef TestMigrateLocalEta20211116 < matlab.unittest.TestCase
                 '20211116 retired no `observes` relation on its presentations');
         end
 
+        function testACarriedSubjectReadsBackAsV1(testCase)
+            % Decided by Jess Haley, 2026-11-19 [recording probe subject
+            % carried the same way] (did-schema did_v2_standing_wiring_plan.md):
+            % a migrated recording probe with no recording observation (a
+            % session never ingested: 1 n-trode in 20211116, as the decision
+            % records) gets no `observes`; its v1 subject is held in the
+            % migration report's carried fields ([one-field carry in the
+            % migration report], carry register row carry-172), and NDI's
+            % readers read it back (ndi.vintage.elementFields, getprobes).
+            r = ndi.unittest.migrate.verifyObservesRetirement(testCase, testCase.Result, '20211116');
+            testCase.verifyGreaterThan(r.retired_carried, 0, ...
+                '20211116 carried no subject (the decision records 1 n-trode with no recording observation)');
+            n = ndi.unittest.migrate.verifyCarriedSubjects(testCase, testCase.Result, ...
+                testCase.Bodies, '20211116');
+            testCase.verifyEqual(n, r.retired_carried, 'not every carried element was checked');
+        end
+
         function testControlRecordsFoldIntoACovariateOrAreCounted(testCase)
             % Decided by Jess Haley, 2026-10-22 [control as covariate]: a v1
             % control_stimulus_ids about a folded presentation is read into
