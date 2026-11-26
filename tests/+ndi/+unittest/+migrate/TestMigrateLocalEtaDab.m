@@ -610,6 +610,91 @@ classdef TestMigrateLocalEtaDab < matlab.unittest.TestCase
             end
         end
 
+        function testElementsWhoseProbeMapsNameAnotherSubjectAreCarriedAsV1(testCase)
+            % Decided by Jess Haley, 2026-11-26 [element whose probe maps
+            % name another subject is malformed] (did-schema
+            % did_v2_go_forward_class_audit.md; built by DID-matlab's
+            % +migrators_j/element.m, carry-170): a v1 element whose epoch
+            % probe maps name a subject other than its own `subject_id` is
+            % malformed v1 and is carried whole. In Dab these are the 4
+            % two-subject recording probes carry-170 already carried and the
+            % two bath stimulators bath_230616_BNSTIII_a and
+            % bath_230620_BNSTIII_a (VH-Lab/NDI-matlab#1309), which are then
+            % no longer read back twice by verifyCarriedSubjects (which stays
+            % as strict as it is, testObservesRetirementIsCounted). EXPECTED
+            % is computed from the v1 bodies directly, joining a probe-map row
+            % to its element by (session, name, reference) as DID-matlab's
+            % probemapSubjects does, not through the migrator under test.
+            subjName = containers.Map('KeyType', 'char', 'ValueType', 'char');
+            rowSubjects = containers.Map('KeyType', 'char', 'ValueType', 'any');
+            els = {};
+            for k = 1:numel(testCase.Bodies)
+                txt = testCase.Bodies{k};
+                if ~(contains(txt, '"element"') || contains(txt, '"subject"') ...
+                        || contains(txt, 'epochprobemap'))
+                    continue;
+                end
+                b = jsondecode(txt);
+                if ~isfield(b, 'document_class'); continue; end
+                switch char(b.document_class.class_name)
+                    case 'subject'
+                        subjName(char(b.base.id)) = strtrim(char(b.subject.local_identifier));
+                    case 'element'
+                        els{end+1} = b; %#ok<AGROW>
+                    case 'epochfiles_ingested'
+                        pm = b.epochfiles_ingested.epochprobemap;
+                        if ~ischar(pm) || isempty(pm); continue; end
+                        rows = probemapRows(pm);
+                        for r = 1:numel(rows)
+                            row = rows{r};
+                            if isempty(row{3}); continue; end
+                            key = strjoin({strtrim(char(b.base.session_id)), row{1}, row{2}}, char(9));
+                            if isKey(rowSubjects, key)
+                                rowSubjects(key) = unique([rowSubjects(key), row(3)], 'stable');
+                            else
+                                rowSubjects(key) = row(3);
+                            end
+                        end
+                end
+            end
+            expected = {};
+            names = {};
+            for k = 1:numel(els)
+                b = els{k};
+                sj = strtrim(char(edgeOf(b, 'subject_id')));
+                if isempty(sj) || ~isKey(subjName, sj); continue; end
+                key = strjoin({strtrim(char(b.base.session_id)), strtrim(char(b.element.name)), ...
+                    refAsText(b.element.reference)}, char(9));
+                if ~isKey(rowSubjects, key); continue; end
+                named = rowSubjects(key);
+                if any(~strcmp(named, subjName(sj)) & ~strcmp(named, sj))
+                    expected{end+1} = char(b.base.id); %#ok<AGROW>
+                    names{end+1} = strtrim(char(b.element.name)); %#ok<AGROW>
+                end
+            end
+            fprintf(['\n  ELEMENTS WHOSE PROBE MAPS NAME ANOTHER SUBJECT (Dab)\n    elements read %d; ' ...
+                'named by a probe-map row with a subject %d; naming another subject %d: %s\n'], ...
+                numel(els), numel(rowSubjects.keys), numel(expected), strjoin(names, ', '));
+            verifyGreaterThan(testCase, numel(els), 0, 'the denominator: no Dab element was read');
+            for nm = {'bath_230616_BNSTIII_a', 'bath_230620_BNSTIII_a'}
+                verifyTrue(testCase, any(strcmp(names, nm{1})), ...
+                    sprintf('%s: its probe-map rows no longer name a second subject', nm{1}));
+            end
+            dst = destinationBodies(testCase.Result.destination);
+            stamp = containers.Map('KeyType', 'char', 'ValueType', 'char');
+            for k = 1:numel(dst)
+                b = dst{k};
+                if isfield(b, 'base') && isfield(b.base, 'id') && any(strcmp(expected, char(b.base.id)))
+                    stamp(char(b.base.id)) = char(b.document_class.schema_version);
+                end
+            end
+            for k = 1:numel(expected)
+                verifyTrue(testCase, isKey(stamp, expected{k}) ...
+                    && strcmp(stamp(expected{k}), 'did_v1'), ...
+                    sprintf('element %s (%s) is not stored as a v1 document', expected{k}, names{k}));
+            end
+        end
+
         function testTheGenericStageLeavesTheSlicesToTheMap(testCase)
             % [sliceTetanus to Dab map] (Jess Haley, 2026-10-25): the generic
             % stage makes no slice and no tetanus run, and carries the 635
@@ -1171,6 +1256,35 @@ function s = resultDiag(result)
 s = sprintf('[migrated %d, quarantined %d, edges %d] %s', ...
     result.summary.total, numel(result.quarantine), ...
     result.references.edges_examined, quarantineDiag(result));
+end
+
+function rows = probemapRows(s)
+%PROBEMAPROWS {name, reference, subjectstring} of each row of a serialized
+% v1 epochprobemap (tab-separated; a header row is skipped), as DID-matlab's
+% probemapSubjects reads it.
+rows = {};
+lines = strsplit(char(s), newline, 'CollapseDelimiters', false);
+lines = lines(~cellfun(@(l) isempty(strtrim(l)), lines));
+if isempty(lines); return; end
+h = strtrim(strsplit(lines{1}, char(9), 'CollapseDelimiters', false));
+if isequal(lower(h), {'name', 'reference', 'type', 'devicestring', 'subjectstring'})
+    lines = lines(2:end);
+end
+for i = 1:numel(lines)
+    c = strsplit(lines{i}, char(9), 'CollapseDelimiters', false);
+    c(end+1:5) = {''};
+    rows{end+1} = {strtrim(c{1}), strtrim(c{2}), strtrim(c{5})}; %#ok<AGROW>
+end
+end
+
+function t = refAsText(r)
+%REFASTEXT A v1 element reference as text, an integer as int2str writes it.
+t = '';
+if ischar(r) || (isstring(r) && isscalar(r))
+    t = strtrim(char(r));
+elseif (isnumeric(r) || islogical(r)) && isscalar(r)
+    if r == round(r); t = int2str(r); else; t = num2str(r, 17); end
+end
 end
 
 function v = edgeOf(b, name)
