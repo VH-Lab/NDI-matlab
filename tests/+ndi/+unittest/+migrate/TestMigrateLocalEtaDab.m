@@ -361,12 +361,28 @@ classdef TestMigrateLocalEtaDab < matlab.unittest.TestCase
             % stimulator's `observes` relation retires where a converted
             % stimulus presentation names the same device and animal. The
             % record of [stimulator link lives in the presentations] states
-            % that Dab holds no presentations, so none retires here and the
-            % Dabrowska map (ndi.setup.conv.dabrowska.sliceTetanus), which
-            % reads them, still finds them.
+            % that Dab holds no presentations, so none retires on one.
+            % Decided by Jess Haley, 2026-11-19 [bath manipulation retires
+            % observes] (same document): a bath manipulation naming the
+            % stimulator as instrument and its subject as entity retires it
+            % by the same rule; Dab writes bath manipulations
+            % (stimulusBathToBath), so Dab's bath stimulators retire on them.
+            % Before that decision this test stated that nothing retires
+            % without a presentation. The stimulators reading their subject
+            % back from the baths is testTheSameObjectsBeforeAndAfterMigration's.
             r = ndi.unittest.migrate.verifyObservesRetirement(testCase, testCase.Result, 'Dab');
-            testCase.verifyTrue(r.presentation_manipulations > 0 || r.observes_retired == 0, ...
-                'Dab retired an `observes` relation with no presentation');
+            testCase.verifyEqual(r.retired_by_presentation, 0, ...
+                'Dab retired an `observes` relation on a presentation it does not hold');
+            testCase.verifyGreaterThan(r.bath_manipulations, 0, ...
+                'Dab converted no bath manipulation (nothing measured)');
+            testCase.verifyGreaterThan(r.retired_by_bath, 0, ...
+                'Dab retired no `observes` relation on its bath manipulations');
+            % [one-field carry in the migration report]: an element whose
+            % `observes` retires because no statement names its v1 subject
+            % reads that subject back from the carried fields (0 included)
+            n = ndi.unittest.migrate.verifyCarriedSubjects(testCase, testCase.Result, ...
+                testCase.Bodies, 'Dab');
+            testCase.verifyEqual(n, r.retired_carried, 'not every carried element was checked');
         end
 
         function testReadPhasesAreNoSlowerThanV1(testCase)
@@ -557,6 +573,23 @@ classdef TestMigrateLocalEtaDab < matlab.unittest.TestCase
             % re-attributed and the term_manipulation re-attributions each
             % drop by 1592 (run 44066834018: 3617, 3591, 4190, 0); every
             % other field is the step's.
+            %
+            % MOVED BY 201 for [Dab stimulators with deferred baths read the
+            % animal] (Jess Haley, 2026-11-19, did-schema
+            % did_v2_go_forward_class_audit.md; answer "A"), after [bath
+            % manipulation retires observes] and [stimulator subject carried
+            % as needing information] (VH-Lab/NDI-matlab#1279): NDI's second
+            % pass now retires all 202 stimulators' `observes` relations
+            % before the map runs (run 44489261942: 147 retired by a bath,
+            % 55 with the animal carried in the migration report), so the map
+            % finds no element `observes` relation to move to a slice
+            % (examined, matched, ambiguous: 202, 201, 1 -> 0, 0, 0) and
+            % re-attributes 201 fewer documents (4190 -> 3989, the same in
+            % reattributions_applied). The 147 still read their slice: the
+            % map moves their baths (formulation_manipulation 433, as
+            % before). The 55 whose only baths are carried as v1 (the
+            % OSM/saturation deferrals) read the animal, carried, until those
+            % baths are imported. Every other field is unchanged.
             r = testCase.MapReport;
             assertNotEmpty(testCase, r, 'the Dabrowska map did not run');
             verifyGreaterThan(testCase, r.migrated_documents_read, 0, ...
@@ -571,8 +604,8 @@ classdef TestMigrateLocalEtaDab < matlab.unittest.TestCase
                 'epoch_statements_unmatched', 26, ...
                 'unanchored_statements_examined', 400, 'unanchored_statements_matched', 398, ...
                 'unanchored_statements_ambiguous', 2, ...
-                'element_relations_examined', 202, 'element_relations_matched', 201, ...
-                'element_relations_ambiguous', 1, ...
+                'element_relations_examined', 0, 'element_relations_matched', 0, ...
+                'element_relations_ambiguous', 0, ...
                 'approach_labels', 635, 'runs_examined', 56, ...
                 'tetanus_manipulations', 56, 'tetanus_on_new_animal', 1, ...
                 'tetanus_with_target_region', 55, 'tetanus_without_target_region', 1, ...
@@ -580,9 +613,9 @@ classdef TestMigrateLocalEtaDab < matlab.unittest.TestCase
                 'labels_rebuilt', 635, 'labels_not_rebuilt', 0, 'approach_labels_removed', 635, ...
                 'treatment_manipulations_found', 0, ...
                 'documents_minted', 520, 'minted_folded', 520, 'minted_quarantined', 0, ...
-                'documents_reattributed', 5782 - 1592 + 1579, 'documents_removed', 635, ...
+                'documents_reattributed', 5782 - 1592 - 201 + 1579, 'documents_removed', 635, ...
                 'removals_withheld_still_referenced', 0, ...
-                'reattributions_applied', 5782 - 1592 + 1579, 'removals_applied', 635, ...
+                'reattributions_applied', 5782 - 1592 - 201 + 1579, 'removals_applied', 635, ...
                 'replacements_refused_have_files', 0);
             % MOVED BY 1 for DID-matlab #506 (2bdc9f81; [openMINDS minted ids are
             % an accepted loss], Jess Haley, 2026-11-19): the openMINDS subject

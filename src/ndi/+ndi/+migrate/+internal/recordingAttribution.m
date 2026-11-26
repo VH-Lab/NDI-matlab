@@ -120,7 +120,7 @@ arguments
 end
 
 plan = struct('source_id', {}, 'body', {}, 'specimen_id', {}, ...
-              'instrument_id', {});
+              'instrument_id', {}, 'via_observes', {});
 
 % RULE 5: every counter initialised BEFORE any early return, so a pass that
 % refuses everything reports the same shape as one that resolves everything. A
@@ -277,11 +277,17 @@ for k = 1:numel(candidates)
     % the v2 stamp (Jess Haley, 2026-10-25 [document stamps]: 'did_v2')
     out.document_class.schema_version = did2.schema.v2Stamp();
 
+    % VIA_OBSERVES: the specimen came from the probe's own `observes`
+    % relation, not from a recording observation. NDI's later
+    % ndi.migrate.internal.observesRetirement does not count such an
+    % observation as the probe's recording observation ([recording probe
+    % subject carried the same way], Jess Haley, 2026-11-19)
     plan(end+1) = struct( ...
         'source_id',     baseField(body, 'id'), ...
         'body',          out, ...
         'specimen_id',   specimenId, ...
-        'instrument_id', probeId); %#ok<AGROW>
+        'instrument_id', probeId, ...
+        'via_observes',  viaObserves); %#ok<AGROW>
     report.attributed = report.attributed + 1;
     if viaObserves
         report.attributed_via_observes = report.attributed_via_observes + 1;
