@@ -28,7 +28,17 @@ function R = corpusObjectEquivalence(v1Bodies, migratedNdiDir, label, options)
 %     subject fact   every v1 document that depends on a subject
 %                    (`subject_id`): after migration, the document with the
 %                    same id, or a document pointing at both it and the
-%                    subject (a relation), still ties it to that subject
+%                    subject (a relation), still ties it to that subject;
+%                    or, for a migrated element, the migration report's
+%                    carried fields hold that subject as its v1
+%                    `subject_id` (Decided by Jess Haley, 2026-11-19,
+%                    did-schema did_v2_standing_wiring_plan.md: [stimulator
+%                    subject carried as needing information], [one-field
+%                    carry in the migration report], [recording probe
+%                    subject carried the same way]; carry register row
+%                    carry-172), read from each migrated session's stored
+%                    `migration` record (ndi.vintage.carriedSubjects). Those
+%                    are counted on their own line of the report
 %     element        getelements: id, name, reference, type, class,
 %                    subject, underlying element (id and name), direct
 %     probe          getprobes, keyed by name | reference | type: id,
@@ -96,6 +106,7 @@ end
 label = char(label);
 migratedNdiDir = char(migratedNdiDir);
 R = struct('label', label, 'sessions', struct(), 'v1db', struct(), ...
+    'carried', struct('fields', 0, 'facts', 0), ...
     'probeTables', struct('read', 0, 'probes', 0, 'cap', options.MaxProbeEpochTables), ...
     'apparatus', struct(), 'cats', struct(), 'seconds', struct());
 for c = categoryNames()
@@ -150,6 +161,7 @@ fprintf('  [%s equivalence] sessions: %d in v1, %d after migration, %d in both\n
     label, numel(v1Sids), numel(v2Sids), numel(both));
 
 t = tic;
+carried = containers.Map('KeyType', 'char', 'ValueType', 'char');
 for i = 1:numel(both)
     sid = both{i};
     [S1, e1] = openAt(v1Root, sid, 'ndi.database.implementations.database.didsqlite');
@@ -160,6 +172,17 @@ for i = 1:numel(both)
         continue;
     end
     R.sessions.compared = R.sessions.compared + 1;
+    % the subjects the migration carried in its stored report (read before
+    % the snapshot, which reads the same cache)
+    try
+        [~, ~, cm] = ndi.vintage.carriedSubjects(S2);
+        ck = keys(cm);
+        for m = 1:numel(ck)
+            carried(ck{m}) = cm(ck{m});
+        end
+    catch ME
+        R.sessions.errors{end+1} = sprintf('session %s: carried subjects: %s', sid, errorText(ME));
+    end
     ts = tic;
     a = snapshot(S1, options.MaxProbeEpochTables, {}, false, {});
     b = snapshot(S2, Inf, a.probeEpochKeys, true, a.elementEpochKeys);
@@ -178,7 +201,9 @@ end
 R.seconds.sessions = toc(t);
 
 % ---- subject facts (document level, every session) -----------------------
-R.cats.subject_fact = compareFacts(R.cats.subject_fact, v1Structs, v1Subjects, v2ById, v2Structs);
+R.carried.fields = double(carried.Count);
+[R.cats.subject_fact, R.carried.facts] = compareFacts(R.cats.subject_fact, v1Structs, ...
+    v1Subjects, v2ById, v2Structs, carried);
 
 % ---- apparatus and equipment: counted, not compared ----------------------
 R.apparatus = countApparatus(v2Structs, v1Subjects, v1Elements, v1ById);
@@ -821,11 +846,16 @@ end
 % subject facts, apparatus, write round trip
 % =========================================================================
 
-function C = compareFacts(C, v1Structs, v1Subjects, v2ById, v2Structs)
+function [C, nCarried] = compareFacts(C, v1Structs, v1Subjects, v2ById, v2Structs, carried)
 % A v1 document that depends on a subject (`subject_id`) is a fact about it.
 % After migration the fact holds when the document with the same id points
 % at that subject, or a document that points at both (a relation, e.g. a
-% probe's subject: an element's subject became a relation) does.
+% probe's subject: an element's subject became a relation) does, or when
+% the migration report's carried fields (CARRIED: element id -> subject id,
+% from the stored `migration` records) hold that subject for it ([one-field
+% carry in the migration report]). NCARRIED counts the facts held only by a
+% carried field.
+nCarried = 0;
 refsTo = containers.Map('KeyType', 'char', 'ValueType', 'any');
 for k = 1:numel(v2Structs)
     e = unique(depValues(v2Structs{k}, ''));
@@ -870,6 +900,13 @@ for k = 1:numel(v1Structs)
         for r = refsTo(id)
             held = held | ismember(subj, depValues(v2Structs{r}, ''));
         end
+    end
+    if ~all(held) && isKey(carried, id)
+        byCarry = strcmp(subj, carried(id));
+        if all(held | byCarry)
+            nCarried = nCarried + 1;
+        end
+        held = held | byCarry;
     end
     if all(held)
         C = tally(C, 'same', '', '');
@@ -1078,6 +1115,8 @@ for c = categoryNames()
     fprintf('    %-17s %9d %9d %9d %9d %9d\n', c{1}, C.compared, C.same, C.differ, ...
         C.only_v1, C.only_v2);
 end
+fprintf(['    subject facts held by the migration report''s carried fields ([one-field carry ' ...
+    'in the migration report]): %d of %d carried field(s) read\n'], R.carried.facts, R.carried.fields);
 fprintf('    probe epoch tables read: %d of %d probe(s) (cap per session %g); the rest NOT MEASURED\n', ...
     R.probeTables.read, R.probeTables.probes, R.probeTables.cap);
 if R.cats.subject_fact.carried_by_strain > 0
