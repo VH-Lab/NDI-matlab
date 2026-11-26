@@ -59,6 +59,12 @@ on:
       # sampled body per channel group]); TestReadTimeseriesEquivalence below
       # is the test that reads them.
       - 'src/ndi/*ndi/*daq/reader.m'
+      # THE FOLDER EPOCH READ PATH ([wiring read from the database only],
+      # [no new hidden epoch-id files]): the navigator and the daq system
+      # read a migrated session folder's epochs from the database;
+      # TestSessionFolderWiring below reads them.
+      - 'src/ndi/*ndi/*file/navigator.m'
+      - 'src/ndi/*ndi/*daq/system.m'
       - 'src/ndi/*ndi/*daq/*reader/mfdaq.m'
       # THE SECOND-PASS ASSEMBLERS AND THEIR OWN UNIT TESTS. `+migrate/**`
       # above already covers the sources; this adds the tests, which lived
@@ -334,6 +340,11 @@ jobs:
                 ... % name them, not the database's (corpusObjectEquivalence
                 ... % on Dab, run 43197684863)
                 'ndi.unittest.vintage.TestEpochClockOrder', ...
+                ... % [stimulus log owned by its presentation] (Jess Haley,
+                ... % 2026-11-19): a stimulus system's events read from its
+                ... % presentation or fallback observation as from the v1
+                ... % archive, with the stimulus system's own clock
+                'ndi.unittest.vintage.TestStimulusLogOwner', ...
                 ... % [stimulator manipulation dropped] (Jess Haley,
                 ... % 2026-11-09): a stimulator's probe-map row from its
                 ... % wiring and element, without the manipulation
@@ -411,6 +422,11 @@ jobs:
                 ... % session and on the same session after ndi.migrate.local
                 ... % (a probe from the .rhd, an ingested probe, a .vhsb element
                 ... % and a neuron) give the same samples, times and epoch tables
-                'ndi.unittest.migrate.TestReadTimeseriesEquivalence'});
+                'ndi.unittest.migrate.TestReadTimeseriesEquivalence', ...
+                ... % [session folder wiring migrated], [wiring read from the
+                ... % database only], [no new hidden epoch-id files] (Jess
+                ... % Haley, 2026-11-19): a migrated session folder's wiring and
+                ... % epoch ids read from the database, as v1 read them
+                'ndi.unittest.migrate.TestSessionFolderWiring'});
             disp(results);
             assertSuccess(results);

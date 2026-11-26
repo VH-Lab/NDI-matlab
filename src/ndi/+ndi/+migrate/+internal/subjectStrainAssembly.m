@@ -343,9 +343,11 @@ report.incomplete_reasons                  = {};
 % carried a subject strain for an unread field)
 report.leftover_fields_unplaced            = 0;
 report.leftover_unplaced_reasons           = {};
-% [openMINDS subject leftovers]: distinct `openminds:<id>` identifiers written
-% onto minted strain entities (lab-made strains only)
-report.openminds_ids_on_strains            = 0;
+% [lab-made strain ids are an accepted loss too] (Jess Haley, 2026-11-19):
+% distinct lab-made openMINDS ids read from the assembled Strain documents and
+% NOT written onto any strain entity (the accepted loss, counted so it is
+% never silent)
+report.openminds_ids_not_kept              = 0;
 
 report.distinct_strains                    = 0;   % dedup groups
 report.strains_minted                      = 0;
@@ -505,14 +507,15 @@ for k = 1:numel(strainIdx)
     e.leftovers       = ndi.migrate.internal.strainLeftovers(f, ...
         @(id) v1BodyById(v1Pos, v1Bodies, id));
     e.identifiers     = identifiers(f, e.leftovers.identifiers);
-    % [openMINDS subject leftovers] (Decided by Jess Haley, 2026-10-27,
-    % did-schema V_eta_go_forward_class_audit.md): "a lab-made strain's
-    % `openminds_id` goes on the strain entity's `global_identifier` as
-    % `openminds:<id>`". Read here, NOT put in the dedup key: the writer
-    % mints a fresh openMINDS id for every subject row's Strain (two
-    % `AVP-Cre` rows in dab_slice_tetanus_v1.json carry Strain/5b9a95df...
-    % and Strain/117f4762...), so keying on it would stop every duplicate
-    % from merging. The group's entity carries each member's id (below).
+    % [lab-made strain ids are an accepted loss too] (Jess Haley,
+    % 2026-11-19, did-schema did_v2_go_forward_class_audit.md, replacing the
+    % last clause of [openMINDS subject leftovers]): no `openminds:<id>` is
+    % written on any strain entity's `global_identifier`; a strain is
+    % identified by its name in its session. The writer mints a fresh
+    % openMINDS id for every subject row's Strain (two `AVP-Cre` rows in
+    % dab_slice_tetanus_v1.json carry Strain/5b9a95df... and
+    % Strain/117f4762...). The id is read here only to COUNT the loss
+    % (report.openminds_ids_not_kept); it is not in the dedup key.
     e.openminds_id    = labStrainOpenmindsId(b);
     if ~isempty(e.leftovers.unplaced)
         report.leftover_fields_unplaced = report.leftover_fields_unplaced + 1;
@@ -667,26 +670,20 @@ for g = 1:nGroups
 
     ef = struct('name', rep.name);
     if ~isempty(rep.description); ef.notes = rep.description; end   % v1 description -> entity.notes
+    % The representative's identifiers (ontology id, digitalIdentifier,
+    % alternateIdentifier, a stock RRID). No `openminds:<id>`: [openMINDS
+    % minted ids are an accepted loss] and [lab-made strain ids are an
+    % accepted loss too] (Jess Haley, 2026-11-19). Each member's lab-made id
+    % is counted as not kept, once each.
     gid = rep.identifiers;
-    % [openMINDS subject leftovers]: every lab-made member's openMINDS id, as
-    % `openminds:<id>`, once each, after the representative's identifiers.
-    % Every member's, not the representative's alone, so no row's id is lost
-    % when the rows collapse. SORTED in character order of the CURIE, not in
-    % the order the members were read (NDI-matlab #1235: database order is not
-    % data), so the list is the same however the database was written.
-    omCuries = {};
+    omIds = {};
     for c = find([cand.group] == g)
-        omId = cand(c).openminds_id;
-        if isempty(omId); continue; end
-        omCuries{end+1} = ['openminds:' omId]; %#ok<AGROW>
-    end
-    omCuries = unique(omCuries);   % sorted, once each
-    for u = 1:numel(omCuries)
-        if ~any(strcmp(gid, omCuries{u}))
-            gid{end+1} = omCuries{u}; %#ok<AGROW>
-            report.openminds_ids_on_strains = report.openminds_ids_on_strains + 1;
+        if ~isempty(cand(c).openminds_id)
+            omIds{end+1} = cand(c).openminds_id; %#ok<AGROW>
         end
     end
+    report.openminds_ids_not_kept = report.openminds_ids_not_kept + ...
+        numel(unique(omIds));
     if ~isempty(gid); ef.global_identifier = gid; end
     minted{end+1} = S.entity('strain', ef, 'Id', groupDocId{g}, common{:}); %#ok<AGROW>
     report.strains_minted = report.strains_minted + 1;
@@ -1188,17 +1185,18 @@ end
 
 function omId = labStrainOpenmindsId(b)
 %LABSTRAINOPENMINDSID The `openminds_id` of a LAB-MADE Strain, or ''.
-%   [openMINDS subject leftovers] (Decided by Jess Haley, 2026-10-27): "a
-%   lab-made strain's `openminds_id` goes on the strain entity's
-%   `global_identifier` as `openminds:<id>`". LAB-MADE is the predicate
+%   Read only to count the accepted loss ([lab-made strain ids are an
+%   accepted loss too], Jess Haley, 2026-11-19): the id is not written on the
+%   strain entity (it was, under [openMINDS subject leftovers], until that
+%   decision replaced the clause). LAB-MADE is the predicate
 %   DID-matlab's did2.convert.migrators_j.openminds_subject uses to convert
 %   such a document without checking its id against the term registry (pass 1
 %   no longer carries it), so the two sides agree on which documents this is: a
 %   Strain with no ontology node in any of `preferredOntologyIdentifier`,
 %   `ontologyIdentifier`, `interlexIdentifier` or `alternateIdentifier`. (The
 %   caller only passes Strain-typed documents.) A controlled strain's id is
-%   rebuilt from its term instead ([term equivalents recorded]) and is not
-%   written here. The id is written as the writer stored it, trimmed.
+%   not counted here: its identity is its ontology node. The id is returned
+%   as the writer stored it, trimmed.
 omId = '';
 blk = openmindsBlock(b);
 if ~isfield(blk, 'openminds_id'); return; end

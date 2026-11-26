@@ -202,7 +202,7 @@ end
 
 function C = newCat()
 C = struct('compared', 0, 'same', 0, 'differ', 0, 'only_v1', 0, 'only_v2', 0, ...
-    'merged_probemap_rows', 0, ...
+    'merged_probemap_rows', 0, 'carried_by_strain', 0, ...
     'kinds', {{}}, 'kindCounts', [], 'examples', {{}});
 end
 
@@ -837,12 +837,28 @@ for k = 1:numel(v2Structs)
         end
     end
 end
+% [strain fields checked after the second pass] (Jess Haley, 2026-11-19,
+% did-schema did_v2_go_forward_class_audit.md): once DID-matlab #506 converts
+% the openMINDS subject documents, NDI's second pass folds a subject's Strain
+% (its ancestors, and the Species / GeneticStrainType children they name)
+% into a strain entity the subject is an `instance_of`; those documents' ids
+% do not survive, and their fields are compared after the second pass by
+% ndi.migrate.internal.strainFieldsAfterSecondPass. Such a document is
+% counted here as carried by the strain (C.carried_by_strain), not as lost,
+% only when its subject IS an instance_of a strain entity after migration.
+strainFamily = v1StrainFamily(v1Structs);
+withStrain = subjectsWithStrain(v2Structs);
 for k = 1:numel(v1Structs)
     b = v1Structs{k};
     subj = intersect(depValues(b, 'subject_id'), v1Subjects);
     if isempty(subj); continue; end
     cn = className(b);
     id = docId(b);
+    if ~isKey(v2ById, id) && strcmp(cn, 'openminds_subject') ...
+            && isKey(strainFamily, id) && all(ismember(subj, withStrain))
+        C.carried_by_strain = C.carried_by_strain + 1;
+        continue;
+    end
     if ~isKey(v2ById, id)
         C = tally(C, 'only_v1', sprintf('%s: no document with its id after migration', cn), ...
             sprintf('%s %s (subject %s)', cn, id, subj{1}));
@@ -863,6 +879,54 @@ for k = 1:numel(v1Structs)
             strjoin(subj, ','), className(after), strjoin(depValues(after, ''), ',')));
     end
 end
+end
+
+function M = v1StrainFamily(v1Structs)
+% the ids of every v1 openMINDS Strain document and of the documents its
+% `openminds_<n>` edges name (its Species, GeneticStrainType and background
+% Strain children)
+M = containers.Map('KeyType', 'char', 'ValueType', 'logical');
+for k = 1:numel(v1Structs)
+    b = v1Structs{k};
+    if ~any(strcmp(className(b), {'openminds', 'openminds_subject'})); continue; end
+    blk = struct();
+    if isfield(b, 'openminds') && isstruct(b.openminds); blk = b.openminds; end
+    t = '';
+    if isfield(blk, 'openminds_type'); t = char(blk.openminds_type); end
+    mt = '';
+    if isfield(blk, 'matlab_type'); mt = char(blk.matlab_type); end
+    if ~(endsWith(t, '/Strain') || endsWith(mt, '.Strain')); continue; end
+    M(docId(b)) = true;
+    if ~isfield(b, 'depends_on') || isempty(b.depends_on); continue; end
+    d = b.depends_on;
+    if iscell(d); items = d; else; items = num2cell(d); end
+    for q = 1:numel(items)
+        dq = items{q};
+        if isstruct(dq) && isfield(dq, 'name') ...
+                && ~isempty(regexp(char(dq.name), '^openminds_\d+$', 'once')) ...
+                && isfield(dq, 'value') && ischar(dq.value) && ~isempty(dq.value)
+            M(dq.value) = true;
+        end
+    end
+end
+end
+
+function ids = subjectsWithStrain(v2Structs)
+% the subjects that are an `instance_of` a strain entity after migration
+S = ndi.migrate.internal.etaShape;
+strains = {};
+for k = 1:numel(v2Structs)
+    if S.isEntity(v2Structs{k}) && strcmp(S.entityType(v2Structs{k}), 'strain')
+        strains{end+1} = docId(v2Structs{k}); %#ok<AGROW>
+    end
+end
+ids = {};
+for k = 1:numel(v2Structs)
+    if ~strcmp(S.relationName(v2Structs{k}), 'instance_of'); continue; end
+    [child, parent] = S.relationEnds(v2Structs{k});
+    if any(strcmp(strains, parent)); ids{end+1} = child; end %#ok<AGROW>
+end
+ids = unique(ids);
 end
 
 function A = countApparatus(v2Structs, v1Subjects, v1Elements, v1ById)
@@ -1016,6 +1080,12 @@ for c = categoryNames()
 end
 fprintf('    probe epoch tables read: %d of %d probe(s) (cap per session %g); the rest NOT MEASURED\n', ...
     R.probeTables.read, R.probeTables.probes, R.probeTables.cap);
+if R.cats.subject_fact.carried_by_strain > 0
+    fprintf(['      subject_fact: %d openMINDS Strain document(s) and children folded into ' ...
+        'the strain entity their subject is an instance_of ([strain fields checked after ' ...
+        'the second pass]; compared by result.secondPass.strainFields); not a loss\n'], ...
+        R.cats.subject_fact.carried_by_strain);
+end
 for c = {'probe_epoch', 'daq_epoch', 'element_epoch'}
     if R.cats.(c{1}).merged_probemap_rows > 0
         fprintf(['      %s: %d epoch(s) wire the same probes to the same channels in ' ...

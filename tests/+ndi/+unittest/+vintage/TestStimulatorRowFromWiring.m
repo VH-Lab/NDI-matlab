@@ -437,6 +437,11 @@ classdef TestStimulatorRowFromWiring < matlab.unittest.TestCase
                 rig = ndi.vintage.edgeTargets(found{k}, 'parent_id');
                 assert(isscalar(anchor) && isscalar(rig), ...
                     'wiring %s does not name one anchor and one rig', char(found{k}.id()));
+                % the wiring names the rig's device entity since [acquisition
+                % system is a device entity] (Jess Haley 2026-11-19); the old
+                % manipulation named the acquisition_system pointing at it
+                sysOf = ndi.vintage.rigSystems(S, rig);
+                if isKey(sysOf, rig{1}); rig = {sysOf(rig{1})}; end
                 m = did2.build.statement('manipulation', subjectId, typeTerm, typeTerm, ...
                     'TimeReferenceIds', anchor, 'InstrumentId', stimId, ...
                     'AcquisitionSystemId', char(rig{1}), 'SessionId', char(S.id()), ...
@@ -544,7 +549,7 @@ classdef TestStimulatorRowFromWiring < matlab.unittest.TestCase
                 catch
                     continue;   % the v1 database beside it
                 end
-                if ~isempty(db.search(did2.query('', 'isa', 'acquisition_system')))
+                if ~isempty(db.search(did2.query('', 'isa', 'acquisition_configuration') | did2.query('', 'isa', 'acquisition_system')))
                     v2file = fullfile(dbs(k).folder, dbs(k).name);
                 end
                 db.close();

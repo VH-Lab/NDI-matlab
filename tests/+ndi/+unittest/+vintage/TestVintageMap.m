@@ -194,6 +194,34 @@ classdef TestVintageMap < matlab.unittest.TestCase
             testCase.verifySubstring(txt, 'acquisition_system');
         end
 
+        function testAcquisitionConfigurationReadsAsTheOldName(testCase)
+            % Decided by Jess Haley, 2026-11-19 [acquisition configuration
+            % renamed] (did-schema docs/plans/did_v2_standing_wiring_plan.md):
+            % `acquisition_system` is renamed `acquisition_configuration`.
+            % NDI reads both names before did-schema renames the class.
+            names = ndi.vintage.acquisitionConfigurationNames();
+            testCase.verifyEqual(names, {'acquisition_configuration', 'acquisition_system'});
+            % the daq system's isa query finds v1 and both V2 names
+            txt = jsonencode(ndi.vintage.isaQuery('daqsystem').searchstructure);
+            testCase.verifySubstring(txt, 'daqsystem');
+            testCase.verifySubstring(txt, 'acquisition_system');
+            testCase.verifySubstring(txt, 'acquisition_configuration');
+            % the V2-only query finds both V2 names and not v1
+            txt = jsonencode(ndi.vintage.acquisitionConfigurationQuery().searchstructure);
+            testCase.verifySubstring(txt, 'acquisition_system');
+            testCase.verifySubstring(txt, 'acquisition_configuration');
+            testCase.verifyEmpty(strfind(txt, 'daqsystem'));
+            % a document of the new class is the daq system's V2 record:
+            % its edges translate and its name is read from its own block
+            cur = ndi.unittest.vintage.TestVintageMap.doc('acquisition_configuration', ...
+                'acquisition_configuration', struct('name', 'intan1'));
+            [entry, vintage] = ndi.vintage.entryFor(cur);
+            testCase.verifyEqual(entry.concept, 'daqsystem');
+            testCase.verifyEqual(vintage, 'V_eta');
+            testCase.verifyEqual(ndi.vintage.edgeName(cur, 'daqreader_id'), 'reader_id');
+            testCase.verifyEqual(ndi.vintage.objectName(cur), 'intan1');
+        end
+
         function testIsaQueryOnAnUnrenamedConceptIsUnchanged(testCase)
             % The safety property that lets every call site switch over
             % without auditing: a concept with no map row must produce

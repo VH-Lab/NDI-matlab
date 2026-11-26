@@ -467,7 +467,7 @@ What the template does for you, and a new import should keep:
 - **Terms by name** through `ndi.setup.V2.registeredTerm`; the run collects
   every unregistered term (`ndi.setup.V2.checkTerms`) and writes nothing until
   each is registered (see section 7).
-- **Source values verbatim**: `source_value`, `source_unit` as its registered
+- **Source values verbatim**: `source_numeric` (a date's or a hand-written time's text: `source_value`), `source_unit` as its registered
   term (`ndi.setup.V2.sourceUnit`), a tolerance where the source states one; a
   hand-written time is approximate, [60 60] s (`ndi.setup.V2.utcReference`).
   Corrections go through one function, `ndi.setup.V2.applyCorrection`, only

@@ -115,28 +115,27 @@ classdef TestSyncruleParameters < matlab.unittest.TestCase
             testCase.verifyEqual(params.errorOnFailure, false);
         end
 
-        function testNumericParametersReadInBothNumericShapes(testCase)
+        function testNumericParametersReadAndTheOldShapeIsRefused(testCase)
             % did-schema did_v2_numeric_shape_plan.md ([one shape for
             % measured numbers], [numeric shape details] (1), Jess Haley,
-            % 2026-11-17): a method parameter's number is
-            % quantity {value, source_value} (old) or flat `numeric` beside
-            % `source_numeric`, the source's own number (new). Both rebuild
-            % the same v1 parameters.
+            % 2026-11-17): a method parameter's number is flat `numeric`
+            % beside `source_numeric`, the source's own number. The old
+            % quantity {value, source_value} is refused ([no migrated
+            % database is kept], Jess Haley, 2026-11-19).
             session = mockSession({systemDoc('sys_a', 'intan1'), systemDoc('sys_b', 'vhvis1')});
-            got = cell(1, 2);
-            shapes = {'quantity', 'numeric'};
-            for k = 1:2
-                entries = {param('daqsystem ch1', 'text', 'dep1'), ...
-                    param('daqsystem ch2', 'text', 'mk1'), ...
-                    param('minimum embedded file overlap', shapes{k}, 2), ...
-                    param('errorOnFailure', shapes{k}, 0)};
-                doc = linkedConfigDoc(entries, 'sys_a', 'sys_b', 'dev_local_time');
-                got{k} = ndi.vintage.syncruleParameters(doc, session, ...
-                    'ndi.time.syncrule.commonTriggersOverlappingEpochs');
-                testCase.verifyEqual(got{k}.minEmbeddedFileOverlap, 2, shapes{k});
-                testCase.verifyEqual(got{k}.errorOnFailure, false, shapes{k});
-            end
-            testCase.verifyEqual(got{2}, got{1}, 'both shapes rebuild the same parameters');
+            entriesIn = @(shape) {param('daqsystem ch1', 'text', 'dep1'), ...
+                param('daqsystem ch2', 'text', 'mk1'), ...
+                param('minimum embedded file overlap', shape, 2), ...
+                param('errorOnFailure', shape, 0)};
+            doc = linkedConfigDoc(entriesIn('numeric'), 'sys_a', 'sys_b', 'dev_local_time');
+            got = ndi.vintage.syncruleParameters(doc, session, ...
+                'ndi.time.syncrule.commonTriggersOverlappingEpochs');
+            testCase.verifyEqual(got.minEmbeddedFileOverlap, 2);
+            testCase.verifyEqual(got.errorOnFailure, false);
+            old = linkedConfigDoc(entriesIn('quantity'), 'sys_a', 'sys_b', 'dev_local_time');
+            testCase.verifyError(@() ndi.vintage.syncruleParameters(old, session, ...
+                'ndi.time.syncrule.commonTriggersOverlappingEpochs'), ...
+                'ndi:v2:oldNumericShapeReMigrate', 'the old quantity is refused');
             % a count read by requireNumber, in the new shape
             doc = linkedConfigDoc({param('minimum matching file paths', 'numeric', 3), ...
                 param('sync file name', 'text', 'sync.txt')}, 'sys_a', 'sys_b');
@@ -357,9 +356,10 @@ function e = param(label, kind, value)
 e = struct('variable', struct('name', label));
 switch kind
     case 'quantity'
+        % the old numeric shape (refused by the readers)
         e.quantity = struct('value', value, 'source_value', num2str(value));
     case 'numeric'
-        % the new numeric shape: flat, the source's number a number
+        % the numeric shape: flat, the source's number a number
         e.numeric = value;
         e.source_numeric = value;
     otherwise

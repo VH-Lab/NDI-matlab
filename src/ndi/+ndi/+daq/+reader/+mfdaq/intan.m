@@ -36,7 +36,17 @@ classdef intan < ndi.daq.reader.mfdaq
             % 'type'             | The type of data stored in the channel
             %                    |    (e.g., 'analogin', 'digitalin', 'image', 'timestamp')
             % 'time_channel'     | The channel number that contains the time information for
-            %                    |    each channel.
+            %                    |    each channel, or NaN when no listed time channel
+            %                    |    is sampled with it.
+            %
+            % Intan RHD files hold one time channel, t1, at the amplifier
+            % sample rate (READCHANNELS_EPOCHSAMPLES reads time channel 1
+            % for any time channel asked for). Analog and digital inputs are
+            % sampled with it and name it. Auxiliary inputs are sampled at
+            % aux_input_sample_rate (a quarter of the amplifier rate), so no
+            % listed time channel times their samples and their
+            % time_channel is NaN. It was 2, a time channel this list never
+            % holds (VH-Lab/NDI-matlab#1249).
             %
             channels.name = 't1';
             channels.type = 'time';
@@ -73,7 +83,7 @@ classdef intan < ndi.daq.reader.mfdaq
                             channel(p).native_channel_name);
                         newchannel.time_channel = 1;
                         if strcmp(newchannel.type,'auxiliary_in')
-                            newchannel.time_channel = 2;
+                            newchannel.time_channel = NaN; % not sampled with t1 (see above)
                         end
                         if strcmp(newchannel.type,'analog_in')  % in the NDI intan reader (but not NDR reader), ai channels are numbered by active channels, always from 1, ...
                             ai_counter = ai_counter + 1;

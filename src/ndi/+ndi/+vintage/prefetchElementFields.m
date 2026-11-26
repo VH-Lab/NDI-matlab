@@ -90,12 +90,14 @@ end
 % the elements by their links, session-wide, once per call (elementFields
 % reads each one's kind from it)
 L = ndi.vintage.linkedElements(S);
-classLabel = ndi.vintage.elementLabel('class');
 kindVar = ndi.vintage.equipmentTypeVariable();
 about = ndi.vintage.edgeIn('entity_id', ids) | ndi.vintage.edgeIn('subject_id', ids);
 
+% the class variable by node EMPTY:0000401 "software class", or by the old
+% name 'ndi element class' (ndi.vintage.elementClassQuery; Decided by Jess
+% Haley, 2026-11-19 [variable terms batch 1])
 classQuery = ndi.v2.statementQuery('assertion', 'term') & ...
-    ndi.v2.fieldQuery('statement.variable.name', 'exact_string', classLabel) & about;
+    ndi.vintage.elementClassQuery() & about;
 typeQuery = ndi.v2.statementQuery('assertion', 'term') & ...
     (ndi.v2.fieldQuery('statement.variable.name', 'exact_string', ...
         ndi.vintage.elementLabel('type')) | ...
@@ -318,7 +320,9 @@ vals = [];
 edges = [];
 if ismethod(S, 'database_search_values') && ismethod(S, 'database_search_edges')
     vals = S.database_search_values(q, paths);
-    if isstruct(vals)
+    if isstruct(vals) && isempty(vals)
+        edges = struct('doc_id', {}, 'name', {}, 'document_id', {});   % none to read
+    elseif isstruct(vals)
         edges = S.database_search_edges(q, {'entity_id', 'subject_id'});
     end
 end

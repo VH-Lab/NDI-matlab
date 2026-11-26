@@ -46,7 +46,7 @@ this section should be corrected.
 
 ### Values, units and corrections
 
-- A value keeps the source's number and unit (`source_value`, `source_unit` as
+- A value keeps the source's number and unit (`source_numeric`, `source_unit` as
   a registered term) beside its canonical value; a tolerance only where the
   source states one (#8).
 - Missing is not a value: a blank cell writes nothing and is counted as

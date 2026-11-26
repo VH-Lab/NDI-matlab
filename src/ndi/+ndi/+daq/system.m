@@ -430,10 +430,22 @@ classdef system < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice
             % If it does have a method by that name, it is called and the output returned. If it does not, then the FILENAVIGATOR
             % parameter's method is called.
             %
+            % A migrated session folder's epoch is read from the database
+            % only, whatever the reader (Jess Haley, 2026-11-19,
+            % did-schema did_v2_standing_wiring_plan.md [wiring read from the
+            % database only]): the navigator holds it (ndi.file.navigator/
+            % databaseEpochs), and its epoch table already carries it.
             m = methods(ndi_daqsystem_obj.daqreader);
             if ~isempty(intersect(m,'getepochprobemap'))
-                ecfname = ndi_daqsystem_obj.epochprobemapfilename(epoch);
                 epochfiles = ndi_daqsystem_obj.filenavigator.getepochfiles(epoch);
+                if ~ndi.file.navigator.isingested(epochfiles)
+                    D = ndi_daqsystem_obj.filenavigator.databaseEpochs({epochfiles});
+                    if D.found
+                        epochprobemap = D.probemap;
+                        return;
+                    end
+                end
+                ecfname = ndi_daqsystem_obj.epochprobemapfilename(epoch);
                 % it is remarkable that this is allowed in Matlab but it is beautiful
                 epochprobemap = ndi_daqsystem_obj.daqreader.getepochprobemap(ecfname,epochfiles);
             else
@@ -574,9 +586,10 @@ classdef system < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice
             %
             % DOCS = NEWDOCUMENTV2(NDI_DAQSYSTEM_OBJ)
             %
-            % Returns {acquisition_system, software entity} as ndi.document
-            % objects, in the system's session. The components' own records
-            % are made by their newdocument methods.
+            % Returns {acquisition_configuration, software entity, device
+            % entity} as ndi.document objects, in the system's session (no
+            % device entity for a system with no name). The components' own
+            % records are made by their newdocument methods.
             %
             sid = ndi_daqsystem_obj.session.id();
             cls = class(ndi_daqsystem_obj);
@@ -593,10 +606,29 @@ classdef system < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice
             if ~isempty(ndi_daqsystem_obj.name)
                 f.name = ndi_daqsystem_obj.name;
             end
-            a = did2.build.document('acquisition_system', f, 'Edges', edges, ...
+            % THE RIG'S DEVICE, named by `device_id` (did-schema
+            % docs/plans/did_v2_standing_wiring_plan.md [acquisition system
+            % is a device entity], [device id required and named by the
+            % rig]): one device entity per rig per session, named with the
+            % rig's name in `name` only ([local identifier required only
+            % where looked up]), as DID-matlab's +migrators_j/daqsystem.m
+            % mints it for a v1 daqsystem. Its id is the migration's: derived
+            % from the system's id (which is the v1 daqsystem's id when
+            % migrated) and the role 'rig device' (did2.convert.mintId), so a
+            % session written here and the same session migrated from v1
+            % hold the same device id. A rig with no name mints no device,
+            % as in the migration.
+            dev = ndi.setup.V2.rigDevice(ndi_daqsystem_obj.name, ndi_daqsystem_obj.id(), sid);
+            if ~isempty(dev)
+                edges.device_id = dev{1}.base.id;
+            end
+            % the class the loaded schema holds: `acquisition_configuration`
+            % once did-schema renames `acquisition_system` ([acquisition
+            % configuration renamed], Jess Haley, 2026-11-19)
+            a = did2.build.document(ndi.vintage.acquisitionConfigurationClass(), f, 'Edges', edges, ...
                 'Id', ndi_daqsystem_obj.id(), 'SessionId', sid);
             docs = [{ndi.document(a)}, ...
-                cellfun(@(x) ndi.document(x), sw, 'UniformOutput', false)];
+                cellfun(@(x) ndi.document(x), [sw, dev], 'UniformOutput', false)];
         end % newdocumentV2()
 
         function sq = searchquery(ndi_daqsystem_obj)
@@ -612,7 +644,10 @@ classdef system < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice
             % (did-schema #73 item 54; [carried v1 validates against NDI
             % templates], Jess Haley, 2026-10-27) or base.name (v1, and v2
             % documents migrated before).
-            sq = sq & ( ndi.query('acquisition_system.name','exact_string',ndi_daqsystem_obj.name,'') | ...
+            % Under either class name: `acquisition_configuration` since
+            % [acquisition configuration renamed] (Jess Haley, 2026-11-19).
+            sq = sq & ( ndi.query('acquisition_configuration.name','exact_string',ndi_daqsystem_obj.name,'') | ...
+                ndi.query('acquisition_system.name','exact_string',ndi_daqsystem_obj.name,'') | ...
                 ndi.query('base.name','exact_string',ndi_daqsystem_obj.name,'') );
 
             sq = sq & ndi.query('','depends_on','filenavigator_id',ndi_daqsystem_obj.filenavigator.id()) & ...
