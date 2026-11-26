@@ -223,7 +223,15 @@ classdef syncrule < ndi.ido & ndi.documentservice
             %   randomPulses) links them as its input (daqsystem1) and
             %   output (daqsystem2) (Jess Haley 2026-10-27 [sync
             %   configuration links its rigs], [sync rule direction is
-            %   recorded]). The edge and label names are the ones the loaded
+            %   recorded]). Each end names the rig's DEVICE entity, the
+            %   `device_id` of the daq system's acquisition_configuration,
+            %   not the configuration (Decided by Jess Haley, 2026-11-19
+            %   [a rig's clock belongs to its device], did-schema
+            %   docs/plans/did_v2_standing_wiring_plan.md: "both ends of a
+            %   `clock_alignment_configuration` name the device entity"), as
+            %   DID-matlab's migration names them; ndi.vintage.
+            %   syncruleParameters reads the rig's name off either. The edge
+            %   and label names are the ones the loaded
             %   schema declares (ndi.vintage.syncConfigurationNames):
             %   `input_id` / `output_id` and 'input / output trigger
             %   channel' once did-schema renames them (Decided by Jess
@@ -242,7 +250,10 @@ classdef syncrule < ndi.ido & ndi.documentservice
             %     commonTriggersOverlappingEpochs and randomPulses);
             %   - a named daq system that is not exactly one acquisition
             %     system in the session (resolveClockAlignment refuses
-            %     rather than invents);
+            %     rather than invents), or one whose configuration names no
+            %     device (a configuration with no `device_id`, which the
+            %     schema requires and ndi.daq.system/newdocumentV2 always
+            %     fills; resolveClockAlignment refuses it too);
             %   - a setting that cannot be written (a number that is not
             %     finite: [small unread settings] (3));
             %   - a term did2.build refuses because the term registry does
@@ -278,7 +289,8 @@ classdef syncrule < ndi.ido & ndi.documentservice
             end
             sid = ndi_session_obj.id();
 
-            % the two daq systems, by name, within the session
+            % the two daq systems' devices, by the systems' names, within the
+            % session ([a rig's clock belongs to its device])
             systemIds = {};
             for k = 1:numel(nameKeys)
                 [systemIds{k}, why] = systemIdByName(ndi_session_obj, ...
@@ -402,11 +414,17 @@ end
 end % textParameter()
 
 function [id, why] = systemIdByName(ndi_session_obj, name)
-% SYSTEMIDBYNAME - the id of the one daq system named NAME in the session
+% SYSTEMIDBYNAME - the device of the one daq system named NAME in the session
 %
-% ID is '' (and WHY says why) when no system, or more than one, has that
-% name: DID-matlab's did2.convert.resolveClockAlignment refuses a missing or
-% an ambiguous name rather than inventing a system or taking the first.
+% ID is the `device_id` of the one daq system (acquisition_configuration)
+% named NAME: the rig's device entity, which a clock alignment
+% configuration's ends name (Decided by Jess Haley, 2026-11-19 [a rig's
+% clock belongs to its device], did-schema
+% docs/plans/did_v2_standing_wiring_plan.md). ID is '' (and WHY says why)
+% when no system, or more than one, has that name, or the one system names
+% no device: DID-matlab's did2.convert.resolveClockAlignment refuses each
+% rather than inventing a system, taking the first, or naming the
+% configuration itself.
 id = '';
 why = '';
 if isempty(name)
@@ -418,7 +436,14 @@ docs = ndi_session_obj.database_search(ndi.vintage.isaQuery('daqsystem') & ...
 hit = cellfun(@(d) strcmp(ndi.vintage.objectName(d), name), docs);
 switch nnz(hit)
     case 1
-        id = docs{find(hit, 1)}.id();
+        sys = docs{find(hit, 1)};
+        devices = ndi.vintage.edgeTargets(sys, 'device_id');
+        if isscalar(devices) && ~isempty(devices{1})
+            id = char(devices{1});
+        else
+            why = sprintf(['the daq system named ''%s'' (%s) names no device ' ...
+                '(no device_id)'], name, sys.id());
+        end
     case 0
         why = sprintf('no daq system named ''%s'' is in the session', name);
     otherwise
