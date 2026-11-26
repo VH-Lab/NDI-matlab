@@ -1189,7 +1189,7 @@
    },
    "concentration": {
     "grams_per_liter": 50,
-    "source_value": 50,
+    "source_numeric": 50,
     "source_unit": "g/L"
    },
    "_note": "Frozen stock, 50 mg/mL (231229_OP50_OP50-GFP_cultures). Salt form not recorded; commercial carbenicillin is usually the disodium salt (CHEBI:34609), so 50 mg/mL may be by salt mass. Written as 50 g/L, the same number (Jess Haley, 2026-10-21)."
@@ -1207,7 +1207,7 @@
      "ingredient": "cholesterol_alfa",
      "mass": {
       "grams": 0.5007,
-      "source_value": 500.7,
+      "source_numeric": 500.7,
       "source_unit": "mg"
      }
     },
@@ -1215,7 +1215,7 @@
      "ingredient": "ethanol_koptec",
      "volume": {
       "liters": 0.1,
-      "source_value": 100,
+      "source_numeric": 100,
       "source_unit": "mL"
      }
     }
@@ -1233,7 +1233,7 @@
      "ingredient": "mgso4_sigma",
      "concentration": {
       "grams_per_liter": 120.3,
-      "source_value": 120.3,
+      "source_numeric": 120.3,
       "source_unit": "g/L"
      }
     },
@@ -1254,7 +1254,7 @@
      "ingredient": "cacl2_2h2o_fisher",
      "concentration": {
       "grams_per_liter": 147,
-      "source_value": 147,
+      "source_numeric": 147,
       "source_unit": "g/L"
      }
     },
@@ -1275,7 +1275,7 @@
      "ingredient": "kh2po4_fisher",
      "concentration": {
       "grams_per_liter": 136,
-      "source_value": 136,
+      "source_numeric": 136,
       "source_unit": "g/L"
      }
     },
@@ -1296,7 +1296,7 @@
      "ingredient": "k2hpo4_3h2o_sigma",
      "concentration": {
       "grams_per_liter": 228.16,
-      "source_value": 228.16,
+      "source_numeric": 228.16,
       "source_unit": "g/L"
      }
     },
@@ -1317,7 +1317,7 @@
      "ingredient": "kh2po4_1m",
      "volume": {
       "liters": 0.5,
-      "source_value": 500,
+      "source_numeric": 500,
       "source_unit": "mL"
      }
     },
@@ -1325,7 +1325,7 @@
      "ingredient": "k2hpo4_1m",
      "volume": {
       "liters": 0.2,
-      "source_value": 200,
+      "source_numeric": 200,
       "source_unit": "mL",
       "approximate": true
      }
@@ -1345,7 +1345,7 @@
      "ingredient": "water",
      "volume": {
       "liters": 0.73,
-      "source_value": 730,
+      "source_numeric": 730,
       "source_unit": "mL"
      }
     },
@@ -1353,7 +1353,7 @@
      "ingredient": "agar_emd",
      "mass": {
       "grams": 22.5,
-      "source_value": 22.5,
+      "source_numeric": 22.5,
       "source_unit": "g"
      }
     },
@@ -1361,7 +1361,7 @@
      "ingredient": "nacl_fisher",
      "mass": {
       "grams": 2.25,
-      "source_value": 2.25,
+      "source_numeric": 2.25,
       "source_unit": "g"
      }
     },
@@ -1369,7 +1369,7 @@
      "ingredient": "peptone_bd",
      "mass": {
       "grams": 1.875,
-      "source_value": 1.875,
+      "source_numeric": 1.875,
       "source_unit": "g"
      }
     },
@@ -1377,7 +1377,7 @@
      "ingredient": "kpo4_1m_ph6",
      "volume": {
       "liters": 0.0188,
-      "source_value": 18.8,
+      "source_numeric": 18.8,
       "source_unit": "mL"
      }
     },
@@ -1385,7 +1385,7 @@
      "ingredient": "mgso4_1m",
      "volume": {
       "liters": 0.00075,
-      "source_value": 750,
+      "source_numeric": 750,
       "source_unit": "uL"
      }
     },
@@ -1393,7 +1393,7 @@
      "ingredient": "cacl2_1m",
      "volume": {
       "liters": 0.00075,
-      "source_value": 750,
+      "source_numeric": 750,
       "source_unit": "uL"
      }
     },
@@ -1401,7 +1401,7 @@
      "ingredient": "cholesterol_5",
      "volume": {
       "liters": 0.00075,
-      "source_value": 750,
+      "source_numeric": 750,
       "source_unit": "uL"
      }
     }
@@ -1419,7 +1419,7 @@
      "ingredient": "water",
      "volume": {
       "liters": 0.73,
-      "source_value": 730,
+      "source_numeric": 730,
       "source_unit": "mL"
      }
     },
@@ -1427,7 +1427,7 @@
      "ingredient": "agar_emd",
      "mass": {
       "grams": 22.5,
-      "source_value": 22.5,
+      "source_numeric": 22.5,
       "source_unit": "g"
      }
     },
@@ -1435,7 +1435,7 @@
      "ingredient": "nacl_fisher",
      "mass": {
       "grams": 2.25,
-      "source_value": 2.25,
+      "source_numeric": 2.25,
       "source_unit": "g"
      }
     },
@@ -1443,7 +1443,7 @@
      "ingredient": "kpo4_1m_ph6",
      "volume": {
       "liters": 0.0188,
-      "source_value": 18.8,
+      "source_numeric": 18.8,
       "source_unit": "mL"
      }
     },
@@ -1451,7 +1451,7 @@
      "ingredient": "mgso4_1m",
      "volume": {
       "liters": 0.00075,
-      "source_value": 750,
+      "source_numeric": 750,
       "source_unit": "uL"
      }
     },
@@ -1459,7 +1459,7 @@
      "ingredient": "cacl2_1m",
      "volume": {
       "liters": 0.00075,
-      "source_value": 750,
+      "source_numeric": 750,
       "source_unit": "uL"
      }
     },
@@ -1467,7 +1467,7 @@
      "ingredient": "cholesterol_5",
      "volume": {
       "liters": 0.00075,
-      "source_value": 750,
+      "source_numeric": 750,
       "source_unit": "uL"
      }
     }
@@ -1485,7 +1485,7 @@
      "ingredient": "nacl",
      "concentration": {
       "grams_per_liter": 5.85,
-      "source_value": 5.85,
+      "source_numeric": 5.85,
       "source_unit": "g/L"
      }
     },
@@ -1493,7 +1493,7 @@
      "ingredient": "k2hpo4",
      "concentration": {
       "grams_per_liter": 1,
-      "source_value": 1,
+      "source_numeric": 1,
       "source_unit": "g/L"
      }
     },
@@ -1501,7 +1501,7 @@
      "ingredient": "kh2po4",
      "concentration": {
       "grams_per_liter": 6,
-      "source_value": 6,
+      "source_numeric": 6,
       "source_unit": "g/L"
      }
     },
@@ -1509,7 +1509,7 @@
      "ingredient": "cholesterol_5",
      "concentration": {
       "liters_per_liter": 0.001,
-      "source_value": 1,
+      "source_numeric": 1,
       "source_unit": "uL/mL"
      }
     },
@@ -1533,7 +1533,7 @@
      "ingredient": "edta_disodium",
      "concentration": {
       "grams_per_liter": 1.86,
-      "source_value": 1.86,
+      "source_numeric": 1.86,
       "source_unit": "g/L"
      }
     },
@@ -1541,7 +1541,7 @@
      "ingredient": "feso4",
      "concentration": {
       "grams_per_liter": 0.69,
-      "source_value": 0.69,
+      "source_numeric": 0.69,
       "source_unit": "g/L"
      }
     },
@@ -1549,7 +1549,7 @@
      "ingredient": "mncl2",
      "concentration": {
       "grams_per_liter": 0.2,
-      "source_value": 0.2,
+      "source_numeric": 0.2,
       "source_unit": "g/L"
      }
     },
@@ -1557,7 +1557,7 @@
      "ingredient": "znso4",
      "concentration": {
       "grams_per_liter": 0.29,
-      "source_value": 0.29,
+      "source_numeric": 0.29,
       "source_unit": "g/L"
      }
     },
@@ -1565,7 +1565,7 @@
      "ingredient": "cuso4",
      "concentration": {
       "grams_per_liter": 0.025,
-      "source_value": 0.025,
+      "source_numeric": 0.025,
       "source_unit": "g/L"
      }
     },
@@ -1588,7 +1588,7 @@
      "ingredient": "citric_acid_monohydrate",
      "concentration": {
       "grams_per_liter": 20,
-      "source_value": 20,
+      "source_numeric": 20,
       "source_unit": "g/L"
      }
     },
@@ -1596,7 +1596,7 @@
      "ingredient": "tripotassium_citrate_monohydrate",
      "concentration": {
       "grams_per_liter": 293.5,
-      "source_value": 293.5,
+      "source_numeric": 293.5,
       "source_unit": "g/L"
      }
     },
@@ -1620,7 +1620,7 @@
      "ingredient": "s_basal",
      "volume": {
       "liters": 1,
-      "source_value": 1,
+      "source_numeric": 1,
       "source_unit": "L"
      }
     },
@@ -1628,7 +1628,7 @@
      "ingredient": "k_citrate_1m_ph6",
      "volume": {
       "liters": 0.01,
-      "source_value": 10,
+      "source_numeric": 10,
       "source_unit": "mL"
      }
     },
@@ -1636,7 +1636,7 @@
      "ingredient": "trace_metals",
      "volume": {
       "liters": 0.01,
-      "source_value": 10,
+      "source_numeric": 10,
       "source_unit": "mL"
      }
     },
@@ -1644,7 +1644,7 @@
      "ingredient": "cacl2_1m",
      "volume": {
       "liters": 0.003,
-      "source_value": 3,
+      "source_numeric": 3,
       "source_unit": "mL"
      }
     },
@@ -1652,7 +1652,7 @@
      "ingredient": "mgso4_1m",
      "volume": {
       "liters": 0.003,
-      "source_value": 3,
+      "source_numeric": 3,
       "source_unit": "mL"
      }
     }
@@ -1674,7 +1674,7 @@
      "ingredient": "tryptone",
      "concentration": {
       "grams_per_liter": 10,
-      "source_value": 10,
+      "source_numeric": 10,
       "source_unit": "g/L"
      }
     },
@@ -1682,7 +1682,7 @@
      "ingredient": "yeast_extract",
      "concentration": {
       "grams_per_liter": 5,
-      "source_value": 5,
+      "source_numeric": 5,
       "source_unit": "g/L"
      }
     },
@@ -1690,7 +1690,7 @@
      "ingredient": "nacl",
      "concentration": {
       "grams_per_liter": 5,
-      "source_value": 5,
+      "source_numeric": 5,
       "source_unit": "g/L"
      }
     },
@@ -1718,7 +1718,7 @@
      "ingredient": "carbenicillin_50",
      "concentration": {
       "grams_per_liter": 0.1,
-      "source_value": 100,
+      "source_numeric": 100,
       "source_unit": "ug/mL"
      }
     }
