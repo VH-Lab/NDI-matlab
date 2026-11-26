@@ -39,6 +39,23 @@ classdef TestBathAssembly < matlab.unittest.TestCase
             end
         end
 
+        function testABathWithNoClockRecordIsNotAssembled(testCase)
+            % [one-reading quick answers] Q2 / [no invented values] (Jess
+            % Haley, 2026-10-26; built 2026-11-26, audit batch 2 (b)): a bath
+            % whose stimulator has no clock record for its epoch (the
+            % resolver's '') is carried as v1 by ndi.migrate.local
+            % (carry-157) and never assembled on an assumed clock; reaching
+            % the assembler with it is refused.
+            v1 = stimulusBathDoc('stim_1', 't00001');
+            testCase.verifyError(@() ndi.migrate.internal.stimulusBathToBath( ...
+                v1, mockResolver('animal_1', ''), 'did_v2'), ...
+                'ndi:migrate:bathNoClockRecord');
+            % the control: the same bath with a clock record assembles, on it
+            [~, ~, ~, anchorInfo] = ndi.migrate.internal.stimulusBathToBath( ...
+                v1, mockResolver('animal_1', 'exp_global_time'), 'did_v2');
+            testCase.verifyEqual(anchorInfo.epoch_clock, 'exp_global_time');
+        end
+
         function testOsmAndSaturationRowsAreNotRead(testCase)
             % [Dab bath units are Dabrowska's] (Decided by Jess Haley,
             % 2026-11-03): a row stated in "osm" or "saturation" is not read by

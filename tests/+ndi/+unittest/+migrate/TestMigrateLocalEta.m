@@ -352,6 +352,45 @@ classdef TestMigrateLocalEta < matlab.unittest.TestCase
             end
         end
 
+        function testABathWithNoClockRecordIsCarriedAsV1(testCase)
+            % [one-reading quick answers] Q2 and [no invented values] (Jess
+            % Haley, 2026-10-26, did-schema did_v2_go_forward_class_audit.md;
+            % built 2026-11-26, audit batch 2 (b)): "a bath epoch with no
+            % clock record, is carried as v1 instead of defaulting to
+            % `dev_local_time`". The fixture of testStimulusBathResolvesToDose
+            % (the control, which converts) without the stimulator's
+            % element_epoch: the bath is stored whole as v1, citing carry-157,
+            % and no bath manipulation is written.
+            stimId  = 'aabb1122ccdd3344_5500000000000002';
+            subjId  = 'aabb1122ccdd3344_5500000000000001';
+            sessId  = 'aabb1122ccdd3344_5500000000000005';
+            epochId = 'epoch_t00001';
+            bath = makeStimulusBath(stimId, epochId);
+            bodies = { ...
+                jsonencode(makeSessionDoc(sessId)), ...
+                jsonencode(makeSubject(subjId)), ...
+                jsonencode(makeStimulatorElement(stimId, subjId)), ...
+                jsonencode(bath)};
+            result = runMigrate(testCase, bodies);
+            assertNoDeferral(testCase, result);
+            verifyEqual(testCase, result.references.orphan_count, 0, ...
+                ['the graph does not close. ' resultDiag(result)]);
+            r = result.secondPass.deferred;
+            verifyEqual(testCase, r.deferred_seen, 1, ['the denominator. ' resultDiag(result)]);
+            verifyEqual(testCase, r.baths_carried_no_clock, 1);
+            verifyEqual(testCase, r.baths_carried_unread_unit, 0);
+            verifyEqual(testCase, {r.carry_rows.id}, {bath.base.id});
+            verifyEqual(testCase, {r.carry_rows.row}, {'carry-157'});
+            d = findById(result.destination, bath.base.id);
+            verifyNotEmpty(testCase, d, resultDiag(result));
+            if ~isempty(d)
+                verifyEqual(testCase, d.document_class.class_name, 'stimulus_bath');
+                verifyEqual(testCase, char(d.document_class.schema_version), 'did_v1');
+            end
+            verifyFalse(testCase, isfield(result.summary.by_class, 'formulation'), ...
+                ['a bath formulation was written. ' resultDiag(result)]);
+        end
+
         function testStimulusBathResolvesToDose(testCase)
             % did-schema #88 (VH-Lab/did-schema#88): the bath is a `manipulation`
             % whose value kind is `formulation`, about the specimen by

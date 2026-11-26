@@ -485,8 +485,86 @@ classdef TestMigrateLocalEtaDab < matlab.unittest.TestCase
             verifyGreaterThan(testCase, numel(expected), 0, ...
                 'no Dab bath has an osm or saturation row: this checks nothing');
             verifyEqual(testCase, r.baths_carried_unread_unit, numel(expected));
-            verifyEqual(testCase, sort({r.carry_rows.id}), sort(expected));
-            verifyTrue(testCase, all(strcmp({r.carry_rows.row}, 'carry-155')));
+            % the carry-155 rows exactly; since audit batch 2 (b) (2026-11-26)
+            % the step also records carry-157 rows, checked by
+            % testBathsWithNoClockRecordAreCarriedAsV1
+            is155 = strcmp({r.carry_rows.row}, 'carry-155');
+            verifyEqual(testCase, sort({r.carry_rows(is155).id}), sort(expected));
+            verifyTrue(testCase, all(ismember({r.carry_rows.row}, {'carry-155', 'carry-157'})));
+            dst = destinationBodies(testCase.Result.destination);
+            stamp = containers.Map('KeyType', 'char', 'ValueType', 'char');
+            for k = 1:numel(dst)
+                b = dst{k};
+                if strcmp(b.document_class.class_name, 'stimulus_bath')
+                    stamp(b.base.id) = char(b.document_class.schema_version);
+                end
+            end
+            for k = 1:numel(expected)
+                verifyTrue(testCase, isKey(stamp, expected{k}) ...
+                    && strcmp(stamp(expected{k}), 'did_v1'), ...
+                    sprintf('bath %s is not stored as a v1 document', expected{k}));
+            end
+        end
+
+        function testBathsWithNoClockRecordAreCarriedAsV1(testCase)
+            % [one-reading quick answers] Q2 and [no invented values] (Jess
+            % Haley, 2026-10-26, did-schema did_v2_go_forward_class_audit.md;
+            % built in NDI 2026-11-26, audit batch 2 (b)): a bath whose epoch
+            % has no clock record for its stimulator is carried as v1
+            % (carry-157), not anchored on an assumed 'dev_local_time'. In the
+            % Dab v1 bodies no (stimulator, epoch) pair of a bath has an
+            % element_epoch or an epochclocktimes (1,605 of 1,605, measured
+            % 2026-11-26), so every bath the unit check does not carry
+            % (carry-155) is carried here: DID-matlab's resolveDeferredBaths
+            % carries the same 433 (#325). EXPECTED is computed from the v1
+            % bodies directly, not through the resolver under test.
+            clockKeys = containers.Map('KeyType', 'char', 'ValueType', 'logical');
+            baths = {};
+            for k = 1:numel(testCase.Bodies)
+                txt = testCase.Bodies{k};
+                if contains(txt, '"element_epoch"') || contains(txt, '"epochclocktimes"')
+                    b = jsondecode(txt);
+                    cn = b.document_class.class_name;
+                    ep = '';
+                    if isfield(b, 'epochid') && isfield(b.epochid, 'epochid')
+                        ep = char(b.epochid.epochid);
+                    end
+                    if strcmp(cn, 'element_epoch') && isfield(b, 'element_epoch') ...
+                            && ~isempty(b.element_epoch.epoch_clock)
+                        clockKeys([char(edgeOf(b, 'element_id')) '|' ep]) = true;
+                    elseif strcmp(cn, 'epochclocktimes') && isfield(b, 'epochclocktimes') ...
+                            && ~isempty(b.epochclocktimes.clocktype)
+                        clockKeys(['*|' ep]) = true;
+                    end
+                elseif contains(txt, '"stimulus_bath"')
+                    baths{end+1} = jsondecode(txt); %#ok<AGROW>
+                end
+            end
+            expected = {};
+            for k = 1:numel(baths)
+                b = baths{k};
+                if ~isempty(ndi.migrate.internal.bathUnreadUnitRows(b))
+                    continue;   % carry-155 first
+                end
+                ep = char(b.epochid.epochid);
+                st = char(edgeOf(b, 'stimulus_element_id'));
+                if ~isempty(ep) && ~isempty(st) && ~isKey(clockKeys, [st '|' ep]) ...
+                        && ~isKey(clockKeys, ['*|' ep])
+                    expected{end+1} = char(b.base.id); %#ok<AGROW>
+                end
+            end
+            r = testCase.Result.secondPass.deferred;
+            assertNotEmpty(testCase, r, 'resolveDeferred reported nothing');
+            fprintf(['\n  BATHS WITH NO CLOCK RECORD (Dab)\n    baths read %d; deferrals ' ...
+                'read %d; with no clock record for their stimulator''s epoch %d; ' ...
+                'carried as v1 (carry-157) %d\n'], numel(baths), r.deferred_seen, ...
+                numel(expected), r.baths_carried_no_clock);
+            verifyGreaterThan(testCase, numel(baths), 0, 'the denominator: no Dab bath was read');
+            verifyGreaterThan(testCase, numel(expected), 0, ...
+                'no Dab bath lacks a clock record: this checks nothing');
+            verifyEqual(testCase, r.baths_carried_no_clock, numel(expected));
+            is157 = strcmp({r.carry_rows.row}, 'carry-157');
+            verifyEqual(testCase, sort({r.carry_rows(is157).id}), sort(expected));
             dst = destinationBodies(testCase.Result.destination);
             stamp = containers.Map('KeyType', 'char', 'ValueType', 'char');
             for k = 1:numel(dst)

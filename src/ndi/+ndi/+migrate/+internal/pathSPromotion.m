@@ -96,7 +96,10 @@ function [kept, minted, changed, report] = pathSPromotion(structs, options)
 %                (2) A label term observation
 %                (ndi.migrate.internal.ontologyLabelSubjects: variable `label`)
 %                whose value is an anatomical term (an UBERON node) is
-%                retargeted to the part for that region.
+%                retargeted to the part for that region. Since 2026-11-26
+%                (Jess Haley, audit batch 2 (a)) that pass writes no such
+%                observation (every label is carried as v1), so (2) finds
+%                none from the migration.
 %
 %     'all'      both, 'sites' first.
 %

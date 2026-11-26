@@ -12,12 +12,20 @@ function resolver = bodyResolver(bodies)
 %         subject is empty) it follows `underlying_element_id` up the
 %         chain until a subject is found. Errors if none can be reached.
 %
-%     resolver.epochClockOfElement(elementId, epochId)
+%     [clock, source] = resolver.epochClockOfElement(elementId, epochId)
 %         The ndi.time.clocktype string for an element's epoch, used as
-%         the `epoch_clock` of an epoch_bounded_reference. Prefers the
+%         the `epoch_clock` of an epoch_bounded_reference. Reads the
 %         matching `element_epoch` document (depends_on element_id +
-%         epochid), then any `epochclocktimes` document for the epoch
-%         (favouring 'dev_local_time'), then defaults to 'dev_local_time'.
+%         epochid; SOURCE 'element_epoch'), else any `epochclocktimes`
+%         document for the epoch (favouring 'dev_local_time'; SOURCE
+%         'epochclocktimes'). With NO clock record it returns '' and SOURCE
+%         'none': it no longer defaults to 'dev_local_time'. Decided by Jess
+%         Haley, 2026-10-26 [one-reading quick answers] Q2 and [no invented
+%         values] (did-schema did_v2_go_forward_class_audit.md), built here
+%         on her decision of 2026-11-26 (audit batch 2 (b)): a bath epoch
+%         with no clock record is carried as v1 (carry-157; ndi.migrate.local
+%         resolveDeferred), as DID-matlab's resolveDeferredBaths carries it.
+%         Each caller decides what an empty clock means for it.
 %
 %     resolver.subjectsForPresentation(presentationId)
 %         The animal subject_id(s) a stimulus_presentation was shown to,
@@ -559,7 +567,7 @@ end
 
 % ===================== epoch clock resolution ============================
 
-function clock = epochClockOfElement(elementEpochByKey, clocktimesByEpoch, elementId, epochId)
+function [clock, source] = epochClockOfElement(elementEpochByKey, clocktimesByEpoch, elementId, epochId)
 elementId = char(elementId);
 epochId   = char(epochId);
 
@@ -572,6 +580,7 @@ if isKey(elementEpochByKey, key)
         c = subField(matches{k}, 'element_epoch', 'epoch_clock');
         if ~isempty(c)
             clock = c;
+            source = 'element_epoch';
             return;
         end
     end
@@ -585,6 +594,7 @@ if isKey(clocktimesByEpoch, epochId)
         c = subField(matches{k}, 'epochclocktimes', 'clocktype');
         if strcmp(c, 'dev_local_time')
             clock = c;
+            source = 'epochclocktimes';
             return;
         elseif isempty(fallback) && ~isempty(c)
             fallback = c;
@@ -593,11 +603,15 @@ if isKey(clocktimesByEpoch, epochId)
 end
 if ~isempty(fallback)
     clock = fallback;
+    source = 'epochclocktimes';
     return;
 end
 
-% 3) conventional default for a device epoch.
-clock = 'dev_local_time';
+% 3) no clock record. [one-reading quick answers] Q2 / [no invented values]
+%    (Jess Haley, 2026-10-26; built 2026-11-26, audit batch 2 (b)): no
+%    'dev_local_time' is assumed; the caller carries or decides.
+clock = '';
+source = 'none';
 end
 
 % ===================== body field helpers ================================

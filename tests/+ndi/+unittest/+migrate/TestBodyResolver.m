@@ -12,6 +12,57 @@ classdef TestBodyResolver < matlab.unittest.TestCase
 
     methods (Test)
 
+        % ============ the epoch clock, audit batch 2 (b), 2026-11-26 =====
+
+        function testAnEpochWithNoClockRecordHasNoClock(testCase)
+            % [one-reading quick answers] Q2 and [no invented values] (Jess
+            % Haley, 2026-10-26, did-schema did_v2_go_forward_class_audit.md;
+            % built 2026-11-26, audit batch 2 (b)): with no element_epoch
+            % and no epochclocktimes for the (element, epoch), the clock is
+            % '' and its source 'none' -- not an assumed 'dev_local_time'.
+            % The Dab baths are this case: 1,605 of 1,605 (stimulator, epoch)
+            % pairs have neither record (Dab.zip, measured 2026-11-26).
+            bodies = { element('stimulator_5', 'animal_1'), ...
+                elementEpochClock('other_elem', 't00001', 'dev_local_time') };
+            r = ndi.migrate.internal.bodyResolver(bodies);
+            [clock, source] = r.epochClockOfElement('stimulator_5', 't00001');
+            testCase.verifyEqual(clock, '');
+            testCase.verifyEqual(source, 'none');
+            testCase.verifyEqual(r.epochClockOfElement('stimulator_5', 't00001'), '', ...
+                'one output: the clock alone, still empty');
+        end
+
+        function testAnElementEpochGivesTheClock(testCase)
+            % the control: the stimulator's own element_epoch for that epoch
+            % gives the clock (and an element_epoch of another epoch does not)
+            bodies = { element('stimulator_5', 'animal_1'), ...
+                elementEpochClock('stimulator_5', 't00001', 'exp_global_time'), ...
+                elementEpochClock('stimulator_5', 't00002', 'dev_local_time') };
+            r = ndi.migrate.internal.bodyResolver(bodies);
+            [clock, source] = r.epochClockOfElement('stimulator_5', 't00001');
+            testCase.verifyEqual(clock, 'exp_global_time');
+            testCase.verifyEqual(source, 'element_epoch');
+            [clock, source] = r.epochClockOfElement('stimulator_5', 't00003');
+            testCase.verifyEqual(clock, '');
+            testCase.verifyEqual(source, 'none');
+        end
+
+        function testAnEpochclocktimesRecordGivesTheClock(testCase)
+            % the second record the resolver reads, favouring dev_local_time
+            ect = docBody('epochclocktimes', 'ect_1');
+            ect.epochid = struct('epochid', 't00001');
+            ect.epochclocktimes = struct('clocktype', 'utc');
+            ect2 = ect;
+            ect2.base.id = 'ect_2';
+            ect2.epochclocktimes.clocktype = 'dev_local_time';
+            r = ndi.migrate.internal.bodyResolver({ect});
+            [clock, source] = r.epochClockOfElement('stimulator_5', 't00001');
+            testCase.verifyEqual(clock, 'utc');
+            testCase.verifyEqual(source, 'epochclocktimes');
+            r = ndi.migrate.internal.bodyResolver({ect, ect2});
+            testCase.verifyEqual(r.epochClockOfElement('stimulator_5', 't00001'), 'dev_local_time');
+        end
+
         function testSubjectViaResponseLink(testCase)
             bodies = { ...
                 stimPresentation('pres_1', 'stimulator_5'), ...
@@ -271,6 +322,13 @@ function b = elementEpoch(elementId, epochName, sessionId)
 b = docBody('element_epoch', ['ee_' elementId '_' sessionId], {'element_id', elementId});
 b.base.session_id = sessionId;
 b.epochid = struct('epochid', epochName);
+end
+
+function b = elementEpochClock(elementId, epochName, clock)
+%ELEMENTEPOCHCLOCK An element_epoch of ELEMENTID in EPOCHNAME on clock CLOCK.
+b = docBody('element_epoch', ['ee_' elementId '_' epochName], {'element_id', elementId});
+b.epochid = struct('epochid', epochName);
+b.element_epoch = struct('epoch_clock', clock);
 end
 
 function b = presentationInEpoch(id, epochName, sessionId)

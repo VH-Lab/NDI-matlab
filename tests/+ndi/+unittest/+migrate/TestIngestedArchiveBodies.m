@@ -1001,6 +1001,11 @@ classdef TestIngestedArchiveBodies < matlab.unittest.TestCase
             testCase.verifySubstring(m.reason, 'malformed');
             testCase.verifySubstring(m.reason, 't2, t1');
             testCase.verifySubstring(m.reason, 'kept as v1');
+            % [malformed cases cite carry-120] (Jess Haley, 2026-11-26,
+            % did-schema did_v2_go_forward_class_audit.md): the report cites
+            % carry-120 [values no writer produces are malformed]
+            testCase.verifyEqual(m.row, 'carry-120');
+            testCase.verifyTrue(startsWith(m.reason, '[carry-120] malformed'), m.reason);
             testCase.verifyEqual(rep.first_malformed_reason, m.reason);
             testCase.verifyEqual(rep.first_unconvertible_reason, m.reason);
         end

@@ -261,10 +261,14 @@ arguments
     options.PresentationTimeFile = ''
     options.PresentationTimeFileStatus = ''
     % [generic stage is lossless] (Jess Haley, 2026-10-25): true (the default,
-    % the generic stage) refuses a presentation with any field the
-    % decomposition does not write; false runs the recipes regardless -- the
-    % NewStim recipe as a per-software workbook default ([NewStim recipes are
-    % a default], 2026-10-25), and the tests of the recipes themselves.
+    % the generic stage) carries as v1 a presentation with any field the
+    % decomposition does not write; false writes the decomposition even so
+    % (the tests of the recipes themselves use it). Neither value turns the
+    % recipes on or off: [NewStim recipes are a default] (Jess Haley,
+    % 2026-10-25), confirmed 2026-11-26 (audit batch 2 (c)), means the
+    % NewStim recipes apply automatically to every recognised NewStim kind
+    % (stimulusRecipe), with no per-dataset step; a kind with no recipe is
+    % carried (carry-084).
     options.LeaveUnplaced (1,1) logical = true
 end
 

@@ -835,23 +835,36 @@ function result = local(path, options)
         %   WHAT THIS STEP READS AND WRITES: [migration reliability practices] (c),
         %   Jess Haley, 2026-10-26; DID-matlab tools/batch_pass_order.py derives the
         %   second pass's order from these and checks it.
-        %   A label is resolved only when the document it labels states a
-        %   subject (entity_id / subject_id): a v1 generic_file declares only a
-        %   document_id edge (NDI origin/main generic_file.json), so a
-        %   generic_file's label is never taken here and
-        %   did2.convert.foldGenericFiles still reads it.
+        %   Since Jess Haley's decision of 2026-11-26 (audit batch 2 (a):
+        %   [labels are a field on what they label], [one-reading quick
+        %   answers] Q3) no label is converted: each is carried as v1 and the
+        %   step only names its carry register row (carry-096 / 097 / 100).
+        %   A v1 generic_file declares only a document_id edge (NDI
+        %   origin/main generic_file.json), so a generic_file's label is
+        %   never taken here and did2.convert.foldGenericFiles still reads it.
         %   BATCH-PASS-READS: ontology_label(of a statement about a subject),
         %       ontologyLabel(of a statement about a subject)
-        %   BATCH-PASS-ADDS: observation(ontology label),
-        %       directed_relation(ontology label)
-        %   BATCH-PASS-CHANGES: ontology_label(of a statement about a subject),
-        %       ontologyLabel(of a statement about a subject)
-        %   BATCH-PASS-REMOVES: NONE -- only the labels it resolves are
-        %       replaced (CHANGES); every other label is left for a later
+        %   BATCH-PASS-ADDS: NONE -- every label is carried as v1 (audit
+        %       batch 2 (a), 2026-11-26); no observation is written
+        %   BATCH-PASS-CHANGES: NONE -- every label is left as pass 1 wrote
+        %       it, for the final v1 stamp, with its carry register row
+        %   BATCH-PASS-REMOVES: NONE -- every label is left for a later
         %       reader
         try
             [convertResult, ontologyLabelReport] = ...
                 resolveOntologyLabelSubjects(convertResult, options);
+            if isstruct(ontologyLabelReport) && isfield(ontologyLabelReport, 'labels_passthrough')
+                olr = ontologyLabelReport;
+                fprintf(['[migrate step]   ontology labels: %d of %d document(s) read are ' ...
+                    'labels; carried with a row: %d (target with a subject and a time %d, ' ...
+                    'target with no subject %d, no time reference %d, no edge %d, target ' ...
+                    'absent %d, no node %d, outside the template %d); converted %d\n'], ...
+                    olr.labels_passthrough, olr.documents_inspected, numel(olr.carry_rows), ...
+                    olr.carried_target_has_subject_and_time, olr.blocked_target_has_no_subject, ...
+                    olr.unresolved_target_no_time_reference, olr.unresolved_no_document_edge, ...
+                    olr.unresolved_target_not_in_batch, olr.unresolved_no_ontology_node, ...
+                    olr.unresolved_unplaced_fields, olr.labels_replaced);
+            end
         catch ME
             stepErrors(end+1) = struct('step', 'ontologyLabelSubjectsFailed', 'message', ME.message); %#ok<AGROW>
             warning('NDI:migrate:ontologyLabelSubjectsFailed', ...
@@ -877,6 +890,13 @@ function result = local(path, options)
         try
             [convertResult, stimulusSequenceReport, presentationAnchors] = ...
                 resolveStimulusPresentations(convertResult, bodies, options, resolver, ndiDir);
+            % audit batch 2 (b), 2026-11-26: the presentations whose
+            % stimulator's epoch has no clock record (still anchored on
+            % 'dev_local_time'; Proposed (not decided))
+            fprintf(['[migrate step]   stimulus presentations: of %d read, %d have no ' ...
+                'clock record for their stimulator''s epoch (anchored on ' ...
+                'dev_local_time, as before)\n'], stimulusSequenceReport.presentations_read, ...
+                stimulusSequenceReport.epoch_clock_no_record);
         catch ME
             stepErrors(end+1) = struct('step', 'presentationResolveFailed', 'message', ME.message); %#ok<AGROW>
             warning('NDI:migrate:presentationResolveFailed', ...
@@ -1970,11 +1990,26 @@ function [convertResult, bathAnchors, report] = resolveDeferred(convertResult, r
 %   prefixes convert to molar] an ingredient row in a unit that is not molar
 %   with a known SI prefix (mg/ml, a word) is a spelling that cannot be parsed
 %   and carries the bath the same way (bathUnreadUnitRows, as DID-matlab
-%   resolveDeferredBaths does, PR #456). REPORT, denominators first: deferred_seen (the
-%   deferrals this step read), baths_carried_unread_unit, and carry_rows
+%   resolveDeferredBaths does, PR #456).
+%
+%   A BATH WHOSE EPOCH HAS NO CLOCK RECORD IS CARRIED. Decided by Jess Haley,
+%   2026-10-26 [one-reading quick answers] Q2 (did-schema
+%   did_v2_go_forward_class_audit.md): "a bath epoch with no clock record, is
+%   carried as v1 instead of defaulting to `dev_local_time` ([no invented
+%   values])"; built here on her decision of 2026-11-26 (audit batch 2 (b)),
+%   as DID-matlab's resolveDeferredBaths builds it (#325). A bath with an
+%   epoch string whose stimulator has no clock record for that epoch
+%   (ndi.migrate.internal.bodyResolver epochClockOfElement, SOURCE 'none')
+%   is carried whole as v1, citing carry-157 (needs_mapping), after the
+%   unit check above (a bath both checks carry is counted once, under
+%   carry-155, as DID-matlab orders them).
+%
+%   REPORT, denominators first: deferred_seen (the deferrals this step
+%   read), baths_carried_unread_unit, baths_carried_no_clock, and carry_rows
 %   {id, row, dependency} (secondPassCarryRows reads them).
     bathAnchors = [];
     report = struct('deferred_seen', 0, 'baths_carried_unread_unit', 0, ...
+        'baths_carried_no_clock', 0, ...
         'carry_rows', struct('id', {}, 'row', {}, 'dependency', {}));
     q = convertResult.quarantine;
     if isempty(q)
@@ -2004,6 +2039,19 @@ function [convertResult, bathAnchors, report] = resolveDeferred(convertResult, r
                     keep(k) = false;   % carried -> drop the original deferral
                     continue;
                 end
+                % [one-reading quick answers] Q2: no clock record, carried
+                % carry-register: carry-157
+                if bathHasNoClockRecord(v1Body, resolver)
+                    if isfield(v1Body, 'document_class') && isstruct(v1Body.document_class)
+                        v1Body.document_class.schema_version = 'did_v1';
+                    end
+                    convertResult.migrated{end+1} = did2.document(v1Body);
+                    report.baths_carried_no_clock = report.baths_carried_no_clock + 1;
+                    report.carry_rows(end+1) = struct('id', char(v1Body.base.id), ...
+                        'row', 'carry-157', 'dependency', '');
+                    keep(k) = false;   % carried -> drop the original deferral
+                    continue;
+                end
             end
             % the documents assembled for this deferral take ids derived from
             % it ([migration reliability practices] (b), Jess Haley,
@@ -2028,6 +2076,9 @@ function [convertResult, bathAnchors, report] = resolveDeferred(convertResult, r
         'saturation or a concentration unit not read as molar (carry-155): ' ...
         '%d of %d deferral(s) read\n'], ...
         report.baths_carried_unread_unit, report.deferred_seen);
+    fprintf(['[migrate step]   deferred baths carried as v1, no clock record for ' ...
+        'the stimulator''s epoch (carry-157): %d of %d deferral(s) read\n'], ...
+        report.baths_carried_no_clock, report.deferred_seen);
     if isempty(assembled)
         convertResult.quarantine = q(keep);
         convertResult.summary = recountSummary(convertResult);
@@ -2041,6 +2092,28 @@ function [convertResult, bathAnchors, report] = resolveDeferred(convertResult, r
     convertResult.migrated = [convertResult.migrated, sub.migrated];
     convertResult.quarantine = [q(keep), sub.quarantine];
     convertResult.summary = recountSummary(convertResult);
+end
+
+function tf = bathHasNoClockRecord(v1Body, resolver)
+% A stimulus_bath with an epoch string whose stimulator has no clock record
+% for that epoch ([one-reading quick answers] Q2). A bath with no epoch
+% string is not this case (stimulusBathToBath mints it no anchor), nor one
+% naming no stimulator (its assembly refuses it, and it stays quarantined).
+    tf = false;
+    epochId = '';
+    if isfield(v1Body, 'epochid') && isstruct(v1Body.epochid) ...
+            && isfield(v1Body.epochid, 'epochid')
+        epochId = char(v1Body.epochid.epochid);
+    end
+    if isempty(epochId)
+        return;
+    end
+    stimulatorId = char(ndi.migrate.internal.etaShape.edge(v1Body, 'stimulus_element_id'));
+    if isempty(stimulatorId)
+        return;
+    end
+    [~, source] = resolver.epochClockOfElement(stimulatorId, epochId);
+    tf = strcmp(source, 'none');
 end
 
 function tf = isDeferredForContext(qEntry)
@@ -2598,9 +2671,17 @@ function [convertResult, report] = resolveObservesRetirement(convertResult, opti
 end
 
 function [convertResult, report] = resolveOntologyLabelSubjects(convertResult, options)
-%RESOLVEONTOLOGYLABELSUBJECTS V_eta second pass: give each passed-through
-%   `ontology_label` the subject it is about, as a `term_observation` whose
-%   `derived_from_1` still names the document that was labelled.
+%RESOLVEONTOLOGYLABELSUBJECTS V_eta second pass: name the carry register row
+%   of each passed-through `ontologyLabel` (REPORT.carry_rows).
+%
+%   SINCE 2026-11-26 THE PLAN IS ALWAYS EMPTY. Jess Haley's decision of that
+%   day (audit batch 2 (a), applying [labels are a field on what they label]
+%   and [one-reading quick answers] Q3, did-schema
+%   did_v2_go_forward_class_audit.md) carries every label as v1, the ones
+%   whose target has a subject and a time included, under carry-096
+%   (needs_mapping). The fold below is kept, and runs on nothing; until that
+%   decision it wrote such a label as a term observation of the subject,
+%   as follows.
 %
 %   ndi.migrate.internal.ontologyLabelSubjects does the RESOLUTION (pure struct
 %   logic, no converter, no schema) and returns a plan carrying a ready V_eta
@@ -3312,9 +3393,23 @@ function [convertResult, report, presentationAnchors] = resolveStimulusPresentat
             % clock is the stimulator's for that epoch, read as the bath
             % assembler reads it; a manipulation the epoch anchor fold would
             % refuse is not written, and the presentation is carried as v1
-            epochClock = resolver.epochClockOfElement( ...
+            [epochClock, clockSource] = resolver.epochClockOfElement( ...
                 ndi.migrate.internal.etaShape.edge(b, 'stimulus_element_id'), ...
                 char(rep.epoch_id));
+            if strcmp(clockSource, 'none')
+                % NO CLOCK RECORD: Proposed (not decided). The resolver no
+                % longer assumes 'dev_local_time' ([one-reading quick
+                % answers] Q2, built for baths 2026-11-26, audit batch 2
+                % (b)); Q2 names baths, and for a presentation the reading
+                % is unchanged, kept HERE and counted
+                % (REPORT.epoch_clock_no_record) rather than hidden in the
+                % resolver. Measured 2026-11-26 in the v1 zips: 1,242 of B's
+                % 1,242 and 11 of 20211116's 11 presentations have no
+                % element_epoch or epochclocktimes for their stimulator's
+                % epoch, so carrying them would carry every presentation.
+                epochClock = 'dev_local_time';
+                report.epoch_clock_no_record = report.epoch_clock_no_record + 1;
+            end
             why = epochCarryReason(expectedPairs, char(ndi.v2.sessionIdOf(b)), ...
                 char(rep.epoch_id), char(epochClock));
             if ~isempty(why)
@@ -3931,6 +4026,7 @@ function r = newStimulusSequenceReport()
         'epoch_carried',              struct('total', 0, ...
             'no_epoch_minted', 0, 'clock_no_time', 0, ...
             'clock_inherited', 0, 'clock_unknown', 0), ...
+        'epoch_clock_no_record',      0, ...
         'control_v1',                 [], ...
         'control_records_read',       0, ...
         'control_records_folded',     0, ...
