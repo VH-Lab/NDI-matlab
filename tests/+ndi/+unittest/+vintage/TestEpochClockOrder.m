@@ -135,7 +135,6 @@ classdef TestEpochClockOrder < matlab.unittest.TestCase
                 testCase.verifyEqual(B.t0_t1, {P.ExpT, P.DevT}, ['epoch_b' what]);
             end
         end
-    end
 
         function testAnEpochWhoseRecordingComesBackIsReadAgain(testCase)
             % The derived index (ndi.vintage.epochIndex) keeps each epoch's
