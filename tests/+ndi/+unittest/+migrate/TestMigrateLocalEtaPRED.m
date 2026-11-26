@@ -128,6 +128,18 @@ classdef TestMigrateLocalEtaPRED < matlab.unittest.TestCase
     end
 
     methods (Test)
+        function testEpochInstrumentCensus(testCase)
+            % Decided by Jess Haley, 2026-11-26 [instrument of an epoch
+            % interaction is a link] (did-schema
+            % did_v2_go_forward_class_audit.md): before it is built, count
+            % the interactions that name an instrument_id and are not on an
+            % epoch, and the devices it would make elements. Report-only.
+            result = runPredMigrate(testCase);
+            c = ndi.unittest.migrate.epochInstrumentCensus(result.destination, 'PRED');
+            verifyGreaterThan(testCase, c.documents_inspected, 0, ...
+                'the census read no document from the migrated database');
+        end
+
 
         function testTheWholeCorpusMigratesWithNothingQuarantinedOrDangling(testCase)
             % THE HEADLINE GATE, AND ITS DENOMINATOR COMES FIRST. A pass over

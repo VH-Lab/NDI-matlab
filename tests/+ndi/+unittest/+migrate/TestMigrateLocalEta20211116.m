@@ -104,6 +104,18 @@ classdef TestMigrateLocalEta20211116 < matlab.unittest.TestCase
     end
 
     methods (Test)
+        function testEpochInstrumentCensus(testCase)
+            % Decided by Jess Haley, 2026-11-26 [instrument of an epoch
+            % interaction is a link] (did-schema
+            % did_v2_go_forward_class_audit.md): before it is built, count
+            % the interactions that name an instrument_id and are not on an
+            % epoch, and the devices it would make elements. Report-only.
+            c = ndi.unittest.migrate.epochInstrumentCensus( ...
+                testCase.Result.destination, '20211116');
+            verifyGreaterThan(testCase, c.documents_inspected, 0, ...
+                'the census read no document from the migrated database');
+        end
+
 
         function testTheStimulusFoldReportsItsSeveralAnimalCount(testCase)
             % REPORT-ONLY (Jess Haley, 2026-10-21): every corpus states how
