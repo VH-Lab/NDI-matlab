@@ -475,6 +475,35 @@ classdef TestMigrateLocalEta20211116 < matlab.unittest.TestCase
             end
         end
 
+        function testReadPhasesAreNoSlowerThanV1(testCase)
+            % did-schema did_v2_go_forward_class_audit.md [read speed
+            % margin] (Jess Haley, 2026-11-06) and [read speed check after
+            % getprobes] (2026-11-19; VH-Lab/NDI-matlab#1266): every read
+            % step on every corpus inside 1.10 x v1 + 1 s. The
+            % same check as B's and Dab's: every session of 20211116 is read
+            % in five phases (subjects, getelements, the elements' facts and
+            % epoch tables, getprobes with probe epoch tables, the
+            % acquisition systems' epoch tables), before migration and
+            % after, each side in a freshly opened session doing the same
+            % work (ndi.unittest.migrate.readPhaseTimings).
+            % NDI_PROFILE_READS=1 profiles the phases (report-only).
+            T = ndi.unittest.migrate.readPhaseTimings(testCase.Bodies, ...
+                fileparts(testCase.Result.destination), '20211116', ...
+                'Profile', ndi.unittest.migrate.envTrue('NDI_PROFILE_READS'));
+            ndi.unittest.migrate.verifyReadPhases(testCase, T);
+            % the same objects on both sides, the probe map's duplicates
+            % of existing probes included ([probes from the index keep v1's
+            % duplicates], Jess Haley, 2026-11-10)
+            for i = 1:numel(T.sessions)
+                c = T.sessions(i).counts;
+                if isempty(fieldnames(c)); continue; end
+                testCase.verifyEqual(c.v2.elements, c.v1.elements, ...
+                    sprintf('session %s: getelements count', T.sessions(i).id));
+                testCase.verifyEqual(c.v2.probes, c.v1.probes, ...
+                    sprintf('session %s: getprobes count', T.sessions(i).id));
+            end
+        end
+
         function testTheAddedEpochTableIsReadableThroughTheObjectAPI(testCase)
             % A CHARACTERIZATION TEST, WRITTEN BEFORE THE #60 DISSOLUTION AND
             % DELIBERATELY ASSERTING TODAY'S BEHAVIOUR RATHER THAN THE SIGNED

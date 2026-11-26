@@ -24,9 +24,12 @@ function T = readPhaseTimings(v1Bodies, migratedNdiDir, label, options)
 %   than v1. We need to match or beat."
 %
 %   T is a struct: T.label, T.sessions (per session: id, reference, v1 and
-%   v2 seconds per phase, the object counts per side) and T.v1 / T.v2, each
+%   v2 seconds per phase, the object counts per side, and the element and
+%   probe keys "name | reference | type" per side) and T.v1 / T.v2, each
 %   phase summed over the sessions. Every session read is counted; a phase
 %   that raised is reported with its error and its time is NaN (never 0).
+%   Where the two sides' elements or probes differ, the keys found on one
+%   side only are printed under the session.
 %
 %   'Profile', true runs the MATLAB profiler over each v2 phase and prints
 %   the functions with the most total and self time (report-only).
@@ -46,7 +49,7 @@ end
 label = char(label);
 PH = {'subjects', 'elements', 'element_epochs', 'probes', 'systems'};
 T = struct('label', label, 'phases', {PH}, 'sessions', struct('id', {}, ...
-    'reference', {}, 'v1', {}, 'v2', {}, 'counts', {}, 'errors', {}), ...
+    'reference', {}, 'v1', {}, 'v2', {}, 'counts', {}, 'errors', {}, 'keys', {}), ...
     'v1', zeroPhases(PH), 'v2', zeroPhases(PH));
 
 v1Structs = cell(1, numel(v1Bodies));
@@ -79,16 +82,17 @@ sids = unique(sids, 'stable');
 for i = 1:numel(sids)
     sid = sids{i};
     rec = struct('id', sid, 'reference', '', 'v1', zeroPhases(PH), 'v2', zeroPhases(PH), ...
-        'counts', struct(), 'errors', {{}});
+        'counts', struct(), 'errors', {{}}, 'keys', struct());
     S1 = openAt(v1Root, sid);
-    [rec.v1, c1, e1, keys] = timePhases(S1, PH, options.MaxProbeEpochTables, {}, ...
+    [rec.v1, c1, e1, keys, k1] = timePhases(S1, PH, options.MaxProbeEpochTables, {}, ...
         profileLabel(options.Profile, 'v1'), options.ProfileTop);
     clear S1
     S2 = openAt(v2Root, sid);
     rec.reference = char(S2.reference);
-    [rec.v2, c2, e2] = timePhases(S2, PH, Inf, keys, profileLabel(options.Profile, 'v2'), options.ProfileTop);
+    [rec.v2, c2, e2, ~, k2] = timePhases(S2, PH, Inf, keys, profileLabel(options.Profile, 'v2'), options.ProfileTop);
     clear S2
     rec.counts = struct('v1', c1, 'v2', c2);
+    rec.keys = struct('v1', k1, 'v2', k2);
     rec.errors = [strcat('v1: ', e1), strcat('v2: ', e2)];
     T.sessions(end+1) = rec;
     for p = 1:numel(PH)
@@ -101,12 +105,15 @@ end
 
 % =========================================================================
 
-function [t, counts, errs, probeKeys] = timePhases(S, PH, cap, onlyKeys, doProfile, topN)
+function [t, counts, errs, probeKeys, objectKeys] = timePhases(S, PH, cap, onlyKeys, doProfile, topN)
+% OBJECTKEYS: the key "name | reference | type" of every element and every
+% probe read, built from the facts each phase reads anyway
 t = zeroPhases(PH);
 errs = {};
 counts = struct('subjects', 0, 'elements', 0, 'element_epoch_tables', 0, ...
     'probes', 0, 'probe_epoch_tables', 0, 'systems', 0);
 probeKeys = {};
+objectKeys = struct('elements', {{}}, 'probes', {{}});
 restrict = ~isempty(onlyKeys) || isinf(cap);
 
 % subjects
@@ -144,7 +151,8 @@ tic0 = tic;
 try
     for k = 1:numel(els)
         o = els{k};
-        facts(o);
+        f = facts(o);
+        objectKeys.elements{end+1} = objectKey(f);
         if ~isa(o, 'ndi.probe')
             o.epochtable();
             counts.element_epoch_tables = counts.element_epoch_tables + 1;
@@ -165,8 +173,9 @@ try
     keys = cell(1, numel(prs));
     for k = 1:numel(prs)
         f = facts(prs{k});
-        keys{k} = sprintf('%s | %s | %s', f.name, num2str(f.reference), f.type);
+        keys{k} = objectKey(f);
     end
+    objectKeys.probes = keys;
     if restrict
         toRead = onlyKeys;
     elseif numel(keys) > cap
@@ -202,6 +211,10 @@ catch ME
 end
 t.systems = toc(tic0);
 endPhase(doProfile, 'systems', topN);
+end
+
+function k = objectKey(f)
+k = sprintf('%s | %s | %s', f.name, num2str(f.reference), f.type);
 end
 
 function f = facts(o)
@@ -308,6 +321,18 @@ for i = 1:numel(T.sessions)
         s.counts.v2.elements, s.counts.v2.probes);
     for e = 1:numel(s.errors)
         fprintf('      ERROR %s\n', s.errors{e});
+    end
+    if isfield(s.keys, 'v1') && isfield(s.keys, 'v2')
+        for w = {'elements', 'probes'}
+            a = s.keys.v1.(w{1}); b = s.keys.v2.(w{1});
+            onlyA = setdiff(a, b); onlyB = setdiff(b, a);
+            for j = 1:numel(onlyA)
+                fprintf('      %s only in v1: %s\n', w{1}(1:end-1), onlyA{j});
+            end
+            for j = 1:numel(onlyB)
+                fprintf('      %s only in v2: %s\n', w{1}(1:end-1), onlyB{j});
+            end
+        end
     end
 end
 end
